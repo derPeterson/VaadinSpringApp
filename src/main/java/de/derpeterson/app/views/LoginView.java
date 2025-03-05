@@ -1,0 +1,163 @@
+package de.derpeterson.app.views;
+
+import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.Unit;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.EmailField;
+import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.router.*;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.ui.components.CardComponent;
+import de.derpeterson.app.ui.helper.VaadinUIHelper;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+@Route("login")
+@PageTitle("Login")
+@AnonymousAllowed
+public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
+
+    private final SecurityService securityService;
+
+    private final HttpServletRequest request;
+
+    @Autowired
+    public LoginView(CustomI18NProvider i18nProvider, AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder, SecurityService securityService, HttpServletRequest request) {
+        this.securityService = securityService;
+        this.request = request;
+
+        setSizeFull();
+
+        // UI Elements
+        RouterLink createAccountLink = new RouterLink(i18nProvider.getTranslation("loginView.create_account_link"), LoginView.class);
+        EmailField emailField = new EmailField(i18nProvider.getTranslation("loginView.email_field"));
+        PasswordField passwordField = new PasswordField(i18nProvider.getTranslation("loginView.password_field"));
+        RouterLink forgotPasswordLink = new RouterLink(i18nProvider.getTranslation("loginView.forgot_password_link"), LoginView.class);
+        Checkbox rememberMeCheckBox = new Checkbox(i18nProvider.getTranslation("loginView.remember_me_checkbox"));
+        Button loginButton = new Button(i18nProvider.getTranslation("base.login_button"), event -> {
+            try {
+                Authentication authentication = authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(emailField.getValue(), passwordField.getValue()));
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                if (authentication.getPrincipal() instanceof UserDetails userDetails) {
+                    securityService.storeAuthenticatedUser(request, userDetails, rememberMeCheckBox.getValue());
+                }
+
+                VaadinUIHelper.showNotification("Erfolgreich eingeloggt!", VaadinUIHelper.NotificationType.SUCCESS);
+
+                getUI().ifPresent(ui -> ui.navigate(AdminView.class));
+            } catch (AuthenticationException e) {
+                VaadinUIHelper.showNotification("Falscher Benutzername oder Passwort", VaadinUIHelper.NotificationType.ERROR);
+            }
+        });
+
+        VerticalLayout mainContent = new VerticalLayout();
+
+        mainContent.setAlignItems(Alignment.CENTER);
+        mainContent.setJustifyContentMode(JustifyContentMode.START);
+
+        addClassNames("login-bg-fullscreen");
+
+        Div bannerContent = new Div();
+        bannerContent.add(new Image("../themes/custom-theme/welcome.png", "Welcome"));
+        bannerContent.addClassNames(LumoUtility.Padding.XLARGE);
+
+        mainContent.add(bannerContent);
+
+        H1 title = new H1(i18nProvider.getTranslation("loginView.title"));
+        title.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.FontWeight.BOLD);
+
+        HorizontalLayout cardTitleLayout = new HorizontalLayout();
+        cardTitleLayout.setWidthFull();
+        cardTitleLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardTitleLayout.addClassNames(LumoUtility.Padding.MEDIUM);
+        cardTitleLayout.add(title);
+
+        Span createAccountQuestionText = new Span(i18nProvider.getTranslation("loginView.create_account_question"));
+        createAccountLink.addClassNames("underline");
+
+        HorizontalLayout cardSecondaryTitleLayout = new HorizontalLayout();
+        cardSecondaryTitleLayout.setWidthFull();
+        cardSecondaryTitleLayout.setSpacing(false);
+        cardSecondaryTitleLayout.setJustifyContentMode(JustifyContentMode.START);
+        cardSecondaryTitleLayout.addClassNames(LumoUtility.Gap.SMALL, LumoUtility.Padding.MEDIUM);
+        cardSecondaryTitleLayout.add(createAccountQuestionText);
+        cardSecondaryTitleLayout.add(createAccountLink);
+
+        VerticalLayout cardContentLayout = new VerticalLayout();
+        cardContentLayout.setAlignItems(Alignment.CENTER);
+        cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
+
+        emailField.getElement().setAttribute("name", "username");
+        emailField.setWidth(360, Unit.PIXELS);
+        emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
+        emailField.setClearButtonVisible(true);
+
+        passwordField.getElement().setAttribute("name", "password");
+        passwordField.setWidth(360, Unit.PIXELS);
+        passwordField.setPrefixComponent(VaadinIcon.LOCK.create());
+        passwordField.setClearButtonVisible(true);
+
+        loginButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
+        loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        loginButton.setWidthFull();
+
+        emailField.addKeyPressListener(Key.ENTER, event -> loginButton.click());
+        passwordField.addKeyPressListener(Key.ENTER, event -> loginButton.click());
+
+        HorizontalLayout rememberMeLayout = new HorizontalLayout();
+        rememberMeLayout.setWidthFull();
+        rememberMeLayout.setJustifyContentMode(JustifyContentMode.START);
+        rememberMeLayout.add(rememberMeCheckBox);
+
+        forgotPasswordLink.addClassNames("underline");
+        HorizontalLayout forgotPasswordLayout = new HorizontalLayout();
+        forgotPasswordLayout.setWidthFull();
+        forgotPasswordLayout.setJustifyContentMode(JustifyContentMode.END);
+        forgotPasswordLayout.add(forgotPasswordLink);
+
+        HorizontalLayout secondaryActionLayout = new HorizontalLayout();
+        secondaryActionLayout.setWidthFull();
+
+        secondaryActionLayout.add(rememberMeLayout, forgotPasswordLayout);
+
+        cardContentLayout.add(emailField, passwordField, loginButton, secondaryActionLayout);
+
+        CardComponent cardComponent = new CardComponent(cardTitleLayout, cardSecondaryTitleLayout, cardContentLayout);
+        cardComponent.setWidth(null);
+
+        mainContent.add(cardComponent);
+
+        add(VaadinUIHelper.createFullHorizontalSpace());
+        add(mainContent);
+        add(VaadinUIHelper.createFullHorizontalSpace());
+    }
+
+    @Override
+    public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+        if (securityService.getAuthenticatedUser(this.request).isPresent()) {
+            beforeEnterEvent.forwardTo(AdminView.class);
+        }
+    }
+}
