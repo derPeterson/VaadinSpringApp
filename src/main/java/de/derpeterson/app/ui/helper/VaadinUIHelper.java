@@ -2,7 +2,6 @@ package de.derpeterson.app.ui.helper;
 
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -28,10 +27,10 @@ public class VaadinUIHelper {
     private VaadinUIHelper() {
     }
 
-    public static Div createFullHorizontalSpace() {
-        Div div = new Div();
-        div.setWidthFull();
-        return div;
+    public static HorizontalLayout createFullHorizontalSpace() {
+        HorizontalLayout hLayout = new HorizontalLayout();
+        hLayout.setWidthFull();
+        return hLayout;
     }
 
     public static void showNotification(String message) {

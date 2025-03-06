@@ -47,8 +47,10 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
 
         setSizeFull();
 
+        addClassNames("login-bg-fullscreen");
+
         // UI Elements
-        RouterLink createAccountLink = new RouterLink(i18nProvider.getTranslation("loginView.create_account_link"), LoginView.class);
+        RouterLink createAccountLink = new RouterLink(i18nProvider.getTranslation("loginView.create_account_link"), RegistrationView.class);
         EmailField emailField = new EmailField(i18nProvider.getTranslation("loginView.email_field"));
         PasswordField passwordField = new PasswordField(i18nProvider.getTranslation("loginView.password_field"));
         RouterLink forgotPasswordLink = new RouterLink(i18nProvider.getTranslation("loginView.forgot_password_link"), LoginView.class);
@@ -73,11 +75,8 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
         });
 
         VerticalLayout mainContent = new VerticalLayout();
-
         mainContent.setAlignItems(Alignment.CENTER);
         mainContent.setJustifyContentMode(JustifyContentMode.START);
-
-        addClassNames("login-bg-fullscreen");
 
         Div bannerContent = new Div();
         bannerContent.add(new Image("../themes/custom-theme/welcome.png", "Welcome"));
@@ -85,13 +84,17 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
 
         mainContent.add(bannerContent);
 
+        VerticalLayout cardContentLayout = new VerticalLayout();
+        cardContentLayout.setAlignItems(Alignment.CENTER);
+        cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
+
         H1 title = new H1(i18nProvider.getTranslation("loginView.title"));
         title.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.FontWeight.BOLD);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();
+        cardTitleLayout.setPadding(false);
         cardTitleLayout.setJustifyContentMode(JustifyContentMode.CENTER);
-        cardTitleLayout.addClassNames(LumoUtility.Padding.MEDIUM);
         cardTitleLayout.add(title);
 
         Span createAccountQuestionText = new Span(i18nProvider.getTranslation("loginView.create_account_question"));
@@ -99,22 +102,17 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
 
         HorizontalLayout cardSecondaryTitleLayout = new HorizontalLayout();
         cardSecondaryTitleLayout.setWidthFull();
+        cardSecondaryTitleLayout.setPadding(false);
         cardSecondaryTitleLayout.setSpacing(false);
         cardSecondaryTitleLayout.setJustifyContentMode(JustifyContentMode.START);
-        cardSecondaryTitleLayout.addClassNames(LumoUtility.Gap.SMALL, LumoUtility.Padding.MEDIUM);
+        cardSecondaryTitleLayout.addClassNames(LumoUtility.Gap.SMALL);
         cardSecondaryTitleLayout.add(createAccountQuestionText);
         cardSecondaryTitleLayout.add(createAccountLink);
 
-        VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(Alignment.CENTER);
-        cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
-
-        emailField.getElement().setAttribute("name", "username");
         emailField.setWidth(360, Unit.PIXELS);
         emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
         emailField.setClearButtonVisible(true);
 
-        passwordField.getElement().setAttribute("name", "password");
         passwordField.setWidth(360, Unit.PIXELS);
         passwordField.setPrefixComponent(VaadinIcon.LOCK.create());
         passwordField.setClearButtonVisible(true);
@@ -142,9 +140,9 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
 
         secondaryActionLayout.add(rememberMeLayout, forgotPasswordLayout);
 
-        cardContentLayout.add(emailField, passwordField, loginButton, secondaryActionLayout);
+        cardContentLayout.add(cardTitleLayout, cardSecondaryTitleLayout, emailField, passwordField, loginButton, secondaryActionLayout);
 
-        CardComponent cardComponent = new CardComponent(cardTitleLayout, cardSecondaryTitleLayout, cardContentLayout);
+        CardComponent cardComponent = new CardComponent(cardContentLayout);
         cardComponent.setWidth(null);
 
         mainContent.add(cardComponent);

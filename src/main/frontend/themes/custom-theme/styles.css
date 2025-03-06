@@ -6,11 +6,33 @@
 
 /* Views */
 .login-bg-fullscreen {
-    background-image: url('login_background.jpg');
+    background-image: url('background.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     width: 100vw;
     height: 100vh;
+}
+
+.registration-bg-fullscreen {
+    background-image: url('landscape.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 100vw;
+    height: 100vh;
+}
+
+.registration-bg-card {
+    background-image: url('registration.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* CardLeftImageComponent */
+.border-left-rounded {
+    border-top-left-radius: 0.5em;
+    border-bottom-left-radius: 0.5em;
 }
 

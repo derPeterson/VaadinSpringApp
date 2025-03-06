@@ -13,6 +13,10 @@
     - ~~Remember Me~~
     - Attempts Limit
 
+## Registration
+
+- Registration fertigstellen
+
 ## Logger
 
 - ~~Logger integrieren~~
@@ -22,12 +26,15 @@
 - ~~MainView~~
 - ~~LoginView~~
 - AdminView
+- RegistrationView
 
 ## Config Table
 
 - ~~Anlegen~~
 - ~~Benutzen~~
 - rememberMeServices
+    - Duration
+    - SecretKey
 
 ## MAX SESSIONS
 

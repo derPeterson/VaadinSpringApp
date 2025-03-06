@@ -7,12 +7,13 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 public class CardComponent extends VerticalLayout {
     public CardComponent(Component... contentComponents) {
         addClassNames(LumoUtility.BoxShadow.MEDIUM);
-        addClassNames(LumoUtility.Padding.LARGE);
         addClassNames(LumoUtility.Border.ALL);
         addClassNames(LumoUtility.BorderRadius.LARGE);
         addClassNames(LumoUtility.Background.BASE);
+        addClassNames(LumoUtility.Padding.LARGE);
 
         setSpacing(false);
+        setPadding(false);
 
         add(contentComponents);
     }

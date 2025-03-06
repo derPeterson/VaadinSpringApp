@@ -27,16 +27,8 @@ import java.util.Locale;
 @AnonymousAllowed
 public class MainView extends AppLayout {
 
-    private final SecurityService securityService;
-    private final HttpServletRequest request;
-    private final ConfigService configService;
-
     @Autowired
     public MainView(CustomI18NProvider i18nProvider, SecurityService securityService, HttpServletRequest request, ConfigService configService) {
-        this.securityService = securityService;
-        this.request = request;
-        this.configService = configService;
-
         ComboBox<Locale> languageSelector = new ComboBox<>();
         languageSelector.setItems(Locale.ENGLISH, Locale.GERMAN);
         languageSelector.setItemLabelGenerator(locale -> locale.getDisplayLanguage(locale));
