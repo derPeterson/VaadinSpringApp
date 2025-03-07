@@ -18,6 +18,9 @@ import java.util.Collection;
 @Builder
 public class User {
 
+    // Static Regex für das Passwort
+    public static final String PASSWORD_REGEX = "^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).*$";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -32,7 +35,7 @@ public class User {
     @NotBlank(message = "Das Passwort darf nicht leer sein.")
     @Size(min = 8, message = "Das Passwort muss mindestens 8 Zeichen lang sein.")
     @Pattern(
-            regexp = "^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).*$",
+            regexp = PASSWORD_REGEX,
             message = "Das Passwort muss mindestens einen Großbuchstaben und ein Sonderzeichen enthalten."
     )
     private String password;
@@ -43,8 +46,7 @@ public class User {
     private String email;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    @NotNull(message = "Das Geschlecht muss angegeben werden.")
+    @Column(nullable = true)
     private Gender gender;
 
     @Column(nullable = false)

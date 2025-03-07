@@ -1,7 +1,6 @@
 package de.derpeterson.app.views;
 
 import com.vaadin.flow.component.Key;
-import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
@@ -36,9 +35,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @AnonymousAllowed
 public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
 
-    private final SecurityService securityService;
+    private final transient SecurityService securityService;
 
-    private final HttpServletRequest request;
+    private final transient HttpServletRequest request;
 
     @Autowired
     public LoginView(CustomI18NProvider i18nProvider, AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder, SecurityService securityService, HttpServletRequest request) {
@@ -109,11 +108,11 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
         cardSecondaryTitleLayout.add(createAccountQuestionText);
         cardSecondaryTitleLayout.add(createAccountLink);
 
-        emailField.setWidth(360, Unit.PIXELS);
+        emailField.setWidthFull();
         emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
         emailField.setClearButtonVisible(true);
 
-        passwordField.setWidth(360, Unit.PIXELS);
+        passwordField.setWidthFull();
         passwordField.setPrefixComponent(VaadinIcon.LOCK.create());
         passwordField.setClearButtonVisible(true);
 
@@ -143,7 +142,7 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
         cardContentLayout.add(cardTitleLayout, cardSecondaryTitleLayout, emailField, passwordField, loginButton, secondaryActionLayout);
 
         CardComponent cardComponent = new CardComponent(cardContentLayout);
-        cardComponent.setWidth(null);
+        cardComponent.setMinWidth("500px");
 
         mainContent.add(cardComponent);
 

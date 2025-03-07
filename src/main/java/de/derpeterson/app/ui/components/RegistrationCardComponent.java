@@ -26,7 +26,6 @@ public class RegistrationCardComponent extends VerticalLayout {
         leftCardContent.setPadding(false);
         leftCardContent.setSpacing(false);
         leftCardContent.setAlignItems(Alignment.CENTER);
-        leftCardContent.setMinWidth("616px");
         leftCardContent.setJustifyContentMode(JustifyContentMode.CENTER);
         leftCardContent.addClassNames(LumoUtility.Background.CONTRAST_20);
         leftCardContent.addClassNames("border-left-rounded");
@@ -41,9 +40,15 @@ public class RegistrationCardComponent extends VerticalLayout {
         mainCardContent.setFlexGrow(1, leftCardContent);
         mainCardContent.setFlexGrow(1, rightCardContent);
 
+        leftCardContent.setMinWidth("550px");
+        rightCardContent.setMinWidth("650px");
+
         Arrays.stream(contentComponents).forEach(contentComponent -> contentComponent.addClassNames(LumoUtility.Padding.MEDIUM));
 
         rightCardContent.add(contentComponents);
+
+        mainCardContent.setFlexGrow(1, leftCardContent);
+        mainCardContent.setFlexGrow(1, rightCardContent);
 
         mainCardContent.add(leftCardContent, rightCardContent);
         add(mainCardContent);

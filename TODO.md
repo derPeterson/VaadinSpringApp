@@ -16,6 +16,24 @@
 ## Registration
 
 - Registration fertigstellen
+    - Testen
+
+## EMail
+
+- Versenden
+- Design
+
+## Notification
+
+- Anzahl
+- Verbessern/Verschönern
+    - Länge begrenzen
+    - Hervorhebungen
+    - Color
+
+## Enums
+
+- Roles
 
 ## Logger
 
@@ -26,7 +44,7 @@
 - ~~MainView~~
 - ~~LoginView~~
 - AdminView
-- RegistrationView
+- ~~RegistrationView~~
 
 ## Config Table
 

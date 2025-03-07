@@ -2,12 +2,15 @@ package de.derpeterson.app.ui.helper;
 
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
 
@@ -34,14 +37,14 @@ public class VaadinUIHelper {
     }
 
     public static void showNotification(String message) {
-        showNotification(message, DEFAULT_NOTIFICATION_DURATION, NotificationType.NORMAL);
+        showNotification(null, message, DEFAULT_NOTIFICATION_DURATION, NotificationType.NORMAL);
     }
 
     public static void showNotification(String message, NotificationType notificationType) {
-        showNotification(message, DEFAULT_NOTIFICATION_DURATION, notificationType);
+        showNotification(null, message, DEFAULT_NOTIFICATION_DURATION, notificationType);
     }
 
-    public static void showNotification(String message, Integer duration, NotificationType notificationType) {
+    public static void showNotification(String title, String message, Integer duration, NotificationType notificationType) {
         Notification notification = new Notification();
         if (Objects.requireNonNull(notificationType) == NotificationType.ERROR) {
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -53,6 +56,12 @@ public class VaadinUIHelper {
 
         notification.setPosition(Notification.Position.TOP_STRETCH);
         notification.setDuration(duration);
+
+        H4 titleText = null;
+        if (StringUtils.isNotEmpty(title)) {
+            titleText = new H4(title);
+            notification.add(titleText);
+        }
 
         HorizontalLayout contentLayout = new HorizontalLayout();
         contentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
@@ -67,7 +76,16 @@ public class VaadinUIHelper {
         } else if (notificationType == NotificationType.WARNING) {
             contentLayout.add(VaadinIcon.BELL.create());
         }
-        contentLayout.add(new Text(message));
+        Text messageText = new Text(message);
+        VerticalLayout textLayout = new VerticalLayout();
+        textLayout.setSpacing(false);
+        textLayout.setWidth(null);
+        if (titleText != null) {
+            textLayout.add(titleText);
+            textLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
+        }
+        textLayout.add(messageText);
+        contentLayout.add(textLayout);
 
         notification.add(contentLayout);
         notification.add(createNotificationCloseButton(notification));
