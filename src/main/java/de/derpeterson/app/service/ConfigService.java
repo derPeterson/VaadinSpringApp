@@ -1,7 +1,7 @@
 package de.derpeterson.app.service;
 
-import de.derpeterson.app.config.ConfigSetting;
-import de.derpeterson.app.model.Config;
+import de.derpeterson.app.model.ConfigEntity;
+import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,34 +12,46 @@ public class ConfigService {
 
     private final ConfigRepository configRepository;
 
-    public boolean exists(ConfigSetting configSetting) {
-        return configRepository.existsByKey(configSetting.getKey());
+    public boolean exists(ConfigEntry configEntry) {
+        return configRepository.existsByKey(configEntry.getKey());
     }
 
-    public String getString(ConfigSetting configSetting, String defaultValue) {
-        return configRepository.findByKey(configSetting.getKey())
-                .map(Config::getValue)
+    public String getString(ConfigEntry configEntry) {
+        return getString(configEntry, configEntry.getDefaultValueString());
+    }
+
+    public String getString(ConfigEntry configEntry, String defaultValue) {
+        return configRepository.findByKey(configEntry.getKey())
+                .map(ConfigEntity::getValue)
                 .orElse(defaultValue);
     }
 
-    public int getInt(ConfigSetting configSetting, int defaultValue) {
-        return configRepository.findByKey(configSetting.getKey())
-                .map(Config::getValue)
+    public int getInteger(ConfigEntry configEntry) {
+        return getInteger(configEntry, configEntry.getDefaultValueInteger());
+    }
+
+    public int getInteger(ConfigEntry configEntry, int defaultValue) {
+        return configRepository.findByKey(configEntry.getKey())
+                .map(ConfigEntity::getValue)
                 .map(Integer::parseInt)
                 .orElse(defaultValue);
     }
 
-    public boolean getBoolean(ConfigSetting configSetting, boolean defaultValue) {
-        return configRepository.findByKey(configSetting.getKey())
-                .map(Config::getValue)
+    public boolean getBoolean(ConfigEntry configEntry) {
+        return getBoolean(configEntry, configEntry.getDefaultValueBoolean());
+    }
+
+    public boolean getBoolean(ConfigEntry configEntry, boolean defaultValue) {
+        return configRepository.findByKey(configEntry.getKey())
+                .map(ConfigEntity::getValue)
                 .map(Boolean::parseBoolean)
                 .orElse(defaultValue);
     }
 
-    public void set(ConfigSetting setting, String value) {
-        Config config = configRepository.findByKey(setting.getKey())
-                .orElse(new Config(null, setting.getKey(), value));
-        config.setValue(value);
-        configRepository.save(config);
+    public void set(ConfigEntry configEntry, String value) {
+        ConfigEntity configEntity = configRepository.findByKey(configEntry.getKey())
+                .orElse(new ConfigEntity(null, configEntry.getKey(), value));
+        configEntity.setValue(value);
+        configRepository.save(configEntity);
     }
 }

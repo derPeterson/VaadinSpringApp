@@ -10,9 +10,9 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public abstract class SecureBaseView<T extends Component & FlexComponent> extends Composite<T> implements BeforeEnterObserver {
 
-    private final SecurityService securityService;
+    private final transient SecurityService securityService;
 
-    private final HttpServletRequest request;
+    private final transient HttpServletRequest request;
 
     protected SecureBaseView(SecurityService securityService, HttpServletRequest request, T layout) {
         this.securityService = securityService;

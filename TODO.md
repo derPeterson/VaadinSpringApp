@@ -17,15 +17,29 @@
 
 - Registration fertigstellen
     - Testen
+    - Entity Annotations
+    - Verification
+        - Email
+        - Page
+
+## Database
+
+- ~~H2~~
+    - ~~File Based~~
 
 ## EMail
 
-- Versenden
+- ~~Versenden~~
+- ~~Queue~~
+- ~~Database~~
+- ~~Thread Safe~~
+- ~~Failed~~
+    - ~~Admin Notification~~
 - Design
 
 ## Notification
 
-- Anzahl
+- ~~Anzahl (Singleton)~~
 - Verbessern/Verschönern
     - Länge begrenzen
     - Hervorhebungen
@@ -33,7 +47,11 @@
 
 ## Enums
 
-- Roles
+- ~~RoleType~~
+- ~~ConfigEntry~~
+- ~~Gender~~
+- ~~EmailStatus~~
+- ~~EmailType~~
 
 ## Logger
 
@@ -54,7 +72,7 @@
     - Duration
     - SecretKey
 
-## MAX SESSIONS
+## Max Sessions
 
 - Informieren
     - Umsetzen
@@ -63,6 +81,12 @@
 
 - Informieren
     - Umsetzen
+
+## SQL
+
+```
+DROP ALL OBJECTS;
+```
 
 ## Backup
 

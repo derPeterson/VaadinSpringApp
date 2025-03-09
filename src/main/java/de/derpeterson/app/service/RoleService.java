@@ -1,6 +1,7 @@
 package de.derpeterson.app.service;
 
-import de.derpeterson.app.model.Role;
+import de.derpeterson.app.model.RoleEntity;
+import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,7 +14,7 @@ public class RoleService {
 
     private final RoleRepository roleRepository;
 
-    public Optional<Role> findByName(String name) {
+    public Optional<RoleEntity> findByName(RoleType name) {
         return roleRepository.findByName(name);
     }
 }

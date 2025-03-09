@@ -19,6 +19,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.ui.components.CardComponent;
+import de.derpeterson.app.ui.helper.NotificationHelper;
 import de.derpeterson.app.ui.helper.VaadinUIHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,11 +66,11 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
                     securityService.storeAuthenticatedUser(request, userDetails, rememberMeCheckBox.getValue());
                 }
 
-                VaadinUIHelper.showNotification("Erfolgreich eingeloggt!", VaadinUIHelper.NotificationType.SUCCESS);
+                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("loginView.login.success_message"), NotificationHelper.NotificationType.SUCCESS);
 
                 getUI().ifPresent(ui -> ui.navigate(AdminView.class));
             } catch (AuthenticationException e) {
-                VaadinUIHelper.showNotification("Falscher Benutzername oder Passwort", VaadinUIHelper.NotificationType.ERROR);
+                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("loginView.login.failed_message"), NotificationHelper.NotificationType.ERROR);
             }
         });
 
@@ -143,6 +144,7 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
 
         CardComponent cardComponent = new CardComponent(cardContentLayout);
         cardComponent.setMinWidth("500px");
+        cardComponent.setMaxWidth("500px");
 
         mainContent.add(cardComponent);
 

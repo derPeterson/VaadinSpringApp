@@ -34,21 +34,21 @@ public class SecurityService {
             return Optional.of(userDetails);
         }
 
-        UserDetails user = null;
+        UserDetails userDetails = null;
         if (VaadinSession.getCurrent() != null) {
-            user = VaadinSession.getCurrent().getAttribute(UserDetails.class);
+            userDetails = VaadinSession.getCurrent().getAttribute(UserDetails.class);
         }
 
-        if (user == null) {
+        if (userDetails == null) {
             HttpSession httpSession = request.getSession(false);
             if (httpSession != null) {
-                user = (UserDetails) httpSession.getAttribute(AUTH_USER_SESSION_KEY);
+                userDetails = (UserDetails) httpSession.getAttribute(AUTH_USER_SESSION_KEY);
             }
         }
 
-        if (user != null) {
-            restoreSecurityContext(user);
-            return Optional.of(user);
+        if (userDetails != null) {
+            restoreSecurityContext(userDetails);
+            return Optional.of(userDetails);
         }
 
         return Optional.empty();
@@ -68,8 +68,8 @@ public class SecurityService {
             HttpServletRequest req = (HttpServletRequest) VaadinRequest.getCurrent();
             HttpServletResponse resp = (HttpServletResponse) VaadinResponse.getCurrent();
 
-
             rememberMeServices.setAlwaysRemember(true);
+
             rememberMeServices.loginSuccess(req, resp, auth);
         } else {
             rememberMeServices.setAlwaysRemember(false);

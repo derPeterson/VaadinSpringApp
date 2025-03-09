@@ -40,9 +40,9 @@ public class CustomI18NProvider implements I18NProvider {
 
     public static Locale getCurrentLocale() {
         if (VaadinSession.getCurrent() != null) {
-            return VaadinSession.getCurrent().getLocale(); // 🔄 Dynamisch die aktuelle Locale holen
+            return VaadinSession.getCurrent().getLocale();
         } else {
-            return DEFAULT_LOCALE; // 🔄 Fallback, falls keine Session vorhanden
+            return DEFAULT_LOCALE;
         }
     }
 }

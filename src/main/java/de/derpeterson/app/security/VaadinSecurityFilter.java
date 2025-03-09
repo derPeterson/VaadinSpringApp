@@ -37,25 +37,25 @@ public class VaadinSecurityFilter implements Filter {
         }
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
-            // 1️⃣ Get user from VaadinSession first
-            UserDetails user = null;
+            // 1️⃣ Get userDetails from VaadinSession first
+            UserDetails userDetails = null;
             if (VaadinSession.getCurrent() != null) {
-                user = VaadinSession.getCurrent().getAttribute(UserDetails.class);
+                userDetails = VaadinSession.getCurrent().getAttribute(UserDetails.class);
             }
 
-            // 2️⃣ If not available, restore user from HttpSession
-            if (user == null) {
+            // 2️⃣ If not available, restore userDetails from HttpSession
+            if (userDetails == null) {
                 HttpSession httpSession = httpRequest.getSession(false);
                 if (httpSession != null) {
-                    user = (UserDetails) httpSession.getAttribute(USER_SESSION_KEY);
+                    userDetails = (UserDetails) httpSession.getAttribute(USER_SESSION_KEY);
                 }
             }
 
-            // 3️⃣ If user exists, set in SecurityContext
-            if (user != null) {
-                logger.debug("✅ User found from VaadinSession or HttpSession: {}", user.getUsername());
+            // 3️⃣ If userDetails exists, set in SecurityContext
+            if (userDetails != null) {
+                logger.debug("✅ User found from VaadinSession or HttpSession: {}", userDetails.getUsername());
                 Authentication auth = new UsernamePasswordAuthenticationToken(
-                        user, user.getPassword(), user.getAuthorities());
+                        userDetails, userDetails.getPassword(), userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } else {
                 logger.debug("⚠️ No user found in VaadinSession or HttpSession.");

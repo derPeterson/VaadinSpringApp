@@ -1,6 +1,6 @@
 package de.derpeterson.app.service;
 
-import de.derpeterson.app.model.User;
+import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,11 +13,11 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public void saveUser(User user) {
-        userRepository.save(user);
+    public void saveUser(UserEntity userEntity) {
+        userRepository.save(userEntity);
     }
 
-    public Optional<User> findByEmail(String email) {
+    public Optional<UserEntity> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
 }

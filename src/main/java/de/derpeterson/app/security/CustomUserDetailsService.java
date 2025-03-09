@@ -1,7 +1,8 @@
 package de.derpeterson.app.security;
 
-import de.derpeterson.app.model.Role;
-import de.derpeterson.app.model.User;
+import de.derpeterson.app.model.RoleEntity;
+import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -27,16 +28,16 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email)
+        UserEntity userEntity = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
-        List<GrantedAuthority> authorities = user.getRoles().stream()
-                .map(Role::getName)
-                .map(roleName -> roleName.startsWith("ROLE_") ? roleName : "ROLE_" + roleName)
+        List<GrantedAuthority> authorities = userEntity.getRoleEntities().stream()
+                .map(RoleEntity::getName)
+                .map(RoleType::name)
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
 
         return new org.springframework.security.core.userdetails.User(
-                user.getEmail(), user.getPassword(), user.isEnabled(), true, true, true, authorities);
+                userEntity.getEmail(), userEntity.getPassword(), userEntity.isEnabled(), true, true, true, authorities);
     }
 }

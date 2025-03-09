@@ -1,6 +1,6 @@
 package de.derpeterson.app.security;
 
-import de.derpeterson.app.config.ConfigSetting;
+import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -55,15 +55,15 @@ public class SecurityConfig {
     public PersistentTokenRepository tokenRepository(DataSource dataSource) {
         JdbcTokenRepositoryImpl tokenRepository = new JdbcTokenRepositoryImpl();
         tokenRepository.setDataSource(dataSource);
-        tokenRepository.setCreateTableOnStartup(true);
+        tokenRepository.setCreateTableOnStartup(false);
         return tokenRepository;
     }
 
     @Bean
     public PersistentTokenBasedRememberMeServices rememberMeServices(PersistentTokenRepository tokenRepository, CustomUserDetailsService userDetailsService) {
 
-        String secretKey = configService.getString(ConfigSetting.REMEMBER_ME_SECRET_KEY, ConfigSetting.REMEMBER_ME_SECRET_KEY.getDefaultValueString());
-        int duration = configService.getInt(ConfigSetting.REMEMBER_ME_DURATION, ConfigSetting.REMEMBER_ME_DURATION.getDefaultValueInteger());
+        String secretKey = configService.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY);
+        int duration = configService.getInteger(ConfigEntry.REMEMBER_ME_DURATION);
 
         PersistentTokenBasedRememberMeServices tempRememberMeServices = new PersistentTokenBasedRememberMeServices(
                 secretKey, userDetailsService, tokenRepository);

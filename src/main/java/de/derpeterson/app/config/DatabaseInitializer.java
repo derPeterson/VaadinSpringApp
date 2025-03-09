@@ -1,7 +1,9 @@
 package de.derpeterson.app.config;
 
-import de.derpeterson.app.model.Role;
-import de.derpeterson.app.model.User;
+import de.derpeterson.app.model.RoleEntity;
+import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.RoleRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.service.ConfigService;
@@ -37,44 +39,44 @@ public class DatabaseInitializer {
     }
 
     private void createDefaultRolesAndAdminUser() {
-        Role adminRole = roleRepository.findByName("ROLE_ADMIN")
+        RoleEntity adminRoleEntity = roleRepository.findByName(RoleType.ROLE_ADMIN)
                 .orElseGet(() -> {
-                    Role role = Role.builder().name("ROLE_ADMIN").build();
-                    return roleRepository.save(role);
+                    RoleEntity roleEntity = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
+                    return roleRepository.save(roleEntity);
                 });
 
-        Role userRole = roleRepository.findByName("ROLE_USER")
+        RoleEntity userRoleEntity = roleRepository.findByName(RoleType.ROLE_USER)
                 .orElseGet(() -> {
-                    Role role = Role.builder().name("ROLE_USER").build();
-                    return roleRepository.save(role);
+                    RoleEntity roleEntity = RoleEntity.builder().name(RoleType.ROLE_USER).build();
+                    return roleRepository.save(roleEntity);
                 });
 
         logger.info("✅ Rollen geprüft oder erstellt: ROLE_ADMIN, ROLE_USER");
 
         if (userRepository.findByEmail("admin@example.com").isEmpty()) {
-            User admin = User.builder()
+            UserEntity adminUserEntity = UserEntity.builder()
                     .password(passwordEncoder.encode("Admin@123"))
                     .email("admin@example.com")
-                    .gender(User.Gender.MALE)
                     .birthDate(java.time.LocalDate.of(1990, 1, 1))
-                    .roles(Set.of(adminRole, userRole))
+                    .roleEntities(Set.of(adminRoleEntity, userRoleEntity))
                     .enabled(true)
                     .build();
 
-            userRepository.save(admin);
-            logger.info("✅ Admin user created: {} / {}", admin.getEmail(), admin.getPassword());
+            userRepository.save(adminUserEntity);
+
+            logger.info("✅ Admin user created: {} / {}", adminUserEntity.getEmail(), adminUserEntity.getPassword());
         } else {
             logger.info("⚠️ Admin user already exists!");
         }
     }
 
     private void createDefaultConfigSettings() {
-        for (ConfigSetting setting : ConfigSetting.values()) {
-            if (!configService.exists(setting)) {
-                configService.set(setting, setting.getDefaultValueString());
-                logger.info("✅ Config entry created: {} / {}", setting.getKey(), setting.getDefaultValueString());
+        for (ConfigEntry configEntry : ConfigEntry.values()) {
+            if (!configService.exists(configEntry)) {
+                configService.set(configEntry, configEntry.getDefaultValueString());
+                logger.info("✅ ConfigEntity entry created: {} / {}", configEntry.getKey(), configEntry.getDefaultValueString());
             } else {
-                logger.info("⚠️ Config entry {} exists!", setting.getKey());
+                logger.info("⚠️ ConfigEntity entry {} exists!", configEntry.getKey());
             }
         }
     }

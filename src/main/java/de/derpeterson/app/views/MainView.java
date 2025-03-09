@@ -13,12 +13,13 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.derpeterson.app.config.ConfigSetting;
 import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Locale;
 
@@ -45,7 +46,7 @@ public class MainView extends AppLayout {
         switchLanguageLayout.add(switchLanguage);
         switchLanguageLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 
-        H1 logo = new H1(configService.getString(ConfigSetting.APP_NAME, ConfigSetting.APP_NAME.getDefaultValueString()));
+        H1 logo = new H1(configService.getString(ConfigEntry.APP_NAME));
         logo.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Margin.MEDIUM, LumoUtility.FlexWrap.NOWRAP);
 
         HorizontalLayout header;
@@ -55,7 +56,7 @@ public class MainView extends AppLayout {
             HorizontalLayout logoutLayout = new HorizontalLayout(logout);
             logoutLayout.setAlignItems(FlexComponent.Alignment.CENTER);
             logoutLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-            var userDetails = securityService.getAuthenticatedUser(request).orElse(null);
+            UserDetails userDetails = securityService.getAuthenticatedUser(request).orElse(null);
             if (userDetails != null) {
                 logoutLayout.add(new Span(userDetails.getUsername()));
                 logoutLayout.add(new Span(String.valueOf(userDetails.getAuthorities())));
