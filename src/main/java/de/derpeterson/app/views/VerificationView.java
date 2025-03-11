@@ -26,7 +26,7 @@ import jakarta.servlet.http.HttpServletRequest;
 @AnonymousAllowed
 public class VerificationView extends HorizontalLayout implements HasUrlParameter<String>, BeforeEnterObserver {
 
-    private static final String BASE_FAILED_TEXT_MESSAGE_KEY = "base.failed.text";
+    private static final String BASE_FAILED_TEXT_MESSAGE_KEY = "base.failed.message";
     private static final String BASE_HOME_BUTTON_MESSAGE_KEY = "base.home_button";
 
     private final CustomI18NProvider i18nProvider;
@@ -84,8 +84,8 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
         cardContentLayout.setAlignItems(Alignment.CENTER);
         cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
 
-        Icon successIcon = VaadinIcon.QUESTION_CIRCLE.create();
-        successIcon.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.TextColor.PRIMARY);
+        Icon successIcon = VaadinIcon.BELL.create();
+        successIcon.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.TextColor.WARNING);
 
         HorizontalLayout cardIconLayout = new HorizontalLayout();
         cardIconLayout.setWidthFull();
@@ -102,18 +102,18 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
         cardTitleLayout.setJustifyContentMode(JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
-        Span existsNotText1 = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.expired.text1")));
-        existsNotText1.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
-        Span existsNotText2 = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.expired.text2")));
-        existsNotText2.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
+        Span expiredText1 = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.expired.text1")));
+        expiredText1.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
+        Span expiredText2 = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.expired.text2")));
+        expiredText2.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
         VerticalLayout cardTextLayout = new VerticalLayout();
         cardTextLayout.setWidthFull();
         cardTextLayout.setPadding(false);
         cardTextLayout.setSpacing(false);
         cardTextLayout.setAlignItems(Alignment.CENTER);
         cardTextLayout.setJustifyContentMode(JustifyContentMode.CENTER);
-        cardTextLayout.add(existsNotText1);
-        cardTextLayout.add(existsNotText2);
+        cardTextLayout.add(expiredText1);
+        cardTextLayout.add(expiredText2);
 
         Button reSendButton = new Button(i18nProvider.getTranslation("base.resend_button"), event -> {
             boolean emailSent = verificationService.sendVerificationEmailByToken(token);

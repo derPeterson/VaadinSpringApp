@@ -5,6 +5,7 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.VerificationTokenEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.EmailType;
+import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.repository.VerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,21 +42,38 @@ public class VerificationService {
         verificationToken.setToken(token);
         verificationToken.setUserEntity(user);
         verificationToken.setExpiryDate(LocalDateTime.now().plus(Duration.parse(configService.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION))));
+        verificationToken.setStatus(TokenStatus.ACTIVE);
         tokenRepository.save(verificationToken);
         return token;
     }
 
+    public void setTokenStatus(String token, TokenStatus status) {
+        tokenRepository.findByToken(token).ifPresent(tokenEntity -> {
+            tokenEntity.setStatus(status);
+            tokenRepository.save(tokenEntity);
+        });
+    }
+
     @Transactional
     public boolean validateToken(String token) {
-        VerificationTokenEntity verificationToken = tokenRepository.findByToken(token).orElse(null);
-        if (verificationToken == null || verificationToken.getExpiryDate().isBefore(LocalDateTime.now()) || verificationToken.getUserEntity().isEnabled()) {
+        Optional<VerificationTokenEntity> tokenEntity = tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
+        if (tokenEntity.isPresent() && tokenEntity.get().getExpiryDate().isBefore(LocalDateTime.now())) {
+            setTokenStatus(token, TokenStatus.EXPIRED);
             return false;
         }
-        UserEntity user = verificationToken.getUserEntity();
-        user.setEnabled(true);
-        userRepository.save(user);
-        tokenRepository.delete(verificationToken);
-        return true;
+        if (tokenEntity.isPresent() && tokenEntity.get().getUserEntity().isEnabled()) {
+            return false;
+        }
+
+        if (tokenEntity.isPresent()) {
+            UserEntity user = tokenEntity.get().getUserEntity();
+            user.setEnabled(true);
+            userRepository.save(user);
+            setTokenStatus(token, TokenStatus.USED);
+            return true;
+        }
+
+        return false;
     }
 
     @Transactional

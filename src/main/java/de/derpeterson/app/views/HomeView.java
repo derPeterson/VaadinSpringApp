@@ -4,7 +4,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -30,6 +30,7 @@ public class HomeView extends AppLayout {
 
     @Autowired
     public HomeView(CustomI18NProvider i18nProvider, SecurityService securityService, HttpServletRequest request, ConfigService configService) {
+        // Language
         ComboBox<Locale> languageSelector = new ComboBox<>();
         languageSelector.setItems(Locale.ENGLISH, Locale.GERMAN);
         languageSelector.setItemLabelGenerator(locale -> locale.getDisplayLanguage(locale));
@@ -46,8 +47,18 @@ public class HomeView extends AppLayout {
         switchLanguageLayout.add(switchLanguage);
         switchLanguageLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 
-        H1 logo = new H1(configService.getString(ConfigEntry.APP_NAME));
-        logo.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Margin.MEDIUM, LumoUtility.FlexWrap.NOWRAP);
+        // Service
+        Image serviceLogoIcon = new Image("themes/custom-theme/service_logo.png", "Custom Icon");
+        serviceLogoIcon.setWidth("48px"); // Icon-Größe setzen
+        serviceLogoIcon.setHeight("48px");
+
+        Span serviceNameSpan = new Span(configService.getString(ConfigEntry.SERVICE_NAME));
+        serviceNameSpan.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.SEMIBOLD, LumoUtility.FlexWrap.NOWRAP);
+
+        HorizontalLayout serviceLayout = new HorizontalLayout(serviceLogoIcon, serviceNameSpan);
+        serviceLayout.addClassNames(LumoUtility.Gap.SMALL);
+        serviceLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+
 
         HorizontalLayout header;
         if (securityService.getAuthenticatedUser(request).isPresent()) {
@@ -62,17 +73,17 @@ public class HomeView extends AppLayout {
                 logoutLayout.add(new Span(String.valueOf(userDetails.getAuthorities())));
             }
             logoutLayout.add(logout);
-            header = new HorizontalLayout(logo, switchLanguageLayout, logoutLayout);
+            header = new HorizontalLayout(serviceLayout, switchLanguageLayout, logoutLayout);
         } else {
             Button login = new Button(i18nProvider.getTranslation("base.login_button"), event -> UI.getCurrent().navigate("login"));
-            header = new HorizontalLayout(logo, switchLanguageLayout, login);
+            header = new HorizontalLayout(serviceLayout, switchLanguageLayout, login);
         }
 
         header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
         header.setWidthFull();
         header.expand(switchLanguageLayout);
         header.addClassNames(
-                LumoUtility.Padding.Vertical.NONE,
+                LumoUtility.Padding.Vertical.SMALL,
                 LumoUtility.Padding.Horizontal.MEDIUM);
 
         addToNavbar(header);

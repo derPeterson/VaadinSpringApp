@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum ConfigEntry {
     // General Konfiguration
-    APP_NAME("app.name", "ApplicationName"),
+    SERVICE_NAME("service.name", "{ServiceName}"),
     BASE_URL("base.url", "http://localhost:8080/"),
     REMEMBER_ME_DURATION("rememberMe.duration", 1209600),
     REMEMBER_ME_SECRET_KEY("rememberMe.secret.key", "czgwigh12t"),
@@ -18,6 +18,8 @@ public enum ConfigEntry {
     EMAIL_ADMIN("email.admin", "derpetersondev@yandex.com"),
     VERIFICATION_TOKEN_VALID_DURATION("verificationToken.valid.duration", "PT24H"),
     VERIFICATION_TOKEN_LIVE_DURATION("verificationToken.live.duration", "P7D"),
+    PASSWORD_RESET_TOKEN_VALID_DURATION("passwordResetToken.valid.duration", "PT3H"),
+    PASSWORD_RESET_TOKEN_LIVE_DURATION("passwordResetToken.live.duration", "P3D"),
 
     // EMail Konfiguration
     MAIL_HOST("mail.host", "smtp.yandex.com"),

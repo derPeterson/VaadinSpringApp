@@ -80,7 +80,8 @@ public class SecurityConfig {
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/home", "/login", "/registration", "/verification/**", "/h2").permitAll()
+                        .requestMatchers("/", "/home", "/login", "/registration", "/verification/**",
+                                "/forgot-password", "/reset-password/**", "/h2").permitAll()
                         .requestMatchers("/admin").hasRole("ADMIN")
                         .anyRequest().permitAll()
                 )

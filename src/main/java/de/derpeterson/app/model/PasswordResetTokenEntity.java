@@ -9,11 +9,11 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "verification_token")
+@Table(name = "password_reset_token")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class VerificationTokenEntity {
+public class PasswordResetTokenEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

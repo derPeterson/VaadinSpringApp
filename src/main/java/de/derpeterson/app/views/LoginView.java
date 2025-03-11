@@ -51,7 +51,7 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
         RouterLink createAccountLink = new RouterLink(i18nProvider.getTranslation("loginView.create_account_link"), RegistrationView.class);
         EmailField emailField = new EmailField(i18nProvider.getTranslation("loginView.email_field"));
         PasswordField passwordField = new PasswordField(i18nProvider.getTranslation("loginView.password_field"));
-        RouterLink forgotPasswordLink = new RouterLink(i18nProvider.getTranslation("loginView.forgot_password_link"), LoginView.class);
+        RouterLink forgotPasswordLink = new RouterLink(i18nProvider.getTranslation("loginView.forgot_password_link"), ForgotPasswordView.class);
         Checkbox rememberMeCheckBox = new Checkbox(i18nProvider.getTranslation("loginView.remember_me_checkbox"));
         Button loginButton = new Button(i18nProvider.getTranslation("base.login_button"), event -> {
             try {

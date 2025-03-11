@@ -1,5 +1,13 @@
 # ToDo's
 
+## General
+
+- ~~Home~~
+    - ~~Logo~~
+    - User
+        - Login/Logout
+        - Language
+
 ## Login
 
 - Login fertigstellen
@@ -12,9 +20,18 @@
         - ~~Stylen~~
     - ~~Remember Me~~
     - Attempts Limit
-    - Forgot Password
-        - Email
-        - Page
+
+## Forgot Password
+
+- ~~Database~~
+- ~~Service~~
+- ~~Email~~
+- Page
+    - ~~Forgot Password~~
+        - ~~Background~~
+    - Reset Password
+        - Background
+- Create Token (Ältere auf Expired setzen?)
 
 ## Registration
 
@@ -22,8 +39,11 @@
     - Testen
     - Entity Annotations
     - ~~Verification~~
+        - ~~Database~~
+        - ~~Service~~
         - ~~Email~~
         - ~~Page~~
+        - Create Token (Ältere auf Expired setzen?)
 
 ## Database
 
