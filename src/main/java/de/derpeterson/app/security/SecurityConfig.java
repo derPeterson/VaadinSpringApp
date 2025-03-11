@@ -80,7 +80,7 @@ public class SecurityConfig {
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/login", "/registration", "/verification/**", "/h2").permitAll()
+                        .requestMatchers("/", "/home", "/login", "/registration", "/verification/**", "/h2").permitAll()
                         .requestMatchers("/admin").hasRole("ADMIN")
                         .anyRequest().permitAll()
                 )
@@ -94,9 +94,7 @@ public class SecurityConfig {
                 .formLogin(login -> login
                         .loginPage("/login")
                         .defaultSuccessUrl("/admin", true)
-                        .successHandler((request, response, authentication) -> {
-                            response.sendRedirect("/admin");
-                        })
+                        .successHandler((request, response, authentication) -> response.sendRedirect("/admin"))
                         .permitAll()
                 )
                 .logout(logout -> logout

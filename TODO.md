@@ -12,6 +12,9 @@
         - ~~Stylen~~
     - ~~Remember Me~~
     - Attempts Limit
+    - Forgot Password
+        - Email
+        - Page
 
 ## Registration
 
@@ -41,9 +44,10 @@
 
 - ~~Anzahl (Singleton)~~
 - Verbessern/Verschönern
-    - Länge begrenzen
-    - Hervorhebungen
-    - Color
+    - ~~Länge begrenzen~~
+    - ~~Hervorhebungen~~
+    - Button
+    - ~~Color~~
 
 ## Enums
 

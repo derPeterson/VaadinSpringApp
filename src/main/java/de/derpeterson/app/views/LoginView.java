@@ -68,7 +68,7 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
 
                 getUI().ifPresent(ui -> ui.navigate(AdminView.class));
             } catch (AuthenticationException e) {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.failed.title"), i18nProvider.getTranslation("loginView.login.failed_message"), NotificationHelper.NotificationType.ERROR);
+                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.failed.title"), i18nProvider.getTranslation("loginView.login.failed_message"), -1, NotificationHelper.NotificationType.ERROR);
             }
         });
 

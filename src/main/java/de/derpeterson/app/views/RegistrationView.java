@@ -23,7 +23,6 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
-import de.derpeterson.app.model.enums.EmailType;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.security.SecurityService;
@@ -51,7 +50,7 @@ import java.util.function.Predicate;
 @AnonymousAllowed
 public class RegistrationView extends HorizontalLayout implements BeforeEnterObserver {
 
-    private static final String ERROR_TITLE_MESSAGE_KEY = "registrationView.validation.error_title";
+    private static final String BASE_FAILED_TITLE_MESSAGE_KEY = "base.failed.title";
 
     private final transient CustomI18NProvider i18nProvider;
     private final transient UserService userService;
@@ -166,7 +165,7 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
     private boolean validateBirthDate() {
         // CHECK BIRTH DATE PAST
         if (formComponents.birthDatePicker.getValue().isAfter(LocalDate.now())) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(ERROR_TITLE_MESSAGE_KEY),
+            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
                     i18nProvider.getTranslation("registrationView.validation.birth_date_past_message"),
                     -1, NotificationHelper.NotificationType.ERROR);
 
@@ -183,12 +182,12 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
     private boolean validatePasswordInputs() {
         // CHECK PASSWORD SECURE
         if (!formComponents.passwordField.getValue().matches(UserEntity.PASSWORD_REGEX) || !formComponents.confirmPasswordField.getValue().matches(UserEntity.PASSWORD_REGEX)) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(ERROR_TITLE_MESSAGE_KEY),
+            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
                     i18nProvider.getTranslation("registrationView.validation.password_invalid_message"),
                     -1, NotificationHelper.NotificationType.ERROR);
 
-            formComponents.passwordField.setInvalid(formComponents.passwordField.getValue().isEmpty());
-            formComponents.confirmPasswordField.setInvalid(formComponents.confirmPasswordField.getValue().isEmpty());
+            formComponents.passwordField.setInvalid(!formComponents.passwordField.getValue().matches(UserEntity.PASSWORD_REGEX));
+            formComponents.confirmPasswordField.setInvalid(!formComponents.confirmPasswordField.getValue().matches(UserEntity.PASSWORD_REGEX));
 
             return false;
         } else {
@@ -198,7 +197,7 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
 
         // CHECK PASSWORD MATCH
         if (!StringUtils.equals(formComponents.passwordField.getValue(), formComponents.confirmPasswordField.getValue())) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(ERROR_TITLE_MESSAGE_KEY),
+            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
                     i18nProvider.getTranslation("registrationView.validation.password_confirm_message"),
                     -1, NotificationHelper.NotificationType.ERROR);
 
@@ -217,7 +216,7 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
     private boolean validateEmailInputs() {
         // CHECK EMAIL FORMAT
         if (!formComponents.emailField.getValue().matches(EmailValidator.PATTERN) || !formComponents.confirmEmailField.getValue().matches(EmailValidator.PATTERN)) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(ERROR_TITLE_MESSAGE_KEY),
+            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
                     i18nProvider.getTranslation("registrationView.validation.email_invalid_message"),
                     -1, NotificationHelper.NotificationType.ERROR);
 
@@ -232,7 +231,7 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
 
         // CHECK EMAIL MATCH
         if (!StringUtils.equals(formComponents.emailField.getValue(), formComponents.confirmEmailField.getValue())) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(ERROR_TITLE_MESSAGE_KEY),
+            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
                     i18nProvider.getTranslation("registrationView.validation.email_confirm_message"),
                     -1, NotificationHelper.NotificationType.ERROR);
 
@@ -247,7 +246,7 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
 
         // CHECK EMAIL EXISTS
         if (userService.findByEmail(formComponents.emailField.getValue()).isPresent()) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(ERROR_TITLE_MESSAGE_KEY),
+            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
                     i18nProvider.getTranslation("registrationView.validation.email_exists_message"),
                     -1, NotificationHelper.NotificationType.ERROR);
 
@@ -265,7 +264,7 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
 
     private boolean validateRequiredInputs() {
         if (requiredFormComponts.stream().anyMatch(AbstractField::isEmpty)) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(ERROR_TITLE_MESSAGE_KEY),
+            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
                     i18nProvider.getTranslation("registrationView.validation.required_message"),
                     -1, NotificationHelper.NotificationType.ERROR);
 
@@ -296,14 +295,15 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
         userService.saveUser(userEntity);
 
         boolean emailSent = verificationService.sendVerificationEmailByUser(userEntity);
-        emailQueueService.addEmailToQueue(userEntity, "", "Bitte klicke auf den folgenden Link, um deinen Account zu verifizieren: " + verificationService.createToken(userEntity), EmailType.VERIFICATION);
 
         if (emailSent) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("registrationView.registration.success_title"),
+            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"),
                     MessageFormat.format(i18nProvider.getTranslation("registrationView.registration.success_message"), userEntity.getEmail()),
                     -1, NotificationHelper.NotificationType.SUCCESS);
         } else {
-            // TODO: Fehlermeldung (Nochmal probieren)
+            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
+                    i18nProvider.getTranslation("base.failed.message"),
+                    -1, NotificationHelper.NotificationType.ERROR);
         }
     }
 

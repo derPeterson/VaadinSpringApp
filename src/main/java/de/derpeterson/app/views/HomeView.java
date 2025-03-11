@@ -23,7 +23,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Locale;
 
-@Route
+@Route("home")
 @PageTitle("Home")
 @AnonymousAllowed
 public class HomeView extends AppLayout {
