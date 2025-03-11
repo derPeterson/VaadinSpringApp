@@ -24,12 +24,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Locale;
 
 @Route
-@PageTitle("Main")
+@PageTitle("Home")
 @AnonymousAllowed
-public class MainView extends AppLayout {
+public class HomeView extends AppLayout {
 
     @Autowired
-    public MainView(CustomI18NProvider i18nProvider, SecurityService securityService, HttpServletRequest request, ConfigService configService) {
+    public HomeView(CustomI18NProvider i18nProvider, SecurityService securityService, HttpServletRequest request, ConfigService configService) {
         ComboBox<Locale> languageSelector = new ComboBox<>();
         languageSelector.setItems(Locale.ENGLISH, Locale.GERMAN);
         languageSelector.setItemLabelGenerator(locale -> locale.getDisplayLanguage(locale));

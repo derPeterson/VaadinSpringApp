@@ -22,7 +22,6 @@ import de.derpeterson.app.ui.components.CardComponent;
 import de.derpeterson.app.ui.helper.NotificationHelper;
 import de.derpeterson.app.ui.helper.VaadinUIHelper;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -40,7 +39,6 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
 
     private final transient HttpServletRequest request;
 
-    @Autowired
     public LoginView(CustomI18NProvider i18nProvider, AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder, SecurityService securityService, HttpServletRequest request) {
         this.securityService = securityService;
         this.request = request;
@@ -66,11 +64,11 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
                     securityService.storeAuthenticatedUser(request, userDetails, rememberMeCheckBox.getValue());
                 }
 
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("loginView.login.success_message"), NotificationHelper.NotificationType.SUCCESS);
+                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"), i18nProvider.getTranslation("loginView.login.success_message"), NotificationHelper.NotificationType.SUCCESS);
 
                 getUI().ifPresent(ui -> ui.navigate(AdminView.class));
             } catch (AuthenticationException e) {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("loginView.login.failed_message"), NotificationHelper.NotificationType.ERROR);
+                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.failed.title"), i18nProvider.getTranslation("loginView.login.failed_message"), NotificationHelper.NotificationType.ERROR);
             }
         });
 

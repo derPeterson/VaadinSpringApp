@@ -18,9 +18,9 @@
 - Registration fertigstellen
     - Testen
     - Entity Annotations
-    - Verification
-        - Email
-        - Page
+    - ~~Verification~~
+        - ~~Email~~
+        - ~~Page~~
 
 ## Database
 

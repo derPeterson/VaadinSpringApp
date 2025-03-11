@@ -6,7 +6,7 @@
 
 /* Views */
 .login-bg-fullscreen {
-    background-image: url('background.jpg');
+    background-image: url('login-background.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -15,7 +15,16 @@
 }
 
 .registration-bg-fullscreen {
-    background-image: url('landscape.jpg');
+    background-image: url('registration-background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 100vw;
+    height: 100vh;
+}
+
+.verification-bg-fullscreen {
+    background-image: url('verification-background.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;

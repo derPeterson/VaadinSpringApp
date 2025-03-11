@@ -15,9 +15,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -31,20 +32,13 @@ public class EmailQueueService {
     private final EmailService emailService;
 
     public void addEmailToQueue(UserEntity userEntity, String subject, String body, EmailType emailType) {
-        Optional<EmailQueueEntity> existingEmail = emailQueueRepository
-                .findByUserEntityAndEmailType(userEntity, emailType);
-
-        if (existingEmail.isPresent()) {
-            logger.info("Email already in the queue!");
-        } else {
-            EmailQueueEntity email = new EmailQueueEntity();
-            email.setUserEntity(userEntity);
-            email.setSubject(subject);
-            email.setBody(body);
-            email.setEmailType(emailType);
-            email.setStatus(EmailStatus.PENDING);
-            emailQueueRepository.save(email);
-        }
+        EmailQueueEntity email = new EmailQueueEntity();
+        email.setUserEntity(userEntity);
+        email.setSubject(subject);
+        email.setBody(body);
+        email.setEmailType(emailType);
+        email.setStatus(EmailStatus.PENDING);
+        emailQueueRepository.save(email);
     }
 
     @Transactional
@@ -84,17 +78,19 @@ public class EmailQueueService {
     }
 
     @Transactional
-    @Scheduled(cron = "0 0 2 * * ?")
+    @Scheduled(cron = "0 0 3 ? * SUN")
     public void deleteSentEmails() {
-        int deleted = emailQueueRepository.deleteByStatus(EmailStatus.SENT);
-        logger.info("Es wurden {} E-Mails mit Status SENT gelöscht.", deleted);
+        LocalDateTime liveDateTime = LocalDateTime.now().minus(Duration.parse(configService.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)));
+        int deleted = emailQueueRepository.deleteByStatusAndCreatedAtBefore(EmailStatus.SENT, liveDateTime);
+        var formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE);
+        logger.info("{} emails with status SENT that are older than one {} have been deleted.", deleted, formattedLiveDateTime);
     }
 
     private void sendAdminNotification(EmailQueueEntity failedEmail, Exception e) {
         String adminEmail = configService.getString(ConfigEntry.EMAIL_ADMIN);
         String subject = "Email dispatch failed";
 
-        String body = "The email to %s with the subject '%s' could not be delivered after 3 attempts.\n\nError message: %s\nEmail type: %s\nSending time: %s"
+        String body = "The email to %s with the subject '%s' could not be delivered after 3 attempts.\n\nError message: %s\nEmail type: %s\nSending time: %s" //NOSONAR
                 .formatted(failedEmail.getUserEntity(), failedEmail.getSubject(), e.getMessage(), failedEmail.getEmailType(), failedEmail.getLastRetryAt());
         try {
             emailService.sendAdminEmail(adminEmail, subject, body);

@@ -32,8 +32,7 @@ public class NotificationHelper {
     // Singleton-Instanz
     private static NotificationHelper instance = new NotificationHelper();
 
-    // Globale Variable für die aktuelle Notification (immer initialisiert)
-    private final Notification currentNotification = new Notification();
+    private Notification currentNotification = new Notification();
 
     public static synchronized NotificationHelper getInstance() {
         if (instance == null) {
@@ -50,7 +49,13 @@ public class NotificationHelper {
         showNotification(null, message, DEFAULT_NOTIFICATION_DURATION, notificationType);
     }
 
+    public void showNotification(String title, String message, NotificationType notificationType) {
+        showNotification(title, message, DEFAULT_NOTIFICATION_DURATION, notificationType);
+    }
+
     public void showNotification(String title, String message, Integer duration, NotificationType notificationType) {
+        closeAndClearAllNotifications();
+
         if (Objects.requireNonNull(notificationType) == NotificationType.ERROR) {
             currentNotification.addThemeVariants(NotificationVariant.LUMO_ERROR);
         } else if (notificationType == NotificationType.SUCCESS) {
@@ -98,16 +103,18 @@ public class NotificationHelper {
     }
 
     private static Button createNotificationCloseButton(Notification notification) {
-        Button closeButton = new Button(VaadinIcon.CLOSE_SMALL.create(),
+        Button closeButton = new Button(VaadinIcon.CLOSE_BIG.create(),
                 clickEvent -> notification.close());
         closeButton.addThemeVariants(LUMO_TERTIARY_INLINE);
 
         return closeButton;
     }
 
-    public void closeAllNotifications() {
+    public void closeAndClearAllNotifications() {
         if (currentNotification.isOpened()) {
             currentNotification.close();
         }
+
+        currentNotification = new Notification();
     }
 }

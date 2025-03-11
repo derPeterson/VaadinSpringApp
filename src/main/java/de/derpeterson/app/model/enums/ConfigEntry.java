@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 public enum ConfigEntry {
     // General Konfiguration
     APP_NAME("app.name", "ApplicationName"),
+    BASE_URL("base.url", "http://localhost:8080/"),
     REMEMBER_ME_DURATION("rememberMe.duration", 1209600),
     REMEMBER_ME_SECRET_KEY("rememberMe.secret.key", "czgwigh12t"),
     LOGIN_ATTEMPTS_LIMIT("login.attempts.limit", 10),
@@ -15,6 +16,8 @@ public enum ConfigEntry {
     MAINTENANCE_MODE("maintenance.mode", false),
     EMAIL_FROM("email.from", "derpetersondev@yandex.com"),
     EMAIL_ADMIN("email.admin", "derpetersondev@yandex.com"),
+    VERIFICATION_TOKEN_VALID_DURATION("verificationToken.valid.duration", "PT24H"),
+    VERIFICATION_TOKEN_LIVE_DURATION("verificationToken.live.duration", "P7D"),
 
     // EMail Konfiguration
     MAIL_HOST("mail.host", "smtp.yandex.com"),
@@ -31,7 +34,8 @@ public enum ConfigEntry {
     // Thread-Pool Konfiguration
     EMAIL_QUEUE_POOL_SIZE("email.queue.pool.size", 5),
     EMAIL_QUEUE_CAPACITY("email.queue.capacity", 50),
-    EMAIL_QUEUE_MAX_RETRY("email.queue.max_retry", 3);
+    EMAIL_QUEUE_MAX_RETRY("email.queue.max_retry", 3),
+    EMAIL_QUEUE_SENT_LIVE_DURATION("email.queue.sent.live.duration", "P7D");
 
     private final String key;
     private final Object defaultValue;

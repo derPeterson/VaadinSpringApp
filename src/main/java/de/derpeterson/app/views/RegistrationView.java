@@ -30,6 +30,7 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.EmailQueueService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.service.VerificationService;
 import de.derpeterson.app.ui.components.RegistrationCardComponent;
 import de.derpeterson.app.ui.helper.NotificationHelper;
 import de.derpeterson.app.ui.helper.VaadinUIHelper;
@@ -57,6 +58,7 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
     private final transient RoleService roleService;
     private final transient PasswordEncoder passwordEncoder;
     private final transient EmailQueueService emailQueueService;
+    private final transient VerificationService verificationService;
 
     private final transient SecurityService securityService;
     private final transient HttpServletRequest request;
@@ -67,12 +69,14 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
 
     public RegistrationView(CustomI18NProvider i18nProvider, UserService userService,
                             RoleService roleService, PasswordEncoder passwordEncoder,
-                            EmailQueueService emailQueueService, SecurityService securityService, HttpServletRequest request) {
+                            EmailQueueService emailQueueService, VerificationService verificationService,
+                            SecurityService securityService, HttpServletRequest request) {
         this.i18nProvider = i18nProvider;
         this.userService = userService;
         this.roleService = roleService;
         this.passwordEncoder = passwordEncoder;
         this.emailQueueService = emailQueueService;
+        this.verificationService = verificationService;
         this.securityService = securityService;
         this.request = request;
 
@@ -291,11 +295,16 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
 
         userService.saveUser(userEntity);
 
-        emailQueueService.addEmailToQueue(userEntity, "Test-E-Mail", "Das ist eine Testnachricht.", EmailType.VERIFICATION);
+        boolean emailSent = verificationService.sendVerificationEmailByUser(userEntity);
+        emailQueueService.addEmailToQueue(userEntity, "", "Bitte klicke auf den folgenden Link, um deinen Account zu verifizieren: " + verificationService.createToken(userEntity), EmailType.VERIFICATION);
 
-        NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("registrationView.registration.success_title"),
-                MessageFormat.format(i18nProvider.getTranslation("registrationView.registration.success_message"), userEntity.getEmail()),
-                -1, NotificationHelper.NotificationType.SUCCESS);
+        if (emailSent) {
+            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("registrationView.registration.success_title"),
+                    MessageFormat.format(i18nProvider.getTranslation("registrationView.registration.success_message"), userEntity.getEmail()),
+                    -1, NotificationHelper.NotificationType.SUCCESS);
+        } else {
+            // TODO: Fehlermeldung (Nochmal probieren)
+        }
     }
 
     private List<? extends AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>> createRequiredFormCompontents() {
