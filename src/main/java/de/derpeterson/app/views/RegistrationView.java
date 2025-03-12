@@ -144,7 +144,7 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
 
     private Button createRegisterButton() {
         Button regButton = new Button(i18nProvider.getTranslation("base.registration_button"));
-        regButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
+        regButton.setPrefixComponent(VaadinIcon.EDIT.create());
         regButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         regButton.setWidthFull();
         regButton.addClickListener(event -> handleRegistration());

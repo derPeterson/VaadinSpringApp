@@ -115,7 +115,7 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
         passwordField.setPrefixComponent(VaadinIcon.LOCK.create());
         passwordField.setClearButtonVisible(true);
 
-        loginButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
+        loginButton.setPrefixComponent(VaadinIcon.SIGN_IN.create());
         loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         loginButton.setWidthFull();
 

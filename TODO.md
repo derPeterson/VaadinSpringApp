@@ -4,9 +4,13 @@
 
 - ~~Home~~
     - ~~Logo~~
-    - User
-        - Login/Logout
-        - Language
+    - ~~User~~
+        - ~~Login/Logout~~
+        - ~~Language~~
+        - Manage Account
+            - Page
+        - ~~Online Status~~
+            - Database
 
 ## Login
 
@@ -87,6 +91,7 @@
 - ~~LoginView~~
 - AdminView
 - ~~RegistrationView~~
+- Without Reload?
 
 ## Config Table
 
