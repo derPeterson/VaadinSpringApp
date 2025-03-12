@@ -2,6 +2,10 @@
 
 ## General
 
+- SecureBaseView -> NotSecureBaseView
+    - Umbenennen?
+- Validation in eine Helper Klasse auslagern?
+    - Message Dateien anpassen.
 - ~~Home~~
     - ~~Logo~~
     - ~~User~~
@@ -11,6 +15,8 @@
             - Page
         - ~~Online Status~~
             - Database
+            - Change
+            - Refresh on Change
 
 ## Login
 
@@ -33,15 +39,16 @@
 - Page
     - ~~Forgot Password~~
         - ~~Background~~
-    - Reset Password
-        - Background
+    - ~~Reset Password~~
+        - ~~Background~~
+        - Email bei Erfolg?
 - Create Token (Ältere auf Expired setzen?)
 
 ## Registration
 
-- Registration fertigstellen
-    - Testen
+- ~~Registration fertigstellen~~
     - Entity Annotations
+        - Multi Language?
     - ~~Verification~~
         - ~~Database~~
         - ~~Service~~
@@ -67,11 +74,12 @@
 ## Notification
 
 - ~~Anzahl (Singleton)~~
-- Verbessern/Verschönern
+- ~~Verbessern/Verschönern~~
     - ~~Länge begrenzen~~
     - ~~Hervorhebungen~~
     - Button
     - ~~Color~~
+    - Bei Navigation Event, Close?
 
 ## Enums
 
@@ -87,10 +95,11 @@
 
 ## Multi Langauge
 
-- ~~MainView~~
-- ~~LoginView~~
-- AdminView
-- ~~RegistrationView~~
+- Views
+    - ~~MainView~~
+    - ~~LoginView~~
+    - AdminView
+    - ~~RegistrationView~~
 - Without Reload?
 
 ## Config Table

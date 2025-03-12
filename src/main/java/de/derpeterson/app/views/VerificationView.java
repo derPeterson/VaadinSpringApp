@@ -10,6 +10,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
+import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -26,6 +27,7 @@ import jakarta.servlet.http.HttpServletRequest;
 @AnonymousAllowed
 public class VerificationView extends HorizontalLayout implements HasUrlParameter<String>, BeforeEnterObserver {
 
+    private static final String BASE_FAILED_TITLE_MESSAGE_KEY = "base.failed.title";
     private static final String BASE_FAILED_TEXT_MESSAGE_KEY = "base.failed.message";
     private static final String BASE_HOME_BUTTON_MESSAGE_KEY = "base.home_button";
 
@@ -115,23 +117,23 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
         cardTextLayout.add(expiredText1);
         cardTextLayout.add(expiredText2);
 
-        Button reSendButton = new Button(i18nProvider.getTranslation("base.resend_button"), event -> {
+        Button resendButton = new Button(i18nProvider.getTranslation("base.resend_button"), event -> {
             boolean emailSent = verificationService.sendVerificationEmailByToken(token);
             if (emailSent) {
                 NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"), i18nProvider.getTranslation("verificationView.expired.success_message"), -1, NotificationHelper.NotificationType.SUCCESS);
             } else {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.failed.title"), i18nProvider.getTranslation(BASE_FAILED_TEXT_MESSAGE_KEY), -1, NotificationHelper.NotificationType.ERROR);
+                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY), i18nProvider.getTranslation(BASE_FAILED_TEXT_MESSAGE_KEY), -1, NotificationHelper.NotificationType.ERROR);
             }
         });
-        reSendButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
-        reSendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        reSendButton.setWidthFull();
+        resendButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
+        resendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        resendButton.setWidthFull();
 
         Button homeButton = new Button(i18nProvider.getTranslation(BASE_HOME_BUTTON_MESSAGE_KEY), event -> UI.getCurrent().navigate(HomeView.class));
         homeButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
         homeButton.setWidthFull();
 
-        cardContentLayout.add(cardIconLayout, cardTitleLayout, cardTextLayout, reSendButton, homeButton);
+        cardContentLayout.add(cardIconLayout, cardTitleLayout, cardTextLayout, resendButton, homeButton);
 
         CardComponent cardComponent = new CardComponent(cardContentLayout);
 
@@ -175,20 +177,44 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
         cardTextLayout.add(existsNotText2);
 
         EmailField emailField = new EmailField(i18nProvider.getTranslation("verificationView.email_field"));
-        emailField.setClearButtonVisible(true);
         emailField.setWidthFull();
         emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
         emailField.setClearButtonVisible(true);
+        emailField.setRequiredIndicatorVisible(true);
 
         Button sendButton = new Button(i18nProvider.getTranslation("base.send_button"), event -> {
+            if (emailField.getValue().isEmpty()) {
+                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
+                        i18nProvider.getTranslation("base.validation.required_message"),
+                        -1, NotificationHelper.NotificationType.ERROR);
+
+                emailField.setInvalid(true);
+
+                return;
+            } else {
+                emailField.setInvalid(false);
+            }
+
+            if (!emailField.getValue().matches(EmailValidator.PATTERN)) {
+                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
+                        i18nProvider.getTranslation("base.validation.email_invalid_message"),
+                        -1, NotificationHelper.NotificationType.ERROR);
+
+                emailField.setInvalid(!emailField.getValue().matches(EmailValidator.PATTERN));
+
+                return;
+            } else {
+                emailField.setInvalid(false);
+            }
+
             boolean emailSent = verificationService.sendVerificationEmailByEmail(emailField.getValue());
             if (emailSent) {
                 NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"), i18nProvider.getTranslation("verificationView.not_found.success_message"), -1, NotificationHelper.NotificationType.SUCCESS);
             } else {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.failed.title"), i18nProvider.getTranslation(BASE_FAILED_TEXT_MESSAGE_KEY), -1, NotificationHelper.NotificationType.ERROR);
+                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY), i18nProvider.getTranslation(BASE_FAILED_TEXT_MESSAGE_KEY), -1, NotificationHelper.NotificationType.ERROR);
             }
         });
-        sendButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
+        sendButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
         sendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         sendButton.setWidthFull();
 

@@ -41,6 +41,15 @@
     height: 100vh;
 }
 
+.reset-password-bg-fullscreen {
+    background-image: url('reset-password-background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 100vw;
+    height: 100vh;
+}
+
 .registration-bg-card {
     background-image: url('registration.jpg');
     background-size: cover;

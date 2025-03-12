@@ -10,31 +10,38 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.i18n.CustomI18NProvider;
-import de.derpeterson.app.repository.UserRepository;
-import de.derpeterson.app.service.EmailService;
+import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.PasswordResetService;
 import de.derpeterson.app.ui.components.CardComponent;
 import de.derpeterson.app.ui.helper.NotificationHelper;
 import de.derpeterson.app.ui.helper.VaadinUIHelper;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Route("forgot-password")
 @PageTitle("Forgot Password")
 @AnonymousAllowed
-public class ForgotPasswordView extends HorizontalLayout {
+public class ForgotPasswordView extends HorizontalLayout implements BeforeEnterObserver {
 
     private final CustomI18NProvider i18nProvider;
     private final transient PasswordResetService passwordResetService;
 
+    private final transient SecurityService securityService;
+    private final transient HttpServletRequest request;
+
     private final VerticalLayout mainContent;
 
-    public ForgotPasswordView(CustomI18NProvider i18nProvider, PasswordResetService passwordResetService, UserRepository userRepository, EmailService emailService) {
+    public ForgotPasswordView(CustomI18NProvider i18nProvider, PasswordResetService passwordResetService, SecurityService securityService, HttpServletRequest request) {
         this.i18nProvider = i18nProvider;
         this.passwordResetService = passwordResetService;
+        this.securityService = securityService;
+        this.request = request;
 
         setSizeFull();
         setSpacing(false);
@@ -103,7 +110,7 @@ public class ForgotPasswordView extends HorizontalLayout {
                 NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.failed.title"), i18nProvider.getTranslation("base.failed.message"), -1, NotificationHelper.NotificationType.ERROR);
             }
         });
-        sendButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
+        sendButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
         sendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         sendButton.setWidthFull();
 
@@ -116,5 +123,12 @@ public class ForgotPasswordView extends HorizontalLayout {
         CardComponent cardComponent = new CardComponent(cardContentLayout);
 
         mainContent.add(cardComponent);
+    }
+
+    @Override
+    public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+        if (securityService.getAuthenticatedUser(this.request).isPresent()) {
+            beforeEnterEvent.forwardTo(AdminView.class);
+        }
     }
 }

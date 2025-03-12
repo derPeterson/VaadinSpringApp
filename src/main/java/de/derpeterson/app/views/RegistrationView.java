@@ -183,7 +183,7 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
         // CHECK PASSWORD SECURE
         if (!formComponents.passwordField.getValue().matches(UserEntity.PASSWORD_REGEX) || !formComponents.confirmPasswordField.getValue().matches(UserEntity.PASSWORD_REGEX)) {
             NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("registrationView.validation.password_invalid_message"),
+                    i18nProvider.getTranslation("base.validation.password_invalid_message"),
                     -1, NotificationHelper.NotificationType.ERROR);
 
             formComponents.passwordField.setInvalid(!formComponents.passwordField.getValue().matches(UserEntity.PASSWORD_REGEX));
@@ -198,7 +198,7 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
         // CHECK PASSWORD MATCH
         if (!StringUtils.equals(formComponents.passwordField.getValue(), formComponents.confirmPasswordField.getValue())) {
             NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("registrationView.validation.password_confirm_message"),
+                    i18nProvider.getTranslation("base.validation.password_confirm_message"),
                     -1, NotificationHelper.NotificationType.ERROR);
 
             formComponents.passwordField.setInvalid(true);
@@ -217,7 +217,7 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
         // CHECK EMAIL FORMAT
         if (!formComponents.emailField.getValue().matches(EmailValidator.PATTERN) || !formComponents.confirmEmailField.getValue().matches(EmailValidator.PATTERN)) {
             NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("registrationView.validation.email_invalid_message"),
+                    i18nProvider.getTranslation("base.validation.email_invalid_message"),
                     -1, NotificationHelper.NotificationType.ERROR);
 
             formComponents.emailField.setInvalid(!formComponents.emailField.getValue().matches(EmailValidator.PATTERN));
@@ -265,7 +265,7 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
     private boolean validateRequiredInputs() {
         if (requiredFormComponts.stream().anyMatch(AbstractField::isEmpty)) {
             NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("registrationView.validation.required_message"),
+                    i18nProvider.getTranslation("base.validation.required_message"),
                     -1, NotificationHelper.NotificationType.ERROR);
 
             requiredFormComponts.stream().filter(AbstractField::isEmpty).map(HasValidationProperties.class::cast).forEach(field -> field.setInvalid(true));
