@@ -43,7 +43,8 @@
     - ~~Reset Password~~
         - ~~Background~~
         - Email bei Erfolg?
-- Create Token (Ältere auf Expired setzen?)
+- ~~Create Token~~
+    - ~~Old Token -> Inactive~~
 
 ## Registration
 
@@ -55,7 +56,8 @@
         - ~~Service~~
         - ~~Email~~
         - ~~Page~~
-        - Create Token (Ältere auf Expired setzen?)
+        - ~~Create Token~~
+            - ~~Old Token -> Inactive~~
 
 ## Database
 
@@ -80,7 +82,7 @@
     - ~~Hervorhebungen~~
     - Button
     - ~~Color~~
-    - Bei Navigation Event, Close?
+    - ~~Bei Navigation Event, Close?~~
 
 ## Enums
 

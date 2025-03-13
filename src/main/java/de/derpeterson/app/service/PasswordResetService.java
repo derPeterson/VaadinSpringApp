@@ -38,7 +38,12 @@ public class PasswordResetService {
 
     private final EmailQueueService emailQueueService;
 
+    private final PasswordResetService self;
+
+    @Transactional
     public String createToken(UserEntity user) {
+        self.setInactiveTokensForUser(user);
+
         String token = UUID.randomUUID().toString();
         PasswordResetTokenEntity resetToken = new PasswordResetTokenEntity();
         resetToken.setToken(token);
@@ -56,10 +61,21 @@ public class PasswordResetService {
         });
     }
 
+    @Transactional
+    public void setInactiveTokensForUser(UserEntity user) {
+        tokenRepository.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE).forEach(token -> {
+            token.setStatus(TokenStatus.INACTIVE);
+            tokenRepository.save(token);
+        });
+    }
+
     public boolean validateToken(String token) {
         Optional<PasswordResetTokenEntity> tokenEntity = tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
         if (tokenEntity.isPresent() && tokenEntity.get().getExpiryDate().isBefore(LocalDateTime.now())) {
             setTokenStatus(token, TokenStatus.EXPIRED);
+            return false;
+        }
+        if (tokenEntity.isPresent() && tokenEntity.get().getStatus() == TokenStatus.INACTIVE) {
             return false;
         }
         return tokenEntity.isPresent() && tokenEntity.get().getUserEntity().isEnabled();
@@ -72,10 +88,12 @@ public class PasswordResetService {
             setTokenStatus(token, TokenStatus.EXPIRED);
             return false;
         }
+        if (tokenEntity.isPresent() && tokenEntity.get().getStatus() == TokenStatus.INACTIVE) {
+            return false;
+        }
         if (tokenEntity.isPresent() && !tokenEntity.get().getUserEntity().isEnabled()) {
             return false;
         }
-
         if (tokenEntity.isPresent()) {
             UserEntity user = tokenEntity.get().getUserEntity();
             user.setPassword(passwordEncoder.encode(newPassword));
@@ -100,12 +118,13 @@ public class PasswordResetService {
         return tokenRepository.findByToken(token).orElse(null) != null;
     }
 
+    @Transactional
     public boolean sendPasswordResetEmail(String email) {
         Optional<UserEntity> userOptional = userRepository.findByEmail(email);
         if (userOptional.isPresent()) {
             UserEntity user = userOptional.get();
             if (user.isEnabled()) {
-                String token = createToken(user);
+                String token = self.createToken(user);
 
                 String passwordResetLink = UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))
                         .pathSegment("reset-password", token).toUriString();

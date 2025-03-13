@@ -36,7 +36,12 @@ public class VerificationService {
 
     private final EmailQueueService emailQueueService;
 
+    private final VerificationService self;
+
+    @Transactional
     public String createToken(UserEntity user) {
+        self.setInactiveTokensForUser(user);
+
         String token = UUID.randomUUID().toString();
         VerificationTokenEntity verificationToken = new VerificationTokenEntity();
         verificationToken.setToken(token);
@@ -55,10 +60,21 @@ public class VerificationService {
     }
 
     @Transactional
+    public void setInactiveTokensForUser(UserEntity user) {
+        tokenRepository.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE).forEach(token -> {
+            token.setStatus(TokenStatus.INACTIVE);
+            tokenRepository.save(token);
+        });
+    }
+
+    @Transactional
     public boolean validateToken(String token) {
         Optional<VerificationTokenEntity> tokenEntity = tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
         if (tokenEntity.isPresent() && tokenEntity.get().getExpiryDate().isBefore(LocalDateTime.now())) {
             setTokenStatus(token, TokenStatus.EXPIRED);
+            return false;
+        }
+        if (tokenEntity.isPresent() && tokenEntity.get().getStatus() == TokenStatus.INACTIVE) {
             return false;
         }
         if (tokenEntity.isPresent() && tokenEntity.get().getUserEntity().isEnabled()) {
@@ -85,12 +101,13 @@ public class VerificationService {
         return tokenRepository.deleteByToken(token);
     }
 
+    @Transactional
     public boolean sendVerificationEmailByToken(String token) {
         Optional<VerificationTokenEntity> tokenOptional = tokenRepository.findByToken(token);
         if (tokenOptional.isPresent()) {
             UserEntity user = tokenOptional.get().getUserEntity();
             if (!user.isEnabled()) {
-                String newToken = createToken(user);
+                String newToken = self.createToken(user);
                 sendVerificationEmail(user, newToken);
                 return true;
             }
@@ -98,12 +115,13 @@ public class VerificationService {
         return false;
     }
 
+    @Transactional
     public boolean sendVerificationEmailByEmail(String email) {
         Optional<UserEntity> userOptional = userRepository.findByEmail(email);
         if (userOptional.isPresent()) {
             UserEntity user = userOptional.get();
             if (!user.isEnabled()) {
-                String newToken = createToken(user);
+                String newToken = self.createToken(user);
                 sendVerificationEmail(user, newToken);
                 return true;
             }
@@ -111,9 +129,10 @@ public class VerificationService {
         return false;
     }
 
+    @Transactional
     public boolean sendVerificationEmailByUser(UserEntity user) {
         if (!user.isEnabled()) {
-            String newToken = createToken(user);
+            String newToken = self.createToken(user);
             sendVerificationEmail(user, newToken);
             return true;
         }
