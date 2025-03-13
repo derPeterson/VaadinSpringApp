@@ -2,4 +2,4 @@
 
 ## RememberMe
 
-- Cockie und Datenbank Tabelle ist verschwunden
+- ~~Cockie und Datenbank Tabelle ist verschwunden~~

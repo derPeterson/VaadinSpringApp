@@ -46,7 +46,7 @@ public class HomeView extends AppLayout {
     private final transient UserService userService;
     private final transient SecurityService securityService;
 
-    private Optional<UserDetails> authenticatedUser;
+    private final transient Optional<UserDetails> authenticatedUser;
 
     @Autowired
     public HomeView(CustomI18NProvider i18nProvider, SecurityService securityService, HttpServletRequest request, ConfigService configService, UserService userService) {

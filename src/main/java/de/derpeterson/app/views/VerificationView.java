@@ -7,25 +7,29 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
-import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.VerificationService;
 import de.derpeterson.app.ui.components.CardComponent;
 import de.derpeterson.app.ui.helper.NotificationHelper;
 import de.derpeterson.app.ui.helper.VaadinUIHelper;
+import de.derpeterson.app.ui.helper.ValidationHelper;
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.List;
 
 @Route("verification")
 @PageTitle("Verification")
 @AnonymousAllowed
-public class VerificationView extends HorizontalLayout implements HasUrlParameter<String>, BeforeEnterObserver {
+public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLayout> implements HasUrlParameter<String> {
 
     private static final String BASE_FAILED_TITLE_MESSAGE_KEY = "base.failed.title";
     private static final String BASE_FAILED_TEXT_MESSAGE_KEY = "base.failed.message";
@@ -34,26 +38,23 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
     private final CustomI18NProvider i18nProvider;
     private final transient VerificationService verificationService;
 
-    private final transient SecurityService securityService;
-    private final transient HttpServletRequest request;
-
     private final VerticalLayout mainContent;
 
     public VerificationView(CustomI18NProvider i18nProvider, VerificationService verificationService, SecurityService securityService, HttpServletRequest request) {
+        super(securityService, request, new HorizontalLayout());
+
         this.i18nProvider = i18nProvider;
         this.verificationService = verificationService;
-        this.securityService = securityService;
-        this.request = request;
 
         setSizeFull();
-        setAlignItems(Alignment.CENTER);
-        setJustifyContentMode(JustifyContentMode.CENTER);
+        setAlignItems(FlexComponent.Alignment.CENTER);
+        setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 
         addClassNames("verification-bg-fullscreen");
 
         mainContent = new VerticalLayout();
-        mainContent.setAlignItems(Alignment.CENTER);
-        mainContent.setJustifyContentMode(JustifyContentMode.START);
+        mainContent.setAlignItems(FlexComponent.Alignment.CENTER);
+        mainContent.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
         mainContent.setWidth(null);
         mainContent.setSizeUndefined();
 
@@ -83,7 +84,7 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
 
     private void createExpiredCard(String token) {
         VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(Alignment.CENTER);
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
 
         Icon successIcon = VaadinIcon.BELL.create();
@@ -92,7 +93,7 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
         HorizontalLayout cardIconLayout = new HorizontalLayout();
         cardIconLayout.setWidthFull();
         cardIconLayout.setPadding(false);
-        cardIconLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardIconLayout.add(successIcon);
 
         H1 title = new H1(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.expired.title")));
@@ -101,7 +102,7 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
-        cardTitleLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
         Span expiredText1 = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.expired.text1")));
@@ -112,8 +113,8 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
         cardTextLayout.setWidthFull();
         cardTextLayout.setPadding(false);
         cardTextLayout.setSpacing(false);
-        cardTextLayout.setAlignItems(Alignment.CENTER);
-        cardTextLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardTextLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+        cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTextLayout.add(expiredText1);
         cardTextLayout.add(expiredText2);
 
@@ -142,7 +143,7 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
 
     private void createFailedCard() {
         VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(Alignment.CENTER);
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
 
         Icon successIcon = VaadinIcon.WARNING.create();
@@ -151,7 +152,7 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
         HorizontalLayout cardIconLayout = new HorizontalLayout();
         cardIconLayout.setWidthFull();
         cardIconLayout.setPadding(false);
-        cardIconLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardIconLayout.add(successIcon);
 
         H1 title = new H1(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.not_found.title")));
@@ -160,7 +161,7 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
-        cardTitleLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
         Span existsNotText1 = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.not_found.text1")));
@@ -171,8 +172,8 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
         cardTextLayout.setWidthFull();
         cardTextLayout.setPadding(false);
         cardTextLayout.setSpacing(false);
-        cardTextLayout.setAlignItems(Alignment.CENTER);
-        cardTextLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardTextLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+        cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTextLayout.add(existsNotText1);
         cardTextLayout.add(existsNotText2);
 
@@ -183,28 +184,13 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
         emailField.setRequiredIndicatorVisible(true);
 
         Button sendButton = new Button(i18nProvider.getTranslation("base.send_button"), event -> {
-            if (emailField.getValue().isEmpty()) {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                        i18nProvider.getTranslation("base.validation.required_message"),
-                        -1, NotificationHelper.NotificationType.ERROR);
 
-                emailField.setInvalid(true);
-
+            if (!ValidationHelper.validateRequiredInputs(List.of(emailField), i18nProvider)) {
                 return;
-            } else {
-                emailField.setInvalid(false);
             }
 
-            if (!emailField.getValue().matches(EmailValidator.PATTERN)) {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                        i18nProvider.getTranslation("base.validation.email_invalid_message"),
-                        -1, NotificationHelper.NotificationType.ERROR);
-
-                emailField.setInvalid(!emailField.getValue().matches(EmailValidator.PATTERN));
-
+            if (!ValidationHelper.validateEmailValidInputs(List.of(emailField), i18nProvider)) {
                 return;
-            } else {
-                emailField.setInvalid(false);
             }
 
             boolean emailSent = verificationService.sendVerificationEmailByEmail(emailField.getValue());
@@ -231,7 +217,7 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
 
     private void createSuccessCard() {
         VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(Alignment.CENTER);
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
 
         Icon successIcon = VaadinIcon.CHECK_CIRCLE.create();
@@ -240,7 +226,7 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
         HorizontalLayout cardIconLayout = new HorizontalLayout();
         cardIconLayout.setWidthFull();
         cardIconLayout.setPadding(false);
-        cardIconLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardIconLayout.add(successIcon);
 
         H1 title = new H1(i18nProvider.getTranslation("verificationView.success.title"));
@@ -249,7 +235,7 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
-        cardTitleLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
         Span successText = new Span(i18nProvider.getTranslation("verificationView.success.text"));
@@ -257,7 +243,7 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
         HorizontalLayout cardTextLayout = new HorizontalLayout();
         cardTextLayout.setWidthFull();
         cardTextLayout.setPadding(false);
-        cardTextLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTextLayout.add(successText);
 
         Button homeButton = new Button(i18nProvider.getTranslation(BASE_HOME_BUTTON_MESSAGE_KEY), event -> UI.getCurrent().navigate(HomeView.class));
@@ -270,12 +256,5 @@ public class VerificationView extends HorizontalLayout implements HasUrlParamete
         CardComponent cardComponent = new CardComponent(cardContentLayout);
 
         mainContent.add(cardComponent);
-    }
-
-    @Override
-    public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-        if (securityService.getAuthenticatedUser(this.request).isPresent()) {
-            beforeEnterEvent.forwardTo(AdminView.class);
-        }
     }
 }

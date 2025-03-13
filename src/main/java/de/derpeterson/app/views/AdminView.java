@@ -8,7 +8,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import de.derpeterson.app.i18n.CustomI18NProvider;
-import de.derpeterson.app.security.SecureBaseView;
+import de.derpeterson.app.security.IsAuthentificatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,7 +17,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @Route("admin")
 @PageTitle("Admin")
 @RolesAllowed("ADMIN")
-public class AdminView extends SecureBaseView<VerticalLayout> {
+public class AdminView extends IsAuthentificatedBaseView<VerticalLayout> {
 
     public AdminView(CustomI18NProvider i18nProvider, SecurityService securityService, HttpServletRequest request) {
         super(securityService, request, new VerticalLayout());

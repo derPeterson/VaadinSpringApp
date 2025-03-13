@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -52,10 +53,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public PersistentTokenRepository tokenRepository(DataSource dataSource) {
+    public PersistentTokenRepository tokenRepository(DataSource dataSource, JdbcTemplate jdbcTemplate) {
         JdbcTokenRepositoryImpl tokenRepository = new JdbcTokenRepositoryImpl();
         tokenRepository.setDataSource(dataSource);
-        tokenRepository.setCreateTableOnStartup(false);
+        if (!tableExists(jdbcTemplate, "persistent_logins")) {
+            tokenRepository.setCreateTableOnStartup(true);
+        }
         return tokenRepository;
     }
 
@@ -112,5 +115,17 @@ public class SecurityConfig {
         logger.debug("🔧 SecurityConfig loaded!");
 
         return http.build();
+    }
+
+    private boolean tableExists(JdbcTemplate jdbcTemplate, String tableName) {
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?",
+                    Integer.class, tableName.toUpperCase()
+            );
+            return count != null && count > 0;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

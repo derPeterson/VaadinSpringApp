@@ -1,6 +1,5 @@
 package de.derpeterson.app.views;
 
-import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.AbstractSinglePropertyField;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -9,15 +8,16 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.shared.HasAllowedCharPattern;
-import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.validator.EmailValidator;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -25,30 +25,28 @@ import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
 import de.derpeterson.app.security.SecurityService;
-import de.derpeterson.app.service.EmailQueueService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.service.VerificationService;
 import de.derpeterson.app.ui.components.RegistrationCardComponent;
 import de.derpeterson.app.ui.helper.NotificationHelper;
 import de.derpeterson.app.ui.helper.VaadinUIHelper;
+import de.derpeterson.app.ui.helper.ValidationHelper;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.io.Serializable;
 import java.text.MessageFormat;
-import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 @Route("registration")
 @PageTitle("Registration")
 @AnonymousAllowed
-public class RegistrationView extends HorizontalLayout implements BeforeEnterObserver {
+public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
 
     private static final String BASE_FAILED_TITLE_MESSAGE_KEY = "base.failed.title";
 
@@ -56,11 +54,7 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
     private final transient UserService userService;
     private final transient RoleService roleService;
     private final transient PasswordEncoder passwordEncoder;
-    private final transient EmailQueueService emailQueueService;
     private final transient VerificationService verificationService;
-
-    private final transient SecurityService securityService;
-    private final transient HttpServletRequest request;
 
     private final transient FormComponents formComponents;
 
@@ -68,21 +62,21 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
 
     public RegistrationView(CustomI18NProvider i18nProvider, UserService userService,
                             RoleService roleService, PasswordEncoder passwordEncoder,
-                            EmailQueueService emailQueueService, VerificationService verificationService,
+                            VerificationService verificationService,
                             SecurityService securityService, HttpServletRequest request) {
+
+        super(securityService, request, new HorizontalLayout());
+
         this.i18nProvider = i18nProvider;
         this.userService = userService;
         this.roleService = roleService;
         this.passwordEncoder = passwordEncoder;
-        this.emailQueueService = emailQueueService;
         this.verificationService = verificationService;
-        this.securityService = securityService;
-        this.request = request;
 
         setSizeFull();
         setSpacing(false);
-        setAlignItems(Alignment.CENTER);
-        setJustifyContentMode(JustifyContentMode.CENTER);
+        setAlignItems(FlexComponent.Alignment.CENTER);
+        setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 
         addClassNames("registration-bg-fullscreen");
 
@@ -93,12 +87,12 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
         VerticalLayout mainContent = new VerticalLayout();
         mainContent.setPadding(false);
         mainContent.setSpacing(false);
-        mainContent.setAlignItems(Alignment.CENTER);
-        mainContent.setJustifyContentMode(JustifyContentMode.CENTER);
+        mainContent.setAlignItems(FlexComponent.Alignment.CENTER);
+        mainContent.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 
         // Layout
         VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(Alignment.CENTER);
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
 
         H1 title = new H1(i18nProvider.getTranslation("registrationView.title"));
@@ -107,7 +101,7 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
-        cardTitleLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
         Span createAccountQuestionText = new Span(i18nProvider.getTranslation("registrationView.login_question"));
@@ -116,7 +110,7 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
         cardSecondaryTitleLayout.setWidthFull();
         cardSecondaryTitleLayout.setSpacing(false);
         cardSecondaryTitleLayout.setPadding(false);
-        cardSecondaryTitleLayout.setJustifyContentMode(JustifyContentMode.START);
+        cardSecondaryTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
         cardSecondaryTitleLayout.addClassNames(LumoUtility.Gap.SMALL);
         cardSecondaryTitleLayout.add(createAccountQuestionText);
         cardSecondaryTitleLayout.add(formComponents.loginLink);
@@ -159,123 +153,29 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
     }
 
     private boolean validateInputs() {
-        return validateRequiredInputs() && validateEmailInputs() && validatePasswordInputs() && validateBirthDate();
+        return validateRequiredInputs()
+                && validateEmailInputs()
+                && validatePasswordInputs()
+                && validateBirthDate();
     }
 
     private boolean validateBirthDate() {
-        // CHECK BIRTH DATE PAST
-        if (formComponents.birthDatePicker.getValue().isAfter(LocalDate.now())) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("registrationView.validation.birth_date_past_message"),
-                    -1, NotificationHelper.NotificationType.ERROR);
-
-            formComponents.birthDatePicker.setInvalid(true);
-
-            return false;
-        } else {
-            formComponents.birthDatePicker.setInvalid(false);
-        }
-
-        return true;
+        return ValidationHelper.validateBirthDateBeforeInput(formComponents.birthDatePicker, i18nProvider);
     }
 
     private boolean validatePasswordInputs() {
-        // CHECK PASSWORD SECURE
-        if (!formComponents.passwordField.getValue().matches(UserEntity.PASSWORD_REGEX) || !formComponents.confirmPasswordField.getValue().matches(UserEntity.PASSWORD_REGEX)) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("base.validation.password_invalid_message"),
-                    -1, NotificationHelper.NotificationType.ERROR);
-
-            formComponents.passwordField.setInvalid(!formComponents.passwordField.getValue().matches(UserEntity.PASSWORD_REGEX));
-            formComponents.confirmPasswordField.setInvalid(!formComponents.confirmPasswordField.getValue().matches(UserEntity.PASSWORD_REGEX));
-
-            return false;
-        } else {
-            formComponents.passwordField.setInvalid(false);
-            formComponents.confirmPasswordField.setInvalid(false);
-        }
-
-        // CHECK PASSWORD MATCH
-        if (!StringUtils.equals(formComponents.passwordField.getValue(), formComponents.confirmPasswordField.getValue())) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("base.validation.password_confirm_message"),
-                    -1, NotificationHelper.NotificationType.ERROR);
-
-            formComponents.passwordField.setInvalid(true);
-            formComponents.confirmPasswordField.setInvalid(true);
-
-            return false;
-        } else {
-            formComponents.passwordField.setInvalid(false);
-            formComponents.confirmPasswordField.setInvalid(false);
-        }
-
-        return true;
+        return ValidationHelper.validatePasswordConfirmInputs(formComponents.passwordField, formComponents.confirmPasswordField, i18nProvider)
+                && ValidationHelper.validatePasswordSecureInputs(List.of(formComponents.passwordField, formComponents.confirmPasswordField), i18nProvider);
     }
 
     private boolean validateEmailInputs() {
-        // CHECK EMAIL FORMAT
-        if (!formComponents.emailField.getValue().matches(EmailValidator.PATTERN) || !formComponents.confirmEmailField.getValue().matches(EmailValidator.PATTERN)) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("base.validation.email_invalid_message"),
-                    -1, NotificationHelper.NotificationType.ERROR);
-
-            formComponents.emailField.setInvalid(!formComponents.emailField.getValue().matches(EmailValidator.PATTERN));
-            formComponents.confirmEmailField.setInvalid(!formComponents.confirmEmailField.getValue().matches(EmailValidator.PATTERN));
-
-            return false;
-        } else {
-            formComponents.emailField.setInvalid(false);
-            formComponents.confirmEmailField.setInvalid(false);
-        }
-
-        // CHECK EMAIL MATCH
-        if (!StringUtils.equals(formComponents.emailField.getValue(), formComponents.confirmEmailField.getValue())) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("registrationView.validation.email_confirm_message"),
-                    -1, NotificationHelper.NotificationType.ERROR);
-
-            formComponents.emailField.setInvalid(true);
-            formComponents.confirmEmailField.setInvalid(true);
-
-            return false;
-        } else {
-            formComponents.passwordField.setInvalid(false);
-            formComponents.confirmEmailField.setInvalid(false);
-        }
-
-        // CHECK EMAIL EXISTS
-        if (userService.findByEmail(formComponents.emailField.getValue()).isPresent()) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("registrationView.validation.email_exists_message"),
-                    -1, NotificationHelper.NotificationType.ERROR);
-
-            formComponents.emailField.setInvalid(true);
-            formComponents.confirmEmailField.setInvalid(true);
-
-            return false;
-        } else {
-            formComponents.passwordField.setInvalid(false);
-            formComponents.confirmEmailField.setInvalid(false);
-        }
-
-        return true;
+        return ValidationHelper.validateEmailValidInputs(List.of(formComponents.emailField, formComponents.confirmEmailField), i18nProvider)
+                && ValidationHelper.validateEmailConfirmInputs(formComponents.emailField, formComponents.confirmEmailField, i18nProvider)
+                && ValidationHelper.validateEmailNotExistsInput(formComponents.emailField, formComponents.confirmEmailField, userService, i18nProvider);
     }
 
     private boolean validateRequiredInputs() {
-        if (requiredFormComponts.stream().anyMatch(AbstractField::isEmpty)) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("base.validation.required_message"),
-                    -1, NotificationHelper.NotificationType.ERROR);
-
-            requiredFormComponts.stream().filter(AbstractField::isEmpty).map(HasValidationProperties.class::cast).forEach(field -> field.setInvalid(true));
-            requiredFormComponts.stream().filter(Predicate.not(AbstractField::isEmpty)).map(HasValidationProperties.class::cast).forEach(field -> field.setInvalid(false));
-            return false;
-        } else {
-            requiredFormComponts.stream().map(HasValidationProperties.class::cast).forEach(field -> field.setInvalid(false));
-        }
-
-        return true;
+        return ValidationHelper.validateRequiredInputs(requiredFormComponts, i18nProvider);
     }
 
     private void saveUserAndSendEmail() {
@@ -365,10 +265,4 @@ public class RegistrationView extends HorizontalLayout implements BeforeEnterObs
                                   DatePicker birthDatePicker) {
     }
 
-    @Override
-    public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-        if (securityService.getAuthenticatedUser(this.request).isPresent()) {
-            beforeEnterEvent.forwardTo(AdminView.class);
-        }
-    }
 }

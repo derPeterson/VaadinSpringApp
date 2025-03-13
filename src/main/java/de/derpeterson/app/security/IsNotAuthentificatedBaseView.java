@@ -3,18 +3,20 @@ package de.derpeterson.app.security;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
-import de.derpeterson.app.views.LoginView;
+import de.derpeterson.app.views.AdminView;
 import jakarta.servlet.http.HttpServletRequest;
 
-public abstract class SecureBaseView<T extends Component & FlexComponent> extends Composite<T> implements BeforeEnterObserver {
+public abstract class IsNotAuthentificatedBaseView<T extends Component & FlexComponent> extends Composite<T> implements BeforeEnterObserver {
 
     private final transient SecurityService securityService;
 
     private final transient HttpServletRequest request;
 
-    protected SecureBaseView(SecurityService securityService, HttpServletRequest request, T layout) {
+    protected IsNotAuthentificatedBaseView(SecurityService securityService, HttpServletRequest request, T layout) {
         this.securityService = securityService;
         this.request = request;
         getContent().add(layout);
@@ -22,8 +24,18 @@ public abstract class SecureBaseView<T extends Component & FlexComponent> extend
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
-        if (securityService.getAuthenticatedUser(this.request).isEmpty()) {
-            event.forwardTo(LoginView.class);
+        if (securityService.getAuthenticatedUser(this.request).isPresent()) {
+            event.forwardTo(AdminView.class);
+        }
+    }
+
+    public void setSpacing(boolean spacing) {
+        if (getContent() instanceof VerticalLayout verticalLayout) {
+            verticalLayout.setSpacing(spacing);
+        } else if (getContent() instanceof HorizontalLayout horizontalLayout) {
+            horizontalLayout.setSpacing(spacing);
+        } else {
+            throw new UnsupportedOperationException("setSpacing() is not supported by " + getContent().getClass().getSimpleName() + ".");
         }
     }
 

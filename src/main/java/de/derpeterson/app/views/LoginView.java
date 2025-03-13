@@ -9,14 +9,18 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.ui.components.CardComponent;
 import de.derpeterson.app.ui.helper.NotificationHelper;
@@ -33,15 +37,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Route("login")
 @PageTitle("Login")
 @AnonymousAllowed
-public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
-
-    private final transient SecurityService securityService;
-
-    private final transient HttpServletRequest request;
+public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
 
     public LoginView(CustomI18NProvider i18nProvider, AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder, SecurityService securityService, HttpServletRequest request) {
-        this.securityService = securityService;
-        this.request = request;
+        super(securityService, request, new HorizontalLayout());
 
         setSizeFull();
 
@@ -73,8 +72,8 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
         });
 
         VerticalLayout mainContent = new VerticalLayout();
-        mainContent.setAlignItems(Alignment.CENTER);
-        mainContent.setJustifyContentMode(JustifyContentMode.START);
+        mainContent.setAlignItems(FlexComponent.Alignment.CENTER);
+        mainContent.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
 
         Div bannerContent = new Div();
         bannerContent.add(new Image("../themes/custom-theme/welcome.png", "Welcome"));
@@ -83,7 +82,7 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
         mainContent.add(bannerContent);
 
         VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(Alignment.CENTER);
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
 
         H1 title = new H1(i18nProvider.getTranslation("loginView.title"));
@@ -92,7 +91,7 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
-        cardTitleLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
         Span createAccountQuestionText = new Span(i18nProvider.getTranslation("loginView.create_account_question"));
@@ -102,7 +101,7 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
         cardSecondaryTitleLayout.setWidthFull();
         cardSecondaryTitleLayout.setPadding(false);
         cardSecondaryTitleLayout.setSpacing(false);
-        cardSecondaryTitleLayout.setJustifyContentMode(JustifyContentMode.START);
+        cardSecondaryTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
         cardSecondaryTitleLayout.addClassNames(LumoUtility.Gap.SMALL);
         cardSecondaryTitleLayout.add(createAccountQuestionText);
         cardSecondaryTitleLayout.add(createAccountLink);
@@ -124,13 +123,13 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
 
         HorizontalLayout rememberMeLayout = new HorizontalLayout();
         rememberMeLayout.setWidthFull();
-        rememberMeLayout.setJustifyContentMode(JustifyContentMode.START);
+        rememberMeLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
         rememberMeLayout.add(rememberMeCheckBox);
 
         forgotPasswordLink.addClassNames("underline");
         HorizontalLayout forgotPasswordLayout = new HorizontalLayout();
         forgotPasswordLayout.setWidthFull();
-        forgotPasswordLayout.setJustifyContentMode(JustifyContentMode.END);
+        forgotPasswordLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
         forgotPasswordLayout.add(forgotPasswordLink);
 
         HorizontalLayout secondaryActionLayout = new HorizontalLayout();
@@ -149,12 +148,5 @@ public class LoginView extends HorizontalLayout implements BeforeEnterObserver {
         add(VaadinUIHelper.createFullHorizontalSpace());
         add(mainContent);
         add(VaadinUIHelper.createFullHorizontalSpace());
-    }
-
-    @Override
-    public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-        if (securityService.getAuthenticatedUser(this.request).isPresent()) {
-            beforeEnterEvent.forwardTo(AdminView.class);
-        }
     }
 }

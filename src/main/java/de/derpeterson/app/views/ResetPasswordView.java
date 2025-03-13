@@ -7,6 +7,7 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -14,19 +15,21 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.i18n.CustomI18NProvider;
-import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.PasswordResetService;
 import de.derpeterson.app.ui.components.CardComponent;
 import de.derpeterson.app.ui.helper.NotificationHelper;
 import de.derpeterson.app.ui.helper.VaadinUIHelper;
+import de.derpeterson.app.ui.helper.ValidationHelper;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.lang3.StringUtils;
+
+import java.util.List;
 
 @Route("reset-password")
 @PageTitle("Reset Password")
 @AnonymousAllowed
-public class ResetPasswordView extends VerticalLayout implements HasUrlParameter<String>, BeforeEnterObserver {
+public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLayout> implements HasUrlParameter<String> {
 
     private static final String BASE_FAILED_TITLE_MESSAGE_KEY = "base.failed.title";
     private static final String BASE_HOME_BUTTON_MESSAGE_KEY = "base.home_button";
@@ -34,26 +37,23 @@ public class ResetPasswordView extends VerticalLayout implements HasUrlParameter
     private final CustomI18NProvider i18nProvider;
     private final transient PasswordResetService passwordResetService;
 
-    private final transient SecurityService securityService;
-    private final transient HttpServletRequest request;
-
     private final VerticalLayout mainContent;
 
     public ResetPasswordView(CustomI18NProvider i18nProvider, PasswordResetService passwordResetService, SecurityService securityService, HttpServletRequest request) {
+        super(securityService, request, new HorizontalLayout());
+
         this.i18nProvider = i18nProvider;
         this.passwordResetService = passwordResetService;
-        this.securityService = securityService;
-        this.request = request;
 
         setSizeFull();
-        setAlignItems(Alignment.CENTER);
-        setJustifyContentMode(JustifyContentMode.CENTER);
+        setAlignItems(FlexComponent.Alignment.CENTER);
+        setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 
         addClassNames("reset-password-bg-fullscreen");
 
         mainContent = new VerticalLayout();
-        mainContent.setAlignItems(Alignment.CENTER);
-        mainContent.setJustifyContentMode(JustifyContentMode.START);
+        mainContent.setAlignItems(FlexComponent.Alignment.CENTER);
+        mainContent.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
         mainContent.setWidth(null);
         mainContent.setSizeUndefined();
 
@@ -77,7 +77,7 @@ public class ResetPasswordView extends VerticalLayout implements HasUrlParameter
 
     private void showResetPasswordCard(String token) {
         VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(Alignment.CENTER);
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
 
         H1 title = new H1(i18nProvider.getTranslation(i18nProvider.getTranslation("resetPasswordView.reset.title")));
@@ -86,7 +86,7 @@ public class ResetPasswordView extends VerticalLayout implements HasUrlParameter
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
-        cardTitleLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
         PasswordField passwordField = new PasswordField(i18nProvider.getTranslation("resetPasswordView.reset.new_password_field"));
@@ -102,49 +102,17 @@ public class ResetPasswordView extends VerticalLayout implements HasUrlParameter
         confirmPasswordField.setWidthFull();
 
         Button resetButton = new Button(i18nProvider.getTranslation("base.reset_button"), event -> {
-            if (passwordField.getValue().isEmpty() || confirmPasswordField.getValue().isEmpty()) {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                        i18nProvider.getTranslation("base.validation.required_message"),
-                        -1, NotificationHelper.NotificationType.ERROR);
-
-                passwordField.setInvalid(passwordField.getValue().isEmpty());
-                confirmPasswordField.setInvalid(confirmPasswordField.getValue().isEmpty());
+            if (!ValidationHelper.validateRequiredInputs(List.of(passwordField, confirmPasswordField), i18nProvider)) {
                 return;
-            } else {
-                passwordField.setInvalid(false);
-                confirmPasswordField.setInvalid(false);
             }
 
-            // CHECK PASSWORD SECURE
-            if (!passwordField.getValue().matches(UserEntity.PASSWORD_REGEX) || !confirmPasswordField.getValue().matches(UserEntity.PASSWORD_REGEX)) {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                        i18nProvider.getTranslation("base.validation.password_invalid_message"),
-                        -1, NotificationHelper.NotificationType.ERROR);
-
-                passwordField.setInvalid(!passwordField.getValue().matches(UserEntity.PASSWORD_REGEX));
-                confirmPasswordField.setInvalid(!confirmPasswordField.getValue().matches(UserEntity.PASSWORD_REGEX));
-
+            if (!ValidationHelper.validatePasswordSecureInputs(List.of(passwordField, confirmPasswordField), i18nProvider)) {
                 return;
-            } else {
-                passwordField.setInvalid(false);
-                confirmPasswordField.setInvalid(false);
             }
 
-            // CHECK PASSWORD MATCH
-            if (!StringUtils.equals(passwordField.getValue(), confirmPasswordField.getValue())) {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                        i18nProvider.getTranslation("base.validation.password_confirm_message"),
-                        -1, NotificationHelper.NotificationType.ERROR);
-
-                passwordField.setInvalid(true);
-                confirmPasswordField.setInvalid(true);
-
+            if (!ValidationHelper.validatePasswordConfirmInputs(passwordField, confirmPasswordField, i18nProvider)) {
                 return;
-            } else {
-                passwordField.setInvalid(false);
-                confirmPasswordField.setInvalid(false);
             }
-
 
             boolean success = passwordResetService.resetPassword(token, passwordField.getValue());
             if (success) {
@@ -170,7 +138,7 @@ public class ResetPasswordView extends VerticalLayout implements HasUrlParameter
 
     private void invalidTokenCard() {
         VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(Alignment.CENTER);
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
 
         Icon successIcon = VaadinIcon.WARNING.create();
@@ -179,7 +147,7 @@ public class ResetPasswordView extends VerticalLayout implements HasUrlParameter
         HorizontalLayout cardIconLayout = new HorizontalLayout();
         cardIconLayout.setWidthFull();
         cardIconLayout.setPadding(false);
-        cardIconLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardIconLayout.add(successIcon);
 
         H1 title = new H1(i18nProvider.getTranslation(i18nProvider.getTranslation("resetPasswordView.invalid.title")));
@@ -188,7 +156,7 @@ public class ResetPasswordView extends VerticalLayout implements HasUrlParameter
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
-        cardTitleLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
         Span invalidText = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("resetPasswordView.invalid.text")));
@@ -197,8 +165,8 @@ public class ResetPasswordView extends VerticalLayout implements HasUrlParameter
         cardTextLayout.setWidthFull();
         cardTextLayout.setPadding(false);
         cardTextLayout.setSpacing(false);
-        cardTextLayout.setAlignItems(Alignment.CENTER);
-        cardTextLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+        cardTextLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+        cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTextLayout.add(invalidText);
 
         Button homeButton = new Button(i18nProvider.getTranslation(BASE_HOME_BUTTON_MESSAGE_KEY), event -> UI.getCurrent().navigate(HomeView.class));
@@ -211,12 +179,5 @@ public class ResetPasswordView extends VerticalLayout implements HasUrlParameter
         CardComponent cardComponent = new CardComponent(cardContentLayout);
 
         mainContent.add(cardComponent);
-    }
-
-    @Override
-    public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-        if (securityService.getAuthenticatedUser(this.request).isPresent()) {
-            beforeEnterEvent.forwardTo(AdminView.class);
-        }
     }
 }

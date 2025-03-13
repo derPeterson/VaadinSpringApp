@@ -2,10 +2,11 @@
 
 ## General
 
-- SecureBaseView -> NotSecureBaseView
-    - Umbenennen?
-- Validation in eine Helper Klasse auslagern?
-    - Message Dateien anpassen.
+- ~~SecureBaseView -> NotSecureBaseView~~
+    - ~~Umbenennen?~~
+        - ~~IsAuthentificatedBaseView und IsNotAuthentificatedBaseView~~
+- ~~Validation in eine Helper Klasse auslagern?~~
+    - ~~Message Dateien anpassen.~~
 - ~~Home~~
     - ~~Logo~~
     - ~~User~~
@@ -106,9 +107,9 @@
 
 - ~~Anlegen~~
 - ~~Benutzen~~
-- rememberMeServices
-    - Duration
-    - SecretKey
+- ~~rememberMeServices~~
+    - ~~Duration~~
+    - ~~SecretKey~~
 
 ## Max Sessions
 
