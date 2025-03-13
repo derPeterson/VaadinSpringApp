@@ -14,14 +14,14 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.helper.components.CardComponent;
+import de.derpeterson.app.helper.ui.NotificationHelper;
+import de.derpeterson.app.helper.ui.VaadinUIHelper;
+import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.PasswordResetService;
-import de.derpeterson.app.ui.components.CardComponent;
-import de.derpeterson.app.ui.helper.NotificationHelper;
-import de.derpeterson.app.ui.helper.VaadinUIHelper;
-import de.derpeterson.app.ui.helper.ValidationHelper;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;

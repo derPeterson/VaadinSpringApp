@@ -20,6 +20,10 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.helper.components.RegistrationCardComponent;
+import de.derpeterson.app.helper.ui.NotificationHelper;
+import de.derpeterson.app.helper.ui.VaadinUIHelper;
+import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
@@ -30,13 +34,12 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.service.VerificationService;
-import de.derpeterson.app.ui.components.RegistrationCardComponent;
-import de.derpeterson.app.ui.helper.NotificationHelper;
-import de.derpeterson.app.ui.helper.VaadinUIHelper;
-import de.derpeterson.app.ui.helper.ValidationHelper;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.Collections;
@@ -47,6 +50,8 @@ import java.util.Optional;
 @PageTitle("Registration")
 @AnonymousAllowed
 public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
+
+    private static final Logger logger = LoggerFactory.getLogger(RegistrationView.class);
 
     private static final String BASE_FAILED_TITLE_MESSAGE_KEY = "base.failed.title";
 
@@ -194,13 +199,21 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
 
         userService.saveUser(userEntity);
 
-        boolean emailSent = verificationService.sendVerificationEmailByUser(userEntity);
+        try {
+            boolean emailSent = verificationService.sendVerificationEmailByUser(userEntity);
 
-        if (emailSent) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"),
-                    MessageFormat.format(i18nProvider.getTranslation("registrationView.registration.success_message"), userEntity.getEmail()),
-                    -1, NotificationHelper.NotificationType.SUCCESS);
-        } else {
+            if (emailSent) {
+                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"),
+                        MessageFormat.format(i18nProvider.getTranslation("registrationView.registration.success_message"), userEntity.getEmail()),
+                        -1, NotificationHelper.NotificationType.SUCCESS);
+            } else {
+                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
+                        i18nProvider.getTranslation("base.failed.message"),
+                        -1, NotificationHelper.NotificationType.ERROR);
+            }
+        } catch (IOException e) {
+            logger.error("Exception occurred:", e);
+
             NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
                     i18nProvider.getTranslation("base.failed.message"),
                     -1, NotificationHelper.NotificationType.ERROR);
@@ -208,13 +221,17 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
     }
 
     private List<? extends AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>> createRequiredFormCompontents() {
+        formComponents.firstNameField.setRequiredIndicatorVisible(true);
+        formComponents.lastNameField.setRequiredIndicatorVisible(true);
         formComponents.emailField.setRequiredIndicatorVisible(true);
         formComponents.confirmEmailField.setRequiredIndicatorVisible(true);
         formComponents.passwordField.setRequiredIndicatorVisible(true);
         formComponents.confirmPasswordField.setRequiredIndicatorVisible(true);
+        formComponents.genderComboBox().setRequiredIndicatorVisible(true);
         formComponents.birthDatePicker.setRequiredIndicatorVisible(true);
 
-        return List.of(formComponents.emailField, formComponents.confirmEmailField, formComponents.passwordField, formComponents.confirmPasswordField, formComponents.birthDatePicker);
+        return List.of(formComponents.firstNameField, formComponents.lastNameField, formComponents.emailField, formComponents.confirmEmailField,
+                formComponents.passwordField, formComponents.confirmPasswordField, formComponents.genderComboBox, formComponents.birthDatePicker);
     }
 
     private FormComponents createFormComponents() {

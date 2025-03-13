@@ -14,22 +14,27 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.helper.components.CardComponent;
+import de.derpeterson.app.helper.ui.NotificationHelper;
+import de.derpeterson.app.helper.ui.VaadinUIHelper;
+import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.VerificationService;
-import de.derpeterson.app.ui.components.CardComponent;
-import de.derpeterson.app.ui.helper.NotificationHelper;
-import de.derpeterson.app.ui.helper.VaadinUIHelper;
-import de.derpeterson.app.ui.helper.ValidationHelper;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
 
 @Route("verification")
 @PageTitle("Verification")
 @AnonymousAllowed
 public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLayout> implements HasUrlParameter<String> {
+
+    private static final Logger logger = LoggerFactory.getLogger(VerificationView.class);
 
     private static final String BASE_FAILED_TITLE_MESSAGE_KEY = "base.failed.title";
     private static final String BASE_FAILED_TEXT_MESSAGE_KEY = "base.failed.message";
@@ -119,11 +124,19 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardTextLayout.add(expiredText2);
 
         Button resendButton = new Button(i18nProvider.getTranslation("base.resend_button"), event -> {
-            boolean emailSent = verificationService.sendVerificationEmailByToken(token);
-            if (emailSent) {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"), i18nProvider.getTranslation("verificationView.expired.success_message"), -1, NotificationHelper.NotificationType.SUCCESS);
-            } else {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY), i18nProvider.getTranslation(BASE_FAILED_TEXT_MESSAGE_KEY), -1, NotificationHelper.NotificationType.ERROR);
+            try {
+                boolean emailSent = verificationService.sendVerificationEmailByToken(token);
+                if (emailSent) {
+                    NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"), i18nProvider.getTranslation("verificationView.expired.success_message"), -1, NotificationHelper.NotificationType.SUCCESS);
+                } else {
+                    NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY), i18nProvider.getTranslation(BASE_FAILED_TEXT_MESSAGE_KEY), -1, NotificationHelper.NotificationType.ERROR);
+                }
+            } catch (IOException e) {
+                logger.error("Exception occurred:", e);
+
+                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
+                        i18nProvider.getTranslation("base.failed.message"),
+                        -1, NotificationHelper.NotificationType.ERROR);
             }
         });
         resendButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
@@ -193,11 +206,19 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
                 return;
             }
 
-            boolean emailSent = verificationService.sendVerificationEmailByEmail(emailField.getValue());
-            if (emailSent) {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"), i18nProvider.getTranslation("verificationView.not_found.success_message"), -1, NotificationHelper.NotificationType.SUCCESS);
-            } else {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY), i18nProvider.getTranslation(BASE_FAILED_TEXT_MESSAGE_KEY), -1, NotificationHelper.NotificationType.ERROR);
+            try {
+                boolean emailSent = verificationService.sendVerificationEmailByEmail(emailField.getValue());
+                if (emailSent) {
+                    NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"), i18nProvider.getTranslation("verificationView.not_found.success_message"), -1, NotificationHelper.NotificationType.SUCCESS);
+                } else {
+                    NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY), i18nProvider.getTranslation(BASE_FAILED_TEXT_MESSAGE_KEY), -1, NotificationHelper.NotificationType.ERROR);
+                }
+            } catch (IOException e) {
+                logger.error("Exception occurred:", e);
+
+                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
+                        i18nProvider.getTranslation("base.failed.message"),
+                        -1, NotificationHelper.NotificationType.ERROR);
             }
         });
         sendButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());

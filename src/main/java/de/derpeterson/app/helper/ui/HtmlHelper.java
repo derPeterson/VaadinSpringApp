@@ -1,4 +1,4 @@
-package de.derpeterson.app.ui.helper;
+package de.derpeterson.app.helper.ui;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -6,7 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class HtmlHelper {
-    
+
     public static String ensureParagraphTags(String input) {
         if (StringUtils.isBlank(input)) {
             return "<p></p>";

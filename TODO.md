@@ -73,6 +73,8 @@
 - ~~Failed~~
     - ~~Admin Notification~~
 - Design
+    - ~~Verification~~
+    - Password Reset
 
 ## Notification
 

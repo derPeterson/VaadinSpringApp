@@ -29,7 +29,8 @@ public class EmailQueueEntity {
     @Column(nullable = false)
     private String subject;
 
-    @Column(nullable = false)
+    @Lob
+    @Column(nullable = false, columnDefinition = "CLOB")
     private String body;
 
     @Enumerated(EnumType.STRING)

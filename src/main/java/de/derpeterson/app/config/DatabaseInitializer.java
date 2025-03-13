@@ -3,6 +3,7 @@ package de.derpeterson.app.config;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.RoleRepository;
 import de.derpeterson.app.repository.UserRepository;
@@ -55,8 +56,11 @@ public class DatabaseInitializer {
 
         if (userRepository.findByEmail("admin@example.com").isEmpty()) {
             UserEntity adminUserEntity = UserEntity.builder()
+                    .firstName("John")
+                    .lastName("Doe")
                     .password(passwordEncoder.encode("Admin@123"))
                     .email("admin@example.com")
+                    .gender(Gender.OTHER)
                     .birthDate(java.time.LocalDate.of(1990, 1, 1))
                     .roleEntities(Set.of(adminRoleEntity, userRoleEntity))
                     .enabled(true)

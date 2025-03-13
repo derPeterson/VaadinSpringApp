@@ -2,12 +2,15 @@ package de.derpeterson.app.service;
 
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -22,12 +25,15 @@ public class EmailService {
     private final JavaMailSender mailSender;
 
     @Async("emailTaskExecutor")
-    public void sendEmail(UserEntity userEntity, String subject, String body) throws MailException {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(userEntity.getEmail());
-        message.setSubject(subject);
-        message.setText(body);
-        message.setFrom(configService.getString(ConfigEntry.EMAIL_FROM));
+    public void sendEmail(UserEntity userEntity, String subject, String htmlContent) throws MailException, MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        message.addHeader("Content-Type", "text/html; charset=UTF-8");
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        helper.setTo(userEntity.getEmail());
+        helper.setSubject(subject);
+        helper.setText(htmlContent, true);
+        helper.setFrom(configService.getString(ConfigEntry.EMAIL_FROM));
 
         mailSender.send(message);
     }

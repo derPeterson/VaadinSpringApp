@@ -27,9 +27,11 @@ public class UserEntity {
     private Long id;
 
     @Column(nullable = true)
+    @NotNull(message = "Der Vorname darf nicht leer sein.")
     private String firstName;
 
     @Column(nullable = true)
+    @NotNull(message = "Der Nachname darf nicht leer sein.")
     private String lastName;
 
     @Column(nullable = false)
@@ -48,6 +50,7 @@ public class UserEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = true)
+    @NotNull(message = "Der Geschlecht darf nicht leer sein.")
     private Gender gender;
 
     @Column(nullable = false)

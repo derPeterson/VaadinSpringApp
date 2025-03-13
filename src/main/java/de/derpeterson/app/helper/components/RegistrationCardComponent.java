@@ -1,4 +1,4 @@
-package de.derpeterson.app.ui.components;
+package de.derpeterson.app.helper.components;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;

@@ -38,11 +38,9 @@ public class PasswordResetService {
 
     private final EmailQueueService emailQueueService;
 
-    private final PasswordResetService self;
-
     @Transactional
     public String createToken(UserEntity user) {
-        self.setInactiveTokensForUser(user);
+        setInactiveTokensForUser(user);
 
         String token = UUID.randomUUID().toString();
         PasswordResetTokenEntity resetToken = new PasswordResetTokenEntity();
@@ -124,7 +122,7 @@ public class PasswordResetService {
         if (userOptional.isPresent()) {
             UserEntity user = userOptional.get();
             if (user.isEnabled()) {
-                String token = self.createToken(user);
+                String token = createToken(user);
 
                 String passwordResetLink = UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))
                         .pathSegment("reset-password", token).toUriString();

@@ -1,4 +1,4 @@
-package de.derpeterson.app.ui.helper;
+package de.derpeterson.app.helper.ui;
 
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.AbstractSinglePropertyField;

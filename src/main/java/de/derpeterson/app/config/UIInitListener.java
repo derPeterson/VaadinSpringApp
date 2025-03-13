@@ -3,7 +3,7 @@ package de.derpeterson.app.config;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.server.ServiceInitEvent;
 import com.vaadin.flow.server.VaadinServiceInitListener;
-import de.derpeterson.app.ui.helper.NotificationHelper;
+import de.derpeterson.app.helper.ui.NotificationHelper;
 import org.springframework.stereotype.Component;
 
 @Component

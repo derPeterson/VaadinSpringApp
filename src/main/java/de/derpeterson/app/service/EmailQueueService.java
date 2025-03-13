@@ -6,6 +6,7 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.EmailStatus;
 import de.derpeterson.app.model.enums.EmailType;
 import de.derpeterson.app.repository.EmailQueueRepository;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +57,7 @@ public class EmailQueueService {
                     email.setStatus(EmailStatus.SENT);
                     emailQueueRepository.save(email);
                     logger.info("Email successfully sent to {}.", email.getUserEntity().getEmail());
-                } catch (MailException e) {
+                } catch (MailException | MessagingException e) {
                     if (email.getRetryCount() < configService.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)) {
                         email.setRetryCount(email.getRetryCount() + 1);
                         email.setLastRetryAt(LocalDateTime.now());
