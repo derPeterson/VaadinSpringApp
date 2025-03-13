@@ -111,9 +111,9 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardTitleLayout.add(title);
 
         Span expiredText1 = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.expired.text1")));
-        expiredText1.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
+        expiredText1.addClassNames(LumoUtility.Whitespace.NOWRAP);
         Span expiredText2 = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.expired.text2")));
-        expiredText2.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
+        expiredText2.addClassNames(LumoUtility.Whitespace.NOWRAP);
         VerticalLayout cardTextLayout = new VerticalLayout();
         cardTextLayout.setWidthFull();
         cardTextLayout.setPadding(false);
@@ -135,7 +135,7 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
                 logger.error("Exception occurred:", e);
 
                 NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                        i18nProvider.getTranslation("base.failed.message"),
+                        i18nProvider.getTranslation(BASE_FAILED_TEXT_MESSAGE_KEY),
                         -1, NotificationHelper.NotificationType.ERROR);
             }
         });
@@ -178,9 +178,9 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardTitleLayout.add(title);
 
         Span existsNotText1 = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.not_found.text1")));
-        existsNotText1.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
+        existsNotText1.addClassNames(LumoUtility.Whitespace.NOWRAP);
         Span existsNotText2 = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.not_found.text2")));
-        existsNotText2.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
+        existsNotText2.addClassNames(LumoUtility.Whitespace.NOWRAP);
         VerticalLayout cardTextLayout = new VerticalLayout();
         cardTextLayout.setWidthFull();
         cardTextLayout.setPadding(false);
@@ -217,7 +217,7 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
                 logger.error("Exception occurred:", e);
 
                 NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                        i18nProvider.getTranslation("base.failed.message"),
+                        i18nProvider.getTranslation(BASE_FAILED_TEXT_MESSAGE_KEY),
                         -1, NotificationHelper.NotificationType.ERROR);
             }
         });
@@ -260,7 +260,7 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardTitleLayout.add(title);
 
         Span successText = new Span(i18nProvider.getTranslation("verificationView.success.text"));
-        successText.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
+        successText.addClassNames(LumoUtility.Whitespace.NOWRAP);
         HorizontalLayout cardTextLayout = new HorizontalLayout();
         cardTextLayout.setWidthFull();
         cardTextLayout.setPadding(false);

@@ -87,7 +87,7 @@ public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalL
         cardTitleLayout.add(title);
 
         Span text = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("forgotPasswordView.text")));
-        text.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
+        text.addClassNames(LumoUtility.Whitespace.NOWRAP);
         VerticalLayout cardTextLayout = new VerticalLayout();
         cardTextLayout.setWidthFull();
         cardTextLayout.setPadding(false);

@@ -160,7 +160,7 @@ public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLa
         cardTitleLayout.add(title);
 
         Span invalidText = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("resetPasswordView.invalid.text")));
-        invalidText.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
+        invalidText.addClassNames(LumoUtility.Whitespace.NOWRAP);
         VerticalLayout cardTextLayout = new VerticalLayout();
         cardTextLayout.setWidthFull();
         cardTextLayout.setPadding(false);
