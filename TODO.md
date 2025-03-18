@@ -7,6 +7,8 @@
         - ~~IsAuthentificatedBaseView und IsNotAuthentificatedBaseView~~
 - ~~Validation in eine Helper Klasse auslagern?~~
     - ~~Message Dateien anpassen.~~
+- ~~Message Konstante~~
+    - ~~Überall verwenden~~
 - ~~Home~~
     - ~~Logo~~
     - ~~User~~
@@ -37,12 +39,11 @@
 - ~~Database~~
 - ~~Service~~
 - ~~Email~~
-- Page
+- ~~Page~~
     - ~~Forgot Password~~
         - ~~Background~~
     - ~~Reset Password~~
         - ~~Background~~
-        - Email bei Erfolg?
 - ~~Create Token~~
     - ~~Old Token -> Inactive~~
 
@@ -72,9 +73,9 @@
 - ~~Thread Safe~~
 - ~~Failed~~
     - ~~Admin Notification~~
-- Design
+- ~~Design~~
     - ~~Verification~~
-    - Password Reset
+    - ~~Password Reset~~
 
 ## Notification
 

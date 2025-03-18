@@ -18,8 +18,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.derpeterson.app.helper.components.OverlayUserIcon;
-import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.IconSize;
@@ -27,6 +26,7 @@ import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.ui.components.OverlayUserIcon;
 import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,15 +42,15 @@ import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLIN
 @AnonymousAllowed
 public class HomeView extends AppLayout {
 
-    private final CustomI18NProvider i18nProvider;
+    private final MessageProperties messageProperties;
     private final transient UserService userService;
     private final transient SecurityService securityService;
 
     private final transient Optional<UserDetails> authenticatedUser;
 
     @Autowired
-    public HomeView(CustomI18NProvider i18nProvider, SecurityService securityService, HttpServletRequest request, ConfigService configService, UserService userService) {
-        this.i18nProvider = i18nProvider;
+    public HomeView(MessageProperties messageProperties, SecurityService securityService, HttpServletRequest request, ConfigService configService, UserService userService) {
+        this.messageProperties = messageProperties;
         this.securityService = securityService;
         this.userService = userService;
 
@@ -79,7 +79,7 @@ public class HomeView extends AppLayout {
         userLayout.setWidthFull();
         userLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
 
-        Button userIconButton = new Button(new OverlayUserIcon(i18nProvider, new Image("themes/custom-theme/user_icon.png", "User Icon"),
+        Button userIconButton = new Button(new OverlayUserIcon(messageProperties, new Image("themes/custom-theme/user_icon.png", "User Icon"),
                 securityService.getAuthenticatedUser(request).isPresent() ? UserStatus.AVAILABLE : UserStatus.OFFLINE, IconSize.PIXEL_48));
 
         Popover popover = createUserPopover(userIconButton);
@@ -135,11 +135,11 @@ public class HomeView extends AppLayout {
         contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         contentLayout.addClassNames(LumoUtility.Padding.Top.SMALL, LumoUtility.Padding.Bottom.SMALL, LumoUtility.Gap.SMALL);
 
-        contentLayout.add(new OverlayUserIcon(i18nProvider, new Image("themes/custom-theme/user_icon.png", "User Icon"),
+        contentLayout.add(new OverlayUserIcon(messageProperties, new Image("themes/custom-theme/user_icon.png", "User Icon"),
                 authenticatedUser.isPresent() ? UserStatus.AVAILABLE : UserStatus.OFFLINE, IconSize.PIXEL_96));
 
         if (authenticatedUser.isPresent()) {
-            Span onlineText = new Span(i18nProvider.getTranslation("base.online_text"));
+            Span onlineText = new Span(messageProperties.getBaseOnlineText());
             onlineText.addClassNames(LumoUtility.TextColor.PRIMARY, LumoUtility.FontWeight.SEMIBOLD);
             contentLayout.add(onlineText);
 
@@ -156,12 +156,12 @@ public class HomeView extends AppLayout {
                 contentLayout.add(emailText);
             }
         } else {
-            Span offlineText = new Span(i18nProvider.getTranslation("base.offline_text"));
+            Span offlineText = new Span(messageProperties.getBaseOfflineText());
             offlineText.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.SEMIBOLD);
             contentLayout.add(offlineText);
         }
 
-        Button manageAccountButton = new Button(i18nProvider.getTranslation("base.manage_account_button"));
+        Button manageAccountButton = new Button(messageProperties.getBaseManageAccountButton());
         manageAccountButton.setPrefixComponent(VaadinIcon.COG.create());
         manageAccountButton.setEnabled(authenticatedUser.isPresent());
         if (authenticatedUser.isPresent()) {
@@ -207,19 +207,19 @@ public class HomeView extends AppLayout {
         contentLayout.add(flagLayout);
 
         if (authenticatedUser.isPresent()) {
-            Button logoutButton = new Button(i18nProvider.getTranslation("base.logout_button"));
+            Button logoutButton = new Button(messageProperties.getBaseLogoutButton());
             logoutButton.setPrefixComponent(VaadinIcon.SIGN_OUT.create());
             logoutButton.addClickListener(buttonClickEvent -> securityService.logout());
             logoutButton.setWidthFull();
 
             contentLayout.add(logoutButton);
         } else {
-            Button registrationButton = new Button(i18nProvider.getTranslation("base.registration_button"));
+            Button registrationButton = new Button(messageProperties.getBaseRegistrationButton());
             registrationButton.setPrefixComponent(VaadinIcon.EDIT.create());
             registrationButton.addClickListener(buttonClickEvent -> UI.getCurrent().navigate(RegistrationView.class));
             registrationButton.setWidthFull();
 
-            Button loginButton = new Button(i18nProvider.getTranslation("base.login_button"));
+            Button loginButton = new Button(messageProperties.getBaseLoginButton());
             loginButton.setPrefixComponent(VaadinIcon.SIGN_IN.create());
             loginButton.addClickListener(buttonClickEvent -> UI.getCurrent().navigate(LoginView.class));
             loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);

@@ -1,17 +1,17 @@
-package de.derpeterson.app.helper.components;
+package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.Tooltip;
-import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.model.enums.UserStatus;
 
 public class OverlayUserIcon extends Div {
 
-    public OverlayUserIcon(CustomI18NProvider i18nProvider, Image userImage, UserStatus userStatus, IconSize iconSize) {
+    public OverlayUserIcon(MessageProperties messageProperties, Image userImage, UserStatus userStatus, IconSize iconSize) {
         Div container = new Div();
 
         container.getStyle()
@@ -27,7 +27,7 @@ public class OverlayUserIcon extends Div {
                 .set("box-shadow", "0 0 0 0.5px black");
 
         Tooltip.forComponent(userImage)
-                .withText(i18nProvider.getTranslation(userStatus.getTextKey()))
+                .withText(messageProperties.getTranslation(userStatus.getTextKey()))
                 .withPosition(Tooltip.TooltipPosition.BOTTOM)
                 .withFocusDelay(1000)
                 .withHoverDelay(1000)
@@ -63,7 +63,7 @@ public class OverlayUserIcon extends Div {
             }
 
             Tooltip.forComponent(overlayIcon)
-                    .withText(i18nProvider.getTranslation(userStatus.getTextKey()))
+                    .withText(messageProperties.getTranslation(userStatus.getTextKey()))
                     .withPosition(Tooltip.TooltipPosition.BOTTOM)
                     .withFocusDelay(1000)
                     .withHoverDelay(1000)

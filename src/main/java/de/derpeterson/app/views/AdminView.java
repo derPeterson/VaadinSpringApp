@@ -7,7 +7,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.IsAuthentificatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import jakarta.annotation.security.RolesAllowed;
@@ -19,7 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @RolesAllowed("ADMIN")
 public class AdminView extends IsAuthentificatedBaseView<VerticalLayout> {
 
-    public AdminView(CustomI18NProvider i18nProvider, SecurityService securityService, HttpServletRequest request) {
+    public AdminView(MessageProperties messageProperties, SecurityService securityService, HttpServletRequest request) {
         super(securityService, request, new VerticalLayout());
 
         setSizeFull();
@@ -37,7 +37,7 @@ public class AdminView extends IsAuthentificatedBaseView<VerticalLayout> {
         }
 
         // Logout-Button
-        Button logoutButton = new Button(i18nProvider.getTranslation("base.logout_button"), event -> securityService.logout());
+        Button logoutButton = new Button(messageProperties.getBaseLogoutButton(), event -> securityService.logout());
 
         add(logoutButton);
     }

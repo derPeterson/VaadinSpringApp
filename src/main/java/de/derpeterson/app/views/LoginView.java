@@ -19,12 +19,12 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.derpeterson.app.helper.components.CardComponent;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.VaadinUIHelper;
-import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.ui.components.CardComponent;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -32,14 +32,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Route("login")
 @PageTitle("Login")
 @AnonymousAllowed
 public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
 
-    public LoginView(CustomI18NProvider i18nProvider, AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder, SecurityService securityService, HttpServletRequest request) {
+    public LoginView(MessageProperties messageProperties, AuthenticationManager authenticationManager, SecurityService securityService, HttpServletRequest request) {
         super(securityService, request, new HorizontalLayout());
 
         setSizeFull();
@@ -47,12 +46,12 @@ public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
         addClassNames("login-bg-fullscreen");
 
         // UI Elements
-        RouterLink createAccountLink = new RouterLink(i18nProvider.getTranslation("loginView.create_account_link"), RegistrationView.class);
-        EmailField emailField = new EmailField(i18nProvider.getTranslation("loginView.email_field"));
-        PasswordField passwordField = new PasswordField(i18nProvider.getTranslation("loginView.password_field"));
-        RouterLink forgotPasswordLink = new RouterLink(i18nProvider.getTranslation("loginView.forgot_password_link"), ForgotPasswordView.class);
-        Checkbox rememberMeCheckBox = new Checkbox(i18nProvider.getTranslation("loginView.remember_me_checkbox"));
-        Button loginButton = new Button(i18nProvider.getTranslation("base.login_button"), event -> {
+        RouterLink createAccountLink = new RouterLink(messageProperties.getLoginCreateAccountLink(), RegistrationView.class);
+        EmailField emailField = new EmailField(messageProperties.getLoginEmailField());
+        PasswordField passwordField = new PasswordField(messageProperties.getLoginPasswordField());
+        RouterLink forgotPasswordLink = new RouterLink(messageProperties.getLoginForgotPasswordLink(), ForgotPasswordView.class);
+        Checkbox rememberMeCheckBox = new Checkbox(messageProperties.getLoginRememberMeCheckbox());
+        Button loginButton = new Button(messageProperties.getBaseLoginButton(), event -> {
             try {
                 Authentication authentication = authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(emailField.getValue(), passwordField.getValue()));
@@ -63,11 +62,11 @@ public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
                     securityService.storeAuthenticatedUser(request, userDetails, rememberMeCheckBox.getValue());
                 }
 
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"), i18nProvider.getTranslation("loginView.login.success_message"), NotificationHelper.NotificationType.SUCCESS);
+                NotificationHelper.getInstance().showNotification(messageProperties.getBaseSuccessTitle(), messageProperties.getLoginSuccessMessage(), NotificationHelper.NotificationType.SUCCESS);
 
                 getUI().ifPresent(ui -> ui.navigate(AdminView.class));
             } catch (AuthenticationException e) {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.failed.title"), i18nProvider.getTranslation("loginView.login.failed_message"), -1, NotificationHelper.NotificationType.ERROR);
+                NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(), messageProperties.getLoginFailedMessage(), -1, NotificationHelper.NotificationType.ERROR);
             }
         });
 
@@ -85,7 +84,7 @@ public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
         cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
 
-        H1 title = new H1(i18nProvider.getTranslation("loginView.title"));
+        H1 title = new H1(messageProperties.getLoginTitle());
         title.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.FontWeight.BOLD);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
@@ -94,7 +93,7 @@ public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
-        Span createAccountQuestionText = new Span(i18nProvider.getTranslation("loginView.create_account_question"));
+        Span createAccountQuestionText = new Span(messageProperties.getLoginCreateAccountQuestion());
         createAccountLink.addClassNames("underline");
 
         HorizontalLayout cardSecondaryTitleLayout = new HorizontalLayout();

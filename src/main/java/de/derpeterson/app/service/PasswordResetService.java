@@ -1,6 +1,8 @@
 package de.derpeterson.app.service;
 
+import de.derpeterson.app.helper.image.ImageHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.PasswordResetTokenEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -9,18 +11,23 @@ import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.PasswordResetTokenRepository;
 import de.derpeterson.app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.text.MessageFormat;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,7 +37,7 @@ public class PasswordResetService {
 
     private static final Logger logger = LoggerFactory.getLogger(PasswordResetService.class);
 
-    private final CustomI18NProvider i18nProvider;
+    private final MessageProperties messageProperties;
     private final PasswordResetTokenRepository tokenRepository;
     private final UserRepository userRepository;
     private final ConfigService configService;
@@ -117,19 +124,17 @@ public class PasswordResetService {
     }
 
     @Transactional
-    public boolean sendPasswordResetEmail(String email) {
+    public boolean sendPasswordResetEmail(String email) throws IOException {
         Optional<UserEntity> userOptional = userRepository.findByEmail(email);
         if (userOptional.isPresent()) {
             UserEntity user = userOptional.get();
             if (user.isEnabled()) {
                 String token = createToken(user);
 
-                String passwordResetLink = UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))
-                        .pathSegment("reset-password", token).toUriString();
                 emailQueueService.addEmailToQueue(
                         user,
-                        i18nProvider.getTranslation("email.password_reset.subject"),
-                        MessageFormat.format(i18nProvider.getTranslation("email.password_reset.body"), passwordResetLink),
+                        messageProperties.getEmailResetPasswordSubject(),
+                        loadEmailTemplate(token),
                         EmailType.PASSWORD_RESET
                 );
                 logger.info("Password reset link for {} sent.", user.getEmail());
@@ -137,5 +142,22 @@ public class PasswordResetService {
             }
         }
         return false;
+    }
+
+    private String loadEmailTemplate(String token) throws IOException {
+        Map<String, String> placeholders = Map.of(
+                "SERVICE_LOGO", ImageHelper.convertImageToBase64("src/main/frontend/themes/custom-theme/service_logo.png"),
+                "SERVICE_NAME", configService.getString(ConfigEntry.SERVICE_NAME),
+                "RESET_PASSWORD_LINK", UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))
+                        .pathSegment("reset-password", token).toUriString());
+
+        ClassPathResource resource = new ClassPathResource("email/reset_password_" + CustomI18NProvider.getCurrentLocale().getLanguage() + ".html");
+        String content = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            content = StringUtils.replace(content, "{{" + entry.getKey() + "}}", entry.getValue());
+        }
+
+        return content;
     }
 }

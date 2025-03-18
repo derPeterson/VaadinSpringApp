@@ -2,6 +2,7 @@ package de.derpeterson.app.service;
 
 import de.derpeterson.app.helper.image.ImageHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.VerificationTokenEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -35,7 +36,7 @@ public class VerificationService {
 
     private static final Logger logger = LoggerFactory.getLogger(VerificationService.class);
 
-    private final CustomI18NProvider i18nProvider;
+    private final MessageProperties messageProperties;
     private final VerificationTokenRepository tokenRepository;
     private final UserRepository userRepository;
     private final ConfigService configService;
@@ -147,7 +148,7 @@ public class VerificationService {
     private void sendVerificationEmail(UserEntity user, String token) throws IOException {
         emailQueueService.addEmailToQueue(
                 user,
-                i18nProvider.getTranslation("email.verification.subject"),
+                messageProperties.getEmailVerificationSubject(),
                 loadEmailTemplate(user, token),
                 EmailType.VERIFICATION
         );

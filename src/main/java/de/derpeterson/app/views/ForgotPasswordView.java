@@ -15,16 +15,19 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.derpeterson.app.helper.components.CardComponent;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
-import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.PasswordResetService;
+import de.derpeterson.app.ui.components.CardComponent;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
 
 @Route("forgot-password")
@@ -32,15 +35,17 @@ import java.util.List;
 @AnonymousAllowed
 public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
 
-    private final CustomI18NProvider i18nProvider;
+    private static final Logger logger = LoggerFactory.getLogger(ForgotPasswordView.class);
+
+    private final MessageProperties messageProperties;
     private final transient PasswordResetService passwordResetService;
 
     private final VerticalLayout mainContent;
 
-    public ForgotPasswordView(CustomI18NProvider i18nProvider, PasswordResetService passwordResetService, SecurityService securityService, HttpServletRequest request) {
+    public ForgotPasswordView(MessageProperties messageProperties, PasswordResetService passwordResetService, SecurityService securityService, HttpServletRequest request) {
         super(securityService, request, new HorizontalLayout());
 
-        this.i18nProvider = i18nProvider;
+        this.messageProperties = messageProperties;
         this.passwordResetService = passwordResetService;
 
         setSizeFull();
@@ -77,7 +82,7 @@ public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalL
         cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardIconLayout.add(successIcon);
 
-        H1 title = new H1(i18nProvider.getTranslation(i18nProvider.getTranslation("forgotPasswordView.title")));
+        H1 title = new H1(messageProperties.getForgotPasswordTitle());
         title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
@@ -86,7 +91,7 @@ public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalL
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
-        Span text = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("forgotPasswordView.text")));
+        Span text = new Span(messageProperties.getForgotPasswordText());
         text.addClassNames(LumoUtility.Whitespace.NOWRAP);
         VerticalLayout cardTextLayout = new VerticalLayout();
         cardTextLayout.setWidthFull();
@@ -96,33 +101,41 @@ public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalL
         cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTextLayout.add(text);
 
-        EmailField emailField = new EmailField(i18nProvider.getTranslation("verificationView.email_field"));
+        EmailField emailField = new EmailField(messageProperties.getForgotPasswordEmailField());
         emailField.setClearButtonVisible(true);
         emailField.setWidthFull();
         emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
         emailField.setClearButtonVisible(true);
 
-        Button sendButton = new Button(i18nProvider.getTranslation("base.send_button"), event -> {
-            if (!ValidationHelper.validateRequiredInputs(List.of(emailField), i18nProvider)) {
+        Button sendButton = new Button(messageProperties.getBaseSendButton(), event -> {
+            if (!ValidationHelper.validateRequiredInputs(List.of(emailField), messageProperties)) {
                 return;
             }
 
-            if (!ValidationHelper.validateEmailValidInputs(List.of(emailField), i18nProvider)) {
+            if (!ValidationHelper.validateEmailValidInputs(List.of(emailField), messageProperties)) {
                 return;
             }
 
-            boolean emailSent = passwordResetService.sendPasswordResetEmail(emailField.getValue());
-            if (emailSent) {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"), i18nProvider.getTranslation("forgotPasswordView.success_message"), -1, NotificationHelper.NotificationType.SUCCESS);
-            } else {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.failed.title"), i18nProvider.getTranslation("base.failed.message"), -1, NotificationHelper.NotificationType.ERROR);
+            try {
+                boolean emailSent = passwordResetService.sendPasswordResetEmail(emailField.getValue());
+                if (emailSent) {
+                    NotificationHelper.getInstance().showNotification(messageProperties.getBaseSuccessTitle(), messageProperties.getForgotPasswordSuccessMessage(), -1, NotificationHelper.NotificationType.SUCCESS);
+                } else {
+                    NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(), messageProperties.getBaseFailedMessage(), -1, NotificationHelper.NotificationType.ERROR);
+                }
+            } catch (IOException e) {
+                logger.error("Exception occurred:", e);
+
+                NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
+                        messageProperties.getBaseFailedMessage(),
+                        -1, NotificationHelper.NotificationType.ERROR);
             }
         });
         sendButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
         sendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         sendButton.setWidthFull();
 
-        Button loginButton = new Button(i18nProvider.getTranslation("base.login_button"), event -> UI.getCurrent().navigate(LoginView.class));
+        Button loginButton = new Button(messageProperties.getBaseLoginButton(), event -> UI.getCurrent().navigate(LoginView.class));
         loginButton.setPrefixComponent(VaadinIcon.SIGN_IN.create());
         loginButton.setWidthFull();
 

@@ -14,14 +14,14 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.derpeterson.app.helper.components.CardComponent;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
-import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.PasswordResetService;
+import de.derpeterson.app.ui.components.CardComponent;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
@@ -31,18 +31,15 @@ import java.util.List;
 @AnonymousAllowed
 public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLayout> implements HasUrlParameter<String> {
 
-    private static final String BASE_FAILED_TITLE_MESSAGE_KEY = "base.failed.title";
-    private static final String BASE_HOME_BUTTON_MESSAGE_KEY = "base.home_button";
-
-    private final CustomI18NProvider i18nProvider;
+    private final MessageProperties messageProperties;
     private final transient PasswordResetService passwordResetService;
 
     private final VerticalLayout mainContent;
 
-    public ResetPasswordView(CustomI18NProvider i18nProvider, PasswordResetService passwordResetService, SecurityService securityService, HttpServletRequest request) {
+    public ResetPasswordView(MessageProperties messageProperties, PasswordResetService passwordResetService, SecurityService securityService, HttpServletRequest request) {
         super(securityService, request, new HorizontalLayout());
 
-        this.i18nProvider = i18nProvider;
+        this.messageProperties = messageProperties;
         this.passwordResetService = passwordResetService;
 
         setSizeFull();
@@ -80,7 +77,7 @@ public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLa
         cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
 
-        H1 title = new H1(i18nProvider.getTranslation(i18nProvider.getTranslation("resetPasswordView.reset.title")));
+        H1 title = new H1(messageProperties.getResetPasswordTitle());
         title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
@@ -89,43 +86,43 @@ public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLa
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
-        PasswordField passwordField = new PasswordField(i18nProvider.getTranslation("resetPasswordView.reset.new_password_field"));
+        PasswordField passwordField = new PasswordField(messageProperties.getResetPasswordNewPasswordField());
         passwordField.setPrefixComponent(VaadinIcon.LOCK.create());
         passwordField.setClearButtonVisible(true);
         passwordField.setRequiredIndicatorVisible(true);
         passwordField.setWidthFull();
 
-        PasswordField confirmPasswordField = new PasswordField(i18nProvider.getTranslation("resetPasswordView.reset.confirm_field"));
+        PasswordField confirmPasswordField = new PasswordField(messageProperties.getResetPasswordConfirmField());
         confirmPasswordField.setPrefixComponent(VaadinIcon.LOCK.create());
         confirmPasswordField.setClearButtonVisible(true);
         confirmPasswordField.setRequiredIndicatorVisible(true);
         confirmPasswordField.setWidthFull();
 
-        Button resetButton = new Button(i18nProvider.getTranslation("base.reset_button"), event -> {
-            if (!ValidationHelper.validateRequiredInputs(List.of(passwordField, confirmPasswordField), i18nProvider)) {
+        Button resetButton = new Button(messageProperties.getBaseResetButton(), event -> {
+            if (!ValidationHelper.validateRequiredInputs(List.of(passwordField, confirmPasswordField), messageProperties)) {
                 return;
             }
 
-            if (!ValidationHelper.validatePasswordSecureInputs(List.of(passwordField, confirmPasswordField), i18nProvider)) {
+            if (!ValidationHelper.validatePasswordSecureInputs(List.of(passwordField, confirmPasswordField), messageProperties)) {
                 return;
             }
 
-            if (!ValidationHelper.validatePasswordConfirmInputs(passwordField, confirmPasswordField, i18nProvider)) {
+            if (!ValidationHelper.validatePasswordConfirmInputs(passwordField, confirmPasswordField, messageProperties)) {
                 return;
             }
 
             boolean success = passwordResetService.resetPassword(token, passwordField.getValue());
             if (success) {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"), i18nProvider.getTranslation("resetPasswordView.reset.success_message"), -1, NotificationHelper.NotificationType.SUCCESS);
+                NotificationHelper.getInstance().showNotification(messageProperties.getBaseSuccessTitle(), messageProperties.getResetPasswordSuccessMessage(), -1, NotificationHelper.NotificationType.SUCCESS);
             } else {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY), i18nProvider.getTranslation("base.failed.message"), -1, NotificationHelper.NotificationType.ERROR);
+                NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(), messageProperties.getBaseFailedMessage(), -1, NotificationHelper.NotificationType.ERROR);
             }
         });
         resetButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
         resetButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         resetButton.setWidthFull();
 
-        Button homeButton = new Button(i18nProvider.getTranslation(BASE_HOME_BUTTON_MESSAGE_KEY), event -> UI.getCurrent().navigate(HomeView.class));
+        Button homeButton = new Button(messageProperties.getBaseHomeButton(), event -> UI.getCurrent().navigate(HomeView.class));
         homeButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
         homeButton.setWidthFull();
 
@@ -150,7 +147,7 @@ public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLa
         cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardIconLayout.add(successIcon);
 
-        H1 title = new H1(i18nProvider.getTranslation(i18nProvider.getTranslation("resetPasswordView.invalid.title")));
+        H1 title = new H1(messageProperties.getResetPasswordInvalidTitle());
         title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
@@ -159,17 +156,9 @@ public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLa
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
-        Span invalidText = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("resetPasswordView.invalid.text")));
-        invalidText.addClassNames(LumoUtility.Whitespace.NOWRAP);
-        VerticalLayout cardTextLayout = new VerticalLayout();
-        cardTextLayout.setWidthFull();
-        cardTextLayout.setPadding(false);
-        cardTextLayout.setSpacing(false);
-        cardTextLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-        cardTextLayout.add(invalidText);
+        VerticalLayout cardTextLayout = getCardTextLayout();
 
-        Button homeButton = new Button(i18nProvider.getTranslation(BASE_HOME_BUTTON_MESSAGE_KEY), event -> UI.getCurrent().navigate(HomeView.class));
+        Button homeButton = new Button(messageProperties.getBaseHomeButton(), event -> UI.getCurrent().navigate(HomeView.class));
         homeButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
         homeButton.setWidthFull();
         homeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -179,5 +168,18 @@ public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLa
         CardComponent cardComponent = new CardComponent(cardContentLayout);
 
         mainContent.add(cardComponent);
+    }
+
+    private VerticalLayout getCardTextLayout() {
+        Span invalidText = new Span(messageProperties.getResetPasswordInvalidText());
+        invalidText.addClassNames(LumoUtility.Whitespace.NOWRAP);
+        VerticalLayout cardTextLayout = new VerticalLayout();
+        cardTextLayout.setWidthFull();
+        cardTextLayout.setPadding(false);
+        cardTextLayout.setSpacing(false);
+        cardTextLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+        cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+        cardTextLayout.add(invalidText);
+        return cardTextLayout;
     }
 }

@@ -20,11 +20,10 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.derpeterson.app.helper.components.RegistrationCardComponent;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
-import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.Gender;
@@ -34,6 +33,7 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.service.VerificationService;
+import de.derpeterson.app.ui.components.RegistrationCardComponent;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +41,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -53,9 +52,7 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
 
     private static final Logger logger = LoggerFactory.getLogger(RegistrationView.class);
 
-    private static final String BASE_FAILED_TITLE_MESSAGE_KEY = "base.failed.title";
-
-    private final transient CustomI18NProvider i18nProvider;
+    private final transient MessageProperties messageProperties;
     private final transient UserService userService;
     private final transient RoleService roleService;
     private final transient PasswordEncoder passwordEncoder;
@@ -65,14 +62,14 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
 
     private final List<? extends AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>> requiredFormComponts;
 
-    public RegistrationView(CustomI18NProvider i18nProvider, UserService userService,
+    public RegistrationView(MessageProperties messageProperties, UserService userService,
                             RoleService roleService, PasswordEncoder passwordEncoder,
                             VerificationService verificationService,
                             SecurityService securityService, HttpServletRequest request) {
 
         super(securityService, request, new HorizontalLayout());
 
-        this.i18nProvider = i18nProvider;
+        this.messageProperties = messageProperties;
         this.userService = userService;
         this.roleService = roleService;
         this.passwordEncoder = passwordEncoder;
@@ -100,7 +97,7 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
 
-        H1 title = new H1(i18nProvider.getTranslation("registrationView.title"));
+        H1 title = new H1(messageProperties.getRegistrationTitle());
         title.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.FontWeight.BOLD);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
@@ -109,7 +106,7 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
-        Span createAccountQuestionText = new Span(i18nProvider.getTranslation("registrationView.login_question"));
+        Span createAccountQuestionText = new Span(messageProperties.getRegistrationLoginQuestion());
 
         HorizontalLayout cardSecondaryTitleLayout = new HorizontalLayout();
         cardSecondaryTitleLayout.setWidthFull();
@@ -142,7 +139,7 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
     }
 
     private Button createRegisterButton() {
-        Button regButton = new Button(i18nProvider.getTranslation("base.registration_button"));
+        Button regButton = new Button(messageProperties.getBaseRegistrationButton());
         regButton.setPrefixComponent(VaadinIcon.EDIT.create());
         regButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         regButton.setWidthFull();
@@ -165,22 +162,22 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
     }
 
     private boolean validateBirthDate() {
-        return ValidationHelper.validateBirthDateBeforeInput(formComponents.birthDatePicker, i18nProvider);
+        return ValidationHelper.validateBirthDateBeforeInput(formComponents.birthDatePicker, messageProperties);
     }
 
     private boolean validatePasswordInputs() {
-        return ValidationHelper.validatePasswordConfirmInputs(formComponents.passwordField, formComponents.confirmPasswordField, i18nProvider)
-                && ValidationHelper.validatePasswordSecureInputs(List.of(formComponents.passwordField, formComponents.confirmPasswordField), i18nProvider);
+        return ValidationHelper.validatePasswordConfirmInputs(formComponents.passwordField, formComponents.confirmPasswordField, messageProperties)
+                && ValidationHelper.validatePasswordSecureInputs(List.of(formComponents.passwordField, formComponents.confirmPasswordField), messageProperties);
     }
 
     private boolean validateEmailInputs() {
-        return ValidationHelper.validateEmailValidInputs(List.of(formComponents.emailField, formComponents.confirmEmailField), i18nProvider)
-                && ValidationHelper.validateEmailConfirmInputs(formComponents.emailField, formComponents.confirmEmailField, i18nProvider)
-                && ValidationHelper.validateEmailNotExistsInput(formComponents.emailField, formComponents.confirmEmailField, userService, i18nProvider);
+        return ValidationHelper.validateEmailValidInputs(List.of(formComponents.emailField, formComponents.confirmEmailField), messageProperties)
+                && ValidationHelper.validateEmailConfirmInputs(formComponents.emailField, formComponents.confirmEmailField, messageProperties)
+                && ValidationHelper.validateEmailNotExistsInput(formComponents.emailField, formComponents.confirmEmailField, userService, messageProperties);
     }
 
     private boolean validateRequiredInputs() {
-        return ValidationHelper.validateRequiredInputs(requiredFormComponts, i18nProvider);
+        return ValidationHelper.validateRequiredInputs(requiredFormComponts, messageProperties);
     }
 
     private void saveUserAndSendEmail() {
@@ -203,19 +200,19 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
             boolean emailSent = verificationService.sendVerificationEmailByUser(userEntity);
 
             if (emailSent) {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"),
-                        MessageFormat.format(i18nProvider.getTranslation("registrationView.registration.success_message"), userEntity.getEmail()),
+                NotificationHelper.getInstance().showNotification(messageProperties.getBaseSuccessTitle(),
+                        messageProperties.getRegistrationSuccessMessage(userEntity.getEmail()),
                         -1, NotificationHelper.NotificationType.SUCCESS);
             } else {
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                        i18nProvider.getTranslation("base.failed.message"),
+                NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
+                        messageProperties.getBaseFailedMessage(),
                         -1, NotificationHelper.NotificationType.ERROR);
             }
         } catch (IOException e) {
             logger.error("Exception occurred:", e);
 
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("base.failed.message"),
+            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
+                    messageProperties.getBaseFailedMessage(),
                     -1, NotificationHelper.NotificationType.ERROR);
         }
     }
@@ -235,39 +232,39 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
     }
 
     private FormComponents createFormComponents() {
-        RouterLink loginLink = new RouterLink(i18nProvider.getTranslation("registrationView.login_link"), LoginView.class);
+        RouterLink loginLink = new RouterLink(messageProperties.getRegistrationLoginLink(), LoginView.class);
         loginLink.addClassNames("underline");
-        TextField firstNameField = new TextField(i18nProvider.getTranslation("registrationView.first_name_field"));
+        TextField firstNameField = new TextField(messageProperties.getRegistrationFirstNameField());
         firstNameField.setPrefixComponent(VaadinIcon.USER.create());
         firstNameField.setClearButtonVisible(true);
         firstNameField.setWidthFull();
-        TextField lastNameField = new TextField(i18nProvider.getTranslation("registrationView.last_name_field"));
+        TextField lastNameField = new TextField(messageProperties.getRegistrationLastNameField());
         lastNameField.setPrefixComponent(VaadinIcon.USER.create());
         lastNameField.setClearButtonVisible(true);
         lastNameField.setWidthFull();
-        EmailField emailField = new EmailField(i18nProvider.getTranslation("registrationView.email_field"));
+        EmailField emailField = new EmailField(messageProperties.getRegistrationEmailField());
         emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
         emailField.setClearButtonVisible(true);
         emailField.setWidthFull();
-        EmailField confirmEmailField = new EmailField(i18nProvider.getTranslation("registrationView.confirm_field"));
+        EmailField confirmEmailField = new EmailField(messageProperties.getRegistrationConfirmField());
         confirmEmailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
         confirmEmailField.setClearButtonVisible(true);
         confirmEmailField.setWidthFull();
-        PasswordField passwordField = new PasswordField(i18nProvider.getTranslation("registrationView.password_field"));
+        PasswordField passwordField = new PasswordField(messageProperties.getRegistrationPasswordField());
         passwordField.setPrefixComponent(VaadinIcon.LOCK.create());
         passwordField.setClearButtonVisible(true);
         passwordField.setWidthFull();
-        PasswordField confirmPasswordField = new PasswordField(i18nProvider.getTranslation("registrationView.confirm_field"));
+        PasswordField confirmPasswordField = new PasswordField(messageProperties.getRegistrationConfirmField());
         confirmPasswordField.setPrefixComponent(VaadinIcon.LOCK.create());
         confirmPasswordField.setClearButtonVisible(true);
         confirmPasswordField.setWidthFull();
-        ComboBox<Gender> genderComboBox = new ComboBox<>(i18nProvider.getTranslation("registrationView.gender_combobox"));
+        ComboBox<Gender> genderComboBox = new ComboBox<>(messageProperties.getRegistrationGenderCombobox());
         genderComboBox.setPrefixComponent(VaadinIcon.USERS.create());
         genderComboBox.setClearButtonVisible(true);
         genderComboBox.setWidthFull();
         genderComboBox.setItems(Gender.MALE, Gender.FEMALE, Gender.OTHER);
         genderComboBox.setItemLabelGenerator(Gender::name);
-        DatePicker birthDatePicker = new DatePicker(i18nProvider.getTranslation("registrationView.birth_date_field"));
+        DatePicker birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
         birthDatePicker.setPrefixComponent(VaadinIcon.CALENDAR_USER.create());
         birthDatePicker.setClearButtonVisible(true);
         birthDatePicker.setWidthFull();

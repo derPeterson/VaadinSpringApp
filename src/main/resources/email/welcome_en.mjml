@@ -24,10 +24,10 @@
         <mj-text font-size="16px" color="#ffffff" align="center">Thank you for registering with our service.</mj-text>
         <mj-text font-size="16px" color="#ffffff" align="center">Please confirm your email address to activate your account.</mj-text>
         <mj-button href="{{VERIFICACTION_LINK}}" background-color="#007bff" color="#ffffff" font-size="16px" padding="12px 24px" border-radius="5px" align="center">
-          <b>Verify email</b>
+          <b>VERIFY EMAIL</b>
         </mj-button>
         <mj-text font-size="14px" color="#bbbbbb" align="center">
-          If you have not registered, please ignore this e-mail.
+          If you have not registered, ignore this email.
         </mj-text>
       </mj-column>
     </mj-section>

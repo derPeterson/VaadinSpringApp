@@ -8,7 +8,7 @@ import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.data.validator.EmailValidator;
-import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.service.UserService;
 import lombok.AccessLevel;
@@ -23,12 +23,10 @@ import java.util.function.Predicate;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ValidationHelper {
 
-    private static final String BASE_FAILED_TITLE_MESSAGE_KEY = "base.failed.title";
-
-    public static boolean validateRequiredInputs(List<? extends AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>> requiredInputs, CustomI18NProvider i18nProvider) {
+    public static boolean validateRequiredInputs(List<? extends AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>> requiredInputs, MessageProperties messageProperties) {
         if (requiredInputs.stream().anyMatch(AbstractField::isEmpty)) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("base.validation.required_message"),
+            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
+                    messageProperties.getBaseValidationRequiredMessage(),
                     -1, NotificationHelper.NotificationType.ERROR);
 
             requiredInputs.stream().filter(AbstractField::isEmpty).map(HasValidationProperties.class::cast).forEach(field -> field.setInvalid(true));
@@ -41,10 +39,10 @@ public class ValidationHelper {
         return true;
     }
 
-    public static boolean validatePasswordSecureInputs(List<PasswordField> passwordFields, CustomI18NProvider i18nProvider) {
+    public static boolean validatePasswordSecureInputs(List<PasswordField> passwordFields, MessageProperties messageProperties) {
         if (passwordFields.stream().anyMatch(field -> !field.getValue().matches(UserEntity.PASSWORD_REGEX))) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("base.validation.password_invalid_message"),
+            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
+                    messageProperties.getBaseValidationPasswordInvalidMessage(),
                     -1, NotificationHelper.NotificationType.ERROR);
 
             passwordFields.forEach(field -> field.setInvalid(!field.getValue().matches(UserEntity.PASSWORD_REGEX)));
@@ -56,10 +54,10 @@ public class ValidationHelper {
         return true;
     }
 
-    public static boolean validateEmailValidInputs(List<EmailField> emailFieldsFields, CustomI18NProvider i18nProvider) {
+    public static boolean validateEmailValidInputs(List<EmailField> emailFieldsFields, MessageProperties messageProperties) {
         if (emailFieldsFields.stream().anyMatch(field -> !field.getValue().matches(EmailValidator.PATTERN))) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("base.validation.email_invalid_message"),
+            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
+                    messageProperties.getBaseValidationEmailInvalidMessage(),
                     -1, NotificationHelper.NotificationType.ERROR);
 
             emailFieldsFields.forEach(field -> field.setInvalid(!field.getValue().matches(EmailValidator.PATTERN)));
@@ -71,10 +69,10 @@ public class ValidationHelper {
         return true;
     }
 
-    public static boolean validatePasswordConfirmInputs(PasswordField input, PasswordField confirmInput, CustomI18NProvider i18nProvider) {
+    public static boolean validatePasswordConfirmInputs(PasswordField input, PasswordField confirmInput, MessageProperties messageProperties) {
         if (!StringUtils.equals(input.getValue(), confirmInput.getValue())) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("base.validation.password_confirm_message"),
+            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
+                    messageProperties.getBaseValidationPasswordConfirmMessage(),
                     -1, NotificationHelper.NotificationType.ERROR);
 
             input.setInvalid(true);
@@ -89,10 +87,10 @@ public class ValidationHelper {
         return true;
     }
 
-    public static boolean validateEmailConfirmInputs(EmailField input, EmailField confirmInput, CustomI18NProvider i18nProvider) {
+    public static boolean validateEmailConfirmInputs(EmailField input, EmailField confirmInput, MessageProperties messageProperties) {
         if (!StringUtils.equals(input.getValue(), confirmInput.getValue())) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("base.validation.email_confirm_message"),
+            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
+                    messageProperties.getBaseValidationEmailConfirmMessage(),
                     -1, NotificationHelper.NotificationType.ERROR);
 
             input.setInvalid(true);
@@ -107,10 +105,10 @@ public class ValidationHelper {
         return true;
     }
 
-    public static boolean validateEmailNotExistsInput(EmailField emailField, EmailField confirmEmailField, UserService userService, CustomI18NProvider i18nProvider) {
+    public static boolean validateEmailNotExistsInput(EmailField emailField, EmailField confirmEmailField, UserService userService, MessageProperties messageProperties) {
         if (userService.findByEmail(emailField.getValue()).isPresent()) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("base.validation.email_exists_message"),
+            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
+                    messageProperties.getBaseValidationEmailExistsMessage(),
                     -1, NotificationHelper.NotificationType.ERROR);
 
             emailField.setInvalid(true);
@@ -125,10 +123,10 @@ public class ValidationHelper {
         return true;
     }
 
-    public static boolean validateBirthDateBeforeInput(DatePicker datePicker, CustomI18NProvider i18nProvider) {
+    public static boolean validateBirthDateBeforeInput(DatePicker datePicker, MessageProperties messageProperties) {
         if (datePicker.getValue().isAfter(LocalDate.now())) {
-            NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                    i18nProvider.getTranslation("base.validation.birth_date_past_message"),
+            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
+                    messageProperties.getBaseValidationBirthDatePastMessage(),
                     -1, NotificationHelper.NotificationType.ERROR);
 
             datePicker.setInvalid(true);

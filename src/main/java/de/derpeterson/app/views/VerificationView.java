@@ -14,14 +14,14 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.derpeterson.app.helper.components.CardComponent;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
-import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.VerificationService;
+import de.derpeterson.app.ui.components.CardComponent;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,19 +36,15 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
 
     private static final Logger logger = LoggerFactory.getLogger(VerificationView.class);
 
-    private static final String BASE_FAILED_TITLE_MESSAGE_KEY = "base.failed.title";
-    private static final String BASE_FAILED_TEXT_MESSAGE_KEY = "base.failed.message";
-    private static final String BASE_HOME_BUTTON_MESSAGE_KEY = "base.home_button";
-
-    private final CustomI18NProvider i18nProvider;
+    private final MessageProperties messageProperties;
     private final transient VerificationService verificationService;
 
     private final VerticalLayout mainContent;
 
-    public VerificationView(CustomI18NProvider i18nProvider, VerificationService verificationService, SecurityService securityService, HttpServletRequest request) {
+    public VerificationView(MessageProperties messageProperties, VerificationService verificationService, SecurityService securityService, HttpServletRequest request) {
         super(securityService, request, new HorizontalLayout());
 
-        this.i18nProvider = i18nProvider;
+        this.messageProperties = messageProperties;
         this.verificationService = verificationService;
 
         setSizeFull();
@@ -101,7 +97,7 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardIconLayout.add(successIcon);
 
-        H1 title = new H1(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.expired.title")));
+        H1 title = new H1(messageProperties.getVerificationExpiredTitle());
         title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
@@ -110,9 +106,42 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
-        Span expiredText1 = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.expired.text1")));
+        VerticalLayout cardTextLayout = getCardTextLayout(messageProperties.getVerificationExpiredText1(), messageProperties.getVerificationExpiredText2());
+
+        Button resendButton = new Button(messageProperties.getBaseResendButton(), event -> {
+            try {
+                boolean emailSent = verificationService.sendVerificationEmailByToken(token);
+                if (emailSent) {
+                    NotificationHelper.getInstance().showNotification(messageProperties.getBaseSuccessTitle(), messageProperties.getVerificationExpiredSuccessMessage(), -1, NotificationHelper.NotificationType.SUCCESS);
+                } else {
+                    NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(), messageProperties.getBaseFailedMessage(), -1, NotificationHelper.NotificationType.ERROR);
+                }
+            } catch (IOException e) {
+                logger.error("Exception occurred:", e);
+
+                NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(), messageProperties.getBaseFailedMessage(),
+                        -1, NotificationHelper.NotificationType.ERROR);
+            }
+        });
+        resendButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
+        resendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        resendButton.setWidthFull();
+
+        Button homeButton = new Button(messageProperties.getBaseHomeButton(), event -> UI.getCurrent().navigate(HomeView.class));
+        homeButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
+        homeButton.setWidthFull();
+
+        cardContentLayout.add(cardIconLayout, cardTitleLayout, cardTextLayout, resendButton, homeButton);
+
+        CardComponent cardComponent = new CardComponent(cardContentLayout);
+
+        mainContent.add(cardComponent);
+    }
+
+    private VerticalLayout getCardTextLayout(String text1, String text2) {
+        Span expiredText1 = new Span(text1);
         expiredText1.addClassNames(LumoUtility.Whitespace.NOWRAP);
-        Span expiredText2 = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.expired.text2")));
+        Span expiredText2 = new Span(text2);
         expiredText2.addClassNames(LumoUtility.Whitespace.NOWRAP);
         VerticalLayout cardTextLayout = new VerticalLayout();
         cardTextLayout.setWidthFull();
@@ -122,36 +151,7 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTextLayout.add(expiredText1);
         cardTextLayout.add(expiredText2);
-
-        Button resendButton = new Button(i18nProvider.getTranslation("base.resend_button"), event -> {
-            try {
-                boolean emailSent = verificationService.sendVerificationEmailByToken(token);
-                if (emailSent) {
-                    NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"), i18nProvider.getTranslation("verificationView.expired.success_message"), -1, NotificationHelper.NotificationType.SUCCESS);
-                } else {
-                    NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY), i18nProvider.getTranslation(BASE_FAILED_TEXT_MESSAGE_KEY), -1, NotificationHelper.NotificationType.ERROR);
-                }
-            } catch (IOException e) {
-                logger.error("Exception occurred:", e);
-
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                        i18nProvider.getTranslation(BASE_FAILED_TEXT_MESSAGE_KEY),
-                        -1, NotificationHelper.NotificationType.ERROR);
-            }
-        });
-        resendButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
-        resendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        resendButton.setWidthFull();
-
-        Button homeButton = new Button(i18nProvider.getTranslation(BASE_HOME_BUTTON_MESSAGE_KEY), event -> UI.getCurrent().navigate(HomeView.class));
-        homeButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
-        homeButton.setWidthFull();
-
-        cardContentLayout.add(cardIconLayout, cardTitleLayout, cardTextLayout, resendButton, homeButton);
-
-        CardComponent cardComponent = new CardComponent(cardContentLayout);
-
-        mainContent.add(cardComponent);
+        return cardTextLayout;
     }
 
     private void createFailedCard() {
@@ -168,7 +168,7 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardIconLayout.add(successIcon);
 
-        H1 title = new H1(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.not_found.title")));
+        H1 title = new H1(messageProperties.getVerificationNotFoundTitle());
         title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
@@ -177,47 +177,35 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
-        Span existsNotText1 = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.not_found.text1")));
-        existsNotText1.addClassNames(LumoUtility.Whitespace.NOWRAP);
-        Span existsNotText2 = new Span(i18nProvider.getTranslation(i18nProvider.getTranslation("verificationView.not_found.text2")));
-        existsNotText2.addClassNames(LumoUtility.Whitespace.NOWRAP);
-        VerticalLayout cardTextLayout = new VerticalLayout();
-        cardTextLayout.setWidthFull();
-        cardTextLayout.setPadding(false);
-        cardTextLayout.setSpacing(false);
-        cardTextLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-        cardTextLayout.add(existsNotText1);
-        cardTextLayout.add(existsNotText2);
+        VerticalLayout cardTextLayout = getCardTextLayout(messageProperties.getVerificationNotFoundText1(), messageProperties.getVerificationNotFoundText2());
 
-        EmailField emailField = new EmailField(i18nProvider.getTranslation("verificationView.email_field"));
+        EmailField emailField = new EmailField(messageProperties.getVerificationEmailField());
         emailField.setWidthFull();
         emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
         emailField.setClearButtonVisible(true);
         emailField.setRequiredIndicatorVisible(true);
 
-        Button sendButton = new Button(i18nProvider.getTranslation("base.send_button"), event -> {
+        Button sendButton = new Button(messageProperties.getBaseSendButton(), event -> {
 
-            if (!ValidationHelper.validateRequiredInputs(List.of(emailField), i18nProvider)) {
+            if (!ValidationHelper.validateRequiredInputs(List.of(emailField), messageProperties)) {
                 return;
             }
 
-            if (!ValidationHelper.validateEmailValidInputs(List.of(emailField), i18nProvider)) {
+            if (!ValidationHelper.validateEmailValidInputs(List.of(emailField), messageProperties)) {
                 return;
             }
 
             try {
                 boolean emailSent = verificationService.sendVerificationEmailByEmail(emailField.getValue());
                 if (emailSent) {
-                    NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation("base.success.title"), i18nProvider.getTranslation("verificationView.not_found.success_message"), -1, NotificationHelper.NotificationType.SUCCESS);
+                    NotificationHelper.getInstance().showNotification(messageProperties.getBaseSuccessTitle(), messageProperties.getVerificationNotFoundSuccessMessage(), -1, NotificationHelper.NotificationType.SUCCESS);
                 } else {
-                    NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY), i18nProvider.getTranslation(BASE_FAILED_TEXT_MESSAGE_KEY), -1, NotificationHelper.NotificationType.ERROR);
+                    NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(), messageProperties.getBaseFailedMessage(), -1, NotificationHelper.NotificationType.ERROR);
                 }
             } catch (IOException e) {
                 logger.error("Exception occurred:", e);
 
-                NotificationHelper.getInstance().showNotification(i18nProvider.getTranslation(BASE_FAILED_TITLE_MESSAGE_KEY),
-                        i18nProvider.getTranslation(BASE_FAILED_TEXT_MESSAGE_KEY),
+                NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(), messageProperties.getBaseFailedMessage(),
                         -1, NotificationHelper.NotificationType.ERROR);
             }
         });
@@ -225,7 +213,7 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         sendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         sendButton.setWidthFull();
 
-        Button homeButton = new Button(i18nProvider.getTranslation(BASE_HOME_BUTTON_MESSAGE_KEY), event -> UI.getCurrent().navigate(HomeView.class));
+        Button homeButton = new Button(messageProperties.getBaseHomeButton(), event -> UI.getCurrent().navigate(HomeView.class));
         homeButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
         homeButton.setWidthFull();
 
@@ -250,7 +238,7 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardIconLayout.add(successIcon);
 
-        H1 title = new H1(i18nProvider.getTranslation("verificationView.success.title"));
+        H1 title = new H1(messageProperties.getVerificationSuccessTitle());
         title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
@@ -259,7 +247,7 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
-        Span successText = new Span(i18nProvider.getTranslation("verificationView.success.text"));
+        Span successText = new Span(messageProperties.getVerificationSuccessText());
         successText.addClassNames(LumoUtility.Whitespace.NOWRAP);
         HorizontalLayout cardTextLayout = new HorizontalLayout();
         cardTextLayout.setWidthFull();
@@ -267,7 +255,7 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTextLayout.add(successText);
 
-        Button homeButton = new Button(i18nProvider.getTranslation(BASE_HOME_BUTTON_MESSAGE_KEY), event -> UI.getCurrent().navigate(HomeView.class));
+        Button homeButton = new Button(messageProperties.getBaseHomeButton(), event -> UI.getCurrent().navigate(HomeView.class));
         homeButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
         homeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         homeButton.setWidthFull();
