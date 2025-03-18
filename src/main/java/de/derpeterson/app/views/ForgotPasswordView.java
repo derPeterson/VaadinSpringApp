@@ -1,5 +1,7 @@
 package de.derpeterson.app.views;
 
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -13,8 +15,11 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.events.LanguageChangeEvent;
+import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
@@ -28,7 +33,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 @Route("forgot-password")
 @PageTitle("Forgot Password")
@@ -37,16 +46,40 @@ public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalL
 
     private static final Logger logger = LoggerFactory.getLogger(ForgotPasswordView.class);
 
-    private final MessageProperties messageProperties;
+    private final transient MessageProperties messageProperties;
     private final transient PasswordResetService passwordResetService;
 
     private final VerticalLayout mainContent;
+
+    private H1 title = null;
+    private Span text = null;
+    private EmailField emailField = null;
+    private Button sendButton = null;
+    private Button loginButton = null;
 
     public ForgotPasswordView(MessageProperties messageProperties, PasswordResetService passwordResetService, SecurityService securityService, HttpServletRequest request) {
         super(securityService, request, new HorizontalLayout());
 
         this.messageProperties = messageProperties;
         this.passwordResetService = passwordResetService;
+
+        ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> {
+            VaadinSession.getCurrent().setLocale(event.getNewLocale());
+
+            Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
+            Optional.ofNullable(title)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getForgotPasswordTitle));
+            Optional.ofNullable(text)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getForgotPasswordText));
+            Optional.ofNullable(emailField)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getForgotPasswordEmailField));
+            Optional.ofNullable(sendButton)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseSendButton));
+            Optional.ofNullable(loginButton)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseLoginButton));
+
+            ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+        });
 
         setSizeFull();
         setSpacing(false);
@@ -82,7 +115,7 @@ public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalL
         cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardIconLayout.add(successIcon);
 
-        H1 title = new H1(messageProperties.getForgotPasswordTitle());
+        this.title = new H1(messageProperties.getForgotPasswordTitle());
         title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
@@ -91,7 +124,7 @@ public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalL
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
-        Span text = new Span(messageProperties.getForgotPasswordText());
+        this.text = new Span(messageProperties.getForgotPasswordText());
         text.addClassNames(LumoUtility.Whitespace.NOWRAP);
         VerticalLayout cardTextLayout = new VerticalLayout();
         cardTextLayout.setWidthFull();
@@ -101,13 +134,13 @@ public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalL
         cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTextLayout.add(text);
 
-        EmailField emailField = new EmailField(messageProperties.getForgotPasswordEmailField());
+        this.emailField = new EmailField(messageProperties.getForgotPasswordEmailField());
         emailField.setClearButtonVisible(true);
         emailField.setWidthFull();
         emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
         emailField.setClearButtonVisible(true);
 
-        Button sendButton = new Button(messageProperties.getBaseSendButton(), event -> {
+        this.sendButton = new Button(messageProperties.getBaseSendButton(), event -> {
             if (!ValidationHelper.validateRequiredInputs(List.of(emailField), messageProperties)) {
                 return;
             }
@@ -135,7 +168,7 @@ public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalL
         sendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         sendButton.setWidthFull();
 
-        Button loginButton = new Button(messageProperties.getBaseLoginButton(), event -> UI.getCurrent().navigate(LoginView.class));
+        this.loginButton = new Button(messageProperties.getBaseLoginButton(), event -> UI.getCurrent().navigate(LoginView.class));
         loginButton.setPrefixComponent(VaadinIcon.SIGN_IN.create());
         loginButton.setWidthFull();
 

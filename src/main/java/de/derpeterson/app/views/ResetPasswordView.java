@@ -1,5 +1,7 @@
 package de.derpeterson.app.views;
 
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -12,8 +14,11 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.router.*;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.events.LanguageChangeEvent;
+import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
@@ -24,23 +29,57 @@ import de.derpeterson.app.service.PasswordResetService;
 import de.derpeterson.app.ui.components.CardComponent;
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 @Route("reset-password")
 @PageTitle("Reset Password")
 @AnonymousAllowed
 public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLayout> implements HasUrlParameter<String> {
 
-    private final MessageProperties messageProperties;
+    private final transient MessageProperties messageProperties;
     private final transient PasswordResetService passwordResetService;
 
     private final VerticalLayout mainContent;
+
+    private H1 title = null;
+    private PasswordField passwordField = null;
+    private PasswordField confirmPasswordField = null;
+    private Button resetButton = null;
+    private Button homeButton = null;
+    private H1 invalidTitle = null;
+    private Span invalidText = null;
 
     public ResetPasswordView(MessageProperties messageProperties, PasswordResetService passwordResetService, SecurityService securityService, HttpServletRequest request) {
         super(securityService, request, new HorizontalLayout());
 
         this.messageProperties = messageProperties;
         this.passwordResetService = passwordResetService;
+
+        ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> {
+            VaadinSession.getCurrent().setLocale(event.getNewLocale());
+
+            Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
+            Optional.ofNullable(title)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getResetPasswordTitle));
+            Optional.ofNullable(passwordField)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getResetPasswordNewPasswordField));
+            Optional.ofNullable(confirmPasswordField)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getResetPasswordConfirmField));
+            Optional.ofNullable(resetButton)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseResetButton));
+            Optional.ofNullable(homeButton)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseHomeButton));
+            Optional.ofNullable(invalidTitle)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getResetPasswordInvalidTitle));
+            Optional.ofNullable(invalidText)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getResetPasswordInvalidText));
+
+            ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+        });
 
         setSizeFull();
         setAlignItems(FlexComponent.Alignment.CENTER);
@@ -77,7 +116,7 @@ public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLa
         cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
 
-        H1 title = new H1(messageProperties.getResetPasswordTitle());
+        this.title = new H1(messageProperties.getResetPasswordTitle());
         title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
@@ -86,19 +125,19 @@ public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLa
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
-        PasswordField passwordField = new PasswordField(messageProperties.getResetPasswordNewPasswordField());
+        this.passwordField = new PasswordField(messageProperties.getResetPasswordNewPasswordField());
         passwordField.setPrefixComponent(VaadinIcon.LOCK.create());
         passwordField.setClearButtonVisible(true);
         passwordField.setRequiredIndicatorVisible(true);
         passwordField.setWidthFull();
 
-        PasswordField confirmPasswordField = new PasswordField(messageProperties.getResetPasswordConfirmField());
+        this.confirmPasswordField = new PasswordField(messageProperties.getResetPasswordConfirmField());
         confirmPasswordField.setPrefixComponent(VaadinIcon.LOCK.create());
         confirmPasswordField.setClearButtonVisible(true);
         confirmPasswordField.setRequiredIndicatorVisible(true);
         confirmPasswordField.setWidthFull();
 
-        Button resetButton = new Button(messageProperties.getBaseResetButton(), event -> {
+        this.resetButton = new Button(messageProperties.getBaseResetButton(), event -> {
             if (!ValidationHelper.validateRequiredInputs(List.of(passwordField, confirmPasswordField), messageProperties)) {
                 return;
             }
@@ -122,7 +161,7 @@ public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLa
         resetButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         resetButton.setWidthFull();
 
-        Button homeButton = new Button(messageProperties.getBaseHomeButton(), event -> UI.getCurrent().navigate(HomeView.class));
+        this.homeButton = new Button(messageProperties.getBaseHomeButton(), event -> UI.getCurrent().navigate(HomeView.class));
         homeButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
         homeButton.setWidthFull();
 
@@ -147,18 +186,18 @@ public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLa
         cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardIconLayout.add(successIcon);
 
-        H1 title = new H1(messageProperties.getResetPasswordInvalidTitle());
-        title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
+        this.invalidTitle = new H1(messageProperties.getResetPasswordInvalidTitle());
+        invalidTitle.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-        cardTitleLayout.add(title);
+        cardTitleLayout.add(invalidTitle);
 
         VerticalLayout cardTextLayout = getCardTextLayout();
 
-        Button homeButton = new Button(messageProperties.getBaseHomeButton(), event -> UI.getCurrent().navigate(HomeView.class));
+        this.homeButton = new Button(messageProperties.getBaseHomeButton(), event -> UI.getCurrent().navigate(HomeView.class));
         homeButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
         homeButton.setWidthFull();
         homeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -171,7 +210,7 @@ public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLa
     }
 
     private VerticalLayout getCardTextLayout() {
-        Span invalidText = new Span(messageProperties.getResetPasswordInvalidText());
+        this.invalidText = new Span(messageProperties.getResetPasswordInvalidText());
         invalidText.addClassNames(LumoUtility.Whitespace.NOWRAP);
         VerticalLayout cardTextLayout = new VerticalLayout();
         cardTextLayout.setWidthFull();

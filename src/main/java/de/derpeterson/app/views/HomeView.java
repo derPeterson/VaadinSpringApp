@@ -1,5 +1,7 @@
 package de.derpeterson.app.views;
 
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
@@ -18,6 +20,8 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.events.LanguageChangeEvent;
+import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -32,8 +36,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
 
@@ -42,11 +49,18 @@ import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLIN
 @AnonymousAllowed
 public class HomeView extends AppLayout {
 
-    private final MessageProperties messageProperties;
+    private final transient MessageProperties messageProperties;
     private final transient UserService userService;
     private final transient SecurityService securityService;
 
     private final transient Optional<UserDetails> authenticatedUser;
+
+    private Span onlineText = null;
+    private Span offlineText = null;
+    private Button manageAccountButton = null;
+    private Button logoutButton = null;
+    private Button registrationButton = null;
+    private Button loginButton = null;
 
     @Autowired
     public HomeView(MessageProperties messageProperties, SecurityService securityService, HttpServletRequest request, ConfigService configService, UserService userService) {
@@ -55,6 +69,26 @@ public class HomeView extends AppLayout {
         this.userService = userService;
 
         this.authenticatedUser = securityService.getAuthenticatedUser(request);
+
+        ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> {
+            VaadinSession.getCurrent().setLocale(event.getNewLocale());
+
+            Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
+            Optional.ofNullable(onlineText)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseOnlineText));
+            Optional.ofNullable(offlineText)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseOfflineText));
+            Optional.ofNullable(manageAccountButton)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseManageAccountButton));
+            Optional.ofNullable(logoutButton)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseLogoutButton));
+            Optional.ofNullable(registrationButton)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseRegistrationButton));
+            Optional.ofNullable(loginButton)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseLoginButton));
+
+            ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+        });
 
         HorizontalLayout headerLayout = new HorizontalLayout();
         headerLayout.setWidthFull();
@@ -139,7 +173,7 @@ public class HomeView extends AppLayout {
                 authenticatedUser.isPresent() ? UserStatus.AVAILABLE : UserStatus.OFFLINE, IconSize.PIXEL_96));
 
         if (authenticatedUser.isPresent()) {
-            Span onlineText = new Span(messageProperties.getBaseOnlineText());
+            this.onlineText = new Span(messageProperties.getBaseOnlineText());
             onlineText.addClassNames(LumoUtility.TextColor.PRIMARY, LumoUtility.FontWeight.SEMIBOLD);
             contentLayout.add(onlineText);
 
@@ -156,12 +190,12 @@ public class HomeView extends AppLayout {
                 contentLayout.add(emailText);
             }
         } else {
-            Span offlineText = new Span(messageProperties.getBaseOfflineText());
+            this.offlineText = new Span(messageProperties.getBaseOfflineText());
             offlineText.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.SEMIBOLD);
             contentLayout.add(offlineText);
         }
 
-        Button manageAccountButton = new Button(messageProperties.getBaseManageAccountButton());
+        this.manageAccountButton = new Button(messageProperties.getBaseManageAccountButton());
         manageAccountButton.setPrefixComponent(VaadinIcon.COG.create());
         manageAccountButton.setEnabled(authenticatedUser.isPresent());
         if (authenticatedUser.isPresent()) {
@@ -183,9 +217,8 @@ public class HomeView extends AppLayout {
         }
         Button deFlagIconButton = new Button(deFlagIcon, buttonClickEvent -> {
             authenticatedUser.ifPresent(userDetails -> userService.updateUserLocale(userDetails.getUsername(), Locale.GERMAN));
-
             VaadinSession.getCurrent().setLocale(Locale.GERMAN);
-            UI.getCurrent().getPage().reload();
+            LanguageChangeEvent.fire(UI.getCurrent(), Locale.GERMAN);
         });
         deFlagIconButton.addThemeVariants(LUMO_TERTIARY_INLINE);
 
@@ -200,7 +233,7 @@ public class HomeView extends AppLayout {
         Button enFlagIconButton = new Button(enFlagIcon, buttonClickEvent -> {
             authenticatedUser.ifPresent(userDetails -> userService.updateUserLocale(userDetails.getUsername(), Locale.ENGLISH));
             VaadinSession.getCurrent().setLocale(Locale.ENGLISH);
-            UI.getCurrent().getPage().reload();
+            LanguageChangeEvent.fire(UI.getCurrent(), Locale.ENGLISH);
         });
         enFlagIconButton.addThemeVariants(LUMO_TERTIARY_INLINE);
 
@@ -210,19 +243,19 @@ public class HomeView extends AppLayout {
         contentLayout.add(flagLayout);
 
         if (authenticatedUser.isPresent()) {
-            Button logoutButton = new Button(messageProperties.getBaseLogoutButton());
+            this.logoutButton = new Button(messageProperties.getBaseLogoutButton());
             logoutButton.setPrefixComponent(VaadinIcon.SIGN_OUT.create());
             logoutButton.addClickListener(buttonClickEvent -> securityService.logout());
             logoutButton.setWidthFull();
 
             contentLayout.add(logoutButton);
         } else {
-            Button registrationButton = new Button(messageProperties.getBaseRegistrationButton());
+            this.registrationButton = new Button(messageProperties.getBaseRegistrationButton());
             registrationButton.setPrefixComponent(VaadinIcon.EDIT.create());
             registrationButton.addClickListener(buttonClickEvent -> UI.getCurrent().navigate(RegistrationView.class));
             registrationButton.setWidthFull();
 
-            Button loginButton = new Button(messageProperties.getBaseLoginButton());
+            this.loginButton = new Button(messageProperties.getBaseLoginButton());
             loginButton.setPrefixComponent(VaadinIcon.SIGN_IN.create());
             loginButton.addClickListener(buttonClickEvent -> UI.getCurrent().navigate(LoginView.class));
             loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);

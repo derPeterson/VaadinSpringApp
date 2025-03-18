@@ -1,6 +1,9 @@
 package de.derpeterson.app.views;
 
 import com.vaadin.flow.component.AbstractSinglePropertyField;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentUtil;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -18,8 +21,11 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.events.LanguageChangeEvent;
+import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
@@ -41,9 +47,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Supplier;
 
 @Route("registration")
 @PageTitle("Registration")
@@ -60,7 +65,20 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
 
     private final transient FormComponents formComponents;
 
-    private final List<? extends AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>> requiredFormComponts;
+    private final List<? extends AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>> requiredFormComponents;
+
+    private H1 title = null;
+    private Span createAccountQuestionText = null;
+    private RouterLink loginLink = null;
+    private TextField firstNameField = null;
+    private TextField lastNameField = null;
+    private EmailField emailField = null;
+    private EmailField confirmEmailField = null;
+    private PasswordField passwordField = null;
+    private PasswordField confirmPasswordField = null;
+    private ComboBox<Gender> genderComboBox = null;
+    private DatePicker birthDatePicker = null;
+    private Button registrationButton = null;
 
     public RegistrationView(MessageProperties messageProperties, UserService userService,
                             RoleService roleService, PasswordEncoder passwordEncoder,
@@ -75,6 +93,38 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
         this.passwordEncoder = passwordEncoder;
         this.verificationService = verificationService;
 
+        ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> {
+            VaadinSession.getCurrent().setLocale(event.getNewLocale());
+
+            Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
+            Optional.ofNullable(title)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getRegistrationTitle));
+            Optional.ofNullable(createAccountQuestionText)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getRegistrationLoginQuestion));
+            Optional.ofNullable(loginLink)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getRegistrationLoginLink));
+            Optional.ofNullable(firstNameField)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getRegistrationFirstNameField));
+            Optional.ofNullable(lastNameField)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getRegistrationLastNameField));
+            Optional.ofNullable(emailField)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getRegistrationEmailField));
+            Optional.ofNullable(confirmEmailField)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getRegistrationConfirmField));
+            Optional.ofNullable(passwordField)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getRegistrationPasswordField));
+            Optional.ofNullable(confirmPasswordField)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getRegistrationConfirmField));
+            Optional.ofNullable(genderComboBox)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getRegistrationGenderCombobox));
+            Optional.ofNullable(birthDatePicker)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getRegistrationBirthDateField));
+            Optional.ofNullable(registrationButton)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseRegistrationButton));
+
+            ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+        });
+
         setSizeFull();
         setSpacing(false);
         setAlignItems(FlexComponent.Alignment.CENTER);
@@ -83,7 +133,7 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
         addClassNames("registration-bg-fullscreen");
 
         formComponents = createFormComponents();
-        requiredFormComponts = createRequiredFormCompontents();
+        requiredFormComponents = createRequiredFormComponents();
         Button registerButton = createRegisterButton();
 
         VerticalLayout mainContent = new VerticalLayout();
@@ -97,7 +147,7 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
 
-        H1 title = new H1(messageProperties.getRegistrationTitle());
+        this.title = new H1(messageProperties.getRegistrationTitle());
         title.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.FontWeight.BOLD);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
@@ -106,7 +156,7 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
-        Span createAccountQuestionText = new Span(messageProperties.getRegistrationLoginQuestion());
+        this.createAccountQuestionText = new Span(messageProperties.getRegistrationLoginQuestion());
 
         HorizontalLayout cardSecondaryTitleLayout = new HorizontalLayout();
         cardSecondaryTitleLayout.setWidthFull();
@@ -139,12 +189,12 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
     }
 
     private Button createRegisterButton() {
-        Button regButton = new Button(messageProperties.getBaseRegistrationButton());
-        regButton.setPrefixComponent(VaadinIcon.EDIT.create());
-        regButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        regButton.setWidthFull();
-        regButton.addClickListener(event -> handleRegistration());
-        return regButton;
+        this.registrationButton = new Button(messageProperties.getBaseRegistrationButton());
+        registrationButton.setPrefixComponent(VaadinIcon.EDIT.create());
+        registrationButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        registrationButton.setWidthFull();
+        registrationButton.addClickListener(event -> handleRegistration());
+        return registrationButton;
     }
 
     private void handleRegistration() {
@@ -177,7 +227,7 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
     }
 
     private boolean validateRequiredInputs() {
-        return ValidationHelper.validateRequiredInputs(requiredFormComponts, messageProperties);
+        return ValidationHelper.validateRequiredInputs(requiredFormComponents, messageProperties);
     }
 
     private void saveUserAndSendEmail() {
@@ -217,7 +267,7 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
         }
     }
 
-    private List<? extends AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>> createRequiredFormCompontents() {
+    private List<? extends AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>> createRequiredFormComponents() {
         formComponents.firstNameField.setRequiredIndicatorVisible(true);
         formComponents.lastNameField.setRequiredIndicatorVisible(true);
         formComponents.emailField.setRequiredIndicatorVisible(true);
@@ -232,39 +282,39 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
     }
 
     private FormComponents createFormComponents() {
-        RouterLink loginLink = new RouterLink(messageProperties.getRegistrationLoginLink(), LoginView.class);
+        this.loginLink = new RouterLink(messageProperties.getRegistrationLoginLink(), LoginView.class);
         loginLink.addClassNames("underline");
-        TextField firstNameField = new TextField(messageProperties.getRegistrationFirstNameField());
+        this.firstNameField = new TextField(messageProperties.getRegistrationFirstNameField());
         firstNameField.setPrefixComponent(VaadinIcon.USER.create());
         firstNameField.setClearButtonVisible(true);
         firstNameField.setWidthFull();
-        TextField lastNameField = new TextField(messageProperties.getRegistrationLastNameField());
+        this.lastNameField = new TextField(messageProperties.getRegistrationLastNameField());
         lastNameField.setPrefixComponent(VaadinIcon.USER.create());
         lastNameField.setClearButtonVisible(true);
         lastNameField.setWidthFull();
-        EmailField emailField = new EmailField(messageProperties.getRegistrationEmailField());
+        this.emailField = new EmailField(messageProperties.getRegistrationEmailField());
         emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
         emailField.setClearButtonVisible(true);
         emailField.setWidthFull();
-        EmailField confirmEmailField = new EmailField(messageProperties.getRegistrationConfirmField());
+        this.confirmEmailField = new EmailField(messageProperties.getRegistrationConfirmField());
         confirmEmailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
         confirmEmailField.setClearButtonVisible(true);
         confirmEmailField.setWidthFull();
-        PasswordField passwordField = new PasswordField(messageProperties.getRegistrationPasswordField());
+        this.passwordField = new PasswordField(messageProperties.getRegistrationPasswordField());
         passwordField.setPrefixComponent(VaadinIcon.LOCK.create());
         passwordField.setClearButtonVisible(true);
         passwordField.setWidthFull();
-        PasswordField confirmPasswordField = new PasswordField(messageProperties.getRegistrationConfirmField());
+        this.confirmPasswordField = new PasswordField(messageProperties.getRegistrationConfirmField());
         confirmPasswordField.setPrefixComponent(VaadinIcon.LOCK.create());
         confirmPasswordField.setClearButtonVisible(true);
         confirmPasswordField.setWidthFull();
-        ComboBox<Gender> genderComboBox = new ComboBox<>(messageProperties.getRegistrationGenderCombobox());
+        this.genderComboBox = new ComboBox<>(messageProperties.getRegistrationGenderCombobox());
         genderComboBox.setPrefixComponent(VaadinIcon.USERS.create());
         genderComboBox.setClearButtonVisible(true);
         genderComboBox.setWidthFull();
         genderComboBox.setItems(Gender.MALE, Gender.FEMALE, Gender.OTHER);
         genderComboBox.setItemLabelGenerator(Gender::name);
-        DatePicker birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
+        this.birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
         birthDatePicker.setPrefixComponent(VaadinIcon.CALENDAR_USER.create());
         birthDatePicker.setClearButtonVisible(true);
         birthDatePicker.setWidthFull();

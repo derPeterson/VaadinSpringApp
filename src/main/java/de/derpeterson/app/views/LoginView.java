@@ -1,6 +1,9 @@
 package de.derpeterson.app.views;
 
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
@@ -17,8 +20,11 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.events.LanguageChangeEvent;
+import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -33,25 +39,68 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Supplier;
+
 @Route("login")
 @PageTitle("Login")
 @AnonymousAllowed
 public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
 
+    private final transient MessageProperties messageProperties;
+
+    private RouterLink createAccountLink = null;
+    private EmailField emailField = null;
+    private PasswordField passwordField = null;
+    private RouterLink forgotPasswordLink = null;
+    private Checkbox rememberMeCheckBox = null;
+    private Button loginButton = null;
+    private H1 title = null;
+    private Span createAccountQuestionText = null;
+    
     public LoginView(MessageProperties messageProperties, AuthenticationManager authenticationManager, SecurityService securityService, HttpServletRequest request) {
         super(securityService, request, new HorizontalLayout());
+
+        this.messageProperties = messageProperties;
+
+        ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> {
+            VaadinSession.getCurrent().setLocale(event.getNewLocale());
+
+            Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
+            Optional.ofNullable(createAccountLink)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getLoginCreateAccountLink));
+            Optional.ofNullable(emailField)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getLoginEmailField));
+            Optional.ofNullable(passwordField)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getLoginPasswordField));
+            Optional.ofNullable(forgotPasswordLink)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getLoginForgotPasswordLink));
+            Optional.ofNullable(rememberMeCheckBox)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getLoginRememberMeCheckbox));
+            Optional.ofNullable(loginButton)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseLoginButton));
+            Optional.ofNullable(title)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getLoginTitle));
+            Optional.ofNullable(createAccountQuestionText)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getLoginCreateAccountQuestion));
+
+
+            ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+        });
 
         setSizeFull();
 
         addClassNames("login-bg-fullscreen");
 
         // UI Elements
-        RouterLink createAccountLink = new RouterLink(messageProperties.getLoginCreateAccountLink(), RegistrationView.class);
-        EmailField emailField = new EmailField(messageProperties.getLoginEmailField());
-        PasswordField passwordField = new PasswordField(messageProperties.getLoginPasswordField());
-        RouterLink forgotPasswordLink = new RouterLink(messageProperties.getLoginForgotPasswordLink(), ForgotPasswordView.class);
-        Checkbox rememberMeCheckBox = new Checkbox(messageProperties.getLoginRememberMeCheckbox());
-        Button loginButton = new Button(messageProperties.getBaseLoginButton(), event -> {
+        this.createAccountLink = new RouterLink(messageProperties.getLoginCreateAccountLink(), RegistrationView.class);
+        this.emailField = new EmailField(messageProperties.getLoginEmailField());
+        this.passwordField = new PasswordField(messageProperties.getLoginPasswordField());
+        this.forgotPasswordLink = new RouterLink(messageProperties.getLoginForgotPasswordLink(), ForgotPasswordView.class);
+        this.rememberMeCheckBox = new Checkbox(messageProperties.getLoginRememberMeCheckbox());
+        this.loginButton = new Button(messageProperties.getBaseLoginButton(), event -> {
             try {
                 Authentication authentication = authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(emailField.getValue(), passwordField.getValue()));
@@ -84,7 +133,7 @@ public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
         cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
 
-        H1 title = new H1(messageProperties.getLoginTitle());
+        this.title = new H1(messageProperties.getLoginTitle());
         title.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.FontWeight.BOLD);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
@@ -93,7 +142,7 @@ public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
-        Span createAccountQuestionText = new Span(messageProperties.getLoginCreateAccountQuestion());
+        this.createAccountQuestionText = new Span(messageProperties.getLoginCreateAccountQuestion());
         createAccountLink.addClassNames("underline");
 
         HorizontalLayout cardSecondaryTitleLayout = new HorizontalLayout();
