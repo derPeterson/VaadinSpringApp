@@ -106,6 +106,7 @@
     - ~~LoginView~~
     - AdminView
     - ~~RegistrationView~~
+- ~~Speichern und Setzen~~
 - Without Reload?
 
 ## Config Table

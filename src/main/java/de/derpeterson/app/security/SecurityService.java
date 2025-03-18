@@ -3,9 +3,12 @@ package de.derpeterson.app.security;
 import com.vaadin.flow.server.VaadinRequest;
 import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.VaadinSession;
+import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -17,16 +20,15 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class SecurityService {
 
     private static final String AUTH_USER_SESSION_KEY = "authenticatedUser";
 
     private final PersistentTokenBasedRememberMeServices rememberMeServices;
 
-    public SecurityService(PersistentTokenBasedRememberMeServices rememberMeServices) {
-        this.rememberMeServices = rememberMeServices;
-    }
-
+    private final UserService userService;
+    
     public Optional<UserDetails> getAuthenticatedUser(HttpServletRequest request) {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         Authentication authentication = securityContext.getAuthentication();
@@ -61,6 +63,8 @@ public class SecurityService {
 
         HttpSession httpSession = request.getSession();
         httpSession.setAttribute(AUTH_USER_SESSION_KEY, user);
+
+        applyUserLocale(user.getUsername());
 
         var auth = restoreSecurityContext(user);
 
@@ -99,5 +103,12 @@ public class SecurityService {
         }
 
         SecurityContextHolder.clearContext();
+    }
+
+    private void applyUserLocale(String email) {
+        if (VaadinSession.getCurrent() != null) {
+            Optional<UserEntity> userOpt = userService.findByEmail(email);
+            userOpt.ifPresent(user -> VaadinSession.getCurrent().setLocale(user.getPreferredLocale()));
+        }
     }
 }

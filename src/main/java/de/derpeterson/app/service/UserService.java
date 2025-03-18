@@ -4,7 +4,9 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -19,5 +21,19 @@ public class UserService {
 
     public Optional<UserEntity> findByEmail(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    @Transactional
+    public void updateUserLocale(String email, Locale locale) {
+        Optional<UserEntity> userOptional = userRepository.findByEmail(email);
+        userOptional.ifPresent(user -> {
+            user.setPreferredLocale(locale);
+            userRepository.save(user);
+        });
+    }
+
+    public Optional<Locale> getUserLocale(String email) {
+        return userRepository.findByEmail(email)
+                .map(UserEntity::getPreferredLocale);
     }
 }

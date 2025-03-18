@@ -182,6 +182,8 @@ public class HomeView extends AppLayout {
             deFlagIcon.getStyle().remove("filter");
         }
         Button deFlagIconButton = new Button(deFlagIcon, buttonClickEvent -> {
+            authenticatedUser.ifPresent(userDetails -> userService.updateUserLocale(userDetails.getUsername(), Locale.GERMAN));
+
             VaadinSession.getCurrent().setLocale(Locale.GERMAN);
             UI.getCurrent().getPage().reload();
         });
@@ -196,6 +198,7 @@ public class HomeView extends AppLayout {
             enFlagIcon.getStyle().remove("filter");
         }
         Button enFlagIconButton = new Button(enFlagIcon, buttonClickEvent -> {
+            authenticatedUser.ifPresent(userDetails -> userService.updateUserLocale(userDetails.getUsername(), Locale.ENGLISH));
             VaadinSession.getCurrent().setLocale(Locale.ENGLISH);
             UI.getCurrent().getPage().reload();
         });

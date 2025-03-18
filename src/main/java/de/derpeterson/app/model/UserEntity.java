@@ -1,5 +1,6 @@
 package de.derpeterson.app.model;
 
+import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.model.enums.Gender;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -10,6 +11,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Locale;
 
 @Entity
 @Table(name = "users")
@@ -61,6 +63,8 @@ public class UserEntity {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    private String preferredLocale;
+
     @ManyToMany
     @JoinTable(
             name = "users_roles",
@@ -69,4 +73,12 @@ public class UserEntity {
             inverseJoinColumns = @JoinColumn(
                     name = "role_id", referencedColumnName = "id"))
     private Collection<RoleEntity> roleEntities;
+
+    public Locale getPreferredLocale() {
+        return preferredLocale != null ? Locale.forLanguageTag(preferredLocale) : CustomI18NProvider.getCurrentLocale();
+    }
+
+    public void setPreferredLocale(Locale locale) {
+        this.preferredLocale = locale != null ? locale.toLanguageTag() : CustomI18NProvider.getCurrentLocale().toLanguageTag();
+    }
 }
