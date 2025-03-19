@@ -79,6 +79,7 @@ public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLa
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getResetPasswordInvalidText));
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+            NotificationHelper.getInstance().updateText();
         });
 
         setSizeFull();
@@ -152,9 +153,9 @@ public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLa
 
             boolean success = passwordResetService.resetPassword(token, passwordField.getValue());
             if (success) {
-                NotificationHelper.getInstance().showNotification(messageProperties.getBaseSuccessTitle(), messageProperties.getResetPasswordSuccessMessage(), -1, NotificationHelper.NotificationType.SUCCESS);
+                NotificationHelper.getInstance().showNotification(messageProperties::getBaseSuccessTitle, messageProperties::getResetPasswordSuccessMessage, -1, NotificationHelper.NotificationType.SUCCESS);
             } else {
-                NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(), messageProperties.getBaseFailedMessage(), -1, NotificationHelper.NotificationType.ERROR);
+                NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle, messageProperties::getBaseFailedMessage, -1, NotificationHelper.NotificationType.ERROR);
             }
         });
         resetButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());

@@ -123,6 +123,7 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseRegistrationButton));
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+            NotificationHelper.getInstance().updateText();
         });
 
         setSizeFull();
@@ -250,19 +251,19 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
             boolean emailSent = verificationService.sendVerificationEmailByUser(userEntity);
 
             if (emailSent) {
-                NotificationHelper.getInstance().showNotification(messageProperties.getBaseSuccessTitle(),
-                        messageProperties.getRegistrationSuccessMessage(userEntity.getEmail()),
+                NotificationHelper.getInstance().showNotification(messageProperties::getBaseSuccessTitle,
+                        () -> messageProperties.getRegistrationSuccessMessage(userEntity.getEmail()),
                         -1, NotificationHelper.NotificationType.SUCCESS);
             } else {
-                NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
-                        messageProperties.getBaseFailedMessage(),
+                NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle,
+                        messageProperties::getBaseFailedMessage,
                         -1, NotificationHelper.NotificationType.ERROR);
             }
         } catch (IOException e) {
             logger.error("Exception occurred:", e);
 
-            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
-                    messageProperties.getBaseFailedMessage(),
+            NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle,
+                    messageProperties::getBaseFailedMessage,
                     -1, NotificationHelper.NotificationType.ERROR);
         }
     }

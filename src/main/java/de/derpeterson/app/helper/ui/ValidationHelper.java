@@ -25,8 +25,8 @@ public class ValidationHelper {
 
     public static boolean validateRequiredInputs(List<? extends AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>> requiredInputs, MessageProperties messageProperties) {
         if (requiredInputs.stream().anyMatch(AbstractField::isEmpty)) {
-            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
-                    messageProperties.getBaseValidationRequiredMessage(),
+            NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle,
+                    messageProperties::getBaseValidationRequiredMessage,
                     -1, NotificationHelper.NotificationType.ERROR);
 
             requiredInputs.stream().filter(AbstractField::isEmpty).map(HasValidationProperties.class::cast).forEach(field -> field.setInvalid(true));
@@ -41,8 +41,8 @@ public class ValidationHelper {
 
     public static boolean validatePasswordSecureInputs(List<PasswordField> passwordFields, MessageProperties messageProperties) {
         if (passwordFields.stream().anyMatch(field -> !field.getValue().matches(UserEntity.PASSWORD_REGEX))) {
-            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
-                    messageProperties.getBaseValidationPasswordInvalidMessage(),
+            NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle,
+                    messageProperties::getBaseValidationPasswordInvalidMessage,
                     -1, NotificationHelper.NotificationType.ERROR);
 
             passwordFields.forEach(field -> field.setInvalid(!field.getValue().matches(UserEntity.PASSWORD_REGEX)));
@@ -56,8 +56,8 @@ public class ValidationHelper {
 
     public static boolean validateEmailValidInputs(List<EmailField> emailFieldsFields, MessageProperties messageProperties) {
         if (emailFieldsFields.stream().anyMatch(field -> !field.getValue().matches(EmailValidator.PATTERN))) {
-            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
-                    messageProperties.getBaseValidationEmailInvalidMessage(),
+            NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle,
+                    messageProperties::getBaseValidationEmailInvalidMessage,
                     -1, NotificationHelper.NotificationType.ERROR);
 
             emailFieldsFields.forEach(field -> field.setInvalid(!field.getValue().matches(EmailValidator.PATTERN)));
@@ -71,8 +71,8 @@ public class ValidationHelper {
 
     public static boolean validatePasswordConfirmInputs(PasswordField input, PasswordField confirmInput, MessageProperties messageProperties) {
         if (!StringUtils.equals(input.getValue(), confirmInput.getValue())) {
-            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
-                    messageProperties.getBaseValidationPasswordConfirmMessage(),
+            NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle,
+                    messageProperties::getBaseValidationPasswordConfirmMessage,
                     -1, NotificationHelper.NotificationType.ERROR);
 
             input.setInvalid(true);
@@ -89,8 +89,8 @@ public class ValidationHelper {
 
     public static boolean validateEmailConfirmInputs(EmailField input, EmailField confirmInput, MessageProperties messageProperties) {
         if (!StringUtils.equals(input.getValue(), confirmInput.getValue())) {
-            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
-                    messageProperties.getBaseValidationEmailConfirmMessage(),
+            NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle,
+                    messageProperties::getBaseValidationEmailConfirmMessage,
                     -1, NotificationHelper.NotificationType.ERROR);
 
             input.setInvalid(true);
@@ -107,8 +107,8 @@ public class ValidationHelper {
 
     public static boolean validateEmailNotExistsInput(EmailField emailField, EmailField confirmEmailField, UserService userService, MessageProperties messageProperties) {
         if (userService.findByEmail(emailField.getValue()).isPresent()) {
-            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
-                    messageProperties.getBaseValidationEmailExistsMessage(),
+            NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle,
+                    messageProperties::getBaseValidationEmailExistsMessage,
                     -1, NotificationHelper.NotificationType.ERROR);
 
             emailField.setInvalid(true);
@@ -125,8 +125,8 @@ public class ValidationHelper {
 
     public static boolean validateBirthDateBeforeInput(DatePicker datePicker, MessageProperties messageProperties) {
         if (datePicker.getValue().isAfter(LocalDate.now())) {
-            NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
-                    messageProperties.getBaseValidationBirthDatePastMessage(),
+            NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle,
+                    messageProperties::getBaseValidationBirthDatePastMessage,
                     -1, NotificationHelper.NotificationType.ERROR);
 
             datePicker.setInvalid(true);

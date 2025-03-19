@@ -107,8 +107,8 @@
     - AdminView
     - ~~RegistrationView~~
 - ~~Speichern und Setzen~~
-- Without Reload
-    - Überall umsetzen
+- ~~Without Reload~~
+    - ~~Überall umsetzen~~
     - ~~Verbessern?~~
 
 ## Config Table

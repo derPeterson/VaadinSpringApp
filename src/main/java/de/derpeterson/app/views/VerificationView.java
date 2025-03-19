@@ -45,7 +45,7 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
 
     private static final Logger logger = LoggerFactory.getLogger(VerificationView.class);
 
-    private final MessageProperties messageProperties;
+    private final transient MessageProperties messageProperties;
     private final transient VerificationService verificationService;
 
     private final VerticalLayout mainContent;
@@ -101,6 +101,7 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getVerificationSuccessText));
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+            NotificationHelper.getInstance().updateText();
         });
 
         setSizeFull();
@@ -162,20 +163,20 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(expiredTitle);
 
-        VerticalLayout cardTextLayout = createExpiredCardTextLayout(messageProperties.getVerificationExpiredText1(), messageProperties.getVerificationExpiredText2());
+        VerticalLayout cardTextLayout = createExpiredCardTextLayout(this.messageProperties.getVerificationExpiredText1(), this.messageProperties.getVerificationExpiredText2());
 
         this.resendButton = new Button(messageProperties.getBaseResendButton(), event -> {
             try {
                 boolean emailSent = verificationService.sendVerificationEmailByToken(token);
                 if (emailSent) {
-                    NotificationHelper.getInstance().showNotification(messageProperties.getBaseSuccessTitle(), messageProperties.getVerificationExpiredSuccessMessage(), -1, NotificationHelper.NotificationType.SUCCESS);
+                    NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseSuccessTitle, this.messageProperties::getVerificationExpiredSuccessMessage, -1, NotificationHelper.NotificationType.SUCCESS);
                 } else {
-                    NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(), messageProperties.getBaseFailedMessage(), -1, NotificationHelper.NotificationType.ERROR);
+                    NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseFailedTitle, this.messageProperties::getBaseFailedMessage, -1, NotificationHelper.NotificationType.ERROR);
                 }
             } catch (IOException e) {
                 logger.error("Exception occurred:", e);
 
-                NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(), messageProperties.getBaseFailedMessage(),
+                NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseFailedTitle, this.messageProperties::getBaseFailedMessage,
                         -1, NotificationHelper.NotificationType.ERROR);
             }
         });
@@ -270,14 +271,14 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
             try {
                 boolean emailSent = verificationService.sendVerificationEmailByEmail(emailField.getValue());
                 if (emailSent) {
-                    NotificationHelper.getInstance().showNotification(messageProperties.getBaseSuccessTitle(), messageProperties.getVerificationNotFoundSuccessMessage(), -1, NotificationHelper.NotificationType.SUCCESS);
+                    NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseSuccessTitle, this.messageProperties::getVerificationNotFoundSuccessMessage, -1, NotificationHelper.NotificationType.SUCCESS);
                 } else {
-                    NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(), messageProperties.getBaseFailedMessage(), -1, NotificationHelper.NotificationType.ERROR);
+                    NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseFailedTitle, this.messageProperties::getBaseFailedMessage, -1, NotificationHelper.NotificationType.ERROR);
                 }
             } catch (IOException e) {
                 logger.error("Exception occurred:", e);
 
-                NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(), messageProperties.getBaseFailedMessage(),
+                NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseFailedTitle, this.messageProperties::getBaseFailedMessage,
                         -1, NotificationHelper.NotificationType.ERROR);
             }
         });

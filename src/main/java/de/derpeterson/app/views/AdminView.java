@@ -13,6 +13,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
+import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.IsAuthentificatedBaseView;
 import de.derpeterson.app.security.SecurityService;
@@ -47,6 +48,7 @@ public class AdminView extends IsAuthentificatedBaseView<VerticalLayout> {
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseLogoutButton));
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+            NotificationHelper.getInstance().updateText();
         });
 
         setSizeFull();

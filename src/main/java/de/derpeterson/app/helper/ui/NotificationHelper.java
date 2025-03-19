@@ -13,10 +13,19 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.function.Supplier;
+
 import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
 
 @NoArgsConstructor
 public class NotificationHelper {
+
+    private Span titleText = null;
+    private Supplier<String> titleSupplier = null;
+    private Html messageText = null;
+    private Supplier<String> messageSupplier = null;
+    private VerticalLayout textLayout = null;
+
 
     public enum NotificationType {
         NORMAL,
@@ -39,25 +48,37 @@ public class NotificationHelper {
         return instance;
     }
 
-    public void showNotification(String message) {
-        showNotification(null, message, DEFAULT_NOTIFICATION_DURATION, NotificationType.NORMAL);
+    public void showNotification(Supplier<String> messageSupplier) {
+        showNotification(null, messageSupplier, DEFAULT_NOTIFICATION_DURATION, NotificationType.NORMAL);
     }
 
-    public void showNotification(String message, NotificationType notificationType) {
-        showNotification(null, message, DEFAULT_NOTIFICATION_DURATION, notificationType);
+    public void showNotification(Supplier<String> messageSupplier, NotificationType notificationType) {
+        showNotification(null, messageSupplier, DEFAULT_NOTIFICATION_DURATION, notificationType);
     }
 
-    public void showNotification(String title, String message, NotificationType notificationType) {
-        showNotification(title, message, DEFAULT_NOTIFICATION_DURATION, notificationType);
+    public void showNotification(Supplier<String> titleSupplier, Supplier<String> messageSupplier, NotificationType notificationType) {
+        showNotification(titleSupplier, titleSupplier, DEFAULT_NOTIFICATION_DURATION, notificationType);
     }
 
-    public void showNotification(String title, String message, Integer duration, NotificationType notificationType) {
+    public void showNotification(Supplier<String> titleSupplier, Supplier<String> messageSupplier, Integer duration, NotificationType notificationType) {
         closeAndClearAllNotifications();
+
+        this.titleSupplier = titleSupplier;
+        this.messageSupplier = messageSupplier;
+
+        String title = null;
+        if (titleSupplier != null) {
+            title = titleSupplier.get();
+        }
+        String message = null;
+        if (messageSupplier != null) {
+            message = messageSupplier.get();
+        }
 
         currentNotification.setPosition(Notification.Position.TOP_CENTER);
         currentNotification.setDuration(duration);
 
-        Span titleText = null;
+        this.titleText = null;
         if (StringUtils.isNotEmpty(title)) {
             titleText = new Span(title);
             titleText.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.FontWeight.SEMIBOLD);
@@ -98,19 +119,13 @@ public class NotificationHelper {
 
         contentLayout.add(icon);
 
-        Html messageText = new Html(HtmlHelper.ensureParagraphTags(message));
-        messageText.addClassNames(LumoUtility.Margin.NONE);
-        messageText.getStyle().set("max-width", "520px");
-        VerticalLayout textLayout = new VerticalLayout();
+        this.textLayout = new VerticalLayout();
         textLayout.addClassNames(LumoUtility.Padding.SMALL);
         textLayout.setSpacing(false);
         textLayout.setWidth(null);
-        if (titleText != null) {
-            textLayout.add(titleText);
-            textLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
-            messageText.addClassNames(LumoUtility.FontSize.SMALL);
-        }
-        textLayout.add(messageText);
+
+        createTextLayoutContent(message);
+
         contentLayout.add(textLayout);
 
         currentNotification.add(contentLayout);
@@ -127,11 +142,41 @@ public class NotificationHelper {
         return closeButton;
     }
 
+    private void createTextLayoutContent(String message) {
+        this.messageText = new Html(HtmlHelper.ensureParagraphTags(message));
+        messageText.addClassNames(LumoUtility.Margin.NONE);
+        messageText.getStyle().set("max-width", "520px");
+
+        textLayout.removeAll();
+
+        if (titleText != null) {
+            textLayout.add(titleText);
+            textLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
+            messageText.addClassNames(LumoUtility.FontSize.SMALL);
+        }
+        textLayout.add(messageText);
+    }
+
     public void closeAndClearAllNotifications() {
         if (currentNotification.isOpened()) {
             currentNotification.close();
         }
 
+        this.titleText = null;
+        this.titleSupplier = null;
+        this.messageText = null;
+        this.messageSupplier = null;
+
         currentNotification = new Notification();
     }
+
+    public void updateText() {
+        if (titleText != null && titleSupplier != null) {
+            titleText.setText(titleSupplier.get());
+        }
+        if (messageText != null && messageSupplier != null) {
+            createTextLayoutContent(messageSupplier.get());
+        }
+    }
+
 }

@@ -59,7 +59,7 @@ public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
     private Button loginButton = null;
     private H1 title = null;
     private Span createAccountQuestionText = null;
-    
+
     public LoginView(MessageProperties messageProperties, AuthenticationManager authenticationManager, SecurityService securityService, HttpServletRequest request) {
         super(securityService, request, new HorizontalLayout());
 
@@ -88,6 +88,7 @@ public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
 
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+            NotificationHelper.getInstance().updateText();
         });
 
         setSizeFull();
@@ -111,11 +112,11 @@ public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
                     securityService.storeAuthenticatedUser(request, userDetails, rememberMeCheckBox.getValue());
                 }
 
-                NotificationHelper.getInstance().showNotification(messageProperties.getBaseSuccessTitle(), messageProperties.getLoginSuccessMessage(), NotificationHelper.NotificationType.SUCCESS);
+                NotificationHelper.getInstance().showNotification(messageProperties::getBaseSuccessTitle, messageProperties::getLoginSuccessMessage, NotificationHelper.NotificationType.SUCCESS);
 
                 getUI().ifPresent(ui -> ui.navigate(AdminView.class));
             } catch (AuthenticationException e) {
-                NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(), messageProperties.getLoginFailedMessage(), -1, NotificationHelper.NotificationType.ERROR);
+                NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle, messageProperties::getLoginFailedMessage, -1, NotificationHelper.NotificationType.ERROR);
             }
         });
 

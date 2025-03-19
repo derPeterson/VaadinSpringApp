@@ -79,6 +79,7 @@ public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalL
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseLoginButton));
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+            NotificationHelper.getInstance().updateText();
         });
 
         setSizeFull();
@@ -152,15 +153,15 @@ public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalL
             try {
                 boolean emailSent = passwordResetService.sendPasswordResetEmail(emailField.getValue());
                 if (emailSent) {
-                    NotificationHelper.getInstance().showNotification(messageProperties.getBaseSuccessTitle(), messageProperties.getForgotPasswordSuccessMessage(), -1, NotificationHelper.NotificationType.SUCCESS);
+                    NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseSuccessTitle, this.messageProperties::getForgotPasswordSuccessMessage, -1, NotificationHelper.NotificationType.SUCCESS);
                 } else {
-                    NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(), messageProperties.getBaseFailedMessage(), -1, NotificationHelper.NotificationType.ERROR);
+                    NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseFailedTitle, this.messageProperties::getBaseFailedMessage, -1, NotificationHelper.NotificationType.ERROR);
                 }
             } catch (IOException e) {
                 logger.error("Exception occurred:", e);
 
-                NotificationHelper.getInstance().showNotification(messageProperties.getBaseFailedTitle(),
-                        messageProperties.getBaseFailedMessage(),
+                NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseFailedTitle,
+                        this.messageProperties::getBaseFailedMessage,
                         -1, NotificationHelper.NotificationType.ERROR);
             }
         });
