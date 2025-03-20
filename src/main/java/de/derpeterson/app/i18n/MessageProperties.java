@@ -283,8 +283,16 @@ public class MessageProperties {
         return i18nProvider.getTranslation("userStatus.offline");
     }
 
+    public String getUserStatusOfflineDescription() {
+        return i18nProvider.getTranslation("userStatus.offline.description");
+    }
+
     public String getUserStatusAbsent() {
         return i18nProvider.getTranslation("userStatus.absent");
+    }
+
+    public String getUserStatusAbsentDescription() {
+        return i18nProvider.getTranslation("userStatus.absent.description");
     }
 
     public String getUserStatusEmployed() {
@@ -295,6 +303,14 @@ public class MessageProperties {
         return i18nProvider.getTranslation("userStatus.available");
     }
 
+    public String getUserStatusEmployedDescription() {
+        return i18nProvider.getTranslation("userStatus.employed.description");
+    }
+
+    public String getUserStatusAvailableDescription() {
+        return i18nProvider.getTranslation("userStatus.available.description");
+    }
+    
     public String getTranslation(String textKey) {
         return i18nProvider.getTranslation(textKey);
     }

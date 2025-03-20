@@ -6,8 +6,11 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -15,12 +18,15 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.component.popover.PopoverVariant;
+import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.events.LanguageChangeEvent;
+import de.derpeterson.app.helper.ui.ComponentPrefixHelper;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -54,7 +60,7 @@ public class HomeView extends AppLayout {
     private final transient UserService userService;
     private final transient SecurityService securityService;
 
-    private final transient Optional<UserDetails> authenticatedUser;
+    private transient Optional<UserEntity> userEntity = Optional.empty();
 
     private Span onlineText = null;
     private Span offlineText = null;
@@ -62,6 +68,9 @@ public class HomeView extends AppLayout {
     private Button logoutButton = null;
     private Button registrationButton = null;
     private Button loginButton = null;
+    private Image deFlagIcon = null;
+    private Image enFlagIcon = null;
+    private Select<UserStatus> userStatusSelect = null;
 
     @Autowired
     public HomeView(MessageProperties messageProperties, SecurityService securityService, HttpServletRequest request, ConfigService configService, UserService userService) {
@@ -69,7 +78,9 @@ public class HomeView extends AppLayout {
         this.securityService = securityService;
         this.userService = userService;
 
-        this.authenticatedUser = securityService.getAuthenticatedUser(request);
+        Optional<UserDetails> authenticatedUser = securityService.getAuthenticatedUser(request);
+
+        authenticatedUser.ifPresent(userDetails -> this.userEntity = securityService.getUser(userDetails));
 
         ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> {
             VaadinSession.getCurrent().setLocale(event.getNewLocale());
@@ -89,7 +100,28 @@ public class HomeView extends AppLayout {
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseLoginButton));
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+
             NotificationHelper.getInstance().updateText();
+
+            Optional.ofNullable(this.userStatusSelect).ifPresent(select -> {
+                select.setItemLabelGenerator(status -> getTranslation(status.getTextKey()));
+                select.setItems(UserStatus.values());
+                select.getDataProvider().refreshAll();
+                select.setValue(userEntity.isPresent() ? userEntity.get().getStatus() : UserStatus.getDefaultStatus());
+            });
+
+            var currentLocale = VaadinSession.getCurrent().getLocale();
+
+            if (!currentLocale.equals(Locale.GERMAN)) {
+                deFlagIcon.getStyle().set("filter", "grayscale(100%)");
+            } else {
+                deFlagIcon.getStyle().remove("filter");
+            }
+            if (!currentLocale.equals(Locale.ENGLISH)) {
+                enFlagIcon.getStyle().set("filter", "grayscale(100%)");
+            } else {
+                enFlagIcon.getStyle().remove("filter");
+            }
         });
 
         HorizontalLayout headerLayout = new HorizontalLayout();
@@ -116,7 +148,7 @@ public class HomeView extends AppLayout {
         userLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
 
         Button userIconButton = new Button(new OverlayUserIcon(messageProperties, new Image("themes/custom-theme/user_icon.png", "User Icon"),
-                securityService.getAuthenticatedUser(request).isPresent() ? UserStatus.AVAILABLE : UserStatus.OFFLINE, IconSize.PIXEL_48));
+                userEntity.isPresent() ? userEntity.get().getStatus() : UserStatus.getDefaultStatus(), IconSize.PIXEL_48));
 
         Popover popover = createUserPopover(userIconButton);
 
@@ -172,25 +204,22 @@ public class HomeView extends AppLayout {
         contentLayout.addClassNames(LumoUtility.Padding.Top.SMALL, LumoUtility.Padding.Bottom.SMALL, LumoUtility.Gap.SMALL);
 
         contentLayout.add(new OverlayUserIcon(messageProperties, new Image("themes/custom-theme/user_icon.png", "User Icon"),
-                authenticatedUser.isPresent() ? UserStatus.AVAILABLE : UserStatus.OFFLINE, IconSize.PIXEL_96));
+                userEntity.isPresent() ? userEntity.get().getStatus() : UserStatus.getDefaultStatus(), IconSize.PIXEL_96));
 
-        if (authenticatedUser.isPresent()) {
+        if (userEntity.isPresent()) {
             this.onlineText = new Span(messageProperties.getBaseOnlineText());
             onlineText.addClassNames(LumoUtility.TextColor.PRIMARY, LumoUtility.FontWeight.SEMIBOLD);
             contentLayout.add(onlineText);
 
-            Optional<UserEntity> user = userService.findByEmail(authenticatedUser.get().getUsername());
-            if (user.isPresent()) {
-                if (StringUtils.isNotEmpty(user.get().getFirstName()) || StringUtils.isNotEmpty(user.get().getLastName())) {
-                    Span nameText = new Span(user.get().getFirstName() + " " + user.get().getLastName());
-                    nameText.addClassNames(LumoUtility.FontWeight.BOLD);
-                    contentLayout.add(nameText);
-                }
-
-                Span emailText = new Span(user.get().getEmail());
-                emailText.addClassNames(LumoUtility.TextColor.SECONDARY);
-                contentLayout.add(emailText);
+            if (StringUtils.isNotEmpty(userEntity.get().getFirstName()) || StringUtils.isNotEmpty(userEntity.get().getLastName())) {
+                Span nameText = new Span(userEntity.get().getFirstName() + " " + userEntity.get().getLastName());
+                nameText.addClassNames(LumoUtility.FontWeight.BOLD);
+                contentLayout.add(nameText);
             }
+
+            Span emailText = new Span(userEntity.get().getEmail());
+            emailText.addClassNames(LumoUtility.TextColor.SECONDARY);
+            contentLayout.add(emailText);
         } else {
             this.offlineText = new Span(messageProperties.getBaseOfflineText());
             offlineText.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.SEMIBOLD);
@@ -199,41 +228,128 @@ public class HomeView extends AppLayout {
 
         this.manageAccountButton = new Button(messageProperties.getBaseManageAccountButton());
         manageAccountButton.setPrefixComponent(VaadinIcon.COG.create());
-        manageAccountButton.setEnabled(authenticatedUser.isPresent());
-        if (authenticatedUser.isPresent()) {
+        manageAccountButton.setEnabled(userEntity.isPresent());
+        if (userEntity.isPresent()) {
             manageAccountButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         }
         manageAccountButton.setWidthFull();
 
         contentLayout.add(manageAccountButton);
 
-        Locale curentLocale = VaadinSession.getCurrent().getLocale();
+        this.userStatusSelect = new Select<>();
+        userStatusSelect.setEnabled(userEntity.isPresent());
+        userStatusSelect.setItems(UserStatus.values());
+        userStatusSelect.setItemLabelGenerator(UserStatus::getTextKey);
+        userStatusSelect.setItemLabelGenerator(userStatus -> messageProperties.getTranslation(userStatus.getTextKey()));
+        userStatusSelect.addValueChangeListener(event -> {
+            UserStatus userStatus = event.getValue();
+            if (userStatus == null) {
+                ComponentPrefixHelper.clearSlot(userStatusSelect, "prefix");
+                return;
+            } else {
+                if (userStatus.getComponent(IconSize.PIXEL_16) instanceof Icon statusIcon) {
+                    HorizontalLayout iconLayout = new HorizontalLayout();
+                    iconLayout.addClassNames(LumoUtility.Padding.Left.SMALL, LumoUtility.Padding.Right.SMALL);
 
-        Image deFlagIcon = new Image("themes/custom-theme/flag_de.png", "German Flag Icon");
+                    iconLayout.add(statusIcon);
+
+                    ComponentPrefixHelper.setPrefixComponent(userStatusSelect, iconLayout);
+                }
+
+                if (userStatus.getComponent(IconSize.PIXEL_16) instanceof Div statusDiv) {
+                    HorizontalLayout divLayout = new HorizontalLayout();
+                    divLayout.addClassNames(LumoUtility.Padding.Left.SMALL, LumoUtility.Padding.Right.SMALL);
+
+                    divLayout.add(statusDiv);
+
+                    ComponentPrefixHelper.setPrefixComponent(userStatusSelect, divLayout);
+                }
+
+                userEntity.ifPresent(entity -> userService.updateUserStatus(entity, event.getValue(), true));
+            }
+        });
+        userStatusSelect.setRenderer(new ComponentRenderer<>(userStatus -> {
+            HorizontalLayout contentComboBox = new HorizontalLayout();
+            contentComboBox.setWidthFull();
+
+            if (userStatus.getComponent() instanceof Icon statusIcon) {
+                VerticalLayout iconLayout = new VerticalLayout();
+                iconLayout.setPadding(false);
+                iconLayout.setSpacing(false);
+                iconLayout.setWidth(null);
+                iconLayout.setSizeUndefined();
+                iconLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+                iconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+
+                iconLayout.add(statusIcon);
+
+                contentComboBox.add(iconLayout);
+            }
+
+            if (userStatus.getComponent() instanceof Div statusDiv) {
+                VerticalLayout divLayout = new VerticalLayout();
+                divLayout.setPadding(false);
+                divLayout.setSpacing(false);
+                divLayout.setWidth(null);
+                divLayout.setSizeUndefined();
+                divLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+                divLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+
+                divLayout.add(statusDiv);
+
+                contentComboBox.add(divLayout);
+            }
+
+            VerticalLayout textLayout = new VerticalLayout();
+            textLayout.setPadding(false);
+            textLayout.setSpacing(false);
+            textLayout.setWidthFull();
+
+            Span userStatusText = new Span(messageProperties.getTranslation(userStatus.getTextKey()));
+
+            Span userStatusSecondaryText = new Span(messageProperties.getTranslation(userStatus.getTextDescriptionKey()));
+            userStatusSecondaryText.addClassNames(LumoUtility.FontSize.XXSMALL, LumoUtility.TextColor.SECONDARY);
+
+            textLayout.add(userStatusText);
+            textLayout.add(new Hr());
+            textLayout.add(userStatusSecondaryText);
+
+            contentComboBox.add(textLayout);
+
+            return contentComboBox;
+        }));
+        userStatusSelect.setValue(userEntity.isPresent() ? userEntity.get().getStatus() : UserStatus.getDefaultStatus());
+        userStatusSelect.setWidthFull();
+
+        contentLayout.add(userStatusSelect);
+
+        Locale currentLocale = VaadinSession.getCurrent().getLocale();
+
+        this.deFlagIcon = new Image("themes/custom-theme/flag_de.png", "German Flag Icon");
         deFlagIcon.setWidth("32px");
         deFlagIcon.setHeight("32px");
-        if (!curentLocale.equals(Locale.GERMAN)) {
+        if (!currentLocale.equals(Locale.GERMAN)) {
             deFlagIcon.getStyle().set("filter", "grayscale(100%)");
         } else {
             deFlagIcon.getStyle().remove("filter");
         }
         Button deFlagIconButton = new Button(deFlagIcon, buttonClickEvent -> {
-            authenticatedUser.ifPresent(userDetails -> userService.updateUserLocale(userDetails.getUsername(), Locale.GERMAN));
+            userEntity.ifPresent(user -> userService.updateUserLocale(user.getEmail(), Locale.GERMAN));
             VaadinSession.getCurrent().setLocale(Locale.GERMAN);
             LanguageChangeEvent.fire(UI.getCurrent(), Locale.GERMAN);
         });
         deFlagIconButton.addThemeVariants(LUMO_TERTIARY_INLINE);
 
-        Image enFlagIcon = new Image("themes/custom-theme/flag_en.png", "Englisch Flag Icon");
+        this.enFlagIcon = new Image("themes/custom-theme/flag_en.png", "Englisch Flag Icon");
         enFlagIcon.setWidth("32px");
         enFlagIcon.setHeight("32px");
-        if (!curentLocale.equals(Locale.ENGLISH)) {
+        if (!currentLocale.equals(Locale.ENGLISH)) {
             enFlagIcon.getStyle().set("filter", "grayscale(100%)");
         } else {
             enFlagIcon.getStyle().remove("filter");
         }
         Button enFlagIconButton = new Button(enFlagIcon, buttonClickEvent -> {
-            authenticatedUser.ifPresent(userDetails -> userService.updateUserLocale(userDetails.getUsername(), Locale.ENGLISH));
+            userEntity.ifPresent(user -> userService.updateUserLocale(user.getEmail(), Locale.ENGLISH));
             VaadinSession.getCurrent().setLocale(Locale.ENGLISH);
             LanguageChangeEvent.fire(UI.getCurrent(), Locale.ENGLISH);
         });
@@ -244,7 +360,7 @@ public class HomeView extends AppLayout {
 
         contentLayout.add(flagLayout);
 
-        if (authenticatedUser.isPresent()) {
+        if (userEntity.isPresent()) {
             this.logoutButton = new Button(messageProperties.getBaseLogoutButton());
             logoutButton.setPrefixComponent(VaadinIcon.SIGN_OUT.create());
             logoutButton.addClickListener(buttonClickEvent -> securityService.logout());

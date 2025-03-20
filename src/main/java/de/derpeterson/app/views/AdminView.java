@@ -34,6 +34,7 @@ public class AdminView extends IsAuthentificatedBaseView<VerticalLayout> {
     private final MessageProperties messageProperties;
 
     private Button logoutButton = null;
+    private Button homeButton = null;
 
     public AdminView(MessageProperties messageProperties, SecurityService securityService, HttpServletRequest request) {
         super(securityService, request, new VerticalLayout());
@@ -46,6 +47,8 @@ public class AdminView extends IsAuthentificatedBaseView<VerticalLayout> {
             Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
             Optional.ofNullable(logoutButton)
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseLogoutButton));
+            Optional.ofNullable(homeButton)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseHomeButton));
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
             NotificationHelper.getInstance().updateText();
@@ -65,15 +68,12 @@ public class AdminView extends IsAuthentificatedBaseView<VerticalLayout> {
             Notification.show("Fehler: Benutzer ist nicht authentifiziert.");
         }
 
+        // Home-Button
+        this.homeButton = new Button(messageProperties.getBaseHomeButton(), event -> UI.getCurrent().navigate(HomeView.class));
+        add(homeButton);
+
         // Logout-Button
         this.logoutButton = new Button(messageProperties.getBaseLogoutButton(), event -> securityService.logout());
-
         add(logoutButton);
-    }
-
-    private void updateLanguageTexts() {
-        if (logoutButton != null) {
-            logoutButton.setText(messageProperties.getBaseLogoutButton());
-        }
     }
 }

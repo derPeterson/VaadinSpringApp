@@ -2,6 +2,7 @@ package de.derpeterson.app.model;
 
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.model.enums.Gender;
+import de.derpeterson.app.model.enums.UserStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -10,6 +11,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Locale;
 
@@ -28,11 +30,11 @@ public class UserEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = true)
+    @Column(nullable = false)
     @NotNull(message = "Der Vorname darf nicht leer sein.")
     private String firstName;
 
-    @Column(nullable = true)
+    @Column(nullable = false)
     @NotNull(message = "Der Nachname darf nicht leer sein.")
     private String lastName;
 
@@ -51,7 +53,7 @@ public class UserEntity {
     private String email;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = true)
+    @Column(nullable = false)
     @NotNull(message = "Der Geschlecht darf nicht leer sein.")
     private Gender gender;
 
@@ -61,9 +63,26 @@ public class UserEntity {
     private LocalDate birthDate;
 
     @Column(nullable = false)
-    private boolean enabled = true;
+    @Builder.Default
+    private boolean enabled = false;
 
-    private String preferredLocale;
+    @Column(nullable = false)
+    @Builder.Default
+    private Locale preferredLocale = CustomI18NProvider.getCurrentLocale();
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private UserStatus status = UserStatus.getDefaultStatus();
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean statusManuallySet = false;
+
+    @Column(nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    @Builder.Default
+    private LocalDateTime lastActivity = LocalDateTime.now();
 
     @ManyToMany
     @JoinTable(
@@ -74,11 +93,22 @@ public class UserEntity {
                     name = "role_id", referencedColumnName = "id"))
     private Collection<RoleEntity> roleEntities;
 
-    public Locale getPreferredLocale() {
-        return preferredLocale != null ? Locale.forLanguageTag(preferredLocale) : CustomI18NProvider.getCurrentLocale();
+    public void setAutomaticStatus(UserStatus newStatus) {
+        if (!statusManuallySet) {
+            this.status = newStatus;
+        }
     }
 
-    public void setPreferredLocale(Locale locale) {
-        this.preferredLocale = locale != null ? locale.toLanguageTag() : CustomI18NProvider.getCurrentLocale().toLanguageTag();
+    public void setManualStatus(UserStatus newStatus) {
+        this.status = newStatus;
+        this.statusManuallySet = true;
+    }
+
+    public void enableAutomaticStatus() {
+        this.statusManuallySet = false;
+    }
+
+    public void updateLastActivity() {
+        this.lastActivity = LocalDateTime.now();
     }
 }

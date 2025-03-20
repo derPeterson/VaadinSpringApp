@@ -4,6 +4,29 @@
     text-decoration: underline;
 }
 
+/* Select */
+
+/* Entfernt das Checkmark aus der ComboBox */
+vaadin-select-item::part(checkmark) {
+    display: none !important;
+}
+
+vaadin-select-overlay::part(overlay) {
+    width: 450px !important; /* Setzt die Breite des Overlays */
+}
+
+/* Hebt das ausgewählte Item mit einem blauen Rand hervor */
+vaadin-select-overlay vaadin-select-item[selected] {
+    border: 2px solid var(--lumo-primary-color) !important; /* Nutzt die primäre Farbe */
+    background-color: var(--lumo-primary-color-10pct) !important; /* 10% transparente Version */
+    border-radius: 4px;
+}
+
+/* Setzt Padding für jedes Item in der ComboBox */
+vaadin-select-overlay vaadin-select-item::part(content) {
+    padding-left: 24px;
+}
+
 /* Views */
 .login-bg-fullscreen {
     background-image: url('login-background.jpg');

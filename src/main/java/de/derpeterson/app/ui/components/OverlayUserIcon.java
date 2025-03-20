@@ -5,8 +5,8 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
@@ -46,16 +46,17 @@ public class OverlayUserIcon extends Div {
         Div container = new Div();
 
         container.getStyle()
-                .set("position", "relative")
-                .set("display", "flex")
-                .set("align-items", "center")
-                .set("justify-content", "center");
+                .setPosition(Style.Position.RELATIVE)
+                .setDisplay(Style.Display.FLEX)
+                .setAlignItems(Style.AlignItems.CENTER)
+                .setJustifyContent(Style.JustifyContent.CENTER);
 
         userImage.setWidth(iconSize.getWidth() + iconSize.getUnit().getSymbol());
         userImage.setHeight(iconSize.getHeight() + iconSize.getUnit().getSymbol());
-        userImage.getStyle().set("background-color", "black")
-                .set("border-radius", "50%")
-                .set("box-shadow", "0 0 0 0.5px black");
+        userImage.getStyle()
+                .setBackgroundColor("#000000")
+                .setBorderRadius("50%")
+                .setBoxShadow("0 0 0 0.5px black");
 
         this.userImageToolTip = Tooltip.forComponent(userImage)
                 .withText(messageProperties.getTranslation(userStatus.getTextKey()))
@@ -64,35 +65,7 @@ public class OverlayUserIcon extends Div {
                 .withHoverDelay(1000)
                 .withHideDelay(1000);
 
-        Icon overlayIcon = null;
-        if (userStatus == UserStatus.AVAILABLE) {
-            overlayIcon = VaadinIcon.CHECK_CIRCLE.create();
-        }
-        if (userStatus == UserStatus.ABSENT) {
-            overlayIcon = VaadinIcon.CLOCK.create();
-        }
-        if (userStatus == UserStatus.EMPLOYED) {
-            overlayIcon = VaadinIcon.MINUS_CIRCLE.create();
-        }
-        if (userStatus == UserStatus.OFFLINE) {
-            overlayIcon = VaadinIcon.CLOSE_CIRCLE.create();
-        }
-
-        if (overlayIcon != null) {
-            overlayIcon.getStyle()
-                    .set("width", String.valueOf(Math.round((iconSize.getWidth() * 20) / 100) + iconSize.getUnit().getSymbol()))
-                    .set("height", String.valueOf(Math.round((iconSize.getHeight() * 20) / 100) + iconSize.getUnit().getSymbol()))
-                    .set("position", "absolute")
-                    .set("bottom", String.valueOf(Math.round((iconSize.getHeight() * 5) / 100) + iconSize.getUnit().getSymbol()))
-                    .set("right", String.valueOf(Math.round((iconSize.getWidth() * 5) / 100) + iconSize.getUnit().getSymbol()))
-                    .set("color", userStatus.getColor())
-                    .set("background-color", userStatus.getBackgroundColor())
-                    .set("border-radius", "50%");
-
-            if (userStatus != UserStatus.ABSENT) {
-                overlayIcon.getStyle().set("box-shadow", "0 0 0 0.5px " + userStatus.getBackgroundColor());
-            }
-
+        if (userStatus.getComponent(iconSize, true) instanceof Icon overlayIcon) {
             this.overlayIconTooltip = Tooltip.forComponent(overlayIcon)
                     .withText(messageProperties.getTranslation(userStatus.getTextKey()))
                     .withPosition(Tooltip.TooltipPosition.BOTTOM)
@@ -101,6 +74,17 @@ public class OverlayUserIcon extends Div {
                     .withHideDelay(1000);
 
             container.add(userImage, overlayIcon);
+        }
+
+        if (userStatus.getComponent(iconSize, true) instanceof Div overlayDiv) {
+            this.overlayIconTooltip = Tooltip.forComponent(overlayDiv)
+                    .withText(messageProperties.getTranslation(userStatus.getTextKey()))
+                    .withPosition(Tooltip.TooltipPosition.BOTTOM)
+                    .withFocusDelay(1000)
+                    .withHoverDelay(1000)
+                    .withHideDelay(1000);
+
+            container.add(userImage, overlayDiv);
         }
         add(container);
     }

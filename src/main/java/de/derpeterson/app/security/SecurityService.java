@@ -4,6 +4,8 @@ import com.vaadin.flow.server.VaadinRequest;
 import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.UserStatus;
+import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -11,6 +13,7 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -28,7 +31,8 @@ public class SecurityService {
     private final PersistentTokenBasedRememberMeServices rememberMeServices;
 
     private final UserService userService;
-    
+    private final UserRepository userRepository;
+
     public Optional<UserDetails> getAuthenticatedUser(HttpServletRequest request) {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         Authentication authentication = securityContext.getAuthentication();
@@ -54,6 +58,10 @@ public class SecurityService {
         }
 
         return Optional.empty();
+    }
+
+    public Optional<UserEntity> getUser(UserDetails user) {
+        return userRepository.findByEmail(user.getUsername());
     }
 
     public void storeAuthenticatedUser(HttpServletRequest request, UserDetails user, Boolean rememberMe) {
@@ -109,6 +117,16 @@ public class SecurityService {
         if (VaadinSession.getCurrent() != null) {
             Optional<UserEntity> userOpt = userService.findByEmail(email);
             userOpt.ifPresent(user -> VaadinSession.getCurrent().setLocale(user.getPreferredLocale()));
+        }
+    }
+
+    public void handleLogin(UserDetails user) throws AuthenticationException {
+        Optional<UserEntity> userEntity = userRepository.findByEmail(user.getUsername());
+
+        if (userEntity.isPresent()) {
+            userEntity.get().setAutomaticStatus(UserStatus.AVAILABLE);
+            userEntity.get().updateLastActivity();
+            userRepository.save(userEntity.get());
         }
     }
 }

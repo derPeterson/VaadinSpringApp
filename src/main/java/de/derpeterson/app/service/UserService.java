@@ -1,6 +1,7 @@
 package de.derpeterson.app.service;
 
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,8 +33,13 @@ public class UserService {
         });
     }
 
-    public Optional<Locale> getUserLocale(String email) {
-        return userRepository.findByEmail(email)
-                .map(UserEntity::getPreferredLocale);
+    public void updateUserStatus(UserEntity userEntity, UserStatus newStatus, boolean manualChange) {
+        if (manualChange) {
+            userEntity.setManualStatus(newStatus);
+        } else {
+            userEntity.setAutomaticStatus(newStatus);
+        }
+
+        userRepository.save(userEntity);
     }
 }

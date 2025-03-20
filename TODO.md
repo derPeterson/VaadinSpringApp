@@ -17,9 +17,15 @@
         - Manage Account
             - Page
         - ~~Online Status~~
-            - Database
-            - Change
-            - Refresh on Change
+            - ~~Database~~
+                - Absent/LastActivity
+            - ~~ComboBox~~
+                - ~~Mehrsprachig~~
+            - ~~Absent Icon~~
+            - Event
+            - ~~Overlay anpassen~~
+            - ~~Change~~
+            - ~~UserStatus verbesser~~
 
 ## Login
 

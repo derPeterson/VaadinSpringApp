@@ -20,6 +20,7 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
+import com.vaadin.flow.server.VaadinRequest;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -32,6 +33,8 @@ import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.ui.components.CardComponent;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -49,6 +52,8 @@ import java.util.function.Supplier;
 @AnonymousAllowed
 public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
 
+    private static final Logger logger = LoggerFactory.getLogger(LoginView.class);
+
     private final transient MessageProperties messageProperties;
 
     private RouterLink createAccountLink = null;
@@ -60,7 +65,8 @@ public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
     private H1 title = null;
     private Span createAccountQuestionText = null;
 
-    public LoginView(MessageProperties messageProperties, AuthenticationManager authenticationManager, SecurityService securityService, HttpServletRequest request) {
+    public LoginView(MessageProperties messageProperties, AuthenticationManager authenticationManager,
+                     SecurityService securityService, HttpServletRequest request) {
         super(securityService, request, new HorizontalLayout());
 
         this.messageProperties = messageProperties;
@@ -109,7 +115,11 @@ public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
                 if (authentication.getPrincipal() instanceof UserDetails userDetails) {
-                    securityService.storeAuthenticatedUser(request, userDetails, rememberMeCheckBox.getValue());
+                    securityService.storeAuthenticatedUser((HttpServletRequest) VaadinRequest.getCurrent(), userDetails, rememberMeCheckBox.getValue());
+
+                    securityService.handleLogin(userDetails);
+                } else {
+                    logger.warn("⚠️ Principal is not an instance of UserDetails, save and handle of login could not be performed.");
                 }
 
                 NotificationHelper.getInstance().showNotification(messageProperties::getBaseSuccessTitle, messageProperties::getLoginSuccessMessage, NotificationHelper.NotificationType.SUCCESS);
