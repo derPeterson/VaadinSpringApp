@@ -11,7 +11,9 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     Optional<UserEntity> findByEmail(String email);
+    
+    List<UserEntity> findByLastActivityBeforeAndStatus(LocalDateTime lastActivity, UserStatus status);
 
-    List<UserEntity> findByLastActivityBeforeAndStatusNot(LocalDateTime lastActivity, UserStatus status);
+    List<UserEntity> findByLastActivityAfterAndStatusAndStatusManuallySetFalse(LocalDateTime lastActivity, UserStatus status);
 
 }

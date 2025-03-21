@@ -2,8 +2,8 @@ package de.derpeterson.app.views;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
+import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
@@ -24,7 +24,10 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.shared.Registration;
+import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.config.AppConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentPrefixHelper;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
@@ -37,11 +40,13 @@ import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.ui.base.UserActivityAwareView;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
+import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import io.micrometer.common.util.StringUtils;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -52,16 +57,19 @@ import java.util.function.Supplier;
 import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
 
 @Route("home")
+@UIScope
 @PageTitle("Home")
 @AnonymousAllowed
-public class HomeView extends AppLayout {
+public class HomeView extends UserActivityAwareView {
 
     private final transient MessageProperties messageProperties;
-    private final transient UserService userService;
-    private final transient SecurityService securityService;
+    private final transient UserStatusBroadcaster userStatusBroadcaster;
 
-    private transient Optional<UserEntity> userEntity = Optional.empty();
+    private Registration userStatusBroadcasterRegistration;
 
+    private transient Optional<UserEntity> currentUser = Optional.empty();
+
+    // Text
     private Span onlineText = null;
     private Span offlineText = null;
     private Button manageAccountButton = null;
@@ -72,15 +80,72 @@ public class HomeView extends AppLayout {
     private Image enFlagIcon = null;
     private Select<UserStatus> userStatusSelect = null;
 
+    // UserStatus
+    private Button userIconButton = null;
+    private OverlayUserIcon overlayIcon = null;
+
+
+    private boolean suppressUpdate = false;
+
+    @PostConstruct
+    private void setupBroadcastListener() {
+        // WebSocket-Updates abonnieren
+        userStatusBroadcasterRegistration = userStatusBroadcaster.register(message -> {
+            if (currentUser.isPresent() && message.userId().equals(currentUser.get().getId())) {
+                getUI().ifPresent(ui -> ui.access(() -> {
+                    this.suppressUpdate = true;
+
+                    UserStatus oldStatus = UserStatus.valueOf(message.oldStatus());
+                    UserStatus newStatus = UserStatus.valueOf(message.newStatus());
+
+                    if (!oldStatus.equals(newStatus)) {
+                        if (userIconButton != null) {
+                            userIconButton.setIcon(new OverlayUserIcon(
+                                    messageProperties,
+                                    new Image(AppConstants.USER_ICON_PATH, AppConstants.USER_ICON_ALT),
+                                    newStatus,
+                                    IconSize.PIXEL_48
+                            ));
+                        }
+
+                        if (overlayIcon != null) {
+                            overlayIcon.removeAll();
+                            overlayIcon.add(new OverlayUserIcon(
+                                    messageProperties,
+                                    new Image(AppConstants.USER_ICON_PATH, AppConstants.USER_ICON_ALT),
+                                    newStatus,
+                                    IconSize.PIXEL_96
+                            ));
+                        }
+
+                        Optional.ofNullable(this.userStatusSelect).ifPresent(select -> {
+                            select.setItemLabelGenerator(status -> getTranslation(status.getTextKey()));
+                            select.setItems(UserStatus.values());
+                            select.getDataProvider().refreshAll();
+                            select.setValue(newStatus);
+                        });
+                    }
+
+                    this.suppressUpdate = false;
+                }));
+            }
+        });
+    }
+
+    @Override
+    protected void onDetach(DetachEvent detachEvent) {
+        // UI aus Broadcaster entfernen, um Speicherlecks zu vermeiden
+        userStatusBroadcasterRegistration.remove();
+    }
+
     @Autowired
-    public HomeView(MessageProperties messageProperties, SecurityService securityService, HttpServletRequest request, ConfigService configService, UserService userService) {
+    public HomeView(MessageProperties messageProperties, SecurityService securityService, HttpServletRequest request, ConfigService configService, UserService userService, UserStatusBroadcaster userStatusBroadcaster) {
+        super(securityService, userService);
+
         this.messageProperties = messageProperties;
-        this.securityService = securityService;
-        this.userService = userService;
+        this.userStatusBroadcaster = userStatusBroadcaster;
 
-        Optional<UserDetails> authenticatedUser = securityService.getAuthenticatedUser(request);
-
-        authenticatedUser.ifPresent(userDetails -> this.userEntity = securityService.getUser(userDetails));
+        this.currentUser = securityService.getCurrentUser(request);
 
         ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> {
             VaadinSession.getCurrent().setLocale(event.getNewLocale());
@@ -107,7 +172,7 @@ public class HomeView extends AppLayout {
                 select.setItemLabelGenerator(status -> getTranslation(status.getTextKey()));
                 select.setItems(UserStatus.values());
                 select.getDataProvider().refreshAll();
-                select.setValue(userEntity.isPresent() ? userEntity.get().getStatus() : UserStatus.getDefaultStatus());
+                select.setValue(currentUser.isPresent() ? currentUser.get().getStatus() : UserStatus.getDefaultStatus());
             });
 
             var currentLocale = VaadinSession.getCurrent().getLocale();
@@ -147,8 +212,8 @@ public class HomeView extends AppLayout {
         userLayout.setWidthFull();
         userLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
 
-        Button userIconButton = new Button(new OverlayUserIcon(messageProperties, new Image("themes/custom-theme/user_icon.png", "User Icon"),
-                userEntity.isPresent() ? userEntity.get().getStatus() : UserStatus.getDefaultStatus(), IconSize.PIXEL_48));
+        this.userIconButton = new Button(new OverlayUserIcon(messageProperties, new Image(AppConstants.USER_ICON_PATH, AppConstants.USER_ICON_ALT),
+                currentUser.isPresent() ? currentUser.get().getStatus() : UserStatus.getDefaultStatus(), IconSize.PIXEL_48));
 
         Popover popover = createUserPopover(userIconButton);
 
@@ -203,21 +268,23 @@ public class HomeView extends AppLayout {
         contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         contentLayout.addClassNames(LumoUtility.Padding.Top.SMALL, LumoUtility.Padding.Bottom.SMALL, LumoUtility.Gap.SMALL);
 
-        contentLayout.add(new OverlayUserIcon(messageProperties, new Image("themes/custom-theme/user_icon.png", "User Icon"),
-                userEntity.isPresent() ? userEntity.get().getStatus() : UserStatus.getDefaultStatus(), IconSize.PIXEL_96));
+        this.overlayIcon = new OverlayUserIcon(messageProperties, new Image(AppConstants.USER_ICON_PATH, AppConstants.USER_ICON_ALT),
+                currentUser.isPresent() ? currentUser.get().getStatus() : UserStatus.getDefaultStatus(), IconSize.PIXEL_96);
 
-        if (userEntity.isPresent()) {
+        contentLayout.add(overlayIcon);
+
+        if (currentUser.isPresent()) {
             this.onlineText = new Span(messageProperties.getBaseOnlineText());
             onlineText.addClassNames(LumoUtility.TextColor.PRIMARY, LumoUtility.FontWeight.SEMIBOLD);
             contentLayout.add(onlineText);
 
-            if (StringUtils.isNotEmpty(userEntity.get().getFirstName()) || StringUtils.isNotEmpty(userEntity.get().getLastName())) {
-                Span nameText = new Span(userEntity.get().getFirstName() + " " + userEntity.get().getLastName());
+            if (StringUtils.isNotEmpty(currentUser.get().getFirstName()) || StringUtils.isNotEmpty(currentUser.get().getLastName())) {
+                Span nameText = new Span(currentUser.get().getFirstName() + " " + currentUser.get().getLastName());
                 nameText.addClassNames(LumoUtility.FontWeight.BOLD);
                 contentLayout.add(nameText);
             }
 
-            Span emailText = new Span(userEntity.get().getEmail());
+            Span emailText = new Span(currentUser.get().getEmail());
             emailText.addClassNames(LumoUtility.TextColor.SECONDARY);
             contentLayout.add(emailText);
         } else {
@@ -228,8 +295,8 @@ public class HomeView extends AppLayout {
 
         this.manageAccountButton = new Button(messageProperties.getBaseManageAccountButton());
         manageAccountButton.setPrefixComponent(VaadinIcon.COG.create());
-        manageAccountButton.setEnabled(userEntity.isPresent());
-        if (userEntity.isPresent()) {
+        manageAccountButton.setEnabled(currentUser.isPresent());
+        if (currentUser.isPresent()) {
             manageAccountButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         }
         manageAccountButton.setWidthFull();
@@ -237,7 +304,7 @@ public class HomeView extends AppLayout {
         contentLayout.add(manageAccountButton);
 
         this.userStatusSelect = new Select<>();
-        userStatusSelect.setEnabled(userEntity.isPresent());
+        userStatusSelect.setEnabled(currentUser.isPresent());
         userStatusSelect.setItems(UserStatus.values());
         userStatusSelect.setItemLabelGenerator(UserStatus::getTextKey);
         userStatusSelect.setItemLabelGenerator(userStatus -> messageProperties.getTranslation(userStatus.getTextKey()));
@@ -265,7 +332,9 @@ public class HomeView extends AppLayout {
                     ComponentPrefixHelper.setPrefixComponent(userStatusSelect, divLayout);
                 }
 
-                userEntity.ifPresent(entity -> userService.updateUserStatus(entity, event.getValue(), true));
+                if (!suppressUpdate) {
+                    currentUser.ifPresent(entity -> userService.updateUserStatus(entity, event.getValue(), true));
+                }
             }
         });
         userStatusSelect.setRenderer(new ComponentRenderer<>(userStatus -> {
@@ -318,7 +387,7 @@ public class HomeView extends AppLayout {
 
             return contentComboBox;
         }));
-        userStatusSelect.setValue(userEntity.isPresent() ? userEntity.get().getStatus() : UserStatus.getDefaultStatus());
+        userStatusSelect.setValue(currentUser.isPresent() ? currentUser.get().getStatus() : UserStatus.getDefaultStatus());
         userStatusSelect.setWidthFull();
 
         contentLayout.add(userStatusSelect);
@@ -334,7 +403,7 @@ public class HomeView extends AppLayout {
             deFlagIcon.getStyle().remove("filter");
         }
         Button deFlagIconButton = new Button(deFlagIcon, buttonClickEvent -> {
-            userEntity.ifPresent(user -> userService.updateUserLocale(user.getEmail(), Locale.GERMAN));
+            currentUser.ifPresent(user -> userService.updateUserLocale(user.getEmail(), Locale.GERMAN));
             VaadinSession.getCurrent().setLocale(Locale.GERMAN);
             LanguageChangeEvent.fire(UI.getCurrent(), Locale.GERMAN);
         });
@@ -349,7 +418,7 @@ public class HomeView extends AppLayout {
             enFlagIcon.getStyle().remove("filter");
         }
         Button enFlagIconButton = new Button(enFlagIcon, buttonClickEvent -> {
-            userEntity.ifPresent(user -> userService.updateUserLocale(user.getEmail(), Locale.ENGLISH));
+            currentUser.ifPresent(user -> userService.updateUserLocale(user.getEmail(), Locale.ENGLISH));
             VaadinSession.getCurrent().setLocale(Locale.ENGLISH);
             LanguageChangeEvent.fire(UI.getCurrent(), Locale.ENGLISH);
         });
@@ -360,7 +429,7 @@ public class HomeView extends AppLayout {
 
         contentLayout.add(flagLayout);
 
-        if (userEntity.isPresent()) {
+        if (currentUser.isPresent()) {
             this.logoutButton = new Button(messageProperties.getBaseLogoutButton());
             logoutButton.setPrefixComponent(VaadinIcon.SIGN_OUT.create());
             logoutButton.addClickListener(buttonClickEvent -> securityService.logout());

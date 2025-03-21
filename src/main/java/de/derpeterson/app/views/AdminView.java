@@ -31,7 +31,7 @@ import java.util.function.Supplier;
 @RolesAllowed("ADMIN")
 public class AdminView extends IsAuthentificatedBaseView<VerticalLayout> {
 
-    private final MessageProperties messageProperties;
+    private final transient MessageProperties messageProperties;
 
     private Button logoutButton = null;
     private Button homeButton = null;

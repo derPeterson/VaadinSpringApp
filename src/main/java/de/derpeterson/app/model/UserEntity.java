@@ -16,7 +16,9 @@ import java.util.Collection;
 import java.util.Locale;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+        @Index(name = "idx_user_lastactivity_status", columnList = "lastActivity, status")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -94,18 +96,15 @@ public class UserEntity {
     private Collection<RoleEntity> roleEntities;
 
     public void setAutomaticStatus(UserStatus newStatus) {
-        if (!statusManuallySet) {
+        if (!this.statusManuallySet || this.status == UserStatus.AVAILABLE || this.status == UserStatus.ABSENT) {
             this.status = newStatus;
+            this.statusManuallySet = false;
         }
     }
 
     public void setManualStatus(UserStatus newStatus) {
         this.status = newStatus;
         this.statusManuallySet = true;
-    }
-
-    public void enableAutomaticStatus() {
-        this.statusManuallySet = false;
     }
 
     public void updateLastActivity() {

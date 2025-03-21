@@ -3,6 +3,8 @@ package de.derpeterson.app.model.enums;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.time.Duration;
+
 @Getter
 @RequiredArgsConstructor
 public enum ConfigEntry {
@@ -11,15 +13,16 @@ public enum ConfigEntry {
     BASE_URL("base.url", "http://localhost:8080/"),
     REMEMBER_ME_DURATION("rememberMe.duration", 1209600),
     REMEMBER_ME_SECRET_KEY("rememberMe.secret.key", "czgwigh12t"),
+    USER_AUTO_ABSENT_TIMEOUT("user.auto.absent.timeout", Duration.ofMinutes(10).toString()),
     LOGIN_ATTEMPTS_LIMIT("login.attempts.limit", 10),
     MAX_SESSIONS_PER_USER("max.sessions.per.user", 3),
     MAINTENANCE_MODE("maintenance.mode", false),
     EMAIL_FROM("email.from", "derpetersondev@yandex.com"),
     EMAIL_ADMIN("email.admin", "derpetersondev@yandex.com"),
-    VERIFICATION_TOKEN_VALID_DURATION("verificationToken.valid.duration", "PT24H"),
-    VERIFICATION_TOKEN_LIVE_DURATION("verificationToken.live.duration", "P7D"),
-    PASSWORD_RESET_TOKEN_VALID_DURATION("passwordResetToken.valid.duration", "PT3H"),
-    PASSWORD_RESET_TOKEN_LIVE_DURATION("passwordResetToken.live.duration", "P3D"),
+    VERIFICATION_TOKEN_VALID_DURATION("verificationToken.valid.duration", Duration.ofHours(24).toString()),
+    VERIFICATION_TOKEN_LIVE_DURATION("verificationToken.live.duration", Duration.ofDays(7).toString()),
+    PASSWORD_RESET_TOKEN_VALID_DURATION("passwordResetToken.valid.duration", Duration.ofHours(3).toString()),
+    PASSWORD_RESET_TOKEN_LIVE_DURATION("passwordResetToken.live.duration", Duration.ofDays(3).toString()),
 
     // EMail Konfiguration
     MAIL_HOST("mail.host", "smtp.yandex.com"),
@@ -37,7 +40,7 @@ public enum ConfigEntry {
     EMAIL_QUEUE_POOL_SIZE("email.queue.pool.size", 5),
     EMAIL_QUEUE_CAPACITY("email.queue.capacity", 50),
     EMAIL_QUEUE_MAX_RETRY("email.queue.max_retry", 3),
-    EMAIL_QUEUE_SENT_LIVE_DURATION("email.queue.sent.live.duration", "P7D");
+    EMAIL_QUEUE_SENT_LIVE_DURATION("email.queue.sent.live.duration", Duration.ofDays(7).toString());
 
     private final String key;
     private final Object defaultValue;

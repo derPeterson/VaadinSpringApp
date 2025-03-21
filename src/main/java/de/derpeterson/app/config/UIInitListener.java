@@ -20,10 +20,10 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UIInitListener implements VaadinServiceInitListener {
 
-    private final SecurityService securityService;
-    private final UserService userService;
+    private final transient SecurityService securityService;
+    private final transient UserService userService;
 
-    private final HttpServletRequest request;
+    private final transient HttpServletRequest request;
 
     @Override
     public void serviceInit(ServiceInitEvent event) {

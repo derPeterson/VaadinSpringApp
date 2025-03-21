@@ -57,7 +57,7 @@ public class NotificationHelper {
     }
 
     public void showNotification(Supplier<String> titleSupplier, Supplier<String> messageSupplier, NotificationType notificationType) {
-        showNotification(titleSupplier, titleSupplier, DEFAULT_NOTIFICATION_DURATION, notificationType);
+        showNotification(titleSupplier, messageSupplier, DEFAULT_NOTIFICATION_DURATION, notificationType);
     }
 
     public void showNotification(Supplier<String> titleSupplier, Supplier<String> messageSupplier, Integer duration, NotificationType notificationType) {

@@ -1,6 +1,7 @@
 package de.derpeterson.app;
 
 import com.vaadin.flow.component.page.AppShellConfigurator;
+import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
 import com.vaadin.flow.theme.lumo.Lumo;
@@ -11,6 +12,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
+@Push
 @EnableScheduling
 @ComponentScan(basePackages = "de.derpeterson.app")
 @EntityScan(basePackages = {"de.derpeterson.app.model"})

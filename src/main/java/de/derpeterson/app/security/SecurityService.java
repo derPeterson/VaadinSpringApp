@@ -60,8 +60,17 @@ public class SecurityService {
         return Optional.empty();
     }
 
-    public Optional<UserEntity> getUser(UserDetails user) {
-        return userRepository.findByEmail(user.getUsername());
+    public Optional<UserEntity> getCurrentUser() {
+        HttpServletRequest request = (HttpServletRequest) VaadinRequest.getCurrent();
+        return getCurrentUser(request);
+    }
+
+    public Optional<UserEntity> getCurrentUser(HttpServletRequest request) {
+        Optional<UserDetails> authenticatedUser = getAuthenticatedUser(request);
+        if (authenticatedUser.isPresent()) {
+            return userRepository.findByEmail(authenticatedUser.get().getUsername());
+        }
+        return Optional.empty();
     }
 
     public void storeAuthenticatedUser(HttpServletRequest request, UserDetails user, Boolean rememberMe) {
@@ -72,7 +81,10 @@ public class SecurityService {
         HttpSession httpSession = request.getSession();
         httpSession.setAttribute(AUTH_USER_SESSION_KEY, user);
 
-        applyUserLocale(user.getUsername());
+        if (VaadinSession.getCurrent() != null) {
+            Optional<UserEntity> userEntityOptional = userService.findByEmail(user.getUsername());
+            userEntityOptional.ifPresent(userEntity -> VaadinSession.getCurrent().setLocale(userEntity.getPreferredLocale()));
+        }
 
         var auth = restoreSecurityContext(user);
 
@@ -113,18 +125,13 @@ public class SecurityService {
         SecurityContextHolder.clearContext();
     }
 
-    private void applyUserLocale(String email) {
-        if (VaadinSession.getCurrent() != null) {
-            Optional<UserEntity> userOpt = userService.findByEmail(email);
-            userOpt.ifPresent(user -> VaadinSession.getCurrent().setLocale(user.getPreferredLocale()));
-        }
-    }
-
     public void handleLogin(UserDetails user) throws AuthenticationException {
         Optional<UserEntity> userEntity = userRepository.findByEmail(user.getUsername());
 
         if (userEntity.isPresent()) {
-            userEntity.get().setAutomaticStatus(UserStatus.AVAILABLE);
+            if (!userEntity.get().isStatusManuallySet()) {
+                userEntity.get().setAutomaticStatus(UserStatus.AVAILABLE);
+            }
             userEntity.get().updateLastActivity();
             userRepository.save(userEntity.get());
         }

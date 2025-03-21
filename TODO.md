@@ -18,11 +18,12 @@
             - Page
         - ~~Online Status~~
             - ~~Database~~
-                - Absent/LastActivity
+                - ~~Absent/LastActivity~~
+                - ~~UserStatusScheduler~~
             - ~~ComboBox~~
                 - ~~Mehrsprachig~~
             - ~~Absent Icon~~
-            - Event
+            - ~~Event~~
             - ~~Overlay anpassen~~
             - ~~Change~~
             - ~~UserStatus verbesser~~
