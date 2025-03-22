@@ -5,6 +5,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.dom.Style;
+import de.derpeterson.app.config.AppConstants;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.LoggerFactory;
@@ -18,10 +19,10 @@ import java.util.Scanner;
 @Getter
 @RequiredArgsConstructor
 public enum UserStatus {
-    AVAILABLE("userStatus.available", "userStatus.available.description", "#27ae60", "#000000", VaadinIcon.CHECK_CIRCLE, null),
-    EMPLOYED("userStatus.employed", "userStatus.employed.description", "#cd6155", "#000000", VaadinIcon.MINUS_CIRCLE, null),
-    ABSENT("userStatus.absent", "userStatus.absent.description", "#f4d03f", "#000000", null, "http://localhost:8080/VAADIN/themes/custom-theme/icons/clock_circle.svg"),
-    OFFLINE("userStatus.offline", "userStatus.offline.description", "#99a3a4", "#000000", VaadinIcon.CLOSE_CIRCLE, null);
+    AVAILABLE("userStatus.available", "userStatus.available.description", "#27ae60", AppConstants.BLACK_COLOR_HEX_STRING, VaadinIcon.CHECK_CIRCLE, null),
+    EMPLOYED("userStatus.employed", "userStatus.employed.description", "#cd6155", AppConstants.BLACK_COLOR_HEX_STRING, VaadinIcon.MINUS_CIRCLE, null),
+    ABSENT("userStatus.absent", "userStatus.absent.description", "#f4d03f", AppConstants.BLACK_COLOR_HEX_STRING, null, "http://localhost:8080/VAADIN/themes/custom-theme/icons/clock_circle.svg"),
+    OFFLINE("userStatus.offline", "userStatus.offline.description", "#99a3a4", AppConstants.BLACK_COLOR_HEX_STRING, VaadinIcon.CLOSE_CIRCLE, null);
 
     private final String textKey;
     private final String textDescriptionKey;
@@ -29,6 +30,7 @@ public enum UserStatus {
     private final String backgroundColor;
     private final VaadinIcon vaadinIcon;
     private final String fileUrl;
+
 
     public Component getComponent() {
         return getComponent(IconSize.PIXEL_24, false);

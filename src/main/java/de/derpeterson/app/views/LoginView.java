@@ -24,6 +24,7 @@ import com.vaadin.flow.server.VaadinRequest;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -47,8 +48,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-@Route("login")
-@PageTitle("Login")
+@Route(AppRouteConstants.LOGIN_ROUTE)
+@PageTitle(AppRouteConstants.LOGIN_PAGE_TITLE)
 @AnonymousAllowed
 public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
 

@@ -1,6 +1,9 @@
 package de.derpeterson.app.security;
 
+import de.derpeterson.app.helper.jdbc.JdbcHelper;
+import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.service.ConfigService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -56,7 +59,7 @@ public class SecurityConfig {
     public PersistentTokenRepository tokenRepository(DataSource dataSource, JdbcTemplate jdbcTemplate) {
         JdbcTokenRepositoryImpl tokenRepository = new JdbcTokenRepositoryImpl();
         tokenRepository.setDataSource(dataSource);
-        if (!tableExists(jdbcTemplate, "persistent_logins")) {
+        if (!JdbcHelper.tableExists(jdbcTemplate, "persistent_logins")) {
             tokenRepository.setCreateTableOnStartup(true);
         }
         return tokenRepository;
@@ -83,9 +86,10 @@ public class SecurityConfig {
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/home", "/login", "/registration", "/verification/**",
-                                "/forgot-password", "/reset-password/**", "/h2").permitAll()
-                        .requestMatchers("/admin").hasRole("ADMIN")
+                        .requestMatchers(AppRoute.BASE.getSecurityRoute(), AppRoute.HOME.getSecurityRoute(), AppRoute.LOGIN.getSecurityRoute(), AppRoute.REGISTRATION.getSecurityRoute(),
+                                AppRoute.VERIFICATION.getSecurityRoute(), AppRoute.FORGOT_PASSWORD.getSecurityRoute(), AppRoute.RESET_PASSWORD.getSecurityRoute(),
+                                AppRoute.H2.getSecurityRoute()).permitAll()
+                        .requestMatchers(AppRoute.ADMIN.getSecurityRoute()).hasRole(RoleType.ROLE_ADMIN.getName())
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(vaadinSecurityFilter, UsernamePasswordAuthenticationFilter.class)
@@ -96,14 +100,14 @@ public class SecurityConfig {
                         .securityContextRepository(securityContextRepository())
                 )
                 .formLogin(login -> login
-                        .loginPage("/login")
-                        .defaultSuccessUrl("/admin", true)
-                        .successHandler((request, response, authentication) -> response.sendRedirect("/admin"))
+                        .loginPage(AppRoute.LOGIN.getSecurityRoute())
+                        .defaultSuccessUrl(AppRoute.ADMIN.getSecurityRoute(), true)
+                        .successHandler((request, response, authentication) -> response.sendRedirect(AppRoute.ADMIN.getSecurityRoute()))
                         .permitAll()
                 )
                 .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login")
+                        .logoutUrl(AppRoute.LOGOUT.getSecurityRoute())
+                        .logoutSuccessUrl(AppRoute.LOGIN.getSecurityRoute())
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID", "remember-me")
                 )
@@ -115,17 +119,5 @@ public class SecurityConfig {
         logger.debug("🔧 SecurityConfig loaded!");
 
         return http.build();
-    }
-
-    private boolean tableExists(JdbcTemplate jdbcTemplate, String tableName) {
-        try {
-            Integer count = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?",
-                    Integer.class, tableName.toUpperCase()
-            );
-            return count != null && count > 0;
-        } catch (Exception e) {
-            return false;
-        }
     }
 }

@@ -28,10 +28,12 @@ import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.config.AppConstants;
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentPrefixHelper;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
+import de.derpeterson.app.helper.ui.StyleHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -56,9 +58,9 @@ import java.util.function.Supplier;
 
 import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
 
-@Route("home")
+@Route(AppRouteConstants.HOME_ROUTE)
 @UIScope
-@PageTitle("Home")
+@PageTitle(AppRouteConstants.HOME_PAGE_TITLE)
 @AnonymousAllowed
 public class HomeView extends UserActivityAwareView {
 
@@ -178,14 +180,14 @@ public class HomeView extends UserActivityAwareView {
             var currentLocale = VaadinSession.getCurrent().getLocale();
 
             if (!currentLocale.equals(Locale.GERMAN)) {
-                deFlagIcon.getStyle().set("filter", "grayscale(100%)");
+                StyleHelper.addFilterWithGrayscale100Percent(deFlagIcon);
             } else {
-                deFlagIcon.getStyle().remove("filter");
+                StyleHelper.removeFilter(deFlagIcon);
             }
             if (!currentLocale.equals(Locale.ENGLISH)) {
-                enFlagIcon.getStyle().set("filter", "grayscale(100%)");
+                StyleHelper.addFilterWithGrayscale100Percent(enFlagIcon);
             } else {
-                enFlagIcon.getStyle().remove("filter");
+                StyleHelper.removeFilter(enFlagIcon);
             }
         });
 
@@ -398,10 +400,11 @@ public class HomeView extends UserActivityAwareView {
         deFlagIcon.setWidth("32px");
         deFlagIcon.setHeight("32px");
         if (!currentLocale.equals(Locale.GERMAN)) {
-            deFlagIcon.getStyle().set("filter", "grayscale(100%)");
+            StyleHelper.addFilterWithGrayscale100Percent(deFlagIcon);
         } else {
-            deFlagIcon.getStyle().remove("filter");
+            StyleHelper.removeFilter(deFlagIcon);
         }
+
         Button deFlagIconButton = new Button(deFlagIcon, buttonClickEvent -> {
             currentUser.ifPresent(user -> userService.updateUserLocale(user.getEmail(), Locale.GERMAN));
             VaadinSession.getCurrent().setLocale(Locale.GERMAN);
@@ -413,9 +416,9 @@ public class HomeView extends UserActivityAwareView {
         enFlagIcon.setWidth("32px");
         enFlagIcon.setHeight("32px");
         if (!currentLocale.equals(Locale.ENGLISH)) {
-            enFlagIcon.getStyle().set("filter", "grayscale(100%)");
+            StyleHelper.addFilterWithGrayscale100Percent(enFlagIcon);
         } else {
-            enFlagIcon.getStyle().remove("filter");
+            StyleHelper.removeFilter(enFlagIcon);
         }
         Button enFlagIconButton = new Button(enFlagIcon, buttonClickEvent -> {
             currentUser.ifPresent(user -> userService.updateUserLocale(user.getEmail(), Locale.ENGLISH));

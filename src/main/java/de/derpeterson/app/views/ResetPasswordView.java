@@ -17,6 +17,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -35,8 +36,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-@Route("reset-password")
-@PageTitle("Reset Password")
+@Route(AppRouteConstants.RESET_PASSWORD_ROUTE)
+@PageTitle(AppRouteConstants.RESET_PAGE_TITLE)
 @AnonymousAllowed
 public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLayout> implements HasUrlParameter<String> {
 
@@ -118,7 +119,7 @@ public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLa
         cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
 
         this.title = new H1(messageProperties.getResetPasswordTitle());
-        title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
+        title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();
@@ -188,7 +189,7 @@ public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLa
         cardIconLayout.add(successIcon);
 
         this.invalidTitle = new H1(messageProperties.getResetPasswordInvalidTitle());
-        invalidTitle.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
+        invalidTitle.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();

@@ -17,6 +17,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -38,8 +39,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-@Route("verification")
-@PageTitle("Verification")
+@Route(AppRouteConstants.VERIFICATION_ROUTE)
+@PageTitle(AppRouteConstants.VERIFICATION_PAGE_TITEL)
 @AnonymousAllowed
 public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLayout> implements HasUrlParameter<String> {
 
@@ -155,7 +156,7 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardIconLayout.add(successIcon);
 
         this.expiredTitle = new H1(messageProperties.getVerificationExpiredTitle());
-        expiredTitle.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
+        expiredTitle.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();
@@ -242,7 +243,7 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardIconLayout.add(successIcon);
 
         this.notFoundTitle = new H1(messageProperties.getVerificationNotFoundTitle());
-        notFoundTitle.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
+        notFoundTitle.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();
@@ -312,7 +313,7 @@ public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLay
         cardIconLayout.add(successIcon);
 
         this.successTitle = new H1(messageProperties.getVerificationSuccessTitle());
-        successTitle.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
+        successTitle.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();

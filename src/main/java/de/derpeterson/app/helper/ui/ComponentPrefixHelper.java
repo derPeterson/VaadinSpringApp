@@ -12,6 +12,8 @@ import java.util.stream.Stream;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ComponentPrefixHelper {
 
+    private static final String PREFIX_SLOT_NAME = "prefix";
+
     private static Stream<Element> getElementsInSlot(HasElement target,
                                                      String slot) {
         return target.getElement().getChildren()
@@ -19,10 +21,10 @@ public class ComponentPrefixHelper {
     }
 
     public static void setPrefixComponent(Component target, Component component) {
-        clearSlot(target, "prefix");
+        clearSlot(target, PREFIX_SLOT_NAME);
 
         if (component != null) {
-            component.getElement().setAttribute("slot", "prefix");
+            component.getElement().setAttribute("slot", PREFIX_SLOT_NAME);
             target.getElement().appendChild(component.getElement());
         }
     }
@@ -38,6 +40,6 @@ public class ComponentPrefixHelper {
     }
 
     public static Component getPrefixComponent(Component target) {
-        return getChildInSlot(target, "prefix");
+        return getChildInSlot(target, PREFIX_SLOT_NAME);
     }
 }

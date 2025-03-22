@@ -11,6 +11,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -26,9 +27,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-@Route("admin")
-@PageTitle("Admin")
-@RolesAllowed("ADMIN")
+@Route(AppRouteConstants.ADMIN_ROUTE)
+@PageTitle(AppRouteConstants.ADMIN_PAGE_TITLE)
+@RolesAllowed(AppRouteConstants.ADMIN_ROUTE_ROLES)
 public class AdminView extends IsAuthentificatedBaseView<VerticalLayout> {
 
     private final transient MessageProperties messageProperties;

@@ -58,7 +58,7 @@ public class DatabaseInitializer {
             UserEntity adminUserEntity = UserEntity.builder()
                     .firstName("John")
                     .lastName("Doe")
-                    .password(passwordEncoder.encode("Admin@123"))
+                    .password(passwordEncoder.encode("Admin@123")) //NOSONAR
                     .email("admin@example.com")
                     .gender(Gender.OTHER)
                     .birthDate(java.time.LocalDate.of(1990, 1, 1))

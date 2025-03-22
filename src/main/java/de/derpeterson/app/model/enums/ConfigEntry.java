@@ -17,8 +17,8 @@ public enum ConfigEntry {
     LOGIN_ATTEMPTS_LIMIT("login.attempts.limit", 10),
     MAX_SESSIONS_PER_USER("max.sessions.per.user", 3),
     MAINTENANCE_MODE("maintenance.mode", false),
-    EMAIL_FROM("email.from", "derpetersondev@yandex.com"),
-    EMAIL_ADMIN("email.admin", "derpetersondev@yandex.com"),
+    EMAIL_FROM("email.from", "derpetersondev@yandex.com"), //NOSONAR
+    EMAIL_ADMIN("email.admin", "derpetersondev@yandex.com"), //NOSONAR
     VERIFICATION_TOKEN_VALID_DURATION("verificationToken.valid.duration", Duration.ofHours(24).toString()),
     VERIFICATION_TOKEN_LIVE_DURATION("verificationToken.live.duration", Duration.ofDays(7).toString()),
     PASSWORD_RESET_TOKEN_VALID_DURATION("passwordResetToken.valid.duration", Duration.ofHours(3).toString()),
@@ -27,7 +27,7 @@ public enum ConfigEntry {
     // EMail Konfiguration
     MAIL_HOST("mail.host", "smtp.yandex.com"),
     MAIL_PORT("mail.port", 465),
-    MAIL_USERNAME("mail.username", "derpetersondev@yandex.com"),
+    MAIL_USERNAME("mail.username", "derpetersondev@yandex.com"), //NOSONAR
     MAIL_PASSWORD("mail.password", "kiduwcggwlbnydnl"),
     MAIL_SMTP_AUTH("mail.smtp.auth", true),
     MAIL_SMTP_STARTTLS_ENABLE("mail.smtp.starttls.enable", false),

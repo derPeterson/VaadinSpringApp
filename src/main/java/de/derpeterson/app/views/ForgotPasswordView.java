@@ -18,6 +18,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -39,8 +40,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-@Route("forgot-password")
-@PageTitle("Forgot Password")
+@Route(AppRouteConstants.FORGOT_PASSWORD_ROUTE)
+@PageTitle(AppRouteConstants.FORGOT_PASSWORD_PAGE_TITLE)
 @AnonymousAllowed
 public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
 
@@ -117,7 +118,7 @@ public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalL
         cardIconLayout.add(successIcon);
 
         this.title = new H1(messageProperties.getForgotPasswordTitle());
-        title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD);
+        title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();

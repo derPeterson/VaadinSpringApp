@@ -24,6 +24,7 @@ import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -50,8 +51,8 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.function.Supplier;
 
-@Route("registration")
-@PageTitle("Registration")
+@Route(AppRouteConstants.REGISTRATION_ROUTE)
+@PageTitle(AppRouteConstants.REGISTRATION_PAGE_TITLE)
 @AnonymousAllowed
 public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
 

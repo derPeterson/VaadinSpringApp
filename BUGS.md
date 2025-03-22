@@ -4,5 +4,7 @@
 
 - ~~Cockie und Datenbank Tabelle ist verschwunden~~
 - VerificationService und PasswordResetService (Transactional)
-- Konstanten
-- SonarQuebe
+- ~~Konstanten~~
+- ~~SonarQuebe~~
+    - HomeView complexity
+    - Transactional
