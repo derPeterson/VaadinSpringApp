@@ -112,6 +112,11 @@ public class VerificationService {
         if (tokenOptional.isPresent()) {
             UserEntity user = tokenOptional.get().getUserEntity();
             if (!user.isEnabled()) {
+                if (emailQueueService.hasOpenEmailForUserAndType(user, EmailType.VERIFICATION)) {
+                    logger.warn("⚠️ Verification email for {} is already queued or in progress. Duplicate request skipped.", user.getEmail());
+                    return true;
+                }
+
                 String newToken = createToken(user);
                 sendVerificationEmail(user, newToken);
                 return true;
@@ -126,6 +131,11 @@ public class VerificationService {
         if (userOptional.isPresent()) {
             UserEntity user = userOptional.get();
             if (!user.isEnabled()) {
+                if (emailQueueService.hasOpenEmailForUserAndType(user, EmailType.VERIFICATION)) {
+                    logger.warn("⚠️ Verification email for {} is already queued or in progress. Duplicate request skipped.", user.getEmail());
+                    return true;
+                }
+
                 String newToken = createToken(user);
                 sendVerificationEmail(user, newToken);
                 return true;
@@ -137,6 +147,11 @@ public class VerificationService {
     @Transactional
     public boolean sendVerificationEmailByUser(UserEntity user) throws IOException {
         if (!user.isEnabled()) {
+            if (emailQueueService.hasOpenEmailForUserAndType(user, EmailType.VERIFICATION)) {
+                logger.warn("⚠️ Verification email for {} is already queued or in progress. Duplicate request skipped.", user.getEmail());
+                return true;
+            }
+
             String newToken = createToken(user);
             sendVerificationEmail(user, newToken);
             return true;
@@ -152,7 +167,7 @@ public class VerificationService {
                 loadEmailTemplate(user, token),
                 EmailType.VERIFICATION
         );
-        logger.info("Verification link for {} sent.", user.getEmail());
+        logger.info("✅ Verification link for {} sent.", user.getEmail());
     }
 
     private String loadEmailTemplate(UserEntity user, String token) throws IOException {
@@ -180,7 +195,7 @@ public class VerificationService {
         LocalDateTime liveDateTime = LocalDateTime.now().minus(Duration.parse(configService.getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)));
         int deleted = tokenRepository.deleteByExpiryDateBefore(liveDateTime);
         var formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE);
-        logger.info("{} expired verification tokens that are older than '{}' have been deleted.", deleted, formattedLiveDateTime);
+        logger.info("✅ {} expired verification tokens that are older than '{}' have been deleted.", deleted, formattedLiveDateTime);
     }
 
 }

@@ -159,7 +159,7 @@ public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalL
                     NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseFailedTitle, this.messageProperties::getBaseFailedMessage, -1, NotificationHelper.NotificationType.ERROR);
                 }
             } catch (IOException e) {
-                logger.error("Exception occurred:", e);
+                logger.error("❌ Exception occurred:", e);
 
                 NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseFailedTitle,
                         this.messageProperties::getBaseFailedMessage,

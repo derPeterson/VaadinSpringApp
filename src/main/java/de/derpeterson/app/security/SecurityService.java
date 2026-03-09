@@ -37,7 +37,11 @@ public class SecurityService {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         Authentication authentication = securityContext.getAuthentication();
         if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof UserDetails userDetails) {
-            return Optional.of(userDetails);
+            if (isUserActive(userDetails.getUsername())) {
+                return Optional.of(userDetails);
+            }
+            clearStaleAuthentication(request);
+            return Optional.empty();
         }
 
         UserDetails userDetails = null;
@@ -53,6 +57,10 @@ public class SecurityService {
         }
 
         if (userDetails != null) {
+            if (!isUserActive(userDetails.getUsername())) {
+                clearStaleAuthentication(request);
+                return Optional.empty();
+            }
             restoreSecurityContext(userDetails);
             return Optional.of(userDetails);
         }
@@ -120,6 +128,25 @@ public class SecurityService {
 
         if (rememberMeServices != null && SecurityContextHolder.getContext().getAuthentication() != null) {
             rememberMeServices.logout(request, response, SecurityContextHolder.getContext().getAuthentication());
+        }
+
+        SecurityContextHolder.clearContext();
+    }
+
+    private boolean isUserActive(String email) {
+        return userRepository.findByEmail(email)
+                .map(UserEntity::isEnabled)
+                .orElse(false);
+    }
+
+    private void clearStaleAuthentication(HttpServletRequest request) {
+        if (VaadinSession.getCurrent() != null) {
+            VaadinSession.getCurrent().setAttribute(UserDetails.class, null);
+        }
+
+        HttpSession httpSession = request.getSession(false);
+        if (httpSession != null) {
+            httpSession.removeAttribute(AUTH_USER_SESSION_KEY);
         }
 
         SecurityContextHolder.clearContext();

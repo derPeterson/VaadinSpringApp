@@ -10,9 +10,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "email_queue",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "to_email", "subject", "email_type"}))
-// Einzigartigkeit erweitern
+@Table(name = "email_queue")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

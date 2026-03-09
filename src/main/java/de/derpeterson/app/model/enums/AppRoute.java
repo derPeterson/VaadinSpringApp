@@ -12,7 +12,7 @@ public enum AppRoute {
     HOME(AppRouteConstants.HOME_ROUTE, AppRouteConstants.HOME_SECURITY_ROUTE, AppRouteConstants.HOME_PAGE_TITLE, null),
     ADMIN(AppRouteConstants.ADMIN_ROUTE, AppRouteConstants.ADMIN_SECURITY_ROUTE, AppRouteConstants.ADMIN_PAGE_TITLE, AppRouteConstants.ADMIN_ROUTE_ROLES),
     LOGIN(AppRouteConstants.LOGIN_ROUTE, AppRouteConstants.LOGIN_SECURITY_ROUTE, AppRouteConstants.LOGIN_PAGE_TITLE, null),
-    LOGOUT(AppRouteConstants.LOGIN_ROUTE, AppRouteConstants.LOGIN_SECURITY_ROUTE, AppRouteConstants.LOGOUT_PAGE_TITLE, null),
+    LOGOUT(AppRouteConstants.LOGOUT_ROUTE, AppRouteConstants.LOGOUT_SECURITY_ROUTE, AppRouteConstants.LOGOUT_PAGE_TITLE, null),
     REGISTRATION(AppRouteConstants.REGISTRATION_ROUTE, AppRouteConstants.REGISTRATION_SECURITY_ROUTE, AppRouteConstants.REGISTRATION_PAGE_TITLE, null),
     VERIFICATION(AppRouteConstants.VERIFICATION_ROUTE, AppRouteConstants.VERIFICATION_SECURITY_ROUTE, AppRouteConstants.VERIFICATION_PAGE_TITEL, null),
     FORGOT_PASSWORD(AppRouteConstants.FORGOT_PASSWORD_ROUTE, AppRouteConstants.FORGOT_PASSWORD_SECURITY_ROUTE, AppRouteConstants.FORGOT_PASSWORD_PAGE_TITLE, null),

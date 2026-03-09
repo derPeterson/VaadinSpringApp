@@ -8,7 +8,9 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import de.derpeterson.app.views.AdminView;
+import de.derpeterson.app.views.HomeView;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.userdetails.UserDetails;
 
 public abstract class IsNotAuthentificatedBaseView<T extends Component & FlexComponent> extends Composite<T> implements BeforeEnterObserver {
 
@@ -24,9 +26,18 @@ public abstract class IsNotAuthentificatedBaseView<T extends Component & FlexCom
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
-        if (securityService.getAuthenticatedUser(this.request).isPresent()) {
-            event.forwardTo(AdminView.class);
-        }
+        securityService.getAuthenticatedUser(this.request).ifPresent(user -> {
+            if (hasAdminRole(user)) {
+                event.forwardTo(AdminView.class);
+            } else {
+                event.forwardTo(HomeView.class);
+            }
+        });
+    }
+
+    private boolean hasAdminRole(UserDetails user) {
+        return user.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
     }
 
     public void setSpacing(boolean spacing) {

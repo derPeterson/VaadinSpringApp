@@ -23,3 +23,6 @@ webpack.generated.js
 /logs
 *.log
 /data
+.env
+.env.local
+.env.example

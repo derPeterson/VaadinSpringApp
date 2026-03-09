@@ -261,7 +261,7 @@ public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLay
                         -1, NotificationHelper.NotificationType.ERROR);
             }
         } catch (IOException e) {
-            logger.error("Exception occurred:", e);
+            logger.error("❌ Exception occurred:", e);
 
             NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle,
                     messageProperties::getBaseFailedMessage,

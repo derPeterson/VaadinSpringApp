@@ -115,7 +115,7 @@ public class PasswordResetService {
         LocalDateTime liveDateTime = LocalDateTime.now().minus(Duration.parse(configService.getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION)));
         int deleted = tokenRepository.deleteByExpiryDateBefore(liveDateTime);
         var formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE);
-        logger.info("{} expired password reset tokens that are older than '{}' have been deleted.", deleted, formattedLiveDateTime);
+        logger.info("✅ {} expired password reset tokens that are older than '{}' have been deleted.", deleted, formattedLiveDateTime);
     }
 
     @Transactional
@@ -129,6 +129,11 @@ public class PasswordResetService {
         if (userOptional.isPresent()) {
             UserEntity user = userOptional.get();
             if (user.isEnabled()) {
+                if (emailQueueService.hasOpenEmailForUserAndType(user, EmailType.PASSWORD_RESET)) {
+                    logger.warn("⚠️ Password reset email for {} is already queued or in progress. Duplicate request skipped.", user.getEmail());
+                    return true;
+                }
+
                 String token = createToken(user);
 
                 emailQueueService.addEmailToQueue(
@@ -137,7 +142,7 @@ public class PasswordResetService {
                         loadEmailTemplate(token),
                         EmailType.PASSWORD_RESET
                 );
-                logger.info("Password reset link for {} sent.", user.getEmail());
+                logger.info("✅ Password reset link for {} sent.", user.getEmail());
                 return true;
             }
         }

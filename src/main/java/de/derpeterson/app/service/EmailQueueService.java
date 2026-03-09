@@ -26,13 +26,25 @@ import java.util.List;
 public class EmailQueueService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailQueueService.class);
+    private static final List<EmailStatus> OPEN_STATUSES = List.of(EmailStatus.PENDING, EmailStatus.IN_PROGRESS);
 
     private final ConfigService configService;
 
     private final EmailQueueRepository emailQueueRepository;
     private final EmailService emailService;
 
+    public boolean hasOpenEmailForUserAndType(UserEntity userEntity, EmailType emailType) {
+        return emailQueueRepository.existsByUserEntityAndEmailTypeAndStatusIn(userEntity, emailType, OPEN_STATUSES);
+    }
+
+    @Transactional
     public void addEmailToQueue(UserEntity userEntity, String subject, String body, EmailType emailType) {
+        if (hasOpenEmailForUserAndType(userEntity, emailType)) {
+            logger.warn("⚠️ Email for {} with type {} is already queued or in progress. Duplicate request skipped.",
+                    userEntity.getEmail(), emailType);
+            return;
+        }
+
         EmailQueueEntity email = new EmailQueueEntity();
         email.setUserEntity(userEntity);
         email.setSubject(subject);
@@ -56,23 +68,25 @@ public class EmailQueueService {
                     emailService.sendEmail(email.getUserEntity(), email.getSubject(), email.getBody());
                     email.setStatus(EmailStatus.SENT);
                     emailQueueRepository.save(email);
-                    logger.info("Email successfully sent to {}.", email.getUserEntity().getEmail());
+                    logger.info("✅ Email successfully sent to {}.", email.getUserEntity().getEmail());
                 } catch (MailException | MessagingException e) {
-                    if (email.getRetryCount() < configService.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)) {
+                    int maxRetry = configService.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY);
+                    if (email.getRetryCount() < maxRetry) {
                         email.setRetryCount(email.getRetryCount() + 1);
                         email.setLastRetryAt(LocalDateTime.now());
-                        logger.warn("Error sending the email to {}, attempt {} of 3: {}", email.getUserEntity().getEmail(), email.getRetryCount(), e.getMessage());
+                        email.setStatus(EmailStatus.PENDING);
+                        emailQueueRepository.save(email);
+                        logger.warn("⚠️ Error sending the email to {}, attempt {} of {}: {}", email.getUserEntity().getEmail(),
+                                email.getRetryCount(), maxRetry, e.getMessage());
                     } else {
                         email.setStatus(EmailStatus.FAILED);
+                        email.setLastRetryAt(LocalDateTime.now());
                         emailQueueRepository.save(email);
-                        logger.error("Email to {} failed after 3 attempts: {}", email.getUserEntity().getEmail(), e.getMessage());
+                        logger.error("❌ Email to {} failed after {} attempts: {}", email.getUserEntity().getEmail(), maxRetry, e.getMessage());
 
                         sendAdminNotification(email, e);
                     }
-
-                    email.setStatus(EmailStatus.FAILED);
-                    emailQueueRepository.save(email);
-                    logger.error("Error sending the email: ", e);
+                    logger.error("❌ Error sending the email: ", e);
                 }
             }
         }
@@ -84,7 +98,7 @@ public class EmailQueueService {
         LocalDateTime liveDateTime = LocalDateTime.now().minus(Duration.parse(configService.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)));
         int deleted = emailQueueRepository.deleteByStatusAndCreatedAtBefore(EmailStatus.SENT, liveDateTime);
         var formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE);
-        logger.info("{} emails with status SENT that are older than one {} have been deleted.", deleted, formattedLiveDateTime);
+        logger.info("✅ {} emails with status SENT that are older than one {} have been deleted.", deleted, formattedLiveDateTime);
     }
 
     private void sendAdminNotification(EmailQueueEntity failedEmail, Exception e) {
@@ -95,9 +109,9 @@ public class EmailQueueService {
                 .formatted(failedEmail.getUserEntity(), failedEmail.getSubject(), e.getMessage(), failedEmail.getEmailType(), failedEmail.getLastRetryAt());
         try {
             emailService.sendAdminEmail(adminEmail, subject, body);
-            logger.info("Notification sent to administrator: {}", adminEmail);
+            logger.info("✅ Notification sent to administrator: {}", adminEmail);
         } catch (MailException ex) {
-            logger.error("Error sending the notification to the administrator: ", ex);
+            logger.error("❌ Error sending the notification to the administrator: ", ex);
         }
     }
 }

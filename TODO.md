@@ -83,6 +83,7 @@
 - ~~Design~~
     - ~~Verification~~
     - ~~Password Reset~~
+- Email Trim Database Entry
 
 ## Notification
 

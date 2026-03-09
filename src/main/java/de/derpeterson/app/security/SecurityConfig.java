@@ -8,14 +8,14 @@ import de.derpeterson.app.service.ConfigService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -39,6 +39,8 @@ public class SecurityConfig {
     private final CustomUserDetailsService userDetailsService;
 
     private final ConfigService configService;
+    @Value("${app.security.expose-h2-console:false}")
+    private boolean exposeH2Console;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
@@ -81,16 +83,37 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, PersistentTokenBasedRememberMeServices rememberMeServices) throws Exception {
         logger.debug("🔥 SecurityConfig is loading!");
 
-        http.csrf(AbstractHttpConfigurer::disable)
-                .headers(headers -> headers
-                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
-                )
+        http.csrf(csrf -> csrf.disable())
+                .headers(headers -> headers.frameOptions(frameOptions -> {
+                    if (exposeH2Console) {
+                        frameOptions.disable();
+                    } else {
+                        frameOptions.sameOrigin();
+                    }
+                }))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/VAADIN/**",
+                                "/HILLA/**",
+                                "/themes/**",
+                                "/frontend/**",
+                                "/favicon.ico",
+                                "/manifest.webmanifest",
+                                "/sw.js",
+                                "/sw-runtime-resources-precache.js",
+                                "/offline.html",
+                                "/icons/**",
+                                "/images/**",
+                                "/line-awesome/**",
+                                "/webjars/**",
+                                "/error"
+                        ).permitAll()
                         .requestMatchers(AppRoute.BASE.getSecurityRoute(), AppRoute.HOME.getSecurityRoute(), AppRoute.LOGIN.getSecurityRoute(), AppRoute.REGISTRATION.getSecurityRoute(),
-                                AppRoute.VERIFICATION.getSecurityRoute(), AppRoute.FORGOT_PASSWORD.getSecurityRoute(), AppRoute.RESET_PASSWORD.getSecurityRoute(),
-                                AppRoute.H2.getSecurityRoute()).permitAll()
+                                AppRoute.VERIFICATION.getSecurityRoute(), AppRoute.FORGOT_PASSWORD.getSecurityRoute(), AppRoute.RESET_PASSWORD.getSecurityRoute()).permitAll()
+                        .requestMatchers(AppRoute.H2.getSecurityRoute(), AppRoute.H2.getSecurityRoute() + "/**")
+                        .access((authentication, context) -> new AuthorizationDecision(exposeH2Console))
                         .requestMatchers(AppRoute.ADMIN.getSecurityRoute()).hasRole(RoleType.ROLE_ADMIN.getName())
-                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(vaadinSecurityFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session -> session

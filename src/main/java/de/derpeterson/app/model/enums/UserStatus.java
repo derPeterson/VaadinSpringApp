@@ -168,7 +168,7 @@ public enum UserStatus {
 
             return svgContainer;
         } catch (IOException e) {
-            LoggerFactory.getLogger(UserStatus.class).error("Exception occurred:", e);
+            LoggerFactory.getLogger(UserStatus.class).error("❌ Exception occurred:", e);
             return new Div();
         }
     }

@@ -11,12 +11,14 @@ import de.derpeterson.app.service.ConfigService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDate;
 import java.util.Set;
 
 @Configuration
@@ -29,7 +31,16 @@ public class DatabaseInitializer {
     private final RoleRepository roleRepository;
     private final ConfigService configService;
     private final PasswordEncoder passwordEncoder;
-    private final ApplicationEventPublisher eventPublisher;
+    private final Environment environment;
+
+    @Value("${app.bootstrap.default-admin.enabled:false}")
+    private boolean defaultAdminEnabled;
+
+    @Value("${app.bootstrap.default-admin.email:}")
+    private String defaultAdminEmail;
+
+    @Value("${app.bootstrap.default-admin.password:}")
+    private String defaultAdminPassword;
 
     @Bean
     public CommandLineRunner initDatabase() {
@@ -41,47 +52,57 @@ public class DatabaseInitializer {
 
     private void createDefaultRolesAndAdminUser() {
         RoleEntity adminRoleEntity = roleRepository.findByName(RoleType.ROLE_ADMIN)
-                .orElseGet(() -> {
-                    RoleEntity roleEntity = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
-                    return roleRepository.save(roleEntity);
-                });
+                .orElseGet(() -> roleRepository.save(RoleEntity.builder().name(RoleType.ROLE_ADMIN).build()));
 
         RoleEntity userRoleEntity = roleRepository.findByName(RoleType.ROLE_USER)
-                .orElseGet(() -> {
-                    RoleEntity roleEntity = RoleEntity.builder().name(RoleType.ROLE_USER).build();
-                    return roleRepository.save(roleEntity);
-                });
+                .orElseGet(() -> roleRepository.save(RoleEntity.builder().name(RoleType.ROLE_USER).build()));
 
-        logger.info("✅ Rollen geprüft oder erstellt: ROLE_ADMIN, ROLE_USER");
+        logger.info("✅ Roles checked or created: ROLE_ADMIN, ROLE_USER");
 
-        if (userRepository.findByEmail("admin@example.com").isEmpty()) {
-            UserEntity adminUserEntity = UserEntity.builder()
-                    .firstName("John")
-                    .lastName("Doe")
-                    .password(passwordEncoder.encode("Admin@123")) //NOSONAR
-                    .email("admin@example.com")
-                    .gender(Gender.OTHER)
-                    .birthDate(java.time.LocalDate.of(1990, 1, 1))
-                    .roleEntities(Set.of(adminRoleEntity, userRoleEntity))
-                    .enabled(true)
-                    .build();
-
-            userRepository.save(adminUserEntity);
-
-            logger.info("✅ Admin user created: {} / {}", adminUserEntity.getEmail(), adminUserEntity.getPassword());
-        } else {
-            logger.info("⚠️ Admin user already exists!");
+        if (!defaultAdminEnabled) {
+            logger.info("✅ Default admin bootstrap is disabled.");
+            return;
         }
+
+        if (defaultAdminEmail == null || defaultAdminEmail.isBlank()
+                || defaultAdminPassword == null || defaultAdminPassword.isBlank()) {
+            logger.warn("⚠️ Default admin bootstrap is enabled but email/password are missing.");
+            return;
+        }
+
+        if (userRepository.findByEmail(defaultAdminEmail).isPresent()) {
+            logger.info("✅ Default admin user already exists: {}", defaultAdminEmail);
+            return;
+        }
+
+        UserEntity adminUserEntity = UserEntity.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .password(passwordEncoder.encode(defaultAdminPassword))
+                .email(defaultAdminEmail)
+                .gender(Gender.OTHER)
+                .birthDate(LocalDate.of(1990, 1, 1))
+                .roleEntities(Set.of(adminRoleEntity, userRoleEntity))
+                .enabled(true)
+                .build();
+
+        userRepository.save(adminUserEntity);
+        logger.info("✅ Default admin user created: {}", adminUserEntity.getEmail());
     }
 
     private void createDefaultConfigSettings() {
         for (ConfigEntry configEntry : ConfigEntry.values()) {
             if (!configService.exists(configEntry)) {
-                configService.set(configEntry, configEntry.getDefaultValueString());
-                logger.info("✅ ConfigEntity entry created: {} / {}", configEntry.getKey(), configEntry.getDefaultValueString());
+                configService.set(configEntry, resolveDefaultValue(configEntry));
+                logger.info("✅ Config entry created: {}", configEntry.getKey());
             } else {
-                logger.info("⚠️ ConfigEntity entry {} exists!", configEntry.getKey());
+                logger.info("✅ Config entry already exists: {}", configEntry.getKey());
             }
         }
+    }
+
+    private String resolveDefaultValue(ConfigEntry configEntry) {
+        String propertyKey = "app.config.defaults." + configEntry.getKey();
+        return environment.getProperty(propertyKey, configEntry.getDefaultValueString());
     }
 }

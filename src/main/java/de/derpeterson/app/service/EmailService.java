@@ -11,7 +11,6 @@ import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,7 +23,6 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Async("emailTaskExecutor")
     public void sendEmail(UserEntity userEntity, String subject, String htmlContent) throws MailException, MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         message.addHeader("Content-Type", "text/html; charset=UTF-8");
@@ -38,7 +36,6 @@ public class EmailService {
         mailSender.send(message);
     }
 
-    @Async("emailTaskExecutor")
     public void sendAdminEmail(String adminEmail, String subject, String body) throws MailException {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(adminEmail);
