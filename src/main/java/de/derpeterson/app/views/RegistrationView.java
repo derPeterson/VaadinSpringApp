@@ -35,7 +35,7 @@ import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
-import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
+import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
@@ -54,7 +54,7 @@ import java.util.function.Supplier;
 @Route(AppRouteConstants.REGISTRATION_ROUTE)
 @PageTitle(AppRouteConstants.REGISTRATION_PAGE_TITLE)
 @AnonymousAllowed
-public class RegistrationView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
+public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
     private static final Logger logger = LoggerFactory.getLogger(RegistrationView.class);
 

@@ -3,6 +3,7 @@ package de.derpeterson.app.security;
 import de.derpeterson.app.helper.jdbc.JdbcHelper;
 import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.NavigationErrorCode;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.service.ConfigService;
 import lombok.RequiredArgsConstructor;
@@ -12,8 +13,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -115,6 +116,32 @@ public class SecurityConfig {
                         .requestMatchers(AppRoute.ADMIN.getSecurityRoute()).hasRole(RoleType.ROLE_ADMIN.getName())
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            String requestUri = request.getServletPath();
+                            String redirectTarget = AppRoute.LOGIN.getSecurityRoute();
+
+                            if (!isKnownApplicationPath(requestUri)) {
+                                redirectTarget = AppRoute.HOME.getSecurityRoute() + "?error" + NavigationErrorCode.PATH_NOT_FOUND.getCode();
+                            }
+
+                            if (!response.isCommitted()) {
+                                response.sendRedirect(redirectTarget);
+                            }
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            String redirectTarget = AppRoute.HOME.getSecurityRoute() + "?error=" + NavigationErrorCode.ACCESS_DENIED.getCode();
+                            String requestUri = request.getServletPath();
+
+                            if (requestUri != null && requestUri.startsWith(AppRoute.ADMIN.getSecurityRoute())) {
+                                redirectTarget = AppRoute.HOME.getSecurityRoute() + "?error=" + NavigationErrorCode.ADMIN_ACCESS_DENIED.getCode();
+                            }
+
+                            if (!response.isCommitted()) {
+                                response.sendRedirect(redirectTarget);
+                            }
+                        })
+                )
                 .addFilterBefore(vaadinSecurityFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session -> session
                         .sessionFixation().newSession()
@@ -142,5 +169,22 @@ public class SecurityConfig {
         logger.debug("🔧 SecurityConfig loaded!");
 
         return http.build();
+    }
+
+    private boolean isKnownApplicationPath(String requestUri) {
+        if (requestUri == null || requestUri.isBlank()) {
+            return false;
+        }
+
+        return requestUri.equals(AppRoute.BASE.getSecurityRoute())
+                || requestUri.equals(AppRoute.HOME.getSecurityRoute())
+                || requestUri.equals(AppRoute.ADMIN.getSecurityRoute())
+                || requestUri.equals(AppRoute.LOGIN.getSecurityRoute())
+                || requestUri.equals(AppRoute.LOGOUT.getSecurityRoute())
+                || requestUri.equals(AppRoute.REGISTRATION.getSecurityRoute())
+                || requestUri.equals(AppRoute.FORGOT_PASSWORD.getSecurityRoute())
+                || requestUri.startsWith(AppRoute.VERIFICATION.getSecurityRoute().replace("/**", ""))
+                || requestUri.startsWith(AppRoute.RESET_PASSWORD.getSecurityRoute().replace("/**", ""))
+                || requestUri.startsWith(AppRoute.H2.getSecurityRoute());
     }
 }

@@ -2,6 +2,7 @@ package de.derpeterson.app.model;
 
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.model.enums.Gender;
+import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -109,5 +110,10 @@ public class UserEntity {
 
     public void updateLastActivity() {
         this.lastActivity = LocalDateTime.now();
+    }
+
+    public boolean hasRole(RoleType roleType) {
+        return roleEntities != null &&
+                roleEntities.stream().anyMatch(role -> role.getName() == roleType);
     }
 }

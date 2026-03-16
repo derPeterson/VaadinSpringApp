@@ -30,7 +30,7 @@ import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.i18n.MessageProperties;
-import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
+import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.ui.components.CardComponent;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,7 +51,7 @@ import java.util.function.Supplier;
 @Route(AppRouteConstants.LOGIN_ROUTE)
 @PageTitle(AppRouteConstants.LOGIN_PAGE_TITLE)
 @AnonymousAllowed
-public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
+public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
     private static final Logger logger = LoggerFactory.getLogger(LoginView.class);
 
@@ -125,7 +125,7 @@ public class LoginView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
 
                 NotificationHelper.getInstance().showNotification(messageProperties::getBaseSuccessTitle, messageProperties::getLoginSuccessMessage, NotificationHelper.NotificationType.SUCCESS);
 
-                getUI().ifPresent(ui -> ui.navigate(AdminView.class));
+                getUI().ifPresent(ui -> ui.navigate(HomeView.class));
             } catch (AuthenticationException e) {
                 NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle, messageProperties::getLoginFailedMessage, -1, NotificationHelper.NotificationType.ERROR);
             }

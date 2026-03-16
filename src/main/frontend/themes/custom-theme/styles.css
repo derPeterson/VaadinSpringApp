@@ -1,33 +1,49 @@
-/* Base */
-
+﻿/* Base Utilities */
 .underline {
     text-decoration: underline;
 }
 
-/* Select */
+/* App Layout */
+vaadin-app-layout {
+    background-color: var(--lumo-base-color);
+}
 
-/* Entfernt das Checkmark aus der ComboBox */
+vaadin-app-layout::part(drawer) {
+    border-inline-end: none;
+    background-color: var(--lumo-contrast-10pct);
+}
+
+/* Admin View */
+.admin-nav-item,
+.admin-nav-item * {
+    cursor: pointer;
+}
+
+.admin-nav-item {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Select */
 vaadin-select-item::part(checkmark) {
     display: none !important;
 }
 
 vaadin-select-overlay::part(overlay) {
-    width: 450px !important; /* Setzt die Breite des Overlays */
+    width: 450px !important;
 }
 
-/* Hebt das ausgewählte Item mit einem blauen Rand hervor */
 vaadin-select-overlay vaadin-select-item[selected] {
-    border: 2px solid var(--lumo-primary-color) !important; /* Nutzt die primäre Farbe */
-    background-color: var(--lumo-primary-color-10pct) !important; /* 10% transparente Version */
+    border: 2px solid var(--lumo-primary-color) !important;
+    background-color: var(--lumo-primary-color-10pct) !important;
     border-radius: 4px;
 }
 
-/* Setzt Padding für jedes Item in der ComboBox */
 vaadin-select-overlay vaadin-select-item::part(content) {
     padding-left: 24px;
 }
 
-/* Views */
+/* View Backgrounds */
 .login-bg-fullscreen {
     background-image: url('login-background.jpg');
     background-size: cover;
@@ -80,9 +96,8 @@ vaadin-select-overlay vaadin-select-item::part(content) {
     background-repeat: no-repeat;
 }
 
-/* CardLeftImageComponent */
+/* Components */
 .border-left-rounded {
     border-top-left-radius: 0.5em;
     border-bottom-left-radius: 0.5em;
 }
-

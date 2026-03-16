@@ -24,7 +24,7 @@ import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
-import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
+import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.VerificationService;
 import de.derpeterson.app.ui.components.CardComponent;
@@ -42,7 +42,7 @@ import java.util.function.Supplier;
 @Route(AppRouteConstants.VERIFICATION_ROUTE)
 @PageTitle(AppRouteConstants.VERIFICATION_PAGE_TITEL)
 @AnonymousAllowed
-public class VerificationView extends IsNotAuthentificatedBaseView<HorizontalLayout> implements HasUrlParameter<String> {
+public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayout> implements HasUrlParameter<String> {
 
     private static final Logger logger = LoggerFactory.getLogger(VerificationView.class);
 

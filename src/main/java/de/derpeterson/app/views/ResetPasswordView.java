@@ -24,7 +24,7 @@ import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
-import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
+import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.PasswordResetService;
 import de.derpeterson.app.ui.components.CardComponent;
@@ -39,7 +39,7 @@ import java.util.function.Supplier;
 @Route(AppRouteConstants.RESET_PASSWORD_ROUTE)
 @PageTitle(AppRouteConstants.RESET_PAGE_TITLE)
 @AnonymousAllowed
-public class ResetPasswordView extends IsNotAuthentificatedBaseView<HorizontalLayout> implements HasUrlParameter<String> {
+public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayout> implements HasUrlParameter<String> {
 
     private final transient MessageProperties messageProperties;
     private final transient PasswordResetService passwordResetService;

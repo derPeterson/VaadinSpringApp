@@ -25,7 +25,7 @@ import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
-import de.derpeterson.app.security.IsNotAuthentificatedBaseView;
+import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.PasswordResetService;
 import de.derpeterson.app.ui.components.CardComponent;
@@ -43,7 +43,7 @@ import java.util.function.Supplier;
 @Route(AppRouteConstants.FORGOT_PASSWORD_ROUTE)
 @PageTitle(AppRouteConstants.FORGOT_PASSWORD_PAGE_TITLE)
 @AnonymousAllowed
-public class ForgotPasswordView extends IsNotAuthentificatedBaseView<HorizontalLayout> {
+public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
     private static final Logger logger = LoggerFactory.getLogger(ForgotPasswordView.class);
 
