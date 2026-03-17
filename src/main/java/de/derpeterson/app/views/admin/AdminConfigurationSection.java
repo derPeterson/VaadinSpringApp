@@ -1,10 +1,11 @@
 package de.derpeterson.app.views.admin;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.HasHelper;
+import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
@@ -13,7 +14,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -23,14 +24,16 @@ import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.CardComponent;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.convert.DurationStyle;
 
-import java.util.EnumMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 public class AdminConfigurationSection extends VerticalLayout {
 
@@ -44,14 +47,29 @@ public class AdminConfigurationSection extends VerticalLayout {
     private static final String CONFIG_GROUP_SMTP = "adminView.config.group.smtp";
     private static final String CONFIG_GROUP_QUEUE = "adminView.config.group.queue";
 
+    private static final int SERVICE_NAME_MAX_LENGTH = 30;
+    private static final int SECRET_KEY_MIN_LENGTH = 8;
+    private static final Pattern JAVA_CLASS_NAME_PATTERN =
+            Pattern.compile("^[a-zA-Z_$][a-zA-Z\\d_$]*(\\.[a-zA-Z_$][a-zA-Z\\d_$]*)*$");
+    private static final Pattern DURATION_NUMBER_ONLY_PATTERN = Pattern.compile("^\\d+$");
+
+    private static final Set<ConfigEntry> DURATION_ENTRIES = Set.of(
+            ConfigEntry.USER_AUTO_ABSENT_TIMEOUT,
+            ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION,
+            ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION,
+            ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION,
+            ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION,
+            ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION
+    );
+
     private final transient MessageProperties messageProperties;
     private final transient ConfigService configService;
     private final transient Runnable serviceNameChangedAction;
 
     private final EnumMap<ConfigEntry, Component> configInputs = new EnumMap<>(ConfigEntry.class);
     private final EnumMap<ConfigEntry, VerticalLayout> configInputWrappers = new EnumMap<>(ConfigEntry.class);
-    private final EnumMap<ConfigEntry, Tooltip> configTooltips = new EnumMap<>(ConfigEntry.class);
     private final EnumMap<ConfigEntry, Span> configLabelSpans = new EnumMap<>(ConfigEntry.class);
+    private final EnumMap<ConfigEntry, Span> configMetaTextSpans = new EnumMap<>(ConfigEntry.class);
     private final Map<String, Predicate<ConfigEntry>> configGroupFilters = new LinkedHashMap<>();
 
     private final H1 configurationTitle;
@@ -107,28 +125,15 @@ public class AdminConfigurationSection extends VerticalLayout {
         saveConfigButton.setPrefixComponent(VaadinIcon.CHECK.create());
         saveConfigButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         saveConfigButton.addClickListener(clickEvent -> saveConfigValues());
+        saveConfigButton.addClickShortcut(Key.ENTER);
+        saveConfigButton.setWidthFull();
 
         reloadConfigButton = new Button();
         reloadConfigButton.setPrefixComponent(VaadinIcon.REFRESH.create());
-        reloadConfigButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         reloadConfigButton.addClickListener(clickEvent -> reloadConfigValues());
+        reloadConfigButton.setWidthFull();
 
-        HorizontalLayout buttonLayout = new HorizontalLayout(saveConfigButton, reloadConfigButton);
-        buttonLayout.setPadding(false);
-        buttonLayout.setSpacing(true);
-        buttonLayout.setWidthFull();
-        buttonLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-
-        VerticalLayout configLayout = new VerticalLayout(
-                configurationTitle,
-                configurationDescription,
-                currentGroupTitle,
-                configFieldsContainer,
-                buttonLayout
-        );
-        configLayout.setPadding(false);
-        configLayout.setSpacing(true);
-        configLayout.setAlignItems(Alignment.START);
+        VerticalLayout configLayout = getButtonVerticalLayout();
 
         CardComponent configCard = new CardComponent(configLayout);
         configCard.setWidthFull();
@@ -144,6 +149,36 @@ public class AdminConfigurationSection extends VerticalLayout {
         renderSelectedGroup();
     }
 
+    private @NonNull VerticalLayout getButtonVerticalLayout() {
+        HorizontalLayout saveWrapper = new HorizontalLayout(saveConfigButton);
+        saveWrapper.setPadding(false);
+        saveWrapper.setSpacing(false);
+        saveWrapper.setWidthFull();
+
+        HorizontalLayout reloadWrapper = new HorizontalLayout(reloadConfigButton);
+        reloadWrapper.setPadding(false);
+        reloadWrapper.setSpacing(false);
+        reloadWrapper.setWidthFull();
+
+        HorizontalLayout buttonLayout = new HorizontalLayout(saveWrapper, reloadWrapper);
+        buttonLayout.setPadding(false);
+        buttonLayout.setSpacing(true);
+        buttonLayout.setWidthFull();
+        buttonLayout.expand(saveWrapper, reloadWrapper);
+
+        VerticalLayout configLayout = new VerticalLayout(
+                configurationTitle,
+                configurationDescription,
+                currentGroupTitle,
+                configFieldsContainer,
+                buttonLayout
+        );
+        configLayout.setPadding(false);
+        configLayout.setSpacing(true);
+        configLayout.setAlignItems(Alignment.START);
+        return configLayout;
+    }
+
     public void refreshTexts() {
         configurationTitle.setText(messageProperties.getAdminConfigTitle());
         configurationDescription.setText(messageProperties.getAdminConfigDescription());
@@ -151,9 +186,9 @@ public class AdminConfigurationSection extends VerticalLayout {
         reloadConfigButton.setText(messageProperties.getAdminConfigReload());
 
         refreshInputLabels();
-        refreshDefaultHelperTexts();
+        refreshInputMetaTexts();
         refreshCurrentGroupTitle();
-        refreshInputTooltips();
+        refreshValidationMessagesForInvalidFields();
     }
 
     public void loadConfigValues() {
@@ -164,15 +199,16 @@ public class AdminConfigurationSection extends VerticalLayout {
             }
 
             String value = configService.getString(configEntry);
+            String safeValue = value == null ? "" : value;
 
             if (input instanceof Checkbox checkbox) {
-                checkbox.setValue(Boolean.parseBoolean(value));
+                checkbox.setValue(Boolean.parseBoolean(safeValue));
                 continue;
             }
 
             if (input instanceof IntegerField integerField) {
                 try {
-                    integerField.setValue(Integer.parseInt(value));
+                    integerField.setValue(Integer.parseInt(safeValue));
                 } catch (NumberFormatException ex) {
                     integerField.setValue(configEntry.getDefaultValueInteger());
                 }
@@ -180,14 +216,21 @@ public class AdminConfigurationSection extends VerticalLayout {
             }
 
             if (input instanceof PasswordField passwordField) {
-                passwordField.setValue(value == null ? "" : value);
+                passwordField.setValue(safeValue);
+                continue;
+            }
+
+            if (input instanceof EmailField emailField) {
+                emailField.setValue(safeValue);
                 continue;
             }
 
             if (input instanceof TextField textField) {
-                textField.setValue(value == null ? "" : value);
+                textField.setValue(safeValue);
             }
         }
+
+        clearAllValidationStates();
     }
 
     public void showGroup(String titleKey) {
@@ -247,19 +290,32 @@ public class AdminConfigurationSection extends VerticalLayout {
                 labelSpan.setText(messageProperties.getAdminConfigEntryLabel(configEntry)));
     }
 
-    private void refreshDefaultHelperTexts() {
+    private void refreshInputMetaTexts() {
+        configMetaTextSpans.forEach((configEntry, metaTextSpan) ->
+                metaTextSpan.setText(buildMetaText(configEntry)));
+
         configInputs.forEach((configEntry, input) ->
-                updateHelperText(input, buildDefaultText(configEntry)));
+                updatePlaceholder(input, buildPlaceholder(configEntry)));
     }
 
-    private void refreshInputTooltips() {
-        configTooltips.forEach((configEntry, tooltip) ->
-                tooltip.setText(messageProperties.getAdminConfigEntryTooltip(configEntry)));
+    private void refreshValidationMessagesForInvalidFields() {
+        configInputs.forEach((configEntry, input) -> {
+            if (isInputInvalid(input)) {
+                String errorMessage = validateValue(configEntry, extractInputValue(configEntry));
+                if (errorMessage != null) {
+                    setValidationError(input, errorMessage);
+                }
+            }
+        });
     }
 
-    private void updateHelperText(Component input, String helperText) {
-        if (input instanceof HasHelper hasHelper) {
-            hasHelper.setHelperText(helperText);
+    private void updatePlaceholder(Component input, String placeholder) {
+        String safePlaceholder = placeholder == null ? "" : placeholder;
+
+        if (input instanceof EmailField emailField) {
+            emailField.setPlaceholder(safePlaceholder);
+        } else if (input instanceof TextField textField) {
+            textField.setPlaceholder(safePlaceholder);
         }
     }
 
@@ -275,38 +331,48 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     private VerticalLayout createConfigInput(ConfigEntry configEntry) {
         Object defaultValue = configEntry.getDefaultValue();
-        String helperText = buildDefaultText(configEntry);
-
         Component input;
 
-        if (defaultValue instanceof Boolean) {
+        if (isBooleanLikeEntry(configEntry, defaultValue)) {
             Checkbox checkbox = new Checkbox();
             checkbox.setWidthFull();
-            checkbox.setHelperText(helperText);
             input = checkbox;
+        } else if (isEmailEntry(configEntry)) {
+            EmailField emailField = new EmailField();
+            emailField.setClearButtonVisible(true);
+            emailField.setWidthFull();
+            input = emailField;
         } else if (defaultValue instanceof Integer) {
             IntegerField integerField = new IntegerField();
             integerField.setWidthFull();
             integerField.setStepButtonsVisible(true);
             integerField.setClearButtonVisible(true);
-            integerField.setHelperText(helperText);
             integerField.setMin(0);
+
+            if (configEntry == ConfigEntry.MAIL_PORT) {
+                integerField.setMin(1);
+                integerField.setMax(65535);
+            }
+
             input = integerField;
         } else if (configEntry == ConfigEntry.REMEMBER_ME_SECRET_KEY || configEntry == ConfigEntry.MAIL_PASSWORD) {
             PasswordField passwordField = new PasswordField();
             passwordField.setRevealButtonVisible(true);
             passwordField.setClearButtonVisible(true);
-            passwordField.setHelperText(helperText);
+            if (configEntry == ConfigEntry.REMEMBER_ME_SECRET_KEY) {
+                passwordField.setMinLength(SECRET_KEY_MIN_LENGTH);
+            }
             passwordField.setWidthFull();
             input = passwordField;
         } else {
             TextField textField = new TextField();
             textField.setClearButtonVisible(true);
-            textField.setHelperText(helperText);
             textField.setWidthFull();
             input = textField;
         }
 
+        updatePlaceholder(input, buildPlaceholder(configEntry));
+        installValidationResetListener(input);
         configInputs.put(configEntry, input);
 
         return createFieldWrapper(input, configEntry);
@@ -320,9 +386,20 @@ public class AdminConfigurationSection extends VerticalLayout {
         wrapper.addClassNames(LumoUtility.Gap.XSMALL);
 
         HorizontalLayout headerLayout = createFieldHeader(configEntry);
-        wrapper.add(headerLayout, input);
+        Span metaTextSpan = createMetaTextSpan(configEntry);
 
+        wrapper.add(headerLayout, input, metaTextSpan);
         return wrapper;
+    }
+
+    private Span createMetaTextSpan(ConfigEntry configEntry) {
+        Span metaTextSpan = new Span(buildMetaText(configEntry));
+        metaTextSpan.addClassNames(
+                LumoUtility.FontSize.SMALL,
+                LumoUtility.TextColor.SECONDARY
+        );
+        configMetaTextSpans.put(configEntry, metaTextSpan);
+        return metaTextSpan;
     }
 
     private HorizontalLayout createFieldHeader(ConfigEntry configEntry) {
@@ -340,14 +417,47 @@ public class AdminConfigurationSection extends VerticalLayout {
         );
         configLabelSpans.put(configEntry, labelSpan);
 
-        Icon tooltipIcon = createTooltipIcon();
-        Tooltip tooltip = Tooltip.forComponent(tooltipIcon);
-        tooltip.setText(messageProperties.getAdminConfigEntryTooltip(configEntry));
-        configTooltips.put(configEntry, tooltip);
+        Component infoPopover = createInfoPopover(configEntry);
 
-        headerLayout.add(labelSpan, tooltipIcon);
+        headerLayout.add(labelSpan, infoPopover);
 
         return headerLayout;
+    }
+
+    private Component createInfoPopover(ConfigEntry configEntry) {
+        Icon icon = createTooltipIcon();
+
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle(messageProperties.getAdminConfigEntryLabel(configEntry));
+        dialog.setCloseOnEsc(true);
+        dialog.setCloseOnOutsideClick(true);
+        dialog.setDraggable(true);
+        dialog.setResizable(true);
+        dialog.getElement().getStyle().set("border-radius", "12px");
+
+        Span content = new Span(messageProperties.getAdminConfigEntryTooltip(configEntry));
+        content.getStyle()
+                .set("white-space", "normal")
+                .set("line-height", "1.5");
+
+        Button closeButton = new Button(messageProperties.getOkayHomeButton(), e -> dialog.close());
+        closeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        HorizontalLayout footer = new HorizontalLayout(closeButton);
+        footer.setWidthFull();
+        footer.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+        footer.setPadding(false);
+        footer.setSpacing(false);
+
+        VerticalLayout layout = new VerticalLayout(content, footer);
+        layout.setSpacing(true);
+        layout.setPadding(true);
+
+        dialog.add(layout);
+
+        icon.addClickListener(e -> dialog.open());
+
+        return icon;
     }
 
     private Icon createTooltipIcon() {
@@ -365,11 +475,20 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     private void saveConfigValues() {
+        if (!validateAllInputs()) {
+            NotificationHelper.getInstance().showNotification(
+                    messageProperties::getBaseFailedTitle,
+                    messageProperties::getAdminConfigValidationInvalidFields,
+                    NotificationHelper.NotificationType.ERROR
+            );
+            return;
+        }
+
         try {
             boolean serviceNameChanged = false;
 
             for (ConfigEntry configEntry : ConfigEntry.values()) {
-                String newValue = extractInputValue(configEntry);
+                String newValue = normalizeValue(configEntry, extractInputValue(configEntry));
                 String oldValue = configService.getString(configEntry);
 
                 if (configEntry == ConfigEntry.SERVICE_NAME && !Objects.equals(oldValue, newValue)) {
@@ -378,6 +497,8 @@ public class AdminConfigurationSection extends VerticalLayout {
 
                 configService.set(configEntry, newValue);
             }
+
+            loadConfigValues();
 
             if (serviceNameChanged && serviceNameChangedAction != null) {
                 serviceNameChangedAction.run();
@@ -389,7 +510,7 @@ public class AdminConfigurationSection extends VerticalLayout {
                     NotificationHelper.NotificationType.SUCCESS
             );
         } catch (Exception ex) {
-            logger.error("Failed to store configuration values.", ex);
+            logger.error("❌ Failed to store configuration values.", ex);
             NotificationHelper.getInstance().showNotification(
                     messageProperties::getBaseFailedTitle,
                     messageProperties::getBaseFailedMessage,
@@ -397,6 +518,115 @@ public class AdminConfigurationSection extends VerticalLayout {
                     NotificationHelper.NotificationType.ERROR
             );
         }
+    }
+
+
+    private boolean validateAllInputs() {
+        boolean allValid = true;
+        Component firstInvalid = null;
+        ConfigEntry firstInvalidEntry = null;
+
+        for (ConfigEntry configEntry : ConfigEntry.values()) {
+            Component input = configInputs.get(configEntry);
+            if (input == null) {
+                continue;
+            }
+
+            clearValidationState(input);
+
+            String rawValue = extractInputValue(configEntry);
+            String errorMessage = validateValue(configEntry, rawValue);
+
+            if (errorMessage == null) {
+                continue;
+            }
+
+            setValidationError(input, errorMessage);
+
+            if (firstInvalid == null) {
+                firstInvalid = input;
+                firstInvalidEntry = configEntry;
+            }
+
+            logger.warn("⚠️ Invalid config field: {} with value '{}'", configEntry.name(), rawValue);
+            allValid = false;
+        }
+
+        if (firstInvalid != null) {
+            logger.warn("⚠️ First invalid config field: {}", firstInvalidEntry.name());
+            firstInvalid.getElement().callJsFunction("focus");
+        }
+
+        return allValid;
+    }
+
+    private String validateValue(ConfigEntry configEntry, String value) {
+        String trimmed = value == null ? "" : value.trim();
+
+        return switch (configEntry) {
+            case SERVICE_NAME -> {
+                if (trimmed.isBlank()) {
+                    yield messageProperties.getAdminConfigValidationServiceName();
+                }
+                if (trimmed.length() > SERVICE_NAME_MAX_LENGTH) {
+                    yield messageProperties.getAdminConfigValidationServiceNameMax(SERVICE_NAME_MAX_LENGTH);
+                }
+                yield null;
+            }
+            case BASE_URL -> !isValidHttpUrl(trimmed)
+                    ? messageProperties.getAdminConfigValidationUrl()
+                    : null;
+            case REMEMBER_ME_DURATION -> !isValidPositiveInteger(trimmed)
+                    ? messageProperties.getAdminConfigValidationSeconds()
+                    : null;
+            case REMEMBER_ME_SECRET_KEY -> trimmed.length() < SECRET_KEY_MIN_LENGTH
+                    ? messageProperties.getAdminConfigValidationSecretKey(SECRET_KEY_MIN_LENGTH)
+                    : null;
+            case USER_AUTO_ABSENT_TIMEOUT,
+                 VERIFICATION_TOKEN_VALID_DURATION,
+                 VERIFICATION_TOKEN_LIVE_DURATION,
+                 PASSWORD_RESET_TOKEN_VALID_DURATION,
+                 PASSWORD_RESET_TOKEN_LIVE_DURATION,
+                 EMAIL_QUEUE_SENT_LIVE_DURATION -> !isValidSpringDuration(trimmed)
+                    ? messageProperties.getAdminConfigValidationDuration()
+                    : null;
+            case LOGIN_ATTEMPTS_LIMIT,
+                 MAX_SESSIONS_PER_USER,
+                 EMAIL_QUEUE_POOL_SIZE,
+                 EMAIL_QUEUE_CAPACITY -> !isValidPositiveInteger(trimmed)
+                    ? messageProperties.getAdminConfigValidationMinOne()
+                    : null;
+            case EMAIL_QUEUE_MAX_RETRY -> !isValidNonNegativeInteger(trimmed)
+                    ? messageProperties.getAdminConfigValidationNonNegative()
+                    : null;
+            case EMAIL_FROM,
+                 EMAIL_ADMIN -> !isValidEmail(trimmed)
+                    ? messageProperties.getAdminConfigValidationEmail()
+                    : null;
+            case MAIL_HOST -> !isValidHost(trimmed)
+                    ? messageProperties.getAdminConfigValidationHost()
+                    : null;
+            case MAIL_PORT -> !isValidPort(trimmed)
+                    ? messageProperties.getAdminConfigValidationPort()
+                    : null;
+            case MAIL_SMTP_SSL_TRUST -> !isValidSslTrustValue(trimmed)
+                    ? messageProperties.getAdminConfigValidationHost()
+                    : null;
+            case MAIL_SMTP_SOCKETFACTORY_CLASS -> !isValidJavaClassName(trimmed)
+                    ? messageProperties.getAdminConfigValidationJavaClass()
+                    : null;
+            default -> null;
+        };
+    }
+
+    private String normalizeValue(ConfigEntry configEntry, String value) {
+        String trimmed = value == null ? "" : value.trim();
+
+        if (DURATION_ENTRIES.contains(configEntry) && !trimmed.isBlank()) {
+            return DurationStyle.detectAndParse(trimmed).toString();
+        }
+
+        return trimmed;
     }
 
     private String extractInputValue(ConfigEntry configEntry) {
@@ -417,11 +647,54 @@ public class AdminConfigurationSection extends VerticalLayout {
             return passwordField.getValue() == null ? "" : passwordField.getValue();
         }
 
+        if (input instanceof EmailField emailField) {
+            return emailField.getValue() == null ? "" : emailField.getValue();
+        }
+
         if (input instanceof TextField textField) {
             return textField.getValue() == null ? "" : textField.getValue();
         }
 
         return configEntry.getDefaultValueString();
+    }
+
+    private String buildMetaText(ConfigEntry configEntry) {
+        String defaultText = buildDefaultText(configEntry);
+
+        if (DURATION_ENTRIES.contains(configEntry)) {
+            return defaultText + " • " + messageProperties.getAdminConfigHelperDurationFormats();
+        }
+
+        if (configEntry == ConfigEntry.REMEMBER_ME_DURATION) {
+            return defaultText + " • " + messageProperties.getAdminConfigHelperSeconds();
+        }
+
+        if (configEntry == ConfigEntry.REMEMBER_ME_SECRET_KEY) {
+            return defaultText + " • " +
+                    messageProperties.getAdminConfigHelperSecretKeyMin(SECRET_KEY_MIN_LENGTH);
+        }
+
+        if (configEntry == ConfigEntry.SERVICE_NAME) {
+            return defaultText + " • " +
+                    messageProperties.getAdminConfigHelperServiceNameMax(SERVICE_NAME_MAX_LENGTH);
+        }
+
+        return defaultText;
+    }
+
+    private String buildPlaceholder(ConfigEntry configEntry) {
+        return switch (configEntry) {
+            case BASE_URL -> messageProperties.getAdminConfigPlaceholderBaseUrl();
+            case EMAIL_FROM, EMAIL_ADMIN -> messageProperties.getAdminConfigPlaceholderEmail();
+            case MAIL_HOST -> messageProperties.getAdminConfigPlaceholderMailHost();
+            case USER_AUTO_ABSENT_TIMEOUT,
+                 VERIFICATION_TOKEN_VALID_DURATION,
+                 VERIFICATION_TOKEN_LIVE_DURATION,
+                 PASSWORD_RESET_TOKEN_VALID_DURATION,
+                 PASSWORD_RESET_TOKEN_LIVE_DURATION,
+                 EMAIL_QUEUE_SENT_LIVE_DURATION -> messageProperties.getAdminConfigPlaceholderDuration();
+            default -> "";
+        };
     }
 
     private String buildDefaultText(ConfigEntry configEntry) {
@@ -439,6 +712,177 @@ public class AdminConfigurationSection extends VerticalLayout {
             case CONFIG_GROUP_QUEUE -> messageProperties.getAdminConfigGroupQueue();
             default -> messageProperties.getTranslation(groupKey);
         };
+    }
+
+    private void installValidationResetListener(Component input) {
+        if (input instanceof EmailField emailField) {
+            emailField.addValueChangeListener(event -> clearValidationState(emailField));
+        } else if (input instanceof PasswordField passwordField) {
+            passwordField.addValueChangeListener(event -> clearValidationState(passwordField));
+        } else if (input instanceof TextField textField) {
+            textField.addValueChangeListener(event -> clearValidationState(textField));
+        } else if (input instanceof IntegerField integerField) {
+            integerField.addValueChangeListener(event -> clearValidationState(integerField));
+        } else if (input instanceof Checkbox checkbox) {
+            checkbox.addValueChangeListener(event -> clearValidationState(checkbox));
+        }
+    }
+
+    private void clearAllValidationStates() {
+        configInputs.values().forEach(this::clearValidationState);
+    }
+
+    private void clearValidationState(Component input) {
+        if (input instanceof EmailField emailField) {
+            emailField.setInvalid(false);
+            emailField.setErrorMessage(null);
+        } else if (input instanceof PasswordField passwordField) {
+            passwordField.setInvalid(false);
+            passwordField.setErrorMessage(null);
+        } else if (input instanceof TextField textField) {
+            textField.setInvalid(false);
+            textField.setErrorMessage(null);
+        } else if (input instanceof IntegerField integerField) {
+            integerField.setInvalid(false);
+            integerField.setErrorMessage(null);
+        }
+    }
+
+    private void setValidationError(Component input, String errorMessage) {
+        if (input instanceof EmailField emailField) {
+            emailField.setInvalid(true);
+            emailField.setErrorMessage(errorMessage);
+        } else if (input instanceof PasswordField passwordField) {
+            passwordField.setInvalid(true);
+            passwordField.setErrorMessage(errorMessage);
+        } else if (input instanceof TextField textField) {
+            textField.setInvalid(true);
+            textField.setErrorMessage(errorMessage);
+        } else if (input instanceof IntegerField integerField) {
+            integerField.setInvalid(true);
+            integerField.setErrorMessage(errorMessage);
+        }
+    }
+
+    private boolean isInputInvalid(Component input) {
+        if (input instanceof EmailField emailField) {
+            return emailField.isInvalid();
+        }
+        if (input instanceof PasswordField passwordField) {
+            return passwordField.isInvalid();
+        }
+        if (input instanceof TextField textField) {
+            return textField.isInvalid();
+        }
+        if (input instanceof IntegerField integerField) {
+            return integerField.isInvalid();
+        }
+        return false;
+    }
+
+    private boolean isBooleanLikeEntry(ConfigEntry configEntry, Object defaultValue) {
+        return defaultValue instanceof Boolean || configEntry == ConfigEntry.MAIL_DEBUG;
+    }
+
+    private boolean isEmailEntry(ConfigEntry configEntry) {
+        return configEntry == ConfigEntry.EMAIL_FROM || configEntry == ConfigEntry.EMAIL_ADMIN;
+    }
+
+    private boolean isValidHttpUrl(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+
+        try {
+            URI uri = new URI(value);
+            return uri.getScheme() != null
+                    && uri.getHost() != null
+                    && ("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()));
+        } catch (URISyntaxException ex) {
+            return false;
+        }
+    }
+
+    private boolean isValidSpringDuration(String value) {
+        if (value == null) {
+            return false;
+        }
+
+        String trimmed = value.trim();
+        if (trimmed.isBlank()) {
+            return false;
+        }
+
+        if (DURATION_NUMBER_ONLY_PATTERN.matcher(trimmed).matches()) {
+            return false;
+        }
+
+        try {
+            DurationStyle.detectAndParse(trimmed);
+            return true;
+        } catch (IllegalArgumentException ex) {
+            logger.warn("⚠️ Invalid spring duration format: '{}'", trimmed, ex);
+            return false;
+        }
+    }
+
+    private boolean isValidPositiveInteger(String value) {
+        try {
+            return Integer.parseInt(value) >= 1;
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+    }
+
+    private boolean isValidNonNegativeInteger(String value) {
+        try {
+            return Integer.parseInt(value) >= 0;
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+    }
+
+    private boolean isValidEmail(String value) {
+        return value != null && !value.isBlank() && value.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+    }
+
+    private boolean isValidHost(String value) {
+        return value != null
+                && !value.isBlank()
+                && !value.contains("://")
+                && !value.contains("/")
+                && !value.contains(" ");
+    }
+
+    private boolean isValidPort(String value) {
+        try {
+            int port = Integer.parseInt(value);
+            return port >= 1 && port <= 65535;
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+    }
+
+    private boolean isValidSslTrustValue(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+
+        if ("*".equals(value.trim())) {
+            return true;
+        }
+
+        String[] hosts = value.split(",");
+        for (String host : hosts) {
+            if (!isValidHost(host.trim())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isValidJavaClassName(String value) {
+        return value == null || value.isBlank() || JAVA_CLASS_NAME_PATTERN.matcher(value).matches();
     }
 
     private boolean isGeneralConfig(ConfigEntry configEntry) {

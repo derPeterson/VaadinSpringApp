@@ -1,5 +1,6 @@
 package de.derpeterson.app.views.admin;
 
+import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H1;
@@ -82,6 +83,7 @@ public class AdminMailTestSection extends VerticalLayout {
         sendTestMailButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         sendTestMailButton.setWidthFull();
         sendTestMailButton.addClickListener(clickEvent -> sendTestMail());
+        sendTestMailButton.addClickShortcut(Key.ENTER);
 
         VerticalLayout mailLayout = new VerticalLayout(
                 mailTestTitle,

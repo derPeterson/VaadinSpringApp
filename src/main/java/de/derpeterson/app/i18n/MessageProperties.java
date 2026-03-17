@@ -217,6 +217,10 @@ public class MessageProperties {
         return getTranslation("base.home_button");
     }
 
+    public String getOkayHomeButton() {
+        return getTranslation("base.okay_button");
+    }
+
     public String getBaseSendButton() {
         return getTranslation("base.send_button");
     }
@@ -783,5 +787,90 @@ public class MessageProperties {
 
             default -> "";
         };
+    }
+
+
+    public String getAdminConfigValidationInvalidFields() {
+        return getTranslation("adminView.config.validation.invalid_fields");
+    }
+
+    public String getAdminConfigValidationUrl() {
+        return getTranslation("adminView.config.validation.url");
+    }
+
+    public String getAdminConfigValidationEmail() {
+        return getTranslation("adminView.config.validation.email");
+    }
+
+    public String getAdminConfigValidationHost() {
+        return getTranslation("adminView.config.validation.host");
+    }
+
+    public String getAdminConfigValidationPort() {
+        return getTranslation("adminView.config.validation.port");
+    }
+
+    public String getAdminConfigValidationMinOne() {
+        return getTranslation("adminView.config.validation.min_one");
+    }
+
+    public String getAdminConfigValidationNonNegative() {
+        return getTranslation("adminView.config.validation.non_negative");
+    }
+
+    public String getAdminConfigValidationSecretKey(int min) {
+        return getFormattedTranslation("adminView.config.validation.secret_key", min);
+    }
+
+    public String getAdminConfigValidationDuration() {
+        return getTranslation("adminView.config.validation.duration");
+    }
+
+    public String getAdminConfigValidationJavaClass() {
+        return getTranslation("adminView.config.validation.java_class");
+    }
+
+    public String getAdminConfigValidationServiceName() {
+        return getTranslation("adminView.config.validation.service_name");
+    }
+
+    public String getAdminConfigValidationServiceNameMax(int max) {
+        return getFormattedTranslation("adminView.config.validation.service_name_max", max);
+    }
+
+    public String getAdminConfigValidationSeconds() {
+        return getTranslation("adminView.config.validation.seconds");
+    }
+
+    public String getAdminConfigPlaceholderBaseUrl() {
+        return getTranslation("adminView.config.placeholder.base_url");
+    }
+
+    public String getAdminConfigPlaceholderEmail() {
+        return getTranslation("adminView.config.placeholder.email");
+    }
+
+    public String getAdminConfigPlaceholderMailHost() {
+        return getTranslation("adminView.config.placeholder.mail_host");
+    }
+
+    public String getAdminConfigPlaceholderDuration() {
+        return getTranslation("adminView.config.placeholder.duration");
+    }
+
+    public String getAdminConfigHelperDurationFormats() {
+        return getTranslation("adminView.config.helper.duration_formats");
+    }
+
+    public String getAdminConfigHelperSeconds() {
+        return getTranslation("adminView.config.helper.seconds");
+    }
+
+    public String getAdminConfigHelperSecretKeyMin(int min) {
+        return getFormattedTranslation("adminView.config.helper.secret_key_min", min);
+    }
+
+    public String getAdminConfigHelperServiceNameMax(int max) {
+        return getFormattedTranslation("adminView.config.helper.service_name_max", max);
     }
 }
