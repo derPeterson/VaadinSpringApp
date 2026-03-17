@@ -72,7 +72,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
         return userIconButton;
     }
 
-    protected UserPopoverMenu createTrackedUserPopover(UserPopoverMenu.Actions actions) {
+    protected void createTrackedUserPopover(UserPopoverMenu.Actions actions) {
         if (userIconButton == null) {
             createTrackedUserButton();
         }
@@ -90,7 +90,6 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
         Popover userPopover = userPopoverMenu.getPopover();
         userIconButton.addClickListener(buttonClickEvent -> userPopover.setOpened(true));
 
-        return userPopoverMenu;
     }
 
     protected void updateHeaderStatusIcon(UserStatus userStatus) {

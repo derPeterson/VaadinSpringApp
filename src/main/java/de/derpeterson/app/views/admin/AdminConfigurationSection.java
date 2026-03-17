@@ -49,8 +49,6 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     private static final int SERVICE_NAME_MAX_LENGTH = 30;
     private static final int SECRET_KEY_MIN_LENGTH = 8;
-    private static final Pattern JAVA_CLASS_NAME_PATTERN =
-            Pattern.compile("^[a-zA-Z_$][a-zA-Z\\d_$]*(\\.[a-zA-Z_$][a-zA-Z\\d_$]*)*$");
     private static final Pattern DURATION_NUMBER_ONLY_PATTERN = Pattern.compile("^\\d+$");
 
     private static final Set<ConfigEntry> DURATION_ENTRIES = Set.of(
@@ -198,39 +196,37 @@ public class AdminConfigurationSection extends VerticalLayout {
                 continue;
             }
 
-            String value = configService.getString(configEntry);
-            String safeValue = value == null ? "" : value;
-
-            if (input instanceof Checkbox checkbox) {
-                checkbox.setValue(Boolean.parseBoolean(safeValue));
-                continue;
-            }
-
-            if (input instanceof IntegerField integerField) {
-                try {
-                    integerField.setValue(Integer.parseInt(safeValue));
-                } catch (NumberFormatException ex) {
-                    integerField.setValue(configEntry.getDefaultValueInteger());
-                }
-                continue;
-            }
-
-            if (input instanceof PasswordField passwordField) {
-                passwordField.setValue(safeValue);
-                continue;
-            }
-
-            if (input instanceof EmailField emailField) {
-                emailField.setValue(safeValue);
-                continue;
-            }
-
-            if (input instanceof TextField textField) {
-                textField.setValue(safeValue);
-            }
+            String safeValue = getSafeConfigValue(configEntry);
+            applyConfigValue(input, configEntry, safeValue);
         }
 
         clearAllValidationStates();
+    }
+
+    private String getSafeConfigValue(ConfigEntry configEntry) {
+        String value = configService.getString(configEntry);
+        return value == null ? "" : value;
+    }
+
+    private void applyConfigValue(Component input, ConfigEntry configEntry, String safeValue) {
+        switch (input) {
+            case Checkbox checkbox -> checkbox.setValue(Boolean.parseBoolean(safeValue));
+            case IntegerField integerField -> setIntegerFieldValue(integerField, configEntry, safeValue);
+            case PasswordField passwordField -> passwordField.setValue(safeValue);
+            case EmailField emailField -> emailField.setValue(safeValue);
+            case TextField textField -> textField.setValue(safeValue);
+            default -> {
+                // no-op
+            }
+        }
+    }
+
+    private void setIntegerFieldValue(IntegerField integerField, ConfigEntry configEntry, String safeValue) {
+        try {
+            integerField.setValue(Integer.parseInt(safeValue));
+        } catch (NumberFormatException ex) {
+            integerField.setValue(configEntry.getDefaultValueInteger());
+        }
     }
 
     public void showGroup(String titleKey) {
@@ -527,29 +523,15 @@ public class AdminConfigurationSection extends VerticalLayout {
         ConfigEntry firstInvalidEntry = null;
 
         for (ConfigEntry configEntry : ConfigEntry.values()) {
-            Component input = configInputs.get(configEntry);
-            if (input == null) {
-                continue;
+            ValidationResult result = validateInput(configEntry);
+
+            if (result.invalid()) {
+                if (firstInvalid == null) {
+                    firstInvalid = result.input();
+                    firstInvalidEntry = configEntry;
+                }
+                allValid = false;
             }
-
-            clearValidationState(input);
-
-            String rawValue = extractInputValue(configEntry);
-            String errorMessage = validateValue(configEntry, rawValue);
-
-            if (errorMessage == null) {
-                continue;
-            }
-
-            setValidationError(input, errorMessage);
-
-            if (firstInvalid == null) {
-                firstInvalid = input;
-                firstInvalidEntry = configEntry;
-            }
-
-            logger.warn("⚠️ Invalid config field: {} with value '{}'", configEntry.name(), rawValue);
-            allValid = false;
         }
 
         if (firstInvalid != null) {
@@ -558,6 +540,36 @@ public class AdminConfigurationSection extends VerticalLayout {
         }
 
         return allValid;
+    }
+
+    private ValidationResult validateInput(ConfigEntry configEntry) {
+        Component input = configInputs.get(configEntry);
+        if (input == null) {
+            return ValidationResult.valid();
+        }
+
+        clearValidationState(input);
+
+        String rawValue = extractInputValue(configEntry);
+        String errorMessage = validateValue(configEntry, rawValue);
+
+        if (errorMessage == null) {
+            return ValidationResult.valid();
+        }
+
+        setValidationError(input, errorMessage);
+        logger.warn("⚠️ Invalid config field: {} with value '{}'", configEntry.name(), rawValue);
+        return ValidationResult.invalid(input);
+    }
+
+    private record ValidationResult(boolean invalid, Component input) {
+        private static ValidationResult valid() {
+            return new ValidationResult(false, null);
+        }
+
+        private static ValidationResult invalid(Component input) {
+            return new ValidationResult(true, input);
+        }
     }
 
     private String validateValue(ConfigEntry configEntry, String value) {
@@ -576,7 +588,7 @@ public class AdminConfigurationSection extends VerticalLayout {
             case BASE_URL -> !isValidHttpUrl(trimmed)
                     ? messageProperties.getAdminConfigValidationUrl()
                     : null;
-            case REMEMBER_ME_DURATION -> !isValidPositiveInteger(trimmed)
+            case REMEMBER_ME_DURATION -> isInvalidPositiveInteger(trimmed)
                     ? messageProperties.getAdminConfigValidationSeconds()
                     : null;
             case REMEMBER_ME_SECRET_KEY -> trimmed.length() < SECRET_KEY_MIN_LENGTH
@@ -593,7 +605,7 @@ public class AdminConfigurationSection extends VerticalLayout {
             case LOGIN_ATTEMPTS_LIMIT,
                  MAX_SESSIONS_PER_USER,
                  EMAIL_QUEUE_POOL_SIZE,
-                 EMAIL_QUEUE_CAPACITY -> !isValidPositiveInteger(trimmed)
+                 EMAIL_QUEUE_CAPACITY -> isInvalidPositiveInteger(trimmed)
                     ? messageProperties.getAdminConfigValidationMinOne()
                     : null;
             case EMAIL_QUEUE_MAX_RETRY -> !isValidNonNegativeInteger(trimmed)
@@ -603,7 +615,7 @@ public class AdminConfigurationSection extends VerticalLayout {
                  EMAIL_ADMIN -> !isValidEmail(trimmed)
                     ? messageProperties.getAdminConfigValidationEmail()
                     : null;
-            case MAIL_HOST -> !isValidHost(trimmed)
+            case MAIL_HOST -> isInvalidHost(trimmed)
                     ? messageProperties.getAdminConfigValidationHost()
                     : null;
             case MAIL_PORT -> !isValidPort(trimmed)
@@ -826,7 +838,7 @@ public class AdminConfigurationSection extends VerticalLayout {
         }
     }
 
-    private boolean isValidPositiveInteger(String value) {
+    private boolean isInvalidPositiveInteger(String value) {
         try {
             return Integer.parseInt(value) >= 1;
         } catch (NumberFormatException ex) {
@@ -846,7 +858,7 @@ public class AdminConfigurationSection extends VerticalLayout {
         return value != null && !value.isBlank() && value.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
     }
 
-    private boolean isValidHost(String value) {
+    private boolean isInvalidHost(String value) {
         return value != null
                 && !value.isBlank()
                 && !value.contains("://")
@@ -874,7 +886,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
         String[] hosts = value.split(",");
         for (String host : hosts) {
-            if (!isValidHost(host.trim())) {
+            if (isInvalidHost(host.trim())) {
                 return false;
             }
         }
@@ -882,7 +894,39 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     private boolean isValidJavaClassName(String value) {
-        return value == null || value.isBlank() || JAVA_CLASS_NAME_PATTERN.matcher(value).matches();
+        if (value == null || value.isBlank()) {
+            return true;
+        }
+
+        int start = 0;
+        int length = value.length();
+
+        while (start < length) {
+            int dotIndex = value.indexOf('.', start);
+            int end = dotIndex >= 0 ? dotIndex : length;
+
+            if (start == end || !isValidJavaIdentifier(value, start, end)) {
+                return false;
+            }
+
+            start = end + 1;
+        }
+
+        return true;
+    }
+
+    private boolean isValidJavaIdentifier(String value, int start, int end) {
+        if (!Character.isJavaIdentifierStart(value.charAt(start))) {
+            return false;
+        }
+
+        for (int i = start + 1; i < end; i++) {
+            if (!Character.isJavaIdentifierPart(value.charAt(i))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private boolean isGeneralConfig(ConfigEntry configEntry) {
