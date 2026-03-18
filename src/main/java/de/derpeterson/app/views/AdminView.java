@@ -20,11 +20,13 @@ import de.derpeterson.app.security.IsAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailService;
+import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.views.admin.AdminConfigurationSection;
 import de.derpeterson.app.views.admin.AdminDashboardSection;
 import de.derpeterson.app.views.admin.AdminMailTestSection;
+import de.derpeterson.app.views.admin.AdminUserManagementSection;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,7 +48,8 @@ public class AdminView extends IsAuthenticatedBaseView {
     private enum AdminSection {
         DASHBOARD,
         CONFIGURATION,
-        MAIL_TEST
+        MAIL_TEST,
+        USER_MANAGEMENT
     }
 
     private static final String CONFIG_GROUP_GENERAL = "adminView.config.group.general";
@@ -56,6 +59,7 @@ public class AdminView extends IsAuthenticatedBaseView {
     private static final String CONFIG_GROUP_EMAIL_SENDER = "adminView.config.group.email_sender";
     private static final String CONFIG_GROUP_SMTP = "adminView.config.group.smtp";
     private static final String CONFIG_GROUP_QUEUE = "adminView.config.group.queue";
+    private static final String USER_MANAGEMENT_TITLE_KEY = "admin.users.title";
 
     private final transient ConfigService configService;
 
@@ -64,19 +68,22 @@ public class AdminView extends IsAuthenticatedBaseView {
     private final Span dashboardNavText = new Span();
     private final Span configurationNavText = new Span();
     private final Span mailTestNavText = new Span();
+    private final Span userManagementNavText = new Span();
     private final Span serviceNameSpan = new Span();
 
     private Div dashboardNavItem = null;
     private Div configurationNavItem = null;
     private Div mailTestNavItem = null;
+    private Div userManagementNavItem = null;
     private VerticalLayout configurationSubmenuLayout = null;
     private final Map<String, Div> configurationSubmenuItems = new LinkedHashMap<>();
     private final Map<String, Span> configurationSubmenuTextSpans = new LinkedHashMap<>();
 
-    private VerticalLayout sectionHost = null;
+    private VerticalLayout sectionLayout = null;
     private AdminDashboardSection dashboardSection = null;
     private AdminConfigurationSection configurationSection = null;
     private AdminMailTestSection mailTestSection = null;
+    private AdminUserManagementSection userManagementSection = null;
 
     private AdminSection activeSection = AdminSection.DASHBOARD;
     private String activeConfigurationGroup = null;
@@ -86,6 +93,7 @@ public class AdminView extends IsAuthenticatedBaseView {
                      ConfigService configService,
                      EmailService emailService,
                      UserService userService,
+                     RoleService roleService,
                      HttpServletRequest request,
                      UserStatusBroadcaster userStatusBroadcaster) {
         super(messageProperties, securityService, userService, userStatusBroadcaster, request);
@@ -97,12 +105,12 @@ public class AdminView extends IsAuthenticatedBaseView {
         addToNavbar(createNavbar());
         addToDrawer(createSideNavigation());
 
-        sectionHost = new VerticalLayout();
-        sectionHost.setSizeFull();
-        sectionHost.setPadding(true);
-        sectionHost.setSpacing(true);
-        sectionHost.setAlignItems(FlexComponent.Alignment.STRETCH);
-        sectionHost.addClassNames(LumoUtility.Background.BASE);
+        sectionLayout = new VerticalLayout();
+        sectionLayout.setSizeFull();
+        sectionLayout.setPadding(true);
+        sectionLayout.setSpacing(true);
+        sectionLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+        sectionLayout.addClassNames(LumoUtility.Background.BASE);
 
         dashboardSection = new AdminDashboardSection(messageProperties, authenticatedUser);
         configurationSection = new AdminConfigurationSection(
@@ -111,8 +119,13 @@ public class AdminView extends IsAuthenticatedBaseView {
                 this::refreshServiceName
         );
         mailTestSection = new AdminMailTestSection(messageProperties, emailService, authenticatedUser);
+        userManagementSection = new AdminUserManagementSection(
+                messageProperties,
+                userService,
+                roleService
+        );
 
-        setContent(sectionHost);
+        setContent(sectionLayout);
 
         selectSection(AdminSection.DASHBOARD, null);
         refreshTexts();
@@ -230,6 +243,12 @@ public class AdminView extends IsAuthenticatedBaseView {
                 false,
                 () -> selectSection(AdminSection.MAIL_TEST, null)
         );
+        userManagementNavItem = createNavigationItem(
+                VaadinIcon.USERS,
+                userManagementNavText,
+                false,
+                () -> selectSection(AdminSection.USER_MANAGEMENT, null)
+        );
 
         configurationSubmenuLayout = new VerticalLayout();
         configurationSubmenuLayout.setPadding(false);
@@ -280,7 +299,8 @@ public class AdminView extends IsAuthenticatedBaseView {
                 dashboardNavItem,
                 configurationNavItem,
                 configurationSubmenuLayout,
-                mailTestNavItem
+                mailTestNavItem,
+                userManagementNavItem
         );
         navLayout.setPadding(false);
         navLayout.setSpacing(false);
@@ -374,19 +394,20 @@ public class AdminView extends IsAuthenticatedBaseView {
             activeConfigurationGroup = null;
         }
 
-        if (sectionHost == null) {
+        if (sectionLayout == null) {
             return;
         }
 
-        sectionHost.removeAll();
+        sectionLayout.removeAll();
 
         switch (section) {
-            case AdminSection.CONFIGURATION -> {
-                sectionHost.add(configurationSection);
+            case CONFIGURATION -> {
+                sectionLayout.add(configurationSection);
                 configurationSection.showGroup(activeConfigurationGroup);
             }
-            case AdminSection.MAIL_TEST -> sectionHost.add(mailTestSection);
-            default -> sectionHost.add(dashboardSection);
+            case MAIL_TEST -> sectionLayout.add(mailTestSection);
+            case USER_MANAGEMENT -> sectionLayout.add(userManagementSection);
+            default -> sectionLayout.add(dashboardSection);
         }
 
         updateNavigationState();
@@ -396,6 +417,7 @@ public class AdminView extends IsAuthenticatedBaseView {
         applyNavigationItemState(dashboardNavItem, activeSection == AdminSection.DASHBOARD, false);
         applyNavigationItemState(configurationNavItem, activeSection == AdminSection.CONFIGURATION, false);
         applyNavigationItemState(mailTestNavItem, activeSection == AdminSection.MAIL_TEST, false);
+        applyNavigationItemState(userManagementNavItem, activeSection == AdminSection.USER_MANAGEMENT, false);
 
         if (configurationSubmenuLayout != null) {
             configurationSubmenuLayout.setVisible(true);
@@ -454,8 +476,10 @@ public class AdminView extends IsAuthenticatedBaseView {
         dashboardNavText.setText(messageProperties.getAdminNavDashboard());
         configurationNavText.setText(messageProperties.getAdminNavConfiguration());
         mailTestNavText.setText(messageProperties.getAdminNavMailTest());
+        userManagementNavText.setText(messageProperties.getTranslation(USER_MANAGEMENT_TITLE_KEY));
 
-        configurationSubmenuTextSpans.forEach((groupKey, textSpan) -> textSpan.setText(getConfigurationGroupLabel(groupKey)));
+        configurationSubmenuTextSpans.forEach((groupKey, textSpan) ->
+                textSpan.setText(getConfigurationGroupLabel(groupKey)));
 
         if (dashboardSection != null) {
             dashboardSection.refreshTexts();
@@ -465,6 +489,9 @@ public class AdminView extends IsAuthenticatedBaseView {
         }
         if (mailTestSection != null) {
             mailTestSection.refreshTexts();
+        }
+        if (userManagementSection != null) {
+            userManagementSection.refreshTexts();
         }
 
         updateNavigationState();

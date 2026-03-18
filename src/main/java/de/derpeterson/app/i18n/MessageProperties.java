@@ -873,4 +873,108 @@ public class MessageProperties {
     public String getAdminConfigHelperServiceNameMax(int max) {
         return getFormattedTranslation("adminView.config.helper.service_name_max", max);
     }
+
+    public String getAdminUsersTitle() {
+        return getTranslation("admin.users.title");
+    }
+
+    public String getAdminUsersDescription() {
+        return getTranslation("admin.users.description");
+    }
+
+    public String getAdminUsersAdd() {
+        return getTranslation("admin.users.add");
+    }
+
+    public String getAdminUsersEdit() {
+        return getTranslation("admin.users.edit");
+    }
+
+    public String getAdminUsersDelete() {
+        return getTranslation("admin.users.delete");
+    }
+
+    public String getAdminUsersSave() {
+        return getTranslation("admin.users.save");
+    }
+
+    public String getAdminUsersCancel() {
+        return getTranslation("admin.users.cancel");
+    }
+
+    public String getAdminUsersYes() {
+        return getTranslation("admin.users.yes");
+    }
+
+    public String getAdminUsersNo() {
+        return getTranslation("admin.users.no");
+    }
+
+    public String getAdminUsersGridFirstName() {
+        return getTranslation("admin.users.grid.first_name");
+    }
+
+    public String getAdminUsersGridLastName() {
+        return getTranslation("admin.users.grid.last_name");
+    }
+
+    public String getAdminUsersGridEmail() {
+        return getTranslation("admin.users.grid.email");
+    }
+
+    public String getAdminUsersGridEnabled() {
+        return getTranslation("admin.users.grid.enabled");
+    }
+
+    public String getAdminUsersGridRoles() {
+        return getTranslation("admin.users.grid.roles");
+    }
+
+    public String getAdminUsersGridActions() {
+        return getTranslation("admin.users.grid.actions");
+    }
+
+    public String getAdminUsersFieldFirstName() {
+        return getTranslation("admin.users.field.first_name");
+    }
+
+    public String getAdminUsersFieldLastName() {
+        return getTranslation("admin.users.field.last_name");
+    }
+
+    public String getAdminUsersFieldEmail() {
+        return getTranslation("admin.users.field.email");
+    }
+
+    public String getAdminUsersFieldPassword() {
+        return getTranslation("admin.users.field.password");
+    }
+
+    public String getAdminUsersFieldEnabled() {
+        return getTranslation("admin.users.field.enabled");
+    }
+
+    public String getAdminUsersFieldRoles() {
+        return getTranslation("admin.users.field.roles");
+    }
+
+    public String getAdminUsersCreateDialogTitle() {
+        return getTranslation("admin.users.dialog.create_title");
+    }
+
+    public String getAdminUsersEditDialogTitle() {
+        return getTranslation("admin.users.dialog.edit_title");
+    }
+
+    public String getAdminUsersDeleteSuccess() {
+        return getTranslation("admin.users.delete_success");
+    }
+
+    public String getAdminUsersSaveSuccessCreated() {
+        return getTranslation("admin.users.save_success_created");
+    }
+
+    public String getAdminUsersSaveSuccessUpdated() {
+        return getTranslation("admin.users.save_success_updated");
+    }
 }

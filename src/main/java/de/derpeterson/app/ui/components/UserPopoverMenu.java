@@ -69,7 +69,6 @@ public class UserPopoverMenu {
     private Select<UserStatus> userStatusSelect = null;
 
     private UserStatus currentStatus;
-    private boolean suppressUpdate = false;
 
     public UserPopoverMenu(MessageProperties messageProperties,
                            SecurityService securityService,
@@ -114,10 +113,8 @@ public class UserPopoverMenu {
         updateStatusIcons(newStatus);
 
         if (userStatusSelect != null) {
-            suppressUpdate = true;
             userStatusSelect.setValue(newStatus);
             updateStatusSelectPrefix(newStatus);
-            suppressUpdate = false;
         }
     }
 
@@ -267,7 +264,11 @@ public class UserPopoverMenu {
                 userStatus -> messageProperties.getTranslation(userStatus.getTextKey())
         );
         userStatusSelect.setRenderer(new ComponentRenderer<>(this::createUserStatusRenderer));
-        userStatusSelect.addValueChangeListener(event -> handleUserStatusChange(event.getValue()));
+
+        userStatusSelect.addValueChangeListener(event ->
+                handleUserStatusChange(event.getValue(), event.isFromClient())
+        );
+
         userStatusSelect.setValue(currentStatus);
         userStatusSelect.setWidthFull();
 
@@ -331,7 +332,7 @@ public class UserPopoverMenu {
         return textLayout;
     }
 
-    private void handleUserStatusChange(UserStatus userStatus) {
+    private void handleUserStatusChange(UserStatus userStatus, boolean isFromClient) {
         updateStatusSelectPrefix(userStatus);
 
         if (userStatus == null) {
@@ -346,7 +347,7 @@ public class UserPopoverMenu {
 
         updateStatusIcons(userStatus);
 
-        if (!suppressUpdate && hasCurrentUser()) {
+        if (isFromClient && hasCurrentUser()) {
             userService.updateUserStatus(currentUser, userStatus, true);
         }
     }
@@ -492,7 +493,6 @@ public class UserPopoverMenu {
             return;
         }
 
-        suppressUpdate = true;
         userStatusSelect.setItemLabelGenerator(
                 userStatus -> messageProperties.getTranslation(userStatus.getTextKey())
         );
@@ -500,7 +500,6 @@ public class UserPopoverMenu {
         userStatusSelect.getDataProvider().refreshAll();
         userStatusSelect.setValue(currentStatus);
         updateStatusSelectPrefix(currentStatus);
-        suppressUpdate = false;
     }
 
     private void refreshLanguageFlags() {

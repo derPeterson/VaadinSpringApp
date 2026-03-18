@@ -145,6 +145,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
         refreshTexts();
         renderSelectedGroup();
+        loadConfigValues();
     }
 
     private @NonNull VerticalLayout getButtonVerticalLayout() {
@@ -190,7 +191,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     public void loadConfigValues() {
-        for (ConfigEntry configEntry : ConfigEntry.values()) {
+        for (ConfigEntry configEntry : getVisibleConfigEntries()) {
             Component input = configInputs.get(configEntry);
             if (input == null) {
                 continue;
@@ -200,7 +201,7 @@ public class AdminConfigurationSection extends VerticalLayout {
             applyConfigValue(input, configEntry, safeValue);
         }
 
-        clearAllValidationStates();
+        clearValidationStatesForVisibleInputs();
     }
 
     private String getSafeConfigValue(ConfigEntry configEntry) {
@@ -236,6 +237,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
         selectedGroupKey = titleKey;
         renderSelectedGroup();
+        loadConfigValues();
     }
 
     private void reloadConfigValues() {
@@ -275,6 +277,35 @@ public class AdminConfigurationSection extends VerticalLayout {
         }
     }
 
+    private List<ConfigEntry> getVisibleConfigEntries() {
+        if (selectedGroupKey == null) {
+            return List.of();
+        }
+
+        Predicate<ConfigEntry> filter = configGroupFilters.get(selectedGroupKey);
+        if (filter == null) {
+            return List.of();
+        }
+
+        List<ConfigEntry> visibleEntries = new ArrayList<>();
+        for (ConfigEntry configEntry : ConfigEntry.values()) {
+            if (filter.test(configEntry)) {
+                visibleEntries.add(configEntry);
+            }
+        }
+
+        return visibleEntries;
+    }
+
+    private void clearValidationStatesForVisibleInputs() {
+        for (ConfigEntry configEntry : getVisibleConfigEntries()) {
+            Component input = configInputs.get(configEntry);
+            if (input != null) {
+                clearValidationState(input);
+            }
+        }
+    }
+
     private void refreshCurrentGroupTitle() {
         if (selectedGroupKey != null) {
             currentGroupTitle.setText(getConfigGroupLabel(selectedGroupKey));
@@ -295,14 +326,15 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     private void refreshValidationMessagesForInvalidFields() {
-        configInputs.forEach((configEntry, input) -> {
+        for (ConfigEntry configEntry : getVisibleConfigEntries()) {
+            Component input = configInputs.get(configEntry);
             if (isInputInvalid(input)) {
                 String errorMessage = validateValue(configEntry, extractInputValue(configEntry));
                 if (errorMessage != null) {
                     setValidationError(input, errorMessage);
                 }
             }
-        });
+        }
     }
 
     private void updatePlaceholder(Component input, String placeholder) {
@@ -471,7 +503,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     private void saveConfigValues() {
-        if (!validateAllInputs()) {
+        if (!validateVisibleInputs()) {
             NotificationHelper.getInstance().showNotification(
                     messageProperties::getBaseFailedTitle,
                     messageProperties::getAdminConfigValidationInvalidFields,
@@ -483,7 +515,7 @@ public class AdminConfigurationSection extends VerticalLayout {
         try {
             boolean serviceNameChanged = false;
 
-            for (ConfigEntry configEntry : ConfigEntry.values()) {
+            for (ConfigEntry configEntry : getVisibleConfigEntries()) {
                 String newValue = normalizeValue(configEntry, extractInputValue(configEntry));
                 String oldValue = configService.getString(configEntry);
 
@@ -516,13 +548,12 @@ public class AdminConfigurationSection extends VerticalLayout {
         }
     }
 
-
-    private boolean validateAllInputs() {
+    private boolean validateVisibleInputs() {
         boolean allValid = true;
         Component firstInvalid = null;
         ConfigEntry firstInvalidEntry = null;
 
-        for (ConfigEntry configEntry : ConfigEntry.values()) {
+        for (ConfigEntry configEntry : getVisibleConfigEntries()) {
             ValidationResult result = validateInput(configEntry);
 
             if (result.invalid()) {
@@ -535,7 +566,7 @@ public class AdminConfigurationSection extends VerticalLayout {
         }
 
         if (firstInvalid != null) {
-            logger.warn("⚠️ First invalid config field: {}", firstInvalidEntry.name());
+            logger.warn("⚠️ First invalid config field in visible group: {}", firstInvalidEntry.name());
             firstInvalid.getElement().callJsFunction("focus");
         }
 
@@ -740,10 +771,6 @@ public class AdminConfigurationSection extends VerticalLayout {
         }
     }
 
-    private void clearAllValidationStates() {
-        configInputs.values().forEach(this::clearValidationState);
-    }
-
     private void clearValidationState(Component input) {
         if (input instanceof EmailField emailField) {
             emailField.setInvalid(false);
@@ -840,9 +867,9 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     private boolean isInvalidPositiveInteger(String value) {
         try {
-            return Integer.parseInt(value) >= 1;
+            return Integer.parseInt(value) < 1;
         } catch (NumberFormatException ex) {
-            return false;
+            return true;
         }
     }
 
@@ -859,11 +886,11 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     private boolean isInvalidHost(String value) {
-        return value != null
-                && !value.isBlank()
-                && !value.contains("://")
-                && !value.contains("/")
-                && !value.contains(" ");
+        return value == null
+                || value.isBlank()
+                || value.contains("://")
+                || value.contains("/")
+                || value.contains(" ");
     }
 
     private boolean isValidPort(String value) {
