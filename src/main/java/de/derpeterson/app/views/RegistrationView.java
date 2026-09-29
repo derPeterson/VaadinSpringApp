@@ -124,6 +124,10 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseRegistrationButton));
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+            Optional.ofNullable(genderComboBox).ifPresent(comboBox -> {
+                comboBox.setItemLabelGenerator(this::formatGender);
+                comboBox.getDataProvider().refreshAll();
+            });
             NotificationHelper.getInstance().updateText();
         });
 
@@ -315,7 +319,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         genderComboBox.setClearButtonVisible(true);
         genderComboBox.setWidthFull();
         genderComboBox.setItems(Gender.MALE, Gender.FEMALE, Gender.OTHER);
-        genderComboBox.setItemLabelGenerator(Gender::name);
+        genderComboBox.setItemLabelGenerator(this::formatGender);
         this.birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
         birthDatePicker.setPrefixComponent(VaadinIcon.CALENDAR_USER.create());
         birthDatePicker.setClearButtonVisible(true);
@@ -324,11 +328,22 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         return new FormComponents(loginLink, firstNameField, lastNameField, emailField, confirmEmailField, passwordField, confirmPasswordField, genderComboBox, birthDatePicker);
     }
 
+    private String formatGender(Gender gender) {
+        if (gender == null) {
+            return "-";
+        }
+
+        return switch (gender) {
+            case MALE -> messageProperties.getGenderMale();
+            case FEMALE -> messageProperties.getGenderFemale();
+            case OTHER -> messageProperties.getGenderOther();
+        };
+    }
+
     private record FormComponents(RouterLink loginLink, TextField firstNameField, TextField lastNameField,
                                   EmailField emailField,
                                   EmailField confirmEmailField, PasswordField passwordField,
                                   PasswordField confirmPasswordField, ComboBox<Gender> genderComboBox,
                                   DatePicker birthDatePicker) {
     }
-
 }

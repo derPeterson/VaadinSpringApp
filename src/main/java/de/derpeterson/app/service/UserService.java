@@ -1,6 +1,8 @@
 package de.derpeterson.app.service;
 
+import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
@@ -9,9 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -66,5 +66,56 @@ public class UserService {
 
     public void updatePassword(UserEntity user, String rawPassword) {
         user.setPassword(passwordEncoder.encode(rawPassword));
+    }
+
+    public boolean emailExistsForOtherUser(String email, Long currentUserId) {
+        if (email == null || email.isBlank()) {
+            return false;
+        }
+
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+        return userRepository.findAll().stream()
+                .filter(existingUser -> existingUser.getEmail() != null)
+                .anyMatch(existingUser -> existingUser.getEmail().trim().toLowerCase(Locale.ROOT).equals(normalizedEmail)
+                        && (currentUserId == null || !Objects.equals(existingUser.getId(), currentUserId)));
+    }
+
+    public boolean canDeleteUser(UserEntity user) {
+        if (user == null) {
+            return false;
+        }
+
+        if (!isEnabledAdmin(user)) {
+            return true;
+        }
+
+        long otherEnabledAdmins = userRepository.findAll().stream()
+                .filter(existingUser -> !Objects.equals(existingUser.getId(), user.getId()))
+                .filter(this::isEnabledAdmin)
+                .count();
+
+        return otherEnabledAdmins > 0;
+    }
+
+    public boolean wouldRemoveLastEnabledAdmin(Long editedUserId, boolean enabled, Collection<RoleEntity> roleEntities) {
+        boolean userWillRemainEnabledAdmin = enabled && hasAdminRole(roleEntities);
+        if (userWillRemainEnabledAdmin) {
+            return false;
+        }
+
+        long otherEnabledAdmins = userRepository.findAll().stream()
+                .filter(existingUser -> editedUserId == null || !Objects.equals(existingUser.getId(), editedUserId))
+                .filter(this::isEnabledAdmin)
+                .count();
+
+        return otherEnabledAdmins == 0;
+    }
+
+    private boolean isEnabledAdmin(UserEntity user) {
+        return user != null && user.isEnabled() && user.hasRole(RoleType.ROLE_ADMIN);
+    }
+
+    private boolean hasAdminRole(Collection<RoleEntity> roleEntities) {
+        return roleEntities != null && roleEntities.stream().anyMatch(roleEntity -> roleEntity.getName() == RoleType.ROLE_ADMIN);
     }
 }

@@ -5,7 +5,10 @@ import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,9 +29,6 @@ import java.util.Locale;
 @Builder
 public class UserEntity {
 
-    // Static Regex für das Passwort
-    public static final String PASSWORD_REGEX = "^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).*$";
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -42,12 +42,6 @@ public class UserEntity {
     private String lastName;
 
     @Column(nullable = false)
-    @NotBlank(message = "Das Passwort darf nicht leer sein.")
-    @Size(min = 8, message = "Das Passwort muss mindestens 8 Zeichen lang sein.")
-    @Pattern(
-            regexp = PASSWORD_REGEX,
-            message = "Das Passwort muss mindestens einen Großbuchstaben und ein Sonderzeichen enthalten."
-    )
     private String password;
 
     @Column(unique = true, nullable = false)

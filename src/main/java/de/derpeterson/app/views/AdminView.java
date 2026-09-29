@@ -122,7 +122,8 @@ public class AdminView extends IsAuthenticatedBaseView {
         userManagementSection = new AdminUserManagementSection(
                 messageProperties,
                 userService,
-                roleService
+                roleService,
+                securityService
         );
 
         setContent(sectionLayout);

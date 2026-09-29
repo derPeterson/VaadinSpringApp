@@ -1,11 +1,16 @@
 package de.derpeterson.app.views.admin;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
+import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridSortOrder;
+import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -15,37 +20,80 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.helper.ui.NotificationHelper;
+import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.CardComponent;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.util.Optional;
-import java.util.Set;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class AdminUserManagementSection extends VerticalLayout {
 
+    private static final DateTimeFormatter LAST_ACTIVITY_FORMATTER =
+            DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM);
+
     private final transient MessageProperties messageProperties;
     private final transient UserService userService;
     private final transient RoleService roleService;
+    private final transient SecurityService securityService;
 
     private final H1 title;
     private final Span description;
     private final Button addUserButton;
+    private final TextField searchField;
+    private final Button refreshButton;
     private final Grid<UserEntity> userGrid = new Grid<>(UserEntity.class, false);
+
+    private final ComboBox<Integer> pageSizeComboBox;
+    private final Button firstPageButton;
+    private final Button previousPageButton;
+    private final Button nextPageButton;
+    private final Button lastPageButton;
+    private final Span paginationInfo;
+    private final Span paginationPerPageText;
+    private final Span gridSummaryText;
+
+    private Grid.Column<UserEntity> nameColumn;
+    private Grid.Column<UserEntity> emailColumn;
+    private Grid.Column<UserEntity> enabledColumn;
+    private Grid.Column<UserEntity> statusColumn;
+    private Grid.Column<UserEntity> rolesColumn;
+    private Grid.Column<UserEntity> lastActivityColumn;
+    private Grid.Column<UserEntity> actionsColumn;
+
+    private List<UserEntity> users = new ArrayList<>();
+    private List<UserEntity> filteredUsers = new ArrayList<>();
+
+    private int currentPage = 0;
+    private int pageSize = 10;
 
     public AdminUserManagementSection(MessageProperties messageProperties,
                                       UserService userService,
-                                      RoleService roleService) {
+                                      RoleService roleService,
+                                      SecurityService securityService) {
         this.messageProperties = messageProperties;
         this.userService = userService;
         this.roleService = roleService;
+        this.securityService = securityService;
 
         setPadding(false);
         setSpacing(true);
@@ -67,9 +115,48 @@ public class AdminUserManagementSection extends VerticalLayout {
         addUserButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         addUserButton.addClickListener(e -> openDialog(new UserEntity()));
 
-        configureGrid();
+        searchField = new TextField();
+        searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
+        searchField.setClearButtonVisible(true);
+        searchField.setWidthFull();
+        searchField.setMaxWidth("360px");
+        searchField.setValueChangeMode(ValueChangeMode.EAGER);
+        searchField.addValueChangeListener(event -> applyGridFilter());
 
-        VerticalLayout layout = new VerticalLayout(title, description, addUserButton, userGrid);
+        refreshButton = new Button(VaadinIcon.REFRESH.create(), event -> refreshGrid());
+        refreshButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
+        pageSizeComboBox = new ComboBox<>();
+        firstPageButton = new Button(VaadinIcon.ANGLE_DOUBLE_LEFT.create());
+        previousPageButton = new Button(VaadinIcon.ANGLE_LEFT.create());
+        nextPageButton = new Button(VaadinIcon.ANGLE_RIGHT.create());
+        lastPageButton = new Button(VaadinIcon.ANGLE_DOUBLE_RIGHT.create());
+        paginationInfo = new Span();
+        paginationPerPageText = new Span();
+        gridSummaryText = new Span();
+
+        configureGrid();
+        configurePagination();
+
+        HorizontalLayout toolbar = new HorizontalLayout(searchField, refreshButton);
+        toolbar.setWidthFull();
+        toolbar.setAlignItems(Alignment.END);
+        toolbar.expand(searchField);
+
+        HorizontalLayout paginationBar = createPaginationBar();
+
+        HorizontalLayout footerActions = new HorizontalLayout(addUserButton);
+        footerActions.setWidthFull();
+        footerActions.setJustifyContentMode(JustifyContentMode.END);
+
+        VerticalLayout layout = new VerticalLayout(
+                title,
+                description,
+                toolbar,
+                userGrid,
+                paginationBar,
+                footerActions
+        );
         layout.setPadding(false);
         layout.setSpacing(true);
         layout.setWidthFull();
@@ -77,7 +164,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
         CardComponent card = new CardComponent(layout);
         card.setWidthFull();
-        card.setMaxWidth("1100px");
+        card.setMaxWidth("1300px");
 
         add(card);
 
@@ -90,159 +177,531 @@ public class AdminUserManagementSection extends VerticalLayout {
         description.setText(messageProperties.getAdminUsersDescription());
         addUserButton.setText(messageProperties.getAdminUsersAdd());
 
-        userGrid.removeAllColumns();
-        configureGrid();
+        searchField.setLabel(messageProperties.getAdminUsersSearchLabel());
+        searchField.setPlaceholder(messageProperties.getAdminUsersSearchPlaceholder());
+
+        refreshButton.setTooltipText(messageProperties.getAdminUsersRefreshTooltip());
+        gridSummaryText.setText(messageProperties.getAdminUsersGridSummary());
+        paginationPerPageText.setText(messageProperties.getAdminUsersPaginationPerPage());
+
+        if (nameColumn != null) {
+            nameColumn.setHeader(messageProperties.getAdminUsersGridName());
+        }
+        if (emailColumn != null) {
+            emailColumn.setHeader(messageProperties.getAdminUsersGridEmail());
+        }
+        if (enabledColumn != null) {
+            enabledColumn.setHeader(messageProperties.getAdminUsersGridEnabled());
+        }
+        if (statusColumn != null) {
+            statusColumn.setHeader(messageProperties.getAdminUsersGridStatus());
+        }
+        if (rolesColumn != null) {
+            rolesColumn.setHeader(messageProperties.getAdminUsersGridRoles());
+        }
+        if (lastActivityColumn != null) {
+            lastActivityColumn.setHeader(messageProperties.getAdminUsersGridLastActivity());
+        }
+        if (actionsColumn != null) {
+            actionsColumn.setHeader(messageProperties.getAdminUsersGridActions());
+        }
+
+        userGrid.setEmptyStateText(messageProperties.getAdminUsersGridEmptyState());
+
+        firstPageButton.setTooltipText(messageProperties.getAdminUsersPaginationFirstPage());
+        previousPageButton.setTooltipText(messageProperties.getAdminUsersPaginationPreviousPage());
+        nextPageButton.setTooltipText(messageProperties.getAdminUsersPaginationNextPage());
+        lastPageButton.setTooltipText(messageProperties.getAdminUsersPaginationLastPage());
+
+        updateGridPage();
     }
 
     private void configureGrid() {
-        userGrid.addColumn(UserEntity::getFirstName)
-                .setHeader(messageProperties.getAdminUsersGridFirstName())
-                .setAutoWidth(true);
+        nameColumn = userGrid.addColumn(this::getFullName)
+                .setHeader(messageProperties.getAdminUsersGridName())
+                .setAutoWidth(true)
+                .setSortable(true)
+                .setComparator(Comparator.comparing(this::getFullName, String.CASE_INSENSITIVE_ORDER));
 
-        userGrid.addColumn(UserEntity::getLastName)
-                .setHeader(messageProperties.getAdminUsersGridLastName())
-                .setAutoWidth(true);
-
-        userGrid.addColumn(UserEntity::getEmail)
+        emailColumn = userGrid.addColumn(UserEntity::getEmail)
                 .setHeader(messageProperties.getAdminUsersGridEmail())
                 .setAutoWidth(true)
+                .setSortable(true)
+                .setComparator(Comparator.comparing(
+                        user -> normalize(user.getEmail()),
+                        String.CASE_INSENSITIVE_ORDER
+                ))
                 .setFlexGrow(1);
 
-        userGrid.addColumn(user -> user.isEnabled()
-                        ? messageProperties.getAdminUsersYes()
-                        : messageProperties.getAdminUsersNo())
+        enabledColumn = userGrid.addComponentColumn(this::createEnabledBadge)
                 .setHeader(messageProperties.getAdminUsersGridEnabled())
-                .setAutoWidth(true);
+                .setAutoWidth(true)
+                .setSortable(true)
+                .setComparator(Comparator.comparing(UserEntity::isEnabled));
 
-        userGrid.addColumn(user -> Optional.ofNullable(user.getRoleEntities())
-                        .orElseGet(Set::of)
-                        .stream()
-                        .map(role -> role.getName().name())
-                        .collect(Collectors.joining(", ")))
+        statusColumn = userGrid.addColumn(user -> Optional.ofNullable(user.getStatus())
+                        .map(status -> messageProperties.getTranslation(status.getTextKey()))
+                        .orElse("-"))
+                .setHeader(messageProperties.getAdminUsersGridStatus())
+                .setAutoWidth(true)
+                .setSortable(true)
+                .setComparator(Comparator.comparing(
+                        user -> Optional.ofNullable(user.getStatus())
+                                .map(status -> messageProperties.getTranslation(status.getTextKey()))
+                                .orElse(""),
+                        String.CASE_INSENSITIVE_ORDER
+                ));
+
+        rolesColumn = userGrid.addColumn(this::formatRoleNames)
                 .setHeader(messageProperties.getAdminUsersGridRoles())
                 .setAutoWidth(true)
+                .setSortable(true)
+                .setComparator(Comparator.comparing(this::formatRoleNames, String.CASE_INSENSITIVE_ORDER))
                 .setFlexGrow(1);
 
-        userGrid.addComponentColumn(user -> {
-            Button editButton = new Button(VaadinIcon.EDIT.create(), e -> openDialog(user));
-            editButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-            editButton.setTooltipText(messageProperties.getAdminUsersEdit());
+        lastActivityColumn = userGrid.addColumn(user -> formatDateTime(user.getLastActivity()))
+                .setHeader(messageProperties.getAdminUsersGridLastActivity())
+                .setAutoWidth(true)
+                .setSortable(true)
+                .setComparator(Comparator.comparing(
+                        UserEntity::getLastActivity,
+                        Comparator.nullsLast(LocalDateTime::compareTo)
+                ));
 
-            Button deleteButton = new Button(VaadinIcon.TRASH.create(), e -> deleteUser(user));
-            deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
-            deleteButton.setTooltipText(messageProperties.getAdminUsersDelete());
-
-            HorizontalLayout actions = new HorizontalLayout(editButton, deleteButton);
-            actions.setPadding(false);
-            actions.setSpacing(true);
-            return actions;
-        }).setHeader(messageProperties.getAdminUsersGridActions()).setAutoWidth(true);
+        actionsColumn = userGrid.addComponentColumn(this::createActionButtons)
+                .setHeader(messageProperties.getAdminUsersGridActions())
+                .setAutoWidth(true)
+                .setFlexGrow(0);
 
         userGrid.setWidthFull();
+        userGrid.setEmptyStateText(messageProperties.getAdminUsersGridEmptyState());
+        userGrid.sort(List.of(new GridSortOrder<>(
+                nameColumn,
+                com.vaadin.flow.data.provider.SortDirection.ASCENDING
+        )));
+
+        HeaderRow headerRow = userGrid.prependHeaderRow();
+        headerRow.join(nameColumn, emailColumn, enabledColumn, statusColumn, rolesColumn, lastActivityColumn, actionsColumn)
+                .setComponent(createGridSummary());
+    }
+
+    private Component createGridSummary() {
+        gridSummaryText.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
+        gridSummaryText.setText(messageProperties.getAdminUsersGridSummary());
+        return gridSummaryText;
+    }
+
+    private void configurePagination() {
+        pageSizeComboBox.setItems(10, 20, 50);
+        pageSizeComboBox.setValue(pageSize);
+        pageSizeComboBox.setAllowCustomValue(false);
+        pageSizeComboBox.setWidth("90px");
+        pageSizeComboBox.addClassNames(LumoUtility.FontSize.SMALL);
+
+        pageSizeComboBox.addValueChangeListener(event -> {
+            Integer value = event.getValue();
+            if (value != null) {
+                pageSize = value;
+                currentPage = 0;
+                updateGridPage();
+            }
+        });
+
+        firstPageButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        previousPageButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        nextPageButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        lastPageButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
+        firstPageButton.addClassNames(LumoUtility.Margin.Horizontal.XSMALL);
+        previousPageButton.addClassNames(LumoUtility.Margin.Right.SMALL);
+        nextPageButton.addClassNames(LumoUtility.Margin.Left.SMALL);
+        lastPageButton.addClassNames(LumoUtility.Margin.Horizontal.XSMALL);
+
+        firstPageButton.addClickListener(e -> {
+            currentPage = 0;
+            updateGridPage();
+        });
+
+        previousPageButton.addClickListener(e -> {
+            if (currentPage > 0) {
+                currentPage--;
+                updateGridPage();
+            }
+        });
+
+        nextPageButton.addClickListener(e -> {
+            int totalPages = getTotalPages();
+            if (currentPage < totalPages - 1) {
+                currentPage++;
+                updateGridPage();
+            }
+        });
+
+        lastPageButton.addClickListener(e -> {
+            int totalPages = getTotalPages();
+            currentPage = Math.max(0, totalPages - 1);
+            updateGridPage();
+        });
+    }
+
+    private HorizontalLayout createPaginationBar() {
+        paginationPerPageText.addClassNames(
+                LumoUtility.FontSize.SMALL,
+                LumoUtility.TextColor.SECONDARY
+        );
+        paginationPerPageText.setText(messageProperties.getAdminUsersPaginationPerPage());
+
+        paginationInfo.addClassNames(
+                LumoUtility.FontSize.SMALL,
+                LumoUtility.TextColor.SECONDARY,
+                LumoUtility.FontWeight.MEDIUM
+        );
+
+        HorizontalLayout pageSizeLayout = new HorizontalLayout(pageSizeComboBox, paginationPerPageText);
+        pageSizeLayout.setSpacing(true);
+        pageSizeLayout.setPadding(false);
+        pageSizeLayout.setAlignItems(Alignment.CENTER);
+
+        HorizontalLayout navButtons = new HorizontalLayout(
+                firstPageButton,
+                previousPageButton,
+                nextPageButton,
+                lastPageButton
+        );
+        navButtons.setSpacing(false);
+        navButtons.setPadding(false);
+        navButtons.setAlignItems(Alignment.CENTER);
+
+        HorizontalLayout paginationBar = new HorizontalLayout(
+                pageSizeLayout,
+                paginationInfo,
+                navButtons
+        );
+        paginationBar.setWidthFull();
+        paginationBar.setPadding(false);
+        paginationBar.setSpacing(true);
+        paginationBar.setAlignItems(Alignment.CENTER);
+        paginationBar.setJustifyContentMode(JustifyContentMode.END);
+
+        return paginationBar;
+    }
+
+    private int getTotalPages() {
+        if (filteredUsers.isEmpty()) {
+            return 1;
+        }
+        return (int) Math.ceil((double) filteredUsers.size() / pageSize);
     }
 
     private void refreshGrid() {
-        userGrid.setItems(userService.findAllUsers());
+        users = userService.findAllUsers().stream()
+                .sorted(Comparator.comparing(this::getFullName, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        currentPage = 0;
+        applyGridFilter();
+    }
+
+    private void applyGridFilter() {
+        String filterText = normalize(searchField.getValue());
+
+        if (filterText.isBlank()) {
+            filteredUsers = new ArrayList<>(users);
+        } else {
+            filteredUsers = users.stream()
+                    .filter(user -> matchesFilter(user, filterText))
+                    .collect(Collectors.toList());
+        }
+
+        currentPage = 0;
+        updateGridPage();
+    }
+
+    private void updateGridPage() {
+        int totalPages = getTotalPages();
+
+        if (currentPage >= totalPages) {
+            currentPage = Math.max(0, totalPages - 1);
+        }
+
+        int fromIndex = Math.min(currentPage * pageSize, filteredUsers.size());
+        int toIndex = Math.min(fromIndex + pageSize, filteredUsers.size());
+
+        List<UserEntity> pageItems = filteredUsers.subList(fromIndex, toIndex);
+        userGrid.setItems(pageItems);
+
+        int startDisplay = filteredUsers.isEmpty() ? 0 : fromIndex + 1;
+        int endDisplay = toIndex;
+
+        paginationInfo.setText(messageProperties.getAdminUsersPaginationInfo(
+                currentPage + 1,
+                totalPages,
+                startDisplay,
+                endDisplay,
+                filteredUsers.size()
+        ));
+
+        boolean hasPrevious = currentPage > 0;
+        boolean hasNext = currentPage < totalPages - 1;
+
+        firstPageButton.setEnabled(hasPrevious);
+        previousPageButton.setEnabled(hasPrevious);
+        nextPageButton.setEnabled(hasNext);
+        lastPageButton.setEnabled(hasNext);
+    }
+
+    private boolean matchesFilter(UserEntity user, String filterText) {
+        return normalize(getFullName(user)).contains(filterText)
+                || normalize(user.getEmail()).contains(filterText)
+                || normalize(formatRoleNames(user)).contains(filterText)
+                || normalize(getStatusText(user)).contains(filterText)
+                || normalize(formatDateTime(user.getLastActivity())).contains(filterText);
     }
 
     private void deleteUser(UserEntity user) {
-        userService.deleteUser(user);
+        if (isCurrentUser(user)) {
+            showError(messageProperties.getAdminUsersErrorDeleteOwnUser());
+            return;
+        }
 
-        NotificationHelper.getInstance().showNotification(
-                messageProperties::getBaseSuccessTitle,
-                messageProperties::getAdminUsersDeleteSuccess,
-                NotificationHelper.NotificationType.SUCCESS
-        );
+        if (!userService.canDeleteUser(user)) {
+            showError(messageProperties.getAdminUsersErrorDeleteLastAdmin());
+            return;
+        }
 
-        refreshGrid();
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle(messageProperties.getAdminUsersDeleteDialogTitle());
+        dialog.setCloseOnEsc(true);
+        dialog.setCloseOnOutsideClick(true);
+
+        Span warningText = new Span(messageProperties.getAdminUsersDeleteDialogWarning());
+        warningText.addClassNames(LumoUtility.TextColor.ERROR, LumoUtility.FontWeight.SEMIBOLD);
+
+        Span userText = new Span(getFullName(user) + " <" + Optional.ofNullable(user.getEmail()).orElse("-") + ">");
+
+        Button cancelButton = new Button(messageProperties.getAdminUsersCancel(), event -> dialog.close());
+        Button confirmButton = new Button(messageProperties.getAdminUsersDelete(), event -> {
+            try {
+                userService.deleteUser(user);
+                dialog.close();
+                refreshGrid();
+                NotificationHelper.getInstance().showNotification(
+                        messageProperties::getBaseSuccessTitle,
+                        messageProperties::getAdminUsersDeleteSuccess,
+                        NotificationHelper.NotificationType.SUCCESS
+                );
+            } catch (RuntimeException exception) {
+                showError(messageProperties.getAdminUsersErrorDeleteFailed() + " " + safeMessage(exception));
+            }
+        });
+        confirmButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
+
+        HorizontalLayout footer = new HorizontalLayout(cancelButton, confirmButton);
+        footer.setWidthFull();
+        footer.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+
+        VerticalLayout dialogLayout = new VerticalLayout(warningText, userText, footer);
+        dialogLayout.setPadding(false);
+        dialogLayout.setSpacing(true);
+
+        dialog.add(dialogLayout);
+        dialog.open();
     }
 
     private void openDialog(UserEntity user) {
         boolean editMode = user.getId() != null;
+        AdminUserFormData formData = AdminUserFormData.fromUser(user);
 
         Dialog dialog = new Dialog();
         dialog.setCloseOnEsc(true);
-        dialog.setCloseOnOutsideClick(true);
+        dialog.setCloseOnOutsideClick(false);
         dialog.setDraggable(true);
         dialog.setResizable(true);
-        dialog.setWidth("520px");
+        dialog.setWidth("760px");
         dialog.setHeaderTitle(editMode
                 ? messageProperties.getAdminUsersEditDialogTitle()
                 : messageProperties.getAdminUsersCreateDialogTitle());
 
+        Binder<AdminUserFormData> binder = new Binder<>(AdminUserFormData.class);
+
         TextField firstNameField = new TextField(messageProperties.getAdminUsersFieldFirstName());
+        firstNameField.setRequiredIndicatorVisible(true);
         firstNameField.setWidthFull();
-        firstNameField.setValue(Optional.ofNullable(user.getFirstName()).orElse(""));
 
         TextField lastNameField = new TextField(messageProperties.getAdminUsersFieldLastName());
+        lastNameField.setRequiredIndicatorVisible(true);
         lastNameField.setWidthFull();
-        lastNameField.setValue(Optional.ofNullable(user.getLastName()).orElse(""));
 
         EmailField emailField = new EmailField(messageProperties.getAdminUsersFieldEmail());
+        emailField.setRequiredIndicatorVisible(true);
         emailField.setWidthFull();
-        emailField.setValue(Optional.ofNullable(user.getEmail()).orElse(""));
+        emailField.setClearButtonVisible(true);
 
         PasswordField passwordField = new PasswordField(messageProperties.getAdminUsersFieldPassword());
         passwordField.setWidthFull();
         passwordField.setRevealButtonVisible(true);
+        passwordField.setRequiredIndicatorVisible(!editMode);
+        passwordField.setHelperText(editMode
+                ? messageProperties.getAdminUsersPasswordHelperEdit()
+                : messageProperties.getAdminUsersPasswordHelperCreate());
+
+        ComboBox<Gender> genderComboBox = new ComboBox<>(messageProperties.getRegistrationGenderCombobox());
+        genderComboBox.setItems(Gender.values());
+        genderComboBox.setWidthFull();
+        genderComboBox.setRequired(true);
+        genderComboBox.setItemLabelGenerator(this::formatGender);
+
+        DatePicker birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
+        birthDatePicker.setWidthFull();
+        birthDatePicker.setRequired(true);
+        birthDatePicker.setMax(LocalDate.now());
 
         Checkbox enabledCheckbox = new Checkbox(messageProperties.getAdminUsersFieldEnabled());
-        enabledCheckbox.setValue(user.isEnabled());
 
         CheckboxGroup<RoleType> rolesGroup = new CheckboxGroup<>();
         rolesGroup.setLabel(messageProperties.getAdminUsersFieldRoles());
         rolesGroup.setItems(RoleType.values());
-        rolesGroup.setValue(Optional.ofNullable(user.getRoleEntities())
-                .orElseGet(Set::of)
-                .stream()
-                .map(RoleEntity::getName)
-                .collect(Collectors.toSet()));
+        rolesGroup.setItemLabelGenerator(this::formatRoleType);
+        rolesGroup.setRequired(true);
+        rolesGroup.setHelperText(messageProperties.getAdminUsersRolesHelper());
 
-        Button saveButton = new Button(messageProperties.getAdminUsersSave(), e -> {
-            user.setFirstName(firstNameField.getValue());
-            user.setLastName(lastNameField.getValue());
-            user.setEmail(emailField.getValue());
-            user.setEnabled(enabledCheckbox.getValue());
+        Span technicalInfo = new Span(editMode
+                ? messageProperties.getAdminUsersTechnicalInfoEdit()
+                : messageProperties.getAdminUsersTechnicalInfoCreate());
+        technicalInfo.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
 
-            Set<RoleEntity> roleEntities = rolesGroup.getValue().stream()
-                    .map(roleService::findByName)
-                    .flatMap(Optional::stream)
-                    .collect(Collectors.toSet());
+        binder.forField(firstNameField)
+                .asRequired(messageProperties.getBaseValidationRequiredMessage())
+                .withValidator(ValidationHelper::isRequiredTextValid,
+                        messageProperties.getBaseValidationRequiredMessage())
+                .bind(AdminUserFormData::getFirstName, AdminUserFormData::setFirstName);
 
-            user.setRoleEntities(roleEntities);
+        binder.forField(lastNameField)
+                .asRequired(messageProperties.getBaseValidationRequiredMessage())
+                .withValidator(ValidationHelper::isRequiredTextValid,
+                        messageProperties.getBaseValidationRequiredMessage())
+                .bind(AdminUserFormData::getLastName, AdminUserFormData::setLastName);
 
-            if (!passwordField.getValue().isBlank()) {
-                userService.updatePassword(user, passwordField.getValue());
+        binder.forField(emailField)
+                .asRequired(messageProperties.getBaseValidationRequiredMessage())
+                .withValidator(ValidationHelper::isEmailValid,
+                        messageProperties.getBaseValidationEmailInvalidMessage())
+                .withValidator(email -> !userService.emailExistsForOtherUser(ValidationHelper.normalize(email), formData.getId()),
+                        messageProperties.getBaseValidationEmailExistsMessage())
+                .bind(AdminUserFormData::getEmail, AdminUserFormData::setEmail);
+
+        binder.forField(passwordField)
+                .withValidator(value -> ValidationHelper.isPasswordSecure(value, editMode),
+                        editMode
+                                ? messageProperties.getAdminUsersPasswordValidationEdit()
+                                : messageProperties.getAdminUsersPasswordValidationCreate())
+                .bind(AdminUserFormData::getPassword, AdminUserFormData::setPassword);
+
+        binder.forField(genderComboBox)
+                .asRequired(messageProperties.getBaseValidationRequiredMessage())
+                .bind(AdminUserFormData::getGender, AdminUserFormData::setGender);
+
+        binder.forField(birthDatePicker)
+                .asRequired(messageProperties.getBaseValidationRequiredMessage())
+                .withValidator(ValidationHelper::isBirthDateValid,
+                        messageProperties.getBaseValidationBirthDatePastMessage())
+                .bind(AdminUserFormData::getBirthDate, AdminUserFormData::setBirthDate);
+
+        binder.forField(enabledCheckbox)
+                .bind(AdminUserFormData::isEnabled, AdminUserFormData::setEnabled);
+
+        binder.forField(rolesGroup)
+                .withValidator(selectedRoles -> selectedRoles != null && !selectedRoles.isEmpty(),
+                        messageProperties.getBaseValidationRequiredMessage())
+                .bind(AdminUserFormData::getRoles, AdminUserFormData::setRoles);
+
+        binder.readBean(formData);
+
+        Button saveButton = new Button(messageProperties.getAdminUsersSave());
+        saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        saveButton.setEnabled(binder.isValid());
+
+        binder.addStatusChangeListener(event -> saveButton.setEnabled(binder.isValid()));
+
+        saveButton.addClickListener(event -> {
+            try {
+                binder.writeBean(formData);
+            } catch (ValidationException exception) {
+                showError(messageProperties.getAdminUsersValidationCheckFields());
+                return;
             }
 
-            userService.saveUser(user);
+            Set<RoleEntity> roleEntities = resolveRoles(formData.getRoles());
+            if (roleEntities.size() != formData.getRoles().size()) {
+                showError(messageProperties.getAdminUsersErrorRoleMissing());
+                return;
+            }
 
-            dialog.close();
-            refreshGrid();
+            if (isCurrentUser(user) && !formData.isEnabled()) {
+                showError(messageProperties.getAdminUsersErrorDisableOwnUser());
+                return;
+            }
 
-            NotificationHelper.getInstance().showNotification(
-                    messageProperties::getBaseSuccessTitle,
-                    () -> editMode
-                            ? messageProperties.getAdminUsersSaveSuccessUpdated()
-                            : messageProperties.getAdminUsersSaveSuccessCreated(),
-                    NotificationHelper.NotificationType.SUCCESS
-            );
+            if (isCurrentUser(user) && !formData.getRoles().contains(RoleType.ROLE_ADMIN)) {
+                showError(messageProperties.getAdminUsersErrorRemoveOwnAdminRole());
+                return;
+            }
+
+            if (userService.wouldRemoveLastEnabledAdmin(formData.getId(), formData.isEnabled(), roleEntities)) {
+                showError(messageProperties.getAdminUsersErrorLastActiveAdmin());
+                return;
+            }
+
+            try {
+                user.setFirstName(clean(formData.getFirstName()));
+                user.setLastName(clean(formData.getLastName()));
+                user.setEmail(clean(formData.getEmail()));
+                user.setGender(formData.getGender());
+                user.setBirthDate(formData.getBirthDate());
+                user.setEnabled(formData.isEnabled());
+                user.setRoleEntities(roleEntities);
+
+                if (!clean(formData.getPassword()).isBlank()) {
+                    userService.updatePassword(user, formData.getPassword());
+                }
+
+                userService.saveUser(user);
+                dialog.close();
+                refreshGrid();
+
+                NotificationHelper.getInstance().showNotification(
+                        messageProperties::getBaseSuccessTitle,
+                        () -> editMode
+                                ? messageProperties.getAdminUsersSaveSuccessUpdated()
+                                : messageProperties.getAdminUsersSaveSuccessCreated(),
+                        NotificationHelper.NotificationType.SUCCESS
+                );
+            } catch (RuntimeException exception) {
+                showError(messageProperties.getAdminUsersErrorSaveFailed() + " " + safeMessage(exception));
+            }
         });
-        saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         Button cancelButton = new Button(messageProperties.getAdminUsersCancel(), e -> dialog.close());
+
+        HorizontalLayout nameRow = new HorizontalLayout(firstNameField, lastNameField);
+        nameRow.setWidthFull();
+        nameRow.expand(firstNameField, lastNameField);
+
+        HorizontalLayout masterDataRow = new HorizontalLayout(genderComboBox, birthDatePicker);
+        masterDataRow.setWidthFull();
+        masterDataRow.expand(genderComboBox, birthDatePicker);
 
         HorizontalLayout footer = new HorizontalLayout(cancelButton, saveButton);
         footer.setWidthFull();
         footer.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
 
         VerticalLayout dialogLayout = new VerticalLayout(
-                firstNameField,
-                lastNameField,
+                nameRow,
                 emailField,
                 passwordField,
+                masterDataRow,
                 enabledCheckbox,
                 rolesGroup,
+                technicalInfo,
                 footer
         );
         dialogLayout.setPadding(false);
@@ -250,5 +709,155 @@ public class AdminUserManagementSection extends VerticalLayout {
 
         dialog.add(dialogLayout);
         dialog.open();
+    }
+
+    private Set<RoleEntity> resolveRoles(Set<RoleType> selectedRoles) {
+        return Optional.ofNullable(selectedRoles)
+                .orElseGet(Set::of)
+                .stream()
+                .map(roleService::findByName)
+                .flatMap(Optional::stream)
+                .collect(Collectors.toSet());
+    }
+
+
+    private Component createActionButtons(UserEntity user) {
+        Button editButton = new Button(VaadinIcon.EDIT.create(), e -> openDialog(user));
+        editButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        editButton.setTooltipText(messageProperties.getAdminUsersEdit());
+
+        Button deleteButton = new Button(VaadinIcon.TRASH.create(), e -> deleteUser(user));
+        deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
+        deleteButton.setTooltipText(messageProperties.getAdminUsersDelete());
+        deleteButton.setEnabled(!isCurrentUser(user));
+
+        HorizontalLayout actions = new HorizontalLayout(editButton, deleteButton);
+        actions.setPadding(false);
+        actions.setSpacing(true);
+        return actions;
+    }
+
+    private Component createEnabledBadge(UserEntity user) {
+        boolean enabled = user.isEnabled();
+        Span badge = new Span(enabled
+                ? messageProperties.getAdminUsersYes()
+                : messageProperties.getAdminUsersNo());
+        badge.getElement().getThemeList().add("badge " + (enabled ? "success" : "contrast"));
+        return badge;
+    }
+
+    private String formatRoleNames(UserEntity user) {
+        return Optional.ofNullable(user.getRoleEntities())
+                .orElseGet(Set::of)
+                .stream()
+                .map(RoleEntity::getName)
+                .map(this::formatRoleType)
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .collect(Collectors.joining(", "));
+    }
+
+    private String getFullName(UserEntity user) {
+        String firstName = clean(user.getFirstName());
+        String lastName = clean(user.getLastName());
+        String fullName = (firstName + " " + lastName).trim();
+        return fullName.isBlank() ? "-" : fullName;
+    }
+
+    private String getStatusText(UserEntity user) {
+        return Optional.ofNullable(user.getStatus())
+                .map(status -> messageProperties.getTranslation(status.getTextKey()))
+                .orElse("-");
+    }
+
+    private String formatDateTime(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return "-";
+        }
+        Locale locale = VaadinSession.getCurrent() != null && VaadinSession.getCurrent().getLocale() != null
+                ? VaadinSession.getCurrent().getLocale()
+                : Locale.getDefault();
+        return LAST_ACTIVITY_FORMATTER.withLocale(locale).format(dateTime);
+    }
+
+    private String formatRoleType(RoleType roleType) {
+        if (roleType == null) {
+            return "-";
+        }
+        return switch (roleType) {
+            case ROLE_ADMIN -> messageProperties.getRoleAdmin();
+            case ROLE_USER -> messageProperties.getRoleUser();
+        };
+    }
+
+    private String formatGender(Gender gender) {
+        if (gender == null) {
+            return "-";
+        }
+        return switch (gender) {
+            case MALE -> messageProperties.getGenderMale();
+            case FEMALE -> messageProperties.getGenderFemale();
+            case OTHER -> messageProperties.getGenderOther();
+        };
+    }
+
+    private boolean isCurrentUser(UserEntity user) {
+        return securityService.getCurrentUser()
+                .map(currentUser -> Objects.equals(currentUser.getId(), user.getId()))
+                .orElse(false);
+    }
+
+    private void showError(String message) {
+        NotificationHelper.getInstance().showNotification(
+                messageProperties::getBaseFailedTitle,
+                () -> message,
+                NotificationHelper.NotificationType.ERROR
+        );
+    }
+
+    private String safeMessage(RuntimeException exception) {
+        if (exception.getMessage() == null || exception.getMessage().isBlank()) {
+            return "";
+        }
+        return exception.getMessage();
+    }
+
+    private String clean(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private String normalize(String value) {
+        return clean(value).toLowerCase(Locale.ROOT);
+    }
+
+    @Getter
+    @Setter
+    private static final class AdminUserFormData {
+        private Long id;
+        private String firstName;
+        private String lastName;
+        private String email;
+        private String password;
+        private Gender gender;
+        private LocalDate birthDate;
+        private boolean enabled;
+        private Set<RoleType> roles;
+
+        private static AdminUserFormData fromUser(UserEntity user) {
+            AdminUserFormData formData = new AdminUserFormData();
+            formData.id = user.getId();
+            formData.firstName = Optional.ofNullable(user.getFirstName()).orElse("");
+            formData.lastName = Optional.ofNullable(user.getLastName()).orElse("");
+            formData.email = Optional.ofNullable(user.getEmail()).orElse("");
+            formData.password = "";
+            formData.gender = user.getGender();
+            formData.birthDate = user.getBirthDate();
+            formData.enabled = user.isEnabled();
+            formData.roles = Optional.ofNullable(user.getRoleEntities())
+                    .orElseGet(Set::of)
+                    .stream()
+                    .map(RoleEntity::getName)
+                    .collect(Collectors.toSet());
+            return formData;
+        }
     }
 }

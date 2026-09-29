@@ -977,4 +977,153 @@ public class MessageProperties {
     public String getAdminUsersSaveSuccessUpdated() {
         return getTranslation("admin.users.save_success_updated");
     }
+
+
+    public String getGenderMale() {
+        return getTranslation("gender.male");
+    }
+
+    public String getGenderFemale() {
+        return getTranslation("gender.female");
+    }
+
+    public String getGenderOther() {
+        return getTranslation("gender.other");
+    }
+
+    public String getRoleAdmin() {
+        return getTranslation("role.admin");
+    }
+
+    public String getRoleUser() {
+        return getTranslation("role.user");
+    }
+
+    public String getAdminUsersGridName() {
+        return getTranslation("admin.users.grid.name");
+    }
+
+    public String getAdminUsersGridStatus() {
+        return getTranslation("admin.users.grid.status");
+    }
+
+    public String getAdminUsersGridLastActivity() {
+        return getTranslation("admin.users.grid.last_activity");
+    }
+
+    public String getAdminUsersGridEmptyState() {
+        return getTranslation("admin.users.grid.empty_state");
+    }
+
+    public String getAdminUsersGridSummary() {
+        return getTranslation("admin.users.grid.summary");
+    }
+
+    public String getAdminUsersSearchLabel() {
+        return getTranslation("admin.users.search.label");
+    }
+
+    public String getAdminUsersSearchPlaceholder() {
+        return getTranslation("admin.users.search.placeholder");
+    }
+
+    public String getAdminUsersRefreshTooltip() {
+        return getTranslation("admin.users.refresh.tooltip");
+    }
+
+    public String getAdminUsersPaginationPerPage() {
+        return getTranslation("admin.users.pagination.per_page");
+    }
+
+    public String getAdminUsersPaginationFirstPage() {
+        return getTranslation("admin.users.pagination.first_page");
+    }
+
+    public String getAdminUsersPaginationPreviousPage() {
+        return getTranslation("admin.users.pagination.previous_page");
+    }
+
+    public String getAdminUsersPaginationNextPage() {
+        return getTranslation("admin.users.pagination.next_page");
+    }
+
+    public String getAdminUsersPaginationLastPage() {
+        return getTranslation("admin.users.pagination.last_page");
+    }
+
+    public String getAdminUsersPaginationInfo(int currentPage, int totalPages, int start, int end, int totalItems) {
+        return getFormattedTranslation("admin.users.pagination.info", currentPage, totalPages, start, end, totalItems);
+    }
+
+    public String getAdminUsersDeleteDialogTitle() {
+        return getTranslation("admin.users.delete_dialog.title");
+    }
+
+    public String getAdminUsersDeleteDialogWarning() {
+        return getTranslation("admin.users.delete_dialog.warning");
+    }
+
+    public String getAdminUsersPasswordHelperEdit() {
+        return getTranslation("admin.users.password.helper.edit");
+    }
+
+    public String getAdminUsersPasswordHelperCreate() {
+        return getTranslation("admin.users.password.helper.create");
+    }
+
+    public String getAdminUsersPasswordValidationEdit() {
+        return getTranslation("admin.users.password.validation.edit");
+    }
+
+    public String getAdminUsersPasswordValidationCreate() {
+        return getTranslation("admin.users.password.validation.create");
+    }
+
+    public String getAdminUsersRolesHelper() {
+        return getTranslation("admin.users.roles.helper");
+    }
+
+    public String getAdminUsersTechnicalInfoEdit() {
+        return getTranslation("admin.users.technical_info.edit");
+    }
+
+    public String getAdminUsersTechnicalInfoCreate() {
+        return getTranslation("admin.users.technical_info.create");
+    }
+
+    public String getAdminUsersValidationCheckFields() {
+        return getTranslation("admin.users.validation.check_fields");
+    }
+
+    public String getAdminUsersErrorRoleMissing() {
+        return getTranslation("admin.users.error.role_missing");
+    }
+
+    public String getAdminUsersErrorDisableOwnUser() {
+        return getTranslation("admin.users.error.disable_own_user");
+    }
+
+    public String getAdminUsersErrorRemoveOwnAdminRole() {
+        return getTranslation("admin.users.error.remove_own_admin_role");
+    }
+
+    public String getAdminUsersErrorLastActiveAdmin() {
+        return getTranslation("admin.users.error.last_active_admin");
+    }
+
+    public String getAdminUsersErrorSaveFailed() {
+        return getTranslation("admin.users.error.save_failed");
+    }
+
+    public String getAdminUsersErrorDeleteOwnUser() {
+        return getTranslation("admin.users.error.delete_own_user");
+    }
+
+    public String getAdminUsersErrorDeleteLastAdmin() {
+        return getTranslation("admin.users.error.delete_last_admin");
+    }
+
+    public String getAdminUsersErrorDeleteFailed() {
+        return getTranslation("admin.users.error.delete_failed");
+    }
 }
