@@ -125,7 +125,8 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
                 NotificationHelper.getInstance().showNotification(messageProperties::getBaseSuccessTitle, messageProperties::getLoginSuccessMessage, NotificationHelper.NotificationType.SUCCESS);
 
-                getUI().ifPresent(ui -> ui.navigate(HomeView.class));
+                Class<? extends Component> target = hasAdminRole(authentication) ? AdminView.class : HomeView.class;
+                getUI().ifPresent(ui -> ui.navigate(target));
             } catch (AuthenticationException e) {
                 NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle, messageProperties::getLoginFailedMessage, -1, NotificationHelper.NotificationType.ERROR);
             }

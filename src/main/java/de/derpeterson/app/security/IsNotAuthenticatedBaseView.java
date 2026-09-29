@@ -10,6 +10,7 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import de.derpeterson.app.views.AdminView;
 import de.derpeterson.app.views.HomeView;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 
 public abstract class IsNotAuthenticatedBaseView<T extends Component & FlexComponent> extends Composite<T> implements BeforeEnterObserver {
@@ -37,6 +38,11 @@ public abstract class IsNotAuthenticatedBaseView<T extends Component & FlexCompo
 
     private boolean hasAdminRole(UserDetails user) {
         return user.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
+    }
+
+    protected boolean hasAdminRole(Authentication authentication) {
+        return authentication.getAuthorities().stream()
                 .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
     }
 
