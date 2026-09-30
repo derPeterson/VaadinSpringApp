@@ -11,7 +11,7 @@ import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.PasswordResetTokenRepository;
 import de.derpeterson.app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
@@ -160,7 +160,7 @@ public class PasswordResetService {
         String content = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
 
         for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-            content = StringUtils.replace(content, "{{" + entry.getKey() + "}}", entry.getValue());
+            content = Strings.CS.replace(content, "{{" + entry.getKey() + "}}", entry.getValue());
         }
 
         return content;

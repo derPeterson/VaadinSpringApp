@@ -137,7 +137,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
         mainContent.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
 
         Div bannerContent = new Div();
-        bannerContent.add(new Image("../themes/custom-theme/welcome.png", "Welcome"));
+        bannerContent.add(new Image("custom-theme/welcome.png", "Welcome"));
         bannerContent.addClassNames(LumoUtility.Padding.XLARGE);
 
         mainContent.add(bannerContent);
@@ -199,7 +199,6 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
         secondaryActionLayout.add(rememberMeLayout, forgotPasswordLayout);
 
         cardContentLayout.add(cardTitleLayout, cardSecondaryTitleLayout, emailField, passwordField, loginButton, secondaryActionLayout);
-
         CardComponent cardComponent = new CardComponent(cardContentLayout);
         cardComponent.setMinWidth("500px");
         cardComponent.setMaxWidth("500px");

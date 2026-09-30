@@ -632,8 +632,6 @@ public class MessageProperties {
             case EMAIL_QUEUE_CAPACITY -> getAdminConfigEntryEmailQueueCapacity();
             case EMAIL_QUEUE_MAX_RETRY -> getAdminConfigEntryEmailQueueMaxRetry();
             case EMAIL_QUEUE_SENT_LIVE_DURATION -> getAdminConfigEntryEmailQueueSentLiveDuration();
-
-            default -> configEntry.getKey();
         };
     }
 
@@ -784,11 +782,8 @@ public class MessageProperties {
             case EMAIL_QUEUE_CAPACITY -> getAdminConfigEntryEmailQueueCapacityTooltip();
             case EMAIL_QUEUE_MAX_RETRY -> getAdminConfigEntryEmailQueueMaxRetryTooltip();
             case EMAIL_QUEUE_SENT_LIVE_DURATION -> getAdminConfigEntryEmailQueueSentLiveDurationTooltip();
-
-            default -> "";
         };
     }
-
 
     public String getAdminConfigValidationInvalidFields() {
         return getTranslation("adminView.config.validation.invalid_fields");

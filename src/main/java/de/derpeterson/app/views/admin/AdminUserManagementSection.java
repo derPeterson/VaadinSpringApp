@@ -430,13 +430,12 @@ public class AdminUserManagementSection extends VerticalLayout {
         userGrid.setItems(pageItems);
 
         int startDisplay = filteredUsers.isEmpty() ? 0 : fromIndex + 1;
-        int endDisplay = toIndex;
 
         paginationInfo.setText(messageProperties.getAdminUsersPaginationInfo(
                 currentPage + 1,
                 totalPages,
                 startDisplay,
-                endDisplay,
+                toIndex,
                 filteredUsers.size()
         ));
 

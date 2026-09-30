@@ -97,6 +97,8 @@ public class SecurityConfig {
                                 "/VAADIN/**",
                                 "/HILLA/**",
                                 "/themes/**",
+                                "/custom-theme/**",
+                                "/lumo/**",
                                 "/frontend/**",
                                 "/favicon.ico",
                                 "/manifest.webmanifest",
@@ -122,7 +124,7 @@ public class SecurityConfig {
                             String redirectTarget = AppRoute.LOGIN.getSecurityRoute();
 
                             if (!isKnownApplicationPath(requestUri)) {
-                                redirectTarget = AppRoute.HOME.getSecurityRoute() + "?error" + NavigationErrorCode.PATH_NOT_FOUND.getCode();
+                                redirectTarget = AppRoute.HOME.getSecurityRoute() + "?error=" + NavigationErrorCode.PATH_NOT_FOUND.getCode();
                             }
 
                             if (!response.isCommitted()) {

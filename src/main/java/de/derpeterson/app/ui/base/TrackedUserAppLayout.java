@@ -29,7 +29,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
     protected final transient MessageProperties messageProperties;
     protected final transient HttpServletRequest request;
 
-    protected transient UserEntity currentUser;
+    protected final transient UserEntity currentUser;
 
     protected Button userIconButton;
     protected transient UserPopoverMenu userPopoverMenu;

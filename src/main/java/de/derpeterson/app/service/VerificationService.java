@@ -11,7 +11,7 @@ import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.repository.VerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
@@ -176,14 +176,14 @@ public class VerificationService {
                 "SERVICE_NAME", configService.getString(ConfigEntry.SERVICE_NAME),
                 "FIRST_NAME", user.getFirstName(),
                 "LAST_NAME", user.getLastName(),
-                "VERIFICACTION_LINK", UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))
+                "VERIFICATION_LINK", UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))
                         .pathSegment("verification", token).toUriString());
 
         ClassPathResource resource = new ClassPathResource("email/welcome_" + CustomI18NProvider.getCurrentLocale().getLanguage() + ".html");
         String content = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
 
         for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-            content = StringUtils.replace(content, "{{" + entry.getKey() + "}}", entry.getValue());
+            content = Strings.CS.replace(content, "{{" + entry.getKey() + "}}", entry.getValue());
         }
 
         return content;

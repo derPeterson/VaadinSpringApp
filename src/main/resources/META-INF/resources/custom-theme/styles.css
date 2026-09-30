@@ -43,6 +43,11 @@ vaadin-select-overlay vaadin-select-item::part(content) {
     padding-left: 24px;
 }
 
+html {
+    --vaadin-input-field-autofill-background: var(--lumo-contrast-10pct);
+    --vaadin-input-field-autofill-color: var(--lumo-body-text-color);
+}
+
 /* View Backgrounds */
 .login-bg-fullscreen {
     background-image: url('login-background.jpg');

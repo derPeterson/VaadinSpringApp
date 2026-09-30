@@ -77,7 +77,6 @@ public class UserEntity {
     private boolean statusManuallySet = false;
 
     @Column(nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
     @Builder.Default
     private LocalDateTime lastActivity = LocalDateTime.now();
 

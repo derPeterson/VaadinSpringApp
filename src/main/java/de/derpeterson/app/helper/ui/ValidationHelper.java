@@ -13,6 +13,7 @@ import de.derpeterson.app.service.UserService;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -101,7 +102,7 @@ public class ValidationHelper {
     public static boolean validatePasswordConfirmInputs(PasswordField input,
                                                         PasswordField confirmInput,
                                                         MessageProperties messageProperties) {
-        if (!StringUtils.equals(input.getValue(), confirmInput.getValue())) {
+        if (!Strings.CS.equals(input.getValue(), confirmInput.getValue())) {
             NotificationHelper.getInstance().showNotification(
                     messageProperties::getBaseFailedTitle,
                     messageProperties::getBaseValidationPasswordConfirmMessage,
@@ -122,7 +123,7 @@ public class ValidationHelper {
     public static boolean validateEmailConfirmInputs(EmailField input,
                                                      EmailField confirmInput,
                                                      MessageProperties messageProperties) {
-        if (!StringUtils.equals(input.getValue(), confirmInput.getValue())) {
+        if (!Strings.CS.equals(input.getValue(), confirmInput.getValue())) {
             NotificationHelper.getInstance().showNotification(
                     messageProperties::getBaseFailedTitle,
                     messageProperties::getBaseValidationEmailConfirmMessage,

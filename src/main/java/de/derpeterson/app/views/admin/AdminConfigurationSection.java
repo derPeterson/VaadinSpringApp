@@ -489,7 +489,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     private Icon createTooltipIcon() {
-        Icon icon = VaadinIcon.INFO_CIRCLE_O.create();
+        Icon icon = VaadinIcon.INFO_CIRCLE.create();
         icon.addClassNames(
                 LumoUtility.TextColor.SECONDARY,
                 LumoUtility.Margin.Left.XSMALL

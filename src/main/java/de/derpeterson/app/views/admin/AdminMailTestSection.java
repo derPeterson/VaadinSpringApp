@@ -72,7 +72,7 @@ public class AdminMailTestSection extends VerticalLayout {
 
         testSubjectField = new TextField();
         testSubjectField.setWidthFull();
-        testSubjectField.setPrefixComponent(VaadinIcon.TEXT_LABEL.create());
+        testSubjectField.setPrefixComponent(VaadinIcon.FONT.create());
 
         testBodyField = new TextArea();
         testBodyField.setWidthFull();

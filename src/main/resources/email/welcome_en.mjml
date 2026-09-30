@@ -23,7 +23,7 @@
         <mj-text font-size="20px" font-weight="bold" color="#ffffff" align="center">Welcome {{FIRST_NAME}} {{LAST_NAME}} to {{SERVICE_NAME}}!</mj-text>
         <mj-text font-size="16px" color="#ffffff" align="center">Thank you for registering with our service.</mj-text>
         <mj-text font-size="16px" color="#ffffff" align="center">Please confirm your email address to activate your account.</mj-text>
-        <mj-button href="{{VERIFICACTION_LINK}}" background-color="#007bff" color="#ffffff" font-size="16px" padding="12px 24px" border-radius="5px" align="center">
+        <mj-button href="{{VERIFICATION_LINK}}" background-color="#007bff" color="#ffffff" font-size="16px" padding="12px 24px" border-radius="5px" align="center">
           <b>VERIFY EMAIL</b>
         </mj-button>
         <mj-text font-size="14px" color="#bbbbbb" align="center">

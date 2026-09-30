@@ -3,6 +3,7 @@ package de.derpeterson.app.helper.ui;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class HtmlHelper {
@@ -14,10 +15,10 @@ public class HtmlHelper {
 
         input = StringUtils.trim(input);
 
-        if (!StringUtils.startsWith(input, "<p>")) {
+        if (!Strings.CS.startsWith(input, "<p>")) {
             input = "<p>" + input;
         }
-        if (!StringUtils.endsWith(input, "</p>")) {
+        if (!Strings.CS.endsWith(input, "</p>")) {
             input = input + "</p>";
         }
         return input;

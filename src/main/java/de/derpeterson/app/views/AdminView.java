@@ -239,7 +239,7 @@ public class AdminView extends IsAuthenticatedBaseView {
                 () -> selectSection(AdminSection.CONFIGURATION, CONFIG_GROUP_GENERAL)
         );
         mailTestNavItem = createNavigationItem(
-                VaadinIcon.ENVELOPE_O,
+                VaadinIcon.ENVELOPE,
                 mailTestNavText,
                 false,
                 () -> selectSection(AdminSection.MAIL_TEST, null)
