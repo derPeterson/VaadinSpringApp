@@ -16,6 +16,13 @@ Arbeite in PowerShell, Schritt für Schritt. Lies AGENTS.md und README.md; befol
 Bei jedem ungelösten Fehler: kein Commit, kein Rückwechsel; Abschluss ausführen.
 Kein Fetch, Merge, Push oder Bereinigen fremder Änderungen.
 
+Erstelle mit dem verfügbaren Todo-Tool eine kurze Fortschrittsliste:
+Ausgangsstand prüfen, Branch anlegen, Aufgabe umsetzen, Tests ausführen,
+Diff prüfen und committen, zurückwechseln und Abschlussbericht.
+Markiere jeweils den aktuellen Schritt als in Bearbeitung und erledigte
+Schritte sofort als abgeschlossen. Bei einem Abbruch bleiben unerledigte
+Schritte offen. Eine Textliste ersetzt den Todo-Tool-Aufruf nicht.
+
 1. Prüfe `Get-Location`, `git rev-parse --show-toplevel`, `git branch --show-current`
    und `git status --porcelain`. Nur im Projektstamm mit pom.xml/mvnw.cmd,
    aktivem `main` und vollständig sauberem Arbeitsstand fortfahren. Sonst stoppen.
