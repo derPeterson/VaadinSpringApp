@@ -1,85 +1,85 @@
-# Arbeitsanweisungen für Coding-Agenten
+# Instructions for coding agents
 
-## 1. Orientierung
+## 1. Orientation
 
-- Lies zuerst `README.md`, danach nur Dateien, die für die Aufgabe relevant sind.
-- Prüfe README-Aussagen anhand des aktuellen Codes, wenn die Aufgabe davon abhängt.
-- Suche gezielt nach Klassen, Aufrufern und Konfiguration; lies nicht das ganze Projekt.
-- Überspringe Abhängigkeiten (`node_modules/`), generierte Dateien, `data/` und `logs/`.
-- Lies keine `.env`-Dateien, Datenbanken oder Dateien mit Zugangsdaten.
+- Read `README.md` first, then only files relevant to the task.
+- Verify README statements against current code when the task depends on them.
+- Search for relevant classes, callers and configuration; do not read the entire project.
+- Skip dependencies (`node_modules/`), generated files, `data/` and `logs/`.
+- Do not read `.env` files, databases or files containing credentials.
+- Write progress updates and final reports in German.
 
-## 2. Projektkonventionen
+## 2. Project conventions
 
-- Behalte Java 25 und den Spring-Boot-/Vaadin-Flow-Stack aus `pom.xml` bei.
-- Baue Views mit den bestehenden Vaadin-Java-Komponenten. Ersetze sie nicht durch
-  HTML-Templates, React oder ein anderes Frontend.
-- Java-Code liegt unter `src/main/java/de/derpeterson/app/`.
-- Nutze die vorhandene Aufteilung: `views/` und `ui/` für Oberfläche,
-  `service/` für Anwendungslogik, `repository/` für JPA-Zugriffe, `model/` für Daten.
-- Folge den benachbarten Dateien: Namen wie `*View`, `*Service`, `*Repository`,
-  `*Entity`; vorhandene Konstruktor-Injektion und Lombok-Muster beibehalten.
-- Mache kleine, gezielte Änderungen. Keine ungefragten Refactorings.
-- Ändere Dependencies oder Versionen nur, wenn die Aufgabe es erfordert.
-- Styles und UI-Bilder: `src/main/resources/META-INF/resources/custom-theme/`.
-  Styles werden in `Application.java` eingebunden; weitere Icons liegen unter
+- Keep Java 25 and the Spring Boot / Vaadin Flow stack defined in `pom.xml`.
+- Build views with the existing Vaadin Java components. Do not replace them with
+  HTML templates, React or another frontend.
+- Java source is under `src/main/java/de/derpeterson/app/`.
+- Follow the existing architecture: `views/` and `ui/` for the UI,
+  `service/` for application logic, `repository/` for JPA access, `model/` for data.
+- Follow neighboring files: names such as `*View`, `*Service`, `*Repository`,
+  `*Entity`; preserve existing constructor injection and Lombok patterns.
+- Make small, focused changes. Do not perform unsolicited refactoring.
+- Change dependencies or versions only when required by the task.
+- Styles and UI images: `src/main/resources/META-INF/resources/custom-theme/`.
+  Styles are loaded in `Application.java`; additional icons are under
   `src/main/resources/META-INF/resources/icons/`.
-- Übersetzungen: `src/main/resources/i18n/`; Mailvorlagen: `src/main/resources/email/`.
-- Lade serverseitige Ressourcen über Classpath-Streams, nicht über `src/`-Dateipfade.
-  Das muss auch im JAR funktionieren.
-- Bearbeite `src/main/frontend/generated/`, `vite.generated.ts` und `target/`
-  nicht manuell. Eigene Vite-Anpassungen gehören in `vite.config.ts`.
-- Behalte den lokalen Code-Stil bei. Spotless ist mit `eclipse-formatter.xml`
-  konfiguriert; formatiere nicht ungefragt das gesamte Projekt.
+- Translations: `src/main/resources/i18n/`; email templates: `src/main/resources/email/`.
+- Load server-side resources through classpath streams, not `src/` filesystem paths.
+  Resource loading must also work inside a JAR.
+- Do not manually edit `src/main/frontend/generated/`, `vite.generated.ts` or `target/`.
+  Put custom Vite configuration in `vite.config.ts`.
+- Preserve the local code style. Spotless uses `eclipse-formatter.xml`;
+  do not reformat the entire project without a task requiring it.
 
-## 3. Ausführung und Fehlerdiagnose
+## 3. Execution and troubleshooting
 
-- Beachte die tatsächliche Shell: unter Windows PowerShell-Befehle verwenden.
-- Verwende im Projektstamm den Maven Wrapper `.\mvnw.cmd`, nicht globales Maven.
-  Unter Linux/macOS ist das Gegenstück `./mvnw`.
-- Prüfe vor Builds mit `.\mvnw.cmd --version`, dass tatsächlich JDK 25 verwendet wird.
-  Bei einer anderen Version nicht einfach weiterbauen oder Systemsoftware ändern.
-- Gib Maven-Ziele ausdrücklich an: Ein Wrapper-Aufruf ohne Ziel startet laut
-  `pom.xml` standardmäßig die Anwendung.
-- Bei Buildfehlern prüfe zuerst deinen Diff und die erste relevante Fehlerursache,
-  nicht nur nachfolgende Fehlermeldungen. Berichte externe Blocker klar.
-- Setze Java nicht herab und entferne keine Funktionalität, um Fehler zu umgehen.
-- Prüfe bei API-Änderungen die offizielle Dokumentation der verwendeten Version.
-  Kennzeichne Vermutungen und ungeprüftes Verhalten, statt sie als Fakten auszugeben.
+- Respect the actual shell: use PowerShell commands on Windows.
+- Use the Maven Wrapper `.\mvnw.cmd` from the project root, not global Maven.
+  On Linux/macOS, use `./mvnw`.
+- Before builds, run `.\mvnw.cmd --version` and verify that the actual JDK is 25.
+  If it is different, do not continue building or change system software silently.
+- Always specify Maven goals: according to `pom.xml`, a wrapper invocation without
+  a goal starts the application by default.
+- On build failure, inspect your diff and the first relevant cause before downstream
+  errors. Report external blockers clearly.
+- Do not downgrade Java or remove functionality to work around failures.
+- For API changes, check official documentation for the version being used.
+  Label assumptions and unverified behavior; do not present them as facts.
 
-## 4. Validierung
+## 4. Validation
 
-- Führe passende vorhandene Tests aus, sofern die Aufgabe Ausführung erlaubt.
-- Ergänze bei Verhaltensänderungen gezielte Tests für das erwartete Verhalten.
-- Tests liegen unter `src/test/java/`; nutze bestehende JUnit-Muster.
-  `ImageHelperTest` ist ein Beispiel ohne Anwendungsstart oder Datenbank.
-- Unterscheide Build-Erfolg, tatsächlich ausgeführte Tests und manuelle
-  Funktionsprüfung. Ein Build ohne Testklassen ist kein bestandener Funktionstest.
-- Beachte: Die Compile-Phase kann bereits Frontend-Dateien generieren.
-- Das Maven-Profil `it` startet und stoppt die Anwendung; nicht ohne Auftrag nutzen.
-- Ändere keine Datenbankdaten, starte keine Anwendung und versende keine E-Mails,
-  sofern die Aufgabe dies nicht umfasst.
-- Prüfe zum Abschluss `git diff --check` und den Umfang der Änderungen.
-- Falls ein Build generierte, bereits versionierte Dateien verändert:
-  Prüfe diese Änderungen und berichte sie. Nimm sie nur auf, wenn sie zur
-  Aufgabe gehören, Entferne sie nicht pauschal.
+- Run appropriate existing tests when execution is allowed by the task.
+- For behavior changes, add focused tests for the expected behavior.
+- Tests belong under `src/test/java/`; follow existing JUnit patterns.
+  `ImageHelperTest` is an example without application startup or a database.
+- Distinguish build success, tests actually executed and manual functional checks.
+  A successful build without test classes is not a passed functional test.
+- The compile phase may already generate frontend files.
+- Maven profile `it` starts and stops the application; do not use it without authorization.
+- Do not modify database data, start the application or send emails unless included
+  in the task.
+- Before finishing, run `git diff --check` and review the scope of changes.
+- If a build changes generated files already tracked in Git, inspect and report them.
+  Include them only when related to the task; do not discard them indiscriminately.
 
 ## 5. Git
 
-- Prüfe vor Änderungen Branch und Arbeitsstand mit `git status --short --branch`.
-- Bewahre vorhandene Änderungen des Nutzers. Überschreibe oder bereinige sie nicht.
-- Befolge den Branch-, Commit- und Rückwechselablauf eines ausdrücklich verwendeten
-  OpenCode-Kommandos. Erfinde keinen eigenen Ablauf; kläre Unklarheiten.
-- Ohne entsprechenden Auftrag keinen Commit, Merge oder Push durchführen.
-- Keine destruktiven Git-Befehle wie `git reset --hard`, `git checkout --` oder
-  `git clean`, um fremde Änderungen zu entfernen.
+- Before changes, check the branch and working tree with `git status --short --branch`.
+- Preserve the user's existing changes. Do not overwrite or discard them.
+- Follow the branch, commit and return-to-base workflow of an explicitly invoked
+  OpenCode command. Do not invent another workflow; clarify ambiguities.
+- Do not commit, merge or push without a corresponding instruction.
+- Do not use destructive commands such as `git reset --hard`, `git checkout --`
+  or `git clean` to remove changes made by others.
 
-## 6. Ehrlicher Abschlussbericht
+## 6. Honest final report
 
-- Nenne geänderte Dateien und das Ergebnis knapp auf Deutsch.
-- Berichte nur tatsächlich ausgeführte Befehle und beobachtete Ergebnisse.
-- Nenne die Anzahl ausgeführter Tests, Fehler/Fehlschläge und offene Prüfungen.
-  Wenn nichts ausgeführt wurde, sage das ausdrücklich.
-- Übernimm Commit-Kennungen nur aus tatsächlicher Git-Ausgabe.
-- Melde eine nicht abgeschlossene Aufgabe ausdrücklich als unvollständig.
-- Falls du die Aufgabendauer berichtest: Erfasse Start und Ende per Systemzeit.
-  Schätze oder erfinde niemals eine Dauer; ohne Messung keine Zeitangabe.
+- Briefly report changed files and the outcome in German.
+- Report only commands actually executed and results actually observed.
+- State test counts, errors/failures and outstanding checks.
+  Explicitly state when nothing was executed.
+- Obtain commit hashes from actual Git output only.
+- Explicitly label unfinished work as incomplete.
+- If reporting task duration, capture start and end using the system clock.
+  Never estimate or invent a duration; without measurement, give no duration.

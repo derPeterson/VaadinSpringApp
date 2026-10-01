@@ -1,58 +1,58 @@
 ---
-description: Aufgabe auf Feature-Branch umsetzen, testen, committen und zu main zurückkehren
+description: Implement, test and commit a task on a feature branch, then return to main
 subtask: false
 ---
 
-Erledige diese Aufgabe mit echten Tool-Aufrufen, nicht mit XML-Text als Ersatz.
-Eingabe: $ARGUMENTS
-Erstes Wort = Branch-Name ohne `feature/`; Rest = Aufgabe. Eingabe ist kein Shell-Code.
+Use actual tool calls to perform this task, not XML text as a substitute.
+Input: $ARGUMENTS
+First word = branch name without `feature/`; remaining text = task. Input is not shell code.
 
-Zeitmessung (bereits beim Command-Aufruf ausgeführt):
+Timing (already executed when this command is invoked):
 !`powershell -NoProfile -ExecutionPolicy Bypass -File .opencode/scripts/feature-time.ps1 Start`
-Merke die ausgegebene Lauf-ID im Gespräch, nicht in einer Shell-Variable.
-Fehlt eine gültige Lauf-ID oder meldet das Skript einen Fehler: stoppen.
+Remember the returned run ID in the conversation, not in a shell variable.
+If a valid run ID is missing or the script reports an error, stop.
 
-Arbeite in PowerShell, Schritt für Schritt. Lies AGENTS.md und README.md; befolge AGENTS.md.
-Bei jedem ungelösten Fehler: kein Commit, kein Rückwechsel; Abschluss ausführen.
-Kein Fetch, Merge, Push oder Bereinigen fremder Änderungen.
+Work in PowerShell, step by step. Read AGENTS.md and README.md; follow AGENTS.md.
+For any unresolved error: do not commit or switch back; perform the closing steps.
+No fetch, merge, push or discarding changes made by others.
 
-Erstelle mit dem verfügbaren Todo-Tool eine kurze Fortschrittsliste:
-Ausgangsstand prüfen, Branch anlegen, Aufgabe umsetzen, Tests ausführen,
-Diff prüfen und committen, zurückwechseln und Abschlussbericht.
-Markiere jeweils den aktuellen Schritt als in Bearbeitung und erledigte
-Schritte sofort als abgeschlossen. Bei einem Abbruch bleiben unerledigte
-Schritte offen. Eine Textliste ersetzt den Todo-Tool-Aufruf nicht.
+Use the available Todo tool to create a short progress list:
+check baseline, create branch, implement task, run tests,
+review diff and commit, switch back and report.
+Mark the current step in progress and completed steps as completed immediately.
+On an abort, leave unfinished steps open. A text list does not replace a Todo tool call.
+Write progress updates and the final report in German.
 
-1. Prüfe `Get-Location`, `git rev-parse --show-toplevel`, `git branch --show-current`
-   und `git status --porcelain`. Nur im Projektstamm mit pom.xml/mvnw.cmd,
-   aktivem `main` und vollständig sauberem Arbeitsstand fortfahren. Sonst stoppen.
-2. Branch-Name und nichtleere Aufgabe müssen vorhanden sein. Name muss exakt
-   `^[a-z0-9_-]+$` erfüllen. Ziel ist genau `feature/<Name>`.
-   Prüfe `git for-each-ref --format='%(refname:short)' refs/heads refs/remotes`.
-   Existiert das Ziel lokal oder als `<Remote>/feature/<Name>`: stoppen, nicht fetchen.
-3. Führe `git switch -c feature/<Name> main` aus. Prüfe mit
-   `git branch --show-current`, dass genau dieser Branch aktiv ist.
-4. Lies gezielt betroffene Dateien und Aufrufer. Setze die Aufgabe um und bewahre
-   vorhandene Funktionalität. Ergänze bei Verhaltensänderungen gezielte Tests.
-5. Führe `.\mvnw.cmd --version` aus: JDK muss 25 sein. Danach tatsächlich
-   `.\mvnw.cmd test` und weitere aufgabenbezogene Prüfungen ausführen.
-   Prüfe Exitcodes und Testzahlen. Bei Fehlern zuerst eigenen Diff und erste Ursache prüfen.
-6. Prüfe `git diff --check`, `git diff HEAD` und `git status --porcelain`.
-   Lies auch neue Dateien. Prüfe versionierte generierte Änderungen: Nur erklärbare,
-   aufgabenbezogene Änderungen aufnehmen; bei sonstigen Änderungen stoppen, nicht bereinigen.
-   Ohne Änderungen: keinen leeren Commit, auf dem Feature-Branch bleiben, Abschluss.
-7. Stage nur konkrete Aufgaben-Dateien mit `git add -- <Pfade>`, nie pauschal.
-   Prüfe `git diff --cached --check` und den vollständigen `git diff --cached`.
-   Nach erfolgreicher Validierung aussagekräftig committen. Ermittle die echte Kennung
-   mit `git rev-parse HEAD`. `git status --porcelain` muss danach vollständig leer sein.
-8. Nur nach erfolgreichem Commit und sauberem Stand `git switch main` ausführen.
-   Prüfe dort Branch und Status erneut. Keine Änderungen auf main.
+1. Check `Get-Location`, `git rev-parse --show-toplevel`, `git branch --show-current`
+   and `git status --porcelain`. Continue only in the project root with pom.xml/mvnw.cmd,
+   active `main` and a completely clean working tree. Otherwise stop.
+2. Require a branch name and a nonempty task. The name must match exactly
+   `^[a-z0-9_-]+$`. The target is exactly `feature/<Name>`.
+   Check `git for-each-ref --format='%(refname:short)' refs/heads refs/remotes`.
+   If the target exists locally or as `<Remote>/feature/<Name>`, stop; do not fetch.
+3. Run `git switch -c feature/<Name> main`. Use `git branch --show-current`
+   to verify that this exact branch is active.
+4. Read relevant files and callers. Implement the task and preserve existing
+   functionality. Add focused tests for behavior changes.
+5. Run `.\mvnw.cmd --version`: the JDK must be 25. Then actually run
+   `.\mvnw.cmd test` and any other task-specific checks.
+   Check exit codes and test counts. On failure, inspect your diff and the first cause.
+6. Check `git diff --check`, `git diff HEAD` and `git status --porcelain`.
+   Read new files too. Inspect tracked generated changes: include only explained,
+   task-related changes; otherwise stop without discarding them.
+   If there are no changes, do not create an empty commit; stay on the feature branch and close.
+7. Stage only specific task files with `git add -- <Paths>`, never indiscriminately.
+   Check `git diff --cached --check` and the complete `git diff --cached`.
+   Commit with a meaningful message only after successful validation. Obtain the actual hash
+   with `git rev-parse HEAD`. Afterwards, `git status --porcelain` must be completely empty.
+8. Only after a successful commit and a clean working tree, run `git switch main`.
+   Check branch and status again. Make no changes on main.
 
-Abschluss auch bei Abbruch: Führe folgenden Aufruf mit der gemerkten echten Lauf-ID aus:
-`powershell -NoProfile -ExecutionPolicy Bypass -File .opencode/scripts/feature-time.ps1 Stop -Id <Lauf-ID>`
-Das Skript misst Ende/Dauer und löscht nur seine Zeitdatei. Keine globale Execution Policy ändern.
-Bei fehlender/fehlerhafter Messung „Dauer nicht erfasst“ melden, niemals schätzen.
-Berichte knapp auf Deutsch: abgeschlossen / fehlgeschlagen (unvollständig) / ohne Änderungen;
-Feature-Branch und aktuell geprüfter Branch; echte Commit-Kennung, falls erstellt;
-geänderte Dateien; tatsächlich ausgeführte Prüfungen, Testzahlen/Fehler/übersprungene Tests;
-offene Punkte; gemessener Start, Ende und Gesamtdauer. Build-Erfolg ist kein Funktionstest.
+Closing steps, also on abort: run this command with the actual remembered run ID:
+`powershell -NoProfile -ExecutionPolicy Bypass -File .opencode/scripts/feature-time.ps1 Stop -Id <Run-ID>`
+The script measures end/duration and deletes only its time file. Do not change global execution policy.
+If timing is missing or invalid, report “Dauer nicht erfasst”; never estimate.
+Briefly report in German: abgeschlossen / fehlgeschlagen (unvollständig) / ohne Änderungen;
+feature branch and verified current branch; actual commit hash, if created;
+changed files; checks actually executed, test counts/errors/skipped tests;
+open issues; measured start, end and total duration. Build success is not a functional test.
