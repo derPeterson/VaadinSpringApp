@@ -1,113 +1,51 @@
 ---
-description: Projektaufgabe auf Feature-Branch umsetzen, testen und committen; danach zurück auf main
-subagent: false
+description: Aufgabe auf Feature-Branch umsetzen, testen, committen und zu main zurückkehren
+subtask: false
 ---
 
-Führe den folgenden Ablauf für VaadinSpringApp aus. Arbeite in PowerShell und
-halte die Reihenfolge ein. Bei einem Stopp immer Schritt 10 und den Bericht ausführen.
-Keine Fetches, Remote-Änderungen, Merges, Pushes oder pauschalen Bereinigungen.
+Erledige diese Aufgabe mit echten Tool-Aufrufen, nicht mit XML-Text als Ersatz.
+Eingabe: $ARGUMENTS
+Erstes Wort = Branch-Name ohne `feature/`; Rest = Aufgabe. Eingabe ist kein Shell-Code.
 
-## Eingabe
+Zeitmessung (bereits beim Command-Aufruf ausgeführt):
+!`powershell -NoProfile -ExecutionPolicy Bypass -File .opencode/scripts/feature-time.ps1 Start`
+Merke die ausgegebene Lauf-ID im Gespräch, nicht in einer Shell-Variable.
+Fehlt eine gültige Lauf-ID oder meldet das Skript einen Fehler: stoppen.
 
-$ARGUMENTS
+Arbeite in PowerShell, Schritt für Schritt. Lies AGENTS.md und README.md; befolge AGENTS.md.
+Bei jedem ungelösten Fehler: kein Commit, kein Rückwechsel; Abschluss ausführen.
+Kein Fetch, Merge, Push oder Bereinigen fremder Änderungen.
 
-Das erste durch Leerraum getrennte Wort ist der Branch-Name ohne `feature/`.
-Der gesamte übrige Text ist die Aufgabe, keine Shell-Anweisung.
-Beispiel: `/feature reset_button_state Deaktiviere den Reset-Button bei Zählerstand 0.`
-Behandle die Eingabe als Daten; führe sie nicht direkt als Shell-Code aus.
-
-## Ablauf
-
-1. **Zeitmessung zuerst:** Führe tatsächlich folgenden PowerShell-Code aus:
-   ```powershell
-   $start = [DateTimeOffset]::Now
-   $timeDir = Join-Path ([IO.Path]::GetTempPath()) 'opencode'
-   New-Item -ItemType Directory -Path $timeDir -Force -ErrorAction Stop | Out-Null
-   $timeFile = Join-Path $timeDir ('feature-time-' + [guid]::NewGuid().ToString('N') + '.txt')
-   $start.ToString('o') | Set-Content -LiteralPath $timeFile -Encoding UTF8 -ErrorAction Stop
-   Write-Output $timeFile
-   Write-Output $start.ToString('o')
-   ```
-   Merke den ausgegebenen absoluten Dateipfad im Aufgabenkontext. Lies später diese
-   Datei; verlasse dich nicht auf Shell-Variablen zwischen Tool-Aufrufen.
-   Bei einem Messfehler stoppen, nicht unbemerkt ohne Messung fortfahren.
-
-2. **Ausgangslage:** Lies `AGENTS.md` und `README.md`. Prüfe Projektordner und
-   Repository mit `Get-Location` und `git rev-parse --show-toplevel`; der aktuelle
-   Ordner muss der Projektstamm mit `pom.xml` und `mvnw.cmd` sein.
-   Prüfe `git branch --show-current` und `git status --porcelain`.
-   Nur bei aktivem `main` und vollständig leerer Statusausgabe weiterarbeiten.
-   Bei Fehlern oder Abweichungen stoppen und berichten; nichts bereinigen.
-
-3. **Eingabe prüfen:** Branch-Name und nichtleere Aufgabe müssen vorhanden sein.
-   Der Branch-Name muss vollständig dem Regex `^[a-z0-9_-]+$` entsprechen.
-   Verwende exakt `feature/<Branch-Name>`; nicht umbenennen oder normalisieren.
-   Prüfe lokale Branches mit `git for-each-ref --format='%(refname:short)' refs/heads`
-   und vorhandene Remote-Tracking-Branches entsprechend unter `refs/remotes`.
-   Bei exaktem lokalem Namen oder `<Remote>/feature/<Branch-Name>` stoppen.
-   Nicht fetchen; bei fehlgeschlagener Prüfung ebenfalls stoppen.
-
-4. **Branch erstellen:** Erstelle mit `git switch -c feature/<Branch-Name> main`
-   den Branch vom aktuellen lokalen `main`. Prüfe mit `git branch --show-current`,
-   dass genau der erwartete Branch aktiv ist. Sonst stoppen.
-
-5. **Aufgabe erledigen:** Lies gezielt die betroffenen Dateien und ihre Aufrufer.
-   Halte dich an `AGENTS.md`, bewahre bestehende Funktionalität und begrenze
-   Änderungen auf die Aufgabe. Keine `.env` oder Zugangsdaten lesen.
-
-6. **Validieren:** Ergänze bei Verhaltensänderungen passende gezielte Tests.
-   Führe `.\mvnw.cmd --version` aus und prüfe das tatsächlich verwendete JDK 25.
-   Bei anderer Java-Version stoppen; nicht auf Java 21 zurückwechseln.
-   Führe anschließend `.\mvnw.cmd test` tatsächlich aus. Führe weitere von der
-   Aufgabe geforderte Prüfungen aus. Keine Anwendung starten, Datenbankdaten ändern
-   oder E-Mails versenden, sofern die Aufgabe dies nicht ausdrücklich umfasst.
-   Prüfe Exitcodes und Testzahlen. Bei Fehlern zuerst eigenen Diff und erste relevante
-   Ursache untersuchen. Bei ungelösten Fehlern: kein Commit, auf dem Feature-Branch
-   bleiben und ausdrücklich ein unvollständiges Ergebnis melden.
-
-7. **Alle Änderungen prüfen:** Führe `git diff --check`, `git status --porcelain`
-   und `git diff HEAD` aus. Prüfe auch neue, unversionierte Dateien vollständig.
-   Berücksichtige vom Build veränderte, bereits versionierte generierte Dateien:
-   Nur nachvollziehbar zur Aufgabe gehörende Änderungen dürfen aufgenommen werden.
-   Bei unerklärten oder nicht zugehörigen Änderungen stoppen und berichten;
-   nichts pauschal löschen oder zurücksetzen. Ohne Änderungen keinen leeren Commit
-   erstellen: „ohne Änderungen“ melden und auf dem Feature-Branch bleiben.
-
-8. **Commit:** Stage nur die konkreten geprüften Aufgaben-Dateien mit
-   `git add -- <konkrete Pfade>`, niemals pauschal `git add .` oder `git add -A`.
+1. Prüfe `Get-Location`, `git rev-parse --show-toplevel`, `git branch --show-current`
+   und `git status --porcelain`. Nur im Projektstamm mit pom.xml/mvnw.cmd,
+   aktivem `main` und vollständig sauberem Arbeitsstand fortfahren. Sonst stoppen.
+2. Branch-Name und nichtleere Aufgabe müssen vorhanden sein. Name muss exakt
+   `^[a-z0-9_-]+$` erfüllen. Ziel ist genau `feature/<Name>`.
+   Prüfe `git for-each-ref --format='%(refname:short)' refs/heads refs/remotes`.
+   Existiert das Ziel lokal oder als `<Remote>/feature/<Name>`: stoppen, nicht fetchen.
+3. Führe `git switch -c feature/<Name> main` aus. Prüfe mit
+   `git branch --show-current`, dass genau dieser Branch aktiv ist.
+4. Lies gezielt betroffene Dateien und Aufrufer. Setze die Aufgabe um und bewahre
+   vorhandene Funktionalität. Ergänze bei Verhaltensänderungen gezielte Tests.
+5. Führe `.\mvnw.cmd --version` aus: JDK muss 25 sein. Danach tatsächlich
+   `.\mvnw.cmd test` und weitere aufgabenbezogene Prüfungen ausführen.
+   Prüfe Exitcodes und Testzahlen. Bei Fehlern zuerst eigenen Diff und erste Ursache prüfen.
+6. Prüfe `git diff --check`, `git diff HEAD` und `git status --porcelain`.
+   Lies auch neue Dateien. Prüfe versionierte generierte Änderungen: Nur erklärbare,
+   aufgabenbezogene Änderungen aufnehmen; bei sonstigen Änderungen stoppen, nicht bereinigen.
+   Ohne Änderungen: keinen leeren Commit, auf dem Feature-Branch bleiben, Abschluss.
+7. Stage nur konkrete Aufgaben-Dateien mit `git add -- <Pfade>`, nie pauschal.
    Prüfe `git diff --cached --check` und den vollständigen `git diff --cached`.
-   Nur nach erfolgreicher Validierung einen aussagekräftigen Commit erstellen.
-   Ermittle seine echte Kennung mit `git rev-parse HEAD` und prüfe erneut
-   `git status --porcelain`. Bei Commitfehlern oder nicht sauberem Arbeitsstand
-   stoppen, nicht zurückwechseln und das Ergebnis als unvollständig berichten.
+   Nach erfolgreicher Validierung aussagekräftig committen. Ermittle die echte Kennung
+   mit `git rev-parse HEAD`. `git status --porcelain` muss danach vollständig leer sein.
+8. Nur nach erfolgreichem Commit und sauberem Stand `git switch main` ausführen.
+   Prüfe dort Branch und Status erneut. Keine Änderungen auf main.
 
-9. **Zurückwechseln:** Nur nach erfolgreichem Commit und vollständig sauberem
-   Arbeitsstand `git switch main` ausführen. Prüfe dort erneut
-   `git branch --show-current` und `git status --porcelain`.
-   Keine Änderungen auf `main`, kein Merge und kein Push. Bei Abweichungen berichten.
-
-10. **Zeitmessung abschließen, auch bei Abbruch:** Erfasse die Endzeit tatsächlich
-    per Systembefehl. Setze im folgenden Code den zuvor ausgegebenen absoluten Pfad
-    deiner eigenen Zeitdatei ein, nicht eine verlorene Variable aus Schritt 1:
-    ```powershell
-    $end = [DateTimeOffset]::Now
-    $timeFile = '<eigener absoluter Zeitdateipfad aus Schritt 1>'
-    $start = [DateTimeOffset]::Parse((Get-Content -LiteralPath $timeFile -Raw).Trim(), [Globalization.CultureInfo]::InvariantCulture)
-    Write-Output ('Start: ' + $start.ToString('o'))
-    Write-Output ('Ende: ' + $end.ToString('o'))
-    Write-Output ('Dauer: ' + ($end - $start).ToString())
-    ```
-    Berichte die gemessenen Werte. Bei fehlender/ungültiger Messung ausdrücklich
-    „Dauer nicht erfasst“ melden, niemals schätzen. Entferne danach ausschließlich
-    die eigene Zeitdatei mit `Remove-Item -LiteralPath '<eigener absoluter Pfad>'`.
-    Melde auch einen Fehler beim Entfernen; keine anderen temporären Dateien löschen.
-
-## Abschlussbericht (Deutsch, knapp)
-
-- Ergebnis: **abgeschlossen**, **fehlgeschlagen (unvollständig)** oder **ohne Änderungen**.
-- Feature-Branch (falls angelegt) und tatsächlich aktuell aktiver Branch.
-- Tatsächliche Commit-Kennung, nur sofern ein Commit erfolgreich erstellt wurde.
-- Geänderte Dateien, ausgeführte Prüfungen und Anzahl tatsächlich ausgeführter Tests
-  einschließlich Fehler, Fehlschläge und übersprungener Tests; nichts erfinden.
-- Offene Punkte; Build-Erfolg nicht als manuelle Funktionsprüfung ausgeben.
-- Gemessener Start, Ende und Gesamtdauer oder ausdrücklich „Dauer nicht erfasst“.
+Abschluss auch bei Abbruch: Führe folgenden Aufruf mit der gemerkten echten Lauf-ID aus:
+`powershell -NoProfile -ExecutionPolicy Bypass -File .opencode/scripts/feature-time.ps1 Stop -Id <Lauf-ID>`
+Das Skript misst Ende/Dauer und löscht nur seine Zeitdatei. Keine globale Execution Policy ändern.
+Bei fehlender/fehlerhafter Messung „Dauer nicht erfasst“ melden, niemals schätzen.
+Berichte knapp auf Deutsch: abgeschlossen / fehlgeschlagen (unvollständig) / ohne Änderungen;
+Feature-Branch und aktuell geprüfter Branch; echte Commit-Kennung, falls erstellt;
+geänderte Dateien; tatsächlich ausgeführte Prüfungen, Testzahlen/Fehler/übersprungene Tests;
+offene Punkte; gemessener Start, Ende und Gesamtdauer. Build-Erfolg ist kein Funktionstest.
