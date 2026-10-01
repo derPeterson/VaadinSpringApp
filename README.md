@@ -2,7 +2,7 @@
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Diese Beschreibung basiert auf dem Quellcode und der Build-Konfiguration. Für ihre Erstellung wurden weder Anwendung noch Build oder Tests ausgeführt. Beschriebene Abläufe sind damit kein Nachweis eines erfolgreichen Laufzeitbetriebs.
+> Diese Beschreibung basiert auf dem Quellcode und der Build-Konfiguration. Maven-/Java-Version, Node.js-Version, ein gezielter Logo-Test und der Package-Build wurden am 01.10.2026 geprüft (siehe „Tests und Prüfstand“). Die Anwendung wurde nicht gestartet; ein erfolgreicher Laufzeitbetrieb ist damit nicht nachgewiesen.
 
 ## Funktionen
 
@@ -19,8 +19,8 @@ Belege: `views/RegistrationView.java`, `views/LoginView.java`, `views/admin/`, `
 
 - **JDK 25**, **Spring Boot 4.1.1**, **Vaadin 25.3.0**, Lombok; Versionen und Abhängigkeiten stehen in `pom.xml`.
 - Spring Security, Spring Data JPA/Hibernate, dateibasierte H2-Datenbank und Spring Mail/SMTP.
-- Maven Wrapper: `mvnw` bzw. `mvnw.cmd`, konfiguriert für **Maven 3.8.4** in `.mvn/wrapper/maven-wrapper.properties`. Unter Windows muss `JAVA_HOME` auf das JDK zeigen. Die Kompatibilität dieser Wrapper-Version mit dem aktuellen Stack wurde nicht ausgeführt/geprüft.
-- Frontend-Werkzeuge: Node.js/npm, Vite und TypeScript. Das Vaadin-Maven-Plugin bindet `prepare-frontend` und `build-frontend` an die Compile-Phase; Anpassungen stehen in `vite.config.ts`. Eine konkrete Node-Mindestversion ist im Projekt nicht festgelegt, die passende Toolchain muss beim ersten Build geprüft werden.
+- Maven Wrapper: `mvnw` bzw. `mvnw.cmd`, konfiguriert für **Maven 3.9.16** in `.mvn/wrapper/maven-wrapper.properties`. Dies ist laut [Apache-Downloadseite](https://maven.apache.org/download.cgi) die aktuelle stabile Maven-3.9.x-Version (geprüft am 01.10.2026). Das vorhandene JAR-basierte Wrapper-Verfahren mit Wrapper 3.1.0 bleibt erhalten. Unter Windows muss `JAVA_HOME` auf das JDK zeigen.
+- Frontend-Werkzeuge: **Node.js 24 oder neuer**, bei Verwendung von npm **npm 11.3 oder neuer**, gemäß den [offiziellen Voraussetzungen für Vaadin 25.3.0](https://github.com/vaadin/platform/releases/tag/25.3.0). Lokal wurde Node.js **24.21.0** festgestellt; die npm-Version wurde nicht separat geprüft. Das Vaadin-Maven-Plugin bindet `prepare-frontend` und `build-frontend` an die Compile-Phase; Anpassungen stehen in `vite.config.ts`.
 - Für den ersten Build ist Zugriff auf die Maven-/Frontend-Paketquellen erforderlich. Für Mailfunktionen wird zusätzlich ein erreichbarer SMTP-Server benötigt; er wird nicht mitgeliefert.
 
 ## Architektur und Einstiegspunkte
@@ -87,18 +87,27 @@ java -jar target/app-1.0-SNAPSHOT.jar
 
 Unter Linux/macOS entsprechend `./mvnw` statt `.\mvnw.cmd` verwenden. Alternativ ist `Application.java` der IDE-Einstiegspunkt. Standardadresse: `http://localhost:8080/`; Kontoseiten liegen unter `/login`, `/registration` und `/forgot-password`.
 
-Die Befehle sind aus `pom.xml` und Wrapper abgeleitet, **nicht ausgeführt**. Das `production`-Profil ist vorhanden; der tatsächliche Produktionsmodus und JAR-Start sind ungeprüft. Insbesondere ist `vaadin-dev` zusätzlich direkt als Abhängigkeit deklariert, während das Profil es nur an `vaadin-core` ausschließt.
+Geprüft wurden `clean test` und anschließend `package -Pproduction` mit dem Wrapper. Startbefehle wurden nicht ausgeführt; der tatsächliche Produktionsmodus im laufenden Server und der JAR-Start bleiben ungeprüft. Insbesondere ist `vaadin-dev` zusätzlich direkt als Abhängigkeit deklariert, während das Profil es nur an `vaadin-core` ausschließt.
 
 ## Tests und Prüfstand
 
-Unter `src/test/` liegt derzeit ausschließlich `resources/logback-test.xml`, **keine Testklasse**. `pom.xml` enthält Spring-Boot-Test- und Vaadin-TestBench-JUnit-5-Abhängigkeiten, aber damit noch keine automatisierte Funktionsabdeckung.
+Unter `src/test/java/de/derpeterson/app/helper/image/ImageHelperTest.java` liegt ein gezielter Test: Er lädt das echte Mail-Logo vom Classpath über `ImageHelper`, decodiert den Base64-Inhalt, vergleicht ihn mit der Originalressource und prüft die Lesbarkeit als Bild. Er benötigt weder Spring-Anwendungsstart noch Datenbank oder SMTP. Weitere Testklassen sind derzeit nicht vorhanden; `src/test/resources/logback-test.xml` konfiguriert das Test-Logging.
 
-- `.\mvnw.cmd test`: durchläuft die Testphase, kann derzeit jedoch keine vorhandenen Testklassen ausführen; der Frontend-Build ist bereits an `compile` gebunden.
-- `.\mvnw.cmd verify -Pit,production`: aktiviert die vorbereitete Failsafe-Konfiguration und startet/stoppt dabei die Anwendung. Es gibt derzeit keine Integrationstestklassen und keine explizite Browser-/WebDriver-Konfiguration im Profil.
+Am 01.10.2026 unter Windows tatsächlich ausgeführt:
 
-**Ein erfolgreicher Build ohne Testklassen ist kein bestandener Funktionstest.** Build, Start, Browserdarstellung, Anmeldung, Rollenprüfung, Mailversand und Datenbankbetrieb wurden für diese Dokumentation nicht praktisch überprüft.
+| Befehl | Ergebnis |
+| --- | --- |
+| `.\mvnw.cmd --version` | Maven **3.9.16**, Java **25.0.4.1**, Eclipse Adoptium/Temurin, `JAVA_HOME=C:\Dev\Java\current` |
+| `node --version` | **v24.21.0**, erfüllt die Node.js-Voraussetzung |
+| `.\mvnw.cmd clean test` | **BUILD SUCCESS**; kompiliert mit `release 25`; **1 Test, 0 Fehler, 0 Fehlschläge, 0 übersprungen** |
+| `.\mvnw.cmd package -Pproduction` | **BUILD SUCCESS**; derselbe Test erneut erfolgreich; Spring-Boot-JAR erstellt |
+| `& "$env:JAVA_HOME\bin\jar.exe" tf target/app-1.0-SNAPSHOT.jar` | Enthält `META-INF/resources/custom-theme/service_logo.png` |
 
-Ein konkreter offener Punkt ist bereits im Code sichtbar: `VerificationService` und `PasswordResetService` laden das Mail-Logo über `ImageHelper` noch vom alten Dateisystempfad `src/main/frontend/themes/custom-theme/service_logo.png`. Die Datei liegt inzwischen unter den unten genannten Ressourcen. Damit ist die Mail-Erstellung insbesondere auch beim JAR-Betrieb zu prüfen.
+Beide Builds meldeten, dass kein neuer Produktions-Frontend-Bundle-Build nötig war; ein vollständiger Neuaufbau dieses Bundles ist damit nicht geprüft. Es gab JDK-Warnungen zu Jansi-Native-Access und beim Kompilieren zu Lomboks Nutzung von `sun.misc.Unsafe`, aber keine Build-Fehler.
+
+`VerificationService` und `PasswordResetService` laden das Logo nun über `ImageHelper` als **Classpath-Stream**, ohne lokalen Dateipfad oder Dateiextraktion. Das bisherige Mailformat bleibt erhalten: Der Helper liefert reines Base64, die HTML-Vorlagen ergänzen `data:image/png;base64,`. Der Test prüft die Ressource im Test-Classpath; `jar tf` prüft deren Verpackung, nicht den Ladevorgang im laufenden JAR.
+
+**Build-Erfolg und dieser einzelne Ressourcentest sind kein vollständiger Funktionstest.** Start, Browserdarstellung, Anmeldung, Rollenprüfung, Mailversand, Maildarstellung und Datenbankbetrieb bleiben ungeprüft. `.\mvnw.cmd verify -Pit,production` würde die vorbereitete Failsafe-Konfiguration aktivieren und die Anwendung starten/stoppen; dieser Befehl wurde nicht ausgeführt. Es gibt derzeit keine Integrationstestklassen und keine explizite Browser-/WebDriver-Konfiguration im Profil.
 
 ## Styles, Bilder und generierte Dateien
 

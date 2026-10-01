@@ -172,7 +172,7 @@ public class VerificationService {
 
     private String loadEmailTemplate(UserEntity user, String token) throws IOException {
         Map<String, String> placeholders = Map.of(
-                "SERVICE_LOGO", ImageHelper.convertImageToBase64("src/main/frontend/themes/custom-theme/service_logo.png"),
+                "SERVICE_LOGO", ImageHelper.convertImageToBase64("META-INF/resources/custom-theme/service_logo.png"),
                 "SERVICE_NAME", configService.getString(ConfigEntry.SERVICE_NAME),
                 "FIRST_NAME", user.getFirstName(),
                 "LAST_NAME", user.getLastName(),

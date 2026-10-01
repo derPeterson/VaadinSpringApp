@@ -151,7 +151,7 @@ public class PasswordResetService {
 
     private String loadEmailTemplate(String token) throws IOException {
         Map<String, String> placeholders = Map.of(
-                "SERVICE_LOGO", ImageHelper.convertImageToBase64("src/main/frontend/themes/custom-theme/service_logo.png"),
+                "SERVICE_LOGO", ImageHelper.convertImageToBase64("META-INF/resources/custom-theme/service_logo.png"),
                 "SERVICE_NAME", configService.getString(ConfigEntry.SERVICE_NAME),
                 "RESET_PASSWORD_LINK", UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))
                         .pathSegment("reset-password", token).toUriString());
