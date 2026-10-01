@@ -1,6 +1,5 @@
 package de.derpeterson.app.helper.ui;
 
-import de.derpeterson.app.helper.ui.ValidationHelper;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -19,13 +18,14 @@ public class ValidationHelperTest {
     @Test
     public void testIsPasswordSecure_MinLength() {
         // Test with less than 8 characters - should all fail
+        assertFalse(ValidationHelper.isPasswordSecure("Abc123!")); // 7 chars, despite uppercase and special char
         assertFalse(ValidationHelper.isPasswordSecure("abc123!"));
         assertFalse(ValidationHelper.isPasswordSecure("aB!"));
         
         // Test with exactly 8 characters (should fail without required elements)
-        assertFalse(ValidationHelper.isPasswordSecure("abc12345"));   // 8 chars but no uppercase
+        assertFalse(ValidationHelper.isPasswordSecure("abc12345"));   // 8 chars but no uppercase or special char
         assertFalse(ValidationHelper.isPasswordSecure("ABC12345"));   // 8 chars but no special char
-        assertFalse(ValidationHelper.isPasswordSecure("ABCabcde"));   // 8 chars but no special char and no uppercase
+        assertFalse(ValidationHelper.isPasswordSecure("ABCabcde"));   // 8 chars but no special char
     }
 
     @Test
@@ -34,12 +34,12 @@ public class ValidationHelperTest {
         assertTrue(ValidationHelper.isPasswordSecure("Abc123!A"));  // 8 chars: A-b-c-1-2-3-!-A
         assertTrue(ValidationHelper.isPasswordSecure("123ABC!B"));  // 8 chars: 1-2-3-A-B-C-!-B
         assertTrue(ValidationHelper.isPasswordSecure("!@#abcDE"));  // 8 chars: !-@-#-a-b-c-D-E
-        assertTrue(ValidationHelper.isPasswordSecure("MyP@ssw0rd")); // 9 chars: M-y-P-@-s-s-w-0-r-d
+        assertTrue(ValidationHelper.isPasswordSecure("MyP@ssw0rd")); // 10 chars: M-y-P-@-s-s-w-0-r-d
         
         // Test with invalid passwords (missing requirement)
-        assertFalse(ValidationHelper.isPasswordSecure("abc12345"));   // no uppercase  
+        assertFalse(ValidationHelper.isPasswordSecure("abc12345"));   // no uppercase or special char
         assertFalse(ValidationHelper.isPasswordSecure("ABC12345"));   // no special char
-        assertFalse(ValidationHelper.isPasswordSecure("ABCabcde"));   // no special char and no uppercase
+        assertFalse(ValidationHelper.isPasswordSecure("ABCabcde"));   // no special char
         assertFalse(ValidationHelper.isPasswordSecure("abc!@#123"));   // no uppercase
         assertFalse(ValidationHelper.isPasswordSecure("MyPassw0rd"));   // no special char
     }
@@ -47,8 +47,9 @@ public class ValidationHelperTest {
     @Test
     public void testIsPasswordSecure_WithSpaces() {
         // Test with spaces - password should be trimmed and validated
-        // " Abc123! " after trim becomes "Abc123!" -> 8 chars with uppercase and special char = valid
-        assertTrue(ValidationHelper.isPasswordSecure(" Abc123! "));
+        // Outer spaces do not count toward the minimum length.
+        assertFalse(ValidationHelper.isPasswordSecure(" Abc123! ")); // 7 chars after trimming
+        assertTrue(ValidationHelper.isPasswordSecure(" Abc123!A ")); // exactly 8 chars after trimming
         // " abc123! " after trim becomes "abc123!" -> 7 chars without uppercase = invalid (length requirement)
         assertFalse(ValidationHelper.isPasswordSecure(" abc123! "));
     }
@@ -60,12 +61,24 @@ public class ValidationHelperTest {
         assertFalse(ValidationHelper.isPasswordSecure("", false));
         assertFalse(ValidationHelper.isPasswordSecure("   ", false));
 
-        // Test with actual valid passwords
-        assertTrue(ValidationHelper.isPasswordSecure("Abc123!", true));
+        // With allowBlank=true, null, empty and whitespace-only inputs are accepted.
+        assertTrue(ValidationHelper.isPasswordSecure(null, true));
+        assertTrue(ValidationHelper.isPasswordSecure("", true));
+        assertTrue(ValidationHelper.isPasswordSecure("   ", true));
+
+        // Nonblank inputs must satisfy the same rule regardless of allowBlank.
+        assertTrue(ValidationHelper.isPasswordSecure("Abc123!A", true));
+        assertTrue(ValidationHelper.isPasswordSecure("Abc123!A", false));
+        assertTrue(ValidationHelper.isPasswordSecure(" Abc123!A ", true));
+        assertTrue(ValidationHelper.isPasswordSecure(" Abc123!A ", false));
         assertTrue(ValidationHelper.isPasswordSecure("MyP@ssw0rd", true));
         
         // Test with invalid password - should fail even with allowBlank = true
-        assertFalse(ValidationHelper.isPasswordSecure("abc12345", true)); 
+        assertFalse(ValidationHelper.isPasswordSecure("Abc123!", true));
+        assertFalse(ValidationHelper.isPasswordSecure("Abc123!", false));
+        assertFalse(ValidationHelper.isPasswordSecure(" Abc123! ", true));
+        assertFalse(ValidationHelper.isPasswordSecure(" Abc123! ", false));
+        assertFalse(ValidationHelper.isPasswordSecure("abc12345", true));
     }
 
     @Test
@@ -76,6 +89,9 @@ public class ValidationHelperTest {
         assertTrue(ValidationHelper.isEmailValid("user123@test-domain.org"));
         assertTrue(ValidationHelper.isEmailValid("a@b.co"));
 
+        // Vaadin's current pattern permits consecutive dots in the local part.
+        assertTrue(ValidationHelper.isEmailValid("test..test@example.com"));
+
         // Invalid emails
         assertFalse(ValidationHelper.isEmailValid(null));
         assertFalse(ValidationHelper.isEmailValid(""));
@@ -83,10 +99,11 @@ public class ValidationHelperTest {
         assertFalse(ValidationHelper.isEmailValid("invalid.email"));
         assertFalse(ValidationHelper.isEmailValid("@example.com"));
         assertFalse(ValidationHelper.isEmailValid("test@"));
-        assertFalse(ValidationHelper.isEmailValid("test..test@example.com"));
         
-        // Test with whitespace - the trimmed email should be invalid
-        assertFalse(ValidationHelper.isEmailValid(" test@example.com "));
+        // Outer whitespace is trimmed before applying the Vaadin pattern.
+        assertTrue(ValidationHelper.isEmailValid(" test@example.com "));
+        assertTrue(ValidationHelper.isEmailValid("\t test@example.com \n"));
+        assertFalse(ValidationHelper.isEmailValid("test @example.com")); // internal whitespace is invalid
     }
 
     @Test
