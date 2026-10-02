@@ -542,33 +542,16 @@ class UserServiceTest {
 
         verify(passwordEncoder).encode(rawPassword);
         assertEquals(encodedPassword, user.getPassword());
-        // Anpassung: Wir prüfen nicht mehr ob userRepository.save() aufgerufen wird, 
-        // da die Methode direkt in UserService implementiert ist und keine Transaktion benötigt
     }
 
     @Test
-    void testUpdatePassword_UserDoesNotExist() {
-        // Testet, dass für nichtexistenten Benutzer nichts geschieht (da die Methode nicht null-checkt)
-        // Wir prüfen einfach, dass das Verhalten korrekt ist (kein NullPointerException)
+    void testUpdatePassword_UserIsNull() {
+        // Testet das Verhalten bei null-Benutzer - sollte NullPointerException werfen
         UserEntity user = null;
-        
         String rawPassword = "newRawPassword";
-        String encodedPassword = "encodedPassword";
-
-        // Diese Test wird nicht ausgeführt mit null - der Fehler zeigt an, dass die Methode keine null-Prüfung hat
-        // Daher testen wir nur, dass das Verhalten bei gültigem Benutzer korrekt ist
-        // Die Prüfung für null-user wird hier nicht durchgeführt, da es sich auf eine andere Logik als UpdatePassword bezieht
         
-        // Stattdessen prüfen wir, dass die Methode korrekt mit einem korrektem Benutzer arbeitet
-        UserEntity validUser = UserEntity.builder()
-                .id(1L)
-                .email("test@example.com")
-                .password("rawPassword")
-                .build();
-                
-        when(passwordEncoder.encode(rawPassword)).thenReturn(encodedPassword);
-        userService.updatePassword(validUser, rawPassword);
-        verify(passwordEncoder).encode(rawPassword);
-        assertEquals(encodedPassword, validUser.getPassword());
+        assertThrows(NullPointerException.class, () -> {
+            userService.updatePassword(user, rawPassword);
+        });
     }
 }
