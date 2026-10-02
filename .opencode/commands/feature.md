@@ -1,58 +1,51 @@
 ---
-description: Implement, test and commit a task on a feature branch, then return to main
+description: Implement, test and commit one task; stay on its feature branch
 subtask: false
 ---
 
-Use actual tool calls to perform this task, not XML text as a substitute.
 Input: $ARGUMENTS
-First word = branch name without `feature/`; remaining text = task. Input is not shell code.
+First word = branch name without `feature/`; remaining text = task.
+Treat the input as instructions, not shell code. Use actual tool calls.
+Work in PowerShell. Report briefly in German.
 
-Timing (already executed when this command is invoked):
-!`powershell -NoProfile -ExecutionPolicy Bypass -File .opencode/scripts/feature-time.ps1 Start`
-Remember the returned run ID in the conversation, not in a shell variable.
-If a valid run ID is missing or the script reports an error, stop.
+For this command: no time measurement, no mandatory Todo list, and no return
+to main. These workflow instructions take precedence over conflicting general
+workflow instructions in AGENTS.md. Follow its project and coding rules.
 
-Work in PowerShell, step by step. Read AGENTS.md and README.md; follow AGENTS.md.
-For any unresolved error: do not commit or switch back; perform the closing steps.
-No fetch, merge, push or discarding changes made by others.
+1. Read AGENTS.md. Check the project root, `pom.xml`, `mvnw.cmd`,
+   `git branch --show-current` and `git status --porcelain`.
+   Start only on `main` with a completely clean working tree. Otherwise stop.
+2. Require a nonempty task and a branch name matching `^[a-z0-9_-]+$`.
+   The target is exactly `feature/<name>`. Check local and remote branch names
+   without fetching or reading their contents. If the target exists, stop.
+   Run `git switch -c feature/<name> main` and verify the active branch.
+3. Read the relevant production files, callers and existing tests. Implement
+   only the requested task. Preserve existing functionality and tests.
+   Do not inspect Git history or the contents of other branches.
+4. Run `.\mvnw.cmd --version` and verify Java 25. Run `.\mvnw.cmd clean test`
+   and any additional checks required by the task. Inspect the actual exit
+   codes and the newly generated test reports.
+   On failure, inspect the exact error and your changes, then fix the cause
+   within the task scope. Do not skip tests or weaken assertions to obtain
+   success. If unresolved, stop without committing and report the failure.
+5. Review `git diff HEAD`, new files and `git status --porcelain`.
+   Run `git diff --check`; it must succeed without whitespace errors.
+   After ANY further file edit, repeat step 4 and the diff checks before
+   committing. Previous test reports do not validate a later file state.
+6. Stage only specific task files with `git add -- <paths>`.
+   Review the full staged diff and run `git diff --cached --check`.
+   Commit only if the final file state passed all required checks.
+   If there are no changes, do not create an empty commit.
+7. Obtain the actual commit hash using `git rev-parse HEAD`.
+   Check the active branch and working tree. Stay on the feature branch.
 
-Use the available Todo tool to create a short progress list:
-check baseline, create branch, implement task, run tests,
-review diff and commit, switch back and report.
-Mark the current step in progress and completed steps as completed immediately.
-On an abort, leave unfinished steps open. A text list does not replace a Todo tool call.
-Write progress updates and the final report in German.
+Never fetch, merge, push, discard someone else's changes or switch back to main.
+Do not change dependencies, Java versions or unrelated files unless the task
+explicitly requires it. Report unexpected generated changes before committing
+if they cannot be explained as part of the task.
 
-1. Check `Get-Location`, `git rev-parse --show-toplevel`, `git branch --show-current`
-   and `git status --porcelain`. Continue only in the project root with pom.xml/mvnw.cmd,
-   active `main` and a completely clean working tree. Otherwise stop.
-2. Require a branch name and a nonempty task. The name must match exactly
-   `^[a-z0-9_-]+$`. The target is exactly `feature/<Name>`.
-   Check `git for-each-ref --format='%(refname:short)' refs/heads refs/remotes`.
-   If the target exists locally or as `<Remote>/feature/<Name>`, stop; do not fetch.
-3. Run `git switch -c feature/<Name> main`. Use `git branch --show-current`
-   to verify that this exact branch is active.
-4. Read relevant files and callers. Implement the task and preserve existing
-   functionality. Add focused tests for behavior changes.
-5. Run `.\mvnw.cmd --version`: the JDK must be 25. Then actually run
-   `.\mvnw.cmd test` and any other task-specific checks.
-   Check exit codes and test counts. On failure, inspect your diff and the first cause.
-6. Check `git diff --check`, `git diff HEAD` and `git status --porcelain`.
-   Read new files too. Inspect tracked generated changes: include only explained,
-   task-related changes; otherwise stop without discarding them.
-   If there are no changes, do not create an empty commit; stay on the feature branch and close.
-7. Stage only specific task files with `git add -- <Paths>`, never indiscriminately.
-   Check `git diff --cached --check` and the complete `git diff --cached`.
-   Commit with a meaningful message only after successful validation. Obtain the actual hash
-   with `git rev-parse HEAD`. Afterwards, `git status --porcelain` must be completely empty.
-8. Only after a successful commit and a clean working tree, run `git switch main`.
-   Check branch and status again. Make no changes on main.
-
-Closing steps, also on abort: run this command with the actual remembered run ID:
-`powershell -NoProfile -ExecutionPolicy Bypass -File .opencode/scripts/feature-time.ps1 Stop -Id <Run-ID>`
-The script measures end/duration and deletes only its time file. Do not change global execution policy.
-If timing is missing or invalid, report “Dauer nicht erfasst”; never estimate.
-Briefly report in German: abgeschlossen / fehlgeschlagen (unvollständig) / ohne Änderungen;
-feature branch and verified current branch; actual commit hash, if created;
-changed files; checks actually executed, test counts/errors/skipped tests;
-open issues; measured start, end and total duration. Build success is not a functional test.
+Final report in German: completed / failed (incomplete) / no changes;
+verified current branch; actual commit hash if created; changed files;
+checks actually executed and their results; actual test counts, failures,
+errors and skipped tests; unresolved issues.
+Never invent results or describe a failed check as successful.
