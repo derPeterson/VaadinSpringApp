@@ -594,12 +594,12 @@ class UserServiceTest {
         IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> {
             userService.updatePassword(user, rawPassword);
         });
-        
+
         assertSame(exception, thrown);
 
         // Assert that the user's existing password remains unchanged
         assertEquals("existingPassword", user.getPassword());
-        
+
         // Verify that the repository does not save the user
         verify(userRepository, never()).save(any(UserEntity.class));
     }
