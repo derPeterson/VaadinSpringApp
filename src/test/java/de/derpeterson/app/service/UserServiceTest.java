@@ -554,4 +554,24 @@ class UserServiceTest {
             userService.updatePassword(user, rawPassword);
         });
     }
+
+    @Test
+    void testUpdatePassword_EmptyPassword() {
+        // Testet das Verhalten mit leerem Passwort
+        UserEntity user = UserEntity.builder()
+                .id(1L)
+                .email("test@example.com")
+                .password("rawPassword")
+                .build();
+
+        String rawPassword = "";
+        String encodedPassword = "encodedEmptyPassword";
+
+        when(passwordEncoder.encode(rawPassword)).thenReturn(encodedPassword);
+
+        userService.updatePassword(user, rawPassword);
+
+        verify(passwordEncoder).encode(rawPassword);
+        assertEquals(encodedPassword, user.getPassword());
+    }
 }
