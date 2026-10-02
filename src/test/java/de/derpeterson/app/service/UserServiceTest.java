@@ -1,6 +1,8 @@
 package de.derpeterson.app.service;
 
+import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,12 +67,12 @@ class UserServiceTest {
                 .id(1L)
                 .email("test@example.com")
                 .build();
-        
+
         UserEntity user2 = UserEntity.builder()
                 .id(2L)
                 .email("other@example.com")
                 .build();
-                
+
         when(userRepository.findAll()).thenReturn(Arrays.asList(user1, user2));
         boolean result = userService.emailExistsForOtherUser("other@example.com", 1L);
         assertTrue(result);
@@ -82,7 +84,7 @@ class UserServiceTest {
                 .id(1L)
                 .email("TEST@EXAMPLE.COM")
                 .build();
-        
+
         when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
         boolean result = userService.emailExistsForOtherUser("test@example.com", 2L);
         assertTrue(result);
@@ -94,7 +96,7 @@ class UserServiceTest {
                 .id(1L)
                 .email("   TEST@EXAMPLE.COM   ")
                 .build();
-        
+
         when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
         boolean result = userService.emailExistsForOtherUser("test@example.com", 2L);
         assertTrue(result);
@@ -106,7 +108,7 @@ class UserServiceTest {
                 .id(1L)
                 .email("test@example.com")
                 .build();
-        
+
         when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
         boolean result = userService.emailExistsForOtherUser("test@example.com", 1L);
         assertFalse(result);
@@ -118,7 +120,7 @@ class UserServiceTest {
                 .id(1L)
                 .email("test@example.com")
                 .build();
-        
+
         when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
         boolean result = userService.emailExistsForOtherUser("test@example.com", null);
         assertTrue(result);
@@ -130,12 +132,12 @@ class UserServiceTest {
                 .id(1L)
                 .email(null)
                 .build();
-        
+
         UserEntity user2 = UserEntity.builder()
                 .id(2L)
                 .email("test@example.com")
                 .build();
-                
+
         when(userRepository.findAll()).thenReturn(Arrays.asList(user1, user2));
         boolean result = userService.emailExistsForOtherUser("test@example.com", 1L);
         assertTrue(result);
@@ -147,26 +149,296 @@ class UserServiceTest {
                 .id(1L)
                 .email("test@example.com")
                 .build();
-        
+
         UserEntity matchingUser = UserEntity.builder()
                 .id(2L)
                 .email("test@example.com")
                 .build();
-                
+
         when(userRepository.findAll()).thenReturn(Arrays.asList(currentUser, matchingUser));
         boolean result = userService.emailExistsForOtherUser("test@example.com", 1L);
         assertTrue(result);
     }
-    
+
     @Test
     void testEmailExistsForOtherUser_WithOuterWhitespaceDirect() {
         UserEntity user1 = UserEntity.builder()
                 .id(1L)
                 .email("test@example.com")
                 .build();
-        
+
         when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
         boolean result = userService.emailExistsForOtherUser("  TEST@EXAMPLE.COM  ", 2L);
         assertTrue(result);
+    }
+
+    @Test
+    void testCanDeleteUser_NullUser() {
+        boolean result = userService.canDeleteUser(null);
+        assertFalse(result);
+    }
+
+    @Test
+    void testCanDeleteUser_OrdinaryEnabledUser() {
+        UserEntity user = UserEntity.builder()
+                .id(1L)
+                .enabled(true)
+                .roleEntities(Collections.emptyList())
+                .build();
+
+        boolean result = userService.canDeleteUser(user);
+        assertTrue(result);
+    }
+
+    @Test
+    void testCanDeleteUser_DisabledAdmin() {
+        RoleEntity adminRole = RoleEntity.builder()
+                .id(1L)
+                .name(RoleType.ROLE_ADMIN)
+                .build();
+
+        UserEntity user = UserEntity.builder()
+                .id(1L)
+                .enabled(false)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        boolean result = userService.canDeleteUser(user);
+        assertTrue(result);
+    }
+
+    @Test
+    void testCanDeleteUser_TheOnlyEnabledAdmin() {
+        RoleEntity adminRole = RoleEntity.builder()
+                .id(1L)
+                .name(RoleType.ROLE_ADMIN)
+                .build();
+
+        UserEntity user = UserEntity.builder()
+                .id(1L)
+                .enabled(true)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        boolean result = userService.canDeleteUser(user);
+        assertFalse(result);
+    }
+
+    @Test
+    void testCanDeleteUser_EnabledAdminWithAnotherEnabledAdmin() {
+        RoleEntity adminRole = RoleEntity.builder()
+                .id(1L)
+                .name(RoleType.ROLE_ADMIN)
+                .build();
+
+        UserEntity user1 = UserEntity.builder()
+                .id(1L)
+                .enabled(true)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        UserEntity user2 = UserEntity.builder()
+                .id(2L)
+                .enabled(true)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        when(userRepository.findAll()).thenReturn(Arrays.asList(user1, user2));
+        boolean result = userService.canDeleteUser(user1);
+        assertTrue(result);
+    }
+
+    @Test
+    void testWouldRemoveLastEnabledAdmin_OnlyEditedUserAsEnabledAdmin() {
+        RoleEntity adminRole = RoleEntity.builder()
+                .id(1L)
+                .name(RoleType.ROLE_ADMIN)
+                .build();
+
+        UserEntity user1 = UserEntity.builder()
+                .id(1L)
+                .enabled(true)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
+        boolean result = userService.wouldRemoveLastEnabledAdmin(1L, false, Collections.singletonList(adminRole));
+        assertTrue(result);
+    }
+
+    @Test
+    void testWouldRemoveLastEnabledAdmin_OnlyEditedUserAsEnabledAdminRemovesRole() {
+        RoleEntity adminRole = RoleEntity.builder()
+                .id(1L)
+                .name(RoleType.ROLE_ADMIN)
+                .build();
+
+        UserEntity user1 = UserEntity.builder()
+                .id(1L)
+                .enabled(true)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
+        boolean result = userService.wouldRemoveLastEnabledAdmin(1L, true, Collections.emptyList());
+        assertTrue(result);
+    }
+
+    @Test
+    void testWouldRemoveLastEnabledAdmin_OnlyEditedUserNullAndEmptyRoles() {
+        RoleEntity adminRole = RoleEntity.builder()
+                .id(1L)
+                .name(RoleType.ROLE_ADMIN)
+                .build();
+
+        UserEntity user1 = UserEntity.builder()
+                .id(1L)
+                .enabled(true)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
+        boolean result = userService.wouldRemoveLastEnabledAdmin(1L, true, null);
+        assertTrue(result);
+
+        result = userService.wouldRemoveLastEnabledAdmin(1L, true, Collections.emptyList());
+        assertTrue(result);
+    }
+
+    @Test
+    void testWouldRemoveLastEnabledAdmin_AnotherEnabledAdminRemainsAfterRoleRemoval() {
+        RoleEntity adminRole = RoleEntity.builder()
+                .id(1L)
+                .name(RoleType.ROLE_ADMIN)
+                .build();
+
+        UserEntity user1 = UserEntity.builder()
+                .id(1L)
+                .enabled(true)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        UserEntity user2 = UserEntity.builder()
+                .id(2L)
+                .enabled(true)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        when(userRepository.findAll()).thenReturn(Arrays.asList(user1, user2));
+        boolean result = userService.wouldRemoveLastEnabledAdmin(2L, true, Collections.emptyList());
+        assertFalse(result);
+    }
+
+    @Test
+    void testWouldRemoveLastEnabledAdmin_OrdinaryAndDisabledAdminsNotCounted() {
+        RoleEntity adminRole = RoleEntity.builder()
+                .id(1L)
+                .name(RoleType.ROLE_ADMIN)
+                .build();
+
+        UserEntity enabledAdmin = UserEntity.builder()
+                .id(1L)
+                .enabled(true)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        UserEntity ordinaryUser = UserEntity.builder()
+                .id(2L)
+                .enabled(true)
+                .roleEntities(Collections.emptyList())
+                .build();
+
+        UserEntity disabledAdmin = UserEntity.builder()
+                .id(3L)
+                .enabled(false)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        when(userRepository.findAll()).thenReturn(Arrays.asList(enabledAdmin, ordinaryUser, disabledAdmin));
+        boolean result = userService.wouldRemoveLastEnabledAdmin(1L, false, Collections.singletonList(adminRole));
+        assertTrue(result);
+    }
+
+    @Test
+    void testWouldRemoveLastEnabledAdmin_NoRepositoryStubbingNeeded() {
+        RoleEntity adminRole = RoleEntity.builder()
+                .id(1L)
+                .name(RoleType.ROLE_ADMIN)
+                .build();
+
+        boolean result = userService.wouldRemoveLastEnabledAdmin(1L, true, Collections.singletonList(adminRole));
+        assertFalse(result);
+    }
+
+    @Test
+    void testWouldRemoveLastEnabledAdmin_AnotherEnabledAdminRemainsAfterDisabling() {
+        RoleEntity adminRole = RoleEntity.builder()
+                .id(1L)
+                .name(RoleType.ROLE_ADMIN)
+                .build();
+
+        UserEntity user1 = UserEntity.builder()
+                .id(1L)
+                .enabled(true)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        UserEntity user2 = UserEntity.builder()
+                .id(2L)
+                .enabled(true)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        when(userRepository.findAll()).thenReturn(Arrays.asList(user1, user2));
+        boolean result = userService.wouldRemoveLastEnabledAdmin(1L, false, Collections.singletonList(adminRole));
+        assertFalse(result);
+    }
+
+    @Test
+    void testCanDeleteUser_OnlyTargetEnabledAdmin() {
+        RoleEntity adminRole = RoleEntity.builder()
+                .id(1L)
+                .name(RoleType.ROLE_ADMIN)
+                .build();
+
+        UserEntity user = UserEntity.builder()
+                .id(1L)
+                .enabled(true)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        when(userRepository.findAll()).thenReturn(Collections.singletonList(user));
+        boolean result = userService.canDeleteUser(user);
+        assertFalse(result);
+    }
+
+    @Test
+    void testCanDeleteUser_OnlyTargetEnabledAdminWithOthersButNoOtherEnabledAdmins() {
+        RoleEntity adminRole = RoleEntity.builder()
+                .id(1L)
+                .name(RoleType.ROLE_ADMIN)
+                .build();
+
+        UserEntity enabledAdmin = UserEntity.builder()
+                .id(1L)
+                .enabled(true)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        UserEntity ordinaryUser = UserEntity.builder()
+                .id(2L)
+                .enabled(true)
+                .roleEntities(Collections.emptyList())
+                .build();
+
+        UserEntity disabledAdmin = UserEntity.builder()
+                .id(3L)
+                .enabled(false)
+                .roleEntities(Collections.singletonList(adminRole))
+                .build();
+
+        when(userRepository.findAll()).thenReturn(Arrays.asList(enabledAdmin, ordinaryUser, disabledAdmin));
+        boolean result = userService.canDeleteUser(enabledAdmin);
+        assertFalse(result);
     }
 }
