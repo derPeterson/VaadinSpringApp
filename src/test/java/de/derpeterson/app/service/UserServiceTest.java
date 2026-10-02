@@ -590,14 +590,17 @@ class UserServiceTest {
         // Konfiguriere den mocked PasswordEncoder um eine Exception zu werfen
         when(passwordEncoder.encode(rawPassword)).thenThrow(exception);
 
-        // Assert that the same exception is propagated
-        assertThrows(IllegalStateException.class, () -> {
+        // Capture the exception returned by assertThrows and verify the identical exception instance
+        IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> {
             userService.updatePassword(user, rawPassword);
         });
+        
+        assertSame(exception, thrown);
 
         // Assert that the user's existing password remains unchanged
         assertEquals("existingPassword", user.getPassword());
         
-        // Verify that the repository does not save the user (kein verify UserRepository aufruf hier)
+        // Verify that the repository does not save the user
+        verify(userRepository, never()).save(any(UserEntity.class));
     }
 }
