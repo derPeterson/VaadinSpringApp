@@ -12,7 +12,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -418,25 +421,25 @@ class UserServiceTest {
                 .id(1L)
                 .name(RoleType.ROLE_ADMIN)
                 .build();
-        
+
         UserEntity enabledAdmin = UserEntity.builder()
                 .id(1L)
                 .enabled(true)
                 .roleEntities(Collections.singletonList(adminRole))
                 .build();
-                
+
         UserEntity ordinaryUser = UserEntity.builder()
                 .id(2L)
                 .enabled(true)
                 .roleEntities(Collections.emptyList())
                 .build();
-                
+
         UserEntity disabledAdmin = UserEntity.builder()
                 .id(3L)
                 .enabled(false)
                 .roleEntities(Collections.singletonList(adminRole))
                 .build();
-        
+
         when(userRepository.findAll()).thenReturn(Arrays.asList(enabledAdmin, ordinaryUser, disabledAdmin));
         boolean result = userService.canDeleteUser(enabledAdmin);
         assertFalse(result);
@@ -448,7 +451,7 @@ class UserServiceTest {
                 .id(1L)
                 .name(RoleType.ROLE_ADMIN)
                 .build();
-        
+
         UserEntity user = UserEntity.builder()
                 .id(1L)
                 .email("test@example.com")
@@ -456,12 +459,12 @@ class UserServiceTest {
                 .roleEntities(Collections.singletonList(adminRole))
                 .preferredLocale(Locale.ENGLISH)
                 .build();
-        
+
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-        
+
         Locale newLocale = Locale.FRENCH;
         userService.updateUserLocale("test@example.com", newLocale);
-        
+
         assertEquals(newLocale, user.getPreferredLocale());
         verify(userRepository).save(user);
     }
@@ -469,10 +472,10 @@ class UserServiceTest {
     @Test
     void testUpdateUserLocale_UserDoesNotExist() {
         when(userRepository.findByEmail("nonexistent@example.com")).thenReturn(Optional.empty());
-        
+
         Locale newLocale = Locale.FRENCH;
         userService.updateUserLocale("nonexistent@example.com", newLocale);
-        
+
         verify(userRepository, never()).save(any(UserEntity.class));
     }
 
@@ -482,7 +485,7 @@ class UserServiceTest {
                 .id(1L)
                 .name(RoleType.ROLE_ADMIN)
                 .build();
-        
+
         UserEntity user = UserEntity.builder()
                 .id(1L)
                 .email("test@example.com")
@@ -490,11 +493,11 @@ class UserServiceTest {
                 .roleEntities(Collections.singletonList(adminRole))
                 .preferredLocale(Locale.ENGLISH)
                 .build();
-        
+
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-        
+
         userService.updateUserLocale("test@example.com", null);
-        
+
         assertNull(user.getPreferredLocale());
         verify(userRepository).save(user);
     }
@@ -505,7 +508,7 @@ class UserServiceTest {
                 .id(1L)
                 .name(RoleType.ROLE_ADMIN)
                 .build();
-        
+
         UserEntity user = UserEntity.builder()
                 .id(1L)
                 .email("test@example.com")
@@ -513,13 +516,12 @@ class UserServiceTest {
                 .roleEntities(Collections.singletonList(adminRole))
                 .preferredLocale(Locale.ENGLISH)
                 .build();
-        
+
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-        
+
         userService.updateUserLocale("test@example.com", Locale.forLanguageTag(""));
-        
+
         assertEquals(Locale.forLanguageTag(""), user.getPreferredLocale());
         verify(userRepository).save(user);
     }
-}
 }
