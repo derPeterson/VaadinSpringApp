@@ -305,11 +305,39 @@ $result = [PSCustomObject]@{
     Deletions               = $deletions
 }
 
+# Dezimalwerte fuer die CSV kulturunabhaengig mit Punkt schreiben.
+# Dadurch bleibt die Datei auch ausserhalb einer deutschen Windows-/Excel-Umgebung
+# problemlos maschinell auswertbar.
+$csvNumberFormats = @{
+    DurationSeconds       = '0.0'
+    TestTimeBeforeSeconds = '0.000'
+    TestTimeAfterSeconds  = '0.000'
+    LineCoverageBefore    = '0.00'
+    LineCoverageAfter     = '0.00'
+    BranchCoverageBefore  = '0.00'
+    BranchCoverageAfter   = '0.00'
+}
+
+$csvValues = [ordered]@{}
+
+foreach ($property in $result.PSObject.Properties) {
+    if ($csvNumberFormats.ContainsKey($property.Name)) {
+        $csvValues[$property.Name] = ([double]$property.Value).ToString(
+            $csvNumberFormats[$property.Name],
+            $culture
+        )
+    } else {
+        $csvValues[$property.Name] = $property.Value
+    }
+}
+
+$csvResult = [PSCustomObject]$csvValues
+
 if (Test-Path $resultsFile) {
-    $result |
+    $csvResult |
         Export-Csv -LiteralPath $resultsFile -NoTypeInformation -Append -Encoding UTF8
 } else {
-    $result |
+    $csvResult |
         Export-Csv -LiteralPath $resultsFile -NoTypeInformation -Encoding UTF8
 }
 
