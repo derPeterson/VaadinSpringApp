@@ -233,23 +233,23 @@ if (-not $branch.StartsWith('feature/', [StringComparison]::OrdinalIgnoreCase)) 
     throw "Benchmark Finish must run on a feature/* branch. Current branch: $branch"
 }
 
-# GPT-AUFFAELLIGKEITEN.md ist ein bewusstes Run-Artefakt und darf nicht committed werden.
+# findings.md ist ein bewusstes Run-Artefakt und darf nicht committed werden.
 # Finish akzeptiert genau diese Datei als untracked; alle anderen Aenderungen bleiben verboten.
-$findingsSource = Join-Path $repo 'GPT-AUFFAELLIGKEITEN.md'
+$findingsSource = Join-Path $repo 'findings.md'
 $statusLines = @(& git status --porcelain) | Where-Object { $_ }
 $unexpectedStatus = @(
     $statusLines | Where-Object {
-        $_ -ne '?? GPT-AUFFAELLIGKEITEN.md'
+        $_ -ne '?? findings.md'
     }
 )
 
 if ($unexpectedStatus.Count -gt 0) {
-    throw "Benchmark Finish requires a clean working tree except for an untracked GPT-AUFFAELLIGKEITEN.md. Unexpected status: $($unexpectedStatus -join '; ')"
+    throw "Benchmark Finish requires a clean working tree except for an untracked findings.md. Unexpected status: $($unexpectedStatus -join '; ')"
 }
 
-$findingsTracked = (& git ls-files --error-unmatch -- 'GPT-AUFFAELLIGKEITEN.md' 2>$null)
+$findingsTracked = (& git ls-files --error-unmatch -- 'findings.md' 2>$null)
 if ($LASTEXITCODE -eq 0 -and $findingsTracked) {
-    throw 'GPT-AUFFAELLIGKEITEN.md must not be tracked or committed. Keep it untracked so Finish can archive it as findings.md.'
+    throw 'findings.md must not be tracked or committed. Keep it untracked so Finish can archive it with the run.'
 }
 
 # Ende der eigentlichen Agentenarbeit erfassen,
@@ -363,18 +363,17 @@ $diffFile = Join-Path $runFolder 'diff.patch'
 # Findings als Run-Artefakt archivieren und danach aus dem Repository entfernen.
 # Fehlt die Datei, bleibt trotzdem fuer jeden Run ein eindeutiges findings.md erhalten.
 if (Test-Path -LiteralPath $findingsSource -PathType Leaf) {
-    Copy-Item -LiteralPath $findingsSource -Destination $findingsFile
-    Remove-Item -LiteralPath $findingsSource
+    Move-Item -LiteralPath $findingsSource -Destination $findingsFile -Force
 } else {
     @"
 # Findings
 
-Fuer diesen Benchmark-Lauf wurde keine `GPT-AUFFAELLIGKEITEN.md` erzeugt.
+Fuer diesen Benchmark-Lauf wurde keine `findings.md` erzeugt.
 "@ | Set-Content -LiteralPath $findingsFile -Encoding UTF8
 }
 
 if (& git status --porcelain) {
-    throw 'Working tree is not clean after archiving GPT-AUFFAELLIGKEITEN.md.'
+    throw 'Working tree is not clean after archiving findings.md.'
 }
 
 # Vollstaendigen Commit-Diff des Runs als reproduzierbares Patch-Artefakt sichern.
