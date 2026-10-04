@@ -365,11 +365,11 @@ $diffFile = Join-Path $runFolder 'diff.patch'
 if (Test-Path -LiteralPath $findingsSource -PathType Leaf) {
     Move-Item -LiteralPath $findingsSource -Destination $findingsFile -Force
 } else {
-    @"
-# Findings
-
-Fuer diesen Benchmark-Lauf wurde keine `findings.md` erzeugt.
-"@ | Set-Content -LiteralPath $findingsFile -Encoding UTF8
+    @(
+        '# Findings'
+        ''
+        'Fuer diesen Benchmark-Lauf wurde keine `findings.md` erzeugt.'
+    ) | Set-Content -LiteralPath $findingsFile -Encoding UTF8
 }
 
 if (& git status --porcelain) {
@@ -436,8 +436,8 @@ $($changedFiles -join "`n")
 
 ## Run-Artefakte
 
-- Findings: `findings.md`
-- Diff: `diff.patch`
+- Findings: findings.md
+- Diff: diff.patch
 "@
 
 $report |
