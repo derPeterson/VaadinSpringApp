@@ -247,8 +247,12 @@ if ($unexpectedStatus.Count -gt 0) {
     throw "Benchmark Finish requires a clean working tree except for an untracked findings.md. Unexpected status: $($unexpectedStatus -join '; ')"
 }
 
-$findingsTracked = (& git ls-files --error-unmatch -- 'findings.md' 2>$null)
-if ($LASTEXITCODE -eq 0 -and $findingsTracked) {
+# `git ls-files --error-unmatch` liefert bei einer absichtlich untracked findings.md
+# Exitcode 1. In PowerShell-Konfigurationen, die native Non-Zero-Exitcodes als Fehler
+# behandeln, wuerde Finish dadurch abbrechen. Daher ohne --error-unmatch pruefen:
+# Ausgabe vorhanden = Datei ist tracked, leere Ausgabe = Datei ist untracked/nicht vorhanden.
+$findingsTracked = @(& git ls-files -- 'findings.md') | Where-Object { $_ }
+if ($findingsTracked.Count -gt 0) {
     throw 'findings.md must not be tracked or committed. Keep it untracked so Finish can archive it with the run.'
 }
 
