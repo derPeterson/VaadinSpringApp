@@ -28,8 +28,10 @@ workflow instructions in AGENTS.md. Follow its project and coding rules.
    and any additional checks required by the task. Inspect the actual exit
    codes and the newly generated test reports.
    On failure, inspect the exact error and your changes, then fix the cause
-   within the task scope. Do not skip tests or weaken assertions to obtain
-   success. If unresolved, stop without committing and report the failure.
+   within the task scope. Keep count of failed verification runs that required
+   another code change. Report this count at the end as "Korrekturrunden".
+   Do not skip tests or weaken assertions to obtain success. If unresolved,
+   stop without committing and report the failure.
 5. Review `git diff HEAD`, new files and `git status --porcelain`.
    Run `git diff --check`; it must succeed without whitespace errors.
    After ANY further file edit, repeat step 4 and the diff checks before
@@ -58,6 +60,7 @@ if they cannot be explained as part of the task.
 Final report in German: completed / failed (incomplete) / no changes;
 verified current branch; actual commit hash if created; changed files;
 checks actually executed and their results; actual test counts, failures,
-errors and skipped tests; final working-tree state; unresolved issues.
+errors and skipped tests; number of Korrekturrunden; final working-tree state;
+unresolved issues.
 Never invent results, claim uncommitted work is committed, or describe a failed
 check as successful.
