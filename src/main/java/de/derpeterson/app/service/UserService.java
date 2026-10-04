@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import java.util.*;
 
@@ -21,15 +22,21 @@ public class UserService {
     private final UserStatusBroadcaster userStatusBroadcaster;
     private final PasswordEncoder passwordEncoder;
 
+    @Transactional
     public void saveUser(UserEntity userEntity) {
-        userRepository.save(userEntity);
+        save(userEntity);
     }
 
     public Optional<UserEntity> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
 
+    @Transactional
     public void save(UserEntity user) {
+        Assert.notNull(user, "Entity must not be null");
+        if (!isEnabledAdmin(user)) {
+            ensureNotLastEnabledAdmin(user.getId());
+        }
         userRepository.save(user);
     }
 
@@ -38,7 +45,7 @@ public class UserService {
         Optional<UserEntity> userOptional = userRepository.findByEmail(email);
         userOptional.ifPresent(user -> {
             user.setPreferredLocale(locale);
-            userRepository.save(user);
+            save(user);
         });
     }
 
@@ -51,7 +58,7 @@ public class UserService {
             userEntity.setAutomaticStatus(newStatus);
         }
 
-        userRepository.save(userEntity);
+        save(userEntity);
 
         UserStatus resultingStatus = userEntity.getStatus();
         if (oldStatus != resultingStatus) {
@@ -63,8 +70,21 @@ public class UserService {
         return userRepository.findAll();
     }
 
+    @Transactional
     public void deleteUser(UserEntity user) {
+        Assert.notNull(user, "Entity must not be null");
+        ensureNotLastEnabledAdmin(user.getId());
         userRepository.delete(user);
+    }
+
+    private void ensureNotLastEnabledAdmin(Long userId) {
+        if (userId == null) {
+            return;
+        }
+        List<Long> enabledAdminIds = userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN);
+        if (enabledAdminIds.size() == 1 && Objects.equals(enabledAdminIds.getFirst(), userId)) {
+            throw new IllegalStateException("Der letzte aktive Administrator muss erhalten bleiben.");
+        }
     }
 
     public void updatePassword(UserEntity user, String rawPassword) {
