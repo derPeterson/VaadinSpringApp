@@ -52,12 +52,45 @@ function Get-Metrics([string]$ClassName) {
         throw "JaCoCo report not found: $jacoco"
     }
 
-    $row = Import-Csv $jacoco |
-        Where-Object { $_.CLASS -eq $ClassName } |
-        Select-Object -First 1
+    $matchingRows = @(
+        Import-Csv $jacoco |
+            Where-Object { $_.CLASS -eq $ClassName }
+    )
 
-    if (-not $row) {
+    if ($matchingRows.Count -eq 0) {
         throw "Class '$ClassName' not found in JaCoCo report."
+    }
+
+    if ($matchingRows.Count -eq 1) {
+        $row = $matchingRows[0]
+    } else {
+        # Falls derselbe Klassenname in mehreren Packages vorkommt, das Package
+        # aus der Java-Quelldatei ableiten und damit den JaCoCo-Eintrag eindeutig machen.
+        $sourceFiles = @(
+            Get-ChildItem -Path (Join-Path $repo 'src\main\java') -Recurse -Filter "$ClassName.java" -File -ErrorAction SilentlyContinue
+        )
+
+        if ($sourceFiles.Count -ne 1) {
+            $packages = ($matchingRows | ForEach-Object { $_.PACKAGE }) -join ', '
+            throw "Class '$ClassName' is ambiguous in JaCoCo report (packages: $packages) and could not be uniquely resolved from src/main/java."
+        }
+
+        $packageMatch = Select-String -LiteralPath $sourceFiles[0].FullName -Pattern '^\s*package\s+([A-Za-z0-9_.]+)\s*;' | Select-Object -First 1
+
+        if (-not $packageMatch) {
+            throw "Could not determine package for '$($sourceFiles[0].FullName)'."
+        }
+
+        $packageName = $packageMatch.Matches[0].Groups[1].Value
+        $row = $matchingRows |
+            Where-Object {
+                ($_.PACKAGE -replace '/', '.') -eq $packageName
+            } |
+            Select-Object -First 1
+
+        if (-not $row) {
+            throw "Class '$ClassName' was found multiple times, but no JaCoCo entry matched package '$packageName'."
+        }
     }
 
     $lineMissed = [int]$row.LINE_MISSED
@@ -194,6 +227,16 @@ if ($state.owner -ne 'opencode-ai-benchmark-v1') {
     throw 'Invalid benchmark state file.'
 }
 
+$branch = (& git branch --show-current).Trim()
+
+if (-not $branch.StartsWith('feature/', [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Benchmark Finish must run on a feature/* branch. Current branch: $branch"
+}
+
+if (& git status --porcelain) {
+    throw 'Benchmark Finish requires a clean working tree. Commit all benchmark changes before finishing.'
+}
+
 # Ende der eigentlichen Agentenarbeit erfassen,
 # bevor der abschließende Benchmark-Build gestartet wird.
 $end = [DateTimeOffset]::Now
@@ -204,7 +247,6 @@ Write-Host 'Creating fresh final report...'
 Invoke-FreshReports
 
 $after = Get-Metrics $state.targetClass
-$branch = (& git branch --show-current).Trim()
 $endCommit = (& git rev-parse HEAD).Trim()
 
 $changedFiles = @(

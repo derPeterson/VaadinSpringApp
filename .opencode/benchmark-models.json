@@ -1,0 +1,141 @@
+﻿{
+  "models": [
+    {
+      "command": "gpt53-codex-spark",
+      "name": "GPT-5.3 Codex Spark",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt55",
+      "name": "GPT-5.5",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt55-fast",
+      "name": "GPT-5.5 Fast",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt56-luna",
+      "name": "GPT-5.6 Luna",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt56-luna-fast",
+      "name": "GPT-5.6 Luna Fast",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt56-sol",
+      "name": "GPT-5.6 Sol",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt56-sol-fast",
+      "name": "GPT-5.6 Sol Fast",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt56-terra",
+      "name": "GPT-5.6 Terra",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt56-terra-fast",
+      "name": "GPT-5.6 Terra Fast",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt6-astra",
+      "name": "GPT-6 Astra",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt6-astra-fast",
+      "name": "GPT-6 Astra Fast",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt6-astra-ultrafast",
+      "name": "GPT-6 Astra Ultrafast",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt6-luna",
+      "name": "GPT-6 Luna",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt6-luna-fast",
+      "name": "GPT-6 Luna Fast",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt6-sol",
+      "name": "GPT-6 Sol",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt6-sol-fast",
+      "name": "GPT-6 Sol Fast",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt61-sol",
+      "name": "GPT-6.1 Sol",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+    {
+      "command": "gpt61-sol-fast",
+      "name": "GPT-6.1 Sol Fast",
+      "provider": "OpenAI / ChatGPT",
+      "mode": "selected"
+    },
+
+    {
+      "command": "qwen-q3-tools",
+      "name": "Qwen3-Coder Q3 Tools",
+      "provider": "Ollama lokal",
+      "mode": "forced",
+      "model": "ollama-test/qwen3-coder-q3-tools:latest"
+    },
+    {
+      "command": "qwen30b",
+      "name": "Qwen3-Coder 30B",
+      "provider": "Ollama lokal",
+      "mode": "forced",
+      "model": "ollama-test/qwen3-coder:30b"
+    },
+    {
+      "command": "devstral24b",
+      "name": "Devstral Small 2 24B",
+      "provider": "Ollama lokal",
+      "mode": "forced",
+      "model": "ollama-test/devstral-small-2:24b"
+    },
+    {
+      "command": "qwen38",
+      "name": "Qwen3.8 27B",
+      "provider": "Ollama lokal",
+      "mode": "forced",
+      "model": "ollama-test/qwen3.8:27b"
+    }
+  ]
+}
