@@ -93,6 +93,12 @@ Do not change the benchmark infrastructure as part of the feature task.
 
 Track `Korrekturrunden` exactly as defined in `feature.md`.
 
+If the task asks for findings, observations or improvement notes, write them
+to `GPT-AUFFAELLIGKEITEN.md`. Keep that file UNTRACKED. Never add or commit
+`GPT-AUFFAELLIGKEITEN.md`. It is a benchmark run artifact, not repository
+content. The Finish step archives it automatically as `findings.md` and removes
+it from the working tree. Do not delete it yourself before Finish.
+
 `HumanInterventions` starts at 0.
 
 A failed build or test that the model diagnoses and fixes itself is NOT a
@@ -107,7 +113,8 @@ Before finishing the benchmark verify:
 
 - current branch is exactly `feature/<branchName>`
 - the feature task has been committed
-- working tree is completely clean
+- all repository changes are committed
+- the only allowed remaining working-tree entry is an untracked `GPT-AUFFAELLIGKEITEN.md`
 - all final checks required by `feature.md` succeeded
 
 If the feature workflow failed, do not claim benchmark success and do not
@@ -143,7 +150,10 @@ Report briefly in German:
 - Korrekturrunden
 - HumanInterventions
 - CSV path
-- detailed benchmark report path
+- benchmark run folder path
+- report path
+- findings path
+- diff patch path
 
 Never invent benchmark values. Mark unavailable values as unavailable.
 

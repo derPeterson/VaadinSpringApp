@@ -27,10 +27,10 @@ $benchmarkRoot = 'C:\Dev\AI-Benchmarks'
 $store = Join-Path $benchmarkRoot $projectName
 
 $stateDir = Join-Path $store 'state'
-$runDir = Join-Path $store 'runs'
+$runsDir = Join-Path $store 'runs'
 $resultsFile = Join-Path $store 'results.csv'
 
-New-Item -ItemType Directory -Force -Path $stateDir, $runDir | Out-Null
+New-Item -ItemType Directory -Force -Path $stateDir, $runsDir | Out-Null
 Set-Location $repo
 
 function Invoke-FreshReports {
@@ -233,8 +233,23 @@ if (-not $branch.StartsWith('feature/', [StringComparison]::OrdinalIgnoreCase)) 
     throw "Benchmark Finish must run on a feature/* branch. Current branch: $branch"
 }
 
-if (& git status --porcelain) {
-    throw 'Benchmark Finish requires a clean working tree. Commit all benchmark changes before finishing.'
+# GPT-AUFFAELLIGKEITEN.md ist ein bewusstes Run-Artefakt und darf nicht committed werden.
+# Finish akzeptiert genau diese Datei als untracked; alle anderen Aenderungen bleiben verboten.
+$findingsSource = Join-Path $repo 'GPT-AUFFAELLIGKEITEN.md'
+$statusLines = @(& git status --porcelain) | Where-Object { $_ }
+$unexpectedStatus = @(
+    $statusLines | Where-Object {
+        $_ -ne '?? GPT-AUFFAELLIGKEITEN.md'
+    }
+)
+
+if ($unexpectedStatus.Count -gt 0) {
+    throw "Benchmark Finish requires a clean working tree except for an untracked GPT-AUFFAELLIGKEITEN.md. Unexpected status: $($unexpectedStatus -join '; ')"
+}
+
+$findingsTracked = (& git ls-files --error-unmatch -- 'GPT-AUFFAELLIGKEITEN.md' 2>$null)
+if ($LASTEXITCODE -eq 0 -and $findingsTracked) {
+    throw 'GPT-AUFFAELLIGKEITEN.md must not be tracked or committed. Keep it untracked so Finish can archive it as findings.md.'
 }
 
 # Ende der eigentlichen Agentenarbeit erfassen,
@@ -333,20 +348,39 @@ foreach ($property in $result.PSObject.Properties) {
 
 $csvResult = [PSCustomObject]$csvValues
 
-if (Test-Path $resultsFile) {
-    $csvResult |
-        Export-Csv -LiteralPath $resultsFile -NoTypeInformation -Append -Encoding UTF8
-} else {
-    $csvResult |
-        Export-Csv -LiteralPath $resultsFile -NoTypeInformation -Encoding UTF8
-}
-
 $safeModel = $state.model -replace '[^A-Za-z0-9._-]', '_'
 $safeClass = $state.targetClass -replace '[^A-Za-z0-9._-]', '_'
 
-$runFile = Join-Path $runDir (
-    "$($end.ToString('yyyy-MM-dd_HHmmss'))_${safeClass}_${safeModel}.md"
+$runFolder = Join-Path $runsDir (
+    "$($end.ToString('yyyy-MM-dd_HHmmss'))_${safeClass}_${safeModel}"
 )
+New-Item -ItemType Directory -Force -Path $runFolder | Out-Null
+
+$reportFile = Join-Path $runFolder 'report.md'
+$findingsFile = Join-Path $runFolder 'findings.md'
+$diffFile = Join-Path $runFolder 'diff.patch'
+
+# Findings als Run-Artefakt archivieren und danach aus dem Repository entfernen.
+# Fehlt die Datei, bleibt trotzdem fuer jeden Run ein eindeutiges findings.md erhalten.
+if (Test-Path -LiteralPath $findingsSource -PathType Leaf) {
+    Copy-Item -LiteralPath $findingsSource -Destination $findingsFile
+    Remove-Item -LiteralPath $findingsSource
+} else {
+    @"
+# Findings
+
+Fuer diesen Benchmark-Lauf wurde keine `GPT-AUFFAELLIGKEITEN.md` erzeugt.
+"@ | Set-Content -LiteralPath $findingsFile -Encoding UTF8
+}
+
+if (& git status --porcelain) {
+    throw 'Working tree is not clean after archiving GPT-AUFFAELLIGKEITEN.md.'
+}
+
+# Vollstaendigen Commit-Diff des Runs als reproduzierbares Patch-Artefakt sichern.
+$diffLines = @(& git diff --binary --full-index "$($state.startCommit)..$endCommit")
+$diffText = if ($diffLines.Count -gt 0) { ($diffLines -join "`n") + "`n" } else { '' }
+[IO.File]::WriteAllText($diffFile, $diffText, [Text.UTF8Encoding]::new($false))
 
 $report = @"
 # AI Coding Benchmark
@@ -358,6 +392,7 @@ $($state.task)
 ## Umgebung
 
 - Projekt: $projectName
+- Benchmark-ID: $Id
 - Modell: $($state.model)
 - Provider: $($state.provider)
 - Zielklasse: $($state.targetClass)
@@ -399,10 +434,24 @@ $($state.task)
 ### Geänderte Dateien
 
 $($changedFiles -join "`n")
+
+## Run-Artefakte
+
+- Findings: `findings.md`
+- Diff: `diff.patch`
 "@
 
 $report |
-    Set-Content -LiteralPath $runFile -Encoding UTF8
+    Set-Content -LiteralPath $reportFile -Encoding UTF8
+
+# results.csv erst aktualisieren, wenn alle Run-Artefakte erfolgreich geschrieben wurden.
+if (Test-Path $resultsFile) {
+    $csvResult |
+        Export-Csv -LiteralPath $resultsFile -NoTypeInformation -Append -Encoding UTF8
+} else {
+    $csvResult |
+        Export-Csv -LiteralPath $resultsFile -NoTypeInformation -Encoding UTF8
+}
 
 Remove-Item -LiteralPath $statePath
 
@@ -417,4 +466,7 @@ Write-Host "Failures:         $($after.failures)"
 Write-Host "Errors:           $($after.errors)"
 Write-Host ''
 Write-Host "CSV:              $resultsFile"
-Write-Host "Report:           $runFile"
+Write-Host "Run-Ordner:       $runFolder"
+Write-Host "Report:           $reportFile"
+Write-Host "Findings:         $findingsFile"
+Write-Host "Diff:             $diffFile"
