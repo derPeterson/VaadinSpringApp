@@ -53,7 +53,10 @@ public class UserService {
 
         userRepository.save(userEntity);
 
-        userStatusBroadcaster.broadcast(new UserStatusBroadcaster.UserStatusMessage(userEntity.getId(), oldStatus.name(), newStatus.name()));
+        UserStatus resultingStatus = userEntity.getStatus();
+        if (oldStatus != resultingStatus) {
+            userStatusBroadcaster.broadcast(new UserStatusBroadcaster.UserStatusMessage(userEntity.getId(), oldStatus.name(), resultingStatus.name()));
+        }
     }
 
     public List<UserEntity> findAllUsers() {

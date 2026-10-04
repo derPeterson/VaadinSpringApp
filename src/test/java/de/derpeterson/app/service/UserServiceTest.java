@@ -322,8 +322,7 @@ class UserServiceTest {
 
         @ParameterizedTest
         @EnumSource(value = UserStatus.class, names = {"EMPLOYED", "OFFLINE"})
-        void protectedManualStatusIsRetainedButCurrentlyBroadcastsRequestedStatus(UserStatus previousStatus) {
-            // Characterizes the event mismatch documented in GPT-AUFFAELLIGKEITEN.md.
+        void protectedManualStatusIsRetainedWithoutBroadcastingARejectedChange(UserStatus previousStatus) {
             UserEntity user = user(1L, true);
             user.setManualStatus(previousStatus);
 
@@ -332,7 +331,43 @@ class UserServiceTest {
             assertEquals(previousStatus, user.getStatus());
             assertTrue(user.isStatusManuallySet());
             verify(userRepository).save(same(user));
-            verify(userStatusBroadcaster).broadcast(message(user, previousStatus, UserStatus.ABSENT));
+            verifyNoInteractions(userStatusBroadcaster);
+        }
+
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        void sameStatusRequestPersistsTheManualFlagWithoutBroadcasting(boolean manualChange) {
+            UserEntity user = user(1L, true);
+            user.setStatus(UserStatus.AVAILABLE);
+            user.setStatusManuallySet(!manualChange);
+            doAnswer(invocation -> {
+                assertEquals(UserStatus.AVAILABLE, user.getStatus());
+                assertEquals(manualChange, user.isStatusManuallySet());
+                return user;
+            }).when(userRepository).save(user);
+
+            userService.updateUserStatus(user, UserStatus.AVAILABLE, manualChange);
+
+            assertEquals(UserStatus.AVAILABLE, user.getStatus());
+            assertEquals(manualChange, user.isStatusManuallySet());
+            verify(userRepository).save(same(user));
+            verifyNoInteractions(userStatusBroadcaster);
+        }
+
+        @ParameterizedTest
+        @EnumSource(value = UserStatus.class, names = {"EMPLOYED", "OFFLINE"})
+        void rejectedAutomaticChangeStillPropagatesPersistenceFailure(UserStatus previousStatus) {
+            UserEntity user = user(1L, true);
+            user.setManualStatus(previousStatus);
+            var failure = repositoryFailure();
+            when(userRepository.save(user)).thenThrow(failure);
+
+            assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
+                    () -> userService.updateUserStatus(user, UserStatus.ABSENT, false)));
+            assertEquals(previousStatus, user.getStatus());
+            assertTrue(user.isStatusManuallySet());
+            verify(userRepository).save(same(user));
+            verifyNoInteractions(userStatusBroadcaster);
         }
 
         @Test
@@ -348,14 +383,15 @@ class UserServiceTest {
             verify(userStatusBroadcaster).broadcast(message(user, UserStatus.EMPLOYED, UserStatus.AVAILABLE));
         }
 
-        @Test
-        void doesNotBroadcastWhenSavingFails() {
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        void doesNotBroadcastWhenSavingFails(boolean manualChange) {
             UserEntity user = user(1L, true);
             var failure = repositoryFailure();
             when(userRepository.save(user)).thenThrow(failure);
 
             assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
-                    () -> userService.updateUserStatus(user, UserStatus.AVAILABLE, true)));
+                    () -> userService.updateUserStatus(user, UserStatus.AVAILABLE, manualChange)));
             verifyNoInteractions(userStatusBroadcaster);
         }
 
