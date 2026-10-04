@@ -154,6 +154,184 @@ class UserServiceTest {
     }
 
     @Nested
+    class MutationAdminProtection {
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        void nullSaveStillRaisesAnArgumentError(boolean useSaveUser) {
+            assertThrows(IllegalArgumentException.class, () -> save(null, useSaveUser));
+            verifyNoInteractions(userRepository);
+        }
+
+        @Test
+        void nullDeleteStillRaisesAnArgumentError() {
+            assertThrows(IllegalArgumentException.class, () -> userService.deleteUser(null));
+            verifyNoInteractions(userRepository);
+        }
+
+        @Test
+        void deletionRejectsTheLastStoredAdminEvenIfTheSuppliedUserLooksOrdinary() {
+            UserEntity staleUser = user(1000L, false, RoleType.ROLE_USER);
+            when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1000L));
+
+            assertThrows(IllegalStateException.class, () -> userService.deleteUser(staleUser));
+
+            verify(userRepository, never()).delete(any());
+            verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
+        }
+
+        @Test
+        void deletionRejectsTheLastEnabledAdminWithoutAPreliminaryUiCheck() {
+            when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1L));
+
+            assertThrows(IllegalStateException.class,
+                    () -> userService.deleteUser(user(1L, true, RoleType.ROLE_ADMIN)));
+
+            verify(userRepository, never()).delete(any());
+        }
+
+        @Test
+        void deletionAllowsAnAdminIfAnotherEnabledAdminRemains() {
+            UserEntity admin = user(1L, true, RoleType.ROLE_ADMIN);
+            when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1L, 2L));
+
+            userService.deleteUser(admin);
+
+            var order = inOrder(userRepository);
+            order.verify(userRepository).findEnabledUserIdsByRole(RoleType.ROLE_ADMIN);
+            order.verify(userRepository).delete(same(admin));
+        }
+
+        @Test
+        void deletionAllowsADisabledAdminWhenTheStoredEnabledAdminIsSomeoneElse() {
+            UserEntity disabledAdmin = user(1L, false, RoleType.ROLE_ADMIN);
+            when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(2L));
+
+            userService.deleteUser(disabledAdmin);
+
+            verify(userRepository).delete(same(disabledAdmin));
+        }
+
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        void bothSaveMethodsRejectDisablingTheLastStoredAdmin(boolean useSaveUser) {
+            UserEntity edited = user(1L, false, RoleType.ROLE_ADMIN);
+            when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1L));
+
+            assertThrows(IllegalStateException.class, () -> save(edited, useSaveUser));
+
+            verify(userRepository, never()).save(any());
+        }
+
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        void bothSaveMethodsRejectRemovingTheLastAdminsRole(boolean useSaveUser) {
+            UserEntity edited = user(1L, true, RoleType.ROLE_USER);
+            when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1L));
+
+            assertThrows(IllegalStateException.class, () -> save(edited, useSaveUser));
+
+            verify(userRepository, never()).save(any());
+        }
+
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        void bothSaveMethodsAllowDisablingWhenAnotherAdminRemains(boolean useSaveUser) {
+            UserEntity edited = user(1L, false, RoleType.ROLE_ADMIN);
+            when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1L, 2L));
+
+            save(edited, useSaveUser);
+
+            verify(userRepository).save(same(edited));
+        }
+
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        void bothSaveMethodsAllowRoleRemovalWhenAnotherAdminRemains(boolean useSaveUser) {
+            UserEntity edited = user(1L, true, RoleType.ROLE_USER);
+            when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1L, 2L));
+
+            save(edited, useSaveUser);
+
+            verify(userRepository).save(same(edited));
+        }
+
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        void bothSaveMethodsAllowUnchangedAdminPrivileges(boolean useSaveUser) {
+            UserEntity admin = user(1L, true, RoleType.ROLE_ADMIN);
+
+            save(admin, useSaveUser);
+
+            verify(userRepository).save(same(admin));
+            verify(userRepository, never()).findEnabledUserIdsByRole(any());
+        }
+
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        void registrationStillWorksBeforeTheFirstAdminIsCreated(boolean useSaveUser) {
+            UserEntity newUser = user(null, false, RoleType.ROLE_USER);
+
+            save(newUser, useSaveUser);
+
+            verify(userRepository).save(same(newUser));
+            verify(userRepository, never()).findEnabledUserIdsByRole(any());
+        }
+
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        void ordinaryAccountUpdatesDoNotDependOnBeingAnAdmin(boolean useSaveUser) {
+            UserEntity ordinary = user(1L, true, RoleType.ROLE_USER);
+            when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(2L));
+
+            save(ordinary, useSaveUser);
+
+            verify(userRepository).save(same(ordinary));
+        }
+
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        void failedAdminLookupPreventsSavingAndPropagatesTheOriginalException(boolean useSaveUser) {
+            var failure = repositoryFailure();
+            when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenThrow(failure);
+
+            assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
+                    () -> save(user(1L, false, RoleType.ROLE_ADMIN), useSaveUser)));
+
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        void failedAdminLookupPreventsDeletingAndPropagatesTheOriginalException() {
+            var failure = repositoryFailure();
+            when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenThrow(failure);
+
+            assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
+                    () -> userService.deleteUser(user(1L, true, RoleType.ROLE_ADMIN))));
+
+            verify(userRepository, never()).delete(any());
+        }
+
+        @Test
+        void statusUpdateCannotSaveAnAlreadyDemotedLastAdmin() {
+            when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1L));
+
+            assertThrows(IllegalStateException.class,
+                    () -> userService.updateUserStatus(user(1L, false, RoleType.ROLE_ADMIN), UserStatus.AVAILABLE, true));
+
+            verify(userRepository, never()).save(any());
+            verifyNoInteractions(userStatusBroadcaster);
+        }
+
+        private void save(UserEntity user, boolean useSaveUser) {
+            if (useSaveUser) {
+                userService.saveUser(user);
+            } else {
+                userService.save(user);
+            }
+        }
+    }
+
+    @Nested
     class LocaleUpdates {
         @Test
         void savesAnExistingUsersNewLocale() {
