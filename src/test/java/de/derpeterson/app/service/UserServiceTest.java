@@ -3,32 +3,38 @@ package de.derpeterson.app.service;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/** Unit tests use real entities and mocked boundaries; no Spring context or database. */
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
-
     @Mock
     private UserStatusBroadcaster userStatusBroadcaster;
-
     @Mock
     private PasswordEncoder passwordEncoder;
 
@@ -39,568 +45,560 @@ class UserServiceTest {
         userService = new UserService(userRepository, userStatusBroadcaster, passwordEncoder);
     }
 
-    @Test
-    void testEmailExistsForOtherUser_NullEmail() {
-        boolean result = userService.emailExistsForOtherUser(null, 1L);
-        assertFalse(result);
+    @Nested
+    class Persistence {
+        @ParameterizedTest(name = "saveUser alias: {0}")
+        @ValueSource(booleans = {true, false})
+        void bothSaveMethodsPersistTheSuppliedUser(boolean useSaveUser) {
+            UserEntity user = user(1L, true, RoleType.ROLE_USER);
+
+            save(user, useSaveUser);
+
+            verify(userRepository).save(same(user));
+            verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
+        }
+
+        @ParameterizedTest(name = "saveUser alias: {0}")
+        @ValueSource(booleans = {true, false})
+        void bothSaveMethodsPropagatePersistenceFailures(boolean useSaveUser) {
+            UserEntity user = user(1L, true);
+            var failure = repositoryFailure();
+            when(userRepository.save(user)).thenThrow(failure);
+
+            assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
+                    () -> save(user, useSaveUser)));
+            verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
+        }
+
+        private void save(UserEntity user, boolean useSaveUser) {
+            if (useSaveUser) {
+                userService.saveUser(user);
+            } else {
+                userService.save(user);
+            }
+        }
+
+        @Test
+        void findsAnExistingUserUsingTheSuppliedEmail() {
+            UserEntity user = user(1L, true);
+            String email = " MixedCase@example.com ";
+            when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+
+            assertSame(user, userService.findByEmail(email).orElseThrow());
+            verify(userRepository).findByEmail(email);
+            verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
+        }
+
+        @Test
+        void returnsEmptyWhenEmailIsUnknown() {
+            when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+
+            assertTrue(userService.findByEmail("missing@example.com").isEmpty());
+        }
+
+        @Test
+        void propagatesEmailLookupFailure() {
+            var failure = repositoryFailure();
+            when(userRepository.findByEmail("test@example.com")).thenThrow(failure);
+
+            assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
+                    () -> userService.findByEmail("test@example.com")));
+        }
+
+        @Test
+        void returnsAllUsersInRepositoryOrder() {
+            List<UserEntity> users = List.of(user(2L, false), user(1L, true));
+            when(userRepository.findAll()).thenReturn(users);
+
+            assertEquals(users, userService.findAllUsers());
+            verify(userRepository).findAll();
+            verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
+        }
+
+        @Test
+        void returnsAnEmptyListWhenThereAreNoUsers() {
+            when(userRepository.findAll()).thenReturn(List.of());
+
+            assertTrue(userService.findAllUsers().isEmpty());
+        }
+
+        @Test
+        void propagatesListingFailure() {
+            var failure = repositoryFailure();
+            when(userRepository.findAll()).thenThrow(failure);
+
+            assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
+                    userService::findAllUsers));
+        }
+
+        @Test
+        void deletesTheSuppliedUser() {
+            UserEntity user = user(1L, true, RoleType.ROLE_USER);
+
+            userService.deleteUser(user);
+
+            verify(userRepository).delete(same(user));
+            verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
+        }
+
+        @Test
+        void propagatesDeletionFailure() {
+            UserEntity user = user(1L, true);
+            var failure = repositoryFailure();
+            doThrow(failure).when(userRepository).delete(user);
+
+            assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
+                    () -> userService.deleteUser(user)));
+            verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
+        }
     }
 
-    @Test
-    void testEmailExistsForOtherUser_EmptyEmail() {
-        boolean result = userService.emailExistsForOtherUser("", 1L);
-        assertFalse(result);
+    @Nested
+    class LocaleUpdates {
+        @Test
+        void savesAnExistingUsersNewLocale() {
+            UserEntity user = user(1L, true);
+            user.setPreferredLocale(Locale.ENGLISH);
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+
+            userService.updateUserLocale(user.getEmail(), Locale.FRENCH);
+
+            assertEquals(Locale.FRENCH, user.getPreferredLocale());
+            verify(userRepository).save(same(user));
+            verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
+        }
+
+        @Test
+        void doesNotSaveWhenTheUserIsMissing() {
+            when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+
+            userService.updateUserLocale("missing@example.com", Locale.GERMAN);
+
+            verify(userRepository, never()).save(any());
+            verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
+        }
+
+        @Test
+        void currentlyPassesNullLocaleThroughToPersistence() {
+            // Characterization, not a recommendation: the entity column is non-nullable.
+            UserEntity user = user(1L, true);
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+
+            userService.updateUserLocale(user.getEmail(), null);
+
+            assertNull(user.getPreferredLocale());
+            verify(userRepository).save(same(user));
+        }
+
+        @Test
+        void acceptsTheRootLocale() {
+            UserEntity user = user(1L, true);
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+
+            userService.updateUserLocale(user.getEmail(), Locale.ROOT);
+
+            assertEquals(Locale.ROOT, user.getPreferredLocale());
+            verify(userRepository).save(same(user));
+        }
+
+        @Test
+        void doesNotSaveWhenLocaleLookupFails() {
+            var failure = repositoryFailure();
+            when(userRepository.findByEmail("test@example.com")).thenThrow(failure);
+
+            assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
+                    () -> userService.updateUserLocale("test@example.com", Locale.GERMAN)));
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        void propagatesLocalePersistenceFailure() {
+            UserEntity user = user(1L, true);
+            var failure = repositoryFailure();
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+            when(userRepository.save(user)).thenThrow(failure);
+
+            assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
+                    () -> userService.updateUserLocale(user.getEmail(), Locale.GERMAN)));
+        }
     }
 
-    @Test
-    void testEmailExistsForOtherUser_WhitespaceOnlyEmail() {
-        boolean result = userService.emailExistsForOtherUser("   ", 1L);
-        assertFalse(result);
-    }
+    @Nested
+    class PasswordUpdates {
+        @ParameterizedTest
+        @ValueSource(strings = {"newRawPassword", "", "  password with spaces  "})
+        void encodesTheUnmodifiedInputWithoutSavingTheUser(String rawPassword) {
+            UserEntity user = user(1L, true);
+            user.setPassword("old-hash");
+            when(passwordEncoder.encode(rawPassword)).thenReturn("new-hash");
 
-    @Test
-    void testEmailExistsForOtherUser_NoMatchingUser() {
-        when(userRepository.findAll()).thenReturn(Collections.emptyList());
-        boolean result = userService.emailExistsForOtherUser("test@example.com", 1L);
-        assertFalse(result);
-    }
-
-    @Test
-    void testEmailExistsForOtherUser_AnotherUserWithMatchingEmail() {
-        UserEntity user1 = UserEntity.builder()
-                .id(1L)
-                .email("test@example.com")
-                .build();
-
-        UserEntity user2 = UserEntity.builder()
-                .id(2L)
-                .email("other@example.com")
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Arrays.asList(user1, user2));
-        boolean result = userService.emailExistsForOtherUser("other@example.com", 1L);
-        assertTrue(result);
-    }
-
-    @Test
-    void testEmailExistsForOtherUser_CaseDifference() {
-        UserEntity user1 = UserEntity.builder()
-                .id(1L)
-                .email("TEST@EXAMPLE.COM")
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
-        boolean result = userService.emailExistsForOtherUser("test@example.com", 2L);
-        assertTrue(result);
-    }
-
-    @Test
-    void testEmailExistsForOtherUser_WithOuterWhitespace() {
-        UserEntity user1 = UserEntity.builder()
-                .id(1L)
-                .email("   TEST@EXAMPLE.COM   ")
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
-        boolean result = userService.emailExistsForOtherUser("test@example.com", 2L);
-        assertTrue(result);
-    }
-
-    @Test
-    void testEmailExistsForOtherUser_MatchBelongsToCurrent() {
-        UserEntity user1 = UserEntity.builder()
-                .id(1L)
-                .email("test@example.com")
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
-        boolean result = userService.emailExistsForOtherUser("test@example.com", 1L);
-        assertFalse(result);
-    }
-
-    @Test
-    void testEmailExistsForOtherUser_NullCurrentUserId() {
-        UserEntity user1 = UserEntity.builder()
-                .id(1L)
-                .email("test@example.com")
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
-        boolean result = userService.emailExistsForOtherUser("test@example.com", null);
-        assertTrue(result);
-    }
-
-    @Test
-    void testEmailExistsForOtherUser_UsersWithNullEmail() {
-        UserEntity user1 = UserEntity.builder()
-                .id(1L)
-                .email(null)
-                .build();
-
-        UserEntity user2 = UserEntity.builder()
-                .id(2L)
-                .email("test@example.com")
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Arrays.asList(user1, user2));
-        boolean result = userService.emailExistsForOtherUser("test@example.com", 1L);
-        assertTrue(result);
-    }
-
-    @Test
-    void testEmailExistsForOtherUser_ListWithCurrentAndAnotherUser() {
-        UserEntity currentUser = UserEntity.builder()
-                .id(1L)
-                .email("test@example.com")
-                .build();
-
-        UserEntity matchingUser = UserEntity.builder()
-                .id(2L)
-                .email("test@example.com")
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Arrays.asList(currentUser, matchingUser));
-        boolean result = userService.emailExistsForOtherUser("test@example.com", 1L);
-        assertTrue(result);
-    }
-
-    @Test
-    void testEmailExistsForOtherUser_WithOuterWhitespaceDirect() {
-        UserEntity user1 = UserEntity.builder()
-                .id(1L)
-                .email("test@example.com")
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
-        boolean result = userService.emailExistsForOtherUser("  TEST@EXAMPLE.COM  ", 2L);
-        assertTrue(result);
-    }
-
-    @Test
-    void testCanDeleteUser_NullUser() {
-        boolean result = userService.canDeleteUser(null);
-        assertFalse(result);
-    }
-
-    @Test
-    void testCanDeleteUser_OrdinaryEnabledUser() {
-        UserEntity user = UserEntity.builder()
-                .id(1L)
-                .enabled(true)
-                .roleEntities(Collections.emptyList())
-                .build();
-
-        boolean result = userService.canDeleteUser(user);
-        assertTrue(result);
-    }
-
-    @Test
-    void testCanDeleteUser_DisabledAdmin() {
-        RoleEntity adminRole = RoleEntity.builder()
-                .id(1L)
-                .name(RoleType.ROLE_ADMIN)
-                .build();
-
-        UserEntity user = UserEntity.builder()
-                .id(1L)
-                .enabled(false)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        boolean result = userService.canDeleteUser(user);
-        assertTrue(result);
-    }
-
-    @Test
-    void testCanDeleteUser_TheOnlyEnabledAdmin() {
-        RoleEntity adminRole = RoleEntity.builder()
-                .id(1L)
-                .name(RoleType.ROLE_ADMIN)
-                .build();
-
-        UserEntity user = UserEntity.builder()
-                .id(1L)
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        boolean result = userService.canDeleteUser(user);
-        assertFalse(result);
-    }
-
-    @Test
-    void testCanDeleteUser_EnabledAdminWithAnotherEnabledAdmin() {
-        RoleEntity adminRole = RoleEntity.builder()
-                .id(1L)
-                .name(RoleType.ROLE_ADMIN)
-                .build();
-
-        UserEntity user1 = UserEntity.builder()
-                .id(1L)
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        UserEntity user2 = UserEntity.builder()
-                .id(2L)
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Arrays.asList(user1, user2));
-        boolean result = userService.canDeleteUser(user1);
-        assertTrue(result);
-    }
-
-    @Test
-    void testWouldRemoveLastEnabledAdmin_OnlyEditedUserAsEnabledAdmin() {
-        RoleEntity adminRole = RoleEntity.builder()
-                .id(1L)
-                .name(RoleType.ROLE_ADMIN)
-                .build();
-
-        UserEntity user1 = UserEntity.builder()
-                .id(1L)
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
-        boolean result = userService.wouldRemoveLastEnabledAdmin(1L, false, Collections.singletonList(adminRole));
-        assertTrue(result);
-    }
-
-    @Test
-    void testWouldRemoveLastEnabledAdmin_OnlyEditedUserAsEnabledAdminRemovesRole() {
-        RoleEntity adminRole = RoleEntity.builder()
-                .id(1L)
-                .name(RoleType.ROLE_ADMIN)
-                .build();
-
-        UserEntity user1 = UserEntity.builder()
-                .id(1L)
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
-        boolean result = userService.wouldRemoveLastEnabledAdmin(1L, true, Collections.emptyList());
-        assertTrue(result);
-    }
-
-    @Test
-    void testWouldRemoveLastEnabledAdmin_OnlyEditedUserNullAndEmptyRoles() {
-        RoleEntity adminRole = RoleEntity.builder()
-                .id(1L)
-                .name(RoleType.ROLE_ADMIN)
-                .build();
-
-        UserEntity user1 = UserEntity.builder()
-                .id(1L)
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Collections.singletonList(user1));
-        boolean result = userService.wouldRemoveLastEnabledAdmin(1L, true, null);
-        assertTrue(result);
-
-        result = userService.wouldRemoveLastEnabledAdmin(1L, true, Collections.emptyList());
-        assertTrue(result);
-    }
-
-    @Test
-    void testWouldRemoveLastEnabledAdmin_AnotherEnabledAdminRemainsAfterRoleRemoval() {
-        RoleEntity adminRole = RoleEntity.builder()
-                .id(1L)
-                .name(RoleType.ROLE_ADMIN)
-                .build();
-
-        UserEntity user1 = UserEntity.builder()
-                .id(1L)
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        UserEntity user2 = UserEntity.builder()
-                .id(2L)
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Arrays.asList(user1, user2));
-        boolean result = userService.wouldRemoveLastEnabledAdmin(2L, true, Collections.emptyList());
-        assertFalse(result);
-    }
-
-    @Test
-    void testWouldRemoveLastEnabledAdmin_OrdinaryAndDisabledAdminsNotCounted() {
-        RoleEntity adminRole = RoleEntity.builder()
-                .id(1L)
-                .name(RoleType.ROLE_ADMIN)
-                .build();
-
-        UserEntity enabledAdmin = UserEntity.builder()
-                .id(1L)
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        UserEntity ordinaryUser = UserEntity.builder()
-                .id(2L)
-                .enabled(true)
-                .roleEntities(Collections.emptyList())
-                .build();
-
-        UserEntity disabledAdmin = UserEntity.builder()
-                .id(3L)
-                .enabled(false)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Arrays.asList(enabledAdmin, ordinaryUser, disabledAdmin));
-        boolean result = userService.wouldRemoveLastEnabledAdmin(1L, false, Collections.singletonList(adminRole));
-        assertTrue(result);
-    }
-
-    @Test
-    void testWouldRemoveLastEnabledAdmin_NoRepositoryStubbingNeeded() {
-        RoleEntity adminRole = RoleEntity.builder()
-                .id(1L)
-                .name(RoleType.ROLE_ADMIN)
-                .build();
-
-        boolean result = userService.wouldRemoveLastEnabledAdmin(1L, true, Collections.singletonList(adminRole));
-        assertFalse(result);
-    }
-
-    @Test
-    void testWouldRemoveLastEnabledAdmin_AnotherEnabledAdminRemainsAfterDisabling() {
-        RoleEntity adminRole = RoleEntity.builder()
-                .id(1L)
-                .name(RoleType.ROLE_ADMIN)
-                .build();
-
-        UserEntity user1 = UserEntity.builder()
-                .id(1L)
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        UserEntity user2 = UserEntity.builder()
-                .id(2L)
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Arrays.asList(user1, user2));
-        boolean result = userService.wouldRemoveLastEnabledAdmin(1L, false, Collections.singletonList(adminRole));
-        assertFalse(result);
-    }
-
-    @Test
-    void testCanDeleteUser_OnlyTargetEnabledAdmin() {
-        RoleEntity adminRole = RoleEntity.builder()
-                .id(1L)
-                .name(RoleType.ROLE_ADMIN)
-                .build();
-
-        UserEntity user = UserEntity.builder()
-                .id(1L)
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Collections.singletonList(user));
-        boolean result = userService.canDeleteUser(user);
-        assertFalse(result);
-    }
-
-    @Test
-    void testCanDeleteUser_OnlyTargetEnabledAdminWithOthersButNoOtherEnabledAdmins() {
-        RoleEntity adminRole = RoleEntity.builder()
-                .id(1L)
-                .name(RoleType.ROLE_ADMIN)
-                .build();
-
-        UserEntity enabledAdmin = UserEntity.builder()
-                .id(1L)
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        UserEntity ordinaryUser = UserEntity.builder()
-                .id(2L)
-                .enabled(true)
-                .roleEntities(Collections.emptyList())
-                .build();
-
-        UserEntity disabledAdmin = UserEntity.builder()
-                .id(3L)
-                .enabled(false)
-                .roleEntities(Collections.singletonList(adminRole))
-                .build();
-
-        when(userRepository.findAll()).thenReturn(Arrays.asList(enabledAdmin, ordinaryUser, disabledAdmin));
-        boolean result = userService.canDeleteUser(enabledAdmin);
-        assertFalse(result);
-    }
-
-    @Test
-    void testUpdateUserLocale_UserExists() {
-        RoleEntity adminRole = RoleEntity.builder()
-                .id(1L)
-                .name(RoleType.ROLE_ADMIN)
-                .build();
-
-        UserEntity user = UserEntity.builder()
-                .id(1L)
-                .email("test@example.com")
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .preferredLocale(Locale.ENGLISH)
-                .build();
-
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-
-        Locale newLocale = Locale.FRENCH;
-        userService.updateUserLocale("test@example.com", newLocale);
-
-        assertEquals(newLocale, user.getPreferredLocale());
-        verify(userRepository).save(user);
-    }
-
-    @Test
-    void testUpdateUserLocale_UserDoesNotExist() {
-        when(userRepository.findByEmail("nonexistent@example.com")).thenReturn(Optional.empty());
-
-        Locale newLocale = Locale.FRENCH;
-        userService.updateUserLocale("nonexistent@example.com", newLocale);
-
-        verify(userRepository, never()).save(any(UserEntity.class));
-    }
-
-    @Test
-    void testUpdateUserLocale_NullLocale() {
-        RoleEntity adminRole = RoleEntity.builder()
-                .id(1L)
-                .name(RoleType.ROLE_ADMIN)
-                .build();
-
-        UserEntity user = UserEntity.builder()
-                .id(1L)
-                .email("test@example.com")
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .preferredLocale(Locale.ENGLISH)
-                .build();
-
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-
-        userService.updateUserLocale("test@example.com", null);
-
-        assertNull(user.getPreferredLocale());
-        verify(userRepository).save(user);
-    }
-
-    @Test
-    void testUpdateUserLocale_BlankLocale() {
-        RoleEntity adminRole = RoleEntity.builder()
-                .id(1L)
-                .name(RoleType.ROLE_ADMIN)
-                .build();
-
-        UserEntity user = UserEntity.builder()
-                .id(1L)
-                .email("test@example.com")
-                .enabled(true)
-                .roleEntities(Collections.singletonList(adminRole))
-                .preferredLocale(Locale.ENGLISH)
-                .build();
-
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-
-        userService.updateUserLocale("test@example.com", Locale.forLanguageTag(""));
-
-        assertEquals(Locale.forLanguageTag(""), user.getPreferredLocale());
-        verify(userRepository).save(user);
-    }
-
-    @Test
-    void testUpdatePassword_UserExists() {
-        UserEntity user = UserEntity.builder()
-                .id(1L)
-                .email("test@example.com")
-                .password("rawPassword")
-                .build();
-
-        String rawPassword = "newRawPassword";
-        String encodedPassword = "encodedPassword";
-
-        when(passwordEncoder.encode(rawPassword)).thenReturn(encodedPassword);
-
-        userService.updatePassword(user, rawPassword);
-
-        verify(passwordEncoder).encode(rawPassword);
-        assertEquals(encodedPassword, user.getPassword());
-    }
-
-    @Test
-    void testUpdatePassword_UserIsNull() {
-        // Testet das Verhalten bei null-Benutzer - sollte NullPointerException werfen
-        UserEntity user = null;
-        String rawPassword = "newRawPassword";
-        
-        assertThrows(NullPointerException.class, () -> {
             userService.updatePassword(user, rawPassword);
-        });
+
+            assertEquals("new-hash", user.getPassword());
+            verify(passwordEncoder).encode(rawPassword);
+            verifyNoInteractions(userRepository, userStatusBroadcaster);
+        }
+
+        @Test
+        void rejectsANullUser() {
+            assertThrows(NullPointerException.class,
+                    () -> userService.updatePassword(null, "newRawPassword"));
+            verifyNoInteractions(userRepository, userStatusBroadcaster);
+        }
+
+        @Test
+        void leavesTheExistingPasswordUnchangedWhenEncodingFails() {
+            UserEntity user = user(1L, true);
+            user.setPassword("old-hash");
+            var failure = new IllegalStateException("Encoding failed");
+            when(passwordEncoder.encode("newRawPassword")).thenThrow(failure);
+
+            assertSame(failure, assertThrows(IllegalStateException.class,
+                    () -> userService.updatePassword(user, "newRawPassword")));
+            assertEquals("old-hash", user.getPassword());
+            verifyNoInteractions(userRepository, userStatusBroadcaster);
+        }
+
+        @Test
+        void propagatesEncoderRejectionOfNullPasswordWithoutChangingTheUser() {
+            UserEntity user = user(1L, true);
+            user.setPassword("old-hash");
+            var failure = new IllegalArgumentException("rawPassword cannot be null");
+            when(passwordEncoder.encode(null)).thenThrow(failure);
+
+            assertSame(failure, assertThrows(IllegalArgumentException.class,
+                    () -> userService.updatePassword(user, null)));
+            assertEquals("old-hash", user.getPassword());
+            verifyNoInteractions(userRepository, userStatusBroadcaster);
+        }
     }
 
-    @Test
-    void testUpdatePassword_EmptyPassword() {
-        // Testet das Verhalten mit leerem Passwort
-        UserEntity user = UserEntity.builder()
-                .id(1L)
-                .email("test@example.com")
-                .password("rawPassword")
-                .build();
+    @Nested
+    class StatusUpdates {
+        @Test
+        void manualChangeSavesStatusAndFlagBeforeBroadcasting() {
+            UserEntity user = user(1L, true);
+            user.setStatus(UserStatus.AVAILABLE);
+            doAnswer(invocation -> {
+                assertEquals(UserStatus.EMPLOYED, user.getStatus());
+                assertTrue(user.isStatusManuallySet());
+                return user;
+            }).when(userRepository).save(user);
 
-        String rawPassword = "";
-        String encodedPassword = "encodedEmptyPassword";
+            userService.updateUserStatus(user, UserStatus.EMPLOYED, true);
 
-        when(passwordEncoder.encode(rawPassword)).thenReturn(encodedPassword);
+            var order = inOrder(userRepository, userStatusBroadcaster);
+            order.verify(userRepository).save(same(user));
+            order.verify(userStatusBroadcaster).broadcast(message(user, UserStatus.AVAILABLE, UserStatus.EMPLOYED));
+            verifyNoInteractions(passwordEncoder);
+        }
 
-        userService.updatePassword(user, rawPassword);
+        @Test
+        void automaticChangeSavesNewStatusWithoutManualFlag() {
+            UserEntity user = user(1L, true);
+            user.setStatus(UserStatus.AVAILABLE);
 
-        verify(passwordEncoder).encode(rawPassword);
-        assertEquals(encodedPassword, user.getPassword());
+            userService.updateUserStatus(user, UserStatus.ABSENT, false);
+
+            assertEquals(UserStatus.ABSENT, user.getStatus());
+            assertFalse(user.isStatusManuallySet());
+            verify(userRepository).save(same(user));
+            verify(userStatusBroadcaster).broadcast(message(user, UserStatus.AVAILABLE, UserStatus.ABSENT));
+        }
+
+        @ParameterizedTest
+        @EnumSource(value = UserStatus.class, names = {"AVAILABLE", "ABSENT"})
+        void automaticChangeResetsManualAvailableOrAbsentStatus(UserStatus previousStatus) {
+            UserEntity user = user(1L, true);
+            user.setManualStatus(previousStatus);
+
+            userService.updateUserStatus(user, UserStatus.OFFLINE, false);
+
+            assertEquals(UserStatus.OFFLINE, user.getStatus());
+            assertFalse(user.isStatusManuallySet());
+            verify(userRepository).save(same(user));
+            verify(userStatusBroadcaster).broadcast(message(user, previousStatus, UserStatus.OFFLINE));
+        }
+
+        @ParameterizedTest
+        @EnumSource(value = UserStatus.class, names = {"EMPLOYED", "OFFLINE"})
+        void protectedManualStatusIsRetainedButCurrentlyBroadcastsRequestedStatus(UserStatus previousStatus) {
+            // Characterizes the event mismatch documented in GPT-AUFFAELLIGKEITEN.md.
+            UserEntity user = user(1L, true);
+            user.setManualStatus(previousStatus);
+
+            userService.updateUserStatus(user, UserStatus.ABSENT, false);
+
+            assertEquals(previousStatus, user.getStatus());
+            assertTrue(user.isStatusManuallySet());
+            verify(userRepository).save(same(user));
+            verify(userStatusBroadcaster).broadcast(message(user, previousStatus, UserStatus.ABSENT));
+        }
+
+        @Test
+        void manualChangeCanReplaceAProtectedManualStatus() {
+            UserEntity user = user(1L, true);
+            user.setManualStatus(UserStatus.EMPLOYED);
+
+            userService.updateUserStatus(user, UserStatus.AVAILABLE, true);
+
+            assertEquals(UserStatus.AVAILABLE, user.getStatus());
+            assertTrue(user.isStatusManuallySet());
+            verify(userRepository).save(same(user));
+            verify(userStatusBroadcaster).broadcast(message(user, UserStatus.EMPLOYED, UserStatus.AVAILABLE));
+        }
+
+        @Test
+        void doesNotBroadcastWhenSavingFails() {
+            UserEntity user = user(1L, true);
+            var failure = repositoryFailure();
+            when(userRepository.save(user)).thenThrow(failure);
+
+            assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
+                    () -> userService.updateUserStatus(user, UserStatus.AVAILABLE, true)));
+            verifyNoInteractions(userStatusBroadcaster);
+        }
+
+        @Test
+        void propagatesBroadcastFailureAfterSaving() {
+            UserEntity user = user(1L, true);
+            var event = message(user, UserStatus.OFFLINE, UserStatus.AVAILABLE);
+            var failure = new IllegalStateException("Listener failed");
+            doThrow(failure).when(userStatusBroadcaster).broadcast(event);
+
+            assertSame(failure, assertThrows(IllegalStateException.class,
+                    () -> userService.updateUserStatus(user, UserStatus.AVAILABLE, true)));
+            assertEquals(UserStatus.AVAILABLE, user.getStatus());
+            verify(userRepository).save(same(user));
+        }
     }
 
-    @Test
-    void testUpdatePassword_PasswordEncoderThrowsException() {
-        // Testet das Verhalten wenn PasswordEncoder eine Exception wirft
-        UserEntity user = UserEntity.builder()
-                .id(1L)
-                .email("test@example.com")
-                .password("existingPassword")
+    @Nested
+    class EmailUniqueness {
+        @ParameterizedTest
+        @NullAndEmptySource
+        @ValueSource(strings = {"   ", "\t\n"})
+        void blankEmailDoesNotQueryTheRepository(String email) {
+            assertFalse(userService.emailExistsForOtherUser(email, 1L));
+            verifyNoInteractions(userRepository);
+        }
+
+        @Test
+        void returnsFalseWhenNoUsersExist() {
+            when(userRepository.findAll()).thenReturn(List.of());
+
+            assertFalse(userService.emailExistsForOtherUser("test@example.com", 1L));
+        }
+
+        @Test
+        void returnsFalseWhenOnlyUnrelatedEmailsExist() {
+            when(userRepository.findAll()).thenReturn(List.of(user(2L, true)));
+
+            assertFalse(userService.emailExistsForOtherUser("missing@example.com", 1L));
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"test@example.com", "TEST@EXAMPLE.COM", "  TEST@EXAMPLE.COM  "})
+        void detectsAnotherUsersEmailAfterNormalizingBothSides(String email) {
+            UserEntity other = user(2L, true);
+            other.setEmail("  Test@Example.Com  ");
+            when(userRepository.findAll()).thenReturn(List.of(other));
+
+            assertTrue(userService.emailExistsForOtherUser(email, 1L));
+        }
+
+        @Test
+        void ignoresTheCurrentAccountByIdRatherThanEntityIdentity() {
+            UserEntity stored = user(1000L, true);
+            when(userRepository.findAll()).thenReturn(List.of(stored));
+
+            assertFalse(userService.emailExistsForOtherUser(stored.getEmail(), Long.valueOf("1000")));
+        }
+
+        @Test
+        void creationWithNoCurrentIdDetectsAnyMatchingAccount() {
+            UserEntity existing = user(1L, true);
+            when(userRepository.findAll()).thenReturn(List.of(existing));
+
+            assertTrue(userService.emailExistsForOtherUser(existing.getEmail(), null));
+        }
+
+        @Test
+        void ignoresMissingEmailsButStillFindsAnotherMatchAfterTheCurrentUser() {
+            UserEntity withoutEmail = user(3L, true);
+            withoutEmail.setEmail(null);
+            UserEntity current = user(1L, true);
+            UserEntity duplicate = user(2L, true);
+            duplicate.setEmail(current.getEmail());
+            when(userRepository.findAll()).thenReturn(List.of(withoutEmail, current, duplicate));
+
+            assertTrue(userService.emailExistsForOtherUser(current.getEmail(), current.getId()));
+        }
+
+        @Test
+        void propagatesUniquenessLookupFailure() {
+            var failure = repositoryFailure();
+            when(userRepository.findAll()).thenThrow(failure);
+
+            assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
+                    () -> userService.emailExistsForOtherUser("test@example.com", 1L)));
+        }
+    }
+
+    @Nested
+    class AdminProtection {
+        @Test
+        void cannotDeleteANullUser() {
+            assertFalse(userService.canDeleteUser(null));
+            verifyNoInteractions(userRepository);
+        }
+
+        @Test
+        void canDeleteAnOrdinaryUserWithoutLookingUpAdmins() {
+            assertTrue(userService.canDeleteUser(user(1L, true, RoleType.ROLE_USER)));
+            verifyNoInteractions(userRepository);
+        }
+
+        @Test
+        void canDeleteUsersWithEmptyOrMissingRoles() {
+            UserEntity withoutRoles = user(1L, true);
+            assertTrue(userService.canDeleteUser(withoutRoles));
+            withoutRoles.setRoleEntities(null);
+            assertTrue(userService.canDeleteUser(withoutRoles));
+            verifyNoInteractions(userRepository);
+        }
+
+        @Test
+        void canDeleteADisabledAdminWithoutLookingUpAdmins() {
+            assertTrue(userService.canDeleteUser(user(1L, false, RoleType.ROLE_ADMIN)));
+            verifyNoInteractions(userRepository);
+        }
+
+        @Test
+        void cannotDeleteAnEnabledAdminWhenNoOtherAccountsExist() {
+            when(userRepository.findAll()).thenReturn(List.of());
+
+            assertFalse(userService.canDeleteUser(user(1L, true, RoleType.ROLE_ADMIN)));
+        }
+
+        @Test
+        void cannotDeleteLastEnabledAdminAndDoesNotCountSameIdOrIneligibleAccounts() {
+            UserEntity target = user(1000L, true, RoleType.ROLE_ADMIN);
+            when(userRepository.findAll()).thenReturn(List.of(
+                    user(Long.valueOf("1000"), true, RoleType.ROLE_ADMIN),
+                    user(2L, true, RoleType.ROLE_USER), user(3L, false, RoleType.ROLE_ADMIN)));
+
+            assertFalse(userService.canDeleteUser(target));
+            verify(userRepository, never()).delete(any());
+        }
+
+        @Test
+        void canDeleteAdminWhenAnotherEnabledAdminRemains() {
+            UserEntity target = user(1L, true, RoleType.ROLE_ADMIN);
+            when(userRepository.findAll()).thenReturn(List.of(target,
+                    user(2L, true, RoleType.ROLE_USER, RoleType.ROLE_ADMIN)));
+
+            assertTrue(userService.canDeleteUser(target));
+            verify(userRepository, never()).delete(any());
+        }
+
+        @Test
+        void retainingEnabledAdminRoleNeedsNoOtherAdmin() {
+            assertFalse(userService.wouldRemoveLastEnabledAdmin(1L, true,
+                    List.of(role(RoleType.ROLE_USER), role(RoleType.ROLE_ADMIN))));
+            verifyNoInteractions(userRepository);
+        }
+
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        void removalOfRoleOrDisablingTheLastAdminIsBlocked(boolean remainsEnabled) {
+            when(userRepository.findAll()).thenReturn(List.of(user(1L, true, RoleType.ROLE_ADMIN)));
+            List<RoleEntity> proposedRoles = remainsEnabled ? List.of() : List.of(role(RoleType.ROLE_ADMIN));
+
+            assertTrue(userService.wouldRemoveLastEnabledAdmin(1L, remainsEnabled, proposedRoles));
+        }
+
+        @Test
+        void missingProposedRolesAlsoRemoveAdminAccess() {
+            when(userRepository.findAll()).thenReturn(List.of(user(1L, true, RoleType.ROLE_ADMIN)));
+
+            assertTrue(userService.wouldRemoveLastEnabledAdmin(1L, true, null));
+        }
+
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        void roleRemovalOrDisablingIsAllowedWhenAnotherAdminRemains(boolean remainsEnabled) {
+            when(userRepository.findAll()).thenReturn(List.of(
+                    user(1L, true, RoleType.ROLE_ADMIN), user(2L, true, RoleType.ROLE_ADMIN)));
+            List<RoleEntity> proposedRoles = remainsEnabled ? List.of() : List.of(role(RoleType.ROLE_ADMIN));
+
+            assertFalse(userService.wouldRemoveLastEnabledAdmin(1L, remainsEnabled, proposedRoles));
+        }
+
+        @Test
+        void disabledAdminsAndOrdinaryUsersDoNotPreventLastAdminRemoval() {
+            when(userRepository.findAll()).thenReturn(List.of(user(1L, true, RoleType.ROLE_ADMIN),
+                    user(2L, true, RoleType.ROLE_USER), user(3L, false, RoleType.ROLE_ADMIN)));
+
+            assertTrue(userService.wouldRemoveLastEnabledAdmin(1L, true, List.of(role(RoleType.ROLE_USER))));
+        }
+
+        @Test
+        void newNonAdminAccountIsAllowedWhenAnEnabledAdminExists() {
+            when(userRepository.findAll()).thenReturn(List.of(user(1L, true, RoleType.ROLE_ADMIN)));
+
+            assertFalse(userService.wouldRemoveLastEnabledAdmin(null, true, List.of(role(RoleType.ROLE_USER))));
+        }
+
+        @Test
+        void currentlyBlocksNonAdminCreationIfThereIsNoEnabledAdmin() {
+            when(userRepository.findAll()).thenReturn(List.of());
+
+            assertTrue(userService.wouldRemoveLastEnabledAdmin(null, true, List.of(role(RoleType.ROLE_USER))));
+        }
+
+        @Test
+        void propagatesAdminLookupFailureRatherThanGrantingDeletion() {
+            var failure = repositoryFailure();
+            when(userRepository.findAll()).thenThrow(failure);
+
+            assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
+                    () -> userService.canDeleteUser(user(1L, true, RoleType.ROLE_ADMIN))));
+            verify(userRepository, never()).delete(any());
+        }
+
+        @Test
+        void propagatesAdminLookupFailureRatherThanAllowingRemoval() {
+            var failure = repositoryFailure();
+            when(userRepository.findAll()).thenThrow(failure);
+
+            assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
+                    () -> userService.wouldRemoveLastEnabledAdmin(1L, false, List.of())));
+            verify(userRepository, never()).save(any());
+        }
+    }
+
+    private static UserEntity user(Long id, boolean enabled, RoleType... roles) {
+        return UserEntity.builder()
+                .id(id)
+                .email("user" + id + "@example.com")
+                .enabled(enabled)
+                .preferredLocale(Locale.ENGLISH)
+                .status(UserStatus.OFFLINE)
+                .roleEntities(Arrays.stream(roles).map(UserServiceTest::role).toList())
                 .build();
+    }
 
-        String rawPassword = "newRawPassword";
-        IllegalStateException exception = new IllegalStateException("Encoding failed");
+    private static RoleEntity role(RoleType type) {
+        return RoleEntity.builder().name(type).build();
+    }
 
-        // Konfiguriere den mocked PasswordEncoder um eine Exception zu werfen
-        when(passwordEncoder.encode(rawPassword)).thenThrow(exception);
+    private static UserStatusBroadcaster.UserStatusMessage message(UserEntity user, UserStatus oldStatus,
+                                                                  UserStatus requestedStatus) {
+        return new UserStatusBroadcaster.UserStatusMessage(user.getId(), oldStatus.name(), requestedStatus.name());
+    }
 
-        // Capture the exception returned by assertThrows and verify the identical exception instance
-        IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> {
-            userService.updatePassword(user, rawPassword);
-        });
-
-        assertSame(exception, thrown);
-
-        // Assert that the user's existing password remains unchanged
-        assertEquals("existingPassword", user.getPassword());
-
-        // Verify that the repository does not save the user
-        verify(userRepository, never()).save(any(UserEntity.class));
+    private static DataAccessResourceFailureException repositoryFailure() {
+        return new DataAccessResourceFailureException("Repository unavailable");
     }
 }
