@@ -22,5 +22,17 @@ webpack.generated.js
 /logs
 *.log
 /data
+
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+dev-shell.bat
+
+# Virtual environment
+.venv/
+
+# Local secrets
 .env
 .env.local

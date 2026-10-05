@@ -1,0 +1,13 @@
+{
+  "provider": "chatgpt",
+  "model": "gpt-6.1-sol",
+  "default_non_goals": [
+    "Do not make unrelated code changes.",
+    "Do not introduce architecture changes that are not required by the task."
+  ],
+  "default_verification": [
+    "Run the relevant automated tests.",
+    "Do not weaken existing tests.",
+    "Verify that the requested behavior is covered."
+  ]
+}
