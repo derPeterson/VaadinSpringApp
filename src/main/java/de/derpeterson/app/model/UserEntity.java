@@ -13,6 +13,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.OptimisticLock;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,6 +22,7 @@ import java.util.Collection;
 import java.util.Locale;
 
 @Entity
+@DynamicUpdate
 @Table(name = "users", indexes = {
         @Index(name = "idx_user_lastactivity_status", columnList = "lastActivity, status")
 })
@@ -32,6 +35,10 @@ public class UserEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
 
     @Column(nullable = false)
     @NotNull(message = "Der Vorname darf nicht leer sein.")
@@ -78,6 +85,7 @@ public class UserEntity {
 
     @Column(nullable = false)
     @Builder.Default
+    @OptimisticLock(excluded = true)
     private LocalDateTime lastActivity = LocalDateTime.now();
 
     @ManyToMany

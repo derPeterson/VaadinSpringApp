@@ -5,6 +5,7 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -24,6 +25,7 @@ import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -176,8 +178,18 @@ class UserServicePersistenceTest {
         }
 
         @Bean
-        UserService userService(UserRepository repository) {
-            return new UserService(repository, mock(UserStatusBroadcaster.class), mock(PasswordEncoder.class));
+        UserStatusBroadcaster userStatusBroadcaster() {
+            return new UserStatusBroadcaster();
+        }
+
+        @Bean
+        UserService userService(UserRepository repository, UserStatusBroadcaster broadcaster) {
+            return new UserService(repository, broadcaster, mock(PasswordEncoder.class));
+        }
+
+        @Bean
+        SecurityService securityService(UserService service, UserRepository repository) {
+            return new SecurityService(mock(PersistentTokenBasedRememberMeServices.class), service, repository);
         }
     }
 }

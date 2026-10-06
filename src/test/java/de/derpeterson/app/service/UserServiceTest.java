@@ -7,6 +7,7 @@ import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +19,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Arrays;
 import java.util.List;
@@ -312,14 +315,19 @@ class UserServiceTest {
         }
 
         @Test
-        void statusUpdateCannotSaveAnAlreadyDemotedLastAdmin() {
-            when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1L));
-
-            assertThrows(IllegalStateException.class,
-                    () -> userService.updateUserStatus(user(1L, false, RoleType.ROLE_ADMIN), UserStatus.AVAILABLE, true));
-
-            verify(userRepository, never()).save(any());
-            verifyNoInteractions(userStatusBroadcaster);
+        void statusUpdateIgnoresDemotionInTheSuppliedSnapshot() {
+            UserEntity stored = user(1L, true, RoleType.ROLE_ADMIN);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(stored));
+            TransactionSynchronizationManager.initSynchronization();
+            try {
+                userService.updateUserStatus(user(1L, false, RoleType.ROLE_ADMIN), UserStatus.AVAILABLE, true);
+                assertTrue(stored.isEnabled());
+                verify(userRepository).save(same(stored));
+                verify(userRepository, never()).findEnabledUserIdsByRole(any());
+                verifyNoInteractions(userStatusBroadcaster);
+            } finally {
+                TransactionSynchronizationManager.clearSynchronization();
+            }
         }
 
         private void save(UserEntity user, boolean useSaveUser) {
@@ -453,6 +461,27 @@ class UserServiceTest {
 
     @Nested
     class StatusUpdates {
+        @BeforeEach
+        void openSynchronization() {
+            TransactionSynchronizationManager.initSynchronization();
+        }
+
+        @AfterEach
+        void closeSynchronization() {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+
+        private UserEntity user(Long id, boolean enabled) {
+            UserEntity stored = UserServiceTest.user(id, enabled);
+            when(userRepository.findById(id)).thenReturn(Optional.of(stored));
+            return stored;
+        }
+
+        private void commit() {
+            verifyNoInteractions(userStatusBroadcaster);
+            TransactionSynchronizationManager.getSynchronizations().forEach(TransactionSynchronization::afterCommit);
+        }
+
         @Test
         void manualChangeSavesStatusAndFlagBeforeBroadcasting() {
             UserEntity user = user(1L, true);
@@ -464,6 +493,7 @@ class UserServiceTest {
             }).when(userRepository).save(user);
 
             userService.updateUserStatus(user, UserStatus.EMPLOYED, true);
+            commit();
 
             var order = inOrder(userRepository, userStatusBroadcaster);
             order.verify(userRepository).save(same(user));
@@ -477,6 +507,7 @@ class UserServiceTest {
             user.setStatus(UserStatus.AVAILABLE);
 
             userService.updateUserStatus(user, UserStatus.ABSENT, false);
+            commit();
 
             assertEquals(UserStatus.ABSENT, user.getStatus());
             assertFalse(user.isStatusManuallySet());
@@ -491,6 +522,7 @@ class UserServiceTest {
             user.setManualStatus(previousStatus);
 
             userService.updateUserStatus(user, UserStatus.OFFLINE, false);
+            commit();
 
             assertEquals(UserStatus.OFFLINE, user.getStatus());
             assertFalse(user.isStatusManuallySet());
@@ -554,6 +586,7 @@ class UserServiceTest {
             user.setManualStatus(UserStatus.EMPLOYED);
 
             userService.updateUserStatus(user, UserStatus.AVAILABLE, true);
+            commit();
 
             assertEquals(UserStatus.AVAILABLE, user.getStatus());
             assertTrue(user.isStatusManuallySet());
@@ -574,14 +607,14 @@ class UserServiceTest {
         }
 
         @Test
-        void propagatesBroadcastFailureAfterSaving() {
+        void isolatesBroadcastFailureAfterCommit() {
             UserEntity user = user(1L, true);
             var event = message(user, UserStatus.OFFLINE, UserStatus.AVAILABLE);
             var failure = new IllegalStateException("Listener failed");
             doThrow(failure).when(userStatusBroadcaster).broadcast(event);
 
-            assertSame(failure, assertThrows(IllegalStateException.class,
-                    () -> userService.updateUserStatus(user, UserStatus.AVAILABLE, true)));
+            userService.updateUserStatus(user, UserStatus.AVAILABLE, true);
+            assertDoesNotThrow(this::commit);
             assertEquals(UserStatus.AVAILABLE, user.getStatus());
             verify(userRepository).save(same(user));
         }

@@ -509,6 +509,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     private void openDialog(UserEntity user) {
         boolean editMode = user.getId() != null;
         AdminUserFormData formData = AdminUserFormData.fromUser(user);
+        Long expectedVersion = user.getVersion();
 
         Dialog dialog = new Dialog();
         dialog.setCloseOnEsc(true);
@@ -651,19 +652,17 @@ public class AdminUserManagementSection extends VerticalLayout {
             }
 
             try {
-                user.setFirstName(clean(formData.getFirstName()));
-                user.setLastName(clean(formData.getLastName()));
-                user.setEmail(clean(formData.getEmail()));
-                user.setGender(formData.getGender());
-                user.setBirthDate(formData.getBirthDate());
-                user.setEnabled(formData.isEnabled());
-                user.setRoleEntities(roleEntities);
-
-                if (!clean(formData.getPassword()).isBlank()) {
-                    userService.updatePassword(user, formData.getPassword());
+                UserEntity edited = UserEntity.builder()
+                        .id(formData.getId()).firstName(clean(formData.getFirstName()))
+                        .lastName(clean(formData.getLastName())).email(clean(formData.getEmail()))
+                        .gender(formData.getGender()).birthDate(formData.getBirthDate())
+                        .enabled(formData.isEnabled()).roleEntities(roleEntities).build();
+                if (editMode) {
+                    userService.updateAdminUser(edited, expectedVersion, formData.getPassword());
+                } else {
+                    userService.updatePassword(edited, formData.getPassword());
+                    userService.saveUser(edited);
                 }
-
-                userService.saveUser(user);
                 dialog.close();
                 refreshGrid();
 
@@ -674,6 +673,8 @@ public class AdminUserManagementSection extends VerticalLayout {
                                 : messageProperties.getAdminUsersSaveSuccessCreated(),
                         NotificationHelper.NotificationType.SUCCESS
                 );
+            } catch (org.springframework.dao.OptimisticLockingFailureException exception) {
+                showError(messageProperties.getTranslation("base.user.update.conflict"));
             } catch (RuntimeException exception) {
                 showError(messageProperties.getAdminUsersErrorSaveFailed() + " " + safeMessage(exception));
             }

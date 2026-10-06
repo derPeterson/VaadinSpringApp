@@ -19,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -152,15 +153,15 @@ public class SecurityService {
         SecurityContextHolder.clearContext();
     }
 
+    @Transactional
     public void handleLogin(UserDetails user) throws AuthenticationException {
         Optional<UserEntity> userEntity = userRepository.findByEmail(user.getUsername());
 
         if (userEntity.isPresent()) {
             if (!userEntity.get().isStatusManuallySet()) {
-                userEntity.get().setAutomaticStatus(UserStatus.AVAILABLE);
+                userService.updateUserStatus(userEntity.get(), UserStatus.AVAILABLE, false);
             }
-            userEntity.get().updateLastActivity();
-            userRepository.save(userEntity.get());
+            userService.updateLastActivity(userEntity.get().getId());
         }
     }
 }

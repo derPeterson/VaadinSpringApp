@@ -153,8 +153,7 @@ public abstract class UserActivityAwareView extends AppLayout {
 
         Optional<UserEntity> currentUserOpt = securityService.getCurrentUser();
         currentUserOpt.ifPresent(user -> {
-            user.updateLastActivity();
-            userService.save(user);
+            userService.updateLastActivity(user.getId());
         });
     }
 }
