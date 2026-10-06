@@ -19,6 +19,7 @@ OpenCode nach den Projektregeln; Python bereitet den Lauf vor und wertet ihn aus
   - [Aktion abort](#aktion-abort)
   - [Felder der Request-Datei](#felder-der-request-datei)
 - [Ergebnisse](#ergebnisse)
+  - [Bericht und Findings](#bericht-und-findings)
 - [Usage und Messgrenzen](#usage-und-messgrenzen)
   - [Vergleichbare Benchmarks](#vergleichbare-benchmarks)
 - [Tests](#tests)
@@ -239,10 +240,11 @@ Final-Metriken, archiviert Findings, erzeugt Patch/Report und beendet den Run.
 | `--human-interventions <Anzahl>` | Nein | Neue Korrekturen oder zusätzliche Vorgaben des Benutzers seit Begin. Selbstständige Modellkorrekturen zählen nicht. Ganze Zahl ≥ 0, Standard `0`. |
 | `--correction-rounds <Anzahl>` | Nein | Fehlgeschlagene Verifikationsläufe, die eine weitere Codeänderung erforderten. Ganze Zahl ≥ 0, Standard `0`. |
 | `--usage-export <Datei>` | Nein | Expliziter vollständiger **Nachher**-Export derselben Session. Bei `usage` ersetzt er den automatischen Export; ohne `usage` ohne Wirkung. |
+| `--summary-file <Datei>` | Bei `/start` ja; direkte CLI optional | UTF-8 Markdown außerhalb Git: Erklärung der Umsetzung und Verhaltensänderungen für `report.md`. Keine zusätzliche dauerhafte Run-Datei. |
 | `-h`, `--help` | Nein | Nur die Hilfe für `finish` anzeigen. |
 
 ```powershell
-python .opencode/scripts/start.py finish --id ACTUAL_RUN_ID --correction-rounds 1 --human-interventions 0
+python .opencode/scripts/start.py finish --id ACTUAL_RUN_ID --summary-file C:/Temp/start-summary.md --correction-rounds 1 --human-interventions 0
 ```
 
 Die Anzahl wird vom Aufrufer erfasst und übergeben; Python zählt die Arbeit
@@ -302,8 +304,10 @@ Shell-Code ausgewertet. Beispiel `C:/Temp/start-request.json`:
 # Nach der Baseline workflow_usage_snapshot erneut aufrufen:
 .\.venv\Scripts\python.exe .opencode/scripts/start.py begin --id ACTUAL_ID --usage-export ACTUAL_FRESH_BEGIN_PATH
 # OpenCode führt jetzt den zurückgegebenen task aus, prüft und committet.
+# Umsetzung als UTF-8 Markdown außerhalb Git nach C:/Temp/start-summary.md schreiben.
+# Offene Probleme oder ausdrücklich keine weiteren Findings in findings.md erfassen.
 # Vor finish nochmals einen frischen Snapshot derselben Session erzeugen:
-.\.venv\Scripts\python.exe .opencode/scripts/start.py finish --id ACTUAL_ID --usage-export ACTUAL_FRESH_FINISH_PATH --human-interventions 0 --correction-rounds 0
+.\.venv\Scripts\python.exe .opencode/scripts/start.py finish --id ACTUAL_ID --summary-file C:/Temp/start-summary.md --usage-export ACTUAL_FRESH_FINISH_PATH --human-interventions 0 --correction-rounds 0
 ```
 
 Optional `prompt_provider` / `prompt_model` im Request: Overrides nur für den
@@ -353,10 +357,10 @@ C:/Dev/AI-Benchmarks/<Projekt>/
   state/<id>.json               # Status/Audit, bleibt nach Abschluss erhalten
   results.csv                  # nur bei ausgewähltem benchmark
   runs/<id>/
-    report.md
+    report.md                  # Umsetzung, Verhaltensänderungen und Messwerte
     result.json
     diff.patch                 # vollständiger Git-Diff inkl. Binärdateien
-    findings.md
+    findings.md                # offene Probleme / ausdrücklicher Erfassungsstatus
     original-prompt.md
     improved-prompt.md          # bei prompt
     prompt-metadata.json        # effektiver Improver-Provider/Modell/Dauer
@@ -398,6 +402,42 @@ Bei null gezählten Branches bedeutet die rechnerische 100-%-Anzeige weiterhin
 keinen Nachweis getesteter Verzweigungen. XML-Properties, stdout/stderr und
 Systemumgebungen werden nicht archiviert. Die Dateien sind Messbelege,
 kein kryptografischer Nachweis oder vollständiges Build-Log.
+
+### Bericht und Findings
+
+`report.md` enthält unter **Umsetzung und Verhaltensänderungen**, was erledigt
+wurde, welche Verträge oder Verhaltensweisen sich geändert haben, wichtige
+Entscheidungen sowie Prüfungen und deren Grenzen. Die Behebung mitgegebener
+Findings wird hier erklärt. Danach folgen die automatisch erzeugten Messwerte,
+Tests, Coverage, Usage und Artefaktpfade.
+
+`findings.md` enthält ausschließlich **neu entdeckte oder weiterhin offene
+Probleme**, mit Fundstelle, Beleg, Auswirkung und begründeter Schwere. Erledigte
+Arbeiten und bereits behobene Findings gehören in den Report. Wurden während
+der Aufgabe keine weiteren offenen Probleme festgestellt, steht dort ausdrücklich:
+**„Keine weiteren offenen Findings festgestellt.“** Das ist keine Zusicherung,
+dass der gesamte Code fehlerfrei ist; es wird kein zusätzliches Review-Modul ausgeführt.
+
+OpenCode schreibt den Umsetzungsbericht zunächst in eine temporäre UTF-8
+Markdown-Datei **außerhalb Git** und übergibt deren tatsächlichen Pfad mit
+`finish --summary-file`. Nur den Inhalt für den Reportabschnitt schreiben, ohne
+zusätzliche Dokumentüberschrift oder wiederholte Benchmark-Tabellen. Python
+speichert den Text im vorhandenen Run-Zustand und erzeugt daraus `report.md`.
+Die Übergabedatei wird weder als weiteres Run-Artefakt archiviert noch vom
+Workflow gelöscht. Die Angaben entstehen vor dem finalen Usage-Snapshot.
+
+Fehlt bei einem direkten CLI-Aufruf der Umsetzungsbericht, kennzeichnet der
+Report dies ausdrücklich. Fehlt `findings.md`, archiviert Python einen Hinweis
+auf fehlende Angaben und unbekannten Findings-Status; es erfindet keine Entwarnung.
+Vorhandene Findings werden unverändert archiviert und erst nach erfolgreichem
+Abschluss aus dem Projektroot entfernt.
+
+Bei einem fehlgeschlagenen Finish bleibt der übergebene Bericht für einen Retry
+erhalten, auch wenn die temporäre Datei inzwischen fehlt. Nach weiteren
+Task-Commits muss ein aktualisierter Bericht übergeben werden; ohne ihn wird
+die überholte Erklärung verworfen und als fehlend gekennzeichnet. Ein bereits
+abgeschlossener Run bleibt bei erneutem Finish unverändert. Historische Runs
+werden nicht umgeschrieben; das CSV-Schema bleibt unverändert.
 
 ## Usage und Messgrenzen
 
@@ -511,7 +551,8 @@ node --test tests/test_workflow_usage.mjs
 
 Die automatische Suite nutzt temporäre echte Git-Repositories, Offline-Exports
 und gemockte Provider/Benchmark-Builds. Sie prüft die Lifecycle- und Fehlerpfade,
-Metriken, Patch-/Findings-/CSV-Erhalt, Locking, Modellgenerator und Integration
+Metriken, Trennung von Report und offenen Findings, fehlende Angaben,
+Berichtserhalt bei Retry, Patch-/Findings-/CSV-Erhalt, Locking, Modellgenerator und Integration
 des existierenden Prompt-Improvers. Sie verbraucht keine Modellanfragen und
 startet keine Anwendung. Live-Provider-Smoke-Tests separat und bewusst ausführen.
 Die Node-Suite benötigt die in `.opencode/package.json` deklarierte

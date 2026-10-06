@@ -41,9 +41,9 @@ CLI-Hilfetext und die zwei beschriebenen Smoke-Test-Korrekturen.
 
 | Prüfung | Ergebnis |
 |---|---|
-| Automatische Python-Suite | **60 Tests, 0 Fehler, 0 Failures, 0 Skips** nach den fünf FirstRun-Korrekturen |
+| Automatische Python-Suite | **63 Tests, 0 Fehler, 0 Failures, 0 Skips** nach der Trennung von Umsetzung und Findings |
 | Echte temporäre Git-Repositories | Branch-/Status-Prüfungen, Commits, Findings, Text-/Binary-Diff und sauberer Endzustand erfolgreich |
-| CLI als eigener Prozess | Begin/Finish, sichere JSON-Task-Übergabe mit Quotes/Zeilenumbrüchen/Shell-Sonderzeichen erfolgreich |
+| CLI als eigener Prozess | Begin/Finish, sichere JSON-Task-Übergabe und UTF-8-Umsetzungsbericht mit Quotes/Zeilenumbrüchen/Shell-Sonderzeichen erfolgreich |
 | Fehlerpfade | Dirty Tree, vorhandene lokale/remote Branches, falscher Branch, tracked Findings, fehlende Usage-Session, Build-/CSV-Fehler korrekt abgewiesen |
 | Wiederaufnahme und Locking | Retained State/Findings, Retry, idempotentes Finish und konkurrierender Store-Lock geprüft |
 | CSV | Einheitliches Schema; FirstRun-Schema gezielt erweitert und historische Zeile erhalten; fremde Schemas abgewiesen; keine doppelte ID; kulturunabhängige Dezimalzahlen |
@@ -89,7 +89,9 @@ keine als erfolgreich ausgegebenen fehlgeschlagenen Tests.
   Session-Export, echter Maven-Benchmark und Live-Improver wurden einzeln und
   über die dokumentierten Integrationstests geprüft. Die TUI-Modellauswahl und
   End-to-End-Coding wurde inzwischen im ersten ConfigService-Run vom Nutzer ausgeführt.
-  Der hier beschriebene Fünf-Punkte-Fix wird im nächsten Auftrag geprüft.
+  Die fünf FirstRun-Korrekturen wurden inzwischen anhand der Artefakte des
+  zweiten ConfigService-Laufs geprüft. Der neue Bericht-/Findings-Fix wurde
+  lokal über die automatische Suite und echte CLI-Prozesse geprüft.
   Plugin-Ladung und Tool-Ausführung sind inzwischen im echten Server 2.0.19
   geprüft; die aktive ID wird automatisch übergeben.
 - Usage endet am Finish-Snapshot. Laufende Inference-Schritte und die danach
@@ -222,3 +224,47 @@ Patch ist kein erneutes `npm ci` erforderlich. Infrastruktur auf main
 committen und für den nächsten vergleichbaren Lauf eine frische Sitzung
 verwenden. Der erste Run und seine fachlichen Findings bleiben erhalten;
 ConfigService wurde in diesem Schritt nicht verändert.
+
+## Umsetzung und offene Findings getrennt
+
+`report.md` enthält jetzt einen eigenen Abschnitt **Umsetzung und
+Verhaltensänderungen**. Dort erklärt OpenCode abgeschlossene Arbeiten,
+geänderte Verträge, Entscheidungen sowie Prüfungen und Grenzen. Die Behebung
+mitgegebener Findings wird als Umsetzung dokumentiert. `findings.md` ist für
+neu beobachtete oder weiterhin offene Probleme reserviert. Wurden keine
+weiteren offenen Probleme beobachtet, steht dort ausdrücklich:
+**„Keine weiteren offenen Findings festgestellt.“**
+
+Der gemeinsame `/start`-Ablauf schreibt die Erklärung als temporäre UTF-8
+Markdown-Datei außerhalb Git und übergibt sie mit `finish --summary-file`.
+Python behält den Text im vorhandenen Run-Zustand und übernimmt ihn in den
+generierten Report. Ein zusätzliches dauerhaftes Run-Dokument oder Modul
+wurde nicht eingeführt. Die temporäre Übergabedatei bleibt Eigentum des
+Aufrufers. Die Angaben entstehen vor dem abschließenden Usage-Snapshot.
+
+Fehlende Findings-Angaben bedeuten unbekannten Status; Python erzeugt dann
+keine unbelegte Aussage über Fehlerfreiheit. Ein bei direkten CLI-Aufrufen
+nicht übergebener Umsetzungsbericht wird ebenfalls als fehlend ausgewiesen.
+Leere, fehlende, ungültig kodierte oder innerhalb Git liegende Übergabedateien
+werden vor dem finalen Build und einer Zustandsänderung abgewiesen.
+
+Bei Build-/CSV-Fehlern bleibt die Erklärung für einen Retry erhalten. Nach
+weiteren Task-Commits wird eine überholte Erklärung verworfen, wenn kein
+aktueller Text übergeben wird. Abgeschlossene Runs werden bei wiederholtem
+Finish nicht umgeschrieben. Vorhandene Findings bleiben bytegetreu archiviert;
+historische Benchmark-Läufe und das CSV-Schema bleiben unverändert.
+
+**63 Python-Tests und 11 Node-Tests erfolgreich.** Geprüft wurden insbesondere
+offene Findings getrennt vom Report, ausdrücklich keine weiteren Findings,
+fehlende Angaben, UTF-8 mit BOM, Pfade mit Leerzeichen, ungültige Übergaben,
+Berichtserhalt bei CSV-Fehlern, überholte Berichte nach neuen Commits und ein
+idempotenter Abschluss. Begin/Finish liefen auch als echte CLI-Prozesse in
+temporären Git-Repositories. Der Maven-Aufruf wurde für diese reine
+Berichtsänderung nicht erneut live ausgeführt; die bestehende Build-/Usage-
+Logik bleibt erhalten und wird von der Regression-Suite mitgeprüft.
+
+Das Änderungspaket `opencode-report-findings-fix.zip` enthält die sechs
+geänderten Dateien für den bisherigen `opencode-benchmark-quality-fix`-Stand.
+In `.opencode` darüberkopieren. Keine neuen Dependencies, Katalog- oder
+Pluginänderungen; kein erneutes `npm ci` erforderlich. Der vollständige Stand
+in `opencode-python-migration.zip` wurde ebenfalls aktualisiert.

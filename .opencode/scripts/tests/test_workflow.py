@@ -79,16 +79,24 @@ class RepoCase(unittest.TestCase):
         started = self.begin()
         self.assertEqual("feature/tests", self.git("branch", "--show-current"))
         self.commit_task()
-        (self.repo / "findings.md").write_text("# Findings\nä\n", encoding="utf-8")
+        findings = "# Offene Findings\n\nP2: Weiterer Fehler ä, belegt in source.txt.\n"
+        (self.repo / "findings.md").write_text(findings, encoding="utf-8")
+        summary = self.base / "summary.md"
+        summary.write_text("Die Konvertierung wurde korrigiert; ungültige Werte werden abgelehnt.", encoding="utf-8")
         with patch("workflow.benchmark.collect", return_value=METRICS):
-            result = runner.finish(self.repo, self.store_root, started["id"], 2, 1)
+            result = runner.finish(self.repo, self.store_root, started["id"], 2, 1, summary_file=summary)
         folder = Path(started["folder"])
         self.assertEqual(2, result["HumanInterventions"])
         self.assertEqual(1, result["CorrectionRounds"])
         self.assertEqual(self.git("rev-parse", "HEAD"), result["EndCommit"])
         self.assertEqual(2, result["ChangedFiles"])
         self.assertEqual(3, result["TestsBefore"])
-        self.assertIn("ä", (folder / "findings.md").read_text(encoding="utf-8"))
+        self.assertEqual(findings, (folder / "findings.md").read_text(encoding="utf-8"))
+        report = (folder / "report.md").read_text(encoding="utf-8")
+        self.assertIn("## Umsetzung und Verhaltensänderungen", report)
+        self.assertIn(summary.read_text(encoding="utf-8"), report)
+        self.assertNotIn("Konvertierung", (folder / "findings.md").read_text(encoding="utf-8"))
+        self.assertTrue(summary.exists())  # Caller-owned transport file is not removed.
         self.assertIn(b"GIT binary patch", (folder / "diff.patch").read_bytes())
         self.assertIn(b"changed \xc3\xa4", (folder / "diff.patch").read_bytes())
         self.assertEqual("", self.git("status", "--porcelain"))
@@ -101,7 +109,54 @@ class RepoCase(unittest.TestCase):
         self.assertEqual("75.00", row["LineCoverageBefore"])
         self.assertEqual("", row["InputTokens"])
         # Idempotent finish returns the same result without rerunning Maven or duplicating CSV.
-        self.assertEqual(result, runner.finish(self.repo, self.store_root, started["id"]))
+        summary.write_text("Spätere Erklärung", encoding="utf-8")
+        self.assertEqual(result, runner.finish(self.repo, self.store_root, started["id"], summary_file=summary))
+        self.assertEqual(report, (folder / "report.md").read_text(encoding="utf-8"))
+
+    def test_missing_findings_does_not_claim_no_problems(self):
+        started = self.begin("branch")
+        runner.finish(self.repo, self.store_root, started["id"])
+        folder = Path(started["folder"])
+        findings = (folder / "findings.md").read_text(encoding="utf-8")
+        self.assertIn("keine Findings-Angaben übergeben", findings)
+        self.assertNotIn("Keine weiteren offenen Findings festgestellt.", findings)
+        self.assertIn("kein Umsetzungsbericht übergeben", (folder / "report.md").read_text(encoding="utf-8"))
+
+    def test_invalid_summary_stops_before_build_and_preserves_state(self):
+        started = self.begin()
+        summary = self.base / "summary.md"
+        summary.write_text(" \n", encoding="utf-8")
+        internal = self.repo / "source.txt"
+        invalid_utf8 = self.base / "invalid.md"
+        invalid_utf8.write_bytes(b"\xff")
+        state_path = self.store_root / self.repo.name / "state" / (started["id"] + ".json")
+        original = state_path.read_bytes()
+        for supplied, error in ((summary, WorkflowError), (internal, WorkflowError),
+                                (invalid_utf8, UnicodeError), (self.base / "missing.md", OSError)):
+            with self.subTest(path=supplied), patch("workflow.benchmark.collect") as collect:
+                with self.assertRaises(error):
+                    runner.finish(self.repo, self.store_root, started["id"], summary_file=supplied)
+                collect.assert_not_called()
+                self.assertEqual(original, state_path.read_bytes())
+                self.assertFalse((Path(started["folder"]) / "report.md").exists())
+
+    def test_new_commit_discards_stale_summary_after_failed_finish(self):
+        started = self.begin()
+        self.commit_task()
+        summary = self.base / "summary.md"
+        summary.write_text("Erster Stand, später überholt.", encoding="utf-8")
+        with patch("workflow.benchmark.collect", side_effect=WorkflowError("Maven failed")):
+            with self.assertRaises(WorkflowError):
+                runner.finish(self.repo, self.store_root, started["id"], summary_file=summary)
+        summary.unlink()
+        (self.repo / "source.txt").write_text("additional fix\n", encoding="utf-8")
+        self.git("add", "--", "source.txt")
+        self.git("commit", "-m", "additional fix")
+        with patch("workflow.benchmark.collect", return_value=METRICS):
+            runner.finish(self.repo, self.store_root, started["id"])
+        report = (Path(started["folder"]) / "report.md").read_text(encoding="utf-8")
+        self.assertNotIn("Erster Stand", report)
+        self.assertIn("kein Umsetzungsbericht übergeben", report)
 
     def test_branch_only_has_no_maven_or_prompt_dependencies(self):
         with patch("workflow.benchmark.collect") as collect, patch("workflow.prompt.improve") as improve:
@@ -298,13 +353,21 @@ class RepoCase(unittest.TestCase):
         started = self.begin()
         self.commit_task()
         (self.repo / "findings.md").write_text("valuable")
+        summary = self.base / "summary.md"
+        summary.write_text("Umsetzung ä wurde abgeschlossen.", encoding="utf-8-sig")
         with patch("workflow.benchmark.collect", return_value=METRICS), patch("workflow.benchmark.append_csv", side_effect=OSError("locked")):
             with self.assertRaisesRegex(OSError, "locked"):
-                runner.finish(self.repo, self.store_root, started["id"])
+                runner.finish(self.repo, self.store_root, started["id"], summary_file=summary)
         self.assertTrue((self.repo / "findings.md").exists())
+        summary.unlink()
         with patch("workflow.benchmark.collect", return_value=METRICS):
             runner.finish(self.repo, self.store_root, started["id"])
         self.assertFalse((self.repo / "findings.md").exists())
+        folder = Path(started["folder"])
+        self.assertIn("Umsetzung ä wurde abgeschlossen.", (folder / "report.md").read_text(encoding="utf-8"))
+        self.assertEqual("valuable", (folder / "findings.md").read_text())
+        with (self.store_root / self.repo.name / "results.csv").open(encoding="utf-8", newline="") as handle:
+            self.assertEqual(1, len(list(csv.DictReader(handle))))
 
     def test_lock_rejects_concurrent_store_access(self):
         with store_lock(self.store_root):
@@ -322,9 +385,18 @@ class RepoCase(unittest.TestCase):
         self.assertEqual(0, before.returncode, before.stderr)
         started = json.loads(before.stdout)
         self.assertEqual(self.request["task"], started["task"])
-        after = subprocess.run([*command, "finish", "--id", started["id"]], capture_output=True, text=True, encoding="utf-8")
+        summary = self.base / "summary with spaces.md"
+        explanation = 'Änderungen geprüft; $(bad) `bad` "quoted"\nWeitere Erklärung.'
+        summary.write_text(explanation, encoding="utf-8-sig")
+        no_findings = "# Offene Findings\n\nKeine weiteren offenen Findings festgestellt.\n"
+        (self.repo / "findings.md").write_text(no_findings, encoding="utf-8")
+        after = subprocess.run([*command, "finish", "--summary-file", str(summary), "--id", started["id"]], capture_output=True, text=True, encoding="utf-8")
         self.assertEqual(0, after.returncode, after.stderr)
         self.assertEqual("feature/tests", json.loads(after.stdout)["Branch"])
+        folder = Path(started["folder"])
+        self.assertIn(explanation, (folder / "report.md").read_text(encoding="utf-8"))
+        self.assertEqual(no_findings, (folder / "findings.md").read_text(encoding="utf-8"))
+        self.assertEqual("", self.git("status", "--porcelain"))
 
     def test_fresh_reports_rejects_wrong_java_before_build(self):
         wrapper = self.repo / ("mvnw.cmd" if os.name == "nt" else "mvnw")

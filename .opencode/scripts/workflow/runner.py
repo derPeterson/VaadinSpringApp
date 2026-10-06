@@ -202,6 +202,8 @@ def result_row(state: dict, end: str, end_commit: str, current_branch: str,
 
 def report(state: dict, result: dict, after: dict | None, changed: dict, usage_result: dict | None) -> str:
     lines = ["# AI Coding Benchmark / Start Workflow", "", "## Aufgabe", "", state["task"], "",
+             "## Umsetzung und Verhaltensänderungen", "",
+             state.get("implementationSummary", "Für diesen Lauf wurde kein Umsetzungsbericht übergeben."), "",
              "## Ergebnis", ""]
     lines.extend(f"- {key}: {'nicht verfügbar' if value is None else value}" for key, value in result.items())
     if "usage" in state["modules"]:
@@ -215,7 +217,8 @@ def report(state: dict, result: dict, after: dict | None, changed: dict, usage_r
         lines.extend(f"- {key}: {'nicht verfügbar' if value is None else value}" for key, value in usage_result.items())
     else:
         lines += ["Usage-Modul nicht ausgewählt."]
-    lines += ["", "## Artefakte", "", "- result.json", "- findings.md", "- diff.patch", "- original-prompt.md"]
+    lines += ["", "## Offene Findings", "", "Siehe findings.md für gemeldete offene Probleme und den Erfassungsstatus.",
+              "", "## Artefakte", "", "- result.json", "- findings.md", "- diff.patch", "- original-prompt.md"]
     if "prompt" in state["modules"]:
         lines += ["- improved-prompt.md", "- prompt-metadata.json"]
     if "benchmark" in state["modules"]:
@@ -226,7 +229,8 @@ def report(state: dict, result: dict, after: dict | None, changed: dict, usage_r
 
 
 def finish(repo: Path, root: Path, run_id: str, interventions: int = 0,
-           corrections: int = 0, usage_export: Path | None = None) -> dict:
+           corrections: int = 0, usage_export: Path | None = None,
+           summary_file: Path | None = None) -> dict:
     if interventions < 0 or corrections < 0:
         raise WorkflowError("Interventions and correction rounds must not be negative.")
     repo = repo.resolve()
@@ -237,6 +241,11 @@ def finish(repo: Path, root: Path, run_id: str, interventions: int = 0,
             return read_json(Path(state["folder"]) / "result.json")
         if state["status"] not in ("active", "finishing"):
             raise WorkflowError("Finish requires an active run; begin a prepared run or abort it.")
+        summary = None
+        if summary_file is not None:
+            summary = outside_repo(repo, summary_file).read_text(encoding="utf-8-sig").strip()
+            if not summary:
+                raise WorkflowError("The implementation summary must not be empty.")
         actual_branch = branch.current(repo)
         if "branch" in state["modules"] and actual_branch != state["branch"]:
             raise WorkflowError(f"Finish requires exactly {state['branch']}.")
@@ -251,6 +260,9 @@ def finish(repo: Path, root: Path, run_id: str, interventions: int = 0,
         if state.get("finishCommit") and state["finishCommit"] != end_commit:
             state["end"] = now()
             state.pop("usageAfter", None)
+            state.pop("implementationSummary", None)  # Old prose does not describe a new commit.
+        if summary is not None:
+            state["implementationSummary"] = summary
         state.update(status="finishing", finishCommit=end_commit)
         if "usage" in state["modules"] and "usageAfter" not in state:
             state["usageAfter"] = usage.capture(repo, state["sessionId"], usage_export)
@@ -288,7 +300,8 @@ def finish(repo: Path, root: Path, run_id: str, interventions: int = 0,
         if source.is_file():
             shutil.copyfile(source, destination)  # Archive before removing the untracked original.
         elif not destination.exists():
-            destination.write_text("# Findings\n\nFür diesen Lauf wurde keine findings.md erzeugt.\n", encoding="utf-8")
+            destination.write_text("# Offene Findings\n\nFür diesen Lauf wurden keine Findings-Angaben übergeben. "
+                                   "Es ist nicht dokumentiert, ob weitere offene Probleme festgestellt wurden.\n", encoding="utf-8")
         write_json(folder / "result.json", result)
         (folder / "report.md").write_text(report(state, result, after, changed, usage_result), encoding="utf-8")
         if "benchmark" in state["modules"]:

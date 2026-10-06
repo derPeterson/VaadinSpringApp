@@ -119,25 +119,43 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
 6. Count Korrekturrunden: failed verification runs that required another
    code change. HumanInterventions starts at 0;
    count new user corrections/guidance, not the model's self-corrections.
+   Write the implementation summary as UTF-8 Markdown to an actual temporary
+   file OUTSIDE Git. Its body belongs under "Umsetzung und Verhaltensänderungen"
+   in report.md: describe completed work, changed behavior/contracts, important
+   decisions, verification and limits. Findings resolved by this task belong
+   here as completed work. Do not duplicate the generated metric tables or
+   write report.md directly; Python generates it at finish.
+   Write root findings.md with the heading "Offene Findings" and ONLY concrete
+   newly discovered or remaining open problems, with location, evidence,
+   impact and severity where justified. Do not put implementation summaries
+   or already resolved problems in findings.md. If no further open findings
+   were observed, write explicitly: "Keine weiteren offenen Findings festgestellt."
+   This describes observations during the task, not a guarantee of bug-free
+   code or an additional review module. Missing findings.md means unknown
+   findings status; it must never be treated as confirmation of no problems.
    `findings.md` is an untracked run artifact. Never stage/commit/delete it.
    For this workflow, the final clean-tree checks allow exactly an untracked
    root `findings.md`; finish archives it. Never return to main, fetch, merge,
    rebase, push or discard existing changes.
    Never merge or rebase the feature branch into main; integration happens
    only after manual review by the user.
-7. When task changes are committed and the actual final state has passed all
-   required verification, call `workflow_usage_snapshot` again when usage is
+7. When task changes are committed, both documents from step 6 are written
+   and the actual final state has passed all required verification, call
+   `workflow_usage_snapshot` again when usage is
    selected. Check its session ID equals the begin session; append
    `--usage-export <fresh-path-from-tool>` to the following invocation. Never
    reuse the begin export or export via a different OpenCode installation.
    Then execute:
 
-   `python .opencode/scripts/start.py finish --id <id> --human-interventions <count> --correction-rounds <count>`
+   `python .opencode/scripts/start.py finish --id <id> --summary-file <actual-temp-summary-path> --human-interventions <count> --correction-rounds <count>`
 
    Finish measures fresh final reports for benchmark, collects the usage
    delta, archives findings and benchmark-before/after.json evidence, generates binary-capable `diff.patch`, writes
-   report/result, and updates CSV. It never commits task files. A nonzero exit
+   report/result with the implementation summary, and updates CSV. It never commits task files. A nonzero exit
    is an incomplete workflow: inspect the cause and retry after resolving it.
+   The summary is retained in the existing run state for retries. If resolving
+   a failure requires additional task commits, update the summary and findings
+   for the new final state before taking a fresh snapshot and retrying finish.
    Do not invent metrics. `abort --id <id>` releases a failed active run and
    preserves artifacts and Git state; never abort to hide a failure.
 8. Final report: completed / failed / no changes; selected modules, run ID,
@@ -145,7 +163,8 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    before/after, failures/errors/skipped, corrections/interventions, usage
    tokens/reasoning/cache/completed requests/known retries/estimated USD cost,
    pending messages and measurement limits, CSV (when benchmark selected),
-   run folder, report, findings, diff.patch and final working-tree state.
+   run folder, report (implementation and metrics), findings (open problems or
+   explicit no-further-findings statement), diff.patch and final working-tree state.
    Missing metrics are unavailable, not zero. Usage ends at finish's snapshot;
    the currently running inference step and the final response after that
    snapshot are not completely measured. External prompt-improver provider

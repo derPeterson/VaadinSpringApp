@@ -36,6 +36,8 @@ def main(argv=None) -> int:
     finish.add_argument("--correction-rounds", type=int, default=0,
                        help="Fehlgeschlagene Prüfläufe, die eine weitere Codeänderung erforderten; ganze Zahl >= 0, Standard: 0")
     finish.add_argument("--usage-export", type=Path, help="Frischer NACHHER-Export derselben Session; /start verwendet workflow_usage_snapshot, Begin-Export nicht wiederverwenden")
+    finish.add_argument("--summary-file", type=Path,
+                        help="UTF-8 Markdown außerhalb Git: Umsetzung und Verhaltensänderungen für report.md; findings.md enthält nur offene Probleme")
     abort = commands.add_parser("abort", help="Aktiven Run freigeben; Artefakte und Git-Zustand behalten",
                                 description="Abort beendet den Workflow-Status, ohne Task-Dateien oder Branches zurückzusetzen.")
     abort.add_argument("--id", required=True, help="Pflicht: echte 32-stellige Run-ID des abzubrechenden Laufs")
@@ -51,7 +53,7 @@ def main(argv=None) -> int:
                 result = runner.begin(repo, args.store_root, request, catalog, args.usage_export, args.id)
         elif args.action == "finish":
             result = runner.finish(repo, args.store_root, args.id, args.human_interventions,
-                                   args.correction_rounds, args.usage_export)
+                                   args.correction_rounds, args.usage_export, args.summary_file)
         else:
             result = runner.abort(repo, args.store_root, args.id)
         print(json.dumps(result, ensure_ascii=False, indent=2))
