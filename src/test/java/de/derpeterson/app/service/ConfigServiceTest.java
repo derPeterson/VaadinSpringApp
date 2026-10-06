@@ -9,12 +9,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EmptySource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 
 import java.util.Optional;
 
@@ -26,11 +30,13 @@ import static org.mockito.Mockito.*;
 class ConfigServiceTest {
     @Mock
     private ConfigRepository repository;
+    @Mock
+    private PlatformTransactionManager transactionManager;
     private ConfigService service;
 
     @BeforeEach
     void setUp() {
-        service = new ConfigService(repository);
+        service = new ConfigService(repository, transactionManager);
     }
 
     @ParameterizedTest
@@ -64,6 +70,7 @@ class ConfigServiceTest {
             assertEquals(value, service.getString(ConfigEntry.SERVICE_NAME, "fallback"));
             verify(repository, times(2)).findByKey(ConfigEntry.SERVICE_NAME.getKey());
             verify(repository, never()).save(any());
+            verify(repository, never()).saveAndFlush(any());
         }
 
         @Test
@@ -110,6 +117,7 @@ class ConfigServiceTest {
             assertEquals(expected, service.getInteger(ConfigEntry.MAIL_PORT));
             assertEquals(expected, service.getInteger(ConfigEntry.MAIL_PORT, 99));
             verify(repository, never()).save(any());
+            verify(repository, never()).saveAndFlush(any());
         }
 
         @Test
@@ -143,13 +151,30 @@ class ConfigServiceTest {
             assertThrows(NumberFormatException.class, () -> service.getInteger(ConfigEntry.MAIL_PORT));
             assertThrows(NumberFormatException.class, () -> service.getInteger(ConfigEntry.MAIL_PORT, 99));
             verify(repository, never()).save(any());
+            verify(repository, never()).saveAndFlush(any());
         }
 
         @Test
-        void incompatibleDeclaredDefaultFailsEvenWhenAnIntegerIsStored() {
-            // The no-default overload parses the enum default before querying persistence.
+        void incompatibleDeclaredDefaultIsNotEvaluatedWhenAnIntegerIsStored() {
+            stored(ConfigEntry.SERVICE_NAME, "17");
+
+            assertEquals(17, service.getInteger(ConfigEntry.SERVICE_NAME));
+        }
+
+        @Test
+        void incompatibleDeclaredDefaultFailsOnlyWhenNeeded() {
+            missing(ConfigEntry.SERVICE_NAME);
+
             assertThrows(NumberFormatException.class, () -> service.getInteger(ConfigEntry.SERVICE_NAME));
-            verifyNoInteractions(repository);
+            assertEquals(9, service.getInteger(ConfigEntry.SERVICE_NAME, 9));
+        }
+
+        @Test
+        void legacyNullWithIncompatibleDeclaredDefaultAlsoFails() {
+            stored(ConfigEntry.SERVICE_NAME, null);
+
+            assertThrows(NumberFormatException.class, () -> service.getInteger(ConfigEntry.SERVICE_NAME));
+            assertEquals(9, service.getInteger(ConfigEntry.SERVICE_NAME, 9));
         }
 
         @Test
@@ -163,13 +188,35 @@ class ConfigServiceTest {
     @Nested
     class Booleans {
         @ParameterizedTest
-        @CsvSource({"true,true", "TRUE,true", "TrUe,true", "false,false", "FALSE,false", "yes,false", "1,false", "' true ',false", "'',false"})
-        void parsesStoredBooleansWithoutTrimmingOrRejectingUnknownValues(String raw, boolean expected) {
+        @CsvSource({"true,true", "TRUE,true", "TrUe,true", "false,false", "FALSE,false"})
+        void parsesStoredBooleansCaseInsensitively(String raw, boolean expected) {
             stored(ConfigEntry.MAIL_SMTP_AUTH, raw);
 
             assertEquals(expected, service.getBoolean(ConfigEntry.MAIL_SMTP_AUTH));
             assertEquals(expected, service.getBoolean(ConfigEntry.MAIL_SMTP_AUTH, !expected));
             verify(repository, never()).save(any());
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"yes", "no", "1", "0", " true ", "false ", "", " "})
+        void malformedBooleansThrowWithEitherFallback(String raw) {
+            stored(ConfigEntry.MAIL_SMTP_AUTH, raw);
+
+            var failure = assertThrows(IllegalArgumentException.class,
+                    () -> service.getBoolean(ConfigEntry.MAIL_SMTP_AUTH));
+            assertTrue(failure.getMessage().contains(ConfigEntry.MAIL_SMTP_AUTH.getKey()));
+            assertThrows(IllegalArgumentException.class, () -> service.getBoolean(ConfigEntry.MAIL_SMTP_AUTH, true));
+            assertThrows(IllegalArgumentException.class, () -> service.getBoolean(ConfigEntry.MAIL_SMTP_AUTH, false));
+        }
+
+        @Test
+        void incompatibleBooleanDefaultIsValidatedOnlyWhenNeeded() {
+            stored(ConfigEntry.SERVICE_NAME, "true");
+            assertTrue(service.getBoolean(ConfigEntry.SERVICE_NAME));
+            missing(ConfigEntry.SERVICE_NAME);
+            assertThrows(IllegalArgumentException.class, () -> service.getBoolean(ConfigEntry.SERVICE_NAME));
+            assertFalse(service.getBoolean(ConfigEntry.SERVICE_NAME, false));
         }
 
         @Test
@@ -203,7 +250,7 @@ class ConfigServiceTest {
     @Nested
     class Writes {
         @ParameterizedTest
-        @NullAndEmptySource
+        @EmptySource
         @ValueSource(strings = {"new value", "  preserved  "})
         void updatesTheExistingEntityPreservingItsIdentityAndKey(String value) {
             ConfigEntity existing = new ConfigEntity(7L, ConfigEntry.SERVICE_NAME.getKey(), "old");
@@ -214,11 +261,13 @@ class ConfigServiceTest {
             assertEquals(7L, existing.getId());
             assertEquals(ConfigEntry.SERVICE_NAME.getKey(), existing.getKey());
             assertEquals(value, existing.getValue());
-            verify(repository).save(same(existing));
+            verify(repository).saveAndFlush(same(existing));
+            verify(transactionManager).getTransaction(argThat(definition ->
+                    definition.getPropagationBehavior() == TransactionDefinition.PROPAGATION_REQUIRES_NEW));
         }
 
         @ParameterizedTest
-        @NullAndEmptySource
+        @EmptySource
         @ValueSource(strings = {"new value", "  preserved  "})
         void createsAMissingEntryWithTheRequestedKeyAndValue(String value) {
             missing(ConfigEntry.SERVICE_NAME);
@@ -228,7 +277,7 @@ class ConfigServiceTest {
             var captor = ArgumentCaptor.forClass(ConfigEntity.class);
             var order = inOrder(repository);
             order.verify(repository).findByKey(ConfigEntry.SERVICE_NAME.getKey());
-            order.verify(repository).save(captor.capture());
+            order.verify(repository).saveAndFlush(captor.capture());
             assertNull(captor.getValue().getId());
             assertEquals(ConfigEntry.SERVICE_NAME.getKey(), captor.getValue().getKey());
             assertEquals(value, captor.getValue().getValue());
@@ -241,7 +290,7 @@ class ConfigServiceTest {
 
             assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
                     () -> service.set(ConfigEntry.SERVICE_NAME, "new")));
-            verify(repository, never()).save(any());
+            verify(repository, never()).saveAndFlush(any());
         }
 
         @ParameterizedTest
@@ -253,10 +302,74 @@ class ConfigServiceTest {
                 missing(ConfigEntry.SERVICE_NAME);
             }
             var failure = failure();
-            when(repository.save(any(ConfigEntity.class))).thenThrow(failure);
+            when(repository.saveAndFlush(any(ConfigEntity.class))).thenThrow(failure);
 
             assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
                     () -> service.set(ConfigEntry.SERVICE_NAME, "new")));
+        }
+
+        @Test
+        void nullValueIsRejectedBeforeAnyRepositoryOrTransactionAccess() {
+            assertThrows(NullPointerException.class, () -> service.set(ConfigEntry.SERVICE_NAME, null));
+            verifyNoInteractions(repository, transactionManager);
+        }
+
+        @Test
+        void failedCreationRetriesExistingRowAfterRollback() {
+            var existing = new ConfigEntity(7L, ConfigEntry.SERVICE_NAME.getKey(), "winner");
+            when(repository.findByKey(existing.getKey())).thenReturn(Optional.empty(), Optional.of(existing));
+            var failure = new DataIntegrityViolationException("duplicate key");
+            when(repository.saveAndFlush(any())).thenThrow(failure).thenAnswer(invocation -> invocation.getArgument(0));
+
+            service.set(ConfigEntry.SERVICE_NAME, "loser");
+
+            assertEquals("loser", existing.getValue());
+            var order = inOrder(repository, transactionManager);
+            order.verify(transactionManager).getTransaction(any());
+            order.verify(repository).findByKey(existing.getKey());
+            order.verify(repository).saveAndFlush(any());
+            order.verify(transactionManager).rollback(any());
+            order.verify(transactionManager).getTransaction(any());
+            order.verify(repository).findByKey(existing.getKey());
+            order.verify(repository).saveAndFlush(same(existing));
+            order.verify(transactionManager).commit(any());
+        }
+
+        @Test
+        void failedCreationWithoutCompetingRowPropagatesOriginalFailure() {
+            missing(ConfigEntry.SERVICE_NAME);
+            var failure = new DataIntegrityViolationException("invalid value");
+            when(repository.saveAndFlush(any())).thenThrow(failure);
+
+            assertSame(failure, assertThrows(DataIntegrityViolationException.class,
+                    () -> service.set(ConfigEntry.SERVICE_NAME, "new")));
+            verify(repository, times(1)).saveAndFlush(any());
+        }
+
+        @Test
+        void updateIntegrityFailureIsNotRetried() {
+            stored(ConfigEntry.SERVICE_NAME, "old");
+            var failure = new DataIntegrityViolationException("invalid value");
+            when(repository.saveAndFlush(any())).thenThrow(failure);
+
+            assertSame(failure, assertThrows(DataIntegrityViolationException.class,
+                    () -> service.set(ConfigEntry.SERVICE_NAME, "new")));
+            verify(repository, times(1)).findByKey(ConfigEntry.SERVICE_NAME.getKey());
+        }
+
+        @Test
+        void retryFailureRemainsVisibleAndIsNotRetriedAgain() {
+            var existing = new ConfigEntity(7L, ConfigEntry.SERVICE_NAME.getKey(), "winner");
+            when(repository.findByKey(existing.getKey())).thenReturn(Optional.empty(), Optional.of(existing));
+            var retryFailure = failure();
+            when(repository.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("duplicate key"))
+                    .thenThrow(retryFailure);
+
+            assertSame(retryFailure, assertThrows(DataAccessResourceFailureException.class,
+                    () -> service.set(ConfigEntry.SERVICE_NAME, "new")));
+            verify(repository, times(2)).findByKey(existing.getKey());
+            verify(repository, times(2)).saveAndFlush(any());
+            verify(transactionManager, times(2)).rollback(any());
         }
     }
 
@@ -272,6 +385,7 @@ class ConfigServiceTest {
         assertSame(failure, assertThrows(DataAccessResourceFailureException.class, () -> service.getBoolean(ConfigEntry.MAIL_PORT)));
         assertSame(failure, assertThrows(DataAccessResourceFailureException.class, () -> service.getBoolean(ConfigEntry.MAIL_PORT, true)));
         verify(repository, never()).save(any());
+        verify(repository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -284,7 +398,7 @@ class ConfigServiceTest {
         assertThrows(NullPointerException.class, () -> service.getBoolean(null));
         assertThrows(NullPointerException.class, () -> service.getBoolean(null, true));
         assertThrows(NullPointerException.class, () -> service.set(null, "value"));
-        verifyNoInteractions(repository);
+        verifyNoInteractions(repository, transactionManager);
     }
 
     private void stored(ConfigEntry entry, String value) {
