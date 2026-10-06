@@ -45,6 +45,15 @@ def elapsed(start, end):
 
 def snapshot(data: dict, repo: Path, session_id: str | None = None,
              captured_ms: float | None = None) -> dict:
+    bridge = data.get("workflowUsage")
+    if bridge is not None:
+        if (not isinstance(bridge, dict) or bridge.get("version") != 1
+                or bridge.get("source") != "OpenCode SDK"
+                or bridge.get("sessionId") != data.get("info", {}).get("id")
+                or number(bridge.get("capturedMs")) is None):
+            raise WorkflowError("Invalid active-server usage snapshot.")
+        if captured_ms is None:
+            captured_ms = bridge["capturedMs"]
     captured_ms = captured_ms if captured_ms is not None else time.time() * 1000
     info = data.get("info", {})
     if not isinstance(data.get("messages"), list) or not info.get("id"):
@@ -81,12 +90,19 @@ def snapshot(data: dict, repo: Path, session_id: str | None = None,
         result["model"] = "/".join(str(metadata.get(key, "unknown")) for key in ("providerID", "modelID"))
         messages[message_id] = result
     # No transcript, tool arguments, code, prompts or credentials are persisted.
-    return {"sessionId": info["id"], "capturedMs": captured_ms, "messages": messages}
+    result = {"sessionId": info["id"], "capturedMs": captured_ms, "messages": messages}
+    if bridge is not None:
+        result["source"] = bridge["source"]
+    return result
 
 
 def capture(repo: Path, session_id: str | None, export_path: Path | None = None) -> dict:
     if export_path:
         data = read_json(export_path)
+        if "workflowUsage" in data:
+            captured = (data["workflowUsage"] or {}).get("capturedMs") if isinstance(data["workflowUsage"], dict) else None
+            if number(captured) is None or not -30000 <= time.time() * 1000 - captured <= 300000:
+                raise WorkflowError("Active-server usage snapshot is stale or invalid. Call workflow_usage_snapshot again.")
     else:
         if not session_id or not re.fullmatch(r"ses_[A-Za-z0-9]+", session_id):
             raise WorkflowError("usage requires the exact OpenCode session_id (ses_...) or an export file.")
@@ -101,6 +117,9 @@ def capture(repo: Path, session_id: str | None, export_path: Path | None = None)
 def difference(before: dict, after: dict) -> dict:
     if before["sessionId"] != after["sessionId"]:
         raise WorkflowError("Cannot compare different usage sessions.")
+    if before.get("source") == "OpenCode SDK":
+        if after.get("source") != "OpenCode SDK" or after["capturedMs"] <= before["capturedMs"]:
+            raise WorkflowError("Finish requires a fresh workflow_usage_snapshot from the same active session.")
     old, new = before["messages"], after["messages"]
     if not old.keys() <= new.keys():
         raise WorkflowError("Usage messages disappeared; session was reverted or export is incomplete.")

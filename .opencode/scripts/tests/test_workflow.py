@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch, Mock
@@ -359,6 +360,47 @@ class UsageCase(RepoCase):
     def snap(self, messages):
         return usage.snapshot(self.export(messages), self.repo, "ses_test", captured_ms=6000)
 
+    def bridge_export(self, captured_ms=6000, messages=None):
+        return self.export(messages) | {"workflowUsage": {
+            "version": 1, "source": "OpenCode SDK", "sessionId": "ses_test", "capturedMs": captured_ms}}
+
+    def test_active_server_export_never_uses_local_cli(self):
+        export_path = self.base / "bridge.json"
+        write_json(export_path, self.bridge_export(messages=[assistant()]))
+        with patch("workflow.usage.run") as local_cli, patch("workflow.usage.time.time", return_value=7):
+            measured = usage.capture(self.repo, "ses_test", export_path)
+        local_cli.assert_not_called()
+        self.assertEqual("OpenCode SDK", measured["source"])
+        self.assertEqual(6000, measured["capturedMs"])
+        self.assertNotIn("secret text", json.dumps(measured))
+
+    def test_active_server_snapshot_timestamp_clips_pending_reasoning(self):
+        active = assistant(completed=False, steps=False)
+        active["parts"][0]["time"].pop("end")
+        measured = usage.snapshot(self.bridge_export(captured_ms=3500, messages=[active]), self.repo, "ses_test")
+        self.assertEqual(2.5, measured["messages"]["msg_one"]["ReasoningSeconds"])
+
+    def test_stale_future_or_invalid_active_server_export_rejected(self):
+        export_path = self.base / "bridge.json"
+        for bridge in (self.bridge_export(captured_ms=1), self.bridge_export(captured_ms=999999),
+                       self.export() | {"workflowUsage": "invalid"}):
+            write_json(export_path, bridge)
+            with patch("workflow.usage.time.time", return_value=400), self.assertRaises(WorkflowError):
+                usage.capture(self.repo, "ses_test", export_path)
+        malformed = self.bridge_export()
+        malformed["workflowUsage"]["sessionId"] = "ses_other"
+        with self.assertRaisesRegex(WorkflowError, "Invalid active-server"):
+            usage.snapshot(malformed, self.repo)
+
+    def test_finish_requires_new_snapshot_from_same_transport(self):
+        before = usage.snapshot(self.bridge_export(), self.repo, "ses_test")
+        with self.assertRaisesRegex(WorkflowError, "fresh"):
+            usage.difference(before, before)
+        with self.assertRaisesRegex(WorkflowError, "fresh"):
+            usage.difference(before, self.snap([]))
+        after = usage.snapshot(self.bridge_export(captured_ms=7000, messages=[assistant()]), self.repo, "ses_test")
+        self.assertEqual(100, usage.difference(before, after)["InputTokens"])
+
     def test_usage_partial_intervals_exclude_pre_begin_time(self):
         active = assistant(completed=False, steps=False)
         active["parts"][0]["time"].pop("end")
@@ -444,17 +486,19 @@ class UsageCase(RepoCase):
 
     def test_complete_integration_archives_usage_and_csv(self):
         before_path, after_path = self.base / "before.json", self.base / "after.json"
-        write_json(before_path, self.export([assistant("msg_old")]))
-        write_json(after_path, self.export([assistant("msg_old"), assistant("msg_new")]))
+        write_json(before_path, self.bridge_export(captured_ms=time.time() * 1000, messages=[assistant("msg_old")]))
         self.request.update(modules="complete", session_id="ses_test")
         with patch("workflow.benchmark.collect", return_value=METRICS), patch("workflow.prompt.improve", return_value="improved"):
             started = runner.begin(self.repo, self.store_root, self.request, CATALOG, before_path)
         self.commit_task()
+        write_json(after_path, self.bridge_export(captured_ms=time.time() * 1000,
+                                                  messages=[assistant("msg_old"), assistant("msg_new")]))
         with patch("workflow.benchmark.collect", return_value=METRICS):
             result = runner.finish(self.repo, self.store_root, started["id"], usage_export=after_path)
         self.assertEqual(100, result["InputTokens"])
         self.assertEqual("openai/test-model", result["ActualModels"])
         self.assertTrue((Path(started["folder"]) / "usage.json").is_file())
+        self.assertEqual("OpenCode SDK", read_json(Path(started["folder"]) / "usage-before.json")["source"])
 
     def test_module_selections_use_same_csv_schema(self):
         first = self.begin()

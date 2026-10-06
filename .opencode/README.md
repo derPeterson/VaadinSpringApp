@@ -44,6 +44,15 @@ Standardbibliothek, Git und gegebenenfalls OpenCode/Maven. Für Benchmark:
 Java 25, Maven Wrapper, JaCoCo CSV und Surefire XML im bestehenden Projekt.
 JDK-/Buildfehler werden nicht durch Versionswechsel oder Test-Skips umgangen.
 
+Für `usage` gehört außerdem `plugins/workflow-usage.js` mit
+`scripts/workflow_usage_bridge.mjs` zum installierten Stand. OpenCode lädt das
+lokale Plugin beim Start und installiert seine bereits vorhandene
+`@opencode-ai/plugin`-Abhängigkeit aus `package.json`. Nach dem Einspielen
+OpenCode beziehungsweise dessen Server neu starten; ein laufender Chat lädt
+neue Plugin-Dateien nicht automatisch. Danach muss das Tool
+`workflow_usage_snapshot` verfügbar sein. Die Anbindung wurde gegen OpenCode
+**1.18.32** geprüft. Kein öffentlicher Share-Link ist erforderlich.
+
 ## Aufruf in OpenCode
 
 ```text
@@ -225,7 +234,7 @@ CLI-Optionen wie `--model` oder `--task`. Die Reihenfolge der JSON-Felder ist eg
 | `branch` | Bei `branch` | Name ohne `feature/`, z. B. `userservice_tests`; erlaubt sind kleine Buchstaben, Ziffern, `_` und `-`. |
 | `target_class` | Bei `benchmark` | Einfacher Java-/JaCoCo-Klassenname, z. B. `UserService`; kein Dateipfad und kein Packagepräfix. |
 | `model` | Bei `benchmark` | Schlüssel aus `benchmark-models.json`, z. B. `gpt61-sol` oder `qwen3-coder`; dient der Run-Zuordnung. Schaltet selbst kein aktives OpenCode-Modell um. |
-| `session_id` | Bei automatischem `usage`-Export | Exakte OpenCode-Sitzungs-ID `ses_...` für dieses Projekt. Bei einem expliziten Vorher-Export kann sie aus dessen `info.id` übernommen werden. |
+| `session_id` | Bei `usage` im `/start`-Ablauf | Das Tool `workflow_usage_snapshot` liefert die echte ID automatisch. Bei einem expliziten Vorher-Export kann sie aus dessen `info.id` übernommen werden. |
 | `prompt_provider` | Nein | Nur für das `prompt`-Modul: Override `chatgpt`, `openai` oder `ollama`; sonst Wert aus der Improver-Config. |
 | `prompt_model` | Nein | Nur für das `prompt`-Modul: Modell-Override des Improvers; unabhängig vom Coding-Modell und dem Feld `model`. Ohne Override gilt die Improver-Config. |
 
@@ -323,11 +332,34 @@ sind enthalten. CSV-Zahlen verwenden unabhängig von Windows-Locale einen Punkt.
 
 ## Usage und Messgrenzen
 
-Quelle ist `opencode export <exactSessionId>`, **kein globales `opencode stats`**.
-Session-ID und Projektverzeichnis müssen passen. Vorherige Session-Nutzung
-wird abgezogen. Optional kann bei `begin` und `finish` jeweils
-`--usage-export <JSON-Datei>` für explizite Vorher-/Nachher-Exporte angegeben
-werden. Gemessene Snapshots enthalten keine Gesprächs-/Code-/Tooltexte.
+Im `/start`-Ablauf ist die Quelle das Plugin-Tool `workflow_usage_snapshot`.
+Es bekommt die echte Session-ID aus OpenCodes Tool-Kontext und liest die
+Sitzung über den SDK-Client des aktiven Servers. Desktop-App, Terminal,
+Browser und IDE verwenden damit denselben Weg. Ein separates lokales
+`opencode.cmd` muss die Sitzung nicht kennen. Es gibt keine Zuordnung anhand
+von Sitzungstiteln, der neuesten Sitzung oder einer manuell kopierten ID.
+
+Das Tool liefert `session_id` und `usage_export`. OpenCode übernimmt die ID
+in die Request-Datei und übergibt den Export mit `--usage-export` an `begin`.
+Unmittelbar vor `finish` ruft es das Tool erneut auf und übergibt den neuen
+Export. Session-ID und Projektverzeichnis müssen passen; Python weist
+veraltete Plugin-Exporte (über fünf Minuten), ungültige Zeitstempel und eine
+Wiederverwendung des Begin-Snapshots bei Finish zurück. Vorherige
+Session-Nutzung wird abgezogen. Laufende Zeitspannen enden am tatsächlichen
+Exportzeitpunkt, nicht am späteren Einlesen durch Python.
+
+Die temporären JSON-Dateien enthalten ausschließlich Metriken, IDs und das
+Projektverzeichnis. Gesprächs-, Code-, Tool- und Credential-Texte werden vor
+dem Schreiben entfernt. Das Plugin löscht seine eigenen temporären Dateien
+beim Beenden des Servers; nach einem Prozessabbruch können diese bereinigten
+Dateien im System-Temp verbleiben. Python speichert die Messwerte im Run-Ordner.
+Bei einem entfernten Server laufen Plugin und Python auf dessen Rechner;
+die von OpenCode ausgeführten Shell-Aufrufe müssen den Exportpfad lesen können.
+
+Für einen direkten Python-Aufruf außerhalb OpenCode bleiben explizite
+Session-Exporte mit `--usage-export` und `opencode export <exactSessionId>`
+verfügbar. Der CLI-Weg setzt voraus, dass diese Installation dieselbe Sitzung
+kennt. Globale `opencode stats` werden nicht als Ersatz verwendet.
 
 | Feld | Bedeutung |
 |---|---|
@@ -363,6 +395,7 @@ Vom `.opencode/scripts`-Ordner:
 
 ```powershell
 python -B -m unittest discover -s tests -v
+node --test tests/test_workflow_usage.mjs
 ```
 
 Die automatische Suite nutzt temporäre echte Git-Repositories, Offline-Exports
@@ -370,6 +403,11 @@ und gemockte Provider/Benchmark-Builds. Sie prüft die Lifecycle- und Fehlerpfad
 Metriken, Patch-/Findings-/CSV-Erhalt, Locking, Modellgenerator und Integration
 des existierenden Prompt-Improvers. Sie verbraucht keine Modellanfragen und
 startet keine Anwendung. Live-Provider-Smoke-Tests separat und bewusst ausführen.
+Die Node-Suite benötigt die in `.opencode/package.json` deklarierte
+Plugin-Abhängigkeit (Installation durch OpenCode oder `npm ci` in `.opencode`).
+Sie prüft das echte Plugin und SDK mit einem kontrollierten HTTP-Transport:
+aktiver Server und Authentifizierung, mehrere Sitzungen, vollständige
+Message-Liste, bereinigte Exporte und Fehlerpfade. Sie startet keine Modellanfrage.
 Die konkreten Prüfungen und Grenzen dieser Migration stehen in `MIGRATION_REPORT.md`.
 
 ## Änderungen und bewusste Grenzen
@@ -388,14 +426,16 @@ Die konkreten Prüfungen und Grenzen dieser Migration stehen in `MIGRATION_REPOR
   früher genannten Refresh-Lock-, Re-Login-, `response.incomplete`- und
   Keyring-Chunk-Aufräumpunkte bleiben für später; der Workflow-Store-Lock ist
   kein globaler OAuth-Refresh-Lock für unterschiedliche Projekte/Prozesse.
-- `package.json` / `package-lock.json` erhalten: kein JS-Modul hinzugefügt,
-  kein unbelegtes Löschen der bestehenden OpenCode-Abhängigkeit.
+- `package.json` / `package-lock.json` erhalten. Die vorhandene OpenCode-
+  Abhängigkeit wird nun für die kleine SDK-Anbindung des Usage-Moduls genutzt.
+  Benchmark, Lifecycle und Prompt-Integration bleiben Python.
 - Keine Reviewer-, RAG- oder sonstigen fachlichen Module hinzugefügt.
 
 ## OpenCode-Referenzen
 
 [Command-Argumente und Modell-Frontmatter](https://opencode.ai/docs/commands/),
 [CLI-Session-Export](https://opencode.ai/docs/cli/),
+[Lokale Plugins und Tool-Kontext](https://opencode.ai/docs/plugins/),
 [Exportstruktur](https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/cli/cmd/export.ts),
 [Usage-Zähler im Session-Schema](https://github.com/anomalyco/opencode/blob/dev/packages/schema/src/v1/session.ts).
 Das Exportformat wurde zusätzlich gegen die installierte Version 1.18.32 geprüft.

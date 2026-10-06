@@ -38,3 +38,4 @@ dev-shell.bat
 .env.local
 .opencode/.opencode-before-python-migration.zip
 .opencode/opencode-python-migration.zip
+.opencode/opencode-usage-fix.zip

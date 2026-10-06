@@ -41,7 +41,7 @@ CLI-Hilfetext und die zwei beschriebenen Smoke-Test-Korrekturen.
 
 | Prüfung | Ergebnis |
 |---|---|
-| Automatische Python-Suite | **48 Tests, 0 Fehler, 0 Failures, 0 Skips** |
+| Automatische Python-Suite | **52 Tests, 0 Fehler, 0 Failures, 0 Skips** nach dem Usage-Fix |
 | Echte temporäre Git-Repositories | Branch-/Status-Prüfungen, Commits, Findings, Text-/Binary-Diff und sauberer Endzustand erfolgreich |
 | CLI als eigener Prozess | Begin/Finish, sichere JSON-Task-Übergabe mit Quotes/Zeilenumbrüchen/Shell-Sonderzeichen erfolgreich |
 | Fehlerpfade | Dirty Tree, vorhandene lokale/remote Branches, falscher Branch, tracked Findings, fehlende Usage-Session, Build-/CSV-Fehler korrekt abgewiesen |
@@ -88,7 +88,8 @@ keine als erfolgreich ausgegebenen fehlgeschlagenen Tests.
   nicht ausgeführt. Command-Dateien/Generator, Python-Lifecycle, echter
   Session-Export, echter Maven-Benchmark und Live-Improver wurden einzeln und
   über die dokumentierten Integrationstests geprüft. Die TUI-Modellauswahl und
-  Ermittlung der aktuellen Session-ID müssen beim ersten echten Auftrag passen.
+  Live-Laden des Plugins und dessen Tool-Aufruf in der Desktop-App stehen
+  beim nächsten echten Auftrag noch aus; die aktive ID wird automatisch übergeben.
 - Usage endet am Finish-Snapshot. Laufende Inference-Schritte und die danach
   gesendete Abschlussantwort sind nicht vollständig enthalten. Requests zählt
   abgeschlossene Inference-Schritte, nicht garantiert alle HTTP-Versuche.
@@ -106,6 +107,40 @@ keine als erfolgreich ausgegebenen fehlgeschlagenen Tests.
   seine eigenen `start-*.md`-Dateien mit dem aktuellen `MARKER`.
 
 ## Einspielen und erster Auftrag
+
+### Nachtrag: aktive Sitzung unabhängig von der Oberfläche
+
+Der erste Desktop-Probelauf stoppte vor `begin`, weil die separate Windows-CLI
+die aktuelle Desktop-Sitzung nicht kannte. Die Sitzungs-ID war vorhanden,
+`opencode.cmd export` lieferte dennoch „Session not found“. Das saubere
+Arbeitsverzeichnis ist eine separate Voraussetzung.
+
+`plugins/workflow-usage.js` stellt jetzt `workflow_usage_snapshot` bereit.
+Das Tool erhält die tatsächliche Session-ID aus OpenCodes Tool-Kontext und
+verwendet den von OpenCode bereitgestellten SDK-Client einschließlich dessen
+aktiver Server-Verbindung und Authentifizierung. Vor Begin und Finish werden
+getrennte bereinigte Exporte geschrieben; das bestehende Python-Usage-Modul
+validiert Sitzung, Projekt, Frische und Messzeitpunkt. Es gibt keine Suche nach
+der neuesten Sitzung, keine öffentliche Freigabe und kein zusätzliches
+fachliches Modul. Das bestehende NPM-Paket wird jetzt tatsächlich verwendet.
+
+Die zusätzlichen Prüfungen verwenden das echte Plugin und OpenCode-SDK
+**1.18.32** mit einem kontrollierten HTTP-Transport, keine Modellanfragen:
+**7 Node-Tests erfolgreich**, einschließlich Server-/Auth-Erhalt, 151 Messages
+ohne künstliches Limit, konkurrierenden Sessions, Temp-Dateien, fehlenden
+Sitzungen und Entfernung von Text-/Credential-Daten. Die Python-Suite prüft
+auch einen vollständigen Complete-Lifecycle mit zwei SDK-Snapshots, einem
+echten temporären Git-Repository und gemockten Maven-/Prompt-Aufrufen.
+Damit ist nicht behauptet, dass vier verschiedene Oberflächen live gestartet
+wurden. Der nächste Desktop-Auftrag ist die noch ausstehende Live-Prüfung.
+
+Zum Nachrüsten des bereits installierten Stands: README, `commands/start.md`,
+`.gitignore`, `scripts/workflow/usage.py`, `scripts/workflow/cli.py` und die
+Tests aktualisieren sowie `plugins/workflow-usage.js` und
+`scripts/workflow_usage_bridge.mjs` hinzufügen. OpenCode/Server neu starten,
+Änderungen vor dem Benchmark auf `main` committen und dann denselben
+ConfigService-Auftrag neu senden. Die 22 Modell-Commands und der Katalog
+haben sich durch diesen Fix nicht verändert.
 
 Vorhandene `.opencode` sichern und durch den Ordner aus der ZIP ersetzen.
 Nicht nur darüberkopieren: sonst bleiben die abgelösten Commands aktiv.

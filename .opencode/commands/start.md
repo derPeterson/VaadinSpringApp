@@ -32,11 +32,14 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    catalog model, use its `/start-<modelKey>` command, which has model
    frontmatter; stop if a generic invocation would run a different model.
    Keep the actual provider/model IDs distinct from the catalog display label.
-3. When usage is selected, obtain the exact current session ID from the
-   session context. If unavailable, use `opencode session list --format json`
-   and verify directory AND the current task/title. Use only an unambiguous
-   match; never assume the newest session is this session. If unresolved,
-   stop before begin and report the missing session ID. Never fake usage.
+3. When usage is selected, call the `workflow_usage_snapshot` tool with no
+   arguments immediately before begin. It obtains the exact session ID from
+   OpenCode's tool context and uses the active server's SDK client, independent
+   of Desktop, TUI, browser or IDE. Keep its actual `session_id` and
+   `usage_export` path. Do not use the local CLI, session titles, newest-session
+   guesses, manual IDs or a public share link as a substitute. If the tool is
+   absent, stop and report that `plugins/workflow-usage.js` must be installed
+   and OpenCode restarted. A tool failure also stops before begin. Never fake usage.
 4. Write a UTF-8 JSON request in the system temp directory, outside Git,
    using a file-writing tool or proper JSON serializer. Fields:
    `modules`, `branch`, `target_class`, `model`, `task`, `session_id`.
@@ -45,6 +48,9 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    Invoke from the repository root (use the project's venv Python if present):
 
    `python .opencode/scripts/start.py begin --request <request-file>`
+
+   With usage selected, append `--usage-export <actual-path-from-tool>`.
+   Use exactly the `session_id` returned by the tool in the JSON request.
 
    Capture the real JSON `id`, `folder`, `branch` and effective `task`.
    Nonzero exit = stop; report the failure and retained state. Do not continue
@@ -100,7 +106,11 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    Never merge or rebase the feature branch into main; integration happens
    only after manual review by the user.
 7. When task changes are committed and the actual final state has passed all
-   required verification, execute:
+   required verification, call `workflow_usage_snapshot` again when usage is
+   selected. Check its session ID equals the begin session; append
+   `--usage-export <fresh-path-from-tool>` to the following invocation. Never
+   reuse the begin export or export via a different OpenCode installation.
+   Then execute:
 
    `python .opencode/scripts/start.py finish --id <id> --human-interventions <count> --correction-rounds <count>`
 
