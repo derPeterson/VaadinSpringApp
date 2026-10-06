@@ -36,3 +36,5 @@ dev-shell.bat
 # Local secrets
 .env
 .env.local
+.opencode/.opencode-before-python-migration.zip
+.opencode/opencode-python-migration.zip

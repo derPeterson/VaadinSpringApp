@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from prompt.models import PromptImproverConfig
-from prompt.ollama_client import OllamaClient
+from prompt.llm_client_factory import LlmClientFactory
 from prompt.prompt_improver import PromptImprover
 
 
@@ -16,7 +16,7 @@ def main() -> None:
 
     config = PromptImproverConfig.model_validate(config_data)
 
-    client = OllamaClient("qwen3-coder-q3-tools:latest")
+    client = LlmClientFactory.create(config.provider, config.model)
     improver = PromptImprover(
         config=config,
         llm_client=client,

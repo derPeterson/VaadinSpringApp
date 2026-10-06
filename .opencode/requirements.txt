@@ -1,0 +1,7 @@
+# Direct dependencies; versions verified with the existing project's Python 3.14.8 venv.
+pydantic==2.13.5
+ollama==0.6.3
+openai==3.24.0
+httpx==0.28.1
+keyring==25.7.0
+PyJWT[crypto]==2.15.1

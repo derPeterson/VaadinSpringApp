@@ -27,7 +27,9 @@ CLI
   -> Markdown-Ausgabe
 ```
 
-Die Integration in den bestehenden Benchmark-Flow ist bewusst noch nicht umgesetzt.
+Der Improver ist unverändert als optionales `prompt`-Modul im Python-Workflow
+integriert. Aufrufe und Installation sind in [../../README.md](../../README.md)
+beschrieben. Config, fachliche Regeln und Provider-/OAuth-Clients bleiben erhalten.
 
 ## Verantwortung
 
@@ -442,7 +444,8 @@ keyring
 PyJWT[crypto]
 ```
 
-Die Abhängigkeiten sind derzeit noch nicht in einer eigenen `requirements.txt` oder `pyproject.toml` festgehalten. Für reproduzierbare Setups sollte das noch ergänzt werden.
+Die direkten Abhängigkeiten stehen mit den geprüften Versionen in
+`.opencode/requirements.txt`.
 
 ## Tests und Smoke-Skripte
 
@@ -458,7 +461,8 @@ Direkter OpenAI-API-Smoke-Test. Benötigt API-Key und API-Guthaben.
 
 ### `test_prompt_improver.py`
 
-Direkter Prompt-Improver-Test mit fest eingestelltem Ollama-Client. Die geladene `config.json` bestimmt hier aktuell nicht den Provider des Testclients.
+Manueller Prompt-Improver-Smoke-Test. Die geladene `config.json` bestimmt
+Provider und Modell über `LlmClientFactory`.
 
 ### `test_chatgpt_auth.py`
 
@@ -466,13 +470,14 @@ Prüft Erzeugung von Host-ID, PKCE-Daten und Authorization-URL.
 
 ### `test_chatgpt_callback.py`
 
-Manueller Callback-Test. In der aktuellen Datei fehlt vor `wait_for_callback()` noch der Aufruf:
+Manueller Callback-Test. Der Listener wird vor `wait_for_callback()` gestartet:
 
 ```python
 server.start()
 ```
 
-Ohne diesen Aufruf beendet sich das Skript mit `Callback server must be started first.`
+Ohne `start()` beendet sich der Listener weiterhin mit
+`Callback server must be started first.`; der Smoke-Test wurde korrigiert.
 
 ### `test_chatgpt_login.py`
 
@@ -494,7 +499,7 @@ Testet den ChatGPT-Client mit Strict Structured Output und anschließendem Pydan
 
 Der aktuelle Stand ist funktionsfähig, aber vor einer breiteren oder parallelen Nutzung sollten noch einige Punkte bereinigt werden:
 
-1. `test_chatgpt_callback.py` benötigt `server.start()` vor `wait_for_callback()`.
+1. Callback-Smoke-Test korrigiert: `server.start()` steht vor `wait_for_callback()`.
 2. Der einmalige ChatGPT-Login ist noch als Test-/Bootstrap-Skript implementiert und nicht als produktive Auth-Komponente oder CLI-Aktion.
 3. `ChatGPTClient` kann gespeicherte Credentials laden und refreshen, startet bei fehlenden oder endgültig ungültigen Credentials aber nicht selbst eine erneute Browser-Anmeldung.
 4. Gleichzeitige Refreshes mehrerer Prozesse werden noch nicht synchronisiert. Bei rotierenden Refresh Tokens sollte vor paralleler Benchmark-Nutzung ein Lock ergänzt werden.
@@ -502,8 +507,8 @@ Der aktuelle Stand ist funktionsfähig, aber vor einer breiteren oder parallelen
 6. Verfügbare ChatGPT-Modelle werden noch nicht dynamisch über den Account-Modellkatalog abgefragt. Das Modell kommt derzeit aus `config.json` oder der CLI.
 7. Beim Überschreiben von gechunkten Keyring-Secrets werden ältere, nicht mehr benötigte Extra-Chunks derzeit nicht aktiv gelöscht.
 8. `PromptImprover._apply_defaults()` führt Standardlisten und Modelllisten einfach zusammen; eine zusätzliche Deduplizierung wäre möglich.
-9. Es fehlt noch eine deklarative Python-Dependency-Datei (`requirements.txt` oder `pyproject.toml`).
-10. Die Benchmark-Integration des Prompt Improvers ist noch offen.
+9. Erledigt: deklarative Python-Abhängigkeiten in `.opencode/requirements.txt`.
+10. Erledigt: optionale Integration in den modularen Python-Workflow.
 
 ## Security-Grundsätze
 
@@ -526,15 +531,15 @@ original-prompt.md
 improved-prompt.md
 ```
 
-Die spätere Benchmark-Integration soll diese Dateien in den jeweiligen externen Benchmark-Run-Ordner übernehmen.
+Das `prompt`-Modul schreibt diese Dateien direkt in den externen Run-Ordner.
 
 ## Nächste Schritte
 
 Die fachlich sinnvolle Reihenfolge ist:
 
-1. kleine Review-Funde bereinigen,
-2. Python-Abhängigkeiten deklarativ festhalten,
-3. ChatGPT-Login/Session-Handling aus dem Testskript in eine produktive Komponente verschieben,
-4. Refresh-Race und Re-Login-Fehlerfälle robust behandeln,
-5. optional dynamische ChatGPT-Modellabfrage ergänzen,
-6. anschließend Prompt Improver in den bestehenden Benchmark-Flow integrieren.
+1. ChatGPT-Login/Session-Handling aus dem Testskript in eine produktive Komponente verschieben,
+2. Refresh-Race und Re-Login-Fehlerfälle robust behandeln,
+3. optional dynamische ChatGPT-Modellabfrage ergänzen.
+
+Diese Punkte gehören nicht zur aktuellen Benchmark-Migration; der Improver-Kern
+und seine Provider bleiben in diesem Schritt unverändert.

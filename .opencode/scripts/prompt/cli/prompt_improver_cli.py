@@ -21,7 +21,7 @@ def main() -> None:
     parser.add_argument(
         "--provider",
         required=False,
-        help="Optional LLM provider override, e.g. ollama or openai.",
+        help="Optional LLM provider override: ollama, openai or chatgpt.",
     )
 
     parser.add_argument(

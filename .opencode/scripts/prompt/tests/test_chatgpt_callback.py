@@ -5,6 +5,7 @@ from prompt.chatgpt.callback_server import (
 
 def main() -> None:
     server = ChatGPTCallbackServer()
+    server.start()
 
     print(
         f"Waiting for callback on: "
