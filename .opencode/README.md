@@ -13,12 +13,14 @@ OpenCode nach den Projektregeln; Python bereitet den Lauf vor und wertet ihn aus
 - [Python-CLI und Request-Datei](#python-cli-und-request-datei)
   - [Hilfe im Terminal anzeigen](#hilfe-im-terminal-anzeigen)
   - [Globale Optionen](#globale-optionen)
+  - [Aktion prepare](#aktion-prepare)
   - [Aktion begin](#aktion-begin)
   - [Aktion finish](#aktion-finish)
   - [Aktion abort](#aktion-abort)
   - [Felder der Request-Datei](#felder-der-request-datei)
 - [Ergebnisse](#ergebnisse)
 - [Usage und Messgrenzen](#usage-und-messgrenzen)
+  - [Vergleichbare Benchmarks](#vergleichbare-benchmarks)
 - [Tests](#tests)
 - [Änderungen und bewusste Grenzen](#änderungen-und-bewusste-grenzen)
 - [OpenCode-Referenzen](#opencode-referenzen)
@@ -26,9 +28,10 @@ OpenCode nach den Projektregeln; Python bereitet den Lauf vor und wertet ihn aus
 ## Installation
 
 Die ZIP enthält den vollständigen Ordner `.opencode` für eine saubere
-Neuinstallation. Verwende ihn als neuen Stand und starte mit einem leeren
-AI-Benchmark-Projektordner. Der Workflow übernimmt keine vorherigen Runs oder
-CSV-Schemas. Zugangsdaten im Credential Manager und Benutzerprofil bleiben
+Neuinstallation. Bei einem bestehenden Python-Stand kann das Änderungspaket
+darüberkopiert werden. Vorhandene Python-Runs bleiben erhalten; beim nächsten
+CSV-Eintrag wird das Schema des ersten Runs um die neuen Metadaten erweitert.
+Alte PowerShell-CSV-Schemas werden weiterhin abgewiesen. Zugangsdaten im Credential Manager und Benutzerprofil bleiben
 für den bestehenden Prompt-Improver nutzbar.
 
 Vom Projektroot, mit Python **3.10 oder neuer** (geprüft: 3.14.8):
@@ -136,7 +139,8 @@ und entfernt nur eigene markierte Commands. Manuelle Commands bleiben erhalten.
 | benchmark | Auf sauberem `main` frischen `clean test` + `jacoco:report`-Baseline messen | Auf `feature/*` frisch messen; Vorher/Nachher, CSV, Report und Patch |
 | usage | Exakte OpenCode-Sitzung für dieses Projekt exportieren; bisherige Zähler sichern | Delta desselben Exports, Modell-IDs, Tokens, Cache, Reasoning, Requests, Kosten |
 
-Reihenfolge: **Usage-Prüfung → Benchmark-Baseline → Startzeit → Prompt →
+Reihenfolge: **Usage-Preflight → Benchmark-Baseline (prepare) → frischer
+Usage-Snapshot/Startzeit (begin) → Prompt →
 Branch → Coding/Test/Commit durch OpenCode → Endzeit/Usage → finaler Benchmark**.
 Bei einem Fehler wird nicht mit einem angeblich erfolgreichen Ergebnis
 weitergearbeitet. Fehlgeschlagene Vorbereitung erzeugt keinen Feature-Branch;
@@ -169,12 +173,13 @@ Vom Projektroot (statt `python` bei Bedarf `.\.venv\Scripts\python.exe`):
 
 ```powershell
 python .opencode/scripts/start.py --help
+python .opencode/scripts/start.py prepare --help
 python .opencode/scripts/start.py begin --help
 python .opencode/scripts/start.py finish --help
 python .opencode/scripts/start.py abort --help
 ```
 
-Alle vier Aufrufe zeigen nur Hilfe an. Sie starten keinen Run, erstellen keinen
+Alle fünf Aufrufe zeigen nur Hilfe an. Sie starten keinen Run, erstellen keinen
 Branch und senden keine Modellanfrage. `-h` ist die Kurzform von `--help`.
 
 ### Globale Optionen
@@ -186,15 +191,29 @@ Branch und senden keine Modellanfrage. `-h` ist die Kurzform von `--help`.
 | `-h`, `--help` | Nein | Hilfe anzeigen und beenden. |
 
 Globale Optionen müssen **vor** der Aktion stehen. Aktionsoptionen stehen
-**nach** `begin`, `finish` oder `abort`. Innerhalb der jeweiligen Gruppe ist
+**nach** `prepare`, `begin`, `finish` oder `abort`. Innerhalb der jeweiligen Gruppe ist
 die Reihenfolge der benannten Optionen egal:
 
 ```powershell
-python .opencode/scripts/start.py --repo C:/Dev/Projects/MyApp --store-root C:/Dev/AI-Benchmarks begin --request C:/Temp/start-request.json
+python .opencode/scripts/start.py --repo C:/Dev/Projects/MyApp --store-root C:/Dev/AI-Benchmarks prepare --request C:/Temp/start-request.json
 ```
 
 Pfade mit Leerzeichen in Anführungszeichen setzen. `--store-root` ist die
 Wurzel, nicht bereits der Projekt-Unterordner.
+
+### Aktion `prepare`
+
+Prüft die Voraussetzungen und misst die Benchmark-Baseline. Noch kein
+Improver-Aufruf, kein Feature-Branch und kein laufendes Messfenster. Gibt
+`id`, `folder`, `status` und `session_id` als JSON zurück. Diese Run-ID wird
+anschließend an `begin --id` übergeben. Prepare ist eine interne Aktion,
+kein fünftes Modul. Der `/start`-Command übernimmt diese Schritte automatisch.
+
+| Option | Pflicht? | Wirkung |
+|---|---|---|
+| `--request <Datei>` | Ja | UTF-8 JSON mit Modulen und Auftrag. |
+| `--usage-export <Datei>` | Bei `usage` im `/start`-Ablauf | Preflight-Export zur Prüfung von Sitzung und Projekt vor dem Build. Nach prepare einen neuen Snapshot für begin erzeugen. |
+| `-h`, `--help` | Nein | Hilfe anzeigen. |
 
 ### Aktion `begin`
 
@@ -204,7 +223,8 @@ der Aufgabe erfolgt danach durch OpenCode, nicht durch `begin` selbst.
 
 | Option | Pflicht? | Wirkung |
 |---|---|---|
-| `--request <Datei>` | Ja | UTF-8 JSON-Datei mit der unten beschriebenen Run-Konfiguration und Aufgabe. |
+| `--request <Datei>` | Alternativ zu `--id` | Direkter Start ohne separate Vorbereitung; bei `benchmark,usage` zusammen ist erst prepare erforderlich. |
+| `--id <Run-ID>` | Alternativ zu `--request` | Den vorbereiteten Run starten. Genau eine der beiden Optionen ist Pflicht. Repository und Commit müssen seit prepare unverändert sein. |
 | `--usage-export <Datei>` | Nein | Expliziter vollständiger **Vorher**-Export der OpenCode-Sitzung. Bei ausgewähltem `usage` ersetzt er den automatischen `opencode export`-Aufruf; sonst ohne Wirkung. |
 | `-h`, `--help` | Nein | Nur die Hilfe für `begin` anzeigen. |
 
@@ -277,9 +297,13 @@ Shell-Code ausgewertet. Beispiel `C:/Temp/start-request.json`:
 ```
 
 ```powershell
-.\.venv\Scripts\python.exe .opencode/scripts/start.py begin --request C:/Temp/start-request.json
+# Das OpenCode-Tool liefert zuerst den tatsächlichen Preflight-Pfad:
+.\.venv\Scripts\python.exe .opencode/scripts/start.py prepare --request C:/Temp/start-request.json --usage-export ACTUAL_PREFLIGHT_PATH
+# Nach der Baseline workflow_usage_snapshot erneut aufrufen:
+.\.venv\Scripts\python.exe .opencode/scripts/start.py begin --id ACTUAL_ID --usage-export ACTUAL_FRESH_BEGIN_PATH
 # OpenCode führt jetzt den zurückgegebenen task aus, prüft und committet.
-.\.venv\Scripts\python.exe .opencode/scripts/start.py finish --id ACTUAL_ID --human-interventions 0 --correction-rounds 0
+# Vor finish nochmals einen frischen Snapshot derselben Session erzeugen:
+.\.venv\Scripts\python.exe .opencode/scripts/start.py finish --id ACTUAL_ID --usage-export ACTUAL_FRESH_FINISH_PATH --human-interventions 0 --correction-rounds 0
 ```
 
 Optional `prompt_provider` / `prompt_model` im Request: Overrides nur für den
@@ -288,10 +312,10 @@ ChatGPT und setzt vorhandene Credentials voraus. Die vorhandenen manuellen
 Login-/Provider-Smoke-Skripte stehen unter `scripts/prompt/tests/`; sie sind
 keine Voraussetzung für die Offline-Test-Suite.
 
-Globale Optionen stehen **vor** `begin`/`finish`/`abort`:
+Globale Optionen stehen **vor** `prepare`/`begin`/`finish`/`abort`:
 
 ```powershell
-python .opencode/scripts/start.py --repo C:/Dev/Projects/MyApp --store-root C:/Dev/AI-Benchmarks begin --request C:/Temp/start-request.json
+python .opencode/scripts/start.py --repo C:/Dev/Projects/MyApp --store-root C:/Dev/AI-Benchmarks prepare --request C:/Temp/start-request.json
 ```
 
 Default-Repo ist der Elternordner von `.opencode`. Default-Store unter Windows:
@@ -314,8 +338,11 @@ python .opencode/scripts/start.py abort --id ACTUAL_ID
 Abort beendet nur den aktiven Workflow-Status. Es bewahrt Run-Artefakte und
 ändert weder Branches noch Task-Dateien. Alle neuen Benchmark-Läufe verwenden
 dasselbe CSV-Schema, unabhängig von der gewählten Modulkombination. Nicht
-ausgewählte Usage-Felder bleiben leer. Eine CSV mit abweichendem Schema wird
-abgewiesen; es gibt keine automatische Konvertierung oder Erweiterung.
+ausgewählte Usage-Felder bleiben leer. Die Erweiterung des bisherigen Python-
+Schemas erhält vorhandene Zeilen und benennt `InferenceSeconds` in
+`MessageElapsedSeconds` um. Neue Metadaten alter Runs bleiben leer, weil sie
+nicht nachträglich belegt werden können. Historische Run-Dateien bleiben
+unverändert. Andere abweichende Schemas werden abgewiesen.
 
 ## Ergebnisse
 
@@ -332,6 +359,10 @@ C:/Dev/AI-Benchmarks/<Projekt>/
     findings.md
     original-prompt.md
     improved-prompt.md          # bei prompt
+    prompt-metadata.json        # effektiver Improver-Provider/Modell/Dauer
+    benchmark-before.json       # bei benchmark: Build-/Surefire-/JaCoCo-Belege
+    benchmark-after.json
+    usage-preflight.json        # bei usage: nur Vorprüfung, kein Messbeginn
     usage-before.json          # bei usage, nur Metriken/IDs
     usage-after.json
     usage.json
@@ -346,7 +377,27 @@ Fehlende Reports/Klassen oder Testfehler führen zum Abbruch.
 
 `DurationSeconds` verwendet echte UTC-Zeitstempel. Die Baseline und abschließende
 Benchmark-Builds sind ausgeschlossen; Prompt-Vorbereitung, Branch und Coding
-sind enthalten. CSV-Zahlen verwenden unabhängig von Windows-Locale einen Punkt.
+sind enthalten. Bei `usage` entsprechen Start und Ende exakt den beiden
+Snapshot-Zeitpunkten; `UsageWindowSeconds` zeigt dasselbe Fenster mit drei
+Nachkommastellen, `DurationSeconds` mit einer. Die externe Improver-Dauer ist
+in der Run-Dauer enthalten, seine Tokens und Kosten fehlen im OpenCode-Export.
+CSV-Zahlen verwenden unabhängig von Windows-Locale einen Punkt.
+
+`prompt-metadata.json` speichert die tatsächlich an die bestehende Factory
+übergebenen Provider-/Modellwerte aus Config oder Override sowie Zeitpunkte
+und Dauer. Das sind die effektiven Improver-Einstellungen, kein unabhängiger
+Nachweis einer serverseitigen Modellzuordnung. Die Werte stehen auch in
+Report und CSV als `PromptProvider`, `PromptModel`, `PromptDurationSeconds`.
+Der Improver-Kern und die Provider bleiben unverändert.
+
+`benchmark-before.json` und `benchmark-after.json` enthalten die originalen
+JaCoCo-CSV-Felder der Zielklasse, die Zähler/Zeiten jeder Surefire-Suite und
+die erfolgreichen Maven-Aufrufe mit Exitcodes sowie den geprüften Java-Major.
+Damit lassen sich Testanzahl, Testzeit und Coverage aus der ZIP nachrechnen.
+Bei null gezählten Branches bedeutet die rechnerische 100-%-Anzeige weiterhin
+keinen Nachweis getesteter Verzweigungen. XML-Properties, stdout/stderr und
+Systemumgebungen werden nicht archiviert. Die Dateien sind Messbelege,
+kein kryptografischer Nachweis oder vollständiges Build-Log.
 
 ## Usage und Messgrenzen
 
@@ -379,7 +430,11 @@ Bestehende Konfiguration ergänzen; keine zweite Kopie des Plugins anlegen.
 Die Option richtet keinen Server ein und startet keinen neuen Dienst.
 
 Das Tool liefert `session_id` und `usage_export`. OpenCode übernimmt die ID
-in die Request-Datei und übergibt den Export mit `--usage-export` an `begin`.
+in die Request-Datei. Bei Benchmark dient der erste Export als Preflight für
+`prepare`; nach der Baseline wird das Tool nochmals aufgerufen und der neue
+Export mit `--usage-export` an `begin --id` übergeben. Ein Snapshot vor dem
+Abschluss der Baseline wird beim Begin abgewiesen. Ohne Benchmark reicht
+der direkte Aufruf `begin --request` mit einem Snapshot.
 Unmittelbar vor `finish` ruft es das Tool erneut auf und übergibt den neuen
 Export. Session-ID und Projektverzeichnis müssen passen; Python weist
 veraltete Plugin-Exporte (über fünf Minuten), ungültige Zeitstempel und eine
@@ -397,7 +452,10 @@ die von OpenCode ausgeführten Shell-Aufrufe müssen den Exportpfad lesen könne
 
 Für einen direkten Python-Aufruf außerhalb OpenCode bleiben explizite
 V1-Session-Exporte mit `--usage-export` und `opencode export <exactSessionId>`
-verfügbar. Der rohe V2-CLI-Export hat ein anderes Format; für V2 den bereinigten
+verfügbar. Ohne SDK-Capture-Zeitstempel gilt dabei der Python-Einlesezeitpunkt;
+die echte Capture-Grenze kann nur mit dem Plugin garantiert werden. Auch bei
+manuellen Exporten nach prepare erneut exportieren und vor finish wiederholen.
+Der rohe V2-CLI-Export hat ein anderes Format; für V2 den bereinigten
 Plugin-Export verwenden. Globale `opencode stats` werden nicht als Ersatz verwendet.
 
 | Feld | Bedeutung |
@@ -408,15 +466,18 @@ Plugin-Export verwenden. Globale `opencode stats` werden nicht als Ersatz verwen
 | Requests | V1: abgeschlossene `step-finish`-Schritte oder Assistant-Messages; V2: abgeschlossene Assistant- und Komprimierungsanfragen |
 | RetryEvents | V1: sichtbare Retry-Ereignisse; V2: unbekannt, da kein vollständiger Retry-Verlauf exportiert wird |
 | ReasoningSeconds | Zeitspannen der gemeldeten Reasoning-Parts |
-| InferenceSeconds | Gemeldete Message-Zeitspannen, laufende Intervalle an der Snapshot-Grenze abgeschnitten; können Toolzeiten enthalten. Für V2-Komprimierungen fehlt der Endzeitpunkt: unbekannt, keine erfundene Dauer |
+| MessageElapsedSeconds | Summe der Message-Zeitspannen innerhalb des Messfensters, inklusive Tool-/Wartezeiten; keine reine Modell-Rechenzeit. Überlappende Messages können zusammen länger sein als die Run-Dauer. Für V2-Komprimierungen fehlt der Endzeitpunkt: unbekannt |
 | EstimatedCostUSD | Summe von OpenCodes `cost`, dessen katalogbasierter Kostenschätzung |
+| CostStatus | `unavailable`, `reported-zero-actual-unknown` oder `reported-estimate-actual-unknown`; tatsächliche Kosten bleiben unbekannt |
+| UsageStartUTC / UsageEndUTC / UsageWindowSeconds | Tatsächliche SDK-Capture-Grenzen und Laufzeit des Usage-Fensters, passend zur Run-Dauer |
 | ActualModels | Tatsächliche Provider-/Modell-IDs; mehrere Modelle bleiben sichtbar |
 | PendingMessages | Noch laufende Assistant-Messages am Ende des Snapshots |
 
 `step-finish`-Werte und aggregierte Message-Werte werden **nicht doppelt** addiert.
 Fehlende oder ungültige Metriken sind JSON `null`, CSV leer und im Report
 „nicht verfügbar“. Ein explizit gemeldetes `cost: 0` bleibt 0; das belegt weder
-kostenlose Nutzung noch reale Abonnement-/API-Abrechnung. Es werden keine
+kostenlose Nutzung noch reale Abonnement-/API-Abrechnung. Der Report sagt:
+„OpenCode meldet 0 USD; tatsächliche Kosten unbekannt.“ Es werden keine
 Preise erfunden. Reasoning kann trotz sichtbarer Reasoning-Zeit 0 Tokens melden.
 Ein Provider kann Zähler als 0 liefern, ohne sie differenziert zu unterstützen.
 
@@ -429,8 +490,15 @@ Hilfsanfragen ohne exportierte Message, etwa Titelgenerierung, werden nicht
 gezählt. Liefert ein beim Begin laufender Request seine Zähler erst später,
 geht dessen gemeldeter Gesamtwert in das Delta ein; Tokens werden nicht anhand
 der Laufzeit aufgeteilt.
-Für einen Modellvergleich dieselben Module, Grenzen und Provider-Einstellungen
-verwenden. Kein Wechsel des Coding-Modells während eines forced-Laufs.
+### Vergleichbare Benchmarks
+
+Für jeden Modellvergleich möglichst eine **frische OpenCode-Sitzung** mit
+demselben Ausgangscommit, Auftrag, Modulen und Improver-Einstellungen verwenden.
+Die erste ConfigService-Sitzung enthielt viel Vorgeschichte: Das erhöht den
+Kontext und Cache-Anteil auch nach Abzug vorheriger Zähler. Ein Delta allein
+stellt daher keine identischen Vergleichsbedingungen her. Alte Sessions
+bleiben verwendbar; der Workflow erstellt oder wechselt keine Sitzung selbst.
+Kein Wechsel des Coding-Modells während eines forced-Laufs.
 
 ## Tests
 

@@ -6,11 +6,12 @@ import subprocess
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from .common import write_json
 
 from .common import WorkflowError, run
 
 
-def fresh_reports(repo: Path) -> None:
+def fresh_reports(repo: Path) -> dict:
     wrapper = repo / ("mvnw.cmd" if os.name == "nt" else "mvnw")
     if not wrapper.is_file() or not (repo / "pom.xml").is_file():
         raise WorkflowError("Benchmark requires pom.xml and the Maven Wrapper.")
@@ -18,14 +19,17 @@ def fresh_reports(repo: Path) -> None:
     if not re.search(r"Java version:\s*25(?:[.\s,]|$)", version):
         raise WorkflowError("Benchmark requires Java 25. Maven reports:\n" + version)
     # Stream builds so progress and failures remain visible; never reuse stale reports.
+    checks = [{"arguments": ["--version"], "exitCode": 0}]
     for goals in (("clean", "test"), ("jacoco:report",)):
         result = subprocess.run([str(wrapper), *goals], cwd=repo,
                                 stdout=sys.stderr, stderr=sys.stderr)
         if result.returncode:
             raise WorkflowError(f"Maven {' '.join(goals)} failed ({result.returncode}).")
+        checks.append({"arguments": list(goals), "exitCode": result.returncode})
+    return {"javaMajor": 25, "checks": checks}
 
 
-def metrics(repo: Path, class_name: str) -> dict:
+def class_row(repo: Path, class_name: str) -> dict:
     report = repo / "target/site/jacoco/jacoco.csv"
     if not report.is_file():
         raise WorkflowError(f"JaCoCo report not found: {report}")
@@ -41,7 +45,26 @@ def metrics(repo: Path, class_name: str) -> dict:
                 row["PACKAGE"].replace("/", ".") == match[1]]
     if len(rows) != 1:
         raise WorkflowError(f"Class not uniquely found in JaCoCo: {class_name}")
-    row = rows[0]
+    return rows[0]
+
+
+def test_suites(repo: Path) -> list[dict]:
+    reports = sorted((repo / "target/surefire-reports").glob("TEST-*.xml"))
+    if not reports:
+        raise WorkflowError("No fresh Surefire TEST-*.xml reports found.")
+    result = []
+    for path in reports:
+        root = ET.parse(path).getroot()
+        suites = [root] if root.tag == "testsuite" else list(root.findall("testsuite"))
+        for suite in suites:
+            result.append({"name": suite.get("name", ""),
+                           **{key: int(suite.get(key, "0")) for key in ("tests", "failures", "errors", "skipped")},
+                           "time": float(suite.get("time", "0"))})
+    return result
+
+
+def metrics(repo: Path, class_name: str) -> dict:
+    row = class_row(repo, class_name)
     result = {}
     for prefix, name in (("LINE", "lines"), ("BRANCH", "branches")):
         covered = int(row[prefix + "_COVERED"])
@@ -50,26 +73,25 @@ def metrics(repo: Path, class_name: str) -> dict:
         result[name + "Total"] = total
         result["lineCoverage" if prefix == "LINE" else "branchCoverage"] = (
             round(covered / total * 100, 2) if total else 100.0)
-    reports = list((repo / "target/surefire-reports").glob("TEST-*.xml"))
-    if not reports:
-        raise WorkflowError("No fresh Surefire TEST-*.xml reports found.")
     result.update(tests=0, failures=0, errors=0, skipped=0, testTime=0.0)
-    for path in reports:
-        root = ET.parse(path).getroot()
-        suites = [root] if root.tag == "testsuite" else list(root.findall("testsuite"))
-        for suite in suites:
-            for key in ("tests", "failures", "errors", "skipped"):
-                result[key] += int(suite.get(key, "0"))
-            result["testTime"] += float(suite.get("time", "0"))
+    for suite in test_suites(repo):
+        for key in ("tests", "failures", "errors", "skipped"):
+            result[key] += suite[key]
+        result["testTime"] += suite["time"]
     result["testTime"] = round(result["testTime"], 3)
     if result["failures"] or result["errors"]:
         raise WorkflowError("Surefire reports contain failures/errors.")
     return result
 
 
-def collect(repo: Path, class_name: str) -> dict:
-    fresh_reports(repo)
-    return metrics(repo, class_name)
+def collect(repo: Path, class_name: str, evidence: Path | None = None) -> dict:
+    build = fresh_reports(repo)
+    result = metrics(repo, class_name)
+    if evidence:
+        write_json(evidence, {"version": 1, "targetClass": class_name,
+                              "build": build, "jacoco": class_row(repo, class_name),
+                              "surefire": test_suites(repo), "metrics": result})
+    return result
 
 
 def changes(repo: Path, start: str, end: str, destination: Path) -> dict:
@@ -100,9 +122,18 @@ def append_csv(path: Path, result: dict) -> None:
         with path.open(encoding="utf-8-sig", newline="") as handle:
             reader = csv.DictReader(handle)
             existing_fields = list(reader.fieldnames or [])
-            if existing_fields != fields:
-                raise WorkflowError("results.csv has a different schema. Use an empty benchmark store.")
             old_rows = list(reader)
+            if existing_fields != fields:
+                additions = {"PromptProvider", "PromptModel", "PromptDurationSeconds", "CostStatus",
+                             "UsageStartUTC", "UsageEndUTC", "UsageWindowSeconds"}
+                renamed = ["MessageElapsedSeconds" if key == "InferenceSeconds" else key for key in existing_fields]
+                if renamed != [key for key in fields if key not in additions] and renamed != fields:
+                    raise WorkflowError("results.csv has a different schema. Use an empty benchmark store.")
+                for row in old_rows:
+                    if "InferenceSeconds" in row:
+                        row["MessageElapsedSeconds"] = row.pop("InferenceSeconds")
+                    for key in additions:
+                        row.setdefault(key, "")
         if any(row.get("Id") == result["Id"] for row in old_rows):
             return  # Resume after a late error must not duplicate the result.
     formats = {"DurationSeconds": ".1f", "TestTimeBeforeSeconds": ".3f",

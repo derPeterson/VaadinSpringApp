@@ -73,38 +73,82 @@ def validate_request(repo: Path, request: dict, catalog: Path) -> dict:
             "promptModel": request.get("prompt_model")}
 
 
-def begin(repo: Path, root: Path, request: dict, catalog: Path,
-          usage_export: Path | None = None) -> dict:
+def prepare(repo: Path, root: Path, request: dict, catalog: Path,
+            usage_export: Path | None = None) -> dict:
     repo = repo.resolve()
     store = store_path(repo, root.resolve())
     with store_lock(store):
-        state = validate_request(repo, request, catalog)
-        identity(repo, store)
-        active = store / "active.json"
-        if active.exists():
-            raise WorkflowError(f"Unfinished workflow {read_json(active)['id']}; finish or abort it first.")
-        # Usage preflight happens before Maven, prompt-provider calls or Git mutations.
-        before_usage = usage.capture(repo, state["sessionId"], usage_export) if "usage" in state["modules"] else None
-        run_id = uuid.uuid4().hex
-        folder = store / "runs" / run_id
-        folder.mkdir(parents=True)
-        state.update(owner=OWNER, id=run_id, repo=str(repo), folder=str(folder), status="preparing",
-                     startCommit=run(repo, "git", "rev-parse", "HEAD").strip())
-        state_path = store / "state" / (run_id + ".json")
+        return _prepare(repo, store, request, catalog, usage_export)
+
+
+def _prepare(repo, store, request, catalog, usage_export):
+    state = validate_request(repo, request, catalog)
+    identity(repo, store)
+    active = store / "active.json"
+    if active.exists():
+        raise WorkflowError(f"Unfinished workflow {read_json(active)['id']}; finish or abort it first.")
+    # Usage preflight happens before Maven, prompt-provider calls or Git mutations.
+    before_usage = usage.capture(repo, state["sessionId"], usage_export) if "usage" in state["modules"] else None
+    run_id = uuid.uuid4().hex
+    folder = store / "runs" / run_id
+    folder.mkdir(parents=True)
+    state.update(owner=OWNER, id=run_id, repo=str(repo), folder=str(folder), status="preparing",
+                 initialBranch=branch.current(repo),
+                 startCommit=run(repo, "git", "rev-parse", "HEAD").strip())
+    state_path = store / "state" / (run_id + ".json")
+    write_json(state_path, state)
+    write_json(active, {"id": run_id})
+    try:
+        if "benchmark" in state["modules"]:
+            state["before"] = benchmark.collect(repo, state["targetClass"], folder / "benchmark-before.json")
+            branch.require_clean(repo)  # Maven may generate tracked files.
+        if before_usage is not None:
+            state["sessionId"] = before_usage["sessionId"]
+            write_json(folder / "usage-preflight.json", before_usage)
+        state.update(status="prepared", preparedAt=now())
         write_json(state_path, state)
-        write_json(active, {"id": run_id})
+    except Exception as error:
+        state.update(status="prepare-failed", error=str(error))
+        write_json(state_path, state)
+        raise
+    return {"id": run_id, "folder": str(folder), "status": "prepared", "session_id": state["sessionId"]}
+
+def begin(repo: Path, root: Path, request: dict | None, catalog: Path,
+          usage_export: Path | None = None, prepared_id: str | None = None) -> dict:
+    repo = repo.resolve()
+    store = store_path(repo, root.resolve())
+    with store_lock(store):
+        if prepared_id is None:
+            if request and {"benchmark", "usage"} <= set(modules(request.get("modules", "complete"))):
+                raise WorkflowError("benchmark+usage requires prepare --request, a fresh usage snapshot, then begin --id.")
+            prepared_id = _prepare(repo, store, request, catalog, usage_export)["id"]
+        state_path, state = load_state(repo, store, prepared_id)
+        if state["status"] != "prepared":
+            raise WorkflowError("Begin requires a prepared run.")
+        active = store / "active.json"
+        if not active.exists() or read_json(active)["id"] != prepared_id:
+            raise WorkflowError("Prepared run is not the active run.")
+        branch.require_clean(repo)
+        if (branch.current(repo) != state["initialBranch"] or
+                run(repo, "git", "rev-parse", "HEAD").strip() != state["startCommit"]):
+            raise WorkflowError("Repository changed after prepare; abort and prepare again.")
+        folder = Path(state["folder"])
+        if "usage" in state["modules"]:
+            measured = usage.capture(repo, state["sessionId"], usage_export)
+            if "benchmark" in state["modules"] and measured["capturedMs"] < datetime.fromisoformat(state["preparedAt"]).timestamp() * 1000:
+                raise WorkflowError("Begin requires a fresh usage snapshot AFTER baseline preparation.")
+            state["start"] = usage.timestamp(measured["capturedMs"])
+            write_json(folder / "usage-before.json", measured)
+        else:
+            state["start"] = now()
         try:
-            if "benchmark" in state["modules"]:
-                state["before"] = benchmark.collect(repo, state["targetClass"])
-                branch.require_clean(repo)  # Maven may generate tracked files.
-            state["start"] = now()  # Excludes baseline builds, includes prompt and branch work.
-            if before_usage is not None:
-                state["sessionId"] = before_usage["sessionId"]
-                write_json(folder / "usage-before.json", before_usage)
             (folder / "original-prompt.md").write_text(state["task"].strip() + "\n", encoding="utf-8")
             if "prompt" in state["modules"]:
                 state["effectiveTask"] = prompt.improve(state["task"], folder,
                                                         state["promptProvider"], state["promptModel"])
+                metadata = folder / "prompt-metadata.json"
+                if metadata.exists():
+                    state["promptMetadata"] = read_json(metadata)
             else:
                 state["effectiveTask"] = state["task"]
             if "branch" in state["modules"]:
@@ -115,7 +159,7 @@ def begin(repo: Path, root: Path, request: dict, catalog: Path,
             state.update(status="begin-failed", error=str(error))
             write_json(state_path, state)
             raise
-        return {"id": run_id, "modules": state["modules"], "branch": state["branch"],
+        return {"id": prepared_id, "modules": state["modules"], "branch": state["branch"],
                 "folder": str(folder), "task": state["effectiveTask"],
                 "originalTask": state["task"], "expectedModel": state["expectedModel"]}
 
@@ -160,6 +204,9 @@ def report(state: dict, result: dict, after: dict | None, changed: dict, usage_r
     lines = ["# AI Coding Benchmark / Start Workflow", "", "## Aufgabe", "", state["task"], "",
              "## Ergebnis", ""]
     lines.extend(f"- {key}: {'nicht verfügbar' if value is None else value}" for key, value in result.items())
+    if "usage" in state["modules"]:
+        lines += ["", usage.cost_description(result["EstimatedCostUSD"]),
+                  "MessageElapsedSeconds umfasst Message-, Tool- und Wartezeiten; keine reine Modell-Rechenzeit."]
     if after:
         lines += ["", "## Tests und Coverage", "", "| Messwert | Vorher | Nachher |", "|---|---:|---:|"]
         lines.extend(f"| {key} | {state['before'][key]} | {after[key]} |" for key in after)
@@ -170,7 +217,9 @@ def report(state: dict, result: dict, after: dict | None, changed: dict, usage_r
         lines += ["Usage-Modul nicht ausgewählt."]
     lines += ["", "## Artefakte", "", "- result.json", "- findings.md", "- diff.patch", "- original-prompt.md"]
     if "prompt" in state["modules"]:
-        lines += ["- improved-prompt.md"]
+        lines += ["- improved-prompt.md", "- prompt-metadata.json"]
+    if "benchmark" in state["modules"]:
+        lines += ["- benchmark-before.json", "- benchmark-after.json"]
     if usage_result:
         lines += ["- usage-before.json", "- usage-after.json", "- usage.json"]
     return "\n".join(lines) + "\n"
@@ -187,7 +236,7 @@ def finish(repo: Path, root: Path, run_id: str, interventions: int = 0,
         if state["status"] == "completed":
             return read_json(Path(state["folder"]) / "result.json")
         if state["status"] not in ("active", "finishing"):
-            raise WorkflowError("Cannot finish a workflow whose begin failed; abort it.")
+            raise WorkflowError("Finish requires an active run; begin a prepared run or abort it.")
         actual_branch = branch.current(repo)
         if "branch" in state["modules"] and actual_branch != state["branch"]:
             raise WorkflowError(f"Finish requires exactly {state['branch']}.")
@@ -205,6 +254,7 @@ def finish(repo: Path, root: Path, run_id: str, interventions: int = 0,
         state.update(status="finishing", finishCommit=end_commit)
         if "usage" in state["modules"] and "usageAfter" not in state:
             state["usageAfter"] = usage.capture(repo, state["sessionId"], usage_export)
+            state["end"] = usage.timestamp(state["usageAfter"]["capturedMs"])
         write_json(path, state)
         usage_result = None
         if "usage" in state["modules"]:
@@ -213,7 +263,7 @@ def finish(repo: Path, root: Path, run_id: str, interventions: int = 0,
                 raise WorkflowError("Usage model differs from the forced model. Do not relabel the run.")
             write_json(folder / "usage-after.json", state["usageAfter"])
             write_json(folder / "usage.json", usage_result)
-        after = benchmark.collect(repo, state["targetClass"]) if "benchmark" in state["modules"] else None
+        after = benchmark.collect(repo, state["targetClass"], folder / "benchmark-after.json") if "benchmark" in state["modules"] else None
         branch.require_clean(repo, findings=True)
         changed = benchmark.changes(repo, state["startCommit"], end_commit, folder / "diff.patch")
         result = result_row(state, state["end"], end_commit, actual_branch, after, changed, interventions, corrections)
@@ -224,10 +274,15 @@ def finish(repo: Path, root: Path, run_id: str, interventions: int = 0,
         # One schema for every module selection; unselected usage is unavailable.
         result.update({key: None for key in usage.VALUE_FIELDS})
         result.update(SessionId=None, ActualModels=None, PendingMessages=None)
+        result.update(CostStatus="unavailable", UsageStartUTC=None, UsageEndUTC=None, UsageWindowSeconds=None)
+        metadata = state.get("promptMetadata", {})
+        result.update(PromptProvider=metadata.get("provider"), PromptModel=metadata.get("model"),
+                      PromptDurationSeconds=metadata.get("durationSeconds"))
         if usage_result:
             result.update({key: usage_result[key] for key in usage.VALUE_FIELDS})
             result.update(SessionId=usage_result["SessionId"], ActualModels=",".join(usage_result["ActualModels"]),
                           PendingMessages=usage_result["PendingMessages"])
+            result.update({key: usage_result[key] for key in ("CostStatus", "UsageStartUTC", "UsageEndUTC", "UsageWindowSeconds")})
         source = repo / "findings.md"
         destination = folder / "findings.md"
         if source.is_file():

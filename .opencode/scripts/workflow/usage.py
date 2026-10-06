@@ -5,13 +5,37 @@ import re
 import shutil
 import time
 from pathlib import Path
+from datetime import datetime, timezone
 
 from .common import WorkflowError, read_json, run
 
 TOKEN_FIELDS = ("InputTokens", "OutputTokens", "ReasoningTokens", "CacheReadTokens",
                 "CacheWriteTokens")
 VALUE_FIELDS = (*TOKEN_FIELDS, "EstimatedCostUSD", "Requests", "RetryEvents",
-                "ReasoningSeconds", "InferenceSeconds")
+                "ReasoningSeconds", "MessageElapsedSeconds")
+
+
+def timestamp(captured_ms):
+    return datetime.fromtimestamp(captured_ms / 1000, timezone.utc).isoformat()
+
+
+def cost_status(value):
+    if value is None:
+        return "unavailable"
+    return "reported-zero-actual-unknown" if value == 0 else "reported-estimate-actual-unknown"
+
+
+def cost_description(value):
+    if value is None:
+        return "Keine Kostenschätzung gemeldet; tatsächliche Kosten unbekannt."
+    return f"OpenCode meldet {value:g} USD; tatsächliche Kosten unbekannt."
+
+
+def overlap(start, end, lower, upper):
+    start, end = number(start), number(end)
+    if start is None or end is None or end < start:
+        return None
+    return max(0, min(end, upper) - max(start, lower)) / 1000
 
 
 def number(value):
@@ -88,8 +112,12 @@ def snapshot(data: dict, repo: Path, session_id: str | None = None,
         if not reasoning and result["Requests"] and result["ReasoningTokens"] != 0:
             result["ReasoningSeconds"] = None
         timing = metadata.get("time", {})
-        result["InferenceSeconds"] = elapsed(timing.get("created"),
+        result["MessageElapsedSeconds"] = elapsed(timing.get("created"),
                                              timing.get("completed", None if completed else captured_ms))
+        result["messageStartedMs"] = number(timing.get("created"))
+        result["messageEndedMs"] = number(timing.get("completed"))
+        result["reasoningIntervals"] = [{"start": number(t.get("start")), "end": number(t.get("end", captured_ms))}
+                                        for t in reasoning]
         result["pending"] = not completed
         result["model"] = "/".join(str(metadata.get(key, "unknown")) for key in ("providerID", "modelID"))
         messages[message_id] = result
@@ -127,6 +155,8 @@ def difference(before: dict, after: dict) -> dict:
     old, new = before["messages"], after["messages"]
     if not old.keys() <= new.keys():
         raise WorkflowError("Usage messages disappeared; session was reverted or export is incomplete.")
+    if after["capturedMs"] < before["capturedMs"]:
+        raise WorkflowError("Usage snapshot time went backwards.")
     deltas = []
     models = set()
     pending = 0
@@ -134,7 +164,9 @@ def difference(before: dict, after: dict) -> dict:
         prior = old.get(message_id, {})
         delta = {}
         for key in VALUE_FIELDS:
-            previous, latest = prior.get(key, 0), values[key]
+            # Historical completed runs retain their original snapshot files.
+            previous = prior.get(key, prior.get("InferenceSeconds", 0) if key == "MessageElapsedSeconds" else 0)
+            latest = values.get(key, values.get("InferenceSeconds"))
             if message_id in old and latest == previous and (latest is not None or values == prior):
                 delta[key] = 0
             elif previous is None or latest is None:
@@ -143,6 +175,16 @@ def difference(before: dict, after: dict) -> dict:
                 raise WorkflowError(f"Usage counter went backwards: {message_id} / {key}")
             else:
                 delta[key] = max(0, latest - previous)
+        if values != prior and "messageStartedMs" in values:
+            lower, upper = before["capturedMs"], after["capturedMs"]
+            delta["MessageElapsedSeconds"] = overlap(values["messageStartedMs"],
+                values["messageEndedMs"] if not values["pending"] else upper, lower, upper)
+            intervals = values["reasoningIntervals"]
+            if intervals:
+                delta["ReasoningSeconds"] = total(overlap(t["start"], t["end"],
+                                                          lower, upper) for t in intervals)
+            elif values["ReasoningSeconds"] is None:
+                delta["ReasoningSeconds"] = None
         if delta["Requests"] or delta["RetryEvents"] or (values["pending"] and values != prior):
             models.add(values["model"])
         pending += bool(values["pending"])
@@ -150,6 +192,10 @@ def difference(before: dict, after: dict) -> dict:
     result = {key: total(delta[key] for delta in deltas) for key in VALUE_FIELDS}
     result.update(SessionId=after["sessionId"], ActualModels=sorted(models),
                   PendingMessages=pending, CostSource="OpenCode estimate (USD), not an invoice",
+                  CostStatus=cost_status(result["EstimatedCostUSD"]),
+                  UsageStartUTC=timestamp(before["capturedMs"]), UsageEndUTC=timestamp(after["capturedMs"]),
+                  UsageWindowSeconds=round((after["capturedMs"] - before["capturedMs"]) / 1000, 3),
+                  MessageTimeDefinition="sum of clipped message intervals; includes tool/wait time, not pure model compute; overlapping messages may exceed wall time",
                   RequestDefinition="completed inference steps/messages including V2 compactions; transport retries may not be exposed",
                   Scope="session delta between begin and finish; excludes final response and external prompt provider")
     return result

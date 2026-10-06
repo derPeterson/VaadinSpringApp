@@ -33,7 +33,7 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    frontmatter; stop if a generic invocation would run a different model.
    Keep the actual provider/model IDs distinct from the catalog display label.
 3. When usage is selected, call the `workflow_usage_snapshot` tool with no
-   arguments immediately before begin. It obtains the exact session ID from
+   arguments for preflight before preparation. It obtains the exact session ID from
    OpenCode's tool context and uses the active server's SDK client, independent
    of Desktop, TUI, browser or IDE. Keep its actual `session_id` and
    `usage_export` path. Do not use the local CLI, session titles, newest-session
@@ -48,7 +48,21 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    `modules`, `branch`, `target_class`, `model`, `task`, `session_id`.
    Convert unused dashes to null. `modules` is the selector string. Optional
    `prompt_provider` / `prompt_model` override ONLY the prompt improver.
-   Invoke from the repository root (use the project's venv Python if present):
+   Invoke from the repository root (use the project's venv Python if present).
+   When benchmark is selected, first prepare the baseline:
+
+   `python .opencode/scripts/start.py prepare --request <request-file>`
+
+   With usage selected, append `--usage-export <preflight-path-from-tool>`.
+   Capture the returned real `id`. After prepare succeeds, call
+   `workflow_usage_snapshot` AGAIN when usage is selected. Check its session ID
+   matches preflight and pass this fresh path to begin; never reuse preflight.
+
+   `python .opencode/scripts/start.py begin --id <prepared-id>`
+
+   With usage selected, append `--usage-export <fresh-path-from-tool>`.
+   This snapshot's capture time starts BOTH duration and usage measurement.
+   If benchmark is absent, use the direct path instead:
 
    `python .opencode/scripts/start.py begin --request <request-file>`
 
@@ -58,8 +72,11 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    Capture the real JSON `id`, `folder`, `branch` and effective `task`.
    Nonzero exit = stop; report the failure and retained state. Do not continue
    the coding task after an unsuccessful begin. The script validates all
-   selected prerequisites, measures a fresh baseline before branch creation,
-   invokes the existing prompt improver, then creates the selected branch.
+   selected prerequisites. Prepare measures a fresh baseline; begin invokes
+   the existing prompt improver, then creates the selected branch. Prepare is
+   an internal lifecycle action, not an additional module. For comparable
+   model benchmarks recommend a fresh session before invocation. Do not
+   automatically create/switch sessions or reject an existing session.
 5. Execute the effective task returned by begin. Also read originalTask;
    an improved prompt may not expand the original scope. Report unresolved
    uncertainties before implementing assumptions. Branch creation has
@@ -118,7 +135,7 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    `python .opencode/scripts/start.py finish --id <id> --human-interventions <count> --correction-rounds <count>`
 
    Finish measures fresh final reports for benchmark, collects the usage
-   delta, archives findings, generates binary-capable `diff.patch`, writes
+   delta, archives findings and benchmark-before/after.json evidence, generates binary-capable `diff.patch`, writes
    report/result, and updates CSV. It never commits task files. A nonzero exit
    is an incomplete workflow: inspect the cause and retry after resolving it.
    Do not invent metrics. `abort --id <id>` releases a failed active run and
@@ -133,3 +150,7 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    the currently running inference step and the final response after that
    snapshot are not completely measured. External prompt-improver provider
    usage is not part of the OpenCode session export.
+   State the actual improver provider/model from prompt-metadata.json.
+   Report MessageElapsedSeconds as message time including tool/wait time,
+   never pure inference/compute time. For cost 0 say explicitly:
+   "OpenCode meldet 0 USD; tatsächliche Kosten unbekannt."

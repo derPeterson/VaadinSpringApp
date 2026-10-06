@@ -48,6 +48,9 @@ class RepoCase(unittest.TestCase):
         if selected:
             self.request["modules"] = selected
         with patch("workflow.benchmark.collect", return_value=METRICS):
+            if {"benchmark", "usage"} <= set(runner.modules(self.request["modules"])):
+                prepared = runner.prepare(self.repo, self.store_root, self.request, CATALOG)
+                return runner.begin(self.repo, self.store_root, None, CATALOG, prepared_id=prepared["id"])
             return runner.begin(self.repo, self.store_root, self.request, CATALOG)
 
     def commit_task(self):
@@ -128,7 +131,8 @@ class RepoCase(unittest.TestCase):
             order.append("branch")
             return real_create(*args)
         with patch("workflow.benchmark.collect", side_effect=fake_collect), patch("workflow.prompt.improve", side_effect=fake_improve), patch("workflow.branch.create", side_effect=create):
-            started = runner.begin(self.repo, self.store_root, self.request, CATALOG, export_file)
+            prepared = runner.prepare(self.repo, self.store_root, self.request, CATALOG, export_file)
+            started = runner.begin(self.repo, self.store_root, None, CATALOG, export_file, prepared["id"])
         self.assertEqual(["benchmark", "prompt", "branch"], order)
         self.assertEqual("structured", started["task"])
         self.assertEqual(list(runner.MODULES), started["modules"])
@@ -341,6 +345,32 @@ class RepoCase(unittest.TestCase):
                     benchmark.fresh_reports(self.repo)
                 self.assertEqual(len(codes), build.call_count)
 
+    def test_benchmark_evidence_reconstructs_counts_without_xml_properties(self):
+        self.write_reports()
+        xml = self.repo / "target/surefire-reports/TEST-Test.xml"
+        xml.write_text('<testsuite name="Example" tests="3" failures="0" errors="0" skipped="1" time="0.123">'
+                       '<properties><property name="secret" value="DO_NOT_ARCHIVE"/></properties></testsuite>')
+        evidence = self.base / "benchmark-before.json"
+        checks = {"javaMajor": 25, "checks": [{"arguments": ["clean", "test"], "exitCode": 0}]}
+        with patch("workflow.benchmark.fresh_reports", return_value=checks):
+            values = benchmark.collect(self.repo, "UserService", evidence)
+        archived = read_json(evidence)
+        self.assertNotIn("DO_NOT_ARCHIVE", evidence.read_text())
+        self.assertEqual(sum(s["tests"] for s in archived["surefire"]), values["tests"])
+        row = archived["jacoco"]
+        self.assertEqual(int(row["LINE_COVERED"]) / (int(row["LINE_MISSED"]) + int(row["LINE_COVERED"])) * 100,
+                         values["lineCoverage"])
+        self.assertEqual(checks, archived["build"])
+
+    def test_prepared_run_rejects_changed_commit_before_prompt_or_branch(self):
+        with patch("workflow.benchmark.collect", return_value=METRICS):
+            prepared = runner.prepare(self.repo, self.store_root, self.request, CATALOG)
+        self.git("commit", "--allow-empty", "-m", "changed baseline")
+        with patch("workflow.prompt.improve") as improve, self.assertRaisesRegex(WorkflowError, "changed after prepare"):
+            runner.begin(self.repo, self.store_root, None, CATALOG, prepared_id=prepared["id"])
+        improve.assert_not_called()
+        self.assertEqual("main", branch.current(self.repo))
+
 
 def assistant(message_id="msg_one", input_tokens=100, completed=True, steps=True):
     values = {"cost": 0.012, "tokens": {"input": input_tokens, "output": 20, "reasoning": 5,
@@ -358,7 +388,7 @@ def assistant(message_id="msg_one", input_tokens=100, completed=True, steps=True
 class UsageCase(RepoCase):
     # Inherit fixtures only, not tests: below class overrides discovery with load_tests.
     def snap(self, messages):
-        return usage.snapshot(self.export(messages), self.repo, "ses_test", captured_ms=6000)
+        return usage.snapshot(self.export(messages), self.repo, "ses_test", captured_ms=6000 if messages else 0)
 
     def bridge_export(self, captured_ms=6000, messages=None):
         return self.export(messages) | {"workflowUsage": {
@@ -410,7 +440,7 @@ class UsageCase(RepoCase):
         after = usage.snapshot(self.export([finished]), self.repo, "ses_test", captured_ms=6000)
         result = usage.difference(before, after)
         self.assertEqual(1.0, result["ReasoningSeconds"])
-        self.assertEqual(1.5, result["InferenceSeconds"])
+        self.assertEqual(1.5, result["MessageElapsedSeconds"])
 
     def test_usage_step_and_message_totals_are_not_double_counted(self):
         result = usage.difference(self.snap([]), self.snap([assistant()]))
@@ -421,7 +451,7 @@ class UsageCase(RepoCase):
         self.assertEqual(3, result["CacheWriteTokens"])
         self.assertEqual(1, result["Requests"])
         self.assertEqual(1.5, result["ReasoningSeconds"])
-        self.assertEqual(4, result["InferenceSeconds"])
+        self.assertEqual(4, result["MessageElapsedSeconds"])
         self.assertAlmostEqual(0.012, result["EstimatedCostUSD"])
         self.assertNotIn("secret text", json.dumps(self.snap([assistant()])))
 
@@ -488,7 +518,7 @@ class UsageCase(RepoCase):
         self.assertEqual(1, result["Requests"])
         self.assertEqual(100, result["InputTokens"])
         self.assertEqual(0, result["PendingMessages"])
-        self.assertIsNone(result["InferenceSeconds"])
+        self.assertIsNone(result["MessageElapsedSeconds"])
         self.assertIsNone(result["RetryEvents"])
         self.assertIsNone(result["ReasoningSeconds"])
 
@@ -510,11 +540,18 @@ class UsageCase(RepoCase):
             self.assertIsNone(usage.number(invalid))
 
     def test_complete_integration_archives_usage_and_csv(self):
+        from unittest.mock import Mock
+        from prompt.models import ImprovedPrompt
+        client = Mock()
+        client.chat.return_value = ImprovedPrompt(goal="Improved task", scope=[], requirements=[],
+            non_goals=[], verification=[], uncertainties=[]).model_dump_json()
         before_path, after_path = self.base / "before.json", self.base / "after.json"
         write_json(before_path, self.bridge_export(captured_ms=time.time() * 1000, messages=[assistant("msg_old")]))
-        self.request.update(modules="complete", session_id="ses_test")
-        with patch("workflow.benchmark.collect", return_value=METRICS), patch("workflow.prompt.improve", return_value="improved"):
-            started = runner.begin(self.repo, self.store_root, self.request, CATALOG, before_path)
+        self.request.update(modules="complete", session_id="ses_test", prompt_provider="ollama", prompt_model="fixture-improver")
+        with patch("workflow.benchmark.collect", return_value=METRICS), patch("prompt.llm_client_factory.LlmClientFactory.create", return_value=client):
+            prepared = runner.prepare(self.repo, self.store_root, self.request, CATALOG, before_path)
+            write_json(before_path, self.bridge_export(captured_ms=time.time() * 1000, messages=[assistant("msg_old")]))
+            started = runner.begin(self.repo, self.store_root, None, CATALOG, before_path, prepared["id"])
         self.commit_task()
         write_json(after_path, self.bridge_export(captured_ms=time.time() * 1000,
                                                   messages=[assistant("msg_old"), assistant("msg_new")]))
@@ -522,6 +559,10 @@ class UsageCase(RepoCase):
             result = runner.finish(self.repo, self.store_root, started["id"], usage_export=after_path)
         self.assertEqual(100, result["InputTokens"])
         self.assertEqual("openai/test-model", result["ActualModels"])
+        self.assertEqual("ollama", result["PromptProvider"])
+        self.assertEqual("fixture-improver", result["PromptModel"])
+        self.assertGreaterEqual(result["PromptDurationSeconds"], 0)
+        self.assertIn("fixture-improver", (Path(started["folder"]) / "report.md").read_text(encoding="utf-8"))
         self.assertTrue((Path(started["folder"]) / "usage.json").is_file())
         self.assertEqual("OpenCode SDK", read_json(Path(started["folder"]) / "usage-before.json")["source"])
 
@@ -536,7 +577,8 @@ class UsageCase(RepoCase):
         write_json(after_path, self.export([assistant()]))
         self.request.update(modules="branch,benchmark,usage", branch="with_usage", session_id="ses_test")
         with patch("workflow.benchmark.collect", return_value=METRICS):
-            second = runner.begin(self.repo, self.store_root, self.request, CATALOG, before_path)
+            prepared = runner.prepare(self.repo, self.store_root, self.request, CATALOG, before_path)
+            second = runner.begin(self.repo, self.store_root, None, CATALOG, before_path, prepared["id"])
         self.commit_task()
         with patch("workflow.benchmark.collect", return_value=METRICS):
             second_result = runner.finish(self.repo, self.store_root, second["id"], usage_export=after_path)
@@ -546,6 +588,63 @@ class UsageCase(RepoCase):
         self.assertEqual(2, len(rows))
         self.assertEqual("", rows[0]["InputTokens"])
         self.assertEqual("100", rows[1]["InputTokens"])
+
+    def test_preflight_cannot_start_run_and_fresh_snapshots_share_duration_boundaries(self):
+        self.request.update(modules="branch,benchmark,usage", session_id="ses_test")
+        preflight = self.base / "preflight.json"
+        write_json(preflight, self.bridge_export(captured_ms=time.time() * 1000))
+        with patch("workflow.benchmark.collect", return_value=METRICS):
+            prepared = runner.prepare(self.repo, self.store_root, self.request, CATALOG, preflight)
+        self.assertEqual("main", branch.current(self.repo))
+        with patch("workflow.prompt.improve") as improve, self.assertRaisesRegex(WorkflowError, "AFTER baseline"):
+            runner.begin(self.repo, self.store_root, None, CATALOG, preflight, prepared["id"])
+        improve.assert_not_called()
+        start_ms = time.time() * 1000
+        fresh = self.base / "fresh.json"
+        write_json(fresh, self.bridge_export(captured_ms=start_ms))
+        started = runner.begin(self.repo, self.store_root, None, CATALOG, fresh, prepared["id"])
+        self.commit_task()
+        end_ms = time.time() * 1000
+        after = self.base / "after.json"
+        write_json(after, self.bridge_export(captured_ms=end_ms))
+        with patch("workflow.benchmark.collect", return_value=METRICS):
+            result = runner.finish(self.repo, self.store_root, started["id"], usage_export=after)
+        self.assertEqual(usage.timestamp(start_ms), result["UsageStartUTC"])
+        self.assertEqual(usage.timestamp(end_ms), result["UsageEndUTC"])
+        self.assertAlmostEqual(result["DurationSeconds"], result["UsageWindowSeconds"], delta=.051)
+        report = (Path(started["folder"]) / "report.md").read_text(encoding="utf-8")
+        self.assertIn("OpenCode meldet 0 USD; tatsächliche Kosten unbekannt", report)
+
+    def test_newly_visible_message_time_is_clipped_to_run_even_if_it_started_earlier(self):
+        before = usage.snapshot(self.export([]), self.repo, "ses_test", captured_ms=3500)
+        after = usage.snapshot(self.export([assistant()]), self.repo, "ses_test", captured_ms=6000)
+        result = usage.difference(before, after)
+        self.assertEqual(1.5, result["MessageElapsedSeconds"])
+        self.assertEqual(0, result["ReasoningSeconds"])
+        self.assertEqual(2.5, result["UsageWindowSeconds"])
+
+    def test_invalid_reasoning_endpoint_is_unknown_instead_of_an_open_interval(self):
+        for endpoint in (None, "invalid", -1, True):
+            with self.subTest(endpoint=endpoint):
+                message = assistant()
+                reasoning = next(part for part in message["parts"] if part["type"] == "reasoning")
+                reasoning["time"]["end"] = endpoint
+                self.assertIsNone(usage.difference(self.snap([]), self.snap([message]))["ReasoningSeconds"])
+
+    def test_first_run_csv_is_preserved_when_new_schema_is_appended(self):
+        fields = {"Id": "first", "MessageElapsedSeconds": 225.205, "EstimatedCostUSD": 0,
+                  "CostStatus": "reported-zero-actual-unknown", "UsageStartUTC": None, "UsageEndUTC": None,
+                  "UsageWindowSeconds": None, "PromptProvider": None, "PromptModel": None,
+                  "PromptDurationSeconds": None}
+        path = self.base / "legacy-results.csv"
+        path.write_text("Id,InferenceSeconds,EstimatedCostUSD\nfirst,225.205,0\n", encoding="utf-8")
+        benchmark.append_csv(path, dict(fields, Id="second"))
+        with path.open(encoding="utf-8", newline="") as f:
+            rows = list(csv.DictReader(f))
+        self.assertEqual(["first", "second"], [row["Id"] for row in rows])
+        self.assertEqual("225.205", rows[0]["MessageElapsedSeconds"])
+        self.assertEqual("", rows[0]["UsageStartUTC"])
+        self.assertEqual("reported-zero-actual-unknown", rows[1]["CostStatus"])
 
 
 class ConfigurationCase(unittest.TestCase):

@@ -41,12 +41,12 @@ CLI-Hilfetext und die zwei beschriebenen Smoke-Test-Korrekturen.
 
 | Prüfung | Ergebnis |
 |---|---|
-| Automatische Python-Suite | **54 Tests, 0 Fehler, 0 Failures, 0 Skips** nach dem V2-Usage-Fix |
+| Automatische Python-Suite | **60 Tests, 0 Fehler, 0 Failures, 0 Skips** nach den fünf FirstRun-Korrekturen |
 | Echte temporäre Git-Repositories | Branch-/Status-Prüfungen, Commits, Findings, Text-/Binary-Diff und sauberer Endzustand erfolgreich |
 | CLI als eigener Prozess | Begin/Finish, sichere JSON-Task-Übergabe mit Quotes/Zeilenumbrüchen/Shell-Sonderzeichen erfolgreich |
 | Fehlerpfade | Dirty Tree, vorhandene lokale/remote Branches, falscher Branch, tracked Findings, fehlende Usage-Session, Build-/CSV-Fehler korrekt abgewiesen |
 | Wiederaufnahme und Locking | Retained State/Findings, Retry, idempotentes Finish und konkurrierender Store-Lock geprüft |
-| CSV | Einheitliches Schema für neue Runs; bestehende Runs dieses Schemas bleiben erhalten; fremde Schemas abgewiesen; keine doppelte ID; kulturunabhängige Dezimalzahlen |
+| CSV | Einheitliches Schema; FirstRun-Schema gezielt erweitert und historische Zeile erhalten; fremde Schemas abgewiesen; keine doppelte ID; kulturunabhängige Dezimalzahlen |
 | Modellgenerator | 22 Zuordnungen; selected/forced erhalten; manuelle Commands geschützt; Konfigurationsfehler vor Mutation abgefangen |
 | Usage-Parser mit Offline-Fixtures | Delta, aktive Messages, Teilintervalle, Retries, mehrere Steps, fehlende Werte, Modell-IDs und Vermeidung von Doppelzählung geprüft |
 | Installiertes OpenCode **1.18.32** | Bereinigter echter Export erfolgreich mit demselben Usage-Parser ausgewertet; nur Schema/Metriken gespeichert |
@@ -88,7 +88,8 @@ keine als erfolgreich ausgegebenen fehlgeschlagenen Tests.
   nicht ausgeführt. Command-Dateien/Generator, Python-Lifecycle, echter
   Session-Export, echter Maven-Benchmark und Live-Improver wurden einzeln und
   über die dokumentierten Integrationstests geprüft. Die TUI-Modellauswahl und
-  Modellauswahl und End-to-End-Coding bleiben beim nächsten echten Auftrag zu prüfen.
+  End-to-End-Coding wurde inzwischen im ersten ConfigService-Run vom Nutzer ausgeführt.
+  Der hier beschriebene Fünf-Punkte-Fix wird im nächsten Auftrag geprüft.
   Plugin-Ladung und Tool-Ausführung sind inzwischen im echten Server 2.0.19
   geprüft; die aktive ID wird automatisch übergeben.
 - Usage endet am Finish-Snapshot. Laufende Inference-Schritte und die danach
@@ -102,8 +103,10 @@ keine als erfolgreich ausgegebenen fehlgeschlagenen Tests.
   spezifisches `response.incomplete`-Handling und alte Keyring-Chunks wurden
   wie gewünscht nicht in den unveränderten Improver eingebaut. Der neue
   Workflow-Store-Lock schützt nur Run-Zustand und CSV.
-- Der Stand ist für einen Neustart mit leerem Benchmark-Ordner vorgesehen.
-  Es gibt keine Übernahme oder Konvertierung vorheriger Runs/CSV-Schemas und
+- Frühere PowerShell-CSV-Schemas werden nicht übernommen. Vorhandene Python-
+  Runs einschließlich FirstRun bleiben erhalten; dessen CSV-Schema wird beim
+  nächsten Eintrag gezielt erweitert. Historische Run-Dateien werden nicht verändert.
+  Es gibt
   keine Bereinigung alter Commands durch den Generator. Er verwaltet allein
   seine eigenen `start-*.md`-Dateien mit dem aktuellen `MARKER`.
 
@@ -171,3 +174,51 @@ Beispiel bei sichtbar ausgewähltem GPT-6.1 Sol:
 ```
 
 Keine Reviewer-, RAG- oder sonstigen fachlichen Zusatzmodule wurden gebaut.
+
+## FirstRun: fünf Korrekturen nach dem ersten echten Auftrag
+
+1. `prepare` prüft Usage und misst die Baseline, bevor `begin --id` den Run
+   startet. Nach prepare ist ein neuer SDK-Snapshot erforderlich. Start und
+   Ende von Duration und Usage entsprechen exakt den SDK-Capture-Zeitpunkten.
+   Message-/Reasoning-Intervalle werden an beiden Grenzen abgeschnitten.
+   `MessageElapsedSeconds` ersetzt die irreführende Bezeichnung
+   `InferenceSeconds`: Tool-/Wartezeiten bleiben enthalten, überlappende
+   Messages dürfen zusammen länger als die Laufzeit sein. Tokenwerte eines
+   erst später abgeschlossenen Requests werden nicht künstlich zeitanteilig
+   verteilt; diese Grenze ist in der README erklärt.
+2. Die README empfiehlt frische Sessions, denselben Ausgangscommit und
+   identische Module/Improver-Einstellungen für Modellvergleiche. Der
+   Workflow erstellt oder wechselt Sessions nicht automatisch.
+3. Kosten erhalten einen expliziten Status. Bei gemeldeter 0 steht im Report
+   „OpenCode meldet 0 USD; tatsächliche Kosten unbekannt.“ Keine erfundenen
+   Preise oder Abrechnungsaussagen.
+4. Der Workflow-Adapter speichert die tatsächlich an die bestehende Factory
+   übergebenen Improver-Provider-/Modellwerte und Dauer in
+   `prompt-metadata.json`, Report und CSV. Config, Kern, OAuth und Provider
+   bleiben unverändert. Die Metadaten belegen die lokalen Einstellungen,
+   nicht eine unabhängig bestätigte serverseitige Modellzuordnung.
+5. `benchmark-before.json` und `benchmark-after.json` archivieren die
+   JaCoCo-Zeile der Zielklasse, Surefire-Suitenzähler/-zeiten und erfolgreiche
+   Maven-Aufrufe mit Exitcodes/Java-Major. Counts und Coverage lassen sich
+   unabhängig aus diesen Run-Dateien nachrechnen. XML-Properties und
+   System-/Console-Inhalte werden nicht übernommen; vollständige Build-Logs
+   und ein kryptografischer Nachweis sind damit nicht verbunden.
+
+Der neue Complete-Integrationstest lief über die echte Python-CLI in einem
+isolierten Java-25-/Maven-/JaCoCo-Projekt: 1 → 2 Tests, 75 → 100 % Zeilen,
+50 → 100 % Branches, keine Fehler oder Skips. Die bestehenden Improver-
+Factory-, Structured-Output- und Artefaktpfade wurden mit einer kontrollierten
+Offline-Antwort geprüft; Usage-Snapshots waren Fixtures, keine bezahlten
+Modellanfragen. Messgrenzen, Prompt-Metadaten und beide Benchmark-Belege
+wurden aus den erzeugten Dateien geprüft. Der vollständige FirstRun-CSV-
+Datensatz blieb beim Anhängen der neuen Ergebniszeile erhalten. Der Patch
+bestand `git apply --reverse --check`, der Feature-Branch war abschließend
+sauber. Zusätzlich bestanden 60 Python- und 11 Node-Tests.
+
+Das Änderungspaket `opencode-benchmark-quality-fix.zip` enthält ausschließlich
+die geänderten Dateien. Auf den installierten V2-Fix darüberkopieren. Keine
+neuen Dependencies, Katalogänderungen oder Änderungen am Plugin; für diesen
+Patch ist kein erneutes `npm ci` erforderlich. Infrastruktur auf main
+committen und für den nächsten vergleichbaren Lauf eine frische Sitzung
+verwenden. Der erste Run und seine fachlichen Findings bleiben erhalten;
+ConfigService wurde in diesem Schritt nicht verändert.

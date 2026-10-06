@@ -24,6 +24,10 @@ class PromptTests(unittest.TestCase):
             self.assertIn("Validate usernames", result)
             self.assertEqual("Reject empty names\n", (Path(directory) / "original-prompt.md").read_text())
             self.assertEqual(result + "\n", (Path(directory) / "improved-prompt.md").read_text())
+            metadata = json.loads((Path(directory) / "prompt-metadata.json").read_text())
+            self.assertEqual(config["provider"], metadata["provider"])
+            self.assertEqual(config["model"], metadata["model"])
+            self.assertGreaterEqual(metadata["durationSeconds"], 0)
             schema = client.chat.call_args.kwargs["response_format"]
             self.assertFalse(schema["additionalProperties"])
 
@@ -44,6 +48,9 @@ class PromptTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory, patch.object(LlmClientFactory, "create", return_value=client) as factory:
             prompt.improve("task", Path(directory), "ollama", "local-model")
             factory.assert_called_once_with("ollama", "local-model")
+            metadata = json.loads((Path(directory) / "prompt-metadata.json").read_text())
+            self.assertEqual("ollama", metadata["provider"])
+            self.assertEqual("local-model", metadata["model"])
 
     def test_callback_smoke_starts_server_before_wait(self):
         from prompt.tests import test_chatgpt_callback
