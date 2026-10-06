@@ -6,6 +6,7 @@ import de.derpeterson.app.model.enums.UserStatus;
 import jakarta.persistence.QueryHint;
 import org.hibernate.jpa.HibernateHints;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
@@ -17,6 +18,10 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     Optional<UserEntity> findByEmail(String email);
+
+    @Override
+    @EntityGraph(attributePaths = "roleEntities")
+    List<UserEntity> findAll();
 
     // Read stored IDs, not possibly already edited entities from the persistence context.
     // Do not auto-flush a pending demotion before the service has checked it.

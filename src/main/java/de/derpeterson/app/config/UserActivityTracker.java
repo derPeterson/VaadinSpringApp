@@ -9,7 +9,6 @@ import de.derpeterson.app.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Component
@@ -33,8 +32,7 @@ public class UserActivityTracker implements VaadinServiceInitListener {
         if (session != null) {
             Optional<UserEntity> currentUserOpt = securityService.getCurrentUser();
             currentUserOpt.ifPresent(user -> {
-                user.setLastActivity(LocalDateTime.now());
-                userService.save(user);
+                userService.updateLastActivity(user.getId());
             });
         }
     }

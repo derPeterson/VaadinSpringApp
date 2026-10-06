@@ -10,6 +10,7 @@ import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -31,6 +32,7 @@ import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.UserService;
 import io.micrometer.common.util.StringUtils;
+import org.springframework.dao.OptimisticLockingFailureException;
 
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -333,22 +335,23 @@ public class UserPopoverMenu {
     }
 
     private void handleUserStatusChange(UserStatus userStatus, boolean isFromClient) {
-        updateStatusSelectPrefix(userStatus);
-
         if (userStatus == null) {
             return;
         }
-
-        currentStatus = userStatus;
-
-        if (hasCurrentUser()) {
-            currentUser.setStatus(userStatus);
-        }
-
-        updateStatusIcons(userStatus);
-
         if (isFromClient && hasCurrentUser()) {
-            userService.updateUserStatus(currentUser, userStatus, true);
+            try {
+                var result = userService.updateUserStatus(currentUser, userStatus, true);
+                currentUser.setStatusManuallySet(result.manuallySet());
+                applyExternalStatus(result.status());
+            } catch (RuntimeException exception) {
+                applyExternalStatus(currentStatus);
+                Notification.show(messageProperties.getTranslation(exception instanceof OptimisticLockingFailureException
+                        ? "base.user.update.conflict" : "base.user.status.failed"));
+            }
+        } else {
+            currentStatus = userStatus;
+            updateStatusSelectPrefix(userStatus);
+            updateStatusIcons(userStatus);
         }
     }
 
