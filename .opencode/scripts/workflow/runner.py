@@ -43,6 +43,9 @@ def identity(repo: Path, store: Path) -> None:
 
 def validate_request(repo: Path, request: dict, catalog: Path) -> dict:
     selected = modules(request.get("modules", "complete"))
+    task_mode = request.get("task_mode", "implementation")
+    if task_mode not in ("analysis", "implementation"):
+        raise WorkflowError("task_mode must be analysis or implementation.")
     task = request.get("task")
     if not isinstance(task, str) or not task.strip():
         raise WorkflowError("A nonempty task is required.")
@@ -63,7 +66,7 @@ def validate_request(repo: Path, request: dict, catalog: Path) -> dict:
     model = next((entry for entry in entries if entry["command"] == key), None)
     if not model and "benchmark" in selected:
         raise WorkflowError("benchmark requires a model key from benchmark-models.json.")
-    return {"modules": selected, "task": task, "branchName": request.get("branch"),
+    return {"modules": selected, "task": task, "taskMode": task_mode, "branchName": request.get("branch"),
             "branch": target_branch, "targetClass": request.get("target_class"),
             "model": model["name"] if model else "not specified",
             "modelKey": key, "provider": model["provider"] if model else "not specified",
@@ -161,6 +164,7 @@ def begin(repo: Path, root: Path, request: dict | None, catalog: Path,
             raise
         return {"id": prepared_id, "modules": state["modules"], "branch": state["branch"],
                 "folder": str(folder), "task": state["effectiveTask"],
+                "task_mode": state.get("taskMode", "implementation"),
                 "originalTask": state["task"], "expectedModel": state["expectedModel"]}
 
 
@@ -202,8 +206,9 @@ def result_row(state: dict, end: str, end_commit: str, current_branch: str,
 
 def report(state: dict, result: dict, after: dict | None, changed: dict, usage_result: dict | None) -> str:
     lines = ["# AI Coding Benchmark / Start Workflow", "", "## Aufgabe", "", state["task"], "",
-             "## Umsetzung und Verhaltensänderungen", "",
-             state.get("implementationSummary", "Für diesen Lauf wurde kein Umsetzungsbericht übergeben."), "",
+             "Auftragsart: " + {"analysis": "Analyse", "implementation": "Implementierung"}.get(state.get("taskMode"), "nicht erfasst"), "",
+             "## Durchgeführte Arbeit und Verhaltensänderungen", "",
+             state.get("implementationSummary", "Für diesen Lauf wurde kein Arbeitsbericht übergeben."), "",
              "## Ergebnis", ""]
     lines.extend(f"- {key}: {'nicht verfügbar' if value is None else value}" for key, value in result.items())
     if "usage" in state["modules"]:
@@ -245,7 +250,7 @@ def finish(repo: Path, root: Path, run_id: str, interventions: int = 0,
         if summary_file is not None:
             summary = outside_repo(repo, summary_file).read_text(encoding="utf-8-sig").strip()
             if not summary:
-                raise WorkflowError("The implementation summary must not be empty.")
+                raise WorkflowError("The work summary must not be empty.")
         actual_branch = branch.current(repo)
         if "branch" in state["modules"] and actual_branch != state["branch"]:
             raise WorkflowError(f"Finish requires exactly {state['branch']}.")
@@ -253,6 +258,8 @@ def finish(repo: Path, root: Path, run_id: str, interventions: int = 0,
             raise WorkflowError("Benchmark finish requires a feature/* branch.")
         branch.require_clean(repo, findings=True)
         end_commit = run(repo, "git", "rev-parse", "HEAD").strip()
+        if state.get("taskMode") == "analysis" and end_commit != state["startCommit"]:
+            raise WorkflowError("Analysis runs must not contain task commits. Inspect the changes; do not reset them automatically.")
         run(repo, "git", "merge-base", "--is-ancestor", state["startCommit"], end_commit)
         folder = Path(state["folder"])
         # Preserve the original cutoff when retrying a failed final build/artifact write.
@@ -316,6 +323,71 @@ def finish(repo: Path, root: Path, run_id: str, interventions: int = 0,
         if active.exists() and read_json(active)["id"] == run_id:
             active.unlink()
         return result
+
+
+def status(repo: Path, root: Path, run_id: str | None = None) -> dict:
+    """Read atomic state files without creating a store/lock or running Git/providers."""
+    repo = repo.resolve()
+    store = store_path(repo, root.resolve())
+    project = store / "project.json"
+    if project.exists() and Path(read_json(project)["repo"]).resolve() != repo:
+        raise WorkflowError("Another repository uses this benchmark project directory. Choose another --store-root.")
+
+    def active_id():
+        try:
+            return read_json(store / "active.json")["id"]
+        except FileNotFoundError:
+            return None
+
+    # A writer may complete/replace the active run between the two reads.
+    for _ in range(3):
+        active = active_id()
+        selected = run_id if run_id is not None else active
+        state_path, state = load_state(repo, store, selected) if selected is not None else (None, None)
+        if active == active_id():
+            break
+    else:
+        raise WorkflowError("Workflow state changed during status lookup; retry status.")
+    result = {"repo": str(repo), "store": str(store), "active": selected is not None and selected == active,
+              "active_id": active, "id": selected, "status": state["status"] if state else "idle"}
+    if state is None:
+        result["next_steps"] = ["Kein aktiver Lauf. Für einen neuen Auftrag /start verwenden."]
+        return result
+    result.update(task_mode=state.get("taskMode"), modules=state["modules"],
+                  branch=state["branch"], folder=state["folder"], state_file=str(state_path),
+                  start_commit=state["startCommit"], error_recorded=bool(state.get("error")))
+    artifact_names = ("report.md", "findings.md", "diff.patch", "result.json")
+    folder = Path(state["folder"])
+    result["artifacts"] = {name: str(folder / name) for name in artifact_names if (folder / name).is_file()}
+    phase = state["status"]
+    if phase == "prepared":
+        steps = [f"Vorbereitung abgeschlossen. begin --id {selected} verwenden."]
+        if "usage" in state["modules"]:
+            steps += ["Zuerst einen frischen Usage-Snapshot derselben Session erfassen und mit --usage-export übergeben."]
+    elif phase == "active":
+        steps = ["Auftrag im erlaubten Umfang durchführen und prüfen; Arbeitsbericht und offene Findings dokumentieren.",
+                 f"Danach finish --id {selected} mit --summary-file und den tatsächlichen Zählern aufrufen."]
+        if "usage" in state["modules"]:
+            steps += ["Vor finish einen frischen Usage-Snapshot derselben Session erfassen und mit --usage-export übergeben."]
+    elif phase in ("preparing", "finishing"):
+        steps = ["Falls der Workflow-Prozess noch läuft: seinen Abschluss abwarten."]
+        if phase == "finishing":
+            steps += ["Falls er beendet wurde: Fehler prüfen und finish mit denselben Angaben wiederholen. Nach neuen Task-Commits Bericht und Usage-Snapshot aktualisieren."]
+        else:
+            steps += ["Falls er beendet wurde: Ursache prüfen, den Lauf mit abort --id freigeben und neu vorbereiten."]
+    elif phase in ("prepare-failed", "begin-failed"):
+        steps = ["Fehlerdetails in der Zustandsdatei prüfen.",
+                 f"Nach Klärung abort --id {selected} verwenden und die Voraussetzungen für einen neuen Lauf prüfen. Abort setzt keine Git-Änderungen zurück."]
+    elif phase == "completed":
+        steps = ["Lauf abgeschlossen. Report, Findings und Diff im Artefaktordner prüfen."]
+    elif phase == "aborted":
+        steps = ["Lauf abgebrochen. Git-Zustand und erhaltene Artefakte prüfen, bevor ein neuer Auftrag gestartet wird."]
+    else:
+        steps = ["Unbekannter Zustand: Zustandsdatei prüfen; keine automatische Wiederaufnahme."]
+    if selected != active and phase not in ("completed", "aborted"):
+        steps = ["Dieser Lauf ist nicht als aktiv registriert. Zustandsdatei und aktuellen Lauf prüfen; keine automatische Wiederaufnahme."]
+    result["next_steps"] = steps
+    return result
 
 
 def abort(repo: Path, root: Path, run_id: str) -> dict:

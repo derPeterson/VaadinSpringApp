@@ -93,7 +93,7 @@ class RepoCase(unittest.TestCase):
         self.assertEqual(3, result["TestsBefore"])
         self.assertEqual(findings, (folder / "findings.md").read_text(encoding="utf-8"))
         report = (folder / "report.md").read_text(encoding="utf-8")
-        self.assertIn("## Umsetzung und Verhaltensänderungen", report)
+        self.assertIn("## Durchgeführte Arbeit und Verhaltensänderungen", report)
         self.assertIn(summary.read_text(encoding="utf-8"), report)
         self.assertNotIn("Konvertierung", (folder / "findings.md").read_text(encoding="utf-8"))
         self.assertTrue(summary.exists())  # Caller-owned transport file is not removed.
@@ -120,7 +120,7 @@ class RepoCase(unittest.TestCase):
         findings = (folder / "findings.md").read_text(encoding="utf-8")
         self.assertIn("keine Findings-Angaben übergeben", findings)
         self.assertNotIn("Keine weiteren offenen Findings festgestellt.", findings)
-        self.assertIn("kein Umsetzungsbericht übergeben", (folder / "report.md").read_text(encoding="utf-8"))
+        self.assertIn("kein Arbeitsbericht übergeben", (folder / "report.md").read_text(encoding="utf-8"))
 
     def test_invalid_summary_stops_before_build_and_preserves_state(self):
         started = self.begin()
@@ -156,7 +156,133 @@ class RepoCase(unittest.TestCase):
             runner.finish(self.repo, self.store_root, started["id"])
         report = (Path(started["folder"]) / "report.md").read_text(encoding="utf-8")
         self.assertNotIn("Erster Stand", report)
-        self.assertIn("kein Umsetzungsbericht übergeben", report)
+        self.assertIn("kein Arbeitsbericht übergeben", report)
+
+    def test_analysis_archives_findings_without_changes_or_task_commit(self):
+        self.request.update(task_mode="analysis", task="Nur UserService analysieren, keine Änderungen.")
+        started = self.begin()
+        start_commit = self.git("rev-parse", "HEAD")
+        self.assertEqual("analysis", started["task_mode"])
+        findings = "# Offene Findings\n\nUS-001: P2, source.txt:1, konkreter Fehler mit Beleg.\n"
+        (self.repo / "findings.md").write_text(findings, encoding="utf-8")
+        summary = self.base / "analysis-summary.md"
+        summary.write_text("UserService und Aufrufer analysiert; keine Codeänderungen. Grenzen: bestehende Tests.", encoding="utf-8")
+        with patch("workflow.benchmark.collect", return_value=METRICS):
+            result = runner.finish(self.repo, self.store_root, started["id"], summary_file=summary)
+        folder = Path(started["folder"])
+        self.assertEqual(start_commit, result["EndCommit"])
+        self.assertEqual(0, result["ChangedFiles"])
+        self.assertEqual(b"", (folder / "diff.patch").read_bytes())
+        self.assertEqual(findings, (folder / "findings.md").read_text(encoding="utf-8"))
+        self.assertIn("Auftragsart: Analyse", (folder / "report.md").read_text(encoding="utf-8"))
+        self.assertIn("keine Codeänderungen", (folder / "report.md").read_text(encoding="utf-8"))
+        self.assertEqual("", self.git("status", "--porcelain"))
+
+    def test_analysis_rejects_commits_without_discarding_work(self):
+        self.request["task_mode"] = "analysis"
+        started = self.begin()
+        self.commit_task()
+        commit = self.git("rev-parse", "HEAD")
+        state_path = self.store_root / self.repo.name / "state" / (started["id"] + ".json")
+        original = state_path.read_bytes()
+        with patch("workflow.benchmark.collect") as collect:
+            with self.assertRaisesRegex(WorkflowError, "Analysis runs must not contain task commits"):
+                runner.finish(self.repo, self.store_root, started["id"])
+        collect.assert_not_called()
+        self.assertEqual(commit, self.git("rev-parse", "HEAD"))
+        self.assertEqual(original, state_path.read_bytes())
+        self.assertTrue((self.repo / "binary.dat").exists())
+
+    def test_status_idle_creates_nothing_and_calls_no_external_services(self):
+        before = {str(path): path.read_bytes() for path in self.base.rglob("*") if path.is_file()}
+        with patch("workflow.runner.run", side_effect=AssertionError("Git call")), \
+                patch("workflow.runner.write_json", side_effect=AssertionError("State write")), \
+                patch("workflow.runner.store_lock", side_effect=AssertionError("Store lock")), \
+                patch("workflow.benchmark.collect", side_effect=AssertionError("Build")), \
+                patch("workflow.prompt.improve", side_effect=AssertionError("Provider")):
+            result = runner.status(self.repo, self.store_root)
+        self.assertEqual("idle", result["status"])
+        self.assertFalse(result["active"])
+        self.assertIsNone(result["id"])
+        self.assertFalse(self.store_root.exists())
+        self.assertEqual(before, {str(path): path.read_bytes() for path in self.base.rglob("*") if path.is_file()})
+
+    def test_status_reads_active_run_during_writer_lock_without_changing_files(self):
+        started = self.begin("branch")
+        store = self.store_root / self.repo.name
+        with store_lock(store), patch("workflow.runner.run", side_effect=AssertionError("Git call")):
+            before = {str(path): path.read_bytes() for path in store.rglob("*") if path.is_file() and path.name != ".lock"}
+            result = runner.status(self.repo, self.store_root)
+            self.assertEqual(before, {str(path): path.read_bytes() for path in store.rglob("*") if path.is_file() and path.name != ".lock"})
+        self.assertTrue(result["active"])
+        self.assertEqual(started["id"], result["active_id"])
+        self.assertEqual("active", result["status"])
+        self.assertEqual("implementation", result["task_mode"])
+        self.assertEqual(started["folder"], result["folder"])
+
+    def test_status_reports_completed_and_aborted_runs_without_selecting_latest(self):
+        first = self.begin("branch")
+        runner.finish(self.repo, self.store_root, first["id"])
+        self.assertEqual("idle", runner.status(self.repo, self.store_root)["status"])
+        self.git("switch", "main")
+        self.request["branch"] = "second"
+        second = self.begin("branch")
+        completed = runner.status(self.repo, self.store_root, first["id"])
+        self.assertEqual("completed", completed["status"])
+        self.assertFalse(completed["active"])
+        self.assertEqual(second["id"], completed["active_id"])
+        self.assertEqual({"report.md", "findings.md", "diff.patch", "result.json"}, set(completed["artifacts"]))
+        runner.abort(self.repo, self.store_root, second["id"])
+        self.assertEqual("aborted", runner.status(self.repo, self.store_root, second["id"])["status"])
+
+    def test_status_failure_and_legacy_state_are_read_without_mutation(self):
+        with patch("workflow.prompt.improve", side_effect=RuntimeError("provider failed")):
+            with self.assertRaises(RuntimeError):
+                self.begin("branch,prompt")
+        run_id = read_json(self.store_root / self.repo.name / "active.json")["id"]
+        state_path = self.store_root / self.repo.name / "state" / (run_id + ".json")
+        state = read_json(state_path)
+        state.pop("taskMode")  # Previously created runs have no recorded task mode.
+        write_json(state_path, state)
+        before = state_path.read_bytes()
+        result = runner.status(self.repo, self.store_root)
+        self.assertEqual("begin-failed", result["status"])
+        self.assertTrue(result["error_recorded"])
+        self.assertIsNone(result["task_mode"])
+        self.assertIn("abort --id", " ".join(result["next_steps"]))
+        self.assertEqual(before, state_path.read_bytes())
+
+    def test_status_rejects_invalid_unknown_and_foreign_runs(self):
+        started = self.begin("branch")
+        for run_id in ("../bad", "", "f" * 32):
+            with self.subTest(run_id=run_id), self.assertRaises(WorkflowError):
+                runner.status(self.repo, self.store_root, run_id)
+        state_path = self.store_root / self.repo.name / "state" / (started["id"] + ".json")
+        state = read_json(state_path)
+        state["folder"] = str(self.base / "foreign")
+        write_json(state_path, state)
+        with self.assertRaisesRegex(WorkflowError, "artifact directory"):
+            runner.status(self.repo, self.store_root)
+        write_json(self.store_root / self.repo.name / "project.json", {"repo": str(self.base / "other")})
+        with self.assertRaisesRegex(WorkflowError, "Another repository"):
+            runner.status(self.repo, self.store_root)
+
+    def test_status_retries_when_run_completes_between_reads(self):
+        started = self.begin("branch")
+        active_path = self.store_root / self.repo.name / "active.json"
+        active_reads = 0
+        real_read = runner.read_json
+        def read(path):
+            nonlocal active_reads
+            if path == active_path:
+                active_reads += 1
+                if active_reads == 2:
+                    active_path.unlink()  # Simulate concurrent writer completing the run.
+            return real_read(path)
+        with patch("workflow.runner.read_json", side_effect=read):
+            result = runner.status(self.repo, self.store_root)
+        self.assertEqual("idle", result["status"])
+        self.assertIsNone(result["id"])
 
     def test_branch_only_has_no_maven_or_prompt_dependencies(self):
         with patch("workflow.benchmark.collect") as collect, patch("workflow.prompt.improve") as improve:
@@ -229,7 +355,7 @@ class RepoCase(unittest.TestCase):
 
     def test_reject_bad_request_before_mutations(self):
         for key, value in (("branch", "../bad"), ("target_class", "../UserService"),
-                           ("model", "invented"), ("task", " "), ("modules", "reviewer")):
+                           ("model", "invented"), ("task", " "), ("modules", "reviewer"), ("task_mode", "reviewer")):
             with self.subTest(key=key):
                 request = dict(self.request, **{key: value})
                 with self.assertRaises(WorkflowError):
@@ -277,6 +403,9 @@ class RepoCase(unittest.TestCase):
         self.assertTrue((self.repo / "findings.md").exists())
         state_path = self.store_root / self.repo.name / "state" / (started["id"] + ".json")
         cutoff = read_json(state_path)["end"]
+        saved_status = runner.status(self.repo, self.store_root)
+        self.assertEqual("finishing", saved_status["status"])
+        self.assertIn("Falls der Workflow-Prozess noch läuft", " ".join(saved_status["next_steps"]))
         with patch("workflow.benchmark.collect", return_value=METRICS):
             runner.finish(self.repo, self.store_root, started["id"])
         self.assertEqual(cutoff, read_json(state_path)["end"])
@@ -377,14 +506,19 @@ class RepoCase(unittest.TestCase):
 
     def test_cli_begin_finish_preserves_task_as_data(self):
         request = self.base / "request.json"
-        write_json(request, dict(self.request, modules="branch"))
+        write_json(request, dict(self.request, modules="branch", task_mode="analysis"))
         script = Path(__file__).resolve().parents[1] / "start.py"
         command = [sys.executable, "-B", str(script), "--repo", str(self.repo),
                    "--store-root", str(self.store_root)]
+        idle = subprocess.run([*command, "status"], capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(0, idle.returncode, idle.stderr)
+        self.assertEqual("idle", json.loads(idle.stdout)["status"])
+        self.assertFalse(self.store_root.exists())
         before = subprocess.run([*command, "begin", "--request", str(request)], capture_output=True, text=True, encoding="utf-8")
         self.assertEqual(0, before.returncode, before.stderr)
         started = json.loads(before.stdout)
         self.assertEqual(self.request["task"], started["task"])
+        self.assertEqual("analysis", started["task_mode"])
         summary = self.base / "summary with spaces.md"
         explanation = 'Änderungen geprüft; $(bad) `bad` "quoted"\nWeitere Erklärung.'
         summary.write_text(explanation, encoding="utf-8-sig")
@@ -397,6 +531,9 @@ class RepoCase(unittest.TestCase):
         self.assertIn(explanation, (folder / "report.md").read_text(encoding="utf-8"))
         self.assertEqual(no_findings, (folder / "findings.md").read_text(encoding="utf-8"))
         self.assertEqual("", self.git("status", "--porcelain"))
+        status = subprocess.run([*command, "status", "--id", started["id"]], capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(0, status.returncode, status.stderr)
+        self.assertEqual("completed", json.loads(status.stdout)["status"])
 
     def test_fresh_reports_rejects_wrong_java_before_build(self):
         wrapper = self.repo / ("mvnw.cmd" if os.name == "nt" else "mvnw")
@@ -637,6 +774,38 @@ class UsageCase(RepoCase):
         self.assertIn("fixture-improver", (Path(started["folder"]) / "report.md").read_text(encoding="utf-8"))
         self.assertTrue((Path(started["folder"]) / "usage.json").is_file())
         self.assertEqual("OpenCode SDK", read_json(Path(started["folder"]) / "usage-before.json")["source"])
+
+    def test_complete_analysis_keeps_original_scope_despite_improver_suggestions(self):
+        from prompt.models import ImprovedPrompt
+        client = Mock()
+        client.chat.return_value = ImprovedPrompt(goal="Suggested code fix outside original scope", scope=[], requirements=[],
+            non_goals=[], verification=[], uncertainties=[]).model_dump_json()
+        before_path, after_path = self.base / "before.json", self.base / "after.json"
+        write_json(before_path, self.bridge_export(captured_ms=time.time() * 1000))
+        self.request.update(modules="complete", task_mode="analysis", task="Nur analysieren, keine Codeänderungen.",
+                            session_id="ses_test", prompt_provider="ollama", prompt_model="fixture-improver")
+        with patch("workflow.benchmark.collect", return_value=METRICS), patch("prompt.llm_client_factory.LlmClientFactory.create", return_value=client):
+            prepared = runner.prepare(self.repo, self.store_root, self.request, CATALOG, before_path)
+            prepared_status = runner.status(self.repo, self.store_root)
+            self.assertEqual("prepared", prepared_status["status"])
+            self.assertIn("frischen Usage-Snapshot", " ".join(prepared_status["next_steps"]))
+            write_json(before_path, self.bridge_export(captured_ms=time.time() * 1000))
+            started = runner.begin(self.repo, self.store_root, None, CATALOG, before_path, prepared["id"])
+        self.assertEqual("analysis", started["task_mode"])
+        self.assertEqual(self.request["task"], started["originalTask"])
+        active_status = runner.status(self.repo, self.store_root)
+        self.assertIn("Vor finish einen frischen Usage-Snapshot", " ".join(active_status["next_steps"]))
+        (self.repo / "findings.md").write_text("# Offene Findings\n\nUS-001: Problem mit Beleg.\n", encoding="utf-8")
+        summary = self.base / "summary.md"
+        summary.write_text("Analyse durchgeführt; keine Codeänderungen.", encoding="utf-8")
+        write_json(after_path, self.bridge_export(captured_ms=time.time() * 1000, messages=[assistant("msg_new")]))
+        with patch("workflow.benchmark.collect", return_value=METRICS):
+            result = runner.finish(self.repo, self.store_root, started["id"], usage_export=after_path, summary_file=summary)
+        self.assertEqual(100, result["InputTokens"])
+        self.assertEqual(result["StartCommit"], result["EndCommit"])
+        self.assertEqual(0, result["ChangedFiles"])
+        self.assertEqual(b"", (Path(started["folder"]) / "diff.patch").read_bytes())
+        self.assertEqual("", self.git("status", "--porcelain"))
 
     def test_module_selections_use_same_csv_schema(self):
         first = self.begin()

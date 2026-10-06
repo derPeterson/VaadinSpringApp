@@ -45,7 +45,12 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    A tool failure also stops before begin. Never fake usage.
 4. Write a UTF-8 JSON request in the system temp directory, outside Git,
    using a file-writing tool or proper JSON serializer. Fields:
-   `modules`, `branch`, `target_class`, `model`, `task`, `session_id`.
+   `modules`, `branch`, `target_class`, `model`, `task`, `task_mode`, `session_id`.
+   Set task_mode to "analysis" for an explicitly analysis-only original task;
+   otherwise use "implementation". Analysis with suggested solutions is still
+   analysis. If edits/fixes are requested as well, it is implementation.
+   This is a request field, not a new module or slash argument. Preserve the
+   original scope; the improver must never turn analysis into implementation.
    Convert unused dashes to null. `modules` is the selector string. Optional
    `prompt_provider` / `prompt_model` override ONLY the prompt improver.
    Invoke from the repository root (use the project's venv Python if present).
@@ -70,6 +75,7 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    Use exactly the `session_id` returned by the tool in the JSON request.
 
    Capture the real JSON `id`, `folder`, `branch` and effective `task`.
+   Also preserve the returned task_mode throughout the task.
    Nonzero exit = stop; report the failure and retained state. Do not continue
    the coding task after an unsuccessful begin. The script validates all
    selected prerequisites. Prepare measures a fresh baseline; begin invokes
@@ -86,7 +92,24 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    feature branch must be created explicitly before task edits/finish; ask
    for a branch name if none was supplied. Do not silently add a module.
 
-   Implement, verify and commit the task as follows:
+   For task_mode "analysis":
+   - Read relevant production files, callers and existing tests within the
+     original scope. Identify concrete open problems with evidence, locations
+     and impact. Do not modify production code, tests, dependencies or other
+     tracked/untracked task files. Do not implement fixes, create helper files
+     inside Git or create task/empty commits. The selected branch module may
+     still create a feature branch; selected benchmark builds still run.
+   - Use existing tests and allowed read-only checks as needed. If a check
+     fails, record the exact finding/limitation; do not repair code as part of
+     analysis. A failing benchmark build remains an incomplete workflow.
+   - Verify git status and git diff --check. HEAD must still equal the original
+     start commit, and the only permitted untracked file is root findings.md.
+     Finish also rejects task commits for analysis. Never reset changes
+     automatically to pass this check; report unexpected changes and stop.
+   - Continue at step 6. Document scope, checks and limits in the work summary,
+     explicitly stating that no code changes were made. Findings go in findings.md.
+
+   For task_mode "implementation", implement, verify and commit as follows:
 
    - Read relevant production files, callers and existing tests. Implement
      only the requested task; preserve existing functionality and tests.
@@ -119,9 +142,9 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
 6. Count Korrekturrunden: failed verification runs that required another
    code change. HumanInterventions starts at 0;
    count new user corrections/guidance, not the model's self-corrections.
-   Write the implementation summary as UTF-8 Markdown to an actual temporary
-   file OUTSIDE Git. Its body belongs under "Umsetzung und Verhaltensänderungen"
-   in report.md: describe completed work, changed behavior/contracts, important
+   Write the work summary as UTF-8 Markdown to an actual temporary
+   file OUTSIDE Git. Its body belongs under "Durchgeführte Arbeit und Verhaltensänderungen"
+   in report.md: describe completed analysis/work, changed behavior/contracts if any, important
    decisions, verification and limits. Findings resolved by this task belong
    here as completed work. Do not duplicate the generated metric tables or
    write report.md directly; Python generates it at finish.
@@ -139,7 +162,8 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    rebase, push or discard existing changes.
    Never merge or rebase the feature branch into main; integration happens
    only after manual review by the user.
-7. When task changes are committed, both documents from step 6 are written
+7. When implementation changes are committed (or analysis/no-change tasks have
+   no task changes/commits), both documents from step 6 are written
    and the actual final state has passed all required verification, call
    `workflow_usage_snapshot` again when usage is
    selected. Check its session ID equals the begin session; append
@@ -151,7 +175,7 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
 
    Finish measures fresh final reports for benchmark, collects the usage
    delta, archives findings and benchmark-before/after.json evidence, generates binary-capable `diff.patch`, writes
-   report/result with the implementation summary, and updates CSV. It never commits task files. A nonzero exit
+   report/result with the work summary, and updates CSV. It never commits task files. A nonzero exit
    is an incomplete workflow: inspect the cause and retry after resolving it.
    The summary is retained in the existing run state for retries. If resolving
    a failure requires additional task commits, update the summary and findings
@@ -163,7 +187,7 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    before/after, failures/errors/skipped, corrections/interventions, usage
    tokens/reasoning/cache/completed requests/known retries/estimated USD cost,
    pending messages and measurement limits, CSV (when benchmark selected),
-   run folder, report (implementation and metrics), findings (open problems or
+   run folder, report (performed work and metrics), findings (open problems or
    explicit no-further-findings statement), diff.patch and final working-tree state.
    Missing metrics are unavailable, not zero. Usage ends at finish's snapshot;
    the currently running inference step and the final response after that
@@ -173,3 +197,8 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    Report MessageElapsedSeconds as message time including tool/wait time,
    never pure inference/compute time. For cost 0 say explicitly:
    "OpenCode meldet 0 USD; tatsächliche Kosten unbekannt."
+
+For troubleshooting, `python .opencode/scripts/start.py status` reads the
+active run's saved phase, paths and next-step guidance; `status --id <actual-id>`
+reads a specific run. It performs no tests, model calls, Git commands, writes,
+abort or automatic resume. The recorded branch is not a live Git-status check.

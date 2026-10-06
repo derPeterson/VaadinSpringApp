@@ -41,7 +41,7 @@ CLI-Hilfetext und die zwei beschriebenen Smoke-Test-Korrekturen.
 
 | Prüfung | Ergebnis |
 |---|---|
-| Automatische Python-Suite | **63 Tests, 0 Fehler, 0 Failures, 0 Skips** nach der Trennung von Umsetzung und Findings |
+| Automatische Python-Suite | **72 Tests, 0 Fehler, 0 Failures, 0 Skips** nach Analyse-Ablauf und Statusabfrage |
 | Echte temporäre Git-Repositories | Branch-/Status-Prüfungen, Commits, Findings, Text-/Binary-Diff und sauberer Endzustand erfolgreich |
 | CLI als eigener Prozess | Begin/Finish, sichere JSON-Task-Übergabe und UTF-8-Umsetzungsbericht mit Quotes/Zeilenumbrüchen/Shell-Sonderzeichen erfolgreich |
 | Fehlerpfade | Dirty Tree, vorhandene lokale/remote Branches, falscher Branch, tracked Findings, fehlende Usage-Session, Build-/CSV-Fehler korrekt abgewiesen |
@@ -268,3 +268,63 @@ geänderten Dateien für den bisherigen `opencode-benchmark-quality-fix`-Stand.
 In `.opencode` darüberkopieren. Keine neuen Dependencies, Katalog- oder
 Pluginänderungen; kein erneutes `npm ci` erforderlich. Der vollständige Stand
 in `opencode-python-migration.zip` wurde ebenfalls aktualisiert.
+
+## Analyse-Ablauf und lesende Statusabfrage
+
+Als nächstes Paket wurden die Punkte 1 und 4 der Workflow-Verbesserungen
+umgesetzt. Änderungen wurden ausschließlich in der separaten Arbeitskopie
+vorbereitet. Der parallel aktive UserService-Auftrag im Vaadin-Projekt wurde
+nicht verändert oder unterbrochen. Die neue Statusabfrage wurde lesend am
+echten Store geprüft und erkannte diesen Run als aktiv registriert.
+
+Der Request kennt jetzt `task_mode`: `analysis` für reine Analysen,
+`implementation` für Änderungsaufträge. Der gemeinsame Slash-Command setzt
+diesen Wert anhand des ursprünglichen Auftrags, nicht anhand zusätzlicher
+Improver-Vorschläge. Die Slash-Syntax und die vier Module bleiben erhalten.
+Direkte Requests ohne Feld verwenden das bisherige Implementierungsverhalten.
+
+Bei einer Analyse sind Task-Dateiänderungen, Fixes und Task-/Leercommits
+ausdrücklich ausgeschlossen. Die ausgewählten Branch- und Benchmark-Module
+dürfen weiterhin ihre Arbeit durchführen. Python weist Finish ab, wenn HEAD
+vom Start-Commit abweicht; uncommittete Änderungen scheitern an der bestehenden
+Clean-Tree-Prüfung. Es findet kein automatischer Reset statt. Erfolgreiche
+Analysen archivieren Findings und Arbeitsbericht samt Benchmark/Usage und
+leerem `diff.patch`. Der Reportabschnitt heißt jetzt **Durchgeführte Arbeit
+und Verhaltensänderungen** und nennt die gespeicherte Auftragsart. Bei älteren
+Runs ist eine fehlende Auftragsart als nicht erfasst erkennbar. Das CSV-Schema
+wurde nicht erweitert; die Auftragsart liegt in Zustand, Begin-/Statusausgabe
+und Report vor. Bereits abgeschlossene Runs bleiben unverändert.
+
+`status` zeigt ohne ID ausschließlich den aktiven Run, sonst `idle`.
+`status --id <Run-ID>` liest gezielt einen vorhandenen historischen Run.
+Die Ausgabe enthält gespeicherte Phase, Auftragsart, Module, Branch, Pfade,
+vorhandene Hauptartefakte und Hinweise zu nächsten Schritten. Die Abfrage
+läuft ohne Git-Befehle, Provider-/Build-Aufrufe, Dateischreibzugriffe oder
+Store-Lock. Sie bestätigt keinen aktuellen Git-Zustand oder laufenden Prozess;
+bei vorbereitendem/abschließendem Zustand muss ein noch laufender Prozess
+zunächst abgewartet werden. Eine während des Lesens wechselnde aktive Run-ID
+wird durch erneutes Lesen berücksichtigt. Fremde Projekte, ungültige IDs und
+fremde Artefaktpfade werden abgewiesen. Fehlerdetails werden nicht ungefiltert
+in die Statusausgabe übernommen.
+
+Der CLI-Ausgabekanal wurde ausdrücklich auf UTF-8 gesetzt, damit die neuen
+deutschen JSON-Statushinweise auch bei Windows-Ausgabeumleitung korrekt
+ankommen. Dies wurde im echten CLI-Prozess geprüft.
+
+**72 Python-Tests und 11 Node-Tests erfolgreich.** Ergänzt/geprüft wurden
+insbesondere vollständige Analyse mit allen vier Modulen und kontrollierten
+Improver-/Usage-Fixtures, unveränderte Commits und leerer Diff, Abweisung
+unerwarteter Analyse-Commits ohne Verwerfen der Arbeit, Status ohne Store,
+Status während eines gehaltenen Writer-Locks, historische/abgebrochene Runs,
+ältere Zustände ohne Auftragsart, Fremd-/Fehlzustände und ein paralleler
+Zustandswechsel. Echte temporäre Git-Repositories und separate CLI-Prozesse
+wurden verwendet; für dieses Paket wurden keine Live-Modellanfragen oder
+erneuten Maven-Builds gestartet. Die Build-/Usage-Regressionstests bestanden.
+
+`opencode-analysis-status-fix.zip` enthält die sechs geänderten Dateien auf
+Basis von `opencode-report-findings-fix.zip`. Erst nach Abschluss des parallel
+laufenden Auftrags im Projektroot entpacken und in `.opencode` darüberkopieren;
+Infrastruktur anschließend auf main committen. Kein erneutes `npm ci`
+erforderlich. Die vollständige Migrations-ZIP ist ebenfalls aktualisiert.
+Die weiteren Punkte (abgebrochene Benchmarks auswerten, Improver-Fehlerfälle
+und zusätzliche Improver-Usage) sind in diesem Paket noch nicht umgesetzt.

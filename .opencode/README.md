@@ -10,12 +10,14 @@ OpenCode nach den Projektregeln; Python bereitet den Lauf vor und wertet ihn aus
 - [Installation](#installation)
 - [Aufruf in OpenCode](#aufruf-in-opencode)
 - [Ablauf und unabhängige Module](#ablauf-und-unabhängige-module)
+  - [Analyse und Implementierung](#analyse-und-implementierung)
 - [Python-CLI und Request-Datei](#python-cli-und-request-datei)
   - [Hilfe im Terminal anzeigen](#hilfe-im-terminal-anzeigen)
   - [Globale Optionen](#globale-optionen)
   - [Aktion prepare](#aktion-prepare)
   - [Aktion begin](#aktion-begin)
   - [Aktion finish](#aktion-finish)
+  - [Aktion status](#aktion-status)
   - [Aktion abort](#aktion-abort)
   - [Felder der Request-Datei](#felder-der-request-datei)
 - [Ergebnisse](#ergebnisse)
@@ -142,7 +144,7 @@ und entfernt nur eigene markierte Commands. Manuelle Commands bleiben erhalten.
 
 Reihenfolge: **Usage-Preflight → Benchmark-Baseline (prepare) → frischer
 Usage-Snapshot/Startzeit (begin) → Prompt →
-Branch → Coding/Test/Commit durch OpenCode → Endzeit/Usage → finaler Benchmark**.
+Branch → Analyse oder Implementierung/Tests/Commit durch OpenCode → Endzeit/Usage → finaler Benchmark**.
 Bei einem Fehler wird nicht mit einem angeblich erfolgreichen Ergebnis
 weitergearbeitet. Fehlgeschlagene Vorbereitung erzeugt keinen Feature-Branch;
 bei einem Fehler während/nach `git switch` bleibt der tatsächliche Git-Zustand
@@ -153,14 +155,44 @@ Ein nicht ausgewähltes Modul wird nicht implizit ausgeführt. Ohne `branch`
 `main` für die Baseline und `feature/*` für Finish; der Aufrufer muss den
 Feature-Branch zwischen beiden Schritten ausdrücklich anlegen. `prompt`/`usage`
 allein benötigen nur einen sauberen, nicht detached Git-Branch. Der Aufruf
-autorisiert die in `start.md` beschriebene Task-Implementierung samt geprüftem
-Commit auch bei diesen Kombinationen.
+autorisiert die in `start.md` beschriebene Durchführung im Umfang des
+Originalauftrags auch bei diesen Kombinationen.
 
 Die Regeln in `commands/start.md` für Java 25, Tests, Diff-Prüfung, gezieltes Staging,
 Korrekturrunden und Commit gelten weiterhin. `findings.md` ist genau die
 erlaubte untracked Ausnahme beim Finish. Sie wird archiviert und erst nach
 erfolgreichem Schreiben aller Artefakte/CSV aus dem Projekt entfernt.
 Keine automatischen Fetches, Merges, Rebases, Pushes oder Rückkehr zu `main`.
+
+### Analyse und Implementierung
+
+Die ursprüngliche Aufgabe bestimmt den erlaubten Umfang. OpenCode setzt im
+Request `task_mode` auf `analysis`, wenn ausschließlich eine Analyse gewünscht
+ist; bei einem Änderungsauftrag auf `implementation`. Lösungsvorschläge allein
+machen aus einer Analyse keinen Änderungsauftrag. Der Improver darf diesen
+Umfang nicht erweitern. Es gibt keinen zusätzlichen Slash-Parameter und kein
+neues Modul; `complete` verwendet weiterhin alle vier bestehenden Module.
+
+Bei **analysis** werden Produktionsdateien, Tests und andere Task-Dateien nicht
+geändert. Offene Probleme stehen in `findings.md`; Umfang, Prüfungen und Grenzen
+der Analyse im Arbeitsbericht. Es gibt keinen Task-Commit oder leeren Commit.
+Die gewählten Branch-/Benchmark-Module dürfen weiterhin einen Feature-Branch
+anlegen beziehungsweise bestehende Tests und JaCoCo ausführen. Benchmark-Builds
+erzeugen ihre üblichen ignorierten Build-Dateien. Ein fehlgeschlagener Check
+wird als Problem oder Grenze dokumentiert, nicht durch Codeänderungen repariert.
+Ein fehlgeschlagener Benchmark-Build kann nicht erfolgreich abgeschlossen werden.
+
+Python prüft beim Abschluss zusätzlich, dass HEAD noch dem Start-Commit
+entspricht. Unerwartete Task-Commits führen zum Abbruch des Finish-Aufrufs;
+die Arbeit wird nicht automatisch zurückgesetzt. Uncommittete Änderungen
+werden weiterhin durch die vorhandene Clean-Tree-Prüfung abgewiesen.
+Eine erfolgreiche Analyse erzeugt einen leeren `diff.patch`, unveränderte
+Start-/End-Commits und null geänderte Dateien.
+
+Bei **implementation** gelten die bestehenden Implementierungs-, Test- und
+Commit-Regeln. Direkte Python-Requests ohne `task_mode` behalten dieses bisherige
+Verhalten. Bei älteren gespeicherten Runs fehlt die Auftragsart; Status/Report
+kennzeichnen sie als nicht erfasst und raten nicht anhand des Aufgabentexts.
 
 ## Python-CLI und Request-Datei
 
@@ -177,10 +209,11 @@ python .opencode/scripts/start.py --help
 python .opencode/scripts/start.py prepare --help
 python .opencode/scripts/start.py begin --help
 python .opencode/scripts/start.py finish --help
+python .opencode/scripts/start.py status --help
 python .opencode/scripts/start.py abort --help
 ```
 
-Alle fünf Aufrufe zeigen nur Hilfe an. Sie starten keinen Run, erstellen keinen
+Alle sechs Aufrufe zeigen nur Hilfe an. Sie starten keinen Run, erstellen keinen
 Branch und senden keine Modellanfrage. `-h` ist die Kurzform von `--help`.
 
 ### Globale Optionen
@@ -192,7 +225,7 @@ Branch und senden keine Modellanfrage. `-h` ist die Kurzform von `--help`.
 | `-h`, `--help` | Nein | Hilfe anzeigen und beenden. |
 
 Globale Optionen müssen **vor** der Aktion stehen. Aktionsoptionen stehen
-**nach** `prepare`, `begin`, `finish` oder `abort`. Innerhalb der jeweiligen Gruppe ist
+**nach** `prepare`, `begin`, `finish`, `status` oder `abort`. Innerhalb der jeweiligen Gruppe ist
 die Reihenfolge der benannten Optionen egal:
 
 ```powershell
@@ -219,7 +252,7 @@ kein fünftes Modul. Der `/start`-Command übernimmt diese Schritte automatisch.
 ### Aktion `begin`
 
 Bereitet die ausgewählten Module vor und gibt die echte Run-ID, den Branch,
-den Artefaktordner und die effektive Aufgabe als JSON aus. Die Implementierung
+den Artefaktordner, `task_mode` und die effektive Aufgabe als JSON aus. Die Durchführung
 der Aufgabe erfolgt danach durch OpenCode, nicht durch `begin` selbst.
 
 | Option | Pflicht? | Wirkung |
@@ -231,7 +264,7 @@ der Aufgabe erfolgt danach durch OpenCode, nicht durch `begin` selbst.
 
 ### Aktion `finish`
 
-Nach erfolgreicher Implementierung, Prüfung und Commit abschließen. Erfasst
+Nach erfolgreich durchgeführter Analyse oder geprüfter Implementierung mit Commit abschließen. Erfasst
 Final-Metriken, archiviert Findings, erzeugt Patch/Report und beendet den Run.
 
 | Option | Pflicht? | Wirkung / Standard |
@@ -240,7 +273,7 @@ Final-Metriken, archiviert Findings, erzeugt Patch/Report und beendet den Run.
 | `--human-interventions <Anzahl>` | Nein | Neue Korrekturen oder zusätzliche Vorgaben des Benutzers seit Begin. Selbstständige Modellkorrekturen zählen nicht. Ganze Zahl ≥ 0, Standard `0`. |
 | `--correction-rounds <Anzahl>` | Nein | Fehlgeschlagene Verifikationsläufe, die eine weitere Codeänderung erforderten. Ganze Zahl ≥ 0, Standard `0`. |
 | `--usage-export <Datei>` | Nein | Expliziter vollständiger **Nachher**-Export derselben Session. Bei `usage` ersetzt er den automatischen Export; ohne `usage` ohne Wirkung. |
-| `--summary-file <Datei>` | Bei `/start` ja; direkte CLI optional | UTF-8 Markdown außerhalb Git: Erklärung der Umsetzung und Verhaltensänderungen für `report.md`. Keine zusätzliche dauerhafte Run-Datei. |
+| `--summary-file <Datei>` | Bei `/start` ja; direkte CLI optional | UTF-8 Markdown außerhalb Git: durchgeführte Arbeit, bei Analyse der geprüfte Umfang und Grenzen; bei Implementierung auch Verhaltensänderungen für `report.md`. Keine zusätzliche dauerhafte Run-Datei. |
 | `-h`, `--help` | Nein | Nur die Hilfe für `finish` anzeigen. |
 
 ```powershell
@@ -251,6 +284,37 @@ Die Anzahl wird vom Aufrufer erfasst und übergeben; Python zählt die Arbeit
 des Coding-Agenten nicht selbst mit. Die Platzhalter in Beispielen müssen durch
 die tatsächlich zurückgegebenen IDs ersetzt werden. Bei Verwendung eigener
 `--repo`-/`--store-root`-Werte dieselben Werte für alle Aktionen verwenden.
+
+### Aktion `status`
+
+Liest den gespeicherten Zustand als JSON. Ohne ID wird ausschließlich der
+aktive Lauf ausgewählt. Gibt es keinen aktiven Lauf, lautet der Status `idle`;
+der zuletzt abgeschlossene Lauf wird nicht stillschweigend ausgewählt.
+
+| Option | Pflicht? | Wirkung |
+|---|---|---|
+| `--id <Run-ID>` | Nein | Gezielt einen vorhandenen aktiven, abgeschlossenen oder abgebrochenen Run lesen. Ohne ID den aktiven Run anzeigen. |
+| `-h`, `--help` | Nein | Hilfe anzeigen. |
+
+```powershell
+python .opencode/scripts/start.py status
+python .opencode/scripts/start.py status --id ACTUAL_RUN_ID
+```
+
+Die Ausgabe zeigt die Phase, Auftragsart, ausgewählten Module, den gespeicherten
+Branch, Run-/Zustandspfad, vorhandene Hauptartefakte und Hinweise zu möglichen
+nächsten Schritten. `active_id` benennt den derzeit aktiven Lauf, auch wenn
+mit `--id` ein anderer historischer Run ausgewählt wurde. `error_recorded`
+zeigt an, ob Fehlerdetails in der Zustandsdatei vorhanden sind; diese werden
+nicht ungefiltert in der Statusausgabe wiederholt.
+
+Die Abfrage startet keine Tests oder Modellanfragen, führt keine Git-Befehle
+aus, legt weder Store noch Lockdatei an und schreibt keine Dateien. Sie kann
+während eines laufenden Workflow-Prozesses benutzt werden. Die Ausgabe ist
+eine Momentaufnahme gespeicherter Angaben; sie bestätigt weder den aktuellen
+Git-Zustand noch, ob ein Prozess noch läuft. Bei `preparing`/`finishing` zunächst
+einen noch laufenden Prozess abwarten. Die Hinweise führen keinen Retry oder
+Abort aus und ersetzen keine Prüfung der Voraussetzungen.
 
 ### Aktion `abort`
 
@@ -271,6 +335,7 @@ CLI-Optionen wie `--model` oder `--task`. Die Reihenfolge der JSON-Felder ist eg
 |---|---|---|
 | `modules` | Nein | `"complete"` (Standard), eine Auswahl wie `"branch,prompt"` oder eine Liste wie `["branch", "usage"]`. Nur die vier bekannten Module; keine doppelten Einträge. Ausführungsreihenfolge wird vom Workflow bestimmt. |
 | `task` | Immer | Vollständiger, nicht leerer Originalauftrag. |
+| `task_mode` | Nein; `/start` setzt es | `"analysis"` für reine Analyse ohne Task-Änderungen/Commits, `"implementation"` für Änderungsaufträge. Direkte Requests ohne Feld verwenden `"implementation"`. Keine Erweiterung des Originalauftrags. |
 | `branch` | Bei `branch` | Name ohne `feature/`, z. B. `userservice_tests`; erlaubt sind kleine Buchstaben, Ziffern, `_` und `-`. |
 | `target_class` | Bei `benchmark` | Einfacher Java-/JaCoCo-Klassenname, z. B. `UserService`; kein Dateipfad und kein Packagepräfix. |
 | `model` | Bei `benchmark` | Schlüssel aus `benchmark-models.json`, z. B. `gpt61-sol` oder `qwen3-coder`; dient der Run-Zuordnung. Schaltet selbst kein aktives OpenCode-Modell um. |
@@ -278,9 +343,11 @@ CLI-Optionen wie `--model` oder `--task`. Die Reihenfolge der JSON-Felder ist eg
 | `prompt_provider` | Nein | Nur für das `prompt`-Modul: Override `chatgpt`, `openai` oder `ollama`; sonst Wert aus der Improver-Config. |
 | `prompt_model` | Nein | Nur für das `prompt`-Modul: Modell-Override des Improvers; unabhängig vom Coding-Modell und dem Feld `model`. Ohne Override gilt die Improver-Config. |
 
-Nicht verwendete optionale JSON-Felder weglassen oder auf `null` setzen.
+Nicht verwendete optionale JSON-Felder weglassen oder auf `null` setzen,
+ausgenommen `modules` und `task_mode`.
 `modules` nur weglassen, wenn alle vier Module gewünscht sind; `null` ist hier
-keine gültige Auswahl. Ein `-` als Platzhalter gehört nur zur Slash-Syntax;
+keine gültige Auswahl. `task_mode` weglassen oder explizit setzen; `null` ist
+auch hier ungültig. Ein `-` als Platzhalter gehört nur zur Slash-Syntax;
 OpenCode übersetzt ihn für unbenutzte JSON-Felder in `null`.
 
 Die Slash-Commands lassen OpenCode eine UTF-8 JSON-Datei **außerhalb Git**
@@ -294,6 +361,7 @@ Shell-Code ausgewertet. Beispiel `C:/Temp/start-request.json`:
   "target_class": "UserService",
   "model": "gpt61-sol",
   "task": "Create complete tests for UserService.",
+  "task_mode": "implementation",
   "session_id": "ses_REPLACE_WITH_ACTUAL_SESSION"
 }
 ```
@@ -316,7 +384,7 @@ ChatGPT und setzt vorhandene Credentials voraus. Die vorhandenen manuellen
 Login-/Provider-Smoke-Skripte stehen unter `scripts/prompt/tests/`; sie sind
 keine Voraussetzung für die Offline-Test-Suite.
 
-Globale Optionen stehen **vor** `prepare`/`begin`/`finish`/`abort`:
+Globale Optionen stehen **vor** `prepare`/`begin`/`finish`/`status`/`abort`:
 
 ```powershell
 python .opencode/scripts/start.py --repo C:/Dev/Projects/MyApp --store-root C:/Dev/AI-Benchmarks prepare --request C:/Temp/start-request.json
@@ -357,7 +425,7 @@ C:/Dev/AI-Benchmarks/<Projekt>/
   state/<id>.json               # Status/Audit, bleibt nach Abschluss erhalten
   results.csv                  # nur bei ausgewähltem benchmark
   runs/<id>/
-    report.md                  # Umsetzung, Verhaltensänderungen und Messwerte
+    report.md                  # durchgeführte Arbeit, Verhaltensänderungen und Messwerte
     result.json
     diff.patch                 # vollständiger Git-Diff inkl. Binärdateien
     findings.md                # offene Probleme / ausdrücklicher Erfassungsstatus
@@ -405,11 +473,13 @@ kein kryptografischer Nachweis oder vollständiges Build-Log.
 
 ### Bericht und Findings
 
-`report.md` enthält unter **Umsetzung und Verhaltensänderungen**, was erledigt
+`report.md` enthält die Auftragsart und unter **Durchgeführte Arbeit und Verhaltensänderungen**, was erledigt
 wurde, welche Verträge oder Verhaltensweisen sich geändert haben, wichtige
 Entscheidungen sowie Prüfungen und deren Grenzen. Die Behebung mitgegebener
 Findings wird hier erklärt. Danach folgen die automatisch erzeugten Messwerte,
 Tests, Coverage, Usage und Artefaktpfade.
+Bei einer reinen Analyse werden geprüfter Umfang, Methoden und Grenzen genannt,
+mit der ausdrücklichen Angabe, dass keine Codeänderungen vorgenommen wurden.
 
 `findings.md` enthält ausschließlich **neu entdeckte oder weiterhin offene
 Probleme**, mit Fundstelle, Beleg, Auswirkung und begründeter Schwere. Erledigte
@@ -418,7 +488,7 @@ der Aufgabe keine weiteren offenen Probleme festgestellt, steht dort ausdrückli
 **„Keine weiteren offenen Findings festgestellt.“** Das ist keine Zusicherung,
 dass der gesamte Code fehlerfrei ist; es wird kein zusätzliches Review-Modul ausgeführt.
 
-OpenCode schreibt den Umsetzungsbericht zunächst in eine temporäre UTF-8
+OpenCode schreibt den Arbeitsbericht zunächst in eine temporäre UTF-8
 Markdown-Datei **außerhalb Git** und übergibt deren tatsächlichen Pfad mit
 `finish --summary-file`. Nur den Inhalt für den Reportabschnitt schreiben, ohne
 zusätzliche Dokumentüberschrift oder wiederholte Benchmark-Tabellen. Python
@@ -426,7 +496,7 @@ speichert den Text im vorhandenen Run-Zustand und erzeugt daraus `report.md`.
 Die Übergabedatei wird weder als weiteres Run-Artefakt archiviert noch vom
 Workflow gelöscht. Die Angaben entstehen vor dem finalen Usage-Snapshot.
 
-Fehlt bei einem direkten CLI-Aufruf der Umsetzungsbericht, kennzeichnet der
+Fehlt bei einem direkten CLI-Aufruf der Arbeitsbericht, kennzeichnet der
 Report dies ausdrücklich. Fehlt `findings.md`, archiviert Python einen Hinweis
 auf fehlende Angaben und unbekannten Findings-Status; es erfindet keine Entwarnung.
 Vorhandene Findings werden unverändert archiviert und erst nach erfolgreichem
@@ -552,7 +622,9 @@ node --test tests/test_workflow_usage.mjs
 Die automatische Suite nutzt temporäre echte Git-Repositories, Offline-Exports
 und gemockte Provider/Benchmark-Builds. Sie prüft die Lifecycle- und Fehlerpfade,
 Metriken, Trennung von Report und offenen Findings, fehlende Angaben,
-Berichtserhalt bei Retry, Patch-/Findings-/CSV-Erhalt, Locking, Modellgenerator und Integration
+Berichtserhalt bei Retry, reine Analyse ohne Codeänderungen/Commits,
+lesende Statusabfragen einschließlich paralleler Zustandswechsel,
+Patch-/Findings-/CSV-Erhalt, Locking, Modellgenerator und Integration
 des existierenden Prompt-Improvers. Sie verbraucht keine Modellanfragen und
 startet keine Anwendung. Live-Provider-Smoke-Tests separat und bewusst ausführen.
 Die Node-Suite benötigt die in `.opencode/package.json` deklarierte
