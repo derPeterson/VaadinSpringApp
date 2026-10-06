@@ -47,6 +47,10 @@ def main(argv=None) -> int:
     abort = commands.add_parser("abort", help="Aktiven Run freigeben; Artefakte und Git-Zustand behalten",
                                 description="Abort beendet den Workflow-Status, ohne Task-Dateien oder Branches zurückzusetzen.")
     abort.add_argument("--id", required=True, help="Pflicht: echte 32-stellige Run-ID des abzubrechenden Laufs")
+    abort.add_argument("--reason", help="Grund des Abbruchs für Report und CSV")
+    abort.add_argument("--failed", action="store_true", help="Auftrag endgültig fehlgeschlagen statt bewusst abgebrochen")
+    abort.add_argument("--human-interventions", type=int, help="Tatsächlich bekannte Benutzereingriffe; ohne Angabe unbekannt oder zuletzt erfasst")
+    abort.add_argument("--correction-rounds", type=int, help="Tatsächlich bekannte Korrekturrunden; ohne Angabe unbekannt oder zuletzt erfasst")
     args = parser.parse_args(argv)
     try:
         repo = args.repo.resolve()
@@ -63,9 +67,12 @@ def main(argv=None) -> int:
         elif args.action == "status":
             result = runner.status(repo, args.store_root, args.id)
         else:
-            result = runner.abort(repo, args.store_root, args.id)
+            result = runner.abort(repo, args.store_root, args.id, args.reason, args.failed,
+                                  args.human_interventions, args.correction_rounds)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     except Exception as error:
         print(f"Workflow failed: {error}", file=sys.stderr)
+        for note in getattr(error, "__notes__", []):
+            print(note, file=sys.stderr)
         return 1

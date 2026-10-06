@@ -888,6 +888,278 @@ class UsageCase(RepoCase):
         self.assertEqual("reported-zero-actual-unknown", rows[1]["CostStatus"])
 
 
+    def test_failed_finish_keeps_known_usage_with_original_snapshot_bounds(self):
+        before_path, after_path = self.base / "before.json", self.base / "after.json"
+        write_json(before_path, self.export([]))
+        write_json(after_path, self.export([assistant()]))
+        self.request.update(modules="branch,benchmark,usage", session_id="ses_test")
+        with patch("workflow.benchmark.collect", return_value=METRICS):
+            prepared = runner.prepare(self.repo, self.store_root, self.request, CATALOG, before_path)
+            started = runner.begin(self.repo, self.store_root, None, CATALOG, before_path, prepared["id"])
+        with patch("workflow.benchmark.collect", side_effect=WorkflowError("build broken")):
+            with self.assertRaises(WorkflowError):
+                runner.finish(self.repo, self.store_root, started["id"], usage_export=after_path)
+        folder = Path(started["folder"])
+        partial = read_json(folder / "result.json")
+        self.assertEqual(100, partial["InputTokens"])
+        self.assertIsNotNone(partial["UsageEndUTC"])
+        with patch("workflow.usage.capture", side_effect=AssertionError("unexpected new capture")):
+            runner.abort(self.repo, self.store_root, started["id"], "Prüfung beendet", True)
+        stopped = read_json(folder / "result.json")
+        self.assertEqual(partial["UsageEndUTC"], stopped["UsageEndUTC"])
+        self.assertEqual(partial["UsageWindowSeconds"], stopped["UsageWindowSeconds"])
+        self.assertEqual(100, stopped["InputTokens"])
+        self.assertIsNone(stopped["TestsAfter"])
+
+    def test_invalid_finish_snapshot_can_be_replaced_without_duplicate_csv_row(self):
+        before_path, after_path = self.base / "before.json", self.base / "after.json"
+        self.request.update(modules="branch,benchmark,usage", session_id="ses_test")
+        write_json(before_path, self.bridge_export(captured_ms=time.time() * 1000))
+        with patch("workflow.benchmark.collect", return_value=METRICS):
+            prepared = runner.prepare(self.repo, self.store_root, self.request, CATALOG, before_path)
+            write_json(before_path, self.bridge_export(captured_ms=time.time() * 1000))
+            started = runner.begin(self.repo, self.store_root, None, CATALOG, before_path, prepared["id"])
+        with self.assertRaisesRegex(WorkflowError, "fresh"):
+            runner.finish(self.repo, self.store_root, started["id"], usage_export=before_path)
+        folder = Path(started["folder"])
+        failed = read_json(folder / "result.json")
+        self.assertIsNone(failed["InputTokens"])
+        self.assertEqual("finish-usage", failed["LastFailurePhase"])
+        write_json(after_path, self.bridge_export(captured_ms=time.time() * 1000, messages=[assistant()]))
+        with patch("workflow.benchmark.collect", return_value=METRICS):
+            result = runner.finish(self.repo, self.store_root, started["id"], usage_export=after_path)
+        self.assertEqual("completed", result["Outcome"])
+        self.assertEqual(100, result["InputTokens"])
+        with (self.store_root / self.repo.name / "results.csv").open(encoding="utf-8", newline="") as handle:
+            self.assertEqual(1, len(list(csv.DictReader(handle))))
+
+    def test_abort_before_final_usage_capture_keeps_tokens_unknown(self):
+        before_path = self.base / "before.json"
+        write_json(before_path, self.export([assistant()]))
+        self.request.update(modules="branch,benchmark,usage", session_id="ses_test")
+        with patch("workflow.benchmark.collect", return_value=METRICS):
+            prepared = runner.prepare(self.repo, self.store_root, self.request, CATALOG, before_path)
+            started = runner.begin(self.repo, self.store_root, None, CATALOG, before_path, prepared["id"])
+        with patch("workflow.usage.capture", side_effect=AssertionError("Usage called on abort")):
+            runner.abort(self.repo, self.store_root, started["id"])
+        result = read_json(Path(started["folder"]) / "result.json")
+        self.assertIsNone(result["InputTokens"])
+        self.assertIsNone(result["EstimatedCostUSD"])
+        self.assertEqual("unavailable", result["CostStatus"])
+        self.assertIsNone(result["UsageWindowSeconds"])
+
+
+class OutcomeCase(RepoCase):
+    def saved(self, run_id=None):
+        store = self.store_root / self.repo.name
+        run_id = run_id or read_json(store / "active.json")["id"]
+        return store, store / "state" / (run_id + ".json"), store / "runs" / run_id
+
+    def rows(self):
+        with (self.store_root / self.repo.name / "results.csv").open(encoding="utf-8", newline="") as handle:
+            return list(csv.DictReader(handle))
+
+    def test_failed_baseline_is_visible_without_invented_duration_or_metrics(self):
+        with patch("workflow.benchmark.collect", side_effect=WorkflowError("baseline broken")):
+            with self.assertRaisesRegex(WorkflowError, "baseline broken"):
+                runner.prepare(self.repo, self.store_root, self.request, CATALOG)
+        store, state_path, folder = self.saved()
+        result = read_json(folder / "result.json")
+        self.assertEqual(("failed", False), (result["Outcome"], result["Terminal"]))
+        for key in ("DurationSeconds", "TestsBefore", "TestsAfter", "EndCommit", "ChangedFiles", "DiffPath"):
+            self.assertIsNone(result[key], key)
+        self.assertEqual("prepare", self.rows()[0]["LastFailurePhase"])
+        self.assertEqual("baseline broken", read_json(folder / "failures.json")[0]["message"])
+        self.assertEqual("prepare-failed", read_json(state_path)["status"])
+        self.assertTrue((store / "active.json").exists())
+        self.assertEqual("main", branch.current(self.repo))
+
+    def test_failed_prompt_retains_baseline_and_never_creates_task_branch(self):
+        self.request["modules"] = "branch,prompt,benchmark"
+        with patch("workflow.benchmark.collect", return_value=METRICS), patch("workflow.prompt.improve", side_effect=RuntimeError("provider down")):
+            with self.assertRaisesRegex(RuntimeError, "provider down"):
+                runner.begin(self.repo, self.store_root, self.request, CATALOG)
+        _, _, folder = self.saved()
+        result = read_json(folder / "result.json")
+        self.assertEqual(METRICS["tests"], result["TestsBefore"])
+        self.assertIsNone(result["TestsAfter"])
+        self.assertGreaterEqual(result["DurationSeconds"], 0)
+        self.assertEqual("begin", result["LastFailurePhase"])
+        self.assertIsNone(result["FindingsPath"])
+        self.assertEqual("main", branch.current(self.repo))
+
+    def test_failed_finish_then_success_replaces_row_and_keeps_failure_history(self):
+        started = self.begin()
+        self.commit_task()
+        with patch("workflow.benchmark.collect", side_effect=WorkflowError("final Maven broken")):
+            with self.assertRaises(WorkflowError):
+                runner.finish(self.repo, self.store_root, started["id"], 2, 1)
+        store, state_path, folder = self.saved()
+        cutoff = read_json(state_path)["end"]
+        failed = read_json(folder / "result.json")
+        self.assertEqual("failed", self.rows()[0]["Outcome"])
+        self.assertFalse(failed["Terminal"])
+        self.assertIsNone(failed["TestsAfter"])
+        self.assertIsNone(failed["DiffPath"])
+        self.assertEqual(2, failed["HumanInterventions"])
+        with patch("workflow.benchmark.collect", return_value=METRICS):
+            result = runner.finish(self.repo, self.store_root, started["id"], 2, 1)
+        self.assertEqual(1, len(self.rows()))
+        self.assertEqual(("completed", "True"), (self.rows()[0]["Outcome"], self.rows()[0]["Terminal"]))
+        self.assertEqual(1, result["FailureCount"])
+        self.assertEqual("finish-benchmark", result["LastFailurePhase"])
+        self.assertEqual(cutoff, read_json(state_path)["end"])
+        self.assertEqual(1, len(read_json(folder / "failures.json")))
+        self.assertFalse(runner.status(self.repo, self.store_root, started["id"])["error_recorded"])
+        self.assertFalse((store / "active.json").exists())
+
+    def test_abort_dirty_task_preserves_files_and_performs_no_external_calls(self):
+        started = self.begin()
+        (self.repo / "source.txt").write_text("uncommitted task", encoding="utf-8")
+        (self.repo / "findings.md").write_text("open finding", encoding="utf-8")
+        before = self.git("status", "--porcelain")
+        with patch("workflow.runner.run", side_effect=AssertionError("Git called")), patch("workflow.benchmark.collect", side_effect=AssertionError("Maven called")), patch("workflow.usage.capture", side_effect=AssertionError("Usage called")), patch("workflow.prompt.improve", side_effect=AssertionError("Provider called")):
+            runner.abort(self.repo, self.store_root, started["id"], "Manuell beendet")
+        self.assertEqual(before, self.git("status", "--porcelain"))
+        self.assertEqual("uncommitted task", (self.repo / "source.txt").read_text(encoding="utf-8"))
+        self.assertEqual("open finding", (self.repo / "findings.md").read_text(encoding="utf-8"))
+        result = read_json(Path(started["folder"]) / "result.json")
+        self.assertEqual(("aborted", True), (result["Outcome"], result["Terminal"]))
+        self.assertIsNone(result["CorrectionRounds"])
+        self.assertIsNone(result["HumanInterventions"])
+        self.assertIsNone(result["ChangedFiles"])
+        self.assertIsNone(result["FindingsPath"])
+        self.assertEqual("Manuell beendet", self.rows()[0]["StopReason"])
+
+    def test_abort_prepared_run_has_baseline_but_no_measured_start(self):
+        with patch("workflow.benchmark.collect", return_value=METRICS):
+            prepared = runner.prepare(self.repo, self.store_root, self.request, CATALOG)
+        runner.abort(self.repo, self.store_root, prepared["id"])
+        result = read_json(Path(prepared["folder"]) / "result.json")
+        self.assertIsNone(result["DurationSeconds"])
+        self.assertEqual(3, result["TestsBefore"])
+        self.assertIsNone(result["TestsAfter"])
+
+    def test_terminal_failed_task_and_repeat_abort_are_idempotent(self):
+        started = self.begin()
+        result = runner.abort(self.repo, self.store_root, started["id"], "Tests nicht repariert", True, 0, 3)
+        store, _, folder = self.saved(started["id"])
+        files = {p: p.read_bytes() for p in (folder / "report.md", folder / "result.json", store / "results.csv")}
+        self.assertEqual(result, runner.abort(self.repo, self.store_root, started["id"], "Andere Entscheidung"))
+        self.assertEqual(files, {p: p.read_bytes() for p in files})
+        self.assertEqual("failed", runner.status(self.repo, self.store_root, started["id"])["status"])
+        self.assertEqual("3", self.rows()[0]["CorrectionRounds"])
+        self.assertEqual("True", self.rows()[0]["Terminal"])
+        with self.assertRaisesRegex(WorkflowError, "active run"):
+            runner.finish(self.repo, self.store_root, started["id"])
+
+    def test_abort_csv_failure_keeps_active_run_and_retry_preserves_stop_decision(self):
+        started = self.begin()
+        with patch("workflow.benchmark.append_csv", side_effect=OSError("CSV locked")):
+            with self.assertRaisesRegex(OSError, "CSV locked") as failure:
+                runner.abort(self.repo, self.store_root, started["id"], "Abbruchgrund", True, 1, 2)
+        store, state_path, folder = self.saved()
+        stop_at = read_json(state_path)["stopAt"]
+        self.assertEqual("stopping", read_json(state_path)["status"])
+        self.assertTrue((store / "active.json").exists())
+        self.assertIn("Failure archive/CSV incomplete", " ".join(failure.exception.__notes__))
+        runner.abort(self.repo, self.store_root, started["id"], "Anderer Grund", False, 0, 0)
+        result = read_json(folder / "result.json")
+        self.assertEqual("failed", result["Outcome"])
+        self.assertTrue(result["Terminal"])
+        self.assertEqual("Abbruchgrund", result["StopReason"])
+        self.assertEqual((1, 2), (result["HumanInterventions"], result["CorrectionRounds"]))
+        self.assertEqual(1, result["FailureCount"])
+        self.assertEqual(stop_at, read_json(state_path)["aborted"])
+        self.assertEqual(1, len(self.rows()))
+        self.assertFalse((store / "active.json").exists())
+
+    def test_failure_archive_error_never_hides_original_build_error(self):
+        started = self.begin()
+        with patch("workflow.benchmark.collect", side_effect=WorkflowError("original build failure")), patch("workflow.benchmark.append_csv", side_effect=OSError("CSV locked")):
+            with self.assertRaisesRegex(WorkflowError, "original build failure") as failure:
+                runner.finish(self.repo, self.store_root, started["id"])
+        _, path, folder = self.saved()
+        state = read_json(path)
+        self.assertEqual("original build failure", state["error"])
+        self.assertEqual("CSV locked", state["failureArchiveError"])
+        self.assertEqual("original build failure", read_json(folder / "failures.json")[0]["message"])
+        self.assertIn("CSV locked", " ".join(failure.exception.__notes__))
+
+    def test_legacy_csv_history_is_preserved_and_marked_as_completed(self):
+        started = self.begin()
+        store, _, folder = self.saved()
+        # Actual previous schema without the new lifecycle columns.
+        known = runner.partial_result(read_json(store / "state" / (started["id"] + ".json")), store, runner.now(), "failed", False)
+        new_fields = {"Outcome", "Terminal", "FailureCount", "LastFailurePhase", "LastFailureType", "StopReason"}
+        legacy = {key: value for key, value in known.items() if key not in new_fields}
+        legacy.update(Id="old-run", Task="Historischer Auftrag ä\nzweite Zeile", DurationSeconds=12.3)
+        benchmark.append_csv(store / "results.csv", legacy)
+        runner.abort(self.repo, self.store_root, started["id"])
+        rows = self.rows()
+        self.assertEqual(2, len(rows))
+        self.assertEqual("old-run", rows[0]["Id"])
+        self.assertEqual(legacy["Task"], rows[0]["Task"])
+        self.assertEqual("12.3", rows[0]["DurationSeconds"])
+        self.assertEqual(("completed", "True", ""), (rows[0]["Outcome"], rows[0]["Terminal"], rows[0]["FailureCount"]))
+        self.assertFalse((folder / "failures.json").exists())
+
+    def test_partial_result_ignores_stale_after_metrics_and_diff(self):
+        started = self.begin()
+        folder = Path(started["folder"])
+        write_json(folder / "benchmark-after.json", METRICS)
+        (folder / "diff.patch").write_text("unverified previous diff", encoding="utf-8")
+        runner.abort(self.repo, self.store_root, started["id"])
+        result = read_json(folder / "result.json")
+        self.assertIsNone(result["TestsAfter"])
+        self.assertIsNone(result["DiffPath"])
+        self.assertEqual("unverified previous diff", (folder / "diff.patch").read_text(encoding="utf-8"))
+        self.assertIn("veraltet", (folder / "report.md").read_text(encoding="utf-8"))
+
+    def test_abort_completed_run_and_invalid_arguments_preserve_state(self):
+        started = self.begin("branch")
+        _, path, _ = self.saved()
+        before = path.read_bytes()
+        for kwargs in ({"reason": "   "}, {"corrections": -1}, {"interventions": -1}):
+            with self.assertRaises(WorkflowError):
+                runner.abort(self.repo, self.store_root, started["id"], **kwargs)
+            self.assertEqual(before, path.read_bytes())
+        runner.finish(self.repo, self.store_root, started["id"])
+        before = path.read_bytes()
+        with self.assertRaisesRegex(WorkflowError, "Completed"):
+            runner.abort(self.repo, self.store_root, started["id"])
+        self.assertEqual(before, path.read_bytes())
+
+    def test_failure_rows_do_not_overwrite_other_successful_runs(self):
+        first = self.begin()
+        with patch("workflow.benchmark.collect", return_value=METRICS):
+            runner.finish(self.repo, self.store_root, first["id"])
+        first_row = dict(self.rows()[0])
+        self.git("switch", "main")
+        self.request["branch"] = "second"
+        second = self.begin()
+        with patch("workflow.benchmark.collect", side_effect=WorkflowError("broken")):
+            with self.assertRaises(WorkflowError):
+                runner.finish(self.repo, self.store_root, second["id"])
+        runner.abort(self.repo, self.store_root, second["id"], "Endgültig", True)
+        rows = self.rows()
+        self.assertEqual(2, len(rows))
+        self.assertEqual(first_row, rows[0])
+        self.assertEqual("failed", rows[1]["Outcome"])
+        self.assertEqual("True", rows[1]["Terminal"])
+
+    def test_abort_cli_preserves_unicode_reason_and_real_exit_code(self):
+        started = self.begin()
+        command = [sys.executable, "-B", str(Path(__file__).resolve().parents[1] / "start.py"),
+                   "--repo", str(self.repo), "--store-root", str(self.store_root), "abort", "--id", started["id"],
+                   "--failed", "--reason", 'Prüfung fehlgeschlagen; $(literal) "quoted"', "--correction-rounds", "2"]
+        process = subprocess.run(command, capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual("failed", json.loads(process.stdout)["status"])
+        self.assertEqual('Prüfung fehlgeschlagen; $(literal) "quoted"', self.rows()[0]["StopReason"])
+        self.assertEqual("2", self.rows()[0]["CorrectionRounds"])
+
+
 class ConfigurationCase(unittest.TestCase):
     def test_complete_is_preset_and_module_order_is_canonical(self):
         self.assertEqual(list(runner.MODULES), runner.modules("complete"))
@@ -941,7 +1213,7 @@ class ConfigurationCase(unittest.TestCase):
 
 def load_tests(loader, tests, pattern):
     suite = unittest.TestSuite()
-    for cls in (RepoCase, UsageCase, ConfigurationCase):
+    for cls in (RepoCase, UsageCase, OutcomeCase, ConfigurationCase):
         for name in cls.__dict__:
             if name.startswith("test_"):
                 suite.addTest(cls(name))

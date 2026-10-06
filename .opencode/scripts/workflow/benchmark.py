@@ -114,8 +114,8 @@ def changes(repo: Path, start: str, end: str, destination: Path) -> dict:
             "Deletions": deletions, "files": files}
 
 
-def append_csv(path: Path, result: dict) -> None:
-    """Write the current CSV schema atomically; retries never duplicate a run."""
+def append_csv(path: Path, result: dict, *, replace_existing: bool = False) -> None:
+    """Atomically write one row per run; lifecycle retries can update that row."""
     old_rows = []
     fields = list(result)
     if path.exists():
@@ -125,17 +125,22 @@ def append_csv(path: Path, result: dict) -> None:
             old_rows = list(reader)
             if existing_fields != fields:
                 additions = {"PromptProvider", "PromptModel", "PromptDurationSeconds", "CostStatus",
-                             "UsageStartUTC", "UsageEndUTC", "UsageWindowSeconds"}
+                             "UsageStartUTC", "UsageEndUTC", "UsageWindowSeconds", "Outcome", "Terminal",
+                             "FailureCount", "LastFailurePhase", "LastFailureType", "StopReason"}
                 renamed = ["MessageElapsedSeconds" if key == "InferenceSeconds" else key for key in existing_fields]
-                if renamed != [key for key in fields if key not in additions] and renamed != fields:
+                missing = set(fields) - set(renamed)
+                if not missing <= additions or renamed != [key for key in fields if key not in missing]:
                     raise WorkflowError("results.csv has a different schema. Use an empty benchmark store.")
                 for row in old_rows:
                     if "InferenceSeconds" in row:
                         row["MessageElapsedSeconds"] = row.pop("InferenceSeconds")
-                    for key in additions:
-                        row.setdefault(key, "")
+                    for key in missing:
+                        # Previous versions wrote CSV only after successful final checks.
+                        row.setdefault(key, {"Outcome": "completed", "Terminal": "True"}.get(key, ""))
         if any(row.get("Id") == result["Id"] for row in old_rows):
-            return  # Resume after a late error must not duplicate the result.
+            if not replace_existing:
+                return
+            old_rows = [row for row in old_rows if row.get("Id") != result["Id"]]
     formats = {"DurationSeconds": ".1f", "TestTimeBeforeSeconds": ".3f",
                "TestTimeAfterSeconds": ".3f", "LineCoverageBefore": ".2f",
                "LineCoverageAfter": ".2f", "BranchCoverageBefore": ".2f",

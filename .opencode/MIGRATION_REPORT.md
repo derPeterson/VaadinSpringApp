@@ -41,7 +41,7 @@ CLI-Hilfetext und die zwei beschriebenen Smoke-Test-Korrekturen.
 
 | Prüfung | Ergebnis |
 |---|---|
-| Automatische Python-Suite | **72 Tests, 0 Fehler, 0 Failures, 0 Skips** nach Analyse-Ablauf und Statusabfrage |
+| Automatische Python-Suite | **88 Tests, 0 Fehler, 0 Failures, 0 Skips** nach Fehler-/Abbrucharchivierung |
 | Echte temporäre Git-Repositories | Branch-/Status-Prüfungen, Commits, Findings, Text-/Binary-Diff und sauberer Endzustand erfolgreich |
 | CLI als eigener Prozess | Begin/Finish, sichere JSON-Task-Übergabe und UTF-8-Umsetzungsbericht mit Quotes/Zeilenumbrüchen/Shell-Sonderzeichen erfolgreich |
 | Fehlerpfade | Dirty Tree, vorhandene lokale/remote Branches, falscher Branch, tracked Findings, fehlende Usage-Session, Build-/CSV-Fehler korrekt abgewiesen |
@@ -328,3 +328,55 @@ Infrastruktur anschließend auf main committen. Kein erneutes `npm ci`
 erforderlich. Die vollständige Migrations-ZIP ist ebenfalls aktualisiert.
 Die weiteren Punkte (abgebrochene Benchmarks auswerten, Improver-Fehlerfälle
 und zusätzliche Improver-Usage) sind in diesem Paket noch nicht umgesetzt.
+
+## Fehlgeschlagene und abgebrochene Benchmark-Läufe
+
+Punkt 2 wurde anschließend als eigenes Paket umgesetzt. Workflow-Fehler nach
+Run-Anlage erscheinen als vorläufiges `failed`-Resultat in Report, JSON und
+Benchmark-CSV; der Lifecycle bleibt wiederaufnehmbar, wo dies bisher möglich
+war. `failures.json` und Zustand enthalten den Fehlerverlauf mit Zeitpunkt,
+Phase und Exception-Typ. Die CSV enthält einen Datensatz pro Run-ID. Ein
+erfolgreicher Retry ersetzt den vorläufigen Fehlereintrag, ohne andere Läufe
+zu verändern oder die Fehlerhistorie zu verlieren.
+
+`abort` archiviert mit `--reason` einen bewussten Abbruch oder mit `--failed`
+einen endgültigen Fehlschlag. Bekannte Eingriffs-/Korrekturzähler sind optional
+übergebbar; unbekannte Werte werden nicht als 0 ausgegeben. Vor einer erfolgreichen
+Archivierung wird der aktive Lauf nicht freigegeben. Bei einem Schreibfehler
+bleibt `stopping` für einen erneuten Abort erhalten. Entscheidung, Zeit und
+Zähler des ersten Abort-Versuchs bleiben dabei gleich. Ein erfolgreicher Stop
+ist idempotent; erfolgreich abgeschlossene Runs können nicht abgebrochen werden.
+
+Unvalidierte Endcommit-, Diff- und Nachher-Werte bleiben unbekannt. Vorhandene
+Artefakte aus früheren Abschlussversuchen werden erhalten, aber nicht als
+geprüfter Abschluss ausgegeben. Ohne Begin bleibt die Dauer unbekannt. Ein
+Abort führt keine Git-, Build-, Provider- oder Usage-Capture-Aufrufe aus und
+verändert weder Task-Dateien noch Findings. Bereits validierbare Usage-Teilmessungen
+behalten ihre echten Zeitgrenzen; ohne Nachher-Snapshot bleibt Usage unbekannt.
+Die ursprüngliche Exception bleibt bei einer zusätzlichen Archivierungsstörung
+sichtbar, zusammen mit dem Hinweis auf die unvollständige Archivierung.
+
+Das CSV-Schema wurde um `Outcome`, `Terminal`, `FailureCount`,
+`LastFailurePhase`, `LastFailureType` und `StopReason` ergänzt. Bisherige
+Python-CSV-Zeilen werden samt vorhandenen Werten erhalten und als erfolgreich
+abgeschlossen markiert: Die bisherigen Versionen schrieben ausschließlich
+erfolgreiche Abschlüsse in diese Datei. Neue Fehlerdetails historischer Läufe
+bleiben unbekannt; historische Run-Dateien werden nicht umgeschrieben.
+
+**88 Python-Tests und 11 Node-Tests erfolgreich.** Neue Prüfungen decken
+fehlgeschlagene Baseline/Improver/Final-Builds, Ersetzen eines Fehlereintrags
+beim Retry, Fehlerhistorie, schmutzige Task-Dateien beim Abort, Stop vor Begin,
+fehlende und bekannte Usage-Teilmessungen, Austausch eines ungültigen Finish-
+Snapshots, gesperrte CSV, idempotente und endgültige Stops, historische CSV-
+Werte, Erhalt anderer Runs und einen echten CLI-Prozess mit UTF-8-Grund ab.
+Echte temporäre Git-Repositories wurden verwendet. Builds und Provider waren
+kontrollierte Offline-Fixtures; keine Live-Modellanfragen, Anwendung oder
+neuen Maven-Projektbuilds wurden gestartet. Prompt-Kern/Provider, Modellkatalog,
+Wrapper, NPM-Dependencies und Plugin blieben unverändert.
+
+`opencode-benchmark-outcomes-fix.zip` enthält die sieben geänderten Dateien
+auf Basis des zuletzt gelieferten Analyse-/Status-Pakets. Erst nach Abschluss
+des laufenden OpenCode-Auftrags im Projektroot in `.opencode` darüberkopieren.
+Kein erneutes `npm ci` erforderlich. Die komplette Migrations-ZIP wurde ebenfalls
+aktualisiert. Die beiden verbleibenden Punkte Improver-Fehlerbehandlung und
+separate Improver-Usage sind für ein gemeinsames Folgepaket vorgesehen.

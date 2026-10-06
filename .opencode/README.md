@@ -20,6 +20,7 @@ OpenCode nach den Projektregeln; Python bereitet den Lauf vor und wertet ihn aus
   - [Aktion status](#aktion-status)
   - [Aktion abort](#aktion-abort)
   - [Felder der Request-Datei](#felder-der-request-datei)
+  - [Fehlgeschlagene Läufe und Abbrüche](#fehlgeschlagene-läufe-und-abbrüche)
 - [Ergebnisse](#ergebnisse)
   - [Bericht und Findings](#bericht-und-findings)
 - [Usage und Messgrenzen](#usage-und-messgrenzen)
@@ -307,6 +308,8 @@ nächsten Schritten. `active_id` benennt den derzeit aktiven Lauf, auch wenn
 mit `--id` ein anderer historischer Run ausgewählt wurde. `error_recorded`
 zeigt an, ob Fehlerdetails in der Zustandsdatei vorhanden sind; diese werden
 nicht ungefiltert in der Statusausgabe wiederholt.
+`failure_count`, `last_failure_phase` und `failure_archive_error_recorded`
+zeigen den erfassten Fehlerverlauf und eine noch unvollständige Archivierung.
 
 Die Abfrage startet keine Tests oder Modellanfragen, führt keine Git-Befehle
 aus, legt weder Store noch Lockdatei an und schreibt keine Dateien. Sie kann
@@ -321,10 +324,22 @@ Abort aus und ersetzen keine Prüfung der Voraussetzungen.
 | Option | Pflicht? | Wirkung |
 |---|---|---|
 | `--id <Run-ID>` | Ja | Den aktiven Lauf mit dieser ID abbrechen und für einen neuen Run freigeben. |
+| `--reason <Text>` | Nein | Grund im Report und in der CSV festhalten. Ein ausdrücklich leerer Grund wird abgewiesen. |
+| `--failed` | Nein | Auftrag endgültig fehlgeschlagen: `Outcome=failed`, `Terminal=true`. Ohne Flag: bewusst abgebrochen (`aborted`). |
+| `--human-interventions <Zahl>` | Nein | Bekannte Benutzereingriffe, ganze Zahl >= 0. Ohne Angabe letzter erfasster Wert, sonst unbekannt. |
+| `--correction-rounds <Zahl>` | Nein | Bekannte Korrekturrunden, ganze Zahl >= 0. Ohne Angabe letzter erfasster Wert, sonst unbekannt. |
 | `-h`, `--help` | Nein | Nur die Hilfe für `abort` anzeigen. |
 
-Abort setzt keine Änderungen zurück, löscht keine Run-Artefakte und wechselt
-keinen Branch. Ein abgeschlossener Run kann nicht abgebrochen werden.
+Abort schreibt `result.json`, `report.md` und bei Benchmark eine CSV-Zeile.
+Es setzt keine Änderungen zurück, löscht keine Run-Artefakte, verschiebt keine
+Findings und wechselt keinen Branch. Es führt weder Git-Befehle noch Tests,
+Usage-Exporte oder Modellanfragen aus. Ein erfolgreich abgeschlossener Run kann
+nicht abgebrochen werden. Ein wiederholter erfolgreicher Abort ist idempotent.
+Exit-Code 0 bedeutet hier: Abbruch erfolgreich archiviert, nicht Auftrag erfolgreich.
+
+```powershell
+python .opencode/scripts/start.py abort --id ACTUAL_ID --failed --reason "Testfehler nicht behoben" --correction-rounds 2 --human-interventions 0
+```
 
 ### Felder der Request-Datei
 
@@ -407,14 +422,66 @@ Endzeit und Usage-Grenze neu.
 python .opencode/scripts/start.py abort --id ACTUAL_ID
 ```
 
-Abort beendet nur den aktiven Workflow-Status. Es bewahrt Run-Artefakte und
-ändert weder Branches noch Task-Dateien. Alle neuen Benchmark-Läufe verwenden
+Abort beendet den aktiven Workflow-Status erst nach erfolgreicher Archivierung.
+Es bewahrt Run-Artefakte und ändert weder Branches noch Task-Dateien. Alle neuen Benchmark-Läufe verwenden
 dasselbe CSV-Schema, unabhängig von der gewählten Modulkombination. Nicht
 ausgewählte Usage-Felder bleiben leer. Die Erweiterung des bisherigen Python-
 Schemas erhält vorhandene Zeilen und benennt `InferenceSeconds` in
 `MessageElapsedSeconds` um. Neue Metadaten alter Runs bleiben leer, weil sie
-nicht nachträglich belegt werden können. Historische Run-Dateien bleiben
+nicht nachträglich belegt werden können. Historische CSV-Zeilen aus den bisherigen
+Schemas erhalten `Outcome=completed` und `Terminal=true`: Diese Versionen haben
+ausschließlich erfolgreich geprüfte Abschlüsse in die CSV geschrieben. Ihre
+Fehleranzahl bleibt unbekannt. Historische Run-Dateien bleiben
 unverändert. Andere abweichende Schemas werden abgewiesen.
+
+### Fehlgeschlagene Läufe und Abbrüche
+
+Sobald ein echter Run angelegt wurde, archiviert Python Fehler in Vorbereitung,
+Begin und Abschluss: `failures.json` enthält Zeitpunkt, Phase, Exception-Typ
+und Fehlermeldung. `result.json`, Report und Benchmark-CSV enthalten denselben
+Run mit `Outcome=failed`, `Terminal=false`; die gespeicherte Lifecycle-Phase
+bleibt beispielsweise `prepare-failed`, `begin-failed`, `prepared` bei einem
+abgewiesenen Begin-Snapshot oder `finishing` für einen wiederholbaren Abschluss.
+Fehlerdetails stehen im Archiv, nicht als mehrzeiliger Exception-Text in der CSV.
+Reine Vorbedingungen wie eine ungültige Request-Datei, ein schmutziger Git-Stand
+vor dem Start oder eine ungültige Summary vor Finish erzeugen keinen neuen
+Benchmark-Versuch. Nach einem Prozessabbruch muss der erhaltene Lauf geprüft
+und ausdrücklich mit `abort` archiviert werden; es gibt keinen Hintergrundmonitor.
+
+| Feld | Bedeutung |
+|---|---|
+| Outcome | `completed`: erfolgreich abgeschlossen; `failed`: fehlgeschlagen; `aborted`: bewusst beendet |
+| Terminal | `false`: vorläufiger Fehlereintrag, Lauf bleibt erhalten; `true`: finaler Abschluss oder archivierter Stop |
+| FailureCount | Anzahl aufgezeichneter Workflow-Fehler; getrennt von fachlichen Korrekturrunden. Historische Fehlerzahl unbekannt |
+| LastFailurePhase / LastFailureType | Letzter aufgezeichneter Workflow-Fehler, auch nach erfolgreichem Retry; Details in `failures.json` |
+| StopReason | Übergebener Abbruch-/Fehlschlagsgrund; ohne Angabe unbekannt |
+
+`Terminal` ist in JSON ein Boolean (`true`/`false`); in CSV steht `True`/`False`.
+
+Die CSV hat weiterhin **eine Zeile pro Run-ID**. Ein erfolgreicher Retry ersetzt
+den vorläufigen Fehlereintrag und erhält den Fehlerverlauf. Ein abschließender
+Abort ersetzt ihn durch den finalen Ausgang. Andere Läufe werden nicht geändert.
+Für Erfolgsquoten ausschließlich `Terminal=true` betrachten; für Zeit-/Coverage-
+Vergleiche zusätzlich den Auftrag, Ausgangsstand und Messstatus berücksichtigen.
+
+Teilresultate behaupten keinen validierten Endcommit, finalen Diff oder
+Nachher-Metriken: Diese Felder bleiben unbekannt, auch wenn von einem früheren
+Abschlussversuch bereits Dateien existieren. Vorhandene Dateien bleiben erhalten
+und werden im Report als möglicherweise unvollständig oder veraltet erklärt.
+Ohne tatsächlichen Begin ist die Run-Dauer unbekannt. Ab Begin zählt sie bis
+zum Messabschluss bzw. archivierten Stop, inklusive Pausen. Eine bereits validierbare
+Usage-Teilmessung wird mit ihren ursprünglichen Zeitgrenzen erhalten; ein Abort
+verlängert sie nicht durch erfundene Tokens. Ohne finalen Snapshot bleibt Usage
+unbekannt. Nach einem Usage-Fehler kann Finish einen neuen expliziten Snapshot
+verarbeiten; nach einem Build-/Artefaktfehler bleibt die vorhandene Messgrenze
+beim Retry ohne neue Task-Commits erhalten.
+
+Ist beispielsweise die CSV gesperrt, bleibt der aktive Lauf erhalten. Der
+ursprüngliche Fehler wird nicht durch den Archivierungsfehler verdeckt; die CLI
+meldet die unvollständige Archivierung zusätzlich. Zustand und `status` zeigen
+den Fehler an. Nach Behebung der Ursache Finish bzw. Abort mit derselben ID
+wiederholen. Die bei Abort gespeicherte Entscheidung, Zeit und Zähler bleiben
+bei diesem Retry gleich. `stopping` bedeutet: Archivierung des Stops offen.
 
 ## Ergebnisse
 
@@ -438,6 +505,7 @@ C:/Dev/AI-Benchmarks/<Projekt>/
     usage-before.json          # bei usage, nur Metriken/IDs
     usage-after.json
     usage.json
+    failures.json              # nur bei aufgezeichneten Workflow-Fehlern
 ```
 
 Erhaltene Benchmark-Metriken: Testanzahl, Failures, Errors, Skips, reine Testzeit,
@@ -624,6 +692,8 @@ und gemockte Provider/Benchmark-Builds. Sie prüft die Lifecycle- und Fehlerpfad
 Metriken, Trennung von Report und offenen Findings, fehlende Angaben,
 Berichtserhalt bei Retry, reine Analyse ohne Codeänderungen/Commits,
 lesende Statusabfragen einschließlich paralleler Zustandswechsel,
+Fehler-/Abbruchzeilen, Teilmessungen ohne erfundene Werte, gesperrte CSV,
+idempotenten Stop und erfolgreiche Retries ohne doppelte Run-IDs,
 Patch-/Findings-/CSV-Erhalt, Locking, Modellgenerator und Integration
 des existierenden Prompt-Improvers. Sie verbraucht keine Modellanfragen und
 startet keine Anwendung. Live-Provider-Smoke-Tests separat und bewusst ausführen.

@@ -180,8 +180,22 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    The summary is retained in the existing run state for retries. If resolving
    a failure requires additional task commits, update the summary and findings
    for the new final state before taking a fresh snapshot and retrying finish.
-   Do not invent metrics. `abort --id <id>` releases a failed active run and
-   preserves artifacts and Git state; never abort to hide a failure.
+   Do not invent metrics. Workflow failures after run creation write a provisional
+   failed report/result and CSV row with Terminal=false; successful finish retries
+   update that same run ID. failures.json retains the error history.
+   If this task cannot be completed, archive its known actual run with:
+
+   `python .opencode/scripts/start.py abort --id <id> --failed --reason <actual-failure-reason> --human-interventions <known-count> --correction-rounds <known-count>`
+
+   For an explicitly cancelled task, omit --failed and record the cancellation reason.
+   Abort archives the terminal outcome before releasing the run. It performs no
+   Git, build, provider or new usage-export calls, preserves task files and findings,
+   and does not claim validated final metrics or a completed diff. Its exit code 0
+   means the stop was archived, not that the coding task succeeded. If archiving
+   fails, inspect the cause and retry abort with the same ID; do not start a new run.
+   Never abort to hide a failure. If prepare/begin failed before returning its ID,
+   use status to inspect the actual saved run and verify it belongs to THIS request.
+   Do not abort a pre-existing run from another task or invent an ID.
 8. Final report: completed / failed / no changes; selected modules, run ID,
    verified branch, actual commit hash, duration, actual test/coverage
    before/after, failures/errors/skipped, corrections/interventions, usage

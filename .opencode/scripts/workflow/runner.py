@@ -112,7 +112,7 @@ def _prepare(repo, store, request, catalog, usage_export):
         write_json(state_path, state)
     except Exception as error:
         state.update(status="prepare-failed", error=str(error))
-        write_json(state_path, state)
+        record_failure(state_path, state, store, "prepare", error)
         raise
     return {"id": run_id, "folder": str(folder), "status": "prepared", "session_id": state["sessionId"]}
 
@@ -136,14 +136,18 @@ def begin(repo: Path, root: Path, request: dict | None, catalog: Path,
                 run(repo, "git", "rev-parse", "HEAD").strip() != state["startCommit"]):
             raise WorkflowError("Repository changed after prepare; abort and prepare again.")
         folder = Path(state["folder"])
-        if "usage" in state["modules"]:
-            measured = usage.capture(repo, state["sessionId"], usage_export)
-            if "benchmark" in state["modules"] and measured["capturedMs"] < datetime.fromisoformat(state["preparedAt"]).timestamp() * 1000:
-                raise WorkflowError("Begin requires a fresh usage snapshot AFTER baseline preparation.")
-            state["start"] = usage.timestamp(measured["capturedMs"])
-            write_json(folder / "usage-before.json", measured)
-        else:
-            state["start"] = now()
+        try:
+            if "usage" in state["modules"]:
+                measured = usage.capture(repo, state["sessionId"], usage_export)
+                if "benchmark" in state["modules"] and measured["capturedMs"] < datetime.fromisoformat(state["preparedAt"]).timestamp() * 1000:
+                    raise WorkflowError("Begin requires a fresh usage snapshot AFTER baseline preparation.")
+                state["start"] = usage.timestamp(measured["capturedMs"])
+                write_json(folder / "usage-before.json", measured)
+            else:
+                state["start"] = now()
+        except Exception as error:
+            record_failure(state_path, state, store, "begin-usage", error)
+            raise
         try:
             (folder / "original-prompt.md").write_text(state["task"].strip() + "\n", encoding="utf-8")
             if "prompt" in state["modules"]:
@@ -160,7 +164,7 @@ def begin(repo: Path, root: Path, request: dict | None, catalog: Path,
             write_json(state_path, state)
         except Exception as error:
             state.update(status="begin-failed", error=str(error))
-            write_json(state_path, state)
+            record_failure(state_path, state, store, "begin", error)
             raise
         return {"id": prepared_id, "modules": state["modules"], "branch": state["branch"],
                 "folder": str(folder), "task": state["effectiveTask"],
@@ -189,7 +193,8 @@ def result_row(state: dict, end: str, end_commit: str, current_branch: str,
               "Provider": state["provider"], "TargetClass": state["targetClass"],
               "StartCommit": state["startCommit"], "EndCommit": end_commit,
               "Branch": current_branch,
-              "DurationSeconds": round((datetime.fromisoformat(end) - datetime.fromisoformat(state["start"])).total_seconds(), 1)}
+              "DurationSeconds": round((datetime.fromisoformat(end) - datetime.fromisoformat(state["start"])).total_seconds(), 1)
+              if state.get("start") else None}
     before = state.get("before", {})
     after = after or {}
     for column, source, key in (("TestsBefore", before, "tests"), ("TestsAfter", after, "tests"),
@@ -204,6 +209,83 @@ def result_row(state: dict, end: str, end_commit: str, current_branch: str,
     return result
 
 
+def enrich_result(state: dict, store: Path, result: dict, usage_result: dict | None,
+                  outcome: str = "completed", terminal: bool = True) -> dict:
+    """Use the same columns for successes, partial attempts and cancellations."""
+    folder = Path(state["folder"])
+    result["Modules"] = ",".join(state["modules"])
+    result.update(RunFolder=str(folder), ReportPath=str(folder / "report.md"),
+                  FindingsPath=str(folder / "findings.md") if outcome == "completed" or (folder / "findings.md").is_file() else None,
+                  DiffPath=str(folder / "diff.patch") if outcome == "completed" else None,
+                  CsvPath=str(store / "results.csv") if "benchmark" in state["modules"] else None)
+    result.update({key: None for key in usage.VALUE_FIELDS})
+    result.update(SessionId=state.get("sessionId"), ActualModels=None, PendingMessages=None)
+    result.update(CostStatus="unavailable", UsageStartUTC=None, UsageEndUTC=None, UsageWindowSeconds=None)
+    metadata = state.get("promptMetadata", {})
+    result.update(PromptProvider=metadata.get("provider"), PromptModel=metadata.get("model"),
+                  PromptDurationSeconds=metadata.get("durationSeconds"))
+    if usage_result:
+        result.update({key: usage_result[key] for key in usage.VALUE_FIELDS})
+        result.update(SessionId=usage_result["SessionId"], ActualModels=",".join(usage_result["ActualModels"]),
+                      PendingMessages=usage_result["PendingMessages"])
+        result.update({key: usage_result[key] for key in ("CostStatus", "UsageStartUTC", "UsageEndUTC", "UsageWindowSeconds")})
+    failures = state.get("failures", [])
+    last = failures[-1] if failures else {}
+    result.update(Outcome=outcome, Terminal=terminal,
+                  FailureCount=len(failures) if "failures" in state or not state.get("error") else None,
+                  LastFailurePhase=last.get("phase"), LastFailureType=last.get("type"),
+                  StopReason=state.get("stopReason"))
+    return result
+
+
+def partial_result(state: dict, store: Path, end: str, outcome: str, terminal: bool) -> dict:
+    # No Git, Maven or provider calls: neither dirty task changes nor stale final
+    # build/diff artifacts are presented as a successfully verified final state.
+    changed = {"ChangedFiles": None, "Insertions": None, "Deletions": None, "files": []}
+    result = result_row(state, end, None, state["branch"], None, changed,
+                        state.get("interventions"), state.get("corrections"))
+    usage_result = None
+    folder = Path(state["folder"])
+    if state.get("usageAfter") and (folder / "usage-before.json").is_file():
+        try:
+            usage_result = usage.difference(read_json(folder / "usage-before.json"), state["usageAfter"])
+        except WorkflowError:
+            pass  # Invalid snapshots are not substituted with old usage.json data.
+    # A usage snapshot may precede the abort; its own bounds remain explicit.
+    return enrich_result(state, store, result, usage_result, outcome, terminal)
+
+
+def archive_partial(state: dict, store: Path, end: str, outcome: str, terminal: bool) -> dict:
+    folder = Path(state["folder"])
+    result = partial_result(state, store, end, outcome, terminal)
+    write_json(folder / "result.json", result)
+    changed = {"files": []}
+    (folder / "report.md").write_text(report(state, result, None, changed, None), encoding="utf-8")
+    if "benchmark" in state["modules"]:
+        benchmark.append_csv(store / "results.csv", result, replace_existing=True)
+    return result
+
+
+def record_failure(path: Path, state: dict, store: Path, phase: str, error: Exception) -> None:
+    """Preserve the original error even when its archive/CSV cannot be written."""
+    event = {"at": now(), "phase": phase, "type": type(error).__name__, "message": str(error)}
+    state.setdefault("failures", []).append(event)
+    state["error"] = str(error)
+    state.pop("failureArchiveError", None)
+    try:
+        write_json(path, state)
+        write_json(Path(state["folder"]) / "failures.json", state["failures"])
+        archive_partial(state, store, state.get("end", event["at"]), "failed", False)
+    except Exception as archive_error:
+        state["failureArchiveError"] = str(archive_error)
+        # Store explicit notes for the CLI also on Python 3.10 (no add_note API).
+        error.__notes__ = [*getattr(error, "__notes__", []), "Failure archive/CSV incomplete: " + str(archive_error)]
+        try:
+            write_json(path, state)
+        except Exception as state_error:
+            error.__notes__ = [*getattr(error, "__notes__", []), "Failure state could not be saved: " + str(state_error)]
+
+
 def report(state: dict, result: dict, after: dict | None, changed: dict, usage_result: dict | None) -> str:
     lines = ["# AI Coding Benchmark / Start Workflow", "", "## Aufgabe", "", state["task"], "",
              "Auftragsart: " + {"analysis": "Analyse", "implementation": "Implementierung"}.get(state.get("taskMode"), "nicht erfasst"), "",
@@ -214,6 +296,10 @@ def report(state: dict, result: dict, after: dict | None, changed: dict, usage_r
     if "usage" in state["modules"]:
         lines += ["", usage.cost_description(result["EstimatedCostUSD"]),
                   "MessageElapsedSeconds umfasst Message-, Tool- und Wartezeiten; keine reine Modell-Rechenzeit."]
+    if result.get("Outcome", "completed") != "completed":
+        lines += ["", "Dieser Lauf ist nicht erfolgreich abgeschlossen. EndCommit, Nachher-Metriken und Diff-Metriken sind nicht validiert.",
+                  "Vorhandene Dateien aus früheren Abschlussversuchen können unvollständig oder veraltet sein.",
+                  "Branch ist der gespeicherte Workflow-Branch, keine aktuelle Git-Prüfung."]
     if after:
         lines += ["", "## Tests und Coverage", "", "| Messwert | Vorher | Nachher |", "|---|---:|---:|"]
         lines.extend(f"| {key} | {state['before'][key]} | {after[key]} |" for key in after)
@@ -221,15 +307,17 @@ def report(state: dict, result: dict, after: dict | None, changed: dict, usage_r
     if usage_result:
         lines.extend(f"- {key}: {'nicht verfügbar' if value is None else value}" for key, value in usage_result.items())
     else:
-        lines += ["Usage-Modul nicht ausgewählt."]
-    lines += ["", "## Offene Findings", "", "Siehe findings.md für gemeldete offene Probleme und den Erfassungsstatus.",
-              "", "## Artefakte", "", "- result.json", "- findings.md", "- diff.patch", "- original-prompt.md"]
-    if "prompt" in state["modules"]:
-        lines += ["- improved-prompt.md", "- prompt-metadata.json"]
-    if "benchmark" in state["modules"]:
-        lines += ["- benchmark-before.json", "- benchmark-after.json"]
-    if usage_result:
-        lines += ["- usage-before.json", "- usage-after.json", "- usage.json"]
+        lines += ["Vorhandene Teilmessung mit ihren eigenen Zeitgrenzen steht im Ergebnis oben."
+                  if result.get("UsageStartUTC") else
+                  "Usage-Messung nicht verfügbar." if "usage" in state["modules"] else "Usage-Modul nicht ausgewählt."]
+    lines += ["", "## Offene Findings", "",
+              "Siehe findings.md für gemeldete offene Probleme und den Erfassungsstatus." if result.get("FindingsPath") else "Keine archivierten Findings-Angaben verfügbar.",
+              "", "## Artefakte", ""]
+    folder = Path(state["folder"])
+    names = ("result.json", "findings.md", "diff.patch", "original-prompt.md", "improved-prompt.md",
+             "prompt-metadata.json", "benchmark-before.json", "benchmark-after.json",
+             "usage-before.json", "usage-after.json", "usage.json", "failures.json")
+    lines.extend("- " + name for name in names if (folder / name).is_file())
     return "\n".join(lines) + "\n"
 
 
@@ -262,67 +350,70 @@ def finish(repo: Path, root: Path, run_id: str, interventions: int = 0,
             raise WorkflowError("Analysis runs must not contain task commits. Inspect the changes; do not reset them automatically.")
         run(repo, "git", "merge-base", "--is-ancestor", state["startCommit"], end_commit)
         folder = Path(state["folder"])
-        # Preserve the original cutoff when retrying a failed final build/artifact write.
-        state.setdefault("end", now())
-        if state.get("finishCommit") and state["finishCommit"] != end_commit:
-            state["end"] = now()
+        phase = "finish"
+        try:
+            # Preserve the original cutoff when retrying a failed final build/artifact write.
+            state.setdefault("end", now())
+            if state.get("finishCommit") and state["finishCommit"] != end_commit:
+                state["end"] = now()
+                state.pop("usageAfter", None)
+                state.pop("implementationSummary", None)  # Old prose does not describe a new commit.
+            if summary is not None:
+                state["implementationSummary"] = summary
+            state.update(status="finishing", finishCommit=end_commit,
+                         interventions=interventions, corrections=corrections)
+            phase = "finish-usage"
+            write_json(path, state)
+            retry_usage = bool(state.get("failures") and state["failures"][-1]["phase"] == "finish-usage"
+                               and usage_export is not None)
+            if "usage" in state["modules"] and ("usageAfter" not in state or retry_usage):
+                state["usageAfter"] = usage.capture(repo, state["sessionId"], usage_export)
+                state["end"] = usage.timestamp(state["usageAfter"]["capturedMs"])
+            write_json(path, state)
+            usage_result = None
+            if "usage" in state["modules"]:
+                usage_result = usage.difference(read_json(folder / "usage-before.json"), state["usageAfter"])
+                if state["expectedModel"] and any(model != state["expectedModel"] for model in usage_result["ActualModels"]):
+                    raise WorkflowError("Usage model differs from the forced model. Do not relabel the run.")
+                write_json(folder / "usage-after.json", state["usageAfter"])
+                write_json(folder / "usage.json", usage_result)
+            phase = "finish-benchmark"
+            after = benchmark.collect(repo, state["targetClass"], folder / "benchmark-after.json") if "benchmark" in state["modules"] else None
+            branch.require_clean(repo, findings=True)
+            phase = "finish-diff"
+            changed = benchmark.changes(repo, state["startCommit"], end_commit, folder / "diff.patch")
+            result = result_row(state, state["end"], end_commit, actual_branch, after, changed, interventions, corrections)
+            enrich_result(state, store, result, usage_result)
+            phase = "finish-artifacts"
+            source = repo / "findings.md"
+            destination = folder / "findings.md"
+            if source.is_file():
+                shutil.copyfile(source, destination)  # Archive before removing the untracked original.
+            elif not destination.exists():
+                destination.write_text("# Offene Findings\n\nFür diesen Lauf wurden keine Findings-Angaben übergeben. "
+                                       "Es ist nicht dokumentiert, ob weitere offene Probleme festgestellt wurden.\n", encoding="utf-8")
+            write_json(folder / "result.json", result)
+            (folder / "report.md").write_text(report(state, result, after, changed, usage_result), encoding="utf-8")
+            phase = "finish-csv"
+            if "benchmark" in state["modules"]:
+                benchmark.append_csv(store / "results.csv", result, replace_existing=True)
+            phase = "finish-cleanup"
+            if source.is_file():
+                source.unlink()
+            branch.require_clean(repo)
+            state["status"] = "completed"
+            state.pop("error", None)
+            state.pop("failureArchiveError", None)
             state.pop("usageAfter", None)
-            state.pop("implementationSummary", None)  # Old prose does not describe a new commit.
-        if summary is not None:
-            state["implementationSummary"] = summary
-        state.update(status="finishing", finishCommit=end_commit)
-        if "usage" in state["modules"] and "usageAfter" not in state:
-            state["usageAfter"] = usage.capture(repo, state["sessionId"], usage_export)
-            state["end"] = usage.timestamp(state["usageAfter"]["capturedMs"])
-        write_json(path, state)
-        usage_result = None
-        if "usage" in state["modules"]:
-            usage_result = usage.difference(read_json(folder / "usage-before.json"), state["usageAfter"])
-            if state["expectedModel"] and any(model != state["expectedModel"] for model in usage_result["ActualModels"]):
-                raise WorkflowError("Usage model differs from the forced model. Do not relabel the run.")
-            write_json(folder / "usage-after.json", state["usageAfter"])
-            write_json(folder / "usage.json", usage_result)
-        after = benchmark.collect(repo, state["targetClass"], folder / "benchmark-after.json") if "benchmark" in state["modules"] else None
-        branch.require_clean(repo, findings=True)
-        changed = benchmark.changes(repo, state["startCommit"], end_commit, folder / "diff.patch")
-        result = result_row(state, state["end"], end_commit, actual_branch, after, changed, interventions, corrections)
-        result["Modules"] = ",".join(state["modules"])
-        result.update(RunFolder=str(folder), ReportPath=str(folder / "report.md"),
-                      FindingsPath=str(folder / "findings.md"), DiffPath=str(folder / "diff.patch"),
-                      CsvPath=str(store / "results.csv") if "benchmark" in state["modules"] else None)
-        # One schema for every module selection; unselected usage is unavailable.
-        result.update({key: None for key in usage.VALUE_FIELDS})
-        result.update(SessionId=None, ActualModels=None, PendingMessages=None)
-        result.update(CostStatus="unavailable", UsageStartUTC=None, UsageEndUTC=None, UsageWindowSeconds=None)
-        metadata = state.get("promptMetadata", {})
-        result.update(PromptProvider=metadata.get("provider"), PromptModel=metadata.get("model"),
-                      PromptDurationSeconds=metadata.get("durationSeconds"))
-        if usage_result:
-            result.update({key: usage_result[key] for key in usage.VALUE_FIELDS})
-            result.update(SessionId=usage_result["SessionId"], ActualModels=",".join(usage_result["ActualModels"]),
-                          PendingMessages=usage_result["PendingMessages"])
-            result.update({key: usage_result[key] for key in ("CostStatus", "UsageStartUTC", "UsageEndUTC", "UsageWindowSeconds")})
-        source = repo / "findings.md"
-        destination = folder / "findings.md"
-        if source.is_file():
-            shutil.copyfile(source, destination)  # Archive before removing the untracked original.
-        elif not destination.exists():
-            destination.write_text("# Offene Findings\n\nFür diesen Lauf wurden keine Findings-Angaben übergeben. "
-                                   "Es ist nicht dokumentiert, ob weitere offene Probleme festgestellt wurden.\n", encoding="utf-8")
-        write_json(folder / "result.json", result)
-        (folder / "report.md").write_text(report(state, result, after, changed, usage_result), encoding="utf-8")
-        if "benchmark" in state["modules"]:
-            benchmark.append_csv(store / "results.csv", result)
-        if source.is_file():
-            source.unlink()
-        branch.require_clean(repo)
-        state["status"] = "completed"
-        state.pop("usageAfter", None)
-        write_json(path, state)
-        active = store / "active.json"
-        if active.exists() and read_json(active)["id"] == run_id:
-            active.unlink()
-        return result
+            write_json(path, state)
+            active = store / "active.json"
+            if active.exists() and read_json(active)["id"] == run_id:
+                active.unlink()
+            return result
+        except Exception as error:
+            state["status"] = "finishing"
+            record_failure(path, state, store, phase, error)
+            raise
 
 
 def status(repo: Path, root: Path, run_id: str | None = None) -> dict:
@@ -356,7 +447,11 @@ def status(repo: Path, root: Path, run_id: str | None = None) -> dict:
     result.update(task_mode=state.get("taskMode"), modules=state["modules"],
                   branch=state["branch"], folder=state["folder"], state_file=str(state_path),
                   start_commit=state["startCommit"], error_recorded=bool(state.get("error")))
-    artifact_names = ("report.md", "findings.md", "diff.patch", "result.json")
+    failures = state.get("failures", [])
+    result.update(failure_count=len(failures) if "failures" in state or not state.get("error") else None,
+                  last_failure_phase=failures[-1]["phase"] if failures else None,
+                  failure_archive_error_recorded=bool(state.get("failureArchiveError")))
+    artifact_names = ("report.md", "findings.md", "diff.patch", "result.json", "failures.json")
     folder = Path(state["folder"])
     result["artifacts"] = {name: str(folder / name) for name in artifact_names if (folder / name).is_file()}
     phase = state["status"]
@@ -380,26 +475,60 @@ def status(repo: Path, root: Path, run_id: str | None = None) -> dict:
                  f"Nach Klärung abort --id {selected} verwenden und die Voraussetzungen für einen neuen Lauf prüfen. Abort setzt keine Git-Änderungen zurück."]
     elif phase == "completed":
         steps = ["Lauf abgeschlossen. Report, Findings und Diff im Artefaktordner prüfen."]
-    elif phase == "aborted":
+    elif phase in ("aborted", "failed"):
         steps = ["Lauf abgebrochen. Git-Zustand und erhaltene Artefakte prüfen, bevor ein neuer Auftrag gestartet wird."]
+    elif phase == "stopping":
+        steps = [f"Abbrucharchivierung nicht abgeschlossen. Ursache prüfen und abort --id {selected} wiederholen."]
     else:
         steps = ["Unbekannter Zustand: Zustandsdatei prüfen; keine automatische Wiederaufnahme."]
-    if selected != active and phase not in ("completed", "aborted"):
+    if selected != active and phase not in ("completed", "aborted", "failed"):
         steps = ["Dieser Lauf ist nicht als aktiv registriert. Zustandsdatei und aktuellen Lauf prüfen; keine automatische Wiederaufnahme."]
     result["next_steps"] = steps
     return result
 
 
-def abort(repo: Path, root: Path, run_id: str) -> dict:
+def abort(repo: Path, root: Path, run_id: str, reason: str | None = None,
+          failed: bool = False, interventions: int | None = None,
+          corrections: int | None = None) -> dict:
+    if reason is not None and not reason.strip():
+        raise WorkflowError("The stop reason must not be empty.")
+    if any(value is not None and value < 0 for value in (interventions, corrections)):
+        raise WorkflowError("Interventions and correction rounds must not be negative.")
     repo = repo.resolve()
     store = store_path(repo, root.resolve())
     with store_lock(store):
         path, state = load_state(repo, store, run_id)
         if state["status"] == "completed":
             raise WorkflowError("Completed workflows cannot be aborted.")
-        state.update(status="aborted", aborted=now())
+        folder = Path(state["folder"])
+        if state["status"] in ("aborted", "failed") and (folder / "result.json").is_file():
+            result = read_json(folder / "result.json")
+            if result.get("Terminal") is True and result.get("Outcome") == state["status"]:
+                active = store / "active.json"
+                if active.exists() and read_json(active)["id"] == run_id:
+                    active.unlink()
+                return {"id": run_id, "status": state["status"], "folder": state["folder"]}
+        # Freeze the decision before I/O. A CSV failure must leave the active
+        # pointer intact and a repeatable stop, without changing Git or files.
+        if "stopAt" not in state:
+            state.update(stopAt=state.get("aborted", now()), stopOutcome="failed" if failed else "aborted",
+                         stopReason=reason.strip() if reason is not None else None)
+            if interventions is not None:
+                state["interventions"] = interventions
+            if corrections is not None:
+                state["corrections"] = corrections
+        state["status"] = "stopping"
         write_json(path, state)
+        try:
+            archive_partial(state, store, state["stopAt"], state["stopOutcome"], True)
+            state.update(status=state["stopOutcome"], aborted=state["stopAt"])
+            state.pop("failureArchiveError", None)
+            write_json(path, state)
+        except Exception as error:
+            state["status"] = "stopping"
+            record_failure(path, state, store, "abort-archive", error)
+            raise
         active = store / "active.json"
         if active.exists() and read_json(active)["id"] == run_id:
             active.unlink()
-        return {"id": run_id, "status": "aborted", "folder": state["folder"]}
+        return {"id": run_id, "status": state["status"], "folder": state["folder"]}
