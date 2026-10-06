@@ -4,8 +4,9 @@ import { readFile, access } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { createOpencodeClient } from "@opencode-ai/sdk/client"
-import { WorkflowUsage } from "../../plugins/workflow-usage.js"
-import { measurementExport } from "../workflow_usage_bridge.mjs"
+import plugin from "../../plugins/workflow-usage.js"
+const WorkflowUsage = plugin.server
+import { measurementExport, nativeMeasurements, nativeUsageBridge } from "../workflow_usage_bridge.mjs"
 
 const directory = path.join(tmpdir(), "workflow-project")
 const sessionID = "ses_actualActive"
@@ -123,4 +124,89 @@ test("invalid session context is rejected before any server call", async () => {
     await assert.rejects(hooks.tool.workflow_usage_snapshot.execute({}, { ...context, sessionID: undefined }))
     await assert.rejects(hooks.tool.workflow_usage_snapshot.execute({}, { ...context, directory: undefined }))
   } finally { await hooks.dispose() }
+})
+
+const nativeMessage = (id = "msg_v2") => ({
+  id, type: "assistant", model: { providerID: "test", id: "test-model" },
+  time: { created: 1000, completed: 3000 }, cost: .01,
+  tokens: { input: 100, output: 20, reasoning: 5, cache: { read: 30, write: 2 } },
+  content: [{ type: "reasoning", text: "SECRET", time: { created: 1200, completed: 2000 } },
+    { type: "tool", state: { input: "SECRET", content: "SECRET" } }],
+  providerState: { token: "SECRET" }, snapshot: "SECRET",
+})
+
+test("V2 definition registers native tool and returns its cleanup", async () => {
+  let definition
+  const cleanup = await plugin.setup({ tool: { transform: async (callback) => callback({ add: (d) => { definition = d } }) } })
+  assert.equal(plugin.id, "workflow-usage")
+  assert.equal(definition.name, "workflow_usage_snapshot")
+  assert.deepEqual(definition.input, { type: "object", properties: {}, additionalProperties: false })
+  assert.equal(definition.options.codemode, false)
+  await cleanup()
+})
+
+test("V2 preserves full history including completed compaction; whitelist removes content", async () => {
+  const history = Array.from({ length: 151 }, (_, i) => nativeMessage(`msg_${i}`))
+  history.splice(50, 0, { id: "msg_compacted", type: "compaction", status: "completed",
+    model: { providerID: "test", id: "test-model" }, time: { created: 1500 }, cost: .2,
+    tokens: { input: 192185, output: 1354, reasoning: 0, cache: { read: 5376, write: 0 } }, summary: "SECRET" })
+  const data = { info: { id: sessionID, location: { directory } }, messages: history }
+  const calls = []
+  const ctx = { location: { directory }, session: { get: async (input) => {
+    calls.push(input.sessionID); return data.info
+  } } }
+  const bridge = nativeUsageBridge(ctx, async () => ({ session: { export: async (input) => {
+    calls.push(input.sessionID); return data
+  } } }))
+  try {
+    const result = JSON.parse(await bridge.capture({ sessionID, signal: new AbortController().signal }))
+    const exported = JSON.parse(await readFile(result.usage_export, "utf8"))
+    assert.equal(exported.messages.length, 152)
+    assert.equal(exported.messages[0].parts[0].time.start, 1200)
+    assert.equal(exported.messages[50].info.completed, true)
+    assert.equal(exported.messages[50].info.time.completed, undefined)
+    assert.equal(exported.messages[0].info.retryEvents, null)
+    assert.equal(JSON.stringify(exported).includes("SECRET"), false)
+    assert.deepEqual(calls, [sessionID, sessionID])
+  } finally { await bridge.dispose() }
+})
+
+test("V2 rejects malformed content, wrong active location and mismatched exported session", async () => {
+  assert.throws(() => nativeMeasurements({ info: {}, messages: [ { ...nativeMessage(), content: undefined } ] }))
+  let connected = false
+  const bridge = nativeUsageBridge({ location: { directory }, session: {
+    get: async () => ({ location: { directory: path.join(directory, "other") } }),
+  } }, async () => { connected = true })
+  try { await assert.rejects(bridge.capture({ sessionID })); assert.equal(connected, false) }
+  finally { await bridge.dispose() }
+  const bad = nativeMeasurements({ info: { id: "ses_other", location: { directory } }, messages: [] })
+  assert.throws(() => measurementExport(bad.info, bad.messages, sessionID, directory, Date.now()))
+})
+
+test("V2 public client verifies server process before exporting the active session", async () => {
+  const originalFetch = globalThis.fetch
+  const requests = []
+  let serverPid = process.pid + 1
+  const ctx = { app: { version: "2.0.19" }, location: { directory },
+    options: { serverUrl: "http://127.0.0.1:43219" },
+    session: { get: async () => ({ id: sessionID, location: { directory } }) },
+  }
+  globalThis.fetch = async (url) => {
+    requests.push(new URL(url).pathname)
+    assert.equal(new URL(url).origin, ctx.options.serverUrl)
+    const data = new URL(url).pathname === "/api/info"
+      ? { pid: serverPid, version: ctx.app.version, urls: [], paths: { tmp: tmpdir() } }
+      : { data: { info: { id: sessionID, location: { directory } }, messages: [nativeMessage()] } }
+    return new Response(JSON.stringify(data), { headers: { "content-type": "application/json" } })
+  }
+  const bridge = nativeUsageBridge(ctx)
+  try {
+    await assert.rejects(bridge.capture({ sessionID }), /active OpenCode server process/)
+    assert.deepEqual(requests, ["/api/info"])
+    serverPid = process.pid
+    const capture = JSON.parse(await bridge.capture({ sessionID }))
+    const measured = JSON.parse(await readFile(capture.usage_export, "utf8"))
+    assert.equal(measured.messages[0].info.tokens.reasoning, 5)
+    assert.deepEqual(requests, ["/api/info", "/api/info", `/api/experimental/session/${sessionID}/export`])
+  } finally { globalThis.fetch = originalFetch; await bridge.dispose() }
 })

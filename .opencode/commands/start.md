@@ -39,7 +39,10 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    `usage_export` path. Do not use the local CLI, session titles, newest-session
    guesses, manual IDs or a public share link as a substitute. If the tool is
    absent, stop and report that `plugins/workflow-usage.js` must be installed
-   and OpenCode restarted. A tool failure also stops before begin. Never fake usage.
+   together with scripts/workflow_usage_bridge.mjs and the package.json/package-lock.json
+   dependencies, then the actual OpenCode server restarted. In V2, verify that
+   the default-export plugin uses id/setup, not only a V1 function export.
+   A tool failure also stops before begin. Never fake usage.
 4. Write a UTF-8 JSON request in the system temp directory, outside Git,
    using a file-writing tool or proper JSON serializer. Fields:
    `modules`, `branch`, `target_class`, `model`, `task`, `session_id`.

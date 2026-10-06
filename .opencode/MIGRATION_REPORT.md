@@ -41,7 +41,7 @@ CLI-Hilfetext und die zwei beschriebenen Smoke-Test-Korrekturen.
 
 | Prüfung | Ergebnis |
 |---|---|
-| Automatische Python-Suite | **52 Tests, 0 Fehler, 0 Failures, 0 Skips** nach dem Usage-Fix |
+| Automatische Python-Suite | **54 Tests, 0 Fehler, 0 Failures, 0 Skips** nach dem V2-Usage-Fix |
 | Echte temporäre Git-Repositories | Branch-/Status-Prüfungen, Commits, Findings, Text-/Binary-Diff und sauberer Endzustand erfolgreich |
 | CLI als eigener Prozess | Begin/Finish, sichere JSON-Task-Übergabe mit Quotes/Zeilenumbrüchen/Shell-Sonderzeichen erfolgreich |
 | Fehlerpfade | Dirty Tree, vorhandene lokale/remote Branches, falscher Branch, tracked Findings, fehlende Usage-Session, Build-/CSV-Fehler korrekt abgewiesen |
@@ -88,8 +88,9 @@ keine als erfolgreich ausgegebenen fehlgeschlagenen Tests.
   nicht ausgeführt. Command-Dateien/Generator, Python-Lifecycle, echter
   Session-Export, echter Maven-Benchmark und Live-Improver wurden einzeln und
   über die dokumentierten Integrationstests geprüft. Die TUI-Modellauswahl und
-  Live-Laden des Plugins und dessen Tool-Aufruf in der Desktop-App stehen
-  beim nächsten echten Auftrag noch aus; die aktive ID wird automatisch übergeben.
+  Modellauswahl und End-to-End-Coding bleiben beim nächsten echten Auftrag zu prüfen.
+  Plugin-Ladung und Tool-Ausführung sind inzwischen im echten Server 2.0.19
+  geprüft; die aktive ID wird automatisch übergeben.
 - Usage endet am Finish-Snapshot. Laufende Inference-Schritte und die danach
   gesendete Abschlussantwort sind nicht vollständig enthalten. Requests zählt
   abgeschlossene Inference-Schritte, nicht garantiert alle HTTP-Versuche.
@@ -117,28 +118,44 @@ Arbeitsverzeichnis ist eine separate Voraussetzung.
 
 `plugins/workflow-usage.js` stellt jetzt `workflow_usage_snapshot` bereit.
 Das Tool erhält die tatsächliche Session-ID aus OpenCodes Tool-Kontext und
-verwendet den von OpenCode bereitgestellten SDK-Client einschließlich dessen
-aktiver Server-Verbindung und Authentifizierung. Vor Begin und Finish werden
+verwendet in V1 den bereitgestellten SDK-Client. In V2 registriert der
+Default-Export mit `id/setup` das Tool über `ctx.tool.transform`; die öffentliche
+Client-Abhängigkeit 2.0.19 liest den vollständigen Export. Dienstregistrierung,
+Version und Prozess-ID bestätigen, dass genau der aktive Server angesprochen
+wird. `session.context` wird wegen fehlender Nachrichten vor Komprimierungen
+nicht als Export-Ersatz verwendet. Vor Begin und Finish werden
 getrennte bereinigte Exporte geschrieben; das bestehende Python-Usage-Modul
 validiert Sitzung, Projekt, Frische und Messzeitpunkt. Es gibt keine Suche nach
 der neuesten Sitzung, keine öffentliche Freigabe und kein zusätzliches
-fachliches Modul. Das bestehende NPM-Paket wird jetzt tatsächlich verwendet.
+fachliches Modul. Die Sperrdatei enthält den zusätzlich benötigten V2-Client.
 
-Die zusätzlichen Prüfungen verwenden das echte Plugin und OpenCode-SDK
-**1.18.32** mit einem kontrollierten HTTP-Transport, keine Modellanfragen:
-**7 Node-Tests erfolgreich**, einschließlich Server-/Auth-Erhalt, 151 Messages
+Die zusätzlichen Prüfungen verwenden das echte Plugin und die Clients
+**1.18.32 / 2.0.19** mit einem kontrollierten HTTP-Transport, keine Modellanfragen:
+**11 Node-Tests erfolgreich**, einschließlich Server-/Auth-Erhalt, 151 Messages
 ohne künstliches Limit, konkurrierenden Sessions, Temp-Dateien, fehlenden
-Sitzungen und Entfernung von Text-/Credential-Daten. Die Python-Suite prüft
+Sitzungen, falschen Serverprozessen, V2-Komprimierungen und Entfernung von
+Text-/Credential-Daten. **54 Python-Tests erfolgreich**. Die Python-Suite prüft
 auch einen vollständigen Complete-Lifecycle mit zwei SDK-Snapshots, einem
 echten temporären Git-Repository und gemockten Maven-/Prompt-Aufrufen.
-Damit ist nicht behauptet, dass vier verschiedene Oberflächen live gestartet
-wurden. Der nächste Desktop-Auftrag ist die noch ausstehende Live-Prüfung.
+Ein isolierter echter Server **2.0.19** hat das lokale `.js`-Plugin geladen,
+das registrierte Tool ausgeführt und dessen Session über den nativen Client
+exportiert. Die Session-ID stammt aus dem Command-/Tool-Aufrufkontext. Zusätzlich
+wurde der reale Desktop-Export mit 150 Assistant-Messages und einer Komprimierung
+durch den Adapter und den Python-Parser geprüft. Eine alte Nachricht hat keine
+Token-/Kostenwerte; solche Lücken bleiben unbekannt und werden nicht als 0 ergänzt.
+Kein
+Modell wurde angefragt; der produktive Desktop-Server wurde nicht verändert.
+Vier verschiedene Oberflächen und ein kompletter Coding-Lauf wurden damit
+nicht live getestet. Fehlende Komprimierungszeiten und V2-Retry-Verläufe bleiben
+unbekannt. Die gesamte Workflow-Dauer wird weiterhin separat gemessen.
 
 Zum Nachrüsten des bereits installierten Stands: README, `commands/start.md`,
 `.gitignore`, `scripts/workflow/usage.py`, `scripts/workflow/cli.py` und die
-Tests aktualisieren sowie `plugins/workflow-usage.js` und
-`scripts/workflow_usage_bridge.mjs` hinzufügen. OpenCode/Server neu starten,
-Änderungen vor dem Benchmark auf `main` committen und dann denselben
+Tests und beide NPM-Dateien aktualisieren sowie `plugins/workflow-usage.js` und
+`scripts/workflow_usage_bridge.mjs` hinzufügen.
+`npm --prefix .opencode ci` aus dem Projektroot ausführen, den tatsächlichen
+Desktop-Dienst mit dessen 2.0.19-Binary neu starten, Änderungen vor dem
+Benchmark auf `main` committen und dann denselben
 ConfigService-Auftrag neu senden. Die 22 Modell-Commands und der Katalog
 haben sich durch diesen Fix nicht verändert.
 

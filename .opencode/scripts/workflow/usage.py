@@ -73,19 +73,23 @@ def snapshot(data: dict, repo: Path, session_id: str | None = None,
             raise WorkflowError("Missing or duplicate assistant message ID in usage export.")
         parts = message.get("parts", [])
         steps = [part for part in parts if part.get("type") == "step-finish"]
-        completed = metadata.get("time", {}).get("completed") is not None
+        completed = metadata.get("completed", metadata.get("time", {}).get("completed") is not None)
         units = steps or ([metadata] if completed else [])
         values = [token_values(unit) for unit in units]
         result = {key: total(unit[key] for unit in values)
                   for key in (*TOKEN_FIELDS, "EstimatedCostUSD")}
         result["Requests"] = len(units)
-        result["RetryEvents"] = sum(part.get("type") == "retry" for part in parts)
+        result["RetryEvents"] = (number(metadata["retryEvents"]) if "retryEvents" in metadata
+                                 else sum(part.get("type") == "retry" for part in parts))
         reasoning = [part.get("time", {}) for part in parts if part.get("type") == "reasoning"]
         # Measure partial intervals at the snapshot boundary so a later completion
         # does not charge pre-begin reasoning time to this run.
         result["ReasoningSeconds"] = total(elapsed(t.get("start"), t.get("end", captured_ms)) for t in reasoning)
+        if not reasoning and result["Requests"] and result["ReasoningTokens"] != 0:
+            result["ReasoningSeconds"] = None
         timing = metadata.get("time", {})
-        result["InferenceSeconds"] = elapsed(timing.get("created"), timing.get("completed", captured_ms))
+        result["InferenceSeconds"] = elapsed(timing.get("created"),
+                                             timing.get("completed", None if completed else captured_ms))
         result["pending"] = not completed
         result["model"] = "/".join(str(metadata.get(key, "unknown")) for key in ("providerID", "modelID"))
         messages[message_id] = result
@@ -131,7 +135,7 @@ def difference(before: dict, after: dict) -> dict:
         delta = {}
         for key in VALUE_FIELDS:
             previous, latest = prior.get(key, 0), values[key]
-            if message_id in old and latest == previous:
+            if message_id in old and latest == previous and (latest is not None or values == prior):
                 delta[key] = 0
             elif previous is None or latest is None:
                 delta[key] = None
@@ -146,6 +150,6 @@ def difference(before: dict, after: dict) -> dict:
     result = {key: total(delta[key] for delta in deltas) for key in VALUE_FIELDS}
     result.update(SessionId=after["sessionId"], ActualModels=sorted(models),
                   PendingMessages=pending, CostSource="OpenCode estimate (USD), not an invoice",
-                  RequestDefinition="completed inference steps; transport retries may not be exposed",
+                  RequestDefinition="completed inference steps/messages including V2 compactions; transport retries may not be exposed",
                   Scope="session delta between begin and finish; excludes final response and external prompt provider")
     return result

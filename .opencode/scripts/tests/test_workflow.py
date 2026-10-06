@@ -460,12 +460,37 @@ class UsageCase(RepoCase):
         result = usage.difference(self.snap([msg]), self.snap([msg, assistant("msg_new")]))
         self.assertAlmostEqual(0.012, result["EstimatedCostUSD"])
 
+    def test_unknown_counters_on_changed_message_do_not_become_zero(self):
+        before = assistant(input_tokens=100)
+        after = assistant(input_tokens=101)
+        for msg in (before, after):
+            msg["info"]["retryEvents"] = None
+            msg["parts"][1]["cost"] = None
+        result = usage.difference(self.snap([before]), self.snap([after]))
+        self.assertEqual(1, result["InputTokens"])
+        self.assertIsNone(result["EstimatedCostUSD"])
+        self.assertIsNone(result["RetryEvents"])
+
     def test_usage_fallback_completed_assistant_and_explicit_zero_cost(self):
         msg = assistant(steps=False)
         msg["info"]["cost"] = 0
         result = usage.difference(self.snap([]), self.snap([msg]))
         self.assertEqual(1, result["Requests"])
         self.assertEqual(0, result["EstimatedCostUSD"])
+
+    def test_v2_completed_compaction_has_tokens_but_no_invented_duration(self):
+        msg = assistant(steps=False)
+        msg["info"]["completed"] = True
+        msg["info"]["retryEvents"] = None
+        msg["info"]["time"].pop("completed")
+        msg["parts"] = []
+        result = usage.difference(self.snap([]), self.snap([msg]))
+        self.assertEqual(1, result["Requests"])
+        self.assertEqual(100, result["InputTokens"])
+        self.assertEqual(0, result["PendingMessages"])
+        self.assertIsNone(result["InferenceSeconds"])
+        self.assertIsNone(result["RetryEvents"])
+        self.assertIsNone(result["ReasoningSeconds"])
 
     def test_usage_wrong_session_project_and_shape_rejected(self):
         for data in ({}, self.export() | {"info": {"id": "ses_other", "directory": str(self.repo)}},

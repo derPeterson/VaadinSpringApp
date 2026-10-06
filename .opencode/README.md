@@ -46,12 +46,30 @@ JDK-/Buildfehler werden nicht durch Versionswechsel oder Test-Skips umgangen.
 
 Für `usage` gehört außerdem `plugins/workflow-usage.js` mit
 `scripts/workflow_usage_bridge.mjs` zum installierten Stand. OpenCode lädt das
-lokale Plugin beim Start und installiert seine bereits vorhandene
-`@opencode-ai/plugin`-Abhängigkeit aus `package.json`. Nach dem Einspielen
+lokale Plugin beim Start. Die NPM-Abhängigkeiten gehören ebenfalls dazu:
+`@opencode/client` **2.0.19** für den Desktop-Server und die vorhandene
+V1-Abhängigkeit für CLI **1.18.32**. Aus dem Projektroot installieren:
+
+```powershell
+npm --prefix .opencode ci
+```
+
+Nach dem Einspielen
 OpenCode beziehungsweise dessen Server neu starten; ein laufender Chat lädt
 neue Plugin-Dateien nicht automatisch. Danach muss das Tool
-`workflow_usage_snapshot` verfügbar sein. Die Anbindung wurde gegen OpenCode
-**1.18.32** geprüft. Kein öffentlicher Share-Link ist erforderlich.
+`workflow_usage_snapshot` verfügbar sein. Die V2-Plugin-Ladung und der Tool-Aufruf
+wurden im echten Server **2.0.19** ohne Modellanfrage geprüft. Die V1-Anbindung
+wurde mit dem SDK **1.18.32** geprüft. Kein öffentlicher Share-Link ist erforderlich.
+
+Beim Windows-Desktop läuft der Hintergrunddienst auch nach dem Schließen des
+Fensters weiter. Diesen Dienst neu starten, anschließend die App erneut öffnen:
+
+```powershell
+& "$env:APPDATA/ai.opencode.desktop/cli/2.0.19/opencode-cli.exe" service restart
+& "$env:APPDATA/ai.opencode.desktop/cli/2.0.19/opencode-cli.exe" service status
+```
+
+Ein separat installiertes `opencode.cmd` kann eine andere Version verwenden.
 
 ## Aufruf in OpenCode
 
@@ -334,10 +352,31 @@ sind enthalten. CSV-Zahlen verwenden unabhängig von Windows-Locale einen Punkt.
 
 Im `/start`-Ablauf ist die Quelle das Plugin-Tool `workflow_usage_snapshot`.
 Es bekommt die echte Session-ID aus OpenCodes Tool-Kontext und liest die
-Sitzung über den SDK-Client des aktiven Servers. Desktop-App, Terminal,
-Browser und IDE verwenden damit denselben Weg. Ein separates lokales
+Sitzung über den SDK-Client des aktiven Servers. V1 verwendet den bereitgestellten
+Client. In **2.0.19** fehlt der vollständige Export im Plugin-Kontext; deshalb
+verwendet der Adapter den öffentlichen V2-Client und die Dienstregistrierung.
+Er prüft Serverversion und Prozess-ID gegen den Prozess, in dem das Plugin läuft.
+Ein fremder Server wird vor dem Export abgewiesen. Der vollständige Export
+enthält auch Nachrichten vor Komprimierungen; `session.context` wäre dafür zu kurz.
+Desktop-App, Terminal, Browser und IDE am selben Dienst verwenden denselben Weg. Ein separates lokales
 `opencode.cmd` muss die Sitzung nicht kennen. Es gibt keine Zuordnung anhand
 von Sitzungstiteln, der neuesten Sitzung oder einer manuell kopierten ID.
+
+Für einen eigenständigen V2-Server außerhalb des Hintergrunddienstes lässt sich
+seine lokale Adresse explizit als Plugin-Option konfigurieren. Auch dann muss
+die Prozess-ID passen. Beispiel in der Projektkonfiguration `opencode.json`:
+
+```json
+{
+  "plugins": [{
+    "package": "./.opencode/plugins/workflow-usage.js",
+    "options": { "serverUrl": "http://127.0.0.1:4096" }
+  }]
+}
+```
+
+Bestehende Konfiguration ergänzen; keine zweite Kopie des Plugins anlegen.
+Die Option richtet keinen Server ein und startet keinen neuen Dienst.
 
 Das Tool liefert `session_id` und `usage_export`. OpenCode übernimmt die ID
 in die Request-Datei und übergibt den Export mit `--usage-export` an `begin`.
@@ -357,19 +396,19 @@ Bei einem entfernten Server laufen Plugin und Python auf dessen Rechner;
 die von OpenCode ausgeführten Shell-Aufrufe müssen den Exportpfad lesen können.
 
 Für einen direkten Python-Aufruf außerhalb OpenCode bleiben explizite
-Session-Exporte mit `--usage-export` und `opencode export <exactSessionId>`
-verfügbar. Der CLI-Weg setzt voraus, dass diese Installation dieselbe Sitzung
-kennt. Globale `opencode stats` werden nicht als Ersatz verwendet.
+V1-Session-Exporte mit `--usage-export` und `opencode export <exactSessionId>`
+verfügbar. Der rohe V2-CLI-Export hat ein anderes Format; für V2 den bereinigten
+Plugin-Export verwenden. Globale `opencode stats` werden nicht als Ersatz verwendet.
 
 | Feld | Bedeutung |
 |---|---|
 | InputTokens / OutputTokens | Die normalisierten OpenCode-Zähler; keine zusätzliche Addition des Reasonings |
 | ReasoningTokens | Separater vom Provider/OpenCode gemeldeter Zähler |
 | CacheReadTokens / CacheWriteTokens | Cache-Zähler getrennt von ungecachtem Input |
-| Requests | Abgeschlossene `step-finish`-Inference-Schritte; bei älteren Exporten abgeschlossene Assistant-Messages |
-| RetryEvents | Im Export sichtbare Retry-Ereignisse; nicht garantierte Gesamtzahl aller HTTP-Versuche |
+| Requests | V1: abgeschlossene `step-finish`-Schritte oder Assistant-Messages; V2: abgeschlossene Assistant- und Komprimierungsanfragen |
+| RetryEvents | V1: sichtbare Retry-Ereignisse; V2: unbekannt, da kein vollständiger Retry-Verlauf exportiert wird |
 | ReasoningSeconds | Zeitspannen der gemeldeten Reasoning-Parts |
-| InferenceSeconds | Zeitspannen der Assistant-Messages, laufende Intervalle an der Snapshot-Grenze abgeschnitten; können Toolzeiten enthalten, keine garantierte reine API-Latenz |
+| InferenceSeconds | Gemeldete Message-Zeitspannen, laufende Intervalle an der Snapshot-Grenze abgeschnitten; können Toolzeiten enthalten. Für V2-Komprimierungen fehlt der Endzeitpunkt: unbekannt, keine erfundene Dauer |
 | EstimatedCostUSD | Summe von OpenCodes `cost`, dessen katalogbasierter Kostenschätzung |
 | ActualModels | Tatsächliche Provider-/Modell-IDs; mehrere Modelle bleiben sichtbar |
 | PendingMessages | Noch laufende Assistant-Messages am Ende des Snapshots |
@@ -386,6 +425,10 @@ abgeschlossene Inference-Schritte und die anschließende Abschlussantwort sind
 nicht vollständig enthalten. Die eigentliche CLI-Aufrufzahl ist nicht immer
 die Zahl der HTTP-Requests. Prompt-Improver-Aufrufe außerhalb OpenCode sind im
 Session-Export nicht enthalten; es gibt dafür keine vorgetäuschten Usage-Zahlen.
+Hilfsanfragen ohne exportierte Message, etwa Titelgenerierung, werden nicht
+gezählt. Liefert ein beim Begin laufender Request seine Zähler erst später,
+geht dessen gemeldeter Gesamtwert in das Delta ein; Tokens werden nicht anhand
+der Laufzeit aufgeteilt.
 Für einen Modellvergleich dieselben Module, Grenzen und Provider-Einstellungen
 verwenden. Kein Wechsel des Coding-Modells während eines forced-Laufs.
 
@@ -404,10 +447,11 @@ Metriken, Patch-/Findings-/CSV-Erhalt, Locking, Modellgenerator und Integration
 des existierenden Prompt-Improvers. Sie verbraucht keine Modellanfragen und
 startet keine Anwendung. Live-Provider-Smoke-Tests separat und bewusst ausführen.
 Die Node-Suite benötigt die in `.opencode/package.json` deklarierte
-Plugin-Abhängigkeit (Installation durch OpenCode oder `npm ci` in `.opencode`).
+NPM-Abhängigkeiten (`npm ci` in `.opencode`).
 Sie prüft das echte Plugin und SDK mit einem kontrollierten HTTP-Transport:
 aktiver Server und Authentifizierung, mehrere Sitzungen, vollständige
-Message-Liste, bereinigte Exporte und Fehlerpfade. Sie startet keine Modellanfrage.
+Message-Liste, V2-Registrierung und -Export, Serverprozess-Prüfung, Komprimierungen,
+bereinigte Exporte und Fehlerpfade. Sie startet keine Modellanfrage.
 Die konkreten Prüfungen und Grenzen dieser Migration stehen in `MIGRATION_REPORT.md`.
 
 ## Änderungen und bewusste Grenzen
@@ -426,8 +470,8 @@ Die konkreten Prüfungen und Grenzen dieser Migration stehen in `MIGRATION_REPOR
   früher genannten Refresh-Lock-, Re-Login-, `response.incomplete`- und
   Keyring-Chunk-Aufräumpunkte bleiben für später; der Workflow-Store-Lock ist
   kein globaler OAuth-Refresh-Lock für unterschiedliche Projekte/Prozesse.
-- `package.json` / `package-lock.json` erhalten. Die vorhandene OpenCode-
-  Abhängigkeit wird nun für die kleine SDK-Anbindung des Usage-Moduls genutzt.
+- `package.json` / `package-lock.json` aktualisiert: V2-Client **2.0.19** ergänzt,
+  vorhandene V1-Abhängigkeit erhalten und JavaScript als ESM deklariert.
   Benchmark, Lifecycle und Prompt-Integration bleiben Python.
 - Keine Reviewer-, RAG- oder sonstigen fachlichen Module hinzugefügt.
 
@@ -438,4 +482,7 @@ Die konkreten Prüfungen und Grenzen dieser Migration stehen in `MIGRATION_REPOR
 [Lokale Plugins und Tool-Kontext](https://opencode.ai/docs/plugins/),
 [Exportstruktur](https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/cli/cmd/export.ts),
 [Usage-Zähler im Session-Schema](https://github.com/anomalyco/opencode/blob/dev/packages/schema/src/v1/session.ts).
-Das Exportformat wurde zusätzlich gegen die installierte Version 1.18.32 geprüft.
+[V2-Plugin-Migration](https://opencode.ai/v2/docs/build/plugins/migrate-v1),
+[V2-Client](https://opencode.ai/v2/docs/build/client),
+[V2-API](https://opencode.ai/v2/docs/api).
+Die installierten Versionen 1.18.32 und 2.0.19 wurden getrennt geprüft.
