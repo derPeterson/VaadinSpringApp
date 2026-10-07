@@ -13,6 +13,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.AccessLevel;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.OptimisticLock;
 
@@ -71,6 +73,12 @@ public class UserEntity {
     @Builder.Default
     private boolean enabled = false;
 
+    /** Only a new, still-pending registration may be activated by an email link. */
+    @Column(name = "verification_pending", nullable = false)
+    @Builder.Default
+    @Setter(AccessLevel.NONE)
+    private boolean verificationPending = true;
+
     @Column(nullable = false)
     @Builder.Default
     private Locale preferredLocale = CustomI18NProvider.getCurrentLocale();
@@ -102,11 +110,20 @@ public class UserEntity {
         this.email = EmailIdentity.canonicalize(email);
     }
 
+    /** Explicit account decisions (including admin disable) end link-based activation. */
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        this.verificationPending = false;
+    }
+
     @PrePersist
     @PreUpdate
     private void canonicalizeEmail() {
         // Lombok builders and JPA field access do not invoke the setter.
         email = EmailIdentity.canonicalize(email);
+        if (enabled) {
+            verificationPending = false;
+        }
     }
 
     public void setAutomaticStatus(UserStatus newStatus) {

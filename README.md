@@ -72,6 +72,7 @@ H2 speichert standardmäßig unter `data/appdb`; Hibernate aktualisiert das Sche
 
 Für bestehende Datenbanken ist vor dem Deployment die [Anleitung zur Benutzer-Versionierung](docs/user-version-migration.md) zu beachten. Bei einer Neuinstallation mit leerer Datenbank ist keine Bestandsmigration erforderlich.
 Zusätzlich müssen bei bestehenden Datenbanken die [E-Mail-Identität und Löschkaskaden](docs/user-identity-migration.md) vor dem Deployment migriert und geprüft werden; diese Bestandsmigration wird nicht automatisch ausgeführt.
+Für die Absicherung von Verifikation und Adminsperren ist außerdem die [Migration des Verifikationsstatus](docs/verification-state-migration.md) vor dem Deployment erforderlich; auch sie wird nicht automatisch ausgeführt.
 
 ## Start und Build
 

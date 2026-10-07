@@ -45,7 +45,19 @@ public class VerificationService {
 
     @Transactional
     public String createToken(UserEntity user) {
-        setInactiveTokensForUser(user);
+        UserEntity stored = userRepository.lockVerificationUser(user.getId()).orElseThrow(
+                () -> new IllegalStateException("Der Benutzer ist nicht mehr vorhanden."));
+        if (!canVerify(stored)) {
+            throw new IllegalStateException("Das Konto kann nicht per Verifikationslink aktiviert werden.");
+        }
+        if (emailQueueService.hasOpenEmailForUserAndType(stored, EmailType.VERIFICATION)) {
+            throw new IllegalStateException("Eine Verifikationsmail ist bereits in Bearbeitung.");
+        }
+        return createTokenLocked(stored);
+    }
+
+    private String createTokenLocked(UserEntity user) {
+        invalidateTokensLocked(user);
 
         String token = UUID.randomUUID().toString();
         VerificationTokenEntity verificationToken = new VerificationTokenEntity();
@@ -57,15 +69,30 @@ public class VerificationService {
         return token;
     }
 
+    @Transactional
     public void setTokenStatus(String token, TokenStatus status) {
-        tokenRepository.findByToken(token).ifPresent(tokenEntity -> {
-            tokenEntity.setStatus(status);
-            tokenRepository.save(tokenEntity);
-        });
+        if (status == null || status == TokenStatus.ACTIVE) {
+            throw new IllegalArgumentException("Tokens dürfen nicht reaktiviert werden.");
+        }
+        Optional<Long> userId = tokenRepository.findUserIdByToken(token);
+        if (userId.isEmpty() || userRepository.lockVerificationUser(userId.get()).isEmpty()) {
+            return;
+        }
+        var active = tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
+        if (active.isPresent()) {
+            active.get().setStatus(status);
+            tokenRepository.save(active.get());
+        } else if (tokenRepository.findByToken(token).filter(value -> value.getStatus() != status).isPresent()) {
+            throw new IllegalStateException("Der Token ist bereits abgeschlossen.");
+        }
     }
 
     @Transactional
     public void setInactiveTokensForUser(UserEntity user) {
+        userRepository.lockVerificationUser(user.getId()).ifPresent(this::invalidateTokensLocked);
+    }
+
+    private void invalidateTokensLocked(UserEntity user) {
         tokenRepository.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE).forEach(token -> {
             token.setStatus(TokenStatus.INACTIVE);
             tokenRepository.save(token);
@@ -74,27 +101,38 @@ public class VerificationService {
 
     @Transactional
     public boolean validateToken(String token) {
+        Optional<Long> userId = tokenRepository.findUserIdByToken(token);
+        if (userId.isEmpty()) {
+            return false;
+        }
+        UserEntity user = userRepository.lockVerificationUser(userId.get()).orElse(null);
+        if (user == null) {
+            return false;
+        }
         Optional<VerificationTokenEntity> tokenEntity = tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
         if (tokenEntity.isPresent() && tokenEntity.get().getExpiryDate().isBefore(LocalDateTime.now())) {
-            setTokenStatus(token, TokenStatus.EXPIRED);
+            tokenEntity.get().setStatus(TokenStatus.EXPIRED);
+            tokenRepository.save(tokenEntity.get());
             return false;
         }
         if (tokenEntity.isPresent() && tokenEntity.get().getStatus() == TokenStatus.INACTIVE) {
             return false;
         }
-        if (tokenEntity.isPresent() && tokenEntity.get().getUserEntity().isEnabled()) {
+        if (tokenEntity.isPresent() && !canVerify(user)) {
             return false;
         }
 
         if (tokenEntity.isPresent()) {
-            UserEntity user = tokenEntity.get().getUserEntity();
             user.setEnabled(true);
             userRepository.save(user);
-            setTokenStatus(token, TokenStatus.USED);
+            tokenEntity.get().setStatus(TokenStatus.USED);
+            tokenRepository.save(tokenEntity.get());
             return true;
         }
 
-        return false;
+        // Idempotent success only for a consumed link and a still-enabled account.
+        // No catch: unrelated persistence/locking errors must remain visible.
+        return user.isEnabled() && tokenRepository.findByTokenAndStatus(token, TokenStatus.USED).isPresent();
     }
 
     @Transactional
@@ -104,24 +142,18 @@ public class VerificationService {
 
     @Transactional
     public int deleteToken(String token) {
+        Optional<Long> userId = tokenRepository.findUserIdByToken(token);
+        if (userId.isEmpty() || userRepository.lockVerificationUser(userId.get()).isEmpty()) {
+            return 0;
+        }
         return tokenRepository.deleteByToken(token);
     }
 
     @Transactional(rollbackFor = IOException.class)
     public boolean sendVerificationEmailByToken(String token) throws IOException {
-        Optional<VerificationTokenEntity> tokenOptional = tokenRepository.findByToken(token);
-        if (tokenOptional.isPresent()) {
-            UserEntity user = tokenOptional.get().getUserEntity();
-            if (!user.isEnabled()) {
-                if (emailQueueService.hasOpenEmailForUserAndType(user, EmailType.VERIFICATION)) {
-                    logger.warn("⚠️ Verification email for {} is already queued or in progress. Duplicate request skipped.", user.getEmail());
-                    return true;
-                }
-
-                String newToken = createToken(user);
-                sendVerificationEmail(user, newToken);
-                return true;
-            }
+        Optional<Long> userId = tokenRepository.findUserIdByToken(token);
+        if (userId.isPresent()) {
+            return sendVerificationEmailByUserId(userId.get());
         }
         return false;
     }
@@ -130,30 +162,29 @@ public class VerificationService {
     public boolean sendVerificationEmailByEmail(String email) throws IOException {
         Optional<UserEntity> userOptional = userRepository.findByEmail(email);
         if (userOptional.isPresent()) {
-            UserEntity user = userOptional.get();
-            if (!user.isEnabled()) {
-                if (emailQueueService.hasOpenEmailForUserAndType(user, EmailType.VERIFICATION)) {
-                    logger.warn("⚠️ Verification email for {} is already queued or in progress. Duplicate request skipped.", user.getEmail());
-                    return true;
-                }
-
-                String newToken = createToken(user);
-                sendVerificationEmail(user, newToken);
-                return true;
-            }
+            return sendVerificationEmailByUserId(userOptional.get().getId());
         }
         return false;
     }
 
     @Transactional(rollbackFor = IOException.class)
     public boolean sendVerificationEmailByUser(UserEntity user) throws IOException {
-        if (!user.isEnabled()) {
+        return user != null && user.getId() != null && sendVerificationEmailByUserId(user.getId());
+    }
+
+    private boolean canVerify(UserEntity user) {
+        return !user.isEnabled() && user.isVerificationPending();
+    }
+
+    private boolean sendVerificationEmailByUserId(Long id) throws IOException {
+        UserEntity user = userRepository.lockVerificationUser(id).orElse(null);
+        if (user != null && canVerify(user)) {
             if (emailQueueService.hasOpenEmailForUserAndType(user, EmailType.VERIFICATION)) {
                 logger.warn("⚠️ Verification email for {} is already queued or in progress. Duplicate request skipped.", user.getEmail());
                 return true;
             }
 
-            String newToken = createToken(user);
+            String newToken = createTokenLocked(user);
             sendVerificationEmail(user, newToken);
             return true;
         }

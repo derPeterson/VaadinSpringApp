@@ -6,6 +6,7 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.EmailStatus;
 import de.derpeterson.app.model.enums.EmailType;
 import de.derpeterson.app.repository.EmailQueueRepository;
+import de.derpeterson.app.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -32,6 +33,7 @@ public class EmailQueueService {
 
     private final EmailQueueRepository emailQueueRepository;
     private final EmailService emailService;
+    private final UserRepository userRepository;
 
     public boolean hasOpenEmailForUserAndType(UserEntity userEntity, EmailType emailType) {
         return emailQueueRepository.existsByUserEntityAndEmailTypeAndStatusIn(userEntity, emailType, OPEN_STATUSES);
@@ -39,6 +41,11 @@ public class EmailQueueService {
 
     @Transactional
     public void addEmailToQueue(UserEntity userEntity, String subject, String body, EmailType emailType) {
+        userEntity = userRepository.lockVerificationUser(userEntity.getId()).orElseThrow(
+                () -> new IllegalStateException("Der Benutzer ist nicht mehr vorhanden."));
+        if (emailType == EmailType.VERIFICATION && (userEntity.isEnabled() || !userEntity.isVerificationPending())) {
+            return;
+        }
         if (hasOpenEmailForUserAndType(userEntity, emailType)) {
             logger.warn("⚠️ Email for {} with type {} is already queued or in progress. Duplicate request skipped.",
                     userEntity.getEmail(), emailType);

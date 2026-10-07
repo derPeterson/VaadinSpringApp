@@ -23,7 +23,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.jpa.JpaTransactionManager;
@@ -71,7 +70,7 @@ class VerificationServicePersistenceTest {
 
     @BeforeEach
     void setUp() {
-        reset(probes.tokens(), probes.config(), probes.queue());
+        reset(probes.tokens(), probes.config(), probes.queue(), probes.users());
         when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("PT1H");
         when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn("P7D");
         when(probes.config().getString(ConfigEntry.SERVICE_NAME)).thenReturn("Test Service");
@@ -93,7 +92,7 @@ class VerificationServicePersistenceTest {
         assertTrue(service.validateToken("valid"));
         assertTrue(users.findById(userId).orElseThrow().isEnabled());
         assertEquals(TokenStatus.USED, status("valid"));
-        assertFalse(service.validateToken("valid"));
+        assertTrue(service.validateToken("valid"));
         transaction.executeWithoutResult(tx -> users.findById(userId).orElseThrow().setEnabled(false));
         assertFalse(service.validateToken("valid"));
         assertFalse(users.findById(userId).orElseThrow().isEnabled());
@@ -284,37 +283,34 @@ class VerificationServicePersistenceTest {
     }
 
     @Test
-    void findingConcurrentCreationCanCommitTwoActiveTokensForTheSameAccount() throws Exception {
+    void concurrentCreationCommitsExactlyOneActiveTokenForTheSameAccount() throws Exception {
         var bothRead = new CyclicBarrier(2);
         doAnswer(call -> {
-            var found = tokens.findAllByUserEntityAndStatus(call.getArgument(0), call.getArgument(1));
-            assertTrue(found.isEmpty());
             bothRead.await(10, TimeUnit.SECONDS);
-            return found;
-        }).when(probes.tokens()).findAllByUserEntityAndStatus(any(), eq(TokenStatus.ACTIVE));
+            return users.lockVerificationUser(call.getArgument(0));
+        }).when(probes.users()).lockVerificationUser(userId);
         UserEntity user = detachedUser();
         var values = race(() -> service.createToken(user));
         assertInstanceOf(String.class, values.get(0));
         assertInstanceOf(String.class, values.get(1));
         assertNotEquals(values.get(0), values.get(1));
-        assertEquals(2, activeCount());
+        assertEquals(1, activeCount());
         assertEquals(2, tokens.count());
     }
 
     @Test
-    void concurrentValidationHasOneCommittedWinnerAndOneOptimisticLockFailure() throws Exception {
+    void concurrentValidationIsIdempotentWithoutHidingTechnicalFailures() throws Exception {
         seed("shared", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        Long originalVersion = users.findById(userId).orElseThrow().getVersion();
         var bothRead = new CyclicBarrier(2);
         doAnswer(call -> {
-            var found = tokens.findByTokenAndStatus(call.getArgument(0), call.getArgument(1));
-            assertFalse(found.orElseThrow().getUserEntity().isEnabled());
             bothRead.await(10, TimeUnit.SECONDS);
-            return found;
-        }).when(probes.tokens()).findByTokenAndStatus("shared", TokenStatus.ACTIVE);
+            return users.lockVerificationUser(call.getArgument(0));
+        }).when(probes.users()).lockVerificationUser(userId);
         var results = race(() -> service.validateToken("shared"));
-        assertEquals(1, results.stream().filter(Boolean.TRUE::equals).count());
-        assertEquals(1, results.stream().filter(OptimisticLockingFailureException.class::isInstance).count());
+        assertEquals(List.of(true, true), results);
         assertTrue(users.findById(userId).orElseThrow().isEnabled());
+        assertEquals(originalVersion + 1, users.findById(userId).orElseThrow().getVersion());
         assertEquals(TokenStatus.USED, status("shared"));
     }
 
@@ -360,7 +356,7 @@ class VerificationServicePersistenceTest {
                 users.findById(userId).orElseThrow(), TokenStatus.ACTIVE).size());
     }
 
-    record Probes(VerificationTokenRepository tokens, ConfigService config, EmailQueueService queue) {
+    record Probes(VerificationTokenRepository tokens, ConfigService config, EmailQueueService queue, UserRepository users) {
     }
 
     @Configuration
@@ -393,16 +389,16 @@ class VerificationServicePersistenceTest {
         }
 
         @Bean
-        Probes probes(VerificationTokenRepository tokens) {
+        Probes probes(VerificationTokenRepository tokens, UserRepository users) {
             return new Probes(mock(VerificationTokenRepository.class, delegatesTo(tokens)),
-                    mock(ConfigService.class), mock(EmailQueueService.class));
+                    mock(ConfigService.class), mock(EmailQueueService.class), mock(UserRepository.class, delegatesTo(users)));
         }
 
         @Bean
         VerificationService verificationService(Probes probes, UserRepository users) {
             var messages = mock(MessageProperties.class);
             when(messages.getEmailVerificationSubject()).thenReturn("Verify account");
-            return new VerificationService(messages, probes.tokens(), users, probes.config(), probes.queue());
+            return new VerificationService(messages, probes.tokens(), probes.users(), probes.config(), probes.queue());
         }
     }
 }

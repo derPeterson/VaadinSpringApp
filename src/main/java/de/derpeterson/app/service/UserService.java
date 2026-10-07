@@ -172,7 +172,7 @@ public class UserService {
         Assert.notNull(edited, "Entity must not be null");
         Assert.notNull(edited.getId(), "User ID must not be null");
         List<Long> admins = lockAndReadAdmins();
-        UserEntity stored = userRepository.findById(edited.getId()).orElseThrow(
+        UserEntity stored = userRepository.findByIdForUpdate(edited.getId()).orElseThrow(
                 () -> new OptimisticLockingFailureException("Der Benutzer wurde inzwischen gelöscht."));
         if (expectedVersion == null || !Objects.equals(expectedVersion, stored.getVersion())) {
             throw new OptimisticLockingFailureException("Der Benutzer wurde inzwischen geändert. Bitte das Formular neu öffnen und die Änderungen prüfen.");

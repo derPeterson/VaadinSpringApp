@@ -53,6 +53,8 @@ class VerificationServiceTest {
         service = new VerificationService(messages, tokens, users, config, queue);
         user = UserEntity.builder().id(1L).firstName("Test").lastName("User")
                 .email("test@example.com").preferredLocale(Locale.ENGLISH).build();
+        lenient().when(users.lockVerificationUser(1L)).thenReturn(Optional.of(user));
+        lenient().when(tokens.findUserIdByToken("token")).thenReturn(Optional.of(1L));
     }
 
     @Test
@@ -77,7 +79,9 @@ class VerificationServiceTest {
         assertEquals(TokenStatus.ACTIVE, created.getStatus());
         assertFalse(created.getExpiryDate().isBefore(before));
         assertFalse(created.getExpiryDate().isAfter(after));
-        verifyNoInteractions(users, queue);
+        verify(users, never()).save(any());
+        verify(queue).hasOpenEmailForUserAndType(user, EmailType.VERIFICATION);
+        verify(queue, never()).addEmailToQueue(any(), any(), any(), any());
     }
 
     @Test
@@ -93,7 +97,6 @@ class VerificationServiceTest {
         LocalDateTime now = LocalDateTime.of(2026, 10, 7, 12, 0);
         var entity = token(TokenStatus.ACTIVE, now.plusNanos(offsetNanos));
         when(tokens.findByTokenAndStatus("token", TokenStatus.ACTIVE)).thenReturn(Optional.of(entity));
-        when(tokens.findByToken("token")).thenReturn(Optional.of(entity));
         try (var clock = mockStatic(LocalDateTime.class)) {
             clock.when(LocalDateTime::now).thenReturn(now);
 
@@ -110,7 +113,7 @@ class VerificationServiceTest {
     @ValueSource(strings = {"unknown", "   "})
     void unknownOrEmptyTokenIsRejectedWithoutWrites(String value) {
         assertFalse(service.validateToken(value));
-        verify(tokens).findByTokenAndStatus(value, TokenStatus.ACTIVE);
+        verify(tokens).findUserIdByToken(value);
         verify(tokens, never()).save(any());
         verifyNoInteractions(users, queue);
     }
@@ -123,18 +126,28 @@ class VerificationServiceTest {
 
         assertFalse(service.validateToken("token"));
         assertEquals(TokenStatus.ACTIVE, entity.getStatus());
-        verifyNoInteractions(users);
+        verify(users, never()).save(any());
         verify(tokens, never()).save(any());
     }
 
     @ParameterizedTest
-    @EnumSource(TokenStatus.class)
-    void statusSetterPersistsRequestedStatusWithoutTransitionRestrictions(TokenStatus status) {
-        var entity = token(TokenStatus.USED, LocalDateTime.now().plusDays(1));
-        when(tokens.findByToken("token")).thenReturn(Optional.of(entity));
+    @EnumSource(value = TokenStatus.class, names = {"INACTIVE", "USED", "EXPIRED"})
+    void statusSetterOnlyCompletesActiveTokens(TokenStatus status) {
+        var entity = token(TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        when(tokens.findByTokenAndStatus("token", TokenStatus.ACTIVE)).thenReturn(Optional.of(entity));
         service.setTokenStatus("token", status);
         assertEquals(status, entity.getStatus());
         verify(tokens).save(entity);
+    }
+
+    @Test
+    void statusSetterCannotReactivateOrRewriteCompletedTokens() {
+        assertThrows(IllegalArgumentException.class, () -> service.setTokenStatus("token", TokenStatus.ACTIVE));
+        var entity = token(TokenStatus.USED, LocalDateTime.now().plusDays(1));
+        when(tokens.findByToken("token")).thenReturn(Optional.of(entity));
+        assertThrows(IllegalStateException.class, () -> service.setTokenStatus("token", TokenStatus.INACTIVE));
+        service.setTokenStatus("token", TokenStatus.USED);
+        verify(tokens, never()).save(any());
     }
 
     @Test
@@ -212,6 +225,9 @@ class VerificationServiceTest {
     @ParameterizedTest
     @ValueSource(strings = {"token", "email"})
     void resendForUnknownTokenOrEmailIsRejected(String entry) throws IOException {
+        if (entry.equals("token")) {
+            when(tokens.findUserIdByToken("token")).thenReturn(Optional.empty());
+        }
         assertFalse(resend(entry));
         verifyNoInteractions(queue, config);
     }
@@ -233,7 +249,7 @@ class VerificationServiceTest {
 
     private void prepareResend(String entry) {
         if (entry.equals("token")) {
-            when(tokens.findByToken("token")).thenReturn(Optional.of(token(TokenStatus.EXPIRED, LocalDateTime.now().minusDays(1))));
+            // Scalar reference from the fixture; account state is checked under its lock.
         } else if (entry.equals("email")) {
             when(users.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
         }

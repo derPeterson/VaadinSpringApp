@@ -73,7 +73,7 @@ class UserInputValidationTest {
         UserEntity edited = user();
         edited.setFirstName("Attempted edit");
         invalidate(edited, field);
-        when(repository.findById(1L)).thenReturn(Optional.of(stored));
+        when(repository.findByIdForUpdate(1L)).thenReturn(Optional.of(stored));
         assertThrows(IllegalArgumentException.class, () -> service.updateAdminUser(edited, 2L, "Password!"));
         assertEquals("Test", stored.getFirstName());
         assertEquals("old-hash", stored.getPassword());
@@ -100,7 +100,7 @@ class UserInputValidationTest {
         UserEntity stored = user();
         UserEntity edited = user();
         edited.setFirstName("Attempted edit");
-        when(repository.findById(1L)).thenReturn(Optional.of(stored));
+        when(repository.findByIdForUpdate(1L)).thenReturn(Optional.of(stored));
         assertThrows(IllegalArgumentException.class, () -> service.updateAdminUser(edited, 2L, "weak"));
         assertEquals("Test", stored.getFirstName());
         verify(repository, never()).saveAndFlush(any());

@@ -5,6 +5,8 @@ import de.derpeterson.app.model.VerificationTokenEntity;
 import de.derpeterson.app.model.enums.TokenStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,6 +14,9 @@ import java.util.Optional;
 
 @Repository
 public interface VerificationTokenRepository extends JpaRepository<VerificationTokenEntity, Long> {
+
+    @Query("select t.userEntity.id from VerificationTokenEntity t where t.token = :token")
+    Optional<Long> findUserIdByToken(@Param("token") String token);
 
     Optional<VerificationTokenEntity> findByToken(String token);
 

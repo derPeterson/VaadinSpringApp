@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface UserRepository extends JpaRepository<UserEntity, Long> {
+public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLockRepository {
 
     default Optional<UserEntity> findByEmail(String email) {
         return findByCanonicalEmail(EmailIdentity.canonicalize(email));
@@ -74,6 +74,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from UserEntity u where u.id = :id")
+    @QueryHints(@QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
     Optional<UserEntity> findByIdForUpdate(@Param("id") Long id);
 
     // Bulk update deliberately bypasses entity version checks/increments. Flush any
