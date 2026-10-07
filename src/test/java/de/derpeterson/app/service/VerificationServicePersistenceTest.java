@@ -35,8 +35,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
@@ -56,6 +59,7 @@ import static org.mockito.Mockito.*;
 @Execution(ExecutionMode.SAME_THREAD)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class VerificationServicePersistenceTest {
+    private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-07T12:00:00Z"), ZoneOffset.UTC);
     @Autowired
     private VerificationService service;
     @Autowired
@@ -88,7 +92,7 @@ class VerificationServicePersistenceTest {
 
     @Test
     void activationAndConsumptionCommitTogetherAndUsedTokenCannotReactivateDisabledAccount() {
-        seed("valid", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        seed("valid", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
         assertTrue(service.validateToken("valid"));
         assertTrue(users.findById(userId).orElseThrow().isEnabled());
         assertEquals(TokenStatus.USED, status("valid"));
@@ -101,7 +105,7 @@ class VerificationServicePersistenceTest {
     @ParameterizedTest
     @EnumSource(value = TokenStatus.class, names = {"INACTIVE", "USED", "EXPIRED"})
     void nonActiveTokensExistButCannotActivateAccounts(TokenStatus tokenStatus) {
-        seed("rejected", tokenStatus, LocalDateTime.now().plusDays(1));
+        seed("rejected", tokenStatus, LocalDateTime.now(CLOCK).plusDays(1));
         assertTrue(service.existsToken("rejected"));
         assertFalse(service.validateToken("rejected"));
         assertFalse(users.findById(userId).orElseThrow().isEnabled());
@@ -110,7 +114,7 @@ class VerificationServicePersistenceTest {
 
     @Test
     void expiredActiveTokenIsPersistentlyMarkedExpiredWithoutEnablingAccount() {
-        seed("expired", TokenStatus.ACTIVE, LocalDateTime.now().minusDays(1));
+        seed("expired", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).minusDays(1));
         assertFalse(service.validateToken("expired"));
         assertEquals(TokenStatus.EXPIRED, status("expired"));
         assertFalse(users.findById(userId).orElseThrow().isEnabled());
@@ -118,9 +122,9 @@ class VerificationServicePersistenceTest {
 
     @Test
     void sequentialCreationInvalidatesOnlyActiveTokens() {
-        seed("inactive", TokenStatus.INACTIVE, LocalDateTime.now().plusDays(1));
-        seed("used", TokenStatus.USED, LocalDateTime.now().plusDays(1));
-        seed("expired", TokenStatus.EXPIRED, LocalDateTime.now().minusDays(1));
+        seed("inactive", TokenStatus.INACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+        seed("used", TokenStatus.USED, LocalDateTime.now(CLOCK).plusDays(1));
+        seed("expired", TokenStatus.EXPIRED, LocalDateTime.now(CLOCK).minusDays(1));
         String first = service.createToken(detachedUser());
         String second = service.createToken(detachedUser());
         assertNotEquals(first, second);
@@ -135,7 +139,7 @@ class VerificationServicePersistenceTest {
 
     @Test
     void invalidDurationRollsBackInvalidationOfExistingToken() {
-        seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
         when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("invalid");
         assertThrows(DateTimeParseException.class, () -> service.createToken(detachedUser()));
         assertEquals(TokenStatus.ACTIVE, status("old"));
@@ -143,25 +147,37 @@ class VerificationServicePersistenceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"PT0S", "-PT1H"})
-    void nonPositiveConfiguredLifetimeCreatesAnImmediatelyUnusableToken(String lifetime) {
+    @CsvSource({"create,PT0S", "create,-PT1H", "token,PT0S", "token,-PT1H",
+            "email,PT0S", "email,-PT1H", "user,PT0S", "user,-PT1H"})
+    void nonPositiveConfiguredLifetimePreservesExistingTokenAndDoesNotQueue(String entry, String lifetime) {
+        seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
         when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn(lifetime);
-        LocalDateTime now = LocalDateTime.of(2026, 10, 7, 12, 0);
-        LocalDateTime later = now.plusSeconds(1);
-        try (var clock = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
-            clock.when(LocalDateTime::now).thenReturn(now);
-            String value = service.createToken(detachedUser());
-            assertEquals(TokenStatus.ACTIVE, status(value));
-            clock.when(LocalDateTime::now).thenReturn(later);
-            assertFalse(service.validateToken(value));
-            assertEquals(TokenStatus.EXPIRED, status(value));
-        }
+        assertThrows(IllegalArgumentException.class, () -> {
+            if (entry.equals("create")) {
+                service.createToken(detachedUser());
+            } else {
+                resend(entry);
+            }
+        });
+        assertEquals(TokenStatus.ACTIVE, status("old"));
+        assertEquals(1, tokens.count());
         assertFalse(users.findById(userId).orElseThrow().isEnabled());
+        verify(probes.tokens(), never()).save(any());
+        verify(probes.queue(), never()).addEmailToQueue(any(), any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {-1, 0, 1})
+    void expirationBoundaryIsPersistedWithoutActivatingExpiredAccounts(long seconds) {
+        seed("boundary", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusSeconds(seconds));
+        assertEquals(seconds > 0, service.validateToken("boundary"));
+        assertEquals(seconds > 0 ? TokenStatus.USED : TokenStatus.EXPIRED, status("boundary"));
+        assertEquals(seconds > 0, users.findById(userId).orElseThrow().isEnabled());
     }
 
     @Test
     void emailResendUsesCanonicalIdentityAndCommitsRotationWithoutActivatingAccount() throws IOException {
-        seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
         try (var locale = mockStatic(CustomI18NProvider.class)) {
             locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.GERMAN);
             assertTrue(service.sendVerificationEmailByEmail("  TEST@EXAMPLE.COM  "));
@@ -176,7 +192,7 @@ class VerificationServicePersistenceTest {
 
     @Test
     void enabledAccountRejectsValidationButLeavesTheUnusedTokenActive() {
-        seed("unused", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        seed("unused", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
         transaction.executeWithoutResult(tx -> users.findById(userId).orElseThrow().setEnabled(true));
         assertFalse(service.validateToken("unused"));
         assertEquals(TokenStatus.ACTIVE, status("unused"));
@@ -185,7 +201,7 @@ class VerificationServicePersistenceTest {
 
     @Test
     void failureSavingUsedStatusRollsBackAccountActivationEvenAfterFlush() {
-        seed("valid", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        seed("valid", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
         doAnswer(call -> {
             var entity = (VerificationTokenEntity) call.getArgument(0);
             if (entity.getStatus() == TokenStatus.USED) {
@@ -202,7 +218,7 @@ class VerificationServicePersistenceTest {
     @ParameterizedTest
     @ValueSource(strings = {"token", "email", "user"})
     void queueRuntimeFailureRollsBackTokenRotation(String entry) {
-        seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
         doThrow(new IllegalStateException("simulated queue failure")).when(probes.queue())
                 .addEmailToQueue(any(), any(), any(), eq(EmailType.VERIFICATION));
         try (var locale = mockStatic(CustomI18NProvider.class)) {
@@ -216,9 +232,9 @@ class VerificationServicePersistenceTest {
     @ParameterizedTest
     @CsvSource({"token,logo", "email,logo", "user,logo", "token,template", "email,template", "user,template"})
     void checkedResourceFailureRollsBackTokenRotationWithoutQueuingEmail(String entry, String resource) {
-        seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-        seed("inactive", TokenStatus.INACTIVE, LocalDateTime.now().plusDays(1));
-        seed("used", TokenStatus.USED, LocalDateTime.now().plusDays(1));
+        seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+        seed("inactive", TokenStatus.INACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+        seed("used", TokenStatus.USED, LocalDateTime.now(CLOCK).plusDays(1));
         var failure = new IOException("simulated classpath read failure");
         try (var image = mockStatic(ImageHelper.class, CALLS_REAL_METHODS);
              var locale = mockStatic(CustomI18NProvider.class)) {
@@ -248,17 +264,14 @@ class VerificationServicePersistenceTest {
     @ParameterizedTest
     @EnumSource(TokenStatus.class)
     void cleanupCommitsDeletionOfOldTokensAndKeepsBoundaryAndYoungerTokens(TokenStatus tokenStatus) {
-        LocalDateTime now = LocalDateTime.of(2026, 10, 7, 12, 0);
+        LocalDateTime now = LocalDateTime.now(CLOCK);
         LocalDateTime cutoff = now.minusDays(7);
         seed("old", tokenStatus, cutoff.minusSeconds(1));
         seed("boundary", tokenStatus, cutoff);
         seed("recent", tokenStatus, now.minusDays(1));
         seed("future", tokenStatus, now.plusDays(1));
-        try (var clock = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
-            clock.when(LocalDateTime::now).thenReturn(now);
-            assertDoesNotThrow(service::deleteExpiredTokens);
-            assertDoesNotThrow(service::deleteExpiredTokens);
-        }
+        assertDoesNotThrow(service::deleteExpiredTokens);
+        assertDoesNotThrow(service::deleteExpiredTokens);
         assertFalse(service.existsToken("old"));
         assertEquals(tokenStatus, status("boundary"));
         assertTrue(service.existsToken("recent"));
@@ -268,10 +281,23 @@ class VerificationServicePersistenceTest {
         assertFalse(users.findById(userId).orElseThrow().isEnabled());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"PT0S", "-PT1H", "invalid"})
+    void invalidRetentionPreservesEvenOldTokens(String duration) {
+        seed("old", TokenStatus.EXPIRED, LocalDateTime.now(CLOCK).minusDays(30));
+        when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn(duration);
+        Class<? extends RuntimeException> expected = duration.equals("invalid")
+                ? DateTimeParseException.class : IllegalArgumentException.class;
+        assertThrows(expected, service::deleteExpiredTokens);
+        assertEquals(TokenStatus.EXPIRED, status("old"));
+        assertEquals(1, tokens.count());
+        verify(probes.tokens(), never()).deleteByExpiryDateBefore(any());
+    }
+
     @Test
     void deleteTokenCommitsWithoutAnExternalTransactionAndReturnsZeroWhenMissing() {
-        seed("delete", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-        seed("keep", TokenStatus.USED, LocalDateTime.now().plusDays(1));
+        seed("delete", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+        seed("keep", TokenStatus.USED, LocalDateTime.now(CLOCK).plusDays(1));
         int deleted = service.deleteToken("delete");
         assertEquals(1, deleted);
         assertFalse(service.existsToken("delete"));
@@ -300,7 +326,7 @@ class VerificationServicePersistenceTest {
 
     @Test
     void concurrentValidationIsIdempotentWithoutHidingTechnicalFailures() throws Exception {
-        seed("shared", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        seed("shared", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
         Long originalVersion = users.findById(userId).orElseThrow().getVersion();
         var bothRead = new CyclicBarrier(2);
         doAnswer(call -> {
@@ -398,7 +424,7 @@ class VerificationServicePersistenceTest {
         VerificationService verificationService(Probes probes, UserRepository users) {
             var messages = mock(MessageProperties.class);
             when(messages.getEmailVerificationSubject()).thenReturn("Verify account");
-            return new VerificationService(messages, probes.tokens(), probes.users(), probes.config(), probes.queue());
+            return new VerificationService(messages, probes.tokens(), probes.users(), probes.config(), probes.queue(), CLOCK);
         }
     }
 }

@@ -10,6 +10,15 @@
 - Ein bereits USED-Link meldet bei weiterhin aktiviertem Konto idempotent `true`, ohne erneut zu aktivieren, Tokens zu ändern oder eine weitere Benutzer-Version zu erzeugen. Bei gesperrtem Konto meldet auch dieser Link `false`. Andere ungültige Links melden `false`; technische Datenbank-/Sperrfehler werden weiterhin geworfen, nicht pauschal abgefangen.
 - Terminale Tokenstatus dürfen nicht reaktiviert oder in andere terminale Zustände umgeschrieben werden. `setTokenStatus` erlaubt nur ACTIVE → INACTIVE/USED/EXPIRED; Wiederholung desselben terminalen Zustands ist ein No-op. ACTIVE als Ziel ist unzulässig.
 
+## Tokenlaufzeiten und Zeitgrenzen
+
+- `VERIFICATION_TOKEN_VALID_DURATION` und `VERIFICATION_TOKEN_LIVE_DURATION` müssen parsebare, strikt positive ISO-8601-Dauern sein. Null- und negative Dauern werden mit `IllegalArgumentException` abgelehnt, ungültige Syntax mit `DateTimeParseException`. Die Ablaufzeit wird vor jeder Tokeninvalidierung berechnet; fehlerhafte Konfiguration erzeugt weder einen neuen Token noch einen Mailauftrag. Eine ungültige Aufbewahrungsdauer löst keine Löschung aus.
+- Ein ACTIVE-Token ist nur bei `Prüfzeit < expiryDate` zeitlich gültig. Bei Gleichheit oder später wird er EXPIRED und aktiviert kein Konto. Die bestehende idempotente Bestätigung eines USED-Links für ein weiterhin aktiviertes Konto bleibt davon unberührt.
+- Die Bereinigung löscht unabhängig vom Tokenstatus nur Einträge mit `expiryDate < jetzt - VERIFICATION_TOKEN_LIVE_DURATION`. Gleichheit am Aufbewahrungsstichtag bleibt erhalten; diese Grenze ist nicht die Gültigkeitsgrenze eines Links.
+- Erstellung, Validierung und Bereinigung verwenden dieselbe per Konstruktor injizierbare `Clock`. Im Spring-Betrieb wird `Clock.systemDefaultZone()` verwendet; Tests können eine feste Uhr einsetzen, ohne Systemzeit oder statische Zeitmethoden zu mocken.
+- Das bestehende `LocalDateTime`-Speicherformat und die lokale Zeitzone bleiben kompatibel mit Altbeständen. Dies ist **kein** absolutes/monotones Zeitmodell: Uhrkorrekturen und lokale Sommerzeitwechsel können die effektive Laufzeit beeinflussen. Die Betriebszeitzone muss stabil bleiben; eine Umstellung auf UTC/Instant mit Bestandskonvertierung ist nicht Teil dieser Änderung.
+- Der Verifikationslog bestätigt nach erfolgreichem Queue-Aufruf nur das Einreihen in die Mailqueue, nicht SMTP-Zustellung oder den späteren Transaktionscommit. Fehler beim Einreihen erzeugen keinen Erfolgslog; Token und Auftrag bleiben transaktional gekoppelt.
+
 ## Nebenläufigkeit und Transaktionen
 
 Verifikationsabläufe und Queue-Produzenten sperren dieselbe Benutzerzeile mit PESSIMISTIC_WRITE bis zum Transaktionsende. Eine skalare ID-Abfrage mit FlushMode COMMIT erwirbt die Sperre, anschließend wird das gespeicherte Konto explizit refreshed. Damit entscheidet nicht ein stale Objekt aus dem Persistence Context oder Formular über die Berechtigung. Uncommittete Änderungen am übergebenen Objekt sind kein Kontoentscheid und werden nicht übernommen; solche Formularänderungen müssen über den vorhandenen versionierten Adminpfad gespeichert werden.

@@ -22,7 +22,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
+import java.time.Clock;
+import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
@@ -32,9 +36,11 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/** Isolated service tests; findings tests deliberately characterize unfixed behavior. */
+/** Isolated service tests without application startup, SMTP or a database. */
 @ExtendWith(MockitoExtension.class)
 class VerificationServiceTest {
+    private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-07T12:00:00Z"), ZoneOffset.UTC);
+    private static final LocalDateTime NOW = LocalDateTime.now(CLOCK);
     @Mock
     private MessageProperties messages;
     @Mock
@@ -50,7 +56,7 @@ class VerificationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new VerificationService(messages, tokens, users, config, queue);
+        service = new VerificationService(messages, tokens, users, config, queue, CLOCK);
         user = UserEntity.builder().id(1L).firstName("Test").lastName("User")
                 .email("test@example.com").preferredLocale(Locale.ENGLISH).build();
         lenient().when(users.lockVerificationUser(1L)).thenReturn(Optional.of(user));
@@ -59,15 +65,13 @@ class VerificationServiceTest {
 
     @Test
     void creationInvalidatesAllActiveTokensAndPersistsANewUuidWithConfiguredLifetime() {
-        var first = token(TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-        var second = token(TokenStatus.ACTIVE, LocalDateTime.now().minusDays(1));
+        var first = token(TokenStatus.ACTIVE, NOW.plusDays(1));
+        var second = token(TokenStatus.ACTIVE, NOW.minusDays(1));
         when(tokens.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE)).thenReturn(List.of(first, second));
         when(config.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("PT2H");
-        LocalDateTime before = LocalDateTime.now().plusHours(2);
 
         String value = service.createToken(user);
 
-        LocalDateTime after = LocalDateTime.now().plusHours(2);
         var captor = ArgumentCaptor.forClass(VerificationTokenEntity.class);
         verify(tokens, times(3)).save(captor.capture());
         var created = captor.getAllValues().getLast();
@@ -77,8 +81,7 @@ class VerificationServiceTest {
         assertEquals(value, created.getToken());
         assertSame(user, created.getUserEntity());
         assertEquals(TokenStatus.ACTIVE, created.getStatus());
-        assertFalse(created.getExpiryDate().isBefore(before));
-        assertFalse(created.getExpiryDate().isAfter(after));
+        assertEquals(NOW.plusHours(2), created.getExpiryDate());
         verify(users, never()).save(any());
         verify(queue).hasOpenEmailForUserAndType(user, EmailType.VERIFICATION);
         verify(queue, never()).addEmailToQueue(any(), any(), any(), any());
@@ -89,22 +92,59 @@ class VerificationServiceTest {
         when(config.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("invalid");
         assertThrows(DateTimeParseException.class, () -> service.createToken(user));
         verify(tokens, never()).save(any());
+        verify(tokens, never()).findAllByUserEntityAndStatus(any(), any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"PT0S", "-PT1H"})
+    void nonPositiveLifetimeIsRejectedBeforeInvalidatingTokens(String duration) {
+        when(config.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn(duration);
+        assertThrows(IllegalArgumentException.class, () -> service.createToken(user));
+        verify(tokens, never()).findAllByUserEntityAndStatus(any(), any());
+        verify(tokens, never()).save(any());
+        verify(queue, never()).addEmailToQueue(any(), any(), any(), any());
+    }
+
+    @Test
+    void positiveSubsecondLifetimeIsAccepted() {
+        when(config.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("PT0.000000001S");
+        service.createToken(user);
+        var captor = ArgumentCaptor.forClass(VerificationTokenEntity.class);
+        verify(tokens).save(captor.capture());
+        assertEquals(NOW.plusNanos(1), captor.getValue().getExpiryDate());
+    }
+
+    @Test
+    void unrepresentableExpiryDoesNotInvalidateExistingTokens() {
+        when(config.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("P366000000000D");
+        assertThrows(DateTimeException.class, () -> service.createToken(user));
+        verify(tokens, never()).findAllByUserEntityAndStatus(any(), any());
+        verify(tokens, never()).save(any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void consumedExpiredLinkOnlyConfirmsAnEnabledAccountWithoutWrites(boolean enabled) {
+        user.setEnabled(enabled);
+        when(tokens.findByTokenAndStatus("token", TokenStatus.ACTIVE)).thenReturn(Optional.empty());
+        if (enabled) {
+            when(tokens.findByTokenAndStatus("token", TokenStatus.USED))
+                    .thenReturn(Optional.of(token(TokenStatus.USED, NOW.minusDays(1))));
+        }
+        assertEquals(enabled, service.validateToken("token"));
+        verify(users, never()).save(any());
+        verify(tokens, never()).save(any());
     }
 
     @ParameterizedTest
     @ValueSource(longs = {-1, 0, 1})
-    void expirationBoundaryUsesStrictlyBeforeAndConsumesValidTokens(long offsetNanos) {
-        LocalDateTime now = LocalDateTime.of(2026, 10, 7, 12, 0);
-        var entity = token(TokenStatus.ACTIVE, now.plusNanos(offsetNanos));
+    void expirationBoundaryRejectsEqualityAndConsumesOnlyFutureTokens(long offsetNanos) {
+        var entity = token(TokenStatus.ACTIVE, NOW.plusNanos(offsetNanos));
         when(tokens.findByTokenAndStatus("token", TokenStatus.ACTIVE)).thenReturn(Optional.of(entity));
-        try (var clock = mockStatic(LocalDateTime.class)) {
-            clock.when(LocalDateTime::now).thenReturn(now);
-
-            assertEquals(offsetNanos >= 0, service.validateToken("token"));
-        }
-        assertEquals(offsetNanos >= 0, user.isEnabled());
-        assertEquals(offsetNanos >= 0 ? TokenStatus.USED : TokenStatus.EXPIRED, entity.getStatus());
-        verify(users, times(offsetNanos >= 0 ? 1 : 0)).save(user);
+        assertEquals(offsetNanos > 0, service.validateToken("token"));
+        assertEquals(offsetNanos > 0, user.isEnabled());
+        assertEquals(offsetNanos > 0 ? TokenStatus.USED : TokenStatus.EXPIRED, entity.getStatus());
+        verify(users, times(offsetNanos > 0 ? 1 : 0)).save(user);
         verify(tokens).save(entity);
     }
 
@@ -121,7 +161,7 @@ class VerificationServiceTest {
     @Test
     void enabledAccountIsNotSavedAndItsActiveTokenRemainsActive() {
         user.setEnabled(true);
-        var entity = token(TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        var entity = token(TokenStatus.ACTIVE, NOW.plusDays(1));
         when(tokens.findByTokenAndStatus("token", TokenStatus.ACTIVE)).thenReturn(Optional.of(entity));
 
         assertFalse(service.validateToken("token"));
@@ -133,7 +173,7 @@ class VerificationServiceTest {
     @ParameterizedTest
     @EnumSource(value = TokenStatus.class, names = {"INACTIVE", "USED", "EXPIRED"})
     void statusSetterOnlyCompletesActiveTokens(TokenStatus status) {
-        var entity = token(TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        var entity = token(TokenStatus.ACTIVE, NOW.plusDays(1));
         when(tokens.findByTokenAndStatus("token", TokenStatus.ACTIVE)).thenReturn(Optional.of(entity));
         service.setTokenStatus("token", status);
         assertEquals(status, entity.getStatus());
@@ -143,7 +183,7 @@ class VerificationServiceTest {
     @Test
     void statusSetterCannotReactivateOrRewriteCompletedTokens() {
         assertThrows(IllegalArgumentException.class, () -> service.setTokenStatus("token", TokenStatus.ACTIVE));
-        var entity = token(TokenStatus.USED, LocalDateTime.now().plusDays(1));
+        var entity = token(TokenStatus.USED, NOW.plusDays(1));
         when(tokens.findByToken("token")).thenReturn(Optional.of(entity));
         assertThrows(IllegalStateException.class, () -> service.setTokenStatus("token", TokenStatus.INACTIVE));
         service.setTokenStatus("token", TokenStatus.USED);
@@ -160,7 +200,7 @@ class VerificationServiceTest {
     @ValueSource(booleans = {true, false})
     void existenceReflectsRepositoryPresenceRegardlessOfStatus(boolean exists) {
         when(tokens.findByToken("token")).thenReturn(exists
-                ? Optional.of(token(TokenStatus.EXPIRED, LocalDateTime.now().minusDays(1))) : Optional.empty());
+                ? Optional.of(token(TokenStatus.EXPIRED, NOW.minusDays(1))) : Optional.empty());
         assertEquals(exists, service.existsToken("token"));
     }
 
@@ -235,12 +275,41 @@ class VerificationServiceTest {
     @Test
     void cleanupDeletesUsingConfiguredCutoffWithoutFormattingFailure() {
         when(config.getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn("P7D");
-        LocalDateTime before = LocalDateTime.now().minusDays(7);
         assertDoesNotThrow(service::deleteExpiredTokens);
         var cutoff = ArgumentCaptor.forClass(LocalDateTime.class);
         verify(tokens).deleteByExpiryDateBefore(cutoff.capture());
-        assertFalse(cutoff.getValue().isBefore(before));
-        assertFalse(cutoff.getValue().isAfter(LocalDateTime.now().minusDays(7)));
+        assertEquals(NOW.minusDays(7), cutoff.getValue());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"PT0S", "-PT1H", "invalid"})
+    void invalidRetentionDurationDoesNotDeleteTokens(String duration) {
+        when(config.getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn(duration);
+        Class<? extends RuntimeException> expected = duration.equals("invalid")
+                ? DateTimeParseException.class : IllegalArgumentException.class;
+        assertThrows(expected, service::deleteExpiredTokens);
+        verifyNoInteractions(tokens);
+    }
+
+    @Test
+    void disappearedAccountRejectsValidationDeletionStatusChangesAndResend() throws IOException {
+        when(users.lockVerificationUser(1L)).thenReturn(Optional.empty());
+        assertFalse(service.validateToken("token"));
+        assertEquals(0, service.deleteToken("token"));
+        service.setTokenStatus("token", TokenStatus.INACTIVE);
+        assertFalse(service.sendVerificationEmailByUser(user));
+        assertThrows(IllegalStateException.class, () -> service.createToken(user));
+        verify(tokens, never()).save(any());
+        verify(tokens, never()).deleteByToken(any());
+        verifyNoInteractions(config, queue);
+    }
+
+    @Test
+    void missingUserAndNullStatusAreRejectedWithoutRepositoryAccess() throws IOException {
+        assertFalse(service.sendVerificationEmailByUser(null));
+        assertFalse(service.sendVerificationEmailByUser(UserEntity.builder().build()));
+        assertThrows(IllegalArgumentException.class, () -> service.setTokenStatus("token", null));
+        verifyNoInteractions(tokens, users, queue, config);
     }
 
     private VerificationTokenEntity token(TokenStatus status, LocalDateTime expiry) {
