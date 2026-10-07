@@ -208,6 +208,13 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    snapshot are not completely measured. External prompt-improver provider
    usage is not part of the OpenCode session export.
    State the actual improver provider/model from prompt-metadata.json.
+   When prompt is selected, report its separate Prompt* measurements and status
+   from result.json/prompt-usage.json. Never add these to OpenCode session counters.
+   A completed provider response can fail the structured-output validation;
+   report failed PromptStatus even if PromptCompletedRequests is 1.
+   Missing improver costs are unknown, never 0 or an inferred subscription price.
+   If authentication fails, follow the explicit login guidance; do not start
+   another provider or continue coding after failed begin.
    Report MessageElapsedSeconds as message time including tool/wait time,
    never pure inference/compute time. For cost 0 say explicitly:
    "OpenCode meldet 0 USD; tatsächliche Kosten unbekannt."

@@ -1,6 +1,7 @@
 import httpx
 
-from prompt.chatgpt.credentials import ChatGPTTokenResponse
+from prompt.chatgpt.credentials import ChatGPTTokenResponse, ChatGPTRefreshResponse
+from prompt.telemetry import PromptProviderError, LOGIN_REQUIRED
 
 
 class ChatGPTTokenClient:
@@ -40,7 +41,7 @@ class ChatGPTTokenClient:
             self,
             client_id: str,
             refresh_token: str,
-    ) -> ChatGPTTokenResponse:
+    ) -> ChatGPTRefreshResponse:
         response = httpx.post(
             self.TOKEN_ENDPOINT,
             data={
@@ -52,8 +53,15 @@ class ChatGPTTokenClient:
             timeout=30.0,
         )
 
+        if response.status_code in (400, 401, 403):
+            try:
+                code = response.json().get("error")
+            except (ValueError, AttributeError):
+                code = None
+            if isinstance(code, dict):
+                code = code.get("code")
+            if code in ("invalid_grant", "invalid_token", "invalid_client", "invalid_refresh_token", "token_expired",
+                        "refresh_token_expired", "refresh_token_invalidated", "refresh_token_reused") or response.status_code in (401, 403):
+                raise PromptProviderError("authentication", LOGIN_REQUIRED)
         response.raise_for_status()
-
-        return ChatGPTTokenResponse.model_validate(
-            response.json()
-        )
+        return ChatGPTRefreshResponse.model_validate(response.json())

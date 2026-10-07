@@ -127,6 +127,9 @@ def append_csv(path: Path, result: dict, *, replace_existing: bool = False) -> N
                 additions = {"PromptProvider", "PromptModel", "PromptDurationSeconds", "CostStatus",
                              "UsageStartUTC", "UsageEndUTC", "UsageWindowSeconds", "Outcome", "Terminal",
                              "FailureCount", "LastFailurePhase", "LastFailureType", "StopReason"}
+                from .prompt import USAGE_COLUMNS, METADATA_COLUMNS
+                additions.update(USAGE_COLUMNS)
+                additions.update(METADATA_COLUMNS)
                 renamed = ["MessageElapsedSeconds" if key == "InferenceSeconds" else key for key in existing_fields]
                 missing = set(fields) - set(renamed)
                 if not missing <= additions or renamed != [key for key in fields if key not in missing]:

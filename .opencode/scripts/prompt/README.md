@@ -12,7 +12,9 @@ Der Prompt Improver ist als eigenständiges Python-Modul funktionsfähig und unt
 - `openai` – klassische OpenAI API mit API-Key und separater API-Abrechnung
 - `chatgpt` – Sign in with ChatGPT mit gespeicherten OAuth-Credentials und ChatGPT-Plan-Nutzung
 
-Der vollständige CLI-Pfad mit `chatgpt` wurde erfolgreich Ende-zu-Ende getestet:
+Der vollständige CLI-Pfad mit `chatgpt` wurde vor dem Abschluss-Paket erfolgreich
+live Ende-zu-Ende getestet. Die jetzt ergänzte Fehlerbehandlung und Messung sind
+offline einschließlich echter SDK-Antworttypen und paralleler Prozesse geprüft:
 
 ```text
 CLI
@@ -27,9 +29,11 @@ CLI
   -> Markdown-Ausgabe
 ```
 
-Der Improver ist unverändert als optionales `prompt`-Modul im Python-Workflow
+Der fachliche Improver-Kern ist als optionales `prompt`-Modul im Python-Workflow
 integriert. Aufrufe und Installation sind in [../../README.md](../../README.md)
-beschrieben. Config, fachliche Regeln und Provider-/OAuth-Clients bleiben erhalten.
+beschrieben. Config, fachliche Regeln und Prompt-Schema bleiben erhalten. Die Provider erfassen
+eigene Usage und behandeln Fehler ausdrücklich; ChatGPT-Refresh und Speichern
+sind pro Benutzer über einen eigenen OS-Lock synchronisiert.
 
 ## Verantwortung
 
@@ -91,6 +95,8 @@ ImprovedPrompt
        |
        +-- original-prompt.md
        +-- improved-prompt.md
+prompt-metadata.json
+prompt-usage.json
 ```
 
 Der `PromptImprover` kennt den konkreten Provider nicht. Alle Provider implementieren dieselbe `LlmClient`-Schnittstelle.
@@ -429,6 +435,8 @@ Erzeugt:
 ```text
 original-prompt.md
 improved-prompt.md
+prompt-metadata.json
+prompt-usage.json
 ```
 
 ## Python-Abhängigkeiten
@@ -495,20 +503,49 @@ End-to-End-Smoke-Test für:
 
 Testet den ChatGPT-Client mit Strict Structured Output und anschließendem Pydantic-Parsing.
 
-## Bekannte technische Restpunkte
+## Fehlerbehandlung und eigene Usage
 
-Der aktuelle Stand ist funktionsfähig, aber vor einer breiteren oder parallelen Nutzung sollten noch einige Punkte bereinigt werden:
+Workflow und CLI verwenden `execution.py`; `PromptImprover`, Config, Factory
+und das Prompt-Schema bleiben fachlich unverändert. Incomplete, Refusal,
+leere Ausgaben, abgerissene Streams und ungültiges JSON beenden den Aufruf.
+Keine automatischen Inference-Retries oder stillen Provider-Wechsel.
+HTTP-Anfragen haben 120 Sekunden Timeout (OAuth-Refresh: 30 Sekunden).
 
-1. Callback-Smoke-Test korrigiert: `server.start()` steht vor `wait_for_callback()`.
-2. Der einmalige ChatGPT-Login ist noch als Test-/Bootstrap-Skript implementiert und nicht als produktive Auth-Komponente oder CLI-Aktion.
-3. `ChatGPTClient` kann gespeicherte Credentials laden und refreshen, startet bei fehlenden oder endgültig ungültigen Credentials aber nicht selbst eine erneute Browser-Anmeldung.
-4. Gleichzeitige Refreshes mehrerer Prozesse werden noch nicht synchronisiert. Bei rotierenden Refresh Tokens sollte vor paralleler Benchmark-Nutzung ein Lock ergänzt werden.
-5. Der ChatGPT-Client behandelt `response.failed` und `response.completed`; `response.incomplete` könnte noch mit einer spezifischeren Fehlermeldung behandelt werden.
-6. Verfügbare ChatGPT-Modelle werden noch nicht dynamisch über den Account-Modellkatalog abgefragt. Das Modell kommt derzeit aus `config.json` oder der CLI.
-7. Beim Überschreiben von gechunkten Keyring-Secrets werden ältere, nicht mehr benötigte Extra-Chunks derzeit nicht aktiv gelöscht.
-8. `PromptImprover._apply_defaults()` führt Standardlisten und Modelllisten einfach zusammen; eine zusätzliche Deduplizierung wäre möglich.
-9. Erledigt: deklarative Python-Abhängigkeiten in `.opencode/requirements.txt`.
-10. Erledigt: optionale Integration in den modularen Python-Workflow.
+Mit `--output-dir` schreibt die CLI wie das Workflow-Modul zusätzlich
+`prompt-metadata.json` und `prompt-usage.json`, auch bei Fehlern. Vorhandene
+Provider-Messwerte bleiben bei fehlgeschlagener Pydantic-Validierung erhalten.
+Gemessen werden Input, Output, Total, Reasoning, Cache, Inference-Versuche,
+abgeschlossene Responses, Retries und Providerdauer, soweit tatsächlich vorhanden.
+Kosten werden von den drei Clients nicht ausgewiesen und bleiben unbekannt.
+OpenAI-Input enthält Cache-Reads; Output enthält Reasoning. Teilmengen nicht
+nochmals addieren. Ollama-Reasoning-/Cache-Werte werden nicht aus Text geschätzt.
+
+Der gemeinsame Session-Lock gilt für alle Projekte und Prozesse dieses Benutzers.
+Nach Erwerb wird der aktuelle Keyring-Stand neu geladen. Neue Tokens und deren
+Ablaufzeit werden zusammen als versionierter Snapshot gespeichert; alte bekannte
+Chunks werden anschließend gelöscht. Bereits vorhandene Profile/Credentials
+bleiben lesbar. `profile.json` enthält weiterhin keine Tokens.
+
+Ein dauerhaft ungültiger Refresh-Token verlangt einen neuen Login; die gespeicherte
+Invalidierung verhindert Wiederholungen. Temporäre Netzwerkfehler erhalten die
+Sitzung. Der Benchmark öffnet keinen Browser. Die bewusste Wiederanmeldung erfolgt
+vom `.opencode/scripts`-Ordner über:
+
+```powershell
+python -B -m prompt.tests.test_chatgpt_login
+```
+
+Das bestehende Bootstrap-Skript nutzt ebenfalls den synchronisierten Refresh und
+startet bei dauerhaft ungültiger oder fehlender Sitzung den vorhandenen
+PKCE-/Callback-/Identity-/Scope-geprüften Login. Dynamischer Modellkatalog,
+Deduplizierung der Default-Listen und zusätzliche Workflow-Module sind nicht
+Teil dieses Schritts. Bei einem Prozessabbruch zwischen serverseitiger Token-
+Rotation und lokalem Speichern kann ein neuer Login nötig sein.
+
+Die automatische Suite in `scripts/tests/test_prompt_providers.py` prüft alle
+Provider offline, Fake-Keyring, Fehlerspeicherung und zwei parallele echte
+Python-Prozesse. Die `prompt/tests`-Skripte sind bewusst aufrufbare Live-Smoke-
+Tests und gehören nicht zum automatischen Offline-Lauf.
 
 ## Security-Grundsätze
 
@@ -529,17 +566,15 @@ Der aktuelle Stand ist funktionsfähig, aber vor einer breiteren oder parallelen
 ```text
 original-prompt.md
 improved-prompt.md
+prompt-metadata.json
+prompt-usage.json
 ```
 
 Das `prompt`-Modul schreibt diese Dateien direkt in den externen Run-Ordner.
 
-## Nächste Schritte
+## Bewusster Umfang
 
-Die fachlich sinnvolle Reihenfolge ist:
-
-1. ChatGPT-Login/Session-Handling aus dem Testskript in eine produktive Komponente verschieben,
-2. Refresh-Race und Re-Login-Fehlerfälle robust behandeln,
-3. optional dynamische ChatGPT-Modellabfrage ergänzen.
-
-Diese Punkte gehören nicht zur aktuellen Benchmark-Migration; der Improver-Kern
-und seine Provider bleiben in diesem Schritt unverändert.
+Der bestehende Stand bleibt bei `branch`, `prompt`, `benchmark`, `usage` und
+`complete` als Preset. Diese technischen Hilfsdateien sind keine zusätzlichen
+Workflow-Module. Details der Usage-Spalten, Messgrenzen und Fehlerkategorien
+stehen in [../../README.md](../../README.md#prompt-improver-eigene-usage-und-fehlerbehandlung).

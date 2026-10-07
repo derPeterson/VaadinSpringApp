@@ -21,47 +21,16 @@ def main() -> None:
         storage_directory
     )
 
-    credentials = store.load_credentials()
+    from prompt.telemetry import PromptProviderError
 
-    if credentials is not None:
-        print("Stored ChatGPT credentials found.")
-        print(f"Email: {credentials.email}")
-
-        if credentials.is_access_token_valid():
-            print("Access token is still valid.")
-            print("No browser login required.")
-            return
-
-        print("Access token has expired.")
-        print("Refreshing ChatGPT credentials...")
-
-        token_client = ChatGPTTokenClient()
-
-        refreshed = token_client.refresh(
-            client_id=credentials.client_id,
-            refresh_token=credentials.refresh_token,
-        )
-
-        credentials.access_token = refreshed.access_token
-        credentials.refresh_token = refreshed.refresh_token
-        credentials.token_type = refreshed.token_type
-        credentials.expires_in = refreshed.expires_in
-
-        credentials.saved_at = (
-            datetime.now(timezone.utc).isoformat()
-        )
-
-        if refreshed.id_token is not None:
-            credentials.id_token = refreshed.id_token
-
-        if refreshed.scope is not None:
-            credentials.scopes = refreshed.scopes
-
-        store.save_credentials(credentials)
-
-        print("ChatGPT credentials refreshed.")
-        print("No browser login required.")
+    try:
+        credentials = store.credentials_for_request(ChatGPTTokenClient())
+        print("Stored ChatGPT credentials are ready. No browser login required.")
         return
+    except PromptProviderError as error:
+        if error.category not in ("authentication", "credential_storage"):
+            raise
+        print("ChatGPT sign-in is required; starting the explicit browser login.")
 
     host_id = store.load_host_id()
 

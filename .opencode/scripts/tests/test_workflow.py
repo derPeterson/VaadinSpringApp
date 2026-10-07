@@ -113,6 +113,57 @@ class RepoCase(unittest.TestCase):
         self.assertEqual(result, runner.finish(self.repo, self.store_root, started["id"], summary_file=summary))
         self.assertEqual(report, (folder / "report.md").read_text(encoding="utf-8"))
 
+    def test_improver_usage_reaches_completed_report_result_and_csv(self):
+        from prompt.openai_client import OpenAIClient
+        from tests.test_prompt_providers import response
+        with patch("prompt.openai_client.OpenAI"):
+            client = OpenAIClient("fixture-improver")
+        client.client.responses.create.return_value = response()
+        with patch("prompt.execution.LlmClientFactory.create", return_value=client):
+            started = self.begin("branch,prompt,benchmark")
+        self.commit_task()
+        with patch("workflow.benchmark.collect", return_value=METRICS):
+            result = runner.finish(self.repo, self.store_root, started["id"])
+        folder = Path(started["folder"])
+        self.assertEqual(100, result["PromptInputTokens"])
+        self.assertEqual(30, result["PromptOutputTokens"])
+        self.assertEqual(1, result["PromptRequests"])
+        self.assertEqual("completed", result["PromptStatus"])
+        self.assertIsNone(result["InputTokens"])
+        self.assertIsNone(result["PromptEstimatedCostUSD"])
+        self.assertTrue((folder / "prompt-usage.json").is_file())
+        self.assertIn("## Externe Prompt-Improver Usage", (folder / "report.md").read_text(encoding="utf-8"))
+        with (self.store_root / self.repo.name / "results.csv").open(encoding="utf-8") as handle:
+            row = next(csv.DictReader(handle))
+        self.assertEqual("100", row["PromptInputTokens"])
+        self.assertEqual("", row["InputTokens"])
+
+    def test_invalid_improver_response_usage_reaches_failed_archive_and_abort(self):
+        from prompt.openai_client import OpenAIClient
+        from prompt.telemetry import PromptProviderError
+        from tests.test_prompt_providers import response
+        with patch("prompt.openai_client.OpenAI"):
+            client = OpenAIClient("fixture")
+        client.client.responses.create.return_value = response(text="private invalid response")
+        with patch("prompt.execution.LlmClientFactory.create", return_value=client), self.assertRaises(PromptProviderError):
+            self.begin("branch,prompt,benchmark")
+        store = self.store_root / self.repo.name
+        run_id = read_json(store / "active.json")["id"]
+        folder = store / "runs" / run_id
+        result = read_json(folder / "result.json")
+        self.assertEqual("failed", result["Outcome"])
+        self.assertEqual("failed", result["PromptStatus"])
+        self.assertEqual("invalid_structured_output", result["PromptErrorCategory"])
+        self.assertEqual(100, result["PromptInputTokens"])
+        self.assertIsNone(result["EndCommit"])
+        self.assertEqual("main", self.git("branch", "--show-current"))
+        self.assertNotIn("private invalid response", (folder / "report.md").read_text(encoding="utf-8"))
+        runner.abort(self.repo, self.store_root, run_id, reason="Invalid response", failed=True)
+        final = read_json(folder / "result.json")
+        self.assertTrue(final["Terminal"])
+        self.assertEqual(100, final["PromptInputTokens"])
+        self.assertFalse((store / "active.json").exists())
+
     def test_missing_findings_does_not_claim_no_problems(self):
         started = self.begin("branch")
         runner.finish(self.repo, self.store_root, started["id"])

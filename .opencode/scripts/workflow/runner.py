@@ -164,6 +164,9 @@ def begin(repo: Path, root: Path, request: dict | None, catalog: Path,
             write_json(state_path, state)
         except Exception as error:
             state.update(status="begin-failed", error=str(error))
+            metadata = folder / "prompt-metadata.json"
+            if "prompt" in state["modules"] and metadata.exists():
+                state["promptMetadata"] = read_json(metadata)
             record_failure(state_path, state, store, "begin", error)
             raise
         return {"id": prepared_id, "modules": state["modules"], "branch": state["branch"],
@@ -224,6 +227,9 @@ def enrich_result(state: dict, store: Path, result: dict, usage_result: dict | N
     metadata = state.get("promptMetadata", {})
     result.update(PromptProvider=metadata.get("provider"), PromptModel=metadata.get("model"),
                   PromptDurationSeconds=metadata.get("durationSeconds"))
+    observed = metadata.get("usage", {})
+    result.update({column: observed.get(key) for column, key in prompt.USAGE_COLUMNS.items()})
+    result.update({column: metadata.get(key) for column, key in prompt.METADATA_COLUMNS.items()})
     if usage_result:
         result.update({key: usage_result[key] for key in usage.VALUE_FIELDS})
         result.update(SessionId=usage_result["SessionId"], ActualModels=",".join(usage_result["ActualModels"]),
@@ -310,12 +316,21 @@ def report(state: dict, result: dict, after: dict | None, changed: dict, usage_r
         lines += ["Vorhandene Teilmessung mit ihren eigenen Zeitgrenzen steht im Ergebnis oben."
                   if result.get("UsageStartUTC") else
                   "Usage-Messung nicht verfügbar." if "usage" in state["modules"] else "Usage-Modul nicht ausgewählt."]
+    lines += ["", "## Externe Prompt-Improver Usage", ""]
+    if "prompt" in state["modules"]:
+        lines += ["Separat von OpenCode; Input enthält Cache-Reads, Output enthält Reasoning. Nicht zusätzlich summieren.",
+                  "Requests sind Inference-Versuche; Auth-Aufrufe sind ausgeschlossen. Fehlende Werte sind unbekannt.",
+                  "Kosten werden von diesen Improver-Providern nicht ausgewiesen; keine Kosten aus Tokens oder Abonnements geraten."]
+        lines.extend(f"- {column}: {'nicht verfügbar' if result.get(column) is None else result[column]}"
+                     for column in ("PromptProvider", "PromptModel", "PromptDurationSeconds", *prompt.USAGE_COLUMNS, *prompt.METADATA_COLUMNS))
+    else:
+        lines.append("Prompt-Modul nicht ausgewählt.")
     lines += ["", "## Offene Findings", "",
               "Siehe findings.md für gemeldete offene Probleme und den Erfassungsstatus." if result.get("FindingsPath") else "Keine archivierten Findings-Angaben verfügbar.",
               "", "## Artefakte", ""]
     folder = Path(state["folder"])
     names = ("result.json", "findings.md", "diff.patch", "original-prompt.md", "improved-prompt.md",
-             "prompt-metadata.json", "benchmark-before.json", "benchmark-after.json",
+             "prompt-metadata.json", "prompt-usage.json", "benchmark-before.json", "benchmark-after.json",
              "usage-before.json", "usage-after.json", "usage.json", "failures.json")
     lines.extend("- " + name for name in names if (folder / name).is_file())
     return "\n".join(lines) + "\n"

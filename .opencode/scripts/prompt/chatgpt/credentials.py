@@ -17,7 +17,21 @@ class ChatGPTTokenResponse(BaseModel):
         return self.scope.split()
 
 
+class ChatGPTRefreshResponse(BaseModel):
+    access_token: str = Field(min_length=1)
+    refresh_token: str = Field(min_length=1)
+    id_token: str | None = Field(default=None, min_length=1)
+    token_type: str
+    expires_in: int = Field(gt=0)
+    scope: str | None = None
+
+    @property
+    def scopes(self) -> list[str]:
+        return self.scope.split() if self.scope is not None else []
+
+
 class ChatGPTCredentials(BaseModel):
+    reauth_required: bool = False
     email: str | None
     issuer: str
     subject: str

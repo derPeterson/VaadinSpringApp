@@ -2,10 +2,9 @@ import argparse
 import json
 from pathlib import Path
 
-from prompt.llm_client_factory import LlmClientFactory
 from prompt.models import PromptImproverConfig
-from prompt.prompt_artifact_writer import PromptArtifactWriter
-from prompt.prompt_improver import PromptImprover
+from prompt.execution import improve
+from prompt.telemetry import PromptProviderError
 
 
 def main() -> None:
@@ -50,24 +49,11 @@ def main() -> None:
     provider = args.provider or config.provider
     model = args.model or config.model
 
-    client = LlmClientFactory.create(
-        provider=provider,
-        model=model,
-    )
-
-    improver = PromptImprover(
-        config=config,
-        llm_client=client,
-    )
-
-    improved_prompt = improver.improve(args.prompt)
-
-    if args.output_dir:
-        PromptArtifactWriter.write(
-            output_directory=Path(args.output_dir),
-            original_prompt=args.prompt,
-            improved_prompt=improved_prompt,
-        )
+    try:
+        improved_prompt = improve(config, args.prompt,
+                                  Path(args.output_dir) if args.output_dir else None, provider, model)
+    except PromptProviderError as error:
+        parser.exit(1, str(error) + "\n")
 
     print(improved_prompt.to_markdown())
 

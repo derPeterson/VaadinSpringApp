@@ -32,16 +32,17 @@ enthält direkt die vollständigen Git-Bytes samt Binary-Patches. Usage wird
 als Delta derselben OpenCode-Sitzung erfasst und im Benchmark gespeichert.
 
 Die Prompt-Integration verwendet dieselbe Factory, Config, fachlichen Regeln,
-Structured Outputs und Artefakt-Schreiber. Der Kern und sämtliche Provider-/
-OAuth-Implementierungen wurden anhand der Eingangs-ZIP bytegenau auf Erhalt
-geprüft. Änderungen im Prompt-Verzeichnis beschränken sich auf README,
-CLI-Hilfetext und die zwei beschriebenen Smoke-Test-Korrekturen.
+Structured Outputs und Artefakt-Schreiber. Bei der ursprünglichen Migration wurden Kern und Provider/OAuth-Clients
+bytegenau erhalten. Im jetzt ausdrücklich beauftragten Abschluss-Paket sind
+Provider-Fehlerbehandlung, eigene Usage und Credential-Speicherung ergänzt;
+Prompt-Regeln, Schema, Config, Factory, PKCE und Identity-Prüfung bleiben erhalten.
+Details und Prüfnachweise stehen im letzten Abschnitt dieses Berichts.
 
 ## Tatsächlich ausgeführte Prüfungen
 
 | Prüfung | Ergebnis |
 |---|---|
-| Automatische Python-Suite | **88 Tests, 0 Fehler, 0 Failures, 0 Skips** nach Fehler-/Abbrucharchivierung |
+| Automatische Python-Suite | **132 Tests, 0 Fehler, 0 Failures, 0 Skips** im finalen Infrastrukturstand |
 | Echte temporäre Git-Repositories | Branch-/Status-Prüfungen, Commits, Findings, Text-/Binary-Diff und sauberer Endzustand erfolgreich |
 | CLI als eigener Prozess | Begin/Finish, sichere JSON-Task-Übergabe und UTF-8-Umsetzungsbericht mit Quotes/Zeilenumbrüchen/Shell-Sonderzeichen erfolgreich |
 | Fehlerpfade | Dirty Tree, vorhandene lokale/remote Branches, falscher Branch, tracked Findings, fehlende Usage-Session, Build-/CSV-Fehler korrekt abgewiesen |
@@ -101,10 +102,11 @@ keine als erfolgreich ausgegebenen fehlgeschlagenen Tests.
   unbekannt. `cost: 0` wird als gemeldete Schätzung erhalten und ist kein
   Beleg für reale kostenlose Nutzung. Externe Improver-Aufrufe sind keine
   OpenCode-Session-Nutzung.
-- OAuth-Refresh-Lock über mehrere Prozesse/Projekte, automatisches Re-Login,
-  spezifisches `response.incomplete`-Handling und alte Keyring-Chunks wurden
-  wie gewünscht nicht in den unveränderten Improver eingebaut. Der neue
-  Workflow-Store-Lock schützt nur Run-Zustand und CSV.
+- Der ursprüngliche Workflow-Store-Lock schützt nur Run-Zustand und CSV.
+  Im Abschluss-Paket schützt zusätzlich ein Benutzer-Session-Lock OAuth-Refreshs.
+  Incomplete/Refusal und alte bekannte Keyring-Chunks werden behandelt.
+  Eine erforderliche Wiederanmeldung bleibt eine bewusste Login-Aktion,
+  kein automatischer Browserstart während eines Benchmarks.
 - Frühere PowerShell-CSV-Schemas werden nicht übernommen. Vorhandene Python-
   Runs einschließlich FirstRun bleiben erhalten; dessen CSV-Schema wird beim
   nächsten Eintrag gezielt erweitert. Historische Run-Dateien werden nicht verändert.
@@ -380,3 +382,67 @@ des laufenden OpenCode-Auftrags im Projektroot in `.opencode` darüberkopieren.
 Kein erneutes `npm ci` erforderlich. Die komplette Migrations-ZIP wurde ebenfalls
 aktualisiert. Die beiden verbleibenden Punkte Improver-Fehlerbehandlung und
 separate Improver-Usage sind für ein gemeinsames Folgepaket vorgesehen.
+
+## Abschluss-Paket: Improver-Fehlerbehandlung und separate Usage
+
+Die beiden zuletzt verbliebenen Infrastrukturpunkte sind umgesetzt. Es bleiben
+exakt die vier fachlichen Module `branch`, `prompt`, `benchmark`, `usage`;
+`complete` ist deren Preset. Kein Reviewer, RAG oder weiterer Workflow-Baustein.
+Die tatsächliche Projektinstallation wurde während der Arbeit nicht verändert.
+
+CLI und Workflow verwenden denselben Improver-Ausführungsweg. Provider behandeln
+Timeout/Connection/Auth/Rate-Limit, Failed/Incomplete, Refusal, leere Ausgaben
+und abgerissene Streams ausdrücklich. Pydantic-Fehler enthalten im Benchmark
+keine rohe Modellantwort. Keine automatischen Inference-Retries, kein anderer
+Provider und kein stiller Ersatzprompt. Verbindungen werden nach dem CLI-/
+Workflow-Aufruf geschlossen. Bereits gemeldete Usage bleibt bei Strukturfehlern
+und im Fehler-/Abbrucharchiv erhalten; Metadatenfehler maskieren einen ursprünglichen
+Providerfehler nicht. Die Requests-Zähler unterscheiden Versuche und abgeschlossene
+Provider-Antworten von einem erfolgreich validierten verbesserten Prompt.
+
+OpenAI/ChatGPT werten die endgültige Responses-Usage aus, ohne Stream-Deltas
+zusätzlich zu zählen. Ollama liefert seine vorhandenen Zähler und Serverdauer.
+`prompt-usage.json`, `prompt-metadata.json`, Report und CSV enthalten eigene
+`Prompt*`-Werte. Keine Addition zu OpenCode-Usage. Fehlende Reasoning-/Cache-/
+Kostenwerte bleiben unbekannt; die drei Improver-Clients melden keine USD-Kosten.
+Die ursprüngliche CSV-Historie bleibt erhalten und bekommt nur leere neue Spalten.
+
+ChatGPT-Refresh und Credential-Speicherung sind über einen gemeinsamen OS-Lock
+pro Benutzer serialisiert. Nach dem Lock wird neu geladen; neue Tokens samt
+Ablaufzeit erscheinen als vollständig geschriebener Keyring-Snapshot. Profile
+bleiben tokenfrei. Legacy-Credentials bleiben lesbar; alte bekannte Chunks werden
+aufgeräumt. Permanentes invalid_grant/verwandte Fehler führen zur erforderlichen
+Wiederanmeldung und verhindern weitere Refreshs dieser invalidierten Sitzung.
+Transiente Fehler erhalten die Sitzung. Der bestehende explizite Login verwendet
+den Lock und startet bei nötiger Anmeldung den vorhandenen PKCE-/Identity-/Scope-
+geprüften Browser-Login. Eine verspätete 401 invalidiert keinen inzwischen neu
+gespeicherten Access-Token. Ein Absturz zwischen Rotation und lokalem Speichern
+kann weiterhin einen neuen Login erfordern; Keyring-Cleanup ist bei Backend-
+Löschfehlern best effort und löscht niemals den neuen veröffentlichten Snapshot.
+
+### Abschlussprüfung
+
+**132 Python-Tests und 11 Node-Tests erfolgreich, keine Fehler oder Skips.**
+Die finalen Python-Prüfungen umfassen die bisherigen 88 Tests plus 44 zusätzliche
+Provider-/Auth-/Usage-/Integrationsprüfungen. Getestet sind alle drei Provider
+mit Offline-Responses, echte SDK-Response-/Stream-Event-Typen, erfolgreiche und
+fehlgeschlagene Improver-Runs bis Report/CSV/Abort, fehlende und explizite Nullwerte,
+Schemafehler mit erhaltener Usage, bereinigte Fehlermeldungen, Re-Login und
+transiente Auth-Fehler, Snapshot-Write-/Publish-/Profile-Fehler, Legacy-Migration,
+Aufräumen alter Chunks und zwei gleichzeitig gestartete echte Python-Prozesse,
+die denselben rotierenden Token nur einmal refreshen.
+
+Der abschließende Review hat Lifecycle, Module/Scope, Modellzuordnung,
+Report/Findings, Usage-Grenzen, Auth/Provider und Paketinhalt geprüft. Im
+vereinbarten Umfang bleiben keine erforderlichen Nachbesserungen offen.
+Kostenfreiheit oder vollständig erfasste OpenCode-Abschlussantworten werden
+weiterhin nicht behauptet. Dieser Provider-/Auth-Schritt wurde offline geprüft;
+keine neuen bezahlten Modellanfragen, echten Credential-Updates, Projektbuilds,
+Browser-Anmeldungen oder App-Starts wurden dafür ausgeführt.
+
+Das Änderungspaket `opencode-prompt-hardening-fix.zip` enthält 20 Dateien,
+davon vier neue technische Hilfs-/Testdateien. Es ist direkt gegen den zuletzt
+vollständig gelieferten Outcomes-Stand erstellt, benötigt keine Löschungen und
+ist als Overlay bytegenau mit der aktualisierten Komplett-ZIP verglichen.
+Modellkatalog, NPM-Dateien, Prompt-Kern/Config/Schema/Factory/Artefaktschreiber,
+PKCE, Callback und Identity-Verifier bleiben bytegenau erhalten.

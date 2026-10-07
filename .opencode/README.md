@@ -24,6 +24,7 @@ OpenCode nach den Projektregeln; Python bereitet den Lauf vor und wertet ihn aus
 - [Ergebnisse](#ergebnisse)
   - [Bericht und Findings](#bericht-und-findings)
 - [Usage und Messgrenzen](#usage-und-messgrenzen)
+  - [Prompt-Improver: eigene Usage und Fehlerbehandlung](#prompt-improver-eigene-usage-und-fehlerbehandlung)
   - [Vergleichbare Benchmarks](#vergleichbare-benchmarks)
 - [Tests](#tests)
 - [Änderungen und bewusste Grenzen](#änderungen-und-bewusste-grenzen)
@@ -498,7 +499,8 @@ C:/Dev/AI-Benchmarks/<Projekt>/
     findings.md                # offene Probleme / ausdrücklicher Erfassungsstatus
     original-prompt.md
     improved-prompt.md          # bei prompt
-    prompt-metadata.json        # effektiver Improver-Provider/Modell/Dauer
+    prompt-metadata.json        # Improver-Provider/Modell/Dauer, Status und eigene Usage
+    prompt-usage.json           # separate Provider-Messung, auch bei Improver-Fehlern
     benchmark-before.json       # bei benchmark: Build-/Surefire-/JaCoCo-Belege
     benchmark-after.json
     usage-preflight.json        # bei usage: nur Vorprüfung, kein Messbeginn
@@ -528,7 +530,9 @@ CSV-Zahlen verwenden unabhängig von Windows-Locale einen Punkt.
 und Dauer. Das sind die effektiven Improver-Einstellungen, kein unabhängiger
 Nachweis einer serverseitigen Modellzuordnung. Die Werte stehen auch in
 Report und CSV als `PromptProvider`, `PromptModel`, `PromptDurationSeconds`.
-Der Improver-Kern und die Provider bleiben unverändert.
+Die fachlichen Improver-Regeln, Config und das Pydantic-Prompt-Schema bleiben
+unverändert. Provider und Session-Speicherung sind für die unten beschriebene
+Fehlerbehandlung und eigene Messung ergänzt.
 
 `benchmark-before.json` und `benchmark-after.json` enthalten die originalen
 JaCoCo-CSV-Felder der Zielklasse, die Zähler/Zeiten jeder Surefire-Suite und
@@ -663,11 +667,83 @@ Der Snapshot endet **innerhalb** der Coding-Sitzung bei Finish. Noch nicht
 abgeschlossene Inference-Schritte und die anschließende Abschlussantwort sind
 nicht vollständig enthalten. Die eigentliche CLI-Aufrufzahl ist nicht immer
 die Zahl der HTTP-Requests. Prompt-Improver-Aufrufe außerhalb OpenCode sind im
-Session-Export nicht enthalten; es gibt dafür keine vorgetäuschten Usage-Zahlen.
+Session-Export nicht enthalten; seine tatsächlich gemeldeten Werte stehen
+separat in `prompt-usage.json` und den `Prompt*`-Spalten.
 Hilfsanfragen ohne exportierte Message, etwa Titelgenerierung, werden nicht
 gezählt. Liefert ein beim Begin laufender Request seine Zähler erst später,
 geht dessen gemeldeter Gesamtwert in das Delta ein; Tokens werden nicht anhand
 der Laufzeit aufgeteilt.
+### Prompt-Improver: eigene Usage und Fehlerbehandlung
+
+Das `prompt`-Modul und die eigenständige Improver-CLI verwenden denselben
+Ausführungsweg. Mit einem Ausgabeordner entstehen `prompt-metadata.json`
+und `prompt-usage.json`, auch bei Provider-, Auth- oder Strukturfehlern.
+Die Messdateien enthalten keine Credentials und keinen Antwort-/Reasoning-Text.
+Original- und Improved-Prompt bleiben die bewusst gespeicherten Prompt-Artefakte.
+
+| Bericht / CSV | Bedeutung |
+|---|---|
+| PromptProvider / PromptModel | An die Factory übergebene Einstellungen, unabhängig vom Coding-Modell |
+| PromptDurationSeconds | Gesamtdauer des Improvers einschließlich Auth, Anfrage und Prompt-Artefakten; keine zusätzliche Run-Dauer |
+| PromptInputTokens / PromptOutputTokens / PromptTotalTokens | Provider-Meldung; OpenAI-Input enthält Cache-Reads, Output enthält Reasoning |
+| PromptReasoningTokens / PromptCacheReadTokens / PromptCacheWriteTokens | Nur explizit gemeldete Teilmengen, nicht nochmals zu Input/Output addieren |
+| PromptRequests / PromptCompletedRequests / PromptRetries | Inference-Versuche / erfolgreich abgeschlossene Provider-Antworten / automatische Inference-Retries |
+| PromptProviderDurationSeconds | Wenn vorhanden: Provider-Gesamtdauer, bei Ollama Nanosekunden in Sekunden umgerechnet |
+| PromptEstimatedCostUSD / PromptCostStatus | Bei diesen Providern unbekannt / unavailable; keine Abonnement- oder Tokenpreis-Schätzung erfunden |
+| PromptUsageStatus | reported bei vorhandener Provider-Usage, sonst unavailable |
+| PromptStatus / PromptErrorCategory | completed oder failed für den Improver; bei Fehlern eine bereinigte Kategorie |
+
+OpenAI/ChatGPT lesen Usage aus der endgültigen Responses-Antwort; Stream-Deltas
+werden nicht zusätzlich gezählt. Ollama liefert Prompt-/Output-Zähler und
+gegebenenfalls Serverdauer. Reasoning-, Cache- und Kostenangaben bleiben dort
+unbekannt, wenn keine entsprechenden Zähler vorhanden sind. JSON `null`, leere
+CSV-Felder und „nicht verfügbar“ bedeuten unbekannt; echte gemeldete Nullen
+bleiben Nullen. Alte CSV-Zeilen bekommen leere neue Spalten, historische
+Run-Artefakte bleiben erhalten. `prompt` muss dafür ausgewählt sein; die
+Erfassung benötigt nicht zusätzlich das OpenCode-`usage`-Modul.
+
+Jeder Provider hat einen HTTP-Timeout von 120 Sekunden und führt keine
+automatischen Inference-Retries aus. Bei fehlendem Login zählen 0 Inference-
+Versuche; Auth-/Refresh-Anfragen sind in `PromptRequests` nicht enthalten.
+Ein vollständig empfangener Provider-Response kann trotzdem an der
+Pydantic-Strukturprüfung scheitern: `PromptCompletedRequests=1`, aber
+`PromptStatus=failed`. Die bis dahin gemeldeten Tokens bleiben erhalten.
+Unvollständige Antworten, Refusals, leere Ausgaben und abgerissene Streams
+werden abgewiesen; es gibt keinen stillen Rückfall auf den Original-Prompt
+oder einen anderen Provider. HTTP-Fehler werden kategorisiert, ohne rohe
+Provider-Meldungen in Report/CSV zu übernehmen.
+
+ChatGPT-Refreshs sind über einen gemeinsamen OS-Lock des Benutzerprofils
+serialisiert, auch zwischen Projekten; Wartezeit maximal 60 Sekunden.
+Nach dem Lock wird der aktuelle Credential-Stand erneut gelesen. Die rotierenden
+Tokens samt Ablaufzeit werden als versionierter Snapshot im Keyring gespeichert.
+Erst nach vollständigem Schreiben wird der Snapshot veröffentlicht; anschließend
+werden alte bekannte Chunks aufgeräumt. Vorhandene Legacy-Credentials bleiben
+lesbar und werden beim nächsten Speichern übernommen. Tokens stehen weiterhin
+ausschließlich im Keyring, nicht in `profile.json` oder Benchmark-Artefakten.
+Ein Prozessabbruch nach serverseitiger Rotation vor dem Speichern kann trotzdem
+eine erneute Anmeldung erforderlich machen.
+
+Endgültig ungültige Tokens verlangen eine erneute Anmeldung. Gespeicherte
+Invalidierung verhindert wiederholte Refreshs derselben ungültigen Sitzung;
+Netzwerkfehler invalidieren Credentials nicht. Ein laufender Benchmark öffnet
+keinen Browser. Für die bewusste Anmeldung vom `.opencode/scripts`-Ordner:
+
+```powershell
+python -B -m prompt.tests.test_chatgpt_login
+```
+
+Dieses bestehende Login-Skript versucht den synchronisierten Refresh und öffnet
+bei erforderlicher Anmeldung den vorhandenen PKCE-Login. Temporäre Fehler
+starten keinen neuen Browser-Login. Nach fehlgeschlagenem `begin`: gespeicherten
+Run mit `status` prüfen und mit `abort --id <id> --failed --reason <Grund>`
+archivieren, dann nach Behebung einen neuen Auftrag starten.
+
+Referenzen: [Responses und Usage](https://developers.openai.com/api/reference/python/resources/responses/methods/create),
+[ChatGPT-Sessions und Refresh](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions),
+[Auth-Fehler und Wiederanmeldung](https://developers.openai.com/siwc/token-sharing-open-source/errors-and-recovery),
+[Ollama-Chat-Messwerte](https://docs.ollama.com/api/chat).
+
 ### Vergleichbare Benchmarks
 
 Für jeden Modellvergleich möglichst eine **frische OpenCode-Sitzung** mit
@@ -695,7 +771,9 @@ lesende Statusabfragen einschließlich paralleler Zustandswechsel,
 Fehler-/Abbruchzeilen, Teilmessungen ohne erfundene Werte, gesperrte CSV,
 idempotenten Stop und erfolgreiche Retries ohne doppelte Run-IDs,
 Patch-/Findings-/CSV-Erhalt, Locking, Modellgenerator und Integration
-des existierenden Prompt-Improvers. Sie verbraucht keine Modellanfragen und
+des existierenden Prompt-Improvers, Provider-Fehler/Streaming/Usage,
+atomare Keyring-Snapshots mit Fake-Keyring und einen echten Refresh-Wettlauf
+zweier Python-Prozesse. Sie verbraucht keine Modellanfragen und
 startet keine Anwendung. Live-Provider-Smoke-Tests separat und bewusst ausführen.
 Die Node-Suite benötigt die in `.opencode/package.json` deklarierte
 NPM-Abhängigkeiten (`npm ci` in `.opencode`).
@@ -717,10 +795,10 @@ Die konkreten Prüfungen und Grenzen dieser Migration stehen in `MIGRATION_REPOR
 - Bytecode entfernt und ignoriert. Python-Abhängigkeiten deklarativ erfasst.
 - Callback-Smoke-Test startet den Listener; Improver-Smoke-Test verwendet die
   Config-Factory; CLI-Hilfe nennt alle drei Provider.
-- Prompt-Kern, Config und Provider-/OAuth-Implementierung unverändert. Die
-  früher genannten Refresh-Lock-, Re-Login-, `response.incomplete`- und
-  Keyring-Chunk-Aufräumpunkte bleiben für später; der Workflow-Store-Lock ist
-  kein globaler OAuth-Refresh-Lock für unterschiedliche Projekte/Prozesse.
+- Prompt-Kern, Config und Prompt-Schema unverändert; Provider messen ihre
+  eigene Usage und behandeln Fehler/Incomplete/Refusal ausdrücklich. Ein
+  eigener globaler ChatGPT-Session-Lock schützt Refreshs und Credential-Speicherung.
+  Das bestehende Login-Skript unterstützt die bewusste erneute Anmeldung.
 - `package.json` / `package-lock.json` aktualisiert: V2-Client **2.0.19** ergänzt,
   vorhandene V1-Abhängigkeit erhalten und JavaScript als ESM deklariert.
   Benchmark, Lifecycle und Prompt-Integration bleiben Python.
