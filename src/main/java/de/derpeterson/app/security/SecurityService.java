@@ -14,14 +14,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,12 +37,13 @@ public class SecurityService {
 
     private final UserService userService;
     private final UserRepository userRepository;
+    private final CustomUserDetailsService userDetailsService;
 
     public Optional<UserDetails> getAuthenticatedUser(HttpServletRequest request) {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         Authentication authentication = securityContext.getAuthentication();
         if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof UserDetails userDetails) {
-            if (isUserActive(userDetails.getUsername())) {
+            if (hasCurrentPrivileges(userDetails, authentication)) {
                 return Optional.of(userDetails);
             }
             clearStaleAuthentication(request);
@@ -58,7 +63,7 @@ public class SecurityService {
         }
 
         if (userDetails != null) {
-            if (!isUserActive(userDetails.getUsername())) {
+            if (!hasCurrentPrivileges(userDetails, null)) {
                 clearStaleAuthentication(request);
                 return Optional.empty();
             }
@@ -134,10 +139,19 @@ public class SecurityService {
         SecurityContextHolder.clearContext();
     }
 
-    private boolean isUserActive(String email) {
-        return userRepository.findByEmail(email)
-                .map(UserEntity::isEnabled)
-                .orElse(false);
+    private boolean hasCurrentPrivileges(UserDetails principal, Authentication authentication) {
+        try {
+            UserDetails current = userDetailsService.loadUserByUsername(principal.getUsername());
+            var authorities = current.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toSet());
+            return current.isEnabled()
+                    && authorities.equals(principal.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+                            .collect(Collectors.toSet()))
+                    && (authentication == null || authorities.equals(authentication.getAuthorities().stream()
+                            .map(GrantedAuthority::getAuthority).collect(Collectors.toSet())));
+        } catch (UsernameNotFoundException exception) {
+            return false;
+        }
     }
 
     private void clearStaleAuthentication(HttpServletRequest request) {
@@ -145,11 +159,16 @@ public class SecurityService {
             VaadinSession.getCurrent().setAttribute(UserDetails.class, null);
         }
 
-        HttpSession httpSession = request.getSession(false);
+        HttpSession httpSession = request == null ? null : request.getSession(false);
         if (httpSession != null) {
             httpSession.removeAttribute(AUTH_USER_SESSION_KEY);
+            httpSession.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+            // Discard the old Vaadin UIs too: a later remember-me authentication
+            // with reduced roles must not resume callbacks on an old admin view.
+            httpSession.invalidate();
         }
 
+        SecurityContextHolder.getContext().setAuthentication(null);
         SecurityContextHolder.clearContext();
     }
 

@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -20,7 +21,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
@@ -51,6 +52,13 @@ public class SecurityConfig {
     @Bean
     public SecurityContextRepository securityContextRepository() {
         return new HttpSessionSecurityContextRepository();
+    }
+
+    @Bean
+    public FilterRegistrationBean<VaadinSecurityFilter> vaadinSecurityFilterRegistration() {
+        var registration = new FilterRegistrationBean<>(vaadinSecurityFilter);
+        registration.setEnabled(false);
+        return registration;
     }
 
     @Bean
@@ -144,7 +152,7 @@ public class SecurityConfig {
                             }
                         })
                 )
-                .addFilterBefore(vaadinSecurityFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(vaadinSecurityFilter, AuthorizationFilter.class)
                 .sessionManagement(session -> session
                         .sessionFixation().newSession()
                 )

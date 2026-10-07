@@ -524,7 +524,7 @@ class UserStatusPersistenceTest {
         assertTrue(Hibernate.isInitialized(users.getFirst().getRoleEntities()));
         assertTrue(users.getFirst().hasRole(RoleType.ROLE_USER));
         assertTrue(service.canDeleteUser(users.getFirst()));
-        assertTrue(service.wouldRemoveLastEnabledAdmin(userId, false, users.getFirst().getRoleEntities()));
+        assertFalse(service.wouldRemoveLastEnabledAdmin(userId, false, users.getFirst().getRoleEntities()));
     }
 
     @ParameterizedTest

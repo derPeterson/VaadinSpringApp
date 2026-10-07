@@ -189,7 +189,8 @@ class UserServicePersistenceTest {
 
         @Bean
         SecurityService securityService(UserService service, UserRepository repository) {
-            return new SecurityService(mock(PersistentTokenBasedRememberMeServices.class), service, repository);
+            return new SecurityService(mock(PersistentTokenBasedRememberMeServices.class), service, repository,
+                    new de.derpeterson.app.security.CustomUserDetailsService(repository));
         }
     }
 }

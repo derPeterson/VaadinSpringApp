@@ -3,11 +3,10 @@ package de.derpeterson.app.security;
 import com.vaadin.flow.server.VaadinSession;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -15,53 +14,26 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @Component
+@RequiredArgsConstructor
 public class VaadinSecurityFilter implements Filter {
 
-    private static final Logger logger = LoggerFactory.getLogger(VaadinSecurityFilter.class);
-
-    private static final String USER_SESSION_KEY = "authenticatedUser";
+    // Deferred lookup avoids the SecurityConfig/remember-me construction cycle.
+    private final ObjectProvider<SecurityService> securityService;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-
         HttpServletRequest httpRequest = (HttpServletRequest) request;
-        String requestURI = httpRequest.getRequestURI();
-
-        logger.debug("🔥 VaadinSecurityFilter is called: {}", requestURI);
-
-        // 🔄 If it is a Vaadin request, simply forward it
-        if (requestURI.startsWith("/VAADIN/")) {
-            chain.doFilter(request, response);
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        HttpSession session = httpRequest.getSession(false);
+        boolean hadPrincipal = authentication != null && authentication.getPrincipal() instanceof UserDetails
+                || VaadinSession.getCurrent() != null && VaadinSession.getCurrent().getAttribute(UserDetails.class) != null
+                || session != null && session.getAttribute("authenticatedUser") instanceof UserDetails;
+        if (securityService.getObject().getAuthenticatedUser(httpRequest).isEmpty() && hadPrincipal) {
+            // Also stop UIDL/VAADIN callbacks to an already open privileged view.
+            ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
-
-        if (SecurityContextHolder.getContext().getAuthentication() == null) {
-            // 1️⃣ Get userDetails from VaadinSession first
-            UserDetails userDetails = null;
-            if (VaadinSession.getCurrent() != null) {
-                userDetails = VaadinSession.getCurrent().getAttribute(UserDetails.class);
-            }
-
-            // 2️⃣ If not available, restore userDetails from HttpSession
-            if (userDetails == null) {
-                HttpSession httpSession = httpRequest.getSession(false);
-                if (httpSession != null) {
-                    userDetails = (UserDetails) httpSession.getAttribute(USER_SESSION_KEY);
-                }
-            }
-
-            // 3️⃣ If userDetails exists, set in SecurityContext
-            if (userDetails != null) {
-                logger.debug("✅ User found from VaadinSession or HttpSession: {}", userDetails.getUsername());
-                Authentication auth = new UsernamePasswordAuthenticationToken(
-                        userDetails, userDetails.getPassword(), userDetails.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            } else {
-                logger.debug("⚠️ No user found in VaadinSession or HttpSession.");
-            }
-        }
-
         chain.doFilter(request, response);
     }
 }
