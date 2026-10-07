@@ -272,7 +272,7 @@ Final-Metriken, archiviert Findings, erzeugt Patch/Report und beendet den Run.
 | Option | Pflicht? | Wirkung / Standard |
 |---|---|---|
 | `--id <Run-ID>` | Ja | Die von `begin` erzeugte ID: 32 kleine Hex-Zeichen. Keine Commit-ID und keine OpenCode-Session-ID. |
-| `--human-interventions <Anzahl>` | Nein | Neue Korrekturen oder zusätzliche Vorgaben des Benutzers seit Begin. Selbstständige Modellkorrekturen zählen nicht. Ganze Zahl ≥ 0, Standard `0`. |
+| `--human-interventions <Anzahl>` | Nein | Neue fachliche Korrekturen oder zusätzliche Aufgabenanweisungen des Benutzers seit Begin. Zugriffsgenehmigungen, automatische Wiederaufnahmen, rein technisches Fortsetzen, Kontextwiederherstellung und selbstständige Modellkorrekturen zählen nicht. Ganze Zahl ≥ 0, Standard `0`. |
 | `--correction-rounds <Anzahl>` | Nein | Fehlgeschlagene Verifikationsläufe, die eine weitere Codeänderung erforderten. Ganze Zahl ≥ 0, Standard `0`. |
 | `--usage-export <Datei>` | Nein | Expliziter vollständiger **Nachher**-Export derselben Session. Bei `usage` ersetzt er den automatischen Export; ohne `usage` ohne Wirkung. |
 | `--summary-file <Datei>` | Bei `/start` ja; direkte CLI optional | UTF-8 Markdown außerhalb Git: durchgeführte Arbeit, bei Analyse der geprüfte Umfang und Grenzen; bei Implementierung auch Verhaltensänderungen für `report.md`. Keine zusätzliche dauerhafte Run-Datei. |
@@ -327,7 +327,7 @@ Abort aus und ersetzen keine Prüfung der Voraussetzungen.
 | `--id <Run-ID>` | Ja | Den aktiven Lauf mit dieser ID abbrechen und für einen neuen Run freigeben. |
 | `--reason <Text>` | Nein | Grund im Report und in der CSV festhalten. Ein ausdrücklich leerer Grund wird abgewiesen. |
 | `--failed` | Nein | Auftrag endgültig fehlgeschlagen: `Outcome=failed`, `Terminal=true`. Ohne Flag: bewusst abgebrochen (`aborted`). |
-| `--human-interventions <Zahl>` | Nein | Bekannte Benutzereingriffe, ganze Zahl >= 0. Ohne Angabe letzter erfasster Wert, sonst unbekannt. |
+| `--human-interventions <Zahl>` | Nein | Bekannte fachliche Korrekturen oder zusätzliche Aufgabenanweisungen; gleiche Zählregel wie bei `finish`. Zugriffsgenehmigungen und technische Wiederaufnahmen zählen nicht. Ganze Zahl >= 0. Ohne Angabe letzter erfasster Wert, sonst unbekannt. |
 | `--correction-rounds <Zahl>` | Nein | Bekannte Korrekturrunden, ganze Zahl >= 0. Ohne Angabe letzter erfasster Wert, sonst unbekannt. |
 | `-h`, `--help` | Nein | Nur die Hilfe für `abort` anzeigen. |
 

@@ -141,7 +141,13 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    committing if they cannot be explained as part of the task.
 6. Count Korrekturrunden: failed verification runs that required another
    code change. HumanInterventions starts at 0;
-   count new user corrections/guidance, not the model's self-corrections.
+   count only new substantive user corrections or task guidance after begin.
+   Do not count access/tool approvals, automatic retries or resumptions,
+   context restoration/compaction, or purely technical continuation without
+   new task guidance. The model's self-corrections do not count either.
+   If none occurred, pass 0 even if approvals or technical resumptions occurred.
+   Use the same count in the work summary and final answer. Technical resumptions
+   may be described separately; do not label them HumanInterventions.
    Write the work summary as UTF-8 Markdown to an actual temporary
    file OUTSIDE Git. Its body belongs under "Durchgeführte Arbeit und Verhaltensänderungen"
    in report.md: describe completed analysis/work, changed behavior/contracts if any, important
