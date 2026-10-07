@@ -10,6 +10,7 @@ OpenCode nach den Projektregeln; Python bereitet den Lauf vor und wertet ihn aus
 - [Auftrag, Improver, Workflow und Projektregeln](#auftrag-improver-workflow-und-projektregeln)
 - [Installation](#installation)
 - [Aufruf in OpenCode](#aufruf-in-opencode)
+- [Lokaler Merge nach Review](#lokaler-merge-nach-review)
 - [Ablauf und unabhängige Module](#ablauf-und-unabhängige-module)
   - [Analyse und Implementierung](#analyse-und-implementierung)
 - [Python-CLI und Request-Datei](#python-cli-und-request-datei)
@@ -160,6 +161,94 @@ Nach Änderungen am Katalog:
 Der Generator validiert den gesamten Katalog vor Änderungen. Er überschreibt
 und entfernt nur eigene markierte Commands. Manuelle Commands bleiben erhalten.
 
+## Lokaler Merge nach Review
+
+Nach dem Review lässt sich ein abgeschlossener Feature-Branch separat integrieren:
+
+```text
+/merge
+/merge roleservice_nachbesserung
+/merge feature/roleservice_nachbesserung
+```
+
+Ohne Parameter nimmt `/merge` ausschließlich den aktuell ausgecheckten
+`feature/*`-Branch. Auf `main`, einem fremden Branch oder detached HEAD stoppt
+dieser Aufruf, statt einen zuletzt geänderten Branch zu raten. Optional kann
+genau ein Branchname angegeben werden; beide Schreibweisen mit und ohne
+`feature/` meinen denselben lokalen Feature-Branch. Es gibt keine `latest`-Auswahl
+und keinen `switch`-Parameter. Beide Varianten enden bei Erfolg auf `main`.
+Der ausdrückliche Aufruf autorisiert den lokalen Merge nach deinem
+Review. Ein abgeschlossener Benchmark ist für sich allein keine Reviewfreigabe.
+`/merge` ist **kein fünftes Modul**, gehört nicht zu `complete` und wird von
+`/start` niemals automatisch aufgerufen. Der bisherige Abschluss auf dem
+Feature-Branch bleibt erhalten.
+
+OpenCode verwendet `scripts/merge.py`, um den Branch einem abgeschlossenen Lauf
+im externen Benchmark-Speicher zuzuordnen. Der aktuelle Zustand muss zu Branch,
+Projekt, Ergebnis und Commit-Historie passen. Timestamp- und bisherige ID-Ordner
+werden anhand der gespeicherten Pfade gelesen. Der Bericht unter
+**Durchgeführte Arbeit und Verhaltensänderungen**, offene Findings und der
+aktuelle Git-Diff liefern die Grundlage für die Merge-Nachricht. Zusätzliche
+Commits nach dem Run-Abschluss werden im tatsächlichen Diff berücksichtigt.
+Erinnerungen, Dateimodifikationszeiten oder die README ersetzen diese Belege nicht.
+
+Die Nachricht enthält einen konkreten deutschen Titel über erledigte Arbeit,
+kurze Stichpunkte, Branch und Run-ID. Offene Findings werden durch einen Merge
+nicht als behoben umgedeutet. OpenCode prüft Java 25 und führt auf dem Feature-Branch
+erneut `clean test` und `jacoco:report` aus; für Änderungen an der Infrastruktur
+gehören die betroffenen Python-/Node-Tests dazu. Das Git-Skript selbst führt
+keine Builds aus und schreibt keine Zusammenfassung mit einer separaten Modell-API.
+Diese Aufgaben übernimmt das aktuell ausgewählte OpenCode-Modell.
+
+Bei Erfolg steht das Projekt auf sauberem `main`. Ein expliziter Merge-Commit
+enthält die erzeugte Nachricht; Originalcommits und Feature-Branch bleiben erhalten.
+Die geprüfte Feature-Dateiversion wird unverändert integriert. Voraussetzung:
+`main` ist ein Vorfahr des Feature-Branches. Wenn beide inzwischen eigene
+Änderungen haben, stoppt der Command statt ungeprüfte Konflikte zu lösen.
+Siehe [Git-Merge-Dokumentation](https://git-scm.com/docs/git-merge).
+
+Weitere Stop-Gründe sind ein aktiver `/start`-Lauf, offene/staged/untracked Dateien
+(auch eine nicht archivierte `findings.md`), eine laufende Git-Operation, ein
+fremder/detached Branch, ein fehlender oder nicht abgeschlossener Run und ein
+anderer Worktree mit `main` oder dem Feature-Branch. Fehlgeschlagene Tests und
+Git-Hooks stoppen ebenfalls. Es gibt keine automatischen Reparaturen, Stashes,
+Resets, Konfliktauflösungen, Fetches, Pulls, Pushes oder Branchlöschungen.
+Nach einem Git-Fehler wird der tatsächliche Zustand gemeldet und nicht zurückgesetzt.
+Ein erneut aufgerufener, bereits integrierter Branch erzeugt keinen weiteren Commit.
+
+Pläne und Nachrichtendateien liegen außerhalb Git, normalerweise im System-Temp.
+Vor der Integration werden Branch-Spitzen und Bericht-/Ergebnishashes erneut
+geprüft. Die vorhandene Store-Sperre verhindert einen gleichzeitigen neuen
+`/start`-Lauf während des Merge-Schritts. Historische Reports, Findings, CSV und
+Run-Zustände werden nicht verändert; `/merge` startet keinen neuen Benchmark.
+
+Die CLI kann auch direkt verwendet werden. Dann ist der Aufrufer selbst für die
+inhaltliche Prüfung und tatsächlich erfolgreiche Tests zuständig:
+
+```powershell
+.\.venv\Scripts\python.exe .opencode/scripts/merge.py --help
+.\.venv\Scripts\python.exe .opencode/scripts/merge.py prepare --plan-file C:/Temp/merge-plan.json
+.\.venv\Scripts\python.exe .opencode/scripts/merge.py prepare --branch roleservice_nachbesserung --plan-file C:/Temp/merge-plan.json
+.\.venv\Scripts\python.exe .opencode/scripts/merge.py apply --plan-file C:/Temp/merge-plan.json --message-file C:/Temp/merge-message.txt
+```
+
+Globale Optionen `--repo` und `--store-root` kommen vor `prepare`/`apply`.
+Der Store-Default ist wie bei `/start`: `OPENCODE_BENCHMARK_ROOT` oder
+`C:/Dev/AI-Benchmarks` unter Windows, sonst `~/AI-Benchmarks`.
+`prepare` prüft und schreibt nur den externen Plan; `--branch` ist optional.
+`apply` prüft erneut und führt den lokalen Merge mit dem fest gebundenen Branch
+aus. Ein späterer Wechsel wählt nicht automatisch einen anderen Quellbranch.
+UTF-8-Nachricht: Titel, Leerzeile und Stichpunkte;
+Branch/Run-ID ergänzt das Skript. Keine Shell-Interpolation des Nachrichtentexts.
+
+Installation des Änderungspakets: ZIP im Projektroot entpacken, vorhandene
+`.opencode/README.md` überschreiben und die neuen Dateien mit den übrigen
+Infrastrukturänderungen committen. Nur vier Dateien gehören zu diesem Paket:
+`commands/merge.md`, `scripts/merge.py`, `scripts/tests/test_merge.py`, `README.md`.
+OpenCode anschließend neu öffnen bzw. seine Command-Liste neu laden, falls
+`/merge` noch nicht angezeigt wird. Weder zusätzliche NPM-Pakete noch ein neues
+Plugin sind dafür erforderlich. Eine spätere Reviewer-Kopplung ist nicht enthalten.
+
 ## Ablauf und unabhängige Module
 
 | Modul | Begin | Finish |
@@ -189,7 +278,8 @@ Die Regeln in `commands/start.md` für Java 25, Tests, Diff-Prüfung, gezieltes 
 Korrekturrunden und Commit gelten weiterhin. `findings.md` ist genau die
 erlaubte untracked Ausnahme beim Finish. Sie wird archiviert und erst nach
 erfolgreichem Schreiben aller Artefakte/CSV aus dem Projekt entfernt.
-Keine automatischen Fetches, Merges, Rebases, Pushes oder Rückkehr zu `main`.
+Im `/start`-Workflow keine automatischen Fetches, Merges, Rebases, Pushes oder Rückkehr zu `main`.
+Der separat aufgerufene `/merge`-Command integriert erst nach dem Review und deinem ausdrücklichen Aufruf.
 
 ### Analyse und Implementierung
 
@@ -816,6 +906,8 @@ Vom `.opencode/scripts`-Ordner:
 
 ```powershell
 python -B -m unittest discover -s tests -v
+# Nur die eigenständigen Merge-Regressionen:
+python -B -m unittest discover -s tests -p test_merge.py -v
 node --test tests/test_workflow_usage.mjs
 ```
 
