@@ -139,12 +139,21 @@ async function connectNativeServer(ctx, signal) {
   const configured = ctx.options?.serverUrl
   const endpoint = configured ? { url: configured } : await Service.discover({ version: ctx.app.version })
   if (!endpoint) throw new Error("No active V2 service endpoint. For standalone serve, set workflow-usage plugin option serverUrl.")
-  const url = new URL(endpoint.url)
-  if (!["http:", "https:"].includes(url.protocol) || !["127.0.0.1", "localhost", "[::1]"].includes(url.hostname))
-    throw new Error("Usage endpoint must be the local OpenCode server process.")
-  const client = OpenCode.make({ baseUrl: endpoint.url, headers: Service.headers(endpoint) })
+  const baseUrl = localUsageServerUrl(endpoint.url)
+  const client = OpenCode.make({ baseUrl, headers: Service.headers(endpoint) })
   const info = await client.server.info({ signal })
   if (info.pid !== process.pid || info.version !== ctx.app.version)
     throw new Error("Usage endpoint is not the active OpenCode server process.")
   return client
+}
+
+// A wildcard describes where the service listens, not a remote destination.
+// Pair may expose the same process on the LAN; usage still connects locally.
+export function localUsageServerUrl(value) {
+  const url = new URL(value)
+  if (url.hostname === "0.0.0.0") url.hostname = "127.0.0.1"
+  if (url.hostname === "[::]") url.hostname = "[::1]"
+  if (!["http:", "https:"].includes(url.protocol) || !["127.0.0.1", "localhost", "[::1]"].includes(url.hostname))
+    throw new Error("Usage endpoint must be the local OpenCode server process.")
+  return url.href
 }

@@ -633,7 +633,14 @@ Sitzung über den SDK-Client des aktiven Servers. V1 verwendet den bereitgestell
 Client. In **2.0.19** fehlt der vollständige Export im Plugin-Kontext; deshalb
 verwendet der Adapter den öffentlichen V2-Client und die Dienstregistrierung.
 Er prüft Serverversion und Prozess-ID gegen den Prozess, in dem das Plugin läuft.
-Ein fremder Server wird vor dem Export abgewiesen. Der vollständige Export
+Ein fremder Server wird vor dem Export abgewiesen.
+Für Pair darf der Dienst auf `0.0.0.0` oder `::` lauschen. Der Usage-Adapter
+übersetzt diese Bind-Adressen ausschließlich für seinen eigenen Zugriff nach
+`127.0.0.1` beziehungsweise `::1`, behält Port und Authentifizierung bei und
+prüft weiterhin dieselbe Prozess-ID und Serverversion. Die Netzwerkfreigabe
+des Dienstes bleibt unverändert. Beliebige LAN-/Remote-Adressen werden nicht
+als Usage-Endpunkt akzeptiert. Nach Adapteränderungen den Dienst neu starten
+und dieselbe bestehende Sitzung fortsetzen; keinen neuen Run beginnen. Der vollständige Export
 enthält auch Nachrichten vor Komprimierungen; `session.context` wäre dafür zu kurz.
 Desktop-App, Terminal, Browser und IDE am selben Dienst verwenden denselben Weg. Ein separates lokales
 `opencode.cmd` muss die Sitzung nicht kennen. Es gibt keine Zuordnung anhand

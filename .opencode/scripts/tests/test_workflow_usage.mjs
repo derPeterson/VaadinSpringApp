@@ -4,9 +4,10 @@ import { readFile, access } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { createOpencodeClient } from "@opencode-ai/sdk/client"
+import { Service } from "@opencode/client/service"
 import plugin from "../../plugins/workflow-usage.js"
 const WorkflowUsage = plugin.server
-import { measurementExport, nativeMeasurements, nativeUsageBridge } from "../workflow_usage_bridge.mjs"
+import { measurementExport, nativeMeasurements, nativeUsageBridge, localUsageServerUrl } from "../workflow_usage_bridge.mjs"
 
 const directory = path.join(tmpdir(), "workflow-project")
 const sessionID = "ses_actualActive"
@@ -209,4 +210,67 @@ test("V2 public client verifies server process before exporting the active sessi
     assert.equal(measured.messages[0].info.tokens.reasoning, 5)
     assert.deepEqual(requests, ["/api/info", "/api/info", `/api/experimental/session/${sessionID}/export`])
   } finally { globalThis.fetch = originalFetch; await bridge.dispose() }
+})
+
+test("usage maps wildcard binds to loopback without altering port or path", () => {
+  for (const [input, expected] of [
+    ["http://0.0.0.0:49374", "http://127.0.0.1:49374/"],
+    ["http://[::]:49374", "http://[::1]:49374/"],
+    ["https://0.0.0.0:43219/base?x=1", "https://127.0.0.1:43219/base?x=1"],
+    ["http://127.0.0.1:43219", "http://127.0.0.1:43219/"],
+    ["http://localhost:43219", "http://localhost:43219/"],
+    ["http://[::1]:43219", "http://[::1]:43219/"],
+  ]) assert.equal(localUsageServerUrl(input), expected)
+})
+
+test("wildcard support does not permit LAN, remote or non-HTTP endpoints", () => {
+  for (const value of ["http://192.168.1.20:49374", "http://10.0.0.10:49374",
+    "https://example.com", "http://127.0.0.1.example.com", "http://[2001:db8::1]",
+    "ftp://0.0.0.0:49374", "file:///tmp/test", "not a URL"])
+    assert.throws(() => localUsageServerUrl(value))
+})
+
+test("Pair service discovery connects locally, preserves auth and rejects another process/version", async () => {
+  const originalFetch = globalThis.fetch
+  const originalDiscover = Service.discover
+  let info
+  const requests = []
+  const ctx = { app: { version: "2.0.19" }, location: { directory },
+    session: { get: async () => ({ id: sessionID, location: { directory } }) } }
+  const endpoint = { url: "http://0.0.0.0:43219", auth: { type: "basic", username: "opencode", password: "fixture-only" } }
+  const originalEndpoint = { ...endpoint }
+  const expectedHeaders = Service.headers(endpoint)
+  Service.discover = async (options) => {
+    assert.equal(options.version, ctx.app.version)
+    return endpoint
+  }
+  globalThis.fetch = async (url, options) => {
+    const parsed = new URL(url)
+    assert.equal(parsed.origin, "http://127.0.0.1:43219")
+    const headers = new Headers(options.headers)
+    for (const [key, value] of Object.entries(expectedHeaders)) assert.equal(headers.get(key), value)
+    requests.push(parsed.pathname)
+    return new Response(JSON.stringify(parsed.pathname === "/api/info" ? info : {
+      data: { info: { id: sessionID, location: { directory } }, messages: [nativeMessage()] },
+    }), { headers: { "content-type": "application/json" } })
+  }
+  const bridge = nativeUsageBridge(ctx)
+  try {
+    info = { pid: process.pid + 1, version: ctx.app.version }
+    await assert.rejects(bridge.capture({ sessionID }), /active OpenCode server process/)
+    info = { pid: process.pid, version: "2.0.20" }
+    await assert.rejects(bridge.capture({ sessionID }), /active OpenCode server process/)
+    assert.deepEqual(requests, ["/api/info", "/api/info"])
+    info = { pid: process.pid, version: ctx.app.version }
+    const capture = JSON.parse(await bridge.capture({ sessionID }))
+    const measured = JSON.parse(await readFile(capture.usage_export, "utf8"))
+    assert.equal(measured.messages[0].info.tokens.input, 100)
+    assert.equal(JSON.stringify(measured).includes("fixture-only"), false)
+    assert.deepEqual(endpoint, originalEndpoint)
+    assert.deepEqual(requests, ["/api/info", "/api/info", "/api/info", `/api/experimental/session/${sessionID}/export`])
+  } finally {
+    globalThis.fetch = originalFetch
+    Service.discover = originalDiscover
+    await bridge.dispose()
+  }
 })
