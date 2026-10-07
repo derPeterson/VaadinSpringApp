@@ -218,6 +218,22 @@ class VerificationQueueConcurrencyTest {
     }
 
     @Test
+    void adminCreatedDisabledAccountKeepsItsStoredIneligibility() throws IOException {
+        var created = UserEntity.builder().firstName("Created").lastName("User").email("created@example.com")
+                .password("hash").gender(Gender.OTHER).birthDate(LocalDate.of(1990, 1, 1))
+                .preferredLocale(Locale.ENGLISH).roleEntities(new ArrayList<>()).enabled(false)
+                .verificationPending(false).build();
+        admin.saveUser(created);
+        tx.executeWithoutResult(status -> tokens.saveAndFlush(new VerificationTokenEntity(null, "created-link",
+                users.findById(created.getId()).orElseThrow(), LocalDateTime.now().plusDays(1), TokenStatus.ACTIVE)));
+        assertFalse(users.findById(created.getId()).orElseThrow().isVerificationPending());
+        assertFalse(verification.validateToken("created-link"));
+        assertFalse(verification.sendVerificationEmailByUser(created));
+        assertFalse(users.findById(created.getId()).orElseThrow().isEnabled());
+        assertEquals(0, emails.count());
+    }
+
+    @Test
     void staleManagedAccountIsRefreshedBeforeTheEligibilityDecision() throws Exception {
         tx.executeWithoutResult(status -> {
             UserEntity cached = users.findById(id).orElseThrow();

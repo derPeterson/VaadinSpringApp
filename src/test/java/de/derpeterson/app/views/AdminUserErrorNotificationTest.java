@@ -5,6 +5,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
@@ -336,6 +337,25 @@ class AdminUserErrorNotificationTest {
         save.click();
         if (create) verify(users).saveUser(argThat(edited -> edited.getEmail().equals("available@example.com")));
         else verify(users).updateAdminUser(argThat(edited -> edited.getEmail().equals("available@example.com")), eq(3L), any());
+        assertFalse(dialog.isOpened());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void adminCreatedDisabledAccountIsNotEligibleForSelfVerification(boolean german) {
+        LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
+        ReflectionTestUtils.invokeMethod(section, "openDialog", user(true));
+        Dialog dialog = dialog();
+        descendants(dialog).filter(PasswordField.class::isInstance).map(PasswordField.class::cast)
+                .forEach(field -> field.setValue("Password!"));
+        descendants(dialog).filter(Checkbox.class::isInstance).map(Checkbox.class::cast)
+                .filter(field -> field.getLabel().equals(texts.getAdminUsersFieldEnabled()))
+                .findFirst().orElseThrow().setValue(false);
+        Button save = descendants(dialog).filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(button -> button.getText().equals(texts.getAdminUsersSave())).findFirst().orElseThrow();
+        assertTrue(save.isEnabled());
+        save.click();
+        verify(users).saveUser(argThat(edited -> !edited.isEnabled() && !edited.isVerificationPending()));
         assertFalse(dialog.isOpened());
     }
 

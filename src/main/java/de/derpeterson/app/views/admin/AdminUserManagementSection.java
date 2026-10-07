@@ -688,7 +688,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                         .id(formData.getId()).firstName(clean(formData.getFirstName()))
                         .lastName(clean(formData.getLastName())).email(clean(formData.getEmail()))
                         .gender(formData.getGender()).birthDate(formData.getBirthDate())
-                        .enabled(formData.isEnabled()).roleEntities(roleEntities).build();
+                        .enabled(formData.isEnabled()).verificationPending(false).roleEntities(roleEntities).build();
                 if (editMode) {
                     userService.updateAdminUser(edited, expectedVersion, formData.getPassword());
                 } else {
