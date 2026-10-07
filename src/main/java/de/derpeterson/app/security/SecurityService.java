@@ -39,6 +39,31 @@ public class SecurityService {
     private final UserRepository userRepository;
     private final CustomUserDetailsService userDetailsService;
 
+    /**
+     * Runs before Vaadin resolves/locks a UI, including for each WebSocket
+     * message. Use the connection's HTTP session, not a worker-thread context
+     * or VaadinSession attributes (which require the session lock).
+     */
+    public boolean hasCurrentSessionPrivileges(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            return true; // Public requests have no authenticated UI to revoke.
+        }
+        Object storedContext = session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        Authentication authentication = storedContext instanceof SecurityContext context ? context.getAuthentication() : null;
+        Object storedUser = session.getAttribute(AUTH_USER_SESSION_KEY);
+        boolean valid = (authentication == null || !(authentication.getPrincipal() instanceof UserDetails principal)
+                || hasCurrentPrivileges(principal, authentication))
+                && (!(storedUser instanceof UserDetails storedPrincipal) || hasCurrentPrivileges(storedPrincipal, null));
+        if (!valid) {
+            session.removeAttribute(AUTH_USER_SESSION_KEY);
+            session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+            session.invalidate(); // Discard every old UI associated with this connection.
+            SecurityContextHolder.clearContext();
+        }
+        return valid;
+    }
+
     public Optional<UserDetails> getAuthenticatedUser(HttpServletRequest request) {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         Authentication authentication = securityContext.getAuthentication();
