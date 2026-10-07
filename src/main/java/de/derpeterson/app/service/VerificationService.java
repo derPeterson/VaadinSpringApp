@@ -102,11 +102,12 @@ public class VerificationService {
         return tokenRepository.findByToken(token).orElse(null) != null;
     }
 
+    @Transactional
     public int deleteToken(String token) {
         return tokenRepository.deleteByToken(token);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = IOException.class)
     public boolean sendVerificationEmailByToken(String token) throws IOException {
         Optional<VerificationTokenEntity> tokenOptional = tokenRepository.findByToken(token);
         if (tokenOptional.isPresent()) {
@@ -125,7 +126,7 @@ public class VerificationService {
         return false;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = IOException.class)
     public boolean sendVerificationEmailByEmail(String email) throws IOException {
         Optional<UserEntity> userOptional = userRepository.findByEmail(email);
         if (userOptional.isPresent()) {
@@ -144,7 +145,7 @@ public class VerificationService {
         return false;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = IOException.class)
     public boolean sendVerificationEmailByUser(UserEntity user) throws IOException {
         if (!user.isEnabled()) {
             if (emailQueueService.hasOpenEmailForUserAndType(user, EmailType.VERIFICATION)) {
@@ -194,7 +195,7 @@ public class VerificationService {
     public void deleteExpiredTokens() {
         LocalDateTime liveDateTime = LocalDateTime.now().minus(Duration.parse(configService.getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)));
         int deleted = tokenRepository.deleteByExpiryDateBefore(liveDateTime);
-        var formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE);
+        var formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         logger.info("✅ {} expired verification tokens that are older than '{}' have been deleted.", deleted, formattedLiveDateTime);
     }
 

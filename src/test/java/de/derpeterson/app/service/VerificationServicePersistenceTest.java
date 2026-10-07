@@ -17,12 +17,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -201,54 +200,87 @@ class VerificationServicePersistenceTest {
         assertEquals(TokenStatus.ACTIVE, status("valid"));
     }
 
-    @Test
-    void queueRuntimeFailureRollsBackTokenRotation() {
+    @ParameterizedTest
+    @ValueSource(strings = {"token", "email", "user"})
+    void queueRuntimeFailureRollsBackTokenRotation(String entry) {
         seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
         doThrow(new IllegalStateException("simulated queue failure")).when(probes.queue())
                 .addEmailToQueue(any(), any(), any(), eq(EmailType.VERIFICATION));
         try (var locale = mockStatic(CustomI18NProvider.class)) {
             locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.ENGLISH);
-            assertThrows(IllegalStateException.class, () -> service.sendVerificationEmailByToken("old"));
+            assertThrows(IllegalStateException.class, () -> resend(entry));
         }
         assertEquals(TokenStatus.ACTIVE, status("old"));
         assertEquals(1, tokens.count());
     }
 
-    @Test
-    void findingCheckedTemplateFailureCommitsRotationWithoutQueuingEmail() {
+    @ParameterizedTest
+    @CsvSource({"token,logo", "email,logo", "user,logo", "token,template", "email,template", "user,template"})
+    void checkedResourceFailureRollsBackTokenRotationWithoutQueuingEmail(String entry, String resource) {
         seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        seed("inactive", TokenStatus.INACTIVE, LocalDateTime.now().plusDays(1));
+        seed("used", TokenStatus.USED, LocalDateTime.now().plusDays(1));
         var failure = new IOException("simulated classpath read failure");
-        try (var image = mockStatic(ImageHelper.class)) {
-            image.when(() -> ImageHelper.convertImageToBase64("META-INF/resources/custom-theme/service_logo.png"))
-                    .thenThrow(failure);
-            assertSame(failure, assertThrows(IOException.class, () -> service.sendVerificationEmailByToken("old")));
+        try (var image = mockStatic(ImageHelper.class, CALLS_REAL_METHODS);
+             var locale = mockStatic(CustomI18NProvider.class)) {
+            locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(
+                    resource.equals("template") ? Locale.FRENCH : Locale.ENGLISH);
+            if (resource.equals("logo")) {
+                image.when(() -> ImageHelper.convertImageToBase64("META-INF/resources/custom-theme/service_logo.png"))
+                        .thenThrow(failure);
+            }
+            IOException thrown = assertThrows(IOException.class, () -> resend(entry));
+            if (resource.equals("logo")) {
+                assertSame(failure, thrown);
+            } else {
+                assertInstanceOf(java.io.FileNotFoundException.class, thrown);
+            }
         }
-        assertEquals(TokenStatus.INACTIVE, status("old"));
-        assertEquals(2, tokens.count());
+        verify(probes.tokens(), times(2)).save(any(VerificationTokenEntity.class));
+        assertEquals(TokenStatus.ACTIVE, status("old"));
+        assertEquals(TokenStatus.INACTIVE, status("inactive"));
+        assertEquals(TokenStatus.USED, status("used"));
+        assertEquals(3, tokens.count());
         assertEquals(1, activeCount());
+        assertFalse(users.findById(userId).orElseThrow().isEnabled());
         verify(probes.queue(), never()).addEmailToQueue(any(), any(), any(), any());
     }
 
-    @Test
-    void findingCleanupFormattingFailureRollsBackDeletionOfOldTokens() {
-        seed("old", TokenStatus.EXPIRED, LocalDateTime.now().minusDays(8));
-        seed("recent", TokenStatus.EXPIRED, LocalDateTime.now().minusDays(1));
-        assertThrows(UnsupportedTemporalTypeException.class, service::deleteExpiredTokens);
-        assertTrue(service.existsToken("old"));
+    @ParameterizedTest
+    @EnumSource(TokenStatus.class)
+    void cleanupCommitsDeletionOfOldTokensAndKeepsBoundaryAndYoungerTokens(TokenStatus tokenStatus) {
+        LocalDateTime now = LocalDateTime.of(2026, 10, 7, 12, 0);
+        LocalDateTime cutoff = now.minusDays(7);
+        seed("old", tokenStatus, cutoff.minusSeconds(1));
+        seed("boundary", tokenStatus, cutoff);
+        seed("recent", tokenStatus, now.minusDays(1));
+        seed("future", tokenStatus, now.plusDays(1));
+        try (var clock = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+            clock.when(LocalDateTime::now).thenReturn(now);
+            assertDoesNotThrow(service::deleteExpiredTokens);
+            assertDoesNotThrow(service::deleteExpiredTokens);
+        }
+        assertFalse(service.existsToken("old"));
+        assertEquals(tokenStatus, status("boundary"));
         assertTrue(service.existsToken("recent"));
-        assertEquals(2, tokens.count());
+        assertEquals(tokenStatus, status("recent"));
+        assertEquals(tokenStatus, status("future"));
+        assertEquals(3, tokens.count());
+        assertFalse(users.findById(userId).orElseThrow().isEnabled());
     }
 
     @Test
-    void findingDeleteTokenNeedsAnExternalTransaction() {
+    void deleteTokenCommitsWithoutAnExternalTransactionAndReturnsZeroWhenMissing() {
         seed("delete", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-        assertThrows(InvalidDataAccessApiUsageException.class, () -> service.deleteToken("delete"));
-        assertTrue(service.existsToken("delete"));
-        int deleted = transaction.execute(tx -> service.deleteToken("delete"));
+        seed("keep", TokenStatus.USED, LocalDateTime.now().plusDays(1));
+        int deleted = service.deleteToken("delete");
         assertEquals(1, deleted);
         assertFalse(service.existsToken("delete"));
-        int missing = transaction.execute(tx -> service.deleteToken("delete"));
+        int missing = service.deleteToken("delete");
         assertEquals(0, missing);
+        assertEquals(TokenStatus.USED, status("keep"));
+        assertEquals(1, tokens.count());
+        assertTrue(users.existsById(userId));
     }
 
     @Test
@@ -303,6 +335,15 @@ class VerificationServicePersistenceTest {
 
     private UserEntity detachedUser() {
         return users.findById(userId).orElseThrow();
+    }
+
+    private boolean resend(String entry) throws IOException {
+        return switch (entry) {
+            case "token" -> service.sendVerificationEmailByToken("old");
+            case "email" -> service.sendVerificationEmailByEmail("test@example.com");
+            case "user" -> service.sendVerificationEmailByUser(detachedUser());
+            default -> throw new IllegalArgumentException(entry);
+        };
     }
 
     private void seed(String value, TokenStatus tokenStatus, LocalDateTime expiry) {

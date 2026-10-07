@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -23,7 +24,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -158,15 +158,15 @@ class VerificationServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"token", "email", "user"})
-    void resendForDisabledUserRotatesTokenAndQueuesRealClasspathTemplate(String entry) throws IOException {
+    @CsvSource({"token,en", "email,en", "user,en", "token,de", "email,de", "user,de"})
+    void resendForDisabledUserRotatesTokenAndQueuesRealClasspathTemplate(String entry, String language) throws IOException {
         prepareResend(entry);
         when(config.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("PT1H");
         when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Example Service");
         when(config.getString(ConfigEntry.BASE_URL)).thenReturn("https://example.com/app/");
         when(messages.getEmailVerificationSubject()).thenReturn("Verify account");
         try (var locale = mockStatic(CustomI18NProvider.class)) {
-            locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.ENGLISH);
+            locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.forLanguageTag(language));
             assertTrue(resend(entry));
         }
 
@@ -182,8 +182,9 @@ class VerificationServiceTest {
         for (String placeholder : List.of("SERVICE_LOGO", "SERVICE_NAME", "FIRST_NAME", "LAST_NAME", "VERIFICATION_LINK")) {
             assertFalse(body.getValue().contains("{{" + placeholder + "}}"));
         }
-        // Confirmed template typo; characterize it rather than fixing production behavior.
-        assertTrue(body.getValue().contains("{{SERVICES_NAME}}"));
+        assertTrue(body.getValue().contains("© 2025 Example Service. "
+                + (language.equals("de") ? "Alle Rechte vorbehalten." : "All rights reserved.")));
+        assertFalse(body.getValue().contains("{{"));
         assertFalse(user.isEnabled());
     }
 
@@ -216,10 +217,10 @@ class VerificationServiceTest {
     }
 
     @Test
-    void findingCleanupDeletesThenThrowsBecauseLocalDateTimeHasNoOffset() {
+    void cleanupDeletesUsingConfiguredCutoffWithoutFormattingFailure() {
         when(config.getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn("P7D");
         LocalDateTime before = LocalDateTime.now().minusDays(7);
-        assertThrows(UnsupportedTemporalTypeException.class, service::deleteExpiredTokens);
+        assertDoesNotThrow(service::deleteExpiredTokens);
         var cutoff = ArgumentCaptor.forClass(LocalDateTime.class);
         verify(tokens).deleteByExpiryDateBefore(cutoff.capture());
         assertFalse(cutoff.getValue().isBefore(before));

@@ -34,7 +34,7 @@
     <mj-section>
       <mj-column>
         <mj-text font-size="12px" color="#aaaaaa" align="center">
-          © 2025 {{SERVICES_NAME}}. Alle Rechte vorbehalten.
+          © 2025 {{SERVICE_NAME}}. Alle Rechte vorbehalten.
         </mj-text>
       </mj-column>
     </mj-section>
