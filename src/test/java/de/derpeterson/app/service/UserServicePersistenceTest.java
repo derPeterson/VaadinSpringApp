@@ -24,7 +24,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -184,7 +184,7 @@ class UserServicePersistenceTest {
 
         @Bean
         UserService userService(UserRepository repository, UserStatusBroadcaster broadcaster) {
-            return new UserService(repository, broadcaster, mock(PasswordEncoder.class));
+            return new UserService(repository, broadcaster, new BCryptPasswordEncoder());
         }
 
         @Bean

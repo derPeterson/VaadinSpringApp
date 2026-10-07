@@ -155,7 +155,7 @@ public class SecurityService {
 
     @Transactional
     public void handleLogin(UserDetails user) throws AuthenticationException {
-        Optional<UserEntity> userEntity = userRepository.findByEmail(user.getUsername());
+        Optional<UserEntity> userEntity = userRepository.findByEmailForUpdate(user.getUsername());
 
         if (userEntity.isPresent()) {
             if (!userEntity.get().isStatusManuallySet()) {

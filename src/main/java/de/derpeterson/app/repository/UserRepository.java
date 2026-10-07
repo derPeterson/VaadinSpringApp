@@ -3,10 +3,13 @@ package de.derpeterson.app.repository;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
 import org.hibernate.jpa.HibernateHints;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
@@ -18,6 +21,20 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     Optional<UserEntity> findByEmail(String email);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from UserEntity u where u.email = :email")
+    Optional<UserEntity> findByEmailForUpdate(@Param("email") String email);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from UserEntity u where u.id = :id")
+    Optional<UserEntity> findByIdForUpdate(@Param("id") Long id);
+
+    // Bulk update deliberately bypasses entity version checks/increments. Flush any
+    // pending login status first; do not clear unrelated managed entities.
+    @Modifying(flushAutomatically = true)
+    @Query("update UserEntity u set u.lastActivity = :activity where u.id = :id")
+    int updateLastActivity(@Param("id") Long id, @Param("activity") LocalDateTime activity);
 
     @Override
     @EntityGraph(attributePaths = "roleEntities")

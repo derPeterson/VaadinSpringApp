@@ -1,5 +1,7 @@
 # Benutzer-Versionierung (US-002)
 
+> Diese Anleitung gilt nur für bestehende Datenbanken. Bei einer Neuinstallation mit leerer Datenbank ist keine Bestandsmigration erforderlich.
+
 Vor dem Deployment muss `users.version` für **alle bestehenden Benutzer** als
 `BIGINT NOT NULL` vorliegen; Startwert 0. `@Version` wird ausschließlich von JPA
 verwaltet. Neue Entities lassen die Java-Version zunächst null (JPA-Neuanlage).

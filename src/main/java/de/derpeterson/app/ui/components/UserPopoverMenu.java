@@ -10,7 +10,6 @@ import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -25,6 +24,7 @@ import de.derpeterson.app.config.AppConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentPrefixHelper;
 import de.derpeterson.app.helper.ui.StyleHelper;
+import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.IconSize;
@@ -345,8 +345,10 @@ public class UserPopoverMenu {
                 applyExternalStatus(result.status());
             } catch (RuntimeException exception) {
                 applyExternalStatus(currentStatus);
-                Notification.show(messageProperties.getTranslation(exception instanceof OptimisticLockingFailureException
-                        ? "base.user.update.conflict" : "base.user.status.failed"));
+                NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle,
+                        exception instanceof OptimisticLockingFailureException
+                                ? messageProperties::getBaseUserUpdateConflict : messageProperties::getBaseUserStatusFailed,
+                        NotificationHelper.NotificationType.ERROR);
             }
         } else {
             currentStatus = userStatus;

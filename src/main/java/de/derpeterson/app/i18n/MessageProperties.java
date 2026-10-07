@@ -254,6 +254,14 @@ public class MessageProperties {
         return getTranslation("base.failed.title");
     }
 
+    public String getBaseUserUpdateConflict() {
+        return getTranslation("base.user.update.conflict");
+    }
+
+    public String getBaseUserStatusFailed() {
+        return getTranslation("base.user.status.failed");
+    }
+
     public String getBaseFailedMessage() {
         return getTranslation("base.failed.message");
     }

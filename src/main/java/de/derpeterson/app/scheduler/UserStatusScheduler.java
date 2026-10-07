@@ -7,6 +7,8 @@ import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserService;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,7 @@ import java.util.List;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class UserStatusScheduler {
 
     private final UserRepository userRepository;
@@ -31,7 +34,7 @@ public class UserStatusScheduler {
 
         if (!inactiveAvailableUsers.isEmpty()) {
             for (UserEntity user : inactiveAvailableUsers) {
-                userService.updateUserStatus(user, UserStatus.ABSENT, false);
+                updateCandidate(user, UserStatus.ABSENT, timeout);
             }
         }
     }
@@ -45,8 +48,17 @@ public class UserStatusScheduler {
 
         if (!activeAbsentUsers.isEmpty()) {
             for (UserEntity user : activeAbsentUsers) {
-                userService.updateUserStatus(user, UserStatus.AVAILABLE, false);
+                updateCandidate(user, UserStatus.AVAILABLE, recentActivity);
             }
+        }
+    }
+
+    private void updateCandidate(UserEntity user, UserStatus target, LocalDateTime cutoff) {
+        try {
+            userService.updateScheduledStatus(user.getId(), target, cutoff);
+        } catch (ConcurrencyFailureException exception) {
+            // The next scan reselects this candidate; other users still get processed.
+            log.warn("Automatischer Statuskonflikt für Benutzer {}", user.getId(), exception);
         }
     }
 }

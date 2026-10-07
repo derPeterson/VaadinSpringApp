@@ -674,7 +674,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                         NotificationHelper.NotificationType.SUCCESS
                 );
             } catch (org.springframework.dao.OptimisticLockingFailureException exception) {
-                showError(messageProperties.getTranslation("base.user.update.conflict"));
+                showError(messageProperties::getBaseUserUpdateConflict);
             } catch (RuntimeException exception) {
                 showError(messageProperties.getAdminUsersErrorSaveFailed() + " " + safeMessage(exception));
             }
@@ -807,9 +807,13 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
 
     private void showError(String message) {
+        showError(() -> message);
+    }
+
+    private void showError(java.util.function.Supplier<String> message) {
         NotificationHelper.getInstance().showNotification(
                 messageProperties::getBaseFailedTitle,
-                () -> message,
+                message,
                 NotificationHelper.NotificationType.ERROR
         );
     }

@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -62,6 +63,8 @@ class UserStatusPersistenceTest {
     private EntityManager entityManager;
 
     private Long userId;
+    private UI ui;
+    private VaadinSession session;
     private final List<UserStatusBroadcaster.UserStatusMessage> messages = new ArrayList<>();
     private final List<Registration> registrations = new ArrayList<>();
 
@@ -88,8 +91,11 @@ class UserStatusPersistenceTest {
     void cleanup() {
         registrations.forEach(Registration::remove);
         registrations.clear();
+        NotificationHelper.getInstance().closeAndClearAllNotifications();
         UI.setCurrent(null);
         VaadinSession.setCurrent(null);
+        ui = null;
+        session = null;
     }
 
     private void listen() {
@@ -102,6 +108,302 @@ class UserStatusPersistenceTest {
 
     private UserEntity form() {
         return repository.findAll().getFirst();
+    }
+
+    private TransactionTemplate independent() {
+        var separate = new TransactionTemplate(transaction.getTransactionManager());
+        separate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        return separate;
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void overlappingActivityAndLoginWaitForProfileCommitWithoutLosingFields(boolean login) throws Exception {
+        try (var worker = java.util.concurrent.Executors.newSingleThreadExecutor()) {
+            var entered = new java.util.concurrent.CountDownLatch(1);
+            var future = new java.util.concurrent.atomic.AtomicReference<java.util.concurrent.Future<?>>();
+            transaction.executeWithoutResult(tx -> {
+                UserEntity profile = repository.findByIdForUpdate(userId).orElseThrow();
+                profile.setFirstName("Concurrent profile");
+                profile.setPassword("concurrent-security-hash");
+                profile.setEnabled(false);
+                profile.setManualStatus(UserStatus.EMPLOYED);
+                repository.flush();
+                future.set(worker.submit(() -> {
+                    entered.countDown();
+                    if (login) {
+                        security.handleLogin(org.springframework.security.core.userdetails.User.withUsername("status@example.com")
+                                .password("hash").roles("USER").build());
+                    } else {
+                        service.updateLastActivity(userId);
+                    }
+                }));
+                assertTrue(await(entered));
+                assertThrows(java.util.concurrent.TimeoutException.class, () -> future.get().get(150, java.util.concurrent.TimeUnit.MILLISECONDS));
+            });
+            future.get().get(5, java.util.concurrent.TimeUnit.SECONDS);
+        }
+        assertEquals("Concurrent profile", stored().getFirstName());
+        assertEquals("concurrent-security-hash", stored().getPassword());
+        assertFalse(stored().isEnabled());
+        assertEquals(UserStatus.EMPLOYED, stored().getStatus());
+        assertTrue(stored().isStatusManuallySet());
+        assertEquals(1L, stored().getVersion());
+        assertTrue(stored().getLastActivity().isAfter(LocalDateTime.now().minusMinutes(1)));
+        assertTrue(form().hasRole(RoleType.ROLE_USER));
+    }
+
+    private boolean await(java.util.concurrent.CountDownLatch latch) {
+        try {
+            return latch.await(5, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError(exception);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void realCandidateLockFailureDoesNotRollBackOrPreventTheNextCandidate(boolean toAbsent) throws Exception {
+        UserStatus initial = toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT;
+        UserStatus target = toAbsent ? UserStatus.ABSENT : UserStatus.AVAILABLE;
+        service.updateUserStatus(stored(), initial, false);
+        LocalDateTime activity = toAbsent ? LocalDateTime.now().minusHours(1) : LocalDateTime.now();
+        Long otherId = transaction.execute(tx -> {
+            UserEntity first = stored();
+            first.setLastActivity(activity);
+            UserEntity other = UserEntity.builder().firstName("Other").lastName("User").email("other-status@example.com")
+                    .password("other-hash").enabled(true).gender(Gender.OTHER).birthDate(LocalDate.of(1990, 1, 1))
+                    .preferredLocale(Locale.ENGLISH).roleEntities(new ArrayList<>(first.getRoleEntities()))
+                    .status(initial).lastActivity(activity).build();
+            entityManager.persist(other);
+            return other.getId();
+        });
+        List<UserEntity> candidates = List.of(stored(), repository.findById(otherId).orElseThrow());
+        var selection = mock(UserRepository.class);
+        var config = mock(ConfigService.class);
+        if (toAbsent) {
+            when(config.getString(ConfigEntry.USER_AUTO_ABSENT_TIMEOUT)).thenReturn("PT5M");
+            when(selection.findByLastActivityBeforeAndStatus(any(), eq(initial))).thenReturn(candidates);
+        } else {
+            when(selection.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(any(), eq(initial))).thenReturn(candidates);
+        }
+        var scheduler = new UserStatusScheduler(selection, service, config);
+        listen();
+        try (var worker = java.util.concurrent.Executors.newSingleThreadExecutor()) {
+            transaction.executeWithoutResult(tx -> {
+                repository.findByIdForUpdate(userId).orElseThrow();
+                var future = worker.submit(() -> {
+                    if (toAbsent) {
+                        scheduler.checkInactiveAvailableUsers();
+                    } else {
+                        scheduler.checkRecentlyActiveAbsentUsers();
+                    }
+                });
+                // Keep the first row locked until H2's real lock timeout has been
+                // translated and the scheduler has committed its second candidate.
+                assertDoesNotThrow(() -> future.get(10, java.util.concurrent.TimeUnit.SECONDS));
+            });
+        }
+        assertEquals(initial, stored().getStatus());
+        assertEquals(target, repository.findById(otherId).orElseThrow().getStatus());
+        assertEquals(List.of(new UserStatusBroadcaster.UserStatusMessage(otherId, initial.name(), target.name())), messages);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void scheduledMutationWaitsForActivityCommitAndThenRechecks(boolean toAbsent) throws Exception {
+        service.updateUserStatus(stored(), toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, false);
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(5);
+        transaction.executeWithoutResult(tx -> stored().setLastActivity(toAbsent ? cutoff.minusMinutes(1) : cutoff.plusMinutes(1)));
+        var candidates = toAbsent
+                ? repository.findByLastActivityBeforeAndStatus(cutoff, UserStatus.AVAILABLE)
+                : repository.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(cutoff, UserStatus.ABSENT);
+        assertEquals(1, candidates.size());
+        listen();
+        try (var worker = java.util.concurrent.Executors.newSingleThreadExecutor()) {
+            var entered = new java.util.concurrent.CountDownLatch(1);
+            var future = new java.util.concurrent.atomic.AtomicReference<java.util.concurrent.Future<?>>();
+            transaction.executeWithoutResult(tx -> {
+                UserEntity active = repository.findByIdForUpdate(userId).orElseThrow();
+                active.setLastActivity(toAbsent ? cutoff.plusMinutes(1) : cutoff.minusMinutes(1));
+                repository.flush();
+                future.set(worker.submit(() -> {
+                    entered.countDown();
+                    service.updateScheduledStatus(candidates.getFirst().getId(), toAbsent ? UserStatus.ABSENT : UserStatus.AVAILABLE, cutoff);
+                }));
+                assertTrue(await(entered));
+                assertThrows(java.util.concurrent.TimeoutException.class, () -> future.get().get(150, java.util.concurrent.TimeUnit.MILLISECONDS));
+            });
+            future.get().get(5, java.util.concurrent.TimeUnit.SECONDS);
+        }
+        assertEquals(toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, stored().getStatus());
+        assertTrue(messages.isEmpty());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void activityFromAnAlreadyLoadedContextSurvivesConcurrentVersionedChanges(boolean statusChange) {
+        transaction.executeWithoutResult(status -> {
+            UserEntity stale = repository.findById(userId).orElseThrow();
+            Long version = stale.getVersion();
+            independent().executeWithoutResult(other -> {
+                UserEntity fresh = repository.findById(userId).orElseThrow();
+                if (statusChange) {
+                    service.updateUserStatus(fresh, UserStatus.EMPLOYED, true);
+                } else {
+                    fresh.setFirstName("Latest profile");
+                    fresh.setPassword("latest-security-hash");
+                    fresh.setEnabled(false);
+                    fresh.setPreferredLocale(Locale.GERMAN);
+                }
+            });
+            assertEquals(version, stale.getVersion());
+            assertDoesNotThrow(() -> service.updateLastActivity(userId));
+        });
+        UserEntity fresh = stored();
+        assertTrue(fresh.getLastActivity().isAfter(LocalDateTime.now().minusMinutes(1)));
+        assertEquals(1L, fresh.getVersion());
+        assertEquals(statusChange ? UserStatus.EMPLOYED : UserStatus.OFFLINE, fresh.getStatus());
+        assertEquals(statusChange ? "Test" : "Latest profile", fresh.getFirstName());
+        assertEquals(statusChange ? "old-hash" : "latest-security-hash", fresh.getPassword());
+        assertEquals(statusChange, fresh.isEnabled());
+        assertEquals(statusChange ? Locale.ENGLISH : Locale.GERMAN, fresh.getPreferredLocale());
+        assertTrue(form().hasRole(RoleType.ROLE_USER));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void concurrentActivityIsNotOverwrittenByAnAlreadyLoadedStatusOrProfileEditor(boolean statusChange) {
+        var activity = new java.util.concurrent.atomic.AtomicReference<LocalDateTime>();
+        transaction.executeWithoutResult(status -> {
+            UserEntity editor = repository.findById(userId).orElseThrow();
+            independent().executeWithoutResult(other -> service.updateLastActivity(userId));
+            activity.set(independent().execute(other -> stored().getLastActivity()));
+            if (statusChange) {
+                service.updateUserStatus(editor, UserStatus.ABSENT, false);
+            } else {
+                editor.setLastName("Newest");
+                editor.setPassword("new-password");
+                editor.setEnabled(false);
+            }
+        });
+        assertEquals(activity.get(), stored().getLastActivity());
+        assertEquals(statusChange ? UserStatus.ABSENT : UserStatus.OFFLINE, stored().getStatus());
+        assertEquals(statusChange ? "User" : "Newest", stored().getLastName());
+        assertEquals(statusChange ? "old-hash" : "new-password", stored().getPassword());
+        assertEquals(statusChange, stored().isEnabled());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void schedulerRechecksActivityChangedAfterSelectionInBothDirections(boolean toAbsent) {
+        service.updateUserStatus(stored(), toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, false);
+        if (!toAbsent) {
+            service.updateLastActivity(userId);
+        }
+        UserRepository selection = mock(UserRepository.class);
+        if (toAbsent) {
+            when(selection.findByLastActivityBeforeAndStatus(any(), eq(UserStatus.AVAILABLE))).thenAnswer(call -> {
+                var candidates = repository.findByLastActivityBeforeAndStatus(call.getArgument(0), UserStatus.AVAILABLE);
+                assertEquals(1, candidates.size());
+                service.updateLastActivity(userId);
+                return candidates;
+            });
+        } else {
+            when(selection.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(any(), eq(UserStatus.ABSENT))).thenAnswer(call -> {
+                var candidates = repository.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(call.getArgument(0), UserStatus.ABSENT);
+                assertEquals(1, candidates.size());
+                transaction.executeWithoutResult(tx -> stored().setLastActivity(LocalDateTime.now().minusMinutes(10)));
+                return candidates;
+            });
+        }
+        ConfigService config = mock(ConfigService.class);
+        if (toAbsent) {
+            when(config.getString(ConfigEntry.USER_AUTO_ABSENT_TIMEOUT)).thenReturn("PT5M");
+        }
+        var scheduler = new UserStatusScheduler(selection, service, config);
+        listen();
+        if (toAbsent) {
+            scheduler.checkInactiveAvailableUsers();
+        } else {
+            scheduler.checkRecentlyActiveAbsentUsers();
+        }
+        assertEquals(toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, stored().getStatus());
+        assertTrue(messages.isEmpty());
+    }
+
+    @ParameterizedTest
+    @EnumSource(UserStatus.class)
+    void schedulerRechecksInterveningManualStatusInBothDirections(UserStatus manual) {
+        for (boolean toAbsent : new boolean[]{true, false}) {
+            service.updateUserStatus(stored(), toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, true);
+            service.updateUserStatus(stored(), toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, false);
+            LocalDateTime cutoff = LocalDateTime.now().minusMinutes(5);
+            transaction.executeWithoutResult(tx -> stored().setLastActivity(toAbsent ? cutoff.minusMinutes(1) : cutoff.plusMinutes(1)));
+            var candidates = toAbsent
+                    ? repository.findByLastActivityBeforeAndStatus(cutoff, UserStatus.AVAILABLE)
+                    : repository.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(cutoff, UserStatus.ABSENT);
+            assertEquals(1, candidates.size());
+            service.updateUserStatus(stored(), manual, true);
+            messages.clear();
+            listen();
+            service.updateScheduledStatus(candidates.getFirst().getId(), toAbsent ? UserStatus.ABSENT : UserStatus.AVAILABLE, cutoff);
+            boolean eligible = toAbsent && manual == UserStatus.AVAILABLE;
+            assertEquals(eligible ? UserStatus.ABSENT : manual, stored().getStatus());
+            assertEquals(!eligible, stored().isStatusManuallySet());
+            assertEquals(eligible ? 1 : 0, messages.size());
+            registrations.forEach(Registration::remove);
+            registrations.clear();
+        }
+    }
+
+    @Test
+    void deletedUserHasExplicitStatusActivityAndFormContracts() {
+        UserEntity snapshot = form();
+        repository.deleteById(userId);
+        listen();
+        assertThrows(IllegalStateException.class, () -> service.updateUserStatus(snapshot, UserStatus.AVAILABLE, true));
+        assertThrows(IllegalStateException.class, () -> service.updateLastActivity(userId));
+        assertThrows(OptimisticLockingFailureException.class, () -> service.updateAdminUser(snapshot, snapshot.getVersion(), "new"));
+        assertDoesNotThrow(() -> service.updateScheduledStatus(userId, UserStatus.ABSENT, LocalDateTime.now()));
+        assertFalse(repository.existsById(userId));
+        assertTrue(messages.isEmpty());
+    }
+
+    @Test
+    void missingFormVersionIsRejectedWithoutChangingAnyField() {
+        UserEntity edited = form();
+        edited.setFirstName("Rejected");
+        assertThrows(OptimisticLockingFailureException.class, () -> service.updateAdminUser(edited, null, "new"));
+        assertEquals("Test", stored().getFirstName());
+        assertEquals("old-hash", stored().getPassword());
+        assertEquals(edited.getVersion(), stored().getVersion());
+    }
+
+    @Test
+    void explicitAdminPasswordPreservesUnrelatedStatusLocaleAndActivity() {
+        service.updateUserStatus(stored(), UserStatus.EMPLOYED, true);
+        transaction.executeWithoutResult(tx -> stored().setPreferredLocale(Locale.GERMAN));
+        UserEntity edited = form();
+        service.updateLastActivity(userId);
+        LocalDateTime activity = stored().getLastActivity();
+        // These snapshot fields are not admin-editable and must not be merged.
+        edited.setStatus(UserStatus.OFFLINE);
+        edited.setStatusManuallySet(false);
+        edited.setPreferredLocale(Locale.ENGLISH);
+        edited.setLastActivity(LocalDateTime.MIN);
+        edited.setFirstName("Admin edited");
+        service.updateAdminUser(edited, edited.getVersion(), "explicit-new-password");
+        UserEntity fresh = stored();
+        assertTrue(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().matches("explicit-new-password", fresh.getPassword()));
+        assertEquals("Admin edited", fresh.getFirstName());
+        assertEquals(UserStatus.EMPLOYED, fresh.getStatus());
+        assertTrue(fresh.isStatusManuallySet());
+        assertEquals(Locale.GERMAN, fresh.getPreferredLocale());
+        assertEquals(activity, fresh.getLastActivity());
+        assertTrue(fresh.isEnabled());
+        assertTrue(form().hasRole(RoleType.ROLE_USER));
     }
 
     @Test
@@ -362,25 +664,18 @@ class UserStatusPersistenceTest {
     }
 
     private UserPopoverMenu popover(UserService statusService, UserEntity snapshot, List<UserStatus> icons) {
-        UI.setCurrent(new UI());
-        VaadinSession session = mock(VaadinSession.class);
+        ui = new UI();
+        UI.setCurrent(ui);
+        session = mock(VaadinSession.class);
         when(session.getLocale()).thenReturn(Locale.ENGLISH);
+        when(session.hasLock()).thenReturn(true);
         VaadinSession.setCurrent(session);
         MessageProperties texts = mock(MessageProperties.class, invocation ->
                 invocation.getMethod().getReturnType() == String.class ? "Text" : RETURNS_DEFAULTS.answer(invocation));
-        // The pre-existing ABSENT renderer fetches an SVG over localhost HTTP. Isolate
-        // that unrelated resource boundary, not the popover's status handler or service.
-        try (var svg = mockStatic(UserStatus.class, invocation -> {
-            if (invocation.getMethod().getName().equals("createSvgComponent")) {
-                return new com.vaadin.flow.component.html.Div();
-            }
-            return invocation.callRealMethod();
-        })) {
-            var menu = new UserPopoverMenu(texts, mock(SecurityService.class), statusService, snapshot, new Button(),
-                    new UserPopoverMenu.Actions(null, null, null, null), icons::add);
-            icons.clear();
-            return menu;
-        }
+        var menu = new UserPopoverMenu(texts, mock(SecurityService.class), statusService, snapshot, new Button(),
+                new UserPopoverMenu.Actions(null, null, null, null), icons::add);
+        icons.clear();
+        return menu;
     }
 
     @Test
@@ -416,11 +711,16 @@ class UserStatusPersistenceTest {
             throw new OptimisticLockingFailureException("conflict");
         });
 
-        try (var notification = mockStatic(com.vaadin.flow.component.notification.Notification.class)) {
-            assertDoesNotThrow(
-                    () -> ReflectionTestUtils.invokeMethod(menu, "handleUserStatusChange", UserStatus.EMPLOYED, true));
-            notification.verify(() -> com.vaadin.flow.component.notification.Notification.show("Text"));
-        }
+        assertDoesNotThrow(
+                () -> ReflectionTestUtils.invokeMethod(menu, "handleUserStatusChange", UserStatus.EMPLOYED, true));
+        var helper = NotificationHelper.getInstance();
+        var notification = (com.vaadin.flow.component.notification.Notification) ReflectionTestUtils.getField(helper, "currentNotification");
+        assertTrue(notification.isOpened());
+        var title = (com.vaadin.flow.component.html.Span) ReflectionTestUtils.getField(helper, "titleText");
+        var message = (com.vaadin.flow.component.Html) ReflectionTestUtils.getField(helper, "messageText");
+        assertEquals("Text", title.getText());
+        assertEquals("p", message.getElement().getTag());
+        assertEquals("Text", message.getElement().getProperty("innerHTML"));
         assertEquals(UserStatus.OFFLINE, snapshot.getStatus());
         assertTrue(icons.stream().allMatch(value -> value == UserStatus.OFFLINE));
         verify(failing, times(1)).updateUserStatus(snapshot, UserStatus.EMPLOYED, true);

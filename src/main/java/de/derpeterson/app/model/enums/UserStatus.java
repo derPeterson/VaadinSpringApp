@@ -11,17 +11,15 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URI;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Scanner;
 
 @Getter
 @RequiredArgsConstructor
 public enum UserStatus {
     AVAILABLE("userStatus.available", "userStatus.available.description", "#27ae60", AppConstants.BLACK_COLOR_HEX_STRING, VaadinIcon.CHECK_CIRCLE, null),
     EMPLOYED("userStatus.employed", "userStatus.employed.description", "#cd6155", AppConstants.BLACK_COLOR_HEX_STRING, VaadinIcon.MINUS_CIRCLE, null),
-    ABSENT("userStatus.absent", "userStatus.absent.description", "#f4d03f", AppConstants.BLACK_COLOR_HEX_STRING, null, "http://localhost:8080/VAADIN/themes/custom-theme/icons/clock_circle.svg"),
+    ABSENT("userStatus.absent", "userStatus.absent.description", "#f4d03f", AppConstants.BLACK_COLOR_HEX_STRING, null, "/META-INF/resources/custom-theme/icons/clock_circle.svg"),
     OFFLINE("userStatus.offline", "userStatus.offline.description", "#99a3a4", AppConstants.BLACK_COLOR_HEX_STRING, VaadinIcon.CLOSE_CIRCLE, null);
 
     private final String textKey;
@@ -122,14 +120,11 @@ public enum UserStatus {
     }
 
     private static Component createSvgComponent(String fileUrl, String color, IconSize iconSize, Boolean isOverlayComponent) {
-        try {
-            // 1️⃣ Datei von URL abrufen
-            HttpURLConnection connection = (HttpURLConnection) URI.create(fileUrl).toURL().openConnection();
-            connection.setRequestMethod("GET");
-
-            Scanner scanner = new Scanner(connection.getInputStream(), StandardCharsets.UTF_8);
-            String svgContent = scanner.useDelimiter("\\A").next();
-            scanner.close();
+        try (InputStream stream = UserStatus.class.getResourceAsStream(fileUrl)) {
+            if (stream == null) {
+                throw new IOException("Status-SVG fehlt im Classpath: " + fileUrl);
+            }
+            String svgContent = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
 
             // 2️⃣ `fill`-Farbe ersetzen
             if (svgContent.contains("fill=")) {

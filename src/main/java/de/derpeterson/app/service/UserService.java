@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -120,9 +121,25 @@ public class UserService {
 
     @Transactional
     public void updateLastActivity(Long userId) {
-        UserEntity user = userRepository.findById(userId).orElseThrow(
-                () -> new IllegalStateException("Der Benutzer ist nicht mehr vorhanden."));
-        user.setLastActivity(LocalDateTime.now());
+        if (userRepository.updateLastActivity(userId, LocalDateTime.now()) == 0) {
+            throw new IllegalStateException("Der Benutzer ist nicht mehr vorhanden.");
+        }
+    }
+
+    /** Rechecks a scheduler candidate under a per-user lock, including non-versioned activity. */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void updateScheduledStatus(Long userId, UserStatus target, LocalDateTime cutoff) {
+        Assert.isTrue(target == UserStatus.ABSENT || target == UserStatus.AVAILABLE, "Invalid scheduler status");
+        UserEntity user = userRepository.findByIdForUpdate(userId).orElse(null);
+        if (user == null) {
+            return;
+        }
+        boolean eligible = target == UserStatus.ABSENT
+                ? user.getStatus() == UserStatus.AVAILABLE && user.getLastActivity().isBefore(cutoff)
+                : user.getStatus() == UserStatus.ABSENT && !user.isStatusManuallySet() && user.getLastActivity().isAfter(cutoff);
+        if (eligible) {
+            updateUserStatus(user, target, false);
+        }
     }
 
     /** Applies only admin-editable fields; the snapshot version is fixed when the form opens. */

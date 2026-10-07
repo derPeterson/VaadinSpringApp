@@ -48,6 +48,16 @@ class UserServiceTest {
         userService = new UserService(userRepository, userStatusBroadcaster, passwordEncoder);
     }
 
+    @Test
+    void activityPropagatesOtherDatabaseFailuresWithoutLoadingOrRetryingAnEntity() {
+        var failure = repositoryFailure();
+        when(userRepository.updateLastActivity(eq(1L), any())).thenThrow(failure);
+        assertSame(failure, assertThrows(DataAccessResourceFailureException.class, () -> userService.updateLastActivity(1L)));
+        verify(userRepository, times(1)).updateLastActivity(eq(1L), any());
+        verify(userRepository, never()).findById(any());
+        verifyNoInteractions(userStatusBroadcaster, passwordEncoder);
+    }
+
     @Nested
     class Persistence {
         @ParameterizedTest(name = "saveUser alias: {0}")
