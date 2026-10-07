@@ -7,19 +7,16 @@ import com.vaadin.flow.component.shared.HasAllowedCharPattern;
 import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
-import com.vaadin.flow.data.validator.EmailValidator;
 import de.derpeterson.app.i18n.MessageProperties;
-import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.validation.UserInputRules;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.function.Predicate;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ValidationHelper {
@@ -30,13 +27,13 @@ public class ValidationHelper {
      * - mindestens 1 Großbuchstabe
      * - mindestens 1 Sonderzeichen
      */
-    public static final String PASSWORD_REGEX = "^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$";
+    public static final String PASSWORD_REGEX = UserInputRules.PASSWORD_REGEX;
 
     public static boolean validateRequiredInputs(
             List<? extends AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>> requiredInputs,
             MessageProperties messageProperties
     ) {
-        if (requiredInputs.stream().anyMatch(AbstractField::isEmpty)) {
+        if (requiredInputs.stream().anyMatch(ValidationHelper::isRequiredInputInvalid)) {
             NotificationHelper.getInstance().showNotification(
                     messageProperties::getBaseFailedTitle,
                     messageProperties::getBaseValidationRequiredMessage,
@@ -45,12 +42,12 @@ public class ValidationHelper {
             );
 
             requiredInputs.stream()
-                    .filter(AbstractField::isEmpty)
+                    .filter(ValidationHelper::isRequiredInputInvalid)
                     .map(HasValidationProperties.class::cast)
                     .forEach(field -> field.setInvalid(true));
 
             requiredInputs.stream()
-                    .filter(Predicate.not(AbstractField::isEmpty))
+                    .filter(field -> !isRequiredInputInvalid(field))
                     .map(HasValidationProperties.class::cast)
                     .forEach(field -> field.setInvalid(false));
 
@@ -62,6 +59,10 @@ public class ValidationHelper {
                 .forEach(field -> field.setInvalid(false));
 
         return true;
+    }
+
+    private static boolean isRequiredInputInvalid(AbstractField<?, ?> field) {
+        return field.getValue() instanceof String text ? !UserInputRules.isRequiredTextValid(text) : field.isEmpty();
     }
 
     public static boolean validatePasswordSecureInputs(List<PasswordField> passwordFields,
@@ -183,32 +184,26 @@ public class ValidationHelper {
     }
 
     public static boolean isPasswordSecure(String password) {
-        if (StringUtils.isBlank(password)) {
-            return false;
-        }
-        return password.trim().matches(PASSWORD_REGEX);
+        return UserInputRules.isPasswordSecure(password);
     }
 
     public static boolean isPasswordSecure(String password, boolean allowBlank) {
-        if (StringUtils.isBlank(password)) {
-            return allowBlank;
-        }
-        return isPasswordSecure(password);
+        return UserInputRules.isPasswordSecure(password, allowBlank);
     }
 
     public static boolean isEmailValid(String email) {
-        return StringUtils.isNotBlank(email) && email.trim().matches(EmailValidator.PATTERN);
+        return UserInputRules.isEmailValid(email);
     }
 
     public static boolean isBirthDateValid(LocalDate birthDate) {
-        return birthDate != null && birthDate.isBefore(LocalDate.now());
+        return UserInputRules.isBirthDateValid(birthDate);
     }
 
     public static boolean isRequiredTextValid(String value) {
-        return StringUtils.isNotBlank(value);
+        return UserInputRules.isRequiredTextValid(value);
     }
 
     public static String normalize(String value) {
-        return StringUtils.defaultString(EmailIdentity.canonicalize(value));
+        return UserInputRules.normalize(value);
     }
 }

@@ -1,12 +1,12 @@
 package de.derpeterson.app.service;
 
-import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.validation.UserInputRules;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +22,16 @@ import org.springframework.util.Assert;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * User saves and admin edits require valid names, mail, past birth date, gender and non-null
+ * roles/elements. Empty roles remain allowed. Save accepts an encoded, nonblank
+ * password plus non-null locale/status; password updates use the existing raw
+ * password rule. Invalid arguments raise IllegalArgumentException; last-admin
+ * removal or missing status/activity users raise IllegalStateException. Stale
+ * admin snapshots/deletes raise OptimisticLockingFailureException. Persistence
+ * failures propagate (including unique email conflicts); roll back the whole
+ * transaction, never reuse its persistence context after failure.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -57,7 +67,7 @@ public class UserService {
 
     @Transactional
     public void updateUserLocale(String email, Locale locale) {
-        Assert.isTrue(ValidationHelper.isEmailValid(email), "Invalid email");
+        Assert.isTrue(UserInputRules.isEmailValid(email), "Invalid email");
         validateLocale(locale);
         Optional<UserEntity> userOptional = findByEmail(email);
         userOptional.ifPresent(user -> {
@@ -138,7 +148,7 @@ public class UserService {
         }
     }
 
-    /** Rechecks a scheduler candidate under a per-user lock, including non-versioned activity. */
+    /** Requires ID/cutoff and ABSENT/AVAILABLE; missing/ineligible candidates are ignored. Rechecks under a per-user lock. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateScheduledStatus(Long userId, UserStatus target, LocalDateTime cutoff) {
         Assert.notNull(userId, "User ID must not be null");
@@ -156,7 +166,7 @@ public class UserService {
         }
     }
 
-    /** Applies only admin-editable fields; the snapshot version is fixed when the form opens. */
+    /** Requires ID/form-open version; null/blank password means unchanged. Stale/deleted snapshots raise OptimisticLockingFailureException. */
     @Transactional
     public void updateAdminUser(UserEntity edited, Long expectedVersion, String rawPassword) {
         Assert.notNull(edited, "Entity must not be null");
@@ -169,7 +179,7 @@ public class UserService {
         }
         validateUserFields(edited);
         if (rawPassword != null && !rawPassword.isBlank()) {
-            Assert.isTrue(ValidationHelper.isPasswordSecure(rawPassword), "Invalid password");
+            Assert.isTrue(UserInputRules.isPasswordSecure(rawPassword), "Invalid password");
         }
         ensureAdminChangeAllowed(stored.getId(), isEnabledAdmin(edited), admins);
         stored.setFirstName(edited.getFirstName());
@@ -224,9 +234,10 @@ public class UserService {
         }
     }
 
+    /** Requires an entity and valid raw password; changes its hash but does not persist it. Encoder failures propagate. */
     public void updatePassword(UserEntity user, String rawPassword) {
         Assert.notNull(user, "Entity must not be null");
-        Assert.isTrue(ValidationHelper.isPasswordSecure(rawPassword), "Invalid password");
+        Assert.isTrue(UserInputRules.isPasswordSecure(rawPassword), "Invalid password");
         user.setPassword(passwordEncoder.encode(rawPassword));
     }
 
@@ -263,11 +274,11 @@ public class UserService {
     }
 
     private void validateUserFields(UserEntity user) {
-        Assert.isTrue(ValidationHelper.isRequiredTextValid(user.getFirstName()), "First name must not be blank");
-        Assert.isTrue(ValidationHelper.isRequiredTextValid(user.getLastName()), "Last name must not be blank");
-        Assert.isTrue(ValidationHelper.isEmailValid(user.getEmail()), "Invalid email");
+        Assert.isTrue(UserInputRules.isRequiredTextValid(user.getFirstName()), "First name must not be blank");
+        Assert.isTrue(UserInputRules.isRequiredTextValid(user.getLastName()), "Last name must not be blank");
+        Assert.isTrue(UserInputRules.isEmailValid(user.getEmail()), "Invalid email");
         Assert.notNull(user.getGender(), "Gender must not be null");
-        Assert.isTrue(ValidationHelper.isBirthDateValid(user.getBirthDate()), "Birth date must be in the past");
+        Assert.isTrue(UserInputRules.isBirthDateValid(user.getBirthDate()), "Birth date must be in the past");
         validateRoles(user.getRoleEntities());
     }
 

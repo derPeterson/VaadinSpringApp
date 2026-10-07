@@ -1,7 +1,6 @@
 package de.derpeterson.app.service;
 
 import de.derpeterson.app.helper.image.ImageHelper;
-import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.PasswordResetTokenEntity;
@@ -11,6 +10,7 @@ import de.derpeterson.app.model.enums.EmailType;
 import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.PasswordResetTokenRepository;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.validation.UserInputRules;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
@@ -88,9 +88,10 @@ public class PasswordResetService {
         return tokenEntity.isPresent() && tokenEntity.get().getUserEntity().isEnabled();
     }
 
+    /** Invalid raw passwords raise IllegalArgumentException before encoding or token consumption. */
     @Transactional
     public boolean resetPassword(String token, String newPassword) {
-        Assert.isTrue(ValidationHelper.isPasswordSecure(newPassword), "Invalid password");
+        Assert.isTrue(UserInputRules.isPasswordSecure(newPassword), "Invalid password");
         Optional<PasswordResetTokenEntity> tokenEntity = tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
         if (tokenEntity.isPresent() && tokenEntity.get().getExpiryDate().isBefore(LocalDateTime.now())) {
             setTokenStatus(token, TokenStatus.EXPIRED);

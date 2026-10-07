@@ -73,7 +73,23 @@
    ```
 
    Bestehenden NOT-NULL-/UNIQUE-Constraint bestätigen (und nötigenfalls nach
-   Dublettenprüfung wiederherstellen). Ist der Check bereits vorhanden, nicht
+   Dublettenprüfung wiederherstellen). Für verständliche Registrierungsfehler
+   muss der E-Mail-Unique-Constraint ausdrücklich `uk_users_email` heißen.
+   Den tatsächlichen bisherigen Unique-Constraint (nicht den Check/FK) auf der
+   Offlinekopie ermitteln und unter H2 umbenennen, z. B.:
+
+   ```sql
+   ALTER TABLE users RENAME CONSTRAINT <bisheriger_email_unique_name> TO uk_users_email;
+   ```
+
+   H2 meldet bei Unique-Verletzungen den Constraint samt Backing-Index;
+   maßgeblich ist der eindeutige Constraintname. Alternativ im Wartungsfenster
+   den alten E-Mail-Unique-Constraint entfernen und einen gleichwertigen
+   `ADD CONSTRAINT uk_users_email UNIQUE(email)` anlegen; danach Eindeutigkeit
+   und Fehlerdiagnostik auf der Kopie prüfen. Keine parallelen Schreiber und
+   keinen Deploymentbetrieb ohne Unique-Schutz. Ohne diese Anpassung werden
+   unbekannte Constraintfehler bewusst nicht als E-Mail-Dublette ausgegeben.
+   Ist der Check bereits vorhanden, nicht
    ungeprüft ein zweites Mal anlegen. SQL-Versionsbackfill setzt die bereits
    abgeschlossene Versionsmigration voraus.
    Der SQL-Backfill entfernt keine Rand-Tabs/Steuerzeichen. Solche Adressen

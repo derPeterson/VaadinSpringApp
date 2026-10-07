@@ -2,7 +2,7 @@
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Diese Beschreibung basiert auf dem Quellcode und der Build-Konfiguration. Maven-/Java-Version, Node.js-Version, ein gezielter Logo-Test und der Package-Build wurden am 01.10.2026 geprüft (siehe „Tests und Prüfstand“). Die Anwendung wurde nicht gestartet; ein erfolgreicher Laufzeitbetrieb ist damit nicht nachgewiesen.
+> Diese Beschreibung basiert auf dem Quellcode und der Build-Konfiguration. Der vollständige serverseitige Testlauf wurde am 07.10.2026 mit Java 25 geprüft (siehe „Tests und Prüfstand“). Node.js und der Package-Build wurden zuletzt am 01.10.2026 geprüft. Die Anwendung wurde nicht gestartet; ein erfolgreicher Laufzeitbetrieb ist damit nicht nachgewiesen.
 
 ## Funktionen
 
@@ -94,9 +94,19 @@ Geprüft wurden `clean test` und anschließend `package -Pproduction` mit dem Wr
 
 ## Tests und Prüfstand
 
-Unter `src/test/java/de/derpeterson/app/helper/image/ImageHelperTest.java` liegt ein gezielter Test: Er lädt das echte Mail-Logo vom Classpath über `ImageHelper`, decodiert den Base64-Inhalt, vergleicht ihn mit der Originalressource und prüft die Lesbarkeit als Bild. Er benötigt weder Spring-Anwendungsstart noch Datenbank oder SMTP. Weitere Testklassen sind derzeit nicht vorhanden; `src/test/resources/logback-test.xml` konfiguriert das Test-Logging.
+Unter `src/test/java/` liegen Unit- und serverseitige Regressionstests für Benutzerverwaltung, Eingaberegeln, Registrierung, Konfiguration, Benachrichtigungen, Session-/Remember-me-/Push-RPC-Sicherheit sowie Status und Nebenläufigkeit. Persistenztests verwenden isolierte H2-In-Memory-Datenbanken, nicht die Anwendungsdatenbank. Vaadin-Tests prüfen serverseitige Komponenten und Callbacks mit kontrollierten UI-/Sessionfixtures, ohne Browser oder Anwendungsstart. `ImageHelperTest` prüft zusätzlich das echte Mail-Logo als Classpath-Ressource. `src/test/resources/logback-test.xml` konfiguriert das Test-Logging.
 
-Am 01.10.2026 unter Windows tatsächlich ausgeführt:
+Am 07.10.2026 unter Windows tatsächlich ausgeführt:
+
+| Befehl | Ergebnis |
+| --- | --- |
+| `.\mvnw.cmd --version` | Maven **3.9.16**, Java **25.0.4.1**, Eclipse Adoptium |
+| `.\mvnw.cmd clean test` | **BUILD SUCCESS**, **365 Tests, 0 Fehler, 0 Fehlschläge, 0 übersprungen** |
+| `.\mvnw.cmd jacoco:report` | **BUILD SUCCESS**, Coveragebericht erzeugt |
+
+Öffentliche Servicevoraussetzungen und Exceptions: [UserService-Verträge](docs/user-service-contract.md).
+
+Historischer Prüfstand vom 01.10.2026 (Package/Node/JAR seitdem nicht erneut geprüft):
 
 | Befehl | Ergebnis |
 | --- | --- |
@@ -110,7 +120,7 @@ Beide Builds meldeten, dass kein neuer Produktions-Frontend-Bundle-Build nötig 
 
 `VerificationService` und `PasswordResetService` laden das Logo nun über `ImageHelper` als **Classpath-Stream**, ohne lokalen Dateipfad oder Dateiextraktion. Das bisherige Mailformat bleibt erhalten: Der Helper liefert reines Base64, die HTML-Vorlagen ergänzen `data:image/png;base64,`. Der Test prüft die Ressource im Test-Classpath; `jar tf` prüft deren Verpackung, nicht den Ladevorgang im laufenden JAR.
 
-**Build-Erfolg und dieser einzelne Ressourcentest sind kein vollständiger Funktionstest.** Start, Browserdarstellung, Anmeldung, Rollenprüfung, Mailversand, Maildarstellung und Datenbankbetrieb bleiben ungeprüft. `.\mvnw.cmd verify -Pit,production` würde die vorbereitete Failsafe-Konfiguration aktivieren und die Anwendung starten/stoppen; dieser Befehl wurde nicht ausgeführt. Es gibt derzeit keine Integrationstestklassen und keine explizite Browser-/WebDriver-Konfiguration im Profil.
+**Die erfolgreichen serverseitigen Regressionen sind kein vollständiger End-to-End-Funktionstest.** Start, Browserdarstellung, Login im Browser, echte Netzwerk-WebSockets, Mailversand/-darstellung und Bestandsmigrationen bleiben ungeprüft. `.\mvnw.cmd verify -Pit,production` würde die vorbereitete Failsafe-Konfiguration aktivieren und die Anwendung starten/stoppen; dieser Befehl wurde nicht ausgeführt. Es gibt keine explizite Browser-/WebDriver-Konfiguration im Profil.
 
 ## Styles, Bilder und generierte Dateien
 

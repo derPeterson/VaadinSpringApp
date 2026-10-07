@@ -23,7 +23,7 @@ import java.util.Locale;
 
 @Entity
 @DynamicUpdate
-@Table(name = "users", check = @CheckConstraint(name = "ck_users_canonical_email",
+@Table(name = "users", uniqueConstraints = @UniqueConstraint(name = "uk_users_email", columnNames = "email"), check = @CheckConstraint(name = "ck_users_canonical_email",
         constraint = "email = lower(trim(email)) and length(email) > 0 and ascii(left(email, 1)) > 32 and ascii(right(email, 1)) > 32"), indexes = {
         @Index(name = "idx_user_lastactivity_status", columnList = "lastActivity, status")
 })
@@ -52,7 +52,7 @@ public class UserEntity {
     @Column(nullable = false)
     private String password;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     @NotBlank(message = "Die E-Mail-Adresse darf nicht leer sein.")
     @Email(message = "Bitte geben Sie eine gültige E-Mail-Adresse ein.")
     private String email;

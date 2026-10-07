@@ -41,9 +41,11 @@ import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.service.VerificationService;
 import de.derpeterson.app.ui.components.RegistrationCardComponent;
+import de.derpeterson.app.validation.EmailConflict;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.io.IOException;
@@ -250,7 +252,26 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
                 .roleEntities(userRole.map(List::of).orElse(Collections.emptyList()))
                 .build();
 
-        userService.saveUser(userEntity);
+        try {
+            userService.saveUser(userEntity);
+        } catch (IllegalArgumentException failure) {
+            // Only handle invalid form values. Configuration/encoder/service
+            // errors must not be relabelled as input errors.
+            if (validateInputs()) {
+                throw failure;
+            }
+            return;
+        } catch (DataIntegrityViolationException failure) {
+            if (!EmailConflict.isDuplicate(failure)) {
+                throw failure;
+            }
+            formComponents.emailField.setInvalid(true);
+            formComponents.confirmEmailField.setInvalid(true);
+            NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle,
+                    messageProperties::getBaseValidationEmailExistsMessage,
+                    -1, NotificationHelper.NotificationType.ERROR);
+            return;
+        }
 
         try {
             boolean emailSent = verificationService.sendVerificationEmailByUser(userEntity);
