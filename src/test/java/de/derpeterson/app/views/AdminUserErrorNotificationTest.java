@@ -9,6 +9,7 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.server.VaadinSession;
@@ -263,5 +264,127 @@ class AdminUserErrorNotificationTest {
         LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
         assertNotification(deleting ? texts.getAdminUsersErrorDeleteFailed() : texts.getAdminUsersErrorSaveFailed());
         assertTrue(logs.list.stream().anyMatch(event -> event.getThrowableProxy() != null && event.getThrowableProxy().getMessage().equals(failure.getMessage())));
+    }
+
+    static Stream<Arguments> emailChecks() {
+        return Stream.of(false, true).flatMap(german -> Stream.of(false, true).flatMap(create ->
+                Stream.of("duplicate", "connection", "integrity", "unexpected").map(kind -> Arguments.of(german, create, kind))));
+    }
+
+    @ParameterizedTest
+    @MethodSource("emailChecks")
+    void emailValidationSeparatesDuplicatesFromTechnicalFailuresAndBlocksSaveInBothLanguages(boolean german, boolean create, String kind) {
+        LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
+        ReflectionTestUtils.invokeMethod(section, "openDialog", user(create));
+        Dialog dialog = dialog();
+        if (create) descendants(dialog).filter(PasswordField.class::isInstance).map(PasswordField.class::cast).forEach(field -> field.setValue("Password!"));
+        EmailField email = descendants(dialog).filter(EmailField.class::isInstance).map(EmailField.class::cast).findFirst().orElseThrow();
+        Button save = descendants(dialog).filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(button -> button.getText().equals(texts.getAdminUsersSave())).findFirst().orElseThrow();
+        boolean technical = !kind.equals("duplicate");
+        RuntimeException failure = switch (kind) {
+            case "connection" -> new DataAccessResourceFailureException("secret SELECT connection failure");
+            case "integrity" -> new DataIntegrityViolationException("secret SQL integrity failure");
+            default -> new IllegalStateException("secret SQL unexpected failure");
+        };
+        if (technical) when(users.emailExistsForOtherUser(anyString(), any())).thenThrow(failure);
+        else when(users.emailExistsForOtherUser(anyString(), any())).thenReturn(true);
+        email.setValue("other@example.com");
+        assertTrue(email.isInvalid());
+        assertEquals(technical ? texts.getAdminUsersErrorSaveFailed() : texts.getBaseValidationEmailExistsMessage(), email.getErrorMessage());
+        assertFalse(email.getErrorMessage().contains("secret"));
+        assertFalse(save.isEnabled());
+        verify(users, atLeastOnce()).emailExistsForOtherUser("other@example.com", create ? null : 2L);
+        // Exercise the server callback as well, not merely the disabled button.
+        save.setEnabled(true);
+        save.click();
+        assertFalse(save.isEnabled());
+        assertNotification(technical ? texts.getAdminUsersErrorSaveFailed() : texts.getAdminUsersValidationCheckFields());
+        Object notification = ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
+        LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
+        assertSame(notification, ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification"));
+        assertNotification(technical ? texts.getAdminUsersErrorSaveFailed() : texts.getAdminUsersValidationCheckFields());
+        assertEquals(technical ? texts.getAdminUsersErrorSaveFailed() : texts.getBaseValidationEmailExistsMessage(), email.getErrorMessage());
+        assertTrue(email.isInvalid());
+        assertFalse(save.isEnabled());
+        verify(users, never()).updatePassword(any(), any());
+        verify(users, never()).saveUser(any());
+        verify(users, never()).updateAdminUser(any(), any(), any());
+        if (technical) assertTrue(logs.list.stream().anyMatch(event -> event.getThrowableProxy() != null
+                && event.getThrowableProxy().getMessage().equals(failure.getMessage())));
+        else assertTrue(logs.list.isEmpty());
+    }
+
+    @ParameterizedTest
+    @MethodSource("preflightFailures")
+    void successfulRetryClearsTechnicalFieldErrorAndAllowsCreateOrEdit(boolean german, boolean create) {
+        LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
+        ReflectionTestUtils.invokeMethod(section, "openDialog", user(create));
+        Dialog dialog = dialog();
+        if (create) descendants(dialog).filter(PasswordField.class::isInstance).map(PasswordField.class::cast).forEach(field -> field.setValue("Password!"));
+        EmailField email = descendants(dialog).filter(EmailField.class::isInstance).map(EmailField.class::cast).findFirst().orElseThrow();
+        Button save = descendants(dialog).filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(button -> button.getText().equals(texts.getAdminUsersSave())).findFirst().orElseThrow();
+        when(users.emailExistsForOtherUser(anyString(), any())).thenThrow(new DataAccessResourceFailureException("secret SQL"));
+        email.setValue("unavailable@example.com");
+        assertTrue(email.isInvalid());
+        assertFalse(save.isEnabled());
+        doReturn(false).when(users).emailExistsForOtherUser(anyString(), any());
+        email.setValue("available@example.com");
+        assertFalse(email.isInvalid());
+        assertTrue(save.isEnabled());
+        save.click();
+        if (create) verify(users).saveUser(argThat(edited -> edited.getEmail().equals("available@example.com")));
+        else verify(users).updateAdminUser(argThat(edited -> edited.getEmail().equals("available@example.com")), eq(3L), any());
+        assertFalse(dialog.isOpened());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void invalidEmailFormatStillSkipsTheTechnicalCheckAfterAnEarlierFailure(boolean german) {
+        LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
+        ReflectionTestUtils.invokeMethod(section, "openDialog", user(false));
+        Dialog dialog = dialog();
+        EmailField email = descendants(dialog).filter(EmailField.class::isInstance).map(EmailField.class::cast).findFirst().orElseThrow();
+        when(users.emailExistsForOtherUser(anyString(), any())).thenThrow(new DataAccessResourceFailureException("secret SQL"));
+        email.setValue("unavailable@example.com");
+        clearInvocations(users);
+        email.setValue("invalid");
+        assertTrue(email.isInvalid());
+        // Flow's pre-existing default EmailField validator rejects this value
+        // before the custom validators, with its default empty error text.
+        assertEquals("", email.getErrorMessage());
+        verify(users, never()).emailExistsForOtherUser(anyString(), any());
+        Button save = descendants(dialog).filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(button -> button.getText().equals(texts.getAdminUsersSave())).findFirst().orElseThrow();
+        save.setEnabled(true);
+        save.click();
+        assertNotification(texts.getAdminUsersValidationCheckFields());
+        verify(users, never()).updateAdminUser(any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @MethodSource("preflightFailures")
+    void technicalFailureFirstEncounteredOnSaveBlocksAnInitiallyValidForm(boolean german, boolean create) {
+        LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
+        ReflectionTestUtils.invokeMethod(section, "openDialog", user(create));
+        Dialog dialog = dialog();
+        if (create) descendants(dialog).filter(PasswordField.class::isInstance).map(PasswordField.class::cast).forEach(field -> field.setValue("Password!"));
+        Button save = descendants(dialog).filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(button -> button.getText().equals(texts.getAdminUsersSave())).findFirst().orElseThrow();
+        assertTrue(save.isEnabled());
+        when(users.emailExistsForOtherUser(anyString(), any())).thenThrow(new DataAccessResourceFailureException("secret SQL on save"));
+        save.click();
+        assertNotification(texts.getAdminUsersErrorSaveFailed());
+        assertFalse(save.isEnabled());
+        assertTrue(dialog.isOpened());
+        LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
+        assertNotification(texts.getAdminUsersErrorSaveFailed());
+        EmailField email = descendants(dialog).filter(EmailField.class::isInstance).map(EmailField.class::cast).findFirst().orElseThrow();
+        assertTrue(email.isInvalid());
+        assertEquals(texts.getAdminUsersErrorSaveFailed(), email.getErrorMessage());
+        verify(users, never()).updatePassword(any(), any());
+        verify(users, never()).saveUser(any());
+        verify(users, never()).updateAdminUser(any(), any(), any());
     }
 }

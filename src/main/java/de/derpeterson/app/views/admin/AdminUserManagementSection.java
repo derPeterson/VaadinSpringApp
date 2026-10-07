@@ -22,6 +22,7 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -47,6 +48,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -592,12 +594,23 @@ public class AdminUserManagementSection extends VerticalLayout {
                         context -> messageProperties.getBaseValidationRequiredMessage())
                 .bind(AdminUserFormData::getLastName, AdminUserFormData::setLastName);
 
+        AtomicBoolean emailCheckFailed = new AtomicBoolean();
         binder.forField(emailField)
                 .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
                 .withValidator(ValidationHelper::isEmailValid,
                         context -> messageProperties.getBaseValidationEmailInvalidMessage())
-                .withValidator(email -> !userService.emailExistsForOtherUser(ValidationHelper.normalize(email), formData.getId()),
-                        context -> messageProperties.getBaseValidationEmailExistsMessage())
+                .withValidator((email, context) -> {
+                    emailCheckFailed.set(false);
+                    try {
+                        return userService.emailExistsForOtherUser(ValidationHelper.normalize(email), formData.getId())
+                                ? ValidationResult.error(messageProperties.getBaseValidationEmailExistsMessage())
+                                : ValidationResult.ok();
+                    } catch (RuntimeException exception) {
+                        log.error("E-Mail-Vorprüfung fehlgeschlagen", exception);
+                        emailCheckFailed.set(true);
+                        return ValidationResult.error(messageProperties.getAdminUsersErrorSaveFailed());
+                    }
+                })
                 .bind(AdminUserFormData::getEmail, AdminUserFormData::setEmail);
 
         binder.forField(passwordField)
@@ -636,9 +649,17 @@ public class AdminUserManagementSection extends VerticalLayout {
         saveButton.addClickListener(event -> {
             try {
                 try {
+                    emailCheckFailed.set(false);
                     binder.writeBean(formData);
                 } catch (ValidationException exception) {
-                    showError(messageProperties::getAdminUsersValidationCheckFields);
+                    showError(emailCheckFailed.get() ? messageProperties::getAdminUsersErrorSaveFailed
+                            : messageProperties::getAdminUsersValidationCheckFields);
+                    return;
+                }
+                // Status listeners may recheck validity during writeBean. Never
+                // proceed if such a check failed technically either.
+                if (emailCheckFailed.get()) {
+                    showError(messageProperties::getAdminUsersErrorSaveFailed);
                     return;
                 }
 
