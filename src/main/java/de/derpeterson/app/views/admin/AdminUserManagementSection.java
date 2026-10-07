@@ -36,6 +36,9 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.CardComponent;
+import de.derpeterson.app.validation.EmailConflict;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -46,6 +49,7 @@ import java.time.format.FormatStyle;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class AdminUserManagementSection extends VerticalLayout {
 
     private static final DateTimeFormatter LAST_ACTIVITY_FORMATTER =
@@ -82,6 +86,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     private List<UserEntity> users = new ArrayList<>();
     private List<UserEntity> filteredUsers = new ArrayList<>();
+    private final List<Runnable> dialogErrorRefreshers = new ArrayList<>();
 
     private int currentPage = 0;
     private int pageSize = 10;
@@ -214,6 +219,7 @@ public class AdminUserManagementSection extends VerticalLayout {
         lastPageButton.setTooltipText(messageProperties.getAdminUsersPaginationLastPage());
 
         updateGridPage();
+        List.copyOf(dialogErrorRefreshers).forEach(Runnable::run);
     }
 
     private void configureGrid() {
@@ -457,13 +463,18 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
 
     private void deleteUser(UserEntity user) {
-        if (isCurrentUser(user)) {
-            showError(messageProperties.getAdminUsersErrorDeleteOwnUser());
-            return;
-        }
+        try {
+            if (isCurrentUser(user)) {
+                showError(messageProperties::getAdminUsersErrorDeleteOwnUser);
+                return;
+            }
 
-        if (!userService.canDeleteUser(user)) {
-            showError(messageProperties.getAdminUsersErrorDeleteLastAdmin());
+            if (!userService.canDeleteUser(user)) {
+                showError(messageProperties::getAdminUsersErrorDeleteLastAdmin);
+                return;
+            }
+        } catch (RuntimeException exception) {
+            showMutationError(exception, true);
             return;
         }
 
@@ -489,7 +500,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                         NotificationHelper.NotificationType.SUCCESS
                 );
             } catch (RuntimeException exception) {
-                showError(messageProperties.getAdminUsersErrorDeleteFailed() + " " + safeMessage(exception));
+                showMutationError(exception, true);
             }
         });
         confirmButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
@@ -570,40 +581,40 @@ public class AdminUserManagementSection extends VerticalLayout {
         technicalInfo.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
 
         binder.forField(firstNameField)
-                .asRequired(messageProperties.getBaseValidationRequiredMessage())
+                .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
                 .withValidator(ValidationHelper::isRequiredTextValid,
-                        messageProperties.getBaseValidationRequiredMessage())
+                        context -> messageProperties.getBaseValidationRequiredMessage())
                 .bind(AdminUserFormData::getFirstName, AdminUserFormData::setFirstName);
 
         binder.forField(lastNameField)
-                .asRequired(messageProperties.getBaseValidationRequiredMessage())
+                .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
                 .withValidator(ValidationHelper::isRequiredTextValid,
-                        messageProperties.getBaseValidationRequiredMessage())
+                        context -> messageProperties.getBaseValidationRequiredMessage())
                 .bind(AdminUserFormData::getLastName, AdminUserFormData::setLastName);
 
         binder.forField(emailField)
-                .asRequired(messageProperties.getBaseValidationRequiredMessage())
+                .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
                 .withValidator(ValidationHelper::isEmailValid,
-                        messageProperties.getBaseValidationEmailInvalidMessage())
+                        context -> messageProperties.getBaseValidationEmailInvalidMessage())
                 .withValidator(email -> !userService.emailExistsForOtherUser(ValidationHelper.normalize(email), formData.getId()),
-                        messageProperties.getBaseValidationEmailExistsMessage())
+                        context -> messageProperties.getBaseValidationEmailExistsMessage())
                 .bind(AdminUserFormData::getEmail, AdminUserFormData::setEmail);
 
         binder.forField(passwordField)
                 .withValidator(value -> ValidationHelper.isPasswordSecure(value, editMode),
-                        editMode
+                        context -> editMode
                                 ? messageProperties.getAdminUsersPasswordValidationEdit()
                                 : messageProperties.getAdminUsersPasswordValidationCreate())
                 .bind(AdminUserFormData::getPassword, AdminUserFormData::setPassword);
 
         binder.forField(genderComboBox)
-                .asRequired(messageProperties.getBaseValidationRequiredMessage())
+                .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
                 .bind(AdminUserFormData::getGender, AdminUserFormData::setGender);
 
         binder.forField(birthDatePicker)
-                .asRequired(messageProperties.getBaseValidationRequiredMessage())
+                .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
                 .withValidator(ValidationHelper::isBirthDateValid,
-                        messageProperties.getBaseValidationBirthDatePastMessage())
+                        context -> messageProperties.getBaseValidationBirthDatePastMessage())
                 .bind(AdminUserFormData::getBirthDate, AdminUserFormData::setBirthDate);
 
         binder.forField(enabledCheckbox)
@@ -611,7 +622,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
         binder.forField(rolesGroup)
                 .withValidator(selectedRoles -> selectedRoles != null && !selectedRoles.isEmpty(),
-                        messageProperties.getBaseValidationRequiredMessage())
+                        context -> messageProperties.getBaseValidationRequiredMessage())
                 .bind(AdminUserFormData::getRoles, AdminUserFormData::setRoles);
 
         binder.readBean(formData);
@@ -624,34 +635,34 @@ public class AdminUserManagementSection extends VerticalLayout {
 
         saveButton.addClickListener(event -> {
             try {
-                binder.writeBean(formData);
-            } catch (ValidationException exception) {
-                showError(messageProperties.getAdminUsersValidationCheckFields());
-                return;
-            }
+                try {
+                    binder.writeBean(formData);
+                } catch (ValidationException exception) {
+                    showError(messageProperties::getAdminUsersValidationCheckFields);
+                    return;
+                }
 
-            Set<RoleEntity> roleEntities = resolveRoles(formData.getRoles());
-            if (roleEntities.size() != formData.getRoles().size()) {
-                showError(messageProperties.getAdminUsersErrorRoleMissing());
-                return;
-            }
+                Set<RoleEntity> roleEntities = resolveRoles(formData.getRoles());
+                if (roleEntities.size() != formData.getRoles().size()) {
+                    showError(messageProperties::getAdminUsersErrorRoleMissing);
+                    return;
+                }
 
-            if (isCurrentUser(user) && !formData.isEnabled()) {
-                showError(messageProperties.getAdminUsersErrorDisableOwnUser());
-                return;
-            }
+                if (isCurrentUser(user) && !formData.isEnabled()) {
+                    showError(messageProperties::getAdminUsersErrorDisableOwnUser);
+                    return;
+                }
 
-            if (isCurrentUser(user) && !formData.getRoles().contains(RoleType.ROLE_ADMIN)) {
-                showError(messageProperties.getAdminUsersErrorRemoveOwnAdminRole());
-                return;
-            }
+                if (isCurrentUser(user) && !formData.getRoles().contains(RoleType.ROLE_ADMIN)) {
+                    showError(messageProperties::getAdminUsersErrorRemoveOwnAdminRole);
+                    return;
+                }
 
-            if (userService.wouldRemoveLastEnabledAdmin(formData.getId(), formData.isEnabled(), roleEntities)) {
-                showError(messageProperties.getAdminUsersErrorLastActiveAdmin());
-                return;
-            }
+                if (userService.wouldRemoveLastEnabledAdmin(formData.getId(), formData.isEnabled(), roleEntities)) {
+                    showError(messageProperties::getAdminUsersErrorLastActiveAdmin);
+                    return;
+                }
 
-            try {
                 UserEntity edited = UserEntity.builder()
                         .id(formData.getId()).firstName(clean(formData.getFirstName()))
                         .lastName(clean(formData.getLastName())).email(clean(formData.getEmail()))
@@ -673,10 +684,8 @@ public class AdminUserManagementSection extends VerticalLayout {
                                 : messageProperties.getAdminUsersSaveSuccessCreated(),
                         NotificationHelper.NotificationType.SUCCESS
                 );
-            } catch (org.springframework.dao.OptimisticLockingFailureException exception) {
-                showError(messageProperties::getBaseUserUpdateConflict);
             } catch (RuntimeException exception) {
-                showError(messageProperties.getAdminUsersErrorSaveFailed() + " " + safeMessage(exception));
+                showMutationError(exception, false);
             }
         });
 
@@ -708,6 +717,18 @@ public class AdminUserManagementSection extends VerticalLayout {
         dialogLayout.setSpacing(true);
 
         dialog.add(dialogLayout);
+        Runnable refreshErrors = () -> {
+            if (binder.getFields().anyMatch(field -> field instanceof com.vaadin.flow.component.shared.HasValidationProperties validation && validation.isInvalid())) {
+                binder.validate();
+            }
+        };
+        dialogErrorRefreshers.add(refreshErrors);
+        dialog.addOpenedChangeListener(event -> {
+            if (!event.isOpened()) {
+                dialogErrorRefreshers.remove(refreshErrors);
+            }
+        });
+        dialog.addDetachListener(event -> dialogErrorRefreshers.remove(refreshErrors));
         dialog.open();
     }
 
@@ -806,10 +827,6 @@ public class AdminUserManagementSection extends VerticalLayout {
                 .orElse(false);
     }
 
-    private void showError(String message) {
-        showError(() -> message);
-    }
-
     private void showError(java.util.function.Supplier<String> message) {
         NotificationHelper.getInstance().showNotification(
                 messageProperties::getBaseFailedTitle,
@@ -818,11 +835,26 @@ public class AdminUserManagementSection extends VerticalLayout {
         );
     }
 
-    private String safeMessage(RuntimeException exception) {
-        if (exception.getMessage() == null || exception.getMessage().isBlank()) {
-            return "";
+    private void showMutationError(RuntimeException exception, boolean deleting) {
+        log.error("Benutzer {} fehlgeschlagen", deleting ? "löschen" : "speichern", exception);
+        if (exception instanceof OptimisticLockingFailureException) {
+            showError(messageProperties::getBaseUserUpdateConflict);
+        } else if (!deleting && EmailConflict.isDuplicate(exception)) {
+            showError(messageProperties::getBaseValidationEmailExistsMessage);
+        } else if (exception instanceof IllegalStateException
+                && "Der letzte aktive Administrator muss erhalten bleiben.".equals(exception.getMessage())) {
+            // Legacy service contract has no typed last-admin exception. Match
+            // only its exact business sentinel, never arbitrary IllegalStateExceptions.
+            showError(deleting ? messageProperties::getAdminUsersErrorDeleteLastAdmin : messageProperties::getAdminUsersErrorLastActiveAdmin);
+        } else if (!deleting && exception instanceof IllegalArgumentException && Set.of(
+                "First name must not be blank", "Last name must not be blank", "Invalid email",
+                "Gender must not be null", "Birth date must be in the past", "Roles must not be null",
+                "Invalid role", "Invalid password", "Encoded password must not be blank",
+                "Locale must not be null", "Status must not be null").contains(Optional.ofNullable(exception.getMessage()).orElse(""))) {
+            showError(messageProperties::getAdminUsersValidationCheckFields);
+        } else {
+            showError(deleting ? messageProperties::getAdminUsersErrorDeleteFailed : messageProperties::getAdminUsersErrorSaveFailed);
         }
-        return exception.getMessage();
     }
 
     private String clean(String value) {
