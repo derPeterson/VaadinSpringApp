@@ -28,6 +28,20 @@ def now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def archive_path(store: Path, run_id: str, created_at: str | None = None) -> Path:
+    # Older runs keep their original ID-only paths, including active runs.
+    if created_at is None:
+        return store / "runs" / run_id
+    try:
+        created = datetime.fromisoformat(created_at)
+        if created.tzinfo is None or created.utcoffset() is None:
+            raise ValueError("Creation time needs a timezone.")
+        stamp = created.astimezone(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S_UTC")
+    except (TypeError, ValueError, OverflowError):
+        raise WorkflowError("Invalid run creation timestamp in workflow state.") from None
+    return store / "runs" / (stamp + "__" + run_id)
+
+
 def store_path(repo: Path, root: Path) -> Path:
     # Preserve the original project's directory name; detect name collisions below.
     return outside_repo(repo, root / repo.name)
@@ -93,9 +107,10 @@ def _prepare(repo, store, request, catalog, usage_export):
     # Usage preflight happens before Maven, prompt-provider calls or Git mutations.
     before_usage = usage.capture(repo, state["sessionId"], usage_export) if "usage" in state["modules"] else None
     run_id = uuid.uuid4().hex
-    folder = store / "runs" / run_id
+    created_at = now()
+    folder = archive_path(store, run_id, created_at)
     folder.mkdir(parents=True)
-    state.update(owner=OWNER, id=run_id, repo=str(repo), folder=str(folder), status="preparing",
+    state.update(owner=OWNER, id=run_id, repo=str(repo), folder=str(folder), createdAt=created_at, status="preparing",
                  initialBranch=branch.current(repo),
                  startCommit=run(repo, "git", "rev-parse", "HEAD").strip())
     state_path = store / "state" / (run_id + ".json")
@@ -184,7 +199,7 @@ def load_state(repo: Path, store: Path, run_id: str) -> tuple[Path, dict]:
     state = read_json(path)
     if state.get("owner") != OWNER or state.get("id") != run_id or Path(state["repo"]).resolve() != repo:
         raise WorkflowError("Invalid workflow state or repository.")
-    if Path(state["folder"]).resolve() != (store / "runs" / run_id).resolve():
+    if Path(state["folder"]).resolve() != archive_path(store, run_id, state.get("createdAt")).resolve():
         raise WorkflowError("Invalid artifact directory in workflow state.")
     return path, state
 

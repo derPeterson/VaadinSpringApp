@@ -75,6 +75,9 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    Use exactly the `session_id` returned by the tool in the JSON request.
 
    Capture the real JSON `id`, `folder`, `branch` and effective `task`.
+   Use the returned folder path for artifacts; never reconstruct runs/<id>.
+   New folder names start with a fixed UTC creation timestamp, while the CLI
+   --id remains the plain 32-character run ID. Existing ID-only folders stay valid.
    Also preserve the returned task_mode throughout the task.
    Nonzero exit = stop; report the failure and retained state. Do not continue
    the coding task after an unsuccessful begin. The script validates all

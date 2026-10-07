@@ -42,7 +42,7 @@ Details und Prüfnachweise stehen im letzten Abschnitt dieses Berichts.
 
 | Prüfung | Ergebnis |
 |---|---|
-| Automatische Python-Suite | **148 Tests, 0 Fehler, 0 Failures, 0 Skips** nach der Stream-Korrektur |
+| Automatische Python-Suite | **155 Tests, 0 Fehler, 0 Failures, 0 Skips** nach der Ordner-Zeitstempel-Ergänzung |
 | Echte temporäre Git-Repositories | Branch-/Status-Prüfungen, Commits, Findings, Text-/Binary-Diff und sauberer Endzustand erfolgreich |
 | CLI als eigener Prozess | Begin/Finish, sichere JSON-Task-Übergabe und UTF-8-Umsetzungsbericht mit Quotes/Zeilenumbrüchen/Shell-Sonderzeichen erfolgreich |
 | Fehlerpfade | Dirty Tree, vorhandene lokale/remote Branches, falscher Branch, tracked Findings, fehlende Usage-Session, Build-/CSV-Fehler korrekt abgewiesen |
@@ -478,3 +478,31 @@ Die Komplett-ZIP wurde ebenfalls aktualisiert. Prompt-Kern, Config, Schema,
 Factory, Auth, AGENTS.md, Commands, Modellkatalog und Plugin bleiben unverändert.
 Nach Übernahme ist der bisherige UserService-Auftrag mit einem neuen Run zu starten;
 der fehlgeschlagene Run bleibt als solcher im Archiv erhalten.
+
+## Run-Ordner mit festem Zeitstempel
+
+Neue Archive heißen `YYYY-MM-DD_HH-MM-SS_UTC__<Run-ID>`. Die Erstellung erfasst
+einmal `createdAt` in UTC vor der Baseline; spätere Phasen verwenden denselben
+Pfad. Die Run-ID selbst, Status-Dateinamen und Messfenster bleiben unverändert.
+Der feste Präfix erlaubt chronologisches Sortieren nach Name unabhängig von
+später geänderten Datei-/Ordnerzeiten. Läufe innerhalb derselben Sekunde bleiben
+durch die Run-ID eindeutig, haben aber denselben Zeitpräfix.
+
+Bestehende Archive werden auf ausdrücklichen Nutzerwunsch nicht umbenannt.
+States ohne createdAt verwenden weiterhin den bisherigen ID-only-Pfad;
+auch vorher gestartete Läufe können beendet werden. Der Pfad wird weiterhin
+streng gegen ID und gespeicherten Erstellungszeitpunkt geprüft. Keine Suche
+nach dem neuesten Ordner, kein Raten eines Pfads aus Dateiänderungszeiten.
+
+Sieben neue Regressionen prüfen stabilen Pfad und CSV-/Report-Verweise, den
+Datumswechsel zwischen Prepare und Begin, Abort, Legacy-Status/Finish, ungültige
+Zeitstempel/Pfadabweichungen, mehrere Läufe innerhalb derselben Sekunde sowie
+die Namenssortierung bei unterschiedlichen UTC-Offsets. Die vollständige Suite
+umfasst **155 bestandene Python-Tests**. Kein Live-Provider oder Projektbuild
+wird für diese Änderung aufgerufen.
+
+`opencode-run-folder-timestamps-fix.zip` enthält fünf geänderte Dateien:
+runner.py, Workflow-Tests, start.md, README und diesen Migrationsbericht.
+Die vollständige Migrations-ZIP wurde ebenfalls aktualisiert. Keine neuen
+Dependencies, Module oder Schemaänderungen an der CSV. Der tatsächliche
+Projektordner und seine Benchmark-Archive bleiben während der Lieferung unverändert.

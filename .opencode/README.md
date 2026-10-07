@@ -517,7 +517,7 @@ C:/Dev/AI-Benchmarks/<Projekt>/
   active.json                  # nur während eines aktiven Laufs
   state/<id>.json               # Status/Audit, bleibt nach Abschluss erhalten
   results.csv                  # nur bei ausgewähltem benchmark
-  runs/<id>/
+  runs/YYYY-MM-DD_HH-MM-SS_UTC__<id>/
     report.md                  # durchgeführte Arbeit, Verhaltensänderungen und Messwerte
     result.json
     diff.patch                 # vollständiger Git-Diff inkl. Binärdateien
@@ -534,6 +534,25 @@ C:/Dev/AI-Benchmarks/<Projekt>/
     usage.json
     failures.json              # nur bei aufgezeichneten Workflow-Fehlern
 ```
+
+Neue Run-Ordner bekommen einen festen UTC-Zeitstempel vor ihrer ID, beispielsweise
+`2026-10-07_14-30-12_UTC__d7b68bdd34654af0869feffb50e074a0`.
+Im Explorer nach **Name** sortieren: aufsteigend für älteste zuerst, absteigend
+für neueste zuerst. Spätere Dateiänderungen beeinflussen diese Reihenfolge nicht.
+Läufe innerhalb derselben Sekunde haben dank ihrer unterschiedlichen IDs getrennte
+Ordner; ihr Zeitpräfix ist dann gleich.
+
+Der Zeitstempel entsteht einmal beim Anlegen des Runs, noch vor der Baseline.
+Er wird als `createdAt` im Zustand gespeichert und bleibt bei Begin, Finish,
+Retry und Abort unverändert. Er ist nicht der Startzeitpunkt des Benchmark-
+Messfensters. UTC vermeidet mehrdeutige Namen beim Sommer-/Winterzeitwechsel;
+die lokale Uhrzeit in Deutschland ist je nach Jahreszeit eine oder zwei Stunden später.
+
+Die CLI-ID bleibt die reine 32-stellige Run-ID, und `state/<id>.json` bleibt
+gleich aufgebaut. Artefaktpfade aus dem zurückgegebenen `folder` bzw. `RunFolder`
+verwenden; nicht selbst aus der ID zusammensetzen. Bestehende Ordner `runs/<id>/`
+werden nicht umbenannt: historische Verweise, Report-/CSV-Pfade und noch aktive
+Läufe des bisherigen Stands funktionieren weiterhin.
 
 Erhaltene Benchmark-Metriken: Testanzahl, Failures, Errors, Skips, reine Testzeit,
 Line-/Branch-Coverage der Zielklasse, abgedeckte/gesamte Linien und Branches im

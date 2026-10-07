@@ -113,6 +113,75 @@ class RepoCase(unittest.TestCase):
         self.assertEqual(result, runner.finish(self.repo, self.store_root, started["id"], summary_file=summary))
         self.assertEqual(report, (folder / "report.md").read_text(encoding="utf-8"))
 
+    def test_run_folder_uses_fixed_creation_time_through_finish_and_status(self):
+        created = "2026-10-07T01:02:03.456789+00:00"
+        with patch("workflow.runner.now", return_value=created):
+            started = self.begin()
+        folder = Path(started["folder"])
+        self.assertEqual("2026-10-07_01-02-03_UTC__" + started["id"], folder.name)
+        state_path = self.store_root / self.repo.name / "state" / (started["id"] + ".json")
+        self.assertEqual(created, read_json(state_path)["createdAt"])
+        self.commit_task()
+        with patch("workflow.runner.now", return_value="2026-10-08T03:04:05+00:00"), patch("workflow.benchmark.collect", return_value=METRICS):
+            result = runner.finish(self.repo, self.store_root, started["id"])
+        self.assertEqual(str(folder), result["RunFolder"])
+        self.assertEqual(str(folder), runner.status(self.repo, self.store_root, started["id"])["folder"])
+        with (folder.parent.parent / "results.csv").open(encoding="utf-8", newline="") as handle:
+            self.assertEqual(str(folder), next(csv.DictReader(handle))["RunFolder"])
+        self.assertIn(str(folder), (folder / "report.md").read_text(encoding="utf-8"))
+
+    def test_prepared_folder_does_not_change_at_begin_or_abort(self):
+        with patch("workflow.runner.now", return_value="2026-10-07T23:59:59+00:00"), patch("workflow.benchmark.collect", return_value=METRICS):
+            prepared = runner.prepare(self.repo, self.store_root, self.request, CATALOG)
+        with patch("workflow.runner.now", return_value="2026-10-08T00:00:01+00:00"):
+            started = runner.begin(self.repo, self.store_root, None, CATALOG, prepared_id=prepared["id"])
+        self.assertEqual(prepared["folder"], started["folder"])
+        runner.abort(self.repo, self.store_root, started["id"], "test stop")
+        result = read_json(Path(started["folder"]) / "result.json")
+        self.assertEqual(started["folder"], result["RunFolder"])
+
+    def test_legacy_active_run_finishes_without_moving_its_archive(self):
+        started = self.begin()
+        state_path = self.store_root / self.repo.name / "state" / (started["id"] + ".json")
+        state = read_json(state_path)
+        legacy_folder = Path(started["folder"]).parent / started["id"]
+        Path(started["folder"]).rename(legacy_folder)
+        state.pop("createdAt")
+        state["folder"] = str(legacy_folder)
+        write_json(state_path, state)
+        self.assertEqual(str(legacy_folder), runner.status(self.repo, self.store_root, started["id"])["folder"])
+        self.commit_task()
+        with patch("workflow.benchmark.collect", return_value=METRICS):
+            result = runner.finish(self.repo, self.store_root, started["id"])
+        snapshot = {p: p.read_bytes() for p in (state_path, legacy_folder / "result.json", legacy_folder / "report.md")}
+        self.assertEqual(str(legacy_folder), result["RunFolder"])
+        runner.status(self.repo, self.store_root, started["id"])
+        self.assertEqual(snapshot, {p: p.read_bytes() for p in snapshot})
+        self.assertFalse(Path(started["folder"]).exists())
+
+    def test_timestamped_run_rejects_mismatched_folder_and_creation_time(self):
+        started = self.begin("branch")
+        state_path = self.store_root / self.repo.name / "state" / (started["id"] + ".json")
+        original = read_json(state_path)
+        for stamp in ("2025-01-01T00:00:00+00:00", "bad", "2026-10-07T01:02:03", 123):
+            state = dict(original, createdAt=stamp)
+            write_json(state_path, state)
+            with self.subTest(stamp=stamp), self.assertRaises(WorkflowError):
+                runner.status(self.repo, self.store_root, started["id"])
+        write_json(state_path, original)
+
+    def test_multiple_runs_created_same_second_have_distinct_folders(self):
+        with patch("workflow.runner.now", return_value="2026-10-07T01:02:03+00:00"):
+            first = self.begin("branch")
+            runner.abort(self.repo, self.store_root, first["id"])
+            self.git("switch", "main")
+            self.request["branch"] = "second"
+            second = self.begin("branch")
+        self.assertNotEqual(first["id"], second["id"])
+        self.assertNotEqual(first["folder"], second["folder"])
+        self.assertTrue(Path(first["folder"]).is_dir())
+        self.assertTrue(Path(second["folder"]).is_dir())
+
     def test_improver_usage_reaches_completed_report_result_and_csv(self):
         from prompt.openai_client import OpenAIClient
         from tests.test_prompt_providers import response
@@ -149,7 +218,7 @@ class RepoCase(unittest.TestCase):
             self.begin("branch,prompt,benchmark")
         store = self.store_root / self.repo.name
         run_id = read_json(store / "active.json")["id"]
-        folder = store / "runs" / run_id
+        folder = Path(read_json(store / "state" / (run_id + ".json"))["folder"])
         result = read_json(folder / "result.json")
         self.assertEqual("failed", result["Outcome"])
         self.assertEqual("failed", result["PromptStatus"])
@@ -1004,7 +1073,8 @@ class OutcomeCase(RepoCase):
     def saved(self, run_id=None):
         store = self.store_root / self.repo.name
         run_id = run_id or read_json(store / "active.json")["id"]
-        return store, store / "state" / (run_id + ".json"), store / "runs" / run_id
+        state_path = store / "state" / (run_id + ".json")
+        return store, state_path, Path(read_json(state_path)["folder"])
 
     def rows(self):
         with (self.store_root / self.repo.name / "results.csv").open(encoding="utf-8", newline="") as handle:
@@ -1212,6 +1282,16 @@ class OutcomeCase(RepoCase):
 
 
 class ConfigurationCase(unittest.TestCase):
+    def test_archive_names_sort_chronologically_independent_of_offsets(self):
+        store = Path("store")
+        later = runner.archive_path(store, "a" * 32, "2026-10-07T02:00:00+00:00")
+        earlier = runner.archive_path(store, "f" * 32, "2026-10-07T03:59:59+02:00")
+        self.assertEqual([earlier, later], sorted([later, earlier]))
+        self.assertEqual("2026-10-07_01-59-59_UTC__" + "f" * 32, earlier.name)
+
+    def test_legacy_archive_path_keeps_id_without_timestamp(self):
+        self.assertEqual(Path("store/runs") / ("a" * 32), runner.archive_path(Path("store"), "a" * 32))
+
     def test_complete_is_preset_and_module_order_is_canonical(self):
         self.assertEqual(list(runner.MODULES), runner.modules("complete"))
         self.assertEqual(["branch", "usage"], runner.modules("usage,branch"))
