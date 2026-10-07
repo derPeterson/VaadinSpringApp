@@ -7,6 +7,7 @@ OpenCode nach den Projektregeln; Python bereitet den Lauf vor und wertet ihn aus
 
 ## Inhaltsverzeichnis
 
+- [Auftrag, Improver, Workflow und Projektregeln](#auftrag-improver-workflow-und-projektregeln)
 - [Installation](#installation)
 - [Aufruf in OpenCode](#aufruf-in-opencode)
 - [Ablauf und unabhängige Module](#ablauf-und-unabhängige-module)
@@ -29,6 +30,30 @@ OpenCode nach den Projektregeln; Python bereitet den Lauf vor und wertet ihn aus
 - [Tests](#tests)
 - [Änderungen und bewusste Grenzen](#änderungen-und-bewusste-grenzen)
 - [OpenCode-Referenzen](#opencode-referenzen)
+
+## Auftrag, Improver, Workflow und Projektregeln
+
+Ein kurzer Auftrag genügt, wenn Ziel, Umfang und benötigte Quellen eindeutig sind.
+Build-, Benchmark- und Abschlussregeln müssen nicht bei jedem Auftrag wiederholt werden.
+
+| Ebene | Aufgabe |
+|---|---|
+| Benutzerauftrag | Fachliches Ziel, gewünschter Umfang, Quellen und besondere Grenzen festlegen. |
+| Prompt-Improver | Den Auftragstext präzisieren und strukturieren; keine Anforderungen oder Entscheidungen erfinden. |
+| `/start` | Gewählte Module, Vorbereitung, Aufgabenbearbeitung, Prüfung, Git-Abschluss und Run-Artefakte koordinieren. |
+| Projekt-`AGENTS.md` | Dauerhafte Architektur-, Stil-, Test-, Übersetzungs- und Arbeitsregeln festlegen. |
+
+Der Improver erhält ausschließlich den Auftragstext. Er liest weder Projektdateien
+noch `AGENTS.md` oder eine erwähnte `findings.md`. Das liest der ausführende Agent
+im `/start`-Ablauf: Originalauftrag und verbesserten Prompt zusammen berücksichtigen,
+referenzierte Quellen für die beauftragten IDs lesen und fehlenden Kontext zunächst
+dort prüfen. Eine Referenz allein ist kein Nachweis des Dateiinhalts. Der Improver
+entscheidet weder über die Implementierung noch über Berechtigungen.
+
+Die konfigurierten Improver-Defaults bleiben allgemeine Vorgaben. Sie erlauben
+keine zusätzlichen Änderungen bei einem Analyseauftrag und ersetzen keine
+Projektregeln. Der Workflow kennt Analyse und Implementierung getrennt; explizite
+Benutzervorgaben gelten weiterhin.
 
 ## Installation
 

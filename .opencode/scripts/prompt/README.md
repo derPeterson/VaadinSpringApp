@@ -59,6 +59,22 @@ Er soll nicht:
 
 ## Architektur
 
+### Kontext und Grenzen im Workflow
+
+Der Improver bekommt den ursprünglichen Auftragstext und die eigene Config.
+Er erhält keine Projektdateien, keine `AGENTS.md` und keine Inhalte erwähnter
+Findings-Dateien. Ein kurzer Auftrag mit konkreten IDs und Dateipfad ist dennoch
+nutzbar: Der ausführende Agent liest diese Quelle anschließend im `/start`-Ablauf
+und berücksichtigt Originalauftrag und verbesserten Prompt gemeinsam. Inhalte
+fehlender Quellen darf der Improver nicht erfinden.
+
+Die Defaults für `non_goals` und `verification` sind allgemeine Leitlinien.
+Sie erweitern weder den fachlichen Umfang noch erlauben sie Codeänderungen bei
+einem Analyseauftrag. Projektregeln kommen aus `AGENTS.md`, Ablauf und Abschluss
+aus `/start`; Details der Aufgabe kommen vom Benutzer und seinen Quellen.
+
+### Aufrufpfad
+
 ```text
 CLI
  |
@@ -111,6 +127,8 @@ prompt/
 ├─ openai_client.py
 ├─ chatgpt_client.py
 ├─ llm_client_factory.py
+├─ execution.py
+├─ telemetry.py
 ├─ models.py
 ├─ prompt_improver.py
 ├─ prompt_artifact_writer.py
@@ -123,7 +141,8 @@ prompt/
 │  ├─ credential_store.py
 │  ├─ credentials.py
 │  ├─ identity.py
-│  └─ token_client.py
+│  ├─ token_client.py
+│  └─ session_lock.py
 ├─ cli/
 │  ├─ __init__.py
 │  └─ prompt_improver_cli.py
@@ -268,8 +287,10 @@ Der Client:
 3. erneuert einen abgelaufenen Access Token über den Refresh Token,
 4. speichert die rotierenden Credentials erneut,
 5. erzeugt einen OpenAI-SDK-Client mit dem OAuth Access Token,
-6. konsumiert den Stream bis `response.completed`,
-7. sammelt `response.output_text.delta` zu einem Ergebnis-String.
+6. konsumiert den Stream bis zu einer terminalen Response,
+7. übernimmt Text und Usage aus der endgültigen Response. Nur eine vollständige,
+   nicht verweigerte und nicht leere Ausgabe wird akzeptiert; Deltas werden nicht
+   zu einer zweiten Text- oder Usage-Summe addiert.
 
 Auch Strict Structured Output wird über `text.format` unterstützt.
 
@@ -561,7 +582,9 @@ Tests und gehören nicht zum automatischen Offline-Lauf.
 
 ## Artefakte
 
-`PromptArtifactWriter` kann aktuell folgende Dateien erzeugen:
+`PromptArtifactWriter` schreibt Original- und verbesserten Prompt. Die gemeinsame
+Ausführung in `execution.py` ergänzt Metadaten und Usage, auch bei Fehlern.
+Zusammen entstehen:
 
 ```text
 original-prompt.md

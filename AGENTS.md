@@ -25,6 +25,10 @@
   Styles are loaded in `Application.java`; additional icons are under
   `src/main/resources/META-INF/resources/icons/`.
 - Translations: `src/main/resources/i18n/`; email templates: `src/main/resources/email/`.
+- Use the existing typed `MessageProperties` getters for fixed translation keys.
+  For visible notifications that must update on language change, pass dynamic
+  translation suppliers for title and body to the existing `NotificationHelper`.
+  Do not freeze translated strings before that update mechanism.
 - Load server-side resources through classpath streams, not `src/` filesystem paths.
   Resource loading must also work inside a JAR.
 - Do not manually edit `src/main/frontend/generated/`, `vite.generated.ts` or `target/`.
@@ -53,12 +57,17 @@
 - For behavior changes, add focused tests for the expected behavior.
 - Tests belong under `src/test/java/`; follow existing JUnit patterns.
   `ImageHelperTest` is an example without application startup or a database.
+- Database regression tests may use isolated test databases such as H2; never
+  connect them to existing application databases or reuse application data.
+  Use controlled synchronization for concurrency tests rather than timing alone.
+  Keep required UI/session fixtures strongly referenced and clean up listeners
+  and contexts after each test.
 - Distinguish build success, tests actually executed and manual functional checks.
   A successful build without test classes is not a passed functional test.
 - The compile phase may already generate frontend files.
 - Maven profile `it` starts and stops the application; do not use it without authorization.
-- Do not modify database data, start the application or send emails unless included
-  in the task.
+- Do not modify existing application database data, start the application or
+  send emails unless included in the task.
 - Before finishing, run `git diff --check` and review the scope of changes.
 - If a build changes generated files already tracked in Git, inspect and report them.
   Include them only when related to the task; do not discard them indiscriminately.
@@ -67,9 +76,11 @@
 
 - Before changes, check the branch and working tree with `git status --short --branch`.
 - Preserve the user's existing changes. Do not overwrite or discard them.
-- Follow the branch, commit and return-to-base workflow of an explicitly invoked
+- Follow the branch, commit and final-state workflow of an explicitly invoked
   OpenCode command. Do not invent another workflow; clarify ambiguities.
 - Do not commit, merge or push without a corresponding instruction.
+- When a commit is authorized, describe the completed change in the message
+  (German past tense), not a planned change.
 - Do not use destructive commands such as `git reset --hard`, `git checkout --`
   or `git clean` to remove changes made by others.
 
