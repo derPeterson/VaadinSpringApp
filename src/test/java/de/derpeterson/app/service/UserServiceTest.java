@@ -95,10 +95,10 @@ class UserServiceTest {
         void findsAnExistingUserUsingTheSuppliedEmail() {
             UserEntity user = user(1L, true);
             String email = " MixedCase@example.com ";
-            when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+            when(userRepository.findByEmail("mixedcase@example.com")).thenReturn(Optional.of(user));
 
             assertSame(user, userService.findByEmail(email).orElseThrow());
-            verify(userRepository).findByEmail(email);
+            verify(userRepository).findByEmail("mixedcase@example.com");
             verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
         }
 
@@ -375,15 +375,11 @@ class UserServiceTest {
         }
 
         @Test
-        void currentlyPassesNullLocaleThroughToPersistence() {
-            // Characterization, not a recommendation: the entity column is non-nullable.
+        void rejectsNullLocaleBeforeLookingUpOrChangingTheUser() {
             UserEntity user = user(1L, true);
-            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-
-            userService.updateUserLocale(user.getEmail(), null);
-
-            assertNull(user.getPreferredLocale());
-            verify(userRepository).save(same(user));
+            assertThrows(IllegalArgumentException.class, () -> userService.updateUserLocale(user.getEmail(), null));
+            assertEquals(Locale.ENGLISH, user.getPreferredLocale());
+            verifyNoInteractions(userRepository);
         }
 
         @Test
@@ -422,7 +418,7 @@ class UserServiceTest {
     @Nested
     class PasswordUpdates {
         @ParameterizedTest
-        @ValueSource(strings = {"newRawPassword", "", "  password with spaces  "})
+        @ValueSource(strings = {"NewPassword!", "  Password with spaces!  ", "A!234567"})
         void encodesTheUnmodifiedInputWithoutSavingTheUser(String rawPassword) {
             UserEntity user = user(1L, true);
             user.setPassword("old-hash");
@@ -437,7 +433,7 @@ class UserServiceTest {
 
         @Test
         void rejectsANullUser() {
-            assertThrows(NullPointerException.class,
+            assertThrows(IllegalArgumentException.class,
                     () -> userService.updatePassword(null, "newRawPassword"));
             verifyNoInteractions(userRepository, userStatusBroadcaster);
         }
@@ -447,25 +443,22 @@ class UserServiceTest {
             UserEntity user = user(1L, true);
             user.setPassword("old-hash");
             var failure = new IllegalStateException("Encoding failed");
-            when(passwordEncoder.encode("newRawPassword")).thenThrow(failure);
+            when(passwordEncoder.encode("NewPassword!")).thenThrow(failure);
 
             assertSame(failure, assertThrows(IllegalStateException.class,
-                    () -> userService.updatePassword(user, "newRawPassword")));
+                    () -> userService.updatePassword(user, "NewPassword!")));
             assertEquals("old-hash", user.getPassword());
             verifyNoInteractions(userRepository, userStatusBroadcaster);
         }
 
         @Test
-        void propagatesEncoderRejectionOfNullPasswordWithoutChangingTheUser() {
+        void rejectsNullPasswordWithoutEncodingOrChangingTheUser() {
             UserEntity user = user(1L, true);
             user.setPassword("old-hash");
-            var failure = new IllegalArgumentException("rawPassword cannot be null");
-            when(passwordEncoder.encode(null)).thenThrow(failure);
-
-            assertSame(failure, assertThrows(IllegalArgumentException.class,
-                    () -> userService.updatePassword(user, null)));
+            assertThrows(IllegalArgumentException.class, () -> userService.updatePassword(user, null));
             assertEquals("old-hash", user.getPassword());
             verifyNoInteractions(userRepository, userStatusBroadcaster);
+            verifyNoInteractions(passwordEncoder);
         }
     }
 
@@ -642,24 +635,22 @@ class UserServiceTest {
 
         @Test
         void returnsFalseWhenNoUsersExist() {
-            when(userRepository.findAll()).thenReturn(List.of());
+            when(userRepository.emailExistsForOtherUser("test@example.com", 1L)).thenReturn(false);
 
             assertFalse(userService.emailExistsForOtherUser("test@example.com", 1L));
         }
 
         @Test
         void returnsFalseWhenOnlyUnrelatedEmailsExist() {
-            when(userRepository.findAll()).thenReturn(List.of(user(2L, true)));
+            when(userRepository.emailExistsForOtherUser("missing@example.com", 1L)).thenReturn(false);
 
             assertFalse(userService.emailExistsForOtherUser("missing@example.com", 1L));
         }
 
         @ParameterizedTest
         @ValueSource(strings = {"test@example.com", "TEST@EXAMPLE.COM", "  TEST@EXAMPLE.COM  "})
-        void detectsAnotherUsersEmailAfterNormalizingBothSides(String email) {
-            UserEntity other = user(2L, true);
-            other.setEmail("  Test@Example.Com  ");
-            when(userRepository.findAll()).thenReturn(List.of(other));
+        void detectsAnotherUsersEmailWithCanonicalQueryParameter(String email) {
+            when(userRepository.emailExistsForOtherUser("test@example.com", 1L)).thenReturn(true);
 
             assertTrue(userService.emailExistsForOtherUser(email, 1L));
         }
@@ -667,7 +658,7 @@ class UserServiceTest {
         @Test
         void ignoresTheCurrentAccountByIdRatherThanEntityIdentity() {
             UserEntity stored = user(1000L, true);
-            when(userRepository.findAll()).thenReturn(List.of(stored));
+            when(userRepository.emailExistsForOtherUser(stored.getEmail(), 1000L)).thenReturn(false);
 
             assertFalse(userService.emailExistsForOtherUser(stored.getEmail(), Long.valueOf("1000")));
         }
@@ -675,19 +666,15 @@ class UserServiceTest {
         @Test
         void creationWithNoCurrentIdDetectsAnyMatchingAccount() {
             UserEntity existing = user(1L, true);
-            when(userRepository.findAll()).thenReturn(List.of(existing));
+            when(userRepository.emailExistsForOtherUser(existing.getEmail(), null)).thenReturn(true);
 
             assertTrue(userService.emailExistsForOtherUser(existing.getEmail(), null));
         }
 
         @Test
-        void ignoresMissingEmailsButStillFindsAnotherMatchAfterTheCurrentUser() {
-            UserEntity withoutEmail = user(3L, true);
-            withoutEmail.setEmail(null);
+        void delegatesCurrentUserExclusionToTheTargetedQuery() {
             UserEntity current = user(1L, true);
-            UserEntity duplicate = user(2L, true);
-            duplicate.setEmail(current.getEmail());
-            when(userRepository.findAll()).thenReturn(List.of(withoutEmail, current, duplicate));
+            when(userRepository.emailExistsForOtherUser(current.getEmail(), current.getId())).thenReturn(true);
 
             assertTrue(userService.emailExistsForOtherUser(current.getEmail(), current.getId()));
         }
@@ -695,7 +682,7 @@ class UserServiceTest {
         @Test
         void propagatesUniquenessLookupFailure() {
             var failure = repositoryFailure();
-            when(userRepository.findAll()).thenThrow(failure);
+            when(userRepository.emailExistsForOtherUser("test@example.com", 1L)).thenThrow(failure);
 
             assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
                     () -> userService.emailExistsForOtherUser("test@example.com", 1L)));
@@ -773,10 +760,9 @@ class UserServiceTest {
         }
 
         @Test
-        void missingProposedRolesAlsoRemoveAdminAccess() {
-            when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1L));
-
-            assertTrue(userService.wouldRemoveLastEnabledAdmin(1L, true, null));
+        void missingProposedRolesAreRejectedBeforeTheAdminQuery() {
+            assertThrows(IllegalArgumentException.class, () -> userService.wouldRemoveLastEnabledAdmin(1L, true, null));
+            verifyNoInteractions(userRepository);
         }
 
         @ParameterizedTest
@@ -829,6 +815,9 @@ class UserServiceTest {
 
     private static UserEntity user(Long id, boolean enabled, RoleType... roles) {
         return UserEntity.builder()
+                .firstName("Test").lastName("User").password("hash")
+                .gender(de.derpeterson.app.model.enums.Gender.OTHER)
+                .birthDate(java.time.LocalDate.of(1990, 1, 1))
                 .id(id)
                 .email("user" + id + "@example.com")
                 .enabled(enabled)

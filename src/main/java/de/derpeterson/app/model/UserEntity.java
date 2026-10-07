@@ -23,7 +23,8 @@ import java.util.Locale;
 
 @Entity
 @DynamicUpdate
-@Table(name = "users", indexes = {
+@Table(name = "users", check = @CheckConstraint(name = "ck_users_canonical_email",
+        constraint = "email = lower(trim(email)) and length(email) > 0 and ascii(left(email, 1)) > 32 and ascii(right(email, 1)) > 32"), indexes = {
         @Index(name = "idx_user_lastactivity_status", columnList = "lastActivity, status")
 })
 @Data
@@ -96,6 +97,17 @@ public class UserEntity {
             inverseJoinColumns = @JoinColumn(
                     name = "role_id", referencedColumnName = "id"))
     private Collection<RoleEntity> roleEntities;
+
+    public void setEmail(String email) {
+        this.email = EmailIdentity.canonicalize(email);
+    }
+
+    @PrePersist
+    @PreUpdate
+    private void canonicalizeEmail() {
+        // Lombok builders and JPA field access do not invoke the setter.
+        email = EmailIdentity.canonicalize(email);
+    }
 
     public void setAutomaticStatus(UserStatus newStatus) {
         if (!this.statusManuallySet || this.status == UserStatus.AVAILABLE || this.status == UserStatus.ABSENT) {

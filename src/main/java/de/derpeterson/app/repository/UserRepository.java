@@ -1,5 +1,6 @@
 package de.derpeterson.app.repository;
 
+import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.RoleType;
@@ -23,7 +24,20 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
-    Optional<UserEntity> findByEmail(String email);
+    default Optional<UserEntity> findByEmail(String email) {
+        return findByCanonicalEmail(EmailIdentity.canonicalize(email));
+    }
+
+    @Query("select u from UserEntity u where u.email = :email")
+    Optional<UserEntity> findByCanonicalEmail(@Param("email") String email);
+
+    default boolean emailExistsForOtherUser(String email, Long id) {
+        return canonicalEmailExistsForOtherUser(EmailIdentity.canonicalize(email), id);
+    }
+
+    @Query("select count(u) > 0 from UserEntity u where u.email = :email and (:id is null or u.id <> :id)")
+    @QueryHints(@QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
+    boolean canonicalEmailExistsForOtherUser(@Param("email") String email, @Param("id") Long id);
 
     // A single existing, unique role row serializes privilege mutations across
     // application instances. Do not flush already edited managed users first.
@@ -41,14 +55,22 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     // Scalar projections bypass stale managed entities/collections (including
     // OSIV). An independent read sees committed privileges, not pending edits.
+    default List<SecurityUserRow> findSecurityUser(String email) {
+        return findCanonicalSecurityUser(EmailIdentity.canonicalize(email));
+    }
+
     @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
     @Query("select u.email as email, u.password as password, u.enabled as enabled, r.name as role "
             + "from UserEntity u left join u.roleEntities r where u.email = :email")
-    List<SecurityUserRow> findSecurityUser(@Param("email") String email);
+    List<SecurityUserRow> findCanonicalSecurityUser(@Param("email") String email);
+
+    default Optional<UserEntity> findByEmailForUpdate(String email) {
+        return findByCanonicalEmailForUpdate(EmailIdentity.canonicalize(email));
+    }
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from UserEntity u where u.email = :email")
-    Optional<UserEntity> findByEmailForUpdate(@Param("email") String email);
+    Optional<UserEntity> findByCanonicalEmailForUpdate(@Param("email") String email);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from UserEntity u where u.id = :id")

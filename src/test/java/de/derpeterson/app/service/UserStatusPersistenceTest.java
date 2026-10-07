@@ -394,9 +394,9 @@ class UserStatusPersistenceTest {
         edited.setPreferredLocale(Locale.ENGLISH);
         edited.setLastActivity(LocalDateTime.MIN);
         edited.setFirstName("Admin edited");
-        service.updateAdminUser(edited, edited.getVersion(), "explicit-new-password");
+        service.updateAdminUser(edited, edited.getVersion(), "Explicit-new-password!");
         UserEntity fresh = stored();
-        assertTrue(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().matches("explicit-new-password", fresh.getPassword()));
+        assertTrue(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().matches("Explicit-new-password!", fresh.getPassword()));
         assertEquals("Admin edited", fresh.getFirstName());
         assertEquals(UserStatus.EMPLOYED, fresh.getStatus());
         assertTrue(fresh.isStatusManuallySet());

@@ -1,0 +1,231 @@
+package de.derpeterson.app.service;
+
+import de.derpeterson.app.model.*;
+import de.derpeterson.app.model.enums.*;
+import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.CustomUserDetailsService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import javax.sql.DataSource;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/** Real constraints/commits in the isolated H2 fixture, never application data. */
+@SpringJUnitConfig(UserServicePersistenceTest.Config.class)
+class UserIdentityPersistenceTest {
+    @Autowired UserService service;
+    @Autowired UserRepository repository;
+    @Autowired TransactionTemplate transaction;
+    @Autowired DataSource dataSource;
+    @PersistenceContext EntityManager entityManager;
+    private Long adminId;
+    private Long targetId;
+    private Long otherId;
+    private RoleEntity ordinary;
+
+    @BeforeEach
+    void seed() {
+        transaction.executeWithoutResult(tx -> {
+            entityManager.createQuery("delete from VerificationTokenEntity").executeUpdate();
+            entityManager.createQuery("delete from PasswordResetTokenEntity").executeUpdate();
+            entityManager.createQuery("delete from EmailQueueEntity").executeUpdate();
+            repository.deleteAll();
+            repository.flush();
+            entityManager.createQuery("delete from RoleEntity").executeUpdate();
+            var admin = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
+            ordinary = RoleEntity.builder().name(RoleType.ROLE_USER).build();
+            entityManager.persist(admin);
+            entityManager.persist(ordinary);
+            adminId = persist("admin@example.com", admin);
+            targetId = persist("target@example.com", ordinary);
+            otherId = persist("other@example.com", ordinary);
+            for (Long id : List.of(targetId, otherId, adminId)) {
+                UserEntity user = entityManager.find(UserEntity.class, id);
+                for (TokenStatus status : TokenStatus.values()) {
+                    var verification = new VerificationTokenEntity(null, "verification-" + id + status, user,
+                            LocalDateTime.now().plusHours(1), status);
+                    var reset = new PasswordResetTokenEntity(null, "reset-" + id + status, user,
+                            LocalDateTime.now().plusHours(1), status);
+                    entityManager.persist(verification);
+                    entityManager.persist(reset);
+                }
+                var mail = new EmailQueueEntity();
+                mail.setUserEntity(user);
+                mail.setSubject("Test");
+                mail.setBody("Test");
+                entityManager.persist(mail);
+            }
+        });
+    }
+
+    private UserEntity user(String email, RoleEntity role) {
+        return UserEntity.builder().email(email).firstName("Test").lastName("User").password("hash")
+                .birthDate(LocalDate.of(1990, 1, 1)).gender(Gender.OTHER).enabled(true).preferredLocale(Locale.ENGLISH)
+                .roleEntities(new ArrayList<>(List.of(role))).build();
+    }
+
+    private Long persist(String email, RoleEntity role) {
+        UserEntity user = user(email, role);
+        entityManager.persist(user);
+        return user.getId();
+    }
+
+    private UserEntity form(Long id) {
+        return repository.findAll().stream().filter(user -> user.getId().equals(id)).findFirst().orElseThrow();
+    }
+
+    private long children(String table, Long id) {
+        return new JdbcTemplate(dataSource).queryForObject("select count(*) from " + table + " where user_id = ?", Long.class, id);
+    }
+
+    @Test
+    void deletionCascadesAllTokenStatesAndQueuedMailWithoutRemovingOtherUsersOrRoles() {
+        service.deleteUser(form(targetId));
+        assertFalse(repository.existsById(targetId));
+        for (String table : List.of("verification_token", "password_reset_token", "email_queue", "users_roles")) {
+            assertEquals(0, children(table, targetId));
+            assertTrue(children(table, otherId) > 0);
+        }
+        assertTrue(repository.existsById(otherId));
+        assertEquals(1, repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN).size());
+    }
+
+    @Test
+    void outerRollbackRestoresUserAndEveryDependentRowAfterSuccessfulDeleteFlush() {
+        transaction.executeWithoutResult(tx -> {
+            service.deleteUser(form(targetId));
+            assertFalse(repository.existsById(targetId));
+            tx.setRollbackOnly();
+        });
+        assertTrue(repository.existsById(targetId));
+        assertEquals(TokenStatus.values().length, children("verification_token", targetId));
+        assertEquals(TokenStatus.values().length, children("password_reset_token", targetId));
+        assertEquals(1, children("email_queue", targetId));
+    }
+
+    @Test
+    void lastAdminRejectionLeavesAllTokensAndMailUntouched() {
+        assertThrows(IllegalStateException.class, () -> service.deleteUser(form(adminId)));
+        assertTrue(repository.existsById(adminId));
+        assertEquals(TokenStatus.values().length, children("verification_token", adminId));
+        assertEquals(TokenStatus.values().length, children("password_reset_token", adminId));
+        assertEquals(1, children("email_queue", adminId));
+    }
+
+    @Test
+    void emailPreflightCannotFlushAnUnguardedPendingDemotionOfTheLastAdmin() {
+        assertThrows(IllegalStateException.class, () -> transaction.executeWithoutResult(tx -> {
+            var users = repository.findAll();
+            users.stream().filter(user -> user.getId().equals(adminId)).findFirst().orElseThrow().setEnabled(false);
+            assertFalse(service.emailExistsForOtherUser("unused@example.com", null));
+            service.save(users.stream().filter(user -> user.getId().equals(targetId)).findFirst().orElseThrow());
+        }));
+        assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN));
+    }
+
+    @Test
+    void staleVersionDeleteRejectsWithoutLosingChildren() {
+        UserEntity stale = form(targetId);
+        UserEntity fresh = form(targetId);
+        fresh.setFirstName("Changed");
+        service.updateAdminUser(fresh, fresh.getVersion(), "");
+        assertThrows(org.springframework.dao.OptimisticLockingFailureException.class, () -> service.deleteUser(stale));
+        assertEquals("Changed", form(targetId).getFirstName());
+        assertEquals(TokenStatus.values().length, children("verification_token", targetId));
+        assertEquals(TokenStatus.values().length, children("password_reset_token", targetId));
+        assertEquals(1, children("email_queue", targetId));
+    }
+
+    @Test
+    void canonicalIdentityIsSharedBySaveLookupSecurityLocaleAndUniqueness() {
+        UserEntity edited = form(targetId);
+        edited.setEmail("  MiXeD@Example.COM  ");
+        service.updateAdminUser(edited, edited.getVersion(), "");
+        assertEquals("mixed@example.com", form(targetId).getEmail());
+        assertEquals(targetId, service.findByEmail(" MIXED@EXAMPLE.COM ").orElseThrow().getId());
+        assertEquals(targetId, repository.findByEmail(" MIXED@EXAMPLE.COM ").orElseThrow().getId());
+        assertEquals("mixed@example.com", new CustomUserDetailsService(repository).loadUserByUsername(" MIXED@EXAMPLE.COM ").getUsername());
+        transaction.executeWithoutResult(tx -> assertEquals(targetId,
+                repository.findByEmailForUpdate(" MIXED@EXAMPLE.COM ").orElseThrow().getId()));
+        service.updateUserLocale(" MIXED@EXAMPLE.COM ", Locale.GERMAN);
+        assertEquals(Locale.GERMAN, form(targetId).getPreferredLocale());
+        assertTrue(service.emailExistsForOtherUser(" MIXED@EXAMPLE.COM ", otherId));
+        assertFalse(service.emailExistsForOtherUser(" MIXED@EXAMPLE.COM ", targetId));
+        assertTrue(service.emailExistsForOtherUser(" MIXED@EXAMPLE.COM ", null));
+        assertTrue(repository.emailExistsForOtherUser(" MIXED@EXAMPLE.COM ", otherId));
+        assertFalse(repository.emailExistsForOtherUser(" MIXED@EXAMPLE.COM ", targetId));
+    }
+
+    @Test
+    void directJpaBuilderAndUpdatesAlsoCanonicalizeAndDatabaseRejectsRawVariants() {
+        Long id = transaction.execute(tx -> persist(" BUILDER@Example.COM ", ordinary));
+        assertEquals("builder@example.com", form(id).getEmail());
+        assertThrows(DataIntegrityViolationException.class, () -> new JdbcTemplate(dataSource)
+                .update("update users set email = ? where id = ?", " BUILDER@Example.COM ", otherId));
+        assertThrows(DataIntegrityViolationException.class, () -> new JdbcTemplate(dataSource)
+                .update("update users set email = ? where id = ?", "\tbuilder@example.com\t", otherId));
+        assertThrows(DataIntegrityViolationException.class, () -> new JdbcTemplate(dataSource)
+                .update("update users set email = ? where id = ?", "", otherId));
+        assertThrows(DataIntegrityViolationException.class, () -> new JdbcTemplate(dataSource)
+                .update("update users set email = ? where id = ?", "builder@example.com", otherId));
+        assertEquals("other@example.com", form(otherId).getEmail());
+        transaction.executeWithoutResult(tx -> {
+            UserEntity managed = entityManager.find(UserEntity.class, id);
+            org.springframework.test.util.ReflectionTestUtils.setField(managed, "email", " UPDATED@Example.COM ");
+            managed.setFirstName("Updated through field access");
+        });
+        assertEquals("updated@example.com", form(id).getEmail());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void concurrentCanonicalDuplicatesAreRejectedByDatabaseEvenWithoutServiceGuard(boolean update) throws Exception {
+        var barrier = new CyclicBarrier(2);
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var first = executor.submit(() -> race(targetId, " RACE@Example.COM ", update, barrier));
+            var second = executor.submit(() -> race(otherId, "race@example.com", update, barrier));
+            assertNotEquals(first.get(10, TimeUnit.SECONDS), second.get(10, TimeUnit.SECONDS));
+        }
+        assertEquals(1L, new JdbcTemplate(dataSource).queryForObject(
+                "select count(*) from users where email = 'race@example.com'", Long.class));
+    }
+
+    private boolean race(Long id, String email, boolean update, CyclicBarrier barrier) {
+        try {
+            transaction.executeWithoutResult(tx -> {
+                UserEntity candidate = update ? entityManager.find(UserEntity.class, id) : user(email, ordinary);
+                assertFalse(service.emailExistsForOtherUser(email, update ? id : null));
+                try {
+                    barrier.await(5, TimeUnit.SECONDS);
+                } catch (Exception exception) {
+                    throw new AssertionError(exception);
+                }
+                // Deliberately bypass the role-row service lock: the UNIQUE
+                // constraint must be authoritative for any writer/instance.
+                candidate.setEmail(email);
+                repository.saveAndFlush(candidate);
+            });
+            return true;
+        } catch (DataIntegrityViolationException conflict) {
+            return false;
+        }
+    }
+}

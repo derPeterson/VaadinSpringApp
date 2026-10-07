@@ -112,9 +112,9 @@ public class ValidationHelperTest {
         LocalDate yesterday = today.minusDays(1);
         LocalDate tomorrow = today.plusDays(1);
 
-        // Valid dates (past or present)
+        // Only past dates satisfy the entity's existing @Past rule.
         assertTrue(ValidationHelper.isBirthDateValid(yesterday));
-        assertTrue(ValidationHelper.isBirthDateValid(today));
+        assertFalse(ValidationHelper.isBirthDateValid(today));
         
         // Invalid dates (future)
         assertFalse(ValidationHelper.isBirthDateValid(tomorrow));

@@ -1,6 +1,7 @@
 package de.derpeterson.app.service;
 
 import de.derpeterson.app.helper.image.ImageHelper;
+import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.PasswordResetTokenEntity;
@@ -19,6 +20,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -88,6 +90,7 @@ public class PasswordResetService {
 
     @Transactional
     public boolean resetPassword(String token, String newPassword) {
+        Assert.isTrue(ValidationHelper.isPasswordSecure(newPassword), "Invalid password");
         Optional<PasswordResetTokenEntity> tokenEntity = tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
         if (tokenEntity.isPresent() && tokenEntity.get().getExpiryDate().isBefore(LocalDateTime.now())) {
             setTokenStatus(token, TokenStatus.EXPIRED);

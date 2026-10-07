@@ -9,6 +9,7 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.data.validator.EmailValidator;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.service.UserService;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -200,7 +201,7 @@ public class ValidationHelper {
     }
 
     public static boolean isBirthDateValid(LocalDate birthDate) {
-        return birthDate != null && !birthDate.isAfter(LocalDate.now());
+        return birthDate != null && birthDate.isBefore(LocalDate.now());
     }
 
     public static boolean isRequiredTextValid(String value) {
@@ -208,6 +209,6 @@ public class ValidationHelper {
     }
 
     public static String normalize(String value) {
-        return StringUtils.trimToEmpty(value).toLowerCase();
+        return StringUtils.defaultString(EmailIdentity.canonicalize(value));
     }
 }
