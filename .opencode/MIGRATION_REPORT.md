@@ -42,7 +42,7 @@ Details und Prüfnachweise stehen im letzten Abschnitt dieses Berichts.
 
 | Prüfung | Ergebnis |
 |---|---|
-| Automatische Python-Suite | **132 Tests, 0 Fehler, 0 Failures, 0 Skips** im finalen Infrastrukturstand |
+| Automatische Python-Suite | **148 Tests, 0 Fehler, 0 Failures, 0 Skips** nach der Stream-Korrektur |
 | Echte temporäre Git-Repositories | Branch-/Status-Prüfungen, Commits, Findings, Text-/Binary-Diff und sauberer Endzustand erfolgreich |
 | CLI als eigener Prozess | Begin/Finish, sichere JSON-Task-Übergabe und UTF-8-Umsetzungsbericht mit Quotes/Zeilenumbrüchen/Shell-Sonderzeichen erfolgreich |
 | Fehlerpfade | Dirty Tree, vorhandene lokale/remote Branches, falscher Branch, tracked Findings, fehlende Usage-Session, Build-/CSV-Fehler korrekt abgewiesen |
@@ -446,3 +446,35 @@ vollständig gelieferten Outcomes-Stand erstellt, benötigt keine Löschungen un
 ist als Overlay bytegenau mit der aktualisierten Komplett-ZIP verglichen.
 Modellkatalog, NPM-Dateien, Prompt-Kern/Config/Schema/Factory/Artefaktschreiber,
 PKCE, Callback und Identity-Verifier bleiben bytegenau erhalten.
+
+## Korrektur: gestreamter Prompttext bei leerer terminaler Response
+
+Der Run `bd91e99a11fd43b39aff6242046d0417` scheiterte beim Prompt-Modul mit
+`empty_output`, obwohl 403 Output-Tokens gemeldet wurden. Die neue
+Antwortverarbeitung aus dem Hardening-Paket verwendete ausschließlich den
+Text der terminalen Response und ignorierte zuvor empfangenen Streamtext.
+Dieser Fall fehlte in den bisherigen Offline-Fixtures.
+
+ChatGPT bewahrt jetzt Textteile aus Deltas und Done-Ereignissen auf. Finalisierte
+Textteile ersetzen ihre Deltas, statt doppelt angehängt zu werden. Vorhandener
+terminaler Text bleibt maßgeblich; fehlt er, wird der Streamtext verwendet.
+Refusal, Failed/Incomplete und ein fehlender erfolgreicher Abschluss verhindern
+weiterhin einen Prompt. Pydantic prüft danach unverändert das JSON-Schema.
+Usage wird weiterhin ausschließlich einmal aus der terminalen Response erfasst.
+Nicht-gestreamte Response-Dictionaries werden auch ohne SDK-output_text-Property
+anhand ihrer tatsächlichen Textblöcke ausgewertet.
+
+**148 Python-Tests bestanden**, einschließlich 16 zusätzlicher Regressionen
+für diese Antwortformen und die bisherigen Sicherheits-/Fehlerfälle. Ein
+einziger neutraler Live-Test mit `chatgpt/gpt-6.1-sol` bestätigte den Fehlerfall:
+0 Zeichen im terminalen output_text, 0 terminale Output-Items, aber 662 Zeichen
+im Stream. Der korrigierte Improver validierte diese Ausgabe erfolgreich.
+Keine Projektaufgabe und keine historischen Benchmark-Änderungen wurden ausgeführt.
+Der konkrete UserService-Auftrag wurde im Live-Test nicht versendet.
+
+`opencode-prompt-stream-fix.zip` enthält sechs geänderte Dateien auf Basis des
+zuletzt gelieferten Anweisungsabgleichs, ohne neue Dateien oder Löschungen.
+Die Komplett-ZIP wurde ebenfalls aktualisiert. Prompt-Kern, Config, Schema,
+Factory, Auth, AGENTS.md, Commands, Modellkatalog und Plugin bleiben unverändert.
+Nach Übernahme ist der bisherige UserService-Auftrag mit einem neuen Run zu starten;
+der fehlgeschlagene Run bleibt als solcher im Archiv erhalten.

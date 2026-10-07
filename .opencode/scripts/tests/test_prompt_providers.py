@@ -219,6 +219,153 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(1, client.get_usage()["requests"])
         stream.__exit__.assert_called_once()
 
+    def test_chatgpt_actual_sdk_text_events_with_empty_terminal_output(self):
+        from openai.types.responses import ResponseCompletedEvent, ResponseTextDeltaEvent, ResponseTextDoneEvent
+        raw = response(text="")
+        raw.pop("output_text")
+        raw.update(id="resp_fixture", created_at=1, error=None, incomplete_details=None,
+                   instructions=None, metadata={}, model="fixture", object="response", parallel_tool_calls=True,
+                   tool_choice="auto", tools=[], temperature=1, top_p=1)
+        events = [ResponseTextDeltaEvent.model_validate(dict(type="response.output_text.delta",
+                  item_id="msg_fixture", output_index=0, content_index=0, sequence_number=1, delta=VALID, logprobs=[])),
+                  ResponseTextDoneEvent.model_validate(dict(type="response.output_text.done",
+                  item_id="msg_fixture", output_index=0, content_index=0, sequence_number=2, text=VALID, logprobs=[])),
+                  ResponseCompletedEvent.model_validate(dict(type="response.completed", sequence_number=3, response=raw))]
+        client, factory, _ = self.chatgpt(events)
+        with patch("prompt.chatgpt_client.OpenAI", factory):
+            self.assertEqual(VALID, client.chat("s", "u"))
+        self.assertEqual((1, 1, 0, 130), tuple(client.get_usage()[k] for k in
+                         ("requests", "completedRequests", "retries", "totalTokens")))
+
+    def test_chatgpt_delta_only_text_with_completed_response(self):
+        events = [dict(type="response.output_text.delta", delta=VALID[:20]),
+                  dict(type="response.output_text.delta", delta=VALID[20:]),
+                  dict(type="response.completed", response=response(text=""))]
+        client, factory, _ = self.chatgpt(events)
+        with patch("prompt.chatgpt_client.OpenAI", factory):
+            self.assertEqual(VALID, client.chat("s", "u"))
+
+    def test_chatgpt_done_text_is_not_added_to_deltas(self):
+        events = [dict(type="response.output_text.delta", delta="partial"),
+                  dict(type="response.output_text.done", text=VALID),
+                  dict(type="response.completed", response=response(text=""))]
+        client, factory, _ = self.chatgpt(events)
+        with patch("prompt.chatgpt_client.OpenAI", factory):
+            self.assertEqual(VALID, client.chat("s", "u"))
+
+    def test_chatgpt_done_only_text_preserved(self):
+        events = [dict(type="response.output_text.done", text=VALID),
+                  dict(type="response.completed", response=response(text=""))]
+        client, factory, _ = self.chatgpt(events)
+        with patch("prompt.chatgpt_client.OpenAI", factory):
+            self.assertEqual(VALID, client.chat("s", "u"))
+
+    def test_chatgpt_parts_ordered_and_finalized_independently(self):
+        events = [dict(type="response.output_text.delta", output_index=1, content_index=0, delta=VALID[20:]),
+                  dict(type="response.output_text.delta", output_index=0, content_index=1, delta=VALID[10:20]),
+                  dict(type="response.output_text.delta", output_index=0, content_index=0, delta=VALID[:10]),
+                  dict(type="response.output_text.done", output_index=0, content_index=0, text=VALID[:10]),
+                  dict(type="response.completed", response=response(text=""))]
+        client, factory, _ = self.chatgpt(events)
+        with patch("prompt.chatgpt_client.OpenAI", factory):
+            self.assertEqual(VALID, client.chat("s", "u"))
+
+    def test_chatgpt_stream_refusal_rejects_text_without_terminal_refusal(self):
+        for kind in ("response.refusal.delta", "response.refusal.done"):
+            client, factory, _ = self.chatgpt([dict(type="response.output_text.delta", delta=VALID),
+                                               dict(type=kind), dict(type="response.completed", response=response())])
+            with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+                client.chat("s", "u")
+            self.assertEqual("refusal", caught.exception.category)
+
+    def test_chatgpt_failure_or_incomplete_never_accepts_stream_text(self):
+        for status, category in (("failed", "provider_failure"), ("incomplete", "incomplete")):
+            client, factory, _ = self.chatgpt([dict(type="response.output_text.delta", delta=VALID),
+                                               dict(type="response." + status, response=response(status, text=""))])
+            with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+                client.chat("s", "u")
+            self.assertEqual(category, caught.exception.category)
+
+    def test_chatgpt_genuine_empty_output_remains_failure_with_usage(self):
+        client, factory, _ = self.chatgpt([dict(type="response.completed", response=response(text=""))])
+        with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+            client.chat("s", "u")
+        self.assertEqual("empty_output", caught.exception.category)
+        self.assertEqual(1, client.get_usage()["completedRequests"])
+        self.assertEqual(30, client.get_usage()["outputTokens"])
+
+    def test_chatgpt_stream_text_reaches_schema_validation_and_artifacts(self):
+        client, factory, _ = self.chatgpt([dict(type="response.output_text.delta", delta=VALID),
+                                          dict(type="response.completed", response=response(text=""))])
+        config = PromptImproverConfig(provider="chatgpt", model="fixture")
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
+            output = Path(directory)
+            with patch("prompt.chatgpt_client.OpenAI", factory), patch("prompt.execution.LlmClientFactory.create", return_value=client):
+                result = improve(config, "Analyze UserService only", output)
+            self.assertEqual("Review only", result.goal)
+            self.assertEqual("Analyze UserService only\n", (output / "original-prompt.md").read_text())
+            self.assertIn("Review only", (output / "improved-prompt.md").read_text())
+            data = json.loads((output / "prompt-metadata.json").read_text())
+            self.assertEqual("completed", data["status"])
+            self.assertEqual(1, data["usage"]["requests"])
+
+    def test_chatgpt_stream_invalid_json_still_fails_schema(self):
+        client, factory, _ = self.chatgpt([dict(type="response.output_text.done", text="{broken"),
+                                          dict(type="response.completed", response=response(text=""))])
+        with patch("prompt.chatgpt_client.OpenAI", factory), patch("prompt.execution.LlmClientFactory.create", return_value=client), self.assertRaises(PromptProviderError) as caught:
+            improve(PromptImproverConfig(provider="chatgpt", model="fixture"), "task")
+        self.assertEqual("invalid_structured_output", caught.exception.category)
+
+    def test_response_dictionary_text_blocks_without_sdk_convenience_property(self):
+        value = response()
+        value.pop("output_text")
+        value["output"] = [dict(type="reasoning", summary=[dict(text="not prompt text")]),
+                           dict(type="message", content=[dict(type="output_text", text=VALID)])]
+        client, _ = self.openai(value)
+        self.assertEqual(VALID, client.chat("s", "u"))
+
+    def test_chatgpt_content_part_or_item_done_text_preserved(self):
+        for event in (dict(type="response.content_part.done", part=dict(type="output_text", text=VALID)),
+                      dict(type="response.output_item.done", item=dict(type="message",
+                           content=[dict(type="output_text", text=VALID)]))):
+            client, factory, _ = self.chatgpt([event, dict(type="response.completed", response=response(text=""))])
+            with patch("prompt.chatgpt_client.OpenAI", factory):
+                self.assertEqual(VALID, client.chat("s", "u"))
+
+    def test_chatgpt_content_part_or_item_refusal_rejected(self):
+        for event in (dict(type="response.content_part.done", part=dict(type="refusal", refusal="private")),
+                      dict(type="response.output_item.done", item=dict(type="message",
+                           content=[dict(type="refusal", refusal="private")]))):
+            client, factory, _ = self.chatgpt([event, dict(type="response.completed", response=response())])
+            with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+                client.chat("s", "u")
+            self.assertEqual("refusal", caught.exception.category)
+            self.assertNotIn("private", str(caught.exception))
+
+    def test_chatgpt_empty_finalized_part_is_not_replaced_by_old_delta(self):
+        client, factory, _ = self.chatgpt([dict(type="response.output_text.delta", delta=VALID),
+                                          dict(type="response.output_text.done", text=""),
+                                          dict(type="response.completed", response=response(text=""))])
+        with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+            client.chat("s", "u")
+        self.assertEqual("empty_output", caught.exception.category)
+
+    def test_chatgpt_finalized_text_without_response_completed_rejected(self):
+        client, factory, _ = self.chatgpt([dict(type="response.output_text.done", text=VALID)])
+        with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+            client.chat("s", "u")
+        self.assertEqual("interrupted_stream", caught.exception.category)
+
+    def test_chatgpt_stream_text_not_reused_by_next_request(self):
+        client, factory, _ = self.chatgpt([dict(type="response.output_text.delta", delta=VALID),
+                                          dict(type="response.completed", response=response(text=""))])
+        with patch("prompt.chatgpt_client.OpenAI", factory):
+            self.assertEqual(VALID, client.chat("s", "u"))
+        empty, next_factory, _ = self.chatgpt([dict(type="response.completed", response=response(text=""))])
+        with patch("prompt.chatgpt_client.OpenAI", next_factory), self.assertRaises(PromptProviderError) as caught:
+            client.chat("s", "u")
+        self.assertEqual("empty_output", caught.exception.category)
+
     def test_chatgpt_terminal_failure_variants(self):
         for event, expected in ((dict(type="response.failed", response=response("failed")), "provider_failure"),
                                 (dict(type="response.incomplete", response=response("incomplete")), "incomplete"),

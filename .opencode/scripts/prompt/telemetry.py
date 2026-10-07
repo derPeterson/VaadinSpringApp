@@ -51,16 +51,27 @@ class UsageObserver:
             self._usage["completedRequests"] = 1
 
 
-def checked_text(response):
+def checked_text(response, streamed_text=None, streamed_refusal=False):
     status = field(response, "status")
     if status != "completed":
         category = "incomplete" if status == "incomplete" else "provider_failure"
         raise PromptProviderError(category, "Prompt response did not complete successfully (" + category + ").")
+    texts = []
     for item in field(response, "output", []) or []:
         for part in field(item, "content", []) or []:
             if field(part, "type") == "refusal":
                 raise PromptProviderError("refusal", "Provider declined the prompt-improver request.")
+            if field(item, "type") == "message" and field(part, "type") == "output_text":
+                text = field(part, "text")
+                if isinstance(text, str):
+                    texts.append(text)
+    if streamed_refusal:
+        raise PromptProviderError("refusal", "Provider declined the prompt-improver request.")
     output = field(response, "output_text")
+    if not isinstance(output, str) or not output.strip():
+        output = "".join(texts)
+    if not output.strip() and isinstance(streamed_text, str):
+        output = streamed_text
     if not isinstance(output, str) or not output.strip():
         raise PromptProviderError("empty_output", "Provider returned no usable prompt text.")
     return output

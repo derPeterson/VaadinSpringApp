@@ -718,6 +718,11 @@ Original- und Improved-Prompt bleiben die bewusst gespeicherten Prompt-Artefakte
 | PromptUsageStatus | reported bei vorhandener Provider-Usage, sonst unavailable |
 | PromptStatus / PromptErrorCategory | completed oder failed für den Improver; bei Fehlern eine bereinigte Kategorie |
 
+ChatGPT bewahrt Text-Ereignisse bis zum Abschluss auf. Falls die terminale
+Response keinen Text enthält, wird der tatsächlich gestreamte Text verwendet;
+finalisierte Textteile werden nicht nochmals zu ihren Deltas addiert. Erst ein
+erfolgreicher Abschluss ohne Refusal und eine gültige Struktur erlauben die Weiterarbeit.
+
 OpenAI/ChatGPT lesen Usage aus der endgültigen Responses-Antwort; Stream-Deltas
 werden nicht zusätzlich gezählt. Ollama liefert Prompt-/Output-Zähler und
 gegebenenfalls Serverdauer. Reasoning-, Cache- und Kostenangaben bleiben dort

@@ -288,9 +288,11 @@ Der Client:
 4. speichert die rotierenden Credentials erneut,
 5. erzeugt einen OpenAI-SDK-Client mit dem OAuth Access Token,
 6. konsumiert den Stream bis zu einer terminalen Response,
-7. übernimmt Text und Usage aus der endgültigen Response. Nur eine vollständige,
-   nicht verweigerte und nicht leere Ausgabe wird akzeptiert; Deltas werden nicht
-   zu einer zweiten Text- oder Usage-Summe addiert.
+7. übernimmt vorhandenen Text aus der endgültigen Response. Fehlt er dort,
+   verwendet er die zuvor erhaltenen Text-Ereignisse des Streams. Finalisierte
+   Textteile ersetzen ihre Deltas, statt sie zu verdoppeln. Usage stammt nur aus
+   der terminalen Response. Ohne erfolgreichen Abschluss, bei Refusal, leerem
+   Text oder ungültigem JSON wird kein verbesserter Prompt akzeptiert.
 
 Auch Strict Structured Output wird über `text.format` unterstützt.
 
