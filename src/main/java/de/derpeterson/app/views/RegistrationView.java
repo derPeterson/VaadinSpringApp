@@ -240,6 +240,13 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
     private void saveUserAndSendEmail() {
         Optional<RoleEntity> userRole = roleService.findByName(RoleType.ROLE_USER);
+        if (userRole.isEmpty()) {
+            logger.error("Registration aborted: required role ROLE_USER is missing from the role repository.");
+            NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle,
+                    messageProperties::getRegistrationUnavailableMessage,
+                    -1, NotificationHelper.NotificationType.ERROR);
+            return;
+        }
 
         UserEntity userEntity = UserEntity.builder()
                 .firstName(formComponents.firstNameField.getValue())
@@ -249,7 +256,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
                 .gender(formComponents.genderComboBox.getValue())
                 .birthDate(formComponents.birthDatePicker.getValue())
                 .enabled(false)
-                .roleEntities(userRole.map(List::of).orElse(Collections.emptyList()))
+                .roleEntities(List.of(userRole.get()))
                 .build();
 
         try {

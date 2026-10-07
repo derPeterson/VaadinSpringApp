@@ -130,6 +130,10 @@ public class MessageProperties {
         return getFormattedTranslation("registrationView.registration.success_message", email);
     }
 
+    public String getRegistrationUnavailableMessage() {
+        return getTranslation("registrationView.registration.unavailable_message");
+    }
+
     // Verification View
     public String getVerificationSuccessTitle() {
         return getTranslation("verificationView.success.title");
