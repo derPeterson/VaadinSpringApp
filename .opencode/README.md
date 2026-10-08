@@ -2,7 +2,9 @@
 
 `/start` führt einen Auftrag mit den ausgewählten Modulen aus. Es gibt genau
 vier Module: **branch**, **prompt**, **benchmark**, **usage**. **complete** ist
-das Preset für alle vier. Die eigentliche Coding-Arbeit übernimmt weiterhin
+das Preset für alle vier. `/restart` verwendet denselben Workflow auf dem
+aktuellen Feature-Branch; dort ist **complete** das Preset für **prompt**,
+**benchmark**, **usage** und **branch** nicht verfügbar. Die eigentliche Coding-Arbeit übernimmt weiterhin
 OpenCode nach den Projektregeln; Python bereitet den Lauf vor und wertet ihn aus.
 
 ## Inhaltsverzeichnis
@@ -10,6 +12,7 @@ OpenCode nach den Projektregeln; Python bereitet den Lauf vor und wertet ihn aus
 - [Auftrag, Improver, Workflow und Projektregeln](#auftrag-improver-workflow-und-projektregeln)
 - [Installation](#installation)
 - [Aufruf in OpenCode](#aufruf-in-opencode)
+- [Nachbesserung auf dem aktuellen Branch](#nachbesserung-auf-dem-aktuellen-branch)
 - [Lokaler Merge nach Review](#lokaler-merge-nach-review)
 - [Ablauf und unabhängige Module](#ablauf-und-unabhängige-module)
   - [Analyse und Implementierung](#analyse-und-implementierung)
@@ -161,6 +164,68 @@ Nach Änderungen am Katalog:
 Der Generator validiert den gesamten Katalog vor Änderungen. Er überschreibt
 und entfernt nur eigene markierte Commands. Manuelle Commands bleiben erhalten.
 
+## Nachbesserung auf dem aktuellen Branch
+
+`/restart` startet einen **neuen Run** auf dem aktuellen sauberen `feature/*`-Branch.
+Der vorherige Run und seine Artefakte bleiben erhalten. Der Befehl setzt keinen
+unterbrochenen Lauf fort und bricht einen noch offenen Lauf nicht automatisch ab.
+Eine technische Fortsetzung verwendet weiterhin dessen gespeicherte Run-ID.
+
+```text
+/restart complete PasswordResetService gpt61-sol Behebe F8.
+/restart prompt,benchmark PasswordResetService gpt61-sol Behebe F8.
+/restart benchmark,usage PasswordResetService gpt61-sol Prüfe die Nachbesserung.
+/restart prompt - gpt61-sol Präzisiere und erledige den angegebenen Auftrag.
+/restart usage - - Analysiere die angegebenen Aufrufer.
+```
+
+Format: `/restart <modules> <targetClass|-> <modelKey|-> <task>`.
+Alle nicht leeren Kombinationen von **prompt**, **benchmark**, **usage** sind
+verfügbar. **complete** wählt hier genau diese drei. `branch`, unbekannte und
+doppelte Module werden abgewiesen; es gibt keinen Branchparameter.
+Ohne Argumente bzw. mit `help`, `-h` oder `--help` zeigt der Slash-Befehl die
+Syntax und Modulauswahl, ohne einen Run oder zusätzlichen Improver-Aufruf zu starten.
+
+Bei `benchmark` sind Zielklasse und Katalogschlüssel Pflicht. Andernfalls
+markiert `-` unbenutzte Felder. Aufgabe und Zeilenumbrüche bleiben vollständig
+erhalten. Originalauftrag und AGENTS.md behalten dieselben Rollen wie bei `/start`.
+Generisches `/restart` schaltet das Modell nicht um: das tatsächlich ausgewählte
+Modell muss zum Schlüssel passen. Auch für forced-Katalogmodelle zuerst die
+exakte Modell-ID auswählen; `/restart` ruft keine `/start-<model>`-Variante auf.
+
+Die Baseline wird frisch am aktuellen Feature-HEAD erhoben. Vorher/Nachher und
+`diff.patch` beziehen sich nur auf die Änderungen dieses neuen Runs; ältere
+Änderungen auf demselben Branch werden nicht erneut gezählt. Prepare/Begin und
+Finish prüfen Commit bzw. den festgehaltenen Branch. Ein Dirty-Tree, main,
+ein anderer Branch, detached HEAD oder ein noch offener Run stoppt den Aufruf.
+Es wird kein Branch angelegt, gewechselt, gemergt oder gepusht.
+
+Intern entspricht der erste Beispielaufruf:
+
+```text
+/start prompt,benchmark,usage - PasswordResetService gpt61-sol Behebe F8.
+```
+
+Der Python-Einstieg `.opencode/scripts/restart.py` nutzt dieselbe CLI und Engine
+wie `start.py`; er setzt nur den Einstieg und begrenzt die Modulauswahl.
+Alle prepare/begin/finish/status/abort-Optionen bleiben gleich. Beispielsweise:
+
+```powershell
+python .opencode/scripts/restart.py --help
+python .opencode/scripts/restart.py prepare --request C:/Temp/restart-request.json
+python .opencode/scripts/restart.py begin --id ACTUAL_PREPARED_ID
+python .opencode/scripts/restart.py finish --id ACTUAL_RUN_ID --summary-file C:/Temp/restart-summary.md
+```
+
+Bei `usage` gehören unverändert die frischen Usage-Snapshots dazu. Für einen
+bereits offenen `/start`-Run weiter dessen bisherigen Einstieg und ID verwenden.
+Die Einstiegserweiterung ändert vorhandene Zustandsdateien oder CSV-Schemas nicht.
+Neue Runs halten den Branch auch ohne ausgewähltes Branch-Modul bis Finish fest.
+
+Das Änderungspaket im Projektroot entpacken, nachdem der laufende Auftrag fertig
+ist. Danach die OpenCode-Command-Liste neu laden. Keine neuen NPM-/Python-Pakete
+oder Plugins erforderlich.
+
 ## Lokaler Merge nach Review
 
 Nach dem Review lässt sich ein abgeschlossener Feature-Branch separat integrieren:
@@ -255,7 +320,7 @@ Plugin sind dafür erforderlich. Eine spätere Reviewer-Kopplung ist nicht entha
 |---|---|---|
 | branch | Sauberes `main`, freie lokale/remote Branchnamen prüfen; nach Vorbereitung `feature/<name>` erstellen | Exakt diesen Branch prüfen, dort bleiben |
 | prompt | Bestehende Factory/Config/Improver verwenden; Original und verbesserten Prompt extern speichern | Artefakte im Run-Ordner behalten |
-| benchmark | Auf sauberem `main` frischen `clean test` + `jacoco:report`-Baseline messen | Auf `feature/*` frisch messen; Vorher/Nachher, CSV, Report und Patch |
+| benchmark | Mit `branch`: sauberes `main`; ohne `branch`: aktueller sauberer `feature/*`-Branch. Frische `clean test` + `jacoco:report`-Baseline | Auf dem festgehaltenen `feature/*`-Branch frisch messen; Vorher/Nachher, CSV, Report und Patch |
 | usage | Exakte OpenCode-Sitzung für dieses Projekt exportieren; bisherige Zähler sichern | Delta desselben Exports, Modell-IDs, Tokens, Cache, Reasoning, Requests, Kosten |
 
 Reihenfolge: **Usage-Preflight → Benchmark-Baseline (prepare) → frischer
@@ -267,10 +332,10 @@ bei einem Fehler während/nach `git switch` bleibt der tatsächliche Git-Zustand
 zur Prüfung erhalten.
 
 Ein nicht ausgewähltes Modul wird nicht implizit ausgeführt. Ohne `branch`
-ändert Python den Branch nicht. Ein reiner `benchmark`-Lauf benötigt weiter
-`main` für die Baseline und `feature/*` für Finish; der Aufrufer muss den
-Feature-Branch zwischen beiden Schritten ausdrücklich anlegen. `prompt`/`usage`
-allein benötigen nur einen sauberen, nicht detached Git-Branch. Der Aufruf
+ändert Python den Branch nicht. Ein `benchmark`-Lauf ohne `branch` misst den
+aktuellen sauberen `feature/*`-Branch und beendet den Run genau dort.
+`/start` mit ausschließlich `prompt`/`usage` benötigt einen sauberen, nicht
+detached Git-Branch; `/restart` benötigt immer den aktuellen Feature-Branch. Der Aufruf
 autorisiert die in `start.md` beschriebene Durchführung im Umfang des
 Originalauftrags auch bei diesen Kombinationen.
 
@@ -288,7 +353,8 @@ Request `task_mode` auf `analysis`, wenn ausschließlich eine Analyse gewünscht
 ist; bei einem Änderungsauftrag auf `implementation`. Lösungsvorschläge allein
 machen aus einer Analyse keinen Änderungsauftrag. Der Improver darf diesen
 Umfang nicht erweitern. Es gibt keinen zusätzlichen Slash-Parameter und kein
-neues Modul; `complete` verwendet weiterhin alle vier bestehenden Module.
+neues Modul; `complete` verwendet bei `/start` alle vier bestehenden Module,
+bei `/restart` die drei Module `prompt`, `benchmark` und `usage`.
 
 Bei **analysis** werden Produktionsdateien, Tests und andere Task-Dateien nicht
 geändert. Offene Probleme stehen in `findings.md`; Umfang, Prüfungen und Grenzen
@@ -313,8 +379,8 @@ kennzeichnen sie als nicht erfasst und raten nicht anhand des Aufgabentexts.
 
 ## Python-CLI und Request-Datei
 
-Der öffentliche Einstieg ist `.opencode/scripts/start.py`. Er ruft
-`workflow/cli.py` auf; diese Datei liest Optionen ein und übergibt die gewählte
+Die öffentlichen Einstiege sind `.opencode/scripts/start.py` und
+`.opencode/scripts/restart.py`. Beide rufen `workflow/cli.py` auf; diese Datei liest Optionen ein und übergibt die gewählte
 Aktion an `workflow/runner.py`.
 
 ### Hilfe im Terminal anzeigen
@@ -323,6 +389,7 @@ Vom Projektroot (statt `python` bei Bedarf `.\.venv\Scripts\python.exe`):
 
 ```powershell
 python .opencode/scripts/start.py --help
+python .opencode/scripts/restart.py --help
 python .opencode/scripts/start.py prepare --help
 python .opencode/scripts/start.py begin --help
 python .opencode/scripts/start.py finish --help
@@ -330,7 +397,7 @@ python .opencode/scripts/start.py status --help
 python .opencode/scripts/start.py abort --help
 ```
 
-Alle sechs Aufrufe zeigen nur Hilfe an. Sie starten keinen Run, erstellen keinen
+Diese Aufrufe zeigen nur Hilfe an. Sie starten keinen Run, erstellen keinen
 Branch und senden keine Modellanfrage. `-h` ist die Kurzform von `--help`.
 
 ### Globale Optionen
@@ -464,7 +531,8 @@ CLI-Optionen wie `--model` oder `--task`. Die Reihenfolge der JSON-Felder ist eg
 
 | Feld | Pflicht? | Bedeutung |
 |---|---|---|
-| `modules` | Nein | `"complete"` (Standard), eine Auswahl wie `"branch,prompt"` oder eine Liste wie `["branch", "usage"]`. Nur die vier bekannten Module; keine doppelten Einträge. Ausführungsreihenfolge wird vom Workflow bestimmt. |
+| `entrypoint` | Nein | `"start"` (Standard) oder `"restart"`; restart.py setzt den Einstieg selbst. Bei restart sind branch und Branchnamen nicht erlaubt. |
+| `modules` | Nein | Bei `/start` vier Module; bei `/restart` nur prompt, benchmark, usage. `"complete"` (Standard), eine Auswahl wie `"branch,prompt"` oder eine Liste wie `["branch", "usage"]`. Nur die vier bekannten Module; keine doppelten Einträge. Ausführungsreihenfolge wird vom Workflow bestimmt. |
 | `task` | Immer | Vollständiger, nicht leerer Originalauftrag. |
 | `task_mode` | Nein; `/start` setzt es | `"analysis"` für reine Analyse ohne Task-Änderungen/Commits, `"implementation"` für Änderungsaufträge. Direkte Requests ohne Feld verwenden `"implementation"`. Keine Erweiterung des Originalauftrags. |
 | `branch` | Bei `branch` | Name ohne `feature/`, z. B. `userservice_tests`; erlaubt sind kleine Buchstaben, Ziffern, `_` und `-`. |
@@ -476,7 +544,8 @@ CLI-Optionen wie `--model` oder `--task`. Die Reihenfolge der JSON-Felder ist eg
 
 Nicht verwendete optionale JSON-Felder weglassen oder auf `null` setzen,
 ausgenommen `modules` und `task_mode`.
-`modules` nur weglassen, wenn alle vier Module gewünscht sind; `null` ist hier
+`modules` nur weglassen, wenn das `complete`-Preset des jeweiligen Einstiegs
+gewünscht ist; `null` ist hier
 keine gültige Auswahl. `task_mode` weglassen oder explizit setzen; `null` ist
 auch hier ungültig. Ein `-` als Platzhalter gehört nur zur Slash-Syntax;
 OpenCode übersetzt ihn für unbenutzte JSON-Felder in `null`.

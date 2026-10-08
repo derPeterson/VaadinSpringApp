@@ -5,17 +5,18 @@ import sys
 from pathlib import Path
 
 from . import runner
-from .common import read_json
+from .common import WorkflowError, read_json
 
 
-def main(argv=None) -> int:
+def main(argv=None, *, restart=False) -> int:
     # Redirected Windows streams otherwise use a locale encoding, breaking JSON umlauts.
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(
-        description="Modularer OpenCode /start-Workflow",
-        epilog="Globale Optionen vor prepare/begin/finish/status/abort, Aktionsoptionen danach. Details: .opencode/README.md.")
+        description="Modularer OpenCode /restart-Workflow auf dem aktuellen Feature-Branch" if restart else "Modularer OpenCode /start-Workflow",
+        epilog=("Module: prompt,benchmark,usage; complete wählt alle drei, branch ist nicht verfügbar. " if restart else "")
+               + "Globale Optionen vor prepare/begin/finish/status/abort, Aktionsoptionen danach. Details: .opencode/README.md.")
     parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[3],
                         help="Projektroot mit Git und Maven Wrapper; Standard: Elternordner von .opencode")
     parser.add_argument("--store-root", type=Path,
@@ -51,15 +52,24 @@ def main(argv=None) -> int:
     abort.add_argument("--failed", action="store_true", help="Auftrag endgültig fehlgeschlagen statt bewusst abgebrochen")
     abort.add_argument("--human-interventions", type=int, help="Tatsächlich bekannte Benutzereingriffe; ohne Angabe unbekannt oder zuletzt erfasst")
     abort.add_argument("--correction-rounds", type=int, help="Tatsächlich bekannte Korrekturrunden; ohne Angabe unbekannt oder zuletzt erfasst")
+    if restart and not (sys.argv[1:] if argv is None else argv):
+        parser.print_help()
+        return 0
     args = parser.parse_args(argv)
     try:
         repo = args.repo.resolve()
+        if restart and args.action in ("begin", "finish", "abort") and getattr(args, "id", None):
+            _, state = runner.load_state(repo, runner.store_path(repo, args.store_root.resolve()), args.id)
+            if state.get("entrypoint") != "restart":
+                raise WorkflowError("restart.py only changes runs created through /restart; use start.py for this run.")
         if args.action in ("prepare", "begin"):
             catalog = Path(__file__).resolve().parents[2] / "benchmark-models.json"
+            request = read_json(args.request) if args.request else None
+            if restart and request is not None:
+                request = runner.restart_request(request)
             if args.action == "prepare":
-                result = runner.prepare(repo, args.store_root, read_json(args.request), catalog, args.usage_export)
+                result = runner.prepare(repo, args.store_root, request, catalog, args.usage_export)
             else:
-                request = read_json(args.request) if args.request else None
                 result = runner.begin(repo, args.store_root, request, catalog, args.usage_export, args.id)
         elif args.action == "finish":
             result = runner.finish(repo, args.store_root, args.id, args.human_interventions,

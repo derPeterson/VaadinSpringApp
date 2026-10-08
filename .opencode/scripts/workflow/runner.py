@@ -10,6 +10,7 @@ from . import benchmark, branch, prompt, usage
 from .common import WorkflowError, outside_repo, read_json, run, store_lock, write_json
 
 MODULES = ("branch", "prompt", "benchmark", "usage")
+RESTART_MODULES = tuple(item for item in MODULES if item != "branch")
 OWNER = "opencode-start-v1"
 
 
@@ -22,6 +23,18 @@ def modules(value) -> list[str]:
     if len(set(items)) != len(items):
         raise WorkflowError("Duplicate modules are not allowed.")
     return [item for item in MODULES if item in items]
+
+
+def restart_request(request: dict) -> dict:
+    """Translate /restart into the same workflow, without branch creation."""
+    if not isinstance(request, dict):
+        raise WorkflowError("A workflow request must be a JSON object.")
+    selected = list(RESTART_MODULES) if request.get("modules", "complete") == "complete" else modules(request["modules"])
+    if "branch" in selected:
+        raise WorkflowError("/restart does not provide the branch module.")
+    if request.get("branch") not in (None, "-"):
+        raise WorkflowError("/restart uses the current feature branch; do not provide a branch name.")
+    return dict(request, modules=selected, branch=None, entrypoint="restart")
 
 
 def now() -> str:
@@ -56,6 +69,11 @@ def identity(repo: Path, store: Path) -> None:
 
 
 def validate_request(repo: Path, request: dict, catalog: Path) -> dict:
+    entrypoint = request.get("entrypoint", "start")
+    if entrypoint not in ("start", "restart"):
+        raise WorkflowError("Unknown workflow entrypoint.")
+    if entrypoint == "restart":
+        request = restart_request(request)
     selected = modules(request.get("modules", "complete"))
     task_mode = request.get("task_mode", "implementation")
     if task_mode not in ("analysis", "implementation"):
@@ -67,11 +85,13 @@ def validate_request(repo: Path, request: dict, catalog: Path) -> dict:
     target_branch = branch.current(repo)
     if not target_branch:
         raise WorkflowError("Detached HEAD is not supported.")
+    if entrypoint == "restart" and not target_branch.startswith("feature/"):
+        raise WorkflowError("/restart requires the current feature/* branch.")
     if "branch" in selected:
         target_branch = branch.validate(repo, request.get("branch"))
     if "benchmark" in selected:
-        if branch.current(repo) != "main":
-            raise WorkflowError("Benchmark baseline must start on main.")
+        if "branch" not in selected and not target_branch.startswith("feature/"):
+            raise WorkflowError("Benchmark without branch requires the current feature/* branch.")
         target = request.get("target_class", "")
         if not isinstance(target, str) or not re.fullmatch(r"[A-Za-z_$][\w$]*", target):
             raise WorkflowError("benchmark requires a simple Java/JaCoCo target_class.")
@@ -81,6 +101,7 @@ def validate_request(repo: Path, request: dict, catalog: Path) -> dict:
     if not model and "benchmark" in selected:
         raise WorkflowError("benchmark requires a model key from benchmark-models.json.")
     return {"modules": selected, "task": task, "taskMode": task_mode, "branchName": request.get("branch"),
+            "entrypoint": entrypoint, "branchPinned": True,
             "branch": target_branch, "targetClass": request.get("target_class"),
             "model": model["name"] if model else "not specified",
             "modelKey": key, "provider": model["provider"] if model else "not specified",
@@ -370,7 +391,7 @@ def finish(repo: Path, root: Path, run_id: str, interventions: int = 0,
             if not summary:
                 raise WorkflowError("The work summary must not be empty.")
         actual_branch = branch.current(repo)
-        if "branch" in state["modules"] and actual_branch != state["branch"]:
+        if ("branch" in state["modules"] or state.get("branchPinned")) and actual_branch != state["branch"]:
             raise WorkflowError(f"Finish requires exactly {state['branch']}.")
         if "benchmark" in state["modules"] and not actual_branch.startswith("feature/"):
             raise WorkflowError("Benchmark finish requires a feature/* branch.")
