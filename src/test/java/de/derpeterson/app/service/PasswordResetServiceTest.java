@@ -21,12 +21,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -353,12 +356,14 @@ class PasswordResetServiceTest {
         }
     }
 
-    @Test
-    void cleanupCurrentlyThrowsAfterCallingDeleteBecauseLocalDateTimeHasNoOffset() {
+    @ParameterizedTest
+    @ValueSource(ints = {0, 3})
+    void cleanupCompletesWithAnExactLocalCutoffEvenWhenNothingIsDeleted(int deleted) {
         when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION)).thenReturn("P7D");
+        when(tokens.deleteByExpiryDateBefore(NOW.minusDays(7))).thenReturn(deleted);
         try (var time = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
             time.when(LocalDateTime::now).thenReturn(NOW);
-            assertThrows(UnsupportedTemporalTypeException.class, service::deleteExpiredTokens);
+            assertDoesNotThrow(service::deleteExpiredTokens);
         }
         verify(tokens).deleteByExpiryDateBefore(NOW.minusDays(7));
     }
@@ -408,7 +413,7 @@ class PasswordResetServiceTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void realClasspathMailTemplateContainsTokenAndLogoButCurrentlyLeavesServiceNamePlaceholder(boolean german) throws IOException {
+    void realClasspathMailTemplateReplacesAllPlaceholdersInBothLanguages(boolean german) throws IOException {
         when(users.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn("PT1H");
         when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Reset Test Service");
@@ -427,14 +432,75 @@ class PasswordResetServiceTest {
         var html = ArgumentCaptor.forClass(String.class);
         verify(queue).addEmailToQueue(same(user), eq("Reset subject"), html.capture(), eq(EmailType.PASSWORD_RESET));
         assertTrue(html.getValue().contains("https://example.invalid/app/reset-password/" + stored.getValue().getToken()));
-        // The actual template has no SERVICE_NAME placeholder, although the service reads it.
         verify(config).getString(ConfigEntry.SERVICE_NAME);
         assertTrue(html.getValue().contains(ImageHelper.convertImageToBase64("META-INF/resources/custom-theme/service_logo.png")));
         assertFalse(html.getValue().contains("{{SERVICE_LOGO}}"));
         assertFalse(html.getValue().contains("{{RESET_PASSWORD_LINK}}"));
-        // Confirmed template typo: the service replaces SERVICE_NAME, not SERVICES_NAME.
-        assertTrue(html.getValue().contains("{{SERVICES_NAME}}"));
+        assertTrue(html.getValue().contains("Reset Test Service"));
+        assertFalse(html.getValue().contains("{{"));
         verifyNoInteractions(encoder);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"de", "en"})
+    void htmlAndMjmlSourcesUseTheSameSupportedPlaceholders(String language) throws IOException {
+        for (String extension : List.of("html", "mjml")) {
+            try (InputStream input = new ClassPathResource("email/reset_password_" + language + "." + extension).getInputStream()) {
+                String source = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+                var placeholders = java.util.regex.Pattern.compile("\\{\\{([^}]+)}}").matcher(source)
+                        .results().map(match -> match.group(1)).collect(java.util.stream.Collectors.toSet());
+                assertEquals(java.util.Set.of("SERVICE_NAME", "SERVICE_LOGO", "RESET_PASSWORD_LINK"), placeholders);
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"success", "read", "close", "read-and-close"})
+    void templateStreamIsClosedOnSuccessAndIoFailures(String stage) throws IOException {
+        when(users.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn("PT1H");
+        when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Reset Test Service");
+        when(config.getString(ConfigEntry.BASE_URL)).thenReturn("https://example.invalid/");
+        when(messages.getEmailResetPasswordSubject()).thenReturn("subject");
+        var readFailure = new IOException("isolated template read");
+        var closeFailure = new IOException("isolated template close");
+        var closed = new java.util.concurrent.atomic.AtomicBoolean();
+        InputStream template = new InputStream() {
+            private final InputStream content = new ByteArrayInputStream("{{SERVICE_NAME}}".getBytes(StandardCharsets.UTF_8));
+
+            @Override
+            public int read() throws IOException {
+                if (stage.contains("read")) {
+                    throw readFailure;
+                }
+                return content.read();
+            }
+
+            @Override
+            public void close() throws IOException {
+                closed.set(true);
+                if (stage.contains("close")) {
+                    throw closeFailure;
+                }
+            }
+        };
+        // Keep real classpath coverage above; intercept only resource construction here.
+        try (var resources = mockConstruction(ClassPathResource.class, (resource, context) ->
+                when(resource.getInputStream()).thenReturn(context.arguments().getFirst().toString().startsWith("email/")
+                        ? template : new ByteArrayInputStream(new byte[] {1})))) {
+            if (stage.equals("success")) {
+                assertTrue(service.sendPasswordResetEmail("test@example.com"));
+                verify(queue).addEmailToQueue(same(user), eq("subject"), eq("Reset Test Service"), eq(EmailType.PASSWORD_RESET));
+            } else {
+                IOException thrown = assertThrows(IOException.class, () -> service.sendPasswordResetEmail("test@example.com"));
+                assertSame(stage.contains("read") ? readFailure : closeFailure, thrown);
+                if (stage.equals("read-and-close")) {
+                    assertArrayEquals(new Throwable[] {closeFailure}, thrown.getSuppressed());
+                }
+                verify(queue, never()).addEmailToQueue(any(), any(), any(), any());
+            }
+        }
+        assertTrue(closed.get());
     }
 
     @Test

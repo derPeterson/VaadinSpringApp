@@ -25,6 +25,7 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -164,7 +165,7 @@ public class PasswordResetService {
     public void deleteExpiredTokens() {
         LocalDateTime liveDateTime = LocalDateTime.now().minus(Duration.parse(configService.getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION)));
         int deleted = tokenRepository.deleteByExpiryDateBefore(liveDateTime);
-        var formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE);
+        var formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         logger.info("✅ {} expired password reset tokens that are older than '{}' have been deleted.", deleted, formattedLiveDateTime);
     }
 
@@ -173,7 +174,7 @@ public class PasswordResetService {
         return tokenRepository.findByToken(token).orElse(null) != null;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = IOException.class)
     public boolean sendPasswordResetEmail(String email) throws IOException {
         Optional<UserEntity> userOptional = userRepository.findByEmail(email);
         userOptional = userOptional.flatMap(user -> userRepository.lockVerificationUser(user.getId()));
@@ -208,7 +209,10 @@ public class PasswordResetService {
                         .pathSegment("reset-password", token).toUriString());
 
         ClassPathResource resource = new ClassPathResource("email/reset_password_" + CustomI18NProvider.getCurrentLocale().getLanguage() + ".html");
-        String content = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+        String content;
+        try (InputStream input = resource.getInputStream()) {
+            content = StreamUtils.copyToString(input, StandardCharsets.UTF_8);
+        }
 
         for (Map.Entry<String, String> entry : placeholders.entrySet()) {
             content = Strings.CS.replace(content, "{{" + entry.getKey() + "}}", entry.getValue());

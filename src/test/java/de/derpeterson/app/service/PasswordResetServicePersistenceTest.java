@@ -26,6 +26,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -41,10 +42,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.mockito.ArgumentCaptor;
 
 import javax.sql.DataSource;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.List;
@@ -425,17 +427,42 @@ class PasswordResetServicePersistenceTest {
     }
 
     @Test
-    void cleanupFormattingFailureRollsBackTheActualDeletion() {
-        seed("old", TokenStatus.USED, LocalDateTime.now().minusDays(10));
-        seed("recent", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-        assertThrows(UnsupportedTemporalTypeException.class, service::deleteExpiredTokens);
-        assertTrue(service.existsToken("old"));
+    void cleanupCommitsOnlyTokensStrictlyBeforeTheRetentionCutoffAndIsRepeatable() {
+        var now = LocalDateTime.of(2026, 10, 8, 12, 0);
+        var cutoff = now.minusDays(7);
+        for (TokenStatus status : TokenStatus.values()) {
+            seed("old-" + status, status, cutoff.minusSeconds(1));
+        }
+        seed("boundary", TokenStatus.USED, cutoff);
+        seed("recent", TokenStatus.EXPIRED, cutoff.plusSeconds(1));
+        seed("future", TokenStatus.ACTIVE, now.plusDays(1));
+        try (var time = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+            time.when(LocalDateTime::now).thenReturn(now);
+            assertDoesNotThrow(service::deleteExpiredTokens);
+            assertDoesNotThrow(service::deleteExpiredTokens);
+        }
+        for (TokenStatus status : TokenStatus.values()) {
+            assertFalse(service.existsToken("old-" + status));
+        }
+        assertTrue(service.existsToken("boundary"));
         assertTrue(service.existsToken("recent"));
-        assertEquals(2, tokens.count());
+        assertTrue(service.existsToken("future"));
+        assertEquals(3, tokens.count());
     }
 
     @Test
-    void checkedTemplateIoFailureCurrentlyCommitsTokenRotationWithoutQueuingMail() {
+    void cleanupParticipatesInOuterRollback() {
+        seed("old", TokenStatus.USED, LocalDateTime.now().minusDays(10));
+        transaction.executeWithoutResult(tx -> {
+            service.deleteExpiredTokens();
+            assertEquals(0, tokens.count());
+            tx.setRollbackOnly();
+        });
+        assertTrue(service.existsToken("old"));
+    }
+
+    @Test
+    void checkedTemplateIoFailureRollsBackTokenRotationWithoutQueuingMailAndAllowsRetry() throws IOException {
         seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
         var session = mock(VaadinSession.class);
         when(session.getLocale()).thenReturn(Locale.FRENCH);
@@ -445,12 +472,95 @@ class PasswordResetServicePersistenceTest {
         } finally {
             VaadinSession.setCurrent(null);
         }
-        assertEquals(TokenStatus.INACTIVE, status("old"));
-        assertEquals(2, tokens.count());
+        assertEquals(TokenStatus.ACTIVE, status("old"));
+        assertEquals(1, tokens.count());
         int active = transaction.execute(tx -> tokens.findAllByUserEntityAndStatus(
                 users.findById(userId).orElseThrow(), TokenStatus.ACTIVE).size());
         assertEquals(1, active);
         verify(probes.queue(), never()).addEmailToQueue(any(), any(), any(), any());
+        assertEquals(0, mails.count());
+        assertTrue(service.sendPasswordResetEmail("test@example.com"));
+        assertEquals(TokenStatus.INACTIVE, status("old"));
+        assertEquals(2, tokens.count());
+        assertEquals(1, mails.count());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"read", "close"})
+    void templateStreamIoFailuresRollbackTheRealRotationAndCloseTheStream(String stage) {
+        seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        var failure = new IOException("isolated " + stage);
+        var closed = new java.util.concurrent.atomic.AtomicBoolean();
+        InputStream template = new InputStream() {
+            @Override
+            public int read() throws IOException {
+                if (stage.equals("read")) {
+                    throw failure;
+                }
+                return -1;
+            }
+
+            @Override
+            public void close() throws IOException {
+                closed.set(true);
+                if (stage.equals("close")) {
+                    throw failure;
+                }
+            }
+        };
+        try (var resources = mockConstruction(ClassPathResource.class, (resource, context) ->
+                when(resource.getInputStream()).thenReturn(context.arguments().getFirst().toString().startsWith("email/")
+                        ? template : new ByteArrayInputStream(new byte[] {1})))) {
+            assertSame(failure, assertThrows(IOException.class, () -> service.sendPasswordResetEmail("test@example.com")));
+        }
+        assertTrue(closed.get());
+        assertEquals(TokenStatus.ACTIVE, status("old"));
+        assertEquals(1, tokens.count());
+        assertEquals(0, mails.count());
+    }
+
+    @Test
+    void checkedIoAfterActualQueueInsertionRollsBackQueueAndRotation() throws IOException {
+        seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        var failure = new IOException("isolated failure after queue write");
+        doAnswer(call -> {
+            var mail = new EmailQueueEntity();
+            mail.setUserEntity(call.getArgument(0));
+            mail.setSubject(call.getArgument(1));
+            mail.setBody(call.getArgument(2));
+            mail.setEmailType(call.getArgument(3));
+            mail.setStatus(EmailStatus.PENDING);
+            mails.saveAndFlush(mail);
+            assertEquals(1, mails.count());
+            throw failure;
+        }).when(probes.queue()).addEmailToQueue(any(), any(), any(), any());
+        assertSame(failure, assertThrows(IOException.class, () -> service.sendPasswordResetEmail("test@example.com")));
+        assertEquals(TokenStatus.ACTIVE, status("old"));
+        assertEquals(1, tokens.count());
+        assertEquals(0, mails.count());
+        reset(probes.queue());
+        assertTrue(service.sendPasswordResetEmail("test@example.com"));
+        assertEquals(1, mails.count());
+    }
+
+    @Test
+    void caughtCheckedIoMarksTheOuterTransactionRollbackOnly() {
+        seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        var session = mock(VaadinSession.class);
+        when(session.getLocale()).thenReturn(Locale.FRENCH);
+        VaadinSession.setCurrent(session);
+        try {
+            assertThrows(org.springframework.transaction.UnexpectedRollbackException.class, () -> transaction.executeWithoutResult(tx -> {
+                users.findById(userId).orElseThrow().setFirstName("Must rollback");
+                assertThrows(IOException.class, () -> service.sendPasswordResetEmail("test@example.com"));
+            }));
+        } finally {
+            VaadinSession.setCurrent(null);
+        }
+        assertEquals("Test", users.findById(userId).orElseThrow().getFirstName());
+        assertEquals(TokenStatus.ACTIVE, status("old"));
+        assertEquals(1, tokens.count());
+        assertEquals(0, mails.count());
     }
 
     @Test
@@ -483,6 +593,9 @@ class PasswordResetServicePersistenceTest {
         verify(probes.queue()).addEmailToQueue(argThat(user -> userId.equals(user.getId())), eq("Reset password"),
                 html.capture(), eq(de.derpeterson.app.model.enums.EmailType.PASSWORD_RESET));
         assertTrue(html.getValue().contains("https://example.invalid/reset-password/" + value));
+        assertTrue(html.getValue().contains("Reset Test Service"));
+        assertFalse(html.getValue().contains("{{"));
+        assertEquals(1, mails.count());
         assertEquals(2, tokens.count());
     }
 
