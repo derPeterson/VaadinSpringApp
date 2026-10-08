@@ -359,6 +359,26 @@ class VerificationServicePersistenceTest {
         return users.findById(userId).orElseThrow();
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void repeatedAccountLockPreservesActivationAndOuterRollback(boolean rollback) {
+        seed("outer-verify", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+        transaction.executeWithoutResult(tx -> {
+            assertTrue(service.validateToken("outer-verify"));
+            var managed = users.findById(userId).orElseThrow();
+            managed.setFirstName("Local");
+            service.setInactiveTokensForUser(managed);
+            assertTrue(managed.isEnabled());
+            assertEquals("Local", managed.getFirstName());
+            if (rollback) {
+                tx.setRollbackOnly();
+            }
+        });
+        assertEquals(!rollback, users.findById(userId).orElseThrow().isEnabled());
+        assertEquals(rollback ? "Test" : "Local", users.findById(userId).orElseThrow().getFirstName());
+        assertEquals(rollback ? TokenStatus.ACTIVE : TokenStatus.USED, status("outer-verify"));
+    }
+
     private boolean resend(String entry) throws IOException {
         return switch (entry) {
             case "token" -> service.sendVerificationEmailByToken("old");

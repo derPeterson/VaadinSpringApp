@@ -137,6 +137,175 @@ class PasswordResetServicePersistenceTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"create", "invalidate"})
+    void resetFollowedByAnotherAccountLockPreservesPasswordAtOuterCommit(String next) {
+        seed("outer", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        var created = new AtomicReference<String>();
+        transaction.executeWithoutResult(tx -> {
+            assertTrue(service.resetPassword("outer", "Password!"));
+            var managed = users.findById(userId).orElseThrow();
+            // Also preserve another local edit, not just the reset method's field.
+            managed.setFirstName("Updated");
+            if (next.equals("create")) {
+                created.set(service.createToken(managed));
+            } else {
+                service.setInactiveTokensForUser(managed);
+            }
+            assertEquals("hash-Password!", managed.getPassword());
+            assertEquals("Updated", managed.getFirstName());
+        });
+        assertEquals("hash-Password!", password());
+        assertEquals("Updated", users.findById(userId).orElseThrow().getFirstName());
+        assertEquals(TokenStatus.USED, status("outer"));
+        assertFalse(service.resetPassword("outer", "OtherPassword!"));
+        if (next.equals("create")) {
+            assertEquals(TokenStatus.ACTIVE, status(created.get()));
+            assertEquals(2, tokens.count());
+        } else {
+            assertEquals(1, tokens.count());
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"create", "invalidate"})
+    void outerRollbackRestoresPasswordAndTokensAfterRepeatedAccountLock(String next) {
+        seed("outer", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        seed("other", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        var created = new AtomicReference<String>();
+        transaction.executeWithoutResult(tx -> {
+            assertTrue(service.resetPassword("outer", "Password!"));
+            var managed = users.findById(userId).orElseThrow();
+            managed.setFirstName("Updated");
+            if (next.equals("create")) {
+                created.set(service.createToken(managed));
+            } else {
+                service.setInactiveTokensForUser(managed);
+            }
+            assertEquals("hash-Password!", managed.getPassword());
+            assertEquals(TokenStatus.USED, status("outer"));
+            assertEquals(TokenStatus.INACTIVE, status("other"));
+            tx.setRollbackOnly();
+        });
+        assertEquals("old-hash", password());
+        assertEquals("Test", users.findById(userId).orElseThrow().getFirstName());
+        assertEquals(TokenStatus.ACTIVE, status("outer"));
+        assertEquals(TokenStatus.ACTIVE, status("other"));
+        assertEquals(2, tokens.count());
+        if (next.equals("create")) {
+            assertFalse(service.existsToken(created.get()));
+        }
+        assertTrue(service.resetPassword("outer", "RetryPassword!"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void realMailQueueRelockPreservesResetAndParticipatesInOuterRollback(boolean rollback) {
+        seed("outer-mail", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        transaction.executeWithoutResult(tx -> {
+            assertTrue(service.resetPassword("outer-mail", "Password!"));
+            try {
+                assertTrue(service.sendPasswordResetEmail("test@example.com"));
+            } catch (IOException failure) {
+                throw new IllegalStateException(failure);
+            }
+            assertEquals("hash-Password!", users.findById(userId).orElseThrow().getPassword());
+            assertEquals(1, mails.count());
+            if (rollback) {
+                tx.setRollbackOnly();
+            }
+        });
+        assertEquals(rollback ? "old-hash" : "hash-Password!", password());
+        assertEquals(rollback ? TokenStatus.ACTIVE : TokenStatus.USED, status("outer-mail"));
+        assertEquals(rollback ? 0 : 1, mails.count());
+        assertEquals(rollback ? 1 : 2, tokens.count());
+        if (!rollback) {
+            var active = transaction.execute(tx -> tokens.findAllByUserEntityAndStatus(
+                    users.findById(userId).orElseThrow(), TokenStatus.ACTIVE).getFirst().getToken());
+            assertTrue(mails.findAll().getFirst().getBody().contains("/reset-password/" + active));
+        }
+    }
+
+    @Test
+    void firstAccountLockPreservesOwnPendingChangesWithoutCommittingThem() {
+        transaction.executeWithoutResult(tx -> {
+            var managed = users.findById(userId).orElseThrow();
+            managed.setFirstName("Local");
+            assertSame(managed, users.lockVerificationUser(userId).orElseThrow());
+            assertEquals("Local", managed.getFirstName());
+            tx.setRollbackOnly();
+        });
+        assertEquals("Test", users.findById(userId).orElseThrow().getFirstName());
+    }
+
+    @Test
+    void firstAccountLockRefreshesAnUnchangedStaleEnabledAccountBeforeReset() throws Exception {
+        seed("blocked", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        var loaded = new CountDownLatch(1);
+        var disabled = new CountDownLatch(1);
+        var executor = Executors.newSingleThreadExecutor();
+        try {
+            var result = executor.submit(() -> transaction.execute(tx -> {
+                var stale = users.findById(userId).orElseThrow();
+                assertTrue(stale.isEnabled());
+                loaded.countDown();
+                try {
+                    assertTrue(disabled.await(10, TimeUnit.SECONDS));
+                } catch (InterruptedException failure) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(failure);
+                }
+                return service.resetPassword("blocked", "Password!");
+            }));
+            assertTrue(loaded.await(10, TimeUnit.SECONDS));
+            transaction.executeWithoutResult(tx -> users.findById(userId).orElseThrow().setEnabled(false));
+            disabled.countDown();
+            assertFalse(result.get(10, TimeUnit.SECONDS));
+        } finally {
+            disabled.countDown();
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+        }
+        assertEquals("old-hash", password());
+        assertEquals(TokenStatus.ACTIVE, status("blocked"));
+        assertFalse(users.findById(userId).orElseThrow().isEnabled());
+    }
+
+    @Test
+    void dirtyStaleAccountCannotOverwriteAConcurrentDisableDuringLockFlush() throws Exception {
+        var loaded = new CountDownLatch(1);
+        var disabled = new CountDownLatch(1);
+        var executor = Executors.newSingleThreadExecutor();
+        try {
+            var result = executor.submit(() -> transaction.execute(tx -> {
+                var stale = users.findById(userId).orElseThrow();
+                stale.setFirstName("Stale edit");
+                loaded.countDown();
+                try {
+                    assertTrue(disabled.await(10, TimeUnit.SECONDS));
+                } catch (InterruptedException failure) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(failure);
+                }
+                return users.lockVerificationUser(userId);
+            }));
+            assertTrue(loaded.await(10, TimeUnit.SECONDS));
+            transaction.executeWithoutResult(tx -> users.findById(userId).orElseThrow().setEnabled(false));
+            disabled.countDown();
+            var failure = assertThrows(java.util.concurrent.ExecutionException.class,
+                    () -> result.get(10, TimeUnit.SECONDS));
+            assertInstanceOf(org.springframework.dao.OptimisticLockingFailureException.class, failure.getCause());
+        } finally {
+            disabled.countDown();
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+        }
+        var stored = users.findById(userId).orElseThrow();
+        assertFalse(stored.isEnabled());
+        assertEquals("Test", stored.getFirstName());
+        assertEquals("old-hash", stored.getPassword());
+    }
+
+    @ParameterizedTest
     @EnumSource(value = TokenStatus.class, names = {"USED", "INACTIVE", "EXPIRED"})
     void nonActiveTokensExistButCannotValidateOrChangePasswords(TokenStatus tokenStatus) {
         seed("closed", tokenStatus, LocalDateTime.now().plusDays(1));
