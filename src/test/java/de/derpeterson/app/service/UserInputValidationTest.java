@@ -148,9 +148,10 @@ class UserInputValidationTest {
         var reset = new PasswordResetService(null, tokens, repository, null, encoder, null);
         UserEntity user = user();
         user.setEnabled(true);
+        when(tokens.findUserIdByToken("token")).thenReturn(Optional.of(user.getId()));
+        when(repository.lockVerificationUser(user.getId())).thenReturn(Optional.of(user));
         var token = new PasswordResetTokenEntity(null, "token", user, java.time.LocalDateTime.now().plusHours(1), TokenStatus.ACTIVE);
         when(tokens.findByTokenAndStatus("token", TokenStatus.ACTIVE)).thenReturn(Optional.of(token));
-        when(tokens.findByToken("token")).thenReturn(Optional.of(token));
         when(encoder.encode("Password!")).thenReturn("new-hash");
         assertTrue(reset.resetPassword("token", "Password!"));
         assertEquals("new-hash", user.getPassword());

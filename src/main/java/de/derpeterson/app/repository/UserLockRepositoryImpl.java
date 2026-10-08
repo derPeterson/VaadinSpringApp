@@ -21,6 +21,10 @@ class UserLockRepositoryImpl implements UserLockRepository {
             return Optional.empty();
         }
         UserEntity user = entityManager.find(UserEntity.class, id);
+        // Acquire the database lock before flushing. Preserve this transaction's
+        // own pending changes before refresh; flush is not a commit, and stale
+        // dirty entities must still pass their optimistic version checks.
+        entityManager.flush();
         entityManager.refresh(user);
         return Optional.of(user);
     }

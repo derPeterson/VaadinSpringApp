@@ -58,6 +58,8 @@ class PasswordResetServiceTest {
     void setup() {
         service = new PasswordResetService(messages, tokens, users, config, encoder, queue);
         user = UserEntity.builder().id(1L).email("test@example.com").password("old-hash").enabled(true).build();
+        lenient().when(users.lockVerificationUser(1L)).thenReturn(Optional.of(user));
+        lenient().when(tokens.findUserIdByToken(anyString())).thenReturn(Optional.of(1L));
     }
 
     private PasswordResetTokenEntity token(String value, TokenStatus status, LocalDateTime expiry) {
@@ -88,7 +90,9 @@ class PasswordResetServiceTest {
             assertEquals(TokenStatus.ACTIVE, saved.getValue().getStatus());
             order.verifyNoMoreInteractions();
         }
-        verifyNoInteractions(users, encoder, queue);
+        verify(users).lockVerificationUser(1L);
+        verifyNoInteractions(encoder);
+        verify(queue).hasOpenEmailForUserAndType(user, EmailType.PASSWORD_RESET);
     }
 
     @ParameterizedTest
@@ -113,7 +117,9 @@ class PasswordResetServiceTest {
         assertThrows(RuntimeException.class, () -> service.createToken(user));
         verify(tokens).findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
         verifyNoMoreInteractions(tokens);
-        verifyNoInteractions(users, queue, encoder);
+        verify(users).lockVerificationUser(1L);
+        verify(queue).hasOpenEmailForUserAndType(user, EmailType.PASSWORD_RESET);
+        verifyNoInteractions(encoder);
     }
 
     @Test
@@ -127,30 +133,92 @@ class PasswordResetServiceTest {
         verify(tokens).save(first);
         verify(tokens).save(second);
         assertEquals("old-hash", user.getPassword());
-        verifyNoInteractions(users, encoder, queue);
+        verify(users).lockVerificationUser(1L);
+        verifyNoInteractions(encoder, queue);
     }
 
     @ParameterizedTest
     @EnumSource(TokenStatus.class)
-    void statusSetterCurrentlyAllowsEveryTransitionIncludingReactivation(TokenStatus status) {
+    void statusSetterRejectsReactivationAndChangesOfTerminalStatus(TokenStatus status) {
         var stored = token("used", TokenStatus.USED, NOW.plusDays(1));
-        when(tokens.findByToken("used")).thenReturn(Optional.of(stored));
-        service.setTokenStatus("used", status);
+        if (status == TokenStatus.ACTIVE) {
+            assertThrows(IllegalArgumentException.class, () -> service.setTokenStatus("used", status));
+            verifyNoInteractions(tokens, users);
+        } else {
+            when(tokens.findByToken("used")).thenReturn(Optional.of(stored));
+            if (status == TokenStatus.USED) {
+                service.setTokenStatus("used", status);
+            } else {
+                assertThrows(IllegalStateException.class, () -> service.setTokenStatus("used", status));
+            }
+            verify(tokens, never()).save(any());
+        }
+        assertEquals(TokenStatus.USED, stored.getStatus());
+        verifyNoInteractions(encoder, queue);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TokenStatus.class, names = {"USED", "INACTIVE", "EXPIRED"})
+    void activeTokenMayTransitionToATerminalStatus(TokenStatus status) {
+        var stored = token("active", TokenStatus.ACTIVE, NOW.plusDays(1));
+        when(tokens.findByToken("active")).thenReturn(Optional.of(stored));
+        service.setTokenStatus("active", status);
         assertEquals(status, stored.getStatus());
-        verify(tokens).save(stored);
-        verifyNoInteractions(users, encoder, queue);
+        var order = inOrder(tokens, users);
+        order.verify(tokens).findUserIdByToken("active");
+        order.verify(users).lockVerificationUser(1L);
+        order.verify(tokens).findByToken("active");
+        order.verify(tokens).save(stored);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"create", "validate", "reset", "status", "invalidate", "mail"})
+    void accountLockFailurePropagatesBeforeTokenMutation(String operation) {
+        var failure = new DataAccessResourceFailureException("test account lock");
+        when(users.lockVerificationUser(1L)).thenThrow(failure);
+        if (operation.equals("mail")) {
+            when(users.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        }
+        assertSame(failure, assertThrows(DataAccessResourceFailureException.class, () -> {
+            switch (operation) {
+                case "create" -> service.createToken(user);
+                case "validate" -> service.validateToken("valid");
+                case "reset" -> service.resetPassword("valid", "Password!");
+                case "status" -> service.setTokenStatus("valid", TokenStatus.USED);
+                case "invalidate" -> service.setInactiveTokensForUser(user);
+                case "mail" -> service.sendPasswordResetEmail("test@example.com");
+            }
+        }));
+        verify(tokens, never()).save(any());
+        verify(users, never()).save(any());
+        verifyNoInteractions(encoder, queue, config);
+    }
+
+    @Test
+    void openMailPreventsDirectRotationBeforeInvalidation() {
+        when(queue.hasOpenEmailForUserAndType(user, EmailType.PASSWORD_RESET)).thenReturn(true);
+        assertThrows(IllegalStateException.class, () -> service.createToken(user));
+        verifyNoInteractions(tokens, encoder, config);
+    }
+
+    @Test
+    void deletedAccountCannotBeUsedForTokenCreation() {
+        when(users.lockVerificationUser(1L)).thenReturn(Optional.empty());
+        assertThrows(IllegalStateException.class, () -> service.createToken(user));
+        verifyNoInteractions(tokens, encoder, queue, config);
     }
 
     @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = {"unknown"})
     void unknownOrEmptyTokensAreNotValidDoNotResetAndDoNotExist(String value) {
+        when(tokens.findUserIdByToken(value)).thenReturn(Optional.empty());
         assertFalse(service.validateToken(value));
         assertFalse(service.resetPassword(value, "Password!"));
         assertFalse(service.existsToken(value));
         service.setTokenStatus(value, TokenStatus.USED);
-        verify(tokens, times(2)).findByTokenAndStatus(value, TokenStatus.ACTIVE);
-        verify(tokens, times(2)).findByToken(value);
+        verify(tokens, times(3)).findUserIdByToken(value);
+        verify(tokens).findByToken(value);
         verifyNoMoreInteractions(tokens);
         verifyNoInteractions(users, encoder, config, queue);
     }
@@ -160,9 +228,6 @@ class PasswordResetServiceTest {
     void expiryIsStrictlyBeforeNowAndResetRechecksIt(boolean resetPassword, long nanoseconds) {
         var stored = token("boundary", TokenStatus.ACTIVE, NOW.plusNanos(nanoseconds));
         when(tokens.findByTokenAndStatus("boundary", TokenStatus.ACTIVE)).thenReturn(Optional.of(stored));
-        if (nanoseconds < 0 || resetPassword) {
-            when(tokens.findByToken("boundary")).thenReturn(Optional.of(stored));
-        }
         if (resetPassword && nanoseconds >= 0) {
             when(encoder.encode("Password!")).thenReturn("new-hash");
         }
@@ -177,7 +242,8 @@ class PasswordResetServiceTest {
             verify(users).save(user);
         } else {
             assertEquals("old-hash", user.getPassword());
-            verifyNoInteractions(users, encoder);
+            verify(users, never()).save(any());
+            verifyNoInteractions(encoder);
         }
     }
 
@@ -190,7 +256,8 @@ class PasswordResetServiceTest {
         assertFalse(resetPassword ? service.resetPassword("disabled", "Password!") : service.validateToken("disabled"));
         assertEquals(TokenStatus.ACTIVE, stored.getStatus());
         verify(tokens, never()).save(any());
-        verifyNoInteractions(users, encoder);
+        verify(users, never()).save(any());
+        verifyNoInteractions(encoder);
     }
 
     @ParameterizedTest
@@ -205,21 +272,19 @@ class PasswordResetServiceTest {
     void securePasswordIsEncodedVerbatimAndTokenConsumedAfterUserSave() {
         var stored = token("valid", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
         when(tokens.findByTokenAndStatus("valid", TokenStatus.ACTIVE)).thenReturn(Optional.of(stored));
-        when(tokens.findByToken("valid")).thenReturn(Optional.of(stored));
         when(encoder.encode("  Password!  ")).thenReturn("hash");
         assertTrue(service.resetPassword("valid", "  Password!  "));
         var order = inOrder(tokens, users, encoder);
         order.verify(tokens).findByTokenAndStatus("valid", TokenStatus.ACTIVE);
         order.verify(encoder).encode("  Password!  ");
         order.verify(users).save(user);
-        order.verify(tokens).findByToken("valid");
         order.verify(tokens).save(stored);
         assertEquals(TokenStatus.USED, stored.getStatus());
         assertEquals("hash", user.getPassword());
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"encoder", "user-save", "status-lookup", "token-save"})
+    @ValueSource(strings = {"encoder", "user-save", "token-save"})
     void passwordChangeFailuresArePropagatedWithoutRetry(String stage) {
         var stored = token("valid", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
         var failure = new DataAccessResourceFailureException("test " + stage);
@@ -230,10 +295,7 @@ class PasswordResetServiceTest {
             when(encoder.encode("Password!")).thenReturn("hash");
             if (stage.equals("user-save")) {
                 doThrow(failure).when(users).save(user);
-            } else if (stage.equals("status-lookup")) {
-                when(tokens.findByToken("valid")).thenThrow(failure);
             } else {
-                when(tokens.findByToken("valid")).thenReturn(Optional.of(stored));
                 doThrow(failure).when(tokens).save(stored);
             }
         }
@@ -242,7 +304,7 @@ class PasswordResetServiceTest {
         verify(encoder).encode("Password!");
         if (stage.equals("encoder")) {
             assertEquals("old-hash", user.getPassword());
-            verifyNoInteractions(users);
+            verify(users, never()).save(any());
         }
         if (stage.equals("encoder") || stage.equals("user-save")) {
             assertEquals(TokenStatus.ACTIVE, stored.getStatus());
@@ -282,7 +344,13 @@ class PasswordResetServiceTest {
                 case "create" -> service.createToken(user);
             }
         }));
-        verifyNoInteractions(users, encoder, config, queue);
+        verify(users, never()).save(any());
+        verifyNoInteractions(encoder, config);
+        if (operation.equals("create")) {
+            verify(queue).hasOpenEmailForUserAndType(user, EmailType.PASSWORD_RESET);
+        } else {
+            verifyNoInteractions(queue);
+        }
     }
 
     @Test

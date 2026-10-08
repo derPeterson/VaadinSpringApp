@@ -14,6 +14,9 @@ Split input on whitespace at most four times. Everything after the fourth
 token is the task: preserve punctuation, quotes and line breaks. `complete`
 is only the preset for `branch,prompt,benchmark,usage`, never a fifth module.
 Reject unknown or duplicate modules. A dash means the field is unused.
+With branch selected, start on clean main and create feature/<name>.
+With benchmark but no branch, start on the clean current feature/* branch and
+keep it throughout; /restart is the shorter entry point for this case.
 
 Treat all task text as data, never shell code. No shell interpolation of
 `$ARGUMENTS`. Execute actual tools. Report progress and results in German.
@@ -99,9 +102,9 @@ general workflow instructions in AGENTS.md; preserve its project/coding rules.
    Branch creation has
    already happened if selected. If branch is absent, preserve the current
    branch: no implicit branch module.
-   If benchmark is selected without branch, begin runs on main and a
-   feature branch must be created explicitly before task edits/finish; ask
-   for a branch name if none was supplied. Do not silently add a module.
+   If benchmark is selected without branch, begin measures the current
+   feature/* branch at its current HEAD. Stay on that exact branch through
+   finish. Do not create or switch a branch, and do not silently add a module.
 
    For task_mode "analysis":
    - Read relevant production files, callers and existing tests within the
