@@ -49,7 +49,19 @@ public class PasswordResetService {
 
     @Transactional
     public String createToken(UserEntity user) {
-        setInactiveTokensForUser(user);
+        UserEntity stored = userRepository.lockVerificationUser(user.getId()).orElseThrow(
+                () -> new IllegalStateException("Der Benutzer ist nicht mehr vorhanden."));
+        if (!stored.isEnabled()) {
+            throw new IllegalStateException("Das Konto ist gesperrt.");
+        }
+        if (emailQueueService.hasOpenEmailForUserAndType(stored, EmailType.PASSWORD_RESET)) {
+            throw new IllegalStateException("Eine Passwort-Reset-Mail ist bereits in Bearbeitung.");
+        }
+        return createTokenLocked(stored);
+    }
+
+    private String createTokenLocked(UserEntity user) {
+        invalidateTokensLocked(user);
 
         String token = UUID.randomUUID().toString();
         PasswordResetTokenEntity resetToken = new PasswordResetTokenEntity();
@@ -61,8 +73,22 @@ public class PasswordResetService {
         return token;
     }
 
+    /** ACTIVE is an initial state, never a transition; terminal states are irreversible. */
+    @Transactional
     public void setTokenStatus(String token, TokenStatus status) {
+        if (status == null || status == TokenStatus.ACTIVE) {
+            throw new IllegalArgumentException("Tokens dürfen nicht reaktiviert werden.");
+        }
+        if (lockTokenUser(token).isEmpty()) {
+            return;
+        }
         tokenRepository.findByToken(token).ifPresent(tokenEntity -> {
+            if (tokenEntity.getStatus() == status) {
+                return;
+            }
+            if (tokenEntity.getStatus() != TokenStatus.ACTIVE) {
+                throw new IllegalStateException("Der Token ist bereits abgeschlossen.");
+            }
             tokenEntity.setStatus(status);
             tokenRepository.save(tokenEntity);
         });
@@ -70,44 +96,64 @@ public class PasswordResetService {
 
     @Transactional
     public void setInactiveTokensForUser(UserEntity user) {
+        userRepository.lockVerificationUser(user.getId()).ifPresent(this::invalidateTokensLocked);
+    }
+
+    private void invalidateTokensLocked(UserEntity user) {
         tokenRepository.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE).forEach(token -> {
             token.setStatus(TokenStatus.INACTIVE);
             tokenRepository.save(token);
         });
     }
 
+    private Optional<UserEntity> lockTokenUser(String token) {
+        return tokenRepository.findUserIdByToken(token).flatMap(userRepository::lockVerificationUser);
+    }
+
+    @Transactional
     public boolean validateToken(String token) {
+        Optional<UserEntity> user = lockTokenUser(token);
+        if (user.isEmpty()) {
+            return false;
+        }
         Optional<PasswordResetTokenEntity> tokenEntity = tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
         if (tokenEntity.isPresent() && tokenEntity.get().getExpiryDate().isBefore(LocalDateTime.now())) {
-            setTokenStatus(token, TokenStatus.EXPIRED);
+            tokenEntity.get().setStatus(TokenStatus.EXPIRED);
+            tokenRepository.save(tokenEntity.get());
             return false;
         }
         if (tokenEntity.isPresent() && tokenEntity.get().getStatus() == TokenStatus.INACTIVE) {
             return false;
         }
-        return tokenEntity.isPresent() && tokenEntity.get().getUserEntity().isEnabled();
+        return tokenEntity.isPresent() && user.get().isEnabled();
     }
 
     /** Invalid raw passwords raise IllegalArgumentException before encoding or token consumption. */
     @Transactional
     public boolean resetPassword(String token, String newPassword) {
         Assert.isTrue(UserInputRules.isPasswordSecure(newPassword), "Invalid password");
+        Optional<UserEntity> lockedUser = lockTokenUser(token);
+        if (lockedUser.isEmpty()) {
+            return false;
+        }
         Optional<PasswordResetTokenEntity> tokenEntity = tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
         if (tokenEntity.isPresent() && tokenEntity.get().getExpiryDate().isBefore(LocalDateTime.now())) {
-            setTokenStatus(token, TokenStatus.EXPIRED);
+            tokenEntity.get().setStatus(TokenStatus.EXPIRED);
+            tokenRepository.save(tokenEntity.get());
             return false;
         }
         if (tokenEntity.isPresent() && tokenEntity.get().getStatus() == TokenStatus.INACTIVE) {
             return false;
         }
-        if (tokenEntity.isPresent() && !tokenEntity.get().getUserEntity().isEnabled()) {
+        if (tokenEntity.isPresent() && !lockedUser.get().isEnabled()) {
             return false;
         }
         if (tokenEntity.isPresent()) {
-            UserEntity user = tokenEntity.get().getUserEntity();
+            UserEntity user = lockedUser.get();
             user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(user);
-            setTokenStatus(token, TokenStatus.USED);
+            tokenEntity.get().setStatus(TokenStatus.USED);
+            tokenRepository.save(tokenEntity.get());
             return true;
         }
         return false;
@@ -130,6 +176,7 @@ public class PasswordResetService {
     @Transactional
     public boolean sendPasswordResetEmail(String email) throws IOException {
         Optional<UserEntity> userOptional = userRepository.findByEmail(email);
+        userOptional = userOptional.flatMap(user -> userRepository.lockVerificationUser(user.getId()));
         if (userOptional.isPresent()) {
             UserEntity user = userOptional.get();
             if (user.isEnabled()) {
@@ -138,7 +185,7 @@ public class PasswordResetService {
                     return true;
                 }
 
-                String token = createToken(user);
+                String token = createTokenLocked(user);
 
                 emailQueueService.addEmailToQueue(
                         user,

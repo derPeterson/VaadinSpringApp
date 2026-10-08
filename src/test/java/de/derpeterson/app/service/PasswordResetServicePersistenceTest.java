@@ -2,6 +2,7 @@ package de.derpeterson.app.service;
 
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.EmailQueueEntity;
 import de.derpeterson.app.model.PasswordResetTokenEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -9,8 +10,10 @@ import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.PasswordResetTokenRepository;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.repository.EmailQueueRepository;
+import de.derpeterson.app.model.enums.EmailStatus;
+import de.derpeterson.app.model.enums.EmailType;
 import jakarta.persistence.EntityManagerFactory;
-import org.hibernate.LazyInitializationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.RepeatedTest;
@@ -18,6 +21,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -43,8 +47,10 @@ import java.time.LocalDateTime;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.Locale;
 import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -68,6 +74,8 @@ class PasswordResetServicePersistenceTest {
     private TransactionTemplate transaction;
     @Autowired
     private Probes probes;
+    @Autowired
+    private EmailQueueRepository mails;
     private Long userId;
 
     @BeforeEach
@@ -79,6 +87,7 @@ class PasswordResetServicePersistenceTest {
         when(probes.config().getString(ConfigEntry.BASE_URL)).thenReturn("https://example.invalid/");
         when(probes.encoder().encode(any())).thenAnswer(call -> "hash-" + call.getArgument(0));
         transaction.executeWithoutResult(tx -> {
+            mails.deleteAll();
             tokens.deleteAll();
             users.deleteAll();
             users.flush();
@@ -99,6 +108,19 @@ class PasswordResetServicePersistenceTest {
 
     private String password() {
         return users.findById(userId).orElseThrow().getPassword();
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"missing"})
+    void absentTokenLookupsAndEntrypointsRemainEmpty(String token) {
+        assertTrue(tokens.findByToken(token).isEmpty());
+        assertTrue(tokens.findByTokenAndStatus(token, TokenStatus.ACTIVE).isEmpty());
+        assertFalse(service.validateToken(token));
+        assertFalse(service.resetPassword(token, "Password!"));
+        assertFalse(service.existsToken(token));
+        service.setTokenStatus(token, TokenStatus.USED);
+        assertEquals("old-hash", password());
     }
 
     @Test
@@ -149,9 +171,9 @@ class PasswordResetServicePersistenceTest {
     }
 
     @Test
-    void validTokenValidationCurrentlyNeedsAnAmbientPersistenceContext() {
+    void validTokenValidationWorksWithoutAnAmbientPersistenceContext() {
         seed("valid", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-        assertThrows(LazyInitializationException.class, () -> service.validateToken("valid"));
+        assertTrue(service.validateToken("valid"));
         boolean valid = transaction.execute(tx -> service.validateToken("valid"));
         assertTrue(valid);
         assertEquals(TokenStatus.ACTIVE, status("valid"));
@@ -175,19 +197,19 @@ class PasswordResetServicePersistenceTest {
     }
 
     @Test
-    void statusSetterCurrentlyReactivatesUsedTokensAndAllowsASecondPasswordChange() {
+    void statusSetterCannotReactivateUsedTokensOrAllowASecondPasswordChange() {
         seed("reusable", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
         assertTrue(service.resetPassword("reusable", "Password!"));
-        service.setTokenStatus("reusable", TokenStatus.ACTIVE);
-        assertTrue(service.resetPassword("reusable", "OtherPassword!"));
-        assertEquals("hash-OtherPassword!", password());
+        assertThrows(IllegalArgumentException.class, () -> service.setTokenStatus("reusable", TokenStatus.ACTIVE));
+        assertFalse(service.resetPassword("reusable", "OtherPassword!"));
+        assertEquals("hash-Password!", password());
         assertEquals(TokenStatus.USED, status("reusable"));
     }
 
     @Test
-    void nullStatusIsRejectedByPersistenceWithoutChangingStoredStatus() {
+    void nullStatusIsRejectedBeforePersistenceWithoutChangingStoredStatus() {
         seed("valid", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-        assertThrows(DataIntegrityViolationException.class, () -> service.setTokenStatus("valid", null));
+        assertThrows(IllegalArgumentException.class, () -> service.setTokenStatus("valid", null));
         assertEquals(TokenStatus.ACTIVE, status("valid"));
     }
 
@@ -296,22 +318,21 @@ class PasswordResetServicePersistenceTest {
     }
 
     @RepeatedTest(3)
-    void secondTransactionThatReadActiveBeforeFirstCommitCanCurrentlyReuseTheToken() throws Exception {
+    void secondTransactionResolvingTheAccountBeforeFirstCommitCannotReuseTheToken() throws Exception {
         seed("race", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
         var activeRead = new CountDownLatch(1);
         var firstCommitted = new CountDownLatch(1);
         var staleReader = new AtomicReference<Thread>();
-        // Only pause after the real token query. Keep the lazy user uninitialized:
-        // the second transaction reads the current user version after the first commit.
+        // Resolve the scalar account ID, then pause before acquiring its lock.
         doAnswer(call -> {
-            var result = tokens.findByTokenAndStatus("race", TokenStatus.ACTIVE);
+            var result = tokens.findUserIdByToken("race");
             if (Thread.currentThread() == staleReader.get()) {
                 assertTrue(result.isPresent());
                 activeRead.countDown();
                 assertTrue(firstCommitted.await(10, TimeUnit.SECONDS));
             }
             return result;
-        }).when(probes.tokens()).findByTokenAndStatus("race", TokenStatus.ACTIVE);
+        }).when(probes.tokens()).findUserIdByToken("race");
         var executor = Executors.newSingleThreadExecutor();
         try {
             var second = executor.submit(() -> {
@@ -321,14 +342,197 @@ class PasswordResetServicePersistenceTest {
             assertTrue(activeRead.await(10, TimeUnit.SECONDS));
             assertTrue(service.resetPassword("race", "FirstPassword!"));
             firstCommitted.countDown();
-            assertTrue(second.get(10, TimeUnit.SECONDS), "Characterizes the currently missing atomic single-use guard");
+            assertFalse(second.get(10, TimeUnit.SECONDS), "The committed consumption must be observed after locking");
         } finally {
             firstCommitted.countDown();
             executor.shutdownNow();
             assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
         }
-        assertEquals("hash-SecondPassword!", password());
+        assertEquals("hash-FirstPassword!", password());
         assertEquals(TokenStatus.USED, status("race"));
+    }
+
+    /** The first transaction holds the actual DB lock when the second attempts it. */
+    private <T> List<T> overlap(Callable<T> first, Callable<T> second) throws Exception {
+        var locked = new CountDownLatch(1);
+        var contender = new CountDownLatch(1);
+        var owner = new AtomicReference<Thread>();
+        doAnswer(call -> {
+            if (Thread.currentThread() != owner.get()) {
+                contender.countDown();
+            }
+            var result = users.lockVerificationUser(userId);
+            if (Thread.currentThread() == owner.get()) {
+                locked.countDown();
+                assertTrue(contender.await(10, TimeUnit.SECONDS));
+            }
+            return result;
+        }).when(probes.users()).lockVerificationUser(userId);
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            var a = executor.submit(() -> {
+                owner.set(Thread.currentThread());
+                return first.call();
+            });
+            assertTrue(locked.await(10, TimeUnit.SECONDS));
+            var b = executor.submit(second);
+            return List.of(a.get(10, TimeUnit.SECONDS), b.get(10, TimeUnit.SECONDS));
+        } finally {
+            contender.countDown();
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+        }
+    }
+
+    @RepeatedTest(3)
+    void overlappingResetsConsumeTheTokenExactlyOnce() throws Exception {
+        seed("overlap", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        var results = overlap(() -> service.resetPassword("overlap", "FirstPassword!"),
+                () -> service.resetPassword("overlap", "SecondPassword!"));
+        assertEquals(List.of(true, false), results);
+        assertEquals("hash-FirstPassword!", password());
+        assertEquals(TokenStatus.USED, status("overlap"));
+        verify(probes.encoder(), times(1)).encode(any());
+    }
+
+    @RepeatedTest(3)
+    void overlappingCreationLeavesOnlyTheLastTokenActive() throws Exception {
+        var detached = users.findById(userId).orElseThrow();
+        var results = overlap(() -> service.createToken(detached), () -> service.createToken(detached));
+        assertNotEquals(results.getFirst(), results.getLast());
+        assertEquals(TokenStatus.INACTIVE, status(results.getFirst()));
+        assertEquals(TokenStatus.ACTIVE, status(results.getLast()));
+        int active = transaction.execute(tx -> tokens.findAllByUserEntityAndStatus(
+                users.findById(userId).orElseThrow(), TokenStatus.ACTIVE).size());
+        assertEquals(1, active);
+    }
+
+    @RepeatedTest(3)
+    void overlappingMailRequestsPersistOneMailWhoseTokenRemainsActive() throws Exception {
+        var results = overlap(() -> service.sendPasswordResetEmail("test@example.com"),
+                () -> service.sendPasswordResetEmail("test@example.com"));
+        assertEquals(List.of(true, true), results);
+        assertEquals(1, mails.count());
+        assertEquals(1, tokens.count());
+        var active = transaction.execute(tx -> tokens.findAllByUserEntityAndStatus(
+                users.findById(userId).orElseThrow(), TokenStatus.ACTIVE).getFirst().getToken());
+        assertTrue(mails.findAll().getFirst().getBody().contains("/reset-password/" + active));
+        assertTrue(service.validateToken(active));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void overlappingDirectCreationAndMailRequestKeepTheQueuedLinkActive(boolean mailFirst) throws Exception {
+        var detached = users.findById(userId).orElseThrow();
+        if (mailFirst) {
+            assertEquals(List.of(true, false), overlap(() -> service.sendPasswordResetEmail("test@example.com"), () -> {
+                assertThrows(IllegalStateException.class, () -> service.createToken(detached));
+                return false;
+            }));
+            assertEquals(1, tokens.count());
+        } else {
+            var results = overlap(() -> service.createToken(detached), () -> {
+                assertTrue(service.sendPasswordResetEmail("test@example.com"));
+                return "mail-queued";
+            });
+            assertEquals(TokenStatus.INACTIVE, status(results.getFirst()));
+            assertEquals(2, tokens.count());
+        }
+        assertEquals(1, mails.count());
+        var active = transaction.execute(tx -> tokens.findAllByUserEntityAndStatus(
+                users.findById(userId).orElseThrow(), TokenStatus.ACTIVE));
+        assertEquals(1, active.size());
+        assertTrue(mails.findAll().getFirst().getBody().contains("/reset-password/" + active.getFirst().getToken()));
+    }
+
+    @Test
+    void detachedEnabledUserCannotCreateTokensAfterAccountWasDisabled() {
+        var detached = users.findById(userId).orElseThrow();
+        transaction.executeWithoutResult(tx -> users.findById(userId).orElseThrow().setEnabled(false));
+        assertThrows(IllegalStateException.class, () -> service.createToken(detached));
+        assertEquals(0, tokens.count());
+        assertEquals(0, mails.count());
+    }
+
+    @Test
+    void mailQueuePersistenceFailureRollsBackRotationAndTheQueuedRow() {
+        seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        // Inject an actual NOT NULL constraint violation in the real queue save,
+        // rather than replacing the queue with an exception-only mock.
+        when(probes.config().getString(ConfigEntry.BASE_URL)).thenReturn("https://example.invalid/");
+        doAnswer(call -> {
+            var user = (UserEntity) call.getArgument(0);
+            var broken = new EmailQueueEntity();
+            broken.setUserEntity(user);
+            broken.setEmailType(EmailType.PASSWORD_RESET);
+            broken.setStatus(EmailStatus.PENDING);
+            mails.saveAndFlush(broken);
+            return null;
+        }).when(probes.queue()).addEmailToQueue(any(), any(), any(), any());
+        assertThrows(DataIntegrityViolationException.class,
+                () -> service.sendPasswordResetEmail("test@example.com"));
+        assertEquals(TokenStatus.ACTIVE, status("old"));
+        assertEquals(1, tokens.count());
+        assertEquals(0, mails.count());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = EmailStatus.class, names = {"PENDING", "IN_PROGRESS"})
+    void directRotationCannotInvalidateATokenInAnOpenMail(EmailStatus mailStatus) throws IOException {
+        assertTrue(service.sendPasswordResetEmail("test@example.com"));
+        transaction.executeWithoutResult(tx -> mails.findAll().getFirst().setStatus(mailStatus));
+        var active = transaction.execute(tx -> tokens.findAllByUserEntityAndStatus(
+                users.findById(userId).orElseThrow(), TokenStatus.ACTIVE).getFirst().getToken());
+        assertThrows(IllegalStateException.class, () -> service.createToken(users.findById(userId).orElseThrow()));
+        assertEquals(TokenStatus.ACTIVE, status(active));
+        assertEquals(1, tokens.count());
+        assertEquals(1, mails.count());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TokenStatus.class, names = {"USED", "INACTIVE", "EXPIRED"})
+    void terminalTokensRemainIrreversibleAndRepeatedSameStatusIsIdempotent(TokenStatus terminal) {
+        seed("closed", terminal, LocalDateTime.now().plusDays(1));
+        assertThrows(IllegalArgumentException.class, () -> service.setTokenStatus("closed", TokenStatus.ACTIVE));
+        for (var target : List.of(TokenStatus.USED, TokenStatus.INACTIVE, TokenStatus.EXPIRED)) {
+            if (target == terminal) {
+                service.setTokenStatus("closed", target);
+            } else {
+                assertThrows(IllegalStateException.class, () -> service.setTokenStatus("closed", target));
+            }
+        }
+        assertEquals(terminal, status("closed"));
+    }
+
+    @Test
+    void staleManagedTokenCannotBeReusedAfterAnotherTransactionCommitsConsumption() throws Exception {
+        seed("stale", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        var read = new CountDownLatch(1);
+        var committed = new CountDownLatch(1);
+        var executor = Executors.newSingleThreadExecutor();
+        try {
+            var stale = executor.submit(() -> transaction.execute(tx -> {
+                var managed = tokens.findByToken("stale").orElseThrow();
+                assertEquals(TokenStatus.ACTIVE, managed.getStatus());
+                read.countDown();
+                try {
+                    assertTrue(committed.await(10, TimeUnit.SECONDS));
+                } catch (InterruptedException failure) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(failure);
+                }
+                return service.resetPassword("stale", "SecondPassword!");
+            }));
+            assertTrue(read.await(10, TimeUnit.SECONDS));
+            assertTrue(service.resetPassword("stale", "FirstPassword!"));
+            committed.countDown();
+            assertFalse(stale.get(10, TimeUnit.SECONDS));
+        } finally {
+            committed.countDown();
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+        }
+        assertEquals("hash-FirstPassword!", password());
     }
 
     record Probes(PasswordResetTokenRepository tokens, UserRepository users, ConfigService config,
@@ -366,10 +570,20 @@ class PasswordResetServicePersistenceTest {
         }
 
         @Bean
-        Probes probes(PasswordResetTokenRepository tokens, UserRepository users) {
+        ConfigService configService() {
+            return mock(ConfigService.class);
+        }
+
+        @Bean
+        EmailQueueService emailQueueService(ConfigService config, EmailQueueRepository mails, UserRepository users) {
+            return new EmailQueueService(config, mails, mock(EmailService.class), users);
+        }
+
+        @Bean
+        Probes probes(PasswordResetTokenRepository tokens, UserRepository users, ConfigService config, EmailQueueService queue) {
             return new Probes(mock(PasswordResetTokenRepository.class, delegatesTo(tokens)),
-                    mock(UserRepository.class, delegatesTo(users)), mock(ConfigService.class),
-                    mock(PasswordEncoder.class), mock(EmailQueueService.class));
+                    mock(UserRepository.class, delegatesTo(users)), config,
+                    mock(PasswordEncoder.class), mock(EmailQueueService.class, delegatesTo(queue)));
         }
 
         @Bean
