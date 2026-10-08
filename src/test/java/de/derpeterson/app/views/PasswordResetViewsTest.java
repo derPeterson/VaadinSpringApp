@@ -1,5 +1,9 @@
 package de.derpeterson.app.views;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -20,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -105,12 +110,12 @@ class PasswordResetViewsTest {
         verify(service).validateToken("link-token");
         verify(service).resetPassword("link-token", "Password!");
         verifyNoMoreInteractions(service);
-        notification(success, success ? texts.getResetPasswordSuccessMessage() : texts.getBaseFailedMessage(), Locale.ENGLISH);
+        notification(success, success ? texts.getResetPasswordSuccessMessage() : texts.getResetPasswordInvalidText(), Locale.ENGLISH);
         var helper = NotificationHelper.getInstance();
         var visible = ReflectionTestUtils.getField(helper, "currentNotification");
         LanguageChangeEvent.fire(ui, Locale.GERMAN);
         assertSame(visible, ReflectionTestUtils.getField(helper, "currentNotification"));
-        notification(success, success ? texts.getResetPasswordSuccessMessage() : texts.getBaseFailedMessage(), Locale.GERMAN);
+        notification(success, success ? texts.getResetPasswordSuccessMessage() : texts.getResetPasswordInvalidText(), Locale.GERMAN);
     }
 
     @ParameterizedTest
@@ -128,34 +133,91 @@ class PasswordResetViewsTest {
     }
 
     @Test
-    void resetRepositoryFailureCurrentlyEscapesTheCallback() {
+    void resetRepositoryFailureIsLoggedAndShowsOnlyDynamicNeutralText() {
         createResetForm();
-        var failure = new DataAccessResourceFailureException("isolated reset failure");
+        var failure = new DataAccessResourceFailureException("secret SQL and password detail");
         when(service.resetPassword("link-token", "Password!")).thenThrow(failure);
-        assertSame(failure, assertThrows(DataAccessResourceFailureException.class,
-                () -> field(resetView, "resetButton", Button.class).click()));
+        assertLogged(ResetPasswordView.class, failure, () -> field(resetView, "resetButton", Button.class).click());
+        notification(false, texts.getResetPasswordTechnicalErrorMessage(), Locale.ENGLISH);
+        var visible = ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
+        LanguageChangeEvent.fire(ui, Locale.GERMAN);
+        assertSame(visible, ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification"));
+        notification(false, texts.getResetPasswordTechnicalErrorMessage(), Locale.GERMAN);
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void mailRequestMapsServiceResultToDynamicNotification(boolean success) throws IOException {
+    @ValueSource(strings = {"missing", "disabled", "queued", "pending", "in-progress", "io", "runtime"})
+    void anonymousMailRequestAlwaysShowsTheSameDynamicConfirmation(String outcome) throws IOException {
         forgotView = new ForgotPasswordView(texts, service, mock(SecurityService.class), mock(HttpServletRequest.class));
         field(forgotView, "emailField", EmailField.class).setValue("test@example.com");
-        when(service.sendPasswordResetEmail("test@example.com")).thenReturn(success);
-        field(forgotView, "sendButton", Button.class).click();
-        notification(success, success ? texts.getForgotPasswordSuccessMessage() : texts.getBaseFailedMessage(), Locale.ENGLISH);
+        if (outcome.equals("io") || outcome.equals("runtime")) {
+            Exception failure = outcome.equals("io") ? new IOException("secret template path") : new DataAccessResourceFailureException("secret SQL");
+            when(service.sendPasswordResetEmail("test@example.com")).thenThrow(failure);
+            assertLogged(ForgotPasswordView.class, failure, () -> field(forgotView, "sendButton", Button.class).click());
+        } else {
+            when(service.sendPasswordResetEmail("test@example.com")).thenReturn(!outcome.equals("missing") && !outcome.equals("disabled"));
+            field(forgotView, "sendButton", Button.class).click();
+        }
+        notification(true, texts.getForgotPasswordSuccessMessage(), Locale.ENGLISH);
+        var helper = NotificationHelper.getInstance();
+        var visible = (com.vaadin.flow.component.notification.Notification) ReflectionTestUtils.getField(helper, "currentNotification");
+        assertEquals(-1, visible.getDuration());
+        assertTrue(((Span) ReflectionTestUtils.getField(helper, "titleText")).hasClassName("text-success"));
         LanguageChangeEvent.fire(ui, Locale.GERMAN);
-        notification(success, success ? texts.getForgotPasswordSuccessMessage() : texts.getBaseFailedMessage(), Locale.GERMAN);
+        assertSame(visible, ReflectionTestUtils.getField(helper, "currentNotification"));
+        notification(true, texts.getForgotPasswordSuccessMessage(), Locale.GERMAN);
         verify(service).sendPasswordResetEmail("test@example.com");
         verifyNoMoreInteractions(service);
     }
 
     @Test
-    void mailIoFailureIsHandledAsFailureRatherThanSuccess() throws IOException {
+    void validationFailureShowsTechnicalCardWithoutPasswordFormAndTranslates() {
+        var failure = new DataAccessResourceFailureException("secret SQL");
+        when(service.validateToken("link-token")).thenThrow(failure);
+        resetView = new ResetPasswordView(texts, service, mock(SecurityService.class), mock(HttpServletRequest.class));
+        assertLogged(ResetPasswordView.class, failure, () -> resetView.setParameter(null, "link-token"));
+        assertNull(ReflectionTestUtils.getField(resetView, "resetButton"));
+        assertEquals(texts.getBaseFailedTitle(), field(resetView, "invalidTitle", H1.class).getText());
+        assertEquals(texts.getResetPasswordTechnicalErrorMessage(), field(resetView, "invalidText", Span.class).getText());
+        LanguageChangeEvent.fire(ui, Locale.GERMAN);
+        assertEquals(texts.getBaseFailedTitle(), field(resetView, "invalidTitle", H1.class).getText());
+        assertEquals(texts.getResetPasswordTechnicalErrorMessage(), field(resetView, "invalidText", Span.class).getText());
+        verify(service).validateToken("link-token");
+        verifyNoMoreInteractions(service);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "not-an-email"})
+    void anonymousInputValidationDoesNotQueryAccounts(String value) {
         forgotView = new ForgotPasswordView(texts, service, mock(SecurityService.class), mock(HttpServletRequest.class));
-        field(forgotView, "emailField", EmailField.class).setValue("test@example.com");
-        when(service.sendPasswordResetEmail("test@example.com")).thenThrow(new IOException("isolated template failure"));
-        assertDoesNotThrow(() -> field(forgotView, "sendButton", Button.class).click());
-        notification(false, texts.getBaseFailedMessage(), Locale.ENGLISH);
+        field(forgotView, "emailField", EmailField.class).setValue(value);
+        field(forgotView, "sendButton", Button.class).click();
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void neutralTranslationsAreRealGermanAndEnglishAndContainRetryAdvice() {
+        assertTrue(texts.getForgotPasswordSuccessMessage().contains("If an eligible account exists"));
+        assertTrue(texts.getResetPasswordTechnicalErrorMessage().contains("try again later"));
+        session.setLocale(Locale.GERMAN);
+        assertTrue(texts.getForgotPasswordSuccessMessage().contains("Wenn ein geeignetes Konto"));
+        assertTrue(texts.getForgotPasswordSuccessMessage().contains("prüfen"));
+        assertTrue(texts.getResetPasswordTechnicalErrorMessage().contains("später erneut"));
+        assertFalse(texts.getResetPasswordTechnicalErrorMessage().contains("\\u"));
+    }
+
+    private void assertLogged(Class<?> source, Exception failure, Runnable action) {
+        var logger = (Logger) LoggerFactory.getLogger(source);
+        var logs = new ListAppender<ILoggingEvent>();
+        logs.start();
+        logger.addAppender(logs);
+        try {
+            assertDoesNotThrow(action::run);
+            assertTrue(logs.list.stream().anyMatch(event -> event.getThrowableProxy() != null
+                    && event.getThrowableProxy().getMessage().equals(failure.getMessage())));
+        } finally {
+            logger.detachAppender(logs);
+            logs.stop();
+        }
     }
 }

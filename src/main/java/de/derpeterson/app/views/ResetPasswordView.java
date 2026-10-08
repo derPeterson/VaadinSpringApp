@@ -29,6 +29,8 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.PasswordResetService;
 import de.derpeterson.app.ui.components.CardComponent;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +42,8 @@ import java.util.function.Supplier;
 @PageTitle(AppRouteConstants.RESET_PAGE_TITLE)
 @AnonymousAllowed
 public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayout> implements HasUrlParameter<String> {
+
+    private static final Logger logger = LoggerFactory.getLogger(ResetPasswordView.class);
 
     private final transient MessageProperties messageProperties;
     private final transient PasswordResetService passwordResetService;
@@ -53,6 +57,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     private Button homeButton = null;
     private H1 invalidTitle = null;
     private Span invalidText = null;
+    private boolean technicalFailure;
 
     public ResetPasswordView(MessageProperties messageProperties, PasswordResetService passwordResetService, SecurityService securityService, HttpServletRequest request) {
         super(securityService, request, new HorizontalLayout());
@@ -75,9 +80,9 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
             Optional.ofNullable(homeButton)
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseHomeButton));
             Optional.ofNullable(invalidTitle)
-                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getResetPasswordInvalidTitle));
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, () -> technicalFailure ? this.messageProperties.getBaseFailedTitle() : this.messageProperties.getResetPasswordInvalidTitle()));
             Optional.ofNullable(invalidText)
-                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getResetPasswordInvalidText));
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, () -> technicalFailure ? this.messageProperties.getResetPasswordTechnicalErrorMessage() : this.messageProperties.getResetPasswordInvalidText()));
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
             NotificationHelper.getInstance().updateText();
@@ -103,9 +108,17 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     @Override
     public void setParameter(BeforeEvent event, @OptionalParameter String token) {
         if (token != null && !token.isEmpty()) {
-            if (passwordResetService.validateToken(token)) {
-                showResetPasswordCard(token);
-            } else {
+            mainContent.removeAll();
+            technicalFailure = false;
+            try {
+                if (passwordResetService.validateToken(token)) {
+                    showResetPasswordCard(token);
+                } else {
+                    invalidTokenCard();
+                }
+            } catch (RuntimeException failure) {
+                logger.error("Password reset link could not be validated", failure);
+                technicalFailure = true;
                 invalidTokenCard();
             }
         } else {
@@ -152,11 +165,17 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
                 return;
             }
 
-            boolean success = passwordResetService.resetPassword(token, passwordField.getValue());
-            if (success) {
-                NotificationHelper.getInstance().showNotification(messageProperties::getBaseSuccessTitle, messageProperties::getResetPasswordSuccessMessage, -1, NotificationHelper.NotificationType.SUCCESS);
-            } else {
-                NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle, messageProperties::getBaseFailedMessage, -1, NotificationHelper.NotificationType.ERROR);
+            try {
+                boolean success = passwordResetService.resetPassword(token, passwordField.getValue());
+                if (success) {
+                    NotificationHelper.getInstance().showNotification(messageProperties::getBaseSuccessTitle, messageProperties::getResetPasswordSuccessMessage, -1, NotificationHelper.NotificationType.SUCCESS);
+                } else {
+                    NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle, messageProperties::getResetPasswordInvalidText, -1, NotificationHelper.NotificationType.ERROR);
+                }
+            } catch (RuntimeException failure) {
+                logger.error("Password could not be reset", failure);
+                NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle,
+                        messageProperties::getResetPasswordTechnicalErrorMessage, -1, NotificationHelper.NotificationType.ERROR);
             }
         });
         resetButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
@@ -188,7 +207,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
         cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardIconLayout.add(successIcon);
 
-        this.invalidTitle = new H1(messageProperties.getResetPasswordInvalidTitle());
+        this.invalidTitle = new H1(technicalFailure ? messageProperties.getBaseFailedTitle() : messageProperties.getResetPasswordInvalidTitle());
         invalidTitle.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
@@ -212,7 +231,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     }
 
     private VerticalLayout getCardTextLayout() {
-        this.invalidText = new Span(messageProperties.getResetPasswordInvalidText());
+        this.invalidText = new Span(technicalFailure ? messageProperties.getResetPasswordTechnicalErrorMessage() : messageProperties.getResetPasswordInvalidText());
         invalidText.addClassNames(LumoUtility.Whitespace.NOWRAP);
         VerticalLayout cardTextLayout = new VerticalLayout();
         cardTextLayout.setWidthFull();

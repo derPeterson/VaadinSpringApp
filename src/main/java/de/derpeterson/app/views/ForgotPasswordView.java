@@ -152,19 +152,13 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
             }
 
             try {
-                boolean emailSent = passwordResetService.sendPasswordResetEmail(emailField.getValue());
-                if (emailSent) {
-                    NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseSuccessTitle, this.messageProperties::getForgotPasswordSuccessMessage, -1, NotificationHelper.NotificationType.SUCCESS);
-                } else {
-                    NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseFailedTitle, this.messageProperties::getBaseFailedMessage, -1, NotificationHelper.NotificationType.ERROR);
-                }
-            } catch (IOException e) {
-                logger.error("❌ Exception occurred:", e);
-
-                NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseFailedTitle,
-                        this.messageProperties::getBaseFailedMessage,
-                        -1, NotificationHelper.NotificationType.ERROR);
+                passwordResetService.sendPasswordResetEmail(emailField.getValue());
+            } catch (IOException | RuntimeException e) {
+                logger.error("Password reset request could not be processed", e);
             }
+            // Identical text, style and duration even for account-dependent failures.
+            NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseSuccessTitle,
+                    this.messageProperties::getForgotPasswordSuccessMessage, -1, NotificationHelper.NotificationType.SUCCESS);
         });
         sendButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
         sendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);

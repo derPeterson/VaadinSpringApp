@@ -11,10 +11,12 @@ import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.PasswordResetTokenRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.validation.UserInputRules;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,6 +29,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -47,6 +50,15 @@ public class PasswordResetService {
     private final PasswordEncoder passwordEncoder;
 
     private final EmailQueueService emailQueueService;
+    @NonNull
+    private final Clock clock;
+
+    @Autowired
+    public PasswordResetService(MessageProperties messageProperties, PasswordResetTokenRepository tokenRepository,
+                                UserRepository userRepository, ConfigService configService, PasswordEncoder passwordEncoder,
+                                EmailQueueService emailQueueService) {
+        this(messageProperties, tokenRepository, userRepository, configService, passwordEncoder, emailQueueService, Clock.systemDefaultZone());
+    }
 
     @Transactional
     public String createToken(UserEntity user) {
@@ -62,16 +74,25 @@ public class PasswordResetService {
     }
 
     private String createTokenLocked(UserEntity user) {
+        LocalDateTime expiryDate = LocalDateTime.now(clock).plus(positiveDuration(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION));
         invalidateTokensLocked(user);
 
         String token = UUID.randomUUID().toString();
         PasswordResetTokenEntity resetToken = new PasswordResetTokenEntity();
         resetToken.setToken(token);
         resetToken.setUserEntity(user);
-        resetToken.setExpiryDate(LocalDateTime.now().plus(Duration.parse(configService.getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION))));
+        resetToken.setExpiryDate(expiryDate);
         resetToken.setStatus(TokenStatus.ACTIVE);
         tokenRepository.save(resetToken);
         return token;
+    }
+
+    private Duration positiveDuration(ConfigEntry entry) {
+        Duration duration = Duration.parse(configService.getString(entry));
+        if (duration.isZero() || duration.isNegative()) {
+            throw new IllegalArgumentException(entry + " muss eine positive Dauer sein.");
+        }
+        return duration;
     }
 
     /** ACTIVE is an initial state, never a transition; terminal states are irreversible. */
@@ -118,7 +139,7 @@ public class PasswordResetService {
             return false;
         }
         Optional<PasswordResetTokenEntity> tokenEntity = tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
-        if (tokenEntity.isPresent() && tokenEntity.get().getExpiryDate().isBefore(LocalDateTime.now())) {
+        if (tokenEntity.isPresent() && !tokenEntity.get().getExpiryDate().isAfter(LocalDateTime.now(clock))) {
             tokenEntity.get().setStatus(TokenStatus.EXPIRED);
             tokenRepository.save(tokenEntity.get());
             return false;
@@ -138,7 +159,7 @@ public class PasswordResetService {
             return false;
         }
         Optional<PasswordResetTokenEntity> tokenEntity = tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
-        if (tokenEntity.isPresent() && tokenEntity.get().getExpiryDate().isBefore(LocalDateTime.now())) {
+        if (tokenEntity.isPresent() && !tokenEntity.get().getExpiryDate().isAfter(LocalDateTime.now(clock))) {
             tokenEntity.get().setStatus(TokenStatus.EXPIRED);
             tokenRepository.save(tokenEntity.get());
             return false;
@@ -163,7 +184,7 @@ public class PasswordResetService {
     @Transactional
     @Scheduled(cron = "0 0 3 1/3 * ?")
     public void deleteExpiredTokens() {
-        LocalDateTime liveDateTime = LocalDateTime.now().minus(Duration.parse(configService.getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION)));
+        LocalDateTime liveDateTime = LocalDateTime.now(clock).minus(positiveDuration(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION));
         int deleted = tokenRepository.deleteByExpiryDateBefore(liveDateTime);
         var formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         logger.info("✅ {} expired password reset tokens that are older than '{}' have been deleted.", deleted, formattedLiveDateTime);
@@ -174,6 +195,7 @@ public class PasswordResetService {
         return tokenRepository.findByToken(token).orElse(null) != null;
     }
 
+    /** Internal queue outcome only; anonymous callers must not expose this boolean or exceptions as account signals. */
     @Transactional(rollbackFor = IOException.class)
     public boolean sendPasswordResetEmail(String email) throws IOException {
         Optional<UserEntity> userOptional = userRepository.findByEmail(email);
