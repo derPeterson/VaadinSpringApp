@@ -17,6 +17,8 @@ import tempfile
 
 from workflow.common import WorkflowError, outside_repo, read_json, store_lock, write_json
 
+MERGE_TITLE_PREFIX = "In main integriert:"
+
 
 def git_bytes(repo: Path, *args: str) -> bytes:
     result = subprocess.run(["git", "--no-optional-locks", *args], cwd=repo,
@@ -155,6 +157,13 @@ def apply(repo: Path, plan_file: Path, message_file: Path | None) -> dict:
         lines = message.splitlines()
         if not lines or not lines[0].strip() or len(lines) < 3 or lines[1].strip() or not any(line.startswith("- ") for line in lines[2:]):
             raise WorkflowError("Nachricht braucht einen Titel, eine Leerzeile und mindestens einen Stichpunkt über erledigte Arbeit.")
+        title = lines[0].strip()
+        if title.startswith(MERGE_TITLE_PREFIX):
+            title = title[len(MERGE_TITLE_PREFIX):].strip()
+        if not title:
+            raise WorkflowError("Merge-Titel braucht eine konkrete Beschreibung nach 'In main integriert:'.")
+        lines[0] = f"{MERGE_TITLE_PREFIX} {title}"
+        message = "\n".join(lines)
         message += f"\n\nBranch: {plan['branch']}\nBenchmark-Run: {plan['runId']}\n"
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", prefix="opencode-merge-",
                                          suffix=".txt", dir=message_file.parent, delete=False) as handle:

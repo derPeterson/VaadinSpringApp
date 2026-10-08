@@ -78,9 +78,36 @@ class MergeCase(unittest.TestCase):
         self.assertEqual([self.main_commit, self.feature_commit], self.git("rev-list", "--parents", "-n", "1", "HEAD").split()[1:])
         self.assertEqual(self.git("rev-parse", "HEAD^{tree}"), self.git("rev-parse", "feature/change^{tree}"))
         text = self.git("log", "-1", "--format=%B")
+        self.assertEqual("In main integriert: Validierung und Übersetzungen korrigiert", text.splitlines()[0])
+        self.assertTrue(result["message"].startswith(text.splitlines()[0] + "\n"))
+        self.assertEqual("Validierung korrigiert", self.git("show", "-s", "--format=%s", self.feature_commit))
         self.assertIn("Übersetzungen korrigiert", text)
         self.assertIn("'$()' bleibt Text", text)
         self.assertIn("Benchmark-Run: " + self.run_id, text)
+        self.assertEqual(before, self.snapshots())
+
+    def test_existing_merge_title_prefix_is_not_duplicated_and_body_is_preserved(self):
+        body = "\n\n- DE/EN geprüft; '$()' bleibt Text.\n"
+        original = "In main integriert: Validierung korrigiert" + body
+        self.message.write_text(original, encoding="utf-8")
+        self.plan()
+        result = merge.apply(self.repo, self.plan_file, self.message)
+        actual = self.git("show", "-s", "--format=%B", "HEAD")
+        self.assertEqual("In main integriert: Validierung korrigiert", actual.splitlines()[0])
+        self.assertEqual(1, actual.splitlines()[0].count("In main integriert:"))
+        self.assertIn(body.rstrip(), actual)
+        self.assertEqual(original, self.message.read_text(encoding="utf-8"))
+        self.assertEqual(actual, result["message"].strip())
+
+    def test_prefix_without_a_description_stops_before_branch_switch_or_commit(self):
+        self.message.write_text("In main integriert:  \n\n- Test geprüft.\n", encoding="utf-8")
+        before = self.snapshots()
+        self.plan()
+        with self.assertRaisesRegex(WorkflowError, "konkrete Beschreibung"):
+            merge.apply(self.repo, self.plan_file, self.message)
+        self.assertEqual("feature/change", self.git("branch", "--show-current"))
+        self.assertEqual(self.main_commit, self.git("rev-parse", "main"))
+        self.assertEqual(self.feature_commit, self.git("rev-parse", "HEAD"))
         self.assertEqual(before, self.snapshots())
 
     def test_prepare_does_not_switch_or_create_commit(self):

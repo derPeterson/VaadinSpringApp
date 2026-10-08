@@ -52,10 +52,15 @@ rule against returning to main/merging. Preserve all project/coding rules.
    and mention material remaining issues/limits in the message. Do not modify
    report.md, findings.md, result.json, state or results.csv.
 4. Write a concise German merge message as UTF-8 to the external message file:
-   one meaningful title in completed tense, blank line, then 2-5 useful bullets
+   one meaningful title in completed tense prefixed with `In main integriert:`,
+   blank line, then 2-5 useful bullets
    describing completed changes and actual checks/important remaining limits.
    No generic "Branch gemerged" title, no future-tense promises, no invented
-   review/test/coverage/cost claims. The helper adds the branch and real run ID.
+   review/test/coverage/cost claims. Example title:
+   `In main integriert: Tokenbereinigung, IO-Rollback und Reset-Mailvorlagen korrigiert`.
+   The helper enforces this prefix exactly once for an already prefixed title,
+   and adds the branch and real run ID. The merge title must be visibly distinct
+   from the original task-commit title; original commits remain unchanged.
    Show the short message in a progress update; the invoked command already
    authorizes the merge, so routine confirmation is not required.
 5. If not already on the selected feature branch, switch to that exact branch

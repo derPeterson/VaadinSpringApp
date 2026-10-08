@@ -258,7 +258,12 @@ Commits nach dem Run-Abschluss werden im tatsächlichen Diff berücksichtigt.
 Erinnerungen, Dateimodifikationszeiten oder die README ersetzen diese Belege nicht.
 
 Die Nachricht enthält einen konkreten deutschen Titel über erledigte Arbeit,
-kurze Stichpunkte, Branch und Run-ID. Offene Findings werden durch einen Merge
+mit dem festen Präfix **In main integriert:**, kurze Stichpunkte, Branch und Run-ID.
+Beispiel: `In main integriert: Tokenbereinigung, IO-Rollback und Reset-Mailvorlagen korrigiert`.
+Der Helper ergänzt ein fehlendes Präfix; ein bereits vorhandenes wird nicht verdoppelt.
+So sind Umsetzung und Zusammenführung in der Historie sofort unterscheidbar.
+Originale Commit-Nachrichten und bestehende Merge-Commits werden nicht verändert.
+Offene Findings werden durch einen Merge
 nicht als behoben umgedeutet. OpenCode prüft Java 25 und führt auf dem Feature-Branch
 erneut `clean test` und `jacoco:report` aus; für Änderungen an der Infrastruktur
 gehören die betroffenen Python-/Node-Tests dazu. Das Git-Skript selbst führt
