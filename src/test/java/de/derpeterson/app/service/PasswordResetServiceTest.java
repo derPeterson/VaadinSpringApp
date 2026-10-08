@@ -29,7 +29,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -42,6 +45,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class PasswordResetServiceTest {
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 10, 8, 12, 0);
+    private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-08T10:00:00Z"), ZoneId.of("Europe/Berlin"));
     @Mock
     private MessageProperties messages;
     @Mock
@@ -59,7 +63,7 @@ class PasswordResetServiceTest {
 
     @BeforeEach
     void setup() {
-        service = new PasswordResetService(messages, tokens, users, config, encoder, queue);
+        service = new PasswordResetService(messages, tokens, users, config, encoder, queue, CLOCK);
         user = UserEntity.builder().id(1L).email("test@example.com").password("old-hash").enabled(true).build();
         lenient().when(users.lockVerificationUser(1L)).thenReturn(Optional.of(user));
         lenient().when(tokens.findUserIdByToken(anyString())).thenReturn(Optional.of(1L));
@@ -70,20 +74,24 @@ class PasswordResetServiceTest {
     }
 
     @Test
+    void explicitClockMustNotBeNull() {
+        assertThrows(NullPointerException.class, () -> new PasswordResetService(messages, tokens, users, config, encoder, queue, null));
+    }
+
+    @Test
     void creationInvalidatesActiveTokensBeforeSavingANewUuidForTheSameUser() {
         var old = token("old", TokenStatus.ACTIVE, NOW.plusDays(1));
         when(tokens.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE)).thenReturn(List.of(old));
         when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn("PT1H");
-        try (var time = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
-            time.when(LocalDateTime::now).thenReturn(NOW);
+        {
             String value = service.createToken(user);
             assertEquals(value, UUID.fromString(value).toString());
             assertNotEquals(old.getToken(), value);
             var saved = ArgumentCaptor.forClass(PasswordResetTokenEntity.class);
             var order = inOrder(tokens, config);
+            order.verify(config).getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION);
             order.verify(tokens).findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
             order.verify(tokens).save(old);
-            order.verify(config).getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION);
             order.verify(tokens).save(saved.capture());
             assertEquals(TokenStatus.INACTIVE, old.getStatus());
             assertNull(saved.getValue().getId());
@@ -100,16 +108,10 @@ class PasswordResetServiceTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"PT0S", "-PT1S"})
-    void creationCurrentlyAcceptsNonPositiveDurations(String duration) {
+    void creationRejectsNonPositiveDurationsBeforeInvalidation(String duration) {
         when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn(duration);
-        try (var time = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
-            time.when(LocalDateTime::now).thenReturn(NOW);
-            service.createToken(user);
-            var saved = ArgumentCaptor.forClass(PasswordResetTokenEntity.class);
-            verify(tokens).save(saved.capture());
-            assertEquals(NOW.plus(java.time.Duration.parse(duration)), saved.getValue().getExpiryDate());
-            assertEquals(TokenStatus.ACTIVE, saved.getValue().getStatus());
-        }
+        assertThrows(IllegalArgumentException.class, () -> service.createToken(user));
+        verifyNoInteractions(tokens);
     }
 
     @ParameterizedTest
@@ -118,8 +120,7 @@ class PasswordResetServiceTest {
     void invalidDurationPropagatesWithoutSavingANewToken(String duration) {
         when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn(duration);
         assertThrows(RuntimeException.class, () -> service.createToken(user));
-        verify(tokens).findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
-        verifyNoMoreInteractions(tokens);
+        verifyNoInteractions(tokens);
         verify(users).lockVerificationUser(1L);
         verify(queue).hasOpenEmailForUserAndType(user, EmailType.PASSWORD_RESET);
         verifyNoInteractions(encoder);
@@ -228,19 +229,16 @@ class PasswordResetServiceTest {
 
     @ParameterizedTest
     @CsvSource({"false,-1", "false,0", "false,1", "true,-1", "true,0", "true,1"})
-    void expiryIsStrictlyBeforeNowAndResetRechecksIt(boolean resetPassword, long nanoseconds) {
+    void expiryIsExclusiveAndResetRechecksItWithTheInjectedLocalClock(boolean resetPassword, long nanoseconds) {
         var stored = token("boundary", TokenStatus.ACTIVE, NOW.plusNanos(nanoseconds));
         when(tokens.findByTokenAndStatus("boundary", TokenStatus.ACTIVE)).thenReturn(Optional.of(stored));
-        if (resetPassword && nanoseconds >= 0) {
+        if (resetPassword && nanoseconds > 0) {
             when(encoder.encode("Password!")).thenReturn("new-hash");
         }
-        try (var time = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
-            time.when(LocalDateTime::now).thenReturn(NOW);
-            boolean result = resetPassword ? service.resetPassword("boundary", "Password!") : service.validateToken("boundary");
-            assertEquals(nanoseconds >= 0, result);
-        }
-        assertEquals(nanoseconds < 0 ? TokenStatus.EXPIRED : resetPassword ? TokenStatus.USED : TokenStatus.ACTIVE, stored.getStatus());
-        if (resetPassword && nanoseconds >= 0) {
+        boolean result = resetPassword ? service.resetPassword("boundary", "Password!") : service.validateToken("boundary");
+        assertEquals(nanoseconds > 0, result);
+        assertEquals(nanoseconds <= 0 ? TokenStatus.EXPIRED : resetPassword ? TokenStatus.USED : TokenStatus.ACTIVE, stored.getStatus());
+        if (resetPassword && nanoseconds > 0) {
             assertEquals("new-hash", user.getPassword());
             verify(users).save(user);
         } else {
@@ -330,6 +328,9 @@ class PasswordResetServiceTest {
     @ValueSource(strings = {"validate", "reset", "exists", "status", "invalidate", "create"})
     void repositoryLookupFailuresAreNotConvertedIntoFalseOrSwallowed(String operation) {
         var failure = new DataAccessResourceFailureException("test lookup");
+        if (operation.equals("create")) {
+            when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn("PT1H");
+        }
         if (operation.equals("validate") || operation.equals("reset")) {
             when(tokens.findByTokenAndStatus("value", TokenStatus.ACTIVE)).thenThrow(failure);
         } else if (operation.equals("invalidate") || operation.equals("create")) {
@@ -348,7 +349,10 @@ class PasswordResetServiceTest {
             }
         }));
         verify(users, never()).save(any());
-        verifyNoInteractions(encoder, config);
+        verifyNoInteractions(encoder);
+        if (!operation.equals("create")) {
+            verifyNoInteractions(config);
+        }
         if (operation.equals("create")) {
             verify(queue).hasOpenEmailForUserAndType(user, EmailType.PASSWORD_RESET);
         } else {
@@ -361,11 +365,26 @@ class PasswordResetServiceTest {
     void cleanupCompletesWithAnExactLocalCutoffEvenWhenNothingIsDeleted(int deleted) {
         when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION)).thenReturn("P7D");
         when(tokens.deleteByExpiryDateBefore(NOW.minusDays(7))).thenReturn(deleted);
-        try (var time = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
-            time.when(LocalDateTime::now).thenReturn(NOW);
-            assertDoesNotThrow(service::deleteExpiredTokens);
-        }
+        assertDoesNotThrow(service::deleteExpiredTokens);
         verify(tokens).deleteByExpiryDateBefore(NOW.minusDays(7));
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"broken", "PT0S", "-PT1S"})
+    void invalidRetentionNeverDeletesTokens(String duration) {
+        when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION)).thenReturn(duration);
+        assertThrows(RuntimeException.class, service::deleteExpiredTokens);
+        verifyNoInteractions(tokens);
+    }
+
+    @Test
+    void subsecondPositiveDurationAndNonUtcClockRetainLocalTime() {
+        when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn("PT0.000000001S");
+        service.createToken(user);
+        var saved = ArgumentCaptor.forClass(PasswordResetTokenEntity.class);
+        verify(tokens).save(saved.capture());
+        assertEquals(NOW.plusNanos(1), saved.getValue().getExpiryDate());
     }
 
     @Test

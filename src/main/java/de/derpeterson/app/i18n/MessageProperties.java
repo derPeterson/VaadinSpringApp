@@ -73,7 +73,11 @@ public class MessageProperties {
     }
 
     public String getForgotPasswordSuccessMessage() {
-        return getTranslation("forgotPasswordView.success_message");
+        return getTranslation("forgotPasswordView.request_message");
+    }
+
+    public String getResetPasswordTechnicalErrorMessage() {
+        return getTranslation("resetPasswordView.technical_error_message");
     }
 
     // Email Subjects

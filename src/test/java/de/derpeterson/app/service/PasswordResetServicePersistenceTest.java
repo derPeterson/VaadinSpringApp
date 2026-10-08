@@ -45,8 +45,11 @@ import javax.sql.DataSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Locale;
 import java.util.Map;
 import java.util.List;
@@ -78,10 +81,15 @@ class PasswordResetServicePersistenceTest {
     private Probes probes;
     @Autowired
     private EmailQueueRepository mails;
+    @Autowired
+    private Clock clock;
     private Long userId;
 
     @BeforeEach
     void setup() {
+        reset(clock);
+        when(clock.getZone()).thenReturn(ZoneId.systemDefault());
+        when(clock.instant()).thenAnswer(call -> Instant.now());
         reset(probes.tokens(), probes.users(), probes.config(), probes.encoder(), probes.queue());
         when(probes.config().getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn("PT1H");
         when(probes.config().getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION)).thenReturn("P7D");
@@ -426,6 +434,50 @@ class PasswordResetServicePersistenceTest {
         assertEquals(1, tokens.count());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"PT0S", "-PT1S", "invalid", "PT999999999999999999999S", "PT9223372036854775807S"})
+    void invalidDurationsPreserveExistingTokensAndQueueInCreationAndMail(String duration) {
+        seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+        when(probes.config().getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn(duration);
+        assertThrows(RuntimeException.class, () -> service.createToken(users.findById(userId).orElseThrow()));
+        assertThrows(RuntimeException.class, () -> service.sendPasswordResetEmail("test@example.com"));
+        assertEquals(TokenStatus.ACTIVE, status("old"));
+        assertEquals(1, tokens.count());
+        assertEquals(0, mails.count());
+        when(probes.config().getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION)).thenReturn(duration);
+        assertThrows(RuntimeException.class, service::deleteExpiredTokens);
+        assertEquals(1, tokens.count());
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {-1, 0, 1})
+    void actualPersistenceUsesExclusiveExpiryForValidationAndReset(long offsetSeconds) {
+        var instant = Instant.parse("2026-10-08T10:00:00Z");
+        when(clock.getZone()).thenReturn(ZoneId.of("Europe/Berlin"));
+        when(clock.instant()).thenReturn(instant);
+        var expiry = LocalDateTime.now(clock).plusSeconds(offsetSeconds);
+        seed("validate-boundary", TokenStatus.ACTIVE, expiry);
+        seed("reset-boundary", TokenStatus.ACTIVE, expiry);
+        assertEquals(offsetSeconds > 0, service.validateToken("validate-boundary"));
+        assertEquals(offsetSeconds > 0, service.resetPassword("reset-boundary", "Password!"));
+        assertEquals(offsetSeconds > 0 ? TokenStatus.ACTIVE : TokenStatus.EXPIRED, status("validate-boundary"));
+        assertEquals(offsetSeconds > 0 ? TokenStatus.USED : TokenStatus.EXPIRED, status("reset-boundary"));
+        assertEquals(offsetSeconds > 0 ? "hash-Password!" : "old-hash", password());
+    }
+
+    @Test
+    void resetRechecksTimeAfterValidationWithoutConsumingAnExpiredToken() {
+        var instant = Instant.parse("2026-10-08T10:00:00Z");
+        when(clock.instant()).thenReturn(instant);
+        seed("later", TokenStatus.ACTIVE, LocalDateTime.now(clock).plusSeconds(1));
+        assertTrue(service.validateToken("later"));
+        when(clock.instant()).thenReturn(instant.plusSeconds(1));
+        assertFalse(service.resetPassword("later", "Password!"));
+        assertEquals(TokenStatus.EXPIRED, status("later"));
+        assertEquals("old-hash", password());
+        verifyNoInteractions(probes.encoder());
+    }
+
     @Test
     void cleanupCommitsOnlyTokensStrictlyBeforeTheRetentionCutoffAndIsRepeatable() {
         var now = LocalDateTime.of(2026, 10, 8, 12, 0);
@@ -436,11 +488,10 @@ class PasswordResetServicePersistenceTest {
         seed("boundary", TokenStatus.USED, cutoff);
         seed("recent", TokenStatus.EXPIRED, cutoff.plusSeconds(1));
         seed("future", TokenStatus.ACTIVE, now.plusDays(1));
-        try (var time = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
-            time.when(LocalDateTime::now).thenReturn(now);
-            assertDoesNotThrow(service::deleteExpiredTokens);
-            assertDoesNotThrow(service::deleteExpiredTokens);
-        }
+        var cutoffInstant = now.atZone(clock.getZone()).toInstant();
+        when(clock.instant()).thenReturn(cutoffInstant);
+        assertDoesNotThrow(service::deleteExpiredTokens);
+        assertDoesNotThrow(service::deleteExpiredTokens);
         for (TokenStatus status : TokenStatus.values()) {
             assertFalse(service.existsToken("old-" + status));
         }
@@ -869,10 +920,15 @@ class PasswordResetServicePersistenceTest {
         }
 
         @Bean
-        PasswordResetService passwordResetService(Probes probes) {
+        Clock clock() {
+            return mock(Clock.class);
+        }
+
+        @Bean
+        PasswordResetService passwordResetService(Probes probes, Clock clock) {
             var messages = mock(MessageProperties.class);
             when(messages.getEmailResetPasswordSubject()).thenReturn("Reset password");
-            return new PasswordResetService(messages, probes.tokens(), probes.users(), probes.config(), probes.encoder(), probes.queue());
+            return new PasswordResetService(messages, probes.tokens(), probes.users(), probes.config(), probes.encoder(), probes.queue(), clock);
         }
     }
 }
