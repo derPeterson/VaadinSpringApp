@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 @Configuration
@@ -19,6 +20,7 @@ public class MailConfig {
     @Bean
     public JavaMailSender javaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setDefaultEncoding(StandardCharsets.UTF_8.name());
         mailSender.setHost(configService.getString(ConfigEntry.MAIL_HOST));
         mailSender.setPort(configService.getInteger(ConfigEntry.MAIL_PORT));
         mailSender.setUsername(configService.getString(ConfigEntry.MAIL_USERNAME));

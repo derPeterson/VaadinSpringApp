@@ -1,11 +1,11 @@
 package de.derpeterson.app.service;
 
+import de.derpeterson.app.config.MailConfig;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import jakarta.mail.Address;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
-import jakarta.mail.Multipart;
 import jakarta.mail.Part;
 import jakarta.mail.Session;
 import jakarta.mail.internet.ContentType;
@@ -28,8 +28,8 @@ import org.springframework.mail.MailParseException;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMailMessage;
-import org.springframework.mail.javamail.MimeMessageHelper;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -61,7 +61,7 @@ class EmailServiceTest {
     }
 
     private MimeMessage prepareMime() {
-        var message = new MimeMessage(Session.getInstance(new Properties()));
+        var message = spy(new MimeMessage(Session.getInstance(new Properties())));
         when(sender.createMimeMessage()).thenReturn(message);
         return message;
     }
@@ -93,15 +93,10 @@ class EmailServiceTest {
 
         var message = roundTrip(sentMime(original));
         assertEnvelope(message, RECIPIENT, FROM, subject);
-        assertTrue(message.isMimeType("multipart/mixed"));
+        assertFalse(message.isMimeType("multipart/*"));
         assertEquals(1, message.getHeader("Content-Type").length);
-        var mixed = (Multipart) message.getContent();
-        assertEquals(1, mixed.getCount());
-        var relatedPart = mixed.getBodyPart(0);
-        assertTrue(relatedPart.isMimeType("multipart/related"));
-        var related = (Multipart) relatedPart.getContent();
-        assertEquals(1, related.getCount());
-        assertHtml(related.getBodyPart(0), body);
+        assertHtml(message, body);
+        verify(original, never()).addHeader(anyString(), anyString());
         if (!subject.isEmpty() && !subject.equals("Normal subject")) {
             assertTrue(message.getHeader("Subject", null).toLowerCase().contains("=?utf-8?"));
         }
@@ -116,9 +111,7 @@ class EmailServiceTest {
         when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
         service.sendEmail(user(RECIPIENT), "subject", body);
         var message = roundTrip(sentMime(original));
-        var mixed = (Multipart) message.getContent();
-        var related = (Multipart) mixed.getBodyPart(0).getContent();
-        assertHtml(related.getBodyPart(0), body);
+        assertHtml(message, body);
     }
 
     @Test
@@ -159,17 +152,19 @@ class EmailServiceTest {
         verifyNoMoreInteractions(config);
     }
 
-    @Test
-    void adminUnicodeRoundTripsWhenTheSenderAdapterExplicitlyUsesUtf8() throws Exception {
-        // This adapter is a controlled test fixture, not a claim about MailConfig defaults.
-        var mime = new MimeMessage(Session.getInstance(new Properties()));
-        var adapter = new MimeMailMessage(new MimeMessageHelper(mime, false, StandardCharsets.UTF_8.name()));
+    @ParameterizedTest
+    @ValueSource(strings = {"Normal subject", "Grüße – 密码 🔐", ""})
+    void adminMailRoundTripsWithTheProductionSenderAndRealSpringAdapter(String subject) throws Exception {
+        var realSender = configuredSender();
+        assertEquals("UTF-8", realSender.getDefaultEncoding());
+        // Same conversion as JavaMailSenderImpl.send(SimpleMailMessage...), no transport.
+        var mime = realSender.createMimeMessage();
+        var adapter = new MimeMailMessage(mime);
         doAnswer(call -> {
             call.getArgument(0, SimpleMailMessage.class).copyTo(adapter);
             return null;
         }).when(sender).send(any(SimpleMailMessage.class));
         when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
-        String subject = "Grüße – 密码 🔐";
         String body = "Ä € 日本語 😀\r\n<b>literal markup</b>";
         service.sendAdminEmail(RECIPIENT, subject, body);
         var simple = sentSimple();
@@ -179,7 +174,36 @@ class EmailServiceTest {
         assertTrue(message.isMimeType("text/plain"));
         assertEquals("UTF-8", new ContentType(message.getContentType()).getParameter("charset"));
         assertEquals(body, message.getContent());
-        assertTrue(message.getHeader("Subject", null).toLowerCase().contains("=?utf-8?"));
+        assertEquals(1, message.getHeader("Content-Type").length);
+        assertFalse(message.isMimeType("multipart/*"));
+        if (subject.contains("Grüße")) {
+            assertTrue(message.getHeader("Subject", null).toLowerCase().contains("=?utf-8?"));
+        }
+    }
+
+    private JavaMailSenderImpl configuredSender() {
+        when(config.getString(ConfigEntry.MAIL_HOST)).thenReturn("smtp.invalid");
+        when(config.getString(ConfigEntry.MAIL_USERNAME)).thenReturn("fixture-user");
+        when(config.getString(ConfigEntry.MAIL_PASSWORD)).thenReturn("fixture-only-not-a-secret");
+        when(config.getString(ConfigEntry.MAIL_SMTP_SSL_TRUST)).thenReturn("smtp.invalid");
+        when(config.getString(ConfigEntry.MAIL_DEBUG)).thenReturn("false");
+        return (JavaMailSenderImpl) new MailConfig(config).javaMailSender();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"recipient", "from"})
+    void realAdminAdapterWrapsAddressErrorsAsMailParseException(String invalidField) {
+        var realSender = configuredSender();
+        var adapter = new MimeMailMessage(realSender.createMimeMessage());
+        doAnswer(call -> {
+            call.getArgument(0, SimpleMailMessage.class).copyTo(adapter);
+            return null;
+        }).when(sender).send(any(SimpleMailMessage.class));
+        when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(invalidField.equals("from") ? "bad@@example.com" : FROM);
+        var failure = assertThrows(MailParseException.class, () -> service.sendAdminEmail(
+                invalidField.equals("recipient") ? "bad@@example.com" : RECIPIENT, "subject", "body"));
+        assertInstanceOf(MessagingException.class, failure.getCause());
+        sentSimple();
     }
 
     @ParameterizedTest
@@ -285,13 +309,13 @@ class EmailServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"header", "subject", "from"})
+    @ValueSource(strings = {"content", "subject", "from"})
     void checkedMimeConstructionFailuresPropagateWithoutSending(String stage) throws Exception {
         var message = spy(new MimeMessage(Session.getInstance(new Properties())));
         when(sender.createMimeMessage()).thenReturn(message);
         var failure = new MessagingException("controlled " + stage + " failure");
         switch (stage) {
-            case "header" -> doThrow(failure).when(message).addHeader("Content-Type", "text/html; charset=UTF-8");
+            case "content" -> doThrow(failure).when(message).setContent("body", "text/html;charset=UTF-8");
             case "subject" -> doThrow(failure).when(message).setSubject("subject", "UTF-8");
             case "from" -> {
                 when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
