@@ -19,8 +19,9 @@ import java.util.Optional;
 @Repository
 public interface EmailQueueRepository extends JpaRepository<EmailQueueEntity, Long> {
 
-    @Query("SELECT e FROM EmailQueueEntity e WHERE e.status = 'PENDING'")
-    List<EmailQueueEntity> findPendingEmails(Pageable pageable);
+    @Query("SELECT e FROM EmailQueueEntity e WHERE e.status = 'PENDING' "
+            + "AND (e.lastRetryAt IS NULL OR e.lastRetryAt <= :retryCutoff) ORDER BY e.createdAt, e.id")
+    List<EmailQueueEntity> findPendingEmails(LocalDateTime retryCutoff, Pageable pageable);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT e FROM EmailQueueEntity e WHERE e.id = :id")

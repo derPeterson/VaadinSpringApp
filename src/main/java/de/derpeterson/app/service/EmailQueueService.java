@@ -8,7 +8,7 @@ import de.derpeterson.app.model.enums.EmailType;
 import de.derpeterson.app.repository.EmailQueueRepository;
 import de.derpeterson.app.repository.UserRepository;
 import jakarta.mail.MessagingException;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
@@ -25,16 +25,18 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 
 @Service
-@RequiredArgsConstructor
 public class EmailQueueService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailQueueService.class);
     private static final List<EmailStatus> OPEN_STATUSES = List.of(EmailStatus.PENDING, EmailStatus.IN_PROGRESS);
+    private static final Duration RETRY_INTERVAL = Duration.ofMinutes(1);
 
     private final ConfigService configService;
 
@@ -42,13 +44,40 @@ public class EmailQueueService {
     private final EmailService emailService;
     private final UserRepository userRepository;
     private final PlatformTransactionManager transactionManager;
+    private final Clock clock;
+
+    @Autowired
+    public EmailQueueService(ConfigService configService, EmailQueueRepository emailQueueRepository,
+            EmailService emailService, UserRepository userRepository, PlatformTransactionManager transactionManager) {
+        this(configService, emailQueueRepository, emailService, userRepository, transactionManager, Clock.systemDefaultZone());
+    }
+
+    public EmailQueueService(ConfigService configService, EmailQueueRepository emailQueueRepository,
+            EmailService emailService, UserRepository userRepository, PlatformTransactionManager transactionManager, Clock clock) {
+        this.configService = configService;
+        this.emailQueueRepository = emailQueueRepository;
+        this.emailService = emailService;
+        this.userRepository = userRepository;
+        this.transactionManager = transactionManager;
+        this.clock = Objects.requireNonNull(clock, "clock");
+    }
+
+    private void requireUserAndType(UserEntity user, EmailType type) {
+        Objects.requireNonNull(user, "userEntity");
+        Objects.requireNonNull(user.getId(), "userEntity.id");
+        Objects.requireNonNull(type, "emailType");
+    }
 
     public boolean hasOpenEmailForUserAndType(UserEntity userEntity, EmailType emailType) {
+        requireUserAndType(userEntity, emailType);
         return emailQueueRepository.existsByUserEntityAndEmailTypeAndStatusIn(userEntity, emailType, OPEN_STATUSES);
     }
 
     @Transactional
     public void addEmailToQueue(UserEntity userEntity, String subject, String body, EmailType emailType) {
+        requireUserAndType(userEntity, emailType);
+        Objects.requireNonNull(subject, "subject");
+        Objects.requireNonNull(body, "body");
         userEntity = userRepository.lockVerificationUser(userEntity.getId()).orElseThrow(
                 () -> new IllegalStateException("Der Benutzer ist nicht mehr vorhanden."));
         if (emailType == EmailType.VERIFICATION && (userEntity.isEnabled() || !userEntity.isVerificationPending())) {
@@ -66,6 +95,7 @@ public class EmailQueueService {
         email.setBody(body);
         email.setEmailType(emailType);
         email.setStatus(EmailStatus.PENDING);
+        email.setCreatedAt(LocalDateTime.now(clock));
         emailQueueRepository.save(email);
     }
 
@@ -81,27 +111,32 @@ public class EmailQueueService {
         var transaction = new TransactionTemplate(transactionManager);
         transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         int capacity = configService.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY);
+        if (capacity <= 0) throw new IllegalArgumentException("Email queue capacity must be positive.");
+        int maxRetry = configService.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY);
+        if (maxRetry < 0) throw new IllegalArgumentException("Email queue retry limit must not be negative.");
+        LocalDateTime retryCutoff = LocalDateTime.now(clock).minus(RETRY_INTERVAL);
         List<EmailQueueEntity> pendingEmails = transaction.execute(status ->
-                emailQueueRepository.findPendingEmails(PageRequest.of(0, capacity)));
+                emailQueueRepository.findPendingEmails(retryCutoff, PageRequest.of(0, capacity)));
         for (EmailQueueEntity candidate : pendingEmails) {
             try {
                 EmailQueueEntity claimed = transaction.execute(status -> {
                     var email = emailQueueRepository.lockById(candidate.getId()).orElse(null);
                     if (email == null || email.getStatus() != EmailStatus.PENDING) return null;
+                    if (email.getLastRetryAt() != null && email.getLastRetryAt().isAfter(LocalDateTime.now(clock).minus(RETRY_INTERVAL))) return null;
                     // Initialize the lazy recipient while the claim transaction is open.
                     email.getUserEntity().getEmail();
                     email.setStatus(EmailStatus.IN_PROGRESS);
                     emailQueueRepository.save(email);
                     return email;
                 });
-                if (claimed != null) dispatchClaimed(transaction, claimed);
+                if (claimed != null) dispatchClaimed(transaction, claimed, maxRetry);
             } catch (RuntimeException e) {
                 logger.error("❌ Queue entry {} could not be completed; no automatic release of IN_PROGRESS.", candidate.getId(), e);
             }
         }
     }
 
-    private void dispatchClaimed(TransactionTemplate transaction, EmailQueueEntity claimed) {
+    private void dispatchClaimed(TransactionTemplate transaction, EmailQueueEntity claimed, int maxRetry) {
         long attempt = (long) claimed.getRetryCount() + 1;
         Exception sendFailure = null;
         try {
@@ -117,7 +152,6 @@ public class EmailQueueService {
             sendFailure = e;
         }
         final Exception failure = sendFailure;
-        int maxRetry = failure == null ? 0 : configService.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY);
         EmailQueueEntity completed = transaction.execute(status -> {
             var email = emailQueueRepository.lockById(claimed.getId()).orElseThrow();
             if (email.getStatus() != EmailStatus.IN_PROGRESS || email.getRetryCount() != claimed.getRetryCount()) {
@@ -126,7 +160,7 @@ public class EmailQueueService {
             if (failure == null) {
                 email.setStatus(EmailStatus.SENT);
             } else {
-                email.setLastRetryAt(LocalDateTime.now());
+                email.setLastRetryAt(LocalDateTime.now(clock));
                 if (email.getRetryCount() < maxRetry) {
                     email.setRetryCount(email.getRetryCount() + 1);
                     email.setStatus(EmailStatus.PENDING);
@@ -152,7 +186,9 @@ public class EmailQueueService {
     @Transactional
     @Scheduled(cron = "0 0 3 ? * SUN")
     public void deleteSentEmails() {
-        LocalDateTime liveDateTime = LocalDateTime.now().minus(Duration.parse(configService.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)));
+        Duration retention = Duration.parse(Objects.requireNonNull(configService.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION), "retention"));
+        if (retention.isZero() || retention.isNegative()) throw new IllegalArgumentException("Email queue retention must be positive.");
+        LocalDateTime liveDateTime = LocalDateTime.now(clock).minus(retention);
         int deleted = emailQueueRepository.deleteByStatusAndCreatedAtBefore(EmailStatus.SENT, liveDateTime);
         var formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         logger.info("✅ {} emails with status SENT created before {} have been deleted.", deleted, formattedLiveDateTime);
