@@ -1,6 +1,7 @@
 package de.derpeterson.app.service;
 
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.config.ConnectionAwareJavaMailSender;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -8,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.MailException;
+import org.springframework.mail.MailSendException;
+import org.springframework.mail.MailPreparationException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -31,6 +34,9 @@ public class EmailService {
      * A null user raises NullPointerException; other null arguments raise
      * IllegalArgumentException, malformed/empty/multiple addresses MessagingException.
      * Config, MIME construction and sender failures propagate; no retry or fallback.
+     * A connection-boundary failure proven for this exact single message is exposed
+     * as MailPreparationException (with the original Spring exception as cause).
+     * Send/close failures and unmarked MailSendException remain unknown outcomes.
      */
     public void sendEmail(UserEntity userEntity, String subject, String htmlContent) throws MailException, MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
@@ -41,7 +47,14 @@ public class EmailService {
         helper.setText(htmlContent, true);
         helper.setFrom(configService.getString(ConfigEntry.EMAIL_FROM));
 
-        mailSender.send(message);
+        try {
+            mailSender.send(message);
+        } catch (MailSendException e) {
+            if (ConnectionAwareJavaMailSender.failedBeforeSending(e, message)) {
+                throw new MailPreparationException("Connection failed before this message was sent", e);
+            }
+            throw e;
+        }
     }
 
     /**

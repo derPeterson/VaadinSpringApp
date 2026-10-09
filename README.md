@@ -13,6 +13,9 @@ Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administ
 - Deutsche und englische Oberfläche, manuell wählbarer Benutzerstatus und automatische Abwesenheitserkennung mit Push-Aktualisierung.
 - Datenbankgestützte E-Mail-Warteschlange mit Wiederholungsversuchen und geplanten Bereinigungsaufgaben.
 
+Worker-Koordination, Retry-Verhalten und konservativer Umgang mit unklaren
+Versandausgängen: [Mailqueue-Verarbeitung](docs/email-queue-processing.md).
+
 Belege: `views/RegistrationView.java`, `views/LoginView.java`, `views/admin/`, `service/VerificationService.java`, `service/PasswordResetService.java`, `service/EmailQueueService.java`, `security/SecurityConfig.java` und `scheduler/UserStatusScheduler.java` unter `src/main/java/de/derpeterson/app/`.
 
 ## Technologien und Voraussetzungen

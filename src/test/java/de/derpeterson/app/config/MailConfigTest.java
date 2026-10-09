@@ -4,7 +4,6 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,7 +25,7 @@ class MailConfigTest {
         when(config.getBoolean(ConfigEntry.MAIL_SMTP_STARTTLS_ENABLE)).thenReturn(enabled);
         when(config.getBoolean(ConfigEntry.MAIL_SMTP_SSL_ENABLE)).thenReturn(enabled);
 
-        var sender = assertInstanceOf(JavaMailSenderImpl.class, new MailConfig(config).javaMailSender());
+        var sender = assertInstanceOf(ConnectionAwareJavaMailSender.class, new MailConfig(config).javaMailSender());
 
         assertEquals("UTF-8", sender.getDefaultEncoding());
         assertEquals("UTF-8", new MimeMessageHelper(sender.createMimeMessage()).getEncoding());

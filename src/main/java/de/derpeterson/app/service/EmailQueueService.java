@@ -13,9 +13,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.mail.MailException;
+import org.springframework.mail.MailAuthenticationException;
+import org.springframework.mail.MailPreparationException;
+import org.springframework.mail.MailParseException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -34,6 +41,7 @@ public class EmailQueueService {
     private final EmailQueueRepository emailQueueRepository;
     private final EmailService emailService;
     private final UserRepository userRepository;
+    private final PlatformTransactionManager transactionManager;
 
     public boolean hasOpenEmailForUserAndType(UserEntity userEntity, EmailType emailType) {
         return emailQueueRepository.existsByUserEntityAndEmailTypeAndStatusIn(userEntity, emailType, OPEN_STATUSES);
@@ -61,42 +69,83 @@ public class EmailQueueService {
         emailQueueRepository.save(email);
     }
 
-    @Transactional
+    /**
+     * Claim and outcome commit independently, with no database transaction during SMTP.
+     * IN_PROGRESS is durable before sending and is never automatically reclaimed:
+     * a crash or an unknown send/commit outcome requires operator investigation.
+     * SMTP and the outcome commit are not atomic; this is not an exactly-once guarantee.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     @Scheduled(fixedDelay = 5000)
     public void processQueue() {
-        List<EmailQueueEntity> pendingEmails = emailQueueRepository.findPendingEmails(PageRequest.of(0, configService.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)));  // Max. 50 E-Mails
-
-        for (EmailQueueEntity email : pendingEmails) {
-            if (email.getStatus() == EmailStatus.PENDING) {
-                email.setStatus(EmailStatus.IN_PROGRESS);
-                emailQueueRepository.save(email);
-
-                long attempt = (long) email.getRetryCount() + 1;
-                try {
-                    emailService.sendEmail(email.getUserEntity(), email.getSubject(), email.getBody());
-                    email.setStatus(EmailStatus.SENT);
+        var transaction = new TransactionTemplate(transactionManager);
+        transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        int capacity = configService.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY);
+        List<EmailQueueEntity> pendingEmails = transaction.execute(status ->
+                emailQueueRepository.findPendingEmails(PageRequest.of(0, capacity)));
+        for (EmailQueueEntity candidate : pendingEmails) {
+            try {
+                EmailQueueEntity claimed = transaction.execute(status -> {
+                    var email = emailQueueRepository.lockById(candidate.getId()).orElse(null);
+                    if (email == null || email.getStatus() != EmailStatus.PENDING) return null;
+                    // Initialize the lazy recipient while the claim transaction is open.
+                    email.getUserEntity().getEmail();
+                    email.setStatus(EmailStatus.IN_PROGRESS);
                     emailQueueRepository.save(email);
-                    logger.info("✅ Email successfully sent to {} on attempt {}.", email.getUserEntity().getEmail(), attempt);
-                } catch (MailException | MessagingException e) {
-                    int maxRetry = configService.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY);
-                    if (email.getRetryCount() < maxRetry) {
-                        email.setRetryCount(email.getRetryCount() + 1);
-                        email.setLastRetryAt(LocalDateTime.now());
-                        email.setStatus(EmailStatus.PENDING);
-                        emailQueueRepository.save(email);
-                        logger.warn("⚠️ Error sending the email to {}, attempt {} of {}: {}", email.getUserEntity().getEmail(),
-                                attempt, (long) maxRetry + 1, e.getMessage());
-                    } else {
-                        email.setStatus(EmailStatus.FAILED);
-                        email.setLastRetryAt(LocalDateTime.now());
-                        emailQueueRepository.save(email);
-                        logger.error("❌ Email to {} failed after {} attempts: {}", email.getUserEntity().getEmail(), attempt, e.getMessage());
+                    return email;
+                });
+                if (claimed != null) dispatchClaimed(transaction, claimed);
+            } catch (RuntimeException e) {
+                logger.error("❌ Queue entry {} could not be completed; no automatic release of IN_PROGRESS.", candidate.getId(), e);
+            }
+        }
+    }
 
-                        sendAdminNotification(email, e, attempt);
-                    }
-                    logger.error("❌ Error sending the email: ", e);
+    private void dispatchClaimed(TransactionTemplate transaction, EmailQueueEntity claimed) {
+        long attempt = (long) claimed.getRetryCount() + 1;
+        Exception sendFailure = null;
+        try {
+            emailService.sendEmail(claimed.getUserEntity(), claimed.getSubject(), claimed.getBody());
+        } catch (MailException | MessagingException e) {
+            // Transport errors may follow SMTP acceptance (for example a lost reply).
+            // Do not confuse an exception with proof of non-delivery.
+            if (!(e instanceof MessagingException || e instanceof MailAuthenticationException
+                    || e instanceof MailPreparationException || e instanceof MailParseException)) {
+                logger.error("❌ Transport outcome for queue entry {} is unknown; IN_PROGRESS retained.", claimed.getId(), e);
+                return;
+            }
+            sendFailure = e;
+        }
+        final Exception failure = sendFailure;
+        int maxRetry = failure == null ? 0 : configService.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY);
+        EmailQueueEntity completed = transaction.execute(status -> {
+            var email = emailQueueRepository.lockById(claimed.getId()).orElseThrow();
+            if (email.getStatus() != EmailStatus.IN_PROGRESS || email.getRetryCount() != claimed.getRetryCount()) {
+                throw new IllegalStateException("Queue claim no longer matches the stored state.");
+            }
+            if (failure == null) {
+                email.setStatus(EmailStatus.SENT);
+            } else {
+                email.setLastRetryAt(LocalDateTime.now());
+                if (email.getRetryCount() < maxRetry) {
+                    email.setRetryCount(email.getRetryCount() + 1);
+                    email.setStatus(EmailStatus.PENDING);
+                } else {
+                    email.setStatus(EmailStatus.FAILED);
                 }
             }
+            emailQueueRepository.save(email);
+            email.getUserEntity().getEmail();
+            return email;
+        });
+        if (failure == null) {
+            logger.info("✅ Email successfully sent to {} on attempt {}.", completed.getUserEntity().getEmail(), attempt);
+        } else if (completed.getStatus() == EmailStatus.PENDING) {
+            logger.warn("⚠️ Error sending the email to {}, attempt {} of {}: {}", completed.getUserEntity().getEmail(),
+                    attempt, (long) maxRetry + 1, failure.getMessage());
+        } else {
+            logger.error("❌ Email to {} failed after {} attempts: {}", completed.getUserEntity().getEmail(), attempt, failure.getMessage());
+            sendAdminNotification(completed, failure, attempt);
         }
     }
 

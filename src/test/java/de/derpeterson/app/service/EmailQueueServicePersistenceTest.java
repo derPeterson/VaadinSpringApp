@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.mail.MailSendException;
+import org.springframework.mail.MailAuthenticationException;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
@@ -27,6 +28,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.support.TransactionSynchronization;
 
 import javax.sql.DataSource;
 import java.time.LocalDate;
@@ -136,7 +138,7 @@ class EmailQueueServicePersistenceTest {
         for (EmailStatus status : EmailStatus.values()) insert(status.name(), status, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
         insert("another-pending", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
         doAnswer(call -> {
-            assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
+            assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
             return null;
         }).when(mail).sendEmail(any(), anyString(), anyString());
         service.processQueue();
@@ -151,7 +153,7 @@ class EmailQueueServicePersistenceTest {
     void retryHistoryAndTerminalFailureCommitAcrossSeparateTransactions() throws Exception {
         when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(1);
         Long id = insert("subject", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
-        doThrow(new MailSendException("smtp fixture failure")).when(mail).sendEmail(any(), anyString(), anyString());
+        doThrow(new MailAuthenticationException("smtp fixture failure")).when(mail).sendEmail(any(), anyString(), anyString());
         service.processQueue();
         var retry = emails.findById(id).orElseThrow();
         assertEquals(EmailStatus.PENDING, retry.getStatus());
@@ -171,23 +173,21 @@ class EmailQueueServicePersistenceTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void adminMailFailureCommitsButUnexpectedRuntimeFailureRollsBack(boolean mailException) throws Exception {
+    void adminFailuresCannotRollBackCommittedTerminalFailure(boolean mailException) throws Exception {
         when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
         Long id = insert("subject", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
-        doThrow(new MailSendException("recipient failed")).when(mail).sendEmail(any(), anyString(), anyString());
+        doThrow(new MailAuthenticationException("recipient failed")).when(mail).sendEmail(any(), anyString(), anyString());
         RuntimeException failure = mailException ? new MailSendException("admin failed") : new IllegalStateException("admin runtime");
         doThrow(failure).when(mail).sendAdminEmail(any(), any(), any());
-        if (mailException) assertDoesNotThrow(service::processQueue);
-        else assertSame(failure, assertThrows(IllegalStateException.class, service::processQueue));
+        assertDoesNotThrow(service::processQueue);
         var actual = emails.findById(id).orElseThrow();
-        assertEquals(mailException ? EmailStatus.FAILED : EmailStatus.PENDING, actual.getStatus());
+        assertEquals(EmailStatus.FAILED, actual.getStatus());
         assertEquals(0, actual.getRetryCount());
-        if (mailException) assertNotNull(actual.getLastRetryAt());
-        else assertNull(actual.getLastRetryAt());
+        assertNotNull(actual.getLastRetryAt());
     }
 
     @Test
-    void laterBatchRuntimeFailureRollsBackEarlierSuccessThoughDispatchAlreadyOccurred() throws Exception {
+    void laterRuntimeFailurePreservesEarlierSuccessAndUnknownClaimWithoutRedispatch() throws Exception {
         Long one = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
         Long two = insert("two", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
         // Deterministic order, using real managed entities inside the actual transaction.
@@ -195,21 +195,21 @@ class EmailQueueServicePersistenceTest {
                 .when(probes.emails()).findPendingEmails(any());
         var failure = new IllegalStateException("second dispatch runtime");
         doThrow(failure).when(mail).sendEmail(any(), eq("two"), eq("body"));
-        assertSame(failure, assertThrows(IllegalStateException.class, service::processQueue));
-        assertEquals(2, emails.findByStatus(EmailStatus.PENDING).size());
+        assertDoesNotThrow(service::processQueue);
+        assertEquals(EmailStatus.SENT, emails.findById(one).orElseThrow().getStatus());
+        assertEquals(EmailStatus.IN_PROGRESS, emails.findById(two).orElseThrow().getStatus());
         verify(mail).sendEmail(any(), eq("one"), eq("body"));
-        // Next execution dispatches the already successful first message again.
+        // Stale candidate lists must not redispatch SENT or unknown IN_PROGRESS.
         reset(mail);
         service.processQueue();
-        verify(mail).sendEmail(any(), eq("one"), eq("body"));
-        assertEquals(2, emails.findByStatus(EmailStatus.SENT).size());
+        verifyNoInteractions(mail);
+        assertEquals(1, emails.findByStatus(EmailStatus.SENT).size());
     }
 
     @Test
-    void twoWorkersCanDispatchTheSamePersistedPendingMailTwice() throws Exception {
+    void twoWorkersDispatchTheSamePersistedPendingMailOnlyOnce() throws Exception {
         Long id = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
         var selected = new CyclicBarrier(2);
-        var dispatching = new CyclicBarrier(2);
         var calls = new AtomicInteger();
         doAnswer(call -> {
             var result = emails.findPendingEmails(call.getArgument(0));
@@ -220,7 +220,6 @@ class EmailQueueServicePersistenceTest {
         }).when(probes.emails()).findPendingEmails(any());
         doAnswer(call -> {
             calls.incrementAndGet();
-            dispatching.await(10, TimeUnit.SECONDS);
             return null;
         }).when(mail).sendEmail(any(), anyString(), anyString());
         try (var executor = Executors.newFixedThreadPool(2)) {
@@ -229,13 +228,13 @@ class EmailQueueServicePersistenceTest {
             first.get(20, TimeUnit.SECONDS);
             second.get(20, TimeUnit.SECONDS);
         }
-        assertEquals(2, calls.get());
+        assertEquals(1, calls.get());
         assertEquals(EmailStatus.SENT, emails.findById(id).orElseThrow().getStatus());
         assertEquals(1, emails.count());
     }
 
     @Test
-    void laterFailingWorkerCanOverwriteCommittedSuccessWithPendingRetry() throws Exception {
+    void staleFailingWorkerCannotDispatchOrOverwriteCommittedSuccess() throws Exception {
         Long id = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
         var selected = new CyclicBarrier(2);
         var successCommitted = new CountDownLatch(1);
@@ -246,6 +245,10 @@ class EmailQueueServicePersistenceTest {
             selected.await(10, TimeUnit.SECONDS);
             return result;
         }).when(probes.emails()).findPendingEmails(any());
+        doAnswer(call -> {
+            if (Boolean.TRUE.equals(failingWorker.get())) await(successCommitted);
+            return emails.lockById(call.getArgument(0));
+        }).when(probes.emails()).lockById(any());
         doAnswer(call -> {
             if (Boolean.TRUE.equals(failingWorker.get())) {
                 await(successCommitted);
@@ -273,9 +276,9 @@ class EmailQueueServicePersistenceTest {
             failure.get(20, TimeUnit.SECONDS);
         }
         var actual = emails.findById(id).orElseThrow();
-        assertEquals(EmailStatus.PENDING, actual.getStatus());
-        assertEquals(1, actual.getRetryCount());
-        verify(mail, times(2)).sendEmail(any(), anyString(), anyString());
+        assertEquals(EmailStatus.SENT, actual.getStatus());
+        assertEquals(0, actual.getRetryCount());
+        verify(mail, times(1)).sendEmail(any(), anyString(), anyString());
     }
 
     @Test
@@ -298,6 +301,251 @@ class EmailQueueServicePersistenceTest {
             processing.get(20, TimeUnit.SECONDS);
         }
         assertEquals(1, emails.findByStatus(EmailStatus.SENT).size());
+    }
+
+    @Test
+    void durableClaimBlocksContenderWhileSenderIsStillRunning() throws Exception {
+        Long id = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        var selected = new CyclicBarrier(2);
+        var sending = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var contenderCompleted = new CountDownLatch(1);
+        doAnswer(call -> {
+            var result = emails.findPendingEmails(call.getArgument(0));
+            selected.await(10, TimeUnit.SECONDS);
+            return result;
+        }).when(probes.emails()).findPendingEmails(any());
+        doAnswer(call -> {
+            assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
+            sending.countDown();
+            await(release);
+            return null;
+        }).when(mail).sendEmail(any(), anyString(), anyString());
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            Runnable worker = () -> { try { service.processQueue(); } finally { contenderCompleted.countDown(); } };
+            var first = executor.submit(worker);
+            var second = executor.submit(worker);
+            try {
+                await(sending);
+                await(contenderCompleted);
+                assertEquals(EmailStatus.IN_PROGRESS, emails.findById(id).orElseThrow().getStatus());
+                verify(mail, times(1)).sendEmail(any(), anyString(), anyString());
+            } finally {
+                release.countDown();
+            }
+            first.get(20, TimeUnit.SECONDS);
+            second.get(20, TimeUnit.SECONDS);
+        }
+        assertEquals(EmailStatus.SENT, emails.findById(id).orElseThrow().getStatus());
+    }
+
+    @Test
+    void parallelWorkersKeepMixedSuccessTerminalFailureAndUnknownOutcomesSeparate() throws Exception {
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
+        Long sent = insert("success", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        Long failed = insert("known-failure", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        Long unknown = insert("unknown", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        var selected = new CyclicBarrier(2);
+        doAnswer(call -> {
+            var result = emails.findPendingEmails(call.getArgument(0));
+            assertEquals(3, result.size());
+            selected.await(10, TimeUnit.SECONDS);
+            return result;
+        }).when(probes.emails()).findPendingEmails(any());
+        doThrow(new MailAuthenticationException("known failure")).when(mail).sendEmail(any(), eq("known-failure"), anyString());
+        doThrow(new IllegalStateException("unknown outcome")).when(mail).sendEmail(any(), eq("unknown"), anyString());
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var first = executor.submit(service::processQueue);
+            var second = executor.submit(service::processQueue);
+            first.get(20, TimeUnit.SECONDS);
+            second.get(20, TimeUnit.SECONDS);
+        }
+        assertEquals(EmailStatus.SENT, emails.findById(sent).orElseThrow().getStatus());
+        assertEquals(EmailStatus.FAILED, emails.findById(failed).orElseThrow().getStatus());
+        assertEquals(EmailStatus.IN_PROGRESS, emails.findById(unknown).orElseThrow().getStatus());
+        for (String subject : List.of("success", "known-failure", "unknown")) {
+            verify(mail, times(1)).sendEmail(any(), eq(subject), eq("body"));
+        }
+        verify(mail, times(1)).sendAdminEmail(any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"claimSave", "claimCommit", "sentSave", "sentCommit", "retrySave", "retryCommit"})
+    void storageAndCommitFailuresAreIsolatedAndUnknownOutcomesAreNeverReleased(String stage) throws Exception {
+        Long affected = insert("affected", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        Long healthy = insert("healthy", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        var failure = new IllegalStateException(stage);
+        boolean claimFailure = stage.startsWith("claim");
+        boolean retryFailure = stage.startsWith("retry");
+        if (retryFailure) doThrow(new MailAuthenticationException("known failure")).when(mail).sendEmail(any(), eq("affected"), anyString());
+        doAnswer(call -> {
+            EmailQueueEntity item = call.getArgument(0);
+            EmailStatus target = claimFailure ? EmailStatus.IN_PROGRESS : retryFailure ? EmailStatus.PENDING : EmailStatus.SENT;
+            if (item.getId().equals(affected) && item.getStatus() == target) {
+                emails.saveAndFlush(item);
+                if (stage.endsWith("Save")) throw failure;
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override public void beforeCommit(boolean readOnly) { throw failure; }
+                });
+            } else emails.save(item);
+            return item;
+        }).when(probes.emails()).save(any());
+        assertDoesNotThrow(service::processQueue);
+        var actual = emails.findById(affected).orElseThrow();
+        assertEquals(claimFailure ? EmailStatus.PENDING : EmailStatus.IN_PROGRESS, actual.getStatus());
+        assertEquals(0, actual.getRetryCount());
+        assertNull(actual.getLastRetryAt());
+        assertEquals(EmailStatus.SENT, emails.findById(healthy).orElseThrow().getStatus());
+        verify(mail, times(claimFailure ? 0 : 1)).sendEmail(any(), eq("affected"), anyString());
+        verify(mail, times(1)).sendEmail(any(), eq("healthy"), anyString());
+        if (!claimFailure) {
+            reset(mail);
+            service.processQueue();
+            verifyNoInteractions(mail);
+            assertTrue(service.hasOpenEmailForUserAndType(snapshot(), EmailType.NOTIFICATION));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"adminConfig", "adminMail", "adminRuntime"})
+    void laterAdminFailureCannotUndoEarlierSuccessOrStopFollowingMessages(String stage) throws Exception {
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
+        Long first = insert("first", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        Long terminal = insert("terminal", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        Long last = insert("last", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        doAnswer(call -> List.of(emails.findById(first).orElseThrow(), emails.findById(terminal).orElseThrow(), emails.findById(last).orElseThrow()))
+                .when(probes.emails()).findPendingEmails(any());
+        doThrow(new MailAuthenticationException("recipient failure")).when(mail).sendEmail(any(), eq("terminal"), anyString());
+        if (stage.equals("adminConfig")) when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenThrow(new IllegalStateException(stage));
+        else doAnswer(call -> {
+            assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
+            assertEquals(EmailStatus.FAILED, emails.findById(terminal).orElseThrow().getStatus());
+            if (stage.equals("adminMail")) throw new MailSendException(stage);
+            throw new IllegalStateException(stage);
+        }).when(mail).sendAdminEmail(any(), any(), any());
+        assertDoesNotThrow(service::processQueue);
+        assertEquals(EmailStatus.SENT, emails.findById(first).orElseThrow().getStatus());
+        assertEquals(EmailStatus.FAILED, emails.findById(terminal).orElseThrow().getStatus());
+        assertEquals(EmailStatus.SENT, emails.findById(last).orElseThrow().getStatus());
+        reset(mail);
+        service.processQueue();
+        verifyNoInteractions(mail);
+    }
+
+    @Test
+    void ambientCallerRollbackCannotUndoClaimOrSuccessfulOutcome() throws Exception {
+        Long id = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        tx.executeWithoutResult(status -> {
+            service.processQueue();
+            status.setRollbackOnly();
+        });
+        assertEquals(EmailStatus.SENT, emails.findById(id).orElseThrow().getStatus());
+        verify(mail, times(1)).sendEmail(any(), anyString(), anyString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void unknownTransportOrRuntimeOutcomeStaysOpenWithoutRetryOrDuplicateProduction(boolean transport) throws Exception {
+        Long id = insert("unknown", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now().minusDays(30), 2);
+        RuntimeException failure = transport ? new MailSendException("SMTP reply lost") : new IllegalStateException("sender outcome unknown");
+        doThrow(failure).when(mail).sendEmail(any(), anyString(), anyString());
+        service.processQueue();
+        var actual = emails.findById(id).orElseThrow();
+        assertEquals(EmailStatus.IN_PROGRESS, actual.getStatus());
+        assertEquals(2, actual.getRetryCount());
+        assertNull(actual.getLastRetryAt());
+        verify(mail, never()).sendAdminEmail(any(), any(), any());
+        reset(mail);
+        service.processQueue();
+        service.deleteSentEmails();
+        service.addEmailToQueue(snapshot(), "duplicate", "body", EmailType.NOTIFICATION);
+        assertEquals(1, emails.count());
+        assertEquals(EmailStatus.IN_PROGRESS, emails.findById(id).orElseThrow().getStatus());
+        verifyNoInteractions(mail);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = EmailStatus.class, names = {"SENT", "FAILED"})
+    void outcomeGuardNeverOverwritesAnAlreadyTerminalState(EmailStatus terminal) throws Exception {
+        Long id = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        doAnswer(call -> {
+            tx.executeWithoutResult(status -> emails.findById(id).orElseThrow().setStatus(terminal));
+            return null;
+        }).when(mail).sendEmail(any(), anyString(), anyString());
+        assertDoesNotThrow(service::processQueue);
+        assertEquals(terminal, emails.findById(id).orElseThrow().getStatus());
+        assertEquals(0, emails.findById(id).orElseThrow().getRetryCount());
+        verify(mail, never()).sendAdminEmail(any(), any(), any());
+    }
+
+    @Test
+    void outcomeGuardRejectsChangedRetryHistoryWithoutOverwritingIt() throws Exception {
+        Long id = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        doAnswer(call -> {
+            tx.executeWithoutResult(status -> emails.findById(id).orElseThrow().setRetryCount(9));
+            return null;
+        }).when(mail).sendEmail(any(), anyString(), anyString());
+        service.processQueue();
+        var actual = emails.findById(id).orElseThrow();
+        assertEquals(EmailStatus.IN_PROGRESS, actual.getStatus());
+        assertEquals(9, actual.getRetryCount());
+        verify(mail, never()).sendAdminEmail(any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 3})
+    void realSpringConnectionFailureRetriesToLimitThenUnblocksProducer(int retries) throws Exception {
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(retries);
+        when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("sender@example.com");
+        var sender = new EmailConnectionFailureTest.Sender();
+        var connectionFailure = new jakarta.mail.MessagingException("arbitrary", new java.net.ConnectException("fixture"));
+        doThrow(connectionFailure).when(sender.transport).connect(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
+        var realMail = new EmailService(config, sender);
+        doAnswer(call -> {
+            realMail.sendEmail(call.getArgument(0), call.getArgument(1), call.getArgument(2));
+            return null;
+        }).when(mail).sendEmail(any(), anyString(), anyString());
+        Long id = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        for (int attempt = 1; attempt <= retries + 1; attempt++) {
+            service.processQueue();
+            var actual = emails.findById(id).orElseThrow();
+            assertEquals(attempt <= retries ? EmailStatus.PENDING : EmailStatus.FAILED, actual.getStatus());
+            assertEquals(Math.min(attempt, retries), actual.getRetryCount());
+            assertNotNull(actual.getLastRetryAt());
+            if (attempt <= retries) {
+                service.addEmailToQueue(snapshot(), "duplicate", "body", EmailType.NOTIFICATION);
+                assertEquals(1, emails.count());
+            }
+        }
+        verify(sender.transport, times(retries + 1)).connect(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
+        verify(sender.transport, never()).sendMessage(any(), any());
+        verify(mail).sendAdminEmail(eq("admin@example.com"), anyString(), contains("after " + (retries + 1) + " attempts"));
+        service.addEmailToQueue(snapshot(), "new", "body", EmailType.NOTIFICATION);
+        assertEquals(2, emails.count());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"send", "close", "sendAndClose"})
+    void realSpringUnknownSendOrCloseFailureRemainsInProgress(String stage) throws Exception {
+        when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("sender@example.com");
+        var sender = new EmailConnectionFailureTest.Sender();
+        var failure = new jakarta.mail.MessagingException("Mail server connection failed", new java.net.ConnectException("fixture"));
+        if (!stage.equals("close")) doThrow(failure).when(sender.transport).sendMessage(any(), any());
+        if (!stage.equals("send")) doThrow(failure).when(sender.transport).close();
+        var realMail = new EmailService(config, sender);
+        doAnswer(call -> { realMail.sendEmail(call.getArgument(0), call.getArgument(1), call.getArgument(2)); return null; })
+                .when(mail).sendEmail(any(), anyString(), anyString());
+        Long id = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        service.processQueue();
+        service.processQueue();
+        service.addEmailToQueue(snapshot(), "duplicate", "body", EmailType.NOTIFICATION);
+        assertEquals(1, emails.count());
+        var actual = emails.findById(id).orElseThrow();
+        assertEquals(EmailStatus.IN_PROGRESS, actual.getStatus());
+        assertEquals(0, actual.getRetryCount());
+        assertNull(actual.getLastRetryAt());
+        verify(sender.transport, times(1)).sendMessage(any(), any());
+        verify(mail, never()).sendAdminEmail(any(), any(), any());
     }
 
     @Test
@@ -399,8 +647,8 @@ class EmailQueueServicePersistenceTest {
         }
         @Bean ConfigService configService() { return mock(ConfigService.class); }
         @Bean EmailService emailService() { return mock(EmailService.class); }
-        @Bean EmailQueueService emailQueueService(ConfigService config, EmailService mail, Probes probes) {
-            return new EmailQueueService(config, probes.emails(), mail, probes.users());
+        @Bean EmailQueueService emailQueueService(ConfigService config, EmailService mail, Probes probes, JpaTransactionManager manager) {
+            return new EmailQueueService(config, probes.emails(), mail, probes.users(), manager);
         }
     }
 }

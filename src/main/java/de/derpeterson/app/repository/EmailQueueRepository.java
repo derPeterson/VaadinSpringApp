@@ -6,7 +6,9 @@ import de.derpeterson.app.model.enums.EmailStatus;
 import de.derpeterson.app.model.enums.EmailType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import jakarta.persistence.LockModeType;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -19,6 +21,10 @@ public interface EmailQueueRepository extends JpaRepository<EmailQueueEntity, Lo
 
     @Query("SELECT e FROM EmailQueueEntity e WHERE e.status = 'PENDING'")
     List<EmailQueueEntity> findPendingEmails(Pageable pageable);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT e FROM EmailQueueEntity e WHERE e.id = :id")
+    Optional<EmailQueueEntity> lockById(Long id);
 
     List<EmailQueueEntity> findByStatus(EmailStatus status);
 

@@ -466,8 +466,8 @@ class VerificationQueueConcurrencyTest {
             return config;
         }
         @Bean
-        EmailQueueService emailQueueService(ConfigService config, Probes probes) {
-            return new EmailQueueService(config, probes.emails(), mock(EmailService.class), probes.users());
+        EmailQueueService emailQueueService(ConfigService config, Probes probes, JpaTransactionManager manager) {
+            return new EmailQueueService(config, probes.emails(), mock(EmailService.class), probes.users(), manager);
         }
         @Bean
         VerificationService verificationService(ConfigService config, Probes probes, EmailQueueService queue) {

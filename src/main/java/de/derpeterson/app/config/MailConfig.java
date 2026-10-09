@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
@@ -19,7 +18,7 @@ public class MailConfig {
 
     @Bean
     public JavaMailSender javaMailSender() {
-        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        ConnectionAwareJavaMailSender mailSender = new ConnectionAwareJavaMailSender();
         mailSender.setDefaultEncoding(StandardCharsets.UTF_8.name());
         mailSender.setHost(configService.getString(ConfigEntry.MAIL_HOST));
         mailSender.setPort(configService.getInteger(ConfigEntry.MAIL_PORT));
