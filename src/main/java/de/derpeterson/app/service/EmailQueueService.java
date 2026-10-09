@@ -71,11 +71,12 @@ public class EmailQueueService {
                 email.setStatus(EmailStatus.IN_PROGRESS);
                 emailQueueRepository.save(email);
 
+                long attempt = (long) email.getRetryCount() + 1;
                 try {
                     emailService.sendEmail(email.getUserEntity(), email.getSubject(), email.getBody());
                     email.setStatus(EmailStatus.SENT);
                     emailQueueRepository.save(email);
-                    logger.info("✅ Email successfully sent to {}.", email.getUserEntity().getEmail());
+                    logger.info("✅ Email successfully sent to {} on attempt {}.", email.getUserEntity().getEmail(), attempt);
                 } catch (MailException | MessagingException e) {
                     int maxRetry = configService.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY);
                     if (email.getRetryCount() < maxRetry) {
@@ -84,14 +85,14 @@ public class EmailQueueService {
                         email.setStatus(EmailStatus.PENDING);
                         emailQueueRepository.save(email);
                         logger.warn("⚠️ Error sending the email to {}, attempt {} of {}: {}", email.getUserEntity().getEmail(),
-                                email.getRetryCount(), maxRetry, e.getMessage());
+                                attempt, (long) maxRetry + 1, e.getMessage());
                     } else {
                         email.setStatus(EmailStatus.FAILED);
                         email.setLastRetryAt(LocalDateTime.now());
                         emailQueueRepository.save(email);
-                        logger.error("❌ Email to {} failed after {} attempts: {}", email.getUserEntity().getEmail(), maxRetry, e.getMessage());
+                        logger.error("❌ Email to {} failed after {} attempts: {}", email.getUserEntity().getEmail(), attempt, e.getMessage());
 
-                        sendAdminNotification(email, e);
+                        sendAdminNotification(email, e, attempt);
                     }
                     logger.error("❌ Error sending the email: ", e);
                 }
@@ -104,16 +105,16 @@ public class EmailQueueService {
     public void deleteSentEmails() {
         LocalDateTime liveDateTime = LocalDateTime.now().minus(Duration.parse(configService.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)));
         int deleted = emailQueueRepository.deleteByStatusAndCreatedAtBefore(EmailStatus.SENT, liveDateTime);
-        var formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE);
-        logger.info("✅ {} emails with status SENT that are older than one {} have been deleted.", deleted, formattedLiveDateTime);
+        var formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        logger.info("✅ {} emails with status SENT created before {} have been deleted.", deleted, formattedLiveDateTime);
     }
 
-    private void sendAdminNotification(EmailQueueEntity failedEmail, Exception e) {
+    private void sendAdminNotification(EmailQueueEntity failedEmail, Exception e, long attempt) {
         String adminEmail = configService.getString(ConfigEntry.EMAIL_ADMIN);
         String subject = "Email dispatch failed";
 
-        String body = "The email to %s with the subject '%s' could not be delivered after 3 attempts.\n\nError message: %s\nEmail type: %s\nSending time: %s" //NOSONAR
-                .formatted(failedEmail.getUserEntity(), failedEmail.getSubject(), e.getMessage(), failedEmail.getEmailType(), failedEmail.getLastRetryAt());
+        String body = "The email to %s with the subject '%s' could not be delivered after %d attempts.\n\nError message: %s\nEmail type: %s\nSending time: %s" //NOSONAR
+                .formatted(failedEmail.getUserEntity().getEmail(), failedEmail.getSubject(), attempt, e.getMessage(), failedEmail.getEmailType(), failedEmail.getLastRetryAt());
         try {
             emailService.sendAdminEmail(adminEmail, subject, body);
             logger.info("✅ Notification sent to administrator: {}", adminEmail);
