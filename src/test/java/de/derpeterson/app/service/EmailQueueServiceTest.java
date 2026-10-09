@@ -22,6 +22,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.mail.MailSendException;
+import org.springframework.mail.MailAuthenticationException;
+import org.springframework.mail.MailPreparationException;
+import org.springframework.mail.MailParseException;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
@@ -41,12 +46,14 @@ class EmailQueueServiceTest {
     @Mock private EmailQueueRepository emails;
     @Mock private EmailService mail;
     @Mock private UserRepository users;
+    @Mock private PlatformTransactionManager transactions;
     private EmailQueueService service;
     private UserEntity user;
 
     @BeforeEach
     void setup() {
-        service = new EmailQueueService(config, emails, mail, users);
+        lenient().when(transactions.getTransaction(any())).thenAnswer(call -> new SimpleTransactionStatus());
+        service = new EmailQueueService(config, emails, mail, users, transactions);
         user = UserEntity.builder().id(12L).email("recipient@example.com").firstName("Fixture")
                 .lastName("User").password("fixture-hash-not-a-real-password").preferredLocale(Locale.ENGLISH)
                 .roleEntities(new ArrayList<>()).build();
@@ -192,7 +199,7 @@ class EmailQueueServiceTest {
         batch(item);
         when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(limit);
         if (terminal) when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
-        doThrow(new MailSendException("smtp failed")).when(mail).sendEmail(user, "subject", "body");
+        doThrow(new MailAuthenticationException("smtp failed")).when(mail).sendEmail(user, "subject", "body");
         LocalDateTime before = LocalDateTime.now();
         service.processQueue();
         assertEquals(terminal ? EmailStatus.FAILED : EmailStatus.PENDING, item.getStatus());
@@ -218,13 +225,37 @@ class EmailQueueServiceTest {
         verify(mail).sendEmail(user, "second", "body");
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void knownPreparationAndParseFailuresRetainRetrySemantics(boolean preparation) throws Exception {
+        var item = item(EmailStatus.PENDING, 0);
+        batch(item);
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(3);
+        RuntimeException failure = preparation ? new MailPreparationException("prepare") : new MailParseException("parse");
+        doThrow(failure).when(mail).sendEmail(user, "subject", "body");
+        service.processQueue();
+        assertEquals(EmailStatus.PENDING, item.getStatus());
+        assertEquals(1, item.getRetryCount());
+        verify(mail, never()).sendAdminEmail(any(), any(), any());
+    }
+
+    @Test
+    void deletedCandidateIsSkippedBeforeDispatch() {
+        var item = item(EmailStatus.PENDING, 0);
+        batch(item);
+        when(emails.lockById(item.getId())).thenReturn(Optional.empty());
+        service.processQueue();
+        verifyNoInteractions(mail);
+        verify(emails, never()).save(any());
+    }
+
     @Test
     void configuredThreeRetriesActuallyMeansFourFailedDispatches() throws Exception {
         var item = item(EmailStatus.PENDING, 0);
         batch(item);
         when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(3);
         when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
-        doThrow(new MailSendException("failure")).when(mail).sendEmail(user, "subject", "body");
+        doThrow(new MailAuthenticationException("failure")).when(mail).sendEmail(user, "subject", "body");
         for (int attempt = 1; attempt <= 3; attempt++) {
             service.processQueue();
             assertEquals(attempt, item.getRetryCount());
@@ -255,7 +286,7 @@ class EmailQueueServiceTest {
         batch(first, second);
         when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
         when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
-        doThrow(new MailSendException("failed")).when(mail).sendEmail(user, "subject", "body");
+        doThrow(new MailAuthenticationException("failed")).when(mail).sendEmail(user, "subject", "body");
         doThrow(new MailSendException("admin failed")).when(mail).sendAdminEmail(any(), any(), any());
         assertDoesNotThrow(service::processQueue);
         assertEquals(EmailStatus.FAILED, first.getStatus());
@@ -269,7 +300,7 @@ class EmailQueueServiceTest {
         batch(item);
         when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(limit);
         when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
-        doThrow(new MailSendException("fixture failure")).when(mail).sendEmail(user, "subject", "body");
+        doThrow(new MailAuthenticationException("fixture failure")).when(mail).sendEmail(user, "subject", "body");
         var logger = (Logger) LoggerFactory.getLogger(EmailQueueService.class);
         var logs = threadLogs();
         String thread = Thread.currentThread().getName();
@@ -301,7 +332,7 @@ class EmailQueueServiceTest {
         batch(item);
         when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(1);
         when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
-        doThrow(new MailSendException("fixture failure")).when(mail).sendEmail(user, "subject", "body");
+        doThrow(new MailAuthenticationException("fixture failure")).when(mail).sendEmail(user, "subject", "body");
         service.processQueue();
         assertEquals(EmailStatus.FAILED, item.getStatus());
         assertEquals(4, item.getRetryCount());
@@ -330,30 +361,30 @@ class EmailQueueServiceTest {
     }
 
     @Test
-    void unexpectedSenderRuntimeFailureEscapesWithoutRetryOrRemainingDispatch() throws Exception {
+    void unexpectedSenderRuntimeFailureKeepsClaimAndContinuesOtherDispatches() throws Exception {
         var first = item(EmailStatus.PENDING, 0);
         var second = item(EmailStatus.PENDING, 0);
         second.setSubject("second");
         batch(first, second);
         var failure = new IllegalStateException("unexpected");
         doThrow(failure).when(mail).sendEmail(user, "subject", "body");
-        assertSame(failure, assertThrows(IllegalStateException.class, service::processQueue));
-        assertEquals(EmailStatus.IN_PROGRESS, first.getStatus()); // Direct call, no tx proxy.
-        assertEquals(EmailStatus.PENDING, second.getStatus());
-        verify(mail, never()).sendEmail(user, "second", "body");
+        assertDoesNotThrow(service::processQueue);
+        assertEquals(EmailStatus.IN_PROGRESS, first.getStatus());
+        assertEquals(EmailStatus.SENT, second.getStatus());
+        verify(mail).sendEmail(user, "second", "body");
         verify(config, never()).getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY);
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"save", "retryConfig", "adminConfig", "adminSender"})
-    void infrastructureRuntimeFailuresPropagateWithoutFallback(String stage) throws Exception {
+    void infrastructureRuntimeFailuresAreIsolatedWithoutAutomaticRelease(String stage) throws Exception {
         var item = item(EmailStatus.PENDING, 0);
         batch(item);
         var failure = new IllegalStateException(stage);
         if (stage.equals("save")) {
             when(emails.save(item)).thenThrow(failure);
         } else {
-            doThrow(new MailSendException("smtp")).when(mail).sendEmail(user, "subject", "body");
+            doThrow(new MailAuthenticationException("smtp")).when(mail).sendEmail(user, "subject", "body");
             if (stage.equals("retryConfig")) when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenThrow(failure);
             else {
                 when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
@@ -364,8 +395,9 @@ class EmailQueueServiceTest {
                 }
             }
         }
-        assertSame(failure, assertThrows(IllegalStateException.class, service::processQueue));
+        assertDoesNotThrow(service::processQueue);
         if (stage.equals("save")) verifyNoInteractions(mail);
+        else assertEquals(stage.equals("retryConfig") ? EmailStatus.IN_PROGRESS : EmailStatus.FAILED, item.getStatus());
     }
 
     @ParameterizedTest
@@ -402,6 +434,10 @@ class EmailQueueServiceTest {
     private void batch(EmailQueueEntity... items) {
         when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(3);
         when(emails.findPendingEmails(PageRequest.of(0, 3))).thenReturn(List.of(items));
+        for (int i = 0; i < items.length; i++) {
+            items[i].setId((long) i + 1);
+            when(emails.lockById(items[i].getId())).thenReturn(Optional.of(items[i]));
+        }
     }
 
     private EmailQueueEntity item(EmailStatus status, int retries) {
