@@ -23,10 +23,18 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
+    /**
+     * Sends a single UTF-8 HTML part without attachments or inline resources.
+     * User, email, subject and content must be non-null; empty subject/content are
+     * preserved. The helper parses exactly one recipient/from address (including
+     * display names); local addresses are accepted, no stricter validation is enabled.
+     * A null user raises NullPointerException; other null arguments raise
+     * IllegalArgumentException, malformed/empty/multiple addresses MessagingException.
+     * Config, MIME construction and sender failures propagate; no retry or fallback.
+     */
     public void sendEmail(UserEntity userEntity, String subject, String htmlContent) throws MailException, MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
-        message.addHeader("Content-Type", "text/html; charset=UTF-8");
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
 
         helper.setTo(userEntity.getEmail());
         helper.setSubject(subject);
@@ -36,6 +44,13 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    /**
+     * Passes a plain-text SimpleMailMessage to the configured sender, whose default
+     * encoding is UTF-8. No service-level validation, trimming or HTML interpretation:
+     * null/empty recipient, subject, body and configured from are passed unchanged.
+     * The real sender may reject such values during conversion/dispatch with a
+     * MailException. Config/sender runtime failures propagate unchanged; no retry.
+     */
     public void sendAdminEmail(String adminEmail, String subject, String body) throws MailException {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(adminEmail);
