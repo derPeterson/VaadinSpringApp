@@ -20,15 +20,27 @@ prozesslokalen Java-Lock. Die Kandidatenliste ist keine Reservierung:
 
 ## Retry und IN_PROGRESS
 
-Bei eindeutig vor dem Transport gescheiterten MIME-/Authentifizierungs- oder
+Bei eindeutig vor dem Transport gescheiterten Verbindungs-, MIME-/Authentifizierungs- oder
 Vorbereitungsfehlern gilt weiter: initialer Versuch plus konfigurierte
 Wiederholungen. Der Retry-Zähler zählt Wiederholungen, die angezeigte aktuelle
 Versuchszahl ist `retryCount + 1`. Der konfigurierte Grenzwert und seine bisherige
 Behandlung werden nicht geändert.
 
-Eine `MailSendException` beweist dagegen keine Nichtzustellung: etwa bei verlorenem
+Der konfigurierte `ConnectionAwareJavaMailSender` markiert `MessagingException`
+direkt beim fehlgeschlagenen `connectTransport`, bevor Spring `sendMessage`
+aufrufen kann. `EmailService` übersetzt die von Spring erzeugte `MailSendException`
+nur dann in `MailPreparationException`, wenn Ursache und einziger Eintrag der
+Failed-Messages-Map dieselbe Markierung tragen und genau die aktuell versandte
+MIME-Nachricht betreffen. Das erhält begrenzte Retries auch bei Verbindungsfehlern,
+ohne Fehlertexte oder etwa eine `ConnectException` allein als Beweis zu verwenden.
+Spring-Authentifizierungsfehler behalten ihre bisherige Klassifizierung. Ein
+unmarkierter Sender oder ein anderer/batchweiser Nachrichtenkontext gilt nicht
+als dieser Nachweis. Die Markierung ist pro Aufruf, ohne gemeinsam veränderlichen
+Senderzustand. Runtimefehler ohne diese Markierung bleiben konservativ unklar.
+
+Eine unmarkierte `MailSendException` beweist dagegen keine Nichtzustellung: etwa bei verlorenem
 SMTP-Antwortpaket kann die Nachricht bereits angenommen sein. Deshalb bleiben
-Transportfehler konservativ auf `IN_PROGRESS`, ohne automatischen Retry oder
+unklare Transport-/Closefehler konservativ auf `IN_PROGRESS`, ohne automatischen Retry oder
 terminalen Adminversand. Auch unerwartete Sender-Runtimefehler, Prozessabbruch
 nach dem Claim sowie fehlgeschlagene Ergebnis-Speicherung/Commits lassen den
 committeten Claim bestehen. Ein vor Versand fehlgeschlagenes Claim wird nicht

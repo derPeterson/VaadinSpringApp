@@ -492,6 +492,62 @@ class EmailQueueServicePersistenceTest {
         verify(mail, never()).sendAdminEmail(any(), any(), any());
     }
 
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 3})
+    void realSpringConnectionFailureRetriesToLimitThenUnblocksProducer(int retries) throws Exception {
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(retries);
+        when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("sender@example.com");
+        var sender = new EmailConnectionFailureTest.Sender();
+        var connectionFailure = new jakarta.mail.MessagingException("arbitrary", new java.net.ConnectException("fixture"));
+        doThrow(connectionFailure).when(sender.transport).connect(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
+        var realMail = new EmailService(config, sender);
+        doAnswer(call -> {
+            realMail.sendEmail(call.getArgument(0), call.getArgument(1), call.getArgument(2));
+            return null;
+        }).when(mail).sendEmail(any(), anyString(), anyString());
+        Long id = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        for (int attempt = 1; attempt <= retries + 1; attempt++) {
+            service.processQueue();
+            var actual = emails.findById(id).orElseThrow();
+            assertEquals(attempt <= retries ? EmailStatus.PENDING : EmailStatus.FAILED, actual.getStatus());
+            assertEquals(Math.min(attempt, retries), actual.getRetryCount());
+            assertNotNull(actual.getLastRetryAt());
+            if (attempt <= retries) {
+                service.addEmailToQueue(snapshot(), "duplicate", "body", EmailType.NOTIFICATION);
+                assertEquals(1, emails.count());
+            }
+        }
+        verify(sender.transport, times(retries + 1)).connect(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
+        verify(sender.transport, never()).sendMessage(any(), any());
+        verify(mail).sendAdminEmail(eq("admin@example.com"), anyString(), contains("after " + (retries + 1) + " attempts"));
+        service.addEmailToQueue(snapshot(), "new", "body", EmailType.NOTIFICATION);
+        assertEquals(2, emails.count());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"send", "close", "sendAndClose"})
+    void realSpringUnknownSendOrCloseFailureRemainsInProgress(String stage) throws Exception {
+        when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("sender@example.com");
+        var sender = new EmailConnectionFailureTest.Sender();
+        var failure = new jakarta.mail.MessagingException("Mail server connection failed", new java.net.ConnectException("fixture"));
+        if (!stage.equals("close")) doThrow(failure).when(sender.transport).sendMessage(any(), any());
+        if (!stage.equals("send")) doThrow(failure).when(sender.transport).close();
+        var realMail = new EmailService(config, sender);
+        doAnswer(call -> { realMail.sendEmail(call.getArgument(0), call.getArgument(1), call.getArgument(2)); return null; })
+                .when(mail).sendEmail(any(), anyString(), anyString());
+        Long id = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
+        service.processQueue();
+        service.processQueue();
+        service.addEmailToQueue(snapshot(), "duplicate", "body", EmailType.NOTIFICATION);
+        assertEquals(1, emails.count());
+        var actual = emails.findById(id).orElseThrow();
+        assertEquals(EmailStatus.IN_PROGRESS, actual.getStatus());
+        assertEquals(0, actual.getRetryCount());
+        assertNull(actual.getLastRetryAt());
+        verify(sender.transport, times(1)).sendMessage(any(), any());
+        verify(mail, never()).sendAdminEmail(any(), any(), any());
+    }
+
     @Test
     void cleanupCommitsActualSentDeletionEvenAfterFlush() {
         Long old = insert("old-sent", EmailStatus.SENT, EmailType.NOTIFICATION, LocalDateTime.now().minusDays(8), 0);
