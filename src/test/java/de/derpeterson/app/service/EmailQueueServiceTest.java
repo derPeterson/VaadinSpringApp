@@ -1,5 +1,8 @@
 package de.derpeterson.app.service;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import de.derpeterson.app.model.EmailQueueEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.*;
@@ -16,12 +19,12 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.mail.MailSendException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -233,10 +236,12 @@ class EmailQueueServiceTest {
         verify(mail, times(4)).sendEmail(user, "subject", "body");
         var body = ArgumentCaptor.forClass(String.class);
         verify(mail).sendAdminEmail(eq("admin@example.com"), eq("Email dispatch failed"), body.capture());
-        // Confirmed defects: hardcoded attempt count and full entity disclosure.
-        assertTrue(body.getValue().contains("after 3 attempts"));
-        assertTrue(body.getValue().contains(user.toString()));
-        assertTrue(body.getValue().contains("password=fixture-hash-not-a-real-password"));
+        assertEquals("The email to recipient@example.com with the subject 'subject' could not be delivered after 4 attempts.\n\nError message: failure\nEmail type: NOTIFICATION\nSending time: "
+                + item.getLastRetryAt(), body.getValue());
+        assertFalse(body.getValue().contains(user.toString()));
+        assertFalse(body.getValue().contains(user.getPassword()));
+        assertFalse(body.getValue().contains(user.getFirstName()));
+        assertFalse(body.getValue().contains(user.getLastName()));
         assertTrue(body.getValue().contains("Error message: failure"));
         assertTrue(body.getValue().contains("Email type: NOTIFICATION"));
         assertTrue(body.getValue().contains("Sending time: " + item.getLastRetryAt()));
@@ -255,6 +260,73 @@ class EmailQueueServiceTest {
         assertDoesNotThrow(service::processQueue);
         assertEquals(EmailStatus.FAILED, first.getStatus());
         assertEquals(EmailStatus.SENT, second.getStatus());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 3})
+    void logsAndAdminBodyCountInitialAttemptPlusConfiguredRetries(int limit) throws Exception {
+        var item = item(EmailStatus.PENDING, 0);
+        batch(item);
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(limit);
+        when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
+        doThrow(new MailSendException("fixture failure")).when(mail).sendEmail(user, "subject", "body");
+        var logger = (Logger) LoggerFactory.getLogger(EmailQueueService.class);
+        var logs = threadLogs();
+        String thread = Thread.currentThread().getName();
+        logs.start();
+        logger.addAppender(logs);
+        try {
+            for (int attempt = 1; attempt <= limit + 1; attempt++) {
+                service.processQueue();
+                String expected = attempt <= limit
+                        ? "⚠️ Error sending the email to recipient@example.com, attempt " + attempt + " of " + (limit + 1) + ": fixture failure"
+                        : "❌ Email to recipient@example.com failed after " + attempt + " attempts: fixture failure";
+                assertTrue(logs.list.stream().anyMatch(event -> event.getThreadName().equals(thread)
+                        && event.getFormattedMessage().equals(expected)), expected);
+                assertEquals(attempt <= limit ? EmailStatus.PENDING : EmailStatus.FAILED, item.getStatus());
+            }
+            assertEquals(limit, item.getRetryCount());
+            verify(mail, times(limit + 1)).sendEmail(user, "subject", "body");
+            verify(mail).sendAdminEmail(eq("admin@example.com"), eq("Email dispatch failed"),
+                    contains("after " + (limit + 1) + " attempts"));
+        } finally {
+            logger.detachAppender(logs);
+            logs.stop();
+        }
+    }
+
+    @Test
+    void terminalAttemptCountUsesStoredHistoryRatherThanChangedConfiguration() throws Exception {
+        var item = item(EmailStatus.PENDING, 4);
+        batch(item);
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(1);
+        when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
+        doThrow(new MailSendException("fixture failure")).when(mail).sendEmail(user, "subject", "body");
+        service.processQueue();
+        assertEquals(EmailStatus.FAILED, item.getStatus());
+        assertEquals(4, item.getRetryCount());
+        verify(mail).sendAdminEmail(eq("admin@example.com"), eq("Email dispatch failed"), contains("after 5 attempts"));
+    }
+
+    @Test
+    void successfulRetryLogsActualAttemptWithoutChangingHistory() throws Exception {
+        var item = item(EmailStatus.PENDING, 2);
+        batch(item);
+        var logger = (Logger) LoggerFactory.getLogger(EmailQueueService.class);
+        var logs = threadLogs();
+        String thread = Thread.currentThread().getName();
+        logs.start();
+        logger.addAppender(logs);
+        try {
+            service.processQueue();
+            assertTrue(logs.list.stream().anyMatch(event -> event.getThreadName().equals(thread)
+                    && event.getFormattedMessage().equals("✅ Email successfully sent to recipient@example.com on attempt 3.")));
+            assertEquals(EmailStatus.SENT, item.getStatus());
+            assertEquals(2, item.getRetryCount());
+        } finally {
+            logger.detachAppender(logs);
+            logs.stop();
+        }
     }
 
     @Test
@@ -298,11 +370,11 @@ class EmailQueueServiceTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"PT168H", "PT0S", "-PT1H"})
-    void cleanupReproducesF1AfterRequestingSentOnlyDeletion(String duration) {
+    void cleanupCompletesAfterRequestingSentOnlyDeletionWithUnchangedCutoff(String duration) {
         when(config.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)).thenReturn(duration);
         LocalDateTime before = LocalDateTime.now().minus(java.time.Duration.parse(duration));
         when(emails.deleteByStatusAndCreatedAtBefore(eq(EmailStatus.SENT), any())).thenReturn(5);
-        assertThrows(UnsupportedTemporalTypeException.class, service::deleteSentEmails);
+        assertDoesNotThrow(service::deleteSentEmails);
         var cutoff = ArgumentCaptor.forClass(LocalDateTime.class);
         verify(emails).deleteByStatusAndCreatedAtBefore(eq(EmailStatus.SENT), cutoff.capture());
         assertFalse(cutoff.getValue().isBefore(before));
@@ -315,6 +387,16 @@ class EmailQueueServiceTest {
         when(config.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)).thenReturn("not-a-duration");
         assertThrows(DateTimeParseException.class, service::deleteSentEmails);
         verifyNoInteractions(emails, mail);
+    }
+
+    private ListAppender<ILoggingEvent> threadLogs() {
+        Thread owner = Thread.currentThread();
+        return new ListAppender<>() {
+            @Override
+            protected void append(ILoggingEvent event) {
+                if (Thread.currentThread() == owner) super.append(event);
+            }
+        };
     }
 
     private void batch(EmailQueueEntity... items) {

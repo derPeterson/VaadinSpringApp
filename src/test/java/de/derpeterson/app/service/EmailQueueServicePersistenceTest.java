@@ -31,7 +31,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import javax.sql.DataSource;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -165,7 +164,7 @@ class EmailQueueServicePersistenceTest {
         assertEquals(1, failed.getRetryCount());
         assertFalse(failed.getLastRetryAt().isBefore(retry.getLastRetryAt()));
         verify(mail, times(2)).sendEmail(any(), anyString(), anyString());
-        verify(mail).sendAdminEmail(eq("admin@example.com"), eq("Email dispatch failed"), contains("after 3 attempts"));
+        verify(mail).sendAdminEmail(eq("admin@example.com"), eq("Email dispatch failed"), contains("after 2 attempts"));
         service.processQueue();
         verify(mail, times(2)).sendEmail(any(), anyString(), anyString());
     }
@@ -302,7 +301,7 @@ class EmailQueueServicePersistenceTest {
     }
 
     @Test
-    void f1FormatterFailureRollsBackActualSentDeletionEvenAfterFlush() {
+    void cleanupCommitsActualSentDeletionEvenAfterFlush() {
         Long old = insert("old-sent", EmailStatus.SENT, EmailType.NOTIFICATION, LocalDateTime.now().minusDays(8), 0);
         insert("new-sent", EmailStatus.SENT, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
         insert("old-pending", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now().minusDays(8), 0);
@@ -313,15 +312,15 @@ class EmailQueueServicePersistenceTest {
             assertFalse(emails.existsById(old));
             return deleted;
         }).when(probes.emails()).deleteByStatusAndCreatedAtBefore(any(), any());
-        assertThrows(UnsupportedTemporalTypeException.class, service::deleteSentEmails);
-        assertTrue(emails.existsById(old));
-        assertEquals(3, emails.count());
+        assertDoesNotThrow(service::deleteSentEmails);
+        assertFalse(emails.existsById(old));
+        assertEquals(2, emails.count());
         verifyNoInteractions(mail);
     }
 
     @Test
-    void f1AlsoThrowsWhenThereIsNothingToDelete() {
-        assertThrows(UnsupportedTemporalTypeException.class, service::deleteSentEmails);
+    void cleanupCompletesWhenThereIsNothingToDelete() {
+        assertDoesNotThrow(service::deleteSentEmails);
         assertEquals(0, emails.count());
     }
 
