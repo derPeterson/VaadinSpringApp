@@ -4,6 +4,8 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import de.derpeterson.app.model.EmailQueueEntity;
+import de.derpeterson.app.model.AdminNotificationAttemptEntity;
+import de.derpeterson.app.repository.AdminNotificationAttemptRepository;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.*;
 import de.derpeterson.app.repository.EmailQueueRepository;
@@ -47,6 +49,7 @@ class EmailQueueServiceTest {
     @Mock private EmailService mail;
     @Mock private UserRepository users;
     @Mock private PlatformTransactionManager transactions;
+    @Mock private AdminNotificationAttemptRepository adminAttempts;
     private EmailQueueService service;
     private UserEntity user;
     private MutableQueueClock clock;
@@ -55,7 +58,13 @@ class EmailQueueServiceTest {
     void setup() {
         lenient().when(transactions.getTransaction(any())).thenAnswer(call -> new SimpleTransactionStatus());
         clock = new MutableQueueClock();
-        service = new EmailQueueService(config, emails, mail, users, transactions, clock);
+        service = new EmailQueueService(config, emails, mail, users, transactions, adminAttempts, clock);
+        lenient().when(adminAttempts.saveAndFlush(any())).thenAnswer(call -> {
+            AdminNotificationAttemptEntity audit = call.getArgument(0);
+            audit.setId(1L);
+            lenient().when(adminAttempts.lockById(1L)).thenReturn(Optional.of(audit));
+            return audit;
+        });
         lenient().when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(3);
         user = UserEntity.builder().id(12L).email("recipient@example.com").firstName("Fixture")
                 .lastName("User").password("fixture-hash-not-a-real-password").preferredLocale(Locale.ENGLISH)
@@ -453,7 +462,7 @@ class EmailQueueServiceTest {
     @Test
     void nullRetentionAndClockAreRejected() {
         assertThrows(NullPointerException.class, service::deleteSentEmails);
-        assertThrows(NullPointerException.class, () -> new EmailQueueService(config, emails, mail, users, transactions, null));
+        assertThrows(NullPointerException.class, () -> new EmailQueueService(config, emails, mail, users, transactions, adminAttempts, null));
         verifyNoInteractions(emails, mail);
     }
 
@@ -496,13 +505,15 @@ class EmailQueueServiceTest {
     @ValueSource(strings = {"Europe/Berlin", "America/New_York"})
     void injectedClockZoneDeterminesLocalCreationAndCleanup(String zone) {
         var fixed = java.time.Clock.fixed(java.time.Instant.parse("2030-01-01T12:00:00Z"), java.time.ZoneId.of(zone));
-        var localService = new EmailQueueService(config, emails, mail, users, transactions, fixed);
+        var localService = new EmailQueueService(config, emails, mail, users, transactions, adminAttempts, fixed);
         when(users.lockVerificationUser(user.getId())).thenReturn(Optional.of(user));
         localService.addEmailToQueue(user, "", "", EmailType.NOTIFICATION);
         verify(emails).save(argThat(item -> item.getCreatedAt().equals(LocalDateTime.now(fixed))));
         when(config.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)).thenReturn("PT1H");
         localService.deleteSentEmails();
         verify(emails).deleteByStatusAndCreatedAtBefore(EmailStatus.SENT, LocalDateTime.now(fixed).minusHours(1));
+        localService.deleteFailedEmails();
+        verify(emails).deleteByStatusAndLastRetryAtBefore(EmailStatus.FAILED, LocalDateTime.now(fixed).minusDays(30));
     }
 
     @Test
@@ -512,6 +523,23 @@ class EmailQueueServiceTest {
         when(emails.findPendingEmails(any(), eq(PageRequest.of(0, Integer.MAX_VALUE)))).thenReturn(List.of());
         assertDoesNotThrow(service::processQueue);
         verifyNoInteractions(mail);
+    }
+
+    @Test
+    void failedCleanupUsesInjectedClockAndFixedThirtyDayLastAttemptCutoff() {
+        service.deleteFailedEmails();
+        verify(emails).deleteByStatusAndLastRetryAtBefore(EmailStatus.FAILED, LocalDateTime.now(clock).minusDays(30));
+        verifyNoInteractions(config, mail, adminAttempts);
+    }
+
+    @Test
+    void failedCleanupUsesLocalDaysAcrossDaylightSavingNotSevenHundredTwentyHours() {
+        var fixed = java.time.Clock.fixed(java.time.Instant.parse("2030-10-28T12:00:00Z"), java.time.ZoneId.of("Europe/Berlin"));
+        var localService = new EmailQueueService(config, emails, mail, users, transactions, adminAttempts, fixed);
+        localService.deleteFailedEmails();
+        var expected = LocalDateTime.of(2030, 9, 28, 13, 0);
+        verify(emails).deleteByStatusAndLastRetryAtBefore(EmailStatus.FAILED, expected);
+        assertNotEquals(expected, LocalDateTime.ofInstant(fixed.instant().minus(java.time.Duration.ofDays(30)), fixed.getZone()));
     }
 
     private ListAppender<ILoggingEvent> threadLogs() {

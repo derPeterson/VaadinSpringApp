@@ -109,4 +109,123 @@ kein monotones Wall-Clock-Versprechen zwischen mehreren Instanzen.
 Die SENT-Bereinigung behält strikt `createdAt < jetzt - Dauer`. Eintrag genau auf
 der Grenze bleibt erhalten. `lastRetryAt` und ein jüngster Versand ändern die
 Altersbasis nicht: Eine alte Einreihung kann kurz nach erfolgreichem Versand gelöscht
-werden. PENDING, IN_PROGRESS und FAILED werden dadurch weiterhin nicht bereinigt.
+werden. PENDING, IN_PROGRESS und FAILED werden durch diese SENT-Bereinigung weiterhin
+nicht bereinigt.
+
+## FAILED-Aufbewahrung
+
+Die eigene geplante Aufgabe `deleteFailedEmails` läuft wie die SENT-Bereinigung
+sonntags um 03:00 Uhr, aber in einer separaten Transaktion und unabhängig von deren
+konfigurierter Dauer. Sie löscht ausschließlich `FAILED` mit
+`lastRetryAt < LocalDateTime.now(clock).minusDays(30)`. Die Grenze ist strikt:
+Gleichheit bleibt erhalten; erst beim nächsten Lauf mit überschrittener Grenze wird
+gelöscht. Es sind 30 Tage im vorhandenen lokalen Zeitmodell, keine Garantie von
+720 Echtzeitstunden über Sommerzeitwechsel. Maßgeblich ist der letzte committete
+fehlgeschlagene Versuch, nicht `createdAt`. Ein terminaler Fehler setzt `lastRetryAt`
+bereits im bestehenden Ergebnis-Commit frisch. Fehlende Zeitangaben werden weder
+ersetzt noch gelöscht. PENDING und IN_PROGRESS bleiben vollständig unangetastet.
+Ein fehlgeschlagener Cleanup-Commit rollt dessen Löschungen zurück.
+
+## Dauerhafte Adminbeobachtbarkeit
+
+Nach dem FAILED-Ergebnis-Commit wird für den Adminversuch eine eigene
+`REQUIRES_NEW`-Transaktion committet: `queueId`, `startedAt`, `IN_PROGRESS`.
+Erst nach erfolgreichem Commit wird die Adminadresse gelesen und Versand vorbereitet.
+SMTP läuft weiter ohne Datenbanktransaktion. Anschließend wird unter Audit-Lock in
+einer weiteren `REQUIRES_NEW`-Transaktion der Ausgang mit `completedAt` gespeichert:
+
+- `SENT`: Senderaufruf erfolgreich zurückgekehrt; keine Garantie von Postfachzustellung.
+- `NOT_SENT`: Fehler vor dem Senderaufruf (z. B. Admin-Konfiguration) oder expliziter
+  Authentifizierungs-/MIME-Vorbereitungs-/Parsefehler, der Nichtversand belegt.
+- `UNKNOWN`: unmarkierter Transportfehler (`MailSendException`) oder unerwarteter
+  Runtimefehler während des Senderaufrufs; keine Text-/Cause-Heuristiken.
+- `IN_PROGRESS` ohne Abschluss: Start ist dauerhaft, aber kein Ergebnis dauerhaft
+  bestätigt; etwa Prozessabbruch oder Ergebnis-Save-/Commitfehler. Auch ein Abbruch
+  vor dem eigentlichen Versand kann so aussehen. Kein Beweis einer SMTP-Annahme.
+
+`sendAdminEmail` nutzt weiterhin den vorhandenen SimpleMailMessage-Vertrag. Die F6-
+MIME-Nichtversandmarkierung des normalen Queueversands wird nicht ohne exakten
+Nachrichtenbeweis auf diesen anderen Aufruf übertragen. Deshalb kann selbst ein
+Admin-Verbindungsfehler konservativ UNKNOWN sein. Alle technischen Exceptiondetails
+bleiben im Log; die neue Tabelle enthält keine Exceptiontexte, Empfänger, Benutzer,
+Betreffzeilen, Mailbodies oder Tokens. Bestehender Inhalt der Adminmail bleibt erhalten.
+
+Speicherfehler verändern FAILED oder andere bereits abgeschlossene Queueeinträge
+nicht. Start-Save-/Commitfehler verhindern Versand; ein zweifelhafter Start-Commit
+wird nicht erneut angelegt. Ergebnis-Save-/Commitfehler lösen keinen zweiten Versand
+und keinen nachträglichen Ersatzstatus aus. Ein tatsächlich committetes Ergebnis
+kann trotz nachfolgender Exception vorhanden sein; Betreiber lesen den frischen
+Datenbankzustand. Der unique `queue_id` erlaubt höchstens einen Auditversuch je
+Queue-ID, auch nach versehentlicher manueller Wiederverwendung. Es gibt keine
+automatischen Admin-Retries, auch nicht für NOT_SENT. Fehlende Auditzeilen sind
+**kein Nichtversandbeweis** und dürfen nicht als erfolgreiche Benachrichtigung gelten:
+ein Crash zwischen FAILED-Commit und Auditstart oder ein Datenbankausfall kann die
+Aufzeichnung verhindern. Bei einem vollständig ausgefallenen Speicher ist dauerhafte
+Speicherung nicht garantierbar. Logs und Überwachung müssen diese Lücke abdecken.
+
+Die Auditzeilen überleben Queue-/Benutzerlöschung bewusst. Sie werden hier nicht
+automatisch bereinigt; keine neue Admin-Retention-Policy oder Recovery-Oberfläche.
+
+## Manueller Recovery-Vertrag / Betriebsvorgehen
+
+1. Betroffene Queue-ID, Status, Retryzähler, `createdAt`, `lastRetryAt` und
+   Untersuchungszeit in einem zugriffsgeschützten Betriebsvorgang erfassen. Zeitstempel
+   können vorangegangene Versuche betreffen: IN_PROGRESS hat keinen eigenen
+   Dispatchzeitstempel. Nur erforderliche Daten einsehen, keine Mailinhalte/Token oder
+   vollständigen Benutzerentitäten in zusätzliche Fehler-/Auditdaten kopieren.
+2. **Alle** Worker aller Instanzen stoppen, Scheduler deaktivieren und Neustarts/
+   Deployment-Autorestarts unterbinden. Bereits gestartete Aufrufe und SMTP-Sockets
+   müssen nachweislich beendet sein. Nur ein abgelaufener Timeout, das Alter des
+   Eintrags oder die Beendigung einer einzigen Instanz reichen nicht.
+3. Mit Queue-ID aus dem Anwendungslog das tatsächliche Versandfenster bestimmen.
+   Empfänger und Zeitfenster mit SMTP-/Providerprotokollen einschließlich Annahme-
+   antworten, Relay-IDs und ggf. Providerrecherche abgleichen. Fehlende Logs,
+   fehlende Postfachmail, ein Timeout oder fehlendes SENT sind kein Beweis für
+   Nichtversand. Wiederholte ähnliche Mails dürfen nicht verwechselt werden. Bei
+   unvollständiger Korrelation bleibt der Ausgang unklar.
+4. Ergebnis dokumentieren: nachgewiesene SMTP-Annahme bedeutet **keine** erneute
+   Einreihung; endgültige Zustellung ist davon verschieden. Bleibt der Ausgang
+   unklar, IN_PROGRESS unverändert quarantänisieren und eskalieren. Eine eventuell
+   erforderliche manuelle terminale Korrektur benötigt eine separate autorisierte
+   Betriebsentscheidung; nicht einfach alle alten Claims verändern.
+5. Nur wenn **Nichtversand des betroffenen Versuchs positiv nachgewiesen** und alle
+   Worker sicher beendet sind, eine gezielte Wiederfreigabe autorisieren. Vorher
+   Benutzerkonto/Typ und Tokenzustand erneut fachlich prüfen: insbesondere dürfen
+   verbrauchte/abgelaufene Reset- oder Verifikationstokens nicht durch Recovery wieder
+   gültig gemacht werden. Eine neue, fachlich zulässige Nachricht kann nötig sein.
+6. Bei genehmigter Wiederfreigabe in einer kontrollierten Datenbanktransaktion zuerst
+   die gemeinsame Kontosperre, dann den Queue-Lock erwerben (wie Produzenten),
+   Status und Retryhistorie frisch prüfen und andere offene Nachrichten desselben
+   Kontos/Typs ausschließen. Nur genau die untersuchte ID von IN_PROGRESS nach
+   PENDING ändern, Retryzähler und vorhandene Zeitangaben unverändert lassen;
+   nicht Retrylimit oder Fälligkeit umgehen. Erwartet genau eine betroffene Zeile,
+   sonst Rollback und erneute Untersuchung. Commit und frischen Zustand prüfen;
+   bei Commit-Ambiguität nicht blind erneut ausführen. Erst danach Worker gezielt
+   wieder starten und die nächste Verarbeitung beobachten.
+
+Dieses Vorgehen ist ein Vertrag für autorisierte Betreiber, keine hier ausgeführte
+Datenänderung und kein neues Recovery-API. Für offene Admin-Audits analog Worker-
+beendigung und SMTP-Belege prüfen; kein automatischer oder blinder manueller Retry.
+
+## Schemaänderung und Einführung
+
+Neue Tabelle `admin_notification_attempt` mit Identity-PK `id` (Long),
+`queue_id` (Long, NOT NULL, unique Constraint `uk_admin_attempt_queue`),
+`started_at` (LocalDateTime, NOT NULL), `completed_at` (LocalDateTime, nullable),
+`status` (Enum als String, max. 32, NOT NULL; IN_PROGRESS/SENT/NOT_SENT/UNKNOWN).
+`queue_id` ist absichtlich nur ein Korrelationswert, **kein Foreign Key** und keine
+JPA-Beziehung; keine Löschkaskade. Bestehende Queue-Spalten werden nicht verändert:
+FAILED-Alter nutzt das vorhandene nullable `lastRetryAt`.
+
+Das Projekt ist derzeit auf `spring.jpa.hibernate.ddl-auto=update` eingestellt.
+Hibernate kann die neue Tabelle beim autorisierten Start anlegen; dies ist hier
+nicht an Bestandsdaten getestet oder ausgeführt worden. Vor Einführung mit Backup
+und gestoppten Workern das konkrete Dialekt-DDL einschließlich Timestamppräzision,
+String-Enum-Constraints, Identity und Unique-Constraint in einer isolierten Kopie
+prüfen und nach dem betrieblichen Schemafreigabeverfahren bereitstellen. Kein neues
+Migrationstool oder Bestandsdaten-Backfill: alte FAILED-Einträge ohne lastRetryAt
+bleiben erhalten, historische Adminausgänge werden nicht erfunden. Bei Einführung
+können bereits ältere FAILED mit bekanntem Zeitstempel beim nächsten Cleanup
+gelöscht werden; erforderliche Untersuchungsbelege vorher autorisiert sichern.
+Die JPA-Schemaerzeugung, Uniqueness, Persistenz und fehlende Löschkaskade sind nur
+mit isoliertem H2 geprüft; keine reale Produktionsmigration zugesichert.
