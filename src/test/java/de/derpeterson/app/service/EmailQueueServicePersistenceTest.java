@@ -4,6 +4,7 @@ import de.derpeterson.app.model.EmailQueueEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.*;
 import de.derpeterson.app.repository.EmailQueueRepository;
+import de.derpeterson.app.repository.AdminNotificationAttemptRepository;
 import de.derpeterson.app.repository.UserRepository;
 import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,17 +56,19 @@ class EmailQueueServicePersistenceTest {
     @Autowired private TransactionTemplate tx;
     @Autowired private Probes probes;
     @Autowired private MutableQueueClock clock;
+    @Autowired private AdminNotificationAttemptRepository adminAttempts;
     private Long userId;
 
     @BeforeEach
     void seed() {
-        reset(probes.emails(), probes.users(), config, mail);
+        reset(probes.emails(), probes.users(), probes.adminAttempts(), config, mail);
         clock.set(java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS));
         when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(50);
         lenient().when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(3);
         lenient().when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
         lenient().when(config.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)).thenReturn("PT168H");
         tx.executeWithoutResult(status -> {
+            adminAttempts.deleteAll();
             emails.deleteAll();
             users.deleteAll();
             users.flush();
@@ -702,6 +705,225 @@ class EmailQueueServicePersistenceTest {
         });
     }
 
+    @Test
+    void failedCleanupUsesStrictLastFailureBoundaryAndKeepsMissingTimesAndOtherStates() {
+        clock.set(java.time.Instant.parse("2030-01-31T12:00:00Z"));
+        var cutoff = LocalDateTime.now(clock).minusDays(30);
+        Long before = insert("old-failure-new-created", EmailStatus.FAILED, EmailType.NOTIFICATION, LocalDateTime.now(clock), 3);
+        Long equal = insert("equal", EmailStatus.FAILED, EmailType.NOTIFICATION, cutoff.minusDays(100), 3);
+        Long after = insert("after", EmailStatus.FAILED, EmailType.NOTIFICATION, cutoff.minusDays(100), 3);
+        Long missing = insert("missing", EmailStatus.FAILED, EmailType.NOTIFICATION, cutoff.minusDays(100), 3);
+        Long recent = insert("recent-failure-old-created", EmailStatus.FAILED, EmailType.NOTIFICATION, cutoff.minusDays(100), 3);
+        tx.executeWithoutResult(status -> {
+            emails.findById(before).orElseThrow().setLastRetryAt(cutoff.minusNanos(1000));
+            emails.findById(equal).orElseThrow().setLastRetryAt(cutoff);
+            emails.findById(after).orElseThrow().setLastRetryAt(cutoff.plusNanos(1000));
+            emails.findById(recent).orElseThrow().setLastRetryAt(LocalDateTime.now(clock));
+        });
+        for (var state : List.of(EmailStatus.PENDING, EmailStatus.IN_PROGRESS, EmailStatus.SENT)) {
+            Long id = insert(state.name(), state, EmailType.NOTIFICATION, cutoff.minusDays(100), 0);
+            tx.executeWithoutResult(status -> emails.findById(id).orElseThrow().setLastRetryAt(cutoff.minusDays(1)));
+        }
+        service.deleteFailedEmails();
+        assertFalse(emails.existsById(before));
+        for (Long id : List.of(equal, after, missing, recent)) assertTrue(emails.existsById(id));
+        assertEquals(7, emails.count());
+        verifyNoInteractions(mail);
+        // Independent of invalid SENT retention configuration.
+        when(config.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)).thenReturn("PT0S");
+        clock.advance(java.time.Duration.ofNanos(1000));
+        service.deleteFailedEmails();
+        assertFalse(emails.existsById(equal));
+        assertTrue(emails.existsById(after));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"success", "authentication", "preparation", "parse", "send", "runtime", "adminConfig"})
+    void adminOutcomesAreDurableIndependentAndNeverAutomaticallyRetried(String scenario) throws Exception {
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
+        Long id = insert("private subject", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(clock), 0);
+        doThrow(new MailAuthenticationException("private original error")).when(mail).sendEmail(any(), anyString(), anyString());
+        var expected = AdminNotificationStatus.SENT;
+        RuntimeException failure = switch (scenario) {
+            case "authentication" -> new MailAuthenticationException("private auth");
+            case "preparation" -> new org.springframework.mail.MailPreparationException("private MIME");
+            case "parse" -> new org.springframework.mail.MailParseException("private parse");
+            case "send" -> new MailSendException("private body and recipient; connection failed");
+            case "runtime", "adminConfig" -> new IllegalStateException("private technical details");
+            default -> null;
+        };
+        if (failure != null) {
+            if (scenario.equals("adminConfig")) when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenThrow(failure);
+            else doThrow(failure).when(mail).sendAdminEmail(any(), any(), any());
+            expected = List.of("send", "runtime").contains(scenario) ? AdminNotificationStatus.UNKNOWN : AdminNotificationStatus.NOT_SENT;
+        }
+        if (scenario.equals("success")) doAnswer(call -> {
+            assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
+            assertEquals(EmailStatus.FAILED, emails.findById(id).orElseThrow().getStatus());
+            var started = adminAttempts.findAll().getFirst();
+            assertEquals(AdminNotificationStatus.IN_PROGRESS, started.getStatus());
+            assertEquals(id, started.getQueueId());
+            assertNull(started.getCompletedAt());
+            clock.advance(java.time.Duration.ofSeconds(2));
+            return null;
+        }).when(mail).sendAdminEmail(any(), any(), any());
+        var startedAt = LocalDateTime.now(clock);
+        service.processQueue();
+        var stored = adminAttempts.findAll().getFirst();
+        assertEquals(expected, stored.getStatus());
+        assertEquals(id, stored.getQueueId());
+        assertEquals(startedAt, stored.getStartedAt());
+        assertEquals(LocalDateTime.now(clock), stored.getCompletedAt());
+        assertEquals(EmailStatus.FAILED, emails.findById(id).orElseThrow().getStatus());
+        // The schema stores only IDs, status and timestamps, not arbitrary exception text.
+        assertEquals(Set.of("id", "queueId", "startedAt", "completedAt", "status"),
+                Arrays.stream(de.derpeterson.app.model.AdminNotificationAttemptEntity.class.getDeclaredFields())
+                        .filter(field -> !field.isSynthetic()).map(java.lang.reflect.Field::getName).collect(java.util.stream.Collectors.toSet()));
+        service.processQueue();
+        service.processQueue();
+        assertEquals(1, adminAttempts.count());
+        verify(mail, times(scenario.equals("adminConfig") ? 0 : 1)).sendAdminEmail(any(), any(), any());
+        // Queue cleanup must not cascade-delete observability.
+        clock.advance(java.time.Duration.ofDays(31));
+        service.deleteFailedEmails();
+        assertFalse(emails.existsById(id));
+        assertEquals(stored, adminAttempts.findById(stored.getId()).orElseThrow());
+        tx.executeWithoutResult(status -> users.deleteAll());
+        assertEquals(stored, adminAttempts.findById(stored.getId()).orElseThrow());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"startSave", "startCommit", "startAfterCommit", "outcomeSave", "outcomeCommit", "outcomeAfterCommit"})
+    void adminPersistenceFailuresDoNotRollbackQueueOrSendWithoutDurableStart(String stage) throws Exception {
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
+        Long id = insert("terminal", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(clock), 0);
+        Long next = insert("next", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(clock), 0);
+        doThrow(new MailAuthenticationException("fixture")).when(mail).sendEmail(any(), eq("terminal"), anyString());
+        var saves = new AtomicInteger();
+        doAnswer(call -> {
+            int phase = saves.incrementAndGet();
+            boolean targeted = phase == (stage.startsWith("start") ? 1 : 2);
+            if (targeted && stage.endsWith("Save")) throw new IllegalStateException(stage);
+            var saved = adminAttempts.saveAndFlush(call.getArgument(0));
+            if (targeted) TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override public void beforeCommit(boolean readOnly) {
+                    if (stage.endsWith("Commit") && !stage.endsWith("AfterCommit")) throw new IllegalStateException(stage);
+                }
+                @Override public void afterCommit() {
+                    if (stage.endsWith("AfterCommit")) throw new IllegalStateException(stage);
+                }
+            });
+            return saved;
+        }).when(probes.adminAttempts()).saveAndFlush(any());
+        assertDoesNotThrow(service::processQueue);
+        assertEquals(EmailStatus.FAILED, emails.findById(id).orElseThrow().getStatus());
+        assertEquals(EmailStatus.SENT, emails.findById(next).orElseThrow().getStatus());
+        boolean startFailed = stage.startsWith("start");
+        verify(mail, times(startFailed ? 0 : 1)).sendAdminEmail(any(), any(), any());
+        if (List.of("startSave", "startCommit").contains(stage)) assertEquals(0, adminAttempts.count());
+        else {
+            assertEquals(1, adminAttempts.count());
+            var stored = adminAttempts.findAll().getFirst();
+            assertEquals(stage.equals("outcomeAfterCommit") ? AdminNotificationStatus.SENT : AdminNotificationStatus.IN_PROGRESS, stored.getStatus());
+            if (!stage.equals("outcomeAfterCommit")) assertNull(stored.getCompletedAt());
+        }
+        service.processQueue();
+        verify(mail, times(startFailed ? 0 : 1)).sendAdminEmail(any(), any(), any());
+    }
+
+    @Test
+    void callerRollbackCannotUndoFailedQueueOrAdminAudit() throws Exception {
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
+        Long id = insert("terminal", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(clock), 0);
+        doThrow(new MailAuthenticationException("fixture")).when(mail).sendEmail(any(), anyString(), anyString());
+        assertThrows(IllegalStateException.class, () -> tx.executeWithoutResult(status -> {
+            service.processQueue();
+            throw new IllegalStateException("caller rollback");
+        }));
+        assertEquals(EmailStatus.FAILED, emails.findById(id).orElseThrow().getStatus());
+        assertEquals(AdminNotificationStatus.SENT, adminAttempts.findAll().getFirst().getStatus());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"delete", "commit"})
+    void failedCleanupStorageFailureRollsBackDeletion(String stage) {
+        var now = LocalDateTime.now(clock);
+        Long id = insert("old", EmailStatus.FAILED, EmailType.NOTIFICATION, now.minusDays(40), 0);
+        tx.executeWithoutResult(status -> emails.findById(id).orElseThrow().setLastRetryAt(now.minusDays(31)));
+        doAnswer(call -> {
+            var deleted = emails.deleteByStatusAndLastRetryAtBefore(call.getArgument(0), call.getArgument(1));
+            if (stage.equals("delete")) throw new IllegalStateException("delete failure");
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override public void beforeCommit(boolean readOnly) { throw new IllegalStateException("commit failure"); }
+            });
+            return deleted;
+        }).when(probes.emails()).deleteByStatusAndLastRetryAtBefore(any(), any());
+        assertThrows(IllegalStateException.class, service::deleteFailedEmails);
+        assertTrue(emails.existsById(id));
+        assertEquals(now.minusDays(31), emails.findById(id).orElseThrow().getLastRetryAt());
+        verifyNoInteractions(mail);
+    }
+
+    @Test
+    void terminalFailureStartsRetentionAtLatestAttemptNotOldRetryHistory() throws Exception {
+        clock.set(java.time.Instant.parse("2030-01-01T12:00:00Z"));
+        var now = LocalDateTime.now(clock);
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(1);
+        Long id = insert("old pending", EmailStatus.PENDING, EmailType.NOTIFICATION, now.minusDays(100), 1);
+        tx.executeWithoutResult(status -> emails.findById(id).orElseThrow().setLastRetryAt(now.minusDays(40)));
+        doThrow(new MailAuthenticationException("fixture")).when(mail).sendEmail(any(), anyString(), anyString());
+        service.processQueue();
+        assertEquals(now, emails.findById(id).orElseThrow().getLastRetryAt());
+        service.deleteFailedEmails();
+        assertTrue(emails.existsById(id));
+        clock.advance(java.time.Duration.ofDays(30));
+        service.deleteFailedEmails();
+        assertTrue(emails.existsById(id));
+        clock.advance(java.time.Duration.ofNanos(1000));
+        service.deleteFailedEmails();
+        assertFalse(emails.existsById(id));
+        assertEquals(1, adminAttempts.count());
+    }
+
+    @Test
+    void existingAdminAuditPreventsSecondDispatchEvenWhenQueueIsManuallyReused() throws Exception {
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
+        Long id = insert("terminal", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(clock), 0);
+        doThrow(new MailAuthenticationException("fixture")).when(mail).sendEmail(any(), anyString(), anyString());
+        service.processQueue();
+        tx.executeWithoutResult(status -> {
+            var email = emails.findById(id).orElseThrow();
+            email.setStatus(EmailStatus.PENDING);
+            email.setLastRetryAt(null);
+        });
+        service.processQueue();
+        assertEquals(EmailStatus.FAILED, emails.findById(id).orElseThrow().getStatus());
+        assertEquals(1, adminAttempts.count());
+        verify(mail, times(1)).sendAdminEmail(any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"missing", "changed"})
+    void adminOutcomeGuardDoesNotOverwriteRemovedOrTerminalAudit(String scenario) throws Exception {
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
+        Long id = insert("terminal", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(clock), 0);
+        doThrow(new MailAuthenticationException("fixture")).when(mail).sendEmail(any(), anyString(), anyString());
+        doAnswer(call -> {
+            tx.executeWithoutResult(status -> {
+                var audit = adminAttempts.findAll().getFirst();
+                if (scenario.equals("missing")) adminAttempts.delete(audit);
+                else audit.setStatus(AdminNotificationStatus.UNKNOWN);
+            });
+            return null;
+        }).when(mail).sendAdminEmail(any(), any(), any());
+        assertDoesNotThrow(service::processQueue);
+        assertEquals(EmailStatus.FAILED, emails.findById(id).orElseThrow().getStatus());
+        if (scenario.equals("missing")) assertEquals(0, adminAttempts.count());
+        else assertEquals(AdminNotificationStatus.UNKNOWN, adminAttempts.findAll().getFirst().getStatus());
+        service.processQueue();
+        verify(mail, times(1)).sendAdminEmail(any(), any(), any());
+    }
+
     private Long insert(String subject, EmailStatus status, EmailType type, LocalDateTime created, int retries) {
         return tx.execute(transaction -> {
             var item = new EmailQueueEntity();
@@ -720,7 +942,7 @@ class EmailQueueServicePersistenceTest {
         assertTrue(latch.await(10, TimeUnit.SECONDS), "controlled operation did not arrive");
     }
 
-    record Probes(UserRepository users, EmailQueueRepository emails) { }
+    record Probes(UserRepository users, EmailQueueRepository emails, AdminNotificationAttemptRepository adminAttempts) { }
 
     @Configuration
     @EnableTransactionManagement
@@ -744,14 +966,15 @@ class EmailQueueServicePersistenceTest {
         @Bean TransactionTemplate transactionTemplate(JpaTransactionManager manager) {
             return new TransactionTemplate(manager);
         }
-        @Bean Probes probes(UserRepository users, EmailQueueRepository emails) {
-            return new Probes(mock(UserRepository.class, delegatesTo(users)), mock(EmailQueueRepository.class, delegatesTo(emails)));
+        @Bean Probes probes(UserRepository users, EmailQueueRepository emails, AdminNotificationAttemptRepository adminAttempts) {
+            return new Probes(mock(UserRepository.class, delegatesTo(users)), mock(EmailQueueRepository.class, delegatesTo(emails)),
+                    mock(AdminNotificationAttemptRepository.class, delegatesTo(adminAttempts)));
         }
         @Bean ConfigService configService() { return mock(ConfigService.class); }
         @Bean EmailService emailService() { return mock(EmailService.class); }
         @Bean MutableQueueClock queueClock() { return new MutableQueueClock(java.time.ZoneId.of("Europe/Berlin")); }
         @Bean EmailQueueService emailQueueService(ConfigService config, EmailService mail, Probes probes, JpaTransactionManager manager, MutableQueueClock clock) {
-            return new EmailQueueService(config, probes.emails(), mail, probes.users(), manager, clock);
+            return new EmailQueueService(config, probes.emails(), mail, probes.users(), manager, probes.adminAttempts(), clock);
         }
     }
 }

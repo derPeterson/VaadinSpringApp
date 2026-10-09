@@ -909,7 +909,8 @@ class PasswordResetServicePersistenceTest {
 
         @Bean
         EmailQueueService emailQueueService(ConfigService config, EmailQueueRepository mails, UserRepository users, JpaTransactionManager manager) {
-            return new EmailQueueService(config, mails, mock(EmailService.class), users, manager);
+            return new EmailQueueService(config, mails, mock(EmailService.class), users, manager,
+                    mock(de.derpeterson.app.repository.AdminNotificationAttemptRepository.class));
         }
 
         @Bean

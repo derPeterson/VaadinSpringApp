@@ -1,6 +1,9 @@
 package de.derpeterson.app.service;
 
 import de.derpeterson.app.model.EmailQueueEntity;
+import de.derpeterson.app.model.AdminNotificationAttemptEntity;
+import de.derpeterson.app.model.enums.AdminNotificationStatus;
+import de.derpeterson.app.repository.AdminNotificationAttemptRepository;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.EmailStatus;
@@ -45,21 +48,25 @@ public class EmailQueueService {
     private final UserRepository userRepository;
     private final PlatformTransactionManager transactionManager;
     private final Clock clock;
+    private final AdminNotificationAttemptRepository adminAttempts;
 
     @Autowired
     public EmailQueueService(ConfigService configService, EmailQueueRepository emailQueueRepository,
-            EmailService emailService, UserRepository userRepository, PlatformTransactionManager transactionManager) {
-        this(configService, emailQueueRepository, emailService, userRepository, transactionManager, Clock.systemDefaultZone());
+            EmailService emailService, UserRepository userRepository, PlatformTransactionManager transactionManager,
+            AdminNotificationAttemptRepository adminAttempts) {
+        this(configService, emailQueueRepository, emailService, userRepository, transactionManager, adminAttempts, Clock.systemDefaultZone());
     }
 
     public EmailQueueService(ConfigService configService, EmailQueueRepository emailQueueRepository,
-            EmailService emailService, UserRepository userRepository, PlatformTransactionManager transactionManager, Clock clock) {
+            EmailService emailService, UserRepository userRepository, PlatformTransactionManager transactionManager,
+            AdminNotificationAttemptRepository adminAttempts, Clock clock) {
         this.configService = configService;
         this.emailQueueRepository = emailQueueRepository;
         this.emailService = emailService;
         this.userRepository = userRepository;
         this.transactionManager = transactionManager;
         this.clock = Objects.requireNonNull(clock, "clock");
+        this.adminAttempts = Objects.requireNonNull(adminAttempts, "adminAttempts");
     }
 
     private void requireUserAndType(UserEntity user, EmailType type) {
@@ -179,7 +186,7 @@ public class EmailQueueService {
                     attempt, (long) maxRetry + 1, failure.getMessage());
         } else {
             logger.error("❌ Email to {} failed after {} attempts: {}", completed.getUserEntity().getEmail(), attempt, failure.getMessage());
-            sendAdminNotification(completed, failure, attempt);
+            sendAdminNotification(transaction, completed, failure, attempt);
         }
     }
 
@@ -194,17 +201,51 @@ public class EmailQueueService {
         logger.info("✅ {} emails with status SENT created before {} have been deleted.", deleted, formattedLiveDateTime);
     }
 
-    private void sendAdminNotification(EmailQueueEntity failedEmail, Exception e, long attempt) {
-        String adminEmail = configService.getString(ConfigEntry.EMAIL_ADMIN);
-        String subject = "Email dispatch failed";
+    @Transactional
+    @Scheduled(cron = "0 0 3 ? * SUN")
+    public void deleteFailedEmails() {
+        LocalDateTime cutoff = LocalDateTime.now(clock).minusDays(30);
+        int deleted = emailQueueRepository.deleteByStatusAndLastRetryAtBefore(EmailStatus.FAILED, cutoff);
+        logger.info("✅ {} FAILED emails with last attempt before {} have been deleted.", deleted,
+                cutoff.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+    }
 
-        String body = "The email to %s with the subject '%s' could not be delivered after %d attempts.\n\nError message: %s\nEmail type: %s\nSending time: %s" //NOSONAR
-                .formatted(failedEmail.getUserEntity().getEmail(), failedEmail.getSubject(), attempt, e.getMessage(), failedEmail.getEmailType(), failedEmail.getLastRetryAt());
+    private void sendAdminNotification(TransactionTemplate transaction, EmailQueueEntity failedEmail, Exception e, long attempt) {
+        // A failed/ambiguous start commit must prevent external dispatch.
+        Long auditId = transaction.execute(status -> {
+            var audit = new AdminNotificationAttemptEntity();
+            audit.setQueueId(failedEmail.getId());
+            audit.setStartedAt(LocalDateTime.now(clock));
+            return adminAttempts.saveAndFlush(audit).getId();
+        });
+        AdminNotificationStatus outcome = AdminNotificationStatus.NOT_SENT;
+        boolean dispatchStarted = false;
         try {
+            String adminEmail = configService.getString(ConfigEntry.EMAIL_ADMIN);
+            String subject = "Email dispatch failed";
+            String body = "The email to %s with the subject '%s' could not be delivered after %d attempts.\n\nError message: %s\nEmail type: %s\nSending time: %s" //NOSONAR
+                    .formatted(failedEmail.getUserEntity().getEmail(), failedEmail.getSubject(), attempt, e.getMessage(), failedEmail.getEmailType(), failedEmail.getLastRetryAt());
+            dispatchStarted = true;
             emailService.sendAdminEmail(adminEmail, subject, body);
+            outcome = AdminNotificationStatus.SENT;
             logger.info("✅ Notification sent to administrator: {}", adminEmail);
-        } catch (MailException ex) {
-            logger.error("❌ Error sending the notification to the administrator: ", ex);
+        } catch (RuntimeException ex) {
+            if (dispatchStarted && !(ex instanceof MailAuthenticationException
+                    || ex instanceof MailPreparationException || ex instanceof MailParseException)) {
+                outcome = AdminNotificationStatus.UNKNOWN;
+            }
+            logger.error("❌ Admin notification attempt {} for queue entry {} ended with {}.", auditId, failedEmail.getId(), outcome, ex);
         }
+        final AdminNotificationStatus finalOutcome = outcome;
+        // Independent of the already committed FAILED; failure here leaves the durable start.
+        transaction.executeWithoutResult(status -> {
+            var audit = adminAttempts.lockById(auditId).orElseThrow();
+            if (audit.getStatus() != AdminNotificationStatus.IN_PROGRESS) {
+                throw new IllegalStateException("Admin notification attempt no longer matches the stored state.");
+            }
+            audit.setStatus(finalOutcome);
+            audit.setCompletedAt(LocalDateTime.now(clock));
+            adminAttempts.saveAndFlush(audit);
+        });
     }
 }
