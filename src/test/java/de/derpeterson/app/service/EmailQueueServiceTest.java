@@ -49,11 +49,14 @@ class EmailQueueServiceTest {
     @Mock private PlatformTransactionManager transactions;
     private EmailQueueService service;
     private UserEntity user;
+    private MutableQueueClock clock;
 
     @BeforeEach
     void setup() {
         lenient().when(transactions.getTransaction(any())).thenAnswer(call -> new SimpleTransactionStatus());
-        service = new EmailQueueService(config, emails, mail, users, transactions);
+        clock = new MutableQueueClock();
+        service = new EmailQueueService(config, emails, mail, users, transactions, clock);
+        lenient().when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(3);
         user = UserEntity.builder().id(12L).email("recipient@example.com").firstName("Fixture")
                 .lastName("User").password("fixture-hash-not-a-real-password").preferredLocale(Locale.ENGLISH)
                 .roleEntities(new ArrayList<>()).build();
@@ -144,7 +147,7 @@ class EmailQueueServiceTest {
     @Test
     void emptyBatchOnlyQueriesConfiguredCapacity() {
         when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(7);
-        when(emails.findPendingEmails(PageRequest.of(0, 7))).thenReturn(List.of());
+        when(emails.findPendingEmails(any(), eq(PageRequest.of(0, 7)))).thenReturn(List.of());
         service.processQueue();
         verifyNoInteractions(mail, users);
         verify(emails, never()).save(any());
@@ -184,16 +187,16 @@ class EmailQueueServiceTest {
         assertEquals(2, item.getRetryCount());
         assertEquals(retryAt, item.getLastRetryAt());
         var order = inOrder(emails, mail);
-        order.verify(emails).findPendingEmails(PageRequest.of(0, 3));
+        order.verify(emails).findPendingEmails(any(), eq(PageRequest.of(0, 3)));
         order.verify(emails).save(item);
         order.verify(mail).sendEmail(user, "subject", "body");
         order.verify(emails).save(item);
         verify(mail, never()).sendAdminEmail(any(), any(), any());
-        verify(config, never()).getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY);
+        verify(config).getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY);
     }
 
     @ParameterizedTest
-    @CsvSource({"0,3,false", "2,3,false", "3,3,true", "4,3,true", "0,0,true", "0,-1,true"})
+    @CsvSource({"0,3,false", "2,3,false", "3,3,true", "4,3,true", "0,0,true"})
     void retryBoundaryUsesStoredCounterAndConfiguredLimit(int retries, int limit, boolean terminal) throws Exception {
         var item = item(EmailStatus.PENDING, retries);
         batch(item);
@@ -260,6 +263,7 @@ class EmailQueueServiceTest {
             service.processQueue();
             assertEquals(attempt, item.getRetryCount());
             assertEquals(EmailStatus.PENDING, item.getStatus());
+            clock.advance(java.time.Duration.ofMinutes(1));
         }
         service.processQueue();
         assertEquals(EmailStatus.FAILED, item.getStatus());
@@ -315,6 +319,7 @@ class EmailQueueServiceTest {
                 assertTrue(logs.list.stream().anyMatch(event -> event.getThreadName().equals(thread)
                         && event.getFormattedMessage().equals(expected)), expected);
                 assertEquals(attempt <= limit ? EmailStatus.PENDING : EmailStatus.FAILED, item.getStatus());
+                clock.advance(java.time.Duration.ofMinutes(1));
             }
             assertEquals(limit, item.getRetryCount());
             verify(mail, times(limit + 1)).sendEmail(user, "subject", "body");
@@ -372,11 +377,11 @@ class EmailQueueServiceTest {
         assertEquals(EmailStatus.IN_PROGRESS, first.getStatus());
         assertEquals(EmailStatus.SENT, second.getStatus());
         verify(mail).sendEmail(user, "second", "body");
-        verify(config, never()).getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY);
+        verify(config).getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY);
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"save", "retryConfig", "adminConfig", "adminSender"})
+    @ValueSource(strings = {"save", "adminConfig", "adminSender"})
     void infrastructureRuntimeFailuresAreIsolatedWithoutAutomaticRelease(String stage) throws Exception {
         var item = item(EmailStatus.PENDING, 0);
         batch(item);
@@ -385,8 +390,7 @@ class EmailQueueServiceTest {
             when(emails.save(item)).thenThrow(failure);
         } else {
             doThrow(new MailAuthenticationException("smtp")).when(mail).sendEmail(user, "subject", "body");
-            if (stage.equals("retryConfig")) when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenThrow(failure);
-            else {
+            {
                 when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
                 if (stage.equals("adminConfig")) when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenThrow(failure);
                 else {
@@ -397,20 +401,19 @@ class EmailQueueServiceTest {
         }
         assertDoesNotThrow(service::processQueue);
         if (stage.equals("save")) verifyNoInteractions(mail);
-        else assertEquals(stage.equals("retryConfig") ? EmailStatus.IN_PROGRESS : EmailStatus.FAILED, item.getStatus());
+        else assertEquals(EmailStatus.FAILED, item.getStatus());
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"PT168H", "PT0S", "-PT1H"})
+    @ValueSource(strings = {"PT168H", "PT0.000000001S"})
     void cleanupCompletesAfterRequestingSentOnlyDeletionWithUnchangedCutoff(String duration) {
         when(config.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)).thenReturn(duration);
-        LocalDateTime before = LocalDateTime.now().minus(java.time.Duration.parse(duration));
+        LocalDateTime expected = LocalDateTime.now(clock).minus(java.time.Duration.parse(duration));
         when(emails.deleteByStatusAndCreatedAtBefore(eq(EmailStatus.SENT), any())).thenReturn(5);
         assertDoesNotThrow(service::deleteSentEmails);
         var cutoff = ArgumentCaptor.forClass(LocalDateTime.class);
         verify(emails).deleteByStatusAndCreatedAtBefore(eq(EmailStatus.SENT), cutoff.capture());
-        assertFalse(cutoff.getValue().isBefore(before));
-        assertFalse(cutoff.getValue().isAfter(LocalDateTime.now().minus(java.time.Duration.parse(duration))));
+        assertEquals(expected, cutoff.getValue());
         verifyNoInteractions(mail);
     }
 
@@ -419,6 +422,96 @@ class EmailQueueServiceTest {
         when(config.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)).thenReturn("not-a-duration");
         assertThrows(DateTimeParseException.class, service::deleteSentEmails);
         verifyNoInteractions(emails, mail);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {-1, Integer.MIN_VALUE})
+    void negativeRetryLimitFailsBeforeSelectionOrClaim(int limit) {
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(1);
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(limit);
+        assertThrows(IllegalArgumentException.class, service::processQueue);
+        verifyNoInteractions(emails, mail, transactions);
+    }
+
+    @Test
+    void retryConfigFailureStopsBeforeSelectionAndSending() {
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(1);
+        var failure = new IllegalStateException("config");
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenThrow(failure);
+        assertSame(failure, assertThrows(IllegalStateException.class, service::processQueue));
+        verifyNoInteractions(emails, mail, transactions);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"PT0S", "-PT1H"})
+    void nonPositiveCleanupDurationFailsBeforeDeletion(String duration) {
+        when(config.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)).thenReturn(duration);
+        assertThrows(IllegalArgumentException.class, service::deleteSentEmails);
+        verifyNoInteractions(emails, mail);
+    }
+
+    @Test
+    void nullRetentionAndClockAreRejected() {
+        assertThrows(NullPointerException.class, service::deleteSentEmails);
+        assertThrows(NullPointerException.class, () -> new EmailQueueService(config, emails, mail, users, transactions, null));
+        verifyNoInteractions(emails, mail);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"user", "id", "subject", "body", "type"})
+    void nullQueueRequiredFieldsFailBeforeRepositoryAccess(String field) {
+        if (field.equals("id")) user.setId(null);
+        assertThrows(NullPointerException.class, () -> service.addEmailToQueue(field.equals("user") ? null : user,
+                field.equals("subject") ? null : "", field.equals("body") ? null : "", field.equals("type") ? null : EmailType.NOTIFICATION));
+        verifyNoInteractions(users, emails, mail);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"user", "id", "type"})
+    void nullOpenQueryRequiredFieldsFailBeforeRepositoryAccess(String field) {
+        if (field.equals("id")) user.setId(null);
+        assertThrows(NullPointerException.class, () -> service.hasOpenEmailForUserAndType(field.equals("user") ? null : user,
+                field.equals("type") ? null : EmailType.NOTIFICATION));
+        verifyNoInteractions(emails);
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {-1, 0, 1})
+    void claimRechecksRetryBoundaryUsingClock(long offsetNanos) throws Exception {
+        var item = item(EmailStatus.PENDING, 1);
+        item.setLastRetryAt(LocalDateTime.now(clock).minusMinutes(1).plusNanos(offsetNanos));
+        batch(item);
+        service.processQueue();
+        if (offsetNanos > 0) {
+            assertEquals(EmailStatus.PENDING, item.getStatus());
+            verifyNoInteractions(mail);
+            verify(emails, never()).save(any());
+        } else {
+            assertEquals(EmailStatus.SENT, item.getStatus());
+            verify(mail).sendEmail(user, "subject", "body");
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"Europe/Berlin", "America/New_York"})
+    void injectedClockZoneDeterminesLocalCreationAndCleanup(String zone) {
+        var fixed = java.time.Clock.fixed(java.time.Instant.parse("2030-01-01T12:00:00Z"), java.time.ZoneId.of(zone));
+        var localService = new EmailQueueService(config, emails, mail, users, transactions, fixed);
+        when(users.lockVerificationUser(user.getId())).thenReturn(Optional.of(user));
+        localService.addEmailToQueue(user, "", "", EmailType.NOTIFICATION);
+        verify(emails).save(argThat(item -> item.getCreatedAt().equals(LocalDateTime.now(fixed))));
+        when(config.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)).thenReturn("PT1H");
+        localService.deleteSentEmails();
+        verify(emails).deleteByStatusAndCreatedAtBefore(EmailStatus.SENT, LocalDateTime.now(fixed).minusHours(1));
+    }
+
+    @Test
+    void positiveMaximumCapacityAndRetryLimitAreAccepted() {
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(Integer.MAX_VALUE);
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(Integer.MAX_VALUE);
+        when(emails.findPendingEmails(any(), eq(PageRequest.of(0, Integer.MAX_VALUE)))).thenReturn(List.of());
+        assertDoesNotThrow(service::processQueue);
+        verifyNoInteractions(mail);
     }
 
     private ListAppender<ILoggingEvent> threadLogs() {
@@ -433,7 +526,7 @@ class EmailQueueServiceTest {
 
     private void batch(EmailQueueEntity... items) {
         when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(3);
-        when(emails.findPendingEmails(PageRequest.of(0, 3))).thenReturn(List.of(items));
+        when(emails.findPendingEmails(any(), eq(PageRequest.of(0, 3)))).thenReturn(List.of(items));
         for (int i = 0; i < items.length; i++) {
             items[i].setId((long) i + 1);
             when(emails.lockById(items[i].getId())).thenReturn(Optional.of(items[i]));
@@ -453,7 +546,6 @@ class EmailQueueServiceTest {
 
     private void assertBetween(LocalDateTime actual, LocalDateTime before) {
         assertNotNull(actual);
-        assertFalse(actual.isBefore(before));
-        assertFalse(actual.isAfter(LocalDateTime.now()));
+        assertEquals(LocalDateTime.now(clock), actual);
     }
 }

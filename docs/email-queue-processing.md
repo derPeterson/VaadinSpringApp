@@ -20,6 +20,20 @@ prozesslokalen Java-Lock. Die Kandidatenliste ist keine Reservierung:
 
 ## Retry und IN_PROGRESS
 
+Fällige PENDING-Nachrichten werden deterministisch nach `createdAt` aufsteigend
+und bei Gleichstand nach `id` aufsteigend ausgewählt. Die Kapazitätsgrenze wird
+erst nach dem Fälligkeitsfilter angewendet: `lastRetryAt == null` ist sofort
+fällig; andernfalls muss `lastRetryAt <= jetzt - 1 Minute` sein (Gleichheit gilt
+als fällig). Unter dem Claim-Lock wird diese Bedingung frisch erneut geprüft,
+damit ein anderer Worker nach einem zwischenzeitlich committeten Retryfehler
+keinen vorzeitigen weiteren Versuch startet. Die Auswahl ist eine Momentaufnahme;
+parallel arbeitende Worker garantieren keine globale SMTP-Abschlussreihenfolge.
+
+Der einfache feste Abstand beträgt eine Minute ab dem gespeicherten Fehlerzeitpunkt,
+ohne exponentielles Backoff oder neue Konfigurationsoption. Nicht fällige Nachrichten
+verbrauchen keine Auswahlplätze. Jeder Aufruf verarbeitet höchstens seine ausgewählte
+Seite; es gibt keine zusätzliche Nachfüllschleife oder weitergehende Fairnessgarantie.
+
 Bei eindeutig vor dem Transport gescheiterten Verbindungs-, MIME-/Authentifizierungs- oder
 Vorbereitungsfehlern gilt weiter: initialer Versuch plus konfigurierte
 Wiederholungen. Der Retry-Zähler zählt Wiederholungen, die angezeigte aktuelle
@@ -67,3 +81,32 @@ aber nicht, dass jeder Eintrag zugestellt wird oder selbständig fortschreitet.
 
 Die automatisierten Persistenzbelege verwenden isoliertes H2 und gemockten Versand.
 Sie ersetzen keine reale SMTP-, Prozessabsturz- oder Multiinstanz-Deploymentprüfung.
+
+## Eingabe-, Konfigurations- und Zeitverträge
+
+Einreihung benötigt einen nicht-null Benutzer mit nicht-null persistierter ID,
+einen nicht-null Typ sowie nicht-null Betreff und Body. Die offene Statusabfrage
+benötigt ebenfalls Benutzer, ID und Typ. Null verletzt den Vertrag und wird vor
+Repositoryzugriff abgewiesen. Leere Betreff-/Bodywerte bleiben erlaubt, unverändert
+und ungetrimmt. Keine zusätzliche Adressformat-/Enabled-Regel; der Benutzer wird
+weiter unter dem bestehenden Account-Lock frisch geladen.
+
+Vor Auswahl/Claims/Versand prüft jeder Verarbeitungslauf positive Kapazität und
+nichtnegative Retryzahl. Das validierte Retrylimit bleibt für diesen Lauf konstant;
+Änderungen gelten ab dem nächsten Aufruf. Ungültige Werte schlagen fehl, statt
+erst nach Versand eine Nachricht zu blockieren. Bereinigung erfordert eine gültige,
+nicht-null, positive ISO-8601-Dauer; Null, Null-/Negativdauer und Parsefehler führen
+zu keiner Löschung. Es gibt keine erfundenen Obergrenzen und keinen stillen Fallback.
+
+`EmailQueueService` verwendet eine injizierbare, nicht-null `Clock`, standardmäßig
+`Clock.systemDefaultZone()` wie der Passwortreset-Service. Einreihungszeit,
+Retryzeitpunkt, Fälligkeitsprüfung und Bereinigung lesen `LocalDateTime.now(clock)`.
+Das lokale Zeitmodell bleibt erhalten; keine Umstellung auf UTC/Instant-Spalten.
+Sommerzeit- oder rückwärts gerichtete lokale Uhränderungen können den realen
+Retryabstand beeinflussen. Der Abstand ist bewusst ein lokaler Zeitvertrag,
+kein monotones Wall-Clock-Versprechen zwischen mehreren Instanzen.
+
+Die SENT-Bereinigung behält strikt `createdAt < jetzt - Dauer`. Eintrag genau auf
+der Grenze bleibt erhalten. `lastRetryAt` und ein jüngster Versand ändern die
+Altersbasis nicht: Eine alte Einreihung kann kurz nach erfolgreichem Versand gelöscht
+werden. PENDING, IN_PROGRESS und FAILED werden dadurch weiterhin nicht bereinigt.

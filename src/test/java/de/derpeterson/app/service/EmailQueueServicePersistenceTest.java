@@ -54,11 +54,13 @@ class EmailQueueServicePersistenceTest {
     @Autowired private EmailService mail;
     @Autowired private TransactionTemplate tx;
     @Autowired private Probes probes;
+    @Autowired private MutableQueueClock clock;
     private Long userId;
 
     @BeforeEach
     void seed() {
         reset(probes.emails(), probes.users(), config, mail);
+        clock.set(java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS));
         when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(50);
         lenient().when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(3);
         lenient().when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
@@ -160,6 +162,7 @@ class EmailQueueServicePersistenceTest {
         assertEquals(1, retry.getRetryCount());
         assertNotNull(retry.getLastRetryAt());
         verify(mail, never()).sendAdminEmail(any(), any(), any());
+        clock.advance(java.time.Duration.ofMinutes(1));
         service.processQueue();
         var failed = emails.findById(id).orElseThrow();
         assertEquals(EmailStatus.FAILED, failed.getStatus());
@@ -192,7 +195,7 @@ class EmailQueueServicePersistenceTest {
         Long two = insert("two", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
         // Deterministic order, using real managed entities inside the actual transaction.
         doAnswer(call -> List.of(emails.findById(one).orElseThrow(), emails.findById(two).orElseThrow()))
-                .when(probes.emails()).findPendingEmails(any());
+                .when(probes.emails()).findPendingEmails(any(), any());
         var failure = new IllegalStateException("second dispatch runtime");
         doThrow(failure).when(mail).sendEmail(any(), eq("two"), eq("body"));
         assertDoesNotThrow(service::processQueue);
@@ -212,12 +215,12 @@ class EmailQueueServicePersistenceTest {
         var selected = new CyclicBarrier(2);
         var calls = new AtomicInteger();
         doAnswer(call -> {
-            var result = emails.findPendingEmails(call.getArgument(0));
+            var result = emails.findPendingEmails(call.getArgument(0), call.getArgument(1));
             assertEquals(1, result.size());
             assertEquals(EmailStatus.PENDING, result.getFirst().getStatus());
             selected.await(10, TimeUnit.SECONDS);
             return result;
-        }).when(probes.emails()).findPendingEmails(any());
+        }).when(probes.emails()).findPendingEmails(any(), any());
         doAnswer(call -> {
             calls.incrementAndGet();
             return null;
@@ -240,11 +243,11 @@ class EmailQueueServicePersistenceTest {
         var successCommitted = new CountDownLatch(1);
         var failingWorker = new ThreadLocal<Boolean>();
         doAnswer(call -> {
-            var result = emails.findPendingEmails(call.getArgument(0));
+            var result = emails.findPendingEmails(call.getArgument(0), call.getArgument(1));
             assertEquals(1, result.size());
             selected.await(10, TimeUnit.SECONDS);
             return result;
-        }).when(probes.emails()).findPendingEmails(any());
+        }).when(probes.emails()).findPendingEmails(any(), any());
         doAnswer(call -> {
             if (Boolean.TRUE.equals(failingWorker.get())) await(successCommitted);
             return emails.lockById(call.getArgument(0));
@@ -311,10 +314,10 @@ class EmailQueueServicePersistenceTest {
         var release = new CountDownLatch(1);
         var contenderCompleted = new CountDownLatch(1);
         doAnswer(call -> {
-            var result = emails.findPendingEmails(call.getArgument(0));
+            var result = emails.findPendingEmails(call.getArgument(0), call.getArgument(1));
             selected.await(10, TimeUnit.SECONDS);
             return result;
-        }).when(probes.emails()).findPendingEmails(any());
+        }).when(probes.emails()).findPendingEmails(any(), any());
         doAnswer(call -> {
             assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
             sending.countDown();
@@ -347,11 +350,11 @@ class EmailQueueServicePersistenceTest {
         Long unknown = insert("unknown", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
         var selected = new CyclicBarrier(2);
         doAnswer(call -> {
-            var result = emails.findPendingEmails(call.getArgument(0));
+            var result = emails.findPendingEmails(call.getArgument(0), call.getArgument(1));
             assertEquals(3, result.size());
             selected.await(10, TimeUnit.SECONDS);
             return result;
-        }).when(probes.emails()).findPendingEmails(any());
+        }).when(probes.emails()).findPendingEmails(any(), any());
         doThrow(new MailAuthenticationException("known failure")).when(mail).sendEmail(any(), eq("known-failure"), anyString());
         doThrow(new IllegalStateException("unknown outcome")).when(mail).sendEmail(any(), eq("unknown"), anyString());
         try (var executor = Executors.newFixedThreadPool(2)) {
@@ -414,7 +417,7 @@ class EmailQueueServicePersistenceTest {
         Long terminal = insert("terminal", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
         Long last = insert("last", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
         doAnswer(call -> List.of(emails.findById(first).orElseThrow(), emails.findById(terminal).orElseThrow(), emails.findById(last).orElseThrow()))
-                .when(probes.emails()).findPendingEmails(any());
+                .when(probes.emails()).findPendingEmails(any(), any());
         doThrow(new MailAuthenticationException("recipient failure")).when(mail).sendEmail(any(), eq("terminal"), anyString());
         if (stage.equals("adminConfig")) when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenThrow(new IllegalStateException(stage));
         else doAnswer(call -> {
@@ -515,6 +518,7 @@ class EmailQueueServicePersistenceTest {
             if (attempt <= retries) {
                 service.addEmailToQueue(snapshot(), "duplicate", "body", EmailType.NOTIFICATION);
                 assertEquals(1, emails.count());
+                clock.advance(java.time.Duration.ofMinutes(1));
             }
         }
         verify(sender.transport, times(retries + 1)).connect(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
@@ -570,6 +574,104 @@ class EmailQueueServicePersistenceTest {
     void cleanupCompletesWhenThereIsNothingToDelete() {
         assertDoesNotThrow(service::deleteSentEmails);
         assertEquals(0, emails.count());
+    }
+
+    @Test
+    void dueSelectionIsOldestCreatedFirstWithIdTieBreakAndFiltersBeforeCapacity() throws Exception {
+        var now = LocalDateTime.now(clock).withNano(0);
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(2);
+        Long recent = insert("recent", EmailStatus.PENDING, EmailType.NOTIFICATION, now, 0);
+        Long equalFirst = insert("tie-first", EmailStatus.PENDING, EmailType.NOTIFICATION, now.minusDays(1), 0);
+        Long equalSecond = insert("tie-second", EmailStatus.PENDING, EmailType.NOTIFICATION, now.minusDays(1), 0);
+        Long oldest = insert("oldest", EmailStatus.PENDING, EmailType.NOTIFICATION, now.minusDays(2), 0);
+        Long waiting = insert("not-due", EmailStatus.PENDING, EmailType.NOTIFICATION, now.minusDays(3), 1);
+        tx.executeWithoutResult(status -> emails.findById(waiting).orElseThrow().setLastRetryAt(now));
+        insert("unknown", EmailStatus.IN_PROGRESS, EmailType.NOTIFICATION, now.minusDays(4), 0);
+        service.processQueue();
+        var order = inOrder(mail);
+        order.verify(mail).sendEmail(any(), eq("oldest"), eq("body"));
+        order.verify(mail).sendEmail(any(), eq("tie-first"), eq("body"));
+        assertEquals(EmailStatus.PENDING, emails.findById(equalSecond).orElseThrow().getStatus());
+        assertEquals(EmailStatus.PENDING, emails.findById(recent).orElseThrow().getStatus());
+        assertEquals(EmailStatus.PENDING, emails.findById(waiting).orElseThrow().getStatus());
+        service.processQueue();
+        order.verify(mail).sendEmail(any(), eq("tie-second"), eq("body"));
+        order.verify(mail).sendEmail(any(), eq("recent"), eq("body"));
+        assertEquals(2, emails.findByStatus(EmailStatus.PENDING).size() + emails.findByStatus(EmailStatus.IN_PROGRESS).size());
+        assertEquals(EmailStatus.SENT, emails.findById(oldest).orElseThrow().getStatus());
+        assertEquals(EmailStatus.SENT, emails.findById(equalFirst).orElseThrow().getStatus());
+    }
+
+    @Test
+    void retryIsNotSelectedBeforeMinuteAndIsSelectedExactlyAtBoundary() throws Exception {
+        clock.set(java.time.Instant.parse("2030-01-01T12:00:00Z"));
+        var now = LocalDateTime.now(clock);
+        Long id = insert("retry", EmailStatus.PENDING, EmailType.NOTIFICATION, now, 0);
+        doThrow(new MailAuthenticationException("fixture")).when(mail).sendEmail(any(), anyString(), anyString());
+        service.processQueue();
+        assertEquals(now, emails.findById(id).orElseThrow().getLastRetryAt());
+        clock.advance(java.time.Duration.ofSeconds(59).plusNanos(999_999_999));
+        service.processQueue();
+        verify(mail, times(1)).sendEmail(any(), anyString(), anyString());
+        clock.advance(java.time.Duration.ofNanos(1));
+        service.processQueue();
+        verify(mail, times(2)).sendEmail(any(), anyString(), anyString());
+        assertEquals(2, emails.findById(id).orElseThrow().getRetryCount());
+        assertEquals(now.plusMinutes(1), emails.findById(id).orElseThrow().getLastRetryAt());
+    }
+
+    @Test
+    void staleWorkerCannotRetryAfterAnotherWorkerCommittedFreshFailure() throws Exception {
+        Long id = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(clock), 0);
+        var selected = new CyclicBarrier(2);
+        var firstCommitted = new CountDownLatch(1);
+        var stale = new ThreadLocal<Boolean>();
+        doAnswer(call -> {
+            var candidates = emails.findPendingEmails(call.getArgument(0), call.getArgument(1));
+            assertEquals(1, candidates.size());
+            selected.await(10, TimeUnit.SECONDS);
+            return candidates;
+        }).when(probes.emails()).findPendingEmails(any(), any());
+        doAnswer(call -> { if (Boolean.TRUE.equals(stale.get())) await(firstCommitted); return emails.lockById(call.getArgument(0)); })
+                .when(probes.emails()).lockById(any());
+        doThrow(new MailAuthenticationException("fixture")).when(mail).sendEmail(any(), anyString(), anyString());
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var first = executor.submit(() -> { try { service.processQueue(); } finally { firstCommitted.countDown(); } });
+            var second = executor.submit(() -> { stale.set(true); try { service.processQueue(); } finally { stale.remove(); } });
+            first.get(20, TimeUnit.SECONDS);
+            second.get(20, TimeUnit.SECONDS);
+        }
+        verify(mail, times(1)).sendEmail(any(), anyString(), anyString());
+        assertEquals(EmailStatus.PENDING, emails.findById(id).orElseThrow().getStatus());
+        assertEquals(1, emails.findById(id).orElseThrow().getRetryCount());
+    }
+
+    @Test
+    void cleanupUsesClockZoneAndStrictCreationAgeNotLastRetryOrStatusAge() {
+        clock.set(java.time.Instant.parse("2030-01-01T12:00:00Z"));
+        var cutoff = LocalDateTime.now(clock).minusHours(168);
+        Long before = insert("before", EmailStatus.SENT, EmailType.NOTIFICATION, cutoff.minusNanos(1000), 0);
+        Long equal = insert("equal", EmailStatus.SENT, EmailType.NOTIFICATION, cutoff, 0);
+        Long after = insert("after", EmailStatus.SENT, EmailType.NOTIFICATION, cutoff.plusNanos(1000), 0);
+        for (EmailStatus status : List.of(EmailStatus.PENDING, EmailStatus.IN_PROGRESS, EmailStatus.FAILED)) {
+            insert(status.name(), status, EmailType.NOTIFICATION, cutoff.minusDays(1), 0);
+        }
+        tx.executeWithoutResult(status -> emails.findById(before).orElseThrow().setLastRetryAt(LocalDateTime.now(clock)));
+        service.deleteSentEmails();
+        assertFalse(emails.existsById(before));
+        assertTrue(emails.existsById(equal));
+        assertTrue(emails.existsById(after));
+        assertEquals(5, emails.count());
+    }
+
+    @Test
+    void queueAcceptsEmptyContentAndUsesInjectedLocalTime() {
+        clock.set(java.time.Instant.parse("2030-01-01T12:00:00Z"));
+        service.addEmailToQueue(snapshot(), "", "", EmailType.NOTIFICATION);
+        var actual = emails.findAll().getFirst();
+        assertEquals("", actual.getSubject());
+        assertEquals("", actual.getBody());
+        assertEquals(LocalDateTime.now(clock), actual.getCreatedAt());
     }
 
     @Test
@@ -647,8 +749,9 @@ class EmailQueueServicePersistenceTest {
         }
         @Bean ConfigService configService() { return mock(ConfigService.class); }
         @Bean EmailService emailService() { return mock(EmailService.class); }
-        @Bean EmailQueueService emailQueueService(ConfigService config, EmailService mail, Probes probes, JpaTransactionManager manager) {
-            return new EmailQueueService(config, probes.emails(), mail, probes.users(), manager);
+        @Bean MutableQueueClock queueClock() { return new MutableQueueClock(java.time.ZoneId.of("Europe/Berlin")); }
+        @Bean EmailQueueService emailQueueService(ConfigService config, EmailService mail, Probes probes, JpaTransactionManager manager, MutableQueueClock clock) {
+            return new EmailQueueService(config, probes.emails(), mail, probes.users(), manager, clock);
         }
     }
 }
