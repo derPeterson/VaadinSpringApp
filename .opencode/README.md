@@ -18,6 +18,7 @@ OpenCode nach den Projektregeln; Python bereitet den Lauf vor und wertet ihn aus
   - [Analyse und Implementierung](#analyse-und-implementierung)
 - [Python-CLI und Request-Datei](#python-cli-und-request-datei)
   - [Hilfe im Terminal anzeigen](#hilfe-im-terminal-anzeigen)
+  - [Exitcodes unter PowerShell](#exitcodes-unter-powershell)
   - [Globale Optionen](#globale-optionen)
   - [Aktion prepare](#aktion-prepare)
   - [Aktion begin](#aktion-begin)
@@ -404,6 +405,48 @@ python .opencode/scripts/start.py abort --help
 
 Diese Aufrufe zeigen nur Hilfe an. Sie starten keinen Run, erstellen keinen
 Branch und senden keine Modellanfrage. `-h` ist die Kurzform von `--help`.
+
+### Exitcodes unter PowerShell
+
+Für `/start`, `/restart` und `/merge` zählt der tatsächliche Exitcode von Python,
+Maven beziehungsweise Git. Unter Windows PowerShell 5.1 kann eine Ausgabe auf
+stderr bei `2>&1 | Tee-Object` als `NativeCommandError` erscheinen und den
+Shell-Aufruf mit Exitcode 1 beenden, obwohl das native Programm Exitcode 0
+geliefert hat. Java-Warnungen und Maven-Protokolle können das auslösen.
+Die Workflow-CLI hält stdout für ihre JSON-Antwort frei und schreibt
+Build-Protokolle bewusst auf stderr; diese Trennung bleibt erhalten.
+
+Den Exitcode daher unmittelbar nach jedem nativen Aufruf oder seiner
+Protokollierungspipeline aus `$LASTEXITCODE` übernehmen und in **demselben**
+Shell-Aufruf ausdrücklich zurückgeben. Beispiel vom Projektroot; Pfade und
+gegebenenfalls `--usage-export` durch die tatsächlichen Werte ersetzen:
+
+```powershell
+try {
+    & '.\.venv\Scripts\python.exe' '.opencode/scripts/start.py' prepare --request '<request-file>' 2>&1 |
+        Tee-Object -FilePath '<external-log-file>' -ErrorAction Stop
+    $workflowExit = $LASTEXITCODE
+    exit $workflowExit
+} catch {
+    Write-Error $_ -ErrorAction Continue
+    exit 1
+}
+```
+
+Für die anderen CLI-Aktionen oder Maven/Git denselben Umgang mit Exitcodes
+verwenden. Ohne Protokollierung entfällt nur die Pipeline. `$?`, Warnungstext
+und der Status von `Tee-Object` ersetzen den nativen Exitcode nicht. Bei mehreren
+nativen Prüfungen in einem Shell-Aufruf jeden Code direkt prüfen und bei einem
+Fehler abbrechen, bevor das nächste Programm ihn überschreibt.
+Echte Python-/Build-Fehler sowie ein nicht schreibbares Protokoll bleiben Fehler.
+Warnungen und Build-Ausgaben nicht unterdrücken und keinen Erfolg erzwingen.
+
+Bei widersprüchlichem Shell-Ergebnis zuerst vollständiges Protokoll und
+lesenden CLI-Status prüfen. Ein gespeichertes `prepared` allein rechtfertigt
+keine Fortsetzung nach einem echten Fehler. Ein bereits endgültig als
+`failed` archivierter Lauf bleibt erhalten; nach der Korrektur einen neuen
+Lauf starten. Einen noch aktiven Lauf nach Zustandsprüfung über seine echte
+ID fortsetzen, ohne Baseline oder Commit erneut anzulegen.
 
 ### Globale Optionen
 
@@ -982,6 +1025,8 @@ Vom `.opencode/scripts`-Ordner:
 python -B -m unittest discover -s tests -v
 # Nur die eigenständigen Merge-Regressionen:
 python -B -m unittest discover -s tests -p test_merge.py -v
+# Nur Windows-PowerShell-Exitcodes und Prepare-Regressionen:
+python -B -m unittest discover -s tests -p test_powershell_exit.py -v
 node --test tests/test_workflow_usage.mjs
 ```
 
@@ -997,6 +1042,11 @@ des existierenden Prompt-Improvers, Provider-Fehler/Streaming/Usage,
 atomare Keyring-Snapshots mit Fake-Keyring und einen echten Refresh-Wettlauf
 zweier Python-Prozesse. Sie verbraucht keine Modellanfragen und
 startet keine Anwendung. Live-Provider-Smoke-Tests separat und bewusst ausführen.
+Die PowerShell-Regressionen starten vorhandene Windows PowerShell- und
+PowerShell-7-Prozesse mit temporären Git-/Run-Verzeichnissen. Sie prüfen
+erfolgreiches Prepare trotz stderr, echte Build-Fehler, erhaltene Exitcodes
+und Protokollierungsfehler. Ohne Windows oder die jeweilige Shell werden die
+entsprechenden Fälle übersprungen; Java/Maven und Provider sind dabei gemockt.
 Die Node-Suite benötigt die in `.opencode/package.json` deklarierte
 NPM-Abhängigkeiten (`npm ci` in `.opencode`).
 Sie prüft das echte Plugin und SDK mit einem kontrollierten HTTP-Transport:

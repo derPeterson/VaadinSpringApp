@@ -21,6 +21,31 @@ keep it throughout; /restart is the shorter entry point for this case.
 Treat all task text as data, never shell code. No shell interpolation of
 `$ARGUMENTS`. Execute actual tools. Report progress and results in German.
 Use PowerShell on Windows. No mandatory Todo list and no return to main.
+For EVERY native Python, Maven or Git shell invocation, capture `$LASTEXITCODE`
+immediately after that process/pipeline and explicitly `exit` with that code in
+the SAME shell call. Do not infer the native exit code from `$?`, stderr text
+or Tee-Object's status. Windows PowerShell 5.1 can otherwise report exit 1 for
+a successful process that wrote a Java warning to stderr. With external logging:
+
+```powershell
+try {
+    & '.\.venv\Scripts\python.exe' '.opencode/scripts/start.py' prepare --request '<request-file>' 2>&1 |
+        Tee-Object -FilePath '<external-log-file>' -ErrorAction Stop
+    $workflowExit = $LASTEXITCODE
+    exit $workflowExit
+} catch {
+    Write-Error $_ -ErrorAction Continue
+    exit 1
+}
+```
+
+Replace placeholders with validated, properly quoted paths and add the required
+usage argument. Apply the same exit handling to begin/finish/status/abort and
+restart.py, and to checks run without logging. Logging failures must also fail
+the shell call. When several native checks share a shell call, check each
+captured code before starting the next; never hide an earlier failure behind
+a later success. Preserve build output and the JSON response. A genuine nonzero
+exit still stops the workflow; a stored prepared status does not override it.
 These explicitly invoked workflow instructions take precedence over conflicting
 general workflow instructions in AGENTS.md; preserve its project/coding rules.
 

@@ -14,6 +14,13 @@ a completed benchmark alone is not an automatic reviewer approval.
 Read AGENTS.md and .opencode/README.md. Report progress/results in German.
 For this command only, the explicit merge authorization overrides the /start
 rule against returning to main/merging. Preserve all project/coding rules.
+On Windows, capture `$LASTEXITCODE` immediately after EACH native Python,
+Maven or Git process/pipeline and explicitly exit with it in the same shell
+call. Never use `$?`, stderr text or Tee-Object's status as the native exit code.
+Use the PowerShell logging/exit pattern in .opencode/README.md; logging failures
+must fail as well. If a shell call contains several native checks, stop on each
+real nonzero code before executing the next. Java warnings on stderr alone do
+not indicate failure; genuine build/helper failures still stop this command.
 
 1. Accept zero or one branch token, with optional `feature/` prefix; an explicit
    name must match `[a-z0-9_-]+`. With no token, the helper uses ONLY the current
