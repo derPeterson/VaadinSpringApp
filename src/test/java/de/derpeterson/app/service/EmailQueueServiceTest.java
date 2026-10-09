@@ -1,0 +1,341 @@
+package de.derpeterson.app.service;
+
+import de.derpeterson.app.model.EmailQueueEntity;
+import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.*;
+import de.derpeterson.app.repository.EmailQueueRepository;
+import de.derpeterson.app.repository.UserRepository;
+import jakarta.mail.MessagingException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.mail.MailSendException;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.UnsupportedTemporalTypeException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+/** Characterizes current behavior, including defects, without SMTP or persistence. */
+@ExtendWith(MockitoExtension.class)
+class EmailQueueServiceTest {
+    @Mock private ConfigService config;
+    @Mock private EmailQueueRepository emails;
+    @Mock private EmailService mail;
+    @Mock private UserRepository users;
+    private EmailQueueService service;
+    private UserEntity user;
+
+    @BeforeEach
+    void setup() {
+        service = new EmailQueueService(config, emails, mail, users);
+        user = UserEntity.builder().id(12L).email("recipient@example.com").firstName("Fixture")
+                .lastName("User").password("fixture-hash-not-a-real-password").preferredLocale(Locale.ENGLISH)
+                .roleEntities(new ArrayList<>()).build();
+    }
+
+    @ParameterizedTest
+    @EnumSource(EmailType.class)
+    void openQueryUsesExactlyPendingAndInProgressForTheRequestedType(EmailType type) {
+        var statuses = List.of(EmailStatus.PENDING, EmailStatus.IN_PROGRESS);
+        when(emails.existsByUserEntityAndEmailTypeAndStatusIn(user, type, statuses)).thenReturn(true, false);
+        assertTrue(service.hasOpenEmailForUserAndType(user, type));
+        assertFalse(service.hasOpenEmailForUserAndType(user, type));
+        verifyNoInteractions(users, mail, config);
+    }
+
+    @ParameterizedTest
+    @EnumSource(EmailType.class)
+    void enqueueLocksAndUsesFreshAccountAndPreservesContent(EmailType type) {
+        var stale = UserEntity.builder().id(12L).email("stale@example.com").preferredLocale(Locale.ENGLISH).build();
+        when(users.lockVerificationUser(12L)).thenReturn(Optional.of(user));
+        LocalDateTime before = LocalDateTime.now();
+        service.addEmailToQueue(stale, "Grüße 🔐", "<b>日本語</b>\r\n", type);
+        var order = inOrder(users, emails);
+        order.verify(users).lockVerificationUser(12L);
+        order.verify(emails).existsByUserEntityAndEmailTypeAndStatusIn(user, type,
+                List.of(EmailStatus.PENDING, EmailStatus.IN_PROGRESS));
+        var captor = ArgumentCaptor.forClass(EmailQueueEntity.class);
+        order.verify(emails).save(captor.capture());
+        var queued = captor.getValue();
+        assertSame(user, queued.getUserEntity());
+        assertEquals(type, queued.getEmailType());
+        assertEquals("Grüße 🔐", queued.getSubject());
+        assertEquals("<b>日本語</b>\r\n", queued.getBody());
+        assertEquals(EmailStatus.PENDING, queued.getStatus());
+        assertEquals(0, queued.getRetryCount());
+        assertNull(queued.getLastRetryAt());
+        assertNull(queued.getId());
+        assertBetween(queued.getCreatedAt(), before);
+        verifyNoInteractions(mail, config);
+    }
+
+    @ParameterizedTest
+    @EnumSource(EmailType.class)
+    void openDuplicateDoesNotOverwriteOrInsert(EmailType type) {
+        when(users.lockVerificationUser(12L)).thenReturn(Optional.of(user));
+        when(emails.existsByUserEntityAndEmailTypeAndStatusIn(eq(user), eq(type), anyCollection())).thenReturn(true);
+        service.addEmailToQueue(user, "new", "new", type);
+        verify(emails, never()).save(any());
+        verifyNoInteractions(mail);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void verificationCannotQueueForEnabledOrExplicitlyBlockedAccounts(boolean enabled) {
+        user.setEnabled(enabled);
+        when(users.lockVerificationUser(12L)).thenReturn(Optional.of(user));
+        service.addEmailToQueue(user, "subject", "body", EmailType.VERIFICATION);
+        verifyNoInteractions(emails, mail);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = EmailType.class, names = "VERIFICATION", mode = EnumSource.Mode.EXCLUDE)
+    void nonVerificationQueueDoesNotAddItsOwnEligibilityRule(EmailType type) {
+        user.setEnabled(false);
+        when(users.lockVerificationUser(12L)).thenReturn(Optional.of(user));
+        service.addEmailToQueue(user, "", "", type);
+        verify(emails).save(argThat(e -> e.getSubject().isEmpty() && e.getBody().isEmpty()));
+    }
+
+    @Test
+    void missingAccountFailsBeforeQueueAccess() {
+        when(users.lockVerificationUser(12L)).thenReturn(Optional.empty());
+        assertEquals("Der Benutzer ist nicht mehr vorhanden.", assertThrows(IllegalStateException.class,
+                () -> service.addEmailToQueue(user, "subject", "body", EmailType.NOTIFICATION)).getMessage());
+        verifyNoInteractions(emails, mail);
+    }
+
+    @Test
+    void queueInsertFailurePropagatesUnchanged() {
+        when(users.lockVerificationUser(12L)).thenReturn(Optional.of(user));
+        var failure = new IllegalStateException("queue storage failed");
+        when(emails.save(any())).thenThrow(failure);
+        assertSame(failure, assertThrows(IllegalStateException.class,
+                () -> service.addEmailToQueue(user, "subject", "body", EmailType.NOTIFICATION)));
+        verifyNoInteractions(mail);
+    }
+
+    @Test
+    void emptyBatchOnlyQueriesConfiguredCapacity() {
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(7);
+        when(emails.findPendingEmails(PageRequest.of(0, 7))).thenReturn(List.of());
+        service.processQueue();
+        verifyNoInteractions(mail, users);
+        verify(emails, never()).save(any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    void nonPositiveCapacityFailsBeforeQuery(int capacity) {
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(capacity);
+        assertThrows(IllegalArgumentException.class, service::processQueue);
+        verifyNoInteractions(emails, mail);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = EmailStatus.class, names = "PENDING", mode = EnumSource.Mode.EXCLUDE)
+    void nonPendingEntriesAreNotSentEvenIfReturnedByRepository(EmailStatus status) {
+        var item = item(status, 2);
+        batch(item);
+        service.processQueue();
+        verifyNoInteractions(mail);
+        verify(emails, never()).save(any());
+        assertEquals(status, item.getStatus());
+        assertEquals(2, item.getRetryCount());
+    }
+
+    @Test
+    void successSavesInProgressBeforeSendingAndSentAfterwardsWithoutResettingHistory() throws Exception {
+        var item = item(EmailStatus.PENDING, 2);
+        var retryAt = item.getLastRetryAt();
+        batch(item);
+        var transitions = new ArrayList<EmailStatus>();
+        when(emails.save(item)).thenAnswer(call -> { transitions.add(item.getStatus()); return item; });
+        doAnswer(call -> { assertEquals(EmailStatus.IN_PROGRESS, item.getStatus()); return null; })
+                .when(mail).sendEmail(user, "subject", "body");
+        service.processQueue();
+        assertEquals(List.of(EmailStatus.IN_PROGRESS, EmailStatus.SENT), transitions);
+        assertEquals(2, item.getRetryCount());
+        assertEquals(retryAt, item.getLastRetryAt());
+        var order = inOrder(emails, mail);
+        order.verify(emails).findPendingEmails(PageRequest.of(0, 3));
+        order.verify(emails).save(item);
+        order.verify(mail).sendEmail(user, "subject", "body");
+        order.verify(emails).save(item);
+        verify(mail, never()).sendAdminEmail(any(), any(), any());
+        verify(config, never()).getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0,3,false", "2,3,false", "3,3,true", "4,3,true", "0,0,true", "0,-1,true"})
+    void retryBoundaryUsesStoredCounterAndConfiguredLimit(int retries, int limit, boolean terminal) throws Exception {
+        var item = item(EmailStatus.PENDING, retries);
+        batch(item);
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(limit);
+        if (terminal) when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
+        doThrow(new MailSendException("smtp failed")).when(mail).sendEmail(user, "subject", "body");
+        LocalDateTime before = LocalDateTime.now();
+        service.processQueue();
+        assertEquals(terminal ? EmailStatus.FAILED : EmailStatus.PENDING, item.getStatus());
+        assertEquals(terminal ? retries : retries + 1, item.getRetryCount());
+        assertBetween(item.getLastRetryAt(), before);
+        verify(emails, times(2)).save(item);
+        if (terminal) verify(mail).sendAdminEmail(eq("admin@example.com"), eq("Email dispatch failed"), anyString());
+        else verify(mail, never()).sendAdminEmail(any(), any(), any());
+    }
+
+    @Test
+    void checkedMessagingFailureAlsoRequeuesAndContinuesBatch() throws Exception {
+        var first = item(EmailStatus.PENDING, 0);
+        var second = item(EmailStatus.PENDING, 0);
+        second.setSubject("second");
+        batch(first, second);
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(2);
+        doThrow(new MessagingException("mime failed")).when(mail).sendEmail(user, "subject", "body");
+        service.processQueue();
+        assertEquals(EmailStatus.PENDING, first.getStatus());
+        assertEquals(1, first.getRetryCount());
+        assertEquals(EmailStatus.SENT, second.getStatus());
+        verify(mail).sendEmail(user, "second", "body");
+    }
+
+    @Test
+    void configuredThreeRetriesActuallyMeansFourFailedDispatches() throws Exception {
+        var item = item(EmailStatus.PENDING, 0);
+        batch(item);
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(3);
+        when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
+        doThrow(new MailSendException("failure")).when(mail).sendEmail(user, "subject", "body");
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            service.processQueue();
+            assertEquals(attempt, item.getRetryCount());
+            assertEquals(EmailStatus.PENDING, item.getStatus());
+        }
+        service.processQueue();
+        assertEquals(EmailStatus.FAILED, item.getStatus());
+        assertEquals(3, item.getRetryCount());
+        verify(mail, times(4)).sendEmail(user, "subject", "body");
+        var body = ArgumentCaptor.forClass(String.class);
+        verify(mail).sendAdminEmail(eq("admin@example.com"), eq("Email dispatch failed"), body.capture());
+        // Confirmed defects: hardcoded attempt count and full entity disclosure.
+        assertTrue(body.getValue().contains("after 3 attempts"));
+        assertTrue(body.getValue().contains(user.toString()));
+        assertTrue(body.getValue().contains("password=fixture-hash-not-a-real-password"));
+        assertTrue(body.getValue().contains("Error message: failure"));
+        assertTrue(body.getValue().contains("Email type: NOTIFICATION"));
+        assertTrue(body.getValue().contains("Sending time: " + item.getLastRetryAt()));
+    }
+
+    @Test
+    void adminMailExceptionIsSwallowedAndRemainingBatchContinues() throws Exception {
+        var first = item(EmailStatus.PENDING, 0);
+        var second = item(EmailStatus.PENDING, 0);
+        second.setSubject("second");
+        batch(first, second);
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
+        when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
+        doThrow(new MailSendException("failed")).when(mail).sendEmail(user, "subject", "body");
+        doThrow(new MailSendException("admin failed")).when(mail).sendAdminEmail(any(), any(), any());
+        assertDoesNotThrow(service::processQueue);
+        assertEquals(EmailStatus.FAILED, first.getStatus());
+        assertEquals(EmailStatus.SENT, second.getStatus());
+    }
+
+    @Test
+    void unexpectedSenderRuntimeFailureEscapesWithoutRetryOrRemainingDispatch() throws Exception {
+        var first = item(EmailStatus.PENDING, 0);
+        var second = item(EmailStatus.PENDING, 0);
+        second.setSubject("second");
+        batch(first, second);
+        var failure = new IllegalStateException("unexpected");
+        doThrow(failure).when(mail).sendEmail(user, "subject", "body");
+        assertSame(failure, assertThrows(IllegalStateException.class, service::processQueue));
+        assertEquals(EmailStatus.IN_PROGRESS, first.getStatus()); // Direct call, no tx proxy.
+        assertEquals(EmailStatus.PENDING, second.getStatus());
+        verify(mail, never()).sendEmail(user, "second", "body");
+        verify(config, never()).getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"save", "retryConfig", "adminConfig", "adminSender"})
+    void infrastructureRuntimeFailuresPropagateWithoutFallback(String stage) throws Exception {
+        var item = item(EmailStatus.PENDING, 0);
+        batch(item);
+        var failure = new IllegalStateException(stage);
+        if (stage.equals("save")) {
+            when(emails.save(item)).thenThrow(failure);
+        } else {
+            doThrow(new MailSendException("smtp")).when(mail).sendEmail(user, "subject", "body");
+            if (stage.equals("retryConfig")) when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenThrow(failure);
+            else {
+                when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
+                if (stage.equals("adminConfig")) when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenThrow(failure);
+                else {
+                    when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
+                    doThrow(failure).when(mail).sendAdminEmail(any(), any(), any());
+                }
+            }
+        }
+        assertSame(failure, assertThrows(IllegalStateException.class, service::processQueue));
+        if (stage.equals("save")) verifyNoInteractions(mail);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"PT168H", "PT0S", "-PT1H"})
+    void cleanupReproducesF1AfterRequestingSentOnlyDeletion(String duration) {
+        when(config.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)).thenReturn(duration);
+        LocalDateTime before = LocalDateTime.now().minus(java.time.Duration.parse(duration));
+        when(emails.deleteByStatusAndCreatedAtBefore(eq(EmailStatus.SENT), any())).thenReturn(5);
+        assertThrows(UnsupportedTemporalTypeException.class, service::deleteSentEmails);
+        var cutoff = ArgumentCaptor.forClass(LocalDateTime.class);
+        verify(emails).deleteByStatusAndCreatedAtBefore(eq(EmailStatus.SENT), cutoff.capture());
+        assertFalse(cutoff.getValue().isBefore(before));
+        assertFalse(cutoff.getValue().isAfter(LocalDateTime.now().minus(java.time.Duration.parse(duration))));
+        verifyNoInteractions(mail);
+    }
+
+    @Test
+    void invalidCleanupDurationDoesNotDelete() {
+        when(config.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)).thenReturn("not-a-duration");
+        assertThrows(DateTimeParseException.class, service::deleteSentEmails);
+        verifyNoInteractions(emails, mail);
+    }
+
+    private void batch(EmailQueueEntity... items) {
+        when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(3);
+        when(emails.findPendingEmails(PageRequest.of(0, 3))).thenReturn(List.of(items));
+    }
+
+    private EmailQueueEntity item(EmailStatus status, int retries) {
+        var item = new EmailQueueEntity();
+        item.setUserEntity(user);
+        item.setSubject("subject");
+        item.setBody("body");
+        item.setStatus(status);
+        item.setRetryCount(retries);
+        item.setLastRetryAt(LocalDateTime.of(2020, 1, 1, 0, 0));
+        return item;
+    }
+
+    private void assertBetween(LocalDateTime actual, LocalDateTime before) {
+        assertNotNull(actual);
+        assertFalse(actual.isBefore(before));
+        assertFalse(actual.isAfter(LocalDateTime.now()));
+    }
+}
