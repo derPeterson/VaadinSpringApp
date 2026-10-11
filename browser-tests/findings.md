@@ -1,8 +1,8 @@
-# Offene Befunde aus den Browsertests
+# Befunde aus den Browsertests
 
 ## UI-VER-001 · Verifikation ohne Token zeigt eine leere Ansicht statt der Startseite
 
-- **Status:** OFFEN, reproduziert im Chromium-Browsertest.
+- **Status:** BEHOBEN: Weiterleitung über das laufende Navigationsereignis; VER-02A bleibt als unveränderte Regression aktiv.
 - **Priorität:** Mittel. Ungültige oder unvollständige Linkaufrufe können Benutzer in einer leeren Ansicht zurücklassen.
 - **Betroffener Browserfall:** VER-02A.
 - **Geprüfter Ausgangsstand:** `ae4454b2` mit den ergänzten Browsertests; Anwendungscode unverändert.
@@ -20,18 +20,22 @@ sichtbar, URL `/home`, Titel `Home`.
 Verifikationsansicht. Serviceanzeige und Benutzermenü fehlen; der Titel lautet weiterhin
 `Verification`. Beim direkten Aufruf von `/home` funktioniert die Startseite.
 
-### Einordnung und vorgeschlagene Nachbesserung
+### Ursache und Korrektur
 
-`VerificationView.setParameter(...)` startet bei fehlendem Token eine zweite Navigation
+`VerificationView.setParameter(...)` startete bei fehlendem Token eine zweite Navigation
 mit `UI.getCurrent().navigate(HomeView.class)` während die erste Navigation noch läuft.
 Das ist die anhand des Codes naheliegende Ursache für die inkonsistente Ansicht.
-Die Umleitung sollte über das aktuelle Navigationsereignis erfolgen, wie bereits in
-`MainView.beforeEnter(...)` mit `event.forwardTo(HomeView.class)`.
+Die Umleitung erfolgt jetzt über das aktuelle Navigationsereignis, wie bereits in
+`MainView.beforeEnter(...)` mit `event.forwardTo(HomeView.class)`. Dadurch wird die
+Zielnavigation samt Inhalt und Titel abgeschlossen, statt eine verschachtelte Navigation
+zu starten. Tokenvalidierung und Sicherheitsregeln wurden nicht geändert.
 
-Der Browserfall bleibt aktiv und schlägt fehl; der Bericht wird nicht als vollständig
-bestanden ausgegeben. Keine Umgehung durch Nachladen von `/home`, keinen Skip und keine
-schwächere Erwartung einbauen. Nach einer gezielten Korrektur die Verifikationssuite
-erneut prüfen. Tokenvalidierung, Adminsperren und Serviceverträge bleiben davon getrennt.
+Der Browserfall bleibt unverändert aktiv: keine Umgehung durch Nachladen von `/home`,
+kein Skip und keine schwächere Erwartung. Verifikationssuite und vollständiger Browserlauf
+prüfen die sichtbare Startseite und den Titel; die jeweiligen Laufarchive enthalten die
+tatsächlichen Ergebnisse und Belege. Ergänzende JUnit-Regressionen prüfen null/leeren
+Token ohne Serviceaufruf sowie unveränderte gültige, abgelaufene und unbekannte Tokens.
+Adminsperren und Serviceverträge bleiben davon getrennt.
 
 Der ähnliche tokenlose Navigationspfad in `ResetPasswordView` wurde im Rahmen dieses
 Pakets noch nicht im Browser geprüft; für ihn liegt hier kein bestätigter Befund vor.
