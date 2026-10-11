@@ -46,6 +46,7 @@ public final class BrowserTestRunner {
         metadata.put("project", project);
         metadata.put("build", build);
         metadata.put("failureProbe", options.contains("--failure-probe"));
+        metadata.put("uiLanguage", System.getProperty("browser.tests.language"));
         metadata.put("suite", options.contains("--failure-probe") ? "reporting-probe" : suite);
         metadata.put("setup", "not-started");
         metadata.put("tests", "not-started");
@@ -78,6 +79,11 @@ public final class BrowserTestRunner {
             Runtime.getRuntime().addShutdownHook(new Thread(process::destroy));
             System.exit(process.waitFor());
         }
+        int languageIndex = Arrays.asList(args).indexOf("--language");
+        if (languageIndex >= 0 && languageIndex + 1 >= args.length) throw new IllegalArgumentException("Language missing.");
+        String language = languageIndex >= 0 ? args[languageIndex + 1] : "de";
+        new de.derpeterson.browsertests.i18n.UiTexts(language); // Validate before creating a Docker environment.
+        System.setProperty("browser.tests.language", language);
         int suiteIndex = Arrays.asList(args).indexOf("--suite");
         if (suiteIndex >= 0 && suiteIndex + 1 >= args.length) throw new IllegalArgumentException("Suite name missing.");
         String suite = suiteIndex >= 0 ? args[suiteIndex + 1] : "all";
@@ -118,7 +124,7 @@ public final class BrowserTestRunner {
             var result = listener.getSummary();
             metadata.put("browser", "Chromium " + System.getProperty("browser.tests.browserVersion", "nicht verfügbar"));
             metadata.put("viewport", "1280 × 900");
-            metadata.put("browserLocale", "de-DE");
+            metadata.put("browserLocale", de.derpeterson.browsertests.i18n.UiTexts.selected().browserLocale());
             metadata.put("browserTimezone", "Europe/Berlin");
             metadata.put("testsFound", result.getTestsFoundCount());
             metadata.put("testsPassed", result.getTestsSucceededCount());
@@ -151,7 +157,7 @@ public final class BrowserTestRunner {
             try {
                 Files.writeString(run.resolve("allure-results/environment.properties"),
                         "Java=" + Runtime.version() + "\nPlaywright=1.63.0\nGit=" + metadata.get("commit")
-                        + "\nBranch=" + metadata.get("branch") + "\nDocker=" + project + "\n");
+                        + "\nUI-Language=" + metadata.get("uiLanguage") + "\nBranch=" + metadata.get("branch") + "\nDocker=" + project + "\n");
                 command(allureCommand(module, "generate", run.resolve("allure-results").toString(), "--output", run.resolve("html").toString()));
                 writeReportLauncher(run.resolve("html"));
                 metadata.put("html", "passed");

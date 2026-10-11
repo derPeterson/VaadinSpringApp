@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public final class MailpitInbox {
     private static final ObjectMapper JSON = new ObjectMapper();
     private final BrowserContext context;
+    private final de.derpeterson.browsertests.i18n.UiTexts texts = de.derpeterson.browsertests.i18n.UiTexts.selected();
     private final String baseUrl = System.getProperty("browser.tests.mailpitUrl");
 
     public MailpitInbox(BrowserContext context) { this.context = context; }
@@ -44,7 +45,7 @@ public final class MailpitInbox {
         JsonNode mail = getJson("/api/v1/message/" + found.get().path("ID").asText());
         assertTrue(addressedTo(mail, recipient), "Mail gehört nicht zur eigenen Testadresse.");
         String subject = mail.path("Subject").asText();
-        assertTrue(List.of("Verify your account", "Verifiziere deinen Account").contains(subject), "Unerwarteter Verifikationsbetreff.");
+        assertEquals(texts.text("email.verification.subject"), subject, "Verifikationsbetreff muss zur ausgewählten Sprache passen.");
         String html = mail.path("HTML").asText();
         assertFalse(html.isBlank(), "Verifikationsmail hat keinen HTML-Inhalt.");
         assertFalse(html.contains("{{"), "Nicht ersetzte Platzhalter in der versandten Mail.");

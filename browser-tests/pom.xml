@@ -25,6 +25,14 @@
         <dependency><groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-databind</artifactId><version>2.22.3</version><scope>test</scope></dependency>
     </dependencies>
     <build>
+        <testResources>
+            <!-- Share original translation files; no copied text catalogue or application dependency. -->
+            <testResource>
+                <directory>${project.basedir}/../src/main/resources</directory>
+                <includes><include>i18n/messages_*.properties</include></includes>
+                <filtering>false</filtering>
+            </testResource>
+        </testResources>
         <plugins>
             <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.15.0</version></plugin>
             <plugin>

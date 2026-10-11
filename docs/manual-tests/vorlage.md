@@ -1053,7 +1053,7 @@ in einer neuen, separaten Anleitung für manuelle Sonderprüfungen gesammelt.
 | [ ] | REG-01 | TEILWEISE | Gültige Registrierung, Bestätigung, tatsächliche Testmail und gesperrte Anmeldung vor Aktivierung | Vollständige Adminansicht des angelegten Kontos |
 | [ ] | REG-02 | TEILWEISE | Leere Pflichtfelder, ungültige E-Mail, abweichende Passwortbestätigung und erfolgreiche Korrektur | Blanke Namen, weitere Passwort-/Bestätigungsvarianten, heutige/zukünftige Geburtstage |
 | [ ] | VER-01 | TEILWEISE | Empfänger, Betreff, Name, Service, Platzhalter, echter Mailbutton, Aktivierung, Anmeldung und erneute Linkverwendung | Weitere Sprach-/Footer- und Adminsperrenvarianten |
-| [ ] | VER-02 | TEILWEISE / FEHLER | Unbekannter Token geprüft; tokenloser Aufruf als Browserfall umgesetzt | Tokenloser Aufruf zeigt noch eine leere Ansicht; fehlerhafte Eingaben im Mailformular fehlen |
+| [ ] | VER-02 | TEILWEISE | Unbekannter Token und tokenloser Aufruf zur tatsächlichen Startseite geprüft | Fehlerhafte Eingaben im Mailformular fehlen |
 | [ ] | Alle weiteren bisherigen Prüfpunkte | OFFEN | Noch keine vollständige Übernahme in Browserabläufe | Vorhandene Varianten nach und nach zuordnen und umsetzen |
 
 Die historischen Test-Häkchen und Statuswerte der Abschnitte 1–17 sowie archivierte

@@ -8,7 +8,6 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import org.junit.jupiter.api.*;
-import java.util.regex.Pattern;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -50,10 +49,9 @@ public class InfrastructureBrowserTest extends BrowserFixture {
             Dieser Infrastrukturfall führt noch keine Anmeldung aus.
             """)
     void loginFormLoads() {
-        page.navigate("/login");
-        assertThat(page.locator("vaadin-email-field")).isVisible();
-        assertThat(page.locator("vaadin-password-field")).isVisible();
-        assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(Pattern.compile("^(Anmelden|Log in|Login)$", Pattern.CASE_INSENSITIVE)))).isVisible();
+        new de.derpeterson.browsertests.pages.LoginPage(page).open();
+        assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions()
+                .setName(texts.text("base.login_button")).setExact(true))).isVisible();
     }
 
     @Test

@@ -89,6 +89,7 @@ public class VerificationBrowserTest extends BrowserFixture {
         login.open();
         login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
         assertThat(target).hasURL(Pattern.compile(".*/home(?:\\?.*)?$"));
+        new UserMenu(target).selectTestLanguage();
         new UserMenu(target).assertUserSignedInWithoutAdminAction(email);
     }
 

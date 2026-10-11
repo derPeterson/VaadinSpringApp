@@ -82,7 +82,7 @@ public class AuthenticationBrowserTest extends BrowserFixture {
     void anonymousUserCannotOpenAdmin() {
         page.navigate("/admin");
         new LoginPage(page).assertFormVisible();
-        assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName("Dashboard").setExact(true))).hasCount(0);
+        assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName(texts.text("adminView.dashboard.title")).setExact(true))).hasCount(0);
     }
 
     @Test
@@ -136,18 +136,20 @@ public class AuthenticationBrowserTest extends BrowserFixture {
         login.open();
         login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
         assertThat(page).hasURL(Pattern.compile(".*/home(?:\\?.*)?$"));
+        new UserMenu(page).selectTestLanguage();
         new UserMenu(page).assertUserSignedInWithoutAdminAction(email);
         page.navigate("/admin");
         assertThat(page).hasURL(Pattern.compile(".*/home(?:\\?.*)?$"));
-        assertThat(page.getByText(Pattern.compile(
-                "^(Du hast keinen Zugriff auf diesen Bereich\\.|You do not have access to this area\\.)$"))).isVisible();
-        assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName("Dashboard").setExact(true))).hasCount(0);
+        assertThat(page.getByText(texts.text("base.error.admin_access_denied"), new Page.GetByTextOptions().setExact(true))).isVisible();
+        assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName(texts.text("adminView.dashboard.title")).setExact(true))).hasCount(0);
     }
 
     private void signInAsAdmin() {
         LoginPage login = new LoginPage(page);
         login.open();
         login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+        assertThat(page).hasURL(Pattern.compile(".*/admin(?:\\?.*)?$"));
+        new UserMenu(page).selectTestLanguage();
         login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
     }
 }

@@ -55,7 +55,10 @@ class MarkdownSummaryTest {
                  "description":"1. Login öffnen.\\n\\n**Erwartet:** Keine Anmeldung.",
                  "labels":[{"name":"feature","value":"Anmeldung"},{"name":"story","value":"Abgelehnte Anmeldung"}]}
                 """);
-        String report = MarkdownSummary.render(complete(), List.of(test));
+        var metadata = complete();
+        metadata.put("uiLanguage", "en");
+        String report = MarkdownSummary.render(metadata, List.of(test));
+        assertTrue(report.contains("| Geprüfte Oberflächensprache | en |"));
         assertTrue(report.contains("### Anmeldung"));
         assertTrue(report.contains("**Prüfbereich:** Abgelehnte Anmeldung"));
         assertTrue(report.contains("**Erwartet:** Keine Anmeldung."));

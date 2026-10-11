@@ -6,6 +6,7 @@ Die Browsertests prüfen die im Browser gerenderte Vaadin-Anwendung in einer fri
 
 - [Einrichten und starten](#einrichten-und-starten)
 - [Suites und Testfälle](#suites-und-testfälle)
+- [Sprache und Übersetzungen](#sprache-und-übersetzungen)
 - [Ergebnisse ansehen](#ergebnisse-ansehen)
 - [Java-Dateien verstehen](#java-dateien-verstehen)
 - [Isolation und Grenzen](#isolation-und-grenzen)
@@ -30,7 +31,7 @@ In PowerShell im Projektordner:
 | --- | --- |
 | Tests mit sichtbarem Browser | `.\browser-tests\run.ps1 -Headed` |
 | Bereits gebautes Browser-Testimage wiederverwenden | `.\browser-tests\run.ps1 -NoBuild` |
-| Reporter und Link-Isolation mit JUnit prüfen, ohne Docker | `.\browser-tests\run.ps1 -ReportingTests` |
+| Reporter, Link-Isolation und Übersetzungs-Helper mit JUnit prüfen, ohne Docker | `.\browser-tests\run.ps1 -ReportingTests` |
 | Letzten Allure-HTML-Bericht anzeigen | `.\browser-tests\run.ps1 -Report` |
 | Bewusst einen Fehlerbericht erzeugen | `.\browser-tests\run.ps1 -NoBuild -FailureProbe` |
 | Eine gespeicherte Ablaufaufzeichnung öffnen | `.\browser-tests\run.ps1 -Trace 'C:\PFAD\ZUM\trace.zip'` |
@@ -157,15 +158,55 @@ Konto erneut Erfolg anzeigen. Der Fall behauptet keinen Nachweis für nachträgl
 Adminsperren. Die isolierte Mailpit-Zustellung beweist außerdem keine Zustellung an
 externe Postfächer oder Darstellung in Outlook/Gmail.
 
-### Behobener Navigationsbefund / Regression
+## Sprache und Übersetzungen
 
-UI-VER-001 wurde durch `event.forwardTo(HomeView.class)` in der tokenlosen
-Verifikationsnavigation korrigiert. VER-02A bleibt unverändert und prüft neben `/home`
-den sichtbaren Startseiteninhalt und den Titel `Home`, ohne Nachladen oder Skip.
-Reproduktion, Korrektur und Befundstatus stehen in [findings.md](findings.md);
-die tatsächlichen Prüfergebnisse stehen in den jeweiligen Laufarchiven. Tokenvalidierung
-und Sicherheitsregeln bleiben unverändert. Der ähnliche Pfad in `ResetPasswordView`
-ist nicht Bestandteil dieser Korrektur.
+Jeder Lauf prüft **eine ausdrücklich gewählte Oberflächensprache**. Standard ist Deutsch.
+Für die englische Variante denselben Lauf mit `-Language en` starten:
+
+```powershell
+.\browser-tests\run.ps1 -Language de
+.\browser-tests\run.ps1 -Language en
+.\browser-tests\run.ps1 -Suite registration -Language en -Headed
+```
+
+Die Sprache lässt sich mit `-Suite`, `-Headed` und `-NoBuild` kombinieren. Jeder Lauf
+erhält sein eigenes Archiv mit Oberflächensprache und Browser-Locale. Die 15 Fälle
+laufen pro Sprache; Deutsch und Englisch werden nicht gleichzeitig als richtige
+Antwort akzeptiert. Beide Läufe zusammen prüfen 30 Fallausführungen.
+
+`i18n/UiTexts` lädt die **originalen** Dateien `src/main/resources/i18n/messages_de.properties`
+und `messages_en.properties` über den Test-Classpath. Maven stellt diese Ressourcen
+beim Testbuild bereit. Es gibt keinen zweiten, von Hand gepflegten Textkatalog und
+keine Abhängigkeit auf Spring oder Vaadin. Der Java-`PropertyResourceBundle` liest die
+Zeichenkodierung wie in der Anwendung, einschließlich der vorhandenen deutschen
+ISO-8859-1-Datei und UTF-8-Dateien. Die Originaldateien werden nicht umkodiert.
+[Java-Ressourcenleser](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/PropertyResourceBundle.html).
+Fehlende/leere Schlüssel und nicht unterstützte
+Sprachen brechen die Prüfung ab; kein stiller Rückfall auf Englisch oder den Schlüssel.
+
+Die vorhandene Anwendungsklasse `MessageProperties` bleibt unverändert. Sie benötigt
+die serverseitige Vaadin-Session, die der externe Browsertest nicht besitzt. Beide
+Helfer verwenden dieselbe Textquelle. Eine Änderung der Properties wird beim nächsten
+Testbuild übernommen. Bei `-NoBuild` muss zusätzlich das wiederverwendete App-Image
+zu diesen Texten passen; nach Textänderungen deshalb gewöhnlich mit Build starten.
+
+Die Tests wählen die Sprache über das echte Flaggenmenü und prüfen anschließend
+exakt die entsprechenden Labels, Buttons, Hinweise und Mailbetreffe. Nach einer
+erfolgreichen Anmeldung wird die Testsprache nochmals über das Menü gesetzt, weil
+die gespeicherte Benutzersprache die Browser-Vorgabe überschreiben kann. Die Tests
+behaupten damit keine Prüfung der automatischen Spracherkennung oder gespeicherten
+Sprachpräferenz beim Login. Datumsangaben werden passend zur gewählten Sprache eingegeben.
+
+Formatierte Benachrichtigungen behalten ihre Empfängerparameter; deren HTML-Markup
+wird für den sichtbaren Textvergleich in einem inaktiven Template ausgewertet. Die
+Anwendungsseite wird dabei nicht verändert. Prüfungen auf Fehlermarkierungen,
+Zugriffsverweigerung, Navigation und Mailzustellung bleiben unabhängig davon erhalten.
+
+Routen und feste Seitentitel wie `Home`, technische Bildnamen sowie erfundene
+Testdaten sind keine übersetzten Properties und bleiben als solche im Test stehen.
+Diese Tests prüfen die Verwendung der richtigen Übersetzung; die sprachliche Qualität
+des Inhalts benötigt weiterhin eine gesonderte Einschätzung. Änderungen von Schlüsseln
+oder der UI-Struktur können weiterhin eine Anpassung der Tests erfordern.
 
 ## Ergebnisse ansehen
 
@@ -212,6 +253,7 @@ Alle Java-Dateien liegen unter `src/test/java/de/derpeterson/browsertests/`:
 | `suites/VerificationBrowserTest.java` | Drei Fälle für Mailaktivierung und gültige/ungültige Linkaufrufe |
 | `mail/MailpitInbox.java` | Eigene SMTP-Mail abwarten, lesen und den sichtbaren Mailbutton verwenden |
 | `mail/MailpitInboxTest.java` | Fremde Linkziele und die manuelle Umgebung vor Navigation ausschließen |
+| `i18n/UiTexts.java / UiTextsTest.java` | Originale DE/EN-Properties lesen, Parameter formatieren und fehlende Schlüssel/Sprachen absichern |
 | `pages/` | Kleine Bedienhelfer für Loginformular, Benutzermenü und Benutzeranlage |
 | `BrowserSuites.java / BrowserTestAccounts.java` | Suite-Auswahl und erfundene lokale Testkonten |
 | `BrowserFixture.java` | Browser und isolierten Kontext bereitstellen; Screenshot und Trace an Allure übergeben |
@@ -236,7 +278,7 @@ $env:BROWSER_TEST_MAILPIT_PORT = '18027'
 
 `-NoBuild` kann einen älteren App-Stand testen und ist nur bei bewusst unverändertem App-Code sinnvoll. Die tatsächliche Image-ID und Wiederverwendung stehen im Protokoll. Daten und Belege liegen außerhalb von Git; Screenshots/Traces können spätere Testeingaben oder Sitzungstokens enthalten.
 
-Der aktuelle Umfang umfasst Infrastruktur, Login/Logout, Zugriffsrechte, Registrierung und die oben beschriebenen Verifikationsabläufe. Weitere Benutzerabläufe sind im Abschnitt „Suites und Testfälle“ als offen aufgeführt. Nur Chromium, ein Thread, keine automatischen Wiederholungen. Die zusätzliche Browserprüfung liefert keine Java-Coverage.
+Der aktuelle Umfang umfasst Infrastruktur, Login/Logout, Zugriffsrechte, Registrierung und die oben beschriebenen Verifikationsabläufe. Weitere Benutzerabläufe sind im Abschnitt „Suites und Testfälle“ als offen aufgeführt. Nur Chromium, ein Thread, eine explizite Sprache pro Lauf, keine automatischen Wiederholungen. Die zusätzliche Browserprüfung liefert keine Java-Coverage.
 
 Bei normalem Abschluss und Testfehlern werden eigene Container und Volumes entfernt. Hartes Beenden des Prozesses oder ein ausgefallener Docker-Dienst kann das verhindern. Dann nur den genauen Projektnamen aus `metadata.json` zum Abbau verwenden:
 
@@ -250,7 +292,7 @@ Keine fremden oder manuellen Docker-Projekte zum Aufräumen einsetzen.
 
 `browser-tests/pom.xml` als zusätzliches Maven-Projekt in IntelliJ hinzufügen (Maven-Fenster → Maven-Projekt hinzufügen). Dann bekommst du Navigation und Autovervollständigung wie bei deinen anderen Java-Tests.
 
-Die Browserfälle werden über den Starter ausgeführt. Ein direkter JUnit-Start ohne verwaltete Testumgebung bricht bewusst ab, damit Tests nicht versehentlich gegen eine laufende Anwendung oder deren Datenbank gehen. Die `MarkdownSummaryTest`-Tests können direkt als gewöhnliche JUnit-Tests ausgeführt werden.
+Die Browserfälle werden über den Starter ausgeführt. Ein direkter JUnit-Start ohne verwaltete Testumgebung bricht bewusst ab, damit Tests nicht versehentlich gegen eine laufende Anwendung oder deren Datenbank gehen. Die Tests für MarkdownSummary, Mailpit-Link-Isolation und UiTexts können direkt als gewöhnliche JUnit-Tests ausgeführt werden.
 
 Neue Fälle in der fachlich passenden Suite unter `suites/` ergänzen; für einen neuen Bereich eine eigene Suite-Klasse und einen Eintrag in `BrowserSuites` anlegen. Test-ID, `@DisplayName`, `@Feature`, `@Story` und `@Description` pflegen: Daraus entstehen Gruppierung, Prüfbereich, Schritte und Erwartung im Bericht. Playwrights wartende Assertions verwenden, keine festen Schlafzeiten. Eine automatische Anbindung an das `/start`-Benchmarking ist noch nicht eingerichtet.
 

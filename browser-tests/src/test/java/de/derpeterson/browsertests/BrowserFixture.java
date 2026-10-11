@@ -2,6 +2,8 @@ package de.derpeterson.browsertests;
 
 import com.microsoft.playwright.*;
 import io.qameta.allure.playwright.AllurePlaywright;
+import de.derpeterson.browsertests.i18n.UiTexts;
+import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.playwright.TraceSession;
 import org.junit.jupiter.api.*;
 
@@ -10,6 +12,7 @@ public abstract class BrowserFixture {
     protected static Browser browser;
     protected BrowserContext context;
     protected Page page;
+    protected final UiTexts texts = UiTexts.selected();
     protected TraceSession trace;
 
     @BeforeAll
@@ -24,12 +27,15 @@ public abstract class BrowserFixture {
     @BeforeEach
     protected void openPage() {
         context = browser.newContext(new Browser.NewContextOptions().setBaseURL(System.getProperty("browser.tests.baseUrl"))
-                .setViewportSize(1280, 900).setLocale("de-DE").setTimezoneId("Europe/Berlin")
+                .setViewportSize(1280, 900).setLocale(texts.browserLocale()).setTimezoneId("Europe/Berlin")
                 .setServiceWorkers(com.microsoft.playwright.options.ServiceWorkerPolicy.BLOCK));
         context.setDefaultTimeout(15_000);
         AllurePlaywright.register(context);
         trace = AllurePlaywright.startTracing(context);
         page = context.newPage();
+        page.navigate("/home");
+        com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat(page).hasTitle("Home");
+        new UserMenu(page).selectTestLanguage();
     }
 
     @AfterEach

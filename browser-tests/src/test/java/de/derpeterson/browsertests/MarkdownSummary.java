@@ -34,10 +34,10 @@ final class MarkdownSummary {
                 Map.entry("imageId", "App-Image-ID"), Map.entry("build", "Image-Build aufgerufen (Cache möglich)"),
                 Map.entry("failureProbe", "Absichtlicher Fehler-Probelauf"), Map.entry("suite", "Ausgewählte Suite"),
                 Map.entry("browser", "Browser"), Map.entry("viewport", "Bildschirmgröße"),
-                Map.entry("browserLocale", "Browser-Locale"), Map.entry("browserTimezone", "Browser-Zeitzone"),
+                Map.entry("uiLanguage", "Geprüfte Oberflächensprache"), Map.entry("browserLocale", "Browser-Locale"), Map.entry("browserTimezone", "Browser-Zeitzone"),
                 Map.entry("appUrl", "Anwendung"), Map.entry("mailpitUrl", "Mailpit"), Map.entry("project", "Docker-Projekt"),
                 Map.entry("setup", "Aufbau"), Map.entry("tests", "Testausführung"), Map.entry("cleanup", "Abbau"), Map.entry("html", "HTML-Bericht"));
-        for (String key : List.of("runId", "startedAt", "finishedAt", "commit", "branch", "imageId", "build", "suite", "failureProbe", "browser", "viewport", "browserLocale", "browserTimezone", "appUrl", "mailpitUrl", "project", "setup", "tests", "cleanup", "html"))
+        for (String key : List.of("runId", "startedAt", "finishedAt", "commit", "branch", "imageId", "build", "suite", "failureProbe", "browser", "viewport", "uiLanguage", "browserLocale", "browserTimezone", "appUrl", "mailpitUrl", "project", "setup", "tests", "cleanup", "html"))
             text.append("| ").append(labels.get(key)).append(" | ").append(cell(metadata.get(key))).append(" |\n");
         text.append("| Lokale Änderungen | ").append(metadata.getOrDefault("gitStatus", "").toString().isBlank() ? "nein" : "ja; siehe metadata.json").append(" |\n");
         text.append("\n## Umfang und Grenzen\n\n")

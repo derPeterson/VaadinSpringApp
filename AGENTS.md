@@ -68,6 +68,11 @@
   Keep technical rules, transactions and concurrency in JUnit/persistence tests; browser
   tests check visible UI behavior and user journeys. Manual checks cover special cases
   requiring human judgment or unsuitable for automation.
+  Load expected translated browser labels/messages from the original i18n properties via
+  the test module's UiTexts helper; do not duplicate German/English strings or accept both
+  languages at once. Use the explicit -Language de/en selection, choose it through the UI,
+  and account for saved user preferences after login. Missing keys must fail. Keep stable
+  route/title contracts and invented test data distinct from translated UI text.
   For mail journeys, register through the UI and read only the own recipient's captured
   SMTP mail through MailpitInbox; never use mail generation APIs or service/database
   calls to bypass the UI. Keep the activation link on the runner's exact local origin.

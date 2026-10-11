@@ -1,27 +1,45 @@
 package de.derpeterson.browsertests.pages;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
-import java.util.regex.Pattern;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
-/** The same avatar menu a person uses to sign out or inspect their account. */
+/** The same avatar menu a person uses to select a language or sign out. */
 public final class UserMenu {
     private final Page page;
+    private final UiTexts texts = UiTexts.selected();
 
     public UserMenu(Page page) { this.page = page; }
 
     @Step("Benutzermenü über den Avatar öffnen")
     public void open() {
-        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("User Icon").setExact(true)).click();
+        if (!page.locator("vaadin-popover-overlay[opened]").isVisible())
+            avatar().click();
+        assertThat(page.locator("vaadin-popover-overlay[opened]")).isVisible();
+    }
+
+    @Step("Testsprache über die sichtbare Sprachflagge auswählen")
+    public void selectTestLanguage() {
+        open();
+        Locator flag = page.getByRole(AriaRole.IMG, new Page.GetByRoleOptions()
+                .setName(texts.language().equals("de") ? "German Flag Icon" : "English Flag Icon").setExact(true));
+        page.getByRole(AriaRole.BUTTON).filter(new Locator.FilterOptions().setHas(flag)).click();
+        assertThat(flag).hasCSS("filter", "none");
+        // The menu may be anonymous or authenticated; both expected labels use exactly this language.
+        assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(texts.text("base.login_button")).setExact(true))
+                .or(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(texts.text("base.logout_button")).setExact(true)))).isVisible();
+        page.keyboard().press("Escape");
+        assertThat(page.locator("vaadin-popover-overlay[opened]")).not().isVisible();
     }
 
     @Step("Über die Oberfläche abmelden")
     public void signOut() {
         open();
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions()
-                .setName(Pattern.compile("^(Abmelden|Logout)$"))).click();
+                .setName(texts.text("base.logout_button")).setExact(true)).click();
         new LoginPage(page).assertFormVisible();
     }
 
@@ -30,8 +48,12 @@ public final class UserMenu {
         open();
         assertThat(page.getByText(email, new Page.GetByTextOptions().setExact(true))).isVisible();
         assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions()
-                .setName(Pattern.compile("^(Abmelden|Logout)$")))).isVisible();
+                .setName(texts.text("base.logout_button")).setExact(true))).isVisible();
         assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions()
-                .setName(Pattern.compile("^(Anwendung verwalten|Manage application)$")))).hasCount(0);
+                .setName(texts.text("base.manage_application_button")).setExact(true))).hasCount(0);
+    }
+
+    private Locator avatar() {
+        return page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("User Icon").setExact(true));
     }
 }
