@@ -1,0 +1,31 @@
+# VaadinSpringApp: local manual test setup
+# Copy to data/manual-tests/2026-10-10_14-30__56f66ac/manual-tests.properties in your project.
+# Fill a local test admin password and test remember-me key before first startup.
+# Keep local secrets out of Git and test reports.
+# Use plain Java property values, without surrounding quotes.
+
+# New isolated database: adjust the date/time folder to section 4 of the guide.
+spring.datasource.url=jdbc:h2:file:C:/Dev/Projects/VaadinSpringApp/data/manual-tests/2026-10-10_14-30__56f66ac/appdb;AUTO_SERVER=TRUE;MODE=MySQL;DB_CLOSE_DELAY=-1;SCHEMA=PUBLIC
+server.port=8080
+app.security.expose-h2-console=false
+spring.h2.console.enabled=false
+
+# Enable only for first startup. Set false after the admin has been created.
+app.bootstrap.default-admin.enabled=true
+app.bootstrap.default-admin.email=admin@example.test
+app.bootstrap.default-admin.password=
+
+# Initial defaults: existing database settings are not overwritten.
+app.config.defaults.service.name=Vaadin Test
+app.config.defaults.base.url=http://localhost:8080/
+app.config.defaults.rememberMe.secret.key=
+app.config.defaults.email.from=no-reply@example.test
+app.config.defaults.email.admin=admin@example.test
+app.config.defaults.mail.host=127.0.0.1
+app.config.defaults.mail.port=1025
+app.config.defaults.mail.username=
+app.config.defaults.mail.password=
+app.config.defaults.mail.smtp.auth=false
+app.config.defaults.mail.smtp.starttls.enable=false
+app.config.defaults.mail.smtp.ssl.enable=false
+app.config.defaults.mail.debug=false
