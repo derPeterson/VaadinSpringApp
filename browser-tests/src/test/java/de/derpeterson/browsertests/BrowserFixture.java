@@ -1,5 +1,7 @@
 package de.derpeterson.browsertests;
 
+import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.*;
 import com.microsoft.playwright.*;
 import io.qameta.allure.playwright.AllurePlaywright;
 import de.derpeterson.browsertests.i18n.UiTexts;
@@ -33,8 +35,8 @@ public abstract class BrowserFixture {
         AllurePlaywright.register(context);
         trace = AllurePlaywright.startTracing(context);
         page = context.newPage();
-        page.navigate("/home");
-        com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat(page).hasTitle("Home");
+        page.navigate(path(HOME_ROUTE));
+        com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat(page).hasTitle(HOME_PAGE_TITLE);
         new UserMenu(page).selectTestLanguage();
     }
 

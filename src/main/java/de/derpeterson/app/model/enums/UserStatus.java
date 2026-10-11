@@ -17,13 +17,11 @@ import java.nio.charset.StandardCharsets;
 @Getter
 @RequiredArgsConstructor
 public enum UserStatus {
-    AVAILABLE("userStatus.available", "userStatus.available.description", "#27ae60", AppConstants.BLACK_COLOR_HEX_STRING, VaadinIcon.CHECK_CIRCLE, null),
-    EMPLOYED("userStatus.employed", "userStatus.employed.description", "#cd6155", AppConstants.BLACK_COLOR_HEX_STRING, VaadinIcon.MINUS_CIRCLE, null),
-    ABSENT("userStatus.absent", "userStatus.absent.description", "#f4d03f", AppConstants.BLACK_COLOR_HEX_STRING, null, "/META-INF/resources/custom-theme/icons/clock_circle.svg"),
-    OFFLINE("userStatus.offline", "userStatus.offline.description", "#99a3a4", AppConstants.BLACK_COLOR_HEX_STRING, VaadinIcon.CLOSE_CIRCLE, null);
+    AVAILABLE("#27ae60", AppConstants.BLACK_COLOR_HEX_STRING, VaadinIcon.CHECK_CIRCLE, null),
+    EMPLOYED("#cd6155", AppConstants.BLACK_COLOR_HEX_STRING, VaadinIcon.MINUS_CIRCLE, null),
+    ABSENT("#f4d03f", AppConstants.BLACK_COLOR_HEX_STRING, null, "/META-INF/resources/custom-theme/icons/clock_circle.svg"),
+    OFFLINE("#99a3a4", AppConstants.BLACK_COLOR_HEX_STRING, VaadinIcon.CLOSE_CIRCLE, null);
 
-    private final String textKey;
-    private final String textDescriptionKey;
     private final String color;
     private final String backgroundColor;
     private final VaadinIcon vaadinIcon;

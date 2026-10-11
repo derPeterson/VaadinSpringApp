@@ -1,5 +1,6 @@
 package de.derpeterson.app.service;
 
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.helper.image.ImageHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -226,7 +227,7 @@ public class VerificationService {
                 "FIRST_NAME", user.getFirstName(),
                 "LAST_NAME", user.getLastName(),
                 "VERIFICATION_LINK", UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))
-                        .pathSegment("verification", token).toUriString());
+                        .pathSegment(AppRouteConstants.VERIFICATION_ROUTE, token).toUriString());
 
         ClassPathResource resource = new ClassPathResource("email/welcome_" + CustomI18NProvider.getCurrentLocale().getLanguage() + ".html");
         String content;

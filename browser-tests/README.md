@@ -31,7 +31,7 @@ In PowerShell im Projektordner:
 | --- | --- |
 | Tests mit sichtbarem Browser | `.\browser-tests\run.ps1 -Headed` |
 | Bereits gebautes Browser-Testimage wiederverwenden | `.\browser-tests\run.ps1 -NoBuild` |
-| Reporter, Link-Isolation und Übersetzungs-Helper mit JUnit prüfen, ohne Docker | `.\browser-tests\run.ps1 -ReportingTests` |
+| Reporter, URL-/Link-Isolation und Übersetzungs-Helper mit JUnit prüfen, ohne Docker | `.\browser-tests\run.ps1 -ReportingTests` |
 | Letzten Allure-HTML-Bericht anzeigen | `.\browser-tests\run.ps1 -Report` |
 | Bewusst einen Fehlerbericht erzeugen | `.\browser-tests\run.ps1 -NoBuild -FailureProbe` |
 | Eine gespeicherte Ablaufaufzeichnung öffnen | `.\browser-tests\run.ps1 -Trace 'C:\PFAD\ZUM\trace.zip'` |
@@ -184,11 +184,26 @@ ISO-8859-1-Datei und UTF-8-Dateien. Die Originaldateien werden nicht umkodiert.
 Fehlende/leere Schlüssel und nicht unterstützte
 Sprachen brechen die Prüfung ab; kein stiller Rückfall auf Englisch oder den Schlüssel.
 
-Die vorhandene Anwendungsklasse `MessageProperties` bleibt unverändert. Sie benötigt
-die serverseitige Vaadin-Session, die der externe Browsertest nicht besitzt. Beide
-Helfer verwenden dieselbe Textquelle. Eine Änderung der Properties wird beim nächsten
-Testbuild übernommen. Bei `-NoBuild` muss zusätzlich das wiederverwendete App-Image
-zu diesen Texten passen; nach Textänderungen deshalb gewöhnlich mit Build starten.
+Anwendung und Browsertests verwenden **denselben Getter-Katalog** in
+`shared/src/main/java/de/derpeterson/app/i18n/MessageTexts.java`. `MessageProperties`
+ist der Spring-/Vaadin-Adapter und `UiTexts` der Browser-Adapter; beide erben diese
+Getter. In einem Page-Helper steht beispielsweise `texts.getLoginEmailField()` statt
+eines Properties-Schlüssels. Bei einer Schlüsseländerung wird nur der gemeinsame Getter
+angepasst. Ein umbenannter Getter kann über Java-Refactoring in beiden Projekten geändert
+werden; anschließend beide Maven-Projekte neu laden und kompilieren.
+
+Die zusätzlichen Source-Roots stellt der
+[Maven Build Helper](https://www.mojohaus.org/build-helper-maven-plugin/usage.html) bereit.
+Es gibt kein zusätzlich zu installierendes Maven-Artefakt, keine generierten Getter und
+keine kopierten Java-Quellen. `UiTexts` lädt die Texte mit der ausgewählten Locale ohne
+Spring oder Vaadin. Die Anwendung verwendet standardmäßig ihre aktuelle Session-Sprache;
+`MessageProperties.forLocale(provider, Locale.GERMAN)` ist für ausdrücklich festgelegte
+Übersetzungen verfügbar. Normale Oberflächen bleiben beim dynamischen Adapter, damit
+Sprachwechsel weiterhin funktionieren.
+
+Eine Änderung der Properties wird beim nächsten Testbuild übernommen. Bei `-NoBuild`
+muss zusätzlich das wiederverwendete App-Image zu diesen Texten passen; nach Änderungen
+am Anwendungscode oder den gemeinsamen Quellen deshalb mit Image-Build starten.
 
 Die Tests wählen die Sprache über das echte Flaggenmenü und prüfen anschließend
 exakt die entsprechenden Labels, Buttons, Hinweise und Mailbetreffe. Nach einer
@@ -202,8 +217,18 @@ wird für den sichtbaren Textvergleich in einem inaktiven Template ausgewertet. 
 Anwendungsseite wird dabei nicht verändert. Prüfungen auf Fehlermarkierungen,
 Zugriffsverweigerung, Navigation und Mailzustellung bleiben unabhängig davon erhalten.
 
-Routen und feste Seitentitel wie `Home`, technische Bildnamen sowie erfundene
-Testdaten sind keine übersetzten Properties und bleiben als solche im Test stehen.
+Routen, feste Seitentitel und vorhandene Avatar-Konstanten stammen direkt aus
+`AppRouteConstants` und `AppConstants` unter `shared/src/main/java/`. Die ursprünglichen
+Java-Packages und Namen bleiben erhalten. `BrowserRoutes` bildet daraus Browserpfade
+und prüft URLs auf der genauen lokalen Runner-Adresse. Sicherheitsmuster mit `/**`
+werden nicht als Browserpfade verwendet. Der Mail-Link-Guard prüft weiterhin Host,
+Port, Protokoll, UUID-Pfad und fehlende Query-/Fragment-/Benutzerangaben.
+
+Eine Änderung dieser gemeinsamen Werte wird nach erneutem App-Image-Build auch in
+den Tests verwendet. Sichtbare Inhalte, Kontorechte, Fehlermarkierungen und Mailzustellung
+werden weiterhin eigenständig geprüft: Ein richtiger Titel allein reicht nicht.
+Erfundene Testdaten und Bildnamen ohne bestehende gemeinsame Konstante bleiben
+als ausdrückliche Testvorgaben erhalten.
 Diese Tests prüfen die Verwendung der richtigen Übersetzung; die sprachliche Qualität
 des Inhalts benötigt weiterhin eine gesonderte Einschätzung. Änderungen von Schlüsseln
 oder der UI-Struktur können weiterhin eine Anpassung der Tests erfordern.
@@ -253,16 +278,18 @@ Alle Java-Dateien liegen unter `src/test/java/de/derpeterson/browsertests/`:
 | `suites/VerificationBrowserTest.java` | Drei Fälle für Mailaktivierung und gültige/ungültige Linkaufrufe |
 | `mail/MailpitInbox.java` | Eigene SMTP-Mail abwarten, lesen und den sichtbaren Mailbutton verwenden |
 | `mail/MailpitInboxTest.java` | Fremde Linkziele und die manuelle Umgebung vor Navigation ausschließen |
-| `i18n/UiTexts.java / UiTextsTest.java` | Originale DE/EN-Properties lesen, Parameter formatieren und fehlende Schlüssel/Sprachen absichern |
+| `i18n/UiTexts.java / UiTextsTest.java` | Gemeinsame Getter mit fester DE/EN-Sprache verwenden und fehlende Schlüssel/Sprachen absichern |
+| `../shared/src/main/java/` | Einzige Definition der Getter, Routen, Seitentitel und vorhandenen App-Konstanten; keine Framework-Abhängigkeiten |
 | `pages/` | Kleine Bedienhelfer für Loginformular, Benutzermenü und Benutzeranlage |
 | `BrowserSuites.java / BrowserTestAccounts.java` | Suite-Auswahl und erfundene lokale Testkonten |
+| `BrowserRoutes.java / BrowserRoutesTest.java` | Gemeinsame Routenkonstanten als Pfade und genaue lokale URL-Erwartungen verwenden |
 | `BrowserFixture.java` | Browser und isolierten Kontext bereitstellen; Screenshot und Trace an Allure übergeben |
 | `FailureProbeTest.java` | Separat auswählbarer absichtlicher Fehler für den Berichtsvergleich |
 | `BrowserTestRunner.java` | Frische Docker-Umgebung starten, JUnit aufrufen, aufräumen und Allure-Generator starten |
 | `MarkdownSummary.java` | Projektspezifische Markdown-Checkliste aus fertigen Allure-Ergebnissen erstellen |
 | `MarkdownSummaryTest.java` | Protokollstatus, fehlende Fälle und Beleglinks ohne Browser prüfen |
 
-`pom.xml` verwaltet nur die Testwerkzeuge. Es hat keinen Spring-Boot-/Vaadin-Parent und verändert die produktiven Abhängigkeiten oder den normalen Java-Testlauf der Anwendung nicht.
+`pom.xml` verwaltet die Testwerkzeuge und bindet die kleinen gemeinsamen Java-Quellen ein. Es hat keinen Spring-Boot-/Vaadin-Parent und verändert die produktiven Abhängigkeiten oder den normalen Java-Testlauf der Anwendung nicht.
 
 ## Isolation und Grenzen
 
@@ -292,7 +319,7 @@ Keine fremden oder manuellen Docker-Projekte zum Aufräumen einsetzen.
 
 `browser-tests/pom.xml` als zusätzliches Maven-Projekt in IntelliJ hinzufügen (Maven-Fenster → Maven-Projekt hinzufügen). Dann bekommst du Navigation und Autovervollständigung wie bei deinen anderen Java-Tests.
 
-Die Browserfälle werden über den Starter ausgeführt. Ein direkter JUnit-Start ohne verwaltete Testumgebung bricht bewusst ab, damit Tests nicht versehentlich gegen eine laufende Anwendung oder deren Datenbank gehen. Die Tests für MarkdownSummary, Mailpit-Link-Isolation und UiTexts können direkt als gewöhnliche JUnit-Tests ausgeführt werden.
+Die Browserfälle werden über den Starter ausgeführt. Ein direkter JUnit-Start ohne verwaltete Testumgebung bricht bewusst ab, damit Tests nicht versehentlich gegen eine laufende Anwendung oder deren Datenbank gehen. Die Tests für MarkdownSummary, BrowserRoutes, Mailpit-Link-Isolation und UiTexts können direkt als gewöhnliche JUnit-Tests ausgeführt werden.
 
 Neue Fälle in der fachlich passenden Suite unter `suites/` ergänzen; für einen neuen Bereich eine eigene Suite-Klasse und einen Eintrag in `BrowserSuites` anlegen. Test-ID, `@DisplayName`, `@Feature`, `@Story` und `@Description` pflegen: Daraus entstehen Gruppierung, Prüfbereich, Schritte und Erwartung im Bericht. Playwrights wartende Assertions verwenden, keine festen Schlafzeiten. Eine automatische Anbindung an das `/start`-Benchmarking ist noch nicht eingerichtet.
 

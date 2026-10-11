@@ -1,5 +1,7 @@
 package de.derpeterson.browsertests.mail;
 
+import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.APIResponse;
@@ -45,7 +47,7 @@ public final class MailpitInbox {
         JsonNode mail = getJson("/api/v1/message/" + found.get().path("ID").asText());
         assertTrue(addressedTo(mail, recipient), "Mail gehört nicht zur eigenen Testadresse.");
         String subject = mail.path("Subject").asText();
-        assertEquals(texts.text("email.verification.subject"), subject, "Verifikationsbetreff muss zur ausgewählten Sprache passen.");
+        assertEquals(texts.getEmailVerificationSubject(), subject, "Verifikationsbetreff muss zur ausgewählten Sprache passen.");
         String html = mail.path("HTML").asText();
         assertFalse(html.isBlank(), "Verifikationsmail hat keinen HTML-Inhalt.");
         assertFalse(html.contains("{{"), "Nicht ersetzte Platzhalter in der versandten Mail.");
@@ -61,7 +63,7 @@ public final class MailpitInbox {
             messagePage.navigate(baseUrl + "/view/" + mail.id() + ".html");
             assertThat(messagePage.locator("body")).containsText("Browser Testuser");
             assertThat(messagePage.locator("body")).containsText("VaadinSpringApp (Browser-Test)");
-            Locator link = messagePage.locator("a[href*='/verification/']");
+            Locator link = messagePage.locator("a[href*='" + path(VERIFICATION_ROUTE) + "/']");
             assertThat(link).hasCount(1);
             assertThat(link).isVisible();
             assertLocalVerificationLink(link.getAttribute("href"));
@@ -84,7 +86,7 @@ public final class MailpitInbox {
         assertNull(actual.getUserInfo());
         assertNull(actual.getQuery());
         assertNull(actual.getFragment());
-        assertTrue(actual.getPath().matches("/verification/[0-9a-f-]{36}"), "Falsches Aktivierungsziel.");
+        assertTrue(actual.getPath().matches(java.util.regex.Pattern.quote(path(VERIFICATION_ROUTE)) + "/[0-9a-f-]{36}"), "Falsches Aktivierungsziel.");
     }
 
     private static boolean addressedTo(JsonNode mail, String recipient) {

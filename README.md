@@ -22,6 +22,28 @@ Versandausgängen: [Mailqueue-Verarbeitung](docs/email-queue-processing.md).
 
 Belege: `views/RegistrationView.java`, `views/LoginView.java`, `views/admin/`, `service/VerificationService.java`, `service/PasswordResetService.java`, `service/EmailQueueService.java`, `security/SecurityConfig.java` und `scheduler/UserStatusScheduler.java` unter `src/main/java/de/derpeterson/app/`.
 
+## Gemeinsame Texte und UI-Konstanten
+
+Die stabilen Übersetzungs-Getter sind einmalig in
+[MessageTexts](shared/src/main/java/de/derpeterson/app/i18n/MessageTexts.java) definiert.
+Die Anwendung nutzt sie über `MessageProperties`, die Browsertests über `UiTexts`.
+Bei einer Änderung eines Properties-Schlüssels wird der gemeinsame Getter angepasst;
+seine Aufrufer bleiben unverändert. Direkte Übersetzungsaufrufe gehören in die I18n-Schicht.
+Für Statuswerte verwenden UI-Komponenten `getUserStatusLabel(status)` und
+`getUserStatusDescription(status)`, für Konfiguration die vorhandenen typisierten Methoden.
+
+`new MessageProperties(provider)` liest die Session-Sprache bei jedem Aufruf neu.
+Für eine feste Übersetzung ohne Session gibt es
+`MessageProperties.forLocale(provider, Locale.GERMAN)` beziehungsweise `Locale.ENGLISH`.
+Die normale Oberfläche verwendet weiterhin die dynamische Variante.
+
+[AppRouteConstants](shared/src/main/java/de/derpeterson/app/config/AppRouteConstants.java)
+und [AppConstants](shared/src/main/java/de/derpeterson/app/config/AppConstants.java)
+liegen ebenfalls unter `shared/src/main/java/`. Anwendung und Browsertests kompilieren
+dieselben Quellen; die bisherigen Packages und Konstantennamen bleiben gültig.
+Maven und Docker binden den Ordner ein. Es ist kein zusätzlicher Installationsschritt nötig.
+Nach dem Aktualisieren der POM-Dateien beide Maven-Projekte in IntelliJ neu laden.
+
 ## Technologien und Voraussetzungen
 
 - **JDK 25**, **Spring Boot 4.1.1**, **Vaadin 25.3.0**, Lombok; Versionen und Abhängigkeiten stehen in `pom.xml`.

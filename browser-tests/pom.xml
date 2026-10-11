@@ -6,7 +6,7 @@
     <artifactId>browser-tests</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>VaadinSpringApp Browser Tests</name>
-    <!-- Independent test project: no Spring/Vaadin build or production dependencies. -->
+    <!-- Independent test project: shared plain Java contracts only; no Spring/Vaadin dependencies. -->
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -34,6 +34,19 @@
             </testResource>
         </testResources>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>shared-java-contracts</id>
+                        <phase>generate-test-sources</phase>
+                        <goals><goal>add-test-source</goal></goals>
+                        <configuration><sources><source>${project.basedir}/../shared/src/main/java</source></sources></configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.15.0</version></plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.5.5</version>

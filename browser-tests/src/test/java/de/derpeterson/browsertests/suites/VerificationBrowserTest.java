@@ -1,5 +1,7 @@
 package de.derpeterson.browsertests.suites;
 
+import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.*;
 import com.microsoft.playwright.Page;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
@@ -8,7 +10,6 @@ import de.derpeterson.browsertests.pages.*;
 import io.qameta.allure.*;
 import org.junit.jupiter.api.*;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 @Tag("browser")
@@ -67,12 +68,12 @@ public class VerificationBrowserTest extends BrowserFixture {
             die Startseite. Erneuter Versand, Ablauf und Adminsperren sind noch nicht abgedeckt.
             """)
     void invalidAndMissingTokensHaveDefinedUiBehavior() {
-        page.navigate("/verification/" + UUID.randomUUID());
+        page.navigate(path(VERIFICATION_ROUTE) + "/" + UUID.randomUUID());
         new VerificationPage(page).assertUnknownToken();
-        page.navigate("/verification");
-        assertThat(page).hasURL(Pattern.compile(".*/home(?:\\?.*)?$"));
+        page.navigate(path(VERIFICATION_ROUTE));
+        assertThat(page).hasURL(urlPattern(HOME_ROUTE));
         assertThat(page.getByText("VaadinSpringApp (Browser-Test)", new Page.GetByTextOptions().setExact(true))).isVisible();
-        assertThat(page).hasTitle("Home");
+        assertThat(page).hasTitle(HOME_PAGE_TITLE);
     }
 
     private MailpitInbox.VerificationMail registerAndReceive(String email, MailpitInbox inbox) {
@@ -88,7 +89,7 @@ public class VerificationBrowserTest extends BrowserFixture {
         LoginPage login = new LoginPage(target);
         login.open();
         login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-        assertThat(target).hasURL(Pattern.compile(".*/home(?:\\?.*)?$"));
+        assertThat(target).hasURL(urlPattern(HOME_ROUTE));
         new UserMenu(target).selectTestLanguage();
         new UserMenu(target).assertUserSignedInWithoutAdminAction(email);
     }

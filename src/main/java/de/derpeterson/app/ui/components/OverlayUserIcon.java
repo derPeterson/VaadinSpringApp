@@ -36,9 +36,9 @@ public class OverlayUserIcon extends Div {
 
             Map<Tooltip, Supplier<String>> tooltipTranslationSupplierMap = new HashMap<>();
             Optional.ofNullable(this.userImageToolTip)
-                    .ifPresent(tooltip -> tooltipTranslationSupplierMap.put(tooltip, () -> this.messageProperties.getTranslation(this.userStatus.getTextKey())));
+                    .ifPresent(tooltip -> tooltipTranslationSupplierMap.put(tooltip, () -> this.messageProperties.getUserStatusLabel(this.userStatus)));
             Optional.ofNullable(this.overlayIconTooltip)
-                    .ifPresent(tooltip -> tooltipTranslationSupplierMap.put(tooltip, () -> this.messageProperties.getTranslation(this.userStatus.getTextKey())));
+                    .ifPresent(tooltip -> tooltipTranslationSupplierMap.put(tooltip, () -> this.messageProperties.getUserStatusLabel(this.userStatus)));
 
             ComponentTextUpdateHelper.updateToolTipComponents(tooltipTranslationSupplierMap);
         });
@@ -59,7 +59,7 @@ public class OverlayUserIcon extends Div {
                 .setBoxShadow("0 0 0 0.5px black");
 
         this.userImageToolTip = Tooltip.forComponent(userImage)
-                .withText(messageProperties.getTranslation(userStatus.getTextKey()))
+                .withText(messageProperties.getUserStatusLabel(userStatus))
                 .withPosition(Tooltip.TooltipPosition.BOTTOM)
                 .withFocusDelay(1000)
                 .withHoverDelay(1000)
@@ -67,7 +67,7 @@ public class OverlayUserIcon extends Div {
 
         if (userStatus.getComponent(iconSize, true) instanceof Icon overlayIcon) {
             this.overlayIconTooltip = Tooltip.forComponent(overlayIcon)
-                    .withText(messageProperties.getTranslation(userStatus.getTextKey()))
+                    .withText(messageProperties.getUserStatusLabel(userStatus))
                     .withPosition(Tooltip.TooltipPosition.BOTTOM)
                     .withFocusDelay(1000)
                     .withHoverDelay(1000)
@@ -78,7 +78,7 @@ public class OverlayUserIcon extends Div {
 
         if (userStatus.getComponent(iconSize, true) instanceof Div overlayDiv) {
             this.overlayIconTooltip = Tooltip.forComponent(overlayDiv)
-                    .withText(messageProperties.getTranslation(userStatus.getTextKey()))
+                    .withText(messageProperties.getUserStatusLabel(userStatus))
                     .withPosition(Tooltip.TooltipPosition.BOTTOM)
                     .withFocusDelay(1000)
                     .withHoverDelay(1000)

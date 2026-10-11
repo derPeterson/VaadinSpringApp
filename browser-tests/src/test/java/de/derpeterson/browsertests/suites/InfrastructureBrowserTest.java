@@ -1,5 +1,8 @@
 package de.derpeterson.browsertests.suites;
 
+import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.*;
+import static de.derpeterson.app.config.AppConstants.USER_ICON_ALT;
 import de.derpeterson.browsertests.BrowserFixture;
 import io.qameta.allure.*;
 
@@ -26,14 +29,14 @@ public class InfrastructureBrowserTest extends BrowserFixture {
             Prüft keine vollständige responsive Darstellung, Rollen- oder Tabelleninitialisierung.
             """)
     void homeAndImagesLoad() {
-        page.navigate("/home");
-        assertThat(page).hasTitle("Home");
+        page.navigate(path(HOME_ROUTE));
+        assertThat(page).hasTitle(HOME_PAGE_TITLE);
         assertThat(page.getByText("VaadinSpringApp (Browser-Test)", new Page.GetByTextOptions().setExact(true))).isVisible();
-        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("User Icon").setExact(true)).click();
+        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(USER_ICON_ALT).setExact(true)).click();
         for (String name : new String[] { "Service Icon", "German Flag Icon", "English Flag Icon" }) {
             assertImageLoaded(page.getByRole(AriaRole.IMG, new Page.GetByRoleOptions().setName(name).setExact(true)));
         }
-        Locator avatars = page.getByRole(AriaRole.IMG, new Page.GetByRoleOptions().setName("User Icon").setExact(true));
+        Locator avatars = page.getByRole(AriaRole.IMG, new Page.GetByRoleOptions().setName(USER_ICON_ALT).setExact(true));
         assertThat(avatars).hasCount(2);
         for (Locator avatar : avatars.all()) assertImageLoaded(avatar);
     }
@@ -51,7 +54,7 @@ public class InfrastructureBrowserTest extends BrowserFixture {
     void loginFormLoads() {
         new de.derpeterson.browsertests.pages.LoginPage(page).open();
         assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions()
-                .setName(texts.text("base.login_button")).setExact(true))).isVisible();
+                .setName(texts.getBaseLoginButton()).setExact(true))).isVisible();
     }
 
     @Test

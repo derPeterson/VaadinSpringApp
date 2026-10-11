@@ -1,10 +1,8 @@
 package de.derpeterson.app.config;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class AppRouteConstants {
+public final class AppRouteConstants {
+    private AppRouteConstants() { }
     public static final String BASE_ROUTE = "";
     public static final String BASE_SECURITY_ROUTE = "/";
     public static final String BASE_PAGE_TITLE = "Base";

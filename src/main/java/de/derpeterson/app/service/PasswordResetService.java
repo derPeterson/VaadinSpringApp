@@ -1,5 +1,6 @@
 package de.derpeterson.app.service;
 
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.helper.image.ImageHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -228,7 +229,7 @@ public class PasswordResetService {
                 "SERVICE_LOGO", ImageHelper.convertImageToBase64("META-INF/resources/custom-theme/service_logo.png"),
                 "SERVICE_NAME", configService.getString(ConfigEntry.SERVICE_NAME),
                 "RESET_PASSWORD_LINK", UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))
-                        .pathSegment("reset-password", token).toUriString());
+                        .pathSegment(AppRouteConstants.RESET_PASSWORD_ROUTE, token).toUriString());
 
         ClassPathResource resource = new ClassPathResource("email/reset_password_" + CustomI18NProvider.getCurrentLocale().getLanguage() + ".html");
         String content;

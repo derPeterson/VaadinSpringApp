@@ -248,14 +248,14 @@ public class AdminUserManagementSection extends VerticalLayout {
                 .setComparator(Comparator.comparing(UserEntity::isEnabled));
 
         statusColumn = userGrid.addColumn(user -> Optional.ofNullable(user.getStatus())
-                        .map(status -> messageProperties.getTranslation(status.getTextKey()))
+                        .map(status -> messageProperties.getUserStatusLabel(status))
                         .orElse("-"))
                 .setHeader(messageProperties.getAdminUsersGridStatus())
                 .setAutoWidth(true)
                 .setSortable(true)
                 .setComparator(Comparator.comparing(
                         user -> Optional.ofNullable(user.getStatus())
-                                .map(status -> messageProperties.getTranslation(status.getTextKey()))
+                                .map(status -> messageProperties.getUserStatusLabel(status))
                                 .orElse(""),
                         String.CASE_INSENSITIVE_ORDER
                 ));
@@ -807,7 +807,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     private String getStatusText(UserEntity user) {
         return Optional.ofNullable(user.getStatus())
-                .map(status -> messageProperties.getTranslation(status.getTextKey()))
+                .map(status -> messageProperties.getUserStatusLabel(status))
                 .orElse("-");
     }
 

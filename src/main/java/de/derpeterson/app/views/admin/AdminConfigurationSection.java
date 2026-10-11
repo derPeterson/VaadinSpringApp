@@ -308,7 +308,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     private void refreshCurrentGroupTitle() {
         if (selectedGroupKey != null) {
-            currentGroupTitle.setText(getConfigGroupLabel(selectedGroupKey));
+            currentGroupTitle.setText(messageProperties.getAdminConfigGroupLabel(selectedGroupKey));
         }
     }
 
@@ -742,19 +742,6 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     private String buildDefaultText(ConfigEntry configEntry) {
         return messageProperties.getAdminConfigDefault() + ": " + configEntry.getDefaultValueString();
-    }
-
-    private String getConfigGroupLabel(String groupKey) {
-        return switch (groupKey) {
-            case CONFIG_GROUP_GENERAL -> messageProperties.getAdminConfigGroupGeneral();
-            case CONFIG_GROUP_SECURITY -> messageProperties.getAdminConfigGroupSecurity();
-            case CONFIG_GROUP_TOKENS -> messageProperties.getAdminConfigGroupTokens();
-            case CONFIG_GROUP_USER_STATUS -> messageProperties.getAdminConfigGroupUserStatus();
-            case CONFIG_GROUP_EMAIL_SENDER -> messageProperties.getAdminConfigGroupEmailSender();
-            case CONFIG_GROUP_SMTP -> messageProperties.getAdminConfigGroupSmtp();
-            case CONFIG_GROUP_QUEUE -> messageProperties.getAdminConfigGroupQueue();
-            default -> messageProperties.getTranslation(groupKey);
-        };
     }
 
     private void installValidationResetListener(Component input) {

@@ -1,5 +1,8 @@
 package de.derpeterson.browsertests.suites;
 
+import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.*;
+import static de.derpeterson.app.config.AppConstants.USER_ICON_ALT;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.browsertests.BrowserFixture;
@@ -10,7 +13,6 @@ import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.*;
 import org.junit.jupiter.api.*;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 /** Independent browser contexts per test; each case can run without preceding cases. */
@@ -47,7 +49,7 @@ public class AuthenticationBrowserTest extends BrowserFixture {
         login.open();
         login.signIn(BrowserTestAccounts.ADMIN_EMAIL, "DefinitelyWrong1!");
         login.assertRejected();
-        page.navigate("/admin");
+        page.navigate(path(ADMIN_ROUTE));
         login.assertFormVisible();
     }
 
@@ -66,7 +68,7 @@ public class AuthenticationBrowserTest extends BrowserFixture {
         login.open();
         login.signIn("unknown-" + UUID.randomUUID() + "@example.test", "UnknownUser1!");
         login.assertRejected();
-        page.navigate("/admin");
+        page.navigate(path(ADMIN_ROUTE));
         login.assertFormVisible();
     }
 
@@ -80,9 +82,9 @@ public class AuthenticationBrowserTest extends BrowserFixture {
             **Erwartet:** Weiterleitung zur Anmeldung; keine Admininhalte.
             """)
     void anonymousUserCannotOpenAdmin() {
-        page.navigate("/admin");
+        page.navigate(path(ADMIN_ROUTE));
         new LoginPage(page).assertFormVisible();
-        assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName(texts.text("adminView.dashboard.title")).setExact(true))).hasCount(0);
+        assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName(texts.getAdminDashboardTitle()).setExact(true))).hasCount(0);
     }
 
     @Test
@@ -101,15 +103,15 @@ public class AuthenticationBrowserTest extends BrowserFixture {
     void logoutEndsAccessInBothTabs() {
         signInAsAdmin();
         Page otherTab = context.newPage();
-        otherTab.navigate("/admin");
+        otherTab.navigate(path(ADMIN_ROUTE));
         new LoginPage(otherTab).assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
         new UserMenu(page).signOut();
-        otherTab.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("User Icon").setExact(true)).click();
-        otherTab.navigate("/admin");
+        otherTab.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(USER_ICON_ALT).setExact(true)).click();
+        otherTab.navigate(path(ADMIN_ROUTE));
         new LoginPage(otherTab).assertFormVisible();
         page.goBack();
         new LoginPage(page).assertFormVisible();
-        page.navigate("/admin");
+        page.navigate(path(ADMIN_ROUTE));
         new LoginPage(page).assertFormVisible();
         otherTab.close();
     }
@@ -135,20 +137,20 @@ public class AuthenticationBrowserTest extends BrowserFixture {
         LoginPage login = new LoginPage(page);
         login.open();
         login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-        assertThat(page).hasURL(Pattern.compile(".*/home(?:\\?.*)?$"));
+        assertThat(page).hasURL(urlPattern(HOME_ROUTE));
         new UserMenu(page).selectTestLanguage();
         new UserMenu(page).assertUserSignedInWithoutAdminAction(email);
-        page.navigate("/admin");
-        assertThat(page).hasURL(Pattern.compile(".*/home(?:\\?.*)?$"));
-        assertThat(page.getByText(texts.text("base.error.admin_access_denied"), new Page.GetByTextOptions().setExact(true))).isVisible();
-        assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName(texts.text("adminView.dashboard.title")).setExact(true))).hasCount(0);
+        page.navigate(path(ADMIN_ROUTE));
+        assertThat(page).hasURL(urlPattern(HOME_ROUTE));
+        assertThat(page.getByText(texts.getBaseErrorAdminAccessDenied(), new Page.GetByTextOptions().setExact(true))).isVisible();
+        assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName(texts.getAdminDashboardTitle()).setExact(true))).hasCount(0);
     }
 
     private void signInAsAdmin() {
         LoginPage login = new LoginPage(page);
         login.open();
         login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-        assertThat(page).hasURL(Pattern.compile(".*/admin(?:\\?.*)?$"));
+        assertThat(page).hasURL(urlPattern(ADMIN_ROUTE));
         new UserMenu(page).selectTestLanguage();
         login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
     }

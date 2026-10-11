@@ -59,7 +59,6 @@ public class AdminView extends IsAuthenticatedBaseView {
     private static final String CONFIG_GROUP_EMAIL_SENDER = "adminView.config.group.email_sender";
     private static final String CONFIG_GROUP_SMTP = "adminView.config.group.smtp";
     private static final String CONFIG_GROUP_QUEUE = "adminView.config.group.queue";
-    private static final String USER_MANAGEMENT_TITLE_KEY = "admin.users.title";
 
     private final transient ConfigService configService;
 
@@ -477,10 +476,10 @@ public class AdminView extends IsAuthenticatedBaseView {
         dashboardNavText.setText(messageProperties.getAdminNavDashboard());
         configurationNavText.setText(messageProperties.getAdminNavConfiguration());
         mailTestNavText.setText(messageProperties.getAdminNavMailTest());
-        userManagementNavText.setText(messageProperties.getTranslation(USER_MANAGEMENT_TITLE_KEY));
+        userManagementNavText.setText(messageProperties.getAdminUsersTitle());
 
         configurationSubmenuTextSpans.forEach((groupKey, textSpan) ->
-                textSpan.setText(getConfigurationGroupLabel(groupKey)));
+                textSpan.setText(messageProperties.getAdminConfigGroupLabel(groupKey)));
 
         if (dashboardSection != null) {
             dashboardSection.refreshTexts();
@@ -496,19 +495,6 @@ public class AdminView extends IsAuthenticatedBaseView {
         }
 
         updateNavigationState();
-    }
-
-    private String getConfigurationGroupLabel(String groupKey) {
-        return switch (groupKey) {
-            case CONFIG_GROUP_GENERAL -> messageProperties.getAdminConfigGroupGeneral();
-            case CONFIG_GROUP_SECURITY -> messageProperties.getAdminConfigGroupSecurity();
-            case CONFIG_GROUP_TOKENS -> messageProperties.getAdminConfigGroupTokens();
-            case CONFIG_GROUP_USER_STATUS -> messageProperties.getAdminConfigGroupUserStatus();
-            case CONFIG_GROUP_EMAIL_SENDER -> messageProperties.getAdminConfigGroupEmailSender();
-            case CONFIG_GROUP_SMTP -> messageProperties.getAdminConfigGroupSmtp();
-            case CONFIG_GROUP_QUEUE -> messageProperties.getAdminConfigGroupQueue();
-            default -> messageProperties.getTranslation(groupKey);
-        };
     }
 
     @Override

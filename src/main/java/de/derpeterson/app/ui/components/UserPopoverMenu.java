@@ -263,7 +263,7 @@ public class UserPopoverMenu {
         userStatusSelect.setEnabled(hasCurrentUser());
         userStatusSelect.setItems(UserStatus.values());
         userStatusSelect.setItemLabelGenerator(
-                userStatus -> messageProperties.getTranslation(userStatus.getTextKey())
+                userStatus -> messageProperties.getUserStatusLabel(userStatus)
         );
         userStatusSelect.setRenderer(new ComponentRenderer<>(this::createUserStatusRenderer));
 
@@ -319,9 +319,9 @@ public class UserPopoverMenu {
         textLayout.setSpacing(false);
         textLayout.setWidthFull();
 
-        Span userStatusText = new Span(messageProperties.getTranslation(userStatus.getTextKey()));
+        Span userStatusText = new Span(messageProperties.getUserStatusLabel(userStatus));
         Span userStatusSecondaryText =
-                new Span(messageProperties.getTranslation(userStatus.getTextDescriptionKey()));
+                new Span(messageProperties.getUserStatusDescription(userStatus));
         userStatusSecondaryText.addClassNames(
                 LumoUtility.FontSize.XXSMALL,
                 LumoUtility.TextColor.SECONDARY
@@ -499,7 +499,7 @@ public class UserPopoverMenu {
         }
 
         userStatusSelect.setItemLabelGenerator(
-                userStatus -> messageProperties.getTranslation(userStatus.getTextKey())
+                userStatus -> messageProperties.getUserStatusLabel(userStatus)
         );
         userStatusSelect.setItems(UserStatus.values());
         userStatusSelect.getDataProvider().refreshAll();

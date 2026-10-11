@@ -1,5 +1,7 @@
 package de.derpeterson.browsertests.mail;
 
+import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -10,19 +12,19 @@ class MailpitInboxTest {
     @Test
     void linkOnCustomRunnerPortIsAccepted() {
         withRunnerOrigin(() -> assertDoesNotThrow(() -> MailpitInbox.assertLocalVerificationLink(
-                "http://127.0.0.1:18082/verification/" + TOKEN)));
+                "http://127.0.0.1:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN)));
     }
 
     @Test
     void foreignOrManualTargetsAndWrongRoutesAreRejectedBeforeNavigation() {
         withRunnerOrigin(() -> {
             for (String wrongLink : new String[] {
-                    "http://127.0.0.1:18080/verification/" + TOKEN,
-                    "http://example.test:18082/verification/" + TOKEN,
-                    "https://127.0.0.1:18082/verification/" + TOKEN,
-                    "http://user@127.0.0.1:18082/verification/" + TOKEN,
-                    "http://127.0.0.1:18082/admin",
-                    "http://127.0.0.1:18082/verification/" + TOKEN + "?redirect=elsewhere"
+                    "http://127.0.0.1:18080" + path(VERIFICATION_ROUTE) + "/" + TOKEN,
+                    "http://example.test:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN,
+                    "https://127.0.0.1:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN,
+                    "http://user@127.0.0.1:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN,
+                    "http://127.0.0.1:18082" + path(ADMIN_ROUTE),
+                    "http://127.0.0.1:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN + "?redirect=elsewhere"
             }) {
                 assertThrows(AssertionError.class, () -> MailpitInbox.assertLocalVerificationLink(wrongLink));
             }

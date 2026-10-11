@@ -11,7 +11,7 @@ class UiTextsTest {
     @ValueSource(strings = {"de", "en"})
     void requiredKeysNeverFallBackToAnotherLanguageOrTheKeyItself(String language) {
         UiTexts texts = new UiTexts(language);
-        assertThrows(IllegalArgumentException.class, () -> texts.text("missing.browser.test.key"));
+        assertThrows(IllegalArgumentException.class, () -> texts.getTranslation("missing.browser.test.key"));
         assertEquals(language, texts.language());
     }
 
@@ -23,7 +23,7 @@ class UiTextsTest {
     @ParameterizedTest
     @ValueSource(strings = {"de", "en"})
     void formattedMessageKeepsItsRecipientAndSubstitutesItsPlaceholder(String language) {
-        String result = new UiTexts(language).text("registrationView.registration.success_message", "test@example.test");
+        String result = new UiTexts(language).getRegistrationSuccessMessage("test@example.test");
         assertTrue(result.contains("test@example.test"));
         assertFalse(result.contains("{0}"));
         assertFalse(result.contains("\uFFFD"), "Original translation must not contain decoding replacement characters.");

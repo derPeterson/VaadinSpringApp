@@ -11,6 +11,8 @@
 !tsconfig.json
 !types.d.ts
 !eclipse-formatter.xml
+!shared/
+!shared/**
 !src/
 !src/**
 src/main/frontend/generated/

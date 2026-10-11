@@ -1,5 +1,6 @@
 package de.derpeterson.browsertests.pages;
 
+import static de.derpeterson.app.config.AppConstants.USER_ICON_ALT;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
@@ -29,8 +30,8 @@ public final class UserMenu {
         page.getByRole(AriaRole.BUTTON).filter(new Locator.FilterOptions().setHas(flag)).click();
         assertThat(flag).hasCSS("filter", "none");
         // The menu may be anonymous or authenticated; both expected labels use exactly this language.
-        assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(texts.text("base.login_button")).setExact(true))
-                .or(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(texts.text("base.logout_button")).setExact(true)))).isVisible();
+        assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(texts.getBaseLoginButton()).setExact(true))
+                .or(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(texts.getBaseLogoutButton()).setExact(true)))).isVisible();
         page.keyboard().press("Escape");
         assertThat(page.locator("vaadin-popover-overlay[opened]")).not().isVisible();
     }
@@ -39,7 +40,7 @@ public final class UserMenu {
     public void signOut() {
         open();
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions()
-                .setName(texts.text("base.logout_button")).setExact(true)).click();
+                .setName(texts.getBaseLogoutButton()).setExact(true)).click();
         new LoginPage(page).assertFormVisible();
     }
 
@@ -48,12 +49,12 @@ public final class UserMenu {
         open();
         assertThat(page.getByText(email, new Page.GetByTextOptions().setExact(true))).isVisible();
         assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions()
-                .setName(texts.text("base.logout_button")).setExact(true))).isVisible();
+                .setName(texts.getBaseLogoutButton()).setExact(true))).isVisible();
         assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions()
-                .setName(texts.text("base.manage_application_button")).setExact(true))).hasCount(0);
+                .setName(texts.getBaseManageApplicationButton()).setExact(true))).hasCount(0);
     }
 
     private Locator avatar() {
-        return page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("User Icon").setExact(true));
+        return page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(USER_ICON_ALT).setExact(true));
     }
 }

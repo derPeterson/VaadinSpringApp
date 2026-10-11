@@ -1,12 +1,13 @@
 package de.derpeterson.browsertests.pages;
 
+import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.*;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
 import java.time.LocalDate;
-import java.util.regex.Pattern;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 /** Visible registration form; no service calls or database preparation. */
@@ -18,59 +19,59 @@ public final class RegistrationPage {
 
     @Step("Registrierungsformular öffnen")
     public void open() {
-        page.navigate("/registration");
-        assertThat(page).hasTitle("Registration");
+        page.navigate(path(REGISTRATION_ROUTE));
+        assertThat(page).hasTitle(REGISTRATION_PAGE_TITLE);
         assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions()
-                .setName(texts.text("registrationView.title")).setExact(true))).isVisible();
+                .setName(texts.getRegistrationTitle()).setExact(true))).isVisible();
     }
 
     @Step("Pflichtfelder mit gültigen Testangaben ausfüllen")
     public void fillValid(String email, String password) {
-        field("registrationView.first_name_field").fill("Browser");
-        field("registrationView.last_name_field").fill("Testuser");
+        field(texts.getRegistrationFirstNameField()).fill("Browser");
+        field(texts.getRegistrationLastNameField()).fill("Testuser");
         setEmails(email, email);
         setPasswords(password, password);
-        field("registrationView.gender_combobox").click();
-        page.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(texts.text("gender.other")).setExact(true)).click();
-        field("registrationView.birth_date_field").fill(texts.dateInput(LocalDate.of(1990, 1, 1)));
+        field(texts.getRegistrationGenderCombobox()).click();
+        page.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(texts.getGenderOther()).setExact(true)).click();
+        field(texts.getRegistrationBirthDateField()).fill(texts.dateInput(LocalDate.of(1990, 1, 1)));
         // Enter commits the typed date and closes its popup; Escape can close surrounding dialogs.
-        field("registrationView.birth_date_field").press("Enter");
+        field(texts.getRegistrationBirthDateField()).press("Enter");
         assertThat(page.locator("vaadin-date-picker-overlay[opened]")).not().isVisible();
         assertThat(page.locator("vaadin-date-picker")).hasJSProperty("value", "1990-01-01");
     }
 
     @Step("E-Mail und E-Mail-Bestätigung eingeben")
     public void setEmails(String email, String confirmation) {
-        field("registrationView.email_field").fill(email);
+        field(texts.getRegistrationEmailField()).fill(email);
         Locator confirm = page.locator("vaadin-email-field").nth(1);
-        assertThat(confirm).hasJSProperty("label", texts.text("registrationView.confirm_field"));
+        assertThat(confirm).hasJSProperty("label", texts.getRegistrationConfirmField());
         confirm.locator("input").fill(confirmation);
     }
 
     @Step("Passwort und Passwortbestätigung eingeben")
     public void setPasswords(String password, String confirmation) {
-        field("registrationView.password_field").fill(password);
+        field(texts.getRegistrationPasswordField()).fill(password);
         Locator confirm = page.locator("vaadin-password-field").nth(1);
-        assertThat(confirm).hasJSProperty("label", texts.text("registrationView.confirm_field"));
+        assertThat(confirm).hasJSProperty("label", texts.getRegistrationConfirmField());
         confirm.locator("input").fill(confirmation);
     }
 
     @Step("Registrierung über den Button absenden")
     public void submit() {
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions()
-                .setName(texts.text("base.registration_button")).setExact(true)).click();
+                .setName(texts.getBaseRegistrationButton()).setExact(true)).click();
     }
 
     @Step("Bestätigung nennt die eigene Testadresse und fordert zur Verifikation auf")
     public void assertSubmitted(String email) {
-        assertThat(page).hasURL(Pattern.compile(".*/registration(?:\\?.*)?$"));
+        assertThat(page).hasURL(urlPattern(REGISTRATION_ROUTE));
         Locator notice = page.locator("vaadin-notification-card").filter(new Locator.FilterOptions().setHasText(email));
-        assertThat(notice).containsText(texts.visibleText(page, "registrationView.registration.success_message", email));
+        assertThat(notice).containsText(texts.visibleText(page, texts.getRegistrationSuccessMessage(email)));
     }
 
     @Step("Pflichtfeldfehler und markierte Felder prüfen")
     public void assertRequiredError() {
-        assertError("base.validation.required_message");
+        assertError(texts.getBaseValidationRequiredMessage());
         assertThat(page.locator("vaadin-text-field[invalid]")).hasCount(2);
         assertThat(page.locator("vaadin-email-field[invalid]")).hasCount(2);
         assertThat(page.locator("vaadin-password-field[invalid]")).hasCount(2);
@@ -80,24 +81,24 @@ public final class RegistrationPage {
 
     @Step("Ungültige E-Mail verständlich anzeigen und beide E-Mail-Felder markieren")
     public void assertEmailError() {
-        assertError("base.validation.email_invalid_message");
+        assertError(texts.getBaseValidationEmailInvalidMessage());
         assertThat(page.locator("vaadin-email-field[invalid]")).hasCount(2);
     }
 
     @Step("Abweichende Passwortbestätigung verständlich anzeigen und Felder markieren")
     public void assertPasswordConfirmationError() {
-        assertError("base.validation.password_confirm_message");
+        assertError(texts.getBaseValidationPasswordConfirmMessage());
         assertThat(page.locator("vaadin-password-field[invalid]")).hasCount(2);
     }
 
-    private Locator field(String key) {
-        return page.getByLabel(texts.text(key), new Page.GetByLabelOptions().setExact(true));
+    private Locator field(String label) {
+        return page.getByLabel(label, new Page.GetByLabelOptions().setExact(true));
     }
 
-    private void assertError(String key) {
-        assertThat(page).hasURL(Pattern.compile(".*/registration(?:\\?.*)?$"));
-        assertThat(page.getByText(texts.text(key), new Page.GetByTextOptions().setExact(true))).isVisible();
+    private void assertError(String message) {
+        assertThat(page).hasURL(urlPattern(REGISTRATION_ROUTE));
+        assertThat(page.getByText(message, new Page.GetByTextOptions().setExact(true))).isVisible();
         assertThat(page.locator("vaadin-notification-card").filter(new Locator.FilterOptions()
-                .setHas(page.getByText(texts.text("base.success.title"), new Page.GetByTextOptions().setExact(true))))).hasCount(0);
+                .setHas(page.getByText(texts.getBaseSuccessTitle(), new Page.GetByTextOptions().setExact(true))))).hasCount(0);
     }
 }

@@ -1,10 +1,11 @@
 package de.derpeterson.browsertests.pages;
 
+import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.*;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
-import java.util.regex.Pattern;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 /** Assertions on the actual activation page, including its existing idempotent success contract. */
@@ -16,19 +17,20 @@ public final class VerificationPage {
 
     @Step("Aktivierungsseite bestätigt die Verifikation des Kontos")
     public void assertActivated() {
-        assertThat(page).hasURL(Pattern.compile(".*/verification/[0-9a-f-]+$"));
+        assertThat(page).hasURL(urlPattern(VERIFICATION_ROUTE, "/[0-9a-f-]+"));
+        assertThat(page).hasTitle(VERIFICATION_PAGE_TITEL);
         assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions()
-                .setName(texts.text("verificationView.success.title")).setExact(true))).isVisible();
-        assertThat(page.getByText(texts.text("verificationView.success.text"), new Page.GetByTextOptions().setExact(true))).isVisible();
+                .setName(texts.getVerificationSuccessTitle()).setExact(true))).isVisible();
+        assertThat(page.getByText(texts.getVerificationSuccessText(), new Page.GetByTextOptions().setExact(true))).isVisible();
     }
 
     @Step("Unbekannter Verifikationslink zeigt einen verständlichen Fehler")
     public void assertUnknownToken() {
         assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions()
-                .setName(texts.text("verificationView.not_found.title")).setExact(true))).isVisible();
-        assertThat(page.getByText(texts.text("verificationView.not_found.text1"), new Page.GetByTextOptions().setExact(true))).isVisible();
+                .setName(texts.getVerificationNotFoundTitle()).setExact(true))).isVisible();
+        assertThat(page.getByText(texts.getVerificationNotFoundText1(), new Page.GetByTextOptions().setExact(true))).isVisible();
         assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions()
-                .setName(texts.text("verificationView.success.title")).setExact(true))).hasCount(0);
-        assertThat(page.getByLabel(texts.text("verificationView.email_field"), new Page.GetByLabelOptions().setExact(true))).isVisible();
+                .setName(texts.getVerificationSuccessTitle()).setExact(true))).hasCount(0);
+        assertThat(page.getByLabel(texts.getVerificationEmailField(), new Page.GetByLabelOptions().setExact(true))).isVisible();
     }
 }

@@ -14,7 +14,9 @@
 - Keep Java 25 and the Spring Boot / Vaadin Flow stack defined in `pom.xml`.
 - Build views with the existing Vaadin Java components. Do not replace them with
   HTML templates, React or another frontend.
-- Java source is under `src/main/java/de/derpeterson/app/`.
+- Application Java source is under `src/main/java/de/derpeterson/app/`.
+  The shared typed translation catalogue and route/app constants are under
+  `shared/src/main/java/`; both Maven projects compile these same framework-free files.
 - Follow the existing architecture: `views/` and `ui/` for the UI,
   `service/` for application logic, `repository/` for JPA access, `model/` for data.
 - Follow neighboring files: names such as `*View`, `*Service`, `*Repository`,
@@ -26,6 +28,10 @@
   `src/main/resources/META-INF/resources/icons/`.
 - Translations: `src/main/resources/i18n/`; email templates: `src/main/resources/email/`.
 - Use the existing typed `MessageProperties` getters for fixed translation keys.
+  Their single definition is in shared `MessageTexts`; do not create a second key/getter
+  catalogue. Use typed status/configuration label methods in UI components. Keep raw
+  translation lookup calls inside the i18n layer. Normal MessageProperties follows the
+  session at each call; use forLocale only when a fixed explicit language is required.
   For visible notifications that must update on language change, pass dynamic
   translation suppliers for title and body to the existing `NotificationHelper`.
   Do not freeze translated strings before that update mechanism.
@@ -68,8 +74,10 @@
   Keep technical rules, transactions and concurrency in JUnit/persistence tests; browser
   tests check visible UI behavior and user journeys. Manual checks cover special cases
   requiring human judgment or unsuitable for automation.
-  Load expected translated browser labels/messages from the original i18n properties via
-  the test module's UiTexts helper; do not duplicate German/English strings or accept both
+  Use the shared MessageTexts getters through UiTexts for browser labels/messages,
+  and the shared AppRouteConstants/AppConstants for existing route/title/avatar contracts;
+  BrowserRoutes derives local browser paths (never security wildcards). Read original
+  i18n properties via the test module's UiTexts adapter; do not duplicate German/English strings or accept both
   languages at once. Use the explicit -Language de/en selection, choose it through the UI,
   and account for saved user preferences after login. Missing keys must fail. Keep stable
   route/title contracts and invented test data distinct from translated UI text.
