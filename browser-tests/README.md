@@ -157,11 +157,15 @@ Konto erneut Erfolg anzeigen. Der Fall behauptet keinen Nachweis für nachträgl
 Adminsperren. Die isolierte Mailpit-Zustellung beweist außerdem keine Zustellung an
 externe Postfächer oder Darstellung in Outlook/Gmail.
 
-### Aktueller offener Befund
+### Behobener Navigationsbefund / Regression
 
-VER-02A deckt einen bestätigten UI-Fehler auf: Ohne Token wechselt die URL zu /home,
-die sichtbare Startseite wird aber nicht aufgebaut. Der Test bleibt rot. Reproduktion
-und vorgeschlagene Korrektur stehen in [findings.md](findings.md).
+UI-VER-001 wurde durch `event.forwardTo(HomeView.class)` in der tokenlosen
+Verifikationsnavigation korrigiert. VER-02A bleibt unverändert und prüft neben `/home`
+den sichtbaren Startseiteninhalt und den Titel `Home`, ohne Nachladen oder Skip.
+Reproduktion, Korrektur und Befundstatus stehen in [findings.md](findings.md);
+die tatsächlichen Prüfergebnisse stehen in den jeweiligen Laufarchiven. Tokenvalidierung
+und Sicherheitsregeln bleiben unverändert. Der ähnliche Pfad in `ResetPasswordView`
+ist nicht Bestandteil dieser Korrektur.
 
 ## Ergebnisse ansehen
 

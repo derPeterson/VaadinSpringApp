@@ -137,7 +137,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
                 }
             }
         } else {
-            UI.getCurrent().navigate(HomeView.class);
+            event.forwardTo(HomeView.class);
         }
     }
 
