@@ -55,8 +55,12 @@
 
 - Run appropriate existing tests when execution is allowed by the task.
 - For behavior changes, add focused tests for the expected behavior.
-- Tests belong under `src/test/java/`; follow existing JUnit patterns.
+- Java tests belong under `src/test/java/`; follow existing JUnit patterns.
   `ImageHelperTest` is an example without application startup or a database.
+- Browser tests live under `browser-tests/src/test/java/` and use
+  `browser-tests/run.ps1`; follow `browser-tests/README.md`. The Java/JUnit runner
+  creates disposable isolated Docker data and archives Allure and Markdown reports.
+  Do not target existing application databases.
 - Database regression tests may use isolated test databases such as H2; never
   connect them to existing application databases or reuse application data.
   Use controlled synchronization for concurrency tests rather than timing alone.

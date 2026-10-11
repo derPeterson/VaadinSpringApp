@@ -1,0 +1,129 @@
+# Browsertests mit Java, JUnit und Allure
+
+Die Browsertests prüfen die im Browser gerenderte Vaadin-Anwendung in einer frischen Docker-Testumgebung. Die Testfälle, Docker-Steuerung und Markdown-Erzeugung sind Java. Playwright übernimmt die Browserautomatisierung, JUnit die Testausführung und Allure die HTML-Berichte samt Aktionen und Belegen. Es wird kein eigener HTML-Reporter entwickelt.
+
+## Inhalt
+
+- [Einrichten und starten](#einrichten-und-starten)
+- [Ergebnisse ansehen](#ergebnisse-ansehen)
+- [Java-Dateien verstehen](#java-dateien-verstehen)
+- [Isolation und Grenzen](#isolation-und-grenzen)
+- [IntelliJ und weitere Tests](#intellij-und-weitere-tests)
+- [Fehlerhilfe](#fehlerhilfe)
+
+## Einrichten und starten
+
+Voraussetzungen: Java 25, Docker Desktop mit Linux-Containern und Docker Compose ab 2.24.4. Den vorhandenen Maven Wrapper des Projekts verwenden. Allure wird lokal über Maven bereitgestellt; keine globale Allure-Installation nötig.
+
+In PowerShell im Projektordner:
+
+```powershell
+# Einmalig: Abhängigkeiten und passenden Chromium-Browser bereitstellen.
+.\browser-tests\run.ps1 -InstallBrowsers
+
+# Normaler Testlauf mit aktuellem App-Image-Build (Docker-Cache möglich).
+.\browser-tests\run.ps1
+```
+
+| Aktion | Befehl |
+| --- | --- |
+| Tests mit sichtbarem Browser | `.\browser-tests\run.ps1 -Headed` |
+| Bereits gebautes Browser-Testimage wiederverwenden | `.\browser-tests\run.ps1 -NoBuild` |
+| Markdown-Reporter mit JUnit prüfen, ohne Docker | `.\browser-tests\run.ps1 -ReportingTests` |
+| Letzten Allure-HTML-Bericht anzeigen | `.\browser-tests\run.ps1 -Report` |
+| Bewusst einen Fehlerbericht erzeugen | `.\browser-tests\run.ps1 -NoBuild -FailureProbe` |
+| Eine gespeicherte Ablaufaufzeichnung öffnen | `.\browser-tests\run.ps1 -Trace 'C:\PFAD\ZUM\trace.zip'` |
+
+`-FailureProbe` lässt absichtlich einen falschen Seitentitel erwarten. Exitcode 1 und ein roter Test sind dabei korrekt. Dieser Fall läuft nicht bei normalen Browser- oder Reporter-Prüfungen mit. Auch nach dem Fehler wird die eigene Docker-Umgebung abgebaut.
+
+`run.ps1` ist nur der kurze Windows-Einstieg: Es kompiliert das unabhängige Maven-Testprojekt und startet Java mit den Bibliotheken. Die eigentliche Teststeuerung liegt in Java. JUnit startet die Browserfälle ohne ein zweites selbst entwickeltes Testframework.
+
+## Ergebnisse ansehen
+
+Jeder Lauf legt ein eigenes Archiv an:
+
+```text
+browser-tests/runs/
+  2026-10-11T19-40-00_UTC__1234abcd__a1b2c3d4/
+    report.md
+    metadata.json
+    runner.log
+    allure-results/
+    html/index.html
+    html/open-report.bat
+```
+
+`report.md` enthält Häkchen, Status, Fehlergrund und Links zu Screenshots und Traces. Die Angaben erfassen UTC-Start/Ende, Git-Commit/Branch, lokale Änderungen, App-Image-ID sowie Aufbau, Testausführung, HTML-Erzeugung und Abbau. Auch übersprungene Fälle, fehlende Belege oder ein fehlgeschlagener Abbau dürfen keinen erfolgreichen Gesamtlauf ergeben.
+
+Der Allure-Bericht enthält die Testfälle, Browseraktionen, Fehlerdetails, Screenshots und Trace-Anhänge. Browseraktionen werden durch die fertige Allure-Playwright-Integration aufgezeichnet. Screenshots und Traces werden auch bei erfolgreichen Fällen behalten, damit du die Belege direkt ansehen kannst. Die ZIP-Ablaufaufzeichnung kann heruntergeladen und mit `-Trace` im Playwright Trace Viewer geöffnet werden. [Allure Playwright Java](https://allurereport.org/docs/playwright-java/), [Playwright Trace Viewer](https://playwright.dev/java/docs/trace-viewer).
+
+`-Report` startet nur den lokalen Berichtserver an `127.0.0.1`; es startet keine Anwendung und führt keine Tests aus. Mit Strg+C beenden. Jeder HTML-Ordner enthält außerdem eine open-report.bat. Per Doppelklick öffnet sie genau den Bericht dieses Laufs, auch wenn inzwischen neuere Läufe vorhanden sind. Das Konsolenfenster geöffnet lassen; mit Strg+C wird der Berichtserver beendet. Die index.html nicht direkt per Doppelklick öffnen, weil Allure seine Daten über HTTP nachlädt. Die BAT-Datei benötigt weiterhin den Testordner samt Maven Wrapper, Java und den bereitgestellten Allure-Werkzeugen.
+
+Ein bestimmter Bericht lässt sich auch ausdrücklich auswählen:
+
+    .\browser-tests\run.ps1 -Report -ReportPath '.\browser-tests\runs\DEIN-LAUFORDNER\html'
+
+Alternativ kannst du den lokal bereitgestellten Allure-Starter verwenden:
+
+```powershell
+.\browser-tests\target\tools\allure-2.46.1\bin\allure.bat open '.\browser-tests\runs\DEIN-LAUFORDNER\html' --host 127.0.0.1
+```
+
+Allure Java 3.0.0 ist hier der Testadapter; Allure Report 2.46.1 ist der HTML-Generator. Das sind unterschiedliche Werkzeuge mit eigenen Versionsnummern. Playwright Java ist auf 1.63.0 festgeschrieben. Dazu wird der passende Chromium-Testbrowser installiert.
+
+## Java-Dateien verstehen
+
+Alle Java-Dateien liegen unter `src/test/java/de/derpeterson/browsertests/`:
+
+| Datei | Aufgabe |
+| --- | --- |
+| `InfrastructureBrowserTest.java` | Die drei lesbaren JUnit-Testfälle: Startseite/Bilder, Loginformular, leeres Mailpit |
+| `BrowserFixture.java` | Browser und isolierten Kontext bereitstellen; Screenshot und Trace an Allure übergeben |
+| `FailureProbeTest.java` | Separat auswählbarer absichtlicher Fehler für den Berichtsvergleich |
+| `BrowserTestRunner.java` | Frische Docker-Umgebung starten, JUnit aufrufen, aufräumen und Allure-Generator starten |
+| `MarkdownSummary.java` | Projektspezifische Markdown-Checkliste aus fertigen Allure-Ergebnissen erstellen |
+| `MarkdownSummaryTest.java` | Protokollstatus, fehlende Fälle und Beleglinks ohne Browser prüfen |
+
+`pom.xml` verwaltet nur die Testwerkzeuge. Es hat keinen Spring-Boot-/Vaadin-Parent und verändert die produktiven Abhängigkeiten oder den normalen Java-Testlauf der Anwendung nicht.
+
+## Isolation und Grenzen
+
+Der Starter verwendet [compose.browser-tests.yaml](../compose.browser-tests.yaml). Jeder Java-Lauf startet ein eigenes Projekt `vaadinspringapp-e2e-java-…` mit frischen eigenen Datenbank- und Mailpit-Volumes. Anwendung: `127.0.0.1:18081`, Mailpit: `127.0.0.1:18026`; H2-Webkonsole deaktiviert. Deine manuelle Umgebung auf `18080`/`18025` bleibt bestehen. Diese Ports werden als Browser-Testports abgelehnt.
+
+Mehrere Browser-Testläufe auf denselben Ports nacheinander ausführen. Für einen weiteren gleichzeitigen Lauf in dessen PowerShell-Prozess andere freie Ports einstellen:
+
+```powershell
+$env:BROWSER_TEST_APP_PORT = '18082'
+$env:BROWSER_TEST_MAILPIT_PORT = '18027'
+.\browser-tests\run.ps1
+```
+
+`-NoBuild` kann einen älteren App-Stand testen und ist nur bei bewusst unverändertem App-Code sinnvoll. Die tatsächliche Image-ID und Wiederverwendung stehen im Protokoll. Daten und Belege liegen außerhalb von Git; Screenshots/Traces können spätere Testeingaben oder Sitzungstokens enthalten.
+
+Der aktuelle Umfang ist weiterhin Infrastruktur, noch kein vollständiger Login-/Logout-, Registrierungs-, Reset- oder Adminablauf. Nur Chromium, ein Thread, keine automatischen Wiederholungen. Die zusätzliche Browserprüfung liefert keine Java-Coverage.
+
+Bei normalem Abschluss und Testfehlern werden eigene Container und Volumes entfernt. Hartes Beenden des Prozesses oder ein ausgefallener Docker-Dienst kann das verhindern. Dann nur den genauen Projektnamen aus `metadata.json` zum Abbau verwenden:
+
+```powershell
+docker compose -f compose.browser-tests.yaml -p vaadinspringapp-e2e-java-DEINEKENNUNG down --volumes --remove-orphans
+```
+
+Keine fremden oder manuellen Docker-Projekte zum Aufräumen einsetzen.
+
+## IntelliJ und weitere Tests
+
+`browser-tests/pom.xml` als zusätzliches Maven-Projekt in IntelliJ hinzufügen (Maven-Fenster → Maven-Projekt hinzufügen). Dann bekommst du Navigation und Autovervollständigung wie bei deinen anderen Java-Tests.
+
+Die Browserfälle werden über den Starter ausgeführt. Ein direkter JUnit-Start ohne verwaltete Testumgebung bricht bewusst ab, damit Tests nicht versehentlich gegen eine laufende Anwendung oder deren Datenbank gehen. Die `MarkdownSummaryTest`-Tests können direkt als gewöhnliche JUnit-Tests ausgeführt werden.
+
+Neue Browserfälle zunächst in `InfrastructureBrowserTest` ergänzen; bei späterer Aufteilung die JUnit-Auswahl im Starter passend erweitern. Playwrights wartende Assertions verwenden, keine festen Schlafzeiten. Eine automatische Anbindung an das `/start`-Benchmarking ist noch nicht eingerichtet.
+
+## Fehlerhilfe
+
+- Fehlender Testbrowser: `-InstallBrowsers` ausführen. Der normale Starter lädt keine weiteren Browser automatisch.
+- Aufbaufehler: Docker Desktop prüfen; `runner.log` und `metadata.json` ansehen. Fremdbelegte Testports ändern.
+- Falsches JDK: Der Starter benötigt Java 25. `JAVA_HOME`/IntelliJ-JDK prüfen, keine Bibliotheksversionen zur Umgehung downgraden.
+- Bericht startet nicht: Zuerst einen abgeschlossenen Lauf ausführen; `-Report` benötigt dessen HTML-Ordner.
+- Maven muss beim ersten Start Werkzeuge herunterladen. Danach sind Bibliotheken und Allure im lokalen Maven-/Build-Verzeichnis vorhanden.
+
+Die Browsertests brauchen kein eigenes npm-Testprojekt. Playwright verwendet intern weiterhin seinen mitgelieferten Browser-Treiber; der von dir bearbeitete Testcode bleibt Java.

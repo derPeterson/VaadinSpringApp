@@ -36,3 +36,7 @@ dev-shell.bat
 # Local secrets
 .env
 .env.local
+
+# Browser-test build output and local evidence
+/browser-tests/target/
+/browser-tests/runs/

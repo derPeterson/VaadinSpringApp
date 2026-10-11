@@ -1,0 +1,25 @@
+# Separate, disposable environment. The runner supplies a unique project name.
+# !override requires Docker Compose 2.24.4 or newer.
+services:
+  app:
+    extends:
+      file: compose.yaml
+      service: app
+    image: vaadinspringapp-browser-tests-app:local
+    ports: !override
+      - "127.0.0.1:${BROWSER_TEST_APP_PORT:-18081}:8080"
+    environment:
+      APP_CFG_SERVICE_NAME: "VaadinSpringApp (Browser-Test)"
+      APP_CFG_BASE_URL: "http://127.0.0.1:${BROWSER_TEST_APP_PORT:-18081}/"
+      APP_SECURITY_EXPOSE_H2_CONSOLE: "false"
+
+  mailpit:
+    extends:
+      file: compose.yaml
+      service: mailpit
+    ports: !override
+      - "127.0.0.1:${BROWSER_TEST_MAILPIT_PORT:-18026}:8025"
+
+volumes:
+  app-data:
+  mailpit-data:

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>de.derpeterson</groupId>
+    <artifactId>browser-tests</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>VaadinSpringApp Browser Tests</name>
+    <!-- Independent test project: no Spring/Vaadin build or production dependencies. -->
+    <properties>
+        <maven.compiler.release>25</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <playwright.version>1.63.0</playwright.version>
+        <junit.version>6.1.3</junit.version>
+        <allure.version>3.0.0</allure.version>
+        <allure.report.version>2.46.1</allure.report.version>
+        <aspectj.version>1.9.25</aspectj.version>
+    </properties>
+    <dependencies>
+        <dependency><groupId>com.microsoft.playwright</groupId><artifactId>playwright</artifactId><version>${playwright.version}</version><scope>test</scope></dependency>
+        <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>${junit.version}</version><scope>test</scope></dependency>
+        <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-launcher</artifactId><version>${junit.version}</version><scope>test</scope></dependency>
+        <dependency><groupId>io.qameta.allure</groupId><artifactId>allure-jupiter</artifactId><version>${allure.version}</version><scope>test</scope></dependency>
+        <dependency><groupId>io.qameta.allure</groupId><artifactId>allure-playwright</artifactId><version>${allure.version}</version><scope>test</scope></dependency>
+        <dependency><groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-databind</artifactId><version>2.22.3</version><scope>test</scope></dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.15.0</version></plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.5.5</version>
+                <configuration><excludedGroups>browser</excludedGroups><systemPropertyVariables><allure.results.directory>${project.build.directory}/allure-unit-results</allure.results.directory></systemPropertyVariables></configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId><artifactId>maven-dependency-plugin</artifactId><version>3.11.0</version>
+                <executions>
+                    <execution>
+                        <id>report-tools</id><phase>generate-test-resources</phase><goals><goal>unpack</goal></goals>
+                        <configuration><artifactItems><artifactItem>
+                            <groupId>io.qameta.allure</groupId><artifactId>allure-commandline</artifactId><version>${allure.report.version}</version><type>zip</type>
+                            <outputDirectory>${project.build.directory}/tools</outputDirectory>
+                        </artifactItem></artifactItems></configuration>
+                    </execution>
+                    <execution>
+                        <id>action-recording-agent</id><phase>generate-test-resources</phase><goals><goal>copy</goal></goals>
+                        <configuration><artifactItems><artifactItem>
+                            <groupId>org.aspectj</groupId><artifactId>aspectjweaver</artifactId><version>${aspectj.version}</version>
+                            <outputDirectory>${project.build.directory}/tools</outputDirectory><destFileName>aspectjweaver.jar</destFileName>
+                        </artifactItem></artifactItems></configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
