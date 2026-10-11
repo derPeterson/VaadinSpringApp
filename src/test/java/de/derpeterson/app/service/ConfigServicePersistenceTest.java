@@ -5,6 +5,7 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
 import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.mock.env.MockEnvironment;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
@@ -47,7 +48,7 @@ class ConfigServicePersistenceTest {
     @BeforeEach
     void clearDatabase() {
         repository.deleteAll();
-        service = new ConfigService(repository, transactionManager);
+        service = new ConfigService(repository, transactionManager, new MockEnvironment());
     }
 
     @Test
@@ -130,8 +131,8 @@ class ConfigServicePersistenceTest {
             }
         }).when(coordinated).saveAndFlush(any());
         // Distinct service instances: no JVM-local lock can hide the DB race.
-        var first = new ConfigService(coordinated, transactionManager);
-        var second = new ConfigService(coordinated, transactionManager);
+        var first = new ConfigService(coordinated, transactionManager, new MockEnvironment());
+        var second = new ConfigService(coordinated, transactionManager, new MockEnvironment());
         var executor = Executors.newFixedThreadPool(2);
         try {
             var firstWrite = executor.submit(() -> first.set(ConfigEntry.SERVICE_NAME, "first"));

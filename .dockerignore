@@ -1,0 +1,22 @@
+# Only build inputs enter the context; local settings and data stay on the host.
+**
+!pom.xml
+!mvnw
+!.mvn/
+!.mvn/wrapper/
+!.mvn/wrapper/**
+!package.json
+!package-lock.json
+!vite.config.ts
+!tsconfig.json
+!types.d.ts
+!eclipse-formatter.xml
+!src/
+!src/**
+src/main/frontend/generated/
+src/main/bundles/
+**/.env*
+**/*.mv.db
+**/*.trace.db
+**/node_modules/
+**/target/

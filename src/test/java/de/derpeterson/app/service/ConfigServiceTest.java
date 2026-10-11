@@ -4,6 +4,7 @@ import de.derpeterson.app.model.ConfigEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.mock.env.MockEnvironment;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +37,7 @@ class ConfigServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ConfigService(repository, transactionManager);
+        service = new ConfigService(repository, transactionManager, new MockEnvironment());
     }
 
     @ParameterizedTest

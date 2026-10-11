@@ -163,7 +163,7 @@ public class AdminView extends IsAuthenticatedBaseView {
         leftLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
         leftLayout.addClassNames(LumoUtility.Gap.SMALL);
 
-        Image drawerToggleIcon = new Image("themes/custom-theme/service_logo.png", "Service Icon");
+        Image drawerToggleIcon = new Image("custom-theme/service_logo.png", "Service Icon");
         drawerToggleIcon.setWidth("48px");
         drawerToggleIcon.setHeight("48px");
 

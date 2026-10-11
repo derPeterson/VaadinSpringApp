@@ -361,7 +361,7 @@ public class UserPopoverMenu {
         Locale locale = VaadinSession.getCurrent().getLocale();
 
         Button deFlagButton = createLanguageButton(
-                "themes/custom-theme/flag_de.png",
+                "custom-theme/flag_de.png",
                 "German Flag Icon",
                 Locale.GERMAN,
                 locale
@@ -372,7 +372,7 @@ public class UserPopoverMenu {
                 .orElse(null);
 
         Button enFlagButton = createLanguageButton(
-                "themes/custom-theme/flag_en.png",
+                "custom-theme/flag_en.png",
                 "English Flag Icon",
                 Locale.ENGLISH,
                 locale

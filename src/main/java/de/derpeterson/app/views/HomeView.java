@@ -79,7 +79,7 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
         serviceLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
         serviceLayout.addClassNames(LumoUtility.Gap.SMALL);
 
-        Image serviceLogoIcon = new Image("themes/custom-theme/service_logo.png", "Service Icon");
+        Image serviceLogoIcon = new Image("custom-theme/service_logo.png", "Service Icon");
         serviceLogoIcon.setWidth("48px");
         serviceLogoIcon.setHeight("48px");
 

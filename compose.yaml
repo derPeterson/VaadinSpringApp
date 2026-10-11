@@ -1,0 +1,65 @@
+name: vaadinspringapp-test
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:18080:8080"
+    environment:
+      TZ: Europe/Berlin
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: ""
+      # Local test settings. APP_CFG defaults initialize missing database entries only.
+      SPRING_DATASOURCE_URL: "jdbc:h2:file:/app/data/appdb;MODE=MySQL;DB_CLOSE_DELAY=-1;SCHEMA=PUBLIC"
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: ""
+      APP_CFG_SERVICE_NAME: "VaadinSpringApp (Docker-Test)"
+      APP_CFG_BASE_URL: "http://localhost:18080/"
+      # Controls both application access and the H2 web console.
+      APP_SECURITY_EXPOSE_H2_CONSOLE: "true"
+      APP_BOOTSTRAP_DEFAULT_ADMIN_ENABLED: "true"
+      APP_BOOTSTRAP_DEFAULT_ADMIN_EMAIL: admin@example.test
+      APP_BOOTSTRAP_DEFAULT_ADMIN_PASSWORD: "Password1!"
+      APP_CFG_REMEMBER_ME_SECRET_KEY: local-docker-test-key-not-for-production
+      APP_CFG_EMAIL_FROM: no-reply@example.test
+      APP_CFG_EMAIL_ADMIN: admin@example.test
+      APP_CFG_MAIL_HOST: mailpit
+      APP_CFG_MAIL_PORT: "1025"
+      APP_CFG_MAIL_USERNAME: ""
+      APP_CFG_MAIL_PASSWORD: ""
+      APP_CFG_MAIL_SMTP_AUTH: "false"
+      APP_CFG_MAIL_SMTP_STARTTLS_ENABLE: "false"
+      APP_CFG_MAIL_SMTP_SSL_ENABLE: "false"
+    volumes:
+      - app-data:/app/data
+    depends_on:
+      mailpit:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--output", "/dev/null", "http://localhost:8080/login"]
+      interval: 10s
+      timeout: 5s
+      start_period: 90s
+      retries: 6
+    stop_grace_period: 30s
+
+  mailpit:
+    image: axllent/mailpit:v1.31.4
+    ports:
+      - "127.0.0.1:18025:8025"
+    environment:
+      TZ: Europe/Berlin
+      MP_DATABASE: /data/mailpit.db
+    volumes:
+      - mailpit-data:/data
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  app-data:
+  mailpit-data:

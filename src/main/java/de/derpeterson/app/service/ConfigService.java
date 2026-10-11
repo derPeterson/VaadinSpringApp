@@ -5,6 +5,7 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -14,6 +15,8 @@ import java.util.Objects;
 
 /**
  * Missing entries (including legacy null values) use the requested default.
+ * Without an explicit default, configured application defaults take precedence over
+ * the enum default, including before database initialization. Stored values win.
  * Strings are preserved verbatim; typed getters reject malformed values rather
  * than silently falling back. Every method requires a non-null ConfigEntry.
  */
@@ -23,13 +26,21 @@ public class ConfigService {
 
     private final ConfigRepository configRepository;
     private final PlatformTransactionManager transactionManager;
+    private final Environment environment;
 
     public boolean exists(ConfigEntry configEntry) {
         return configRepository.existsByKey(configEntry.getKey());
     }
 
     public String getString(ConfigEntry configEntry) {
-        return getString(configEntry, configEntry.getDefaultValueString());
+        return configRepository.findByKey(configEntry.getKey())
+                .map(ConfigEntity::getValue)
+                .orElseGet(() -> configuredDefault(configEntry));
+    }
+
+    private String configuredDefault(ConfigEntry configEntry) {
+        return environment.getProperty("app.config.defaults." + configEntry.getKey(),
+                configEntry.getDefaultValueString());
     }
 
     public String getString(ConfigEntry configEntry, String defaultValue) {
@@ -42,7 +53,7 @@ public class ConfigService {
         return configRepository.findByKey(configEntry.getKey())
                 .map(ConfigEntity::getValue)
                 .map(Integer::parseInt)
-                .orElseGet(configEntry::getDefaultValueInteger);
+                .orElseGet(() -> Integer.parseInt(configuredDefault(configEntry)));
     }
 
     public int getInteger(ConfigEntry configEntry, int defaultValue) {

@@ -1,5 +1,7 @@
 # VaadinSpringApp
 
+Lokale Docker-Testumgebung mit Mailpit und H2: [Docker-Anleitung](docs/docker/README.md).
+
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
 > Diese Beschreibung basiert auf dem Quellcode und der Build-Konfiguration. Der vollständige serverseitige Testlauf wurde am 07.10.2026 mit Java 25 geprüft (siehe „Tests und Prüfstand“). Node.js und der Package-Build wurden zuletzt am 01.10.2026 geprüft. Die Anwendung wurde nicht gestartet; ein erfolgreicher Laufzeitbetrieb ist damit nicht nachgewiesen.
