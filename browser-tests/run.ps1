@@ -1,6 +1,6 @@
 param(
     [switch]$Headed,
-    [ValidateSet('all', 'infrastructure', 'authentication')]
+    [ValidateSet('all', 'infrastructure', 'authentication', 'registration', 'verification')]
     [string]$Suite = 'all',
     [switch]$NoBuild,
     [switch]$FailureProbe,

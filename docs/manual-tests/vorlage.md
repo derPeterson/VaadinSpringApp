@@ -1,6 +1,6 @@
 # Manuelle Tests – VaadinSpringApp
 
-> Vorlage, Version 1.3 · erstellt am 10.10.2026.
+> Vorlage, Version 1.4 · erstellt am 10.10.2026.
 > Diese Datei bleibt als Übergangscheckliste für die Automatisierung erhalten.
 > Sie wird nicht mehr als Vorlage für neue vollständige manuelle Durchläufe erweitert.
 > Die früheren Ablauf- und Protokollhinweise bleiben zur Einordnung vorhandener Archive stehen.
@@ -108,7 +108,7 @@ Prüfungen nicht. Ein gezielter Nachtest darf kürzer sein, muss seinen Umfang n
 | Durchlauf-ID / Dateiname | … |
 | Einrichtungsprotokoll / Konfigurationsdatei | … |
 | Art | Vollständiger Durchlauf / gezielter Nachtest: … |
-| Vorlagenversion | 1.3 |
+| Vorlagenversion | 1.4 |
 | Beginn / Ende mit Zeitzone | … |
 | Geprüft von | … |
 | Vollständiger Git-Commit | … |
@@ -1046,10 +1046,14 @@ in einer neuen, separaten Anleitung für manuelle Sonderprüfungen gesammelt.
 | Vollständig automatisiert | Bisheriger Punkt | Stand | Bereits abgedeckt | Noch offen |
 | --- | --- | --- | --- | --- |
 | [ ] | START-01 / UI-01 | TEILWEISE | Startseite und Bilder bei Desktopgröße | Weitere Erststartprüfungen und Darstellung auf anderen Bildschirmgrößen |
-| [ ] | AUTH-01 | TEILWEISE | Formular, Admin und aktiver normaler Benutzer, falsches Passwort, unbekannte Adresse, anonymer Zugriff | Unverifizierte und gesperrte Konten |
+| [ ] | AUTH-01 | TEILWEISE | Formular, Admin und aktiver normaler Benutzer, unverifiziertes Konto, falsches Passwort, unbekannte Adresse, anonymer Zugriff | Gesperrte Konten |
 | [ ] | AUTH-02 | TEILWEISE | Abmeldung mit Admin, bestehender Tab, Browser-Zurück und erneuter Aufruf | Alte mutierende Formulare und weitere Kontovarianten |
 | [ ] | SEC-01 | TEILWEISE | Gast, vorhandener Admin und normale Benutzerrolle | Nachträgliche Rollenvergabe |
-| [ ] | START-03 | TEILWEISE | Frische Mailpit-API erreichbar und leer | Versand sowie Erststart-/Neustartvergleich |
+| [ ] | START-03 | TEILWEISE | Mailpit-API erreichbar und tatsächliche Verifikationsmail eingegangen | Weitere Versandarten sowie Erststart-/Neustartvergleich |
+| [ ] | REG-01 | TEILWEISE | Gültige Registrierung, Bestätigung, tatsächliche Testmail und gesperrte Anmeldung vor Aktivierung | Vollständige Adminansicht des angelegten Kontos |
+| [ ] | REG-02 | TEILWEISE | Leere Pflichtfelder, ungültige E-Mail, abweichende Passwortbestätigung und erfolgreiche Korrektur | Blanke Namen, weitere Passwort-/Bestätigungsvarianten, heutige/zukünftige Geburtstage |
+| [ ] | VER-01 | TEILWEISE | Empfänger, Betreff, Name, Service, Platzhalter, echter Mailbutton, Aktivierung, Anmeldung und erneute Linkverwendung | Weitere Sprach-/Footer- und Adminsperrenvarianten |
+| [ ] | VER-02 | TEILWEISE / FEHLER | Unbekannter Token geprüft; tokenloser Aufruf als Browserfall umgesetzt | Tokenloser Aufruf zeigt noch eine leere Ansicht; fehlerhafte Eingaben im Mailformular fehlen |
 | [ ] | Alle weiteren bisherigen Prüfpunkte | OFFEN | Noch keine vollständige Übernahme in Browserabläufe | Vorhandene Varianten nach und nach zuordnen und umsetzen |
 
 Die historischen Test-Häkchen und Statuswerte der Abschnitte 1–17 sowie archivierte

@@ -30,7 +30,7 @@ In PowerShell im Projektordner:
 | --- | --- |
 | Tests mit sichtbarem Browser | `.\browser-tests\run.ps1 -Headed` |
 | Bereits gebautes Browser-Testimage wiederverwenden | `.\browser-tests\run.ps1 -NoBuild` |
-| Markdown-Reporter mit JUnit prüfen, ohne Docker | `.\browser-tests\run.ps1 -ReportingTests` |
+| Reporter und Link-Isolation mit JUnit prüfen, ohne Docker | `.\browser-tests\run.ps1 -ReportingTests` |
 | Letzten Allure-HTML-Bericht anzeigen | `.\browser-tests\run.ps1 -Report` |
 | Bewusst einen Fehlerbericht erzeugen | `.\browser-tests\run.ps1 -NoBuild -FailureProbe` |
 | Eine gespeicherte Ablaufaufzeichnung öffnen | `.\browser-tests\run.ps1 -Trace 'C:\PFAD\ZUM\trace.zip'` |
@@ -42,15 +42,17 @@ In PowerShell im Projektordner:
 ## Suites und Testfälle
 
 Die Fälle sind nach fachlichem Bereich getrennt, mit eigenen JUnit-Klassen unter
-src/test/java/de/derpeterson/browsertests/suites/. Ein gewöhnlicher Start führt beide
+src/test/java/de/derpeterson/browsertests/suites/. Ein gewöhnlicher Start führt alle vier
 Suites aus. Jede Prüfung bekommt einen frischen Browserkontext; alle Fälle funktionieren
 ohne vorherige Testfälle. Die Datenbank und Mailpit sind für den gesamten Lauf frisch.
 
 | Suite | Inhalt | Anzahl |
 | --- | --- | ---: |
-| infrastructure | Startseite und Bilder, Loginformular, leere Mailpit-API | 3 |
+| infrastructure | Startseite und Bilder, Loginformular, erreichbare Mailpit-API | 3 |
 | authentication | Adminlogin, falsches Passwort, unbekanntes Konto, Gastzugriff, Logout, normale Benutzerrechte | 6 |
-| all | Beide Suites; Standardwert | 9 |
+| registration | Registrierung, Pflichtfelder und korrigierbare Eingabefehler | 3 |
+| verification | Echter Mailbutton, Aktivierung, erneuter Linkaufruf, ungültiger/fehlender Token | 3 |
+| all | Alle vier Suites; Standardwert | 15 |
 
 ~~~powershell
 # Nur die Anmeldungssuite:
@@ -59,7 +61,11 @@ ohne vorherige Testfälle. Die Datenbank und Mailpit sind für den gesamten Lauf
 # Infrastruktur unabhängig prüfen:
 .\browser-tests\run.ps1 -Suite infrastructure
 
-# Beide Suites live mitverfolgen:
+# Registrierung oder Verifikation einzeln prüfen:
+.\browser-tests\run.ps1 -Suite registration
+.\browser-tests\run.ps1 -Suite verification
+
+# Alle Suites live mitverfolgen:
 .\browser-tests\run.ps1 -Suite all -Headed
 ~~~
 
@@ -74,17 +80,25 @@ und Erwartungen vollständig in der Suite und im erzeugten Bericht.
 | --- | --- |
 | INFRA-01 | Startseite, Serviceanzeige und geladene Bilder bei 1280 × 900 |
 | INFRA-02 | Sichtbares Loginformular |
-| INFRA-03 | Mailpit-API erreichbar und frisch leer; Vorbereitung für spätere Mailabläufe |
+| INFRA-03 | Mailpit-API erreichbar und Nachrichtenliste lesbar; kein Leerheitszwang nach anderen Versandtests |
 | AUTH-01A | Admin meldet sich an; Konto und Dashboard sichtbar |
 | AUTH-01B | Falsches Passwort: neutraler Fehler und kein Adminzugriff |
 | AUTH-01C | Unbekannte Adresse: gleicher Fehler und kein Adminzugriff |
 | AUTH-01D | Gast wird beim direkten Adminaufruf zur Anmeldung geführt |
 | AUTH-02A | Logout über UI; bestehender Tab, Zurück und erneuter Adminaufruf |
 | SEC-01A | Aktiver normaler Benutzer kann sich anmelden, aber keine Adminfunktionen nutzen |
+| REG-01A | Registrierung bestätigt, tatsächliche SMTP-Mail eingegangen, Anmeldung vor Aktivierung abgelehnt |
+| REG-02A | Leere Pflichtfelder markiert; nach gültiger Korrektur Registrierung bestätigt |
+| REG-02B | Ungültige E-Mail und abweichende Passwortbestätigung verständlich markiert und korrigierbar |
+| VER-01A | Mailinhalt geprüft, echter Mailbutton öffnet Aktivierung; anschließend normale Anmeldung ohne Adminrechte |
+| VER-01B | Bereits verbrauchter Link zeigt beim weiterhin aktiven Konto gemäß Vertrag erneut Erfolg; Anmeldung funktioniert |
+| VER-02A | Unbekannter Token zeigt verständlichen Fehler; Aufruf ohne Token führt zur Startseite |
 
-Noch nicht automatisiert: unverifizierte und gesperrte Konten, Remember-me,
-Rollenänderungen in laufenden Sitzungen, mutierende Aktionen aus alten Formularen,
-Registrierung/Verifikation/Reset, Adminbearbeitung und mobile/Tastaturvarianten.
+Noch nicht automatisiert: gesperrte Konten, Remember-me, Rollenänderungen in laufenden
+Sitzungen, mutierende Aktionen aus alten Formularen, weitere Eingabe-/Dublettenvarianten,
+Verifikationsablauf und erneuter Versand, nachträgliche Adminsperren, Passwortreset,
+Adminbearbeitung sowie mobile/Tastaturvarianten. Die Verifikationsfälle prüfen keine
+direkten Datenbankzustände, keine exakten Zeitgrenzen und keine Tokenkonkurrenz.
 
 ### Aufgaben der Testarten
 
@@ -117,6 +131,37 @@ Die kleinen Klassen unter pages/ enthalten wiederkehrende Klicks und Eingaben.
 Die Suites beschreiben die fachlichen Fälle. BrowserFixture verwaltet ausschließlich
 Browserkontexte, Screenshots und Traces. Neue fachliche Bereiche erhalten später
 eigene Suite-Klassen und einen Eintrag in BrowserSuites.
+
+### Registrierungsdaten und tatsächliche Testmails
+
+Jeder neue Registrierungs-/Verifikationsfall verwendet eine eigene UUID-Adresse unter
+example.test und das erfundene Testpasswort BrowserUser1!. Namen, Geschlecht und
+Geburtsdatum werden über das sichtbare Formular eingegeben. Kein Test registriert oder
+aktiviert Konten durch SQL, Serviceaufrufe oder eine Test-API.
+
+MailpitInbox liest ausschließlich die Mailablage der isolierten Testumgebung.
+Es wartet höchstens 30 Sekunden auf die konkrete Empfängeradresse, niemals auf die
+global neueste Nachricht. Die Anwendung versendet über ihre reguläre Queue und SMTP
+an Mailpit. Der Helfer erzeugt oder versendet selbst keine Mail.
+
+Empfänger, Betreff und ausgefüllte Platzhalter werden am empfangenen Inhalt geprüft.
+Die HTML-Mail wird im Browser geöffnet; dort werden Name, Serviceanzeige und der echte
+Aktivierungsbutton geprüft und angeklickt. Sein Ziel muss exakt zum lokalen App-Port
+des Testlaufs gehören. Mailansicht und Aktivierung bekommen zusätzliche Screenshots;
+Empfänger/Betreff werden als Beleg angehängt. Grundlage ist die offizielle
+[Mailpit-API](https://mailpit.axllent.org/docs/api-v1/) und ihre
+[HTML-Ansicht für Tests](https://mailpit.axllent.org/docs/integration/).
+
+VER-01B folgt dem bestehenden Vertrag: Ein verwendeter Link darf bei weiterhin aktivem
+Konto erneut Erfolg anzeigen. Der Fall behauptet keinen Nachweis für nachträgliche
+Adminsperren. Die isolierte Mailpit-Zustellung beweist außerdem keine Zustellung an
+externe Postfächer oder Darstellung in Outlook/Gmail.
+
+### Aktueller offener Befund
+
+VER-02A deckt einen bestätigten UI-Fehler auf: Ohne Token wechselt die URL zu /home,
+die sichtbare Startseite wird aber nicht aufgebaut. Der Test bleibt rot. Reproduktion
+und vorgeschlagene Korrektur stehen in [findings.md](findings.md).
 
 ## Ergebnisse ansehen
 
@@ -157,8 +202,12 @@ Alle Java-Dateien liegen unter `src/test/java/de/derpeterson/browsertests/`:
 
 | Datei | Aufgabe |
 | --- | --- |
-| `suites/InfrastructureBrowserTest.java` | Die drei lesbaren JUnit-Testfälle: Startseite/Bilder, Loginformular, leeres Mailpit |
+| `suites/InfrastructureBrowserTest.java` | Die drei lesbaren JUnit-Testfälle: Startseite/Bilder, Loginformular, erreichbares Mailpit |
 | `suites/AuthenticationBrowserTest.java` | Die sechs unabhängigen Fälle für Anmeldung, Abmeldung und Adminrechte |
+| `suites/RegistrationBrowserTest.java` | Drei Fälle für Registrierung, Feldfehler und Korrektur |
+| `suites/VerificationBrowserTest.java` | Drei Fälle für Mailaktivierung und gültige/ungültige Linkaufrufe |
+| `mail/MailpitInbox.java` | Eigene SMTP-Mail abwarten, lesen und den sichtbaren Mailbutton verwenden |
+| `mail/MailpitInboxTest.java` | Fremde Linkziele und die manuelle Umgebung vor Navigation ausschließen |
 | `pages/` | Kleine Bedienhelfer für Loginformular, Benutzermenü und Benutzeranlage |
 | `BrowserSuites.java / BrowserTestAccounts.java` | Suite-Auswahl und erfundene lokale Testkonten |
 | `BrowserFixture.java` | Browser und isolierten Kontext bereitstellen; Screenshot und Trace an Allure übergeben |
@@ -183,7 +232,7 @@ $env:BROWSER_TEST_MAILPIT_PORT = '18027'
 
 `-NoBuild` kann einen älteren App-Stand testen und ist nur bei bewusst unverändertem App-Code sinnvoll. Die tatsächliche Image-ID und Wiederverwendung stehen im Protokoll. Daten und Belege liegen außerhalb von Git; Screenshots/Traces können spätere Testeingaben oder Sitzungstokens enthalten.
 
-Der aktuelle Umfang sind Infrastruktur sowie die oben beschriebenen echten Login-/Logout- und Zugriffsprüfungen. Weitere Benutzerabläufe sind im Abschnitt „Suites und Testfälle“ als offen aufgeführt. Nur Chromium, ein Thread, keine automatischen Wiederholungen. Die zusätzliche Browserprüfung liefert keine Java-Coverage.
+Der aktuelle Umfang umfasst Infrastruktur, Login/Logout, Zugriffsrechte, Registrierung und die oben beschriebenen Verifikationsabläufe. Weitere Benutzerabläufe sind im Abschnitt „Suites und Testfälle“ als offen aufgeführt. Nur Chromium, ein Thread, keine automatischen Wiederholungen. Die zusätzliche Browserprüfung liefert keine Java-Coverage.
 
 Bei normalem Abschluss und Testfehlern werden eigene Container und Volumes entfernt. Hartes Beenden des Prozesses oder ein ausgefallener Docker-Dienst kann das verhindern. Dann nur den genauen Projektnamen aus `metadata.json` zum Abbau verwenden:
 
