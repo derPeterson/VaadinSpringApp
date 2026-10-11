@@ -49,4 +49,31 @@ class MarkdownSummaryTest {
         var passed = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
         assertTrue(MarkdownSummary.render(metadata, new ArrayList<>(List.of(passed))).contains("UNVOLLSTÄNDIG / FEHLER"));
     }
+    @Test void checklistKeepsStepsAreaAndTimeWithoutDependingOnManualTests() throws Exception {
+        var test = new ObjectMapper().readTree("""
+                {"name":"AUTH-01B: Falsches Passwort","status":"passed","start":1791748800000,"stop":1791748801000,
+                 "description":"1. Login öffnen.\\n\\n**Erwartet:** Keine Anmeldung.",
+                 "labels":[{"name":"feature","value":"Anmeldung"},{"name":"story","value":"Abgelehnte Anmeldung"}]}
+                """);
+        String report = MarkdownSummary.render(complete(), List.of(test));
+        assertTrue(report.contains("### Anmeldung"));
+        assertTrue(report.contains("**Prüfbereich:** Abgelehnte Anmeldung"));
+        assertTrue(report.contains("**Erwartet:** Keine Anmeldung."));
+        assertTrue(report.contains("**Zeitpunkt (UTC):** 2026-10-11T"));
+        assertTrue(report.contains("keine vollständige Prüfung der Anwendung"));
+        assertFalse(report.contains("docs/manual-tests"));
+        assertFalse(report.contains("Manuelle Vorlage"));
+    }
+
+    @Test void skippedChecklistRetainsItsInstructionsAndReason() throws Exception {
+        var test = new ObjectMapper().readTree("""
+                {"name":"AUTH-01A","status":"skipped","description":"1. Admin anmelden.",
+                 "statusDetails":{"message":"Testumgebung nicht erreichbar."}}
+                """);
+        String report = MarkdownSummary.render(complete(), List.of(test));
+        assertTrue(report.contains("1. Admin anmelden."));
+        assertTrue(report.contains("**Status:** NICHT AUSGEFÜHRT"));
+        assertTrue(report.contains("Testumgebung nicht erreichbar."));
+        assertFalse(report.contains("- [x]"));
+    }
 }

@@ -1,0 +1,10 @@
+package de.derpeterson.browsertests;
+
+/** Invented credentials exclusively for the runner's disposable Docker database. */
+public final class BrowserTestAccounts {
+    public static final String ADMIN_EMAIL = "browser-admin@example.test";
+    public static final String ADMIN_PASSWORD = "BrowserAdmin1!";
+    public static final String USER_PASSWORD = "BrowserUser1!";
+
+    private BrowserTestAccounts() { }
+}

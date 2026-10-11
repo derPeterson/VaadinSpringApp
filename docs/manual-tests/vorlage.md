@@ -1,7 +1,10 @@
 # Manuelle Tests – VaadinSpringApp
 
-> Vorlage, Version 1.1 · erstellt am 10.10.2026.
-> Diese Datei enthält Prüfaufträge, keine bereits bestandenen Tests.
+> Vorlage, Version 1.3 · erstellt am 10.10.2026.
+> Diese Datei bleibt als Übergangscheckliste für die Automatisierung erhalten.
+> Sie wird nicht mehr als Vorlage für neue vollständige manuelle Durchläufe erweitert.
+> Die früheren Ablauf- und Protokollhinweise bleiben zur Einordnung vorhandener Archive stehen.
+> Automatisierungsstatus siehe Abschnitt 18; er ist kein manueller Testerfolg.
 
 ## Inhaltsverzeichnis
 
@@ -22,6 +25,7 @@
 - [15. Erweiterte Betriebsprüfungen](#15-erweiterte-betriebsprüfungen)
 - [16. Fehlerprotokoll und Nachprüfung](#16-fehlerprotokoll-und-nachprüfung)
 - [17. Abschluss](#17-abschluss)
+- [18. Automatisierte Teilfälle](#18-automatisierte-teilfälle)
 
 ## 1. Vorlage verwenden und Ergebnisse festhalten
 
@@ -104,7 +108,7 @@ Prüfungen nicht. Ein gezielter Nachtest darf kürzer sein, muss seinen Umfang n
 | Durchlauf-ID / Dateiname | … |
 | Einrichtungsprotokoll / Konfigurationsdatei | … |
 | Art | Vollständiger Durchlauf / gezielter Nachtest: … |
-| Vorlagenversion | 1.1 |
+| Vorlagenversion | 1.3 |
 | Beginn / Ende mit Zeitzone | … |
 | Geprüft von | … |
 | Vollständiger Git-Commit | … |
@@ -1027,3 +1031,27 @@ in einem neuen Protokoll bestätigen und hier nur den Verweis ergänzen.
 und ohne offene Fehler bestanden sind. Fehlende Voraussetzungen nicht durch eine
 grüne Zusammenfassung verdecken. Dieses Protokoll belegt beobachtete Abläufe zu einem
 bestimmten Stand, keine vollständige Fehlerfreiheit oder automatische Deploymentfreigabe.
+
+## 18. Automatisierte Teilfälle
+
+Dieser Abschnitt dient ausschließlich als Übergangscheckliste. Die vorhandenen
+Prüfaufträge werden schrittweise durch eigenständige Browserfälle ersetzt.
+Es gibt keine gegenseitigen Dokumentationsverweise oder technische Abhängigkeit.
+
+`AUTOMATISIERT` erst abhaken, wenn alle geeigneten Varianten des bisherigen Punktes
+abgedeckt sind. `TEILWEISE` bedeutet, dass noch Varianten fehlen. Technische Fälle
+gehören in JUnit-/Persistenztests; erforderliche menschliche Bewertungen werden später
+in einer neuen, separaten Anleitung für manuelle Sonderprüfungen gesammelt.
+
+| Vollständig automatisiert | Bisheriger Punkt | Stand | Bereits abgedeckt | Noch offen |
+| --- | --- | --- | --- | --- |
+| [ ] | START-01 / UI-01 | TEILWEISE | Startseite und Bilder bei Desktopgröße | Weitere Erststartprüfungen und Darstellung auf anderen Bildschirmgrößen |
+| [ ] | AUTH-01 | TEILWEISE | Formular, Admin und aktiver normaler Benutzer, falsches Passwort, unbekannte Adresse, anonymer Zugriff | Unverifizierte und gesperrte Konten |
+| [ ] | AUTH-02 | TEILWEISE | Abmeldung mit Admin, bestehender Tab, Browser-Zurück und erneuter Aufruf | Alte mutierende Formulare und weitere Kontovarianten |
+| [ ] | SEC-01 | TEILWEISE | Gast, vorhandener Admin und normale Benutzerrolle | Nachträgliche Rollenvergabe |
+| [ ] | START-03 | TEILWEISE | Frische Mailpit-API erreichbar und leer | Versand sowie Erststart-/Neustartvergleich |
+| [ ] | Alle weiteren bisherigen Prüfpunkte | OFFEN | Noch keine vollständige Übernahme in Browserabläufe | Vorhandene Varianten nach und nach zuordnen und umsetzen |
+
+Die historischen Test-Häkchen und Statuswerte der Abschnitte 1–17 sowie archivierte
+Durchläufe werden dadurch nicht verändert. Diese Übergangscheckliste beschreibt
+den Automatisierungsfortschritt, keine Freigabe der Anwendung.

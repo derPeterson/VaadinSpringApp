@@ -1,5 +1,7 @@
 param(
     [switch]$Headed,
+    [ValidateSet('all', 'infrastructure', 'authentication')]
+    [string]$Suite = 'all',
     [switch]$NoBuild,
     [switch]$FailureProbe,
     [switch]$ReportingTests,
@@ -37,6 +39,7 @@ if ($Trace) {
 $javaArguments = @('-Dfile.encoding=UTF-8', '-cp', $classpath)
 if (-not $Report) { $javaArguments += "-javaagent:$targetPath/tools/aspectjweaver.jar" }
 $javaArguments += @('de.derpeterson.browsertests.BrowserTestRunner', $modulePath)
+if (-not $Report) { $javaArguments += @('--suite', $Suite) }
 if ($Headed) { $javaArguments += '--headed' }
 if ($NoBuild) { $javaArguments += '--no-build' }
 if ($FailureProbe) { $javaArguments += '--failure-probe' }

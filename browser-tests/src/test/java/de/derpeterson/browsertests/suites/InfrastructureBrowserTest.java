@@ -1,4 +1,7 @@
-package de.derpeterson.browsertests;
+package de.derpeterson.browsertests.suites;
+
+import de.derpeterson.browsertests.BrowserFixture;
+import io.qameta.allure.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Locator;
@@ -10,9 +13,19 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("browser")
-class InfrastructureBrowserTest extends BrowserFixture {
+@Feature("Infrastruktur")
+public class InfrastructureBrowserTest extends BrowserFixture {
     @Test
     @DisplayName("INFRA-01: Startseite, Logo, Avatare und Sprachflaggen werden geladen")
+    @Story("Startseite und Bilder")
+    @Description("""
+            1. Die Startseite öffnen und den konfigurierten Servicenamen prüfen.
+            2. Das Benutzermenü öffnen.
+            3. Logo, beide Avatare und Sprachflaggen auf Sichtbarkeit und geladenen Bildinhalt prüfen.
+
+            **Erwartet:** Startseite korrekt gerendert; Bilder sichtbar und nicht defekt.
+            Prüft keine vollständige responsive Darstellung, Rollen- oder Tabelleninitialisierung.
+            """)
     void homeAndImagesLoad() {
         page.navigate("/home");
         assertThat(page).hasTitle("Home");
@@ -28,6 +41,14 @@ class InfrastructureBrowserTest extends BrowserFixture {
 
     @Test
     @DisplayName("INFRA-02: Loginformular wird im Browser gerendert")
+    @Story("Loginformular")
+    @Description("""
+            1. /login öffnen.
+            2. E-Mail-Feld, Passwortfeld und Anmeldebutton prüfen.
+
+            **Erwartet:** Das Loginformular ist sichtbar und bedienbar.
+            Dieser Infrastrukturfall führt noch keine Anmeldung aus.
+            """)
     void loginFormLoads() {
         page.navigate("/login");
         assertThat(page.locator("vaadin-email-field")).isVisible();
@@ -37,6 +58,14 @@ class InfrastructureBrowserTest extends BrowserFixture {
 
     @Test
     @DisplayName("INFRA-03: Isolierte Mailpit-Instanz ist erreichbar und leer")
+    @Story("Mailpit-Testumgebung")
+    @Description("""
+            1. Die Mailpit-API der eigenen Testumgebung aufrufen.
+            2. Erfolgreiche Antwort, Nachrichtenliste und Gesamtzahl prüfen.
+
+            **Erwartet:** Mailpit erreichbar; die neu angelegte Mailablage ist leer.
+            Das beweist noch keinen SMTP-Versand der Anwendung.
+            """)
     void mailpitIsEmpty() throws Exception {
         var response = context.request().get(System.getProperty("browser.tests.mailpitUrl") + "/api/v1/messages");
         assertTrue(response.ok());

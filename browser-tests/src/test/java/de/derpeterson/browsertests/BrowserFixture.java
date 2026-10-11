@@ -5,23 +5,24 @@ import io.qameta.allure.playwright.AllurePlaywright;
 import io.qameta.allure.playwright.TraceSession;
 import org.junit.jupiter.api.*;
 
-abstract class BrowserFixture {
-    static Playwright playwright;
-    static Browser browser;
-    BrowserContext context;
-    Page page;
-    TraceSession trace;
+public abstract class BrowserFixture {
+    protected static Playwright playwright;
+    protected static Browser browser;
+    protected BrowserContext context;
+    protected Page page;
+    protected TraceSession trace;
 
     @BeforeAll
-    static void launchBrowser() {
+    protected static void launchBrowser() {
         if (!Boolean.getBoolean("browser.tests.managed"))
             throw new IllegalStateException("Use run.ps1: browser tests require a disposable Docker environment.");
         playwright = Playwright.create();
         browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(!Boolean.getBoolean("browser.tests.headed")));
+        System.setProperty("browser.tests.browserVersion", browser.version());
     }
 
     @BeforeEach
-    void openPage() {
+    protected void openPage() {
         context = browser.newContext(new Browser.NewContextOptions().setBaseURL(System.getProperty("browser.tests.baseUrl"))
                 .setViewportSize(1280, 900).setLocale("de-DE").setTimezoneId("Europe/Berlin")
                 .setServiceWorkers(com.microsoft.playwright.options.ServiceWorkerPolicy.BLOCK));
@@ -32,7 +33,7 @@ abstract class BrowserFixture {
     }
 
     @AfterEach
-    void closePage() {
+    protected void closePage() {
         try {
             if (page != null && !page.isClosed()) AllurePlaywright.attachScreenshot("Browser am Testende", page);
         } finally {
@@ -42,7 +43,7 @@ abstract class BrowserFixture {
     }
 
     @AfterAll
-    static void closeBrowser() {
+    protected static void closeBrowser() {
         if (playwright != null) playwright.close();
     }
 }

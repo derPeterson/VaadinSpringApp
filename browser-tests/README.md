@@ -5,6 +5,7 @@ Die Browsertests prüfen die im Browser gerenderte Vaadin-Anwendung in einer fri
 ## Inhalt
 
 - [Einrichten und starten](#einrichten-und-starten)
+- [Suites und Testfälle](#suites-und-testfälle)
 - [Ergebnisse ansehen](#ergebnisse-ansehen)
 - [Java-Dateien verstehen](#java-dateien-verstehen)
 - [Isolation und Grenzen](#isolation-und-grenzen)
@@ -38,6 +39,85 @@ In PowerShell im Projektordner:
 
 `run.ps1` ist nur der kurze Windows-Einstieg: Es kompiliert das unabhängige Maven-Testprojekt und startet Java mit den Bibliotheken. Die eigentliche Teststeuerung liegt in Java. JUnit startet die Browserfälle ohne ein zweites selbst entwickeltes Testframework.
 
+## Suites und Testfälle
+
+Die Fälle sind nach fachlichem Bereich getrennt, mit eigenen JUnit-Klassen unter
+src/test/java/de/derpeterson/browsertests/suites/. Ein gewöhnlicher Start führt beide
+Suites aus. Jede Prüfung bekommt einen frischen Browserkontext; alle Fälle funktionieren
+ohne vorherige Testfälle. Die Datenbank und Mailpit sind für den gesamten Lauf frisch.
+
+| Suite | Inhalt | Anzahl |
+| --- | --- | ---: |
+| infrastructure | Startseite und Bilder, Loginformular, leere Mailpit-API | 3 |
+| authentication | Adminlogin, falsches Passwort, unbekanntes Konto, Gastzugriff, Logout, normale Benutzerrechte | 6 |
+| all | Beide Suites; Standardwert | 9 |
+
+~~~powershell
+# Nur die Anmeldungssuite:
+.\browser-tests\run.ps1 -Suite authentication
+
+# Infrastruktur unabhängig prüfen:
+.\browser-tests\run.ps1 -Suite infrastructure
+
+# Beide Suites live mitverfolgen:
+.\browser-tests\run.ps1 -Suite all -Headed
+~~~
+
+-Suite lässt sich mit -Headed oder -NoBuild kombinieren. -NoBuild verwendet das vorhandene
+App-Image; nur bei unverändertem Anwendungscode einsetzen. -FailureProbe führt weiterhin
+ausschließlich den absichtlichen Fehlerfall aus, unabhängig von der Suite-Auswahl.
+
+Die IDs kennzeichnen eigenständige Browserfälle. Jeder Fall beschreibt seine Schritte
+und Erwartungen vollständig in der Suite und im erzeugten Bericht.
+
+| Fall | Geprüftes Verhalten |
+| --- | --- |
+| INFRA-01 | Startseite, Serviceanzeige und geladene Bilder bei 1280 × 900 |
+| INFRA-02 | Sichtbares Loginformular |
+| INFRA-03 | Mailpit-API erreichbar und frisch leer; Vorbereitung für spätere Mailabläufe |
+| AUTH-01A | Admin meldet sich an; Konto und Dashboard sichtbar |
+| AUTH-01B | Falsches Passwort: neutraler Fehler und kein Adminzugriff |
+| AUTH-01C | Unbekannte Adresse: gleicher Fehler und kein Adminzugriff |
+| AUTH-01D | Gast wird beim direkten Adminaufruf zur Anmeldung geführt |
+| AUTH-02A | Logout über UI; bestehender Tab, Zurück und erneuter Adminaufruf |
+| SEC-01A | Aktiver normaler Benutzer kann sich anmelden, aber keine Adminfunktionen nutzen |
+
+Noch nicht automatisiert: unverifizierte und gesperrte Konten, Remember-me,
+Rollenänderungen in laufenden Sitzungen, mutierende Aktionen aus alten Formularen,
+Registrierung/Verifikation/Reset, Adminbearbeitung und mobile/Tastaturvarianten.
+
+### Aufgaben der Testarten
+
+- JUnit- und Persistenztests prüfen fachliche Regeln, Datenbankverhalten, Transaktionen,
+  Nebenläufigkeit und technische Fehlerfälle. Diese bestehenden Tests bleiben erhalten.
+- Browsertests bedienen die echte Oberfläche und prüfen das sichtbare Verhalten und
+  vollständige Benutzerabläufe. Datenbank- oder API-Zugriffe dürfen diese Bedienung nicht
+  ersetzen. Infrastrukturprüfungen sichern die Voraussetzungen der Browserläufe ab.
+- Manuelle Sonderprüfungen bleiben für nicht sinnvoll automatisierbare Fälle und
+  menschliche Bewertungen, etwa Bediengefühl, Verständlichkeit und visuelle Qualität.
+
+Die Browserdokumentation und ihre Berichte sind eigenständig. Sie benötigen keine
+manuelle Vorlage und führen keine manuellen Prüfaufträge mit.
+
+### Testkonten und kleine UI-Helfer
+
+Nur die eigene Browser-Testumgebung bekommt den Bootstrap-Admin
+browser-admin@example.test mit dem erfundenen Passwort BrowserAdmin1!.
+Die Vorgaben stehen in compose.browser-tests.yaml; passende Testwerte in
+BrowserTestAccounts.java. Diese Werte gehören ausschließlich zur wegwerfbaren
+Testumgebung, nicht zu einer echten Installation.
+
+Der normale Benutzer für SEC-01A wird im selben Fall durch die echte Adminoberfläche
+angelegt: aktive Freigabe, nur ROLE_USER, eindeutige Adresse und BrowserUser1! als
+erfundenes Testpasswort. Kein SQL-Seeding, keine Testendpunkte und keine gemockte
+Authentifizierung. Die Anlage ist Vorbereitung dieses Falls, keine vollständige
+Prüfung der Benutzerverwaltung oder des Verifikationswegs.
+
+Die kleinen Klassen unter pages/ enthalten wiederkehrende Klicks und Eingaben.
+Die Suites beschreiben die fachlichen Fälle. BrowserFixture verwaltet ausschließlich
+Browserkontexte, Screenshots und Traces. Neue fachliche Bereiche erhalten später
+eigene Suite-Klassen und einen Eintrag in BrowserSuites.
+
 ## Ergebnisse ansehen
 
 Jeder Lauf legt ein eigenes Archiv an:
@@ -53,9 +133,9 @@ browser-tests/runs/
     html/open-report.bat
 ```
 
-`report.md` enthält Häkchen, Status, Fehlergrund und Links zu Screenshots und Traces. Die Angaben erfassen UTC-Start/Ende, Git-Commit/Branch, lokale Änderungen, App-Image-ID sowie Aufbau, Testausführung, HTML-Erzeugung und Abbau. Auch übersprungene Fälle, fehlende Belege oder ein fehlgeschlagener Abbau dürfen keinen erfolgreichen Gesamtlauf ergeben.
+`report.md` enthält pro Fall die Schritte und Erwartung aus der Testbeschreibung sowie Häkchen, Status, Ist/Grund, UTC-Zeitpunkt und Links zu Screenshots und Traces. Alle Ergebnisse werden automatisch eingetragen, ohne manuelle Abhakpflicht. Die Angaben erfassen UTC-Start/Ende, Git-Commit/Branch, lokale Änderungen, App-Image-ID sowie Aufbau, Testausführung, HTML-Erzeugung und Abbau. Auch übersprungene Fälle, fehlende Belege oder ein fehlgeschlagener Abbau dürfen keinen erfolgreichen Gesamtlauf ergeben.
 
-Der Allure-Bericht enthält die Testfälle, Browseraktionen, Fehlerdetails, Screenshots und Trace-Anhänge. Browseraktionen werden durch die fertige Allure-Playwright-Integration aufgezeichnet. Screenshots und Traces werden auch bei erfolgreichen Fällen behalten, damit du die Belege direkt ansehen kannst. Die ZIP-Ablaufaufzeichnung kann heruntergeladen und mit `-Trace` im Playwright Trace Viewer geöffnet werden. [Allure Playwright Java](https://allurereport.org/docs/playwright-java/), [Playwright Trace Viewer](https://playwright.dev/java/docs/trace-viewer).
+Der Allure-Bericht enthält die Testfälle, Browseraktionen, Fehlerdetails, Screenshots und Trace-Anhänge. Browseraktionen werden durch die fertige Allure-Playwright-Integration aufgezeichnet. Screenshots und Traces werden auch bei erfolgreichen Fällen behalten, damit du die Belege direkt ansehen kannst. Der Trace Viewer ist direkt im Allure-Bericht über den Trace-Anhang erreichbar. Alternativ kann die ZIP-Ablaufaufzeichnung heruntergeladen und mit `-Trace` separat geöffnet werden. [Allure Playwright Java](https://allurereport.org/docs/playwright-java/), [Playwright Trace Viewer](https://playwright.dev/java/docs/trace-viewer).
 
 `-Report` startet nur den lokalen Berichtserver an `127.0.0.1`; es startet keine Anwendung und führt keine Tests aus. Mit Strg+C beenden. Jeder HTML-Ordner enthält außerdem eine open-report.bat. Per Doppelklick öffnet sie genau den Bericht dieses Laufs, auch wenn inzwischen neuere Läufe vorhanden sind. Das Konsolenfenster geöffnet lassen; mit Strg+C wird der Berichtserver beendet. Die index.html nicht direkt per Doppelklick öffnen, weil Allure seine Daten über HTTP nachlädt. Die BAT-Datei benötigt weiterhin den Testordner samt Maven Wrapper, Java und den bereitgestellten Allure-Werkzeugen.
 
@@ -77,7 +157,10 @@ Alle Java-Dateien liegen unter `src/test/java/de/derpeterson/browsertests/`:
 
 | Datei | Aufgabe |
 | --- | --- |
-| `InfrastructureBrowserTest.java` | Die drei lesbaren JUnit-Testfälle: Startseite/Bilder, Loginformular, leeres Mailpit |
+| `suites/InfrastructureBrowserTest.java` | Die drei lesbaren JUnit-Testfälle: Startseite/Bilder, Loginformular, leeres Mailpit |
+| `suites/AuthenticationBrowserTest.java` | Die sechs unabhängigen Fälle für Anmeldung, Abmeldung und Adminrechte |
+| `pages/` | Kleine Bedienhelfer für Loginformular, Benutzermenü und Benutzeranlage |
+| `BrowserSuites.java / BrowserTestAccounts.java` | Suite-Auswahl und erfundene lokale Testkonten |
 | `BrowserFixture.java` | Browser und isolierten Kontext bereitstellen; Screenshot und Trace an Allure übergeben |
 | `FailureProbeTest.java` | Separat auswählbarer absichtlicher Fehler für den Berichtsvergleich |
 | `BrowserTestRunner.java` | Frische Docker-Umgebung starten, JUnit aufrufen, aufräumen und Allure-Generator starten |
@@ -100,7 +183,7 @@ $env:BROWSER_TEST_MAILPIT_PORT = '18027'
 
 `-NoBuild` kann einen älteren App-Stand testen und ist nur bei bewusst unverändertem App-Code sinnvoll. Die tatsächliche Image-ID und Wiederverwendung stehen im Protokoll. Daten und Belege liegen außerhalb von Git; Screenshots/Traces können spätere Testeingaben oder Sitzungstokens enthalten.
 
-Der aktuelle Umfang ist weiterhin Infrastruktur, noch kein vollständiger Login-/Logout-, Registrierungs-, Reset- oder Adminablauf. Nur Chromium, ein Thread, keine automatischen Wiederholungen. Die zusätzliche Browserprüfung liefert keine Java-Coverage.
+Der aktuelle Umfang sind Infrastruktur sowie die oben beschriebenen echten Login-/Logout- und Zugriffsprüfungen. Weitere Benutzerabläufe sind im Abschnitt „Suites und Testfälle“ als offen aufgeführt. Nur Chromium, ein Thread, keine automatischen Wiederholungen. Die zusätzliche Browserprüfung liefert keine Java-Coverage.
 
 Bei normalem Abschluss und Testfehlern werden eigene Container und Volumes entfernt. Hartes Beenden des Prozesses oder ein ausgefallener Docker-Dienst kann das verhindern. Dann nur den genauen Projektnamen aus `metadata.json` zum Abbau verwenden:
 
@@ -116,7 +199,7 @@ Keine fremden oder manuellen Docker-Projekte zum Aufräumen einsetzen.
 
 Die Browserfälle werden über den Starter ausgeführt. Ein direkter JUnit-Start ohne verwaltete Testumgebung bricht bewusst ab, damit Tests nicht versehentlich gegen eine laufende Anwendung oder deren Datenbank gehen. Die `MarkdownSummaryTest`-Tests können direkt als gewöhnliche JUnit-Tests ausgeführt werden.
 
-Neue Browserfälle zunächst in `InfrastructureBrowserTest` ergänzen; bei späterer Aufteilung die JUnit-Auswahl im Starter passend erweitern. Playwrights wartende Assertions verwenden, keine festen Schlafzeiten. Eine automatische Anbindung an das `/start`-Benchmarking ist noch nicht eingerichtet.
+Neue Fälle in der fachlich passenden Suite unter `suites/` ergänzen; für einen neuen Bereich eine eigene Suite-Klasse und einen Eintrag in `BrowserSuites` anlegen. Test-ID, `@DisplayName`, `@Feature`, `@Story` und `@Description` pflegen: Daraus entstehen Gruppierung, Prüfbereich, Schritte und Erwartung im Bericht. Playwrights wartende Assertions verwenden, keine festen Schlafzeiten. Eine automatische Anbindung an das `/start`-Benchmarking ist noch nicht eingerichtet.
 
 ## Fehlerhilfe
 

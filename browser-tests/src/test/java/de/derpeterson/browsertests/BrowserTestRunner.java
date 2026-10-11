@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.time.Instant;
 import java.util.*;
-import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
 /** Starts only disposable Docker data, then delegates tests to JUnit and HTML to Allure. */
 public final class BrowserTestRunner {
@@ -20,13 +19,15 @@ public final class BrowserTestRunner {
     private final List<String> compose;
     private final Map<String, String> environment = new HashMap<>(System.getenv());
     private final boolean build;
+    private final List<Class<?>> testClasses;
     private boolean environmentStarted;
     private final Thread shutdownHook;
 
-    private BrowserTestRunner(Path module, Set<String> options) throws Exception {
+    private BrowserTestRunner(Path module, Set<String> options, String suite) throws Exception {
         this.module = module.toAbsolutePath().normalize();
         repo = this.module.getParent();
         build = !options.contains("--no-build");
+        testClasses = options.contains("--failure-probe") ? List.of(FailureProbeTest.class) : BrowserSuites.select(suite);
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         String commit = git("rev-parse", "HEAD");
         String runId = Instant.now().toString().replace(':', '-').replaceAll("\\.\\d+Z$", "_UTC")
@@ -45,6 +46,7 @@ public final class BrowserTestRunner {
         metadata.put("project", project);
         metadata.put("build", build);
         metadata.put("failureProbe", options.contains("--failure-probe"));
+        metadata.put("suite", options.contains("--failure-probe") ? "reporting-probe" : suite);
         metadata.put("setup", "not-started");
         metadata.put("tests", "not-started");
         metadata.put("cleanup", "not-needed");
@@ -76,7 +78,10 @@ public final class BrowserTestRunner {
             Runtime.getRuntime().addShutdownHook(new Thread(process::destroy));
             System.exit(process.waitFor());
         }
-        System.exit(new BrowserTestRunner(module, options).execute(options));
+        int suiteIndex = Arrays.asList(args).indexOf("--suite");
+        if (suiteIndex >= 0 && suiteIndex + 1 >= args.length) throw new IllegalArgumentException("Suite name missing.");
+        String suite = suiteIndex >= 0 ? args[suiteIndex + 1] : "all";
+        System.exit(new BrowserTestRunner(module, options, suite).execute(options));
     }
 
     private int execute(Set<String> options) throws Exception {
@@ -107,10 +112,14 @@ public final class BrowserTestRunner {
             save();
             var listener = new SummaryGeneratingListener();
             var request = LauncherDiscoveryRequestBuilder.request()
-                    .selectors(selectClass(options.contains("--failure-probe") ? FailureProbeTest.class : InfrastructureBrowserTest.class))
+                    .selectors(testClasses.stream().map(org.junit.platform.engine.discovery.DiscoverySelectors::selectClass).toList())
                     .configurationParameter("junit.jupiter.execution.parallel.enabled", "false").build();
             LauncherFactory.create().execute(request, listener);
             var result = listener.getSummary();
+            metadata.put("browser", "Chromium " + System.getProperty("browser.tests.browserVersion", "nicht verfügbar"));
+            metadata.put("viewport", "1280 × 900");
+            metadata.put("browserLocale", "de-DE");
+            metadata.put("browserTimezone", "Europe/Berlin");
             metadata.put("testsFound", result.getTestsFoundCount());
             metadata.put("testsPassed", result.getTestsSucceededCount());
             metadata.put("testsSkipped", result.getTestsSkippedCount());

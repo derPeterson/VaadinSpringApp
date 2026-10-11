@@ -60,6 +60,14 @@
 - Browser tests live under `browser-tests/src/test/java/` and use
   `browser-tests/run.ps1`; follow `browser-tests/README.md`. The Java/JUnit runner
   creates disposable isolated Docker data and archives Allure and Markdown reports.
+  Suites live under `browser-tests/src/test/java/de/derpeterson/browsertests/suites/`;
+  keep infrastructure and authentication cases separate. Shared UI actions belong in
+  `pages/`, not in one growing test class. Select suites with `-Suite`.
+  Document each browser case independently with its ID, area, steps and expected result.
+  Keep browser documentation and reports independent of the former manual-test template.
+  Keep technical rules, transactions and concurrency in JUnit/persistence tests; browser
+  tests check visible UI behavior and user journeys. Manual checks cover special cases
+  requiring human judgment or unsuitable for automation.
   Do not target existing application databases.
 - Database regression tests may use isolated test databases such as H2; never
   connect them to existing application databases or reuse application data.
