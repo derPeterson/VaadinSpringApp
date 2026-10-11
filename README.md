@@ -39,10 +39,29 @@ Die normale Oberfläche verwendet weiterhin die dynamische Variante.
 
 [AppRouteConstants](shared/src/main/java/de/derpeterson/app/config/AppRouteConstants.java)
 und [AppConstants](shared/src/main/java/de/derpeterson/app/config/AppConstants.java)
-liegen ebenfalls unter `shared/src/main/java/`. Anwendung und Browsertests kompilieren
-dieselben Quellen; die bisherigen Packages und Konstantennamen bleiben gültig.
-Maven und Docker binden den Ordner ein. Es ist kein zusätzlicher Installationsschritt nötig.
-Nach dem Aktualisieren der POM-Dateien beide Maven-Projekte in IntelliJ neu laden.
+liegen ebenfalls unter `shared/src/main/java/`. Diese Quellen gehören ausschließlich
+zum eigenständigen Maven-Projekt [shared/pom.xml](shared/pom.xml). Anwendung und
+Browsertests verwenden dessen JAR als Abhängigkeit; die Packages und Namen bleiben gültig.
+Es gibt keine doppelten Source-Roots und keine Spring-/Vaadin-Abhängigkeit im Shared-Modul.
+
+In IntelliJ `shared/pom.xml` zusätzlich zu `pom.xml` und `browser-tests/pom.xml` als
+Maven-Projekt hinzufügen und alle Maven-Projekte neu laden. Danach hat `MessageTexts`
+einen eindeutigen Modulbesitzer; Find Usages mit dem Suchbereich „All Places“ kann
+Aufrufe in Anwendung und Browsertests finden. Eine Getter-Umbenennung erfolgt über
+Java-Refactoring an dieser gemeinsamen Definition.
+
+Vor direkten Anwendungs-Maven-Builds auf einem frischen Checkout und nach Änderungen
+an den gemeinsamen Java-Quellen das Shared-JAR lokal neu bauen:
+
+```powershell
+.\mvnw.cmd -f shared/pom.xml clean install
+```
+
+Der Browserstarter, Docker-Build und das Workflow-Benchmarking erledigen diesen Schritt
+automatisch. Ein direkter `clean test`, `package` oder `spring-boot:run` im Projektroot
+verwendet hingegen das zuletzt installierte Shared-JAR; nach Shared-Änderungen daher
+zuerst den obigen Befehl ausführen. IntelliJ verwendet bei geladenem Shared-Modul die
+Modulabhängigkeit. Die vorhandenen Anwendungsquellen und `target/` bleiben an ihrem Ort.
 
 ## Technologien und Voraussetzungen
 
@@ -108,6 +127,9 @@ Für die Absicherung von Verifikation und Adminsperren ist außerdem **nur bei b
 Windows/PowerShell:
 
 ```powershell
+# Shared-Abhängigkeit bereitstellen (erster Build / nach Shared-Änderungen)
+.\mvnw.cmd -f shared/pom.xml clean install
+
 # Entwicklungsstart
 .\mvnw.cmd spring-boot:run
 

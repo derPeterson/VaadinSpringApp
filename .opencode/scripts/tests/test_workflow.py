@@ -674,6 +674,18 @@ class RepoCase(unittest.TestCase):
                     benchmark.fresh_reports(self.repo)
                 self.assertEqual(len(codes), build.call_count)
 
+    def test_shared_build_failure_stops_application_measurement(self):
+        wrapper = self.repo / ("mvnw.cmd" if os.name == "nt" else "mvnw")
+        wrapper.write_text("stub")
+        (self.repo / "pom.xml").write_text("stub")
+        (self.repo / "shared").mkdir()
+        (self.repo / "shared/pom.xml").write_text("stub")
+        with patch("workflow.benchmark.run", return_value="Java version: 25.0.4.1"), \
+                patch("workflow.benchmark.subprocess.run", return_value=Mock(returncode=1)) as build:
+            with self.assertRaisesRegex(WorkflowError, "shared/pom.xml"):
+                benchmark.fresh_reports(self.repo)
+        build.assert_called_once()
+
     def test_benchmark_evidence_reconstructs_counts_without_xml_properties(self):
         self.write_reports()
         xml = self.repo / "target/surefire-reports/TEST-Test.xml"

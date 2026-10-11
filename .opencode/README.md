@@ -267,7 +267,11 @@ Originale Commit-Nachrichten und bestehende Merge-Commits werden nicht veränder
 Offene Findings werden durch einen Merge
 nicht als behoben umgedeutet. OpenCode prüft Java 25 und führt auf dem Feature-Branch
 erneut `clean test` und `jacoco:report` aus; für Änderungen an der Infrastruktur
-gehören die betroffenen Python-/Node-Tests dazu. Das Git-Skript selbst führt
+gehören die betroffenen Python-/Node-Tests dazu. Vor direkten Anwendungs-Builds
+auf einem frischen Checkout oder nach Shared-Änderungen zuerst
+`.\mvnw.cmd -f shared/pom.xml clean install` ausführen. Das Benchmark-Modul
+baut diese Abhängigkeit vor jeder Messung automatisch frisch und dokumentiert
+den zusätzlichen Maven-Aufruf in den Messbelegen. Das Git-Skript selbst führt
 keine Builds aus und schreibt keine Zusammenfassung mit einer separaten Modell-API.
 Diese Aufgaben übernimmt das aktuell ausgewählte OpenCode-Modell.
 

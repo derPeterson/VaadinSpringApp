@@ -22,6 +22,9 @@ $targetPath = Join-Path $modulePath 'target'
 # This file only bootstraps Java. Docker, test execution and reports are handled in Java.
 & $wrapperPath --version
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+# Rebuild the shared dependency before compiling either helper tests or the runner.
+& $wrapperPath -f (Join-Path $repoPath 'shared/pom.xml') clean install
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 if ($ReportingTests) {
     & $wrapperPath -f $pomPath test
     exit $LASTEXITCODE

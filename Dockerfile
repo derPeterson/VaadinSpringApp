@@ -8,6 +8,7 @@ COPY . .
 RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
 RUN --mount=type=cache,target=/root/.m2 \
     --mount=type=cache,target=/root/.npm \
+    ./mvnw -B -f shared/pom.xml clean install && \
     ./mvnw -B -Pproduction -Dvaadin.productionMode=true -Dvaadin.forceProductionBuild=true clean verify
 
 FROM eclipse-temurin:25-jre-noble AS runtime

@@ -20,7 +20,12 @@ def fresh_reports(repo: Path) -> dict:
         raise WorkflowError("Benchmark requires Java 25. Maven reports:\n" + version)
     # Stream builds so progress and failures remain visible; never reuse stale reports.
     checks = [{"arguments": ["--version"], "exitCode": 0}]
-    for goals in (("clean", "test"), ("jacoco:report",)):
+    goals_to_run = []
+    if (repo / "shared/pom.xml").is_file():
+        # Always rebuild shared contracts before measuring the application.
+        goals_to_run.append(("-f", "shared/pom.xml", "clean", "install"))
+    goals_to_run.extend((("clean", "test"), ("jacoco:report",)))
+    for goals in goals_to_run:
         result = subprocess.run([str(wrapper), *goals], cwd=repo,
                                 stdout=sys.stderr, stderr=sys.stderr)
         if result.returncode:

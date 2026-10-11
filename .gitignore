@@ -38,5 +38,6 @@ dev-shell.bat
 .env.local
 
 # Browser-test build output and local evidence
+/shared/target/
 /browser-tests/target/
 /browser-tests/runs/

@@ -16,7 +16,9 @@
   HTML templates, React or another frontend.
 - Application Java source is under `src/main/java/de/derpeterson/app/`.
   The shared typed translation catalogue and route/app constants are under
-  `shared/src/main/java/`; both Maven projects compile these same framework-free files.
+  `shared/src/main/java/`, owned by the independent Maven project `shared/pom.xml`.
+  Application and browser tests depend on its JAR; never add its source directory
+  to another module. It has no Spring/Vaadin dependencies.
 - Follow the existing architecture: `views/` and `ui/` for the UI,
   `service/` for application logic, `repository/` for JPA access, `model/` for data.
 - Follow neighboring files: names such as `*View`, `*Service`, `*Repository`,
@@ -46,7 +48,10 @@
 
 - Respect the actual shell: use PowerShell commands on Windows.
 - Use the Maven Wrapper `.\mvnw.cmd` from the project root, not global Maven.
-  On Linux/macOS, use `./mvnw`.
+  On Linux/macOS, use `./mvnw`. Before direct application Maven builds on a
+  fresh checkout or after changes to shared Java sources, run
+  `.\mvnw.cmd -f shared/pom.xml clean install`. The browser starter, Docker build
+  and workflow benchmark rebuild this dependency automatically.
 - Before builds, run `.\mvnw.cmd --version` and verify that the actual JDK is 25.
   If it is different, do not continue building or change system software silently.
 - Always specify Maven goals: according to `pom.xml`, a wrapper invocation without

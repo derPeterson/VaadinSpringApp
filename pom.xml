@@ -59,6 +59,12 @@
     <dependencies>
 
         <dependency>
+            <groupId>de.derpeterson</groupId>
+            <artifactId>shared</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin</artifactId>
         </dependency>
@@ -155,19 +161,6 @@
     <build>
         <defaultGoal>spring-boot:run</defaultGoal>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.6.1</version>
-                <executions>
-                    <execution>
-                        <id>shared-java-contracts</id>
-                        <phase>generate-sources</phase>
-                        <goals><goal>add-source</goal></goals>
-                        <configuration><sources><source>${project.basedir}/shared/src/main/java</source></sources></configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

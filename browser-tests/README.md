@@ -190,12 +190,16 @@ ist der Spring-/Vaadin-Adapter und `UiTexts` der Browser-Adapter; beide erben di
 Getter. In einem Page-Helper steht beispielsweise `texts.getLoginEmailField()` statt
 eines Properties-Schlüssels. Bei einer Schlüsseländerung wird nur der gemeinsame Getter
 angepasst. Ein umbenannter Getter kann über Java-Refactoring in beiden Projekten geändert
-werden; anschließend beide Maven-Projekte neu laden und kompilieren.
+werden; anschließend die drei Maven-Projekte neu laden und kompilieren.
 
-Die zusätzlichen Source-Roots stellt der
-[Maven Build Helper](https://www.mojohaus.org/build-helper-maven-plugin/usage.html) bereit.
-Es gibt kein zusätzlich zu installierendes Maven-Artefakt, keine generierten Getter und
-keine kopierten Java-Quellen. `UiTexts` lädt die Texte mit der ausgewählten Locale ohne
+Der Katalog gehört ausschließlich zum Maven-Modul `shared/pom.xml`.
+Anwendung und Browsertests hängen vom gleichen Shared-JAR ab; der Browserstarter
+baut und installiert es vor jeder Kompilierung frisch. Es gibt keine zusätzlich
+eingebundenen Source-Roots, generierten Getter oder kopierten Java-Quellen.
+Für einen direkten Maven-Aufruf ohne Starter zunächst
+`.\mvnw.cmd -f shared/pom.xml clean install` ausführen, dann beispielsweise
+`.\mvnw.cmd -f browser-tests/pom.xml test`.
+`UiTexts` lädt die Texte mit der ausgewählten Locale ohne
 Spring oder Vaadin. Die Anwendung verwendet standardmäßig ihre aktuelle Session-Sprache;
 `MessageProperties.forLocale(provider, Locale.GERMAN)` ist für ausdrücklich festgelegte
 Übersetzungen verfügbar. Normale Oberflächen bleiben beim dynamischen Adapter, damit
@@ -289,7 +293,7 @@ Alle Java-Dateien liegen unter `src/test/java/de/derpeterson/browsertests/`:
 | `MarkdownSummary.java` | Projektspezifische Markdown-Checkliste aus fertigen Allure-Ergebnissen erstellen |
 | `MarkdownSummaryTest.java` | Protokollstatus, fehlende Fälle und Beleglinks ohne Browser prüfen |
 
-`pom.xml` verwaltet die Testwerkzeuge und bindet die kleinen gemeinsamen Java-Quellen ein. Es hat keinen Spring-Boot-/Vaadin-Parent und verändert die produktiven Abhängigkeiten oder den normalen Java-Testlauf der Anwendung nicht.
+`pom.xml` verwaltet die Testwerkzeuge und verwendet das Shared-JAR als Testabhängigkeit. Es hat keinen Spring-Boot-/Vaadin-Parent und verändert die produktiven Abhängigkeiten oder den normalen Java-Testlauf der Anwendung nicht.
 
 ## Isolation und Grenzen
 
@@ -317,7 +321,14 @@ Keine fremden oder manuellen Docker-Projekte zum Aufräumen einsetzen.
 
 ## IntelliJ und weitere Tests
 
-`browser-tests/pom.xml` als zusätzliches Maven-Projekt in IntelliJ hinzufügen (Maven-Fenster → Maven-Projekt hinzufügen). Dann bekommst du Navigation und Autovervollständigung wie bei deinen anderen Java-Tests.
+`shared/pom.xml` und `browser-tests/pom.xml` zusätzlich zur Anwendungs-POM als
+Maven-Projekte in IntelliJ hinzufügen (Maven-Fenster → Maven-Projekt hinzufügen),
+danach alle Maven-Projekte neu laden. Die drei Projekte heißen VaadinSpringApp,
+VaadinSpringApp Shared und VaadinSpringApp Browser Tests. Shared besitzt als einziges
+Modul seinen Quellordner; Anwendung und Browsertests verwenden Modulabhängigkeiten.
+Find Usages an `MessageTexts.getLoginEmailField()` mit „All Places“ muss Aufrufe aus
+`LoginView` und `LoginPage` zeigen. Die früheren zusätzlichen Shared-Source-Roots in
+Anwendungs- und Browsermodul sind entfernt.
 
 Die Browserfälle werden über den Starter ausgeführt. Ein direkter JUnit-Start ohne verwaltete Testumgebung bricht bewusst ab, damit Tests nicht versehentlich gegen eine laufende Anwendung oder deren Datenbank gehen. Die Tests für MarkdownSummary, BrowserRoutes, Mailpit-Link-Isolation und UiTexts können direkt als gewöhnliche JUnit-Tests ausgeführt werden.
 
