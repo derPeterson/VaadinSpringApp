@@ -416,6 +416,31 @@ RESET-05A tatsächlich das alte offene Formular; bestehendes RESET-04B dagegen
 nur das erneute Laden eines bereits verbrauchten Links.
 
 
+## Abschlussstand vom 12.10.2026
+
+**Noch kein vollständig grüner Gesamtstand und keine 100-%-Ablösung der manuellen Fälle.**
+Die zwei neuen Suites bestehen einzeln auf DE/EN. Im vollständigen Lauf scheitert
+LANG-02A aber schon beim Anlegen seines Testkontos: der bestehende Admin-Anlagehelfer
+sucht die E-Mail global in der ersten Seite einer bereits gefüllten Grid-Tabelle.
+Er muss nach dem Speichern über die echte Suchfunktion auf das eigene Konto filtern.
+Deutsch zeigt zusätzlich einen nicht übernommenen mobilen Geburtstag bei UI-01A.
+Keine dritte Reparaturrunde wurde vorgenommen. Die Tests bleiben im Feature-Branch
+als überprüfbare Arbeit erhalten; `main` und Produktionscode sind unverändert.
+
+| Abschlussprüfung | Ergebnis |
+|---|---|
+| Vollständiger Browserlauf DE | 28/30 bestanden, LANG-02A und UI-01A fehlgeschlagen |
+| Zweiter Abschlussdurchlauf, vollständiger EN-Lauf | 29/30 bestanden, LANG-02A fehlgeschlagen |
+| Anwendung `clean test` | 971 Tests, 0 Fehler/Fehlschläge/Skips |
+| Helper-/Reportertests | 19 Tests, 0 Fehler/Fehlschläge/Skips |
+| JaCoCo | Erfolgreich erzeugt |
+
+Alle Aufbau-/Abbau-/HTML-Schritte dieser beiden vollständigen Browserläufe waren
+erfolgreich. Der zweite vollständige DE-Lauf wurde nach dem EN-Fehler nicht mehr
+begonnen. Historische rote Berichte wurden nicht überschrieben.
+
+Details und Prioritäten: `abdeckung.md` und `automatisierung-offen.md`.
+
 ## Sprache, schmale Fenster und Tastatur
 
 Die Suite `presentation` besitzt vier voneinander unabhängige Fälle:

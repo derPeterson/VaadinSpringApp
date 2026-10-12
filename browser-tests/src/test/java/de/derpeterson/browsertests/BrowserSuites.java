@@ -22,7 +22,7 @@ final class BrowserSuites {
             case "account-lifecycle" -> List.of(AccountLifecycleBrowserTest.class);
             case "presentation" -> List.of(PresentationBrowserTest.class);
             default -> throw new IllegalArgumentException("Unknown suite: " + suite
-                    + ". Choose all, infrastructure, authentication, registration, verification, password-reset, account-lifecycle.");
+                    + ". Choose all, infrastructure, authentication, registration, verification, password-reset, account-lifecycle or presentation.");
         };
     }
 }
