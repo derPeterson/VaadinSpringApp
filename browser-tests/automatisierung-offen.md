@@ -39,3 +39,21 @@ Hinweise über deren echte UI-Buttons, bevor die nächste Variante eingegeben wi
 DE: `2026-10-12T02-42-02_UTC__fbc1ba18__39d243db`, 5/5 bestanden.
 Der zugehörige EN-Lauf wurde ebenfalls mit 5/5 bestätigt; Belege in den Run-Archiven.
 Die Paketgrenze wurde eingehalten: keine dritte Reparaturrunde.
+
+## Konfiguration/Mail – nach zwei Versuchen offen
+
+Versuch 1: `2026-10-12T02-47-02_UTC__ea41bc7e__420ff512`, 0/3 bestanden.
+Der Wartungs-Boolean wurde in der falschen Gruppe gesucht; ein korrekt übertragener
+Unicode-Mailtext enthielt den SMTP-typischen abschließenden Zeilenumbruch.
+**Bestätigter Produktionsbefund:** `PT0S` wurde als Reset-Token-Gültigkeit gespeichert,
+obwohl VerificationService/PasswordResetService strikt positive Dauern voraussetzen.
+AdminConfigurationSection validiert derzeit nur die Syntax einer Dauer.
+
+Versuch 2 wurde schon bei der Vorbereitung der Korrektur abgebrochen:
+Das Bearbeitungsskript las die UTF-8-Produktionsdatei irrtümlich als Windows-1252
+und scheiterte mit UnicodeDecodeError. Es wurden noch keine Produktionsänderungen
+geschrieben und kein weiterer Browserlauf gestartet. Die unbestätigten neuen
+Helper-/Suiteänderungen wurden zum erfolgreichen Konto-Paketstand zurückgeführt.
+Kein dritter Versuch. Nötig: explizites UTF-8-Lesen, positive Prüfung für die vier
+Token-Dauern, korrigierte Gruppenbedienung und SMTP-Zeilenabschlussvergleich;
+anschließend DE/EN-Regressionsläufe. CONFIG-01/02 und MAIL-01 bleiben offen.
