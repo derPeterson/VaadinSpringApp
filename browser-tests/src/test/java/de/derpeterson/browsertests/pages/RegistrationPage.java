@@ -36,6 +36,9 @@ public final class RegistrationPage {
         field(texts.getRegistrationBirthDateField()).fill(texts.dateInput(LocalDate.of(1990, 1, 1)));
         // Enter commits the typed date and closes its popup; Escape can close surrounding dialogs.
         field(texts.getRegistrationBirthDateField()).press("Enter");
+        if (page.locator("vaadin-date-picker-overlay[opened][fullscreen]").isVisible()) {
+            page.keyboard().press("Escape");
+        }
         assertThat(page.locator("vaadin-date-picker-overlay[opened]")).not().isVisible();
         assertThat(page.locator("vaadin-date-picker")).hasJSProperty("value", "1990-01-01");
     }

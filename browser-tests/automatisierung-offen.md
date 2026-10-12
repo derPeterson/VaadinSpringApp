@@ -57,3 +57,24 @@ Helper-/Suiteänderungen wurden zum erfolgreichen Konto-Paketstand zurückgefüh
 Kein dritter Versuch. Nötig: explizites UTF-8-Lesen, positive Prüfung für die vier
 Token-Dauern, korrigierte Gruppenbedienung und SMTP-Zeilenabschlussvergleich;
 anschließend DE/EN-Regressionsläufe. CONFIG-01/02 und MAIL-01 bleiben offen.
+
+## Sprache/Bedienung – Versuch 1 (abgebrochen)
+
+`2026-10-12T02-51-59_UTC__91a4c046__60ee3047`, 1/5 bestanden
+(Tastaturlogin). Registrierung, Verifikation und Reset besitzen keinen Avatar-
+Sprachschalter; ein tatsächlicher UI-Wechsel bei offenem Hinweis ist dort mit
+dem bestehenden Produkt nicht erreichbar. Keine künstlichen Session-/JS-Ereignisse
+als Ersatz. LANG-01 bleibt dort offen; feste DE/EN-Durchläufe bestehen weiterhin.
+Mobil bleibt der Datepicker nach Enter im Vollbild geöffnet; echtes Escape ist
+für den Formularfall möglich. Normaler Home-Logout invalidiert die Session ohne
+zwingend die Route zu ändern. Zweiter Versuch passt die Bedienung an diese echten
+Verträge an und behält Grenzen ausdrücklich bei.
+
+### Sprache/Bedienung – Versuch 2 erfolgreich im erreichbaren Teilumfang
+
+DE: `2026-10-12T02-55-38_UTC__91a4c046__97513ab7`, 4/4 bestanden;
+auch der entsprechende EN-Lauf besteht 4/4. Kein Produkt-Sprachschalter ergänzt,
+kein fehlender Formularfall als bestanden gewertet. Die zwei unerreichbaren
+Schalterfälle sind durch den ehrlich eingeschränkten Home-Schalterfall ersetzt;
+ursprünglicher Umfang LANG-01 bleibt teilweise offen. Mobiles Escape und frische
+Sprachpräferenz wurden tatsächlich durch die UI bestätigt.

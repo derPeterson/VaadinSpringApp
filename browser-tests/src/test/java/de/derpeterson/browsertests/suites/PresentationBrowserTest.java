@@ -1,0 +1,98 @@
+package de.derpeterson.browsertests.suites;
+
+import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.*;
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.AriaRole;
+import de.derpeterson.browsertests.*;
+import de.derpeterson.browsertests.i18n.UiTexts;
+import de.derpeterson.browsertests.pages.*;
+import io.qameta.allure.*;
+import io.qameta.allure.playwright.AllurePlaywright;
+import org.junit.jupiter.api.*;
+import java.util.UUID;
+
+@Tag("browser") @Feature("Sprache und Bedienung")
+public class PresentationBrowserTest extends BrowserFixture {
+    @Test @DisplayName("LANG-01C: Sichtbares Startseitenmenü wechselt in beide Sprachen")
+    @Story("Verfügbarer Sprachschalter")
+    @Description("""
+        1. Anonyme Startseite öffnen und ihr Flaggenmenü bedienen.
+        2. Erst andere, dann Ausgangssprache wählen; jeweils übersetzten Loginbutton prüfen.
+        3. Ausgewählte Flagge und erhaltene Startseitenroute prüfen.
+        **Erwartet:** Tatsächlich vorhandener Schalter funktioniert in beiden Richtungen ohne Neuladen.
+        Nicht angebotene Schalter auf anonymen Formular-/Tokenseiten bleiben ausdrücklich offen.
+        """)
+    void homeLanguageMenuChangesBothDirections() {
+        for(UiTexts expected:languages()) {
+            new UserMenu(page).selectLanguage(expected.language());new UserMenu(page).open();
+            assertThat(page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName(expected.getBaseLoginButton()).setExact(true))).isVisible();
+            assertThat(page).hasURL(urlPattern(HOME_ROUTE));page.keyboard().press("Escape");
+        }
+    }
+
+    @Test @DisplayName("LANG-02A: Gespeicherte Kontosprache überlebt Logout und frische Anmeldung")
+    @Story("Sprachpräferenz speichern")
+    @Description("""
+        1. Eigenes normales Konto als Admin anlegen, abmelden und als Benutzer anmelden.
+        2. Andere Sprache ausdrücklich wählen; über den übersetzten Logoutbutton abmelden.
+        3. In einer frischen Sitzung die entgegengesetzte Sprache wählen und dasselbe Konto anmelden.
+        4. Ohne erneuten Sprachklick gespeicherte Sprache an Logoutbutton/Flagge prüfen.
+        **Erwartet:** Kontopräferenz bestimmt nach neuer Anmeldung die Sprache.
+        """)
+    void preferredLanguageIsLoadedAfterLogin() {
+        String email=create(); new UserMenu(page).signOut();LoginPage login=new LoginPage(page);login.open();login.signIn(email,BrowserTestAccounts.USER_PASSWORD);
+        assertThat(page).hasURL(urlPattern(HOME_ROUTE));new UserMenu(page).selectTestLanguage();
+        UiTexts chosen=languages()[0];new UserMenu(page).selectLanguage(chosen.language());new UserMenu(page).open();
+        page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName(chosen.getBaseLogoutButton()).setExact(true)).click();
+        // Normal Home logout invalidates the session but need not change the displayed route.
+        page.navigate(path(LOGIN_ROUTE));
+        assertThat(page).hasURL(urlPattern(LOGIN_ROUTE));
+        try(BrowserContext other=browser.newContext(new Browser.NewContextOptions().setBaseURL(System.getProperty("browser.tests.baseUrl")).setLocale(texts.browserLocale()))) {
+            AllurePlaywright.register(other);try(var otherTrace=AllurePlaywright.startTracing(other)) {
+                Page visitor=other.newPage();visitor.navigate(path(HOME_ROUTE));new UserMenu(visitor).selectTestLanguage();
+                LoginPage fresh=new LoginPage(visitor);fresh.open();fresh.signIn(email,BrowserTestAccounts.USER_PASSWORD);assertThat(visitor).hasURL(urlPattern(HOME_ROUTE));
+                new UserMenu(visitor).open();assertThat(visitor.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName(chosen.getBaseLogoutButton()).setExact(true))).isVisible();
+                assertThat(visitor.getByRole(AriaRole.IMG,new Page.GetByRoleOptions().setName(chosen.language().equals("de")?"German Flag Icon":"English Flag Icon").setExact(true))).hasCSS("filter","none");
+                AllurePlaywright.attachScreenshot("Geladene Kontosprache",visitor);
+            }
+        }
+    }
+
+    @Test @DisplayName("UI-01A: Registrierung bleibt bei schmalen Hoch-/Querformaten bedienbar")
+    @Story("Schmale Viewports")
+    @Description("""
+        1. Browser auf 390×844 setzen, Loginfelder bedienen und zur Registrierung navigieren.
+        2. Pflichtfeldfehler erzeugen; unter Scrollen gültige Angaben eingeben.
+        3. Auf 844×390 wechseln; Registrierung tatsächlich absenden und Bestätigung prüfen.
+        **Erwartet:** Kernaktionen erreichbar und bedienbar. Emulierte Fenstergrößen ersetzen kein echtes Handy oder Qualitätsurteil.
+        """)
+    void narrowRegistrationCanBeUsed() {
+        page.setViewportSize(390,844);new LoginPage(page).open();
+        assertThat(page.getByLabel(texts.getLoginEmailField(),new Page.GetByLabelOptions().setExact(true))).isVisible();
+        RegistrationPage form=new RegistrationPage(page);form.open();form.submit();form.assertRequiredError();
+        AllurePlaywright.attachScreenshot("Schmales Hochformat mit Fehlern",page);
+        String email="mobile-"+UUID.randomUUID()+"@example.test";form.fillValid(email,BrowserTestAccounts.USER_PASSWORD);
+        page.setViewportSize(844,390);form.submit();form.assertSubmitted(email);AllurePlaywright.attachScreenshot("Bedienbares Querformat",page);
+    }
+
+    @Test @DisplayName("UI-02A: Loginfelder sind per Tab und Enter bedienbar")
+    @Story("Tastaturbedienung")
+    @Description("""
+        1. Login öffnen und das E-Mail-Feld fokussieren, Testadmin eingeben.
+        2. Mit Tab ins Passwortfeld wechseln und dessen tatsächlichen Fokus prüfen.
+        3. Passwort eingeben und ausschließlich mit Enter absenden.
+        **Erwartet:** Admin-Dashboard erreichbar; kein unbeabsichtigter anderer Ablauf. Kein vollständiges Accessibility- oder Zoomaudit.
+        """)
+    void loginWithKeyboard() {
+        new LoginPage(page).open();Locator email=page.getByLabel(texts.getLoginEmailField(),new Page.GetByLabelOptions().setExact(true));
+        Locator password=page.getByLabel(texts.getLoginPasswordField(),new Page.GetByLabelOptions().setExact(true));
+        email.focus();assertThat(email).isFocused();email.fill(BrowserTestAccounts.ADMIN_EMAIL);page.keyboard().press("Tab");assertThat(password).isFocused();
+        password.fill(BrowserTestAccounts.ADMIN_PASSWORD);password.press("Enter");assertThat(page).hasURL(urlPattern(ADMIN_ROUTE));new UserMenu(page).selectTestLanguage();
+        new LoginPage(page).assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
+    }
+    private UiTexts[] languages(){return new UiTexts[]{new UiTexts(texts.language().equals("de")?"en":"de"),texts};}
+    private void assertNotice(UiTexts expected,String message){assertThat(page.locator("vaadin-notification-card:not([closing])")).containsText(expected.getBaseFailedTitle());assertThat(page.locator("vaadin-notification-card:not([closing])")).containsText(expected.visibleText(page,message));}
+    private String create(){LoginPage login=new LoginPage(page);login.open();login.signIn(BrowserTestAccounts.ADMIN_EMAIL,BrowserTestAccounts.ADMIN_PASSWORD);assertThat(page).hasURL(urlPattern(ADMIN_ROUTE));new UserMenu(page).selectTestLanguage();String email="language-"+UUID.randomUUID()+"@example.test";new AdminUsersPage(page).createActiveUser(email,BrowserTestAccounts.USER_PASSWORD);return email;}
+}

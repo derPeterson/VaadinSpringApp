@@ -23,15 +23,19 @@ public final class UserMenu {
     }
 
     @Step("Testsprache über die sichtbare Sprachflagge auswählen")
-    public void selectTestLanguage() {
+    public void selectTestLanguage() { selectLanguage(texts.language()); }
+
+    @Step("Sprache ausdrücklich über das Flaggenmenü wechseln")
+    public void selectLanguage(String language) {
+        UiTexts expected = new UiTexts(language);
         open();
         Locator flag = page.getByRole(AriaRole.IMG, new Page.GetByRoleOptions()
-                .setName(texts.language().equals("de") ? "German Flag Icon" : "English Flag Icon").setExact(true));
+                .setName(language.equals("de") ? "German Flag Icon" : "English Flag Icon").setExact(true));
         page.getByRole(AriaRole.BUTTON).filter(new Locator.FilterOptions().setHas(flag)).click();
         assertThat(flag).hasCSS("filter", "none");
         // The menu may be anonymous or authenticated; both expected labels use exactly this language.
-        assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(texts.getBaseLoginButton()).setExact(true))
-                .or(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(texts.getBaseLogoutButton()).setExact(true)))).isVisible();
+        assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(expected.getBaseLoginButton()).setExact(true))
+                .or(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(expected.getBaseLogoutButton()).setExact(true)))).isVisible();
         page.keyboard().press("Escape");
         assertThat(page.locator("vaadin-popover-overlay[opened]")).not().isVisible();
     }

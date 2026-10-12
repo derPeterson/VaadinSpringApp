@@ -43,7 +43,7 @@ In PowerShell im Projektordner:
 ## Suites und Testfälle
 
 Die Fälle sind nach fachlichem Bereich getrennt, mit eigenen JUnit-Klassen unter
-src/test/java/de/derpeterson/browsertests/suites/. Ein gewöhnlicher Start führt alle sechs
+src/test/java/de/derpeterson/browsertests/suites/. Ein gewöhnlicher Start führt alle sieben
 Suites aus. Jede Prüfung bekommt einen frischen Browserkontext; alle Fälle funktionieren
 ohne vorherige Testfälle. Die Datenbank und Mailpit sind für den gesamten Lauf frisch.
 
@@ -55,7 +55,8 @@ ohne vorherige Testfälle. Die Datenbank und Mailpit sind für den gesamten Lauf
 | verification | Echter Mailbutton, Aktivierung, erneuter Linkaufruf, ungültiger/fehlender Token | 3 |
 | password-reset | Echte Reset-Mail und neue Anmeldung, Formularfehler, neutrale Anfrageantwort, ungültige/verbrauchte/fehlende Links | 6 |
 | account-lifecycle | Einzelvalidierung, kanonisierte Dubletten, unverifizierte Resetanfrage und altes Resetformular | 5 |
-| all | Alle sechs Suites; Standardwert | 26 |
+| presentation | Startseiten-Sprachwechsel, gespeicherte Kontosprache, schmale Registrierung, Tastaturlogin | 4 |
+| all | Alle sieben Suites; Standardwert | 30 |
 
 ~~~powershell
 # Nur die Anmeldungssuite:
@@ -208,9 +209,9 @@ Für die englische Variante denselben Lauf mit `-Language en` starten:
 ```
 
 Die Sprache lässt sich mit `-Suite`, `-Headed` und `-NoBuild` kombinieren. Jeder Lauf
-erhält sein eigenes Archiv mit Oberflächensprache und Browser-Locale. Die 26 Fälle
+erhält sein eigenes Archiv mit Oberflächensprache und Browser-Locale. Die 30 Fälle
 laufen pro Sprache; Deutsch und Englisch werden nicht gleichzeitig als richtige
-Antwort akzeptiert. Beide Läufe zusammen prüfen 52 Fallausführungen.
+Antwort akzeptiert. Beide Läufe zusammen prüfen 60 Fallausführungen.
 
 `i18n/UiTexts` lädt die **originalen** Dateien `src/main/resources/i18n/messages_de.properties`
 und `messages_en.properties` über den Test-Classpath. Maven stellt diese Ressourcen
@@ -413,3 +414,33 @@ Restlücken und Paketversuche in `automatisierung-offen.md`. Die IDs der alten
 Vorlage und der Browserfälle sind eigene Kataloge: beispielsweise prüft der neue
 RESET-05A tatsächlich das alte offene Formular; bestehendes RESET-04B dagegen
 nur das erneute Laden eines bereits verbrauchten Links.
+
+
+## Sprache, schmale Fenster und Tastatur
+
+Die Suite `presentation` besitzt vier voneinander unabhängige Fälle:
+
+| ID | Schritte | Erwartung |
+|---|---|---|
+| LANG-01C | Auf der Startseite die echte Flaggenauswahl in beide Richtungen bedienen | Ausgewählte Flagge und übersetzter Loginbutton wechseln ohne Neuladen |
+| LANG-02A | Eigenes Konto anlegen, andere Sprache speichern, abmelden und in frischer Sitzung mit anderer Browserauswahl anmelden | Kontosprache wird ohne nachträglichen Sprachklick geladen |
+| UI-01A | Registrierung bei 390×844 mit Fehlerhinweis bedienen, korrigieren und bei 844×390 absenden | Kernaktion in beiden Größen tatsächlich bedienbar |
+| UI-02A | Login per Fokus/Tab/Enter mit eigenem Testadmin ausführen | Tatsächlicher Passwortfokus und Adminanmeldung |
+
+    .\browser-tests\run.ps1 -Suite presentation -Language de
+    .\browser-tests\run.ps1 -Suite presentation -Language en
+
+`UserMenu.selectLanguage` wählt ausdrücklich eine Sprache; `selectTestLanguage`
+bleibt der Standard für einen Lauf. Der Locale-Persistenzfall wählt nach dem
+frischen Login ausdrücklich **nicht** erneut eine Sprache, damit ein Fehler beim
+Laden der Kontopräferenz sichtbar würde. Auch die zusätzliche Sitzung erhält
+einen eigenen Trace. Im mobilen Datepicker wird nach Enter gegebenenfalls echtes
+Escape verwendet; der bereits gewählte Geburtstag muss erhalten bleiben.
+
+Die anonymen Login-/Registrierungs-/Tokenformulare besitzen aktuell keinen
+erreichbaren Flaggen-/Avatar-Schalter. Dynamischer Wechsel bei dort offenen
+Hinweisen wird nicht durch künstliche JavaScript-/Sessionevents simuliert.
+Die festen DE/EN-Läufe sind davon unabhängig. Echte Geräte, Bildschirmtastaturen,
+200-%-Browserzoom, sämtliche Dialoge und ein menschliches Gestaltungs-/Lesbarkeitsurteil
+bleiben offen. Ein grüner schmaler Chromium-Viewport bedeutet keinen vollständigen
+Mobilgeräte- oder Accessibility-Nachweis.

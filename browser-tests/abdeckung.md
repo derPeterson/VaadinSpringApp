@@ -59,10 +59,10 @@ Browserprüfungen stehen in `automatisierung-offen.md`. Keine Änderung der alte
 | MAIL-02 | Erfolgreiche Queue-Verarbeitung | REG/VER/RESET: echte Queuezustellung; interne Zustände separat |
 | MAIL-03 | Nachgewiesener Verbindungsfehler und Wiederholung | OFFEN – noch kein entsprechender Browsernachweis |
 | MAIL-04 | Dauerhafter Fehler und Adminbeobachtbarkeit | OFFEN – noch kein entsprechender Browsernachweis |
-| LANG-01 | Sichtbarer Wechsel Deutsch ↔ Englisch | Alle bisherigen Fälle pro Sprache; dynamischer Wechsel mit offenen Fehlern fehlt |
-| LANG-02 | Sprache nach Anmeldung und Mailvorlagen | Mailbetreffe/Platzhalter DE/EN geprüft; Präferenzpersistenz fehlt |
-| UI-01 | Desktop, Handy und andere Fensterbreiten | Desktop/Infrastrukturbilder; Handy/Rotation/Dialogsituation fehlt |
-| UI-02 | Tastatur und grundlegende Bedienbarkeit | OFFEN – noch kein entsprechender Browsernachweis |
+| LANG-01 | Sichtbarer Wechsel Deutsch ↔ Englisch | Alle bisherigen Fälle pro Sprache; LANG-01C prüft vorhandenen Home-Schalter DE↔EN; auf anonymen Formularen fehlen UI-Schalter, offene Adminfehler bleiben offen |
+| LANG-02 | Sprache nach Anmeldung und Mailvorlagen | Mailbetreffe/Platzhalter DE/EN geprüft; LANG-02A bestätigt gespeicherte Kontosprache nach frischer Anmeldung; Footer nicht gesondert verglichen |
+| UI-01 | Desktop, Handy und andere Fensterbreiten | INFRA-01 Desktopbilder; UI-01A echte Registrierung bei 390×844/844×390; echte Geräte/Tastatur und übrige Admin-/Resetdialoge offen |
+| UI-02 | Tastatur und grundlegende Bedienbarkeit | UI-02A bestätigt Fokus/Tab/Enter beim Login; Admin-/Registrierungsreihenfolge, Zoom und menschliche Fokusbeurteilung offen |
 | OPS-01 | Unklarer Transportausgang bleibt quarantänisiert | OFFEN – noch kein entsprechender Browsernachweis |
 | OPS-02 | Aufbewahrung und Bereinigung | OFFEN – noch kein entsprechender Browsernachweis |
 | OPS-03 | Manuellen Recovery-Vertrag nachvollziehen | OFFEN – noch kein entsprechender Browsernachweis |
