@@ -109,6 +109,27 @@ class AdminUserErrorNotificationTest {
         return Stream.concat(Stream.of(root), children.flatMap(AdminUserErrorNotificationTest::descendants));
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void birthdayInputInCreateAndEditFollowsTheLocaleWithoutLosingTheDate(boolean create) {
+        LanguageChangeEvent.fire(ui, Locale.GERMAN);
+        ReflectionTestUtils.invokeMethod(section, "openDialog", user(create));
+        DatePicker picker = descendants(dialog()).filter(DatePicker.class::isInstance)
+                .map(DatePicker.class::cast).findFirst().orElseThrow();
+        assertFalse(picker.isAutoOpen());
+        assertEquals(Locale.GERMAN, picker.getLocale());
+        assertEquals(texts.getDateInputPlaceholder(), picker.getPlaceholder());
+        LocalDate selected = picker.getValue();
+        LanguageChangeEvent.fire(ui, Locale.ENGLISH);
+        assertEquals(Locale.ENGLISH, picker.getLocale());
+        assertEquals(texts.getDateInputPlaceholder(), picker.getPlaceholder());
+        assertEquals(selected, picker.getValue());
+        LanguageChangeEvent.fire(ui, Locale.GERMAN);
+        assertEquals(Locale.GERMAN, picker.getLocale());
+        assertEquals(texts.getDateInputPlaceholder(), picker.getPlaceholder());
+        assertEquals(selected, picker.getValue());
+    }
+
     private UserEntity user(boolean create) {
         return UserEntity.builder().id(create ? null : 2L).version(create ? null : 3L)
                 .firstName("Test").lastName("User").email("test@example.com").password("hash")

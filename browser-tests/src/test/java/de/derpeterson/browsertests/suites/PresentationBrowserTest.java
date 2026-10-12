@@ -12,6 +12,7 @@ import io.qameta.allure.*;
 import io.qameta.allure.playwright.AllurePlaywright;
 import org.junit.jupiter.api.*;
 import java.util.UUID;
+import java.time.LocalDate;
 
 @Tag("browser") @Feature("Sprache und Bedienung")
 public class PresentationBrowserTest extends BrowserFixture {
@@ -64,8 +65,8 @@ public class PresentationBrowserTest extends BrowserFixture {
     @Story("Schmale Viewports")
     @Description("""
         1. Browser auf 390×844 setzen, Loginfelder bedienen und zur Registrierung navigieren.
-        2. Pflichtfeldfehler erzeugen; unter Scrollen gültige Angaben eingeben.
-        3. Auf 844×390 wechseln; Registrierung tatsächlich absenden und Bestätigung prüfen.
+        2. Pflichtfeldfehler erzeugen, DE/EN-Datumsbeispiel prüfen; gültige Angaben und Geburtstag eintippen.
+        3. Ohne Enter/Escape auf 844×390 wechseln und Registrieren klicken; übernommenen Geburtstag und Bestätigung prüfen.
         **Erwartet:** Kernaktionen erreichbar und bedienbar. Emulierte Fenstergrößen ersetzen kein echtes Handy oder Qualitätsurteil.
         """)
     void narrowRegistrationCanBeUsed() {
@@ -74,7 +75,27 @@ public class PresentationBrowserTest extends BrowserFixture {
         RegistrationPage form=new RegistrationPage(page);form.open();form.submit();form.assertRequiredError();
         AllurePlaywright.attachScreenshot("Schmales Hochformat mit Fehlern",page);
         String email="mobile-"+UUID.randomUUID()+"@example.test";form.fillValid(email,BrowserTestAccounts.USER_PASSWORD);
-        page.setViewportSize(844,390);form.submit();form.assertSubmitted(email);AllurePlaywright.attachScreenshot("Bedienbares Querformat",page);
+        page.setViewportSize(844,390);form.submit();form.assertBirthDateCommitted(LocalDate.of(1990,1,1));form.assertSubmitted(email);AllurePlaywright.attachScreenshot("Bedienbares Querformat",page);
+    }
+
+    @Test @DisplayName("UI-01B: Geburtstag über das Kalender-Icon auswählen und wiederfinden")
+    @Story("Mobiler Kalender")
+    @Description("""
+        1. Registrierung bei 390×844 öffnen; gültige Angaben außer Geburtstag eingeben.
+        2. Klick ins Datumsfeld öffnet keinen Kalender; erst das rechte Icon öffnet ihn.
+        3. Im Kalender zum Vortag navigieren und den Tag anklicken; Datum wird ohne Texteingabe übernommen.
+        4. Kalender erneut über das Icon öffnen: Datum ist markiert; denselben Tag wählen.
+        5. Registrieren klicken; übernommenes Datum und tatsächliche Erfolgsbestätigung prüfen.
+        **Erwartet:** Kalenderauswahl und Wiederöffnen funktionieren ohne künstliche Zustandsinjektion.
+        """)
+    void birthDateCanBePickedWithoutTypingAndIsSelectedAfterReopening() {
+        page.setViewportSize(390,844);
+        RegistrationPage form = new RegistrationPage(page); form.open();
+        String email = "calendar-" + UUID.randomUUID() + "@example.test";
+        LocalDate selected = form.fillValidUsingCalendar(email, BrowserTestAccounts.USER_PASSWORD);
+        AllurePlaywright.attachScreenshot("Über Kalender gewählter Geburtstag", page);
+        form.submit(); form.assertBirthDateCommitted(selected); form.assertSubmitted(email);
+        AllurePlaywright.attachScreenshot("Registrierung nach Kalenderauswahl", page);
     }
 
     @Test @DisplayName("UI-02A: Loginfelder sind per Tab und Enter bedienbar")

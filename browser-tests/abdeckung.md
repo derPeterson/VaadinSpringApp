@@ -1,63 +1,83 @@
 # Browserabdeckung und offene Punkte
 
-**Stand: 12.10.2026 – unvollständig.** Dies ist die zentrale Übersicht zum Prüfstand.
-Bedienung und Aufbau stehen in der [Browser-Testanleitung](README.md).
-Ergebnisse einzelner Ausführungen stehen in deren Run-Berichten; sie werden nicht nachträglich geändert.
+**Stand: 12.10.2026 – alle registrierten Fälle grün, ursprüngliche Gesamtabdeckung noch unvollständig.**
+Dies ist die zentrale Übersicht zum Prüfstand. Bedienung und Aufbau stehen in der
+[Browser-Testanleitung](README.md). Historische Run-Berichte werden nicht verändert.
 
 ## Letzter vollständiger Prüfstand
 
-Arbeitsbranch: `feature/browser_manual_coverage`, Commit `0ec7f478`, mit lokalen Änderungen.
+Arbeitsbranch: `feature/browser_manual_coverage`, Commit `664ad9cc`, mit lokalen Änderungen.
 Beide Browserläufe verwendeten dasselbe frisch gebaute Anwendungsimage und jeweils
 eigene frische Docker-/H2-/Mailpit-Daten. Keine Bestandsdaten oder echten Postfächer.
 
 | Prüfung | Ergebnis | Nicht bestandene Fälle |
 | --- | --- | --- |
-| Anwendung und JaCoCo | 1030/1030, keine Fehler/Fehlschläge/Skips | keine |
+| Anwendung und JaCoCo | 1034/1034, keine Fehler/Fehlschläge/Skips | keine |
 | Helper/Reporter | 24/24, keine Fehler/Fehlschläge/Skips | keine |
-| Browser Deutsch | 37/42, 5 fehlgeschlagen, 0 übersprungen | USER-05B, USER-06B/C/D, UI-01A |
-| Browser Englisch | 37/42, 5 fehlgeschlagen, 0 übersprungen | USER-05B, USER-06B/C/D/F |
+| Browser Deutsch | 44/44, keine Fehler/Skips | keine |
+| Browser Englisch | 44/44, keine Fehler/Skips | keine |
 
-- [Vollständiger DE-Bericht](runs/2026-10-12T14-15-06_UTC__0ec7f478__9d6a93ca/report.md)
-- [Vollständiger EN-Bericht](runs/2026-10-12T14-21-48_UTC__0ec7f478__32fd8f49/report.md)
+- [Vollständiger DE-Bericht](runs/2026-10-12T18-31-45_UTC__664ad9cc__cf19ae2f/report.md)
+- [Vollständiger EN-Bericht](runs/2026-10-12T18-38-08_UTC__664ad9cc__8008e05d/report.md)
 
 Aufbau, Abbau und HTML-Erzeugung waren in beiden Läufen erfolgreich.
 HTML-Berichte über ihre `html/open-report.bat` öffnen; Screenshots/Traces bleiben im Archiv.
-Die Dokumentationsbereinigung hat keine Browserfälle erneut ausgeführt oder behoben.
+Die erfolgreichen 44 Browserfälle ersetzen nicht alle 44 ursprünglichen manuellen
+Fälle: Die beiden Kataloge haben unterschiedliche IDs und Teilabläufe. Fehlende
+Journeys, Betriebsprüfungen und menschliche Einschätzungen bleiben unten ausgewiesen.
+
+## Einheitliche Datum-/Uhrzeitbedienung
+
+DatePicker in Registrierung und Benutzerformular sowie Date-/TimePicker im
+Aktivitätsfilter verwenden `autoOpen=false`. Direkte Eingabe öffnet kein Overlay;
+Icons und die vorgesehenen Pfeiltasten bieten weiterhin Auswahlmöglichkeiten.
+
+Kurze Beispiele im Adminbereich kommen aus dem gemeinsamen typisierten Katalog:
+DE `31.12.1990` / `14:30`, EN `12/31/1990` / `2:30 PM`. „Uhrzeit optional“ steht
+klein neben der Aktivitätsüberschrift, nicht mehr als Platzhalter. Der Geburtstag
+bleibt beim DE↔EN-Wechsel im Anlegen-/Bearbeiten-Dialog erhalten (technische Regression).
+
+UI-01A/B bestätigen direkte Geburtstagseingabe, Kalenderauswahl/Wiederöffnen und
+tatsächliche Registrierung bei 390×844 bzw. 844×390. USER-05B/C bestätigen
+kombinierte Filter, direktes Datum, Kalenderauswahl, optionale Uhrzeit und Clear.
+Morgen liefert keine Treffer, gestern zeigt das eigene Konto; beide Zeitvarianten
+werden über echte Bedienung übernommen. Vaadin darf führende Nullen beim Blur entfernen;
+entscheidend ist das exakt geprüfte kanonische Datum und das tatsächliche Filterergebnis.
+
+Der projizierte Kalenderinhalt liegt im DOM beim DatePicker. Der Browserhelfer
+verwendet zugängliche Tageszellen mit dem öffentlichen `date`-Part; die virtualisierte
+Uhrzeitliste wird über echte Mausbewegungen gescrollt. Anwendungszustände werden
+nicht über SQL-/Service-/API-Abkürzungen erzeugt. Echte Geräte und Bildschirmtastaturen
+bleiben ergänzende Prüfungen.
 
 ## Aktuelle Benutzerverwaltungsfälle
 
-| ID | Aussage | DE gesamt | EN gesamt |
+| ID | Aussage | DE-Nachweis | EN-Nachweis |
 | --- | --- | --- | --- |
 | USER-05A | Zwölf eigene Konten, Suche, exakte Treffer auf zwei Seiten, Seitengröße und Leerzustand | Bestanden | Bestanden |
-| USER-05B | Kombinierte Freigabe-/Status-/Rollenfilter, Datum mit optionaler Zeit, Entfernen/Clear | Fehlgeschlagen | Fehlgeschlagen |
+| USER-05B | Kombinierte Freigabe-/Status-/Rollenfilter, direktes Datum mit optionaler Zeit, Entfernen/Clear | Bestanden | Bestanden |
+| USER-05C | Kalender-Icon, Tagesauswahl/Wiederöffnen und optionale Dropdown-Zeit | Bestanden | Bestanden |
 | USER-06A | Zentrale Validierung, Dublettenkorrektur, tatsächliche Anmeldung des neuen Kontos | Bestanden | Bestanden |
-| USER-06B | Namen/E-Mail speichern, erneut öffnen, Passwort leer unverändert lassen | Fehlgeschlagen | Fehlgeschlagen |
-| USER-06C | Löschabbruch, Bestätigung und dauerhaftes Nichtvorhandensein | Fehlgeschlagen | Fehlgeschlagen |
-| USER-06D | Selbstlöschschutz im eigenen Adminformular | Fehlgeschlagen | Fehlgeschlagen |
+| USER-06B | Namen/E-Mail speichern, erneut öffnen, Passwort leer unverändert lassen | Bestanden | Bestanden |
+| USER-06C | Löschabbruch, Bestätigung und dauerhaftes Nichtvorhandensein | Bestanden | Bestanden |
+| USER-06D | Selbstlöschschutz im eigenen Adminformular | Bestanden | Bestanden |
 | USER-06E | Suche und Freigabefilter beim Sprachwechsel in beide Richtungen erhalten | Bestanden | Bestanden |
-| USER-06F | Neues Passwort speichern, altes abweisen und mit neuem anmelden | Bestanden | Fehlgeschlagen |
+| USER-06F | Neues Passwort speichern, altes abweisen und mit neuem anmelden | Bestanden | Bestanden |
 
-Die neue Suche/Pagination und LANG-02A (gespeicherte Kontosprache) bestehen jetzt
-im DE-/EN-Gesamtlauf. Der frühere Zugriff nur auf die erste Seite ist überwunden.
-USER-06F war außerdem im gezielten DE-Lauf rot. Sein wechselndes Ergebnis bei
-unverändertem Quellstand ist kein zuverlässiger Gesamtnachweis.
+Suche/Pagination, Filter, Anlage, Bearbeitung, Löschabbruch/-bestätigung,
+Selbstlöschschutz, Sprachpräferenz und Passwortwechsel bestehen jetzt in beiden
+Gesamtläufen. Der Editierbutton wird vor dem echten Mausklick sichtbar gemacht und
+fokussiert, damit die native Grid-Scrollbewegung den Klick nicht verliert. Erwartungen,
+Speicher-/Anmeldeprüfungen und Sicherheitsregeln bleiben erhalten.
 
-## Zuerst zu klärende Probleme
-
-| Bereich | Beobachtung | Fehlender Nachweis / nächster Schritt |
-| --- | --- | --- |
-| Editierdialog: USER-06B/C/D/F | Exakte Suche findet Konto und einen sichtbaren Editierbutton; nach Klick fehlt der Dialog. Beim Klick scrollt das breite Grid horizontal. USER-06F besteht nur in einem Lauf. | Grid-Aktionsziel, Scrollbewegung und Serverereignis zuverlässig prüfen. Kein bestätigter allgemeiner Produktionsfehler. Ändern, Löschen und Selbstschutz bleiben unbestätigt. |
-| Aktivitätsfilter: USER-05B | Freigabe/Status/Rollenmitgliedschaft funktionieren bis zum Datumsschritt; anschließend bleibt der Kalender geöffnet und der Uhrzeit-Locator findet kein zugängliches Feld. | Datum über echte Bedienung übernehmen und Kalender schließen; danach Datum ohne Zeit, optionale Zeit und Clear abschließen. Der ganze Fall bleibt rot. |
-| Schmale Registrierung: UI-01A | DE übernimmt den Geburtstag nach mobiler Datepicker-Bedienung nicht; EN bestand im Gesamtlauf. | Tatsächliche Datumübernahme prüfen, nicht nur das Schließen des Overlays. Kein zuverlässiger Mobilnachweis; reale Geräte zusätzlich beurteilen. |
-
-Die Testassertions und Sicherheitsregeln wurden zur Umgehung dieser Probleme nicht
-abgeschwächt. Die bisherigen begrenzten Paketversuche sind abgeschlossen; diese
-Übersicht dokumentiert den Stand und startet keine weiteren Korrekturversuche.
+Aktuell sind keine fehlgeschlagenen Fälle unter den 44 registrierten Browserfällen
+offen. Die folgenden noch nicht aufgenommenen Abläufe sind weiterhin keine
+vollständigen Browsernachweise.
 
 ## Weitere fehlende Abläufe und sinnvolle Reihenfolge
 
-1. **Benutzerverwaltung abschließen:** Editieren, Sperren/Freigeben, Löschen,
-   Selbstschutz und zwei tatsächlich offene veraltete Adminformulare.
+1. **Benutzerverwaltung ergänzen:** Sperren/Freigeben, gezieltes Aktivieren
+   unverifizierter Konten und zwei tatsächlich offene veraltete Adminformulare.
 2. **Darauf aufbauend Sitzungen und alte Links:** Rollenentzug, Kontosperre/Löschung
    bei bestehenden Verbindungen sowie Verifikations-/Resetlinks nach Adminänderungen.
 3. **Status/Live-Aktualisierung:** aktuelle Value-Anzeige von gleichlautenden Optionen
@@ -109,7 +129,7 @@ Falls abdecken. Es wird kein künstlicher Gesamt-Prozentwert berechnet.
 | VER-01 | Gültiger Link und erneute Verwendung | TEILWEISE | VER-01A/B, MailpitInbox | Aktivierung/erneute Verwendung und Mail-Schlüsselangaben geprüft; Footer nicht ausdrücklich mit Getter verglichen |
 | VER-02 | Ungültiger oder fehlender Token | TEILWEISE | VER-02A | Unbekannter/fehlender Token geprüft; ungültige Eingabe im tatsächlich angebotenen Anforderungsformular fehlt |
 | VER-03 | Ablauf und erneuter Versand | OFFEN – ABHÄNGIG | Technische Clock-/Queue-Persistenztests vorhanden | UI-Speicherung von einer Minute ist jetzt durch CONFIG-03A belegt; Ablauf mit echter Wartezeit wurde noch nicht ergänzt. Erneuten Versand/Deduplizierung nicht als Browsererfolg zählen |
-| VER-04 | Adminsperre bleibt trotz alter Links bestehen | OFFEN – ABHÄNGIG | Technische Sperrregressionen vorhanden | Benötigt bestätigte Adminbearbeitung für unverifiziertes und verifiziertes Konto; Adminbearbeitung noch unbestätigt |
+| VER-04 | Adminsperre bleibt trotz alter Links bestehen | OFFEN – ABHÄNGIG | Technische Sperrregressionen vorhanden | Adminbearbeitung jetzt durch USER-06B belegt; spezifische Sperre unverifizierter/verifizierter Konten und Prüfung alter Links noch nicht ergänzt |
 | AUTH-01 | Erfolgs- und Fehlerfälle | UI-ABGEDECKT | AUTH-01A–D, REG-01A, SEC-01A, VER-01A | Erfolg/falsches Passwort/unbekannt/unverifiziert/anonym geprüft; zusätzliche hypothetische Sperrregeln nicht behauptet |
 | AUTH-02 | Abmeldung, Zurück und bestehende Tabs | TEILWEISE | AUTH-02A | Admin-Tabs, Logout, Zurück und neuer Zugriff belegt; alter geschützter Mutationscallback nicht vollständig geprüft |
 | AUTH-03 | Angemeldet bleiben | OFFEN | Zwei archivierte Remember-me-Versuche | Ohne Option zweimal echter Neustart bestanden; gesamte Variante mit Option und Logout nicht zuverlässig abgeschlossen, keine aktive Suite aufgenommen |
@@ -118,15 +138,15 @@ Falls abdecken. Es wird kein künstlicher Gesamt-Prozentwert berechnet.
 | RESET-03 | Passwortregeln, ungültige und verbrauchte Links | UI-ABGEDECKT | RESET-02B/04A/04B | Fehler/Korrektur, unbekannter und verbrauchter Link ohne weiteres Passwortformular; technische Regeln bleiben JUnit |
 | RESET-04 | Ablauf auch bei bereits geöffnetem Formular | OFFEN – ABHÄNGIG | Technische Clock-/Ablaufregressionen vorhanden | UI-Speicherung von einer Minute ist durch CONFIG-03C belegt; benötigt noch den Ablauf mit echter Wartezeit; keine Uhrmanipulation/Testzustandsinjektion als Ersatz |
 | RESET-05 | Zwei geöffnete Formulare für denselben Token | UI-ABGEDECKT | RESET-05A | Zwei getrennte anonyme Kontexte: erstes Speichern gewinnt, alter Submit abgewiesen und richtige Loginidentität geprüft; echte Parallelität separat |
-| RESET-06 | Sperre oder Löschung nach Linkerstellung | OFFEN – ABHÄNGIG | Technische Sperr-/Löschregressionen vorhanden | Verlässliche Adminsperre/Löschung für tatsächliche alte Links benötigt; Adminbearbeitung noch unbestätigt |
-| USER-01 | Anlegen, bearbeiten und erneut öffnen | TEILWEISE | USER-05A/06A: Anlage, genaue Suche/Pagination, zentrale Validierung und neue Anmeldung; technische Filter-/Zeitregressionen | Datumsschritt sowie Bearbeitung/erneutes Öffnen noch unbestätigt; USER-06F DE bestanden, EN fehlgeschlagen |
+| RESET-06 | Sperre oder Löschung nach Linkerstellung | OFFEN – ABHÄNGIG | Technische Sperr-/Löschregressionen vorhanden | Adminbearbeitung/Löschung durch USER-06B/C belegt; gezielte Sperre und tatsächliche alte Resetlinks nach Änderungen noch nicht ergänzt |
+| USER-01 | Anlegen, bearbeiten und erneut öffnen | TEILWEISE | USER-05A/06A: Anlage, genaue Suche/Pagination, zentrale Validierung und neue Anmeldung; technische Filter-/Zeitregressionen | Datum/Kalender und optionale Zeit durch USER-05B/C sowie Bearbeitung/erneutes Öffnen durch USER-06B belegt; ausdrückliche Admininspektion aller Stammdaten bleibt ergänzbar |
 | USER-02 | Sperren und gezieltes Freigeben | OFFEN | Keine vollständige Browser-Sperre/Freigabe | Auch ausdrückliche Freigabe unverifizierter Konten fehlt |
-| USER-03 | Löschen mit zugehörigen Tokens und Queueeinträgen | OFFEN / TECHNISCH | Löschkaskaden in Persistenztests; USER-06C ergänzt, aber vor Editierdialog gescheitert | Bestätigte UI-Löschung/alte Links fehlen; interne Queue-/Tokenkaskaden sind technische Aussagen |
+| USER-03 | Löschen mit zugehörigen Tokens und Queueeinträgen | TEILWEISE / TECHNISCH | Löschkaskaden in Persistenztests; USER-06C: Abbruch, Bestätigung und dauerhafte Abwesenheit des ausgewählten Kontos | UI-Löschung belegt; alte Links fehlen noch, interne Queue-/Tokenkaskaden bleiben technische Aussagen |
 | USER-04 | Veraltetes Bearbeitungsformular | OFFEN | Versionskonflikte in Persistenz-/UI-Komponententests | Zwei tatsächliche Adminformulare noch nicht bestätigt |
 | SEC-01 | Direkte URL und normale Benutzerrolle | TEILWEISE | AUTH-01D und SEC-01A | Anonym/normal ausgeschlossen und Bootstrapadmin funktioniert; nachträgliche Adminrollenvergabe fehlt |
-| SEC-02 | Rollenentzug bei offenem Adminformular / Push | OFFEN – ABHÄNGIG | PushRpcSecurityPersistenceTest, SessionAuthorityPersistenceTest | Reale offene Browserverbindung plus Rollenentzug benötigt bestätigte Adminbearbeitung |
+| SEC-02 | Rollenentzug bei offenem Adminformular / Push | OFFEN – ABHÄNGIG | PushRpcSecurityPersistenceTest, SessionAuthorityPersistenceTest | Adminbearbeitung jetzt belegt; Rollenentzug bei tatsächlich offener geschützter Browserverbindung fehlt noch |
 | SEC-03 | Sperre und Löschung bei laufender Sitzung | OFFEN – ABHÄNGIG | Sitzungs-/Sperrregressionen technisch | Reale Aktion nach Sperre/Löschung inklusive Remember-me noch nicht bestätigt |
-| SEC-04 | Letzten aktiven Admin schützen | OFFEN – ABHÄNGIG | AdminSecurityPersistenceTest | Letzter-Admin-/Selbstschutz muss über erreichbare Formular-/Löschaktionen geprüft werden |
+| SEC-04 | Letzten aktiven Admin schützen | TEILWEISE / TECHNISCH | AdminSecurityPersistenceTest | USER-06D belegt Selbstlöschschutz; Letzter-Admin-Schutz bei Rollen-/Freigabeänderungen fehlt noch als Browserablauf |
 | STATUS-01 | Manueller Status und Aktualisierung | OFFEN | Zwei archivierte Statusversuche | Vaadin-Slot- und Optionen-/Value-Locators zweimal gescheitert; kein vollständiger manueller Status-/Live-Nachweis übernommen |
 | STATUS-02 | Automatische Abwesenheit und Rückkehr | OFFEN – ABHÄNGIG / TECHNISCH | UserStatusSchedulerTest, UserStatusPersistenceTest | Kurzer Timeout plus echte sichtbare Status-/Rückkehrprüfung benötigen bestätigte Config- und Statushelfer |
 | CONFIG-01 | Zulässige Werte speichern | TEILWEISE | CONFIG-03A–D: vier Tokendauern an der Mindestgrenze gespeichert und neu geladen, DE/EN | Weitere Konfigurationsfelder (u. a. Boolean/Zahlen) und Neustartwirkung bleiben offen; früheres Gesamtpaket nicht nachträglich als erfolgreich werten |
@@ -137,7 +157,7 @@ Falls abdecken. Es wird kein künstlicher Gesamt-Prozentwert berechnet.
 | MAIL-04 | Dauerhafter Fehler und Adminbeobachtbarkeit | OFFEN – BETRIEB / TECHNISCH | Queue-/Auditregressionen | Dauerhafter realer SMTP-Ausfall, Retrylimit und Auditbeobachtung nicht im Browser eingerichtet |
 | LANG-01 | Sichtbarer Wechsel Deutsch ↔ Englisch | TEILWEISE / PRODUKTGRENZE | LANG-01C, USER-06E: Adminsuche/Freigabefilter bleiben bei Wechsel in beide Richtungen erhalten | Offene Adminfehler/-dialoge noch nicht im Browser bestätigt; anonyme Form-/Tokenseiten haben keinen UI-Schalter |
 | LANG-02 | Sprache nach Anmeldung und Mailvorlagen | TEILWEISE | LANG-02A im aktuellen DE/EN-Gesamtlauf bestanden; VER/RESET-Mails pro Sprache | Vorbereitung über exakte Suche jetzt belegt; vollständiger Footer-Vergleich bleibt offen |
-| UI-01 | Desktop, Handy und andere Fensterbreiten | TEILWEISE / MENSCHLICH | INFRA-01; UI-01A im aktuellen Gesamtlauf: DE fehlgeschlagen, EN bestanden | Mobile Datumübernahme nicht zuverlässig; echte Geräte/Tastatur, übrige Formulare und Layoutqualität fehlen |
+| UI-01 | Desktop, Handy und andere Fensterbreiten | TEILWEISE / MENSCHLICH | INFRA-01; UI-01A/B im vollständigen aktuellen DE-/EN-Lauf bestanden: direkte Datumeingabe, Kalenderauswahl/Wiederöffnen und Registrierung | Echte Geräte/Tastatur, übrige Formulare und menschliche Layoutqualität fehlen |
 | UI-02 | Tastatur und grundlegende Bedienbarkeit | TEILWEISE / MENSCHLICH | UI-02A | Login per Tab/Fokus/Enter belegt; gesamte Fokusreihenfolge, 200-%-Zoom und menschliche Lesbarkeit/Accessibility nicht vollständig geprüft |
 | OPS-01 | Unklarer Transportausgang bleibt quarantänisiert | TECHNISCH / BETRIEBSNACHWEIS OFFEN | Queue-Service-/Persistenzregressionen | Fehler nach möglicher SMTP-Annahme und Neustart erfordern kontrollierte Transportfixture; fehlende Mail ist kein Nichtversandbeweis |
 | OPS-02 | Aufbewahrung und Bereinigung | TECHNISCH / BETRIEBSNACHWEIS OFFEN | Queue-/Token-Cleanup mit Clock/H2 | Alte Zustände/Grenzfixture dürfen nicht über Browser-SQL erzeugt werden; tatsächlicher Sonntags-Schedulerlauf ist kein Kurztest |

@@ -119,6 +119,22 @@ public class RegistrationViewTest {
         field("registrationButton", Button.class).click();
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void birthDateExampleFollowsLanguageChangesAndPreservesTheSelectedDate(boolean german) {
+        Locale initial = german ? Locale.GERMAN : Locale.ENGLISH;
+        Locale other = german ? Locale.ENGLISH : Locale.GERMAN;
+        DatePicker picker = field("birthDatePicker", DatePicker.class);
+        LanguageChangeEvent.fire(ui, initial);
+        String initialExample = MessageProperties.forLocale(provider, initial).getRegistrationBirthDatePlaceholder();
+        assertEquals(initialExample, picker.getPlaceholder());
+        LanguageChangeEvent.fire(ui, other);
+        String translatedExample = MessageProperties.forLocale(provider, other).getRegistrationBirthDatePlaceholder();
+        assertNotEquals(initialExample, translatedExample);
+        assertEquals(translatedExample, picker.getPlaceholder());
+        assertEquals(LocalDate.of(1990, 1, 1), picker.getValue());
+    }
+
     public static class TestService extends com.vaadin.flow.server.VaadinServletService {
         @Override
         public com.vaadin.flow.server.RouteRegistry getRouteRegistry() {

@@ -31,9 +31,15 @@ public final class AdminUserDialog {
         this.password().fill(password);
         field(texts.getRegistrationGenderCombobox()).click();
         page.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(texts.getGenderOther()).setExact(true)).click();
-        field(texts.getRegistrationBirthDateField()).fill(texts.dateInput(LocalDate.of(1990, 1, 1)));
-        field(texts.getRegistrationBirthDateField()).press("Enter");
-        assertThat(page.locator("vaadin-date-picker-overlay[opened]")).not().isVisible();
+        Locator birthday = field(texts.getRegistrationBirthDateField());
+        assertThat(birthday).hasAttribute("placeholder", texts.getDateInputPlaceholder());
+        birthday.click();
+        assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+        birthday.fill(texts.dateInput(LocalDate.of(1990, 1, 1)));
+        // A real focus change commits the birthday; no Enter or popup cancellation.
+        firstName().click();
+        assertThat(root().locator("vaadin-date-picker")).hasJSProperty("value", "1990-01-01");
+        assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
         check(texts.getAdminUsersFieldEnabled(), enabled);
         check(texts.getRoleUser(), true);
         check(texts.getRoleAdmin(), administrator);

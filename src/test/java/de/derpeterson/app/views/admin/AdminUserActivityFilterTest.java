@@ -93,6 +93,12 @@ class AdminUserActivityFilterTest {
         assertEquals(locale, date().getLocale());
         assertEquals(locale, time().getLocale());
         assertEquals(texts.getAdminUsersActivityDate(), date().getAriaLabel().orElseThrow());
+        assertEquals(texts.getDateInputPlaceholder(), date().getPlaceholder());
+        assertEquals(texts.getTimeInputPlaceholder(), time().getPlaceholder());
+        assertEquals(texts.getAdminUsersActivityTimeOptional(),
+                ((com.vaadin.flow.component.html.Span) ReflectionTestUtils.getField(field, "optionalTimeHint")).getText());
+        assertFalse(date().isAutoOpen());
+        assertFalse(time().isAutoOpen());
         assertEquals(texts.getAdminUsersActivityTimeOptional(), time().getAriaLabel().orElseThrow());
     }
 

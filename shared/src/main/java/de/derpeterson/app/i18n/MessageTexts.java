@@ -132,6 +132,10 @@ public class MessageTexts {
         return getTranslation("registrationView.birth_date_field");
     }
 
+    public String getRegistrationBirthDatePlaceholder() {
+        return getTranslation("registrationView.birth_date_placeholder");
+    }
+
     public String getRegistrationSuccessMessage(String email) {
         return getFormattedTranslation("registrationView.registration.success_message", email);
     }
@@ -1000,6 +1004,14 @@ public class MessageTexts {
 
     public String getAdminUsersActivityDate() {
         return getTranslation("admin.users.activity.date");
+    }
+
+    public String getDateInputPlaceholder() {
+        return getTranslation("base.input.date_placeholder");
+    }
+
+    public String getTimeInputPlaceholder() {
+        return getTranslation("base.input.time_placeholder");
     }
 
     public String getAdminUsersActivityTimeOptional() {

@@ -8,6 +8,7 @@ import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 /** Visible registration form; no service calls or database preparation. */
@@ -23,24 +24,61 @@ public final class RegistrationPage {
         assertThat(page).hasTitle(REGISTRATION_PAGE_TITLE);
         assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions()
                 .setName(texts.getRegistrationTitle()).setExact(true))).isVisible();
+        assertThat(field(texts.getRegistrationBirthDateField()))
+                .hasAttribute("placeholder", texts.getRegistrationBirthDatePlaceholder());
     }
 
     @Step("Pflichtfelder mit gültigen Testangaben ausfüllen")
     public void fillValid(String email, String password) {
+        fillOtherFields(email, password);
+        Locator birthDate = field(texts.getRegistrationBirthDateField());
+        String input = texts.dateInput(LocalDate.of(1990, 1, 1));
+        birthDate.fill(input);
+        assertThat(birthDate).hasValue(input);
+        assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+        // The submit click commits the input naturally; no Enter, Escape or artificial blur.
+    }
+
+    private void fillOtherFields(String email, String password) {
         field(texts.getRegistrationFirstNameField()).fill("Browser");
         field(texts.getRegistrationLastNameField()).fill("Testuser");
         setEmails(email, email);
         setPasswords(password, password);
         field(texts.getRegistrationGenderCombobox()).click();
         page.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(texts.getGenderOther()).setExact(true)).click();
-        field(texts.getRegistrationBirthDateField()).fill(texts.dateInput(LocalDate.of(1990, 1, 1)));
-        // Enter commits the typed date and closes its popup; Escape can close surrounding dialogs.
-        field(texts.getRegistrationBirthDateField()).press("Enter");
-        if (page.locator("vaadin-date-picker-overlay[opened][fullscreen]").isVisible()) {
-            page.keyboard().press("Escape");
-        }
-        assertThat(page.locator("vaadin-date-picker-overlay[opened]")).not().isVisible();
-        assertThat(page.locator("vaadin-date-picker")).hasJSProperty("value", "1990-01-01");
+    }
+
+    @Step("Geburtstag ohne Texteingabe über Kalender-Icon auswählen und erneut öffnen")
+    public LocalDate fillValidUsingCalendar(String email, String password) {
+        fillOtherFields(email, password);
+        Locator picker = page.locator("vaadin-date-picker");
+        field(texts.getRegistrationBirthDateField()).click();
+        assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+        picker.locator("[part~='toggle-button']").click();
+        assertThat(page.locator("vaadin-date-picker-overlay[opened]")).isVisible();
+        Locator focusedDay = page.getByRole(AriaRole.GRIDCELL)
+                .and(page.locator("[part~='focused']"));
+        assertThat(focusedDay).hasCount(1);
+        // One ordinary calendar navigation step chooses yesterday, including month/year boundaries.
+        LocalDate selected = LocalDate.now(ZoneId.of("Europe/Berlin")).minusDays(1);
+        focusedDay.press("ArrowLeft");
+        assertThat(focusedDay).hasCount(1);
+        focusedDay.click();
+        assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+        assertBirthDateCommitted(selected);
+        picker.locator("[part~='toggle-button']").click();
+        Locator selectedDay = page.getByRole(AriaRole.GRIDCELL)
+                .and(page.locator("[aria-selected='true']"));
+        assertThat(selectedDay).hasCount(1);
+        selectedDay.click();
+        assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+        assertBirthDateCommitted(selected);
+        return selected;
+    }
+
+    @Step("Tatsächlich übernommenen Geburtstag prüfen")
+    public void assertBirthDateCommitted(LocalDate expected) {
+        assertThat(page.locator("vaadin-date-picker")).hasJSProperty("value", expected.toString());
     }
 
     @Step("E-Mail und E-Mail-Bestätigung eingeben")

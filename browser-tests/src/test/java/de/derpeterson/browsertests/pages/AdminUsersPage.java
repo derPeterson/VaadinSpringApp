@@ -7,6 +7,7 @@ import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 /** User list and optional filters; form/confirmation actions have their own small helpers. */
@@ -59,6 +60,11 @@ public final class AdminUsersPage {
                 .setHas(page.locator("vaadin-icon[icon='vaadin:edit']")));
         // No first-row assumption: filtering must yield one visible account and action.
         assertThat(edit).hasCount(1);
+        // Finish the grid's native focus/scroll movement before the mouse click.
+        // Otherwise focus on mousedown can move the action before mouseup arrives.
+        edit.scrollIntoViewIfNeeded();
+        edit.focus();
+        edit.hover();
         edit.click();
         AdminUserDialog form = new AdminUserDialog(page, texts);
         // Vaadin's host has no visible box; assert real rendered fields instead.
@@ -104,8 +110,72 @@ public final class AdminUsersPage {
         addActivityFilter();
         activityTime().fill("");
         activityDate().fill(texts.dateInput(date));
-        activityDate().press("Tab");
+        assertThat(activityDate()).hasValue(texts.dateInput(date));
+        // Vaadin may remove leading zeroes on blur. Verify the exact parsed date below.
+        // Focus another real field to commit; do not open or cancel the calendar.
+        searchField().click();
+        assertThat(activityPicker()).hasJSProperty("value", date.toString());
+        assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
         assertThat(activityTime()).hasValue("");
+    }
+
+    @Step("Aktivitätsdatum ohne Texteingabe über Kalender-Icon wählen und wiederfinden")
+    public LocalDate activityDateUsingCalendar(int daysFromToday) {
+        addActivityFilter();
+        activityTime().fill("");
+        activityDate().click();
+        assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+        // The public value property is read only; selection itself uses ordinary UI actions.
+        Object value = activityPicker().evaluate("element => element.value");
+        LocalDate base = value instanceof String current && !current.isEmpty()
+                ? LocalDate.parse(current) : LocalDate.now(ZoneId.of("Europe/Berlin"));
+        LocalDate selected = LocalDate.now(ZoneId.of("Europe/Berlin")).plusDays(daysFromToday);
+        activityPicker().locator("[part~='toggle-button']").click();
+        assertThat(page.locator("vaadin-date-picker-overlay[opened]")).isVisible();
+        // Vaadin projects the calendar content into its overlay; its DOM remains with the picker.
+        // Match the accessible calendar cell by its public date part, excluding user-grid cells.
+        // Desktop opening marks the current date with tabindex=0, before keyboard focus.
+        Locator currentDay = page.getByRole(AriaRole.GRIDCELL)
+                .and(page.locator("[part~='date'][tabindex='0']"));
+        assertThat(currentDay).hasCount(1);
+        long delta = java.time.temporal.ChronoUnit.DAYS.between(base, selected);
+        for (long step = 0; step < Math.abs(delta); step++) currentDay.press(delta > 0 ? "ArrowRight" : "ArrowLeft");
+        currentDay.click();
+        assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+        assertThat(activityPicker()).hasJSProperty("value", selected.toString());
+        assertThat(activityTime()).hasValue("");
+        activityPicker().locator("[part~='toggle-button']").click();
+        Locator selectedDay = page.getByRole(AriaRole.GRIDCELL).and(page.locator("[part~='date'][aria-selected='true']"));
+        assertThat(selectedDay).hasCount(1);
+        selectedDay.click();
+        assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+        assertThat(activityPicker()).hasJSProperty("value", selected.toString());
+        return selected;
+    }
+
+    @Step("Optionale Uhrzeit über den angebotenen Dropdown auswählen")
+    public void activityTimeUsingDropdown(LocalTime time) {
+        activityTime().click();
+        assertThat(page.locator("vaadin-time-picker-overlay[opened]")).hasCount(0);
+        page.locator(".admin-user-activity-filter vaadin-time-picker")
+                .locator("[part~='toggle-button']").click();
+        Locator overlay = page.locator("vaadin-time-picker-overlay[opened]");
+        assertThat(overlay).isVisible();
+        Locator options = page.getByRole(AriaRole.OPTION).and(page.locator("vaadin-time-picker-item"));
+        Locator target = page.getByRole(AriaRole.OPTION,
+                new Page.GetByRoleOptions().setName(texts.timeInput(time)).setExact(true));
+        // The time list is virtualized: later options appear only after real scrolling.
+        // Twelve wheel movements cover a full day; each waits for the rendered items to advance.
+        // Hover a real list item: the transparent overlay host is not a pointer target.
+        options.first().hover();
+        for (int step = 0; step < 12 && target.count() == 0; step++) {
+            String previousFirst = options.first().textContent();
+            page.mouse().wheel(0, 400);
+            assertThat(options.first()).not().hasText(previousFirst);
+        }
+        assertThat(target).hasCount(1);
+        target.click();
+        assertThat(activityTime()).hasValue(texts.timeInput(time));
     }
 
     @Step("Optionale Uhrzeit für den bestehenden Aktivitätsfilter ergänzen")
@@ -144,7 +214,13 @@ public final class AdminUsersPage {
             page.getByRole(AriaRole.MENUITEM, new Page.GetByRoleOptions().setName(texts.getAdminUsersFilterActiveSince()).setExact(true)).click();
         }
         assertThat(activityDate()).isVisible();
+        assertThat(activityDate()).hasAttribute("placeholder", texts.getDateInputPlaceholder());
+        assertThat(activityTime()).hasAttribute("placeholder", texts.getTimeInputPlaceholder());
+        assertThat(page.locator(".admin-user-activity-optional-note"))
+                .hasText(texts.getAdminUsersActivityTimeOptional());
     }
+
+    private Locator activityPicker() { return page.locator(".admin-user-activity-filter vaadin-date-picker"); }
 
     private Locator activityDate() {
         return page.locator(".admin-user-activity-filter").getByRole(AriaRole.COMBOBOX,

@@ -28,7 +28,6 @@ import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
-import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.RoleEntity;
@@ -50,7 +49,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 @Route(AppRouteConstants.REGISTRATION_ROUTE)
@@ -126,6 +128,8 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseRegistrationButton));
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+            Optional.ofNullable(birthDatePicker).ifPresent(picker ->
+                    picker.setPlaceholder(this.messageProperties.getRegistrationBirthDatePlaceholder()));
             Optional.ofNullable(genderComboBox).ifPresent(comboBox -> {
                 comboBox.setItemLabelGenerator(this::formatGender);
                 comboBox.getDataProvider().refreshAll();
@@ -133,7 +137,8 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
             NotificationHelper.getInstance().updateText();
         });
 
-        setSizeFull();
+        getContent().setWidthFull();
+        getContent().setPadding(false);
         setSpacing(false);
         setAlignItems(FlexComponent.Alignment.CENTER);
         setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
@@ -145,6 +150,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         Button registerButton = createRegisterButton();
 
         VerticalLayout mainContent = new VerticalLayout();
+        mainContent.addClassName("registration-main-content");
         mainContent.setPadding(false);
         mainContent.setSpacing(false);
         mainContent.setAlignItems(FlexComponent.Alignment.CENTER);
@@ -152,8 +158,10 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
         // Layout
         VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+        cardContentLayout.setPadding(false);
+        cardContentLayout.setSpacing(false);
+        cardContentLayout.addClassName("registration-form");
 
         this.title = new H1(messageProperties.getRegistrationTitle());
         title.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.FontWeight.BOLD);
@@ -171,29 +179,34 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         cardSecondaryTitleLayout.setSpacing(false);
         cardSecondaryTitleLayout.setPadding(false);
         cardSecondaryTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-        cardSecondaryTitleLayout.addClassNames(LumoUtility.Gap.SMALL);
+        cardSecondaryTitleLayout.addClassNames(LumoUtility.Gap.SMALL, "registration-form-subtitle");
         cardSecondaryTitleLayout.add(createAccountQuestionText);
         cardSecondaryTitleLayout.add(formComponents.loginLink);
 
         var firstLineForm = new HorizontalLayout(formComponents.firstNameField, formComponents.lastNameField);
         firstLineForm.setWidthFull();
+        firstLineForm.setSpacing(false);
+        firstLineForm.addClassName("registration-form-row");
         var secondLineForm = new HorizontalLayout(formComponents.emailField, formComponents.confirmEmailField);
         secondLineForm.setWidthFull();
+        secondLineForm.setSpacing(false);
+        secondLineForm.addClassName("registration-form-row");
         var thirdLineForm = new HorizontalLayout(formComponents.passwordField, formComponents.confirmPasswordField);
         thirdLineForm.setWidthFull();
+        thirdLineForm.setSpacing(false);
+        thirdLineForm.addClassName("registration-form-row");
         var fourthLineForm = new HorizontalLayout(formComponents.genderComboBox, formComponents.birthDatePicker);
         fourthLineForm.setWidthFull();
+        fourthLineForm.setSpacing(false);
+        fourthLineForm.addClassName("registration-form-row");
 
         cardContentLayout.add(cardTitleLayout, cardSecondaryTitleLayout, firstLineForm, secondLineForm, thirdLineForm, fourthLineForm, registerButton);
 
         RegistrationCardComponent registrationCardComponent = new RegistrationCardComponent(cardContentLayout);
-        registrationCardComponent.setWidth(null);
 
         mainContent.add(registrationCardComponent);
 
-        add(VaadinUIHelper.createFullHorizontalSpace());
         add(mainContent);
-        add(VaadinUIHelper.createFullHorizontalSpace());
     }
 
     private Button createRegisterButton() {
@@ -201,6 +214,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         registrationButton.setPrefixComponent(VaadinIcon.EDIT.create());
         registrationButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         registrationButton.setWidthFull();
+        registrationButton.addClassName("registration-submit");
         registrationButton.addClickListener(event -> handleRegistration());
         return registrationButton;
     }
@@ -350,6 +364,8 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         genderComboBox.setItemLabelGenerator(this::formatGender);
         this.birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
         birthDatePicker.setPrefixComponent(VaadinIcon.CALENDAR_USER.create());
+        birthDatePicker.setAutoOpen(false);
+        birthDatePicker.setPlaceholder(messageProperties.getRegistrationBirthDatePlaceholder());
         birthDatePicker.setClearButtonVisible(true);
         birthDatePicker.setWidthFull();
 

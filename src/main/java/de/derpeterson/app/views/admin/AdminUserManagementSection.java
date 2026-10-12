@@ -476,6 +476,14 @@ public class AdminUserManagementSection extends VerticalLayout {
         genderComboBox.setItemLabelGenerator(this::formatGender);
 
         DatePicker birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
+        birthDatePicker.setAutoOpen(false);
+        Runnable refreshBirthDate = () -> {
+            birthDatePicker.setLocale(VaadinSession.getCurrent() != null
+                    ? VaadinSession.getCurrent().getLocale() : Locale.getDefault());
+            birthDatePicker.setLabel(messageProperties.getRegistrationBirthDateField());
+            birthDatePicker.setPlaceholder(messageProperties.getDateInputPlaceholder());
+        };
+        refreshBirthDate.run();
         birthDatePicker.setWidthFull();
         birthDatePicker.setRequired(true);
         birthDatePicker.setMax(LocalDate.now());
@@ -660,6 +668,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
         dialog.add(dialogLayout);
         Runnable refreshErrors = () -> {
+            refreshBirthDate.run();
             if (binder.getFields().anyMatch(field -> field instanceof com.vaadin.flow.component.shared.HasValidationProperties validation && validation.isInvalid())) {
                 binder.validate();
             }

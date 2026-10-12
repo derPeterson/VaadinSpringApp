@@ -6,7 +6,7 @@ Automatisierte Browserprüfungen mit Java, JUnit und Allure in eigener Docker-Te
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Diese Beschreibung basiert auf dem Quellcode und der Build-Konfiguration. Der vollständige serverseitige Testlauf wurde am 07.10.2026 mit Java 25 geprüft (siehe „Tests und Prüfstand“). Node.js und der Package-Build wurden zuletzt am 01.10.2026 geprüft. Die Anwendung wurde nicht gestartet; ein erfolgreicher Laufzeitbetrieb ist damit nicht nachgewiesen.
+> Aktueller Prüfstand vom 12.10.2026: Java 25, 1.034 Anwendungstests mit JaCoCo sowie 24 Browser-Helper-/Reportertests erfolgreich. Das gebaute Docker-JAR wurde mit 44 Browserfällen jeweils auf Deutsch und Englisch in isoliertem H2/Mailpit geprüft. Umfang und verbleibende Grenzen: [Browserabdeckung](browser-tests/abdeckung.md).
 
 ## Funktionen
 
@@ -21,6 +21,11 @@ Worker-Koordination, Retry-Verhalten und konservativer Umgang mit unklaren
 Versandausgängen: [Mailqueue-Verarbeitung](docs/email-queue-processing.md).
 
 Belege: `views/RegistrationView.java`, `views/LoginView.java`, `views/admin/`, `service/VerificationService.java`, `service/PasswordResetService.java`, `service/EmailQueueService.java`, `security/SecurityConfig.java` und `scheduler/UserStatusScheduler.java` unter `src/main/java/de/derpeterson/app/`.
+
+Die Registrierung verwendet eine responsive Formularkarte ohne Foto-/Bildspalte.
+Ihr dunkler Hintergrund mit blauen Kreisbögen und Punktraster entsteht vollständig
+im CSS. Unter 600 px stehen Feldpaare untereinander; die Seite wächst mit dem Inhalt
+und lässt sich vertikal scrollen. Validierung und Verifikationsablauf bleiben erhalten.
 
 ## Gemeinsame Texte und UI-Konstanten
 
@@ -148,7 +153,7 @@ java -jar target/app-1.0-SNAPSHOT.jar
 
 Unter Linux/macOS entsprechend `./mvnw` statt `.\mvnw.cmd` verwenden. Alternativ ist `Application.java` der IDE-Einstiegspunkt. Standardadresse: `http://localhost:8080/`; Kontoseiten liegen unter `/login`, `/registration` und `/forgot-password`.
 
-Geprüft wurden `clean test` und anschließend `package -Pproduction` mit dem Wrapper. Startbefehle wurden nicht ausgeführt; der tatsächliche Produktionsmodus im laufenden Server und der JAR-Start bleiben ungeprüft. Insbesondere ist `vaadin-dev` zusätzlich direkt als Abhängigkeit deklariert, während das Profil es nur an `vaadin-core` ausschließt.
+Geprüft wurden `clean test jacoco:report` mit dem Wrapper und ein frischer Produktions-Frontend-/JAR-Build im Docker-Build. Das verpackte JAR wurde anschließend in der isolierten Browser-Testumgebung gestartet. Ein separater aktueller Start außerhalb Docker wurde nicht geprüft. `vaadin-dev` ist zusätzlich direkt als Abhängigkeit deklariert, während das Profil es nur an `vaadin-core` ausschließt.
 
 ## Benutzerverwaltung: Filter und Seiten
 
@@ -158,6 +163,11 @@ Datum und optionaler Uhrzeit werden gemeinsam angewendet. Eine Rollenmitgliedsch
 auch bei mehreren Rollen. „Letzte Aktivität“ schließt den gewählten lokalen Zeitpunkt
 ein; ohne Uhrzeit gilt der Tag ab 00:00 Uhr. Ohne gespeicherte Aktivität gibt es
 bei aktivem Zeitfilter keinen Treffer.
+Datum und Uhrzeit öffnen ihre Auswahllisten nur über die Icons oder vorgesehenen
+Pfeiltasten. Kurze DE-/EN-Beispiele stammen aus dem gemeinsamen Übersetzungskatalog;
+„Uhrzeit optional“ steht klein neben der Filterüberschrift. Das Geburtstagsfeld im
+Anlegen-/Bearbeiten-Dialog hat dieselbe Bedienung; Sprachwechsel erhalten den Wert.
+
 Beide Zeitfelder leeren hebt die Zeitbedingung auf. Freigabe und Präsenzstatus
 sind unterschiedliche Kriterien.
 
@@ -207,7 +217,17 @@ offenen Punkte stehen in der Browserdokumentation.
 
 Unter `src/test/java/` liegen Unit- und serverseitige Regressionstests für Benutzerverwaltung, Eingaberegeln, Registrierung, Konfiguration, Benachrichtigungen, Session-/Remember-me-/Push-RPC-Sicherheit sowie Status und Nebenläufigkeit. Persistenztests verwenden isolierte H2-In-Memory-Datenbanken, nicht die Anwendungsdatenbank. Vaadin-Tests prüfen serverseitige Komponenten und Callbacks mit kontrollierten UI-/Sessionfixtures, ohne Browser oder Anwendungsstart. `ImageHelperTest` prüft zusätzlich das echte Mail-Logo als Classpath-Ressource. `src/test/resources/logback-test.xml` konfiguriert das Test-Logging.
 
-Am 07.10.2026 unter Windows tatsächlich ausgeführt:
+Aktueller Prüfstand am 12.10.2026 unter Windows:
+
+| Prüfung | Ergebnis |
+| --- | --- |
+| `.\mvnw.cmd clean test jacoco:report` | Java 25, 1.034 Tests, keine Fehler/Fehlschläge/Skips; Coveragebericht erzeugt |
+| Browser-Helper/Reporter | 24/24 erfolgreich |
+| Vollständige Browserläufe DE und EN | jeweils 44/44 erfolgreich; isoliertes Docker/H2/Mailpit |
+
+Aktuelle Einzelbelege und verbleibende Journeys stehen in [Browserabdeckung](browser-tests/abdeckung.md).
+
+Historischer Prüfstand vom 07.10.2026:
 
 | Befehl | Ergebnis |
 | --- | --- |
@@ -217,7 +237,7 @@ Am 07.10.2026 unter Windows tatsächlich ausgeführt:
 
 Öffentliche Servicevoraussetzungen und Exceptions: [UserService-Verträge](docs/user-service-contract.md).
 
-Historischer Prüfstand vom 01.10.2026 (Package/Node/JAR seitdem nicht erneut geprüft):
+Historischer Prüfstand vom 01.10.2026:
 
 | Befehl | Ergebnis |
 | --- | --- |
@@ -227,11 +247,11 @@ Historischer Prüfstand vom 01.10.2026 (Package/Node/JAR seitdem nicht erneut ge
 | `.\mvnw.cmd package -Pproduction` | **BUILD SUCCESS**; derselbe Test erneut erfolgreich; Spring-Boot-JAR erstellt |
 | `& "$env:JAVA_HOME\bin\jar.exe" tf target/app-1.0-SNAPSHOT.jar` | Enthält `META-INF/resources/custom-theme/service_logo.png` |
 
-Beide Builds meldeten, dass kein neuer Produktions-Frontend-Bundle-Build nötig war; ein vollständiger Neuaufbau dieses Bundles ist damit nicht geprüft. Es gab JDK-Warnungen zu Jansi-Native-Access und beim Kompilieren zu Lomboks Nutzung von `sun.misc.Unsafe`, aber keine Build-Fehler.
+Die beiden historischen Builds vom 01.10.2026 meldeten, dass kein neuer Produktions-Frontend-Bundle-Build nötig war. Der aktuelle Docker-Build vom 12.10.2026 hat das Produktionsfrontend neu gebaut. Es gab JDK-Warnungen zu Jansi-Native-Access und beim Kompilieren zu Lomboks Nutzung von `sun.misc.Unsafe`, aber keine Build-Fehler.
 
 `VerificationService` und `PasswordResetService` laden das Logo nun über `ImageHelper` als **Classpath-Stream**, ohne lokalen Dateipfad oder Dateiextraktion. Das bisherige Mailformat bleibt erhalten: Der Helper liefert reines Base64, die HTML-Vorlagen ergänzen `data:image/png;base64,`. Der Test prüft die Ressource im Test-Classpath; `jar tf` prüft deren Verpackung, nicht den Ladevorgang im laufenden JAR.
 
-**Die erfolgreichen serverseitigen Regressionen sind kein vollständiger End-to-End-Funktionstest.** Start, Browserdarstellung, Login im Browser, echte Netzwerk-WebSockets, Mailversand/-darstellung und Bestandsmigrationen bleiben ungeprüft. `.\mvnw.cmd verify -Pit,production` würde die vorbereitete Failsafe-Konfiguration aktivieren und die Anwendung starten/stoppen; dieser Befehl wurde nicht ausgeführt. Es gibt keine explizite Browser-/WebDriver-Konfiguration im Profil.
+**Die erfolgreichen Tests belegen die beschriebenen Fälle, keine vollständige Prüfung aller Betriebsabläufe.** Die Browserläufe belegen Start, Darstellung, Login und ausgewählte Mailjourneys mit lokaler SMTP-Zustellung an Mailpit. Reale Geräte, externe Maildarstellung/-zustellung, zusätzliche Sicherheitsjourneys und Bestandsmigrationen bleiben offen (siehe Abdeckungsübersicht). `.\mvnw.cmd verify -Pit,production` würde die vorbereitete Failsafe-Konfiguration aktivieren und die Anwendung starten/stoppen; dieser Befehl wurde nicht ausgeführt. Es gibt keine explizite Browser-/WebDriver-Konfiguration im Profil.
 
 ## Styles, Bilder und generierte Dateien
 

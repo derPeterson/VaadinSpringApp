@@ -2,22 +2,36 @@ package de.derpeterson.app.views.admin;
 
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.timepicker.TimePicker;
 import de.derpeterson.app.i18n.MessageProperties;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Locale;
 
-/** Inclusive local cutoff: a date without a time starts at midnight. */
+/**
+ * Inclusive local cutoff: a date without a time starts at midnight.
+ */
 final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
     private final DatePicker date = new DatePicker();
     private final TimePicker time = new TimePicker();
+    private final Span caption = new Span();
+    private final Span optionalTimeHint = new Span();
     private boolean presenting;
 
     AdminUserActivityFilter() {
         super(null, true);
+        date.setAutoOpen(false);
+        time.setAutoOpen(false);
+        Span label = new Span(caption, optionalTimeHint);
+        label.getElement().setAttribute("slot", "label");
+        optionalTimeHint.addClassName("admin-user-activity-optional-note");
+        // Screen readers already receive the optional-time input label below.
+        optionalTimeHint.getElement().setAttribute("aria-hidden", "true");
+        getElement().appendChild(label.getElement());
         date.setClearButtonVisible(true);
         time.setClearButtonVisible(true);
         // Vaadin offers a time dropdown for steps of at least fifteen minutes.
@@ -40,9 +54,12 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
     }
 
     void refreshTexts(MessageProperties texts) {
+        caption.setText(texts.getAdminUsersFilterActiveSince());
+        optionalTimeHint.setText(texts.getAdminUsersActivityTimeOptional());
         date.setAriaLabel(texts.getAdminUsersActivityDate());
+        date.setPlaceholder(texts.getDateInputPlaceholder());
         time.setAriaLabel(texts.getAdminUsersActivityTimeOptional());
-        time.setPlaceholder(texts.getAdminUsersActivityTimeOptional());
+        time.setPlaceholder(texts.getTimeInputPlaceholder());
     }
 
     private void inputChanged() {

@@ -25,6 +25,7 @@ Eine globale Playwright- oder Allure-Installation ist nicht erforderlich.
 | Aktion | Befehl |
 | --- | --- |
 | Tests live im sichtbaren Browser verfolgen | `.\browser-tests\run.ps1 -Headed` |
+| Nur Benutzerfilter prüfen | `.\browser-tests\run.ps1 -Suite user-filters -Language de` |
 | Nur Benutzerverwaltung prüfen | `.\browser-tests\run.ps1 -Suite user-management -Language de` |
 | Helper und Reporter ohne Docker prüfen | `.\browser-tests\run.ps1 -ReportingTests` |
 | Letzten Allure-Bericht öffnen | `.\browser-tests\run.ps1 -Report` |
@@ -55,10 +56,22 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler und Links | 6 |
 | `account-lifecycle` | Einzelvalidierungen, kanonisierte Dubletten, unverifizierte Anfrage und altes Resetformular | 5 |
-| `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung und Tastaturlogin | 4 |
+| `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung mit Datumeingabe/Kalenderauswahl und Tastaturlogin | 5 |
 | `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
-| `user-management` | Suche/Pagination, optionale Filter, Anlage, Bearbeitung, Löschung, Selbstschutz und Passwortwechsel | 8 |
-| `all` | Alle neun Suites | 42 |
+| `user-management` | Suche/Pagination, optionale Filter, Anlage, Bearbeitung, Löschung, Selbstschutz und Passwortwechsel | 9 |
+| `user-filters` | Teilmenge der Benutzerverwaltung: direkte Datumeingabe und Kalenderauswahl, optionale Uhrzeit, kombinierte Filter/Clear | 2 |
+| `all` | Alle zehn Testklassen, einschließlich beider Benutzerfilterfälle | 44 |
+
+UI-01A prüft die direkte Datumseingabe mit lokalisiertem Beispiel und anschließendem
+Registrieren ohne Enter/Escape. UI-01B prüft getrennt die Auswahl über das Kalender-Icon,
+das markierte Datum beim Wiederöffnen und das tatsächliche Absenden. Ein Feldklick
+öffnet bei der Registrierung kein Overlay. Aktuelle Nachweise stehen in `abdeckung.md`.
+
+Datum und Uhrzeit im Aktivitätsfilter öffnen ihre Auswahllisten nur über das Icon
+(oder die vorgesehenen Pfeiltasten). Kurze formatgerechte DE-/EN-Beispiele kommen
+aus dem gemeinsamen Übersetzungskatalog; „Uhrzeit optional“ steht neben der
+Filterüberschrift. Das Geburtstagsfeld im Anlegen-/Bearbeiten-Dialog verwendet
+ebenfalls direkte Eingabe ohne automatisches Öffnen und denselben kurzen Datumsplatzhalter.
 
 Die vollständigen Schritte und Erwartungen stehen pro Fall in `@Description`
 und werden automatisch in den Markdown-Bericht übernommen. Die Test-ID erscheint
@@ -132,7 +145,7 @@ Eine automatische Anbindung an das OpenCode-Benchmarking ist nicht eingerichtet.
 
 Ein Lauf prüft eine ausdrücklich über die Oberfläche gewählte Sprache: `de` oder `en`.
 Erwartungen akzeptieren nicht gleichzeitig beide Übersetzungen. Für einen vollständigen
-Vergleich beide Sprachen ausführen; derzeit sind das 42 Fälle je Sprache.
+Vergleich beide Sprachen ausführen; derzeit sind das 44 Fälle je Sprache.
 
 Die Getter sind einmalig in `shared/src/main/java/de/derpeterson/app/i18n/MessageTexts.java`
 definiert. Die Anwendung verwendet `MessageProperties`, die Browsertests `UiTexts`.
