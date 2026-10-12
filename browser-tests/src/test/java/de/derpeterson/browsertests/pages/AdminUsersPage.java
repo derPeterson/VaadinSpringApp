@@ -53,6 +53,10 @@ public final class AdminUsersPage {
 
     @Step("Genau das eigene Konto per E-Mail suchen und dessen sichtbaren Editierbutton öffnen")
     public AdminUserDialog openEdit(String email) {
+        open();
+        // Login/logout and other users may have changed the stored row version.
+        // Use the offered refresh action before opening a new snapshot; open forms remain untouched.
+        button(texts.getAdminUsersRefreshTooltip()).click();
         search(email);
         assertThat(emailCells(email)).hasCount(1);
         assertThat(emailCells(email)).hasText(email);

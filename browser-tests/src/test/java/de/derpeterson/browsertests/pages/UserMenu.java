@@ -42,10 +42,18 @@ public final class UserMenu {
 
     @Step("Über die Oberfläche abmelden")
     public void signOut() {
-        open();
-        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions()
-                .setName(texts.getBaseLogoutButton()).setExact(true)).click();
+        requestSignOut();
         new LoginPage(page).assertFormVisible();
+    }
+
+    @Step("Abmelden anklicken und die echte Logout-Antwort abwarten")
+    public void requestSignOut() {
+        open();
+        // Synchronize the actual browser RPC; no synthetic request or state mutation.
+        page.waitForResponse(response -> response.request().method().equals("POST")
+                && response.url().startsWith(System.getProperty("browser.tests.baseUrl"))
+                && response.url().contains("v-r=uidl"), () -> page.getByRole(AriaRole.BUTTON,
+                        new Page.GetByRoleOptions().setName(texts.getBaseLogoutButton()).setExact(true)).click()).finished();
     }
 
     @Step("Normales Konto ist angemeldet und hat keine Adminaktion im Menü")

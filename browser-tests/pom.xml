@@ -33,10 +33,13 @@
     </dependencies>
     <build>
         <testResources>
-            <!-- Share original translation files; no copied text catalogue or application dependency. -->
+            <!-- Share original translations and canonical mail templates; no copied catalogue or application dependency. -->
             <testResource>
                 <directory>${project.basedir}/../src/main/resources</directory>
-                <includes><include>i18n/messages_*.properties</include></includes>
+                <includes>
+                    <include>i18n/messages_*.properties</include>
+                    <include>email/*.html</include>
+                </includes>
                 <filtering>false</filtering>
             </testResource>
         </testResources>

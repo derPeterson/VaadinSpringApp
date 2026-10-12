@@ -45,6 +45,33 @@ public final class AdminUserDialog {
         check(texts.getRoleAdmin(), administrator);
     }
 
+    @Step("Freigabe im Benutzerformular ändern")
+    public void setEnabled(boolean enabled) { check(texts.getAdminUsersFieldEnabled(), enabled); }
+
+    public Locator enabled() {
+        return root().getByRole(AriaRole.CHECKBOX,
+                new Locator.GetByRoleOptions().setName(texts.getAdminUsersFieldEnabled()).setExact(true));
+    }
+
+    @Step("Administratorrolle im Benutzerformular vergeben oder entziehen")
+    public void setAdministrator(boolean selected) { check(texts.getRoleAdmin(), selected); }
+
+    public Locator administrator() {
+        return root().getByRole(AriaRole.CHECKBOX,
+                new Locator.GetByRoleOptions().setName(texts.getRoleAdmin()).setExact(true));
+    }
+
+    @Step("Speichern versuchen und erwarteten fachlichen Hinweis prüfen")
+    public void expectSaveError(String message) {
+        assertThat(saveButton()).isEnabled();
+        saveButton().click();
+        assertThat(page.locator("vaadin-notification-card:not([closing])")).containsText(message);
+        assertThat(root()).hasCount(1);
+        Locator notice = page.locator("vaadin-notification-card:not([closing])");
+        notice.getByRole(AriaRole.BUTTON).click();
+        assertThat(notice).not().isVisible();
+    }
+
     @Step("Benutzerformular speichern und dessen tatsächliches Schließen abwarten")
     public void save() {
         assertThat(saveButton()).isEnabled();

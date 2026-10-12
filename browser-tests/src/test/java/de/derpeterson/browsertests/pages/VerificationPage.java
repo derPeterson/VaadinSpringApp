@@ -24,6 +24,16 @@ public final class VerificationPage {
         assertThat(page.getByText(texts.getVerificationSuccessText(), new Page.GetByTextOptions().setExact(true))).isVisible();
     }
 
+    @Step("Aufbewahrter abgelaufener Link zeigt keinen Aktivierungserfolg")
+    public void assertExpired() {
+        assertThat(page).hasURL(urlPattern(VERIFICATION_ROUTE, "/[0-9a-f-]+"));
+        assertThat(page).hasTitle(VERIFICATION_PAGE_TITEL);
+        assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions()
+                .setName(texts.getVerificationExpiredTitle()).setExact(true))).isVisible();
+        assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions()
+                .setName(texts.getVerificationSuccessTitle()).setExact(true))).hasCount(0);
+    }
+
     @Step("Unbekannter Verifikationslink zeigt einen verständlichen Fehler")
     public void assertUnknownToken() {
         assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions()

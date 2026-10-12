@@ -21,6 +21,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.VaadinRequest;
+import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -34,6 +35,7 @@ import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.ui.components.CardComponent;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -116,7 +118,8 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
                 if (authentication.getPrincipal() instanceof UserDetails userDetails) {
-                    securityService.storeAuthenticatedUser((HttpServletRequest) VaadinRequest.getCurrent(), userDetails, rememberMeCheckBox.getValue());
+                    securityService.storeAuthenticatedUser((HttpServletRequest) VaadinRequest.getCurrent(),
+                            (HttpServletResponse) VaadinResponse.getCurrent(), userDetails, rememberMeCheckBox.getValue());
 
                     securityService.handleLogin(userDetails);
                 } else {

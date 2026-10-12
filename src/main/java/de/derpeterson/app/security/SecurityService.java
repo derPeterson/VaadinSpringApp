@@ -21,6 +21,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +39,7 @@ public class SecurityService {
     private final UserService userService;
     private final UserRepository userRepository;
     private final CustomUserDetailsService userDetailsService;
+    private final SecurityContextRepository securityContextRepository;
 
     /**
      * Runs before Vaadin resolves/locks a UI, including for each WebSocket
@@ -112,7 +114,7 @@ public class SecurityService {
         return Optional.empty();
     }
 
-    public void storeAuthenticatedUser(HttpServletRequest request, UserDetails user, Boolean rememberMe) {
+    public void storeAuthenticatedUser(HttpServletRequest request, HttpServletResponse response, UserDetails user, Boolean rememberMe) {
         if (VaadinSession.getCurrent() != null) {
             VaadinSession.getCurrent().setAttribute(UserDetails.class, user);
         }
@@ -126,14 +128,14 @@ public class SecurityService {
         }
 
         var auth = restoreSecurityContext(user);
+        // Der eigene Vaadin-Login muss den Kontext ausdrücklich für Folgeanfragen speichern.
+        // Sonst starten parallele Folgeanfragen erneut Remember-me und rotieren dasselbe Cookie mehrfach.
+        securityContextRepository.saveContext(SecurityContextHolder.getContext(), request, response);
 
         if (Boolean.TRUE.equals(rememberMe)) {
-            HttpServletRequest req = (HttpServletRequest) VaadinRequest.getCurrent();
-            HttpServletResponse resp = (HttpServletResponse) VaadinResponse.getCurrent();
-
             rememberMeServices.setAlwaysRemember(true);
 
-            rememberMeServices.loginSuccess(req, resp, auth);
+            rememberMeServices.loginSuccess(request, response, auth);
         } else {
             rememberMeServices.setAlwaysRemember(false);
         }
@@ -141,7 +143,9 @@ public class SecurityService {
 
     private Authentication restoreSecurityContext(UserDetails user) {
         Authentication auth = new UsernamePasswordAuthenticationToken(user, user.getPassword(), user.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(auth);
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(auth);
+        SecurityContextHolder.setContext(context);
         return auth;
     }
 

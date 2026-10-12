@@ -6,25 +6,35 @@ Dies ist die zentrale Übersicht zum Prüfstand. Bedienung und Aufbau stehen in 
 
 ## Letzter vollständiger Prüfstand
 
-Arbeitsbranch: `feature/browser_manual_coverage`, Commit `664ad9cc`, mit lokalen Änderungen.
-Beide Browserläufe verwendeten dasselbe frisch gebaute Anwendungsimage und jeweils
-eigene frische Docker-/H2-/Mailpit-Daten. Keine Bestandsdaten oder echten Postfächer.
+Arbeitsbranch: `main`, Ausgangscommit `d0f33d16`, mit den hier beschriebenen lokalen Änderungen.
+Die beiden abschließenden Gesamtläufe verwendeten dasselbe frisch gebaute Anwendungsimage
+und jeweils eigene frische Docker-/H2-/Mailpit-Daten. Keine Bestandsdaten oder echten Postfächer.
 
 | Prüfung | Ergebnis | Nicht bestandene Fälle |
 | --- | --- | --- |
-| Anwendung und JaCoCo | 1034/1034, keine Fehler/Fehlschläge/Skips | keine |
+| Anwendung und JaCoCo | 1036/1036, keine Fehler/Fehlschläge/Skips | keine |
 | Helper/Reporter | 24/24, keine Fehler/Fehlschläge/Skips | keine |
-| Browser Deutsch | 44/44, keine Fehler/Skips | keine |
-| Browser Englisch | 44/44, keine Fehler/Skips | keine |
+| Browser Deutsch | 70/70, keine Fehler/Skips | keine |
+| Browser Englisch | 70/70, keine Fehler/Skips | keine |
 
-- [Vollständiger DE-Bericht](runs/2026-10-12T18-31-45_UTC__664ad9cc__cf19ae2f/report.md)
-- [Vollständiger EN-Bericht](runs/2026-10-12T18-38-08_UTC__664ad9cc__8008e05d/report.md)
+- [Vollständiger DE-Bericht](runs/2026-10-12T20-35-51_UTC__d0f33d16__a6bcc4c8/report.md)
+- [Vollständiger EN-Bericht](runs/2026-10-12T20-48-59_UTC__d0f33d16__d7f70c45/report.md)
 
-Aufbau, Abbau und HTML-Erzeugung waren in beiden Läufen erfolgreich.
-HTML-Berichte über ihre `html/open-report.bat` öffnen; Screenshots/Traces bleiben im Archiv.
-Die erfolgreichen 44 Browserfälle ersetzen nicht alle 44 ursprünglichen manuellen
-Fälle: Die beiden Kataloge haben unterschiedliche IDs und Teilabläufe. Fehlende
-Journeys, Betriebsprüfungen und menschliche Einschätzungen bleiben unten ausgewiesen.
+Aufbau, Abbau und HTML-Erzeugung waren erfolgreich. HTML-Berichte über ihre
+`html/open-report.bat` öffnen; Screenshots/Traces bleiben im jeweiligen Archiv.
+Die 70 Browserfälle und die 44 ursprünglichen manuellen Fälle haben unterschiedliche
+Teilabläufe und IDs. Ihr Vergleich steht unten; erfolgreiche Browserläufe bedeuten
+keine vollständige 100-%-Ablösung aller Betriebs- und menschlichen Prüfungen.
+
+Der neue Remember-me-Ablauf hat eine fehlende Spring-Kontextspeicherung nach dem
+eigenen Vaadin-Login aufgedeckt: das zunächst gesetzte Cookie wurde durch erneute
+Remember-me-Anmeldungen paralleler Folgeanfragen wieder gelöscht. Der Login speichert
+den Kontext jetzt ausdrücklich über das vorhandene `SecurityContextRepository`,
+bevor das Cookie ausgegeben wird. Zwei technische Varianten lesen den Kontext aus
+einer unabhängigen Folgeanfrage; der Browser bestätigt Cookie, echten Prozessneustart
+und Logout mit erneutem Neustart. Die bestehende Sperr-/Rollenprüfung bleibt erhalten.
+Die fehlgeschlagenen Zwischenläufe sind historische Belege, keine offenen Fehler
+dieses abschließenden Prüfstands.
 
 ## Einheitliche Datum-/Uhrzeitbedienung
 
@@ -70,28 +80,31 @@ Gesamtläufen. Der Editierbutton wird vor dem echten Mausklick sichtbar gemacht 
 fokussiert, damit die native Grid-Scrollbewegung den Klick nicht verliert. Erwartungen,
 Speicher-/Anmeldeprüfungen und Sicherheitsregeln bleiben erhalten.
 
-Aktuell sind keine fehlgeschlagenen Fälle unter den 44 registrierten Browserfällen
-offen. Die folgenden noch nicht aufgenommenen Abläufe sind weiterhin keine
-vollständigen Browsernachweise.
+Aktuell sind keine fehlgeschlagenen Fälle unter den 70 registrierten Browserfällen
+offen. Die ergänzten Pakete und die weiterhin nur teilweise abgedeckten ursprünglichen
+Fälle sind nachfolgend getrennt aufgeführt.
 
-## Weitere fehlende Abläufe und sinnvolle Reihenfolge
+## Ergänzte Arbeitspakete
 
-1. **Benutzerverwaltung ergänzen:** Sperren/Freigeben, gezieltes Aktivieren
-   unverifizierter Konten und zwei tatsächlich offene veraltete Adminformulare.
-2. **Darauf aufbauend Sitzungen und alte Links:** Rollenentzug, Kontosperre/Löschung
-   bei bestehenden Verbindungen sowie Verifikations-/Resetlinks nach Adminänderungen.
-3. **Status/Live-Aktualisierung:** aktuelle Value-Anzeige von gleichlautenden Optionen
-   trennen; anschließend manuellen Status und automatische Abwesenheit/Rückkehr prüfen.
-4. **Remember-me:** Popover nach Login zuverlässig bedienen, tatsächliche Checkbox,
-   Cookieauslieferung, echten Browserneustart und Logout prüfen. Frühere Cookiebeobachtung
-   ist ein Hinweis, kein bewiesener Authentifizierungsfehler; keine aktive Suite aufgenommen.
-5. **Übrige Konfiguration und Admin-Testmail:** richtige Konfigurationsgruppen,
-   Boolean-/Zahlenwerte und Neustartwirkung prüfen. Unicode-Mail wurde früher empfangen;
-   Vergleich am regulären SMTP-Zeilenabschluss gescheitert, kein bestätigter Versandfehler.
-6. **Token-/Mailabläufe ergänzen:** Ablauf mit echten Mindestdauern, erneuter Versand,
-   ungültige Eingaben im Verifikations-Anforderungsformular und vollständige Mail-Footer.
-   Die vier Token-Konfigurationsfälle CONFIG-03A–D bestehen DE/EN; Mindestgrenzen
-   sind eine Minute Gültigkeit und zwei Minuten Aufbewahrung nach Ablauf.
+| Paket | Neue UI-Aussagen | Suite / IDs |
+| --- | --- | --- |
+| 1 | Sperren/Freigeben, gezieltes Aktivieren unverifizierter Konten, Rollenvergabe/-entzug, echte zwei alte Formulare und Selbstschutz | `user-access`: USER-07A–E |
+| 2 | Alte privilegierte Callbacks nach Rollenentzug/Sperre/Löschung; alte Verifikations- und Resetbuttons; neutrale gesperrte Anfrage | `session-security`: SESSION-01A–E (einschließlich Remember-me bei Sperre/Löschung); `blocked-links`: SEC-LINK-01A/B und SEC-LINK-02A/B, RESET-03C |
+| 3 | Echter Browserneustart mit/ohne Remember-me und nach Logout; Statuswahl, zweiter Tab, automatische Abwesenheit/Rückkehr | `remember-me`: AUTH-07A/B; `user-status`: STATUS-01/02 |
+| 4 | Weitere String-/Boolean-/Integerkonfiguration, Unicode-Testmail, echte Tokenabläufe/Resend und Verifikationsanfragefehler | `configuration`: CONFIG-04A–C; `admin-mail`: MAIL-01; `token-expiry`: VER-03A, RESET-06A, VER-02B |
+
+Jeder Fall enthält eigene Schritte und Erwartungen im erzeugten Markdown-Bericht.
+Implementierung allein zählt nicht als erfolgreicher Nachweis; Resultate stehen oben.
+Die Oberfläche bereitet sämtliche Anwendungszustände vor. Mailpit liefert nur die
+eigene tatsächlich versandte SMTP-Mail. Interne Regeln bleiben technische Tests.
+
+## Noch sinnvoll als nächster Schritt
+
+Die vier UI-Pakete sind geprüft. Als Nächstes bieten sich kontrollierte
+Betriebsfixtures an: Neustart mit derselben eigenen Testdatenbank, SMTP-Stopp und
+Wiederanlauf sowie deren Bericht. Weitere Browserpakete betreffen offene
+Fehlerdialoge beim Sprachwechsel und schmale Admin-/Resetansichten.
+Queue-/Audit-Innenzustände werden dafür nicht in gewöhnliche UI-Tests gepresst.
 
 ## Grenzen der Testarten
 
@@ -122,41 +135,41 @@ Falls abdecken. Es wird kein künstlicher Gesamt-Prozentwert berechnet.
 |---|---|---|---|---|
 | START-01 | Erststart mit frischer Datenbank | TEILWEISE / TECHNISCH | INFRA-01/02, AUTH-01A, Runner-Aufbau | Frische Docker-Daten, Login/Admin und Rollen bei Anlage sichtbar; Tabellen-/Audit-/Loginspektion kein Browsernachweis |
 | START-02 | Erneuter Start erhält Daten und Konfiguration | OFFEN – BETRIEB | Kein Neustartfall mit derselben Datenbank | Runner startet absichtlich jedes Mal frische Daten; benötigt kontrollierte Neustart-Orchestrierung, keine manuelle Umgebung verwenden |
-| START-03 | Erststart und Neustart verwenden die richtige Mailkonfiguration | TEILWEISE | REG/VER/RESET und SMTP-Mailpit | Erststart-Zustellung belegt; Vergleich Erststart/Neustart und Admin-Testmail noch offen |
+| START-03 | Erststart und Neustart verwenden die richtige Mailkonfiguration | TEILWEISE | REG/VER/RESET, MAIL-01 und SMTP-Mailpit | Erststart-Zustellung und Admin-Testmail belegt; Vergleich Erststart/Neustart bleibt offen |
 | REG-01 | Gültige Registrierung | TEILWEISE | REG-01A, VER-01A, SEC-01A | Registrierung/Mail/gesperrter Vorlogin belegt; explizite Admininspektion und genaue Kontozahl fehlen |
 | REG-02 | Pflichtfelder und ungültige Eingaben | TEILWEISE / TECHNISCH | REG-02A/B/C/D | Geforderte UI-Eingabevarianten und Korrekturen geprüft; Nichtanlage/Nichtversand jeder einzelnen Variante bleiben gesonderte technische Aussagen |
 | REG-03 | Doppelte E-Mail und Kanonisierung | TEILWEISE / TECHNISCH | REG-03A | Exakte/kanonisierte Dublette abgewiesen und Passwort unverändert; genaue Anzahl gespeicherter Identitäten technisch prüfen |
-| VER-01 | Gültiger Link und erneute Verwendung | TEILWEISE | VER-01A/B, MailpitInbox | Aktivierung/erneute Verwendung und Mail-Schlüsselangaben geprüft; Footer nicht ausdrücklich mit Getter verglichen |
-| VER-02 | Ungültiger oder fehlender Token | TEILWEISE | VER-02A | Unbekannter/fehlender Token geprüft; ungültige Eingabe im tatsächlich angebotenen Anforderungsformular fehlt |
-| VER-03 | Ablauf und erneuter Versand | OFFEN – ABHÄNGIG | Technische Clock-/Queue-Persistenztests vorhanden | UI-Speicherung von einer Minute ist jetzt durch CONFIG-03A belegt; Ablauf mit echter Wartezeit wurde noch nicht ergänzt. Erneuten Versand/Deduplizierung nicht als Browsererfolg zählen |
-| VER-04 | Adminsperre bleibt trotz alter Links bestehen | OFFEN – ABHÄNGIG | Technische Sperrregressionen vorhanden | Adminbearbeitung jetzt durch USER-06B belegt; spezifische Sperre unverifizierter/verifizierter Konten und Prüfung alter Links noch nicht ergänzt |
+| VER-01 | Gültiger Link und erneute Verwendung | UI-ABGEDECKT | VER-01A/B, MailpitInbox | Echte Mail: eigene Adresse, gewählter Betreff, Name, Service, vollständiger kanonischer DE-/EN-Footer, Platzhalter und lokaler Mailbutton; Aktivierung, Anmeldung und idempotente Wiederverwendung. Externe Mailclients bleiben Sonderprüfungen |
+| VER-02 | Ungültiger oder fehlender Token | UI-ABGEDECKT | VER-02A/B | Unbekannter/fehlender Token, Pflichtfeld/Syntaxfehler, Korrektur und erneute echte Mail geprüft |
+| VER-03 | Ablauf und erneuter Versand | TEILWEISE / TECHNISCH | VER-03A, CONFIG-03A, Queue-Persistenztests | Echte Minute abgewartet, abgelaufener Mailbutton, erneuter Versand, neue Mail-ID/Link, alter ungültiger Link und Anmeldung geprüft; absichtlich offen gehaltene Queue und konkurrierende Deduplizierung bleiben technisch |
+| VER-04 | Adminsperre bleibt trotz alter Links bestehen | UI-ABGEDECKT | SEC-LINK-01A/B (vorher aktiviert: nein/ja) | Unbenutzter wie bereits benutzter Mailbutton und erneuter Versand heben ausdrückliche Adminsperre nicht auf; gespeicherte Freigabe und verweigerter Login geprüft |
 | AUTH-01 | Erfolgs- und Fehlerfälle | UI-ABGEDECKT | AUTH-01A–D, REG-01A, SEC-01A, VER-01A | Erfolg/falsches Passwort/unbekannt/unverifiziert/anonym geprüft; zusätzliche hypothetische Sperrregeln nicht behauptet |
 | AUTH-02 | Abmeldung, Zurück und bestehende Tabs | TEILWEISE | AUTH-02A | Admin-Tabs, Logout, Zurück und neuer Zugriff belegt; alter geschützter Mutationscallback nicht vollständig geprüft |
-| AUTH-03 | Angemeldet bleiben | OFFEN | Zwei archivierte Remember-me-Versuche | Ohne Option zweimal echter Neustart bestanden; gesamte Variante mit Option und Logout nicht zuverlässig abgeschlossen, keine aktive Suite aufgenommen |
-| RESET-01 | Gültiger Reset | TEILWEISE | RESET-01A | Echte Mail/neues und altes Passwort belegt; vollständiger Mail-Footer-Vertrag nicht ausdrücklich verglichen |
-| RESET-02 | Anonyme Antwort verrät keine Konten | TEILWEISE | RESET-03A/03B, RESET-02A | Aktiv/unbekannt/unverifiziert und Syntax belegt; administrativ gesperrte Adresse bleibt abhängig von Adminbearbeitung offen |
+| AUTH-03 | Angemeldet bleiben | UI-ABGEDECKT | AUTH-07A/B | Zwei eigene temporäre Profile, tatsächliches Prozessende/Neustart mit und ohne Option; wiederhergestellte Identität, Cookieentfernung und dauerhaftes Logout geprüft. Keine Sitzungscookie-Injektion |
+| RESET-01 | Gültiger Reset | UI-ABGEDECKT | RESET-01A, MailpitInbox | Echte eigene Mail, Betreff, Dienst, vollständiger kanonischer DE-/EN-Footer und lokaler Button; neues Passwort funktioniert, altes nicht |
+| RESET-02 | Anonyme Antwort verrät keine Konten | UI-ABGEDECKT | RESET-03A/B/C, RESET-02A | Aktive, unbekannte, unverifizierte und administrativ gesperrte Adresse: identischer sichtbarer Anfragehinweis; Syntaxfehler separat. Kein Timing-/Rate-Limit-Nachweis |
 | RESET-03 | Passwortregeln, ungültige und verbrauchte Links | UI-ABGEDECKT | RESET-02B/04A/04B | Fehler/Korrektur, unbekannter und verbrauchter Link ohne weiteres Passwortformular; technische Regeln bleiben JUnit |
-| RESET-04 | Ablauf auch bei bereits geöffnetem Formular | OFFEN – ABHÄNGIG | Technische Clock-/Ablaufregressionen vorhanden | UI-Speicherung von einer Minute ist durch CONFIG-03C belegt; benötigt noch den Ablauf mit echter Wartezeit; keine Uhrmanipulation/Testzustandsinjektion als Ersatz |
+| RESET-04 | Ablauf auch bei bereits geöffnetem Formular | UI-ABGEDECKT / TECHNISCH | RESET-06A, CONFIG-03C | Formular vor Ablauf geöffnet, echte Mindestdauer abgewartet, alter Submit und neuer Aufruf abgewiesen; neues Passwort abgelehnt, ursprüngliches funktioniert. Exakte Gleichheitsgrenze bleibt JUnit |
 | RESET-05 | Zwei geöffnete Formulare für denselben Token | UI-ABGEDECKT | RESET-05A | Zwei getrennte anonyme Kontexte: erstes Speichern gewinnt, alter Submit abgewiesen und richtige Loginidentität geprüft; echte Parallelität separat |
-| RESET-06 | Sperre oder Löschung nach Linkerstellung | OFFEN – ABHÄNGIG | Technische Sperr-/Löschregressionen vorhanden | Adminbearbeitung/Löschung durch USER-06B/C belegt; gezielte Sperre und tatsächliche alte Resetlinks nach Änderungen noch nicht ergänzt |
+| RESET-06 | Sperre oder Löschung nach Linkerstellung | UI-ABGEDECKT | SEC-LINK-02A/B (Sperre/Löschung) | Echter alter Resetbutton bietet nach Sperre/Löschung kein Passwortformular; Login abgewiesen. Gezielte spätere Freigabe erhält das ursprüngliche Passwort |
 | USER-01 | Anlegen, bearbeiten und erneut öffnen | TEILWEISE | USER-05A/06A: Anlage, genaue Suche/Pagination, zentrale Validierung und neue Anmeldung; technische Filter-/Zeitregressionen | Datum/Kalender und optionale Zeit durch USER-05B/C sowie Bearbeitung/erneutes Öffnen durch USER-06B belegt; ausdrückliche Admininspektion aller Stammdaten bleibt ergänzbar |
-| USER-02 | Sperren und gezieltes Freigeben | OFFEN | Keine vollständige Browser-Sperre/Freigabe | Auch ausdrückliche Freigabe unverifizierter Konten fehlt |
-| USER-03 | Löschen mit zugehörigen Tokens und Queueeinträgen | TEILWEISE / TECHNISCH | Löschkaskaden in Persistenztests; USER-06C: Abbruch, Bestätigung und dauerhafte Abwesenheit des ausgewählten Kontos | UI-Löschung belegt; alte Links fehlen noch, interne Queue-/Tokenkaskaden bleiben technische Aussagen |
-| USER-04 | Veraltetes Bearbeitungsformular | OFFEN | Versionskonflikte in Persistenz-/UI-Komponententests | Zwei tatsächliche Adminformulare noch nicht bestätigt |
-| SEC-01 | Direkte URL und normale Benutzerrolle | TEILWEISE | AUTH-01D und SEC-01A | Anonym/normal ausgeschlossen und Bootstrapadmin funktioniert; nachträgliche Adminrollenvergabe fehlt |
-| SEC-02 | Rollenentzug bei offenem Adminformular / Push | OFFEN – ABHÄNGIG | PushRpcSecurityPersistenceTest, SessionAuthorityPersistenceTest | Adminbearbeitung jetzt belegt; Rollenentzug bei tatsächlich offener geschützter Browserverbindung fehlt noch |
-| SEC-03 | Sperre und Löschung bei laufender Sitzung | OFFEN – ABHÄNGIG | Sitzungs-/Sperrregressionen technisch | Reale Aktion nach Sperre/Löschung inklusive Remember-me noch nicht bestätigt |
-| SEC-04 | Letzten aktiven Admin schützen | TEILWEISE / TECHNISCH | AdminSecurityPersistenceTest | USER-06D belegt Selbstlöschschutz; Letzter-Admin-Schutz bei Rollen-/Freigabeänderungen fehlt noch als Browserablauf |
-| STATUS-01 | Manueller Status und Aktualisierung | OFFEN | Zwei archivierte Statusversuche | Vaadin-Slot- und Optionen-/Value-Locators zweimal gescheitert; kein vollständiger manueller Status-/Live-Nachweis übernommen |
-| STATUS-02 | Automatische Abwesenheit und Rückkehr | OFFEN – ABHÄNGIG / TECHNISCH | UserStatusSchedulerTest, UserStatusPersistenceTest | Kurzer Timeout plus echte sichtbare Status-/Rückkehrprüfung benötigen bestätigte Config- und Statushelfer |
-| CONFIG-01 | Zulässige Werte speichern | TEILWEISE | CONFIG-03A–D: vier Tokendauern an der Mindestgrenze gespeichert und neu geladen, DE/EN | Weitere Konfigurationsfelder (u. a. Boolean/Zahlen) und Neustartwirkung bleiben offen; früheres Gesamtpaket nicht nachträglich als erfolgreich werten |
-| CONFIG-02 | Ungültige Konfiguration bleibt abgelehnt | TEILWEISE – TOKENFEHLER BEHOBEN | CONFIG-03A–D DE/EN: Syntax, Null, negative und zu kurze Dauern abgelehnt; gespeicherter Wert bleibt unverändert | Mindestgrenzen 1 Minute Gültigkeit / 2 Minuten Aufbewahrung nach Ablauf. Weitere Konfigurationsfelder offen; behobene Null-Dauer-Lücke im Archiv belegt |
-| MAIL-01 | Admin-Testmail und Unicode | OFFEN | Echte Unicode-Mail im ersten Versuch empfangen | Vergleich scheiterte am regulären abschließenden SMTP-Zeilenumbruch; gesamtes Paket nicht abschließend DE/EN bestätigt |
+| USER-02 | Sperren und gezieltes Freigeben | UI-ABGEDECKT | USER-07A/C | Sperren/Freigeben einschließlich frischer Anmeldung und ausdrücklicher Aktivierung unverifizierter Konten geprüft |
+| USER-03 | Löschen mit zugehörigen Tokens und Queueeinträgen | TEILWEISE / TECHNISCH | USER-06C, SEC-LINK-02; Löschkaskaden in Persistenztests | UI-Abbruch/Bestätigung und dauerhafte Abwesenheit sowie alter Resetlink nach Löschung geprüft. Interne Token-/Queuekaskaden bleiben technische Aussagen |
+| USER-04 | Veraltetes Bearbeitungsformular | UI-ABGEDECKT | USER-07D | Zwei echte gleichzeitig offene Adminformulare: neuere Änderung gespeichert, alter Submit mit eigenem Konflikthinweis abgewiesen, Daten frisch geprüft |
+| SEC-01 | Direkte URL und normale Benutzerrolle | UI-ABGEDECKT | AUTH-01D, SEC-01A, USER-07B | Gast/normaler Benutzer ausgeschlossen, Bootstrapadmin sowie tatsächliche Rollenvergabe und späterer Entzug mit neuen Anmeldungen geprüft |
+| SEC-02 | Rollenentzug bei offenem Adminformular / Push | TEILWEISE / TECHNISCH | SESSION-01A (Rollenentzug), PushRpcSecurityPersistenceTest | Alter echter privilegierter Browsercallback erhält vor Mutation 401; Probe-Konto fehlt, neuer Adminaufruf ausgeschlossen. Das belegt diesen Flow-Clientpfad, nicht sämtliche WebSocket-Transportvarianten |
+| SEC-03 | Sperre und Löschung bei laufender Sitzung | UI-ABGEDECKT / TECHNISCH | SESSION-01B–E (Sperre/Löschung jeweils mit/ohne Remember-me) | Bestehende echte privilegierte Formulare blockiert, Probe-Konto fehlt und erneuter Adminaufruf verlangt Anmeldung. Interne Principal-/Pushvarianten ergänzend technisch |
+| SEC-04 | Letzten aktiven Admin schützen | TEILWEISE / TECHNISCH | USER-06D, USER-07E; AdminSecurityPersistenceTest | Eigene Löschung/Sperre/eigener Rollenentzug durch UI-Selbstschutz abgewiesen. Globale Letzter-Admin-Regel und konkurrierende Änderungen bleiben Service-/Persistenzregressionen |
+| STATUS-01 | Manueller Status und Aktualisierung | UI-ABGEDECKT | STATUS-01 | Alle angebotenen Statuswerte ausgewählt; sichtbarer aktueller Wert, echte Push-Aktualisierung im zweiten Tab und Speicherung nach Neuladen geprüft |
+| STATUS-02 | Automatische Abwesenheit und Rückkehr | UI-ABGEDECKT / TECHNISCH | STATUS-02; UserStatusSchedulerTest/UserStatusPersistenceTest | Konfiguration über UI, echte Inaktivität/Scheduler und Rückkehr nach Reload; manuell beschäftigt sowie manuell abwesend bleiben erhalten. Originaltimeout wiederhergestellt |
+| CONFIG-01 | Zulässige Werte speichern | TEILWEISE / BETRIEB | CONFIG-03A–D, CONFIG-04A–C, VER-03A, RESET-06A | String/Boolean/Ganzzahl und vier Tokendauern gespeichert/neu geladen; geänderter Name tatsächlich auf frischer Startseite, neue Dauern tatsächlich am Mailtoken geprüft; Neustartwirkung startgebundener Einstellungen bleibt offen |
+| CONFIG-02 | Ungültige Konfiguration bleibt abgelehnt | TEILWEISE / TECHNISCH | CONFIG-03A–D, CONFIG-04A/C | Syntax, Null, negative/zu kurze Tokendauern, blanker Name, ungültige URL und nicht positive Ganzzahl abgelehnt; Originalwerte erhalten. Freie Boolean-Texte werden nicht angeboten; weitere SMTP-Verträge bleiben technische/ergänzende Prüfungen |
+| MAIL-01 | Admin-Testmail und Unicode | UI-ABGEDECKT | MAIL-01, MailpitInbox | Empfänger-/Betreff-/Textfehler korrigiert; eigene echte SMTP-Mail mit UI-konfiguriertem Absender, Unicode-Betreff/Inhalt und genauem regulärem Zeilenabschluss geprüft |
 | MAIL-02 | Erfolgreiche Queue-Verarbeitung | TEILWEISE / TECHNISCH | REG/VER/RESET lesen tatsächlich zugestellte eigene SMTP-Mails | Kein vollständiger Browsernachweis interner PENDING/IN_PROGRESS/SENT-Zustände oder späterer Scheduler-Doppelversandfreiheit |
 | MAIL-03 | Nachgewiesener Verbindungsfehler und Wiederholung | OFFEN – BETRIEB / TECHNISCH | EmailConnectionFailureTest, EmailQueueServicePersistenceTest | Realer SMTP-Stopp/Wiederanlauf mit mindestens einminütigem Retry benötigt begrenzte Test-Orchestrierung; keine Queue-Statusoberfläche vorhanden |
 | MAIL-04 | Dauerhafter Fehler und Adminbeobachtbarkeit | OFFEN – BETRIEB / TECHNISCH | Queue-/Auditregressionen | Dauerhafter realer SMTP-Ausfall, Retrylimit und Auditbeobachtung nicht im Browser eingerichtet |
 | LANG-01 | Sichtbarer Wechsel Deutsch ↔ Englisch | TEILWEISE / PRODUKTGRENZE | LANG-01C, USER-06E: Adminsuche/Freigabefilter bleiben bei Wechsel in beide Richtungen erhalten | Offene Adminfehler/-dialoge noch nicht im Browser bestätigt; anonyme Form-/Tokenseiten haben keinen UI-Schalter |
-| LANG-02 | Sprache nach Anmeldung und Mailvorlagen | TEILWEISE | LANG-02A im aktuellen DE/EN-Gesamtlauf bestanden; VER/RESET-Mails pro Sprache | Vorbereitung über exakte Suche jetzt belegt; vollständiger Footer-Vergleich bleibt offen |
+| LANG-02 | Sprache nach Anmeldung und Mailvorlagen | TEILWEISE | LANG-01B, MailpitInbox und vollständige DE-/EN-Gesamtläufe | Gespeicherte Sprache nach Anmeldung und gewählte Mailbetreffe/volle kanonische Footer in beiden Sprachen geprüft. Sprachänderung eines bereits vorhandenen Kontos mit anschließender neuer Mail bleibt ergänzbar |
 | UI-01 | Desktop, Handy und andere Fensterbreiten | TEILWEISE / MENSCHLICH | INFRA-01; UI-01A/B im vollständigen aktuellen DE-/EN-Lauf bestanden: direkte Datumeingabe, Kalenderauswahl/Wiederöffnen und Registrierung | Echte Geräte/Tastatur, übrige Formulare und menschliche Layoutqualität fehlen |
 | UI-02 | Tastatur und grundlegende Bedienbarkeit | TEILWEISE / MENSCHLICH | UI-02A | Login per Tab/Fokus/Enter belegt; gesamte Fokusreihenfolge, 200-%-Zoom und menschliche Lesbarkeit/Accessibility nicht vollständig geprüft |
 | OPS-01 | Unklarer Transportausgang bleibt quarantänisiert | TECHNISCH / BETRIEBSNACHWEIS OFFEN | Queue-Service-/Persistenzregressionen | Fehler nach möglicher SMTP-Annahme und Neustart erfordern kontrollierte Transportfixture; fehlende Mail ist kein Nichtversandbeweis |

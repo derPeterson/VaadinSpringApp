@@ -6,7 +6,7 @@ Automatisierte Browserprüfungen mit Java, JUnit und Allure in eigener Docker-Te
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Aktueller Prüfstand vom 12.10.2026: Java 25, 1.034 Anwendungstests mit JaCoCo sowie 24 Browser-Helper-/Reportertests erfolgreich. Das gebaute Docker-JAR wurde mit 44 Browserfällen jeweils auf Deutsch und Englisch in isoliertem H2/Mailpit geprüft. Umfang und verbleibende Grenzen: [Browserabdeckung](browser-tests/abdeckung.md).
+> Aktueller Prüfstand vom 12.10.2026: Java 25, 1.036 Anwendungstests mit JaCoCo sowie 24 Browser-Helper-/Reportertests erfolgreich. Das gebaute Docker-JAR wurde mit 70 Browserfällen jeweils auf Deutsch und Englisch in isoliertem H2/Mailpit geprüft. Umfang und verbleibende Grenzen: [Browserabdeckung](browser-tests/abdeckung.md).
 
 ## Funktionen
 
@@ -221,9 +221,14 @@ Aktueller Prüfstand am 12.10.2026 unter Windows:
 
 | Prüfung | Ergebnis |
 | --- | --- |
-| `.\mvnw.cmd clean test jacoco:report` | Java 25, 1.034 Tests, keine Fehler/Fehlschläge/Skips; Coveragebericht erzeugt |
+| `.\mvnw.cmd clean test jacoco:report` | Java 25, 1.036 Tests, keine Fehler/Fehlschläge/Skips; Coveragebericht erzeugt |
 | Browser-Helper/Reporter | 24/24 erfolgreich |
-| Vollständige Browserläufe DE und EN | jeweils 44/44 erfolgreich; isoliertes Docker/H2/Mailpit |
+| Vollständige Browserläufe DE und EN | jeweils 70/70 erfolgreich; isoliertes Docker/H2/Mailpit |
+
+Der eigene Vaadin-Login speichert seinen Sicherheitskontext ausdrücklich in der Sitzung,
+bevor Remember-me ausgegeben wird. Die Browserprüfung verwendet echte separate
+Chromium-Prozessneustarts mit einem eigenen temporären Profil; Cookie- und
+Storage-Zustände werden nicht künstlich eingesetzt.
 
 Aktuelle Einzelbelege und verbleibende Journeys stehen in [Browserabdeckung](browser-tests/abdeckung.md).
 
@@ -251,7 +256,7 @@ Die beiden historischen Builds vom 01.10.2026 meldeten, dass kein neuer Produkti
 
 `VerificationService` und `PasswordResetService` laden das Logo nun über `ImageHelper` als **Classpath-Stream**, ohne lokalen Dateipfad oder Dateiextraktion. Das bisherige Mailformat bleibt erhalten: Der Helper liefert reines Base64, die HTML-Vorlagen ergänzen `data:image/png;base64,`. Der Test prüft die Ressource im Test-Classpath; `jar tf` prüft deren Verpackung, nicht den Ladevorgang im laufenden JAR.
 
-**Die erfolgreichen Tests belegen die beschriebenen Fälle, keine vollständige Prüfung aller Betriebsabläufe.** Die Browserläufe belegen Start, Darstellung, Login und ausgewählte Mailjourneys mit lokaler SMTP-Zustellung an Mailpit. Reale Geräte, externe Maildarstellung/-zustellung, zusätzliche Sicherheitsjourneys und Bestandsmigrationen bleiben offen (siehe Abdeckungsübersicht). `.\mvnw.cmd verify -Pit,production` würde die vorbereitete Failsafe-Konfiguration aktivieren und die Anwendung starten/stoppen; dieser Befehl wurde nicht ausgeführt. Es gibt keine explizite Browser-/WebDriver-Konfiguration im Profil.
+**Die erfolgreichen Tests belegen die beschriebenen Fälle, keine vollständige Prüfung aller Betriebsabläufe.** Die Browserläufe belegen Start, Darstellung, Login und ausgewählte Mailjourneys mit lokaler SMTP-Zustellung an Mailpit. Reale Geräte, externe Maildarstellung/-zustellung, zusätzliche Transport-/Betriebsvarianten und Bestandsmigrationen bleiben offen (siehe Abdeckungsübersicht). `.\mvnw.cmd verify -Pit,production` würde die vorbereitete Failsafe-Konfiguration aktivieren und die Anwendung starten/stoppen; dieser Befehl wurde nicht ausgeführt. Es gibt keine explizite Browser-/WebDriver-Konfiguration im Profil.
 
 ## Styles, Bilder und generierte Dateien
 

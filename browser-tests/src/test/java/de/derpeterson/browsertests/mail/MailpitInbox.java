@@ -43,12 +43,39 @@ public final class MailpitInbox {
         return awaitMail(recipient, texts.getEmailResetPasswordSubject());
     }
 
+    public CapturedMail awaitVerificationMailAfter(String recipient, CapturedMail previous) {
+        return awaitMail(recipient, texts.getEmailVerificationSubject(), previous.id(), true);
+    }
+
+    public CapturedMail awaitAdminMail(String recipient, String subject) {
+        return awaitMail(recipient, subject, null, false);
+    }
+
+    @Step("Unicode-Betreff und echten Textinhalt der Adminmail prüfen")
+    public void assertPlainContent(CapturedMail mail, String body) {
+        String received = getJson("/api/v1/message/" + mail.id()).path("Text").asText();
+        // SMTP may append exactly one terminal line break; other content stays byte-for-byte significant.
+        if (received.endsWith("\r\n")) received = received.substring(0, received.length() - 2);
+        else if (received.endsWith("\n")) received = received.substring(0, received.length() - 1);
+        assertEquals(body, received, "Unicode-Mailinhalt wurde verändert.");
+    }
+
+    @Step("Absender der tatsächlich empfangenen SMTP-Mail prüfen")
+    public void assertSender(CapturedMail mail, String expectedSender) {
+        assertEquals(expectedSender, getJson("/api/v1/message/" + mail.id()).path("From").path("Address").asText());
+    }
+
     private CapturedMail awaitMail(String recipient, String expectedSubject) {
+        return awaitMail(recipient, expectedSubject, null, true);
+    }
+
+    private CapturedMail awaitMail(String recipient, String expectedSubject, String previousId, boolean htmlExpected) {
         AtomicReference<JsonNode> found = new AtomicReference<>();
         context.waitForCondition(() -> {
             List<JsonNode> matches = new ArrayList<>();
             for (JsonNode mail : getJson("/api/v1/messages?limit=100").path("messages")) {
-                if (addressedTo(mail, recipient) && expectedSubject.equals(mail.path("Subject").asText())) matches.add(mail);
+                if (addressedTo(mail, recipient) && expectedSubject.equals(mail.path("Subject").asText())
+                        && !mail.path("ID").asText().equals(previousId)) matches.add(mail);
             }
             assertTrue(matches.size() <= 1, "Mehrere Mails desselben Typs an dieselbe neue Testadresse.");
             if (matches.isEmpty()) return false;
@@ -60,7 +87,7 @@ public final class MailpitInbox {
         String subject = mail.path("Subject").asText();
         assertEquals(expectedSubject, subject, "Mailbetreff muss zum angefragten Typ und zur ausgewählten Sprache passen.");
         String html = mail.path("HTML").asText();
-        assertFalse(html.isBlank(), "Erfasste Mail hat keinen HTML-Inhalt.");
+        if (htmlExpected) assertFalse(html.isBlank(), "Erfasste Mail hat keinen HTML-Inhalt.");
         assertFalse(html.contains("{{"), "Nicht ersetzte Platzhalter in der versandten Mail.");
         Allure.attachment("SMTP-Mail: Empfänger und Betreff", "text/plain",
                 "Empfänger: " + recipient + "\nBetreff: " + subject + "\nMailpit-ID: " + mail.path("ID").asText());
@@ -69,7 +96,7 @@ public final class MailpitInbox {
 
     @Step("Empfangene HTML-Mail ansehen und ihren echten Aktivierungsbutton anklicken")
     public Page openVerificationLink(CapturedMail mail) {
-        Page activation = openActionLink(mail, VERIFICATION_ROUTE, "Tatsächlich empfangene Verifikationsmail");
+        Page activation = openVerificationAction(mail);
         new VerificationPage(activation).assertActivated();
         AllurePlaywright.attachScreenshot("Aktivierung über den Mailbutton", activation);
         return activation;
@@ -77,10 +104,20 @@ public final class MailpitInbox {
 
     @Step("Empfangene HTML-Mail ansehen und ihren echten Reset-Button anklicken")
     public Page openPasswordResetLink(CapturedMail mail) {
-        Page reset = openActionLink(mail, RESET_PASSWORD_ROUTE, "Tatsächlich empfangene Reset-Mail");
+        Page reset = openPasswordResetAction(mail);
         new ResetPasswordPage(reset).assertFormVisible();
         AllurePlaywright.attachScreenshot("Passwortformular über den echten Mailbutton", reset);
         return reset;
+    }
+
+    @Step("Echten Verifikationsbutton öffnen; Ergebnis separat prüfen")
+    public Page openVerificationAction(CapturedMail mail) {
+        return openActionLink(mail, VERIFICATION_ROUTE, "Tatsächlich empfangene Verifikationsmail");
+    }
+
+    @Step("Echten Resetbutton öffnen; Ergebnis separat prüfen")
+    public Page openPasswordResetAction(CapturedMail mail) {
+        return openActionLink(mail, RESET_PASSWORD_ROUTE, "Tatsächlich empfangene Reset-Mail");
     }
 
     private Page openActionLink(CapturedMail mail, String route, String screenshotName) {
@@ -93,10 +130,28 @@ public final class MailpitInbox {
             assertThat(link).hasCount(1);
             assertThat(link).isVisible();
             assertLocalActionLink(link.getAttribute("href"), route);
+            // Reuse the selected original template instead of a second translated footer catalogue.
+            assertThat(messagePage.getByText(expectedFooter(route), new Page.GetByTextOptions().setExact(true))).hasCount(1);
+            assertThat(messagePage.locator("body")).not().containsText("{ServiceName}");
             AllurePlaywright.attachScreenshot(screenshotName, messagePage);
             return context.waitForPage(link::click);
         } finally {
             messagePage.close();
+        }
+    }
+
+    private String expectedFooter(String route) {
+        String resource = "/email/" + (VERIFICATION_ROUTE.equals(route) ? "welcome_" : "reset_password_")
+                + texts.language() + ".html";
+        try (var source = Objects.requireNonNull(MailpitInbox.class.getResourceAsStream(resource), "Mailvorlage fehlt: " + resource)) {
+            String template = new String(source.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            // Ab Copyrightzeichen alle Textzeichen bis zum nächsten HTML-Tag; kein eigener Übersetzungstext.
+            var footer = java.util.regex.Pattern.compile("©[^<]+").matcher(template);
+            assertTrue(footer.find(), "Die kanonische Vorlage enthält keinen Copyright-Footer.");
+            // Ein oder mehrere Leerraumzeichen werden wie beim sichtbaren HTML-Text zu einem Leerzeichen.
+            return footer.group().strip().replace("{{SERVICE_NAME}}", "VaadinSpringApp (Browser-Test)").replaceAll("\\s+", " ");
+        } catch (IOException failure) {
+            throw new IllegalStateException("Mailvorlage ist nicht lesbar: " + resource, failure);
         }
     }
 

@@ -60,7 +60,18 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
 | `user-management` | Suche/Pagination, optionale Filter, Anlage, Bearbeitung, Löschung, Selbstschutz und Passwortwechsel | 9 |
 | `user-filters` | Teilmenge der Benutzerverwaltung: direkte Datumeingabe und Kalenderauswahl, optionale Uhrzeit, kombinierte Filter/Clear | 2 |
-| `all` | Alle zehn Testklassen, einschließlich beider Benutzerfilterfälle | 44 |
+| `user-access` | Sperren/Freigeben, Rollenvergabe/-entzug, unverifizierte Konten, zwei offene Formulare und Selbstschutz | 5 |
+| `session-security` | Alte Speichern-Aktion nach Rollenentzug/Sperre/Löschung, Sperre/Löschung auch mit Remember-me | 5 |
+| `blocked-links` | Alte Verifikations-/Resetbuttons nach Adminänderung; neutrale Anfrage gesperrter Adresse | 5 |
+| `security-journeys` | Sitzungs- und Maillinkfälle gemeinsam | 10 |
+| `remember-me` | Echter separater Chromium-Neustart mit/ohne Remember-me und nach Logout | 2 |
+| `user-status` | Manuelle Wahl, Live-Anzeige in zweitem Tab, Abwesenheit/Rückkehr | 2 |
+| `configuration` | String-, Boolean- und Ganzzahlwerte: Fehler, Speichern, Neuladen, Wiederherstellen | 3 |
+| `admin-mail` | Formularfehler korrigieren und tatsächliche Unicode-SMTP-Mail empfangen | 1 |
+| `token-expiry` | Echte Mindestdauer abwarten, erneuter Verifikationsversand, offenes Resetformular, Anfragefehler | 3 |
+| `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 7 |
+| `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 11 |
+| `all` | Alle 18 Testklassen | 70 |
 
 UI-01A prüft die direkte Datumseingabe mit lokalisiertem Beispiel und anschließendem
 Registrieren ohne Enter/Escape. UI-01B prüft getrennt die Auswahl über das Kalender-Icon,
@@ -76,6 +87,38 @@ ebenfalls direkte Eingabe ohne automatisches Öffnen und denselben kurzen Datums
 Die vollständigen Schritte und Erwartungen stehen pro Fall in `@Description`
 und werden automatisch in den Markdown-Bericht übernommen. Die Test-ID erscheint
 in `@DisplayName`, im Allure-Bericht und in der Abdeckungsübersicht.
+
+## Weitere Konten und echte Wartezeiten
+
+Die neuen Abläufe verwenden kleine eigenständige Suites statt einer wachsenden
+Gesamtklasse. `BrowserActor` öffnet tatsächlich getrennte Sitzungen; die Konten
+werden über Registrierung oder das Adminformular angelegt. Neue Editierformulare
+werden erst nach dem angebotenen Neuladen der Benutzerliste geöffnet, damit echte
+An-/Abmeldungen anderer Konten keinen unbeabsichtigten alten Datenstand vorbereiten.
+Im Versionskonflikttest bleiben dagegen absichtlich beide ursprünglichen Formulare offen.
+
+`session-security` klickt den bereits geöffneten Speichern-Button nach einer
+Adminänderung. Die echte Browseranfrage muss 401 erhalten; das Probe-Konto darf
+anschließend nicht existieren. Das ist ein Nachweis dieses UI-Callbacks, keine
+vollständige Aussage zu allen WebSocket-Transportvarianten oder laufenden Aktionen.
+
+Remember-me verwendet einen eigenen temporären Chromium-Profilordner. Der ganze
+zusätzliche Prozess wird geschlossen und mit demselben Ordner neu gestartet;
+Cookies und Storage werden nicht künstlich eingesetzt. JUnit räumt das Testprofil auf.
+Die Browserberichte enthalten nur erfundene Konten; Cookieinhalte werden nicht protokolliert.
+
+Konfigurationsfälle merken ihre Ausgangswerte und stellen sie im `finally`-Block
+über die Oberfläche wieder her. Neuladen bestätigt Speicherung, keinen Neustart
+der Anwendung. Der Wartungsmodus-Fall prüft die Checkbox/Persistenz, keine nicht
+vorhandene Betriebsfunktion. Alle Änderungen treffen ausschließlich die Wegwerf-Umgebung.
+
+Tokenablauf prüft die echte Mindestdauer von einer Minute und wartet pro Ablauf
+65 Sekunden. Deshalb dauert `token-expiry` mehrere Minuten. Die erneute Mail wird
+an derselben eigenen Adresse über ihre neue Mailpit-ID unterschieden; kein Mail-
+oder Datenbankzustand wird zum Beschleunigen verändert. Die empfangenen HTML-Mails
+werden zusätzlich auf ersetzte Platzhalter und den vollständigen Footer der jeweiligen
+ursprünglichen DE-/EN-Vorlage geprüft. Die Vorlagen werden als Testressourcen gelesen,
+nicht als zweiter Textkatalog kopiert. Die Adminmail prüft ihren im UI konfigurierten Absender.
 
 ## Ergebnisse und Traces
 
@@ -145,7 +188,7 @@ Eine automatische Anbindung an das OpenCode-Benchmarking ist nicht eingerichtet.
 
 Ein Lauf prüft eine ausdrücklich über die Oberfläche gewählte Sprache: `de` oder `en`.
 Erwartungen akzeptieren nicht gleichzeitig beide Übersetzungen. Für einen vollständigen
-Vergleich beide Sprachen ausführen; derzeit sind das 44 Fälle je Sprache.
+Vergleich beide Sprachen ausführen; derzeit sind das 49 Fälle je Sprache.
 
 Die Getter sind einmalig in `shared/src/main/java/de/derpeterson/app/i18n/MessageTexts.java`
 definiert. Die Anwendung verwendet `MessageProperties`, die Browsertests `UiTexts`.

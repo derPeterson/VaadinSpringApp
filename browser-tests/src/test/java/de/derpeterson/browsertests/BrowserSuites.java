@@ -10,13 +10,21 @@ import de.derpeterson.browsertests.suites.PresentationBrowserTest;
 import de.derpeterson.browsertests.suites.TokenConfigurationBrowserTest;
 import de.derpeterson.browsertests.suites.UserManagementBrowserTest;
 import de.derpeterson.browsertests.suites.UserFiltersBrowserTest;
+import de.derpeterson.browsertests.suites.UserAccessBrowserTest;
+import de.derpeterson.browsertests.suites.SessionSecurityBrowserTest;
+import de.derpeterson.browsertests.suites.BlockedLinksBrowserTest;
+import de.derpeterson.browsertests.suites.RememberMeBrowserTest;
+import de.derpeterson.browsertests.suites.UserStatusBrowserTest;
+import de.derpeterson.browsertests.suites.ConfigurationBrowserTest;
+import de.derpeterson.browsertests.suites.AdminMailBrowserTest;
+import de.derpeterson.browsertests.suites.TokenExpiryBrowserTest;
 import java.util.List;
 
 /** The deliberately small list of suites supported by run.ps1 -Suite. */
 final class BrowserSuites {
     static List<Class<?>> select(String suite) {
         return switch (suite) {
-            case "all" -> List.of(InfrastructureBrowserTest.class, AuthenticationBrowserTest.class, RegistrationBrowserTest.class, VerificationBrowserTest.class, PasswordResetBrowserTest.class, AccountLifecycleBrowserTest.class, PresentationBrowserTest.class, TokenConfigurationBrowserTest.class, UserManagementBrowserTest.class, UserFiltersBrowserTest.class);
+            case "all" -> List.of(InfrastructureBrowserTest.class, AuthenticationBrowserTest.class, RegistrationBrowserTest.class, VerificationBrowserTest.class, PasswordResetBrowserTest.class, AccountLifecycleBrowserTest.class, PresentationBrowserTest.class, TokenConfigurationBrowserTest.class, UserManagementBrowserTest.class, UserFiltersBrowserTest.class, UserAccessBrowserTest.class, SessionSecurityBrowserTest.class, BlockedLinksBrowserTest.class, RememberMeBrowserTest.class, UserStatusBrowserTest.class, ConfigurationBrowserTest.class, AdminMailBrowserTest.class, TokenExpiryBrowserTest.class);
             case "infrastructure" -> List.of(InfrastructureBrowserTest.class);
             case "authentication" -> List.of(AuthenticationBrowserTest.class);
             case "registration" -> List.of(RegistrationBrowserTest.class);
@@ -25,10 +33,21 @@ final class BrowserSuites {
             case "account-lifecycle" -> List.of(AccountLifecycleBrowserTest.class);
             case "presentation" -> List.of(PresentationBrowserTest.class);
             case "user-management" -> List.of(UserManagementBrowserTest.class, UserFiltersBrowserTest.class);
+            case "remaining-coverage" -> List.of(RememberMeBrowserTest.class, UserStatusBrowserTest.class, ConfigurationBrowserTest.class, AdminMailBrowserTest.class, TokenExpiryBrowserTest.class);
+            case "configuration" -> List.of(ConfigurationBrowserTest.class);
+            case "admin-mail" -> List.of(AdminMailBrowserTest.class);
+            case "token-expiry" -> List.of(TokenExpiryBrowserTest.class);
+            case "remaining-configuration" -> List.of(ConfigurationBrowserTest.class, AdminMailBrowserTest.class, TokenExpiryBrowserTest.class);
+            case "remember-me" -> List.of(RememberMeBrowserTest.class);
+            case "user-status" -> List.of(UserStatusBrowserTest.class);
+            case "session-security" -> List.of(SessionSecurityBrowserTest.class);
+            case "blocked-links" -> List.of(BlockedLinksBrowserTest.class);
+            case "security-journeys" -> List.of(SessionSecurityBrowserTest.class, BlockedLinksBrowserTest.class);
+            case "user-access" -> List.of(UserAccessBrowserTest.class);
             case "user-filters" -> List.of(UserFiltersBrowserTest.class);
             case "token-configuration" -> List.of(TokenConfigurationBrowserTest.class);
             default -> throw new IllegalArgumentException("Unknown suite: " + suite
-                    + ". Choose all, infrastructure, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, user-management or user-filters.");
+                    + ". Choose all, infrastructure, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
         };
     }
 }
