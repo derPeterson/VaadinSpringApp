@@ -122,7 +122,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
                 invalidTokenCard();
             }
         } else {
-            UI.getCurrent().navigate(HomeView.class);
+            event.forwardTo(HomeView.class);
         }
     }
 

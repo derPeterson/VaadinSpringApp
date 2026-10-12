@@ -2,7 +2,7 @@
 
 Lokale Docker-Testumgebung mit Mailpit und H2: [Docker-Anleitung](docs/docker/README.md).
 
-Automatisierte Browserprüfungen mit Java, JUnit und Allure in eigener Docker-Testumgebung; getrennte Suites für Infrastruktur, Anmeldung und Zugriffsrechte sowie Registrierung und Verifikation über echte Testmails: [Browser-Test-Anleitung](browser-tests/README.md).
+Automatisierte Browserprüfungen mit Java, JUnit und Allure in eigener Docker-Testumgebung; getrennte Suites für Infrastruktur, Anmeldung und Zugriffsrechte sowie Registrierung, Verifikation und Passwortreset über echte Testmails: [Browser-Test-Anleitung](browser-tests/README.md).
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 

@@ -31,6 +31,30 @@ class MailpitInboxTest {
         });
     }
 
+    @Test
+    void resetLinkOnTheExactRunnerOriginIsAccepted() {
+        withRunnerOrigin(() -> assertDoesNotThrow(() -> MailpitInbox.assertLocalPasswordResetLink(
+                "http://127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN)));
+    }
+
+    @Test
+    void resetMailCannotNavigateToOtherOriginsOrActionRoutes() {
+        withRunnerOrigin(() -> {
+            for (String wrongLink : new String[] {
+                    "http://127.0.0.1:18080" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN,
+                    "http://example.test:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN,
+                    "https://127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN,
+                    "http://user@127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN,
+                    "http://127.0.0.1:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN,
+                    "http://127.0.0.1:18082" + path(ADMIN_ROUTE),
+                    "http://127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN + "?redirect=elsewhere",
+                    "http://127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN + "#elsewhere"
+            }) {
+                assertThrows(AssertionError.class, () -> MailpitInbox.assertLocalPasswordResetLink(wrongLink));
+            }
+        });
+    }
+
     private static void withRunnerOrigin(Runnable test) {
         String previous = System.getProperty("browser.tests.baseUrl");
         try {

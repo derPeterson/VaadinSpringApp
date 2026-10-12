@@ -43,7 +43,7 @@ In PowerShell im Projektordner:
 ## Suites und Testfälle
 
 Die Fälle sind nach fachlichem Bereich getrennt, mit eigenen JUnit-Klassen unter
-src/test/java/de/derpeterson/browsertests/suites/. Ein gewöhnlicher Start führt alle vier
+src/test/java/de/derpeterson/browsertests/suites/. Ein gewöhnlicher Start führt alle fünf
 Suites aus. Jede Prüfung bekommt einen frischen Browserkontext; alle Fälle funktionieren
 ohne vorherige Testfälle. Die Datenbank und Mailpit sind für den gesamten Lauf frisch.
 
@@ -53,7 +53,8 @@ ohne vorherige Testfälle. Die Datenbank und Mailpit sind für den gesamten Lauf
 | authentication | Adminlogin, falsches Passwort, unbekanntes Konto, Gastzugriff, Logout, normale Benutzerrechte | 6 |
 | registration | Registrierung, Pflichtfelder und korrigierbare Eingabefehler | 3 |
 | verification | Echter Mailbutton, Aktivierung, erneuter Linkaufruf, ungültiger/fehlender Token | 3 |
-| all | Alle vier Suites; Standardwert | 15 |
+| password-reset | Echte Reset-Mail und neue Anmeldung, Formularfehler, neutrale Anfrageantwort, ungültige/verbrauchte/fehlende Links | 6 |
+| all | Alle fünf Suites; Standardwert | 21 |
 
 ~~~powershell
 # Nur die Anmeldungssuite:
@@ -65,6 +66,9 @@ ohne vorherige Testfälle. Die Datenbank und Mailpit sind für den gesamten Lauf
 # Registrierung oder Verifikation einzeln prüfen:
 .\browser-tests\run.ps1 -Suite registration
 .\browser-tests\run.ps1 -Suite verification
+
+# Die Passwortreset-Suite separat:
+.\browser-tests\run.ps1 -Suite password-reset
 
 # Alle Suites live mitverfolgen:
 .\browser-tests\run.ps1 -Suite all -Headed
@@ -94,10 +98,16 @@ und Erwartungen vollständig in der Suite und im erzeugten Bericht.
 | VER-01A | Mailinhalt geprüft, echter Mailbutton öffnet Aktivierung; anschließend normale Anmeldung ohne Adminrechte |
 | VER-01B | Bereits verbrauchter Link zeigt beim weiterhin aktiven Konto gemäß Vertrag erneut Erfolg; Anmeldung funktioniert |
 | VER-02A | Unbekannter Token zeigt verständlichen Fehler; Aufruf ohne Token führt zur Startseite |
+| RESET-01A | Echte Reset-Mail, neues Passwort, Ablehnung des alten Passworts und erfolgreiche normale Anmeldung |
+| RESET-02A | Leere/ungültige Anfrageadresse markieren; nach Korrektur tatsächliche Reset-Mail empfangen |
+| RESET-02B | Leere/ungültige Passwörter und abweichende Bestätigung korrigieren; derselbe Link erlaubt danach den Reset |
+| RESET-03A | Sichtbare Antwort auf vorhandene und unbekannte E-Mail identisch; vorherigen Hinweis über UI schließen |
+| RESET-04A | Unbekannten Token ohne Resetformular ablehnen; ohne Token echte Startseite prüfen |
+| RESET-04B | Erfolgreich verwendeten Reset-Link neu laden; neutraler Fehler statt erneutem Passwortformular |
 
 Noch nicht automatisiert: gesperrte Konten, Remember-me, Rollenänderungen in laufenden
 Sitzungen, mutierende Aktionen aus alten Formularen, weitere Eingabe-/Dublettenvarianten,
-Verifikationsablauf und erneuter Versand, nachträgliche Adminsperren, Passwortreset,
+Verifikationsablauf und erneuter Versand, nachträgliche Adminsperren, weitere Reset-Ablauf-/Fehlervarianten,
 Adminbearbeitung sowie mobile/Tastaturvarianten. Die Verifikationsfälle prüfen keine
 direkten Datenbankzustände, keine exakten Zeitgrenzen und keine Tokenkonkurrenz.
 
@@ -133,6 +143,32 @@ Die Suites beschreiben die fachlichen Fälle. BrowserFixture verwaltet ausschlie
 Browserkontexte, Screenshots und Traces. Neue fachliche Bereiche erhalten später
 eigene Suite-Klassen und einen Eintrag in BrowserSuites.
 
+### Passwortreset über echte Testmails
+
+Die Suite `password-reset` legt jedes benötigte Konto selbst über Registrierung und
+Verifikationsmailbutton an. Es gibt kein direktes Seeding und keine Abhängigkeit auf
+andere Testfälle. Anschließend wird Passwort vergessen über den sichtbaren Link im
+Loginformular geöffnet. Reset-Mails kommen durch die reguläre Queue und SMTP in der
+eigenen Mailpit-Umgebung an. Der tatsächlich gerenderte Reset-Mailbutton wird nach
+Prüfung des exakten Test-Ursprungs und der Reset-Route angeklickt.
+
+Nach erfolgreicher Änderung prüfen normale Loginversuche das alte und das neue
+Passwort. Für die neue Eingabe dient ausschließlich das erfundene Testpasswort
+`BrowserReset2!`. Fehlende/ungültige Angaben werden über die sichtbaren Formulare
+korrigiert. Tokenzustände, Uhrzeit, SQL oder Dienste werden nicht als Abkürzung benutzt.
+Der Vergleich vorhandener/unbekannter E-Mails schließt die erste Bestätigung über
+ihren echten UI-Button, damit kein alter Hinweis den zweiten Versuch verdeckt.
+
+Alle sechs Fälle enthalten eigene Schritte und Erwartungen in `@Description`.
+Der bestehende Reporter überträgt sie automatisch mit Status, Ist/Grund, Zeitpunkten
+und Beleglinks in `report.md`; Allure enthält zusätzlich Mail-/Formularscreenshots
+und den Kontext-Trace. Keine Erweiterung der alten manuellen Vorlage erforderlich.
+
+Die Suite prüft keine exakten Ablaufgrenzen, Parallelität, technischen Fehlerinjektionen,
+Antwortzeiten, dauerhafte Abwesenheit von Mails an unbekannte Adressen, bestehende
+Sitzungen nach dem Reset oder externe SMTP-/Mailclient-Zustellung. Diese Grenzen
+werden nicht aus einer sichtbaren neutralen Antwort abgeleitet.
+
 ### Registrierungsdaten und tatsächliche Testmails
 
 Jeder neue Registrierungs-/Verifikationsfall verwendet eine eigene UUID-Adresse unter
@@ -141,8 +177,9 @@ Geburtsdatum werden über das sichtbare Formular eingegeben. Kein Test registrie
 aktiviert Konten durch SQL, Serviceaufrufe oder eine Test-API.
 
 MailpitInbox liest ausschließlich die Mailablage der isolierten Testumgebung.
-Es wartet höchstens 30 Sekunden auf die konkrete Empfängeradresse, niemals auf die
-global neueste Nachricht. Die Anwendung versendet über ihre reguläre Queue und SMTP
+Es wartet höchstens 30 Sekunden auf die konkrete Empfängeradresse und den
+erwarteten übersetzten Betreff, niemals auf die global neueste Nachricht. So werden
+Verifikations- und Reset-Mails desselben Kontos eindeutig unterschieden. Die Anwendung versendet über ihre reguläre Queue und SMTP
 an Mailpit. Der Helfer erzeugt oder versendet selbst keine Mail.
 
 Empfänger, Betreff und ausgefüllte Platzhalter werden am empfangenen Inhalt geprüft.
@@ -170,7 +207,7 @@ Für die englische Variante denselben Lauf mit `-Language en` starten:
 ```
 
 Die Sprache lässt sich mit `-Suite`, `-Headed` und `-NoBuild` kombinieren. Jeder Lauf
-erhält sein eigenes Archiv mit Oberflächensprache und Browser-Locale. Die 15 Fälle
+erhält sein eigenes Archiv mit Oberflächensprache und Browser-Locale. Die 21 Fälle
 laufen pro Sprache; Deutsch und Englisch werden nicht gleichzeitig als richtige
 Antwort akzeptiert. Beide Läufe zusammen prüfen 30 Fallausführungen.
 
@@ -282,7 +319,9 @@ Alle Java-Dateien liegen unter `src/test/java/de/derpeterson/browsertests/`:
 | `suites/AuthenticationBrowserTest.java` | Die sechs unabhängigen Fälle für Anmeldung, Abmeldung und Adminrechte |
 | `suites/RegistrationBrowserTest.java` | Drei Fälle für Registrierung, Feldfehler und Korrektur |
 | `suites/VerificationBrowserTest.java` | Drei Fälle für Mailaktivierung und gültige/ungültige Linkaufrufe |
-| `mail/MailpitInbox.java` | Eigene SMTP-Mail abwarten, lesen und den sichtbaren Mailbutton verwenden |
+| `suites/PasswordResetBrowserTest.java` | Sechs unabhängige Fälle für Passwortreset, Formularfehler, neutrale Antworten und ungültige Links |
+| `pages/ForgotPasswordPage.java / ResetPasswordPage.java` | Sichtbare Anfrage-/Resetformulare bedienen und ihre Hinweise prüfen |
+| `mail/MailpitInbox.java` | Eigene Verifikations-/Reset-Mail nach Adresse und Betreff abwarten, lesen und ihren sichtbaren Mailbutton verwenden |
 | `mail/MailpitInboxTest.java` | Fremde Linkziele und die manuelle Umgebung vor Navigation ausschließen |
 | `i18n/UiTexts.java / UiTextsTest.java` | Gemeinsame Getter mit fester DE/EN-Sprache verwenden und fehlende Schlüssel/Sprachen absichern |
 | `../shared/src/main/java/` | Einzige Definition der Getter, Routen, Seitentitel und vorhandenen App-Konstanten; keine Framework-Abhängigkeiten |
@@ -311,7 +350,7 @@ $env:BROWSER_TEST_MAILPIT_PORT = '18027'
 
 `-NoBuild` kann einen älteren App-Stand testen und ist nur bei bewusst unverändertem App-Code sinnvoll. Die tatsächliche Image-ID und Wiederverwendung stehen im Protokoll. Daten und Belege liegen außerhalb von Git; Screenshots/Traces können spätere Testeingaben oder Sitzungstokens enthalten.
 
-Der aktuelle Umfang umfasst Infrastruktur, Login/Logout, Zugriffsrechte, Registrierung und die oben beschriebenen Verifikationsabläufe. Weitere Benutzerabläufe sind im Abschnitt „Suites und Testfälle“ als offen aufgeführt. Nur Chromium, ein Thread, eine explizite Sprache pro Lauf, keine automatischen Wiederholungen. Die zusätzliche Browserprüfung liefert keine Java-Coverage.
+Der aktuelle Umfang umfasst Infrastruktur, Login/Logout, Zugriffsrechte, Registrierung und die oben beschriebenen Verifikations-/Passwortreset-Abläufe. Weitere Benutzerabläufe sind im Abschnitt „Suites und Testfälle“ als offen aufgeführt. Nur Chromium, ein Thread, eine explizite Sprache pro Lauf, keine automatischen Wiederholungen. Die zusätzliche Browserprüfung liefert keine Java-Coverage.
 
 Bei normalem Abschluss und Testfehlern werden eigene Container und Volumes entfernt. Hartes Beenden des Prozesses oder ein ausgefallener Docker-Dienst kann das verhindern. Dann nur den genauen Projektnamen aus `metadata.json` zum Abbau verwenden:
 

@@ -8,6 +8,8 @@ import com.microsoft.playwright.APIResponse;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import de.derpeterson.browsertests.pages.ResetPasswordPage;
+import de.derpeterson.browsertests.pages.VerificationPage;
 import io.qameta.allure.Allure;
 import io.qameta.allure.Step;
 import io.qameta.allure.playwright.AllurePlaywright;
@@ -20,7 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Reads captured SMTP mail only; never creates mail or bypasses the registration UI. */
+/** Reads captured SMTP mail only; never creates mail or bypasses the application's UI. */
 public final class MailpitInbox {
     private static final ObjectMapper JSON = new ObjectMapper();
     private final BrowserContext context;
@@ -29,17 +31,26 @@ public final class MailpitInbox {
 
     public MailpitInbox(BrowserContext context) { this.context = context; }
 
-    public record VerificationMail(String id, String recipient, String subject) { }
+    public record CapturedMail(String id, String recipient, String subject) { }
 
     @Step("Auf die regulär versandte Verifikationsmail an die eigene Testadresse warten")
-    public VerificationMail awaitVerificationMail(String recipient) {
+    public CapturedMail awaitVerificationMail(String recipient) {
+        return awaitMail(recipient, texts.getEmailVerificationSubject());
+    }
+
+    @Step("Auf die regulär versandte Reset-Mail an die eigene Testadresse warten")
+    public CapturedMail awaitPasswordResetMail(String recipient) {
+        return awaitMail(recipient, texts.getEmailResetPasswordSubject());
+    }
+
+    private CapturedMail awaitMail(String recipient, String expectedSubject) {
         AtomicReference<JsonNode> found = new AtomicReference<>();
         context.waitForCondition(() -> {
             List<JsonNode> matches = new ArrayList<>();
             for (JsonNode mail : getJson("/api/v1/messages?limit=100").path("messages")) {
-                if (addressedTo(mail, recipient)) matches.add(mail);
+                if (addressedTo(mail, recipient) && expectedSubject.equals(mail.path("Subject").asText())) matches.add(mail);
             }
-            assertTrue(matches.size() <= 1, "Mehrere Mails an dieselbe neue Testadresse.");
+            assertTrue(matches.size() <= 1, "Mehrere Mails desselben Typs an dieselbe neue Testadresse.");
             if (matches.isEmpty()) return false;
             found.set(matches.getFirst());
             return true;
@@ -47,38 +58,53 @@ public final class MailpitInbox {
         JsonNode mail = getJson("/api/v1/message/" + found.get().path("ID").asText());
         assertTrue(addressedTo(mail, recipient), "Mail gehört nicht zur eigenen Testadresse.");
         String subject = mail.path("Subject").asText();
-        assertEquals(texts.getEmailVerificationSubject(), subject, "Verifikationsbetreff muss zur ausgewählten Sprache passen.");
+        assertEquals(expectedSubject, subject, "Mailbetreff muss zum angefragten Typ und zur ausgewählten Sprache passen.");
         String html = mail.path("HTML").asText();
-        assertFalse(html.isBlank(), "Verifikationsmail hat keinen HTML-Inhalt.");
+        assertFalse(html.isBlank(), "Erfasste Mail hat keinen HTML-Inhalt.");
         assertFalse(html.contains("{{"), "Nicht ersetzte Platzhalter in der versandten Mail.");
         Allure.attachment("SMTP-Mail: Empfänger und Betreff", "text/plain",
                 "Empfänger: " + recipient + "\nBetreff: " + subject + "\nMailpit-ID: " + mail.path("ID").asText());
-        return new VerificationMail(mail.path("ID").asText(), recipient, subject);
+        return new CapturedMail(mail.path("ID").asText(), recipient, subject);
     }
 
     @Step("Empfangene HTML-Mail ansehen und ihren echten Aktivierungsbutton anklicken")
-    public Page openVerificationLink(VerificationMail mail) {
+    public Page openVerificationLink(CapturedMail mail) {
+        Page activation = openActionLink(mail, VERIFICATION_ROUTE, "Tatsächlich empfangene Verifikationsmail");
+        new VerificationPage(activation).assertActivated();
+        AllurePlaywright.attachScreenshot("Aktivierung über den Mailbutton", activation);
+        return activation;
+    }
+
+    @Step("Empfangene HTML-Mail ansehen und ihren echten Reset-Button anklicken")
+    public Page openPasswordResetLink(CapturedMail mail) {
+        Page reset = openActionLink(mail, RESET_PASSWORD_ROUTE, "Tatsächlich empfangene Reset-Mail");
+        new ResetPasswordPage(reset).assertFormVisible();
+        AllurePlaywright.attachScreenshot("Passwortformular über den echten Mailbutton", reset);
+        return reset;
+    }
+
+    private Page openActionLink(CapturedMail mail, String route, String screenshotName) {
         Page messagePage = context.newPage();
         try {
             messagePage.navigate(baseUrl + "/view/" + mail.id() + ".html");
-            assertThat(messagePage.locator("body")).containsText("Browser Testuser");
+            if (VERIFICATION_ROUTE.equals(route)) assertThat(messagePage.locator("body")).containsText("Browser Testuser");
             assertThat(messagePage.locator("body")).containsText("VaadinSpringApp (Browser-Test)");
-            Locator link = messagePage.locator("a[href*='" + path(VERIFICATION_ROUTE) + "/']");
+            Locator link = messagePage.locator("a[href*='" + path(route) + "/']");
             assertThat(link).hasCount(1);
             assertThat(link).isVisible();
-            assertLocalVerificationLink(link.getAttribute("href"));
-            AllurePlaywright.attachScreenshot("Tatsächlich empfangene Verifikationsmail", messagePage);
-            Page activation = context.waitForPage(link::click);
-            new de.derpeterson.browsertests.pages.VerificationPage(activation).assertActivated();
-            AllurePlaywright.attachScreenshot("Aktivierung über den Mailbutton", activation);
-            return activation;
+            assertLocalActionLink(link.getAttribute("href"), route);
+            AllurePlaywright.attachScreenshot(screenshotName, messagePage);
+            return context.waitForPage(link::click);
         } finally {
             messagePage.close();
         }
     }
 
-    static void assertLocalVerificationLink(String link) {
-        URI actual = URI.create(Objects.requireNonNull(link, "Verifikationslink fehlt."));
+    static void assertLocalVerificationLink(String link) { assertLocalActionLink(link, VERIFICATION_ROUTE); }
+    static void assertLocalPasswordResetLink(String link) { assertLocalActionLink(link, RESET_PASSWORD_ROUTE); }
+
+    private static void assertLocalActionLink(String link, String route) {
+        URI actual = URI.create(Objects.requireNonNull(link, "Mail-Link fehlt."));
         URI expected = URI.create(System.getProperty("browser.tests.baseUrl"));
         assertEquals(expected.getScheme(), actual.getScheme(), "Falsches Link-Protokoll.");
         assertEquals(expected.getHost(), actual.getHost(), "Link zeigt auf einen fremden Server.");
@@ -86,7 +112,7 @@ public final class MailpitInbox {
         assertNull(actual.getUserInfo());
         assertNull(actual.getQuery());
         assertNull(actual.getFragment());
-        assertTrue(actual.getPath().matches(java.util.regex.Pattern.quote(path(VERIFICATION_ROUTE)) + "/[0-9a-f-]{36}"), "Falsches Aktivierungsziel.");
+        assertTrue(actual.getPath().matches(java.util.regex.Pattern.quote(path(route)) + "/[0-9a-f-]{36}"), "Falsches Mail-Linkziel.");
     }
 
     private static boolean addressedTo(JsonNode mail, String recipient) {

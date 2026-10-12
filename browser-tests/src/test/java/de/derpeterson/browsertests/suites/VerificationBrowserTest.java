@@ -76,7 +76,7 @@ public class VerificationBrowserTest extends BrowserFixture {
         assertThat(page).hasTitle(HOME_PAGE_TITLE);
     }
 
-    private MailpitInbox.VerificationMail registerAndReceive(String email, MailpitInbox inbox) {
+    private MailpitInbox.CapturedMail registerAndReceive(String email, MailpitInbox inbox) {
         RegistrationPage registration = new RegistrationPage(page);
         registration.open();
         registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);

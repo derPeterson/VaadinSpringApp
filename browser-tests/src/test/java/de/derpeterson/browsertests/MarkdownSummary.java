@@ -44,7 +44,7 @@ final class MarkdownSummary {
                 .append("Dieses Protokoll bewertet nur die ausgewählten, unten aufgeführten Browserfälle. ")
                 .append("Ein bestandener Lauf belegt nur diese Fälle, keine vollständige Prüfung der Anwendung. ")
                 .append("Nicht ausgewählte Suites wurden in diesem Lauf nicht geprüft. ")
-                .append("Weitere Eingabevarianten, Verifikationsablauf und erneuter Versand, Adminsperren, Passwortreset, Remember-me, dynamischer Rollenentzug und weitere Betriebsfälle sind noch nicht automatisiert.\n\n")
+                .append("Weitere Eingabevarianten, Verifikationsablauf und erneuter Versand, Adminsperren, weitere Passwortreset- und Ablaufvarianten, Remember-me, dynamischer Rollenentzug und weitere Betriebsfälle sind noch nicht automatisiert.\n\n")
                 .append("Suites, Testfälle und Grenzen: [Browser-Testanleitung](../../README.md).\n\n## Ergebnisse\n\n");
         if (results.isEmpty()) text.append("Keine Testfälle vom Reporter erfasst.\n");
         List<JsonNode> ordered = new ArrayList<>(results);
