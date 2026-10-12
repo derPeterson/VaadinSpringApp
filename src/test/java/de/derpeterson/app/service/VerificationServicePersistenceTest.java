@@ -148,8 +148,9 @@ class VerificationServicePersistenceTest {
 
     @ParameterizedTest
     @CsvSource({"create,PT0S", "create,-PT1H", "token,PT0S", "token,-PT1H",
-            "email,PT0S", "email,-PT1H", "user,PT0S", "user,-PT1H"})
-    void nonPositiveConfiguredLifetimePreservesExistingTokenAndDoesNotQueue(String entry, String lifetime) {
+            "email,PT0S", "email,-PT1H", "user,PT0S", "user,-PT1H",
+            "create,PT59.999999999S", "token,PT59.999999999S", "email,PT59.999999999S", "user,PT59.999999999S"})
+    void belowMinimumConfiguredLifetimePreservesExistingTokenAndDoesNotQueue(String entry, String lifetime) {
         seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
         when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn(lifetime);
         assertThrows(IllegalArgumentException.class, () -> {
@@ -282,7 +283,7 @@ class VerificationServicePersistenceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"PT0S", "-PT1H", "invalid"})
+    @ValueSource(strings = {"PT0S", "-PT1H", "invalid", "PT1M", "PT119.999999999S"})
     void invalidRetentionPreservesEvenOldTokens(String duration) {
         seed("old", TokenStatus.EXPIRED, LocalDateTime.now(CLOCK).minusDays(30));
         when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn(duration);

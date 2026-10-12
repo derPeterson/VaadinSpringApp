@@ -107,8 +107,8 @@ class PasswordResetServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"PT0S", "-PT1S"})
-    void creationRejectsNonPositiveDurationsBeforeInvalidation(String duration) {
+    @ValueSource(strings = {"PT0S", "-PT1S", "PT0.000000001S", "PT1S", "PT59.999999999S"})
+    void creationRejectsBelowMinimumDurationsBeforeInvalidation(String duration) {
         when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn(duration);
         assertThrows(IllegalArgumentException.class, () -> service.createToken(user));
         verifyNoInteractions(tokens);
@@ -371,7 +371,7 @@ class PasswordResetServiceTest {
 
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = {"broken", "PT0S", "-PT1S"})
+    @ValueSource(strings = {"broken", "PT0S", "-PT1S", "PT1M", "PT119.999999999S"})
     void invalidRetentionNeverDeletesTokens(String duration) {
         when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION)).thenReturn(duration);
         assertThrows(RuntimeException.class, service::deleteExpiredTokens);
@@ -379,12 +379,19 @@ class PasswordResetServiceTest {
     }
 
     @Test
-    void subsecondPositiveDurationAndNonUtcClockRetainLocalTime() {
-        when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn("PT0.000000001S");
+    void minimumDurationAndNonUtcClockRetainLocalTime() {
+        when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn("PT1M");
         service.createToken(user);
         var saved = ArgumentCaptor.forClass(PasswordResetTokenEntity.class);
         verify(tokens).save(saved.capture());
-        assertEquals(NOW.plusNanos(1), saved.getValue().getExpiryDate());
+        assertEquals(NOW.plusMinutes(1), saved.getValue().getExpiryDate());
+    }
+
+    @Test
+    void minimumRetentionUsesExpiryBasedCutoff() {
+        when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION)).thenReturn("PT2M");
+        service.deleteExpiredTokens();
+        verify(tokens).deleteByExpiryDateBefore(NOW.minusMinutes(2));
     }
 
     @Test

@@ -7,6 +7,7 @@ import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.VerificationTokenEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.config.TokenDurationPolicy;
 import de.derpeterson.app.model.enums.EmailType;
 import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.UserRepository;
@@ -83,8 +84,9 @@ public class VerificationService {
 
     private Duration positiveDuration(ConfigEntry entry) {
         Duration duration = Duration.parse(configService.getString(entry));
-        if (duration.isZero() || duration.isNegative()) {
-            throw new IllegalArgumentException(entry + " muss eine positive Dauer sein.");
+        Duration minimum = entry.getMinimumTokenDuration();
+        if (!TokenDurationPolicy.isAtLeast(duration, minimum)) {
+            throw new IllegalArgumentException(entry + " muss mindestens " + minimum + " betragen.");
         }
         return duration;
     }

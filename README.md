@@ -150,6 +150,32 @@ Unter Linux/macOS entsprechend `./mvnw` statt `.\mvnw.cmd` verwenden. Alternativ
 
 Geprüft wurden `clean test` und anschließend `package -Pproduction` mit dem Wrapper. Startbefehle wurden nicht ausgeführt; der tatsächliche Produktionsmodus im laufenden Server und der JAR-Start bleiben ungeprüft. Insbesondere ist `vaadin-dev` zusätzlich direkt als Abhängigkeit deklariert, während das Profil es nur an `vaadin-core` ausschließt.
 
+## Mindestdauern für Verifikations- und Resettokens
+
+| Einstellung | Mindestdauer |
+| --- | --- |
+| `VERIFICATION_TOKEN_VALID_DURATION` | 1 Minute |
+| `PASSWORD_RESET_TOKEN_VALID_DURATION` | 1 Minute |
+| `VERIFICATION_TOKEN_LIVE_DURATION` | 2 Minuten nach Ablauf |
+| `PASSWORD_RESET_TOKEN_LIVE_DURATION` | 2 Minuten nach Ablauf |
+
+Die Konstanten liegen in der gemeinsamen `TokenDurationPolicy`; `ConfigEntry`
+ordnet sie den vier Einstellungen zu. Adminformular und Tokendienste prüfen dieselben
+Grenzen. Das Formular akzeptiert beispielsweise `1m`/`2m` und speichert ISO-8601
+(`PT1M`/`PT2M`). Ungültige Syntax, Null-, negative und zu kurze Dauern verhindern
+das Speichern; Hinweise und Erklärungen nennen die Mindestdauer auf Deutsch/Englisch.
+Die Dienste lehnen unzulässige gespeicherte Werte vor Tokenänderung bzw. Bereinigung ab.
+Aufbewahrung verlängert keinen Link; Null bedeutet nicht unbegrenzt.
+
+Vor Übernahme dieses Stands vorhandene Konfigurationswerte unter den Mindestdauern
+anpassen. Sie werden nicht still aufgerundet. Bereits ausgegebene Tokens behalten
+ihre gespeicherten Ablaufdaten; für diese Mindestdaueränderung ist keine Schemaänderung nötig.
+
+Prüfung dieses Fixes am 12.10.2026: 1007 Anwendungstests, 21 Browser-Helper-/Reportertests
+und die vier neuen Token-Konfigurationsfälle jeweils auf DE und EN erfolgreich.
+Das ist kein erfolgreicher Gesamtnachweis aller Browserfälle; die unabhängig davon
+offenen Punkte stehen in der Browserdokumentation.
+
 ## Tests und Prüfstand
 
 Unter `src/test/java/` liegen Unit- und serverseitige Regressionstests für Benutzerverwaltung, Eingaberegeln, Registrierung, Konfiguration, Benachrichtigungen, Session-/Remember-me-/Push-RPC-Sicherheit sowie Status und Nebenläufigkeit. Persistenztests verwenden isolierte H2-In-Memory-Datenbanken, nicht die Anwendungsdatenbank. Vaadin-Tests prüfen serverseitige Komponenten und Callbacks mit kontrollierten UI-/Sessionfixtures, ohne Browser oder Anwendungsstart. `ImageHelperTest` prüft zusätzlich das echte Mail-Logo als Classpath-Ressource. `src/test/resources/logback-test.xml` konfiguriert das Test-Logging.

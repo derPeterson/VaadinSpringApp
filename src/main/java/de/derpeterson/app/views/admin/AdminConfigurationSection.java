@@ -1,6 +1,7 @@
 package de.derpeterson.app.views.admin;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.HasAriaLabel;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -21,6 +22,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.config.AdminConfigGroup;
+import de.derpeterson.app.config.TokenDurationPolicy;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
@@ -408,6 +410,9 @@ public class AdminConfigurationSection extends VerticalLayout {
         wrapper.addClassNames(LumoUtility.Gap.XSMALL);
 
         HorizontalLayout headerLayout = createFieldHeader(configEntry);
+        if (input instanceof HasAriaLabel labelledInput) {
+            labelledInput.setAriaLabelledBy(configLabelSpans.get(configEntry).getId().orElseThrow());
+        }
         Span metaTextSpan = createMetaTextSpan(configEntry);
 
         wrapper.add(headerLayout, input, metaTextSpan);
@@ -433,6 +438,7 @@ public class AdminConfigurationSection extends VerticalLayout {
         headerLayout.addClassNames(LumoUtility.Gap.SMALL);
 
         Span labelSpan = new Span(messageProperties.getAdminConfigEntryLabel(configEntry));
+        labelSpan.setId("config-label-" + configEntry.name().toLowerCase(Locale.ROOT));
         labelSpan.addClassNames(
                 LumoUtility.FontWeight.MEDIUM,
                 LumoUtility.FontSize.SMALL
@@ -477,7 +483,12 @@ public class AdminConfigurationSection extends VerticalLayout {
 
         dialog.add(layout);
 
-        icon.addClickListener(e -> dialog.open());
+        icon.addClickListener(e -> {
+            dialog.setHeaderTitle(messageProperties.getAdminConfigEntryLabel(configEntry));
+            content.setText(messageProperties.getAdminConfigEntryTooltip(configEntry));
+            closeButton.setText(messageProperties.getOkayHomeButton());
+            dialog.open();
+        });
 
         return icon;
     }
@@ -619,14 +630,18 @@ public class AdminConfigurationSection extends VerticalLayout {
             case REMEMBER_ME_SECRET_KEY -> trimmed.length() < SECRET_KEY_MIN_LENGTH
                     ? messageProperties.getAdminConfigValidationSecretKey(SECRET_KEY_MIN_LENGTH)
                     : null;
-            case USER_AUTO_ABSENT_TIMEOUT,
-                 VERIFICATION_TOKEN_VALID_DURATION,
-                 VERIFICATION_TOKEN_LIVE_DURATION,
-                 PASSWORD_RESET_TOKEN_VALID_DURATION,
-                 PASSWORD_RESET_TOKEN_LIVE_DURATION,
-                 EMAIL_QUEUE_SENT_LIVE_DURATION -> !isValidSpringDuration(trimmed)
+            case USER_AUTO_ABSENT_TIMEOUT, EMAIL_QUEUE_SENT_LIVE_DURATION -> !isValidSpringDuration(trimmed)
                     ? messageProperties.getAdminConfigValidationDuration()
                     : null;
+            case VERIFICATION_TOKEN_VALID_DURATION, VERIFICATION_TOKEN_LIVE_DURATION,
+                 PASSWORD_RESET_TOKEN_VALID_DURATION, PASSWORD_RESET_TOKEN_LIVE_DURATION -> {
+                var minimum = configEntry.getMinimumTokenDuration();
+                if (!isValidSpringDuration(trimmed)) {
+                    yield messageProperties.getAdminConfigValidationTokenDuration(minimum.toMinutes());
+                }
+                yield TokenDurationPolicy.isAtLeast(DurationStyle.detectAndParse(trimmed), minimum)
+                        ? null : messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes());
+            }
             case LOGIN_ATTEMPTS_LIMIT,
                  MAX_SESSIONS_PER_USER,
                  EMAIL_QUEUE_POOL_SIZE,
@@ -699,6 +714,10 @@ public class AdminConfigurationSection extends VerticalLayout {
         String defaultText = buildDefaultText(configEntry);
 
         if (DURATION_ENTRIES.contains(configEntry)) {
+            var minimum = configEntry.getMinimumTokenDuration();
+            if (minimum != null) {
+                return defaultText + " • " + messageProperties.getAdminConfigHelperTokenDurationFormats(minimum.toMinutes());
+            }
             return defaultText + " • " + messageProperties.getAdminConfigHelperDurationFormats();
         }
 

@@ -435,7 +435,7 @@ class PasswordResetServicePersistenceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"PT0S", "-PT1S", "invalid", "PT999999999999999999999S", "PT9223372036854775807S"})
+    @ValueSource(strings = {"PT0S", "-PT1S", "PT1S", "PT59.999999999S", "invalid", "PT999999999999999999999S", "PT9223372036854775807S"})
     void invalidDurationsPreserveExistingTokensAndQueueInCreationAndMail(String duration) {
         seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
         when(probes.config().getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn(duration);

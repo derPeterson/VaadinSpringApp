@@ -30,6 +30,20 @@ class UiTextsTest {
         assertNotEquals("registrationView.registration.success_message", result);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"de", "en"})
+    void tokenMinimumMessagesAndExistingTooltipGettersAreFormattedInBothLanguages(String language) {
+        UiTexts texts = new UiTexts(language);
+        for (String value : new String[]{texts.getAdminConfigValidationDurationMinimum(1),
+                texts.getAdminConfigValidationTokenDuration(2), texts.getAdminConfigHelperTokenDurationFormats(1),
+                texts.getAdminConfigEntryVerificationTokenValidDurationTooltip(), texts.getAdminConfigEntryVerificationTokenLiveDurationTooltip(),
+                texts.getAdminConfigEntryPasswordResetTokenValidDurationTooltip(), texts.getAdminConfigEntryPasswordResetTokenLiveDurationTooltip()}) {
+            assertFalse(value.contains("{0}"));
+            assertFalse(value.contains("\uFFFD"));
+            assertTrue(value.contains("min"));
+        }
+    }
+
     @Test
     void dateEntryMatchesTheExplicitUiLanguage() {
         var date = LocalDate.of(1990, 1, 1);

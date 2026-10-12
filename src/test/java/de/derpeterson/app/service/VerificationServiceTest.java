@@ -96,8 +96,8 @@ class VerificationServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"PT0S", "-PT1H"})
-    void nonPositiveLifetimeIsRejectedBeforeInvalidatingTokens(String duration) {
+    @ValueSource(strings = {"PT0S", "-PT1H", "PT0.000000001S", "PT1S", "PT59.999999999S"})
+    void belowMinimumLifetimeIsRejectedBeforeInvalidatingTokens(String duration) {
         when(config.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn(duration);
         assertThrows(IllegalArgumentException.class, () -> service.createToken(user));
         verify(tokens, never()).findAllByUserEntityAndStatus(any(), any());
@@ -106,12 +106,12 @@ class VerificationServiceTest {
     }
 
     @Test
-    void positiveSubsecondLifetimeIsAccepted() {
-        when(config.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("PT0.000000001S");
+    void minimumLifetimeIsAccepted() {
+        when(config.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("PT1M");
         service.createToken(user);
         var captor = ArgumentCaptor.forClass(VerificationTokenEntity.class);
         verify(tokens).save(captor.capture());
-        assertEquals(NOW.plusNanos(1), captor.getValue().getExpiryDate());
+        assertEquals(NOW.plusMinutes(1), captor.getValue().getExpiryDate());
     }
 
     @Test
@@ -282,13 +282,20 @@ class VerificationServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"PT0S", "-PT1H", "invalid"})
+    @ValueSource(strings = {"PT0S", "-PT1H", "invalid", "PT1M", "PT119.999999999S"})
     void invalidRetentionDurationDoesNotDeleteTokens(String duration) {
         when(config.getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn(duration);
         Class<? extends RuntimeException> expected = duration.equals("invalid")
                 ? DateTimeParseException.class : IllegalArgumentException.class;
         assertThrows(expected, service::deleteExpiredTokens);
         verifyNoInteractions(tokens);
+    }
+
+    @Test
+    void minimumRetentionUsesExpiryBasedCutoff() {
+        when(config.getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn("PT2M");
+        service.deleteExpiredTokens();
+        verify(tokens).deleteByExpiryDateBefore(NOW.minusMinutes(2));
     }
 
     @Test

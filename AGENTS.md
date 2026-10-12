@@ -75,7 +75,7 @@
   creates disposable isolated Docker data and archives Allure and Markdown reports.
   Suites live under `browser-tests/src/test/java/de/derpeterson/browsertests/suites/`;
   keep infrastructure, authentication, registration, verification, password-reset,
-  account-lifecycle and presentation cases separate. Shared UI actions belong in
+  account-lifecycle, presentation and token-configuration cases separate. Shared UI actions belong in
   `pages/`, not in one growing test class. Select suites with `-Suite`.
   Document each browser case independently with its ID, area, steps and expected result.
   Keep browser documentation and reports independent of the former manual-test template.

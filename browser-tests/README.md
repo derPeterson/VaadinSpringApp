@@ -43,7 +43,7 @@ In PowerShell im Projektordner:
 ## Suites und Testfälle
 
 Die Fälle sind nach fachlichem Bereich getrennt, mit eigenen JUnit-Klassen unter
-src/test/java/de/derpeterson/browsertests/suites/. Ein gewöhnlicher Start führt alle sieben
+src/test/java/de/derpeterson/browsertests/suites/. Ein gewöhnlicher Start führt alle acht
 Suites aus. Jede Prüfung bekommt einen frischen Browserkontext; alle Fälle funktionieren
 ohne vorherige Testfälle. Die Datenbank und Mailpit sind für den gesamten Lauf frisch.
 
@@ -56,7 +56,8 @@ ohne vorherige Testfälle. Die Datenbank und Mailpit sind für den gesamten Lauf
 | password-reset | Echte Reset-Mail und neue Anmeldung, Formularfehler, neutrale Anfrageantwort, ungültige/verbrauchte/fehlende Links | 6 |
 | account-lifecycle | Einzelvalidierung, kanonisierte Dubletten, unverifizierte Resetanfrage und altes Resetformular | 5 |
 | presentation | Startseiten-Sprachwechsel, gespeicherte Kontosprache, schmale Registrierung, Tastaturlogin | 4 |
-| all | Alle sieben Suites; Standardwert | 30 |
+| token-configuration | Mindestdauern der vier Tokeneinstellungen, Feldfehler, Speichern/Neuladen und Erklärungen | 4 |
+| all | Alle acht Suites; Standardwert | 34 |
 
 ~~~powershell
 # Nur die Anmeldungssuite:
@@ -209,9 +210,9 @@ Für die englische Variante denselben Lauf mit `-Language en` starten:
 ```
 
 Die Sprache lässt sich mit `-Suite`, `-Headed` und `-NoBuild` kombinieren. Jeder Lauf
-erhält sein eigenes Archiv mit Oberflächensprache und Browser-Locale. Die 30 Fälle
+erhält sein eigenes Archiv mit Oberflächensprache und Browser-Locale. Die 34 Fälle
 laufen pro Sprache; Deutsch und Englisch werden nicht gleichzeitig als richtige
-Antwort akzeptiert. Beide Läufe zusammen prüfen 60 Fallausführungen.
+Antwort akzeptiert. Beide Läufe zusammen prüfen 68 Fallausführungen, sofern beide Gesamtläufe erfolgreich abgeschlossen werden.
 
 `i18n/UiTexts` lädt die **originalen** Dateien `src/main/resources/i18n/messages_de.properties`
 und `messages_en.properties` über den Test-Classpath. Maven stellt diese Ressourcen
@@ -469,3 +470,43 @@ Die festen DE/EN-Läufe sind davon unabhängig. Echte Geräte, Bildschirmtastatu
 200-%-Browserzoom, sämtliche Dialoge und ein menschliches Gestaltungs-/Lesbarkeitsurteil
 bleiben offen. Ein grüner schmaler Chromium-Viewport bedeutet keinen vollständigen
 Mobilgeräte- oder Accessibility-Nachweis.
+
+## Token-Konfiguration: Mindestdauern
+
+Die Suite `token-configuration` enthält vier unabhängige Fälle:
+
+| ID | Feld | Mindestdauer |
+| --- | --- | --- |
+| CONFIG-03A | Verifikationslink-Gültigkeit | 1 Minute |
+| CONFIG-03B | Verifikationstoken-Aufbewahrung nach Ablauf | 2 Minuten |
+| CONFIG-03C | Resetlink-Gültigkeit | 1 Minute |
+| CONFIG-03D | Resettoken-Aufbewahrung nach Ablauf | 2 Minuten |
+
+Jeder Fall meldet sich über die Oberfläche als Admin an und wählt die Laufsprache.
+Er prüft Mindesthinweis und Erklärung, versucht ungültige Syntax, Null, negative,
+einsekündige und knapp unter dem Minimum liegende Werte zu speichern. Feldfehler
+und erneutes Laden belegen Ablehnung und unveränderte Speicherung. Danach werden
+genau `1m` bzw. `2m` gespeichert und als ISO-Wert wieder geladen; der ursprüngliche
+Wert wird wiederhergestellt. Andere Konfigurationsfelder und Neustartwirkung sind
+damit nicht vollständig geprüft.
+
+```powershell
+.\browser-tests\run.ps1 -Suite token-configuration -Language de
+.\browser-tests\run.ps1 -Suite token-configuration -Language en -NoBuild
+```
+
+`TokenConfigurationPage` bedient die beschrifteten Felder, Speichern, Neuladen und
+Erklärungsdialoge. Die echten sichtbaren Feldlabels sind über `aria-labelledby`
+mit ihren Eingaben verbunden; die Browserhelfer nutzen die zugänglichen Namen und
+gemeinsamen Übersetzungsgetter. Keine Datenbank-/Servicevorbereitung.
+Schritte, Erwartungen, Screenshots und Traces stehen im jeweiligen Run-Bericht.
+
+**Nachprüfung vom 12.10.2026:** Anwendung 1007/1007, Helper/Reporter 21/21;
+Token-Konfiguration 4/4 auf DE und 4/4 auf EN. Aufbau, Abbau und HTML-Berichte erfolgreich.
+
+- DE: `runs/2026-10-12T07-46-38_UTC__3a10c1b8__2eb51d1c/report.md`
+- EN: `runs/2026-10-12T07-50-30_UTC__3a10c1b8__2ea921ba/report.md`
+
+Die früheren vollständigen Läufe mit 30 Fällen bleiben historische Belege ihrer
+Fehler. Ein vollständiger Lauf aller jetzt 34 Fälle wurde für diesen Fix nicht
+wiederholt. Adminlisten-Vorbereitung und mobiler Datepicker bleiben unabhängig davon offen.

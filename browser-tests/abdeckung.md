@@ -1,7 +1,9 @@
 # Abgleich der ursprünglichen manuellen Testfälle
 
-**Abschluss: UNVOLLSTÄNDIG.** 30 aktive Browserfälle (vorher 21); final DE 28/30, EN 29/30.
-Einzelsuites grün, Gesamtläufe mit zwei nachstehend dokumentierten Grenzen.
+**Abschluss: UNVOLLSTÄNDIG.** Jetzt 34 aktive Browserfälle (ursprünglich 21).
+Historische Gesamtläufe mit 30 Fällen: DE 28/30, EN 29/30, mit zwei dokumentierten Grenzen.
+Nachfolgefix der vier Token-Konfigurationsfelder: CONFIG-03A–D jeweils DE/EN 4/4 erfolgreich;
+1007 Anwendungstests und 21 Helper-/Reportertests erfolgreich. Kein neuer vollständiger 34-Fälle-Lauf.
 
 Stand: 12.10.2026. Ausgangscommit `5310516d2ccbade7169aa19023ec21a24a849c22`.
 Arbeitsbranch: `feature/browser_manual_coverage`. Die 44 ursprünglichen Fall-IDs
@@ -44,7 +46,7 @@ nachweis zu behaupten. Es wird kein künstlicher Gesamt-Prozentwert berechnet.
 | REG-03 | Doppelte E-Mail und Kanonisierung | TEILWEISE / TECHNISCH | REG-03A | Exakte/kanonisierte Dublette abgewiesen und Passwort unverändert; genaue Anzahl gespeicherter Identitäten technisch prüfen |
 | VER-01 | Gültiger Link und erneute Verwendung | TEILWEISE | VER-01A/B, MailpitInbox | Aktivierung/erneute Verwendung und Mail-Schlüsselangaben geprüft; Footer nicht ausdrücklich mit Getter verglichen |
 | VER-02 | Ungültiger oder fehlender Token | TEILWEISE | VER-02A | Unbekannter/fehlender Token geprüft; ungültige Eingabe im tatsächlich angebotenen Anforderungsformular fehlt |
-| VER-03 | Ablauf und erneuter Versand | OFFEN – ABHÄNGIG | Technische Clock-/Queue-Persistenztests vorhanden | Browserablauf benötigt verlässliche UI-Änderung der kurzen Tokenlaufzeit; Konfigurationspaket gescheitert. Erneuten Versand/Deduplizierung nicht als Browsererfolg zählen |
+| VER-03 | Ablauf und erneuter Versand | OFFEN – ABHÄNGIG | Technische Clock-/Queue-Persistenztests vorhanden | UI-Speicherung von einer Minute ist jetzt durch CONFIG-03A belegt; Ablauf mit echter Wartezeit wurde noch nicht ergänzt. Erneuten Versand/Deduplizierung nicht als Browsererfolg zählen |
 | VER-04 | Adminsperre bleibt trotz alter Links bestehen | OFFEN – ABHÄNGIG | Technische Sperrregressionen vorhanden | Benötigt bestätigte Adminbearbeitung für unverifiziertes und verifiziertes Konto; Benutzerverwaltungspaket gescheitert |
 | AUTH-01 | Erfolgs- und Fehlerfälle | UI-ABGEDECKT | AUTH-01A–D, REG-01A, SEC-01A, VER-01A | Erfolg/falsches Passwort/unbekannt/unverifiziert/anonym geprüft; zusätzliche hypothetische Sperrregeln nicht behauptet |
 | AUTH-02 | Abmeldung, Zurück und bestehende Tabs | TEILWEISE | AUTH-02A | Admin-Tabs, Logout, Zurück und neuer Zugriff belegt; alter geschützter Mutationscallback nicht vollständig geprüft |
@@ -52,7 +54,7 @@ nachweis zu behaupten. Es wird kein künstlicher Gesamt-Prozentwert berechnet.
 | RESET-01 | Gültiger Reset | TEILWEISE | RESET-01A | Echte Mail/neues und altes Passwort belegt; vollständiger Mail-Footer-Vertrag nicht ausdrücklich verglichen |
 | RESET-02 | Anonyme Antwort verrät keine Konten | TEILWEISE | RESET-03A/03B, RESET-02A | Aktiv/unbekannt/unverifiziert und Syntax belegt; administrativ gesperrte Adresse bleibt abhängig von Adminbearbeitung offen |
 | RESET-03 | Passwortregeln, ungültige und verbrauchte Links | UI-ABGEDECKT | RESET-02B/04A/04B | Fehler/Korrektur, unbekannter und verbrauchter Link ohne weiteres Passwortformular; technische Regeln bleiben JUnit |
-| RESET-04 | Ablauf auch bei bereits geöffnetem Formular | OFFEN – ABHÄNGIG | Technische Clock-/Ablaufregressionen vorhanden | Benötigt kontrolliert kurze UI-Konfiguration und echte Wartezeit; keine Uhrmanipulation/Testzustandsinjektion als Ersatz |
+| RESET-04 | Ablauf auch bei bereits geöffnetem Formular | OFFEN – ABHÄNGIG | Technische Clock-/Ablaufregressionen vorhanden | UI-Speicherung von einer Minute ist durch CONFIG-03C belegt; benötigt noch den Ablauf mit echter Wartezeit; keine Uhrmanipulation/Testzustandsinjektion als Ersatz |
 | RESET-05 | Zwei geöffnete Formulare für denselben Token | UI-ABGEDECKT | RESET-05A | Zwei getrennte anonyme Kontexte: erstes Speichern gewinnt, alter Submit abgewiesen und richtige Loginidentität geprüft; echte Parallelität separat |
 | RESET-06 | Sperre oder Löschung nach Linkerstellung | OFFEN – ABHÄNGIG | Technische Sperr-/Löschregressionen vorhanden | Verlässliche Adminsperre/Löschung für tatsächliche alte Links benötigt; gescheitertes User-Paket |
 | USER-01 | Anlegen, bearbeiten und erneut öffnen | OFFEN – PAKET GESCHEITERT | Bisherige Anlage dient SEC-01A/Sprachpräferenz als Vorbereitung | Bearbeitung/Validation/erneutes Öffnen des Gesamtfalls nach zwei User-Versuchen nicht bestätigt |
@@ -65,8 +67,8 @@ nachweis zu behaupten. Es wird kein künstlicher Gesamt-Prozentwert berechnet.
 | SEC-04 | Letzten aktiven Admin schützen | OFFEN – ABHÄNGIG | AdminSecurityPersistenceTest | Letzter-Admin-/Selbstschutz muss über erreichbare Formular-/Löschaktionen geprüft werden |
 | STATUS-01 | Manueller Status und Aktualisierung | OFFEN – PAKET GESCHEITERT | Zwei archivierte Statusversuche | Vaadin-Slot- und Optionen-/Value-Locators zweimal gescheitert; kein vollständiger manueller Status-/Live-Nachweis übernommen |
 | STATUS-02 | Automatische Abwesenheit und Rückkehr | OFFEN – ABHÄNGIG / TECHNISCH | UserStatusSchedulerTest, UserStatusPersistenceTest | Kurzer Timeout plus echte sichtbare Status-/Rückkehrprüfung benötigen bestätigte Config- und Statushelfer |
-| CONFIG-01 | Zulässige Werte speichern | OFFEN – PAKET GESCHEITERT | Konfigurationsdienste/Komponenten technisch geprüft | UI-Test suchte Boolean in falscher Gruppe; zweiter Versuch beim Dateieinlesen gescheitert; Wiederladen/Neustartwirkung nicht vollständig bestätigt |
-| CONFIG-02 | Ungültige Konfiguration bleibt abgelehnt | OFFEN – BESTÄTIGTER FEHLER | Archivierter CONFIG-02A | PT0S wird derzeit gespeichert, obwohl Tokendienste positive Dauern verlangen; nicht behoben. Weitere UI-Varianten offen |
+| CONFIG-01 | Zulässige Werte speichern | TEILWEISE | CONFIG-03A–D: vier Tokendauern an der Mindestgrenze gespeichert und neu geladen, DE/EN | Weitere Konfigurationsfelder (u. a. Boolean/Zahlen) und Neustartwirkung bleiben offen; früheres Gesamtpaket nicht nachträglich als erfolgreich werten |
+| CONFIG-02 | Ungültige Konfiguration bleibt abgelehnt | TEILWEISE – TOKENFEHLER BEHOBEN | CONFIG-03A–D DE/EN: Syntax, Null, negative und zu kurze Dauern abgelehnt; gespeicherter Wert bleibt unverändert | Mindestgrenzen 1 Minute Gültigkeit / 2 Minuten Aufbewahrung nach Ablauf. Weitere Konfigurationsfelder offen; historischer CONFIG-02A bleibt Reproduktionsbeleg |
 | MAIL-01 | Admin-Testmail und Unicode | OFFEN – PAKET GESCHEITERT | Echte Unicode-Mail im ersten Versuch empfangen | Vergleich scheiterte am regulären abschließenden SMTP-Zeilenumbruch; gesamtes Paket nicht abschließend DE/EN bestätigt |
 | MAIL-02 | Erfolgreiche Queue-Verarbeitung | TEILWEISE / TECHNISCH | REG/VER/RESET lesen tatsächlich zugestellte eigene SMTP-Mails | Kein vollständiger Browsernachweis interner PENDING/IN_PROGRESS/SENT-Zustände oder späterer Scheduler-Doppelversandfreiheit |
 | MAIL-03 | Nachgewiesener Verbindungsfehler und Wiederholung | OFFEN – BETRIEB / TECHNISCH | EmailConnectionFailureTest, EmailQueueServicePersistenceTest | Realer SMTP-Stopp/Wiederanlauf mit mindestens einminütigem Retry benötigt begrenzte Test-Orchestrierung; keine Queue-Statusoberfläche vorhanden |

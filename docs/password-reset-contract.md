@@ -14,9 +14,11 @@ Passwortänderung prüfen jeweils erneut nach dem Kontolock; das Rendern des
 Formulars reserviert keinen gültigen Token.
 
 `PASSWORD_RESET_TOKEN_VALID_DURATION` und `PASSWORD_RESET_TOKEN_LIVE_DURATION`
-müssen parsebare, strikt positive ISO-8601-Dauern sein. Auch positive
-Subsekundendauern sind zulässig. Null, leere/ungültige Werte, Null-/Negativdauern
-und nicht darstellbare Zeitberechnungen schlagen fehl. Ablaufdatum und Dauer
+müssen parsebare ISO-8601-Dauern von mindestens **1 Minute Gültigkeit** bzw.
+**2 Minuten Aufbewahrung nach Ablauf** sein. Die gemeinsame `TokenDurationPolicy`
+und die Zuordnung in `ConfigEntry` definieren diese Grenzen auch für die Adminoberfläche.
+Null, leere/ungültige Werte, Null-/Negativdauern, Werte unter dem jeweiligen Minimum
+(auch positive Subsekundendauern) und nicht darstellbare Zeitberechnungen schlagen fehl. Ablaufdatum und Dauer
 werden vor Tokeninvalidierung berechnet; es gibt keine stillen Ersatzwerte.
 Bereinigung löscht weiterhin ausschließlich Ablaufdaten strikt vor
 `now(clock) - Aufbewahrungsdauer`, unabhängig vom Tokenstatus. Gleichheit bleibt

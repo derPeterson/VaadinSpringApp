@@ -1,6 +1,7 @@
 package de.derpeterson.app.i18n;
 
 import de.derpeterson.app.config.AdminConfigGroup;
+import de.derpeterson.app.config.TokenDurationPolicy;
 
 import java.text.MessageFormat;
 import java.util.Objects;
@@ -656,19 +657,19 @@ public class MessageTexts {
     }
 
     public String getAdminConfigEntryVerificationTokenValidDurationTooltip() {
-        return getTranslation("adminView.config.entry.verification_token_valid_duration.tooltip");
+        return getFormattedTranslation("adminView.config.entry.verification_token_valid_duration.tooltip", TokenDurationPolicy.MIN_VALIDITY.toMinutes());
     }
 
     public String getAdminConfigEntryVerificationTokenLiveDurationTooltip() {
-        return getTranslation("adminView.config.entry.verification_token_live_duration.tooltip");
+        return getFormattedTranslation("adminView.config.entry.verification_token_live_duration.tooltip", TokenDurationPolicy.MIN_RETENTION.toMinutes());
     }
 
     public String getAdminConfigEntryPasswordResetTokenValidDurationTooltip() {
-        return getTranslation("adminView.config.entry.password_reset_token_valid_duration.tooltip");
+        return getFormattedTranslation("adminView.config.entry.password_reset_token_valid_duration.tooltip", TokenDurationPolicy.MIN_VALIDITY.toMinutes());
     }
 
     public String getAdminConfigEntryPasswordResetTokenLiveDurationTooltip() {
-        return getTranslation("adminView.config.entry.password_reset_token_live_duration.tooltip");
+        return getFormattedTranslation("adminView.config.entry.password_reset_token_live_duration.tooltip", TokenDurationPolicy.MIN_RETENTION.toMinutes());
     }
 
     public String getAdminConfigEntryMailHostTooltip() {
@@ -758,6 +759,18 @@ public class MessageTexts {
 
     public String getAdminConfigValidationSecretKey(int min) {
         return getFormattedTranslation("adminView.config.validation.secret_key", min);
+    }
+
+    public String getAdminConfigValidationDurationMinimum(long minutes) {
+        return getFormattedTranslation("adminView.config.validation.duration_minimum", minutes);
+    }
+
+    public String getAdminConfigValidationTokenDuration(long minutes) {
+        return getFormattedTranslation("adminView.config.validation.token_duration", minutes);
+    }
+
+    public String getAdminConfigHelperTokenDurationFormats(long minutes) {
+        return getFormattedTranslation("adminView.config.helper.token_duration_formats", minutes);
     }
 
     public String getAdminConfigValidationDuration() {

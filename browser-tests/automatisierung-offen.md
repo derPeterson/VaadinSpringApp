@@ -40,7 +40,11 @@ DE: `2026-10-12T02-42-02_UTC__fbc1ba18__39d243db`, 5/5 bestanden.
 Der zugehörige EN-Lauf wurde ebenfalls mit 5/5 bestätigt; Belege in den Run-Archiven.
 Die Paketgrenze wurde eingehalten: keine dritte Reparaturrunde.
 
-## Konfiguration/Mail – nach zwei Versuchen offen
+## Konfiguration/Mail – historisches Paket nach zwei Versuchen offen
+
+**Nachfolgeauftrag:** Der Token-Dauerfehler ist inzwischen behoben und separat
+DE/EN geprüft (siehe Nachprüfung unten). Weitere Config-/Mailfälle bleiben offen.
+Der folgende Abschnitt beschreibt unverändert den damaligen Stand.
 
 Versuch 1: `2026-10-12T02-47-02_UTC__ea41bc7e__420ff512`, 0/3 bestanden.
 Der Wartungs-Boolean wurde in der falschen Gruppe gesucht; ein korrekt übertragener
@@ -158,8 +162,9 @@ Vaadin-Slot-/Value-Zuordnung nicht als dritter Versuch für User/Status verwende
 
 ## Sinnvolle nächste Reihenfolge
 
-1. Bestätigten Config-Fehler beheben: ausschließlich die vier Token-Dauern positiv
-   validieren; Syntaxfehler, Null und negative Werte dürfen nicht gespeichert werden.
+1. Erledigt im ausdrücklich beauftragten Nachfolgefix: vier Token-Dauern mit
+   Mindestgrenzen 1/2 Minuten abgesichert, ungültige Werte werden nicht gespeichert.
+   Nachweise und noch offene übrige Config-Fälle siehe unten.
 2. Admin-Grid-Aktionen und Vaadin-Dialoginhalte anhand echter Slots/DOM-Belege
    zuverlässig bedienen; Benutzerverwaltung und veraltete Formulare bestätigen.
 3. Davon abhängig Rollenentzug/Sperre/Löschung in laufenden Sitzungen und alte Links.
@@ -204,3 +209,37 @@ wie beauftragt; die später gefundenen Grenzen sind hier sichtbar. Der Branch is
 Aufbau, Abbau und HTML-Erzeugung der finalen Läufe erfolgreich; eigene Container
 und Volumes jeweils entfernt. Anwendung: 971 Tests und JaCoCo erfolgreich;
 Helper/Reporter: 19 Tests erfolgreich. Keine Produktionsänderung, kein Merge/Push.
+
+## Nachprüfung: Mindestdauern für Tokens behoben
+
+Der Nutzer hat nach dem abgeschlossenen nächtlichen Auftrag einen eigenen Fix
+beauftragt: mindestens eine Minute Linkgültigkeit und zwei Minuten Aufbewahrung
+nach Ablauf für Verifikation und Reset. Null bedeutet nicht unbegrenzt.
+
+Der früher durch CONFIG-02A sichtbare Syntax-only-Check war eine echte Lücke der
+Adminvalidierung: Eine Null-Dauer konnte gespeichert werden, obwohl die Dienste
+sie ablehnten. Die UI prüft nun dieselben Mindestgrenzen wie beide Dienste;
+DE/EN-Feldfehler, Hilfstexte und Erklärungsdialoge wurden angepasst. Vorhandene
+zu kurze Konfigurationswerte müssen geprüft/angepasst werden; bestehende Token-
+Ablaufdaten werden nicht geändert. Die Mindestdaueränderung benötigt kein neues Schema.
+
+Dieses Paket wurde mit höchstens zwei Umsetzungsversuchen durchgeführt:
+
+1. Anwendungstests erfolgreich; erster DE-Browserlauf
+   `2026-10-12T07-39-32_UTC__3a10c1b8__ad01c17b` scheiterte an einem
+   mehrdeutigen Testlocator nach dem Erklärungsdialog. Kein neuer Anwendungsfehler:
+   Der damalige Locator ordnete Eingaben über Layouttext statt ihrer Feldbeschriftung zu.
+2. Nach erneuter Bestandsaufnahme wurden die tatsächlichen sichtbaren Feldlabels
+   zugänglich mit den Eingaben verbunden und diese Namen im Seitenhelfer verwendet.
+   Anwendung 1007/1007, Helper/Reporter 21/21, CONFIG-03A–D DE 4/4 und EN 4/4 erfolgreich.
+
+Erfolgreiche Berichte:
+
+- DE: `runs/2026-10-12T07-46-38_UTC__3a10c1b8__2eb51d1c/report.md`
+- EN: `runs/2026-10-12T07-50-30_UTC__3a10c1b8__2ea921ba/report.md`
+
+Die Testumgebungen wurden jeweils abgebaut. Historische Berichte bleiben erhalten.
+Keine weiteren Reparaturversuche und kein Merge/Push. Adminlisten-Vorbereitung,
+mobiler Datepicker, übrige Konfigurationsfelder, Admin-Testmail und weitere bisher
+offene Pakete wurden durch diesen Fix nicht mit erledigt. Die Gesamtübersicht
+bleibt unvollständig; kein neuer vollständiger Browserlauf aller 34 Fälle.

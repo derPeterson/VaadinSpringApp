@@ -1,6 +1,6 @@
 param(
     [switch]$Headed,
-    [ValidateSet('all', 'infrastructure', 'authentication', 'registration', 'verification', 'password-reset', 'account-lifecycle', 'presentation')]
+    [ValidateSet('all', 'infrastructure', 'authentication', 'registration', 'verification', 'password-reset', 'account-lifecycle', 'presentation', 'token-configuration')]
     [string]$Suite = 'all',
     [ValidateSet('de', 'en')]
     [string]$Language = 'de',

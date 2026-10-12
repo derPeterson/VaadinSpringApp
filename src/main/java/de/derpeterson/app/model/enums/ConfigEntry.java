@@ -1,5 +1,6 @@
 package de.derpeterson.app.model.enums;
 
+import de.derpeterson.app.config.TokenDurationPolicy;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -44,6 +45,15 @@ public enum ConfigEntry {
 
     private final String key;
     private final Object defaultValue;
+
+    /** Null for unrelated settings; retention is measured after token expiry. */
+    public Duration getMinimumTokenDuration() {
+        return switch (this) {
+            case VERIFICATION_TOKEN_VALID_DURATION, PASSWORD_RESET_TOKEN_VALID_DURATION -> TokenDurationPolicy.MIN_VALIDITY;
+            case VERIFICATION_TOKEN_LIVE_DURATION, PASSWORD_RESET_TOKEN_LIVE_DURATION -> TokenDurationPolicy.MIN_RETENTION;
+            default -> null;
+        };
+    }
 
     public String getDefaultValueString() {
         return (defaultValue instanceof String defaultString) ? defaultString : String.valueOf(defaultValue);
