@@ -17,7 +17,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @ComponentScan(basePackages = "de.derpeterson.app")
 @EntityScan(basePackages = {"de.derpeterson.app.model"})
-@PWA(name = "VaadinSpringApp", shortName = "App")
+@PWA(name = "VaadinSpringApp", shortName = "App", iconPath = "custom-theme/service_logo.png")
 @StyleSheet(Lumo.STYLESHEET)
 @StyleSheet(Lumo.UTILITY_STYLESHEET)
 @StyleSheet("custom-theme/styles.css")
