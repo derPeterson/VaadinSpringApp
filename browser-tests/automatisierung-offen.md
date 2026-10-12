@@ -25,3 +25,17 @@ USER-01 bis USER-04 bleiben offen; nur die bisherige Anlagevorbereitung ist bele
 SEC-02/03/04, VER-04 und RESET-06 benötigen verlässlich bedienbare Adminänderungen
 und Löschaktionen. Sie werden nicht auf dem unbestätigten neuen Helfer aufgebaut.
 Nach Lösung des Benutzerverwaltungs-Pakets sind sie als eigene UI-Fälle nachzuholen.
+
+## Weitere Kontoabläufe – Versuch 1 (abgebrochen)
+
+`2026-10-12T02-40-22_UTC__fbc1ba18__7a45978d`: 3/5 bestanden
+(Dublette, neutrale Antwort für unverifizierte Adresse, veraltetes Resetformular).
+Die Einzelvalidierungen scheiterten an gleichzeitig vorhandenen gleichlautenden
+Notifications nach mehreren Versuchen. Versuch 2 beginnt neu und schließt geprüfte
+Hinweise über deren echte UI-Buttons, bevor die nächste Variante eingegeben wird.
+
+### Weitere Kontoabläufe – Versuch 2 erfolgreich
+
+DE: `2026-10-12T02-42-02_UTC__fbc1ba18__39d243db`, 5/5 bestanden.
+Der zugehörige EN-Lauf wurde ebenfalls mit 5/5 bestätigt; Belege in den Run-Archiven.
+Die Paketgrenze wurde eingehalten: keine dritte Reparaturrunde.

@@ -28,8 +28,8 @@ Browserprüfungen stehen in `automatisierung-offen.md`. Keine Änderung der alte
 | START-02 | Erneuter Start erhält Daten und Konfiguration | OFFEN – noch kein entsprechender Browsernachweis |
 | START-03 | Erststart und Neustart verwenden die richtige Mailkonfiguration | REG-01A und RESET-01A: SMTP beim frischen Start; Neustart fehlt |
 | REG-01 | Gültige Registrierung | REG-01A: Registrierung, Mail, Ablehnung vor Aktivierung; Admininspektion fehlt |
-| REG-02 | Pflichtfelder und ungültige Eingaben | REG-02A/B: Pflichtfelder, E-Mail und Bestätigung; weitere Einzelvarianten fehlen |
-| REG-03 | Doppelte E-Mail und Kanonisierung | OFFEN – noch kein entsprechender Browsernachweis |
+| REG-02 | Pflichtfelder und ungültige Eingaben | REG-02A/B/C/D: Pflichtfelder, blanke Namen, E-Mail/Bestätigung, heutiger/zukünftiger Geburtstag und einzelne Passwortregeln; Mailabwesenheit/fehlende SQL-Anlage bei jedem Fehlversuch separat |
+| REG-03 | Doppelte E-Mail und Kanonisierung | REG-03A: beide Dublettenvarianten und unverändertes Passwort; genaue SQL-Kontozahl separat |
 | VER-01 | Gültiger Link und erneute Verwendung | VER-01A/B: Aktivierung und Wiederverwendung; Footer nicht ausdrücklich verglichen |
 | VER-02 | Ungültiger oder fehlender Token | VER-02A: unbekannter/fehlender Token; Anforderungsformular teilweise |
 | VER-03 | Ablauf und erneuter Versand | OFFEN – noch kein entsprechender Browsernachweis |
@@ -38,10 +38,10 @@ Browserprüfungen stehen in `automatisierung-offen.md`. Keine Änderung der alte
 | AUTH-02 | Abmeldung, Zurück und bestehende Tabs | AUTH-02A: Logout, Tabnavigation und Zurück; alte Mutation nicht geprüft |
 | AUTH-03 | Angemeldet bleiben | OFFEN – noch kein entsprechender Browsernachweis |
 | RESET-01 | Gültiger Reset | RESET-01A: Mail, Passwortwechsel, alte/neue Anmeldung |
-| RESET-02 | Anonyme Antwort verrät keine Konten | RESET-03A und RESET-02A: aktiv/unbekannt und Syntax; unverifiziert/gesperrt fehlen |
+| RESET-02 | Anonyme Antwort verrät keine Konten | RESET-03A und RESET-02A: aktiv/unbekannt und Syntax; RESET-03B unverifiziert; gesperrte Variante bleibt offen |
 | RESET-03 | Passwortregeln, ungültige und verbrauchte Links | RESET-02B/04A/04B |
 | RESET-04 | Ablauf auch bei bereits geöffnetem Formular | OFFEN – noch kein entsprechender Browsernachweis |
-| RESET-05 | Zwei geöffnete Formulare für denselben Token | OFFEN – noch kein entsprechender Browsernachweis |
+| RESET-05 | Zwei geöffnete Formulare für denselben Token | VOLLSTÄNDIG für den beschriebenen sequenziellen UI-Ablauf: RESET-05A, zwei getrennte Kontexte, abgelehnter alter Submit und Login; echte Parallelität separat |
 | RESET-06 | Sperre oder Löschung nach Linkerstellung | OFFEN – noch kein entsprechender Browsernachweis |
 | USER-01 | Anlegen, bearbeiten und erneut öffnen | OFFEN – noch kein entsprechender Browsernachweis |
 | USER-02 | Sperren und gezieltes Freigeben | OFFEN – noch kein entsprechender Browsernachweis |

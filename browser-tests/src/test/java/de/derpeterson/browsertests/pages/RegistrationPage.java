@@ -91,6 +91,19 @@ public final class RegistrationPage {
         assertThat(page.locator("vaadin-password-field[invalid]")).hasCount(2);
     }
 
+    @Step("Einzelne Registrierungsangabe ändern")
+    public void change(String label, String value) { field(label).fill(value); field(label).press("Tab"); }
+
+    @Step("Verständlichen Registrierungsfehler ohne Erfolg prüfen")
+    public void assertValidationError(String message) {
+        Locator notice = page.locator("vaadin-notification-card:not([closing])");
+        assertThat(notice).hasCount(1);
+        assertThat(notice).containsText(texts.visibleText(page, message));
+        assertThat(notice).containsText(texts.getBaseFailedTitle());
+        notice.getByRole(AriaRole.BUTTON).click();
+        assertThat(notice).not().isVisible();
+    }
+
     private Locator field(String label) {
         return page.getByLabel(label, new Page.GetByLabelOptions().setExact(true));
     }

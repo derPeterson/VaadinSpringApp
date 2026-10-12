@@ -43,7 +43,7 @@ In PowerShell im Projektordner:
 ## Suites und Testfälle
 
 Die Fälle sind nach fachlichem Bereich getrennt, mit eigenen JUnit-Klassen unter
-src/test/java/de/derpeterson/browsertests/suites/. Ein gewöhnlicher Start führt alle fünf
+src/test/java/de/derpeterson/browsertests/suites/. Ein gewöhnlicher Start führt alle sechs
 Suites aus. Jede Prüfung bekommt einen frischen Browserkontext; alle Fälle funktionieren
 ohne vorherige Testfälle. Die Datenbank und Mailpit sind für den gesamten Lauf frisch.
 
@@ -54,7 +54,8 @@ ohne vorherige Testfälle. Die Datenbank und Mailpit sind für den gesamten Lauf
 | registration | Registrierung, Pflichtfelder und korrigierbare Eingabefehler | 3 |
 | verification | Echter Mailbutton, Aktivierung, erneuter Linkaufruf, ungültiger/fehlender Token | 3 |
 | password-reset | Echte Reset-Mail und neue Anmeldung, Formularfehler, neutrale Anfrageantwort, ungültige/verbrauchte/fehlende Links | 6 |
-| all | Alle fünf Suites; Standardwert | 21 |
+| account-lifecycle | Einzelvalidierung, kanonisierte Dubletten, unverifizierte Resetanfrage und altes Resetformular | 5 |
+| all | Alle sechs Suites; Standardwert | 26 |
 
 ~~~powershell
 # Nur die Anmeldungssuite:
@@ -207,9 +208,9 @@ Für die englische Variante denselben Lauf mit `-Language en` starten:
 ```
 
 Die Sprache lässt sich mit `-Suite`, `-Headed` und `-NoBuild` kombinieren. Jeder Lauf
-erhält sein eigenes Archiv mit Oberflächensprache und Browser-Locale. Die 21 Fälle
+erhält sein eigenes Archiv mit Oberflächensprache und Browser-Locale. Die 26 Fälle
 laufen pro Sprache; Deutsch und Englisch werden nicht gleichzeitig als richtige
-Antwort akzeptiert. Beide Läufe zusammen prüfen 30 Fallausführungen.
+Antwort akzeptiert. Beide Läufe zusammen prüfen 52 Fallausführungen.
 
 `i18n/UiTexts` lädt die **originalen** Dateien `src/main/resources/i18n/messages_de.properties`
 und `messages_en.properties` über den Test-Classpath. Maven stellt diese Ressourcen
@@ -384,3 +385,31 @@ Neue Fälle in der fachlich passenden Suite unter `suites/` ergänzen; für eine
 - Maven muss beim ersten Start Werkzeuge herunterladen. Danach sind Bibliotheken und Allure im lokalen Maven-/Build-Verzeichnis vorhanden.
 
 Die Browsertests brauchen kein eigenes npm-Testprojekt. Playwright verwendet intern weiterhin seinen mitgelieferten Browser-Treiber; der von dir bearbeitete Testcode bleibt Java.
+
+
+## Weitere Kontoabläufe
+
+Die eigenständige Suite `account-lifecycle` ergänzt fünf unabhängige Fälle:
+
+| ID | Schritte | Erwartung |
+|---|---|---|
+| REG-02C | Blanke Namen, heutiger/zukünftiger Geburtstag einzeln absenden, korrigieren, echte Mail abwarten | Verständliche Fehler; korrigierte Registrierung funktioniert |
+| REG-02D | Kurzes Passwort, fehlender Großbuchstabe/Sonderzeichen und abweichende E-Mail-Bestätigung einzeln versuchen | Kein Erfolg aus ungültigen Angaben; Korrektur möglich |
+| REG-03A | Eigenes aktiviertes Konto exakt und kanonisiert erneut registrieren; Original-/Ersatzpasswort testen | Dublette abgelehnt und ursprüngliches Passwort unverändert |
+| RESET-03B | Noch unverifiziertes Konto und unbekannte Adresse anfragen; Antworten vergleichen | Identische neutrale Bestätigung |
+| RESET-05A | Echten Resetlink in zwei getrennten Sitzungen öffnen; B setzt Passwort, altes A versucht abweichende Änderung | Alter Submit abgewiesen; nur zuerst erfolgreiches Passwort gilt |
+
+    .\browser-tests\run.ps1 -Suite account-lifecycle -Language de
+    .\browser-tests\run.ps1 -Suite account-lifecycle -Language en
+
+`RegistrationPage` schließt den geprüften Einzelvalidierungshinweis über seinen
+echten Button vor der nächsten Variante. `RESET-05A` behält zusätzlich den Trace
+und Screenshot der getrennten Sitzung. Keine Testfälle sind voneinander abhängig.
+Die Schritte/Erwartungen werden aus `@Description` in den bestehenden Markdown-
+und Allure-Bericht übernommen, nicht als zweites Protokoll von Hand gepflegt.
+
+Der Vergleich der 44 ursprünglichen Fälle steht in `abdeckung.md`; tatsächliche
+Restlücken und Paketversuche in `automatisierung-offen.md`. Die IDs der alten
+Vorlage und der Browserfälle sind eigene Kataloge: beispielsweise prüft der neue
+RESET-05A tatsächlich das alte offene Formular; bestehendes RESET-04B dagegen
+nur das erneute Laden eines bereits verbrauchten Links.
