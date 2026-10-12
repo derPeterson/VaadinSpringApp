@@ -78,3 +78,25 @@ kein fehlender Formularfall als bestanden gewertet. Die zwei unerreichbaren
 Schalterfälle sind durch den ehrlich eingeschränkten Home-Schalterfall ersetzt;
 ursprünglicher Umfang LANG-01 bleibt teilweise offen. Mobiles Escape und frische
 Sprachpräferenz wurden tatsächlich durch die UI bestätigt.
+
+## Remember-me – Versuch 1 (abgebrochen)
+
+`2026-10-12T02-58-58_UTC__b4d8d751__74d6dab4`: ohne Option echter Neustart
+erfolgreich; mit Option kein `remember-me`-Cookie nach normaler UI-Anmeldung
+beobachtet (1/2 bestanden). Zweiter Versuch dokumentiert die vor dem Login
+tatsächlich gesetzte Checkbox und prüft direkt den echten neuen Browserprozess;
+es werden keine Cookie-/Authentifizierungszustände injiziert.
+
+### Remember-me – Versuch 2 gescheitert, Paket bleibt offen
+
+`2026-10-12T03-01-51_UTC__b4d8d751__326fdb88`: erneut 1/2 bestanden.
+Die Variante ohne Option bestätigt zweimal den echten Browserprozess-Neustart.
+Die Variante mit Option scheiterte diesmal schon an einem verdeckten Konto-E-Mail-
+Element im nachgeladenen Popover. Der eigentliche Remember-me-Neustart wurde daher
+nicht vollständig erreicht. Die Cookiebeobachtung aus Versuch 1 ist ein Hinweis,
+aber kein abschließender Nachweis einer defekten Persistenzfunktion.
+Beide Testberichte bleiben erhalten; unbestätigte Suite und Auswahlregistrierung
+wurden wieder entfernt. AUTH-03 bleibt ohne zuverlässigen DE/EN-Gesamtnachweis offen.
+Nötig: Popover-Lebenszyklus nach Login/Sprachwahl zuverlässig synchronisieren,
+danach Cookieauslieferung und echte Profilneustarts gezielt prüfen. Keine Sicherheits-
+oder Authentifizierungsänderung ohne eindeutige Ursache vorgenommen.
