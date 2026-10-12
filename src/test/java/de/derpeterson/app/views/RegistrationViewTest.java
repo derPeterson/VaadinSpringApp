@@ -39,6 +39,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.function.Function;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -125,13 +126,15 @@ public class RegistrationViewTest {
         }
     }
 
-    private void assertNotification(String key, Locale locale) {
+    private void assertNotification(Function<MessageProperties, String> messageGetter, Locale locale) {
         var helper = NotificationHelper.getInstance();
         Span title = (Span) ReflectionTestUtils.getField(helper, "titleText");
         Html body = (Html) ReflectionTestUtils.getField(helper, "messageText");
-        assertEquals(provider.getTranslation("base.failed.title", locale), title.getText());
-        String expected = provider.getTranslation(key, locale);
-        assertNotEquals(key, expected);
+        MessageProperties expectedTexts = MessageProperties.forLocale(provider, locale);
+        assertEquals(expectedTexts.getBaseFailedTitle(), title.getText());
+        String expected = messageGetter.apply(expectedTexts);
+        Locale other = locale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN;
+        assertNotEquals(expected, messageGetter.apply(MessageProperties.forLocale(provider, other)));
         assertEquals(expected, body.getElement().getProperty("innerHTML"));
     }
 
@@ -150,27 +153,23 @@ public class RegistrationViewTest {
         verify(roles).findByName(RoleType.ROLE_USER);
         verifyNoMoreInteractions(roles);
         verifyNoInteractions(encoder, verification);
-        String key = "registrationView.registration.unavailable_message";
-        assertEquals("Registration is currently unavailable. No account was created. Please try again later or contact support.",
-                provider.getTranslation(key, Locale.ENGLISH));
-        assertEquals("Die Registrierung ist derzeit nicht verfügbar. Es wurde kein Konto erstellt. Bitte versuchen Sie es später erneut oder wenden Sie sich an den Support.",
-                provider.getTranslation(key, Locale.GERMAN));
-        assertNotification(key, initial);
+        Function<MessageProperties, String> messageGetter = MessageProperties::getRegistrationUnavailableMessage;
+        assertNotification(messageGetter, initial);
         var helper = NotificationHelper.getInstance();
         var notification = (Notification) ReflectionTestUtils.getField(helper, "currentNotification");
         assertTrue(notification.isOpened());
         assertEquals(-1, notification.getDuration());
-        String initialText = provider.getTranslation(key, initial);
+        String initialText = messageGetter.apply(MessageProperties.forLocale(provider, initial));
         assertFalse(initialText.contains("ROLE_USER"));
         assertFalse(initialText.contains("repository"));
-        assertNotEquals(initialText, provider.getTranslation(key, other));
+        assertNotEquals(initialText, messageGetter.apply(MessageProperties.forLocale(provider, other)));
 
         LanguageChangeEvent.fire(ui, other);
         assertSame(notification, ReflectionTestUtils.getField(helper, "currentNotification"));
         assertTrue(notification.isOpened());
-        assertNotification(key, other);
+        assertNotification(messageGetter, other);
         LanguageChangeEvent.fire(ui, initial);
-        assertNotification(key, initial);
+        assertNotification(messageGetter, initial);
         verifyNoMoreInteractions(users, roles);
         verifyNoInteractions(encoder, verification);
 
@@ -236,9 +235,9 @@ public class RegistrationViewTest {
         assertTrue(field(name, TextField.class).isInvalid());
         assertFalse(field(name.equals("firstNameField") ? "lastNameField" : "firstNameField", TextField.class).isInvalid());
         verifyNoInteractions(users, encoder, verification);
-        assertNotification("base.validation.required_message", Locale.ENGLISH);
+        assertNotification(MessageProperties::getBaseValidationRequiredMessage, Locale.ENGLISH);
         LanguageChangeEvent.fire(ui, Locale.GERMAN);
-        assertNotification("base.validation.required_message", Locale.GERMAN);
+        assertNotification(MessageProperties::getBaseValidationRequiredMessage, Locale.GERMAN);
     }
 
     @Test
@@ -267,9 +266,9 @@ public class RegistrationViewTest {
         assertTrue(field("confirmEmailField", EmailField.class).isInvalid());
         verify(users).saveUser(any());
         verifyNoInteractions(verification);
-        assertNotification("base.validation.email_exists_message", Locale.ENGLISH);
+        assertNotification(MessageProperties::getBaseValidationEmailExistsMessage, Locale.ENGLISH);
         LanguageChangeEvent.fire(ui, Locale.GERMAN);
-        assertNotification("base.validation.email_exists_message", Locale.GERMAN);
+        assertNotification(MessageProperties::getBaseValidationEmailExistsMessage, Locale.GERMAN);
     }
 
     @ParameterizedTest
@@ -301,7 +300,7 @@ public class RegistrationViewTest {
         }).when(users).saveUser(any());
         click();
         assertTrue(field("lastNameField", TextField.class).isInvalid());
-        assertNotification("base.validation.required_message", Locale.ENGLISH);
+        assertNotification(MessageProperties::getBaseValidationRequiredMessage, Locale.ENGLISH);
         verifyNoInteractions(verification);
     }
 }

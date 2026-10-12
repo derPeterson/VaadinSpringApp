@@ -109,14 +109,13 @@ class UserStatusNotificationTest {
         assertTrue(currentNotification().isOpened());
         Span title = (Span) ReflectionTestUtils.getField(helper, "titleText");
         Html message = (Html) ReflectionTestUtils.getField(helper, "messageText");
-        String expectedTitle = provider.getTranslation("base.failed.title", locale);
-        String expectedMessage = provider.getTranslation(conflict ? "base.user.update.conflict" : "base.user.status.failed", locale);
-        assertNotEquals("base.failed.title", expectedTitle);
-        assertNotEquals("base.user.update.conflict", expectedMessage);
-        assertNotEquals("base.user.status.failed", expectedMessage);
-        assertEquals(locale.equals(Locale.GERMAN) ? "Fehlgeschlagen!" : "Failed!", expectedTitle);
-        assertNotEquals(provider.getTranslation(conflict ? "base.user.update.conflict" : "base.user.status.failed",
-                locale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN), expectedMessage);
+        MessageProperties expectedTexts = MessageProperties.forLocale(provider, locale);
+        MessageProperties otherTexts = MessageProperties.forLocale(provider,
+                locale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
+        String expectedTitle = expectedTexts.getBaseFailedTitle();
+        String expectedMessage = conflict ? expectedTexts.getBaseUserUpdateConflict() : expectedTexts.getBaseUserStatusFailed();
+        assertNotEquals(otherTexts.getBaseFailedTitle(), expectedTitle);
+        assertNotEquals(conflict ? otherTexts.getBaseUserUpdateConflict() : otherTexts.getBaseUserStatusFailed(), expectedMessage);
         assertEquals(expectedTitle, title.getText());
         assertEquals("p", message.getElement().getTag());
         assertEquals(expectedMessage, message.getElement().getProperty("innerHTML"));

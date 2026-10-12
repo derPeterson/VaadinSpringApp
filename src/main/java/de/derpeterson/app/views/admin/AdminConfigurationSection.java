@@ -20,6 +20,7 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.helper.ui.NotificationHelper;
+import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
@@ -39,13 +40,6 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     private static final Logger logger = LoggerFactory.getLogger(AdminConfigurationSection.class);
 
-    private static final String CONFIG_GROUP_GENERAL = "adminView.config.group.general";
-    private static final String CONFIG_GROUP_SECURITY = "adminView.config.group.security";
-    private static final String CONFIG_GROUP_TOKENS = "adminView.config.group.tokens";
-    private static final String CONFIG_GROUP_USER_STATUS = "adminView.config.group.user_status";
-    private static final String CONFIG_GROUP_EMAIL_SENDER = "adminView.config.group.email_sender";
-    private static final String CONFIG_GROUP_SMTP = "adminView.config.group.smtp";
-    private static final String CONFIG_GROUP_QUEUE = "adminView.config.group.queue";
 
     private static final int SERVICE_NAME_MAX_LENGTH = 30;
     private static final int SECRET_KEY_MIN_LENGTH = 8;
@@ -68,7 +62,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     private final EnumMap<ConfigEntry, VerticalLayout> configInputWrappers = new EnumMap<>(ConfigEntry.class);
     private final EnumMap<ConfigEntry, Span> configLabelSpans = new EnumMap<>(ConfigEntry.class);
     private final EnumMap<ConfigEntry, Span> configMetaTextSpans = new EnumMap<>(ConfigEntry.class);
-    private final Map<String, Predicate<ConfigEntry>> configGroupFilters = new LinkedHashMap<>();
+    private final Map<AdminConfigGroup, Predicate<ConfigEntry>> configGroupFilters = new LinkedHashMap<>();
 
     private final H1 configurationTitle;
     private final Span configurationDescription;
@@ -78,7 +72,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     private final Button saveConfigButton;
     private final Button reloadConfigButton;
 
-    private String selectedGroupKey = null;
+    private AdminConfigGroup selectedGroup = null;
 
     public AdminConfigurationSection(MessageProperties messageProperties,
                                      ConfigService configService,
@@ -140,7 +134,7 @@ public class AdminConfigurationSection extends VerticalLayout {
         add(configCard);
 
         if (!configGroupFilters.isEmpty()) {
-            selectedGroupKey = configGroupFilters.keySet().iterator().next();
+            selectedGroup = configGroupFilters.keySet().iterator().next();
         }
 
         refreshTexts();
@@ -230,12 +224,12 @@ public class AdminConfigurationSection extends VerticalLayout {
         }
     }
 
-    public void showGroup(String titleKey) {
-        if (titleKey == null || !configGroupFilters.containsKey(titleKey)) {
+    public void showGroup(AdminConfigGroup group) {
+        if (group == null || !configGroupFilters.containsKey(group)) {
             return;
         }
 
-        selectedGroupKey = titleKey;
+        selectedGroup = group;
         renderSelectedGroup();
         loadConfigValues();
     }
@@ -250,17 +244,17 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     private void renderSelectedGroup() {
-        if (selectedGroupKey == null || !configGroupFilters.containsKey(selectedGroupKey)) {
+        if (selectedGroup == null || !configGroupFilters.containsKey(selectedGroup)) {
             if (configGroupFilters.isEmpty()) {
                 return;
             }
-            selectedGroupKey = configGroupFilters.keySet().iterator().next();
+            selectedGroup = configGroupFilters.keySet().iterator().next();
         }
 
         refreshCurrentGroupTitle();
         configFieldsContainer.removeAll();
 
-        Predicate<ConfigEntry> filter = configGroupFilters.get(selectedGroupKey);
+        Predicate<ConfigEntry> filter = configGroupFilters.get(selectedGroup);
         if (filter == null) {
             return;
         }
@@ -278,11 +272,11 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     private List<ConfigEntry> getVisibleConfigEntries() {
-        if (selectedGroupKey == null) {
+        if (selectedGroup == null) {
             return List.of();
         }
 
-        Predicate<ConfigEntry> filter = configGroupFilters.get(selectedGroupKey);
+        Predicate<ConfigEntry> filter = configGroupFilters.get(selectedGroup);
         if (filter == null) {
             return List.of();
         }
@@ -307,8 +301,8 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     private void refreshCurrentGroupTitle() {
-        if (selectedGroupKey != null) {
-            currentGroupTitle.setText(messageProperties.getAdminConfigGroupLabel(selectedGroupKey));
+        if (selectedGroup != null) {
+            currentGroupTitle.setText(messageProperties.getAdminConfigGroupLabel(selectedGroup));
         }
     }
 
@@ -348,13 +342,13 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     private void registerConfigGroups() {
-        configGroupFilters.put(CONFIG_GROUP_GENERAL, this::isGeneralConfig);
-        configGroupFilters.put(CONFIG_GROUP_SECURITY, this::isSecurityConfig);
-        configGroupFilters.put(CONFIG_GROUP_TOKENS, this::isTokenConfig);
-        configGroupFilters.put(CONFIG_GROUP_USER_STATUS, this::isUserStatusConfig);
-        configGroupFilters.put(CONFIG_GROUP_EMAIL_SENDER, this::isEmailSenderConfig);
-        configGroupFilters.put(CONFIG_GROUP_SMTP, this::isSmtpConfig);
-        configGroupFilters.put(CONFIG_GROUP_QUEUE, this::isQueueConfig);
+        configGroupFilters.put(AdminConfigGroup.GENERAL, this::isGeneralConfig);
+        configGroupFilters.put(AdminConfigGroup.SECURITY, this::isSecurityConfig);
+        configGroupFilters.put(AdminConfigGroup.TOKENS, this::isTokenConfig);
+        configGroupFilters.put(AdminConfigGroup.USER_STATUS, this::isUserStatusConfig);
+        configGroupFilters.put(AdminConfigGroup.EMAIL_SENDER, this::isEmailSenderConfig);
+        configGroupFilters.put(AdminConfigGroup.SMTP, this::isSmtpConfig);
+        configGroupFilters.put(AdminConfigGroup.QUEUE, this::isQueueConfig);
     }
 
     private VerticalLayout createConfigInput(ConfigEntry configEntry) {

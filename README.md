@@ -31,6 +31,12 @@ Bei einer Änderung eines Properties-Schlüssels wird der gemeinsame Getter ange
 seine Aufrufer bleiben unverändert. Direkte Übersetzungsaufrufe gehören in die I18n-Schicht.
 Für Statuswerte verwenden UI-Komponenten `getUserStatusLabel(status)` und
 `getUserStatusDescription(status)`, für Konfiguration die vorhandenen typisierten Methoden.
+Konfigurationsgruppen werden durch `AdminConfigGroup` identifiziert, beispielsweise
+`AdminConfigGroup.GENERAL`. Der Text kommt aus `getAdminConfigGroupLabel(group)`;
+übersetzte Texte oder Properties-Schlüssel sind keine Gruppenkennungen. Somit bleiben
+Navigation und Gruppenauswahl bei Schlüsseländerungen und DE/EN-Wechsel stabil.
+Auch UI-Test-Erwartungen verwenden Getter mit expliziter Locale. Direkte Lookup-Aufrufe
+gehören nur in die I18n-Adapter und deren gezielte Tests für fehlende Schlüssel.
 
 `new MessageProperties(provider)` liest die Session-Sprache bei jedem Aufruf neu.
 Für eine feste Übersetzung ohne Session gibt es

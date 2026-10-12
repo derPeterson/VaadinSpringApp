@@ -31,7 +31,9 @@
 - Translations: `src/main/resources/i18n/`; email templates: `src/main/resources/email/`.
 - Use the existing typed `MessageProperties` getters for fixed translation keys.
   Their single definition is in shared `MessageTexts`; do not create a second key/getter
-  catalogue. Use typed status/configuration label methods in UI components. Keep raw
+  catalogue. Use AdminConfigGroup enum values for configuration group identity, never
+  properties keys or translated labels. Use typed status/configuration label methods
+  in UI components and fixed-locale getters for UI test expectations. Keep raw
   translation lookup calls inside the i18n layer. Normal MessageProperties follows the
   session at each call; use forLocale only when a fixed explicit language is required.
   For visible notifications that must update on language change, pass dynamic

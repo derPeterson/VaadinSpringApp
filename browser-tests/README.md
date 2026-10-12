@@ -193,6 +193,8 @@ angepasst. Ein umbenannter Getter kann über Java-Refactoring in beiden Projekte
 werden; anschließend die drei Maven-Projekte neu laden und kompilieren.
 
 Der Katalog gehört ausschließlich zum Maven-Modul `shared/pom.xml`.
+Auch Admin-Konfigurationsgruppen sind mit `AdminConfigGroup` typisiert; ihre Texte
+kommen aus `getAdminConfigGroupLabel(group)` statt aus einem übergebenen Properties-Schlüssel.
 Anwendung und Browsertests hängen vom gleichen Shared-JAR ab; der Browserstarter
 baut und installiert es vor jeder Kompilierung frisch. Es gibt keine zusätzlich
 eingebundenen Source-Roots, generierten Getter oder kopierten Java-Quellen.

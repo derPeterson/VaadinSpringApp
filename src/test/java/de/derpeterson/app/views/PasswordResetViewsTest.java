@@ -85,7 +85,8 @@ class PasswordResetViewsTest {
         var helper = NotificationHelper.getInstance();
         var title = (Span) ReflectionTestUtils.getField(helper, "titleText");
         var message = (Html) ReflectionTestUtils.getField(helper, "messageText");
-        assertEquals(provider.getTranslation(success ? "base.success.title" : "base.failed.title", locale), title.getText());
+        MessageProperties expectedTexts = MessageProperties.forLocale(provider, locale);
+        assertEquals(success ? expectedTexts.getBaseSuccessTitle() : expectedTexts.getBaseFailedTitle(), title.getText());
         assertEquals(body, message.getElement().getProperty("innerHTML"));
     }
 

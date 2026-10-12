@@ -1,5 +1,7 @@
 package de.derpeterson.app.i18n;
 
+import de.derpeterson.app.config.AdminConfigGroup;
+
 import java.text.MessageFormat;
 import java.util.Objects;
 import java.util.function.Function;
@@ -1063,17 +1065,16 @@ public class MessageTexts {
         return getTranslation("admin.users.error.delete_failed");
     }
 
-    /** Group identifiers are UI data; their labels still use the stable typed getters. */
-    public String getAdminConfigGroupLabel(String groupId) {
-        return switch (groupId) {
-            case "adminView.config.group.general" -> getAdminConfigGroupGeneral();
-            case "adminView.config.group.security" -> getAdminConfigGroupSecurity();
-            case "adminView.config.group.tokens" -> getAdminConfigGroupTokens();
-            case "adminView.config.group.user_status" -> getAdminConfigGroupUserStatus();
-            case "adminView.config.group.email_sender" -> getAdminConfigGroupEmailSender();
-            case "adminView.config.group.smtp" -> getAdminConfigGroupSmtp();
-            case "adminView.config.group.queue" -> getAdminConfigGroupQueue();
-            default -> getTranslation(groupId);
+    /** Group identity is independent of the properties key and the current label. */
+    public String getAdminConfigGroupLabel(AdminConfigGroup group) {
+        return switch (group) {
+            case GENERAL -> getAdminConfigGroupGeneral();
+            case SECURITY -> getAdminConfigGroupSecurity();
+            case TOKENS -> getAdminConfigGroupTokens();
+            case USER_STATUS -> getAdminConfigGroupUserStatus();
+            case EMAIL_SENDER -> getAdminConfigGroupEmailSender();
+            case SMTP -> getAdminConfigGroupSmtp();
+            case QUEUE -> getAdminConfigGroupQueue();
         };
     }
 }

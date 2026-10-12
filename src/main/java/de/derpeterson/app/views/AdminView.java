@@ -14,6 +14,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.config.AppRouteConstants;
+import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.IsAuthenticatedBaseView;
@@ -52,13 +53,6 @@ public class AdminView extends IsAuthenticatedBaseView {
         USER_MANAGEMENT
     }
 
-    private static final String CONFIG_GROUP_GENERAL = "adminView.config.group.general";
-    private static final String CONFIG_GROUP_SECURITY = "adminView.config.group.security";
-    private static final String CONFIG_GROUP_TOKENS = "adminView.config.group.tokens";
-    private static final String CONFIG_GROUP_USER_STATUS = "adminView.config.group.user_status";
-    private static final String CONFIG_GROUP_EMAIL_SENDER = "adminView.config.group.email_sender";
-    private static final String CONFIG_GROUP_SMTP = "adminView.config.group.smtp";
-    private static final String CONFIG_GROUP_QUEUE = "adminView.config.group.queue";
 
     private final transient ConfigService configService;
 
@@ -75,8 +69,8 @@ public class AdminView extends IsAuthenticatedBaseView {
     private Div mailTestNavItem = null;
     private Div userManagementNavItem = null;
     private VerticalLayout configurationSubmenuLayout = null;
-    private final Map<String, Div> configurationSubmenuItems = new LinkedHashMap<>();
-    private final Map<String, Span> configurationSubmenuTextSpans = new LinkedHashMap<>();
+    private final Map<AdminConfigGroup, Div> configurationSubmenuItems = new LinkedHashMap<>();
+    private final Map<AdminConfigGroup, Span> configurationSubmenuTextSpans = new LinkedHashMap<>();
 
     private VerticalLayout sectionLayout = null;
     private AdminDashboardSection dashboardSection = null;
@@ -85,7 +79,7 @@ public class AdminView extends IsAuthenticatedBaseView {
     private AdminUserManagementSection userManagementSection = null;
 
     private AdminSection activeSection = AdminSection.DASHBOARD;
-    private String activeConfigurationGroup = null;
+    private AdminConfigGroup activeConfigurationGroup = null;
 
     public AdminView(MessageProperties messageProperties,
                      SecurityService securityService,
@@ -235,7 +229,7 @@ public class AdminView extends IsAuthenticatedBaseView {
                 VaadinIcon.COG,
                 configurationNavText,
                 false,
-                () -> selectSection(AdminSection.CONFIGURATION, CONFIG_GROUP_GENERAL)
+                () -> selectSection(AdminSection.CONFIGURATION, AdminConfigGroup.GENERAL)
         );
         mailTestNavItem = createNavigationItem(
                 VaadinIcon.ENVELOPE,
@@ -263,13 +257,13 @@ public class AdminView extends IsAuthenticatedBaseView {
                 LumoUtility.Background.TRANSPARENT
         );
 
-        addConfigurationSubmenuButton(CONFIG_GROUP_GENERAL);
-        addConfigurationSubmenuButton(CONFIG_GROUP_SECURITY);
-        addConfigurationSubmenuButton(CONFIG_GROUP_TOKENS);
-        addConfigurationSubmenuButton(CONFIG_GROUP_USER_STATUS);
-        addConfigurationSubmenuButton(CONFIG_GROUP_EMAIL_SENDER);
-        addConfigurationSubmenuButton(CONFIG_GROUP_SMTP);
-        addConfigurationSubmenuButton(CONFIG_GROUP_QUEUE);
+        addConfigurationSubmenuButton(AdminConfigGroup.GENERAL);
+        addConfigurationSubmenuButton(AdminConfigGroup.SECURITY);
+        addConfigurationSubmenuButton(AdminConfigGroup.TOKENS);
+        addConfigurationSubmenuButton(AdminConfigGroup.USER_STATUS);
+        addConfigurationSubmenuButton(AdminConfigGroup.EMAIL_SENDER);
+        addConfigurationSubmenuButton(AdminConfigGroup.SMTP);
+        addConfigurationSubmenuButton(AdminConfigGroup.QUEUE);
 
         VerticalLayout drawerContent = getDrawerLayout();
         updateNavigationState();
@@ -315,16 +309,16 @@ public class AdminView extends IsAuthenticatedBaseView {
         return navLayout;
     }
 
-    private void addConfigurationSubmenuButton(String titleKey) {
+    private void addConfigurationSubmenuButton(AdminConfigGroup group) {
         Span submenuText = new Span();
         Div submenuButton = createNavigationItem(
                 null,
                 submenuText,
                 true,
-                () -> selectSection(AdminSection.CONFIGURATION, titleKey)
+                () -> selectSection(AdminSection.CONFIGURATION, group)
         );
-        configurationSubmenuItems.put(titleKey, submenuButton);
-        configurationSubmenuTextSpans.put(titleKey, submenuText);
+        configurationSubmenuItems.put(group, submenuButton);
+        configurationSubmenuTextSpans.put(group, submenuText);
         configurationSubmenuLayout.add(submenuButton);
     }
 
@@ -381,14 +375,14 @@ public class AdminView extends IsAuthenticatedBaseView {
         return item;
     }
 
-    private void selectSection(AdminSection section, String configurationGroupKey) {
+    private void selectSection(AdminSection section, AdminConfigGroup configurationGroup) {
         activeSection = section;
 
         if (section == AdminSection.CONFIGURATION) {
-            if (configurationGroupKey != null) {
-                activeConfigurationGroup = configurationGroupKey;
+            if (configurationGroup != null) {
+                activeConfigurationGroup = configurationGroup;
             } else if (activeConfigurationGroup == null) {
-                activeConfigurationGroup = CONFIG_GROUP_GENERAL;
+                activeConfigurationGroup = AdminConfigGroup.GENERAL;
             }
         } else {
             activeConfigurationGroup = null;
@@ -423,9 +417,9 @@ public class AdminView extends IsAuthenticatedBaseView {
             configurationSubmenuLayout.setVisible(true);
         }
 
-        configurationSubmenuItems.forEach((groupKey, item) -> {
+        configurationSubmenuItems.forEach((group, item) -> {
             boolean isActive = activeSection == AdminSection.CONFIGURATION
-                    && Objects.equals(activeConfigurationGroup, groupKey);
+                    && Objects.equals(activeConfigurationGroup, group);
             applyNavigationItemState(item, isActive, true);
         });
     }
@@ -478,8 +472,8 @@ public class AdminView extends IsAuthenticatedBaseView {
         mailTestNavText.setText(messageProperties.getAdminNavMailTest());
         userManagementNavText.setText(messageProperties.getAdminUsersTitle());
 
-        configurationSubmenuTextSpans.forEach((groupKey, textSpan) ->
-                textSpan.setText(messageProperties.getAdminConfigGroupLabel(groupKey)));
+        configurationSubmenuTextSpans.forEach((group, textSpan) ->
+                textSpan.setText(messageProperties.getAdminConfigGroupLabel(group)));
 
         if (dashboardSection != null) {
             dashboardSection.refreshTexts();
