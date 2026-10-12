@@ -14,6 +14,7 @@ def generate(root: Path) -> int:
     planned = {}
     for entry in entries:
         key = entry.get("command", "")
+        # Regex: Kleine Buchstaben/Ziffern in nichtleeren Gruppen; Punkt/Minus nur zwischen Gruppen, nicht am Rand.
         if not re.fullmatch(r"[a-z0-9]+(?:[.-][a-z0-9]+)*", key) or key in planned:
             raise ValueError(f"Invalid/duplicate model command: {key}")
         if not entry.get("name") or not entry.get("provider") or entry.get("mode") not in ("forced", "selected"):

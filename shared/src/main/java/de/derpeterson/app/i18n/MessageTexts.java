@@ -978,6 +978,88 @@ public class MessageTexts {
         return getTranslation("admin.users.search.placeholder");
     }
 
+    public String getAdminUsersClearFilters() {
+        return getTranslation("admin.users.filter.clear");
+    }
+
+    public String getAdminUsersAddFilter() {
+        return getTranslation("admin.users.filter.add");
+    }
+
+    public String getAdminUsersRemoveFilter(String label) {
+        return getFormattedTranslation("admin.users.filter.remove", label);
+    }
+
+    public String getAdminUsersFilterAll() {
+        return getTranslation("admin.users.filter.all");
+    }
+
+    public String getAdminUsersFilterRole() {
+        return getTranslation("admin.users.filter.role");
+    }
+
+    public String getAdminUsersActivityDate() {
+        return getTranslation("admin.users.activity.date");
+    }
+
+    public String getAdminUsersActivityTimeOptional() {
+        return getTranslation("admin.users.activity.time_optional");
+    }
+
+    public String getAdminUsersActivityNow() {
+        return getTranslation("admin.users.activity.now");
+    }
+
+    public String getAdminUsersActivityMinutes(long count) {
+        return getFormattedTranslation(count == 1
+                ? "admin.users.activity.minutes.one" : "admin.users.activity.minutes.many", count);
+    }
+
+    public String getAdminUsersActivityHours(long count) {
+        return getFormattedTranslation(count == 1
+                ? "admin.users.activity.hours.one" : "admin.users.activity.hours.many", count);
+    }
+
+    public String getAdminUsersActivityDays(long count) {
+        return getFormattedTranslation(count == 1
+                ? "admin.users.activity.days.one" : "admin.users.activity.days.many", count);
+    }
+
+    public String getAdminUsersActivityWeeks(long count) {
+        return getFormattedTranslation(count == 1
+                ? "admin.users.activity.weeks.one" : "admin.users.activity.weeks.many", count);
+    }
+
+    public String getAdminUsersActivityMonths(long count) {
+        return getFormattedTranslation(count == 1
+                ? "admin.users.activity.months.one" : "admin.users.activity.months.many", count);
+    }
+
+    public String getAdminUsersActivityYears(long count) {
+        return getFormattedTranslation(count == 1
+                ? "admin.users.activity.years.one" : "admin.users.activity.years.many", count);
+    }
+
+    public String getAdminUsersFilterActiveSince() {
+        return getTranslation("admin.users.filter.active_since");
+    }
+
+    public String getAdminUsersFilterActiveSinceHelp() {
+        return getTranslation("admin.users.filter.active_since_help");
+    }
+
+    public String getAdminUsersFilterActiveSinceError() {
+        return getTranslation("admin.users.filter.active_since_error");
+    }
+
+    public String getAdminUsersPaginationTotal(int totalItems) {
+        return getFormattedTranslation("admin.users.pagination.total", totalItems);
+    }
+
+    public String getAdminUsersPaginationPage(int page) {
+        return getFormattedTranslation("admin.users.pagination.page", page);
+    }
+
     public String getAdminUsersRefreshTooltip() {
         return getTranslation("admin.users.refresh.tooltip");
     }
@@ -1015,19 +1097,19 @@ public class MessageTexts {
     }
 
     public String getAdminUsersPasswordHelperEdit() {
-        return getTranslation("admin.users.password.helper.edit");
+        return getFormattedTranslation("admin.users.password.helper.edit", getBaseValidationPasswordInvalidMessage());
     }
 
     public String getAdminUsersPasswordHelperCreate() {
-        return getTranslation("admin.users.password.helper.create");
+        return getFormattedTranslation("admin.users.password.helper.create", getBaseValidationPasswordInvalidMessage());
     }
 
     public String getAdminUsersPasswordValidationEdit() {
-        return getTranslation("admin.users.password.validation.edit");
+        return getFormattedTranslation("admin.users.password.validation.edit", getBaseValidationPasswordInvalidMessage());
     }
 
     public String getAdminUsersPasswordValidationCreate() {
-        return getTranslation("admin.users.password.validation.create");
+        return getFormattedTranslation("admin.users.password.validation.create", getBaseValidationPasswordInvalidMessage());
     }
 
     public String getAdminUsersRolesHelper() {

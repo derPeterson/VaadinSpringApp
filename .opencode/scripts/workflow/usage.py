@@ -136,6 +136,7 @@ def capture(repo: Path, session_id: str | None, export_path: Path | None = None)
             if number(captured) is None or not -30000 <= time.time() * 1000 - captured <= 300000:
                 raise WorkflowError("Active-server usage snapshot is stale or invalid. Call workflow_usage_snapshot again.")
     else:
+        # Regex: Exakter Präfix ses_ und mindestens ein ASCII-Buchstabe oder eine Ziffer für die Session-ID.
         if not session_id or not re.fullmatch(r"ses_[A-Za-z0-9]+", session_id):
             raise WorkflowError("usage requires the exact OpenCode session_id (ses_...) or an export file.")
         executable = shutil.which("opencode.cmd" if os.name == "nt" else "opencode")

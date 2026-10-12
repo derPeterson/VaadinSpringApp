@@ -93,6 +93,7 @@ def validate_request(repo: Path, request: dict, catalog: Path) -> dict:
         if "branch" not in selected and not target_branch.startswith("feature/"):
             raise WorkflowError("Benchmark without branch requires the current feature/* branch.")
         target = request.get("target_class", "")
+        # Regex: Ein einfacher Klassenname: startet mit ASCII-Buchstabe/_/$, danach Wortzeichen oder $; keine Paketpunkte.
         if not isinstance(target, str) or not re.fullmatch(r"[A-Za-z_$][\w$]*", target):
             raise WorkflowError("benchmark requires a simple Java/JaCoCo target_class.")
     entries = read_json(catalog)["models"]
@@ -212,6 +213,7 @@ def begin(repo: Path, root: Path, request: dict | None, catalog: Path,
 
 
 def load_state(repo: Path, store: Path, run_id: str) -> tuple[Path, dict]:
+    # Regex: Exakt 32 kleine Hexziffern (0–9/a–f), die Form der internen Run-ID.
     if not re.fullmatch(r"[a-f0-9]{32}", run_id):
         raise WorkflowError("Invalid workflow ID.")
     path = store / "state" / (run_id + ".json")

@@ -16,6 +16,7 @@ def fresh_reports(repo: Path) -> dict:
     if not wrapper.is_file() or not (repo / "pom.xml").is_file():
         raise WorkflowError("Benchmark requires pom.xml and the Maven Wrapper.")
     version = run(repo, str(wrapper), "--version")
+    # Regex: Findet Java version: mit optionalem Leerraum und Hauptversion 25; danach Punkt/Leerraum/Komma/Ende, nicht 250.
     if not re.search(r"Java version:\s*25(?:[.\s,]|$)", version):
         raise WorkflowError("Benchmark requires Java 25. Maven reports:\n" + version)
     # Stream builds so progress and failures remain visible; never reuse stale reports.
@@ -40,6 +41,7 @@ def class_row(repo: Path, class_name: str) -> dict:
         raise WorkflowError(f"JaCoCo report not found: {report}")
     with report.open(encoding="utf-8-sig", newline="") as handle:
         rows = [row for row in csv.DictReader(handle) if row["CLASS"] == class_name]
+    # Regex: Am Zeilenanfang optionaler Leerraum, package plus Leerraum, Paketname aus Wortzeichen/Punkten (Gruppe 1), dann Semikolon.
     if len(rows) > 1:
         sources = list((repo / "src/main/java").rglob(class_name + ".java"))
         if len(sources) != 1:

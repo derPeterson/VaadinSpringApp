@@ -1,6 +1,9 @@
 package de.derpeterson.app.views.admin;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.avatar.Avatar;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
+import de.derpeterson.app.config.AppConstants;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
@@ -10,7 +13,7 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridSortOrder;
-import com.vaadin.flow.component.grid.HeaderRow;
+import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -33,6 +36,7 @@ import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
@@ -69,14 +73,12 @@ public class AdminUserManagementSection extends VerticalLayout {
     private final Button refreshButton;
     private final Grid<UserEntity> userGrid = new Grid<>(UserEntity.class, false);
 
-    private final ComboBox<Integer> pageSizeComboBox;
-    private final Button firstPageButton;
-    private final Button previousPageButton;
-    private final Button nextPageButton;
-    private final Button lastPageButton;
-    private final Span paginationInfo;
-    private final Span paginationPerPageText;
-    private final Span gridSummaryText;
+    private final ComboBox<Boolean> enabledFilter = new ComboBox<>();
+    private final ComboBox<UserStatus> statusFilter = new ComboBox<>();
+    private final ComboBox<RoleType> roleFilter = new ComboBox<>();
+    private final AdminUserActivityFilter lastActivityFilter = new AdminUserActivityFilter();
+    private final AdminUserPagination pagination;
+    private final AdminUserFilterBar filterBar;
 
     private Grid.Column<UserEntity> nameColumn;
     private Grid.Column<UserEntity> emailColumn;
@@ -85,6 +87,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     private Grid.Column<UserEntity> rolesColumn;
     private Grid.Column<UserEntity> lastActivityColumn;
     private Grid.Column<UserEntity> actionsColumn;
+    private final Span actionsHeader = new Span();
 
     private List<UserEntity> users = new ArrayList<>();
     private List<UserEntity> filteredUsers = new ArrayList<>();
@@ -133,41 +136,32 @@ public class AdminUserManagementSection extends VerticalLayout {
         refreshButton = new Button(VaadinIcon.REFRESH.create(), event -> refreshGrid());
         refreshButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
-        pageSizeComboBox = new ComboBox<>();
-        firstPageButton = new Button(VaadinIcon.ANGLE_DOUBLE_LEFT.create());
-        previousPageButton = new Button(VaadinIcon.ANGLE_LEFT.create());
-        nextPageButton = new Button(VaadinIcon.ANGLE_RIGHT.create());
-        lastPageButton = new Button(VaadinIcon.ANGLE_DOUBLE_RIGHT.create());
-        paginationInfo = new Span();
-        paginationPerPageText = new Span();
-        gridSummaryText = new Span();
-
+        pagination = new AdminUserPagination(messageProperties, page -> {
+            currentPage = page;
+            updateGridPage();
+        }, size -> {
+            pageSize = size;
+            currentPage = 0;
+            updateGridPage();
+        });
+        configureFilters();
         configureGrid();
-        configurePagination();
 
-        HorizontalLayout toolbar = new HorizontalLayout(searchField, refreshButton);
-        toolbar.setWidthFull();
-        toolbar.setAlignItems(Alignment.END);
-        toolbar.expand(searchField);
-
-        HorizontalLayout paginationBar = createPaginationBar();
-
-        HorizontalLayout footerActions = new HorizontalLayout(addUserButton);
-        footerActions.setWidthFull();
-        footerActions.setJustifyContentMode(JustifyContentMode.END);
+        filterBar = new AdminUserFilterBar(messageProperties, searchField, refreshButton, addUserButton,
+                enabledFilter, statusFilter, roleFilter, lastActivityFilter);
 
         VerticalLayout layout = new VerticalLayout(
                 title,
                 description,
-                toolbar,
+                filterBar,
                 userGrid,
-                paginationBar,
-                footerActions
+                pagination
         );
         layout.setPadding(false);
         layout.setSpacing(true);
         layout.setWidthFull();
         layout.setAlignItems(Alignment.START);
+        layout.setAlignSelf(Alignment.CENTER, title, description);
 
         CardComponent card = new CardComponent(layout);
         card.setWidthFull();
@@ -184,12 +178,31 @@ public class AdminUserManagementSection extends VerticalLayout {
         description.setText(messageProperties.getAdminUsersDescription());
         addUserButton.setText(messageProperties.getAdminUsersAdd());
 
-        searchField.setLabel(messageProperties.getAdminUsersSearchLabel());
+        searchField.setLabel(null);
+        searchField.setAriaLabel(messageProperties.getAdminUsersSearchLabel());
         searchField.setPlaceholder(messageProperties.getAdminUsersSearchPlaceholder());
 
         refreshButton.setTooltipText(messageProperties.getAdminUsersRefreshTooltip());
-        gridSummaryText.setText(messageProperties.getAdminUsersGridSummary());
-        paginationPerPageText.setText(messageProperties.getAdminUsersPaginationPerPage());
+        refreshButton.setAriaLabel(messageProperties.getAdminUsersRefreshTooltip());
+        enabledFilter.setLabel(messageProperties.getAdminUsersGridEnabled());
+        enabledFilter.setPlaceholder(messageProperties.getAdminUsersFilterAll());
+        enabledFilter.setItemLabelGenerator(enabled -> enabled
+                ? messageProperties.getAdminUsersYes() : messageProperties.getAdminUsersNo());
+        statusFilter.setLabel(messageProperties.getAdminUsersGridStatus());
+        statusFilter.setPlaceholder(messageProperties.getAdminUsersFilterAll());
+        statusFilter.setItemLabelGenerator(messageProperties::getUserStatusLabel);
+        roleFilter.setLabel(messageProperties.getAdminUsersFilterRole());
+        roleFilter.setPlaceholder(messageProperties.getAdminUsersFilterAll());
+        roleFilter.setItemLabelGenerator(this::formatRoleType);
+        lastActivityFilter.setLabel(messageProperties.getAdminUsersFilterActiveSince());
+        lastActivityFilter.getElement().setAttribute("title", messageProperties.getAdminUsersFilterActiveSinceHelp());
+        lastActivityFilter.setErrorMessage(messageProperties.getAdminUsersFilterActiveSinceError());
+        Locale locale = VaadinSession.getCurrent() != null
+                ? VaadinSession.getCurrent().getLocale() : Locale.getDefault();
+        lastActivityFilter.setLocale(locale);
+        lastActivityFilter.refreshTexts(messageProperties);
+        pagination.refreshTexts();
+        filterBar.refreshTexts();
 
         if (nameColumn != null) {
             nameColumn.setHeader(messageProperties.getAdminUsersGridName());
@@ -210,22 +223,17 @@ public class AdminUserManagementSection extends VerticalLayout {
             lastActivityColumn.setHeader(messageProperties.getAdminUsersGridLastActivity());
         }
         if (actionsColumn != null) {
-            actionsColumn.setHeader(messageProperties.getAdminUsersGridActions());
+            actionsHeader.setText(messageProperties.getAdminUsersGridActions());
         }
 
         userGrid.setEmptyStateText(messageProperties.getAdminUsersGridEmptyState());
-
-        firstPageButton.setTooltipText(messageProperties.getAdminUsersPaginationFirstPage());
-        previousPageButton.setTooltipText(messageProperties.getAdminUsersPaginationPreviousPage());
-        nextPageButton.setTooltipText(messageProperties.getAdminUsersPaginationNextPage());
-        lastPageButton.setTooltipText(messageProperties.getAdminUsersPaginationLastPage());
 
         updateGridPage();
         List.copyOf(dialogErrorRefreshers).forEach(Runnable::run);
     }
 
     private void configureGrid() {
-        nameColumn = userGrid.addColumn(this::getFullName)
+        nameColumn = userGrid.addComponentColumn(this::createUserIdentity)
                 .setHeader(messageProperties.getAdminUsersGridName())
                 .setAutoWidth(true)
                 .setSortable(true)
@@ -247,9 +255,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                 .setSortable(true)
                 .setComparator(Comparator.comparing(UserEntity::isEnabled));
 
-        statusColumn = userGrid.addColumn(user -> Optional.ofNullable(user.getStatus())
-                        .map(status -> messageProperties.getUserStatusLabel(status))
-                        .orElse("-"))
+        statusColumn = userGrid.addComponentColumn(this::createStatusBadge)
                 .setHeader(messageProperties.getAdminUsersGridStatus())
                 .setAutoWidth(true)
                 .setSortable(true)
@@ -265,9 +271,11 @@ public class AdminUserManagementSection extends VerticalLayout {
                 .setAutoWidth(true)
                 .setSortable(true)
                 .setComparator(Comparator.comparing(this::formatRoleNames, String.CASE_INSENSITIVE_ORDER))
-                .setFlexGrow(1);
+                .setAutoWidth(false)
+                .setWidth("140px")
+                .setFlexGrow(0);
 
-        lastActivityColumn = userGrid.addColumn(user -> formatDateTime(user.getLastActivity()))
+        lastActivityColumn = userGrid.addComponentColumn(this::createLastActivity)
                 .setHeader(messageProperties.getAdminUsersGridLastActivity())
                 .setAutoWidth(true)
                 .setSortable(true)
@@ -276,122 +284,42 @@ public class AdminUserManagementSection extends VerticalLayout {
                         Comparator.nullsLast(LocalDateTime::compareTo)
                 ));
 
+        actionsHeader.setText(messageProperties.getAdminUsersGridActions());
+        actionsHeader.addClassName("admin-users-actions-header");
         actionsColumn = userGrid.addComponentColumn(this::createActionButtons)
-                .setHeader(messageProperties.getAdminUsersGridActions())
+                .setHeader(actionsHeader)
+                .setTextAlign(ColumnTextAlign.CENTER)
                 .setAutoWidth(true)
                 .setFlexGrow(0);
 
+        userGrid.addSortListener(event -> {
+            currentPage = 0;
+            updateGridPage();
+        });
         userGrid.setWidthFull();
+        userGrid.setAllRowsVisible(true);
         userGrid.setEmptyStateText(messageProperties.getAdminUsersGridEmptyState());
         userGrid.sort(List.of(new GridSortOrder<>(
                 nameColumn,
                 com.vaadin.flow.data.provider.SortDirection.ASCENDING
         )));
 
-        HeaderRow headerRow = userGrid.prependHeaderRow();
-        headerRow.join(nameColumn, emailColumn, enabledColumn, statusColumn, rolesColumn, lastActivityColumn, actionsColumn)
-                .setComponent(createGridSummary());
+        userGrid.addClassName("admin-users-grid");
+        userGrid.addThemeVariants(GridVariant.ROW_STRIPES);
     }
 
-    private Component createGridSummary() {
-        gridSummaryText.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
-        gridSummaryText.setText(messageProperties.getAdminUsersGridSummary());
-        return gridSummaryText;
-    }
-
-    private void configurePagination() {
-        pageSizeComboBox.setItems(10, 20, 50);
-        pageSizeComboBox.setValue(pageSize);
-        pageSizeComboBox.setAllowCustomValue(false);
-        pageSizeComboBox.setWidth("90px");
-        pageSizeComboBox.addClassNames(LumoUtility.FontSize.SMALL);
-
-        pageSizeComboBox.addValueChangeListener(event -> {
-            Integer value = event.getValue();
-            if (value != null) {
-                pageSize = value;
-                currentPage = 0;
-                updateGridPage();
-            }
-        });
-
-        firstPageButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        previousPageButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        nextPageButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        lastPageButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-
-        firstPageButton.addClassNames(LumoUtility.Margin.Horizontal.XSMALL);
-        previousPageButton.addClassNames(LumoUtility.Margin.Right.SMALL);
-        nextPageButton.addClassNames(LumoUtility.Margin.Left.SMALL);
-        lastPageButton.addClassNames(LumoUtility.Margin.Horizontal.XSMALL);
-
-        firstPageButton.addClickListener(e -> {
-            currentPage = 0;
-            updateGridPage();
-        });
-
-        previousPageButton.addClickListener(e -> {
-            if (currentPage > 0) {
-                currentPage--;
-                updateGridPage();
-            }
-        });
-
-        nextPageButton.addClickListener(e -> {
-            int totalPages = getTotalPages();
-            if (currentPage < totalPages - 1) {
-                currentPage++;
-                updateGridPage();
-            }
-        });
-
-        lastPageButton.addClickListener(e -> {
-            int totalPages = getTotalPages();
-            currentPage = Math.max(0, totalPages - 1);
-            updateGridPage();
-        });
-    }
-
-    private HorizontalLayout createPaginationBar() {
-        paginationPerPageText.addClassNames(
-                LumoUtility.FontSize.SMALL,
-                LumoUtility.TextColor.SECONDARY
-        );
-        paginationPerPageText.setText(messageProperties.getAdminUsersPaginationPerPage());
-
-        paginationInfo.addClassNames(
-                LumoUtility.FontSize.SMALL,
-                LumoUtility.TextColor.SECONDARY,
-                LumoUtility.FontWeight.MEDIUM
-        );
-
-        HorizontalLayout pageSizeLayout = new HorizontalLayout(pageSizeComboBox, paginationPerPageText);
-        pageSizeLayout.setSpacing(true);
-        pageSizeLayout.setPadding(false);
-        pageSizeLayout.setAlignItems(Alignment.CENTER);
-
-        HorizontalLayout navButtons = new HorizontalLayout(
-                firstPageButton,
-                previousPageButton,
-                nextPageButton,
-                lastPageButton
-        );
-        navButtons.setSpacing(false);
-        navButtons.setPadding(false);
-        navButtons.setAlignItems(Alignment.CENTER);
-
-        HorizontalLayout paginationBar = new HorizontalLayout(
-                pageSizeLayout,
-                paginationInfo,
-                navButtons
-        );
-        paginationBar.setWidthFull();
-        paginationBar.setPadding(false);
-        paginationBar.setSpacing(true);
-        paginationBar.setAlignItems(Alignment.CENTER);
-        paginationBar.setJustifyContentMode(JustifyContentMode.END);
-
-        return paginationBar;
+    private void configureFilters() {
+        enabledFilter.setItems(true, false);
+        statusFilter.setItems(UserStatus.values());
+        roleFilter.setItems(RoleType.values());
+        for (ComboBox<?> filter : List.of(enabledFilter, statusFilter, roleFilter)) {
+            filter.setClearButtonVisible(true);
+            filter.setAllowCustomValue(false);
+            filter.addClassName("admin-user-select-filter");
+            filter.addValueChangeListener(event -> applyGridFilter());
+        }
+        lastActivityFilter.addClassName("admin-user-activity-filter");
+        lastActivityFilter.addValueChangeListener(event -> applyGridFilter());
     }
 
     private int getTotalPages() {
@@ -410,15 +338,9 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
 
     private void applyGridFilter() {
-        String filterText = normalize(searchField.getValue());
-
-        if (filterText.isBlank()) {
-            filteredUsers = new ArrayList<>(users);
-        } else {
-            filteredUsers = users.stream()
-                    .filter(user -> matchesFilter(user, filterText))
-                    .collect(Collectors.toList());
-        }
+        AdminUserFilters filters = new AdminUserFilters(searchField.getValue(), enabledFilter.getValue(),
+                statusFilter.getValue(), roleFilter.getValue(), lastActivityFilter.getValue());
+        filteredUsers = users.stream().filter(filters::matches).collect(Collectors.toList());
 
         currentPage = 0;
         updateGridPage();
@@ -434,37 +356,20 @@ public class AdminUserManagementSection extends VerticalLayout {
         int fromIndex = Math.min(currentPage * pageSize, filteredUsers.size());
         int toIndex = Math.min(fromIndex + pageSize, filteredUsers.size());
 
-        List<UserEntity> pageItems = filteredUsers.subList(fromIndex, toIndex);
-        userGrid.setItems(pageItems);
-
-        int startDisplay = filteredUsers.isEmpty() ? 0 : fromIndex + 1;
-
-        paginationInfo.setText(messageProperties.getAdminUsersPaginationInfo(
-                currentPage + 1,
-                totalPages,
-                startDisplay,
-                toIndex,
-                filteredUsers.size()
-        ));
-
-        boolean hasPrevious = currentPage > 0;
-        boolean hasNext = currentPage < totalPages - 1;
-
-        firstPageButton.setEnabled(hasPrevious);
-        previousPageButton.setEnabled(hasPrevious);
-        nextPageButton.setEnabled(hasNext);
-        lastPageButton.setEnabled(hasNext);
-    }
-
-    private boolean matchesFilter(UserEntity user, String filterText) {
-        return normalize(getFullName(user)).contains(filterText)
-                || normalize(user.getEmail()).contains(filterText)
-                || normalize(formatRoleNames(user)).contains(filterText)
-                || normalize(getStatusText(user)).contains(filterText)
-                || normalize(formatDateTime(user.getLastActivity())).contains(filterText);
+        Comparator<UserEntity> comparator = userGrid.getSortOrder().stream()
+                .map(order -> (Comparator<UserEntity>) order.getSorted().getComparator(order.getDirection()))
+                .reduce((first, next) -> first.thenComparing(next))
+                .orElse((left, right) -> 0);
+        List<UserEntity> sortedUsers = filteredUsers.stream().sorted(comparator).toList();
+        userGrid.setItems(sortedUsers.subList(fromIndex, toIndex));
+        pagination.showPage(currentPage, filteredUsers.size(), pageSize);
     }
 
     private void deleteUser(UserEntity user) {
+        deleteUser(user, () -> { });
+    }
+
+    private void deleteUser(UserEntity user, Runnable afterDelete) {
         try {
             if (isCurrentUser(user)) {
                 showError(messageProperties::getAdminUsersErrorDeleteOwnUser);
@@ -482,19 +387,22 @@ public class AdminUserManagementSection extends VerticalLayout {
 
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle(messageProperties.getAdminUsersDeleteDialogTitle());
+        dialog.addClassName("admin-user-delete-dialog");
         dialog.setCloseOnEsc(true);
         dialog.setCloseOnOutsideClick(true);
 
         Span warningText = new Span(messageProperties.getAdminUsersDeleteDialogWarning());
-        warningText.addClassNames(LumoUtility.TextColor.ERROR, LumoUtility.FontWeight.SEMIBOLD);
+        warningText.addClassNames(LumoUtility.FontWeight.SEMIBOLD);
 
         Span userText = new Span(getFullName(user) + " <" + Optional.ofNullable(user.getEmail()).orElse("-") + ">");
+        userText.addClassName(LumoUtility.FontWeight.BOLD);
 
         Button cancelButton = new Button(messageProperties.getAdminUsersCancel(), event -> dialog.close());
         Button confirmButton = new Button(messageProperties.getAdminUsersDelete(), event -> {
             try {
                 userService.deleteUser(user);
                 dialog.close();
+                afterDelete.run();
                 refreshGrid();
                 NotificationHelper.getInstance().showNotification(
                         messageProperties::getBaseSuccessTitle,
@@ -505,13 +413,16 @@ public class AdminUserManagementSection extends VerticalLayout {
                 showMutationError(exception, true);
             }
         });
+        confirmButton.setPrefixComponent(VaadinIcon.TRASH.create());
         confirmButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
+        confirmButton.addClassName("admin-user-delete-confirm");
 
         HorizontalLayout footer = new HorizontalLayout(cancelButton, confirmButton);
         footer.setWidthFull();
         footer.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
 
-        VerticalLayout dialogLayout = new VerticalLayout(warningText, userText, footer);
+        dialog.getFooter().add(footer);
+        VerticalLayout dialogLayout = new VerticalLayout(warningText, userText);
         dialogLayout.setPadding(false);
         dialogLayout.setSpacing(true);
 
@@ -530,6 +441,7 @@ public class AdminUserManagementSection extends VerticalLayout {
         dialog.setDraggable(true);
         dialog.setResizable(true);
         dialog.setWidth("760px");
+        dialog.addClassName("admin-user-dialog");
         dialog.setHeaderTitle(editMode
                 ? messageProperties.getAdminUsersEditDialogTitle()
                 : messageProperties.getAdminUsersCreateDialogTitle());
@@ -720,9 +632,18 @@ public class AdminUserManagementSection extends VerticalLayout {
         masterDataRow.setWidthFull();
         masterDataRow.expand(genderComboBox, birthDatePicker);
 
-        HorizontalLayout footer = new HorizontalLayout(cancelButton, saveButton);
+        HorizontalLayout footer = new HorizontalLayout();
         footer.setWidthFull();
-        footer.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+        footer.setAlignItems(Alignment.CENTER);
+        if (editMode) {
+            Button deleteButton = new Button(messageProperties.getAdminUsersDelete(),
+                    VaadinIcon.TRASH.create(), event -> deleteUser(user, dialog::close));
+            deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+            deleteButton.setEnabled(!isCurrentUser(user));
+            footer.add(deleteButton);
+        }
+        cancelButton.getStyle().set("margin-inline-start", "auto");
+        footer.add(cancelButton, saveButton);
 
         VerticalLayout dialogLayout = new VerticalLayout(
                 nameRow,
@@ -731,9 +652,9 @@ public class AdminUserManagementSection extends VerticalLayout {
                 masterDataRow,
                 enabledCheckbox,
                 rolesGroup,
-                technicalInfo,
-                footer
+                technicalInfo
         );
+        dialog.getFooter().add(footer);
         dialogLayout.setPadding(false);
         dialogLayout.setSpacing(true);
 
@@ -776,6 +697,7 @@ public class AdminUserManagementSection extends VerticalLayout {
         HorizontalLayout actions = new HorizontalLayout(editButton, deleteButton);
         actions.setPadding(false);
         actions.setSpacing(true);
+        actions.setJustifyContentMode(JustifyContentMode.CENTER);
         return actions;
     }
 
@@ -784,7 +706,31 @@ public class AdminUserManagementSection extends VerticalLayout {
         Span badge = new Span(enabled
                 ? messageProperties.getAdminUsersYes()
                 : messageProperties.getAdminUsersNo());
-        badge.getElement().getThemeList().add("badge " + (enabled ? "success" : "contrast"));
+        badge.getElement().getThemeList().add("badge " + (enabled ? "success" : "error"));
+        return badge;
+    }
+
+    private Component createUserIdentity(UserEntity user) {
+        Avatar avatar = new Avatar(getFullName(user), AppConstants.USER_ICON_PATH);
+        avatar.addClassName("admin-user-table-avatar");
+        Span name = new Span(getFullName(user));
+        HorizontalLayout identity = new HorizontalLayout(avatar, name);
+        identity.setAlignItems(Alignment.CENTER);
+        identity.setPadding(false);
+        identity.setSpacing(true);
+        return identity;
+    }
+
+    private Component createStatusBadge(UserEntity user) {
+        UserStatus status = user.getStatus();
+        Span badge = new Span(status == null ? "-" : messageProperties.getUserStatusLabel(status));
+        String variant = status == null ? "contrast" : switch (status) {
+            case AVAILABLE -> "success";
+            case ABSENT -> "warning";
+            case EMPLOYED -> "error";
+            case OFFLINE -> "contrast";
+        };
+        badge.getElement().getThemeList().add("badge " + variant);
         return badge;
     }
 
@@ -809,6 +755,17 @@ public class AdminUserManagementSection extends VerticalLayout {
         return Optional.ofNullable(user.getStatus())
                 .map(status -> messageProperties.getUserStatusLabel(status))
                 .orElse("-");
+    }
+
+    private Component createLastActivity(UserEntity user) {
+        LocalDateTime activity = user.getLastActivity();
+        LocalDateTime now = LocalDateTime.now();
+        String text = activity != null && activity.isAfter(now)
+                ? formatDateTime(activity)
+                : AdminUserActivityText.format(activity, now, messageProperties);
+        Span label = new Span(text);
+        if (activity != null) label.getElement().setAttribute("title", formatDateTime(activity));
+        return label;
     }
 
     private String formatDateTime(LocalDateTime dateTime) {

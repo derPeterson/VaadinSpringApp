@@ -45,6 +45,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     private static final int SERVICE_NAME_MAX_LENGTH = 30;
     private static final int SECRET_KEY_MIN_LENGTH = 8;
+    // Nur eine oder mehrere ASCII-Ziffern, ohne Vorzeichen/Einheit/Leerzeichen; ^/$ begrenzen die ganze Eingabe.
     private static final Pattern DURATION_NUMBER_ONLY_PATTERN = Pattern.compile("^\\d+$");
 
     private static final Set<ConfigEntry> DURATION_ENTRIES = Set.of(
@@ -882,6 +883,8 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     private boolean isValidEmail(String value) {
+        // Einfache Adresse: nichtleere Teile vor/nach @ und nach einem Domainpunkt; keine Leerzeichen oder weiteren @.
+        // Dies ist die bestehende SMTP-Konfigurationsprüfung; Benutzeradressen nutzen UserInputRules.
         return value != null && !value.isBlank() && value.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
     }
 
@@ -911,6 +914,7 @@ public class AdminConfigurationSection extends VerticalLayout {
             return true;
         }
 
+        // Das Komma ist hier ein wörtliches Trennzeichen für die Hostliste, kein komplexes Regex-Muster.
         String[] hosts = value.split(",");
         for (String host : hosts) {
             if (isInvalidHost(host.trim())) {

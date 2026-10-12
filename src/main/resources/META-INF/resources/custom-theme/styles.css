@@ -106,3 +106,227 @@ html {
     border-top-left-radius: 0.5em;
     border-bottom-left-radius: 0.5em;
 }
+
+/* User management: aligned search/actions and optional filter row. */
+.admin-user-filter-bar {
+    gap: 0;
+    margin-block-start: var(--lumo-space-m);
+}
+
+.admin-user-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-m);
+    width: 100%;
+    padding-block: var(--lumo-space-s);
+}
+
+.admin-user-toolbar > vaadin-text-field {
+    flex: 1 1 240px;
+    min-width: 120px;
+}
+
+.admin-user-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-s);
+    margin-inline-start: auto;
+    flex: 0 0 auto;
+}
+
+.admin-user-toolbar vaadin-button {
+    margin: 0;
+}
+
+.admin-user-add-filter {
+    flex: 0 0 auto;
+}
+
+.admin-user-add-filter-label {
+    gap: var(--lumo-space-xs);
+}
+
+.admin-user-add-filter-label vaadin-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.admin-user-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--lumo-space-m);
+    width: 100%;
+}
+
+.admin-user-filters[hidden], .admin-user-filter-control[hidden] {
+    display: none;
+}
+
+.admin-user-filter-control {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--lumo-space-xs);
+    max-width: 100%;
+}
+
+.admin-user-select-filter {
+    width: 160px;
+}
+
+.admin-user-activity-filter {
+    width: 340px;
+    max-width: 100%;
+}
+
+.admin-user-activity-inputs {
+    gap: var(--lumo-space-xs);
+}
+
+.admin-user-activity-inputs > vaadin-date-picker,
+.admin-user-activity-inputs > vaadin-time-picker {
+    min-width: 0;
+    flex: 1 1 0;
+}
+
+.admin-user-filter-remove {
+    flex: 0 0 auto;
+    margin: 0 0 4px;
+}
+
+.admin-user-toolbar vaadin-text-field::part(input-field),
+.admin-user-filters vaadin-combo-box::part(input-field),
+.admin-user-activity-filter vaadin-date-picker::part(input-field),
+.admin-user-activity-filter vaadin-time-picker::part(input-field) {
+}
+
+.admin-users-grid::part(header-cell),
+vaadin-dialog.admin-user-dialog::part(header) {
+    background: color-mix(in srgb, var(--lumo-primary-color) 72%, var(--lumo-base-color));
+    color: var(--lumo-primary-contrast-color);
+    font-weight: 600;
+}
+
+vaadin-dialog.admin-user-dialog::part(content) {
+    padding-block: var(--lumo-space-l);
+}
+
+
+vaadin-dialog.admin-user-dialog > [slot="title"] {
+    color: var(--lumo-primary-contrast-color);
+}
+
+.admin-users-grid {
+    --vaadin-grid-cell-padding: var(--lumo-space-s) var(--lumo-space-s);
+    min-height: calc(11 * (var(--lumo-size-m) + 2 * var(--lumo-space-s)) + 2px);
+}
+
+.admin-user-table-avatar {
+    --vaadin-avatar-size: 32px;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+}
+
+.admin-users-actions-header {
+    display: block;
+    width: 100%;
+    text-align: center;
+}
+
+.admin-users-grid vaadin-grid-sorter {
+    width: 100%;
+    color: var(--lumo-primary-contrast-color);
+}
+
+.admin-users-grid vaadin-grid-sorter::part(content) {
+    flex: 1;
+    text-align: start;
+}
+
+.admin-users-grid vaadin-grid-sorter::part(indicators) {
+    margin-inline-start: auto;
+    margin-inline-end: 15px;
+    color: var(--lumo-primary-contrast-color);
+}
+
+.admin-users-grid::part(odd-row) {
+    --vaadin-grid-cell-background: color-mix(in srgb, var(--lumo-contrast) 3%, var(--lumo-base-color));
+}
+
+.admin-user-pagination {
+    flex-wrap: wrap;
+    gap: var(--lumo-space-m);
+}
+
+.admin-user-pagination-summary {
+    flex-wrap: wrap;
+    gap: var(--lumo-space-s);
+}
+
+.admin-user-pagination-nav {
+    margin-inline-start: auto;
+    gap: var(--lumo-space-xs);
+    flex-wrap: wrap;
+}
+
+.admin-user-pagination-number, .admin-user-pagination-arrow {
+    border-radius: 50%;
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--lumo-contrast-10pct);
+    margin: 0;
+}
+
+.admin-user-pagination-current {
+    border-color: var(--lumo-primary-color);
+}
+
+.admin-user-pagination-ellipsis {
+    padding-inline: var(--lumo-space-xs);
+}
+
+@media (max-width: 600px) {
+    .admin-user-toolbar {
+        gap: var(--lumo-space-xs);
+        flex-wrap: wrap;
+    }
+
+    .admin-user-toolbar > vaadin-text-field {
+        flex-basis: calc(100% - 150px);
+    }
+
+    .admin-user-toolbar-actions {
+        margin-inline-start: auto;
+    }
+
+    .admin-user-activity-filter {
+        width: min(300px, 70vw);
+    }
+
+    .admin-user-pagination-nav {
+        margin-inline-start: 0;
+    }
+}
+
+/* Deletion confirmation: same semantic red as the error text/icons, native footer. */
+vaadin-dialog.admin-user-delete-dialog::part(header) {
+    background: color-mix(in srgb, var(--lumo-error-color) 50%, var(--lumo-base-color));
+    color: var(--lumo-primary-contrast-color);
+    font-weight: 600;
+}
+
+vaadin-dialog.admin-user-delete-dialog > [slot="title"] {
+    color: var(--lumo-primary-contrast-color);
+}
+
+vaadin-dialog.admin-user-delete-dialog::part(content) {
+    padding-block: var(--lumo-space-l);
+}
+
+.admin-user-delete-confirm {
+    background: color-mix(in srgb, var(--lumo-error-color) 50%, var(--lumo-base-color));
+    color: var(--lumo-primary-contrast-color);
+}

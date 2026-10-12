@@ -5,6 +5,7 @@ import de.derpeterson.app.i18n.MessageTexts;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Objects;
@@ -57,6 +58,10 @@ public final class UiTexts extends MessageTexts {
     public String visibleText(Page page, String html) {
         return (String) page.evaluate("html => { const t = document.createElement('template'); "
                 + "t.innerHTML = html; return t.content.textContent; }", html);
+    }
+
+    public String timeInput(LocalTime time) {
+        return time.format(DateTimeFormatter.ofPattern(language().equals("de") ? "HH:mm" : "h:mm a", locale));
     }
 
     public String dateInput(LocalDate date) {

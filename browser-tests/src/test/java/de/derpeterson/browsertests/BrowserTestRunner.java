@@ -30,6 +30,7 @@ public final class BrowserTestRunner {
         testClasses = options.contains("--failure-probe") ? List.of(FailureProbeTest.class) : BrowserSuites.select(suite);
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         String commit = git("rev-parse", "HEAD");
+        // Ersetzt einen Punkt plus Sekundenbruchteil am Ende vor Z durch _UTC; $ verlangt das Zeichenfolgenende.
         String runId = Instant.now().toString().replace(':', '-').replaceAll("\\.\\d+Z$", "_UTC")
                 + "__" + commit.substring(0, 8) + "__" + suffix;
         run = this.module.resolve("runs").resolve(runId);
@@ -70,6 +71,7 @@ public final class BrowserTestRunner {
                 report = Path.of(args[reportPathIndex + 1]).toAbsolutePath().normalize();
             } else {
                 String latest = Files.readString(module.resolve("runs/latest.txt")).trim();
+                // Erlaubt nur ASCII-Buchstaben/Ziffern/Unterstrich, Punkt und Minus, also keine Pfadtrenner; mindestens ein Zeichen.
                 if (!latest.matches("[\\w.-]+")) throw new IllegalArgumentException("Invalid report path.");
                 report = module.resolve("runs").resolve(latest).resolve("html");
             }

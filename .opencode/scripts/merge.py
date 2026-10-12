@@ -43,6 +43,7 @@ def ancestor(repo: Path, older: str, newer: str) -> bool:
 
 def branch_name(value: str) -> str:
     name = value.removeprefix("feature/")
+    # Regex: Nur kleine ASCII-Buchstaben, Ziffern, Unterstrich oder Minus; mindestens ein Zeichen im ganzen Namen.
     if not re.fullmatch(r"[a-z0-9_-]+", name):
         raise WorkflowError("Branch muss feature/<name> oder <name> mit kleinen Buchstaben, Ziffern, _ und - sein.")
     return "feature/" + name
@@ -101,6 +102,7 @@ def prepare(repo: Path, store_root: Path, name: str | None = None) -> dict:
         raise WorkflowError("Kein zugehöriger Benchmark-Lauf für diesen Branch gefunden.")
     _, state_path, state = max(candidates, key=lambda item: item[0])
     run_id = state.get("id", "")
+    # Regex: Exakt 32 kleine Hexziffern (0–9/a–f), die Form der internen Run-ID.
     if not re.fullmatch(r"[0-9a-f]{32}", run_id) or state_path.name != run_id + ".json":
         raise WorkflowError("Ungültige Run-ID im Zustand.")
     if state.get("status") != "completed":
@@ -110,6 +112,7 @@ def prepare(repo: Path, store_root: Path, name: str | None = None) -> dict:
         raise WorkflowError("Run-Ordner liegt außerhalb des Projektarchivs.")
     result = read_json(folder / "result.json")
     finish = state.get("finishCommit", "")
+    # Regex: Eine vollständige Git-Objekt-ID: genau 40 oder 64 kleine Hexziffern (SHA-1 bzw. SHA-256).
     if not all(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", value)
                for value in (finish, state.get("startCommit"))):
         raise WorkflowError("Ungültige Commit-IDs im Run-Zustand.")

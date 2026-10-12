@@ -44,6 +44,27 @@ class UiTextsTest {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"de", "en"})
+    void adminPasswordExplanationsUseTheSharedRuleAndContainNoUnexpandedPlaceholder(String language) {
+        UiTexts texts = new UiTexts(language);
+        String rule = texts.getBaseValidationPasswordInvalidMessage();
+        for (String value : new String[]{texts.getAdminUsersPasswordHelperEdit(), texts.getAdminUsersPasswordHelperCreate(),
+                texts.getAdminUsersPasswordValidationEdit(), texts.getAdminUsersPasswordValidationCreate()}) {
+            assertTrue(value.contains(rule));
+            assertFalse(value.contains("{0}"));
+            assertFalse(value.contains("\uFFFD"));
+        }
+    }
+
+    @Test
+    void timeEntryUsesTheChosenLanguagesClockFormat() {
+        assertEquals("00:00", new UiTexts("de").timeInput(java.time.LocalTime.MIDNIGHT));
+        assertEquals("12:00 AM", new UiTexts("en").timeInput(java.time.LocalTime.MIDNIGHT));
+        assertEquals("14:45", new UiTexts("de").timeInput(java.time.LocalTime.of(14, 45)));
+        assertEquals("2:45 PM", new UiTexts("en").timeInput(java.time.LocalTime.of(14, 45)));
+    }
+
     @Test
     void dateEntryMatchesTheExplicitUiLanguage() {
         var date = LocalDate.of(1990, 1, 1);

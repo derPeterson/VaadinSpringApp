@@ -89,7 +89,7 @@ class UserStatusResourceTest {
         assertTrue(svg.contains("<svg"));
         assertTrue(svg.contains("viewBox=\"0 0 24 24\""));
         assertTrue(svg.contains("M 12 24 C 5.383 24"));
-        assertTrue(svg.contains("fill=\"#f4d03f\""));
+        assertTrue(svg.contains("fill=\"var(--lumo-warning-color)\""));
         double width = overlay ? Math.round(size.getWidth() * 0.2) : size.getWidth();
         assertTrue(svg.contains("width=\"" + width + "\""));
         assertTrue(svg.contains("height=\"" + width + "\""));

@@ -473,6 +473,7 @@ class PasswordResetServiceTest {
         for (String extension : List.of("html", "mjml")) {
             try (InputStream input = new ClassPathResource("email/reset_password_" + language + "." + extension).getInputStream()) {
                 String source = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+                // Findet {{...}}-Platzhalter; Gruppe 1 erfasst mindestens ein Zeichen bis zur ersten schließenden Klammer.
                 var placeholders = java.util.regex.Pattern.compile("\\{\\{([^}]+)}}").matcher(source)
                         .results().map(match -> match.group(1)).collect(java.util.stream.Collectors.toSet());
                 assertEquals(java.util.Set.of("SERVICE_NAME", "SERVICE_LOGO", "RESET_PASSWORD_LINK"), placeholders);

@@ -24,6 +24,9 @@
 - Follow neighboring files: names such as `*View`, `*Service`, `*Repository`,
   `*Entity`; preserve existing constructor injection and Lombok patterns.
 - Make small, focused changes. Do not perform unsolicited refactoring.
+- Explain regular expressions in a nearby plain German comment: purpose, accepted
+  characters, anchors, groups and replacement references where applicable. Reuse
+  existing central validation rules instead of introducing parallel regex policies.
 - Change dependencies or versions only when required by the task.
 - Styles and UI images: `src/main/resources/META-INF/resources/custom-theme/`.
   Styles are loaded in `Application.java`; additional icons are under

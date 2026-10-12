@@ -99,7 +99,14 @@ class AdminUserErrorNotificationTest {
     }
 
     private static Stream<Component> descendants(Component root) {
-        return Stream.concat(Stream.of(root), root.getChildren().flatMap(AdminUserErrorNotificationTest::descendants));
+        Stream<Component> children = root.getChildren();
+        if (root instanceof Dialog dialog) {
+            // Dialog.getChildren() excludes the native footer's slotted wrapper.
+            // Traverse it explicitly so error tests exercise the real save/delete button.
+            children = Stream.concat(children, dialog.getFooter().getElement().getChildren()
+                    .flatMap(element -> element.getComponent().stream()));
+        }
+        return Stream.concat(Stream.of(root), children.flatMap(AdminUserErrorNotificationTest::descendants));
     }
 
     private UserEntity user(boolean create) {

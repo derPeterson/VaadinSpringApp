@@ -44,7 +44,7 @@ final class MarkdownSummary {
                 .append("Dieses Protokoll bewertet nur die ausgewählten, unten aufgeführten Browserfälle. ")
                 .append("Ein bestandener Lauf belegt nur diese Fälle, keine vollständige Prüfung der Anwendung. ")
                 .append("Nicht ausgewählte Suites wurden in diesem Lauf nicht geprüft. ")
-                .append("Die verbleibenden Teilfälle und Betriebsgrenzen sind in browser-tests/abdeckung.md und browser-tests/automatisierung-offen.md beschrieben. Ein grüner Lauf bestätigt nur die tatsächlich aufgeführten Schritte.\n\n")
+                .append("Die verbleibenden Teilfälle und Betriebsgrenzen stehen in [Abdeckung und offene Punkte](../../abdeckung.md). Ein grüner Lauf bestätigt nur die tatsächlich aufgeführten Schritte.\n\n")
                 .append("Suites, Testfälle und Grenzen: [Browser-Testanleitung](../../README.md).\n\n## Ergebnisse\n\n");
         if (results.isEmpty()) text.append("Keine Testfälle vom Reporter erfasst.\n");
         List<JsonNode> ordered = new ArrayList<>(results);
@@ -83,6 +83,7 @@ final class MarkdownSummary {
             for (JsonNode array : test.findValues("attachments")) {
                 for (JsonNode attachment : array) {
                     String source = attachment.path("source").asText();
+                    // Nur einfache Dateinamen aus ASCII-Buchstaben/Ziffern/Unterstrich/Punkt/Minus; Pfadtrenner sind ausgeschlossen.
                     if (source.matches("[\\w.-]+")) attachments.put(source, attachment.path("name").asText("Beleg"));
                 }
             }

@@ -29,6 +29,7 @@ class UserInputRulesTest {
     void uiDelegatesPreserveExactlyThePureRules(String value) {
         assertEquals(UserInputRules.isRequiredTextValid(value), ValidationHelper.isRequiredTextValid(value));
         assertEquals(UserInputRules.isEmailValid(value), ValidationHelper.isEmailValid(value));
+        // Vergleicht die zentrale Regel mit der bestehenden Flow-E-Mail-Regex; definiert keine zweite Passwortregel.
         assertEquals(value != null && !value.isBlank() && value.trim().matches(EmailValidator.PATTERN), UserInputRules.isEmailValid(value));
         assertEquals(UserInputRules.isPasswordSecure(value), ValidationHelper.isPasswordSecure(value));
         assertEquals(UserInputRules.normalize(value), ValidationHelper.normalize(value));

@@ -112,6 +112,8 @@ public final class MailpitInbox {
         assertNull(actual.getUserInfo());
         assertNull(actual.getQuery());
         assertNull(actual.getFragment());
+        // Pattern.quote schützt die Route; der Token muss 36 Zeichen aus kleinen Hexziffern und Minus enthalten.
+        // Dies prüft die vorhandene Token-Form, nicht die Position der UUID-Trennstriche.
         assertTrue(actual.getPath().matches(java.util.regex.Pattern.quote(path(route)) + "/[0-9a-f-]{36}"), "Falsches Mail-Linkziel.");
     }
 

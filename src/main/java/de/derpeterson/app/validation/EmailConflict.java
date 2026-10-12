@@ -18,6 +18,8 @@ public final class EmailConflict {
                     // may expose the exact constraint name. Do not match message text.
                     String normalized = name.toLowerCase(Locale.ROOT);
                     if (normalized.equals("uk_users_email")
+                            // Optionaler Schema-Präfix (?:...)?; dann exakt uk_users_email index, Indexname und optionaler Tabellenzusatz.
+                            // Erkennt nur die benannte Constraint in H2-Metadaten, keine beliebigen Fehlermeldungen.
                             || normalized.matches("(?:[a-z0-9_]+\\.)?uk_users_email index [a-z0-9_.]+(?: on .*)?")) {
                         return true;
                     }

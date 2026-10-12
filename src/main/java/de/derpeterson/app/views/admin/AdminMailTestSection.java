@@ -130,6 +130,8 @@ public class AdminMailTestSection extends VerticalLayout {
         String subject = Optional.ofNullable(testSubjectField.getValue()).orElse("").trim();
         String body = Optional.ofNullable(testBodyField.getValue()).orElse("").trim();
 
+        // Flow-E-Mail-Regel: lokale ASCII-Buchstaben/Ziffern/_.-+, @ und Domain mit Punkt und mindestens zweistelligem Endteil.
+        // Dieselbe bestehende Pattern-Regel liegt der Benutzerprüfung in UserInputRules zugrunde.
         if (recipient.isBlank() || !recipient.matches(EmailValidator.PATTERN)) {
             NotificationHelper.getInstance().showNotification(
                     messageProperties::getBaseFailedTitle,

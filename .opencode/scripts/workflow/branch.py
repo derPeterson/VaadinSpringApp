@@ -19,6 +19,7 @@ def require_clean(repo: Path, findings: bool = False) -> None:
 
 
 def validate(repo: Path, name: str) -> str:
+    # Regex: Nur kleine ASCII-Buchstaben, Ziffern, Unterstrich oder Minus; mindestens ein Zeichen im ganzen Namen.
     if not isinstance(name, str) or not re.fullmatch(r"[a-z0-9_-]+", name):
         raise WorkflowError("Branch name must match ^[a-z0-9_-]+$.")
     target = "feature/" + name

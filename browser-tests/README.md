@@ -1,291 +1,76 @@
 # Browsertests mit Java, JUnit und Allure
 
-Die Browsertests prüfen die im Browser gerenderte Vaadin-Anwendung in einer frischen Docker-Testumgebung. Die Testfälle, Docker-Steuerung und Markdown-Erzeugung sind Java. Playwright übernimmt die Browserautomatisierung, JUnit die Testausführung und Allure die HTML-Berichte samt Aktionen und Belegen. Es wird kein eigener HTML-Reporter entwickelt.
+Diese Anleitung erklärt die Bedienung und den Aufbau der Browsertests.
+Den aktuellen Prüfstand, offene Fehler und die Zuordnung der ursprünglichen
+manuellen Fälle findest du ausschließlich in [Abdeckung und offene Punkte](abdeckung.md).
+Ein vorhandener Testfall bedeutet noch nicht, dass sein Ablauf erfolgreich geprüft ist.
 
-## Inhalt
+## Starten
 
-- [Einrichten und starten](#einrichten-und-starten)
-- [Suites und Testfälle](#suites-und-testfälle)
-- [Sprache und Übersetzungen](#sprache-und-übersetzungen)
-- [Ergebnisse ansehen](#ergebnisse-ansehen)
-- [Java-Dateien verstehen](#java-dateien-verstehen)
-- [Isolation und Grenzen](#isolation-und-grenzen)
-- [IntelliJ und weitere Tests](#intellij-und-weitere-tests)
-- [Fehlerhilfe](#fehlerhilfe)
-
-## Einrichten und starten
-
-Voraussetzungen: Java 25, Docker Desktop mit Linux-Containern und Docker Compose ab 2.24.4. Den vorhandenen Maven Wrapper des Projekts verwenden. Allure wird lokal über Maven bereitgestellt; keine globale Allure-Installation nötig.
-
-In PowerShell im Projektordner:
+Voraussetzungen: Java 25, Docker Desktop mit Linux-Containern und Docker Compose
+ab 2.24.4. Im Projektordner den vorhandenen Maven Wrapper verwenden.
+Eine globale Playwright- oder Allure-Installation ist nicht erforderlich.
 
 ```powershell
-# Einmalig: Abhängigkeiten und passenden Chromium-Browser bereitstellen.
+# Einmalig: Bibliotheken und passenden Chromium-Testbrowser bereitstellen.
 .\browser-tests\run.ps1 -InstallBrowsers
 
-# Normaler Testlauf mit aktuellem App-Image-Build (Docker-Cache möglich).
-.\browser-tests\run.ps1
+# Alle Suites auf Deutsch, mit aktuellem Anwendungsimage.
+.\browser-tests\run.ps1 -Suite all -Language de
+
+# Dasselbe unveränderte Anwendungsimage anschließend auf Englisch prüfen.
+.\browser-tests\run.ps1 -Suite all -Language en -NoBuild
 ```
 
 | Aktion | Befehl |
 | --- | --- |
-| Tests mit sichtbarem Browser | `.\browser-tests\run.ps1 -Headed` |
-| Bereits gebautes Browser-Testimage wiederverwenden | `.\browser-tests\run.ps1 -NoBuild` |
-| Reporter, URL-/Link-Isolation und Übersetzungs-Helper mit JUnit prüfen, ohne Docker | `.\browser-tests\run.ps1 -ReportingTests` |
-| Letzten Allure-HTML-Bericht anzeigen | `.\browser-tests\run.ps1 -Report` |
-| Bewusst einen Fehlerbericht erzeugen | `.\browser-tests\run.ps1 -NoBuild -FailureProbe` |
-| Eine gespeicherte Ablaufaufzeichnung öffnen | `.\browser-tests\run.ps1 -Trace 'C:\PFAD\ZUM\trace.zip'` |
+| Tests live im sichtbaren Browser verfolgen | `.\browser-tests\run.ps1 -Headed` |
+| Nur Benutzerverwaltung prüfen | `.\browser-tests\run.ps1 -Suite user-management -Language de` |
+| Helper und Reporter ohne Docker prüfen | `.\browser-tests\run.ps1 -ReportingTests` |
+| Letzten Allure-Bericht öffnen | `.\browser-tests\run.ps1 -Report` |
+| Bestimmten Bericht öffnen | `.\browser-tests\run.ps1 -Report -ReportPath '.\browser-tests\runs\DEIN-LAUFORDNER\html'` |
+| Gespeicherten Trace öffnen | `.\browser-tests\run.ps1 -Trace 'C:\PFAD\ZUM\trace.zip'` |
+| Absichtlich einen roten Bericht erzeugen | `.\browser-tests\run.ps1 -NoBuild -FailureProbe` |
 
-`-FailureProbe` lässt absichtlich einen falschen Seitentitel erwarten. Exitcode 1 und ein roter Test sind dabei korrekt. Dieser Fall läuft nicht bei normalen Browser- oder Reporter-Prüfungen mit. Auch nach dem Fehler wird die eigene Docker-Umgebung abgebaut.
+`-Suite`, `-Language`, `-Headed` und `-NoBuild` lassen sich kombinieren.
+Standardwerte sind `all` und `de`. `-NoBuild` verwendet das vorhandene App-Image;
+nach Änderungen an Anwendung, gemeinsamen Quellen, Übersetzungen oder Styles
+zuerst einen Lauf mit Image-Build starten. Sonst kann der Browser einen alten Stand prüfen.
 
-`run.ps1` ist nur der kurze Windows-Einstieg: Es kompiliert das unabhängige Maven-Testprojekt und startet Java mit den Bibliotheken. Die eigentliche Teststeuerung liegt in Java. JUnit startet die Browserfälle ohne ein zweites selbst entwickeltes Testframework.
+`-FailureProbe` führt ausschließlich einen absichtlich falschen Titelvergleich aus.
+Exitcode 1 und ein roter Fall sind dabei erwartet. Er gehört nicht zum normalen Lauf.
+Auch bei Testfehlern wird die eigene Testumgebung abgebaut.
 
-## Suites und Testfälle
+## Suites
 
-Die Fälle sind nach fachlichem Bereich getrennt, mit eigenen JUnit-Klassen unter
-src/test/java/de/derpeterson/browsertests/suites/. Ein gewöhnlicher Start führt alle acht
-Suites aus. Jede Prüfung bekommt einen frischen Browserkontext; alle Fälle funktionieren
-ohne vorherige Testfälle. Die Datenbank und Mailpit sind für den gesamten Lauf frisch.
+Alle Fälle sind eigenständige JUnit-Tests. Jeder bekommt einen frischen Browserkontext;
+die isolierte Datenbank und Mailpit sind pro Lauf frisch. Benötigte Konten werden im
+jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 
-| Suite | Inhalt | Anzahl |
+| Suite | Inhalt | Fälle |
 | --- | --- | ---: |
-| infrastructure | Startseite und Bilder, Loginformular, erreichbare Mailpit-API | 3 |
-| authentication | Adminlogin, falsches Passwort, unbekanntes Konto, Gastzugriff, Logout, normale Benutzerrechte | 6 |
-| registration | Registrierung, Pflichtfelder und korrigierbare Eingabefehler | 3 |
-| verification | Echter Mailbutton, Aktivierung, erneuter Linkaufruf, ungültiger/fehlender Token | 3 |
-| password-reset | Echte Reset-Mail und neue Anmeldung, Formularfehler, neutrale Anfrageantwort, ungültige/verbrauchte/fehlende Links | 6 |
-| account-lifecycle | Einzelvalidierung, kanonisierte Dubletten, unverifizierte Resetanfrage und altes Resetformular | 5 |
-| presentation | Startseiten-Sprachwechsel, gespeicherte Kontosprache, schmale Registrierung, Tastaturlogin | 4 |
-| token-configuration | Mindestdauern der vier Tokeneinstellungen, Feldfehler, Speichern/Neuladen und Erklärungen | 4 |
-| all | Alle acht Suites; Standardwert | 34 |
+| `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit | 3 |
+| `authentication` | Admin-/Benutzerlogin, Fehler, Gastzugriff und Logout | 6 |
+| `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
+| `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
+| `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler und Links | 6 |
+| `account-lifecycle` | Einzelvalidierungen, kanonisierte Dubletten, unverifizierte Anfrage und altes Resetformular | 5 |
+| `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung und Tastaturlogin | 4 |
+| `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
+| `user-management` | Suche/Pagination, optionale Filter, Anlage, Bearbeitung, Löschung, Selbstschutz und Passwortwechsel | 8 |
+| `all` | Alle neun Suites | 42 |
 
-~~~powershell
-# Nur die Anmeldungssuite:
-.\browser-tests\run.ps1 -Suite authentication
+Die vollständigen Schritte und Erwartungen stehen pro Fall in `@Description`
+und werden automatisch in den Markdown-Bericht übernommen. Die Test-ID erscheint
+in `@DisplayName`, im Allure-Bericht und in der Abdeckungsübersicht.
 
-# Infrastruktur unabhängig prüfen:
-.\browser-tests\run.ps1 -Suite infrastructure
+## Ergebnisse und Traces
 
-# Registrierung oder Verifikation einzeln prüfen:
-.\browser-tests\run.ps1 -Suite registration
-.\browser-tests\run.ps1 -Suite verification
-
-# Die Passwortreset-Suite separat:
-.\browser-tests\run.ps1 -Suite password-reset
-
-# Alle Suites live mitverfolgen:
-.\browser-tests\run.ps1 -Suite all -Headed
-~~~
-
--Suite lässt sich mit -Headed oder -NoBuild kombinieren. -NoBuild verwendet das vorhandene
-App-Image; nur bei unverändertem Anwendungscode einsetzen. -FailureProbe führt weiterhin
-ausschließlich den absichtlichen Fehlerfall aus, unabhängig von der Suite-Auswahl.
-
-Die IDs kennzeichnen eigenständige Browserfälle. Jeder Fall beschreibt seine Schritte
-und Erwartungen vollständig in der Suite und im erzeugten Bericht.
-
-| Fall | Geprüftes Verhalten |
-| --- | --- |
-| INFRA-01 | Startseite, Serviceanzeige und geladene Bilder bei 1280 × 900 |
-| INFRA-02 | Sichtbares Loginformular |
-| INFRA-03 | Mailpit-API erreichbar und Nachrichtenliste lesbar; kein Leerheitszwang nach anderen Versandtests |
-| AUTH-01A | Admin meldet sich an; Konto und Dashboard sichtbar |
-| AUTH-01B | Falsches Passwort: neutraler Fehler und kein Adminzugriff |
-| AUTH-01C | Unbekannte Adresse: gleicher Fehler und kein Adminzugriff |
-| AUTH-01D | Gast wird beim direkten Adminaufruf zur Anmeldung geführt |
-| AUTH-02A | Logout über UI; bestehender Tab, Zurück und erneuter Adminaufruf |
-| SEC-01A | Aktiver normaler Benutzer kann sich anmelden, aber keine Adminfunktionen nutzen |
-| REG-01A | Registrierung bestätigt, tatsächliche SMTP-Mail eingegangen, Anmeldung vor Aktivierung abgelehnt |
-| REG-02A | Leere Pflichtfelder markiert; nach gültiger Korrektur Registrierung bestätigt |
-| REG-02B | Ungültige E-Mail und abweichende Passwortbestätigung verständlich markiert und korrigierbar |
-| VER-01A | Mailinhalt geprüft, echter Mailbutton öffnet Aktivierung; anschließend normale Anmeldung ohne Adminrechte |
-| VER-01B | Bereits verbrauchter Link zeigt beim weiterhin aktiven Konto gemäß Vertrag erneut Erfolg; Anmeldung funktioniert |
-| VER-02A | Unbekannter Token zeigt verständlichen Fehler; Aufruf ohne Token führt zur Startseite |
-| RESET-01A | Echte Reset-Mail, neues Passwort, Ablehnung des alten Passworts und erfolgreiche normale Anmeldung |
-| RESET-02A | Leere/ungültige Anfrageadresse markieren; nach Korrektur tatsächliche Reset-Mail empfangen |
-| RESET-02B | Leere/ungültige Passwörter und abweichende Bestätigung korrigieren; derselbe Link erlaubt danach den Reset |
-| RESET-03A | Sichtbare Antwort auf vorhandene und unbekannte E-Mail identisch; vorherigen Hinweis über UI schließen |
-| RESET-04A | Unbekannten Token ohne Resetformular ablehnen; ohne Token echte Startseite prüfen |
-| RESET-04B | Erfolgreich verwendeten Reset-Link neu laden; neutraler Fehler statt erneutem Passwortformular |
-
-Noch nicht automatisiert: gesperrte Konten, Remember-me, Rollenänderungen in laufenden
-Sitzungen, mutierende Aktionen aus alten Formularen, weitere Eingabe-/Dublettenvarianten,
-Verifikationsablauf und erneuter Versand, nachträgliche Adminsperren, weitere Reset-Ablauf-/Fehlervarianten,
-Adminbearbeitung sowie mobile/Tastaturvarianten. Die Verifikationsfälle prüfen keine
-direkten Datenbankzustände, keine exakten Zeitgrenzen und keine Tokenkonkurrenz.
-
-### Aufgaben der Testarten
-
-- JUnit- und Persistenztests prüfen fachliche Regeln, Datenbankverhalten, Transaktionen,
-  Nebenläufigkeit und technische Fehlerfälle. Diese bestehenden Tests bleiben erhalten.
-- Browsertests bedienen die echte Oberfläche und prüfen das sichtbare Verhalten und
-  vollständige Benutzerabläufe. Datenbank- oder API-Zugriffe dürfen diese Bedienung nicht
-  ersetzen. Infrastrukturprüfungen sichern die Voraussetzungen der Browserläufe ab.
-- Manuelle Sonderprüfungen bleiben für nicht sinnvoll automatisierbare Fälle und
-  menschliche Bewertungen, etwa Bediengefühl, Verständlichkeit und visuelle Qualität.
-
-Die Browserdokumentation und ihre Berichte sind eigenständig. Sie benötigen keine
-manuelle Vorlage und führen keine manuellen Prüfaufträge mit.
-
-### Testkonten und kleine UI-Helfer
-
-Nur die eigene Browser-Testumgebung bekommt den Bootstrap-Admin
-browser-admin@example.test mit dem erfundenen Passwort BrowserAdmin1!.
-Die Vorgaben stehen in compose.browser-tests.yaml; passende Testwerte in
-BrowserTestAccounts.java. Diese Werte gehören ausschließlich zur wegwerfbaren
-Testumgebung, nicht zu einer echten Installation.
-
-Der normale Benutzer für SEC-01A wird im selben Fall durch die echte Adminoberfläche
-angelegt: aktive Freigabe, nur ROLE_USER, eindeutige Adresse und BrowserUser1! als
-erfundenes Testpasswort. Kein SQL-Seeding, keine Testendpunkte und keine gemockte
-Authentifizierung. Die Anlage ist Vorbereitung dieses Falls, keine vollständige
-Prüfung der Benutzerverwaltung oder des Verifikationswegs.
-
-Die kleinen Klassen unter pages/ enthalten wiederkehrende Klicks und Eingaben.
-Die Suites beschreiben die fachlichen Fälle. BrowserFixture verwaltet ausschließlich
-Browserkontexte, Screenshots und Traces. Neue fachliche Bereiche erhalten später
-eigene Suite-Klassen und einen Eintrag in BrowserSuites.
-
-### Passwortreset über echte Testmails
-
-Die Suite `password-reset` legt jedes benötigte Konto selbst über Registrierung und
-Verifikationsmailbutton an. Es gibt kein direktes Seeding und keine Abhängigkeit auf
-andere Testfälle. Anschließend wird Passwort vergessen über den sichtbaren Link im
-Loginformular geöffnet. Reset-Mails kommen durch die reguläre Queue und SMTP in der
-eigenen Mailpit-Umgebung an. Der tatsächlich gerenderte Reset-Mailbutton wird nach
-Prüfung des exakten Test-Ursprungs und der Reset-Route angeklickt.
-
-Nach erfolgreicher Änderung prüfen normale Loginversuche das alte und das neue
-Passwort. Für die neue Eingabe dient ausschließlich das erfundene Testpasswort
-`BrowserReset2!`. Fehlende/ungültige Angaben werden über die sichtbaren Formulare
-korrigiert. Tokenzustände, Uhrzeit, SQL oder Dienste werden nicht als Abkürzung benutzt.
-Der Vergleich vorhandener/unbekannter E-Mails schließt die erste Bestätigung über
-ihren echten UI-Button, damit kein alter Hinweis den zweiten Versuch verdeckt.
-
-Alle sechs Fälle enthalten eigene Schritte und Erwartungen in `@Description`.
-Der bestehende Reporter überträgt sie automatisch mit Status, Ist/Grund, Zeitpunkten
-und Beleglinks in `report.md`; Allure enthält zusätzlich Mail-/Formularscreenshots
-und den Kontext-Trace. Keine Erweiterung der alten manuellen Vorlage erforderlich.
-
-Die Suite prüft keine exakten Ablaufgrenzen, Parallelität, technischen Fehlerinjektionen,
-Antwortzeiten, dauerhafte Abwesenheit von Mails an unbekannte Adressen, bestehende
-Sitzungen nach dem Reset oder externe SMTP-/Mailclient-Zustellung. Diese Grenzen
-werden nicht aus einer sichtbaren neutralen Antwort abgeleitet.
-
-### Registrierungsdaten und tatsächliche Testmails
-
-Jeder neue Registrierungs-/Verifikationsfall verwendet eine eigene UUID-Adresse unter
-example.test und das erfundene Testpasswort BrowserUser1!. Namen, Geschlecht und
-Geburtsdatum werden über das sichtbare Formular eingegeben. Kein Test registriert oder
-aktiviert Konten durch SQL, Serviceaufrufe oder eine Test-API.
-
-MailpitInbox liest ausschließlich die Mailablage der isolierten Testumgebung.
-Es wartet höchstens 30 Sekunden auf die konkrete Empfängeradresse und den
-erwarteten übersetzten Betreff, niemals auf die global neueste Nachricht. So werden
-Verifikations- und Reset-Mails desselben Kontos eindeutig unterschieden. Die Anwendung versendet über ihre reguläre Queue und SMTP
-an Mailpit. Der Helfer erzeugt oder versendet selbst keine Mail.
-
-Empfänger, Betreff und ausgefüllte Platzhalter werden am empfangenen Inhalt geprüft.
-Die HTML-Mail wird im Browser geöffnet; dort werden Name, Serviceanzeige und der echte
-Aktivierungsbutton geprüft und angeklickt. Sein Ziel muss exakt zum lokalen App-Port
-des Testlaufs gehören. Mailansicht und Aktivierung bekommen zusätzliche Screenshots;
-Empfänger/Betreff werden als Beleg angehängt. Grundlage ist die offizielle
-[Mailpit-API](https://mailpit.axllent.org/docs/api-v1/) und ihre
-[HTML-Ansicht für Tests](https://mailpit.axllent.org/docs/integration/).
-
-VER-01B folgt dem bestehenden Vertrag: Ein verwendeter Link darf bei weiterhin aktivem
-Konto erneut Erfolg anzeigen. Der Fall behauptet keinen Nachweis für nachträgliche
-Adminsperren. Die isolierte Mailpit-Zustellung beweist außerdem keine Zustellung an
-externe Postfächer oder Darstellung in Outlook/Gmail.
-
-## Sprache und Übersetzungen
-
-Jeder Lauf prüft **eine ausdrücklich gewählte Oberflächensprache**. Standard ist Deutsch.
-Für die englische Variante denselben Lauf mit `-Language en` starten:
-
-```powershell
-.\browser-tests\run.ps1 -Language de
-.\browser-tests\run.ps1 -Language en
-.\browser-tests\run.ps1 -Suite registration -Language en -Headed
-```
-
-Die Sprache lässt sich mit `-Suite`, `-Headed` und `-NoBuild` kombinieren. Jeder Lauf
-erhält sein eigenes Archiv mit Oberflächensprache und Browser-Locale. Die 34 Fälle
-laufen pro Sprache; Deutsch und Englisch werden nicht gleichzeitig als richtige
-Antwort akzeptiert. Beide Läufe zusammen prüfen 68 Fallausführungen, sofern beide Gesamtläufe erfolgreich abgeschlossen werden.
-
-`i18n/UiTexts` lädt die **originalen** Dateien `src/main/resources/i18n/messages_de.properties`
-und `messages_en.properties` über den Test-Classpath. Maven stellt diese Ressourcen
-beim Testbuild bereit. Es gibt keinen zweiten, von Hand gepflegten Textkatalog und
-keine Abhängigkeit auf Spring oder Vaadin. Der Java-`PropertyResourceBundle` liest die
-Zeichenkodierung wie in der Anwendung, einschließlich der vorhandenen deutschen
-ISO-8859-1-Datei und UTF-8-Dateien. Die Originaldateien werden nicht umkodiert.
-[Java-Ressourcenleser](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/PropertyResourceBundle.html).
-Fehlende/leere Schlüssel und nicht unterstützte
-Sprachen brechen die Prüfung ab; kein stiller Rückfall auf Englisch oder den Schlüssel.
-
-Anwendung und Browsertests verwenden **denselben Getter-Katalog** in
-`shared/src/main/java/de/derpeterson/app/i18n/MessageTexts.java`. `MessageProperties`
-ist der Spring-/Vaadin-Adapter und `UiTexts` der Browser-Adapter; beide erben diese
-Getter. In einem Page-Helper steht beispielsweise `texts.getLoginEmailField()` statt
-eines Properties-Schlüssels. Bei einer Schlüsseländerung wird nur der gemeinsame Getter
-angepasst. Ein umbenannter Getter kann über Java-Refactoring in beiden Projekten geändert
-werden; anschließend die drei Maven-Projekte neu laden und kompilieren.
-
-Der Katalog gehört ausschließlich zum Maven-Modul `shared/pom.xml`.
-Auch Admin-Konfigurationsgruppen sind mit `AdminConfigGroup` typisiert; ihre Texte
-kommen aus `getAdminConfigGroupLabel(group)` statt aus einem übergebenen Properties-Schlüssel.
-Anwendung und Browsertests hängen vom gleichen Shared-JAR ab; der Browserstarter
-baut und installiert es vor jeder Kompilierung frisch. Es gibt keine zusätzlich
-eingebundenen Source-Roots, generierten Getter oder kopierten Java-Quellen.
-Für einen direkten Maven-Aufruf ohne Starter zunächst
-`.\mvnw.cmd -f shared/pom.xml clean install` ausführen, dann beispielsweise
-`.\mvnw.cmd -f browser-tests/pom.xml test`.
-`UiTexts` lädt die Texte mit der ausgewählten Locale ohne
-Spring oder Vaadin. Die Anwendung verwendet standardmäßig ihre aktuelle Session-Sprache;
-`MessageProperties.forLocale(provider, Locale.GERMAN)` ist für ausdrücklich festgelegte
-Übersetzungen verfügbar. Normale Oberflächen bleiben beim dynamischen Adapter, damit
-Sprachwechsel weiterhin funktionieren.
-
-Eine Änderung der Properties wird beim nächsten Testbuild übernommen. Bei `-NoBuild`
-muss zusätzlich das wiederverwendete App-Image zu diesen Texten passen; nach Änderungen
-am Anwendungscode oder den gemeinsamen Quellen deshalb mit Image-Build starten.
-
-Die Tests wählen die Sprache über das echte Flaggenmenü und prüfen anschließend
-exakt die entsprechenden Labels, Buttons, Hinweise und Mailbetreffe. Nach einer
-erfolgreichen Anmeldung wird die Testsprache nochmals über das Menü gesetzt, weil
-die gespeicherte Benutzersprache die Browser-Vorgabe überschreiben kann. Die Tests
-behaupten damit keine Prüfung der automatischen Spracherkennung oder gespeicherten
-Sprachpräferenz beim Login. Datumsangaben werden passend zur gewählten Sprache eingegeben.
-
-Formatierte Benachrichtigungen behalten ihre Empfängerparameter; deren HTML-Markup
-wird für den sichtbaren Textvergleich in einem inaktiven Template ausgewertet. Die
-Anwendungsseite wird dabei nicht verändert. Prüfungen auf Fehlermarkierungen,
-Zugriffsverweigerung, Navigation und Mailzustellung bleiben unabhängig davon erhalten.
-
-Routen, feste Seitentitel und vorhandene Avatar-Konstanten stammen direkt aus
-`AppRouteConstants` und `AppConstants` unter `shared/src/main/java/`. Die ursprünglichen
-Java-Packages und Namen bleiben erhalten. `BrowserRoutes` bildet daraus Browserpfade
-und prüft URLs auf der genauen lokalen Runner-Adresse. Sicherheitsmuster mit `/**`
-werden nicht als Browserpfade verwendet. Der Mail-Link-Guard prüft weiterhin Host,
-Port, Protokoll, UUID-Pfad und fehlende Query-/Fragment-/Benutzerangaben.
-
-Eine Änderung dieser gemeinsamen Werte wird nach erneutem App-Image-Build auch in
-den Tests verwendet. Sichtbare Inhalte, Kontorechte, Fehlermarkierungen und Mailzustellung
-werden weiterhin eigenständig geprüft: Ein richtiger Titel allein reicht nicht.
-Erfundene Testdaten und Bildnamen ohne bestehende gemeinsame Konstante bleiben
-als ausdrückliche Testvorgaben erhalten.
-Diese Tests prüfen die Verwendung der richtigen Übersetzung; die sprachliche Qualität
-des Inhalts benötigt weiterhin eine gesonderte Einschätzung. Änderungen von Schlüsseln
-oder der UI-Struktur können weiterhin eine Anpassung der Tests erfordern.
-
-## Ergebnisse ansehen
-
-Jeder Lauf legt ein eigenes Archiv an:
+Jeder Lauf erhält einen eigenen Ordner:
 
 ```text
 browser-tests/runs/
-  2026-10-11T19-40-00_UTC__1234abcd__a1b2c3d4/
+  ZEITSTEMPEL_UTC__GIT-COMMIT__RUN-ID/
     report.md
     metadata.json
     runner.log
@@ -294,56 +79,89 @@ browser-tests/runs/
     html/open-report.bat
 ```
 
-`report.md` enthält pro Fall die Schritte und Erwartung aus der Testbeschreibung sowie Häkchen, Status, Ist/Grund, UTC-Zeitpunkt und Links zu Screenshots und Traces. Alle Ergebnisse werden automatisch eingetragen, ohne manuelle Abhakpflicht. Die Angaben erfassen UTC-Start/Ende, Git-Commit/Branch, lokale Änderungen, App-Image-ID sowie Aufbau, Testausführung, HTML-Erzeugung und Abbau. Auch übersprungene Fälle, fehlende Belege oder ein fehlgeschlagener Abbau dürfen keinen erfolgreichen Gesamtlauf ergeben.
+`report.md` enthält Fallbeschreibung, Häkchen, Status, Ist/Grund, UTC-Zeitpunkte
+und Links zu Screenshots und Traces. `metadata.json` dokumentiert zusätzlich
+Branch/Commit, lokale Änderungen, Image-ID, Sprache und Aufbau/Abbau.
+Übersprungene Fälle, fehlende Ergebnisse oder fehlgeschlagener Abbau ergeben
+keinen erfolgreichen Gesamtstatus.
 
-Der Allure-Bericht enthält die Testfälle, Browseraktionen, Fehlerdetails, Screenshots und Trace-Anhänge. Browseraktionen werden durch die fertige Allure-Playwright-Integration aufgezeichnet. Screenshots und Traces werden auch bei erfolgreichen Fällen behalten, damit du die Belege direkt ansehen kannst. Der Trace Viewer ist direkt im Allure-Bericht über den Trace-Anhang erreichbar. Alternativ kann die ZIP-Ablaufaufzeichnung heruntergeladen und mit `-Trace` separat geöffnet werden. [Allure Playwright Java](https://allurereport.org/docs/playwright-java/), [Playwright Trace Viewer](https://playwright.dev/java/docs/trace-viewer).
+**Für einen beliebigen gespeicherten HTML-Bericht `html/open-report.bat`
+doppelklicken.** Das zugehörige Konsolenfenster offen lassen; mit Strg+C beenden.
+`index.html` nicht direkt öffnen: Allure lädt seine Daten über den lokalen HTTP-Server.
+Der Starter benötigt den Testordner samt Maven Wrapper, Java und bereitgestellten Tools.
 
-`-Report` startet nur den lokalen Berichtserver an `127.0.0.1`; es startet keine Anwendung und führt keine Tests aus. Mit Strg+C beenden. Jeder HTML-Ordner enthält außerdem eine open-report.bat. Per Doppelklick öffnet sie genau den Bericht dieses Laufs, auch wenn inzwischen neuere Läufe vorhanden sind. Das Konsolenfenster geöffnet lassen; mit Strg+C wird der Berichtserver beendet. Die index.html nicht direkt per Doppelklick öffnen, weil Allure seine Daten über HTTP nachlädt. Die BAT-Datei benötigt weiterhin den Testordner samt Maven Wrapper, Java und den bereitgestellten Allure-Werkzeugen.
+Im Allure-Bericht enthält jeder Fall Aktionen, Diagnose, Screenshots und den
+Playwright-Trace. Der Trace-Anhang öffnet den Trace Viewer direkt im Bericht.
+Alternativ die ZIP herunterladen und mit `-Trace` öffnen. Belege werden auch bei
+erfolgreichen Fällen behalten. `-Report` startet ausschließlich einen lokalen
+Berichtserver, keine Anwendung und keine neuen Tests.
 
-Ein bestimmter Bericht lässt sich auch ausdrücklich auswählen:
+Historische Run-Berichte werden nicht nachträglich geändert. Frühere Fassungen
+der zusammengeführten Dokumentation liegen als ZIP unter `runs/dokumentationsarchiv/`.
+Dieser Unterordner enthält Dokumentationssicherungen, keine zusätzlichen Testläufe.
 
-    .\browser-tests\run.ps1 -Report -ReportPath '.\browser-tests\runs\DEIN-LAUFORDNER\html'
+## Aufbau und Änderungen
 
-Alternativ kannst du den lokal bereitgestellten Allure-Starter verwenden:
+Die Testquellen liegen unter `browser-tests/src/test/java/de/derpeterson/browsertests/`.
 
-```powershell
-.\browser-tests\target\tools\allure-2.46.1\bin\allure.bat open '.\browser-tests\runs\DEIN-LAUFORDNER\html' --host 127.0.0.1
-```
-
-Allure Java 3.0.0 ist hier der Testadapter; Allure Report 2.46.1 ist der HTML-Generator. Das sind unterschiedliche Werkzeuge mit eigenen Versionsnummern. Playwright Java ist auf 1.63.0 festgeschrieben. Dazu wird der passende Chromium-Testbrowser installiert.
-
-## Java-Dateien verstehen
-
-Alle Java-Dateien liegen unter `src/test/java/de/derpeterson/browsertests/`:
-
-| Datei | Aufgabe |
+| Bereich | Aufgabe |
 | --- | --- |
-| `suites/InfrastructureBrowserTest.java` | Die drei lesbaren JUnit-Testfälle: Startseite/Bilder, Loginformular, erreichbares Mailpit |
-| `suites/AuthenticationBrowserTest.java` | Die sechs unabhängigen Fälle für Anmeldung, Abmeldung und Adminrechte |
-| `suites/RegistrationBrowserTest.java` | Drei Fälle für Registrierung, Feldfehler und Korrektur |
-| `suites/VerificationBrowserTest.java` | Drei Fälle für Mailaktivierung und gültige/ungültige Linkaufrufe |
-| `suites/PasswordResetBrowserTest.java` | Sechs unabhängige Fälle für Passwortreset, Formularfehler, neutrale Antworten und ungültige Links |
-| `pages/ForgotPasswordPage.java / ResetPasswordPage.java` | Sichtbare Anfrage-/Resetformulare bedienen und ihre Hinweise prüfen |
-| `mail/MailpitInbox.java` | Eigene Verifikations-/Reset-Mail nach Adresse und Betreff abwarten, lesen und ihren sichtbaren Mailbutton verwenden |
-| `mail/MailpitInboxTest.java` | Fremde Linkziele und die manuelle Umgebung vor Navigation ausschließen |
-| `i18n/UiTexts.java / UiTextsTest.java` | Gemeinsame Getter mit fester DE/EN-Sprache verwenden und fehlende Schlüssel/Sprachen absichern |
-| `../shared/src/main/java/` | Einzige Definition der Getter, Routen, Seitentitel und vorhandenen App-Konstanten; keine Framework-Abhängigkeiten |
-| `pages/` | Kleine Bedienhelfer für Loginformular, Benutzermenü und Benutzeranlage |
-| `BrowserSuites.java / BrowserTestAccounts.java` | Suite-Auswahl und erfundene lokale Testkonten |
-| `BrowserRoutes.java / BrowserRoutesTest.java` | Gemeinsame Routenkonstanten als Pfade und genaue lokale URL-Erwartungen verwenden |
-| `BrowserFixture.java` | Browser und isolierten Kontext bereitstellen; Screenshot und Trace an Allure übergeben |
-| `FailureProbeTest.java` | Separat auswählbarer absichtlicher Fehler für den Berichtsvergleich |
-| `BrowserTestRunner.java` | Frische Docker-Umgebung starten, JUnit aufrufen, aufräumen und Allure-Generator starten |
-| `MarkdownSummary.java` | Projektspezifische Markdown-Checkliste aus fertigen Allure-Ergebnissen erstellen |
-| `MarkdownSummaryTest.java` | Protokollstatus, fehlende Fälle und Beleglinks ohne Browser prüfen |
+| `suites/` | Kleine getrennte fachliche Suites mit unabhängigen Testfällen |
+| `pages/` | Wiederkehrende UI-Aktionen; Liste, Benutzerformular und Löschbestätigung haben getrennte Helfer |
+| `mail/MailpitInbox` | Nur eigene empfangene Testmail lesen und deren echten Link verwenden |
+| `i18n/UiTexts` | Gemeinsame Übersetzungsgetter mit expliziter Sprache |
+| `BrowserFixture` | Browserkontext, Screenshots und Traces |
+| `BrowserSuites` | Auswahl mit `-Suite` |
+| `BrowserRoutes` | Gemeinsame Routen als lokale Pfade und genaue URL-Erwartungen |
+| `BrowserTestRunner` | Eigene Docker-Umgebung, JUnit-Ausführung, Abbau und Allure-Erzeugung |
+| `MarkdownSummary` | Markdown-Checkliste aus fertigen Allure-Ergebnissen |
 
-`pom.xml` verwaltet die Testwerkzeuge und verwendet das Shared-JAR als Testabhängigkeit. Es hat keinen Spring-Boot-/Vaadin-Parent und verändert die produktiven Abhängigkeiten oder den normalen Java-Testlauf der Anwendung nicht.
+`run.ps1` kompiliert das unabhängige Maven-Testprojekt und startet Java.
+Die Ablaufsteuerung und Markdown-Erzeugung sind Java; Playwright steuert den Browser,
+JUnit führt die Fälle aus und Allure erzeugt die HTML-Berichte.
+Kein eigenes npm-Testprojekt oder selbst entwickelter HTML-Reporter.
+Die aktuellen Werkzeugversionen stehen in `browser-tests/pom.xml`.
 
-## Isolation und Grenzen
+Neue Fälle in der passenden Suite ergänzen; neue fachliche Bereiche erhalten eine
+eigene Suite und Registrierung in `BrowserSuites`. ID, `@DisplayName`, `@Feature`,
+`@Story` und `@Description` pflegen. Playwrights wartende Assertions verwenden,
+keine festen Schlafzeiten und keine Abschwächung bei roten Ergebnissen.
+Eine automatische Anbindung an das OpenCode-Benchmarking ist nicht eingerichtet.
 
-Der Starter verwendet [compose.browser-tests.yaml](../compose.browser-tests.yaml). Jeder Java-Lauf startet ein eigenes Projekt `vaadinspringapp-e2e-java-…` mit frischen eigenen Datenbank- und Mailpit-Volumes. Anwendung: `127.0.0.1:18081`, Mailpit: `127.0.0.1:18026`; H2-Webkonsole deaktiviert. Deine manuelle Umgebung auf `18080`/`18025` bleibt bestehen. Diese Ports werden als Browser-Testports abgelehnt.
+## Sprachen und gemeinsame Konstanten
 
-Mehrere Browser-Testläufe auf denselben Ports nacheinander ausführen. Für einen weiteren gleichzeitigen Lauf in dessen PowerShell-Prozess andere freie Ports einstellen:
+Ein Lauf prüft eine ausdrücklich über die Oberfläche gewählte Sprache: `de` oder `en`.
+Erwartungen akzeptieren nicht gleichzeitig beide Übersetzungen. Für einen vollständigen
+Vergleich beide Sprachen ausführen; derzeit sind das 42 Fälle je Sprache.
+
+Die Getter sind einmalig in `shared/src/main/java/de/derpeterson/app/i18n/MessageTexts.java`
+definiert. Die Anwendung verwendet `MessageProperties`, die Browsertests `UiTexts`.
+`UiTexts` liest die originalen Properties-Ressourcen mit fester Locale; fehlende
+Schlüssel/Sprachen müssen scheitern. Properties-Dateien nicht duplizieren oder umkodieren.
+Routen, Seitentitel und vorhandene Avatar-Konstanten kommen aus den gemeinsamen
+`AppRouteConstants`/`AppConstants`; `AdminConfigGroup` bezeichnet Konfigurationsgruppen.
+
+Normalerweise wird nach Login die Laufsprache über das echte Menü gewählt, weil eine
+Kontopräferenz sie überschreiben kann. **LANG-02A ist die bewusste Ausnahme:**
+Nach frischer Anmeldung wird die Sprache nicht erneut gesetzt, damit der Fall die
+gespeicherte Präferenz tatsächlich prüft. Datum und Uhrzeit werden zur Sprache passend eingegeben.
+
+## Isolation und Aufgaben der Testarten
+
+- JUnit-/Persistenztests prüfen Regeln, Transaktionen, Nebenläufigkeit und technische Fehler.
+- Browsertests prüfen sichtbare UI-Abläufe. Testzustände entstehen über die Oberfläche;
+  kein SQL, kein Serviceaufruf und keine API zum Anlegen/Aktivieren/Ändern von Konten.
+- Manuelle Sonderprüfungen bleiben für echte Geräte, Bediengefühl, Lesbarkeit und
+  weitere Fälle mit notwendiger menschlicher Einschätzung.
+
+Der Runner verwendet [compose.browser-tests.yaml](../compose.browser-tests.yaml)
+und pro Lauf ein eigenes Projekt `vaadinspringapp-e2e-java-…` mit wegwerfbaren Volumes.
+Standardports: Anwendung `127.0.0.1:18081`, Mailpit `127.0.0.1:18026`;
+H2-Webkonsole deaktiviert. Die manuelle Umgebung auf `18080`/`18025` bleibt unberührt.
+Diese manuellen Ports werden vom Runner abgelehnt.
+
+Mehrere Läufe auf denselben Ports nacheinander ausführen. Für einen parallelen Lauf
+in dessen PowerShell-Prozess andere freie Ports wählen:
 
 ```powershell
 $env:BROWSER_TEST_APP_PORT = '18082'
@@ -351,162 +169,49 @@ $env:BROWSER_TEST_MAILPIT_PORT = '18027'
 .\browser-tests\run.ps1
 ```
 
-`-NoBuild` kann einen älteren App-Stand testen und ist nur bei bewusst unverändertem App-Code sinnvoll. Die tatsächliche Image-ID und Wiederverwendung stehen im Protokoll. Daten und Belege liegen außerhalb von Git; Screenshots/Traces können spätere Testeingaben oder Sitzungstokens enthalten.
+Nur Chromium, ein Thread und keine automatischen Testwiederholungen.
+Der Testaufbau besitzt einen eigenen Bootstrap-Admin mit erfundenen Zugangsdaten;
+die Vorgaben stehen in `compose.browser-tests.yaml` und `BrowserTestAccounts`.
+Die tatsächliche Queue versendet per SMTP ausschließlich an den eigenen Mailpit.
+`MailpitInbox` sucht nach eigenem Empfänger und übersetztem Betreff, nicht nach der
+global neuesten Mail. Aktivierungs-/Resetlinks müssen exakt zur lokalen Runner-Adresse passen.
+Damit ist keine externe Postfachzustellung oder Outlook-/Gmail-Darstellung bewiesen.
 
-Der aktuelle Umfang umfasst Infrastruktur, Login/Logout, Zugriffsrechte, Registrierung und die oben beschriebenen Verifikations-/Passwortreset-Abläufe. Weitere Benutzerabläufe sind im Abschnitt „Suites und Testfälle“ als offen aufgeführt. Nur Chromium, ein Thread, eine explizite Sprache pro Lauf, keine automatischen Wiederholungen. Die zusätzliche Browserprüfung liefert keine Java-Coverage.
+Run-Daten sind nicht in Git; Screenshots/Traces können Testeingaben und Sitzungstokens
+enthalten. Keine Bestandsdatenbank oder laufende manuelle Umgebung zur Vorbereitung verwenden.
+Die Browserprüfung liefert keine Java-Coverage und ersetzt keinen vollständigen
+Mehrbrowser-, Mobilgeräte-, Accessibility-, SMTP- oder Betriebsnachweis.
 
-Bei normalem Abschluss und Testfehlern werden eigene Container und Volumes entfernt. Hartes Beenden des Prozesses oder ein ausgefallener Docker-Dienst kann das verhindern. Dann nur den genauen Projektnamen aus `metadata.json` zum Abbau verwenden:
+## IntelliJ und Fehlerhilfe
+
+`shared/pom.xml` und `browser-tests/pom.xml` zusätzlich zur Anwendungs-POM als
+Maven-Projekte hinzufügen und neu laden. Shared besitzt seine Quellen allein;
+Anwendung und Tests hängen von dessen JAR ab. Keine zusätzlichen Shared-Source-Roots.
+Find Usages an einem Getter mit „All Places“ findet beide Modulaufrufer.
+
+Browserfälle über den Starter ausführen. Ein direkter JUnit-Start ohne verwaltete
+Testumgebung bricht absichtlich ab. Helper-/Reportertests funktionieren ohne Docker.
+Vor direkten Maven-Aufrufen das Shared-JAR bauen:
+
+```powershell
+.\mvnw.cmd -f shared/pom.xml clean install
+.\mvnw.cmd -f browser-tests/pom.xml test
+```
+
+| Problem | Vorgehen |
+| --- | --- |
+| Chromium fehlt | `-InstallBrowsers` ausführen |
+| Aufbau/Ports scheitern | Docker Desktop, `runner.log` und `metadata.json` prüfen; andere freie Testports wählen |
+| Falsches JDK | Tatsächliches Wrapper-JDK muss Java 25 sein; keine Versionen zur Umgehung downgraden |
+| HTML lädt nicht | `open-report.bat` oder `-Report` verwenden; nicht `index.html` direkt öffnen |
+| Alter Anwendungsstand | Nach Code-/Text-/Styleänderungen ohne `-NoBuild` starten |
+| Test rot | Screenshot, Trace und erste konkrete Ursache ansehen; offenen Stand in `abdeckung.md` aktualisieren |
+
+Bei normalem Abschluss und Testfehlern räumt der Runner seine Container/Volumes auf.
+Nach hartem Abbruch nur das konkrete eigene Projekt aus `metadata.json` abbauen:
 
 ```powershell
 docker compose -f compose.browser-tests.yaml -p vaadinspringapp-e2e-java-DEINEKENNUNG down --volumes --remove-orphans
 ```
 
-Keine fremden oder manuellen Docker-Projekte zum Aufräumen einsetzen.
-
-## IntelliJ und weitere Tests
-
-`shared/pom.xml` und `browser-tests/pom.xml` zusätzlich zur Anwendungs-POM als
-Maven-Projekte in IntelliJ hinzufügen (Maven-Fenster → Maven-Projekt hinzufügen),
-danach alle Maven-Projekte neu laden. Die drei Projekte heißen VaadinSpringApp,
-VaadinSpringApp Shared und VaadinSpringApp Browser Tests. Shared besitzt als einziges
-Modul seinen Quellordner; Anwendung und Browsertests verwenden Modulabhängigkeiten.
-Find Usages an `MessageTexts.getLoginEmailField()` mit „All Places“ muss Aufrufe aus
-`LoginView` und `LoginPage` zeigen. Die früheren zusätzlichen Shared-Source-Roots in
-Anwendungs- und Browsermodul sind entfernt.
-
-Die Browserfälle werden über den Starter ausgeführt. Ein direkter JUnit-Start ohne verwaltete Testumgebung bricht bewusst ab, damit Tests nicht versehentlich gegen eine laufende Anwendung oder deren Datenbank gehen. Die Tests für MarkdownSummary, BrowserRoutes, Mailpit-Link-Isolation und UiTexts können direkt als gewöhnliche JUnit-Tests ausgeführt werden.
-
-Neue Fälle in der fachlich passenden Suite unter `suites/` ergänzen; für einen neuen Bereich eine eigene Suite-Klasse und einen Eintrag in `BrowserSuites` anlegen. Test-ID, `@DisplayName`, `@Feature`, `@Story` und `@Description` pflegen: Daraus entstehen Gruppierung, Prüfbereich, Schritte und Erwartung im Bericht. Playwrights wartende Assertions verwenden, keine festen Schlafzeiten. Eine automatische Anbindung an das `/start`-Benchmarking ist noch nicht eingerichtet.
-
-## Fehlerhilfe
-
-- Fehlender Testbrowser: `-InstallBrowsers` ausführen. Der normale Starter lädt keine weiteren Browser automatisch.
-- Aufbaufehler: Docker Desktop prüfen; `runner.log` und `metadata.json` ansehen. Fremdbelegte Testports ändern.
-- Falsches JDK: Der Starter benötigt Java 25. `JAVA_HOME`/IntelliJ-JDK prüfen, keine Bibliotheksversionen zur Umgehung downgraden.
-- Bericht startet nicht: Zuerst einen abgeschlossenen Lauf ausführen; `-Report` benötigt dessen HTML-Ordner.
-- Maven muss beim ersten Start Werkzeuge herunterladen. Danach sind Bibliotheken und Allure im lokalen Maven-/Build-Verzeichnis vorhanden.
-
-Die Browsertests brauchen kein eigenes npm-Testprojekt. Playwright verwendet intern weiterhin seinen mitgelieferten Browser-Treiber; der von dir bearbeitete Testcode bleibt Java.
-
-
-## Weitere Kontoabläufe
-
-Die eigenständige Suite `account-lifecycle` ergänzt fünf unabhängige Fälle:
-
-| ID | Schritte | Erwartung |
-|---|---|---|
-| REG-02C | Blanke Namen, heutiger/zukünftiger Geburtstag einzeln absenden, korrigieren, echte Mail abwarten | Verständliche Fehler; korrigierte Registrierung funktioniert |
-| REG-02D | Kurzes Passwort, fehlender Großbuchstabe/Sonderzeichen und abweichende E-Mail-Bestätigung einzeln versuchen | Kein Erfolg aus ungültigen Angaben; Korrektur möglich |
-| REG-03A | Eigenes aktiviertes Konto exakt und kanonisiert erneut registrieren; Original-/Ersatzpasswort testen | Dublette abgelehnt und ursprüngliches Passwort unverändert |
-| RESET-03B | Noch unverifiziertes Konto und unbekannte Adresse anfragen; Antworten vergleichen | Identische neutrale Bestätigung |
-| RESET-05A | Echten Resetlink in zwei getrennten Sitzungen öffnen; B setzt Passwort, altes A versucht abweichende Änderung | Alter Submit abgewiesen; nur zuerst erfolgreiches Passwort gilt |
-
-    .\browser-tests\run.ps1 -Suite account-lifecycle -Language de
-    .\browser-tests\run.ps1 -Suite account-lifecycle -Language en
-
-`RegistrationPage` schließt den geprüften Einzelvalidierungshinweis über seinen
-echten Button vor der nächsten Variante. `RESET-05A` behält zusätzlich den Trace
-und Screenshot der getrennten Sitzung. Keine Testfälle sind voneinander abhängig.
-Die Schritte/Erwartungen werden aus `@Description` in den bestehenden Markdown-
-und Allure-Bericht übernommen, nicht als zweites Protokoll von Hand gepflegt.
-
-Der Vergleich der 44 ursprünglichen Fälle steht in `abdeckung.md`; tatsächliche
-Restlücken und Paketversuche in `automatisierung-offen.md`. Die IDs der alten
-Vorlage und der Browserfälle sind eigene Kataloge: beispielsweise prüft der neue
-RESET-05A tatsächlich das alte offene Formular; bestehendes RESET-04B dagegen
-nur das erneute Laden eines bereits verbrauchten Links.
-
-
-## Abschlussstand vom 12.10.2026
-
-**Noch kein vollständig grüner Gesamtstand und keine 100-%-Ablösung der manuellen Fälle.**
-Die zwei neuen Suites bestehen einzeln auf DE/EN. Im vollständigen Lauf scheitert
-LANG-02A aber schon beim Anlegen seines Testkontos: der bestehende Admin-Anlagehelfer
-sucht die E-Mail global in der ersten Seite einer bereits gefüllten Grid-Tabelle.
-Er muss nach dem Speichern über die echte Suchfunktion auf das eigene Konto filtern.
-Deutsch zeigt zusätzlich einen nicht übernommenen mobilen Geburtstag bei UI-01A.
-Keine dritte Reparaturrunde wurde vorgenommen. Die Tests bleiben im Feature-Branch
-als überprüfbare Arbeit erhalten; `main` und Produktionscode sind unverändert.
-
-| Abschlussprüfung | Ergebnis |
-|---|---|
-| Vollständiger Browserlauf DE | 28/30 bestanden, LANG-02A und UI-01A fehlgeschlagen |
-| Zweiter Abschlussdurchlauf, vollständiger EN-Lauf | 29/30 bestanden, LANG-02A fehlgeschlagen |
-| Anwendung `clean test` | 971 Tests, 0 Fehler/Fehlschläge/Skips |
-| Helper-/Reportertests | 19 Tests, 0 Fehler/Fehlschläge/Skips |
-| JaCoCo | Erfolgreich erzeugt |
-
-Alle Aufbau-/Abbau-/HTML-Schritte dieser beiden vollständigen Browserläufe waren
-erfolgreich. Der zweite vollständige DE-Lauf wurde nach dem EN-Fehler nicht mehr
-begonnen. Historische rote Berichte wurden nicht überschrieben.
-
-Details und Prioritäten: `abdeckung.md` und `automatisierung-offen.md`.
-
-## Sprache, schmale Fenster und Tastatur
-
-Die Suite `presentation` besitzt vier voneinander unabhängige Fälle:
-
-| ID | Schritte | Erwartung |
-|---|---|---|
-| LANG-01C | Auf der Startseite die echte Flaggenauswahl in beide Richtungen bedienen | Ausgewählte Flagge und übersetzter Loginbutton wechseln ohne Neuladen |
-| LANG-02A | Eigenes Konto anlegen, andere Sprache speichern, abmelden und in frischer Sitzung mit anderer Browserauswahl anmelden | Kontosprache wird ohne nachträglichen Sprachklick geladen |
-| UI-01A | Registrierung bei 390×844 mit Fehlerhinweis bedienen, korrigieren und bei 844×390 absenden | Kernaktion in beiden Größen tatsächlich bedienbar |
-| UI-02A | Login per Fokus/Tab/Enter mit eigenem Testadmin ausführen | Tatsächlicher Passwortfokus und Adminanmeldung |
-
-    .\browser-tests\run.ps1 -Suite presentation -Language de
-    .\browser-tests\run.ps1 -Suite presentation -Language en
-
-`UserMenu.selectLanguage` wählt ausdrücklich eine Sprache; `selectTestLanguage`
-bleibt der Standard für einen Lauf. Der Locale-Persistenzfall wählt nach dem
-frischen Login ausdrücklich **nicht** erneut eine Sprache, damit ein Fehler beim
-Laden der Kontopräferenz sichtbar würde. Auch die zusätzliche Sitzung erhält
-einen eigenen Trace. Im mobilen Datepicker wird nach Enter gegebenenfalls echtes
-Escape verwendet; der bereits gewählte Geburtstag muss erhalten bleiben.
-
-Die anonymen Login-/Registrierungs-/Tokenformulare besitzen aktuell keinen
-erreichbaren Flaggen-/Avatar-Schalter. Dynamischer Wechsel bei dort offenen
-Hinweisen wird nicht durch künstliche JavaScript-/Sessionevents simuliert.
-Die festen DE/EN-Läufe sind davon unabhängig. Echte Geräte, Bildschirmtastaturen,
-200-%-Browserzoom, sämtliche Dialoge und ein menschliches Gestaltungs-/Lesbarkeitsurteil
-bleiben offen. Ein grüner schmaler Chromium-Viewport bedeutet keinen vollständigen
-Mobilgeräte- oder Accessibility-Nachweis.
-
-## Token-Konfiguration: Mindestdauern
-
-Die Suite `token-configuration` enthält vier unabhängige Fälle:
-
-| ID | Feld | Mindestdauer |
-| --- | --- | --- |
-| CONFIG-03A | Verifikationslink-Gültigkeit | 1 Minute |
-| CONFIG-03B | Verifikationstoken-Aufbewahrung nach Ablauf | 2 Minuten |
-| CONFIG-03C | Resetlink-Gültigkeit | 1 Minute |
-| CONFIG-03D | Resettoken-Aufbewahrung nach Ablauf | 2 Minuten |
-
-Jeder Fall meldet sich über die Oberfläche als Admin an und wählt die Laufsprache.
-Er prüft Mindesthinweis und Erklärung, versucht ungültige Syntax, Null, negative,
-einsekündige und knapp unter dem Minimum liegende Werte zu speichern. Feldfehler
-und erneutes Laden belegen Ablehnung und unveränderte Speicherung. Danach werden
-genau `1m` bzw. `2m` gespeichert und als ISO-Wert wieder geladen; der ursprüngliche
-Wert wird wiederhergestellt. Andere Konfigurationsfelder und Neustartwirkung sind
-damit nicht vollständig geprüft.
-
-```powershell
-.\browser-tests\run.ps1 -Suite token-configuration -Language de
-.\browser-tests\run.ps1 -Suite token-configuration -Language en -NoBuild
-```
-
-`TokenConfigurationPage` bedient die beschrifteten Felder, Speichern, Neuladen und
-Erklärungsdialoge. Die echten sichtbaren Feldlabels sind über `aria-labelledby`
-mit ihren Eingaben verbunden; die Browserhelfer nutzen die zugänglichen Namen und
-gemeinsamen Übersetzungsgetter. Keine Datenbank-/Servicevorbereitung.
-Schritte, Erwartungen, Screenshots und Traces stehen im jeweiligen Run-Bericht.
-
-**Nachprüfung vom 12.10.2026:** Anwendung 1007/1007, Helper/Reporter 21/21;
-Token-Konfiguration 4/4 auf DE und 4/4 auf EN. Aufbau, Abbau und HTML-Berichte erfolgreich.
-
-- DE: `runs/2026-10-12T07-46-38_UTC__3a10c1b8__2eb51d1c/report.md`
-- EN: `runs/2026-10-12T07-50-30_UTC__3a10c1b8__2ea921ba/report.md`
-
-Die früheren vollständigen Läufe mit 30 Fällen bleiben historische Belege ihrer
-Fehler. Ein vollständiger Lauf aller jetzt 34 Fälle wurde für diesen Fix nicht
-wiederholt. Adminlisten-Vorbereitung und mobiler Datepicker bleiben unabhängig davon offen.
+Keine fremden oder manuellen Docker-Projekte zum Aufräumen verwenden.

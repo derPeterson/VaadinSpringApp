@@ -5,7 +5,6 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.dom.Style;
-import de.derpeterson.app.config.AppConstants;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.LoggerFactory;
@@ -17,10 +16,10 @@ import java.nio.charset.StandardCharsets;
 @Getter
 @RequiredArgsConstructor
 public enum UserStatus {
-    AVAILABLE("#27ae60", AppConstants.BLACK_COLOR_HEX_STRING, VaadinIcon.CHECK_CIRCLE, null),
-    EMPLOYED("#cd6155", AppConstants.BLACK_COLOR_HEX_STRING, VaadinIcon.MINUS_CIRCLE, null),
-    ABSENT("#f4d03f", AppConstants.BLACK_COLOR_HEX_STRING, null, "/META-INF/resources/custom-theme/icons/clock_circle.svg"),
-    OFFLINE("#99a3a4", AppConstants.BLACK_COLOR_HEX_STRING, VaadinIcon.CLOSE_CIRCLE, null);
+    AVAILABLE("var(--lumo-success-color)", "var(--lumo-base-color)", VaadinIcon.CHECK_CIRCLE, null),
+    EMPLOYED("var(--lumo-error-color)", "var(--lumo-base-color)", VaadinIcon.MINUS_CIRCLE, null),
+    ABSENT("var(--lumo-warning-color)", "var(--lumo-base-color)", null, "/META-INF/resources/custom-theme/icons/clock_circle.svg"),
+    OFFLINE("var(--lumo-secondary-text-color)", "var(--lumo-base-color)", VaadinIcon.CLOSE_CIRCLE, null);
 
     private final String color;
     private final String backgroundColor;
@@ -126,6 +125,7 @@ public enum UserStatus {
 
             // 2️⃣ `fill`-Farbe ersetzen
             if (svgContent.contains("fill=")) {
+                // Ersetzt nur doppelt zitierte fill-Attribute mit # und genau sechs Hexziffern (0–9, a–f, A–F).
                 svgContent = svgContent.replaceAll("fill=\"#[0-9a-fA-F]{6}\"", "fill=\"" + color + "\"");
             } else {
                 svgContent = svgContent.replace("<svg", "<svg fill=\"" + color + "\"");
@@ -141,6 +141,7 @@ public enum UserStatus {
                 String overlayStyles = "position: absolute; right: 0px; bottom: 0px;";
 
                 if (svgContent.contains("style=")) {
+                    // Gruppe 1 erfasst alles innerhalb des doppelt zitierten style-Attributs; $1 erhält es beim Ergänzen.
                     svgContent = svgContent.replaceAll("style=\"([^\"]*)\"", "style=\"$1; " + overlayStyles + "\"");
                 } else {
                     svgContent = svgContent.replace("<svg", "<svg style=\"" + overlayStyles + "\"");
@@ -149,7 +150,9 @@ public enum UserStatus {
 
             // 3️⃣ Breite und Höhe dynamisch setzen
             if (svgContent.contains("width=") && svgContent.contains("height=")) {
+                // Ersetzt doppelt zitierte Breiten aus einer oder mehreren Ziffern; keine Einheiten oder Dezimalwerte.
                 svgContent = svgContent.replaceAll("width=\"\\d+\"", "width=\"" + width + "\"");
+                // Ersetzt doppelt zitierte Höhen aus einer oder mehreren Ziffern; keine Einheiten oder Dezimalwerte.
                 svgContent = svgContent.replaceAll("height=\"\\d+\"", "height=\"" + height + "\"");
             } else {
                 svgContent = svgContent.replace("<svg", "<svg width=\"" + width + "\" height=\"" + height + "\"");

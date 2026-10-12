@@ -10,8 +10,20 @@ public final class UserInputRules {
     private UserInputRules() {
     }
 
+    /**
+     * Prüft die gesamte Zeichenfolge: ^ und $ markieren Anfang und Ende.
+     * (?=.*[A-Z]) fordert mindestens einen lateinischen Großbuchstaben A–Z.
+     * (?=.*[^A-Za-z0-9]) fordert ein Zeichen außerhalb der ASCII-Buchstaben/Ziffern;
+     * auch ein inneres Leerzeichen oder ein Umlaut erfüllt diese Bedingung.
+     * .{8,} fordert mindestens acht Zeichen ohne Zeilenumbrüche.
+     * Kleinbuchstaben und Ziffern sind ausdrücklich keine zusätzlichen Pflichten.
+     * isPasswordSecure prüft wie bisher die mit trim() bereinigte Eingabe.
+     */
     public static final String PASSWORD_REGEX = "^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$";
-    // Same pattern as the previously used Flow 25.3 EmailValidator, not a new mail policy.
+    // Dieselbe Regel wie Flow 25.3 EmailValidator, keine neue E-Mail-Policy:
+    // vor @ mindestens ein ASCII-Buchstabe, eine Ziffer, _, Punkt, Minus oder Plus;
+    // danach durch Punkte getrennte Domainteile aus Buchstaben/Ziffern/Minus,
+    // letzter Teil mindestens zwei Zeichen. ^/$ begrenzen die ganze Adresse.
     private static final String EMAIL_REGEX = "^([a-zA-Z0-9_\\.\\-+])+@([a-zA-Z0-9-]+\\.)+[a-zA-Z0-9-]{2,}$";
 
     public static boolean isPasswordSecure(String password) {

@@ -150,6 +150,33 @@ Unter Linux/macOS entsprechend `./mvnw` statt `.\mvnw.cmd` verwenden. Alternativ
 
 Geprüft wurden `clean test` und anschließend `package -Pproduction` mit dem Wrapper. Startbefehle wurden nicht ausgeführt; der tatsächliche Produktionsmodus im laufenden Server und der JAR-Start bleiben ungeprüft. Insbesondere ist `vaadin-dev` zusätzlich direkt als Abhängigkeit deklariert, während das Profil es nur an `vaadin-core` ausschließt.
 
+## Benutzerverwaltung: Filter und Seiten
+
+Die sofort ausgewertete Suche berücksichtigt nur Name und E-Mail. Über „Filter hinzufügen“ / „Add Filter“ werden benötigte Filter unter der Suche eingeblendet.
+Entfernen setzt ihre Werte zurück. Einzeln löschbare Filter für Freigabe, Status, eine Rolle und Aktivität seit
+Datum und optionaler Uhrzeit werden gemeinsam angewendet. Eine Rollenmitgliedschaft reicht aus,
+auch bei mehreren Rollen. „Letzte Aktivität“ schließt den gewählten lokalen Zeitpunkt
+ein; ohne Uhrzeit gilt der Tag ab 00:00 Uhr. Ohne gespeicherte Aktivität gibt es
+bei aktivem Zeitfilter keinen Treffer.
+Beide Zeitfelder leeren hebt die Zeitbedingung auf. Freigabe und Präsenzstatus
+sind unterschiedliche Kriterien.
+
+Suche, „Add Filter“ und „Add User“ stehen oben auf einer gemeinsamen Höhe. Gewählte
+Filter laufen darunter nach rechts und umbrechen bei Platzmangel. Der Tabellenkopf
+ist blau abgesetzt, Zeilen wechseln dezent die Hintergrundfarbe. Die Zeitvorschläge
+verwenden 15-Minuten-Schritte, damit Vaadin die Auswahlliste anbietet. Unter der Tabelle
+stehen Zeilen pro Seite, Trefferzahl und nummerierte Seiten mit erster/vorheriger/
+nächster/letzter Seite und Auslassungspunkten bei vielen Seiten. Filter- und
+Seitengrößenänderungen beginnen auf Seite 1. Sortierung erfolgt vor der Seitenteilung.
+`AdminUserFilters` und `AdminUserPagination` halten diese Logik getrennt vom CRUD-Formular.
+Die Filterung bleibt wie bisher im Speicher über die geladene Benutzerliste;
+keine neue Datenbankabfrage oder Schemaänderung.
+
+Bedienung der Tests: [Browser-Testanleitung](browser-tests/README.md).
+Aktuelle Ergebnisse, Abdeckung und verbleibende Prüfungen:
+[Browserabdeckung und offene Punkte](browser-tests/abdeckung.md).
+Die freigegebenen CSS-Farben und Abstände wurden durch die Nachprüfung nicht verändert.
+
 ## Mindestdauern für Verifikations- und Resettokens
 
 | Einstellung | Mindestdauer |
@@ -212,3 +239,59 @@ Beide Builds meldeten, dass kein neuer Produktions-Frontend-Bundle-Build nötig 
 - **Übersetzungen:** `src/main/resources/i18n/messages_de.properties` und `messages_en.properties`.
 - **Mailvorlagen:** `src/main/resources/email/`; die Dienste laden HTML-Dateien. MJML-Quelldateien liegen daneben, eine automatische MJML-Kompilierung ist in `pom.xml` nicht eingerichtet.
 - **Generierte Dateien:** `src/main/frontend/generated/`, `vite.generated.ts` und Build-Ausgaben unter `target/`; nicht manuell pflegen. `node_modules/` enthält Frontend-Abhängigkeiten. Diese Pfade sind in `.gitignore` ausgeschlossen. Eigene Vite-Anpassungen gehören in `vite.config.ts`.
+
+## Aktuelle Styles beim Start aus IntelliJ
+
+Im Entwicklungsmodus ist Vaadins Frontend-Livebetrieb aktiviert (vaadin.frontend.hotdeploy=true).
+Dadurch wird das vorberechnete Entwicklungspaket umgangen; Vite verarbeitet aktuelle Frontenddateien.
+Docker setzt diese Option auf false und verwendet weiterhin den gebauten Produktionsstand.
+Nach der erstmaligen Umstellung die IntelliJ-Anwendung einmal stoppen und erneut starten;
+anschließend die Browserseite mit Strg+F5 vollständig neu laden. Der erste Start kann das Frontend vorbereiten.
+Es wurden für diese Einstellung keine Tests ausgeführt; die Übernahme durch den IntelliJ-Neustart steht noch aus.
+
+
+Zusätzlich kann ein vorheriger Produktionsbuild komprimierte Kopien von styles.css
+(styles.css.gz / styles.css.br) im Klassen-Ausgabeordner hinterlassen. Werden anschließend
+über die IDE nur die unkomprimierten Ressourcen aktualisiert, können diese Kopien veraltet bleiben.
+Am 12.10.2026 wurden die beiden veralteten Ausgabedateien gezielt über Maven entfernt;
+der laufende IDE-Server liefert bei einem frischen CSS-Abruf wieder die neue Filterleiste
+und den neuen Tabellenkopf. Ein Neustart beseitigt gegebenenfalls noch zwischengespeicherte Ressourcen.
+Das ist getrennt von der Livebetrieb-Einstellung zu betrachten; dafür ist kein neuer Run-Parameter nötig.
+
+
+Aktuelle Layoutrevision der Benutzerverwaltung (noch ohne neue Testläufe):
+„Clear Filter“ setzt Suche und Filterwerte zurück und blendet die Zusatzfilter aus.
+Der Button verwendet das dezente Error-Theme; „Add User“ verwendet dieselbe
+Standardform wie der Speichern-Button der Konfiguration.
+Die aktive Seite verwendet das gleiche Primary-Theme wie „Add User“. Die Tabelle
+zeigt alle Zeilen der gewählten Seite ohne innere vertikale Scrollleiste und hält
+mindestens Platz für zehn Zeilen vor; bei kleinen Fenstern scrollt die ganze Seite.
+Die Aktionsspalte ist zentriert, Sortierindikatoren werden mit drei einfachen CSS-Regeln
+an den rechten Rand mit 15 Pixel Abstand zur nächsten Spalte gestellt.
+„Letzte Aktivität“ zeigt relative DE/EN-Texte (z. B. „vor 4 Stunden“); der Tooltip
+enthält den exakten Zeitpunkt. Aktualisierung erfolgt beim Neuladen oder erneuten
+Rendern der Tabelle, ohne zusätzlichen Timer. Der gleichnamige Filter bleibt
+eine inklusive Untergrenze. Ohne optionale Uhrzeit gilt der Tag ab 00:00 Uhr;
+ohne Datum ist keine Zeitfilterung aktiv. Freigabe und Status verwenden Lumo-Badgefarben;
+auch die vorhandenen Statusicons verwenden nun diese semantischen Lumo-Farben.
+Beim Namen steht das vorhandene Standard-Avatarbild. Benutzerdefinierte Bildspeicherung
+oder Uploads sind noch nicht implementiert; dafür wurde das Benutzerschema nicht geändert.
+
+Der Benutzerformular-Dialog verwendet denselben farbigen Kopf wie die Tabelle.
+Beim Bearbeiten steht links unten „Benutzer löschen“ mit dezentem Error-Theme.
+Der vorhandene Bestätigungsdialog und die Schutzregeln bleiben erhalten; das
+Bearbeitungsformular wird erst nach erfolgreicher Löschung geschlossen.
+Die Löschbestätigung verwendet normale Textfarben und den gleichen nativen
+Dialogfuß wie das Bearbeitungsformular. Der Inhalt hat oben und unten denselben
+Abstand. Filter-/Löschicons verwenden `--lumo-error-text-color`. Für die größeren
+Flächen von Löschheader und Löschbutton hat der Nutzer die Mischung
+`color-mix(in srgb, var(--lumo-error-color) 50%, var(--lumo-base-color))` gewählt.
+Der rot gefüllte Löschbutton hat ein Papierkorb-Icon und die
+Kontrastschrift eines Primary-Buttons. Name und E-Mail sind fett hervorgehoben;
+das Löschverhalten ist unverändert.
+Registrierung und Adminformular nutzen dieselben fachlichen UserInputRules über
+ValidationHelper (Pflichttexte, E-Mail, Passwort, Geburtsdatum). Registrierung
+prüft beim Absenden, das Adminformular über Binder. Bestätigungsfelder gehören
+zur Registrierung; Rollen/Freigabe zur Administration. Nur beim Bearbeiten darf
+das Passwort leer bleiben. Passwort-Hilfen und Fehlertexte leiten die Beschreibung
+aus dem gemeinsamen Übersetzungstext der zentralen Regel ab.
