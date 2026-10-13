@@ -169,6 +169,18 @@ Der SMTP-Hinweis beschreibt die beim Start geladene Verbindung und deren
 Neustartbedarf. Versand und Validierung bleiben unverändert. Diese Gestaltung
 ist noch nicht durch einen neuen Anwendungsbuild oder Testlauf geprüft.
 
+Die Benutzerverwaltung nutzt denselben Breadcrumb-/Titelbereich mit Akzentpunkt
+und die gemeinsamen Panel-Stile. Die mittige Card zeigt Benutzer-Icon, Kurzbeschreibung
+und die tatsächliche Gesamtanzahl geladener Konten, unabhängig von den aktiven Filtern.
+Die Kontenanzahl wird beim Neuladen und nach CRUD-Aktionen sowie beim Sprachwechsel
+aktualisiert. Filter, Sortierung, Tabellenfarben, Avatare und Pagination bleiben
+wie abgestimmt; die Pagination erhält den gemeinsamen abgetrennten Card-Footer.
+Buttons, Rahmen und Rundung verwenden die gemeinsame Gestaltung der Oberfläche;
+es gibt dafür keine gesonderten Vorschau-Regeln in der Benutzerverwaltung.
+Die Zusammenfassung links unten ist dezent mit 11 px; die Primary-Farbe der aktiven
+Seite bleibt mit dem Hinzufügen-Button identisch.
+Diese neue Gestaltung ist noch nicht durch einen Anwendungsbuild oder Testlauf geprüft.
+
 Standardwerte und Platzhalter kommen über `ConfigService.getDefaultValue` aus
 `app.config.defaults.*`, mit dem Enumwert als Fallback, wie im Backend und bei der
 Initialisierung. Aktuelle gespeicherte Eingaben bleiben davon getrennt. Leere

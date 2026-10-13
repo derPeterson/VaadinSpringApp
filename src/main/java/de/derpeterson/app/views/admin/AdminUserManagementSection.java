@@ -14,7 +14,8 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -67,7 +68,11 @@ public class AdminUserManagementSection extends VerticalLayout {
     private final transient RoleService roleService;
     private final transient SecurityService securityService;
 
-    private final H1 title;
+    private final Span breadcrumb;
+    private final Span title;
+    private final H2 cardTitle;
+    private final Span cardDescription;
+    private final Span accountCount;
     private final Span description;
     private final Button addUserButton;
     private final TextField searchField;
@@ -112,7 +117,14 @@ public class AdminUserManagementSection extends VerticalLayout {
         setAlignItems(FlexComponent.Alignment.CENTER);
         addClassNames("cosmos-admin-section", "cosmos-admin-section--users");
 
-        title = new H1();
+        breadcrumb = new Span();
+        title = new Span();
+        cardTitle = new H2();
+        cardTitle.addClassName("cosmos-panel-title");
+        cardDescription = new Span();
+        cardDescription.addClassName("cosmos-panel-description");
+        accountCount = new Span();
+        accountCount.addClassName("cosmos-panel-meta");
 
 
         description = new Span();
@@ -148,10 +160,13 @@ public class AdminUserManagementSection extends VerticalLayout {
         filterBar = new AdminUserFilterBar(messageProperties, searchField, refreshButton, addUserButton,
                 enabledFilter, statusFilter, roleFilter, lastActivityFilter);
 
+        Div paginationFooter = new Div(pagination);
+        paginationFooter.addClassName("cosmos-panel-footer");
         VerticalLayout layout = new VerticalLayout(
+                createUsersCardHeader(),
                 filterBar,
                 userGrid,
-                pagination
+                paginationFooter
         );
         layout.setPadding(false);
         layout.setSpacing(false);
@@ -160,14 +175,29 @@ public class AdminUserManagementSection extends VerticalLayout {
         layout.setAlignItems(Alignment.START);
 
         CosmosCardComponent card = new CosmosCardComponent(layout);
-        card.addClassName("cosmos-admin-users-card");
-        add(new CosmosSectionHeaderComponent(title, description), card);
+        card.addClassNames("cosmos-admin-users-card", "cosmos-panel-card");
+        add(new CosmosSectionHeaderComponent(breadcrumb, title, description), card);
 
         refreshTexts();
         refreshGrid();
     }
 
+    private Div createUsersCardHeader() {
+        var usersIcon = VaadinIcon.USERS.create();
+        usersIcon.getElement().setAttribute("aria-hidden", "true");
+        Div iconBadge = new Div(usersIcon);
+        iconBadge.addClassName("cosmos-panel-icon");
+        Div heading = new Div(cardTitle, cardDescription);
+        heading.addClassName("cosmos-panel-heading");
+        Div header = new Div(iconBadge, heading, accountCount);
+        header.addClassName("cosmos-panel-header");
+        return header;
+    }
+
     public void refreshTexts() {
+        breadcrumb.setText(messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminUsersTitle());
+        cardTitle.setText(messageProperties.getAdminUsersCardTitle());
+        cardDescription.setText(messageProperties.getAdminUsersCardDescription());
         title.setText(messageProperties.getAdminUsersTitle());
         description.setText(messageProperties.getAdminUsersDescription());
         addUserButton.setText(messageProperties.getAdminUsersAdd());
@@ -357,6 +387,7 @@ public class AdminUserManagementSection extends VerticalLayout {
         List<UserEntity> sortedUsers = filteredUsers.stream().sorted(comparator).toList();
         userGrid.setItems(sortedUsers.subList(fromIndex, toIndex));
         pagination.showPage(currentPage, filteredUsers.size(), pageSize);
+        accountCount.setText(messageProperties.getAdminUsersAccountCount(users.size()));
     }
 
     private void deleteUser(UserEntity user) {

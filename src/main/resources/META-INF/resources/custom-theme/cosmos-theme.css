@@ -285,6 +285,13 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     font-size: 14px;
 }
 
+/* Gemeinsame Größe für Aktionsbutton-Icons; Info-Buttons behalten Größe l. */
+.cosmos-theme vaadin-button:not(.cosmos-config-info) > vaadin-icon,
+.cosmos-theme vaadin-menu-bar-button vaadin-icon {
+    width: 14px;
+    height: 14px;
+}
+
 .cosmos-theme vaadin-button[theme~="primary"] {
     background: var(--cosmos-primary-background);
     color: var(--lumo-primary-contrast-color);
@@ -866,7 +873,8 @@ vaadin-app-layout.cosmos-admin {
 
 .cosmos-admin-section--dashboard > .cosmos-section-header,
 .cosmos-admin-section--config > .cosmos-section-header,
-.cosmos-admin-section--mail > .cosmos-section-header {
+.cosmos-admin-section--mail > .cosmos-section-header,
+.cosmos-admin-section--users > .cosmos-section-header {
     justify-self: stretch;
     max-width: none;
 }
@@ -1267,13 +1275,25 @@ vaadin-app-layout.cosmos-admin {
     height: 32px;
     margin: 0;
     padding: 0;
-    border-radius: 50%;
     font-size: 13px;
 }
 
 .cosmos-admin .admin-user-pagination-nav,
 .cosmos-admin .admin-user-pagination-summary {
     align-items: center;
+}
+
+/* Nur die Schrift der Pagination-Zusammenfassung wird dezenter dargestellt. */
+.cosmos-admin-users-card .admin-user-pagination-summary {
+    color: var(--lumo-secondary-text-color);
+    font-size: 11px;
+    font-weight: 400;
+}
+
+.cosmos-admin-users-card .admin-user-pagination-summary vaadin-combo-box {
+    --vaadin-input-field-value-font-size: 12px;
+    --vaadin-input-field-value-font-weight: 500;
+    font-size: 12px;
 }
 
 .cosmos-admin vaadin-menu-bar-button {

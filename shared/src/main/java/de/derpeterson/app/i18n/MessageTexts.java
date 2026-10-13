@@ -1025,6 +1025,20 @@ public class MessageTexts {
         return getTranslation("admin.users.title");
     }
 
+    public String getAdminUsersCardTitle() {
+        return getTranslation("admin.users.card_title");
+    }
+
+    public String getAdminUsersCardDescription() {
+        return getTranslation("admin.users.card_description");
+    }
+
+    public String getAdminUsersAccountCount(int count) {
+        return count == 1
+                ? getFormattedTranslation("admin.users.account_count.one", count)
+                : getFormattedTranslation("admin.users.account_count.other", count);
+    }
+
     public String getAdminUsersDescription() {
         return getTranslation("admin.users.description");
     }
