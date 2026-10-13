@@ -4,6 +4,21 @@
 Bedienung und Aufbau stehen in der [Browser-Testanleitung](README.md).
 Historische Run-Berichte bleiben unverändert; hier steht der aktuelle Prüfstand.
 
+**Späterer Designfeinschliff, noch ungeprüft:** Home/Dashboard teilen jetzt den
+Kopfbereich mit Bereichszeile und Akzentpunkt; das Dashboard richtet ihn links und
+seine Card mittig aus. Die Card erhält außerdem eine übersetzte Begrüßungszeile,
+fette E-Mail und einzelne Rollen-Badges. Konfiguration nutzt denselben Kopfbereich
+mit blauem Akzentpunkt und dynamischem Gruppen-/Sprach-Breadcrumb. Der neue
+Card-Rahmen ergänzt Gruppenicon, Beschreibung, Einstellungsanzahl und Fußbereich;
+Alle 29 Konfigurationsfelder nutzen nun den gemeinsamen Info-Button mit Card-Tooltip,
+Außenklick-Schließung, Backend-Standardwerten und vollständigen Regelhinweisen.
+Zahlenfeldgrenzen folgen den vorhandenen Prüfungen; Checkboxen haben keinen Platzhalter,
+geheime Standardwerte bleiben verborgen. DE-/EN-Satzpunkte und Erklärungen sind
+aktualisiert; Mailqueue-Aufbewahrung lehnt passend zur vorhandenen Backend-Prüfung
+Null und negative Dauern bereits im Formular ab.
+Auf Wunsch erfolgen in dieser Designrunde
+keine neuen Anwendungsbuilds oder Tests. Der folgende erfolgreiche Gesamtlauf gilt für den Stand davor.
+
 ## Home-/Admin-Gestaltung – vollständig geprüft am 13.10.2026
 
 Ausgangscommit: `f3d5b663` auf `main`. Korrekturen und Tests sind noch nicht committet.
@@ -302,7 +317,7 @@ Falls abdecken. Es wird kein künstlicher Gesamt-Prozentwert berechnet.
 | SEC-04 | Letzten aktiven Admin schützen | TEILWEISE / TECHNISCH | USER-06D, USER-07E; AdminSecurityPersistenceTest | Eigene Löschung/Sperre/eigener Rollenentzug durch UI-Selbstschutz abgewiesen. Globale Letzter-Admin-Regel und konkurrierende Änderungen bleiben Service-/Persistenzregressionen |
 | STATUS-01 | Manueller Status und Aktualisierung | UI-ABGEDECKT | STATUS-01 | Alle angebotenen Statuswerte ausgewählt; sichtbarer aktueller Wert, echte Push-Aktualisierung im zweiten Tab und Speicherung nach Neuladen geprüft |
 | STATUS-02 | Automatische Abwesenheit und Rückkehr | UI-ABGEDECKT / TECHNISCH | STATUS-02; UserStatusSchedulerTest/UserStatusPersistenceTest | Konfiguration über UI, echte Inaktivität/Scheduler und Rückkehr nach Reload; manuell beschäftigt sowie manuell abwesend bleiben erhalten. Originaltimeout wiederhergestellt |
-| CONFIG-01 | Zulässige Werte speichern | TEILWEISE / BETRIEB | CONFIG-03A–D, CONFIG-04A–C, COSMOS-03, VER-03A, RESET-06A | String/Boolean/Ganzzahl, Copyright-Fußtext und vier Tokendauern gespeichert/neu geladen; geänderter Name tatsächlich auf frischer Startseite, neue Dauern tatsächlich am Mailtoken geprüft; Neustartwirkung startgebundener Einstellungen bleibt offen |
+| CONFIG-01 | Zulässige Werte speichern | TEILWEISE / BETRIEB | CONFIG-03A–D, CONFIG-04A–C, COSMOS-03, VER-03A, RESET-06A | String/Boolean/Ganzzahl, Copyright Text und vier Tokendauern gespeichert/neu geladen; geänderter Name tatsächlich auf frischer Startseite, neue Dauern tatsächlich am Mailtoken geprüft; Neustartwirkung startgebundener Einstellungen bleibt offen |
 | CONFIG-02 | Ungültige Konfiguration bleibt abgelehnt | TEILWEISE / TECHNISCH | CONFIG-03A–D, CONFIG-04A/C | Syntax, Null, negative/zu kurze Tokendauern, blanker Name, ungültige URL und nicht positive Ganzzahl abgelehnt; Originalwerte erhalten. Freie Boolean-Texte werden nicht angeboten; weitere SMTP-Verträge bleiben technische/ergänzende Prüfungen |
 | MAIL-01 | Admin-Testmail und Unicode | UI-ABGEDECKT | MAIL-01, MailpitInbox | Empfänger-/Betreff-/Textfehler korrigiert; eigene echte SMTP-Mail mit UI-konfiguriertem Absender, Unicode-Betreff/Inhalt und genauem regulärem Zeilenabschluss geprüft |
 | MAIL-02 | Erfolgreiche Queue-Verarbeitung | TEILWEISE / TECHNISCH | REG/VER/RESET lesen tatsächlich zugestellte eigene SMTP-Mails | Kein vollständiger Browsernachweis interner PENDING/IN_PROGRESS/SENT-Zustände oder späterer Scheduler-Doppelversandfreiheit |

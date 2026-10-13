@@ -178,7 +178,7 @@ Tokenablauf prüft die echte Mindestdauer von einer Minute und wartet pro Ablauf
 an derselben eigenen Adresse über ihre neue Mailpit-ID unterschieden; kein Mail-
 oder Datenbankzustand wird zum Beschleunigen verändert. Die empfangenen HTML-Mails
 werden zusätzlich auf ersetzte Platzhalter, geladenes CID-Inline-Logo und vollständigen
-Copyright-Fußtext geprüft. Der Standardtext kommt über den gemeinsamen DE-/EN-Getter
+Copyright Text geprüft. Der Standardtext kommt über den gemeinsamen DE-/EN-Getter
 mit aktuellem Jahr; im Konfigurationstest stammt die Erwartung aus der über die UI
 gespeicherten Fußzeile. Die kanonischen HTML-Dateien bleiben Testressourcen und werden
 auf den Copyright-Platzhalter geprüft. Es gibt keinen zweiten Übersetzungskatalog.

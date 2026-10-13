@@ -121,7 +121,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
             assertThat(footer).containsText("VaadinSpringApp (Browser-Test) · <b>Browser-Test</b>");
             assertFalse(footer.innerText().contains("{year}"));
             assertThat(footer.locator("b")).hasCount(0);
-            AllurePlaywright.attachScreenshot("Konfigurierter sicherer Copyright-Fußtext", page);
+            AllurePlaywright.attachScreenshot("Konfigurierter sicherer Copyright Text", page);
             String expectedFooter = footer.innerText();
             String email = "copyright-" + UUID.randomUUID() + "@example.test";
             RegistrationPage registration = new RegistrationPage(page);

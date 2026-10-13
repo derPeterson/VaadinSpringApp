@@ -496,7 +496,8 @@ vaadin-app-layout.cosmos-app-shell {
     gap: 40px;
 }
 
-.cosmos-dashboard-introduction {
+.cosmos-dashboard-introduction,
+.cosmos-section-header.cosmos-dashboard-introduction {
     width: 100%;
     max-width: 1100px;
 }
@@ -511,7 +512,8 @@ vaadin-app-layout.cosmos-app-shell {
     text-transform: uppercase;
 }
 
-.cosmos-dashboard-introduction h1 {
+.cosmos-dashboard-introduction h1,
+.cosmos-section-title {
     margin: 0 0 10px;
     color: var(--lumo-header-text-color);
     font-size: clamp(28px, 4vw, 36px);
@@ -826,20 +828,30 @@ vaadin-app-layout.cosmos-admin {
     text-align: start;
 }
 
-.cosmos-section-title {
-    margin: 0 0 10px;
-    color: var(--lumo-header-text-color);
-    font-size: clamp(28px, 4vw, 36px);
-    font-weight: 650;
-    line-height: 1.25;
-    letter-spacing: -.04em;
-    overflow-wrap: anywhere;
+/* Dashboard: Kopfbereich am linken Inhaltsrand, Card in der Mitte derselben Spalte.
+ * Eine begrenzte Headerbreite darf ihn auf großen Bildschirmen nicht nach rechts schieben. */
+.cosmos-admin-section--dashboard {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    justify-items: center;
+}
+
+.cosmos-admin-section--dashboard > .cosmos-section-header,
+.cosmos-admin-section--config > .cosmos-section-header,
+.cosmos-admin-section--mail > .cosmos-section-header {
+    justify-self: stretch;
+    max-width: none;
 }
 
 .cosmos-admin-dashboard-card {
     position: relative;
+    justify-self: center;
+    margin-inline: auto;
     max-width: 590px;
-    min-height: 208px;
+    min-height: 218px;
+    padding: 27px clamp(20px, 4vw, 35px) 28px;
+    border-radius: 16px;
 }
 
 .cosmos-admin-dashboard-card::before {
@@ -852,8 +864,17 @@ vaadin-app-layout.cosmos-admin {
     background: linear-gradient(90deg, transparent, var(--lumo-primary-color-50pct), transparent);
 }
 
+.cosmos-admin-summary-eyebrow {
+    margin-bottom: 14px;
+    color: var(--lumo-primary-text-color);
+    font-size: 9px;
+    font-weight: 650;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
 .cosmos-admin-summary-title {
-    margin: 0;
+    margin: 0 0 9px;
     color: var(--lumo-header-text-color);
     font-size: 25px;
     font-weight: 630;
@@ -862,13 +883,57 @@ vaadin-app-layout.cosmos-admin {
 }
 
 .cosmos-admin-account-summary {
-    gap: 14px;
+    gap: 0;
     text-align: center;
 }
 
-.cosmos-admin-account-summary > span {
+.cosmos-admin-account-summary > * {
     max-width: 100%;
     overflow-wrap: anywhere;
+}
+
+.cosmos-admin-summary-description {
+    margin-bottom: 23px;
+    color: var(--lumo-secondary-text-color);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.cosmos-admin-summary-user {
+    margin-bottom: 13px;
+    color: var(--lumo-body-text-color);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.cosmos-admin-summary-email {
+    font-weight: 650;
+}
+
+.cosmos-admin-summary-role-row,
+.cosmos-admin-summary-roles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+}
+
+.cosmos-admin-summary-role-row {
+    color: var(--lumo-secondary-text-color);
+    font-size: 12px;
+}
+
+.cosmos-admin-role-chip {
+    padding: 4px 9px;
+    border: 1px solid var(--lumo-primary-color-50pct);
+    border-radius: 5px;
+    background: var(--lumo-primary-color-10pct);
+    color: var(--lumo-primary-text-color);
+    font-size: 10px;
+    font-weight: 650;
+    line-height: 1.4;
+    letter-spacing: .2px;
 }
 
 .cosmos-admin-form-card {
@@ -886,24 +951,258 @@ vaadin-app-layout.cosmos-admin {
     gap: 20px;
 }
 
-.cosmos-config-group-title {
+.cosmos-config-group-title,
+.cosmos-panel-title {
     margin: 0;
     color: var(--lumo-header-text-color);
     font-size: var(--lumo-font-size-l);
     font-weight: 600;
 }
 
+/* Konfigurations-Card: gemeinsamer Rahmen für alle Gruppen; Felder bleiben unverändert. */
+.cosmos-config-card,
+.cosmos-panel-card {
+    padding: 32px clamp(20px, 4vw, 36px) 28px;
+}
+
+.cosmos-config-card-header,
+.cosmos-panel-header {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    padding-bottom: 26px;
+    border-bottom: 1px solid var(--cosmos-card-border);
+}
+
+.cosmos-config-group-icon,
+.cosmos-panel-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    box-sizing: border-box;
+    border: 1px solid var(--lumo-primary-color-50pct);
+    border-radius: 10px;
+    background: var(--lumo-primary-color-10pct);
+    color: var(--lumo-primary-text-color);
+}
+
+.cosmos-config-group-icon > vaadin-icon,
+.cosmos-panel-icon > vaadin-icon {
+    width: 22px;
+    height: 22px;
+}
+
+.cosmos-config-group-heading,
+.cosmos-panel-heading {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.cosmos-config-group-description,
+.cosmos-panel-description {
+    display: block;
+    margin-top: 5px;
+    color: var(--lumo-secondary-text-color);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.cosmos-config-setting-count,
+.cosmos-panel-meta {
+    color: var(--lumo-primary-text-color);
+    font-size: 9px;
+    font-weight: 650;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    text-align: end;
+}
+
+.cosmos-config-card-footer,
+.cosmos-panel-footer {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    padding-top: 24px;
+    border-top: 1px solid var(--cosmos-card-border);
+}
+
+.cosmos-config-save-hint,
+.cosmos-panel-hint {
+    display: flex;
+    flex: 1 1 260px;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--lumo-secondary-text-color);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.cosmos-config-save-hint > vaadin-icon,
+.cosmos-panel-hint > vaadin-icon {
+    width: 14px;
+    height: 14px;
+    margin-top: 1px;
+    flex-shrink: 0;
+    color: var(--lumo-primary-text-color);
+}
+
+.cosmos-config-card-actions,
+.cosmos-panel-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    width: auto;
+    margin-inline-start: auto;
+}
+
+.cosmos-config-card-actions > vaadin-button,
+.cosmos-panel-actions > vaadin-button {
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+    .cosmos-config-card-header,
+    .cosmos-panel-header {
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .cosmos-config-setting-count,
+    .cosmos-panel-meta {
+        grid-column: 2;
+        text-align: start;
+    }
+
+    .cosmos-config-card-actions,
+    .cosmos-panel-actions {
+        width: 100%;
+    }
+
+    .cosmos-config-card-actions > vaadin-button,
+    .cosmos-panel-actions > vaadin-button {
+        flex: 1 1 180px;
+        min-width: 0;
+    }
+}
+
+/* Gemeinsame Konfigurations-Tooltips: Breite hier ändern, Overlay nutzt die Card-Variablen. */
+.cosmos-theme vaadin-button.cosmos-config-info {
+    --cosmos-info-tooltip-width: 360px;
+    --vaadin-button-gap: 0;
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+    color: var(--lumo-primary-text-color);
+    cursor: pointer;
+}
+
+.cosmos-config-input-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    align-items: start;
+    gap: var(--lumo-space-s);
+    width: 100%;
+    min-width: 0;
+}
+
+.cosmos-config-input-row > vaadin-checkbox {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+.cosmos-config-info > vaadin-icon {
+    width: var(--lumo-icon-size-l);
+    height: var(--lumo-icon-size-l);
+    margin: 0;
+}
+
+.cosmos-config-info > vaadin-tooltip {
+    --vaadin-tooltip-max-width: min(var(--cosmos-info-tooltip-width), calc(100vw - 32px));
+    --vaadin-tooltip-background: var(--cosmos-card-background);
+    --vaadin-tooltip-border-color: var(--cosmos-card-border);
+    --vaadin-tooltip-border-width: 1px;
+    --vaadin-tooltip-border-radius: var(--cosmos-card-radius);
+    --vaadin-tooltip-shadow: var(--cosmos-card-shadow);
+    --vaadin-tooltip-text-color: var(--lumo-secondary-text-color);
+    --vaadin-tooltip-font-size: 12px;
+    --vaadin-tooltip-font-weight: 400;
+    --vaadin-tooltip-line-height: 1.6;
+    --vaadin-tooltip-padding: var(--lumo-space-m);
+}
+
+/* Lumo setzt Background, Border und Breite direkt am Part und umgeht dabei
+ * die Tooltip-Variablen. Deshalb diese Werte gezielt am freigegebenen Part anwenden. */
+.cosmos-config-info > vaadin-tooltip::part(overlay) {
+    box-sizing: border-box;
+    width: var(--vaadin-tooltip-max-width);
+    max-width: var(--vaadin-tooltip-max-width);
+    padding: 0;
+    border: var(--vaadin-tooltip-border-width) solid var(--vaadin-tooltip-border-color);
+    border-radius: var(--vaadin-tooltip-border-radius);
+    background: var(--vaadin-tooltip-background);
+    box-shadow: var(--vaadin-tooltip-shadow);
+    color: var(--vaadin-tooltip-text-color);
+    font-size: var(--vaadin-tooltip-font-size);
+    font-weight: var(--vaadin-tooltip-font-weight);
+    line-height: var(--vaadin-tooltip-line-height);
+    -webkit-backdrop-filter: blur(17px);
+    backdrop-filter: blur(17px);
+}
+
+.cosmos-config-info > vaadin-tooltip::part(content) {
+    padding: var(--vaadin-tooltip-padding);
+    color: var(--vaadin-tooltip-text-color);
+    font-size: var(--vaadin-tooltip-font-size);
+    font-weight: var(--vaadin-tooltip-font-weight);
+}
+
 .cosmos-config-field {
     min-width: 0;
 }
 
-.cosmos-config-field > vaadin-horizontal-layout > span {
+.cosmos-config-field > vaadin-horizontal-layout > span,
+.cosmos-config-input-row > vaadin-checkbox > span[slot="label"] {
     color: var(--lumo-secondary-text-color);
     font-size: 12px;
 }
 
+/* Mail Test nutzt die gemeinsamen Panel-Köpfe und -Footer der Konfiguration. */
+.cosmos-mail-card {
+    max-width: 720px;
+    margin-inline: auto;
+}
+
+.cosmos-mail-fields {
+    min-width: 0;
+    gap: 20px;
+}
+
+/* Native Feldbeschriftungen bleiben über dem Input; Info daneben auf Inputhöhe. */
+.cosmos-mail-field-row {
+    align-items: end;
+}
+
+.cosmos-mail-field-row:has(vaadin-text-area) {
+    align-items: center;
+}
+
 .cosmos-mail-body-field {
-    min-height: 220px;
+    min-height: 160px;
 }
 
 .cosmos-admin .admin-user-select-filter {

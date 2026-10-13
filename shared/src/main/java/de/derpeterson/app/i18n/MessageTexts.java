@@ -469,6 +469,10 @@ public class MessageTexts {
         return getTranslation("adminView.dashboard.description");
     }
 
+    public String getAdminDashboardWelcomeBack() {
+        return getTranslation("adminView.dashboard.welcome_back");
+    }
+
     public String getAdminDashboardWelcome() {
         return getTranslation("adminView.dashboard.welcome");
     }
@@ -487,6 +491,34 @@ public class MessageTexts {
 
     public String getAdminMailDescription() {
         return getTranslation("adminView.mail.description");
+    }
+
+    public String getAdminMailCardTitle() {
+        return getTranslation("adminView.mail.card_title");
+    }
+
+    public String getAdminMailCardDescription() {
+        return getTranslation("adminView.mail.card_description");
+    }
+
+    public String getAdminMailCardBadge() {
+        return getTranslation("adminView.mail.card_badge");
+    }
+
+    public String getAdminMailSendHint() {
+        return getTranslation("adminView.mail.send_hint");
+    }
+
+    public String getAdminMailRecipientHint() {
+        return getTranslation("adminView.mail.recipient_hint");
+    }
+
+    public String getAdminMailSubjectHint() {
+        return getTranslation("adminView.mail.subject_hint");
+    }
+
+    public String getAdminMailBodyHint() {
+        return getTranslation("adminView.mail.body_hint");
     }
 
     public String getAdminMailSend() {
@@ -541,12 +573,110 @@ public class MessageTexts {
         return getTranslation("adminView.config.description");
     }
 
+    public String getAdminConfigGroupGeneralDescription() {
+        return getTranslation("adminView.config.group.general.description");
+    }
+
+    public String getAdminConfigGroupSecurityDescription() {
+        return getTranslation("adminView.config.group.security.description");
+    }
+
+    public String getAdminConfigGroupTokensDescription() {
+        return getTranslation("adminView.config.group.tokens.description");
+    }
+
+    public String getAdminConfigGroupUserStatusDescription() {
+        return getTranslation("adminView.config.group.user_status.description");
+    }
+
+    public String getAdminConfigGroupEmailSenderDescription() {
+        return getTranslation("adminView.config.group.email_sender.description");
+    }
+
+    public String getAdminConfigGroupSmtpDescription() {
+        return getTranslation("adminView.config.group.smtp.description");
+    }
+
+    public String getAdminConfigGroupQueueDescription() {
+        return getTranslation("adminView.config.group.queue.description");
+    }
+
+    public String getAdminConfigGroupDescription(AdminConfigGroup group) {
+        return switch (group) {
+            case GENERAL -> getAdminConfigGroupGeneralDescription();
+            case SECURITY -> getAdminConfigGroupSecurityDescription();
+            case TOKENS -> getAdminConfigGroupTokensDescription();
+            case USER_STATUS -> getAdminConfigGroupUserStatusDescription();
+            case EMAIL_SENDER -> getAdminConfigGroupEmailSenderDescription();
+            case SMTP -> getAdminConfigGroupSmtpDescription();
+            case QUEUE -> getAdminConfigGroupQueueDescription();
+        };
+    }
+
+    public String getAdminConfigSettingsCount(int count) {
+        return count == 1
+                ? getFormattedTranslation("adminView.config.settings_count.one", count)
+                : getFormattedTranslation("adminView.config.settings_count.other", count);
+    }
+
+    public String getAdminConfigSaveHint() {
+        return getTranslation("adminView.config.save_hint");
+    }
+
     public String getAdminConfigSave() {
         return getTranslation("adminView.config.save");
     }
 
     public String getAdminConfigReload() {
         return getTranslation("adminView.config.reload");
+    }
+
+    public String getAdminConfigRuleOptional() {
+        return getTranslation("adminView.config.rule.optional");
+    }
+
+    public String getAdminConfigRuleEmptyUsesDefault() {
+        return getTranslation("adminView.config.rule.empty_uses_default");
+    }
+
+    public String getAdminConfigRuleBoolean() {
+        return getTranslation("adminView.config.rule.boolean");
+    }
+
+    public String getAdminConfigRuleHost() {
+        return getTranslation("adminView.config.rule.host");
+    }
+
+    public String getAdminConfigRuleSslTrust() {
+        return getTranslation("adminView.config.rule.ssl_trust");
+    }
+
+    public String getAdminConfigRuleJavaClass() {
+        return getTranslation("adminView.config.rule.java_class");
+    }
+
+    public String getAdminConfigRuleDurationNoMinimum() {
+        return getTranslation("adminView.config.rule.duration_no_minimum");
+    }
+
+    public String getAdminConfigDefaultEmpty() {
+        return getTranslation("adminView.config.default_empty");
+    }
+
+    public String getAdminConfigDefaultConfidential() {
+        return getTranslation("adminView.config.default_confidential");
+    }
+
+    public String getAdminConfigPlaceholderEmpty() {
+        return getTranslation("adminView.config.placeholder.empty");
+    }
+
+    public String getAdminConfigRuleInteger(int min, int max) {
+        return getFormattedTranslation("adminView.config.rule.integer", Integer.toString(min), Integer.toString(max));
+    }
+
+    public String getAdminConfigInputRules() {
+        return getTranslation("adminView.config.input_rules");
     }
 
     public String getAdminConfigDefault() {
@@ -829,6 +959,10 @@ public class MessageTexts {
 
     public String getAdminConfigHelperTokenDurationFormats(long minutes) {
         return getFormattedTranslation("adminView.config.helper.token_duration_formats", minutes);
+    }
+
+    public String getAdminConfigValidationPositiveDuration() {
+        return getTranslation("adminView.config.validation.positive_duration");
     }
 
     public String getAdminConfigValidationDuration() {

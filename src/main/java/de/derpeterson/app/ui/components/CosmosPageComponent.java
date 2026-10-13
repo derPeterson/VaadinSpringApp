@@ -13,7 +13,7 @@ import de.derpeterson.app.service.ConfigService;
 import java.time.Clock;
 import java.util.function.Supplier;
 
-/** Gemeinsamer Hintergrund, Marke, Card-Bereich und konfigurierbarer Copyright-Fußtext. */
+/** Gemeinsamer Hintergrund, Marke, Card-Bereich und konfigurierbarer Copyright Text. */
 public class CosmosPageComponent extends Div {
     private final VerticalLayout cards = new VerticalLayout();
 

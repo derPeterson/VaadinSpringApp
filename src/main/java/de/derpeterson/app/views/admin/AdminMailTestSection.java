@@ -1,9 +1,11 @@
 package de.derpeterson.app.views.admin;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -16,6 +18,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.service.EmailService;
+import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import org.slf4j.Logger;
@@ -32,12 +35,20 @@ public class AdminMailTestSection extends VerticalLayout {
     private final transient MessageProperties messageProperties;
     private final transient EmailService emailService;
 
-    private final H1 mailTestTitle;
+    private final Span mailTestBreadcrumb;
+    private final Span mailTestTitle;
+    private final H2 mailCardTitle;
+    private final Span mailCardDescription;
+    private final Span mailCardBadge;
+    private final Span mailSendHint;
     private final Span mailTestDescription;
     private final EmailField testRecipientField;
     private final TextField testSubjectField;
     private final TextArea testBodyField;
     private final Button sendTestMailButton;
+    private final ConfigInfoButton recipientInfoButton;
+    private final ConfigInfoButton subjectInfoButton;
+    private final ConfigInfoButton bodyInfoButton;
 
     public AdminMailTestSection(MessageProperties messageProperties,
                                 EmailService emailService,
@@ -51,7 +62,15 @@ public class AdminMailTestSection extends VerticalLayout {
         setAlignItems(FlexComponent.Alignment.CENTER);
         addClassNames("cosmos-admin-section", "cosmos-admin-section--mail");
 
-        mailTestTitle = new H1();
+        mailTestBreadcrumb = new Span();
+        mailTestTitle = new Span();
+        mailCardTitle = new H2();
+        mailCardTitle.addClassName("cosmos-panel-title");
+        mailCardDescription = new Span();
+        mailCardDescription.addClassName("cosmos-panel-description");
+        mailCardBadge = new Span();
+        mailCardBadge.addClassName("cosmos-panel-meta");
+        mailSendHint = new Span();
 
 
         mailTestDescription = new Span();
@@ -62,6 +81,7 @@ public class AdminMailTestSection extends VerticalLayout {
         testRecipientField = new EmailField();
         testRecipientField.setClearButtonVisible(true);
         testRecipientField.setWidthFull();
+        testRecipientField.setRequiredIndicatorVisible(true);
         testRecipientField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
 
         if (authenticatedUser != null) {
@@ -70,37 +90,92 @@ public class AdminMailTestSection extends VerticalLayout {
 
         testSubjectField = new TextField();
         testSubjectField.setWidthFull();
+        testSubjectField.setRequiredIndicatorVisible(true);
         testSubjectField.setPrefixComponent(VaadinIcon.FONT.create());
 
         testBodyField = new TextArea();
         testBodyField.setWidthFull();
+        testBodyField.setRequiredIndicatorVisible(true);
         testBodyField.addClassName("cosmos-mail-body-field");
+
+        recipientInfoButton = new ConfigInfoButton(() -> buildMailTooltip(
+                messageProperties.getAdminMailRecipientHint(), messageProperties.getAdminMailValidationRecipient()));
+        subjectInfoButton = new ConfigInfoButton(() -> buildMailTooltip(
+                messageProperties.getAdminMailSubjectHint(), messageProperties.getAdminMailValidationSubject()));
+        bodyInfoButton = new ConfigInfoButton(() -> buildMailTooltip(
+                messageProperties.getAdminMailBodyHint(), messageProperties.getAdminMailValidationBody()));
 
         sendTestMailButton = new Button();
         sendTestMailButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
         sendTestMailButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        sendTestMailButton.setWidthFull();
         sendTestMailButton.addClickListener(clickEvent -> sendTestMail());
         sendTestMailButton.addClickShortcut(Key.ENTER);
 
-        VerticalLayout mailLayout = new VerticalLayout(
-                testRecipientField,
-                testSubjectField,
-                testBodyField,
-                sendTestMailButton
-        );
-
-        mailLayout.setPadding(false);
-        mailLayout.setSpacing(false);
-        mailLayout.addClassName("cosmos-admin-form");
-        mailLayout.setAlignItems(Alignment.START);
-
+        VerticalLayout mailLayout = createMailCardContent();
         CosmosCardComponent mailCard = new CosmosCardComponent(mailLayout);
-        mailCard.addClassName("cosmos-admin-form-card");
-        add(new CosmosSectionHeaderComponent(mailTestTitle, mailTestDescription), mailCard);
+        mailCard.addClassNames("cosmos-admin-form-card", "cosmos-panel-card", "cosmos-mail-card");
+        add(new CosmosSectionHeaderComponent(mailTestBreadcrumb, mailTestTitle, mailTestDescription), mailCard);
+    }
+
+    private VerticalLayout createMailCardContent() {
+        var envelope = VaadinIcon.ENVELOPE.create();
+        envelope.getElement().setAttribute("aria-hidden", "true");
+        Div iconBadge = new Div(envelope);
+        iconBadge.addClassName("cosmos-panel-icon");
+        Div heading = new Div(mailCardTitle, mailCardDescription);
+        heading.addClassName("cosmos-panel-heading");
+        Div header = new Div(iconBadge, heading, mailCardBadge);
+        header.addClassName("cosmos-panel-header");
+
+        VerticalLayout fields = new VerticalLayout(
+                createMailFieldRow(testRecipientField, recipientInfoButton),
+                createMailFieldRow(testSubjectField, subjectInfoButton),
+                createMailFieldRow(testBodyField, bodyInfoButton));
+        fields.setPadding(false);
+        fields.setSpacing(false);
+        fields.setWidthFull();
+        fields.addClassName("cosmos-mail-fields");
+
+        var hintIcon = VaadinIcon.INFO_CIRCLE_O.create();
+        hintIcon.getElement().setAttribute("aria-hidden", "true");
+        Div hint = new Div(hintIcon, mailSendHint);
+        hint.addClassName("cosmos-panel-hint");
+        Div actions = new Div(sendTestMailButton);
+        actions.addClassName("cosmos-panel-actions");
+        Div footer = new Div(hint, actions);
+        footer.addClassName("cosmos-panel-footer");
+
+        VerticalLayout content = new VerticalLayout(header, fields, footer);
+        content.setPadding(false);
+        content.setSpacing(false);
+        content.setWidthFull();
+        content.setAlignItems(Alignment.START);
+        content.addClassName("cosmos-admin-form");
+        return content;
+    }
+
+    private Div createMailFieldRow(Component input, ConfigInfoButton infoButton) {
+        Div row = new Div(input, infoButton);
+        row.addClassNames("cosmos-config-input-row", "cosmos-mail-field-row");
+        return row;
+    }
+
+    private String buildMailTooltip(String description, String validation) {
+        return description + "\n\n" + messageProperties.getAdminConfigInputRules() + ":\n• " + validation;
     }
 
     public void refreshTexts() {
+        mailTestBreadcrumb.setText(messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminMailTitle());
+        mailCardTitle.setText(messageProperties.getAdminMailCardTitle());
+        mailCardDescription.setText(messageProperties.getAdminMailCardDescription());
+        mailCardBadge.setText(messageProperties.getAdminMailCardBadge());
+        mailSendHint.setText(messageProperties.getAdminMailSendHint());
+        recipientInfoButton.refreshText();
+        subjectInfoButton.refreshText();
+        bodyInfoButton.refreshText();
+        recipientInfoButton.getElement().setAttribute("aria-label", messageProperties.getAdminMailRecipient());
+        subjectInfoButton.getElement().setAttribute("aria-label", messageProperties.getAdminMailSubject());
+        bodyInfoButton.getElement().setAttribute("aria-label", messageProperties.getAdminMailBody());
         mailTestTitle.setText(messageProperties.getAdminMailTitle());
         mailTestDescription.setText(messageProperties.getAdminMailDescription());
         sendTestMailButton.setText(messageProperties.getAdminMailSend());

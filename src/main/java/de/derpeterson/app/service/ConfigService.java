@@ -35,10 +35,12 @@ public class ConfigService {
     public String getString(ConfigEntry configEntry) {
         return configRepository.findByKey(configEntry.getKey())
                 .map(ConfigEntity::getValue)
-                .orElseGet(() -> configuredDefault(configEntry));
+                .orElseGet(() -> getDefaultValue(configEntry));
     }
 
-    private String configuredDefault(ConfigEntry configEntry) {
+    /** Backend-Standard aus app.config.defaults.*, unabhängig vom gespeicherten Wert. */
+    public String getDefaultValue(ConfigEntry configEntry) {
+        Objects.requireNonNull(configEntry, "configEntry");
         return environment.getProperty("app.config.defaults." + configEntry.getKey(),
                 configEntry.getDefaultValueString());
     }
@@ -53,7 +55,7 @@ public class ConfigService {
         return configRepository.findByKey(configEntry.getKey())
                 .map(ConfigEntity::getValue)
                 .map(Integer::parseInt)
-                .orElseGet(() -> Integer.parseInt(configuredDefault(configEntry)));
+                .orElseGet(() -> Integer.parseInt(getDefaultValue(configEntry)));
     }
 
     public int getInteger(ConfigEntry configEntry, int defaultValue) {

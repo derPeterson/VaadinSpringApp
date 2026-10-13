@@ -3,7 +3,6 @@ package de.derpeterson.app.views;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -25,6 +24,7 @@ import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.base.TrackedUserAppLayout;
 import de.derpeterson.app.ui.components.CosmosBackgroundComponent;
 import de.derpeterson.app.ui.components.CosmosCopyrightComponent;
+import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
@@ -111,15 +111,8 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
     }
 
     private Div createHomeContent() {
-        overviewLabel.addClassName("cosmos-dashboard-kicker");
-        H1 heading = new H1();
-        Span accent = new Span(".");
-        accent.addClassName("cosmos-dashboard-accent");
-        accent.getElement().setAttribute("aria-hidden", "true");
-        heading.add(pageTitle, accent);
-        pageDescription.addClassName("cosmos-dashboard-description");
-        Div introduction = new Div(overviewLabel, heading, pageDescription);
-        introduction.addClassName("cosmos-dashboard-introduction");
+        CosmosSectionHeaderComponent introduction = new CosmosSectionHeaderComponent(
+                overviewLabel, pageTitle, pageDescription);
 
         CosmosCopyrightComponent copyright = new CosmosCopyrightComponent(configService,
                 Clock.systemDefaultZone(), messageProperties::getAccountCopyrightTemplate);

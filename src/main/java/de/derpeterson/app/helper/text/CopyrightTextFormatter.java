@@ -6,7 +6,7 @@ import java.time.Clock;
 import java.time.Year;
 import java.util.function.Supplier;
 
-/** Gemeinsamer Plain-Text-Vertrag für den Copyright-Fußtext der Oberfläche und Mails. */
+/** Gemeinsamer Plain-Text-Vertrag für den Copyright Text der Oberfläche und Mails. */
 public final class CopyrightTextFormatter {
 
     private CopyrightTextFormatter() {

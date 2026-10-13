@@ -61,7 +61,7 @@ Verschieben durch die unterschiedlichen Höhen. Bei wenig
 Höhe wächst die Seite und scrollt vertikal. Reduzierte Bewegung deaktiviert die
 Animation. Platzhalter folgen über die gemeinsamen Getter der gewählten Sprache.
 
-Unter **Admin → Konfiguration → Allgemein** kann der Copyright-Fußtext geändert
+Unter **Admin → Konfiguration → Allgemein** kann der Copyright Text geändert
 werden. Datenbankschlüssel: `copyright.text`; Default: `© {year} {serviceName}`.
 Der unveränderte Standard wird über den gemeinsamen Übersetzungsgetter angezeigt:
 DE `© {year} {serviceName}. Alle Rechte vorbehalten.`,
@@ -70,7 +70,7 @@ Eigene gespeicherte Texte werden unverändert verwendet. Beim Sprachwechsel wird
 der Standardtext aktualisiert; dafür werden keine Datenbankwerte überschrieben.
 `{year}` wird durch das aktuelle lokale Jahr, `{serviceName}` durch den konfigurierten
 Servicenamen ersetzt. Leerer Text blendet die Fußzeile aus; HTML bleibt sicher Text.
-Änderungen erscheinen beim erneuten Öffnen einer Kontoansicht. Beim normalen Start
+Änderungen erscheinen beim erneuten Öffnen der betreffenden Ansichten und in neu erzeugten E-Mails. Beim normalen Start
 wird nur ein fehlender Eintrag ergänzt; gespeicherte Werte werden nicht überschrieben.
 
 Frühere Hintergrundbilder, Welcome-Bild und alte Login-Styles wurden aus den
@@ -124,8 +124,66 @@ Löschdialog-Akzente bleiben Admin-Spezialfälle in `styles.css`; dieses Stylesh
 weiterhin nur an AdminView geladen. Der gemeinsame Rest steht in `cosmos-theme.css`.
 Formularpaare und Aktionsleisten können bei wenig Platz umbrechen.
 
-Rollenprüfung, Datenzugriffe, Validierung, Filter, Speicherung, Mailaktionen und
-Kontoschutzregeln sind bei dieser Umstellung unverändert geblieben.
+Home und Dashboard verwenden denselben `CosmosSectionHeaderComponent` mit kleiner
+Bereichszeile und blauem Akzentpunkt. Im Dashboard steht die Bereichszeile lokalisiert
+als „Admin Center / Übersicht“ bzw. „Admin Center / Overview“. Seine Überschrift beginnt
+links im Inhaltsbereich, die Kontoinformations-Card steht mittig darunter.
+Die kompakte Card zeigt „Willkommen zurück“, die aktuelle E-Mail fett und jede
+Berechtigung als eigenen Rollen-Badge; ihre Gestaltung bleibt im zentralen CSS.
+Konfiguration nutzt denselben Kopfbereich und die bisherigen Schriftgrößen; sein
+Breadcrumb zeigt Admin Center, Konfiguration und die ausgewählte Gruppe und wird
+bei Gruppen- und Sprachwechsel aktualisiert. Die Konfigurations-Card zeigt
+Gruppenicon, Kurzbeschreibung und tatsächliche Einstellungsanzahl; Trennlinien
+begrenzen Kopf und Fuß mit Speicherhinweis und rechts angeordneten Aktionsbuttons.
+Alle 29 Konfigurationsfelder verwenden denselben `ConfigInfoButton`: rechts am
+Input, Lumo-Icongröße l, Primary-Farbe, manuelles Öffnen per Klick oder Tastatur.
+Ein Außenklick schließt den Tooltip; die Steuerung wird beim Entfernen des Felds
+aufgeräumt. Die Texte folgen beim Sprachwechsel der aktuellen Sprache.
+Tooltips enthalten Beschreibung, Standardwert und die tatsächlich geprüften
+Eingaberegeln als Aufzählung; Satzpunkte stehen in den DE-/EN-Message-Dateien.
+Sie nutzen Card-Hintergrund, Border, Rundung und Schatten, dezente Schrift (12 px)
+und die zentrale Breite `--cosmos-info-tooltip-width` (360 px, begrenzt durch den Viewport).
+
+Mail Test verwendet denselben Breadcrumb-/Titelbereich und die gemeinsamen
+Panel-Stile für Icon, Card-Kopf, Trennlinien und Footer. Die Card steht mittig
+und bleibt bei kleinen Auflösungen flexibel. Die drei Pflichtfelder nutzen
+denselben `ConfigInfoButton` rechts neben dem Input: Beschreibung und Eingaberegel
+im Klick-Tooltip, mit Card-Stil und Schließen durch Außenklick. Die Texte werden
+beim Sprachwechsel aktualisiert. Bisherige Feldvorgaben bleiben erhalten;
+der Versandbutton steht rechts im Footer.
+Der SMTP-Hinweis beschreibt die beim Start geladene Verbindung und deren
+Neustartbedarf. Versand und Validierung bleiben unverändert. Diese Gestaltung
+ist noch nicht durch einen neuen Anwendungsbuild oder Testlauf geprüft.
+
+Standardwerte und Platzhalter kommen über `ConfigService.getDefaultValue` aus
+`app.config.defaults.*`, mit dem Enumwert als Fallback, wie im Backend und bei der
+Initialisierung. Aktuelle gespeicherte Eingaben bleiben davon getrennt. Leere
+Zahlenfelder übernehmen beim Speichern diesen Standardwert; sichtbare Zahlgrenzen
+folgen den vorhandenen Prüfungen. Checkboxen zeigen ihren Standardwert im Tooltip,
+weil sie keinen Platzhalter besitzen. Geheime Standardwerte erscheinen ausschließlich
+als „(vertraulich)“, leere Standards als „(leer)“; bei leeren Textstandards lautet der
+Platzhalter „Leer lassen“. Gespeicherte Passwörter bleiben im vorhandenen Passwortfeld.
+
+Die Regelhinweise wurden mit der bestehenden serverseitigen Prüfung abgeglichen:
+Token-Gültigkeit mindestens eine Minute, Token-Aufbewahrung mindestens zwei Minuten,
+Port 1–65535, positive Zähler bzw. nichtnegative Retry-Anzahl sowie vorhandene
+URL-, E-Mail-, Host-, Trustlisten-, Geheimschlüssel- und Klassenname-Prüfungen.
+Für automatische Abwesenheit existiert bisher keine Mindestdauer. Die
+Mailqueue-Aufbewahrung muss wie im Backend strikt positiv sein; Null und negative
+Werte werden bereits im Formular abgelehnt. Dafür gilt keine zusätzliche Minutengrenze. Zeitspannen
+benötigen Einheit oder ISO-Format, während Remember-me weiterhin Sekunden verwendet.
+Es wurden keine neuen fachlichen Mindestdauern eingeführt.
+Die Erklärungen nennen den heutigen Einsatz: Copyright Text für Oberfläche und
+E-Mail-Vorlagen, Basis-URL für neu erzeugte Mail-Links und die Neustartwirkung von
+Remember-me-, SMTP- und Threadpool-Einstellungen. Queue-Kapazität beschreibt die
+geladene Menge pro Durchlauf statt einer Obergrenze für alle gespeicherten Mails.
+Die Bereinigung versendeter Queue-Einträge richtet sich nach ihrem Erstellungsdatum.
+Dieser spätere Designfeinschliff ist noch nicht als Anwendung gebaut oder getestet; der oben genannte
+Gesamtlauf dokumentiert den Stand davor.
+
+Rollenprüfung, fachliche Prüfregeln, Filter, Mailaktionen und Kontoschutz bleiben
+erhalten. Zahlenfeldgrenzen und Standardwertanzeigen sind an die vorhandenen
+serverseitigen Regeln und Backend-Defaults angeglichen.
 **Geprüft:** Produktionsbuild sowie vollständige DE-/EN-Browserläufe erfolgreich.
 Die bisherigen funktionalen Konfigurations-, Mail-, Status-, Benutzer- und Sicherheitsfälle
 bleiben erhalten. COSMOS-05A–C ergänzen reale Navigation und Benutzerformular bei drei

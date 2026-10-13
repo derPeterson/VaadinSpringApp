@@ -6,8 +6,7 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
-import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -26,6 +25,7 @@ import de.derpeterson.app.config.TokenDurationPolicy;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import org.jspecify.annotations.NonNull;
@@ -65,12 +65,17 @@ public class AdminConfigurationSection extends VerticalLayout {
     private final EnumMap<ConfigEntry, Component> configInputs = new EnumMap<>(ConfigEntry.class);
     private final EnumMap<ConfigEntry, VerticalLayout> configInputWrappers = new EnumMap<>(ConfigEntry.class);
     private final EnumMap<ConfigEntry, Span> configLabelSpans = new EnumMap<>(ConfigEntry.class);
-    private final EnumMap<ConfigEntry, Span> configMetaTextSpans = new EnumMap<>(ConfigEntry.class);
+    private final EnumMap<ConfigEntry, ConfigInfoButton> configInfoButtons = new EnumMap<>(ConfigEntry.class);
     private final Map<AdminConfigGroup, Predicate<ConfigEntry>> configGroupFilters = new LinkedHashMap<>();
 
-    private final H1 configurationTitle;
+    private final Span configurationBreadcrumb;
+    private final Span configurationTitle;
     private final Span configurationDescription;
     private final H2 currentGroupTitle;
+    private final Icon currentGroupIcon;
+    private final Span currentGroupDescription;
+    private final Span currentGroupSettingCount;
+    private final Span configurationSaveHint;
     private final VerticalLayout configFieldsContainer;
 
     private final Button saveConfigButton;
@@ -91,7 +96,8 @@ public class AdminConfigurationSection extends VerticalLayout {
         setAlignItems(FlexComponent.Alignment.CENTER);
         addClassNames("cosmos-admin-section", "cosmos-admin-section--config");
 
-        configurationTitle = new H1();
+        configurationBreadcrumb = new Span();
+        configurationTitle = new Span();
 
 
         configurationDescription = new Span();
@@ -99,6 +105,13 @@ public class AdminConfigurationSection extends VerticalLayout {
 
         currentGroupTitle = new H2();
         currentGroupTitle.addClassName("cosmos-config-group-title");
+        currentGroupIcon = VaadinIcon.COG.create();
+        currentGroupIcon.getElement().setAttribute("aria-hidden", "true");
+        currentGroupDescription = new Span();
+        currentGroupDescription.addClassName("cosmos-config-group-description");
+        currentGroupSettingCount = new Span();
+        currentGroupSettingCount.addClassName("cosmos-config-setting-count");
+        configurationSaveHint = new Span();
 
         configFieldsContainer = new VerticalLayout();
         configFieldsContainer.setPadding(false);
@@ -117,18 +130,16 @@ public class AdminConfigurationSection extends VerticalLayout {
         saveConfigButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         saveConfigButton.addClickListener(clickEvent -> saveConfigValues());
         saveConfigButton.addClickShortcut(Key.ENTER);
-        saveConfigButton.setWidthFull();
 
         reloadConfigButton = new Button();
         reloadConfigButton.setPrefixComponent(VaadinIcon.REFRESH.create());
         reloadConfigButton.addClickListener(clickEvent -> reloadConfigValues());
-        reloadConfigButton.setWidthFull();
 
-        VerticalLayout configLayout = getButtonVerticalLayout();
+        VerticalLayout configLayout = createConfigurationCardContent();
 
         CosmosCardComponent configCard = new CosmosCardComponent(configLayout);
-        configCard.addClassName("cosmos-admin-form-card");
-        add(new CosmosSectionHeaderComponent(configurationTitle, configurationDescription), configCard);
+        configCard.addClassNames("cosmos-admin-form-card", "cosmos-config-card");
+        add(new CosmosSectionHeaderComponent(configurationBreadcrumb, configurationTitle, configurationDescription), configCard);
 
         if (!configGroupFilters.isEmpty()) {
             selectedGroup = configGroupFilters.keySet().iterator().next();
@@ -139,32 +150,27 @@ public class AdminConfigurationSection extends VerticalLayout {
         loadConfigValues();
     }
 
-    private @NonNull VerticalLayout getButtonVerticalLayout() {
-        HorizontalLayout saveWrapper = new HorizontalLayout(saveConfigButton);
-        saveWrapper.setPadding(false);
-        saveWrapper.setSpacing(false);
-        saveWrapper.setWidthFull();
+    private @NonNull VerticalLayout createConfigurationCardContent() {
+        Div iconBadge = new Div(currentGroupIcon);
+        iconBadge.addClassName("cosmos-config-group-icon");
+        Div headingText = new Div(currentGroupTitle, currentGroupDescription);
+        headingText.addClassName("cosmos-config-group-heading");
+        Div cardHeader = new Div(iconBadge, headingText, currentGroupSettingCount);
+        cardHeader.addClassName("cosmos-config-card-header");
 
-        HorizontalLayout reloadWrapper = new HorizontalLayout(reloadConfigButton);
-        reloadWrapper.setPadding(false);
-        reloadWrapper.setSpacing(false);
-        reloadWrapper.setWidthFull();
+        Icon hintIcon = VaadinIcon.INFO_CIRCLE_O.create();
+        hintIcon.getElement().setAttribute("aria-hidden", "true");
+        Div saveHint = new Div(hintIcon, configurationSaveHint);
+        saveHint.addClassName("cosmos-config-save-hint");
+        Div buttonLayout = new Div(reloadConfigButton, saveConfigButton);
+        buttonLayout.addClassName("cosmos-config-card-actions");
+        Div cardFooter = new Div(saveHint, buttonLayout);
+        cardFooter.addClassName("cosmos-config-card-footer");
 
-        HorizontalLayout buttonLayout = new HorizontalLayout(saveWrapper, reloadWrapper);
-        buttonLayout.setPadding(false);
-        buttonLayout.setSpacing(true);
-        buttonLayout.setWidthFull();
-        buttonLayout.expand(saveWrapper, reloadWrapper);
-        buttonLayout.addClassName("cosmos-admin-form-actions");
-
-        VerticalLayout configLayout = new VerticalLayout(
-                currentGroupTitle,
-                configFieldsContainer,
-                buttonLayout
-        );
+        VerticalLayout configLayout = new VerticalLayout(cardHeader, configFieldsContainer, cardFooter);
         configLayout.setPadding(false);
         configLayout.setSpacing(false);
-        configLayout.addClassName("cosmos-admin-form");
+        configLayout.addClassNames("cosmos-admin-form", "cosmos-config-form");
         configLayout.setAlignItems(Alignment.START);
         return configLayout;
     }
@@ -174,9 +180,10 @@ public class AdminConfigurationSection extends VerticalLayout {
         configurationDescription.setText(messageProperties.getAdminConfigDescription());
         saveConfigButton.setText(messageProperties.getAdminConfigSave());
         reloadConfigButton.setText(messageProperties.getAdminConfigReload());
+        configurationSaveHint.setText(messageProperties.getAdminConfigSaveHint());
 
         refreshInputLabels();
-        refreshInputMetaTexts();
+        refreshInputHelp();
         refreshCurrentGroupTitle();
         refreshValidationMessagesForInvalidFields();
     }
@@ -217,7 +224,7 @@ public class AdminConfigurationSection extends VerticalLayout {
         try {
             integerField.setValue(Integer.parseInt(safeValue));
         } catch (NumberFormatException ex) {
-            integerField.setValue(configEntry.getDefaultValueInteger());
+            integerField.setValue(Integer.parseInt(configuredDefault(configEntry)));
         }
     }
 
@@ -298,9 +305,24 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     private void refreshCurrentGroupTitle() {
+        String breadcrumb = messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminConfigTitle();
         if (selectedGroup != null) {
-            currentGroupTitle.setText(messageProperties.getAdminConfigGroupLabel(selectedGroup));
+            String groupLabel = messageProperties.getAdminConfigGroupLabel(selectedGroup);
+            currentGroupTitle.setText(groupLabel);
+            currentGroupDescription.setText(messageProperties.getAdminConfigGroupDescription(selectedGroup));
+            currentGroupSettingCount.setText(messageProperties.getAdminConfigSettingsCount(getVisibleConfigEntries().size()));
+            switch (selectedGroup) {
+                case GENERAL -> currentGroupIcon.setIcon(VaadinIcon.COG);
+                case SECURITY -> currentGroupIcon.setIcon(VaadinIcon.LOCK);
+                case TOKENS -> currentGroupIcon.setIcon(VaadinIcon.KEY);
+                case USER_STATUS -> currentGroupIcon.setIcon(VaadinIcon.USER);
+                case EMAIL_SENDER -> currentGroupIcon.setIcon(VaadinIcon.ENVELOPE);
+                case SMTP -> currentGroupIcon.setIcon(VaadinIcon.COG);
+                case QUEUE -> currentGroupIcon.setIcon(VaadinIcon.LIST);
+            }
+            breadcrumb += " / " + groupLabel;
         }
+        configurationBreadcrumb.setText(breadcrumb);
     }
 
     private void refreshInputLabels() {
@@ -308,12 +330,10 @@ public class AdminConfigurationSection extends VerticalLayout {
                 labelSpan.setText(messageProperties.getAdminConfigEntryLabel(configEntry)));
     }
 
-    private void refreshInputMetaTexts() {
-        configMetaTextSpans.forEach((configEntry, metaTextSpan) ->
-                metaTextSpan.setText(buildMetaText(configEntry)));
-
+    private void refreshInputHelp() {
         configInputs.forEach((configEntry, input) ->
                 updatePlaceholder(input, buildPlaceholder(configEntry)));
+        configInfoButtons.values().forEach(ConfigInfoButton::refreshText);
     }
 
     private void refreshValidationMessagesForInvalidFields() {
@@ -330,11 +350,12 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     private void updatePlaceholder(Component input, String placeholder) {
         String safePlaceholder = placeholder == null ? "" : placeholder;
-
-        if (input instanceof EmailField emailField) {
-            emailField.setPlaceholder(safePlaceholder);
-        } else if (input instanceof TextField textField) {
-            textField.setPlaceholder(safePlaceholder);
+        switch (input) {
+            case EmailField field -> field.setPlaceholder(safePlaceholder);
+            case PasswordField field -> field.setPlaceholder(safePlaceholder);
+            case IntegerField field -> field.setPlaceholder(safePlaceholder);
+            case TextField field -> field.setPlaceholder(safePlaceholder);
+            default -> { /* Checkboxen haben keinen Platzhalter. */ }
         }
     }
 
@@ -366,7 +387,7 @@ public class AdminConfigurationSection extends VerticalLayout {
             integerField.setWidthFull();
             integerField.setStepButtonsVisible(true);
             integerField.setClearButtonVisible(true);
-            integerField.setMin(0);
+            integerField.setMin(configEntry == ConfigEntry.EMAIL_QUEUE_MAX_RETRY ? 0 : 1);
 
             if (configEntry == ConfigEntry.MAIL_PORT) {
                 integerField.setMin(1);
@@ -404,101 +425,74 @@ public class AdminConfigurationSection extends VerticalLayout {
         wrapper.setWidthFull();
         wrapper.addClassNames(LumoUtility.Gap.XSMALL, "cosmos-config-field");
 
-        HorizontalLayout headerLayout = createFieldHeader(configEntry);
-        if (input instanceof HasAriaLabel labelledInput) {
-            labelledInput.setAriaLabelledBy(configLabelSpans.get(configEntry).getId().orElseThrow());
+        Span labelSpan = new Span(messageProperties.getAdminConfigEntryLabel(configEntry));
+        labelSpan.setId("config-label-" + configEntry.name().toLowerCase(Locale.ROOT));
+        labelSpan.addClassNames(LumoUtility.FontWeight.MEDIUM, LumoUtility.FontSize.SMALL);
+        configLabelSpans.put(configEntry, labelSpan);
+        if (input instanceof Checkbox checkbox) {
+            checkbox.setLabelComponent(labelSpan);
+        } else {
+            HorizontalLayout headerLayout = new HorizontalLayout();
+            headerLayout.setPadding(false);
+            headerLayout.setSpacing(false);
+            headerLayout.setWidthFull();
+            headerLayout.add(labelSpan);
+            wrapper.add(headerLayout);
         }
-        Span metaTextSpan = createMetaTextSpan(configEntry);
+        String labelId = labelSpan.getId().orElseThrow();
+        if (input instanceof HasAriaLabel labelledInput) {
+            labelledInput.setAriaLabelledBy(labelId);
+        }
 
-        wrapper.add(headerLayout, input, metaTextSpan);
+        ConfigInfoButton infoButton = new ConfigInfoButton(() -> buildConfigTooltipText(configEntry));
+        infoButton.getElement().setAttribute("aria-labelledby", labelId);
+        configInfoButtons.put(configEntry, infoButton);
+        Div inputRow = new Div(input, infoButton);
+        inputRow.addClassName("cosmos-config-input-row");
+        wrapper.add(inputRow);
         return wrapper;
     }
 
-    private Span createMetaTextSpan(ConfigEntry configEntry) {
-        Span metaTextSpan = new Span(buildMetaText(configEntry));
-        metaTextSpan.addClassNames(
-                LumoUtility.FontSize.SMALL,
-                LumoUtility.TextColor.SECONDARY
-        );
-        configMetaTextSpans.put(configEntry, metaTextSpan);
-        return metaTextSpan;
+    private String buildConfigTooltipText(ConfigEntry configEntry) {
+        StringBuilder text = new StringBuilder(messageProperties.getAdminConfigEntryTooltip(configEntry));
+        text.append("\n\n").append(buildDefaultText(configEntry));
+        text.append("\n\n").append(messageProperties.getAdminConfigInputRules()).append(":");
+        buildInputRules(configEntry).forEach(rule -> text.append("\n• ").append(rule));
+        return text.toString();
     }
 
-    private HorizontalLayout createFieldHeader(ConfigEntry configEntry) {
-        HorizontalLayout headerLayout = new HorizontalLayout();
-        headerLayout.setPadding(false);
-        headerLayout.setSpacing(true);
-        headerLayout.setWidthFull();
-        headerLayout.setAlignItems(Alignment.CENTER);
-        headerLayout.addClassNames(LumoUtility.Gap.SMALL);
-
-        Span labelSpan = new Span(messageProperties.getAdminConfigEntryLabel(configEntry));
-        labelSpan.setId("config-label-" + configEntry.name().toLowerCase(Locale.ROOT));
-        labelSpan.addClassNames(
-                LumoUtility.FontWeight.MEDIUM,
-                LumoUtility.FontSize.SMALL
-        );
-        configLabelSpans.put(configEntry, labelSpan);
-
-        Component infoPopover = createInfoPopover(configEntry);
-
-        headerLayout.add(labelSpan, infoPopover);
-
-        return headerLayout;
-    }
-
-    private Component createInfoPopover(ConfigEntry configEntry) {
-        Icon icon = createTooltipIcon();
-
-        Dialog dialog = new Dialog();
-        dialog.setHeaderTitle(messageProperties.getAdminConfigEntryLabel(configEntry));
-        dialog.setCloseOnEsc(true);
-        dialog.setCloseOnOutsideClick(true);
-        dialog.setDraggable(true);
-        dialog.setResizable(true);
-        dialog.addClassNames("cosmos-theme", "cosmos-admin-info-dialog");
-        dialog.getElement().getThemeList().add("cosmos");
-
-        Span content = new Span(messageProperties.getAdminConfigEntryTooltip(configEntry));
-        content.addClassName("cosmos-dialog-text");
-
-        Button closeButton = new Button(messageProperties.getOkayHomeButton(), e -> dialog.close());
-        closeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
-        HorizontalLayout footer = new HorizontalLayout(closeButton);
-        footer.setWidthFull();
-        footer.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
-        footer.setPadding(false);
-        footer.setSpacing(false);
-
-        VerticalLayout layout = new VerticalLayout(content, footer);
-        layout.setSpacing(true);
-        layout.setPadding(true);
-
-        dialog.add(layout);
-
-        icon.addClickListener(e -> {
-            dialog.setHeaderTitle(messageProperties.getAdminConfigEntryLabel(configEntry));
-            content.setText(messageProperties.getAdminConfigEntryTooltip(configEntry));
-            closeButton.setText(messageProperties.getOkayHomeButton());
-            dialog.open();
-        });
-
-        return icon;
-    }
-
-    private Icon createTooltipIcon() {
-        Icon icon = VaadinIcon.INFO_CIRCLE.create();
-        icon.addClassNames(
-                LumoUtility.TextColor.SECONDARY,
-                LumoUtility.Margin.Left.XSMALL
-        );
-        icon.getStyle().set("cursor", "help");
-        icon.getStyle().set("flex-shrink", "0");
-        icon.getStyle().set("width", "16px");
-        icon.getStyle().set("height", "16px");
-        icon.getStyle().set("margin-top", "1px");
-        return icon;
+    /** Beschreibt die vorhandene Prüfung; führt keine zweite Validierung aus. */
+    private List<String> buildInputRules(ConfigEntry configEntry) {
+        return switch (configEntry) {
+            case SERVICE_NAME -> List.of(messageProperties.getAdminConfigValidationServiceName(),
+                    messageProperties.getAdminConfigHelperServiceNameMax(SERVICE_NAME_MAX_LENGTH));
+            case COPYRIGHT_TEXT, MAIL_USERNAME, MAIL_PASSWORD -> List.of(messageProperties.getAdminConfigRuleOptional());
+            case BASE_URL -> List.of(messageProperties.getAdminConfigValidationUrl());
+            case REMEMBER_ME_SECRET_KEY -> List.of(messageProperties.getAdminConfigValidationSecretKey(SECRET_KEY_MIN_LENGTH));
+            case REMEMBER_ME_DURATION -> List.of(messageProperties.getAdminConfigRuleInteger(1, Integer.MAX_VALUE),
+                    messageProperties.getAdminConfigHelperSeconds(), messageProperties.getAdminConfigRuleEmptyUsesDefault());
+            case LOGIN_ATTEMPTS_LIMIT, MAX_SESSIONS_PER_USER, EMAIL_QUEUE_POOL_SIZE, EMAIL_QUEUE_CAPACITY ->
+                    List.of(messageProperties.getAdminConfigRuleInteger(1, Integer.MAX_VALUE),
+                            messageProperties.getAdminConfigRuleEmptyUsesDefault());
+            case EMAIL_QUEUE_MAX_RETRY -> List.of(messageProperties.getAdminConfigRuleInteger(0, Integer.MAX_VALUE),
+                    messageProperties.getAdminConfigRuleEmptyUsesDefault());
+            case MAIL_PORT -> List.of(messageProperties.getAdminConfigRuleInteger(1, 65535),
+                    messageProperties.getAdminConfigRuleEmptyUsesDefault());
+            case MAINTENANCE_MODE, MAIL_SMTP_AUTH, MAIL_SMTP_STARTTLS_ENABLE, MAIL_SMTP_SSL_ENABLE, MAIL_DEBUG ->
+                    List.of(messageProperties.getAdminConfigRuleBoolean());
+            case EMAIL_FROM, EMAIL_ADMIN -> List.of(messageProperties.getAdminConfigValidationEmail());
+            case MAIL_HOST -> List.of(messageProperties.getAdminConfigRuleHost());
+            case MAIL_SMTP_SSL_TRUST -> List.of(messageProperties.getAdminConfigRuleSslTrust());
+            case MAIL_SMTP_SOCKETFACTORY_CLASS -> List.of(messageProperties.getAdminConfigRuleJavaClass());
+            case USER_AUTO_ABSENT_TIMEOUT -> List.of(messageProperties.getAdminConfigHelperDurationFormats(),
+                    messageProperties.getAdminConfigRuleDurationNoMinimum());
+            case EMAIL_QUEUE_SENT_LIVE_DURATION -> List.of(messageProperties.getAdminConfigHelperDurationFormats(),
+                    messageProperties.getAdminConfigValidationPositiveDuration());
+            case VERIFICATION_TOKEN_VALID_DURATION, VERIFICATION_TOKEN_LIVE_DURATION,
+                 PASSWORD_RESET_TOKEN_VALID_DURATION, PASSWORD_RESET_TOKEN_LIVE_DURATION ->
+                    List.of(messageProperties.getAdminConfigHelperDurationFormats(),
+                            messageProperties.getAdminConfigValidationDurationMinimum(configEntry.getMinimumTokenDuration().toMinutes()));
+        };
     }
 
     private void saveConfigValues() {
@@ -624,9 +618,17 @@ public class AdminConfigurationSection extends VerticalLayout {
             case REMEMBER_ME_SECRET_KEY -> trimmed.length() < SECRET_KEY_MIN_LENGTH
                     ? messageProperties.getAdminConfigValidationSecretKey(SECRET_KEY_MIN_LENGTH)
                     : null;
-            case USER_AUTO_ABSENT_TIMEOUT, EMAIL_QUEUE_SENT_LIVE_DURATION -> !isValidSpringDuration(trimmed)
+            case USER_AUTO_ABSENT_TIMEOUT -> !isValidSpringDuration(trimmed)
                     ? messageProperties.getAdminConfigValidationDuration()
                     : null;
+            case EMAIL_QUEUE_SENT_LIVE_DURATION -> {
+                if (!isValidSpringDuration(trimmed)) {
+                    yield messageProperties.getAdminConfigValidationDuration();
+                }
+                var duration = DurationStyle.detectAndParse(trimmed);
+                yield duration.isZero() || duration.isNegative()
+                        ? messageProperties.getAdminConfigValidationPositiveDuration() : null;
+            }
             case VERIFICATION_TOKEN_VALID_DURATION, VERIFICATION_TOKEN_LIVE_DURATION,
                  PASSWORD_RESET_TOKEN_VALID_DURATION, PASSWORD_RESET_TOKEN_LIVE_DURATION -> {
                 var minimum = configEntry.getMinimumTokenDuration();
@@ -685,7 +687,7 @@ public class AdminConfigurationSection extends VerticalLayout {
         if (input instanceof IntegerField integerField) {
             Integer value = integerField.getValue();
             return value == null
-                    ? String.valueOf(configEntry.getDefaultValueInteger())
+                    ? configuredDefault(configEntry)
                     : String.valueOf(value);
         }
 
@@ -704,51 +706,28 @@ public class AdminConfigurationSection extends VerticalLayout {
         return configEntry.getDefaultValueString();
     }
 
-    private String buildMetaText(ConfigEntry configEntry) {
-        String defaultText = buildDefaultText(configEntry);
+    private String configuredDefault(ConfigEntry configEntry) {
+        String value = configService.getDefaultValue(configEntry);
+        return value == null ? configEntry.getDefaultValueString() : value;
+    }
 
-        if (DURATION_ENTRIES.contains(configEntry)) {
-            var minimum = configEntry.getMinimumTokenDuration();
-            if (minimum != null) {
-                return defaultText + " • " + messageProperties.getAdminConfigHelperTokenDurationFormats(minimum.toMinutes());
-            }
-            return defaultText + " • " + messageProperties.getAdminConfigHelperDurationFormats();
-        }
-
-        if (configEntry == ConfigEntry.REMEMBER_ME_DURATION) {
-            return defaultText + " • " + messageProperties.getAdminConfigHelperSeconds();
-        }
-
-        if (configEntry == ConfigEntry.REMEMBER_ME_SECRET_KEY) {
-            return defaultText + " • " +
-                    messageProperties.getAdminConfigHelperSecretKeyMin(SECRET_KEY_MIN_LENGTH);
-        }
-
-        if (configEntry == ConfigEntry.SERVICE_NAME) {
-            return defaultText + " • " +
-                    messageProperties.getAdminConfigHelperServiceNameMax(SERVICE_NAME_MAX_LENGTH);
-        }
-
-        return defaultText;
+    private boolean isSecretEntry(ConfigEntry configEntry) {
+        return configEntry == ConfigEntry.REMEMBER_ME_SECRET_KEY || configEntry == ConfigEntry.MAIL_PASSWORD;
     }
 
     private String buildPlaceholder(ConfigEntry configEntry) {
-        return switch (configEntry) {
-            case BASE_URL -> messageProperties.getAdminConfigPlaceholderBaseUrl();
-            case EMAIL_FROM, EMAIL_ADMIN -> messageProperties.getAdminConfigPlaceholderEmail();
-            case MAIL_HOST -> messageProperties.getAdminConfigPlaceholderMailHost();
-            case USER_AUTO_ABSENT_TIMEOUT,
-                 VERIFICATION_TOKEN_VALID_DURATION,
-                 VERIFICATION_TOKEN_LIVE_DURATION,
-                 PASSWORD_RESET_TOKEN_VALID_DURATION,
-                 PASSWORD_RESET_TOKEN_LIVE_DURATION,
-                 EMAIL_QUEUE_SENT_LIVE_DURATION -> messageProperties.getAdminConfigPlaceholderDuration();
-            default -> "";
-        };
+        String defaultValue = configuredDefault(configEntry);
+        if (defaultValue.isEmpty()) {
+            return messageProperties.getAdminConfigPlaceholderEmpty();
+        }
+        return isSecretEntry(configEntry) ? messageProperties.getAdminConfigDefaultConfidential() : defaultValue;
     }
 
     private String buildDefaultText(ConfigEntry configEntry) {
-        return messageProperties.getAdminConfigDefault() + ": " + configEntry.getDefaultValueString();
+        String defaultValue = configuredDefault(configEntry);
+        String displayValue = defaultValue.isEmpty() ? messageProperties.getAdminConfigDefaultEmpty()
+                : isSecretEntry(configEntry) ? messageProperties.getAdminConfigDefaultConfidential() : defaultValue;
+        return messageProperties.getAdminConfigDefault() + ": " + displayValue;
     }
 
     private void installValidationResetListener(Component input) {
