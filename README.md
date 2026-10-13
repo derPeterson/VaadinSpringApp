@@ -22,7 +22,7 @@ Versandausgängen: [Mailqueue-Verarbeitung](docs/email-queue-processing.md).
 
 Belege: `views/RegistrationView.java`, `views/LoginView.java`, `views/admin/`, `service/VerificationService.java`, `service/PasswordResetService.java`, `service/EmailQueueService.java`, `security/SecurityConfig.java` und `scheduler/UserStatusScheduler.java` unter `src/main/java/de/derpeterson/app/`.
 
-## Kontoansichten und Startseite: Silent Cosmos und Inter
+## Kontoansichten, Home und Admin: Silent Cosmos und Inter
 
 Login, Registrierung, Verifikation, Passwortanfrage und Passwortänderung verwenden
 denselben animierten CSS-Hintergrund und dieselben Card-/Formularbausteine.
@@ -34,16 +34,16 @@ den zentralen blauen Verlauf `#3a538d` → `#526ebc`.
 | Zentrale Datei unter `custom-theme/` | Aufgabe |
 | --- | --- |
 | `typography.css` | Inter als Standardschrift für die gesamte Anwendung |
-| `cosmos-theme.css` | Gemeinsame Palette, Lumo-Farbvariablen, Cards, Formulare, Home-Layout und markierte Overlays |
+| `cosmos-theme.css` | Gemeinsame Palette, Lumo-Farbvariablen, Cards, Formulare, App-Layout und markierte Overlays |
 | `cosmos-background.css` | CSS-Sterne, Nebel, Planeten und Animation |
-| `styles.css` | Nur in AdminView geladen; Admin-Layout, Tabellen, Dialoge und markierte Admin-Select-Overlays |
+| `styles.css` | Nur in AdminView geladen; Tabellen, Filter, Pagination und Löschdialog-Akzente |
 
 Typografie, Cosmos-Theme und Hintergrund werden einmalig in `Application.java`
 eingebunden. `styles.css` wird ausschließlich an `AdminView` geladen; seine allgemeinen
 Selektoren sind auf Admin begrenzt und wirken auch nach einer Navigation nicht auf Home. Die Cosmos-Palette
 gilt für `.cosmos-theme` und die aus diesen Ansichten geöffneten Notifications;
-Auch `HomeView` verwendet diese Palette. `AdminView` behält seine bisherigen Farben.
-**Inter gilt ausdrücklich auch im Adminbereich.**
+`HomeView` und `AdminView` verwenden dieselbe Palette, Topbar und Avatar-Popup.
+**Inter gilt für die gesamte Anwendung.**
 Aus dem bereitgestellten Inter-ZIP werden beide vollständigen variablen Fonts lokal
 geladen: normal und kursiv, alle Gewichte von 100 bis 900 einschließlich optischer
 Größen. Es sind keine externen Fontdienste nötig. Die statischen Einzelschnitte
@@ -52,7 +52,8 @@ Lizenz: `custom-theme/fonts/Inter-LICENSE.txt` (SIL Open Font License 1.1).
 
 `CosmosBackgroundComponent` und `CosmosCopyrightComponent` werden von den Kontoansichten
 und der Startseite gemeinsam verwendet. `CosmosPageComponent` ordnet Marke, Cards und Fußzeile an;
-`CosmosCardComponent` stellt den gemeinsamen Card-Rahmen bereit. Registrierung
+`CosmosCardComponent` stellt den gemeinsamen Card-Rahmen bereit;
+`CosmosSectionHeaderComponent` die übersetzten Admin-Bereichsüberschriften. Registrierung
 nutzt eine breitere Card; Feldpaare stehen unter 600 px untereinander. Die Card selbst
 steht bei ausreichend Platz exakt in der Bildschirmmitte. Logo/Servicebezeichnung
 stehen darüber, Copyright darunter; ausgeglichene Grid-Zeilen verhindern ein
@@ -89,7 +90,7 @@ Die Kopfzeile zeigt Service-Logo/-Name und das bestehende Benutzermenü. Verlauf
 Rahmen, Schatten und Abstände entsprechen der Dashboard-Vorschau und stehen zentral
 in `cosmos-theme.css`: `cosmos-app-shell` markiert das AppLayout, `cosmos-topbar`
 die Leiste; Brand, Logo, Servicename und Kontomenü haben gemeinsame `cosmos-topbar-*`
-Klassen. Diese Bausteine können später auch in Admin verwendet werden. Die Leiste
+Klassen. Diese Bausteine werden von Home und Admin gemeinsam verwendet. Die Leiste
 ist regulär 68 px hoch, mit 20/24 px seitlichem Abstand und unter 750 px mit 11 px.
 Die bestehenden Logo-/Avatar-Ressourcen bleiben erhalten. Das Avatar-Popup verwendet
 denselben Card-Verlauf, Rahmen und Schatten, zentrale Cosmos-Buttons sowie eine passende
@@ -97,8 +98,8 @@ Statusauswahl. Menüabstände und schmale Fenster werden über `cosmos-user-menu
 gesteuert; Kontofunktionen, Statuswechsel und Sprachwahl bleiben erhalten.
 Die Willkommen-Card wurde entfernt. Anmeldung, Registrierung und der Zugang zur
 Administration bleiben über das Benutzermenü erreichbar. Authentifizierung, Status,
-Sprachwahl und Sicherheitsnavigation bleiben erhalten; die Adminansicht und ihre
-Menüs werden in diesem Paket nicht umgebaut.
+Sprachwahl und Sicherheitsnavigation bleiben erhalten. Die Adminansicht verwendet
+inzwischen dieselben gemeinsamen Bausteine; ihr eigener Aufbau steht im folgenden Abschnitt.
 Die Startseite ist für schmale Fenster mit umbrechenden Inhalten gestaltet. Copyright
 und Sprachwechsel verwenden dieselben gemeinsamen Bausteine wie die Kontoansichten.
 
@@ -106,6 +107,29 @@ und Sprachwechsel verwenden dieselben gemeinsamen Bausteine wie die Kontoansicht
 statt. Für dieses Gestaltungspaket wurden auf Wunsch keine Builds oder Tests ausgeführt.
 Die bisherigen Browsererwartungen zur unveränderten Home-Palette müssen beim späteren
 gemeinsamen Prüfabschluss angepasst werden; die Admin-Abgrenzung bleibt bestehen.
+
+### Admin im gemeinsamen Cosmos-Theme
+
+Die Admin-Umstellung verwendet die Dashboard-HTML als gestalterische Referenz.
+Topbar (68 px), Service-Logo, Avatar-Schimmer, Popup, Hintergrund und Copyright sind
+dieselben Bausteine wie in Home. Die dunkle Seitenleiste verwendet kompakte Einträge,
+eine hervorgehobene aktuelle Auswahl und die bestehenden Konfigurationsgruppen.
+Auf schmalen Fenstern verwendet Vaadin seine aufklappbare Navigation; sie bleibt über
+das Service-Logo erreichbar. Es werden keine vorgetäuschten Systemstatuswerte angezeigt.
+
+Dashboard, Konfiguration, Mailtest und Benutzerverwaltung verwenden gemeinsame
+Bereichsüberschriften und Cosmos-Cards. Formulare, Filter und Benutzer-/Informationsdialoge
+verwenden dieselbe Palette und Eingabegestaltung. Tabelle, Pagination sowie die roten
+Löschdialog-Akzente bleiben Admin-Spezialfälle in `styles.css`; dieses Stylesheet wird
+weiterhin nur an AdminView geladen. Der gemeinsame Rest steht in `cosmos-theme.css`.
+Formularpaare und Aktionsleisten können bei wenig Platz umbrechen.
+
+Rollenprüfung, Datenzugriffe, Validierung, Filter, Speicherung, Mailaktionen und
+Kontoschutzregeln sind bei dieser Umstellung unverändert geblieben.
+**Prüfung ausstehend:** Diese Admin-Umstellung ist noch nicht gebaut oder automatisiert
+geprüft. Tests und Korrekturen erfolgen erst nach der ausdrücklichen Freigabe im Chat;
+es gibt dafür keinen aktiven automatischen Start. Beim späteren Prüflauf muss auch die
+bisherige Erwartung einer unveränderten Admin-Palette bewusst aktualisiert werden.
 
 ## Gemeinsame Texte und UI-Konstanten
 

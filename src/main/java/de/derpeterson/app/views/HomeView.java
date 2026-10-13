@@ -105,10 +105,6 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
         createTrackedUserPopover(createPopoverActions());
         // Nur das Startseiten-Menü erhält die Cosmos-Palette; das Admin-Menü bleibt unverändert.
         userPopoverMenu.addThemeName("cosmos");
-        userPopoverMenu.getPopover().getChildren().forEach(content -> {
-            content.getElement().getClassList().add("cosmos-theme");
-            content.getElement().getClassList().add("cosmos-user-menu");
-        });
 
         userLayout.add(userButton);
         return userLayout;
@@ -128,7 +124,7 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
         CosmosCopyrightComponent copyright = new CosmosCopyrightComponent(configService,
                 Clock.systemDefaultZone(), messageProperties::getAccountCopyrightTemplate);
         Div main = new Div(introduction, copyright);
-        main.addClassName("cosmos-dashboard-main");
+        main.addClassName("cosmos-app-main");
         main.getElement().setAttribute("role", "main");
         return new Div(new CosmosBackgroundComponent(), main);
     }

@@ -40,7 +40,8 @@ import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
-import de.derpeterson.app.ui.components.CardComponent;
+import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.validation.EmailConflict;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -106,16 +107,13 @@ public class AdminUserManagementSection extends VerticalLayout {
         this.securityService = securityService;
 
         setPadding(false);
-        setSpacing(true);
+        setSpacing(false);
         setWidthFull();
         setAlignItems(FlexComponent.Alignment.CENTER);
-        addClassNames(LumoUtility.Gap.MEDIUM);
+        addClassNames("cosmos-admin-section", "cosmos-admin-section--users");
 
         title = new H1();
-        title.addClassNames(
-                LumoUtility.Margin.NONE,
-                LumoUtility.FontSize.XXLARGE
-        );
+
 
         description = new Span();
         description.addClassNames(LumoUtility.TextColor.SECONDARY);
@@ -151,23 +149,19 @@ public class AdminUserManagementSection extends VerticalLayout {
                 enabledFilter, statusFilter, roleFilter, lastActivityFilter);
 
         VerticalLayout layout = new VerticalLayout(
-                title,
-                description,
                 filterBar,
                 userGrid,
                 pagination
         );
         layout.setPadding(false);
-        layout.setSpacing(true);
+        layout.setSpacing(false);
+        layout.addClassName("cosmos-admin-users-content");
         layout.setWidthFull();
         layout.setAlignItems(Alignment.START);
-        layout.setAlignSelf(Alignment.CENTER, title, description);
 
-        CardComponent card = new CardComponent(layout);
-        card.setWidthFull();
-        card.setMaxWidth("1300px");
-
-        add(card);
+        CosmosCardComponent card = new CosmosCardComponent(layout);
+        card.addClassName("cosmos-admin-users-card");
+        add(new CosmosSectionHeaderComponent(title, description), card);
 
         refreshTexts();
         refreshGrid();
@@ -386,6 +380,8 @@ public class AdminUserManagementSection extends VerticalLayout {
         }
 
         Dialog dialog = new Dialog();
+        dialog.addClassName("cosmos-theme");
+        dialog.getElement().getThemeList().add("cosmos");
         dialog.setHeaderTitle(messageProperties.getAdminUsersDeleteDialogTitle());
         dialog.addClassName("admin-user-delete-dialog");
         dialog.setCloseOnEsc(true);
@@ -418,13 +414,15 @@ public class AdminUserManagementSection extends VerticalLayout {
         confirmButton.addClassName("admin-user-delete-confirm");
 
         HorizontalLayout footer = new HorizontalLayout(cancelButton, confirmButton);
+        footer.addClassName("cosmos-dialog-actions");
         footer.setWidthFull();
         footer.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
 
         dialog.getFooter().add(footer);
         VerticalLayout dialogLayout = new VerticalLayout(warningText, userText);
         dialogLayout.setPadding(false);
-        dialogLayout.setSpacing(true);
+        dialogLayout.setSpacing(false);
+        dialogLayout.addClassName("cosmos-dialog-form");
 
         dialog.add(dialogLayout);
         dialog.open();
@@ -436,11 +434,12 @@ public class AdminUserManagementSection extends VerticalLayout {
         Long expectedVersion = user.getVersion();
 
         Dialog dialog = new Dialog();
+        dialog.addClassName("cosmos-theme");
+        dialog.getElement().getThemeList().add("cosmos");
         dialog.setCloseOnEsc(true);
         dialog.setCloseOnOutsideClick(false);
         dialog.setDraggable(true);
         dialog.setResizable(true);
-        dialog.setWidth("760px");
         dialog.addClassName("admin-user-dialog");
         dialog.setHeaderTitle(editMode
                 ? messageProperties.getAdminUsersEditDialogTitle()
@@ -634,13 +633,16 @@ public class AdminUserManagementSection extends VerticalLayout {
 
         HorizontalLayout nameRow = new HorizontalLayout(firstNameField, lastNameField);
         nameRow.setWidthFull();
+        nameRow.addClassName("cosmos-form-row");
         nameRow.expand(firstNameField, lastNameField);
 
         HorizontalLayout masterDataRow = new HorizontalLayout(genderComboBox, birthDatePicker);
         masterDataRow.setWidthFull();
+        masterDataRow.addClassName("cosmos-form-row");
         masterDataRow.expand(genderComboBox, birthDatePicker);
 
         HorizontalLayout footer = new HorizontalLayout();
+        footer.addClassName("cosmos-dialog-actions");
         footer.setWidthFull();
         footer.setAlignItems(Alignment.CENTER);
         if (editMode) {
@@ -650,7 +652,7 @@ public class AdminUserManagementSection extends VerticalLayout {
             deleteButton.setEnabled(!isCurrentUser(user));
             footer.add(deleteButton);
         }
-        cancelButton.getStyle().set("margin-inline-start", "auto");
+        cancelButton.addClassName("cosmos-dialog-cancel");
         footer.add(cancelButton, saveButton);
 
         VerticalLayout dialogLayout = new VerticalLayout(
@@ -664,7 +666,8 @@ public class AdminUserManagementSection extends VerticalLayout {
         );
         dialog.getFooter().add(footer);
         dialogLayout.setPadding(false);
-        dialogLayout.setSpacing(true);
+        dialogLayout.setSpacing(false);
+        dialogLayout.addClassName("cosmos-dialog-form");
 
         dialog.add(dialogLayout);
         Runnable refreshErrors = () -> {

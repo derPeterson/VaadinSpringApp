@@ -1,22 +1,37 @@
 # Browserabdeckung und offene Punkte
 
-**Letzter vollständiger Prüfstand: 13.10.2026 – 1055 Anwendungstests, 26 Helper-/Reportertests und je 84 Browserfälle auf DE/EN erfolgreich. Spätere Designänderungen einschließlich Home sind noch ungeprüft.**
+**Letzter vollständiger Prüfstand: 13.10.2026 – 1055 Anwendungstests, 26 Helper-/Reportertests und je 84 Browserfälle auf DE/EN erfolgreich. Spätere Designänderungen einschließlich Home und Admin sind noch ungeprüft.**
 Bedienung und Aufbau stehen in der [Browser-Testanleitung](README.md).
 Historische Run-Berichte bleiben unverändert; hier steht der aktuelle Prüfstand.
+
+## Admin-Gestaltung – Prüfabschluss ausstehend
+
+Ausgangscommit für dieses Paket: `9d671af` auf `main` (abgeschlossene Home-Gestaltung).
+Admin verwendet dieselbe Cosmos-Palette, Topbar, Animation und dasselbe Avatar-Popup.
+Seitenleiste, Dashboard, Konfiguration, Mailtest und Benutzerverwaltung samt Dialogen
+sind gestalterisch umgestellt. Funktionen und Sicherheitsprüfungen bleiben erhalten.
+Es wurden keine Builds, Browser- oder Anwendungstests für diesen Entwurf ausgeführt.
+
+Beim später ausdrücklich freigegebenen Gesamtlauf sind die bestehenden fachlichen
+Adminfälle weiterhin relevant. Ergänzend sind Navigation bei schmalen Fenstern,
+Konfigurationsgruppen/Infodialoge, Filtermenü und Statusauswahl, Tabellenpagination,
+Benutzerformularpaare und Löschdialoge auf DE/EN zu prüfen. UI-03F sowie COSMOS-03/04
+müssen die nun beabsichtigte gemeinsame Home-/Admin-Palette berücksichtigen.
+Historische Berichte dokumentieren den damaligen Stand und bleiben unverändert.
 
 ## Home-Gestaltung – gemeinsamer Prüfabschluss ausstehend
 
 Die Startseite nutzt jetzt die gemeinsame Cosmos-Palette, Animation und
 Copyright-Komponente. Die Willkommen-Card wurde auf Wunsch entfernt;
 die Kontoaktionen bleiben im bestehenden Benutzermenü erreichbar. Die Adminansicht
-bleibt unverändert.
+wurde inzwischen im folgenden Paket ebenfalls umgestellt; siehe oben.
 Home-Texte verwenden typisierte DE-/EN-Getter. Auch die jüngsten Eingabeschrift-/
 Login-Ausrichtungsänderungen sind seit dem letzten Gesamtlauf noch ungeprüft.
 
 Auf Wunsch wurden für dieses Paket keine Builds, Browser- oder Anwendungstests
 ausgeführt. Beim späteren Prüfabschluss sind die bisherigen Home-Abgrenzungen in UI-03F und
 COSMOS-04 auf die jetzt beabsichtigte gemeinsame Palette umzustellen.
-Die unveränderte Admin-Palette soll weiterhin abgesichert werden. Historische
+Auch die inzwischen beabsichtigte gemeinsame Admin-Palette ist zu berücksichtigen. Historische
 Run-Berichte und die unten beschriebenen damaligen Ergebnisse bleiben erhalten.
 
 ## Letzter vollständig geprüfter Stand – 13.10.2026

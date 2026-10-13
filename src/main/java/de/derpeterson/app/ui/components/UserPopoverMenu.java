@@ -102,6 +102,10 @@ public class UserPopoverMenu {
         if ("cosmos".equals(themeName)) {
             // Native Platzierung außerhalb des Felds; bei wenig Platz darf Vaadin nach oben ausweichen.
             userStatusSelect.setNoVerticalOverlap(true);
+            userPopover.getChildren().forEach(content -> {
+                content.getElement().getClassList().add("cosmos-theme");
+                content.getElement().getClassList().add("cosmos-user-menu");
+            });
         }
     }
 

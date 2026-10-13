@@ -101,9 +101,8 @@ UI-03F prüfte bisher die CSS-Animation und `prefers-reduced-motion` sowie die B
 der Dekoration auf die Kontoansichten. Home gehört jetzt ebenfalls zum Cosmos-Bereich;
 diese Erwartung muss beim gemeinsamen Prüfabschluss angepasst werden. Die echten Vaadin-Felder/Buttons verwenden
 die zentrale Cosmos-Lumo-Palette; Card und Anordnung folgen der Designvorlage.
-Inter wird lokal und global bereitgestellt. Home verwendet inzwischen ebenfalls die
-zentrale Cosmos-Palette; Admin behält seine bisherigen Farben. Der Prüfstand der
-Home-Erweiterung ist noch offen.
+Inter wird lokal und global bereitgestellt. Home und Admin verwenden inzwischen ebenfalls die
+zentrale Cosmos-Palette. Der Prüfstand beider Erweiterungen ist noch offen.
 
 ```powershell
 .\browser-tests\run.ps1 -Suite login-checks -Language de
@@ -134,7 +133,7 @@ Fußtext werden geprüft. Der ursprüngliche Wert wird wiederhergestellt.
 COSMOS-04 prüft die schmale Fehlermeldung mit Card-Verlauf. Seine bisherige Erwartung
 zur unveränderten Home-Palette muss beim gemeinsamen Prüfabschluss angepasst werden.
 Globale Inter-Schrift und die ursprünglichen Home-/Adminfarben wurden im letzten Lauf
-geprüft; die neue Home-Gestaltung ist darin noch nicht enthalten.
+geprüft; die neue Home-/Admin-Gestaltung ist darin noch nicht enthalten.
 
 ```powershell
 .\browser-tests\run.ps1 -Suite cosmos-design -Language de
@@ -334,3 +333,12 @@ docker compose -f compose.browser-tests.yaml -p vaadinspringapp-e2e-java-DEINEKE
 ```
 
 Keine fremden oder manuellen Docker-Projekte zum Aufräumen verwenden.
+
+### Ausstehende Admin-Designprüfung
+
+Home und Admin verwenden jetzt Topbar, Hintergrund, Cards, Popup und Cosmos-Palette
+gemeinsam. Admin hat zusätzlich eine neue Navigation und gestaltete Konfigurations-,
+Mailtest-, Benutzer- und Dialogflächen. Bestehende fachliche Browserfälle bleiben
+relevant; ihre bisherigen Aussagen zur unveränderten Admin-Palette müssen beim
+gemeinsamen Prüfabschluss angepasst werden. Auch schmale Navigation, Filtermenü,
+Statusauswahl und Formularpaare sind dabei zu prüfen. Noch keine neuen Prüfergebnisse.

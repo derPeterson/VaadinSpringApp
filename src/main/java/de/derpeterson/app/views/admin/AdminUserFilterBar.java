@@ -42,6 +42,7 @@ final class AdminUserFilterBar extends VerticalLayout {
 
         MenuBar menu = new MenuBar();
         menu.addClassName("admin-user-add-filter");
+        menu.getElement().getThemeList().add("cosmos");
         HorizontalLayout label = new HorizontalLayout(VaadinIcon.FILTER.create(), addFilterLabel);
         label.setSpacing(false);
         label.setAlignItems(Alignment.CENTER);

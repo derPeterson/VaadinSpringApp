@@ -25,6 +25,8 @@ import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
+import de.derpeterson.app.ui.components.CosmosBackgroundComponent;
+import de.derpeterson.app.ui.components.CosmosCopyrightComponent;
 import de.derpeterson.app.views.admin.AdminConfigurationSection;
 import de.derpeterson.app.views.admin.AdminDashboardSection;
 import de.derpeterson.app.views.admin.AdminMailTestSection;
@@ -35,6 +37,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -94,7 +97,7 @@ public class AdminView extends IsAuthenticatedBaseView {
         super(messageProperties, securityService, userService, userStatusBroadcaster, request);
 
         this.configService = configService;
-        addClassName("admin-view");
+        addClassNames("admin-view", "cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-admin");
 
         UserDetails authenticatedUser = securityService.getAuthenticatedUser(request).orElse(null);
 
@@ -102,11 +105,10 @@ public class AdminView extends IsAuthenticatedBaseView {
         addToDrawer(createSideNavigation());
 
         sectionLayout = new VerticalLayout();
-        sectionLayout.setSizeFull();
-        sectionLayout.setPadding(true);
-        sectionLayout.setSpacing(true);
-        sectionLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-        sectionLayout.addClassNames(LumoUtility.Background.BASE);
+        sectionLayout.setWidthFull();
+        sectionLayout.setPadding(false);
+        sectionLayout.setSpacing(false);
+        sectionLayout.addClassName("cosmos-admin-sections");
 
         dashboardSection = new AdminDashboardSection(messageProperties, authenticatedUser);
         configurationSection = new AdminConfigurationSection(
@@ -122,7 +124,12 @@ public class AdminView extends IsAuthenticatedBaseView {
                 securityService
         );
 
-        setContent(sectionLayout);
+        CosmosCopyrightComponent copyright = new CosmosCopyrightComponent(configService,
+                Clock.systemDefaultZone(), messageProperties::getAccountCopyrightTemplate);
+        Div main = new Div(sectionLayout, copyright);
+        main.addClassName("cosmos-app-main");
+        main.getElement().setAttribute("role", "main");
+        setContent(new Div(new CosmosBackgroundComponent(), main));
 
         selectSection(AdminSection.DASHBOARD, null);
         refreshTexts();
@@ -135,63 +142,29 @@ public class AdminView extends IsAuthenticatedBaseView {
     }
 
     private HorizontalLayout createNavbar() {
-        HorizontalLayout navbar = new HorizontalLayout();
-        navbar.setWidthFull();
-        navbar.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-        navbar.addClassNames(
-                LumoUtility.Padding.Horizontal.MEDIUM,
-                LumoUtility.Padding.Vertical.SMALL
-        );
-
-        HorizontalLayout leftLayout = createLeftNavbarLayout();
-        HorizontalLayout rightLayout = createRightNavbarLayout();
-
-        navbar.add(leftLayout, rightLayout);
-        navbar.expand(leftLayout, rightLayout);
-
+        HorizontalLayout navbar = new HorizontalLayout(createLeftNavbarLayout(), createRightNavbarLayout());
+        navbar.setSpacing(false);
+        navbar.addClassName("cosmos-topbar");
         return navbar;
     }
 
     private HorizontalLayout createLeftNavbarLayout() {
         HorizontalLayout leftLayout = new HorizontalLayout();
-        leftLayout.setWidthFull();
-        leftLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        leftLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-        leftLayout.addClassNames(LumoUtility.Gap.SMALL);
+        leftLayout.setSpacing(false);
+        leftLayout.addClassName("cosmos-topbar-brand");
 
         Image drawerToggleIcon = new Image("custom-theme/service_logo.png", "Service Icon");
-        drawerToggleIcon.setWidth("48px");
-        drawerToggleIcon.setHeight("48px");
-
+        drawerToggleIcon.addClassName("cosmos-topbar-logo");
         Button drawerToggle = new Button(drawerToggleIcon);
         drawerToggle.addThemeVariants(LUMO_TERTIARY_INLINE);
+        drawerToggle.addClassName("cosmos-drawer-toggle");
         drawerToggle.getElement().setAttribute("aria-label", "Toggle navigation");
         drawerToggle.addClickListener(event -> setDrawerOpened(!isDrawerOpened()));
 
-        serviceNameSpan.addClassNames(
-                LumoUtility.FontSize.XXLARGE,
-                LumoUtility.FontWeight.SEMIBOLD,
-                LumoUtility.FlexWrap.NOWRAP
-        );
-
+        serviceNameSpan.addClassName("cosmos-topbar-service-name");
         refreshServiceName();
-
         headerTitle = new Span();
-        headerTitle.addClassNames(
-                LumoUtility.Display.INLINE_FLEX,
-                LumoUtility.AlignItems.CENTER,
-                LumoUtility.Padding.Vertical.XSMALL,
-                LumoUtility.Padding.Horizontal.SMALL,
-                LumoUtility.Border.ALL,
-                LumoUtility.BorderColor.PRIMARY,
-                LumoUtility.BorderRadius.LARGE,
-                LumoUtility.Background.PRIMARY_10,
-                LumoUtility.TextTransform.UPPERCASE,
-                LumoUtility.FontWeight.SEMIBOLD,
-                LumoUtility.TextColor.PRIMARY,
-                LumoUtility.FontSize.SMALL
-        );
-
+        headerTitle.addClassName("cosmos-topbar-badge");
         leftLayout.add(drawerToggle, serviceNameSpan, headerTitle);
         return leftLayout;
     }
@@ -202,9 +175,8 @@ public class AdminView extends IsAuthenticatedBaseView {
 
     private HorizontalLayout createRightNavbarLayout() {
         HorizontalLayout rightLayout = new HorizontalLayout();
-        rightLayout.setWidthFull();
-        rightLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        rightLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+        rightLayout.setSpacing(false);
+        rightLayout.addClassName("cosmos-topbar-account-menu");
 
         Button userButton = createTrackedUserButton();
 
@@ -216,7 +188,7 @@ public class AdminView extends IsAuthenticatedBaseView {
         );
 
         createTrackedUserPopover(popoverActions);
-        userPopoverMenu.addThemeName("admin");
+        userPopoverMenu.addThemeName("cosmos");
         rightLayout.add(userButton);
 
         return rightLayout;
@@ -253,13 +225,7 @@ public class AdminView extends IsAuthenticatedBaseView {
         configurationSubmenuLayout.setSpacing(false);
         configurationSubmenuLayout.setWidthFull();
         configurationSubmenuLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-        configurationSubmenuLayout.addClassNames(
-                LumoUtility.Padding.Left.SMALL,
-                LumoUtility.Padding.Right.NONE,
-                LumoUtility.Gap.SMALL,
-                LumoUtility.Overflow.HIDDEN,
-                LumoUtility.Background.TRANSPARENT
-        );
+        configurationSubmenuLayout.addClassName("cosmos-nav-submenu");
 
         addConfigurationSubmenuButton(AdminConfigGroup.GENERAL);
         addConfigurationSubmenuButton(AdminConfigGroup.SECURITY);
@@ -281,14 +247,7 @@ public class AdminView extends IsAuthenticatedBaseView {
         drawerContent.setSpacing(false);
         drawerContent.setWidthFull();
         drawerContent.setAlignItems(FlexComponent.Alignment.STRETCH);
-        drawerContent.addClassNames(
-                LumoUtility.Overflow.HIDDEN,
-                LumoUtility.Padding.NONE,
-                LumoUtility.Padding.Top.SMALL,
-                LumoUtility.Padding.Bottom.SMALL,
-                LumoUtility.Margin.NONE,
-                LumoUtility.Background.TRANSPARENT
-        );
+        drawerContent.addClassName("cosmos-sidebar");
         return drawerContent;
     }
 
@@ -304,12 +263,7 @@ public class AdminView extends IsAuthenticatedBaseView {
         navLayout.setSpacing(false);
         navLayout.setWidthFull();
         navLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-        navLayout.addClassNames(
-                LumoUtility.Gap.SMALL,
-                LumoUtility.Padding.NONE,
-                LumoUtility.Margin.NONE,
-                LumoUtility.Background.TRANSPARENT
-        );
+        navLayout.addClassName("cosmos-nav");
         return navLayout;
     }
 
@@ -339,41 +293,10 @@ public class AdminView extends IsAuthenticatedBaseView {
             item = new Div(textSpan);
         }
 
-        textSpan.addClassNames(
-                LumoUtility.Whitespace.NORMAL,
-                LumoUtility.LineHeight.SMALL
-        );
+        textSpan.addClassName("cosmos-nav-label");
+        item.addClassNames("admin-nav-item", "cosmos-nav-item");
+        if (submenu) item.addClassName("cosmos-nav-item--sub");
 
-        item.addClassNames(
-                LumoUtility.Display.FLEX,
-                LumoUtility.AlignItems.CENTER,
-                LumoUtility.JustifyContent.START,
-                LumoUtility.Gap.SMALL,
-                LumoUtility.TextAlignment.LEFT,
-                LumoUtility.Margin.NONE,
-                LumoUtility.MinWidth.NONE,
-                LumoUtility.Width.FULL,
-                LumoUtility.BoxSizing.BORDER,
-                LumoUtility.BorderRadius.NONE,
-                LumoUtility.Border.START,
-                LumoUtility.BorderColor.CONTRAST_10
-        );
-
-        if (submenu) {
-            item.addClassNames(
-                    LumoUtility.Padding.Vertical.SMALL,
-                    LumoUtility.Padding.Left.SMALL,
-                    LumoUtility.Padding.Right.XSMALL
-            );
-        } else {
-            item.addClassNames(
-                    LumoUtility.Padding.Vertical.MEDIUM,
-                    LumoUtility.Padding.Left.SMALL,
-                    LumoUtility.Padding.Right.XSMALL
-            );
-        }
-
-        item.addClassName("admin-nav-item");
         item.addClickListener(event -> clickAction.run());
 
         return item;
@@ -412,10 +335,10 @@ public class AdminView extends IsAuthenticatedBaseView {
     }
 
     private void updateNavigationState() {
-        applyNavigationItemState(dashboardNavItem, activeSection == AdminSection.DASHBOARD, false);
-        applyNavigationItemState(configurationNavItem, activeSection == AdminSection.CONFIGURATION, false);
-        applyNavigationItemState(mailTestNavItem, activeSection == AdminSection.MAIL_TEST, false);
-        applyNavigationItemState(userManagementNavItem, activeSection == AdminSection.USER_MANAGEMENT, false);
+        applyNavigationItemState(dashboardNavItem, activeSection == AdminSection.DASHBOARD);
+        applyNavigationItemState(configurationNavItem, activeSection == AdminSection.CONFIGURATION);
+        applyNavigationItemState(mailTestNavItem, activeSection == AdminSection.MAIL_TEST);
+        applyNavigationItemState(userManagementNavItem, activeSection == AdminSection.USER_MANAGEMENT);
 
         if (configurationSubmenuLayout != null) {
             configurationSubmenuLayout.setVisible(true);
@@ -424,45 +347,21 @@ public class AdminView extends IsAuthenticatedBaseView {
         configurationSubmenuItems.forEach((group, item) -> {
             boolean isActive = activeSection == AdminSection.CONFIGURATION
                     && Objects.equals(activeConfigurationGroup, group);
-            applyNavigationItemState(item, isActive, true);
+            applyNavigationItemState(item, isActive);
         });
     }
 
-    private void applyNavigationItemState(Div item, boolean active, boolean submenuItem) {
+    private void applyNavigationItemState(Div item, boolean active) {
         if (item == null) {
             return;
         }
 
-        item.removeClassNames(
-                LumoUtility.Background.BASE,
-                LumoUtility.Background.TRANSPARENT,
-                LumoUtility.TextColor.PRIMARY,
-                LumoUtility.TextColor.SECONDARY,
-                LumoUtility.BorderColor.PRIMARY,
-                LumoUtility.BorderColor.CONTRAST_10,
-                LumoUtility.FontWeight.SEMIBOLD,
-                LumoUtility.FontWeight.BOLD
-        );
-
         if (active) {
-            item.addClassNames(
-                    LumoUtility.Background.BASE,
-                    LumoUtility.TextColor.PRIMARY,
-                    LumoUtility.BorderColor.PRIMARY
-            );
-            item.addClassNames(submenuItem
-                    ? LumoUtility.FontWeight.SEMIBOLD
-                    : LumoUtility.FontWeight.BOLD);
-            return;
-        }
-
-        item.addClassNames(
-                LumoUtility.Background.TRANSPARENT,
-                LumoUtility.BorderColor.CONTRAST_10
-        );
-
-        if (submenuItem) {
-            item.addClassNames(LumoUtility.TextColor.SECONDARY);
+            item.addClassName("cosmos-nav-item--active");
+            item.getElement().setAttribute("aria-current", "page");
+        } else {
+            item.removeClassName("cosmos-nav-item--active");
+            item.getElement().removeAttribute("aria-current");
         }
     }
 

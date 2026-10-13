@@ -1,51 +1,5 @@
-/* Nur AdminView lädt dieses Stylesheet. Allgemeine Regeln sind zusätzlich
- * begrenzt, weil geladene Styles beim Wechsel zu Home im Browser erhalten bleiben. */
-vaadin-app-layout.admin-view {
-    background-color: var(--lumo-base-color);
-    --vaadin-input-field-autofill-background: var(--lumo-contrast-10pct);
-    --vaadin-input-field-autofill-color: var(--lumo-body-text-color);
-}
-
-vaadin-app-layout.admin-view::part(drawer) {
-    border-inline-end: none;
-    background-color: var(--lumo-contrast-10pct);
-}
-
-/* Bisherige Menübreite bleibt im Adminbereich erhalten. */
-.user-popover-content:not(.cosmos-user-menu) {
-    min-width: 300px;
-}
-
-/* Admin View */
-.admin-nav-item,
-.admin-nav-item * {
-    cursor: pointer;
-}
-
-.admin-nav-item {
-    -webkit-user-select: none;
-    user-select: none;
-}
-
-/* Select */
-vaadin-select-overlay[theme~="admin"] vaadin-select-item::part(checkmark) {
-    display: none !important;
-}
-
-vaadin-select-overlay[theme~="admin"]::part(overlay) {
-    width: 450px !important;
-}
-
-vaadin-select-overlay[theme~="admin"] vaadin-select-item[selected] {
-    border: 2px solid var(--lumo-primary-color) !important;
-    background-color: var(--lumo-primary-color-10pct) !important;
-    border-radius: 4px;
-}
-
-vaadin-select-overlay[theme~="admin"] vaadin-select-item::part(content) {
-    padding-left: 24px;
-}
-
+/* Admin-Spezialfälle: Tabelle, Filter, Pagination und destruktive Dialogakzente.
+ * Palette, App-Layout, Navigation, Cards, Felder und Buttons stehen in cosmos-theme.css. */
 /* User management: aligned search/actions and optional filter row. */
 .admin-user-filter-bar {
     gap: 0;
@@ -141,7 +95,7 @@ vaadin-select-overlay[theme~="admin"] vaadin-select-item::part(content) {
 
 .admin-users-grid::part(header-cell),
 vaadin-dialog.admin-user-dialog::part(header) {
-    background: color-mix(in srgb, var(--lumo-primary-color) 72%, var(--lumo-base-color));
+    background: color-mix(in srgb, var(--lumo-primary-color) 35%, var(--lumo-base-color));
     color: var(--lumo-primary-contrast-color);
     font-weight: 600;
 }

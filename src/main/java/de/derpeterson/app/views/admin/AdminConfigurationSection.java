@@ -26,7 +26,8 @@ import de.derpeterson.app.config.TokenDurationPolicy;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
-import de.derpeterson.app.ui.components.CardComponent;
+import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,30 +86,25 @@ public class AdminConfigurationSection extends VerticalLayout {
         this.serviceNameChangedAction = serviceNameChangedAction;
 
         setPadding(false);
-        setSpacing(true);
+        setSpacing(false);
         setWidthFull();
         setAlignItems(FlexComponent.Alignment.CENTER);
-        addClassNames(LumoUtility.Gap.MEDIUM);
+        addClassNames("cosmos-admin-section", "cosmos-admin-section--config");
 
         configurationTitle = new H1();
-        configurationTitle.addClassNames(
-                LumoUtility.Margin.NONE,
-                LumoUtility.FontSize.XXLARGE
-        );
+
 
         configurationDescription = new Span();
         configurationDescription.addClassNames(LumoUtility.TextColor.SECONDARY);
 
         currentGroupTitle = new H2();
-        currentGroupTitle.addClassNames(
-                LumoUtility.FontSize.XLARGE,
-                LumoUtility.FontWeight.SEMIBOLD
-        );
+        currentGroupTitle.addClassName("cosmos-config-group-title");
 
         configFieldsContainer = new VerticalLayout();
         configFieldsContainer.setPadding(false);
         configFieldsContainer.setSpacing(true);
         configFieldsContainer.setWidthFull();
+        configFieldsContainer.addClassName("cosmos-config-fields");
 
         registerConfigGroups();
 
@@ -130,11 +126,9 @@ public class AdminConfigurationSection extends VerticalLayout {
 
         VerticalLayout configLayout = getButtonVerticalLayout();
 
-        CardComponent configCard = new CardComponent(configLayout);
-        configCard.setWidthFull();
-        configCard.setMaxWidth("980px");
-
-        add(configCard);
+        CosmosCardComponent configCard = new CosmosCardComponent(configLayout);
+        configCard.addClassName("cosmos-admin-form-card");
+        add(new CosmosSectionHeaderComponent(configurationTitle, configurationDescription), configCard);
 
         if (!configGroupFilters.isEmpty()) {
             selectedGroup = configGroupFilters.keySet().iterator().next();
@@ -161,16 +155,16 @@ public class AdminConfigurationSection extends VerticalLayout {
         buttonLayout.setSpacing(true);
         buttonLayout.setWidthFull();
         buttonLayout.expand(saveWrapper, reloadWrapper);
+        buttonLayout.addClassName("cosmos-admin-form-actions");
 
         VerticalLayout configLayout = new VerticalLayout(
-                configurationTitle,
-                configurationDescription,
                 currentGroupTitle,
                 configFieldsContainer,
                 buttonLayout
         );
         configLayout.setPadding(false);
-        configLayout.setSpacing(true);
+        configLayout.setSpacing(false);
+        configLayout.addClassName("cosmos-admin-form");
         configLayout.setAlignItems(Alignment.START);
         return configLayout;
     }
@@ -408,7 +402,7 @@ public class AdminConfigurationSection extends VerticalLayout {
         wrapper.setPadding(false);
         wrapper.setSpacing(false);
         wrapper.setWidthFull();
-        wrapper.addClassNames(LumoUtility.Gap.XSMALL);
+        wrapper.addClassNames(LumoUtility.Gap.XSMALL, "cosmos-config-field");
 
         HorizontalLayout headerLayout = createFieldHeader(configEntry);
         if (input instanceof HasAriaLabel labelledInput) {
@@ -462,12 +456,11 @@ public class AdminConfigurationSection extends VerticalLayout {
         dialog.setCloseOnOutsideClick(true);
         dialog.setDraggable(true);
         dialog.setResizable(true);
-        dialog.getElement().getStyle().set("border-radius", "12px");
+        dialog.addClassNames("cosmos-theme", "cosmos-admin-info-dialog");
+        dialog.getElement().getThemeList().add("cosmos");
 
         Span content = new Span(messageProperties.getAdminConfigEntryTooltip(configEntry));
-        content.getStyle()
-                .set("white-space", "normal")
-                .set("line-height", "1.5");
+        content.addClassName("cosmos-dialog-text");
 
         Button closeButton = new Button(messageProperties.getOkayHomeButton(), e -> dialog.close());
         closeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
