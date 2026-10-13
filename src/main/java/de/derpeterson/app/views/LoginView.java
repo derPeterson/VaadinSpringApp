@@ -185,18 +185,21 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
         HorizontalLayout rememberMeLayout = new HorizontalLayout();
         rememberMeLayout.addClassName("cosmos-remember");
+        rememberMeLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         rememberMeLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
         rememberMeLayout.add(rememberMeCheckBox);
 
         forgotPasswordLink.addClassNames("underline");
         HorizontalLayout forgotPasswordLayout = new HorizontalLayout();
         forgotPasswordLayout.addClassName("cosmos-forgot");
+        forgotPasswordLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         forgotPasswordLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
         forgotPasswordLayout.add(forgotPasswordLink);
 
         HorizontalLayout secondaryActionLayout = new HorizontalLayout();
         secondaryActionLayout.setWidthFull();
         secondaryActionLayout.addClassName("cosmos-options");
+        secondaryActionLayout.setAlignItems(FlexComponent.Alignment.CENTER);
 
         secondaryActionLayout.add(rememberMeLayout, forgotPasswordLayout);
 

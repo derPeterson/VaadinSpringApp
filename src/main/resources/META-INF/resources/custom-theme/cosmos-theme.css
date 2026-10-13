@@ -205,7 +205,13 @@ vaadin-notification-card[theme~="cosmos"] {
     max-width: 100%;
 }
 
+/* Einheitliche Schrift für Eingabewerte aller fünf Kontoansichten.
+ * Eine Größenvariable hält Eingaben und Platzhalter auf derselben Größe. */
 .cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker) {
+    --cosmos-input-font-size: 13px;
+    --vaadin-input-field-value-font-size: var(--cosmos-input-font-size);
+    --vaadin-input-field-value-font-weight: 700;
+    --vaadin-input-field-placeholder-color: var(--lumo-tertiary-text-color);
     width: 100%;
     min-width: 0;
     padding: 0;
@@ -233,31 +239,27 @@ vaadin-notification-card[theme~="cosmos"] {
     border-color: var(--lumo-primary-color-50pct);
 }
 
-/* Vaadin vererbt dem nativen Platzhalter die Schrift des Eingabebereichs.
- * Deshalb auch den leeren Feldzustand stylen; eingegebene Werte bleiben unverändert.
+/* Leere Felder und Platzhalter bleiben normal gewichtet und weich gefärbt.
  * Die Komponentenvariablen erreichen auch die internen Felder von Combo-/DatePicker. */
-.cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker) {
-    --vaadin-input-field-placeholder-color: var(--lumo-tertiary-text-color);
-}
 
 .cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker):not([has-value]) {
-    --vaadin-input-field-value-font-size: 13px;
+    --vaadin-input-field-value-font-size: var(--cosmos-input-font-size);
     --vaadin-input-field-value-font-weight: 400;
 }
 
 .cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker):not([has-value])::part(input-field) {
-    font-size: 13px;
+    font-size: var(--cosmos-input-font-size);
     font-weight: 400;
 }
 
 .cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker) > input:placeholder-shown {
-    font-size: 13px;
+    font-size: var(--cosmos-input-font-size);
     font-weight: 400;
     color: var(--lumo-tertiary-text-color);
 }
 
 .cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker) > input::placeholder {
-    font-size: 13px;
+    font-size: var(--cosmos-input-font-size);
     font-weight: 400;
     color: var(--lumo-tertiary-text-color);
     opacity: 1;
