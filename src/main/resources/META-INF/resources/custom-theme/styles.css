@@ -49,14 +49,7 @@ html {
 }
 
 /* View Backgrounds */
-.login-bg-fullscreen {
-    background-image: url('login-background.jpg');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    width: 100vw;
-    height: 100vh;
-}
+/* Login-Hintergrund und Layout: cosmos-login.css (an LoginView eingebunden). */
 
 /* Registration: CSS-only night background; the page grows with its form. */
 .registration-bg-fullscreen {

@@ -1,12 +1,66 @@
 # Browserabdeckung und offene Punkte
 
-**Stand: 12.10.2026 – alle registrierten Fälle grün, ursprüngliche Gesamtabdeckung noch unvollständig.**
+**Stand: 13.10.2026 – Loginänderung gezielt geprüft; ursprüngliche Gesamtabdeckung noch unvollständig.**
 Dies ist die zentrale Übersicht zum Prüfstand. Bedienung und Aufbau stehen in der
 [Browser-Testanleitung](README.md). Historische Run-Berichte werden nicht verändert.
 
+## Aktuelle Cardgestaltung
+
+Die abschließende Anpassung verwendet eine 430 px breite dunkle Glas-Card mit
+kompakteren Abständen/Überschrift, konturierten echten Vaadin-Feldern und dezentem
+Buttonverlauf. Der Card-Hintergrund wurde anschließend ausdrücklich auf den RGBA-Verlauf der
+Vorlage festgelegt; die übrigen Elementfarben kommen aus Lumo. Inter wird lokal
+für den Login eingebunden. Seit diesen optischen Feinänderungen wurden keine
+JUnit-/Docker-Browserläufe erneut ausgeführt.
+Der bestehende Authentifizierungs-Handler wurde gegen den Ausgangscommit verglichen
+und ist unverändert; Security und Registrierung wurden nicht angepasst.
+
+Frischer Anwendungs-/Frontend-Build erfolgreich. Die sechs Login-Layoutfälle
+UI-03A–F bestehen jeweils auf Deutsch und Englisch auf demselben neuen Image;
+Aufbau, Abbau und HTML-Erzeugung erfolgreich. Die übrigen Tests wurden für diese
+rein optische Nachbesserung nicht erneut ausgeführt; ältere Nachweise stehen unten.
+
+- [Aktueller DE-Cardbericht](runs/2026-10-12T21-57-49_UTC__2a1dfb7a__1ac35ef9/report.md)
+- [Aktueller EN-Cardbericht](runs/2026-10-12T21-59-37_UTC__2a1dfb7a__35065e21/report.md)
+
+## Anschließende Login-Hintergrund-/Layoutänderung
+
+Nach dem unten dokumentierten Gesamtlauf wurde ausschließlich der Login-Hintergrund
+auf CSS-Sterne, Nebel und Planeten umgestellt, das Welcome-Bild entfernt und die
+feste Karten-Mindestbreite aufgehoben. Bestehende Felder, Buttons, Texte,
+Authentifizierungsablauf und Security-Konfiguration bleiben erhalten.
+
+| Prüfung des neuen Stands | Ergebnis |
+| --- | --- |
+| Anwendung und JaCoCo | 1036/1036; keine Fehler/Fehlschläge/Skips |
+| Helper/Reporter | 24/24; keine Fehler/Fehlschläge/Skips |
+| `login-checks` Deutsch | 19/19; Aufbau, Abbau und HTML erfolgreich |
+| `login-checks` Englisch | 19/19; Aufbau, Abbau und HTML erfolgreich |
+
+- [DE-Loginbericht](runs/2026-10-12T21-36-30_UTC__2a1dfb7a__abaac605/report.md)
+- [EN-Loginbericht](runs/2026-10-12T21-38-14_UTC__2a1dfb7a__27317c32/report.md)
+
+Die sechs zusätzlichen Fälle UI-03A–F prüfen fünf Fenstergrößen (320×568,
+390×844, 844×390, 360×240, 1280×900), Fehler/Korrektur und reale Anmeldung
+sowie reduzierte Bewegung und Begrenzung der CSS-Dekoration auf Login.
+Das Dashboard wird nach der tatsächlichen Anmeldung wieder bei Desktopbreite
+kontrolliert; seine responsive Gestaltung ist kein Teil dieser Änderung.
+Die kombinierten 19 Fälle enthalten außerdem bestehende Anmeldung/Zugriff,
+Tastatur-/Präsentations- und Remember-me-Prüfungen.
+
+Beide Läufe nutzten dasselbe frisch gebaute Image mit lokalen Änderungen auf
+`main` (Ausgangscommit `2a1dfb7a`). Jetzt sind 76 Fälle
+registriert. Für diesen Stand wurde gezielt `login-checks` ausgeführt, kein neuer
+76-Fälle-Gesamtlauf. Echte Geräte/Leistungsbenchmarks und ein vollständiges Zoomaudit
+werden durch die emulierten Platzverhältnisse nicht ersetzt.
+
+Die anschließend festgelegten Animationszeiten bleiben 30/45 Sekunden für Sterne
+und 18–24 Sekunden für Nebel. Der neuere Card-Prüfstand steht oben.
+
 ## Letzter vollständiger Prüfstand
 
-Arbeitsbranch: `main`, Ausgangscommit `d0f33d16`, mit den hier beschriebenen lokalen Änderungen.
+Historischer Gesamtlauf vor der anschließenden Loginänderung: Arbeitsbranch `main`,
+Ausgangscommit `d0f33d16`, mit den damals dokumentierten lokalen Änderungen.
 Die beiden abschließenden Gesamtläufe verwendeten dasselbe frisch gebaute Anwendungsimage
 und jeweils eigene frische Docker-/H2-/Mailpit-Daten. Keine Bestandsdaten oder echten Postfächer.
 
@@ -80,8 +134,8 @@ Gesamtläufen. Der Editierbutton wird vor dem echten Mausklick sichtbar gemacht 
 fokussiert, damit die native Grid-Scrollbewegung den Klick nicht verliert. Erwartungen,
 Speicher-/Anmeldeprüfungen und Sicherheitsregeln bleiben erhalten.
 
-Aktuell sind keine fehlgeschlagenen Fälle unter den 70 registrierten Browserfällen
-offen. Die ergänzten Pakete und die weiterhin nur teilweise abgedeckten ursprünglichen
+Im bisherigen vollständigen 70-Fälle-Lauf waren keine Fälle fehlgeschlagen.
+Der gezielte Prüfstand der anschließenden Loginänderung steht oben. Die ergänzten Pakete und die weiterhin nur teilweise abgedeckten ursprünglichen
 Fälle sind nachfolgend getrennt aufgeführt.
 
 ## Ergänzte Arbeitspakete

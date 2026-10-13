@@ -6,7 +6,7 @@ Automatisierte Browserprüfungen mit Java, JUnit und Allure in eigener Docker-Te
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Aktueller Prüfstand vom 12.10.2026: Java 25, 1.036 Anwendungstests mit JaCoCo sowie 24 Browser-Helper-/Reportertests erfolgreich. Das gebaute Docker-JAR wurde mit 70 Browserfällen jeweils auf Deutsch und Englisch in isoliertem H2/Mailpit geprüft. Umfang und verbleibende Grenzen: [Browserabdeckung](browser-tests/abdeckung.md).
+> Letzter vollständiger Gesamtprüfstand vom 12.10.2026: Java 25, 1.036 Anwendungstests mit JaCoCo sowie 24 Browser-Helper-/Reportertests erfolgreich. Das gebaute Docker-JAR wurde mit 70 Browserfällen jeweils auf Deutsch und Englisch in isoliertem H2/Mailpit geprüft. Umfang und verbleibende Grenzen: [Browserabdeckung](browser-tests/abdeckung.md).
 
 ## Funktionen
 
@@ -26,6 +26,25 @@ Die Registrierung verwendet eine responsive Formularkarte ohne Foto-/Bildspalte.
 Ihr dunkler Hintergrund mit blauen Kreisbögen und Punktraster entsteht vollständig
 im CSS. Unter 600 px stehen Feldpaare untereinander; die Seite wächst mit dem Inhalt
 und lässt sich vertikal scrollen. Validierung und Verifikationsablauf bleiben erhalten.
+
+Der Login behält seine echten Vaadin-Felder, Buttons, Texte und Anmeldung.
+Das Welcome-Bild und die feste Karten-Mindestbreite wurden entfernt. Der nur auf
+Login begrenzte Silent-Cosmos-Hintergrund verwendet CSS-Sterne, Nebel und Planeten
+aus `custom-theme/cosmos-login.css`, eingebunden direkt an `LoginView`.
+Die 430 px breite Login-Card folgt den Proportionen der Vorlage: kompakte
+Abstände/Überschrift, der ausdrücklich gewählte dunkle RGBA-Verlauf der Vorlage,
+dezente Lumo-Kante sowie konturierte Felder und ein Lumo-Buttonverlauf.
+Schrift und Inhalt bleiben deckend. Die Login-Schrift Inter wird lokal über
+`custom-theme/fonts/InterVariable.woff2` geladen, ohne externen Fontdienst.
+Quelle: [offizielles Inter-Projekt](https://github.com/rsms/inter/tree/e3a3d4c57d5ecc01453a575621882a384c1995a3),
+Lizenz: `custom-theme/fonts/Inter-LICENSE.txt` (SIL Open Font License 1.1).
+Das Formular wächst bei wenig Höhe und lässt sich vertikal scrollen; Links brechen
+bei wenig Breite um. Reduzierte Bewegung deaktiviert die Hintergrundanimationen.
+Gezielte Layout-/Anmeldeprüfungen: `browser-tests/run.ps1 -Suite login-checks`.
+Vor der abschließenden Cardgestaltung: 1.036 Anwendungstests, 24 Helper-/Reportertests
+und jeweils 19/19 gezielte Browserfälle DE/EN erfolgreich. Danach wurde die
+Cardgestaltung frisch gebaut und mit jeweils 6/6 Login-Layoutfällen DE/EN geprüft. Die nun 76 registrierten
+Browserfälle wurden nicht erneut als vollständiger Gesamtlauf ausgeführt.
 
 ## Gemeinsame Texte und UI-Konstanten
 

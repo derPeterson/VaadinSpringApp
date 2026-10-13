@@ -71,7 +71,9 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `token-expiry` | Echte Mindestdauer abwarten, erneuter Verifikationsversand, offenes Resetformular, Anfragefehler | 3 |
 | `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 7 |
 | `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 11 |
-| `all` | Alle 18 Testklassen | 70 |
+| `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
+| `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 19 |
+| `all` | Alle 19 Testklassen | 76 |
 
 UI-01A prüft die direkte Datumseingabe mit lokalisiertem Beispiel und anschließendem
 Registrieren ohne Enter/Escape. UI-01B prüft getrennt die Auswahl über das Kalender-Icon,
@@ -87,6 +89,26 @@ ebenfalls direkte Eingabe ohne automatisches Öffnen und denselben kurzen Datums
 Die vollständigen Schritte und Erwartungen stehen pro Fall in `@Description`
 und werden automatisch in den Markdown-Bericht übernommen. Die Test-ID erscheint
 in `@DisplayName`, im Allure-Bericht und in der Abdeckungsübersicht.
+
+## Loginlayout
+
+UI-03A–E prüfen den bestehenden Login bei 320×568, 390×844, 844×390,
+360×240 und 1280×900. Formularelemente liegen innerhalb der Fensterbreite;
+geringe Höhe darf vertikal scrollen. Remember-me wird tatsächlich gewählt/abgewählt,
+eine falsche Anmeldung korrigiert und das echte Admin-Dashboard erreicht.
+UI-03F prüft die CSS-Animation und `prefers-reduced-motion` sowie die Begrenzung
+der Dekoration auf die Loginseite. Die echten Vaadin-Felder/Buttons verwenden Lumo-Farben;
+die Login-Card und ihre kompakte Anordnung folgen der Designvorlage. Der Card-Verlauf
+verwendet nach ausdrücklicher Vorgabe deren RGBA-Werte. Inter wird lokal bereitgestellt.
+
+```powershell
+.\browser-tests\run.ps1 -Suite login-checks -Language de
+.\browser-tests\run.ps1 -Suite login-checks -Language en -NoBuild
+```
+
+Die Fenstergrößen prüfen typische Platzverhältnisse, nicht alle Geräte,
+Bildschirmtastaturen oder die Leistung echter Smartphones. Ein kontrollierter
+Browserlauf ersetzt kein menschliches Urteil über das Aussehen.
 
 ## Weitere Konten und echte Wartezeiten
 

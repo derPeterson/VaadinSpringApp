@@ -7,9 +7,9 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -29,7 +29,6 @@ import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
-import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
@@ -53,6 +52,7 @@ import java.util.function.Supplier;
 @Route(AppRouteConstants.LOGIN_ROUTE)
 @PageTitle(AppRouteConstants.LOGIN_PAGE_TITLE)
 @AnonymousAllowed
+@StyleSheet("custom-theme/cosmos-login.css")
 public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
     private static final Logger logger = LoggerFactory.getLogger(LoginView.class);
@@ -100,9 +100,10 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
             NotificationHelper.getInstance().updateText();
         });
 
-        setSizeFull();
-
-        addClassNames("login-bg-fullscreen");
+        getContent().setWidthFull();
+        getContent().setPadding(false);
+        setSpacing(false);
+        addClassName("cosmos-login");
 
         // UI Elements
         this.createAccountLink = new RouterLink(messageProperties.getLoginCreateAccountLink(), RegistrationView.class);
@@ -136,21 +137,21 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
         });
 
         VerticalLayout mainContent = new VerticalLayout();
+        mainContent.addClassName("cosmos-login__content");
+        mainContent.setWidthFull();
+        mainContent.setPadding(false);
+        mainContent.setSpacing(false);
         mainContent.setAlignItems(FlexComponent.Alignment.CENTER);
-        mainContent.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-
-        Div bannerContent = new Div();
-        bannerContent.add(new Image("custom-theme/welcome.png", "Welcome"));
-        bannerContent.addClassNames(LumoUtility.Padding.XLARGE);
-
-        mainContent.add(bannerContent);
+        mainContent.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 
         VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+        cardContentLayout.setPadding(false);
+        cardContentLayout.setSpacing(false);
+        cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY, "cosmos-login__form");
 
         this.title = new H1(messageProperties.getLoginTitle());
-        title.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.FontWeight.BOLD);
+        title.addClassName("cosmos-login__headline");
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
         cardTitleLayout.setWidthFull();
@@ -165,8 +166,8 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
         cardSecondaryTitleLayout.setWidthFull();
         cardSecondaryTitleLayout.setPadding(false);
         cardSecondaryTitleLayout.setSpacing(false);
-        cardSecondaryTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-        cardSecondaryTitleLayout.addClassNames(LumoUtility.Gap.SMALL);
+        cardSecondaryTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+        cardSecondaryTitleLayout.addClassNames(LumoUtility.Gap.SMALL, "cosmos-login__account-links");
         cardSecondaryTitleLayout.add(createAccountQuestionText);
         cardSecondaryTitleLayout.add(createAccountLink);
 
@@ -186,30 +187,52 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
         passwordField.addKeyPressListener(Key.ENTER, event -> loginButton.click());
 
         HorizontalLayout rememberMeLayout = new HorizontalLayout();
-        rememberMeLayout.setWidthFull();
+        rememberMeLayout.addClassName("cosmos-login__remember");
         rememberMeLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
         rememberMeLayout.add(rememberMeCheckBox);
 
         forgotPasswordLink.addClassNames("underline");
         HorizontalLayout forgotPasswordLayout = new HorizontalLayout();
-        forgotPasswordLayout.setWidthFull();
+        forgotPasswordLayout.addClassName("cosmos-login__forgot");
         forgotPasswordLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
         forgotPasswordLayout.add(forgotPasswordLink);
 
         HorizontalLayout secondaryActionLayout = new HorizontalLayout();
         secondaryActionLayout.setWidthFull();
+        secondaryActionLayout.addClassName("cosmos-login__options");
 
         secondaryActionLayout.add(rememberMeLayout, forgotPasswordLayout);
 
         cardContentLayout.add(cardTitleLayout, cardSecondaryTitleLayout, emailField, passwordField, loginButton, secondaryActionLayout);
         CardComponent cardComponent = new CardComponent(cardContentLayout);
-        cardComponent.setMinWidth("500px");
-        cardComponent.setMaxWidth("500px");
+        // Nur diese Card erhält die Glasoberfläche; andere CardComponent-Instanzen bleiben unverändert.
+        cardComponent.removeClassNames(LumoUtility.Background.BASE, LumoUtility.Border.ALL,
+                LumoUtility.BorderRadius.LARGE, LumoUtility.BoxShadow.MEDIUM, LumoUtility.Padding.LARGE);
+        cardComponent.addClassName("cosmos-login__card");
+        cardComponent.setWidthFull();
 
         mainContent.add(cardComponent);
 
-        add(VaadinUIHelper.createFullHorizontalSpace());
-        add(mainContent);
-        add(VaadinUIHelper.createFullHorizontalSpace());
+        add(createSky(), mainContent);
+    }
+
+    private static Div createSky() {
+        Div sky = layer("cosmos-login__sky");
+        sky.getElement().setAttribute("aria-hidden", "true");
+        sky.add(layer("cosmos-login__stars", "cosmos-login__stars--small"),
+                layer("cosmos-login__stars", "cosmos-login__stars--far"),
+                layer("cosmos-login__galaxy"),
+                layer("cosmos-login__glow", "cosmos-login__glow--blue"),
+                layer("cosmos-login__glow", "cosmos-login__glow--violet"),
+                layer("cosmos-login__horizon"),
+                layer("cosmos-login__planet"),
+                layer("cosmos-login__moon"));
+        return sky;
+    }
+
+    private static Div layer(String... classes) {
+        Div layer = new Div();
+        layer.addClassNames(classes);
+        return layer;
     }
 }
