@@ -194,15 +194,18 @@ public class UserManagementBrowserTest extends BrowserFixture {
         users.createUser(prefix + "-active@example.test", BrowserTestAccounts.USER_PASSWORD, true);
         users.createUser(disabled, BrowserTestAccounts.USER_PASSWORD, false);
         users.search(prefix); users.selectFilter(texts.getAdminUsersGridEnabled(), texts.getAdminUsersNo());
+        assertThat(users.emailCells(prefix)).hasCount(1);
         assertThat(users.emailCells(prefix)).hasText(disabled);
         UiTexts other = new UiTexts(texts.language().equals("de") ? "en" : "de");
         new UserMenu(page).selectLanguage(other.language());
         AdminUsersPage translated = new AdminUsersPage(page, other);
         assertThat(translated.searchField()).hasValue(prefix);
         assertThat(translated.filterField(other.getAdminUsersGridEnabled())).hasValue(other.getAdminUsersNo());
+        assertThat(translated.emailCells(prefix)).hasCount(1);
         assertThat(translated.emailCells(prefix)).hasText(disabled);
         new UserMenu(page).selectTestLanguage();
         assertThat(users.filterField(texts.getAdminUsersGridEnabled())).hasValue(texts.getAdminUsersNo());
+        assertThat(users.emailCells(prefix)).hasCount(1);
         assertThat(users.emailCells(prefix)).hasText(disabled);
         AllurePlaywright.attachScreenshot("Erhaltene Filter nach Sprachwechsel in beide Richtungen", page);
     }

@@ -1,40 +1,54 @@
 # Browserabdeckung und offene Punkte
 
-**Letzter vollständiger Prüfstand: 13.10.2026 – 1055 Anwendungstests, 26 Helper-/Reportertests und je 84 Browserfälle auf DE/EN erfolgreich. Spätere Designänderungen einschließlich Home und Admin sind noch ungeprüft.**
+**Vollständiger Prüfstand: 13.10.2026 – 1055 Anwendungstests, 26 Helper-/Reportertests und je 87 Browserfälle auf DE/EN erfolgreich, einschließlich Home-/Admin-Umstellung.**
 Bedienung und Aufbau stehen in der [Browser-Testanleitung](README.md).
 Historische Run-Berichte bleiben unverändert; hier steht der aktuelle Prüfstand.
 
-## Admin-Gestaltung – Prüfabschluss ausstehend
+## Home-/Admin-Gestaltung – vollständig geprüft am 13.10.2026
 
-Ausgangscommit für dieses Paket: `9d671af` auf `main` (abgeschlossene Home-Gestaltung).
-Admin verwendet dieselbe Cosmos-Palette, Topbar, Animation und dasselbe Avatar-Popup.
-Seitenleiste, Dashboard, Konfiguration, Mailtest und Benutzerverwaltung samt Dialogen
-sind gestalterisch umgestellt. Funktionen und Sicherheitsprüfungen bleiben erhalten.
-Es wurden keine Builds, Browser- oder Anwendungstests für diesen Entwurf ausgeführt.
+Ausgangscommit: `f3d5b663` auf `main`. Korrekturen und Tests sind noch nicht committet.
+Home und Admin verwenden dieselbe Palette, Topbar, Dekoration und dasselbe Avatar-Popup.
+Die bestehenden fachlichen Erwartungen bleiben erhalten; UI-03F und COSMOS-03/04
+prüfen jetzt die beabsichtigte gemeinsame Palette. Der Dashboard-Helper unterscheidet
+die Bereichsüberschrift (H1) von der gleichnamigen Card-Überschrift (H2).
 
-Beim später ausdrücklich freigegebenen Gesamtlauf sind die bestehenden fachlichen
-Adminfälle weiterhin relevant. Ergänzend sind Navigation bei schmalen Fenstern,
-Konfigurationsgruppen/Infodialoge, Filtermenü und Statusauswahl, Tabellenpagination,
-Benutzerformularpaare und Löschdialoge auf DE/EN zu prüfen. UI-03F sowie COSMOS-03/04
-müssen die nun beabsichtigte gemeinsame Home-/Admin-Palette berücksichtigen.
-Historische Berichte dokumentieren den damaligen Stand und bleiben unverändert.
+| Prüfung | Ergebnis |
+| --- | --- |
+| Shared-Modul / Java 25 | Clean install erfolgreich |
+| Anwendung / JaCoCo | 1055/1055, 0 Fehler/Fehlschläge/Skips |
+| Browser-Helper/Reporter | 26/26, 0 Fehler/Fehlschläge/Skips |
+| Docker-Produktionsbuild | Erfolgreich; Produktions-JAR mit aktuellem Frontend |
+| Browser Deutsch | 87/87, 0 Fehler/Skips |
+| Browser Englisch | 87/87, 0 Fehler/Skips, dasselbe App-Image |
+| Aufbau, Abbau und HTML-/Markdown-Berichte | Beide vollständig erfolgreich |
 
-## Home-Gestaltung – gemeinsamer Prüfabschluss ausstehend
+- [Vollständiger DE-Bericht](runs/2026-10-13T17-52-36_UTC__f3d5b663__6313d7ba/report.md)
+- [Vollständiger EN-Bericht](runs/2026-10-13T17-52-39_UTC__f3d5b663__6cb9da7a/report.md)
 
-Die Startseite nutzt jetzt die gemeinsame Cosmos-Palette, Animation und
-Copyright-Komponente. Die Willkommen-Card wurde auf Wunsch entfernt;
-die Kontoaktionen bleiben im bestehenden Benutzermenü erreichbar. Die Adminansicht
-wurde inzwischen im folgenden Paket ebenfalls umgestellt; siehe oben.
-Home-Texte verwenden typisierte DE-/EN-Getter. Auch die jüngsten Eingabeschrift-/
-Login-Ausrichtungsänderungen sind seit dem letzten Gesamtlauf noch ungeprüft.
+Image: `sha256:c5ba24c980afca4a993fdd86e1d57eccff81473dfd29fbc46c2063defdf267d0`. Beide Läufe verwendeten getrennte eigene Docker-Projekte,
+H2-/Mailpit-Daten und Ports (DE 18081/18026, EN 18082/18027). Bestandsdaten und die
+manuelle Dockerumgebung blieben unberührt. Testzustände entstanden über Oberfläche
+und regulär abgefangene SMTP-Mails. Die eigenen Testumgebungen wurden entfernt.
 
-Auf Wunsch wurden für dieses Paket keine Builds, Browser- oder Anwendungstests
-ausgeführt. Beim späteren Prüfabschluss sind die bisherigen Home-Abgrenzungen in UI-03F und
-COSMOS-04 auf die jetzt beabsichtigte gemeinsame Palette umzustellen.
-Auch die inzwischen beabsichtigte gemeinsame Admin-Palette ist zu berücksichtigen. Historische
-Run-Berichte und die unten beschriebenen damaligen Ergebnisse bleiben erhalten.
+COSMOS-05A–C ergänzen Home/Avatar-Popup, Adminnavigation, Allgemein und Benutzeranlage
+bei 390×844, 844×390 und 1280×900. Desktopinhalt beginnt neben der Navigation;
+auf kleinen Fenstern bleibt die native Overlaynavigation bedienbar. Die Testentwicklung
+enthielt zuerst zu breite Theme-/Overlay-Locators sowie verfrühte Messungen während
+der Drawer-Animation und hinter einem offenen modalen Drawer. Menü-/Dropdown-Helfer
+warten jetzt auf die reale Serverantwort; die Antwort zur Wertänderung wird vom reinen
+Dropdown-Öffnen unterschieden. Sprachwechsel, Filtererhalt und Status nach Neuladen
+bleiben tatsächlich geprüft. Ein während der Diagnose nachkompilierter früherer
+Gesamtlauf enthält Klassenladefehler und ist ausdrücklich kein Abschlussnachweis.
+Die abschließenden Läufe verwendeten unveränderte kompilierte Testklassen.
+Die Zwischenberichte bleiben erhalten. Kein Fall wurde entfernt, übersprungen oder
+durch Akzeptieren beider Sprachen abgeschwächt.
 
-## Letzter vollständig geprüfter Stand – 13.10.2026
+Die Gestaltung ist weiterhin ein Zwischenstand. Subjektiver Admin-Feinschliff,
+echte Mobilgeräte/Bildschirmtastaturen und E-Maildarstellung in Gmail/Outlook bleiben
+menschliche Prüfungen. Die unten dokumentierten Grenzen der ursprünglichen manuellen
+Abdeckung bestehen weiterhin; ein grüner Lauf bedeutet keine vollständige 100-%-Ablösung.
+
+## Historischer Gesamtlauf vor Home-/Admin-Umstellung – 13.10.2026
 
 Der damals geprüfte Stand einschließlich 96×96-Logo, größerem Servicenamen (Lumo XL),
 kleiner weicher Platzhalterschrift, angepassten Statusicons und Reset-Erfolgscard
@@ -53,8 +67,8 @@ MJML und daraus erzeugtes HTML sind synchron.
 | Browser Englisch | 84/84, 0 Fehler/Skips, dasselbe App-Image |
 | Aufbau, Abbau, Markdown/HTML-Berichte | Beide Läufe erfolgreich; eigene Testumgebungen entfernt |
 
-- [Aktueller vollständiger DE-Bericht](runs/2026-10-13T13-05-10_UTC__a972ffbf__6c6370b4/report.md)
-- [Aktueller vollständiger EN-Bericht](runs/2026-10-13T13-23-24_UTC__a972ffbf__eb540930/report.md)
+- [Historischer vollständiger DE-Bericht](runs/2026-10-13T13-05-10_UTC__a972ffbf__6c6370b4/report.md)
+- [Historischer vollständiger EN-Bericht](runs/2026-10-13T13-23-24_UTC__a972ffbf__eb540930/report.md)
 
 Die Fälle COSMOS-01A–E enthalten fünf Fenstergrößen einschließlich 1280×1200 zur
 Prüfung der Zentrierung der langen Registrierung bei ausreichend Platz.
@@ -135,7 +149,7 @@ IntelliJ-/Eclipse-Lauf und echte mobile Geräte wurden nicht geprüft.
 Login, Registrierung, Verifikation, Passwortanfrage und Passwortänderung verwenden
 gemeinsame Java-/CSS-Bausteine, die Palette der Silent-Cosmos-Referenz, animierte
 CSS-Dekoration, lokales Inter und übersetzte Platzhalter. Inter gilt global; Home/Admin
-behalten ihre bisherigen Farben. Copyright wird über Allgemein gespeichert, seine
+verwenden ebenfalls die gemeinsame Cosmos-Palette. Copyright wird über Allgemein gespeichert, seine
 Platzhalter werden ersetzt und HTML-Zeichen als Text angezeigt. Die vorherigen
 Hintergrundbilder sind aus den aktiven Ressourcen entfernt; die versionierten
 Originale bleiben über Git nachvollziehbar. Ein lokaler Backupordner ist aktuell
@@ -145,8 +159,9 @@ nicht vorhanden.
 | --- | --- |
 | COSMOS-01A–E | Alle fünf Ansichten bei 320×568, 390×844, 844×390, 1280×900 und 1280×1200; keine horizontale Abschneidung, gemeinsame Gestaltung, sichtbare Platzhalterschrift und Screenshots |
 | COSMOS-02 | Mobile Registrierung, echte Aktivierungsmail, erfolgreiche Verifikation, echte Reset-Mail, Passwortänderung mit Erfolgscard/Häkchen und Anmeldung bei 390×844 |
-| COSMOS-03 | Copyright über Admin gespeichert/neu geladen, sicherer Fußtext mit year/serviceName in UI und echten Verifikations-/Resetmails, geladene Inline-Logos und Wiederherstellung; Admin-Palette unverändert |
-| COSMOS-04 | Schmale Fehlermeldung verwendet Card-Verlauf; Schließen erreichbar, Home-Palette unverändert |
+| COSMOS-03 | Copyright über Admin gespeichert/neu geladen, sicherer Fußtext mit year/serviceName in UI und echten Verifikations-/Resetmails, geladene Inline-Logos und Wiederherstellung; gemeinsame Admin-Palette |
+| COSMOS-04 | Schmale Fehlermeldung verwendet Card-Verlauf; Schließen erreichbar, gemeinsame Home-Palette |
+| COSMOS-05A–C | Home/Avatar-Popup und Adminnavigation bei drei Größen; Allgemein sowie Benutzerformular innerhalb der Fensterbreite |
 | UI-03A–F | Reale Loginbedienung bei fünf Größen einschließlich 360×240, Fehler/Korrektur, Remember-me-Auswahl, Anmeldung und reduzierte Bewegung |
 
 JUnit prüft zusätzlich Copyright-Defaults/Erhalt gespeicherter Werte, sichere Textanzeige,
@@ -157,7 +172,7 @@ fachlichen Konto-, Admin-, Mail-, Status- und Sicherheitsabläufe.
 
 Sterne behalten 30/45 Sekunden, Nebel 18–24 Sekunden als Animationszeiten.
 Reduzierte Bewegung deaktiviert die Animation; kurze Fenster dürfen vertikal scrollen.
-Die 84 Browserfälle und 44 ursprünglichen manuellen Fälle haben unterschiedliche IDs
+Die 87 Browserfälle und 44 ursprünglichen manuellen Fälle haben unterschiedliche IDs
 und Teilabläufe. Die Vergleichstabelle unten behauptet keine vollständige 100-%-Ablösung
 aller Betriebs- und menschlichen Prüfungen.
 
@@ -205,7 +220,7 @@ Gesamtläufen. Der Editierbutton wird vor dem echten Mausklick sichtbar gemacht 
 fokussiert, damit die native Grid-Scrollbewegung den Klick nicht verliert. Erwartungen,
 Speicher-/Anmeldeprüfungen und Sicherheitsregeln bleiben erhalten.
 
-Im aktuellen vollständigen DE-/EN-Lauf sind jeweils alle 84 Browserfälle bestanden.
+Im aktuellen vollständigen DE-/EN-Lauf sind jeweils alle 87 Browserfälle bestanden.
 Die weiterhin nur teilweise abgedeckten ursprünglichen Fälle sind nachfolgend aufgeführt.
 
 ## Ergänzte Arbeitspakete

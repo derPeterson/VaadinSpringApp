@@ -6,7 +6,7 @@ Automatisierte Browserprüfungen mit Java, JUnit und Allure in eigener Docker-Te
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Letzter vollständiger Gesamtprüfstand vom 13.10.2026 vor den jüngsten Home-/Eingabeschriftänderungen, einschließlich Designfeinschliff, CID-Mailbildern und DB-Copyright: Java 25, 1.055 Anwendungstests mit JaCoCo sowie 26 Browser-Helper-/Reportertests erfolgreich. Das frisch gebaute Docker-Produktions-JAR wurde mit jeweils 84 Browserfällen auf Deutsch und Englisch in isoliertem H2/Mailpit geprüft. Umfang, Berichte und verbleibende Grenzen: [Browserabdeckung](browser-tests/abdeckung.md).
+> Vollständiger Gesamtprüfstand vom 13.10.2026 einschließlich Home-/Admin-Umstellung und Eingabeschrift: Java 25, 1.055 Anwendungstests mit JaCoCo sowie 26 Browser-Helper-/Reportertests erfolgreich. Das frisch gebaute Docker-Produktions-JAR wurde mit jeweils 87 Browserfällen auf Deutsch und Englisch in isoliertem H2/Mailpit geprüft. Umfang, Berichte und verbleibende Grenzen: [Browserabdeckung](browser-tests/abdeckung.md).
 
 ## Funktionen
 
@@ -80,8 +80,8 @@ Git-Historie nachvollziehbar. Der ursprünglich angelegte lokale Ordner
 Service-Logo, Avatar und Sprachflaggen bleiben aktiv. Gezielt prüfen:
 `browser-tests/run.ps1 -Suite cosmos-design -Language de` (danach EN mit `-NoBuild`).
 Service-Logo (96×96), Servicename (Lumo XL), Platzhalter und Statuscards wurden
-abschließend im vollständigen DE-/EN-Lauf geprüft: je 8 Cosmos- und 6 Login-Layoutfälle
-innerhalb der jeweils 84 Browserfälle. Den aktuellen Nachweis dokumentiert [Browserabdeckung](browser-tests/abdeckung.md).
+abschließend im vollständigen DE-/EN-Lauf geprüft: je 11 Cosmos- und 6 Login-Layoutfälle
+innerhalb der jeweils 87 Browserfälle. Den aktuellen Nachweis dokumentiert [Browserabdeckung](browser-tests/abdeckung.md).
 
 ### Startseite nach der Dashboard-Vorschau
 
@@ -103,10 +103,10 @@ inzwischen dieselben gemeinsamen Bausteine; ihr eigener Aufbau steht im folgende
 Die Startseite ist für schmale Fenster mit umbrechenden Inhalten gestaltet. Copyright
 und Sprachwechsel verwenden dieselben gemeinsamen Bausteine wie die Kontoansichten.
 
-**Prüfung ausstehend:** Der oben dokumentierte Gesamtlauf fand vor dieser Home-Anpassung
-statt. Für dieses Gestaltungspaket wurden auf Wunsch keine Builds oder Tests ausgeführt.
-Die bisherigen Browsererwartungen zur unveränderten Home-Palette müssen beim späteren
-gemeinsamen Prüfabschluss angepasst werden; die Admin-Abgrenzung bleibt bestehen.
+**Geprüft:** Home ist im vollständigen DE-/EN-Lauf enthalten. UI-03F prüft reduzierte
+Bewegung auch auf Home; COSMOS-04 die gemeinsame Palette und Notificationgestaltung.
+COSMOS-05A–C prüfen Topbar, Avatar-Popup und Adminnavigation bei 390×844, 844×390 und
+1280×900. Die entfernte Willkommen-Card wird nicht mehr vorausgesetzt.
 
 ### Admin im gemeinsamen Cosmos-Theme
 
@@ -126,10 +126,11 @@ Formularpaare und Aktionsleisten können bei wenig Platz umbrechen.
 
 Rollenprüfung, Datenzugriffe, Validierung, Filter, Speicherung, Mailaktionen und
 Kontoschutzregeln sind bei dieser Umstellung unverändert geblieben.
-**Prüfung ausstehend:** Diese Admin-Umstellung ist noch nicht gebaut oder automatisiert
-geprüft. Tests und Korrekturen erfolgen erst nach der ausdrücklichen Freigabe im Chat;
-es gibt dafür keinen aktiven automatischen Start. Beim späteren Prüflauf muss auch die
-bisherige Erwartung einer unveränderten Admin-Palette bewusst aktualisiert werden.
+**Geprüft:** Produktionsbuild sowie vollständige DE-/EN-Browserläufe erfolgreich.
+Die bisherigen funktionalen Konfigurations-, Mail-, Status-, Benutzer- und Sicherheitsfälle
+bleiben erhalten. COSMOS-05A–C ergänzen reale Navigation und Benutzerformular bei drei
+Fenstergrößen. Das Aussehen ist ein Zwischenstand; gestalterischer Feinschliff und echte
+Mobilgeräte bleiben gesonderte menschliche Prüfungen.
 
 ## Gemeinsame Texte und UI-Konstanten
 

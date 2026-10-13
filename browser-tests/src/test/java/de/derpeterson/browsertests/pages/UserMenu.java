@@ -17,8 +17,10 @@ public final class UserMenu {
 
     @Step("Benutzermenü über den Avatar öffnen")
     public void open() {
+        // Während der Schließanimation sperrt das modale Overlay weiterhin den Hintergrund.
+        assertThat(page.locator("vaadin-popover-overlay[closing]")).hasCount(0);
         if (!page.locator("vaadin-popover-overlay[opened]").isVisible())
-            avatar().click();
+            UiActions.complete(page, () -> avatar().click());
         assertThat(page.locator("vaadin-popover-overlay[opened]")).isVisible();
     }
 
@@ -36,8 +38,14 @@ public final class UserMenu {
         // The menu may be anonymous or authenticated; both expected labels use exactly this language.
         assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(expected.getBaseLoginButton()).setExact(true))
                 .or(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(expected.getBaseLogoutButton()).setExact(true)))).isVisible();
-        page.keyboard().press("Escape");
-        assertThat(page.locator("vaadin-popover-overlay[opened]")).not().isVisible();
+        close();
+    }
+
+    @Step("Benutzermenü schließen und die native Schließanimation abwarten")
+    public void close() {
+        UiActions.complete(page, () -> page.keyboard().press("Escape"));
+        assertThat(page.locator("vaadin-popover-overlay[opened], vaadin-popover-overlay[closing]")).hasCount(0);
+        assertThat(avatar()).hasAttribute("aria-expanded", "false");
     }
 
     @Step("Über die Oberfläche abmelden")

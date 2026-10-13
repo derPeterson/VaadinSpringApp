@@ -29,7 +29,7 @@ public class PresentationBrowserTest extends BrowserFixture {
         for(UiTexts expected:languages()) {
             new UserMenu(page).selectLanguage(expected.language());new UserMenu(page).open();
             assertThat(page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName(expected.getBaseLoginButton()).setExact(true))).isVisible();
-            assertThat(page).hasURL(urlPattern(HOME_ROUTE));page.keyboard().press("Escape");
+            assertThat(page).hasURL(urlPattern(HOME_ROUTE));new UserMenu(page).close();
         }
     }
 

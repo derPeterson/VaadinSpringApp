@@ -103,7 +103,7 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
 
         Button userButton = createTrackedUserButton();
         createTrackedUserPopover(createPopoverActions());
-        // Nur das Startseiten-Menü erhält die Cosmos-Palette; das Admin-Menü bleibt unverändert.
+        // Home und Admin verwenden dieselbe zentral markierte Menü-Palette.
         userPopoverMenu.addThemeName("cosmos");
 
         userLayout.add(userButton);

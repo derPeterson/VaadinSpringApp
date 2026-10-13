@@ -16,6 +16,12 @@ public final class ConfigurationPage {
     public void open(AdminConfigGroup group) {
         page.locator("[slot='drawer']").getByText(texts.getAdminConfigGroupLabel(group),
                 new Locator.GetByTextOptions().setExact(true)).click();
+        // Im mobilen AppLayout liegt die Navigation modal über dem Formular.
+        Locator app = page.locator("vaadin-app-layout");
+        if ((Boolean) app.evaluate("el => el.hasAttribute('overlay') && el.hasAttribute('drawer-opened')")) {
+            page.keyboard().press("Escape");
+            assertThat(app).not().hasAttribute("drawer-opened", "");
+        }
         assertThat(button(texts.getAdminConfigSave())).isVisible();
     }
     public Locator input(String label) {return page.getByLabel(label, new Page.GetByLabelOptions().setExact(true));}

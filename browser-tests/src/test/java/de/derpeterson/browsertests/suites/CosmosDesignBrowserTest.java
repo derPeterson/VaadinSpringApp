@@ -102,13 +102,14 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
         2. Neu laden und den gespeicherten Wert bestätigen; abmelden und die Login-Fußzeile prüfen.
         3. Über Registrierung und Passwortanfrage echte Mails erzeugen; geladenes Inline-Logo und denselben sicheren DB-Fußtext prüfen.
         4. Ursprünglichen Wert anschließend über die Oberfläche wiederherstellen.
-        **Erwartet:** Platzhalter sind ausgefüllt, HTML bleibt Text, Home/Admin besitzen keine Cosmos-Palette.
+        **Erwartet:** Platzhalter sind ausgefüllt, HTML bleibt Text, Home/Admin verwenden dieselbe Cosmos-Palette; die globale HTML-Palette bleibt unverändert.
         """)
     void copyrightCanBeConfiguredThroughTheUi() {
         String homePrimary = primary(page, "html");
         ConfigurationPage config = adminConfig();
         assertEquals(homePrimary, primary(page, "html"));
-        assertThat(page.locator(".cosmos-page")).hasCount(0);
+        assertThat(page.locator(".cosmos-app-shell.cosmos-theme")).isVisible();
+        assertEquals("#526ebc", primary(page, ".cosmos-page.cosmos-theme"));
         String label = texts.getAdminConfigEntryCopyrightText();
         String original = config.value(label);
         String template = "© {year} {serviceName} · <b>Browser-Test</b>";
@@ -138,19 +139,19 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     }
 
     @Test
-    @DisplayName("COSMOS-04: Fehlermeldung erhält Card-Hintergrund; Home behält seine Lumo-Farbe")
-    @Story("Begrenztes Theme und Notificationgestaltung")
+    @DisplayName("COSMOS-04: Fehlermeldung und Home verwenden das gemeinsame Cosmos-Theme")
+    @Story("Gemeinsames Theme und Notificationgestaltung")
     @Description("""
         1. Home-Farbe erfassen, bei 320×568 eine falsche Anmeldung absenden.
         2. Cosmos-Notification, gleichen Verlauf wie Card und erreichbaren Schließen-Button prüfen.
-        3. Zur Startseite wechseln und die bisherige Farbe sowie globale Inter-Schrift bestätigen.
-        **Erwartet:** Konto-Notifications passen zur Card; Palette und Hintergrund greifen nicht auf Home über.
+        3. Zur Startseite wechseln und die gemeinsame Palette, Dekoration sowie globale Inter-Schrift bestätigen.
+        **Erwartet:** Konto-Notifications passen zur Card; Home verwendet dieselbe Palette und Dekoration; globale HTML-Variablen bleiben unverändert.
         """)
-    void notificationMatchesTheCardWithoutChangingHome() {
+    void notificationAndHomeShareTheTheme() {
         String homePrimary = primary(page, "html");
         page.setViewportSize(320, 568);
         LoginPage login = new LoginPage(page); login.open();
-        assertEquals("#526ebc", primary(page, ".cosmos-theme"));
+        assertEquals("#526ebc", primary(page, ".cosmos-page.cosmos-theme"));
         login.signIn(BrowserTestAccounts.ADMIN_EMAIL, "DefinitelyWrong1!"); login.assertRejected();
         Locator notice = page.locator("vaadin-notification-card:not([closing])");
         assertThat(notice).hasAttribute("theme", "cosmos");
@@ -162,8 +163,95 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
         page.navigate(path(HOME_ROUTE));
         assertThat(page).hasTitle(HOME_PAGE_TITLE);
         assertEquals(homePrimary, primary(page, "html"));
-        assertThat(page.locator(".cosmos-page")).hasCount(0);
+        assertThat(page.locator(".cosmos-app-shell.cosmos-theme")).isVisible();
+        assertEquals("#526ebc", primary(page, ".cosmos-page.cosmos-theme"));
         assertTrue(page.locator("body").evaluate("el => getComputedStyle(el).fontFamily").toString().contains("Inter"));
+    }
+
+    @ParameterizedTest(name = "{0}: Home und Admin bei {1}×{2}")
+    @CsvSource({"COSMOS-05A,390,844", "COSMOS-05B,844,390", "COSMOS-05C,1280,900"})
+    @Story("App-Kopfzeile und erreichbare Adminnavigation")
+    @Description("""
+        1. Home bei der angegebenen Fenstergröße öffnen: Logo, Avatar, Fußzeile und fehlenden horizontalen Überlauf prüfen.
+        2. Avatar-Popup öffnen, seine Erreichbarkeit prüfen und über die normale Anmeldung zum Admin wechseln.
+        3. Die echte Navigation öffnen; Dashboard und Allgemein anklicken. Der Drawer darf den Inhalt nur im mobilen Overlaymodus überlagern.
+        4. Benutzerverwaltung über die Navigation öffnen, Add User anklicken und die sichtbaren Formularfelder innerhalb der Fensterbreite prüfen.
+        **Erwartet:** Hintergrund verdeckt keine Navigation. Topbar, Inhalt, Avatar-Popup und Benutzerformular bleiben erreichbar.
+        Die Prüfung beurteilt keine gestalterische Perfektion und ersetzt kein echtes Mobilgerät.
+        """)
+    void appShellAndNavigationRemainUsable(String id, int width, int height) {
+        page.setViewportSize(width, height);
+        page.navigate(path(HOME_ROUTE));
+        assertAppShell();
+        UserMenu menu = new UserMenu(page);
+        menu.open();
+        Locator popup = page.locator("vaadin-popover-overlay[opened] > [part~='overlay']");
+        assertThat(popup).isVisible();
+        assertWithinViewport(popup);
+        AllurePlaywright.attachScreenshot(id + " Home mit Avatar-Popup", page);
+        menu.close();
+        LoginPage login = new LoginPage(page);
+        login.open(); login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+        assertThat(page).hasURL(urlPattern(ADMIN_ROUTE));
+        menu.selectTestLanguage();
+        assertAppShell();
+        openDrawerIfNeeded();
+        Locator drawer = page.locator("vaadin-app-layout [part='drawer']");
+        assertThat(drawer).isVisible();
+        assertWithinViewport(drawer);
+        page.locator("[slot='drawer']").getByText(texts.getAdminNavDashboard(), new Locator.GetByTextOptions().setExact(true)).click();
+        closeOverlayDrawerIfNeeded();
+        login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
+        if (!(Boolean) page.locator("vaadin-app-layout").evaluate("el => el.hasAttribute('overlay')")) {
+            double right = ((Number) drawer.evaluate("el => el.getBoundingClientRect().right")).doubleValue();
+            double left = ((Number) page.locator(".cosmos-app-main").evaluate("el => el.getBoundingClientRect().left")).doubleValue();
+            assertTrue(left >= right - 1, "Desktopinhalt muss neben der Navigation beginnen.");
+        }
+        AllurePlaywright.attachScreenshot(id + " Adminnavigation", page);
+        openDrawerIfNeeded();
+        new ConfigurationPage(page).open(AdminConfigGroup.GENERAL);
+        closeOverlayDrawerIfNeeded();
+        assertWithinViewport(page.locator(".cosmos-admin-form-card"));
+        assertAppShell();
+        openDrawerIfNeeded();
+        AdminUsersPage users = new AdminUsersPage(page);
+        users.open();
+        closeOverlayDrawerIfNeeded();
+        users.openCreate();
+        Locator dialog = page.locator("vaadin-dialog.admin-user-dialog vaadin-dialog-overlay[opened] > [part~='overlay']");
+        assertThat(dialog).isVisible();
+        assertWithinViewport(dialog);
+        for (Locator field : page.locator("vaadin-dialog.admin-user-dialog vaadin-text-field, vaadin-dialog.admin-user-dialog vaadin-email-field, vaadin-dialog.admin-user-dialog vaadin-date-picker").all())
+            assertWithinViewport(field);
+        AllurePlaywright.attachScreenshot(id + " Benutzerformular", page);
+    }
+
+    private void assertAppShell() {
+        assertThat(page.locator(".cosmos-app-shell.cosmos-theme")).isVisible();
+        assertEquals("#526ebc", primary(page, ".cosmos-page.cosmos-theme"));
+        assertThat(page.locator(".cosmos-topbar-logo")).isVisible();
+        assertWithinViewport(page.locator(".cosmos-topbar"));
+        assertWithinViewport(page.locator(".cosmos-topbar-account-menu"));
+        assertWithinViewport(page.locator(".cosmos-app-main"));
+        assertTrue((Boolean) page.evaluate("() => document.documentElement.scrollWidth <= innerWidth + 1"),
+                "AppLayout erzeugt horizontalen Überlauf.");
+    }
+
+    private void openDrawerIfNeeded() {
+        Locator app = page.locator("vaadin-app-layout");
+        if (!(Boolean) app.evaluate("el => el.hasAttribute('drawer-opened')"))
+            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Toggle navigation").setExact(true)).click();
+        assertThat(app).hasAttribute("drawer-opened", "");
+        // Sichtbarkeit beginnt bereits während des nativen Einschiebens. Erst die Endposition prüfen.
+        assertThat(page.locator("vaadin-app-layout [part='drawer']")).hasCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
+    }
+
+    private void closeOverlayDrawerIfNeeded() {
+        Locator app = page.locator("vaadin-app-layout");
+        if ((Boolean) app.evaluate("el => el.hasAttribute('overlay') && el.hasAttribute('drawer-opened')")) {
+            page.keyboard().press("Escape");
+            assertThat(app).not().hasAttribute("drawer-opened", "");
+        }
     }
 
     private ConfigurationPage adminConfig() {

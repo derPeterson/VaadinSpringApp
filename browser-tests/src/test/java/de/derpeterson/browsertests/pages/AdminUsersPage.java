@@ -99,7 +99,8 @@ public final class AdminUsersPage {
     public void selectFilter(String label, String option) {
         addFilter(label);
         filterField(label).click();
-        page.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(option).setExact(true)).click();
+        UiActions.completeValueChange(page, () -> page.getByRole(AriaRole.OPTION,
+                new Page.GetByRoleOptions().setName(option).setExact(true)).click());
         assertThat(filterField(label)).hasValue(option);
     }
 

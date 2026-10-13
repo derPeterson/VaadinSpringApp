@@ -73,13 +73,13 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
     }
 
     @Test
-    @DisplayName("UI-03F: CSS-Animation respektiert reduzierte Bewegung und bleibt auf Kontoansichten begrenzt")
+    @DisplayName("UI-03F: Gemeinsame CSS-Animation respektiert reduzierte Bewegung")
     @Story("Dekoration und reduzierte Bewegung")
     @Description("""
         1. Login öffnen: beide Sternlagen und Nebellagen besitzen die CSS-Animation; Dekoration ist aria-hidden und nicht klickbar.
         2. Betriebssystemwunsch nach reduzierter Bewegung emulieren: Sterne/Nebel haben keine Animation mehr.
         3. Über den echten Kontoerstellungslink zur Registrierung wechseln.
-        **Erwartet:** Reduzierte Bewegung ohne JavaScript-Animation; gemeinsamer Cosmos-Hintergrund auf Registrierung, keiner auf Home.
+        **Erwartet:** Reduzierte Bewegung ohne JavaScript-Animation; gemeinsamer Cosmos-Hintergrund auf Registrierung und Home.
         """)
     void reducedMotionAndBackgroundScope() {
         page.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.NO_PREFERENCE));
@@ -102,6 +102,9 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
         assertThat(page.locator(".cosmos-page--wide")).isVisible();
         page.navigate(path(HOME_ROUTE));
         assertThat(page).hasTitle(HOME_PAGE_TITLE);
-        assertThat(page.locator(".cosmos-page")).hasCount(0);
+        assertThat(page.locator(".cosmos-home.cosmos-theme")).isVisible();
+        assertThat(page.locator(".cosmos-sky")).hasAttribute("aria-hidden", "true");
+        for (Locator layer : page.locator(".cosmos-stars, .cosmos-galaxy, .cosmos-glow").all())
+            assertThat(layer).hasCSS("animation-name", "none");
     }
 }

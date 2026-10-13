@@ -17,6 +17,6 @@ public final class UserStatusMenu {
         new UserMenu(page).open(); current().click();
         Locator option = page.getByRole(AriaRole.OPTION).filter(new Locator.FilterOptions()
                 .setHas(page.getByText(label, new Page.GetByTextOptions().setExact(true))));
-        assertThat(option).hasCount(1); option.click(); assertThat(current()).containsText(label);
+        assertThat(option).hasCount(1); UiActions.completeValueChange(page, () -> option.click()); assertThat(current()).containsText(label);
     }
 }

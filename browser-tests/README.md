@@ -73,8 +73,8 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 11 |
 | `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 19 |
-| `cosmos-design` | Fünf Kontoansichten bei fünf Fenstergrößen, mobiler Mailablauf, Copyright in UI/Mails und Notification-/Theme-Abgrenzung | 8 |
-| `all` | Alle 20 Testklassen | 84 |
+| `cosmos-design` | Fünf Kontoansichten, mobiler Mailablauf, Copyright in UI/Mails, gemeinsames Theme sowie Home-/Adminnavigation bei drei Größen | 11 |
+| `all` | Alle 20 Testklassen | 87 |
 
 UI-01A prüft die direkte Datumseingabe mit lokalisiertem Beispiel und anschließendem
 Registrieren ohne Enter/Escape. UI-01B prüft getrennt die Auswahl über das Kalender-Icon,
@@ -97,12 +97,10 @@ UI-03A–E prüfen den bestehenden Login bei 320×568, 390×844, 844×390,
 360×240 und 1280×900. Formularelemente liegen innerhalb der Fensterbreite;
 geringe Höhe darf vertikal scrollen. Remember-me wird tatsächlich gewählt/abgewählt,
 eine falsche Anmeldung korrigiert und das echte Admin-Dashboard erreicht.
-UI-03F prüfte bisher die CSS-Animation und `prefers-reduced-motion` sowie die Begrenzung
-der Dekoration auf die Kontoansichten. Home gehört jetzt ebenfalls zum Cosmos-Bereich;
-diese Erwartung muss beim gemeinsamen Prüfabschluss angepasst werden. Die echten Vaadin-Felder/Buttons verwenden
-die zentrale Cosmos-Lumo-Palette; Card und Anordnung folgen der Designvorlage.
-Inter wird lokal und global bereitgestellt. Home und Admin verwenden inzwischen ebenfalls die
-zentrale Cosmos-Palette. Der Prüfstand beider Erweiterungen ist noch offen.
+UI-03F prüft die CSS-Animation und `prefers-reduced-motion` auf Kontoansichten und Home.
+Die echten Vaadin-Felder/Buttons verwenden die zentrale Cosmos-Lumo-Palette; Card und
+Anordnung folgen der Designvorlage. Inter wird lokal und global bereitgestellt. Home und
+Admin verwenden dieselbe zentrale Palette und sind im vollständigen DE-/EN-Lauf geprüft.
 
 ```powershell
 .\browser-tests\run.ps1 -Suite login-checks -Language de
@@ -130,10 +128,14 @@ COSMOS-03 speichert den Copyright-Text im Adminbereich, lädt ihn neu und prüft
 ausgefüllte, sichere Fußzeile nach Abmeldung. Registrierung und Passwortanfrage erzeugen
 anschließend echte SMTP-Mails; deren geladenes Inline-Logo und derselbe gespeicherte
 Fußtext werden geprüft. Der ursprüngliche Wert wird wiederhergestellt.
-COSMOS-04 prüft die schmale Fehlermeldung mit Card-Verlauf. Seine bisherige Erwartung
-zur unveränderten Home-Palette muss beim gemeinsamen Prüfabschluss angepasst werden.
-Globale Inter-Schrift und die ursprünglichen Home-/Adminfarben wurden im letzten Lauf
-geprüft; die neue Home-/Admin-Gestaltung ist darin noch nicht enthalten.
+COSMOS-04 prüft die schmale Fehlermeldung mit Card-Verlauf und dieselbe Palette auf Home.
+Die globalen HTML-Farbvariablen bleiben unabhängig davon unverändert.
+COSMOS-05A–C prüfen Home und Admin bei 390×844, 844×390 und 1280×900: Topbar/Avatar,
+Popupbreite, horizontale Erreichbarkeit, echte Drawer-Navigation, Allgemein und das
+Benutzerformular. Im mobilen Overlaymodus wird die Navigation vor der Prüfung des
+dahinterliegenden Inhalts geschlossen; die native Einschiebe-Animation wird abgewartet.
+Alle elf Cosmos-Fälle sind Bestandteil der vollständigen DE-/EN-Läufe. Screenshots
+enthalten den Design-Zwischenstand, keine Behauptung gestalterischer Perfektion.
 
 ```powershell
 .\browser-tests\run.ps1 -Suite cosmos-design -Language de
@@ -226,6 +228,7 @@ Die Testquellen liegen unter `browser-tests/src/test/java/de/derpeterson/browser
 | --- | --- |
 | `suites/` | Kleine getrennte fachliche Suites mit unabhängigen Testfällen |
 | `pages/` | Wiederkehrende UI-Aktionen; Liste, Benutzerformular und Löschbestätigung haben getrennte Helfer |
+| `pages/UiActions` | Wartet nach echten Klicks auf die Vaadin-Antwort; Wertänderungen werden getrennt vom Öffnen eines Dropdowns erkannt |
 | `mail/MailpitInbox` | Nur eigene empfangene Testmail lesen und deren echten Link verwenden |
 | `i18n/UiTexts` | Gemeinsame Übersetzungsgetter mit expliziter Sprache |
 | `BrowserFixture` | Browserkontext, Screenshots und Traces |

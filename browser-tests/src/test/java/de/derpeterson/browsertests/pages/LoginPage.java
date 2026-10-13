@@ -44,14 +44,14 @@ public final class LoginPage {
         assertFormVisible();
         assertThat(page.getByText(texts.getLoginFailedMessage(), new Page.GetByTextOptions().setExact(true))).isVisible();
         assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions()
-                .setName(texts.getAdminDashboardTitle()).setExact(true))).hasCount(0);
+                .setName(texts.getAdminDashboardTitle()).setExact(true).setLevel(1))).hasCount(0);
     }
 
     @Step("Admin-Dashboard und angemeldetes Konto sind sichtbar")
     public void assertAdminSignedIn(String email) {
         assertThat(page).hasURL(urlPattern(ADMIN_ROUTE));
         assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions()
-                .setName(texts.getAdminDashboardTitle()).setExact(true))).isVisible();
+                .setName(texts.getAdminDashboardTitle()).setExact(true).setLevel(1))).isVisible();
         assertThat(page.getByText(texts.getAdminDashboardWelcome() + ": " + email,
                 new Page.GetByTextOptions().setExact(true))).isVisible();
     }
