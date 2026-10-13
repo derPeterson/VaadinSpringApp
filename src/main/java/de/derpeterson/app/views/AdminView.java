@@ -10,10 +10,12 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.sidenav.SideNav;
+import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.spring.annotation.UIScope;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -24,6 +26,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.ui.components.CosmosBackgroundComponent;
 import de.derpeterson.app.ui.components.CosmosCopyrightComponent;
@@ -40,6 +43,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Locale;
 import java.util.Objects;
 
 import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
@@ -63,19 +67,15 @@ public class AdminView extends IsAuthenticatedBaseView {
 
     private Span headerTitle = null;
 
-    private final Span dashboardNavText = new Span();
-    private final Span configurationNavText = new Span();
-    private final Span mailTestNavText = new Span();
-    private final Span userManagementNavText = new Span();
     private final Span serviceNameSpan = new Span();
 
-    private Div dashboardNavItem = null;
-    private Div configurationNavItem = null;
-    private Div mailTestNavItem = null;
-    private Div userManagementNavItem = null;
-    private VerticalLayout configurationSubmenuLayout = null;
-    private final Map<AdminConfigGroup, Div> configurationSubmenuItems = new LinkedHashMap<>();
-    private final Map<AdminConfigGroup, Span> configurationSubmenuTextSpans = new LinkedHashMap<>();
+    private SideNav sideNavigation;
+    private SideNavItem dashboardNavItem;
+    private SideNavItem configurationNavItem;
+    private SideNavItem mailTestNavItem;
+    private SideNavItem userManagementNavItem;
+    private final Map<AdminConfigGroup, SideNavItem> configurationSubmenuItems = new LinkedHashMap<>();
+    private final Map<String, Runnable> navigationActions = new LinkedHashMap<>();
 
     private VerticalLayout sectionLayout = null;
     private AdminDashboardSection dashboardSection = null;
@@ -195,117 +195,78 @@ public class AdminView extends IsAuthenticatedBaseView {
     }
 
     private VerticalLayout createSideNavigation() {
-        dashboardNavItem = createNavigationItem(
-                VaadinIcon.DASHBOARD,
-                dashboardNavText,
-                false,
-                () -> selectSection(AdminSection.DASHBOARD, null)
-        );
-        configurationNavItem = createNavigationItem(
-                VaadinIcon.COG,
-                configurationNavText,
-                false,
-                () -> selectSection(AdminSection.CONFIGURATION, AdminConfigGroup.GENERAL)
-        );
-        mailTestNavItem = createNavigationItem(
-                VaadinIcon.ENVELOPE,
-                mailTestNavText,
-                false,
-                () -> selectSection(AdminSection.MAIL_TEST, null)
-        );
-        userManagementNavItem = createNavigationItem(
-                VaadinIcon.USERS,
-                userManagementNavText,
-                false,
-                () -> selectSection(AdminSection.USER_MANAGEMENT, null)
-        );
+        sideNavigation = new SideNav();
+        sideNavigation.setWidthFull();
+        sideNavigation.addClassName("cosmos-nav");
+        sideNavigation.setAutoExpand(false);
 
-        configurationSubmenuLayout = new VerticalLayout();
-        configurationSubmenuLayout.setPadding(false);
-        configurationSubmenuLayout.setSpacing(false);
-        configurationSubmenuLayout.setWidthFull();
-        configurationSubmenuLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-        configurationSubmenuLayout.addClassName("cosmos-nav-submenu");
+        dashboardNavItem = createNavigationItem(VaadinIcon.DASHBOARD, AdminSection.DASHBOARD, null);
+        // Ohne Zielpfad klappt SideNav diesen Elternpunkt ausschließlich auf und zu.
+        configurationNavItem = new SideNavItem("");
+        configurationNavItem.setPrefixComponent(VaadinIcon.COGS.create());
+        configurationNavItem.getElement().getClassList().add("admin-nav-item");
+        mailTestNavItem = createNavigationItem(VaadinIcon.ENVELOPE, AdminSection.MAIL_TEST, null);
+        userManagementNavItem = createNavigationItem(VaadinIcon.USERS, AdminSection.USER_MANAGEMENT, null);
 
-        addConfigurationSubmenuButton(AdminConfigGroup.GENERAL);
-        addConfigurationSubmenuButton(AdminConfigGroup.SECURITY);
-        addConfigurationSubmenuButton(AdminConfigGroup.TOKENS);
-        addConfigurationSubmenuButton(AdminConfigGroup.USER_STATUS);
-        addConfigurationSubmenuButton(AdminConfigGroup.EMAIL_SENDER);
-        addConfigurationSubmenuButton(AdminConfigGroup.SMTP);
-        addConfigurationSubmenuButton(AdminConfigGroup.QUEUE);
+        for (AdminConfigGroup group : AdminConfigGroup.values()) {
+            SideNavItem submenuItem = createNavigationItem(ConfigGroupIcons.forGroup(group), AdminSection.CONFIGURATION, group);
+            submenuItem.getElement().getClassList().add("cosmos-nav-item--sub");
+            configurationSubmenuItems.put(group, submenuItem);
+            configurationNavItem.addItem(submenuItem);
+        }
 
-        VerticalLayout drawerContent = getDrawerLayout();
-        updateNavigationState();
+        sideNavigation.addItem(dashboardNavItem, configurationNavItem, mailTestNavItem, userManagementNavItem);
+        installSideNavigationActions();
 
-        return drawerContent;
-    }
-
-    private @NonNull VerticalLayout getDrawerLayout() {
-        VerticalLayout drawerContent = new VerticalLayout(getNavLayout());
+        VerticalLayout drawerContent = new VerticalLayout(sideNavigation);
         drawerContent.setPadding(false);
         drawerContent.setSpacing(false);
         drawerContent.setWidthFull();
         drawerContent.setAlignItems(FlexComponent.Alignment.STRETCH);
         drawerContent.addClassName("cosmos-sidebar");
+        updateNavigationState();
         return drawerContent;
     }
 
-    private @NonNull VerticalLayout getNavLayout() {
-        VerticalLayout navLayout = new VerticalLayout(
-                dashboardNavItem,
-                configurationNavItem,
-                configurationSubmenuLayout,
-                mailTestNavItem,
-                userManagementNavItem
-        );
-        navLayout.setPadding(false);
-        navLayout.setSpacing(false);
-        navLayout.setWidthFull();
-        navLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-        navLayout.addClassName("cosmos-nav");
-        return navLayout;
-    }
-
-    private void addConfigurationSubmenuButton(AdminConfigGroup group) {
-        Span submenuText = new Span();
-        Div submenuButton = createNavigationItem(
-                null,
-                submenuText,
-                true,
-                () -> selectSection(AdminSection.CONFIGURATION, group)
-        );
-        configurationSubmenuItems.put(group, submenuButton);
-        configurationSubmenuTextSpans.put(group, submenuText);
-        configurationSubmenuLayout.add(submenuButton);
-    }
-
-    private Div createNavigationItem(VaadinIcon iconType, Span textSpan, boolean submenu, Runnable clickAction) {
-        Div item;
-        if (iconType != null) {
-            var icon = iconType.create();
-            icon.addClassNames(
-                    submenu ? LumoUtility.IconSize.SMALL : LumoUtility.IconSize.MEDIUM,
-                    LumoUtility.Flex.SHRINK_NONE
-            );
-            item = new Div(icon, textSpan);
-        } else {
-            item = new Div(textSpan);
+    private SideNavItem createNavigationItem(VaadinIcon iconType, AdminSection section, AdminConfigGroup group) {
+        Map<String, String> parameters = new LinkedHashMap<>();
+        parameters.put("section", section.name().toLowerCase(Locale.ROOT));
+        if (group != null) {
+            parameters.put("group", group.name().toLowerCase(Locale.ROOT));
         }
-
-        textSpan.addClassName("cosmos-nav-label");
-        item.addClassNames("admin-nav-item", "cosmos-nav-item");
-        if (submenu) item.addClassName("cosmos-nav-item--sub");
-
-        item.addClickListener(event -> clickAction.run());
-
+        SideNavItem item = new SideNavItem("", AdminView.class);
+        // SideNavItem entfernt Query-Anteile aus setPath; deshalb die vorgesehene API nutzen.
+        item.setQueryParameters(QueryParameters.simple(parameters));
+        if (iconType != null) {
+            item.setPrefixComponent(iconType.create());
+        }
+        item.getElement().getClassList().add("admin-nav-item");
+        navigationActions.put(item.getPath(), () -> selectSection(section, group));
         return item;
+    }
+
+    private void installSideNavigationActions() {
+        // Die Admin-Bereiche sind Panels derselben View. Der öffentliche onNavigate-
+        // Hook delegiert ihren Wechsel an Flow und verhindert ein erneutes Laden der View.
+        sideNavigation.getElement().addEventListener("cosmos-admin-navigate", event -> {
+            String path = event.getEventData().path("event.detail.path").asString();
+            Runnable action = navigationActions.get(path);
+            if (action != null) {
+                action.run();
+            }
+        }).addEventData("event.detail.path");
+        sideNavigation.addAttachListener(event -> sideNavigation.getElement().executeJs("""
+                this.onNavigate = ({path}) => {
+                    this.dispatchEvent(new CustomEvent('cosmos-admin-navigate', {detail: {path}}));
+                };
+                """));
     }
 
     private void selectSection(AdminSection section, AdminConfigGroup configurationGroup) {
         activeSection = section;
 
         if (section == AdminSection.CONFIGURATION) {
+            configurationNavItem.setExpanded(true);
             if (configurationGroup != null) {
                 activeConfigurationGroup = configurationGroup;
             } else if (activeConfigurationGroup == null) {
@@ -340,8 +301,9 @@ public class AdminView extends IsAuthenticatedBaseView {
         applyNavigationItemState(mailTestNavItem, activeSection == AdminSection.MAIL_TEST);
         applyNavigationItemState(userManagementNavItem, activeSection == AdminSection.USER_MANAGEMENT);
 
-        if (configurationSubmenuLayout != null) {
-            configurationSubmenuLayout.setVisible(true);
+        // Der Elternpunkt klappt nur auf; die aktive Seite ist der Unterpunkt.
+        if (configurationNavItem != null) {
+            configurationNavItem.getElement().removeAttribute("aria-current");
         }
 
         configurationSubmenuItems.forEach((group, item) -> {
@@ -351,16 +313,16 @@ public class AdminView extends IsAuthenticatedBaseView {
         });
     }
 
-    private void applyNavigationItemState(Div item, boolean active) {
+    private void applyNavigationItemState(SideNavItem item, boolean active) {
         if (item == null) {
             return;
         }
 
         if (active) {
-            item.addClassName("cosmos-nav-item--active");
+            item.getElement().getClassList().add("cosmos-nav-item--active");
             item.getElement().setAttribute("aria-current", "page");
         } else {
-            item.removeClassName("cosmos-nav-item--active");
+            item.getElement().getClassList().remove("cosmos-nav-item--active");
             item.getElement().removeAttribute("aria-current");
         }
     }
@@ -370,13 +332,15 @@ public class AdminView extends IsAuthenticatedBaseView {
             headerTitle.setText(messageProperties.getAdminHeaderTitle());
         }
 
-        dashboardNavText.setText(messageProperties.getAdminNavDashboard());
-        configurationNavText.setText(messageProperties.getAdminNavConfiguration());
-        mailTestNavText.setText(messageProperties.getAdminNavMailTest());
-        userManagementNavText.setText(messageProperties.getAdminUsersTitle());
+        dashboardNavItem.setLabel(messageProperties.getAdminNavDashboard());
+        configurationNavItem.setLabel(messageProperties.getAdminNavConfiguration());
+        mailTestNavItem.setLabel(messageProperties.getAdminNavMailTest());
+        userManagementNavItem.setLabel(messageProperties.getAdminUsersTitle());
 
-        configurationSubmenuTextSpans.forEach((group, textSpan) ->
-                textSpan.setText(messageProperties.getAdminConfigGroupLabel(group)));
+        configurationSubmenuItems.forEach((group, item) ->
+                item.setLabel(messageProperties.getAdminConfigGroupLabel(group)));
+        sideNavigation.getElement().setAttribute("aria-label", messageProperties.getAdminHeaderTitle());
+        sideNavigation.setI18n(new SideNav.SideNavI18n().setToggle(messageProperties.getAdminNavToggleChildren()));
 
         if (dashboardSection != null) {
             dashboardSection.refreshTexts();

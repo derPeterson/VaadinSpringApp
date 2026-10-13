@@ -700,7 +700,7 @@ vaadin-select[theme~="cosmos"] {
 
 /* ADMIN — nur Layout/Navigation ergänzen; Palette, Topbar, Cards und Menü stehen oben. */
 vaadin-app-layout.cosmos-admin {
-    --vaadin-app-layout-drawer-width: 211px;
+    --vaadin-app-layout-drawer-width: 250px;
     --cosmos-sidebar-background: linear-gradient(180deg, #101b2cdd, #0b1425c9);
     --cosmos-sidebar-border-color: #8cadd626;
     --cosmos-nav-active-background: linear-gradient(90deg, #204478a6, #24488630);
@@ -746,51 +746,66 @@ vaadin-app-layout.cosmos-admin {
     padding: 17px 12px;
 }
 
+/* Native SideNav mit dem kompakten Cosmos-Look des ursprünglichen Entwurfs.
+ * Hierarchie und Tastaturbedienung bleiben bei Vaadin; Farben zentral im Theme. */
 .cosmos-nav {
+    --cosmos-nav-icon-size: 20px;
+    --cosmos-subnav-inset: calc(var(--lumo-space-l) + var(--lumo-space-s));
+    color: var(--lumo-secondary-text-color);
+    font-size: 13px;
+}
+
+.cosmos-nav::part(children),
+.cosmos-nav vaadin-side-nav-item::part(children) {
+    display: flex;
+    flex-direction: column;
     gap: 5px;
 }
 
-.cosmos-nav-submenu {
-    gap: 0;
+.cosmos-nav vaadin-side-nav-item[expanded]::part(children) {
+    margin-block-start: 5px;
 }
 
-.cosmos-nav-item {
+.cosmos-nav vaadin-side-nav-item::part(content) {
     box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    width: 100%;
-    min-width: 0;
     min-height: 42px;
-    padding: 8px 12px;
-    gap: 11px;
+    padding: 0;
     border: 1px solid transparent;
     border-radius: 9px;
+    background: transparent;
     color: var(--lumo-secondary-text-color);
     font-size: 13px;
     font-weight: 500;
-    cursor: pointer;
-    -webkit-user-select: none;
-    user-select: none;
-}
-
-.cosmos-nav-item vaadin-icon {
-    width: 17px;
-    height: 17px;
-    flex-shrink: 0;
-}
-
-.cosmos-nav-label {
-    white-space: normal;
     line-height: 1.4;
-    overflow-wrap: anywhere;
 }
 
-.cosmos-nav-item:hover {
+.cosmos-nav vaadin-side-nav-item::part(link) {
+    color: inherit;
+    font: inherit;
+    min-height: 24px;
+}
+
+.cosmos-nav vaadin-side-nav-item::part(toggle-button) {
+    width: 24px;
+    height: 32px;
+    margin-inline-end: 0;
+    color: var(--lumo-secondary-text-color);
+}
+
+.cosmos-nav vaadin-side-nav-item > vaadin-icon {
+    box-sizing: border-box;
+    width: var(--cosmos-nav-icon-size);
+    height: var(--cosmos-nav-icon-size);
+    padding: 0;
+    color: var(--lumo-secondary-text-color);
+}
+
+.cosmos-nav vaadin-side-nav-item::part(content):hover {
     background: var(--lumo-contrast-5pct);
     color: var(--lumo-body-text-color);
 }
 
-.cosmos-nav-item--active {
+.cosmos-nav vaadin-side-nav-item.cosmos-nav-item--active::part(content) {
     background: var(--cosmos-nav-active-background);
     border-color: var(--cosmos-nav-active-border-color);
     color: var(--lumo-body-text-color);
@@ -798,16 +813,28 @@ vaadin-app-layout.cosmos-admin {
     box-shadow: inset 3px 0 var(--lumo-primary-text-color);
 }
 
-.cosmos-nav-item--sub {
+/* Den ganzen Unterpunkt einrücken, damit Hintergrund und Fokusrahmen
+ * beim Icon beginnen. Native Einrückung entfällt, damit die Position stabil bleibt. */
+.cosmos-nav vaadin-side-nav-item[slot="children"] {
+    --vaadin-side-nav-child-indent: 0px;
+}
+
+.cosmos-nav vaadin-side-nav-item[slot="children"]::part(content) {
+    margin-inline-start: calc(var(--cosmos-subnav-inset) - 5px);
     min-height: 31px;
-    padding: 6px 8px 6px 42px;
     font-size: 12px;
     color: var(--lumo-tertiary-text-color);
 }
 
-.cosmos-nav-item--sub.cosmos-nav-item--active {
-    color: var(--lumo-primary-text-color);
+.cosmos-nav vaadin-side-nav-item[slot="children"]::part(link) {
+    padding-inline-start: 5px;
+    min-height: 0;
+    padding-block: 6px;
+}
+
+.cosmos-nav vaadin-side-nav-item.cosmos-nav-item--sub.cosmos-nav-item--active::part(content) {
     background: var(--lumo-primary-color-10pct);
+    color: var(--lumo-primary-text-color);
     box-shadow: none;
 }
 

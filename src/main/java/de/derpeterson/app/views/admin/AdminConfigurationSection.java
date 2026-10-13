@@ -25,6 +25,7 @@ import de.derpeterson.app.config.TokenDurationPolicy;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
@@ -311,15 +312,7 @@ public class AdminConfigurationSection extends VerticalLayout {
             currentGroupTitle.setText(groupLabel);
             currentGroupDescription.setText(messageProperties.getAdminConfigGroupDescription(selectedGroup));
             currentGroupSettingCount.setText(messageProperties.getAdminConfigSettingsCount(getVisibleConfigEntries().size()));
-            switch (selectedGroup) {
-                case GENERAL -> currentGroupIcon.setIcon(VaadinIcon.COG);
-                case SECURITY -> currentGroupIcon.setIcon(VaadinIcon.LOCK);
-                case TOKENS -> currentGroupIcon.setIcon(VaadinIcon.KEY);
-                case USER_STATUS -> currentGroupIcon.setIcon(VaadinIcon.USER);
-                case EMAIL_SENDER -> currentGroupIcon.setIcon(VaadinIcon.ENVELOPE);
-                case SMTP -> currentGroupIcon.setIcon(VaadinIcon.COG);
-                case QUEUE -> currentGroupIcon.setIcon(VaadinIcon.LIST);
-            }
+            currentGroupIcon.setIcon(ConfigGroupIcons.forGroup(selectedGroup));
             breadcrumb += " / " + groupLabel;
         }
         configurationBreadcrumb.setText(breadcrumb);

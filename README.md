@@ -130,6 +130,20 @@ als „Admin Center / Übersicht“ bzw. „Admin Center / Overview“. Seine Ü
 links im Inhaltsbereich, die Kontoinformations-Card steht mittig darunter.
 Die kompakte Card zeigt „Willkommen zurück“, die aktuelle E-Mail fett und jede
 Berechtigung als eigenen Rollen-Badge; ihre Gestaltung bleibt im zentralen CSS.
+Die Seitennavigation verwendet Vaadins native `SideNav`/`SideNavItem`-Hierarchie.
+„Konfiguration“ ist ein Elternpunkt ohne Zielpfad mit `VaadinIcon.COGS`; Vaadin
+übernimmt das Auf-/Zuklappen, den separaten Pfeil und die Tastaturbedienung.
+Die Unterpunkte öffnen weiterhin die bestehenden Konfigurationsgruppen.
+`ConfigGroupIcons` ordnet Cards und Unterpunkten gemeinsam dieselben Gruppenicons zu.
+Die früheren Chevron-/Button-Sonderregeln sind entfernt. Das zentrale Theme
+stellt den kompakten Look wieder her: Hauptpunkte 13 px/42 px, Unterpunkte 12 px/31 px,
+Icons 20 px und dezente Flächen ausschließlich für die aktive Auswahl bzw. Hover.
+Zielparameter werden über `SideNavItem.setQueryParameters` gesetzt, damit die
+Einträge unterschiedliche Ziele und korrekt zugeordnete Panel-Aktionen behalten.
+Der öffentliche `onNavigate`-Hook verbindet die Einträge mit den bestehenden
+Admin-Panels, ohne die View neu zu laden. Labels und die Aufklapphilfe folgen DE/EN.
+Die Browser-Navigation muss beim späteren gemeinsamen Testlauf angepasst werden.
+Referenz: [Vaadin SideNav: Hierarchy](https://vaadin.com/docs/latest/components/side-nav#hierarchy).
 Konfiguration nutzt denselben Kopfbereich und die bisherigen Schriftgrößen; sein
 Breadcrumb zeigt Admin Center, Konfiguration und die ausgewählte Gruppe und wird
 bei Gruppen- und Sprachwechsel aktualisiert. Die Konfigurations-Card zeigt

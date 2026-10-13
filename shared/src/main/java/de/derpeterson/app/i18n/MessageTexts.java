@@ -425,6 +425,10 @@ public class MessageTexts {
         return getTranslation("adminView.nav.dashboard");
     }
 
+    public String getAdminNavToggleChildren() {
+        return getTranslation("adminView.nav.toggle_children");
+    }
+
     public String getAdminNavConfiguration() {
         return getTranslation("adminView.nav.configuration");
     }
