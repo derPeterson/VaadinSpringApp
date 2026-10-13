@@ -82,7 +82,7 @@ public class RegistrationViewTest {
         when(roles.findByName(RoleType.ROLE_USER)).thenReturn(Optional.of(RoleEntity.builder().name(RoleType.ROLE_USER).build()));
         when(encoder.encode("Password!")).thenReturn("hash");
         view = new RegistrationView(new MessageProperties(provider), users, roles, encoder, verification,
-                mock(SecurityService.class), mock(HttpServletRequest.class));
+                mock(SecurityService.class), mock(HttpServletRequest.class), accountConfig());
         field("firstNameField", TextField.class).setValue("Test");
         field("lastNameField", TextField.class).setValue("User");
         field("emailField", EmailField.class).setValue("test@example.com");
@@ -133,6 +133,30 @@ public class RegistrationViewTest {
         assertNotEquals(initialExample, translatedExample);
         assertEquals(translatedExample, picker.getPlaceholder());
         assertEquals(LocalDate.of(1990, 1, 1), picker.getValue());
+    }
+
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void cosmosPlaceholdersFollowLanguageChangesWithoutLosingFormValues(boolean german) {
+        Locale initial = german ? Locale.GERMAN : Locale.ENGLISH;
+        Locale other = german ? Locale.ENGLISH : Locale.GERMAN;
+        for (Locale locale : List.of(initial, other, initial)) {
+            LanguageChangeEvent.fire(ui, locale);
+            MessageProperties expected = MessageProperties.forLocale(provider, locale);
+            assertEquals(expected.getAccountFirstNamePlaceholder(), field("firstNameField", TextField.class).getPlaceholder());
+            assertEquals(expected.getAccountLastNamePlaceholder(), field("lastNameField", TextField.class).getPlaceholder());
+            assertEquals(expected.getAccountEmailPlaceholder(), field("emailField", EmailField.class).getPlaceholder());
+            assertEquals(expected.getAccountConfirmEmailPlaceholder(), field("confirmEmailField", EmailField.class).getPlaceholder());
+            assertEquals(expected.getAccountPasswordPlaceholder(), field("passwordField", PasswordField.class).getPlaceholder());
+            assertEquals(expected.getAccountConfirmPasswordPlaceholder(), field("confirmPasswordField", PasswordField.class).getPlaceholder());
+            assertEquals(expected.getAccountGenderPlaceholder(), field("genderComboBox", ComboBox.class).getPlaceholder());
+            assertEquals("Test", field("firstNameField", TextField.class).getValue());
+            assertEquals("test@example.com", field("emailField", EmailField.class).getValue());
+            assertEquals("Password!", field("passwordField", PasswordField.class).getValue());
+            assertEquals(Gender.OTHER, field("genderComboBox", ComboBox.class).getValue());
+        }
+        verifyNoInteractions(users, verification);
     }
 
     public static class TestService extends com.vaadin.flow.server.VaadinServletService {
@@ -319,4 +343,11 @@ public class RegistrationViewTest {
         assertNotification(MessageProperties::getBaseValidationRequiredMessage, Locale.ENGLISH);
         verifyNoInteractions(verification);
     }
+    private static ConfigService accountConfig() {
+        ConfigService config = mock(ConfigService.class);
+        when(config.getString(any(ConfigEntry.class))).thenAnswer(call ->
+                ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
+        return config;
+    }
+
 }

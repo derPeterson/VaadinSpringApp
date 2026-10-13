@@ -7,8 +7,6 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
-import com.vaadin.flow.component.dependency.StyleSheet;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -32,7 +30,9 @@ import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
-import de.derpeterson.app.ui.components.CardComponent;
+import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.CosmosPageComponent;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -52,7 +52,6 @@ import java.util.function.Supplier;
 @Route(AppRouteConstants.LOGIN_ROUTE)
 @PageTitle(AppRouteConstants.LOGIN_PAGE_TITLE)
 @AnonymousAllowed
-@StyleSheet("custom-theme/cosmos-login.css")
 public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
     private static final Logger logger = LoggerFactory.getLogger(LoginView.class);
@@ -69,7 +68,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     private Span createAccountQuestionText = null;
 
     public LoginView(MessageProperties messageProperties, AuthenticationManager authenticationManager,
-                     SecurityService securityService, HttpServletRequest request) {
+                     SecurityService securityService, HttpServletRequest request, ConfigService configService) {
         super(securityService, request, new HorizontalLayout());
 
         this.messageProperties = messageProperties;
@@ -97,13 +96,14 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+            updateInputPlaceholders();
             NotificationHelper.getInstance().updateText();
         });
 
         getContent().setWidthFull();
         getContent().setPadding(false);
         setSpacing(false);
-        addClassName("cosmos-login");
+        getContent().removeAll();
 
         // UI Elements
         this.createAccountLink = new RouterLink(messageProperties.getLoginCreateAccountLink(), RegistrationView.class);
@@ -136,24 +136,20 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
             }
         });
 
-        VerticalLayout mainContent = new VerticalLayout();
-        mainContent.addClassName("cosmos-login__content");
-        mainContent.setWidthFull();
-        mainContent.setPadding(false);
-        mainContent.setSpacing(false);
-        mainContent.setAlignItems(FlexComponent.Alignment.CENTER);
-        mainContent.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+        CosmosPageComponent pageLayout = new CosmosPageComponent(configService, false, messageProperties::getAccountCopyrightTemplate);
+        VerticalLayout mainContent = pageLayout.getCardContainer();
 
         VerticalLayout cardContentLayout = new VerticalLayout();
         cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
         cardContentLayout.setPadding(false);
         cardContentLayout.setSpacing(false);
-        cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY, "cosmos-login__form");
+        cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY, "cosmos-form");
 
         this.title = new H1(messageProperties.getLoginTitle());
-        title.addClassName("cosmos-login__headline");
+        title.addClassName("cosmos-headline");
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
+        cardTitleLayout.addClassName("cosmos-title-row");
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
@@ -163,11 +159,12 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
         createAccountLink.addClassNames("underline");
 
         HorizontalLayout cardSecondaryTitleLayout = new HorizontalLayout();
+        cardSecondaryTitleLayout.addClassNames("cosmos-intro", "cosmos-form-text");
         cardSecondaryTitleLayout.setWidthFull();
         cardSecondaryTitleLayout.setPadding(false);
         cardSecondaryTitleLayout.setSpacing(false);
         cardSecondaryTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-        cardSecondaryTitleLayout.addClassNames(LumoUtility.Gap.SMALL, "cosmos-login__account-links");
+        cardSecondaryTitleLayout.addClassNames(LumoUtility.Gap.SMALL, "cosmos-form-links", "cosmos-form-text");
         cardSecondaryTitleLayout.add(createAccountQuestionText);
         cardSecondaryTitleLayout.add(createAccountLink);
 
@@ -187,52 +184,34 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
         passwordField.addKeyPressListener(Key.ENTER, event -> loginButton.click());
 
         HorizontalLayout rememberMeLayout = new HorizontalLayout();
-        rememberMeLayout.addClassName("cosmos-login__remember");
+        rememberMeLayout.addClassName("cosmos-remember");
         rememberMeLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
         rememberMeLayout.add(rememberMeCheckBox);
 
         forgotPasswordLink.addClassNames("underline");
         HorizontalLayout forgotPasswordLayout = new HorizontalLayout();
-        forgotPasswordLayout.addClassName("cosmos-login__forgot");
+        forgotPasswordLayout.addClassName("cosmos-forgot");
         forgotPasswordLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
         forgotPasswordLayout.add(forgotPasswordLink);
 
         HorizontalLayout secondaryActionLayout = new HorizontalLayout();
         secondaryActionLayout.setWidthFull();
-        secondaryActionLayout.addClassName("cosmos-login__options");
+        secondaryActionLayout.addClassName("cosmos-options");
 
         secondaryActionLayout.add(rememberMeLayout, forgotPasswordLayout);
 
         cardContentLayout.add(cardTitleLayout, cardSecondaryTitleLayout, emailField, passwordField, loginButton, secondaryActionLayout);
-        CardComponent cardComponent = new CardComponent(cardContentLayout);
-        // Nur diese Card erhält die Glasoberfläche; andere CardComponent-Instanzen bleiben unverändert.
-        cardComponent.removeClassNames(LumoUtility.Background.BASE, LumoUtility.Border.ALL,
-                LumoUtility.BorderRadius.LARGE, LumoUtility.BoxShadow.MEDIUM, LumoUtility.Padding.LARGE);
-        cardComponent.addClassName("cosmos-login__card");
-        cardComponent.setWidthFull();
+        CosmosCardComponent cardComponent = new CosmosCardComponent(cardContentLayout);
 
         mainContent.add(cardComponent);
 
-        add(createSky(), mainContent);
+        updateInputPlaceholders();
+        add(pageLayout);
     }
 
-    private static Div createSky() {
-        Div sky = layer("cosmos-login__sky");
-        sky.getElement().setAttribute("aria-hidden", "true");
-        sky.add(layer("cosmos-login__stars", "cosmos-login__stars--small"),
-                layer("cosmos-login__stars", "cosmos-login__stars--far"),
-                layer("cosmos-login__galaxy"),
-                layer("cosmos-login__glow", "cosmos-login__glow--blue"),
-                layer("cosmos-login__glow", "cosmos-login__glow--violet"),
-                layer("cosmos-login__horizon"),
-                layer("cosmos-login__planet"),
-                layer("cosmos-login__moon"));
-        return sky;
+    private void updateInputPlaceholders() {
+        if (emailField != null) emailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
+        if (passwordField != null) passwordField.setPlaceholder(messageProperties.getAccountPasswordPlaceholder());
     }
 
-    private static Div layer(String... classes) {
-        Div layer = new Div();
-        layer.addClassNames(classes);
-        return layer;
-    }
 }

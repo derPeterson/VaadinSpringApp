@@ -54,6 +54,10 @@ class VerificationServiceMailTest {
 
     @BeforeEach
     void setUp() {
+        // Neue Konfiguration gehört zur Mailfixture; andere Fälle lesen diese Werte nicht.
+        lenient().when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn(ConfigEntry.COPYRIGHT_TEXT.getDefaultValueString());
+        lenient().when(messages.getAccountCopyrightTemplate()).thenAnswer(call ->
+                MessageProperties.forLocale(new CustomI18NProvider(), CustomI18NProvider.getCurrentLocale()).getAccountCopyrightTemplate());
         service = new VerificationService(messages, tokens, users, config, queue,
                 Clock.fixed(Instant.parse("2026-10-07T12:00:00Z"), ZoneOffset.UTC));
         user = UserEntity.builder().id(1L).firstName("Test").lastName("User").email("test@example.com").build();
@@ -74,8 +78,8 @@ class VerificationServiceMailTest {
                  assertEquals("email/welcome_en.html", context.arguments().getFirst());
                  when(resource.getInputStream()).thenReturn(stream);
              })) {
-            image.when(() -> ImageHelper.convertImageToBase64("META-INF/resources/custom-theme/service_logo.png"))
-                    .thenReturn("logo");
+            image.when(() -> ImageHelper.readImageBytes("META-INF/resources/custom-theme/service_logo.png"))
+                    .thenReturn(new byte[] {1});
             locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.ENGLISH);
             if (readFailure || closeFailure) {
                 IOException failure = assertThrows(IOException.class, () -> service.sendVerificationEmailByUser(user));

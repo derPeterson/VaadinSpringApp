@@ -36,10 +36,12 @@ import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.service.VerificationService;
-import de.derpeterson.app.ui.components.RegistrationCardComponent;
+import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.CosmosPageComponent;
 import de.derpeterson.app.validation.EmailConflict;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -88,7 +90,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     public RegistrationView(MessageProperties messageProperties, UserService userService,
                             RoleService roleService, PasswordEncoder passwordEncoder,
                             VerificationService verificationService,
-                            SecurityService securityService, HttpServletRequest request) {
+                            SecurityService securityService, HttpServletRequest request, ConfigService configService) {
 
         super(securityService, request, new HorizontalLayout());
 
@@ -128,6 +130,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseRegistrationButton));
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+            updateInputPlaceholders();
             Optional.ofNullable(birthDatePicker).ifPresent(picker ->
                     picker.setPlaceholder(this.messageProperties.getRegistrationBirthDatePlaceholder()));
             Optional.ofNullable(genderComboBox).ifPresent(comboBox -> {
@@ -143,30 +146,27 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         setAlignItems(FlexComponent.Alignment.CENTER);
         setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 
-        addClassNames("registration-bg-fullscreen");
+        getContent().removeAll();
 
         formComponents = createFormComponents();
         requiredFormComponents = createRequiredFormComponents();
         Button registerButton = createRegisterButton();
 
-        VerticalLayout mainContent = new VerticalLayout();
-        mainContent.addClassName("registration-main-content");
-        mainContent.setPadding(false);
-        mainContent.setSpacing(false);
-        mainContent.setAlignItems(FlexComponent.Alignment.CENTER);
-        mainContent.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+        CosmosPageComponent pageLayout = new CosmosPageComponent(configService, true, messageProperties::getAccountCopyrightTemplate);
+        VerticalLayout mainContent = pageLayout.getCardContainer();
 
         // Layout
         VerticalLayout cardContentLayout = new VerticalLayout();
         cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
         cardContentLayout.setPadding(false);
         cardContentLayout.setSpacing(false);
-        cardContentLayout.addClassName("registration-form");
+        cardContentLayout.addClassName("cosmos-form");
 
         this.title = new H1(messageProperties.getRegistrationTitle());
-        title.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.FontWeight.BOLD);
+        title.addClassName("cosmos-headline");
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
+        cardTitleLayout.addClassName("cosmos-title-row");
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
@@ -175,38 +175,40 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         this.createAccountQuestionText = new Span(messageProperties.getRegistrationLoginQuestion());
 
         HorizontalLayout cardSecondaryTitleLayout = new HorizontalLayout();
+        cardSecondaryTitleLayout.addClassNames("cosmos-intro", "cosmos-form-text");
         cardSecondaryTitleLayout.setWidthFull();
         cardSecondaryTitleLayout.setSpacing(false);
         cardSecondaryTitleLayout.setPadding(false);
         cardSecondaryTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-        cardSecondaryTitleLayout.addClassNames(LumoUtility.Gap.SMALL, "registration-form-subtitle");
+        cardSecondaryTitleLayout.addClassNames(LumoUtility.Gap.SMALL, "cosmos-form-links");
         cardSecondaryTitleLayout.add(createAccountQuestionText);
         cardSecondaryTitleLayout.add(formComponents.loginLink);
 
         var firstLineForm = new HorizontalLayout(formComponents.firstNameField, formComponents.lastNameField);
         firstLineForm.setWidthFull();
         firstLineForm.setSpacing(false);
-        firstLineForm.addClassName("registration-form-row");
+        firstLineForm.addClassName("cosmos-form-row");
         var secondLineForm = new HorizontalLayout(formComponents.emailField, formComponents.confirmEmailField);
         secondLineForm.setWidthFull();
         secondLineForm.setSpacing(false);
-        secondLineForm.addClassName("registration-form-row");
+        secondLineForm.addClassName("cosmos-form-row");
         var thirdLineForm = new HorizontalLayout(formComponents.passwordField, formComponents.confirmPasswordField);
         thirdLineForm.setWidthFull();
         thirdLineForm.setSpacing(false);
-        thirdLineForm.addClassName("registration-form-row");
+        thirdLineForm.addClassName("cosmos-form-row");
         var fourthLineForm = new HorizontalLayout(formComponents.genderComboBox, formComponents.birthDatePicker);
         fourthLineForm.setWidthFull();
         fourthLineForm.setSpacing(false);
-        fourthLineForm.addClassName("registration-form-row");
+        fourthLineForm.addClassName("cosmos-form-row");
 
         cardContentLayout.add(cardTitleLayout, cardSecondaryTitleLayout, firstLineForm, secondLineForm, thirdLineForm, fourthLineForm, registerButton);
 
-        RegistrationCardComponent registrationCardComponent = new RegistrationCardComponent(cardContentLayout);
+        CosmosCardComponent registrationCardComponent = new CosmosCardComponent(cardContentLayout);
 
         mainContent.add(registrationCardComponent);
 
-        add(mainContent);
+        updateInputPlaceholders();
+        add(pageLayout);
     }
 
     private Button createRegisterButton() {
@@ -214,7 +216,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         registrationButton.setPrefixComponent(VaadinIcon.EDIT.create());
         registrationButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         registrationButton.setWidthFull();
-        registrationButton.addClassName("registration-submit");
+        registrationButton.addClassName("cosmos-submit");
         registrationButton.addClickListener(event -> handleRegistration());
         return registrationButton;
     }
@@ -390,4 +392,14 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
                                   PasswordField confirmPasswordField, ComboBox<Gender> genderComboBox,
                                   DatePicker birthDatePicker) {
     }
+    private void updateInputPlaceholders() {
+        if (firstNameField != null) firstNameField.setPlaceholder(messageProperties.getAccountFirstNamePlaceholder());
+        if (lastNameField != null) lastNameField.setPlaceholder(messageProperties.getAccountLastNamePlaceholder());
+        if (emailField != null) emailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
+        if (confirmEmailField != null) confirmEmailField.setPlaceholder(messageProperties.getAccountConfirmEmailPlaceholder());
+        if (passwordField != null) passwordField.setPlaceholder(messageProperties.getAccountPasswordPlaceholder());
+        if (confirmPasswordField != null) confirmPasswordField.setPlaceholder(messageProperties.getAccountConfirmPasswordPlaceholder());
+        if (genderComboBox != null) genderComboBox.setPlaceholder(messageProperties.getAccountGenderPlaceholder());
+    }
+
 }

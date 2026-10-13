@@ -56,6 +56,10 @@ class VerificationServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Neue Konfiguration gehört zur Mailfixture; andere Fälle lesen diese Werte nicht.
+        lenient().when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn(ConfigEntry.COPYRIGHT_TEXT.getDefaultValueString());
+        lenient().when(messages.getAccountCopyrightTemplate()).thenAnswer(call ->
+                MessageProperties.forLocale(new CustomI18NProvider(), CustomI18NProvider.getCurrentLocale()).getAccountCopyrightTemplate());
         service = new VerificationService(messages, tokens, users, config, queue, CLOCK);
         user = UserEntity.builder().id(1L).firstName("Test").lastName("User")
                 .email("test@example.com").preferredLocale(Locale.ENGLISH).build();
@@ -231,14 +235,33 @@ class VerificationServiceTest {
         assertTrue(body.getValue().contains("Example Service"));
         assertTrue(body.getValue().contains("Test"));
         assertTrue(body.getValue().contains("User"));
-        assertTrue(body.getValue().contains("data:image/png;base64,"));
-        for (String placeholder : List.of("SERVICE_LOGO", "SERVICE_NAME", "FIRST_NAME", "LAST_NAME", "VERIFICATION_LINK")) {
+        assertTrue(body.getValue().contains("cid:" + de.derpeterson.app.helper.email.EmailLogo.CONTENT_ID));
+        for (String placeholder : List.of("SERVICE_LOGO", "SERVICE_NAME", "FIRST_NAME", "LAST_NAME", "VERIFICATION_LINK", "COPYRIGHT_TEXT")) {
             assertFalse(body.getValue().contains("{{" + placeholder + "}}"));
         }
-        assertTrue(body.getValue().contains("© 2025 Example Service. "
-                + (language.equals("de") ? "Alle Rechte vorbehalten." : "All rights reserved.")));
+        String expectedFooter = MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language))
+                .getAccountCopyrightTemplate().replace("{year}", String.valueOf(java.time.Year.now(CLOCK).getValue()))
+                .replace("{serviceName}", "Example Service");
+        assertTrue(org.springframework.web.util.HtmlUtils.htmlUnescape(body.getValue()).contains(expectedFooter));
         assertFalse(body.getValue().contains("{{"));
         assertFalse(user.isEnabled());
+    }
+
+    @Test
+    void customCopyrightIsResolvedFromConfigurationAndEscapedInTheMail() throws IOException {
+        prepareResend("email");
+        when(config.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("PT1H");
+        when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Company & Partners");
+        when(config.getString(ConfigEntry.BASE_URL)).thenReturn("https://example.com/");
+        when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("© {year} {serviceName} <b>Eigener Text</b>");
+        when(messages.getEmailVerificationSubject()).thenReturn("subject");
+        assertTrue(resend("email"));
+        var body = ArgumentCaptor.forClass(String.class);
+        verify(queue).addEmailToQueue(eq(user), eq("subject"), body.capture(), eq(EmailType.VERIFICATION));
+        assertTrue(body.getValue().contains("&copy; 2026 Company &amp; Partners &lt;b&gt;Eigener Text&lt;/b&gt;"));
+        assertFalse(body.getValue().contains("<b>Eigener Text</b>"));
+        assertFalse(body.getValue().contains("{year}"));
+        verify(messages, never()).getAccountCopyrightTemplate();
     }
 
     @ParameterizedTest

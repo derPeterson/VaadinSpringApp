@@ -374,6 +374,70 @@ class EmailServiceTest {
         verifyNoInteractions(config);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"<p>Grüße – 密码 🔐</p>", "<p>Reset</p>"})
+    void inlineLogoRoundTripsItsCidPngBytesAndUtf8Html(String text) throws Exception {
+        var original = prepareMime();
+        when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+        String cid = de.derpeterson.app.helper.email.EmailLogo.CONTENT_ID;
+        String body = text + "<img src=\"cid:" + cid + "\" alt=\"Service\">";
+        service.sendEmail(user(RECIPIENT), "Logo – Ä", body);
+        var message = roundTrip(sentMime(original));
+        assertEnvelope(message, RECIPIENT, FROM, "Logo – Ä");
+        assertTrue(message.isMimeType("multipart/related"));
+        var parts = (jakarta.mail.Multipart) message.getContent();
+        assertEquals(2, parts.getCount());
+        assertHtml(parts.getBodyPart(0), body);
+        var logo = parts.getBodyPart(1);
+        assertTrue(logo.isMimeType("image/png"));
+        assertEquals(Part.INLINE, logo.getDisposition());
+        assertEquals("service-logo.png", logo.getFileName());
+        assertArrayEquals(new String[] {"<" + cid + ">"}, logo.getHeader("Content-ID"));
+        try (var stream = logo.getInputStream()) {
+            assertArrayEquals(de.derpeterson.app.helper.email.EmailLogo.readBytes(), stream.readAllBytes());
+        }
+    }
+
+    @Test
+    void unreadableInlineLogoFailsBeforeTransportWithoutRetry() {
+        var message = prepareMime();
+        when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+        var failure = new java.io.IOException("controlled logo read failure");
+        try (var logo = mockStatic(de.derpeterson.app.helper.email.EmailLogo.class)) {
+            logo.when(de.derpeterson.app.helper.email.EmailLogo::readBytes).thenThrow(failure);
+            var thrown = assertThrows(org.springframework.mail.MailPreparationException.class,
+                    () -> service.sendEmail(user(RECIPIENT), "subject",
+                            "<img src=\"cid:" + de.derpeterson.app.helper.email.EmailLogo.CONTENT_ID + "\">"));
+            assertSame(failure, thrown.getCause());
+        }
+        verify(sender).createMimeMessage();
+        verify(sender, never()).send(message);
+        verifyNoMoreInteractions(sender);
+    }
+
+    @Test
+    void unknownCidDoesNotTriggerAnUnrelatedLogoAttachment() throws Exception {
+        var message = prepareMime();
+        when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+        String body = "<img src=\"cid:unknown-image\">";
+        service.sendEmail(user(RECIPIENT), "subject", body);
+        var received = roundTrip(sentMime(message));
+        assertFalse(received.isMimeType("multipart/*"));
+        assertHtml(received, body);
+    }
+
+    @Test
+    void unmarkedMultipartSendFailureRemainsUnknownAndIsNotRetried() {
+        var message = prepareMime();
+        when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+        var failure = new MailSendException("unknown outcome");
+        doThrow(failure).when(sender).send(message);
+        assertSame(failure, assertThrows(MailSendException.class,
+                () -> service.sendEmail(user(RECIPIENT), "subject",
+                        "<img src=\"cid:" + de.derpeterson.app.helper.email.EmailLogo.CONTENT_ID + "\">")));
+        sentMime(message);
+    }
+
     private MimeMessage roundTrip(MimeMessage message) throws Exception {
         try (var bytes = new ByteArrayOutputStream()) {
             message.saveChanges();

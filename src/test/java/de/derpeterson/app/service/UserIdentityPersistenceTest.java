@@ -242,7 +242,7 @@ class UserIdentityPersistenceTest {
             org.mockito.Mockito.when(encoder.encode("Password!")).thenReturn("hash");
             var verification = org.mockito.Mockito.mock(VerificationService.class);
             var view = new de.derpeterson.app.views.RegistrationView(new de.derpeterson.app.i18n.MessageProperties(new de.derpeterson.app.i18n.CustomI18NProvider()),
-                    users, roles, encoder, verification, org.mockito.Mockito.mock(de.derpeterson.app.security.SecurityService.class), org.mockito.Mockito.mock(jakarta.servlet.http.HttpServletRequest.class));
+                    users, roles, encoder, verification, org.mockito.Mockito.mock(de.derpeterson.app.security.SecurityService.class), org.mockito.Mockito.mock(jakarta.servlet.http.HttpServletRequest.class), accountConfig());
             for (String name : List.of("firstNameField", "lastNameField")) {
                 ((com.vaadin.flow.component.textfield.TextField) org.springframework.test.util.ReflectionTestUtils.getField(view, name)).setValue("Test");
             }
@@ -301,4 +301,11 @@ class UserIdentityPersistenceTest {
             return false;
         }
     }
+    private static ConfigService accountConfig() {
+        ConfigService config = org.mockito.Mockito.mock(ConfigService.class);
+        org.mockito.Mockito.when(config.getString(org.mockito.ArgumentMatchers.any(ConfigEntry.class)))
+                .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
+        return config;
+    }
+
 }

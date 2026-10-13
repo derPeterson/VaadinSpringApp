@@ -7,10 +7,28 @@
 Host, Port, Anmeldedaten und SMTP-Properties behalten ihre bisherigen Quellen.
 Dies erfolgt nicht über eine zusätzliche, möglicherweise ungenutzte Boot-Property.
 
-`EmailService.sendEmail` erzeugt genau einen `text/html; charset=UTF-8`-Teil.
-Der Helper erzeugt den Content-Type; es gibt keinen manuellen Header und keine
-Multipart-Hüllen. Der aktuelle Dienst unterstützt weder Attachments noch
-Inline-Ressourcen oder einen alternativen Plain-Text-Inhalt.
+`EmailService.sendEmail` erzeugt UTF-8-HTML. Ohne die bekannte Logo-CID bleibt
+es bei genau einem `text/html; charset=UTF-8`-Teil. Verifikations-/Resetvorlagen
+referenzieren `cid:service-logo@vaadinspringapp`; dafür erzeugt der Helper
+`multipart/related` mit HTML und einem Inline-PNG-Teil (`Content-ID` passend zur CID,
+Dateiname `service-logo.png`, Content-Type `image/png`). `setText` erfolgt vor
+`addInline`. Es gibt keine beliebigen Benutzeranhänge, externen Bildabrufe oder
+einen alternativen Plain-Text-Inhalt.
+
+`EmailLogo` verwaltet CID/Ressourcenpfad. Das PNG wird aus dem Classpath gelesen,
+nicht aus einem lokalen Quelldateipfad. Die Produzenten prüfen die Ressource weiterhin
+vor Queue-Anlage, damit ein `IOException` die bestehende Tokenrotation zurückrollen
+kann. Der Versanddienst liest die Bytes vollständig vor dem Transport; eine
+`ByteArrayResource` liefert für spätere MIME-Lesezugriffe jeweils einen neuen Stream.
+
+Die MJML-Quellen und erzeugten HTML-Dateien verwenden dieselbe Cosmos-Palette mit
+statischen CSS-Verläufen und festen Grundfarben als Rückfall. Keine Animation,
+externen Webfonts oder öffentlich erreichbaren Logo-URLs sind erforderlich.
+`{{COPYRIGHT_TEXT}}` wird bei Queue-Anlage aus der DB-Konfiguration aufgelöst:
+gemeinsamer `CopyrightTextFormatter`, `{year}` aus der injizierten Clock,
+`{serviceName}` aus der Konfiguration, DE-/EN-Standard über den vorhandenen Getter.
+Eigene DB-Texte bleiben erhalten und werden für HTML escaped. Bereits gespeicherte
+Queue-Inhalte werden nicht umgeschrieben.
 
 `sendAdminEmail` erzeugt weiterhin `SimpleMailMessage`, also Plain Text.
 HTML-Markup bleibt Text. Beim realen Spring-Sender läuft die Konvertierung über
@@ -39,10 +57,15 @@ Mock-Sender einen Randfall annimmt, bedeutet nicht, dass SMTP ihn akzeptiert.
 ## Fehler und Zuständigkeiten
 
 MIME-Aufbaufehler der HTML-Methode (`MessagingException`) werden weitergegeben.
-`MailException`, etwa Parse-, Authentifizierungs- und Versandfehler des Senders,
-werden nicht abgefangen, verändert oder durch einen Fallback ersetzt.
-Konfigurations- und andere Runtimefehler propagieren ebenfalls unverändert.
-Nach einem Aufbau-/Konfigurationsfehler wird der Sender nicht aufgerufen.
+Parse-, Authentifizierungs- und Versandfehler bleiben ohne Fallback oder eigenen
+Retry. Die vorhandene gezielte Ausnahme bleibt: Ein vom
+`ConnectionAwareJavaMailSender` für genau diese Nachricht nachgewiesener Fehler
+vor Versand wird als `MailPreparationException` mit Originalursache weitergegeben.
+Unmarkierte `MailSendException` und unklare Versand-/Close-Ausgänge bleiben unverändert.
+Ein `IOException` beim Lesen des Inline-Logos wird ebenfalls vor dem Transport als
+`MailPreparationException` weitergegeben. Konfigurations- und andere Runtimefehler
+propagieren unverändert. Nach einem Aufbau-/Konfigurations-/Logolesefehler wird der
+Sender nicht aufgerufen.
 
 Der Spring-Admin-Adapter kapselt Adress-Parsingfehler in `MailParseException`;
 die Methode führt davor keine zusätzliche Prüfung durch. Retries gehören
@@ -58,3 +81,15 @@ erzeugten Nachricht. Die Adapterkonvertierung wird ohne `send` auf dem realen
 Sender, ohne `testConnection` und ohne Transport ausgeführt. Konfiguration ist
 vollständig gemockt; keine Bestandsdaten oder echten Anmeldedaten erforderlich.
 SMTP-Zustellung, Darstellung in Mailclients und Anwendungslaufzeit bleiben ungeprüft.
+
+Der CID-/Cosmos-/Copyright-Feinschliff vom 13.10.2026 ist abschließend geprüft:
+1055 Anwendungstests und 26 Browser-Helper-/Reportertests sowie je 84 Browserfälle
+auf DE/EN erfolgreich; frisch gebautes Docker-Produktions-JAR, eigene Umgebungen
+abgebaut. MIME-Roundtrips prüfen Content-ID, Inline-PNG-Bytes und UTF-8; ein
+Logo-Lesefehler stoppt nachweislich vor Transport. Unmarkierte Versandfehler bleiben
+unklar und werden vom Maildienst nicht wiederholt. Die Service-/Persistenzregressionen
+erhalten Tokenrotation, Rollback und Kontosperren. Browserjourneys prüfen geladene
+Mailbilder und den über die Oberfläche gespeicherten sicheren DB-Fußtext in beiden
+Mailtypen. MJML wurde erfolgreich mit strikter Validierung in HTML übersetzt.
+Gmail/Outlook-Darstellung und reale Zustellung bleiben separat ungeprüft.
+Berichte: [Browserabdeckung](../browser-tests/abdeckung.md).

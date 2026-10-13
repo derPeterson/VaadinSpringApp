@@ -21,13 +21,14 @@ import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
-import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.VerificationService;
-import de.derpeterson.app.ui.components.CardComponent;
+import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.CosmosPageComponent;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +65,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     private Span notFoundText2 = null;
     private Span successText = null;
 
-    public VerificationView(MessageProperties messageProperties, VerificationService verificationService, SecurityService securityService, HttpServletRequest request) {
+    public VerificationView(MessageProperties messageProperties, VerificationService verificationService, SecurityService securityService, HttpServletRequest request, ConfigService configService) {
         super(securityService, request, new HorizontalLayout());
 
         this.messageProperties = messageProperties;
@@ -102,24 +103,17 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getVerificationSuccessText));
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+            updateInputPlaceholders();
             NotificationHelper.getInstance().updateText();
         });
 
-        setSizeFull();
-        setAlignItems(FlexComponent.Alignment.CENTER);
-        setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-
-        addClassNames("verification-bg-fullscreen");
-
-        mainContent = new VerticalLayout();
-        mainContent.setAlignItems(FlexComponent.Alignment.CENTER);
-        mainContent.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-        mainContent.setWidth(null);
-        mainContent.setSizeUndefined();
-
-        add(VaadinUIHelper.createFullHorizontalSpace());
-        add(mainContent);
-        add(VaadinUIHelper.createFullHorizontalSpace());
+        getContent().setWidthFull();
+        getContent().setPadding(false);
+        getContent().removeAll();
+        setSpacing(false);
+        CosmosPageComponent pageLayout = new CosmosPageComponent(configService, false, messageProperties::getAccountCopyrightTemplate);
+        mainContent = pageLayout.getCardContainer();
+        add(pageLayout);
     }
 
     @Override
@@ -143,8 +137,10 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
     private void createExpiredCard(String token) {
         VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+        cardContentLayout.setPadding(false);
+        cardContentLayout.setSpacing(false);
+        cardContentLayout.addClassName("cosmos-form");
 
         Icon successIcon = VaadinIcon.BELL.create();
         successIcon.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.TextColor.WARNING);
@@ -156,9 +152,10 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         cardIconLayout.add(successIcon);
 
         this.expiredTitle = new H1(messageProperties.getVerificationExpiredTitle());
-        expiredTitle.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
+        expiredTitle.addClassName("cosmos-headline");
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
+        cardTitleLayout.addClassName("cosmos-title-row");
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
@@ -191,17 +188,18 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
         cardContentLayout.add(cardIconLayout, cardTitleLayout, cardTextLayout, resendButton, homeButton);
 
-        CardComponent cardComponent = new CardComponent(cardContentLayout);
+        CosmosCardComponent cardComponent = new CosmosCardComponent(cardContentLayout);
 
         mainContent.add(cardComponent);
     }
 
     private VerticalLayout createExpiredCardTextLayout(String text1String, String text2String) {
         this.expiredText1 = new Span(text1String);
-        expiredText1.addClassNames(LumoUtility.Whitespace.NOWRAP);
+        expiredText1.addClassName("cosmos-form-text");
         this.expiredText2 = new Span(text2String);
-        expiredText2.addClassNames(LumoUtility.Whitespace.NOWRAP);
+        expiredText2.addClassName("cosmos-form-text");
         VerticalLayout cardTextLayout = new VerticalLayout();
+        cardTextLayout.addClassName("cosmos-intro");
         cardTextLayout.setWidthFull();
         cardTextLayout.setPadding(false);
         cardTextLayout.setSpacing(false);
@@ -214,10 +212,11 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
     private VerticalLayout createNotFoundCardTextLayout(String text1String, String text2String) {
         this.notFoundText1 = new Span(text1String);
-        notFoundText1.addClassNames(LumoUtility.Whitespace.NOWRAP);
+        notFoundText1.addClassName("cosmos-form-text");
         this.notFoundText2 = new Span(text2String);
-        notFoundText2.addClassNames(LumoUtility.Whitespace.NOWRAP);
+        notFoundText2.addClassName("cosmos-form-text");
         VerticalLayout cardTextLayout = new VerticalLayout();
+        cardTextLayout.addClassName("cosmos-intro");
         cardTextLayout.setWidthFull();
         cardTextLayout.setPadding(false);
         cardTextLayout.setSpacing(false);
@@ -230,8 +229,10 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
     private void createNotFoundCard() {
         VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+        cardContentLayout.setPadding(false);
+        cardContentLayout.setSpacing(false);
+        cardContentLayout.addClassName("cosmos-form");
 
         Icon successIcon = VaadinIcon.WARNING.create();
         successIcon.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.TextColor.ERROR);
@@ -243,9 +244,10 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         cardIconLayout.add(successIcon);
 
         this.notFoundTitle = new H1(messageProperties.getVerificationNotFoundTitle());
-        notFoundTitle.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
+        notFoundTitle.addClassName("cosmos-headline");
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
+        cardTitleLayout.addClassName("cosmos-title-row");
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
@@ -258,6 +260,8 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
         emailField.setClearButtonVisible(true);
         emailField.setRequiredIndicatorVisible(true);
+
+        updateInputPlaceholders();
 
         this.sendButton = new Button(messageProperties.getBaseSendButton(), event -> {
 
@@ -293,18 +297,20 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
         cardContentLayout.add(cardIconLayout, cardTitleLayout, cardTextLayout, emailField, sendButton, homeButton);
 
-        CardComponent cardComponent = new CardComponent(cardContentLayout);
+        CosmosCardComponent cardComponent = new CosmosCardComponent(cardContentLayout);
 
         mainContent.add(cardComponent);
     }
 
     private void createSuccessCard() {
         VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+        cardContentLayout.setPadding(false);
+        cardContentLayout.setSpacing(false);
+        cardContentLayout.addClassName("cosmos-form");
 
         Icon successIcon = VaadinIcon.CHECK_CIRCLE.create();
-        successIcon.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.TextColor.SUCCESS);
+        successIcon.addClassNames("cosmos-verification-success-icon", "cosmos-status-icon", LumoUtility.TextColor.SUCCESS);
 
         HorizontalLayout cardIconLayout = new HorizontalLayout();
         cardIconLayout.setWidthFull();
@@ -313,17 +319,19 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         cardIconLayout.add(successIcon);
 
         this.successTitle = new H1(messageProperties.getVerificationSuccessTitle());
-        successTitle.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
+        successTitle.addClassName("cosmos-headline");
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
+        cardTitleLayout.addClassName("cosmos-title-row");
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(successTitle);
 
         this.successText = new Span(messageProperties.getVerificationSuccessText());
-        successText.addClassNames(LumoUtility.Whitespace.NOWRAP);
+        successText.addClassName("cosmos-form-text");
         HorizontalLayout cardTextLayout = new HorizontalLayout();
+        cardTextLayout.addClassName("cosmos-intro");
         cardTextLayout.setWidthFull();
         cardTextLayout.setPadding(false);
         cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
@@ -336,8 +344,12 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
         cardContentLayout.add(cardIconLayout, cardTitleLayout, cardTextLayout, homeButton);
 
-        CardComponent cardComponent = new CardComponent(cardContentLayout);
+        CosmosCardComponent cardComponent = new CosmosCardComponent(cardContentLayout);
 
         mainContent.add(cardComponent);
     }
+    private void updateInputPlaceholders() {
+        if (emailField != null) emailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
+    }
+
 }

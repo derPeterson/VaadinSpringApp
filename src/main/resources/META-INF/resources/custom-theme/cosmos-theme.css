@@ -1,0 +1,371 @@
+/* SILENT COSMOS — zentrale Palette und gemeinsame Konto-Bausteine.
+ * Nur .cosmos-theme und markierte Notifications verwenden diese Palette.
+ * Home/Admin behalten ihre Lumo-Farben; die Schrift steht global in typography.css.
+ */
+.cosmos-theme,
+vaadin-notification-card[theme~="cosmos"] {
+    --cosmos-sky-color: #040710;
+    --cosmos-card-background: linear-gradient(142deg, rgba(16, 23, 38, .88), rgba(9, 14, 25, .91));
+    --cosmos-primary-background: linear-gradient(115deg, #3a538d, #526ebc);
+    --cosmos-card-width: 430px;
+    --cosmos-card-radius: 18px;
+    --cosmos-card-border: rgba(169, 191, 233, .18);
+    --cosmos-card-shadow: 0 25px 95px rgba(0, 0, 0, .47), inset 0 1px rgba(255, 255, 255, .05);
+
+    /* Vaadin-/Lumo-Variablen: gemeinsame semantische Farben, keine View-spezifischen Overrides. */
+    --lumo-base-color: #0b1220;
+    --lumo-body-text-color: #edf2ff;
+    --lumo-header-text-color: #edf2ff;
+    --lumo-secondary-text-color: #a7b7d2;
+    --lumo-tertiary-text-color: #899ab8;
+    --lumo-disabled-text-color: #748199;
+    --lumo-contrast-5pct: rgba(207, 221, 255, .055);
+    --lumo-contrast-10pct: rgba(167, 189, 232, .09);
+    --lumo-contrast-20pct: rgba(161, 187, 231, .2);
+    --lumo-primary-color: #526ebc;
+    --lumo-primary-text-color: #a9c0fb;
+    --lumo-primary-contrast-color: #f3f6ff;
+    --lumo-primary-color-10pct: rgba(78, 112, 202, .13);
+    --lumo-primary-color-50pct: rgba(159, 184, 255, .69);
+    --lumo-error-color: #bc596e;
+    --lumo-error-text-color: #efa4b1;
+    --lumo-error-color-10pct: rgba(188, 89, 110, .13);
+    --lumo-error-color-50pct: rgba(188, 89, 110, .5);
+    --lumo-error-contrast-color: #fff;
+    --lumo-warning-color: #c99950;
+    --lumo-warning-text-color: #efcb8a;
+    --lumo-warning-color-10pct: rgba(201, 153, 80, .13);
+    --lumo-warning-contrast-color: #0b1220;
+    --lumo-success-color: #468c69;
+    --lumo-success-text-color: #a3d5b8;
+    --lumo-success-color-10pct: rgba(70, 140, 105, .13);
+    --lumo-success-color-50pct: rgba(70, 140, 105, .5);
+    --lumo-success-contrast-color: #fff;
+    --lumo-border-radius-l: 9px;
+    --vaadin-input-field-autofill-background: var(--lumo-base-color);
+    --vaadin-input-field-autofill-color: var(--lumo-body-text-color);
+}
+
+/* Gemeinsame Seite: wächst bei wenig Höhe, statt Inhalte hinter dem Fenster abzuschneiden. */
+.cosmos-content {
+    position: relative;
+    z-index: 1;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: clamp(24px, 5vh, 64px) 16px;
+    gap: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    /* Gleiche obere/untere Platzreserve hält die Card selbst in der Bildschirmmitte.
+     * Wird der Inhalt größer als das Fenster, wächst das Grid und bleibt scrollbar. */
+    grid-template-rows: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
+    justify-items: center;
+}
+
+.cosmos-brand {
+    text-align: center;
+    width: 100%;
+    max-width: 660px;
+    margin-bottom: 28px;
+    align-self: end;
+    color: var(--lumo-body-text-color);
+}
+
+.cosmos-logo {
+    display: block;
+    width: 96px;
+    height: 96px;
+    object-fit: contain;
+    margin: 0 auto 17px;
+}
+
+.cosmos-brand-name {
+    display: block;
+    font-size: var(--lumo-font-size-xl);
+    font-weight: 450;
+    letter-spacing: .15em;
+    overflow-wrap: anywhere;
+}
+
+.cosmos-cards {
+    width: 100%;
+    max-width: var(--cosmos-card-width);
+    min-width: 0;
+}
+
+.cosmos-page--wide {
+    --cosmos-card-width: 660px;
+}
+
+.cosmos-card {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 32px 34px 25px;
+    border: 1px solid var(--cosmos-card-border);
+    border-radius: var(--cosmos-card-radius);
+    background: var(--cosmos-card-background);
+    box-shadow: var(--cosmos-card-shadow);
+    -webkit-backdrop-filter: blur(17px);
+    backdrop-filter: blur(17px);
+}
+
+.cosmos-form {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    gap: 0;
+    color: var(--lumo-secondary-text-color);
+}
+
+.cosmos-form > * {
+    min-width: 0;
+}
+
+/* Gemeinsame Abstände wie in der Referenz: kompakte Überschrift/Erklärung,
+ * danach mehr Raum bis zum ersten Feld. Weitere Formularzeilen bleiben bei 16 px. */
+.cosmos-form > * + * {
+    margin-top: 16px;
+}
+
+.cosmos-form > .cosmos-title-row + .cosmos-intro {
+    margin-top: 8px;
+}
+
+.cosmos-form > .cosmos-intro + *,
+.cosmos-form > .cosmos-title-row + :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker, .cosmos-form-row) {
+    margin-top: 28px;
+}
+
+.cosmos-form h1 {
+    margin: 0;
+    color: var(--lumo-header-text-color);
+    font-size: clamp(24px, 3vw, 29px);
+    font-weight: 550;
+    line-height: 1.25;
+    letter-spacing: -.035em;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.cosmos-form-text {
+    font-size: 13px;
+    line-height: 1.55;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.cosmos-form-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--lumo-space-s);
+}
+
+.cosmos-form-links a, .cosmos-options a {
+    overflow-wrap: anywhere;
+}
+
+.cosmos-form-row {
+    width: 100%;
+    min-width: 0;
+    gap: var(--lumo-space-m);
+    align-items: start;
+}
+
+.cosmos-form-row > * {
+    flex: 1 1 0;
+    width: 100%;
+    min-width: 0;
+}
+
+.cosmos-options {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: var(--lumo-space-s);
+    font-size: 12px;
+}
+
+.cosmos-options > * {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.cosmos-footer {
+    align-self: start;
+    margin-top: 20px;
+    color: var(--lumo-secondary-text-color);
+    font-size: 11px;
+    line-height: 1.6;
+    text-align: center;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+}
+
+.cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker) {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+}
+
+.cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker)::part(input-field) {
+    min-height: 44px;
+    border: 1px solid var(--lumo-contrast-20pct);
+    border-radius: 9px;
+    background: var(--lumo-contrast-5pct);
+}
+
+.cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker)::part(label) {
+    color: var(--lumo-secondary-text-color);
+    font-size: 12px;
+    font-weight: 450;
+}
+
+.cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker)[invalid]::part(input-field) {
+    border-color: var(--lumo-error-color);
+    background: var(--lumo-error-color-10pct);
+}
+
+.cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker)[focused]::part(input-field) {
+    border-color: var(--lumo-primary-color-50pct);
+}
+
+/* Vaadin vererbt dem nativen Platzhalter die Schrift des Eingabebereichs.
+ * Deshalb auch den leeren Feldzustand stylen; eingegebene Werte bleiben unverändert.
+ * Die Komponentenvariablen erreichen auch die internen Felder von Combo-/DatePicker. */
+.cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker) {
+    --vaadin-input-field-placeholder-color: var(--lumo-tertiary-text-color);
+}
+
+.cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker):not([has-value]) {
+    --vaadin-input-field-value-font-size: 13px;
+    --vaadin-input-field-value-font-weight: 400;
+}
+
+.cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker):not([has-value])::part(input-field) {
+    font-size: 13px;
+    font-weight: 400;
+}
+
+.cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker) > input:placeholder-shown {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--lumo-tertiary-text-color);
+}
+
+.cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker) > input::placeholder {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--lumo-tertiary-text-color);
+    opacity: 1;
+}
+
+/* Gemeinsame Größe für Fragezeichen, Erfolgs- und Warnsymbole der Konto-Cards. */
+.cosmos-theme vaadin-icon.cosmos-status-icon {
+    width: calc(2 * var(--lumo-font-size-xxl));
+    height: calc(2 * var(--lumo-font-size-xxl));
+}
+
+.cosmos-theme vaadin-icon.cosmos-status-icon--warning {
+    color: var(--lumo-warning-text-color);
+}
+
+.cosmos-theme vaadin-button {
+    min-height: 44px;
+    border-radius: 9px;
+    font-size: 14px;
+}
+
+.cosmos-theme vaadin-button[theme~="primary"] {
+    background: var(--cosmos-primary-background);
+    color: var(--lumo-primary-contrast-color);
+    border: 1px solid var(--lumo-primary-color-50pct);
+    box-shadow: 0 0 23px var(--lumo-primary-color-10pct), inset 0 1px var(--lumo-contrast-10pct);
+}
+
+.cosmos-theme vaadin-button:focus-visible {
+    outline: 2px solid var(--lumo-primary-text-color);
+    outline-offset: 3px;
+}
+
+.cosmos-theme vaadin-checkbox::part(label) {
+    font-size: 12px;
+}
+
+.cosmos-theme vaadin-icon {
+    flex-shrink: 0;
+}
+
+/* Die Notification liegt außerhalb der View. Das Theme wird nur für Kontoansichten markiert. */
+vaadin-notification-card[theme~="cosmos"]::part(overlay) {
+    max-width: calc(100vw - 24px);
+    border: 1px solid var(--cosmos-card-border);
+    border-radius: var(--cosmos-card-radius);
+    background: var(--cosmos-card-background);
+    box-shadow: var(--cosmos-card-shadow);
+    -webkit-backdrop-filter: blur(17px);
+    backdrop-filter: blur(17px);
+}
+
+vaadin-notification-card[theme~="cosmos"]::part(content) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+vaadin-notification-card[theme~="cosmos"] p {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+vaadin-notification-card[theme~="cosmos"] vaadin-vertical-layout {
+    min-width: 0;
+}
+
+@media (max-width: 700px) {
+    .cosmos-card {
+        padding: 26px 22px 22px;
+        border-radius: 15px;
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+    }
+
+    .cosmos-brand {
+        margin-bottom: 24px;
+    }
+}
+
+@media (max-width: 600px) {
+    .cosmos-form-row {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .cosmos-form-row > * {
+        flex: none;
+    }
+}
+
+@media (max-width: 380px) {
+    .cosmos-content {
+        padding: 22px 12px;
+    }
+
+    .cosmos-card {
+        padding: 24px 17px 19px;
+    }
+
+    .cosmos-brand-name {
+        letter-spacing: .1em;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .cosmos-card, vaadin-notification-card[theme~="cosmos"]::part(overlay) {
+        background: var(--lumo-base-color);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}

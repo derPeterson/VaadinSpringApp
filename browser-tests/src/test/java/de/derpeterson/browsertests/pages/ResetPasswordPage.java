@@ -42,7 +42,11 @@ public final class ResetPasswordPage {
         var notice = page.locator("vaadin-notification-card:not([closing])");
         assertThat(notice).containsText(texts.getBaseSuccessTitle());
         assertThat(notice).containsText(texts.visibleText(page, texts.getResetPasswordSuccessMessage()));
-        assertThat(page.locator("vaadin-password-field[invalid]")).hasCount(0);
+        assertThat(page.locator("vaadin-password-field")).hasCount(0);
+        assertThat(page.locator(".cosmos-card").getByRole(AriaRole.HEADING,
+                new com.microsoft.playwright.Locator.GetByRoleOptions().setName(texts.getBaseSuccessTitle()).setExact(true))).isVisible();
+        assertThat(page.locator(".cosmos-card vaadin-icon[icon='vaadin:check-circle'].cosmos-status-icon")).isVisible();
+        assertThat(page.locator(".cosmos-card")).containsText(texts.visibleText(page, texts.getResetPasswordSuccessMessage()));
     }
 
     @Step("Leere Passwortfelder sind markiert und haben einen Pflichtfeldhinweis")
@@ -64,6 +68,7 @@ public final class ResetPasswordPage {
         assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions()
                 .setName(texts.getBaseResetButton()).setExact(true))).hasCount(0);
         assertThat(page.locator("vaadin-password-field")).hasCount(0);
+        assertThat(page.locator(".cosmos-card vaadin-icon[icon='vaadin:warning'].cosmos-status-icon--warning")).isVisible();
     }
 
     private void assertError(String message) {

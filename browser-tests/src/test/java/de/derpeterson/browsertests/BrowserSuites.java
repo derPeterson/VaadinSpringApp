@@ -2,6 +2,7 @@ package de.derpeterson.browsertests;
 
 import de.derpeterson.browsertests.suites.AuthenticationBrowserTest;
 import de.derpeterson.browsertests.suites.LoginLayoutBrowserTest;
+import de.derpeterson.browsertests.suites.CosmosDesignBrowserTest;
 import de.derpeterson.browsertests.suites.InfrastructureBrowserTest;
 import de.derpeterson.browsertests.suites.RegistrationBrowserTest;
 import de.derpeterson.browsertests.suites.VerificationBrowserTest;
@@ -25,7 +26,8 @@ import java.util.List;
 final class BrowserSuites {
     static List<Class<?>> select(String suite) {
         return switch (suite) {
-            case "all" -> List.of(InfrastructureBrowserTest.class, AuthenticationBrowserTest.class, RegistrationBrowserTest.class, VerificationBrowserTest.class, PasswordResetBrowserTest.class, AccountLifecycleBrowserTest.class, PresentationBrowserTest.class, TokenConfigurationBrowserTest.class, UserManagementBrowserTest.class, UserFiltersBrowserTest.class, UserAccessBrowserTest.class, SessionSecurityBrowserTest.class, BlockedLinksBrowserTest.class, RememberMeBrowserTest.class, UserStatusBrowserTest.class, ConfigurationBrowserTest.class, AdminMailBrowserTest.class, TokenExpiryBrowserTest.class, LoginLayoutBrowserTest.class);
+            case "all" -> List.of(InfrastructureBrowserTest.class, AuthenticationBrowserTest.class, RegistrationBrowserTest.class, VerificationBrowserTest.class, PasswordResetBrowserTest.class, AccountLifecycleBrowserTest.class, PresentationBrowserTest.class, TokenConfigurationBrowserTest.class, UserManagementBrowserTest.class, UserFiltersBrowserTest.class, UserAccessBrowserTest.class, SessionSecurityBrowserTest.class, BlockedLinksBrowserTest.class, RememberMeBrowserTest.class, UserStatusBrowserTest.class, ConfigurationBrowserTest.class, AdminMailBrowserTest.class, TokenExpiryBrowserTest.class, LoginLayoutBrowserTest.class, CosmosDesignBrowserTest.class);
+            case "cosmos-design" -> List.of(CosmosDesignBrowserTest.class);
             case "login-layout" -> List.of(LoginLayoutBrowserTest.class);
             case "login-checks" -> List.of(LoginLayoutBrowserTest.class, AuthenticationBrowserTest.class, PresentationBrowserTest.class, RememberMeBrowserTest.class);
             case "infrastructure" -> List.of(InfrastructureBrowserTest.class);
@@ -50,7 +52,7 @@ final class BrowserSuites {
             case "user-filters" -> List.of(UserFiltersBrowserTest.class);
             case "token-configuration" -> List.of(TokenConfigurationBrowserTest.class);
             default -> throw new IllegalArgumentException("Unknown suite: " + suite
-                    + ". Choose all, login-layout, login-checks, infrastructure, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
+                    + ". Choose all, cosmos-design, login-layout, login-checks, infrastructure, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
         };
     }
 }

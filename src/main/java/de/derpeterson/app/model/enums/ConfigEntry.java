@@ -11,6 +11,7 @@ import java.time.Duration;
 public enum ConfigEntry {
     // General Konfiguration
     SERVICE_NAME("service.name", "{ServiceName}"),
+    COPYRIGHT_TEXT("copyright.text", "© {year} {serviceName}"),
     BASE_URL("base.url", "http://localhost:8080/"),
     REMEMBER_ME_DURATION("rememberMe.duration", 1209600),
     REMEMBER_ME_SECRET_KEY("rememberMe.secret.key", "change-me-remember-me-secret"),

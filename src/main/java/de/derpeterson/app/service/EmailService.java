@@ -1,13 +1,15 @@
 package de.derpeterson.app.service;
 
-import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.config.ConnectionAwareJavaMailSender;
+import de.derpeterson.app.helper.email.EmailLogo;
+import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.MailException;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.MailPreparationException;
@@ -15,6 +17,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +31,9 @@ public class EmailService {
     private final JavaMailSender mailSender;
 
     /**
-     * Sends a single UTF-8 HTML part without attachments or inline resources.
+     * Sends UTF-8 HTML; account templates with the known logo CID use multipart/related
+     * with an inline PNG. Other HTML keeps the single-part format. Logo read failures
+     * are MailPreparationException before invoking the transport.
      * User, email, subject and content must be non-null; empty subject/content are
      * preserved. The helper parses exactly one recipient/from address (including
      * display names); local addresses are accepted, no stricter validation is enabled.
@@ -40,12 +46,25 @@ public class EmailService {
      */
     public void sendEmail(UserEntity userEntity, String subject, String htmlContent) throws MailException, MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+        boolean includeLogo = htmlContent != null && htmlContent.contains("cid:" + EmailLogo.CONTENT_ID);
+        MimeMessageHelper helper = new MimeMessageHelper(message,
+                includeLogo ? MimeMessageHelper.MULTIPART_MODE_RELATED : MimeMessageHelper.MULTIPART_MODE_NO, "UTF-8");
 
         helper.setTo(userEntity.getEmail());
         helper.setSubject(subject);
         helper.setText(htmlContent, true);
         helper.setFrom(configService.getString(ConfigEntry.EMAIL_FROM));
+
+        if (includeLogo) {
+            try {
+                // Bytes vor dem Transport lesen; jeder MIME-Lesezugriff erhält einen neuen Stream.
+                // Inline erst nach setText hinzufügen, damit Mailprogramme die CID auflösen können.
+                helper.addInline(EmailLogo.CONTENT_ID, "service-logo.png",
+                        new ByteArrayResource(EmailLogo.readBytes()), "image/png");
+            } catch (IOException e) {
+                throw new MailPreparationException("Cannot read inline service logo before sending", e);
+            }
+        }
 
         try {
             mailSender.send(message);

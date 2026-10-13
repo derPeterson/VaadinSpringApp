@@ -93,6 +93,7 @@ class PasswordResetServicePersistenceTest {
         reset(probes.tokens(), probes.users(), probes.config(), probes.encoder(), probes.queue());
         when(probes.config().getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn("PT1H");
         when(probes.config().getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION)).thenReturn("P7D");
+        when(probes.config().getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("© {year} {serviceName} (isolated fixture)");
         when(probes.config().getString(ConfigEntry.SERVICE_NAME)).thenReturn("Reset Test Service");
         when(probes.config().getString(ConfigEntry.BASE_URL)).thenReturn("https://example.invalid/");
         when(probes.encoder().encode(any())).thenAnswer(call -> "hash-" + call.getArgument(0));

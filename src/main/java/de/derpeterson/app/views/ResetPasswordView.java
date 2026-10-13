@@ -21,13 +21,14 @@ import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
-import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.PasswordResetService;
-import de.derpeterson.app.ui.components.CardComponent;
+import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.CosmosPageComponent;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,11 +56,13 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     private PasswordField confirmPasswordField = null;
     private Button resetButton = null;
     private Button homeButton = null;
+    private H1 successTitle = null;
+    private Span successText = null;
     private H1 invalidTitle = null;
     private Span invalidText = null;
     private boolean technicalFailure;
 
-    public ResetPasswordView(MessageProperties messageProperties, PasswordResetService passwordResetService, SecurityService securityService, HttpServletRequest request) {
+    public ResetPasswordView(MessageProperties messageProperties, PasswordResetService passwordResetService, SecurityService securityService, HttpServletRequest request, ConfigService configService) {
         super(securityService, request, new HorizontalLayout());
 
         this.messageProperties = messageProperties;
@@ -79,30 +82,27 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseResetButton));
             Optional.ofNullable(homeButton)
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseHomeButton));
+            Optional.ofNullable(successTitle)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseSuccessTitle));
+            Optional.ofNullable(successText)
+                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getResetPasswordSuccessMessage));
             Optional.ofNullable(invalidTitle)
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, () -> technicalFailure ? this.messageProperties.getBaseFailedTitle() : this.messageProperties.getResetPasswordInvalidTitle()));
             Optional.ofNullable(invalidText)
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, () -> technicalFailure ? this.messageProperties.getResetPasswordTechnicalErrorMessage() : this.messageProperties.getResetPasswordInvalidText()));
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+            updateInputPlaceholders();
             NotificationHelper.getInstance().updateText();
         });
 
-        setSizeFull();
-        setAlignItems(FlexComponent.Alignment.CENTER);
-        setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-
-        addClassNames("reset-password-bg-fullscreen");
-
-        mainContent = new VerticalLayout();
-        mainContent.setAlignItems(FlexComponent.Alignment.CENTER);
-        mainContent.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-        mainContent.setWidth(null);
-        mainContent.setSizeUndefined();
-
-        add(VaadinUIHelper.createFullHorizontalSpace());
-        add(mainContent);
-        add(VaadinUIHelper.createFullHorizontalSpace());
+        getContent().setWidthFull();
+        getContent().setPadding(false);
+        getContent().removeAll();
+        setSpacing(false);
+        CosmosPageComponent pageLayout = new CosmosPageComponent(configService, false, messageProperties::getAccountCopyrightTemplate);
+        mainContent = pageLayout.getCardContainer();
+        add(pageLayout);
     }
 
     @Override
@@ -128,13 +128,16 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
 
     private void showResetPasswordCard(String token) {
         VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+        cardContentLayout.setPadding(false);
+        cardContentLayout.setSpacing(false);
+        cardContentLayout.addClassName("cosmos-form");
 
         this.title = new H1(messageProperties.getResetPasswordTitle());
-        title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
+        title.addClassName("cosmos-headline");
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
+        cardTitleLayout.addClassName("cosmos-title-row");
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
@@ -152,6 +155,8 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
         confirmPasswordField.setRequiredIndicatorVisible(true);
         confirmPasswordField.setWidthFull();
 
+        updateInputPlaceholders();
+
         this.resetButton = new Button(messageProperties.getBaseResetButton(), event -> {
             if (!ValidationHelper.validateRequiredInputs(List.of(passwordField, confirmPasswordField), messageProperties)) {
                 return;
@@ -168,6 +173,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
             try {
                 boolean success = passwordResetService.resetPassword(token, passwordField.getValue());
                 if (success) {
+                    showSuccessCard();
                     NotificationHelper.getInstance().showNotification(messageProperties::getBaseSuccessTitle, messageProperties::getResetPasswordSuccessMessage, -1, NotificationHelper.NotificationType.SUCCESS);
                 } else {
                     NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle, messageProperties::getResetPasswordInvalidText, -1, NotificationHelper.NotificationType.ERROR);
@@ -188,18 +194,27 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
 
         cardContentLayout.add(cardTitleLayout, passwordField, confirmPasswordField, resetButton, homeButton);
 
-        CardComponent cardComponent = new CardComponent(cardContentLayout);
+        CosmosCardComponent cardComponent = new CosmosCardComponent(cardContentLayout);
 
         mainContent.add(cardComponent);
     }
 
-    private void invalidTokenCard() {
-        VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
+    private void showSuccessCard() {
+        mainContent.removeAll();
+        // Nach erfolgreichem Verbrauch des Tokens nur noch die Bestätigung anzeigen.
+        title = null;
+        passwordField = null;
+        confirmPasswordField = null;
+        resetButton = null;
 
-        Icon successIcon = VaadinIcon.WARNING.create();
-        successIcon.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.TextColor.ERROR);
+        VerticalLayout cardContentLayout = new VerticalLayout();
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+        cardContentLayout.setPadding(false);
+        cardContentLayout.setSpacing(false);
+        cardContentLayout.addClassName("cosmos-form");
+
+        Icon successIcon = VaadinIcon.CHECK_CIRCLE.create();
+        successIcon.addClassNames("cosmos-status-icon", LumoUtility.TextColor.SUCCESS);
 
         HorizontalLayout cardIconLayout = new HorizontalLayout();
         cardIconLayout.setWidthFull();
@@ -207,10 +222,55 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
         cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardIconLayout.add(successIcon);
 
+        this.successTitle = new H1(messageProperties.getBaseSuccessTitle());
+        successTitle.addClassName("cosmos-headline");
+        HorizontalLayout cardTitleLayout = new HorizontalLayout();
+        cardTitleLayout.addClassName("cosmos-title-row");
+        cardTitleLayout.setWidthFull();
+        cardTitleLayout.setPadding(false);
+        cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+        cardTitleLayout.add(successTitle);
+
+        this.successText = new Span(messageProperties.getResetPasswordSuccessMessage());
+        successText.addClassName("cosmos-form-text");
+        VerticalLayout cardTextLayout = new VerticalLayout(successText);
+        cardTextLayout.addClassName("cosmos-intro");
+        cardTextLayout.setWidthFull();
+        cardTextLayout.setPadding(false);
+        cardTextLayout.setSpacing(false);
+        cardTextLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+
+        this.homeButton = new Button(messageProperties.getBaseHomeButton(), event -> UI.getCurrent().navigate(HomeView.class));
+        homeButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
+        homeButton.setWidthFull();
+        homeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        cardContentLayout.add(cardIconLayout, cardTitleLayout, cardTextLayout, homeButton);
+        mainContent.add(new CosmosCardComponent(cardContentLayout));
+    }
+
+    private void invalidTokenCard() {
+        VerticalLayout cardContentLayout = new VerticalLayout();
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+        cardContentLayout.setPadding(false);
+        cardContentLayout.setSpacing(false);
+        cardContentLayout.addClassName("cosmos-form");
+
+        Icon warningIcon = VaadinIcon.WARNING.create();
+        warningIcon.addClassNames("cosmos-status-icon",
+                technicalFailure ? LumoUtility.TextColor.ERROR : "cosmos-status-icon--warning");
+
+        HorizontalLayout cardIconLayout = new HorizontalLayout();
+        cardIconLayout.setWidthFull();
+        cardIconLayout.setPadding(false);
+        cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+        cardIconLayout.add(warningIcon);
+
         this.invalidTitle = new H1(technicalFailure ? messageProperties.getBaseFailedTitle() : messageProperties.getResetPasswordInvalidTitle());
-        invalidTitle.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
+        invalidTitle.addClassName("cosmos-headline");
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
+        cardTitleLayout.addClassName("cosmos-title-row");
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
@@ -225,15 +285,16 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
 
         cardContentLayout.add(cardIconLayout, cardTitleLayout, cardTextLayout, homeButton);
 
-        CardComponent cardComponent = new CardComponent(cardContentLayout);
+        CosmosCardComponent cardComponent = new CosmosCardComponent(cardContentLayout);
 
         mainContent.add(cardComponent);
     }
 
     private VerticalLayout getCardTextLayout() {
         this.invalidText = new Span(technicalFailure ? messageProperties.getResetPasswordTechnicalErrorMessage() : messageProperties.getResetPasswordInvalidText());
-        invalidText.addClassNames(LumoUtility.Whitespace.NOWRAP);
+        invalidText.addClassName("cosmos-form-text");
         VerticalLayout cardTextLayout = new VerticalLayout();
+        cardTextLayout.addClassName("cosmos-intro");
         cardTextLayout.setWidthFull();
         cardTextLayout.setPadding(false);
         cardTextLayout.setSpacing(false);
@@ -242,4 +303,9 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
         cardTextLayout.add(invalidText);
         return cardTextLayout;
     }
+    private void updateInputPlaceholders() {
+        if (passwordField != null) passwordField.setPlaceholder(messageProperties.getAccountNewPasswordPlaceholder());
+        if (confirmPasswordField != null) confirmPasswordField.setPlaceholder(messageProperties.getAccountConfirmPasswordPlaceholder());
+    }
+
 }

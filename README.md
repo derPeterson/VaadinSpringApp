@@ -6,7 +6,7 @@ Automatisierte Browserprüfungen mit Java, JUnit und Allure in eigener Docker-Te
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Letzter vollständiger Gesamtprüfstand vom 12.10.2026: Java 25, 1.036 Anwendungstests mit JaCoCo sowie 24 Browser-Helper-/Reportertests erfolgreich. Das gebaute Docker-JAR wurde mit 70 Browserfällen jeweils auf Deutsch und Englisch in isoliertem H2/Mailpit geprüft. Umfang und verbleibende Grenzen: [Browserabdeckung](browser-tests/abdeckung.md).
+> Aktueller vollständiger Gesamtprüfstand vom 13.10.2026 einschließlich Designfeinschliff, CID-Mailbildern und DB-Copyright: Java 25, 1.055 Anwendungstests mit JaCoCo sowie 26 Browser-Helper-/Reportertests erfolgreich. Das frisch gebaute Docker-Produktions-JAR wurde mit jeweils 84 Browserfällen auf Deutsch und Englisch in isoliertem H2/Mailpit geprüft. Umfang, Berichte und verbleibende Grenzen: [Browserabdeckung](browser-tests/abdeckung.md).
 
 ## Funktionen
 
@@ -22,29 +22,61 @@ Versandausgängen: [Mailqueue-Verarbeitung](docs/email-queue-processing.md).
 
 Belege: `views/RegistrationView.java`, `views/LoginView.java`, `views/admin/`, `service/VerificationService.java`, `service/PasswordResetService.java`, `service/EmailQueueService.java`, `security/SecurityConfig.java` und `scheduler/UserStatusScheduler.java` unter `src/main/java/de/derpeterson/app/`.
 
-Die Registrierung verwendet eine responsive Formularkarte ohne Foto-/Bildspalte.
-Ihr dunkler Hintergrund mit blauen Kreisbögen und Punktraster entsteht vollständig
-im CSS. Unter 600 px stehen Feldpaare untereinander; die Seite wächst mit dem Inhalt
-und lässt sich vertikal scrollen. Validierung und Verifikationsablauf bleiben erhalten.
+## Kontoansichten: Silent Cosmos und Inter
 
-Der Login behält seine echten Vaadin-Felder, Buttons, Texte und Anmeldung.
-Das Welcome-Bild und die feste Karten-Mindestbreite wurden entfernt. Der nur auf
-Login begrenzte Silent-Cosmos-Hintergrund verwendet CSS-Sterne, Nebel und Planeten
-aus `custom-theme/cosmos-login.css`, eingebunden direkt an `LoginView`.
-Die 430 px breite Login-Card folgt den Proportionen der Vorlage: kompakte
-Abstände/Überschrift, der ausdrücklich gewählte dunkle RGBA-Verlauf der Vorlage,
-dezente Lumo-Kante sowie konturierte Felder und ein Lumo-Buttonverlauf.
-Schrift und Inhalt bleiben deckend. Die Login-Schrift Inter wird lokal über
-`custom-theme/fonts/InterVariable.woff2` geladen, ohne externen Fontdienst.
-Quelle: [offizielles Inter-Projekt](https://github.com/rsms/inter/tree/e3a3d4c57d5ecc01453a575621882a384c1995a3),
+Login, Registrierung, Verifikation, Passwortanfrage und Passwortänderung verwenden
+denselben animierten CSS-Hintergrund und dieselben Card-/Formularbausteine.
+Grundlage ist die bereitgestellte Silent-Cosmos-Referenz; Servicebezeichnung,
+Vaadin-Komponenten, Übersetzungen, Validierung und Authentifizierung bleiben erhalten.
+Die Glas-Card verwendet den gewünschten RGBA-Verlauf der Vorlage; Primary-Buttons
+den zentralen blauen Verlauf `#3a538d` → `#526ebc`.
+
+| Zentrale Datei unter `custom-theme/` | Aufgabe |
+| --- | --- |
+| `typography.css` | Inter als Standardschrift für die gesamte Anwendung |
+| `cosmos-theme.css` | Konto-Palette, Lumo-Farbvariablen, Cards, Felder, Buttons und markierte Notifications |
+| `cosmos-background.css` | CSS-Sterne, Nebel, Planeten und Animation |
+| `styles.css` | Bestehende allgemeine und Admin-Styles; keine alten Konto-Bildhintergründe |
+
+Die Styles werden einmalig in `Application.java` eingebunden. Die Cosmos-Palette
+gilt für `.cosmos-theme` und die aus diesen Ansichten geöffneten Notifications;
+Home/Admin behalten ihre bisherigen Farben. **Inter gilt ausdrücklich auch dort.**
+Aus dem bereitgestellten Inter-ZIP werden beide vollständigen variablen Fonts lokal
+geladen: normal und kursiv, alle Gewichte von 100 bis 900 einschließlich optischer
+Größen. Es sind keine externen Fontdienste nötig. Die statischen Einzelschnitte
+aus dem ZIP werden durch diese beiden variablen Dateien abgedeckt.
 Lizenz: `custom-theme/fonts/Inter-LICENSE.txt` (SIL Open Font License 1.1).
-Das Formular wächst bei wenig Höhe und lässt sich vertikal scrollen; Links brechen
-bei wenig Breite um. Reduzierte Bewegung deaktiviert die Hintergrundanimationen.
-Gezielte Layout-/Anmeldeprüfungen: `browser-tests/run.ps1 -Suite login-checks`.
-Vor der abschließenden Cardgestaltung: 1.036 Anwendungstests, 24 Helper-/Reportertests
-und jeweils 19/19 gezielte Browserfälle DE/EN erfolgreich. Danach wurde die
-Cardgestaltung frisch gebaut und mit jeweils 6/6 Login-Layoutfällen DE/EN geprüft. Die nun 76 registrierten
-Browserfälle wurden nicht erneut als vollständiger Gesamtlauf ausgeführt.
+
+`CosmosPageComponent` verwaltet Hintergrund, Service-Logo, Servicebezeichnung und Fußzeile;
+`CosmosCardComponent` stellt den gemeinsamen Card-Rahmen bereit. Registrierung
+nutzt eine breitere Card; Feldpaare stehen unter 600 px untereinander. Die Card selbst
+steht bei ausreichend Platz exakt in der Bildschirmmitte. Logo/Servicebezeichnung
+stehen darüber, Copyright darunter; ausgeglichene Grid-Zeilen verhindern ein
+Verschieben durch die unterschiedlichen Höhen. Bei wenig
+Höhe wächst die Seite und scrollt vertikal. Reduzierte Bewegung deaktiviert die
+Animation. Platzhalter folgen über die gemeinsamen Getter der gewählten Sprache.
+
+Unter **Admin → Konfiguration → Allgemein** kann der Copyright-Fußtext geändert
+werden. Datenbankschlüssel: `copyright.text`; Default: `© {year} {serviceName}`.
+Der unveränderte Standard wird über den gemeinsamen Übersetzungsgetter angezeigt:
+DE `© {year} {serviceName}. Alle Rechte vorbehalten.`,
+EN `© {year} {serviceName}. All rights reserved.`.
+Eigene gespeicherte Texte werden unverändert verwendet. Beim Sprachwechsel wird
+der Standardtext aktualisiert; dafür werden keine Datenbankwerte überschrieben.
+`{year}` wird durch das aktuelle lokale Jahr, `{serviceName}` durch den konfigurierten
+Servicenamen ersetzt. Leerer Text blendet die Fußzeile aus; HTML bleibt sicher Text.
+Änderungen erscheinen beim erneuten Öffnen einer Kontoansicht. Beim normalen Start
+wird nur ein fehlender Eintrag ergänzt; gespeicherte Werte werden nicht überschrieben.
+
+Frühere Hintergrundbilder, Welcome-Bild und alte Login-Styles wurden aus den
+aktiven Ressourcen entfernt. Die vorher versionierten Dateien bleiben über die
+Git-Historie nachvollziehbar. Der ursprünglich angelegte lokale Ordner
+`design-backup/custom-theme/` ist im aktuellen Arbeitsbaum nicht mehr vorhanden.
+Service-Logo, Avatar und Sprachflaggen bleiben aktiv. Gezielt prüfen:
+`browser-tests/run.ps1 -Suite cosmos-design -Language de` (danach EN mit `-NoBuild`).
+Service-Logo (96×96), Servicename (Lumo XL), Platzhalter und Statuscards wurden
+abschließend im vollständigen DE-/EN-Lauf geprüft: je 8 Cosmos- und 6 Login-Layoutfälle
+innerhalb der jeweils 84 Browserfälle. Den aktuellen Nachweis dokumentiert [Browserabdeckung](browser-tests/abdeckung.md).
 
 ## Gemeinsame Texte und UI-Konstanten
 
@@ -273,7 +305,39 @@ Historischer Prüfstand vom 01.10.2026:
 
 Die beiden historischen Builds vom 01.10.2026 meldeten, dass kein neuer Produktions-Frontend-Bundle-Build nötig war. Der aktuelle Docker-Build vom 12.10.2026 hat das Produktionsfrontend neu gebaut. Es gab JDK-Warnungen zu Jansi-Native-Access und beim Kompilieren zu Lomboks Nutzung von `sun.misc.Unsafe`, aber keine Build-Fehler.
 
-`VerificationService` und `PasswordResetService` laden das Logo nun über `ImageHelper` als **Classpath-Stream**, ohne lokalen Dateipfad oder Dateiextraktion. Das bisherige Mailformat bleibt erhalten: Der Helper liefert reines Base64, die HTML-Vorlagen ergänzen `data:image/png;base64,`. Der Test prüft die Ressource im Test-Classpath; `jar tf` prüft deren Verpackung, nicht den Ladevorgang im laufenden JAR.
+Die Logo-Ressource wird weiterhin als **Classpath-Stream** geladen und funktioniert
+auch ohne lokalen Quelldateipfad. Neu erzeugte Verifikations- und Resetmails verwenden
+`cid:service-logo@vaadinspringapp` statt einer Data-URI. `EmailService` ergänzt dafür
+einen Inline-PNG-Teil in `multipart/related`; anderer HTML-Inhalt bleibt ein einzelner
+HTML-Teil. `EmailLogo` verwaltet CID und Ressourcenpfad zentral. Die Ressource wird
+vor der Einreihung geprüft und vor dem Transport als Bytes gelesen; Lesefehler dürfen
+keinen Versand beginnen. Die bestehende Behandlung nachweislich unversandter und
+unklarer Transportausgänge bleibt erhalten.
+
+Die DE-/EN-Mailvorlagen übernehmen die Cosmos-Farben mit einer statischen Stern-/Nebel-
+Variante. Feste Grundfarben bleiben als Rückfall für Mailprogramme ohne CSS-Verläufe.
+Inter/Roboto verwenden dort Arial/sans-serif als Rückfall; es werden keine externen
+Schriften nachgeladen. MJML ist die Quelle; die vier danebenliegenden HTML-Dateien
+wurden mit MJML 5.4.1 erzeugt. Für Änderungen jeweils aus dem Projektroot ausführen:
+
+```powershell
+npx --yes --package mjml@5.4.1 mjml src/main/resources/email/welcome_de.mjml -o src/main/resources/email/welcome_de.html --config.validationLevel strict
+```
+
+Entsprechend für `welcome_en`, `reset_password_de` und `reset_password_en` wiederholen.
+MJML ist keine Anwendungsabhängigkeit und wird nicht durch Maven ausgeführt.
+
+`{{COPYRIGHT_TEXT}}` wird beim Erzeugen der Queue-Nachricht aus `copyright.text`
+eingesetzt. `CopyrightTextFormatter` löst für Oberfläche und Mails gemeinsam Jahr,
+Servicenamen und den sprachabhängigen Standard auf. Eigene DB-Texte bleiben erhalten;
+Mailtexte werden HTML-escaped. Bereits gespeicherte Queue-Nachrichten werden nicht
+nachträglich umgeschrieben.
+
+**Aktueller Feinschliff geprüft:** CID-MIME, Mailvorlagen und Konto-Styles wurden
+abschließend gebaut und getestet. Gezielte MIME-Roundtrips prüfen CID/PNG-Bytes,
+UTF-8 und Logo-Lesefehler vor Transport. DE-/EN-Browserjourneys bestätigen geladene
+Inline-Bilder und den gespeicherten Copyrighttext über regulär versandte Testmails.
+Gmail/Outlook-Darstellung bleibt separat zu prüfen. Nachweise: [Browserabdeckung](browser-tests/abdeckung.md).
 
 **Die erfolgreichen Tests belegen die beschriebenen Fälle, keine vollständige Prüfung aller Betriebsabläufe.** Die Browserläufe belegen Start, Darstellung, Login und ausgewählte Mailjourneys mit lokaler SMTP-Zustellung an Mailpit. Reale Geräte, externe Maildarstellung/-zustellung, zusätzliche Transport-/Betriebsvarianten und Bestandsmigrationen bleiben offen (siehe Abdeckungsübersicht). `.\mvnw.cmd verify -Pit,production` würde die vorbereitete Failsafe-Konfiguration aktivieren und die Anwendung starten/stoppen; dieser Befehl wurde nicht ausgeführt. Es gibt keine explizite Browser-/WebDriver-Konfiguration im Profil.
 

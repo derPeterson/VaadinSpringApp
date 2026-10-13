@@ -1,94 +1,135 @@
 # Browserabdeckung und offene Punkte
 
-**Stand: 13.10.2026 – Loginänderung gezielt geprüft; ursprüngliche Gesamtabdeckung noch unvollständig.**
-Dies ist die zentrale Übersicht zum Prüfstand. Bedienung und Aufbau stehen in der
-[Browser-Testanleitung](README.md). Historische Run-Berichte werden nicht verändert.
+**Stand: 13.10.2026 – aktueller Design-/Mailstand vollständig geprüft: 1055 Anwendungstests, 26 Helper-/Reportertests und je 84 Browserfälle auf DE/EN erfolgreich.**
+Bedienung und Aufbau stehen in der [Browser-Testanleitung](README.md).
+Historische Run-Berichte bleiben unverändert; hier steht der aktuelle Prüfstand.
 
-## Aktuelle Cardgestaltung
+## Aktueller vollständiger Prüfstand – 13.10.2026
 
-Die abschließende Anpassung verwendet eine 430 px breite dunkle Glas-Card mit
-kompakteren Abständen/Überschrift, konturierten echten Vaadin-Feldern und dezentem
-Buttonverlauf. Der Card-Hintergrund wurde anschließend ausdrücklich auf den RGBA-Verlauf der
-Vorlage festgelegt; die übrigen Elementfarben kommen aus Lumo. Inter wird lokal
-für den Login eingebunden. Seit diesen optischen Feinänderungen wurden keine
-JUnit-/Docker-Browserläufe erneut ausgeführt.
-Der bestehende Authentifizierungs-Handler wurde gegen den Ausgangscommit verglichen
-und ist unverändert; Security und Registrierung wurden nicht angepasst.
+Der aktuelle Stand einschließlich 96×96-Logo, größerem Servicenamen (Lumo XL),
+kleiner weicher Platzhalterschrift, angepassten Statusicons und Reset-Erfolgscard
+wurde vollständig geprüft. Copyright verwendet den DE-/EN-Standardtext oder den
+eigenen DB-Eintrag. Neu erzeugte Verifikations-/Resetmails enthalten ein echtes
+CID-Inline-PNG, die Cosmos-Palette und einen sicheren konfigurierbaren Fußtext;
+MJML und daraus erzeugtes HTML sind synchron.
 
-Frischer Anwendungs-/Frontend-Build erfolgreich. Die sechs Login-Layoutfälle
-UI-03A–F bestehen jeweils auf Deutsch und Englisch auf demselben neuen Image;
-Aufbau, Abbau und HTML-Erzeugung erfolgreich. Die übrigen Tests wurden für diese
-rein optische Nachbesserung nicht erneut ausgeführt; ältere Nachweise stehen unten.
-
-- [Aktueller DE-Cardbericht](runs/2026-10-12T21-57-49_UTC__2a1dfb7a__1ac35ef9/report.md)
-- [Aktueller EN-Cardbericht](runs/2026-10-12T21-59-37_UTC__2a1dfb7a__35065e21/report.md)
-
-## Anschließende Login-Hintergrund-/Layoutänderung
-
-Nach dem unten dokumentierten Gesamtlauf wurde ausschließlich der Login-Hintergrund
-auf CSS-Sterne, Nebel und Planeten umgestellt, das Welcome-Bild entfernt und die
-feste Karten-Mindestbreite aufgehoben. Bestehende Felder, Buttons, Texte,
-Authentifizierungsablauf und Security-Konfiguration bleiben erhalten.
-
-| Prüfung des neuen Stands | Ergebnis |
+| Prüfung | Ergebnis |
 | --- | --- |
-| Anwendung und JaCoCo | 1036/1036; keine Fehler/Fehlschläge/Skips |
-| Helper/Reporter | 24/24; keine Fehler/Fehlschläge/Skips |
-| `login-checks` Deutsch | 19/19; Aufbau, Abbau und HTML erfolgreich |
-| `login-checks` Englisch | 19/19; Aufbau, Abbau und HTML erfolgreich |
+| Shared-Modul | Clean install erfolgreich, aktuelle Getter verwendet |
+| Anwendung / JaCoCo, Java 25 | 1055/1055, 0 Fehler/Fehlschläge/Skips; Bericht erzeugt |
+| Browser-Helper/Reporter | 26/26, 0 Fehler/Fehlschläge/Skips |
+| Docker-Produktionsbuild | Erfolgreich, frisches Produktions-JAR mit Frontend |
+| Browser Deutsch | 84/84, 0 Fehler/Skips |
+| Browser Englisch | 84/84, 0 Fehler/Skips, dasselbe App-Image |
+| Aufbau, Abbau, Markdown/HTML-Berichte | Beide Läufe erfolgreich; eigene Testumgebungen entfernt |
 
-- [DE-Loginbericht](runs/2026-10-12T21-36-30_UTC__2a1dfb7a__abaac605/report.md)
-- [EN-Loginbericht](runs/2026-10-12T21-38-14_UTC__2a1dfb7a__27317c32/report.md)
+- [Aktueller vollständiger DE-Bericht](runs/2026-10-13T13-05-10_UTC__a972ffbf__6c6370b4/report.md)
+- [Aktueller vollständiger EN-Bericht](runs/2026-10-13T13-23-24_UTC__a972ffbf__eb540930/report.md)
 
-Die sechs zusätzlichen Fälle UI-03A–F prüfen fünf Fenstergrößen (320×568,
-390×844, 844×390, 360×240, 1280×900), Fehler/Korrektur und reale Anmeldung
-sowie reduzierte Bewegung und Begrenzung der CSS-Dekoration auf Login.
-Das Dashboard wird nach der tatsächlichen Anmeldung wieder bei Desktopbreite
-kontrolliert; seine responsive Gestaltung ist kein Teil dieser Änderung.
-Die kombinierten 19 Fälle enthalten außerdem bestehende Anmeldung/Zugriff,
-Tastatur-/Präsentations- und Remember-me-Prüfungen.
+Die Fälle COSMOS-01A–E enthalten fünf Fenstergrößen einschließlich 1280×1200 zur
+Prüfung der Zentrierung der langen Registrierung bei ausreichend Platz.
+COSMOS-02 prüft die tatsächliche neue Reset-Erfolgscard. COSMOS-03 stellt den
+Copyright-Text über die Oberfläche ein und prüft denselben sicheren Text auch in
+echten Verifikations- und Resetmails. Mailpit zeigt die Inline-Bilder geladen an;
+Screenshots und Traces sind in den Berichten enthalten.
 
-Beide Läufe nutzten dasselbe frisch gebaute Image mit lokalen Änderungen auf
-`main` (Ausgangscommit `2a1dfb7a`). Jetzt sind 76 Fälle
-registriert. Für diesen Stand wurde gezielt `login-checks` ausgeführt, kein neuer
-76-Fälle-Gesamtlauf. Echte Geräte/Leistungsbenchmarks und ein vollständiges Zoomaudit
-werden durch die emulierten Platzverhältnisse nicht ersetzt.
+Gezielte MIME-Roundtrips prüfen passende Content-ID, PNG-Bytes, UTF-8-Inhalt und
+Logo-Lesefehler vor dem Transport. Bekannte und unklare Versandfehler, Tokenrotation,
+Rollback, Kontosperren und die bestehenden Nebenläufigkeitsregressionen bleiben
+geprüft. Der Copyright-Formatter prüft den lokalen Jahreswechsel per injizierter
+Clock; eigene/blanke DB-Texte werden nicht durch den Standard ersetzt.
 
-Die anschließend festgelegten Animationszeiten bleiben 30/45 Sekunden für Sterne
-und 18–24 Sekunden für Nebel. Der neuere Card-Prüfstand steht oben.
+Der erste Anwendungslauf enthielt veraltete Mailfixtures/-Erwartungen (Base64,
+fester Footer, fehlender neuer Configwert). Diese wurden angepasst; der finale
+Clean-Volltest ist grün. Es wurden keine Tests entfernt, deaktiviert oder übergangen.
 
-## Letzter vollständiger Prüfstand
+Arbeitsbranch `main`, Ausgangscommit `a972ffbf`, lokale Änderungen noch nicht
+committet. Geprüftes Image: `sha256:be8c5f9b842642ae2e128cc2cfb7034405064dac47da63c43dbb0576e4ddc49e`.
+Alle Zustände über Oberfläche und reguläre SMTP-Testmails in frischen eigenen
+Docker-/H2-/Mailpit-Daten erzeugt. Bestandsdaten, manuelle Dockerumgebung und echte
+Postfächer wurden nicht verändert. Gmail/Outlook-Darstellung, echte mobile Geräte
+und die unten genannten Betriebs-/menschlichen Prüfungen bleiben offen.
 
-Historischer Gesamtlauf vor der anschließenden Loginänderung: Arbeitsbranch `main`,
-Ausgangscommit `d0f33d16`, mit den damals dokumentierten lokalen Änderungen.
-Die beiden abschließenden Gesamtläufe verwendeten dasselbe frisch gebaute Anwendungsimage
-und jeweils eigene frische Docker-/H2-/Mailpit-Daten. Keine Bestandsdaten oder echten Postfächer.
+## Historischer Zwischenstand: Logo-/Zentrierungsanpassung
 
-| Prüfung | Ergebnis | Nicht bestandene Fälle |
-| --- | --- | --- |
-| Anwendung und JaCoCo | 1036/1036, keine Fehler/Fehlschläge/Skips | keine |
-| Helper/Reporter | 24/24, keine Fehler/Fehlschläge/Skips | keine |
-| Browser Deutsch | 70/70, keine Fehler/Skips | keine |
-| Browser Englisch | 70/70, keine Fehler/Skips | keine |
+Das vorhandene Service-Logo steht über dem Servicenamen. Gleich große obere und
+untere Grid-Bereiche halten die Card selbst bei ausreichend Platz exakt in der
+Bildschirmmitte, unabhängig von Logo/Überschrift und Copyright. Bei wenig Höhe oder
+langer mobiler Registrierung wächst die Seite und bleibt scrollbar; alle Inhalte
+sind erreichbar. Keine festen Pixel-Offsets oder JavaScript-Größenberechnung.
 
-- [Vollständiger DE-Bericht](runs/2026-10-12T20-35-51_UTC__d0f33d16__a6bcc4c8/report.md)
-- [Vollständiger EN-Bericht](runs/2026-10-12T20-48-59_UTC__d0f33d16__d7f70c45/report.md)
+Die vorhandenen Cosmos-Fälle prüfen jetzt zusätzlich geladenes Logo, dessen Position
+vor dem Servicenamen, überlappungsfreie Anordnung und die Cardmitte. Desktop (1280×900)
+muss die Cardzentrierung in allen fünf Ansichten erfüllen; passende kleine Fenster
+prüfen sie ebenfalls. Sehr niedrige Fenster bleiben echte Bedienungsprüfungen.
 
-Aufbau, Abbau und HTML-Erzeugung waren erfolgreich. HTML-Berichte über ihre
-`html/open-report.bat` öffnen; Screenshots/Traces bleiben im jeweiligen Archiv.
-Die 70 Browserfälle und die 44 ursprünglichen manuellen Fälle haben unterschiedliche
-Teilabläufe und IDs. Ihr Vergleich steht unten; erfolgreiche Browserläufe bedeuten
-keine vollständige 100-%-Ablösung aller Betriebs- und menschlichen Prüfungen.
+| Gezielte Prüfung des neuen Stands | Ergebnis |
+| --- | --- |
+| Gemeinsame Komponenten/Copyright – JUnit | 6/6, keine Fehler/Fehlschläge/Skips |
+| Cosmos-Design Deutsch / Englisch | Jeweils 7/7, keine Fehler/Skips |
+| Loginlayout Deutsch / Englisch | Jeweils 6/6, keine Fehler/Skips |
+| Frischer Image-Build, Aufbau, Abbau, HTML | Erfolgreich; danach dasselbe Image verwendet |
 
-Der neue Remember-me-Ablauf hat eine fehlende Spring-Kontextspeicherung nach dem
-eigenen Vaadin-Login aufgedeckt: das zunächst gesetzte Cookie wurde durch erneute
-Remember-me-Anmeldungen paralleler Folgeanfragen wieder gelöscht. Der Login speichert
-den Kontext jetzt ausdrücklich über das vorhandene `SecurityContextRepository`,
-bevor das Cookie ausgegeben wird. Zwei technische Varianten lesen den Kontext aus
-einer unabhängigen Folgeanfrage; der Browser bestätigt Cookie, echten Prozessneustart
-und Logout mit erneutem Neustart. Die bestehende Sperr-/Rollenprüfung bleibt erhalten.
-Die fehlgeschlagenen Zwischenläufe sind historische Belege, keine offenen Fehler
-dieses abschließenden Prüfstands.
+- [cosmos-design DE](runs/2026-10-13T10-32-46_UTC__a972ffbf__2c1c1d43/report.md)
+- [cosmos-design EN](runs/2026-10-13T10-35-51_UTC__a972ffbf__fec50aee/report.md)
+- [login-layout DE](runs/2026-10-13T10-36-57_UTC__a972ffbf__8a9dd80e/report.md)
+- [login-layout EN](runs/2026-10-13T10-37-45_UTC__a972ffbf__a2eb5fef/report.md)
+
+Dieser historische Zwischenschritt wurde damals nur gezielt geprüft.
+Der aktuelle vollständige Prüfstand steht oben; frühere Run-Berichte bleiben erhalten.
+
+## Historischer vollständiger Prüfstand vor Logo-/Zentrierungsanpassung
+
+Arbeitsbranch `main`, Ausgangscommit `a972ffbf` mit den lokalen,
+noch nicht committeten Designänderungen. Die beiden Gesamtläufe verwendeten dasselbe
+frisch gebaute Produktions-JAR/Image und jeweils eigene frische Docker-/H2-/Mailpit-Daten.
+
+| Prüfung | Ergebnis |
+| --- | --- |
+| Anwendung und JaCoCo | 1044/1044, keine Fehler/Fehlschläge/Skips |
+| Browser-Helper/Reporter | 26/26, keine Fehler/Fehlschläge/Skips |
+| Browser Deutsch | 83/83, keine Fehler/Skips |
+| Browser Englisch | 83/83, keine Fehler/Skips |
+| Aufbau, Abbau und HTML-Berichte | Jeweils erfolgreich |
+
+- [Vollständiger DE-Bericht](runs/2026-10-13T09-02-52_UTC__a972ffbf__77813902/report.md)
+- [Vollständiger EN-Bericht](runs/2026-10-13T09-19-06_UTC__a972ffbf__475d1311/report.md)
+
+HTML-Berichte über die jeweilige `html/open-report.bat` öffnen. Screenshots und
+Traces liegen im selben Run-Archiv. Es wurden keine Bestandsdaten oder echten
+Postfächer verwendet. Der verpackte Docker-Stand ist geprüft; ein separater aktueller
+IntelliJ-/Eclipse-Lauf und echte mobile Geräte wurden nicht geprüft.
+
+## Gemeinsames Design der Kontoansichten
+
+Login, Registrierung, Verifikation, Passwortanfrage und Passwortänderung verwenden
+gemeinsame Java-/CSS-Bausteine, die Palette der Silent-Cosmos-Referenz, animierte
+CSS-Dekoration, lokales Inter und übersetzte Platzhalter. Inter gilt global; Home/Admin
+behalten ihre bisherigen Farben. Copyright wird über Allgemein gespeichert, seine
+Platzhalter werden ersetzt und HTML-Zeichen als Text angezeigt. Die vorherigen
+Hintergrundbilder sind aus den aktiven Ressourcen entfernt; die versionierten
+Originale bleiben über Git nachvollziehbar. Ein lokaler Backupordner ist aktuell
+nicht vorhanden.
+
+| Fälle | Nachweis im vollständigen DE-/EN-Lauf |
+| --- | --- |
+| COSMOS-01A–E | Alle fünf Ansichten bei 320×568, 390×844, 844×390, 1280×900 und 1280×1200; keine horizontale Abschneidung, gemeinsame Gestaltung, sichtbare Platzhalterschrift und Screenshots |
+| COSMOS-02 | Mobile Registrierung, echte Aktivierungsmail, erfolgreiche Verifikation, echte Reset-Mail, Passwortänderung mit Erfolgscard/Häkchen und Anmeldung bei 390×844 |
+| COSMOS-03 | Copyright über Admin gespeichert/neu geladen, sicherer Fußtext mit year/serviceName in UI und echten Verifikations-/Resetmails, geladene Inline-Logos und Wiederherstellung; Admin-Palette unverändert |
+| COSMOS-04 | Schmale Fehlermeldung verwendet Card-Verlauf; Schließen erreichbar, Home-Palette unverändert |
+| UI-03A–F | Reale Loginbedienung bei fünf Größen einschließlich 360×240, Fehler/Korrektur, Remember-me-Auswahl, Anmeldung und reduzierte Bewegung |
+
+JUnit prüft zusätzlich Copyright-Defaults/Erhalt gespeicherter Werte, sichere Textanzeige,
+Notification-Scope sowie wechselnde Registrierungsplatzhalter ohne Verlust der Formulardaten.
+Die Anmelde-/Registrierungs-/Tokenaktionen und die Security-Konfiguration wurden gegen
+den Ausgangsstand geprüft und blieben unverändert. Der Browser prüft auch die bisherigen
+fachlichen Konto-, Admin-, Mail-, Status- und Sicherheitsabläufe.
+
+Sterne behalten 30/45 Sekunden, Nebel 18–24 Sekunden als Animationszeiten.
+Reduzierte Bewegung deaktiviert die Animation; kurze Fenster dürfen vertikal scrollen.
+Die 84 Browserfälle und 44 ursprünglichen manuellen Fälle haben unterschiedliche IDs
+und Teilabläufe. Die Vergleichstabelle unten behauptet keine vollständige 100-%-Ablösung
+aller Betriebs- und menschlichen Prüfungen.
 
 ## Einheitliche Datum-/Uhrzeitbedienung
 
@@ -134,9 +175,8 @@ Gesamtläufen. Der Editierbutton wird vor dem echten Mausklick sichtbar gemacht 
 fokussiert, damit die native Grid-Scrollbewegung den Klick nicht verliert. Erwartungen,
 Speicher-/Anmeldeprüfungen und Sicherheitsregeln bleiben erhalten.
 
-Im bisherigen vollständigen 70-Fälle-Lauf waren keine Fälle fehlgeschlagen.
-Der gezielte Prüfstand der anschließenden Loginänderung steht oben. Die ergänzten Pakete und die weiterhin nur teilweise abgedeckten ursprünglichen
-Fälle sind nachfolgend getrennt aufgeführt.
+Im aktuellen vollständigen DE-/EN-Lauf sind jeweils alle 84 Browserfälle bestanden.
+Die weiterhin nur teilweise abgedeckten ursprünglichen Fälle sind nachfolgend aufgeführt.
 
 ## Ergänzte Arbeitspakete
 
@@ -157,7 +197,8 @@ eigene tatsächlich versandte SMTP-Mail. Interne Regeln bleiben technische Tests
 Die vier UI-Pakete sind geprüft. Als Nächstes bieten sich kontrollierte
 Betriebsfixtures an: Neustart mit derselben eigenen Testdatenbank, SMTP-Stopp und
 Wiederanlauf sowie deren Bericht. Weitere Browserpakete betreffen offene
-Fehlerdialoge beim Sprachwechsel und schmale Admin-/Resetansichten.
+Adminfehlerdialoge beim Sprachwechsel und schmale Home-/Adminansichten.
+Die fünf Kontoansichten einschließlich Reset sind inzwischen responsiv geprüft.
 Queue-/Audit-Innenzustände werden dafür nicht in gewöhnliche UI-Tests gepresst.
 
 ## Grenzen der Testarten
@@ -216,7 +257,7 @@ Falls abdecken. Es wird kein künstlicher Gesamt-Prozentwert berechnet.
 | SEC-04 | Letzten aktiven Admin schützen | TEILWEISE / TECHNISCH | USER-06D, USER-07E; AdminSecurityPersistenceTest | Eigene Löschung/Sperre/eigener Rollenentzug durch UI-Selbstschutz abgewiesen. Globale Letzter-Admin-Regel und konkurrierende Änderungen bleiben Service-/Persistenzregressionen |
 | STATUS-01 | Manueller Status und Aktualisierung | UI-ABGEDECKT | STATUS-01 | Alle angebotenen Statuswerte ausgewählt; sichtbarer aktueller Wert, echte Push-Aktualisierung im zweiten Tab und Speicherung nach Neuladen geprüft |
 | STATUS-02 | Automatische Abwesenheit und Rückkehr | UI-ABGEDECKT / TECHNISCH | STATUS-02; UserStatusSchedulerTest/UserStatusPersistenceTest | Konfiguration über UI, echte Inaktivität/Scheduler und Rückkehr nach Reload; manuell beschäftigt sowie manuell abwesend bleiben erhalten. Originaltimeout wiederhergestellt |
-| CONFIG-01 | Zulässige Werte speichern | TEILWEISE / BETRIEB | CONFIG-03A–D, CONFIG-04A–C, VER-03A, RESET-06A | String/Boolean/Ganzzahl und vier Tokendauern gespeichert/neu geladen; geänderter Name tatsächlich auf frischer Startseite, neue Dauern tatsächlich am Mailtoken geprüft; Neustartwirkung startgebundener Einstellungen bleibt offen |
+| CONFIG-01 | Zulässige Werte speichern | TEILWEISE / BETRIEB | CONFIG-03A–D, CONFIG-04A–C, COSMOS-03, VER-03A, RESET-06A | String/Boolean/Ganzzahl, Copyright-Fußtext und vier Tokendauern gespeichert/neu geladen; geänderter Name tatsächlich auf frischer Startseite, neue Dauern tatsächlich am Mailtoken geprüft; Neustartwirkung startgebundener Einstellungen bleibt offen |
 | CONFIG-02 | Ungültige Konfiguration bleibt abgelehnt | TEILWEISE / TECHNISCH | CONFIG-03A–D, CONFIG-04A/C | Syntax, Null, negative/zu kurze Tokendauern, blanker Name, ungültige URL und nicht positive Ganzzahl abgelehnt; Originalwerte erhalten. Freie Boolean-Texte werden nicht angeboten; weitere SMTP-Verträge bleiben technische/ergänzende Prüfungen |
 | MAIL-01 | Admin-Testmail und Unicode | UI-ABGEDECKT | MAIL-01, MailpitInbox | Empfänger-/Betreff-/Textfehler korrigiert; eigene echte SMTP-Mail mit UI-konfiguriertem Absender, Unicode-Betreff/Inhalt und genauem regulärem Zeilenabschluss geprüft |
 | MAIL-02 | Erfolgreiche Queue-Verarbeitung | TEILWEISE / TECHNISCH | REG/VER/RESET lesen tatsächlich zugestellte eigene SMTP-Mails | Kein vollständiger Browsernachweis interner PENDING/IN_PROGRESS/SENT-Zustände oder späterer Scheduler-Doppelversandfreiheit |
@@ -224,7 +265,7 @@ Falls abdecken. Es wird kein künstlicher Gesamt-Prozentwert berechnet.
 | MAIL-04 | Dauerhafter Fehler und Adminbeobachtbarkeit | OFFEN – BETRIEB / TECHNISCH | Queue-/Auditregressionen | Dauerhafter realer SMTP-Ausfall, Retrylimit und Auditbeobachtung nicht im Browser eingerichtet |
 | LANG-01 | Sichtbarer Wechsel Deutsch ↔ Englisch | TEILWEISE / PRODUKTGRENZE | LANG-01C, USER-06E: Adminsuche/Freigabefilter bleiben bei Wechsel in beide Richtungen erhalten | Offene Adminfehler/-dialoge noch nicht im Browser bestätigt; anonyme Form-/Tokenseiten haben keinen UI-Schalter |
 | LANG-02 | Sprache nach Anmeldung und Mailvorlagen | TEILWEISE | LANG-01B, MailpitInbox und vollständige DE-/EN-Gesamtläufe | Gespeicherte Sprache nach Anmeldung und gewählte Mailbetreffe/volle kanonische Footer in beiden Sprachen geprüft. Sprachänderung eines bereits vorhandenen Kontos mit anschließender neuer Mail bleibt ergänzbar |
-| UI-01 | Desktop, Handy und andere Fensterbreiten | TEILWEISE / MENSCHLICH | INFRA-01; UI-01A/B im vollständigen aktuellen DE-/EN-Lauf bestanden: direkte Datumeingabe, Kalenderauswahl/Wiederöffnen und Registrierung | Echte Geräte/Tastatur, übrige Formulare und menschliche Layoutqualität fehlen |
+| UI-01 | Desktop, Handy und andere Fensterbreiten | TEILWEISE / MENSCHLICH | INFRA-01, COSMOS-01A–D/02, UI-03A–F; UI-01A/B im aktuellen DE-/EN-Lauf bestanden: direkte Datumeingabe, Kalenderauswahl/Wiederöffnen und Registrierung | Kontoansichten zusätzlich durch COSMOS-01A–D/COSMOS-02 bei vier Fenstergrößen samt gültigen Maillinks geprüft; Home/Admin, echte Geräte/Tastatur und menschliche Layoutqualität bleiben ergänzende Prüfungen |
 | UI-02 | Tastatur und grundlegende Bedienbarkeit | TEILWEISE / MENSCHLICH | UI-02A | Login per Tab/Fokus/Enter belegt; gesamte Fokusreihenfolge, 200-%-Zoom und menschliche Lesbarkeit/Accessibility nicht vollständig geprüft |
 | OPS-01 | Unklarer Transportausgang bleibt quarantänisiert | TECHNISCH / BETRIEBSNACHWEIS OFFEN | Queue-Service-/Persistenzregressionen | Fehler nach möglicher SMTP-Annahme und Neustart erfordern kontrollierte Transportfixture; fehlende Mail ist kein Nichtversandbeweis |
 | OPS-02 | Aufbewahrung und Bereinigung | TECHNISCH / BETRIEBSNACHWEIS OFFEN | Queue-/Token-Cleanup mit Clock/H2 | Alte Zustände/Grenzfixture dürfen nicht über Browser-SQL erzeugt werden; tatsächlicher Sonntags-Schedulerlauf ist kein Kurztest |

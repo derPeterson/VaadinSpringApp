@@ -56,7 +56,7 @@ class AdminConfigurationGroupTest {
     @Test
     void typedSelectionKeepsDefaultAndTokenFieldsAndIgnoresNull() {
         assertEquals(AdminConfigGroup.GENERAL, selectedGroup());
-        assertEquals(List.of(ConfigEntry.SERVICE_NAME, ConfigEntry.BASE_URL), visibleEntries());
+        assertEquals(List.of(ConfigEntry.SERVICE_NAME, ConfigEntry.COPYRIGHT_TEXT, ConfigEntry.BASE_URL), visibleEntries());
         section.showGroup(AdminConfigGroup.TOKENS);
         List<ConfigEntry> tokenEntries = List.of(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION,
                 ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION, ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION,
@@ -66,7 +66,7 @@ class AdminConfigurationGroupTest {
         assertEquals(AdminConfigGroup.TOKENS, selectedGroup());
         assertEquals(tokenEntries, visibleEntries());
         section.showGroup(AdminConfigGroup.GENERAL);
-        assertEquals(List.of(ConfigEntry.SERVICE_NAME, ConfigEntry.BASE_URL), visibleEntries());
+        assertEquals(List.of(ConfigEntry.SERVICE_NAME, ConfigEntry.COPYRIGHT_TEXT, ConfigEntry.BASE_URL), visibleEntries());
     }
 
     @Test

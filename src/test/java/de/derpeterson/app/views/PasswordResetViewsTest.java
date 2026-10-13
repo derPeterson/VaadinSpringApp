@@ -18,6 +18,8 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.PasswordResetService;
+import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.model.enums.ConfigEntry;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,7 +77,7 @@ class PasswordResetViewsTest {
 
     private void createResetForm() {
         when(service.validateToken("link-token")).thenReturn(true);
-        resetView = new ResetPasswordView(texts, service, mock(SecurityService.class), mock(HttpServletRequest.class));
+        resetView = new ResetPasswordView(texts, service, mock(SecurityService.class), mock(HttpServletRequest.class), accountConfig());
         resetView.setParameter(null, "link-token");
         field(resetView, "passwordField", PasswordField.class).setValue("Password!");
         field(resetView, "confirmPasswordField", PasswordField.class).setValue("Password!");
@@ -92,7 +94,7 @@ class PasswordResetViewsTest {
 
     @Test
     void rejectedTokenShowsInvalidCardWithoutOfferingPasswordChangeAndTranslates() {
-        resetView = new ResetPasswordView(texts, service, mock(SecurityService.class), mock(HttpServletRequest.class));
+        resetView = new ResetPasswordView(texts, service, mock(SecurityService.class), mock(HttpServletRequest.class), accountConfig());
         resetView.setParameter(null, "used-or-expired");
         assertNull(ReflectionTestUtils.getField(resetView, "resetButton"));
         assertEquals(texts.getResetPasswordInvalidTitle(), field(resetView, "invalidTitle", H1.class).getText());
@@ -149,7 +151,7 @@ class PasswordResetViewsTest {
     @ParameterizedTest
     @ValueSource(strings = {"missing", "disabled", "queued", "pending", "in-progress", "io", "runtime"})
     void anonymousMailRequestAlwaysShowsTheSameDynamicConfirmation(String outcome) throws IOException {
-        forgotView = new ForgotPasswordView(texts, service, mock(SecurityService.class), mock(HttpServletRequest.class));
+        forgotView = new ForgotPasswordView(texts, service, mock(SecurityService.class), mock(HttpServletRequest.class), accountConfig());
         field(forgotView, "emailField", EmailField.class).setValue("test@example.com");
         if (outcome.equals("io") || outcome.equals("runtime")) {
             Exception failure = outcome.equals("io") ? new IOException("secret template path") : new DataAccessResourceFailureException("secret SQL");
@@ -175,7 +177,7 @@ class PasswordResetViewsTest {
     void validationFailureShowsTechnicalCardWithoutPasswordFormAndTranslates() {
         var failure = new DataAccessResourceFailureException("secret SQL");
         when(service.validateToken("link-token")).thenThrow(failure);
-        resetView = new ResetPasswordView(texts, service, mock(SecurityService.class), mock(HttpServletRequest.class));
+        resetView = new ResetPasswordView(texts, service, mock(SecurityService.class), mock(HttpServletRequest.class), accountConfig());
         assertLogged(ResetPasswordView.class, failure, () -> resetView.setParameter(null, "link-token"));
         assertNull(ReflectionTestUtils.getField(resetView, "resetButton"));
         assertEquals(texts.getBaseFailedTitle(), field(resetView, "invalidTitle", H1.class).getText());
@@ -190,7 +192,7 @@ class PasswordResetViewsTest {
     @ParameterizedTest
     @ValueSource(strings = {"", "not-an-email"})
     void anonymousInputValidationDoesNotQueryAccounts(String value) {
-        forgotView = new ForgotPasswordView(texts, service, mock(SecurityService.class), mock(HttpServletRequest.class));
+        forgotView = new ForgotPasswordView(texts, service, mock(SecurityService.class), mock(HttpServletRequest.class), accountConfig());
         field(forgotView, "emailField", EmailField.class).setValue(value);
         field(forgotView, "sendButton", Button.class).click();
         verifyNoInteractions(service);
@@ -221,4 +223,11 @@ class PasswordResetViewsTest {
             logs.stop();
         }
     }
+    private static ConfigService accountConfig() {
+        ConfigService config = mock(ConfigService.class);
+        when(config.getString(any(ConfigEntry.class))).thenAnswer(call ->
+                ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
+        return config;
+    }
+
 }

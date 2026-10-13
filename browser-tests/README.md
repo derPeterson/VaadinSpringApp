@@ -73,7 +73,8 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 11 |
 | `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 19 |
-| `all` | Alle 19 Testklassen | 76 |
+| `cosmos-design` | Fünf Kontoansichten bei fünf Fenstergrößen, mobiler Mailablauf, Copyright in UI/Mails und Notification-/Theme-Abgrenzung | 8 |
+| `all` | Alle 20 Testklassen | 84 |
 
 UI-01A prüft die direkte Datumseingabe mit lokalisiertem Beispiel und anschließendem
 Registrieren ohne Enter/Escape. UI-01B prüft getrennt die Auswahl über das Kalender-Icon,
@@ -97,9 +98,9 @@ UI-03A–E prüfen den bestehenden Login bei 320×568, 390×844, 844×390,
 geringe Höhe darf vertikal scrollen. Remember-me wird tatsächlich gewählt/abgewählt,
 eine falsche Anmeldung korrigiert und das echte Admin-Dashboard erreicht.
 UI-03F prüft die CSS-Animation und `prefers-reduced-motion` sowie die Begrenzung
-der Dekoration auf die Loginseite. Die echten Vaadin-Felder/Buttons verwenden Lumo-Farben;
-die Login-Card und ihre kompakte Anordnung folgen der Designvorlage. Der Card-Verlauf
-verwendet nach ausdrücklicher Vorgabe deren RGBA-Werte. Inter wird lokal bereitgestellt.
+der Dekoration auf die Kontoansichten. Die echten Vaadin-Felder/Buttons verwenden
+die zentrale Cosmos-Lumo-Palette; Card und Anordnung folgen der Designvorlage.
+Inter wird lokal und global bereitgestellt; Home/Admin behalten ihre bisherigen Farben.
 
 ```powershell
 .\browser-tests\run.ps1 -Suite login-checks -Language de
@@ -109,6 +110,37 @@ verwendet nach ausdrücklicher Vorgabe deren RGBA-Werte. Inter wird lokal bereit
 Die Fenstergrößen prüfen typische Platzverhältnisse, nicht alle Geräte,
 Bildschirmtastaturen oder die Leistung echter Smartphones. Ein kontrollierter
 Browserlauf ersetzt kein menschliches Urteil über das Aussehen.
+
+## Gemeinsames Cosmos-Design
+
+Die eigene Suite `cosmos-design` bleibt von den fachlichen Konto-Suites getrennt.
+COSMOS-01A–E prüfen alle fünf Ansichten bei 320×568, 390×844, 844×390, 1280×900 und 1280×1200:
+geladenes Service-Logo oberhalb der Überschrift, Cardzentrierung bei ausreichend Platz,
+gemeinsames Design, Inter, Fußzeile, übersetzte Platzhalter samt kleiner normaler Schrift und Erreichbarkeit
+innerhalb der Fensterbreite. Jeder Fall enthält Screenshots aller fünf Ansichten.
+Unbekannte UUID-Links zeigen die echten Fehlerzustände, ohne Tokens zu erzeugen.
+
+COSMOS-02 prüft zusätzlich die gültigen und erfolgreichen Verifikations-/Resetansichten
+bei 390×844 über Registrierung und tatsächlich empfangene Mailbuttons bis zur Anmeldung.
+Nach dem Reset werden Erfolgscard, Häkchen und entfernte Passwortfelder geprüft;
+ungültige Links zeigen das Warnsymbol.
+COSMOS-03 speichert den Copyright-Text im Adminbereich, lädt ihn neu und prüft die
+ausgefüllte, sichere Fußzeile nach Abmeldung. Registrierung und Passwortanfrage erzeugen
+anschließend echte SMTP-Mails; deren geladenes Inline-Logo und derselbe gespeicherte
+Fußtext werden geprüft. Der ursprüngliche Wert wird wiederhergestellt.
+COSMOS-04 prüft die schmale Fehlermeldung mit Card-Verlauf und die Theme-Abgrenzung zu Home.
+Globale Inter-Schrift und die ursprünglichen Home-/Adminfarben sind ausdrücklich geprüft.
+
+```powershell
+.\browser-tests\run.ps1 -Suite cosmos-design -Language de
+.\browser-tests\run.ps1 -Suite cosmos-design -Language en -NoBuild
+```
+
+Die Palette steht in `custom-theme/cosmos-theme.css`, die Dekoration in
+`cosmos-background.css` und der globale Font in `typography.css`. Die Java-Bausteine
+heißen `CosmosPageComponent` und `CosmosCardComponent`. Die Übersetzungen bleiben im
+gemeinsamen typisierten Katalog. JUnit prüft zusätzlich Copyright-Defaults, Textsicherheit
+und dynamischen Sprachwechsel ohne Verlust der Eingaben. Keine doppelten Navigationstests.
 
 ## Weitere Konten und echte Wartezeiten
 
@@ -138,9 +170,12 @@ Tokenablauf prüft die echte Mindestdauer von einer Minute und wartet pro Ablauf
 65 Sekunden. Deshalb dauert `token-expiry` mehrere Minuten. Die erneute Mail wird
 an derselben eigenen Adresse über ihre neue Mailpit-ID unterschieden; kein Mail-
 oder Datenbankzustand wird zum Beschleunigen verändert. Die empfangenen HTML-Mails
-werden zusätzlich auf ersetzte Platzhalter und den vollständigen Footer der jeweiligen
-ursprünglichen DE-/EN-Vorlage geprüft. Die Vorlagen werden als Testressourcen gelesen,
-nicht als zweiter Textkatalog kopiert. Die Adminmail prüft ihren im UI konfigurierten Absender.
+werden zusätzlich auf ersetzte Platzhalter, geladenes CID-Inline-Logo und vollständigen
+Copyright-Fußtext geprüft. Der Standardtext kommt über den gemeinsamen DE-/EN-Getter
+mit aktuellem Jahr; im Konfigurationstest stammt die Erwartung aus der über die UI
+gespeicherten Fußzeile. Die kanonischen HTML-Dateien bleiben Testressourcen und werden
+auf den Copyright-Platzhalter geprüft. Es gibt keinen zweiten Übersetzungskatalog.
+Die Adminmail prüft ihren im UI konfigurierten Absender.
 
 ## Ergebnisse und Traces
 

@@ -962,6 +962,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     private boolean isGeneralConfig(ConfigEntry configEntry) {
         return configEntry == ConfigEntry.SERVICE_NAME
+                || configEntry == ConfigEntry.COPYRIGHT_TEXT
                 || configEntry == ConfigEntry.BASE_URL;
     }
 

@@ -126,7 +126,7 @@ class VerificationQueueConcurrencyTest {
             locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(
                     resource.equals("template") ? Locale.FRENCH : Locale.ENGLISH);
             if (resource.equals("logo")) {
-                image.when(() -> ImageHelper.convertImageToBase64("META-INF/resources/custom-theme/service_logo.png"))
+                image.when(() -> ImageHelper.readImageBytes("META-INF/resources/custom-theme/service_logo.png"))
                         .thenThrow(failure);
             }
             IOException thrown = assertThrows(IOException.class, () -> resend(entry));
@@ -461,6 +461,7 @@ class VerificationQueueConcurrencyTest {
         ConfigService configService() {
             var config = mock(ConfigService.class);
             when(config.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("PT1H");
+            when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("© {year} {serviceName} (isolated fixture)");
             when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Test Service");
             when(config.getString(ConfigEntry.BASE_URL)).thenReturn("https://example.com/");
             return config;

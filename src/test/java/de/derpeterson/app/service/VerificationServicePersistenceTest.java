@@ -77,6 +77,7 @@ class VerificationServicePersistenceTest {
         reset(probes.tokens(), probes.config(), probes.queue(), probes.users());
         when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("PT1H");
         when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn("P7D");
+        when(probes.config().getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("© {year} {serviceName} (isolated fixture)");
         when(probes.config().getString(ConfigEntry.SERVICE_NAME)).thenReturn("Test Service");
         when(probes.config().getString(ConfigEntry.BASE_URL)).thenReturn("https://example.com/");
         transaction.executeWithoutResult(status -> {
@@ -242,7 +243,7 @@ class VerificationServicePersistenceTest {
             locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(
                     resource.equals("template") ? Locale.FRENCH : Locale.ENGLISH);
             if (resource.equals("logo")) {
-                image.when(() -> ImageHelper.convertImageToBase64("META-INF/resources/custom-theme/service_logo.png"))
+                image.when(() -> ImageHelper.readImageBytes("META-INF/resources/custom-theme/service_logo.png"))
                         .thenThrow(failure);
             }
             IOException thrown = assertThrows(IOException.class, () -> resend(entry));

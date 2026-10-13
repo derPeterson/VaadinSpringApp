@@ -1,7 +1,8 @@
 package de.derpeterson.app.service;
 
 import de.derpeterson.app.config.AppRouteConstants;
-import de.derpeterson.app.helper.image.ImageHelper;
+import de.derpeterson.app.helper.email.EmailLogo;
+import de.derpeterson.app.helper.text.CopyrightTextFormatter;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.PasswordResetTokenEntity;
@@ -26,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
+import org.springframework.web.util.HtmlUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
@@ -227,9 +229,14 @@ public class PasswordResetService {
     }
 
     private String loadEmailTemplate(String token) throws IOException {
+        String serviceName = configService.getString(ConfigEntry.SERVICE_NAME);
         Map<String, String> placeholders = Map.of(
-                "SERVICE_LOGO", ImageHelper.convertImageToBase64("META-INF/resources/custom-theme/service_logo.png"),
-                "SERVICE_NAME", configService.getString(ConfigEntry.SERVICE_NAME),
+                "SERVICE_LOGO", EmailLogo.validatedContentId(),
+                "SERVICE_NAME", HtmlUtils.htmlEscape(serviceName),
+                "COPYRIGHT_TEXT", HtmlUtils.htmlEscape(CopyrightTextFormatter.format(
+                        configService.getString(ConfigEntry.COPYRIGHT_TEXT),
+                        serviceName, clock,
+                        messageProperties::getAccountCopyrightTemplate)),
                 "RESET_PASSWORD_LINK", UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))
                         .pathSegment(AppRouteConstants.RESET_PASSWORD_ROUTE, token).toUriString());
 

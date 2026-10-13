@@ -39,11 +39,12 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
         page.setViewportSize(width, height);
         LoginPage login = new LoginPage(page);
         login.open();
-        assertThat(page.locator(".cosmos-login__sky")).hasAttribute("aria-hidden", "true");
-        assertThat(page.locator(".cosmos-login img")).hasCount(0);
+        assertThat(page.locator(".cosmos-sky")).hasAttribute("aria-hidden", "true");
+        assertThat(page.locator(".cosmos-logo")).isVisible();
+        assertThat(page.locator(".cosmos-sky img, .cosmos-card img")).hasCount(0);
         assertTrue((Boolean) page.evaluate("() => document.documentElement.scrollWidth <= innerWidth + 1"));
         for (Locator control : new Locator[] {
-                page.locator(".cosmos-login__card"),
+                page.locator(".cosmos-card"),
                 page.getByLabel(texts.getLoginEmailField(), new Page.GetByLabelOptions().setExact(true)),
                 page.getByLabel(texts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true)),
                 page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName(texts.getLoginCreateAccountLink()).setExact(true)),
@@ -72,33 +73,35 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
     }
 
     @Test
-    @DisplayName("UI-03F: CSS-Animation respektiert reduzierte Bewegung und bleibt auf Login begrenzt")
+    @DisplayName("UI-03F: CSS-Animation respektiert reduzierte Bewegung und bleibt auf Kontoansichten begrenzt")
     @Story("Dekoration und reduzierte Bewegung")
     @Description("""
         1. Login öffnen: beide Sternlagen und Nebellagen besitzen die CSS-Animation; Dekoration ist aria-hidden und nicht klickbar.
         2. Betriebssystemwunsch nach reduzierter Bewegung emulieren: Sterne/Nebel haben keine Animation mehr.
         3. Über den echten Kontoerstellungslink zur Registrierung wechseln.
-        **Erwartet:** Reduzierte Bewegung ohne JavaScript-Animation; kein Cosmos-Hintergrund auf der Registrierungsseite.
+        **Erwartet:** Reduzierte Bewegung ohne JavaScript-Animation; gemeinsamer Cosmos-Hintergrund auf Registrierung, keiner auf Home.
         """)
     void reducedMotionAndBackgroundScope() {
         page.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.NO_PREFERENCE));
         new LoginPage(page).open();
-        Locator sky = page.locator(".cosmos-login__sky");
+        Locator sky = page.locator(".cosmos-sky");
         assertThat(sky).hasAttribute("aria-hidden", "true");
         assertThat(sky).hasCSS("pointer-events", "none");
-        Locator stars = page.locator(".cosmos-login__stars");
+        Locator stars = page.locator(".cosmos-stars");
         assertThat(stars).hasCount(2);
-        assertThat(page.locator(".cosmos-login__galaxy, .cosmos-login__glow")).hasCount(3);
+        assertThat(page.locator(".cosmos-galaxy, .cosmos-glow")).hasCount(3);
         for (Locator layer : stars.all()) assertThat(layer).hasCSS("animation-name", "cosmos-stars-float");
-        for (Locator layer : page.locator(".cosmos-login__galaxy, .cosmos-login__glow").all())
+        for (Locator layer : page.locator(".cosmos-galaxy, .cosmos-glow").all())
             assertThat(layer).hasCSS("animation-name", "cosmos-nebula-float");
         page.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.REDUCE));
-        for (Locator layer : page.locator(".cosmos-login__stars, .cosmos-login__galaxy, .cosmos-login__glow").all())
+        for (Locator layer : page.locator(".cosmos-stars, .cosmos-galaxy, .cosmos-glow").all())
             assertThat(layer).hasCSS("animation-name", "none");
         AllurePlaywright.attachScreenshot("Login mit reduzierter Bewegung", page);
         page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName(texts.getLoginCreateAccountLink()).setExact(true)).click();
         assertThat(page).hasURL(urlPattern(REGISTRATION_ROUTE));
-        assertThat(page.locator(".cosmos-login")).hasCount(0);
-        assertThat(page.locator(".registration-bg-fullscreen")).isVisible();
+        assertThat(page.locator(".cosmos-page--wide")).isVisible();
+        page.navigate(path(HOME_ROUTE));
+        assertThat(page).hasTitle(HOME_PAGE_TITLE);
+        assertThat(page.locator(".cosmos-page")).hasCount(0);
     }
 }

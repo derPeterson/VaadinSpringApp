@@ -71,4 +71,22 @@ class UiTextsTest {
         assertEquals("01.01.1990", new UiTexts("de").dateInput(date));
         assertEquals("1/1/1990", new UiTexts("en").dateInput(date));
     }
+    @ParameterizedTest
+    @ValueSource(strings = {"de", "en"})
+    void cosmosPlaceholdersAndCopyrightTooltipUseTheSharedCatalogue(String language) {
+        UiTexts texts = new UiTexts(language);
+        for (String value : new String[] {texts.getAccountEmailPlaceholder(), texts.getAccountConfirmEmailPlaceholder(),
+                texts.getAccountPasswordPlaceholder(), texts.getAccountConfirmPasswordPlaceholder(), texts.getAccountNewPasswordPlaceholder(),
+                texts.getAccountFirstNamePlaceholder(), texts.getAccountLastNamePlaceholder(), texts.getAccountGenderPlaceholder(),
+                texts.getAdminConfigEntryCopyrightText()}) {
+            assertFalse(value.isBlank());
+            assertFalse(value.contains("\uFFFD"));
+            assertFalse(value.contains("account.form."));
+        }
+        String tooltip = texts.getAdminConfigEntryCopyrightTextTooltip();
+        assertTrue(tooltip.contains("{year}"));
+        assertTrue(tooltip.contains("{serviceName}"));
+        assertFalse(tooltip.contains("'"), "MessageFormat quotes must not appear in the visible explanation.");
+    }
+
 }

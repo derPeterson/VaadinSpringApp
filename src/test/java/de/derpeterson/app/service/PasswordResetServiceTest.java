@@ -1,8 +1,9 @@
 package de.derpeterson.app.service;
 
-import de.derpeterson.app.helper.image.ImageHelper;
+import de.derpeterson.app.helper.email.EmailLogo;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.model.PasswordResetTokenEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -63,6 +64,10 @@ class PasswordResetServiceTest {
 
     @BeforeEach
     void setup() {
+        // Neue Konfiguration gehört zur Mailfixture; andere Fälle lesen diese Werte nicht.
+        lenient().when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn(ConfigEntry.COPYRIGHT_TEXT.getDefaultValueString());
+        lenient().when(messages.getAccountCopyrightTemplate()).thenAnswer(call ->
+                MessageProperties.forLocale(new CustomI18NProvider(), CustomI18NProvider.getCurrentLocale()).getAccountCopyrightTemplate());
         service = new PasswordResetService(messages, tokens, users, config, encoder, queue, CLOCK);
         user = UserEntity.builder().id(1L).email("test@example.com").password("old-hash").enabled(true).build();
         lenient().when(users.lockVerificationUser(1L)).thenReturn(Optional.of(user));
@@ -459,12 +464,33 @@ class PasswordResetServiceTest {
         verify(queue).addEmailToQueue(same(user), eq("Reset subject"), html.capture(), eq(EmailType.PASSWORD_RESET));
         assertTrue(html.getValue().contains("https://example.invalid/app/reset-password/" + stored.getValue().getToken()));
         verify(config).getString(ConfigEntry.SERVICE_NAME);
-        assertTrue(html.getValue().contains(ImageHelper.convertImageToBase64("META-INF/resources/custom-theme/service_logo.png")));
+        assertTrue(html.getValue().contains("cid:" + EmailLogo.CONTENT_ID));
+        String expectedFooter = MessageProperties.forLocale(new CustomI18NProvider(), german ? Locale.GERMAN : Locale.ENGLISH)
+                .getAccountCopyrightTemplate().replace("{year}", String.valueOf(java.time.Year.now(CLOCK).getValue()))
+                .replace("{serviceName}", "Reset Test Service");
+        assertTrue(org.springframework.web.util.HtmlUtils.htmlUnescape(html.getValue()).contains(expectedFooter));
         assertFalse(html.getValue().contains("{{SERVICE_LOGO}}"));
         assertFalse(html.getValue().contains("{{RESET_PASSWORD_LINK}}"));
         assertTrue(html.getValue().contains("Reset Test Service"));
         assertFalse(html.getValue().contains("{{"));
         verifyNoInteractions(encoder);
+    }
+
+    @Test
+    void customCopyrightIsResolvedFromConfigurationAndEscapedInResetMail() throws IOException {
+        when(users.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn("PT1H");
+        when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Company & Partners");
+        when(config.getString(ConfigEntry.BASE_URL)).thenReturn("https://example.invalid/");
+        when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("© {year} {serviceName} <b>Custom footer</b>");
+        when(messages.getEmailResetPasswordSubject()).thenReturn("subject");
+        assertTrue(service.sendPasswordResetEmail("test@example.com"));
+        var body = ArgumentCaptor.forClass(String.class);
+        verify(queue).addEmailToQueue(eq(user), eq("subject"), body.capture(), eq(EmailType.PASSWORD_RESET));
+        assertTrue(body.getValue().contains("&copy; 2026 Company &amp; Partners &lt;b&gt;Custom footer&lt;/b&gt;"));
+        assertFalse(body.getValue().contains("<b>Custom footer</b>"));
+        assertFalse(body.getValue().contains("{year}"));
+        verify(messages, never()).getAccountCopyrightTemplate();
     }
 
     @ParameterizedTest
@@ -476,7 +502,7 @@ class PasswordResetServiceTest {
                 // Findet {{...}}-Platzhalter; Gruppe 1 erfasst mindestens ein Zeichen bis zur ersten schließenden Klammer.
                 var placeholders = java.util.regex.Pattern.compile("\\{\\{([^}]+)}}").matcher(source)
                         .results().map(match -> match.group(1)).collect(java.util.stream.Collectors.toSet());
-                assertEquals(java.util.Set.of("SERVICE_NAME", "SERVICE_LOGO", "RESET_PASSWORD_LINK"), placeholders);
+                assertEquals(java.util.Set.of("SERVICE_NAME", "SERVICE_LOGO", "RESET_PASSWORD_LINK", "COPYRIGHT_TEXT"), placeholders);
             }
         }
     }

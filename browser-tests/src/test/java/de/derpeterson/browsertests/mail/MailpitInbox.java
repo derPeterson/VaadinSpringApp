@@ -29,7 +29,15 @@ public final class MailpitInbox {
     private final de.derpeterson.browsertests.i18n.UiTexts texts = de.derpeterson.browsertests.i18n.UiTexts.selected();
     private final String baseUrl = System.getProperty("browser.tests.mailpitUrl");
 
-    public MailpitInbox(BrowserContext context) { this.context = context; }
+    private final String configuredFooter;
+
+    public MailpitInbox(BrowserContext context) { this(context, null); }
+
+    /** Erwartung stammt beim Konfigurationstest aus der über die UI gespeicherten Fußzeile. */
+    public MailpitInbox(BrowserContext context, String configuredFooter) {
+        this.context = context;
+        this.configuredFooter = configuredFooter;
+    }
 
     public record CapturedMail(String id, String recipient, String subject) { }
 
@@ -130,7 +138,13 @@ public final class MailpitInbox {
             assertThat(link).hasCount(1);
             assertThat(link).isVisible();
             assertLocalActionLink(link.getAttribute("href"), route);
-            // Reuse the selected original template instead of a second translated footer catalogue.
+            Locator logo = messagePage.getByRole(com.microsoft.playwright.options.AriaRole.IMG,
+                    new Page.GetByRoleOptions().setName("VaadinSpringApp (Browser-Test)").setExact(true));
+            assertThat(logo).hasCount(1);
+            assertThat(logo).isVisible();
+            // Mailpits HTML-Ansicht löst die tatsächlich empfangene Inline-Ressource auf.
+            messagePage.waitForFunction("image => image.complete && image.naturalWidth > 0", logo.elementHandle());
+            // Erwartung über den gemeinsamen Übersetzungsgetter, ohne festen Jahreswert.
             assertThat(messagePage.getByText(expectedFooter(route), new Page.GetByTextOptions().setExact(true))).hasCount(1);
             assertThat(messagePage.locator("body")).not().containsText("{ServiceName}");
             AllurePlaywright.attachScreenshot(screenshotName, messagePage);
@@ -145,11 +159,12 @@ public final class MailpitInbox {
                 + texts.language() + ".html";
         try (var source = Objects.requireNonNull(MailpitInbox.class.getResourceAsStream(resource), "Mailvorlage fehlt: " + resource)) {
             String template = new String(source.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-            // Ab Copyrightzeichen alle Textzeichen bis zum nächsten HTML-Tag; kein eigener Übersetzungstext.
-            var footer = java.util.regex.Pattern.compile("©[^<]+").matcher(template);
-            assertTrue(footer.find(), "Die kanonische Vorlage enthält keinen Copyright-Footer.");
+            assertTrue(template.contains("{{COPYRIGHT_TEXT}}"), "Die kanonische Vorlage enthält keinen konfigurierbaren Footer.");
+            String footer = configuredFooter != null ? configuredFooter : texts.getAccountCopyrightTemplate()
+                    .replace("{year}", String.valueOf(java.time.Year.now(java.time.ZoneId.of("Europe/Berlin")).getValue()))
+                    .replace("{serviceName}", "VaadinSpringApp (Browser-Test)");
             // Ein oder mehrere Leerraumzeichen werden wie beim sichtbaren HTML-Text zu einem Leerzeichen.
-            return footer.group().strip().replace("{{SERVICE_NAME}}", "VaadinSpringApp (Browser-Test)").replaceAll("\\s+", " ");
+            return footer.strip().replaceAll("\\s+", " ");
         } catch (IOException failure) {
             throw new IllegalStateException("Mailvorlage ist nicht lesbar: " + resource, failure);
         }

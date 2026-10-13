@@ -22,13 +22,14 @@ import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
-import de.derpeterson.app.helper.ui.VaadinUIHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.PasswordResetService;
-import de.derpeterson.app.ui.components.CardComponent;
+import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.CosmosPageComponent;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +59,7 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
     private Button sendButton = null;
     private Button loginButton = null;
 
-    public ForgotPasswordView(MessageProperties messageProperties, PasswordResetService passwordResetService, SecurityService securityService, HttpServletRequest request) {
+    public ForgotPasswordView(MessageProperties messageProperties, PasswordResetService passwordResetService, SecurityService securityService, HttpServletRequest request, ConfigService configService) {
         super(securityService, request, new HorizontalLayout());
 
         this.messageProperties = messageProperties;
@@ -80,36 +81,29 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
                     .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseLoginButton));
 
             ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+            updateInputPlaceholders();
             NotificationHelper.getInstance().updateText();
         });
 
-        setSizeFull();
+        getContent().setWidthFull();
+        getContent().setPadding(false);
+        getContent().removeAll();
         setSpacing(false);
-        setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-
-        addClassNames("forgot-password-bg-fullscreen");
-
-        mainContent = new VerticalLayout();
-        mainContent.setAlignItems(FlexComponent.Alignment.CENTER);
-        mainContent.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-        mainContent.setWidth(null);
-        mainContent.setSizeUndefined();
-        mainContent.getStyle().set("padding-top", "10%");
-
+        CosmosPageComponent pageLayout = new CosmosPageComponent(configService, false, messageProperties::getAccountCopyrightTemplate);
+        mainContent = pageLayout.getCardContainer();
         createPasswordResetCard();
-
-        add(VaadinUIHelper.createFullHorizontalSpace());
-        add(mainContent);
-        add(VaadinUIHelper.createFullHorizontalSpace());
+        add(pageLayout);
     }
 
     private void createPasswordResetCard() {
         VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
+        cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+        cardContentLayout.setPadding(false);
+        cardContentLayout.setSpacing(false);
+        cardContentLayout.addClassName("cosmos-form");
 
         Icon successIcon = VaadinIcon.QUESTION_CIRCLE.create();
-        successIcon.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.TextColor.PRIMARY);
+        successIcon.addClassNames("cosmos-forgot-icon", "cosmos-status-icon", LumoUtility.TextColor.PRIMARY);
 
         HorizontalLayout cardIconLayout = new HorizontalLayout();
         cardIconLayout.setWidthFull();
@@ -118,17 +112,19 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
         cardIconLayout.add(successIcon);
 
         this.title = new H1(messageProperties.getForgotPasswordTitle());
-        title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Whitespace.NOWRAP);
+        title.addClassName("cosmos-headline");
 
         HorizontalLayout cardTitleLayout = new HorizontalLayout();
+        cardTitleLayout.addClassName("cosmos-title-row");
         cardTitleLayout.setWidthFull();
         cardTitleLayout.setPadding(false);
         cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         cardTitleLayout.add(title);
 
         this.text = new Span(messageProperties.getForgotPasswordText());
-        text.addClassNames(LumoUtility.Whitespace.NOWRAP);
+        text.addClassName("cosmos-form-text");
         VerticalLayout cardTextLayout = new VerticalLayout();
+        cardTextLayout.addClassName("cosmos-intro");
         cardTextLayout.setWidthFull();
         cardTextLayout.setPadding(false);
         cardTextLayout.setSpacing(false);
@@ -141,6 +137,8 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
         emailField.setWidthFull();
         emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
         emailField.setClearButtonVisible(true);
+
+        updateInputPlaceholders();
 
         this.sendButton = new Button(messageProperties.getBaseSendButton(), event -> {
             if (!ValidationHelper.validateRequiredInputs(List.of(emailField), messageProperties)) {
@@ -170,8 +168,12 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
 
         cardContentLayout.add(cardIconLayout, cardTitleLayout, cardTextLayout, emailField, sendButton, loginButton);
 
-        CardComponent cardComponent = new CardComponent(cardContentLayout);
+        CosmosCardComponent cardComponent = new CosmosCardComponent(cardContentLayout);
 
         mainContent.add(cardComponent);
     }
+    private void updateInputPlaceholders() {
+        if (emailField != null) emailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
+    }
+
 }

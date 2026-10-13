@@ -13,8 +13,13 @@ public class ImageHelper {
 
     /** Encodes a classpath image as Base64 without a data URI prefix. */
     public static String convertImageToBase64(String resourcePath) throws IOException {
+        return Base64.encodeBase64String(readImageBytes(resourcePath));
+    }
+
+    /** Liest eine Bildressource auch aus einem JAR und schließt den Classpath-Stream. */
+    public static byte[] readImageBytes(String resourcePath) throws IOException {
         try (InputStream input = new ClassPathResource(resourcePath).getInputStream()) {
-            return Base64.encodeBase64String(input.readAllBytes());
+            return input.readAllBytes();
         }
     }
 }

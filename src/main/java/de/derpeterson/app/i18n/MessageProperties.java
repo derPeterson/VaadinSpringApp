@@ -50,6 +50,7 @@ public class MessageProperties extends MessageTexts {
     public String getAdminConfigEntryLabel(ConfigEntry configEntry) {
         return switch (configEntry) {
             case SERVICE_NAME -> getAdminConfigEntryServiceName();
+            case COPYRIGHT_TEXT -> getAdminConfigEntryCopyrightText();
             case BASE_URL -> getAdminConfigEntryBaseUrl();
 
             case REMEMBER_ME_DURATION -> getAdminConfigEntryRememberMeDuration();
@@ -88,6 +89,7 @@ public class MessageProperties extends MessageTexts {
     public String getAdminConfigEntryTooltip(ConfigEntry configEntry) {
         return switch (configEntry) {
             case SERVICE_NAME -> getAdminConfigEntryServiceNameTooltip();
+            case COPYRIGHT_TEXT -> getAdminConfigEntryCopyrightTextTooltip();
             case BASE_URL -> getAdminConfigEntryBaseUrlTooltip();
 
             case REMEMBER_ME_DURATION -> getAdminConfigEntryRememberMeDurationTooltip();

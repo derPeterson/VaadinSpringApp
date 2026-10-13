@@ -24,6 +24,47 @@ public class MessageTexts {
         return MessageFormat.format(getTranslation(key), args);
     }
 
+    // Gemeinsame Formulare und Copyright-Konfiguration
+    public String getAccountEmailPlaceholder() {
+        return getTranslation("account.form.email.placeholder");
+    }
+
+    public String getAccountConfirmEmailPlaceholder() {
+        return getTranslation("account.form.confirm_email.placeholder");
+    }
+
+    public String getAccountPasswordPlaceholder() {
+        return getTranslation("account.form.password.placeholder");
+    }
+
+    public String getAccountConfirmPasswordPlaceholder() {
+        return getTranslation("account.form.confirm_password.placeholder");
+    }
+
+    public String getAccountNewPasswordPlaceholder() {
+        return getTranslation("account.form.new_password.placeholder");
+    }
+
+    public String getAccountFirstNamePlaceholder() {
+        return getTranslation("account.form.first_name.placeholder");
+    }
+
+    public String getAccountLastNamePlaceholder() {
+        return getTranslation("account.form.last_name.placeholder");
+    }
+
+    public String getAccountGenderPlaceholder() {
+        return getTranslation("account.form.gender.placeholder");
+    }
+
+    public String getAdminConfigEntryCopyrightText() {
+        return getTranslation("adminView.config.entry.copyright_text");
+    }
+
+    public String getAdminConfigEntryCopyrightTextTooltip() {
+        return getTranslation("adminView.config.entry.copyright_text.tooltip");
+    }
+
     // Login View
     public String getLoginTitle() {
         return getTranslation("loginView.title");
@@ -1184,4 +1225,9 @@ public class MessageTexts {
             case QUEUE -> getAdminConfigGroupQueue();
         };
     }
+    /** Sprachabhängiger Standard-Fußtext; die benannten Platzhalter ersetzt die Kontoansicht. */
+    public String getAccountCopyrightTemplate() {
+        return getTranslation("account.copyright.template");
+    }
+
 }

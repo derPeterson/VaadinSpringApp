@@ -1,6 +1,8 @@
 package de.derpeterson.app.helper.ui;
 
 import com.vaadin.flow.component.Html;
+import com.vaadin.flow.component.UI;
+import de.derpeterson.app.ui.components.CosmosPageComponent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -75,6 +77,9 @@ public class NotificationHelper {
             message = messageSupplier.get();
         }
 
+        if (CosmosPageComponent.isDisplayed(UI.getCurrent())) {
+            currentNotification.getElement().getThemeList().add("cosmos");
+        }
         currentNotification.setPosition(Notification.Position.TOP_CENTER);
         currentNotification.setDuration(duration);
 
