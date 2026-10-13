@@ -2,9 +2,10 @@ package de.derpeterson.app.views;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
@@ -12,7 +13,6 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -23,11 +23,14 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.base.TrackedUserAppLayout;
+import de.derpeterson.app.ui.components.CosmosBackgroundComponent;
+import de.derpeterson.app.ui.components.CosmosCopyrightComponent;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +43,9 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
     private final transient ConfigService configService;
 
     private final Span serviceNameSpan = new Span();
+    private final Span pageTitle = new Span();
+    private final Span pageDescription = new Span();
+    private final Span overviewLabel = new Span();
 
     @Autowired
     public HomeView(MessageProperties messageProperties,
@@ -52,17 +58,16 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
 
         this.configService = configService;
 
+        addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-home");
         addToNavbar(createHeader());
+        setContent(createHomeContent());
+        refreshTexts();
     }
 
     private HorizontalLayout createHeader() {
         HorizontalLayout headerLayout = new HorizontalLayout();
-        headerLayout.setWidthFull();
-        headerLayout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-        headerLayout.addClassNames(
-                LumoUtility.Padding.Vertical.SMALL,
-                LumoUtility.Padding.Horizontal.MEDIUM
-        );
+        headerLayout.setSpacing(false);
+        headerLayout.addClassName("cosmos-topbar");
 
         HorizontalLayout serviceLayout = createServiceLayout();
         HorizontalLayout userLayout = createUserLayout();
@@ -74,20 +79,12 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
 
     private HorizontalLayout createServiceLayout() {
         HorizontalLayout serviceLayout = new HorizontalLayout();
-        serviceLayout.setWidthFull();
-        serviceLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        serviceLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-        serviceLayout.addClassNames(LumoUtility.Gap.SMALL);
+        serviceLayout.addClassName("cosmos-topbar-brand");
+        serviceLayout.setSpacing(false);
 
         Image serviceLogoIcon = new Image("custom-theme/service_logo.png", "Service Icon");
-        serviceLogoIcon.setWidth("48px");
-        serviceLogoIcon.setHeight("48px");
-
-        serviceNameSpan.addClassNames(
-                LumoUtility.FontSize.XXLARGE,
-                LumoUtility.FontWeight.SEMIBOLD,
-                LumoUtility.FlexWrap.NOWRAP
-        );
+        serviceLogoIcon.addClassName("cosmos-topbar-logo");
+        serviceNameSpan.addClassName("cosmos-topbar-service-name");
 
         refreshServiceName();
 
@@ -101,14 +98,45 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
 
     private HorizontalLayout createUserLayout() {
         HorizontalLayout userLayout = new HorizontalLayout();
-        userLayout.setWidthFull();
-        userLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+        userLayout.addClassName("cosmos-topbar-account-menu");
+        userLayout.setSpacing(false);
 
         Button userButton = createTrackedUserButton();
         createTrackedUserPopover(createPopoverActions());
+        // Nur das Startseiten-Menü erhält die Cosmos-Palette; das Admin-Menü bleibt unverändert.
+        userPopoverMenu.addThemeName("cosmos");
+        userPopoverMenu.getPopover().getChildren().forEach(content -> {
+            content.getElement().getClassList().add("cosmos-theme");
+            content.getElement().getClassList().add("cosmos-user-menu");
+        });
 
         userLayout.add(userButton);
         return userLayout;
+    }
+
+    private Div createHomeContent() {
+        overviewLabel.addClassName("cosmos-dashboard-kicker");
+        H1 heading = new H1();
+        Span accent = new Span(".");
+        accent.addClassName("cosmos-dashboard-accent");
+        accent.getElement().setAttribute("aria-hidden", "true");
+        heading.add(pageTitle, accent);
+        pageDescription.addClassName("cosmos-dashboard-description");
+        Div introduction = new Div(overviewLabel, heading, pageDescription);
+        introduction.addClassName("cosmos-dashboard-introduction");
+
+        CosmosCopyrightComponent copyright = new CosmosCopyrightComponent(configService,
+                Clock.systemDefaultZone(), messageProperties::getAccountCopyrightTemplate);
+        Div main = new Div(introduction, copyright);
+        main.addClassName("cosmos-dashboard-main");
+        main.getElement().setAttribute("role", "main");
+        return new Div(new CosmosBackgroundComponent(), main);
+    }
+
+    private void refreshTexts() {
+        pageTitle.setText(messageProperties.getHomeTitle());
+        pageDescription.setText(messageProperties.getHomeDescription());
+        overviewLabel.setText(messageProperties.getHomeOverview());
     }
 
     private UserPopoverMenu.Actions createPopoverActions() {
@@ -128,7 +156,7 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
 
     @Override
     protected void onTrackedUserLanguageChanged() {
-        // Keine statischen, sprachabhängigen Header-Texte vorhanden.
+        refreshTexts();
     }
 
     @Override

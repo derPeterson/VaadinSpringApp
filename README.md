@@ -6,7 +6,7 @@ Automatisierte Browserprüfungen mit Java, JUnit und Allure in eigener Docker-Te
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Aktueller vollständiger Gesamtprüfstand vom 13.10.2026 einschließlich Designfeinschliff, CID-Mailbildern und DB-Copyright: Java 25, 1.055 Anwendungstests mit JaCoCo sowie 26 Browser-Helper-/Reportertests erfolgreich. Das frisch gebaute Docker-Produktions-JAR wurde mit jeweils 84 Browserfällen auf Deutsch und Englisch in isoliertem H2/Mailpit geprüft. Umfang, Berichte und verbleibende Grenzen: [Browserabdeckung](browser-tests/abdeckung.md).
+> Letzter vollständiger Gesamtprüfstand vom 13.10.2026 vor den jüngsten Home-/Eingabeschriftänderungen, einschließlich Designfeinschliff, CID-Mailbildern und DB-Copyright: Java 25, 1.055 Anwendungstests mit JaCoCo sowie 26 Browser-Helper-/Reportertests erfolgreich. Das frisch gebaute Docker-Produktions-JAR wurde mit jeweils 84 Browserfällen auf Deutsch und Englisch in isoliertem H2/Mailpit geprüft. Umfang, Berichte und verbleibende Grenzen: [Browserabdeckung](browser-tests/abdeckung.md).
 
 ## Funktionen
 
@@ -22,7 +22,7 @@ Versandausgängen: [Mailqueue-Verarbeitung](docs/email-queue-processing.md).
 
 Belege: `views/RegistrationView.java`, `views/LoginView.java`, `views/admin/`, `service/VerificationService.java`, `service/PasswordResetService.java`, `service/EmailQueueService.java`, `security/SecurityConfig.java` und `scheduler/UserStatusScheduler.java` unter `src/main/java/de/derpeterson/app/`.
 
-## Kontoansichten: Silent Cosmos und Inter
+## Kontoansichten und Startseite: Silent Cosmos und Inter
 
 Login, Registrierung, Verifikation, Passwortanfrage und Passwortänderung verwenden
 denselben animierten CSS-Hintergrund und dieselben Card-/Formularbausteine.
@@ -34,20 +34,24 @@ den zentralen blauen Verlauf `#3a538d` → `#526ebc`.
 | Zentrale Datei unter `custom-theme/` | Aufgabe |
 | --- | --- |
 | `typography.css` | Inter als Standardschrift für die gesamte Anwendung |
-| `cosmos-theme.css` | Konto-Palette, Lumo-Farbvariablen, Cards, Felder, Buttons und markierte Notifications |
+| `cosmos-theme.css` | Gemeinsame Palette, Lumo-Farbvariablen, Cards, Formulare, Home-Layout und markierte Overlays |
 | `cosmos-background.css` | CSS-Sterne, Nebel, Planeten und Animation |
-| `styles.css` | Bestehende allgemeine und Admin-Styles; keine alten Konto-Bildhintergründe |
+| `styles.css` | Nur in AdminView geladen; Admin-Layout, Tabellen, Dialoge und markierte Admin-Select-Overlays |
 
-Die Styles werden einmalig in `Application.java` eingebunden. Die Cosmos-Palette
+Typografie, Cosmos-Theme und Hintergrund werden einmalig in `Application.java`
+eingebunden. `styles.css` wird ausschließlich an `AdminView` geladen; seine allgemeinen
+Selektoren sind auf Admin begrenzt und wirken auch nach einer Navigation nicht auf Home. Die Cosmos-Palette
 gilt für `.cosmos-theme` und die aus diesen Ansichten geöffneten Notifications;
-Home/Admin behalten ihre bisherigen Farben. **Inter gilt ausdrücklich auch dort.**
+Auch `HomeView` verwendet diese Palette. `AdminView` behält seine bisherigen Farben.
+**Inter gilt ausdrücklich auch im Adminbereich.**
 Aus dem bereitgestellten Inter-ZIP werden beide vollständigen variablen Fonts lokal
 geladen: normal und kursiv, alle Gewichte von 100 bis 900 einschließlich optischer
 Größen. Es sind keine externen Fontdienste nötig. Die statischen Einzelschnitte
 aus dem ZIP werden durch diese beiden variablen Dateien abgedeckt.
 Lizenz: `custom-theme/fonts/Inter-LICENSE.txt` (SIL Open Font License 1.1).
 
-`CosmosPageComponent` verwaltet Hintergrund, Service-Logo, Servicebezeichnung und Fußzeile;
+`CosmosBackgroundComponent` und `CosmosCopyrightComponent` werden von den Kontoansichten
+und der Startseite gemeinsam verwendet. `CosmosPageComponent` ordnet Marke, Cards und Fußzeile an;
 `CosmosCardComponent` stellt den gemeinsamen Card-Rahmen bereit. Registrierung
 nutzt eine breitere Card; Feldpaare stehen unter 600 px untereinander. Die Card selbst
 steht bei ausreichend Platz exakt in der Bildschirmmitte. Logo/Servicebezeichnung
@@ -77,6 +81,31 @@ Service-Logo, Avatar und Sprachflaggen bleiben aktiv. Gezielt prüfen:
 Service-Logo (96×96), Servicename (Lumo XL), Platzhalter und Statuscards wurden
 abschließend im vollständigen DE-/EN-Lauf geprüft: je 8 Cosmos- und 6 Login-Layoutfälle
 innerhalb der jeweils 84 Browserfälle. Den aktuellen Nachweis dokumentiert [Browserabdeckung](browser-tests/abdeckung.md).
+
+### Startseite nach der Dashboard-Vorschau
+
+`HomeView` verwendet dieselbe zentrale Palette und den animierten Hintergrund.
+Die Kopfzeile zeigt Service-Logo/-Name und das bestehende Benutzermenü. Verlauf,
+Rahmen, Schatten und Abstände entsprechen der Dashboard-Vorschau und stehen zentral
+in `cosmos-theme.css`: `cosmos-app-shell` markiert das AppLayout, `cosmos-topbar`
+die Leiste; Brand, Logo, Servicename und Kontomenü haben gemeinsame `cosmos-topbar-*`
+Klassen. Diese Bausteine können später auch in Admin verwendet werden. Die Leiste
+ist regulär 68 px hoch, mit 20/24 px seitlichem Abstand und unter 750 px mit 11 px.
+Die bestehenden Logo-/Avatar-Ressourcen bleiben erhalten. Das Avatar-Popup verwendet
+denselben Card-Verlauf, Rahmen und Schatten, zentrale Cosmos-Buttons sowie eine passende
+Statusauswahl. Menüabstände und schmale Fenster werden über `cosmos-user-menu` im Theme
+gesteuert; Kontofunktionen, Statuswechsel und Sprachwahl bleiben erhalten.
+Die Willkommen-Card wurde entfernt. Anmeldung, Registrierung und der Zugang zur
+Administration bleiben über das Benutzermenü erreichbar. Authentifizierung, Status,
+Sprachwahl und Sicherheitsnavigation bleiben erhalten; die Adminansicht und ihre
+Menüs werden in diesem Paket nicht umgebaut.
+Die Startseite ist für schmale Fenster mit umbrechenden Inhalten gestaltet. Copyright
+und Sprachwechsel verwenden dieselben gemeinsamen Bausteine wie die Kontoansichten.
+
+**Prüfung ausstehend:** Der oben dokumentierte Gesamtlauf fand vor dieser Home-Anpassung
+statt. Für dieses Gestaltungspaket wurden auf Wunsch keine Builds oder Tests ausgeführt.
+Die bisherigen Browsererwartungen zur unveränderten Home-Palette müssen beim späteren
+gemeinsamen Prüfabschluss angepasst werden; die Admin-Abgrenzung bleibt bestehen.
 
 ## Gemeinsame Texte und UI-Konstanten
 

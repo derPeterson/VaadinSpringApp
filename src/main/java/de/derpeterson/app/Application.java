@@ -21,7 +21,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @StyleSheet(Lumo.STYLESHEET)
 @StyleSheet(Lumo.UTILITY_STYLESHEET)
 @StyleSheet("custom-theme/typography.css")
-@StyleSheet("custom-theme/styles.css")
 @StyleSheet("custom-theme/cosmos-theme.css")
 @StyleSheet("custom-theme/cosmos-background.css")
 @ColorScheme(ColorScheme.Value.DARK)

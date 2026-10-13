@@ -97,10 +97,13 @@ UI-03A–E prüfen den bestehenden Login bei 320×568, 390×844, 844×390,
 360×240 und 1280×900. Formularelemente liegen innerhalb der Fensterbreite;
 geringe Höhe darf vertikal scrollen. Remember-me wird tatsächlich gewählt/abgewählt,
 eine falsche Anmeldung korrigiert und das echte Admin-Dashboard erreicht.
-UI-03F prüft die CSS-Animation und `prefers-reduced-motion` sowie die Begrenzung
-der Dekoration auf die Kontoansichten. Die echten Vaadin-Felder/Buttons verwenden
+UI-03F prüfte bisher die CSS-Animation und `prefers-reduced-motion` sowie die Begrenzung
+der Dekoration auf die Kontoansichten. Home gehört jetzt ebenfalls zum Cosmos-Bereich;
+diese Erwartung muss beim gemeinsamen Prüfabschluss angepasst werden. Die echten Vaadin-Felder/Buttons verwenden
 die zentrale Cosmos-Lumo-Palette; Card und Anordnung folgen der Designvorlage.
-Inter wird lokal und global bereitgestellt; Home/Admin behalten ihre bisherigen Farben.
+Inter wird lokal und global bereitgestellt. Home verwendet inzwischen ebenfalls die
+zentrale Cosmos-Palette; Admin behält seine bisherigen Farben. Der Prüfstand der
+Home-Erweiterung ist noch offen.
 
 ```powershell
 .\browser-tests\run.ps1 -Suite login-checks -Language de
@@ -128,8 +131,10 @@ COSMOS-03 speichert den Copyright-Text im Adminbereich, lädt ihn neu und prüft
 ausgefüllte, sichere Fußzeile nach Abmeldung. Registrierung und Passwortanfrage erzeugen
 anschließend echte SMTP-Mails; deren geladenes Inline-Logo und derselbe gespeicherte
 Fußtext werden geprüft. Der ursprüngliche Wert wird wiederhergestellt.
-COSMOS-04 prüft die schmale Fehlermeldung mit Card-Verlauf und die Theme-Abgrenzung zu Home.
-Globale Inter-Schrift und die ursprünglichen Home-/Adminfarben sind ausdrücklich geprüft.
+COSMOS-04 prüft die schmale Fehlermeldung mit Card-Verlauf. Seine bisherige Erwartung
+zur unveränderten Home-Palette muss beim gemeinsamen Prüfabschluss angepasst werden.
+Globale Inter-Schrift und die ursprünglichen Home-/Adminfarben wurden im letzten Lauf
+geprüft; die neue Home-Gestaltung ist darin noch nicht enthalten.
 
 ```powershell
 .\browser-tests\run.ps1 -Suite cosmos-design -Language de
@@ -138,7 +143,8 @@ Globale Inter-Schrift und die ursprünglichen Home-/Adminfarben sind ausdrückli
 
 Die Palette steht in `custom-theme/cosmos-theme.css`, die Dekoration in
 `cosmos-background.css` und der globale Font in `typography.css`. Die Java-Bausteine
-heißen `CosmosPageComponent` und `CosmosCardComponent`. Die Übersetzungen bleiben im
+heißen `CosmosPageComponent`, `CosmosCardComponent`, `CosmosBackgroundComponent`
+und `CosmosCopyrightComponent`. Die Übersetzungen bleiben im
 gemeinsamen typisierten Katalog. JUnit prüft zusätzlich Copyright-Defaults, Textsicherheit
 und dynamischen Sprachwechsel ohne Verlust der Eingaben. Keine doppelten Navigationstests.
 

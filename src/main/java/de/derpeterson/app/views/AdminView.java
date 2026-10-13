@@ -1,6 +1,7 @@
 package de.derpeterson.app.views;
 
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
@@ -40,6 +41,7 @@ import java.util.Objects;
 
 import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
 
+@StyleSheet("custom-theme/styles.css")
 @Route(AppRouteConstants.ADMIN_ROUTE)
 @UIScope
 @PageTitle(AppRouteConstants.ADMIN_PAGE_TITLE)
@@ -92,6 +94,7 @@ public class AdminView extends IsAuthenticatedBaseView {
         super(messageProperties, securityService, userService, userStatusBroadcaster, request);
 
         this.configService = configService;
+        addClassName("admin-view");
 
         UserDetails authenticatedUser = securityService.getAuthenticatedUser(request).orElse(null);
 
@@ -213,6 +216,7 @@ public class AdminView extends IsAuthenticatedBaseView {
         );
 
         createTrackedUserPopover(popoverActions);
+        userPopoverMenu.addThemeName("admin");
         rightLayout.add(userButton);
 
         return rightLayout;

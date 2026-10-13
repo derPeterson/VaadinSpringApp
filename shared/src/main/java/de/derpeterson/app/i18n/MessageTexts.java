@@ -24,6 +24,19 @@ public class MessageTexts {
         return MessageFormat.format(getTranslation(key), args);
     }
 
+    // Startseite: gemeinsame Getter für Anwendung und Browserprüfungen
+    public String getHomeTitle() {
+        return getTranslation("homeView.title");
+    }
+
+    public String getHomeDescription() {
+        return getTranslation("homeView.description");
+    }
+
+    public String getHomeOverview() {
+        return getTranslation("homeView.overview");
+    }
+
     // Gemeinsame Formulare und Copyright-Konfiguration
     public String getAccountEmailPlaceholder() {
         return getTranslation("account.form.email.placeholder");

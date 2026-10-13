@@ -1,12 +1,27 @@
 # Browserabdeckung und offene Punkte
 
-**Stand: 13.10.2026 – aktueller Design-/Mailstand vollständig geprüft: 1055 Anwendungstests, 26 Helper-/Reportertests und je 84 Browserfälle auf DE/EN erfolgreich.**
+**Letzter vollständiger Prüfstand: 13.10.2026 – 1055 Anwendungstests, 26 Helper-/Reportertests und je 84 Browserfälle auf DE/EN erfolgreich. Spätere Designänderungen einschließlich Home sind noch ungeprüft.**
 Bedienung und Aufbau stehen in der [Browser-Testanleitung](README.md).
 Historische Run-Berichte bleiben unverändert; hier steht der aktuelle Prüfstand.
 
-## Aktueller vollständiger Prüfstand – 13.10.2026
+## Home-Gestaltung – gemeinsamer Prüfabschluss ausstehend
 
-Der aktuelle Stand einschließlich 96×96-Logo, größerem Servicenamen (Lumo XL),
+Die Startseite nutzt jetzt die gemeinsame Cosmos-Palette, Animation und
+Copyright-Komponente. Die Willkommen-Card wurde auf Wunsch entfernt;
+die Kontoaktionen bleiben im bestehenden Benutzermenü erreichbar. Die Adminansicht
+bleibt unverändert.
+Home-Texte verwenden typisierte DE-/EN-Getter. Auch die jüngsten Eingabeschrift-/
+Login-Ausrichtungsänderungen sind seit dem letzten Gesamtlauf noch ungeprüft.
+
+Auf Wunsch wurden für dieses Paket keine Builds, Browser- oder Anwendungstests
+ausgeführt. Beim späteren Prüfabschluss sind die bisherigen Home-Abgrenzungen in UI-03F und
+COSMOS-04 auf die jetzt beabsichtigte gemeinsame Palette umzustellen.
+Die unveränderte Admin-Palette soll weiterhin abgesichert werden. Historische
+Run-Berichte und die unten beschriebenen damaligen Ergebnisse bleiben erhalten.
+
+## Letzter vollständig geprüfter Stand – 13.10.2026
+
+Der damals geprüfte Stand einschließlich 96×96-Logo, größerem Servicenamen (Lumo XL),
 kleiner weicher Platzhalterschrift, angepassten Statusicons und Reset-Erfolgscard
 wurde vollständig geprüft. Copyright verwendet den DE-/EN-Standardtext oder den
 eigenen DB-Eintrag. Neu erzeugte Verifikations-/Resetmails enthalten ein echtes

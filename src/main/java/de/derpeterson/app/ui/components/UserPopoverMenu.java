@@ -95,6 +95,16 @@ public class UserPopoverMenu {
         return userPopover;
     }
 
+    /** Markiert auch das ausgelagerte Select-Overlay, damit View-Styles gezielt bleiben. */
+    public void addThemeName(String themeName) {
+        userPopover.getElement().getThemeList().add(themeName);
+        userStatusSelect.getElement().getThemeList().add(themeName);
+        if ("cosmos".equals(themeName)) {
+            // Native Platzierung außerhalb des Felds; bei wenig Platz darf Vaadin nach oben ausweichen.
+            userStatusSelect.setNoVerticalOverlap(true);
+        }
+    }
+
     public void refreshForLanguageChange() {
         refreshTexts();
         refreshUserStatusSelect();
@@ -155,15 +165,18 @@ public class UserPopoverMenu {
 
     private VerticalLayout createPopoverLayout() {
         VerticalLayout popoverLayout = new VerticalLayout();
+        // Keine inline vorgegebene Breite: das jeweilige Theme bestimmt die Menübreite.
+        popoverLayout.setWidth(null);
         popoverLayout.setSpacing(false);
         popoverLayout.setPadding(false);
         popoverLayout.addClassNames(LumoUtility.Padding.SMALL);
-        popoverLayout.setMinWidth("300px");
+        popoverLayout.addClassName("user-popover-content");
         return popoverLayout;
     }
 
     private HorizontalLayout createHeaderLayout(Popover popover) {
         HorizontalLayout headerLayout = new HorizontalLayout();
+        headerLayout.addClassName("user-popover-header");
         headerLayout.setWidthFull();
         headerLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
 
@@ -177,6 +190,7 @@ public class UserPopoverMenu {
 
     private VerticalLayout createContentLayout() {
         VerticalLayout contentLayout = new VerticalLayout();
+        contentLayout.addClassName("user-popover-body");
         contentLayout.setWidthFull();
         contentLayout.setSpacing(false);
         contentLayout.setPadding(false);
@@ -197,6 +211,7 @@ public class UserPopoverMenu {
                 currentStatus,
                 IconSize.PIXEL_96
         );
+        overlayIcon.addClassName("user-popover-avatar");
         contentLayout.add(overlayIcon);
     }
 
@@ -320,6 +335,7 @@ public class UserPopoverMenu {
         textLayout.setWidthFull();
 
         Span userStatusText = new Span(messageProperties.getUserStatusLabel(userStatus));
+        userStatusText.addClassName("user-popover-status-label");
         Span userStatusSecondaryText =
                 new Span(messageProperties.getUserStatusDescription(userStatus));
         userStatusSecondaryText.addClassNames(
