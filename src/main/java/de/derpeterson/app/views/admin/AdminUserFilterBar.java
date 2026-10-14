@@ -41,8 +41,6 @@ final class AdminUserFilterBar extends VerticalLayout {
         addClassName("admin-user-filter-bar");
 
         MenuBar menu = new MenuBar();
-        // Filterbedienung bleibt bis zur abschließenden Gestaltung vorübergehend ausgeblendet.
-        menu.setVisible(false);
         menu.addClassName("admin-user-add-filter");
         menu.getElement().getThemeList().add("cosmos");
         HorizontalLayout label = new HorizontalLayout(VaadinIcon.FILTER.create(), addFilterLabel);

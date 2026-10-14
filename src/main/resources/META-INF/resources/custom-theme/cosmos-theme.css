@@ -11,6 +11,11 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-sky-color: #040710;
     --cosmos-card-background: linear-gradient(142deg, rgba(16, 23, 38, .88), rgba(9, 14, 25, .91));
     --cosmos-primary-background: linear-gradient(115deg, #3a538d, #526ebc);
+    /* Eigene Tabellenfarben aus der bereitgestellten Tabellenvorlage. */
+    --cosmos-table-header-background: #223353b3;
+    --cosmos-table-row-background: #101a2a73;
+    --cosmos-table-alternate-row-background: #18213681;
+    --cosmos-table-highlight-background: #1B2B42;
     --cosmos-card-width: 430px;
     --cosmos-card-radius: 18px;
     --cosmos-card-border: rgba(169, 191, 233, .18);
@@ -222,7 +227,7 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
 }
 
 .cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker, vaadin-text-area, vaadin-integer-field, vaadin-number-field, vaadin-time-picker)::part(input-field) {
-    min-height: 44px;
+    min-height: var(--lumo-size-m);
     border: 1px solid var(--lumo-contrast-20pct);
     border-radius: 9px;
     background: var(--lumo-contrast-5pct);
@@ -280,8 +285,19 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
 }
 
 .cosmos-theme vaadin-button {
-    min-height: 44px;
+    min-height: var(--lumo-size-m);
     border-radius: 9px;
+    font-size: 14px;
+}
+
+/* Testweise kleinere Primary-/Secondary-Schrift. Individuelle Pagination und
+ * Reload-Button bleiben unverändert; :where lässt eigene Schriftgrößen Vorrang haben. */
+.cosmos-theme vaadin-button:where(:not([theme~="tertiary"], [theme~="tertiary-inline"], .admin-user-pagination vaadin-button, .admin-user-refresh)) {
+    font-size: 13px;
+}
+
+/* Lumo bemisst Icons in em; ihre bisherige Größe beim kleineren Text erhalten. */
+.cosmos-theme vaadin-button:where(:not([theme~="tertiary"], [theme~="tertiary-inline"], .admin-user-pagination vaadin-button, .admin-user-refresh)) > vaadin-icon {
     font-size: 14px;
 }
 
@@ -315,6 +331,82 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
 
 .cosmos-theme vaadin-icon {
     flex-shrink: 0;
+}
+
+/* Gemeinsame Tabellenpalette; die zusätzlichen Zeilenfarben ergänzen Lumo. */
+.cosmos-theme vaadin-grid {
+    --_lumo-vaadin-grid-inject-modules: lumo_mixins_sr-only, lumo_components_grid, lumo_cosmos_grid_colors, lumo_cosmos_grid_hover;
+    --_lumo-grid-selected-row-color: var(--cosmos-table-highlight-background);
+    --vaadin-grid-cell-background: var(--cosmos-table-row-background);
+    background: var(--cosmos-table-row-background);
+    border: 1px solid var(--lumo-contrast-20pct);
+    border-radius: var(--lumo-border-radius-l);
+    overflow: hidden;
+}
+
+.cosmos-theme vaadin-grid::part(header-cell) {
+    min-height: var(--lumo-size-l);
+    font-size: 12px;
+    color: var(--lumo-primary-text-color);
+    text-transform: uppercase;
+    background: var(--cosmos-table-header-background);
+    border-bottom-color: var(--lumo-contrast-20pct);
+}
+
+/* Alle Cosmos-Tabellen verwenden automatisch die abwechselnden Zeilenfarben.
+ * Der Lumo-Rückfallwert erhält die Darstellung von Grids außerhalb des Cosmos-Themes. */
+@media lumo_cosmos_grid_colors {
+    /* Außerhalb des Cosmos-Themes bleibt der native row-stripes-Farbwert erhalten. */
+    :host([theme~="row-stripes"]) .even-row {
+        --_cosmos-grid-stripe-fallback: var(--lumo-contrast-5pct);
+    }
+
+    /* Vaadin zählt ab null: even-row ist die erste, dritte usw. Zeile. */
+    :host .body-row.even-row .body-cell,
+    :host .body-row.even-row .details-cell {
+        background-image: linear-gradient(
+            var(--cosmos-table-row-background, var(--_cosmos-grid-stripe-fallback, transparent)),
+            var(--cosmos-table-row-background, var(--_cosmos-grid-stripe-fallback, transparent))
+        );
+        background-repeat: repeat-x;
+    }
+
+    :host .body-row.odd-row .body-cell,
+    :host .body-row.odd-row .details-cell {
+        background-image: linear-gradient(
+            var(--cosmos-table-alternate-row-background, transparent),
+            var(--cosmos-table-alternate-row-background, transparent)
+        );
+        background-repeat: repeat-x;
+    }
+}
+
+.cosmos-theme vaadin-grid vaadin-grid-sorter::part(indicators) {
+    color: var(--lumo-primary-text-color);
+}
+
+.cosmos-theme vaadin-grid::part(body-cell) {
+    font-size: 12px;
+    font-weight: 400;
+    border-top-color: var(--lumo-contrast-20pct);
+}
+
+.cosmos-theme vaadin-grid [theme~="badge"] {
+    font-size: 12px;
+    font-weight: 400;
+}
+
+/* Gemeinsamer Tabellen-Hover; die Auswahl verwendet dieselbe Farbvariable. */
+@media lumo_cosmos_grid_hover {
+    @media (any-hover: hover) {
+        :host .body-row:hover .body-cell {
+            background-image: linear-gradient(
+                var(--cosmos-table-highlight-background, var(--_cosmos-grid-stripe-fallback, transparent)),
+                var(--cosmos-table-highlight-background, var(--_cosmos-grid-stripe-fallback, transparent))
+            );
+            background-repeat: repeat;
+        }
+    }
 }
 
 /* Portalisierte Notifications und das Home-Menü bekommen das Theme ausdrücklich. */
@@ -555,16 +647,16 @@ vaadin-app-layout.cosmos-app-shell {
 }
 
 .cosmos-user-menu .user-popover-header vaadin-button {
-    min-height: 40px;
-    width: 40px;
-    height: 40px;
+    min-height: var(--lumo-size-m);
+    width: var(--lumo-size-m);
+    height: var(--lumo-size-m);
     margin: 0;
     padding: 0;
 }
 
 .cosmos-user-menu .user-popover-header vaadin-icon {
-    width: var(--lumo-icon-size-l);
-    height: var(--lumo-icon-size-l);
+    width: var(--lumo-icon-size-m);
+    height: var(--lumo-icon-size-m);
 }
 
 .cosmos-user-menu .user-popover-body {
@@ -590,7 +682,7 @@ vaadin-app-layout.cosmos-app-shell {
 }
 
 .cosmos-user-menu vaadin-select::part(input-field) {
-    min-height: 44px;
+    min-height: var(--lumo-size-m);
     border: 1px solid var(--lumo-contrast-20pct);
     border-radius: var(--lumo-border-radius-l);
     background: var(--lumo-contrast-5pct);
@@ -624,6 +716,23 @@ vaadin-menu-bar-submenu[theme~="cosmos"]::part(overlay),
     box-shadow: var(--cosmos-card-shadow);
     -webkit-backdrop-filter: blur(17px);
     backdrop-filter: blur(17px);
+}
+
+/* ComboBox- und Uhrzeit-Einträge passen zur 13px-Schrift der Eingabefelder. */
+.cosmos-theme :is(vaadin-combo-box, vaadin-time-picker)::part(content) {
+    --lumo-font-size-m: 13px;
+    font-size: 13px;
+}
+
+/* Kalendergrößen relativ zur 13px-Basis, auf ganze Pixel gerundet.
+ * Die explizite Wochentaggröße wird auch für die Scroller-Höhenberechnung verwendet. */
+.cosmos-theme vaadin-date-picker::part(content) {
+    --lumo-font-size-m: 13px;
+    --lumo-font-size-s: 11px;
+    --vaadin-date-picker-month-header-font-size: 15px;
+    --vaadin-date-picker-weekday-font-size: 10px;
+    --vaadin-date-picker-week-number-font-size: 10px;
+    font-size: 13px;
 }
 
 vaadin-popover[theme~="cosmos"]::part(content) {
@@ -780,7 +889,7 @@ vaadin-app-layout.cosmos-admin {
     background: transparent;
     color: var(--lumo-secondary-text-color);
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     line-height: 1.4;
 }
 
@@ -814,7 +923,7 @@ vaadin-app-layout.cosmos-admin {
     background: var(--cosmos-nav-active-background);
     border-color: var(--cosmos-nav-active-border-color);
     color: var(--lumo-body-text-color);
-    font-weight: 650;
+    font-weight: 700;
     box-shadow: inset 3px 0 var(--lumo-primary-text-color);
 }
 
@@ -825,6 +934,7 @@ vaadin-app-layout.cosmos-admin {
 }
 
 .cosmos-nav vaadin-side-nav-item[slot="children"]::part(content) {
+    font-weight: 500;
     margin-inline-start: calc(var(--cosmos-subnav-inset) - 5px);
     min-height: 31px;
     font-size: 12px;
@@ -838,6 +948,7 @@ vaadin-app-layout.cosmos-admin {
 }
 
 .cosmos-nav vaadin-side-nav-item.cosmos-nav-item--sub.cosmos-nav-item--active::part(content) {
+    font-weight: 600;
     background: var(--lumo-primary-color-10pct);
     color: var(--lumo-primary-text-color);
     box-shadow: none;
@@ -1048,7 +1159,7 @@ vaadin-app-layout.cosmos-admin {
 .cosmos-config-setting-count,
 .cosmos-panel-meta {
     color: var(--lumo-primary-text-color);
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 650;
     letter-spacing: 1.2px;
     text-transform: uppercase;
@@ -1066,6 +1177,12 @@ vaadin-app-layout.cosmos-admin {
     box-sizing: border-box;
     padding-top: 24px;
     border-top: 1px solid var(--cosmos-card-border);
+}
+
+/* Abstand zwischen Hinweis und Aktionen in Konfiguration und Mail-Test. */
+.cosmos-config-card-footer,
+.cosmos-admin-section--mail .cosmos-panel-footer {
+    gap: var(--lumo-space-xl);
 }
 
 .cosmos-config-save-hint,
@@ -1164,6 +1281,27 @@ vaadin-app-layout.cosmos-admin {
     margin: 0;
 }
 
+/* Info-Buttons in Konfiguration und Mail-Test passen zur Eingabehöhe M. */
+:is(.cosmos-admin-section--config, .cosmos-admin-section--mail) vaadin-button.cosmos-config-info {
+    min-width: var(--lumo-size-m);
+    min-height: var(--lumo-size-m);
+    width: var(--lumo-size-m);
+    height: var(--lumo-size-m);
+}
+
+:is(.cosmos-admin-section--config, .cosmos-admin-section--mail) .cosmos-config-input-row {
+    grid-template-columns: minmax(0, 1fr) var(--lumo-size-m);
+}
+
+:is(.cosmos-admin-section--config, .cosmos-admin-section--mail) .cosmos-config-input-row > vaadin-checkbox {
+    min-height: var(--lumo-size-m);
+}
+
+:is(.cosmos-admin-section--config, .cosmos-admin-section--mail) .cosmos-config-info > vaadin-icon {
+    width: var(--lumo-icon-size-m);
+    height: var(--lumo-icon-size-m);
+}
+
 .cosmos-config-info > vaadin-tooltip {
     --vaadin-tooltip-max-width: min(var(--cosmos-info-tooltip-width), calc(100vw - 32px));
     --vaadin-tooltip-background: var(--cosmos-card-background);
@@ -1252,9 +1390,10 @@ vaadin-app-layout.cosmos-admin {
 }
 
 .cosmos-admin vaadin-button.admin-user-refresh {
-    width: 44px;
-    min-width: 44px;
-    height: 44px;
+    width: var(--lumo-size-m);
+    min-width: var(--lumo-size-m);
+    min-height: var(--lumo-size-m);
+    height: var(--lumo-size-m);
     padding: 0;
 }
 
@@ -1266,12 +1405,20 @@ vaadin-app-layout.cosmos-admin {
 }
 
 .cosmos-admin .admin-users-grid vaadin-button {
+    min-width: 32px;
     min-height: 32px;
     width: 32px;
     height: 32px;
     margin: 0;
     padding: 0;
     background: transparent;
+}
+
+/* Aktionssymbole der Benutzertabelle: 16px innerhalb der 32px-Buttonfläche. */
+.cosmos-admin .admin-users-grid vaadin-button > vaadin-icon {
+    width: 16px;
+    height: 16px;
+    padding: 0;
 }
 
 /* Abstände zwischen Kopf, Werkzeugleiste und Tabelle bleiben erhalten;
@@ -1294,12 +1441,12 @@ vaadin-app-layout.cosmos-admin {
 }
 
 .cosmos-admin .admin-user-pagination vaadin-button {
-    min-height: 32px;
-    width: 32px;
-    height: 32px;
+    min-height: 28px;
+    width: 28px;
+    height: 28px;
     margin: 0;
     padding: 0;
-    font-size: 13px;
+    font-size: 11px;
 }
 
 .cosmos-admin .admin-user-pagination-nav,

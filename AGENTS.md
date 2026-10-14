@@ -157,3 +157,12 @@
   tatsächlichen Entwicklungsstand berücksichtigen; bei veralteten komprimierten
   CSS-Ressourcen reicht ein Browser-Refresh nicht. Keine Übernahme behaupten,
   wenn nur die Quelldatei geändert wurde.
+- Bestätigter Tabellenstandard: alle Vaadin-Grids im Cosmos-Theme verwenden die
+  vier zentralen Variablen in cosmos-theme.css: --cosmos-table-header-background
+  (#223353b3), --cosmos-table-row-background (#101a2a73),
+  --cosmos-table-alternate-row-background (#18213681) und
+  --cosmos-table-highlight-background (#1B2B42). Zeilenfarben wechseln automatisch;
+  GridVariant.ROW_STRIPES oder eine spezielle Benutzerverwaltungs-Klasse ist dafür
+  nicht erforderlich. Hover und Auswahl verwenden dieselbe Hervorhebungsfarbe.
+  Der Hover ist dauerhaft freigegeben und kein Testblock mehr. Gemeinsame Regeln
+  wiederverwenden; keine parallelen Tabellenfarben für neue Views einführen.

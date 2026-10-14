@@ -290,7 +290,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                         String.CASE_INSENSITIVE_ORDER
                 ));
 
-        rolesColumn = userGrid.addColumn(this::formatRoleNames)
+        rolesColumn = userGrid.addComponentColumn(this::createRoleBadges)
                 .setHeader(messageProperties.getAdminUsersGridRoles())
                 .setAutoWidth(true)
                 .setSortable(true)
@@ -757,6 +757,7 @@ public class AdminUserManagementSection extends VerticalLayout {
         Avatar avatar = new Avatar(getFullName(user), AppConstants.USER_ICON_PATH);
         avatar.addClassName("admin-user-table-avatar");
         Span name = new Span(getFullName(user));
+        name.addClassName("admin-user-table-name");
         HorizontalLayout identity = new HorizontalLayout(avatar, name);
         identity.setAlignItems(Alignment.CENTER);
         identity.setPadding(false);
@@ -775,6 +776,23 @@ public class AdminUserManagementSection extends VerticalLayout {
         };
         badge.getElement().getThemeList().add("badge " + variant);
         return badge;
+    }
+
+    private Component createRoleBadges(UserEntity user) {
+        Div badges = new Div();
+        badges.addClassName("admin-user-table-roles");
+        Optional.ofNullable(user.getRoleEntities())
+                .orElseGet(Set::of)
+                .stream()
+                .map(RoleEntity::getName)
+                .map(this::formatRoleType)
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .forEach(roleName -> {
+                    Span badge = new Span(roleName);
+                    badge.addClassName("cosmos-admin-role-chip");
+                    badges.add(badge);
+                });
+        return badges;
     }
 
     private String formatRoleNames(UserEntity user) {

@@ -93,7 +93,15 @@
     margin: 0 0 4px;
 }
 
-.admin-users-grid::part(header-cell),
+.admin-users-grid::part(header-cell) {
+    font-weight: 600;
+}
+
+/* Den Kopfzellen-Fokusrahmen nur bei Tastaturbedienung anzeigen. */
+.admin-users-grid::part(header-cell):not(:focus-visible)::before {
+    box-shadow: none;
+}
+
 vaadin-dialog.admin-user-dialog::part(header) {
     background: color-mix(in srgb, var(--lumo-primary-color) 35%, var(--lumo-base-color));
     color: var(--lumo-primary-contrast-color);
@@ -111,7 +119,28 @@ vaadin-dialog.admin-user-dialog > [slot="title"] {
 
 .admin-users-grid {
     --vaadin-grid-cell-padding: var(--lumo-space-s) var(--lumo-space-s);
-    min-height: calc(11 * (var(--lumo-size-m) + 2 * var(--lumo-space-s)) + 2px);
+}
+
+.admin-users-grid::part(body-cell) {
+    color: var(--lumo-secondary-text-color);
+}
+
+.admin-users-grid .admin-user-table-name {
+    font-weight: 700;
+}
+
+.admin-user-table-roles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--lumo-space-xs);
+}
+
+/* Dashboard-Badge wiederverwenden, mit der vereinbarten Tabellenschrift. */
+.admin-users-grid .cosmos-admin-role-chip {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--lumo-secondary-text-color);
 }
 
 .admin-user-table-avatar {
@@ -127,9 +156,11 @@ vaadin-dialog.admin-user-dialog > [slot="title"] {
     text-align: center;
 }
 
+/* Text und Sortierpfeile mittig statt an der Schrift-Grundlinie ausrichten. */
 .admin-users-grid vaadin-grid-sorter {
     width: 100%;
-    color: var(--lumo-primary-contrast-color);
+    align-items: center;
+    line-height: 1;
 }
 
 .admin-users-grid vaadin-grid-sorter::part(content) {
@@ -140,11 +171,7 @@ vaadin-dialog.admin-user-dialog > [slot="title"] {
 .admin-users-grid vaadin-grid-sorter::part(indicators) {
     margin-inline-start: auto;
     margin-inline-end: 15px;
-    color: var(--lumo-primary-contrast-color);
-}
-
-.admin-users-grid::part(odd-row) {
-    --vaadin-grid-cell-background: color-mix(in srgb, var(--lumo-contrast) 3%, var(--lumo-base-color));
+    transform: translateY(-2px);
 }
 
 .admin-user-pagination {
@@ -164,9 +191,9 @@ vaadin-dialog.admin-user-dialog > [slot="title"] {
 }
 
 .admin-user-pagination-number, .admin-user-pagination-arrow {
-    min-width: 32px;
-    width: 32px;
-    height: 32px;
+    min-width: 28px;
+    width: 28px;
+    height: 28px;
     padding: 0;
     margin: 0;
 }
