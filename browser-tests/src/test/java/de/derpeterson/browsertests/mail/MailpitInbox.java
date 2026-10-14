@@ -61,11 +61,16 @@ public final class MailpitInbox {
 
     @Step("Unicode-Betreff und echten Textinhalt der Adminmail prüfen")
     public void assertPlainContent(CapturedMail mail, String body) {
-        String received = getJson("/api/v1/message/" + mail.id()).path("Text").asText();
-        // SMTP may append exactly one terminal line break; other content stays byte-for-byte significant.
-        if (received.endsWith("\r\n")) received = received.substring(0, received.length() - 2);
-        else if (received.endsWith("\n")) received = received.substring(0, received.length() - 1);
-        assertEquals(body, received, "Unicode-Mailinhalt wurde verändert.");
+        assertPlainTextContent(getJson("/api/v1/message/" + mail.id()).path("Text").asText(), body);
+    }
+
+    static void assertPlainTextContent(String received, String body) {
+        // SMTP verwendet CRLF, die TextArea LF. Nur diese Zeilenenden und genau
+        // ein angehängter Transport-Zeilenabschluss werden normalisiert; Unicode,
+        // Leerzeichen und zusätzliche Leerzeilen bleiben für den Vergleich relevant.
+        received = received.replace("\r\n", "\n");
+        if (received.endsWith("\n")) received = received.substring(0, received.length() - 1);
+        assertEquals(body.replace("\r\n", "\n"), received, "Unicode-Mailinhalt wurde verändert.");
     }
 
     @Step("Absender der tatsächlich empfangenen SMTP-Mail prüfen")

@@ -199,7 +199,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
         Locator drawer = page.locator("vaadin-app-layout [part='drawer']");
         assertThat(drawer).isVisible();
         assertWithinViewport(drawer);
-        page.locator("[slot='drawer']").getByText(texts.getAdminNavDashboard(), new Locator.GetByTextOptions().setExact(true)).click();
+        new AdminNavigation(page).openSection(texts.getAdminNavDashboard());
         closeOverlayDrawerIfNeeded();
         login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
         if (!(Boolean) page.locator("vaadin-app-layout").evaluate("el => el.hasAttribute('overlay')")) {
@@ -238,20 +238,11 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     }
 
     private void openDrawerIfNeeded() {
-        Locator app = page.locator("vaadin-app-layout");
-        if (!(Boolean) app.evaluate("el => el.hasAttribute('drawer-opened')"))
-            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Toggle navigation").setExact(true)).click();
-        assertThat(app).hasAttribute("drawer-opened", "");
-        // Sichtbarkeit beginnt bereits während des nativen Einschiebens. Erst die Endposition prüfen.
-        assertThat(page.locator("vaadin-app-layout [part='drawer']")).hasCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
+        new AdminNavigation(page).openDrawer();
     }
 
     private void closeOverlayDrawerIfNeeded() {
-        Locator app = page.locator("vaadin-app-layout");
-        if ((Boolean) app.evaluate("el => el.hasAttribute('overlay') && el.hasAttribute('drawer-opened')")) {
-            page.keyboard().press("Escape");
-            assertThat(app).not().hasAttribute("drawer-opened", "");
-        }
+        new AdminNavigation(page).closeOverlayDrawer();
     }
 
     private ConfigurationPage adminConfig() {

@@ -37,7 +37,7 @@ public final class AdminUsersPage {
 
     @Step("Benutzerverwaltung öffnen")
     public void open() {
-        page.locator("[slot='drawer']").getByText(texts.getAdminUsersTitle(), new Locator.GetByTextOptions().setExact(true)).click();
+        new AdminNavigation(page, texts).openSection(texts.getAdminUsersTitle());
         assertThat(grid()).isVisible();
     }
 

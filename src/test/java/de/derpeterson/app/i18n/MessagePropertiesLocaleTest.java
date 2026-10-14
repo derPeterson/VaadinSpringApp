@@ -22,6 +22,17 @@ class MessagePropertiesLocaleTest {
         VaadinSession.setCurrent(null);
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+            "de, 0, 0 Konten", "de, 1, 1 Konto", "de, 2, 2 Konten", "de, 102, 102 Konten",
+            "en, 0, 0 Accounts", "en, 1, 1 Account", "en, 2, 2 Accounts", "en, 102, 102 Accounts"
+    })
+    void accountCountSurvivesTheRealTwoStageTranslation(String language, int count, String expected) {
+        MessageProperties messages = MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
+        assertEquals(expected, messages.getAdminUsersAccountCount(count));
+        assertFalse(messages.getAdminUsersAccountCount(count).contains("{"));
+    }
+
     @Test
     void normalGettersFollowTheSessionLanguageWithoutRecreatingTheBean() {
         AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);

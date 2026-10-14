@@ -15,11 +15,10 @@ public final class TokenConfigurationPage {
 
     @Step("Token-Laufzeiten über die Adminnavigation öffnen")
     public void open() {
-        page.locator("[slot='drawer']").getByText(texts.getAdminConfigGroupTokens(), new Locator.GetByTextOptions().setExact(true)).click();
+        new ConfigurationPage(page).open(de.derpeterson.app.config.AdminConfigGroup.TOKENS);
         assertThat(button(texts.getAdminConfigSave())).isVisible();
     }
 
-    private Locator wrapper(String label) {return field(label).locator("..");}
     public Locator field(String label) {
         return page.locator("vaadin-text-field").filter(new Locator.FilterOptions()
                 .setHas(page.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName(label).setExact(true))));
@@ -42,15 +41,10 @@ public final class TokenConfigurationPage {
     @Step("Gespeicherte Konfiguration erneut laden")
     public void reload() {button(texts.getAdminConfigReload()).click();assertThat(notice()).containsText(texts.getAdminConfigReloadSuccess());dismiss();}
 
-    @Step("Sichtbare Mindestdauer und zugehörigen Erklärungsdialog prüfen")
+    @Step("Mindestdauer und Erklärung im neuen Klick-Tooltip prüfen")
     public void explain(String label, long minutes, String explanation) {
-        assertThat(wrapper(label)).containsText(texts.getAdminConfigHelperTokenDurationFormats(minutes));
-        wrapper(label).locator("vaadin-icon[icon='vaadin:info-circle']").click();
-        assertThat(page.locator("vaadin-dialog-overlay[opened]")).isVisible();
-        // Vaadin's slotted dialog content is not a DOM descendant of the overlay.
-        assertThat(page.getByText(explanation, new Page.GetByTextOptions().setExact(true))).isVisible();
-        button(texts.getOkayHomeButton()).click();
-        assertThat(page.locator("vaadin-dialog-overlay[opened]")).not().isVisible();
+        new ConfigurationPage(page).explain(label, explanation, texts.getAdminConfigHelperDurationFormats(),
+                texts.getAdminConfigValidationDurationMinimum(minutes));
     }
     private Locator notice() {return page.locator("vaadin-notification-card:not([closing])");}
     private void dismiss() {notice().getByRole(AriaRole.BUTTON).click();assertThat(notice()).not().isVisible();}

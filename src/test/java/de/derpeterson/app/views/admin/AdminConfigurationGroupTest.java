@@ -9,6 +9,8 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.ui.components.ConfigInfoButton;
+import com.vaadin.flow.component.textfield.TextField;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,7 @@ class AdminConfigurationGroupTest {
     private UI ui;
     private VaadinSession session;
     private AdminConfigurationSection section;
+    private ConfigService config;
 
     @BeforeEach
     void setup() {
@@ -38,7 +41,7 @@ class AdminConfigurationGroupTest {
         when(session.getLocale()).thenAnswer(ignored -> locale.get());
         when(session.hasLock()).thenReturn(true);
         VaadinSession.setCurrent(session);
-        ConfigService config = mock(ConfigService.class);
+        config = mock(ConfigService.class);
         when(config.getString(any(ConfigEntry.class))).thenAnswer(call ->
                 ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
         section = new AdminConfigurationSection(new MessageProperties(provider), config, () -> {});
@@ -96,6 +99,28 @@ class AdminConfigurationGroupTest {
         assertEquals(germanTitle, title.getText());
         assertEquals(AdminConfigGroup.SECURITY, selectedGroup());
         assertEquals("edited-test-value", secretField.getValue());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"de", "en"})
+    void tooltipUsesConfiguredDefaultAndRefreshesLanguageWithoutSavingTheDraft(String language) {
+        when(config.getDefaultValue(ConfigEntry.SERVICE_NAME)).thenReturn("Configured default");
+        when(config.getDefaultValue(ConfigEntry.REMEMBER_ME_SECRET_KEY)).thenReturn("SecretDefault1!");
+        locale.set(Locale.forLanguageTag(language)); section.refreshTexts();
+        MessageProperties messages = MessageProperties.forLocale(provider, locale.get());
+        var inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
+        var infos = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInfoButtons");
+        TextField serviceName = (TextField) inputs.get(ConfigEntry.SERVICE_NAME);
+        serviceName.setValue("Unsaved draft");
+        ConfigInfoButton info = (ConfigInfoButton) infos.get(ConfigEntry.SERVICE_NAME);
+        assertEquals("Configured default", serviceName.getPlaceholder());
+        assertTrue(info.getTooltip().getText().contains(messages.getAdminConfigDefault() + ": Configured default"));
+        assertTrue(info.getTooltip().getText().contains(messages.getAdminConfigHelperServiceNameMax(30)));
+        assertFalse(((ConfigInfoButton) infos.get(ConfigEntry.REMEMBER_ME_SECRET_KEY)).getTooltip().getText().contains("SecretDefault1!"));
+        locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN); section.refreshTexts();
+        assertEquals("Unsaved draft", serviceName.getValue());
+        assertTrue(info.getTooltip().getText().contains(MessageProperties.forLocale(provider, locale.get()).getAdminConfigDefault()));
+        verify(config, never()).set(any(ConfigEntry.class), anyString());
     }
 
     private AdminConfigGroup selectedGroup() {

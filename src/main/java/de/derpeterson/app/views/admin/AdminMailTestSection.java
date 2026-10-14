@@ -109,7 +109,11 @@ public class AdminMailTestSection extends VerticalLayout {
         sendTestMailButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
         sendTestMailButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         sendTestMailButton.addClickListener(clickEvent -> sendTestMail());
-        sendTestMailButton.addClickShortcut(Key.ENTER);
+        // Enter im Nachrichtentext bleibt ein Zeilenumbruch. Navigation und Info-Buttons
+        // dürfen ebenfalls keinen Versand auslösen.
+        sendTestMailButton.addClickShortcut(Key.ENTER)
+                .listenOn(testRecipientField, testSubjectField)
+                .resetFocusOnActiveElement();
 
         VerticalLayout mailLayout = createMailCardContent();
         CosmosCardComponent mailCard = new CosmosCardComponent(mailLayout);

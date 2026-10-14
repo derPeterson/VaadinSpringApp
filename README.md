@@ -6,7 +6,7 @@ Automatisierte Browserprüfungen mit Java, JUnit und Allure in eigener Docker-Te
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Vollständiger Gesamtprüfstand vom 13.10.2026 einschließlich Home-/Admin-Umstellung und Eingabeschrift: Java 25, 1.055 Anwendungstests mit JaCoCo sowie 26 Browser-Helper-/Reportertests erfolgreich. Das frisch gebaute Docker-Produktions-JAR wurde mit jeweils 87 Browserfällen auf Deutsch und Englisch in isoliertem H2/Mailpit geprüft. Umfang, Berichte und verbleibende Grenzen: [Browserabdeckung](browser-tests/abdeckung.md).
+> Vollständiger Gesamtprüfstand vom 14.10.2026 einschließlich aktueller Admingestaltung und Enter-Korrekturen: Java 25, 1.067 Anwendungstests mit JaCoCo sowie 28 Browser-Helper-/Reportertests erfolgreich. Das frisch gebaute Docker-Produktions-JAR wurde mit jeweils 96 Browserfällen auf Deutsch und Englisch in isoliertem H2/Mailpit geprüft. Umfang, Berichte und verbleibende Grenzen: [Browserabdeckung](browser-tests/abdeckung.md).
 
 ## Funktionen
 
@@ -81,7 +81,7 @@ Service-Logo, Avatar und Sprachflaggen bleiben aktiv. Gezielt prüfen:
 `browser-tests/run.ps1 -Suite cosmos-design -Language de` (danach EN mit `-NoBuild`).
 Service-Logo (96×96), Servicename (Lumo XL), Platzhalter und Statuscards wurden
 abschließend im vollständigen DE-/EN-Lauf geprüft: je 11 Cosmos- und 6 Login-Layoutfälle
-innerhalb der jeweils 87 Browserfälle. Den aktuellen Nachweis dokumentiert [Browserabdeckung](browser-tests/abdeckung.md).
+innerhalb der jeweils 96 Browserfälle. Den aktuellen Nachweis dokumentiert [Browserabdeckung](browser-tests/abdeckung.md).
 
 ### Startseite nach der Dashboard-Vorschau
 
@@ -142,7 +142,7 @@ Zielparameter werden über `SideNavItem.setQueryParameters` gesetzt, damit die
 Einträge unterschiedliche Ziele und korrekt zugeordnete Panel-Aktionen behalten.
 Der öffentliche `onNavigate`-Hook verbindet die Einträge mit den bestehenden
 Admin-Panels, ohne die View neu zu laden. Labels und die Aufklapphilfe folgen DE/EN.
-Die Browser-Navigation muss beim späteren gemeinsamen Testlauf angepasst werden.
+Der gemeinsame Browserhelfer `AdminNavigation` bedient die native Hierarchie und den mobilen Drawer. Konfiguration, Benutzerverwaltung, Mail Test und die mobilen Designprüfungen verwenden denselben Helfer; DE und EN sind vollständig geprüft.
 Referenz: [Vaadin SideNav: Hierarchy](https://vaadin.com/docs/latest/components/side-nav#hierarchy).
 Konfiguration nutzt denselben Kopfbereich und die bisherigen Schriftgrößen; sein
 Breadcrumb zeigt Admin Center, Konfiguration und die ausgewählte Gruppe und wird
@@ -215,6 +215,11 @@ Die bisherigen funktionalen Konfigurations-, Mail-, Status-, Benutzer- und Siche
 bleiben erhalten. COSMOS-05A–C ergänzen reale Navigation und Benutzerformular bei drei
 Fenstergrößen. Das Aussehen ist ein Zwischenstand; gestalterischer Feinschliff und echte
 Mobilgeräte bleiben gesonderte menschliche Prüfungen.
+
+Enter-Shortcuts in Konfiguration und Mail Test sind auf die jeweiligen Eingabefelder begrenzt.
+Navigation und Info-Buttons lösen keine Formularaktion aus. Im Nachrichtentext bleibt
+Enter ein Zeilenumbruch; im einzeiligen Mail-/Konfigurationsfeld übernimmt der
+Shortcut auch die neueste Eingabe ohne vorherigen Fokuswechsel.
 
 ## Gemeinsame Texte und UI-Konstanten
 
@@ -406,13 +411,13 @@ offenen Punkte stehen in der Browserdokumentation.
 
 Unter `src/test/java/` liegen Unit- und serverseitige Regressionstests für Benutzerverwaltung, Eingaberegeln, Registrierung, Konfiguration, Benachrichtigungen, Session-/Remember-me-/Push-RPC-Sicherheit sowie Status und Nebenläufigkeit. Persistenztests verwenden isolierte H2-In-Memory-Datenbanken, nicht die Anwendungsdatenbank. Vaadin-Tests prüfen serverseitige Komponenten und Callbacks mit kontrollierten UI-/Sessionfixtures, ohne Browser oder Anwendungsstart. `ImageHelperTest` prüft zusätzlich das echte Mail-Logo als Classpath-Ressource. `src/test/resources/logback-test.xml` konfiguriert das Test-Logging.
 
-Aktueller Prüfstand am 12.10.2026 unter Windows:
+Aktueller Prüfstand am 14.10.2026 unter Windows:
 
 | Prüfung | Ergebnis |
 | --- | --- |
-| `.\mvnw.cmd clean test jacoco:report` | Java 25, 1.036 Tests, keine Fehler/Fehlschläge/Skips; Coveragebericht erzeugt |
-| Browser-Helper/Reporter | 24/24 erfolgreich |
-| Vollständige Browserläufe DE und EN | jeweils 70/70 erfolgreich; isoliertes Docker/H2/Mailpit |
+| `.\mvnw.cmd clean test jacoco:report` | Java 25, 1.067 Tests, keine Fehler/Fehlschläge/Skips; Coveragebericht erzeugt |
+| Browser-Helper/Reporter | 28/28 erfolgreich |
+| Vollständige Browserläufe DE und EN | jeweils 96/96 erfolgreich; isoliertes Docker/H2/Mailpit |
 
 Der eigene Vaadin-Login speichert seinen Sicherheitskontext ausdrücklich in der Sitzung,
 bevor Remember-me ausgegeben wird. Die Browserprüfung verwendet echte separate
@@ -441,7 +446,7 @@ Historischer Prüfstand vom 01.10.2026:
 | `.\mvnw.cmd package -Pproduction` | **BUILD SUCCESS**; derselbe Test erneut erfolgreich; Spring-Boot-JAR erstellt |
 | `& "$env:JAVA_HOME\bin\jar.exe" tf target/app-1.0-SNAPSHOT.jar` | Enthält `META-INF/resources/custom-theme/service_logo.png` |
 
-Die beiden historischen Builds vom 01.10.2026 meldeten, dass kein neuer Produktions-Frontend-Bundle-Build nötig war. Der aktuelle Docker-Build vom 12.10.2026 hat das Produktionsfrontend neu gebaut. Es gab JDK-Warnungen zu Jansi-Native-Access und beim Kompilieren zu Lomboks Nutzung von `sun.misc.Unsafe`, aber keine Build-Fehler.
+Die beiden historischen Builds vom 01.10.2026 meldeten, dass kein neuer Produktions-Frontend-Bundle-Build nötig war. Der aktuelle Docker-Build vom 14.10.2026 hat das Produktionsfrontend neu gebaut. Es gab JDK-Warnungen zu Jansi-Native-Access und beim Kompilieren zu Lomboks Nutzung von `sun.misc.Unsafe`, aber keine Build-Fehler.
 
 Die Logo-Ressource wird weiterhin als **Classpath-Stream** geladen und funktioniert
 auch ohne lokalen Quelldateipfad. Neu erzeugte Verifikations- und Resetmails verwenden
@@ -481,7 +486,7 @@ Gmail/Outlook-Darstellung bleibt separat zu prüfen. Nachweise: [Browserabdeckun
 
 ## Styles, Bilder und generierte Dateien
 
-- **Styles und UI-Bilder:** `src/main/resources/META-INF/resources/custom-theme/`, insbesondere `styles.css`; eingebunden in `Application.java` über `custom-theme/styles.css`. Weitere Icons: `src/main/resources/META-INF/resources/icons/`.
+- **Styles und UI-Bilder:** `src/main/resources/META-INF/resources/custom-theme/`, gemeinsame Palette in `cosmos-theme.css`, Dekoration in `cosmos-background.css` und Schrift in `typography.css`, zentral geladen in `Application.java`. `styles.css` wird nur an `AdminView` für Admin-Spezialfälle eingebunden. Weitere Icons: `src/main/resources/META-INF/resources/icons/`.
 - **Übersetzungen:** `src/main/resources/i18n/messages_de.properties` und `messages_en.properties`.
 - **Mailvorlagen:** `src/main/resources/email/`; die Dienste laden HTML-Dateien. MJML-Quelldateien liegen daneben, eine automatische MJML-Kompilierung ist in `pom.xml` nicht eingerichtet.
 - **Generierte Dateien:** `src/main/frontend/generated/`, `vite.generated.ts` und Build-Ausgaben unter `target/`; nicht manuell pflegen. `node_modules/` enthält Frontend-Abhängigkeiten. Diese Pfade sind in `.gitignore` ausgeschlossen. Eigene Vite-Anpassungen gehören in `vite.config.ts`.

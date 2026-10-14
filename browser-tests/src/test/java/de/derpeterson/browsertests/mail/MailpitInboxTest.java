@@ -55,6 +55,25 @@ class MailpitInboxTest {
         });
     }
 
+    @Test
+    void regularSmtpLineEndingsPreserveMultilineUnicodeContent() {
+        String expected = "First line\nSecond line ÄÖÜ ß 中文";
+        assertDoesNotThrow(() -> MailpitInbox.assertPlainTextContent("First line\r\nSecond line ÄÖÜ ß 中文\r\n", expected));
+        assertDoesNotThrow(() -> MailpitInbox.assertPlainTextContent(expected + "\n", expected));
+    }
+
+    @Test
+    void contentComparisonStillRejectsChangedUnicodeWhitespaceAndAdditionalLines() {
+        String expected = "First line\nSecond line ÄÖÜ ß 中文";
+        for (String changed : new String[]{
+                "First line\r\nSecond line ÄÖU ß 中文\r\n",
+                "First line \r\nSecond line ÄÖÜ ß 中文\r\n",
+                "First line\r\n\r\nSecond line ÄÖÜ ß 中文\r\n",
+                "First line\r\nSecond line ÄÖÜ ß 中文\r\n\r\n",
+                "First line\rSecond line ÄÖÜ ß 中文\r\n"
+        }) assertThrows(AssertionError.class, () -> MailpitInbox.assertPlainTextContent(changed, expected));
+    }
+
     private static void withRunnerOrigin(Runnable test) {
         String previous = System.getProperty("browser.tests.baseUrl");
         try {

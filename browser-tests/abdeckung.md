@@ -1,25 +1,66 @@
 # Browserabdeckung und offene Punkte
 
-**Vollständiger Prüfstand: 13.10.2026 – 1055 Anwendungstests, 26 Helper-/Reportertests und je 87 Browserfälle auf DE/EN erfolgreich, einschließlich Home-/Admin-Umstellung.**
+**Vollständiger Prüfstand: 14.10.2026 – 1067 Anwendungstests, 28 Helper-/Reportertests und je 96 Browserfälle auf DE/EN erfolgreich, einschließlich aktueller Admingestaltung und Enter-Korrekturen.**
 Bedienung und Aufbau stehen in der [Browser-Testanleitung](README.md).
 Historische Run-Berichte bleiben unverändert; hier steht der aktuelle Prüfstand.
 
-**Späterer Designfeinschliff, noch ungeprüft:** Home/Dashboard teilen jetzt den
-Kopfbereich mit Bereichszeile und Akzentpunkt; das Dashboard richtet ihn links und
-seine Card mittig aus. Die Card erhält außerdem eine übersetzte Begrüßungszeile,
-fette E-Mail und einzelne Rollen-Badges. Konfiguration nutzt denselben Kopfbereich
-mit blauem Akzentpunkt und dynamischem Gruppen-/Sprach-Breadcrumb. Der neue
-Card-Rahmen ergänzt Gruppenicon, Beschreibung, Einstellungsanzahl und Fußbereich;
-Alle 29 Konfigurationsfelder nutzen nun den gemeinsamen Info-Button mit Card-Tooltip,
-Außenklick-Schließung, Backend-Standardwerten und vollständigen Regelhinweisen.
-Zahlenfeldgrenzen folgen den vorhandenen Prüfungen; Checkboxen haben keinen Platzhalter,
-geheime Standardwerte bleiben verborgen. DE-/EN-Satzpunkte und Erklärungen sind
-aktualisiert; Mailqueue-Aufbewahrung lehnt passend zur vorhandenen Backend-Prüfung
-Null und negative Dauern bereits im Formular ab.
-Auf Wunsch erfolgen in dieser Designrunde
-keine neuen Anwendungsbuilds oder Tests. Der folgende erfolgreiche Gesamtlauf gilt für den Stand davor.
+## Gesamtprüfung der aktuellen Admingestaltung – 14.10.2026
 
-## Home-/Admin-Gestaltung – vollständig geprüft am 13.10.2026
+Ausgangscommit: `bce26f07` auf `main`; Änderungen nicht committet.
+Zwei echte Enter-Fehler sind behoben: Die Konfigurationsnavigation speichert
+keine ungespeicherten Formularwerte mehr, und Enter im Mailtext löst keinen
+vorzeitigen Versand aus. Die Shortcuts hören ausschließlich auf die vorgesehenen
+Eingabefelder und übertragen vor dem Speichern deren aktuellen Wert.
+Die native Browsernavigation und die bisherigen Erklärungsprüfungen sind an
+SideNav und Klick-Tooltips angepasst; kein fachlicher Fall wurde gestrichen.
+
+| Prüfung | Ergebnis |
+| --- | --- |
+| Shared-Modul / Java 25 | Clean install erfolgreich; keine eigenen Shared-Testklassen |
+| Anwendung / JaCoCo | 1067/1067, 0 Fehler/Fehlschläge/Skips |
+| Browser-Helper/Reporter | 28/28, 0 Fehler/Fehlschläge/Skips |
+| Docker-Produktionsbuild | Erfolgreich; aktuelles Produktions-JAR samt Frontend |
+| Browser Deutsch | 96/96, 0 Fehler/Skips |
+| Browser Englisch | 96/96, 0 Fehler/Skips, dasselbe App-Image |
+| Aufbau, Abbau und HTML-/Markdown-Berichte | Beide vollständig erfolgreich |
+
+- [Vollständiger DE-Bericht](runs/2026-10-14T07-39-51_UTC__bce26f07__aa7962a6/report.md)
+- [Vollständiger EN-Bericht](runs/2026-10-14T07-39-51_UTC__bce26f07__f736df36/report.md)
+
+Image: `sha256:52056eb043579106ef940579affd2b410c21d01379036c59d77bfd3a91f6703f`. Beide Läufe verwendeten getrennte eigene
+Docker-Projekte, H2-/Mailpit-Daten und Ports (DE 18081/18026, EN 18082/18027).
+Die vorbereiteten Testklassen blieben während der parallelen Gesamtläufe unverändert.
+IntelliJ-Anwendung, Bestandsdaten und echte Postfächer blieben unberührt.
+Testzustände entstanden ausschließlich über die Oberfläche und eigene SMTP-Mails.
+Alle eigenen Testumgebungen wurden entfernt.
+
+Neu: 12 Anwendungsfälle, zwei Mailvergleichs-Helpertests und neun Browserfälle
+CONFIG-05A–F, MAIL-02/03 und USER-10. Sie prüfen native Hierarchie/Tastatur,
+Eingabeerhalt, Klick-Infos samt Card-Stil/Außenklick/Sprachwechsel, alle 29 Felder,
+mobilen Tooltip bei 320×568, positive Queue-Sekunden, sichere Enter-Bedienung,
+mehrzeilige echte SMTP-Mail und den lokalisierten tatsächlichen Kontenzähler.
+
+Die Diagnose enthielt veraltete Hinweise statt Tooltips, einen Locator am äußeren
+Tooltiprahmen, eine falsche Erwartung für das leere SMTP-Standardpasswort sowie
+einen Resize-Zugriff vor Vaadins Wechsel in den mobilen Overlaymodus. Diese
+Testprobleme sind korrigiert. SMTP-Zeilenenden werden bewusst normalisiert;
+Unicode-, Leerzeichen- und zusätzliche Zeilenabweichungen bleiben Fehler.
+Die beiden Anwendungsfehler wurden vor der Korrektur tatsächlich reproduziert.
+Zwischenberichte bleiben unverändert als Diagnosehistorie erhalten.
+
+Die zunächst parallel gestarteten Gesamtläufe wurden am 14.10.2026 gegen 02:30
+durch geplante Windows-Update-Neustarts unterbrochen. Je 33 Fälle waren bis dahin
+erfolgreich gespeichert; beide Läufe sind unvollständig und kein Abschlussnachweis.
+Ihre vorhandenen Berichte/Metadaten bleiben unverändert. Die eigenen verbliebenen
+Testcontainer und Volumes wurden nach dem Neustart gezielt entfernt. Die oben
+verlinkten vollständigen Läufe verwenden jeweils neue isolierte Testdaten.
+
+Der visuelle Feinschliff der Benutzerverwaltung bleibt ein Zwischenstand.
+Echte Mobilgeräte/Bildschirmtastaturen, Gmail/Outlook und die unten aufgeführten
+Betriebs-/menschlichen Grenzen bleiben ergänzende Prüfungen; keine Behauptung
+einer vollständigen 100-%-Ablösung der manuellen Fälle.
+
+## Historische Home-/Admin-Gesamtprüfung – 13.10.2026
 
 Ausgangscommit: `f3d5b663` auf `main`. Korrekturen und Tests sind noch nicht committet.
 Home und Admin verwenden dieselbe Palette, Topbar, Dekoration und dasselbe Avatar-Popup.
@@ -187,7 +228,7 @@ fachlichen Konto-, Admin-, Mail-, Status- und Sicherheitsabläufe.
 
 Sterne behalten 30/45 Sekunden, Nebel 18–24 Sekunden als Animationszeiten.
 Reduzierte Bewegung deaktiviert die Animation; kurze Fenster dürfen vertikal scrollen.
-Die 87 Browserfälle und 44 ursprünglichen manuellen Fälle haben unterschiedliche IDs
+Die 96 Browserfälle und 44 ursprünglichen manuellen Fälle haben unterschiedliche IDs
 und Teilabläufe. Die Vergleichstabelle unten behauptet keine vollständige 100-%-Ablösung
 aller Betriebs- und menschlichen Prüfungen.
 
@@ -228,6 +269,7 @@ bleiben ergänzende Prüfungen.
 | USER-06D | Selbstlöschschutz im eigenen Adminformular | Bestanden | Bestanden |
 | USER-06E | Suche und Freigabefilter beim Sprachwechsel in beide Richtungen erhalten | Bestanden | Bestanden |
 | USER-06F | Neues Passwort speichern, altes abweisen und mit neuem anmelden | Bestanden | Bestanden |
+| USER-10 | Gesamtzahl nach Anlage/Löschung, unabhängig von Filtern und mit korrektem Sprachwechsel | Bestanden | Bestanden |
 
 Suche/Pagination, Filter, Anlage, Bearbeitung, Löschabbruch/-bestätigung,
 Selbstlöschschutz, Sprachpräferenz und Passwortwechsel bestehen jetzt in beiden
@@ -235,7 +277,7 @@ Gesamtläufen. Der Editierbutton wird vor dem echten Mausklick sichtbar gemacht 
 fokussiert, damit die native Grid-Scrollbewegung den Klick nicht verliert. Erwartungen,
 Speicher-/Anmeldeprüfungen und Sicherheitsregeln bleiben erhalten.
 
-Im aktuellen vollständigen DE-/EN-Lauf sind jeweils alle 87 Browserfälle bestanden.
+Im aktuellen vollständigen DE-/EN-Lauf sind jeweils alle 96 Browserfälle bestanden.
 Die weiterhin nur teilweise abgedeckten ursprünglichen Fälle sind nachfolgend aufgeführt.
 
 ## Ergänzte Arbeitspakete
@@ -257,7 +299,8 @@ eigene tatsächlich versandte SMTP-Mail. Interne Regeln bleiben technische Tests
 Die vier UI-Pakete sind geprüft. Als Nächstes bieten sich kontrollierte
 Betriebsfixtures an: Neustart mit derselben eigenen Testdatenbank, SMTP-Stopp und
 Wiederanlauf sowie deren Bericht. Weitere Browserpakete betreffen offene
-Adminfehlerdialoge beim Sprachwechsel und schmale Home-/Adminansichten.
+Adminfehlerdialoge beim Sprachwechsel. Schmale Home-/Adminansichten sind durch
+COSMOS-05A–C, der mobile Konfigurations-Tooltip durch CONFIG-05F geprüft.
 Die fünf Kontoansichten einschließlich Reset sind inzwischen responsiv geprüft.
 Queue-/Audit-Innenzustände werden dafür nicht in gewöhnliche UI-Tests gepresst.
 

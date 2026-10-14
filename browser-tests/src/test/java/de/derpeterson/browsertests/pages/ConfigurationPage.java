@@ -14,17 +14,25 @@ public final class ConfigurationPage {
     public ConfigurationPage(Page page) {this.page = page;}
     @Step("Gewählte Konfigurationsgruppe über das Adminmenü öffnen")
     public void open(AdminConfigGroup group) {
-        page.locator("[slot='drawer']").getByText(texts.getAdminConfigGroupLabel(group),
-                new Locator.GetByTextOptions().setExact(true)).click();
-        // Im mobilen AppLayout liegt die Navigation modal über dem Formular.
-        Locator app = page.locator("vaadin-app-layout");
-        if ((Boolean) app.evaluate("el => el.hasAttribute('overlay') && el.hasAttribute('drawer-opened')")) {
-            page.keyboard().press("Escape");
-            assertThat(app).not().hasAttribute("drawer-opened", "");
-        }
+        new AdminNavigation(page).openGroup(group);
         assertThat(button(texts.getAdminConfigSave())).isVisible();
     }
-    public Locator input(String label) {return page.getByLabel(label, new Page.GetByLabelOptions().setExact(true));}
+    public Locator input(String label) {return page.getByLabel(label, new Page.GetByLabelOptions().setExact(true)).and(page.locator("input"));}
+    public Locator info(String label) {
+        return page.getByLabel(label, new Page.GetByLabelOptions().setExact(true))
+                .and(page.locator("vaadin-button.cosmos-config-info"));
+    }
+    public Locator tooltip() { return page.getByRole(AriaRole.TOOLTIP); }
+    @Step("Feldinformation per Klick öffnen und die tatsächlichen Regeln prüfen")
+    public void explain(String label, String description, String... rules) {
+        info(label).click();
+        assertThat(tooltip()).isVisible();
+        assertThat(tooltip()).containsText(description);
+        for (String rule : rules) assertThat(tooltip()).containsText(rule);
+        assertThat(tooltip()).containsText(texts.getAdminConfigInputRules());
+        info(label).click();
+        assertThat(tooltip()).hasCount(0);
+    }
     public String value(String label) {return input(label).inputValue();}
     @Step("Konfigurationswert eingeben")
     public void enter(String label, String value) {input(label).fill(value); input(label).press("Tab");}

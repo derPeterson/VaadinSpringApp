@@ -235,6 +235,38 @@ public class UserManagementBrowserTest extends BrowserFixture {
         AllurePlaywright.attachScreenshot("Anmeldung mit geändertem Passwort", page);
     }
 
+    @Test @DisplayName("USER-10: Gesamtzahl der Konten folgt Anlage/Löschung, nicht Filterung, und wechselt die Sprache")
+    @Description("""
+        1. Benutzerverwaltung öffnen und die aktuelle Gesamtanzahl merken.
+        2. Eigenes aktives Konto über das Formular anlegen: Gesamtzahl steigt um eins.
+        3. Suche ohne Treffer eingeben: Liste leer, Gesamtzahl bleibt unverändert.
+        4. Sprache wechseln und zurück: lokalisierter Zähler, keine doppelte Zahl, Filter bleibt erhalten.
+        5. Eigenes Konto über den Dialog löschen: Gesamtzahl kehrt zum Ausgangswert zurück.
+        **Erwartet:** Der Card-Zähler zeigt die echten gesamten Konten unabhängig von den sichtbaren Treffern.
+        """)
+    void accountTotalTracksMutationsButNotFiltersAndFollowsLanguage() {
+        AdminUsersPage users = login(); users.open();
+        Locator total = page.locator(".cosmos-admin-users-card .cosmos-panel-meta");
+        // Entfernt alle Nichtziffern; so bleiben auch lokalisierte Zahlentrennzeichen außen vor.
+        int original = Integer.parseInt(total.innerText().replaceAll("\\D", ""));
+        String email = unique("counter") + "@example.test";
+        users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+        assertThat(total).hasText(texts.getAdminUsersAccountCount(original + 1));
+        String query = unique("no-result"); users.search(query);
+        assertThat(users.emailCells(email)).hasCount(0);
+        assertThat(total).hasText(texts.getAdminUsersAccountCount(original + 1));
+        var other = new de.derpeterson.browsertests.i18n.UiTexts(texts.language().equals("de") ? "en" : "de");
+        try {
+            new UserMenu(page).selectLanguage(other.language());
+            assertThat(total).hasText(other.getAdminUsersAccountCount(original + 1));
+            assertThat(new AdminUsersPage(page, other).searchField()).hasValue(query);
+            AllurePlaywright.attachScreenshot("Gesamtzahl und erhaltener Filter in der anderen Sprache", page);
+        } finally { new UserMenu(page).selectTestLanguage(); }
+        AdminUserDialog form = users.openEdit(email);
+        form.requestDelete().confirm();
+        assertThat(total).hasText(texts.getAdminUsersAccountCount(original));
+    }
+
     private AdminUsersPage login() {
         LoginPage login = new LoginPage(page); login.open();
         login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);

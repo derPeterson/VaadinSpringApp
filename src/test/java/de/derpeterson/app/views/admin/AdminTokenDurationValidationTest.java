@@ -10,6 +10,7 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.ui.components.ConfigInfoButton;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -89,9 +90,27 @@ class AdminTokenDurationValidationTest {
         field(entry).setValue(minimum.toMinutes() + "m"); clearInvocations(config); saveButton().click();
         verify(config).set(entry, minimum.toString());
         assertFalse(field(entry).isInvalid());
-        String meta = ReflectionTestUtils.invokeMethod(section, "buildMetaText", entry);
-        assertTrue(meta.contains(messages.getAdminConfigHelperTokenDurationFormats(minimum.toMinutes())));
+        ConfigInfoButton info = (ConfigInfoButton) ((Map<?, ?>) ReflectionTestUtils.getField(section, "configInfoButtons")).get(entry);
+        assertTrue(info.getTooltip().getText().contains(messages.getAdminConfigHelperDurationFormats()));
+        assertTrue(info.getTooltip().getText().contains(messages.getAdminConfigValidationDurationMinimum(minimum.toMinutes())));
+        assertTrue(info.getTooltip().getText().contains(messages.getAdminConfigEntryTooltip(entry)));
         assertFalse(messages.getAdminConfigEntryTooltip(entry).contains("{0}"));
+    }
+
+    @ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(strings = {"de", "en"})
+    void queueRetentionRejectsZeroAndNegativeButAcceptsPositiveSeconds(String language) {
+        locale.set(Locale.forLanguageTag(language)); section.refreshTexts();
+        section.showGroup(AdminConfigGroup.QUEUE);
+        ConfigEntry entry = ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION;
+        for (String invalid : new String[]{"0s", "PT0S", "-1s"}) {
+            field(entry).setValue(invalid); clearInvocations(config); saveButton().click();
+            assertTrue(field(entry).isInvalid());
+            assertEquals(messages.getAdminConfigValidationPositiveDuration(), field(entry).getErrorMessage());
+            verify(config, never()).set(any(ConfigEntry.class), anyString());
+        }
+        field(entry).setValue("1s"); clearInvocations(config); saveButton().click();
+        assertFalse(field(entry).isInvalid());
+        verify(config).set(entry, "PT1S");
     }
 
     private TextField field(ConfigEntry entry) {

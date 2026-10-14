@@ -58,7 +58,7 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `account-lifecycle` | Einzelvalidierungen, kanonisierte Dubletten, unverifizierte Anfrage und altes Resetformular | 5 |
 | `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung mit Datumeingabe/Kalenderauswahl und Tastaturlogin | 5 |
 | `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
-| `user-management` | Suche/Pagination, optionale Filter, Anlage, Bearbeitung, Löschung, Selbstschutz und Passwortwechsel | 9 |
+| `user-management` | Suche/Pagination, optionale Filter, Anlage, Bearbeitung, Löschung, Selbstschutz und Passwortwechsel | 10 |
 | `user-filters` | Teilmenge der Benutzerverwaltung: direkte Datumeingabe und Kalenderauswahl, optionale Uhrzeit, kombinierte Filter/Clear | 2 |
 | `user-access` | Sperren/Freigeben, Rollenvergabe/-entzug, unverifizierte Konten, zwei offene Formulare und Selbstschutz | 5 |
 | `session-security` | Alte Speichern-Aktion nach Rollenentzug/Sperre/Löschung, Sperre/Löschung auch mit Remember-me | 5 |
@@ -66,15 +66,15 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `security-journeys` | Sitzungs- und Maillinkfälle gemeinsam | 10 |
 | `remember-me` | Echter separater Chromium-Neustart mit/ohne Remember-me und nach Logout | 2 |
 | `user-status` | Manuelle Wahl, Live-Anzeige in zweitem Tab, Abwesenheit/Rückkehr | 2 |
-| `configuration` | String-, Boolean- und Ganzzahlwerte: Fehler, Speichern, Neuladen, Wiederherstellen | 3 |
-| `admin-mail` | Formularfehler korrigieren und tatsächliche Unicode-SMTP-Mail empfangen | 1 |
+| `configuration` | String-, Boolean- und Ganzzahlwerte, native SideNav, alle 29 Klick-Infos, mobile Tooltipbreite und sichere Enter-Bedienung | 9 |
+| `admin-mail` | Formularfehler, Feldinfos/Sprachwechsel, sicherer mehrzeiliger Text und tatsächliche Unicode-SMTP-Mails | 3 |
 | `token-expiry` | Echte Mindestdauer abwarten, erneuter Verifikationsversand, offenes Resetformular, Anfragefehler | 3 |
-| `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 7 |
-| `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 11 |
+| `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 15 |
+| `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 19 |
 | `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 19 |
 | `cosmos-design` | Fünf Kontoansichten, mobiler Mailablauf, Copyright in UI/Mails, gemeinsames Theme sowie Home-/Adminnavigation bei drei Größen | 11 |
-| `all` | Alle 20 Testklassen | 87 |
+| `all` | Alle 20 Testklassen | 96 |
 
 UI-01A prüft die direkte Datumseingabe mit lokalisiertem Beispiel und anschließendem
 Registrieren ohne Enter/Escape. UI-01B prüft getrennt die Auswahl über das Kalender-Icon,
@@ -90,6 +90,22 @@ ebenfalls direkte Eingabe ohne automatisches Öffnen und denselben kurzen Datums
 Die vollständigen Schritte und Erwartungen stehen pro Fall in `@Description`
 und werden automatisch in den Markdown-Bericht übernommen. Die Test-ID erscheint
 in `@DisplayName`, im Allure-Bericht und in der Abdeckungsübersicht.
+
+## Neue Adminregressionen
+
+CONFIG-05A–F prüfen die native Hierarchie mit Klick/Enter/Leertaste, den Erhalt
+ungespeicherter Werte und den echten Klick-Tooltip samt Außenklick, Sprache und
+Card-Stil. Alle 29 Feldinfos in sieben Gruppen sowie 320×568 mit begrenzter
+Tooltipbreite sind enthalten. Enter am Navigationspunkt darf nicht speichern;
+Enter im Eingabefeld muss den neuesten Wert übernehmen. Positive Queue-Dauern
+bleiben auch unter einer Minute zulässig. Geheimwerte werden nicht als Default gezeigt.
+
+MAIL-02/03 prüfen alle drei Feldinfos mit Tastatur und Sprachwechsel sowie Enter
+als Zeilenumbruch im Textarea. Erst bewusstes Absenden erzeugt genau eine eigene
+SMTP-Mail; MAIL-01 prüft zusätzlich Enter im Betreff. Der Vergleich berücksichtigt
+SMTP-CRLF und Textarea-LF, lehnt geänderten Unicode, Leerzeichen und zusätzliche
+Leerzeilen weiterhin ab. USER-10 prüft die reale Gesamtzahl nach Anlage/Löschung,
+unabhängig vom Suchfilter und mit korrektem DE-/EN-Sprachwechsel.
 
 ## Loginlayout
 
@@ -228,6 +244,7 @@ Die Testquellen liegen unter `browser-tests/src/test/java/de/derpeterson/browser
 | --- | --- |
 | `suites/` | Kleine getrennte fachliche Suites mit unabhängigen Testfällen |
 | `pages/` | Wiederkehrende UI-Aktionen; Liste, Benutzerformular und Löschbestätigung haben getrennte Helfer |
+| `pages/AdminNavigation` | Native SideNav-Hierarchie, sichtbare Links, mobiler Drawer und dessen Einschiebe-Animation |
 | `pages/UiActions` | Wartet nach echten Klicks auf die Vaadin-Antwort; Wertänderungen werden getrennt vom Öffnen eines Dropdowns erkannt |
 | `mail/MailpitInbox` | Nur eigene empfangene Testmail lesen und deren echten Link verwenden |
 | `i18n/UiTexts` | Gemeinsame Übersetzungsgetter mit expliziter Sprache |
@@ -253,7 +270,7 @@ Eine automatische Anbindung an das OpenCode-Benchmarking ist nicht eingerichtet.
 
 Ein Lauf prüft eine ausdrücklich über die Oberfläche gewählte Sprache: `de` oder `en`.
 Erwartungen akzeptieren nicht gleichzeitig beide Übersetzungen. Für einen vollständigen
-Vergleich beide Sprachen ausführen; derzeit sind das 49 Fälle je Sprache.
+Vergleich beide Sprachen ausführen; derzeit sind das 96 Fälle je Sprache.
 
 Die Getter sind einmalig in `shared/src/main/java/de/derpeterson/app/i18n/MessageTexts.java`
 definiert. Die Anwendung verwendet `MessageProperties`, die Browsertests `UiTexts`.

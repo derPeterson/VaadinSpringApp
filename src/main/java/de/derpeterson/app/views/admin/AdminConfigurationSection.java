@@ -130,7 +130,10 @@ public class AdminConfigurationSection extends VerticalLayout {
         saveConfigButton.setPrefixComponent(VaadinIcon.CHECK.create());
         saveConfigButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         saveConfigButton.addClickListener(clickEvent -> saveConfigValues());
-        saveConfigButton.addClickShortcut(Key.ENTER);
+        // Enter in der Navigation oder an einem Info-Button darf keine Werte speichern.
+        saveConfigButton.addClickShortcut(Key.ENTER)
+                .listenOn(configInputs.values().toArray(Component[]::new))
+                .resetFocusOnActiveElement();
 
         reloadConfigButton = new Button();
         reloadConfigButton.setPrefixComponent(VaadinIcon.REFRESH.create());
