@@ -44,6 +44,7 @@ final class AdminUserPagination extends HorizontalLayout {
         HorizontalLayout summary = new HorizontalLayout(rowsLabel, pageSize, totalLabel);
         summary.addClassName("admin-user-pagination-summary");
         summary.setAlignItems(Alignment.CENTER);
+        numbers.addClassName("admin-user-pagination-numbers");
         numbers.setSpacing(false);
         numbers.setAlignItems(Alignment.CENTER);
         HorizontalLayout navigation = new HorizontalLayout(first, previous, numbers, next, last);
@@ -51,7 +52,6 @@ final class AdminUserPagination extends HorizontalLayout {
         navigation.setSpacing(false);
         navigation.setAlignItems(Alignment.CENTER);
         for (Button button : List.of(first, previous, next, last)) {
-            button.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
             button.addClassName("admin-user-pagination-arrow");
         }
         first.addClickListener(event -> selectPage.accept(0));
@@ -90,10 +90,10 @@ final class AdminUserPagination extends HorizontalLayout {
                 numbers.add(gap);
             }
             Button button = new Button(Integer.toString(page + 1), event -> selectPage.accept(page));
-            button.addThemeVariants(page == currentPage ? ButtonVariant.LUMO_PRIMARY : ButtonVariant.LUMO_TERTIARY);
             button.addClassName("admin-user-pagination-number");
             button.setAriaLabel(texts.getAdminUsersPaginationPage(page + 1));
             if (page == currentPage) {
+                button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
                 button.addClassName("admin-user-pagination-current");
                 button.getElement().setAttribute("aria-current", "page");
             }

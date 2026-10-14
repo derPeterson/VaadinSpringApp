@@ -491,7 +491,7 @@ Gmail/Outlook-Darstellung bleibt separat zu prüfen. Nachweise: [Browserabdeckun
 - **Mailvorlagen:** `src/main/resources/email/`; die Dienste laden HTML-Dateien. MJML-Quelldateien liegen daneben, eine automatische MJML-Kompilierung ist in `pom.xml` nicht eingerichtet.
 - **Generierte Dateien:** `src/main/frontend/generated/`, `vite.generated.ts` und Build-Ausgaben unter `target/`; nicht manuell pflegen. `node_modules/` enthält Frontend-Abhängigkeiten. Diese Pfade sind in `.gitignore` ausgeschlossen. Eigene Vite-Anpassungen gehören in `vite.config.ts`.
 
-## Aktuelle Styles beim Start aus IntelliJ
+## Aktuelle Styles beim Start aus IntelliJ oder Eclipse
 
 Im Entwicklungsmodus ist Vaadins Frontend-Livebetrieb aktiviert (vaadin.frontend.hotdeploy=true).
 Dadurch wird das vorberechnete Entwicklungspaket umgangen; Vite verarbeitet aktuelle Frontenddateien.
@@ -501,13 +501,25 @@ anschließend die Browserseite mit Strg+F5 vollständig neu laden. Der erste Sta
 Es wurden für diese Einstellung keine Tests ausgeführt; die Übernahme durch den IntelliJ-Neustart steht noch aus.
 
 
-Zusätzlich kann ein vorheriger Produktionsbuild komprimierte Kopien von styles.css
-(styles.css.gz / styles.css.br) im Klassen-Ausgabeordner hinterlassen. Werden anschließend
-über die IDE nur die unkomprimierten Ressourcen aktualisiert, können diese Kopien veraltet bleiben.
-Am 12.10.2026 wurden die beiden veralteten Ausgabedateien gezielt über Maven entfernt;
-der laufende IDE-Server liefert bei einem frischen CSS-Abruf wieder die neue Filterleiste
-und den neuen Tabellenkopf. Ein Neustart beseitigt gegebenenfalls noch zwischengespeicherte Ressourcen.
-Das ist getrennt von der Livebetrieb-Einstellung zu betrachten; dafür ist kein neuer Run-Parameter nötig.
+Vaadin 25.3 erzeugt bei Produktionsbuilds komprimierte CSS-Kopien (.css.gz / .css.br)
+im Klassen-Ausgabeordner. Die IDE kann danach nur die normale CSS-Datei aktualisieren,
+während die komprimierten Kopien veraltet bleiben. Vaadin kann diese Kopien auch im
+Entwicklungsmodus ausliefern; Browser-Refresh oder ein IDE-Neustart allein beheben das nicht.
+
+DevelopmentCssConfiguration verwendet den Vaadin-Erweiterungspunkt StaticFileHandlerFactory.
+Im Entwicklungsmodus werden Anfragen nach CSS unter /custom-theme/ an den normalen
+Vaadin-Dateiserver mit Accept-Encoding: identity weitergegeben. Damit verwendet er
+die ungepackte CSS-Datei. Andere Ressourcen und Produktionsstarts verwenden den
+unveränderten Vaadin-Dateiserver einschließlich der Kompression.
+
+Die IDE muss vor dem Start Java kompilieren und Ressourcen kopieren (IntelliJ: Make
+vor dem Start; Eclipse: Project → Build Automatically). Für diese Konfiguration die
+Anwendung einmal normal aus der IDE neu starten und im Browser Strg+F5 drücken.
+Danach genügt für CSS ein Refresh, sobald die IDE die geänderte Ressource kopiert hat;
+andernfalls die Anwendung normal aus der IDE neu starten. Ein Maven-Neubau auf der
+Kommandozeile ist dafür nicht erforderlich. Java-Änderungen benötigen weiterhin
+Kompilierung und einen Neustart. Diese Änderung wurde noch nicht gebaut oder im
+gestarteten System geprüft; es wurden keine Tests ausgeführt.
 
 
 Aktuelle Layoutrevision der Benutzerverwaltung (noch ohne neue Testläufe):

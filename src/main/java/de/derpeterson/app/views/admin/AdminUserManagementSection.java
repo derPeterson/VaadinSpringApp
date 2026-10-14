@@ -144,7 +144,7 @@ public class AdminUserManagementSection extends VerticalLayout {
         searchField.addValueChangeListener(event -> applyGridFilter());
 
         refreshButton = new Button(VaadinIcon.REFRESH.create(), event -> refreshGrid());
-        refreshButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        refreshButton.addClassName("admin-user-refresh");
 
         pagination = new AdminUserPagination(messageProperties, page -> {
             currentPage = page;

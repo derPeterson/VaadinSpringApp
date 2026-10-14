@@ -134,3 +134,26 @@
 - Explicitly label unfinished work as incomplete.
 - If reporting task duration, capture start and end using the system clock.
   Never estimate or invent a duration; without measurement, give no duration.
+
+## 7. Abgestimmtes Design und schrittweise Änderungen
+
+- Designänderungen einzeln und ausschließlich im ausdrücklich angefragten Umfang umsetzen.
+- Bestehende, abgestimmte Gestaltung beibehalten. Keine Änderungen mit globalen Auswirkungen
+  ohne ausdrücklichen Auftrag des Benutzers; eine lokale Anpassung ist keine Erlaubnis
+  zur Änderung gemeinsamer Styles auf anderen Views.
+- Icons nicht aufgrund einer Preview austauschen. Änderungen am Button-Aussehen lassen
+  das bestehende Icon und seine Größe unverändert, sofern nicht ausdrücklich angefragt.
+- Primary-Buttons: zentraler blauer Cosmos-Verlauf mit sichtbarem Border.
+- Secondary-Buttons: Hintergrund wie die Inputfelder, Schrift in Primary-Farbe und
+  der zuletzt abgestimmte dezente Border: 1px solid var(--lumo-contrast-20pct).
+- Gemeinsame Button-Basis: mindestens 44px Höhe, 9px Eckenradius und 14px Schrift.
+  Button-Icons verwenden die Lumo-Standardgröße; keine globale 14px-Iconvorgabe ergänzen.
+- Fragezeichen-, Erfolgs- und Warnsymbole der Kontoansichten verwenden zentral
+  var(--lumo-font-size-xxxl) für Breite und Höhe (standardmäßig 40px).
+- Während der aktuellen Designabstimmung keine Builds oder Tests ohne ausdrücklichen
+  Auftrag ausführen. Nicht committen; der Benutzer sichert den Stand selbst.
+- Nach jeder Änderung ausdrücklich angeben, wie sie sichtbar wird: Browser-Refresh
+  (gegebenenfalls Strg+F5), Anwendungsneustart oder vorheriger Build. Dabei den
+  tatsächlichen Entwicklungsstand berücksichtigen; bei veralteten komprimierten
+  CSS-Ressourcen reicht ein Browser-Refresh nicht. Keine Übernahme behaupten,
+  wenn nur die Quelldatei geändert wurde.

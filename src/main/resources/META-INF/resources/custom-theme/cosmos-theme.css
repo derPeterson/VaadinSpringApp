@@ -271,8 +271,8 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
 
 /* Gemeinsame Größe für Fragezeichen, Erfolgs- und Warnsymbole der Konto-Cards. */
 .cosmos-theme vaadin-icon.cosmos-status-icon {
-    width: calc(2 * var(--lumo-font-size-xxl));
-    height: calc(2 * var(--lumo-font-size-xxl));
+    width: var(--lumo-font-size-xxxl);
+    height: var(--lumo-font-size-xxxl);
 }
 
 .cosmos-theme vaadin-icon.cosmos-status-icon--warning {
@@ -285,11 +285,9 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     font-size: 14px;
 }
 
-/* Gemeinsame Größe für Aktionsbutton-Icons; Info-Buttons behalten Größe l. */
-.cosmos-theme vaadin-button:not(.cosmos-config-info) > vaadin-icon,
-.cosmos-theme vaadin-menu-bar-button vaadin-icon {
-    width: 14px;
-    height: 14px;
+/* Dezenter Rahmen für Secondary-Buttons; Tertiary bleibt ohne Rahmen. */
+.cosmos-theme vaadin-button:not([theme~="primary"]):not([theme~="tertiary"]):not([theme~="tertiary-inline"]) {
+    border: 1px solid var(--lumo-contrast-20pct);
 }
 
 .cosmos-theme vaadin-button[theme~="primary"] {
@@ -1253,6 +1251,13 @@ vaadin-app-layout.cosmos-admin {
     flex-basis: 220px;
 }
 
+.cosmos-admin vaadin-button.admin-user-refresh {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+}
+
 .cosmos-admin .admin-user-filter-remove {
     min-height: 28px;
     width: 28px;
@@ -1269,6 +1274,25 @@ vaadin-app-layout.cosmos-admin {
     background: transparent;
 }
 
+/* Abstände zwischen Kopf, Werkzeugleiste und Tabelle bleiben erhalten;
+ * zwischen Tabelle und Pagination entfällt der Abstand. */
+.cosmos-admin-users-card .cosmos-admin-users-content {
+    row-gap: 0;
+}
+
+.cosmos-admin-users-content > :is(.admin-user-filter-bar, .admin-users-grid) {
+    margin-top: 20px;
+}
+
+.cosmos-admin-users-card .cosmos-panel-footer {
+    padding-top: 0;
+    border-top: none;
+}
+
+.cosmos-admin-users-card .admin-user-pagination {
+    margin-top: 16px;
+}
+
 .cosmos-admin .admin-user-pagination vaadin-button {
     min-height: 32px;
     width: 32px;
@@ -1281,6 +1305,10 @@ vaadin-app-layout.cosmos-admin {
 .cosmos-admin .admin-user-pagination-nav,
 .cosmos-admin .admin-user-pagination-summary {
     align-items: center;
+}
+
+.cosmos-admin .admin-user-pagination-numbers {
+    gap: var(--lumo-space-xs);
 }
 
 /* Nur die Schrift der Pagination-Zusammenfassung wird dezenter dargestellt. */

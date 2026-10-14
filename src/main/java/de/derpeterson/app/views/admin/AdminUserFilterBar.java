@@ -41,6 +41,8 @@ final class AdminUserFilterBar extends VerticalLayout {
         addClassName("admin-user-filter-bar");
 
         MenuBar menu = new MenuBar();
+        // Filterbedienung bleibt bis zur abschließenden Gestaltung vorübergehend ausgeblendet.
+        menu.setVisible(false);
         menu.addClassName("admin-user-add-filter");
         menu.getElement().getThemeList().add("cosmos");
         HorizontalLayout label = new HorizontalLayout(VaadinIcon.FILTER.create(), addFilterLabel);
@@ -52,6 +54,7 @@ final class AdminUserFilterBar extends VerticalLayout {
         clearFilters.setPrefixComponent(VaadinIcon.CLOSE_SMALL.create());
         clearFilters.addThemeVariants(ButtonVariant.LUMO_ERROR);
         clearFilters.addClickListener(event -> clearAllFilters());
+        clearFilters.setVisible(false);
 
         Div actions = new Div(refresh, addUser);
         actions.addClassName("admin-user-toolbar-actions");
