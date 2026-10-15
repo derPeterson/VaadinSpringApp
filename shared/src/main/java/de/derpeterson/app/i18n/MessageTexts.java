@@ -115,6 +115,10 @@ public class MessageTexts {
         return getTranslation("login.throttled.message");
     }
 
+    public String getLoginSessionLimitMessage() {
+        return getTranslation("login.sessions.limit.message");
+    }
+
     public String getLoginUnavailableMessage() {
         return getTranslation("login.unavailable.message");
     }

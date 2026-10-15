@@ -24,6 +24,10 @@ public class VaadinSecurityFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
+        if (httpRequest.getAttribute(SessionAdmissionService.FAILURE_REASON) instanceof String reason) {
+            ((HttpServletResponse) response).sendRedirect(de.derpeterson.app.model.enums.AppRoute.LOGIN.getSecurityRoute() + "?error=" + reason);
+            return;
+        }
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         HttpSession session = httpRequest.getSession(false);
         boolean hadPrincipal = authentication != null && authentication.getPrincipal() instanceof UserDetails

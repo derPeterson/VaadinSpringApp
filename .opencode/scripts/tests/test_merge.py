@@ -1,14 +1,13 @@
 """Real temporary Git repositories; no application, provider or live project writes."""
 import hashlib
 import json
+import merge
 import os
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
-
-import merge
+from pathlib import Path
 from workflow.common import WorkflowError, write_json
 
 
@@ -44,11 +43,14 @@ class MergeCase(unittest.TestCase):
                            StartCommit=self.main_commit, EndCommit=self.feature_commit, RunFolder=str(self.folder))
         write_json(self.state_file, self.state)
         write_json(self.folder / "result.json", self.result)
-        (self.folder / "report.md").write_text("# Bericht\n\nValidierung korrigiert.\n", encoding="utf-8")
-        (self.folder / "findings.md").write_text("# Offene Findings\n\nKeine weiteren offenen Findings festgestellt.\n", encoding="utf-8")
+        ((self.folder / "report.md").write_text("# Bericht\n\nValidierung korrigiert.\n", encoding="utf-8"))
+        (self.folder / "findings.md").write_text("# Offene Findings\n\nKeine weiteren offenen Findings festgestellt.\n",
+                                                 encoding="utf-8")
         self.plan_file = self.base / "merge-plan.json"
         self.message = self.base / "merge-message.txt"
-        self.message.write_text("Validierung und Übersetzungen korrigiert\n\n- Frühen Abbruch geprüft.\n- DE/EN-Hinweise übersetzt; '$()' bleibt Text.\n", encoding="utf-8")
+        self.message.write_text(
+            "Validierung und Übersetzungen korrigiert\n\n- Frühen Abbruch geprüft.\n- DE/EN-Hinweise übersetzt; '$()' bleibt Text.\n",
+            encoding="utf-8")
 
     def git(self, *args):
         return merge.git(self.repo, *args).strip()
@@ -75,7 +77,8 @@ class MergeCase(unittest.TestCase):
         self.assertEqual("main", self.git("branch", "--show-current"))
         self.assertEqual("", self.git("status", "--porcelain"))
         self.assertEqual(self.feature_commit, self.git("rev-parse", "feature/change"))
-        self.assertEqual([self.main_commit, self.feature_commit], self.git("rev-list", "--parents", "-n", "1", "HEAD").split()[1:])
+        self.assertEqual([self.main_commit, self.feature_commit],
+                         self.git("rev-list", "--parents", "-n", "1", "HEAD").split()[1:])
         self.assertEqual(self.git("rev-parse", "HEAD^{tree}"), self.git("rev-parse", "feature/change^{tree}"))
         text = self.git("log", "-1", "--format=%B")
         self.assertEqual("In main integriert: Validierung und Übersetzungen korrigiert", text.splitlines()[0])
@@ -167,7 +170,8 @@ class MergeCase(unittest.TestCase):
         self.assertEqual("merged", merge.apply(self.repo, self.plan_file, self.message)["status"])
 
     def test_input_is_not_a_revision_or_shell_expression(self):
-        for name in ("main", "--help", "change;whoami", "$(whoami)", "change other", "feature/change/x", "refs/heads/feature/change"):
+        for name in ("main", "--help", "change;whoami", "$(whoami)", "change other", "feature/change/x",
+                     "refs/heads/feature/change"):
             with self.subTest(name=name), self.assertRaises(WorkflowError):
                 merge.prepare(self.repo, self.store_root, name)
         self.assertEqual(self.feature_commit, self.git("rev-parse", "HEAD"))
@@ -305,8 +309,9 @@ class MergeCase(unittest.TestCase):
         script = Path(merge.__file__)
         help_result = subprocess.run([sys.executable, str(script), "--help"], capture_output=True, text=True)
         self.assertEqual(0, help_result.returncode)
-        result = subprocess.run([sys.executable, str(script), "--repo", str(self.repo), "--store-root", str(self.store_root),
-                                 "prepare", "--branch", "change", "--plan-file", str(self.plan_file)], capture_output=True)
+        result = subprocess.run(
+            [sys.executable, str(script), "--repo", str(self.repo), "--store-root", str(self.store_root),
+             "prepare", "--branch", "change", "--plan-file", str(self.plan_file)], capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual("ready", json.loads(result.stdout.decode("utf-8"))["status"])
 

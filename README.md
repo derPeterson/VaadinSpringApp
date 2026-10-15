@@ -16,7 +16,7 @@ Eine ausgefüllte Lernvorlage zeigt Befunde, Korrektur und Nachtest.
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Theme-Strukturprüfung vom 15.10.2026: Java 25, 1.085 Anwendungstests, 34 Helper-/Reportertests und je 100 Browserfälle auf Deutsch/Englisch erfolgreich. [Ergebnisse und Grenzen](browser-tests/abdeckung.md).
+> Aktueller Sitzungs-/Sicherheitsnachweis vom 15.10.2026: Java 25, 1.171 Anwendungstests, 43 Helfertests und je 27 gezielte Browserfälle DE/EN erfolgreich; zusätzlich fünf deutsche Bestandsfälle nach Synchronisierungskorrektur. [Ergebnisse und Grenzen](browser-tests/abdeckung.md).
 
 ## Funktionen
 
@@ -24,6 +24,7 @@ Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administ
 - Anmeldung per E-Mail und Passwort, Abmeldung, persistentes „Remember me“ und BCrypt-Passwort-Hashing.
 - Passwort-Zurücksetzen über zeitlich begrenzte, nach Verwendung verbrauchte Tokens.
 - Dauerhafte Begrenzung erfolgloser Passwortanmeldungen mit 15-Minuten-Fenster und 15-Minuten-Sperre.
+- Konfigurierbares Limit gleichzeitiger Sitzungen pro Benutzer für Passwortlogin und Remember-me; zusätzliche Tabs teilen ihren Sitzungsplatz.
 - Adminbereich mit Benutzerverwaltung, Rollen und Kontofreigabe, Konfiguration sowie Mail-Testversand.
 - Deutsche und englische Oberfläche, manuell wählbarer Benutzerstatus und automatische Abwesenheitserkennung mit Push-Aktualisierung.
 - Datenbankgestützte E-Mail-Warteschlange mit Wiederholungsversuchen und geplanten Bereinigungsaufgaben.
@@ -59,10 +60,16 @@ Die Begrenzung der Anmeldeversuche ist umgesetzt:
 benötigen einmalig einen Anwendungsneustart. Bestehende Sitzungen und Remember-me
 bleiben von der Passwortsperre unabhängig. Ein erfolgreicher Passwortreset hebt sie auf.
 
-Für die vier noch offenen Konfigurationseinträge liegen
+Das Sitzungslimit ist ebenfalls umgesetzt:
+[Verhalten und Eininstanz-Grenze](docs/session-limit-contract.md). Für die neuen
+Java-Komponenten einmalig die Anwendung neu starten; spätere Änderungen an
+`max.sessions.per.user` gelten bei neuen Anmeldungen ohne Neustart. Bestehende
+Sitzungen bleiben bei einer Reduzierung erhalten.
+
+Für die drei noch offenen Konfigurationseinträge liegen
 [einzelne Umsetzungspläne](docs/umsetzungsplaene/konfiguration/README.md)
-vor: gleichzeitige Sitzungen, Wartungsmodus, SMTP-SocketFactory und Nutzung des
-Mail-Workerpools. Diese übrigen Pläne aktivieren keine Funktion.
+vor: Wartungsmodus, SMTP-SocketFactory und Nutzung des Mail-Workerpools. Diese übrigen Pläne aktivieren keine Funktion. Danach ist das Kontokonfigurationspanel
+vorgesehen, mit [Sitzungsverwaltung als zweiter Ausbaustufe](docs/umsetzungsplaene/kontokonfiguration/sitzungsverwaltung.md).
 
 ## Kontoansichten, Home und Admin: Silent Cosmos und Inter
 
@@ -464,7 +471,14 @@ offenen Punkte stehen in der Browserdokumentation.
 
 Unter `src/test/java/` liegen Unit- und serverseitige Regressionstests für Benutzerverwaltung, Eingaberegeln, Registrierung, Konfiguration, Benachrichtigungen, Session-/Remember-me-/Push-RPC-Sicherheit sowie Status und Nebenläufigkeit. Persistenztests verwenden isolierte H2-In-Memory-Datenbanken, nicht die Anwendungsdatenbank. Vaadin-Tests prüfen serverseitige Komponenten und Callbacks mit kontrollierten UI-/Sessionfixtures, ohne Browser oder Anwendungsstart. `ImageHelperTest` prüft zusätzlich das echte Mail-Logo als Classpath-Ressource. `src/test/resources/logback-test.xml` konfiguriert das Test-Logging.
 
-Theme-Strukturprüfung vom 15.10.2026 auf `feature/theme-css-structure`:
+Aktueller Sitzungs-/Sicherheitsnachweis vom 15.10.2026: **1.171 Anwendungstests,
+43 Helfertests und je 27 gezielte Browserfälle DE/EN** erfolgreich. Nach einer
+Synchronisierungskorrektur im Bestands-Browsertest bestanden zusätzlich dessen fünf
+deutsche Varianten. Alle Sprach-/Nachtests verwendeten dasselbe App-Image. Details,
+Messgrenzen und die Abgrenzung zum vollständigen `all`-Lauf stehen in der
+[aktuellen Abdeckung](browser-tests/abdeckung.md).
+
+Historische Theme-Strukturprüfung vom 15.10.2026 auf `feature/theme-css-structure`:
 
 | Prüfung | Ergebnis |
 | --- | --- |

@@ -242,6 +242,78 @@ class SecurityChainRegressionTest {
         assertEquals(before, attempts.count());
     }
 
+    @Autowired de.derpeterson.app.security.SessionAdmissionService admissions;
+    @Autowired org.springframework.security.core.session.SessionRegistry sessionRegistry;
+    @Autowired org.springframework.security.web.authentication.rememberme.PersistentTokenRepository tokens;
+
+    @ParameterizedTest @EnumSource(RoleType.class)
+    void httpAndVaadinShareTheLimitAndLogoutFreesTheSlot(RoleType roleType) throws Exception {
+        String email = sessionUser(roleType);
+        when(settings.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
+        try {
+            var first = postPassword(email, "OriginalPassword!");
+            var session = first.request().getSession(false); assertNotNull(session);
+            var principal = new CustomUserDetailsService(repository).loadUserByUsername(email);
+            var denied = postPassword(email, "OriginalPassword!");
+            assertEquals("/login?error=sessions", denied.response().getRedirectedUrl());
+            assertEquals(0, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
+            assertThrows(de.derpeterson.app.security.SessionLimitException.class, () -> actualSecurity.storeAuthenticatedUser(
+                    new MockHttpServletRequest(), new MockHttpServletResponse(), principal, true));
+            assertEquals(1, sessionRegistry.getAllSessions(email, true).size());
+            var logout = new MockHttpServletRequest("POST", "/logout"); logout.setServletPath("/logout"); logout.setSession(session);
+            new FilterChainProxy(chain).doFilter(logout, new MockHttpServletResponse(), mock(FilterChain.class));
+            assertTrue(sessionRegistry.getAllSessions(email, true).isEmpty());
+            assertEquals(roleType.isAdministrative() ? "/admin" : "/home", postPassword(email, "OriginalPassword!").response().getRedirectedUrl());
+        } finally { when(settings.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(3); }
+    }
+
+    @Autowired SecurityService actualSecurity;
+
+    @Test void rememberMeIsRejectedAtTheSameLimitWithoutDeletingOtherTokenSeries() throws Exception {
+        String email = sessionUser(RoleType.ROLE_USER);
+        when(settings.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
+        try {
+            var first = postPassword(email, "OriginalPassword!");
+            String series = "series-" + java.util.UUID.randomUUID();
+            String otherSeries = "other-" + java.util.UUID.randomUUID();
+            tokens.createNewToken(new org.springframework.security.web.authentication.rememberme.PersistentRememberMeToken(email, series, "token-value", new java.util.Date()));
+            tokens.createNewToken(new org.springframework.security.web.authentication.rememberme.PersistentRememberMeToken(email, otherSeries, "other-token", new java.util.Date()));
+            String cookie = java.util.Base64.getEncoder().encodeToString((series + ":token-value").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            var request = new MockHttpServletRequest("GET", "/home"); request.setServletPath("/home");
+            request.setCookies(new jakarta.servlet.http.Cookie("remember-me", cookie));
+            var response = new MockHttpServletResponse(); var servlet = mock(FilterChain.class);
+            new FilterChainProxy(chain).doFilter(request, response, servlet);
+            assertEquals("/login?error=sessions", response.getRedirectedUrl()); verifyNoInteractions(servlet);
+            assertTrue(request.getSession(false) == null || request.getSession(false).getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY) == null);
+            assertNotNull(tokens.getTokenForSeries(otherSeries)); assertNotNull(tokens.getTokenForSeries(series));
+            assertEquals(1, sessionRegistry.getAllSessions(email, true).size());
+            assertNotNull(first.request().getSession(false).getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
+            assertEquals(0, java.util.Arrays.stream(response.getCookies()).filter(cookieValue -> cookieValue.getName().equals("remember-me")).toList().getLast().getMaxAge());
+            // Actual Remember-me admission is allowed immediately after raising the limit.
+            when(settings.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(2);
+            var currentToken = tokens.getTokenForSeries(series);
+            String updatedCookie = java.util.Base64.getEncoder().encodeToString((series + ":" + java.net.URLEncoder.encode(currentToken.getTokenValue(), java.nio.charset.StandardCharsets.UTF_8)).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            var allowed = new MockHttpServletRequest("GET", "/home"); allowed.setServletPath("/home");
+            allowed.setCookies(new jakarta.servlet.http.Cookie("remember-me", updatedCookie));
+            var target = mock(FilterChain.class);
+            new FilterChainProxy(chain).doFilter(allowed, new MockHttpServletResponse(), target);
+            verify(target).doFilter(any(), any());
+            assertEquals(2, sessionRegistry.getAllSessions(email, true).size());
+            assertNotNull(allowed.getSession(false).getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
+        } finally { when(settings.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(3); }
+    }
+
+    private String sessionUser(RoleType roleType) {
+        String email = "session-" + java.util.UUID.randomUUID() + "@example.test";
+        transaction.executeWithoutResult(tx -> {
+            var role = entityManager.createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
+                    .setParameter("role", roleType).getResultStream().findFirst().orElse(null);
+            if (role == null) { role = RoleEntity.builder().name(roleType).build(); entityManager.persist(role); }
+            var id = create(email, role); entityManager.find(UserEntity.class, id).setPassword(encoder.encode("OriginalPassword!"));
+        });
+        return email;
+    }
+
     private PasswordResponse postPassword(String email, String password) throws Exception {
         SecurityContextHolder.clearContext();
         var request = new MockHttpServletRequest("POST", "/login"); request.setServletPath("/login");
@@ -280,6 +352,7 @@ class SecurityChainRegressionTest {
             when(config.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY)).thenReturn("isolated-test-key");
             when(config.getInteger(ConfigEntry.REMEMBER_ME_DURATION)).thenReturn(3600);
             when(config.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(10);
+            when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(3);
             return config;
         }
 

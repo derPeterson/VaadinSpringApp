@@ -47,9 +47,11 @@ public class SessionSecurityBrowserTest extends BrowserFixture {
                     && response.url().startsWith(System.getProperty("browser.tests.baseUrl")),
                     stale.saveButton()::click);
             assertEquals(401, denied.status());
-            actor.page.navigate(path(ADMIN_ROUTE));
-            assertThat(actor.page).hasURL(urlPattern(LOGIN_ROUTE));
-            assertThat(actor.page).hasTitle(LOGIN_PAGE_TITLE);
+            // Nach der 401 können alte Push-Anfragen noch auslaufen. Das neue Dokument
+            // und die sichtbare Loginmaske belegen die Abwehr, nicht das globale load-Ereignis.
+            actor.page.navigate(path(ADMIN_ROUTE), new Page.NavigateOptions()
+                    .setWaitUntil(com.microsoft.playwright.options.WaitUntilState.DOMCONTENTLOADED));
+            new LoginPage(actor.page).assertFormVisible();
             users.open(); users.search(probe); assertThat(users.emailCells(probe)).hasCount(0);
         }
     }

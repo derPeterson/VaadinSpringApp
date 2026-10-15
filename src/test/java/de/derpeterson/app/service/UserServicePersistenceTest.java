@@ -188,10 +188,16 @@ class UserServicePersistenceTest {
         }
 
         @Bean
-        SecurityService securityService(UserService service, UserRepository repository) {
+        SecurityService securityService(UserService service, UserRepository repository,
+                org.springframework.beans.factory.ObjectProvider<de.derpeterson.app.security.SessionAdmissionService> admissions) {
             return new SecurityService(mock(PersistentTokenBasedRememberMeServices.class), service, repository,
                     new de.derpeterson.app.security.CustomUserDetailsService(repository),
-                    new org.springframework.security.web.context.HttpSessionSecurityContextRepository());
+                    new org.springframework.security.web.context.HttpSessionSecurityContextRepository(),
+                    admissions.getIfAvailable(() -> {
+                        var config = mock(ConfigService.class);
+                        org.mockito.Mockito.when(config.getInteger(de.derpeterson.app.model.enums.ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(3);
+                        return new de.derpeterson.app.security.SessionAdmissionService(config, new org.springframework.security.core.session.SessionRegistryImpl());
+                    }));
         }
     }
 }

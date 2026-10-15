@@ -1,14 +1,15 @@
-from pathlib import Path
-from typing import Any
 from openai import OpenAI
+from pathlib import Path
 from prompt.chatgpt.credential_store import ChatGPTCredentialStore
 from prompt.chatgpt.token_client import ChatGPTTokenClient
 from prompt.llm_client import LlmClient
 from prompt.telemetry import UsageObserver, PromptProviderError, LOGIN_REQUIRED, checked_text, field, provider_error
+from typing import Any
 
 
 class _StreamedText:
     """Retain text parts without adding final text snapshots to their deltas."""
+
     def __init__(self):
         self.deltas, self.done, self.refused = {}, {}, False
 

@@ -2,6 +2,7 @@ package de.derpeterson.browsertests;
 
 import de.derpeterson.browsertests.suites.AuthenticationBrowserTest;
 import de.derpeterson.browsertests.suites.LoginAttemptBrowserTest;
+import de.derpeterson.browsertests.suites.SessionLimitBrowserTest;
 import de.derpeterson.browsertests.suites.LoginLayoutBrowserTest;
 import de.derpeterson.browsertests.suites.CosmosDesignBrowserTest;
 import de.derpeterson.browsertests.suites.InfrastructureBrowserTest;
@@ -27,11 +28,12 @@ import java.util.List;
 final class BrowserSuites {
     static List<Class<?>> select(String suite) {
         return switch (suite) {
-            case "all", "fast" -> List.of(InfrastructureBrowserTest.class, AuthenticationBrowserTest.class, RegistrationBrowserTest.class, VerificationBrowserTest.class, PasswordResetBrowserTest.class, AccountLifecycleBrowserTest.class, PresentationBrowserTest.class, TokenConfigurationBrowserTest.class, UserManagementBrowserTest.class, UserFiltersBrowserTest.class, UserAccessBrowserTest.class, SessionSecurityBrowserTest.class, BlockedLinksBrowserTest.class, RememberMeBrowserTest.class, UserStatusBrowserTest.class, ConfigurationBrowserTest.class, AdminMailBrowserTest.class, TokenExpiryBrowserTest.class, LoginLayoutBrowserTest.class, CosmosDesignBrowserTest.class, LoginAttemptBrowserTest.class);
+            case "all", "fast" -> List.of(InfrastructureBrowserTest.class, AuthenticationBrowserTest.class, RegistrationBrowserTest.class, VerificationBrowserTest.class, PasswordResetBrowserTest.class, AccountLifecycleBrowserTest.class, PresentationBrowserTest.class, TokenConfigurationBrowserTest.class, UserManagementBrowserTest.class, UserFiltersBrowserTest.class, UserAccessBrowserTest.class, SessionSecurityBrowserTest.class, BlockedLinksBrowserTest.class, RememberMeBrowserTest.class, UserStatusBrowserTest.class, ConfigurationBrowserTest.class, AdminMailBrowserTest.class, TokenExpiryBrowserTest.class, LoginLayoutBrowserTest.class, CosmosDesignBrowserTest.class, LoginAttemptBrowserTest.class, SessionLimitBrowserTest.class);
             case "cosmos-design" -> List.of(CosmosDesignBrowserTest.class);
             case "login-layout" -> List.of(LoginLayoutBrowserTest.class);
             case "login-checks" -> List.of(LoginLayoutBrowserTest.class, AuthenticationBrowserTest.class, PresentationBrowserTest.class, RememberMeBrowserTest.class);
             case "infrastructure" -> List.of(InfrastructureBrowserTest.class);
+            case "session-limits" -> List.of(SessionLimitBrowserTest.class, AuthenticationBrowserTest.class, LoginAttemptBrowserTest.class, RememberMeBrowserTest.class, SessionSecurityBrowserTest.class, UserAccessBrowserTest.class);
             case "login-attempts" -> List.of(LoginAttemptBrowserTest.class, AuthenticationBrowserTest.class, RememberMeBrowserTest.class);
             case "authentication" -> List.of(AuthenticationBrowserTest.class);
             case "registration" -> List.of(RegistrationBrowserTest.class);
@@ -54,7 +56,7 @@ final class BrowserSuites {
             case "user-filters" -> List.of(UserFiltersBrowserTest.class);
             case "token-configuration" -> List.of(TokenConfigurationBrowserTest.class);
             default -> throw new IllegalArgumentException("Unknown suite: " + suite
-                    + ". Choose all, fast, cosmos-design, login-layout, login-checks, infrastructure, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
+                    + ". Choose all, fast, cosmos-design, login-layout, login-checks, infrastructure, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, session-limits, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
         };
     }
 }

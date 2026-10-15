@@ -127,3 +127,10 @@ prüfen sichtbare Sperre, erhaltene Sitzung, dynamische Reduzierung, neutrale
 Meldungen und Entsperrung über eine tatsächlich versandte Resetmail. Zeitgrenzen
 werden kontrolliert in JUnit geprüft; der Browser wartet keine 15 Minuten ab.
 Aktuelle tatsächlich ausgeführte Ergebnisse: [Browserabdeckung](../browser-tests/abdeckung.md).
+
+## Zusammenspiel mit dem Sitzungslimit
+
+Die [Begrenzung gleichzeitiger Sitzungen](session-limit-contract.md) gilt zusätzlich
+für neue Sitzungen nach erfolgreicher Identitätsprüfung. Eine Ablehnung wegen belegter
+Plätze ist kein falsches Passwort. Bestehende Sitzungen bleiben von der Passwortsperre
+unabhängig; eine Remember-me-Rückkehr benötigt dagegen einen freien Sitzungsplatz.

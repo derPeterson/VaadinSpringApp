@@ -4,7 +4,6 @@ import com.vaadin.flow.server.VaadinRequest;
 import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.model.UserEntity;
-import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,6 +39,7 @@ public class SecurityService {
     private final UserRepository userRepository;
     private final CustomUserDetailsService userDetailsService;
     private final SecurityContextRepository securityContextRepository;
+    private final SessionAdmissionService admissions;
 
     /**
      * Runs before Vaadin resolves/locks a UI, including for each WebSocket
@@ -115,34 +115,42 @@ public class SecurityService {
     }
 
     public void storeAuthenticatedUser(HttpServletRequest request, HttpServletResponse response, UserDetails user, Boolean rememberMe) {
-        if (VaadinSession.getCurrent() != null) {
-            VaadinSession.getCurrent().setAttribute(UserDetails.class, user);
-        }
-
-        HttpSession httpSession = request.getSession();
-        httpSession.setAttribute(AUTH_USER_SESSION_KEY, user);
-
-        if (VaadinSession.getCurrent() != null) {
-            Optional<UserEntity> userEntityOptional = userService.findByEmail(user.getUsername());
-            userEntityOptional.ifPresent(userEntity -> VaadinSession.getCurrent().setLocale(userEntity.getPreferredLocale()));
-        }
-
-        var auth = restoreSecurityContext(user);
-        // Der eigene Vaadin-Login muss den Kontext ausdrücklich für Folgeanfragen speichern.
-        // Sonst starten parallele Folgeanfragen erneut Remember-me und rotieren dasselbe Cookie mehrfach.
-        securityContextRepository.saveContext(SecurityContextHolder.getContext(), request, response);
-
-        if (Boolean.TRUE.equals(rememberMe)) {
-            rememberMeServices.setAlwaysRemember(true);
-
-            rememberMeServices.loginSuccess(request, response, auth);
-        } else {
-            rememberMeServices.setAlwaysRemember(false);
+        Authentication auth = UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities());
+        try {
+            admissions.complete(auth, request, response, () -> {
+                handleLogin(user);
+                if (VaadinSession.getCurrent() != null) {
+                    VaadinSession.getCurrent().setAttribute(UserDetails.class, user);
+                    userService.findByEmail(user.getUsername()).ifPresent(entity ->
+                            VaadinSession.getCurrent().setLocale(entity.getPreferredLocale()));
+                }
+                request.getSession().setAttribute(AUTH_USER_SESSION_KEY, user);
+                restoreSecurityContext(user);
+                securityContextRepository.saveContext(SecurityContextHolder.getContext(), request, response);
+                if (Boolean.TRUE.equals(rememberMe)) {
+                    // Checkbox selection belongs to this request, never to the singleton service.
+                    var rememberedRequest = new jakarta.servlet.http.HttpServletRequestWrapper(request) {
+                        @Override public String getParameter(String name) {
+                            return "remember-me".equals(name) ? "true" : super.getParameter(name);
+                        }
+                    };
+                    rememberMeServices.loginSuccess(rememberedRequest, response, auth);
+                }
+            });
+        } catch (RuntimeException failure) {
+            if (VaadinSession.getCurrent() != null) VaadinSession.getCurrent().setAttribute(UserDetails.class, null);
+            SecurityContextHolder.clearContext();
+            if (Boolean.TRUE.equals(rememberMe) && !response.isCommitted()) {
+                try { rememberMeServices.loginFail(request, response); }
+                catch (RuntimeException cleanupFailure) { failure.addSuppressed(cleanupFailure); }
+            }
+            if (failure instanceof AuthenticationException authenticationFailure) throw authenticationFailure;
+            throw new org.springframework.security.authentication.AuthenticationServiceException("Login completion failed", failure);
         }
     }
 
     private Authentication restoreSecurityContext(UserDetails user) {
-        Authentication auth = new UsernamePasswordAuthenticationToken(user, user.getPassword(), user.getAuthorities());
+        Authentication auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);
         SecurityContextHolder.setContext(context);
@@ -153,16 +161,14 @@ public class SecurityService {
         HttpServletRequest request = (HttpServletRequest) VaadinRequest.getCurrent();
         HttpServletResponse response = (HttpServletResponse) VaadinResponse.getCurrent();
 
-        if (VaadinSession.getCurrent() != null) {
-            VaadinSession.getCurrent().getSession().invalidate();
-        }
         HttpSession httpSession = request.getSession(false);
-        if (httpSession != null) {
-            httpSession.invalidate();
-        }
-
         if (rememberMeServices != null && SecurityContextHolder.getContext().getAuthentication() != null) {
             rememberMeServices.logout(request, response, SecurityContextHolder.getContext().getAuthentication());
+        }
+        if (httpSession != null) {
+            httpSession.invalidate();
+        } else if (VaadinSession.getCurrent() != null) {
+            VaadinSession.getCurrent().getSession().invalidate();
         }
 
         SecurityContextHolder.clearContext();
@@ -208,13 +214,6 @@ public class SecurityService {
 
     @Transactional
     public void handleLogin(UserDetails user) throws AuthenticationException {
-        Optional<UserEntity> userEntity = userRepository.findByEmailForUpdate(user.getUsername());
-
-        if (userEntity.isPresent()) {
-            if (!userEntity.get().isStatusManuallySet()) {
-                userService.updateUserStatus(userEntity.get(), UserStatus.AVAILABLE, false);
-            }
-            userService.updateLastActivity(userEntity.get().getId());
-        }
+        userService.recordLogin(user.getUsername());
     }
 }

@@ -28,6 +28,7 @@ Eine globale Playwright- oder Allure-Installation ist nicht erforderlich.
 | Alle Fälle auf zwei Umgebungen verteilen | `.\browser-tests\run.ps1 -Suite all -Workers 2 -Language de` |
 | Tests live im sichtbaren Browser verfolgen | `.\browser-tests\run.ps1 -Headed` |
 | Login-Schutz, bestehende Anmeldung und Remember-me prüfen | `.\browser-tests\run.ps1 -Suite login-attempts -Workers 2 -Language de` |
+| Sitzungslimit und zugehörige Sicherheitsabläufe prüfen | `.\browser-tests\run.ps1 -Suite session-limits -Workers 2 -Language de` |
 | Nur Benutzerfilter prüfen | `.\browser-tests\run.ps1 -Suite user-filters -Language de` |
 | Nur Benutzerverwaltung prüfen | `.\browser-tests\run.ps1 -Suite user-management -Language de` |
 | Helper und Reporter ohne Docker prüfen | `.\browser-tests\run.ps1 -ReportingTests` |
@@ -56,6 +57,7 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit | 3 |
 | `authentication` | Admin-/Benutzerlogin, Fehler, Gastzugriff und Logout | 6 |
 | `login-attempts` | Drei neue Sperr-/Resetfälle plus sechs Anmelde- und zwei Remember-me-Regressionsfälle | 11 |
+| `session-limits` | Vier neue Sitzungsfälle plus Login-, Anmeldeversuchs-, Remember-me-, Rechte- und Sitzungsregressionen | 27 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler und Links | 6 |
@@ -79,7 +81,20 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 19 |
 | `cosmos-design` | Fünf Kontoansichten, mobiler Mailablauf, Copyright in UI/Mails, gemeinsames Theme sowie Home-/Adminnavigation bei drei Größen | 11 |
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
-| `all` | Alle 21 Testklassen einschließlich der Fast-Fälle | 105 |
+| `all` | Alle 22 Testklassen einschließlich der Fast-Fälle | 109 |
+
+SESSION-LIMIT-01–04 prüfen das gespeicherte Sitzungslimit über echte Anmeldungen:
+zusätzliche Tabs belegen keinen Platz, Logout gibt einen frei, Reduzierung erhält
+bestehende Geräte und Erhöhung wirkt sofort. Ein echter Chromium-Prozess wird
+beendet und neu gestartet, um Browserschließen ohne Logout und die begrenzte
+Remember-me-Rückkehr zu prüfen. Die gemeinsame Suite enthält 27 Fälle; `fast`
+bleibt unverändert bei 34. Timeout- und Konkurrenzgrenzen prüft JUnit.
+
+Das gemeinsame Fixture meldet sein Konto nach dem abschließenden Screenshot über
+die Oberfläche ab. Bloßes Schließen des Testkontextes würde korrekt einen Platz bis
+zum Timeout belegen und die wiederverwendete Bootstrap-Identität über mehrere
+unabhängige Fälle blockieren. Spezielle Browserneustart-Fälle behalten ihr eigenes
+Profil und schließen ausdrücklich ohne diese Fixture-Abmeldung.
 
 AUTH-LIMIT-01–03 prüfen gespeichertes Versuchslimit, erhaltene angemeldete Sitzung,
 sofortige Reduzierung für bekannte/unbekannte Kennungen und Entsperrung erst nach

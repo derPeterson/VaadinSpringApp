@@ -44,7 +44,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.HashMap;
@@ -119,13 +118,10 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
                 Authentication authentication = authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(emailField.getValue(), passwordField.getValue()));
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-
                 if (authentication.getPrincipal() instanceof UserDetails userDetails) {
                     securityService.storeAuthenticatedUser((HttpServletRequest) VaadinRequest.getCurrent(),
                             (HttpServletResponse) VaadinResponse.getCurrent(), userDetails, rememberMeCheckBox.getValue());
 
-                    securityService.handleLogin(userDetails);
                 } else {
                     logger.warn("⚠️ Principal is not an instance of UserDetails, save and handle of login could not be performed.");
                 }
@@ -135,7 +131,8 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
                 Class<? extends Component> target = hasAdminRole(authentication) ? AdminView.class : HomeView.class;
                 getUI().ifPresent(ui -> ui.navigate(target));
             } catch (AuthenticationException e) {
-                showLoginFailure(e instanceof LoginThrottledException ? "throttled"
+                showLoginFailure(e instanceof de.derpeterson.app.security.SessionLimitException ? "sessions"
+                        : e instanceof LoginThrottledException ? "throttled"
                         : e instanceof AuthenticationServiceException ? "unavailable" : "invalid");
             }
         });
@@ -221,13 +218,14 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
         super.beforeEnter(event);
         if (event.hasForwardTarget()) return;
         var errors = event.getLocation().getQueryParameters().getParameters().get("error");
-        if (errors != null && errors.size() == 1 && java.util.Set.of("throttled", "unavailable", "invalid").contains(errors.getFirst())) {
+        if (errors != null && errors.size() == 1 && java.util.Set.of("sessions", "throttled", "unavailable", "invalid").contains(errors.getFirst())) {
             showLoginFailure(errors.getFirst());
         }
     }
 
     private void showLoginFailure(String reason) {
         Supplier<String> text = switch (reason) {
+            case "sessions" -> messageProperties::getLoginSessionLimitMessage;
             case "throttled" -> messageProperties::getLoginThrottledMessage;
             case "unavailable" -> messageProperties::getLoginUnavailableMessage;
             default -> messageProperties::getLoginFailedMessage;

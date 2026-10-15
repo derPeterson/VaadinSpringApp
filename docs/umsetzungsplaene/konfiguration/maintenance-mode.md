@@ -122,4 +122,4 @@ administrative Wiederfreigabe praktisch nachgewiesen ist. Diese Tests stehen noc
 [VaadinSecurityFilter](../../../src/main/java/de/derpeterson/app/security/VaadinSecurityFilter.java),
 [PushSecurityInterceptor](../../../src/main/java/de/derpeterson/app/security/PushSecurityInterceptor.java),
 [Push-/RPC-Regressionen](../../../src/test/java/de/derpeterson/app/service/PushRpcSecurityPersistenceTest.java).
-Abstimmen mit [umgesetzten Anmeldeversuchen](../../login-attempts-contract.md) und [Sitzungslimit](max-sessions-per-user.md).
+Abstimmen mit [umgesetzten Anmeldeversuchen](../../login-attempts-contract.md) und [umgesetzten Sitzungslimit](../../session-limit-contract.md).

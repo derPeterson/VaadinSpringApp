@@ -47,6 +47,12 @@ public final class LoginPage {
                 .setName(texts.getAdminDashboardTitle()).setExact(true).setLevel(1))).hasCount(0);
     }
 
+    @Step("Sitzungsgrenze bei gültigen Zugangsdaten prüfen")
+    public void assertSessionLimit() {
+        assertFormVisible();
+        assertThat(page.getByText(texts.getLoginSessionLimitMessage(), new Page.GetByTextOptions().setExact(true))).isVisible();
+    }
+
     @Step("Vorübergehende Anmeldesperre ohne Kontoauskunft prüfen")
     public void assertThrottled() {
         assertFormVisible();

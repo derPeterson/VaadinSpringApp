@@ -7,7 +7,7 @@ Stand: 15.10.2026. **Abgestimmter Folgeauftrag zur Planung; noch nicht implement
 Zuerst werden die [noch offenen Konfigurationsfunktionen](../konfiguration/README.md)
 umgesetzt. Danach ist das Kontokonfigurationspanel vorgesehen, das bisher noch nicht
 existiert. In diesem Panel folgt die Sitzungsverwaltung als **zweite Ausbaustufe** der
-[Begrenzung gleichzeitiger Sitzungen](../konfiguration/max-sessions-per-user.md).
+[bereits umgesetzten Begrenzung gleichzeitiger Sitzungen](../../session-limit-contract.md).
 Dieser Plan baut weder das Panel noch die Verwaltung bereits ein.
 
 ## Ziel und Zählweise

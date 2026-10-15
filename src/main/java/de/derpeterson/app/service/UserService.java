@@ -46,6 +46,15 @@ public class UserService {
         save(userEntity);
     }
 
+    /** Called through the service proxy so a login's status/activity update has its own transaction boundary. */
+    @Transactional
+    public void recordLogin(String email) {
+        userRepository.findByEmailForUpdate(EmailIdentity.canonicalize(email)).ifPresent(user -> {
+            if (!user.isStatusManuallySet()) updateUserStatus(user, UserStatus.AVAILABLE, false);
+            updateLastActivity(user.getId());
+        });
+    }
+
     public Optional<UserEntity> findByEmail(String email) {
         return userRepository.findByEmail(EmailIdentity.canonicalize(email));
     }

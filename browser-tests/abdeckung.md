@@ -1,6 +1,55 @@
 # Browserabdeckung und offene Punkte
 
-**Aktueller Funktionsnachweis 15.10.2026: 1.149 Anwendungstests, 43 Helfertests und je 11 gezielte Login-Browserfälle DE/EN erfolgreich.**
+**Aktueller Funktionsnachweis 15.10.2026: 1.171 Anwendungstests, 43 Helfertests und je 27 gezielte Sitzungs-/Sicherheits-Browserfälle DE/EN erfolgreich.**
+
+## Gleichzeitige Sitzungen pro Benutzer (15.10.2026)
+
+Branch `feature/max-sessions-per-user`, Ausgangscommit `d69f38b2`; Umsetzung und
+Dokumentation lagen bei der Prüfung uncommittet vor.
+[Verbindlicher Funktions-/Einführungsvertrag](../docs/session-limit-contract.md).
+
+| Prüfung | Ergebnis |
+| --- | --- |
+| Java 25 / gemeinsamer Übersetzungskatalog | Geprüft; Shared sauber gebaut und installiert |
+| Vollständige Anwendungs-JUnit-Suite | 1171/1171; keine Fehler, Fehlschläge oder Skips |
+| Browserhelfer und Suite-/Workeraufteilung | 43/43; keine Fehler, Fehlschläge oder Skips |
+| Frischer Produktionsbuild | Erfolgreich, einschließlich Anwendungstests und Frontend |
+| `session-limits`, Deutsch / Englisch, je zwei isolierte Worker | Je 27/27; identisches gepinntes App-Image, keine Fehler oder Skips |
+| Gezielter deutscher Nachtest `session-security` nach Synchronisierungskorrektur | 5/5; dasselbe App-Image, keine Fehler oder Skips |
+| Aufbau, Abbau und Berichte der abgeschlossenen Nachweise | Vollständig erfolgreich |
+
+SESSION-LIMIT-01 prüft die gemeinsame Tab-Zählung, Ablehnung bei voller Belegung und
+Freigabe nach Logout. SESSION-LIMIT-02 prüft Reduzierung ohne Verdrängung und sofortige
+Erhöhung. SESSION-LIMIT-03 beendet einen echten Chromium-Prozess ohne Logout und
+weist nach, dass das keinen Platz freigibt. SESSION-LIMIT-04 startet einen echten
+Remember-me-Browser erneut: automatische Anmeldung kann die Grenze nicht umgehen;
+die bestehende zweite Sitzung bleibt nutzbar. Die übrigen 23 Fälle prüfen bisherigen
+Login, Passwortsperre/-reset, Remember-me, alle Rollen und alte privilegierte Aktionen.
+
+Ein englischer Bestandsfall wartete zunächst auf das globale `load`-Ereignis, obwohl
+302-Weiterleitung, Loginantwort und sichtbare Loginmaske bereits vorlagen. Die
+Bestandsprüfung wartet nun auf das neue DOM und das vollständige sichtbare Formular.
+Die echte 401-Abwehr und die Prüfung, dass keine alte Speichern-Aktion ausgeführt
+wurde, bleiben erhalten. Danach bestanden die vollständige englische Suite und die
+fünf betroffenen Bestandsvarianten zusätzlich auf Deutsch. Kein erhöhter globaler
+Timeout, kein automatisches Wiederholen fehlschlagender Fälle und keine Testausnahme
+für das Sitzungslimit wurden eingeführt.
+
+JUnit prüft zusätzlich Grenzwerte 1/3, Normalisierung, gleiche Grenze für alle Rollen,
+Sitzungs-ID-Wechsel ohne UI-Verlust, Freigabe durch Invalidierung/Timeout-Ereignis,
+parallele Anmeldung am letzten Platz und parallele Kontowechsel in derselben Sitzung.
+Speicher-, Status- und Cookiefehler hinterlassen keinen neuen Registerplatz. Die echte
+HTTP-Filterkette und Vaadin verwenden denselben Bestand; Remember-me-Ablehnung löscht
+keine Tokenserien anderer Geräte. Die Checkbox-Auswahl ist pro Anfrage isoliert.
+
+**Grenzen:** Eininstanzbetrieb mit lokalen Servlet-Sitzungen. Produktive Bestandsdaten
+und laufende Benutzeranwendungen wurden nicht angefasst. Ein echtes produktives
+Sitzungstimeout wurde nicht abgewartet; JUnit prüft die Lifecycle-Ereignisse. Kein neuer
+vollständiger `all`-Browserlauf und keine neue Coverage-Prozentmessung. `all` enthält
+jetzt 109 Fälle in 22 Klassen; `fast` unverändert 34. Ältere Coverage-Werte unten sind
+historische Messungen. Die Geräteverwaltung bleibt der separat geplante zweite Ausbau
+im zukünftigen Kontokonfigurationspanel.
+
 
 ## Begrenzung der Passwort-Anmeldeversuche (15.10.2026)
 
@@ -34,7 +83,7 @@ Passwortabfrage. Echte Spring-Faktornachweise erhalten eine gültige Sitzung; ei
 echte Kontosperre und nachgeahmte Faktorstrings werden weiterhin erkannt.
 
 Zeitablauf wird mit kontrollierter Clock in JUnit geprüft; im Browser wurde keine
-15-Minuten-Wartezeit durchlaufen. Die vollständige Browser-Suite umfasst nun 105
+15-Minuten-Wartezeit durchlaufen. Mit der damaligen Login-Erweiterung umfasste die vollständige Browser-Suite 105
 Fälle in 21 Klassen, wurde diesmal jedoch nicht komplett neu ausgeführt. `fast`
 bleibt bei 34 Fällen und wurde nicht als vollständige Fast-Auswahl erneut gestartet.
 Es gibt keine neue Coverage-Auswertung. Frühere Prozentwerte gehören zu den unten

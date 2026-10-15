@@ -16,6 +16,9 @@ public final class PersistentBrowserActor implements AutoCloseable {
     public final Page page;
     private final TraceSession trace;
     public PersistentBrowserActor(Playwright playwright, Path profile) {
+        this(playwright, profile, HOME_ROUTE);
+    }
+    public PersistentBrowserActor(Playwright playwright, Path profile, String expectedRoute) {
         UiTexts texts = UiTexts.selected();
         context = playwright.chromium().launchPersistentContext(profile, new BrowserType.LaunchPersistentContextOptions()
                 .setHeadless(!Boolean.getBoolean("browser.tests.headed"))
@@ -23,8 +26,10 @@ public final class PersistentBrowserActor implements AutoCloseable {
                 .setViewportSize(1280, 900).setLocale(texts.browserLocale())
                 .setTimezoneId("Europe/Berlin").setServiceWorkers(ServiceWorkerPolicy.BLOCK));
         context.setDefaultTimeout(15_000); AllurePlaywright.register(context); trace = AllurePlaywright.startTracing(context);
-        page = context.newPage(); page.navigate(path(HOME_ROUTE)); assertThat(page).hasTitle(HOME_PAGE_TITLE);
-        new UserMenu(page).selectTestLanguage();
+        page = context.newPage(); page.navigate(path(HOME_ROUTE));
+        assertThat(page).hasURL(urlPattern(expectedRoute));
+        assertThat(page).hasTitle(expectedRoute.equals(LOGIN_ROUTE) ? LOGIN_PAGE_TITLE : HOME_PAGE_TITLE);
+        if (expectedRoute.equals(HOME_ROUTE)) new UserMenu(page).selectTestLanguage();
     }
     @Override public void close() {
         try {AllurePlaywright.attachScreenshot("Separater Browser vor echtem Prozessende", page);}

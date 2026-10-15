@@ -15,6 +15,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.RememberMeAuthenticationProvider;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.config.ObjectPostProcessor;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import de.derpeterson.app.service.LoginAttemptService;
@@ -26,7 +35,6 @@ import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 
 import javax.sql.DataSource;
@@ -49,15 +57,35 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(LoginAttemptService attempts, PasswordEncoder encoder) {
         var provider = new DaoAuthenticationProvider(userDetailsService::loadPasswordUserByUsername);
         provider.setPasswordEncoder(encoder);
-        return new org.springframework.security.authentication.ProviderManager(java.util.List.of(
+        return new ProviderManager(java.util.List.of(
                 new LoginAuthenticationService(provider, attempts),
-                new org.springframework.security.authentication.RememberMeAuthenticationProvider(
+                new RememberMeAuthenticationProvider(
                         configService.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY))));
     }
 
     @Bean
-    public SecurityContextRepository securityContextRepository() {
-        return new HttpSessionSecurityContextRepository();
+    public SecurityContextRepository securityContextRepository(SessionAdmissionService admissions) {
+        return new AdmittedSecurityContextRepository(admissions);
+    }
+
+    @Bean
+    public org.springframework.web.util.HttpSessionMutexListener httpSessionMutexListener() {
+        return new org.springframework.web.util.HttpSessionMutexListener();
+    }
+
+    @Bean
+    public SessionRegistryImpl sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    @Bean
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
+    }
+
+    @Bean
+    public SessionAdmissionService sessionAdmissionService(SessionRegistry registry) {
+        return new SessionAdmissionService(configService, registry);
     }
 
     @Bean
@@ -95,7 +123,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, PersistentTokenBasedRememberMeServices rememberMeServices, AuthenticationManager authenticationManager) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, PersistentTokenBasedRememberMeServices rememberMeServices, AuthenticationManager authenticationManager, SessionAdmissionService admissions, SecurityContextRepository contextRepository) throws Exception {
         logger.debug("🔥 SecurityConfig is loading!");
 
         http.authenticationManager(authenticationManager)
@@ -160,14 +188,21 @@ public class SecurityConfig {
                         })
                 )
                 .addFilterBefore(vaadinSecurityFilter, AuthorizationFilter.class)
+                .addFilterBefore(new LoginCompletionFilter(admissions, rememberMeServices), UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session -> session
-                        .sessionFixation().newSession()
+                        .sessionFixation().changeSessionId()
                 )
                 .securityContext(securityContext -> securityContext
-                        .securityContextRepository(securityContextRepository())
+                        .securityContextRepository(contextRepository)
                 )
-                .formLogin(login -> login
-                        .loginPage(AppRoute.LOGIN.getSecurityRoute())
+                .formLogin(login -> {
+                    login.addObjectPostProcessor(new ObjectPostProcessor<UsernamePasswordAuthenticationFilter>() {
+                            @Override public <O extends UsernamePasswordAuthenticationFilter> O postProcess(O filter) {
+                                filter.setSessionAuthenticationStrategy(admissions);
+                                return filter;
+                            }
+                        });
+                    login.loginPage(AppRoute.LOGIN.getSecurityRoute())
                         .defaultSuccessUrl(AppRoute.ADMIN.getSecurityRoute(), true)
                         .successHandler((request, response, authentication) -> {
                             boolean admin = authentication.getAuthorities().stream()
@@ -175,12 +210,13 @@ public class SecurityConfig {
                             response.sendRedirect((admin ? AppRoute.ADMIN : AppRoute.HOME).getSecurityRoute());
                         })
                         .failureHandler((request, response, failure) -> {
-                            String error = failure instanceof LoginThrottledException ? "throttled"
-                                    : failure instanceof org.springframework.security.authentication.AuthenticationServiceException ? "unavailable" : "invalid";
+                            String error = failure instanceof SessionLimitException ? "sessions"
+                                    : failure instanceof LoginThrottledException ? "throttled"
+                                    : failure instanceof AuthenticationServiceException ? "unavailable" : "invalid";
                             response.sendRedirect(AppRoute.LOGIN.getSecurityRoute() + "?error=" + error);
                         })
-                        .permitAll()
-                )
+                        .permitAll();
+                })
                 .logout(logout -> logout
                         .logoutUrl(AppRoute.LOGOUT.getSecurityRoute())
                         .logoutSuccessUrl(AppRoute.LOGIN.getSecurityRoute())
@@ -189,6 +225,12 @@ public class SecurityConfig {
                 )
                 .rememberMe(rememberMe -> rememberMe
                         .rememberMeServices(rememberMeServices)
+                        .addObjectPostProcessor(new ObjectPostProcessor<RememberMeAuthenticationFilter>() {
+                            @Override public <O extends RememberMeAuthenticationFilter> O postProcess(O filter) {
+                                filter.setSessionAuthenticationStrategy(admissions);
+                                return filter;
+                            }
+                        })
                 );
 
         logger.debug("🔧 SecurityConfig loaded!");

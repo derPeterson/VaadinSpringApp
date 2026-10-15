@@ -43,7 +43,17 @@ public abstract class BrowserFixture {
     @AfterEach
     protected void closePage() {
         try {
-            if (page != null && !page.isClosed()) AllurePlaywright.attachScreenshot("Browser am Testende", page);
+            if (page != null && !page.isClosed()) {
+                AllurePlaywright.attachScreenshot("Browser am Testende", page);
+                // A closed browser intentionally keeps its server slot until timeout. Explicitly
+                // sign out the shared fixture account so independent cases do not consume its limit.
+                page.navigate(path(HOME_ROUTE));
+                var menu = new UserMenu(page); menu.selectTestLanguage(); menu.open();
+                if (page.getByRole(com.microsoft.playwright.options.AriaRole.BUTTON,
+                        new Page.GetByRoleOptions().setName(texts.getBaseLogoutButton()).setExact(true)).isVisible()) {
+                    menu.requestSignOut();
+                } else menu.close();
+            }
         } finally {
             try { if (trace != null) trace.close(); }
             finally { if (context != null) context.close(); }
