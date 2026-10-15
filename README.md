@@ -36,11 +36,14 @@ den zentralen blauen Verlauf `#3a538d` → `#526ebc`.
 | `typography.css` | Inter als Standardschrift für die gesamte Anwendung |
 | `cosmos-theme.css` | Gemeinsame Palette, Lumo-Farbvariablen, Cards, Formulare, App-Layout und markierte Overlays |
 | `cosmos-background.css` | CSS-Sterne, Nebel, Planeten und Animation |
-| `styles.css` | Nur in AdminView geladen; Tabellen, Filter, Pagination und Löschdialog-Akzente |
+| `styles.css` | Nur in AdminView geladen; lokale Tabellen-, Filter-, Pagination- und Dialoganordnung |
 
 Typografie, Cosmos-Theme und Hintergrund werden einmalig in `Application.java`
-eingebunden. `styles.css` wird ausschließlich an `AdminView` geladen; seine allgemeinen
-Selektoren sind auf Admin begrenzt und wirken auch nach einer Navigation nicht auf Home. Die Cosmos-Palette
+eingebunden. `styles.css` bleibt als lokale Ergänzung der Benutzerverwaltung getrennt:
+Filterwerkzeugleiste/-panel, Tabelleninhalte, Pagination und Benutzerdialoge. Gemeinsame
+Palette und Komponentenstandards gehören in `cosmos-theme.css`; `styles.css` ist kein
+allgemeines Reset-Stylesheet. Es wird ausschließlich an `AdminView` geladen; die lokalen
+Selektoren verändern Home auch nach einer Navigation nicht. Die Cosmos-Palette
 gilt für `.cosmos-theme` und die aus diesen Ansichten geöffneten Notifications;
 `HomeView` und `AdminView` verwenden dieselbe Palette, Topbar und Avatar-Popup.
 **Inter gilt für die gesamte Anwendung.**
@@ -119,9 +122,11 @@ das Service-Logo erreichbar. Es werden keine vorgetäuschten Systemstatuswerte a
 
 Dashboard, Konfiguration, Mailtest und Benutzerverwaltung verwenden gemeinsame
 Bereichsüberschriften und Cosmos-Cards. Formulare, Filter und Benutzer-/Informationsdialoge
-verwenden dieselbe Palette und Eingabegestaltung. Tabelle, Pagination sowie die roten
-Löschdialog-Akzente bleiben Admin-Spezialfälle in `styles.css`; dieses Stylesheet wird
-weiterhin nur an AdminView geladen. Der gemeinsame Rest steht in `cosmos-theme.css`.
+verwenden dieselbe Palette und Eingabegestaltung. Die lokale Anordnung von Tabelle,
+Filtern, Pagination und Benutzerdialogen bleibt in `styles.css`; dieses Stylesheet wird
+nur an AdminView geladen. Gemeinsame Standards einschließlich der roten Löschakzente
+stehen in `cosmos-theme.css`; bereits überstimmte oder doppelte Deklarationen werden
+nicht zusätzlich in `styles.css` gehalten.
 Formularpaare und Aktionsleisten können bei wenig Platz umbrechen.
 
 Home und Dashboard verwenden denselben `CosmosSectionHeaderComponent` mit kleiner

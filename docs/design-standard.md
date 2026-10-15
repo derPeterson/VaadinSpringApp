@@ -7,8 +7,11 @@ anderen Ansichten. Neue Entwürfe übernehmen zuerst die bestehenden Bausteine.
 ## Gemeinsame Bausteine
 
 Vaadin Flow bleibt die Komponentenbasis. `cosmos-theme.css` enthält Palette,
-Cards, Formularfelder, Buttons, Navigation und Overlays. `styles.css` ergänzt
-Admin-Tabellen, Filter, Pagination und Benutzerdialoge. Inter wird lokal geladen.
+Cards, Formularfelder, Buttons, Navigation und Overlays. `styles.css` bleibt für
+die lokale Anordnung der Admin-Tabellen, Filter, Pagination und Benutzerdialoge
+getrennt und wird nur an AdminView geladen. Gemeinsame Farben und Komponentenstandards
+werden dort nicht parallel zum Cosmos-Theme definiert; die Datei ist kein allgemeines
+Reset-Stylesheet. Inter wird lokal geladen.
 Formularpaare verwenden `cosmos-form-row` und stehen unter 600 px untereinander.
 
 | Element | Abgestimmte Gestaltung |

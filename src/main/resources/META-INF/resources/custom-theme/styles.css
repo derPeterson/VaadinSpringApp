@@ -1,6 +1,6 @@
-/* Admin-Spezialfälle: Tabelle, Filter, Pagination und destruktive Dialogakzente.
- * Palette, App-Layout, Navigation, Cards, Felder und Buttons stehen in cosmos-theme.css. */
-/* User management: aligned search/actions and optional filter row. */
+/* Lokale Anordnung der Benutzerverwaltung: Tabelle, Filter, Pagination und Dialoginhalte.
+ * Bewusst getrennt vom gemeinsamen Cosmos-Theme; keine allgemeinen Reset-Regeln.
+ * Palette und gemeinsame Komponentenstandards stehen in cosmos-theme.css. */
 .admin-user-filter-bar {
     gap: 0;
     margin-block-start: var(--lumo-space-m);
@@ -11,7 +11,6 @@
     align-items: center;
     gap: var(--lumo-space-m);
     width: 100%;
-    padding-block: var(--lumo-space-s);
 }
 
 .admin-user-toolbar > vaadin-text-field {
@@ -106,7 +105,6 @@
     padding: var(--lumo-space-m);
 }
 
-
 .cosmos-admin vaadin-button.admin-user-filter-reset {
     font-size: 12px;
 }
@@ -160,16 +158,10 @@
     width: 100%;
 }
 
-
-.admin-user-select-filter {
-    width: 160px;
-}
-
 .admin-user-activity-filter {
     width: 340px;
     max-width: 100%;
 }
-
 
 .admin-user-activity-time-picker {
     --vaadin-time-picker-overlay-max-height: 300px;
@@ -188,7 +180,6 @@
     min-width: 0;
     flex: 1 1 0;
 }
-
 
 .admin-users-grid::part(header-cell) {
     font-weight: 600;
@@ -306,11 +297,6 @@ vaadin-dialog.admin-user-dialog::part(content) {
     padding-block: var(--lumo-space-l);
 }
 
-
-vaadin-dialog.admin-user-dialog > [slot="title"] {
-    color: var(--lumo-primary-contrast-color);
-}
-
 .admin-users-grid {
     --vaadin-grid-cell-padding: var(--lumo-space-s) var(--lumo-space-s);
 }
@@ -388,14 +374,6 @@ vaadin-dialog.admin-user-dialog > [slot="title"] {
 
 .admin-user-pagination-number, .admin-user-pagination-arrow {
     min-width: 28px;
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    margin: 0;
-}
-
-.admin-user-pagination-current {
-    border-color: var(--lumo-primary-color);
 }
 
 .admin-user-pagination-ellipsis {
@@ -405,15 +383,6 @@ vaadin-dialog.admin-user-dialog > [slot="title"] {
 @media (max-width: 600px) {
     .admin-user-toolbar {
         gap: var(--lumo-space-xs);
-        flex-wrap: wrap;
-    }
-
-    .admin-user-toolbar > vaadin-text-field {
-        flex-basis: calc(100% - 150px);
-    }
-
-    .admin-user-toolbar-actions {
-        margin-inline-start: auto;
     }
 
     .admin-user-activity-filter {
@@ -448,7 +417,6 @@ vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(overlay) {
     flex-shrink: 0;
 }
 
-
 .admin-user-delete-warning-title,
 .admin-user-delete-name {
     color: var(--lumo-body-text-color);
@@ -464,12 +432,6 @@ vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(overlay) {
     background: var(--cosmos-table-header-background);
 }
 
-
 vaadin-dialog.admin-user-delete-dialog::part(content) {
     padding-block: var(--lumo-space-l);
-}
-
-.admin-user-delete-confirm {
-    background: color-mix(in srgb, var(--lumo-error-color) 50%, var(--lumo-base-color));
-    color: var(--lumo-primary-contrast-color);
 }
