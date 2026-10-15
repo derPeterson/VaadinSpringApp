@@ -41,6 +41,22 @@ final class MarkdownSummary {
         for (String key : List.of("runId", "startedAt", "finishedAt", "commit", "branch", "imageId", "build", "suite", "failureProbe", "browser", "viewport", "uiLanguage", "browserLocale", "browserTimezone", "appUrl", "mailpitUrl", "project", "setup", "tests", "cleanup", "html"))
             text.append("| ").append(labels.get(key)).append(" | ").append(cell(metadata.get(key))).append(" |\n");
         text.append("| Lokale Änderungen | ").append(metadata.getOrDefault("gitStatus", "").toString().isBlank() ? "nein" : "ja; siehe metadata.json").append(" |\n");
+        if ("fast".equals(metadata.get("suite")))
+            text.append("\n**Schnellprüfung:** Nur explizit mit `fast` markierte Kernfälle. Lange Ablaufzeiten, vollständige Rechte-/Sitzungsprüfungen und weitere Spezialfälle sind hier nicht enthalten; `all` bleibt die vollständige Auswahl.\n");
+        if (metadata.containsKey("workersActual")) {
+            text.append("\n## Parallele Worker\n\n")
+                    .append("Angefordert: ").append(metadata.get("workersRequested")).append("; gestartet: ")
+                    .append(metadata.get("workersActual")).append(". Eigene JVM, Browser, Docker-App, H2 und Mailpit je Worker; ein gemeinsames Image.\n\n")
+                    .append("| Worker | Bestanden / gefunden | Aufbau | Abbau | Exitcode | Diagnose |\n| --- | --- | --- | --- | --- | --- |\n");
+            if (metadata.get("workerResults") instanceof List<?> workers) for (Object entry : workers) {
+                if (!(entry instanceof Map<?, ?> data)) continue;
+                String id = cell(data.get("worker"));
+                text.append("| ").append(id).append(" | ").append(data.get("testsPassed")).append(" / ").append(data.get("testsFound"))
+                        .append(" | ").append(cell(data.get("setup"))).append(" | ").append(cell(data.get("cleanup")))
+                        .append(" | ").append(data.get("exitCode")).append(" | [Laufdaten](workers/").append(id)
+                        .append("/metadata.json), [Konsole](workers/").append(id).append("/console.log) |\n");
+            }
+        }
         if ("passed".equals(metadata.get("coverage"))) {
             text.append("\n## Gemessene Browser-Coverage\n\n[JaCoCo-Bericht](coverage/html/index.html), [XML](coverage/jacoco.xml), [CSV](coverage/jacoco.csv). ")
                     .append("Gemessen wurde der serverseitige Anwendungscode im getesteten Docker-JAR, einschließlich Start und Browserabläufen. ")

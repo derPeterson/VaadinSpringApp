@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Tag("browser")
 @Feature("Passwort-Zurücksetzen")
 public class PasswordResetBrowserTest extends BrowserFixture {
+    @Tag("fast")
     @Test
     @DisplayName("RESET-01A: Echte Reset-Mail ermöglicht ein neues Passwort und die Anmeldung")
     @Story("Vom vergessenen Passwort zur erneuten Anmeldung")

@@ -15,6 +15,7 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 @Tag("browser")
 @Feature("Verifikation")
 public class VerificationBrowserTest extends BrowserFixture {
+    @Tag("fast")
     @Test
     @DisplayName("VER-01A: Echte Verifikationsmail aktiviert das Konto und ermöglicht normale Anmeldung")
     @Story("Registrierung bis zur ersten Anmeldung")

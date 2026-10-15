@@ -1,9 +1,55 @@
 # Browserabdeckung und offene Punkte
 
-**Theme-Struktur geprüft am 15.10.2026: 1085 Anwendungs-JUnit-Tests, 34 Helper-/Reportertests und je 100 Browserfälle auf Deutsch/Englisch erfolgreich.**
+**Runner-Nachprüfung am 15.10.2026: 43 Helper-/Reportertests, 34 Fast-Fälle DE/EN und 100 vollständige DE-Browserfälle mit zwei isolierten Workern erfolgreich.**
+Der vorherige Theme-Prüfstand mit 1085 Anwendungs-JUnit-Tests und je 100 DE-/EN-Fällen
+bleibt unten als eigener Prüfschritt erhalten.
 Bedienung und Aufbau stehen in der [Browser-Testanleitung](README.md).
 Wichtige Abschlüsse bleiben unter [Meilensteine](../docs/meilensteine/README.md)
 unabhängig von bereinigbaren lokalen Testausgaben erhalten.
+
+## Fast-Modus und isolierte Parallelisierung (15.10.2026)
+
+Branch `feature/browser-tests-fast-parallel`, Ausgangscommit `003f6ac7`;
+Runner-/Testmarkierungs- und Dokumentationsänderungen lagen uncommittet vor.
+Anwendungsquellen und Styles wurden dafür nicht geändert. Die vorhandenen 100
+Browserfälle bleiben erhalten; `fast` ist eine bewusst markierte Teilmenge mit 34 Fällen.
+Auswahl, Gründe und Messgrenzen stehen in der [Testanleitung](README.md#schnellprüfung-und-parallele-ausführung).
+
+| Prüfung | Ergebnis |
+| --- | --- |
+| Java 25 / Helper und Reporter | 43/43; keine Fehler, Fehlschläge oder Skips |
+| Fast DE sequenziell | 34/34; Aufbau, Abbau und Bericht erfolgreich |
+| Fast DE mit zwei Workern | 34/34; dieselben Fall-/Parameteridentitäten wie sequenziell, keine Doppelungen |
+| Fast EN mit zwei Workern und Coverage | 34/34; gemeinsamer JaCoCo-Bericht gegen das geprüfte JAR erfolgreich |
+| All DE mit zwei Workern und normalem Image-Build (Cache) | 100/100, 54 bzw. 46 Fälle je Worker; keine Fehler/Skips, identische Image-ID beider Worker, Aufbau/Abbau und gemeinsamer Bericht erfolgreich |
+| Absichtlicher Fehler-Probelauf | 1 erwarteter Fehlschlag, Exitcode 1 und roter Gesamtbericht; eigener Abbau erfolgreich |
+| Kontrollierter Abbruch nach Aufbau zweier Worker | Exitcode 23 des temporären QA-Helfers; beide eigenen Projekte vollständig abgebaut, `interrupted` samt Endzeit gespeichert |
+
+In der DE-Einzelmessung sank die Zeitspanne aller 34 Fälle von **3:53 auf 2:16 min**;
+der gesamte Java-Runner benötigte **4:21 bzw. 2:42 min**. Starter-Vorbereitung davor
+ist ausgeschlossen. Der sequenzielle Lauf rief den Image-Build mit Cache auf,
+der parallele Vergleich verwendete dasselbe Image mit `-NoBuild`. Dies ist keine
+Dauerzusage und kein langfristiger Durchschnitt. Mehr Worker benötigen mehr CPU/RAM.
+
+Geprüft wurde die reale Zwei-Worker-Ausführung. Die Verteilung für 1–4 Worker ist
+zusätzlich durch Helpertests abgedeckt; vier gleichzeitige Docker-Umgebungen wurden
+hier nicht ausgeführt. Der Abbruchnachweis gilt für kontrollierten JVM-Shutdown,
+nicht für einen harten Betriebssystem-/Rechnerabbruch. Die beiden Probeläufe sind
+keine bestandenen fachlichen Browserläufe und werden nicht in die Erfolgszahlen addiert.
+
+Der vollständige parallele DE-Lauf benötigte **12:59 min** für den Java-Runner;
+die Fallspanne betrug **12:26 min**. Die 100 Fall-/Parameteridentitäten stimmen exakt
+mit dem vorherigen vollständigen DE-Lauf überein; alle 34 Fast-Fälle sind enthalten.
+Dies ist eine aktuelle Einzelmessung, kein neuer gepaarter Vergleich mit einem
+sequenziellen `all`-Lauf. Englisch wurde für den neuen Runner mit `fast` geprüft,
+nicht nochmals mit `all`. Nach der Prüfung blieben von den eigenen Testprojekten
+keine Container, Netzwerke oder Volumes zurück.
+
+Die Fast-Coverage prüft die technische Zusammenführung serverseitiger Java-Rohdaten.
+Es entstehen ein gemeinsamer HTML-/Markdown-Testbericht und nur ein geprüftes JAR,
+keine Kopie je Worker. Dies ist keine CSS-/JavaScript-Coverage. Anwendungs-JUnit und
+dessen Coverage wurden in dieser Runner-Nachprüfung nicht erneut ausgeführt; der
+vorherige vollständige Anwendungsprüfstand folgt unten.
 
 ## Vollständige Theme-Prüfung
 

@@ -19,6 +19,7 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 @Tag("browser")
 @Feature("Anmeldung und Zugriffsrechte")
 public class AuthenticationBrowserTest extends BrowserFixture {
+    @Tag("fast")
     @Test
     @DisplayName("AUTH-01A: Admin meldet sich an und erreicht das Dashboard")
     @Story("Admin-Anmeldung")
@@ -34,6 +35,7 @@ public class AuthenticationBrowserTest extends BrowserFixture {
         signInAsAdmin();
     }
 
+    @Tag("fast")
     @Test
     @DisplayName("AUTH-01B: Falsches Passwort wird verständlich abgelehnt")
     @Story("Abgelehnte Anmeldung")
@@ -53,6 +55,7 @@ public class AuthenticationBrowserTest extends BrowserFixture {
         login.assertFormVisible();
     }
 
+    @Tag("fast")
     @Test
     @DisplayName("AUTH-01C: Unbekanntes Konto erhält denselben Anmeldefehler")
     @Story("Abgelehnte Anmeldung")
@@ -72,6 +75,7 @@ public class AuthenticationBrowserTest extends BrowserFixture {
         login.assertFormVisible();
     }
 
+    @Tag("fast")
     @Test
     @DisplayName("AUTH-01D: Anonyme Sitzung kann den Adminbereich nicht öffnen")
     @Story("Anonymer Zugriff")
@@ -87,6 +91,7 @@ public class AuthenticationBrowserTest extends BrowserFixture {
         assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName(texts.getAdminDashboardTitle()).setExact(true))).hasCount(0);
     }
 
+    @Tag("fast")
     @Test
     @DisplayName("AUTH-02A: Logout entzieht den Zugriff auch einem bestehenden Tab")
     @Story("Abmeldung und bestehende Tabs")
@@ -116,6 +121,7 @@ public class AuthenticationBrowserTest extends BrowserFixture {
         otherTab.close();
     }
 
+    @Tag("fast")
     @Test
     @DisplayName("SEC-01A: Normaler Benutzer kann sich anmelden, aber keine Adminfunktionen nutzen")
     @Story("Zugriffsrechte normaler Benutzer")

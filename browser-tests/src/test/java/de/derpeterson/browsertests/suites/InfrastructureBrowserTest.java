@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag("browser")
 @Feature("Infrastruktur")
 public class InfrastructureBrowserTest extends BrowserFixture {
+    @Tag("fast")
     @Test
     @DisplayName("INFRA-01: Startseite, Logo, Avatare und Sprachflaggen werden geladen")
     @Story("Startseite und Bilder")
@@ -41,6 +42,7 @@ public class InfrastructureBrowserTest extends BrowserFixture {
         for (Locator avatar : avatars.all()) assertImageLoaded(avatar);
     }
 
+    @Tag("fast")
     @Test
     @DisplayName("INFRA-02: Loginformular wird im Browser gerendert")
     @Story("Loginformular")

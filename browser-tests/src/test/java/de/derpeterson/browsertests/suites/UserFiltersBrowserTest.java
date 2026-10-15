@@ -93,6 +93,7 @@ public class UserFiltersBrowserTest extends BrowserFixture {
         assertThat(users.emailCells(email)).hasCount(1);
     }
 
+    @Tag("fast")
     @Test
     @DisplayName("USER-11A: Filterentwürfe wirken erst nach Anwenden; Badge-X übernimmt keine anderen Entwürfe")
     @Description("""
@@ -131,6 +132,7 @@ public class UserFiltersBrowserTest extends BrowserFixture {
         AllurePlaywright.attachScreenshot("Entwürfe und aktive Filter korrekt getrennt", page);
     }
 
+    @Tag("fast")
     @Test
     @DisplayName("USER-11B: Uhrzeit braucht ein Datum; Overlay scrollt zum Platzhalter ohne einen Wert zu übernehmen")
     @Description("""

@@ -1,9 +1,11 @@
 ﻿param(
     [switch]$Headed,
-    [ValidateSet('all', 'cosmos-design', 'login-layout', 'login-checks', 'infrastructure', 'authentication', 'registration', 'verification', 'password-reset', 'account-lifecycle', 'presentation', 'token-configuration', 'user-management', 'user-filters', 'user-access', 'session-security', 'blocked-links', 'security-journeys', 'remember-me', 'user-status', 'configuration', 'admin-mail', 'token-expiry', 'remaining-configuration', 'remaining-coverage')]
+    [ValidateSet('all', 'fast', 'cosmos-design', 'login-layout', 'login-checks', 'infrastructure', 'authentication', 'registration', 'verification', 'password-reset', 'account-lifecycle', 'presentation', 'token-configuration', 'user-management', 'user-filters', 'user-access', 'session-security', 'blocked-links', 'security-journeys', 'remember-me', 'user-status', 'configuration', 'admin-mail', 'token-expiry', 'remaining-configuration', 'remaining-coverage')]
     [string]$Suite = 'all',
     [ValidateSet('de', 'en')]
     [string]$Language = 'de',
+    [ValidateRange(1, 4)]
+    [int]$Workers = 1,
     [switch]$NoBuild,
     [switch]$Coverage,
     [switch]$FailureProbe,
@@ -45,7 +47,7 @@ if ($Trace) {
 $javaArguments = @('-Dfile.encoding=UTF-8', '-cp', $classpath)
 if (-not $Report) { $javaArguments += "-javaagent:$targetPath/tools/aspectjweaver.jar" }
 $javaArguments += @('de.derpeterson.browsertests.BrowserTestRunner', $modulePath)
-if (-not $Report) { $javaArguments += @('--suite', $Suite, '--language', $Language) }
+if (-not $Report) { $javaArguments += @('--suite', $Suite, '--language', $Language, '--workers', [string]$Workers) }
 if ($Headed) { $javaArguments += '--headed' }
 if ($NoBuild) { $javaArguments += '--no-build' }
 if ($Coverage) { $javaArguments += '--coverage' }

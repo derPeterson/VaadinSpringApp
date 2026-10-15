@@ -41,6 +41,7 @@ public class RegistrationBrowserTest extends BrowserFixture {
         login.assertRejected();
     }
 
+    @Tag("fast")
     @Test
     @DisplayName("REG-02A: Fehlende Pflichtangaben werden markiert und lassen sich korrigieren")
     @Story("Pflichtangaben und Korrektur")
@@ -65,6 +66,7 @@ public class RegistrationBrowserTest extends BrowserFixture {
         registration.assertSubmitted(email);
     }
 
+    @Tag("fast")
     @Test
     @DisplayName("REG-02B: Ungültige E-Mail und abweichende Passwortbestätigung sind korrigierbar")
     @Story("Eingabehinweise und Korrektur")

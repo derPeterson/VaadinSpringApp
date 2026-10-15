@@ -87,6 +87,13 @@
   keep infrastructure, authentication, registration, verification, password-reset,
   account-lifecycle, presentation and token-configuration cases separate. Shared UI actions belong in
   `pages/`, not in one growing test class. Select suites with `-Suite`.
+  `-Suite fast` selects existing cases explicitly marked `@Tag("fast")`; keep the
+  documented case list in browser-tests/README.md synchronized. All marked cases
+  remain in `all`; do not duplicate test implementations or weaken assertions.
+  `-Workers 2` partitions whole classes into isolated JVM/Docker/H2/Mailpit stacks.
+  Preserve sequential JUnit execution inside each worker. Never enable shared-fixture
+  thread parallelism as a shortcut. Build the image once and pin all workers to its ID;
+  compile shared/browser sources once before forking, not concurrently per worker.
   Document each browser case independently with its ID, area, steps and expected result.
   Keep browser documentation and reports independent of the former manual-test template.
   Keep technical rules, transactions and concurrency in JUnit/persistence tests; browser

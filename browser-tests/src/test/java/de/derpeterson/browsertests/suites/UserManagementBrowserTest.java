@@ -104,6 +104,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
         signInAsCreatedUser(email, "ABCDEFG!");
     }
 
+    @Tag("fast")
     @Test
     @DisplayName("USER-06B: Bearbeitung bleibt nach erneutem Öffnen gespeichert; leeres Passwort erhält die Anmeldung")
     @Description("""
@@ -132,6 +133,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
         signInAsCreatedUser(changed, BrowserTestAccounts.USER_PASSWORD);
     }
 
+    @Tag("fast")
     @Test
     @DisplayName("USER-06C: Löschabbruch erhält das Konto; Bestätigung entfernt genau das ausgewählte Konto")
     @Description("""
@@ -269,6 +271,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
         assertThat(total).hasText(texts.getAdminUsersAccountCount(original));
     }
 
+    @Tag("fast")
     @Test
     @DisplayName("USER-12A: Passwortbestätigung bleibt optional, zeigt Fehler erst nach Blur und wird beim Leeren zurückgesetzt")
     @Description("""
@@ -311,6 +314,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
         form.cancel();
     }
 
+    @Tag("fast")
     @Test
     @DisplayName("USER-12B: Schließen im neuen Löschdialog erhält Benutzer und offenes Bearbeitungsformular")
     @Description("""

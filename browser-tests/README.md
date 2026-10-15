@@ -24,6 +24,8 @@ Eine globale Playwright- oder Allure-Installation ist nicht erforderlich.
 
 | Aktion | Befehl |
 | --- | --- |
+| Schnelle Kernprüfung in zwei isolierten Umgebungen | `.\browser-tests\run.ps1 -Suite fast -Workers 2 -Language de` |
+| Alle Fälle auf zwei Umgebungen verteilen | `.\browser-tests\run.ps1 -Suite all -Workers 2 -Language de` |
 | Tests live im sichtbaren Browser verfolgen | `.\browser-tests\run.ps1 -Headed` |
 | Nur Benutzerfilter prüfen | `.\browser-tests\run.ps1 -Suite user-filters -Language de` |
 | Nur Benutzerverwaltung prüfen | `.\browser-tests\run.ps1 -Suite user-management -Language de` |
@@ -33,8 +35,8 @@ Eine globale Playwright- oder Allure-Installation ist nicht erforderlich.
 | Gespeicherten Trace öffnen | `.\browser-tests\run.ps1 -Trace 'C:\PFAD\ZUM\trace.zip'` |
 | Absichtlich einen roten Bericht erzeugen | `.\browser-tests\run.ps1 -NoBuild -FailureProbe` |
 
-`-Suite`, `-Language`, `-Headed`, `-NoBuild` und `-Coverage` lassen sich kombinieren.
-Standardwerte sind `all` und `de`. `-NoBuild` verwendet das vorhandene App-Image;
+`-Suite`, `-Language`, `-Workers`, `-Headed`, `-NoBuild` und `-Coverage` lassen sich kombinieren.
+Standardwerte sind `all`, `de` und `-Workers 1` (sequenziell). `-NoBuild` verwendet das vorhandene App-Image;
 nach Änderungen an Anwendung, gemeinsamen Quellen, Übersetzungen oder Styles
 zuerst einen Lauf mit Image-Build starten. Sonst kann der Browser einen alten Stand prüfen.
 
@@ -74,7 +76,8 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 19 |
 | `cosmos-design` | Fünf Kontoansichten, mobiler Mailablauf, Copyright in UI/Mails, gemeinsames Theme sowie Home-/Adminnavigation bei drei Größen | 11 |
-| `all` | Alle 20 Testklassen | 100 |
+| `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
+| `all` | Alle 20 Testklassen einschließlich der Fast-Fälle | 100 |
 
 UI-01A prüft die direkte Datumseingabe mit lokalisiertem Beispiel und anschließendem
 Registrieren ohne Enter/Escape. UI-01B prüft getrennt die Auswahl über das Kalender-Icon,
@@ -97,6 +100,106 @@ Passwortfehler sowie die beiden sicheren Schließen-Aktionen der Dialoge.
 Die vollständigen Schritte und Erwartungen stehen pro Fall in `@Description`
 und werden automatisch in den Markdown-Bericht übernommen. Die Test-ID erscheint
 in `@DisplayName`, im Allure-Bericht und in der Abdeckungsübersicht.
+
+## Schnellprüfung und parallele Ausführung
+
+`fast` beantwortet: Funktionieren die wichtigsten sichtbaren Abläufe nach einer
+kleinen Änderung noch? Die Auswahl besteht aus vorhandenen Fällen mit JUnit
+`@Tag("fast")`. `all` führt dieselben Fälle und alle übrigen aus; es gibt keine
+zweite, abweichende Implementierung der Kernprüfungen. Im Bericht sind die
+Schnellprüfung und ihre Grenzen ausdrücklich gekennzeichnet. Der `fast`-Tag ist
+auch im Allure-Bericht sichtbar und dort filterbar.
+
+| Bestehende Fälle im Schnelllauf | Warum enthalten |
+| --- | --- |
+| INFRA-01/02 | Start, Ressourcen und echtes Loginformular |
+| AUTH-01A–D, AUTH-02A, SEC-01A | Anmeldung, Fehler, Gast-/Benutzerrechte und Logout |
+| REG-02A/B | Pflichtfelder, E-Mail und Passwortbestätigung |
+| VER-01A, RESET-01A | Echte SMTP-Mail, Aktivierung und Passwortreset bis zur Anmeldung |
+| LANG-01C, UI-01B, UI-02A | Sprache, Kalenderbedienung und Tastaturlogin |
+| COSMOS-01A–E, COSMOS-04, COSMOS-05A–C | Kontoansichten und Home/Admin bei schmalen und breiten Fenstern, Theme und Navigation |
+| USER-06B/C, USER-12A/B | Bearbeiten, sicheres Löschen/Abbrechen und Passwortvalidierung beim richtigen Ereignis |
+| USER-11A/B | Filterentwürfe, Anwenden, Badges, Datumabhängigkeit und Zeitoverlay |
+| CONFIG-05A/B/E | SideNav, Feldinfo und Speichern per Enter |
+| MAIL-01 | Formularfehler und tatsächlich empfangene Unicode-Testmail |
+
+Nicht enthalten sind unter anderem die echten Tokenablauf-Wartezeiten, automatische
+Abwesenheit, Chromium-Neustarts für Remember-me, die vollständige Rechte-/Sitzungsmatrix,
+alle Konfigurationsvarianten und die große Pagination-Anlage. Das macht diese Prüfungen
+nicht unwichtig: Vor Freigaben sowie nach Änderungen an Sicherheit, Konfiguration oder
+Kontolebenszyklus `all` beziehungsweise die passende fachliche Suite ausführen.
+`fast` erkennt auch nicht automatisch, welche Dateien geändert wurden. Neue Fälle bewusst
+nach häufigem Fehlerrisiko, schnellem Ablauf und zusätzlichem Erkenntnisgewinn markieren.
+Bei einem parametrisierten markierten Fall werden **alle** seine Varianten ausgeführt.
+
+`-Workers 2` verteilt ganze Testklassen auf zwei separate Java-Prozesse. Jeder hat
+seinen eigenen Chromium, Docker-Projektnamen, H2-Datenbestand, Mailpit und freie lokale
+Ports. Innerhalb eines Workers laufen die Fälle nacheinander: Globale Konfiguration,
+Kontenzahlen und statische Playwright-Objekte werden niemals zwischen gleichzeitig
+laufenden Fällen geteilt. Die Gruppierung verwendet grobe feste Klassengewichte und
+benötigt keine alten Run-Ordner. Bei einer einzelnen Klasse startet nur ein Worker.
+
+Zulässig sind 1 bis 4 Worker; für den lokalen Rechner zunächst 2 verwenden. Mehr Worker
+benötigen zusätzliche CPU/RAM und sind nicht automatisch schneller. Die beiden eigenen
+Ports werden vor dem Start geprüft/reserviert und an Docker übergeben. Bei einer
+externen Kollision scheitert der Aufbau, bevor die Tests starten. Im Parallelmodus
+werden die manuell gesetzten `BROWSER_TEST_APP_PORT`/`BROWSER_TEST_MAILPIT_PORT` durch
+diese eigenen Worker-Ports ersetzt; sequenziell behalten sie ihre bisherige Bedeutung.
+
+Der Elternrunner baut das App-Image einmal und gibt dessen unveränderliche Image-ID
+an alle Worker weiter. `-NoBuild` überspringt nur den Image-Build und muss zum Quellstand
+passen. Der Starter kompiliert Shared/Testcode einmal vor dem Aufteilen. Zwei parallele
+Starter gegen denselben Arbeitsordner sind dafür nicht erforderlich und sollen wegen
+der gemeinsamen Maven-Ausgabeordner vermieden werden.
+
+Ein Run-Ordner enthält einen gemeinsamen Markdown-/Allure-Bericht und unter `workers/`
+jeweils Metadaten und Konsolenlogs. Screenshots und Traces werden in den gemeinsamen
+Nachweisordner verschoben, nicht verdoppelt; HTML wird nur einmal erzeugt. Exitcode,
+Fallzahlen, Nachweise, Image-ID und Abbau jedes Workers müssen stimmen. Fehlende,
+doppelte, übersprungene oder fehlgeschlagene Fälle werden nicht als Erfolg gewertet.
+Es gibt keine automatischen Wiederholungen, die einen ersten Fehlschlag verdecken.
+`-Coverage` vereinigt die JaCoCo-Rohdaten aller Worker und berichtet gegen dasselbe
+geprüfte JAR; Prozentwerte werden niemals gemittelt oder addiert.
+
+Normaler Abschluss und Fehler bauen nur die eigenen Container/Volumes ab. Beim
+kontrollierten Eltern-Abbruch beendet dieser auch seine Worker-Prozesse und räumt deren
+konkrete Compose-Projekte auf. Bei hartem Betriebssystemabbruch kann kein Programm
+Aufräumen garantieren: dann ausschließlich die eigenen `project`-Werte aus
+`workers/*/metadata.json` verwenden. Keine globale Docker-Bereinigung.
+
+### Gemessener Schnelllauf und Prüfumfang (15.10.2026)
+
+Einzelmessung auf dem lokalen Windows-Rechner, Java 25 und identisches App-Image;
+keine zugesicherte Dauer und kein Langzeitmittel:
+
+| DE `fast` | Sequenziell | Zwei Worker |
+| --- | ---: | ---: |
+| Genau dieselben Browserfälle | 34/34 | 34/34 |
+| Zeitspanne erster Fallstart bis letztes Fallende | 3:53 min | 2:16 min |
+| Gesamter Java-Runner einschließlich Docker-Aufbau/-Abbau und Bericht | 4:21 min | 2:42 min |
+
+Die reine Fallspanne sank in diesem Vergleich um rund 41 %. Der erste Lauf rief
+den Image-Build mit vorhandenem Cache auf, der parallele Vergleich nutzte `-NoBuild`;
+beide prüften dieselbe Image-ID. Die Vorbereitungszeit des PowerShell-Starters
+(Shared/Testcode kompilieren) liegt vor der Runner-Messung und ist nicht enthalten.
+Mehrere Worker verbrauchen mehr CPU/RAM; bei anderer Last können die Zeiten abweichen.
+
+Auch `all -Workers 2 -Language de` ist mit 100/100 Fällen erfolgreich: **12:59 min**
+für den Java-Runner, davon **12:26 min** Fallspanne. Beide Worker prüften dasselbe
+Image, der normale Image-Build wurde einmal mit Cache aufgerufen. Alle 100
+Fall-/Parameteridentitäten stimmen mit dem vorherigen vollständigen DE-Lauf überein;
+kein Fall fehlt und keiner läuft doppelt. Ein neuer sequenzieller `all`-Vergleich
+wurde hierfür nicht gestartet.
+
+Zusätzlich sind 34 englische Fast-Fälle mit zwei Workern und zusammengeführter
+Coverage erfolgreich. 43 Helper-/Reportertests prüfen unter anderem die Tag-Auswahl,
+die eindeutige Klassenverteilung, zulässige Reihenfolgeunterschiede, fehlende/mehrfache
+Belege und die Fehlerdarstellung. Ein absichtlicher Fehlerfall liefert den erwarteten
+Exitcode 1 samt rotem Bericht und Abbau. Ein temporärer QA-Helfer löste nach dem Aufbau
+beider Worker einen kontrollierten JVM-Abbruch aus: beide Projekte wurden entfernt,
+der Lauf als `interrupted` mit Endzeit gespeichert. Dies ist kein Nachweis für das
+Aufräumen nach hartem Betriebssystem-/Rechnerabbruch. Vollständiger Prüfstand:
+[Abdeckung](abdeckung.md).
 
 ## Code-Coverage der Browserabläufe
 
@@ -292,7 +395,9 @@ Die Testquellen liegen unter `browser-tests/src/test/java/de/derpeterson/browser
 | `mail/MailpitInbox` | Nur eigene empfangene Testmail lesen und deren echten Link verwenden |
 | `i18n/UiTexts` | Gemeinsame Übersetzungsgetter mit expliziter Sprache |
 | `BrowserFixture` | Browserkontext, Screenshots und Traces |
-| `BrowserSuites` | Auswahl mit `-Suite` |
+| `BrowserSuites` | Fachliche Auswahl mit `-Suite` |
+| `BrowserExecutionPlan` | Fast-Markierungen, sequenzielle JUnit-Auswahl und eindeutige Klassenverteilung |
+| `BrowserParallelWorkers` | Getrennte JVMs/Ports, Prozessgrenzen und gemeinsame Belege |
 | `BrowserRoutes` | Gemeinsame Routen als lokale Pfade und genaue URL-Erwartungen |
 | `BrowserTestRunner` | Eigene Docker-Umgebung, JUnit-Ausführung, Abbau und Allure-Erzeugung |
 | `BrowserCoverage` | Optionaler JaCoCo-Agent, sichere Extraktion der geprüften JAR-Klassen und statischer Code-Coverage-Bericht |

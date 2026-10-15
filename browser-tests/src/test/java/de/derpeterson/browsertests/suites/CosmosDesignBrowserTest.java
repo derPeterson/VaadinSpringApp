@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag("browser")
 @Feature("Gemeinsames Cosmos-Design")
 public class CosmosDesignBrowserTest extends BrowserFixture {
+    @Tag("fast")
     @ParameterizedTest(name = "{0}: Fünf Kontoansichten bei {1}×{2}")
     @CsvSource({"COSMOS-01A,320,568", "COSMOS-01B,390,844", "COSMOS-01C,844,390", "COSMOS-01D,1280,900", "COSMOS-01E,1280,1200"})
     @Story("Einheitliches responsives Design")
@@ -138,6 +139,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
         }
     }
 
+    @Tag("fast")
     @Test
     @DisplayName("COSMOS-04: Fehlermeldung und Home verwenden das gemeinsame Cosmos-Theme")
     @Story("Gemeinsames Theme und Notificationgestaltung")
@@ -168,6 +170,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
         assertTrue(page.locator("body").evaluate("el => getComputedStyle(el).fontFamily").toString().contains("Inter"));
     }
 
+    @Tag("fast")
     @ParameterizedTest(name = "{0}: Home und Admin bei {1}×{2}")
     @CsvSource({"COSMOS-05A,390,844", "COSMOS-05B,844,390", "COSMOS-05C,1280,900"})
     @Story("App-Kopfzeile und erreichbare Adminnavigation")

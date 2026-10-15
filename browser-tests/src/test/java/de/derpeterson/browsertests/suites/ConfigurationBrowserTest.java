@@ -71,6 +71,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
             settings.enter(label, "4"); settings.save(); settings.reload(); assertThat(settings.input(label)).hasValue("4");
         } finally {settings.enter(label, original); settings.save();}
     }
+    @Tag("fast")
     @Test @DisplayName("CONFIG-05A: SideNav auf- und zuklappen, Tastatur und Sprache ohne Formularverlust")
     @Description("""
         1. Allgemein über die native Konfigurationshierarchie öffnen und einen ungespeicherten Namen eingeben.
@@ -115,6 +116,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         }
     }
 
+    @Tag("fast")
     @Test @DisplayName("CONFIG-05B: Klick-Tooltip mit Backend-Standardwert, Regeln, Außenklick und Sprachwechsel")
     @Description("""
         1. Allgemein öffnen: Dienstname verwendet den tatsächlichen Default der isolierten Umgebung als Platzhalter.
@@ -209,6 +211,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         assertEquals(29, total);
     }
 
+    @Tag("fast")
     @Test @DisplayName("CONFIG-05E: Enter im Eingabefeld speichert den aktuellen Wert ohne vorherigen Fokuswechsel")
     @Description("""
         1. Allgemein öffnen und den ursprünglichen Servicenamen merken.

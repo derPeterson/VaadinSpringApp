@@ -4,6 +4,12 @@ Lokale Docker-Testumgebung mit Mailpit und H2: [Docker-Anleitung](docs/docker/RE
 
 Automatisierte Browserprüfungen mit Java, JUnit und Allure in eigener Docker-Testumgebung; getrennte Suites für Infrastruktur, Anmeldung und Zugriffsrechte sowie Registrierung, Verifikation und Passwortreset über echte Testmails, Einzelvalidierung, Sprachpräferenz und grundlegende Bedienung: [Browser-Test-Anleitung](browser-tests/README.md).
 
+Schnelle Kernprüfung: `.\browser-tests\run.ps1 -Suite fast -Workers 2 -Language de`.
+`fast` wählt gezielt bestehende Kernfälle; `-Workers 2` verteilt sie auf getrennte
+Docker-/H2-/Mailpit-Umgebungen mit gemeinsamem Bericht. Auch `all` unterstützt
+`-Workers 2`; Standard bleibt sequenziell. Auswahl und Grenzen stehen in der
+[Browser-Testanleitung](browser-tests/README.md#schnellprüfung-und-parallele-ausführung).
+
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
 > Theme-Strukturprüfung vom 15.10.2026: Java 25, 1.085 Anwendungstests, 34 Helper-/Reportertests und je 100 Browserfälle auf Deutsch/Englisch erfolgreich. [Ergebnisse und Grenzen](browser-tests/abdeckung.md).

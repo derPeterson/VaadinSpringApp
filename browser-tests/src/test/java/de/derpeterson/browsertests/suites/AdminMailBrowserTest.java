@@ -17,6 +17,7 @@ import static de.derpeterson.app.config.AppRouteConstants.*;
 
 @Tag("browser") @Feature("Admin-Testmail")
 public class AdminMailBrowserTest extends BrowserFixture {
+    @Tag("fast")
     @Test @DisplayName("MAIL-01: Eingabefehler korrigieren und echte Unicode-Testmail in Mailpit empfangen")
     @Description("""
         1. Als Admin Mailtest öffnen; ungültigen Empfänger und anschließend leeren Betreff/Text einzeln absenden.

@@ -16,6 +16,7 @@ import java.time.LocalDate;
 
 @Tag("browser") @Feature("Sprache und Bedienung")
 public class PresentationBrowserTest extends BrowserFixture {
+    @Tag("fast")
     @Test @DisplayName("LANG-01C: Sichtbares Startseitenmenü wechselt in beide Sprachen")
     @Story("Verfügbarer Sprachschalter")
     @Description("""
@@ -78,6 +79,7 @@ public class PresentationBrowserTest extends BrowserFixture {
         page.setViewportSize(844,390);form.submit();form.assertBirthDateCommitted(LocalDate.of(1990,1,1));form.assertSubmitted(email);AllurePlaywright.attachScreenshot("Bedienbares Querformat",page);
     }
 
+    @Tag("fast")
     @Test @DisplayName("UI-01B: Geburtstag über das Kalender-Icon auswählen und wiederfinden")
     @Story("Mobiler Kalender")
     @Description("""
@@ -98,6 +100,7 @@ public class PresentationBrowserTest extends BrowserFixture {
         AllurePlaywright.attachScreenshot("Registrierung nach Kalenderauswahl", page);
     }
 
+    @Tag("fast")
     @Test @DisplayName("UI-02A: Loginfelder sind per Tab und Enter bedienbar")
     @Story("Tastaturbedienung")
     @Description("""

@@ -96,4 +96,19 @@ class MarkdownSummaryTest {
         assertTrue(report.contains("Testumgebung nicht erreichbar."));
         assertFalse(report.contains("- [x]"));
     }
+    @Test void fastParallelReportShowsItsScopeAndWorkerDiagnostics() throws Exception {
+        var metadata = complete();
+        metadata.put("suite", "fast"); metadata.put("workersRequested", 2); metadata.put("workersActual", 2);
+        metadata.put("workerResults", List.of(Map.of("worker", "1", "testsPassed", 2, "testsFound", 2,
+                "setup", "passed", "cleanup", "passed", "exitCode", 0)));
+        var test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
+        String report = MarkdownSummary.render(metadata, List.of(test));
+        assertTrue(report.contains("Schnellprüfung"));
+        assertTrue(report.contains("`all` bleibt die vollständige Auswahl"));
+        assertTrue(report.contains("Angefordert: 2; gestartet: 2"));
+        assertTrue(report.contains("workers/1/metadata.json"));
+        metadata.put("tests", "failed");
+        assertTrue(MarkdownSummary.render(metadata, List.of(test)).contains("UNVOLLSTÄNDIG / FEHLER"));
+    }
+
 }
