@@ -95,10 +95,15 @@
   thread parallelism as a shortcut. Build the image once and pin all workers to its ID;
   compile shared/browser sources once before forking, not concurrently per worker.
   Document each browser case independently with its ID, area, steps and expected result.
-  Keep browser documentation and reports independent of the former manual-test template.
+  Keep browser documentation and reports independent of the manual-test catalogue.
   Keep technical rules, transactions and concurrency in JUnit/persistence tests; browser
   tests check visible UI behavior and user journeys. Manual checks cover special cases
   requiring human judgment or unsuitable for automation.
+  Manual special checks live under docs/manual-tests/: keep only human acceptance
+  and explicit gaps, mark future browser/operations/integration cases accordingly.
+  Remove their manual duplication after a successful automated replacement. Keep
+  properties.example, anwendung.md and vorlage.md minimal and synchronized;
+  vorlage_ausgefüllt.md contains fictional examples only, never real QA evidence.
   Use the shared MessageTexts getters through UiTexts for browser labels/messages,
   and the shared AppRouteConstants/AppConstants for existing route/title/avatar contracts;
   BrowserRoutes derives local browser paths (never security wildcards). Read original

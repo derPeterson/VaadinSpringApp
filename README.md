@@ -10,6 +10,10 @@ Docker-/H2-/Mailpit-Umgebungen mit gemeinsamem Bericht. Auch `all` unterstützt
 `-Workers 2`; Standard bleibt sequenziell. Auswahl und Grenzen stehen in der
 [Browser-Testanleitung](browser-tests/README.md#schnellprüfung-und-parallele-ausführung).
 
+Gezielte [manuelle Sonderprüfungen](docs/manual-tests/README.md) ergänzen die Automatisierung:
+menschliche Abnahme, echte Geräte/Mailclients und klar markierte noch offene Testfolgen.
+Eine ausgefüllte Lernvorlage zeigt Befunde, Korrektur und Nachtest.
+
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
 > Theme-Strukturprüfung vom 15.10.2026: Java 25, 1.085 Anwendungstests, 34 Helper-/Reportertests und je 100 Browserfälle auf Deutsch/Englisch erfolgreich. [Ergebnisse und Grenzen](browser-tests/abdeckung.md).
@@ -337,7 +341,7 @@ $env:APP_SECURITY_EXPOSE_H2_CONSOLE = 'false'
 
 **Zwei Konfigurationsebenen beachten:** `DatabaseInitializer` übernimmt `app.config.defaults.<Schlüssel>` nur für noch fehlende Datenbankeinträge. Bereits gespeicherte Werte werden durch geänderte `APP_CFG_*`-Vorgaben nicht überschrieben. Die Schlüssel definiert `model/enums/ConfigEntry.java`; Änderungen vorhandener Werte sind im Adminbereich möglich. `service.name` bestimmt den Anzeigenamen, `base.url` die Basis für Mail-Links und muss zur erreichbaren URL passen. Für die Erstbefüllung ist beispielsweise `app.config.defaults.base.url=http://localhost:8080/` möglich.
 
-SMTP-Sender und Remember-me-Dienst lesen ihre Einstellungen bei der Bean-Erstellung. Änderungen daran erfordern einen Neustart; bei einer frischen Datenbank erfolgt die Erstbefüllung erst danach durch einen `CommandLineRunner`. Die Wirksamkeit der Vorgaben beim allerersten Start ist deshalb noch zu prüfen (`config/MailConfig.java`, `security/SecurityConfig.java`, `config/DatabaseInitializer.java`).
+SMTP-Sender und Remember-me-Dienst lesen ihre Einstellungen bei der Bean-Erstellung. `ConfigService` berücksichtigt konfigurierte Defaults bereits vor der Erstbefüllung durch den `DatabaseInitializer`; ein grundsätzlich nötiger zweiter Start ergibt sich daraus nicht. Gespeicherte Änderungen an startgebundenen Einstellungen erfordern weiterhin einen vollständigen Neustart. Der gezielte Erststart-/SMTP-Wechsel-/Neustartnachweis ist als AUTO-02 im [Handprüfkatalog](docs/manual-tests/README.md) offen.
 
 H2 speichert standardmäßig unter `data/appdb`; Hibernate aktualisiert das Schema automatisch (`ddl-auto=update`). Logs landen unter `logs/` (`src/main/resources/logback-spring.xml`). Ein Start kann Datenbank, Logs und Frontend-Artefakte anlegen oder verändern. Ohne aktivierten Admin-Bootstrap entsteht kein automatisches Adminkonto.
 
