@@ -16,7 +16,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authorization.AuthorizationDecision;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import de.derpeterson.app.service.LoginAttemptService;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,8 +46,13 @@ public class SecurityConfig {
     private boolean exposeH2Console;
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(LoginAttemptService attempts, PasswordEncoder encoder) {
+        var provider = new DaoAuthenticationProvider(userDetailsService::loadPasswordUserByUsername);
+        provider.setPasswordEncoder(encoder);
+        return new org.springframework.security.authentication.ProviderManager(java.util.List.of(
+                new LoginAuthenticationService(provider, attempts),
+                new org.springframework.security.authentication.RememberMeAuthenticationProvider(
+                        configService.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY))));
     }
 
     @Bean
@@ -89,10 +95,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, PersistentTokenBasedRememberMeServices rememberMeServices) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, PersistentTokenBasedRememberMeServices rememberMeServices, AuthenticationManager authenticationManager) throws Exception {
         logger.debug("🔥 SecurityConfig is loading!");
 
-        http.csrf(csrf -> csrf.disable())
+        http.authenticationManager(authenticationManager)
+                .csrf(csrf -> csrf.disable())
                 .headers(headers -> headers.frameOptions(frameOptions -> {
                     if (exposeH2Console) {
                         frameOptions.disable();
@@ -162,7 +169,16 @@ public class SecurityConfig {
                 .formLogin(login -> login
                         .loginPage(AppRoute.LOGIN.getSecurityRoute())
                         .defaultSuccessUrl(AppRoute.ADMIN.getSecurityRoute(), true)
-                        .successHandler((request, response, authentication) -> response.sendRedirect(AppRoute.ADMIN.getSecurityRoute()))
+                        .successHandler((request, response, authentication) -> {
+                            boolean admin = authentication.getAuthorities().stream()
+                                    .anyMatch(authority -> RoleType.ROLE_ADMIN.name().equals(authority.getAuthority()));
+                            response.sendRedirect((admin ? AppRoute.ADMIN : AppRoute.HOME).getSecurityRoute());
+                        })
+                        .failureHandler((request, response, failure) -> {
+                            String error = failure instanceof LoginThrottledException ? "throttled"
+                                    : failure instanceof org.springframework.security.authentication.AuthenticationServiceException ? "unavailable" : "invalid";
+                            response.sendRedirect(AppRoute.LOGIN.getSecurityRoute() + "?error=" + error);
+                        })
                         .permitAll()
                 )
                 .logout(logout -> logout
@@ -173,8 +189,7 @@ public class SecurityConfig {
                 )
                 .rememberMe(rememberMe -> rememberMe
                         .rememberMeServices(rememberMeServices)
-                )
-                .userDetailsService(userDetailsService);
+                );
 
         logger.debug("🔧 SecurityConfig loaded!");
 

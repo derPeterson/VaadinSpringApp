@@ -30,6 +30,9 @@ import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.LoginThrottledException;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import com.vaadin.flow.router.BeforeEnterEvent;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosPageComponent;
@@ -132,7 +135,8 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
                 Class<? extends Component> target = hasAdminRole(authentication) ? AdminView.class : HomeView.class;
                 getUI().ifPresent(ui -> ui.navigate(target));
             } catch (AuthenticationException e) {
-                NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle, messageProperties::getLoginFailedMessage, -1, NotificationHelper.NotificationType.ERROR);
+                showLoginFailure(e instanceof LoginThrottledException ? "throttled"
+                        : e instanceof AuthenticationServiceException ? "unavailable" : "invalid");
             }
         });
 
@@ -210,6 +214,26 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
         updateInputPlaceholders();
         add(pageLayout);
+    }
+
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        super.beforeEnter(event);
+        if (event.hasForwardTarget()) return;
+        var errors = event.getLocation().getQueryParameters().getParameters().get("error");
+        if (errors != null && errors.size() == 1 && java.util.Set.of("throttled", "unavailable", "invalid").contains(errors.getFirst())) {
+            showLoginFailure(errors.getFirst());
+        }
+    }
+
+    private void showLoginFailure(String reason) {
+        Supplier<String> text = switch (reason) {
+            case "throttled" -> messageProperties::getLoginThrottledMessage;
+            case "unavailable" -> messageProperties::getLoginUnavailableMessage;
+            default -> messageProperties::getLoginFailedMessage;
+        };
+        NotificationHelper.getInstance().showNotification(messageProperties::getBaseFailedTitle,
+                text, -1, NotificationHelper.NotificationType.ERROR);
     }
 
     private void updateInputPlaceholders() {

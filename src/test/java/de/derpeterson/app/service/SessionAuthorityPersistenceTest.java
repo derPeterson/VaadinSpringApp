@@ -179,6 +179,16 @@ class SessionAuthorityPersistenceTest {
     }
 
     @Test
+    void plainStringImitatingAFrameworkFactorIsStillRejectedAsAnUnstoredPrivilege() {
+        var authorities = new ArrayList<org.springframework.security.core.GrantedAuthority>(oldPrincipal.getAuthorities());
+        authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("FACTOR_PASSWORD"));
+        oldPrincipal = org.springframework.security.core.userdetails.User.withUsername(oldPrincipal.getUsername())
+                .password("unused").authorities(authorities).build();
+        var request = request("context", "/admin");
+        assertTrue(security.getAuthenticatedUser(request).isEmpty());
+    }
+
+    @Test
     void rollbackDoesNotInvalidateCurrentAuthoritiesAndReadIgnoresPendingRoleEdits() {
         var request = request("context", "/admin");
         Authentication original = SecurityContextHolder.getContext().getAuthentication();

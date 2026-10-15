@@ -90,7 +90,7 @@ class UserInputValidationTest {
         assertThrows(IllegalArgumentException.class, () -> service.updatePassword(user, password));
         assertEquals("old-hash", user.getPassword());
         var tokens = mock(PasswordResetTokenRepository.class);
-        var reset = new PasswordResetService(null, tokens, repository, null, encoder, null);
+        var reset = new PasswordResetService(null, tokens, repository, null, encoder, null, mock(LoginAttemptService.class));
         assertThrows(IllegalArgumentException.class, () -> reset.resetPassword("token", password));
         verifyNoInteractions(tokens, repository, encoder, broadcaster);
     }
@@ -145,7 +145,7 @@ class UserInputValidationTest {
     @Test
     void validResetPasswordStillEncodesAndConsumesTheToken() {
         var tokens = mock(PasswordResetTokenRepository.class);
-        var reset = new PasswordResetService(null, tokens, repository, null, encoder, null);
+        var reset = new PasswordResetService(null, tokens, repository, null, encoder, null, mock(LoginAttemptService.class));
         UserEntity user = user();
         user.setEnabled(true);
         when(tokens.findUserIdByToken("token")).thenReturn(Optional.of(user.getId()));

@@ -54,14 +54,15 @@ public class PasswordResetService {
     private final PasswordEncoder passwordEncoder;
 
     private final EmailQueueService emailQueueService;
+    private final LoginAttemptService loginAttemptService;
     @NonNull
     private final Clock clock;
 
     @Autowired
     public PasswordResetService(MessageProperties messageProperties, PasswordResetTokenRepository tokenRepository,
                                 UserRepository userRepository, ConfigService configService, PasswordEncoder passwordEncoder,
-                                EmailQueueService emailQueueService) {
-        this(messageProperties, tokenRepository, userRepository, configService, passwordEncoder, emailQueueService, Clock.systemDefaultZone());
+                                EmailQueueService emailQueueService, LoginAttemptService loginAttemptService) {
+        this(messageProperties, tokenRepository, userRepository, configService, passwordEncoder, emailQueueService, loginAttemptService, Clock.systemDefaultZone());
     }
 
     @Transactional
@@ -181,6 +182,7 @@ public class PasswordResetService {
             userRepository.save(user);
             tokenEntity.get().setStatus(TokenStatus.USED);
             tokenRepository.save(tokenEntity.get());
+            loginAttemptService.clearAfterPasswordReset(user.getEmail());
             return true;
         }
         return false;

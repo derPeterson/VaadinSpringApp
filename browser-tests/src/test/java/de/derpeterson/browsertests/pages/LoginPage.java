@@ -47,6 +47,20 @@ public final class LoginPage {
                 .setName(texts.getAdminDashboardTitle()).setExact(true).setLevel(1))).hasCount(0);
     }
 
+    @Step("Vorübergehende Anmeldesperre ohne Kontoauskunft prüfen")
+    public void assertThrottled() {
+        assertFormVisible();
+        assertThat(page.getByText(texts.getLoginThrottledMessage(), new Page.GetByTextOptions().setExact(true))).isVisible();
+    }
+
+    @Step("Vorhandenen Fehlerhinweis vor dem nächsten Anmeldeversuch schließen")
+    public void dismissFailure() {
+        var notice = page.locator("vaadin-notification-card:not([closing])");
+        assertThat(notice).hasCount(1);
+        notice.getByRole(AriaRole.BUTTON).click();
+        assertThat(notice).not().isVisible();
+    }
+
     @Step("Admin-Dashboard und angemeldetes Konto sind sichtbar")
     public void assertAdminSignedIn(String email) {
         assertThat(page).hasURL(urlPattern(ADMIN_ROUTE));

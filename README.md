@@ -23,6 +23,7 @@ Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administ
 - Registrierung mit zunächst deaktiviertem Konto und Aktivierung per E-Mail-Token.
 - Anmeldung per E-Mail und Passwort, Abmeldung, persistentes „Remember me“ und BCrypt-Passwort-Hashing.
 - Passwort-Zurücksetzen über zeitlich begrenzte, nach Verwendung verbrauchte Tokens.
+- Dauerhafte Begrenzung erfolgloser Passwortanmeldungen mit 15-Minuten-Fenster und 15-Minuten-Sperre.
 - Adminbereich mit Benutzerverwaltung, Rollen und Kontofreigabe, Konfiguration sowie Mail-Testversand.
 - Deutsche und englische Oberfläche, manuell wählbarer Benutzerstatus und automatische Abwesenheitserkennung mit Push-Aktualisierung.
 - Datenbankgestützte E-Mail-Warteschlange mit Wiederholungsversuchen und geplanten Bereinigungsaufgaben.
@@ -52,10 +53,16 @@ vorhandene Rollen-IDs und Kontozuweisungen bleiben erhalten.
 
 ## Geplante Konfigurationsfunktionen
 
-Für die fünf bisher fachlich wirkungslosen Konfigurationseinträge liegen
-[einzelne Umsetzungspläne mit Bestandsaufnahme](docs/umsetzungsplaene/konfiguration/README.md)
-vor: Anmeldeversuche, gleichzeitige Sitzungen, Wartungsmodus, SMTP-SocketFactory
-und Nutzung des Mail-Workerpools. Sie beschreiben Vorschläge und aktivieren keine Funktion.
+Die Begrenzung der Anmeldeversuche ist umgesetzt:
+[Verhalten, Datenbankerweiterung und Prüfgrenzen](docs/login-attempts-contract.md).
+`login.attempts.limit` wirkt ab dem nächsten Versuch; neue Java-/Schemakomponenten
+benötigen einmalig einen Anwendungsneustart. Bestehende Sitzungen und Remember-me
+bleiben von der Passwortsperre unabhängig. Ein erfolgreicher Passwortreset hebt sie auf.
+
+Für die vier noch offenen Konfigurationseinträge liegen
+[einzelne Umsetzungspläne](docs/umsetzungsplaene/konfiguration/README.md)
+vor: gleichzeitige Sitzungen, Wartungsmodus, SMTP-SocketFactory und Nutzung des
+Mail-Workerpools. Diese übrigen Pläne aktivieren keine Funktion.
 
 ## Kontoansichten, Home und Admin: Silent Cosmos und Inter
 

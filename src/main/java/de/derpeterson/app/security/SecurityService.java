@@ -171,16 +171,21 @@ public class SecurityService {
     private boolean hasCurrentPrivileges(UserDetails principal, Authentication authentication) {
         try {
             UserDetails current = userDetailsService.loadUserByUsername(principal.getUsername());
-            var authorities = current.getAuthorities().stream().map(GrantedAuthority::getAuthority)
-                    .collect(Collectors.toSet());
+            var authorities = accountAuthorities(current.getAuthorities());
             return current.isEnabled()
-                    && authorities.equals(principal.getAuthorities().stream().map(GrantedAuthority::getAuthority)
-                            .collect(Collectors.toSet()))
-                    && (authentication == null || authorities.equals(authentication.getAuthorities().stream()
-                            .map(GrantedAuthority::getAuthority).collect(Collectors.toSet())));
+                    && authorities.equals(accountAuthorities(principal.getAuthorities()))
+                    && (authentication == null || authorities.equals(accountAuthorities(authentication.getAuthorities())));
         } catch (UsernameNotFoundException exception) {
             return false;
         }
+    }
+
+    private java.util.Set<String> accountAuthorities(java.util.Collection<? extends GrantedAuthority> authorities) {
+        // Spring's typed factor evidence records HOW login occurred; it is not a stored account role.
+        // Do not ignore arbitrary strings with a FACTOR_ prefix: only genuine framework factor objects.
+        return authorities.stream()
+                .filter(authority -> !(authority instanceof org.springframework.security.core.authority.FactorGrantedAuthority))
+                .map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
     }
 
     private void clearStaleAuthentication(HttpServletRequest request) {

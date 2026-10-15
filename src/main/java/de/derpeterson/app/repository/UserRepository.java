@@ -59,10 +59,18 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
         return findCanonicalSecurityUser(EmailIdentity.canonicalize(email));
     }
 
+    String SECURITY_USER_QUERY = "select u.email as email, u.password as password, u.enabled as enabled, r.name as role "
+            + "from UserEntity u left join u.roleEntities r where u.email = :email";
+
     @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
-    @Query("select u.email as email, u.password as password, u.enabled as enabled, r.name as role "
-            + "from UserEntity u left join u.roleEntities r where u.email = :email")
+    @Query(SECURITY_USER_QUERY)
     List<SecurityUserRow> findCanonicalSecurityUser(@Param("email") String email);
+
+    // The password guard already owns a fresh independent transaction. Reuse its connection
+    // instead of exhausting the pool with a second connection for each locked login row.
+    @Transactional(readOnly = true, propagation = Propagation.MANDATORY)
+    @Query(SECURITY_USER_QUERY)
+    List<SecurityUserRow> findPasswordSecurityUser(@Param("email") String email);
 
     default Optional<UserEntity> findByEmailForUpdate(String email) {
         return findByCanonicalEmailForUpdate(EmailIdentity.canonicalize(email));

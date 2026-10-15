@@ -67,3 +67,10 @@ garantiert keine Gleichheit aller Netzwerk-/Infrastrukturfehler. Tests prüfen
 serverseitige Komponenten und isoliertes H2. Ergänzende Browser-/Mailpit-Nachweise
 stehen in der Abdeckungsübersicht; reale SMTP-Zustellung, Bestandsmigrationen,
 andere Datenbanken/Isolationsmodi und Mehrinstanzbetrieb bleiben gesonderte Prüfungen.
+
+## Rücksetzung des Passwort-Anmeldezählers
+
+Nach gültigem Passwortreset wird die vorübergehende Anmeldesperre in derselben
+Transaktion wie Hashänderung und Tokenverbrauch zurückgesetzt. Rollback erhält alle
+drei Zustände. Eine bloße Mailanfrage, ein ungültiger Token oder gesperrtes Konto
+entsperrt nicht. [Anmeldeversuchsvertrag](login-attempts-contract.md).

@@ -27,6 +27,7 @@ Eine globale Playwright- oder Allure-Installation ist nicht erforderlich.
 | Schnelle Kernprüfung in zwei isolierten Umgebungen | `.\browser-tests\run.ps1 -Suite fast -Workers 2 -Language de` |
 | Alle Fälle auf zwei Umgebungen verteilen | `.\browser-tests\run.ps1 -Suite all -Workers 2 -Language de` |
 | Tests live im sichtbaren Browser verfolgen | `.\browser-tests\run.ps1 -Headed` |
+| Login-Schutz, bestehende Anmeldung und Remember-me prüfen | `.\browser-tests\run.ps1 -Suite login-attempts -Workers 2 -Language de` |
 | Nur Benutzerfilter prüfen | `.\browser-tests\run.ps1 -Suite user-filters -Language de` |
 | Nur Benutzerverwaltung prüfen | `.\browser-tests\run.ps1 -Suite user-management -Language de` |
 | Helper und Reporter ohne Docker prüfen | `.\browser-tests\run.ps1 -ReportingTests` |
@@ -54,6 +55,7 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | --- | --- | ---: |
 | `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit | 3 |
 | `authentication` | Admin-/Benutzerlogin, Fehler, Gastzugriff und Logout | 6 |
+| `login-attempts` | Drei neue Sperr-/Resetfälle plus sechs Anmelde- und zwei Remember-me-Regressionsfälle | 11 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler und Links | 6 |
@@ -77,7 +79,13 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 19 |
 | `cosmos-design` | Fünf Kontoansichten, mobiler Mailablauf, Copyright in UI/Mails, gemeinsames Theme sowie Home-/Adminnavigation bei drei Größen | 11 |
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
-| `all` | Alle 20 Testklassen einschließlich der Fast-Fälle | 102 |
+| `all` | Alle 21 Testklassen einschließlich der Fast-Fälle | 105 |
+
+AUTH-LIMIT-01–03 prüfen gespeichertes Versuchslimit, erhaltene angemeldete Sitzung,
+sofortige Reduzierung für bekannte/unbekannte Kennungen und Entsperrung erst nach
+abgeschlossenem echten Passwortreset. Die Suite enthält auch reale Browserneustarts
+für Remember-me. Zeitgrenzen und Konkurrenz sind JUnit-Aufgabe; der Browser wartet
+keine 15 Minuten. `fast` bleibt bei seinen bisherigen 34 Fällen.
 
 UI-01A prüft die direkte Datumseingabe mit lokalisiertem Beispiel und anschließendem
 Registrieren ohne Enter/Escape. UI-01B prüft getrennt die Auswahl über das Kalender-Icon,

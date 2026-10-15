@@ -39,7 +39,7 @@ class BrowserExecutionPlanTest {
     }
 
     @Test void partitionsCoverEveryClassOnceForAllSupportedWorkerCounts() {
-        for (String suite : List.of("all", "fast", "authentication", "user-management")) {
+        for (String suite : List.of("all", "fast", "authentication", "login-attempts", "user-management")) {
             var selected = BrowserExecutionPlan.classes(suite);
             for (int workers = 1; workers <= 4; workers++) {
                 var groups = BrowserExecutionPlan.partition(selected, workers, suite);

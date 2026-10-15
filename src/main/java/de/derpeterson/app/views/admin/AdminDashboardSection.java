@@ -90,7 +90,9 @@ public class AdminDashboardSection extends VerticalLayout {
             welcomeLabel.setText(messageProperties.getAdminDashboardWelcome() + ": ");
             userEmail.setText(authenticatedUser.getUsername());
             roleInfoText.setText(messageProperties.getAdminDashboardRoles() + ":");
-            authenticatedUser.getAuthorities().forEach(authority -> {
+            authenticatedUser.getAuthorities().stream()
+                    .filter(authority -> !(authority instanceof org.springframework.security.core.authority.FactorGrantedAuthority))
+                    .forEach(authority -> {
                 Span badge = new Span(authority.getAuthority());
                 badge.addClassName("cosmos-admin-role-chip");
                 roleBadges.add(badge);

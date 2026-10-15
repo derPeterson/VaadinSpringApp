@@ -2,6 +2,9 @@
 
 Stand: 15.10.2026; Ausgangscommit `1d57a5e`. **Umsetzungsplan, noch nicht implementiert.**
 
+Anschlussstand: Die [Begrenzung der Anmeldeversuche](../../login-attempts-contract.md)
+ist inzwischen umgesetzt. Darauf aufbauen; dieses weitere Paket bleibt offen.
+
 | Eigenschaft | Wert |
 | --- | --- |
 | Konfiguration | `maintenance.mode` / `ConfigEntry.MAINTENANCE_MODE` |
@@ -119,4 +122,4 @@ administrative Wiederfreigabe praktisch nachgewiesen ist. Diese Tests stehen noc
 [VaadinSecurityFilter](../../../src/main/java/de/derpeterson/app/security/VaadinSecurityFilter.java),
 [PushSecurityInterceptor](../../../src/main/java/de/derpeterson/app/security/PushSecurityInterceptor.java),
 [Push-/RPC-Regressionen](../../../src/test/java/de/derpeterson/app/service/PushRpcSecurityPersistenceTest.java).
-Abstimmen mit [Anmeldeversuchen](login-attempts-limit.md) und [Sitzungslimit](max-sessions-per-user.md).
+Abstimmen mit [umgesetzten Anmeldeversuchen](../../login-attempts-contract.md) und [Sitzungslimit](max-sessions-per-user.md).

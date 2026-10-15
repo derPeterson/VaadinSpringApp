@@ -59,11 +59,16 @@ class SecurityChainRegressionTest {
     @Autowired UserService users;
     @Autowired UserRepository repository;
     @Autowired TransactionTemplate transaction;
+    @Autowired ConfigService settings;
+    @Autowired org.springframework.security.authentication.AuthenticationManager passwordManager;
+    @Autowired org.springframework.security.crypto.password.PasswordEncoder encoder;
+    @Autowired de.derpeterson.app.repository.LoginAttemptRepository attempts;
     @PersistenceContext EntityManager entityManager;
 
     @AfterEach
     void cleanup() {
         SecurityContextHolder.clearContext();
+        when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(10);
     }
 
     @Test
@@ -159,6 +164,94 @@ class SecurityChainRegressionTest {
         }
     }
 
+    @ParameterizedTest @EnumSource(RoleType.class)
+    void actualHttpPasswordFilterCannotBypassThrottleAndExistingSessionSurvives(RoleType roleType) throws Exception {
+        var providers = assertInstanceOf(org.springframework.security.authentication.ProviderManager.class, passwordManager);
+        assertTrue(providers.getProviders().stream().anyMatch(de.derpeterson.app.security.LoginAuthenticationService.class::isInstance));
+        String email = "password-" + java.util.UUID.randomUUID() + "@example.test";
+        transaction.executeWithoutResult(tx -> {
+            var role = entityManager.createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
+                    .setParameter("role", roleType).getResultStream().findFirst().orElse(null);
+            if (role == null) { role = RoleEntity.builder().name(roleType).build(); entityManager.persist(role); }
+            Long id = create(email, role);
+            entityManager.find(UserEntity.class, id).setPassword(encoder.encode("OriginalPassword!"));
+        });
+        when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(2);
+        var successful = postPassword(email, "OriginalPassword!");
+        assertEquals(roleType.isAdministrative() ? "/admin" : "/home", successful.response().getRedirectedUrl());
+        var originalSession = successful.request().getSession(false);
+        assertNotNull(originalSession.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
+        assertEquals("/login?error=invalid", postPassword(email, "WrongPassword!").response().getRedirectedUrl());
+        assertEquals("/login?error=invalid", postPassword(email, "WrongPassword!").response().getRedirectedUrl());
+        var blocked = postPassword(email, "OriginalPassword!");
+        assertEquals("/login?error=throttled", blocked.response().getRedirectedUrl());
+        assertFalse(java.util.Arrays.stream(blocked.response().getCookies()).anyMatch(cookie ->
+                cookie.getName().equals("remember-me") && cookie.getMaxAge() != 0));
+        assertTrue(blocked.request().getSession(false) == null || blocked.request().getSession(false)
+                .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY) == null);
+        assertEquals(2, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
+        var saved = (org.springframework.security.core.context.SecurityContext) originalSession.getAttribute(
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        var oldPrincipal = (org.springframework.security.core.userdetails.UserDetails) saved.getAuthentication().getPrincipal();
+        var currentPrincipal = new CustomUserDetailsService(repository).loadUserByUsername(email);
+        var currentRoles = currentPrincipal.getAuthorities().stream().map(Object::toString).collect(java.util.stream.Collectors.toSet());
+        assertEquals(currentRoles, oldPrincipal.getAuthorities().stream()
+                .filter(authority -> !(authority instanceof org.springframework.security.core.authority.FactorGrantedAuthority))
+                .map(Object::toString).collect(java.util.stream.Collectors.toSet()));
+        assertTrue(saved.getAuthentication().getAuthorities().stream()
+                .anyMatch(org.springframework.security.core.authority.FactorGrantedAuthority.class::isInstance));
+        assertTrue(currentPrincipal.isEnabled()); assertTrue(oldPrincipal.isEnabled());
+        var oldRequest = new MockHttpServletRequest("GET", roleType.isAdministrative() ? "/admin" : "/home");
+        oldRequest.setServletPath(oldRequest.getRequestURI()); oldRequest.setSession(originalSession);
+        var response = new MockHttpServletResponse(); var servlet = mock(FilterChain.class);
+        new FilterChainProxy(chain).doFilter(oldRequest, response, servlet);
+        assertEquals(200, response.getStatus(), "Existing session: " + response.getRedirectedUrl() + " / " + response.getErrorMessage());
+        verify(servlet).doFilter(any(), any());
+        // Fixture-only state change proves framework factor evidence cannot preserve a disabled account.
+        transaction.executeWithoutResult(tx -> repository.findByEmail(email).orElseThrow().setEnabled(false));
+        var revoked = new MockHttpServletRequest("GET", "/home"); revoked.setServletPath("/home"); revoked.setSession(originalSession);
+        var denied = new MockHttpServletResponse();
+        new FilterChainProxy(chain).doFilter(revoked, denied, mock(FilterChain.class));
+        assertEquals(401, denied.getStatus());
+    }
+
+    @Test
+    void unknownHttpIdentityIsLimitedAndTechnicalConfigurationFailureDoesNotCount() throws Exception {
+        String email = "unknown-" + java.util.UUID.randomUUID() + "@example.test";
+        when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(1);
+        assertEquals("/login?error=invalid", postPassword(email, "WrongPassword!").response().getRedirectedUrl());
+        assertEquals("/login?error=throttled", postPassword(email, "WrongPassword!").response().getRedirectedUrl());
+        when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(0);
+        String other = "technical-" + java.util.UUID.randomUUID() + "@example.test";
+        assertEquals("/login?error=unavailable", postPassword(other, "WrongPassword!").response().getRedirectedUrl());
+        assertFalse(attempts.existsById(LoginAttemptService.identityKey(other)));
+    }
+
+    @Test
+    void rememberMeUsesItsOwnProviderWithoutPasswordCountersEvenWithInvalidPasswordLimit() {
+        when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(0);
+        long before = attempts.count();
+        var principal = org.springframework.security.core.userdetails.User.withUsername("remember-fixture@example.test")
+                .password("unused").roles("USER").build();
+        var token = new org.springframework.security.authentication.RememberMeAuthenticationToken(
+                "isolated-test-key", principal, principal.getAuthorities());
+        assertTrue(passwordManager.authenticate(token).isAuthenticated());
+        var forged = new org.springframework.security.authentication.RememberMeAuthenticationToken(
+                "wrong-key", principal, principal.getAuthorities());
+        assertThrows(org.springframework.security.authentication.BadCredentialsException.class, () -> passwordManager.authenticate(forged));
+        assertEquals(before, attempts.count());
+    }
+
+    private PasswordResponse postPassword(String email, String password) throws Exception {
+        SecurityContextHolder.clearContext();
+        var request = new MockHttpServletRequest("POST", "/login"); request.setServletPath("/login");
+        request.setParameter("username", email); request.setParameter("password", password);
+        var response = new MockHttpServletResponse();
+        new FilterChainProxy(chain).doFilter(request, response, mock(FilterChain.class));
+        assertEquals(302, response.getStatus()); return new PasswordResponse(request, response);
+    }
+    private record PasswordResponse(MockHttpServletRequest request, MockHttpServletResponse response) { }
+
     private Long create(String email, RoleEntity role) {
         var user = UserEntity.builder().email(email).firstName("Test").lastName("User").password("hash").enabled(true)
                 .gender(Gender.OTHER).birthDate(LocalDate.of(1990, 1, 1)).preferredLocale(Locale.ENGLISH)
@@ -169,7 +262,7 @@ class SecurityChainRegressionTest {
 
     @Configuration
     @EnableWebSecurity
-    @Import({UserServicePersistenceTest.Config.class, SecurityConfig.class})
+    @Import({UserServicePersistenceTest.Config.class, SecurityConfig.class, LoginAttemptService.class})
     static class Config {
         @Bean
         CustomUserDetailsService userDetailsService(UserRepository repository) {
@@ -186,6 +279,7 @@ class SecurityChainRegressionTest {
             var config = mock(ConfigService.class);
             when(config.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY)).thenReturn("isolated-test-key");
             when(config.getInteger(ConfigEntry.REMEMBER_ME_DURATION)).thenReturn(3600);
+            when(config.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(10);
             return config;
         }
 

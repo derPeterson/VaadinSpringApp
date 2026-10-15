@@ -59,6 +59,8 @@ class PasswordResetServiceTest {
     private PasswordEncoder encoder;
     @Mock
     private EmailQueueService queue;
+    @Mock
+    private LoginAttemptService attempts;
     private PasswordResetService service;
     private UserEntity user;
 
@@ -68,7 +70,7 @@ class PasswordResetServiceTest {
         lenient().when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn(ConfigEntry.COPYRIGHT_TEXT.getDefaultValueString());
         lenient().when(messages.getAccountCopyrightTemplate()).thenAnswer(call ->
                 MessageProperties.forLocale(new CustomI18NProvider(), CustomI18NProvider.getCurrentLocale()).getAccountCopyrightTemplate());
-        service = new PasswordResetService(messages, tokens, users, config, encoder, queue, CLOCK);
+        service = new PasswordResetService(messages, tokens, users, config, encoder, queue, attempts, CLOCK);
         user = UserEntity.builder().id(1L).email("test@example.com").password("old-hash").enabled(true).build();
         lenient().when(users.lockVerificationUser(1L)).thenReturn(Optional.of(user));
         lenient().when(tokens.findUserIdByToken(anyString())).thenReturn(Optional.of(1L));
@@ -80,7 +82,7 @@ class PasswordResetServiceTest {
 
     @Test
     void explicitClockMustNotBeNull() {
-        assertThrows(NullPointerException.class, () -> new PasswordResetService(messages, tokens, users, config, encoder, queue, null));
+        assertThrows(NullPointerException.class, () -> new PasswordResetService(messages, tokens, users, config, encoder, queue, attempts, null));
     }
 
     @Test

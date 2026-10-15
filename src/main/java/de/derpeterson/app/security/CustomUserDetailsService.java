@@ -21,7 +21,15 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        var rows = userRepository.findSecurityUser(email);
+        return toUserDetails(email, userRepository.findSecurityUser(email));
+    }
+
+    public UserDetails loadPasswordUserByUsername(String email) {
+        return toUserDetails(email, userRepository.findPasswordSecurityUser(
+                de.derpeterson.app.model.EmailIdentity.canonicalize(email)));
+    }
+
+    private UserDetails toUserDetails(String email, List<UserRepository.SecurityUserRow> rows) {
         if (rows.isEmpty()) {
             throw new UsernameNotFoundException("User not found: " + email);
         }

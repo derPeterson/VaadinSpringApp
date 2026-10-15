@@ -930,7 +930,7 @@ class PasswordResetServicePersistenceTest {
         PasswordResetService passwordResetService(Probes probes, Clock clock) {
             var messages = mock(MessageProperties.class);
             when(messages.getEmailResetPasswordSubject()).thenReturn("Reset password");
-            return new PasswordResetService(messages, probes.tokens(), probes.users(), probes.config(), probes.encoder(), probes.queue(), clock);
+            return new PasswordResetService(messages, probes.tokens(), probes.users(), probes.config(), probes.encoder(), probes.queue(), mock(LoginAttemptService.class), clock);
         }
     }
 }

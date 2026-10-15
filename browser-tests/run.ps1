@@ -1,6 +1,6 @@
 ﻿param(
     [switch]$Headed,
-    [ValidateSet('all', 'fast', 'cosmos-design', 'login-layout', 'login-checks', 'infrastructure', 'authentication', 'registration', 'verification', 'password-reset', 'account-lifecycle', 'presentation', 'token-configuration', 'user-management', 'user-filters', 'user-access', 'session-security', 'blocked-links', 'security-journeys', 'remember-me', 'user-status', 'configuration', 'admin-mail', 'token-expiry', 'remaining-configuration', 'remaining-coverage')]
+    [ValidateSet('all', 'fast', 'cosmos-design', 'login-layout', 'login-checks', 'infrastructure', 'authentication', 'login-attempts', 'registration', 'verification', 'password-reset', 'account-lifecycle', 'presentation', 'token-configuration', 'user-management', 'user-filters', 'user-access', 'session-security', 'blocked-links', 'security-journeys', 'remember-me', 'user-status', 'configuration', 'admin-mail', 'token-expiry', 'remaining-configuration', 'remaining-coverage')]
     [string]$Suite = 'all',
     [ValidateSet('de', 'en')]
     [string]$Language = 'de',

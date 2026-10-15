@@ -3,7 +3,7 @@
 Stand: 15.10.2026. Geprüfter Ausgangscommit: `1d57a5e`.
 Status: **Planung; diese Dokumente implementieren oder aktivieren keine Funktion.**
 
-Die fünf Einzelpläne beschreiben Iststand, empfohlenen ersten Umfang, sichtbare
+Die vier verbleibenden Einzelpläne beschreiben Iststand, empfohlenen ersten Umfang, sichtbare
 Verhaltensänderungen, technische Schritte, Einführung und Abnahmetests. Empfehlungen
 sind Vorschläge für die nächste Umsetzung, keine bereits abgestimmten Produktregeln.
 Als neu vorgeschlagen bezeichnete Klassen existieren noch nicht.
@@ -17,7 +17,6 @@ Zugangsdaten und laufende Anwendungen wurden nicht untersucht.
 
 | Eintrag | Enum-Standard | Heutige Wirkung | Plan |
 | --- | --- | --- | --- |
-| `login.attempts.limit` | `10` | Anzeige/Speicherung; keine Drosselung | [Anmeldeversuche](login-attempts-limit.md) |
 | `max.sessions.per.user` | `3` | Anzeige/Speicherung; kein Sitzungskontingent | [Gleichzeitige Sitzungen](max-sessions-per-user.md) |
 | `maintenance.mode` | `false` | Anzeige/Speicherung; keine Zugangsbeschränkung | [Wartungsmodus](maintenance-mode.md) |
 | `mail.smtp.socketFactory.class` | `javax.net.ssl.SSLSocketFactory` | `MailConfig` reicht den Wert nicht weiter | [SMTP-SocketFactory](mail-smtp-socketfactory-class.md) |
@@ -26,12 +25,17 @@ Zugangsdaten und laufende Anwendungen wurden nicht untersucht.
 Das sind Enum-Standards, keine ausgelesenen Installationseinstellungen. Gespeicherte
 Werte haben Vorrang; fehlende Werte können aus `app.config.defaults.*` kommen.
 
+`login.attempts.limit` ist inzwischen umgesetzt. Der abgeschlossene Plan wird durch
+[den verbindlichen Vertrag](../../login-attempts-contract.md) ersetzt; der frühere
+Ausgangsstand der übrigen Pläne bleibt nachvollziehbar.
+
 ### Bereits verwendete Werte
 
 | Konfiguration | Nachgewiesener Verbraucher / Wirkung |
 | --- | --- |
 | `service.name`, `copyright.text` | Konto-/App-Komponenten und neu erzeugte Mails |
 | `base.url` | Links neuer Verifikations-/Passwortresetmails |
+| `login.attempts.limit` | Gemeinsamer Vaadin-/HTTP-Passwortschutz mit dauerhaftem Zähler |
 | `rememberMe.duration`, `rememberMe.secret.key` | Aufbau des Remember-me-Dienstes in `SecurityConfig` |
 | `user.auto.absent.timeout` | `UserStatusScheduler` |
 | `email.from` | Absender in `EmailService` |
@@ -51,11 +55,10 @@ beschreibt, wie die wirksame Kapazitätsgrenze erhalten werden soll.
 
 ## Empfohlene Reihenfolge
 
-1. **Anmeldeversuche:** gemeinsamen serverseitigen Anmelde-Einstieg schaffen.
-2. **Gleichzeitige Sitzungen:** dieselben Anmeldewege einschließlich Remember-me einbinden.
-3. **Wartungsmodus:** auf den geklärten Login-/Sitzungsvertrag aufsetzen; alte UIs und Push beachten.
-4. **Mail-Workerpool:** eigenes Paket mit belastbaren Konkurrenztests.
-5. **SocketFactory:** Spezialfall; Bedarf und genaue Bedeutung des bisherigen Felds zuerst abstimmen.
+1. **Gleichzeitige Sitzungen:** an den vorhandenen geschützten Login anbinden; Remember-me einbeziehen.
+2. **Wartungsmodus:** auf den Login-/Sitzungsvertrag aufsetzen; alte UIs und Push beachten.
+3. **Mail-Workerpool:** eigenes Paket mit belastbaren Konkurrenztests.
+4. **SocketFactory:** Spezialfall; Bedarf und genaue Bedeutung des bisherigen Felds zuerst abstimmen.
 
 Jeder Plan ist ein eigenes Arbeitspaket. Gemeinsame Anmeldelogik schrittweise
 verbessern, ohne nebenbei sämtliche Sicherheitsklassen umzubauen.
@@ -79,6 +82,7 @@ verbessern, ohne nebenbei sämtliche Sicherheitsklassen umzubauen.
 
 ## Prüfung dieser Unterlagen
 
-Die Aufgabe ändert ausschließlich Markdown. Keine Builds, JUnit- oder Browserläufe
-wurden hierfür gestartet. Geprüft werden Quellbezüge, interne Links, Zuordnung aller
-29 Einträge und der Diff. Zum Lesen ist kein Anwendungsneustart oder Refresh nötig.
+Die ursprüngliche Planung war eine reine Markdown-Aufgabe. Der inzwischen umgesetzte
+Login-Schutz hat eigene Prüfungen; deren tatsächlich ausgeführte Ergebnisse stehen in
+[der aktuellen Abdeckung](../../../browser-tests/abdeckung.md). Die verbleibenden Pläne
+bleiben unimplementiert. Zum bloßen Lesen dieser Dateien ist kein Neustart nötig.

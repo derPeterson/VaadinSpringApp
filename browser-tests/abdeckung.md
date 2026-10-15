@@ -1,5 +1,47 @@
 # Browserabdeckung und offene Punkte
 
+**Aktueller Funktionsnachweis 15.10.2026: 1.149 Anwendungstests, 43 Helfertests und je 11 gezielte Login-Browserfälle DE/EN erfolgreich.**
+
+## Begrenzung der Passwort-Anmeldeversuche (15.10.2026)
+
+Branch `feature/login-attempt-limit`, Ausgangscommit `a37cf0c2`; Umsetzung und
+Dokumentationsänderungen lagen bei der Prüfung uncommittet vor.
+[Verbindlicher Funktions-/Einführungsvertrag](../docs/login-attempts-contract.md).
+
+| Prüfung | Ergebnis |
+| --- | --- |
+| Java 25 / gemeinsamer Übersetzungskatalog | Geprüft; Shared sauber gebaut und installiert |
+| Vollständige Anwendungs-JUnit-Suite | 1149/1149; keine Fehler, Fehlschläge oder Skips |
+| Browserhelfer und Suite-/Workeraufteilung | 43/43; keine Fehler, Fehlschläge oder Skips |
+| Frischer Produktionsbuild | Erfolgreich, einschließlich Anwendungstests und Frontend |
+| `login-attempts`, Deutsch / Englisch, je zwei isolierte Worker | Je 11/11; identisches gepinntes App-Image, keine Fehler oder Skips |
+| Aufbau, Abbau und gemeinsame Berichte | Beide Läufe vollständig erfolgreich |
+
+AUTH-LIMIT-01 prüft tatsächliche Sperre nach gespeichertem Limit, fehlende Anmeldung/
+Remember-me-Cookies und Erhalt einer schon angemeldeten Sitzung. AUTH-LIMIT-02 prüft
+sofortige Limitreduzierung und gleiche neutrale Sperrhinweise für bekannte/unbekannte
+Kennungen. AUTH-LIMIT-03 verwendet eine echte eigene Resetmail: Anfrage allein hebt
+nicht auf; erst abgeschlossener Passwortwechsel ermöglicht wieder die Anmeldung.
+Die sechs bestehenden Authentifizierungsfälle und zwei Remember-me-Fälle mit echten
+Chromium-Neustarts sind in derselben Suite in beiden Sprachen erneut bestanden.
+
+JUnit weist zusätzlich genaue Fenster-/Sperrgrenzen, Konkurrenz bei derselben und
+verschiedenen Kennungen, maximale Zählerzahl, Bereinigung, Caller-Rollback,
+Passwort-/Token-/Zähler-Rollback, alle Rollen und die echte HTTP-Filterkette nach.
+Ein isoliertes Bestandsupgrade erhält das Konto und speichert die Sperre über neue
+Persistenzkontexte. Ein Hikari-Pool mit einer Verbindung prüft die transaktionale
+Passwortabfrage. Echte Spring-Faktornachweise erhalten eine gültige Sitzung; eine
+echte Kontosperre und nachgeahmte Faktorstrings werden weiterhin erkannt.
+
+Zeitablauf wird mit kontrollierter Clock in JUnit geprüft; im Browser wurde keine
+15-Minuten-Wartezeit durchlaufen. Die vollständige Browser-Suite umfasst nun 105
+Fälle in 21 Klassen, wurde diesmal jedoch nicht komplett neu ausgeführt. `fast`
+bleibt bei 34 Fällen und wurde nicht als vollständige Fast-Auswahl erneut gestartet.
+Es gibt keine neue Coverage-Auswertung. Frühere Prozentwerte gehören zu den unten
+getrennt dokumentierten Prüfständen. Bestehende Anwendungsdatenbanken wurden nicht verwendet.
+
+## Vorherige Prüfstände
+
 **Gezielte Rollenprüfung am 15.10.2026: 353 Anwendungs-JUnit-Tests und je 7 Zugriffsfälle auf Deutsch/Englisch erfolgreich.**
 Die früheren vollständigen Theme- und Runnerprüfungen bleiben unten getrennt dokumentiert;
 sie sind kein vollständiger Nachweis für die anschließend ergänzten Rollen.
@@ -30,7 +72,8 @@ zählen gemeinsam beim Letzter-Admin-Schutz; doppelte Rollen zählen einmal, par
 In-Memory-Datenbank erweitert: alte IDs, Verknüpfung und Foreign Key bleiben erhalten;
 ein zweiter Aufruf führt kein weiteres ALTER aus. Bestehende Anwendungsdaten wurden nicht benutzt.
 
-`all` enthält jetzt 102 Browserfälle, `fast` weiterhin 34. Die vollständige 102er-Suite
+Nach der Rollenerweiterung umfasste `all` 102 Browserfälle, `fast` weiterhin 34.
+Der spätere Login-Zuwachs ist im aktuellen Abschnitt oben berücksichtigt. Die vollständige 102er-Suite
 und der Fast-Modus wurden für diese Rollenänderung nicht erneut ausgeführt.
 Es wurde keine neue vollständige Code-Coverage gemessen; die unten genannten Werte
 gehören zu ihrem jeweiligen früheren Prüfstand. Rollenstandard: [Projekt-README](../README.md#rollen-und-zugriffsrechte).

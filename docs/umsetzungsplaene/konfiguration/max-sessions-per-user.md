@@ -2,6 +2,9 @@
 
 Stand: 15.10.2026; Ausgangscommit `1d57a5e`. **Umsetzungsplan, noch nicht implementiert.**
 
+Anschlussstand: Die [Begrenzung der Anmeldeversuche](../../login-attempts-contract.md)
+ist inzwischen umgesetzt. Darauf aufbauen; dieses weitere Paket bleibt offen.
+
 | Eigenschaft | Wert |
 | --- | --- |
 | Konfiguration | `max.sessions.per.user` / `ConfigEntry.MAX_SESSIONS_PER_USER` |
@@ -87,7 +90,7 @@ Laufzeitregister beginnen leer. Wird später Sessionpersistenz aktiviert, muss d
 Wiederherstellung vor Zulassung neuer Logins geregelt sein. Minimum 1 erhalten;
 0 bekommt keine neue Bedeutung „unbegrenzt“.
 
-Mit [Anmeldeversuchen](login-attempts-limit.md) abstimmen: eine Sitzungsablehnung ist kein
+Mit [umgesetzten Anmeldeversuchen](../../login-attempts-contract.md) abstimmen: eine Sitzungsablehnung ist kein
 falsches Passwort. Mit [Wartungsmodus](maintenance-mode.md) abstimmen: ein dort abgewiesenes
 Konto darf keinen Platz belegen. Bestehende Token-Löschregeln bei echtem Logout nicht
 beiläufig ändern. Ein geänderter Grenzwert gilt für nachfolgende Zulassungen;

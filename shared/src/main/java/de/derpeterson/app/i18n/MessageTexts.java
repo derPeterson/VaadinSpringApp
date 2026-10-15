@@ -111,6 +111,14 @@ public class MessageTexts {
         return getTranslation("loginView.login.failed_message");
     }
 
+    public String getLoginThrottledMessage() {
+        return getTranslation("login.throttled.message");
+    }
+
+    public String getLoginUnavailableMessage() {
+        return getTranslation("login.unavailable.message");
+    }
+
     public String getLoginSuccessMessage() {
         return getTranslation("loginView.login.success_message");
     }
