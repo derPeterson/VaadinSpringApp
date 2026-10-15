@@ -467,6 +467,13 @@ und die vier neuen Token-Konfigurationsfälle jeweils auf DE und EN erfolgreich.
 Das ist kein erfolgreicher Gesamtnachweis aller Browserfälle; die unabhängig davon
 offenen Punkte stehen in der Browserdokumentation.
 
+## Java-Formatierung
+
+Für neue Java-Änderungen gilt Google Java Format mit 2 Leerzeichen. Coding-Agenten
+führen nach ihren Änderungen verbindlich `spotless:apply` und `spotless:check` aus.
+Die zentrale Konfiguration erfasst Anwendung, Shared-Modul und Browsertests und
+beschränkt sich auf geänderte/neue Dateien. [Ablauf und Grenzen](docs/java-formatierung.md).
+
 ## Tests und Prüfstand
 
 Unter `src/test/java/` liegen Unit- und serverseitige Regressionstests für Benutzerverwaltung, Eingaberegeln, Registrierung, Konfiguration, Benachrichtigungen, Session-/Remember-me-/Push-RPC-Sicherheit sowie Status und Nebenläufigkeit. Persistenztests verwenden isolierte H2-In-Memory-Datenbanken, nicht die Anwendungsdatenbank. Vaadin-Tests prüfen serverseitige Komponenten und Callbacks mit kontrollierten UI-/Sessionfixtures, ohne Browser oder Anwendungsstart. `ImageHelperTest` prüft zusätzlich das echte Mail-Logo als Classpath-Ressource. `src/test/resources/logback-test.xml` konfiguriert das Test-Logging.

@@ -201,13 +201,23 @@
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
-                <version>2.43.0</version>
+                <version>3.10.4</version>
                 <configuration>
+                    <!-- Nur seit dem letzten Commit geänderte/neue Dateien bearbeiten. -->
+                    <ratchetFrom>HEAD</ratchetFrom>
                     <java>
-                        <eclipse>
-                            <version>4.33</version>
-                            <file>${project.basedir}/eclipse-formatter.xml</file>
-                        </eclipse>
+                        <includes>
+                            <include>src/main/java/**/*.java</include>
+                            <include>src/test/java/**/*.java</include>
+                            <include>shared/src/main/java/**/*.java</include>
+                            <include>shared/src/test/java/**/*.java</include>
+                            <include>browser-tests/src/main/java/**/*.java</include>
+                            <include>browser-tests/src/test/java/**/*.java</include>
+                        </includes>
+                        <googleJavaFormat>
+                            <version>1.36.1</version>
+                            <style>GOOGLE</style>
+                        </googleJavaFormat>
                     </java>
                     <!-- Uncomment to format TypeScript files 
                         <typescript>

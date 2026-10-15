@@ -53,8 +53,19 @@
   Resource loading must also work inside a JAR.
 - Do not manually edit `src/main/frontend/generated/`, `vite.generated.ts` or `target/`.
   Put custom Vite configuration in `vite.config.ts`.
-- Preserve the local code style. Spotless uses `eclipse-formatter.xml`;
-  do not reformat the entire project without a task requiring it.
+- Java-Standard ist Google Java Format (`GOOGLE`, 2 Leerzeichen), zentral über
+  Spotless im Root-`pom.xml`; Anwendung, Shared-Modul und Browsertests sind eingeschlossen.
+- Nach JEDER eigenen Java-Änderung verbindlich vor Tests und vor dem Abschluss
+  `.\mvnw.cmd spotless:apply` und anschließend `.\mvnw.cmd spotless:check` im
+  Projektroot ausführen, auch bei kleinen Änderungen ohne Build/Testlauf.
+  Nach späteren Java-Korrekturen diesen Schritt wiederholen. Dies ist der dauerhafte
+  Standard für künftige Aufgaben, kein einmaliger Formatierungslauf.
+- Spotless berücksichtigt über `ratchetFrom=HEAD` geänderte und neue Java-Dateien.
+  Bei fremden vorhandenen Java-Änderungen beide Aufrufe mit `-DspotlessFiles=...`
+  auf die selbst bearbeiteten Dateien begrenzen; der Wert enthält reguläre Ausdrücke
+  für absolute Dateipfade. Fremde Änderungen erhalten. Den Ratchet nicht abschalten
+  und keine projektweite Umformatierung ohne eigenen Auftrag ausführen.
+  Anleitung und Grenzen: `docs/java-formatierung.md`.
 
 ## 3. Execution and troubleshooting
 
