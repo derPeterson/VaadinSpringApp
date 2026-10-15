@@ -1132,6 +1132,14 @@ public class MessageTexts {
         return getTranslation("gender.other");
     }
 
+    public String getRoleSuperadmin() {
+        return getTranslation("role.superadmin");
+    }
+
+    public String getRoleGuest() {
+        return getTranslation("role.guest");
+    }
+
     public String getRoleAdmin() {
         return getTranslation("role.admin");
     }

@@ -142,6 +142,11 @@ public class UserEntity {
         this.lastActivity = LocalDateTime.now();
     }
 
+    public boolean hasAdministrativeRole() {
+        return roleEntities != null && roleEntities.stream()
+                .anyMatch(role -> role.getName() != null && role.getName().isAdministrative());
+    }
+
     public boolean hasRole(RoleType roleType) {
         return roleEntities != null &&
                 roleEntities.stream().anyMatch(role -> role.getName() == roleType);

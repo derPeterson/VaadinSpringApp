@@ -121,6 +121,69 @@ public class UserAccessBrowserTest extends BrowserFixture {
         assertThat(form.enabled()).isChecked(); assertThat(form.administrator()).isChecked(); form.cancel();
     }
 
+    @Test @DisplayName("USER-07F: Superadmin allein erhält Adminzugriff und die Adminaktion auf Home")
+    @Description("""
+        1. Eigenes aktives Konto über die UI anlegen; ausschließlich Superadmin zuweisen.
+        2. Formular neu öffnen: Superadmin gespeichert, Administrator/Benutzer/Gast nicht zugewiesen.
+        3. In einer unabhängigen Sitzung anmelden: Admin-Dashboard erreichbar.
+        4. Home öffnen und über die sichtbare Verwaltungsaktion zurück in den Adminbereich wechseln.
+        5. Eigenes Formular ohne zweite Adminrolle bearbeiten und speichern.
+        **Erwartet:** Superadmin erbt Adminrechte ohne zusätzliche gespeicherte Administratorrolle.
+        """)
+    void superadminAloneHasAdminNavigationAndCanSaveItsOwnAccount() {
+        AdminUsersPage users = admin(); String email = email("superadmin");
+        users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+        AdminUserDialog form = users.openEdit(email);
+        form.setRole(texts.getRoleUser(), false); form.setRole(texts.getRoleSuperadmin(), true); form.save();
+        form = users.openEdit(email);
+        assertThat(form.role(texts.getRoleSuperadmin())).isChecked();
+        assertThat(form.role(texts.getRoleAdmin())).not().isChecked();
+        assertThat(form.role(texts.getRoleUser())).not().isChecked();
+        assertThat(form.role(texts.getRoleGuest())).not().isChecked(); form.cancel();
+        try (BrowserActor actor = new BrowserActor(browser)) {
+            actor.loginAdmin(email, BrowserTestAccounts.USER_PASSWORD);
+            actor.page.navigate(path(HOME_ROUTE));
+            assertThat(actor.page).hasURL(urlPattern(HOME_ROUTE));
+            new UserMenu(actor.page).open();
+            actor.page.getByRole(com.microsoft.playwright.options.AriaRole.BUTTON, new Page.GetByRoleOptions()
+                    .setName(texts.getBaseManageApplicationButton()).setExact(true)).click();
+            assertThat(actor.page).hasURL(urlPattern(ADMIN_ROUTE));
+            AdminUserDialog own = new AdminUsersPage(actor.page).openEdit(email);
+            own.firstName().fill("Superadmin"); own.save();
+            own = new AdminUsersPage(actor.page).openEdit(email);
+            assertThat(own.firstName()).hasValue("Superadmin"); own.cancel();
+        }
+    }
+
+    @Test @DisplayName("USER-07G: Gastrolle allein erlaubt Home, aber keinen Adminbereich")
+    @Description("""
+        1. Eigenes aktives Konto über die UI anlegen; ausschließlich Gast zuweisen.
+        2. Formular neu öffnen: Gast gespeichert, Benutzer/Administrator/Superadmin nicht zugewiesen.
+        3. In unabhängiger Sitzung anmelden: Home und eigenes Benutzermenü erreichbar.
+        4. Admin direkt aufrufen: lokalisierte Zugriffsverweigerung auf Home.
+        **Erwartet:** Gast kann sich wie Benutzer anmelden und Home nutzen; keine Adminrechte.
+        """)
+    void guestAloneCanSignInAndUseHomeWithoutAdminAccess() {
+        AdminUsersPage users = admin(); String email = email("guest-role");
+        users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+        AdminUserDialog form = users.openEdit(email);
+        form.setRole(texts.getRoleUser(), false); form.setRole(texts.getRoleGuest(), true); form.save();
+        form = users.openEdit(email);
+        assertThat(form.role(texts.getRoleGuest())).isChecked();
+        assertThat(form.role(texts.getRoleUser())).not().isChecked();
+        assertThat(form.role(texts.getRoleAdmin())).not().isChecked();
+        assertThat(form.role(texts.getRoleSuperadmin())).not().isChecked(); form.cancel();
+        try (BrowserActor actor = new BrowserActor(browser)) {
+            actor.login(email, BrowserTestAccounts.USER_PASSWORD);
+            assertThat(actor.page).hasURL(urlPattern(HOME_ROUTE));
+            new UserMenu(actor.page).selectTestLanguage();
+            new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
+            new UserMenu(actor.page).close();
+            actor.page.navigate(path(ADMIN_ROUTE));
+            assertThat(actor.page.getByText(texts.getBaseErrorAdminAccessDenied(), new Page.GetByTextOptions().setExact(true))).isVisible();
+        }
+    }
+
     private AdminUsersPage admin() {
         LoginPage login = new LoginPage(page); login.open(); login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
         new UserMenu(page).selectTestLanguage(); login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);

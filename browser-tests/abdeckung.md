@@ -1,11 +1,39 @@
 # Browserabdeckung und offene Punkte
 
-**Runner-Nachprüfung am 15.10.2026: 43 Helper-/Reportertests, 34 Fast-Fälle DE/EN und 100 vollständige DE-Browserfälle mit zwei isolierten Workern erfolgreich.**
-Der vorherige Theme-Prüfstand mit 1085 Anwendungs-JUnit-Tests und je 100 DE-/EN-Fällen
-bleibt unten als eigener Prüfschritt erhalten.
+**Gezielte Rollenprüfung am 15.10.2026: 353 Anwendungs-JUnit-Tests und je 7 Zugriffsfälle auf Deutsch/Englisch erfolgreich.**
+Die früheren vollständigen Theme- und Runnerprüfungen bleiben unten getrennt dokumentiert;
+sie sind kein vollständiger Nachweis für die anschließend ergänzten Rollen.
 Bedienung und Aufbau stehen in der [Browser-Testanleitung](README.md).
 Wichtige Abschlüsse bleiben unter [Meilensteine](../docs/meilensteine/README.md)
 unabhängig von bereinigbaren lokalen Testausgaben erhalten.
+
+## Superadmin und Gast (15.10.2026)
+
+| Prüfung | Ergebnis |
+| --- | --- |
+| Java 25 / gemeinsames Übersetzungsmodul | Sauber gebaut und installiert |
+| Gezielte Anwendungs-JUnit-Auswahl | 353/353; keine Fehler, Fehlschläge oder Skips |
+| `user-access` DE / EN | Je 7/7 mit identischem neu gebautem App-Image; keine Fehler oder Skips |
+| Eigene Docker-/H2-/Mailpit-Umgebungen und Berichte | Aufbau, Abbau und Berichtserstellung erfolgreich |
+
+USER-07F weist ausschließlich Superadmin über das Formular zu und prüft erneutes
+Öffnen, Adminlogin, Verwaltungsaktion auf Home und Speichern des eigenen Formulars.
+USER-07G weist ausschließlich Gast zu und prüft erneutes Öffnen, Login/Home,
+fehlende Adminaktion und abgewiesenen direkten Adminzugriff. Beide sind über die
+reguläre Oberfläche in beiden Sprachen bestanden. USER-07A–E wurden ebenfalls erneut geprüft.
+
+JUnit prüft zusätzlich die vier persistierten Rollen, Übersetzungen, Zuweisung und exakte
+Filter einschließlich Badges, unveränderte Bootstrap-/Registrierungsrollen, die echte
+Security-Kette, Rollenentzug für bestehende Sitzungen und RPC-Schutz. Admin und Superadmin
+zählen gemeinsam beim Letzter-Admin-Schutz; doppelte Rollen zählen einmal, parallele
+Änderungen bleiben gesichert. Ein alter H2-Enum mit zwei Rollen wird in einer frischen
+In-Memory-Datenbank erweitert: alte IDs, Verknüpfung und Foreign Key bleiben erhalten;
+ein zweiter Aufruf führt kein weiteres ALTER aus. Bestehende Anwendungsdaten wurden nicht benutzt.
+
+`all` enthält jetzt 102 Browserfälle, `fast` weiterhin 34. Die vollständige 102er-Suite
+und der Fast-Modus wurden für diese Rollenänderung nicht erneut ausgeführt.
+Es wurde keine neue vollständige Code-Coverage gemessen; die unten genannten Werte
+gehören zu ihrem jeweiligen früheren Prüfstand. Rollenstandard: [Projekt-README](../README.md#rollen-und-zugriffsrechte).
 
 ## Fast-Modus und isolierte Parallelisierung (15.10.2026)
 
@@ -164,6 +192,8 @@ bleiben ergänzende Prüfungen.
 | USER-11B | Datumabhängige Zeit, aktueller Platzhalter, begrenztes Overlay und Scrollen ohne Auswahl | Bestanden | Bestanden |
 | USER-12A | Optionale Passwortbestätigung, exakter Vergleich, Fehler erst nach Blur und Rücksetzen | Bestanden | Bestanden |
 | USER-12B | Sichere Schließen-Aktionen, neue Löschtexte und Erhalt des ausgewählten Kontos | Bestanden | Bestanden |
+| USER-07F | Ausschließlich Superadmin: gespeicherte Rolle, Adminlogin, Home-Verwaltungsaktion und eigenes Formular speichern | Bestanden | Bestanden |
+| USER-07G | Ausschließlich Gast: gespeicherte Rolle, Anmeldung/Home, keine Adminaktion und kein Adminzugriff | Bestanden | Bestanden |
 
 Suche/Pagination, Filter, Anlage, Bearbeitung, Löschabbruch/-bestätigung,
 Selbstlöschschutz, Sprachpräferenz und Passwortwechsel bestehen jetzt in beiden
@@ -171,14 +201,15 @@ Gesamtläufen. Der Editierbutton wird vor dem echten Mausklick sichtbar gemacht 
 fokussiert, damit die native Grid-Scrollbewegung den Klick nicht verliert. Erwartungen,
 Speicher-/Anmeldeprüfungen und Sicherheitsregeln bleiben erhalten.
 
-Im aktuellen vollständigen DE-/EN-Lauf sind jeweils alle 100 Browserfälle bestanden.
+In der vollständigen Theme-Prüfung bestanden jeweils alle damaligen 100 DE-/EN-Browserfälle.
+Die nachfolgende gezielte Rollenprüfung und ihre Grenzen stehen oben.
 Noch offene ergänzende Prüfungen stehen im Abschnitt „Ergänzende Handprüfungen“ unten.
 
 ## Ergänzte Arbeitspakete
 
 | Paket | Neue UI-Aussagen | Suite / IDs |
 | --- | --- | --- |
-| 1 | Sperren/Freigeben, gezieltes Aktivieren unverifizierter Konten, Rollenvergabe/-entzug, echte zwei alte Formulare und Selbstschutz | `user-access`: USER-07A–E |
+| 1 | Sperren/Freigeben, gezieltes Aktivieren unverifizierter Konten, Rollenvergabe/-entzug, Superadmin/Gast, echte zwei alte Formulare und Selbstschutz | `user-access`: USER-07A–G |
 | 2 | Alte privilegierte Callbacks nach Rollenentzug/Sperre/Löschung; alte Verifikations- und Resetbuttons; neutrale gesperrte Anfrage | `session-security`: SESSION-01A–E (einschließlich Remember-me bei Sperre/Löschung); `blocked-links`: SEC-LINK-01A/B und SEC-LINK-02A/B, RESET-03C |
 | 3 | Echter Browserneustart mit/ohne Remember-me und nach Logout; Statuswahl, zweiter Tab, automatische Abwesenheit/Rückkehr | `remember-me`: AUTH-07A/B; `user-status`: STATUS-01/02 |
 | 4 | Weitere String-/Boolean-/Integerkonfiguration, Unicode-Testmail, echte Tokenabläufe/Resend und Verifikationsanfragefehler | `configuration`: CONFIG-04A–C; `admin-mail`: MAIL-01; `token-expiry`: VER-03A, RESET-06A, VER-02B |

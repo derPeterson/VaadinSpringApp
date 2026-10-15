@@ -17,7 +17,6 @@ import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.NavigationErrorCode;
-import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserService;
@@ -131,7 +130,7 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
     private UserPopoverMenu.Actions createPopoverActions() {
         Runnable manageApplicationAction = null;
 
-        if (currentUser != null && currentUser.hasRole(RoleType.ROLE_ADMIN)) {
+        if (currentUser != null && currentUser.hasAdministrativeRole()) {
             manageApplicationAction = () -> UI.getCurrent().navigate(AdminView.class);
         }
 

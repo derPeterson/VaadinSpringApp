@@ -828,7 +828,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                     return;
                 }
 
-                if (isCurrentUser(user) && !formData.getRoles().contains(RoleType.ROLE_ADMIN)) {
+                if (isCurrentUser(user) && formData.getRoles().stream().noneMatch(RoleType::isAdministrative)) {
                     showError(messageProperties::getAdminUsersErrorRemoveOwnAdminRole);
                     return;
                 }
@@ -1073,6 +1073,8 @@ public class AdminUserManagementSection extends VerticalLayout {
             return "-";
         }
         return switch (roleType) {
+            case ROLE_SUPERADMIN -> messageProperties.getRoleSuperadmin();
+            case ROLE_GUEST -> messageProperties.getRoleGuest();
             case ROLE_ADMIN -> messageProperties.getRoleAdmin();
             case ROLE_USER -> messageProperties.getRoleUser();
         };

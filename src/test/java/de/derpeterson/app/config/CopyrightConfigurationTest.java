@@ -31,6 +31,6 @@ class CopyrightConfigurationTest {
     }
     private DatabaseInitializer initializer(ConfigService config, Environment environment) {
         return new DatabaseInitializer(mock(UserRepository.class), mock(RoleRepository.class), config,
-                mock(PasswordEncoder.class), environment);
+                mock(PasswordEncoder.class), environment, mock(RoleSchemaUpdater.class));
     }
 }

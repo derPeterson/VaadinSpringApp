@@ -64,6 +64,14 @@ public final class AdminUserDialog {
                 new Locator.GetByRoleOptions().setName(texts.getRoleAdmin()).setExact(true));
     }
 
+    @Step("Explizite Rolle im Benutzerformular vergeben oder entziehen")
+    public void setRole(String translatedRole, boolean selected) { role(translatedRole).setChecked(selected); }
+
+    public Locator role(String translatedRole) {
+        return root().getByRole(AriaRole.CHECKBOX,
+                new Locator.GetByRoleOptions().setName(translatedRole).setExact(true));
+    }
+
     @Step("Speichern versuchen und erwarteten fachlichen Hinweis prüfen")
     public void expectSaveError(String message) {
         assertThat(saveButton()).isEnabled();

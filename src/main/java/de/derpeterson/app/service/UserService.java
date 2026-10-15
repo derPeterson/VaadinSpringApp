@@ -212,8 +212,16 @@ public class UserService {
     }
 
     private List<Long> lockAndReadAdmins() {
+        // Both administrative roles use the same lock, including mixed Admin/Superadmin changes.
         userRepository.lockRole(RoleType.ROLE_ADMIN);
-        return userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN);
+        return readAdminIds();
+    }
+
+    private List<Long> readAdminIds() {
+        return java.util.stream.Stream.concat(
+                userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN).stream(),
+                userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN).stream())
+                .distinct().sorted().toList();
     }
 
     private boolean removesLastAdmin(Long userId, boolean remainsAdmin, List<Long> admins) {
@@ -229,7 +237,7 @@ public class UserService {
     private void ensureAdminsRemain(List<Long> before) {
         // flush can include other users already dirtied by a caller in the same
         // transaction. Reject that entire batch, not just the submitted entity.
-        if (!before.isEmpty() && userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN).isEmpty()) {
+        if (!before.isEmpty() && readAdminIds().isEmpty()) {
             throw new IllegalStateException("Der letzte aktive Administrator muss erhalten bleiben.");
         }
     }
@@ -252,7 +260,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public boolean canDeleteUser(UserEntity user) {
         return user != null && user.getId() != null && !removesLastAdmin(user.getId(), false,
-                userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN));
+                readAdminIds());
     }
 
     @Transactional(readOnly = true)
@@ -262,15 +270,15 @@ public class UserService {
             return false;
         }
         return removesLastAdmin(editedUserId, enabled && hasAdminRole(roleEntities),
-                userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN));
+                readAdminIds());
     }
 
     private boolean isEnabledAdmin(UserEntity user) {
-        return user != null && user.isEnabled() && user.hasRole(RoleType.ROLE_ADMIN);
+        return user != null && user.isEnabled() && user.hasAdministrativeRole();
     }
 
     private boolean hasAdminRole(Collection<RoleEntity> roleEntities) {
-        return roleEntities != null && roleEntities.stream().anyMatch(roleEntity -> roleEntity.getName() == RoleType.ROLE_ADMIN);
+        return roleEntities != null && roleEntities.stream().anyMatch(roleEntity -> roleEntity.getName() != null && roleEntity.getName().isAdministrative());
     }
 
     private void validateUserFields(UserEntity user) {

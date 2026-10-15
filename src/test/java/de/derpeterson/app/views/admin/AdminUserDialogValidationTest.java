@@ -2,6 +2,7 @@ package de.derpeterson.app.views.admin;
 
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.server.VaadinSession;
@@ -148,6 +149,23 @@ class AdminUserDialogValidationTest {
         assertEquals("Different!", confirm().getValue());
         assertEquals(texts.getBaseValidationPasswordConfirmMessage(), confirm().getErrorMessage());
         assertEquals(texts.getAccountConfirmPasswordPlaceholder(), confirm().getPlaceholder());
+    }
+
+    @ParameterizedTest @ValueSource(strings = {"de", "en"})
+    void newRolesCanBeAssignedAndHaveTranslatedLabels(String language) {
+        open(language, false);
+        @SuppressWarnings("unchecked")
+        CheckboxGroup<RoleType> roles = (CheckboxGroup<RoleType>) descendants(dialog)
+                .filter(CheckboxGroup.class::isInstance).findFirst().orElseThrow();
+        assertEquals(List.of(RoleType.values()), roles.getListDataView().getItems().toList());
+        assertEquals(texts.getRoleSuperadmin(), roles.getItemLabelGenerator().apply(RoleType.ROLE_SUPERADMIN));
+        assertEquals(texts.getRoleGuest(), roles.getItemLabelGenerator().apply(RoleType.ROLE_GUEST));
+        roles.setValue(Set.of(RoleType.ROLE_SUPERADMIN, RoleType.ROLE_GUEST));
+        save().click();
+        var edited = org.mockito.ArgumentCaptor.forClass(UserEntity.class);
+        verify(users).updateAdminUser(edited.capture(), eq(3L), eq(""));
+        assertEquals(Set.of(RoleType.ROLE_SUPERADMIN, RoleType.ROLE_GUEST), edited.getValue().getRoleEntities().stream()
+                .map(RoleEntity::getName).collect(java.util.stream.Collectors.toSet()));
     }
 
     private void open(String language, boolean create) {

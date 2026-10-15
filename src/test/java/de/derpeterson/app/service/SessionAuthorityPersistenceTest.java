@@ -159,6 +159,25 @@ class SessionAuthorityPersistenceTest {
         assertEquals(List.of("ROLE_USER"), current.getAuthorities().stream().map(Object::toString).toList());
     }
 
+    @ParameterizedTest
+    @CsvSource({"context,ROLE_SUPERADMIN", "http,ROLE_SUPERADMIN", "vaadin,ROLE_SUPERADMIN", "remember,ROLE_SUPERADMIN",
+            "context,ROLE_GUEST", "http,ROLE_GUEST", "vaadin,ROLE_GUEST", "remember,ROLE_GUEST"})
+    void replacingNewRolesAlsoRevokesEveryExistingPrincipalSource(String source, RoleType roleType) {
+        transaction.executeWithoutResult(tx -> {
+            var role = RoleEntity.builder().name(roleType).build();
+            entityManager.persist(role);
+            form().setRoleEntities(new ArrayList<>(List.of(role)));
+        });
+        oldPrincipal = new CustomUserDetailsService(repository).loadUserByUsername("victim@example.com");
+        var request = request(source, "/VAADIN/uidl");
+        var oldSession = (MockHttpSession) request.getSession(false);
+        assertTrue(security.getAuthenticatedUser(request).isPresent());
+        revoke();
+        assertTrue(security.getAuthenticatedUser(request).isEmpty());
+        assertTrue(oldSession.isInvalid());
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
     @Test
     void rollbackDoesNotInvalidateCurrentAuthoritiesAndReadIgnoresPendingRoleEdits() {
         var request = request("context", "/admin");

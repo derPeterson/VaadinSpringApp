@@ -32,6 +32,24 @@ Versandausgängen: [Mailqueue-Verarbeitung](docs/email-queue-processing.md).
 
 Belege: `views/RegistrationView.java`, `views/LoginView.java`, `views/admin/`, `service/VerificationService.java`, `service/PasswordResetService.java`, `service/EmailQueueService.java`, `security/SecurityConfig.java` und `scheduler/UserStatusScheduler.java` unter `src/main/java/de/derpeterson/app/`.
 
+## Rollen und Zugriffsrechte
+
+Die Rollen werden in der Reihenfolge **Superadmin → Administrator → Benutzer → Gast**
+angeboten. Superadmin erhält sämtliche bestehenden Admin-Berechtigungen, einschließlich
+Adminbereich und Benutzerverwaltung. Gast darf vorerst dieselben Bereiche wie Benutzer
+aufrufen, insbesondere Home; zusätzliche Einschränkungen sind noch nicht festgelegt.
+Beide Rollen sind in Benutzerformular und Rollenfilter verfügbar (EN: Superadmin / Guest).
+
+Gespeicherte Rollenzuweisungen und automatisch gewährte Berechtigungen bleiben getrennt:
+Superadmin gewährt bei der Anmeldung zusätzlich `ROLE_ADMIN`, ohne eine zweite
+Rollenzuweisung zu speichern. Rollenfilter zeigen die ausdrücklich zugewiesene Rolle.
+Der Schutz des letzten aktiven Administrators berücksichtigt Admin und Superadmin gemeinsam;
+ein Konto mit beiden Rollen zählt einmal. Bestehende Konten werden nicht umgestuft,
+Registrierungen erhalten weiterhin Benutzer, und das optionale Bootstrap-Konto behält
+Administrator und Benutzer. Fehlende Rollen werden beim Anwendungsstart ergänzt.
+Eine bestehende H2-Enum-Spalte wird zuvor gezielt um die Rollennamen erweitert;
+vorhandene Rollen-IDs und Kontozuweisungen bleiben erhalten.
+
 ## Kontoansichten, Home und Admin: Silent Cosmos und Inter
 
 Login, Registrierung, Verifikation, Passwortanfrage und Passwortänderung verwenden

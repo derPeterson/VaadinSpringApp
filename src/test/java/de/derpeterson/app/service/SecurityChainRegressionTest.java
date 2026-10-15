@@ -18,6 +18,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -114,6 +115,48 @@ class SecurityChainRegressionTest {
         assertTrue(session.isInvalid());
         verifyNoInteractions(action);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @ParameterizedTest
+    @EnumSource(RoleType.class)
+    void currentRoleGrantsHomeAndOnlyAdministratorsReachAdmin(RoleType roleType) throws Exception {
+        transaction.executeWithoutResult(tx -> {
+            repository.deleteAll();
+            repository.flush();
+            entityManager.createQuery("delete from RoleEntity").executeUpdate();
+            var role = RoleEntity.builder().name(roleType).build();
+            entityManager.persist(role);
+            create("role-access@example.test", role);
+        });
+        var principal = new CustomUserDetailsService(repository).loadUserByUsername("role-access@example.test");
+        var expected = roleType == RoleType.ROLE_SUPERADMIN
+                ? java.util.Set.of("ROLE_SUPERADMIN", "ROLE_ADMIN") : java.util.Set.of(roleType.name());
+        assertEquals(expected, principal.getAuthorities().stream().map(Object::toString).collect(java.util.stream.Collectors.toSet()));
+        assertTrue(repository.findAll().getFirst().hasRole(roleType));
+        if (roleType == RoleType.ROLE_SUPERADMIN) {
+            assertFalse(repository.findAll().getFirst().hasRole(RoleType.ROLE_ADMIN),
+                    "Inherited permission must not add a stored assignment");
+        }
+        for (String path : List.of("/home", "/admin")) {
+            var context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(principal, null, principal.getAuthorities()));
+            var session = new MockHttpSession();
+            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+            var request = new MockHttpServletRequest("GET", path);
+            request.setServletPath(path);
+            request.setSession(session);
+            var response = new MockHttpServletResponse();
+            FilterChain action = mock(FilterChain.class);
+            new FilterChainProxy(chain).doFilter(request, response, action);
+            if (path.equals("/home") || roleType == RoleType.ROLE_ADMIN || roleType == RoleType.ROLE_SUPERADMIN) {
+                verify(action).doFilter(any(), any());
+                assertEquals(200, response.getStatus());
+            } else {
+                verifyNoInteractions(action);
+                assertEquals(302, response.getStatus());
+                assertEquals("/home?error=admin-access-denied", response.getRedirectedUrl());
+            }
+        }
     }
 
     private Long create(String email, RoleEntity role) {

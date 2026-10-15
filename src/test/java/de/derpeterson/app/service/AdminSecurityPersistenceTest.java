@@ -52,6 +52,74 @@ class AdminSecurityPersistenceTest {
         });
     }
 
+    private void assignSuperadmin(boolean bothAccounts, boolean keepAdminAssignment) {
+        transaction.executeWithoutResult(tx -> {
+            var role = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
+            entityManager.persist(role);
+            var first = form(firstId);
+            if (keepAdminAssignment) first.getRoleEntities().add(role);
+            else first.setRoleEntities(new ArrayList<>(List.of(role)));
+            if (bothAccounts) form(secondId).setRoleEntities(new ArrayList<>(List.of(role)));
+        });
+    }
+
+    private List<Long> administratorIds() {
+        return java.util.stream.Stream.concat(repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN).stream(),
+                repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN).stream()).distinct().sorted().toList();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"disable", "role", "form", "delete", "mixed"})
+    void parallelMixedAdminAndSuperadminMutationsPreserveAnAdministrator(String mutation) throws Exception {
+        assignSuperadmin(false, false);
+        var barrier = new CyclicBarrier(2);
+        try (var workers = Executors.newFixedThreadPool(2)) {
+            var first = workers.submit(() -> compete(firstId, mutation.equals("mixed") ? "delete" : mutation, barrier));
+            var second = workers.submit(() -> compete(secondId, mutation.equals("mixed") ? "form" : mutation, barrier));
+            assertNotEquals(first.get(10, TimeUnit.SECONDS), second.get(10, TimeUnit.SECONDS));
+        }
+        assertEquals(1, administratorIds().size());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void lastSuperadminCannotBeRemovedIncludingWhenItAlsoHasAdmin(boolean keepAdminAssignment) {
+        assignSuperadmin(false, keepAdminAssignment);
+        service.deleteUser(form(secondId));
+        assertEquals(List.of(firstId), administratorIds());
+        assertFalse(service.canDeleteUser(form(firstId)));
+        assertTrue(service.wouldRemoveLastEnabledAdmin(firstId, false, form(firstId).getRoleEntities()));
+        assertTrue(service.wouldRemoveLastEnabledAdmin(firstId, true, form(ordinaryId).getRoleEntities()));
+        assertFalse(service.wouldRemoveLastEnabledAdmin(firstId, true, form(firstId).getRoleEntities()));
+        assertThrows(IllegalStateException.class, () -> service.deleteUser(form(firstId)));
+        assertThrows(IllegalStateException.class, () -> change(form(firstId), "disable"));
+        assertThrows(IllegalStateException.class, () -> change(form(firstId), "role"));
+        assertEquals(List.of(firstId), administratorIds());
+    }
+
+    @Test
+    void soleAdminCanBeReplacedBySuperadminAndBackWithoutLosingAccess() {
+        assignSuperadmin(false, false);
+        service.deleteUser(form(secondId));
+        transaction.executeWithoutResult(tx -> {
+            var admin = entityManager.createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
+                    .setParameter("role", RoleType.ROLE_ADMIN).getSingleResult();
+            var edited = form(firstId);
+            edited.setRoleEntities(new ArrayList<>(List.of(admin)));
+            service.updateAdminUser(edited, edited.getVersion(), "");
+        });
+        assertTrue(form(firstId).hasRole(RoleType.ROLE_ADMIN));
+        transaction.executeWithoutResult(tx -> {
+            var superadmin = entityManager.createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
+                    .setParameter("role", RoleType.ROLE_SUPERADMIN).getSingleResult();
+            var edited = form(firstId);
+            edited.setRoleEntities(new ArrayList<>(List.of(superadmin)));
+            service.updateAdminUser(edited, edited.getVersion(), "");
+        });
+        assertTrue(form(firstId).hasRole(RoleType.ROLE_SUPERADMIN));
+        assertEquals(List.of(firstId), administratorIds());
+    }
+
     private Long create(String email, RoleEntity role) {
         var user = UserEntity.builder().email(email).firstName("Test").lastName("User").password("hash")
                 .birthDate(LocalDate.of(1990, 1, 1)).gender(Gender.OTHER).enabled(true).preferredLocale(Locale.ENGLISH)

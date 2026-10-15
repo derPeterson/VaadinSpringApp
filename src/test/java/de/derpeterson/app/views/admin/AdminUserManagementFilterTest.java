@@ -177,6 +177,32 @@ class AdminUserManagementFilterTest {
         assertTrue(chips().getFirst().getElement().getTextRecursively().contains(texts.getAdminUsersNo()));
     }
 
+    @ParameterizedTest @ValueSource(strings = {"de", "en"})
+    void newRoleFiltersUseAssignedRolesAndTranslateAppliedBadges(String language) {
+        var roleFilter = filter("roleFilter");
+        assertEquals(List.of(RoleType.values()), roleFilter.getListDataView().getItems().toList());
+        var user = visibleUsers().getFirst();
+        user.setRoleEntities(List.of(RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build()));
+        roleFilter.setValue(RoleType.ROLE_SUPERADMIN);
+        applyFilters();
+        assertEquals(List.of(user), visibleUsers());
+        roleFilter.setValue(RoleType.ROLE_ADMIN);
+        applyFilters();
+        assertTrue(visibleUsers().stream().noneMatch(candidate -> candidate.getId().equals(user.getId())));
+        roleFilter.setValue(RoleType.ROLE_SUPERADMIN);
+        applyFilters();
+        locale.set(Locale.forLanguageTag(language));
+        section.refreshTexts();
+        assertEquals(texts.getRoleSuperadmin(), roleFilter.getItemLabelGenerator().apply(RoleType.ROLE_SUPERADMIN));
+        assertTrue(chips().getFirst().getElement().getTextRecursively().contains(texts.getRoleSuperadmin()));
+        user.setRoleEntities(List.of(RoleEntity.builder().name(RoleType.ROLE_GUEST).build()));
+        roleFilter.setValue(RoleType.ROLE_GUEST);
+        applyFilters();
+        assertEquals(List.of(user), visibleUsers());
+        assertEquals(texts.getRoleGuest(), roleFilter.getItemLabelGenerator().apply(RoleType.ROLE_GUEST));
+        assertTrue(chips().getFirst().getElement().getTextRecursively().contains(texts.getRoleGuest()));
+    }
+
     private void applyFilters() { filterButton(texts.getAdminUsersApplyFilters()).click(); }
     private Button filterButton(String label) {
         return descendants((com.vaadin.flow.component.Component) field("filterBar"))

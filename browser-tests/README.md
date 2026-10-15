@@ -62,7 +62,7 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
 | `user-management` | Suche/Pagination, Filterentwürfe/Badges, Anlage, Bearbeitung, sichere Dialogaktionen und Passwortbestätigung | 14 |
 | `user-filters` | Entwürfe/Anwenden/Badges, Kalender/Datumabhängigkeit, Zeitoverlay und kombinierte Filter/Reset | 4 |
-| `user-access` | Sperren/Freigeben, Rollenvergabe/-entzug, unverifizierte Konten, zwei offene Formulare und Selbstschutz | 5 |
+| `user-access` | Sperren/Freigeben, Rollenvergabe/-entzug, Superadmin-/Gastzugriff, unverifizierte Konten, zwei offene Formulare und Selbstschutz | 7 |
 | `session-security` | Alte Speichern-Aktion nach Rollenentzug/Sperre/Löschung, Sperre/Löschung auch mit Remember-me | 5 |
 | `blocked-links` | Alte Verifikations-/Resetbuttons nach Adminänderung; neutrale Anfrage gesperrter Adresse | 5 |
 | `security-journeys` | Sitzungs- und Maillinkfälle gemeinsam | 10 |
@@ -77,7 +77,7 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 19 |
 | `cosmos-design` | Fünf Kontoansichten, mobiler Mailablauf, Copyright in UI/Mails, gemeinsames Theme sowie Home-/Adminnavigation bei drei Größen | 11 |
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
-| `all` | Alle 20 Testklassen einschließlich der Fast-Fälle | 100 |
+| `all` | Alle 20 Testklassen einschließlich der Fast-Fälle | 102 |
 
 UI-01A prüft die direkte Datumseingabe mit lokalisiertem Beispiel und anschließendem
 Registrieren ohne Enter/Escape. UI-01B prüft getrennt die Auswahl über das Kalender-Icon,

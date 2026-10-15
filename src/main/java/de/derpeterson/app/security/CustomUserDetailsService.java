@@ -29,6 +29,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         List<GrantedAuthority> authorities = rows.stream()
                 .map(UserRepository.SecurityUserRow::getRole)
                 .filter(java.util.Objects::nonNull)
+                .flatMap(role -> role.getGrantedRoles().stream())
                 .map(RoleType::name)
                 .distinct()
                 .map(SimpleGrantedAuthority::new)

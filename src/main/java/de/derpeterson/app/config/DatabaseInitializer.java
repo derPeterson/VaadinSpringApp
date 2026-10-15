@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.util.Set;
+import java.util.EnumMap;
 
 @Configuration
 @RequiredArgsConstructor
@@ -32,6 +33,7 @@ public class DatabaseInitializer {
     private final ConfigService configService;
     private final PasswordEncoder passwordEncoder;
     private final Environment environment;
+    private final RoleSchemaUpdater roleSchemaUpdater;
 
     @Value("${app.bootstrap.default-admin.enabled:false}")
     private boolean defaultAdminEnabled;
@@ -46,18 +48,18 @@ public class DatabaseInitializer {
     public CommandLineRunner initDatabase() {
         return args -> {
             createDefaultConfigSettings();
+            roleSchemaUpdater.updateRoleColumn();
             createDefaultRolesAndAdminUser();
         };
     }
 
     private void createDefaultRolesAndAdminUser() {
-        RoleEntity adminRoleEntity = roleRepository.findByName(RoleType.ROLE_ADMIN)
-                .orElseGet(() -> roleRepository.save(RoleEntity.builder().name(RoleType.ROLE_ADMIN).build()));
-
-        RoleEntity userRoleEntity = roleRepository.findByName(RoleType.ROLE_USER)
-                .orElseGet(() -> roleRepository.save(RoleEntity.builder().name(RoleType.ROLE_USER).build()));
-
-        logger.info("✅ Roles checked or created: ROLE_ADMIN, ROLE_USER");
+        var roles = new EnumMap<RoleType, RoleEntity>(RoleType.class);
+        for (RoleType role : RoleType.values()) {
+            roles.put(role, roleRepository.findByName(role)
+                    .orElseGet(() -> roleRepository.save(RoleEntity.builder().name(role).build())));
+        }
+        logger.info("✅ Roles checked or created: {}", roles.keySet());
 
         if (!defaultAdminEnabled) {
             logger.info("✅ Default admin bootstrap is disabled.");
@@ -82,7 +84,7 @@ public class DatabaseInitializer {
                 .email(defaultAdminEmail)
                 .gender(Gender.OTHER)
                 .birthDate(LocalDate.of(1990, 1, 1))
-                .roleEntities(Set.of(adminRoleEntity, userRoleEntity))
+                .roleEntities(Set.of(roles.get(RoleType.ROLE_ADMIN), roles.get(RoleType.ROLE_USER)))
                 .enabled(true)
                 .build();
 
