@@ -5,6 +5,7 @@
     [ValidateSet('de', 'en')]
     [string]$Language = 'de',
     [switch]$NoBuild,
+    [switch]$Coverage,
     [switch]$FailureProbe,
     [switch]$ReportingTests,
     [switch]$Report,
@@ -47,6 +48,7 @@ $javaArguments += @('de.derpeterson.browsertests.BrowserTestRunner', $modulePath
 if (-not $Report) { $javaArguments += @('--suite', $Suite, '--language', $Language) }
 if ($Headed) { $javaArguments += '--headed' }
 if ($NoBuild) { $javaArguments += '--no-build' }
+if ($Coverage) { $javaArguments += '--coverage' }
 if ($FailureProbe) { $javaArguments += '--failure-probe' }
 if ($Report) { $javaArguments += '--report' }
 if ($ReportPath) { $javaArguments += @('--report-path', $ReportPath) }

@@ -81,6 +81,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
         assertThat(form.saveButton()).isDisabled();
         assertThat(form.root()).containsText(texts.getAdminUsersPasswordHelperCreate());
         form.password().fill("ABCDEFG!");
+        form.confirmPassword().fill("ABCDEFG!");
         form.password().press("Tab");
         assertThat(form.saveButton()).isEnabled();
         form.firstName().fill("   ");
@@ -225,7 +226,8 @@ public class UserManagementBrowserTest extends BrowserFixture {
         AdminUserDialog form = users.openEdit(email);
         form.password().fill("weak"); form.password().press("Tab");
         assertThat(form.saveButton()).isDisabled();
-        form.password().fill(changed); form.password().press("Tab");
+        form.password().fill(changed);
+        form.confirmPassword().fill(changed); form.confirmPassword().press("Tab");
         form.save();
         new UserMenu(page).signOut();
         LoginPage login = new LoginPage(page); login.open(); login.signIn(email, BrowserTestAccounts.USER_PASSWORD); login.assertRejected();
@@ -246,7 +248,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
         """)
     void accountTotalTracksMutationsButNotFiltersAndFollowsLanguage() {
         AdminUsersPage users = login(); users.open();
-        Locator total = page.locator(".cosmos-admin-users-card .cosmos-panel-meta");
+        Locator total = page.locator(".cosmos-admin-users-card .cosmos-admin-users-content > .cosmos-panel-header .cosmos-panel-meta");
         // Entfernt alle Nichtziffern; so bleiben auch lokalisierte Zahlentrennzeichen außen vor.
         int original = Integer.parseInt(total.innerText().replaceAll("\\D", ""));
         String email = unique("counter") + "@example.test";
@@ -265,6 +267,75 @@ public class UserManagementBrowserTest extends BrowserFixture {
         AdminUserDialog form = users.openEdit(email);
         form.requestDelete().confirm();
         assertThat(total).hasText(texts.getAdminUsersAccountCount(original));
+    }
+
+    @Test
+    @DisplayName("USER-12A: Passwortbestätigung bleibt optional, zeigt Fehler erst nach Blur und wird beim Leeren zurückgesetzt")
+    @Description("""
+        1. Eigenes Konto anlegen und bearbeiten: leeres Passwort, deaktivierte Bestätigung und erlaubtes Speichern.
+        2. Einen Buchstaben eingeben: Bestätigung aktiv, keine roten Fehler während des Tippens, Speichern gesperrt.
+        3. Passwort verlassen: Passwortregel sichtbar, unberührte Bestätigung ohne Fehler.
+        4. Gültiges Passwort und abweichende Bestätigung eingeben: Fehler erst beim Verlassen der Bestätigung.
+        5. Erstes Passwort leeren: Bestätigung leer/deaktiviert, Speichern wieder erlaubt. Abbrechen erhält das Konto.
+        **Erwartet:** Keine frühe Fehlermeldung; kein versehentlicher Passwortwechsel und exakter Vergleich.
+        """)
+    void optionalConfirmationDefersErrorsAndClearsWithThePassword() {
+        AdminUsersPage users = login();
+        String email = unique("confirmation") + "@example.test";
+        users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+        AdminUserDialog form = users.openEdit(email);
+        assertThat(form.confirmPassword()).isDisabled();
+        assertThat(form.saveButton()).isEnabled();
+        Locator passwordHost = form.root().locator("vaadin-password-field").nth(0);
+        Locator confirmHost = form.root().locator("vaadin-password-field").nth(1);
+        form.password().fill("w");
+        assertThat(form.confirmPassword()).isEnabled();
+        assertThat(form.saveButton()).isDisabled();
+        assertThat(passwordHost).hasJSProperty("invalid", false);
+        assertThat(confirmHost).hasJSProperty("invalid", false);
+        form.password().press("Tab");
+        assertThat(passwordHost).hasJSProperty("invalid", true);
+        assertThat(confirmHost).hasJSProperty("invalid", false);
+        form.password().fill("ChangedBrowser2!");
+        form.confirmPassword().fill("DifferentBrowser2!");
+        assertThat(confirmHost).hasJSProperty("invalid", false);
+        form.firstName().click();
+        assertThat(confirmHost).hasJSProperty("invalid", true);
+        assertThat(form.root()).containsText(texts.getBaseValidationPasswordConfirmMessage());
+        form.password().fill("");
+        assertThat(form.confirmPassword()).isDisabled();
+        assertThat(form.confirmPassword()).hasValue("");
+        assertThat(confirmHost).hasJSProperty("invalid", false);
+        assertThat(form.saveButton()).isEnabled();
+        AllurePlaywright.attachScreenshot("Optionale Passwortänderung zurückgesetzt", page);
+        form.cancel();
+    }
+
+    @Test
+    @DisplayName("USER-12B: Schließen im neuen Löschdialog erhält Benutzer und offenes Bearbeitungsformular")
+    @Description("""
+        1. Eigenes Konto anlegen und Bearbeitungsformular öffnen.
+        2. Löschdialog öffnen: Untertitel, Löschfrage, Warntext, Name und E-Mail prüfen.
+        3. Schließen-Button verwenden: Löschdialog weg, Bearbeitung bleibt mit unveränderten Daten offen.
+        4. Auch Bearbeitung über Schließen beenden, Konto erneut finden.
+        **Erwartet:** Beide Schließen-Buttons sind erreichbar und führen keine Mutation aus.
+        """)
+    void newDialogCloseActionsPreserveTheSelectedUser() {
+        AdminUsersPage users = login();
+        String email = unique("close-dialog") + "@example.test";
+        users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+        AdminUserDialog form = users.openEdit(email);
+        AdminUserDeleteDialog confirmation = form.requestDelete();
+        assertThat(confirmation.root()).containsText(texts.getAdminUsersDeleteDialogDescription());
+        assertThat(confirmation.root()).containsText(texts.getAdminUsersDeleteDialogQuestion());
+        assertThat(confirmation.root()).containsText(texts.getAdminUsersDeleteDialogWarning());
+        assertThat(confirmation.root()).containsText(email);
+        confirmation.root().getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(texts.getAdminUsersCloseDialog()).setExact(true)).click();
+        assertThat(confirmation.root()).hasCount(0);
+        assertThat(form.email()).hasValue(email);
+        form.root().getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(texts.getAdminUsersCloseDialog()).setExact(true)).click();
+        assertThat(form.root()).hasCount(0);
+        users.search(email); assertThat(users.emailCells(email)).hasCount(1);
     }
 
     private AdminUsersPage login() {

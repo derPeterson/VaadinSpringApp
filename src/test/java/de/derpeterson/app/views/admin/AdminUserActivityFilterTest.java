@@ -43,10 +43,12 @@ class AdminUserActivityFilterTest {
     }
 
     @Test
-    void timeWithoutDateIsInvalidAndClearRemovesPartialInputEvenWithANullModel() {
+    void timeWithoutDateRemainsDisabledAndCannotCreateAPartialFilter() {
         time().setValue(LocalTime.NOON);
         assertNull(field.getValue());
-        assertTrue(field.isInvalid());
+        assertFalse(time().isEnabled());
+        assertNull(time().getValue());
+        assertFalse(field.isInvalid());
         field.clear();
         assertNull(date().getValue());
         assertNull(time().getValue());
@@ -93,13 +95,40 @@ class AdminUserActivityFilterTest {
         assertEquals(locale, date().getLocale());
         assertEquals(locale, time().getLocale());
         assertEquals(texts.getAdminUsersActivityDate(), date().getAriaLabel().orElseThrow());
-        assertEquals(texts.getDateInputPlaceholder(), date().getPlaceholder());
-        assertEquals(texts.getTimeInputPlaceholder(), time().getPlaceholder());
-        assertEquals(texts.getAdminUsersActivityTimeOptional(),
-                ((com.vaadin.flow.component.html.Span) ReflectionTestUtils.getField(field, "optionalTimeHint")).getText());
+        assertEquals(texts.getAdminUsersFilterActiveSince(), date().getLabel());
+        assertEquals(LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern(
+                language.equals("de") ? "dd.MM.uuuu" : "MM/dd/uuuu", locale)), date().getPlaceholder());
+        LocalTime placeholder = LocalTime.parse(time().getPlaceholder(), java.time.format.DateTimeFormatter.ofPattern(
+                language.equals("de") ? "HH:mm" : "h:mm a", locale));
+        assertEquals(0, placeholder.getMinute() % 15);
+        assertFalse(placeholder.isAfter(LocalTime.now()));
         assertFalse(date().isAutoOpen());
         assertFalse(time().isAutoOpen());
         assertEquals(texts.getAdminUsersActivityTimeOptional(), time().getAriaLabel().orElseThrow());
+    }
+
+    @Test
+    void clearingTheDateClearsAndDisablesAnExistingTimeAndReentryEnablesIt() {
+        field.setValue(day.atTime(14, 30));
+        assertTrue(time().isEnabled());
+        date().clear();
+        assertNull(time().getValue());
+        assertFalse(time().isEnabled());
+        assertNull(field.getValue());
+        date().setValue(day);
+        assertTrue(time().isEnabled());
+        assertEquals(day.atStartOfDay(), field.getValue());
+    }
+
+    @Test
+    void invalidDateDisablesTimeAndDoesNotExposeAValidCutoff() {
+        field.setValue(day.atTime(14, 30));
+        date().setInvalid(true);
+        assertNull(field.generateModelValue());
+        assertTrue(field.isInvalid());
+        field.clear();
+        assertFalse(time().isEnabled());
+        assertFalse(field.isInvalid());
     }
 
     private DatePicker date() { return (DatePicker) ReflectionTestUtils.getField(field, "date"); }

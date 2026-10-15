@@ -16,10 +16,10 @@ Eine globale Playwright- oder Allure-Installation ist nicht erforderlich.
 .\browser-tests\run.ps1 -InstallBrowsers
 
 # Alle Suites auf Deutsch, mit aktuellem Anwendungsimage.
-.\browser-tests\run.ps1 -Suite all -Language de
+.\browser-tests\run.ps1 -Suite all -Language de -Coverage
 
 # Dasselbe unveränderte Anwendungsimage anschließend auf Englisch prüfen.
-.\browser-tests\run.ps1 -Suite all -Language en -NoBuild
+.\browser-tests\run.ps1 -Suite all -Language en -NoBuild -Coverage
 ```
 
 | Aktion | Befehl |
@@ -33,7 +33,7 @@ Eine globale Playwright- oder Allure-Installation ist nicht erforderlich.
 | Gespeicherten Trace öffnen | `.\browser-tests\run.ps1 -Trace 'C:\PFAD\ZUM\trace.zip'` |
 | Absichtlich einen roten Bericht erzeugen | `.\browser-tests\run.ps1 -NoBuild -FailureProbe` |
 
-`-Suite`, `-Language`, `-Headed` und `-NoBuild` lassen sich kombinieren.
+`-Suite`, `-Language`, `-Headed`, `-NoBuild` und `-Coverage` lassen sich kombinieren.
 Standardwerte sind `all` und `de`. `-NoBuild` verwendet das vorhandene App-Image;
 nach Änderungen an Anwendung, gemeinsamen Quellen, Übersetzungen oder Styles
 zuerst einen Lauf mit Image-Build starten. Sonst kann der Browser einen alten Stand prüfen.
@@ -58,8 +58,8 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `account-lifecycle` | Einzelvalidierungen, kanonisierte Dubletten, unverifizierte Anfrage und altes Resetformular | 5 |
 | `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung mit Datumeingabe/Kalenderauswahl und Tastaturlogin | 5 |
 | `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
-| `user-management` | Suche/Pagination, optionale Filter, Anlage, Bearbeitung, Löschung, Selbstschutz und Passwortwechsel | 10 |
-| `user-filters` | Teilmenge der Benutzerverwaltung: direkte Datumeingabe und Kalenderauswahl, optionale Uhrzeit, kombinierte Filter/Clear | 2 |
+| `user-management` | Suche/Pagination, Filterentwürfe/Badges, Anlage, Bearbeitung, sichere Dialogaktionen und Passwortbestätigung | 14 |
+| `user-filters` | Entwürfe/Anwenden/Badges, Kalender/Datumabhängigkeit, Zeitoverlay und kombinierte Filter/Reset | 4 |
 | `user-access` | Sperren/Freigeben, Rollenvergabe/-entzug, unverifizierte Konten, zwei offene Formulare und Selbstschutz | 5 |
 | `session-security` | Alte Speichern-Aktion nach Rollenentzug/Sperre/Löschung, Sperre/Löschung auch mit Remember-me | 5 |
 | `blocked-links` | Alte Verifikations-/Resetbuttons nach Adminänderung; neutrale Anfrage gesperrter Adresse | 5 |
@@ -74,22 +74,49 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 19 |
 | `cosmos-design` | Fünf Kontoansichten, mobiler Mailablauf, Copyright in UI/Mails, gemeinsames Theme sowie Home-/Adminnavigation bei drei Größen | 11 |
-| `all` | Alle 20 Testklassen | 96 |
+| `all` | Alle 20 Testklassen | 100 |
 
 UI-01A prüft die direkte Datumseingabe mit lokalisiertem Beispiel und anschließendem
 Registrieren ohne Enter/Escape. UI-01B prüft getrennt die Auswahl über das Kalender-Icon,
 das markierte Datum beim Wiederöffnen und das tatsächliche Absenden. Ein Feldklick
 öffnet bei der Registrierung kein Overlay. Aktuelle Nachweise stehen in `abdeckung.md`.
 
-Datum und Uhrzeit im Aktivitätsfilter öffnen ihre Auswahllisten nur über das Icon
-(oder die vorgesehenen Pfeiltasten). Kurze formatgerechte DE-/EN-Beispiele kommen
-aus dem gemeinsamen Übersetzungskatalog; „Uhrzeit optional“ steht neben der
-Filterüberschrift. Das Geburtstagsfeld im Anlegen-/Bearbeiten-Dialog verwendet
-ebenfalls direkte Eingabe ohne automatisches Öffnen und denselben kurzen Datumsplatzhalter.
+Datum und Uhrzeit im Aktivitätsfilter öffnen nur über Icon/Pfeiltaste. Der Button
+„Filter“ schaltet alle permanenten Filterfelder ein/aus. Die Helfer unterscheiden
+`selectDraftFilter` und `applyFilters`; `selectFilter` führt beide echten UI-Aktionen
+aus. Ein Badge-X entfernt nur das angewandte Kriterium. Reset leert auch Entwürfe,
+blendet die Felder aber nicht aus. Platzhalter sind das heutige Datum und die
+aktuelle abgerundete Viertelstunde. Ohne gültiges Datum ist die Zeit deaktiviert.
+Das Geburtstagsfeld nutzt den Platzhalter der Registrierung.
+
+`AdminUserDialog.fillNewUser` füllt Passwort und Bestätigung. Neue Fälle USER-11A/B
+prüfen Entwurfszustand, einzelne Badge-Aktionen, Datumabhängigkeit, begrenztes
+Zeitoverlay und Scrollen ohne Auswahl. USER-12A/B prüfen den Zeitpunkt der
+Passwortfehler sowie die beiden sicheren Schließen-Aktionen der Dialoge.
 
 Die vollständigen Schritte und Erwartungen stehen pro Fall in `@Description`
 und werden automatisch in den Markdown-Bericht übernommen. Die Test-ID erscheint
 in `@DisplayName`, im Allure-Bericht und in der Abdeckungsübersicht.
+
+## Code-Coverage der Browserabläufe
+
+`-Coverage` startet ausschließlich die eigene Docker-Testanwendung mit einem
+JaCoCo-Agenten. Der Agent wird schreibgeschützt eingebunden; zusätzliche Ports
+oder Zugriff auf eine bestehende Instanz sind nicht erforderlich. Nach den Tests
+wird die eigene App geordnet gestoppt, die Ausführungsdatei vor dem Löschen der
+Container gesichert und das exakt getestete Produktions-JAR kopiert. Die
+Klassendateien für den Bericht stammen aus diesem JAR, nicht aus `target/classes`.
+
+Im jeweiligen Laufordner entstehen `coverage/html/index.html`, `coverage/jacoco.xml`,
+`coverage/jacoco.csv`, die Rohdaten und das geprüfte JAR. Der Markdown-Bericht verlinkt
+sie. Eine angeforderte, fehlgeschlagene Messung macht den Lauf insgesamt unvollständig.
+Ohne `-Coverage` bleiben Start und Abbau des bisherigen Runners erhalten.
+
+Gemessen wird serverseitiger Anwendungscode einschließlich Start, Hintergrundaufgaben
+und der ausgewählten Browserjourneys. Der Prozentsatz ist weder CSS-/JavaScript-
+Coverage noch ein Anteil aller fachlich denkbaren Fälle. „100/100 bestanden“ ist eine
+Fall-Erfolgsquote, keine Aussage über 100 % Code-Coverage. JUnit-Coverage liegt getrennt
+unter `target/site/jacoco/index.html`. Tatsächlich gemessene Werte: [Abdeckung](abdeckung.md).
 
 ## Neue Adminregressionen
 
@@ -151,7 +178,8 @@ Popupbreite, horizontale Erreichbarkeit, echte Drawer-Navigation, Allgemein und 
 Benutzerformular. Im mobilen Overlaymodus wird die Navigation vor der Prüfung des
 dahinterliegenden Inhalts geschlossen; die native Einschiebe-Animation wird abgewartet.
 Alle elf Cosmos-Fälle sind Bestandteil der vollständigen DE-/EN-Läufe. Screenshots
-enthalten den Design-Zwischenstand, keine Behauptung gestalterischer Perfektion.
+dokumentieren den abgestimmten Designstand; echte Geräte und eine vollständige
+menschliche Bewertung werden dadurch nicht ersetzt.
 
 ```powershell
 .\browser-tests\run.ps1 -Suite cosmos-design -Language de
@@ -232,9 +260,22 @@ Alternativ die ZIP herunterladen und mit `-Trace` öffnen. Belege werden auch be
 erfolgreichen Fällen behalten. `-Report` startet ausschließlich einen lokalen
 Berichtserver, keine Anwendung und keine neuen Tests.
 
-Historische Run-Berichte werden nicht nachträglich geändert. Frühere Fassungen
-der zusammengeführten Dokumentation liegen als ZIP unter `runs/dokumentationsarchiv/`.
-Dieser Unterordner enthält Dokumentationssicherungen, keine zusätzlichen Testläufe.
+### Aufbewahrung und Bereinigung
+
+`runs/` enthält ignorierte lokale Diagnoseausgaben, keine dauerhaft erforderliche
+Projektdokumentation. Screenshots, Traces, Allure-Daten und bei Coverage zusätzlich
+JAR/Klassendateien können viel Speicher benötigen. Nach Auswertung dürfen nicht mehr
+benötigte vollständige Laufordner entfernt werden. Eine dauerhafte Aufbewahrung
+oder Sicherung aller Runs ist nicht vorgesehen; es gibt keine vorgeschriebene Frist
+und keine automatische Löschung.
+
+Wichtige Abschlüsse vorher als kurze eigenständige Markdown-Zusammenfassung unter
+[Meilensteine](../docs/meilensteine/README.md) festhalten: geprüfter Stand, Ergebnisse,
+Coverage mit Messgrenzen und wichtigste Erkenntnisse. Keine konkreten Run-Pfade in
+dauerhafte Dokumentation übernehmen. Der Redesign-Abschluss ist dort bereits dokumentiert.
+Die Links innerhalb eines Run-Berichts sind nur nutzbar, solange sein Ordner besteht.
+Auch `-Report` benötigt einen vorhandenen Bericht; nach Bereinigung kann ein neuer
+Lauf erstellt oder mit `-ReportPath` ein noch vorhandener Bericht ausgewählt werden.
 
 ## Aufbau und Änderungen
 
@@ -252,6 +293,7 @@ Die Testquellen liegen unter `browser-tests/src/test/java/de/derpeterson/browser
 | `BrowserSuites` | Auswahl mit `-Suite` |
 | `BrowserRoutes` | Gemeinsame Routen als lokale Pfade und genaue URL-Erwartungen |
 | `BrowserTestRunner` | Eigene Docker-Umgebung, JUnit-Ausführung, Abbau und Allure-Erzeugung |
+| `BrowserCoverage` | Optionaler JaCoCo-Agent, sichere Extraktion der geprüften JAR-Klassen und statischer Code-Coverage-Bericht |
 | `MarkdownSummary` | Markdown-Checkliste aus fertigen Allure-Ergebnissen |
 
 `run.ps1` kompiliert das unabhängige Maven-Testprojekt und startet Java.
@@ -354,11 +396,11 @@ docker compose -f compose.browser-tests.yaml -p vaadinspringapp-e2e-java-DEINEKE
 
 Keine fremden oder manuellen Docker-Projekte zum Aufräumen verwenden.
 
-### Ausstehende Admin-Designprüfung
+### Abgeschlossene Redesign-Prüfung
 
-Home und Admin verwenden jetzt Topbar, Hintergrund, Cards, Popup und Cosmos-Palette
-gemeinsam. Admin hat zusätzlich eine neue Navigation und gestaltete Konfigurations-,
-Mailtest-, Benutzer- und Dialogflächen. Bestehende fachliche Browserfälle bleiben
-relevant; ihre bisherigen Aussagen zur unveränderten Admin-Palette müssen beim
-gemeinsamen Prüfabschluss angepasst werden. Auch schmale Navigation, Filtermenü,
-Statusauswahl und Formularpaare sind dabei zu prüfen. Noch keine neuen Prüfergebnisse.
+Die gemeinsame Gestaltung von Kontoansichten, Home und Administration einschließlich
+Benutzerfiltern und Dialogen wurde am 15.10.2026 vollständig auf DE und EN geprüft.
+Ergebnisse und Erkenntnisse bleiben im
+[Redesign-Meilenstein](../docs/meilensteine/2026-10-15-redesign-abgeschlossen.md) erhalten.
+Aktuelle Fallzuordnungen und offene Betriebs-/Gerätegrenzen stehen in
+[Abdeckung und offene Punkte](abdeckung.md).

@@ -25,6 +25,7 @@ final class MarkdownSummary {
     static String render(Map<String, Object> metadata, List<JsonNode> results) {
         boolean finished = metadata.containsKey("finishedAt");
         boolean passed = finished && List.of("setup", "tests", "cleanup", "html").stream().allMatch(key -> "passed".equals(metadata.get(key)))
+                && (!metadata.containsKey("coverage") || List.of("disabled", "passed").contains(metadata.get("coverage")))
                 && !results.isEmpty() && (!metadata.containsKey("testsFound") || results.size() == ((Number) metadata.get("testsFound")).longValue())
                 && results.stream().allMatch(test -> "passed".equals(test.path("status").asText()));
         String state = !finished ? "IN BEARBEITUNG" : passed ? "BESTANDEN" : "UNVOLLSTÄNDIG / FEHLER";
@@ -40,6 +41,13 @@ final class MarkdownSummary {
         for (String key : List.of("runId", "startedAt", "finishedAt", "commit", "branch", "imageId", "build", "suite", "failureProbe", "browser", "viewport", "uiLanguage", "browserLocale", "browserTimezone", "appUrl", "mailpitUrl", "project", "setup", "tests", "cleanup", "html"))
             text.append("| ").append(labels.get(key)).append(" | ").append(cell(metadata.get(key))).append(" |\n");
         text.append("| Lokale Änderungen | ").append(metadata.getOrDefault("gitStatus", "").toString().isBlank() ? "nein" : "ja; siehe metadata.json").append(" |\n");
+        if ("passed".equals(metadata.get("coverage"))) {
+            text.append("\n## Gemessene Browser-Coverage\n\n[JaCoCo-Bericht](coverage/html/index.html), [XML](coverage/jacoco.xml), [CSV](coverage/jacoco.csv). ")
+                    .append("Gemessen wurde der serverseitige Anwendungscode im getesteten Docker-JAR, einschließlich Start und Browserabläufen. ")
+                    .append("Dies ist keine CSS-/JavaScript- oder vollständige fachliche Abdeckung.\n");
+        } else if ("failed".equals(metadata.get("coverage"))) {
+            text.append("\n**Angeforderte Coverage konnte nicht erstellt werden:** ").append(cell(metadata.get("coverageError"))).append("\n");
+        }
         text.append("\n## Umfang und Grenzen\n\n")
                 .append("Dieses Protokoll bewertet nur die ausgewählten, unten aufgeführten Browserfälle. ")
                 .append("Ein bestandener Lauf belegt nur diese Fälle, keine vollständige Prüfung der Anwendung. ")

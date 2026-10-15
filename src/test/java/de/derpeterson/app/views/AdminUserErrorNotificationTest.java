@@ -118,15 +118,15 @@ class AdminUserErrorNotificationTest {
                 .map(DatePicker.class::cast).findFirst().orElseThrow();
         assertFalse(picker.isAutoOpen());
         assertEquals(Locale.GERMAN, picker.getLocale());
-        assertEquals(texts.getDateInputPlaceholder(), picker.getPlaceholder());
+        assertEquals(texts.getRegistrationBirthDatePlaceholder(), picker.getPlaceholder());
         LocalDate selected = picker.getValue();
         LanguageChangeEvent.fire(ui, Locale.ENGLISH);
         assertEquals(Locale.ENGLISH, picker.getLocale());
-        assertEquals(texts.getDateInputPlaceholder(), picker.getPlaceholder());
+        assertEquals(texts.getRegistrationBirthDatePlaceholder(), picker.getPlaceholder());
         assertEquals(selected, picker.getValue());
         LanguageChangeEvent.fire(ui, Locale.GERMAN);
         assertEquals(Locale.GERMAN, picker.getLocale());
-        assertEquals(texts.getDateInputPlaceholder(), picker.getPlaceholder());
+        assertEquals(texts.getRegistrationBirthDatePlaceholder(), picker.getPlaceholder());
         assertEquals(selected, picker.getValue());
     }
 
@@ -377,7 +377,7 @@ class AdminUserErrorNotificationTest {
         descendants(dialog).filter(PasswordField.class::isInstance).map(PasswordField.class::cast)
                 .forEach(field -> field.setValue("Password!"));
         descendants(dialog).filter(Checkbox.class::isInstance).map(Checkbox.class::cast)
-                .filter(field -> field.getLabel().equals(texts.getAdminUsersFieldEnabled()))
+                .filter(field -> field.hasClassName("admin-user-enabled-checkbox"))
                 .findFirst().orElseThrow().setValue(false);
         Button save = descendants(dialog).filter(Button.class::isInstance).map(Button.class::cast)
                 .filter(button -> button.getText().equals(texts.getAdminUsersSave())).findFirst().orElseThrow();

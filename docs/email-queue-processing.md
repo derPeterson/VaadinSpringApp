@@ -1,5 +1,10 @@
 # Mailqueue: Verarbeitung und unklare Versandausgänge
 
+Standabgleich 15.10.2026: Die beschriebenen Service-/Migrationsverträge bleiben vom
+Redesign unverändert. Aktuelle automatisierte Nachweise und Grenzen stehen in der
+[Abdeckungsübersicht](../browser-tests/abdeckung.md). Bestandsmigrationen werden
+durch Tests in frischen H2-Datenbanken nicht nachgewiesen.
+
 `EmailQueueService` koordiniert Worker über die Datenbank, nicht über einen
 prozesslokalen Java-Lock. Die Kandidatenliste ist keine Reservierung:
 

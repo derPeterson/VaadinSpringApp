@@ -19,6 +19,8 @@ public final class BrowserTestRunner {
     private final List<String> compose;
     private final Map<String, String> environment = new HashMap<>(System.getenv());
     private final boolean build;
+    private final boolean coverage;
+    private String appContainer;
     private final List<Class<?>> testClasses;
     private boolean environmentStarted;
     private final Thread shutdownHook;
@@ -27,6 +29,7 @@ public final class BrowserTestRunner {
         this.module = module.toAbsolutePath().normalize();
         repo = this.module.getParent();
         build = !options.contains("--no-build");
+        coverage = options.contains("--coverage");
         testClasses = options.contains("--failure-probe") ? List.of(FailureProbeTest.class) : BrowserSuites.select(suite);
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         String commit = git("rev-parse", "HEAD");
@@ -38,7 +41,10 @@ public final class BrowserTestRunner {
         Files.writeString(this.module.resolve("runs/latest.txt"), runId);
         project = "vaadinspringapp-e2e-java-" + suffix;
         docker = dockerExecutable();
-        compose = List.of(docker, "compose", "-f", repo.resolve("compose.browser-tests.yaml").toString(), "-p", project);
+        var composeArguments = new ArrayList<>(List.of(docker, "compose", "-f", repo.resolve("compose.browser-tests.yaml").toString()));
+        if (coverage) composeArguments.addAll(List.of("-f", BrowserCoverage.prepare(module, run).toString()));
+        composeArguments.addAll(List.of("-p", project));
+        compose = List.copyOf(composeArguments);
         metadata.put("runId", runId);
         metadata.put("startedAt", Instant.now().toString());
         metadata.put("commit", commit);
@@ -46,6 +52,7 @@ public final class BrowserTestRunner {
         metadata.put("gitStatus", git("status", "--porcelain"));
         metadata.put("project", project);
         metadata.put("build", build);
+        metadata.put("coverage", coverage ? "pending" : "disabled");
         metadata.put("failureProbe", options.contains("--failure-probe"));
         metadata.put("uiLanguage", System.getProperty("browser.tests.language"));
         metadata.put("suite", options.contains("--failure-probe") ? "reporting-probe" : suite);
@@ -115,8 +122,8 @@ public final class BrowserTestRunner {
             environmentStarted = true;
             command(withCompose("up", "-d", "--wait", "--wait-timeout", "180", build ? "--build" : "--no-build"));
             metadata.put("setup", "passed");
-            String container = command(withCompose("ps", "-q", "app")).trim();
-            metadata.put("imageId", command(List.of(docker, "inspect", "--format", "{{.Image}}", container)).trim());
+            appContainer = command(withCompose("ps", "-q", "app")).trim();
+            metadata.put("imageId", command(List.of(docker, "inspect", "--format", "{{.Image}}", appContainer)).trim());
             save();
             var listener = new SummaryGeneratingListener();
             var request = LauncherDiscoveryRequestBuilder.request()
@@ -149,6 +156,23 @@ public final class BrowserTestRunner {
             metadata.put("passed".equals(metadata.get("setup")) ? "tests" : "setup", "failed");
             System.err.println(error.getMessage());
         } finally {
+            if (coverage) {
+                try {
+                    if (appContainer == null || appContainer.isBlank()) throw new IOException("No test application started; coverage unavailable.");
+                    command(withCompose("stop", "--timeout", "30", "app"));
+                    Path coverageFolder = run.resolve("coverage");
+                    command(List.of(docker, "cp", appContainer + ":/app/logs/browser-jacoco.exec", coverageFolder.resolve("browser-jacoco.exec").toString()));
+                    command(List.of(docker, "cp", appContainer + ":/app/app.jar", coverageFolder.resolve("app.jar").toString()));
+                    BrowserCoverage.extractApplicationClasses(coverageFolder);
+                    command(BrowserCoverage.reportCommand(module, repo, coverageFolder));
+                    metadata.put("coverage", "passed");
+                    metadata.put("coverageReport", "coverage/html/index.html");
+                } catch (Exception error) {
+                    metadata.put("coverage", "failed");
+                    metadata.put("coverageError", error.toString());
+                    exitCode = 1;
+                }
+            }
             if (environmentStarted) {
                 try { cleanup(); } catch (Exception error) {
                     metadata.put("cleanup", "failed");

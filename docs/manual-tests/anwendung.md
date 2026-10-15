@@ -4,6 +4,15 @@
 > Mit dem aktuellen Quellcode abgeglichen. Der beschriebene Start wurde für diese
 > Anleitung nicht ausgeführt; sein Ergebnis wird im manuellen Testprotokoll festgehalten.
 
+Abgleich 15.10.2026: Für den normalen IDE-Start müssen aktuelle Java-Klassen und
+Ressourcen kopiert werden. Neue gemeinsame Übersetzungsgetter erfordern zuerst
+`shared` → Maven → Lifecycle → `install`; danach Anwendung neu starten und die Seite
+aktualisieren. Der [Designstandard](../design-standard.md) gilt auch für manuelle
+Prüfungen. Diese Einrichtungsanleitung dokumentiert keinen aktuellen manuellen Lauf;
+automatisierte Nachweise stehen in der [Abdeckung](../../browser-tests/abdeckung.md).
+Wichtige Ergebnisse dauerhaft unter [Meilensteine](../meilensteine/README.md)
+zusammenfassen; lokale Laufordner und umfangreiche Belege sind danach bereinigbar.
+
 ## Inhaltsverzeichnis
 
 - [1. Was „frisch“ hier bedeutet](#1-was-frisch-hier-bedeutet)
@@ -358,8 +367,8 @@ Die Einrichtung nicht als vollständig erfolgreich markieren.
 
 1. Die manuelle Testvorlage als `docs/manual-tests/vorlage.md` ablegen.
 2. Für denselben Durchlauf zwei Kopien anlegen:
-   - `anwendung.md` → `runs/2026-10-10_14-30__56f66ac__app.md`: Einrichtung.
-   - `vorlage.md` → `runs/2026-10-10_14-30__56f66ac__tests.md`: Funktionstests.
+   - `anwendung.md` → `runs/JJJJ-MM-TT_HH-mm__commit__app.md`: Einrichtung.
+   - `vorlage.md` → `runs/JJJJ-MM-TT_HH-mm__commit__tests.md`: Funktionstests.
    Datum, Uhrzeit und Commit in beiden Namen gehören zu demselben Durchlauf.
 3. Das tatsächliche Commit-Kürzel ermitteln:
 

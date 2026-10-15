@@ -64,8 +64,10 @@ class AdminUserManagementFilterTest {
         assertEquals(List.of("user24@example.test"), visibleUsers().stream().map(UserEntity::getEmail).toList());
         assertEquals(0, field("currentPage"));
         filter("enabledFilter").setValue(false);
+        applyFilters();
         assertTrue(visibleUsers().isEmpty());
         filter("enabledFilter").clear();
+        applyFilters();
         assertEquals(1, visibleUsers().size());
     }
 
@@ -75,6 +77,7 @@ class AdminUserManagementFilterTest {
         filter("statusFilter").setValue(UserStatus.AVAILABLE);
         filter("roleFilter").setValue(RoleType.ROLE_USER);
         ((AdminUserActivityFilter) field("lastActivityFilter")).setValue(cutoff);
+        applyFilters();
         assertEquals(6, visibleUsers().size());
         locale.set(Locale.forLanguageTag(language));
         section.refreshTexts();
@@ -115,6 +118,80 @@ class AdminUserManagementFilterTest {
         assertEquals(List.of(0, 8, 9, 10, 19), AdminUserPagination.pageIndices(9, 20));
         assertEquals(List.of(0, 16, 17, 18, 19), AdminUserPagination.pageIndices(19, 20));
         assertEquals(List.of(0), AdminUserPagination.pageIndices(0, 1));
+    }
+
+    @Test
+    void draftFiltersWaitForApplyWhileSearchRemainsLive() {
+        filter("enabledFilter").setValue(false);
+        assertEquals(10, visibleUsers().size());
+        ((TextField) field("searchField")).setValue("user24@example.test");
+        assertEquals(1, visibleUsers().size());
+        applyFilters();
+        assertTrue(visibleUsers().isEmpty());
+        assertEquals(1, chips().size());
+    }
+
+    @Test
+    void removingAnAppliedBadgePreservesOtherAppliedCriteriaAndPendingEdits() {
+        filter("enabledFilter").setValue(true);
+        filter("statusFilter").setValue(UserStatus.AVAILABLE);
+        applyFilters();
+        filter("roleFilter").setValue(RoleType.ROLE_ADMIN);
+        removeFilter(texts.getAdminUsersGridEnabled());
+        assertNull(filter("enabledFilter").getValue());
+        assertEquals(RoleType.ROLE_ADMIN, filter("roleFilter").getValue());
+        assertEquals(10, visibleUsers().size());
+        assertEquals(1, chips().size());
+        applyFilters();
+        assertTrue(visibleUsers().isEmpty());
+        assertEquals(2, chips().size());
+    }
+
+    @Test
+    void invalidActivityDoesNotReplaceAppliedFiltersAndResetClearsAllDrafts() {
+        filter("enabledFilter").setValue(false);
+        applyFilters();
+        filter("enabledFilter").setValue(true);
+        ((AdminUserActivityFilter) field("lastActivityFilter")).setInvalid(true);
+        applyFilters();
+        assertFalse(visibleUsers().getFirst().isEnabled());
+        filterButton(texts.getAdminUsersClearFilters()).click();
+        assertNull(filter("enabledFilter").getValue());
+        assertFalse(((AdminUserActivityFilter) field("lastActivityFilter")).isInvalid());
+        assertTrue(chips().isEmpty());
+        assertEquals(10, visibleUsers().size());
+    }
+
+    @Test
+    void openingAndClosingThePanelPreservesDraftsAndAppliedBadges() {
+        filterButton(texts.getAdminUsersAddFilter()).click();
+        filter("enabledFilter").setValue(false);
+        filterButton(texts.getAdminUsersAddFilter()).click();
+        assertEquals(false, filter("enabledFilter").getValue());
+        assertTrue(chips().isEmpty());
+        filterButton(texts.getAdminUsersAddFilter()).click();
+        applyFilters();
+        assertEquals(1, chips().size());
+        locale.set(Locale.GERMAN);
+        section.refreshTexts();
+        assertTrue(chips().getFirst().getElement().getTextRecursively().contains(texts.getAdminUsersNo()));
+    }
+
+    private void applyFilters() { filterButton(texts.getAdminUsersApplyFilters()).click(); }
+    private Button filterButton(String label) {
+        return descendants((com.vaadin.flow.component.Component) field("filterBar"))
+                .filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(button -> button.getText().equals(label)).findFirst().orElseThrow();
+    }
+    private List<com.vaadin.flow.component.Component> chips() {
+        return descendants((com.vaadin.flow.component.Component) field("filterBar"))
+                .filter(component -> component.hasClassName("admin-user-active-filter-chip")).toList();
+    }
+    private void removeFilter(String label) {
+        descendants((com.vaadin.flow.component.Component) field("filterBar"))
+                .filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(button -> button.getAriaLabel().orElse("").equals(texts.getAdminUsersRemoveFilter(label)))
+                .findFirst().orElseThrow().click();
     }
 
     private Object field(String name) { return ReflectionTestUtils.getField(section, name); }

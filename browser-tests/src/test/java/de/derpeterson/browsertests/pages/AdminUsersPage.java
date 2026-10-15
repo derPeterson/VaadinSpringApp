@@ -86,34 +86,45 @@ public final class AdminUsersPage {
 
     public Locator searchField() { return page.getByLabel(texts.getAdminUsersSearchLabel(), new Page.GetByLabelOptions().setExact(true)); }
 
-    @Step("Benötigten Filter über Add Filter einblenden")
-    public void addFilter(String label) {
-        if (!filterField(label).isVisible()) {
-            page.getByRole(AriaRole.MENUITEM, new Page.GetByRoleOptions().setName(texts.getAdminUsersAddFilter()).setExact(true)).click();
-            page.getByRole(AriaRole.MENUITEM, new Page.GetByRoleOptions().setName(label).setExact(true)).click();
-        }
-        assertThat(filterField(label)).isVisible();
+    @Step("Filterpanel bei Bedarf öffnen; alle Filter bleiben dauerhaft vorhanden")
+    public void openFilters() {
+        Locator toggle = button(texts.getAdminUsersAddFilter());
+        if (!"true".equals(toggle.getAttribute("aria-expanded"))) toggle.click();
+        assertThat(toggle).hasAttribute("aria-expanded", "true");
+        assertThat(button(texts.getAdminUsersApplyFilters())).isVisible();
     }
 
-    @Step("Optionalen Dropdownfilter auswählen")
-    public void selectFilter(String label, String option) {
-        addFilter(label);
+    @Step("Filterentwurf auswählen, ohne ihn bereits anzuwenden")
+    public void selectDraftFilter(String label, String option) {
+        openFilters();
         filterField(label).click();
         UiActions.completeValueChange(page, () -> page.getByRole(AriaRole.OPTION,
                 new Page.GetByRoleOptions().setName(option).setExact(true)).click());
         assertThat(filterField(label)).hasValue(option);
     }
 
-    @Step("Filter mit seinem beschrifteten Entfernen-Button zurücksetzen und ausblenden")
+    @Step("Dropdownfilter auswählen und ausdrücklich anwenden")
+    public void selectFilter(String label, String option) {
+        selectDraftFilter(label, option);
+        applyFilters();
+    }
+
+    @Step("Filterentwürfe über Filter anwenden übernehmen")
+    public void applyFilters() {
+        button(texts.getAdminUsersApplyFilters()).click();
+    }
+
+    @Step("Nur den ausgewählten angewandten Filter über seinen Badge entfernen")
     public void removeFilter(String label) {
         button(texts.getAdminUsersRemoveFilter(label)).click();
-        assertThat(filterField(label)).not().isVisible();
+        assertThat(page.locator(".admin-user-active-filter-chip:visible").filter(new Locator.FilterOptions()
+                .setHasText(label + ":"))).hasCount(0);
     }
 
     @Step("Aktivitätsfilter nur mit Datum setzen; Uhrzeit bleibt optional leer")
     public void activeSince(LocalDate date) {
         addActivityFilter();
-        activityTime().fill("");
+        if (activityTime().isEnabled()) activityTime().fill("");
         activityDate().fill(texts.dateInput(date));
         assertThat(activityDate()).hasValue(texts.dateInput(date));
         // Vaadin may remove leading zeroes on blur. Verify the exact parsed date below.
@@ -122,12 +133,13 @@ public final class AdminUsersPage {
         assertThat(activityPicker()).hasJSProperty("value", date.toString());
         assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
         assertThat(activityTime()).hasValue("");
+        applyFilters();
     }
 
     @Step("Aktivitätsdatum ohne Texteingabe über Kalender-Icon wählen und wiederfinden")
     public LocalDate activityDateUsingCalendar(int daysFromToday) {
         addActivityFilter();
-        activityTime().fill("");
+        if (activityTime().isEnabled()) activityTime().fill("");
         activityDate().click();
         assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
         // The public value property is read only; selection itself uses ordinary UI actions.
@@ -155,6 +167,7 @@ public final class AdminUsersPage {
         selectedDay.click();
         assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
         assertThat(activityPicker()).hasJSProperty("value", selected.toString());
+        applyFilters();
         return selected;
     }
 
@@ -169,18 +182,23 @@ public final class AdminUsersPage {
         Locator options = page.getByRole(AriaRole.OPTION).and(page.locator("vaadin-time-picker-item"));
         Locator target = page.getByRole(AriaRole.OPTION,
                 new Page.GetByRoleOptions().setName(texts.timeInput(time)).setExact(true));
-        // The time list is virtualized: later options appear only after real scrolling.
-        // Twelve wheel movements cover a full day; each waits for the rendered items to advance.
-        // Hover a real list item: the transparent overlay host is not a pointer target.
-        options.first().hover();
-        for (int step = 0; step < 12 && target.count() == 0; step++) {
-            String previousFirst = options.first().textContent();
-            page.mouse().wheel(0, 400);
-            assertThat(options.first()).not().hasText(previousFirst);
+        // Die Liste hält unsichtbare Pufferzeilen vor. Das Mausrad muss über dem
+        // sichtbaren Overlay liegen, nicht über dessen erstem DOM-Puffereintrag.
+        var bounds = overlay.locator("[part~='overlay']").boundingBox();
+        page.mouse().move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+        Locator scroller = page.locator("vaadin-time-picker-scroller:visible");
+        for (int step = 0; step < 24 && target.count() == 0; step++) {
+            LocalTime firstTime = LocalTime.parse(options.first().innerText().trim(),
+                    java.time.format.DateTimeFormatter.ofPattern(texts.language().equals("de") ? "HH:mm" : "h:mm a",
+                            java.util.Locale.forLanguageTag(texts.language())));
+            Object previousScroll = scroller.evaluate("element => element.scrollTop");
+            page.mouse().wheel(0, time.isBefore(firstTime) ? -240 : 240);
+            assertThat(scroller).not().hasJSProperty("scrollTop", previousScroll);
         }
         assertThat(target).hasCount(1);
         target.click();
         assertThat(activityTime()).hasValue(texts.timeInput(time));
+        applyFilters();
     }
 
     @Step("Optionale Uhrzeit für den bestehenden Aktivitätsfilter ergänzen")
@@ -188,6 +206,7 @@ public final class AdminUsersPage {
         activityTime().fill(texts.timeInput(time));
         activityTime().press("Tab");
         assertThat(activityTime()).hasValue(texts.timeInput(time));
+        applyFilters();
     }
 
     @Step("Nur die Uhrzeit leeren und den gewählten Tag beibehalten")
@@ -195,13 +214,16 @@ public final class AdminUsersPage {
         activityTime().fill("");
         activityTime().press("Tab");
         assertThat(activityTime()).hasValue("");
+        applyFilters();
     }
 
-    @Step("Suche und alle Zusatzfilter über Clear Filter zurücksetzen")
+    @Step("Suche, Entwürfe und aktive Badges über Alle zurücksetzen leeren")
     public void clearAllFilters() {
+        openFilters();
         button(texts.getAdminUsersClearFilters()).click();
         assertThat(searchField()).hasValue("");
-        assertThat(page.locator(".admin-user-filter-control:visible")).hasCount(0);
+        assertThat(page.locator(".admin-user-active-filter-chip:visible")).hasCount(0);
+        assertThat(activityTime()).isDisabled();
     }
 
     public Locator filterField(String label) {
@@ -214,20 +236,18 @@ public final class AdminUsersPage {
     }
 
     private void addActivityFilter() {
-        if (!activityDate().isVisible()) {
-            page.getByRole(AriaRole.MENUITEM, new Page.GetByRoleOptions().setName(texts.getAdminUsersAddFilter()).setExact(true)).click();
-            page.getByRole(AriaRole.MENUITEM, new Page.GetByRoleOptions().setName(texts.getAdminUsersFilterActiveSince()).setExact(true)).click();
-        }
+        openFilters();
         assertThat(activityDate()).isVisible();
-        assertThat(activityDate()).hasAttribute("placeholder", texts.getDateInputPlaceholder());
-        assertThat(activityTime()).hasAttribute("placeholder", texts.getTimeInputPlaceholder());
-        assertThat(page.locator(".admin-user-activity-optional-note"))
-                .hasText(texts.getAdminUsersActivityTimeOptional());
+        LocalDate today = LocalDate.now(ZoneId.of("Europe/Berlin"));
+        String example = today.format(java.time.format.DateTimeFormatter.ofPattern(
+                texts.language().equals("de") ? "dd.MM.uuuu" : "MM/dd/uuuu"));
+        assertThat(activityDate()).hasAttribute("placeholder", example);
+        assertThat(page.locator(".admin-user-filter-footer")).containsText(texts.getAdminUsersFilterTimeHint());
     }
 
     private Locator activityPicker() { return page.locator(".admin-user-activity-filter vaadin-date-picker"); }
 
-    private Locator activityDate() {
+    public Locator activityDate() {
         return page.locator(".admin-user-activity-filter").getByRole(AriaRole.COMBOBOX,
                 new Locator.GetByRoleOptions().setName(texts.getAdminUsersActivityDate()).setExact(true));
     }

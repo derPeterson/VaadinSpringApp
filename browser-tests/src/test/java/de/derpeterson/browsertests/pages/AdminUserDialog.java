@@ -20,6 +20,7 @@ public final class AdminUserDialog {
     public Locator lastName() { return field(texts.getAdminUsersFieldLastName()); }
     public Locator email() { return field(texts.getAdminUsersFieldEmail()); }
     public Locator password() { return field(texts.getAdminUsersFieldPassword()); }
+    public Locator confirmPassword() { return field(texts.getRegistrationConfirmField()); }
     public Locator saveButton() { return button(texts.getAdminUsersSave()); }
     public Locator deleteButton() { return button(texts.getAdminUsersDelete()); }
 
@@ -29,10 +30,12 @@ public final class AdminUserDialog {
         lastName().fill("Testuser");
         this.email().fill(email);
         this.password().fill(password);
+        assertThat(confirmPassword()).isEnabled();
+        confirmPassword().fill(password);
         field(texts.getRegistrationGenderCombobox()).click();
         page.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(texts.getGenderOther()).setExact(true)).click();
         Locator birthday = field(texts.getRegistrationBirthDateField());
-        assertThat(birthday).hasAttribute("placeholder", texts.getDateInputPlaceholder());
+        assertThat(birthday).hasAttribute("placeholder", texts.getRegistrationBirthDatePlaceholder());
         birthday.click();
         assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
         birthday.fill(texts.dateInput(LocalDate.of(1990, 1, 1)));

@@ -75,7 +75,7 @@
   `ImageHelperTest` is an example without application startup or a database.
 - Browser tests live under `browser-tests/src/test/java/` and use
   `browser-tests/run.ps1`; follow `browser-tests/README.md`. The Java/JUnit runner
-  creates disposable isolated Docker data and archives Allure and Markdown reports.
+  creates disposable isolated Docker data and generates local Allure and Markdown reports.
   Suites live under `browser-tests/src/test/java/de/derpeterson/browsertests/suites/`;
   keep infrastructure, authentication, registration, verification, password-reset,
   account-lifecycle, presentation and token-configuration cases separate. Shared UI actions belong in
@@ -108,6 +108,15 @@
 - Maven profile `it` starts and stops the application; do not use it without authorization.
 - Do not modify existing application database data, start the application or
   send emails unless included in the task.
+- Browser-Testausgaben unter `browser-tests/runs/` sind ignorierte, bereinigbare
+  Diagnosedaten. Ihre dauerhafte Aufbewahrung oder Sicherung ist nicht erforderlich.
+  Keine konkreten alten Run-Pfade oder Run-Listen in dauerhafte Dokumentation aufnehmen.
+  Wichtige Meilensteine eigenständig lesbar unter `docs/meilensteine/` dokumentieren:
+  Datum, geprüfter Stand, tatsächliche Ergebnisse, Coverage samt Messgrenzen und
+  wesentliche Erkenntnisse. Keine Abhängigkeit von lokalen Screenshots, Traces,
+  HTML-Berichten oder Rohdaten; nicht jeden Lauf als Meilenstein festhalten.
+  Bestehende Run-Ordner nur auf entsprechenden Auftrag löschen; keine automatische
+  Aufräumroutine oder neue unbegrenzte Archivablage einführen.
 - Before finishing, run `git diff --check` and review the scope of changes.
 - If a build changes generated files already tracked in Git, inspect and report them.
   Include them only when related to the task; do not discard them indiscriminately.
@@ -146,12 +155,15 @@
 - Primary-Buttons: zentraler blauer Cosmos-Verlauf mit sichtbarem Border.
 - Secondary-Buttons: Hintergrund wie die Inputfelder, Schrift in Primary-Farbe und
   der zuletzt abgestimmte dezente Border: 1px solid var(--lumo-contrast-20pct).
-- Gemeinsame Button-Basis: mindestens 44px Höhe, 9px Eckenradius und 14px Schrift.
-  Button-Icons verwenden die Lumo-Standardgröße; keine globale 14px-Iconvorgabe ergänzen.
+- Gemeinsame Primary-/Secondary-Basis: Lumo M (36px), 9px Eckenradius, 13px Schrift / 600.
+  Die vorhandene 14px-Schriftbasis für em-basierte Button-Icons bleibt erhalten;
+  Icons und individuelle Pagination-/Tabellenaktionen nicht global umskalieren.
 - Fragezeichen-, Erfolgs- und Warnsymbole der Kontoansichten verwenden zentral
   var(--lumo-font-size-xxxl) für Breite und Höhe (standardmäßig 40px).
-- Während der aktuellen Designabstimmung keine Builds oder Tests ohne ausdrücklichen
-  Auftrag ausführen. Nicht committen; der Benutzer sichert den Stand selbst.
+- Das Redesign ist seit 15.10.2026 als Standard bestätigt: siehe docs/design-standard.md.
+  Die anschließende vollständige QA wurde ausdrücklich freigegeben. Neue Designänderungen
+  bleiben auf den angefragten Umfang begrenzt. Nicht ohne Auftrag committen; der Benutzer
+  sichert den Stand selbst.
 - Nach jeder Änderung ausdrücklich angeben, wie sie sichtbar wird: Browser-Refresh
   (gegebenenfalls Strg+F5), Anwendungsneustart oder vorheriger Build. Dabei den
   tatsächlichen Entwicklungsstand berücksichtigen; bei veralteten komprimierten

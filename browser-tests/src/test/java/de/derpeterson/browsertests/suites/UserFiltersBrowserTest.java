@@ -19,10 +19,10 @@ public class UserFiltersBrowserTest extends BrowserFixture {
     @DisplayName("USER-05B: Optionale Filter kombinieren sich; direkte Datumeingabe funktioniert ohne Uhrzeit")
     @Description("""
         1. Eigenes aktives Benutzerkonto und deaktiviertes Konto mit beiden Rollen anlegen.
-        2. Freigabe über Add Filter ergänzen; Ja/Nein liefern genau das passende Konto.
+        2. Filterpanel öffnen, Freigabe wählen und anwenden; Ja/Nein liefern genau das passende Konto.
         3. Offline und Rollenmitgliedschaft kombinieren; Administrator filtert das Mehrrollen-Konto.
         4. Letzte Aktivität nur mit Datum setzen: Zukunft liefert keinen Treffer, Vergangenheit beide.
-        5. Uhrzeit ergänzen und wieder leeren; Datum bleibt wirksam. Clear Filter leert Suche und Zusatzfilter.
+        5. Uhrzeit ergänzen und wieder leeren; Datum bleibt wirksam. Alle zurücksetzen leert Suche, Zusatzfilter und aktive Badges.
         **Erwartet:** Alle Bedingungen wirken gemeinsam; keine Uhrzeitpflicht, keine Datenbankvorbereitung.
         """)
     void combineAndClearTypedFilters() {
@@ -66,11 +66,11 @@ public class UserFiltersBrowserTest extends BrowserFixture {
     @DisplayName("USER-05C: Aktivitätsdatum über Kalender-Icon und optionale Uhrzeit über Dropdown")
     @Description("""
         1. Eigenes aktives Konto über das Adminformular anlegen und exakt suchen.
-        2. Kurzes lokalisiertes Datumsbeispiel prüfen; Feldklick öffnet keinen Kalender.
+        2. Heutiges Datum als lokalisierten Platzhalter prüfen; Feldklick öffnet keinen Kalender.
         3. Über das Icon morgen wählen: Konto verschwindet; Wiederöffnen markiert die Auswahl.
         4. Über den Kalender gestern wählen: Konto erscheint, Uhrzeit bleibt leer.
-        5. Kurzbeispiel und Optional-Hinweis prüfen; Feldklick öffnet keine Zeitliste. Uhrzeit über Icon/Dropdown auswählen und wieder leeren; Datum bleibt wirksam.
-        6. Clear Filter leert Suche und Zusatzfilter; Konto bleibt über Suche erreichbar.
+        5. Aktuellen Uhrzeitplatzhalter und optionalen Zeithinweis prüfen; Feldklick öffnet keine Zeitliste. Uhrzeit über Icon/Dropdown auswählen und wieder leeren; Datum bleibt wirksam.
+        6. Alle zurücksetzen leert Suche, Zusatzfilter und aktive Badges; Konto bleibt über Suche erreichbar.
         **Erwartet:** Echte Kalenderauswahl ohne direkte Datumeingabe, optionale Zeit und wirksame Trefferfilterung.
         """)
     void calendarAndOptionalTimeDropdownFilterTheActualAccount() {
@@ -91,6 +91,74 @@ public class UserFiltersBrowserTest extends BrowserFixture {
         users.clearAllFilters();
         users.search(email);
         assertThat(users.emailCells(email)).hasCount(1);
+    }
+
+    @Test
+    @DisplayName("USER-11A: Filterentwürfe wirken erst nach Anwenden; Badge-X übernimmt keine anderen Entwürfe")
+    @Description("""
+        1. Zwei eigene Konten anlegen, eines aktiv und eines deaktiviert, und gemeinsam suchen.
+        2. Nein als Entwurf wählen: beide Treffer bleiben. Panel schließen/öffnen erhält den Entwurf.
+        3. Anwenden: ein Treffer und ein aktiver Badge. Einen noch nicht angewandten Rollenentwurf wählen.
+        4. Aktiv-Badge über X entfernen: beide Treffer wieder sichtbar, Rollenentwurf bleibt ohne Wirkung.
+        5. Rollenentwurf anwenden, danach Alle zurücksetzen: Treffer und Badges folgen den Aktionen.
+        **Erwartet:** Suche bleibt live; Entwürfe, angewandte Filter und einzelne Badge-Aktionen bleiben getrennt.
+        """)
+    void draftApplyAndBadgeRemovalKeepTheirDistinctEffects() {
+        AdminUsersPage users = login();
+        String prefix = unique("drafts");
+        users.createUser(prefix + "-yes@example.test", BrowserTestAccounts.USER_PASSWORD, true);
+        users.createUser(prefix + "-no@example.test", BrowserTestAccounts.USER_PASSWORD, false);
+        users.search(prefix);
+        users.selectDraftFilter(texts.getAdminUsersGridEnabled(), texts.getAdminUsersNo());
+        assertThat(users.emailCells(prefix)).hasCount(2);
+        assertThat(page.locator(".admin-user-active-filter-chip:visible")).hasCount(0);
+        Locator toggle = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(texts.getAdminUsersAddFilter()).setExact(true));
+        toggle.click();
+        assertThat(toggle).hasAttribute("aria-expanded", "false");
+        users.openFilters();
+        assertThat(users.filterField(texts.getAdminUsersGridEnabled())).hasValue(texts.getAdminUsersNo());
+        users.applyFilters();
+        assertThat(users.emailCells(prefix)).hasCount(1);
+        assertThat(page.locator(".admin-user-active-filter-count")).hasText(texts.getAdminUsersActiveFilterCount(1));
+        users.selectDraftFilter(texts.getAdminUsersFilterRole(), texts.getRoleAdmin());
+        users.removeFilter(texts.getAdminUsersGridEnabled());
+        assertThat(users.emailCells(prefix)).hasCount(2);
+        assertThat(users.filterField(texts.getAdminUsersFilterRole())).hasValue(texts.getRoleAdmin());
+        users.applyFilters();
+        assertThat(users.emailCells(prefix)).hasCount(0);
+        users.clearAllFilters(); users.search(prefix);
+        assertThat(users.emailCells(prefix)).hasCount(2);
+        AllurePlaywright.attachScreenshot("Entwürfe und aktive Filter korrekt getrennt", page);
+    }
+
+    @Test
+    @DisplayName("USER-11B: Uhrzeit braucht ein Datum; Overlay scrollt zum Platzhalter ohne einen Wert zu übernehmen")
+    @Description("""
+        1. Filterpanel öffnen: Uhrzeit ist ohne Datum deaktiviert.
+        2. Gestern als Datum setzen: Uhrzeit wird aktiv und bleibt leer.
+        3. Zeitliste über das Icon öffnen: der aktuelle Viertelstunden-Platzhalter ist sichtbar, Höhe höchstens 300 px plus Border.
+        4. Ohne Auswahl schließen: Uhrzeit bleibt leer. Datum leeren: Uhrzeit wird wieder deaktiviert.
+        **Erwartet:** Platzhalter ist keine Auswahl; Scrollposition, Größenlimit und Abhängigkeit sind tatsächlich wirksam.
+        """)
+    void timeRequiresDateAndPlaceholderScrollDoesNotCommitAValue() {
+        AdminUsersPage users = login(); users.open(); users.openFilters();
+        assertThat(users.activityTime()).isDisabled();
+        users.activeSince(LocalDate.now(ZoneId.of("Europe/Berlin")).minusDays(1));
+        assertThat(users.activityTime()).isEnabled();
+        Locator picker = page.locator(".admin-user-activity-filter vaadin-time-picker");
+        picker.locator("[part~='toggle-button']").click();
+        Locator overlay = page.locator("vaadin-time-picker-overlay[opened]");
+        assertThat(overlay).isVisible();
+        String placeholder = users.activityTime().getAttribute("placeholder");
+        assertThat(page.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(placeholder).setExact(true))).isVisible();
+        org.junit.jupiter.api.Assertions.assertTrue(overlay.locator("[part~='overlay']").boundingBox().height <= 302);
+        users.activityTime().press("Escape");
+        assertThat(overlay).hasCount(0);
+        assertThat(users.activityTime()).hasValue("");
+        users.activityDate().fill(""); users.activityDate().press("Tab");
+        assertThat(users.activityTime()).isDisabled();
+        assertThat(users.activityTime()).hasValue("");
+        AllurePlaywright.attachScreenshot("Datumabhängigkeit ohne implizite Zeitauswahl", page);
     }
 
     private AdminUsersPage login() {

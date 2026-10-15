@@ -17,6 +17,23 @@ class MarkdownSummaryTest {
         assertTrue(report.contains("- [x] **BESTANDEN**"));
     }
 
+    @Test void requestedCoverageFailurePreventsAGreenOverallReport() throws Exception {
+        var metadata = complete(); metadata.put("coverage", "failed"); metadata.put("coverageError", "Missing execution data");
+        var test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
+        String report = MarkdownSummary.render(metadata, List.of(test));
+        assertTrue(report.contains("UNVOLLSTÄNDIG / FEHLER"));
+        assertTrue(report.contains("Missing execution data"));
+    }
+
+    @Test void measuredCoverageLinksToTheArchivedReportAndStatesItsScope() throws Exception {
+        var metadata = complete(); metadata.put("coverage", "passed");
+        var test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
+        String report = MarkdownSummary.render(metadata, List.of(test));
+        assertTrue(report.contains("coverage/html/index.html"));
+        assertTrue(report.contains("serverseitige Anwendungscode"));
+        assertTrue(report.contains("**Status: BESTANDEN**"));
+    }
+
     @Test void skippedCaseIsNotSuccess() throws Exception {
         var test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"skipped\"}");
         String report = MarkdownSummary.render(complete(), new ArrayList<>(List.of(test)));

@@ -6,6 +6,13 @@
 > Die früheren Ablauf- und Protokollhinweise bleiben zur Einordnung vorhandener Archive stehen.
 > Automatisierungsstatus siehe Abschnitt 18; er ist kein manueller Testerfolg.
 
+Aktualisierung 15.10.2026: Die nachfolgenden alten Ablaufsformulierungen dienen
+weiterhin als historische Übergangscheckliste. Aktuelle Benutzerfilter verwenden
+Entwürfe, „Filter anwenden“ und aktive Badges; Passwortänderungen im Adminformular
+besitzen eine bedingte Bestätigung. Verbindliche Gestaltung und aktuelle Abläufe:
+[Designstandard](../design-standard.md). Der tatsächliche Automatisierungsstand
+steht in der [Abdeckung](../../browser-tests/abdeckung.md), nicht in alten Häkchen.
+
 ## Inhaltsverzeichnis
 
 - [1. Vorlage verwenden und Ergebnisse festhalten](#1-vorlage-verwenden-und-ergebnisse-festhalten)
@@ -29,17 +36,18 @@
 
 ## 1. Vorlage verwenden und Ergebnisse festhalten
 
-Empfohlene Ablage im Projekt:
+Früheres Ablageschema für temporäre Prüfprotokolle. Maßgeblich für die dauerhafte
+Dokumentation sind heute die [Meilensteine](../meilensteine/README.md); umfangreiche
+Testausgaben müssen nicht dauerhaft archiviert werden:
 
 ```text
 docs/manual-tests/
   vorlage.md
   runs/
-    2026-10-10_14-30__56f66ac__app.md
-    2026-10-10_14-30__56f66ac__tests.md
-    2026-10-12_18-00__anderer-commit__tests.md
+    JJJJ-MM-TT_HH-mm__commit__app.md
+    JJJJ-MM-TT_HH-mm__commit__tests.md
   evidence/
-    2026-10-10_14-30__56f66ac/
+    JJJJ-MM-TT_HH-mm__commit/
       ... bereinigte Screenshots und Belege ...
 ```
 
@@ -58,10 +66,11 @@ docs/manual-tests/
 6. Bei Abweichungen Status, tatsächliches Ergebnis, Zeitpunkt und Beleg ergänzen.
    Einen Fehler im Abschnitt [Fehlerprotokoll](#16-fehlerprotokoll-und-nachprüfung)
    genauer beschreiben; dort auch die betroffenen Test-IDs vermerken.
-7. Nach Codeänderungen einen **neuen Durchlauf** anlegen. Den alten Fehlversuch
-   erhalten; nicht nachträglich so ändern, als wäre er schon damals erfolgreich gewesen.
-8. Nach Abschluss Protokoll und geeignete Belege zusammen versionieren oder in einer
-   festgelegten Ablage archivieren. Änderungen an der Vorlage gelten für künftige Läufe.
+7. Nach Codeänderungen einen **neuen Durchlauf** anlegen. Frühere Ergebnisse nicht
+   rückwirkend in Erfolge umschreiben. Fehlversuche nur für die laufende Diagnose behalten.
+8. Wichtige Abschlüsse mit Ergebnissen und Erkenntnissen als Meilenstein zusammenfassen.
+   Nicht mehr benötigte lokale Protokolle und Belege können danach bereinigt werden;
+   keine vollständigen Laufarchive dauerhaft versionieren oder sichern.
 
 **So entsteht der Dateiname:**
 
@@ -71,8 +80,8 @@ Im Projektordner in PowerShell den aktuell ausgecheckten Commit kurz ausgeben la
 git rev-parse --short HEAD
 ```
 
-Lautet die Ausgabe beispielsweise `56f66ac` und beginnt der Test am 10.10.2026
-um 14:30 Uhr, heißt die Kopie `2026-10-10_14-30__56f66ac__tests.md`.
+Den Dateinamen aus tatsächlichem Datum, Uhrzeit und ausgegebenem Commit bilden:
+`JJJJ-MM-TT_HH-mm__commit__tests.md`.
 Der hintere Teil ist also das Git-Commit-Kürzel des getesteten Code-Stands,
 keine zufällige Kennung. Seine Länge kann je nach Git-Konfiguration variieren.
 Datum und Uhrzeit gehören zum Beginn dieses Testdurchlaufs; die Zeitzone wird im Kopf

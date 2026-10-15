@@ -1,204 +1,50 @@
 # Browserabdeckung und offene Punkte
 
-**Vollständiger Prüfstand: 14.10.2026 – 1067 Anwendungstests, 28 Helper-/Reportertests und je 96 Browserfälle auf DE/EN erfolgreich, einschließlich aktueller Admingestaltung und Enter-Korrekturen.**
+**Vollständiger Prüfstand: 15.10.2026 – 1082 Anwendungstests, 34 Helper-/Reportertests und je 100 Browserfälle auf DE/EN erfolgreich; JUnit- und Browser-Code-Coverage gemessen.**
 Bedienung und Aufbau stehen in der [Browser-Testanleitung](README.md).
-Historische Run-Berichte bleiben unverändert; hier steht der aktuelle Prüfstand.
+Wichtige Abschlüsse stehen dauerhaft unter [Meilensteine](../docs/meilensteine/README.md).
+Lokale Run-Ausgaben sind bereinigbare Diagnosedaten und keine Voraussetzung für diese Übersicht.
 
-## Gesamtprüfung der aktuellen Admingestaltung – 14.10.2026
+## Redesign-Abschlussprüfung – 15.10.2026
 
-Ausgangscommit: `bce26f07` auf `main`; Änderungen nicht committet.
-Zwei echte Enter-Fehler sind behoben: Die Konfigurationsnavigation speichert
-keine ungespeicherten Formularwerte mehr, und Enter im Mailtext löst keinen
-vorzeitigen Versand aus. Die Shortcuts hören ausschließlich auf die vorgesehenen
-Eingabefelder und übertragen vor dem Speichern deren aktuellen Wert.
-Die native Browsernavigation und die bisherigen Erklärungsprüfungen sind an
-SideNav und Klick-Tooltips angepasst; kein fachlicher Fall wurde gestrichen.
+Ausgangscommit `c5c3d089` auf `main`; Test- und Dokumentationsänderungen noch nicht committet.
+Die bestätigte Anwendung und ihre Styles wurden in dieser QA-Runde nicht verändert.
+15 JUnit-Regressionen, vier Browserfälle und sechs Helper-/Reporterfälle wurden ergänzt;
+veraltete Testannahmen an die neuen Filter und Dialoge angepasst.
 
 | Prüfung | Ergebnis |
 | --- | --- |
-| Shared-Modul / Java 25 | Clean install erfolgreich; keine eigenen Shared-Testklassen |
-| Anwendung / JaCoCo | 1067/1067, 0 Fehler/Fehlschläge/Skips |
-| Browser-Helper/Reporter | 28/28, 0 Fehler/Fehlschläge/Skips |
-| Docker-Produktionsbuild | Erfolgreich; aktuelles Produktions-JAR samt Frontend |
-| Browser Deutsch | 96/96, 0 Fehler/Skips |
-| Browser Englisch | 96/96, 0 Fehler/Skips, dasselbe App-Image |
-| Aufbau, Abbau und HTML-/Markdown-Berichte | Beide vollständig erfolgreich |
+| Shared / Java 25.0.4.1 | Clean install erfolgreich |
+| JUnit Anwendung | 1082/1082; 0 Fehler, Fehlschläge, Skips |
+| Browser-Helper/Reporter | 34/34; 0 Fehler, Fehlschläge, Skips |
+| Frischer Docker-Produktionsbuild | Erfolgreich einschließlich Tests und Frontend |
+| Browser Deutsch | 100/100; 0 Fehler/Skips |
+| Browser Englisch | 100/100; 0 Fehler/Skips, dasselbe App-Image |
+| Aufbau, Abbau, JaCoCo, Allure und Markdown | Beide vollständig erfolgreich |
 
-- [Vollständiger DE-Bericht](runs/2026-10-14T07-39-51_UTC__bce26f07__aa7962a6/report.md)
-- [Vollständiger EN-Bericht](runs/2026-10-14T07-39-51_UTC__bce26f07__f736df36/report.md)
+| Messung | Zeilen | Zweige |
+| --- | ---: | ---: |
+| JUnit | 70,87 % (3689/5205) | 66,22 % (1127/1702) |
+| Browser DE + EN zusammen | 86,19 % (4486/5205) | 65,63 % (1117/1702) |
 
-Image: `sha256:52056eb043579106ef940579affd2b410c21d01379036c59d77bfd3a91f6703f`. Beide Läufe verwendeten getrennte eigene
-Docker-Projekte, H2-/Mailpit-Daten und Ports (DE 18081/18026, EN 18082/18027).
-Die vorbereiteten Testklassen blieben während der parallelen Gesamtläufe unverändert.
-IntelliJ-Anwendung, Bestandsdaten und echte Postfächer blieben unberührt.
-Testzustände entstanden ausschließlich über die Oberfläche und eigene SMTP-Mails.
-Alle eigenen Testumgebungen wurden entfernt.
 
-Neu: 12 Anwendungsfälle, zwei Mailvergleichs-Helpertests und neun Browserfälle
-CONFIG-05A–F, MAIL-02/03 und USER-10. Sie prüfen native Hierarchie/Tastatur,
-Eingabeerhalt, Klick-Infos samt Card-Stil/Außenklick/Sprachwechsel, alle 29 Felder,
-mobilen Tooltip bei 320×568, positive Queue-Sekunden, sichere Enter-Bedienung,
-mehrzeilige echte SMTP-Mail und den lokalisierten tatsächlichen Kontenzähler.
+Gemessen ist serverseitiger Anwendungscode, kein CSS-/JavaScript- oder vollständiger
+fachlicher Abdeckungsgrad. Browser-Coverage enthält auch Start und Hintergrundaufgaben.
+Die DE-/EN-Ausführungsdaten wurden vereinigt; Klassendateien stammen aus dem identischen
+geprüften Docker-JAR. JUnit wurde mit frischer Ausführungsdatei separat gemessen.
 
-Die Diagnose enthielt veraltete Hinweise statt Tooltips, einen Locator am äußeren
-Tooltiprahmen, eine falsche Erwartung für das leere SMTP-Standardpasswort sowie
-einen Resize-Zugriff vor Vaadins Wechsel in den mobilen Overlaymodus. Diese
-Testprobleme sind korrigiert. SMTP-Zeilenenden werden bewusst normalisiert;
-Unicode-, Leerzeichen- und zusätzliche Zeilenabweichungen bleiben Fehler.
-Die beiden Anwendungsfehler wurden vor der Korrektur tatsächlich reproduziert.
-Zwischenberichte bleiben unverändert als Diagnosehistorie erhalten.
+Der [Meilensteinbericht zum Redesign](../docs/meilensteine/2026-10-15-redesign-abgeschlossen.md)
+enthält die Ergebnisse und wichtigsten Erkenntnisse unabhängig von lokalen Testausgaben.
+Der [Designstandard](../docs/design-standard.md) bleibt verbindlich.
+Beide Sprachläufe verwendeten getrennte eigene Docker-/H2-/Mailpit-Umgebungen und
+Konten; die eigenen Container, Netzwerke und Volumes wurden vollständig abgebaut.
+Die IDE-Anwendung und Bestandsdaten waren keine Testziele.
 
-Die zunächst parallel gestarteten Gesamtläufe wurden am 14.10.2026 gegen 02:30
-durch geplante Windows-Update-Neustarts unterbrochen. Je 33 Fälle waren bis dahin
-erfolgreich gespeichert; beide Läufe sind unvollständig und kein Abschlussnachweis.
-Ihre vorhandenen Berichte/Metadaten bleiben unverändert. Die eigenen verbliebenen
-Testcontainer und Volumes wurden nach dem Neustart gezielt entfernt. Die oben
-verlinkten vollständigen Läufe verwenden jeweils neue isolierte Testdaten.
-
-Der visuelle Feinschliff der Benutzerverwaltung bleibt ein Zwischenstand.
-Echte Mobilgeräte/Bildschirmtastaturen, Gmail/Outlook und die unten aufgeführten
-Betriebs-/menschlichen Grenzen bleiben ergänzende Prüfungen; keine Behauptung
-einer vollständigen 100-%-Ablösung der manuellen Fälle.
-
-## Historische Home-/Admin-Gesamtprüfung – 13.10.2026
-
-Ausgangscommit: `f3d5b663` auf `main`. Korrekturen und Tests sind noch nicht committet.
-Home und Admin verwenden dieselbe Palette, Topbar, Dekoration und dasselbe Avatar-Popup.
-Die bestehenden fachlichen Erwartungen bleiben erhalten; UI-03F und COSMOS-03/04
-prüfen jetzt die beabsichtigte gemeinsame Palette. Der Dashboard-Helper unterscheidet
-die Bereichsüberschrift (H1) von der gleichnamigen Card-Überschrift (H2).
-
-| Prüfung | Ergebnis |
-| --- | --- |
-| Shared-Modul / Java 25 | Clean install erfolgreich |
-| Anwendung / JaCoCo | 1055/1055, 0 Fehler/Fehlschläge/Skips |
-| Browser-Helper/Reporter | 26/26, 0 Fehler/Fehlschläge/Skips |
-| Docker-Produktionsbuild | Erfolgreich; Produktions-JAR mit aktuellem Frontend |
-| Browser Deutsch | 87/87, 0 Fehler/Skips |
-| Browser Englisch | 87/87, 0 Fehler/Skips, dasselbe App-Image |
-| Aufbau, Abbau und HTML-/Markdown-Berichte | Beide vollständig erfolgreich |
-
-- [Vollständiger DE-Bericht](runs/2026-10-13T17-52-36_UTC__f3d5b663__6313d7ba/report.md)
-- [Vollständiger EN-Bericht](runs/2026-10-13T17-52-39_UTC__f3d5b663__6cb9da7a/report.md)
-
-Image: `sha256:c5ba24c980afca4a993fdd86e1d57eccff81473dfd29fbc46c2063defdf267d0`. Beide Läufe verwendeten getrennte eigene Docker-Projekte,
-H2-/Mailpit-Daten und Ports (DE 18081/18026, EN 18082/18027). Bestandsdaten und die
-manuelle Dockerumgebung blieben unberührt. Testzustände entstanden über Oberfläche
-und regulär abgefangene SMTP-Mails. Die eigenen Testumgebungen wurden entfernt.
-
-COSMOS-05A–C ergänzen Home/Avatar-Popup, Adminnavigation, Allgemein und Benutzeranlage
-bei 390×844, 844×390 und 1280×900. Desktopinhalt beginnt neben der Navigation;
-auf kleinen Fenstern bleibt die native Overlaynavigation bedienbar. Die Testentwicklung
-enthielt zuerst zu breite Theme-/Overlay-Locators sowie verfrühte Messungen während
-der Drawer-Animation und hinter einem offenen modalen Drawer. Menü-/Dropdown-Helfer
-warten jetzt auf die reale Serverantwort; die Antwort zur Wertänderung wird vom reinen
-Dropdown-Öffnen unterschieden. Sprachwechsel, Filtererhalt und Status nach Neuladen
-bleiben tatsächlich geprüft. Ein während der Diagnose nachkompilierter früherer
-Gesamtlauf enthält Klassenladefehler und ist ausdrücklich kein Abschlussnachweis.
-Die abschließenden Läufe verwendeten unveränderte kompilierte Testklassen.
-Die Zwischenberichte bleiben erhalten. Kein Fall wurde entfernt, übersprungen oder
-durch Akzeptieren beider Sprachen abgeschwächt.
-
-Die Gestaltung ist weiterhin ein Zwischenstand. Subjektiver Admin-Feinschliff,
-echte Mobilgeräte/Bildschirmtastaturen und E-Maildarstellung in Gmail/Outlook bleiben
-menschliche Prüfungen. Die unten dokumentierten Grenzen der ursprünglichen manuellen
-Abdeckung bestehen weiterhin; ein grüner Lauf bedeutet keine vollständige 100-%-Ablösung.
-
-## Historischer Gesamtlauf vor Home-/Admin-Umstellung – 13.10.2026
-
-Der damals geprüfte Stand einschließlich 96×96-Logo, größerem Servicenamen (Lumo XL),
-kleiner weicher Platzhalterschrift, angepassten Statusicons und Reset-Erfolgscard
-wurde vollständig geprüft. Copyright verwendet den DE-/EN-Standardtext oder den
-eigenen DB-Eintrag. Neu erzeugte Verifikations-/Resetmails enthalten ein echtes
-CID-Inline-PNG, die Cosmos-Palette und einen sicheren konfigurierbaren Fußtext;
-MJML und daraus erzeugtes HTML sind synchron.
-
-| Prüfung | Ergebnis |
-| --- | --- |
-| Shared-Modul | Clean install erfolgreich, aktuelle Getter verwendet |
-| Anwendung / JaCoCo, Java 25 | 1055/1055, 0 Fehler/Fehlschläge/Skips; Bericht erzeugt |
-| Browser-Helper/Reporter | 26/26, 0 Fehler/Fehlschläge/Skips |
-| Docker-Produktionsbuild | Erfolgreich, frisches Produktions-JAR mit Frontend |
-| Browser Deutsch | 84/84, 0 Fehler/Skips |
-| Browser Englisch | 84/84, 0 Fehler/Skips, dasselbe App-Image |
-| Aufbau, Abbau, Markdown/HTML-Berichte | Beide Läufe erfolgreich; eigene Testumgebungen entfernt |
-
-- [Historischer vollständiger DE-Bericht](runs/2026-10-13T13-05-10_UTC__a972ffbf__6c6370b4/report.md)
-- [Historischer vollständiger EN-Bericht](runs/2026-10-13T13-23-24_UTC__a972ffbf__eb540930/report.md)
-
-Die Fälle COSMOS-01A–E enthalten fünf Fenstergrößen einschließlich 1280×1200 zur
-Prüfung der Zentrierung der langen Registrierung bei ausreichend Platz.
-COSMOS-02 prüft die tatsächliche neue Reset-Erfolgscard. COSMOS-03 stellt den
-Copyright-Text über die Oberfläche ein und prüft denselben sicheren Text auch in
-echten Verifikations- und Resetmails. Mailpit zeigt die Inline-Bilder geladen an;
-Screenshots und Traces sind in den Berichten enthalten.
-
-Gezielte MIME-Roundtrips prüfen passende Content-ID, PNG-Bytes, UTF-8-Inhalt und
-Logo-Lesefehler vor dem Transport. Bekannte und unklare Versandfehler, Tokenrotation,
-Rollback, Kontosperren und die bestehenden Nebenläufigkeitsregressionen bleiben
-geprüft. Der Copyright-Formatter prüft den lokalen Jahreswechsel per injizierter
-Clock; eigene/blanke DB-Texte werden nicht durch den Standard ersetzt.
-
-Der erste Anwendungslauf enthielt veraltete Mailfixtures/-Erwartungen (Base64,
-fester Footer, fehlender neuer Configwert). Diese wurden angepasst; der finale
-Clean-Volltest ist grün. Es wurden keine Tests entfernt, deaktiviert oder übergangen.
-
-Arbeitsbranch `main`, Ausgangscommit `a972ffbf`, lokale Änderungen noch nicht
-committet. Geprüftes Image: `sha256:be8c5f9b842642ae2e128cc2cfb7034405064dac47da63c43dbb0576e4ddc49e`.
-Alle Zustände über Oberfläche und reguläre SMTP-Testmails in frischen eigenen
-Docker-/H2-/Mailpit-Daten erzeugt. Bestandsdaten, manuelle Dockerumgebung und echte
-Postfächer wurden nicht verändert. Gmail/Outlook-Darstellung, echte mobile Geräte
-und die unten genannten Betriebs-/menschlichen Prüfungen bleiben offen.
-
-## Historischer Zwischenstand: Logo-/Zentrierungsanpassung
-
-Das vorhandene Service-Logo steht über dem Servicenamen. Gleich große obere und
-untere Grid-Bereiche halten die Card selbst bei ausreichend Platz exakt in der
-Bildschirmmitte, unabhängig von Logo/Überschrift und Copyright. Bei wenig Höhe oder
-langer mobiler Registrierung wächst die Seite und bleibt scrollbar; alle Inhalte
-sind erreichbar. Keine festen Pixel-Offsets oder JavaScript-Größenberechnung.
-
-Die vorhandenen Cosmos-Fälle prüfen jetzt zusätzlich geladenes Logo, dessen Position
-vor dem Servicenamen, überlappungsfreie Anordnung und die Cardmitte. Desktop (1280×900)
-muss die Cardzentrierung in allen fünf Ansichten erfüllen; passende kleine Fenster
-prüfen sie ebenfalls. Sehr niedrige Fenster bleiben echte Bedienungsprüfungen.
-
-| Gezielte Prüfung des neuen Stands | Ergebnis |
-| --- | --- |
-| Gemeinsame Komponenten/Copyright – JUnit | 6/6, keine Fehler/Fehlschläge/Skips |
-| Cosmos-Design Deutsch / Englisch | Jeweils 7/7, keine Fehler/Skips |
-| Loginlayout Deutsch / Englisch | Jeweils 6/6, keine Fehler/Skips |
-| Frischer Image-Build, Aufbau, Abbau, HTML | Erfolgreich; danach dasselbe Image verwendet |
-
-- [cosmos-design DE](runs/2026-10-13T10-32-46_UTC__a972ffbf__2c1c1d43/report.md)
-- [cosmos-design EN](runs/2026-10-13T10-35-51_UTC__a972ffbf__fec50aee/report.md)
-- [login-layout DE](runs/2026-10-13T10-36-57_UTC__a972ffbf__8a9dd80e/report.md)
-- [login-layout EN](runs/2026-10-13T10-37-45_UTC__a972ffbf__a2eb5fef/report.md)
-
-Dieser historische Zwischenschritt wurde damals nur gezielt geprüft.
-Der aktuelle vollständige Prüfstand steht oben; frühere Run-Berichte bleiben erhalten.
-
-## Historischer vollständiger Prüfstand vor Logo-/Zentrierungsanpassung
-
-Arbeitsbranch `main`, Ausgangscommit `a972ffbf` mit den lokalen,
-noch nicht committeten Designänderungen. Die beiden Gesamtläufe verwendeten dasselbe
-frisch gebaute Produktions-JAR/Image und jeweils eigene frische Docker-/H2-/Mailpit-Daten.
-
-| Prüfung | Ergebnis |
-| --- | --- |
-| Anwendung und JaCoCo | 1044/1044, keine Fehler/Fehlschläge/Skips |
-| Browser-Helper/Reporter | 26/26, keine Fehler/Fehlschläge/Skips |
-| Browser Deutsch | 83/83, keine Fehler/Skips |
-| Browser Englisch | 83/83, keine Fehler/Skips |
-| Aufbau, Abbau und HTML-Berichte | Jeweils erfolgreich |
-
-- [Vollständiger DE-Bericht](runs/2026-10-13T09-02-52_UTC__a972ffbf__77813902/report.md)
-- [Vollständiger EN-Bericht](runs/2026-10-13T09-19-06_UTC__a972ffbf__475d1311/report.md)
-
-HTML-Berichte über die jeweilige `html/open-report.bat` öffnen. Screenshots und
-Traces liegen im selben Run-Archiv. Es wurden keine Bestandsdaten oder echten
-Postfächer verwendet. Der verpackte Docker-Stand ist geprüft; ein separater aktueller
-IntelliJ-/Eclipse-Lauf und echte mobile Geräte wurden nicht geprüft.
+USER-11A/B prüfen Entwürfe/Anwenden, einzelne Badge-Aktionen, Datumabhängigkeit und
+Scrollen der begrenzten Zeitliste ohne Wertübernahme. USER-12A/B prüfen die optionale
+Passwortbestätigung mit Fehlern erst nach Blur und sichere Schließen-Aktionen.
+Die Regressionen zu Anmeldung, Remember-me, Rollen/Sperren, alten Formularen,
+Mailtokens, Konfiguration, Unicode-Mails und mobilen Fenstergrößen bleiben erhalten.
 
 ## Gemeinsames Design der Kontoansichten
 
@@ -228,7 +74,7 @@ fachlichen Konto-, Admin-, Mail-, Status- und Sicherheitsabläufe.
 
 Sterne behalten 30/45 Sekunden, Nebel 18–24 Sekunden als Animationszeiten.
 Reduzierte Bewegung deaktiviert die Animation; kurze Fenster dürfen vertikal scrollen.
-Die 96 Browserfälle und 44 ursprünglichen manuellen Fälle haben unterschiedliche IDs
+Die 100 Browserfälle und 44 ursprünglichen manuellen Fälle haben unterschiedliche IDs
 und Teilabläufe. Die Vergleichstabelle unten behauptet keine vollständige 100-%-Ablösung
 aller Betriebs- und menschlichen Prüfungen.
 
@@ -238,10 +84,13 @@ DatePicker in Registrierung und Benutzerformular sowie Date-/TimePicker im
 Aktivitätsfilter verwenden `autoOpen=false`. Direkte Eingabe öffnet kein Overlay;
 Icons und die vorgesehenen Pfeiltasten bieten weiterhin Auswahlmöglichkeiten.
 
-Kurze Beispiele im Adminbereich kommen aus dem gemeinsamen typisierten Katalog:
-DE `31.12.1990` / `14:30`, EN `12/31/1990` / `2:30 PM`. „Uhrzeit optional“ steht
-klein neben der Aktivitätsüberschrift, nicht mehr als Platzhalter. Der Geburtstag
-bleibt beim DE↔EN-Wechsel im Anlegen-/Bearbeiten-Dialog erhalten (technische Regression).
+Der Geburtstagsplatzhalter entspricht der Registrierung und folgt der Sprache.
+Im Aktivitätsfilter ist der Datumsplatzhalter das heutige Datum im DE-/EN-Format;
+der Zeitplatzhalter entspricht der aktuellen Uhrzeit, abgerundet auf 15 Minuten.
+Die Uhrzeit ist optional und nur bei gültigem Datum bedienbar. Ohne gültiges Datum
+wird sie deaktiviert. Öffnen und Scrollen der Zeitliste übernimmt keinen Wert.
+Der Geburtstag bleibt beim DE↔EN-Wechsel im Anlegen-/Bearbeiten-Dialog erhalten
+(technische Regression).
 
 UI-01A/B bestätigen direkte Geburtstagseingabe, Kalenderauswahl/Wiederöffnen und
 tatsächliche Registrierung bei 390×844 bzw. 844×390. USER-05B/C bestätigen
@@ -270,6 +119,10 @@ bleiben ergänzende Prüfungen.
 | USER-06E | Suche und Freigabefilter beim Sprachwechsel in beide Richtungen erhalten | Bestanden | Bestanden |
 | USER-06F | Neues Passwort speichern, altes abweisen und mit neuem anmelden | Bestanden | Bestanden |
 | USER-10 | Gesamtzahl nach Anlage/Löschung, unabhängig von Filtern und mit korrektem Sprachwechsel | Bestanden | Bestanden |
+| USER-11A | Filterentwürfe, Anwenden, Panelzustand und einzelnes Badge-X ohne Übernahme anderer Entwürfe | Bestanden | Bestanden |
+| USER-11B | Datumabhängige Zeit, aktueller Platzhalter, begrenztes Overlay und Scrollen ohne Auswahl | Bestanden | Bestanden |
+| USER-12A | Optionale Passwortbestätigung, exakter Vergleich, Fehler erst nach Blur und Rücksetzen | Bestanden | Bestanden |
+| USER-12B | Sichere Schließen-Aktionen, neue Löschtexte und Erhalt des ausgewählten Kontos | Bestanden | Bestanden |
 
 Suche/Pagination, Filter, Anlage, Bearbeitung, Löschabbruch/-bestätigung,
 Selbstlöschschutz, Sprachpräferenz und Passwortwechsel bestehen jetzt in beiden
@@ -277,7 +130,7 @@ Gesamtläufen. Der Editierbutton wird vor dem echten Mausklick sichtbar gemacht 
 fokussiert, damit die native Grid-Scrollbewegung den Klick nicht verliert. Erwartungen,
 Speicher-/Anmeldeprüfungen und Sicherheitsregeln bleiben erhalten.
 
-Im aktuellen vollständigen DE-/EN-Lauf sind jeweils alle 96 Browserfälle bestanden.
+Im aktuellen vollständigen DE-/EN-Lauf sind jeweils alle 100 Browserfälle bestanden.
 Die weiterhin nur teilweise abgedeckten ursprünglichen Fälle sind nachfolgend aufgeführt.
 
 ## Ergänzte Arbeitspakete
@@ -368,7 +221,7 @@ Falls abdecken. Es wird kein künstlicher Gesamt-Prozentwert berechnet.
 | MAIL-04 | Dauerhafter Fehler und Adminbeobachtbarkeit | OFFEN – BETRIEB / TECHNISCH | Queue-/Auditregressionen | Dauerhafter realer SMTP-Ausfall, Retrylimit und Auditbeobachtung nicht im Browser eingerichtet |
 | LANG-01 | Sichtbarer Wechsel Deutsch ↔ Englisch | TEILWEISE / PRODUKTGRENZE | LANG-01C, USER-06E: Adminsuche/Freigabefilter bleiben bei Wechsel in beide Richtungen erhalten | Offene Adminfehler/-dialoge noch nicht im Browser bestätigt; anonyme Form-/Tokenseiten haben keinen UI-Schalter |
 | LANG-02 | Sprache nach Anmeldung und Mailvorlagen | TEILWEISE | LANG-01B, MailpitInbox und vollständige DE-/EN-Gesamtläufe | Gespeicherte Sprache nach Anmeldung und gewählte Mailbetreffe/volle kanonische Footer in beiden Sprachen geprüft. Sprachänderung eines bereits vorhandenen Kontos mit anschließender neuer Mail bleibt ergänzbar |
-| UI-01 | Desktop, Handy und andere Fensterbreiten | TEILWEISE / MENSCHLICH | INFRA-01, COSMOS-01A–D/02, UI-03A–F; UI-01A/B im aktuellen DE-/EN-Lauf bestanden: direkte Datumeingabe, Kalenderauswahl/Wiederöffnen und Registrierung | Kontoansichten zusätzlich durch COSMOS-01A–D/COSMOS-02 bei vier Fenstergrößen samt gültigen Maillinks geprüft; Home/Admin, echte Geräte/Tastatur und menschliche Layoutqualität bleiben ergänzende Prüfungen |
+| UI-01 | Desktop, Handy und andere Fensterbreiten | TEILWEISE / MENSCHLICH | INFRA-01, COSMOS-01A–D/02, UI-03A–F; UI-01A/B im aktuellen DE-/EN-Lauf bestanden: direkte Datumeingabe, Kalenderauswahl/Wiederöffnen und Registrierung | Kontoansichten durch COSMOS-01A–E/02 bei fünf Fenstergrößen und gültigen Maillinks, Home/Admin durch COSMOS-05A–C geprüft; echte Geräte/Tastatur und menschliche Layoutqualität bleiben ergänzende Prüfungen |
 | UI-02 | Tastatur und grundlegende Bedienbarkeit | TEILWEISE / MENSCHLICH | UI-02A | Login per Tab/Fokus/Enter belegt; gesamte Fokusreihenfolge, 200-%-Zoom und menschliche Lesbarkeit/Accessibility nicht vollständig geprüft |
 | OPS-01 | Unklarer Transportausgang bleibt quarantänisiert | TECHNISCH / BETRIEBSNACHWEIS OFFEN | Queue-Service-/Persistenzregressionen | Fehler nach möglicher SMTP-Annahme und Neustart erfordern kontrollierte Transportfixture; fehlende Mail ist kein Nichtversandbeweis |
 | OPS-02 | Aufbewahrung und Bereinigung | TECHNISCH / BETRIEBSNACHWEIS OFFEN | Queue-/Token-Cleanup mit Clock/H2 | Alte Zustände/Grenzfixture dürfen nicht über Browser-SQL erzeugt werden; tatsächlicher Sonntags-Schedulerlauf ist kein Kurztest |
@@ -378,12 +231,16 @@ Falls abdecken. Es wird kein künstlicher Gesamt-Prozentwert berechnet.
 
 ## Belege und Pflege
 
-Hier nur den aktuellen Stand und verbleibende Voraussetzungen pflegen. Abgeschlossene
-Versuchshistorien gehören in die Run-Archive. Die vorherigen Dokumentfassungen inklusive
-Paketversuchen wurden vollständig und überprüft gesichert:
+Hier nur den aktuellen Prüfstand, Fallzuordnungen und offene Grenzen pflegen.
+Wichtige Abschlüsse eigenständig lesbar unter [Meilensteine](../docs/meilensteine/README.md)
+festhalten: Datum, geprüfter Stand, Ergebnisse, Coverage und wesentliche Erkenntnisse.
+Keine konkreten lokalen Run-Pfade oder Listen früherer Testläufe als dauerhafte Belege eintragen.
 
-- [Dokumentationsstand vor der Zusammenfassung](runs/dokumentationsarchiv/2026-10-12_14-39-02_UTC__vor-zusammenfassung.zip)
+Lokale Laufordner mit Screenshots, Traces, JARs und HTML-/Coverage-Berichten dürfen
+nach Auswertung bereinigt werden. Ihre dauerhafte Aufbewahrung oder vollständige
+Sicherung ist nicht erforderlich. Die Links innerhalb eines Run-Berichts gelten nur,
+solange der zugehörige Ordner vorhanden ist. Keine automatische Löschung ohne Auftrag.
 
-Historische Run-Berichte, die manuelle Vorlage, die Weiterleitung unter
-`docs/browser-tests/README.md` und der nützliche SQL-Skriptordner bleiben erhalten.
-Es gibt weiterhin keine vollständige 100-%-Ablösung aller ursprünglichen Fälle.
+Die historische manuelle Checkliste und die Weiterleitung unter
+`docs/browser-tests/README.md` bleiben zur Einordnung bestehen. Es gibt weiterhin
+keine vollständige 100-%-Ablösung aller ursprünglichen manuellen Fälle.

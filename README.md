@@ -6,7 +6,7 @@ Automatisierte Browserprüfungen mit Java, JUnit und Allure in eigener Docker-Te
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Vollständiger Gesamtprüfstand vom 14.10.2026 einschließlich aktueller Admingestaltung und Enter-Korrekturen: Java 25, 1.067 Anwendungstests mit JaCoCo sowie 28 Browser-Helper-/Reportertests erfolgreich. Das frisch gebaute Docker-Produktions-JAR wurde mit jeweils 96 Browserfällen auf Deutsch und Englisch in isoliertem H2/Mailpit geprüft. Umfang, Berichte und verbleibende Grenzen: [Browserabdeckung](browser-tests/abdeckung.md).
+> Redesign-Abschlussprüfung vom 15.10.2026: Java 25, 1.082 Anwendungstests, 34 Helper-/Reportertests und je 100 Browserfälle auf Deutsch/Englisch erfolgreich. JUnit- und Browser-Code-Coverage sind gemessen. [Ergebnisse und Grenzen](browser-tests/abdeckung.md).
 
 ## Funktionen
 
@@ -81,7 +81,7 @@ Service-Logo, Avatar und Sprachflaggen bleiben aktiv. Gezielt prüfen:
 `browser-tests/run.ps1 -Suite cosmos-design -Language de` (danach EN mit `-NoBuild`).
 Service-Logo (96×96), Servicename (Lumo XL), Platzhalter und Statuscards wurden
 abschließend im vollständigen DE-/EN-Lauf geprüft: je 11 Cosmos- und 6 Login-Layoutfälle
-innerhalb der jeweils 96 Browserfälle. Den aktuellen Nachweis dokumentiert [Browserabdeckung](browser-tests/abdeckung.md).
+innerhalb der jeweils 100 Browserfälle. Den aktuellen Nachweis dokumentiert [Browserabdeckung](browser-tests/abdeckung.md).
 
 ### Startseite nach der Dashboard-Vorschau
 
@@ -150,7 +150,7 @@ bei Gruppen- und Sprachwechsel aktualisiert. Die Konfigurations-Card zeigt
 Gruppenicon, Kurzbeschreibung und tatsächliche Einstellungsanzahl; Trennlinien
 begrenzen Kopf und Fuß mit Speicherhinweis und rechts angeordneten Aktionsbuttons.
 Alle 29 Konfigurationsfelder verwenden denselben `ConfigInfoButton`: rechts am
-Input, Lumo-Icongröße l, Primary-Farbe, manuelles Öffnen per Klick oder Tastatur.
+Input, Lumo-Icongröße M, Primary-Farbe, manuelles Öffnen per Klick oder Tastatur.
 Ein Außenklick schließt den Tooltip; die Steuerung wird beim Entfernen des Felds
 aufgeräumt. Die Texte folgen beim Sprachwechsel der aktuellen Sprache.
 Tooltips enthalten Beschreibung, Standardwert und die tatsächlich geprüften
@@ -166,20 +166,19 @@ im Klick-Tooltip, mit Card-Stil und Schließen durch Außenklick. Die Texte werd
 beim Sprachwechsel aktualisiert. Bisherige Feldvorgaben bleiben erhalten;
 der Versandbutton steht rechts im Footer.
 Der SMTP-Hinweis beschreibt die beim Start geladene Verbindung und deren
-Neustartbedarf. Versand und Validierung bleiben unverändert. Diese Gestaltung
-ist noch nicht durch einen neuen Anwendungsbuild oder Testlauf geprüft.
+Neustartbedarf. Versand und Validierung bleiben unverändert. Der tatsächliche aktuelle Prüfstand steht in der [Abdeckungsübersicht](browser-tests/abdeckung.md).
 
 Die Benutzerverwaltung nutzt denselben Breadcrumb-/Titelbereich mit Akzentpunkt
 und die gemeinsamen Panel-Stile. Die mittige Card zeigt Benutzer-Icon, Kurzbeschreibung
 und die tatsächliche Gesamtanzahl geladener Konten, unabhängig von den aktiven Filtern.
 Die Kontenanzahl wird beim Neuladen und nach CRUD-Aktionen sowie beim Sprachwechsel
 aktualisiert. Filter, Sortierung, Tabellenfarben, Avatare und Pagination bleiben
-wie abgestimmt; die Pagination erhält den gemeinsamen abgetrennten Card-Footer.
+wie abgestimmt; die Pagination verwendet den gemeinsamen Card-Footer ohne zusätzliche Trennlinie.
 Buttons, Rahmen und Rundung verwenden die gemeinsame Gestaltung der Oberfläche;
 es gibt dafür keine gesonderten Vorschau-Regeln in der Benutzerverwaltung.
 Die Zusammenfassung links unten ist dezent mit 11 px; die Primary-Farbe der aktiven
 Seite bleibt mit dem Hinzufügen-Button identisch.
-Diese neue Gestaltung ist noch nicht durch einen Anwendungsbuild oder Testlauf geprüft.
+Der aktuelle Prüfstand steht in der [Abdeckungsübersicht](browser-tests/abdeckung.md).
 
 Standardwerte und Platzhalter kommen über `ConfigService.getDefaultValue` aus
 `app.config.defaults.*`, mit dem Enumwert als Fallback, wie im Backend und bei der
@@ -204,8 +203,7 @@ E-Mail-Vorlagen, Basis-URL für neu erzeugte Mail-Links und die Neustartwirkung 
 Remember-me-, SMTP- und Threadpool-Einstellungen. Queue-Kapazität beschreibt die
 geladene Menge pro Durchlauf statt einer Obergrenze für alle gespeicherten Mails.
 Die Bereinigung versendeter Queue-Einträge richtet sich nach ihrem Erstellungsdatum.
-Dieser spätere Designfeinschliff ist noch nicht als Anwendung gebaut oder getestet; der oben genannte
-Gesamtlauf dokumentiert den Stand davor.
+Die Nachprüfung des abgeschlossenen Redesigns ist in der [Abdeckungsübersicht](browser-tests/abdeckung.md) dokumentiert.
 
 Rollenprüfung, fachliche Prüfregeln, Filter, Mailaktionen und Kontoschutz bleiben
 erhalten. Zahlenfeldgrenzen und Standardwertanzeigen sind an die vorhandenen
@@ -213,8 +211,7 @@ serverseitigen Regeln und Backend-Defaults angeglichen.
 **Geprüft:** Produktionsbuild sowie vollständige DE-/EN-Browserläufe erfolgreich.
 Die bisherigen funktionalen Konfigurations-, Mail-, Status-, Benutzer- und Sicherheitsfälle
 bleiben erhalten. COSMOS-05A–C ergänzen reale Navigation und Benutzerformular bei drei
-Fenstergrößen. Das Aussehen ist ein Zwischenstand; gestalterischer Feinschliff und echte
-Mobilgeräte bleiben gesonderte menschliche Prüfungen.
+Fenstergrößen. Das abgestimmte Aussehen ist der Standard; echte Mobilgeräte bleiben ergänzende menschliche Prüfungen.
 
 Enter-Shortcuts in Konfiguration und Mail Test sind auf die jeweiligen Eingabefelder begrenzt.
 Navigation und Info-Buttons lösen keine Formularaktion aus. Im Nachrichtentext bleibt
@@ -351,30 +348,29 @@ Geprüft wurden `clean test jacoco:report` mit dem Wrapper und ein frischer Prod
 
 ## Benutzerverwaltung: Filter und Seiten
 
-Die sofort ausgewertete Suche berücksichtigt nur Name und E-Mail. Über „Filter hinzufügen“ / „Add Filter“ werden benötigte Filter unter der Suche eingeblendet.
-Entfernen setzt ihre Werte zurück. Einzeln löschbare Filter für Freigabe, Status, eine Rolle und Aktivität seit
-Datum und optionaler Uhrzeit werden gemeinsam angewendet. Eine Rollenmitgliedschaft reicht aus,
-auch bei mehreren Rollen. „Letzte Aktivität“ schließt den gewählten lokalen Zeitpunkt
-ein; ohne Uhrzeit gilt der Tag ab 00:00 Uhr. Ohne gespeicherte Aktivität gibt es
-bei aktivem Zeitfilter keinen Treffer.
-Datum und Uhrzeit öffnen ihre Auswahllisten nur über die Icons oder vorgesehenen
-Pfeiltasten. Kurze DE-/EN-Beispiele stammen aus dem gemeinsamen Übersetzungskatalog;
-„Uhrzeit optional“ steht klein neben der Filterüberschrift. Das Geburtstagsfeld im
-Anlegen-/Bearbeiten-Dialog hat dieselbe Bedienung; Sprachwechsel erhalten den Wert.
+Die Suche nach Name/E-Mail wirkt sofort. Der Secondary-Button „Filter“ neben der
+Suche öffnet einen nativen Details-Bereich mit dauerhaft vorhandenen Feldern für
+Freigabe, Status, Rolle und „Letzte Aktivität ab“. Änderungen daran sind Entwürfe:
+Erst „Filter anwenden“ übernimmt sie. Panel schließen/öffnen erhält die Eingaben.
+Aktive Badges zeigen die angewandten Kriterien; ihr X entfernt nur das jeweilige
+Kriterium und übernimmt keine anderen Entwürfe. Die Anzahl im Panel zählt diese
+angewandten Kriterien. „Alle zurücksetzen“ leert Suche, Entwürfe und aktive Filter.
 
-Beide Zeitfelder leeren hebt die Zeitbedingung auf. Freigabe und Präsenzstatus
-sind unterschiedliche Kriterien.
+Eine Rollenmitgliedschaft genügt auch bei mehreren Rollen. Die Aktivitätsgrenze
+ist inklusive; ohne Uhrzeit gilt 00:00 Uhr. Fehlende gespeicherte Aktivität liefert
+bei aktivem Zeitfilter keinen Treffer. Uhrzeit ist erst mit gültigem Datum aktiv;
+Löschen oder ungültiges Datum leert/deaktiviert sie wieder. Beide Picker öffnen
+nur über Icon/Pfeiltaste. Platzhalter zeigen das heutige Datum und die auf die
+vorherige Viertelstunde gerundete aktuelle Uhrzeit, lokalisiert auf DE/EN.
+Das Zeitoverlay ist höchstens 300 px hoch; Scrollen zum Platzhalter wählt keinen
+Wert aus. Der Geburtstagsplatzhalter im Benutzerformular entspricht der Registrierung.
 
-Suche, „Add Filter“ und „Add User“ stehen oben auf einer gemeinsamen Höhe. Gewählte
-Filter laufen darunter nach rechts und umbrechen bei Platzmangel. Der Tabellenkopf
-ist blau abgesetzt, Zeilen wechseln dezent die Hintergrundfarbe. Die Zeitvorschläge
-verwenden 15-Minuten-Schritte, damit Vaadin die Auswahlliste anbietet. Unter der Tabelle
-stehen Zeilen pro Seite, Trefferzahl und nummerierte Seiten mit erster/vorheriger/
-nächster/letzter Seite und Auslassungspunkten bei vielen Seiten. Filter- und
-Seitengrößenänderungen beginnen auf Seite 1. Sortierung erfolgt vor der Seitenteilung.
-`AdminUserFilters` und `AdminUserPagination` halten diese Logik getrennt vom CRUD-Formular.
-Die Filterung bleibt wie bisher im Speicher über die geladene Benutzerliste;
-keine neue Datenbankabfrage oder Schemaänderung.
+Die Tabelle nutzt die vier zentralen Cosmos-Tabellenfarben, 12-px-Text und fette
+Namen. Die Pagination steht mit 16 px Abstand darunter, ohne zusätzliche Trennlinie:
+28-px-Buttons mit 11-px-Text, aktiv Primary, sonst Secondary. Sortierung erfolgt vor
+der Seitenteilung; angewandte Filter und neue Seitengrößen beginnen auf Seite 1.
+`AdminUserFilters` und `AdminUserPagination` halten die Logik vom CRUD-Formular getrennt.
+Die Filterung erfolgt im Speicher über die geladene Benutzerliste, ohne Schemaänderung.
 
 Bedienung der Tests: [Browser-Testanleitung](browser-tests/README.md).
 Aktuelle Ergebnisse, Abdeckung und verbleibende Prüfungen:
@@ -411,13 +407,22 @@ offenen Punkte stehen in der Browserdokumentation.
 
 Unter `src/test/java/` liegen Unit- und serverseitige Regressionstests für Benutzerverwaltung, Eingaberegeln, Registrierung, Konfiguration, Benachrichtigungen, Session-/Remember-me-/Push-RPC-Sicherheit sowie Status und Nebenläufigkeit. Persistenztests verwenden isolierte H2-In-Memory-Datenbanken, nicht die Anwendungsdatenbank. Vaadin-Tests prüfen serverseitige Komponenten und Callbacks mit kontrollierten UI-/Sessionfixtures, ohne Browser oder Anwendungsstart. `ImageHelperTest` prüft zusätzlich das echte Mail-Logo als Classpath-Ressource. `src/test/resources/logback-test.xml` konfiguriert das Test-Logging.
 
-Aktueller Prüfstand am 14.10.2026 unter Windows:
+Aktueller Prüfstand am 15.10.2026:
 
 | Prüfung | Ergebnis |
 | --- | --- |
-| `.\mvnw.cmd clean test jacoco:report` | Java 25, 1.067 Tests, keine Fehler/Fehlschläge/Skips; Coveragebericht erzeugt |
-| Browser-Helper/Reporter | 28/28 erfolgreich |
-| Vollständige Browserläufe DE und EN | jeweils 96/96 erfolgreich; isoliertes Docker/H2/Mailpit |
+| `.\mvnw.cmd test jacoco:report` | Java 25, 1.082 Tests, keine Fehler/Fehlschläge/Skips; frische JaCoCo-Daten |
+| Browser-Helper/Reporter | 34/34 erfolgreich |
+| Vollständige Browserläufe DE und EN | jeweils 100/100 erfolgreich; isoliertes Docker/H2/Mailpit |
+| JUnit-Coverage: Zeilen / Zweige | 70,87 % / 66,22 % |
+| Browser-Coverage DE + EN: Zeilen / Zweige | 86,19 % / 65,63 % |
+
+Browser-Coverage misst den serverseitigen Anwendungscode im exakten Produktions-JAR,
+einschließlich Start und Hintergrundaufgaben. Sie ist keine CSS-/JavaScript-Coverage.
+[Dauerhafter Redesign-Meilenstein](docs/meilensteine/2026-10-15-redesign-abgeschlossen.md)
+und [aktuelle Abdeckung](browser-tests/abdeckung.md). Lokale Browser-Testausgaben
+dürfen nach Auswertung bereinigt werden; ihre dauerhafte Aufbewahrung ist nicht nötig.
+Wichtige Ergebnisse bleiben kompakt unter [Meilensteine](docs/meilensteine/README.md) erhalten.
 
 Der eigene Vaadin-Login speichert seinen Sicherheitskontext ausdrücklich in der Sitzung,
 bevor Remember-me ausgegeben wird. Die Browserprüfung verwendet echte separate
@@ -426,27 +431,7 @@ Storage-Zustände werden nicht künstlich eingesetzt.
 
 Aktuelle Einzelbelege und verbleibende Journeys stehen in [Browserabdeckung](browser-tests/abdeckung.md).
 
-Historischer Prüfstand vom 07.10.2026:
-
-| Befehl | Ergebnis |
-| --- | --- |
-| `.\mvnw.cmd --version` | Maven **3.9.16**, Java **25.0.4.1**, Eclipse Adoptium |
-| `.\mvnw.cmd clean test` | **BUILD SUCCESS**, **365 Tests, 0 Fehler, 0 Fehlschläge, 0 übersprungen** |
-| `.\mvnw.cmd jacoco:report` | **BUILD SUCCESS**, Coveragebericht erzeugt |
-
 Öffentliche Servicevoraussetzungen und Exceptions: [UserService-Verträge](docs/user-service-contract.md).
-
-Historischer Prüfstand vom 01.10.2026:
-
-| Befehl | Ergebnis |
-| --- | --- |
-| `.\mvnw.cmd --version` | Maven **3.9.16**, Java **25.0.4.1**, Eclipse Adoptium/Temurin, `JAVA_HOME=C:\Dev\Java\current` |
-| `node --version` | **v24.21.0**, erfüllt die Node.js-Voraussetzung |
-| `.\mvnw.cmd clean test` | **BUILD SUCCESS**; kompiliert mit `release 25`; **1 Test, 0 Fehler, 0 Fehlschläge, 0 übersprungen** |
-| `.\mvnw.cmd package -Pproduction` | **BUILD SUCCESS**; derselbe Test erneut erfolgreich; Spring-Boot-JAR erstellt |
-| `& "$env:JAVA_HOME\bin\jar.exe" tf target/app-1.0-SNAPSHOT.jar` | Enthält `META-INF/resources/custom-theme/service_logo.png` |
-
-Die beiden historischen Builds vom 01.10.2026 meldeten, dass kein neuer Produktions-Frontend-Bundle-Build nötig war. Der aktuelle Docker-Build vom 14.10.2026 hat das Produktionsfrontend neu gebaut. Es gab JDK-Warnungen zu Jansi-Native-Access und beim Kompilieren zu Lomboks Nutzung von `sun.misc.Unsafe`, aber keine Build-Fehler.
 
 Die Logo-Ressource wird weiterhin als **Classpath-Stream** geladen und funktioniert
 auch ohne lokalen Quelldateipfad. Neu erzeugte Verifikations- und Resetmails verwenden
@@ -498,7 +483,7 @@ Dadurch wird das vorberechnete Entwicklungspaket umgangen; Vite verarbeitet aktu
 Docker setzt diese Option auf false und verwendet weiterhin den gebauten Produktionsstand.
 Nach der erstmaligen Umstellung die IntelliJ-Anwendung einmal stoppen und erneut starten;
 anschließend die Browserseite mit Strg+F5 vollständig neu laden. Der erste Start kann das Frontend vorbereiten.
-Es wurden für diese Einstellung keine Tests ausgeführt; die Übernahme durch den IntelliJ-Neustart steht noch aus.
+Der Produktionsmodus bleibt davon getrennt; der Prüfstand und die Grenzen der IDE-Prüfung stehen in der Abdeckungsübersicht.
 
 
 Vaadin 25.3 erzeugt bei Produktionsbuilds komprimierte CSS-Kopien (.css.gz / .css.br)
@@ -518,43 +503,36 @@ Anwendung einmal normal aus der IDE neu starten und im Browser Strg+F5 drücken.
 Danach genügt für CSS ein Refresh, sobald die IDE die geänderte Ressource kopiert hat;
 andernfalls die Anwendung normal aus der IDE neu starten. Ein Maven-Neubau auf der
 Kommandozeile ist dafür nicht erforderlich. Java-Änderungen benötigen weiterhin
-Kompilierung und einen Neustart. Diese Änderung wurde noch nicht gebaut oder im
-gestarteten System geprüft; es wurden keine Tests ausgeführt.
+Kompilierung und einen Neustart. Neue Übersetzungsgetter erfordern zuvor die Installation
+des eigenständigen Shared-Moduls; ein App-Build allein aktualisiert dessen JAR nicht.
 
 
-Aktuelle Layoutrevision der Benutzerverwaltung (noch ohne neue Testläufe):
-„Clear Filter“ setzt Suche und Filterwerte zurück und blendet die Zusatzfilter aus.
-Der Button verwendet das dezente Error-Theme; „Add User“ verwendet dieselbe
-Standardform wie der Speichern-Button der Konfiguration.
-Die aktive Seite verwendet das gleiche Primary-Theme wie „Add User“. Die Tabelle
-zeigt alle Zeilen der gewählten Seite ohne innere vertikale Scrollleiste und hält
-mindestens Platz für zehn Zeilen vor; bei kleinen Fenstern scrollt die ganze Seite.
-Die Aktionsspalte ist zentriert, Sortierindikatoren werden mit drei einfachen CSS-Regeln
-an den rechten Rand mit 15 Pixel Abstand zur nächsten Spalte gestellt.
-„Letzte Aktivität“ zeigt relative DE/EN-Texte (z. B. „vor 4 Stunden“); der Tooltip
-enthält den exakten Zeitpunkt. Aktualisierung erfolgt beim Neuladen oder erneuten
-Rendern der Tabelle, ohne zusätzlichen Timer. Der gleichnamige Filter bleibt
-eine inklusive Untergrenze. Ohne optionale Uhrzeit gilt der Tag ab 00:00 Uhr;
-ohne Datum ist keine Zeitfilterung aktiv. Freigabe und Status verwenden Lumo-Badgefarben;
-auch die vorhandenen Statusicons verwenden nun diese semantischen Lumo-Farben.
-Beim Namen steht das vorhandene Standard-Avatarbild. Benutzerdefinierte Bildspeicherung
-oder Uploads sind noch nicht implementiert; dafür wurde das Benutzerschema nicht geändert.
+## Abgeschlossenes Redesign und Benutzerformulare
 
-Der Benutzerformular-Dialog verwendet denselben farbigen Kopf wie die Tabelle.
-Beim Bearbeiten steht links unten „Benutzer löschen“ mit dezentem Error-Theme.
-Der vorhandene Bestätigungsdialog und die Schutzregeln bleiben erhalten; das
-Bearbeitungsformular wird erst nach erfolgreicher Löschung geschlossen.
-Die Löschbestätigung verwendet normale Textfarben und den gleichen nativen
-Dialogfuß wie das Bearbeitungsformular. Der Inhalt hat oben und unten denselben
-Abstand. Filter-/Löschicons verwenden `--lumo-error-text-color`. Für die größeren
-Flächen von Löschheader und Löschbutton hat der Nutzer die Mischung
-`color-mix(in srgb, var(--lumo-error-color) 50%, var(--lumo-base-color))` gewählt.
-Der rot gefüllte Löschbutton hat ein Papierkorb-Icon und die
-Kontrastschrift eines Primary-Buttons. Name und E-Mail sind fett hervorgehoben;
-das Löschverhalten ist unverändert.
-Registrierung und Adminformular nutzen dieselben fachlichen UserInputRules über
-ValidationHelper (Pflichttexte, E-Mail, Passwort, Geburtsdatum). Registrierung
-prüft beim Absenden, das Adminformular über Binder. Bestätigungsfelder gehören
-zur Registrierung; Rollen/Freigabe zur Administration. Nur beim Bearbeiten darf
-das Passwort leer bleiben. Passwort-Hilfen und Fehlertexte leiten die Beschreibung
-aus dem gemeinsamen Übersetzungstext der zentralen Regel ab.
+Der am 15.10.2026 bestätigte [Designstandard](docs/design-standard.md) gilt für
+weitere Ansichten. Primary/Secondary und Eingaben verwenden Lumo M (36 px),
+Buttons 13 px / 600, Eingabewerte 13 px / 700. Pagination und Tabellenaktionen
+behalten ihre eigenen Größen. Gemeinsame Styles werden bei lokalen Wünschen
+nicht unaufgefordert geändert; neue Entwürfe nutzen zuerst die vorhandenen Bausteine.
+
+Bearbeitungs- und Löschdialog nutzen den Tabellen-Headerhintergrund und denselben
+Tabellen-Border außen sowie unter Header/über Footer. Beide haben den gemeinsamen
+Schließen-Button. Im Löschdialog stehen Warnsymbol/-text und eine separate Benutzerfläche
+mit Avatar, Name und E-Mail. Nur der bestätigte Löschbutton führt die Mutation aus.
+`cosmos-delete-button` und `cosmos-delete-accent` teilen sich rote Schrift/Rahmen und
+einen dezenten Hintergrund. Der Primary-Bestätigungsbutton behält die rote 50-%-Mischung.
+
+Das Benutzerformular besitzt Passwort und Bestätigung nebeneinander. Ein leeres
+Passwort lässt beim Bearbeiten den bisherigen Hash unverändert. Erst eine Eingabe
+aktiviert die verpflichtende Bestätigung; beide Werte müssen exakt übereinstimmen.
+Leeren des Passworts leert/deaktiviert die Bestätigung. Fehlermeldungen erscheinen
+pro Feld nach Blur oder beim Speichern. Der Passworthinweis nutzt beide Spalten.
+Geburtstagsplatzhalter und fachliche Passwortregeln entsprechen der Registrierung.
+Die Bestätigung ist ausschließlich Formularzustand und wird nicht separat gespeichert.
+Aktiv besitzt einen erklärenden Hilfetext; Trennlinien gliedern Aktiv/Rollen/Sicherheit.
+
+Die Tabelle zeigt relative Aktivitätszeiten mit genauem Zeitpunkt im Tooltip,
+aktualisiert beim Neuladen/Rendern, ohne eigenen Timer. Das vorhandene Avatarbild
+wird wiederverwendet; Benutzeruploads und benutzerdefinierte Bildspeicherung sind
+weiterhin nicht implementiert. Schutzregeln, Versionierung und Backendverträge
+bleiben unabhängig von den Dialogstilen bestehen.

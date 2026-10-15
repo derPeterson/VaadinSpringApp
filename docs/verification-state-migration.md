@@ -1,5 +1,10 @@
 # Verifikationsstatus und Konto-Sperren
 
+Standabgleich 15.10.2026: Die beschriebenen Service-/Migrationsverträge bleiben vom
+Redesign unverändert. Aktuelle automatisierte Nachweise und Grenzen stehen in der
+[Abdeckungsübersicht](../browser-tests/abdeckung.md). Bestandsmigrationen werden
+durch Tests in frischen H2-Datenbanken nicht nachgewiesen.
+
 ## Vertrag
 
 - `users.enabled` bleibt das wirksame Login-/Administrationsflag. Die bestehenden Rollen-, Versions-, Last-Admin-, Remember-me- und Sitzungsschutzregeln bleiben bestehen.

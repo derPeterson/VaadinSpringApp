@@ -1,10 +1,4 @@
 # Bugs
 
-## RememberMe
-
-- ~~Cockie und Datenbank Tabelle ist verschwunden~~
-- VerificationService und PasswordResetService (Transactional)
-- ~~Konstanten~~
-- ~~SonarQuebe~~
-    - HomeView complexity
-    - Transactional
+Aktueller Prüfstand vom 15.10.2026: [Abdeckung und offene Punkte](browser-tests/abdeckung.md).
+Dort werden tatsächliche Defekte, Testanpassungen und verbleibende Prüfgrenzen getrennt.

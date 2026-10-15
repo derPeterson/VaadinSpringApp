@@ -1,5 +1,10 @@
 # Öffentliche UserService-Verträge
 
+Standabgleich 15.10.2026: Die beschriebenen Service-/Migrationsverträge bleiben vom
+Redesign unverändert. Aktuelle automatisierte Nachweise und Grenzen stehen in der
+[Abdeckungsübersicht](../browser-tests/abdeckung.md). Bestandsmigrationen werden
+durch Tests in frischen H2-Datenbanken nicht nachgewiesen.
+
 Alle Regeln stammen aus dem bestehenden Formular-/Entityvertrag. Die reinen
 Prüfroutinen liegen in `validation/UserInputRules`; `ValidationHelper` übernimmt
 nur Komponenten/Notifications und delegiert seine bisherigen Prüfmethoden.
@@ -41,3 +46,13 @@ für H2; andere Dialekte müssen die Constraintdiagnostik gesondert prüfen.
 `PasswordResetService.resetPassword` verlangt ebenfalls ein Rohpasswort nach
 `UserInputRules`; ungültige Werte werfen vor Encoding/Tokenverbrauch eine
 `IllegalArgumentException`. Sonstige Token-/Resetverträge bleiben unverändert.
+
+## Passwortbestätigung im Adminformular
+
+Die Bestätigung ist reiner Formularzustand und kein zusätzliches Serviceargument.
+Bei Neuanlage ist ein gültiges Passwort mit exakter Bestätigung erforderlich.
+Beim Bearbeiten bleibt das Passwort optional; eine Eingabe aktiviert die verpflichtende
+Bestätigung, Leeren setzt sie zurück. Der Binder blockiert nicht übereinstimmende
+Eingaben bereits vor dem Serviceaufruf. Die Servicevalidierung bleibt unabhängig
+wirksam; Null/blank bewahrt bei `updateAdminUser` weiterhin den vorhandenen Hash.
+Fehleranzeigen folgen dem abgestimmten [Designstandard](design-standard.md).

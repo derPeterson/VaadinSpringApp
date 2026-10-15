@@ -1,5 +1,10 @@
 # E-Mail-Identität und Benutzerlöschung (US-006/007)
 
+Standabgleich 15.10.2026: Die beschriebenen Service-/Migrationsverträge bleiben vom
+Redesign unverändert. Aktuelle automatisierte Nachweise und Grenzen stehen in der
+[Abdeckungsübersicht](../browser-tests/abdeckung.md). Bestandsmigrationen werden
+durch Tests in frischen H2-Datenbanken nicht nachgewiesen.
+
 > Anleitung, nicht ausgeführte Migration. Nur bei einer leeren Neuinstallation
 > erzeugt Hibernate die Constraints/FKs aus den Mappings. `ddl-auto=update` ist
 > kein Ersatz für die folgenden geprüften Bestandsänderungen. Die bestehende

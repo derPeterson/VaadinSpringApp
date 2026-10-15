@@ -2,6 +2,11 @@
 
 Diese Anleitung beschreibt die lokale Testumgebung aus `compose.yaml`: die Anwendung mit eigener H2-Datenbank und Mailpit zum Auffangen von Test-E-Mails. Docker Desktop muss mit Linux-Containern laufen. Java, Maven und Node werden beim Docker-Build im Container bereitgestellt.
 
+Aktueller Prüfstand des Redesigns: [Browserabdeckung](../../browser-tests/abdeckung.md).
+Die automatisierten Läufe verwenden `compose.browser-tests.yaml`, eigene Projekte,
+H2-/Mailpit-Volumes und getrennte Ports. `-Coverage` bindet nur dort einen JaCoCo-Agenten
+ein. Diese manuelle Compose-Umgebung und vorhandene Daten werden dadurch nicht verändert.
+
 ## Inhalt
 
 - [Starten und beenden](#starten-und-beenden)

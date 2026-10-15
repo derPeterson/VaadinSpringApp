@@ -1,5 +1,10 @@
 # Benutzer-Versionierung (US-002)
 
+Standabgleich 15.10.2026: Die beschriebenen Service-/Migrationsverträge bleiben vom
+Redesign unverändert. Aktuelle automatisierte Nachweise und Grenzen stehen in der
+[Abdeckungsübersicht](../browser-tests/abdeckung.md). Bestandsmigrationen werden
+durch Tests in frischen H2-Datenbanken nicht nachgewiesen.
+
 > Diese Anleitung gilt nur für bestehende Datenbanken. Bei einer Neuinstallation mit leerer Datenbank ist keine Bestandsmigration erforderlich.
 
 Vor dem Deployment muss `users.version` für **alle bestehenden Benutzer** als

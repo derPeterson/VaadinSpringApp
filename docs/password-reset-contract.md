@@ -1,5 +1,10 @@
 # Passwortreset-Verträge
 
+Standabgleich 15.10.2026: Die beschriebenen Service-/Migrationsverträge bleiben vom
+Redesign unverändert. Aktuelle automatisierte Nachweise und Grenzen stehen in der
+[Abdeckungsübersicht](../browser-tests/abdeckung.md). Bestandsmigrationen werden
+durch Tests in frischen H2-Datenbanken nicht nachgewiesen.
+
 ## Lokale Zeit und Konfiguration
 
 `PasswordResetService` verwendet wie `VerificationService` eine injizierbare
@@ -59,5 +64,6 @@ zurück. Streams und Classpath-Vorlagen behalten die Absicherungen aus Paket 2.
 
 Die Antwortgleichheit ist kein Timing-Schutz, Rate-Limit oder CAPTCHA und
 garantiert keine Gleichheit aller Netzwerk-/Infrastrukturfehler. Tests prüfen
-serverseitige Komponenten und isoliertes H2; Browser, SMTP, Bestandsmigrationen,
-andere Datenbanken/Isolationsmodi und Mehrinstanzbetrieb bleiben ungeprüft.
+serverseitige Komponenten und isoliertes H2. Ergänzende Browser-/Mailpit-Nachweise
+stehen in der Abdeckungsübersicht; reale SMTP-Zustellung, Bestandsmigrationen,
+andere Datenbanken/Isolationsmodi und Mehrinstanzbetrieb bleiben gesonderte Prüfungen.
