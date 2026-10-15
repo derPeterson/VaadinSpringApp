@@ -1115,6 +1115,10 @@ public class MessageTexts {
         return getTranslation("admin.users.field.enabled");
     }
 
+    public String getAdminUsersEnabledHint() {
+        return getTranslation("admin.users.field.enabled_hint");
+    }
+
     public String getAdminUsersFieldRoles() {
         return getTranslation("admin.users.field.roles");
     }
@@ -1125,6 +1129,18 @@ public class MessageTexts {
 
     public String getAdminUsersEditDialogTitle() {
         return getTranslation("admin.users.dialog.edit_title");
+    }
+
+    public String getAdminUsersDialogDescription() {
+        return getTranslation("admin.users.dialog.description");
+    }
+
+    public String getAdminUsersCloseDialog() {
+        return getTranslation("admin.users.dialog.close");
+    }
+
+    public String getAdminUsersPasswordPlaceholderEdit() {
+        return getTranslation("admin.users.password.placeholder.edit");
     }
 
     public String getAdminUsersDeleteSuccess() {
@@ -1192,8 +1208,28 @@ public class MessageTexts {
         return getTranslation("admin.users.filter.clear");
     }
 
+    public String getAdminUsersApplyFilters() {
+        return getTranslation("admin.users.filter.apply");
+    }
+
+    public String getAdminUsersActiveFilters() {
+        return getTranslation("admin.users.filter.active");
+    }
+
+    public String getAdminUsersActiveFilterCount(int count) {
+        return getFormattedTranslation("admin.users.filter.active_count", count);
+    }
+
+    public String getAdminUsersFilterTimeHint() {
+        return getTranslation("admin.users.filter.time_hint");
+    }
+
     public String getAdminUsersAddFilter() {
         return getTranslation("admin.users.filter.add");
+    }
+
+    public String getAdminUsersFilterPanelTitle() {
+        return getTranslation("admin.users.filter.title");
     }
 
     public String getAdminUsersRemoveFilter(String label) {
@@ -1308,6 +1344,14 @@ public class MessageTexts {
 
     public String getAdminUsersDeleteDialogTitle() {
         return getTranslation("admin.users.delete_dialog.title");
+    }
+
+    public String getAdminUsersDeleteDialogDescription() {
+        return getTranslation("admin.users.delete_dialog.description");
+    }
+
+    public String getAdminUsersDeleteDialogQuestion() {
+        return getTranslation("admin.users.delete_dialog.question");
     }
 
     public String getAdminUsersDeleteDialogWarning() {

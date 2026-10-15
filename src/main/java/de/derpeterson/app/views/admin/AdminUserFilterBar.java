@@ -1,38 +1,42 @@
 package de.derpeterson.app.views.admin;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.menubar.MenuBar;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.theme.lumo.LumoIcon;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
-/** Search/actions stay on one baseline; explicitly added filters wrap beneath them. */
+/** Suche und Aktionen bleiben oben; alle Zusatzfilter werden gemeinsam aufgeklappt. */
 final class AdminUserFilterBar extends VerticalLayout {
     private final MessageProperties texts;
     private final TextField search;
     private final Button clearFilters = new Button();
-    private final Span addFilterLabel = new Span();
-    private final MenuItem addFilterItem;
+    private final Button filterButton = new Button();
+    private final Button applyFiltersButton = new Button();
+    private final Span filterHint = new Span();
+    private final Span filterPanelTitle = new Span();
+    private final Span activeFilterCountBadge = new Span();
+    private int activeFilterCount;
     private final Div filters = new Div();
-    private final List<FilterControl> controls = new ArrayList<>();
+    private final Span activeFiltersLabel = new Span();
+    private final Div activeFilterChips = new Div();
+    private final Div activeFiltersRow = new Div(activeFiltersLabel, activeFilterChips);
+    private final List<HasValue<?, ?>> controls = new ArrayList<>();
 
     AdminUserFilterBar(MessageProperties texts, TextField search, Button refresh, Button addUser,
                        ComboBox<Boolean> enabled, ComboBox<UserStatus> status,
-                       ComboBox<RoleType> role, AdminUserActivityFilter activity) {
+                       ComboBox<RoleType> role, AdminUserActivityFilter activity, Runnable applyFilters) {
         this.texts = texts;
         this.search = search;
         setPadding(false);
@@ -40,85 +44,106 @@ final class AdminUserFilterBar extends VerticalLayout {
         setWidthFull();
         addClassName("admin-user-filter-bar");
 
-        MenuBar menu = new MenuBar();
-        menu.addClassName("admin-user-add-filter");
-        menu.getElement().getThemeList().add("cosmos");
-        HorizontalLayout label = new HorizontalLayout(VaadinIcon.FILTER.create(), addFilterLabel);
-        label.setSpacing(false);
-        label.setAlignItems(Alignment.CENTER);
-        label.addClassName("admin-user-add-filter-label");
-        addFilterItem = menu.addItem(label);
+        var filterIcon = VaadinIcon.FILTER.create();
+        filterIcon.getElement().setAttribute("aria-hidden", "true");
+        var filterToggle = LumoIcon.ANGLE_DOWN.create();
+        filterToggle.addClassName("admin-user-filter-toggle");
+        filterToggle.getElement().setAttribute("aria-hidden", "true");
+        filterButton.addClassName("admin-user-filter-button");
+        filterButton.setPrefixComponent(filterIcon);
+        filterButton.setSuffixComponent(filterToggle);
+        filters.addClassName("admin-user-filters");
+        applyFiltersButton.setPrefixComponent(VaadinIcon.CHECK.create());
+        applyFiltersButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        applyFiltersButton.addClickListener(event -> applyFilters.run());
+        var hintIcon = VaadinIcon.INFO_CIRCLE_O.create();
+        hintIcon.getElement().setAttribute("aria-hidden", "true");
+        Div hint = new Div(hintIcon, filterHint);
+        hint.addClassName("cosmos-panel-hint");
+        Div filterActions = new Div(applyFiltersButton);
+        filterActions.addClassName("cosmos-panel-actions");
+        Div filterFooter = new Div(hint, filterActions);
+        filterFooter.addClassNames("cosmos-panel-footer", "admin-user-filter-footer");
+        var panelIcon = VaadinIcon.FILTER.create();
+        panelIcon.getElement().setAttribute("aria-hidden", "true");
+        activeFilterCountBadge.getElement().getThemeList().add("badge");
+        activeFilterCountBadge.addClassName("admin-user-active-filter-count");
+        Div panelHeading = new Div(panelIcon, filterPanelTitle, activeFilterCountBadge);
+        panelHeading.addClassName("admin-user-filter-panel-heading");
+        Div panelHeader = new Div(panelHeading, clearFilters);
+        panelHeader.addClassName("admin-user-filter-panel-header");
+        Div filterPanel = new Div(panelHeader, filters, filterFooter);
+        filterPanel.setId("admin-user-filter-panel");
+        Details filterDetails = new Details("", filterPanel);
+        filterDetails.addClassName("admin-user-filter-details");
+        filterDetails.setWidthFull();
+        filterDetails.setOpened(false);
+        filterButton.getElement().setAttribute("aria-controls", "admin-user-filter-panel");
+        filterButton.getElement().setAttribute("aria-expanded", "false");
+        filterButton.addClickListener(event -> filterDetails.setOpened(!filterDetails.isOpened()));
+        filterDetails.addOpenedChangeListener(event -> {
+            filterButton.getElement().setAttribute("aria-expanded", Boolean.toString(event.isOpened()));
+            if (event.isOpened()) activity.refreshPlaceholders();
+        });
 
-        clearFilters.setPrefixComponent(VaadinIcon.CLOSE_SMALL.create());
-        clearFilters.addThemeVariants(ButtonVariant.LUMO_ERROR);
-        clearFilters.addClickListener(event -> clearAllFilters());
-        clearFilters.setVisible(false);
+        clearFilters.setPrefixComponent(VaadinIcon.ROTATE_LEFT.create());
+        clearFilters.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
+        clearFilters.addClassName("admin-user-filter-reset");
+        clearFilters.addClickListener(event -> {
+            clearAllFilters();
+            applyFilters.run();
+        });
 
         Div actions = new Div(refresh, addUser);
         actions.addClassName("admin-user-toolbar-actions");
-        Div toolbar = new Div(search, menu, clearFilters, actions);
+        Div toolbar = new Div(search, filterButton, actions);
         toolbar.addClassName("admin-user-toolbar");
-        filters.addClassName("admin-user-filters");
-        filters.setVisible(false);
-        add(toolbar, filters);
+        activeFiltersLabel.addClassName("cosmos-panel-meta");
+        activeFilterChips.addClassName("admin-user-active-filter-chips");
+        activeFiltersRow.addClassName("admin-user-active-filters");
+        activeFiltersRow.setVisible(false);
+        add(toolbar, activeFiltersRow, filterDetails);
 
-        addControl(enabled, enabled, texts::getAdminUsersGridEnabled);
-        addControl(status, status, texts::getAdminUsersGridStatus);
-        addControl(role, role, texts::getAdminUsersFilterRole);
-        addControl(activity, activity, texts::getAdminUsersFilterActiveSince);
+        filters.add(enabled, status, role, activity);
+        controls.addAll(List.of(enabled, status, role, activity));
         refreshTexts();
     }
 
-    private void addControl(Component input, HasValue<?, ?> value, Supplier<String> label) {
-        Button remove = new Button(VaadinIcon.CLOSE_SMALL.create());
-        remove.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
-        remove.addClassName("admin-user-filter-remove");
-        Div wrapper = new Div(input, remove);
-        wrapper.addClassName("admin-user-filter-control");
-        wrapper.setVisible(false);
-        filters.add(wrapper);
-
-        MenuItem choice = addFilterItem.getSubMenu().addItem(label.get(), event -> {
-            wrapper.setVisible(true);
-            filters.setVisible(true);
-            updateChoices();
-        });
-        remove.addClickListener(event -> {
-            value.clear();
-            wrapper.setVisible(false);
-            filters.setVisible(controls.stream().anyMatch(control -> control.wrapper().isVisible()));
-            updateChoices();
-        });
-        controls.add(new FilterControl(wrapper, choice, remove, label, value));
-    }
 
     void refreshTexts() {
-        addFilterLabel.setText(texts.getAdminUsersAddFilter());
+        filterButton.setText(texts.getAdminUsersAddFilter());
+        filterPanelTitle.setText(texts.getAdminUsersFilterPanelTitle());
+        activeFilterCountBadge.setText(texts.getAdminUsersActiveFilterCount(activeFilterCount));
+        applyFiltersButton.setText(texts.getAdminUsersApplyFilters());
+        filterHint.setText(texts.getAdminUsersFilterTimeHint());
+        activeFiltersLabel.setText(texts.getAdminUsersActiveFilters());
         clearFilters.setText(texts.getAdminUsersClearFilters());
-        for (FilterControl control : controls) {
-            control.choice().setText(control.label().get());
-            String removeText = texts.getAdminUsersRemoveFilter(control.label().get());
-            control.remove().setAriaLabel(removeText);
-            control.remove().setTooltipText(removeText);
+    }
+
+    void showActiveFilters(List<ActiveFilter> activeFilters) {
+        activeFilterCount = activeFilters.size();
+        activeFilterCountBadge.setText(texts.getAdminUsersActiveFilterCount(activeFilterCount));
+        activeFilterChips.removeAll();
+        for (ActiveFilter filter : activeFilters) {
+            Span label = new Span(filter.label() + ": " + filter.value());
+            Button remove = new Button(VaadinIcon.CLOSE_SMALL.create(), event -> filter.remove().run());
+            remove.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+            remove.addClassName("admin-user-filter-chip-remove");
+            String removeText = texts.getAdminUsersRemoveFilter(filter.label());
+            remove.setAriaLabel(removeText);
+            remove.setTooltipText(removeText);
+            Div chip = new Div(label, remove);
+            chip.addClassNames("cosmos-admin-role-chip", "admin-user-active-filter-chip");
+            activeFilterChips.add(chip);
         }
-        updateChoices();
+        activeFiltersRow.setVisible(!activeFilters.isEmpty());
+    }
+
+    record ActiveFilter(String label, String value, Runnable remove) {
     }
 
     private void clearAllFilters() {
         search.clear();
-        for (FilterControl control : controls) {
-            control.value().clear();
-            control.wrapper().setVisible(false);
-        }
-        filters.setVisible(false);
-        updateChoices();
-    }
-
-    private void updateChoices() {
-        for (FilterControl control : controls) control.choice().setVisible(!control.wrapper().isVisible());
-        addFilterItem.setEnabled(controls.stream().anyMatch(control -> !control.wrapper().isVisible()));
-    }
-
-    private record FilterControl(Div wrapper, MenuItem choice, Button remove, Supplier<String> label, HasValue<?, ?> value) {
+        for (HasValue<?, ?> control : controls) control.clear();
     }
 }

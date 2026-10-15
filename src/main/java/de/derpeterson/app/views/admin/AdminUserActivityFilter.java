@@ -2,7 +2,7 @@ package de.derpeterson.app.views.admin;
 
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.datepicker.DatePicker;
-import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.timepicker.TimePicker;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -10,6 +10,7 @@ import de.derpeterson.app.i18n.MessageProperties;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 /**
@@ -18,20 +19,15 @@ import java.util.Locale;
 final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
     private final DatePicker date = new DatePicker();
     private final TimePicker time = new TimePicker();
-    private final Span caption = new Span();
-    private final Span optionalTimeHint = new Span();
     private boolean presenting;
+    private LocalTime placeholderTime = LocalTime.MIDNIGHT;
 
     AdminUserActivityFilter() {
         super(null, true);
         date.setAutoOpen(false);
         time.setAutoOpen(false);
-        Span label = new Span(caption, optionalTimeHint);
-        label.getElement().setAttribute("slot", "label");
-        optionalTimeHint.addClassName("admin-user-activity-optional-note");
-        // Screen readers already receive the optional-time input label below.
-        optionalTimeHint.getElement().setAttribute("aria-hidden", "true");
-        getElement().appendChild(label.getElement());
+        time.setEnabled(false);
+        time.addClassName("admin-user-activity-time-picker");
         date.setClearButtonVisible(true);
         time.setClearButtonVisible(true);
         // Vaadin offers a time dropdown for steps of at least fifteen minutes.
@@ -42,28 +38,85 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
         fields.setPadding(false);
         fields.setSpacing(false);
         fields.setWidthFull();
+        fields.setAlignItems(FlexComponent.Alignment.END);
         fields.addClassName("admin-user-activity-inputs");
         add(fields);
         date.addValueChangeListener(event -> inputChanged());
+        date.addValidationStatusChangeListener(event -> inputChanged());
         time.addValueChangeListener(event -> inputChanged());
+        time.addValidationStatusChangeListener(event -> inputChanged());
+        time.addFocusListener(event -> refreshPlaceholders());
+        time.getElement().addEventListener("opened-changed", event -> {
+            if (event.getEventData().path("event.detail.value").asBoolean() && time.isEmpty()) {
+                scrollToTimePlaceholder();
+            }
+        }).addEventData("event.detail.value");
     }
 
     void setLocale(Locale locale) {
         date.setLocale(locale);
         time.setLocale(locale);
+        refreshPlaceholders();
     }
 
     void refreshTexts(MessageProperties texts) {
-        caption.setText(texts.getAdminUsersFilterActiveSince());
-        optionalTimeHint.setText(texts.getAdminUsersActivityTimeOptional());
+        date.setLabel(texts.getAdminUsersFilterActiveSince());
         date.setAriaLabel(texts.getAdminUsersActivityDate());
-        date.setPlaceholder(texts.getDateInputPlaceholder());
+        refreshPlaceholders();
         time.setAriaLabel(texts.getAdminUsersActivityTimeOptional());
-        time.setPlaceholder(texts.getTimeInputPlaceholder());
+    }
+
+    void refreshPlaceholders() {
+        Locale locale = date.getLocale();
+        boolean german = Locale.GERMAN.getLanguage().equals(locale.getLanguage());
+        LocalDateTime now = LocalDateTime.now();
+        String datePattern = german ? "dd.MM.uuuu" : "MM/dd/uuuu";
+        date.setPlaceholder(now.toLocalDate().format(DateTimeFormatter.ofPattern(datePattern, locale)));
+        int stepMinutes = Math.toIntExact(time.getStep().toMinutes());
+        LocalTime roundedTime = now.toLocalTime()
+                .withMinute(now.getMinute() / stepMinutes * stepMinutes)
+                .withSecond(0)
+                .withNano(0);
+        placeholderTime = roundedTime;
+        String timePattern = german ? "HH:mm" : "h:mm a";
+        time.setPlaceholder(roundedTime.format(DateTimeFormatter.ofPattern(timePattern, locale)));
+    }
+
+    private void scrollToTimePlaceholder() {
+        refreshPlaceholders();
+        // Vaadin 25 bietet keine öffentliche Java-Scrollmethode für den TimePicker.
+        // Nur die Liste scrollen: Ein fokussierter Eintrag würde beim Schließen übernommen.
+        time.getElement().executeJs("""
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    if (!this.opened || this.value || this.inputElement?.value || this._focusedIndex >= 0) return;
+                    const scroller = this._scroller;
+                    if (!scroller?.opened || typeof scroller.scrollIntoView !== 'function') return;
+                    const index = scroller.items?.findIndex(item => item.value === $0);
+                    if (index >= 0) scroller.scrollIntoView(index);
+                }));
+                """, placeholderTime.format(DateTimeFormatter.ofPattern("HH:mm")));
     }
 
     private void inputChanged() {
-        if (!presenting) updateValue();
+        if (!presenting) {
+            updateTimeAvailability();
+            updateValue();
+        }
+    }
+
+    private void updateTimeAvailability() {
+        boolean validDate = date.getValue() != null && !date.isInvalid();
+        time.setEnabled(validDate);
+        if (!validDate) {
+            boolean previousPresenting = presenting;
+            presenting = true;
+            try {
+                time.clear();
+                time.setInvalid(false);
+            } finally {
+                presenting = previousPresenting;
+            }
+        }
     }
 
     @Override
@@ -86,6 +139,7 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
                 time.setInvalid(false);
                 setInvalid(false);
             }
+            updateTimeAvailability();
         } finally {
             presenting = false;
         }
