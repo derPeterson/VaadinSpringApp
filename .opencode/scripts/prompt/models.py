@@ -10,9 +10,7 @@ class PromptImproverConfig(BaseModel):
 
 
 class ImprovedPrompt(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid"
-    )
+    model_config = ConfigDict(extra="forbid")
 
     goal: str
     scope: list[str]
@@ -22,25 +20,27 @@ class ImprovedPrompt(BaseModel):
     uncertainties: list[str]
 
     def to_markdown(self) -> str:
-        return "\n".join([
-            "## Goal",
-            self.goal,
-            "",
-            "## Scope",
-            self._format_list(self.scope),
-            "",
-            "## Requirements",
-            self._format_list(self.requirements),
-            "",
-            "## Non-goals",
-            self._format_list(self.non_goals),
-            "",
-            "## Verification",
-            self._format_list(self.verification),
-            "",
-            "## Uncertainties",
-            self._format_list(self.uncertainties),
-        ])
+        return "\n".join(
+            [
+                "## Goal",
+                self.goal,
+                "",
+                "## Scope",
+                self._format_list(self.scope),
+                "",
+                "## Requirements",
+                self._format_list(self.requirements),
+                "",
+                "## Non-goals",
+                self._format_list(self.non_goals),
+                "",
+                "## Verification",
+                self._format_list(self.verification),
+                "",
+                "## Uncertainties",
+                self._format_list(self.uncertainties),
+            ]
+        )
 
     @staticmethod
     def _format_list(values: list[str]) -> str:

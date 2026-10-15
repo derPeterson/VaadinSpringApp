@@ -33,7 +33,9 @@ class ChatGPTCredentialStore:
         self.host_path = storage_directory / "host.json"
         # The keyring service is global per user, so separate project directories
         # must share this lock, too. Tests inject their own isolated path.
-        self.lock_path = lock_path or Path.home() / ".vaadin-prompt-improver/chatgpt-session.lock"
+        self.lock_path = (
+            lock_path or Path.home() / ".vaadin-prompt-improver/chatgpt-session.lock"
+        )
 
     @staticmethod
     def _atomic_text(path, value):
@@ -47,12 +49,17 @@ class ChatGPTCredentialStore:
 
     def save_host_id(self, ext_agent_host_id: str) -> None:
         with session_lock(self.lock_path):
-            self._atomic_text(self.host_path, json.dumps({"ext_agent_host_id": ext_agent_host_id}, indent=2))
+            self._atomic_text(
+                self.host_path,
+                json.dumps({"ext_agent_host_id": ext_agent_host_id}, indent=2),
+            )
 
     def load_host_id(self) -> str | None:
         if not self.host_path.exists():
             return None
-        return json.loads(self.host_path.read_text(encoding="utf-8")).get("ext_agent_host_id")
+        return json.loads(self.host_path.read_text(encoding="utf-8")).get(
+            "ext_agent_host_id"
+        )
 
     def save_credentials(self, credentials: ChatGPTCredentials) -> None:
         with session_lock(self.lock_path):
@@ -61,7 +68,9 @@ class ChatGPTCredentialStore:
     def _save_credentials(self, credentials):
         # One versioned keyring bundle publishes all three rotating tokens and
         # their expiry together. A failed chunk write leaves the old snapshot intact.
-        self._save_secret(credentials.client_id, "credentials", credentials.model_dump_json())
+        self._save_secret(
+            credentials.client_id, "credentials", credentials.model_dump_json()
+        )
         metadata = ChatGPTProfileMetadata.model_validate(credentials.model_dump())
         self._atomic_text(self.profile_path, metadata.model_dump_json(indent=2))
         for name in ("access_token", "refresh_token", "id_token"):
@@ -78,24 +87,36 @@ class ChatGPTCredentialStore:
             count, generation = data["count"], data["generation"]
             if type(count) is not int or not 0 <= count <= 10000:
                 raise ValueError()
-            if generation is not None and (not isinstance(generation, str) or
-                                           len(generation) != 32 or any(c not in "0123456789abcdef" for c in generation)):
+            if generation is not None and (
+                not isinstance(generation, str)
+                or len(generation) != 32
+                or any(c not in "0123456789abcdef" for c in generation)
+            ):
                 raise ValueError()
             return data
         except (ValueError, TypeError, KeyError):
-            raise PromptProviderError("credential_storage", "Stored ChatGPT credentials are malformed; log in again.") from None
+            raise PromptProviderError(
+                "credential_storage",
+                "Stored ChatGPT credentials are malformed; log in again.",
+            ) from None
 
     @staticmethod
     def _chunk_key(client_id, name, generation, index):
-        return f"{client_id}:{name}:{generation}:{index}" if generation else f"{client_id}:{name}:{index}"
+        return (
+            f"{client_id}:{name}:{generation}:{index}"
+            if generation
+            else f"{client_id}:{name}:{index}"
+        )
 
     def _delete_chunks(self, client_id, name, manifest):
         if manifest is None:
             return
         for index in range(manifest["count"]):
             try:
-                keyring.delete_password(self.KEYRING_SERVICE,
-                                        self._chunk_key(client_id, name, manifest["generation"], index))
+                keyring.delete_password(
+                    self.KEYRING_SERVICE,
+                    self._chunk_key(client_id, name, manifest["generation"], index),
+                )
             except keyring.errors.KeyringError:
                 pass  # Cleanup cannot turn a published rotating token into a failed refresh.
 
@@ -104,7 +125,9 @@ class ChatGPTCredentialStore:
             manifest = self._manifest(client_id, name)
             self._delete_chunks(client_id, name, manifest)
             if manifest is not None:
-                keyring.delete_password(self.KEYRING_SERVICE, f"{client_id}:{name}:meta")
+                keyring.delete_password(
+                    self.KEYRING_SERVICE, f"{client_id}:{name}:meta"
+                )
         except (keyring.errors.KeyringError, PromptProviderError):
             pass
 
@@ -114,12 +137,21 @@ class ChatGPTCredentialStore:
         except PromptProviderError:
             previous = None  # A fresh verified login can replace a malformed pointer.
         generation = uuid.uuid4().hex
-        chunks = [value[i:i + self.CHUNK_SIZE] for i in range(0, len(value), self.CHUNK_SIZE)]
+        chunks = [
+            value[i : i + self.CHUNK_SIZE]
+            for i in range(0, len(value), self.CHUNK_SIZE)
+        ]
         manifest = {"generation": generation, "count": len(chunks)}
         try:
             for index, chunk in enumerate(chunks):
-                keyring.set_password(self.KEYRING_SERVICE, self._chunk_key(client_id, name, generation, index), chunk)
-            keyring.set_password(self.KEYRING_SERVICE, f"{client_id}:{name}:meta", json.dumps(manifest))
+                keyring.set_password(
+                    self.KEYRING_SERVICE,
+                    self._chunk_key(client_id, name, generation, index),
+                    chunk,
+                )
+            keyring.set_password(
+                self.KEYRING_SERVICE, f"{client_id}:{name}:meta", json.dumps(manifest)
+            )
         except Exception:
             self._delete_chunks(client_id, name, manifest)
             raise
@@ -131,8 +163,10 @@ class ChatGPTCredentialStore:
             return None
         chunks = []
         for index in range(manifest["count"]):
-            chunk = keyring.get_password(self.KEYRING_SERVICE,
-                                        self._chunk_key(client_id, name, manifest["generation"], index))
+            chunk = keyring.get_password(
+                self.KEYRING_SERVICE,
+                self._chunk_key(client_id, name, manifest["generation"], index),
+            )
             if chunk is None:
                 return None
             chunks.append(chunk)
@@ -145,15 +179,22 @@ class ChatGPTCredentialStore:
     def _load_credentials(self):
         if not self.profile_path.exists():
             return None
-        metadata = ChatGPTProfileMetadata.model_validate_json(self.profile_path.read_text(encoding="utf-8"))
+        metadata = ChatGPTProfileMetadata.model_validate_json(
+            self.profile_path.read_text(encoding="utf-8")
+        )
         bundle = self._load_secret(metadata.client_id, "credentials")
         if bundle is not None:
             return ChatGPTCredentials.model_validate_json(bundle)
         if self._manifest(metadata.client_id, "credentials") is not None:
-            raise PromptProviderError("credential_storage", "Stored ChatGPT credential snapshot is incomplete; log in again.")
+            raise PromptProviderError(
+                "credential_storage",
+                "Stored ChatGPT credential snapshot is incomplete; log in again.",
+            )
         # Read existing installations without copying any secret into profile.json.
-        secrets = {name: self._load_secret(metadata.client_id, name)
-                   for name in ("access_token", "refresh_token", "id_token")}
+        secrets = {
+            name: self._load_secret(metadata.client_id, name)
+            for name in ("access_token", "refresh_token", "id_token")
+        }
         if any(value is None for value in secrets.values()):
             return None
         return ChatGPTCredentials(**metadata.model_dump(), **secrets)
@@ -170,14 +211,19 @@ class ChatGPTCredentialStore:
                 if credentials.is_access_token_valid():
                     return credentials
                 try:
-                    refreshed = token_client.refresh(client_id=credentials.client_id, refresh_token=credentials.refresh_token)
+                    refreshed = token_client.refresh(
+                        client_id=credentials.client_id,
+                        refresh_token=credentials.refresh_token,
+                    )
                 except PromptProviderError as error:
                     if error.category == "authentication":
                         credentials.reauth_required = True
                         try:
                             self._save_credentials(credentials)
                         except Exception:
-                            error.__notes__ = ["Could not persist the ChatGPT reauthentication marker."]
+                            error.__notes__ = [
+                                "Could not persist the ChatGPT reauthentication marker."
+                            ]
                     raise
                 credentials.access_token = refreshed.access_token
                 if refreshed.refresh_token is not None:
@@ -200,6 +246,10 @@ class ChatGPTCredentialStore:
         with session_lock(self.lock_path):
             current = self._load_credentials()
             # Do not invalidate a replacement produced while this request ran.
-            if current and current.client_id == client_id and current.access_token == access_token:
+            if (
+                current
+                and current.client_id == client_id
+                and current.access_token == access_token
+            ):
                 current.reauth_required = True
                 self._save_credentials(current)

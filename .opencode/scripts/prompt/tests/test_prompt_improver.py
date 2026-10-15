@@ -10,9 +10,7 @@ def main() -> None:
     script_directory = Path(__file__).resolve().parent.parent
     config_path = script_directory / "config.json"
 
-    config_data = json.loads(
-        config_path.read_text(encoding="utf-8")
-    )
+    config_data = json.loads(config_path.read_text(encoding="utf-8"))
 
     config = PromptImproverConfig.model_validate(config_data)
 
@@ -22,9 +20,7 @@ def main() -> None:
         llm_client=client,
     )
 
-    improved_prompt = improver.improve(
-        "Improve email normalization."
-    )
+    improved_prompt = improver.improve("Improve email normalization.")
 
     print(improved_prompt.to_markdown())
 

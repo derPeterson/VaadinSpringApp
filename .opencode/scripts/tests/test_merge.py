@@ -1,4 +1,5 @@
 """Real temporary Git repositories; no application, provider or live project writes."""
+
 import hashlib
 import json
 import merge
@@ -36,21 +37,42 @@ class MergeCase(unittest.TestCase):
         self.folder = self.store / "runs" / ("2026-10-08_00-00-00_UTC__" + self.run_id)
         self.state_file = self.store / "state" / (self.run_id + ".json")
         write_json(self.store / "project.json", {"repo": str(self.repo)})
-        self.state = dict(repo=str(self.repo), id=self.run_id, branch="feature/change", status="completed",
-                          createdAt="2026-10-08T00:00:00+00:00", folder=str(self.folder),
-                          startCommit=self.main_commit, finishCommit=self.feature_commit)
-        self.result = dict(Id=self.run_id, Branch="feature/change", Outcome="completed", Terminal=True,
-                           StartCommit=self.main_commit, EndCommit=self.feature_commit, RunFolder=str(self.folder))
+        self.state = dict(
+            repo=str(self.repo),
+            id=self.run_id,
+            branch="feature/change",
+            status="completed",
+            createdAt="2026-10-08T00:00:00+00:00",
+            folder=str(self.folder),
+            startCommit=self.main_commit,
+            finishCommit=self.feature_commit,
+        )
+        self.result = dict(
+            Id=self.run_id,
+            Branch="feature/change",
+            Outcome="completed",
+            Terminal=True,
+            StartCommit=self.main_commit,
+            EndCommit=self.feature_commit,
+            RunFolder=str(self.folder),
+        )
         write_json(self.state_file, self.state)
         write_json(self.folder / "result.json", self.result)
-        ((self.folder / "report.md").write_text("# Bericht\n\nValidierung korrigiert.\n", encoding="utf-8"))
-        (self.folder / "findings.md").write_text("# Offene Findings\n\nKeine weiteren offenen Findings festgestellt.\n",
-                                                 encoding="utf-8")
+        (
+            (self.folder / "report.md").write_text(
+                "# Bericht\n\nValidierung korrigiert.\n", encoding="utf-8"
+            )
+        )
+        (self.folder / "findings.md").write_text(
+            "# Offene Findings\n\nKeine weiteren offenen Findings festgestellt.\n",
+            encoding="utf-8",
+        )
         self.plan_file = self.base / "merge-plan.json"
         self.message = self.base / "merge-message.txt"
         self.message.write_text(
             "Validierung und Übersetzungen korrigiert\n\n- Frühen Abbruch geprüft.\n- DE/EN-Hinweise übersetzt; '$()' bleibt Text.\n",
-            encoding="utf-8")
+            encoding="utf-8",
+        )
 
     def git(self, *args):
         return merge.git(self.repo, *args).strip()
@@ -65,8 +87,11 @@ class MergeCase(unittest.TestCase):
         return value
 
     def snapshots(self):
-        return {str(path): hashlib.sha256(path.read_bytes()).hexdigest()
-                for path in self.store.rglob("*") if path.is_file() and path.name != ".lock"}
+        return {
+            str(path): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in self.store.rglob("*")
+            if path.is_file() and path.name != ".lock"
+        }
 
     def test_merge_keeps_commits_branch_archive_and_exact_feature_tree(self):
         before = self.snapshots()
@@ -77,13 +102,24 @@ class MergeCase(unittest.TestCase):
         self.assertEqual("main", self.git("branch", "--show-current"))
         self.assertEqual("", self.git("status", "--porcelain"))
         self.assertEqual(self.feature_commit, self.git("rev-parse", "feature/change"))
-        self.assertEqual([self.main_commit, self.feature_commit],
-                         self.git("rev-list", "--parents", "-n", "1", "HEAD").split()[1:])
-        self.assertEqual(self.git("rev-parse", "HEAD^{tree}"), self.git("rev-parse", "feature/change^{tree}"))
+        self.assertEqual(
+            [self.main_commit, self.feature_commit],
+            self.git("rev-list", "--parents", "-n", "1", "HEAD").split()[1:],
+        )
+        self.assertEqual(
+            self.git("rev-parse", "HEAD^{tree}"),
+            self.git("rev-parse", "feature/change^{tree}"),
+        )
         text = self.git("log", "-1", "--format=%B")
-        self.assertEqual("In main integriert: Validierung und Übersetzungen korrigiert", text.splitlines()[0])
+        self.assertEqual(
+            "In main integriert: Validierung und Übersetzungen korrigiert",
+            text.splitlines()[0],
+        )
         self.assertTrue(result["message"].startswith(text.splitlines()[0] + "\n"))
-        self.assertEqual("Validierung korrigiert", self.git("show", "-s", "--format=%s", self.feature_commit))
+        self.assertEqual(
+            "Validierung korrigiert",
+            self.git("show", "-s", "--format=%s", self.feature_commit),
+        )
         self.assertIn("Übersetzungen korrigiert", text)
         self.assertIn("'$()' bleibt Text", text)
         self.assertIn("Benchmark-Run: " + self.run_id, text)
@@ -96,14 +132,18 @@ class MergeCase(unittest.TestCase):
         self.plan()
         result = merge.apply(self.repo, self.plan_file, self.message)
         actual = self.git("show", "-s", "--format=%B", "HEAD")
-        self.assertEqual("In main integriert: Validierung korrigiert", actual.splitlines()[0])
+        self.assertEqual(
+            "In main integriert: Validierung korrigiert", actual.splitlines()[0]
+        )
         self.assertEqual(1, actual.splitlines()[0].count("In main integriert:"))
         self.assertIn(body.rstrip(), actual)
         self.assertEqual(original, self.message.read_text(encoding="utf-8"))
         self.assertEqual(actual, result["message"].strip())
 
     def test_prefix_without_a_description_stops_before_branch_switch_or_commit(self):
-        self.message.write_text("In main integriert:  \n\n- Test geprüft.\n", encoding="utf-8")
+        self.message.write_text(
+            "In main integriert:  \n\n- Test geprüft.\n", encoding="utf-8"
+        )
         before = self.snapshots()
         self.plan()
         with self.assertRaisesRegex(WorkflowError, "konkrete Beschreibung"):
@@ -131,7 +171,9 @@ class MergeCase(unittest.TestCase):
         with self.assertRaisesRegex(WorkflowError, "Ohne Branchname"):
             merge.prepare(self.repo, self.store_root)
         self.assertEqual(self.main_commit, self.git("rev-parse", "HEAD"))
-        self.assertEqual("ready", merge.prepare(self.repo, self.store_root, "change")["status"])
+        self.assertEqual(
+            "ready", merge.prepare(self.repo, self.store_root, "change")["status"]
+        )
 
     def test_omitted_branch_on_unrelated_or_detached_head_is_rejected(self):
         self.git("switch", "-c", "unrelated")
@@ -143,11 +185,22 @@ class MergeCase(unittest.TestCase):
         self.assertEqual(self.feature_commit, self.git("rev-parse", "HEAD"))
 
     def test_cli_omitted_branch_and_failure_on_main(self):
-        command = [sys.executable, str(Path(merge.__file__)), "--repo", str(self.repo),
-                   "--store-root", str(self.store_root), "prepare", "--plan-file", str(self.plan_file)]
+        command = [
+            sys.executable,
+            str(Path(merge.__file__)),
+            "--repo",
+            str(self.repo),
+            "--store-root",
+            str(self.store_root),
+            "prepare",
+            "--plan-file",
+            str(self.plan_file),
+        ]
         result = subprocess.run(command, capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertEqual("feature/change", json.loads(result.stdout.decode("utf-8"))["branch"])
+        self.assertEqual(
+            "feature/change", json.loads(result.stdout.decode("utf-8"))["branch"]
+        )
         original_plan = self.plan_file.read_bytes()
         self.git("switch", "main")
         rejected = subprocess.run(command, capture_output=True)
@@ -166,12 +219,23 @@ class MergeCase(unittest.TestCase):
     def test_main_invocation_and_short_or_full_branch_are_supported(self):
         short = self.plan()
         self.git("switch", "main")
-        self.assertEqual(short, merge.prepare(self.repo, self.store_root, "feature/change"))
-        self.assertEqual("merged", merge.apply(self.repo, self.plan_file, self.message)["status"])
+        self.assertEqual(
+            short, merge.prepare(self.repo, self.store_root, "feature/change")
+        )
+        self.assertEqual(
+            "merged", merge.apply(self.repo, self.plan_file, self.message)["status"]
+        )
 
     def test_input_is_not_a_revision_or_shell_expression(self):
-        for name in ("main", "--help", "change;whoami", "$(whoami)", "change other", "feature/change/x",
-                     "refs/heads/feature/change"):
+        for name in (
+            "main",
+            "--help",
+            "change;whoami",
+            "$(whoami)",
+            "change other",
+            "feature/change/x",
+            "refs/heads/feature/change",
+        ):
             with self.subTest(name=name), self.assertRaises(WorkflowError):
                 merge.prepare(self.repo, self.store_root, name)
         self.assertEqual(self.feature_commit, self.git("rev-parse", "HEAD"))
@@ -216,7 +280,12 @@ class MergeCase(unittest.TestCase):
             self.plan()
 
     def test_latest_unfinished_run_is_not_replaced_by_an_old_completed_run(self):
-        later = dict(self.state, id="b" * 32, status="failed", createdAt="2026-10-09T00:00:00+00:00")
+        later = dict(
+            self.state,
+            id="b" * 32,
+            status="failed",
+            createdAt="2026-10-09T00:00:00+00:00",
+        )
         write_json(self.store / "state" / (later["id"] + ".json"), later)
         with self.assertRaisesRegex(WorkflowError, "abgeschlossen"):
             self.plan()
@@ -272,7 +341,9 @@ class MergeCase(unittest.TestCase):
         self.assertEqual("feature/change", self.git("branch", "--show-current"))
 
     def test_open_findings_are_preserved_and_not_silently_resolved(self):
-        (self.folder / "findings.md").write_text("# Offene Findings\n\nF3 remains open", encoding="utf-8")
+        (self.folder / "findings.md").write_text(
+            "# Offene Findings\n\nF3 remains open", encoding="utf-8"
+        )
         before = self.snapshots()
         self.plan()
         merge.apply(self.repo, self.plan_file, self.message)
@@ -307,11 +378,26 @@ class MergeCase(unittest.TestCase):
 
     def test_cli_help_and_prepare_handle_paths_with_spaces(self):
         script = Path(merge.__file__)
-        help_result = subprocess.run([sys.executable, str(script), "--help"], capture_output=True, text=True)
+        help_result = subprocess.run(
+            [sys.executable, str(script), "--help"], capture_output=True, text=True
+        )
         self.assertEqual(0, help_result.returncode)
         result = subprocess.run(
-            [sys.executable, str(script), "--repo", str(self.repo), "--store-root", str(self.store_root),
-             "prepare", "--branch", "change", "--plan-file", str(self.plan_file)], capture_output=True)
+            [
+                sys.executable,
+                str(script),
+                "--repo",
+                str(self.repo),
+                "--store-root",
+                str(self.store_root),
+                "prepare",
+                "--branch",
+                "change",
+                "--plan-file",
+                str(self.plan_file),
+            ],
+            capture_output=True,
+        )
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual("ready", json.loads(result.stdout.decode("utf-8"))["status"])
 

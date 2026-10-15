@@ -10,8 +10,12 @@ def current(repo: Path) -> str:
 
 def require_clean(repo: Path, findings: bool = False) -> None:
     # Do not strip leading status spaces: ' M' is significant.
-    entries = run(repo, "git", "status", "--porcelain", "--untracked-files=all").splitlines()
-    unexpected = [line for line in entries if not (findings and line == "?? findings.md")]
+    entries = run(
+        repo, "git", "status", "--porcelain", "--untracked-files=all"
+    ).splitlines()
+    unexpected = [
+        line for line in entries if not (findings and line == "?? findings.md")
+    ]
     if unexpected:
         raise WorkflowError("Working tree is not clean: " + "; ".join(unexpected))
     if findings and run(repo, "git", "ls-files", "--", "findings.md").strip():
@@ -26,11 +30,14 @@ def validate(repo: Path, name: str) -> str:
     if current(repo) != "main":
         raise WorkflowError("New branch and benchmark workflows must start on main.")
     require_clean(repo)
-    refs = run(repo, "git", "for-each-ref", "--format=%(refname)",
-               "refs/heads", "refs/remotes").splitlines()
-    if any(ref == "refs/heads/" + target or
-           (ref.startswith("refs/remotes/") and ref.split("/", 3)[-1] == target)
-           for ref in refs):
+    refs = run(
+        repo, "git", "for-each-ref", "--format=%(refname)", "refs/heads", "refs/remotes"
+    ).splitlines()
+    if any(
+        ref == "refs/heads/" + target
+        or (ref.startswith("refs/remotes/") and ref.split("/", 3)[-1] == target)
+        for ref in refs
+    ):
         raise WorkflowError(f"Branch already exists locally or remotely: {target}")
     return target
 

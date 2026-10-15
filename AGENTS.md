@@ -66,6 +66,18 @@
   für absolute Dateipfade. Fremde Änderungen erhalten. Den Ratchet nicht abschalten
   und keine projektweite Umformatierung ohne eigenen Auftrag ausführen.
   Anleitung und Grenzen: `docs/java-formatierung.md`.
+- Python-Standard ist Ruff, zentral in `ruff.toml`; die genaue Version steht auch
+  in `requirements-dev.txt`. Installation nur in der virtuellen Projektumgebung:
+  `.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt`.
+- Nach JEDER eigenen Python-Änderung vor Tests und vor dem Abschluss
+  `.\.venv\Scripts\python.exe -m ruff format <eigene Dateipfade>` und danach
+  `.\.venv\Scripts\python.exe -m ruff format --check <eigene Dateipfade>`
+  im Projektroot ausführen. Die Platzhalter durch explizite, korrekt zitierte
+  Pfade ersetzen; nach weiteren Python-Korrekturen beide Schritte wiederholen.
+  Anders als Spotless hat Ruff hier keinen Git-Ratchet: nur selbst bearbeitete
+  Dateien übergeben, fremde Änderungen erhalten. Keine projektweite Formatierung
+  ohne eigenen Auftrag; kein `ruff check --fix` als Formatierungsersatz.
+  Anleitung und Grenzen: `docs/python-formatierung.md`.
 
 ## 3. Execution and troubleshooting
 

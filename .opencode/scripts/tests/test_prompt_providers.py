@@ -1,4 +1,5 @@
 """Offline provider/auth regression tests: fake responses and fake keyring only."""
+
 import csv
 from datetime import datetime, timezone
 import json
@@ -24,22 +25,50 @@ from prompt.execution import improve
 from prompt.models import PromptImproverConfig
 from workflow import benchmark, prompt, runner
 
-VALID = json.dumps(dict(goal="Review only", scope=[], requirements=[], non_goals=[], verification=[], uncertainties=[]))
+VALID = json.dumps(
+    dict(
+        goal="Review only",
+        scope=[],
+        requirements=[],
+        non_goals=[],
+        verification=[],
+        uncertainties=[],
+    )
+)
 
 
 def response(status="completed", text=VALID, usage=True, output=None):
-    return dict(status=status, output_text=text, output=output or [], usage=dict(
-        input_tokens=100, output_tokens=30, total_tokens=130,
-        input_tokens_details=dict(cached_tokens=80, cache_write_tokens=0),
-        output_tokens_details=dict(reasoning_tokens=10)) if usage else None)
+    return dict(
+        status=status,
+        output_text=text,
+        output=output or [],
+        usage=dict(
+            input_tokens=100,
+            output_tokens=30,
+            total_tokens=130,
+            input_tokens_details=dict(cached_tokens=80, cache_write_tokens=0),
+            output_tokens_details=dict(reasoning_tokens=10),
+        )
+        if usage
+        else None,
+    )
 
 
 def credentials():
-    return ChatGPTCredentials(email="test@example.invalid", issuer="issuer", subject="subject",
-                              client_id="fixture", ext_agent_host_id="host", access_token="fake-access",
-                              refresh_token="fake-refresh", id_token="fake-id", token_type="Bearer",
-                              expires_in=3600, scopes=["chatgpt.tokens.use.direct"],
-                              saved_at=datetime.now(timezone.utc).isoformat())
+    return ChatGPTCredentials(
+        email="test@example.invalid",
+        issuer="issuer",
+        subject="subject",
+        client_id="fixture",
+        ext_agent_host_id="host",
+        access_token="fake-access",
+        refresh_token="fake-refresh",
+        id_token="fake-id",
+        token_type="Bearer",
+        expires_in=3600,
+        scopes=["chatgpt.tokens.use.direct"],
+        saved_at=datetime.now(timezone.utc).isoformat(),
+    )
 
 
 class FakeKeyring:
@@ -48,7 +77,11 @@ class FakeKeyring:
         self.path = path
 
     def read(self):
-        return json.loads(self.path.read_text()) if self.path and self.path.exists() else self.data
+        return (
+            json.loads(self.path.read_text())
+            if self.path and self.path.exists()
+            else self.data
+        )
 
     def write(self, data):
         if self.path:
@@ -71,8 +104,12 @@ class FakeKeyring:
 
 
 def fake_keyring(backend):
-    return patch.multiple(keyring, get_password=backend.get_password,
-                          set_password=backend.set_password, delete_password=backend.delete_password)
+    return patch.multiple(
+        keyring,
+        get_password=backend.get_password,
+        set_password=backend.set_password,
+        delete_password=backend.delete_password,
+    )
 
 
 class ProviderTests(unittest.TestCase):
@@ -99,11 +136,27 @@ class ProviderTests(unittest.TestCase):
         client, factory = self.openai(response())
         self.assertEqual(VALID, client.chat("system", "task", {"type": "object"}))
         factory.assert_called_once_with(max_retries=0, timeout=120.0)
-        self.assertTrue(client.client.responses.create.call_args.kwargs["text"]["format"]["strict"])
+        self.assertTrue(
+            client.client.responses.create.call_args.kwargs["text"]["format"]["strict"]
+        )
         data = client.get_usage()
-        self.assertEqual((100, 30, 10, 80, 0, 130), tuple(data[k] for k in
-                         ("inputTokens", "outputTokens", "reasoningTokens", "cacheReadTokens", "cacheWriteTokens", "totalTokens")))
-        self.assertEqual((1, 1, 0), (data["requests"], data["completedRequests"], data["retries"]))
+        self.assertEqual(
+            (100, 30, 10, 80, 0, 130),
+            tuple(
+                data[k]
+                for k in (
+                    "inputTokens",
+                    "outputTokens",
+                    "reasoningTokens",
+                    "cacheReadTokens",
+                    "cacheWriteTokens",
+                    "totalTokens",
+                )
+            ),
+        )
+        self.assertEqual(
+            (1, 1, 0), (data["requests"], data["completedRequests"], data["retries"])
+        )
         self.assertIsNone(data["estimatedCostUSD"])
         self.assertEqual("unavailable", data["costStatus"])
 
@@ -132,17 +185,43 @@ class ProviderTests(unittest.TestCase):
 
     def test_actual_sdk_response_and_completed_stream_event_contract(self):
         from openai.types.responses import Response, ResponseCompletedEvent
+
         value = response()
         value.pop("output_text")
-        value.update(id="resp_fixture", created_at=1, error=None, incomplete_details=None,
-                     instructions=None, metadata={}, model="fixture", object="response", parallel_tool_calls=True,
-                     tool_choice="auto", tools=[], temperature=1, top_p=1,
-                     output=[dict(id="msg_fixture", type="message", role="assistant", status="completed",
-                                  content=[dict(type="output_text", text=VALID, annotations=[], logprobs=[])])])
+        value.update(
+            id="resp_fixture",
+            created_at=1,
+            error=None,
+            incomplete_details=None,
+            instructions=None,
+            metadata={},
+            model="fixture",
+            object="response",
+            parallel_tool_calls=True,
+            tool_choice="auto",
+            tools=[],
+            temperature=1,
+            top_p=1,
+            output=[
+                dict(
+                    id="msg_fixture",
+                    type="message",
+                    role="assistant",
+                    status="completed",
+                    content=[
+                        dict(
+                            type="output_text", text=VALID, annotations=[], logprobs=[]
+                        )
+                    ],
+                )
+            ],
+        )
         parsed = Response.model_validate(value)
         client, _ = self.openai(parsed)
         self.assertEqual(VALID, client.chat("s", "u"))
-        event = ResponseCompletedEvent.model_validate(dict(type="response.completed", sequence_number=1, response=value))
+        event = ResponseCompletedEvent.model_validate(
+            dict(type="response.completed", sequence_number=1, response=value)
+        )
         streaming, factory, _ = self.chatgpt([event])
         with patch("prompt.chatgpt_client.OpenAI", factory):
             self.assertEqual(VALID, streaming.chat("s", "u"))
@@ -154,8 +233,13 @@ class ProviderTests(unittest.TestCase):
         error = RuntimeError("private access token")
         error.status_code = 401
         factory.return_value.__enter__.return_value.responses.create.side_effect = error
-        client.credential_store.require_login.side_effect = RuntimeError("private storage secret")
-        with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+        client.credential_store.require_login.side_effect = RuntimeError(
+            "private storage secret"
+        )
+        with (
+            patch("prompt.chatgpt_client.OpenAI", factory),
+            self.assertRaises(PromptProviderError) as caught,
+        ):
             client.chat("s", "u")
         self.assertEqual("authentication", caught.exception.category)
         self.assertNotIn("private", str(caught.exception))
@@ -175,7 +259,11 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(0, client.get_usage()["completedRequests"])
 
     def test_refusal_does_not_become_an_improved_prompt(self):
-        client, _ = self.openai(response(output=[dict(content=[dict(type="refusal", refusal="private text")])]))
+        client, _ = self.openai(
+            response(
+                output=[dict(content=[dict(type="refusal", refusal="private text")])]
+            )
+        )
         with self.assertRaises(PromptProviderError) as caught:
             client.chat("s", "u")
         self.assertEqual("refusal", caught.exception.category)
@@ -188,7 +276,12 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual("empty_output", caught.exception.category)
 
     def test_provider_http_errors_sanitized_without_retry(self):
-        for status, category in ((401, "authentication"), (403, "authentication"), (429, "rate_limit"), (503, "provider_failure")):
+        for status, category in (
+            (401, "authentication"),
+            (403, "authentication"),
+            (429, "rate_limit"),
+            (503, "provider_failure"),
+        ):
             with self.subTest(status=status):
                 client, _ = self.openai(response())
                 error = RuntimeError("Bearer secret-and-request-body")
@@ -202,7 +295,10 @@ class ProviderTests(unittest.TestCase):
                 self.assertEqual(0, client.get_usage()["completedRequests"])
 
     def test_timeout_and_connection_errors_classified(self):
-        for error, expected in ((httpx.ReadTimeout("private"), "timeout"), (httpx.ConnectError("private"), "connection")):
+        for error, expected in (
+            (httpx.ReadTimeout("private"), "timeout"),
+            (httpx.ConnectError("private"), "connection"),
+        ):
             client, _ = self.openai(response())
             client.client.responses.create.side_effect = error
             with self.assertRaises(PromptProviderError) as caught:
@@ -210,8 +306,10 @@ class ProviderTests(unittest.TestCase):
             self.assertEqual(expected, caught.exception.category)
 
     def test_chatgpt_final_response_owns_text_and_usage(self):
-        events = [dict(type="response.output_text.delta", delta="wrong duplicate"),
-                  dict(type="response.completed", response=response())]
+        events = [
+            dict(type="response.output_text.delta", delta="wrong duplicate"),
+            dict(type="response.completed", response=response()),
+        ]
         client, factory, stream = self.chatgpt(events)
         with patch("prompt.chatgpt_client.OpenAI", factory):
             self.assertEqual(VALID, client.chat("s", "u", {}))
@@ -220,173 +318,355 @@ class ProviderTests(unittest.TestCase):
         stream.__exit__.assert_called_once()
 
     def test_chatgpt_actual_sdk_text_events_with_empty_terminal_output(self):
-        from openai.types.responses import ResponseCompletedEvent, ResponseTextDeltaEvent, ResponseTextDoneEvent
+        from openai.types.responses import (
+            ResponseCompletedEvent,
+            ResponseTextDeltaEvent,
+            ResponseTextDoneEvent,
+        )
+
         raw = response(text="")
         raw.pop("output_text")
-        raw.update(id="resp_fixture", created_at=1, error=None, incomplete_details=None,
-                   instructions=None, metadata={}, model="fixture", object="response", parallel_tool_calls=True,
-                   tool_choice="auto", tools=[], temperature=1, top_p=1)
-        events = [ResponseTextDeltaEvent.model_validate(dict(type="response.output_text.delta",
-                  item_id="msg_fixture", output_index=0, content_index=0, sequence_number=1, delta=VALID, logprobs=[])),
-                  ResponseTextDoneEvent.model_validate(dict(type="response.output_text.done",
-                  item_id="msg_fixture", output_index=0, content_index=0, sequence_number=2, text=VALID, logprobs=[])),
-                  ResponseCompletedEvent.model_validate(dict(type="response.completed", sequence_number=3, response=raw))]
+        raw.update(
+            id="resp_fixture",
+            created_at=1,
+            error=None,
+            incomplete_details=None,
+            instructions=None,
+            metadata={},
+            model="fixture",
+            object="response",
+            parallel_tool_calls=True,
+            tool_choice="auto",
+            tools=[],
+            temperature=1,
+            top_p=1,
+        )
+        events = [
+            ResponseTextDeltaEvent.model_validate(
+                dict(
+                    type="response.output_text.delta",
+                    item_id="msg_fixture",
+                    output_index=0,
+                    content_index=0,
+                    sequence_number=1,
+                    delta=VALID,
+                    logprobs=[],
+                )
+            ),
+            ResponseTextDoneEvent.model_validate(
+                dict(
+                    type="response.output_text.done",
+                    item_id="msg_fixture",
+                    output_index=0,
+                    content_index=0,
+                    sequence_number=2,
+                    text=VALID,
+                    logprobs=[],
+                )
+            ),
+            ResponseCompletedEvent.model_validate(
+                dict(type="response.completed", sequence_number=3, response=raw)
+            ),
+        ]
         client, factory, _ = self.chatgpt(events)
         with patch("prompt.chatgpt_client.OpenAI", factory):
             self.assertEqual(VALID, client.chat("s", "u"))
-        self.assertEqual((1, 1, 0, 130), tuple(client.get_usage()[k] for k in
-                         ("requests", "completedRequests", "retries", "totalTokens")))
+        self.assertEqual(
+            (1, 1, 0, 130),
+            tuple(
+                client.get_usage()[k]
+                for k in ("requests", "completedRequests", "retries", "totalTokens")
+            ),
+        )
 
     def test_chatgpt_delta_only_text_with_completed_response(self):
-        events = [dict(type="response.output_text.delta", delta=VALID[:20]),
-                  dict(type="response.output_text.delta", delta=VALID[20:]),
-                  dict(type="response.completed", response=response(text=""))]
+        events = [
+            dict(type="response.output_text.delta", delta=VALID[:20]),
+            dict(type="response.output_text.delta", delta=VALID[20:]),
+            dict(type="response.completed", response=response(text="")),
+        ]
         client, factory, _ = self.chatgpt(events)
         with patch("prompt.chatgpt_client.OpenAI", factory):
             self.assertEqual(VALID, client.chat("s", "u"))
 
     def test_chatgpt_done_text_is_not_added_to_deltas(self):
-        events = [dict(type="response.output_text.delta", delta="partial"),
-                  dict(type="response.output_text.done", text=VALID),
-                  dict(type="response.completed", response=response(text=""))]
+        events = [
+            dict(type="response.output_text.delta", delta="partial"),
+            dict(type="response.output_text.done", text=VALID),
+            dict(type="response.completed", response=response(text="")),
+        ]
         client, factory, _ = self.chatgpt(events)
         with patch("prompt.chatgpt_client.OpenAI", factory):
             self.assertEqual(VALID, client.chat("s", "u"))
 
     def test_chatgpt_done_only_text_preserved(self):
-        events = [dict(type="response.output_text.done", text=VALID),
-                  dict(type="response.completed", response=response(text=""))]
+        events = [
+            dict(type="response.output_text.done", text=VALID),
+            dict(type="response.completed", response=response(text="")),
+        ]
         client, factory, _ = self.chatgpt(events)
         with patch("prompt.chatgpt_client.OpenAI", factory):
             self.assertEqual(VALID, client.chat("s", "u"))
 
     def test_chatgpt_parts_ordered_and_finalized_independently(self):
-        events = [dict(type="response.output_text.delta", output_index=1, content_index=0, delta=VALID[20:]),
-                  dict(type="response.output_text.delta", output_index=0, content_index=1, delta=VALID[10:20]),
-                  dict(type="response.output_text.delta", output_index=0, content_index=0, delta=VALID[:10]),
-                  dict(type="response.output_text.done", output_index=0, content_index=0, text=VALID[:10]),
-                  dict(type="response.completed", response=response(text=""))]
+        events = [
+            dict(
+                type="response.output_text.delta",
+                output_index=1,
+                content_index=0,
+                delta=VALID[20:],
+            ),
+            dict(
+                type="response.output_text.delta",
+                output_index=0,
+                content_index=1,
+                delta=VALID[10:20],
+            ),
+            dict(
+                type="response.output_text.delta",
+                output_index=0,
+                content_index=0,
+                delta=VALID[:10],
+            ),
+            dict(
+                type="response.output_text.done",
+                output_index=0,
+                content_index=0,
+                text=VALID[:10],
+            ),
+            dict(type="response.completed", response=response(text="")),
+        ]
         client, factory, _ = self.chatgpt(events)
         with patch("prompt.chatgpt_client.OpenAI", factory):
             self.assertEqual(VALID, client.chat("s", "u"))
 
     def test_chatgpt_stream_refusal_rejects_text_without_terminal_refusal(self):
         for kind in ("response.refusal.delta", "response.refusal.done"):
-            client, factory, _ = self.chatgpt([dict(type="response.output_text.delta", delta=VALID),
-                                               dict(type=kind), dict(type="response.completed", response=response())])
-            with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+            client, factory, _ = self.chatgpt(
+                [
+                    dict(type="response.output_text.delta", delta=VALID),
+                    dict(type=kind),
+                    dict(type="response.completed", response=response()),
+                ]
+            )
+            with (
+                patch("prompt.chatgpt_client.OpenAI", factory),
+                self.assertRaises(PromptProviderError) as caught,
+            ):
                 client.chat("s", "u")
             self.assertEqual("refusal", caught.exception.category)
 
     def test_chatgpt_failure_or_incomplete_never_accepts_stream_text(self):
-        for status, category in (("failed", "provider_failure"), ("incomplete", "incomplete")):
-            client, factory, _ = self.chatgpt([dict(type="response.output_text.delta", delta=VALID),
-                                               dict(type="response." + status, response=response(status, text=""))])
-            with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+        for status, category in (
+            ("failed", "provider_failure"),
+            ("incomplete", "incomplete"),
+        ):
+            client, factory, _ = self.chatgpt(
+                [
+                    dict(type="response.output_text.delta", delta=VALID),
+                    dict(type="response." + status, response=response(status, text="")),
+                ]
+            )
+            with (
+                patch("prompt.chatgpt_client.OpenAI", factory),
+                self.assertRaises(PromptProviderError) as caught,
+            ):
                 client.chat("s", "u")
             self.assertEqual(category, caught.exception.category)
 
     def test_chatgpt_genuine_empty_output_remains_failure_with_usage(self):
-        client, factory, _ = self.chatgpt([dict(type="response.completed", response=response(text=""))])
-        with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+        client, factory, _ = self.chatgpt(
+            [dict(type="response.completed", response=response(text=""))]
+        )
+        with (
+            patch("prompt.chatgpt_client.OpenAI", factory),
+            self.assertRaises(PromptProviderError) as caught,
+        ):
             client.chat("s", "u")
         self.assertEqual("empty_output", caught.exception.category)
         self.assertEqual(1, client.get_usage()["completedRequests"])
         self.assertEqual(30, client.get_usage()["outputTokens"])
 
     def test_chatgpt_stream_text_reaches_schema_validation_and_artifacts(self):
-        client, factory, _ = self.chatgpt([dict(type="response.output_text.delta", delta=VALID),
-                                          dict(type="response.completed", response=response(text=""))])
+        client, factory, _ = self.chatgpt(
+            [
+                dict(type="response.output_text.delta", delta=VALID),
+                dict(type="response.completed", response=response(text="")),
+            ]
+        )
         config = PromptImproverConfig(provider="chatgpt", model="fixture")
         with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
             output = Path(directory)
-            with patch("prompt.chatgpt_client.OpenAI", factory), patch("prompt.execution.LlmClientFactory.create", return_value=client):
+            with (
+                patch("prompt.chatgpt_client.OpenAI", factory),
+                patch("prompt.execution.LlmClientFactory.create", return_value=client),
+            ):
                 result = improve(config, "Analyze UserService only", output)
             self.assertEqual("Review only", result.goal)
-            self.assertEqual("Analyze UserService only\n", (output / "original-prompt.md").read_text())
+            self.assertEqual(
+                "Analyze UserService only\n",
+                (output / "original-prompt.md").read_text(),
+            )
             self.assertIn("Review only", (output / "improved-prompt.md").read_text())
             data = json.loads((output / "prompt-metadata.json").read_text())
             self.assertEqual("completed", data["status"])
             self.assertEqual(1, data["usage"]["requests"])
 
     def test_chatgpt_stream_invalid_json_still_fails_schema(self):
-        client, factory, _ = self.chatgpt([dict(type="response.output_text.done", text="{broken"),
-                                          dict(type="response.completed", response=response(text=""))])
-        with patch("prompt.chatgpt_client.OpenAI", factory), patch("prompt.execution.LlmClientFactory.create", return_value=client), self.assertRaises(PromptProviderError) as caught:
+        client, factory, _ = self.chatgpt(
+            [
+                dict(type="response.output_text.done", text="{broken"),
+                dict(type="response.completed", response=response(text="")),
+            ]
+        )
+        with (
+            patch("prompt.chatgpt_client.OpenAI", factory),
+            patch("prompt.execution.LlmClientFactory.create", return_value=client),
+            self.assertRaises(PromptProviderError) as caught,
+        ):
             improve(PromptImproverConfig(provider="chatgpt", model="fixture"), "task")
         self.assertEqual("invalid_structured_output", caught.exception.category)
 
     def test_response_dictionary_text_blocks_without_sdk_convenience_property(self):
         value = response()
         value.pop("output_text")
-        value["output"] = [dict(type="reasoning", summary=[dict(text="not prompt text")]),
-                           dict(type="message", content=[dict(type="output_text", text=VALID)])]
+        value["output"] = [
+            dict(type="reasoning", summary=[dict(text="not prompt text")]),
+            dict(type="message", content=[dict(type="output_text", text=VALID)]),
+        ]
         client, _ = self.openai(value)
         self.assertEqual(VALID, client.chat("s", "u"))
 
     def test_chatgpt_content_part_or_item_done_text_preserved(self):
-        for event in (dict(type="response.content_part.done", part=dict(type="output_text", text=VALID)),
-                      dict(type="response.output_item.done", item=dict(type="message",
-                           content=[dict(type="output_text", text=VALID)]))):
-            client, factory, _ = self.chatgpt([event, dict(type="response.completed", response=response(text=""))])
+        for event in (
+            dict(
+                type="response.content_part.done",
+                part=dict(type="output_text", text=VALID),
+            ),
+            dict(
+                type="response.output_item.done",
+                item=dict(
+                    type="message", content=[dict(type="output_text", text=VALID)]
+                ),
+            ),
+        ):
+            client, factory, _ = self.chatgpt(
+                [event, dict(type="response.completed", response=response(text=""))]
+            )
             with patch("prompt.chatgpt_client.OpenAI", factory):
                 self.assertEqual(VALID, client.chat("s", "u"))
 
     def test_chatgpt_content_part_or_item_refusal_rejected(self):
-        for event in (dict(type="response.content_part.done", part=dict(type="refusal", refusal="private")),
-                      dict(type="response.output_item.done", item=dict(type="message",
-                           content=[dict(type="refusal", refusal="private")]))):
-            client, factory, _ = self.chatgpt([event, dict(type="response.completed", response=response())])
-            with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+        for event in (
+            dict(
+                type="response.content_part.done",
+                part=dict(type="refusal", refusal="private"),
+            ),
+            dict(
+                type="response.output_item.done",
+                item=dict(
+                    type="message", content=[dict(type="refusal", refusal="private")]
+                ),
+            ),
+        ):
+            client, factory, _ = self.chatgpt(
+                [event, dict(type="response.completed", response=response())]
+            )
+            with (
+                patch("prompt.chatgpt_client.OpenAI", factory),
+                self.assertRaises(PromptProviderError) as caught,
+            ):
                 client.chat("s", "u")
             self.assertEqual("refusal", caught.exception.category)
             self.assertNotIn("private", str(caught.exception))
 
     def test_chatgpt_empty_finalized_part_is_not_replaced_by_old_delta(self):
-        client, factory, _ = self.chatgpt([dict(type="response.output_text.delta", delta=VALID),
-                                          dict(type="response.output_text.done", text=""),
-                                          dict(type="response.completed", response=response(text=""))])
-        with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+        client, factory, _ = self.chatgpt(
+            [
+                dict(type="response.output_text.delta", delta=VALID),
+                dict(type="response.output_text.done", text=""),
+                dict(type="response.completed", response=response(text="")),
+            ]
+        )
+        with (
+            patch("prompt.chatgpt_client.OpenAI", factory),
+            self.assertRaises(PromptProviderError) as caught,
+        ):
             client.chat("s", "u")
         self.assertEqual("empty_output", caught.exception.category)
 
     def test_chatgpt_finalized_text_without_response_completed_rejected(self):
-        client, factory, _ = self.chatgpt([dict(type="response.output_text.done", text=VALID)])
-        with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+        client, factory, _ = self.chatgpt(
+            [dict(type="response.output_text.done", text=VALID)]
+        )
+        with (
+            patch("prompt.chatgpt_client.OpenAI", factory),
+            self.assertRaises(PromptProviderError) as caught,
+        ):
             client.chat("s", "u")
         self.assertEqual("interrupted_stream", caught.exception.category)
 
     def test_chatgpt_stream_text_not_reused_by_next_request(self):
-        client, factory, _ = self.chatgpt([dict(type="response.output_text.delta", delta=VALID),
-                                          dict(type="response.completed", response=response(text=""))])
+        client, factory, _ = self.chatgpt(
+            [
+                dict(type="response.output_text.delta", delta=VALID),
+                dict(type="response.completed", response=response(text="")),
+            ]
+        )
         with patch("prompt.chatgpt_client.OpenAI", factory):
             self.assertEqual(VALID, client.chat("s", "u"))
-        empty, next_factory, _ = self.chatgpt([dict(type="response.completed", response=response(text=""))])
-        with patch("prompt.chatgpt_client.OpenAI", next_factory), self.assertRaises(PromptProviderError) as caught:
+        empty, next_factory, _ = self.chatgpt(
+            [dict(type="response.completed", response=response(text=""))]
+        )
+        with (
+            patch("prompt.chatgpt_client.OpenAI", next_factory),
+            self.assertRaises(PromptProviderError) as caught,
+        ):
             client.chat("s", "u")
         self.assertEqual("empty_output", caught.exception.category)
 
     def test_chatgpt_terminal_failure_variants(self):
-        for event, expected in ((dict(type="response.failed", response=response("failed")), "provider_failure"),
-                                (dict(type="response.incomplete", response=response("incomplete")), "incomplete"),
-                                (dict(type="error", message="private"), "provider_failure")):
+        for event, expected in (
+            (
+                dict(type="response.failed", response=response("failed")),
+                "provider_failure",
+            ),
+            (
+                dict(type="response.incomplete", response=response("incomplete")),
+                "incomplete",
+            ),
+            (dict(type="error", message="private"), "provider_failure"),
+        ):
             client, factory, stream = self.chatgpt([event])
-            with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+            with (
+                patch("prompt.chatgpt_client.OpenAI", factory),
+                self.assertRaises(PromptProviderError) as caught,
+            ):
                 client.chat("s", "u")
             self.assertEqual(expected, caught.exception.category)
             stream.__exit__.assert_called_once()
 
     def test_chatgpt_interrupted_stream_keeps_unknown_tokens(self):
-        client, factory, _ = self.chatgpt([dict(type="response.output_text.delta", delta=VALID)])
-        with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+        client, factory, _ = self.chatgpt(
+            [dict(type="response.output_text.delta", delta=VALID)]
+        )
+        with (
+            patch("prompt.chatgpt_client.OpenAI", factory),
+            self.assertRaises(PromptProviderError) as caught,
+        ):
             client.chat("s", "u")
         self.assertEqual("interrupted_stream", caught.exception.category)
         self.assertIsNone(client.get_usage()["inputTokens"])
 
     def test_chatgpt_auth_failure_does_not_claim_inference_request(self):
         client, factory, _ = self.chatgpt([])
-        client.credential_store.credentials_for_request.side_effect = PromptProviderError("authentication", "Sign in.")
-        with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError):
+        client.credential_store.credentials_for_request.side_effect = (
+            PromptProviderError("authentication", "Sign in.")
+        )
+        with (
+            patch("prompt.chatgpt_client.OpenAI", factory),
+            self.assertRaises(PromptProviderError),
+        ):
             client.chat("s", "u")
         factory.assert_not_called()
         self.assertEqual(0, client.get_usage()["requests"])
@@ -396,22 +676,47 @@ class ProviderTests(unittest.TestCase):
         error = RuntimeError("secret")
         error.status_code = 401
         factory.return_value.__enter__.return_value.responses.create.side_effect = error
-        with patch("prompt.chatgpt_client.OpenAI", factory), self.assertRaises(PromptProviderError) as caught:
+        with (
+            patch("prompt.chatgpt_client.OpenAI", factory),
+            self.assertRaises(PromptProviderError) as caught,
+        ):
             client.chat("s", "u")
         self.assertIn("test_chatgpt_login", str(caught.exception))
-        client.credential_store.require_login.assert_called_once_with("fixture", "fake-access")
+        client.credential_store.require_login.assert_called_once_with(
+            "fixture", "fake-access"
+        )
 
     def test_ollama_counts_and_nanoseconds_without_fake_reasoning_cache_cost(self):
         with patch("prompt.ollama_client.ollama.Client") as factory:
             client = OllamaClient("fixture")
-        client.client.chat.return_value = dict(done=True, prompt_eval_count=10, eval_count=4,
-                                              total_duration=1500000000, message=dict(content=VALID, thinking="private"))
+        client.client.chat.return_value = dict(
+            done=True,
+            prompt_eval_count=10,
+            eval_count=4,
+            total_duration=1500000000,
+            message=dict(content=VALID, thinking="private"),
+        )
         self.assertEqual(VALID, client.chat("s", "u", {}))
         factory.assert_called_once_with(timeout=120.0)
         data = client.get_usage()
-        self.assertEqual((10, 4, 14, 1.5), tuple(data[k] for k in
-                         ("inputTokens", "outputTokens", "totalTokens", "providerDurationSeconds")))
-        for key in ("reasoningTokens", "cacheReadTokens", "cacheWriteTokens", "estimatedCostUSD"):
+        self.assertEqual(
+            (10, 4, 14, 1.5),
+            tuple(
+                data[k]
+                for k in (
+                    "inputTokens",
+                    "outputTokens",
+                    "totalTokens",
+                    "providerDurationSeconds",
+                )
+            ),
+        )
+        for key in (
+            "reasoningTokens",
+            "cacheReadTokens",
+            "cacheWriteTokens",
+            "estimatedCostUSD",
+        ):
             self.assertIsNone(data[key])
 
     def test_ollama_unfinished_output_rejected(self):
@@ -442,20 +747,34 @@ class AuthTests(unittest.TestCase):
         self.patch = fake_keyring(self.backend)
         self.patch.start()
         self.addCleanup(self.patch.stop)
-        self.store = ChatGPTCredentialStore(self.root / "profile", self.root / "session.lock")
+        self.store = ChatGPTCredentialStore(
+            self.root / "profile", self.root / "session.lock"
+        )
 
     def test_legacy_credentials_load_and_migrate_without_plaintext_secrets(self):
         old = credentials()
         from prompt.chatgpt.credential_store import ChatGPTProfileMetadata
+
         self.store.profile_path.parent.mkdir()
-        self.store.profile_path.write_text(ChatGPTProfileMetadata.model_validate(old.model_dump()).model_dump_json())
+        self.store.profile_path.write_text(
+            ChatGPTProfileMetadata.model_validate(old.model_dump()).model_dump_json()
+        )
         for name in ("access_token", "refresh_token", "id_token"):
-            self.backend.set_password(self.store.KEYRING_SERVICE, f"fixture:{name}:meta", "1")
-            self.backend.set_password(self.store.KEYRING_SERVICE, f"fixture:{name}:0", getattr(old, name))
+            self.backend.set_password(
+                self.store.KEYRING_SERVICE, f"fixture:{name}:meta", "1"
+            )
+            self.backend.set_password(
+                self.store.KEYRING_SERVICE, f"fixture:{name}:0", getattr(old, name)
+            )
         self.assertEqual(old, self.store.load_credentials())
         self.store.save_credentials(old)
         self.assertEqual(old, self.store.load_credentials())
-        self.assertFalse(any(":access_token:" in key or ":refresh_token:" in key for key in self.backend.data))
+        self.assertFalse(
+            any(
+                ":access_token:" in key or ":refresh_token:" in key
+                for key in self.backend.data
+            )
+        )
         self.assertNotIn("fake-access", self.store.profile_path.read_text())
 
     def test_replacing_large_snapshot_removes_old_chunks(self):
@@ -466,7 +785,10 @@ class AuthTests(unittest.TestCase):
         new = credentials()
         self.store.save_credentials(new)
         self.assertEqual(new, self.store.load_credentials())
-        self.assertFalse((keys - {self.store.KEYRING_SERVICE + "/fixture:credentials:meta"}) & set(self.backend.data))
+        self.assertFalse(
+            (keys - {self.store.KEYRING_SERVICE + "/fixture:credentials:meta"})
+            & set(self.backend.data)
+        )
 
     def test_failed_chunk_write_preserves_previous_whole_snapshot(self):
         old = credentials()
@@ -482,7 +804,10 @@ class AuthTests(unittest.TestCase):
                 raise keyring.errors.KeyringError("fixture write failure")
             original_set(service, key, value)
 
-        with patch.object(keyring, "set_password", side_effect=fail), self.assertRaises(keyring.errors.KeyringError):
+        with (
+            patch.object(keyring, "set_password", side_effect=fail),
+            self.assertRaises(keyring.errors.KeyringError),
+        ):
             self.store.save_credentials(new)
         self.assertEqual(old, self.store.load_credentials())
 
@@ -496,7 +821,10 @@ class AuthTests(unittest.TestCase):
                 raise keyring.errors.KeyringError("fixture pointer failure")
             original_set(service, key, value)
 
-        with patch.object(keyring, "set_password", side_effect=fail), self.assertRaises(keyring.errors.KeyringError):
+        with (
+            patch.object(keyring, "set_password", side_effect=fail),
+            self.assertRaises(keyring.errors.KeyringError),
+        ):
             self.store.save_credentials(credentials())
         self.assertEqual(old, self.store.load_credentials())
 
@@ -505,7 +833,10 @@ class AuthTests(unittest.TestCase):
         self.store.save_credentials(old)
         new = credentials()
         new.access_token = "rotated"
-        with patch.object(self.store, "_atomic_text", side_effect=OSError("fixture")), self.assertRaises(OSError):
+        with (
+            patch.object(self.store, "_atomic_text", side_effect=OSError("fixture")),
+            self.assertRaises(OSError),
+        ):
             self.store.save_credentials(new)
         self.assertEqual(new, self.store.load_credentials())
 
@@ -521,11 +852,17 @@ class AuthTests(unittest.TestCase):
         value.expires_in = 0
         self.store.save_credentials(value)
         client = Mock()
-        client.refresh.return_value = ChatGPTRefreshResponse(access_token="new-access", refresh_token="new-refresh",
-                                                            token_type="Bearer", expires_in=3600)
+        client.refresh.return_value = ChatGPTRefreshResponse(
+            access_token="new-access",
+            refresh_token="new-refresh",
+            token_type="Bearer",
+            expires_in=3600,
+        )
         new = self.store.credentials_for_request(client)
-        self.assertEqual(("new-access", "new-refresh", "fake-id", value.scopes),
-                         (new.access_token, new.refresh_token, new.id_token, new.scopes))
+        self.assertEqual(
+            ("new-access", "new-refresh", "fake-id", value.scopes),
+            (new.access_token, new.refresh_token, new.id_token, new.scopes),
+        )
         self.assertEqual(new, self.store.load_credentials())
 
     def test_invalid_refresh_requires_login_without_repeated_refreshes(self):
@@ -570,23 +907,42 @@ class AuthTests(unittest.TestCase):
         self.assertEqual("credential_storage", caught.exception.category)
 
     def test_invalid_grant_and_other_refresh_error_codes(self):
-        for code in ("invalid_grant", "invalid_refresh_token", "refresh_token_reused", "refresh_token_expired"):
+        for code in (
+            "invalid_grant",
+            "invalid_refresh_token",
+            "refresh_token_reused",
+            "refresh_token_expired",
+        ):
             request = httpx.Request("POST", "https://fixture.invalid/token")
             reply = httpx.Response(400, request=request, json={"error": code})
-            with patch("prompt.chatgpt.token_client.httpx.post", return_value=reply), self.assertRaises(PromptProviderError) as caught:
+            with (
+                patch("prompt.chatgpt.token_client.httpx.post", return_value=reply),
+                self.assertRaises(PromptProviderError) as caught,
+            ):
                 ChatGPTTokenClient().refresh("fixture", "fake-refresh")
             self.assertEqual("authentication", caught.exception.category)
             self.assertNotIn("fake-refresh", str(caught.exception))
 
     def test_refresh_response_validates_new_token_and_optional_fields(self):
         request = httpx.Request("POST", "https://fixture.invalid/token")
-        reply = httpx.Response(200, request=request, json=dict(access_token="new", refresh_token="replacement",
-                                                             token_type="Bearer", expires_in=3600))
+        reply = httpx.Response(
+            200,
+            request=request,
+            json=dict(
+                access_token="new",
+                refresh_token="replacement",
+                token_type="Bearer",
+                expires_in=3600,
+            ),
+        )
         with patch("prompt.chatgpt.token_client.httpx.post", return_value=reply):
             self.assertIsNone(ChatGPTTokenClient().refresh("fixture", "fake").id_token)
         from pydantic import ValidationError
+
         with self.assertRaises(ValidationError):
-            ChatGPTRefreshResponse(access_token="new", token_type="Bearer", expires_in=3600)
+            ChatGPTRefreshResponse(
+                access_token="new", token_type="Bearer", expires_in=3600
+            )
 
     def test_lock_timeout_and_release(self):
         with session_lock(self.store.lock_path):
@@ -606,9 +962,21 @@ class AuthTests(unittest.TestCase):
         children = []
         try:
             for index in range(2):
-                children.append(subprocess.Popen([sys.executable, "-B", "-m", "tests.test_prompt_providers",
-                                                  "--refresh-worker", str(self.root), str(index)],
-                                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE))
+                children.append(
+                    subprocess.Popen(
+                        [
+                            sys.executable,
+                            "-B",
+                            "-m",
+                            "tests.test_prompt_providers",
+                            "--refresh-worker",
+                            str(self.root),
+                            str(index),
+                        ],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                    )
+                )
             deadline = time.monotonic() + 10
             while not all((self.root / f"ready-{i}").exists() for i in range(2)):
                 if time.monotonic() > deadline:
@@ -620,7 +988,9 @@ class AuthTests(unittest.TestCase):
                 self.assertEqual(0, child.returncode, stderr.decode())
             self.assertEqual("1", (self.root / "refresh-count").read_text())
             with fake_keyring(shared):
-                self.assertEqual("rotated-refresh", self.store.load_credentials().refresh_token)
+                self.assertEqual(
+                    "rotated-refresh", self.store.load_credentials().refresh_token
+                )
         finally:
             for child in children:
                 if child.poll() is None:
@@ -633,30 +1003,55 @@ class ExecutionTests(unittest.TestCase):
         from prompt.tests import test_chatgpt_login as login
         from prompt.chatgpt.credentials import ChatGPTTokenResponse
         from types import SimpleNamespace
-        with patch.object(login, "ChatGPTCredentialStore") as store_factory, \
-                patch.object(login, "ChatGPTTokenClient") as tokens, \
-                patch.object(login, "ChatGPTAuth") as auth, \
-                patch.object(login, "ChatGPTCallbackServer") as callbacks, \
-                patch.object(login, "ChatGPTIdentityVerifier") as verifier, patch.object(login.webbrowser, "open") as browser:
+
+        with (
+            patch.object(login, "ChatGPTCredentialStore") as store_factory,
+            patch.object(login, "ChatGPTTokenClient") as tokens,
+            patch.object(login, "ChatGPTAuth") as auth,
+            patch.object(login, "ChatGPTCallbackServer") as callbacks,
+            patch.object(login, "ChatGPTIdentityVerifier") as verifier,
+            patch.object(login.webbrowser, "open") as browser,
+        ):
             store = store_factory.return_value
-            store.credentials_for_request.side_effect = PromptProviderError("authentication", "Sign in")
+            store.credentials_for_request.side_effect = PromptProviderError(
+                "authentication", "Sign in"
+            )
             store.load_host_id.return_value = "host"
-            auth.create_attempt.return_value = SimpleNamespace(state="state", nonce="nonce", code_verifier="verifier")
-            callbacks.return_value.wait_for_callback.return_value = SimpleNamespace(state="state", client_id="fixture", code="code")
-            tokens.return_value.exchange_code.return_value = ChatGPTTokenResponse(access_token="fake-access", refresh_token="fake-refresh",
-                id_token="fake-id", token_type="Bearer", expires_in=3600, scope="chatgpt.tokens.use.direct")
-            verifier.return_value.verify.return_value = SimpleNamespace(email="fixture@example.invalid", issuer="issuer", subject="subject")
+            auth.create_attempt.return_value = SimpleNamespace(
+                state="state", nonce="nonce", code_verifier="verifier"
+            )
+            callbacks.return_value.wait_for_callback.return_value = SimpleNamespace(
+                state="state", client_id="fixture", code="code"
+            )
+            tokens.return_value.exchange_code.return_value = ChatGPTTokenResponse(
+                access_token="fake-access",
+                refresh_token="fake-refresh",
+                id_token="fake-id",
+                token_type="Bearer",
+                expires_in=3600,
+                scope="chatgpt.tokens.use.direct",
+            )
+            verifier.return_value.verify.return_value = SimpleNamespace(
+                email="fixture@example.invalid", issuer="issuer", subject="subject"
+            )
             login.main()
             callbacks.return_value.start.assert_called_once()
             browser.assert_called_once()
-            verifier.return_value.verify.assert_called_once_with(id_token="fake-id", client_id="fixture", expected_nonce="nonce")
+            verifier.return_value.verify.assert_called_once_with(
+                id_token="fake-id", client_id="fixture", expected_nonce="nonce"
+            )
             self.assertFalse(store.save_credentials.call_args.args[0].reauth_required)
 
     def test_explicit_login_transient_failure_does_not_open_browser(self):
         from prompt.tests import test_chatgpt_login as login
-        with patch.object(login, "ChatGPTCredentialStore") as store_factory, \
-                patch.object(login.webbrowser, "open") as browser:
-            store_factory.return_value.credentials_for_request.side_effect = PromptProviderError("timeout", "Try later")
+
+        with (
+            patch.object(login, "ChatGPTCredentialStore") as store_factory,
+            patch.object(login.webbrowser, "open") as browser,
+        ):
+            store_factory.return_value.credentials_for_request.side_effect = (
+                PromptProviderError("timeout", "Try later")
+            )
             with self.assertRaises(PromptProviderError):
                 login.main()
             browser.assert_not_called()
@@ -673,9 +1068,18 @@ class ExecutionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
             with patch("prompt.openai_client.OpenAI"):
                 client = OpenAIClient("fixture")
-            client.client.responses.create.return_value = response(text="secret response that is not JSON")
-            with patch("prompt.execution.LlmClientFactory.create", return_value=client), self.assertRaises(PromptProviderError) as caught:
-                improve(PromptImproverConfig(provider="openai", model="fixture"), "task", Path(directory))
+            client.client.responses.create.return_value = response(
+                text="secret response that is not JSON"
+            )
+            with (
+                patch("prompt.execution.LlmClientFactory.create", return_value=client),
+                self.assertRaises(PromptProviderError) as caught,
+            ):
+                improve(
+                    PromptImproverConfig(provider="openai", model="fixture"),
+                    "task",
+                    Path(directory),
+                )
             self.assertEqual("invalid_structured_output", caught.exception.category)
             metadata = json.loads((Path(directory) / "prompt-usage.json").read_text())
             self.assertEqual("failed", metadata["status"])
@@ -686,32 +1090,80 @@ class ExecutionTests(unittest.TestCase):
     def test_factory_failure_and_blank_input_archive_zero_attempts(self):
         for task in ("task", " "):
             with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
-                with patch("prompt.execution.LlmClientFactory.create", side_effect=ValueError("secret")), self.assertRaises(PromptProviderError):
-                    improve(PromptImproverConfig(provider="openai", model="fixture"), task, Path(directory))
+                with (
+                    patch(
+                        "prompt.execution.LlmClientFactory.create",
+                        side_effect=ValueError("secret"),
+                    ),
+                    self.assertRaises(PromptProviderError),
+                ):
+                    improve(
+                        PromptImproverConfig(provider="openai", model="fixture"),
+                        task,
+                        Path(directory),
+                    )
                 data = json.loads((Path(directory) / "prompt-usage.json").read_text())
                 self.assertEqual(0, data["usage"]["requests"])
                 self.assertIsNone(data["usage"]["estimatedCostUSD"])
 
     def test_archive_error_does_not_mask_provider_failure(self):
-        with patch("prompt.execution.LlmClientFactory.create", side_effect=RuntimeError("private")), \
-                patch("prompt.execution.write_json", side_effect=OSError("fixture disk full")), self.assertRaises(PromptProviderError) as caught:
-            improve(PromptImproverConfig(provider="openai", model="fixture"), "task", Path("unused"))
+        with (
+            patch(
+                "prompt.execution.LlmClientFactory.create",
+                side_effect=RuntimeError("private"),
+            ),
+            patch(
+                "prompt.execution.write_json", side_effect=OSError("fixture disk full")
+            ),
+            self.assertRaises(PromptProviderError) as caught,
+        ):
+            improve(
+                PromptImproverConfig(provider="openai", model="fixture"),
+                "task",
+                Path("unused"),
+            )
         self.assertIn("archive failed", caught.exception.__notes__[0])
 
     def test_result_and_csv_keep_improver_separate_and_upgrade_old_rows(self):
         with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
             root = Path(directory)
-            state = dict(folder=str(root), modules=["prompt"], id="fixture", task="task", before={},
-                         promptMetadata=dict(provider="openai", model="fixture", status="completed", errorCategory=None,
-                                             durationSeconds=0.5, usage=dict(inputTokens=100, outputTokens=30,
-                                             cacheReadTokens=80, cacheWriteTokens=0, reasoningTokens=10, totalTokens=130,
-                                             requests=1, completedRequests=1, retries=0, costStatus="unavailable", status="reported")))
+            state = dict(
+                folder=str(root),
+                modules=["prompt"],
+                id="fixture",
+                task="task",
+                before={},
+                promptMetadata=dict(
+                    provider="openai",
+                    model="fixture",
+                    status="completed",
+                    errorCategory=None,
+                    durationSeconds=0.5,
+                    usage=dict(
+                        inputTokens=100,
+                        outputTokens=30,
+                        cacheReadTokens=80,
+                        cacheWriteTokens=0,
+                        reasoningTokens=10,
+                        totalTokens=130,
+                        requests=1,
+                        completedRequests=1,
+                        retries=0,
+                        costStatus="unavailable",
+                        status="reported",
+                    ),
+                ),
+            )
             value = runner.enrich_result(state, root, dict(Id="fixture"), None)
             self.assertEqual(100, value["PromptInputTokens"])
             self.assertIsNone(value["InputTokens"])
             self.assertIsNone(value["EstimatedCostUSD"])
             csv_path = root / "results.csv"
-            legacy = {k: v for k, v in value.items() if k not in prompt.USAGE_COLUMNS and k not in prompt.METADATA_COLUMNS}
+            legacy = {
+                k: v
+                for k, v in value.items()
+                if k not in prompt.USAGE_COLUMNS and k not in prompt.METADATA_COLUMNS
+            }
             legacy["Id"] = "old"
             benchmark.append_csv(csv_path, legacy)
             benchmark.append_csv(csv_path, value)
@@ -725,6 +1177,7 @@ def refresh_worker(root, index):
     root = Path(root)
     backend = FakeKeyring(root / "fake-keyring.json")
     store = ChatGPTCredentialStore(root / "profile", root / "session.lock")
+
     class Tokens:
         def refresh(self, **kwargs):
             path = root / "refresh-count"
@@ -733,8 +1186,13 @@ def refresh_worker(root, index):
             if kwargs["refresh_token"] != "fake-refresh":
                 raise RuntimeError("duplicate refresh of rotated token")
             time.sleep(0.15)
-            return ChatGPTRefreshResponse(access_token="rotated-access", refresh_token="rotated-refresh",
-                                          token_type="Bearer", expires_in=3600)
+            return ChatGPTRefreshResponse(
+                access_token="rotated-access",
+                refresh_token="rotated-refresh",
+                token_type="Bearer",
+                expires_in=3600,
+            )
+
     (root / f"ready-{index}").write_text("ready")
     deadline = time.monotonic() + 10
     while not (root / "go").exists():

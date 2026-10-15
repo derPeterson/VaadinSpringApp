@@ -1,0 +1,3 @@
+# Entwicklungswerkzeuge; Laufzeitpakete bleiben in .opencode/requirements.txt.
+# Version muss zu required-version in ruff.toml passen.
+ruff==0.17.1

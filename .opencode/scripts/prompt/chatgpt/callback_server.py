@@ -12,11 +12,10 @@ class ChatGPTAuthCallback(BaseModel):
 
 
 class ChatGPTCallbackServer:
-
     def __init__(
-            self,
-            host: str = "127.0.0.1",
-            port: int = 1455,
+        self,
+        host: str = "127.0.0.1",
+        port: int = 1455,
     ):
         self.host = host
         self.port = port
@@ -26,10 +25,7 @@ class ChatGPTCallbackServer:
 
     @property
     def redirect_uri(self) -> str:
-        return (
-            f"http://{self.host}:{self.port}"
-            "/auth/callback"
-        )
+        return f"http://{self.host}:{self.port}/auth/callback"
 
     def start(self) -> None:
         if self._server is not None:
@@ -42,9 +38,7 @@ class ChatGPTCallbackServer:
 
     def wait_for_callback(self) -> ChatGPTAuthCallback:
         if self._server is None:
-            raise RuntimeError(
-                "Callback server must be started first."
-            )
+            raise RuntimeError("Callback server must be started first.")
 
         try:
             self._server.handle_request()
@@ -53,9 +47,7 @@ class ChatGPTCallbackServer:
             self._server = None
 
         if self.callback is None:
-            raise RuntimeError(
-                "No ChatGPT authorization callback was received."
-            )
+            raise RuntimeError("No ChatGPT authorization callback was received.")
 
         return self.callback
 
@@ -63,7 +55,6 @@ class ChatGPTCallbackServer:
         parent = self
 
         class CallbackHandler(BaseHTTPRequestHandler):
-
             def do_GET(self) -> None:
                 parsed_url = urlparse(self.path)
 
@@ -95,9 +86,7 @@ class ChatGPTCallbackServer:
                     self.send_response(400)
                     self.end_headers()
 
-                    self.wfile.write(
-                        b"Invalid ChatGPT authorization callback."
-                    )
+                    self.wfile.write(b"Invalid ChatGPT authorization callback.")
                     return
 
                 parent.callback = ChatGPTAuthCallback(
@@ -126,9 +115,9 @@ class ChatGPTCallbackServer:
                 )
 
             def log_message(
-                    self,
-                    format: str,
-                    *args,
+                self,
+                format: str,
+                *args,
             ) -> None:
                 pass
 

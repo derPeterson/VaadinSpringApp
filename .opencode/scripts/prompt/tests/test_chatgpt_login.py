@@ -11,15 +11,9 @@ from prompt.chatgpt.token_client import ChatGPTTokenClient
 
 
 def main() -> None:
-    storage_directory = (
-            Path.home()
-            / ".vaadin-prompt-improver"
-            / "chatgpt"
-    )
+    storage_directory = Path.home() / ".vaadin-prompt-improver" / "chatgpt"
 
-    store = ChatGPTCredentialStore(
-        storage_directory
-    )
+    store = ChatGPTCredentialStore(storage_directory)
 
     from prompt.telemetry import PromptProviderError
 
@@ -38,9 +32,7 @@ def main() -> None:
         host_id = ChatGPTAuth.create_host_id()
         store.save_host_id(host_id)
 
-    attempt = ChatGPTAuth.create_attempt(
-        ext_agent_host_id=host_id
-    )
+    attempt = ChatGPTAuth.create_attempt(ext_agent_host_id=host_id)
 
     callback_server = ChatGPTCallbackServer()
     callback_server.start()
@@ -58,14 +50,10 @@ def main() -> None:
     callback = callback_server.wait_for_callback()
 
     if callback.state != attempt.state:
-        raise RuntimeError(
-            "OAuth state mismatch."
-        )
+        raise RuntimeError("OAuth state mismatch.")
 
     if callback.client_id is None:
-        raise RuntimeError(
-            "ChatGPT registration did not return a client ID."
-        )
+        raise RuntimeError("ChatGPT registration did not return a client ID.")
 
     token_client = ChatGPTTokenClient()
 
@@ -87,9 +75,7 @@ def main() -> None:
     required_scope = "chatgpt.tokens.use.direct"
 
     if required_scope not in token_response.scopes:
-        raise RuntimeError(
-            "ChatGPT plan usage permission was not granted."
-        )
+        raise RuntimeError("ChatGPT plan usage permission was not granted.")
 
     credentials = ChatGPTCredentials(
         email=identity.email,
@@ -103,14 +89,10 @@ def main() -> None:
         token_type=token_response.token_type,
         expires_in=token_response.expires_in,
         scopes=token_response.scopes,
-        saved_at=datetime.now(
-            timezone.utc
-        ).isoformat(),
+        saved_at=datetime.now(timezone.utc).isoformat(),
     )
 
-    store.save_credentials(
-        credentials
-    )
+    store.save_credentials(credentials)
 
     print("ChatGPT login successful.")
     print("Identity verified.")
@@ -118,10 +100,7 @@ def main() -> None:
     print(f"Subject: {identity.subject}")
     print(f"Client ID: {callback.client_id}")
     print("ChatGPT plan usage: enabled")
-    print(
-        f"Credentials saved in: "
-        f"{storage_directory}"
-    )
+    print(f"Credentials saved in: {storage_directory}")
 
 
 if __name__ == "__main__":

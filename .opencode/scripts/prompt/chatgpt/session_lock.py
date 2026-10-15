@@ -1,4 +1,5 @@
 """One OS lock shared by processes using this user's ChatGPT keyring service."""
+
 from contextlib import contextmanager
 import os
 from pathlib import Path
@@ -20,14 +21,19 @@ def session_lock(path: Path, timeout: float = 60.0):
                 handle.seek(0)
                 if os.name == "nt":
                     import msvcrt
+
                     msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
                 else:
                     import fcntl
+
                     fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                 break
             except OSError:
                 if time.monotonic() >= deadline:
-                    raise PromptProviderError("auth_busy", "Another process is updating ChatGPT credentials; try again later.") from None
+                    raise PromptProviderError(
+                        "auth_busy",
+                        "Another process is updating ChatGPT credentials; try again later.",
+                    ) from None
                 time.sleep(0.05)
         try:
             yield

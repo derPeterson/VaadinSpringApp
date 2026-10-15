@@ -7,8 +7,8 @@ from prompt.openai_client import OpenAIClient
 class LlmClientFactory:
     @staticmethod
     def create(
-            provider: str,
-            model: str,
+        provider: str,
+        model: str,
     ) -> LlmClient:
         match provider.lower():
             case "ollama":
@@ -21,6 +21,4 @@ class LlmClientFactory:
                 return ChatGPTClient(model)
 
             case _:
-                raise ValueError(
-                    f"Unsupported LLM provider: {provider}"
-                )
+                raise ValueError(f"Unsupported LLM provider: {provider}")

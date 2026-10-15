@@ -50,26 +50,13 @@ class ChatGPTCredentials(BaseModel):
     saved_at: str
 
     def is_access_token_valid(
-            self,
-            safety_margin_seconds: int = 60,
+        self,
+        safety_margin_seconds: int = 60,
     ) -> bool:
-        saved_at = datetime.fromisoformat(
-            self.saved_at
-        )
+        saved_at = datetime.fromisoformat(self.saved_at)
 
-        expires_at = (
-                saved_at
-                + timedelta(seconds=self.expires_in)
-        )
+        expires_at = saved_at + timedelta(seconds=self.expires_in)
 
-        refresh_before = (
-                expires_at
-                - timedelta(
-            seconds=safety_margin_seconds
-        )
-        )
+        refresh_before = expires_at - timedelta(seconds=safety_margin_seconds)
 
-        return (
-                datetime.now(saved_at.tzinfo)
-                < refresh_before
-        )
+        return datetime.now(saved_at.tzinfo) < refresh_before

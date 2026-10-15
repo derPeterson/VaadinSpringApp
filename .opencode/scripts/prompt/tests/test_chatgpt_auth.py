@@ -4,9 +4,7 @@ from prompt.chatgpt.auth import ChatGPTAuth
 def main() -> None:
     host_id = ChatGPTAuth.create_host_id()
 
-    attempt = ChatGPTAuth.create_attempt(
-        ext_agent_host_id=host_id
-    )
+    attempt = ChatGPTAuth.create_attempt(ext_agent_host_id=host_id)
 
     authorization_url = ChatGPTAuth.build_authorization_url(
         attempt=attempt,

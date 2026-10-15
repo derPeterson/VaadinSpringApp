@@ -41,11 +41,10 @@ Keep the result concise.
 
 
 class PromptImprover:
-
     def __init__(
-            self,
-            config: PromptImproverConfig,
-            llm_client: LlmClient,
+        self,
+        config: PromptImproverConfig,
+        llm_client: LlmClient,
     ):
         self.config = config
         self.llm_client = llm_client
@@ -67,17 +66,15 @@ class PromptImprover:
         return self._apply_defaults(improved_prompt)
 
     def _apply_defaults(
-            self,
-            improved_prompt: ImprovedPrompt,
+        self,
+        improved_prompt: ImprovedPrompt,
     ) -> ImprovedPrompt:
         improved_prompt.non_goals = (
-                self.config.default_non_goals
-                + improved_prompt.non_goals
+            self.config.default_non_goals + improved_prompt.non_goals
         )
 
         improved_prompt.verification = (
-                self.config.default_verification
-                + improved_prompt.verification
+            self.config.default_verification + improved_prompt.verification
         )
 
         return improved_prompt

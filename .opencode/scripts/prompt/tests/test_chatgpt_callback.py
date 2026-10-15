@@ -7,10 +7,7 @@ def main() -> None:
     server = ChatGPTCallbackServer()
     server.start()
 
-    print(
-        f"Waiting for callback on: "
-        f"{server.redirect_uri}"
-    )
+    print(f"Waiting for callback on: {server.redirect_uri}")
 
     callback = server.wait_for_callback()
 

@@ -4,12 +4,11 @@ from prompt.models import ImprovedPrompt
 
 
 class PromptArtifactWriter:
-
     @staticmethod
     def write(
-            output_directory: Path,
-            original_prompt: str,
-            improved_prompt: ImprovedPrompt,
+        output_directory: Path,
+        original_prompt: str,
+        improved_prompt: ImprovedPrompt,
     ) -> None:
         output_directory.mkdir(
             parents=True,

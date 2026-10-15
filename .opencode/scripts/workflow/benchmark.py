@@ -1,4 +1,5 @@
 """Maven/JaCoCo/Surefire and commit-diff metrics."""
+
 import csv
 import os
 import re
@@ -27,10 +28,13 @@ def fresh_reports(repo: Path) -> dict:
         goals_to_run.append(("-f", "shared/pom.xml", "clean", "install"))
     goals_to_run.extend((("clean", "test"), ("jacoco:report",)))
     for goals in goals_to_run:
-        result = subprocess.run([str(wrapper), *goals], cwd=repo,
-                                stdout=sys.stderr, stderr=sys.stderr)
+        result = subprocess.run(
+            [str(wrapper), *goals], cwd=repo, stdout=sys.stderr, stderr=sys.stderr
+        )
         if result.returncode:
-            raise WorkflowError(f"Maven {' '.join(goals)} failed ({result.returncode}).")
+            raise WorkflowError(
+                f"Maven {' '.join(goals)} failed ({result.returncode})."
+            )
         checks.append({"arguments": list(goals), "exitCode": result.returncode})
     return {"javaMajor": 25, "checks": checks}
 
@@ -46,10 +50,16 @@ def class_row(repo: Path, class_name: str) -> dict:
         sources = list((repo / "src/main/java").rglob(class_name + ".java"))
         if len(sources) != 1:
             raise WorkflowError(f"Ambiguous JaCoCo class: {class_name}")
-        match = re.search(r"^\s*package\s+([\w.]+)\s*;",
-                          sources[0].read_text(encoding="utf-8"), re.MULTILINE)
-        rows = [row for row in rows if match and
-                row["PACKAGE"].replace("/", ".") == match[1]]
+        match = re.search(
+            r"^\s*package\s+([\w.]+)\s*;",
+            sources[0].read_text(encoding="utf-8"),
+            re.MULTILINE,
+        )
+        rows = [
+            row
+            for row in rows
+            if match and row["PACKAGE"].replace("/", ".") == match[1]
+        ]
     if len(rows) != 1:
         raise WorkflowError(f"Class not uniquely found in JaCoCo: {class_name}")
     return rows[0]
@@ -64,9 +74,16 @@ def test_suites(repo: Path) -> list[dict]:
         root = ET.parse(path).getroot()
         suites = [root] if root.tag == "testsuite" else list(root.findall("testsuite"))
         for suite in suites:
-            result.append({"name": suite.get("name", ""),
-                           **{key: int(suite.get(key, "0")) for key in ("tests", "failures", "errors", "skipped")},
-                           "time": float(suite.get("time", "0"))})
+            result.append(
+                {
+                    "name": suite.get("name", ""),
+                    **{
+                        key: int(suite.get(key, "0"))
+                        for key in ("tests", "failures", "errors", "skipped")
+                    },
+                    "time": float(suite.get("time", "0")),
+                }
+            )
     return result
 
 
@@ -79,7 +96,8 @@ def metrics(repo: Path, class_name: str) -> dict:
         result[name + "Covered"] = covered
         result[name + "Total"] = total
         result["lineCoverage" if prefix == "LINE" else "branchCoverage"] = (
-            round(covered / total * 100, 2) if total else 100.0)
+            round(covered / total * 100, 2) if total else 100.0
+        )
     result.update(tests=0, failures=0, errors=0, skipped=0, testTime=0.0)
     for suite in test_suites(repo):
         for key in ("tests", "failures", "errors", "skipped"):
@@ -95,9 +113,17 @@ def collect(repo: Path, class_name: str, evidence: Path | None = None) -> dict:
     build = fresh_reports(repo)
     result = metrics(repo, class_name)
     if evidence:
-        write_json(evidence, {"version": 1, "targetClass": class_name,
-                              "build": build, "jacoco": class_row(repo, class_name),
-                              "surefire": test_suites(repo), "metrics": result})
+        write_json(
+            evidence,
+            {
+                "version": 1,
+                "targetClass": class_name,
+                "build": build,
+                "jacoco": class_row(repo, class_name),
+                "surefire": test_suites(repo),
+                "metrics": result,
+            },
+        )
     return result
 
 
@@ -105,10 +131,16 @@ def changes(repo: Path, start: str, end: str, destination: Path) -> dict:
     run(repo, "git", "merge-base", "--is-ancestor", start, end)
     revision = f"{start}..{end}"
     # Preserve byte-for-byte Git output, including binary patches and LF endings.
-    diff = subprocess.run(["git", "diff", "--binary", "--full-index", revision],
-                          cwd=repo, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    diff = subprocess.run(
+        ["git", "diff", "--binary", "--full-index", revision],
+        cwd=repo,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
     if diff.returncode:
-        raise WorkflowError("git diff failed: " + diff.stderr.decode("utf-8", "replace"))
+        raise WorkflowError(
+            "git diff failed: " + diff.stderr.decode("utf-8", "replace")
+        )
     destination.write_bytes(diff.stdout)
     files = run(repo, "git", "diff", "--name-only", revision).splitlines()
     additions = deletions = 0
@@ -117,8 +149,12 @@ def changes(repo: Path, start: str, end: str, destination: Path) -> dict:
         if len(parts) >= 2:
             additions += int(parts[0]) if parts[0].isdigit() else 0
             deletions += int(parts[1]) if parts[1].isdigit() else 0
-    return {"ChangedFiles": len(files), "Insertions": additions,
-            "Deletions": deletions, "files": files}
+    return {
+        "ChangedFiles": len(files),
+        "Insertions": additions,
+        "Deletions": deletions,
+        "files": files,
+    }
 
 
 def append_csv(path: Path, result: dict, *, replace_existing: bool = False) -> None:
@@ -131,32 +167,64 @@ def append_csv(path: Path, result: dict, *, replace_existing: bool = False) -> N
             existing_fields = list(reader.fieldnames or [])
             old_rows = list(reader)
             if existing_fields != fields:
-                additions = {"PromptProvider", "PromptModel", "PromptDurationSeconds", "CostStatus",
-                             "UsageStartUTC", "UsageEndUTC", "UsageWindowSeconds", "Outcome", "Terminal",
-                             "FailureCount", "LastFailurePhase", "LastFailureType", "StopReason"}
+                additions = {
+                    "PromptProvider",
+                    "PromptModel",
+                    "PromptDurationSeconds",
+                    "CostStatus",
+                    "UsageStartUTC",
+                    "UsageEndUTC",
+                    "UsageWindowSeconds",
+                    "Outcome",
+                    "Terminal",
+                    "FailureCount",
+                    "LastFailurePhase",
+                    "LastFailureType",
+                    "StopReason",
+                }
                 from .prompt import USAGE_COLUMNS, METADATA_COLUMNS
+
                 additions.update(USAGE_COLUMNS)
                 additions.update(METADATA_COLUMNS)
-                renamed = ["MessageElapsedSeconds" if key == "InferenceSeconds" else key for key in existing_fields]
+                renamed = [
+                    "MessageElapsedSeconds" if key == "InferenceSeconds" else key
+                    for key in existing_fields
+                ]
                 missing = set(fields) - set(renamed)
-                if not missing <= additions or renamed != [key for key in fields if key not in missing]:
-                    raise WorkflowError("results.csv has a different schema. Use an empty benchmark store.")
+                if not missing <= additions or renamed != [
+                    key for key in fields if key not in missing
+                ]:
+                    raise WorkflowError(
+                        "results.csv has a different schema. Use an empty benchmark store."
+                    )
                 for row in old_rows:
                     if "InferenceSeconds" in row:
                         row["MessageElapsedSeconds"] = row.pop("InferenceSeconds")
                     for key in missing:
                         # Previous versions wrote CSV only after successful final checks.
-                        row.setdefault(key, {"Outcome": "completed", "Terminal": "True"}.get(key, ""))
+                        row.setdefault(
+                            key,
+                            {"Outcome": "completed", "Terminal": "True"}.get(key, ""),
+                        )
         if any(row.get("Id") == result["Id"] for row in old_rows):
             if not replace_existing:
                 return
             old_rows = [row for row in old_rows if row.get("Id") != result["Id"]]
-    formats = {"DurationSeconds": ".1f", "TestTimeBeforeSeconds": ".3f",
-               "TestTimeAfterSeconds": ".3f", "LineCoverageBefore": ".2f",
-               "LineCoverageAfter": ".2f", "BranchCoverageBefore": ".2f",
-               "BranchCoverageAfter": ".2f"}
-    row = {key: format(value, formats[key]) if key in formats and value is not None
-           else value for key, value in result.items()}
+    formats = {
+        "DurationSeconds": ".1f",
+        "TestTimeBeforeSeconds": ".3f",
+        "TestTimeAfterSeconds": ".3f",
+        "LineCoverageBefore": ".2f",
+        "LineCoverageAfter": ".2f",
+        "BranchCoverageBefore": ".2f",
+        "BranchCoverageAfter": ".2f",
+    }
+    row = {
+        key: format(value, formats[key])
+        if key in formats and value is not None
+        else value
+        for key, value in result.items()
+    }
     temporary = path.with_suffix(".csv.tmp")
     with temporary.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields)

@@ -16,21 +16,14 @@ class ChatGPTAuthAttempt(BaseModel):
 
 
 class ChatGPTAuth:
-    AUTHORIZATION_ENDPOINT = (
-        "https://auth.openai.com/api/accounts/authorize"
-    )
+    AUTHORIZATION_ENDPOINT = "https://auth.openai.com/api/accounts/authorize"
 
     CLIENT_ID = "dynamic_agent_client"
 
     RESOURCE = "https://api.openai.com/v1"
 
     SCOPES = (
-        "openid "
-        "profile "
-        "email "
-        "offline_access "
-        "resource.invoke "
-        "chatgpt.tokens.use.direct"
+        "openid profile email offline_access resource.invoke chatgpt.tokens.use.direct"
     )
 
     @staticmethod
@@ -39,15 +32,13 @@ class ChatGPTAuth:
 
     @staticmethod
     def create_attempt(
-            ext_agent_host_id: str,
+        ext_agent_host_id: str,
     ) -> ChatGPTAuthAttempt:
         state = secrets.token_urlsafe(32)
         nonce = secrets.token_urlsafe(32)
         code_verifier = secrets.token_urlsafe(64)
 
-        code_challenge = ChatGPTAuth._create_code_challenge(
-            code_verifier
-        )
+        code_challenge = ChatGPTAuth._create_code_challenge(code_verifier)
 
         return ChatGPTAuthAttempt(
             ext_agent_host_id=ext_agent_host_id,
@@ -59,9 +50,9 @@ class ChatGPTAuth:
 
     @staticmethod
     def build_authorization_url(
-            attempt: ChatGPTAuthAttempt,
-            redirect_uri: str,
-            agent_name: str,
+        attempt: ChatGPTAuthAttempt,
+        redirect_uri: str,
+        agent_name: str,
     ) -> str:
         parameters = {
             "client_id": ChatGPTAuth.CLIENT_ID,
@@ -77,21 +68,12 @@ class ChatGPTAuth:
             "code_challenge": attempt.code_challenge,
         }
 
-        return (
-            f"{ChatGPTAuth.AUTHORIZATION_ENDPOINT}"
-            f"?{urlencode(parameters)}"
-        )
+        return f"{ChatGPTAuth.AUTHORIZATION_ENDPOINT}?{urlencode(parameters)}"
 
     @staticmethod
     def _create_code_challenge(
-            code_verifier: str,
+        code_verifier: str,
     ) -> str:
-        digest = hashlib.sha256(
-            code_verifier.encode("ascii")
-        ).digest()
+        digest = hashlib.sha256(code_verifier.encode("ascii")).digest()
 
-        return (
-            base64.urlsafe_b64encode(digest)
-            .decode("ascii")
-            .rstrip("=")
-        )
+        return base64.urlsafe_b64encode(digest).decode("ascii").rstrip("=")

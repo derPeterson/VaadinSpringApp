@@ -25,6 +25,7 @@ webpack.generated.js
 
 
 # Python
+.ruff_cache/
 __pycache__/
 *.py[cod]
 *.pyo

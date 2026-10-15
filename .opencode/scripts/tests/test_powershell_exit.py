@@ -1,4 +1,5 @@
 """Actual Windows shells: native stderr must not turn successful prepare into failure."""
+
 import base64
 import json
 import os
@@ -45,7 +46,9 @@ class PowerShellExitTests(unittest.TestCase):
         encoded = base64.b64encode(command.encode("utf-16-le")).decode("ascii")
         return subprocess.run(
             [executable, "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded],
-            cwd=self.repo, capture_output=True, timeout=60,
+            cwd=self.repo,
+            capture_output=True,
+            timeout=60,
         )
 
     def prepare(self, shell="powershell.exe", *, failure=False, explicit=True):
@@ -58,15 +61,28 @@ class PowerShellExitTests(unittest.TestCase):
             "from workflow.common import WorkflowError\n"
             "def collect(*args, **kwargs):\n"
             "    print('WARNING: simulated JVM warning', file=sys.stderr)\n"
-            + ("    raise WorkflowError('Maven clean test failed (7)')\n" if failure
-               else f"    return {fixtures.METRICS!r}\n")
+            + (
+                "    raise WorkflowError('Maven clean test failed (7)')\n"
+                if failure
+                else f"    return {fixtures.METRICS!r}\n"
+            )
             + "with patch('workflow.benchmark.collect', side_effect=collect):\n"
             "    raise SystemExit(cli.main())\n",
             encoding="utf-8",
         )
         log = self.base / "prepare.log"
-        arguments = [sys.executable, "-B", self.launcher, "--repo", self.repo,
-                     "--store-root", self.store_root, "prepare", "--request", self.request_file]
+        arguments = [
+            sys.executable,
+            "-B",
+            self.launcher,
+            "--repo",
+            self.repo,
+            "--store-root",
+            self.store_root,
+            "prepare",
+            "--request",
+            self.request_file,
+        ]
         result = self.shell(shell, logged_command(arguments, log, explicit=explicit))
         states = list((self.store_root / self.repo.name / "state").glob("*.json"))
         self.assertEqual(1, len(states), result.stderr)
@@ -115,8 +131,12 @@ class PowerShellExitTests(unittest.TestCase):
         # Python has written its state, so no lifecycle-state assertion here.
         probe = self.base / "native.py"
         probe.write_text("print('success')\n", encoding="utf-8")
-        result = self.shell(shell, logged_command(
-            [sys.executable, "-B", probe], self.base / "missing/log.txt"))
+        result = self.shell(
+            shell,
+            logged_command(
+                [sys.executable, "-B", probe], self.base / "missing/log.txt"
+            ),
+        )
         self.assertEqual(1, result.returncode)
 
     def test_windows_powershell_logging_failure_does_not_become_success(self):
@@ -127,12 +147,19 @@ class PowerShellExitTests(unittest.TestCase):
 
     def check_native_exit(self, shell):
         probe = self.base / "native.py"
-        probe.write_text("import sys\nprint('warning', file=sys.stderr)\nsys.exit(int(sys.argv[1]))\n",
-                         encoding="utf-8")
+        probe.write_text(
+            "import sys\nprint('warning', file=sys.stderr)\nsys.exit(int(sys.argv[1]))\n",
+            encoding="utf-8",
+        )
         for native_exit in (0, 7):
             with self.subTest(native_exit=native_exit):
-                result = self.shell(shell, logged_command(
-                    [sys.executable, "-B", probe, native_exit], self.base / "native.log"))
+                result = self.shell(
+                    shell,
+                    logged_command(
+                        [sys.executable, "-B", probe, native_exit],
+                        self.base / "native.log",
+                    ),
+                )
                 self.assertEqual(native_exit, result.returncode, result.stderr)
 
     def test_windows_powershell_preserves_exact_native_exit(self):

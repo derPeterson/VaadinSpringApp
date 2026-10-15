@@ -13,26 +13,18 @@ class ChatGPTIdentity(BaseModel):
 class ChatGPTIdentityVerifier:
     ISSUER = "https://auth.openai.com"
 
-    JWKS_URI = (
-        "https://auth.openai.com/"
-        ".well-known/jwks.json"
-    )
+    JWKS_URI = "https://auth.openai.com/.well-known/jwks.json"
 
     def __init__(self):
-        self.jwks_client = PyJWKClient(
-            self.JWKS_URI
-        )
+        self.jwks_client = PyJWKClient(self.JWKS_URI)
 
     def verify(
-            self,
-            id_token: str,
-            client_id: str,
-            expected_nonce: str,
+        self,
+        id_token: str,
+        client_id: str,
+        expected_nonce: str,
     ) -> ChatGPTIdentity:
-        signing_key = (
-            self.jwks_client
-            .get_signing_key_from_jwt(id_token)
-        )
+        signing_key = self.jwks_client.get_signing_key_from_jwt(id_token)
 
         claims = jwt.decode(
             id_token,
@@ -53,17 +45,12 @@ class ChatGPTIdentityVerifier:
         nonce = claims.get("nonce")
 
         if nonce != expected_nonce:
-            raise ValueError(
-                "The ID token nonce does not match."
-            )
+            raise ValueError("The ID token nonce does not match.")
 
         subject = claims.get("sub")
 
         if not isinstance(subject, str) or not subject:
-            raise ValueError(
-                "The ID token does not contain "
-                "a valid subject."
-            )
+            raise ValueError("The ID token does not contain a valid subject.")
 
         return ChatGPTIdentity(
             issuer=self.ISSUER,
