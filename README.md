@@ -50,6 +50,13 @@ Administrator und Benutzer. Fehlende Rollen werden beim Anwendungsstart ergänzt
 Eine bestehende H2-Enum-Spalte wird zuvor gezielt um die Rollennamen erweitert;
 vorhandene Rollen-IDs und Kontozuweisungen bleiben erhalten.
 
+## Geplante Konfigurationsfunktionen
+
+Für die fünf bisher fachlich wirkungslosen Konfigurationseinträge liegen
+[einzelne Umsetzungspläne mit Bestandsaufnahme](docs/umsetzungsplaene/konfiguration/README.md)
+vor: Anmeldeversuche, gleichzeitige Sitzungen, Wartungsmodus, SMTP-SocketFactory
+und Nutzung des Mail-Workerpools. Sie beschreiben Vorschläge und aktivieren keine Funktion.
+
 ## Kontoansichten, Home und Admin: Silent Cosmos und Inter
 
 Login, Registrierung, Verifikation, Passwortanfrage und Passwortänderung verwenden
