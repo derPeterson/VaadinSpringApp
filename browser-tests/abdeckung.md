@@ -1,9 +1,14 @@
 # Browserabdeckung und offene Punkte
 
-**Vollständiger Prüfstand: 15.10.2026 – 1082 Anwendungstests, 34 Helper-/Reportertests und je 100 Browserfälle auf DE/EN erfolgreich; JUnit- und Browser-Code-Coverage gemessen.**
+**Redesign-Abschlussprüfung: 15.10.2026 – 1082 Anwendungstests, 34 Helper-/Reportertests und je 100 Browserfälle auf DE/EN erfolgreich; JUnit- und Browser-Code-Coverage gemessen.**
 Bedienung und Aufbau stehen in der [Browser-Testanleitung](README.md).
 Wichtige Abschlüsse stehen dauerhaft unter [Meilensteine](../docs/meilensteine/README.md).
 Lokale Run-Ausgaben sind bereinigbare Diagnosedaten und keine Voraussetzung für diese Übersicht.
+
+Nach der anschließenden Java-/Textbereinigung am 15.10.2026 bestehen 1085
+Anwendungs-JUnit-Tests und 34 Helper-/Reportertests ohne Fehler oder Skips.
+Die vollständigen Browserläufe und Coverage wurden dabei nicht wiederholt;
+ihre unten dokumentierten Ergebnisse stammen aus der Redesign-Abschlussprüfung.
 
 ## Redesign-Abschlussprüfung – 15.10.2026
 

@@ -59,12 +59,4 @@ public enum ConfigEntry {
     public String getDefaultValueString() {
         return (defaultValue instanceof String defaultString) ? defaultString : String.valueOf(defaultValue);
     }
-
-    public Integer getDefaultValueInteger() {
-        return (defaultValue instanceof Integer defaultInteger) ? defaultInteger : Integer.parseInt(defaultValue.toString());
-    }
-
-    public Boolean getDefaultValueBoolean() {
-        return (defaultValue instanceof Boolean defaultBoolean) ? defaultBoolean : Boolean.parseBoolean(defaultValue.toString());
-    }
 }

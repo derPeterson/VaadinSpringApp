@@ -407,7 +407,7 @@ offenen Punkte stehen in der Browserdokumentation.
 
 Unter `src/test/java/` liegen Unit- und serverseitige Regressionstests für Benutzerverwaltung, Eingaberegeln, Registrierung, Konfiguration, Benachrichtigungen, Session-/Remember-me-/Push-RPC-Sicherheit sowie Status und Nebenläufigkeit. Persistenztests verwenden isolierte H2-In-Memory-Datenbanken, nicht die Anwendungsdatenbank. Vaadin-Tests prüfen serverseitige Komponenten und Callbacks mit kontrollierten UI-/Sessionfixtures, ohne Browser oder Anwendungsstart. `ImageHelperTest` prüft zusätzlich das echte Mail-Logo als Classpath-Ressource. `src/test/resources/logback-test.xml` konfiguriert das Test-Logging.
 
-Aktueller Prüfstand am 15.10.2026:
+Redesign-Abschlussprüfung vom 15.10.2026:
 
 | Prüfung | Ergebnis |
 | --- | --- |
@@ -423,6 +423,17 @@ einschließlich Start und Hintergrundaufgaben. Sie ist keine CSS-/JavaScript-Cov
 und [aktuelle Abdeckung](browser-tests/abdeckung.md). Lokale Browser-Testausgaben
 dürfen nach Auswertung bereinigt werden; ihre dauerhafte Aufbewahrung ist nicht nötig.
 Wichtige Ergebnisse bleiben kompakt unter [Meilensteine](docs/meilensteine/README.md) erhalten.
+
+Nachfolgende Java-/Textbereinigung am 15.10.2026: ungenutzte `CardComponent` und
+`VaadinUIHelper`, sieben weitere Methoden sowie 13 Übersetzungsgetter entfernt;
+14 veraltete Schlüssel je Sprache entfallen. 336 Schlüssel je Sprache bleiben erhalten.
+`MessageCatalogueTest` sichert identische Sprachkataloge, vorhandene Übersetzungen
+und die Erreichbarkeit aller Einträge über den gemeinsamen typisierten Katalog ab.
+Nach der Bereinigung: **1085 Anwendungs-JUnit-Tests und 34 Helper-/Reportertests
+bestanden, keine Fehler oder Skips**. Die vollständigen Browserläufe und Coverage
+wurden dafür nicht erneut ausgeführt; die obigen Messwerte gehören zum Redesign-Abschluss.
+Bestehende Styles/CSS/Theme wurden nicht angepasst.
+
 
 Der eigene Vaadin-Login speichert seinen Sicherheitskontext ausdrücklich in der Sitzung,
 bevor Remember-me ausgegeben wird. Die Browserprüfung verwendet echte separate

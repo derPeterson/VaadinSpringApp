@@ -29,11 +29,7 @@ public interface EmailQueueRepository extends JpaRepository<EmailQueueEntity, Lo
 
     List<EmailQueueEntity> findByStatus(EmailStatus status);
 
-    Optional<EmailQueueEntity> findByUserEntityAndEmailType(UserEntity userEntity, EmailType emailType);
-
     boolean existsByUserEntityAndEmailTypeAndStatusIn(UserEntity userEntity, EmailType emailType, Collection<EmailStatus> statuses);
-
-    int deleteByStatus(EmailStatus status);
 
     int deleteByStatusAndCreatedAtBefore(EmailStatus status, LocalDateTime date);
 

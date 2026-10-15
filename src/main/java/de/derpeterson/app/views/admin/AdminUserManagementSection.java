@@ -1047,12 +1047,6 @@ public class AdminUserManagementSection extends VerticalLayout {
         return fullName.isBlank() ? "-" : fullName;
     }
 
-    private String getStatusText(UserEntity user) {
-        return Optional.ofNullable(user.getStatus())
-                .map(status -> messageProperties.getUserStatusLabel(status))
-                .orElse("-");
-    }
-
     private Component createLastActivity(UserEntity user) {
         LocalDateTime activity = user.getLastActivity();
         LocalDateTime now = LocalDateTime.now();

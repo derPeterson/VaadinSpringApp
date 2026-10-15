@@ -37,7 +37,6 @@ import de.derpeterson.app.views.admin.AdminUserManagementSection;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletRequest;
-import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.Clock;

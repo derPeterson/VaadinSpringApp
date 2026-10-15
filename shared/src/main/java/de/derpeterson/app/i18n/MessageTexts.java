@@ -269,10 +269,6 @@ public class MessageTexts {
     }
 
     // Base Buttons
-    public String getBaseApplyButton() {
-        return getTranslation("base.apply_button");
-    }
-
     public String getBaseLoginButton() {
         return getTranslation("base.login_button");
     }
@@ -283,10 +279,6 @@ public class MessageTexts {
 
     public String getBaseHomeButton() {
         return getTranslation("base.home_button");
-    }
-
-    public String getOkayHomeButton() {
-        return getTranslation("base.okay_button");
     }
 
     public String getBaseSendButton() {
@@ -989,32 +981,12 @@ public class MessageTexts {
         return getTranslation("adminView.config.validation.seconds");
     }
 
-    public String getAdminConfigPlaceholderBaseUrl() {
-        return getTranslation("adminView.config.placeholder.base_url");
-    }
-
-    public String getAdminConfigPlaceholderEmail() {
-        return getTranslation("adminView.config.placeholder.email");
-    }
-
-    public String getAdminConfigPlaceholderMailHost() {
-        return getTranslation("adminView.config.placeholder.mail_host");
-    }
-
-    public String getAdminConfigPlaceholderDuration() {
-        return getTranslation("adminView.config.placeholder.duration");
-    }
-
     public String getAdminConfigHelperDurationFormats() {
         return getTranslation("adminView.config.helper.duration_formats");
     }
 
     public String getAdminConfigHelperSeconds() {
         return getTranslation("adminView.config.helper.seconds");
-    }
-
-    public String getAdminConfigHelperSecretKeyMin(int min) {
-        return getFormattedTranslation("adminView.config.helper.secret_key_min", min);
     }
 
     public String getAdminConfigHelperServiceNameMax(int max) {
@@ -1069,14 +1041,6 @@ public class MessageTexts {
 
     public String getAdminUsersNo() {
         return getTranslation("admin.users.no");
-    }
-
-    public String getAdminUsersGridFirstName() {
-        return getTranslation("admin.users.grid.first_name");
-    }
-
-    public String getAdminUsersGridLastName() {
-        return getTranslation("admin.users.grid.last_name");
     }
 
     public String getAdminUsersGridEmail() {
@@ -1192,10 +1156,6 @@ public class MessageTexts {
         return getTranslation("admin.users.grid.empty_state");
     }
 
-    public String getAdminUsersGridSummary() {
-        return getTranslation("admin.users.grid.summary");
-    }
-
     public String getAdminUsersSearchLabel() {
         return getTranslation("admin.users.search.label");
     }
@@ -1246,14 +1206,6 @@ public class MessageTexts {
 
     public String getAdminUsersActivityDate() {
         return getTranslation("admin.users.activity.date");
-    }
-
-    public String getDateInputPlaceholder() {
-        return getTranslation("base.input.date_placeholder");
-    }
-
-    public String getTimeInputPlaceholder() {
-        return getTranslation("base.input.time_placeholder");
     }
 
     public String getAdminUsersActivityTimeOptional() {
@@ -1336,10 +1288,6 @@ public class MessageTexts {
 
     public String getAdminUsersPaginationLastPage() {
         return getTranslation("admin.users.pagination.last_page");
-    }
-
-    public String getAdminUsersPaginationInfo(int currentPage, int totalPages, int start, int end, int totalItems) {
-        return getFormattedTranslation("admin.users.pagination.info", currentPage, totalPages, start, end, totalItems);
     }
 
     public String getAdminUsersDeleteDialogTitle() {
