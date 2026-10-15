@@ -7,16 +7,17 @@ import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
 import io.qameta.allure.*;
 import io.qameta.allure.playwright.AllurePlaywright;
-import org.junit.jupiter.api.*;
 import java.util.UUID;
+import org.junit.jupiter.api.*;
 
 @Tag("browser")
 @Feature("Registrierung")
 public class RegistrationBrowserTest extends BrowserFixture {
-    @Test
-    @DisplayName("REG-01A: Registrierung bestätigt Mailversand, Anmeldung bleibt zunächst gesperrt")
-    @Story("Neues Konto registrieren")
-    @Description("""
+  @Test
+  @DisplayName("REG-01A: Registrierung bestätigt Mailversand, Anmeldung bleibt zunächst gesperrt")
+  @Story("Neues Konto registrieren")
+  @Description(
+      """
             1. In einer frischen Browsersitzung alle Registrierungsfelder gültig ausfüllen.
             2. Absenden und Bestätigung mit der eigenen Testadresse prüfen.
             3. Auf die tatsächliche SMTP-Mail an genau diese Adresse in Mailpit warten.
@@ -26,26 +27,27 @@ public class RegistrationBrowserTest extends BrowserFixture {
             eingegangen; ohne Verifikation bleibt die Anmeldung verständlich abgelehnt.
             Datenbankzustände werden hier nicht direkt untersucht.
             """)
-    void registrationNeedsVerificationBeforeLogin() {
-        String email = "registration-" + UUID.randomUUID() + "@example.test";
-        RegistrationPage registration = new RegistrationPage(page);
-        registration.open();
-        registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
-        registration.submit();
-        registration.assertSubmitted(email);
-        AllurePlaywright.attachScreenshot("Registrierung bestätigt", page);
-        new MailpitInbox(context).awaitVerificationMail(email);
-        LoginPage login = new LoginPage(page);
-        login.open();
-        login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-        login.assertRejected();
-    }
+  void registrationNeedsVerificationBeforeLogin() {
+    String email = "registration-" + UUID.randomUUID() + "@example.test";
+    RegistrationPage registration = new RegistrationPage(page);
+    registration.open();
+    registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
+    registration.submit();
+    registration.assertSubmitted(email);
+    AllurePlaywright.attachScreenshot("Registrierung bestätigt", page);
+    new MailpitInbox(context).awaitVerificationMail(email);
+    LoginPage login = new LoginPage(page);
+    login.open();
+    login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+    login.assertRejected();
+  }
 
-    @Tag("fast")
-    @Test
-    @DisplayName("REG-02A: Fehlende Pflichtangaben werden markiert und lassen sich korrigieren")
-    @Story("Pflichtangaben und Korrektur")
-    @Description("""
+  @Tag("fast")
+  @Test
+  @DisplayName("REG-02A: Fehlende Pflichtangaben werden markiert und lassen sich korrigieren")
+  @Story("Pflichtangaben und Korrektur")
+  @Description(
+      """
             1. Das leere Registrierungsformular absenden.
             2. Verständlichen Pflichtfeldhinweis und Markierungen aller Pflichtfelder prüfen.
             3. Alle Felder gültig ausfüllen und erneut absenden.
@@ -54,23 +56,24 @@ public class RegistrationBrowserTest extends BrowserFixture {
             die Registrierungsbestätigung für die neue Testadresse.
             Einzelvarianten wie blanke Namen oder zukünftige Geburtstage bleiben offen.
             """)
-    void requiredFieldsCanBeCorrected() {
-        String email = "required-" + UUID.randomUUID() + "@example.test";
-        RegistrationPage registration = new RegistrationPage(page);
-        registration.open();
-        registration.submit();
-        registration.assertRequiredError();
-        AllurePlaywright.attachScreenshot("Fehlende Pflichtangaben", page);
-        registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
-        registration.submit();
-        registration.assertSubmitted(email);
-    }
+  void requiredFieldsCanBeCorrected() {
+    String email = "required-" + UUID.randomUUID() + "@example.test";
+    RegistrationPage registration = new RegistrationPage(page);
+    registration.open();
+    registration.submit();
+    registration.assertRequiredError();
+    AllurePlaywright.attachScreenshot("Fehlende Pflichtangaben", page);
+    registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
+    registration.submit();
+    registration.assertSubmitted(email);
+  }
 
-    @Tag("fast")
-    @Test
-    @DisplayName("REG-02B: Ungültige E-Mail und abweichende Passwortbestätigung sind korrigierbar")
-    @Story("Eingabehinweise und Korrektur")
-    @Description("""
+  @Tag("fast")
+  @Test
+  @DisplayName("REG-02B: Ungültige E-Mail und abweichende Passwortbestätigung sind korrigierbar")
+  @Story("Eingabehinweise und Korrektur")
+  @Description(
+      """
             1. Alle Pflichtfelder füllen, aber in beiden E-Mail-Feldern eine ungültige Adresse verwenden.
             2. Absenden; verständlichen E-Mail-Hinweis und Feldmarkierungen prüfen.
             3. E-Mail korrigieren, abweichende Passwortbestätigung eingeben und erneut absenden.
@@ -80,22 +83,22 @@ public class RegistrationBrowserTest extends BrowserFixture {
             Erst der korrigierte Versuch zeigt eine Registrierungsbestätigung.
             Weitere Passwort-, E-Mail-Bestätigungs- und Dublettenvarianten bleiben offen.
             """)
-    void emailAndPasswordConfirmationCanBeCorrected() {
-        String email = "correction-" + UUID.randomUUID() + "@example.test";
-        RegistrationPage registration = new RegistrationPage(page);
-        registration.open();
-        registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
-        registration.setEmails("not-an-email", "not-an-email");
-        registration.submit();
-        registration.assertEmailError();
-        AllurePlaywright.attachScreenshot("Ungültige E-Mail", page);
-        registration.setEmails(email, email);
-        registration.setPasswords(BrowserTestAccounts.USER_PASSWORD, "DifferentPassword1!");
-        registration.submit();
-        registration.assertPasswordConfirmationError();
-        AllurePlaywright.attachScreenshot("Abweichende Passwortbestätigung", page);
-        registration.setPasswords(BrowserTestAccounts.USER_PASSWORD, BrowserTestAccounts.USER_PASSWORD);
-        registration.submit();
-        registration.assertSubmitted(email);
-    }
+  void emailAndPasswordConfirmationCanBeCorrected() {
+    String email = "correction-" + UUID.randomUUID() + "@example.test";
+    RegistrationPage registration = new RegistrationPage(page);
+    registration.open();
+    registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
+    registration.setEmails("not-an-email", "not-an-email");
+    registration.submit();
+    registration.assertEmailError();
+    AllurePlaywright.attachScreenshot("Ungültige E-Mail", page);
+    registration.setEmails(email, email);
+    registration.setPasswords(BrowserTestAccounts.USER_PASSWORD, "DifferentPassword1!");
+    registration.submit();
+    registration.assertPasswordConfirmationError();
+    AllurePlaywright.attachScreenshot("Abweichende Passwortbestätigung", page);
+    registration.setPasswords(BrowserTestAccounts.USER_PASSWORD, BrowserTestAccounts.USER_PASSWORD);
+    registration.submit();
+    registration.assertSubmitted(email);
+  }
 }

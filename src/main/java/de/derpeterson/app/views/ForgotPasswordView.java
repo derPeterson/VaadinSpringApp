@@ -31,149 +31,188 @@ import de.derpeterson.app.service.PasswordResetService;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosPageComponent;
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Route(AppRouteConstants.FORGOT_PASSWORD_ROUTE)
 @PageTitle(AppRouteConstants.FORGOT_PASSWORD_PAGE_TITLE)
 @AnonymousAllowed
 public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ForgotPasswordView.class);
+  private static final Logger logger = LoggerFactory.getLogger(ForgotPasswordView.class);
 
-    private final transient MessageProperties messageProperties;
-    private final transient PasswordResetService passwordResetService;
+  private final transient MessageProperties messageProperties;
+  private final transient PasswordResetService passwordResetService;
 
-    private final VerticalLayout mainContent;
+  private final VerticalLayout mainContent;
 
-    private H1 title = null;
-    private Span text = null;
-    private EmailField emailField = null;
-    private Button sendButton = null;
-    private Button loginButton = null;
+  private H1 title = null;
+  private Span text = null;
+  private EmailField emailField = null;
+  private Button sendButton = null;
+  private Button loginButton = null;
 
-    public ForgotPasswordView(MessageProperties messageProperties, PasswordResetService passwordResetService, SecurityService securityService, HttpServletRequest request, ConfigService configService) {
-        super(securityService, request, new HorizontalLayout());
+  public ForgotPasswordView(
+      MessageProperties messageProperties,
+      PasswordResetService passwordResetService,
+      SecurityService securityService,
+      HttpServletRequest request,
+      ConfigService configService) {
+    super(securityService, request, new HorizontalLayout());
 
-        this.messageProperties = messageProperties;
-        this.passwordResetService = passwordResetService;
+    this.messageProperties = messageProperties;
+    this.passwordResetService = passwordResetService;
 
-        ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> {
-            VaadinSession.getCurrent().setLocale(event.getNewLocale());
+    ComponentUtil.addListener(
+        UI.getCurrent(),
+        LanguageChangeEvent.class,
+        event -> {
+          VaadinSession.getCurrent().setLocale(event.getNewLocale());
 
-            Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
-            Optional.ofNullable(title)
-                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getForgotPasswordTitle));
-            Optional.ofNullable(text)
-                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getForgotPasswordText));
-            Optional.ofNullable(emailField)
-                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getForgotPasswordEmailField));
-            Optional.ofNullable(sendButton)
-                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseSendButton));
-            Optional.ofNullable(loginButton)
-                    .ifPresent(component -> componentTranslationSupplierMap.put(component, this.messageProperties::getBaseLoginButton));
+          Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
+          Optional.ofNullable(title)
+              .ifPresent(
+                  component ->
+                      componentTranslationSupplierMap.put(
+                          component, this.messageProperties::getForgotPasswordTitle));
+          Optional.ofNullable(text)
+              .ifPresent(
+                  component ->
+                      componentTranslationSupplierMap.put(
+                          component, this.messageProperties::getForgotPasswordText));
+          Optional.ofNullable(emailField)
+              .ifPresent(
+                  component ->
+                      componentTranslationSupplierMap.put(
+                          component, this.messageProperties::getForgotPasswordEmailField));
+          Optional.ofNullable(sendButton)
+              .ifPresent(
+                  component ->
+                      componentTranslationSupplierMap.put(
+                          component, this.messageProperties::getBaseSendButton));
+          Optional.ofNullable(loginButton)
+              .ifPresent(
+                  component ->
+                      componentTranslationSupplierMap.put(
+                          component, this.messageProperties::getBaseLoginButton));
 
-            ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
-            updateInputPlaceholders();
-            NotificationHelper.getInstance().updateText();
+          ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+          updateInputPlaceholders();
+          NotificationHelper.getInstance().updateText();
         });
 
-        getContent().setWidthFull();
-        getContent().setPadding(false);
-        getContent().removeAll();
-        setSpacing(false);
-        CosmosPageComponent pageLayout = new CosmosPageComponent(configService, false, messageProperties::getAccountCopyrightTemplate);
-        mainContent = pageLayout.getCardContainer();
-        createPasswordResetCard();
-        add(pageLayout);
-    }
+    getContent().setWidthFull();
+    getContent().setPadding(false);
+    getContent().removeAll();
+    setSpacing(false);
+    CosmosPageComponent pageLayout =
+        new CosmosPageComponent(
+            configService, false, messageProperties::getAccountCopyrightTemplate);
+    mainContent = pageLayout.getCardContainer();
+    createPasswordResetCard();
+    add(pageLayout);
+  }
 
-    private void createPasswordResetCard() {
-        VerticalLayout cardContentLayout = new VerticalLayout();
-        cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-        cardContentLayout.setPadding(false);
-        cardContentLayout.setSpacing(false);
-        cardContentLayout.addClassName("cosmos-form");
+  private void createPasswordResetCard() {
+    VerticalLayout cardContentLayout = new VerticalLayout();
+    cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+    cardContentLayout.setPadding(false);
+    cardContentLayout.setSpacing(false);
+    cardContentLayout.addClassName("cosmos-form");
 
-        Icon successIcon = VaadinIcon.QUESTION_CIRCLE.create();
-        successIcon.addClassNames("cosmos-forgot-icon", "cosmos-status-icon", LumoUtility.TextColor.PRIMARY);
+    Icon successIcon = VaadinIcon.QUESTION_CIRCLE.create();
+    successIcon.addClassNames(
+        "cosmos-forgot-icon", "cosmos-status-icon", LumoUtility.TextColor.PRIMARY);
 
-        HorizontalLayout cardIconLayout = new HorizontalLayout();
-        cardIconLayout.setWidthFull();
-        cardIconLayout.setPadding(false);
-        cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-        cardIconLayout.add(successIcon);
+    HorizontalLayout cardIconLayout = new HorizontalLayout();
+    cardIconLayout.setWidthFull();
+    cardIconLayout.setPadding(false);
+    cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+    cardIconLayout.add(successIcon);
 
-        this.title = new H1(messageProperties.getForgotPasswordTitle());
-        title.addClassName("cosmos-headline");
+    this.title = new H1(messageProperties.getForgotPasswordTitle());
+    title.addClassName("cosmos-headline");
 
-        HorizontalLayout cardTitleLayout = new HorizontalLayout();
-        cardTitleLayout.addClassName("cosmos-title-row");
-        cardTitleLayout.setWidthFull();
-        cardTitleLayout.setPadding(false);
-        cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-        cardTitleLayout.add(title);
+    HorizontalLayout cardTitleLayout = new HorizontalLayout();
+    cardTitleLayout.addClassName("cosmos-title-row");
+    cardTitleLayout.setWidthFull();
+    cardTitleLayout.setPadding(false);
+    cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+    cardTitleLayout.add(title);
 
-        this.text = new Span(messageProperties.getForgotPasswordText());
-        text.addClassName("cosmos-form-text");
-        VerticalLayout cardTextLayout = new VerticalLayout();
-        cardTextLayout.addClassName("cosmos-intro");
-        cardTextLayout.setWidthFull();
-        cardTextLayout.setPadding(false);
-        cardTextLayout.setSpacing(false);
-        cardTextLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-        cardTextLayout.add(text);
+    this.text = new Span(messageProperties.getForgotPasswordText());
+    text.addClassName("cosmos-form-text");
+    VerticalLayout cardTextLayout = new VerticalLayout();
+    cardTextLayout.addClassName("cosmos-intro");
+    cardTextLayout.setWidthFull();
+    cardTextLayout.setPadding(false);
+    cardTextLayout.setSpacing(false);
+    cardTextLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+    cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+    cardTextLayout.add(text);
 
-        this.emailField = new EmailField(messageProperties.getForgotPasswordEmailField());
-        emailField.setClearButtonVisible(true);
-        emailField.setWidthFull();
-        emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
-        emailField.setClearButtonVisible(true);
+    this.emailField = new EmailField(messageProperties.getForgotPasswordEmailField());
+    emailField.setClearButtonVisible(true);
+    emailField.setWidthFull();
+    emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
+    emailField.setClearButtonVisible(true);
 
-        updateInputPlaceholders();
+    updateInputPlaceholders();
 
-        this.sendButton = new Button(messageProperties.getBaseSendButton(), event -> {
-            if (!ValidationHelper.validateRequiredInputs(List.of(emailField), messageProperties)) {
+    this.sendButton =
+        new Button(
+            messageProperties.getBaseSendButton(),
+            event -> {
+              if (!ValidationHelper.validateRequiredInputs(
+                  List.of(emailField), messageProperties)) {
                 return;
-            }
+              }
 
-            if (!ValidationHelper.validateEmailValidInputs(List.of(emailField), messageProperties)) {
+              if (!ValidationHelper.validateEmailValidInputs(
+                  List.of(emailField), messageProperties)) {
                 return;
-            }
+              }
 
-            try {
+              try {
                 passwordResetService.sendPasswordResetEmail(emailField.getValue());
-            } catch (IOException | RuntimeException e) {
+              } catch (IOException | RuntimeException e) {
                 logger.error("Password reset request could not be processed", e);
-            }
-            // Identical text, style and duration even for account-dependent failures.
-            NotificationHelper.getInstance().showNotification(this.messageProperties::getBaseSuccessTitle,
-                    this.messageProperties::getForgotPasswordSuccessMessage, -1, NotificationHelper.NotificationType.SUCCESS);
-        });
-        sendButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
-        sendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        sendButton.setWidthFull();
+              }
+              // Identical text, style and duration even for account-dependent failures.
+              NotificationHelper.getInstance()
+                  .showNotification(
+                      this.messageProperties::getBaseSuccessTitle,
+                      this.messageProperties::getForgotPasswordSuccessMessage,
+                      -1,
+                      NotificationHelper.NotificationType.SUCCESS);
+            });
+    sendButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
+    sendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    sendButton.setWidthFull();
 
-        this.loginButton = new Button(messageProperties.getBaseLoginButton(), event -> UI.getCurrent().navigate(LoginView.class));
-        loginButton.setPrefixComponent(VaadinIcon.SIGN_IN.create());
-        loginButton.setWidthFull();
+    this.loginButton =
+        new Button(
+            messageProperties.getBaseLoginButton(),
+            event -> UI.getCurrent().navigate(LoginView.class));
+    loginButton.setPrefixComponent(VaadinIcon.SIGN_IN.create());
+    loginButton.setWidthFull();
 
-        cardContentLayout.add(cardIconLayout, cardTitleLayout, cardTextLayout, emailField, sendButton, loginButton);
+    cardContentLayout.add(
+        cardIconLayout, cardTitleLayout, cardTextLayout, emailField, sendButton, loginButton);
 
-        CosmosCardComponent cardComponent = new CosmosCardComponent(cardContentLayout);
+    CosmosCardComponent cardComponent = new CosmosCardComponent(cardContentLayout);
 
-        mainContent.add(cardComponent);
-    }
-    private void updateInputPlaceholders() {
-        if (emailField != null) emailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
-    }
+    mainContent.add(cardComponent);
+  }
 
+  private void updateInputPlaceholders() {
+    if (emailField != null)
+      emailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
+  }
 }

@@ -5,39 +5,44 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-
 @Component
 @RequiredArgsConstructor
 public class VaadinSecurityFilter implements Filter {
 
-    // Deferred lookup avoids the SecurityConfig/remember-me construction cycle.
-    private final ObjectProvider<SecurityService> securityService;
+  // Deferred lookup avoids the SecurityConfig/remember-me construction cycle.
+  private final ObjectProvider<SecurityService> securityService;
 
-    @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
-        if (httpRequest.getAttribute(SessionAdmissionService.FAILURE_REASON) instanceof String reason) {
-            ((HttpServletResponse) response).sendRedirect(de.derpeterson.app.model.enums.AppRoute.LOGIN.getSecurityRoute() + "?error=" + reason);
-            return;
-        }
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        HttpSession session = httpRequest.getSession(false);
-        boolean hadPrincipal = authentication != null && authentication.getPrincipal() instanceof UserDetails
-                || VaadinSession.getCurrent() != null && VaadinSession.getCurrent().getAttribute(UserDetails.class) != null
-                || session != null && session.getAttribute("authenticatedUser") instanceof UserDetails;
-        if (securityService.getObject().getAuthenticatedUser(httpRequest).isEmpty() && hadPrincipal) {
-            // Also stop UIDL/VAADIN callbacks to an already open privileged view.
-            ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
-        }
-        chain.doFilter(request, response);
+  @Override
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+      throws IOException, ServletException {
+    HttpServletRequest httpRequest = (HttpServletRequest) request;
+    if (httpRequest.getAttribute(SessionAdmissionService.FAILURE_REASON) instanceof String reason) {
+      ((HttpServletResponse) response)
+          .sendRedirect(
+              de.derpeterson.app.model.enums.AppRoute.LOGIN.getSecurityRoute()
+                  + "?error="
+                  + reason);
+      return;
     }
+    var authentication = SecurityContextHolder.getContext().getAuthentication();
+    HttpSession session = httpRequest.getSession(false);
+    boolean hadPrincipal =
+        authentication != null && authentication.getPrincipal() instanceof UserDetails
+            || VaadinSession.getCurrent() != null
+                && VaadinSession.getCurrent().getAttribute(UserDetails.class) != null
+            || session != null && session.getAttribute("authenticatedUser") instanceof UserDetails;
+    if (securityService.getObject().getAuthenticatedUser(httpRequest).isEmpty() && hadPrincipal) {
+      // Also stop UIDL/VAADIN callbacks to an already open privileged view.
+      ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
+      return;
+    }
+    chain.doFilter(request, response);
+  }
 }

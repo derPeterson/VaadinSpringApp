@@ -9,41 +9,45 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Locale;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
-
-import java.util.Locale;
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
 public class UIInitListener implements VaadinServiceInitListener {
 
-    private final transient SecurityService securityService;
-    private final transient UserService userService;
+  private final transient SecurityService securityService;
+  private final transient UserService userService;
 
-    private final transient HttpServletRequest request;
+  private final transient HttpServletRequest request;
 
-    @Override
-    public void serviceInit(ServiceInitEvent event) {
-        event.getSource().addUIInitListener(uiInitEvent -> {
-            UI ui = uiInitEvent.getUI();
+  @Override
+  public void serviceInit(ServiceInitEvent event) {
+    event
+        .getSource()
+        .addUIInitListener(
+            uiInitEvent -> {
+              UI ui = uiInitEvent.getUI();
 
-            if (VaadinSession.getCurrent() != null && VaadinSession.getCurrent().getAttribute("locale-set") == null) {
+              if (VaadinSession.getCurrent() != null
+                  && VaadinSession.getCurrent().getAttribute("locale-set") == null) {
                 Optional<UserDetails> userOpt = securityService.getAuthenticatedUser(request);
-                userOpt.ifPresent(user -> {
-                    Optional<UserEntity> userEntity = userService.findByEmail(user.getUsername());
-                    if (userEntity.isPresent()) {
+                userOpt.ifPresent(
+                    user -> {
+                      Optional<UserEntity> userEntity = userService.findByEmail(user.getUsername());
+                      if (userEntity.isPresent()) {
                         Locale userLocale = userEntity.get().getPreferredLocale();
                         VaadinSession.getCurrent().setLocale(userLocale);
                         VaadinSession.getCurrent().setAttribute("locale-set", true);
-                    }
+                      }
+                    });
+              }
 
-                });
-            }
-
-            ui.addBeforeEnterListener(e -> NotificationHelper.getInstance().closeAndClearAllNotifications());
-        });
-    }
+              ui.addBeforeEnterListener(
+                  e -> NotificationHelper.getInstance().closeAndClearAllNotifications());
+            });
+  }
 }

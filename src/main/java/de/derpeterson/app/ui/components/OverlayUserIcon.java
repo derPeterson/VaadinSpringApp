@@ -13,7 +13,6 @@ import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.model.enums.UserStatus;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -21,71 +20,91 @@ import java.util.function.Supplier;
 
 public class OverlayUserIcon extends Div {
 
-    private final transient MessageProperties messageProperties;
-    private final UserStatus userStatus;
+  private final transient MessageProperties messageProperties;
+  private final UserStatus userStatus;
 
-    private Tooltip userImageToolTip = null;
-    private Tooltip overlayIconTooltip = null;
+  private Tooltip userImageToolTip = null;
+  private Tooltip overlayIconTooltip = null;
 
-    public OverlayUserIcon(MessageProperties messageProperties, Image userImage, UserStatus userStatus, IconSize iconSize) {
-        this.messageProperties = messageProperties;
-        this.userStatus = userStatus;
+  public OverlayUserIcon(
+      MessageProperties messageProperties,
+      Image userImage,
+      UserStatus userStatus,
+      IconSize iconSize) {
+    this.messageProperties = messageProperties;
+    this.userStatus = userStatus;
 
-        ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> {
-            VaadinSession.getCurrent().setLocale(event.getNewLocale());
+    ComponentUtil.addListener(
+        UI.getCurrent(),
+        LanguageChangeEvent.class,
+        event -> {
+          VaadinSession.getCurrent().setLocale(event.getNewLocale());
 
-            Map<Tooltip, Supplier<String>> tooltipTranslationSupplierMap = new HashMap<>();
-            Optional.ofNullable(this.userImageToolTip)
-                    .ifPresent(tooltip -> tooltipTranslationSupplierMap.put(tooltip, () -> this.messageProperties.getUserStatusLabel(this.userStatus)));
-            Optional.ofNullable(this.overlayIconTooltip)
-                    .ifPresent(tooltip -> tooltipTranslationSupplierMap.put(tooltip, () -> this.messageProperties.getUserStatusLabel(this.userStatus)));
+          Map<Tooltip, Supplier<String>> tooltipTranslationSupplierMap = new HashMap<>();
+          Optional.ofNullable(this.userImageToolTip)
+              .ifPresent(
+                  tooltip ->
+                      tooltipTranslationSupplierMap.put(
+                          tooltip,
+                          () -> this.messageProperties.getUserStatusLabel(this.userStatus)));
+          Optional.ofNullable(this.overlayIconTooltip)
+              .ifPresent(
+                  tooltip ->
+                      tooltipTranslationSupplierMap.put(
+                          tooltip,
+                          () -> this.messageProperties.getUserStatusLabel(this.userStatus)));
 
-            ComponentTextUpdateHelper.updateToolTipComponents(tooltipTranslationSupplierMap);
+          ComponentTextUpdateHelper.updateToolTipComponents(tooltipTranslationSupplierMap);
         });
 
-        Div container = new Div();
+    Div container = new Div();
 
-        container.getStyle()
-                .setPosition(Style.Position.RELATIVE)
-                .setDisplay(Style.Display.FLEX)
-                .setAlignItems(Style.AlignItems.CENTER)
-                .setJustifyContent(Style.JustifyContent.CENTER);
+    container
+        .getStyle()
+        .setPosition(Style.Position.RELATIVE)
+        .setDisplay(Style.Display.FLEX)
+        .setAlignItems(Style.AlignItems.CENTER)
+        .setJustifyContent(Style.JustifyContent.CENTER);
 
-        userImage.setWidth(iconSize.getWidth() + iconSize.getUnit().getSymbol());
-        userImage.setHeight(iconSize.getHeight() + iconSize.getUnit().getSymbol());
-        userImage.getStyle()
-                .setBackgroundColor("#000000")
-                .setBorderRadius("50%")
-                .setBoxShadow("0 0 0 0.5px black");
+    userImage.setWidth(iconSize.getWidth() + iconSize.getUnit().getSymbol());
+    userImage.setHeight(iconSize.getHeight() + iconSize.getUnit().getSymbol());
+    userImage
+        .getStyle()
+        .setBackgroundColor("#000000")
+        .setBorderRadius("50%")
+        .setBoxShadow("0 0 0 0.5px black");
 
-        this.userImageToolTip = Tooltip.forComponent(userImage)
-                .withText(messageProperties.getUserStatusLabel(userStatus))
-                .withPosition(Tooltip.TooltipPosition.BOTTOM)
-                .withFocusDelay(1000)
-                .withHoverDelay(1000)
-                .withHideDelay(1000);
+    this.userImageToolTip =
+        Tooltip.forComponent(userImage)
+            .withText(messageProperties.getUserStatusLabel(userStatus))
+            .withPosition(Tooltip.TooltipPosition.BOTTOM)
+            .withFocusDelay(1000)
+            .withHoverDelay(1000)
+            .withHideDelay(1000);
 
-        if (userStatus.getComponent(iconSize, true) instanceof Icon overlayIcon) {
-            this.overlayIconTooltip = Tooltip.forComponent(overlayIcon)
-                    .withText(messageProperties.getUserStatusLabel(userStatus))
-                    .withPosition(Tooltip.TooltipPosition.BOTTOM)
-                    .withFocusDelay(1000)
-                    .withHoverDelay(1000)
-                    .withHideDelay(1000);
+    if (userStatus.getComponent(iconSize, true) instanceof Icon overlayIcon) {
+      this.overlayIconTooltip =
+          Tooltip.forComponent(overlayIcon)
+              .withText(messageProperties.getUserStatusLabel(userStatus))
+              .withPosition(Tooltip.TooltipPosition.BOTTOM)
+              .withFocusDelay(1000)
+              .withHoverDelay(1000)
+              .withHideDelay(1000);
 
-            container.add(userImage, overlayIcon);
-        }
-
-        if (userStatus.getComponent(iconSize, true) instanceof Div overlayDiv) {
-            this.overlayIconTooltip = Tooltip.forComponent(overlayDiv)
-                    .withText(messageProperties.getUserStatusLabel(userStatus))
-                    .withPosition(Tooltip.TooltipPosition.BOTTOM)
-                    .withFocusDelay(1000)
-                    .withHoverDelay(1000)
-                    .withHideDelay(1000);
-
-            container.add(userImage, overlayDiv);
-        }
-        add(container);
+      container.add(userImage, overlayIcon);
     }
+
+    if (userStatus.getComponent(iconSize, true) instanceof Div overlayDiv) {
+      this.overlayIconTooltip =
+          Tooltip.forComponent(overlayDiv)
+              .withText(messageProperties.getUserStatusLabel(userStatus))
+              .withPosition(Tooltip.TooltipPosition.BOTTOM)
+              .withFocusDelay(1000)
+              .withHoverDelay(1000)
+              .withHideDelay(1000);
+
+      container.add(userImage, overlayDiv);
+    }
+    add(container);
+  }
 }

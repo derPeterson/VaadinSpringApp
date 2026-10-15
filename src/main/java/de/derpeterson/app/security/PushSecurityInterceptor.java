@@ -14,33 +14,34 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class PushSecurityInterceptor implements VaadinServiceInitListener, VaadinRequestInterceptor {
+public class PushSecurityInterceptor
+    implements VaadinServiceInitListener, VaadinRequestInterceptor {
 
-    private final SecurityService securityService;
+  private final SecurityService securityService;
 
-    @Override
-    public void serviceInit(ServiceInitEvent event) {
-        event.addVaadinRequestInterceptor(this);
+  @Override
+  public void serviceInit(ServiceInitEvent event) {
+    event.addVaadinRequestInterceptor(this);
+  }
+
+  @Override
+  public void requestStart(VaadinRequest request, VaadinResponse response) {
+    if (request instanceof VaadinServletRequest servletRequest
+        && !securityService.hasCurrentSessionPrivileges(servletRequest.getHttpServletRequest())) {
+      // requestStart is also called by PushHandler for an existing socket,
+      // before resolving the UI or executing any ServerRpcHandler callback.
+      // PushHandler calls requestStart outside its requestEnd finally.
+      CurrentInstance.clearAll();
+      throw new AccessDeniedException("Session privileges have changed");
     }
+  }
 
-    @Override
-    public void requestStart(VaadinRequest request, VaadinResponse response) {
-        if (request instanceof VaadinServletRequest servletRequest
-                && !securityService.hasCurrentSessionPrivileges(servletRequest.getHttpServletRequest())) {
-            // requestStart is also called by PushHandler for an existing socket,
-            // before resolving the UI or executing any ServerRpcHandler callback.
-            // PushHandler calls requestStart outside its requestEnd finally.
-            CurrentInstance.clearAll();
-            throw new AccessDeniedException("Session privileges have changed");
-        }
-    }
+  @Override
+  public void handleException(
+      VaadinRequest request, VaadinResponse response, VaadinSession session, Exception exception) {
+    // The framework owns transport error handling; never resume RPC dispatch.
+  }
 
-    @Override
-    public void handleException(VaadinRequest request, VaadinResponse response, VaadinSession session, Exception exception) {
-        // The framework owns transport error handling; never resume RPC dispatch.
-    }
-
-    @Override
-    public void requestEnd(VaadinRequest request, VaadinResponse response, VaadinSession session) {
-    }
+  @Override
+  public void requestEnd(VaadinRequest request, VaadinResponse response, VaadinSession session) {}
 }

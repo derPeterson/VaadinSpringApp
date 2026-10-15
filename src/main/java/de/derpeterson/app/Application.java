@@ -30,8 +30,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @ColorScheme(ColorScheme.Value.DARK)
 public class Application implements AppShellConfigurator {
 
-    static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
-    }
-
+  static void main(String[] args) {
+    SpringApplication.run(Application.class, args);
+  }
 }

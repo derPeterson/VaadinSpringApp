@@ -2,13 +2,12 @@ package de.derpeterson.app.model;
 
 import de.derpeterson.app.model.enums.TokenStatus;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "verification_token")
@@ -17,22 +16,22 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class VerificationTokenEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String token;
+  @Column(nullable = false, unique = true)
+  private String token;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity userEntity;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @OnDelete(action = OnDeleteAction.CASCADE)
+  @JoinColumn(name = "user_id", nullable = false)
+  private UserEntity userEntity;
 
-    @Column(nullable = false)
-    private LocalDateTime expiryDate;
+  @Column(nullable = false)
+  private LocalDateTime expiryDate;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TokenStatus status = TokenStatus.ACTIVE;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private TokenStatus status = TokenStatus.ACTIVE;
 }

@@ -1,52 +1,92 @@
 package de.derpeterson.browsertests.pages;
 
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
-import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 /** The four visible token settings; no database or service access. */
 public final class TokenConfigurationPage {
-    private final Page page;
-    private final UiTexts texts = UiTexts.selected();
-    public TokenConfigurationPage(Page page) {this.page = page;}
+  private final Page page;
+  private final UiTexts texts = UiTexts.selected();
 
-    @Step("Token-Laufzeiten über die Adminnavigation öffnen")
-    public void open() {
-        new ConfigurationPage(page).open(de.derpeterson.app.config.AdminConfigGroup.TOKENS);
-        assertThat(button(texts.getAdminConfigSave())).isVisible();
-    }
+  public TokenConfigurationPage(Page page) {
+    this.page = page;
+  }
 
-    public Locator field(String label) {
-        return page.locator("vaadin-text-field").filter(new Locator.FilterOptions()
-                .setHas(page.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName(label).setExact(true))));
-    }
-    public String value(String label) {return field(label).locator("input").inputValue();}
+  @Step("Token-Laufzeiten über die Adminnavigation öffnen")
+  public void open() {
+    new ConfigurationPage(page).open(de.derpeterson.app.config.AdminConfigGroup.TOKENS);
+    assertThat(button(texts.getAdminConfigSave())).isVisible();
+  }
 
-    @Step("Dauer im sichtbaren Feld eingeben")
-    public void enter(String label, String value) {field(label).locator("input").fill(value);field(label).locator("input").press("Tab");}
+  public Locator field(String label) {
+    return page.locator("vaadin-text-field")
+        .filter(
+            new Locator.FilterOptions()
+                .setHas(
+                    page.getByRole(
+                        AriaRole.TEXTBOX,
+                        new Page.GetByRoleOptions().setName(label).setExact(true))));
+  }
 
-    @Step("Dauer ablehnen und lokalisierten Feldfehler prüfen")
-    public void reject(String label, String error) {
-        button(texts.getAdminConfigSave()).click();
-        assertThat(field(label)).hasAttribute("invalid", "");
-        assertThat(field(label)).hasJSProperty("errorMessage", error);
-        assertThat(notice()).containsText(texts.getAdminConfigValidationInvalidFields());
-        dismiss();
-    }
-    @Step("Konfiguration speichern")
-    public void save() {button(texts.getAdminConfigSave()).click();assertThat(notice()).containsText(texts.getAdminConfigSaveSuccess());dismiss();}
-    @Step("Gespeicherte Konfiguration erneut laden")
-    public void reload() {button(texts.getAdminConfigReload()).click();assertThat(notice()).containsText(texts.getAdminConfigReloadSuccess());dismiss();}
+  public String value(String label) {
+    return field(label).locator("input").inputValue();
+  }
 
-    @Step("Mindestdauer und Erklärung im neuen Klick-Tooltip prüfen")
-    public void explain(String label, long minutes, String explanation) {
-        new ConfigurationPage(page).explain(label, explanation, texts.getAdminConfigHelperDurationFormats(),
-                texts.getAdminConfigValidationDurationMinimum(minutes));
-    }
-    private Locator notice() {return page.locator("vaadin-notification-card:not([closing])");}
-    private void dismiss() {notice().getByRole(AriaRole.BUTTON).click();assertThat(notice()).not().isVisible();}
-    private Locator button(String name) {return page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(name).setExact(true));}
+  @Step("Dauer im sichtbaren Feld eingeben")
+  public void enter(String label, String value) {
+    field(label).locator("input").fill(value);
+    field(label).locator("input").press("Tab");
+  }
+
+  @Step("Dauer ablehnen und lokalisierten Feldfehler prüfen")
+  public void reject(String label, String error) {
+    button(texts.getAdminConfigSave()).click();
+    assertThat(field(label)).hasAttribute("invalid", "");
+    assertThat(field(label)).hasJSProperty("errorMessage", error);
+    assertThat(notice()).containsText(texts.getAdminConfigValidationInvalidFields());
+    dismiss();
+  }
+
+  @Step("Konfiguration speichern")
+  public void save() {
+    button(texts.getAdminConfigSave()).click();
+    assertThat(notice()).containsText(texts.getAdminConfigSaveSuccess());
+    dismiss();
+  }
+
+  @Step("Gespeicherte Konfiguration erneut laden")
+  public void reload() {
+    button(texts.getAdminConfigReload()).click();
+    assertThat(notice()).containsText(texts.getAdminConfigReloadSuccess());
+    dismiss();
+  }
+
+  @Step("Mindestdauer und Erklärung im neuen Klick-Tooltip prüfen")
+  public void explain(String label, long minutes, String explanation) {
+    new ConfigurationPage(page)
+        .explain(
+            label,
+            explanation,
+            texts.getAdminConfigHelperDurationFormats(),
+            texts.getAdminConfigValidationDurationMinimum(minutes));
+  }
+
+  private Locator notice() {
+    return page.locator("vaadin-notification-card:not([closing])");
+  }
+
+  private void dismiss() {
+    notice().getByRole(AriaRole.BUTTON).click();
+    assertThat(notice()).not().isVisible();
+  }
+
+  private Locator button(String name) {
+    return page.getByRole(
+        AriaRole.BUTTON, new Page.GetByRoleOptions().setName(name).setExact(true));
+  }
 }

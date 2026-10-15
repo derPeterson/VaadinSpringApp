@@ -14,13 +14,13 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ConfigEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(name = "config_key", unique = true, nullable = false)
-    private String key;
+  @Column(name = "config_key", unique = true, nullable = false)
+  private String key;
 
-    @Column(name = "config_value", nullable = false)
-    private String value;
+  @Column(name = "config_value", nullable = false)
+  private String value;
 }

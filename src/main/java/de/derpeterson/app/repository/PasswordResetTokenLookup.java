@@ -6,7 +6,7 @@ import java.util.Optional;
 
 /** Fresh reads after the account lock, including with an existing persistence context. */
 public interface PasswordResetTokenLookup {
-    Optional<PasswordResetTokenEntity> findByToken(String token);
+  Optional<PasswordResetTokenEntity> findByToken(String token);
 
-    Optional<PasswordResetTokenEntity> findByTokenAndStatus(String token, TokenStatus status);
+  Optional<PasswordResetTokenEntity> findByTokenAndStatus(String token, TokenStatus status);
 }

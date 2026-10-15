@@ -4,6 +4,6 @@ import de.derpeterson.app.model.UserEntity;
 import java.util.Optional;
 
 public interface UserLockRepository {
-    /** Locks the stored account and refreshes it, never merges a caller's snapshot. */
-    Optional<UserEntity> lockVerificationUser(Long id);
+  /** Locks the stored account and refreshes it, never merges a caller's snapshot. */
+  Optional<UserEntity> lockVerificationUser(Long id);
 }

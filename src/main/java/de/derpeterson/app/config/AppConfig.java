@@ -8,13 +8,13 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AppConfig {
 
-    @Bean
-    public CustomI18NProvider customI18NProvider() {
-        return new CustomI18NProvider();
-    }
+  @Bean
+  public CustomI18NProvider customI18NProvider() {
+    return new CustomI18NProvider();
+  }
 
-    @Bean
-    public MessageProperties messageProperties() {
-        return new MessageProperties(customI18NProvider());
-    }
+  @Bean
+  public MessageProperties messageProperties() {
+    return new MessageProperties(customI18NProvider());
+  }
 }

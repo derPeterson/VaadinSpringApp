@@ -1,5 +1,9 @@
 package de.derpeterson.app.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.Mockito.*;
+
 import de.derpeterson.app.helper.image.ImageHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -12,6 +16,22 @@ import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.repository.VerificationTokenRepository;
 import jakarta.persistence.EntityManagerFactory;
+import java.io.IOException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
@@ -33,420 +53,471 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.sql.DataSource;
-import java.io.IOException;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeParseException;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.AdditionalAnswers.delegatesTo;
-import static org.mockito.Mockito.*;
-
 /** Real repositories and service transaction proxy, never the application or mail scheduler. */
 @SpringJUnitConfig(VerificationServicePersistenceTest.Config.class)
 @Execution(ExecutionMode.SAME_THREAD)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class VerificationServicePersistenceTest {
-    private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-07T12:00:00Z"), ZoneOffset.UTC);
-    @Autowired
-    private VerificationService service;
-    @Autowired
-    private VerificationTokenRepository tokens;
-    @Autowired
-    private UserRepository users;
-    @Autowired
-    private TransactionTemplate transaction;
-    @Autowired
-    private Probes probes;
-    private Long userId;
+  private static final Clock CLOCK =
+      Clock.fixed(Instant.parse("2026-10-07T12:00:00Z"), ZoneOffset.UTC);
+  @Autowired private VerificationService service;
+  @Autowired private VerificationTokenRepository tokens;
+  @Autowired private UserRepository users;
+  @Autowired private TransactionTemplate transaction;
+  @Autowired private Probes probes;
+  private Long userId;
 
-    @BeforeEach
-    void setUp() {
-        reset(probes.tokens(), probes.config(), probes.queue(), probes.users());
-        when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("PT1H");
-        when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn("P7D");
-        when(probes.config().getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("© {year} {serviceName} (isolated fixture)");
-        when(probes.config().getString(ConfigEntry.SERVICE_NAME)).thenReturn("Test Service");
-        when(probes.config().getString(ConfigEntry.BASE_URL)).thenReturn("https://example.com/");
-        transaction.executeWithoutResult(status -> {
-            tokens.deleteAll();
-            users.deleteAll();
-            users.flush();
-            var user = UserEntity.builder().firstName("Test").lastName("User").email("test@example.com")
-                    .password("hash").gender(Gender.OTHER).birthDate(LocalDate.of(1990, 1, 1))
-                    .preferredLocale(Locale.ENGLISH).enabled(false).build();
-            userId = users.saveAndFlush(user).getId();
+  @BeforeEach
+  void setUp() {
+    reset(probes.tokens(), probes.config(), probes.queue(), probes.users());
+    when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION))
+        .thenReturn("PT1H");
+    when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn("P7D");
+    when(probes.config().getString(ConfigEntry.COPYRIGHT_TEXT))
+        .thenReturn("© {year} {serviceName} (isolated fixture)");
+    when(probes.config().getString(ConfigEntry.SERVICE_NAME)).thenReturn("Test Service");
+    when(probes.config().getString(ConfigEntry.BASE_URL)).thenReturn("https://example.com/");
+    transaction.executeWithoutResult(
+        status -> {
+          tokens.deleteAll();
+          users.deleteAll();
+          users.flush();
+          var user =
+              UserEntity.builder()
+                  .firstName("Test")
+                  .lastName("User")
+                  .email("test@example.com")
+                  .password("hash")
+                  .gender(Gender.OTHER)
+                  .birthDate(LocalDate.of(1990, 1, 1))
+                  .preferredLocale(Locale.ENGLISH)
+                  .enabled(false)
+                  .build();
+          userId = users.saveAndFlush(user).getId();
         });
-    }
+  }
 
-    @Test
-    void activationAndConsumptionCommitTogetherAndUsedTokenCannotReactivateDisabledAccount() {
-        seed("valid", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-        assertTrue(service.validateToken("valid"));
-        assertTrue(users.findById(userId).orElseThrow().isEnabled());
-        assertEquals(TokenStatus.USED, status("valid"));
-        assertTrue(service.validateToken("valid"));
-        transaction.executeWithoutResult(tx -> users.findById(userId).orElseThrow().setEnabled(false));
-        assertFalse(service.validateToken("valid"));
-        assertFalse(users.findById(userId).orElseThrow().isEnabled());
-    }
+  @Test
+  void activationAndConsumptionCommitTogetherAndUsedTokenCannotReactivateDisabledAccount() {
+    seed("valid", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+    assertTrue(service.validateToken("valid"));
+    assertTrue(users.findById(userId).orElseThrow().isEnabled());
+    assertEquals(TokenStatus.USED, status("valid"));
+    assertTrue(service.validateToken("valid"));
+    transaction.executeWithoutResult(tx -> users.findById(userId).orElseThrow().setEnabled(false));
+    assertFalse(service.validateToken("valid"));
+    assertFalse(users.findById(userId).orElseThrow().isEnabled());
+  }
 
-    @ParameterizedTest
-    @EnumSource(value = TokenStatus.class, names = {"INACTIVE", "USED", "EXPIRED"})
-    void nonActiveTokensExistButCannotActivateAccounts(TokenStatus tokenStatus) {
-        seed("rejected", tokenStatus, LocalDateTime.now(CLOCK).plusDays(1));
-        assertTrue(service.existsToken("rejected"));
-        assertFalse(service.validateToken("rejected"));
-        assertFalse(users.findById(userId).orElseThrow().isEnabled());
-        assertEquals(tokenStatus, status("rejected"));
-    }
+  @ParameterizedTest
+  @EnumSource(
+      value = TokenStatus.class,
+      names = {"INACTIVE", "USED", "EXPIRED"})
+  void nonActiveTokensExistButCannotActivateAccounts(TokenStatus tokenStatus) {
+    seed("rejected", tokenStatus, LocalDateTime.now(CLOCK).plusDays(1));
+    assertTrue(service.existsToken("rejected"));
+    assertFalse(service.validateToken("rejected"));
+    assertFalse(users.findById(userId).orElseThrow().isEnabled());
+    assertEquals(tokenStatus, status("rejected"));
+  }
 
-    @Test
-    void expiredActiveTokenIsPersistentlyMarkedExpiredWithoutEnablingAccount() {
-        seed("expired", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).minusDays(1));
-        assertFalse(service.validateToken("expired"));
-        assertEquals(TokenStatus.EXPIRED, status("expired"));
-        assertFalse(users.findById(userId).orElseThrow().isEnabled());
-    }
+  @Test
+  void expiredActiveTokenIsPersistentlyMarkedExpiredWithoutEnablingAccount() {
+    seed("expired", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).minusDays(1));
+    assertFalse(service.validateToken("expired"));
+    assertEquals(TokenStatus.EXPIRED, status("expired"));
+    assertFalse(users.findById(userId).orElseThrow().isEnabled());
+  }
 
-    @Test
-    void sequentialCreationInvalidatesOnlyActiveTokens() {
-        seed("inactive", TokenStatus.INACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-        seed("used", TokenStatus.USED, LocalDateTime.now(CLOCK).plusDays(1));
-        seed("expired", TokenStatus.EXPIRED, LocalDateTime.now(CLOCK).minusDays(1));
-        String first = service.createToken(detachedUser());
-        String second = service.createToken(detachedUser());
-        assertNotEquals(first, second);
-        assertEquals(TokenStatus.INACTIVE, status(first));
-        assertEquals(TokenStatus.ACTIVE, status(second));
-        assertEquals(TokenStatus.INACTIVE, status("inactive"));
-        assertEquals(TokenStatus.USED, status("used"));
-        assertEquals(TokenStatus.EXPIRED, status("expired"));
-        assertFalse(service.validateToken(first));
-        assertTrue(service.validateToken(second));
-    }
+  @Test
+  void sequentialCreationInvalidatesOnlyActiveTokens() {
+    seed("inactive", TokenStatus.INACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+    seed("used", TokenStatus.USED, LocalDateTime.now(CLOCK).plusDays(1));
+    seed("expired", TokenStatus.EXPIRED, LocalDateTime.now(CLOCK).minusDays(1));
+    String first = service.createToken(detachedUser());
+    String second = service.createToken(detachedUser());
+    assertNotEquals(first, second);
+    assertEquals(TokenStatus.INACTIVE, status(first));
+    assertEquals(TokenStatus.ACTIVE, status(second));
+    assertEquals(TokenStatus.INACTIVE, status("inactive"));
+    assertEquals(TokenStatus.USED, status("used"));
+    assertEquals(TokenStatus.EXPIRED, status("expired"));
+    assertFalse(service.validateToken(first));
+    assertTrue(service.validateToken(second));
+  }
 
-    @Test
-    void invalidDurationRollsBackInvalidationOfExistingToken() {
-        seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-        when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("invalid");
-        assertThrows(DateTimeParseException.class, () -> service.createToken(detachedUser()));
-        assertEquals(TokenStatus.ACTIVE, status("old"));
-        assertEquals(1, tokens.count());
-    }
+  @Test
+  void invalidDurationRollsBackInvalidationOfExistingToken() {
+    seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+    when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION))
+        .thenReturn("invalid");
+    assertThrows(DateTimeParseException.class, () -> service.createToken(detachedUser()));
+    assertEquals(TokenStatus.ACTIVE, status("old"));
+    assertEquals(1, tokens.count());
+  }
 
-    @ParameterizedTest
-    @CsvSource({"create,PT0S", "create,-PT1H", "token,PT0S", "token,-PT1H",
-            "email,PT0S", "email,-PT1H", "user,PT0S", "user,-PT1H",
-            "create,PT59.999999999S", "token,PT59.999999999S", "email,PT59.999999999S", "user,PT59.999999999S"})
-    void belowMinimumConfiguredLifetimePreservesExistingTokenAndDoesNotQueue(String entry, String lifetime) {
-        seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-        when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn(lifetime);
-        assertThrows(IllegalArgumentException.class, () -> {
-            if (entry.equals("create")) {
-                service.createToken(detachedUser());
-            } else {
-                resend(entry);
-            }
+  @ParameterizedTest
+  @CsvSource({
+    "create,PT0S",
+    "create,-PT1H",
+    "token,PT0S",
+    "token,-PT1H",
+    "email,PT0S",
+    "email,-PT1H",
+    "user,PT0S",
+    "user,-PT1H",
+    "create,PT59.999999999S",
+    "token,PT59.999999999S",
+    "email,PT59.999999999S",
+    "user,PT59.999999999S"
+  })
+  void belowMinimumConfiguredLifetimePreservesExistingTokenAndDoesNotQueue(
+      String entry, String lifetime) {
+    seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+    when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION))
+        .thenReturn(lifetime);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          if (entry.equals("create")) {
+            service.createToken(detachedUser());
+          } else {
+            resend(entry);
+          }
         });
-        assertEquals(TokenStatus.ACTIVE, status("old"));
-        assertEquals(1, tokens.count());
-        assertFalse(users.findById(userId).orElseThrow().isEnabled());
-        verify(probes.tokens(), never()).save(any());
-        verify(probes.queue(), never()).addEmailToQueue(any(), any(), any(), any());
-    }
+    assertEquals(TokenStatus.ACTIVE, status("old"));
+    assertEquals(1, tokens.count());
+    assertFalse(users.findById(userId).orElseThrow().isEnabled());
+    verify(probes.tokens(), never()).save(any());
+    verify(probes.queue(), never()).addEmailToQueue(any(), any(), any(), any());
+  }
 
-    @ParameterizedTest
-    @ValueSource(longs = {-1, 0, 1})
-    void expirationBoundaryIsPersistedWithoutActivatingExpiredAccounts(long seconds) {
-        seed("boundary", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusSeconds(seconds));
-        assertEquals(seconds > 0, service.validateToken("boundary"));
-        assertEquals(seconds > 0 ? TokenStatus.USED : TokenStatus.EXPIRED, status("boundary"));
-        assertEquals(seconds > 0, users.findById(userId).orElseThrow().isEnabled());
-    }
+  @ParameterizedTest
+  @ValueSource(longs = {-1, 0, 1})
+  void expirationBoundaryIsPersistedWithoutActivatingExpiredAccounts(long seconds) {
+    seed("boundary", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusSeconds(seconds));
+    assertEquals(seconds > 0, service.validateToken("boundary"));
+    assertEquals(seconds > 0 ? TokenStatus.USED : TokenStatus.EXPIRED, status("boundary"));
+    assertEquals(seconds > 0, users.findById(userId).orElseThrow().isEnabled());
+  }
 
-    @Test
-    void emailResendUsesCanonicalIdentityAndCommitsRotationWithoutActivatingAccount() throws IOException {
-        seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-        try (var locale = mockStatic(CustomI18NProvider.class)) {
-            locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.GERMAN);
-            assertTrue(service.sendVerificationEmailByEmail("  TEST@EXAMPLE.COM  "));
-        }
-        assertEquals(TokenStatus.INACTIVE, status("old"));
-        assertEquals(1, activeCount());
-        assertEquals(2, tokens.count());
-        assertFalse(users.findById(userId).orElseThrow().isEnabled());
-        verify(probes.queue()).addEmailToQueue(any(UserEntity.class), eq("Verify account"),
-                contains("Willkommen Test User bei Test Service!"), eq(EmailType.VERIFICATION));
+  @Test
+  void emailResendUsesCanonicalIdentityAndCommitsRotationWithoutActivatingAccount()
+      throws IOException {
+    seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+    try (var locale = mockStatic(CustomI18NProvider.class)) {
+      locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.GERMAN);
+      assertTrue(service.sendVerificationEmailByEmail("  TEST@EXAMPLE.COM  "));
     }
+    assertEquals(TokenStatus.INACTIVE, status("old"));
+    assertEquals(1, activeCount());
+    assertEquals(2, tokens.count());
+    assertFalse(users.findById(userId).orElseThrow().isEnabled());
+    verify(probes.queue())
+        .addEmailToQueue(
+            any(UserEntity.class),
+            eq("Verify account"),
+            contains("Willkommen Test User bei Test Service!"),
+            eq(EmailType.VERIFICATION));
+  }
 
-    @Test
-    void enabledAccountRejectsValidationButLeavesTheUnusedTokenActive() {
-        seed("unused", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-        transaction.executeWithoutResult(tx -> users.findById(userId).orElseThrow().setEnabled(true));
-        assertFalse(service.validateToken("unused"));
-        assertEquals(TokenStatus.ACTIVE, status("unused"));
-        assertTrue(users.findById(userId).orElseThrow().isEnabled());
-    }
+  @Test
+  void enabledAccountRejectsValidationButLeavesTheUnusedTokenActive() {
+    seed("unused", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+    transaction.executeWithoutResult(tx -> users.findById(userId).orElseThrow().setEnabled(true));
+    assertFalse(service.validateToken("unused"));
+    assertEquals(TokenStatus.ACTIVE, status("unused"));
+    assertTrue(users.findById(userId).orElseThrow().isEnabled());
+  }
 
-    @Test
-    void failureSavingUsedStatusRollsBackAccountActivationEvenAfterFlush() {
-        seed("valid", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-        doAnswer(call -> {
-            var entity = (VerificationTokenEntity) call.getArgument(0);
-            if (entity.getStatus() == TokenStatus.USED) {
+  @Test
+  void failureSavingUsedStatusRollsBackAccountActivationEvenAfterFlush() {
+    seed("valid", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+    doAnswer(
+            call -> {
+              var entity = (VerificationTokenEntity) call.getArgument(0);
+              if (entity.getStatus() == TokenStatus.USED) {
                 users.flush();
                 throw new IllegalStateException("simulated token persistence failure");
+              }
+              return tokens.save(entity);
+            })
+        .when(probes.tokens())
+        .save(any(VerificationTokenEntity.class));
+    assertThrows(IllegalStateException.class, () -> service.validateToken("valid"));
+    assertFalse(users.findById(userId).orElseThrow().isEnabled());
+    assertEquals(TokenStatus.ACTIVE, status("valid"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"token", "email", "user"})
+  void queueRuntimeFailureRollsBackTokenRotation(String entry) {
+    seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+    doThrow(new IllegalStateException("simulated queue failure"))
+        .when(probes.queue())
+        .addEmailToQueue(any(), any(), any(), eq(EmailType.VERIFICATION));
+    try (var locale = mockStatic(CustomI18NProvider.class)) {
+      locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.ENGLISH);
+      assertThrows(IllegalStateException.class, () -> resend(entry));
+    }
+    assertEquals(TokenStatus.ACTIVE, status("old"));
+    assertEquals(1, tokens.count());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "token,logo",
+    "email,logo",
+    "user,logo",
+    "token,template",
+    "email,template",
+    "user,template"
+  })
+  void checkedResourceFailureRollsBackTokenRotationWithoutQueuingEmail(
+      String entry, String resource) {
+    seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+    seed("inactive", TokenStatus.INACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+    seed("used", TokenStatus.USED, LocalDateTime.now(CLOCK).plusDays(1));
+    var failure = new IOException("simulated classpath read failure");
+    try (var image = mockStatic(ImageHelper.class, CALLS_REAL_METHODS);
+        var locale = mockStatic(CustomI18NProvider.class)) {
+      locale
+          .when(CustomI18NProvider::getCurrentLocale)
+          .thenReturn(resource.equals("template") ? Locale.FRENCH : Locale.ENGLISH);
+      if (resource.equals("logo")) {
+        image
+            .when(
+                () ->
+                    ImageHelper.readImageBytes("META-INF/resources/custom-theme/service_logo.png"))
+            .thenThrow(failure);
+      }
+      IOException thrown = assertThrows(IOException.class, () -> resend(entry));
+      if (resource.equals("logo")) {
+        assertSame(failure, thrown);
+      } else {
+        assertInstanceOf(java.io.FileNotFoundException.class, thrown);
+      }
+    }
+    verify(probes.tokens(), times(2)).save(any(VerificationTokenEntity.class));
+    assertEquals(TokenStatus.ACTIVE, status("old"));
+    assertEquals(TokenStatus.INACTIVE, status("inactive"));
+    assertEquals(TokenStatus.USED, status("used"));
+    assertEquals(3, tokens.count());
+    assertEquals(1, activeCount());
+    assertFalse(users.findById(userId).orElseThrow().isEnabled());
+    verify(probes.queue(), never()).addEmailToQueue(any(), any(), any(), any());
+  }
+
+  @ParameterizedTest
+  @EnumSource(TokenStatus.class)
+  void cleanupCommitsDeletionOfOldTokensAndKeepsBoundaryAndYoungerTokens(TokenStatus tokenStatus) {
+    LocalDateTime now = LocalDateTime.now(CLOCK);
+    LocalDateTime cutoff = now.minusDays(7);
+    seed("old", tokenStatus, cutoff.minusSeconds(1));
+    seed("boundary", tokenStatus, cutoff);
+    seed("recent", tokenStatus, now.minusDays(1));
+    seed("future", tokenStatus, now.plusDays(1));
+    assertDoesNotThrow(service::deleteExpiredTokens);
+    assertDoesNotThrow(service::deleteExpiredTokens);
+    assertFalse(service.existsToken("old"));
+    assertEquals(tokenStatus, status("boundary"));
+    assertTrue(service.existsToken("recent"));
+    assertEquals(tokenStatus, status("recent"));
+    assertEquals(tokenStatus, status("future"));
+    assertEquals(3, tokens.count());
+    assertFalse(users.findById(userId).orElseThrow().isEnabled());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"PT0S", "-PT1H", "invalid", "PT1M", "PT119.999999999S"})
+  void invalidRetentionPreservesEvenOldTokens(String duration) {
+    seed("old", TokenStatus.EXPIRED, LocalDateTime.now(CLOCK).minusDays(30));
+    when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION))
+        .thenReturn(duration);
+    Class<? extends RuntimeException> expected =
+        duration.equals("invalid") ? DateTimeParseException.class : IllegalArgumentException.class;
+    assertThrows(expected, service::deleteExpiredTokens);
+    assertEquals(TokenStatus.EXPIRED, status("old"));
+    assertEquals(1, tokens.count());
+    verify(probes.tokens(), never()).deleteByExpiryDateBefore(any());
+  }
+
+  @Test
+  void deleteTokenCommitsWithoutAnExternalTransactionAndReturnsZeroWhenMissing() {
+    seed("delete", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+    seed("keep", TokenStatus.USED, LocalDateTime.now(CLOCK).plusDays(1));
+    int deleted = service.deleteToken("delete");
+    assertEquals(1, deleted);
+    assertFalse(service.existsToken("delete"));
+    int missing = service.deleteToken("delete");
+    assertEquals(0, missing);
+    assertEquals(TokenStatus.USED, status("keep"));
+    assertEquals(1, tokens.count());
+    assertTrue(users.existsById(userId));
+  }
+
+  @Test
+  void concurrentCreationCommitsExactlyOneActiveTokenForTheSameAccount() throws Exception {
+    var bothRead = new CyclicBarrier(2);
+    doAnswer(
+            call -> {
+              bothRead.await(10, TimeUnit.SECONDS);
+              return users.lockVerificationUser(call.getArgument(0));
+            })
+        .when(probes.users())
+        .lockVerificationUser(userId);
+    UserEntity user = detachedUser();
+    var values = race(() -> service.createToken(user));
+    assertInstanceOf(String.class, values.get(0));
+    assertInstanceOf(String.class, values.get(1));
+    assertNotEquals(values.get(0), values.get(1));
+    assertEquals(1, activeCount());
+    assertEquals(2, tokens.count());
+  }
+
+  @Test
+  void concurrentValidationIsIdempotentWithoutHidingTechnicalFailures() throws Exception {
+    seed("shared", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+    Long originalVersion = users.findById(userId).orElseThrow().getVersion();
+    var bothRead = new CyclicBarrier(2);
+    doAnswer(
+            call -> {
+              bothRead.await(10, TimeUnit.SECONDS);
+              return users.lockVerificationUser(call.getArgument(0));
+            })
+        .when(probes.users())
+        .lockVerificationUser(userId);
+    var results = race(() -> service.validateToken("shared"));
+    assertEquals(List.of(true, true), results);
+    assertTrue(users.findById(userId).orElseThrow().isEnabled());
+    assertEquals(originalVersion + 1, users.findById(userId).orElseThrow().getVersion());
+    assertEquals(TokenStatus.USED, status("shared"));
+  }
+
+  private List<Object> race(Callable<Object> work) throws Exception {
+    try (var executor = Executors.newFixedThreadPool(2)) {
+      Callable<Object> capture =
+          () -> {
+            try {
+              return work.call();
+            } catch (Exception failure) {
+              return failure;
             }
-            return tokens.save(entity);
-        }).when(probes.tokens()).save(any(VerificationTokenEntity.class));
-        assertThrows(IllegalStateException.class, () -> service.validateToken("valid"));
-        assertFalse(users.findById(userId).orElseThrow().isEnabled());
-        assertEquals(TokenStatus.ACTIVE, status("valid"));
+          };
+      var first = executor.submit(capture);
+      var second = executor.submit(capture);
+      return List.of(first.get(20, TimeUnit.SECONDS), second.get(20, TimeUnit.SECONDS));
     }
+  }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"token", "email", "user"})
-    void queueRuntimeFailureRollsBackTokenRotation(String entry) {
-        seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-        doThrow(new IllegalStateException("simulated queue failure")).when(probes.queue())
-                .addEmailToQueue(any(), any(), any(), eq(EmailType.VERIFICATION));
-        try (var locale = mockStatic(CustomI18NProvider.class)) {
-            locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.ENGLISH);
-            assertThrows(IllegalStateException.class, () -> resend(entry));
-        }
-        assertEquals(TokenStatus.ACTIVE, status("old"));
-        assertEquals(1, tokens.count());
-    }
+  private UserEntity detachedUser() {
+    return users.findById(userId).orElseThrow();
+  }
 
-    @ParameterizedTest
-    @CsvSource({"token,logo", "email,logo", "user,logo", "token,template", "email,template", "user,template"})
-    void checkedResourceFailureRollsBackTokenRotationWithoutQueuingEmail(String entry, String resource) {
-        seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-        seed("inactive", TokenStatus.INACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-        seed("used", TokenStatus.USED, LocalDateTime.now(CLOCK).plusDays(1));
-        var failure = new IOException("simulated classpath read failure");
-        try (var image = mockStatic(ImageHelper.class, CALLS_REAL_METHODS);
-             var locale = mockStatic(CustomI18NProvider.class)) {
-            locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(
-                    resource.equals("template") ? Locale.FRENCH : Locale.ENGLISH);
-            if (resource.equals("logo")) {
-                image.when(() -> ImageHelper.readImageBytes("META-INF/resources/custom-theme/service_logo.png"))
-                        .thenThrow(failure);
-            }
-            IOException thrown = assertThrows(IOException.class, () -> resend(entry));
-            if (resource.equals("logo")) {
-                assertSame(failure, thrown);
-            } else {
-                assertInstanceOf(java.io.FileNotFoundException.class, thrown);
-            }
-        }
-        verify(probes.tokens(), times(2)).save(any(VerificationTokenEntity.class));
-        assertEquals(TokenStatus.ACTIVE, status("old"));
-        assertEquals(TokenStatus.INACTIVE, status("inactive"));
-        assertEquals(TokenStatus.USED, status("used"));
-        assertEquals(3, tokens.count());
-        assertEquals(1, activeCount());
-        assertFalse(users.findById(userId).orElseThrow().isEnabled());
-        verify(probes.queue(), never()).addEmailToQueue(any(), any(), any(), any());
-    }
-
-    @ParameterizedTest
-    @EnumSource(TokenStatus.class)
-    void cleanupCommitsDeletionOfOldTokensAndKeepsBoundaryAndYoungerTokens(TokenStatus tokenStatus) {
-        LocalDateTime now = LocalDateTime.now(CLOCK);
-        LocalDateTime cutoff = now.minusDays(7);
-        seed("old", tokenStatus, cutoff.minusSeconds(1));
-        seed("boundary", tokenStatus, cutoff);
-        seed("recent", tokenStatus, now.minusDays(1));
-        seed("future", tokenStatus, now.plusDays(1));
-        assertDoesNotThrow(service::deleteExpiredTokens);
-        assertDoesNotThrow(service::deleteExpiredTokens);
-        assertFalse(service.existsToken("old"));
-        assertEquals(tokenStatus, status("boundary"));
-        assertTrue(service.existsToken("recent"));
-        assertEquals(tokenStatus, status("recent"));
-        assertEquals(tokenStatus, status("future"));
-        assertEquals(3, tokens.count());
-        assertFalse(users.findById(userId).orElseThrow().isEnabled());
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"PT0S", "-PT1H", "invalid", "PT1M", "PT119.999999999S"})
-    void invalidRetentionPreservesEvenOldTokens(String duration) {
-        seed("old", TokenStatus.EXPIRED, LocalDateTime.now(CLOCK).minusDays(30));
-        when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn(duration);
-        Class<? extends RuntimeException> expected = duration.equals("invalid")
-                ? DateTimeParseException.class : IllegalArgumentException.class;
-        assertThrows(expected, service::deleteExpiredTokens);
-        assertEquals(TokenStatus.EXPIRED, status("old"));
-        assertEquals(1, tokens.count());
-        verify(probes.tokens(), never()).deleteByExpiryDateBefore(any());
-    }
-
-    @Test
-    void deleteTokenCommitsWithoutAnExternalTransactionAndReturnsZeroWhenMissing() {
-        seed("delete", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-        seed("keep", TokenStatus.USED, LocalDateTime.now(CLOCK).plusDays(1));
-        int deleted = service.deleteToken("delete");
-        assertEquals(1, deleted);
-        assertFalse(service.existsToken("delete"));
-        int missing = service.deleteToken("delete");
-        assertEquals(0, missing);
-        assertEquals(TokenStatus.USED, status("keep"));
-        assertEquals(1, tokens.count());
-        assertTrue(users.existsById(userId));
-    }
-
-    @Test
-    void concurrentCreationCommitsExactlyOneActiveTokenForTheSameAccount() throws Exception {
-        var bothRead = new CyclicBarrier(2);
-        doAnswer(call -> {
-            bothRead.await(10, TimeUnit.SECONDS);
-            return users.lockVerificationUser(call.getArgument(0));
-        }).when(probes.users()).lockVerificationUser(userId);
-        UserEntity user = detachedUser();
-        var values = race(() -> service.createToken(user));
-        assertInstanceOf(String.class, values.get(0));
-        assertInstanceOf(String.class, values.get(1));
-        assertNotEquals(values.get(0), values.get(1));
-        assertEquals(1, activeCount());
-        assertEquals(2, tokens.count());
-    }
-
-    @Test
-    void concurrentValidationIsIdempotentWithoutHidingTechnicalFailures() throws Exception {
-        seed("shared", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-        Long originalVersion = users.findById(userId).orElseThrow().getVersion();
-        var bothRead = new CyclicBarrier(2);
-        doAnswer(call -> {
-            bothRead.await(10, TimeUnit.SECONDS);
-            return users.lockVerificationUser(call.getArgument(0));
-        }).when(probes.users()).lockVerificationUser(userId);
-        var results = race(() -> service.validateToken("shared"));
-        assertEquals(List.of(true, true), results);
-        assertTrue(users.findById(userId).orElseThrow().isEnabled());
-        assertEquals(originalVersion + 1, users.findById(userId).orElseThrow().getVersion());
-        assertEquals(TokenStatus.USED, status("shared"));
-    }
-
-    private List<Object> race(Callable<Object> work) throws Exception {
-        try (var executor = Executors.newFixedThreadPool(2)) {
-            Callable<Object> capture = () -> {
-                try {
-                    return work.call();
-                } catch (Exception failure) {
-                    return failure;
-                }
-            };
-            var first = executor.submit(capture);
-            var second = executor.submit(capture);
-            return List.of(first.get(20, TimeUnit.SECONDS), second.get(20, TimeUnit.SECONDS));
-        }
-    }
-
-    private UserEntity detachedUser() {
-        return users.findById(userId).orElseThrow();
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void repeatedAccountLockPreservesActivationAndOuterRollback(boolean rollback) {
-        seed("outer-verify", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-        transaction.executeWithoutResult(tx -> {
-            assertTrue(service.validateToken("outer-verify"));
-            var managed = users.findById(userId).orElseThrow();
-            managed.setFirstName("Local");
-            service.setInactiveTokensForUser(managed);
-            assertTrue(managed.isEnabled());
-            assertEquals("Local", managed.getFirstName());
-            if (rollback) {
-                tx.setRollbackOnly();
-            }
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void repeatedAccountLockPreservesActivationAndOuterRollback(boolean rollback) {
+    seed("outer-verify", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+    transaction.executeWithoutResult(
+        tx -> {
+          assertTrue(service.validateToken("outer-verify"));
+          var managed = users.findById(userId).orElseThrow();
+          managed.setFirstName("Local");
+          service.setInactiveTokensForUser(managed);
+          assertTrue(managed.isEnabled());
+          assertEquals("Local", managed.getFirstName());
+          if (rollback) {
+            tx.setRollbackOnly();
+          }
         });
-        assertEquals(!rollback, users.findById(userId).orElseThrow().isEnabled());
-        assertEquals(rollback ? "Test" : "Local", users.findById(userId).orElseThrow().getFirstName());
-        assertEquals(rollback ? TokenStatus.ACTIVE : TokenStatus.USED, status("outer-verify"));
+    assertEquals(!rollback, users.findById(userId).orElseThrow().isEnabled());
+    assertEquals(rollback ? "Test" : "Local", users.findById(userId).orElseThrow().getFirstName());
+    assertEquals(rollback ? TokenStatus.ACTIVE : TokenStatus.USED, status("outer-verify"));
+  }
+
+  private boolean resend(String entry) throws IOException {
+    return switch (entry) {
+      case "token" -> service.sendVerificationEmailByToken("old");
+      case "email" -> service.sendVerificationEmailByEmail("test@example.com");
+      case "user" -> service.sendVerificationEmailByUser(detachedUser());
+      default -> throw new IllegalArgumentException(entry);
+    };
+  }
+
+  private void seed(String value, TokenStatus tokenStatus, LocalDateTime expiry) {
+    transaction.executeWithoutResult(
+        tx ->
+            tokens.saveAndFlush(
+                new VerificationTokenEntity(
+                    null, value, users.findById(userId).orElseThrow(), expiry, tokenStatus)));
+  }
+
+  private TokenStatus status(String value) {
+    return transaction.execute(tx -> tokens.findByToken(value).orElseThrow().getStatus());
+  }
+
+  private int activeCount() {
+    return transaction.execute(
+        tx ->
+            tokens
+                .findAllByUserEntityAndStatus(
+                    users.findById(userId).orElseThrow(), TokenStatus.ACTIVE)
+                .size());
+  }
+
+  record Probes(
+      VerificationTokenRepository tokens,
+      ConfigService config,
+      EmailQueueService queue,
+      UserRepository users) {}
+
+  @Configuration
+  @EnableTransactionManagement
+  @EnableJpaRepositories(basePackageClasses = UserRepository.class)
+  static class Config {
+    @Bean
+    DataSource dataSource() {
+      return new DriverManagerDataSource(
+          "jdbc:h2:mem:verification-" + UUID.randomUUID() + ";MODE=MySQL;DB_CLOSE_DELAY=-1",
+          "sa",
+          "");
     }
 
-    private boolean resend(String entry) throws IOException {
-        return switch (entry) {
-            case "token" -> service.sendVerificationEmailByToken("old");
-            case "email" -> service.sendVerificationEmailByEmail("test@example.com");
-            case "user" -> service.sendVerificationEmailByUser(detachedUser());
-            default -> throw new IllegalArgumentException(entry);
-        };
+    @Bean
+    LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
+      var factory = new LocalContainerEntityManagerFactoryBean();
+      factory.setDataSource(dataSource);
+      factory.setPackagesToScan("de.derpeterson.app.model");
+      factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
+      factory.setJpaPropertyMap(Map.of("hibernate.hbm2ddl.auto", "create-drop"));
+      return factory;
     }
 
-    private void seed(String value, TokenStatus tokenStatus, LocalDateTime expiry) {
-        transaction.executeWithoutResult(tx -> tokens.saveAndFlush(new VerificationTokenEntity(null, value,
-                users.findById(userId).orElseThrow(), expiry, tokenStatus)));
+    @Bean
+    JpaTransactionManager transactionManager(EntityManagerFactory factory) {
+      return new JpaTransactionManager(factory);
     }
 
-    private TokenStatus status(String value) {
-        return transaction.execute(tx -> tokens.findByToken(value).orElseThrow().getStatus());
+    @Bean
+    TransactionTemplate transactionTemplate(JpaTransactionManager manager) {
+      return new TransactionTemplate(manager);
     }
 
-    private int activeCount() {
-        return transaction.execute(tx -> tokens.findAllByUserEntityAndStatus(
-                users.findById(userId).orElseThrow(), TokenStatus.ACTIVE).size());
+    @Bean
+    Probes probes(VerificationTokenRepository tokens, UserRepository users) {
+      return new Probes(
+          mock(VerificationTokenRepository.class, delegatesTo(tokens)),
+          mock(ConfigService.class),
+          mock(EmailQueueService.class),
+          mock(UserRepository.class, delegatesTo(users)));
     }
 
-    record Probes(VerificationTokenRepository tokens, ConfigService config, EmailQueueService queue, UserRepository users) {
+    @Bean
+    VerificationService verificationService(Probes probes, UserRepository users) {
+      var messages = mock(MessageProperties.class);
+      when(messages.getEmailVerificationSubject()).thenReturn("Verify account");
+      return new VerificationService(
+          messages, probes.tokens(), probes.users(), probes.config(), probes.queue(), CLOCK);
     }
-
-    @Configuration
-    @EnableTransactionManagement
-    @EnableJpaRepositories(basePackageClasses = UserRepository.class)
-    static class Config {
-        @Bean
-        DataSource dataSource() {
-            return new DriverManagerDataSource("jdbc:h2:mem:verification-" + UUID.randomUUID() + ";MODE=MySQL;DB_CLOSE_DELAY=-1", "sa", "");
-        }
-
-        @Bean
-        LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
-            var factory = new LocalContainerEntityManagerFactoryBean();
-            factory.setDataSource(dataSource);
-            factory.setPackagesToScan("de.derpeterson.app.model");
-            factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
-            factory.setJpaPropertyMap(Map.of("hibernate.hbm2ddl.auto", "create-drop"));
-            return factory;
-        }
-
-        @Bean
-        JpaTransactionManager transactionManager(EntityManagerFactory factory) {
-            return new JpaTransactionManager(factory);
-        }
-
-        @Bean
-        TransactionTemplate transactionTemplate(JpaTransactionManager manager) {
-            return new TransactionTemplate(manager);
-        }
-
-        @Bean
-        Probes probes(VerificationTokenRepository tokens, UserRepository users) {
-            return new Probes(mock(VerificationTokenRepository.class, delegatesTo(tokens)),
-                    mock(ConfigService.class), mock(EmailQueueService.class), mock(UserRepository.class, delegatesTo(users)));
-        }
-
-        @Bean
-        VerificationService verificationService(Probes probes, UserRepository users) {
-            var messages = mock(MessageProperties.class);
-            when(messages.getEmailVerificationSubject()).thenReturn("Verify account");
-            return new VerificationService(messages, probes.tokens(), probes.users(), probes.config(), probes.queue(), CLOCK);
-        }
-    }
+  }
 }

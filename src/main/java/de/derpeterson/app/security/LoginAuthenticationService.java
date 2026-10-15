@@ -9,21 +9,22 @@ import org.springframework.security.core.CredentialsContainer;
 /** One password entry point shared by the Vaadin button and HTTP form filter. */
 @RequiredArgsConstructor
 public class LoginAuthenticationService implements AuthenticationProvider {
-    private final AuthenticationProvider provider;
-    private final LoginAttemptService attempts;
+  private final AuthenticationProvider provider;
+  private final LoginAttemptService attempts;
 
-    @Override
-    public boolean supports(Class<?> type) {
-        return UsernamePasswordAuthenticationToken.class.isAssignableFrom(type);
-    }
+  @Override
+  public boolean supports(Class<?> type) {
+    return UsernamePasswordAuthenticationToken.class.isAssignableFrom(type);
+  }
 
-    @Override
-    public Authentication authenticate(Authentication request) {
-        if (!(request instanceof UsernamePasswordAuthenticationToken)) {
-            throw new AuthenticationServiceException("Unsupported password sign-in request");
-        }
-        Authentication result = attempts.authenticate(request.getName(), () -> provider.authenticate(request));
-        if (result instanceof CredentialsContainer credentials) credentials.eraseCredentials();
-        return result;
+  @Override
+  public Authentication authenticate(Authentication request) {
+    if (!(request instanceof UsernamePasswordAuthenticationToken)) {
+      throw new AuthenticationServiceException("Unsupported password sign-in request");
     }
+    Authentication result =
+        attempts.authenticate(request.getName(), () -> provider.authenticate(request));
+    if (result instanceof CredentialsContainer credentials) credentials.eraseCredentials();
+    return result;
+  }
 }

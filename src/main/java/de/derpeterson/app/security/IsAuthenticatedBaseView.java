@@ -13,56 +13,58 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-public abstract class IsAuthenticatedBaseView extends TrackedUserAppLayout implements BeforeEnterObserver {
+public abstract class IsAuthenticatedBaseView extends TrackedUserAppLayout
+    implements BeforeEnterObserver {
 
-    protected IsAuthenticatedBaseView(MessageProperties messageProperties,
-                                      SecurityService securityService,
-                                      UserService userService,
-                                      UserStatusBroadcaster userStatusBroadcaster,
-                                      HttpServletRequest request) {
-        super(messageProperties, securityService, userService, userStatusBroadcaster, request);
+  protected IsAuthenticatedBaseView(
+      MessageProperties messageProperties,
+      SecurityService securityService,
+      UserService userService,
+      UserStatusBroadcaster userStatusBroadcaster,
+      HttpServletRequest request) {
+    super(messageProperties, securityService, userService, userStatusBroadcaster, request);
+  }
+
+  @Override
+  public void beforeEnter(BeforeEnterEvent event) {
+    UserDetails authenticatedUser = securityService.getAuthenticatedUser(request).orElse(null);
+
+    if (authenticatedUser == null) {
+      event.forwardTo(LoginView.class);
+      return;
     }
 
-    @Override
-    public void beforeEnter(BeforeEnterEvent event) {
-        UserDetails authenticatedUser = securityService.getAuthenticatedUser(request).orElse(null);
+    if (!hasRequiredAccess(authenticatedUser)) {
+      event.forwardTo(getUnauthorizedForwardTarget());
+    }
+  }
 
-        if (authenticatedUser == null) {
-            event.forwardTo(LoginView.class);
-            return;
-        }
+  protected boolean hasRequiredAccess(UserDetails authenticatedUser) {
+    return true;
+  }
 
-        if (!hasRequiredAccess(authenticatedUser)) {
-            event.forwardTo(getUnauthorizedForwardTarget());
-        }
+  protected Class<? extends Component> getUnauthorizedForwardTarget() {
+    return HomeView.class;
+  }
+
+  protected boolean hasRole(UserDetails authenticatedUser, String requiredRole) {
+    if (authenticatedUser == null || requiredRole == null || requiredRole.isBlank()) {
+      return false;
     }
 
-    protected boolean hasRequiredAccess(UserDetails authenticatedUser) {
-        return true;
+    String normalizedRequiredRole = normalizeRole(requiredRole);
+
+    return authenticatedUser.getAuthorities().stream()
+        .map(GrantedAuthority::getAuthority)
+        .map(this::normalizeRole)
+        .anyMatch(normalizedRequiredRole::equals);
+  }
+
+  private String normalizeRole(String role) {
+    if (role == null) {
+      return "";
     }
 
-    protected Class<? extends Component> getUnauthorizedForwardTarget() {
-        return HomeView.class;
-    }
-
-    protected boolean hasRole(UserDetails authenticatedUser, String requiredRole) {
-        if (authenticatedUser == null || requiredRole == null || requiredRole.isBlank()) {
-            return false;
-        }
-
-        String normalizedRequiredRole = normalizeRole(requiredRole);
-
-        return authenticatedUser.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .map(this::normalizeRole)
-                .anyMatch(normalizedRequiredRole::equals);
-    }
-
-    private String normalizeRole(String role) {
-        if (role == null) {
-            return "";
-        }
-
-        return role.startsWith("ROLE_") ? role.substring(5) : role;
-    }
+    return role.startsWith("ROLE_") ? role.substring(5) : role;
+  }
 }
