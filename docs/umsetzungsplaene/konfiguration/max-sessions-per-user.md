@@ -51,8 +51,11 @@ Sitzungszahl erreicht ist: auf einem anderen Gerät abmelden oder Timeout abwart
 Die Zahl wird erst nach gültigem Identitätsnachweis gezeigt, nicht für beliebige Adressen.
 
 Geöffnete Geräte arbeiten weiter. Geräteverwaltung und „Andere Sitzungen beenden“
-gehören zunächst nicht dazu. Die Feldhilfe erklärt Zählweise, Ablehnung neuer
-Sitzungen und die Wirkung einer Reduzierung. Bestehende Gestaltung bleibt erhalten.
+gehören zunächst nicht dazu. Sie sind als
+[zweite Ausbaustufe im künftigen Kontokonfigurationspanel](../kontokonfiguration/sitzungsverwaltung.md)
+festgehalten: nach Umsetzung der fehlenden Konfigurationsfunktionen und im Rahmen
+des anschließend geplanten Kontopanels. Die Feldhilfe erklärt Zählweise, Ablehnung
+neuer Sitzungen und die Wirkung einer Reduzierung. Bestehende Gestaltung bleibt erhalten.
 
 ## Technischer Umsetzungsweg
 
