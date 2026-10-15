@@ -186,8 +186,10 @@ menschliche Bewertung werden dadurch nicht ersetzt.
 .\browser-tests\run.ps1 -Suite cosmos-design -Language en -NoBuild
 ```
 
-Die Palette steht in `custom-theme/cosmos-theme.css`, die Dekoration in
-`cosmos-background.css` und der globale Font in `typography.css`. Die Java-Bausteine
+Palette und Komponentenfarben stehen in `custom-theme/cosmos-tokens.css`; die Regeln
+in `cosmos-theme.css`, `cosmos-shell.css` und `cosmos-admin.css`. `admin-users.css`
+ergänzt das lokale Benutzerlayout. Die Dekoration steht in `cosmos-background.css`
+und der globale Font in `typography.css`. Siehe [Theme-Anleitung](../docs/theme.md). Die Java-Bausteine
 heißen `CosmosPageComponent`, `CosmosCardComponent`, `CosmosBackgroundComponent`
 und `CosmosCopyrightComponent`. Die Übersetzungen bleiben im
 gemeinsamen typisierten Katalog. JUnit prüft zusätzlich Copyright-Defaults, Textsicherheit

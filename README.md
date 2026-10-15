@@ -6,7 +6,7 @@ Automatisierte Browserprüfungen mit Java, JUnit und Allure in eigener Docker-Te
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Redesign-Abschlussprüfung vom 15.10.2026: Java 25, 1.082 Anwendungstests, 34 Helper-/Reportertests und je 100 Browserfälle auf Deutsch/Englisch erfolgreich. JUnit- und Browser-Code-Coverage sind gemessen. [Ergebnisse und Grenzen](browser-tests/abdeckung.md).
+> Theme-Strukturprüfung vom 15.10.2026: Java 25, 1.085 Anwendungstests, 34 Helper-/Reportertests und je 100 Browserfälle auf Deutsch/Englisch erfolgreich. [Ergebnisse und Grenzen](browser-tests/abdeckung.md).
 
 ## Funktionen
 
@@ -34,18 +34,27 @@ den zentralen blauen Verlauf `#3a538d` → `#526ebc`.
 | Zentrale Datei unter `custom-theme/` | Aufgabe |
 | --- | --- |
 | `typography.css` | Inter als Standardschrift für die gesamte Anwendung |
-| `cosmos-theme.css` | Gemeinsame Palette, Lumo-Farbvariablen, Cards, Formulare, App-Layout und markierte Overlays |
-| `cosmos-background.css` | CSS-Sterne, Nebel, Planeten und Animation |
-| `styles.css` | Nur in AdminView geladen; lokale Tabellen-, Filter-, Pagination- und Dialoganordnung |
+| `cosmos-tokens.css` | Zentrale Palette, Komponentenfarben, Verläufe, Schatten und gemeinsame Designwerte |
+| `cosmos-theme.css` | Kontoansichten, Cards, Formulare, Buttons, Tabellen und Benachrichtigungen |
+| `cosmos-shell.css` | App-Kopfzeile, Seitenkopf, Benutzermenü und Auswahl-Overlays |
+| `cosmos-admin.css` | Navigation, Panels, Konfiguration, Mail-Test und Dialogstandards |
+| `cosmos-background.css` | Anordnung und Animation von Sternen, Nebeln und Planeten; Farben aus den Tokens |
+| `admin-users.css` | Nur in AdminView geladen; lokale Tabellen-, Filter-, Pagination- und Dialoganordnung |
 
-Typografie, Cosmos-Theme und Hintergrund werden einmalig in `Application.java`
-eingebunden. `styles.css` bleibt als lokale Ergänzung der Benutzerverwaltung getrennt:
+Typografie, Tokens, Komponenten-, App-/Admin-Regeln und Hintergrund werden in dieser
+Reihenfolge einmalig in `Application.java` eingebunden. `admin-users.css` bleibt
+als lokale Ergänzung der Benutzerverwaltung getrennt:
 Filterwerkzeugleiste/-panel, Tabelleninhalte, Pagination und Benutzerdialoge. Gemeinsame
-Palette und Komponentenstandards gehören in `cosmos-theme.css`; `styles.css` ist kein
+Palette und Komponentenfarben gehören in `cosmos-tokens.css`, gemeinsame Regeln
+in die zugehörigen Komponenten-/App-/Admin-Dateien. `admin-users.css` ist kein
 allgemeines Reset-Stylesheet. Es wird ausschließlich an `AdminView` geladen; die lokalen
 Selektoren verändern Home auch nach einer Navigation nicht. Die Cosmos-Palette
 gilt für `.cosmos-theme` und die aus diesen Ansichten geöffneten Notifications;
 `HomeView` und `AdminView` verwenden dieselbe Palette, Topbar und Avatar-Popup.
+Die Theme-Struktur behält Standardwerte und Regelreihenfolge bei. Die bisherige
+`styles.css` heißt jetzt `admin-users.css`. [Theme anpassen und als Vorlage nutzen](docs/theme.md)
+erklärt Palette, Komponentenwerte, CSS-Begriffe und das Vorgehen für ein weiteres Theme.
+
 **Inter gilt für die gesamte Anwendung.**
 Aus dem bereitgestellten Inter-ZIP werden beide vollständigen variablen Fonts lokal
 geladen: normal und kursiv, alle Gewichte von 100 bis 900 einschließlich optischer
@@ -91,7 +100,7 @@ innerhalb der jeweils 100 Browserfälle. Den aktuellen Nachweis dokumentiert [Br
 `HomeView` verwendet dieselbe zentrale Palette und den animierten Hintergrund.
 Die Kopfzeile zeigt Service-Logo/-Name und das bestehende Benutzermenü. Verlauf,
 Rahmen, Schatten und Abstände entsprechen der Dashboard-Vorschau und stehen zentral
-in `cosmos-theme.css`: `cosmos-app-shell` markiert das AppLayout, `cosmos-topbar`
+in `cosmos-shell.css`: `cosmos-app-shell` markiert das AppLayout, `cosmos-topbar`
 die Leiste; Brand, Logo, Servicename und Kontomenü haben gemeinsame `cosmos-topbar-*`
 Klassen. Diese Bausteine werden von Home und Admin gemeinsam verwendet. Die Leiste
 ist regulär 68 px hoch, mit 20/24 px seitlichem Abstand und unter 750 px mit 11 px.
@@ -123,10 +132,11 @@ das Service-Logo erreichbar. Es werden keine vorgetäuschten Systemstatuswerte a
 Dashboard, Konfiguration, Mailtest und Benutzerverwaltung verwenden gemeinsame
 Bereichsüberschriften und Cosmos-Cards. Formulare, Filter und Benutzer-/Informationsdialoge
 verwenden dieselbe Palette und Eingabegestaltung. Die lokale Anordnung von Tabelle,
-Filtern, Pagination und Benutzerdialogen bleibt in `styles.css`; dieses Stylesheet wird
+Filtern, Pagination und Benutzerdialogen bleibt in `admin-users.css`; dieses Stylesheet wird
 nur an AdminView geladen. Gemeinsame Standards einschließlich der roten Löschakzente
-stehen in `cosmos-theme.css`; bereits überstimmte oder doppelte Deklarationen werden
-nicht zusätzlich in `styles.css` gehalten.
+verwenden die zentralen Tokens und die gemeinsamen Komponentenregeln; bereits
+überstimmte oder doppelte Deklarationen werden
+nicht zusätzlich in `admin-users.css` gehalten.
 Formularpaare und Aktionsleisten können bei wenig Platz umbrechen.
 
 Home und Dashboard verwenden denselben `CosmosSectionHeaderComponent` mit kleiner
@@ -412,33 +422,33 @@ offenen Punkte stehen in der Browserdokumentation.
 
 Unter `src/test/java/` liegen Unit- und serverseitige Regressionstests für Benutzerverwaltung, Eingaberegeln, Registrierung, Konfiguration, Benachrichtigungen, Session-/Remember-me-/Push-RPC-Sicherheit sowie Status und Nebenläufigkeit. Persistenztests verwenden isolierte H2-In-Memory-Datenbanken, nicht die Anwendungsdatenbank. Vaadin-Tests prüfen serverseitige Komponenten und Callbacks mit kontrollierten UI-/Sessionfixtures, ohne Browser oder Anwendungsstart. `ImageHelperTest` prüft zusätzlich das echte Mail-Logo als Classpath-Ressource. `src/test/resources/logback-test.xml` konfiguriert das Test-Logging.
 
-Redesign-Abschlussprüfung vom 15.10.2026:
+Theme-Strukturprüfung vom 15.10.2026 auf `feature/theme-css-structure`:
 
 | Prüfung | Ergebnis |
 | --- | --- |
-| `.\mvnw.cmd test jacoco:report` | Java 25, 1.082 Tests, keine Fehler/Fehlschläge/Skips; frische JaCoCo-Daten |
+| `.\mvnw.cmd clean test jacoco:report` | Java 25, 1.085 Tests, keine Fehler/Fehlschläge/Skips; frische JaCoCo-Daten |
 | Browser-Helper/Reporter | 34/34 erfolgreich |
-| Vollständige Browserläufe DE und EN | jeweils 100/100 erfolgreich; isoliertes Docker/H2/Mailpit |
-| JUnit-Coverage: Zeilen / Zweige | 70,87 % / 66,22 % |
-| Browser-Coverage DE + EN: Zeilen / Zweige | 86,19 % / 65,63 % |
+| Frischer Docker-Produktionsbuild | Erfolgreich einschließlich Tests und Frontend |
+| Vollständige Browserläufe DE und EN | jeweils 100/100 erfolgreich; getrenntes Docker/H2/Mailpit, dasselbe Image |
+| JUnit-Coverage: Zeilen / Zweige | 71,16 % / 66,37 % |
 
-Browser-Coverage misst den serverseitigen Anwendungscode im exakten Produktions-JAR,
-einschließlich Start und Hintergrundaufgaben. Sie ist keine CSS-/JavaScript-Coverage.
-[Dauerhafter Redesign-Meilenstein](docs/meilensteine/2026-10-15-redesign-abgeschlossen.md)
-und [aktuelle Abdeckung](browser-tests/abdeckung.md). Lokale Browser-Testausgaben
-dürfen nach Auswertung bereinigt werden; ihre dauerhafte Aufbewahrung ist nicht nötig.
-Wichtige Ergebnisse bleiben kompakt unter [Meilensteine](docs/meilensteine/README.md) erhalten.
+Alle sieben CSS-Dateien werden aus dem Produktionsimage korrekt ausgeliefert;
+ihre Regeln stimmen trotz Minifizierung mit dem Quellstand überein. Die Browserläufe
+prüfen sichtbare Abläufe und Layoutgrenzen. Browser-Code-Coverage wurde diesmal
+nicht erneut instrumentiert; dies ist kein CSS-/JavaScript-Coveragebericht.
 
-Nachfolgende Java-/Textbereinigung am 15.10.2026: ungenutzte `CardComponent` und
-`VaadinUIHelper`, sieben weitere Methoden sowie 13 Übersetzungsgetter entfernt;
-14 veraltete Schlüssel je Sprache entfallen. 336 Schlüssel je Sprache bleiben erhalten.
-`MessageCatalogueTest` sichert identische Sprachkataloge, vorhandene Übersetzungen
-und die Erreichbarkeit aller Einträge über den gemeinsamen typisierten Katalog ab.
-Nach der Bereinigung: **1085 Anwendungs-JUnit-Tests und 34 Helper-/Reportertests
-bestanden, keine Fehler oder Skips**. Die vollständigen Browserläufe und Coverage
-wurden dafür nicht erneut ausgeführt; die obigen Messwerte gehören zum Redesign-Abschluss.
-Bestehende Styles/CSS/Theme wurden nicht angepasst.
+[Dauerhafter Theme-Meilenstein](docs/meilensteine/2026-10-15-theme-struktur-geprueft.md) und
+[aktuelle Abdeckung](browser-tests/abdeckung.md). Ergebnisse der vorherigen vollständigen
+Designumstellung einschließlich damaliger Browser-Code-Coverage bleiben im
+[Redesign-Meilenstein](docs/meilensteine/2026-10-15-redesign-abgeschlossen.md).
+Lokale Testausgaben dürfen nach Auswertung bereinigt werden; ihre dauerhafte
+Aufbewahrung ist nicht erforderlich.
 
+Die vorausgehende Java-/Textbereinigung entfernte die alte `CardComponent`,
+`VaadinUIHelper`, sieben weitere Methoden, 13 Übersetzungsgetter und 14 veraltete
+Schlüssel je Sprache. 336 Schlüssel je Sprache bleiben erhalten. Die drei
+`MessageCatalogueTest`-Fälle prüfen Sprachparität, vorhandene Gettertexte und
+verwaiste Einträge; sie sind im aktuellen JUnit-Gesamtergebnis enthalten.
 
 Der eigene Vaadin-Login speichert seinen Sicherheitskontext ausdrücklich in der Sitzung,
 bevor Remember-me ausgegeben wird. Die Browserprüfung verwendet echte separate
@@ -487,7 +497,7 @@ Gmail/Outlook-Darstellung bleibt separat zu prüfen. Nachweise: [Browserabdeckun
 
 ## Styles, Bilder und generierte Dateien
 
-- **Styles und UI-Bilder:** `src/main/resources/META-INF/resources/custom-theme/`, gemeinsame Palette in `cosmos-theme.css`, Dekoration in `cosmos-background.css` und Schrift in `typography.css`, zentral geladen in `Application.java`. `styles.css` wird nur an `AdminView` für Admin-Spezialfälle eingebunden. Weitere Icons: `src/main/resources/META-INF/resources/icons/`.
+- **Styles und UI-Bilder:** `src/main/resources/META-INF/resources/custom-theme/`, Palette und Komponentenfarben in `cosmos-tokens.css`, gemeinsame Regeln in `cosmos-theme.css`, App-/Admin-Bausteine in `cosmos-shell.css`/`cosmos-admin.css`, Dekoration in `cosmos-background.css` und Schrift in `typography.css`, zentral geladen in `Application.java`. `admin-users.css` wird nur an `AdminView` für Admin-Spezialfälle eingebunden. Weitere Icons: `src/main/resources/META-INF/resources/icons/`.
 - **Übersetzungen:** `src/main/resources/i18n/messages_de.properties` und `messages_en.properties`.
 - **Mailvorlagen:** `src/main/resources/email/`; die Dienste laden HTML-Dateien. MJML-Quelldateien liegen daneben, eine automatische MJML-Kompilierung ist in `pom.xml` nicht eingerichtet.
 - **Generierte Dateien:** `src/main/frontend/generated/`, `vite.generated.ts` und Build-Ausgaben unter `target/`; nicht manuell pflegen. `node_modules/` enthält Frontend-Abhängigkeiten. Diese Pfade sind in `.gitignore` ausgeschlossen. Eigene Vite-Anpassungen gehören in `vite.config.ts`.

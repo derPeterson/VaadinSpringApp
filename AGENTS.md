@@ -29,6 +29,13 @@
   existing central validation rules instead of introducing parallel regex policies.
 - Change dependencies or versions only when required by the task.
 - Styles and UI images: `src/main/resources/META-INF/resources/custom-theme/`.
+  Gemeinsame Farben, Flächen, Verläufe und Schatten zentral in `cosmos-tokens.css` pflegen.
+  `cosmos-theme.css` enthält gemeinsame Komponenten, `cosmos-shell.css` App-Rahmen/Overlays,
+  `cosmos-admin.css` Admin-Bausteine und `admin-users.css` lokale Benutzeranordnung.
+  Die Stylesheet-Reihenfolge in Application/AdminView erhalten. Keine parallelen Hex-/RGBA-
+  Farben in Komponentenregeln einführen; vorhandene Tokens verwenden. Erläuterungen und
+  Vorgehen für weitere Themes: `docs/theme.md`. Native Lumo-Zustände und die benannten
+  Grid-@media-Einschübe erhalten. Layoutmaße/Icons nicht als Nebenwirkung ändern.
   Styles are loaded in `Application.java`; additional icons are under
   `src/main/resources/META-INF/resources/icons/`.
 - Translations: `src/main/resources/i18n/`; email templates: `src/main/resources/email/`.
@@ -170,7 +177,7 @@
   CSS-Ressourcen reicht ein Browser-Refresh nicht. Keine Übernahme behaupten,
   wenn nur die Quelldatei geändert wurde.
 - Bestätigter Tabellenstandard: alle Vaadin-Grids im Cosmos-Theme verwenden die
-  vier zentralen Variablen in cosmos-theme.css: --cosmos-table-header-background
+  vier zentralen Variablen in cosmos-tokens.css: --cosmos-table-header-background
   (#223353b3), --cosmos-table-row-background (#101a2a73),
   --cosmos-table-alternate-row-background (#18213681) und
   --cosmos-table-highlight-background (#1B2B42). Zeilenfarben wechseln automatisch;

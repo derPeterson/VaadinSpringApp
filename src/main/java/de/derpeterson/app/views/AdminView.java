@@ -47,7 +47,7 @@ import java.util.Objects;
 
 import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
 
-@StyleSheet("custom-theme/styles.css")
+@StyleSheet("custom-theme/admin-users.css")
 @Route(AppRouteConstants.ADMIN_ROUTE)
 @UIScope
 @PageTitle(AppRouteConstants.ADMIN_PAGE_TITLE)

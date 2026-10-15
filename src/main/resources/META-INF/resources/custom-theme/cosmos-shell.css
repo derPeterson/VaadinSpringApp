@@ -1,0 +1,360 @@
+/* SILENT COSMOS / APP-RAHMEN UND OVERLAYS
+ * Gemeinsame Kopfzeile, Seitenkopf, Benutzermenü und Popupflächen für Home/Admin.
+ * Farben und Schatten stehen in cosmos-tokens.css; lokale Größen bleiben bei ihrem Baustein. */
+
+/* 1. APP-RAHMEN UND TOPBAR */
+
+vaadin-app-layout.cosmos-app-shell {
+    --vaadin-app-layout-navbar-background: transparent;
+    --vaadin-app-layout-navbar-padding-top: 0;
+    --vaadin-app-layout-navbar-padding-bottom: 0;
+    --vaadin-app-layout-navbar-padding-inline-start: 0;
+    --vaadin-app-layout-navbar-padding-inline-end: 0;
+    background: var(--cosmos-sky-color);
+}
+
+.cosmos-app-shell::part(navbar) {
+    box-sizing: border-box;
+    min-width: 0;
+    z-index: 2;
+
+    /* Die sichtbare Fläche liegt ausschließlich auf der gemeinsamen Topbar. */
+    background: transparent;
+}
+
+.cosmos-app-shell.cosmos-page .cosmos-sky {
+    position: fixed;
+
+    /* Innerhalb des isolierten AppLayouts hinter dem nativen Drawer halten.
+         * Dessen Desktop-Ebene hat keinen eigenen z-index. */
+    z-index: -1;
+}
+
+.cosmos-topbar {
+    display: flex;
+    flex: 1 1 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+    min-height: var(--cosmos-topbar-height);
+    background: var(--cosmos-topbar-background);
+    border-bottom: 1px solid var(--cosmos-topbar-border-color);
+    box-shadow: var(--cosmos-topbar-shadow);
+    padding: 0 24px 0 20px;
+    gap: 18px;
+}
+
+.cosmos-topbar-brand {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 12px;
+}
+
+.cosmos-topbar-logo {
+    --cosmos-topbar-logo-size: 48px;
+    width: var(--cosmos-topbar-logo-size);
+    height: var(--cosmos-topbar-logo-size);
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.cosmos-topbar-service-name {
+    min-width: 0;
+    color: var(--cosmos-topbar-text-color);
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -.6px;
+    overflow-wrap: anywhere;
+}
+
+.cosmos-topbar-account-menu {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: auto;
+    flex: 0 0 auto;
+    margin-inline-start: auto;
+    gap: 18px;
+}
+
+.cosmos-topbar .tracked-user-button {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+}
+
+/* Gemeinsamer Avatar-Schimmer; überschreibt den vorhandenen Inline-Schatten des Icons. */
+
+.cosmos-topbar-account-menu .tracked-user-button img,
+.cosmos-user-menu .user-popover-avatar img {
+    box-shadow: 0 0 18px color-mix(in srgb, var(--lumo-warning-color) 25%, transparent) !important;
+}
+
+.cosmos-app-main {
+    position: relative;
+    z-index: 1;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: calc(100vh - var(--cosmos-topbar-height));
+    min-height: calc(100dvh - var(--cosmos-topbar-height));
+    padding: 48px clamp(20px, 5vw, 76px) 24px;
+    gap: 40px;
+}
+
+.cosmos-dashboard-introduction,
+.cosmos-section-header.cosmos-dashboard-introduction {
+    width: 100%;
+    max-width: 1100px;
+}
+
+.cosmos-dashboard-kicker {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--lumo-primary-text-color);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+}
+
+.cosmos-dashboard-introduction h1,
+.cosmos-section-title {
+    margin: 0 0 6px;
+    color: var(--lumo-header-text-color);
+    font-size: clamp(28px, 4vw, 36px);
+    font-weight: 650;
+    letter-spacing: -.04em;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.cosmos-dashboard-accent {
+    color: var(--lumo-primary-text-color);
+}
+
+.cosmos-dashboard-description {
+    display: block;
+    color: var(--lumo-secondary-text-color);
+    font-size: 12px;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+}
+
+/* Gemeinsames Benutzermenü; nur die explizit markierte Cosmos-Variante wird gestaltet. */
+
+/* 2. BENUTZERMENÜ / einschließlich des portalierten Status-Selects */
+
+.cosmos-user-menu {
+    box-sizing: border-box;
+    width: min(380px, calc(100vw - 32px));
+    min-width: 0;
+    padding: 18px 22px 22px;
+    color: var(--lumo-body-text-color);
+    font-size: 13px;
+}
+
+.cosmos-user-menu .user-popover-header {
+    margin-bottom: 4px;
+}
+
+.cosmos-user-menu .user-popover-header vaadin-button,
+.cosmos-theme vaadin-button.cosmos-overlay-close {
+    min-height: var(--lumo-size-m);
+    width: var(--lumo-size-m);
+    height: var(--lumo-size-m);
+    margin: 0;
+    padding: 0;
+}
+
+.cosmos-user-menu .user-popover-header vaadin-icon,
+.cosmos-theme vaadin-button.cosmos-overlay-close > vaadin-icon {
+    width: var(--lumo-icon-size-m);
+    height: var(--lumo-icon-size-m);
+}
+
+.cosmos-user-menu .user-popover-body {
+    padding-block: 0;
+    gap: 12px;
+    min-width: 0;
+}
+
+.cosmos-user-menu .user-popover-body > span {
+    max-width: 100%;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.cosmos-user-menu .user-popover-avatar {
+    margin-bottom: 6px;
+}
+
+.cosmos-user-menu vaadin-select {
+    --vaadin-select-overlay-width: min(320px, calc(100vw - 32px));
+    --vaadin-input-field-value-font-size: 13px;
+    --vaadin-input-field-value-font-weight: 600;
+}
+
+.cosmos-user-menu vaadin-select::part(input-field) {
+    min-height: var(--lumo-size-m);
+    border: 1px solid var(--cosmos-input-border);
+    border-radius: var(--lumo-border-radius-l);
+    background: var(--cosmos-input-background);
+}
+
+.cosmos-user-menu vaadin-select[focused]::part(input-field) {
+    border-color: var(--cosmos-input-focus-border);
+}
+
+.cosmos-user-menu vaadin-button {
+    margin-block: 0;
+}
+
+.cosmos-app-shell .cosmos-footer {
+    align-self: center;
+    margin-top: auto;
+    padding-top: 16px;
+}
+
+/* 3. OVERLAYS UND AUSWAHLFELDER
+ * ::part gestaltet freigegebene Oberflächen; CSS erreicht nicht beliebig Vaadins Inneres. */
+
+vaadin-popover[theme~="cosmos"]::part(overlay),
+vaadin-select[theme~="cosmos"]::part(overlay),
+vaadin-dialog[theme~="cosmos"]::part(overlay),
+vaadin-menu-bar-submenu[theme~="cosmos"]::part(overlay),
+.cosmos-theme vaadin-combo-box::part(overlay),
+.cosmos-theme vaadin-date-picker::part(overlay),
+.cosmos-theme vaadin-time-picker::part(overlay) {
+    max-width: calc(100vw - 24px);
+    border: 1px solid var(--cosmos-overlay-border);
+    border-radius: var(--cosmos-overlay-radius);
+    background: var(--cosmos-overlay-background);
+    box-shadow: var(--cosmos-overlay-shadow);
+    -webkit-backdrop-filter: blur(17px);
+    backdrop-filter: blur(17px);
+}
+
+/* ComboBox- und Uhrzeit-Einträge passen zur 13px-Schrift der Eingabefelder. */
+
+.cosmos-theme :is(vaadin-combo-box, vaadin-time-picker)::part(content) {
+    --lumo-font-size-m: 13px;
+    font-size: 13px;
+}
+
+/* Kalendergrößen relativ zur 13px-Basis, auf ganze Pixel gerundet.
+ * Die explizite Wochentaggröße wird auch für die Scroller-Höhenberechnung verwendet. */
+
+.cosmos-theme vaadin-date-picker::part(content) {
+    --lumo-font-size-m: 13px;
+    --lumo-font-size-s: 11px;
+    --vaadin-date-picker-month-header-font-size: 15px;
+    --vaadin-date-picker-weekday-font-size: 10px;
+    --vaadin-date-picker-week-number-font-size: 10px;
+    font-size: 13px;
+}
+
+vaadin-popover[theme~="cosmos"]::part(content) {
+    padding: 0;
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+}
+
+vaadin-popover[theme~="cosmos"]::part(arrow) {
+    background: var(--lumo-base-color);
+}
+
+vaadin-select[theme~="cosmos"]::part(content) {
+    padding: var(--lumo-space-xs);
+}
+
+vaadin-select[theme~="cosmos"] vaadin-select-item {
+    color: var(--lumo-body-text-color);
+    border-radius: var(--lumo-border-radius-m);
+}
+
+/* Der geschlossene Select hat genau eine Fläche: den äußeren input-field-Part.
+ * Die gewählte Zeile im Wert-Button erhält keinen eigenen farbigen Balken.
+ * Die Hervorhebung im geöffneten Dropdown bleibt beim nativen Vaadin-Theme. */
+
+.cosmos-user-menu vaadin-select-value-button,
+.cosmos-user-menu vaadin-select-value-button > vaadin-select-item {
+    background: transparent;
+    box-shadow: none;
+}
+
+.cosmos-user-menu vaadin-select-value-button {
+    border: 0;
+    min-width: 0;
+}
+
+@media (max-width: 380px) {
+
+    .cosmos-user-menu {
+        padding-inline: 16px;
+    }
+}
+
+@media (max-width: 750px) {
+
+    .cosmos-topbar {
+        padding-inline: 11px;
+    }
+
+    .cosmos-topbar-logo {
+        --cosmos-topbar-logo-size: 40px;
+    }
+
+    .cosmos-topbar-service-name {
+        font-size: 17px;
+    }
+}
+
+@media (max-width: 700px) {
+
+    .cosmos-app-main {
+        padding: 28px 16px 20px;
+        gap: 28px;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+
+    .cosmos-topbar,
+    vaadin-popover[theme~="cosmos"]::part(overlay),
+    vaadin-select[theme~="cosmos"]::part(overlay),
+    vaadin-dialog[theme~="cosmos"]::part(overlay),
+    vaadin-menu-bar-submenu[theme~="cosmos"]::part(overlay) {
+        background: var(--lumo-base-color);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}
+
+/* Link-Unterstreichung gehört zu den Cosmos-Views, nicht zum Admin-Stylesheet. */
+
+.cosmos-theme .underline {
+    text-decoration: underline;
+}
+
+/* Haupttexte der Cosmos-Statusliste: Lumo S; andere Menüs behalten Lumo M. */
+
+vaadin-select[theme~="cosmos"] {
+    --user-status-label-font-size: var(--lumo-font-size-s);
+}
+
+.user-popover-status-label {
+    font-size: var(--user-status-label-font-size, var(--lumo-font-size-m));
+}

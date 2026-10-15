@@ -1,55 +1,45 @@
 # Browserabdeckung und offene Punkte
 
-**Redesign-Abschlussprüfung: 15.10.2026 – 1082 Anwendungstests, 34 Helper-/Reportertests und je 100 Browserfälle auf DE/EN erfolgreich; JUnit- und Browser-Code-Coverage gemessen.**
+**Theme-Struktur geprüft am 15.10.2026: 1085 Anwendungs-JUnit-Tests, 34 Helper-/Reportertests und je 100 Browserfälle auf Deutsch/Englisch erfolgreich.**
 Bedienung und Aufbau stehen in der [Browser-Testanleitung](README.md).
-Wichtige Abschlüsse stehen dauerhaft unter [Meilensteine](../docs/meilensteine/README.md).
-Lokale Run-Ausgaben sind bereinigbare Diagnosedaten und keine Voraussetzung für diese Übersicht.
+Wichtige Abschlüsse bleiben unter [Meilensteine](../docs/meilensteine/README.md)
+unabhängig von bereinigbaren lokalen Testausgaben erhalten.
 
-Nach der anschließenden Java-/Textbereinigung am 15.10.2026 bestehen 1085
-Anwendungs-JUnit-Tests und 34 Helper-/Reportertests ohne Fehler oder Skips.
-Die vollständigen Browserläufe und Coverage wurden dabei nicht wiederholt;
-ihre unten dokumentierten Ergebnisse stammen aus der Redesign-Abschlussprüfung.
+## Vollständige Theme-Prüfung
 
-## Redesign-Abschlussprüfung – 15.10.2026
-
-Ausgangscommit `c5c3d089` auf `main`; Test- und Dokumentationsänderungen noch nicht committet.
-Die bestätigte Anwendung und ihre Styles wurden in dieser QA-Runde nicht verändert.
-15 JUnit-Regressionen, vier Browserfälle und sechs Helper-/Reporterfälle wurden ergänzt;
-veraltete Testannahmen an die neuen Filter und Dialoge angepasst.
+Branch `feature/theme-css-structure`, Ausgangscommit `e429f86f`;
+Theme-/Dokumentationsänderungen lagen bei der Prüfung uncommittet vor.
+Zentrale Tokens, Dateiaufteilung und umbenanntes `admin-users.css` sind im frischen
+Produktionsimage geprüft. Alle sieben CSS-Dateien werden korrekt ausgeliefert;
+ihre geparsten Regeln stimmen trotz Produktionsminifizierung mit dem Quellstand überein.
 
 | Prüfung | Ergebnis |
 | --- | --- |
-| Shared / Java 25.0.4.1 | Clean install erfolgreich |
-| JUnit Anwendung | 1082/1082; 0 Fehler, Fehlschläge, Skips |
+| Java 25.0.4.1 / Shared sauber installiert | Erfolgreich |
+| Anwendungs-JUnit | 1085/1085; 0 Fehler, Fehlschläge, Skips |
 | Browser-Helper/Reporter | 34/34; 0 Fehler, Fehlschläge, Skips |
-| Frischer Docker-Produktionsbuild | Erfolgreich einschließlich Tests und Frontend |
-| Browser Deutsch | 100/100; 0 Fehler/Skips |
-| Browser Englisch | 100/100; 0 Fehler/Skips, dasselbe App-Image |
-| Aufbau, Abbau, JaCoCo, Allure und Markdown | Beide vollständig erfolgreich |
+| Frischer Produktionsbuild einschließlich JUnit und Frontend | Erfolgreich |
+| Browser Deutsch / Englisch | Je 100/100; 0 Fehlschläge oder Skips, identisches App-Image |
+| Aufbau, Abbau und Allure-/Markdown-Berichte | Beide vollständig erfolgreich |
 
-| Messung | Zeilen | Zweige |
-| --- | ---: | ---: |
-| JUnit | 70,87 % (3689/5205) | 66,22 % (1127/1702) |
-| Browser DE + EN zusammen | 86,19 % (4486/5205) | 65,63 % (1117/1702) |
+JUnit-Coverage: **71,16 % Zeilen** (3689/5184) und
+**66,37 % Zweige** (1127/1698); frische Messung.
+Gemessen ist serverseitiger Java-Anwendungscode. Browser-Code-Coverage wurde diesmal
+nicht erneut instrumentiert; die frühere Messung steht im
+[Redesign-Meilenstein](../docs/meilensteine/2026-10-15-redesign-abgeschlossen.md).
+Die Fall-Erfolgsquote ist keine CSS-/JavaScript- oder vollständige fachliche Coverage.
 
+[Dauerhafter Theme-Meilenstein](../docs/meilensteine/2026-10-15-theme-struktur-geprueft.md) mit Ergebnissen,
+Erkenntnissen und Messgrenzen; [Theme-Anleitung](../docs/theme.md) für die neue Struktur.
+Die vollständige Prüfung ist erfolgreich abgeschlossen. Weitere Designkorrekturen
+waren in dieser Nachprüfung nicht nötig.
 
-Gemessen ist serverseitiger Anwendungscode, kein CSS-/JavaScript- oder vollständiger
-fachlicher Abdeckungsgrad. Browser-Coverage enthält auch Start und Hintergrundaufgaben.
-Die DE-/EN-Ausführungsdaten wurden vereinigt; Klassendateien stammen aus dem identischen
-geprüften Docker-JAR. JUnit wurde mit frischer Ausführungsdatei separat gemessen.
-
-Der [Meilensteinbericht zum Redesign](../docs/meilensteine/2026-10-15-redesign-abgeschlossen.md)
-enthält die Ergebnisse und wichtigsten Erkenntnisse unabhängig von lokalen Testausgaben.
-Der [Designstandard](../docs/design-standard.md) bleibt verbindlich.
-Beide Sprachläufe verwendeten getrennte eigene Docker-/H2-/Mailpit-Umgebungen und
-Konten; die eigenen Container, Netzwerke und Volumes wurden vollständig abgebaut.
-Die IDE-Anwendung und Bestandsdaten waren keine Testziele.
-
-USER-11A/B prüfen Entwürfe/Anwenden, einzelne Badge-Aktionen, Datumabhängigkeit und
-Scrollen der begrenzten Zeitliste ohne Wertübernahme. USER-12A/B prüfen die optionale
+USER-11A/B prüfen Filterentwürfe, Anwenden, einzelne Badges, Datumabhängigkeit und
+Scrollen der begrenzten Zeitliste ohne Auswahl. USER-12A/B prüfen die optionale
 Passwortbestätigung mit Fehlern erst nach Blur und sichere Schließen-Aktionen.
-Die Regressionen zu Anmeldung, Remember-me, Rollen/Sperren, alten Formularen,
-Mailtokens, Konfiguration, Unicode-Mails und mobilen Fenstergrößen bleiben erhalten.
+Beide Sprachläufe verwenden getrennte eigene Docker-/H2-/Mailpit-Umgebungen und Konten.
+Die eigenen Container, Netzwerke und Volumes wurden vollständig abgebaut;
+IDE-Anwendung und Bestandsdaten waren keine Testziele.
 
 ## Gemeinsames Design der Kontoansichten
 

@@ -6,6 +6,7 @@ Sie bleiben auch dann verständlich, wenn lokale Testausgaben bereits bereinigt 
 | Datum | Meilenstein |
 | --- | --- |
 | 15.10.2026 | [Redesign abgeschlossen und vollständig nachgeprüft](2026-10-15-redesign-abgeschlossen.md) |
+| 15.10.2026 | [Theme-Struktur vollständig geprüft](2026-10-15-theme-struktur-geprueft.md) |
 
 ## Was festgehalten wird
 

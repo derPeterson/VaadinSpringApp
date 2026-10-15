@@ -6,12 +6,16 @@ anderen Ansichten. Neue Entwürfe übernehmen zuerst die bestehenden Bausteine.
 
 ## Gemeinsame Bausteine
 
-Vaadin Flow bleibt die Komponentenbasis. `cosmos-theme.css` enthält Palette,
-Cards, Formularfelder, Buttons, Navigation und Overlays. `styles.css` bleibt für
-die lokale Anordnung der Admin-Tabellen, Filter, Pagination und Benutzerdialoge
-getrennt und wird nur an AdminView geladen. Gemeinsame Farben und Komponentenstandards
-werden dort nicht parallel zum Cosmos-Theme definiert; die Datei ist kein allgemeines
-Reset-Stylesheet. Inter wird lokal geladen.
+Vaadin Flow bleibt die Komponentenbasis. `cosmos-tokens.css` enthält Palette,
+Komponentenfarben, Verläufe, Schatten und gemeinsame Designwerte. `cosmos-theme.css`
+verwendet sie für Kontoansichten, Cards, Eingaben, Buttons und Grids. App-Kopfzeile,
+Benutzermenü und Auswahl-Overlays stehen in `cosmos-shell.css`; Navigation, Panels,
+Konfiguration und Dialogstandards in `cosmos-admin.css`.
+`admin-users.css` ergänzt nur die lokale Benutzerverwaltung und wird an AdminView geladen.
+Die bisherige `styles.css` wurde dafür umbenannt. Dekorationsfarben stehen ebenfalls
+in den Tokens; `cosmos-background.css` ordnet und animiert die Dekoration.
+Inter wird separat lokal geladen. [Theme-Anleitung](theme.md): Zuständigkeiten,
+Farben ändern und ein weiteres Theme auf dieser Basis aufbauen.
 Formularpaare verwenden `cosmos-form-row` und stehen unter 600 px untereinander.
 
 | Element | Abgestimmte Gestaltung |

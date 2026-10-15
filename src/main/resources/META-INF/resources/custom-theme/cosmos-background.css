@@ -1,6 +1,13 @@
+/* SILENT COSMOS / DEKORATION
+ * Diese Datei ordnet und bewegt Sterne, Nebel und Planeten. Alle Farben/Verläufe
+ * stehen in cosmos-tokens.css. pointer-events: none lässt Klicks zur Oberfläche durch.
+ * isolation + z-index halten die Dekoration hinter den bedienbaren Inhalten.
+ */
+
 /* Gemeinsamer CSS-Hintergrund für Kontoansichten und Startseite, aus Silent Cosmos.
  * Keine Bilder, kein Canvas, keine JavaScript-Animation. Nur die Dekoration wird beschnitten.
  */
+
 .cosmos-page {
     position: relative;
     isolation: isolate;
@@ -11,140 +18,178 @@
     min-height: 100dvh;
     background: var(--cosmos-sky-color);
 }
-/* Separate background layer: never intercept clicks / focus. */
+
+/* Eigene Hintergrundebene: fängt weder Mausklicks noch Tastaturfokus ab. */
+
 .cosmos-page .cosmos-sky {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse at 78% 40%, rgba(25, 33, 66, .78), transparent 54%),
-    radial-gradient(ellipse at 22% 72%, rgba(19, 41, 65, .43), transparent 54%),
-    linear-gradient(150deg, #03050b 0%, #080d1c 48%, #020409 100%);
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--cosmos-sky-background);
 }
-.cosmos-page .cosmos-sky > * { position: absolute; pointer-events: none; }
+
+.cosmos-page .cosmos-sky > * {
+    position: absolute;
+    pointer-events: none;
+}
 
 .cosmos-page .cosmos-stars {
-  inset: -25px;
-  background-repeat: repeat;
-  animation: cosmos-stars-float 30s ease-in-out infinite alternate;
+    inset: -25px;
+    background-repeat: repeat;
+    animation: cosmos-stars-float 30s ease-in-out infinite alternate;
 }
+
 .cosmos-page .cosmos-stars--small {
-  opacity: .74;
-  background-size: 257px 223px;
-  background-image:
-    radial-gradient(1px 1px at 8% 14%, #f7faff 98%, transparent),
-    radial-gradient(1px 1px at 26% 64%, #adc7f6 98%, transparent),
-    radial-gradient(1px 1px at 43% 26%, #eef2ff 98%, transparent),
-    radial-gradient(1px 1px at 69% 84%, #b9cbee 98%, transparent),
-    radial-gradient(1px 1px at 85% 43%, #ffffff 98%, transparent),
-    radial-gradient(1px 1px at 93% 12%, #b6caef 98%, transparent);
+    opacity: .74;
+    background-size: 257px 223px;
+    background-image: var(--cosmos-stars-small-background);
 }
+
 .cosmos-page .cosmos-stars--far {
-  opacity: .45;
-  background-size: 359px 283px;
-  background-image:
-    radial-gradient(1.5px 1.5px at 15% 75%, #eff5ff 98%, transparent),
-    radial-gradient(1px 1px at 51% 32%, #e4ecff 98%, transparent),
-    radial-gradient(1px 1px at 82% 16%, #fff 98%, transparent),
-    radial-gradient(1.5px 1.5px at 74% 63%, #9ebfff 98%, transparent);
-  animation-duration: 45s;
-  animation-direction: alternate-reverse;
+    opacity: .45;
+    background-size: 359px 283px;
+    background-image: var(--cosmos-stars-far-background);
+    animation-duration: 45s;
+    animation-direction: alternate-reverse;
 }
+
 .cosmos-page .cosmos-galaxy {
-  width: 130%; height: 44%;
-  top: 3%; left: -24%;
-  transform: rotate(-20deg);
-  background: radial-gradient(ellipse at 50% 50%,
-    rgba(57, 74, 139, .24) 0%,
-    rgba(46, 73, 115, .12) 34%,
-    rgba(20, 45, 82, .035) 55%, transparent 74%);
-  filter: blur(36px);
-  animation: cosmos-nebula-float 18s ease-in-out infinite alternate;
+    width: 130%;
+    height: 44%;
+    top: 3%;
+    left: -24%;
+    transform: rotate(-20deg);
+    background: var(--cosmos-galaxy-background);
+    filter: blur(36px);
+    animation: cosmos-nebula-float 18s ease-in-out infinite alternate;
 }
+
 .cosmos-page .cosmos-glow {
-  border-radius: 50%;
-  filter: blur(70px);
-  animation: cosmos-nebula-float 20s ease-in-out infinite alternate;
-  will-change: transform;
+    border-radius: 50%;
+    filter: blur(70px);
+    animation: cosmos-nebula-float 20s ease-in-out infinite alternate;
+    will-change: transform;
 }
+
 .cosmos-page .cosmos-glow--blue {
-  width: min(65vw, 950px); height: min(46vw, 650px);
-  left: -14%; top: 6%;
-  background: radial-gradient(ellipse, rgba(32, 75, 126, .30), transparent 69%);
+    width: min(65vw, 950px);
+    height: min(46vw, 650px);
+    left: -14%;
+    top: 6%;
+    background: var(--cosmos-glow-blue-background);
 }
+
 .cosmos-page .cosmos-glow--violet {
-  width: min(62vw, 850px); height: min(48vw, 650px);
-  right: -20%; top: -5%;
-  background: radial-gradient(ellipse, rgba(94, 57, 140, .25), transparent 67%);
-  animation-delay: -8s;
-  animation-duration: 24s;
+    width: min(62vw, 850px);
+    height: min(48vw, 650px);
+    right: -20%;
+    top: -5%;
+    background: var(--cosmos-glow-violet-background);
+    animation-delay: -8s;
+    animation-duration: 24s;
 }
 
-/* Planetary horizon: all curves and lighting are CSS gradients and shadows. */
+/* Planetenhorizont: Rundung und Licht entstehen aus CSS-Verläufen und Schatten. */
+
 .cosmos-page .cosmos-horizon {
-  z-index: 0;
-  width: 150vw;
-  height: 150vw;
-  left: -90vw;
-  bottom: -125vw;
-  border-radius: 50%;
-  background:
-    radial-gradient(ellipse at 67% 22%, rgba(88, 105, 126, .29), transparent 32%),
-    radial-gradient(ellipse at 65% 12%, #30465e 0%, #111b2d 11%, #060d17 28%, #02040a 75%);
-  box-shadow:
-    0 -2px 6px rgba(221, 236, 255, .67),
-    0 -12px 36px rgba(105, 155, 232, .37),
-    0 -35px 85px rgba(53, 100, 177, .25),
-    inset 0 12px 26px rgba(193, 216, 250, .10);
-  opacity: .92;
-}
-.cosmos-page .cosmos-horizon::after {
-  content: "";
-  position: absolute; inset: 0; border-radius: inherit;
-  background:
-    radial-gradient(ellipse at 50% 24%, rgba(95, 116, 137, .21), transparent 17%),
-    radial-gradient(ellipse at 68% 35%, rgba(99, 122, 136, .17), transparent 23%),
-    repeating-radial-gradient(ellipse at 45% 26%, transparent 0 27px, rgba(146, 161, 179, .026) 29px 32px, transparent 34px 77px);
-}
-.cosmos-page .cosmos-planet {
-  width: clamp(58px, 7vw, 104px);
-  aspect-ratio: 1;
-  top: 52%; right: 10%;
-  border-radius: 50%;
-  background: radial-gradient(circle at 82% 25%, #202c43 0%, #09101d 41%, #02040a 75%);
-  box-shadow: inset 2px 2px 4px rgba(202, 224, 255, .62), 0 0 25px rgba(142, 181, 238, .12);
-}
-.cosmos-page .cosmos-moon {
-  z-index: 1;
-  width: clamp(35px, 4vw, 60px);
-  aspect-ratio: 1;
-  bottom: 11%; left: 13%;
-  border-radius: 50%;
-  background: radial-gradient(circle at 26% 20%, #374960, #101829 48%, #03050b 79%);
-  box-shadow: inset 2px 2px 3px rgba(190, 210, 242, .6), 0 0 13px rgba(145, 172, 235, .08);
+    z-index: 0;
+    width: 150vw;
+    height: 150vw;
+    left: -90vw;
+    bottom: -125vw;
+    border-radius: 50%;
+    background: var(--cosmos-horizon-background);
+    box-shadow: var(--cosmos-horizon-shadow);
+    opacity: .92;
 }
 
+.cosmos-page .cosmos-horizon::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--cosmos-horizon-texture-background);
+}
+
+.cosmos-page .cosmos-planet {
+    width: clamp(58px, 7vw, 104px);
+    aspect-ratio: 1;
+    top: 52%;
+    right: 10%;
+    border-radius: 50%;
+    background: var(--cosmos-planet-background);
+    box-shadow: var(--cosmos-planet-shadow);
+}
+
+.cosmos-page .cosmos-moon {
+    z-index: 1;
+    width: clamp(35px, 4vw, 60px);
+    aspect-ratio: 1;
+    bottom: 11%;
+    left: 13%;
+    border-radius: 50%;
+    background: var(--cosmos-moon-background);
+    box-shadow: var(--cosmos-moon-shadow);
+}
 
 @keyframes cosmos-nebula-float {
-  from { transform: translate3d(-2%, 0, 0) scale(1); }
-  to { transform: translate3d(5%, 5%, 0) scale(1.1); }
-}
-@keyframes cosmos-stars-float {
-  from { transform: translate3d(-6px, 0, 0); }
-  to { transform: translate3d(14px, 9px, 0); }
+
+    from {
+        transform: translate3d(-2%, 0, 0) scale(1);
+    }
+
+    to {
+        transform: translate3d(5%, 5%, 0) scale(1.1);
+    }
 }
 
+@keyframes cosmos-stars-float {
+
+    from {
+        transform: translate3d(-6px, 0, 0);
+    }
+
+    to {
+        transform: translate3d(14px, 9px, 0);
+    }
+}
 
 @media (max-width: 700px) {
-    .cosmos-page .cosmos-galaxy { width: 175%; left: -45%; filter: blur(24px); }
-    .cosmos-page .cosmos-glow { filter: blur(40px); opacity: .75; will-change: auto; }
-    .cosmos-page .cosmos-horizon { width: 225vw; height: 225vw; left: -150vw; bottom: -195vw; opacity: .7; }
-    .cosmos-page .cosmos-planet { right: 5%; top: 68%; }
+
+    .cosmos-page .cosmos-galaxy {
+        width: 175%;
+        left: -45%;
+        filter: blur(24px);
+    }
+
+    .cosmos-page .cosmos-glow {
+        filter: blur(40px);
+        opacity: .75;
+        will-change: auto;
+    }
+
+    .cosmos-page .cosmos-horizon {
+        width: 225vw;
+        height: 225vw;
+        left: -150vw;
+        bottom: -195vw;
+        opacity: .7;
+    }
+
+    .cosmos-page .cosmos-planet {
+        right: 5%;
+        top: 68%;
+    }
 }
+
 @media (prefers-reduced-motion: reduce) {
+
     .cosmos-page .cosmos-stars,
     .cosmos-page .cosmos-galaxy,
-    .cosmos-page .cosmos-glow { animation: none; will-change: auto; }
+    .cosmos-page .cosmos-glow {
+        animation: none;
+        will-change: auto;
+    }
 }

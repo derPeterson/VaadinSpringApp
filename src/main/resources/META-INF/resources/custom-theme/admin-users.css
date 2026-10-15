@@ -1,6 +1,9 @@
-/* Lokale Anordnung der Benutzerverwaltung: Tabelle, Filter, Pagination und Dialoginhalte.
- * Bewusst getrennt vom gemeinsamen Cosmos-Theme; keine allgemeinen Reset-Regeln.
- * Palette und gemeinsame Komponentenstandards stehen in cosmos-theme.css. */
+/* BENUTZERVERWALTUNG / LOKALE ANORDNUNG
+ * Nur AdminView lädt diese Datei. Farben werden aus cosmos-tokens.css übernommen.
+ * Erst die gemeinsame Komponente ändern, wenn tatsächlich alle Views betroffen sein sollen. */
+
+/* 1. SUCHE, FILTERPANEL UND AKTIVE FILTER */
+
 .admin-user-filter-bar {
     gap: 0;
     margin-block-start: var(--lumo-space-m);
@@ -94,12 +97,13 @@
 }
 
 /* Der normale Secondary-Button in der Werkzeugleiste steuert das Details. */
+
 .admin-user-filter-details > vaadin-details-summary {
     display: none;
 }
 
 .admin-user-filter-details[opened]::part(content) {
-    background: var(--cosmos-table-header-background);
+    background: var(--cosmos-filter-panel-background);
     border: 1px solid var(--lumo-contrast-20pct);
     border-radius: var(--lumo-border-radius-l);
     padding: var(--lumo-space-m);
@@ -150,6 +154,7 @@
     padding-top: var(--lumo-space-m);
     gap: var(--lumo-space-xl);
 }
+
 .admin-user-filters {
     display: flex;
     flex-wrap: wrap;
@@ -157,6 +162,8 @@
     gap: var(--lumo-space-m);
     width: 100%;
 }
+
+/* 2. DATUM UND UHRZEIT / Breite des Feldpaars und begrenztes Auswahl-Overlay */
 
 .admin-user-activity-filter {
     width: 340px;
@@ -168,9 +175,11 @@
 }
 
 /* Der Scrollbereich bleibt innerhalb des abgerundeten Overlay-Rahmens. */
+
 .cosmos-theme vaadin-time-picker.admin-user-activity-time-picker::part(overlay) {
     overflow: hidden;
 }
+
 .admin-user-activity-inputs {
     gap: var(--lumo-space-xs);
 }
@@ -181,30 +190,33 @@
     flex: 1 1 0;
 }
 
+/* 3. TABELLENKOPF UND BENUTZERDIALOG */
+
 .admin-users-grid::part(header-cell) {
     font-weight: 600;
 }
 
 /* Den Kopfzellen-Fokusrahmen nur bei Tastaturbedienung anzeigen. */
+
 .admin-users-grid::part(header-cell):not(:focus-visible)::before {
     box-shadow: none;
 }
 
 vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(overlay),
 vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(overlay) {
-    border: 1px solid var(--lumo-contrast-20pct);
+    border: 1px solid var(--cosmos-table-border-color);
 }
 
 vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(header),
 vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(header) {
-    background: var(--cosmos-table-header-background);
+    background: var(--cosmos-user-dialog-header-background);
     color: var(--lumo-primary-contrast-color);
-    border-bottom: 1px solid var(--lumo-contrast-20pct);
+    border-bottom: 1px solid var(--cosmos-table-border-color);
 }
 
 vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(footer),
 vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(footer) {
-    border-top: 1px solid var(--lumo-contrast-20pct);
+    border-top: 1px solid var(--cosmos-table-border-color);
 }
 
 vaadin-dialog.admin-user-delete-dialog::part(header-content),
@@ -288,7 +300,7 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     width: 100%;
     box-sizing: border-box;
     padding: var(--lumo-space-s) var(--lumo-space-m);
-    border: 1px solid var(--lumo-contrast-20pct);
+    border: 1px solid var(--cosmos-table-border-color);
     border-radius: var(--lumo-border-radius-l);
     background: var(--lumo-contrast-5pct);
 }
@@ -297,12 +309,14 @@ vaadin-dialog.admin-user-dialog::part(content) {
     padding-block: var(--lumo-space-l);
 }
 
+/* 4. TABELLENINHALTE / Name, Rollen, Avatar und Sortierindikatoren */
+
 .admin-users-grid {
     --vaadin-grid-cell-padding: var(--lumo-space-s) var(--lumo-space-s);
 }
 
 .admin-users-grid::part(body-cell) {
-    color: var(--lumo-secondary-text-color);
+    color: var(--cosmos-table-body-color);
 }
 
 .admin-users-grid .admin-user-table-name {
@@ -317,6 +331,7 @@ vaadin-dialog.admin-user-dialog::part(content) {
 }
 
 /* Rollen und aktive Filter verwenden dieselbe Badge-Schrift. */
+
 .admin-users-grid .cosmos-admin-role-chip,
 .cosmos-admin .admin-user-active-filter-chip {
     font-size: 12px;
@@ -339,6 +354,7 @@ vaadin-dialog.admin-user-dialog::part(content) {
 }
 
 /* Text und Sortierpfeile mittig statt an der Schrift-Grundlinie ausrichten. */
+
 .admin-users-grid vaadin-grid-sorter {
     width: 100%;
     align-items: center;
@@ -355,6 +371,8 @@ vaadin-dialog.admin-user-dialog::part(content) {
     margin-inline-end: 15px;
     transform: translateY(-2px);
 }
+
+/* 5. PAGINATION / Anordnung; Buttonmaße kommen aus cosmos-admin.css */
 
 .admin-user-pagination {
     flex-wrap: wrap;
@@ -381,6 +399,7 @@ vaadin-dialog.admin-user-dialog::part(content) {
 }
 
 @media (max-width: 600px) {
+
     .admin-user-toolbar {
         gap: var(--lumo-space-xs);
     }
@@ -395,6 +414,9 @@ vaadin-dialog.admin-user-dialog::part(content) {
 }
 
 /* Löschdialog: vorhandene Panel- und Dialoggestaltung, lokal angeordnete Inhalte. */
+
+/* 6. LÖSCHDIALOG / Warnung und ausgewähltes Konto */
+
 vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(overlay) {
     box-sizing: border-box;
     width: min(640px, calc(100vw - 32px));
@@ -429,7 +451,7 @@ vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(overlay) {
     padding: var(--lumo-space-m);
     border: 1px solid var(--lumo-contrast-20pct);
     border-radius: var(--lumo-border-radius-l);
-    background: var(--cosmos-table-header-background);
+    background: var(--cosmos-user-dialog-header-background);
 }
 
 vaadin-dialog.admin-user-delete-dialog::part(content) {

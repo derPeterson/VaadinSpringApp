@@ -21,7 +21,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @StyleSheet(Lumo.STYLESHEET)
 @StyleSheet(Lumo.UTILITY_STYLESHEET)
 @StyleSheet("custom-theme/typography.css")
+// Reihenfolge: Designwerte vor Komponenten, danach App-/Admin-Bausteine und Dekoration.
+@StyleSheet("custom-theme/cosmos-tokens.css")
 @StyleSheet("custom-theme/cosmos-theme.css")
+@StyleSheet("custom-theme/cosmos-shell.css")
+@StyleSheet("custom-theme/cosmos-admin.css")
 @StyleSheet("custom-theme/cosmos-background.css")
 @ColorScheme(ColorScheme.Value.DARK)
 public class Application implements AppShellConfigurator {
