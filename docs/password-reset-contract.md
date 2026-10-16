@@ -74,3 +74,14 @@ Nach gültigem Passwortreset wird die vorübergehende Anmeldesperre in derselben
 Transaktion wie Hashänderung und Tokenverbrauch zurückgesetzt. Rollback erhält alle
 drei Zustände. Eine bloße Mailanfrage, ein ungültiger Token oder gesperrtes Konto
 entsperrt nicht. [Anmeldeversuchsvertrag](login-attempts-contract.md).
+
+## Öffentliche Einstiege während Wartung
+
+Der [Wartungsmodus](maintenance-mode-contract.md) schützt Tokenanlage,
+Validierung, Mailanfrage und Passwortänderung zusätzlich vor Fachänderungen.
+`MaintenanceAccessException` bezeichnet eine absichtlich pausierte Nutzung;
+eine abgewiesene Aktion verbraucht keinen Token und verändert weder Hash noch
+Queue. Die normale Laufzeit läuft weiter. Scheduler-Bereinigung bleibt aktiv.
+Transport-/Routenschutz fängt alte Formulare und Direktlinks vor diesen
+Einstiegen ab. Die bestehende neutrale Anfrageantwort bei Kontounterschieden
+bleibt für zugelassene Anfragen erhalten.

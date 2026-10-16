@@ -15,7 +15,10 @@ import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.repository.VerificationTokenRepository;
+import de.derpeterson.app.security.MaintenanceAccessException;
+import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.persistence.EntityManagerFactory;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
@@ -23,6 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -40,6 +44,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -48,6 +53,8 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -295,7 +302,7 @@ class VerificationServicePersistenceTest {
       if (resource.equals("logo")) {
         assertSame(failure, thrown);
       } else {
-        assertInstanceOf(java.io.FileNotFoundException.class, thrown);
+        assertInstanceOf(FileNotFoundException.class, thrown);
       }
     }
     verify(probes.tokens(), times(2)).save(any(VerificationTokenEntity.class));
@@ -471,10 +478,70 @@ class VerificationServicePersistenceTest {
       EmailQueueService queue,
       UserRepository users) {}
 
+  @Test
+  void maintenanceCannotConsumeVerificationOrQueueMailAndExistingLinkWorksAfterwards()
+      throws Exception {
+    SecurityContextHolder.clearContext();
+    String token = service.createToken(users.findById(userId).orElseThrow());
+    long tokenCount = tokens.count();
+    clearInvocations(probes.queue());
+    when(probes.config().getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    assertThrows(MaintenanceAccessException.class, () -> service.validateToken(token));
+    assertThrows(
+        MaintenanceAccessException.class, () -> service.sendVerificationEmailByToken(token));
+    assertThrows(
+        MaintenanceAccessException.class,
+        () -> service.sendVerificationEmailByEmail("test@example.com"));
+    assertEquals(tokenCount, tokens.count());
+    assertEquals(TokenStatus.ACTIVE, tokens.findByToken(token).orElseThrow().getStatus());
+    assertFalse(users.findById(userId).orElseThrow().isEnabled());
+    verifyNoInteractions(probes.queue());
+    service.deleteExpiredTokens();
+    when(probes.config().getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
+    assertTrue(service.validateToken(token));
+    assertEquals(TokenStatus.USED, tokens.findByToken(token).orElseThrow().getStatus());
+  }
+
+  @Autowired RegistrationService registration;
+
+  @Test
+  void maintenanceChangeBetweenAccountAndMailRollsBackTheWholeRegistration() {
+    SecurityContextHolder.clearContext();
+    var candidate =
+        UserEntity.builder()
+            .firstName("New")
+            .lastName("User")
+            .email("paused-registration@example.test")
+            .roleEntities(new ArrayList<>())
+            .password("hash")
+            .gender(Gender.OTHER)
+            .birthDate(LocalDate.of(1990, 1, 1))
+            .preferredLocale(Locale.ENGLISH)
+            .enabled(false)
+            .build();
+    long count = users.count();
+    long tokenCount = tokens.count();
+    when(probes.config().getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false, true);
+    assertTrue(AopUtils.isAopProxy(registration));
+    assertThrows(MaintenanceAccessException.class, () -> registration.register(candidate));
+    assertEquals(count, users.count());
+    assertEquals(tokenCount, tokens.count());
+    assertTrue(users.findByEmail("paused-registration@example.test").isEmpty());
+    verify(probes.queue(), never()).addEmailToQueue(any(), any(), any(), any());
+  }
+
   @Configuration
   @EnableTransactionManagement
   @EnableJpaRepositories(basePackageClasses = UserRepository.class)
   static class Config {
+    @Bean
+    RegistrationService registrationService(
+        Probes probes, UserRepository repository, VerificationService verification) {
+      var users =
+          new UserService(repository, new UserStatusBroadcaster(), mock(PasswordEncoder.class));
+      return new RegistrationService(users, verification, probes.config());
+    }
+
     @Bean
     DataSource dataSource() {
       return new DriverManagerDataSource(

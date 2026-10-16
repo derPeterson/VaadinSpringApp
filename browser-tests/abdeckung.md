@@ -1,6 +1,81 @@
 # Browserabdeckung und offene Punkte
 
-**Aktueller Funktionsnachweis 15.10.2026: 1.171 Anwendungstests, 43 Helfertests und je 27 gezielte Sitzungs-/Sicherheits-Browserfälle DE/EN erfolgreich.**
+**Aktueller Gesamtnachweis 16.10.2026: 1.226 Anwendungstests, 44 Browserhelfer, 205 Python-Offlinetests und vollständiges `all` mit je 118 Fällen DE/EN erfolgreich.**
+
+## Wartungsmodus und vollständige Gesamtrunde (16.10.2026)
+
+Branch `feature/maintenance-mode`, Basis `05a67e8ca25ac4cacb326096c18b5f89b57a8406`.
+Umsetzung und Dokumentation lagen uncommittet vor.
+[Verbindlicher Wartungsvertrag](../docs/maintenance-mode-contract.md),
+[dauerhafter Meilenstein](../docs/meilensteine/2026-10-16-wartungsmodus-und-gesamttests.md).
+
+| Prüfung | Ergebnis des endgültigen Stands |
+| --- | --- |
+| Java / Shared-Modul | Java 25 bestätigt; Shared sauber gebaut und installiert |
+| Vollständige Anwendungs-JUnit-Suite | 1226/1226; keine Fehler, Fehlschläge oder Skips |
+| Browserhelfer / Reporter / Suite- und Workeraufteilung | 44/44; keine Fehler oder Skips |
+| Python-Offline-Regressionen | 205/205; keine Fehler oder Skips; keine Live-Provider-/Modellanfragen |
+| Produktionsbuild | Erfolgreich einschließlich Anwendungstests und Frontend |
+| Browser `all` DE / EN, jeweils zwei isolierte Worker | Je 118/118, keine Fehler oder Skips; identisches gepinntes App-Image |
+| Vollständige Fallidentitäten / Fast-Auswahl | DE und EN identisch, keine Doppelungen; jeweils alle 34 Fast-Fälle enthalten |
+| Aufbau / Abbau / HTML / Coverage | Beide endgültigen Gesamtläufe vollständig erfolgreich |
+| Formatstandard | Google Java Format über Spotless und Ruff-Formatprüfung erfolgreich |
+
+Vor der Erweiterung wurde die unveränderte Basis ebenfalls vollständig geprüft:
+1171 Anwendungstests, 43 Browserhelfer, 205 Python-Offlinetests und `all` mit je
+109 Fällen DE/EN erfolgreich. Die folgenden Zahlen beziehen sich ausschließlich
+auf den endgültigen erweiterten Stand, nicht auf addierte oder abgebrochene Läufe.
+
+### Wartungsnachweise
+
+MAINT-01 prüft HTTP 503 für öffentliche Dokumente, geladene Cosmos-Card und Erhalt
+einer bestehenden Sitzung nach Freigabe. MAINT-02A–D prüfen Benutzer, Gast,
+Administrator und Superadmin einschließlich administrativem Ausschalten. MAINT-03
+klickt ein vor Wartung geöffnetes Registrierungsformular und weist ausbleibende
+Kontoanlage nach. MAINT-04A/B verwenden tatsächlich empfangene eigene SMTP-Mails:
+Tokenlinks und altes Resetformular sind während Wartung gesperrt; derselbe gültige
+Link funktioniert nach Freigabe. MAINT-05 startet Chromium tatsächlich neu und
+prüft Remember-me-Ablehnung ohne zusätzlichen Sitzungsplatz.
+
+JUnit ergänzt Konfigurationsfehler und Live-Wechsel, echte Spring-Security-Kette,
+explizite erneute Anmeldung, fremde Thread-Principals, gefälschte UI-IDs und
+Vaadin-Parameter an fremden Servletpfaden. Der echte `PushHandler` wird vor gültigen
+RPC-Callbacks geprüft. H2-Persistenztests erhalten Tokens/Hash/Queue und weisen
+vollständigen Registrierungsrollback nach. Hintergrundoperationen bleiben verwendbar.
+
+### Frisch gemessene JaCoCo-Coverage
+
+| Messung | Zeilen | Zweige |
+| --- | ---: | ---: |
+| Anwendungs-JUnit | 4624/6425 (71,97 %) | 1340/2023 (66,24 %) |
+| Browser all DE | 5413/6425 (84,25 %) | 1325/2023 (65,50 %) |
+| Browser all EN | 5415/6425 (84,28 %) | 1328/2023 (65,65 %) |
+
+Die JUnit-Messdatei wurde vor dem letzten vollständigen Testlauf entfernt; die
+Browsermessungen wurden pro Sprache aus den jeweiligen beiden Workern gegen die
+Klassen ihres geprüften Produktions-JARs zusammengeführt. Beide Berichte umfassen
+119 analysierte Anwendungs-Java-Klassen. Shared-JAR und Drittbibliotheken gehören
+nicht zu diesem Reportumfang. Browser-Coverage enthält auch Start und Hintergrundjobs;
+sie ist **keine CSS-/JavaScript-Coverage und keine Prozentzahl fachlich vollständiger
+Browserabdeckung**. Die 118 Fälle bezeichnen bestandene konkrete Abläufe.
+
+`fast` wurde nicht separat erneut gestartet; seine 34 markierten Fälle sind in
+beiden `all`-Läufen enthalten. Echte Endgeräte, Screenreader, Service-Worker-/PWA-
+Caches, produktive Bestandsmigrationen und reale Provider/Postfächer bleiben außerhalb
+dieser isolierten Prüfung. Vorhandene menschliche/Betriebsprüfungen stehen im
+[Handprüfkatalog](../docs/manual-tests/README.md).
+
+Bei der Integration wurden HTTP-/Push-Trennung, die erste UIDL einer leeren Server-UI,
+Bootstrap-Ressourcen unter verschachtelten Tokenpfaden sowie enge Transport-/Principal-
+Ausnahmen korrigiert und erneut geprüft. Alte Zwischenstände und kontrolliert
+abgebrochene, überholte Läufe zählen nicht als Abschlussnachweis. Assertions wurden
+nicht abgeschwächt; die endgültigen Quellen blieben nach den Läufen unverändert.
+Es wurden keine fremden Dockerumgebungen oder Anwendungsdaten verändert.
+Der Abbau ist in allen eigenen Eltern-Laufprotokollen erfolgreich bestätigt. Bei
+der zusätzlichen Bestandskontrolle am Vormittag war die Docker-Linux-API nicht
+erreichbar; eine erneute Live-Inventur wurde deshalb nicht als Nachweis gewertet.
+
+
 
 ## Gleichzeitige Sitzungen pro Benutzer (15.10.2026)
 
@@ -46,7 +121,7 @@ keine Tokenserien anderer Geräte. Die Checkbox-Auswahl ist pro Anfrage isoliert
 und laufende Benutzeranwendungen wurden nicht angefasst. Ein echtes produktives
 Sitzungstimeout wurde nicht abgewartet; JUnit prüft die Lifecycle-Ereignisse. Kein neuer
 vollständiger `all`-Browserlauf und keine neue Coverage-Prozentmessung. `all` enthält
-jetzt 109 Fälle in 22 Klassen; `fast` unverändert 34. Ältere Coverage-Werte unten sind
+damals 109 Fälle in 22 Klassen; `fast` unverändert 34. Ältere Coverage-Werte unten sind
 historische Messungen. Die Geräteverwaltung bleibt der separat geplante zweite Ausbau
 im zukünftigen Kontokonfigurationspanel.
 

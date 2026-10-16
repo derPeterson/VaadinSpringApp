@@ -2,8 +2,13 @@ package de.derpeterson.browsertests;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import de.derpeterson.browsertests.suites.AuthenticationBrowserTest;
+import de.derpeterson.browsertests.suites.MaintenanceBrowserTest;
 import java.util.*;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.platform.engine.support.descriptor.MethodSource;
 import org.junit.platform.launcher.core.LauncherFactory;
 
@@ -45,9 +50,9 @@ class BrowserExecutionPlanTest {
     for (var type : BrowserExecutionPlan.classes("fast"))
       for (var method : type.getDeclaredMethods()) {
         if (!BrowserExecutionPlan.fast(method)) continue;
-        var csv = method.getAnnotation(org.junit.jupiter.params.provider.CsvSource.class);
+        var csv = method.getAnnotation(CsvSource.class);
         cases += csv == null ? 1 : csv.value().length;
-        assertFalse(method.isAnnotationPresent(org.junit.jupiter.api.Disabled.class));
+        assertFalse(method.isAnnotationPresent(Disabled.class));
       }
     assertEquals(
         34, cases, "Update the documented selection deliberately when changing fast tags.");
@@ -62,6 +67,7 @@ class BrowserExecutionPlanTest {
             "authentication",
             "login-attempts",
             "session-limits",
+            "maintenance",
             "user-management")) {
       var selected = BrowserExecutionPlan.classes(suite);
       for (int workers = 1; workers <= 4; workers++) {
@@ -95,7 +101,23 @@ class BrowserExecutionPlanTest {
         IllegalArgumentException.class,
         () -> BrowserExecutionPlan.partition(BrowserExecutionPlan.classes("all"), 5, "all"));
     assertEquals(
-        List.of(de.derpeterson.browsertests.suites.AuthenticationBrowserTest.class),
+        List.of(AuthenticationBrowserTest.class),
         BrowserExecutionPlan.workerClasses("all", "AuthenticationBrowserTest"));
+  }
+
+  @Test
+  void maintenanceCasesAreIncludedInAllButNotImplicitlyInFast() {
+    var classes = BrowserSuites.select("maintenance");
+    assertEquals(List.of(MaintenanceBrowserTest.class), classes);
+    assertTrue(BrowserSuites.select("all").containsAll(classes));
+    int cases = 0;
+    for (var method : classes.getFirst().getDeclaredMethods()) {
+      if (!method.isAnnotationPresent(Test.class)
+          && !method.isAnnotationPresent(ParameterizedTest.class)) continue;
+      assertFalse(BrowserExecutionPlan.fast(method));
+      var csv = method.getAnnotation(CsvSource.class);
+      cases += csv == null ? 1 : csv.value().length;
+    }
+    assertEquals(9, cases);
   }
 }

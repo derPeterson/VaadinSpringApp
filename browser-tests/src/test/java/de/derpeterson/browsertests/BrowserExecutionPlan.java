@@ -14,21 +14,32 @@ import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 
 /** Selects existing cases and keeps whole classes together in independent JVMs. */
 final class BrowserExecutionPlan {
-  // Grobe Gewichte aus der DE-/EN-Messung vom 15.10.2026, keine Laufzeitgarantie.
+  // Bestandsgewichte aus der DE-/EN-Messung vom 15.10.2026; Wartung zunächst geschätzt.
+  // Dies sind Verteilungsgewichte, keine gemessene Dauer oder Laufzeitgarantie neuer Fälle.
   // Lange Klassen zuerst verteilen; kein Zugriff auf aufbewahrte Run-Ordner nötig.
   private static final Map<String, Integer> SECONDS =
       Map.ofEntries(
-          Map.entry("TokenExpiryBrowserTest", 209), Map.entry("UserManagementBrowserTest", 173),
-          Map.entry("SessionSecurityBrowserTest", 116), Map.entry("UserAccessBrowserTest", 114),
-          Map.entry("BlockedLinksBrowserTest", 112), Map.entry("CosmosDesignBrowserTest", 100),
-          Map.entry("PasswordResetBrowserTest", 93), Map.entry("ConfigurationBrowserTest", 92),
+          Map.entry("TokenExpiryBrowserTest", 209),
+          Map.entry("UserManagementBrowserTest", 173),
+          Map.entry("SessionSecurityBrowserTest", 116),
+          Map.entry("UserAccessBrowserTest", 114),
+          Map.entry("BlockedLinksBrowserTest", 112),
+          Map.entry("CosmosDesignBrowserTest", 100),
+          Map.entry("MaintenanceBrowserTest", 150),
+          Map.entry("PasswordResetBrowserTest", 93),
+          Map.entry("ConfigurationBrowserTest", 92),
           Map.entry("TokenConfigurationBrowserTest", 77),
-              Map.entry("AccountLifecycleBrowserTest", 72),
-          Map.entry("UserStatusBrowserTest", 72), Map.entry("UserFiltersBrowserTest", 66),
-          Map.entry("RememberMeBrowserTest", 31), Map.entry("PresentationBrowserTest", 29),
-          Map.entry("AuthenticationBrowserTest", 26), Map.entry("LoginLayoutBrowserTest", 25),
-          Map.entry("VerificationBrowserTest", 20), Map.entry("AdminMailBrowserTest", 19),
-          Map.entry("RegistrationBrowserTest", 16), Map.entry("InfrastructureBrowserTest", 7));
+          Map.entry("AccountLifecycleBrowserTest", 72),
+          Map.entry("UserStatusBrowserTest", 72),
+          Map.entry("UserFiltersBrowserTest", 66),
+          Map.entry("RememberMeBrowserTest", 31),
+          Map.entry("PresentationBrowserTest", 29),
+          Map.entry("AuthenticationBrowserTest", 26),
+          Map.entry("LoginLayoutBrowserTest", 25),
+          Map.entry("VerificationBrowserTest", 20),
+          Map.entry("AdminMailBrowserTest", 19),
+          Map.entry("RegistrationBrowserTest", 16),
+          Map.entry("InfrastructureBrowserTest", 7));
 
   static boolean fast(Method method) {
     return Arrays.stream(method.getAnnotationsByType(Tag.class))

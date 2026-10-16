@@ -18,6 +18,7 @@ public class PushSecurityInterceptor
     implements VaadinServiceInitListener, VaadinRequestInterceptor {
 
   private final SecurityService securityService;
+  private final MaintenanceService maintenance;
 
   @Override
   public void serviceInit(ServiceInitEvent event) {
@@ -33,6 +34,16 @@ public class PushSecurityInterceptor
       // PushHandler calls requestStart outside its requestEnd finally.
       CurrentInstance.clearAll();
       throw new AccessDeniedException("Session privileges have changed");
+    }
+    // HTTP is handled by MaintenanceHttpFilter. Only existing WebSocket messages
+    // enter here without a response; blocking document/bootstrap requests would loop login.
+    if (response == null
+        && request instanceof VaadinServletRequest servletRequest
+        && maintenance.blocks(servletRequest.getHttpServletRequest())
+        && !MaintenanceTransport.allowedUi(servletRequest.getHttpServletRequest())) {
+      MaintenanceTransport.redirectUi(servletRequest.getHttpServletRequest());
+      CurrentInstance.clearAll();
+      throw new MaintenanceAccessException("UI actions paused for maintenance");
     }
   }
 

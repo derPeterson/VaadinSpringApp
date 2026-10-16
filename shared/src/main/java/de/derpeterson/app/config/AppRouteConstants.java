@@ -40,6 +40,10 @@ public final class AppRouteConstants {
   public static final String RESET_PASSWORD_SECURITY_ROUTE = "/reset-password/**";
   public static final String RESET_PAGE_TITLE = "Reset Password";
 
+  public static final String MAINTENANCE_ROUTE = "maintenance";
+  public static final String MAINTENANCE_SECURITY_ROUTE = "/maintenance";
+  public static final String MAINTENANCE_PAGE_TITLE = "Maintenance";
+
   public static final String H2_ROUTE = "h2";
   public static final String H2_SECURITY_ROUTE = "/h2";
   public static final String H2_PAGE_TITLE = "H2 Database";

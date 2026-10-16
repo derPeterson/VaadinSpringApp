@@ -8,19 +8,32 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.repository.LoginAttemptRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.CustomUserDetailsService;
+import de.derpeterson.app.security.LoginAuthenticationService;
 import de.derpeterson.app.security.SecurityConfig;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.SessionAdmissionService;
+import de.derpeterson.app.security.SessionLimitException;
 import de.derpeterson.app.security.VaadinSecurityFilter;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.Cookie;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -37,12 +50,24 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.RememberMeAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.authority.FactorGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.security.web.authentication.rememberme.PersistentRememberMeToken;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -59,15 +84,16 @@ class SecurityChainRegressionTest {
   @Autowired UserRepository repository;
   @Autowired TransactionTemplate transaction;
   @Autowired ConfigService settings;
-  @Autowired org.springframework.security.authentication.AuthenticationManager passwordManager;
-  @Autowired org.springframework.security.crypto.password.PasswordEncoder encoder;
-  @Autowired de.derpeterson.app.repository.LoginAttemptRepository attempts;
+  @Autowired AuthenticationManager passwordManager;
+  @Autowired PasswordEncoder encoder;
+  @Autowired LoginAttemptRepository attempts;
   @PersistenceContext EntityManager entityManager;
 
   @AfterEach
   void cleanup() {
     SecurityContextHolder.clearContext();
     when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(10);
+    when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
   }
 
   @Test
@@ -150,13 +176,11 @@ class SecurityChainRegressionTest {
         new CustomUserDetailsService(repository).loadUserByUsername("role-access@example.test");
     var expected =
         roleType == RoleType.ROLE_SUPERADMIN
-            ? java.util.Set.of("ROLE_SUPERADMIN", "ROLE_ADMIN")
-            : java.util.Set.of(roleType.name());
+            ? Set.of("ROLE_SUPERADMIN", "ROLE_ADMIN")
+            : Set.of(roleType.name());
     assertEquals(
         expected,
-        principal.getAuthorities().stream()
-            .map(Object::toString)
-            .collect(java.util.stream.Collectors.toSet()));
+        principal.getAuthorities().stream().map(Object::toString).collect(Collectors.toSet()));
     assertTrue(repository.findAll().getFirst().hasRole(roleType));
     if (roleType == RoleType.ROLE_SUPERADMIN) {
       assertFalse(
@@ -194,13 +218,10 @@ class SecurityChainRegressionTest {
   @EnumSource(RoleType.class)
   void actualHttpPasswordFilterCannotBypassThrottleAndExistingSessionSurvives(RoleType roleType)
       throws Exception {
-    var providers =
-        assertInstanceOf(
-            org.springframework.security.authentication.ProviderManager.class, passwordManager);
+    var providers = assertInstanceOf(ProviderManager.class, passwordManager);
     assertTrue(
-        providers.getProviders().stream()
-            .anyMatch(de.derpeterson.app.security.LoginAuthenticationService.class::isInstance));
-    String email = "password-" + java.util.UUID.randomUUID() + "@example.test";
+        providers.getProviders().stream().anyMatch(LoginAuthenticationService.class::isInstance));
+    String email = "password-" + UUID.randomUUID() + "@example.test";
     transaction.executeWithoutResult(
         tx -> {
           var role =
@@ -234,7 +255,7 @@ class SecurityChainRegressionTest {
     var blocked = postPassword(email, "OriginalPassword!");
     assertEquals("/login?error=throttled", blocked.response().getRedirectedUrl());
     assertFalse(
-        java.util.Arrays.stream(blocked.response().getCookies())
+        Arrays.stream(blocked.response().getCookies())
             .anyMatch(cookie -> cookie.getName().equals("remember-me") && cookie.getMaxAge() != 0));
     assertTrue(
         blocked.request().getSession(false) == null
@@ -246,32 +267,24 @@ class SecurityChainRegressionTest {
     assertEquals(
         2, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
     var saved =
-        (org.springframework.security.core.context.SecurityContext)
+        (SecurityContext)
             originalSession.getAttribute(
                 HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-    var oldPrincipal =
-        (org.springframework.security.core.userdetails.UserDetails)
-            saved.getAuthentication().getPrincipal();
+    var oldPrincipal = (UserDetails) saved.getAuthentication().getPrincipal();
     var currentPrincipal = new CustomUserDetailsService(repository).loadUserByUsername(email);
     var currentRoles =
         currentPrincipal.getAuthorities().stream()
             .map(Object::toString)
-            .collect(java.util.stream.Collectors.toSet());
+            .collect(Collectors.toSet());
     assertEquals(
         currentRoles,
         oldPrincipal.getAuthorities().stream()
-            .filter(
-                authority ->
-                    !(authority
-                        instanceof
-                        org.springframework.security.core.authority.FactorGrantedAuthority))
+            .filter(authority -> !(authority instanceof FactorGrantedAuthority))
             .map(Object::toString)
-            .collect(java.util.stream.Collectors.toSet()));
+            .collect(Collectors.toSet()));
     assertTrue(
         saved.getAuthentication().getAuthorities().stream()
-            .anyMatch(
-                org.springframework.security.core.authority.FactorGrantedAuthority.class
-                    ::isInstance));
+            .anyMatch(FactorGrantedAuthority.class::isInstance));
     assertTrue(currentPrincipal.isEnabled());
     assertTrue(oldPrincipal.isEnabled());
     var oldRequest =
@@ -300,7 +313,7 @@ class SecurityChainRegressionTest {
 
   @Test
   void unknownHttpIdentityIsLimitedAndTechnicalConfigurationFailureDoesNotCount() throws Exception {
-    String email = "unknown-" + java.util.UUID.randomUUID() + "@example.test";
+    String email = "unknown-" + UUID.randomUUID() + "@example.test";
     when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(1);
     assertEquals(
         "/login?error=invalid",
@@ -309,7 +322,7 @@ class SecurityChainRegressionTest {
         "/login?error=throttled",
         postPassword(email, "WrongPassword!").response().getRedirectedUrl());
     when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(0);
-    String other = "technical-" + java.util.UUID.randomUUID() + "@example.test";
+    String other = "technical-" + UUID.randomUUID() + "@example.test";
     assertEquals(
         "/login?error=unavailable",
         postPassword(other, "WrongPassword!").response().getRedirectedUrl());
@@ -321,29 +334,21 @@ class SecurityChainRegressionTest {
     when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(0);
     long before = attempts.count();
     var principal =
-        org.springframework.security.core.userdetails.User.withUsername(
-                "remember-fixture@example.test")
-            .password("unused")
-            .roles("USER")
-            .build();
+        User.withUsername("remember-fixture@example.test").password("unused").roles("USER").build();
     var token =
-        new org.springframework.security.authentication.RememberMeAuthenticationToken(
+        new RememberMeAuthenticationToken(
             "isolated-test-key", principal, principal.getAuthorities());
     assertTrue(passwordManager.authenticate(token).isAuthenticated());
     var forged =
-        new org.springframework.security.authentication.RememberMeAuthenticationToken(
-            "wrong-key", principal, principal.getAuthorities());
-    assertThrows(
-        org.springframework.security.authentication.BadCredentialsException.class,
-        () -> passwordManager.authenticate(forged));
+        new RememberMeAuthenticationToken("wrong-key", principal, principal.getAuthorities());
+    assertThrows(BadCredentialsException.class, () -> passwordManager.authenticate(forged));
     assertEquals(before, attempts.count());
   }
 
-  @Autowired de.derpeterson.app.security.SessionAdmissionService admissions;
-  @Autowired org.springframework.security.core.session.SessionRegistry sessionRegistry;
+  @Autowired SessionAdmissionService admissions;
+  @Autowired SessionRegistry sessionRegistry;
 
-  @Autowired
-  org.springframework.security.web.authentication.rememberme.PersistentTokenRepository tokens;
+  @Autowired PersistentTokenRepository tokens;
 
   @ParameterizedTest
   @EnumSource(RoleType.class)
@@ -360,7 +365,7 @@ class SecurityChainRegressionTest {
       assertEquals(
           0, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
       assertThrows(
-          de.derpeterson.app.security.SessionLimitException.class,
+          SessionLimitException.class,
           () ->
               actualSecurity.storeAuthenticatedUser(
                   new MockHttpServletRequest(), new MockHttpServletResponse(), principal, true));
@@ -387,21 +392,18 @@ class SecurityChainRegressionTest {
     when(settings.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     try {
       var first = postPassword(email, "OriginalPassword!");
-      String series = "series-" + java.util.UUID.randomUUID();
-      String otherSeries = "other-" + java.util.UUID.randomUUID();
+      String series = "series-" + UUID.randomUUID();
+      String otherSeries = "other-" + UUID.randomUUID();
       tokens.createNewToken(
-          new org.springframework.security.web.authentication.rememberme.PersistentRememberMeToken(
-              email, series, "token-value", new java.util.Date()));
+          new PersistentRememberMeToken(email, series, "token-value", new Date()));
       tokens.createNewToken(
-          new org.springframework.security.web.authentication.rememberme.PersistentRememberMeToken(
-              email, otherSeries, "other-token", new java.util.Date()));
+          new PersistentRememberMeToken(email, otherSeries, "other-token", new Date()));
       String cookie =
-          java.util.Base64.getEncoder()
-              .encodeToString(
-                  (series + ":token-value").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+          Base64.getEncoder()
+              .encodeToString((series + ":token-value").getBytes(StandardCharsets.UTF_8));
       var request = new MockHttpServletRequest("GET", "/home");
       request.setServletPath("/home");
-      request.setCookies(new jakarta.servlet.http.Cookie("remember-me", cookie));
+      request.setCookies(new Cookie("remember-me", cookie));
       var response = new MockHttpServletResponse();
       var servlet = mock(FilterChain.class);
       new FilterChainProxy(chain).doFilter(request, response, servlet);
@@ -424,7 +426,7 @@ class SecurityChainRegressionTest {
               .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
       assertEquals(
           0,
-          java.util.Arrays.stream(response.getCookies())
+          Arrays.stream(response.getCookies())
               .filter(cookieValue -> cookieValue.getName().equals("remember-me"))
               .toList()
               .getLast()
@@ -433,17 +435,15 @@ class SecurityChainRegressionTest {
       when(settings.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(2);
       var currentToken = tokens.getTokenForSeries(series);
       String updatedCookie =
-          java.util.Base64.getEncoder()
+          Base64.getEncoder()
               .encodeToString(
                   (series
                           + ":"
-                          + java.net.URLEncoder.encode(
-                              currentToken.getTokenValue(),
-                              java.nio.charset.StandardCharsets.UTF_8))
-                      .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                          + URLEncoder.encode(currentToken.getTokenValue(), StandardCharsets.UTF_8))
+                      .getBytes(StandardCharsets.UTF_8));
       var allowed = new MockHttpServletRequest("GET", "/home");
       allowed.setServletPath("/home");
-      allowed.setCookies(new jakarta.servlet.http.Cookie("remember-me", updatedCookie));
+      allowed.setCookies(new Cookie("remember-me", updatedCookie));
       var target = mock(FilterChain.class);
       new FilterChainProxy(chain).doFilter(allowed, new MockHttpServletResponse(), target);
       verify(target).doFilter(any(), any());
@@ -457,8 +457,86 @@ class SecurityChainRegressionTest {
     }
   }
 
+  @ParameterizedTest
+  @EnumSource(RoleType.class)
+  void realPasswordChainChecksMaintenanceAfterPasswordButBeforeSessionCreation(RoleType role)
+      throws Exception {
+    String email = sessionUser(role);
+    when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    var login = postPassword(email, "OriginalPassword!");
+    assertEquals(
+        role.isAdministrative() ? "/admin" : "/login?error=maintenance",
+        login.response().getRedirectedUrl());
+    if (!role.isAdministrative()) {
+      assertNull(login.request().getSession(false));
+      assertEquals(
+          0, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
+      assertEquals(
+          "/login?error=invalid",
+          postPassword(email, "WrongPassword!").response().getRedirectedUrl());
+      assertEquals(
+          1, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
+    }
+  }
+
+  @Test
+  void realChainPausesExistingUserWithoutLosingContextAndAllowsLogout() throws Exception {
+    String email = sessionUser(RoleType.ROLE_USER);
+    var login = postPassword(email, "OriginalPassword!");
+    var session = (MockHttpSession) login.request().getSession(false);
+    Object context =
+        session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+    when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    var request = new MockHttpServletRequest("GET", "/home");
+    request.setServletPath("/home");
+    request.setSession(session);
+    var response = new MockHttpServletResponse();
+    var servlet = mock(FilterChain.class);
+    new FilterChainProxy(chain).doFilter(request, response, servlet);
+    assertEquals(503, response.getStatus());
+    assertEquals("/maintenance", response.getForwardedUrl());
+    assertFalse(session.isInvalid());
+    assertSame(
+        context,
+        session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
+    when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
+    new FilterChainProxy(chain).doFilter(request, new MockHttpServletResponse(), servlet);
+    verify(servlet).doFilter(any(), any());
+    when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    var logout = new MockHttpServletRequest("POST", "/logout");
+    logout.setServletPath("/logout");
+    logout.setSession(session);
+    new FilterChainProxy(chain)
+        .doFilter(logout, new MockHttpServletResponse(), mock(FilterChain.class));
+    assertTrue(session.isInvalid());
+  }
+
+  @Test
+  void explicitReloginCannotReuseOldUserSlotToBypassMaintenance() throws Exception {
+    String email = sessionUser(RoleType.ROLE_USER);
+    var previous = postPassword(email, "OriginalPassword!");
+    var session = (MockHttpSession) previous.request().getSession(false);
+    when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    var request = new MockHttpServletRequest("POST", "/login");
+    request.setServletPath("/login");
+    request.setSession(session);
+    request.setParameter("username", email);
+    request.setParameter("password", "OriginalPassword!");
+    request.setParameter("remember-me", "true");
+    var response = new MockHttpServletResponse();
+    new FilterChainProxy(chain).doFilter(request, response, mock(FilterChain.class));
+    assertEquals("/login?error=maintenance", response.getRedirectedUrl());
+    assertFalse(session.isInvalid());
+    assertNotNull(
+        session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
+    assertTrue(
+        Arrays.stream(response.getCookies())
+            .noneMatch(
+                cookie -> cookie.getName().equals("remember-me") && cookie.getMaxAge() != 0));
+  }
+
   private String sessionUser(RoleType roleType) {
-    String email = "session-" + java.util.UUID.randomUUID() + "@example.test";
+    String email = "session-" + UUID.randomUUID() + "@example.test";
     transaction.executeWithoutResult(
         tx -> {
           var role =

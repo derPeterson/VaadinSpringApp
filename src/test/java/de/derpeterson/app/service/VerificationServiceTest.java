@@ -3,6 +3,7 @@ package de.derpeterson.app.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import de.derpeterson.app.helper.email.EmailLogo;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
@@ -17,6 +18,7 @@ import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.Year;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -34,6 +36,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.util.HtmlUtils;
 
 /** Isolated service tests without application startup, SMTP or a database. */
 @ExtendWith(MockitoExtension.class)
@@ -255,8 +258,7 @@ class VerificationServiceTest {
     assertTrue(body.getValue().contains("Example Service"));
     assertTrue(body.getValue().contains("Test"));
     assertTrue(body.getValue().contains("User"));
-    assertTrue(
-        body.getValue().contains("cid:" + de.derpeterson.app.helper.email.EmailLogo.CONTENT_ID));
+    assertTrue(body.getValue().contains("cid:" + EmailLogo.CONTENT_ID));
     for (String placeholder :
         List.of(
             "SERVICE_LOGO",
@@ -270,11 +272,9 @@ class VerificationServiceTest {
     String expectedFooter =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language))
             .getAccountCopyrightTemplate()
-            .replace("{year}", String.valueOf(java.time.Year.now(CLOCK).getValue()))
+            .replace("{year}", String.valueOf(Year.now(CLOCK).getValue()))
             .replace("{serviceName}", "Example Service");
-    assertTrue(
-        org.springframework.web.util.HtmlUtils.htmlUnescape(body.getValue())
-            .contains(expectedFooter));
+    assertTrue(HtmlUtils.htmlUnescape(body.getValue()).contains(expectedFooter));
     assertFalse(body.getValue().contains("{{"));
     assertFalse(user.isEnabled());
   }
@@ -308,7 +308,7 @@ class VerificationServiceTest {
     assertTrue(resend(entry));
     verify(tokens, never()).save(any());
     verify(queue, never()).addEmailToQueue(any(), any(), any(), any());
-    verifyNoInteractions(config);
+    verifyMaintenanceOnly(1);
   }
 
   @ParameterizedTest
@@ -317,7 +317,8 @@ class VerificationServiceTest {
     prepareResend(entry);
     user.setEnabled(true);
     assertFalse(resend(entry));
-    verifyNoInteractions(queue, config);
+    verifyNoInteractions(queue);
+    verifyMaintenanceOnly(1);
     verify(tokens, never()).save(any());
   }
 
@@ -328,7 +329,8 @@ class VerificationServiceTest {
       when(tokens.findUserIdByToken("token")).thenReturn(Optional.empty());
     }
     assertFalse(resend(entry));
-    verifyNoInteractions(queue, config);
+    verifyNoInteractions(queue);
+    verifyMaintenanceOnly(1);
   }
 
   @Test
@@ -367,7 +369,8 @@ class VerificationServiceTest {
     assertThrows(IllegalStateException.class, () -> service.createToken(user));
     verify(tokens, never()).save(any());
     verify(tokens, never()).deleteByToken(any());
-    verifyNoInteractions(config, queue);
+    verifyNoInteractions(queue);
+    verifyMaintenanceOnly(3);
   }
 
   @Test
@@ -397,5 +400,10 @@ class VerificationServiceTest {
       case "user" -> service.sendVerificationEmailByUser(user);
       default -> throw new IllegalArgumentException(entry);
     };
+  }
+
+  private void verifyMaintenanceOnly(int reads) {
+    verify(config, times(reads)).getBoolean(ConfigEntry.MAINTENANCE_MODE);
+    verifyNoMoreInteractions(config);
   }
 }

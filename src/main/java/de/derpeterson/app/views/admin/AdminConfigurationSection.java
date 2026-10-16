@@ -60,7 +60,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
   private final transient MessageProperties messageProperties;
   private final transient ConfigService configService;
-  private final transient Runnable serviceNameChangedAction;
+  private final transient Runnable configurationChangedAction;
 
   private final EnumMap<ConfigEntry, Component> configInputs = new EnumMap<>(ConfigEntry.class);
   private final EnumMap<ConfigEntry, VerticalLayout> configInputWrappers =
@@ -89,10 +89,10 @@ public class AdminConfigurationSection extends VerticalLayout {
   public AdminConfigurationSection(
       MessageProperties messageProperties,
       ConfigService configService,
-      Runnable serviceNameChangedAction) {
+      Runnable configurationChangedAction) {
     this.messageProperties = messageProperties;
     this.configService = configService;
-    this.serviceNameChangedAction = serviceNameChangedAction;
+    this.configurationChangedAction = configurationChangedAction;
 
     setPadding(false);
     setSpacing(false);
@@ -545,14 +545,15 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     try {
-      boolean serviceNameChanged = false;
+      boolean configurationChanged = false;
 
       for (ConfigEntry configEntry : getVisibleConfigEntries()) {
         String newValue = normalizeValue(configEntry, extractInputValue(configEntry));
         String oldValue = configService.getString(configEntry);
 
-        if (configEntry == ConfigEntry.SERVICE_NAME && !Objects.equals(oldValue, newValue)) {
-          serviceNameChanged = true;
+        if ((configEntry == ConfigEntry.SERVICE_NAME || configEntry == ConfigEntry.MAINTENANCE_MODE)
+            && !Objects.equals(oldValue, newValue)) {
+          configurationChanged = true;
         }
 
         configService.set(configEntry, newValue);
@@ -560,8 +561,8 @@ public class AdminConfigurationSection extends VerticalLayout {
 
       loadConfigValues();
 
-      if (serviceNameChanged && serviceNameChangedAction != null) {
-        serviceNameChangedAction.run();
+      if (configurationChanged && configurationChangedAction != null) {
+        configurationChangedAction.run();
       }
 
       NotificationHelper.getInstance()

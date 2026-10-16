@@ -15,6 +15,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.NavigationErrorCode;
 import de.derpeterson.app.security.SecurityService;
@@ -170,9 +171,6 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
                         () -> error.getMessage(messageProperties),
                         NotificationHelper.NotificationType.ERROR));
 
-    UI.getCurrent()
-        .getPage()
-        .getHistory()
-        .replaceState(null, AppRouteConstants.HOME_SECURITY_ROUTE);
+    UI.getCurrent().getPage().getHistory().replaceState(null, AppRoute.HOME.getSecurityRoute());
   }
 }

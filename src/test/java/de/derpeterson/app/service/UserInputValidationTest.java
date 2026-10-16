@@ -10,6 +10,7 @@ import de.derpeterson.app.repository.PasswordResetTokenRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -104,7 +105,13 @@ class UserInputValidationTest {
     var tokens = mock(PasswordResetTokenRepository.class);
     var reset =
         new PasswordResetService(
-            null, tokens, repository, null, encoder, null, mock(LoginAttemptService.class));
+            null,
+            tokens,
+            repository,
+            mock(ConfigService.class),
+            encoder,
+            null,
+            mock(LoginAttemptService.class));
     assertThrows(IllegalArgumentException.class, () -> reset.resetPassword("token", password));
     verifyNoInteractions(tokens, repository, encoder, broadcaster);
   }
@@ -165,14 +172,20 @@ class UserInputValidationTest {
     var tokens = mock(PasswordResetTokenRepository.class);
     var reset =
         new PasswordResetService(
-            null, tokens, repository, null, encoder, null, mock(LoginAttemptService.class));
+            null,
+            tokens,
+            repository,
+            mock(ConfigService.class),
+            encoder,
+            null,
+            mock(LoginAttemptService.class));
     UserEntity user = user();
     user.setEnabled(true);
     when(tokens.findUserIdByToken("token")).thenReturn(Optional.of(user.getId()));
     when(repository.lockVerificationUser(user.getId())).thenReturn(Optional.of(user));
     var token =
         new PasswordResetTokenEntity(
-            null, "token", user, java.time.LocalDateTime.now().plusHours(1), TokenStatus.ACTIVE);
+            null, "token", user, LocalDateTime.now().plusHours(1), TokenStatus.ACTIVE);
     when(tokens.findByTokenAndStatus("token", TokenStatus.ACTIVE)).thenReturn(Optional.of(token));
     when(encoder.encode("Password!")).thenReturn("new-hash");
     assertTrue(reset.resetPassword("token", "Password!"));

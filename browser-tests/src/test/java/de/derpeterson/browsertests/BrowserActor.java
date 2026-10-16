@@ -5,6 +5,7 @@ import static de.derpeterson.app.config.AppRouteConstants.*;
 import static de.derpeterson.browsertests.BrowserRoutes.*;
 
 import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.ServiceWorkerPolicy;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.pages.*;
@@ -17,6 +18,10 @@ public final class BrowserActor implements AutoCloseable {
   private final TraceSession trace;
 
   public BrowserActor(Browser browser) {
+    this(browser, HOME_PAGE_TITLE);
+  }
+
+  public BrowserActor(Browser browser, String expectedInitialTitle) {
     UiTexts texts = UiTexts.selected();
     context =
         browser.newContext(
@@ -31,8 +36,8 @@ public final class BrowserActor implements AutoCloseable {
     trace = AllurePlaywright.startTracing(context);
     page = context.newPage();
     page.navigate(path(HOME_ROUTE));
-    assertThat(page).hasTitle(HOME_PAGE_TITLE);
-    new UserMenu(page).selectTestLanguage();
+    assertThat(page).hasTitle(expectedInitialTitle);
+    if (HOME_PAGE_TITLE.equals(expectedInitialTitle)) new UserMenu(page).selectTestLanguage();
   }
 
   public void login(String email, String password) {
@@ -43,7 +48,7 @@ public final class BrowserActor implements AutoCloseable {
     LoginPage login = new LoginPage(page);
     login.open();
     page.getByRole(
-            com.microsoft.playwright.options.AriaRole.CHECKBOX,
+            AriaRole.CHECKBOX,
             new Page.GetByRoleOptions()
                 .setName(UiTexts.selected().getLoginRememberMeCheckbox())
                 .setExact(true))

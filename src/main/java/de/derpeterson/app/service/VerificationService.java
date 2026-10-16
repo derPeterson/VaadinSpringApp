@@ -1,6 +1,5 @@
 package de.derpeterson.app.service;
 
-import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.config.TokenDurationPolicy;
 import de.derpeterson.app.helper.email.EmailLogo;
 import de.derpeterson.app.helper.text.CopyrightTextFormatter;
@@ -8,11 +7,13 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.VerificationTokenEntity;
+import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.EmailType;
 import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.repository.VerificationTokenRepository;
+import de.derpeterson.app.security.MaintenanceService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -68,6 +69,7 @@ public class VerificationService {
 
   @Transactional
   public String createToken(UserEntity user) {
+    MaintenanceService.requirePublicAccess(configService);
     UserEntity stored =
         userRepository
             .lockVerificationUser(user.getId())
@@ -145,6 +147,7 @@ public class VerificationService {
 
   @Transactional
   public boolean validateToken(String token) {
+    MaintenanceService.requirePublicAccess(configService);
     Optional<Long> userId = tokenRepository.findUserIdByToken(token);
     if (userId.isEmpty()) {
       return false;
@@ -196,6 +199,7 @@ public class VerificationService {
 
   @Transactional(rollbackFor = IOException.class)
   public boolean sendVerificationEmailByToken(String token) throws IOException {
+    MaintenanceService.requirePublicAccess(configService);
     Optional<Long> userId = tokenRepository.findUserIdByToken(token);
     if (userId.isPresent()) {
       return sendVerificationEmailByUserId(userId.get());
@@ -205,6 +209,7 @@ public class VerificationService {
 
   @Transactional(rollbackFor = IOException.class)
   public boolean sendVerificationEmailByEmail(String email) throws IOException {
+    MaintenanceService.requirePublicAccess(configService);
     Optional<UserEntity> userOptional = userRepository.findByEmail(email);
     if (userOptional.isPresent()) {
       return sendVerificationEmailByUserId(userOptional.get().getId());
@@ -214,7 +219,9 @@ public class VerificationService {
 
   @Transactional(rollbackFor = IOException.class)
   public boolean sendVerificationEmailByUser(UserEntity user) throws IOException {
-    return user != null && user.getId() != null && sendVerificationEmailByUserId(user.getId());
+    if (user == null || user.getId() == null) return false;
+    MaintenanceService.requirePublicAccess(configService);
+    return sendVerificationEmailByUserId(user.getId());
   }
 
   private boolean canVerify(UserEntity user) {
@@ -265,7 +272,7 @@ public class VerificationService {
             "LAST_NAME", HtmlUtils.htmlEscape(user.getLastName()),
             "VERIFICATION_LINK",
                 UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))
-                    .pathSegment(AppRouteConstants.VERIFICATION_ROUTE, token)
+                    .pathSegment(AppRoute.VERIFICATION.getRoute(), token)
                     .toUriString());
 
     ClassPathResource resource =

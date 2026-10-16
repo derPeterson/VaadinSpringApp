@@ -21,11 +21,16 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.Year;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +45,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.util.HtmlUtils;
 
 /** Service logic and exact time boundaries; no application, database or SMTP. */
 @ExtendWith(MockitoExtension.class)
@@ -220,21 +226,25 @@ class PasswordResetServiceTest {
             }));
     verify(tokens, never()).save(any());
     verify(users, never()).save(any());
-    verifyNoInteractions(encoder, queue, config);
+    verifyNoInteractions(encoder, queue);
+    verifyMaintenanceOnly(
+        Set.of("create", "validate", "reset", "mail").contains(operation) ? 1 : 0);
   }
 
   @Test
   void openMailPreventsDirectRotationBeforeInvalidation() {
     when(queue.hasOpenEmailForUserAndType(user, EmailType.PASSWORD_RESET)).thenReturn(true);
     assertThrows(IllegalStateException.class, () -> service.createToken(user));
-    verifyNoInteractions(tokens, encoder, config);
+    verifyNoInteractions(tokens, encoder);
+    verifyMaintenanceOnly(1);
   }
 
   @Test
   void deletedAccountCannotBeUsedForTokenCreation() {
     when(users.lockVerificationUser(1L)).thenReturn(Optional.empty());
     assertThrows(IllegalStateException.class, () -> service.createToken(user));
-    verifyNoInteractions(tokens, encoder, queue, config);
+    verifyNoInteractions(tokens, encoder, queue);
+    verifyMaintenanceOnly(1);
   }
 
   @ParameterizedTest
@@ -249,7 +259,8 @@ class PasswordResetServiceTest {
     verify(tokens, times(3)).findUserIdByToken(value);
     verify(tokens).findByToken(value);
     verifyNoMoreInteractions(tokens);
-    verifyNoInteractions(users, encoder, config, queue);
+    verifyNoInteractions(users, encoder, queue);
+    verifyMaintenanceOnly(2);
   }
 
   @ParameterizedTest
@@ -397,7 +408,7 @@ class PasswordResetServiceTest {
     verify(users, never()).save(any());
     verifyNoInteractions(encoder);
     if (!operation.equals("create")) {
-      verifyNoInteractions(config);
+      verifyMaintenanceOnly(Set.of("validate", "reset").contains(operation) ? 1 : 0);
     }
     if (operation.equals("create")) {
       verify(queue).hasOpenEmailForUserAndType(user, EmailType.PASSWORD_RESET);
@@ -467,7 +478,8 @@ class PasswordResetServiceTest {
         assertThrows(
             DataAccessResourceFailureException.class,
             () -> service.sendPasswordResetEmail("test@example.com")));
-    verifyNoInteractions(tokens, config, encoder);
+    verifyNoInteractions(tokens, encoder);
+    verifyMaintenanceOnly(1);
   }
 
   @ParameterizedTest
@@ -478,7 +490,8 @@ class PasswordResetServiceTest {
     when(users.findByEmail("test@example.com"))
         .thenReturn(present ? Optional.of(user) : Optional.empty());
     assertFalse(service.sendPasswordResetEmail("test@example.com"));
-    verifyNoInteractions(tokens, config, encoder, queue);
+    verifyNoInteractions(tokens, encoder, queue);
+    verifyMaintenanceOnly(1);
   }
 
   @Test
@@ -486,7 +499,8 @@ class PasswordResetServiceTest {
     when(users.findByEmail("test@example.com")).thenReturn(Optional.of(user));
     when(queue.hasOpenEmailForUserAndType(user, EmailType.PASSWORD_RESET)).thenReturn(true);
     assertTrue(service.sendPasswordResetEmail("test@example.com"));
-    verifyNoInteractions(tokens, config, encoder);
+    verifyNoInteractions(tokens, encoder);
+    verifyMaintenanceOnly(1);
     verify(queue, never()).addEmailToQueue(any(), any(), any(), any());
   }
 
@@ -523,11 +537,9 @@ class PasswordResetServiceTest {
         MessageProperties.forLocale(
                 new CustomI18NProvider(), german ? Locale.GERMAN : Locale.ENGLISH)
             .getAccountCopyrightTemplate()
-            .replace("{year}", String.valueOf(java.time.Year.now(CLOCK).getValue()))
+            .replace("{year}", String.valueOf(Year.now(CLOCK).getValue()))
             .replace("{serviceName}", "Reset Test Service");
-    assertTrue(
-        org.springframework.web.util.HtmlUtils.htmlUnescape(html.getValue())
-            .contains(expectedFooter));
+    assertTrue(HtmlUtils.htmlUnescape(html.getValue()).contains(expectedFooter));
     assertFalse(html.getValue().contains("{{SERVICE_LOGO}}"));
     assertFalse(html.getValue().contains("{{RESET_PASSWORD_LINK}}"));
     assertTrue(html.getValue().contains("Reset Test Service"));
@@ -567,14 +579,13 @@ class PasswordResetServiceTest {
         // Findet {{...}}-Platzhalter; Gruppe 1 erfasst mindestens ein Zeichen bis zur ersten
         // schließenden Klammer.
         var placeholders =
-            java.util.regex.Pattern.compile("\\{\\{([^}]+)}}")
+            Pattern.compile("\\{\\{([^}]+)}}")
                 .matcher(source)
                 .results()
                 .map(match -> match.group(1))
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
         assertEquals(
-            java.util.Set.of(
-                "SERVICE_NAME", "SERVICE_LOGO", "RESET_PASSWORD_LINK", "COPYRIGHT_TEXT"),
+            Set.of("SERVICE_NAME", "SERVICE_LOGO", "RESET_PASSWORD_LINK", "COPYRIGHT_TEXT"),
             placeholders);
       }
     }
@@ -590,7 +601,7 @@ class PasswordResetServiceTest {
     when(messages.getEmailResetPasswordSubject()).thenReturn("subject");
     var readFailure = new IOException("isolated template read");
     var closeFailure = new IOException("isolated template close");
-    var closed = new java.util.concurrent.atomic.AtomicBoolean();
+    var closed = new AtomicBoolean();
     InputStream template =
         new InputStream() {
           private final InputStream content =
@@ -655,5 +666,10 @@ class PasswordResetServiceTest {
         assertThrows(
             DataAccessResourceFailureException.class,
             () -> service.sendPasswordResetEmail("test@example.com")));
+  }
+
+  private void verifyMaintenanceOnly(int reads) {
+    verify(config, times(reads)).getBoolean(ConfigEntry.MAINTENANCE_MODE);
+    verifyNoMoreInteractions(config);
   }
 }

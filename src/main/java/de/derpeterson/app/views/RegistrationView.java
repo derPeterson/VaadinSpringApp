@@ -37,9 +37,9 @@ import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.RegistrationService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
-import de.derpeterson.app.service.VerificationService;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosPageComponent;
 import de.derpeterson.app.validation.EmailConflict;
@@ -67,7 +67,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
   private final transient UserService userService;
   private final transient RoleService roleService;
   private final transient PasswordEncoder passwordEncoder;
-  private final transient VerificationService verificationService;
+  private final transient RegistrationService registrationService;
 
   private final transient FormComponents formComponents;
 
@@ -94,7 +94,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
       UserService userService,
       RoleService roleService,
       PasswordEncoder passwordEncoder,
-      VerificationService verificationService,
+      RegistrationService registrationService,
       SecurityService securityService,
       HttpServletRequest request,
       ConfigService configService) {
@@ -105,7 +105,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     this.userService = userService;
     this.roleService = roleService;
     this.passwordEncoder = passwordEncoder;
-    this.verificationService = verificationService;
+    this.registrationService = registrationService;
 
     ComponentUtil.addListener(
         UI.getCurrent(),
@@ -354,8 +354,9 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
             .roleEntities(List.of(userRole.get()))
             .build();
 
+    boolean emailSent;
     try {
-      userService.saveUser(userEntity);
+      emailSent = registrationService.register(userEntity);
     } catch (IllegalArgumentException failure) {
       // Only handle invalid form values. Configuration/encoder/service
       // errors must not be relabelled as input errors.
@@ -376,29 +377,25 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
               -1,
               NotificationHelper.NotificationType.ERROR);
       return;
+    } catch (IOException failure) {
+      logger.error("Registration mail could not be prepared", failure);
+      NotificationHelper.getInstance()
+          .showNotification(
+              messageProperties::getBaseFailedTitle,
+              messageProperties::getBaseFailedMessage,
+              -1,
+              NotificationHelper.NotificationType.ERROR);
+      return;
     }
 
-    try {
-      boolean emailSent = verificationService.sendVerificationEmailByUser(userEntity);
-
-      if (emailSent) {
-        NotificationHelper.getInstance()
-            .showNotification(
-                messageProperties::getBaseSuccessTitle,
-                () -> messageProperties.getRegistrationSuccessMessage(userEntity.getEmail()),
-                -1,
-                NotificationHelper.NotificationType.SUCCESS);
-      } else {
-        NotificationHelper.getInstance()
-            .showNotification(
-                messageProperties::getBaseFailedTitle,
-                messageProperties::getBaseFailedMessage,
-                -1,
-                NotificationHelper.NotificationType.ERROR);
-      }
-    } catch (IOException e) {
-      logger.error("❌ Exception occurred:", e);
-
+    if (emailSent) {
+      NotificationHelper.getInstance()
+          .showNotification(
+              messageProperties::getBaseSuccessTitle,
+              () -> messageProperties.getRegistrationSuccessMessage(userEntity.getEmail()),
+              -1,
+              NotificationHelper.NotificationType.SUCCESS);
+    } else {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,

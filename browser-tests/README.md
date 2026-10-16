@@ -29,6 +29,7 @@ Eine globale Playwright- oder Allure-Installation ist nicht erforderlich.
 | Tests live im sichtbaren Browser verfolgen | `.\browser-tests\run.ps1 -Headed` |
 | Login-Schutz, bestehende Anmeldung und Remember-me prüfen | `.\browser-tests\run.ps1 -Suite login-attempts -Workers 2 -Language de` |
 | Sitzungslimit und zugehörige Sicherheitsabläufe prüfen | `.\browser-tests\run.ps1 -Suite session-limits -Workers 2 -Language de` |
+| Wartungsmodus und Wiederfreigabe prüfen | `.\browser-tests\run.ps1 -Suite maintenance -Language de -Coverage` |
 | Nur Benutzerfilter prüfen | `.\browser-tests\run.ps1 -Suite user-filters -Language de` |
 | Nur Benutzerverwaltung prüfen | `.\browser-tests\run.ps1 -Suite user-management -Language de` |
 | Helper und Reporter ohne Docker prüfen | `.\browser-tests\run.ps1 -ReportingTests` |
@@ -81,7 +82,8 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 19 |
 | `cosmos-design` | Fünf Kontoansichten, mobiler Mailablauf, Copyright in UI/Mails, gemeinsames Theme sowie Home-/Adminnavigation bei drei Größen | 11 |
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
-| `all` | Alle 22 Testklassen einschließlich der Fast-Fälle | 109 |
+| `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
+| `all` | Alle 23 Testklassen einschließlich der Fast-Fälle | 118 |
 
 SESSION-LIMIT-01–04 prüfen das gespeicherte Sitzungslimit über echte Anmeldungen:
 zusätzliche Tabs belegen keinen Platz, Logout gibt einen frei, Reduzierung erhält
@@ -123,6 +125,15 @@ Passwortfehler sowie die beiden sicheren Schließen-Aktionen der Dialoge.
 Die vollständigen Schritte und Erwartungen stehen pro Fall in `@Description`
 und werden automatisch in den Markdown-Bericht übernommen. Die Test-ID erscheint
 in `@DisplayName`, im Allure-Bericht und in der Abdeckungsübersicht.
+
+
+Der Wartungsmodus hat neun eigene Fälle MAINT-01 bis MAINT-05 einschließlich
+Rollen- und Linkvarianten. Sie prüfen echte HTTP-503-Dokumente, erhaltene Sitzungen,
+Admin-/Superadmin-Wiederfreigabe, alte Registrierungs-/Resetformulare, unverbrauchte
+SMTP-Mailtokens und einen tatsächlichen Remember-me-Chromium-Neustart. `all` enthält
+sie; `fast` bleibt bei 34 Fällen. Fachregeln und Grenzen stehen im
+[Wartungsvertrag](../docs/maintenance-mode-contract.md). Der zusätzliche Helper prüft
+Suite-Aufnahme und unveränderten Fast-Umfang; die aktuelle Helper-Suite umfasst 44 Fälle.
 
 ## Schnellprüfung und parallele Ausführung
 
@@ -342,8 +353,9 @@ Die Browserberichte enthalten nur erfundene Konten; Cookieinhalte werden nicht p
 
 Konfigurationsfälle merken ihre Ausgangswerte und stellen sie im `finally`-Block
 über die Oberfläche wieder her. Neuladen bestätigt Speicherung, keinen Neustart
-der Anwendung. Der Wartungsmodus-Fall prüft die Checkbox/Persistenz, keine nicht
-vorhandene Betriebsfunktion. Alle Änderungen treffen ausschließlich die Wegwerf-Umgebung.
+der Anwendung. CONFIG-04B prüft gezielt die Checkbox/Persistenz. Die eigene
+Suite `maintenance` prüft zusätzlich den tatsächlichen Zugangsschutz und die
+Wiederfreigabe. Alle Änderungen treffen ausschließlich die Wegwerf-Umgebung.
 
 Tokenablauf prüft die echte Mindestdauer von einer Minute und wartet pro Ablauf
 65 Sekunden. Deshalb dauert `token-expiry` mehrere Minuten. Die erneute Mail wird
@@ -479,7 +491,8 @@ $env:BROWSER_TEST_MAILPIT_PORT = '18027'
 .\browser-tests\run.ps1
 ```
 
-Nur Chromium, ein Thread und keine automatischen Testwiederholungen.
+Nur Chromium und keine automatischen Testwiederholungen. Pro Worker laufen die
+JUnit-Fälle weiterhin auf einem Thread; mehrere Worker haben getrennte Umgebungen.
 Der Testaufbau besitzt einen eigenen Bootstrap-Admin mit erfundenen Zugangsdaten;
 die Vorgaben stehen in `compose.browser-tests.yaml` und `BrowserTestAccounts`.
 Die tatsächliche Queue versendet per SMTP ausschließlich an den eigenen Mailpit.
@@ -489,8 +502,10 @@ Damit ist keine externe Postfachzustellung oder Outlook-/Gmail-Darstellung bewie
 
 Run-Daten sind nicht in Git; Screenshots/Traces können Testeingaben und Sitzungstokens
 enthalten. Keine Bestandsdatenbank oder laufende manuelle Umgebung zur Vorbereitung verwenden.
-Die Browserprüfung liefert keine Java-Coverage und ersetzt keinen vollständigen
-Mehrbrowser-, Mobilgeräte-, Accessibility-, SMTP- oder Betriebsnachweis.
+Mit `-Coverage` misst die Browserprüfung serverseitigen Java-Code einschließlich
+Start und Hintergrundjobs. Ohne diesen Schalter wird keine Code-Coverage erfasst.
+Sie ersetzt keinen vollständigen Mehrbrowser-, Mobilgeräte-, Accessibility-,
+SMTP- oder Betriebsnachweis.
 
 ## IntelliJ und Fehlerhilfe
 

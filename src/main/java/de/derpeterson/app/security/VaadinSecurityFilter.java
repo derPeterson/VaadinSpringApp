@@ -1,6 +1,7 @@
 package de.derpeterson.app.security;
 
 import com.vaadin.flow.server.VaadinSession;
+import de.derpeterson.app.model.enums.AppRoute;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,10 +26,7 @@ public class VaadinSecurityFilter implements Filter {
     HttpServletRequest httpRequest = (HttpServletRequest) request;
     if (httpRequest.getAttribute(SessionAdmissionService.FAILURE_REASON) instanceof String reason) {
       ((HttpServletResponse) response)
-          .sendRedirect(
-              de.derpeterson.app.model.enums.AppRoute.LOGIN.getSecurityRoute()
-                  + "?error="
-                  + reason);
+          .sendRedirect(AppRoute.LOGIN.getSecurityRoute() + "?error=" + reason);
       return;
     }
     var authentication = SecurityContextHolder.getContext().getAuthentication();

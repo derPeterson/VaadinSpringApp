@@ -1,9 +1,10 @@
 # Umsetzungspläne für bisher wirkungslose Konfiguration
 
-Stand: 15.10.2026. Geprüfter Ausgangscommit: `1d57a5e`.
+Stand: 16.10.2026. Ursprüngliche Bestandsaufnahme: `1d57a5e`.
+Wartungsumsetzung und Gesamtnachweis auf `feature/maintenance-mode`, Basis `05a67e8c`.
 Status: **Planung; diese Dokumente implementieren oder aktivieren keine Funktion.**
 
-Die drei verbleibenden Einzelpläne beschreiben Iststand, empfohlenen ersten Umfang, sichtbare
+Die zwei verbleibenden Einzelpläne beschreiben Iststand, empfohlenen ersten Umfang, sichtbare
 Verhaltensänderungen, technische Schritte, Einführung und Abnahmetests. Empfehlungen
 sind Vorschläge für die nächste Umsetzung, keine bereits abgestimmten Produktregeln.
 Als neu vorgeschlagen bezeichnete Klassen existieren noch nicht.
@@ -17,17 +18,17 @@ Zugangsdaten und laufende Anwendungen wurden nicht untersucht.
 
 | Eintrag | Enum-Standard | Heutige Wirkung | Plan |
 | --- | --- | --- | --- |
-| `maintenance.mode` | `false` | Anzeige/Speicherung; keine Zugangsbeschränkung | [Wartungsmodus](maintenance-mode.md) |
 | `mail.smtp.socketFactory.class` | `javax.net.ssl.SSLSocketFactory` | `MailConfig` reicht den Wert nicht weiter | [SMTP-SocketFactory](mail-smtp-socketfactory-class.md) |
 | `email.queue.pool.size` | `5` | Executor konfiguriert; Mailqueue verwendet ihn nicht | [Mail-Workerpool](email-queue-pool-size.md) |
 
 Das sind Enum-Standards, keine ausgelesenen Installationseinstellungen. Gespeicherte
 Werte haben Vorrang; fehlende Werte können aus `app.config.defaults.*` kommen.
 
-`login.attempts.limit` und `max.sessions.per.user` sind inzwischen umgesetzt. Die
-abgeschlossenen Pläne werden durch die verbindlichen Verträge für
-[Anmeldeversuche](../../login-attempts-contract.md) und
-[gleichzeitige Sitzungen](../../session-limit-contract.md) ersetzt; der frühere
+`login.attempts.limit`, `max.sessions.per.user` und `maintenance.mode` sind inzwischen
+umgesetzt. Die abgeschlossenen Pläne werden durch die verbindlichen Verträge für
+[Anmeldeversuche](../../login-attempts-contract.md),
+[gleichzeitige Sitzungen](../../session-limit-contract.md) und
+[Wartung](../../maintenance-mode-contract.md) ersetzt; der frühere
 Ausgangsstand der übrigen Pläne bleibt nachvollziehbar.
 
 ### Bereits verwendete Werte
@@ -38,6 +39,7 @@ Ausgangsstand der übrigen Pläne bleibt nachvollziehbar.
 | `base.url` | Links neuer Verifikations-/Passwortresetmails |
 | `login.attempts.limit` | Gemeinsamer Vaadin-/HTTP-Passwortschutz mit dauerhaftem Zähler |
 | `max.sessions.per.user` | Gemeinsame atomare Zulassung von Vaadin-/HTTP-/Remember-me-Sitzungen je Konto; Standard 3 |
+| `maintenance.mode` | Live-Zugangsschutz für HTTP, Vaadin-Routen/RPC und bestehende Push-Verbindungen; administrative Wiederfreigabe |
 | `rememberMe.duration`, `rememberMe.secret.key` | Aufbau des Remember-me-Dienstes in `SecurityConfig` |
 | `user.auto.absent.timeout` | `UserStatusScheduler` |
 | `email.from` | Absender in `EmailService` |
@@ -57,9 +59,8 @@ beschreibt, wie die wirksame Kapazitätsgrenze erhalten werden soll.
 
 ## Empfohlene Reihenfolge
 
-1. **Wartungsmodus:** auf den Login-/Sitzungsvertrag aufsetzen; alte UIs und Push beachten.
-2. **Mail-Workerpool:** eigenes Paket mit belastbaren Konkurrenztests.
-3. **SocketFactory:** Spezialfall; Bedarf und genaue Bedeutung des bisherigen Felds zuerst abstimmen.
+1. **Mail-Workerpool:** eigenes Paket mit belastbaren Konkurrenztests.
+2. **SocketFactory:** Spezialfall; Bedarf und genaue Bedeutung des bisherigen Felds zuerst abstimmen.
 
 Anschließend ist das **Kontokonfigurationspanel** vorgesehen. Die
 [Sitzungsverwaltung darin](../kontokonfiguration/sitzungsverwaltung.md) ist als zweite
@@ -91,6 +92,6 @@ verbessern, ohne nebenbei sämtliche Sicherheitsklassen umzubauen.
 ## Prüfung dieser Unterlagen
 
 Die ursprüngliche Planung war eine reine Markdown-Aufgabe. Der inzwischen umgesetzte
-Login- und Sitzungsschutz haben eigene Prüfungen; deren tatsächlich ausgeführte Ergebnisse stehen in
+Login-, Sitzungs- und Wartungsschutz haben eigene Prüfungen; deren tatsächlich ausgeführte Ergebnisse stehen in
 [der aktuellen Abdeckung](../../../browser-tests/abdeckung.md). Die verbleibenden Pläne
 bleiben unimplementiert. Zum bloßen Lesen dieser Dateien ist kein Neustart nötig.

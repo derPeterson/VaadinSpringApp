@@ -31,7 +31,9 @@ import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.LoginThrottledException;
+import de.derpeterson.app.security.MaintenanceAuthenticationException;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.SessionLimitException;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosPageComponent;
@@ -40,6 +42,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -177,13 +180,15 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
                 getUI().ifPresent(ui -> ui.navigate(target));
               } catch (AuthenticationException e) {
                 showLoginFailure(
-                    e instanceof de.derpeterson.app.security.SessionLimitException
-                        ? "sessions"
-                        : e instanceof LoginThrottledException
-                            ? "throttled"
-                            : e instanceof AuthenticationServiceException
-                                ? "unavailable"
-                                : "invalid");
+                    e instanceof MaintenanceAuthenticationException
+                        ? "maintenance"
+                        : e instanceof SessionLimitException
+                            ? "sessions"
+                            : e instanceof LoginThrottledException
+                                ? "throttled"
+                                : e instanceof AuthenticationServiceException
+                                    ? "unavailable"
+                                    : "invalid");
               }
             });
 
@@ -279,7 +284,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     var errors = event.getLocation().getQueryParameters().getParameters().get("error");
     if (errors != null
         && errors.size() == 1
-        && java.util.Set.of("sessions", "throttled", "unavailable", "invalid")
+        && Set.of("maintenance", "sessions", "throttled", "unavailable", "invalid")
             .contains(errors.getFirst())) {
       showLoginFailure(errors.getFirst());
     }
@@ -288,6 +293,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
   private void showLoginFailure(String reason) {
     Supplier<String> text =
         switch (reason) {
+          case "maintenance" -> messageProperties::getMaintenanceLoginMessage;
           case "sessions" -> messageProperties::getLoginSessionLimitMessage;
           case "throttled" -> messageProperties::getLoginThrottledMessage;
           case "unavailable" -> messageProperties::getLoginUnavailableMessage;

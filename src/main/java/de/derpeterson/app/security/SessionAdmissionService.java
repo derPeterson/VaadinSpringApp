@@ -4,12 +4,14 @@ import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
 import jakarta.servlet.http.*;
+import java.util.Arrays;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.web.util.WebUtils;
 
 /** One-instance admission. Fixed stripes bound lock memory independently of login identities. */
 public class SessionAdmissionService implements SessionAuthenticationStrategy {
@@ -26,13 +28,31 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
   public SessionAdmissionService(ConfigService config, SessionRegistry registry) {
     this.config = config;
     this.registry = registry;
-    java.util.Arrays.setAll(locks, index -> new Object());
+    Arrays.setAll(locks, index -> new Object());
   }
 
   @Override
   public void onAuthentication(
       Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
-    complete(authentication, request, response, () -> {});
+    completeLogin(authentication, request, response, () -> {});
+  }
+
+  /** Explicit sign-in must not use an existing slot to bypass the current maintenance policy. */
+  public void completeLogin(
+      Authentication authentication,
+      HttpServletRequest request,
+      HttpServletResponse response,
+      Runnable completion) {
+    try {
+      new MaintenanceService(config).requireLogin(authentication);
+    } catch (MaintenanceAuthenticationException failure) {
+      request.setAttribute(FAILURE_REASON, "maintenance");
+      throw failure;
+    } catch (AuthenticationServiceException failure) {
+      request.setAttribute(FAILURE_REASON, "unavailable");
+      throw failure;
+    }
+    complete(authentication, request, response, completion);
   }
 
   /** Reserve before publishing any principal/cookie; roll back a failed completion. */
@@ -44,7 +64,7 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
     var session = request.getSession(false);
     if (session != null) {
       // Different account logins in the same browser must not overwrite each other's reservation.
-      synchronized (org.springframework.web.util.WebUtils.getSessionMutex(session)) {
+      synchronized (WebUtils.getSessionMutex(session)) {
         completeForIdentity(authentication, request, response, completion);
       }
     } else completeForIdentity(authentication, request, response, completion);
@@ -71,6 +91,7 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
           completion.run();
           return;
         }
+        new MaintenanceService(config).requireLogin(authentication);
         int limit;
         try {
           limit = config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER);
@@ -89,7 +110,9 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
         session.setAttribute(REGISTRATION, new Registration(registry));
         completion.run();
       } catch (RuntimeException failure) {
-        if (failure instanceof SessionLimitException)
+        if (failure instanceof MaintenanceAuthenticationException)
+          request.setAttribute(FAILURE_REASON, "maintenance");
+        else if (failure instanceof SessionLimitException)
           request.setAttribute(FAILURE_REASON, "sessions");
         else if (failure instanceof AuthenticationServiceException)
           request.setAttribute(FAILURE_REASON, "unavailable");

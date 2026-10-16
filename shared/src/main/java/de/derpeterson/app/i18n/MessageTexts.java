@@ -1417,4 +1417,48 @@ public class MessageTexts {
   public String getAccountCopyrightTemplate() {
     return getTranslation("account.copyright.template");
   }
+
+  public String getMaintenanceTitle() {
+    return getTranslation("maintenance.title");
+  }
+
+  public String getMaintenanceDescription() {
+    return getTranslation("maintenance.description");
+  }
+
+  public String getMaintenanceLoginButton() {
+    return getTranslation("maintenance.login.button");
+  }
+
+  public String getMaintenanceRetryButton() {
+    return getTranslation("maintenance.retry.button");
+  }
+
+  public String getMaintenanceStatusOnline() {
+    return getTranslation("maintenance.status.online");
+  }
+
+  public String getMaintenanceStatusActive() {
+    return getTranslation("maintenance.status.active");
+  }
+
+  public String getMaintenanceStatusUnavailable() {
+    return getTranslation("maintenance.status.unavailable");
+  }
+
+  public String getMaintenanceServicesReady() {
+    return getTranslation("maintenance.services.ready");
+  }
+
+  public String getMaintenanceServicesRestricted() {
+    return getTranslation("maintenance.services.restricted");
+  }
+
+  public String getMaintenanceLoginMessage() {
+    return getTranslation("maintenance.login.message");
+  }
+
+  public String getMaintenanceUnavailableMessage() {
+    return getTranslation("maintenance.unavailable.message");
+  }
 }

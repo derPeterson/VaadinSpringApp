@@ -7,6 +7,7 @@ import de.derpeterson.app.model.enums.NavigationErrorCode;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.LoginAttemptService;
+import java.util.List;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -37,6 +38,7 @@ import org.springframework.security.web.authentication.rememberme.PersistentToke
 import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.web.util.HttpSessionMutexListener;
 
 @Configuration
 @RequiredArgsConstructor
@@ -59,7 +61,7 @@ public class SecurityConfig {
     var provider = new DaoAuthenticationProvider(userDetailsService::loadPasswordUserByUsername);
     provider.setPasswordEncoder(encoder);
     return new ProviderManager(
-        java.util.List.of(
+        List.of(
             new LoginAuthenticationService(provider, attempts),
             new RememberMeAuthenticationProvider(
                 configService.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY))));
@@ -71,8 +73,13 @@ public class SecurityConfig {
   }
 
   @Bean
-  public org.springframework.web.util.HttpSessionMutexListener httpSessionMutexListener() {
-    return new org.springframework.web.util.HttpSessionMutexListener();
+  public HttpSessionMutexListener httpSessionMutexListener() {
+    return new HttpSessionMutexListener();
+  }
+
+  @Bean
+  public MaintenanceService maintenanceService() {
+    return new MaintenanceService(configService);
   }
 
   @Bean
@@ -132,6 +139,7 @@ public class SecurityConfig {
       PersistentTokenBasedRememberMeServices rememberMeServices,
       AuthenticationManager authenticationManager,
       SessionAdmissionService admissions,
+      MaintenanceService maintenance,
       SecurityContextRepository contextRepository)
       throws Exception {
     logger.debug("🔥 SecurityConfig is loading!");
@@ -172,6 +180,7 @@ public class SecurityConfig {
                         AppRoute.BASE.getSecurityRoute(),
                         AppRoute.HOME.getSecurityRoute(),
                         AppRoute.LOGIN.getSecurityRoute(),
+                        AppRoute.MAINTENANCE.getSecurityRoute(),
                         AppRoute.REGISTRATION.getSecurityRoute(),
                         AppRoute.VERIFICATION.getSecurityRoute(),
                         AppRoute.FORGOT_PASSWORD.getSecurityRoute(),
@@ -224,6 +233,7 @@ public class SecurityConfig {
                           }
                         }))
         .addFilterBefore(vaadinSecurityFilter, AuthorizationFilter.class)
+        .addFilterAfter(new MaintenanceHttpFilter(maintenance), VaadinSecurityFilter.class)
         .addFilterBefore(
             new LoginCompletionFilter(admissions, rememberMeServices),
             UsernamePasswordAuthenticationFilter.class)
@@ -259,13 +269,15 @@ public class SecurityConfig {
                   .failureHandler(
                       (request, response, failure) -> {
                         String error =
-                            failure instanceof SessionLimitException
-                                ? "sessions"
-                                : failure instanceof LoginThrottledException
-                                    ? "throttled"
-                                    : failure instanceof AuthenticationServiceException
-                                        ? "unavailable"
-                                        : "invalid";
+                            failure instanceof MaintenanceAuthenticationException
+                                ? "maintenance"
+                                : failure instanceof SessionLimitException
+                                    ? "sessions"
+                                    : failure instanceof LoginThrottledException
+                                        ? "throttled"
+                                        : failure instanceof AuthenticationServiceException
+                                            ? "unavailable"
+                                            : "invalid";
                         response.sendRedirect(
                             AppRoute.LOGIN.getSecurityRoute() + "?error=" + error);
                       })
@@ -306,6 +318,7 @@ public class SecurityConfig {
         || requestUri.equals(AppRoute.HOME.getSecurityRoute())
         || requestUri.equals(AppRoute.ADMIN.getSecurityRoute())
         || requestUri.equals(AppRoute.LOGIN.getSecurityRoute())
+        || requestUri.equals(AppRoute.MAINTENANCE.getSecurityRoute())
         || requestUri.equals(AppRoute.LOGOUT.getSecurityRoute())
         || requestUri.equals(AppRoute.REGISTRATION.getSecurityRoute())
         || requestUri.equals(AppRoute.FORGOT_PASSWORD.getSecurityRoute())

@@ -7,15 +7,20 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.FactorGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -128,7 +133,7 @@ public class SecurityService {
     Authentication auth =
         UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities());
     try {
-      admissions.complete(
+      admissions.completeLogin(
           auth,
           request,
           response,
@@ -148,7 +153,7 @@ public class SecurityService {
             if (Boolean.TRUE.equals(rememberMe)) {
               // Checkbox selection belongs to this request, never to the singleton service.
               var rememberedRequest =
-                  new jakarta.servlet.http.HttpServletRequestWrapper(request) {
+                  new HttpServletRequestWrapper(request) {
                     @Override
                     public String getParameter(String name) {
                       return "remember-me".equals(name) ? "true" : super.getParameter(name);
@@ -170,8 +175,7 @@ public class SecurityService {
       }
       if (failure instanceof AuthenticationException authenticationFailure)
         throw authenticationFailure;
-      throw new org.springframework.security.authentication.AuthenticationServiceException(
-          "Login completion failed", failure);
+      throw new AuthenticationServiceException("Login completion failed", failure);
     }
   }
 
@@ -216,15 +220,11 @@ public class SecurityService {
     }
   }
 
-  private java.util.Set<String> accountAuthorities(
-      java.util.Collection<? extends GrantedAuthority> authorities) {
+  private Set<String> accountAuthorities(Collection<? extends GrantedAuthority> authorities) {
     // Spring's typed factor evidence records HOW login occurred; it is not a stored account role.
     // Do not ignore arbitrary strings with a FACTOR_ prefix: only genuine framework factor objects.
     return authorities.stream()
-        .filter(
-            authority ->
-                !(authority
-                    instanceof org.springframework.security.core.authority.FactorGrantedAuthority))
+        .filter(authority -> !(authority instanceof FactorGrantedAuthority))
         .map(GrantedAuthority::getAuthority)
         .collect(Collectors.toSet());
   }

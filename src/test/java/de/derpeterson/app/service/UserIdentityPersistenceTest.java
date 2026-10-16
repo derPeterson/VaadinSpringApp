@@ -2,29 +2,57 @@ package de.derpeterson.app.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.textfield.EmailField;
+import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.router.Router;
+import com.vaadin.flow.server.VaadinContext;
+import com.vaadin.flow.server.VaadinService;
+import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.startup.ApplicationRouteRegistry;
+import de.derpeterson.app.helper.ui.NotificationHelper;
+import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.*;
 import de.derpeterson.app.model.enums.*;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.CustomUserDetailsService;
+import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.validation.EmailConflict;
+import de.derpeterson.app.views.LoginView;
+import de.derpeterson.app.views.RegistrationView;
+import de.derpeterson.app.views.RegistrationViewTest;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /** Real constraints/commits in the isolated H2 fixture, never application data. */
@@ -179,9 +207,7 @@ class UserIdentityPersistenceTest {
     UserEntity fresh = form(targetId);
     fresh.setFirstName("Changed");
     service.updateAdminUser(fresh, fresh.getVersion(), "");
-    assertThrows(
-        org.springframework.dao.OptimisticLockingFailureException.class,
-        () -> service.deleteUser(stale));
+    assertThrows(OptimisticLockingFailureException.class, () -> service.deleteUser(stale));
     assertEquals("Changed", form(targetId).getFirstName());
     assertEquals(TokenStatus.values().length, children("verification_token", targetId));
     assertEquals(TokenStatus.values().length, children("password_reset_token", targetId));
@@ -245,8 +271,7 @@ class UserIdentityPersistenceTest {
     transaction.executeWithoutResult(
         tx -> {
           UserEntity managed = entityManager.find(UserEntity.class, id);
-          org.springframework.test.util.ReflectionTestUtils.setField(
-              managed, "email", " UPDATED@Example.COM ");
+          ReflectionTestUtils.setField(managed, "email", " UPDATED@Example.COM ");
           managed.setFirstName("Updated through field access");
         });
     assertEquals("updated@example.com", form(id).getEmail());
@@ -258,13 +283,12 @@ class UserIdentityPersistenceTest {
     var failure =
         assertThrows(DataIntegrityViolationException.class, () -> service.saveUser(duplicate));
     assertTrue(
-        de.derpeterson.app.validation.EmailConflict.isDuplicate(failure),
+        EmailConflict.isDuplicate(failure),
         () -> {
           Throwable cause = failure;
-          while (cause.getCause() != null
-              && !(cause instanceof org.hibernate.exception.ConstraintViolationException))
+          while (cause.getCause() != null && !(cause instanceof ConstraintViolationException))
             cause = cause.getCause();
-          return cause instanceof org.hibernate.exception.ConstraintViolationException v
+          return cause instanceof ConstraintViolationException v
               ? "constraint=" + v.getConstraintName() + ", state=" + v.getSQLState()
               : cause.toString();
         });
@@ -278,107 +302,82 @@ class UserIdentityPersistenceTest {
                         "update users set email = ? where id = ?",
                         " INVALID@EXAMPLE.COM ",
                         otherId));
-    assertFalse(de.derpeterson.app.validation.EmailConflict.isDuplicate(invalid));
+    assertFalse(EmailConflict.isDuplicate(invalid));
     assertEquals("other@example.com", form(otherId).getEmail());
   }
 
   @Test
   void registrationCallbackHandlesARealCommittedDuplicateBetweenPreflightAndSave() {
-    var ui = new com.vaadin.flow.component.UI();
-    var session = org.mockito.Mockito.mock(com.vaadin.flow.server.VaadinSession.class);
-    org.mockito.Mockito.when(session.hasLock()).thenReturn(true);
-    org.mockito.Mockito.when(session.getLocale()).thenReturn(Locale.ENGLISH);
-    var registry =
-        new com.vaadin.flow.server.startup.ApplicationRouteRegistry(
-            org.mockito.Mockito.mock(com.vaadin.flow.server.VaadinContext.class)) {};
-    registry.setRoute("login", de.derpeterson.app.views.LoginView.class, List.of());
-    var vaadin =
-        org.mockito.Mockito.mock(de.derpeterson.app.views.RegistrationViewTest.TestService.class);
-    org.mockito.Mockito.when(vaadin.getRouter())
-        .thenReturn(new com.vaadin.flow.router.Router(registry));
-    org.mockito.Mockito.when(vaadin.getRouteRegistry()).thenReturn(registry);
-    org.mockito.Mockito.when(session.getService()).thenReturn(vaadin);
-    com.vaadin.flow.component.UI.setCurrent(ui);
-    com.vaadin.flow.server.VaadinSession.setCurrent(session);
-    com.vaadin.flow.server.VaadinService.setCurrent(vaadin);
+    var ui = new UI();
+    var session = Mockito.mock(VaadinSession.class);
+    Mockito.when(session.hasLock()).thenReturn(true);
+    Mockito.when(session.getLocale()).thenReturn(Locale.ENGLISH);
+    var registry = new ApplicationRouteRegistry(Mockito.mock(VaadinContext.class)) {};
+    registry.setRoute("login", LoginView.class, List.of());
+    var vaadin = Mockito.mock(RegistrationViewTest.TestService.class);
+    Mockito.when(vaadin.getRouter()).thenReturn(new Router(registry));
+    Mockito.when(vaadin.getRouteRegistry()).thenReturn(registry);
+    Mockito.when(session.getService()).thenReturn(vaadin);
+    UI.setCurrent(ui);
+    VaadinSession.setCurrent(session);
+    VaadinService.setCurrent(vaadin);
     try {
-      var users = org.mockito.Mockito.mock(UserService.class);
-      org.mockito.Mockito.when(users.findByEmail("registration@example.com"))
+      var users = Mockito.mock(UserService.class);
+      Mockito.when(users.findByEmail("registration@example.com"))
           .thenAnswer(
               call -> {
                 assertTrue(service.findByEmail("registration@example.com").isEmpty());
                 // Deterministic competing commit after a successful preflight;
                 // the following callback must encounter the actual DB constraint.
                 service.saveUser(user("registration@example.com", ordinary));
-                return java.util.Optional.empty();
+                return Optional.empty();
               });
-      org.mockito.Mockito.doAnswer(
+      Mockito.doAnswer(
               call -> {
                 service.saveUser(call.getArgument(0));
                 return null;
               })
           .when(users)
-          .saveUser(org.mockito.ArgumentMatchers.any());
-      var roles = org.mockito.Mockito.mock(RoleService.class);
-      org.mockito.Mockito.when(roles.findByName(RoleType.ROLE_USER))
-          .thenReturn(java.util.Optional.of(ordinary));
-      var encoder =
-          org.mockito.Mockito.mock(
-              org.springframework.security.crypto.password.PasswordEncoder.class);
-      org.mockito.Mockito.when(encoder.encode("Password!")).thenReturn("hash");
-      var verification = org.mockito.Mockito.mock(VerificationService.class);
+          .saveUser(ArgumentMatchers.any());
+      var roles = Mockito.mock(RoleService.class);
+      Mockito.when(roles.findByName(RoleType.ROLE_USER)).thenReturn(Optional.of(ordinary));
+      var encoder = Mockito.mock(PasswordEncoder.class);
+      Mockito.when(encoder.encode("Password!")).thenReturn("hash");
+      var verification = Mockito.mock(VerificationService.class);
       var view =
-          new de.derpeterson.app.views.RegistrationView(
-              new de.derpeterson.app.i18n.MessageProperties(
-                  new de.derpeterson.app.i18n.CustomI18NProvider()),
+          new RegistrationView(
+              new MessageProperties(new CustomI18NProvider()),
               users,
               roles,
               encoder,
-              verification,
-              org.mockito.Mockito.mock(de.derpeterson.app.security.SecurityService.class),
-              org.mockito.Mockito.mock(jakarta.servlet.http.HttpServletRequest.class),
+              new RegistrationService(users, verification, accountConfig()),
+              Mockito.mock(SecurityService.class),
+              Mockito.mock(HttpServletRequest.class),
               accountConfig());
       for (String name : List.of("firstNameField", "lastNameField")) {
-        ((com.vaadin.flow.component.textfield.TextField)
-                org.springframework.test.util.ReflectionTestUtils.getField(view, name))
-            .setValue("Test");
+        ((TextField) ReflectionTestUtils.getField(view, name)).setValue("Test");
       }
       for (String name : List.of("emailField", "confirmEmailField")) {
-        ((com.vaadin.flow.component.textfield.EmailField)
-                org.springframework.test.util.ReflectionTestUtils.getField(view, name))
+        ((EmailField) ReflectionTestUtils.getField(view, name))
             .setValue("registration@example.com");
       }
       for (String name : List.of("passwordField", "confirmPasswordField")) {
-        ((com.vaadin.flow.component.textfield.PasswordField)
-                org.springframework.test.util.ReflectionTestUtils.getField(view, name))
-            .setValue("Password!");
+        ((PasswordField) ReflectionTestUtils.getField(view, name)).setValue("Password!");
       }
-      ((com.vaadin.flow.component.combobox.ComboBox)
-              org.springframework.test.util.ReflectionTestUtils.getField(view, "genderComboBox"))
-          .setValue(Gender.OTHER);
-      ((com.vaadin.flow.component.datepicker.DatePicker)
-              org.springframework.test.util.ReflectionTestUtils.getField(view, "birthDatePicker"))
+      ((ComboBox) ReflectionTestUtils.getField(view, "genderComboBox")).setValue(Gender.OTHER);
+      ((DatePicker) ReflectionTestUtils.getField(view, "birthDatePicker"))
           .setValue(LocalDate.of(1990, 1, 1));
-      ((com.vaadin.flow.component.button.Button)
-              org.springframework.test.util.ReflectionTestUtils.getField(
-                  view, "registrationButton"))
-          .click();
+      ((Button) ReflectionTestUtils.getField(view, "registrationButton")).click();
+      assertTrue(((EmailField) ReflectionTestUtils.getField(view, "emailField")).isInvalid());
       assertTrue(
-          ((com.vaadin.flow.component.textfield.EmailField)
-                  org.springframework.test.util.ReflectionTestUtils.getField(view, "emailField"))
-              .isInvalid());
-      assertTrue(
-          ((com.vaadin.flow.component.textfield.EmailField)
-                  org.springframework.test.util.ReflectionTestUtils.getField(
-                      view, "confirmEmailField"))
-              .isInvalid());
+          ((EmailField) ReflectionTestUtils.getField(view, "confirmEmailField")).isInvalid());
       assertEquals(4, repository.count());
-      org.mockito.Mockito.verifyNoInteractions(verification);
+      Mockito.verifyNoInteractions(verification);
     } finally {
-      de.derpeterson.app.helper.ui.NotificationHelper.getInstance().closeAndClearAllNotifications();
-      com.vaadin.flow.component.UI.setCurrent(null);
-      com.vaadin.flow.server.VaadinSession.setCurrent(null);
-      com.vaadin.flow.server.VaadinService.setCurrent(null);
+      NotificationHelper.getInstance().closeAndClearAllNotifications();
+      UI.setCurrent(null);
+      VaadinSession.setCurrent(null);
+      VaadinService.setCurrent(null);
     }
   }
 
@@ -418,14 +417,14 @@ class UserIdentityPersistenceTest {
           });
       return true;
     } catch (DataIntegrityViolationException conflict) {
-      assertTrue(de.derpeterson.app.validation.EmailConflict.isDuplicate(conflict));
+      assertTrue(EmailConflict.isDuplicate(conflict));
       return false;
     }
   }
 
   private static ConfigService accountConfig() {
-    ConfigService config = org.mockito.Mockito.mock(ConfigService.class);
-    org.mockito.Mockito.when(config.getString(org.mockito.ArgumentMatchers.any(ConfigEntry.class)))
+    ConfigService config = Mockito.mock(ConfigService.class);
+    Mockito.when(config.getString(ArgumentMatchers.any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     return config;
   }

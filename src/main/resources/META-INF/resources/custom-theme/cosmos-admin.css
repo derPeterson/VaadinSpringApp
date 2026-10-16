@@ -44,7 +44,52 @@ vaadin-app-layout.cosmos-admin {
 
 .cosmos-sidebar {
     box-sizing: border-box;
+    min-height: 100%;
     padding: 17px 12px;
+    gap: var(--lumo-space-l);
+}
+
+/* Der Status bleibt unter der Navigation am unteren Rand. Bei wenig Höhe wächst
+ * die Seitenleiste mit; vorhandene Cosmos-Flächen und Lumo-Statusfarben verwenden. */
+.cosmos-sidebar > .cosmos-service-status {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-s);
+    margin-block-start: auto;
+    padding: var(--lumo-space-s);
+    border: 1px solid var(--cosmos-card-border);
+    border-radius: var(--lumo-border-radius-l);
+    background: var(--cosmos-card-background);
+}
+
+.cosmos-service-status-title,
+.cosmos-service-status-description {
+    display: block;
+    line-height: 1.5;
+}
+
+.cosmos-service-status-title {
+    color: var(--lumo-body-text-color);
+    font-size: 12px;
+}
+
+.cosmos-service-status-description {
+    color: var(--lumo-secondary-text-color);
+    font-size: 11px;
+}
+
+.cosmos-service-status-dot {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--lumo-success-color);
+}
+
+.cosmos-service-status[data-state="active"] .cosmos-service-status-dot,
+.cosmos-service-status[data-state="unavailable"] .cosmos-service-status-dot {
+    background: var(--lumo-error-color);
 }
 
 /* Native SideNav mit dem kompakten Cosmos-Look des ursprünglichen Entwurfs.

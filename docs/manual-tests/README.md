@@ -1,8 +1,8 @@
 # Manuelle Sonderprüfungen
 
-Stand 15.10.2026. Der Katalog enthält **15 gezielte Fälle**: **7 menschliche Abnahmen**
+Stand 16.10.2026. Der Katalog enthält **15 gezielte Fälle**: **7 menschliche Abnahmen**
 und **8 derzeit offene Automatisierungskandidaten**. Er ersetzt die alte vollständige
-Handcheckliste. Die 100 vorhandenen Browserfälle und technischen JUnit-Regeln werden
+Handcheckliste. Die bereits automatisierten Browserfälle und technischen JUnit-Regeln werden
 hier nicht erneut Schritt für Schritt abgearbeitet.
 
 | Datei | Zweck |

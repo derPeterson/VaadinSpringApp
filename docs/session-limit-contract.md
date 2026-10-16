@@ -119,3 +119,12 @@ Frameworkgrundlagen, passend zum verwendeten Spring Security 7.1.1:
 [Session Management](https://docs.spring.io/spring-security/reference/servlet/authentication/session-management.html),
 [RememberMeAuthenticationFilter](https://docs.spring.io/spring-security/reference/api/java/org/springframework/security/web/authentication/rememberme/RememberMeAuthenticationFilter.html),
 [ChangeSessionIdAuthenticationStrategy](https://docs.spring.io/spring-security/reference/api/java/org/springframework/security/web/authentication/session/ChangeSessionIdAuthenticationStrategy.html).
+
+## Zusammenspiel mit Wartung
+
+Der [Wartungsmodus](maintenance-mode-contract.md) prüft neue und ausdrücklich
+erneute Anmeldungen vor Registrierung/Abschluss. Abgewiesene Benutzer/Gäste
+belegen keinen neuen Platz. Bestehende registrierte Sitzungen dürfen ihren
+Context wiederherstellen und behalten ihren Platz; ihre Fachaktionen sind
+während Wartung gesperrt. Ausschalten macht weiterhin gültige Sitzungen wieder
+nutzbar, ohne die Zählung oder andere Geräte zurückzusetzen.

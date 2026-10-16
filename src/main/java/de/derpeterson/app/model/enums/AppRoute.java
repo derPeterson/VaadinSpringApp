@@ -53,6 +53,11 @@ public enum AppRoute {
       AppRouteConstants.RESET_PAGE_TITLE,
       null),
 
+  MAINTENANCE(
+      AppRouteConstants.MAINTENANCE_ROUTE,
+      AppRouteConstants.MAINTENANCE_SECURITY_ROUTE,
+      AppRouteConstants.MAINTENANCE_PAGE_TITLE,
+      null),
   H2(
       AppRouteConstants.H2_ROUTE,
       AppRouteConstants.H2_SECURITY_ROUTE,

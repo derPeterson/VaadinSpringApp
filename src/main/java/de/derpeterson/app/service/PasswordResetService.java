@@ -1,6 +1,5 @@
 package de.derpeterson.app.service;
 
-import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.config.TokenDurationPolicy;
 import de.derpeterson.app.helper.email.EmailLogo;
 import de.derpeterson.app.helper.text.CopyrightTextFormatter;
@@ -8,11 +7,13 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.PasswordResetTokenEntity;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.EmailType;
 import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.PasswordResetTokenRepository;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.validation.UserInputRules;
 import java.io.IOException;
 import java.io.InputStream;
@@ -78,6 +79,7 @@ public class PasswordResetService {
 
   @Transactional
   public String createToken(UserEntity user) {
+    MaintenanceService.requirePublicAccess(configService);
     UserEntity stored =
         userRepository
             .lockVerificationUser(user.getId())
@@ -161,6 +163,7 @@ public class PasswordResetService {
 
   @Transactional
   public boolean validateToken(String token) {
+    MaintenanceService.requirePublicAccess(configService);
     Optional<UserEntity> user = lockTokenUser(token);
     if (user.isEmpty()) {
       return false;
@@ -183,6 +186,7 @@ public class PasswordResetService {
   @Transactional
   public boolean resetPassword(String token, String newPassword) {
     Assert.isTrue(UserInputRules.isPasswordSecure(newPassword), "Invalid password");
+    MaintenanceService.requirePublicAccess(configService);
     Optional<UserEntity> lockedUser = lockTokenUser(token);
     if (lockedUser.isEmpty()) {
       return false;
@@ -238,6 +242,7 @@ public class PasswordResetService {
    */
   @Transactional(rollbackFor = IOException.class)
   public boolean sendPasswordResetEmail(String email) throws IOException {
+    MaintenanceService.requirePublicAccess(configService);
     Optional<UserEntity> userOptional = userRepository.findByEmail(email);
     userOptional = userOptional.flatMap(user -> userRepository.lockVerificationUser(user.getId()));
     if (userOptional.isPresent()) {
@@ -279,7 +284,7 @@ public class PasswordResetService {
                         messageProperties::getAccountCopyrightTemplate)),
             "RESET_PASSWORD_LINK",
                 UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))
-                    .pathSegment(AppRouteConstants.RESET_PASSWORD_ROUTE, token)
+                    .pathSegment(AppRoute.RESET_PASSWORD.getRoute(), token)
                     .toUriString());
 
     ClassPathResource resource =

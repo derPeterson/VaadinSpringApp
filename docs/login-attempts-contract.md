@@ -134,3 +134,10 @@ Die [Begrenzung gleichzeitiger Sitzungen](session-limit-contract.md) gilt zusät
 für neue Sitzungen nach erfolgreicher Identitätsprüfung. Eine Ablehnung wegen belegter
 Plätze ist kein falsches Passwort. Bestehende Sitzungen bleiben von der Passwortsperre
 unabhängig; eine Remember-me-Rückkehr benötigt dagegen einen freien Sitzungsplatz.
+
+## Zusammenspiel mit Wartung
+
+Der [Wartungsmodus](maintenance-mode-contract.md) entscheidet nach gültiger
+Passwortprüfung und vor neuer Sitzung bzw. Remember-me-Ausgabe. Eine Ablehnung
+wegen Wartung ist kein weiterer Passwortfehlversuch. Falsche Passwörter zählen
+weiterhin; Admin/Superadmin umgehen weder Anmeldesperre noch Sitzungslimit.

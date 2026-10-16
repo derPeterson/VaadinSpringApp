@@ -21,8 +21,10 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.IsAuthenticatedBaseView;
+import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailService;
@@ -31,6 +33,7 @@ import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.CosmosBackgroundComponent;
 import de.derpeterson.app.ui.components.CosmosCopyrightComponent;
+import de.derpeterson.app.ui.components.CosmosServiceStatusComponent;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.views.admin.AdminConfigurationSection;
 import de.derpeterson.app.views.admin.AdminDashboardSection;
@@ -66,6 +69,8 @@ public class AdminView extends IsAuthenticatedBaseView {
 
   private final Span serviceNameSpan = new Span();
 
+  private final CosmosServiceStatusComponent serviceStatus;
+
   private SideNav sideNavigation;
   private SideNavItem dashboardNavItem;
   private SideNavItem configurationNavItem;
@@ -88,6 +93,7 @@ public class AdminView extends IsAuthenticatedBaseView {
       MessageProperties messageProperties,
       SecurityService securityService,
       ConfigService configService,
+      MaintenanceService maintenance,
       EmailService emailService,
       UserService userService,
       RoleService roleService,
@@ -96,6 +102,7 @@ public class AdminView extends IsAuthenticatedBaseView {
     super(messageProperties, securityService, userService, userStatusBroadcaster, request);
 
     this.configService = configService;
+    serviceStatus = new CosmosServiceStatusComponent(maintenance, messageProperties);
     addClassNames("admin-view", "cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-admin");
 
     UserDetails authenticatedUser = securityService.getAuthenticatedUser(request).orElse(null);
@@ -111,7 +118,8 @@ public class AdminView extends IsAuthenticatedBaseView {
 
     dashboardSection = new AdminDashboardSection(messageProperties, authenticatedUser);
     configurationSection =
-        new AdminConfigurationSection(messageProperties, configService, this::refreshServiceName);
+        new AdminConfigurationSection(
+            messageProperties, configService, this::refreshConfigurationState);
     mailTestSection = new AdminMailTestSection(messageProperties, emailService, authenticatedUser);
     userManagementSection =
         new AdminUserManagementSection(
@@ -134,7 +142,7 @@ public class AdminView extends IsAuthenticatedBaseView {
 
   @Override
   protected boolean hasRequiredAccess(UserDetails authenticatedUser) {
-    return hasRole(authenticatedUser, AppRouteConstants.ADMIN_ROUTE_ROLES);
+    return hasRole(authenticatedUser, AppRoute.ADMIN.getRoles());
   }
 
   private HorizontalLayout createNavbar() {
@@ -164,6 +172,11 @@ public class AdminView extends IsAuthenticatedBaseView {
     headerTitle.addClassName("cosmos-topbar-badge");
     leftLayout.add(drawerToggle, serviceNameSpan, headerTitle);
     return leftLayout;
+  }
+
+  private void refreshConfigurationState() {
+    refreshServiceName();
+    serviceStatus.refresh();
   }
 
   private void refreshServiceName() {
@@ -215,7 +228,7 @@ public class AdminView extends IsAuthenticatedBaseView {
         dashboardNavItem, configurationNavItem, mailTestNavItem, userManagementNavItem);
     installSideNavigationActions();
 
-    VerticalLayout drawerContent = new VerticalLayout(sideNavigation);
+    VerticalLayout drawerContent = new VerticalLayout(sideNavigation, serviceStatus);
     drawerContent.setPadding(false);
     drawerContent.setSpacing(false);
     drawerContent.setWidthFull();
@@ -271,6 +284,7 @@ public class AdminView extends IsAuthenticatedBaseView {
   }
 
   private void selectSection(AdminSection section, AdminConfigGroup configurationGroup) {
+    serviceStatus.refresh();
     activeSection = section;
 
     if (section == AdminSection.CONFIGURATION) {
@@ -338,6 +352,7 @@ public class AdminView extends IsAuthenticatedBaseView {
   }
 
   private void refreshTexts() {
+    serviceStatus.refresh();
     if (headerTitle != null) {
       headerTitle.setText(messageProperties.getAdminHeaderTitle());
     }

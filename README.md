@@ -16,7 +16,7 @@ Eine ausgefüllte Lernvorlage zeigt Befunde, Korrektur und Nachtest.
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Aktueller Sitzungs-/Sicherheitsnachweis vom 15.10.2026: Java 25, 1.171 Anwendungstests, 43 Helfertests und je 27 gezielte Browserfälle DE/EN erfolgreich; zusätzlich fünf deutsche Bestandsfälle nach Synchronisierungskorrektur. [Ergebnisse und Grenzen](browser-tests/abdeckung.md).
+> Aktueller Gesamtnachweis vom 16.10.2026: Java 25, 1.226 Anwendungstests, 44 Browserhelfer, 205 Python-Offlinetests und vollständiges Browser-`all` mit je 118 Fällen DE/EN erfolgreich. [Ergebnisse und Coverage](browser-tests/abdeckung.md).
 
 ## Funktionen
 
@@ -25,6 +25,7 @@ Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administ
 - Passwort-Zurücksetzen über zeitlich begrenzte, nach Verwendung verbrauchte Tokens.
 - Dauerhafte Begrenzung erfolgloser Passwortanmeldungen mit 15-Minuten-Fenster und 15-Minuten-Sperre.
 - Konfigurierbares Limit gleichzeitiger Sitzungen pro Benutzer für Passwortlogin und Remember-me; zusätzliche Tabs teilen ihren Sitzungsplatz.
+- Sofort wirksamer Wartungsmodus mit Zugang für Admin/Superadmin, pausierter normaler Nutzung und erhaltenen Sitzungen/Tokens.
 - Adminbereich mit Benutzerverwaltung, Rollen und Kontofreigabe, Konfiguration sowie Mail-Testversand.
 - Deutsche und englische Oberfläche, manuell wählbarer Benutzerstatus und automatische Abwesenheitserkennung mit Push-Aktualisierung.
 - Datenbankgestützte E-Mail-Warteschlange mit Wiederholungsversuchen und geplanten Bereinigungsaufgaben.
@@ -66,9 +67,17 @@ Java-Komponenten einmalig die Anwendung neu starten; spätere Änderungen an
 `max.sessions.per.user` gelten bei neuen Anmeldungen ohne Neustart. Bestehende
 Sitzungen bleiben bei einer Reduzierung erhalten.
 
-Für die drei noch offenen Konfigurationseinträge liegen
+Der Wartungsmodus ist umgesetzt:
+[Zugang, Sitzungen und Wiederfreigabe](docs/maintenance-mode-contract.md).
+`maintenance.mode` wirkt nach Speichern ab dem nächsten relevanten Zugriff ohne
+Neustart. Admin/Superadmin behalten Zugang; normale Konten und anonyme Besucher
+erhalten die Wartungscard. Hintergrundjobs laufen weiter. Für diese neue Java-
+Erweiterung Shared-Modul und Anwendung bauen und die Anwendung einmal neu starten.
+
+Für die zwei noch offenen Konfigurationseinträge liegen
 [einzelne Umsetzungspläne](docs/umsetzungsplaene/konfiguration/README.md)
-vor: Wartungsmodus, SMTP-SocketFactory und Nutzung des Mail-Workerpools. Diese übrigen Pläne aktivieren keine Funktion. Danach ist das Kontokonfigurationspanel
+vor: SMTP-SocketFactory und Nutzung des Mail-Workerpools. Diese übrigen Pläne
+aktivieren keine Funktion. Danach ist das Kontokonfigurationspanel
 vorgesehen, mit [Sitzungsverwaltung als zweiter Ausbaustufe](docs/umsetzungsplaene/kontokonfiguration/sitzungsverwaltung.md).
 
 ## Kontoansichten, Home und Admin: Silent Cosmos und Inter
@@ -141,8 +150,8 @@ Git-Historie nachvollziehbar. Der ursprünglich angelegte lokale Ordner
 Service-Logo, Avatar und Sprachflaggen bleiben aktiv. Gezielt prüfen:
 `browser-tests/run.ps1 -Suite cosmos-design -Language de` (danach EN mit `-NoBuild`).
 Service-Logo (96×96), Servicename (Lumo XL), Platzhalter und Statuscards wurden
-abschließend im vollständigen DE-/EN-Lauf geprüft: je 11 Cosmos- und 6 Login-Layoutfälle
-innerhalb der jeweils 100 Browserfälle. Den aktuellen Nachweis dokumentiert [Browserabdeckung](browser-tests/abdeckung.md).
+in der ursprünglichen vollständigen Designabnahme geprüft: je 11 Cosmos- und 6 Login-Layoutfälle
+innerhalb der damals jeweils 100 Browserfälle. Den aktuellen Nachweis dokumentiert [Browserabdeckung](browser-tests/abdeckung.md).
 
 ### Startseite nach der Dashboard-Vorschau
 
@@ -486,12 +495,15 @@ sie werden auf die bearbeiteten Dateien begrenzt.
 
 Unter `src/test/java/` liegen Unit- und serverseitige Regressionstests für Benutzerverwaltung, Eingaberegeln, Registrierung, Konfiguration, Benachrichtigungen, Session-/Remember-me-/Push-RPC-Sicherheit sowie Status und Nebenläufigkeit. Persistenztests verwenden isolierte H2-In-Memory-Datenbanken, nicht die Anwendungsdatenbank. Vaadin-Tests prüfen serverseitige Komponenten und Callbacks mit kontrollierten UI-/Sessionfixtures, ohne Browser oder Anwendungsstart. `ImageHelperTest` prüft zusätzlich das echte Mail-Logo als Classpath-Ressource. `src/test/resources/logback-test.xml` konfiguriert das Test-Logging.
 
-Aktueller Sitzungs-/Sicherheitsnachweis vom 15.10.2026: **1.171 Anwendungstests,
-43 Helfertests und je 27 gezielte Browserfälle DE/EN** erfolgreich. Nach einer
-Synchronisierungskorrektur im Bestands-Browsertest bestanden zusätzlich dessen fünf
-deutsche Varianten. Alle Sprach-/Nachtests verwendeten dasselbe App-Image. Details,
-Messgrenzen und die Abgrenzung zum vollständigen `all`-Lauf stehen in der
-[aktuellen Abdeckung](browser-tests/abdeckung.md).
+Aktueller Gesamtnachweis vom 16.10.2026 auf `feature/maintenance-mode`:
+**1.226 Anwendungstests, 44 Browserhelfer, 205 Python-Offlinetests und je 118
+Browserfälle DE/EN** erfolgreich, ohne Fehler oder Skips. Beide Browserläufe
+verwenden dasselbe frisch gebaute Produktionsimage und zwei isolierte Worker.
+JUnit-JaCoCo: **71,97 % Zeilen / 66,24 % Zweige**. Die getrennte serverseitige
+Java-Coverage der Browserläufe beträgt DE **84,25 % / 65,50 %**, EN
+**84,28 % / 65,65 %**. Dies ist keine CSS-/JavaScript-Coverage.
+Details und Messgrenzen: [aktuelle Abdeckung](browser-tests/abdeckung.md),
+dauerhaft festgehalten im [Wartungs-/QA-Meilenstein](docs/meilensteine/2026-10-16-wartungsmodus-und-gesamttests.md).
 
 Historische Theme-Strukturprüfung vom 15.10.2026 auf `feature/theme-css-structure`:
 
@@ -517,7 +529,9 @@ Aufbewahrung ist nicht erforderlich.
 
 Die vorausgehende Java-/Textbereinigung entfernte die alte `CardComponent`,
 `VaadinUIHelper`, sieben weitere Methoden, 13 Übersetzungsgetter und 14 veraltete
-Schlüssel je Sprache. 336 Schlüssel je Sprache bleiben erhalten. Die drei
+Schlüssel je Sprache. Nach dieser damaligen Bereinigung blieben 336 Schlüssel
+je Sprache. Inzwischen sind es einschließlich der folgenden Sicherheitsfunktionen
+und des Wartungsmodus mit Betriebsstatus 352 je Sprache. Die drei
 `MessageCatalogueTest`-Fälle prüfen Sprachparität, vorhandene Gettertexte und
 verwaiste Einträge; sie sind im aktuellen JUnit-Gesamtergebnis enthalten.
 

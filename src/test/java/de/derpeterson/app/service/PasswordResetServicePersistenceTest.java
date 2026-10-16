@@ -14,9 +14,11 @@ import de.derpeterson.app.model.enums.EmailStatus;
 import de.derpeterson.app.model.enums.EmailType;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.TokenStatus;
+import de.derpeterson.app.repository.AdminNotificationAttemptRepository;
 import de.derpeterson.app.repository.EmailQueueRepository;
 import de.derpeterson.app.repository.PasswordResetTokenRepository;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.MaintenanceAccessException;
 import jakarta.persistence.EntityManagerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -26,14 +28,17 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,14 +57,17 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -332,12 +340,8 @@ class PasswordResetServicePersistenceTest {
       transaction.executeWithoutResult(
           tx -> users.findById(userId).orElseThrow().setEnabled(false));
       disabled.countDown();
-      var failure =
-          assertThrows(
-              java.util.concurrent.ExecutionException.class,
-              () -> result.get(10, TimeUnit.SECONDS));
-      assertInstanceOf(
-          org.springframework.dao.OptimisticLockingFailureException.class, failure.getCause());
+      var failure = assertThrows(ExecutionException.class, () -> result.get(10, TimeUnit.SECONDS));
+      assertInstanceOf(OptimisticLockingFailureException.class, failure.getCause());
     } finally {
       disabled.countDown();
       executor.shutdownNow();
@@ -471,7 +475,7 @@ class PasswordResetServicePersistenceTest {
     when(probes.config().getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION))
         .thenReturn("invalid");
     assertThrows(
-        java.time.format.DateTimeParseException.class,
+        DateTimeParseException.class,
         () -> service.createToken(users.findById(userId).orElseThrow()));
     assertEquals(TokenStatus.ACTIVE, status("old"));
     assertEquals(1, tokens.count());
@@ -605,7 +609,7 @@ class PasswordResetServicePersistenceTest {
   void templateStreamIoFailuresRollbackTheRealRotationAndCloseTheStream(String stage) {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
     var failure = new IOException("isolated " + stage);
-    var closed = new java.util.concurrent.atomic.AtomicBoolean();
+    var closed = new AtomicBoolean();
     InputStream template =
         new InputStream() {
           @Override
@@ -681,7 +685,7 @@ class PasswordResetServicePersistenceTest {
     VaadinSession.setCurrent(session);
     try {
       assertThrows(
-          org.springframework.transaction.UnexpectedRollbackException.class,
+          UnexpectedRollbackException.class,
           () ->
               transaction.executeWithoutResult(
                   tx -> {
@@ -741,7 +745,7 @@ class PasswordResetServicePersistenceTest {
             argThat(user -> userId.equals(user.getId())),
             eq("Reset password"),
             html.capture(),
-            eq(de.derpeterson.app.model.enums.EmailType.PASSWORD_RESET));
+            eq(EmailType.PASSWORD_RESET));
     assertTrue(html.getValue().contains("https://example.invalid/reset-password/" + value));
     assertTrue(html.getValue().contains("Reset Test Service"));
     assertFalse(html.getValue().contains("{{"));
@@ -1038,6 +1042,32 @@ class PasswordResetServicePersistenceTest {
       PasswordEncoder encoder,
       EmailQueueService queue) {}
 
+  @Test
+  void maintenancePreservesResetTokenPasswordAndQueueAndAllowsResume() throws Exception {
+    SecurityContextHolder.clearContext();
+    String token = service.createToken(users.findById(userId).orElseThrow());
+    String password = users.findById(userId).orElseThrow().getPassword();
+    long tokenCount = tokens.count();
+    long mailCount = mails.count();
+    clearInvocations(probes.queue(), probes.encoder());
+    when(probes.config().getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    assertThrows(
+        MaintenanceAccessException.class, () -> service.resetPassword(token, "NewPassword!"));
+    assertThrows(MaintenanceAccessException.class, () -> service.validateToken(token));
+    assertThrows(
+        MaintenanceAccessException.class, () -> service.sendPasswordResetEmail("test@example.com"));
+    assertEquals(password, users.findById(userId).orElseThrow().getPassword());
+    assertEquals(TokenStatus.ACTIVE, tokens.findByToken(token).orElseThrow().getStatus());
+    assertEquals(tokenCount, tokens.count());
+    assertEquals(mailCount, mails.count());
+    verifyNoInteractions(probes.queue(), probes.encoder());
+    service.deleteExpiredTokens();
+    when(probes.config().getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
+    when(probes.encoder().encode("NewPassword!")).thenReturn("updated-hash");
+    assertTrue(service.resetPassword(token, "NewPassword!"));
+    assertEquals(TokenStatus.USED, tokens.findByToken(token).orElseThrow().getStatus());
+  }
+
   @Configuration
   @EnableTransactionManagement
   @EnableJpaRepositories(basePackageClasses = UserRepository.class)
@@ -1089,7 +1119,7 @@ class PasswordResetServicePersistenceTest {
           mock(EmailService.class),
           users,
           manager,
-          mock(de.derpeterson.app.repository.AdminNotificationAttemptRepository.class));
+          mock(AdminNotificationAttemptRepository.class));
     }
 
     @Bean

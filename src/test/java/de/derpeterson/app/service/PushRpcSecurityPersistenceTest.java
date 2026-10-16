@@ -13,16 +13,21 @@ import com.vaadin.flow.server.communication.PushHandler;
 import com.vaadin.flow.server.communication.ServerRpcHandler;
 import com.vaadin.flow.shared.ApplicationConstants;
 import com.vaadin.flow.shared.communication.PushConstants;
+import com.vaadin.flow.shared.communication.PushMode;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.CustomUserDetailsService;
+import de.derpeterson.app.security.MaintenanceAccessException;
+import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.PushSecurityInterceptor;
 import de.derpeterson.app.security.SecurityService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import java.io.BufferedReader;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDate;
@@ -38,11 +43,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.RememberMeAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -69,6 +76,7 @@ class PushRpcSecurityPersistenceTest {
   private MockHttpSession httpSession;
   private PushHandler handler;
   private Authentication authentication;
+  private final ConfigService maintenanceConfig = mock(ConfigService.class);
   private final AtomicInteger calls = new AtomicInteger();
 
   @BeforeEach
@@ -97,7 +105,8 @@ class PushRpcSecurityPersistenceTest {
     // Use the actual registered interceptor collection and real requestStart
     // method. Only servlet/session lookup and outgoing network I/O are mocked.
     var init = new ServiceInitEvent(service);
-    new PushSecurityInterceptor(security).serviceInit(init);
+    new PushSecurityInterceptor(security, new MaintenanceService(maintenanceConfig))
+        .serviceInit(init);
     assertEquals(1, init.getAddedVaadinRequestInterceptor().count());
     ReflectionTestUtils.setField(service, "initialized", true);
     ReflectionTestUtils.setField(
@@ -140,7 +149,7 @@ class PushRpcSecurityPersistenceTest {
     var connection = mock(AtmospherePushConnection.class);
     when(connection.getOrCreateFragmentedMessage(any()))
         .thenAnswer(call -> new AtmospherePushConnection.FragmentedMessage());
-    ui.getPushConfiguration().setPushMode(com.vaadin.flow.shared.communication.PushMode.MANUAL);
+    ui.getPushConfiguration().setPushMode(PushMode.MANUAL);
     ui.getInternals().setPushConnection(connection);
     request = mock(AtmosphereRequest.class);
     httpSession = new MockHttpSession();
@@ -214,7 +223,7 @@ class PushRpcSecurityPersistenceTest {
             + ",\"event\":\"click\",\"data\":{}}]}";
     when(request.getReader())
         .thenReturn(
-            new java.io.BufferedReader(
+            new BufferedReader(
                 new StringReader(
                     message.length() + "" + PushConstants.MESSAGE_DELIMITER + message)));
     var onMessage = PushHandler.class.getDeclaredMethod("onMessage", AtmosphereResource.class);
@@ -298,7 +307,7 @@ class PushRpcSecurityPersistenceTest {
     assertEquals("Mutation 2", form(targetId).getFirstName());
     assertSame(
         authentication,
-        ((org.springframework.security.core.context.SecurityContext)
+        ((SecurityContext)
                 httpSession.getAttribute(
                     HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY))
             .getAuthentication());
@@ -314,6 +323,48 @@ class PushRpcSecurityPersistenceTest {
     SecurityContextHolder.clearContext();
     users.updateLastActivity(targetId);
     assertNotNull(form(targetId).getLastActivity());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void maintenanceStopsActualExistingSocketBeforeRpcAndPreservesItsSession(boolean remember)
+      throws Exception {
+    authenticate(targetId, remember, true);
+    receive(ui.getCsrfToken());
+    when(maintenanceConfig.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    assertThrows(MaintenanceAccessException.class, () -> receive(ui.getCsrfToken()));
+    assertEquals(1, calls.get());
+    assertEquals("Mutation 1", form(targetId).getFirstName());
+    assertFalse(httpSession.isInvalid());
+    assertNull(VaadinService.getCurrentRequest());
+    when(maintenanceConfig.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
+    receive(ui.getCsrfToken());
+    assertEquals(2, calls.get());
+  }
+
+  @Test
+  void maintenanceKeepsAdministrativeSocketAndBackgroundJobsUsable() throws Exception {
+    when(maintenanceConfig.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    receive(ui.getCsrfToken());
+    assertEquals(1, calls.get());
+    CurrentInstance.clearAll();
+    SecurityContextHolder.clearContext();
+    users.updateLastActivity(targetId);
+    assertNotNull(form(targetId).getLastActivity());
+  }
+
+  @Test
+  void maintenanceDoesNotRejectOrdinaryHttpBootstrapBeforeItsRouteGuard() {
+    authenticate(targetId, false, true);
+    when(maintenanceConfig.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    var interceptor =
+        new PushSecurityInterceptor(security, new MaintenanceService(maintenanceConfig));
+    assertDoesNotThrow(
+        () ->
+            interceptor.requestStart(
+                new VaadinServletRequest(request, service), mock(VaadinResponse.class)));
+    assertFalse(httpSession.isInvalid());
+    assertEquals(0, calls.get());
   }
 
   @Test
@@ -345,7 +396,7 @@ class PushRpcSecurityPersistenceTest {
 
   @Test
   void publicRequestDoesNotRequireOrCreateAnAuthenticatedSession() {
-    var publicRequest = new org.springframework.mock.web.MockHttpServletRequest("GET", "/home");
+    var publicRequest = new MockHttpServletRequest("GET", "/home");
     assertDoesNotThrow(
         () -> service.requestStart(new VaadinServletRequest(publicRequest, service), null));
     assertNull(publicRequest.getSession(false));

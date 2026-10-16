@@ -56,3 +56,16 @@ Bestätigung, Leeren setzt sie zurück. Der Binder blockiert nicht übereinstimm
 Eingaben bereits vor dem Serviceaufruf. Die Servicevalidierung bleibt unabhängig
 wirksam; Null/blank bewahrt bei `updateAdminUser` weiterhin den vorhandenen Hash.
 Fehleranzeigen folgen dem abgestimmten [Designstandard](design-standard.md).
+
+## Öffentliche Registrierung während Wartung
+
+Die View verwendet seit 16.10.2026 den `RegistrationService`: Wartungsprüfung,
+`UserService.saveUser` und erste Verifikationsmail teilen eine Transaktion.
+`MaintenanceAccessException`, Runtimefehler und `IOException` rollen diese
+Registrierung zurück. Ein später tatsächlich beobachteter Wartungswechsel vor
+der Mailvorbereitung hinterlässt damit kein halbfertiges Konto. Bereits vor
+Umschalten zugelassene laufende Vorgänge dürfen ansonsten enden.
+
+Die allgemeinen `UserService`-Methoden bleiben für Admin- und Hintergrundarbeit
+verwendbar; sie bekommen keinen pauschalen Thread-/Benutzerzwang. Schutzschichten,
+Tokenverhalten und Wiederfreigabe: [Wartungsvertrag](maintenance-mode-contract.md).

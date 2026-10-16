@@ -52,3 +52,12 @@ ALTER TABLE users ALTER COLUMN verification_pending DROP DEFAULT;
 Vor Freigabe auditierte pending-Konten auf mehrere aktive Tokens sowie veraltete offene Queueeinträge prüfen und eine konsistente Bereinigung/erneute Mailanforderung planen. Bestehende Links und Jobs nicht ungeprüft weiterverwenden. Das aktive Flag, Rollen und bestehende Benutzer-Versionen nicht zurücksetzen. Für andere Datenbanken sind DDL und Lockverhalten gesondert zu prüfen.
 
 Keine dieser Bestandsoperationen wurde im Rahmen des Auftrags ausgeführt. Die automatischen Regressionen verwenden ausschließlich frische, zufällig benannte H2-In-Memory-Datenbanken und echte Token-/Queue-Persistenz, ohne Anwendung, SMTP oder Scheduler zu starten.
+
+## Öffentliche Einstiege während Wartung
+
+Seit 16.10.2026 schützt der [Wartungsmodus](maintenance-mode-contract.md) öffentliche
+Tokenanlage, Validierung und Mailanforderung zusätzlich vor Seiteneffekten.
+`MaintenanceAccessException` verbraucht keinen Token und verändert keine Kontofreigabe
+oder Queue. Laufzeiten und Scheduler-Bereinigung laufen weiter. Die öffentliche
+Registrierung verbindet Kontoanlage und erste Verifikationsmail im neuen
+`RegistrationService` transaktional. Dies verändert keine bestehende DDL-/Migrationsregel.

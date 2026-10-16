@@ -16,8 +16,10 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.textfield.*;
 import com.vaadin.flow.router.Router;
+import com.vaadin.flow.server.RouteRegistry;
 import com.vaadin.flow.server.VaadinContext;
 import com.vaadin.flow.server.VaadinService;
+import com.vaadin.flow.server.VaadinServletService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.startup.ApplicationRouteRegistry;
 import de.derpeterson.app.events.LanguageChangeEvent;
@@ -28,6 +30,7 @@ import de.derpeterson.app.model.*;
 import de.derpeterson.app.model.enums.*;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.*;
+import de.derpeterson.app.service.RegistrationService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -93,7 +96,7 @@ public class RegistrationViewTest {
             users,
             roles,
             encoder,
-            verification,
+            new RegistrationService(users, verification, accountConfig()),
             mock(SecurityService.class),
             mock(HttpServletRequest.class),
             accountConfig());
@@ -188,9 +191,9 @@ public class RegistrationViewTest {
     verifyNoInteractions(users, verification);
   }
 
-  public static class TestService extends com.vaadin.flow.server.VaadinServletService {
+  public static class TestService extends VaadinServletService {
     @Override
-    public com.vaadin.flow.server.RouteRegistry getRouteRegistry() {
+    public RouteRegistry getRouteRegistry() {
       return super.getRouteRegistry();
     }
   }
