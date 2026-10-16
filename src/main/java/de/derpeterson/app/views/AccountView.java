@@ -9,12 +9,15 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.spring.annotation.UIScope;
 import de.derpeterson.app.config.AppRouteConstants;
+import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.IsAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.service.AccountProfileService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountSettingsComponent;
@@ -40,6 +43,7 @@ public class AccountView extends IsAuthenticatedBaseView {
       HttpServletRequest request,
       ConfigService config,
       UserService users,
+      AccountProfileService profiles,
       UserStatusBroadcaster broadcaster) {
     super(messages, security, users, broadcaster, request);
     addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-account");
@@ -67,7 +71,22 @@ public class AccountView extends IsAuthenticatedBaseView {
     navbar.addClassName("cosmos-topbar");
     addToNavbar(navbar);
 
-    accountSettings = new AccountSettingsComponent(messages, currentUser);
+    accountSettings =
+        new AccountSettingsComponent(
+            messages, currentUser, changes -> profiles.save(request, changes));
+    // Erst nach bestätigtem Commit den sichtbaren UI-Zustand und die Sitzungssprache ändern.
+    accountSettings.addProfileSavedListener(
+        saved -> {
+          currentUser.setFirstName(saved.firstName());
+          currentUser.setLastName(saved.lastName());
+          currentUser.setBirthDate(saved.birthDate());
+          currentUser.setPreferredLocale(saved.language());
+          currentUser.setVersion(saved.version());
+          userPopoverMenu.refreshProfileName();
+          if (!saved.language().equals(VaadinSession.getCurrent().getLocale())) {
+            LanguageChangeEvent.fire(UI.getCurrent(), saved.language());
+          }
+        });
     var copyright =
         new CosmosCopyrightComponent(
             config, Clock.systemDefaultZone(), messages::getAccountCopyrightTemplate);

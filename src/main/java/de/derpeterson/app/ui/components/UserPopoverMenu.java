@@ -51,6 +51,7 @@ public class UserPopoverMenu {
   private final SecurityService securityService;
   private final UserService userService;
   private final UserEntity currentUser;
+  private Span profileName;
   private final Actions actions;
   private final Consumer<UserStatus> statusIconConsumer;
   private final Popover userPopover;
@@ -233,14 +234,18 @@ public class UserPopoverMenu {
     contentLayout.add(onlineText);
 
     if (hasUserName()) {
-      Span nameText = new Span(buildFullName());
-      nameText.addClassNames(LumoUtility.FontWeight.BOLD);
-      contentLayout.add(nameText);
+      profileName = new Span(buildFullName());
+      profileName.addClassNames(LumoUtility.FontWeight.BOLD);
+      contentLayout.add(profileName);
     }
 
     Span emailText = new Span(currentUser.getEmail());
     emailText.addClassNames(LumoUtility.TextColor.SECONDARY);
     contentLayout.add(emailText);
+  }
+
+  public void refreshProfileName() {
+    if (profileName != null) profileName.setText(buildFullName());
   }
 
   private void addOfflineUserInfo(VerticalLayout contentLayout) {

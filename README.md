@@ -27,7 +27,7 @@ Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administ
 - Konfigurierbares Limit gleichzeitiger Sitzungen pro Benutzer für Passwortlogin und Remember-me; zusätzliche Tabs teilen ihren Sitzungsplatz.
 - Sofort wirksamer Wartungsmodus mit Zugang für Admin/Superadmin, pausierter normaler Nutzung und erhaltenen Sitzungen/Tokens.
 - Adminbereich mit Benutzerverwaltung, Rollen und Kontofreigabe, Konfiguration sowie Mail-Testversand.
-- Erste Gestaltungsstufe „Mein Konto“ über das Benutzermenü: Profil, Sicherheit und Geräte/Sitzungen; noch ohne schreibende Kontoaktionen. [Umfang](docs/account-settings-ui.md).
+- „Mein Konto“ über das Benutzermenü: eigene Profildaten und bevorzugte Sprache speichern, mit Validierung und Konfliktschutz. E-Mail, Profilbild, Sicherheit und Geräte/Sitzungen bleiben für weitere Schritte vorbereitet. [Umfang](docs/account-settings-ui.md).
 - Deutsche und englische Oberfläche, manuell wählbarer Benutzerstatus und automatische Abwesenheitserkennung mit Push-Aktualisierung.
 - Datenbankgestützte E-Mail-Warteschlange mit Wiederholungsversuchen und geplanten Bereinigungsaufgaben.
 

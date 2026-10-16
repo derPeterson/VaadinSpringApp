@@ -1610,4 +1610,12 @@ public class MessageTexts {
   public String getAccountSettingsLogoutHint() {
     return getTranslation("accountSettings.logout.hint");
   }
+
+  public String getAccountSettingsSaveSuccess() {
+    return getTranslation("accountSettings.save.success");
+  }
+
+  public String getAccountSettingsSaveFailed() {
+    return getTranslation("accountSettings.save.failed");
+  }
 }

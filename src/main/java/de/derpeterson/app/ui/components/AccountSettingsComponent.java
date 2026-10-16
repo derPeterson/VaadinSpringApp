@@ -13,10 +13,16 @@ import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.function.SerializableConsumer;
+import com.vaadin.flow.function.SerializableFunction;
 import de.derpeterson.app.config.AppConstants;
+import de.derpeterson.app.helper.ui.NotificationHelper;
+import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.service.AccountProfileService.Changes;
+import de.derpeterson.app.service.AccountProfileService.Profile;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,10 +30,17 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
 
-/** Erste Gestaltungsstufe: lokale Formulareingaben und Tabwechsel, keine Kontoänderungen. */
+/** Profilbearbeitung; Sicherheits-, Bild- und Sitzungsaktionen folgen in späteren Schritten. */
+@Slf4j
 public class AccountSettingsComponent extends Div {
   private final transient MessageProperties messages;
+  private final SerializableFunction<Changes, Profile> saveProfile;
+  private final List<SerializableConsumer<Profile>> profileSavedListeners = new ArrayList<>();
+  private Long version;
+  private final Span summaryName = new Span();
   private final List<Runnable> textUpdates = new ArrayList<>();
   private final Map<Tab, AccountPanelComponent> panels = new LinkedHashMap<>();
   private final Tabs tabs = new Tabs();
@@ -37,8 +50,13 @@ public class AccountSettingsComponent extends Div {
   private final DatePicker birthDate = new DatePicker();
   private final ComboBox<Locale> preferredLanguage = new ComboBox<>();
 
-  public AccountSettingsComponent(MessageProperties messages, UserEntity user) {
+  public AccountSettingsComponent(
+      MessageProperties messages,
+      UserEntity user,
+      SerializableFunction<Changes, Profile> saveProfile) {
     this.messages = messages;
+    this.saveProfile = saveProfile;
+    this.version = user == null ? null : user.getVersion();
     addClassName("account-settings");
     var breadcrumb = text(new Span(), messages::getAccountSettingsOverview);
     var title = text(new Span(), messages::getAccountSettingsTitle);
@@ -71,22 +89,21 @@ public class AccountSettingsComponent extends Div {
     button.setPrefixComponent(icon.create());
     if (primary) button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     // Für die Gestaltungsabnahme aktiv, aber ohne Aktionslistener oder Serviceaufruf.
-    // Diese erste Stufe darf weiterhin keine Kontodaten oder Sitzungen ändern.
+    // Profil-Speichern erhält seinen eigenen Listener; die weiteren Aktionen folgen später.
     return button;
   }
 
   private CosmosCardComponent summary(UserEntity user) {
     var avatar = new Image(AppConstants.USER_ICON_PATH, AppConstants.USER_ICON_ALT);
     avatar.addClassName("account-summary-avatar");
-    var name =
-        new Span(
-            user == null
-                ? ""
-                : (Objects.toString(user.getFirstName(), "")
-                        + " "
-                        + Objects.toString(user.getLastName(), ""))
-                    .trim());
-    name.addClassName("account-summary-name");
+    summaryName.setText(
+        user == null
+            ? ""
+            : (Objects.toString(user.getFirstName(), "")
+                    + " "
+                    + Objects.toString(user.getLastName(), ""))
+                .trim());
+    summaryName.addClassName("account-summary-name");
     var address = new Span(user == null ? "" : Objects.toString(user.getEmail(), ""));
     address.addClassName("account-summary-email");
     var active =
@@ -98,7 +115,7 @@ public class AccountSettingsComponent extends Div {
     active.addClassName("account-summary-status");
     active.getElement().getThemeList().add("badge");
     active.getElement().getThemeList().add(user != null && user.isEnabled() ? "success" : "error");
-    var info = new Div(name, address, active);
+    var info = new Div(summaryName, address, active);
     info.addClassName("account-summary-details");
     var edit = previewButton(VaadinIcon.EDIT, messages::getAccountSettingsEditPicture, false);
     var row = new Div(avatar, info, edit);
@@ -152,7 +169,9 @@ public class AccountSettingsComponent extends Div {
     firstName.setRequiredIndicatorVisible(true);
     lastName.setRequiredIndicatorVisible(true);
     birthDate.setRequiredIndicatorVisible(true);
+    preferredLanguage.setRequiredIndicatorVisible(true);
     email.setReadOnly(true);
+    email.setEnabled(false);
     preferredLanguage.setItems(Locale.GERMAN, Locale.ENGLISH);
     preferredLanguage.setItemLabelGenerator(language -> language.getDisplayLanguage(language));
     preferredLanguage.setAllowCustomValue(false);
@@ -191,10 +210,59 @@ public class AccountSettingsComponent extends Div {
     var form = new Div(firstName, lastName, emailRow, birthDate, preferredLanguage);
     form.addClassName("account-profile-form");
     panel.getBody().add(form);
-    panel.addFooter(
-        text(new Span(), messages::getAccountSettingsAccountHint),
-        previewButton(VaadinIcon.CHECK, messages::getAccountSettingsSave, true));
+    var save = previewButton(VaadinIcon.CHECK, messages::getAccountSettingsSave, true);
+    save.setId("account-save");
+    save.addClickListener(event -> saveProfile());
+    panel.addFooter(text(new Span(), messages::getAccountSettingsAccountHint), save);
     return panel;
+  }
+
+  private void saveProfile() {
+    // Wie in der Registrierung erst beim Absenden prüfen, nicht beim ersten Tastendruck.
+    birthDate.setInvalid(false);
+    if (!ValidationHelper.validateRequiredInputs(
+        List.of(firstName, lastName, birthDate, preferredLanguage), messages)) return;
+    if (!ValidationHelper.validateBirthDateBeforeInput(birthDate, messages)) return;
+    Profile saved;
+    try {
+      saved =
+          saveProfile.apply(
+              new Changes(
+                  version,
+                  firstName.getValue(),
+                  lastName.getValue(),
+                  birthDate.getValue(),
+                  preferredLanguage.getValue()));
+    } catch (OptimisticLockingFailureException conflict) {
+      NotificationHelper.getInstance()
+          .showNotification(
+              messages::getBaseFailedTitle,
+              messages::getBaseUserUpdateConflict,
+              -1,
+              NotificationHelper.NotificationType.ERROR);
+      return;
+    } catch (RuntimeException failure) {
+      log.warn("Kontoprofil konnte nicht gespeichert werden", failure);
+      NotificationHelper.getInstance()
+          .showNotification(
+              messages::getBaseFailedTitle,
+              messages::getAccountSettingsSaveFailed,
+              -1,
+              NotificationHelper.NotificationType.ERROR);
+      return;
+    }
+    version = saved.version();
+    firstName.setValue(saved.firstName());
+    lastName.setValue(saved.lastName());
+    birthDate.setValue(saved.birthDate());
+    preferredLanguage.setValue(saved.language());
+    summaryName.setText(saved.firstName() + " " + saved.lastName());
+    profileSavedListeners.forEach(listener -> listener.accept(saved));
+    NotificationHelper.getInstance()
+        .showNotification(
+            messages::getBaseSuccessTitle,
+            messages::getAccountSettingsSaveSuccess,
+            NotificationHelper.NotificationType.SUCCESS);
   }
 
   private Div actionRow(
@@ -295,6 +363,10 @@ public class AccountSettingsComponent extends Div {
     logout.addClassName("cosmos-delete-button");
     panel.addFooter(text(new Span(), messages::getAccountSettingsLogoutHint), logout);
     return panel;
+  }
+
+  public void addProfileSavedListener(SerializableConsumer<Profile> listener) {
+    profileSavedListeners.add(listener);
   }
 
   public void refreshTexts() {

@@ -1,4 +1,4 @@
-# Mein Konto: erste Gestaltungsstufe
+# Mein Konto: Oberfläche und Profildaten speichern
 
 Stand: 16.10.2026. Feature-Branch `feature/account-settings-ui`.
 
@@ -10,17 +10,17 @@ vorgesehen, einschließlich Gast. Anonyme Aufrufe führen zur Anmeldung.
 Der Wartungsschutz bleibt wirksam; Admin/Superadmin behalten wie bisher Zugang.
 Die Account-Route steht in den gemeinsamen Routenkonstanten und im `AppRoute`-Enum.
 
-Diese erste Stufe setzt die gewünschte HTML-/Screenshot-Vorschau als Vaadin-
-Oberfläche mit bestehenden Cosmos-Bausteinen um. Sie ergänzt keine Kontoänderungs-
-oder Sitzungsverwaltungsdienste:
+Die HTML-/Screenshot-Vorschau wurde mit bestehenden Cosmos-Bausteinen umgesetzt.
+Der nächste Schritt ergänzt das Speichern der eigenen Profildaten:
 
 - Kontoübersicht mit bestehendem Avatar, eigenem Namen, E-Mail und Aktivierungsstatus.
 - Bedienbare Tabs „Persönliches Profil“, „Sicherheit“, „Geräte & Sitzungen“.
-- Profilfelder werden aus dem angemeldeten Konto gelesen; Eingaben sind nur lokale
-  Entwürfe. Tab- und Sprachwechsel erhalten diese Entwürfe.
-- Die E-Mail ist nur lesbar. Profilbild-, Speicher-, E-Mail-, Passwort- und
-  Sitzungsabmeldeaktionen sind für die visuelle Abnahme aktiv dargestellt, besitzen
-  aber noch keine Aktionslistener oder Serviceaufrufe. Klicks verändern nichts.
+- Profilfelder werden aus dem angemeldeten Konto gelesen. Tab- und Sprachwechsel
+  erhalten ungespeicherte Entwürfe. „Änderungen speichern“ übernimmt Vorname,
+  Nachname, Geburtsdatum und bevorzugte Sprache (DE/EN).
+- Die E-Mail bleibt sichtbar, ist aber deaktiviert und nicht fokussierbar.
+  Profilbild-, E-Mail-, Passwort- und Sitzungsabmeldeaktionen sind für die visuelle
+  Abnahme aktiv dargestellt, besitzen aber noch keine Aktionslistener oder Serviceaufrufe.
 - Sitzungen, Geräte, Zeiten und das dargestellte Limit sind klar bezeichnete
   Beispieldaten. Es erfolgt keine Abfrage des tatsächlichen Sitzungsregisters.
 - Vorhandene Passwörter, Hashes und Sitzungstokens werden weder gelesen noch angezeigt.
@@ -54,17 +54,40 @@ die Anwendung in der IDE neu starten und anschließend die Browserseite aktualis
 Bei Verwendung eines gepackten Produktionsartefakts ist vorher ein neuer Build nötig.
 Ein Browser-Refresh allein lädt keine neuen Java-Komponenten.
 
+## Speichervertrag
+
+`AccountProfileService` bestimmt das Zielkonto bei jedem Speichern erneut über die
+bestehende Anmeldung. Das Formular übergibt keine Konto-ID oder E-Mail. Eine eigene
+Transaktion lädt und sperrt den aktuellen Datensatz; die beim Öffnen gelesene Version
+muss noch passen. Bei Änderungen aus einem anderen Formular erscheint die vorhandene
+Konfliktmeldung. Dann die Seite neu laden und die Änderungen prüfen.
+
+Nur Vorname, Nachname, Geburtsdatum und Sprache werden zugewiesen. E-Mail, Passwort,
+Geschlecht, Freigabe, Verifikationszustand, Rollen, Status und Tokens werden nicht aus
+einer alten UI-Entity zurückgeschrieben. Alle vier Rollen dürfen ihr eigenes Profil
+speichern; Anmeldung, Kontofreigabe und Wartungsschutz werden erneut geprüft.
+
+Pflichtfelder und Geburtsdatum verwenden dieselben zentralen Regeln und UI-Helfer wie
+die Registrierung: Namen dürfen nicht leer sein, das Geburtsdatum muss vor heute liegen.
+Die Sprache muss DE oder EN sein. Die Prüfung erfolgt beim Speichern; Fehler zeigen
+rote Feldmarkierungen und die vorhandene Fehlernotification. Bei einem Speicherfehler
+bleiben die Eingaben erhalten. Erfolg wird ebenfalls per Notification bestätigt.
+Nach bestätigtem Commit aktualisieren sich Name in Übersicht/Benutzermenü und die
+Sitzungssprache. Die neue Datensatzversion wird für weiteres Speichern übernommen.
+
 ## Gezielte Prüfung
 
-44 unterschiedliche JUnit-Fälle erfolgreich: 29 Sicherheitsketten-Fälle, vier
-bestehende Status-/Menüregressionen, fünf Kontokomponenten-Fälle, drei Konto-View-
-Fälle und drei Übersetzungskatalog-Fälle. Keine verbleibenden Fehler oder
-übersprungenen Fälle. Geprüft sind unter anderem alle vier Rollen, anonyme
-Weiterleitung, Wartungsschutz, Tabwechsel, DE/EN, unveränderte Kontodaten und
-regionale Spracheinstellungen. Shared-Modul gebaut, Java 25 und Google Java
-Format geprüft. Die bestehende Browser-Testanwendung ist erfolgreich kompiliert.
+Für diesen Schritt 74 unterschiedliche JUnit-Fälle erfolgreich, keine verbleibenden
+Fehler oder übersprungenen Fälle: 19 isolierte H2-/Transaktionsfälle für Profilspeicherung,
+14 Kontokomponenten-Fälle, fünf Konto-View-Fälle, 29 Sicherheitsketten-Fälle, vier
+bestehende Status-/Menüregressionen und drei Übersetzungskatalog-Fälle. Geprüft sind
+unter anderem alle Rollen, erhaltene fremde Konten und Sicherheitsfelder/Tokens,
+Speicherwiederholung, veraltete Formulare, anonyme/deaktivierte/gelöschte Konten,
+Wartungsschutz, serverseitig ungültige Eingaben sowie rote Fehlermeldungen und
+Erfolgsmeldungen in DE/EN. Java 25, Shared-Build und Google Java Format geprüft.
 
-Die Oberfläche wurde in dieser Gestaltungsstufe noch nicht im laufenden Browser
-visuell abgenommen. Es wurden weder die gesamte Anwendungstestsuite noch die
-Browser-Gesamtsuite erneut gestartet. Frühere Coverage-Zahlen messen diesen neuen
-UI-Stand nicht.
+Die neue Speicherfunktion wurde noch nicht im laufenden Browser geprüft. Die gesamte
+Anwendungstestsuite und Browser-Gesamtsuite wurden nicht erneut gestartet. Frühere
+Coverage-Zahlen messen diesen neuen Stand nicht. Als manuelle Abnahme noch offen:
+Speichern, anschließendes Neuladen und erneute Anmeldung mit gespeicherter Sprache
+sowie die Darstellung des deaktivierten E-Mail-Feldes.

@@ -7,37 +7,55 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.tabs.Tabs;
+import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.service.AccountProfileService.Changes;
+import de.derpeterson.app.service.AccountProfileService.Profile;
 import java.time.LocalDate;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class AccountSettingsComponentTest {
   private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
   private final CustomI18NProvider provider = new CustomI18NProvider();
+  private UI ui;
   private UserEntity user;
+  private SerializableFunction<Changes, Profile> saver;
   private AccountSettingsComponent content;
 
   @BeforeEach
   void setup() {
-    UI.setCurrent(new UI());
+    ui = new UI();
+    UI.setCurrent(ui);
     var session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     VaadinSession.setCurrent(session);
+    ui.getInternals().setSession(session);
+    saver = mock(SerializableFunction.class);
     user =
         UserEntity.builder()
+            .version(3L)
             .firstName("Alex")
             .lastName("Weber")
             .email("own-account@example.test")
@@ -45,11 +63,12 @@ class AccountSettingsComponentTest {
             .enabled(true)
             .preferredLocale(Locale.GERMAN)
             .build();
-    content = new AccountSettingsComponent(new MessageProperties(provider), user);
+    content = new AccountSettingsComponent(new MessageProperties(provider), user, saver);
   }
 
   @AfterEach
   void cleanup() {
+    NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
   }
@@ -117,21 +136,134 @@ class AccountSettingsComponentTest {
   @Test
   void regionalSavedLanguageMapsToASupportedOptionWithoutChangingTheUser() {
     user.setPreferredLocale(Locale.GERMANY);
-    content = new AccountSettingsComponent(new MessageProperties(provider), user);
+    content = new AccountSettingsComponent(new MessageProperties(provider), user, saver);
     assertEquals(Locale.GERMAN, ((ComboBox<?>) byId("account-language")).getValue());
     assertEquals(Locale.GERMANY, user.getPreferredLocale());
   }
 
   @Test
-  void allPreviewButtonsAreEnabledButClicksDoNotChangeTheAccount() {
+  void remainingPreviewButtonsAreEnabledButClicksDoNotChangeTheAccount() {
     var buttons = tree(content).filter(Button.class::isInstance).map(Button.class::cast).toList();
     assertFalse(buttons.isEmpty());
     assertTrue(buttons.stream().allMatch(Button::isEnabled));
     ((TextField) byId("account-first-name")).setValue("Unsaved draft");
-    buttons.forEach(Button::click);
+    buttons.stream()
+        .filter(button -> !button.getId().orElse("").equals("account-save"))
+        .forEach(Button::click);
+    verifyNoInteractions(saver);
     assertEquals("Unsaved draft", ((TextField) byId("account-first-name")).getValue());
     assertEquals("Alex", user.getFirstName());
     assertEquals("own-account@example.test", user.getEmail());
     assertEquals(Locale.GERMAN, user.getPreferredLocale());
+  }
+
+  private void save() {
+    ((Button) byId("account-save")).click();
+  }
+
+  private void assertNotification(String expected, boolean error) {
+    var helper = NotificationHelper.getInstance();
+    var message = (Supplier<String>) ReflectionTestUtils.getField(helper, "messageSupplier");
+    assertEquals(expected, message.get());
+    var notification = (Notification) ReflectionTestUtils.getField(helper, "currentNotification");
+    assertTrue(notification.isOpened());
+    var title = (Span) ReflectionTestUtils.getField(helper, "titleText");
+    assertTrue(
+        title.hasClassName(error ? LumoUtility.TextColor.ERROR : LumoUtility.TextColor.SUCCESS));
+    assertTrue(
+        tree(notification)
+            .anyMatch(
+                component ->
+                    component.getElement().getAttribute("icon") != null
+                        && component
+                            .getElement()
+                            .getAttribute("icon")
+                            .equals(error ? "vaadin:warning" : "vaadin:check-circle")));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void requiredFieldsAreMarkedOnlyOnSaveAndNothingIsWritten(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    content.refreshTexts();
+    var first = (TextField) byId("account-first-name");
+    var last = (TextField) byId("account-last-name");
+    var birth = (DatePicker) byId("account-birth-date");
+    var choice = (ComboBox<?>) byId("account-language");
+    first.setValue("   ");
+    last.clear();
+    birth.clear();
+    choice.clear();
+    assertFalse(first.isInvalid());
+    save();
+    assertTrue(first.isInvalid());
+    assertTrue(last.isInvalid());
+    assertTrue(birth.isInvalid());
+    assertTrue(choice.isInvalid());
+    verifyNoInteractions(saver);
+    assertNotification(new MessageProperties(provider).getBaseValidationRequiredMessage(), true);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void todayAndFutureBirthDatesAreRejectedAndCorrectionCanBeSaved(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    var birth = (DatePicker) byId("account-birth-date");
+    for (var date : new LocalDate[] {LocalDate.now(), LocalDate.now().plusDays(1)}) {
+      birth.setValue(date);
+      save();
+      assertTrue(birth.isInvalid());
+      assertNotification(
+          new MessageProperties(provider).getBaseValidationBirthDatePastMessage(), true);
+    }
+    verifyNoInteractions(saver);
+    var date = LocalDate.of(1990, 2, 1);
+    birth.setValue(date);
+    when(saver.apply(any())).thenReturn(new Profile(4L, "Alex", "Weber", date, Locale.GERMAN));
+    save();
+    assertFalse(birth.isInvalid());
+    verify(saver).apply(any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void successUsesReturnedDataAndNewVersionForTheNextSave(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    ((TextField) byId("account-first-name")).setValue(" New ");
+    var date = LocalDate.of(1992, 3, 4);
+    ((DatePicker) byId("account-birth-date")).setValue(date);
+    when(saver.apply(any())).thenReturn(new Profile(4L, "New", "Weber", date, Locale.ENGLISH));
+    save();
+    verify(saver).apply(new Changes(3L, " New ", "Weber", date, Locale.GERMAN));
+    assertTrue(content.getElement().getTextRecursively().contains("New Weber"));
+    assertEquals("New", ((TextField) byId("account-first-name")).getValue());
+    assertEquals(Locale.ENGLISH, ((ComboBox<?>) byId("account-language")).getValue());
+    assertNotification(new MessageProperties(provider).getAccountSettingsSaveSuccess(), false);
+    save();
+    verify(saver).apply(new Changes(4L, "New", "Weber", date, Locale.ENGLISH));
+    assertEquals("Alex", user.getFirstName());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void failedAndConflictingSavesKeepDraftsAndShowTranslatedErrors(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    ((TextField) byId("account-first-name")).setValue("Keep draft");
+    when(saver.apply(any())).thenThrow(new OptimisticLockingFailureException("changed"));
+    save();
+    assertNotification(new MessageProperties(provider).getBaseUserUpdateConflict(), true);
+    doThrow(new IllegalStateException("Unavailable")).when(saver).apply(any());
+    save();
+    assertNotification(new MessageProperties(provider).getAccountSettingsSaveFailed(), true);
+    assertEquals("Keep draft", ((TextField) byId("account-first-name")).getValue());
+    assertEquals("Alex", user.getFirstName());
+  }
+
+  @Test
+  void emailIsVisibleButDisabledAndReadOnly() {
+    var field = (EmailField) byId("account-email");
+    assertFalse(field.isEnabled());
+    assertTrue(field.isReadOnly());
+    assertEquals(user.getEmail(), field.getValue());
   }
 }
