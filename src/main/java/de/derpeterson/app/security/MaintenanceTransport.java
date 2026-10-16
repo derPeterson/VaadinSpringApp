@@ -55,6 +55,10 @@ public final class MaintenanceTransport {
     }
     for (String key : Collections.list(http.getAttributeNames())) {
       if (http.getAttribute(key) instanceof VaadinSession session) {
+        // Nach einem Serverneustart kann die Sitzung bereits deserialisiert sein,
+        // bevor Vaadin ihre transienten Felder wiederherstellt. Ohne den echten
+        // Sitzungslock keine UI freigeben; die Framework-Initialisierung nicht vorwegnehmen.
+        if (session.getLockInstance() == null) continue;
         session.lock();
         try {
           UI ui = session.getUIById(id);

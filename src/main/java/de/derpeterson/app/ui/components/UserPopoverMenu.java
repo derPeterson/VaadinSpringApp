@@ -33,6 +33,7 @@ import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.views.AccountView;
 import io.micrometer.common.util.StringUtils;
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -252,6 +253,13 @@ public class UserPopoverMenu {
     manageAccountButton = new Button(messageProperties.getBaseManageAccountButton());
     manageAccountButton.setPrefixComponent(VaadinIcon.COG.create());
     manageAccountButton.setEnabled(hasCurrentUser());
+    manageAccountButton.addClickListener(
+        event -> {
+          if (hasCurrentUser()) {
+            userPopover.close();
+            UI.getCurrent().navigate(AccountView.class);
+          }
+        });
 
     if (hasCurrentUser()) {
       manageAccountButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);

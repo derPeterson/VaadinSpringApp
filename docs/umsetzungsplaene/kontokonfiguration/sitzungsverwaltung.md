@@ -4,11 +4,13 @@ Stand: 15.10.2026. **Abgestimmter Folgeauftrag zur Planung; noch nicht implement
 
 ## Reihenfolge und Voraussetzung
 
-Zuerst werden die [noch offenen Konfigurationsfunktionen](../konfiguration/README.md)
-umgesetzt. Danach ist das Kontokonfigurationspanel vorgesehen, das bisher noch nicht
-existiert. In diesem Panel folgt die Sitzungsverwaltung als **zweite Ausbaustufe** der
+Die [Kontokonfiguration](../../account-settings-ui.md) besitzt inzwischen eine erste
+Gestaltungsstufe mit Profil-, Sicherheits- und Sitzungstab. Die dortigen
+Sitzungseinträge sind gekennzeichnete Beispiele; Abmeldebuttons sind für die
+Gestaltungsabnahme aktiv dargestellt, besitzen aber noch keine Funktion.
+In diesem Panel folgt die echte Sitzungsverwaltung als **zweite Ausbaustufe** der
 [bereits umgesetzten Begrenzung gleichzeitiger Sitzungen](../../session-limit-contract.md).
-Dieser Plan baut weder das Panel noch die Verwaltung bereits ein.
+Dieser Plan bleibt für diesen noch nicht umgesetzten Funktionsumfang bestehen.
 
 ## Ziel und Zählweise
 

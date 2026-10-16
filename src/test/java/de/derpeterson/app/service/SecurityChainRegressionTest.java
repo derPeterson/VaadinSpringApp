@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
@@ -94,6 +95,43 @@ class SecurityChainRegressionTest {
     SecurityContextHolder.clearContext();
     when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(10);
     when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
+  }
+
+  @Test
+  void accountRouteRequiresAuthenticationAndUsesTheNormalLogin() throws Exception {
+    var path = AppRoute.ACCOUNT.getSecurityRoute();
+    var request = new MockHttpServletRequest("GET", path);
+    request.setServletPath(path);
+    var response = new MockHttpServletResponse();
+    var servlet = mock(FilterChain.class);
+    new FilterChainProxy(chain).doFilter(request, response, servlet);
+    assertTrue(response.getRedirectedUrl().endsWith(AppRoute.LOGIN.getSecurityRoute()));
+    verifyNoInteractions(servlet);
+  }
+
+  @ParameterizedTest
+  @EnumSource(RoleType.class)
+  void accountRouteAllowsEveryAccountRoleAndRespectsMaintenance(RoleType role) throws Exception {
+    String email = sessionUser(role);
+    var login = postPassword(email, "OriginalPassword!");
+    var session = (MockHttpSession) login.request().getSession(false);
+    var path = AppRoute.ACCOUNT.getSecurityRoute();
+    var request = new MockHttpServletRequest("GET", path);
+    request.setServletPath(path);
+    request.setSession(session);
+    var servlet = mock(FilterChain.class);
+    new FilterChainProxy(chain).doFilter(request, new MockHttpServletResponse(), servlet);
+    verify(servlet).doFilter(any(), any());
+    clearInvocations(servlet);
+    when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    var response = new MockHttpServletResponse();
+    new FilterChainProxy(chain).doFilter(request, response, servlet);
+    if (role.isAdministrative()) verify(servlet).doFilter(any(), any());
+    else {
+      assertEquals(503, response.getStatus());
+      assertEquals(AppRoute.MAINTENANCE.getSecurityRoute(), response.getForwardedUrl());
+      verifyNoInteractions(servlet);
+    }
   }
 
   @Test

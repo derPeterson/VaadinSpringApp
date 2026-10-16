@@ -17,11 +17,14 @@ Alle CSS-Dateien liegen unter `src/main/resources/META-INF/resources/custom-them
 | `cosmos-shell.css` | Gemeinsame Topbar, Seitenkopf, Benutzermenü und Auswahl-Overlays |
 | `cosmos-admin.css` | Navigation, Dashboard, Panels, Konfiguration, Mail-Test, Komponentenmaße und Dialoge |
 | `cosmos-background.css` | Positionen, Animation und responsive Anordnung der Dekoration; Farben kommen aus den Tokens |
+| `cosmos-account.css` | Nur an AccountView: lokale Anordnung von Kontoübersicht, Formularen, Beispielsitzungen und nativen Vaadin-Tabs |
 | `admin-users.css` | Lokale Anordnung von Benutzerfiltern, Tabelle, Pagination und Benutzer-/Löschdialogen |
 
 `Application.java` lädt die globalen Dateien in dieser Reihenfolge. Erst an
 `AdminView` kommt `admin-users.css` hinzu. Die bisherige `styles.css` wurde dafür
-umbenannt. Es gibt keine versteckten CSS-Imports und keine zusätzliche Buildtechnik.
+umbenannt. `AccountView` lädt separat `cosmos-account.css`; alle dortigen Selektoren
+beginnen mit `.cosmos-account` und verwenden bestehende Theme-Variablen.
+Es gibt keine versteckten CSS-Imports und keine zusätzliche Buildtechnik.
 Die Regelreihenfolge ist Teil der CSS-Kaskade: Bei gleicher Priorität gewinnt der
 spätere Wert. Die Aufteilung behält die bisherige Reihenfolge bei.
 

@@ -316,6 +316,7 @@ public class SecurityConfig {
 
     return requestUri.equals(AppRoute.BASE.getSecurityRoute())
         || requestUri.equals(AppRoute.HOME.getSecurityRoute())
+        || requestUri.equals(AppRoute.ACCOUNT.getSecurityRoute())
         || requestUri.equals(AppRoute.ADMIN.getSecurityRoute())
         || requestUri.equals(AppRoute.LOGIN.getSecurityRoute())
         || requestUri.equals(AppRoute.MAINTENANCE.getSecurityRoute())

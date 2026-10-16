@@ -7,10 +7,11 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -43,14 +44,29 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
     content.setPadding(false);
     content.setSpacing(false);
     content.addClassName("cosmos-form");
+    content.setAlignItems(FlexComponent.Alignment.STRETCH);
     var icon = VaadinIcon.WARNING.create();
-    icon.addClassNames(
-        "cosmos-status-icon", LumoUtility.TextColor.PRIMARY, LumoUtility.AlignSelf.CENTER);
+    icon.addClassNames("cosmos-status-icon", "cosmos-status-icon--warning");
+    var iconRow = new HorizontalLayout(icon);
+    iconRow.setWidthFull();
+    iconRow.setPadding(false);
+    iconRow.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
     var title = new H1();
-    title.addClassNames(
-        "cosmos-headline", LumoUtility.AlignSelf.CENTER, LumoUtility.TextAlignment.CENTER);
+    title.addClassName("cosmos-headline");
+    var titleRow = new HorizontalLayout(title);
+    titleRow.addClassName("cosmos-title-row");
+    titleRow.setWidthFull();
+    titleRow.setPadding(false);
+    titleRow.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
     var text = new Span();
-    text.addClassNames("cosmos-form-text", "cosmos-intro");
+    text.addClassName("cosmos-form-text");
+    var textRow = new VerticalLayout(text);
+    textRow.addClassName("cosmos-intro");
+    textRow.setWidthFull();
+    textRow.setPadding(false);
+    textRow.setSpacing(false);
+    textRow.setAlignItems(FlexComponent.Alignment.CENTER);
+    textRow.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
     var login =
         new Button(
             "",
@@ -97,7 +113,7 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
         };
     translate.run();
     ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> translate.run());
-    content.add(icon, title, text, login, retry, logout);
+    content.add(iconRow, titleRow, textRow, login, retry, logout);
     page.getCardContainer().add(new CosmosCardComponent(content));
     add(page);
   }

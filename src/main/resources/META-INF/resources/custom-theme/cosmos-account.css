@@ -1,0 +1,286 @@
+/* MEIN KONTO / lokale Anordnung der ersten Gestaltungsstufe.
+ * Cards, Felder, Buttons und Panelköpfe kommen unverändert aus Cosmos.
+ * Alle neuen Selektoren sind auf diese View begrenzt: andere Seiten bleiben gleich. */
+.cosmos-account .account-settings {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 1100px;
+    min-width: 0;
+    gap: var(--lumo-space-l);
+}
+
+.cosmos-account .account-summary {
+    padding: var(--lumo-space-l);
+}
+
+.cosmos-account .account-summary-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: var(--lumo-space-l);
+}
+
+.cosmos-account .account-summary-avatar {
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+    object-fit: contain;
+    border-radius: 50%;
+    box-shadow: 0 0 18px color-mix(in srgb, var(--lumo-warning-color) 25%, transparent);
+}
+
+.cosmos-account .account-summary-details {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+.cosmos-account .account-summary-name,
+.cosmos-account .account-summary-email {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.cosmos-account .account-summary-name {
+    color: var(--lumo-header-text-color);
+    font-size: var(--lumo-font-size-xl);
+    font-weight: 700;
+}
+
+.cosmos-account .account-summary-email {
+    color: var(--lumo-secondary-text-color);
+    font-size: 12px;
+    margin-block: var(--lumo-space-xs) var(--lumo-space-s);
+}
+
+/* Wie der Löschakzent: dezente Fläche und Rahmen in Schriftfarbe,
+ * hier aus der vorhandenen grünen Success-Palette. */
+.cosmos-account .account-summary-status[theme~="success"] {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--lumo-success-text-color);
+    border: 1px solid currentColor;
+    background: var(--lumo-success-color-10pct);
+}
+
+/* Native Vaadin-Tabs behalten Tastatursteuerung, Scrollbuttons und Fokusrahmen.
+ * Nur Farbe, Typografie und Abstände werden an unsere bestehenden Buttons angelehnt.
+ * Styling-API: https://vaadin.com/docs/latest/components/tabs/styling */
+.cosmos-account .account-tabs {
+    width: 100%;
+    min-width: 0;
+    box-shadow: none;
+    border-bottom: 1px solid var(--cosmos-card-border);
+}
+
+/* Gleich breite Tabs nach dem längsten Inhalt. Der Scrollcontainer darf bei
+ * wenig Platz schrumpfen; die gleich großen Gridspalten bleiben scrollbar. */
+.cosmos-account .account-tabs::part(tabs) {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    flex: 0 1 auto;
+    width: max-content;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.cosmos-account .account-tabs vaadin-tab {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-s);
+    padding: var(--lumo-space-m);
+    color: var(--lumo-secondary-text-color);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: max-content;
+}
+
+.cosmos-account .account-tabs vaadin-tab[selected] {
+    color: var(--lumo-primary-text-color);
+    font-weight: 700;
+}
+
+/* Lumo zentriert seine kurze Markierung per translateX(-50%). Bei voller
+ * Tabbreite entfällt diese Verschiebung; auch der native Klickschimmer folgt. */
+.cosmos-account .account-tabs vaadin-tab::before,
+.cosmos-account .account-tabs vaadin-tab::after {
+    left: 0;
+    right: 0;
+    width: 100%;
+    transform: scaleX(0);
+    background: var(--lumo-primary-text-color);
+}
+
+.cosmos-account .account-tabs vaadin-tab[selected]::before,
+.cosmos-account .account-tabs vaadin-tab[selected]::after {
+    transform: scaleX(1);
+}
+
+/* Gleiche Außenmaße und dasselbe em-basierte Padding wie unsere Button-Icons. */
+.cosmos-account .account-tabs vaadin-tab > vaadin-icon {
+    width: var(--lumo-icon-size-m);
+    height: var(--lumo-icon-size-m);
+    font-size: 14px;
+    padding: 0.25em;
+    margin: 0;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.cosmos-account .account-panels,
+.cosmos-account .account-panel,
+.cosmos-account .account-panel-body {
+    width: 100%;
+    min-width: 0;
+}
+
+.cosmos-account .account-panel-body {
+    box-sizing: border-box;
+    padding-block: var(--lumo-space-l);
+}
+
+/* Profil-Footer als durchgehende Fläche wie im Benutzerdialog.
+ * Der Rahmen schneidet die Fläche an seinen runden unteren Ecken ab.
+ * Kopf und Formular behalten ihre bisherigen seitlichen Innenabstände. */
+.cosmos-account #account-panel-profile {
+    --account-panel-inline-padding: clamp(20px, 4vw, 36px);
+    padding: 0;
+    overflow: hidden;
+}
+
+.cosmos-account #account-panel-profile > .cosmos-panel-header {
+    width: calc(100% - 2 * var(--account-panel-inline-padding));
+    margin-inline: var(--account-panel-inline-padding);
+    padding-top: 32px;
+}
+
+.cosmos-account #account-panel-profile > .account-panel-body {
+    padding-inline: var(--account-panel-inline-padding);
+}
+
+.cosmos-account #account-panel-profile > .cosmos-panel-footer {
+    border-top: 1px solid var(--cosmos-table-border-color);
+    padding: 18px 24px;
+    background: var(--cosmos-account-footer-background);
+}
+
+/* Zwei Spalten auf großen Fenstern; Eingabefeld-Styles bleiben vollständig global. */
+.cosmos-account .account-profile-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: var(--lumo-space-m) var(--lumo-space-l);
+}
+
+.cosmos-account .account-profile-form > *,
+.cosmos-account .account-email-row > vaadin-email-field {
+    width: 100%;
+    min-width: 0;
+}
+
+.cosmos-account :is(vaadin-text-field, vaadin-email-field, vaadin-password-field,
+    vaadin-combo-box, vaadin-date-picker)::part(helper-text) {
+    font-size: 11px;
+    font-weight: 400;
+}
+
+.cosmos-account .account-email-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    /* Vaadins Feld-Baseline gehört zum Eingabetext. Label und Hilfetext
+     * dürfen den benachbarten Button nicht nach oben oder unten versetzen. */
+    align-items: baseline;
+    gap: var(--lumo-space-s);
+}
+
+.cosmos-account .account-email-row > vaadin-button {
+    margin: 0;
+}
+
+.cosmos-account .account-entry {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--lumo-space-m);
+    padding-block: var(--lumo-space-l);
+}
+
+.cosmos-account .account-entry + .account-entry {
+    border-top: 1px solid var(--cosmos-card-border);
+}
+
+.cosmos-account .account-entry-copy {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.cosmos-account .account-entry-title,
+.cosmos-account .account-entry-description {
+    display: block;
+}
+
+.cosmos-account .account-entry-title {
+    color: var(--lumo-body-text-color);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.cosmos-account .account-entry-description,
+.cosmos-account .account-info-text {
+    color: var(--lumo-secondary-text-color);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.cosmos-account .account-entry-description {
+    margin-top: var(--lumo-space-xs);
+}
+
+.cosmos-account .account-session-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--lumo-space-s);
+}
+
+.cosmos-account .account-info-text {
+    display: block;
+    padding: var(--lumo-space-m);
+    margin-top: var(--lumo-space-m);
+    border: 1px solid var(--cosmos-card-border);
+    border-radius: var(--lumo-border-radius-l);
+    background: var(--cosmos-input-background);
+}
+
+@media (max-width: 600px) {
+    .cosmos-account #account-panel-profile > .cosmos-panel-footer {
+        padding: 16px;
+    }
+
+    .cosmos-account .account-profile-form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .cosmos-account .account-email-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .cosmos-account .account-email-row > vaadin-button {
+        margin-top: 0;
+        justify-self: start;
+    }
+
+    .cosmos-account .account-entry {
+        grid-template-columns: 42px minmax(0, 1fr);
+    }
+
+    .cosmos-account .account-entry > vaadin-button {
+        grid-column: 2;
+        justify-self: start;
+    }
+}

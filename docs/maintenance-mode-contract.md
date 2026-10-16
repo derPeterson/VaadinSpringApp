@@ -156,3 +156,28 @@ MAINT-01 erwartet jetzt den Status in der Seitenleiste; der geänderte Browserfa
 ist kompiliert, für diese Gestaltung aber nicht erneut im Browser ausgeführt.
 Die bestehenden vollständigen Browser-/Coverage-Ergebnisse gelten weiterhin für
 den davor gemessenen Stand.
+
+## Nachkorrektur: Statuscard und Sitzungswiederherstellung
+
+Die Wartungscard verwendet die vorhandene Warning-Statusklasse mit
+`--lumo-warning-text-color`, die gemeinsame Statussymbolgröße von 40 px und
+denselben Aufbau aus Iconzeile, Titelzeile und Einleitung wie Passwortreset/
+Passwortanfrage. Dadurch greifen die bereits vorhandenen Abstände und
+Schriftgrößen; globale CSS-Regeln wurden dafür nicht geändert.
+
+Nach einem Serverneustart kann der Servletcontainer eine Vaadin-Sitzung bereits
+deserialisiert haben, bevor Vaadin deren transiente Sperre wiederherstellt.
+`MaintenanceTransport` überspringt solche noch nicht initialisierten Sitzungen,
+statt auf einem fehlenden Lock abzustürzen. Sie geben keine UI-RPCs frei; der
+bestehende Transport leitet zur Wartungsseite. Die eigentliche Initialisierung
+bleibt bei Vaadin, gespeicherte Sitzungen werden durch diese Prüfung nicht gelöscht.
+Bereits initialisierte Login-/Wartungs-UIs bleiben erreichbar.
+
+116 gezielte JUnit-Fälle aus Wartungsservice/-View, Passwortreset-Views,
+Security-Kette und echten Push-/RPC-Persistenzprüfungen erfolgreich; keine Fehler
+oder übersprungenen Fälle. Drei neue Transportfälle decken UIDL und Push mit einer
+wirklich serialisierten/deserialisierten Vaadin-Sitzung sowie die weiterhin
+mögliche Auflösung einer initialisierten Login-UI ab. Java 25 und Google Java
+Format geprüft. Kein erneuter Browser-Gesamtlauf und kein Neustart der regulären
+Benutzeranwendung durch den Agenten; die Anwendung muss für die Korrektur mit dem
+neuen Java-Stand neu gestartet werden.

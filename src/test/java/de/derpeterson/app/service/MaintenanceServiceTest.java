@@ -16,7 +16,12 @@ import de.derpeterson.app.security.*;
 import de.derpeterson.app.views.LoginView;
 import de.derpeterson.app.views.RegistrationView;
 import jakarta.servlet.FilterChain;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 import org.jsoup.Jsoup;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -28,6 +33,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class MaintenanceServiceTest {
   private final ConfigService config = mock(ConfigService.class);
@@ -215,6 +221,65 @@ class MaintenanceServiceTest {
   }
 
   @ParameterizedTest
+  @ValueSource(strings = {"uidl", "push"})
+  void deserializedSessionBeforeVaadinRestoresItsLockRejectsOldRpcWithoutServerErrors(String type)
+      throws Exception {
+    var original = new VaadinSession(null);
+    ReflectionTestUtils.setField(original, "lock", new ReentrantLock());
+    assertNotNull(original.getLockInstance());
+    var bytes = new ByteArrayOutputStream();
+    try (var output = new ObjectOutputStream(bytes)) {
+      output.writeObject(original);
+    }
+    VaadinSession restored;
+    try (var input = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
+      restored = (VaadinSession) input.readObject();
+    }
+    assertNull(restored.getLockInstance());
+    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    var request = new MockHttpServletRequest("POST", "/");
+    request.setServletPath("/");
+    request.setParameter("v-r", type);
+    request.setParameter("v-uiId", "17");
+    var http = new MockHttpSession();
+    request.setSession(http);
+    http.setAttribute("com.vaadin.flow.server.VaadinSession.restored", restored);
+    for (int attempt = 0; attempt < 3; attempt++) {
+      assertFalse(MaintenanceTransport.allowedUi(request));
+      assertDoesNotThrow(() -> MaintenanceTransport.redirectUi(request));
+      var response = new MockHttpServletResponse();
+      var chain = mock(FilterChain.class);
+      assertDoesNotThrow(
+          () -> new MaintenanceHttpFilter(maintenance).doFilter(request, response, chain));
+      verifyNoInteractions(chain);
+      assertTrue(response.getContentType().startsWith("application/json"));
+      assertTrue(response.getContentAsString().contains("/maintenance"));
+      assertNotEquals(500, response.getStatus());
+      assertSame(restored, http.getAttribute("com.vaadin.flow.server.VaadinSession.restored"));
+      assertFalse(http.isInvalid());
+    }
+  }
+
+  @Test
+  void uninitializedSessionDoesNotPreventFindingAnAlreadyInitializedLoginUi() {
+    var request = new MockHttpServletRequest("POST", "/");
+    request.setParameter("v-uiId", "17");
+    var http = new MockHttpSession();
+    request.setSession(http);
+    http.setAttribute("com.vaadin.flow.server.VaadinSession.restored", new VaadinSession(null));
+    var initialized = mock(VaadinSession.class);
+    when(initialized.getLockInstance()).thenReturn(new ReentrantLock());
+    var ui = mock(UI.class, RETURNS_DEEP_STUBS);
+    when(initialized.getUIById(17)).thenReturn(ui);
+    when(ui.getInternals().getActiveRouterTargetsChain())
+        .thenReturn(List.of(mock(LoginView.class)));
+    http.setAttribute("com.vaadin.flow.server.VaadinSession.initialized", initialized);
+    assertTrue(MaintenanceTransport.allowedUi(request));
+    verify(initialized).lock();
+    verify(initialized).unlock();
+  }
+
+  @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void onlyTheActualLoginUiMayUseLoginRpc(boolean loginUi) throws Exception {
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
@@ -225,6 +290,7 @@ class MaintenanceServiceTest {
     var session = new MockHttpSession();
     request.setSession(session);
     var vaadin = mock(VaadinSession.class);
+    when(vaadin.getLockInstance()).thenReturn(new ReentrantLock());
     var ui = mock(UI.class, RETURNS_DEEP_STUBS);
     when(vaadin.getUIById(17)).thenReturn(ui);
     session.setAttribute("com.vaadin.flow.server.VaadinSession.test", vaadin);
@@ -265,6 +331,7 @@ class MaintenanceServiceTest {
     var session = new MockHttpSession();
     request.setSession(session);
     var vaadin = mock(VaadinSession.class);
+    when(vaadin.getLockInstance()).thenReturn(new ReentrantLock());
     var ui = mock(UI.class, RETURNS_DEEP_STUBS);
     when(vaadin.getUIById(17)).thenReturn(ui);
     when(ui.getInternals().getActiveRouterTargetsChain())
@@ -290,6 +357,7 @@ class MaintenanceServiceTest {
     var session = new MockHttpSession();
     request.setSession(session);
     var vaadin = mock(VaadinSession.class);
+    when(vaadin.getLockInstance()).thenReturn(new ReentrantLock());
     var ui = mock(UI.class, RETURNS_DEEP_STUBS);
     when(vaadin.getUIById(17)).thenReturn(ui);
     when(ui.getInternals().getActiveRouterTargetsChain()).thenReturn(List.of());

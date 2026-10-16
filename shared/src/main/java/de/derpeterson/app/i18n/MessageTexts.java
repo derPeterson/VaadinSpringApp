@@ -1461,4 +1461,153 @@ public class MessageTexts {
   public String getMaintenanceUnavailableMessage() {
     return getTranslation("maintenance.unavailable.message");
   }
+
+  // Kontoverwaltung: erste Gestaltungsstufe, ohne schreibende Kontoaktionen.
+  public String getAccountSettingsOverview() {
+    return getTranslation("accountSettings.overview");
+  }
+
+  public String getAccountSettingsTitle() {
+    return getTranslation("accountSettings.title");
+  }
+
+  public String getAccountSettingsDescription() {
+    return getTranslation("accountSettings.description");
+  }
+
+  public String getAccountSettingsProfileTab() {
+    return getTranslation("accountSettings.profile.tab");
+  }
+
+  public String getAccountSettingsSecurityTab() {
+    return getTranslation("accountSettings.security.tab");
+  }
+
+  public String getAccountSettingsSessionsTab() {
+    return getTranslation("accountSettings.sessions.tab");
+  }
+
+  public String getAccountSettingsEnabled() {
+    return getTranslation("accountSettings.enabled");
+  }
+
+  public String getAccountSettingsDisabled() {
+    return getTranslation("accountSettings.disabled");
+  }
+
+  public String getAccountSettingsEditPicture() {
+    return getTranslation("accountSettings.edit.picture");
+  }
+
+  public String getAccountSettingsProfileTitle() {
+    return getTranslation("accountSettings.profile.title");
+  }
+
+  public String getAccountSettingsProfileDescription() {
+    return getTranslation("accountSettings.profile.description");
+  }
+
+  public String getAccountSettingsProfileMeta() {
+    return getTranslation("accountSettings.profile.meta");
+  }
+
+  public String getAccountSettingsLanguage() {
+    return getTranslation("accountSettings.language");
+  }
+
+  public String getAccountSettingsLanguageHint() {
+    return getTranslation("accountSettings.language.hint");
+  }
+
+  public String getAccountSettingsEmailHint() {
+    return getTranslation("accountSettings.email.hint");
+  }
+
+  public String getAccountSettingsChangeEmail() {
+    return getTranslation("accountSettings.change.email");
+  }
+
+  public String getAccountSettingsChangePassword() {
+    return getTranslation("accountSettings.change.password");
+  }
+
+  public String getAccountSettingsPasswordHint() {
+    return getTranslation("accountSettings.password.hint");
+  }
+
+  public String getAccountSettingsAccountHint() {
+    return getTranslation("accountSettings.account.hint");
+  }
+
+  public String getAccountSettingsSave() {
+    return getTranslation("accountSettings.save");
+  }
+
+  public String getAccountSettingsSecurityTitle() {
+    return getTranslation("accountSettings.security.title");
+  }
+
+  public String getAccountSettingsSecurityDescription() {
+    return getTranslation("accountSettings.security.description");
+  }
+
+  public String getAccountSettingsSecurityNotice() {
+    return getTranslation("accountSettings.security.notice");
+  }
+
+  public String getAccountSettingsSessionsTitle() {
+    return getTranslation("accountSettings.sessions.title");
+  }
+
+  public String getAccountSettingsSessionsDescription() {
+    return getTranslation("accountSettings.sessions.description");
+  }
+
+  public String getAccountSettingsSessionsMeta() {
+    return getTranslation("accountSettings.sessions.meta");
+  }
+
+  public String getAccountSettingsSessionsDemo() {
+    return getTranslation("accountSettings.sessions.demo");
+  }
+
+  public String getAccountSettingsSessionsCount() {
+    return getTranslation("accountSettings.sessions.count");
+  }
+
+  public String getAccountSettingsSessionsLimit() {
+    return getTranslation("accountSettings.sessions.limit");
+  }
+
+  public String getAccountSettingsSessionsHint() {
+    return getTranslation("accountSettings.sessions.hint");
+  }
+
+  public String getAccountSettingsCurrentDevice() {
+    return getTranslation("accountSettings.current.device");
+  }
+
+  public String getAccountSettingsCurrentSession() {
+    return getTranslation("accountSettings.current.session");
+  }
+
+  public String getAccountSettingsActiveNow() {
+    return getTranslation("accountSettings.active.now");
+  }
+
+  public String getAccountSettingsActiveHours() {
+    return getTranslation("accountSettings.active.hours");
+  }
+
+  public String getAccountSettingsActiveYesterday() {
+    return getTranslation("accountSettings.active.yesterday");
+  }
+
+  public String getAccountSettingsLogoutOthers() {
+    return getTranslation("accountSettings.logout.others");
+  }
+
+  public String getAccountSettingsLogoutHint() {
+    return getTranslation("accountSettings.logout.hint");
+  }
 }
