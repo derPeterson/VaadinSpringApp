@@ -62,7 +62,7 @@ der Palette. Eine einzelne Komponente kann hier davon abweichen:
 | Kopfzeile / Seitenleiste | `--cosmos-topbar-*`, `--cosmos-sidebar-*` |
 | Navigation | `--cosmos-nav-*`, `--cosmos-subnav-color` |
 | Badges / Panelicons | `--cosmos-badge-*`, `--cosmos-panel-icon-*` |
-| Overlays und Dialoge | `--cosmos-overlay-*`, `--cosmos-dialog-chrome-background`, `--cosmos-user-dialog-header-background` |
+| Overlays und Dialoge | `--cosmos-overlay-*`, `--cosmos-dialog-backdrop-blur`, `--cosmos-dialog-chrome-background`, `--cosmos-user-dialog-header-background` |
 | Filterfläche | `--cosmos-filter-panel-background` |
 | Sterne / Nebel / Planeten | Letzte Tokengruppe: vollständige Verläufe und Schatten |
 

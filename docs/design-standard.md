@@ -86,6 +86,15 @@ von `--lumo-error-color` mit `--lumo-base-color`. Keine zusätzlichen roten Hexf
 - Öffnen, Abbrechen oder Schließen des Löschdialogs löscht nichts. Nur die bestätigte
   Aktion darf das ausgewählte Konto löschen; bestehende Schutzprüfungen bleiben erhalten.
 
+## Dialoge schließen und Hintergrund
+
+Seit 16.10.2026 verwenden alle Cosmos-Dialoge den gemeinsamen Hintergrund-Blur
+von 6 px (`--cosmos-dialog-backdrop-blur`). Die Regel liegt in `cosmos-admin.css`
+und betrifft nur den nativen Backdrop; der Dialog selbst bleibt scharf.
+Benutzer anlegen, bearbeiten und löschen sowie der E-Mail-Dialog erlauben
+Escape und einen Klick außerhalb zum Schließen. Dabei wird nichts gespeichert
+oder gelöscht; ungespeicherte Dialogeingaben werden verworfen.
+
 ## Änderungen sichtbar machen
 
 Bei diesem Entwicklungsstand: Anwendung aus IntelliJ/Eclipse neu starten und den

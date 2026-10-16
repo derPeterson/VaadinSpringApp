@@ -110,6 +110,7 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-overlay-radius: var(--cosmos-card-radius);
     --cosmos-overlay-background: var(--cosmos-card-background);
     --cosmos-overlay-shadow: var(--cosmos-card-shadow);
+    --cosmos-dialog-backdrop-blur: 6px;
     --cosmos-dialog-chrome-background: var(--lumo-contrast-5pct);
     --cosmos-account-footer-background: #11192a;
     --cosmos-user-dialog-header-background: var(--cosmos-table-header-background);

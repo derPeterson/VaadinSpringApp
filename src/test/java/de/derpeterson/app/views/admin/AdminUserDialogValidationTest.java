@@ -182,6 +182,41 @@ class AdminUserDialogValidationTest {
             .collect(java.util.stream.Collectors.toSet()));
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"create", "edit", "delete"})
+  void nativeDismissalIsEnabledAndClosingDoesNotPersistOrDelete(String action) {
+    if (action.equals("delete")) {
+      var target =
+          UserEntity.builder()
+              .id(2L)
+              .version(3L)
+              .firstName("Test")
+              .lastName("User")
+              .email("test@example.test")
+              .build();
+      when(users.canDeleteUser(target)).thenReturn(true);
+      ReflectionTestUtils.invokeMethod(section, "deleteUser", target);
+      ui.getInternals().getStateTree().runExecutionsBeforeClientResponse();
+      dialog =
+          descendants(ui)
+              .filter(Dialog.class::isInstance)
+              .map(Dialog.class::cast)
+              .filter(Dialog::isOpened)
+              .findFirst()
+              .orElseThrow();
+    } else {
+      open("de", action.equals("create"));
+    }
+    assertTrue(dialog.isCloseOnOutsideClick());
+    assertTrue(dialog.isCloseOnEsc());
+    dialog.setOpened(false);
+    assertFalse(dialog.isOpened());
+    verify(users, never()).save(any());
+    verify(users, never()).saveUser(any());
+    verify(users, never()).updateAdminUser(any(), any(), any());
+    verify(users, never()).deleteUser(any());
+  }
+
   private void open(String language, boolean create) {
     locale.set(Locale.forLanguageTag(language));
     UserEntity user =

@@ -652,7 +652,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     dialog.addClassName("cosmos-theme");
     dialog.getElement().getThemeList().add("cosmos");
     dialog.setCloseOnEsc(true);
-    dialog.setCloseOnOutsideClick(false);
+    dialog.setCloseOnOutsideClick(true);
     dialog.setDraggable(true);
     dialog.setResizable(true);
     dialog.addClassName("admin-user-dialog");

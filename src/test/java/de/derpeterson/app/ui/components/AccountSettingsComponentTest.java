@@ -266,4 +266,19 @@ class AccountSettingsComponentTest {
     assertTrue(field.isReadOnly());
     assertEquals(user.getEmail(), field.getValue());
   }
+
+  @Test
+  void bothEmailButtonsOpenTheSameDraftDialogWithoutChangingProfileFields() {
+    ((TextField) byId("account-first-name")).setValue("Unsaved");
+    var dialog = (AccountEmailChangeDialog) byId("account-email-change-dialog");
+    for (var id : new String[] {"account-email-edit-profile", "account-email-edit-security"}) {
+      assertFalse(dialog.isOpened());
+      ((Button) byId(id)).click();
+      assertTrue(dialog.isOpened());
+      dialog.close();
+    }
+    assertEquals("Unsaved", ((TextField) byId("account-first-name")).getValue());
+    assertEquals("own-account@example.test", user.getEmail());
+    verifyNoInteractions(saver);
+  }
 }

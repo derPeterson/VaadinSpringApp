@@ -47,6 +47,7 @@ public class AccountSettingsComponent extends Div {
   private final TextField firstName = new TextField();
   private final TextField lastName = new TextField();
   private final EmailField email = new EmailField();
+  private final AccountEmailChangeDialog emailChangeDialog;
   private final DatePicker birthDate = new DatePicker();
   private final ComboBox<Locale> preferredLanguage = new ComboBox<>();
 
@@ -55,6 +56,7 @@ public class AccountSettingsComponent extends Div {
       UserEntity user,
       SerializableFunction<Changes, Profile> saveProfile) {
     this.messages = messages;
+    emailChangeDialog = new AccountEmailChangeDialog(messages);
     this.saveProfile = saveProfile;
     this.version = user == null ? null : user.getVersion();
     addClassName("account-settings");
@@ -74,7 +76,7 @@ public class AccountSettingsComponent extends Div {
     tabs.addSelectedChangeListener(event -> showSelectedPanel());
     var content = new Div(panels.values().toArray(AccountPanelComponent[]::new));
     content.addClassName("account-panels");
-    add(tabs, content);
+    add(tabs, content, emailChangeDialog);
     refreshTexts();
     showSelectedPanel();
   }
@@ -90,6 +92,13 @@ public class AccountSettingsComponent extends Div {
     if (primary) button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     // Für die Gestaltungsabnahme aktiv, aber ohne Aktionslistener oder Serviceaufruf.
     // Profil-Speichern erhält seinen eigenen Listener; die weiteren Aktionen folgen später.
+    return button;
+  }
+
+  private Button emailChangeButton(String id) {
+    var button = previewButton(VaadinIcon.EDIT, messages::getAccountSettingsChangeEmail, false);
+    button.setId(id);
+    button.addClickListener(event -> emailChangeDialog.open());
     return button;
   }
 
@@ -203,8 +212,7 @@ public class AccountSettingsComponent extends Div {
           preferredLanguage.setLabel(messages.getAccountSettingsLanguage());
           preferredLanguage.setHelperText(messages.getAccountSettingsLanguageHint());
         });
-    var emailAction =
-        previewButton(VaadinIcon.EDIT, messages::getAccountSettingsChangeEmail, false);
+    var emailAction = emailChangeButton("account-email-edit-profile");
     var emailRow = new Div(email, emailAction);
     emailRow.addClassName("account-email-row");
     var form = new Div(firstName, lastName, emailRow, birthDate, preferredLanguage);
@@ -300,7 +308,7 @@ public class AccountSettingsComponent extends Div {
                 VaadinIcon.ENVELOPE,
                 messages::getRegistrationEmailField,
                 () -> user == null ? "" : Objects.toString(user.getEmail(), ""),
-                previewButton(VaadinIcon.EDIT, messages::getAccountSettingsChangeEmail, false)));
+                emailChangeButton("account-email-edit-security")));
     var notice = text(new Span(), messages::getAccountSettingsSecurityNotice);
     notice.addClassName("account-info-text");
     panel.getBody().add(notice);
@@ -371,5 +379,6 @@ public class AccountSettingsComponent extends Div {
 
   public void refreshTexts() {
     textUpdates.forEach(Runnable::run);
+    emailChangeDialog.refreshTexts();
   }
 }

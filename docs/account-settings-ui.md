@@ -19,8 +19,9 @@ Der nächste Schritt ergänzt das Speichern der eigenen Profildaten:
   erhalten ungespeicherte Entwürfe. „Änderungen speichern“ übernimmt Vorname,
   Nachname, Geburtsdatum und bevorzugte Sprache (DE/EN).
 - Die E-Mail bleibt sichtbar, ist aber deaktiviert und nicht fokussierbar.
-  Profilbild-, E-Mail-, Passwort- und Sitzungsabmeldeaktionen sind für die visuelle
-  Abnahme aktiv dargestellt, besitzen aber noch keine Aktionslistener oder Serviceaufrufe.
+  Beide E-Mail-Ändern-Buttons öffnen den unten beschriebenen Dialogentwurf.
+  Profilbild-, Passwort- und Sitzungsabmeldeaktionen sind für die visuelle Abnahme
+  aktiv dargestellt, besitzen aber noch keine Aktionslistener oder Serviceaufrufe.
 - Sitzungen, Geräte, Zeiten und das dargestellte Limit sind klar bezeichnete
   Beispieldaten. Es erfolgt keine Abfrage des tatsächlichen Sitzungsregisters.
 - Vorhandene Passwörter, Hashes und Sitzungstokens werden weder gelesen noch angezeigt.
@@ -77,7 +78,7 @@ Sitzungssprache. Die neue Datensatzversion wird für weiteres Speichern übernom
 
 ## Gezielte Prüfung
 
-Für diesen Schritt 74 unterschiedliche JUnit-Fälle erfolgreich, keine verbleibenden
+Für die Profilspeicherung 74 unterschiedliche JUnit-Fälle erfolgreich, keine verbleibenden
 Fehler oder übersprungenen Fälle: 19 isolierte H2-/Transaktionsfälle für Profilspeicherung,
 14 Kontokomponenten-Fälle, fünf Konto-View-Fälle, 29 Sicherheitsketten-Fälle, vier
 bestehende Status-/Menüregressionen und drei Übersetzungskatalog-Fälle. Geprüft sind
@@ -91,3 +92,29 @@ Anwendungstestsuite und Browser-Gesamtsuite wurden nicht erneut gestartet. Früh
 Coverage-Zahlen messen diesen neuen Stand nicht. Als manuelle Abnahme noch offen:
 Speichern, anschließendes Neuladen und erneute Anmeldung mit gespeicherter Sprache
 sowie die Darstellung des deaktivierten E-Mail-Feldes.
+
+## E-Mail ändern: Dialogentwurf
+
+Über „Ändern“ beim Profilfeld oder „E-Mail ändern“ im Sicherheitstab öffnet sich
+dieselbe `AccountEmailChangeDialog`-Komponente. Sie verwendet die vorhandenen
+Cosmos-Header-, Icon-, Feld-, Hinweis-, Schließen- und Buttonbausteine. Die
+Dialogfläche folgt der Card, der Header dem Benutzerdialog und der Footer dem
+Konto-Footer. Der Hintergrund-Blur von 6px auf dem nativen Backdrop ist inzwischen
+zentraler Standard für alle Cosmos-Dialoge; siehe [Designstandard](design-standard.md).
+
+Der Entwurf enthält neue E-Mail-Adresse, deren Bestätigung und aktuelles Passwort
+mit Sichtbarkeitsschalter. Ein Hinweis mit Info-Icon erläutert den späteren
+Bestätigungsschritt. DE/EN und Sprachwechsel erhalten die offenen Eingaben.
+Schließen per Icon, Abbrechen, Escape oder Außenklick verwirft die Dialogeingaben,
+einschließlich des Passworts. Ungespeicherte Profildaten bleiben erhalten.
+
+„Bestätigung anfordern“ ist für die Gestaltungsabnahme aktiv, führt aber noch
+keine Validierung, Passwortprüfung, Mailzustellung oder Kontoänderung aus.
+Die eigentliche E-Mail-Änderung ist weiterhin offen.
+
+29 gezielte JUnit-Fälle für diesen Entwurf erfolgreich: sechs Dialogfälle,
+15 Kontokomponenten-Fälle, fünf Konto-View-Fälle und drei Katalogfälle; keine
+Fehler oder übersprungenen Fälle. Java 25, Shared-Build und Google Java Format
+geprüft. Browserdarstellung, Blur und echte Außenklick-/Escape-Bedienung sind noch
+visuell abzunehmen; im JUnit-Test wurden die native Schließkonfiguration und das
+Verwerfen beim Schließen geprüft. Keine neue Browser-Gesamttestrunde gestartet.

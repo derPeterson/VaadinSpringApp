@@ -284,3 +284,59 @@
         justify-self: start;
     }
 }
+
+/* E-Mail-Dialog: lokale Ergänzungen zu den vorhandenen Cosmos-Dialogbausteinen.
+ * Der Dialog liegt als Overlay außerhalb der View; deshalb direkt am Dialog
+ * selektieren. Der gemeinsame Backdrop-Blur steht in cosmos-admin.css.
+ * Vaadin-25-Parts: https://vaadin.com/docs/latest/components/dialog/styling */
+vaadin-dialog[theme~="cosmos"].account-email-dialog::part(overlay) {
+    box-sizing: border-box;
+    width: min(520px, calc(100vw - 32px));
+    border: 1px solid var(--cosmos-table-border-color);
+    border-radius: var(--cosmos-overlay-radius);
+    background: var(--cosmos-card-background);
+    box-shadow: var(--cosmos-overlay-shadow);
+}
+
+vaadin-dialog[theme~="cosmos"].account-email-dialog::part(header) {
+    background: var(--cosmos-table-header-background);
+    border-bottom: 1px solid var(--cosmos-table-border-color);
+}
+
+vaadin-dialog[theme~="cosmos"].account-email-dialog::part(footer) {
+    background: var(--cosmos-account-footer-background);
+    border-top: 1px solid var(--cosmos-table-border-color);
+}
+
+vaadin-dialog.account-email-dialog::part(header-content) {
+    width: 100%;
+    min-width: 0;
+}
+
+.account-email-dialog .account-email-dialog-header {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-m);
+    width: 100%;
+    min-width: 0;
+}
+
+.account-email-dialog-header > .cosmos-panel-heading {
+    flex: 1 1 0;
+}
+
+.account-email-dialog-header > .cosmos-panel-icon {
+    flex-shrink: 0;
+}
+
+.account-email-dialog .account-email-dialog-form {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Der gemeinsame Hinweis ist in anderen Panels ein flexibles Footer-Element.
+ * Im senkrechten Formular braucht er keine feste Mindesthöhe. */
+.account-email-dialog-form > .cosmos-panel-hint {
+    flex: none;
+    margin-top: var(--lumo-space-s);
+}

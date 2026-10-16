@@ -1618,4 +1618,28 @@ public class MessageTexts {
   public String getAccountSettingsSaveFailed() {
     return getTranslation("accountSettings.save.failed");
   }
+
+  public String getAccountEmailDialogDescription() {
+    return getTranslation("accountSettings.email.dialog.description");
+  }
+
+  public String getAccountEmailDialogNewEmail() {
+    return getTranslation("accountSettings.email.dialog.new.email");
+  }
+
+  public String getAccountEmailDialogConfirmEmail() {
+    return getTranslation("accountSettings.email.dialog.confirm.email");
+  }
+
+  public String getAccountEmailDialogPassword() {
+    return getTranslation("accountSettings.email.dialog.password");
+  }
+
+  public String getAccountEmailDialogHint() {
+    return getTranslation("accountSettings.email.dialog.hint");
+  }
+
+  public String getAccountEmailDialogRequest() {
+    return getTranslation("accountSettings.email.dialog.request");
+  }
 }

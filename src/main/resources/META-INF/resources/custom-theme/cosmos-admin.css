@@ -731,6 +731,13 @@ vaadin-app-layout.cosmos-admin {
 
 /* 7. DIALOGE / gemeinsame Innenabstände und Aktionsleisten */
 
+/* Nur den Hintergrund außerhalb des Dialogs weichzeichnen. Der native Backdrop
+ * übernimmt weiterhin den Außenklick; der Dialoginhalt bleibt scharf. */
+vaadin-dialog[theme~="cosmos"]::part(backdrop) {
+    -webkit-backdrop-filter: blur(var(--cosmos-dialog-backdrop-blur));
+    backdrop-filter: blur(var(--cosmos-dialog-backdrop-blur));
+}
+
 vaadin-dialog[theme~="cosmos"]::part(header),
 vaadin-dialog[theme~="cosmos"]::part(footer) {
     padding: 18px 24px;
