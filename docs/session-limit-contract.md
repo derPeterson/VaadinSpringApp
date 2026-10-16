@@ -90,15 +90,16 @@ Es gibt keine neue Datenbanktabelle oder Migration. Einmaliger Anwendungsneustar
 ist für die neuen Java-Komponenten erforderlich; danach wirkt das konfigurierte Limit
 ohne weiteren Neustart.
 
-Ein Neustart verwirft die lokalen Sitzungen und ihren Registerbestand. Neue Logins und
+Ein vollständiger Produktionsneustart verwirft die lokalen Sitzungen und ihren Registerbestand. Neue Logins und
 Remember-me-Rückkehr zählen anschließend neu. Sitzungsreplikation, persistierte Servlet-
 Sitzungen und mehrere Server benötigen einen gemeinsamen Bestand mit eigener Einführung;
 das lokale Register bietet hierfür ausdrücklich keine globale Grenze.
 
 Die [Geräte-/Sitzungsverwaltung im künftigen Kontokonfigurationspanel](umsetzungsplaene/kontokonfiguration/sitzungsverwaltung.md)
 bleibt **Ausbaustufe 2**, nachdem die fehlenden Konfigurationsfunktionen umgesetzt sind.
-Dieses Panel existiert noch nicht. Bei erreichtem Limit gibt es zunächst keinen eigenen
-Zugangsweg zu einer Geräteverwaltung vor der Anmeldung.
+Die [Kontoseite](account-settings-ui.md) besitzt inzwischen eine visuelle Vorschau;
+die echte Geräteverwaltung ist weiterhin offen. Bei erreichtem Limit gibt es zunächst
+keinen eigenen Zugangsweg zu einer Geräteverwaltung vor der Anmeldung.
 
 ## Prüfungen
 
@@ -109,7 +110,8 @@ mit Vaadin und Remember-me, Token-Erhalt und Freigabe nach Logout.
 
 Die Browser-Suite `session-limits` umfasst vier neue Fälle SESSION-LIMIT-01–04 sowie
 bestehende Login-, Anmeldeversuchs-, Remember-me-, Rollen- und Sitzungsregressionen:
-**27 Fälle**. Sie nutzt ausschließlich eigene Docker-/H2-/Mailpit-Umgebungen.
+**29 Fälle**, einschließlich der beiden ergänzten Serverneustartvarianten. Sie nutzt
+ausschließlich eigene Docker-/H2-/Mailpit-Umgebungen.
 Browserschließen und Remember-me werden mit echten separaten Chromium-Prozessen
 geprüft. Timeout-/Konkurrenzregeln gehören in JUnit; der Browser wartet kein produktives
 Sitzungstimeout ab. Ausgeführte Ergebnisse und Grenzen stehen in
@@ -128,3 +130,11 @@ belegen keinen neuen Platz. Bestehende registrierte Sitzungen dürfen ihren
 Context wiederherstellen und behalten ihren Platz; ihre Fachaktionen sind
 während Wartung gesperrt. Ausschalten macht weiterhin gültige Sitzungen wieder
 nutzbar, ohne die Zählung oder andere Geräte zurückzusetzen.
+
+## Neustartnachweis und Entwicklungsbetrieb
+
+AUTH-07C/D prüfen seit 16.10.2026 zusätzlich einen tatsächlichen Neustart der eigenen
+Testanwendung mit zwei offenen Tabs: Remember-me stellt die Identität wieder her,
+ohne Remember-me entsteht keine dauerhafte Anmeldung. Die Besonderheiten des
+IntelliJ-/DevTools-Betriebs und die Grenze der konkreten Fehlerreproduktion stehen
+in der [Neustart-Analyse](login-restart-analysis.md).

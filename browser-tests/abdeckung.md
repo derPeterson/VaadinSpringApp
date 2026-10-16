@@ -1,6 +1,72 @@
 # Browserabdeckung und offene Punkte
 
-**Aktueller Gesamtnachweis 16.10.2026: 1.226 Anwendungstests, 44 Browserhelfer, 205 Python-Offlinetests und vollständiges `all` mit je 118 Fällen DE/EN erfolgreich.**
+**Aktueller Abschluss 17.10.2026: 1.298 Anwendungstests, 45 Browserhelfer,
+205 Python- und 14 JavaScript-Offlinetests erfolgreich. Je 127 unterschiedliche
+Browserfälle DE/EN über vollständige Gesamtrunden und gezielte Nachtests nachgewiesen.**
+
+## Kontoprofil, E-Mail-Dialog und Neustart (16.–17.10.2026)
+
+Branch `feature/account-settings-ui`, Basis `0956ff62`, Ergänzungen uncommittet.
+[Kontovertrag](../docs/account-settings-ui.md),
+[Neustart-Analyse](../docs/login-restart-analysis.md),
+[dauerhafter Meilenstein](../docs/meilensteine/2026-10-16-kontoprofil-und-browserpruefungen.md).
+
+| Prüfung | Tatsächliches Ergebnis |
+| --- | --- |
+| Java / Shared / Produktionsbuild | Java 25.0.4.1; erfolgreich einschließlich Tests und Frontend |
+| Vollständige Anwendungs-JUnit-Suite | 1298/1298; keine Fehler oder Skips |
+| Browserhelfer / Reporter / Workeraufteilung, endgültiger Stand | 45/45; keine Fehler oder Skips |
+| Python / JavaScript offline | 205/205 und 14/14; keine Live-Provider-/Modellanfragen |
+| Vollständiges Browser all DE / EN, je zwei isolierte Worker | Je 126/127, je ein Browserhelfer-/Bereinigungsfehler, keine Skips |
+| Account-Nachtest nach Bereinigungskorrektur, DE | 7/7 |
+| Filter-Nachtest nach Scrollkorrektur, DE / EN | Je 4/4; beide Scrollrichtungen unabhängig von der Uhrzeit |
+| Unterschiedliche erfolgreiche Fallidentitäten | Je alle 127 aus all; DE/EN identisch, keine Doppelungen |
+| Fast-Auswahl | Alle 34 markierten Fälle in beiden Gesamtrunden bestanden; kein separater Lauf |
+| Aufbau / Abbau / HTML / Coverage | Alle fünf abschließend ausgewerteten Läufe erfolgreich |
+| Formatstandard / Diff | Google Java Format, Ruff-Formatprüfung und Diff-Prüfung erfolgreich |
+
+ACCOUNT-01–03 und ACCOUNT-04A–D ergänzen sieben UI-Fälle für dauerhaftes Speichern,
+Validierung, Sprachpräferenz und den noch funktionslosen E-Mail-Dialog. Ein echter
+Escape-Fehler mit erhaltenem Passwortentwurf wurde behoben und mit JUnit sowie
+allen vier Browser-Schließwegen nachgeprüft. Zwei weitere Fälle AUTH-07C/D prüfen
+echte Serverneustarts. `all` enthält jetzt 127 Fälle in 24 Klassen.
+
+Der deutsche Account-Sprachtest scheiterte nach bestandener fachlicher Prüfung
+an doppelter Menübereinigung; die gemeinsame Fixture übernimmt sie bereits.
+USER-05C auf EN fand einen zeitabhängigen Helferfehler: Ein unsichtbarer
+Mitternachtseintrag führte zur falschen Scrollrichtung. Der Helfer verwendet jetzt
+die erste tatsächlich sichtbare Zeile; echte Scrollbewegung und Filterwirkung bleiben
+streng geprüft. Der Fall wählt zusätzlich Tagesende und Rückweg, auch nach Mitternacht.
+Keine globalen Timeouts erhöht oder Assertions zur Umgehung abgeschwächt.
+
+Der Abschlussnachweis kombiniert vollständige Runden und erfolgreiche Nachtests.
+Es wird kein vollständig grüner all-Einzellauf behauptet und keine Summe wiederholter
+Fälle als Fallzahl ausgegeben. Zwischen den Nachweisen blieb der Anwendungscode gleich;
+es wurden nur die beschriebenen Browserabläufe korrigiert beziehungsweise erweitert.
+
+| JaCoCo-Messung | Zeilen | Zweige |
+| --- | ---: | ---: |
+| Vollständige Anwendungs-JUnit-Suite | 5289/6920 (76,43 %) | 1432/2071 (69,15 %) |
+| Browser DE, Gesamtrunde + Account-/Filternachtests | 5894/6920 (85,17 %) | 1362/2071 (65,77 %) |
+| Browser EN, Gesamtrunde + Filternachtest | 5894/6920 (85,17 %) | 1362/2071 (65,77 %) |
+
+Alle Browsernachweise verwenden dasselbe gepinnte Produktionsimage; die extrahierten
+Klassen wurden zusätzlich bytegleich verglichen. Die Messdaten wurden je Sprache
+gegen diese Klassen zusammengeführt, einschließlich ausgeführter Abschnitte vor den
+jeweiligen Helferfehlern. Der JaCoCo-Klassenzähler umfasst 127 Anwendungs-Java-Klassen
+mit ausführbarem Code; Shared und Drittbibliotheken sind ausgeschlossen. Serverseitige
+Browser-Coverage enthält Start und Hintergrundjobs, **keine CSS-/JavaScript-Messung
+oder Prozentzahl vollständig geprüfter fachlicher Anforderungen**.
+
+Der konkrete Remember-me-Verlust nach IntelliJ-Neustart bleibt unbestätigt und gilt
+nicht als behoben. Die isolierten Browser-/Produktions-Neustartfälle sind in beiden
+Sprachen bestanden. Echte Geräte, Screenreader, weitere Browser und reale Provider/
+Postfächer bleiben außerhalb dieser Prüfung. Keine reguläre Anwendung gestartet,
+keine echten Daten oder fremden Dockerumgebungen verändert. Nur eigene Teststacks
+wurden abgebaut; keine alten Run-Verzeichnisse gelöscht.
+
+Die folgenden Abschnitte dokumentieren frühere abgeschlossene Stände. Ihre
+Fallzahlen und Coverage sind historische Messergebnisse, keine aktuellen Werte.
 
 ## Wartungsmodus und vollständige Gesamtrunde (16.10.2026)
 

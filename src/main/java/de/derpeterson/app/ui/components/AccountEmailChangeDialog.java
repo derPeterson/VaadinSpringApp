@@ -11,6 +11,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.i18n.MessageProperties;
 
@@ -57,6 +58,11 @@ public class AccountEmailChangeDialog extends Dialog {
     email.setRequiredIndicatorVisible(true);
     confirmEmail.setRequiredIndicatorVisible(true);
     password.setRequiredIndicatorVisible(true);
+    // Escape löst nicht zuverlässig einen Blur aus. Auch unbestätigte Eingaben
+    // rechtzeitig synchronisieren, damit Schließen sie tatsächlich verwerfen kann.
+    email.setValueChangeMode(ValueChangeMode.EAGER);
+    confirmEmail.setValueChangeMode(ValueChangeMode.EAGER);
+    password.setValueChangeMode(ValueChangeMode.EAGER);
     email.setWidthFull();
     confirmEmail.setWidthFull();
     password.setWidthFull();
@@ -81,16 +87,24 @@ public class AccountEmailChangeDialog extends Dialog {
     getFooter().add(actions);
     addOpenedChangeListener(
         event -> {
-          if (!event.isOpened()) {
-            email.clear();
-            confirmEmail.clear();
-            password.clear();
-            email.setInvalid(false);
-            confirmEmail.setInvalid(false);
-            password.setInvalid(false);
-          }
+          if (!event.isOpened()) clearDraft();
         });
     refreshTexts();
+  }
+
+  @Override
+  public void open() {
+    clearDraft();
+    super.open();
+  }
+
+  private void clearDraft() {
+    email.clear();
+    confirmEmail.clear();
+    password.clear();
+    email.setInvalid(false);
+    confirmEmail.setInvalid(false);
+    password.setInvalid(false);
   }
 
   public void refreshTexts() {

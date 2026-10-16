@@ -19,11 +19,12 @@ final class BrowserCoverage {
   static String overrideContents(Path agent) {
     String source =
         agent.toAbsolutePath().normalize().toString().replace('\\', '/').replace("'", "''");
+    // Jeder Lauf besitzt frische eigene Volumes; nach einem App-Neustart Messdaten ergänzen.
     return """
                 services:
                   app:
                     environment:
-                      JAVA_TOOL_OPTIONS: "-javaagent:/opt/jacoco/jacocoagent.jar=destfile=/app/logs/browser-jacoco.exec,append=false,includes=de.derpeterson.app.*"
+                      JAVA_TOOL_OPTIONS: "-javaagent:/opt/jacoco/jacocoagent.jar=destfile=/app/logs/browser-jacoco.exec,append=true,includes=de.derpeterson.app.*"
                     volumes:
                       - type: bind
                         source: '%s'

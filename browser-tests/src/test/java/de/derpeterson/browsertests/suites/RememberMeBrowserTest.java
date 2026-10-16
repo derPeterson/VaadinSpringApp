@@ -14,6 +14,8 @@ import java.nio.file.Path;
 import java.util.UUID;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 @Tag("browser")
 @Feature("Remember-me mit echtem Browserneustart")
@@ -79,6 +81,43 @@ public class RememberMeBrowserTest extends BrowserFixture {
     }
     try (PersistentBrowserActor actor = new PersistentBrowserActor(playwright, profile)) {
       assertAnonymous(actor.page, email);
+    }
+  }
+
+  @ParameterizedTest
+  @CsvSource({"false, AUTH-07C", "true, AUTH-07D"})
+  @DisplayName("AUTH-07C/D: Anmeldung nach echtem Anwendungsneustart")
+  @Description(
+      """
+      1. Eigenes Konto über die Benutzerverwaltung erstellen und mit/ohne Remember-me anmelden.
+      2. Zweiten angemeldeten Tab im selben Kontext öffnen und nur die eigene Testanwendung neu starten.
+      3. Beide Tabs neu laden; bei Remember-me muss dieselbe Identität zurückkehren.
+      4. Ohne Remember-me ist eine neue Anmeldung nötig; danach normale Anmeldung und Logout prüfen.
+      **Erwartet:** Neustart erhält dauerhaftes Remember-me, ohne Cookie-/Storage-Injektion.
+      """)
+  void serverRestartRestoresOnlyRememberedLogin(boolean remember, String caseId) throws Exception {
+    String email = createUser();
+    try (BrowserActor actor = new BrowserActor(browser)) {
+      actor.login(email, BrowserTestAccounts.USER_PASSWORD, remember);
+      new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
+      Page second = actor.context.newPage();
+      second.navigate(path(HOME_ROUTE));
+      new UserMenu(second).assertUserSignedInWithoutAdminAction(email);
+      BrowserTestRunner.restartTestApplication();
+      actor.page.reload();
+      second.reload();
+      if (remember) {
+        new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
+        new UserMenu(second).assertUserSignedInWithoutAdminAction(email);
+        assertTrue(
+            actor.context.cookies().stream().anyMatch(cookie -> cookie.name.equals("remember-me")));
+      } else {
+        new UserMenu(actor.page).selectTestLanguage();
+        assertAnonymous(actor.page, email);
+        actor.login(email, BrowserTestAccounts.USER_PASSWORD);
+        new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
+      }
+      new UserMenu(actor.page).requestSignOut();
     }
   }
 

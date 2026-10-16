@@ -16,7 +16,7 @@ Eine ausgefüllte Lernvorlage zeigt Befunde, Korrektur und Nachtest.
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Aktueller Gesamtnachweis vom 16.10.2026: Java 25, 1.226 Anwendungstests, 44 Browserhelfer, 205 Python-Offlinetests und vollständiges Browser-`all` mit je 118 Fällen DE/EN erfolgreich. [Ergebnisse und Coverage](browser-tests/abdeckung.md).
+> Aktueller Prüfstand vom 17.10.2026: Java 25, 1.298 Anwendungstests, 45 Browserhelfer, 205 Python- und 14 JavaScript-Offlinetests erfolgreich. Je 127 unterschiedliche Browserfälle DE/EN über Gesamtrunden und gezielte Nachtests nachgewiesen. [Ergebnisse und Coverage](browser-tests/abdeckung.md).
 
 ## Funktionen
 
@@ -497,15 +497,21 @@ sie werden auf die bearbeiteten Dateien begrenzt.
 
 Unter `src/test/java/` liegen Unit- und serverseitige Regressionstests für Benutzerverwaltung, Eingaberegeln, Registrierung, Konfiguration, Benachrichtigungen, Session-/Remember-me-/Push-RPC-Sicherheit sowie Status und Nebenläufigkeit. Persistenztests verwenden isolierte H2-In-Memory-Datenbanken, nicht die Anwendungsdatenbank. Vaadin-Tests prüfen serverseitige Komponenten und Callbacks mit kontrollierten UI-/Sessionfixtures, ohne Browser oder Anwendungsstart. `ImageHelperTest` prüft zusätzlich das echte Mail-Logo als Classpath-Ressource. `src/test/resources/logback-test.xml` konfiguriert das Test-Logging.
 
-Aktueller Gesamtnachweis vom 16.10.2026 auf `feature/maintenance-mode`:
-**1.226 Anwendungstests, 44 Browserhelfer, 205 Python-Offlinetests und je 118
-Browserfälle DE/EN** erfolgreich, ohne Fehler oder Skips. Beide Browserläufe
-verwenden dasselbe frisch gebaute Produktionsimage und zwei isolierte Worker.
-JUnit-JaCoCo: **71,97 % Zeilen / 66,24 % Zweige**. Die getrennte serverseitige
-Java-Coverage der Browserläufe beträgt DE **84,25 % / 65,50 %**, EN
-**84,28 % / 65,65 %**. Dies ist keine CSS-/JavaScript-Coverage.
+Aktueller Nachweis vom 17.10.2026 für `feature/account-settings-ui`:
+**1.298 Anwendungstests, 45 Browserhelfer, 205 Python- und 14 JavaScript-Offlinetests**
+erfolgreich, ohne Fehler oder Skips. Der Produktionsbuild einschließlich Tests und
+Frontend ist erfolgreich. Die vollständigen Browserrunden bestanden je 126/127:
+DE scheiterte an doppelter Testbereinigung, EN an falscher Scrollrichtung eines
+Browserhelfers. Nach Korrektur bestanden `account-settings` DE 7/7 und `user-filters`
+DE/EN je 4/4. Damit sind alle 127 unterschiedlichen Fälle je Sprache erfolgreich
+nachgewiesen; es wird kein vollständig grüner `all`-Einzellauf behauptet.
+JUnit-JaCoCo: **76,43 % Zeilen / 69,15 % Zweige**. Zusammengeführte serverseitige
+Browser-Coverage je Sprache: **85,17 % / 65,77 %**, einschließlich Gesamtrunde und
+gezielter Nachtests am identischen Produktionsimage. Keine CSS-/JavaScript-Coverage.
 Details und Messgrenzen: [aktuelle Abdeckung](browser-tests/abdeckung.md),
-dauerhaft festgehalten im [Wartungs-/QA-Meilenstein](docs/meilensteine/2026-10-16-wartungsmodus-und-gesamttests.md).
+dauerhaft festgehalten im [Account-/QA-Meilenstein](docs/meilensteine/2026-10-16-kontoprofil-und-browserpruefungen.md).
+Der konkrete IntelliJ-Remember-me-Befund bleibt unbestätigt:
+[Analyse und isolierte Neustartprüfungen](docs/login-restart-analysis.md).
 
 Historische Theme-Strukturprüfung vom 15.10.2026 auf `feature/theme-css-structure`:
 

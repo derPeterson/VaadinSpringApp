@@ -2,6 +2,7 @@ package de.derpeterson.browsertests;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import de.derpeterson.browsertests.suites.AccountSettingsBrowserTest;
 import de.derpeterson.browsertests.suites.AuthenticationBrowserTest;
 import de.derpeterson.browsertests.suites.MaintenanceBrowserTest;
 import java.util.*;
@@ -119,5 +120,15 @@ class BrowserExecutionPlanTest {
       cases += csv == null ? 1 : csv.value().length;
     }
     assertEquals(9, cases);
+  }
+
+  @Test
+  void accountSettingsAreIncludedInAllAndRemainOutsideFastUntilDeliberatelySelected() {
+    assertEquals(
+        List.of(AccountSettingsBrowserTest.class), BrowserSuites.select("account-settings"));
+    assertTrue(BrowserSuites.select("all").contains(AccountSettingsBrowserTest.class));
+    for (var method : AccountSettingsBrowserTest.class.getDeclaredMethods())
+      assertFalse(BrowserExecutionPlan.fast(method));
+    assertThrows(IllegalStateException.class, BrowserTestRunner::restartTestApplication);
   }
 }

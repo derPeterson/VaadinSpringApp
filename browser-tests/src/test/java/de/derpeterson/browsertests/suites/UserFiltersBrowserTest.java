@@ -74,7 +74,7 @@ public class UserFiltersBrowserTest extends BrowserFixture {
         2. Heutiges Datum als lokalisierten Platzhalter prüfen; Feldklick öffnet keinen Kalender.
         3. Über das Icon morgen wählen: Konto verschwindet; Wiederöffnen markiert die Auswahl.
         4. Über den Kalender gestern wählen: Konto erscheint, Uhrzeit bleibt leer.
-        5. Aktuellen Uhrzeitplatzhalter und optionalen Zeithinweis prüfen; Feldklick öffnet keine Zeitliste. Uhrzeit über Icon/Dropdown auswählen und wieder leeren; Datum bleibt wirksam.
+        5. Aktuellen Uhrzeitplatzhalter und optionalen Zeithinweis prüfen; Feldklick öffnet keine Zeitliste. Uhrzeit über Icon/Dropdown auswählen, zum Tagesende und zurück scrollen, dann leeren; Datum bleibt wirksam.
         6. Alle zurücksetzen leert Suche, Zusatzfilter und aktive Badges; Konto bleibt über Suche erreichbar.
         **Erwartet:** Echte Kalenderauswahl ohne direkte Datumeingabe, optionale Zeit und wirksame Trefferfilterung.
         """)
@@ -87,6 +87,11 @@ public class UserFiltersBrowserTest extends BrowserFixture {
     users.activityDateUsingCalendar(1);
     assertThat(users.emailCells(email)).hasCount(0);
     users.activityDateUsingCalendar(-1);
+    assertThat(users.emailCells(email)).hasCount(1);
+    users.activityTimeUsingDropdown(LocalTime.of(14, 30));
+    assertThat(users.emailCells(email)).hasCount(1);
+    // Beide Scrollrichtungen unabhängig von der tatsächlichen Uhrzeit nachweisen.
+    users.activityTimeUsingDropdown(LocalTime.of(23, 45));
     assertThat(users.emailCells(email)).hasCount(1);
     users.activityTimeUsingDropdown(LocalTime.of(14, 30));
     assertThat(users.emailCells(email)).hasCount(1);

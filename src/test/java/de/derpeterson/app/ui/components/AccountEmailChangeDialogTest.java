@@ -10,6 +10,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -140,5 +141,25 @@ class AccountEmailChangeDialogTest {
     request.click();
     assertTrue(dialog.isOpened());
     assertEquals("draft@example.test", ((EmailField) byId("account-email-new")).getValue());
+  }
+
+  @Test
+  void unfinishedClientDraftsAreSynchronizedAndOpeningStartsWithEmptyFields() {
+    dialog.open();
+    var email = (EmailField) byId("account-email-new");
+    var confirm = (EmailField) byId("account-email-confirm");
+    var password = (PasswordField) byId("account-email-password");
+    assertEquals(ValueChangeMode.EAGER, email.getValueChangeMode());
+    assertEquals(ValueChangeMode.EAGER, confirm.getValueChangeMode());
+    assertEquals(ValueChangeMode.EAGER, password.getValueChangeMode());
+    dialog.close();
+    // Nachlaufende Feldsynchronisierung darf beim nächsten Öffnen nichts wiederherstellen.
+    email.setValue("late@example.test");
+    confirm.setValue("late@example.test");
+    password.setValue("late-draft");
+    dialog.open();
+    assertTrue(email.isEmpty());
+    assertTrue(confirm.isEmpty());
+    assertTrue(password.isEmpty());
   }
 }

@@ -57,11 +57,12 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | --- | --- | ---: |
 | `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit | 3 |
 | `authentication` | Admin-/Benutzerlogin, Fehler, Gastzugriff und Logout | 6 |
-| `login-attempts` | Drei neue Sperr-/Resetfälle plus sechs Anmelde- und zwei Remember-me-Regressionsfälle | 11 |
-| `session-limits` | Vier neue Sitzungsfälle plus Login-, Anmeldeversuchs-, Remember-me-, Rechte- und Sitzungsregressionen | 27 |
+| `login-attempts` | Drei Sperr-/Resetfälle plus sechs Anmelde- und vier Remember-me-Regressionsfälle | 13 |
+| `session-limits` | Vier neue Sitzungsfälle plus Login-, Anmeldeversuchs-, Remember-me-, Rechte- und Sitzungsregressionen | 29 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler und Links | 6 |
+| `account-settings` | Basisdaten speichern/validieren, gespeicherte Sprache und vier Schließwege des E-Mail-Dialogentwurfs | 7 |
 | `account-lifecycle` | Einzelvalidierungen, kanonisierte Dubletten, unverifizierte Anfrage und altes Resetformular | 5 |
 | `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung mit Datumeingabe/Kalenderauswahl und Tastaturlogin | 5 |
 | `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
@@ -71,25 +72,25 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `session-security` | Alte Speichern-Aktion nach Rollenentzug/Sperre/Löschung, Sperre/Löschung auch mit Remember-me | 5 |
 | `blocked-links` | Alte Verifikations-/Resetbuttons nach Adminänderung; neutrale Anfrage gesperrter Adresse | 5 |
 | `security-journeys` | Sitzungs- und Maillinkfälle gemeinsam | 10 |
-| `remember-me` | Echter separater Chromium-Neustart mit/ohne Remember-me und nach Logout | 2 |
+| `remember-me` | Echter Chromium- und Anwendungsneustart mit/ohne Remember-me und nach Logout | 4 |
 | `user-status` | Manuelle Wahl, Live-Anzeige in zweitem Tab, Abwesenheit/Rückkehr | 2 |
 | `configuration` | String-, Boolean- und Ganzzahlwerte, native SideNav, alle 29 Klick-Infos, mobile Tooltipbreite und sichere Enter-Bedienung | 9 |
 | `admin-mail` | Formularfehler, Feldinfos/Sprachwechsel, sicherer mehrzeiliger Text und tatsächliche Unicode-SMTP-Mails | 3 |
 | `token-expiry` | Echte Mindestdauer abwarten, erneuter Verifikationsversand, offenes Resetformular, Anfragefehler | 3 |
 | `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 15 |
-| `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 19 |
+| `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 21 |
 | `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
-| `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 19 |
+| `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 21 |
 | `cosmos-design` | Fünf Kontoansichten, mobiler Mailablauf, Copyright in UI/Mails, gemeinsames Theme sowie Home-/Adminnavigation bei drei Größen | 11 |
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
-| `all` | Alle 23 Testklassen einschließlich der Fast-Fälle | 118 |
+| `all` | Alle 24 Testklassen einschließlich der Fast-Fälle | 127 |
 
 SESSION-LIMIT-01–04 prüfen das gespeicherte Sitzungslimit über echte Anmeldungen:
 zusätzliche Tabs belegen keinen Platz, Logout gibt einen frei, Reduzierung erhält
 bestehende Geräte und Erhöhung wirkt sofort. Ein echter Chromium-Prozess wird
 beendet und neu gestartet, um Browserschließen ohne Logout und die begrenzte
-Remember-me-Rückkehr zu prüfen. Die gemeinsame Suite enthält 27 Fälle; `fast`
+Remember-me-Rückkehr zu prüfen. Die gemeinsame Suite enthält 29 Fälle; `fast`
 bleibt unverändert bei 34. Timeout- und Konkurrenzgrenzen prüft JUnit.
 
 Das gemeinsame Fixture meldet sein Konto nach dem abschließenden Screenshot über
@@ -100,7 +101,7 @@ Profil und schließen ausdrücklich ohne diese Fixture-Abmeldung.
 
 AUTH-LIMIT-01–03 prüfen gespeichertes Versuchslimit, erhaltene angemeldete Sitzung,
 sofortige Reduzierung für bekannte/unbekannte Kennungen und Entsperrung erst nach
-abgeschlossenem echten Passwortreset. Die Suite enthält auch reale Browserneustarts
+abgeschlossenem echten Passwortreset. Die Suite enthält auch reale Browser- und Anwendungsneustarts
 für Remember-me. Zeitgrenzen und Konkurrenz sind JUnit-Aufgabe; der Browser wartet
 keine 15 Minuten. `fast` bleibt bei seinen bisherigen 34 Fällen.
 
@@ -133,7 +134,7 @@ Admin-/Superadmin-Wiederfreigabe, alte Registrierungs-/Resetformulare, unverbrau
 SMTP-Mailtokens und einen tatsächlichen Remember-me-Chromium-Neustart. `all` enthält
 sie; `fast` bleibt bei 34 Fällen. Fachregeln und Grenzen stehen im
 [Wartungsvertrag](../docs/maintenance-mode-contract.md). Der zusätzliche Helper prüft
-Suite-Aufnahme und unveränderten Fast-Umfang; die aktuelle Helper-Suite umfasst 44 Fälle.
+Suite-Aufnahme und unveränderten Fast-Umfang; die aktuelle Helper-Suite umfasst 45 Fälle.
 
 ## Schnellprüfung und parallele Ausführung
 
@@ -549,3 +550,34 @@ Ergebnisse und Erkenntnisse bleiben im
 [Redesign-Meilenstein](../docs/meilensteine/2026-10-15-redesign-abgeschlossen.md) erhalten.
 Aktuelle Fallzuordnungen und offene Betriebs-/Gerätegrenzen stehen in
 [Abdeckung und offene Punkte](abdeckung.md).
+
+## Neue Kontoprüfungen und Serverneustart
+
+`-Suite account-settings` prüft ACCOUNT-01–03 und ACCOUNT-04A–D: dauerhaftes
+Speichern einschließlich zweitem Save, Pflichtfelder/Datumsregel ohne ungewollte
+Speicherung, gespeicherte Sprache nach erneuter Anmeldung, beide E-Mail-Einstiege,
+Tabentwürfe, lokalisierte Dialogfelder, Speichern-Icon, berechneten Backdrop-Blur
+und vier echte Schließwege. Passwort und E-Mail-Entwürfe müssen beim Wiederöffnen
+leer sein. Der eigentliche E-Mail-Wechsel ist noch nicht implementiert und wird
+nicht als erfolgreich geprüft ausgegeben. `fast` bleibt bewusst bei 34 Fällen.
+
+AUTH-07C/D ergänzen die beiden Browserneustartfälle um einen echten Neustart der
+runner-eigenen Anwendung mit zwei offenen Tabs. Der Runner bietet diesen Schritt
+nur während seiner eigenen laufenden Testumgebung an; der normale Anwendungsstack
+wird nicht berührt. [Einordnung des IntelliJ-Befunds](../docs/login-restart-analysis.md).
+Messdaten vor und nach dem Neustart werden innerhalb des frischen eigenen Volumes
+zusammengeführt; alte lokale Run-Verzeichnisse werden nicht benötigt.
+
+Auf dem Windows-Entwicklungsrechner vollständige DE-/EN-Runden **nacheinander**
+starten. Zwei Worker innerhalb eines Laufs bleiben isoliert parallel. Mehrere
+zeitlich überlappende Gesamtläufe können trotz freier CPU/RAM die nativen
+Netzwerkressourcen erschöpfen (`ERR_NO_BUFFER_SPACE` beim Laden von JavaScript).
+Das ist kein bestandener Funktionstest: Lauf abbrechen, nur eigene Umgebungen
+abbauen, die Ressourcen erholen lassen und sequenziell neu prüfen. Assertions
+oder Zeitlimits dafür nicht pauschal lockern.
+
+USER-05C prüft die optionale Zeitliste auch vom Tagesende zurück zur früheren Uhrzeit.
+Bei der virtualisierten Liste bestimmt die erste tatsächlich sichtbare Zeile die
+Scrollrichtung; unsichtbare DOM-Pufferzeilen sind dafür ungeeignet. Der Test prüft
+die echte Mausradbewegung und wirksame Filterung in beiden Richtungen unabhängig von
+der aktuellen Uhrzeit, ohne künstliche DOM- oder Uhrmanipulation.

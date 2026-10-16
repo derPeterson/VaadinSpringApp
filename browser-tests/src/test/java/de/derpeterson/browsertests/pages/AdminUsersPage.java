@@ -10,6 +10,10 @@ import io.qameta.allure.Step;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Locale;
+import java.util.Map;
 
 /** User list and optional filters; form/confirmation actions have their own small helpers. */
 public final class AdminUsersPage {
@@ -184,7 +188,7 @@ public final class AdminUsersPage {
     Locator currentDay =
         page.getByRole(AriaRole.GRIDCELL).and(page.locator("[part~='date'][tabindex='0']"));
     assertThat(currentDay).hasCount(1);
-    long delta = java.time.temporal.ChronoUnit.DAYS.between(base, selected);
+    long delta = ChronoUnit.DAYS.between(base, selected);
     for (long step = 0; step < Math.abs(delta); step++)
       currentDay.press(delta > 0 ? "ArrowRight" : "ArrowLeft");
     currentDay.click();
@@ -222,12 +226,28 @@ public final class AdminUsersPage {
     page.mouse().move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
     Locator scroller = page.locator("vaadin-time-picker-scroller:visible");
     for (int step = 0; step < 24 && target.count() == 0; step++) {
+      // Vaadin hält auch eine unsichtbare Mitternachtszeile im DOM. Sie ist kein
+      // Maß für die Scrollrichtung: maßgeblich ist die erste tatsächlich sichtbare Zeile.
+      var visibleBounds = scroller.boundingBox();
+      String firstVisible =
+          (String)
+              options.evaluateAll(
+                  """
+                  (items, viewport) => items.find(item => {
+                    const rect = item.getBoundingClientRect();
+                    return rect.height > 0 && rect.top >= viewport.top
+                        && rect.bottom <= viewport.bottom;
+                  })?.textContent.trim()
+                  """,
+                  Map.of("top", visibleBounds.y, "bottom", visibleBounds.y + visibleBounds.height));
+      if (firstVisible == null)
+        throw new IllegalStateException("No visible time option in the open dropdown");
       LocalTime firstTime =
           LocalTime.parse(
-              options.first().innerText().trim(),
-              java.time.format.DateTimeFormatter.ofPattern(
+              firstVisible,
+              DateTimeFormatter.ofPattern(
                   texts.language().equals("de") ? "HH:mm" : "h:mm a",
-                  java.util.Locale.forLanguageTag(texts.language())));
+                  Locale.forLanguageTag(texts.language())));
       Object previousScroll = scroller.evaluate("element => element.scrollTop");
       page.mouse().wheel(0, time.isBefore(firstTime) ? -240 : 240);
       assertThat(scroller).not().hasJSProperty("scrollTop", previousScroll);
@@ -281,7 +301,7 @@ public final class AdminUsersPage {
     LocalDate today = LocalDate.now(ZoneId.of("Europe/Berlin"));
     String example =
         today.format(
-            java.time.format.DateTimeFormatter.ofPattern(
+            DateTimeFormatter.ofPattern(
                 texts.language().equals("de") ? "dd.MM.uuuu" : "MM/dd/uuuu"));
     assertThat(activityDate()).hasAttribute("placeholder", example);
     assertThat(page.locator(".admin-user-filter-footer"))

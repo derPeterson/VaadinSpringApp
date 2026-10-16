@@ -10,6 +10,7 @@ import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
 
 /** Starts only disposable Docker data, then delegates tests to JUnit and HTML to Allure. */
 public final class BrowserTestRunner {
+  private static BrowserTestRunner activeTestRunner;
   private static final ObjectMapper JSON = new ObjectMapper();
   private final Path module, repo, run;
   private final Map<String, Object> metadata = new LinkedHashMap<>();
@@ -200,7 +201,12 @@ public final class BrowserTestRunner {
       save();
       var listener = new SummaryGeneratingListener();
       var request = BrowserExecutionPlan.request(testClasses, suite);
-      LauncherFactory.create().execute(request, listener);
+      activeTestRunner = this;
+      try {
+        LauncherFactory.create().execute(request, listener);
+      } finally {
+        activeTestRunner = null;
+      }
       var result = listener.getSummary();
       metadata.put(
           "browser",
@@ -592,6 +598,16 @@ public final class BrowserTestRunner {
       throw new IOException(
           "Process exited with " + exit + "; see runner.log: " + arguments.getFirst());
     return output;
+  }
+
+  /** Neustart ausschließlich der gerade vom Runner selbst erzeugten isolierten Testanwendung. */
+  public static void restartTestApplication() throws Exception {
+    var runner = activeTestRunner;
+    if (runner == null || !runner.environmentStarted || runner.appContainer == null)
+      throw new IllegalStateException("No owned test application is running");
+    runner.command(runner.withCompose("restart", "--timeout", "30", "app"));
+    runner.command(
+        runner.withCompose("up", "-d", "--no-build", "--wait", "--wait-timeout", "180", "app"));
   }
 
   private List<String> withCompose(String... args) {

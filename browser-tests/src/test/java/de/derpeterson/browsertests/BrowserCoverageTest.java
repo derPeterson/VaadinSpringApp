@@ -24,6 +24,8 @@ class BrowserCoverageTest {
     assertTrue(yaml.contains("agent''s directory/agent.jar"));
     assertTrue(yaml.contains("read_only: true"));
     assertTrue(yaml.contains("destfile=/app/logs/browser-jacoco.exec"));
+    assertTrue(
+        yaml.contains("append=true"), "Eigene frische Messdaten nach Serverneustart erhalten");
     assertTrue(yaml.contains("includes=de.derpeterson.app.*"));
     assertFalse(yaml.contains("ports:"));
   }

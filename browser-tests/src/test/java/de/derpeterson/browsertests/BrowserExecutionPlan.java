@@ -32,7 +32,9 @@ final class BrowserExecutionPlan {
           Map.entry("AccountLifecycleBrowserTest", 72),
           Map.entry("UserStatusBrowserTest", 72),
           Map.entry("UserFiltersBrowserTest", 66),
-          Map.entry("RememberMeBrowserTest", 31),
+          // Neue Klassen/Rebootfälle: gezielte DE-Messung vom 16.10.2026, grob gerundet.
+          Map.entry("AccountSettingsBrowserTest", 150),
+          Map.entry("RememberMeBrowserTest", 142),
           Map.entry("PresentationBrowserTest", 29),
           Map.entry("AuthenticationBrowserTest", 26),
           Map.entry("LoginLayoutBrowserTest", 25),

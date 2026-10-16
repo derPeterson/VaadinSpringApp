@@ -1,6 +1,6 @@
 # Mein Konto: Oberfläche und Profildaten speichern
 
-Stand: 16.10.2026. Feature-Branch `feature/account-settings-ui`.
+Stand: 17.10.2026. Feature-Branch `feature/account-settings-ui`.
 
 ## Zugang und Umfang
 
@@ -11,7 +11,7 @@ Der Wartungsschutz bleibt wirksam; Admin/Superadmin behalten wie bisher Zugang.
 Die Account-Route steht in den gemeinsamen Routenkonstanten und im `AppRoute`-Enum.
 
 Die HTML-/Screenshot-Vorschau wurde mit bestehenden Cosmos-Bausteinen umgesetzt.
-Der nächste Schritt ergänzt das Speichern der eigenen Profildaten:
+Das Speichern der eigenen Profildaten ist inzwischen implementiert:
 
 - Kontoübersicht mit bestehendem Avatar, eigenem Namen, E-Mail und Aktivierungsstatus.
 - Bedienbare Tabs „Persönliches Profil“, „Sicherheit“, „Geräte & Sitzungen“.
@@ -76,22 +76,24 @@ bleiben die Eingaben erhalten. Erfolg wird ebenfalls per Notification bestätigt
 Nach bestätigtem Commit aktualisieren sich Name in Übersicht/Benutzermenü und die
 Sitzungssprache. Die neue Datensatzversion wird für weiteres Speichern übernommen.
 
-## Gezielte Prüfung
+## Automatisierte Prüfung
 
-Für die Profilspeicherung 74 unterschiedliche JUnit-Fälle erfolgreich, keine verbleibenden
-Fehler oder übersprungenen Fälle: 19 isolierte H2-/Transaktionsfälle für Profilspeicherung,
-14 Kontokomponenten-Fälle, fünf Konto-View-Fälle, 29 Sicherheitsketten-Fälle, vier
-bestehende Status-/Menüregressionen und drei Übersetzungskatalog-Fälle. Geprüft sind
-unter anderem alle Rollen, erhaltene fremde Konten und Sicherheitsfelder/Tokens,
-Speicherwiederholung, veraltete Formulare, anonyme/deaktivierte/gelöschte Konten,
-Wartungsschutz, serverseitig ungültige Eingaben sowie rote Fehlermeldungen und
-Erfolgsmeldungen in DE/EN. Java 25, Shared-Build und Google Java Format geprüft.
+Der aktuelle vollständige Anwendungsnachweis umfasst 1.298 JUnit-Fälle ohne Fehler
+oder Skips, einschließlich isolierter H2-/Transaktionsprüfungen für Profiländerungen,
+aller Rollen, Versionskonflikte, Sicherheitsfelder und Wartungsschutz. DE/EN-Meldungen,
+rote Feldmarkierungen, wiederholtes Speichern und Übersetzungskatalog sind enthalten.
 
-Die neue Speicherfunktion wurde noch nicht im laufenden Browser geprüft. Die gesamte
-Anwendungstestsuite und Browser-Gesamtsuite wurden nicht erneut gestartet. Frühere
-Coverage-Zahlen messen diesen neuen Stand nicht. Als manuelle Abnahme noch offen:
-Speichern, anschließendes Neuladen und erneute Anmeldung mit gespeicherter Sprache
-sowie die Darstellung des deaktivierten E-Mail-Feldes.
+Die neue Browser-Suite `account-settings` enthält sieben Fälle: dauerhaftes Speichern
+und erneutes Speichern nach Neuladen, Pflichtfelder und Datumsregel ohne Persistierung
+ungültiger Werte, gespeicherte Sprache nach erneuter Anmeldung sowie die vier
+Schließwege des E-Mail-Dialogs. Beide E-Mail-Einstiege, unveränderte Profildrafts,
+deaktivierte E-Mail, übersetzte Felder, Bestätigungsicon und berechneter 6px-Blur
+werden über die echte Oberfläche geprüft. Ein berechneter Style ersetzt keine
+menschliche Abnahme der Darstellung auf echten Geräten.
+
+Aktueller Abschlussstatus und tatsächliche Messergebnisse stehen in der
+[Abdeckungsübersicht](../browser-tests/abdeckung.md). Der eigentliche E-Mail-Wechsel
+ist ausdrücklich kein Bestandteil des Nachweises.
 
 ## E-Mail ändern: Dialogentwurf
 
@@ -112,9 +114,10 @@ einschließlich des Passworts. Ungespeicherte Profildaten bleiben erhalten.
 keine Validierung, Passwortprüfung, Mailzustellung oder Kontoänderung aus.
 Die eigentliche E-Mail-Änderung ist weiterhin offen.
 
-29 gezielte JUnit-Fälle für diesen Entwurf erfolgreich: sechs Dialogfälle,
-15 Kontokomponenten-Fälle, fünf Konto-View-Fälle und drei Katalogfälle; keine
-Fehler oder übersprungenen Fälle. Java 25, Shared-Build und Google Java Format
-geprüft. Browserdarstellung, Blur und echte Außenklick-/Escape-Bedienung sind noch
-visuell abzunehmen; im JUnit-Test wurden die native Schließkonfiguration und das
-Verwerfen beim Schließen geprüft. Keine neue Browser-Gesamttestrunde gestartet.
+Die sieben JUnit-Dialogfälle prüfen unter anderem Konfiguration, Sprache und
+Verwerfen beim Schließen/Wiederöffnen. Im echten Browser wurde ein verbleibender
+Passwortentwurf nach Escape gefunden: Eingaben werden jetzt unmittelbar synchronisiert
+und vor jedem Öffnen zusätzlich verworfen. Die Browserfälle prüfen Icon, Abbrechen,
+Escape und Außenklick jeweils mit anschließender leerer Wiederöffnung. Die vollständige
+Anwendungstestsuite enthält diese Regression; bisherige Teiltestzahlen werden nicht
+zum Gesamtergebnis addiert.
