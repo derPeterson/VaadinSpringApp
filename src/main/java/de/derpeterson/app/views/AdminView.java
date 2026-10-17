@@ -224,7 +224,7 @@ public class AdminView extends IsAuthenticatedBaseView {
 
     createTrackedUserPopover(popoverActions);
     userPopoverMenu.addThemeName("cosmos");
-    rightLayout.add(userButton);
+    rightLayout.add(accountHeaderActions, userButton);
 
     return rightLayout;
   }

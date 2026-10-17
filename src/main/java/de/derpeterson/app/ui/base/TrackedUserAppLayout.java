@@ -17,6 +17,7 @@ import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.ui.components.AccountHeaderActions;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
@@ -30,6 +31,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
 
   protected final transient UserEntity currentUser;
 
+  protected final AccountHeaderActions accountHeaderActions;
   protected Button userIconButton;
   protected transient UserPopoverMenu userPopoverMenu;
 
@@ -44,6 +46,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
     this.messageProperties = messageProperties;
     this.request = request;
     this.currentUser = securityService.getCurrentUser(request).orElse(null);
+    this.accountHeaderActions = new AccountHeaderActions(messageProperties, currentUser != null);
 
     ComponentUtil.addListener(
         UI.getCurrent(),
@@ -52,6 +55,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
           VaadinSession.getCurrent().setLocale(event.getNewLocale());
 
           onTrackedUserLanguageChanged();
+          accountHeaderActions.refreshTexts();
 
           if (userPopoverMenu != null) {
             userPopoverMenu.refreshForLanguageChange();

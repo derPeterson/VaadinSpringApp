@@ -27,7 +27,7 @@ Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administ
 - Konfigurierbares Limit gleichzeitiger Sitzungen pro Benutzer für Passwortlogin und Remember-me; zusätzliche Tabs teilen ihren Sitzungsplatz.
 - Sofort wirksamer Wartungsmodus mit Zugang für Admin/Superadmin, pausierter normaler Nutzung und erhaltenen Sitzungen/Tokens.
 - Adminbereich mit Benutzerverwaltung, Rollen und Kontofreigabe, Konfiguration sowie Mail-Testversand. Die Menüposition steht in der URL und bleibt bei Refresh erhalten; Direktlinks und Zurück/Vorwärts sind möglich.
-- „Mein Konto“ über das Benutzermenü: eigene Profildaten und bevorzugte Sprache speichern, mit Validierung und Konfliktschutz. Der ausgewählte Tab steht in der URL (`/account?tab=security`) und wird beim Neuladen wiederhergestellt. Passwortwechsel mit Bestätigungsmail und E-Mail-Änderung per Einmallink sind umgesetzt. Eigene Sitzungen und gespeicherte Anmeldungen lassen sich verwalten; bei erreichtem Limit gibt es nach Passwortprüfung einen eingeschränkten Zugang. Profilbilder folgen gesondert. [Sitzungsverwaltung und Prüfgrenzen](docs/session-management-contract.md). [Sicherheitsvertrag](docs/account-security-contract.md). [Umfang](docs/account-settings-ui.md).
+- „Mein Konto“ über das Benutzermenü oder das Zahnrad in der Kopfzeile: eigene Profildaten und bevorzugte Sprache speichern, mit Validierung und Konfliktschutz. Der ausgewählte Tab steht in der URL (`/account?tab=security`) und wird beim Neuladen wiederhergestellt. Passwortwechsel mit Bestätigungsmail und E-Mail-Änderung per Einmallink sind umgesetzt. Eigene Sitzungen und gespeicherte Anmeldungen lassen sich verwalten; bei erreichtem Limit gibt es nach Passwortprüfung einen eingeschränkten Zugang. Profilbilder folgen gesondert. [Sitzungsverwaltung und Prüfgrenzen](docs/session-management-contract.md). [Sicherheitsvertrag](docs/account-security-contract.md). [Umfang](docs/account-settings-ui.md).
 - Deutsche und englische Oberfläche, manuell wählbarer Benutzerstatus und automatische Abwesenheitserkennung mit Push-Aktualisierung.
 - Datenbankgestützte E-Mail-Warteschlange mit Wiederholungsversuchen und geplanten Bereinigungsaufgaben.
 
@@ -168,7 +168,11 @@ innerhalb der damals jeweils 100 Browserfälle. Den aktuellen Nachweis dokumenti
 ### Startseite nach der Dashboard-Vorschau
 
 `HomeView` verwendet dieselbe zentrale Palette und den animierten Hintergrund.
-Die Kopfzeile zeigt Service-Logo/-Name und das bestehende Benutzermenü. Verlauf,
+Die Kopfzeile zeigt Service-Logo/-Name und das bestehende Benutzermenü. Angemeldete
+Benutzer sehen links neben dem Avatar eine Glocke als noch funktionslosen Platzhalter
+und ein Zahnrad als direkten Kontoeinstieg. Beide Icons sind anonym ausgeblendet;
+Home, Admin und Konto verwenden dafür `AccountHeaderActions` mit übersetzten
+Tooltips und zugänglichen Namen. Verlauf,
 Rahmen, Schatten und Abstände entsprechen der Dashboard-Vorschau und stehen zentral
 in `cosmos-shell.css`: `cosmos-app-shell` markiert das AppLayout, `cosmos-topbar`
 die Leiste; Brand, Logo, Servicename und Kontomenü haben gemeinsame `cosmos-topbar-*`
@@ -551,7 +555,7 @@ Die vorausgehende Java-/Textbereinigung entfernte die alte `CardComponent`,
 Schlüssel je Sprache. Nach dieser damaligen Bereinigung blieben 336 Schlüssel
 je Sprache. Inzwischen sind es einschließlich der folgenden Sicherheitsfunktionen
 und des Wartungsmodus mit Betriebsstatus sowie der Kontoseite nach Entfernung
-der zwei doppelten E-Mail-/Sicherheitshinweise und Ergänzung des Passwortdialogs sowie Entfernung des Sitzungshinweises 430 je Sprache. Die drei
+der zwei doppelten E-Mail-/Sicherheitshinweise und Ergänzung des Passwortdialogs sowie Entfernung des Sitzungshinweises und dem neuen Kopfzeilenhinweis 431 je Sprache. Die drei
 `MessageCatalogueTest`-Fälle prüfen Sprachparität, vorhandene Gettertexte und
 verwaiste Einträge; sie sind im aktuellen JUnit-Gesamtergebnis enthalten.
 

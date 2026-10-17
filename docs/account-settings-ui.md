@@ -1,6 +1,6 @@
 # Mein Konto: Profildaten, Sicherheit und Sitzungen
 
-Stand: 17.10.2026. Aktuelle Erweiterung auf `feature/account-session-management`.
+Stand: 17.10.2026. Konto-Schnelleinstieg ergänzt auf `feature/account-header-shortcuts`.
 
 ## Zugang und Umfang
 
@@ -9,6 +9,15 @@ Anwendung, mit dem App-Rahmen von Home. Der Zugang ist für alle angemeldeten Ro
 vorgesehen, einschließlich Gast. Anonyme Aufrufe führen zur Anmeldung.
 Der Wartungsschutz bleibt wirksam; Admin/Superadmin behalten wie bisher Zugang.
 Die Account-Route steht in den gemeinsamen Routenkonstanten und im `AppRoute`-Enum.
+
+Zusätzlich öffnet das Zahnrad links neben dem Avatar die Kontoseite direkt, auf
+Home, Admin und Konto. Die benachbarte Glocke ist vorerst ohne Funktion und ohne
+Zähler/Overlay. Beide Kopfzeilenaktionen sind nur angemeldet sichtbar, auch für Gast;
+anonym erscheinen sie nicht. Tooltips und zugängliche Namen folgen DE/EN und dem
+Sprachwechsel. Bestehende Tertiary-Buttons und zentrale Farben werden weiterverwendet.
+Die Erweiterung bestand 54 gezielte JUnit-Fälle einschließlich Kontoeinstieg,
+Sichtbarkeit, Beschriftungen, Konto-/Adminregressionen und Übersetzungskatalog.
+Ein neuer Browserlauf oder eine visuelle Geräteabnahme wurde dafür nicht ausgeführt.
 
 Die HTML-/Screenshot-Vorschau wurde mit bestehenden Cosmos-Bausteinen umgesetzt.
 Das Speichern der eigenen Profildaten ist inzwischen implementiert:

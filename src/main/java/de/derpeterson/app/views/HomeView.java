@@ -106,7 +106,7 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
     // Home und Admin verwenden dieselbe zentral markierte Menü-Palette.
     userPopoverMenu.addThemeName("cosmos");
 
-    userLayout.add(userButton);
+    userLayout.add(accountHeaderActions, userButton);
     return userLayout;
   }
 

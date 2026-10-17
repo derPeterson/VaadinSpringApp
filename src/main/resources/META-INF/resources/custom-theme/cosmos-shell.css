@@ -84,6 +84,26 @@ vaadin-app-layout.cosmos-app-shell {
     gap: 18px;
 }
 
+/* Kontoaktionen bleiben kompakt; die Avatargröße und das bestehende Menü bleiben erhalten. */
+.cosmos-topbar-shortcuts {
+    align-items: center;
+    gap: var(--lumo-space-s);
+}
+
+.cosmos-topbar .cosmos-topbar-shortcut {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    margin: 0;
+}
+
+/* Die beiden Symbole sitzen mit einem gleichmäßigen Rand in ihrer Buttonfläche. */
+.cosmos-topbar .cosmos-topbar-shortcut > vaadin-icon {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+}
+
 .cosmos-topbar .tracked-user-button {
     margin: 0;
     padding: 0;

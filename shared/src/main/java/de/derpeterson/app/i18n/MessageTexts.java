@@ -308,6 +308,10 @@ public class MessageTexts {
     return getTranslation("base.reset_button");
   }
 
+  public String getBaseNotifications() {
+    return getTranslation("base.notifications");
+  }
+
   public String getBaseManageAccountButton() {
     return getTranslation("base.manage_account_button");
   }

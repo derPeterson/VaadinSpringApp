@@ -73,7 +73,7 @@ public class AccountView extends IsAuthenticatedBaseView {
         new UserPopoverMenu.Actions(
             administration, () -> UI.getCurrent().navigate(HomeView.class), null, null));
     userPopoverMenu.addThemeName("cosmos");
-    var userMenu = new HorizontalLayout(userButton);
+    var userMenu = new HorizontalLayout(accountHeaderActions, userButton);
     userMenu.setSpacing(false);
     userMenu.addClassName("cosmos-topbar-account-menu");
     var navbar = new HorizontalLayout(brand, userMenu);
