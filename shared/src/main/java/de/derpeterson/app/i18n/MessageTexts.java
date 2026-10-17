@@ -1778,4 +1778,96 @@ public class MessageTexts {
   public String getSessionSavedSince() {
     return getTranslation("sessions.saved.since");
   }
+
+  public String getAccountAvatarDescription() {
+    return getTranslation("account.avatar.description");
+  }
+
+  public String getAccountAvatarMode() {
+    return getTranslation("account.avatar.mode");
+  }
+
+  public String getAccountAvatarInitials() {
+    return getTranslation("account.avatar.initials");
+  }
+
+  public String getAccountAvatarCustom() {
+    return getTranslation("account.avatar.custom");
+  }
+
+  public String getAccountAvatarChoose() {
+    return getTranslation("account.avatar.choose");
+  }
+
+  public String getAccountAvatarUploadHint() {
+    return getTranslation("account.avatar.upload.hint");
+  }
+
+  public String getAccountAvatarCropHint() {
+    return getTranslation("account.avatar.crop.hint");
+  }
+
+  public String getAccountAvatarZoom() {
+    return getTranslation("account.avatar.zoom");
+  }
+
+  public String getAccountAvatarResetCrop() {
+    return getTranslation("account.avatar.reset");
+  }
+
+  public String getAccountAvatarKeepHint() {
+    return getTranslation("account.avatar.keep.hint");
+  }
+
+  public String getAccountAvatarDelete() {
+    return getTranslation("account.avatar.delete");
+  }
+
+  public String getAccountAvatarTypeError() {
+    return getTranslation("account.avatar.error.type");
+  }
+
+  public String getAccountAvatarSizeError() {
+    return getTranslation("account.avatar.error.size");
+  }
+
+  public String getAccountAvatarImageError() {
+    return getTranslation("account.avatar.error.image");
+  }
+
+  public String getAccountAvatarDimensionsError() {
+    return getTranslation("account.avatar.error.dimensions");
+  }
+
+  public String getAccountAvatarSaved() {
+    return getTranslation("account.avatar.saved");
+  }
+
+  public String getAccountAvatarSaveFailed() {
+    return getTranslation("account.avatar.save.failed");
+  }
+
+  public String getAccountAvatarConflict() {
+    return getTranslation("account.avatar.conflict");
+  }
+
+  public String getAccountAvatarCropError() {
+    return getTranslation("account.avatar.error.crop");
+  }
+
+  public String getAccountAvatarBusy() {
+    return getTranslation("account.avatar.busy");
+  }
+
+  public String getAccountAvatarExpired() {
+    return getTranslation("account.avatar.expired");
+  }
+
+  public String getAccountAvatarMissing() {
+    return getTranslation("account.avatar.missing");
+  }
+
+  public String getAccountAvatarOutputError() {
+    return getTranslation("account.avatar.error.output");
+  }
 }

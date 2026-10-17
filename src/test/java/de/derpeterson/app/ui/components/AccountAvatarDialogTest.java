@@ -1,0 +1,204 @@
+package de.derpeterson.app.ui.components;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.server.Command;
+import com.vaadin.flow.server.VaadinResponse;
+import com.vaadin.flow.server.VaadinServletRequest;
+import com.vaadin.flow.server.VaadinServletService;
+import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.streams.UploadEvent;
+import com.vaadin.flow.server.streams.UploadHandler;
+import de.derpeterson.app.helper.ui.NotificationHelper;
+import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.AvatarMode;
+import de.derpeterson.app.model.enums.UserStatus;
+import de.derpeterson.app.service.UserAvatarService;
+import java.io.ByteArrayInputStream;
+import java.util.Locale;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.test.util.ReflectionTestUtils;
+import tools.jackson.databind.ObjectMapper;
+
+class AccountAvatarDialogTest {
+  private UI ui;
+  private UserEntity user;
+  private MessageProperties messages;
+  private AccountAvatarDialog dialog;
+  private UserAvatarService avatars;
+  private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
+
+  @BeforeEach
+  void setup() {
+    ui = new UI();
+    UI.setCurrent(ui);
+    var session = mock(VaadinSession.class);
+    when(session.hasLock()).thenReturn(true);
+    when(session.getLocale()).thenAnswer(call -> locale.get());
+    VaadinSession.setCurrent(session);
+    ui.getInternals().setSession(session);
+    messages = new MessageProperties(new CustomI18NProvider());
+    user =
+        UserEntity.builder()
+            .firstName("Christian")
+            .lastName("Doebl")
+            .version(7L)
+            .status(UserStatus.AVAILABLE)
+            .build();
+    dialog = new AccountAvatarDialog(messages, user);
+    avatars = mock(UserAvatarService.class);
+    when(avatars.open(any()))
+        .thenAnswer(
+            call ->
+                new UserAvatarService.Open(UserAvatarService.State.initial(), UUID.randomUUID()));
+    dialog.configure(avatars, new MockHttpServletRequest());
+    ui.add(dialog);
+  }
+
+  @AfterEach
+  void cleanup() {
+    dialog.close();
+    NotificationHelper.getInstance().closeAndClearAllNotifications();
+    UI.setCurrent(null);
+    VaadinSession.setCurrent(null);
+  }
+
+  @SuppressWarnings("unchecked")
+  private RadioButtonGroup<AvatarMode> mode() {
+    return (RadioButtonGroup<AvatarMode>) ReflectionTestUtils.getField(dialog, "mode");
+  }
+
+  private AccountAvatarEditor editor() {
+    return (AccountAvatarEditor) ReflectionTestUtils.getField(dialog, "editor");
+  }
+
+  private Button button(String field) {
+    return (Button) ReflectionTestUtils.getField(dialog, field);
+  }
+
+  @Test
+  void previewUsesSavedInitialsAndReadsNameChangesOnReopenWithoutChangingTheAccount() {
+    dialog.open();
+    assertEquals("CD", ((Span) ReflectionTestUtils.getField(editor(), "initials")).getText());
+    assertEquals(AvatarMode.INITIALS, mode().getValue());
+    assertTrue(
+        editor()
+            .getElement()
+            .getChildren()
+            .flatMap(element -> element.getChildren())
+            .noneMatch(element -> element.getClassList().contains("cosmos-avatar-status")));
+    dialog.close();
+    user.setFirstName("  Änne  ");
+    user.setLastName("Öster");
+    dialog.open();
+    assertEquals("ÄÖ", ((Span) ReflectionTestUtils.getField(editor(), "initials")).getText());
+    assertEquals(7L, user.getVersion());
+    assertEquals(UserStatus.AVAILABLE, user.getStatus());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"cancel", "close"})
+  void closingDiscardsTheSelectedMode(String closeButton) {
+    dialog.open();
+    mode().setValue(AvatarMode.CUSTOM);
+    assertEquals("CUSTOM", editor().getElement().getAttribute("data-mode"));
+    button(closeButton).click();
+    assertFalse(dialog.isOpened());
+    assertEquals(AvatarMode.INITIALS, mode().getValue());
+    dialog.open();
+    assertEquals("INITIALS", editor().getElement().getAttribute("data-mode"));
+    assertFalse(button("delete").isVisible());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void labelsFollowLanguageChangesWithoutLosingTheSelectedMode(String language) {
+    dialog.open();
+    mode().setValue(AvatarMode.CUSTOM);
+    locale.set(Locale.forLanguageTag(language));
+    dialog.refreshTexts();
+    assertEquals(AvatarMode.CUSTOM, mode().getValue());
+    assertEquals(messages.getAccountAvatarMode(), mode().getLabel());
+    assertEquals(
+        messages.getAccountAvatarCustom(), mode().getItemLabelGenerator().apply(AvatarMode.CUSTOM));
+    assertEquals(messages.getAdminUsersSave(), button("save").getText());
+    assertTrue(dialog.isCloseOnEsc());
+    assertTrue(dialog.isCloseOnOutsideClick());
+  }
+
+  @Test
+  void savePersistsTheSelectedModeClosesTheDialogAndShowsTheRealSuccessMessage() {
+    dialog.open();
+    var json =
+        new ObjectMapper()
+            .readTree("{\"local\":false,\"loading\":false,\"zoom\":1,\"x\":0,\"y\":0}");
+    ReflectionTestUtils.invokeMethod(dialog, "save", json);
+    var captor = ArgumentCaptor.forClass(UserAvatarService.Change.class);
+    verify(avatars).save(any(), captor.capture());
+    assertEquals(AvatarMode.INITIALS, captor.getValue().mode());
+    assertNull(captor.getValue().imageId());
+    assertFalse(dialog.isOpened());
+    var notification =
+        (Notification)
+            ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
+    assertNotNull(notification);
+    assertTrue(
+        notification.getElement().getTextRecursively().contains(messages.getBaseSuccessTitle()));
+  }
+
+  @Test
+  void uploadResponseBindsTheAcceptedOriginalToItsServerRevisionAndRejectsOldDrafts()
+      throws Exception {
+    var editor = spy(editor());
+    ReflectionTestUtils.setField(dialog, "editor", editor);
+    dialog.configure(avatars, new MockHttpServletRequest());
+    var handler = ArgumentCaptor.forClass(UploadHandler.class);
+    verify(editor).setUploadHandler(handler.capture());
+    dialog.open();
+    var token = (UUID) ReflectionTestUtils.getField(dialog, "draft");
+    var request = new MockHttpServletRequest();
+    request.addHeader("X-Avatar-Draft", token.toString());
+    var event = mock(UploadEvent.class);
+    var response = mock(VaadinResponse.class);
+    var uploadUi = mock(UI.class);
+    when(event.getRequest())
+        .thenReturn(new VaadinServletRequest(request, mock(VaadinServletService.class)));
+    when(event.getResponse()).thenReturn(response);
+    when(event.getUI()).thenReturn(uploadUi);
+    when(event.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[] {1}));
+    doAnswer(
+            call -> {
+              ((Command) call.getArgument(0)).execute();
+              return null;
+            })
+        .when(uploadUi)
+        .accessSynchronously(any());
+    var revision = UUID.randomUUID();
+    when(avatars.upload(any(), eq(token), any())).thenReturn(revision);
+    handler.getValue().handleUploadRequest(event);
+    verify(response).setHeader("X-Avatar-Image", revision.toString());
+    assertEquals(AvatarMode.CUSTOM, mode().getValue());
+    assertTrue(button("delete").isVisible());
+    dialog.close();
+    dialog.open();
+    handler.getValue().handleUploadRequest(event);
+    verify(event).reject();
+    verify(avatars, times(1)).upload(any(), any(), any());
+  }
+}

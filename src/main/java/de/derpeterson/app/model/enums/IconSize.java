@@ -12,6 +12,7 @@ public enum IconSize {
   PIXEL_32(32, 32, Unit.PIXELS),
   PIXEL_48(48, 48, Unit.PIXELS),
   PIXEL_64(64, 64, Unit.PIXELS),
+  PIXEL_72(72, 72, Unit.PIXELS),
   PIXEL_96(96, 96, Unit.PIXELS),
   PIXEL_128(128, 128, Unit.PIXELS),
   PIXEL_256(256, 256, Unit.PIXELS),

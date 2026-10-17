@@ -22,14 +22,7 @@
     gap: var(--lumo-space-l);
 }
 
-.cosmos-account .account-summary-avatar {
-    width: 72px;
-    height: 72px;
-    flex-shrink: 0;
-    object-fit: contain;
-    border-radius: 50%;
-    box-shadow: 0 0 18px color-mix(in srgb, var(--lumo-warning-color) 25%, transparent);
-}
+
 
 .cosmos-account .account-summary-details {
     flex: 1 1 240px;
@@ -339,4 +332,173 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 .account-change-dialog-form > .cosmos-panel-hint {
     flex: none;
     margin-top: var(--lumo-space-s);
+}
+
+/* PROFILBILD / bedienbarer Entwurf. Der portalisierte Dialog trägt seine eigene
+ * Klasse; Farben und Dialogflächen bleiben die gemeinsamen Cosmos-Tokens. */
+.account-avatar-dialog .account-avatar-editor {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: var(--lumo-space-m);
+}
+
+.account-avatar-dialog .account-avatar-preview {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    margin-inline: auto;
+    flex-shrink: 0;
+}
+
+.account-avatar-dialog .account-avatar-circle > canvas,
+.account-avatar-dialog .account-avatar-crop-frame > canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.account-avatar-dialog .account-avatar-circle > canvas {
+    grid-area: 1 / 1;
+}
+
+.account-avatar-dialog account-avatar-editor[data-mode="INITIALS"] .account-avatar-circle > canvas,
+.account-avatar-dialog account-avatar-editor[data-mode="INITIALS"] .account-avatar-custom,
+.account-avatar-dialog account-avatar-editor[data-has-image="false"] .account-avatar-circle > canvas,
+.account-avatar-dialog account-avatar-editor[data-has-image="false"] .account-avatar-crop-controls,
+.account-avatar-dialog account-avatar-editor[data-mode="CUSTOM"][data-has-image="true"] .account-avatar-initials {
+    display: none;
+}
+
+.account-avatar-dialog #account-avatar-mode {
+    width: 100%;
+    font-size: 13px;
+}
+
+.account-avatar-dialog #account-avatar-mode::part(label) {
+    font-size: 12px;
+    color: var(--cosmos-input-label-color);
+}
+
+.account-avatar-dialog #account-avatar-mode vaadin-radio-button {
+    font-size: 13px;
+    color: var(--lumo-secondary-text-color);
+}
+
+.account-avatar-dialog .account-avatar-custom,
+.account-avatar-dialog .account-avatar-crop-controls {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: var(--lumo-space-m);
+}
+
+.account-avatar-dialog .account-avatar-upload {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--lumo-space-s);
+    padding: var(--lumo-space-m);
+    border: 1px dashed var(--cosmos-input-border);
+    border-radius: var(--lumo-border-radius-l);
+    background: var(--cosmos-input-background);
+}
+
+.account-avatar-dialog .account-avatar-helper,
+.account-avatar-dialog .account-avatar-filename {
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--lumo-secondary-text-color);
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.account-avatar-dialog .account-avatar-filename:empty,
+.account-avatar-dialog .account-avatar-error:empty {
+    display: none;
+}
+
+.account-avatar-dialog .account-avatar-error {
+    color: var(--lumo-error-text-color);
+    font-size: 12px;
+}
+
+.account-avatar-dialog .account-avatar-crop-frame {
+    position: relative;
+    width: min(240px, 100%);
+    aspect-ratio: 1;
+    margin-inline: auto;
+    overflow: hidden;
+    border: 1px solid var(--cosmos-card-border);
+    border-radius: var(--lumo-border-radius-l);
+    background: var(--cosmos-table-highlight-background);
+}
+
+.account-avatar-dialog .account-avatar-crop-frame > canvas {
+    cursor: grab;
+    touch-action: none;
+}
+
+.account-avatar-dialog .account-avatar-crop-frame > canvas:active {
+    cursor: grabbing;
+}
+
+.account-avatar-dialog .account-avatar-crop-frame > canvas:focus-visible {
+    outline: 2px solid var(--cosmos-focus-ring-color);
+    outline-offset: -3px;
+}
+
+.account-avatar-dialog .account-avatar-crop-mask {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid var(--lumo-primary-color-50pct);
+    box-shadow: 0 0 0 100px color-mix(in srgb, var(--lumo-base-color) 65%, transparent);
+    pointer-events: none;
+}
+
+.account-avatar-dialog .account-avatar-zoom {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-s);
+    color: var(--lumo-secondary-text-color);
+    font-size: 12px;
+}
+
+.account-avatar-dialog .account-avatar-zoom > input {
+    flex: 1 1 0;
+    min-width: 0;
+    accent-color: var(--lumo-primary-color);
+}
+
+.account-avatar-dialog .account-avatar-zoom-value {
+    min-width: 48px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.account-avatar-dialog .account-avatar-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: var(--lumo-space-s);
+}
+
+.account-avatar-dialog .account-avatar-footer > .cosmos-dialog-actions {
+    margin-inline-start: auto;
+}
+
+.account-avatar-dialog .account-avatar-upload-control {
+    padding: 0;
+    border: 0;
+    min-height: 0;
+}
+
+/* Ein gespeichertes Bild bleibt zum Umschalten verfügbar. Für einen neuen Ausschnitt
+ * wird das Original erneut ausgewählt; nur frische Uploads zeigen die Crop-Steuerung. */
+.account-avatar-dialog account-avatar-editor[data-local-image="false"] .account-avatar-crop-controls {
+    display: none;
 }

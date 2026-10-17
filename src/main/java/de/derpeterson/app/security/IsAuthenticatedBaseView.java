@@ -4,6 +4,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.base.TrackedUserAppLayout;
 import de.derpeterson.app.views.HomeView;
@@ -21,8 +22,9 @@ public abstract class IsAuthenticatedBaseView extends TrackedUserAppLayout
       SecurityService securityService,
       UserService userService,
       UserStatusBroadcaster userStatusBroadcaster,
-      HttpServletRequest request) {
-    super(messageProperties, securityService, userService, userStatusBroadcaster, request);
+      HttpServletRequest request,
+      UserAvatarService avatars) {
+    super(messageProperties, securityService, userService, userStatusBroadcaster, request, avatars);
   }
 
   @Override

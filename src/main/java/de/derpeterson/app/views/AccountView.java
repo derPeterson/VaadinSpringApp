@@ -17,12 +17,14 @@ import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.IsAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionManagementService;
 import de.derpeterson.app.service.AccountProfileService;
 import de.derpeterson.app.service.AccountSecurityService;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountSettingsComponent;
 import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
@@ -54,8 +56,9 @@ public class AccountView extends IsAuthenticatedBaseView {
       AccountProfileService profiles,
       AccountSecurityService accountSecurity,
       SessionManagementService sessions,
-      UserStatusBroadcaster broadcaster) {
-    super(messages, security, users, broadcaster, request);
+      UserStatusBroadcaster broadcaster,
+      UserAvatarService avatars) {
+    super(messages, security, users, broadcaster, request, avatars);
     addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-account");
     var logo = new Image("custom-theme/service_logo.png", "Service Icon");
     logo.addClassName("cosmos-topbar-logo");
@@ -87,6 +90,7 @@ public class AccountView extends IsAuthenticatedBaseView {
             currentUser,
             changes -> profiles.save(request, changes),
             config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER));
+    accountSettings.configureAvatars(avatars, request);
     accountSettings.configureSecurityActions(
         change -> {
           var changed = accountSecurity.changePassword(request, change);
@@ -115,6 +119,7 @@ public class AccountView extends IsAuthenticatedBaseView {
           currentUser.setPreferredLocale(saved.language());
           currentUser.setVersion(saved.version());
           userPopoverMenu.refreshProfileName();
+          refreshTrackedUserAvatar();
           if (!saved.language().equals(VaadinSession.getCurrent().getLocale())) {
             LanguageChangeEvent.fire(UI.getCurrent(), saved.language());
           }
@@ -143,6 +148,17 @@ public class AccountView extends IsAuthenticatedBaseView {
       }
     }
     accountSettings.selectSection(section);
+  }
+
+  @Override
+  protected void onTrackedUserProfileChanged(String first, String last) {
+    if (accountSettings != null) accountSettings.refreshSummaryName(first, last);
+  }
+
+  @Override
+  protected void updateHeaderStatusIcon(UserStatus status) {
+    super.updateHeaderStatusIcon(status);
+    if (accountSettings != null) accountSettings.updateUserStatus(status);
   }
 
   @Override

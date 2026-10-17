@@ -81,7 +81,12 @@ class AdminUserErrorNotificationTest {
     when(users.canDeleteUser(any())).thenReturn(true);
     layout =
         new TrackedUserAppLayout(
-            texts, security, users, new UserStatusBroadcaster(), mock(HttpServletRequest.class)) {};
+            texts,
+            security,
+            users,
+            new UserStatusBroadcaster(),
+            mock(HttpServletRequest.class),
+            mock(UserAvatarService.class)) {};
     section = new AdminUserManagementSection(texts, users, roles, security);
     // Same section refresh path used by AdminView.onTrackedUserLanguageChanged.
     ComponentUtil.addListener(ui, LanguageChangeEvent.class, event -> section.refreshTexts());

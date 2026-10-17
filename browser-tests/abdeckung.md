@@ -607,3 +607,26 @@ solange der zugehörige Ordner vorhanden ist. Keine automatische Löschung ohne 
 Die Weiterleitung unter `docs/browser-tests/README.md` verweist weiter auf die
 aktuelle Browseranleitung. Die manuelle Ergänzung wird ausschließlich im
 [Handprüfkatalog](../docs/manual-tests/README.md) gepflegt, ohne alte Run-Verweise.
+
+## Profilbilder: Implementierungsstand 17.10.2026
+
+Upload, Ausschnitt, Speichern/Ersetzen/Löschen, Initialen-/Bildwechsel, geschützte
+Bildauslieferung und Profilaktualisierung sind implementiert. Technisch geprüft:
+512 gezielte JUnit-Fälle plus 48 erfolgreiche Nachprüfungen der zuletzt angepassten
+Dateien und vier JavaScript-Offlinetests. Grenzen und genaue Regeln stehen im
+[Profilbildvertrag](../docs/profile-avatar-contract.md).
+
+Nach dem manuellen Uploadbefund wurden die ungesperrten UI-Zugriffe bei der
+JPA-Benutzerinitialisierung und beim Anmeldungsfallback behoben. Die folgende gezielte
+Regression bestand mit 210/210 JUnit-Fällen. Der neue Nachweis führt Vaadins RAW-Handler,
+Speichern und DownloadHandler gegen frisches H2 mit echter VaadinSession und strenger
+Sperrprüfung aus; er prüft außerdem die Bildverweigerung nach Kontosperre. DE/EN bei
+Registrierung und Admin-Neuanlage behalten ihre gewählte Sprache. Kein Browserlauf;
+die visuelle Upload-/Crop-Abnahme bleibt offen.
+
+Für diese Erweiterung ausdrücklich **kein Browserlauf**. Der bestehende INFRA-01
+wurde an gerenderte Initialen statt feste Avatar-Bilddateien angepasst, aber noch
+nicht neu ausgeführt. Upload-/Crop-Reisen DE/EN, Touch/Handyfotos, mehrere Fenster
+und ein tatsächlicher App-Neustart mit Bild bleiben für die nächste freigegebene
+Browser-/menschliche Abnahme offen. Alte Browserergebnisse oder JaCoCo-Gesamtwerte
+belegen diese neue Funktion nicht; daraus wird keine neue Coverage abgeleitet.

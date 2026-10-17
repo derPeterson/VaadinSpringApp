@@ -256,6 +256,18 @@ public class RegistrationViewTest {
     assertFalse(technicalMessage.contains("Password!"));
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void newRegistrationExplicitlyKeepsTheSelectedUiLanguage(String language) throws Exception {
+    var selected = Locale.forLanguageTag(language);
+    session.setLocale(selected);
+    when(verification.sendVerificationEmailByUser(any())).thenReturn(true);
+    click();
+    verify(users).saveUser(argThat(user -> selected.equals(user.getPreferredLocale())));
+    verify(verification)
+        .sendVerificationEmailByUser(argThat(user -> selected.equals(user.getPreferredLocale())));
+  }
+
   @Test
   void availableUserRoleStillSavesBeforeVerificationAndShowsDynamicSuccess() throws Exception {
     var role = RoleEntity.builder().id(7L).name(RoleType.ROLE_USER).build();

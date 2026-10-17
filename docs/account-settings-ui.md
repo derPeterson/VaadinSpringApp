@@ -1,6 +1,6 @@
 # Mein Konto: Profildaten, Sicherheit und Sitzungen
 
-Stand: 17.10.2026. Konto-Schnelleinstieg ergänzt auf `feature/account-header-shortcuts`.
+Stand: 17.10.2026. Profilbildfunktion auf `feature/account-avatar-preview`.
 
 ## Zugang und Umfang
 
@@ -32,7 +32,7 @@ Das Speichern der eigenen Profildaten ist inzwischen implementiert:
   Der E-Mail-Ändern-Button unter Sicherheit öffnet den unten beschriebenen Änderungsdialog.
   Im Profil gibt es keinen Ändern-Button und keinen zusätzlichen E-Mail-Hilfetext.
   Passwortänderung und E-Mail-Änderung sind jetzt funktional: [Sicherheitsvertrag](account-security-contract.md).
-  Nur die Profilbildaktion bleibt ein bedienbarer Entwurf ohne Speicherfunktion.
+  Die Profilbildaktion öffnet den unten beschriebenen Dialog mit Upload, Ausschnitt und Speicherung.
 - „Geräte & Sitzungen“ zeigt echte eigene Sitzungen und gespeicherte Anmeldungen.
   Einzelwiderruf, „Alle anderen abmelden“, Aktualisieren und das dynamische Limit sind
   angebunden. „Aktuelle Sitzung“ bleibt deaktiviert. Die statischen Entwurfsgeräte
@@ -60,8 +60,8 @@ Native [Vaadin-Tabs](https://vaadin.com/docs/latest/components/tabs/styling) beh
 Tastaturbedienung, Fokuszustände und Scrollbuttons. Es werden weder die HTML-Vorlage
 noch ihre JavaScript-Demoaktionen in die Anwendung eingebunden.
 
-Der Entwurf ist für die schrittweise visuelle Abstimmung vorgesehen. Gemeinsame
-Styles, Icons, Buttonmaße und das übrige Anwendungsdesign wurden nicht umgestellt.
+Die gemeinsam abgestimmte Gestaltung bleibt erhalten. Styles, Icons, Buttonmaße
+und das übrige Anwendungsdesign wurden nicht beiläufig umgestellt.
 Profil, Sicherheit und Geräte/Sitzungen verwenden dieselbe Footerfläche einschließlich
 Farbe, oberem Border, Innenabständen und mobilem Verhalten.
 DE/EN und vom Standardwert abweichende Konfigurationslimits sind durch JUnit geprüft;
@@ -114,7 +114,7 @@ Fälle einschließlich gezieltem Widerruf, aktuellem Zugang, Serverneustart und 
 [Abdeckung und Messgrenzen](../browser-tests/abdeckung.md),
 [dauerhafter Meilenstein](meilensteine/2026-10-17-sitzungsverwaltung-und-kontosicherheit.md).
 Automatisierte Styles und Desktop-Chromium ersetzen keine menschliche Abnahme auf
-echten Geräten. Profilbildbearbeitung ist weiterhin nicht implementiert.
+echten Geräten. Dauerhafte Profilbilder sind weiterhin nicht implementiert.
 
 ## Konto-Tab in der URL
 
@@ -160,3 +160,22 @@ wiederholen sie. Die Erfolgsmeldungen unterscheiden eine gespeicherte Änderung 
 Mail von einer tatsächlich nachgewiesenen Zustellung. Die realen Browser-/Mailpit-Abläufe
 beider Änderungen sind in DE/EN bestanden. Reale externe Postfächer und Mailclients
 sind damit nicht geprüft.
+
+## Profilbild und gemeinsame Avatare
+
+„Profilbild bearbeiten“ öffnet `AccountAvatarDialog`. JPG-/PNG-Upload, Ausschnitt,
+Initialen-/Bildwechsel, Ersetzen und Löschen werden beim Speichern tatsächlich
+übernommen. Abbrechen, Escape, Außenklick und Schließen verwerfen nur den Entwurf.
+Die Canvas-Steuerung liegt in `src/main/frontend/account-avatar-editor.js`; der
+Server prüft das Original, den Ausschnitt und die aktuelle Anmeldung unabhängig davon.
+
+Alle Avatarstellen verwenden denselben Baustein und dieselben `--cosmos-avatar-*`-
+Tokens. Nur der Kopfzeilenavatar oben rechts zeigt ein Statuszeichen; Kontoübersicht,
+Bildeditor, Benutzermenü und Benutzerverwaltung zeigen nur Bild oder Initialen. Erfolgreiche Avatar-/Namensänderungen
+aktualisieren offene Komponenten über einen eigenen Profilkanal. Es gibt keine
+Designvorschauhinweise mehr. Bilddaten werden getrennt von normalen UserEntity-
+Abfragen gespeichert, nur ein normiertes Bild je Konto.
+
+[Bedienung, Sicherheits-/Speichervertrag und tatsächliche Prüfgrenzen](profile-avatar-contract.md).
+Die neue Browserreise wurde auf ausdrücklichen Wunsch noch nicht ausgeführt.
+Für diesen Stand Shared bauen, Anwendung neu starten und Browser mit Strg+F5 laden.

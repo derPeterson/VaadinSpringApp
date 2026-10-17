@@ -22,7 +22,6 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.derpeterson.app.config.AppConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentPrefixHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -32,6 +31,7 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.views.AccountView;
 import io.micrometer.common.util.StringUtils;
@@ -210,11 +210,7 @@ public class UserPopoverMenu {
 
   private void addUserIcon(VerticalLayout contentLayout) {
     overlayIcon =
-        new OverlayUserIcon(
-            messageProperties,
-            new Image(AppConstants.USER_ICON_PATH, AppConstants.USER_ICON_ALT),
-            currentStatus,
-            IconSize.PIXEL_96);
+        new OverlayUserIcon(messageProperties, currentUser, currentStatus, IconSize.PIXEL_96);
     overlayIcon.addClassName("user-popover-avatar");
     contentLayout.add(overlayIcon);
   }
@@ -244,8 +240,13 @@ public class UserPopoverMenu {
     contentLayout.add(emailText);
   }
 
+  public void configureAvatars(UserAvatarService avatars) {
+    if (overlayIcon != null) overlayIcon.configureAvatar(avatars, null);
+  }
+
   public void refreshProfileName() {
     if (profileName != null) profileName.setText(buildFullName());
+    if (overlayIcon != null) overlayIcon.setIdentity(currentUser);
   }
 
   private void addOfflineUserInfo(VerticalLayout contentLayout) {
@@ -549,13 +550,7 @@ public class UserPopoverMenu {
     }
 
     if (overlayIcon != null) {
-      overlayIcon.removeAll();
-      overlayIcon.add(
-          new OverlayUserIcon(
-              messageProperties,
-              new Image(AppConstants.USER_ICON_PATH, AppConstants.USER_ICON_ALT),
-              userStatus,
-              IconSize.PIXEL_96));
+      overlayIcon.setUserStatus(userStatus);
     }
 
     if (statusIconConsumer != null) {

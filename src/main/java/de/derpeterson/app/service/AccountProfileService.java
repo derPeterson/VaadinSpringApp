@@ -5,6 +5,7 @@ import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.validation.UserInputRules;
+import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -25,6 +26,7 @@ public class AccountProfileService {
   private final SecurityService security;
   private final UserRepository users;
   private final ConfigService config;
+  private final UserProfileBroadcaster profileEvents;
 
   // Kein Benutzerbezeichner aus dem Formular: Das Zielkonto kommt immer aus der Anmeldung.
   public record Changes(
@@ -74,6 +76,7 @@ public class AccountProfileService {
     // Keine Übernahme einer UI-Entity: E-Mail, Passwort, Freigabe, Rollen und Tokens bleiben
     // erhalten.
     users.saveAndFlush(user);
+    profileEvents.afterCommit(user);
     return Profile.from(user);
   }
 }

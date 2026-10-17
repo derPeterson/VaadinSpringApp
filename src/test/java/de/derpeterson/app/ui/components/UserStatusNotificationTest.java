@@ -17,6 +17,7 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.RoleService;
+import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.base.TrackedUserAppLayout;
 import de.derpeterson.app.views.admin.AdminUserManagementSection;
@@ -64,7 +65,8 @@ class UserStatusNotificationTest {
             security,
             mock(UserService.class),
             new UserStatusBroadcaster(),
-            mock(HttpServletRequest.class)) {};
+            mock(HttpServletRequest.class),
+            mock(UserAvatarService.class)) {};
   }
 
   @AfterEach

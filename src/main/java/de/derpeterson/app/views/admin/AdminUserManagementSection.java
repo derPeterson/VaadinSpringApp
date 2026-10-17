@@ -1,7 +1,6 @@
 package de.derpeterson.app.views.admin;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
@@ -30,20 +29,23 @@ import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.derpeterson.app.config.AppConstants;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
+import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.Gender;
+import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.RoleService;
+import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.validation.EmailConflict;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -80,6 +82,14 @@ public class AdminUserManagementSection extends VerticalLayout {
   private final Grid<UserEntity> userGrid = new Grid<>(UserEntity.class, false);
 
   private final ComboBox<Boolean> enabledFilter = new ComboBox<>();
+  private transient UserAvatarService avatars;
+  private Map<Long, UserAvatarService.State> avatarStates = Map.of();
+
+  public void configureAvatars(UserAvatarService avatars) {
+    this.avatars = avatars;
+    updateGridPage();
+  }
+
   private final ComboBox<UserStatus> statusFilter = new ComboBox<>();
   private final ComboBox<RoleType> roleFilter = new ComboBox<>();
   private final AdminUserActivityFilter lastActivityFilter = new AdminUserActivityFilter();
@@ -513,7 +523,10 @@ public class AdminUserManagementSection extends VerticalLayout {
             .reduce((first, next) -> first.thenComparing(next))
             .orElse((left, right) -> 0);
     List<UserEntity> sortedUsers = filteredUsers.stream().sorted(comparator).toList();
-    userGrid.setItems(sortedUsers.subList(fromIndex, toIndex));
+    var page = sortedUsers.subList(fromIndex, toIndex);
+    if (avatars != null)
+      avatarStates = avatars.states(page.stream().map(UserEntity::getId).toList());
+    userGrid.setItems(page);
     pagination.showPage(currentPage, filteredUsers.size(), pageSize);
     accountCount.setText(messageProperties.getAdminUsersAccountCount(users.size()));
   }
@@ -573,7 +586,10 @@ public class AdminUserManagementSection extends VerticalLayout {
     Div warning = new Div(warningBadge, warningHeading);
     warning.addClassName("admin-user-delete-warning");
 
-    Avatar avatar = new Avatar(getFullName(user), AppConstants.USER_ICON_PATH);
+    var avatar = new OverlayUserIcon(messageProperties, user, user.getStatus(), IconSize.PIXEL_32);
+    if (avatars != null)
+      avatar.configureAvatar(
+          avatars, avatarStates.getOrDefault(user.getId(), UserAvatarService.State.initial()));
     avatar.addClassName("admin-user-table-avatar");
     Span userName = new Span(getFullName(user));
     userName.addClassName("admin-user-delete-name");
@@ -981,6 +997,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                     .birthDate(formData.getBirthDate())
                     .enabled(formData.isEnabled())
                     .verificationPending(false)
+                    .preferredLocale(CustomI18NProvider.getCurrentLocale())
                     .roleEntities(roleEntities)
                     .build();
             if (editMode) {
@@ -1144,7 +1161,10 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   private Component createUserIdentity(UserEntity user) {
-    Avatar avatar = new Avatar(getFullName(user), AppConstants.USER_ICON_PATH);
+    var avatar = new OverlayUserIcon(messageProperties, user, user.getStatus(), IconSize.PIXEL_32);
+    if (avatars != null)
+      avatar.configureAvatar(
+          avatars, avatarStates.getOrDefault(user.getId(), UserAvatarService.State.initial()));
     avatar.addClassName("admin-user-table-avatar");
     Span name = new Span(getFullName(user));
     name.addClassName("admin-user-table-name");

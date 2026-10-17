@@ -11,6 +11,7 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.VerificationTokenEntity;
 import de.derpeterson.app.model.enums.*;
 import de.derpeterson.app.repository.*;
+import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.persistence.EntityManagerFactory;
 import java.io.IOException;
@@ -566,7 +567,10 @@ class VerificationQueueConcurrencyTest {
     @Bean
     UserService userService(Probes probes) {
       return new UserService(
-          probes.users(), mock(UserStatusBroadcaster.class), mock(PasswordEncoder.class));
+          probes.users(),
+          mock(UserStatusBroadcaster.class),
+          mock(PasswordEncoder.class),
+          mock(UserProfileBroadcaster.class));
     }
   }
 }

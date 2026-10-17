@@ -331,7 +331,6 @@ vaadin-dialog.admin-user-dialog::part(content) {
 }
 
 .admin-user-table-avatar {
-    --vaadin-avatar-size: 32px;
     width: 32px;
     height: 32px;
     flex: 0 0 32px;

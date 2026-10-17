@@ -142,7 +142,9 @@ class AdminUserDialogValidationTest {
     assertTrue(save().isEnabled());
     save().click();
     verify(users).updatePassword(any(), eq("ValidPassword!"));
-    verify(users).saveUser(any());
+    verify(users)
+        .saveUser(
+            argThat(user -> Locale.forLanguageTag(language).equals(user.getPreferredLocale())));
   }
 
   @Test

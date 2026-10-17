@@ -9,6 +9,7 @@ import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -208,8 +209,16 @@ class UserServicePersistenceTest {
     }
 
     @Bean
-    UserService userService(UserRepository repository, UserStatusBroadcaster broadcaster) {
-      return new UserService(repository, broadcaster, new BCryptPasswordEncoder());
+    UserProfileBroadcaster userProfileBroadcaster() {
+      return new UserProfileBroadcaster();
+    }
+
+    @Bean
+    UserService userService(
+        UserRepository repository,
+        UserStatusBroadcaster broadcaster,
+        UserProfileBroadcaster profiles) {
+      return new UserService(repository, broadcaster, new BCryptPasswordEncoder(), profiles);
     }
 
     @Bean

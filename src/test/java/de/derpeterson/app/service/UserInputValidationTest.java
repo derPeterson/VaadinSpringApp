@@ -8,6 +8,7 @@ import de.derpeterson.app.model.*;
 import de.derpeterson.app.model.enums.*;
 import de.derpeterson.app.repository.PasswordResetTokenRepository;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,7 +34,7 @@ class UserInputValidationTest {
     repository = mock(UserRepository.class);
     encoder = mock(PasswordEncoder.class);
     broadcaster = mock(UserStatusBroadcaster.class);
-    service = new UserService(repository, broadcaster, encoder);
+    service = new UserService(repository, broadcaster, encoder, mock(UserProfileBroadcaster.class));
   }
 
   private UserEntity user() {

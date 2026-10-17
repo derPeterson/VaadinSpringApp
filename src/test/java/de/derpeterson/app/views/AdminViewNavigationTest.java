@@ -28,7 +28,9 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.service.RoleService;
+import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -76,6 +78,8 @@ class AdminViewNavigationTest {
     var config = mock(ConfigService.class);
     when(config.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
+    var avatars = mock(UserAvatarService.class);
+    when(avatars.events()).thenReturn(new UserProfileBroadcaster());
     view =
         new AdminView(
             new MessageProperties(new CustomI18NProvider()),
@@ -86,7 +90,8 @@ class AdminViewNavigationTest {
             mock(UserService.class),
             mock(RoleService.class),
             request,
-            new UserStatusBroadcaster());
+            new UserStatusBroadcaster(),
+            avatars);
   }
 
   @AfterEach

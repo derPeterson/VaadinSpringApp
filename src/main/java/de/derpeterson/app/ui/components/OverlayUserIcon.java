@@ -1,110 +1,186 @@
 package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.ComponentUtil;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.Tooltip;
-import com.vaadin.flow.dom.Style;
-import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.shared.Registration;
+import de.derpeterson.app.config.AppConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
-import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.AvatarMode;
 import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.model.enums.UserStatus;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Supplier;
+import de.derpeterson.app.service.UserAvatarService;
+import java.text.BreakIterator;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.UUID;
 
+/** Gemeinsames Profilbild; nur der Kopfzeilenavatar aktiviert das Verfügbarkeitszeichen. */
 public class OverlayUserIcon extends Div {
-
-  private final transient MessageProperties messageProperties;
-  private final UserStatus userStatus;
-
-  private Tooltip userImageToolTip = null;
-  private Tooltip overlayIconTooltip = null;
+  private final transient MessageProperties messages;
+  private final IconSize iconSize;
+  private final boolean showStatus;
+  private final Span initials = new Span();
+  private final Div status = new Div();
+  private final Image photo = new Image();
+  private Long userId;
+  private transient UserAvatarService avatars;
+  private transient Registration profileRegistration;
+  private UUID displayedRevision;
+  private final Tooltip tooltip;
+  private UserStatus userStatus;
+  private String name = "";
+  private transient Registration languageRegistration;
 
   public OverlayUserIcon(
-      MessageProperties messageProperties,
-      Image userImage,
+      MessageProperties messages, UserEntity user, UserStatus userStatus, IconSize iconSize) {
+    this(messages, user, userStatus, iconSize, false);
+  }
+
+  public OverlayUserIcon(
+      MessageProperties messages,
+      UserEntity user,
       UserStatus userStatus,
-      IconSize iconSize) {
-    this.messageProperties = messageProperties;
-    this.userStatus = userStatus;
-
-    ComponentUtil.addListener(
-        UI.getCurrent(),
-        LanguageChangeEvent.class,
+      IconSize iconSize,
+      boolean showStatus) {
+    this.messages = messages;
+    this.showStatus = showStatus;
+    this.iconSize = iconSize;
+    addClassName("cosmos-user-avatar");
+    getStyle().set("--cosmos-avatar-size", iconSize.getWidth() + iconSize.getUnit().getSymbol());
+    getElement().setAttribute("role", "img");
+    initials.addClassName("cosmos-avatar-initials");
+    initials.getElement().setAttribute("aria-hidden", "true");
+    photo.addClassName("cosmos-avatar-photo");
+    photo.getElement().setAttribute("aria-hidden", "true");
+    photo.setVisible(false);
+    photo
+        .getElement()
+        .addEventListener(
+            "error",
+            event -> {
+              photo.setVisible(false);
+              initials.setVisible(true);
+            });
+    var circle = new Div(initials, photo);
+    circle.addClassName("cosmos-avatar-circle");
+    status.addClassName("cosmos-avatar-status");
+    status.setVisible(showStatus);
+    status.getElement().setAttribute("aria-hidden", "true");
+    add(circle, status);
+    tooltip = Tooltip.forComponent(this).withPosition(Tooltip.TooltipPosition.BOTTOM);
+    setIdentity(user);
+    setUserStatus(userStatus);
+    addAttachListener(
         event -> {
-          VaadinSession.getCurrent().setLocale(event.getNewLocale());
-
-          Map<Tooltip, Supplier<String>> tooltipTranslationSupplierMap = new HashMap<>();
-          Optional.ofNullable(this.userImageToolTip)
-              .ifPresent(
-                  tooltip ->
-                      tooltipTranslationSupplierMap.put(
-                          tooltip,
-                          () -> this.messageProperties.getUserStatusLabel(this.userStatus)));
-          Optional.ofNullable(this.overlayIconTooltip)
-              .ifPresent(
-                  tooltip ->
-                      tooltipTranslationSupplierMap.put(
-                          tooltip,
-                          () -> this.messageProperties.getUserStatusLabel(this.userStatus)));
-
-          ComponentTextUpdateHelper.updateToolTipComponents(tooltipTranslationSupplierMap);
+          refreshTexts();
+          listenProfiles();
+          languageRegistration =
+              ComponentUtil.addListener(
+                  event.getUI(), LanguageChangeEvent.class, change -> refreshTexts());
         });
+    addDetachListener(
+        event -> {
+          if (profileRegistration != null) {
+            profileRegistration.remove();
+            profileRegistration = null;
+          }
+          if (languageRegistration != null) {
+            languageRegistration.remove();
+            languageRegistration = null;
+          }
+        });
+  }
 
-    Div container = new Div();
+  public void setIdentity(UserEntity user) {
+    userId = user == null ? null : user.getId();
+    setName(user == null ? null : user.getFirstName(), user == null ? null : user.getLastName());
+  }
 
-    container
-        .getStyle()
-        .setPosition(Style.Position.RELATIVE)
-        .setDisplay(Style.Display.FLEX)
-        .setAlignItems(Style.AlignItems.CENTER)
-        .setJustifyContent(Style.JustifyContent.CENTER);
+  public void setName(String firstName, String lastName) {
+    name =
+        (Objects.toString(firstName, "").strip() + " " + Objects.toString(lastName, "").strip())
+            .strip();
+    initials.removeAll();
+    initials.setText(initialsFor(firstName, lastName));
+    if (initials.getText().isEmpty()) initials.add(VaadinIcon.USER.create());
+    refreshTexts();
+  }
 
-    userImage.setWidth(iconSize.getWidth() + iconSize.getUnit().getSymbol());
-    userImage.setHeight(iconSize.getHeight() + iconSize.getUnit().getSymbol());
-    userImage
-        .getStyle()
-        .setBackgroundColor("#000000")
-        .setBorderRadius("50%")
-        .setBoxShadow("0 0 0 0.5px black");
+  static String initialsFor(String firstName, String lastName) {
+    return initial(firstName) + initial(lastName);
+  }
 
-    this.userImageToolTip =
-        Tooltip.forComponent(userImage)
-            .withText(messageProperties.getUserStatusLabel(userStatus))
-            .withPosition(Tooltip.TooltipPosition.BOTTOM)
-            .withFocusDelay(1000)
-            .withHoverDelay(1000)
-            .withHideDelay(1000);
+  private static String initial(String value) {
+    String name = Objects.toString(value, "").strip();
+    if (name.isEmpty()) return "";
+    var characters = BreakIterator.getCharacterInstance(Locale.ROOT);
+    characters.setText(name);
+    String upper = name.substring(0, characters.next()).toUpperCase(Locale.ROOT);
+    // Auch bei Großschreibung mit mehreren Zeichen (z.B. ß → SS) nur ein Initial anzeigen.
+    characters.setText(upper);
+    return upper.substring(0, characters.next());
+  }
 
-    if (userStatus.getComponent(iconSize, true) instanceof Icon overlayIcon) {
-      this.overlayIconTooltip =
-          Tooltip.forComponent(overlayIcon)
-              .withText(messageProperties.getUserStatusLabel(userStatus))
-              .withPosition(Tooltip.TooltipPosition.BOTTOM)
-              .withFocusDelay(1000)
-              .withHoverDelay(1000)
-              .withHideDelay(1000);
+  public void setUserStatus(UserStatus value) {
+    userStatus = value == null ? UserStatus.getDefaultStatus() : value;
+    status.removeAll();
+    if (showStatus) status.add(userStatus.getComponent(iconSize, true));
+    refreshTexts();
+  }
 
-      container.add(userImage, overlayIcon);
+  public void configureAvatar(UserAvatarService service, UserAvatarService.State metadata) {
+    avatars = service;
+    applyState(metadata == null ? service.state(userId) : metadata);
+    listenProfiles();
+  }
+
+  private void applyState(UserAvatarService.State metadata) {
+    if (metadata == null) metadata = UserAvatarService.State.initial();
+    boolean custom = metadata.mode() == AvatarMode.CUSTOM && metadata.hasImage();
+    if (custom && !Objects.equals(displayedRevision, metadata.imageRevision())) {
+      photo.setSrc(AvatarImageResource.handler(avatars, userId, metadata.imageRevision(), false));
+      displayedRevision = metadata.imageRevision();
     }
-
-    if (userStatus.getComponent(iconSize, true) instanceof Div overlayDiv) {
-      this.overlayIconTooltip =
-          Tooltip.forComponent(overlayDiv)
-              .withText(messageProperties.getUserStatusLabel(userStatus))
-              .withPosition(Tooltip.TooltipPosition.BOTTOM)
-              .withFocusDelay(1000)
-              .withHoverDelay(1000)
-              .withHideDelay(1000);
-
-      container.add(userImage, overlayDiv);
+    if (!custom) {
+      displayedRevision = null;
+      photo.getElement().removeAttribute("src");
     }
-    add(container);
+    photo.setVisible(custom);
+    initials.setVisible(!custom);
+  }
+
+  private void listenProfiles() {
+    if (avatars == null || userId == null || !isAttached() || profileRegistration != null) return;
+    var ui = getUI().orElseThrow();
+    profileRegistration =
+        avatars
+            .events()
+            .register(
+                message -> {
+                  if (!Objects.equals(userId, message.userId())) return;
+                  ui.access(
+                      () -> {
+                        if (!isAttached()) return;
+                        setName(message.firstName(), message.lastName());
+                        applyState(avatars.state(userId));
+                      });
+                });
+  }
+
+  public void refreshTexts() {
+    var statusLabel =
+        messages.getUserStatusLabel(
+            userStatus == null ? UserStatus.getDefaultStatus() : userStatus);
+    String label = name.isEmpty() ? AppConstants.USER_ICON_ALT : name;
+    getElement()
+        .setAttribute(
+            "aria-label", showStatus && !name.isEmpty() ? label + " – " + statusLabel : label);
+    tooltip.setText(showStatus ? statusLabel : label);
   }
 }

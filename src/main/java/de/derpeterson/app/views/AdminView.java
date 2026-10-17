@@ -30,6 +30,7 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.service.RoleService;
+import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.CosmosBackgroundComponent;
@@ -99,8 +100,9 @@ public class AdminView extends IsAuthenticatedBaseView {
       UserService userService,
       RoleService roleService,
       HttpServletRequest request,
-      UserStatusBroadcaster userStatusBroadcaster) {
-    super(messageProperties, securityService, userService, userStatusBroadcaster, request);
+      UserStatusBroadcaster userStatusBroadcaster,
+      UserAvatarService avatars) {
+    super(messageProperties, securityService, userService, userStatusBroadcaster, request, avatars);
 
     this.configService = configService;
     serviceStatus = new CosmosServiceStatusComponent(maintenance, messageProperties);
@@ -125,6 +127,7 @@ public class AdminView extends IsAuthenticatedBaseView {
     userManagementSection =
         new AdminUserManagementSection(
             messageProperties, userService, roleService, securityService);
+    userManagementSection.configureAvatars(avatars);
 
     CosmosCopyrightComponent copyright =
         new CosmosCopyrightComponent(

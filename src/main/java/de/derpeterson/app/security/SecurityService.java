@@ -94,7 +94,8 @@ public class SecurityService {
     }
 
     UserDetails userDetails = null;
-    if (VaadinSession.getCurrent() != null) {
+    // Stream-Handler laufen ohne UI-Sperre; dort nur die HTTP-Sitzung auswerten.
+    if (VaadinSession.getCurrent() != null && VaadinSession.getCurrent().hasLock()) {
       userDetails = VaadinSession.getCurrent().getAttribute(UserDetails.class);
     }
 
@@ -241,7 +242,7 @@ public class SecurityService {
   }
 
   private void clearStaleAuthentication(HttpServletRequest request) {
-    if (VaadinSession.getCurrent() != null) {
+    if (VaadinSession.getCurrent() != null && VaadinSession.getCurrent().hasLock()) {
       VaadinSession.getCurrent().setAttribute(UserDetails.class, null);
     }
 

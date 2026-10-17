@@ -7,6 +7,7 @@ import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.validation.UserInputRules;
+import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -38,6 +39,7 @@ public class UserService {
   private final UserRepository userRepository;
   private final UserStatusBroadcaster userStatusBroadcaster;
   private final PasswordEncoder passwordEncoder;
+  private final UserProfileBroadcaster profileEvents;
 
   @Transactional
   public void saveUser(UserEntity userEntity) {
@@ -229,6 +231,7 @@ public class UserService {
       updatePassword(stored, rawPassword);
     }
     userRepository.saveAndFlush(stored);
+    profileEvents.afterCommit(stored);
     ensureAdminsRemain(admins);
   }
 

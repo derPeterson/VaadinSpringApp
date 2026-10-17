@@ -29,6 +29,7 @@ import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
+import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
@@ -351,6 +352,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
             .gender(formComponents.genderComboBox.getValue())
             .birthDate(formComponents.birthDatePicker.getValue())
             .enabled(false)
+            .preferredLocale(CustomI18NProvider.getCurrentLocale())
             .roleEntities(List.of(userRole.get()))
             .build();
 

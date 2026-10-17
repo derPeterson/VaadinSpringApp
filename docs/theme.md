@@ -149,3 +149,12 @@ CSS-Antworten. Ein zusätzlicher Konsolenbuild ist für den normalen IDE-Start n
 [Designstandard](design-standard.md) und [Browser-Testanleitung](../browser-tests/README.md)
 bleiben maßgeblich für die vereinbarten Größen und Prüfabläufe. Nach CSS-Änderungen
 muss ein Browser-Testimage frisch gebaut werden; `-NoBuild` würde ein altes Image verwenden.
+
+## Gemeinsame Avatarflächen
+
+`--cosmos-avatar-background`, `--cosmos-avatar-text-color`,
+`--cosmos-avatar-border-color` und `--cosmos-avatar-shadow` in `cosmos-tokens.css`
+steuern die gemeinsame Initialen-/Bildfläche. Die lokale Größe kommt von der
+Avatar-Komponente. Nur oben rechts in der Kopfzeile ist das separate Statussymbol
+aktiviert; alle übrigen Profilbildflächen zeigen Bild bzw. Initialen.
+Bildspeicherung und Prüfgrenzen: [Profilbildvertrag](profile-avatar-contract.md).

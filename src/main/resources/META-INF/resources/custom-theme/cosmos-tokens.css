@@ -56,6 +56,13 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-table-row-background: #101a2a73;
     --cosmos-table-alternate-row-background: #18213681;
     --cosmos-table-highlight-background: #1B2B42;
+
+    /* Standardavatar: Initialen und spätere eigene Bilder teilen denselben Rahmen.
+     * Die Statusfarbe kommt weiterhin aus der semantischen Success-/Error-Palette. */
+    --cosmos-avatar-background: var(--cosmos-table-highlight-background);
+    --cosmos-avatar-text-color: var(--lumo-primary-text-color);
+    --cosmos-avatar-border-color: var(--lumo-primary-color-50pct);
+    --cosmos-avatar-shadow: 0 0 18px var(--lumo-primary-color-10pct);
     --cosmos-card-width: 430px;
     --cosmos-card-radius: 18px;
     --cosmos-card-border: rgba(169, 191, 233, .18);

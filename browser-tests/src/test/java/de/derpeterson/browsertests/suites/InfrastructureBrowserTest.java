@@ -25,9 +25,9 @@ public class InfrastructureBrowserTest extends BrowserFixture {
       """
             1. Die Startseite öffnen und den konfigurierten Servicenamen prüfen.
             2. Das Benutzermenü öffnen.
-            3. Logo, beide Avatare und Sprachflaggen auf Sichtbarkeit und geladenen Bildinhalt prüfen.
+            3. Logo und Sprachflaggen auf geladenen Bildinhalt prüfen; beide anonymen Avatare mit Benutzer- und Offlinesymbol prüfen.
 
-            **Erwartet:** Startseite korrekt gerendert; Bilder sichtbar und nicht defekt.
+            **Erwartet:** Startseite korrekt gerendert; Bilder geladen, beide Standardavatare samt Status sichtbar.
             Prüft keine vollständige responsive Darstellung, Rollen- oder Tabelleninitialisierung.
             """)
   void homeAndImagesLoad() {
@@ -48,7 +48,14 @@ public class InfrastructureBrowserTest extends BrowserFixture {
         page.getByRole(
             AriaRole.IMG, new Page.GetByRoleOptions().setName(USER_ICON_ALT).setExact(true));
     assertThat(avatars).hasCount(2);
-    for (Locator avatar : avatars.all()) assertImageLoaded(avatar);
+    for (Locator avatar : avatars.all()) {
+      assertThat(avatar).isVisible();
+      assertThat(avatar.locator(".cosmos-avatar-circle")).isVisible();
+      assertThat(avatar.locator(".cosmos-avatar-initials vaadin-icon[icon='vaadin:user']"))
+          .isVisible();
+      assertThat(avatar.locator(".cosmos-avatar-status vaadin-icon[icon='vaadin:close-circle']"))
+          .isVisible();
+    }
   }
 
   @Tag("fast")

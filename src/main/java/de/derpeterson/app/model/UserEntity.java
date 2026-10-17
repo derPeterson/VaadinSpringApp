@@ -1,6 +1,5 @@
 package de.derpeterson.app.model;
 
-import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
@@ -85,7 +84,9 @@ public class UserEntity {
 
   @Column(nullable = false)
   @Builder.Default
-  private Locale preferredLocale = CustomI18NProvider.getCurrentLocale();
+  // JPA erzeugt Instanzen auch bei Uploads ohne UI-Sperre. Die UI setzt die gewählte Sprache
+  // explizit.
+  private Locale preferredLocale = Locale.ENGLISH;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)

@@ -8,6 +8,7 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import java.util.Arrays;
 import java.util.List;
@@ -41,7 +42,12 @@ class UserServiceTest {
 
   @BeforeEach
   void setUp() {
-    userService = new UserService(userRepository, userStatusBroadcaster, passwordEncoder);
+    userService =
+        new UserService(
+            userRepository,
+            userStatusBroadcaster,
+            passwordEncoder,
+            mock(UserProfileBroadcaster.class));
   }
 
   @Test

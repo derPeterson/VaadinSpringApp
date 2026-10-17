@@ -27,7 +27,7 @@ Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administ
 - Konfigurierbares Limit gleichzeitiger Sitzungen pro Benutzer für Passwortlogin und Remember-me; zusätzliche Tabs teilen ihren Sitzungsplatz.
 - Sofort wirksamer Wartungsmodus mit Zugang für Admin/Superadmin, pausierter normaler Nutzung und erhaltenen Sitzungen/Tokens.
 - Adminbereich mit Benutzerverwaltung, Rollen und Kontofreigabe, Konfiguration sowie Mail-Testversand. Die Menüposition steht in der URL und bleibt bei Refresh erhalten; Direktlinks und Zurück/Vorwärts sind möglich.
-- „Mein Konto“ über das Benutzermenü oder das Zahnrad in der Kopfzeile: eigene Profildaten und bevorzugte Sprache speichern, mit Validierung und Konfliktschutz. Der ausgewählte Tab steht in der URL (`/account?tab=security`) und wird beim Neuladen wiederhergestellt. Passwortwechsel mit Bestätigungsmail und E-Mail-Änderung per Einmallink sind umgesetzt. Eigene Sitzungen und gespeicherte Anmeldungen lassen sich verwalten; bei erreichtem Limit gibt es nach Passwortprüfung einen eingeschränkten Zugang. Profilbilder folgen gesondert. [Sitzungsverwaltung und Prüfgrenzen](docs/session-management-contract.md). [Sicherheitsvertrag](docs/account-security-contract.md). [Umfang](docs/account-settings-ui.md).
+- „Mein Konto“ über das Benutzermenü oder das Zahnrad in der Kopfzeile: eigene Profildaten und bevorzugte Sprache speichern, mit Validierung und Konfliktschutz. Der ausgewählte Tab steht in der URL (`/account?tab=security`) und wird beim Neuladen wiederhergestellt. Passwortwechsel mit Bestätigungsmail und E-Mail-Änderung per Einmallink sind umgesetzt. Eigene Sitzungen und gespeicherte Anmeldungen lassen sich verwalten; bei erreichtem Limit gibt es nach Passwortprüfung einen eingeschränkten Zugang. Die Standardavatare in Kopfzeile, Benutzermenü, Kontoübersicht und Benutzerverwaltung zeigen gemeinsame Live-Initialen bzw. das eigene Bild. Nur der Avatar oben rechts in der Kopfzeile zeigt zusätzlich den Verfügbarkeitsstatus. Eigene Profilbilder lassen sich mit Ausschnitt speichern, ersetzen oder löschen; beim Wechsel zu Initialen bleibt das Bild erhalten. [Profilbildvertrag und Prüfgrenzen](docs/profile-avatar-contract.md). [Sitzungsverwaltung und Prüfgrenzen](docs/session-management-contract.md). [Sicherheitsvertrag](docs/account-security-contract.md). [Umfang](docs/account-settings-ui.md).
 - Deutsche und englische Oberfläche, manuell wählbarer Benutzerstatus und automatische Abwesenheitserkennung mit Push-Aktualisierung.
 - Datenbankgestützte E-Mail-Warteschlange mit Wiederholungsversuchen und geplanten Bereinigungsaufgaben.
 
@@ -555,7 +555,7 @@ Die vorausgehende Java-/Textbereinigung entfernte die alte `CardComponent`,
 Schlüssel je Sprache. Nach dieser damaligen Bereinigung blieben 336 Schlüssel
 je Sprache. Inzwischen sind es einschließlich der folgenden Sicherheitsfunktionen
 und des Wartungsmodus mit Betriebsstatus sowie der Kontoseite nach Entfernung
-der zwei doppelten E-Mail-/Sicherheitshinweise und Ergänzung des Passwortdialogs sowie Entfernung des Sitzungshinweises und dem neuen Kopfzeilenhinweis 431 je Sprache. Die drei
+der zwei doppelten E-Mail-/Sicherheitshinweise und Ergänzung des Passwortdialogs sowie Entfernung des Sitzungshinweises und dem neuen Kopfzeilenhinweis sowie dem Profilbild-Dialogentwurf 454 je Sprache. Die drei
 `MessageCatalogueTest`-Fälle prüfen Sprachparität, vorhandene Gettertexte und
 verwaiste Einträge; sie sind im aktuellen JUnit-Gesamtergebnis enthalten.
 
@@ -620,6 +620,28 @@ Docker setzt diese Option auf false und verwendet weiterhin den gebauten Produkt
 Nach der erstmaligen Umstellung die IntelliJ-Anwendung einmal stoppen und erneut starten;
 anschließend die Browserseite mit Strg+F5 vollständig neu laden. Der erste Start kann das Frontend vorbereiten.
 Der Produktionsmodus bleibt davon getrennt; der Prüfstand und die Grenzen der IDE-Prüfung stehen in der Abdeckungsübersicht.
+
+Falls Vite beim Start `Cannot find module 'fs-extra'` meldet, zuerst die npm-Protokolle
+unter `%LOCALAPPDATA%/npm-cache/_logs/` auf eine abgebrochene Installation prüfen.
+`EBUSY` bei einer nativen Rollup-Datei weist auf eine Dateisperre hin; nach einem
+abgebrochenen Paketumbau kann `node_modules/` unvollständig sein, obwohl das Paket
+bereits im Lockfile steht. IDE-Anwendung und zugehörige Frontendprozesse vollständig
+stoppen und keine Paketinstallationen gleichzeitig ausführen. Im Projektroot lässt
+sich die Installation anhand des Lockfiles neu aufbauen. `npm ci` ersetzt dabei
+nur `node_modules/`; Paketdeklarationen und Lockfile bleiben unverändert. Ein
+einfaches `npm install` kann trotz fehlender Paketdateien bereits „up to date“
+melden und reicht dann nicht aus:
+
+```powershell
+npm.cmd ci --offline --ignore-scripts --no-audit --no-fund
+node -e "require('workbox-build'); console.log('Workbox erfolgreich geladen');"
+```
+
+Der Offline-Aufruf benötigt die Pakete bereits im lokalen npm-Cache. Fehlen sie,
+den Aufruf mit Netzwerkzugang ohne `--offline` wiederholen. Anschließend die
+Anwendung aus der IDE neu starten und die Seite mit Strg+F5 neu laden.
+`Connection refused` beim Laden von `/login`, `/home` oder `/sw.js` ist bei diesem
+fehlgeschlagenen Vite-Start eine Folge des nicht gestarteten Frontendservers.
 
 
 Vaadin 25.3 erzeugt bei Produktionsbuilds komprimierte CSS-Kopien (.css.gz / .css.br)

@@ -20,6 +20,7 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.NavigationErrorCode;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.base.TrackedUserAppLayout;
 import de.derpeterson.app.ui.components.CosmosBackgroundComponent;
@@ -53,8 +54,9 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
       HttpServletRequest request,
       ConfigService configService,
       UserService userService,
-      UserStatusBroadcaster userStatusBroadcaster) {
-    super(messageProperties, securityService, userService, userStatusBroadcaster, request);
+      UserStatusBroadcaster userStatusBroadcaster,
+      UserAvatarService avatars) {
+    super(messageProperties, securityService, userService, userStatusBroadcaster, request, avatars);
 
     this.configService = configService;
 

@@ -7,7 +7,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -19,18 +18,21 @@ import com.vaadin.flow.function.SerializableConsumer;
 import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.function.SerializableRunnable;
 import com.vaadin.flow.function.SerializableSupplier;
-import de.derpeterson.app.config.AppConstants;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.IconSize;
+import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SessionManagementService.Snapshot;
 import de.derpeterson.app.service.AccountProfileService.Changes;
 import de.derpeterson.app.service.AccountProfileService.Profile;
 import de.derpeterson.app.service.AccountSecurityService.EmailChange;
 import de.derpeterson.app.service.AccountSecurityService.PasswordChange;
 import de.derpeterson.app.service.AccountSecurityService.PasswordChanged;
+import de.derpeterson.app.service.UserAvatarService;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,7 +43,7 @@ import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 
-/** Eigene Profildaten und Sicherheitsänderungen; Bild- und Geräteverwaltung folgen gesondert. */
+/** Eigene Profildaten, Kontosicherheit, Profilbild und Sitzungen. */
 @Slf4j
 public class AccountSettingsComponent extends Div {
   public enum AccountSection {
@@ -54,6 +56,7 @@ public class AccountSettingsComponent extends Div {
   private final SerializableFunction<Changes, Profile> saveProfile;
   private final List<SerializableConsumer<Profile>> profileSavedListeners = new ArrayList<>();
   private Long version;
+  private OverlayUserIcon summaryAvatar;
   private final Span summaryName = new Span();
   private final List<Runnable> textUpdates = new ArrayList<>();
   private final Map<Tab, AccountPanelComponent> panels = new LinkedHashMap<>();
@@ -68,6 +71,7 @@ public class AccountSettingsComponent extends Div {
   private final EmailField email = new EmailField();
   private final AccountEmailChangeDialog emailChangeDialog;
   private final AccountPasswordChangeDialog passwordChangeDialog;
+  private final AccountAvatarDialog avatarDialog;
   private final DatePicker birthDate = new DatePicker();
   private final ComboBox<Locale> preferredLanguage = new ComboBox<>();
 
@@ -80,6 +84,7 @@ public class AccountSettingsComponent extends Div {
     sessionPanel = new AccountSessionsComponent(messages, maxSessionsPerUser);
     emailChangeDialog = new AccountEmailChangeDialog(messages);
     passwordChangeDialog = new AccountPasswordChangeDialog(messages);
+    avatarDialog = new AccountAvatarDialog(messages, user);
     this.saveProfile = saveProfile;
     this.version = user == null ? null : user.getVersion();
     addClassName("account-settings");
@@ -117,7 +122,7 @@ public class AccountSettingsComponent extends Div {
         });
     var content = new Div(panels.values().toArray(AccountPanelComponent[]::new));
     content.addClassName("account-panels");
-    add(tabs, content, emailChangeDialog, passwordChangeDialog);
+    add(tabs, content, emailChangeDialog, passwordChangeDialog, avatarDialog);
     refreshTexts();
     showSelectedPanel();
   }
@@ -127,31 +132,35 @@ public class AccountSettingsComponent extends Div {
     return component;
   }
 
-  private Button previewButton(VaadinIcon icon, Supplier<String> label, boolean primary) {
+  private Button actionButton(VaadinIcon icon, Supplier<String> label, boolean primary) {
     var button = text(new Button(), label);
     button.setPrefixComponent(icon.create());
     if (primary) button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    // Für die Gestaltungsabnahme aktiv, aber ohne Aktionslistener oder Serviceaufruf.
-    // Profil-Speichern erhält seinen eigenen Listener; die weiteren Aktionen folgen später.
     return button;
   }
 
   private Button emailChangeButton(String id) {
-    var button = previewButton(VaadinIcon.EDIT, messages::getAccountSettingsChangeEmail, false);
+    var button = actionButton(VaadinIcon.EDIT, messages::getAccountSettingsChangeEmail, false);
     button.setId(id);
     button.addClickListener(event -> emailChangeDialog.open());
     return button;
   }
 
   private Button passwordChangeButton() {
-    var button = previewButton(VaadinIcon.EDIT, messages::getAccountSettingsChangePassword, false);
+    var button = actionButton(VaadinIcon.EDIT, messages::getAccountSettingsChangePassword, false);
     button.setId("account-password-edit-security");
     button.addClickListener(event -> passwordChangeDialog.open());
     return button;
   }
 
   private CosmosCardComponent summary(UserEntity user) {
-    var avatar = new Image(AppConstants.USER_ICON_PATH, AppConstants.USER_ICON_ALT);
+    var avatar =
+        new OverlayUserIcon(
+            messages,
+            user,
+            user == null ? UserStatus.getDefaultStatus() : user.getStatus(),
+            IconSize.PIXEL_72);
+    summaryAvatar = avatar;
     avatar.addClassName("account-summary-avatar");
     summaryName.setText(
         user == null
@@ -174,7 +183,9 @@ public class AccountSettingsComponent extends Div {
     active.getElement().getThemeList().add(user != null && user.isEnabled() ? "success" : "error");
     var info = new Div(summaryName, address, active);
     info.addClassName("account-summary-details");
-    var edit = previewButton(VaadinIcon.EDIT, messages::getAccountSettingsEditPicture, false);
+    var edit = actionButton(VaadinIcon.EDIT, messages::getAccountSettingsEditPicture, false);
+    edit.setId("account-avatar-edit");
+    edit.addClickListener(event -> avatarDialog.open());
     var row = new Div(avatar, info, edit);
     row.addClassName("account-summary-row");
     var card = new CosmosCardComponent(row);
@@ -292,7 +303,7 @@ public class AccountSettingsComponent extends Div {
     var form = new Div(firstName, lastName, email, birthDate, preferredLanguage);
     form.addClassName("account-profile-form");
     panel.getBody().add(form);
-    var save = previewButton(VaadinIcon.CHECK, messages::getAccountSettingsSave, true);
+    var save = actionButton(VaadinIcon.CHECK, messages::getAccountSettingsSave, true);
     save.setId("account-save");
     save.addClickListener(event -> saveProfile());
     panel.addFooter(text(new Span(), messages::getAccountSettingsAccountHint), save);
@@ -339,6 +350,7 @@ public class AccountSettingsComponent extends Div {
     birthDate.setValue(saved.birthDate());
     preferredLanguage.setValue(saved.language());
     summaryName.setText(saved.firstName() + " " + saved.lastName());
+    summaryAvatar.setName(saved.firstName(), saved.lastName());
     profileSavedListeners.forEach(listener -> listener.accept(saved));
     NotificationHelper.getInstance()
         .showNotification(
@@ -420,10 +432,25 @@ public class AccountSettingsComponent extends Div {
     profileSavedListeners.add(listener);
   }
 
+  public void configureAvatars(UserAvatarService avatars, HttpServletRequest request) {
+    summaryAvatar.configureAvatar(avatars, null);
+    avatarDialog.configure(avatars, request);
+  }
+
+  public void refreshSummaryName(String first, String last) {
+    summaryName.setText(first + " " + last);
+  }
+
+  public void updateUserStatus(UserStatus status) {
+    summaryAvatar.setUserStatus(status);
+  }
+
   public void refreshTexts() {
     textUpdates.forEach(Runnable::run);
     emailChangeDialog.refreshTexts();
     passwordChangeDialog.refreshTexts();
+    avatarDialog.refreshTexts();
+    summaryAvatar.refreshTexts();
     sessionPanel.refreshTexts();
   }
 }

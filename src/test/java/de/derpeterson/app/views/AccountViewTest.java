@@ -20,6 +20,7 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionManagementService;
 import de.derpeterson.app.service.AccountProfileService;
@@ -27,10 +28,13 @@ import de.derpeterson.app.service.AccountProfileService.Changes;
 import de.derpeterson.app.service.AccountProfileService.Profile;
 import de.derpeterson.app.service.AccountSecurityService;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountSettingsComponent;
 import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
+import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
+import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
@@ -95,6 +99,8 @@ class AccountViewTest {
         .thenReturn(
             Optional.of(
                 User.withUsername("own@example.test").password("unused").roles("USER").build()));
+    var avatars = mock(UserAvatarService.class);
+    when(avatars.events()).thenReturn(new UserProfileBroadcaster());
     view =
         new AccountView(
             new MessageProperties(new CustomI18NProvider()),
@@ -105,7 +111,8 @@ class AccountViewTest {
             profiles,
             mock(AccountSecurityService.class),
             sessionService(),
-            new UserStatusBroadcaster());
+            new UserStatusBroadcaster(),
+            avatars);
   }
 
   private SessionManagementService sessionService() {
@@ -266,6 +273,27 @@ class AccountViewTest {
     verify(profiles).save(request, new Changes(3L, "Changed", "Account", date, Locale.ENGLISH));
     assertEquals(Locale.ENGLISH, locale.get());
     assertEquals("Changed", user.getFirstName());
+    var avatars =
+        Stream.concat(
+                tree(view),
+                tree(
+                    ((UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu"))
+                        .getPopover()))
+            .filter(component -> component instanceof OverlayUserIcon)
+            .distinct()
+            .toList();
+    assertEquals(3, avatars.size());
+    for (var avatar : avatars) {
+      var headerIcon = ((Button) ReflectionTestUtils.getField(view, "userIconButton")).getIcon();
+      String expected = "Changed Name";
+      if (avatar == headerIcon)
+        expected +=
+            " – "
+                + MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH)
+                    .getUserStatusLabel(UserStatus.getDefaultStatus());
+      assertEquals(expected, avatar.getElement().getAttribute("aria-label"));
+    }
+
     assertEquals(4L, user.getVersion());
     var menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
     assertTrue(menu.getPopover().getElement().getTextRecursively().contains("Changed Name"));

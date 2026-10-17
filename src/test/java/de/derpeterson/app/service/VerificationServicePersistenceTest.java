@@ -16,6 +16,7 @@ import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.repository.VerificationTokenRepository;
 import de.derpeterson.app.security.MaintenanceAccessException;
+import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.persistence.EntityManagerFactory;
 import java.io.FileNotFoundException;
@@ -538,7 +539,11 @@ class VerificationServicePersistenceTest {
     RegistrationService registrationService(
         Probes probes, UserRepository repository, VerificationService verification) {
       var users =
-          new UserService(repository, new UserStatusBroadcaster(), mock(PasswordEncoder.class));
+          new UserService(
+              repository,
+              new UserStatusBroadcaster(),
+              mock(PasswordEncoder.class),
+              mock(UserProfileBroadcaster.class));
       return new RegistrationService(users, verification, probes.config());
     }
 
