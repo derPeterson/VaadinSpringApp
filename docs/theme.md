@@ -155,6 +155,10 @@ muss ein Browser-Testimage frisch gebaut werden; `-NoBuild` würde ein altes Ima
 `--cosmos-avatar-background`, `--cosmos-avatar-text-color`,
 `--cosmos-avatar-border-color` und `--cosmos-avatar-shadow` in `cosmos-tokens.css`
 steuern die gemeinsame Initialen-/Bildfläche. Die lokale Größe kommt von der
-Avatar-Komponente. Nur oben rechts in der Kopfzeile ist das separate Statussymbol
-aktiviert; alle übrigen Profilbildflächen zeigen Bild bzw. Initialen.
+Avatar-Komponente. Kopfzeile und Kontozusammenfassung zeigen das separate Statussymbol.
+Am Kontobild liegt ein nativer Select über der vergrößerten Klickfläche des Zeichens;
+nur dessen Feldfläche ist transparent, das Cosmos-Dropdown bleibt unverändert sichtbar.
+Der Tastaturfokus erhält einen sichtbaren Ring. Die lokalen Regeln stehen in
+`cosmos-account.css`; übrige Profilbildflächen zeigen Bild bzw. Initialen.
+Die verwendeten Parts folgen der [Vaadin-Select-Styling-API](https://vaadin.com/docs/latest/components/select/styling).
 Bildspeicherung und Prüfgrenzen: [Profilbildvertrag](profile-avatar-contract.md).

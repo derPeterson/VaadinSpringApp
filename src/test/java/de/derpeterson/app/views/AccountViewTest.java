@@ -4,9 +4,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -38,6 +41,7 @@ import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -48,6 +52,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -57,6 +63,7 @@ class AccountViewTest {
   private HttpServletRequest request;
   private AccountView view;
   private AccountProfileService profiles;
+  private UserService users;
   private UserEntity user;
   private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
 
@@ -83,6 +90,7 @@ class AccountViewTest {
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(11);
     profiles = mock(AccountProfileService.class);
+    users = mock(UserService.class);
     user =
         UserEntity.builder()
             .id(12L)
@@ -107,12 +115,84 @@ class AccountViewTest {
             security,
             request,
             config,
-            mock(UserService.class),
+            users,
             profiles,
             mock(AccountSecurityService.class),
             sessionService(),
             new UserStatusBroadcaster(),
             avatars);
+  }
+
+  @SuppressWarnings("unchecked")
+  private Select<UserStatus> avatarStatus() {
+    return (Select<UserStatus>)
+        tree(settings())
+            .filter(component -> component.getId().orElse("").equals("account-avatar-status"))
+            .findFirst()
+            .orElseThrow();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void avatarStatusUsesTheExistingSaveActionAndTracksOtherStatusChanges(String language) {
+    LanguageChangeEvent.fire(ui, Locale.forLanguageTag(language));
+    var select = avatarStatus();
+    assertEquals(UserStatus.getDefaultStatus(), select.getValue());
+    assertTrue(select.isEnabled());
+    assertEquals(List.of(UserStatus.values()), select.getListDataView().getItems().toList());
+    assertEquals("Status", select.getAriaLabel().orElseThrow());
+    when(users.updateUserStatus(user, UserStatus.ABSENT, true))
+        .thenReturn(new UserService.StatusUpdate(UserStatus.ABSENT, true));
+    ReflectionTestUtils.invokeMethod(select, "setModelValue", UserStatus.ABSENT, true);
+    verify(users).updateUserStatus(user, UserStatus.ABSENT, true);
+    assertEquals(UserStatus.ABSENT, user.getStatus());
+    assertTrue(user.isStatusManuallySet());
+    assertEquals(UserStatus.ABSENT, select.getValue());
+    var menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
+    assertEquals(
+        UserStatus.ABSENT,
+        ((Select<?>) ReflectionTestUtils.getField(menu, "userStatusSelect")).getValue());
+    var header = (Button) ReflectionTestUtils.getField(view, "userIconButton");
+    assertEquals(UserStatus.ABSENT, ReflectionTestUtils.getField(header.getIcon(), "userStatus"));
+    menu.applyExternalStatus(UserStatus.EMPLOYED);
+    assertEquals(UserStatus.EMPLOYED, select.getValue());
+    LanguageChangeEvent.fire(ui, Locale.forLanguageTag(language.equals("de") ? "en" : "de"));
+    assertEquals(UserStatus.EMPLOYED, select.getValue());
+    assertEquals(
+        new MessageProperties(new CustomI18NProvider()).getUserStatusEmployed(),
+        select.getItemLabelGenerator().apply(UserStatus.EMPLOYED));
+    verifyNoMoreInteractions(users);
+    verifyNoInteractions(profiles);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void failedAvatarStatusChangeRestoresBothSelectorsAndShowsTheExistingError(boolean conflict) {
+    var select = avatarStatus();
+    when(users.updateUserStatus(user, UserStatus.ABSENT, true))
+        .thenThrow(
+            conflict
+                ? new OptimisticLockingFailureException("conflict")
+                : new IllegalStateException("failed"));
+    ReflectionTestUtils.invokeMethod(select, "setModelValue", UserStatus.ABSENT, true);
+    assertEquals(UserStatus.getDefaultStatus(), select.getValue());
+    assertEquals(UserStatus.getDefaultStatus(), user.getStatus());
+    var menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
+    assertEquals(
+        UserStatus.getDefaultStatus(),
+        ((Select<?>) ReflectionTestUtils.getField(menu, "userStatusSelect")).getValue());
+    var notification =
+        (Notification)
+            ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
+    assertTrue(notification.isOpened());
+    var texts = new MessageProperties(new CustomI18NProvider());
+    var message =
+        (Html) ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText");
+    assertEquals(
+        conflict ? texts.getBaseUserUpdateConflict() : texts.getBaseUserStatusFailed(),
+        message.getElement().getProperty("innerHTML"));
+    verify(users).updateUserStatus(user, UserStatus.ABSENT, true);
+    verifyNoMoreInteractions(users);
   }
 
   private SessionManagementService sessionService() {
@@ -286,7 +366,7 @@ class AccountViewTest {
     for (var avatar : avatars) {
       var headerIcon = ((Button) ReflectionTestUtils.getField(view, "userIconButton")).getIcon();
       String expected = "Changed Name";
-      if (avatar == headerIcon)
+      if (avatar == headerIcon || "group".equals(avatar.getElement().getAttribute("role")))
         expected +=
             " – "
                 + MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH)

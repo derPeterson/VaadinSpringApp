@@ -10,6 +10,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.EmailField;
@@ -159,7 +160,8 @@ public class AccountSettingsComponent extends Div {
             messages,
             user,
             user == null ? UserStatus.getDefaultStatus() : user.getStatus(),
-            IconSize.PIXEL_72);
+            IconSize.PIXEL_72,
+            true);
     summaryAvatar = avatar;
     avatar.addClassName("account-summary-avatar");
     summaryName.setText(
@@ -435,6 +437,11 @@ public class AccountSettingsComponent extends Div {
   public void configureAvatars(UserAvatarService avatars, HttpServletRequest request) {
     summaryAvatar.configureAvatar(avatars, null);
     avatarDialog.configure(avatars, request);
+  }
+
+  public void configureStatusSelection(Select<UserStatus> selection) {
+    selection.setId("account-avatar-status");
+    summaryAvatar.setStatusSelection(selection);
   }
 
   public void refreshSummaryName(String first, String last) {

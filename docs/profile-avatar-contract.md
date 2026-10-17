@@ -33,10 +33,18 @@ Kontozusammenfassung, Benutzertabelle und Löschdialog verwendet. Die bisherigen
 Zeichen von Vor- und Nachname; ohne Namen erscheint das neutrale Benutzerzeichen.
 Farben, Rahmen und Schimmer stehen in `cosmos-tokens.css` unter `--cosmos-avatar-*`.
 
-Nur der Avatar oben rechts in der Kopfzeile zeigt Haken, Minus, Uhr oder Kreuz als
-separate Statusanzeige. Benutzermenü, Kontozusammenfassung, Profilbilddialog,
-Benutzertabelle und Löschdialog zeigen ausschließlich Bild bzw. Initialen, auch in
-Tooltip und zugänglicher Bildbeschreibung. Ein Statuswechsel ersetzt keine Bildquelle. Nach erfolgreichem Commit verteilt
+Der Avatar oben rechts und das Bild in „Mein Konto“ zeigen Haken, Minus, Uhr oder
+Kreuz als separate Statusanzeige. Am Kontobild ist das Statuszeichen direkt bedienbar:
+Eine native Vaadin-Auswahl liegt mit etwas größerer Klickfläche über dem unverändert
+großen Zeichen. Klick bzw. Tastatur öffnen dieselben Statusoptionen wie im Benutzermenü.
+Die Auswahl speichert sofort über dessen vorhandene Aktion, unabhängig vom
+Profilformular. Fehler stellen den vorherigen Status wieder her und verwenden die
+bestehenden übersetzbaren Notifications. Menü, Kopfzeile und Kontobild synchronisieren
+sich auch bei externen Statusänderungen. Die Profilbildquelle bleibt dabei erhalten.
+
+Benutzermenü-Bild, Profilbilddialog, Benutzertabelle und Löschdialog zeigen weiterhin
+nur Bild bzw. Initialen. Das interaktive Kontobild verwendet eine zugängliche Gruppe
+mit beschriftetem Select; der übrige Bildbereich öffnet keine Statusauswahl. Nach erfolgreichem Commit verteilt
 `UserProfileBroadcaster` Bild-/Modus- und gespeicherte Namensänderungen über den
 bestehenden `UI.access`-/Push-Ansatz. Listener werden beim Verlassen abgemeldet.
 Konto-Profilentwürfe werden dabei nicht durch neue Formularwerte überschrieben.

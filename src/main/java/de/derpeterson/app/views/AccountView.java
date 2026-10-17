@@ -91,6 +91,7 @@ public class AccountView extends IsAuthenticatedBaseView {
             changes -> profiles.save(request, changes),
             config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER));
     accountSettings.configureAvatars(avatars, request);
+    accountSettings.configureStatusSelection(userPopoverMenu.createStatusSelect());
     accountSettings.configureSecurityActions(
         change -> {
           var changed = accountSecurity.changePassword(request, change);

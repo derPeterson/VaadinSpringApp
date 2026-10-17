@@ -170,8 +170,10 @@ Die Canvas-Steuerung liegt in `src/main/frontend/account-avatar-editor.js`; der
 Server prüft das Original, den Ausschnitt und die aktuelle Anmeldung unabhängig davon.
 
 Alle Avatarstellen verwenden denselben Baustein und dieselben `--cosmos-avatar-*`-
-Tokens. Nur der Kopfzeilenavatar oben rechts zeigt ein Statuszeichen; Kontoübersicht,
-Bildeditor, Benutzermenü und Benutzerverwaltung zeigen nur Bild oder Initialen. Erfolgreiche Avatar-/Namensänderungen
+Tokens. Kopfzeilenavatar und Kontozusammenfassung zeigen ein Statuszeichen. Am
+Kontobild öffnet es direkt die native Statusauswahl aus dem Benutzermenü; Änderungen
+werden sofort über dieselbe Speicheraktion übernommen und bei Fehlern zurückgesetzt.
+Bildeditor, Benutzermenü-Bild und Benutzerverwaltung zeigen nur Bild oder Initialen. Erfolgreiche Avatar-/Namensänderungen
 aktualisieren offene Komponenten über einen eigenen Profilkanal. Es gibt keine
 Designvorschauhinweise mehr. Bilddaten werden getrennt von normalen UserEntity-
 Abfragen gespeichert, nur ein normiertes Bild je Konto.

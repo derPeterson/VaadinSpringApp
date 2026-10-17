@@ -290,21 +290,25 @@ public class UserPopoverMenu {
   }
 
   private void addUserStatusSelect(VerticalLayout contentLayout) {
-    userStatusSelect = new Select<>();
-    userStatusSelect.setEnabled(hasCurrentUser());
-    userStatusSelect.setItems(UserStatus.values());
-    userStatusSelect.setItemLabelGenerator(
-        userStatus -> messageProperties.getUserStatusLabel(userStatus));
-    userStatusSelect.setRenderer(new ComponentRenderer<>(this::createUserStatusRenderer));
-
-    userStatusSelect.addValueChangeListener(
-        event -> handleUserStatusChange(event.getValue(), event.isFromClient()));
-
-    userStatusSelect.setValue(currentStatus);
+    userStatusSelect = createStatusSelect();
     userStatusSelect.setWidthFull();
-
     updateStatusSelectPrefix(currentStatus);
     contentLayout.add(userStatusSelect);
+  }
+
+  /** Gleiche Auswahl und Speicherlogik für Benutzermenü und Kontobild. */
+  public Select<UserStatus> createStatusSelect() {
+    var select = new Select<UserStatus>();
+    select.setEnabled(hasCurrentUser());
+    select.setItems(UserStatus.values());
+    select.setItemLabelGenerator(messageProperties::getUserStatusLabel);
+    select.setRenderer(new ComponentRenderer<>(this::createUserStatusRenderer));
+    select.setValue(currentStatus);
+    select.addValueChangeListener(
+        event -> {
+          if (event.isFromClient()) handleUserStatusChange(event.getValue(), true);
+        });
+    return select;
   }
 
   private Component createUserStatusRenderer(UserStatus userStatus) {

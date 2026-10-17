@@ -5,6 +5,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.config.AppConstants;
@@ -20,7 +21,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Gemeinsames Profilbild; nur der Kopfzeilenavatar aktiviert das Verfügbarkeitszeichen. */
+/** Gemeinsames Profilbild mit optionalem Statuszeichen bzw. direkter Statusauswahl. */
 public class OverlayUserIcon extends Div {
   private final transient MessageProperties messages;
   private final IconSize iconSize;
@@ -34,6 +35,7 @@ public class OverlayUserIcon extends Div {
   private UUID displayedRevision;
   private final Tooltip tooltip;
   private UserStatus userStatus;
+  private Select<UserStatus> statusSelection;
   private String name = "";
   private transient Registration languageRegistration;
 
@@ -131,6 +133,19 @@ public class OverlayUserIcon extends Div {
     userStatus = value == null ? UserStatus.getDefaultStatus() : value;
     status.removeAll();
     if (showStatus) status.add(userStatus.getComponent(iconSize, true));
+    if (statusSelection != null) statusSelection.setValue(userStatus);
+    refreshTexts();
+  }
+
+  public void setStatusSelection(Select<UserStatus> selection) {
+    if (statusSelection != null) remove(statusSelection);
+    statusSelection = Objects.requireNonNull(selection);
+    statusSelection.addClassName("cosmos-avatar-status-select");
+    statusSelection.getElement().getThemeList().add("cosmos");
+    statusSelection.setNoVerticalOverlap(true);
+    statusSelection.setValue(userStatus);
+    getElement().setAttribute("role", "group");
+    add(statusSelection);
     refreshTexts();
   }
 
@@ -182,5 +197,11 @@ public class OverlayUserIcon extends Div {
         .setAttribute(
             "aria-label", showStatus && !name.isEmpty() ? label + " – " + statusLabel : label);
     tooltip.setText(showStatus ? statusLabel : label);
+    if (statusSelection != null) {
+      statusSelection.setAriaLabel(messages.getAdminUsersGridStatus());
+      statusSelection.setItemLabelGenerator(messages::getUserStatusLabel);
+      statusSelection.getDataProvider().refreshAll();
+      statusSelection.setValue(userStatus);
+    }
   }
 }
