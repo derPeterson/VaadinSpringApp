@@ -57,8 +57,6 @@
 /* Wie der Löschakzent: dezente Fläche und Rahmen in Schriftfarbe,
  * hier aus der vorhandenen grünen Success-Palette. */
 .cosmos-account .account-summary-status[theme~="success"] {
-    font-size: 12px;
-    font-weight: 700;
     color: var(--lumo-success-text-color);
     border: 1px solid currentColor;
     background: var(--lumo-success-color-10pct);
@@ -120,7 +118,8 @@
 }
 
 /* Gleiche Außenmaße und dasselbe em-basierte Padding wie unsere Button-Icons. */
-.cosmos-account .account-tabs vaadin-tab > vaadin-icon {
+.cosmos-account .account-tabs vaadin-tab > vaadin-icon,
+.cosmos-account .account-tabs vaadin-tab > .account-devices-icon {
     width: var(--lumo-icon-size-m);
     height: var(--lumo-icon-size-m);
     font-size: 14px;
@@ -142,26 +141,26 @@
     padding-block: var(--lumo-space-l);
 }
 
-/* Profil-Footer als durchgehende Fläche wie im Benutzerdialog.
+/* Alle Kontofooter als durchgehende Fläche wie im Benutzerdialog.
  * Der Rahmen schneidet die Fläche an seinen runden unteren Ecken ab.
  * Kopf und Formular behalten ihre bisherigen seitlichen Innenabstände. */
-.cosmos-account #account-panel-profile {
+.cosmos-account :is(#account-panel-profile, #account-panel-security, #account-panel-sessions) {
     --account-panel-inline-padding: clamp(20px, 4vw, 36px);
     padding: 0;
     overflow: hidden;
 }
 
-.cosmos-account #account-panel-profile > .cosmos-panel-header {
+.cosmos-account :is(#account-panel-profile, #account-panel-security, #account-panel-sessions) > .cosmos-panel-header {
     width: calc(100% - 2 * var(--account-panel-inline-padding));
     margin-inline: var(--account-panel-inline-padding);
     padding-top: 32px;
 }
 
-.cosmos-account #account-panel-profile > .account-panel-body {
+.cosmos-account :is(#account-panel-profile, #account-panel-security, #account-panel-sessions) > .account-panel-body {
     padding-inline: var(--account-panel-inline-padding);
 }
 
-.cosmos-account #account-panel-profile > .cosmos-panel-footer {
+.cosmos-account :is(#account-panel-profile, #account-panel-security, #account-panel-sessions) > .cosmos-panel-footer {
     border-top: 1px solid var(--cosmos-table-border-color);
     padding: 18px 24px;
     background: var(--cosmos-account-footer-background);
@@ -175,8 +174,7 @@
     gap: var(--lumo-space-m) var(--lumo-space-l);
 }
 
-.cosmos-account .account-profile-form > *,
-.cosmos-account .account-email-row > vaadin-email-field {
+.cosmos-account .account-profile-form > * {
     width: 100%;
     min-width: 0;
 }
@@ -187,18 +185,8 @@
     font-weight: 400;
 }
 
-.cosmos-account .account-email-row {
+.cosmos-account .account-profile-email {
     grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    /* Vaadins Feld-Baseline gehört zum Eingabetext. Label und Hilfetext
-     * dürfen den benachbarten Button nicht nach oben oder unten versetzen. */
-    align-items: baseline;
-    gap: var(--lumo-space-s);
-}
-
-.cosmos-account .account-email-row > vaadin-button {
-    margin: 0;
 }
 
 .cosmos-account .account-entry {
@@ -207,6 +195,28 @@
     align-items: center;
     gap: var(--lumo-space-m);
     padding-block: var(--lumo-space-l);
+}
+
+/* Sicherheitsaktionen und Geräte: eine kleinere Stufe als die Panelköpfe. */
+.cosmos-account :is(#account-panel-security, #account-panel-sessions) .account-entry {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+}
+
+.cosmos-account :is(#account-panel-security, #account-panel-sessions) .account-entry > .cosmos-panel-icon {
+    width: 36px;
+    height: 36px;
+}
+
+.cosmos-account :is(#account-panel-security, #account-panel-sessions) .account-entry > .cosmos-panel-icon > vaadin-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Gemeinsame Aktionsbreite fuer Passwort und E-Mail, auch bei Sprachwechsel.
+ * Auf schmalen Displays bleibt der Button innerhalb seiner Textspalte. */
+.cosmos-account #account-panel-security .account-entry > vaadin-button {
+    width: 180px;
+    max-width: 100%;
 }
 
 .cosmos-account .account-entry + .account-entry {
@@ -229,8 +239,7 @@
     font-weight: 600;
 }
 
-.cosmos-account .account-entry-description,
-.cosmos-account .account-info-text {
+.cosmos-account .account-entry-description {
     color: var(--lumo-secondary-text-color);
     font-size: 11px;
     line-height: 1.5;
@@ -238,6 +247,22 @@
 
 .cosmos-account .account-entry-description {
     margin-top: var(--lumo-space-xs);
+}
+
+.cosmos-account .account-current-device {
+    border: 1px solid currentColor;
+    white-space: nowrap;
+}
+
+.cosmos-account .account-session-heading .account-entry-title {
+    font-size: 15px;
+}
+
+/* Monitor hinten, Vaadin-Laptop links und Smartphone rechts als ein transparentes SVG. */
+.cosmos-account .account-devices-icon {
+    width: 32px;
+    height: 28px;
+    flex-shrink: 0;
 }
 
 .cosmos-account .account-session-heading {
@@ -248,17 +273,9 @@
     gap: var(--lumo-space-s);
 }
 
-.cosmos-account .account-info-text {
-    display: block;
-    padding: var(--lumo-space-m);
-    margin-top: var(--lumo-space-m);
-    border: 1px solid var(--cosmos-card-border);
-    border-radius: var(--lumo-border-radius-l);
-    background: var(--cosmos-input-background);
-}
 
 @media (max-width: 600px) {
-    .cosmos-account #account-panel-profile > .cosmos-panel-footer {
+    .cosmos-account :is(#account-panel-profile, #account-panel-security, #account-panel-sessions) > .cosmos-panel-footer {
         padding: 16px;
     }
 
@@ -266,17 +283,12 @@
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .cosmos-account .account-email-row {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .cosmos-account .account-email-row > vaadin-button {
-        margin-top: 0;
-        justify-self: start;
-    }
-
     .cosmos-account .account-entry {
         grid-template-columns: 42px minmax(0, 1fr);
+    }
+
+    .cosmos-account :is(#account-panel-security, #account-panel-sessions) .account-entry {
+        grid-template-columns: 36px minmax(0, 1fr);
     }
 
     .cosmos-account .account-entry > vaadin-button {
@@ -285,35 +297,23 @@
     }
 }
 
-/* E-Mail-Dialog: lokale Ergänzungen zu den vorhandenen Cosmos-Dialogbausteinen.
+/* Konto-Änderungsdialoge: lokale Ergänzungen zu den vorhandenen Cosmos-Dialogbausteinen.
  * Der Dialog liegt als Overlay außerhalb der View; deshalb direkt am Dialog
  * selektieren. Der gemeinsame Backdrop-Blur steht in cosmos-admin.css.
  * Vaadin-25-Parts: https://vaadin.com/docs/latest/components/dialog/styling */
-vaadin-dialog[theme~="cosmos"].account-email-dialog::part(overlay) {
+vaadin-dialog[theme~="cosmos"].account-change-dialog::part(overlay) {
     box-sizing: border-box;
     width: min(520px, calc(100vw - 32px));
-    border: 1px solid var(--cosmos-table-border-color);
     border-radius: var(--cosmos-overlay-radius);
-    background: var(--cosmos-card-background);
     box-shadow: var(--cosmos-overlay-shadow);
 }
 
-vaadin-dialog[theme~="cosmos"].account-email-dialog::part(header) {
-    background: var(--cosmos-table-header-background);
-    border-bottom: 1px solid var(--cosmos-table-border-color);
-}
-
-vaadin-dialog[theme~="cosmos"].account-email-dialog::part(footer) {
-    background: var(--cosmos-account-footer-background);
-    border-top: 1px solid var(--cosmos-table-border-color);
-}
-
-vaadin-dialog.account-email-dialog::part(header-content) {
+vaadin-dialog.account-change-dialog::part(header-content) {
     width: 100%;
     min-width: 0;
 }
 
-.account-email-dialog .account-email-dialog-header {
+.account-change-dialog .account-change-dialog-header {
     display: flex;
     align-items: center;
     gap: var(--lumo-space-m);
@@ -321,22 +321,22 @@ vaadin-dialog.account-email-dialog::part(header-content) {
     min-width: 0;
 }
 
-.account-email-dialog-header > .cosmos-panel-heading {
+.account-change-dialog-header > .cosmos-panel-heading {
     flex: 1 1 0;
 }
 
-.account-email-dialog-header > .cosmos-panel-icon {
+.account-change-dialog-header > .cosmos-panel-icon {
     flex-shrink: 0;
 }
 
-.account-email-dialog .account-email-dialog-form {
+.account-change-dialog .account-change-dialog-form {
     display: flex;
     flex-direction: column;
 }
 
 /* Der gemeinsame Hinweis ist in anderen Panels ein flexibles Footer-Element.
  * Im senkrechten Formular braucht er keine feste Mindesthöhe. */
-.account-email-dialog-form > .cosmos-panel-hint {
+.account-change-dialog-form > .cosmos-panel-hint {
     flex: none;
     margin-top: var(--lumo-space-s);
 }

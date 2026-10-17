@@ -15,15 +15,22 @@ Das Speichern der eigenen Profildaten ist inzwischen implementiert:
 
 - Kontoübersicht mit bestehendem Avatar, eigenem Namen, E-Mail und Aktivierungsstatus.
 - Bedienbare Tabs „Persönliches Profil“, „Sicherheit“, „Geräte & Sitzungen“.
+  Die Auswahl steht als `tab=profile`, `tab=security` oder `tab=sessions` in der URL.
 - Profilfelder werden aus dem angemeldeten Konto gelesen. Tab- und Sprachwechsel
   erhalten ungespeicherte Entwürfe. „Änderungen speichern“ übernimmt Vorname,
   Nachname, Geburtsdatum und bevorzugte Sprache (DE/EN).
 - Die E-Mail bleibt sichtbar, ist aber deaktiviert und nicht fokussierbar.
-  Beide E-Mail-Ändern-Buttons öffnen den unten beschriebenen Dialogentwurf.
-  Profilbild-, Passwort- und Sitzungsabmeldeaktionen sind für die visuelle Abnahme
-  aktiv dargestellt, besitzen aber noch keine Aktionslistener oder Serviceaufrufe.
-- Sitzungen, Geräte, Zeiten und das dargestellte Limit sind klar bezeichnete
-  Beispieldaten. Es erfolgt keine Abfrage des tatsächlichen Sitzungsregisters.
+  Der E-Mail-Ändern-Button unter Sicherheit öffnet den unten beschriebenen Dialogentwurf.
+  Im Profil gibt es keinen Ändern-Button und keinen zusätzlichen E-Mail-Hilfetext.
+  Auch „Passwort ändern“ öffnet unter Sicherheit einen Dialogentwurf.
+  Beide Dialoge verändern noch keine Kontodaten. Profilbild- und Sitzungsabmeldeaktionen
+  sind für die visuelle Abnahme aktiv dargestellt, besitzen aber noch keine Aktionslistener
+  oder Serviceaufrufe. „Aktuelle Sitzung“ ist als reine Kennzeichnung deaktiviert.
+- Die drei Geräte und Aktivitätszeiten sind weiterhin statische Entwurfsdaten.
+  Der zusätzliche Beispielhinweis und die Zusätze „(Beispiel)“ wurden für die Gestaltung entfernt. Die Überschrift lautet „Aktive Sitzungen“, darunter „Geräte und Aktivitätszeiten“.
+  Das Limit rechts enthält dagegen den tatsächlichen Wert von `max.sessions.per.user`
+  beim Öffnen der Kontoseite, ohne Beispielzusatz. Es erfolgt noch keine Abfrage des
+  tatsächlichen Sitzungsregisters und keine Abmeldung von Geräten.
 - Vorhandene Passwörter, Hashes und Sitzungstokens werden weder gelesen noch angezeigt.
 - DE/EN-Texte liegen im gemeinsamen typisierten `MessageTexts`-Katalog.
 
@@ -47,6 +54,11 @@ noch ihre JavaScript-Demoaktionen in die Anwendung eingebunden.
 
 Der Entwurf ist für die schrittweise visuelle Abstimmung vorgesehen. Gemeinsame
 Styles, Icons, Buttonmaße und das übrige Anwendungsdesign wurden nicht umgestellt.
+Profil, Sicherheit und Geräte/Sitzungen verwenden dieselbe Footerfläche einschließlich
+Farbe, oberem Border, Innenabständen und mobilem Verhalten.
+Die anschließende Sitzungsanpassung wurde mit 27 gezielten JUnit-Fällen geprüft,
+einschließlich DE/EN und vom Standardwert abweichenden Konfigurationslimits 7 und 11.
+Es wurde dafür kein Browserlauf gestartet.
 
 ## Übernehmen
 
@@ -78,7 +90,13 @@ Sitzungssprache. Die neue Datensatzversion wird für weiteres Speichern übernom
 
 ## Automatisierte Prüfung
 
-Der aktuelle vollständige Anwendungsnachweis umfasst 1.298 JUnit-Fälle ohne Fehler
+Für die anschließende Profil-/Sicherheitsbereinigung bestanden 30 gezielte
+JUnit-Fälle (Kontokomponente, E-Mail-Dialog, Konto-View und Übersetzungskatalog)
+sowie 45 Browser-Helpertests. Die Browserquellen sind auf den einzigen E-Mail-Einstieg
+unter Sicherheit angepasst und kompiliert; die Browserabläufe und visuelle Abnahme
+dieser Bereinigung wurden noch nicht erneut ausgeführt.
+
+Die vorherige vollständige Kontoprofil-Gesamtprüfung umfasste 1.298 JUnit-Fälle ohne Fehler
 oder Skips, einschließlich isolierter H2-/Transaktionsprüfungen für Profiländerungen,
 aller Rollen, Versionskonflikte, Sicherheitsfelder und Wartungsschutz. DE/EN-Meldungen,
 rote Feldmarkierungen, wiederholtes Speichern und Übersetzungskatalog sind enthalten.
@@ -86,7 +104,7 @@ rote Feldmarkierungen, wiederholtes Speichern und Übersetzungskatalog sind enth
 Die neue Browser-Suite `account-settings` enthält sieben Fälle: dauerhaftes Speichern
 und erneutes Speichern nach Neuladen, Pflichtfelder und Datumsregel ohne Persistierung
 ungültiger Werte, gespeicherte Sprache nach erneuter Anmeldung sowie die vier
-Schließwege des E-Mail-Dialogs. Beide E-Mail-Einstiege, unveränderte Profildrafts,
+Schließwege des E-Mail-Dialogs. Der E-Mail-Einstieg unter Sicherheit, unveränderte Profildrafts,
 deaktivierte E-Mail, übersetzte Felder, Bestätigungsicon und berechneter 6px-Blur
 werden über die echte Oberfläche geprüft. Ein berechneter Style ersetzt keine
 menschliche Abnahme der Darstellung auf echten Geräten.
@@ -95,10 +113,27 @@ Aktueller Abschlussstatus und tatsächliche Messergebnisse stehen in der
 [Abdeckungsübersicht](../browser-tests/abdeckung.md). Der eigentliche E-Mail-Wechsel
 ist ausdrücklich kein Bestandteil des Nachweises.
 
+## Konto-Tab in der URL
+
+Die Konto-View verwendet wie AdminView die native Flow-Navigation mit Queryparametern:
+`/account?tab=profile`, `/account?tab=security` und `/account?tab=sessions`.
+`beforeEnter` stellt nach der vorhandenen Zugriffsprüfung den angeforderten Tab wieder
+her. Ohne `tab` sowie bei unbekannten, leeren oder mehrfachen Werten wird das Profil
+geöffnet. Die festen Kennungen sind unabhängig von der gewählten Sprache.
+
+Tabwechsel schreiben die URL über Flow und erhalten die Formularentwürfe derselben View.
+Die Wiederherstellung aus der URL erzeugt selbst keinen weiteren Navigationseintrag;
+so können Refresh, Direktlinks und Zurück/Vorwärts denselben Tab auswählen. Ein tatsächlicher
+Reload lädt gespeicherte Profildaten neu; ungespeicherte Formulare werden nicht in der URL
+oder im Browserspeicher abgelegt. Dialoge werden nicht über die Tab-URL geöffnet.
+35 gezielte JUnit-Fälle für Konto-View und Kontokomponente bestanden ohne Fehler oder Skips,
+einschließlich Tab-URLs, Rückfallwerten, Zugriffsschutz, Sprachwechsel und Erhalt der Entwürfe.
+Die neuen Abläufe sind noch nicht mit einem echten Browser geprüft.
+
 ## E-Mail ändern: Dialogentwurf
 
-Über „Ändern“ beim Profilfeld oder „E-Mail ändern“ im Sicherheitstab öffnet sich
-dieselbe `AccountEmailChangeDialog`-Komponente. Sie verwendet die vorhandenen
+Über „E-Mail ändern“ im Sicherheitstab öffnet sich die
+`AccountEmailChangeDialog`-Komponente. Im Profil wird die E-Mail nur angezeigt. Sie verwendet die vorhandenen
 Cosmos-Header-, Icon-, Feld-, Hinweis-, Schließen- und Buttonbausteine. Die
 Dialogfläche folgt der Card, der Header dem Benutzerdialog und der Footer dem
 Konto-Footer. Der Hintergrund-Blur von 6px auf dem nativen Backdrop ist inzwischen
@@ -106,7 +141,8 @@ zentraler Standard für alle Cosmos-Dialoge; siehe [Designstandard](design-stand
 
 Der Entwurf enthält neue E-Mail-Adresse, deren Bestätigung und aktuelles Passwort
 mit Sichtbarkeitsschalter. Ein Hinweis mit Info-Icon erläutert den späteren
-Bestätigungsschritt. DE/EN und Sprachwechsel erhalten die offenen Eingaben.
+Bestätigungsschritt und den Erhalt der alten Adresse bis zur Bestätigung. Dieser Hinweis
+steht ausschließlich im Dialog. DE/EN und Sprachwechsel erhalten die offenen Eingaben.
 Schließen per Icon, Abbrechen, Escape oder Außenklick verwirft die Dialogeingaben,
 einschließlich des Passworts. Ungespeicherte Profildaten bleiben erhalten.
 
@@ -121,3 +157,27 @@ und vor jedem Öffnen zusätzlich verworfen. Die Browserfälle prüfen Icon, Abb
 Escape und Außenklick jeweils mit anschließender leerer Wiederöffnung. Die vollständige
 Anwendungstestsuite enthält diese Regression; bisherige Teiltestzahlen werden nicht
 zum Gesamtergebnis addiert.
+
+
+## Passwort ändern: Dialogentwurf
+
+„Passwort ändern“ unter Sicherheit öffnet `AccountPasswordChangeDialog` mit Schloss-Icon,
+passenden DE/EN-Texten und drei Passwortfeldern: neues Passwort, „Neues Passwort bestätigen“ und
+aktuelles Passwort. Wie im E-Mail-Dialog steht das aktuelle Passwort zuletzt. Die bestehenden Platzhalter, Sichtbarkeitsschalter, Schließen-/Abbrechen-
+und Bestätigungsicons bleiben der Standard. Der Infohinweis empfiehlt ein einzigartiges
+Passwort und die doppelte Eingabe zur Bestätigung.
+
+Beide Kontoänderungsdialoge verwenden dieselben lokalen Layoutregeln in
+`cosmos-account.css` und die zentralen Cosmos-Dialogfarben für Header, Inhalt, Footer
+und Border. Escape und Außenklick schließen nativ; der vorhandene Backdrop-Blur bleibt.
+Beim Schließen und vor jedem Öffnen werden alle Passwortfelder geleert. Ein Sprachwechsel
+übersetzt den offenen Dialog und erhält den aktuellen Entwurf. Der Profilentwurf bleibt
+beim Öffnen und Schließen unverändert.
+
+Der Bestätigungsbutton ist für die visuelle Abstimmung aktiv, führt aber noch keine
+Validierung, Passwortprüfung, Speicherung oder Sitzungsänderung aus. Es gibt keine
+Erfolgsmeldung ohne ausgeführte Änderung. Die eigentliche Funktion folgt gesondert.
+Für diesen Stand bestanden 38 gezielte JUnit-Fälle (Passwortdialog, E-Mail-Dialog,
+Kontokomponente, Konto-View und Übersetzungskatalog), ohne Fehler oder Skips.
+Browserprüfungen und visuelle Abnahme dieses neuen Dialogs stehen noch aus; Browserläufe
+erfolgen gesammelt und ausschließlich auf ausdrückliche Freigabe.

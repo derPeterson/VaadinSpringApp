@@ -16,7 +16,7 @@ Eine ausgefüllte Lernvorlage zeigt Befunde, Korrektur und Nachtest.
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Aktueller Prüfstand vom 17.10.2026: Java 25, 1.298 Anwendungstests, 45 Browserhelfer, 205 Python- und 14 JavaScript-Offlinetests erfolgreich. Je 127 unterschiedliche Browserfälle DE/EN über Gesamtrunden und gezielte Nachtests nachgewiesen. [Ergebnisse und Coverage](browser-tests/abdeckung.md).
+> Dokumentierte Gesamt-QA des Kontoprofils vom 17.10.2026 (vor der anschließenden Admin-URL-Erweiterung): Java 25, 1.298 Anwendungstests, 45 Browserhelfer, 205 Python- und 14 JavaScript-Offlinetests erfolgreich. Je 127 unterschiedliche Browserfälle DE/EN über Gesamtrunden und gezielte Nachtests nachgewiesen. [Ergebnisse und Coverage](browser-tests/abdeckung.md).
 
 ## Funktionen
 
@@ -26,10 +26,19 @@ Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administ
 - Dauerhafte Begrenzung erfolgloser Passwortanmeldungen mit 15-Minuten-Fenster und 15-Minuten-Sperre.
 - Konfigurierbares Limit gleichzeitiger Sitzungen pro Benutzer für Passwortlogin und Remember-me; zusätzliche Tabs teilen ihren Sitzungsplatz.
 - Sofort wirksamer Wartungsmodus mit Zugang für Admin/Superadmin, pausierter normaler Nutzung und erhaltenen Sitzungen/Tokens.
-- Adminbereich mit Benutzerverwaltung, Rollen und Kontofreigabe, Konfiguration sowie Mail-Testversand.
-- „Mein Konto“ über das Benutzermenü: eigene Profildaten und bevorzugte Sprache speichern, mit Validierung und Konfliktschutz. E-Mail, Profilbild, Sicherheit und Geräte/Sitzungen bleiben für weitere Schritte vorbereitet. [Umfang](docs/account-settings-ui.md).
+- Adminbereich mit Benutzerverwaltung, Rollen und Kontofreigabe, Konfiguration sowie Mail-Testversand. Die Menüposition steht in der URL und bleibt bei Refresh erhalten; Direktlinks und Zurück/Vorwärts sind möglich.
+- „Mein Konto“ über das Benutzermenü: eigene Profildaten und bevorzugte Sprache speichern, mit Validierung und Konfliktschutz. Der ausgewählte Tab steht in der URL (`/account?tab=security`) und wird beim Neuladen wiederhergestellt. E-Mail, Profilbild, Sicherheit und Geräte/Sitzungen bleiben für weitere Schritte vorbereitet. [Umfang](docs/account-settings-ui.md).
 - Deutsche und englische Oberfläche, manuell wählbarer Benutzerstatus und automatische Abwesenheitserkennung mit Push-Aktualisierung.
 - Datenbankgestützte E-Mail-Warteschlange mit Wiederholungsversuchen und geplanten Bereinigungsaufgaben.
+
+Admin-Unterseiten verwenden die vorhandenen Queryparameter, beispielsweise
+`/admin?section=user_management` oder `/admin?section=configuration&group=security`.
+Flow aktualisiert URL und Browserhistorie; beim Öffnen, Refresh sowie Zurück/Vorwärts
+stellt die View den Bereich und die Konfigurationsgruppe wieder her. `/admin` und
+ungültige/mehrdeutige Bereiche öffnen das Dashboard; bei fehlender oder ungültiger
+Konfigurationsgruppe wird Allgemein gewählt. Die normalen Admin-Zugriffsprüfungen
+bleiben vorgeschaltet. Die URL speichert die Menüposition; ein Refresh lädt die
+Formulardaten neu. Gezielter Nachweis: [Admin-URL-Prüfung](browser-tests/abdeckung.md).
 
 Worker-Koordination, Retry-Verhalten und konservativer Umgang mit unklaren
 Versandausgängen: [Mailqueue-Verarbeitung](docs/email-queue-processing.md).
@@ -497,7 +506,8 @@ sie werden auf die bearbeiteten Dateien begrenzt.
 
 Unter `src/test/java/` liegen Unit- und serverseitige Regressionstests für Benutzerverwaltung, Eingaberegeln, Registrierung, Konfiguration, Benachrichtigungen, Session-/Remember-me-/Push-RPC-Sicherheit sowie Status und Nebenläufigkeit. Persistenztests verwenden isolierte H2-In-Memory-Datenbanken, nicht die Anwendungsdatenbank. Vaadin-Tests prüfen serverseitige Komponenten und Callbacks mit kontrollierten UI-/Sessionfixtures, ohne Browser oder Anwendungsstart. `ImageHelperTest` prüft zusätzlich das echte Mail-Logo als Classpath-Ressource. `src/test/resources/logback-test.xml` konfiguriert das Test-Logging.
 
-Aktueller Nachweis vom 17.10.2026 für `feature/account-settings-ui`:
+Abgeschlossener Kontoprofil-Nachweis vom 17.10.2026 für `feature/account-settings-ui`,
+vor der anschließenden Admin-URL-Erweiterung:
 **1.298 Anwendungstests, 45 Browserhelfer, 205 Python- und 14 JavaScript-Offlinetests**
 erfolgreich, ohne Fehler oder Skips. Der Produktionsbuild einschließlich Tests und
 Frontend ist erfolgreich. Die vollständigen Browserrunden bestanden je 126/127:
@@ -539,7 +549,8 @@ Die vorausgehende Java-/Textbereinigung entfernte die alte `CardComponent`,
 `VaadinUIHelper`, sieben weitere Methoden, 13 Übersetzungsgetter und 14 veraltete
 Schlüssel je Sprache. Nach dieser damaligen Bereinigung blieben 336 Schlüssel
 je Sprache. Inzwischen sind es einschließlich der folgenden Sicherheitsfunktionen
-und des Wartungsmodus mit Betriebsstatus sowie der Kontovorschau 389 je Sprache. Die drei
+und des Wartungsmodus mit Betriebsstatus sowie der Kontoseite nach Entfernung
+der zwei doppelten E-Mail-/Sicherheitshinweise und Ergänzung des Passwortdialogs sowie Entfernung des Sitzungshinweises 398 je Sprache. Die drei
 `MessageCatalogueTest`-Fälle prüfen Sprachparität, vorhandene Gettertexte und
 verwaiste Einträge; sie sind im aktuellen JUnit-Gesamtergebnis enthalten.
 

@@ -100,6 +100,11 @@
 ## 4. Validation
 
 - Run appropriate existing tests when execution is allowed by the task.
+- Browser-UI-Testlaeufe nur nach ausdruecklicher Freigabe des Benutzers starten;
+  gesammelt zum Abschluss statt automatisch nach einzelnen Aenderungen.
+  Gezielte JUnit-/Helpertests sowie Formatierungs- und Ressourcenpruefungen
+  bleiben davon unberuehrt. Eine fruehere Testfreigabe gilt nicht pauschal
+  fuer spaetere Aufgaben.
 - For behavior changes, add focused tests for the expected behavior.
 - Java tests belong under `src/test/java/`; follow existing JUnit patterns.
   `ImageHelperTest` is an example without application startup or a database.

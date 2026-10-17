@@ -28,6 +28,15 @@ Es gibt keine versteckten CSS-Imports und keine zusätzliche Buildtechnik.
 Die Regelreihenfolge ist Teil der CSS-Kaskade: Bei gleicher Priorität gewinnt der
 spätere Wert. Die Aufteilung behält die bisherige Reihenfolge bei.
 
+## Einheitliche Badge-Schrift
+
+Alle nativen Badges sowie Cosmos-Rollen- und Topbar-Badges verwenden 12 px bei
+Schriftgewicht 400. Das betrifft Kontoaktivierung, „Dieses Gerät“, Sitzungslimit,
+Dashboard-Rollen, Tabellenstatus und Rollen sowie aktive Filter und deren Anzahl.
+Die gemeinsame Regel steht in `cosmos-theme.css`; die beiden Werte lassen sich über
+`--cosmos-badge-font-size` und `--cosmos-badge-font-weight` in `cosmos-tokens.css` ändern.
+Lokale Farben, Rahmen, Abstände und Groß-/Kleinschreibung bleiben davon unabhängig.
+
 ## Farben ändern: Palette oder einzelne Komponente?
 
 Ein Token ist eine benannte CSS-Variable. `var(--cosmos-input-background)` setzt
@@ -62,14 +71,28 @@ der Palette. Eine einzelne Komponente kann hier davon abweichen:
 | Kopfzeile / Seitenleiste | `--cosmos-topbar-*`, `--cosmos-sidebar-*` |
 | Navigation | `--cosmos-nav-*`, `--cosmos-subnav-color` |
 | Badges / Panelicons | `--cosmos-badge-*`, `--cosmos-panel-icon-*` |
-| Overlays und Dialoge | `--cosmos-overlay-*`, `--cosmos-dialog-backdrop-blur`, `--cosmos-dialog-chrome-background`, `--cosmos-user-dialog-header-background` |
+| Overlays | `--cosmos-overlay-*` |
+| Dialoge | `--cosmos-dialog-background`, `--cosmos-dialog-header-background`, `--cosmos-dialog-footer-background`, `--cosmos-dialog-border-color`, `--cosmos-dialog-backdrop-blur` |
 | Filterfläche | `--cosmos-filter-panel-background` |
 | Sterne / Nebel / Planeten | Letzte Tokengruppe: vollständige Verläufe und Schatten |
 
-Filterfläche und Benutzerdialogheader folgen zunächst der Tabellenheaderfarbe.
+Filterfläche und gemeinsamer Dialogheader folgen zunächst der Tabellenheaderfarbe.
 Ein eigener Wert an diesen beiden Tokens trennt sie bewusst davon. Schatten und
 Verläufe sind ebenfalls Werte: Ein Verlauf darf z.B. durch eine einfarbige Fläche,
 ein dekorativer Schatten durch `none` ersetzt werden.
+
+Alle vier Dialogvarianten (E-Mail ändern, Benutzer anlegen/bearbeiten/löschen)
+verwenden die gemeinsamen Farbregeln in `cosmos-admin.css`. Lokale Stylesheets
+regeln ihre Anordnung und Breite. Der Standard bleibt Card-Verlauf für den Inhalt,
+Tabellenheaderfarbe für den Header, `#11192a` für den Footer und Tabellenborder für
+Außenrahmen und Trennlinien. Der Content selbst bleibt transparent, damit der Verlauf
+der Dialogfläche nur einmal gezeichnet wird. Header und Footer verwenden innen
+den Außenradius abzüglich des 1px-Rahmens; Lumos eigene kleinere Rundung würde sonst
+den Außenrand übermalen. Die Dialogfläche bleibt für native Resize-Griffe nach außen
+offen. Außenklick und Escape bleiben native Vaadin-Funktionen; der Hintergrund-Blur
+ist eine Cosmos-CSS-Ergänzung auf dem nativen Backdrop. Der Profil-Footer folgt über
+`--cosmos-account-footer-background` standardmäßig ebenfalls dem Dialogfooter;
+bei Bedarf kann sein Token separat überschrieben werden.
 
 ## Warum werden die Werte an mehreren Elementen gesetzt?
 

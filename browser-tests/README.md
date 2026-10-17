@@ -258,6 +258,8 @@ unter `target/site/jacoco/index.html`. Tatsächlich gemessene Werte: [Abdeckung]
 
 ## Neue Adminregressionen
 
+CONFIG-05A prüft zusätzlich die Menü-URL, echten Browser-Refresh, Direktlinks im
+zweiten Tab und Zurück/Vorwärts zwischen Benutzerverwaltung und Security.
 CONFIG-05A–F prüfen die native Hierarchie mit Klick/Enter/Leertaste, den Erhalt
 ungespeicherter Werte und den echten Klick-Tooltip samt Außenklick, Sprache und
 Card-Stil. Alle 29 Feldinfos in sieben Gruppen sowie 320×568 mit begrenzter
@@ -555,7 +557,7 @@ Aktuelle Fallzuordnungen und offene Betriebs-/Gerätegrenzen stehen in
 
 `-Suite account-settings` prüft ACCOUNT-01–03 und ACCOUNT-04A–D: dauerhaftes
 Speichern einschließlich zweitem Save, Pflichtfelder/Datumsregel ohne ungewollte
-Speicherung, gespeicherte Sprache nach erneuter Anmeldung, beide E-Mail-Einstiege,
+Speicherung, gespeicherte Sprache nach erneuter Anmeldung, den E-Mail-Einstieg unter Sicherheit und den fehlenden Profil-Ändern-Button,
 Tabentwürfe, lokalisierte Dialogfelder, Speichern-Icon, berechneten Backdrop-Blur
 und vier echte Schließwege. Passwort und E-Mail-Entwürfe müssen beim Wiederöffnen
 leer sein. Der eigentliche E-Mail-Wechsel ist noch nicht implementiert und wird

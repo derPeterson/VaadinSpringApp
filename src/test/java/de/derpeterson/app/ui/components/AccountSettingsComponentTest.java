@@ -63,7 +63,7 @@ class AccountSettingsComponentTest {
             .enabled(true)
             .preferredLocale(Locale.GERMAN)
             .build();
-    content = new AccountSettingsComponent(new MessageProperties(provider), user, saver);
+    content = new AccountSettingsComponent(new MessageProperties(provider), user, saver, 7);
   }
 
   @AfterEach
@@ -82,6 +82,21 @@ class AccountSettingsComponentTest {
         .filter(component -> component.getId().orElse("").equals(id))
         .findFirst()
         .orElseThrow();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void sessionsShowConfiguredLimitWithoutPresentingSampleCountAsReal(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    content.refreshTexts();
+    var texts = MessageProperties.forLocale(provider, locale.get());
+    assertEquals(
+        texts.getAccountSettingsSessionsLimit(7),
+        ((Span) byId("account-sessions-limit")).getText());
+    var panel = byId("account-panel-sessions").getElement().getTextRecursively();
+    assertTrue(panel.contains(texts.getAccountSettingsSessionsActiveTitle()));
+    assertTrue(panel.contains(texts.getAccountSettingsSessionsActivity()));
+    verifyNoInteractions(saver);
   }
 
   @Test
@@ -105,7 +120,7 @@ class AccountSettingsComponentTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void languageRefreshKeepsSelectedTabAndInputsAndClearlyLabelsSampleSessions(String language) {
+  void languageRefreshKeepsSelectedTabAndInputsAndTranslatesSessions(String language) {
     ((TextField) byId("account-first-name")).setValue("Unsaved");
     var tabs = (Tabs) byId("account-tabs");
     tabs.setSelectedIndex(2);
@@ -122,12 +137,7 @@ class AccountSettingsComponentTest {
         byId("account-panel-sessions")
             .getElement()
             .getTextRecursively()
-            .contains(texts.getAccountSettingsSessionsDemo()));
-    assertTrue(
-        byId("account-panel-sessions")
-            .getElement()
-            .getTextRecursively()
-            .contains(texts.getAccountSettingsSessionsHint()));
+            .contains(texts.getAccountSettingsSessionsActivity()));
     assertEquals(2, tabs.getSelectedIndex());
     assertEquals("Unsaved", ((TextField) byId("account-first-name")).getValue());
     assertEquals("Alex", user.getFirstName());
@@ -136,7 +146,7 @@ class AccountSettingsComponentTest {
   @Test
   void regionalSavedLanguageMapsToASupportedOptionWithoutChangingTheUser() {
     user.setPreferredLocale(Locale.GERMANY);
-    content = new AccountSettingsComponent(new MessageProperties(provider), user, saver);
+    content = new AccountSettingsComponent(new MessageProperties(provider), user, saver, 7);
     assertEquals(Locale.GERMAN, ((ComboBox<?>) byId("account-language")).getValue());
     assertEquals(Locale.GERMANY, user.getPreferredLocale());
   }
@@ -145,7 +155,10 @@ class AccountSettingsComponentTest {
   void remainingPreviewButtonsAreEnabledButClicksDoNotChangeTheAccount() {
     var buttons = tree(content).filter(Button.class::isInstance).map(Button.class::cast).toList();
     assertFalse(buttons.isEmpty());
-    assertTrue(buttons.stream().allMatch(Button::isEnabled));
+    var currentSession = (Button) byId("account-current-session");
+    assertFalse(currentSession.isEnabled());
+    assertTrue(
+        buttons.stream().filter(button -> button != currentSession).allMatch(Button::isEnabled));
     ((TextField) byId("account-first-name")).setValue("Unsaved draft");
     buttons.stream()
         .filter(button -> !button.getId().orElse("").equals("account-save"))
@@ -265,18 +278,39 @@ class AccountSettingsComponentTest {
     assertFalse(field.isEnabled());
     assertTrue(field.isReadOnly());
     assertEquals(user.getEmail(), field.getValue());
+    assertTrue(field.getHelperText() == null || field.getHelperText().isBlank());
+    assertFalse(
+        tree(content)
+            .anyMatch(
+                component -> component.getId().orElse("").equals("account-email-edit-profile")));
+    assertFalse(
+        tree(byId("account-panel-security"))
+            .anyMatch(
+                component -> component.getElement().getClassList().contains("account-info-text")));
   }
 
   @Test
-  void bothEmailButtonsOpenTheSameDraftDialogWithoutChangingProfileFields() {
+  void securityPasswordButtonOpensOnlyItsDialogAndPreservesProfileDraft() {
+    ((TextField) byId("account-first-name")).setValue("Unsaved");
+    var passwordDialog = (AccountPasswordChangeDialog) byId("account-password-change-dialog");
+    var emailDialog = (AccountEmailChangeDialog) byId("account-email-change-dialog");
+    ((Button) byId("account-password-edit-security")).click();
+    assertTrue(passwordDialog.isOpened());
+    assertFalse(emailDialog.isOpened());
+    passwordDialog.close();
+    assertEquals("Unsaved", ((TextField) byId("account-first-name")).getValue());
+    assertEquals("Alex", user.getFirstName());
+    verifyNoInteractions(saver);
+  }
+
+  @Test
+  void securityEmailButtonOpensTheDraftDialogWithoutChangingProfileFields() {
     ((TextField) byId("account-first-name")).setValue("Unsaved");
     var dialog = (AccountEmailChangeDialog) byId("account-email-change-dialog");
-    for (var id : new String[] {"account-email-edit-profile", "account-email-edit-security"}) {
-      assertFalse(dialog.isOpened());
-      ((Button) byId(id)).click();
-      assertTrue(dialog.isOpened());
-      dialog.close();
-    }
+    assertFalse(dialog.isOpened());
+    ((Button) byId("account-email-edit-security")).click();
+    assertTrue(dialog.isOpened());
+    dialog.close();
     assertEquals("Unsaved", ((TextField) byId("account-first-name")).getValue());
     assertEquals("own-account@example.test", user.getEmail());
     verifyNoInteractions(saver);

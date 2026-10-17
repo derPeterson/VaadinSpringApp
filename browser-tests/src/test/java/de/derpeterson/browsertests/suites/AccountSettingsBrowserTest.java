@@ -162,10 +162,10 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   @Description(
       """
       1. Eigenes Konto öffnen und ungespeicherten Profilnamen eingeben; Tabs wechseln.
-      2. E-Mail-Dialog im Profil öffnen: lokalisierte Felder, Bestätigung, Passwort, Info und Blur prüfen.
+      2. Fehlenden Profil-Ändern-Button prüfen; E-Mail-Dialog unter Sicherheit öffnen: lokalisierte Felder, Bestätigung, Passwort, Info und Blur prüfen.
       3. Erfundenen E-Mail-/Passwortentwurf eingeben; per Icon, Abbrechen, Escape oder Außenklick schließen.
-      4. Über Sicherheit erneut öffnen: beide E-Mail-Felder und Passwort leer, Profilentwurf unverändert.
-      **Erwartet:** Beide Einstiegspunkte funktionieren; Schließen verwirft nur Dialogeingaben. Kein echter E-Mail-Wechsel.
+      4. Unter Sicherheit erneut öffnen: beide E-Mail-Felder und Passwort leer, Profilentwurf unverändert.
+      **Erwartet:** Sicherheit öffnet den Dialog; Schließen verwirft nur Dialogeingaben. Kein echter E-Mail-Wechsel.
       """)
   void emailDraftClosesWithoutChangingTheProfile(String close, String caseId) {
     String email = account();
@@ -175,7 +175,8 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.host("account-tab-security").click();
     form.host("account-tab-profile").click();
     assertThat(form.input("account-first-name")).hasValue("Draft");
-    form.openEmail(false);
+    assertThat(form.host("account-email-edit-profile")).hasCount(0);
+    form.openEmail();
     assertThat(form.host("account-email-new"))
         .hasJSProperty("label", texts.getAccountEmailDialogNewEmail());
     assertThat(form.host("account-email-confirm"))
@@ -196,7 +197,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.input("account-email-confirm").fill("draft@example.test");
     form.input("account-email-password").fill("Local-Draft-Only!");
     form.closeEmail(close);
-    form.openEmail(true);
+    form.openEmail();
     assertThat(form.input("account-email-new")).hasValue("");
     assertThat(form.input("account-email-confirm")).hasValue("");
     assertThat(form.input("account-email-password")).hasValue("");

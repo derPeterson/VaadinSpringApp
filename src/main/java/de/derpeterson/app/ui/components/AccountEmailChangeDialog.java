@@ -31,7 +31,7 @@ public class AccountEmailChangeDialog extends Dialog {
   public AccountEmailChangeDialog(MessageProperties messages) {
     this.messages = messages;
     setId("account-email-change-dialog");
-    addClassNames("cosmos-theme", "account-email-dialog");
+    addClassNames("cosmos-theme", "account-change-dialog", "account-email-dialog");
     getThemeNames().add("cosmos");
     setModality(ModalityMode.STRICT);
     setCloseOnEsc(true);
@@ -49,7 +49,7 @@ public class AccountEmailChangeDialog extends Dialog {
     close.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
     close.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     var header = new Div(badge, heading, close);
-    header.addClassName("account-email-dialog-header");
+    header.addClassName("account-change-dialog-header");
     getHeader().add(header);
 
     email.setId("account-email-new");
@@ -73,7 +73,7 @@ public class AccountEmailChangeDialog extends Dialog {
     var info = new Div(infoIcon, hint);
     info.addClassName("cosmos-panel-hint");
     var form = new Div(email, confirmEmail, password, info);
-    form.addClassNames("cosmos-dialog-form", "account-email-dialog-form");
+    form.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
     add(form);
 
     cancel.setId("account-email-cancel");

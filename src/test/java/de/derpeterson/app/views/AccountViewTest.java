@@ -7,9 +7,13 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.Location;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.server.VaadinSession;
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -23,17 +27,22 @@ import de.derpeterson.app.service.AccountProfileService.Profile;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountSettingsComponent;
+import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class AccountViewTest {
@@ -66,6 +75,7 @@ class AccountViewTest {
     var config = mock(ConfigService.class);
     when(config.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
+    when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(11);
     profiles = mock(AccountProfileService.class);
     user =
         UserEntity.builder()
@@ -79,6 +89,10 @@ class AccountViewTest {
             .enabled(true)
             .build();
     when(security.getCurrentUser(request)).thenReturn(Optional.of(user));
+    when(security.getAuthenticatedUser(request))
+        .thenReturn(
+            Optional.of(
+                User.withUsername("own@example.test").password("unused").roles("USER").build()));
     view =
         new AccountView(
             new MessageProperties(new CustomI18NProvider()),
@@ -97,11 +111,95 @@ class AccountViewTest {
     VaadinSession.setCurrent(null);
   }
 
+  private AccountSettingsComponent settings() {
+    return (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettings");
+  }
+
+  private void enter(String query) {
+    var event = mock(BeforeEnterEvent.class);
+    when(event.getLocation()).thenReturn(new Location(AppRouteConstants.ACCOUNT_ROUTE + query));
+    view.beforeEnter(event);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "'', PROFILE", "?tab=profile, PROFILE", "?tab=security, SECURITY",
+    "?tab=sessions, SESSIONS", "?tab=SECURITY, SECURITY", "?tab=unknown, PROFILE",
+    "?tab=, PROFILE", "?tab=sessions&tab=security, PROFILE", "?tab=%3Cscript%3E, PROFILE"
+  })
+  void accountUrlsRestoreTheTabAndExactlyOneVisiblePanel(String query, AccountSection expected) {
+    enter(query);
+    assertEquals(expected, settings().getSelectedSection());
+    for (var section : AccountSection.values()) {
+      var id = "account-panel-" + section.name().toLowerCase(Locale.ROOT);
+      var panel =
+          tree(settings()).filter(c -> c.getId().orElse("").equals(id)).findFirst().orElseThrow();
+      assertEquals(section == expected, panel.isVisible());
+    }
+    verify(ui, never()).navigate(eq(AccountView.class), any(QueryParameters.class));
+  }
+
+  @Test
+  void tabChangesNavigateWithFlowAndHistoryRestorationDoesNotNavigateAgainOrLoseDrafts() {
+    doReturn(Optional.of(view))
+        .when(ui)
+        .navigate(eq(AccountView.class), any(QueryParameters.class));
+    var first =
+        (TextField)
+            tree(settings())
+                .filter(c -> c.getId().orElse("").equals("account-first-name"))
+                .findFirst()
+                .orElseThrow();
+    first.setValue("Unsaved draft");
+    var tabs =
+        (Tabs)
+            tree(settings())
+                .filter(c -> c.getId().orElse("").equals("account-tabs"))
+                .findFirst()
+                .orElseThrow();
+    tabs.setSelectedIndex(2);
+    verify(ui).navigate(AccountView.class, QueryParameters.simple(Map.of("tab", "sessions")));
+    enter("?tab=security");
+    assertEquals(AccountSection.SECURITY, settings().getSelectedSection());
+    enter("?tab=sessions");
+    assertEquals(AccountSection.SESSIONS, settings().getSelectedSection());
+    assertEquals("Unsaved draft", first.getValue());
+    verify(ui, times(1)).navigate(eq(AccountView.class), any(QueryParameters.class));
+    verifyNoInteractions(profiles);
+  }
+
+  @Test
+  void invalidOrMissingTabResetsEarlierSelectionAndLanguageChangesKeepTheTab() {
+    enter("?tab=security");
+    LanguageChangeEvent.fire(ui, Locale.ENGLISH);
+    assertEquals(AccountSection.SECURITY, settings().getSelectedSection());
+    enter("?tab=unknown");
+    assertEquals(AccountSection.PROFILE, settings().getSelectedSection());
+    enter("?tab=sessions");
+    enter("");
+    assertEquals(AccountSection.PROFILE, settings().getSelectedSection());
+    verify(ui, never()).navigate(eq(AccountView.class), any(QueryParameters.class));
+  }
+
+  @Test
+  void sessionsLimitComesFromConfigurationRatherThanTheThreeSampleDevices() {
+    var limit =
+        tree(view)
+            .filter(c -> c.getId().orElse("").equals("account-sessions-limit"))
+            .findFirst()
+            .orElseThrow();
+    var texts = MessageProperties.forLocale(new CustomI18NProvider(), Locale.GERMAN);
+    assertEquals(texts.getAccountSettingsSessionsLimit(11), limit.getElement().getText());
+  }
+
   @Test
   void viewForwardsAnUnauthenticatedVisitorToLogin() {
+    when(security.getAuthenticatedUser(request)).thenReturn(Optional.empty());
     var event = mock(BeforeEnterEvent.class);
+    when(event.hasForwardTarget()).thenReturn(true);
     view.beforeEnter(event);
     verify(event).forwardTo(LoginView.class);
+    verify(event, never()).getLocation();
   }
 
   @Test

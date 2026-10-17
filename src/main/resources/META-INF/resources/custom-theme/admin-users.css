@@ -140,7 +140,6 @@
 
 .cosmos-admin .admin-user-active-filter-count {
     border: 1px solid var(--lumo-primary-color-50pct);
-    font-size: 12px;
 }
 
 .admin-user-filter-panel-heading > vaadin-icon {
@@ -202,21 +201,9 @@
     box-shadow: none;
 }
 
-vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(overlay),
-vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(overlay) {
-    border: 1px solid var(--cosmos-table-border-color);
-}
-
 vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(header),
 vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(header) {
-    background: var(--cosmos-user-dialog-header-background);
     color: var(--lumo-primary-contrast-color);
-    border-bottom: 1px solid var(--cosmos-table-border-color);
-}
-
-vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(footer),
-vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(footer) {
-    border-top: 1px solid var(--cosmos-table-border-color);
 }
 
 vaadin-dialog.admin-user-delete-dialog::part(header-content),
@@ -319,6 +306,11 @@ vaadin-dialog.admin-user-dialog::part(content) {
     color: var(--cosmos-table-body-color);
 }
 
+/* Aktiv- und Statusbadges: derselbe dezente Rahmen in Textfarbe wie im Konto. */
+.admin-users-grid [theme~="badge"] {
+    border: 1px solid currentColor;
+}
+
 .admin-users-grid .admin-user-table-name {
     font-weight: 700;
 }
@@ -330,12 +322,10 @@ vaadin-dialog.admin-user-dialog::part(content) {
     gap: var(--lumo-space-xs);
 }
 
-/* Rollen und aktive Filter verwenden dieselbe Badge-Schrift. */
+/* Lokale Textfarbe für Rollen und aktive Filter; Schrift zentral in cosmos-theme.css. */
 
 .admin-users-grid .cosmos-admin-role-chip,
 .cosmos-admin .admin-user-active-filter-chip {
-    font-size: 12px;
-    font-weight: 400;
     color: var(--lumo-secondary-text-color);
     text-transform: none;
 }
@@ -451,7 +441,7 @@ vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(overlay) {
     padding: var(--lumo-space-m);
     border: 1px solid var(--lumo-contrast-20pct);
     border-radius: var(--lumo-border-radius-l);
-    background: var(--cosmos-user-dialog-header-background);
+    background: var(--cosmos-dialog-header-background);
 }
 
 vaadin-dialog.admin-user-delete-dialog::part(content) {

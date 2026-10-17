@@ -110,13 +110,19 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-overlay-radius: var(--cosmos-card-radius);
     --cosmos-overlay-background: var(--cosmos-card-background);
     --cosmos-overlay-shadow: var(--cosmos-card-shadow);
+    /* Alle Cosmos-Dialoge verwenden diese vier Werte. Header und Footer sind
+     * bewusst getrennt: hier lassen sich ihre Farben unabhängig ändern. */
+    --cosmos-dialog-background: var(--cosmos-card-background);
+    --cosmos-dialog-header-background: var(--cosmos-table-header-background);
+    --cosmos-dialog-footer-background: #11192a;
+    --cosmos-dialog-border-color: var(--cosmos-table-border-color);
     --cosmos-dialog-backdrop-blur: 6px;
-    --cosmos-dialog-chrome-background: var(--lumo-contrast-5pct);
-    --cosmos-account-footer-background: #11192a;
-    --cosmos-user-dialog-header-background: var(--cosmos-table-header-background);
+    --cosmos-account-footer-background: var(--cosmos-dialog-footer-background);
 
     /* 8. BADGES UND PANELICONS
      * Standardmäßig aus der Palette abgeleitet; für diese Komponente hier separat änderbar. */
+    --cosmos-badge-font-size: 12px;
+    --cosmos-badge-font-weight: 400;
     --cosmos-badge-border: var(--lumo-primary-color-50pct);
     --cosmos-badge-background: var(--lumo-primary-color-10pct);
     --cosmos-badge-color: var(--lumo-primary-text-color);

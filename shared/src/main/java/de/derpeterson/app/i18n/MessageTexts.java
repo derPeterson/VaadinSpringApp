@@ -1519,10 +1519,6 @@ public class MessageTexts {
     return getTranslation("accountSettings.language.hint");
   }
 
-  public String getAccountSettingsEmailHint() {
-    return getTranslation("accountSettings.email.hint");
-  }
-
   public String getAccountSettingsChangeEmail() {
     return getTranslation("accountSettings.change.email");
   }
@@ -1551,10 +1547,6 @@ public class MessageTexts {
     return getTranslation("accountSettings.security.description");
   }
 
-  public String getAccountSettingsSecurityNotice() {
-    return getTranslation("accountSettings.security.notice");
-  }
-
   public String getAccountSettingsSessionsTitle() {
     return getTranslation("accountSettings.sessions.title");
   }
@@ -1567,20 +1559,16 @@ public class MessageTexts {
     return getTranslation("accountSettings.sessions.meta");
   }
 
-  public String getAccountSettingsSessionsDemo() {
-    return getTranslation("accountSettings.sessions.demo");
+  public String getAccountSettingsSessionsActivity() {
+    return getTranslation("accountSettings.sessions.activity");
   }
 
-  public String getAccountSettingsSessionsCount() {
-    return getTranslation("accountSettings.sessions.count");
+  public String getAccountSettingsSessionsActiveTitle() {
+    return getTranslation("accountSettings.sessions.active.title");
   }
 
-  public String getAccountSettingsSessionsLimit() {
-    return getTranslation("accountSettings.sessions.limit");
-  }
-
-  public String getAccountSettingsSessionsHint() {
-    return getTranslation("accountSettings.sessions.hint");
+  public String getAccountSettingsSessionsLimit(int limit) {
+    return getFormattedTranslation("accountSettings.sessions.limit", limit);
   }
 
   public String getAccountSettingsCurrentDevice() {
@@ -1641,5 +1629,21 @@ public class MessageTexts {
 
   public String getAccountEmailDialogRequest() {
     return getTranslation("accountSettings.email.dialog.request");
+  }
+
+  public String getAccountPasswordDialogDescription() {
+    return getTranslation("accountSettings.password.dialog.description");
+  }
+
+  public String getAccountPasswordDialogCurrentPassword() {
+    return getTranslation("accountSettings.password.dialog.current.password");
+  }
+
+  public String getAccountPasswordDialogHint() {
+    return getTranslation("accountSettings.password.dialog.hint");
+  }
+
+  public String getAccountPasswordDialogConfirmPassword() {
+    return getTranslation("accountSettings.password.dialog.confirm.password");
   }
 }

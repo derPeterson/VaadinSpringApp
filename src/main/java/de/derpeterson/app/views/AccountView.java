@@ -7,7 +7,9 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -21,6 +23,7 @@ import de.derpeterson.app.service.AccountProfileService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountSettingsComponent;
+import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
 import de.derpeterson.app.ui.components.CosmosBackgroundComponent;
 import de.derpeterson.app.ui.components.CosmosCopyrightComponent;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
@@ -28,6 +31,8 @@ import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Clock;
+import java.util.Locale;
+import java.util.Map;
 
 @Route(AppRouteConstants.ACCOUNT_ROUTE)
 @PageTitle(AppRouteConstants.ACCOUNT_PAGE_TITLE)
@@ -73,7 +78,17 @@ public class AccountView extends IsAuthenticatedBaseView {
 
     accountSettings =
         new AccountSettingsComponent(
-            messages, currentUser, changes -> profiles.save(request, changes));
+            messages,
+            currentUser,
+            changes -> profiles.save(request, changes),
+            config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER));
+    accountSettings.addSectionChangeListener(
+        section ->
+            UI.getCurrent()
+                .navigate(
+                    AccountView.class,
+                    QueryParameters.simple(
+                        Map.of("tab", section.name().toLowerCase(Locale.ROOT)))));
     // Erst nach bestätigtem Commit den sichtbaren UI-Zustand und die Sitzungssprache ändern.
     accountSettings.addProfileSavedListener(
         saved -> {
@@ -94,6 +109,23 @@ public class AccountView extends IsAuthenticatedBaseView {
     main.addClassName("cosmos-app-main");
     main.getElement().setAttribute("role", "main");
     setContent(new Div(new CosmosBackgroundComponent(), main));
+  }
+
+  @Override
+  public void beforeEnter(BeforeEnterEvent event) {
+    super.beforeEnter(event);
+    if (event.hasForwardTarget()) return;
+    var values = event.getLocation().getQueryParameters().getParameters().get("tab");
+    AccountSection section = AccountSection.PROFILE;
+    // Fehlende, unbekannte und mehrdeutige Tabwerte öffnen immer das Profil.
+    if (values != null && values.size() == 1) {
+      try {
+        section = AccountSection.valueOf(values.getFirst().toUpperCase(Locale.ROOT));
+      } catch (IllegalArgumentException invalid) {
+        section = AccountSection.PROFILE;
+      }
+    }
+    accountSettings.selectSection(section);
   }
 
   @Override

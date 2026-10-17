@@ -82,9 +82,9 @@ public final class AccountPage {
   }
 
   @Step("E-Mail-Dialog öffnen")
-  public void openEmail(boolean security) {
-    if (security) host("account-tab-security").click();
-    host(security ? "account-email-edit-security" : "account-email-edit-profile").click();
+  public void openEmail() {
+    host("account-tab-security").click();
+    host("account-email-edit-security").click();
     assertThat(input("account-email-new")).isVisible();
   }
 

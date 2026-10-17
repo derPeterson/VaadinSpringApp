@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 34" fill="currentColor">
+  <!-- Originalkonturen: Vaadin Icons 25.3.0 (desktop, laptop, mobile), https://vaadin.com/icons.
+       Anordnung und Maskierung angepasst. Die Aussparungen sind transparent, keine Hintergrundflächen. -->
+  <defs>
+    <mask id="account-devices-monitor-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="40" height="34">
+      <rect width="40" height="34" fill="white"/>
+      <!-- Freiraum um Laptop und Smartphone lässt den Bildschirm dahinter verschwinden. -->
+      <rect x="1.75" y="14.25" width="18.5" height="14.4" fill="black"/>
+      <rect x="0" y="26.6" width="23" height="5" fill="black"/>
+      <rect x="26.6" y="10.4" width="13.2" height="21.6" fill="black"/>
+    </mask>
+  </defs>
+  <g mask="url(#account-devices-monitor-mask)">
+    <path transform="translate(8 1) scale(1.5)" d="M16 0h-16v13h6v2h-2v1h8v-1h-2v-2h6v-13zM9 12h-2v-1h2v1zM15 10h-14v-8.9c0-0.1 0-0.1 0-0.1h14c0 0 0 0 0 0.1v8.9z"/>
+  </g>
+  <path transform="translate(0 12.5) scale(1.375)" d="M14 11v-9h-12v9h-2v2h16v-2h-2zM10 12h-4v-1h4v1zM13 10h-10v-7h10v7z"/>
+  <path transform="translate(22 10) scale(1.4)" d="M4 1v14h8v-14h-8zM9 14h-2v-1h2v1zM11 12h-6v-9h6v9z"/>
+</svg>

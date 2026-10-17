@@ -124,14 +124,15 @@ public class ConfigurationBrowserTest extends BrowserFixture {
 
   @Tag("fast")
   @Test
-  @DisplayName("CONFIG-05A: SideNav auf- und zuklappen, Tastatur und Sprache ohne Formularverlust")
+  @DisplayName("CONFIG-05A: SideNav, Sprache, URL, Refresh und Browserhistorie")
   @Description(
       """
         1. Allgemein über die native Konfigurationshierarchie öffnen und einen ungespeicherten Namen eingeben.
         2. Elternpunkt per Klick einklappen: Allgemein bleibt sichtbar und die Eingabe erhalten.
         3. Per Enter öffnen, per Leertaste schließen und erneut öffnen; alle sieben Gruppen bleiben erreichbar.
         4. Über das Avatarmenü die andere Sprache wählen und wieder zurück: Gruppe und Eingabe bleiben erhalten.
-        **Erwartet:** COGS-Elternpunkt navigiert nicht, native Tastaturbedienung und Sprachwechsel funktionieren.
+        5. Benutzerverwaltung und Security öffnen: URL, Refresh, Zurück/Vorwärts und Direktlink im neuen Tab prüfen.
+        **Erwartet:** Elternpunkt navigiert nicht; Bedienung und Sprache erhalten Entwürfe. URL stellt den gewählten Bereich wieder her.
         """)
   void hierarchyTogglePreservesDraftAndSupportsKeyboardAndLanguage() {
     ConfigurationPage settings = admin();
@@ -198,6 +199,34 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       settings.enter(label, original);
       settings.save();
     }
+    navigation.openSection(texts.getAdminUsersTitle());
+    assertEquals(
+        "user_management", page.evaluate("new URL(location.href).searchParams.get('section')"));
+    page.reload();
+    assertAdminHeading(page, texts.getAdminUsersTitle(), 1);
+    assertThat(page.locator(".cosmos-nav-item--active[aria-current='page']")).hasCount(1);
+    navigation.openGroup(AdminConfigGroup.SECURITY);
+    assertEquals("security", page.evaluate("new URL(location.href).searchParams.get('group')"));
+    String directLink = page.url();
+    page.reload();
+    assertAdminHeading(page, texts.getAdminConfigGroupSecurity(), 2);
+    assertThat(navigation.configuration()).hasJSProperty("expanded", true);
+    page.goBack();
+    assertAdminHeading(page, texts.getAdminUsersTitle(), 1);
+    page.goForward();
+    assertAdminHeading(page, texts.getAdminConfigGroupSecurity(), 2);
+    try (Page direct = context.newPage()) {
+      direct.navigate(directLink);
+      assertAdminHeading(direct, texts.getAdminConfigGroupSecurity(), 2);
+    }
+  }
+
+  private void assertAdminHeading(Page target, String title, int level) {
+    assertThat(
+            target.getByRole(
+                AriaRole.HEADING,
+                new Page.GetByRoleOptions().setName(title).setExact(true).setLevel(level)))
+        .isVisible();
   }
 
   @Tag("fast")

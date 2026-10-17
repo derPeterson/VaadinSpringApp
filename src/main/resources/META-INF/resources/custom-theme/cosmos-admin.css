@@ -23,8 +23,6 @@ vaadin-app-layout.cosmos-admin {
     border-radius: 5px;
     background: var(--cosmos-badge-background);
     color: var(--cosmos-badge-color);
-    font-size: 10px;
-    font-weight: 700;
     letter-spacing: .4px;
     white-space: nowrap;
     text-transform: uppercase;
@@ -311,8 +309,6 @@ vaadin-app-layout.cosmos-admin {
     border-radius: 5px;
     background: var(--cosmos-badge-background);
     color: var(--cosmos-badge-color);
-    font-size: 10px;
-    font-weight: 650;
     line-height: 1.4;
     letter-spacing: .2px;
 }
@@ -738,11 +734,35 @@ vaadin-dialog[theme~="cosmos"]::part(backdrop) {
     backdrop-filter: blur(var(--cosmos-dialog-backdrop-blur));
 }
 
+/* Die Oberfläche trägt den Verlauf; Content bleibt transparent, damit er
+ * nicht doppelt übereinander gezeichnet wird. Farben gelten für alle Dialoge. */
+vaadin-dialog[theme~="cosmos"]::part(overlay) {
+    background: var(--cosmos-dialog-background);
+    border: 1px solid var(--cosmos-dialog-border-color);
+}
+
 vaadin-dialog[theme~="cosmos"]::part(header),
 vaadin-dialog[theme~="cosmos"]::part(footer) {
     padding: 18px 24px;
-    background: var(--cosmos-dialog-chrome-background);
     color: var(--lumo-header-text-color);
+}
+
+/* Lumos eigene 9px-Rundung passt nicht zu unserer größeren Dialogfläche.
+ * Innenradius = Außenradius minus 1px Rahmen: so übermalen Header und Footer
+ * die Rundungen des Außenrahmens nicht. Kein overflow:hidden am Dialog,
+ * damit die nativen Resize-Griffe außerhalb der Fläche bedienbar bleiben. */
+vaadin-dialog[theme~="cosmos"]::part(header) {
+    background: var(--cosmos-dialog-header-background);
+    border-bottom: 1px solid var(--cosmos-dialog-border-color);
+    border-top-left-radius: calc(var(--cosmos-overlay-radius) - 1px);
+    border-top-right-radius: calc(var(--cosmos-overlay-radius) - 1px);
+}
+
+vaadin-dialog[theme~="cosmos"]::part(footer) {
+    background: var(--cosmos-dialog-footer-background);
+    border-top: 1px solid var(--cosmos-dialog-border-color);
+    border-bottom-left-radius: calc(var(--cosmos-overlay-radius) - 1px);
+    border-bottom-right-radius: calc(var(--cosmos-overlay-radius) - 1px);
 }
 
 vaadin-dialog[theme~="cosmos"]::part(content) {
@@ -794,7 +814,6 @@ vaadin-dialog[theme~="cosmos"].cosmos-admin-info-dialog::part(overlay) {
     }
 
     .cosmos-topbar-badge {
-        font-size: 8px;
         padding: 5px 7px;
     }
 }

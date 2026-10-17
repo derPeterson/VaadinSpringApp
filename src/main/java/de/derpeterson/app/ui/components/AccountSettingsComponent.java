@@ -1,5 +1,6 @@
 package de.derpeterson.app.ui.components;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasText;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -8,6 +9,7 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
@@ -36,6 +38,12 @@ import org.springframework.dao.OptimisticLockingFailureException;
 /** Profilbearbeitung; Sicherheits-, Bild- und Sitzungsaktionen folgen in späteren Schritten. */
 @Slf4j
 public class AccountSettingsComponent extends Div {
+  public enum AccountSection {
+    PROFILE,
+    SECURITY,
+    SESSIONS
+  }
+
   private final transient MessageProperties messages;
   private final SerializableFunction<Changes, Profile> saveProfile;
   private final List<SerializableConsumer<Profile>> profileSavedListeners = new ArrayList<>();
@@ -43,20 +51,27 @@ public class AccountSettingsComponent extends Div {
   private final Span summaryName = new Span();
   private final List<Runnable> textUpdates = new ArrayList<>();
   private final Map<Tab, AccountPanelComponent> panels = new LinkedHashMap<>();
+  private final Map<AccountSection, Tab> sectionTabs = new LinkedHashMap<>();
+  private final List<SerializableConsumer<AccountSection>> sectionChangeListeners =
+      new ArrayList<>();
+  private boolean restoringSection;
   private final Tabs tabs = new Tabs();
   private final TextField firstName = new TextField();
   private final TextField lastName = new TextField();
   private final EmailField email = new EmailField();
   private final AccountEmailChangeDialog emailChangeDialog;
+  private final AccountPasswordChangeDialog passwordChangeDialog;
   private final DatePicker birthDate = new DatePicker();
   private final ComboBox<Locale> preferredLanguage = new ComboBox<>();
 
   public AccountSettingsComponent(
       MessageProperties messages,
       UserEntity user,
-      SerializableFunction<Changes, Profile> saveProfile) {
+      SerializableFunction<Changes, Profile> saveProfile,
+      int maxSessionsPerUser) {
     this.messages = messages;
     emailChangeDialog = new AccountEmailChangeDialog(messages);
+    passwordChangeDialog = new AccountPasswordChangeDialog(messages);
     this.saveProfile = saveProfile;
     this.version = user == null ? null : user.getVersion();
     addClassName("account-settings");
@@ -70,13 +85,31 @@ public class AccountSettingsComponent extends Div {
     textUpdates.add(
         () -> tabs.getElement().setAttribute("aria-label", messages.getAccountSettingsTitle()));
     var profile = profile(user);
-    addTab("profile", VaadinIcon.USER, messages::getAccountSettingsProfileTab, profile);
-    addTab("security", VaadinIcon.LOCK, messages::getAccountSettingsSecurityTab, security(user));
-    addTab("sessions", VaadinIcon.DESKTOP, messages::getAccountSettingsSessionsTab, sessions());
-    tabs.addSelectedChangeListener(event -> showSelectedPanel());
+    addTab(
+        AccountSection.PROFILE,
+        VaadinIcon.USER.create(),
+        messages::getAccountSettingsProfileTab,
+        profile);
+    addTab(
+        AccountSection.SECURITY,
+        VaadinIcon.LOCK.create(),
+        messages::getAccountSettingsSecurityTab,
+        security(user));
+    addTab(
+        AccountSection.SESSIONS,
+        devicesIcon(),
+        messages::getAccountSettingsSessionsTab,
+        sessions(maxSessionsPerUser));
+    tabs.addSelectedChangeListener(
+        event -> {
+          showSelectedPanel();
+          if (!restoringSection) {
+            sectionChangeListeners.forEach(listener -> listener.accept(getSelectedSection()));
+          }
+        });
     var content = new Div(panels.values().toArray(AccountPanelComponent[]::new));
     content.addClassName("account-panels");
-    add(tabs, content, emailChangeDialog);
+    add(tabs, content, emailChangeDialog, passwordChangeDialog);
     refreshTexts();
     showSelectedPanel();
   }
@@ -99,6 +132,13 @@ public class AccountSettingsComponent extends Div {
     var button = previewButton(VaadinIcon.EDIT, messages::getAccountSettingsChangeEmail, false);
     button.setId(id);
     button.addClickListener(event -> emailChangeDialog.open());
+    return button;
+  }
+
+  private Button passwordChangeButton() {
+    var button = previewButton(VaadinIcon.EDIT, messages::getAccountSettingsChangePassword, false);
+    button.setId("account-password-edit-security");
+    button.addClickListener(event -> passwordChangeDialog.open());
     return button;
   }
 
@@ -146,8 +186,11 @@ public class AccountSettingsComponent extends Div {
   }
 
   private void addTab(
-      String id, VaadinIcon icon, Supplier<String> label, AccountPanelComponent panel) {
-    var symbol = icon.create();
+      AccountSection section,
+      Component symbol,
+      Supplier<String> label,
+      AccountPanelComponent panel) {
+    var id = section.name().toLowerCase(Locale.ROOT);
     symbol.getElement().setAttribute("aria-hidden", "true");
     var tab = new Tab(symbol, text(new Span(), label));
     tab.setId("account-tab-" + id);
@@ -155,7 +198,30 @@ public class AccountSettingsComponent extends Div {
     panel.getElement().setAttribute("role", "tabpanel");
     panel.getElement().setAttribute("aria-labelledby", "account-tab-" + id);
     panels.put(tab, panel);
+    sectionTabs.put(section, tab);
     tabs.add(tab);
+  }
+
+  public AccountSection getSelectedSection() {
+    return sectionTabs.entrySet().stream()
+        .filter(entry -> entry.getValue() == tabs.getSelectedTab())
+        .map(Map.Entry::getKey)
+        .findFirst()
+        .orElse(AccountSection.PROFILE);
+  }
+
+  public void addSectionChangeListener(SerializableConsumer<AccountSection> listener) {
+    sectionChangeListeners.add(listener);
+  }
+
+  public void selectSection(AccountSection section) {
+    // URL-Wiederherstellung darf keinen weiteren Historieneintrag auslösen.
+    restoringSection = true;
+    try {
+      tabs.setSelectedTab(sectionTabs.get(Objects.requireNonNull(section)));
+    } finally {
+      restoringSection = false;
+    }
   }
 
   private void showSelectedPanel() {
@@ -173,6 +239,7 @@ public class AccountSettingsComponent extends Div {
     firstName.setId("account-first-name");
     lastName.setId("account-last-name");
     email.setId("account-email");
+    email.addClassName("account-profile-email");
     birthDate.setId("account-birth-date");
     preferredLanguage.setId("account-language");
     firstName.setRequiredIndicatorVisible(true);
@@ -205,17 +272,13 @@ public class AccountSettingsComponent extends Div {
           lastName.setPlaceholder(messages.getAccountLastNamePlaceholder());
           email.setLabel(messages.getRegistrationEmailField());
           email.setPlaceholder(messages.getAccountEmailPlaceholder());
-          email.setHelperText(messages.getAccountSettingsEmailHint());
           birthDate.setLabel(messages.getRegistrationBirthDateField());
           birthDate.setLocale(CustomI18NProvider.getCurrentLocale());
           birthDate.setPlaceholder(messages.getRegistrationBirthDatePlaceholder());
           preferredLanguage.setLabel(messages.getAccountSettingsLanguage());
           preferredLanguage.setHelperText(messages.getAccountSettingsLanguageHint());
         });
-    var emailAction = emailChangeButton("account-email-edit-profile");
-    var emailRow = new Div(email, emailAction);
-    emailRow.addClassName("account-email-row");
-    var form = new Div(firstName, lastName, emailRow, birthDate, preferredLanguage);
+    var form = new Div(firstName, lastName, email, birthDate, preferredLanguage);
     form.addClassName("account-profile-form");
     panel.getBody().add(form);
     var save = previewButton(VaadinIcon.CHECK, messages::getAccountSettingsSave, true);
@@ -303,20 +366,24 @@ public class AccountSettingsComponent extends Div {
                 VaadinIcon.LOCK,
                 messages::getRegistrationPasswordField,
                 messages::getAccountSettingsPasswordHint,
-                previewButton(VaadinIcon.EDIT, messages::getAccountSettingsChangePassword, false)),
+                passwordChangeButton()),
             actionRow(
                 VaadinIcon.ENVELOPE,
                 messages::getRegistrationEmailField,
                 () -> user == null ? "" : Objects.toString(user.getEmail(), ""),
                 emailChangeButton("account-email-edit-security")));
-    var notice = text(new Span(), messages::getAccountSettingsSecurityNotice);
-    notice.addClassName("account-info-text");
-    panel.getBody().add(notice);
     panel.addFooter(text(new Span(), messages::getAccountSettingsAccountHint), new Span());
     return panel;
   }
 
-  private AccountPanelComponent sessions() {
+  private SvgIcon devicesIcon() {
+    var devices = new SvgIcon("icons/devices.svg");
+    devices.addClassName("account-devices-icon");
+    devices.getElement().setAttribute("aria-hidden", "true");
+    return devices;
+  }
+
+  private AccountPanelComponent sessions(int maxSessionsPerUser) {
     var panel =
         panel(
             "sessions",
@@ -324,30 +391,33 @@ public class AccountSettingsComponent extends Div {
             messages::getAccountSettingsSessionsTitle,
             messages::getAccountSettingsSessionsDescription,
             messages::getAccountSettingsSessionsMeta);
-    var count = text(new Span(), messages::getAccountSettingsSessionsCount);
+    panel.setIcon(devicesIcon());
+    var count = text(new Span(), messages::getAccountSettingsSessionsActiveTitle);
     count.addClassName("account-entry-title");
-    var demo = text(new Span(), messages::getAccountSettingsSessionsDemo);
-    demo.addClassName("account-entry-description");
-    var limit = text(new Span(), messages::getAccountSettingsSessionsLimit);
+    var activity = text(new Span(), messages::getAccountSettingsSessionsActivity);
+    activity.addClassName("account-entry-description");
+    var limit =
+        text(new Span(), () -> messages.getAccountSettingsSessionsLimit(maxSessionsPerUser));
+    limit.setId("account-sessions-limit");
     limit.addClassName("cosmos-admin-role-chip");
-    var heading = new Div(new Div(count, demo), limit);
+    var heading = new Div(new Div(count, activity), limit);
     heading.addClassName("account-session-heading");
+    var currentSession =
+        previewButton(VaadinIcon.DESKTOP, messages::getAccountSettingsCurrentSession, false);
+    currentSession.setId("account-current-session");
+    currentSession.setEnabled(false);
     var current =
         actionRow(
             VaadinIcon.DESKTOP,
             () -> "Windows-PC · Chrome",
             messages::getAccountSettingsActiveNow,
-            previewButton(VaadinIcon.DESKTOP, messages::getAccountSettingsCurrentSession, false));
+            currentSession);
     var currentBadge = text(new Span(), messages::getAccountSettingsCurrentDevice);
     currentBadge.getElement().getThemeList().add("badge");
     currentBadge.getElement().getThemeList().add("success");
-    current
-        .getChildren()
-        .skip(1)
-        .findFirst()
-        .orElseThrow()
-        .getElement()
-        .appendChild(currentBadge.getElement());
+    currentBadge.addClassName("account-current-device");
+    var currentCopy = (Div) current.getChildren().skip(1).findFirst().orElseThrow();
+    currentCopy.add(new Div(currentBadge));
     panel
         .getBody()
         .add(
@@ -363,9 +433,6 @@ public class AccountSettingsComponent extends Div {
                 () -> "Laptop · Edge",
                 messages::getAccountSettingsActiveYesterday,
                 previewButton(VaadinIcon.SIGN_OUT, messages::getBaseLogoutButton, false)));
-    var notice = text(new Span(), messages::getAccountSettingsSessionsHint);
-    notice.addClassName("account-info-text");
-    panel.getBody().add(notice);
     var logout =
         previewButton(VaadinIcon.SIGN_OUT, messages::getAccountSettingsLogoutOthers, false);
     logout.addClassName("cosmos-delete-button");
@@ -380,5 +447,6 @@ public class AccountSettingsComponent extends Div {
   public void refreshTexts() {
     textUpdates.forEach(Runnable::run);
     emailChangeDialog.refreshTexts();
+    passwordChangeDialog.refreshTexts();
   }
 }

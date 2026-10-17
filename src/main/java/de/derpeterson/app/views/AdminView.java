@@ -14,6 +14,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
+import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
@@ -141,6 +142,33 @@ public class AdminView extends IsAuthenticatedBaseView {
   }
 
   @Override
+  public void beforeEnter(BeforeEnterEvent event) {
+    super.beforeEnter(event);
+    if (event.hasForwardTarget()) return;
+
+    QueryParameters parameters = event.getLocation().getQueryParameters();
+    AdminSection section =
+        parameter(parameters, "section", AdminSection.class, AdminSection.DASHBOARD);
+    AdminConfigGroup group =
+        section == AdminSection.CONFIGURATION
+            ? parameter(parameters, "group", AdminConfigGroup.class, AdminConfigGroup.GENERAL)
+            : null;
+    selectSection(section, group);
+  }
+
+  private static <E extends Enum<E>> E parameter(
+      QueryParameters parameters, String key, Class<E> type, E fallback) {
+    var values = parameters.getParameters().get(key);
+    // Fehlende, mehrdeutige oder veraltete Links bekommen einen festen Standard.
+    if (values == null || values.size() != 1) return fallback;
+    try {
+      return Enum.valueOf(type, values.getFirst().toUpperCase(Locale.ROOT));
+    } catch (IllegalArgumentException invalid) {
+      return fallback;
+    }
+  }
+
+  @Override
   protected boolean hasRequiredAccess(UserDetails authenticatedUser) {
     return hasRole(authenticatedUser, AppRoute.ADMIN.getRoles());
   }
@@ -252,13 +280,15 @@ public class AdminView extends IsAuthenticatedBaseView {
       item.setPrefixComponent(iconType.create());
     }
     item.getElement().getClassList().add("admin-nav-item");
-    navigationActions.put(item.getPath(), () -> selectSection(section, group));
+    navigationActions.put(
+        item.getPath(),
+        () -> UI.getCurrent().navigate(AdminView.class, QueryParameters.simple(parameters)));
     return item;
   }
 
   private void installSideNavigationActions() {
-    // Die Admin-Bereiche sind Panels derselben View. Der öffentliche onNavigate-
-    // Hook delegiert ihren Wechsel an Flow und verhindert ein erneutes Laden der View.
+    // Flow übernimmt URL und Browserhistorie. beforeEnter wählt auch bei Refresh,
+    // Direktlinks sowie Zurück/Vorwärts das passende Panel derselben View.
     sideNavigation
         .getElement()
         .addEventListener(

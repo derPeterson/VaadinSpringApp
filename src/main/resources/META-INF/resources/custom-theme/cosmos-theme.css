@@ -371,9 +371,13 @@
     border-top-color: var(--cosmos-table-border-color);
 }
 
-.cosmos-theme vaadin-grid [theme~="badge"] {
-    font-size: 12px;
-    font-weight: 400;
+/* Einheitliche Schrift für native Badges und unsere Rollen-/Statuschips.
+ * Die Varianten behalten ihre bisherigen Farben, Rahmen und Abstände. */
+.cosmos-theme [theme~="badge"],
+.cosmos-theme .cosmos-admin-role-chip,
+.cosmos-theme .cosmos-topbar-badge {
+    font-size: var(--cosmos-badge-font-size);
+    font-weight: var(--cosmos-badge-font-weight);
 }
 
 /* Gemeinsamer Tabellen-Hover; die Auswahl verwendet dieselbe Farbvariable. */

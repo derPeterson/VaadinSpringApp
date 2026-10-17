@@ -12,11 +12,12 @@ public class AccountPanelComponent extends CosmosCardComponent {
   private final Span description = new Span();
   private final Span meta = new Span();
   private final Div body = new Div();
+  private final Div icon = new Div();
 
   public AccountPanelComponent(String id, VaadinIcon iconType) {
     setId(id);
     addClassNames("cosmos-panel-card", "account-panel");
-    var icon = new Div(iconType.create());
+    icon.add(iconType.create());
     icon.addClassName("cosmos-panel-icon");
     title.addClassName("cosmos-panel-title");
     description.addClassName("cosmos-panel-description");
@@ -27,6 +28,11 @@ public class AccountPanelComponent extends CosmosCardComponent {
     header.addClassName("cosmos-panel-header");
     body.addClassName("account-panel-body");
     add(header, body);
+  }
+
+  public void setIcon(Component symbol) {
+    icon.removeAll();
+    icon.add(symbol);
   }
 
   public Div getBody() {

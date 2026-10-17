@@ -1,6 +1,29 @@
 # Browserabdeckung und offene Punkte
 
-**Aktueller Abschluss 17.10.2026: 1.298 Anwendungstests, 45 Browserhelfer,
+## Nachtrag: Admin-Menüposition in der URL (17.10.2026)
+
+Auf `feature/account-settings-ui`, Basis `14e4bb62`, ergänzt die AdminView die
+bestehenden section-/group-Parameter um Flow-Navigation und Wiederherstellung in
+beforeEnter. Benutzerverwaltung, Mail-Test, Dashboard und alle sieben typisierten
+Konfigurationsgruppen können direkt geöffnet werden. Refresh und Browserhistorie
+stellen dieselbe Auswahl wieder her. Bestehende Zugriffsprüfungen bleiben vorgeschaltet;
+fehlende, unbekannte oder mehrdeutige Werte erhalten einen festen Standard.
+
+29 gezielte JUnit-Fälle erfolgreich: 20 neue URL-/Gruppen-/Zugriffsfälle sowie vier
+bestehende Konfigurationsgruppen- und fünf Konto-View-Regressionsfälle. Der frische
+Produktionsbuild ist erfolgreich. Die gezielte Browser-Suite configuration bestand
+DE und EN jeweils 9/9, ohne Fehler oder Skips, am identischen gepinnten Image.
+CONFIG-05A prüft jetzt zusätzlich echte Seitenreloads, Direktlink im zweiten Tab und
+Zurück/Vorwärts zwischen Benutzerverwaltung und Security, neben den bisherigen
+Tastatur-, Sprach- und Entwurfsprüfungen. Kein neuer Browserfall und keine erneute
+vollständige all-Runde; Fallzahl und fast-Auswahl bleiben unverändert.
+
+Beide eigenen Docker-/H2-/Mailpit-Teststacks wurden vollständig abgebaut;
+Formatierung und Diff-Prüfung sind erfolgreich. Die unten stehenden Gesamtzahlen
+und Coverage dokumentieren die vorherige Kontoprofil-QA und messen diese URL-Ergänzung
+nicht. Für die Übernahme einmalig die IDE-Anwendung neu starten und Strg+F5 ausführen.
+
+**Abgeschlossene Kontoprofil-Gesamtprüfung 17.10.2026, vor der folgenden Admin-URL-Erweiterung: 1.298 Anwendungstests, 45 Browserhelfer,
 205 Python- und 14 JavaScript-Offlinetests erfolgreich. Je 127 unterschiedliche
 Browserfälle DE/EN über vollständige Gesamtrunden und gezielte Nachtests nachgewiesen.**
 
