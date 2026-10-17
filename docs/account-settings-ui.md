@@ -1,6 +1,6 @@
-# Mein Konto: Profildaten und Sicherheit
+# Mein Konto: Profildaten, Sicherheit und Sitzungen
 
-Stand: 17.10.2026. Feature-Branch `feature/account-settings-ui`.
+Stand: 17.10.2026. Aktuelle Erweiterung auf `feature/account-session-management`.
 
 ## Zugang und Umfang
 
@@ -23,20 +23,19 @@ Das Speichern der eigenen Profildaten ist inzwischen implementiert:
   Der E-Mail-Ändern-Button unter Sicherheit öffnet den unten beschriebenen Änderungsdialog.
   Im Profil gibt es keinen Ändern-Button und keinen zusätzlichen E-Mail-Hilfetext.
   Passwortänderung und E-Mail-Änderung sind jetzt funktional: [Sicherheitsvertrag](account-security-contract.md).
-  Profilbild- und Sitzungsabmeldeaktionen
-  sind für die visuelle Abnahme aktiv dargestellt, besitzen aber noch keine Aktionslistener
-  oder Serviceaufrufe. „Aktuelle Sitzung“ ist als reine Kennzeichnung deaktiviert.
-- Die drei Geräte und Aktivitätszeiten sind weiterhin statische Entwurfsdaten.
-  Der zusätzliche Beispielhinweis und die Zusätze „(Beispiel)“ wurden für die Gestaltung entfernt. Die Überschrift lautet „Aktive Sitzungen“, darunter „Geräte und Aktivitätszeiten“.
-  Das Limit rechts enthält dagegen den tatsächlichen Wert von `max.sessions.per.user`
-  beim Öffnen der Kontoseite, ohne Beispielzusatz. Es erfolgt noch keine Abfrage des
-  tatsächlichen Sitzungsregisters und keine Abmeldung von Geräten.
+  Nur die Profilbildaktion bleibt ein bedienbarer Entwurf ohne Speicherfunktion.
+- „Geräte & Sitzungen“ zeigt echte eigene Sitzungen und gespeicherte Anmeldungen.
+  Einzelwiderruf, „Alle anderen abmelden“, Aktualisieren und das dynamische Limit sind
+  angebunden. „Aktuelle Sitzung“ bleibt deaktiviert. Die statischen Entwurfsgeräte
+  wurden entfernt. [Verhalten und Grenzen](session-management-contract.md).
 - Die Oberfläche zeigt keine gespeicherten Passwörter, Hashes oder Sitzungstokens an.
 - DE/EN-Texte liegen im gemeinsamen typisierten `MessageTexts`-Katalog.
 
-Die vorhandene Sitzungsbegrenzung bleibt eigenständig wirksam. Die eigentliche
-[Sitzungsverwaltung](umsetzungsplaene/kontokonfiguration/sitzungsverwaltung.md)
-und weitere Kontofunktionen werden später gesondert implementiert und geprüft.
+Die vorhandene Sitzungsbegrenzung bleibt wirksam. Nach korrektem Passwort kann bei
+erreichtem Limit eine befristete, eingeschränkte Sitzungsliste geöffnet werden;
+die normale Anwendung bleibt bis zur erfolgreichen Zulassung gesperrt.
+Die vollständige QA dieser Erweiterung ist am 17.10.2026 nach der Freigabe ab 08:00 Uhr
+erfolgreich abgeschlossen; die manuelle Nutzerabnahme steht noch aus.
 
 ## Gestaltung
 
@@ -45,7 +44,7 @@ Benutzermenü wie Home. `CosmosSectionHeaderComponent`, `CosmosCardComponent` un
 die vorhandenen Panel-/Badge-/Button-/Inputregeln bleiben unverändert.
 `AccountPanelComponent` ordnet die bestehenden Panelbausteine für diese Seite an.
 
-`cosmos-account.css` wird nur an `AccountView` geladen. Die Selektoren sind auf
+`cosmos-account.css` wird an `AccountView` und für die eingeschränkte Sitzungsliste an `LoginView` geladen. Die Selektoren sind auf
 `.cosmos-account` begrenzt. Die Datei ergänzt nur lokale Anordnung, kleine
 Bildschirme und die neue Tab-Leiste; Farben kommen aus den vorhandenen Tokens.
 Native [Vaadin-Tabs](https://vaadin.com/docs/latest/components/tabs/styling) behalten
@@ -56,9 +55,8 @@ Der Entwurf ist für die schrittweise visuelle Abstimmung vorgesehen. Gemeinsame
 Styles, Icons, Buttonmaße und das übrige Anwendungsdesign wurden nicht umgestellt.
 Profil, Sicherheit und Geräte/Sitzungen verwenden dieselbe Footerfläche einschließlich
 Farbe, oberem Border, Innenabständen und mobilem Verhalten.
-Die anschließende Sitzungsanpassung wurde mit 27 gezielten JUnit-Fällen geprüft,
-einschließlich DE/EN und vom Standardwert abweichenden Konfigurationslimits 7 und 11.
-Es wurde dafür kein Browserlauf gestartet.
+DE/EN und vom Standardwert abweichende Konfigurationslimits sind durch JUnit geprüft;
+die realen Sitzungsabläufe sind zusätzlich in beiden vollständigen Browserläufen enthalten.
 
 ## Übernehmen
 
@@ -90,28 +88,24 @@ Sitzungssprache. Die neue Datensatzversion wird für weiteres Speichern übernom
 
 ## Automatisierte Prüfung
 
-Für die anschließende Profil-/Sicherheitsbereinigung bestanden 30 gezielte
-JUnit-Fälle (Kontokomponente, E-Mail-Dialog, Konto-View und Übersetzungskatalog)
-sowie 45 Browser-Helpertests. Die Browserquellen sind auf den einzigen E-Mail-Einstieg
-unter Sicherheit angepasst und kompiliert; die Browserabläufe und visuelle Abnahme
-dieser Bereinigung wurden noch nicht erneut ausgeführt.
+Der abschließende Gesamtstand vom 17.10.2026 bestand **1.424 JUnit-Fälle**, 47
+Browserhelfer-/Reporterprüfungen und `all` mit **je 136/136 Browserfällen DE/EN**,
+jeweils ohne Fehler oder Skips. JUnit umfasst isolierte H2-/Transaktionsprüfungen
+für alle Rollen, Versionskonflikte, Sicherheitsfelder, Wartung und Sitzungswiderruf.
 
-Die vorherige vollständige Kontoprofil-Gesamtprüfung umfasste 1.298 JUnit-Fälle ohne Fehler
-oder Skips, einschließlich isolierter H2-/Transaktionsprüfungen für Profiländerungen,
-aller Rollen, Versionskonflikte, Sicherheitsfelder und Wartungsschutz. DE/EN-Meldungen,
-rote Feldmarkierungen, wiederholtes Speichern und Übersetzungskatalog sind enthalten.
+Die Browser-Suite `account-settings` enthält sieben Fälle: dauerhaftes und wiederholtes
+Speichern nach Neuladen, Pflichtfelder und Datumsregel ohne Persistierung ungültiger
+Werte, gespeicherte Sprache sowie die vier Schließwege des E-Mail-Dialogs. Einstieg
+unter Sicherheit, unveränderte Profildrafts, deaktivierte E-Mail, übersetzte Felder,
+Bestätigungsicon und berechneter 6px-Blur werden über die echte Oberfläche geprüft.
+`account-security` ergänzt vier Fälle für Validierung und erfolgreiche Sicherheitsänderungen
+mit tatsächlich empfangenen eigenen Mailpit-Mails. `session-management` ergänzt fünf
+Fälle einschließlich gezieltem Widerruf, aktuellem Zugang, Serverneustart und Limit-Recovery.
 
-Die neue Browser-Suite `account-settings` enthält sieben Fälle: dauerhaftes Speichern
-und erneutes Speichern nach Neuladen, Pflichtfelder und Datumsregel ohne Persistierung
-ungültiger Werte, gespeicherte Sprache nach erneuter Anmeldung sowie die vier
-Schließwege des E-Mail-Dialogs. Der E-Mail-Einstieg unter Sicherheit, unveränderte Profildrafts,
-deaktivierte E-Mail, übersetzte Felder, Bestätigungsicon und berechneter 6px-Blur
-werden über die echte Oberfläche geprüft. Ein berechneter Style ersetzt keine
-menschliche Abnahme der Darstellung auf echten Geräten.
-
-Aktueller Abschlussstatus und tatsächliche Messergebnisse stehen in der
-[Abdeckungsübersicht](../browser-tests/abdeckung.md). Der eigentliche E-Mail-Wechsel
-ist ausdrücklich kein Bestandteil des Nachweises.
+[Abdeckung und Messgrenzen](../browser-tests/abdeckung.md),
+[dauerhafter Meilenstein](meilensteine/2026-10-17-sitzungsverwaltung-und-kontosicherheit.md).
+Automatisierte Styles und Desktop-Chromium ersetzen keine menschliche Abnahme auf
+echten Geräten. Profilbildbearbeitung ist weiterhin nicht implementiert.
 
 ## Konto-Tab in der URL
 
@@ -126,9 +120,9 @@ Die Wiederherstellung aus der URL erzeugt selbst keinen weiteren Navigationseint
 so können Refresh, Direktlinks und Zurück/Vorwärts denselben Tab auswählen. Ein tatsächlicher
 Reload lädt gespeicherte Profildaten neu; ungespeicherte Formulare werden nicht in der URL
 oder im Browserspeicher abgelegt. Dialoge werden nicht über die Tab-URL geöffnet.
-35 gezielte JUnit-Fälle für Konto-View und Kontokomponente bestanden ohne Fehler oder Skips,
-einschließlich Tab-URLs, Rückfallwerten, Zugriffsschutz, Sprachwechsel und Erhalt der Entwürfe.
-Die neuen Abläufe sind noch nicht mit einem echten Browser geprüft.
+JUnit prüft Tab-URLs, Rückfallwerte, Zugriffsschutz, Sprachwechsel und Erhalt der Entwürfe.
+Die vollständigen Browserläufe DE/EN prüfen die verwendeten Tabwechsel und Neuladen;
+die neue Sitzungsreise bestätigt dabei auch erhaltene Entwürfe und Tabzählung.
 
 ## Passwort und E-Mail ändern
 
@@ -155,4 +149,5 @@ Fehlern, Versuchsbegrenzung und Prüfgrenzen steht im [Sicherheitsvertrag](accou
 Die statischen Infohinweise erklären die Sitzungsfolgen vor dem Absenden; die Sicherheitsmails
 wiederholen sie. Die Erfolgsmeldungen unterscheiden eine gespeicherte Änderung bzw. vorgemerkte
 Mail von einer tatsächlich nachgewiesenen Zustellung. Die realen Browser-/Mailpit-Abläufe
-beider Änderungen wurden in diesem Schritt nicht gestartet; sie bleiben ausdrücklich offen.
+beider Änderungen sind in DE/EN bestanden. Reale externe Postfächer und Mailclients
+sind damit nicht geprüft.

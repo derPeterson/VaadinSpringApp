@@ -103,6 +103,30 @@ class MailpitInboxTest {
           AssertionError.class, () -> MailpitInbox.assertPlainTextContent(changed, expected));
   }
 
+  @Test
+  void emailChangeLinksRequireExactOriginRouteAndBase64urlToken() {
+    withRunnerOrigin(
+        () -> {
+          String token = "a".repeat(42) + "A";
+          String own = "http://127.0.0.1:18082" + path(EMAIL_CHANGE_ROUTE) + "/";
+          assertDoesNotThrow(() -> MailpitInbox.assertLocalEmailChangeLink(own + token));
+          for (String wrong :
+              new String[] {
+                "http://127.0.0.1:18080" + path(EMAIL_CHANGE_ROUTE) + "/" + token,
+                "https://127.0.0.1:18082" + path(EMAIL_CHANGE_ROUTE) + "/" + token,
+                "http://example.test:18082" + path(EMAIL_CHANGE_ROUTE) + "/" + token,
+                own + TOKEN,
+                own + token + "A",
+                own + token.substring(1),
+                own + token + "?redirect=elsewhere",
+                own + token + "#fragment",
+                "http://127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + token
+              })
+            assertThrows(
+                AssertionError.class, () -> MailpitInbox.assertLocalEmailChangeLink(wrong));
+        });
+  }
+
   private static void withRunnerOrigin(Runnable test) {
     String previous = System.getProperty("browser.tests.baseUrl");
     try {

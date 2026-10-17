@@ -1718,4 +1718,60 @@ public class MessageTexts {
   public String getAccountEmailConfirmationAction() {
     return getTranslation("account.security.email.confirm.action");
   }
+
+  public String getSessionManagementHint() {
+    return getTranslation("sessions.management.hint");
+  }
+
+  public String getSessionRefresh() {
+    return getTranslation("sessions.refresh");
+  }
+
+  public String getSessionUnknownDevice() {
+    return getTranslation("sessions.unknown.device");
+  }
+
+  public String getSessionLastActivity() {
+    return getTranslation("sessions.last.activity");
+  }
+
+  public String getSessionSavedLogin() {
+    return getTranslation("sessions.saved.login");
+  }
+
+  public String getSessionStarted() {
+    return getTranslation("sessions.started");
+  }
+
+  public String getSessionRevokeSaved() {
+    return getTranslation("sessions.revoke.saved");
+  }
+
+  public String getSessionRevoked() {
+    return getTranslation("sessions.revoked");
+  }
+
+  public String getSessionManagementFailed() {
+    return getTranslation("sessions.management.failed");
+  }
+
+  public String getSessionRecoveryHint() {
+    return getTranslation("sessions.recovery.hint");
+  }
+
+  public String getSessionContinueLogin() {
+    return getTranslation("sessions.continue.login");
+  }
+
+  public String getSessionRecoveryExpired() {
+    return getTranslation("sessions.recovery.expired");
+  }
+
+  public String getSessionRecoveryLogoutHint() {
+    return getTranslation("sessions.recovery.logout.hint");
+  }
+
+  public String getSessionSavedSince() {
+    return getTranslation("sessions.saved.since");
+  }
 }

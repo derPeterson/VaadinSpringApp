@@ -1,22 +1,22 @@
 package de.derpeterson.app.security;
 
-import de.derpeterson.app.helper.jdbc.JdbcHelper;
 import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.NavigationErrorCode;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.LoginAttemptService;
+import jakarta.servlet.http.HttpSessionEvent;
 import java.util.List;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.ProviderManager;
@@ -25,6 +25,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.ObjectPostProcessor;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -32,12 +33,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
-import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.util.HttpSessionMutexListener;
 
 @Configuration
@@ -88,13 +88,22 @@ public class SecurityConfig {
   }
 
   @Bean
-  public HttpSessionEventPublisher httpSessionEventPublisher() {
-    return new HttpSessionEventPublisher();
+  public HttpSessionEventPublisher httpSessionEventPublisher(SessionAdmissionService admissions) {
+    return new HttpSessionEventPublisher() {
+      @Override
+      public void sessionIdChanged(HttpSessionEvent event, String previous) {
+        admissions.sessionIdChanged(
+            previous, event.getSession().getId(), () -> super.sessionIdChanged(event, previous));
+      }
+    };
   }
 
   @Bean
-  public SessionAdmissionService sessionAdmissionService(SessionRegistry registry) {
-    return new SessionAdmissionService(configService, registry);
+  public SessionAdmissionService sessionAdmissionService(
+      SessionRegistry registry, DeviceTokenRepository tokens) {
+    var admissions = new SessionAdmissionService(configService, registry);
+    admissions.setDeviceTokens(tokens);
+    return admissions;
   }
 
   @Bean
@@ -110,25 +119,22 @@ public class SecurityConfig {
   }
 
   @Bean
-  public PersistentTokenRepository tokenRepository(
-      DataSource dataSource, JdbcTemplate jdbcTemplate) {
-    JdbcTokenRepositoryImpl tokenRepository = new JdbcTokenRepositoryImpl();
-    tokenRepository.setDataSource(dataSource);
-    if (!JdbcHelper.tableExists(jdbcTemplate, "persistent_logins")) {
-      tokenRepository.setCreateTableOnStartup(true);
-    }
-    return tokenRepository;
+  public DeviceTokenRepository tokenRepository(
+      DataSource dataSource, PlatformTransactionManager manager) {
+    return new DeviceTokenRepository(dataSource, manager);
   }
 
   @Bean
-  public PersistentTokenBasedRememberMeServices rememberMeServices(
-      PersistentTokenRepository tokenRepository, CustomUserDetailsService userDetailsService) {
+  public DeviceRememberMeServices rememberMeServices(
+      DeviceTokenRepository tokenRepository,
+      CustomUserDetailsService userDetailsService,
+      SessionAdmissionService admissions) {
 
     String secretKey = configService.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY);
     int duration = configService.getInteger(ConfigEntry.REMEMBER_ME_DURATION);
 
-    PersistentTokenBasedRememberMeServices tempRememberMeServices =
-        new PersistentTokenBasedRememberMeServices(secretKey, userDetailsService, tokenRepository);
+    var tempRememberMeServices =
+        new DeviceRememberMeServices(secretKey, userDetailsService, tokenRepository, admissions);
     tempRememberMeServices.setTokenValiditySeconds(duration);
     return tempRememberMeServices;
   }
@@ -140,7 +146,8 @@ public class SecurityConfig {
       AuthenticationManager authenticationManager,
       SessionAdmissionService admissions,
       MaintenanceService maintenance,
-      SecurityContextRepository contextRepository)
+      SecurityContextRepository contextRepository,
+      ObjectProvider<SessionManagementService> sessionManagement)
       throws Exception {
     logger.debug("🔥 SecurityConfig is loading!");
 
@@ -257,6 +264,9 @@ public class SecurityConfig {
                   .defaultSuccessUrl(AppRoute.ADMIN.getSecurityRoute(), true)
                   .successHandler(
                       (request, response, authentication) -> {
+                        if (rememberMeServices instanceof DeviceRememberMeServices devices
+                            && !devices.requested(request))
+                          devices.preparePasswordLogin(request, response, authentication.getName());
                         boolean admin =
                             authentication.getAuthorities().stream()
                                 .anyMatch(
@@ -269,6 +279,26 @@ public class SecurityConfig {
                       })
                   .failureHandler(
                       (request, response, failure) -> {
+                        if (failure instanceof SessionLimitException) {
+                          var sessions = sessionManagement.getIfAvailable();
+                          if (sessions != null) {
+                            try {
+                              sessions.startRecovery(
+                                  request,
+                                  request.getParameter("username"),
+                                  request.getParameter("password"),
+                                  rememberMeServices instanceof DeviceRememberMeServices devices
+                                      && devices.requested(request));
+                            } catch (AuthenticationException rejected) {
+                              failure = rejected;
+                            } catch (RuntimeException unavailable) {
+                              logger.warn("Restricted session management unavailable", unavailable);
+                              failure =
+                                  new AuthenticationServiceException(
+                                      "Sign-in temporarily unavailable");
+                            }
+                          }
+                        }
                         String error =
                             failure instanceof MaintenanceAuthenticationException
                                 ? "maintenance"

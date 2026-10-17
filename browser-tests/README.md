@@ -58,10 +58,12 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit | 3 |
 | `authentication` | Admin-/Benutzerlogin, Fehler, Gastzugriff und Logout | 6 |
 | `login-attempts` | Drei Sperr-/Resetfälle plus sechs Anmelde- und vier Remember-me-Regressionsfälle | 13 |
-| `session-limits` | Vier neue Sitzungsfälle plus Login-, Anmeldeversuchs-, Remember-me-, Rechte- und Sitzungsregressionen | 29 |
+| `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 34 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler und Links | 6 |
+| `account-security` | Passwortvalidierung/-wechsel mit SMTP-Mail und verifizierte E-Mail-Änderung mit beiden Sicherheitsmails | 4 |
+| `session-management` | Eigene Sitzungen, Einzel-/Sammelwiderruf, gespeicherte Zugänge nach Neustart und eingeschränkter Login | 5 |
 | `account-settings` | Basisdaten speichern/validieren, gespeicherte Sprache und vier Schließwege des E-Mail-Dialogs | 7 |
 | `account-lifecycle` | Einzelvalidierungen, kanonisierte Dubletten, unverifizierte Anfrage und altes Resetformular | 5 |
 | `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung mit Datumeingabe/Kalenderauswahl und Tastaturlogin | 5 |
@@ -84,18 +86,28 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `cosmos-design` | Fünf Kontoansichten, mobiler Mailablauf, Copyright in UI/Mails, gemeinsames Theme sowie Home-/Adminnavigation bei drei Größen | 11 |
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
-| `all` | Alle 24 Testklassen einschließlich der Fast-Fälle | 127 |
+| `all` | Alle 26 Testklassen einschließlich der Fast-Fälle | 136 |
 
-Die sieben Account-Fälle prüfen noch keine erfolgreiche eigene Passwortänderung oder
-verifizierte E-Mail-Änderung. Diese Funktionen sind inzwischen implementiert und per
-JUnit geprüft; ihre neuen Browser-/Mailpit-Journeys bleiben bis zur ausdrücklichen
-Freigabe offen. Siehe [Kontosicherheitsvertrag](../docs/account-security-contract.md).
+Die sieben bisherigen Account-Fälle prüfen Profilspeichern und Dialogschließen.
+Die neuen Suites `account-security` und `session-management` ergänzen neun eigenständige
+Journeys ACCOUNT-SEC-01–04 und SESSIONS-01–05. Sie erstellen Zustände ausschließlich
+über UI und eigene abgefangene Mailpit-Mails; Sicherheitsmails folgen der gespeicherten
+Kontosprache. Ein Mail-Linkaufruf allein darf die neue Adresse nicht übernehmen;
+Bestätigung, beide Benachrichtigungen, Sitzungswiderruf und Einmaligkeit werden geprüft.
+Gespeicherte Zugänge ohne aktive Sitzung belegen keinen Platz. SESSIONS-01 prüft
+zusätzlich zwei gleichzeitig geöffnete Fenster: Ein Feldfehler bleibt erhalten,
+während das andere Fenster erfolgreich speichert und seinen eigenen Hinweis schließt.
+Die tatsächlichen Ergebnisse stehen in [Abdeckung](abdeckung.md), nicht in der bloßen Fallzählung.
+
+Gezielt ausführen: `.\browser-tests\run.ps1 -Suite account-security -Language de`
+beziehungsweise `-Suite session-management`. Beide sind in `all` enthalten und
+bewusst noch nicht in `fast`; dessen 34 Fälle bleiben unverändert.
 
 SESSION-LIMIT-01–04 prüfen das gespeicherte Sitzungslimit über echte Anmeldungen:
 zusätzliche Tabs belegen keinen Platz, Logout gibt einen frei, Reduzierung erhält
 bestehende Geräte und Erhöhung wirkt sofort. Ein echter Chromium-Prozess wird
 beendet und neu gestartet, um Browserschließen ohne Logout und die begrenzte
-Remember-me-Rückkehr zu prüfen. Die gemeinsame Suite enthält 29 Fälle; `fast`
+Remember-me-Rückkehr zu prüfen. Die gemeinsame Suite enthält mit den fünf Verwaltungsfällen 34 Fälle; `fast`
 bleibt unverändert bei 34. Timeout- und Konkurrenzgrenzen prüft JUnit.
 
 Das gemeinsame Fixture meldet sein Konto nach dem abschließenden Screenshot über
@@ -139,7 +151,7 @@ Admin-/Superadmin-Wiederfreigabe, alte Registrierungs-/Resetformulare, unverbrau
 SMTP-Mailtokens und einen tatsächlichen Remember-me-Chromium-Neustart. `all` enthält
 sie; `fast` bleibt bei 34 Fällen. Fachregeln und Grenzen stehen im
 [Wartungsvertrag](../docs/maintenance-mode-contract.md). Der zusätzliche Helper prüft
-Suite-Aufnahme und unveränderten Fast-Umfang; die aktuelle Helper-Suite umfasst 45 Fälle.
+Suite-Aufnahme und unveränderten Fast-Umfang; die aktuelle Helper-Suite umfasst 47 Fälle.
 
 ## Schnellprüfung und parallele Ausführung
 

@@ -63,6 +63,41 @@ public final class MailpitInbox {
     return awaitMail(recipient, subject, null, false);
   }
 
+  @Step("Auf die eigene tatsächlich versandte Sicherheitsmail warten")
+  public CapturedMail awaitSecurityMail(String recipient, String subject) {
+    return awaitMail(recipient, subject);
+  }
+
+  @Step("Sicherheitsmail mit echtem Inline-Logo, Footer und ohne Passwortinhalte prüfen")
+  public void assertSecurityNotice(CapturedMail mail, String... forbidden) {
+    var actual = getJson("/api/v1/message/" + mail.id());
+    assertTrue(addressedTo(actual, mail.recipient()));
+    String html = actual.path("HTML").asText();
+    assertFalse(html.isBlank());
+    assertFalse(html.contains("{{"));
+    for (String secret : forbidden)
+      assertFalse(html.contains(secret), "Passwortinhalt in Sicherheitsmail");
+    Page message = context.newPage();
+    try {
+      message.navigate(baseUrl + "/view/" + mail.id() + ".html");
+      assertThat(message.locator("body")).containsText("VaadinSpringApp (Browser-Test)");
+      var logo = message.locator("img[alt='VaadinSpringApp (Browser-Test)']");
+      assertThat(logo).hasCount(1);
+      assertThat(logo).isVisible();
+      message.waitForFunction(
+          "image => image.complete && image.naturalWidth > 0", logo.elementHandle());
+      assertThat(message.locator("body")).containsText(expectedFooter(EMAIL_CHANGE_ROUTE));
+      AllurePlaywright.attachScreenshot("Tatsächlich empfangene Sicherheitsmail", message);
+    } finally {
+      message.close();
+    }
+  }
+
+  @Step("Verifizierungsbutton der eigenen E-Mail-Änderungsmail öffnen")
+  public Page openEmailChangeAction(CapturedMail mail) {
+    return openActionLink(mail, EMAIL_CHANGE_ROUTE, "E-Mail-Änderungsanfrage über SMTP");
+  }
+
   @Step("Unicode-Betreff und echten Textinhalt der Adminmail prüfen")
   public void assertPlainContent(CapturedMail mail, String body) {
     assertPlainTextContent(getJson("/api/v1/message/" + mail.id()).path("Text").asText(), body);
@@ -190,7 +225,9 @@ public final class MailpitInbox {
   private String expectedFooter(String route) {
     String resource =
         "/email/"
-            + (VERIFICATION_ROUTE.equals(route) ? "welcome_" : "reset_password_")
+            + (VERIFICATION_ROUTE.equals(route)
+                ? "welcome_"
+                : EMAIL_CHANGE_ROUTE.equals(route) ? "email_change_request_" : "reset_password_")
             + texts.language()
             + ".html";
     try (var source =
@@ -225,6 +262,10 @@ public final class MailpitInbox {
     assertLocalActionLink(link, RESET_PASSWORD_ROUTE);
   }
 
+  static void assertLocalEmailChangeLink(String link) {
+    assertLocalActionLink(link, EMAIL_CHANGE_ROUTE);
+  }
+
   private static void assertLocalActionLink(String link, String route) {
     URI actual = URI.create(Objects.requireNonNull(link, "Mail-Link fehlt."));
     URI expected = URI.create(System.getProperty("browser.tests.baseUrl"));
@@ -234,6 +275,17 @@ public final class MailpitInbox {
     assertNull(actual.getUserInfo());
     assertNull(actual.getQuery());
     assertNull(actual.getFragment());
+    if (EMAIL_CHANGE_ROUTE.equals(route)) {
+      // Ganze URL-Pfadprüfung: wörtliche Route, dann genau 43 Base64url-Zeichen.
+      // Die Zeichenklasse erlaubt Buchstaben, Ziffern, Unterstrich und Minus; keine
+      // Gruppen/Ersetzung.
+      assertTrue(
+          actual
+              .getPath()
+              .matches(java.util.regex.Pattern.quote(path(route)) + "/[A-Za-z0-9_-]{43}"),
+          "Falsches E-Mail-Änderungsziel.");
+      return;
+    }
     // Pattern.quote schützt die Route; der Token muss 36 Zeichen aus kleinen Hexziffern und Minus
     // enthalten.
     // Dies prüft die vorhandene Token-Form, nicht die Position der UUID-Trennstriche.

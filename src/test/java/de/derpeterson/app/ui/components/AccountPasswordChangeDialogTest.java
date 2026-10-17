@@ -30,12 +30,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.security.authentication.BadCredentialsException;
 
 class AccountPasswordChangeDialogTest {
+  private UI ui;
   private AccountPasswordChangeDialog dialog;
   private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
 
   @BeforeEach
   void setup() {
-    var ui = new UI();
+    ui = new UI();
     UI.setCurrent(ui);
     var session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);

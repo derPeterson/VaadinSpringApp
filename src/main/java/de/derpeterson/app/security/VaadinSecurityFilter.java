@@ -47,6 +47,9 @@ public class VaadinSecurityFilter implements Filter {
       ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
       return;
     }
+    if ("uidl".equals(httpRequest.getParameter("v-r"))
+        || httpRequest.getParameter("v-r") == null && "GET".equals(httpRequest.getMethod()))
+      securityService.getObject().touchSession(httpRequest);
     chain.doFilter(request, response);
   }
 }

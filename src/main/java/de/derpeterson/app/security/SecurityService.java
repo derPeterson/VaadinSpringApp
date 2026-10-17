@@ -117,6 +117,10 @@ public class SecurityService {
     return Optional.empty();
   }
 
+  public void touchSession(HttpServletRequest request) {
+    admissions.touch(request);
+  }
+
   public Optional<UserEntity> getCurrentUser() {
     HttpServletRequest request = (HttpServletRequest) VaadinRequest.getCurrent();
     return getCurrentUser(request);
@@ -155,6 +159,8 @@ public class SecurityService {
             restoreSecurityContext(user);
             securityContextRepository.saveContext(
                 SecurityContextHolder.getContext(), request, response);
+            if (rememberMeServices instanceof DeviceRememberMeServices devices)
+              devices.preparePasswordLogin(request, response, user.getUsername());
             if (Boolean.TRUE.equals(rememberMe)) {
               // Checkbox selection belongs to this request, never to the singleton service.
               var rememberedRequest =

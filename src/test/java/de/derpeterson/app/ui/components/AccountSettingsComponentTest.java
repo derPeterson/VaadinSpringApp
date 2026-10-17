@@ -152,17 +152,23 @@ class AccountSettingsComponentTest {
   }
 
   @Test
-  void remainingPreviewButtonsAreEnabledButClicksDoNotChangeTheAccount() {
-    var buttons = tree(content).filter(Button.class::isInstance).map(Button.class::cast).toList();
-    assertFalse(buttons.isEmpty());
-    var currentSession = (Button) byId("account-current-session");
-    assertFalse(currentSession.isEnabled());
-    assertTrue(
-        buttons.stream().filter(button -> button != currentSession).allMatch(Button::isEnabled));
+  void profileImagePreviewDoesNotSaveOrChangeProfileDrafts() {
+    var picture =
+        tree(content)
+            .filter(Button.class::isInstance)
+            .map(Button.class::cast)
+            .filter(
+                button ->
+                    button
+                        .getText()
+                        .equals(
+                            MessageProperties.forLocale(provider, locale.get())
+                                .getAccountSettingsEditPicture()))
+            .findFirst()
+            .orElseThrow();
+    assertTrue(picture.isEnabled());
     ((TextField) byId("account-first-name")).setValue("Unsaved draft");
-    buttons.stream()
-        .filter(button -> !button.getId().orElse("").equals("account-save"))
-        .forEach(Button::click);
+    picture.click();
     verifyNoInteractions(saver);
     assertEquals("Unsaved draft", ((TextField) byId("account-first-name")).getValue());
     assertEquals("Alex", user.getFirstName());

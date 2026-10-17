@@ -67,8 +67,8 @@ public class SessionLimitBrowserTest extends BrowserFixture {
       """
         1. Eigenes aktives Konto anlegen; Sitzungslimit 1 im Adminformular speichern.
         2. In unabhängigem Kontext anmelden, dann einen weiteren Tab desselben Kontextes öffnen.
-        3. Zweiten unabhängigen Kontext mit richtigem Passwort und Remember-me anmelden: Sitzungsgrenze anzeigen.
-        4. Erste Sitzung über das Menü abmelden; im bisher abgewiesenen Kontext erneut anmelden.
+        3. Zweiten Kontext mit richtigem Passwort und Remember-me anmelden: ausschließlich Sitzungsverwaltung anzeigen.
+        4. Erste Sitzung über das Menü abmelden; die eingeschränkte Verwaltung abbrechen und im bisher abgewiesenen Kontext erneut anmelden.
         **Erwartet:** Tabs teilen einen Platz, bestehende Sitzung bleibt erhalten, abgewiesener Login erhält kein Remember-me-Cookie.
         """)
   void tabsShareOneSlotAndLogoutMakesRoom() {
@@ -83,13 +83,13 @@ public class SessionLimitBrowserTest extends BrowserFixture {
       signedIn(tab, email);
       second.login(email, BrowserTestAccounts.USER_PASSWORD, true);
       var login = new LoginPage(second.page);
-      login.assertSessionLimit();
+      login.assertRestrictedManagement();
       assertFalse(
           second.context.cookies().stream().anyMatch(cookie -> cookie.name.equals("remember-me")));
       first.page.reload();
       signedIn(first.page, email);
       new UserMenu(first.page).requestSignOut();
-      login.dismissFailure();
+      login.cancelRecovery();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
       signedIn(second.page, email);
       tab.close();
@@ -102,7 +102,7 @@ public class SessionLimitBrowserTest extends BrowserFixture {
       """
         1. Eigenes Konto anlegen; Limit 3 speichern und zwei unabhängige Sitzungen anmelden.
         2. Limit auf 1 reduzieren: beide offenen Sitzungen bleiben nach Neuladen angemeldet.
-        3. Dritte Anmeldung wird abgelehnt. Limit auf 3 erhöhen und denselben Login erneut absenden.
+        3. Dritte Anmeldung öffnet nur die eingeschränkte Verwaltung. Limit auf 3 erhöhen, Verwaltung abbrechen und Login erneut absenden.
         **Erwartet:** Konfiguration gilt ohne Neustart für neue Zulassungen, bestehende Geräte werden nicht verdrängt.
         """)
   void changesApplyWithoutEvictingExistingDevices() {
@@ -122,9 +122,9 @@ public class SessionLimitBrowserTest extends BrowserFixture {
       signedIn(second.page, email);
       third.login(email, BrowserTestAccounts.USER_PASSWORD);
       var login = new LoginPage(third.page);
-      login.assertSessionLimit();
+      login.assertRestrictedManagement();
       limit(3);
-      login.dismissFailure();
+      login.cancelRecovery();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
       signedIn(third.page, email);
     }
@@ -150,7 +150,7 @@ public class SessionLimitBrowserTest extends BrowserFixture {
     }
     try (var next = new BrowserActor(browser)) {
       next.login(email, BrowserTestAccounts.USER_PASSWORD);
-      new LoginPage(next.page).assertSessionLimit();
+      new LoginPage(next.page).assertRestrictedManagement();
     }
   }
 

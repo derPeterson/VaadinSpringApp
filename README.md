@@ -16,7 +16,7 @@ Eine ausgefüllte Lernvorlage zeigt Befunde, Korrektur und Nachtest.
 
 Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administration. Die Oberfläche wird serverseitig mit Vaadin Flow aufgebaut; ein weitergehender fachlicher Anwendungsbereich ist bisher nicht implementiert.
 
-> Dokumentierte Gesamt-QA des Kontoprofils vom 17.10.2026 (vor der anschließenden Admin-URL-Erweiterung): Java 25, 1.298 Anwendungstests, 45 Browserhelfer, 205 Python- und 14 JavaScript-Offlinetests erfolgreich. Je 127 unterschiedliche Browserfälle DE/EN über Gesamtrunden und gezielte Nachtests nachgewiesen. [Ergebnisse und Coverage](browser-tests/abdeckung.md).
+> Abgeschlossene Gesamt-QA vom 17.10.2026 für Sitzungsverwaltung und Kontosicherheit: Java 25, 1.424 Anwendungstests, 47 Browserhelfer, 205 Python- und 14 JavaScript-Offlinetests erfolgreich. Vollständiges Browser-`all` mit je 136/136 Fällen DE/EN am selben Produktionsimage bestanden. [Ergebnisse und Coverage](browser-tests/abdeckung.md), [dauerhafter Meilenstein](docs/meilensteine/2026-10-17-sitzungsverwaltung-und-kontosicherheit.md). Die manuelle Nutzerabnahme vor Main steht noch aus.
 
 ## Funktionen
 
@@ -27,7 +27,7 @@ Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administ
 - Konfigurierbares Limit gleichzeitiger Sitzungen pro Benutzer für Passwortlogin und Remember-me; zusätzliche Tabs teilen ihren Sitzungsplatz.
 - Sofort wirksamer Wartungsmodus mit Zugang für Admin/Superadmin, pausierter normaler Nutzung und erhaltenen Sitzungen/Tokens.
 - Adminbereich mit Benutzerverwaltung, Rollen und Kontofreigabe, Konfiguration sowie Mail-Testversand. Die Menüposition steht in der URL und bleibt bei Refresh erhalten; Direktlinks und Zurück/Vorwärts sind möglich.
-- „Mein Konto“ über das Benutzermenü: eigene Profildaten und bevorzugte Sprache speichern, mit Validierung und Konfliktschutz. Der ausgewählte Tab steht in der URL (`/account?tab=security`) und wird beim Neuladen wiederhergestellt. Passwortwechsel mit Bestätigungsmail und E-Mail-Änderung per Einmallink sind umgesetzt. Profilbild und Geräteverwaltung folgen gesondert. [Sicherheitsvertrag](docs/account-security-contract.md). [Umfang](docs/account-settings-ui.md).
+- „Mein Konto“ über das Benutzermenü: eigene Profildaten und bevorzugte Sprache speichern, mit Validierung und Konfliktschutz. Der ausgewählte Tab steht in der URL (`/account?tab=security`) und wird beim Neuladen wiederhergestellt. Passwortwechsel mit Bestätigungsmail und E-Mail-Änderung per Einmallink sind umgesetzt. Eigene Sitzungen und gespeicherte Anmeldungen lassen sich verwalten; bei erreichtem Limit gibt es nach Passwortprüfung einen eingeschränkten Zugang. Profilbilder folgen gesondert. [Sitzungsverwaltung und Prüfgrenzen](docs/session-management-contract.md). [Sicherheitsvertrag](docs/account-security-contract.md). [Umfang](docs/account-settings-ui.md).
 - Deutsche und englische Oberfläche, manuell wählbarer Benutzerstatus und automatische Abwesenheitserkennung mit Push-Aktualisierung.
 - Datenbankgestützte E-Mail-Warteschlange mit Wiederholungsversuchen und geplanten Bereinigungsaufgaben.
 
@@ -87,8 +87,9 @@ Erweiterung Shared-Modul und Anwendung bauen und die Anwendung einmal neu starte
 Für die zwei noch offenen Konfigurationseinträge liegen
 [einzelne Umsetzungspläne](docs/umsetzungsplaene/konfiguration/README.md)
 vor: SMTP-SocketFactory und Nutzung des Mail-Workerpools. Diese übrigen Pläne
-aktivieren keine Funktion. Danach ist das Kontokonfigurationspanel
-vorgesehen, mit [Sitzungsverwaltung als zweiter Ausbaustufe](docs/umsetzungsplaene/kontokonfiguration/sitzungsverwaltung.md).
+aktivieren keine Funktion. Das Kontokonfigurationspanel wurde unabhängig davon bereits
+umgesetzt; die [Sitzungsverwaltung als zweite Ausbaustufe](docs/session-management-contract.md)
+ist auf dem Feature-Branch vollständig automatisiert geprüft und wartet auf die manuelle Nutzerabnahme vor der Übernahme in Main.
 
 ## Kontoansichten, Home und Admin: Silent Cosmos und Inter
 
@@ -550,7 +551,7 @@ Die vorausgehende Java-/Textbereinigung entfernte die alte `CardComponent`,
 Schlüssel je Sprache. Nach dieser damaligen Bereinigung blieben 336 Schlüssel
 je Sprache. Inzwischen sind es einschließlich der folgenden Sicherheitsfunktionen
 und des Wartungsmodus mit Betriebsstatus sowie der Kontoseite nach Entfernung
-der zwei doppelten E-Mail-/Sicherheitshinweise und Ergänzung des Passwortdialogs sowie Entfernung des Sitzungshinweises 416 je Sprache. Die drei
+der zwei doppelten E-Mail-/Sicherheitshinweise und Ergänzung des Passwortdialogs sowie Entfernung des Sitzungshinweises 430 je Sprache. Die drei
 `MessageCatalogueTest`-Fälle prüfen Sprachparität, vorhandene Gettertexte und
 verwaiste Einträge; sie sind im aktuellen JUnit-Gesamtergebnis enthalten.
 
@@ -575,14 +576,15 @@ unklarer Transportausgänge bleibt erhalten.
 Die DE-/EN-Mailvorlagen übernehmen die Cosmos-Farben mit einer statischen Stern-/Nebel-
 Variante. Feste Grundfarben bleiben als Rückfall für Mailprogramme ohne CSS-Verläufe.
 Inter/Roboto verwenden dort Arial/sans-serif als Rückfall; es werden keine externen
-Schriften nachgeladen. MJML ist die Quelle; die vier danebenliegenden HTML-Dateien
+Schriften nachgeladen. MJML ist die Quelle; die jeweils danebenliegenden HTML-Dateien
 wurden mit MJML 5.4.1 erzeugt. Für Änderungen jeweils aus dem Projektroot ausführen:
 
 ```powershell
 npx --yes --package mjml@5.4.1 mjml src/main/resources/email/welcome_de.mjml -o src/main/resources/email/welcome_de.html --config.validationLevel strict
 ```
 
-Entsprechend für `welcome_en`, `reset_password_de` und `reset_password_en` wiederholen.
+Entsprechend für jede geänderte DE-/EN-Vorlage wiederholen, einschließlich
+`email_change_request` und `email_changed`.
 MJML ist keine Anwendungsabhängigkeit und wird nicht durch Maven ausgeführt.
 
 `{{COPYRIGHT_TEXT}}` wird beim Erzeugen der Queue-Nachricht aus `copyright.text`

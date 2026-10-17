@@ -2,6 +2,7 @@ package de.derpeterson.app.helper.ui;
 
 import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
 
+import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -14,17 +15,19 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.ui.components.CosmosPageComponent;
+import java.io.Serializable;
 import java.util.function.Supplier;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
 @NoArgsConstructor
-public class NotificationHelper {
+public class NotificationHelper implements Serializable {
 
   private Span titleText = null;
-  private Supplier<String> titleSupplier = null;
+  // Request-/Service-Supplier nicht mit einer passivierten UI serialisieren.
+  private transient Supplier<String> titleSupplier = null;
   private Html messageText = null;
-  private Supplier<String> messageSupplier = null;
+  private transient Supplier<String> messageSupplier = null;
   private VerticalLayout textLayout = null;
 
   public enum NotificationType {
@@ -36,16 +39,19 @@ public class NotificationHelper {
 
   public static final Integer DEFAULT_NOTIFICATION_DURATION = 3000;
 
-  // Singleton-Instanz
-  private static NotificationHelper instance = new NotificationHelper();
-
   private Notification currentNotification = new Notification();
 
-  public static synchronized NotificationHelper getInstance() {
-    if (instance == null) {
-      instance = new NotificationHelper();
+  public static NotificationHelper getInstance() {
+    var ui = UI.getCurrent();
+    if (ui == null) throw new IllegalStateException("Notifications require a current UI");
+    // Meldungen gehören zum einzelnen Browserfenster, auch bei mehreren Tabs derselben Sitzung.
+    // Kein globaler Helfer darf Hinweise anderer Benutzer schließen oder deren Texte verändern.
+    var helper = ComponentUtil.getData(ui, NotificationHelper.class);
+    if (helper == null) {
+      helper = new NotificationHelper();
+      ComponentUtil.setData(ui, NotificationHelper.class, helper);
     }
-    return instance;
+    return helper;
   }
 
   public void showNotification(Supplier<String> messageSupplier) {
@@ -93,7 +99,7 @@ public class NotificationHelper {
     this.titleText = null;
     if (StringUtils.isNotEmpty(title)) {
       titleText = new Span(title);
-      titleText.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.FontWeight.SEMIBOLD);
+      titleText.addClassNames("cosmos-notification-title", LumoUtility.FontWeight.SEMIBOLD);
       currentNotification.add(titleText);
     }
 
@@ -126,7 +132,7 @@ public class NotificationHelper {
     }
 
     if (icon != null) {
-      icon.addClassNames(LumoUtility.FontSize.XLARGE);
+      icon.addClassName("cosmos-notification-icon");
     }
 
     contentLayout.add(icon);
@@ -156,15 +162,13 @@ public class NotificationHelper {
 
   private void createTextLayoutContent(String message) {
     this.messageText = new Html(HtmlHelper.ensureParagraphTags(message));
-    messageText.addClassNames(LumoUtility.Margin.NONE);
+    messageText.addClassNames("cosmos-notification-message", LumoUtility.Margin.NONE);
     messageText.getStyle().set("max-width", "520px");
 
     textLayout.removeAll();
 
     if (titleText != null) {
       textLayout.add(titleText);
-      textLayout.addClassNames(LumoUtility.TextColor.SECONDARY);
-      messageText.addClassNames(LumoUtility.FontSize.SMALL);
     }
     textLayout.add(messageText);
   }

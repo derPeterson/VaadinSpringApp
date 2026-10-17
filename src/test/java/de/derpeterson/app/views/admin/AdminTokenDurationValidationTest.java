@@ -32,7 +32,6 @@ class AdminTokenDurationValidationTest {
   private AdminConfigurationSection section;
   private ConfigService config;
   private MessageProperties messages;
-  private NotificationHelper previousNotifications;
   private UI ui;
   private VaadinSession session;
 
@@ -44,8 +43,6 @@ class AdminTokenDurationValidationTest {
     when(session.getLocale()).thenAnswer(ignored -> locale.get());
     when(session.hasLock()).thenReturn(true);
     VaadinSession.setCurrent(session);
-    previousNotifications = NotificationHelper.getInstance();
-    ReflectionTestUtils.setField(NotificationHelper.class, "instance", new NotificationHelper());
     config = mock(ConfigService.class);
     when(config.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
@@ -56,7 +53,7 @@ class AdminTokenDurationValidationTest {
 
   @AfterEach
   void cleanup() {
-    ReflectionTestUtils.setField(NotificationHelper.class, "instance", previousNotifications);
+    NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
     section = null;

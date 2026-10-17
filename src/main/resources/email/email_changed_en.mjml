@@ -24,6 +24,11 @@
         background-image: linear-gradient(142deg, #101726, #090e19) !important;
         box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
       }
+      /* Adresslinks und innerer Text bleiben auch ohne automatische Client-Verlinkung erkennbar. */
+      .cosmos-email-address, .cosmos-email-address span {
+        color: #a9c0fb;
+        text-decoration: underline;
+      }
       .cosmos-email-button td, .cosmos-email-button a {
         background-color: #526ebc;
         background-image: linear-gradient(115deg, #3a538d, #526ebc) !important;
@@ -42,7 +47,7 @@
                   css-class="cosmos-email-card" padding="30px 18px 18px">
         <mj-column>
           <mj-text color="#edf2ff" font-size="26px" font-weight="600" line-height="34px" padding="0 12px 16px">Your email address has been changed</mj-text>
-          <mj-text>Your account email address was changed from {{OLD_EMAIL}} to {{NEW_EMAIL}}.</mj-text>
+          <mj-text>Your account email address was changed from <a href="mailto:{{OLD_EMAIL}}" class="cosmos-email-address"><span>{{OLD_EMAIL}}</span></a> to <a href="mailto:{{NEW_EMAIL}}" class="cosmos-email-address"><span>{{NEW_EMAIL}}</span></a>.</mj-text>
           <mj-button href="{{LOGIN_LINK}}" css-class="cosmos-email-button">SIGN IN</mj-button>
           <mj-text color="#899ab8" font-size="12px" line-height="20px" padding="0 12px 8px">All sessions and remembered sign-ins have ended. Sign in with your new address. This security notification is sent to both addresses. If you did not make this change, contact the administrator immediately.</mj-text>
         </mj-column>

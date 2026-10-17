@@ -1,6 +1,7 @@
 package de.derpeterson.browsertests;
 
 import de.derpeterson.browsertests.suites.AccountLifecycleBrowserTest;
+import de.derpeterson.browsertests.suites.AccountSecurityBrowserTest;
 import de.derpeterson.browsertests.suites.AccountSettingsBrowserTest;
 import de.derpeterson.browsertests.suites.AdminMailBrowserTest;
 import de.derpeterson.browsertests.suites.AuthenticationBrowserTest;
@@ -16,6 +17,7 @@ import de.derpeterson.browsertests.suites.PresentationBrowserTest;
 import de.derpeterson.browsertests.suites.RegistrationBrowserTest;
 import de.derpeterson.browsertests.suites.RememberMeBrowserTest;
 import de.derpeterson.browsertests.suites.SessionLimitBrowserTest;
+import de.derpeterson.browsertests.suites.SessionManagementBrowserTest;
 import de.derpeterson.browsertests.suites.SessionSecurityBrowserTest;
 import de.derpeterson.browsertests.suites.TokenConfigurationBrowserTest;
 import de.derpeterson.browsertests.suites.TokenExpiryBrowserTest;
@@ -39,6 +41,8 @@ final class BrowserSuites {
               PasswordResetBrowserTest.class,
               AccountLifecycleBrowserTest.class,
               AccountSettingsBrowserTest.class,
+              AccountSecurityBrowserTest.class,
+              SessionManagementBrowserTest.class,
               PresentationBrowserTest.class,
               TokenConfigurationBrowserTest.class,
               UserManagementBrowserTest.class,
@@ -56,6 +60,8 @@ final class BrowserSuites {
               LoginAttemptBrowserTest.class,
               SessionLimitBrowserTest.class,
               MaintenanceBrowserTest.class);
+      case "account-security" -> List.of(AccountSecurityBrowserTest.class);
+      case "session-management" -> List.of(SessionManagementBrowserTest.class);
       case "account-settings" -> List.of(AccountSettingsBrowserTest.class);
       case "maintenance" -> List.of(MaintenanceBrowserTest.class);
       case "cosmos-design" -> List.of(CosmosDesignBrowserTest.class);
@@ -70,6 +76,7 @@ final class BrowserSuites {
       case "session-limits" ->
           List.of(
               SessionLimitBrowserTest.class,
+              SessionManagementBrowserTest.class,
               AuthenticationBrowserTest.class,
               LoginAttemptBrowserTest.class,
               RememberMeBrowserTest.class,
@@ -116,7 +123,7 @@ final class BrowserSuites {
           throw new IllegalArgumentException(
               "Unknown suite: "
                   + suite
-                  + ". Choose all, fast, account-settings, cosmos-design, login-layout, login-checks, infrastructure, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, session-limits, maintenance, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
+                  + ". Choose all, fast, account-security, session-management, account-settings, cosmos-design, login-layout, login-checks, infrastructure, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, session-limits, maintenance, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
     };
   }
 }

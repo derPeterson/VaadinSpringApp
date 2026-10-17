@@ -34,6 +34,9 @@ final class BrowserExecutionPlan {
           Map.entry("UserFiltersBrowserTest", 66),
           // Neue Klassen/Rebootfälle: gezielte DE-Messung vom 16.10.2026, grob gerundet.
           Map.entry("AccountSettingsBrowserTest", 150),
+          // Neue Sicherheits-/Sitzungsjourneys zunächst geschätzt, keine Laufzeitgarantie.
+          Map.entry("AccountSecurityBrowserTest", 120),
+          Map.entry("SessionManagementBrowserTest", 130),
           Map.entry("RememberMeBrowserTest", 142),
           Map.entry("PresentationBrowserTest", 29),
           Map.entry("AuthenticationBrowserTest", 26),

@@ -7,7 +7,11 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -33,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ConfirmEmailChangeView extends Div implements HasUrlParameter<String> {
   private final transient MessageProperties messages;
   private final transient AccountSecurityService service;
+  private final Icon statusIcon = VaadinIcon.ENVELOPE.create();
   private final H1 title = new H1();
   private final Span text = new Span();
   private final Button confirm = new Button();
@@ -47,9 +52,8 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
     this.service = service;
     setId("account-email-confirmation");
     var page = new CosmosPageComponent(config, false, messages::getAccountCopyrightTemplate);
-    var icon = VaadinIcon.ENVELOPE.create();
-    icon.addClassName("cosmos-status-icon");
-    icon.getElement().setAttribute("aria-hidden", "true");
+    statusIcon.addClassName("cosmos-status-icon");
+    statusIcon.getElement().setAttribute("aria-hidden", "true");
     text.addClassName("cosmos-form-text");
     title.addClassName("cosmos-headline");
     confirm.setId("account-email-confirm-action");
@@ -67,9 +71,30 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
                 .executeJs(
                     "this.onclick = () => window.location.assign(new URL($0, document.baseURI).href)",
                     AppRoute.LOGIN.getRoute()));
-    var form = new Div(icon, title, text, confirm, login);
+    var iconRow = new HorizontalLayout(statusIcon);
+    iconRow.setWidthFull();
+    iconRow.setPadding(false);
+    iconRow.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+
+    var titleRow = new HorizontalLayout(title);
+    titleRow.addClassName("cosmos-title-row");
+    titleRow.setWidthFull();
+    titleRow.setPadding(false);
+    titleRow.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+
+    var intro = new HorizontalLayout(text);
+    intro.addClassName("cosmos-intro");
+    intro.setWidthFull();
+    intro.setPadding(false);
+    intro.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+
+    var actions = new Div(login, confirm);
+    actions.addClassNames("cosmos-dialog-actions", "cosmos-email-confirm-actions");
+    var form = new VerticalLayout(iconRow, titleRow, intro, actions);
     form.addClassName("cosmos-form");
-    icon.addClassNames(LumoUtility.AlignSelf.CENTER, LumoUtility.TextColor.PRIMARY);
+    form.setAlignItems(FlexComponent.Alignment.STRETCH);
+    form.setPadding(false);
+    form.setSpacing(false);
     page.getCardContainer().add(new CosmosCardComponent(form));
     add(page);
     ComponentUtil.addListener(
@@ -137,7 +162,36 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
     };
   }
 
+  private void updateStatusIcon() {
+    var icon =
+        technicalFailure
+            ? VaadinIcon.WARNING
+            : switch (state) {
+              case READY -> VaadinIcon.ENVELOPE;
+              case SUCCESS -> VaadinIcon.CHECK_CIRCLE;
+              case EXPIRED -> VaadinIcon.BELL;
+              case INVALID, CONFLICT -> VaadinIcon.WARNING;
+            };
+    var color =
+        technicalFailure
+            ? LumoUtility.TextColor.ERROR
+            : switch (state) {
+              case READY -> LumoUtility.TextColor.PRIMARY;
+              case SUCCESS -> LumoUtility.TextColor.SUCCESS;
+              case EXPIRED -> LumoUtility.TextColor.WARNING;
+              case INVALID, CONFLICT -> LumoUtility.TextColor.ERROR;
+            };
+    statusIcon.setIcon(icon);
+    statusIcon.removeClassNames(
+        LumoUtility.TextColor.PRIMARY,
+        LumoUtility.TextColor.SUCCESS,
+        LumoUtility.TextColor.WARNING,
+        LumoUtility.TextColor.ERROR);
+    statusIcon.addClassName(color);
+  }
+
   private void refreshTexts() {
+    updateStatusIcon();
     title.setText(messages.getAccountEmailConfirmationTitle());
     text.setText(message().get());
     confirm.setText(messages.getAccountEmailConfirmationAction());

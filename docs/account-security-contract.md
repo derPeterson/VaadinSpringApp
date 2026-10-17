@@ -68,6 +68,10 @@ still auf die neue Identität. Der Link ist nach Verwendung ungültig.
 MJML und streng kompiliertes HTML auf Deutsch und Englisch. Layout, Inline-CID-Logo,
 Copyright, Typografie und Farben stammen aus den vorhandenen Konto-Mails. Die feste
 Kontosprache wird explizit gewählt; der Scheduler benötigt keine Vaadin-Sitzung.
+Adressangaben in den Anfrage-/Änderungsmails sind ausdrückliche `mailto:`-Links
+in Cosmos-Primary-Textfarbe `#a9c0fb` mit Unterstreichung. Auch der innere Text trägt
+diese Inline-Styles, damit er beim Entfernen der äußeren Linkformatierung erkennbar
+bleibt. Die Darstellung in konkreten Gmail-/GMX-Versionen bleibt eine Mailclient-Abnahme.
 Konfigurations-/Adressplatzhalter werden HTML-escaped. Passwörter und deren Hashes
 stehen niemals in diesen Mails. Command-Objekte geben in `toString` keine Eingaben aus.
 
@@ -100,23 +104,33 @@ Widerrufene Registry-Sitzungen werden vor HTTP-/Vaadin-RPC-/Push-Aktionen zurüc
 und belegen sofort keinen neuen Sitzungslimit-Platz mehr. Die Registry bleibt wie beim
 bestehenden Sitzungslimit an eine Anwendungsinstanz gebunden; clusterweiter aktiver
 Sitzungswiderruf ist nicht implementiert. Persistente Remember-me-Einträge liegen in der
-Datenbank. Die später geplante Geräteverwaltung bleibt unabhängig und derzeit ein Entwurf.
-
-Browser-/Mailpit-Ende-zu-Ende-Prüfungen und reale SMTP-/Mailclient-Abnahme wurden für diese
-Funktionen noch nicht ausgeführt. Browserläufe erfolgen nur nach ausdrücklicher Freigabe.
-Die bestehenden sieben Account-Browserfälle belegen Profilspeichern und Dialogschließen,
-keine erfolgreiche Passwort- oder E-Mail-Änderung. Die frühere Browser-/JaCoCo-Abdeckung
-wird deshalb nicht als Nachweis der neuen Funktion weiterverwendet.
-
+Datenbank. Die anschließende [Sitzungsverwaltung](session-management-contract.md) nutzt diesen Schutz und erweitert ihn um gezielte Abmeldeaktionen; ihr vollständiger Prüfstand ist dort getrennt dokumentiert.
 
 ## Ausgeführte Prüfungen
 
-Der vollständige JUnit-Lauf bestand 1.375 Fälle ohne Fehler oder Skips. Zuvor gefundene
-Abweichung in der Null-Argument-Reihenfolge des Maildienstes wurde im Code korrigiert,
-der bestehende Test unverändert erhalten. Anschließend wurden die letzte Login-
-Übergangskorrektur sowie Konto, HTTP-/Push-Schutz und Sitzungszulassung mit 149 gezielten
-Fällen erneut ohne Fehler oder Skips geprüft. Diese Fälle überschneiden sich mit dem
-Gesamtlauf und werden nicht als zusätzliche 149 Gesamtfälle addiert.
-Die sechs neuen MJML-Vorlagen wurden mit der vorhandenen Version 5.4.1 und strikter
-Validierung nach HTML übersetzt. Google Java Format/Spotless und Diffkontrolle sind geprüft.
-Es wurde keine Anwendung gestartet und kein Browser-/SMTP-Test durchgeführt.
+Die abschließende vollständige QA vom 17.10.2026 bestand **1.424 JUnit-Fälle**, 47
+Browserhelfer-/Reporterprüfungen, 205 Python- und 14 JavaScript-Offlinetests sowie
+Shared- und Produktionsbuild. Spotless Apply/Check und Ruff-Formatprüfung sind erfolgreich.
+Alle Tests bestanden ohne Fehler oder Skips. Die sechs DE/EN-MJML-Vorlagen wurden
+zuvor mit Version 5.4.1 und strikter Validierung nach HTML übersetzt.
+
+Die vollständige Browser-Suite `all` bestand **je 136/136 Fälle DE/EN** am selben
+gepinnten Produktionsimage mit je zwei isolierten Docker-/H2-/Mailpit-Workern.
+ACCOUNT-SEC-01–04 prüfen Feldvalidierung, Passwortwechsel mit echter Bestätigungsmail,
+Erhalt der aktuellen und Widerruf anderer Sitzungen sowie den vollständigen E-Mail-Wechsel:
+Anfrage, tatsächliche Mail an die neue Adresse, nicht verbrauchender GET/Reload,
+ausdrückliche Bestätigung, Sicherheitsmails an beide Adressen, Anmeldung mit neuer
+Adresse und Ablehnung der Wiederverwendung. Mails werden über den echten lokalen
+SMTP-Eingang gelesen, nicht durch Aufruf der Mailgenerierung vorbereitet.
+
+Die sieben bestehenden Account-Fälle und die fünf neuen Sitzungsverwaltungsfälle
+sind in beiden Gesamtrunden enthalten. JUnit ergänzt exakte Zeitgrenzen, Konkurrenz,
+Rollback und HTTP-/RPC-/Push-Schutz; Browsererfolg allein belegt diese Regeln nicht vollständig.
+[Gemessene Coverage und Grenzen](../browser-tests/abdeckung.md),
+[dauerhafter Meilenstein](meilensteine/2026-10-17-sitzungsverwaltung-und-kontosicherheit.md).
+
+Es wurden nur eigene isolierte Testanwendungen und abgefangene Testmails verwendet.
+Keine echte Anwendungsdatenbank, reguläre Anwendung oder fremde Dockerumgebung wurde
+verändert. Reale externe SMTP-Provider, Postfachzustellung, Mailclientdarstellung und
+Migration einer produktiven Bestandsdatenbank sind weiterhin nicht nachgewiesen.
+Die manuelle Nutzerabnahme vor Main steht aus.

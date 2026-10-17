@@ -1,6 +1,6 @@
 # Manuelle Sonderprüfungen
 
-Stand 16.10.2026. Der Katalog enthält **15 gezielte Fälle**: **7 menschliche Abnahmen**
+Stand 17.10.2026. Der Katalog enthält **15 gezielte Fälle**: **7 menschliche Abnahmen**
 und **8 derzeit offene Automatisierungskandidaten**. Er ersetzt die alte vollständige
 Handcheckliste. Die bereits automatisierten Browserfälle und technischen JUnit-Regeln werden
 hier nicht erneut Schritt für Schritt abgearbeitet.
@@ -23,7 +23,7 @@ hier nicht erneut Schritt für Schritt abgearbeitet.
 | [HUM-05](vorlage.md#hum-05) | Verständlichkeit der deutschen und englischen Texte | Menschliche Abnahme |
 | [HUM-06](vorlage.md#hum-06) | Darstellung in tatsächlich verwendeten Mailprogrammen | Menschliche Abnahme |
 | [HUM-07](vorlage.md#hum-07) | Recovery-Entscheidung bei unklarem Mailversand | Menschliche Abnahme |
-| [AUTO-01](vorlage.md#auto-01) | Serverneustart mit derselben Testdatenbank | Zur Automatisierung vorgesehen – Betriebsfixture |
+| [AUTO-01](vorlage.md#auto-01) | Bestandsabgleich nach Neustart ohne Bootstrap | Zur Automatisierung vorgesehen – Betriebsfixture |
 | [AUTO-02](vorlage.md#auto-02) | SMTP-Vorgaben beim Erststart und Wechsel nach Neustart | Zur Automatisierung vorgesehen – Betriebsfixture |
 | [AUTO-03](vorlage.md#auto-03) | Realer SMTP-Ausfall mit anschließendem Wiederanlauf | Zur Automatisierung vorgesehen – Betriebsfixture |
 | [AUTO-04](vorlage.md#auto-04) | Dauerhafter SMTP-Ausfall und brauchbare Betriebsdiagnose | Zur Automatisierung vorgesehen – Betriebsfixture |

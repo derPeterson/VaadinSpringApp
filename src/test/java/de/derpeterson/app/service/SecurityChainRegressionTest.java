@@ -13,10 +13,12 @@ import de.derpeterson.app.repository.LoginAttemptRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.CustomUserDetailsService;
 import de.derpeterson.app.security.LoginAuthenticationService;
+import de.derpeterson.app.security.LoginThrottledException;
 import de.derpeterson.app.security.SecurityConfig;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionAdmissionService;
 import de.derpeterson.app.security.SessionLimitException;
+import de.derpeterson.app.security.SessionManagementService;
 import de.derpeterson.app.security.VaadinSecurityFilter;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -383,6 +385,62 @@ class SecurityChainRegressionTest {
     assertEquals(before, attempts.count());
   }
 
+  @Autowired SessionManagementService management;
+
+  @Test
+  void reachedLimitOffersManagementButCannotOpenAccountUntilNormalAdmission() throws Exception {
+    String email = sessionUser(RoleType.ROLE_USER);
+    when(settings.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
+    try {
+      var old = postPassword(email, "OriginalPassword!");
+      var restricted = postPassword(email, "OriginalPassword!");
+      assertEquals("/login?error=sessions", restricted.response().getRedirectedUrl());
+      assertTrue(management.hasRecovery(restricted.request()));
+      assertNull(
+          restricted
+              .request()
+              .getSession()
+              .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
+      var request = new MockHttpServletRequest("GET", "/account");
+      request.setServletPath("/account");
+      request.setSession(restricted.request().getSession(false));
+      var response = new MockHttpServletResponse();
+      var business = mock(FilterChain.class);
+      new FilterChainProxy(chain).doFilter(request, response, business);
+      verifyNoInteractions(business);
+      assertTrue(response.getRedirectedUrl().endsWith("/login"));
+      var list = management.recoveryList(request);
+      assertEquals(1, list.active());
+      management.recoveryRevoke(request, list.entries().getFirst().handle());
+      assertTrue(admissions.isExpired(old.request()));
+      assertFalse(management.finishRecovery(request, new MockHttpServletResponse()));
+      assertFalse(management.hasRecovery(request));
+      var admitted = new MockHttpServletRequest("GET", "/account");
+      admitted.setServletPath("/account");
+      admitted.setSession(request.getSession(false));
+      new FilterChainProxy(chain).doFilter(admitted, new MockHttpServletResponse(), business);
+      verify(business).doFilter(any(), any());
+    } finally {
+      when(settings.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(3);
+    }
+  }
+
+  @Test
+  void restrictedEntryPointUsesTheSamePersistentPasswordAttemptProtection() {
+    String email = sessionUser(RoleType.ROLE_USER);
+    when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(1);
+    var request = new MockHttpServletRequest();
+    assertThrows(
+        BadCredentialsException.class,
+        () -> management.startRecovery(request, email, "WrongPassword!", false));
+    assertThrows(
+        LoginThrottledException.class,
+        () -> management.startRecovery(request, email, "OriginalPassword!", false));
+    assertFalse(management.hasRecovery(request));
+    assertEquals(
+        1, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
+  }
+
   @Autowired SessionAdmissionService admissions;
   @Autowired SessionRegistry sessionRegistry;
 
@@ -631,7 +689,8 @@ class SecurityChainRegressionTest {
   @Import({
     UserServicePersistenceTest.Config.class,
     SecurityConfig.class,
-    LoginAttemptService.class
+    LoginAttemptService.class,
+    SessionManagementService.class
   })
   static class Config {
     @Bean

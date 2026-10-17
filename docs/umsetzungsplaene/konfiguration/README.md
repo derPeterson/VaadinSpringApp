@@ -62,12 +62,12 @@ beschreibt, wie die wirksame Kapazitätsgrenze erhalten werden soll.
 1. **Mail-Workerpool:** eigenes Paket mit belastbaren Konkurrenztests.
 2. **SocketFactory:** Spezialfall; Bedarf und genaue Bedeutung des bisherigen Felds zuerst abstimmen.
 
-Anschließend ist das **Kontokonfigurationspanel** vorgesehen. Die
-[Sitzungsverwaltung darin](../kontokonfiguration/sitzungsverwaltung.md) ist als zweite
-Ausbaustufe des Sitzungslimits separat geplant: eigene Sitzungen anzeigen und andere
-Geräte einschließlich ihres zugehörigen Remember-me-Zugangs abmelden. Das Panel
-existiert noch nicht; dieser Folgeplan erweitert nicht den ersten Umsetzungsumfang
-der verbleibenden Konfigurationseinträge.
+Das **Kontokonfigurationspanel** ist inzwischen umgesetzt. Die
+[Sitzungsverwaltung darin](../../session-management-contract.md) ergänzt das Limit
+um echte eigene Sitzungen, gezielten Remember-me-Widerruf und einen befristeten
+Verwaltungszugang bei erreichtem Limit. Diese abgeschlossene Implementierung ist
+unabhängig von den beiden verbleibenden Konfigurationseinträgen; Main bleibt bis
+zur manuellen Nutzerabnahme unverändert.
 
 Jeder Plan ist ein eigenes Arbeitspaket. Gemeinsame Anmeldelogik schrittweise
 verbessern, ohne nebenbei sämtliche Sicherheitsklassen umzubauen.

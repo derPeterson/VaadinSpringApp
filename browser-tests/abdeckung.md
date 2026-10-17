@@ -1,17 +1,67 @@
 # Browserabdeckung und offene Punkte
 
-## Kontosicherheit: JUnit-Nachweis, Browser noch offen (17.10.2026)
+## Sitzungsverwaltung und Kontosicherheit vollständig geprüft (17.10.2026)
 
-Eigene Passwortänderung und verifizierte E-Mail-Änderung sind implementiert:
-[Verhalten und Prüfgrenzen](../docs/account-security-contract.md). Der Gesamtlauf bestand
-1.375 JUnit-Fälle ohne Fehler oder Skips; die letzte Login-Übergangskorrektur sowie die betroffenen Konto-/Sicherheitsbereiche
-bestanden anschließend 149 gezielte Nachprüfungen ohne Fehler oder Skips (überlappende Fälle). Die sechs DE/EN-MJML-Vorlagen sind strikt kompiliert. Es gab für diesen
-Featurestand keinen Browserlauf, keine echte SMTP-Zustellung und keinen neuen
-Browser-Code-Coverage-Nachweis. Die sieben vorhandenen Account-Fälle decken Profilspeichern
-und Dialogschließen ab; erfolgreiche Sicherheitsänderungen benötigen weitere Journeys.
-Die folgenden früheren Browserergebnisse und Coverage gelten für ihren jeweils beschriebenen
-Stand und sind keine Abdeckung dieser neuen Funktion.
+Branch `feature/account-session-management`, Basis
+`6fe300a7709c6b172052d2f355166daa5f75e7ef` mit uncommitteter Implementierung.
+Die große Runde begann nach 08:00 Uhr Europe/Berlin; die abschließenden vollständigen
+Browserläufe endeten um 09:38:56 (DE) und 10:01:57 (EN). Beide verwenden dasselbe
+gepinnte Produktionsimage und je zwei getrennte JVM-/Docker-/H2-/Mailpit-Worker.
+[Vertrag Sitzungsverwaltung](../docs/session-management-contract.md),
+[Kontosicherheit](../docs/account-security-contract.md),
+[dauerhafter Meilenstein](../docs/meilensteine/2026-10-17-sitzungsverwaltung-und-kontosicherheit.md).
 
+| Prüfung | Ergebnis des endgültigen Stands |
+| --- | --- |
+| Java / Shared / Produktionsbuild | Java 25.0.4.1 bestätigt; erfolgreich |
+| Vollständige Anwendungs-JUnit-Suite | 1424/1424, keine Fehler oder Skips |
+| Browserhelfer / Reporter / Workeraufteilung | 47/47, keine Fehler oder Skips |
+| Python / JavaScript offline | 205/205 und 14/14, keine Live-Provider-/Modellanfragen |
+| Browser `all` DE / EN | Je 136/136, 26 Klassen, keine Fehler oder Skips |
+| Workeraufteilung je Sprache | 58/58 und 78/78; getrennte Daten und JVMs |
+| Fast-Auswahl | Alle 34 markierten Fälle in beiden Gesamtrunden bestanden; kein separater Lauf |
+| Aufbau / Abbau / HTML / Coverage | Beide abschließenden Läufe vollständig erfolgreich |
+| Format / Diff | Spotless Apply/Check, Ruff-Formatprüfung und Git-Diffkontrolle erfolgreich |
+
+ACCOUNT-SEC-01–04 ergänzen Validierung, Passwortwechsel mit Bestätigungsmail und
+vollständigen verifizierten E-Mail-Wechsel. SESSIONS-01–05 ergänzen echte Listen,
+Tabzählung, gezielten und Sammelwiderruf, tatsächlichen Serverneustart mit dauerhaftem
+Remember-me-Widerruf und eingeschränkten Zugang nach Passwortprüfung bei Limit 1.
+SESSIONS-01 erhält zusätzlich Meldungen im anderen Fenster, auch beim Sprachwechsel.
+Alle Zustände werden über UI und eigene abgefangene SMTP-Mails aufgebaut;
+keine Konto-/Tokenanlage durch direkte Datenbank- oder Serviceaufrufe.
+
+Drei bestätigte Fehler wurden vor den endgültigen Läufen behoben und mit Regressionen
+abgesichert: JDBC-Remember-me-Namen waren auf 64 statt 255 Zeichen begrenzt;
+NotificationHelper teilte veränderlichen Zustand zwischen UIs; die neue Bereinigung
+verwendete eine nur gespeicherte statt der laufenden startgebundenen Remember-me-Dauer.
+Zusätzlich wurden neue Browserabläufe bei Dialogsichtbarkeit, Tabwechseln und eigener
+Bereinigung sauber synchronisiert. Fachliche Assertions wurden nicht abgeschwächt.
+
+| JaCoCo-Messung | Zeilen | Zweige |
+| --- | ---: | ---: |
+| Vollständige Anwendungs-JUnit-Suite | 6910/8157 (84,71 %) | 1833/2507 (73,12 %) |
+| Browser all DE | 6949/8157 (85,19 %) | 1622/2507 (64,70 %) |
+| Browser all EN | 6958/8157 (85,30 %) | 1623/2507 (64,74 %) |
+
+Die XML-Berichte umfassen jeweils 152 ausführbare Anwendungs-Java-Klassen. Die beiden
+Browserberichte stammen aus ihren jeweiligen Workern und den Klassen desselben
+Produktions-JARs. Keine Vermischung mit alten Images, keine Addition wiederholter
+Testfälle und kein Mittelwert verschiedener Messungen. Serverseitige Browser-Coverage
+enthält Start und Hintergrundjobs; sie misst **weder CSS/JavaScript noch den Anteil
+vollständig geprüfter Anforderungen**. Kleine Sprachunterschiede können aus zusätzlich
+ausgeführten Start-/Hintergrundpfaden entstehen.
+
+Aktive Sitzungen bleiben auf eine Anwendungsinstanz begrenzt. Produktive Bestandsmigration,
+Clusterbetrieb, echte Geräte/Screenreader, externe SMTP-Provider/Postfächer und Mailclients
+bleiben ungeprüft. Manuelle Nutzerabnahme steht aus. Shared und Anwendung neu bauen und
+einmal neu starten; die neue Metadatentabelle und ausreichende Token-Username-Länge müssen
+im Schema vorhanden sein. Keine Bestandsdatenbanken wurden geöffnet oder verändert.
+
+Nur eigene Teststacks wurden abgebaut; die Containerkontrolle der beiden abschließenden
+Läufe war leer. Keine alten Run-Ordner gelöscht. Main, Index und Remote bleiben unangetastet.
+Die folgenden datierten Abschnitte beschreiben frühere Nachweise; ihre Zahlen sind
+historisch und ersetzen nicht die aktuelle Gesamtprüfung oben.
 
 ## Nachtrag: Admin-Menüposition in der URL (17.10.2026)
 
@@ -491,8 +541,9 @@ eigene tatsächlich versandte SMTP-Mail. Interne Regeln bleiben technische Tests
 ## Noch sinnvoll als nächster Schritt
 
 Die vier UI-Pakete sind geprüft. Als Nächstes bieten sich kontrollierte
-Betriebsfixtures an: Neustart mit derselben eigenen Testdatenbank, SMTP-Stopp und
-Wiederanlauf sowie deren Bericht. Weitere Browserpakete betreffen Sprachwechsel bei sichtbaren Admin-Feldfehlern,
+Betriebsfixtures an: der zusätzliche Bestandsabgleich bei deaktiviertem Bootstrap,
+SMTP-Stopp und Wiederanlauf sowie deren Bericht. Echte Serverneustarts mit derselben
+eigenen Datenbank sind für Login und gespeicherte Anmeldungen inzwischen automatisiert. Weitere Browserpakete betreffen Sprachwechsel bei sichtbaren Admin-Feldfehlern,
 neue Mails desselben Kontos nach Sprachwechsel und unterbrochene Verbindungen. Schmale Home-/Adminansichten sind durch
 COSMOS-05A–C, der mobile Konfigurations-Tooltip durch CONFIG-05F geprüft.
 Die fünf Kontoansichten einschließlich Reset sind inzwischen responsiv geprüft.
@@ -502,9 +553,10 @@ Queue-/Audit-Innenzustände werden dafür nicht in gewöhnliche UI-Tests gepress
 
 - Regeln, Transaktionen, Sperren, Parallelität, exakte Zeitgrenzen und interne
   Queue-/Audit-Zustände bleiben in JUnit-/Persistenztests. Ein UI-Erfolg beweist sie nicht vollständig.
-- Neustart mit derselben Datenbank, kontrollierter SMTP-Ausfall/Wiederanlauf,
-  Retrylimit, unklarer Versand-/Commitausgang und Recovery benötigen eigene begrenzte
-  Betriebsfixtures. Keine SQL-/Service-Abkürzungen zum Vorbereiten von Browserzuständen.
+- Der zusätzliche Datenbestandsabgleich nach Neustart ohne Bootstrap, kontrollierter
+  SMTP-Ausfall/Wiederanlauf, Retrylimit, unklarer Versand-/Commitausgang und Recovery
+  benötigen eigene begrenzte Betriebsfixtures. Login und gespeicherte Zugänge nach
+  echtem Serverneustart sind bereits automatisiert. Keine SQL-/Service-Abkürzungen zum Vorbereiten von Browserzuständen.
 - Anonyme Login-/Registrierungs-/Tokenformulare bieten derzeit keinen Sprachschalter.
   Dynamischen Wechsel dort nicht durch künstliche Session-/JavaScript-Ereignisse ersetzen.
 - Echte Geräte, Bildschirmtastatur, Zoom, Accessibility, visuelle Qualität und
@@ -523,7 +575,7 @@ Testkonto darf als Vorbereitung vorkommen; geprüft wird nur die benannte Restl�
 | --- | --- | --- |
 | Gestalterische Qualität, echtes Mobilgerät, Tastatur/Zoom, Screenreader, Texte und tatsächliche Mailclients | HUM-01–06 | Menschliche Beurteilung auf den angegebenen Geräten/Hilfsmitteln/Clients |
 | Recovery bei unvollständigen Versandbelegen | HUM-07 | Menschliche Schreibtischübung zum Recovery-Vertrag, keine Datenänderung |
-| Gleiche Datenbank nach Serverneustart und Wirksamkeit startgebundener SMTP-Änderungen | AUTO-01/02 | Zur Automatisierung vorgesehen – kontrollierte Betriebsfixture |
+| Zusätzlicher Bestandsabgleich nach Neustart ohne Bootstrap und Wirksamkeit startgebundener SMTP-Änderungen | AUTO-01/02 | Zur Automatisierung vorgesehen – kontrollierte Betriebsfixture |
 | Realer SMTP-Stopp/Wiederanlauf, begrenzter dauerhafter Fehler und brauchbare Diagnose | AUTO-03/04 | Zur Automatisierung vorgesehen – Betriebsfixture mit korrelierten Belegen |
 | Sichtbare Feldfehler beim Sprachwechsel, neue Mails nach Sprachwechsel desselben Kontos und Offline-/Online-Folge | AUTO-05–07 | Zur Automatisierung vorgesehen – echte UI-/Browserfälle |
 | Vorgesehener SMTP-Transport einschließlich Auth/TLS und tatsächlichem Testpostfach | AUTO-08 | Zur Automatisierung vorgesehen – gesonderte freigegebene Integrationsfixture |

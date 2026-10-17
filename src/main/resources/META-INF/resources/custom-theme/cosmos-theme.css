@@ -126,6 +126,23 @@
     gap: var(--lumo-space-s);
 }
 
+/* Nur die E-Mail-Bestätigung: sichtbare Aktionen teilen den Platz gleichmäßig.
+ * Längere Beschriftungen dürfen umbrechen, statt aus der schmalen Card zu ragen. */
+#account-email-confirmation .cosmos-email-confirm-actions {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: var(--lumo-space-s);
+}
+
+#account-email-confirmation .cosmos-email-confirm-actions > vaadin-button {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    --vaadin-button-label-wrap: normal;
+}
+
 .cosmos-form-links a, .cosmos-options a {
     overflow-wrap: anywhere;
 }
@@ -402,9 +419,9 @@
 
 vaadin-notification-card[theme~="cosmos"]::part(overlay) {
     max-width: calc(100vw - 24px);
-    border: 1px solid var(--cosmos-overlay-border);
+    border: 1px solid var(--cosmos-card-border);
     border-radius: var(--cosmos-overlay-radius);
-    background: var(--cosmos-overlay-background);
+    background: var(--cosmos-card-background);
     box-shadow: var(--cosmos-overlay-shadow);
     -webkit-backdrop-filter: blur(17px);
     backdrop-filter: blur(17px);
@@ -422,6 +439,22 @@ vaadin-notification-card[theme~="cosmos"] p {
 
 vaadin-notification-card[theme~="cosmos"] vaadin-vertical-layout {
     min-width: 0;
+}
+
+/* Größen für den Meldungsinhalt; das Schließen-Icon bleibt separat. */
+vaadin-notification-card[theme~="cosmos"] .cosmos-notification-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+}
+
+vaadin-notification-card[theme~="cosmos"] .cosmos-notification-title {
+    font-size: 18px;
+}
+
+vaadin-notification-card[theme~="cosmos"] .cosmos-notification-message {
+    font-size: 13px;
+    color: var(--lumo-secondary-text-color);
 }
 
 @media (max-width: 700px) {

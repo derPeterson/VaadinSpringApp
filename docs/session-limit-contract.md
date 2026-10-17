@@ -1,6 +1,6 @@
 # Vertrag: Gleichzeitige Sitzungen pro Benutzer
 
-Stand: 15.10.2026. Erste Ausbaustufe von `max.sessions.per.user`.
+Stand: 17.10.2026. `max.sessions.per.user` einschließlich eigener Sitzungsverwaltung.
 
 ## Geltung und sichtbares Verhalten
 
@@ -10,9 +10,11 @@ Stand: 15.10.2026. Erste Ausbaustufe von `max.sessions.per.user`.
   gleichermaßen für Superadmin, Administrator, Benutzer und Gast.
 - Mehrere Tabs desselben Browserprofils teilen normalerweise eine Sitzung und damit
   einen Platz. Zwei Browser auf demselben Gerät können zwei Plätze belegen.
-- Bei belegten N Plätzen wird eine weitere Anmeldung mit gültigem Passwort abgelehnt.
-  Bestehende Sitzungen werden nicht verdrängt. Der DE/EN-Hinweis erklärt, dass man
-  sich anderswo abmelden oder den Ablauf einer Sitzung abwarten muss.
+- Bei belegten N Plätzen wird keine weitere normale Sitzung zugelassen.
+  Bestehende Sitzungen werden nicht verdrängt. Nach korrektem Passwort bietet die
+  Loginseite stattdessen die befristete eigene Sitzungsverwaltung an: andere Zugänge
+  abmelden und die Anmeldung ausdrücklich fortsetzen. Ohne Passwortprüfung gewährt
+  ein abgewiesenes Remember-me-Cookie diesen Zugang nicht.
 - Falsche Passwörter behalten ihren bisherigen neutralen Fehler und den
   [Anmeldeversuchsschutz](login-attempts-contract.md). Eine Sitzungsablehnung ist kein
   falsches Passwort und erhöht dessen Fehlerzähler nicht.
@@ -76,8 +78,10 @@ Spring rotiert bei gültigem Cookie zunächst den Token und setzt ein neues Cook
 die Sitzungsstrategie läuft. Scheitert die Zulassung, löscht der bestehende Fehlerpfad
 das Cookie im betroffenen Browser wieder. Der Nutzer erhält den Sitzungs- beziehungsweise
 Nicht-verfügbar-Hinweis auf der Loginseite; es entsteht keine automatische Login-Schleife.
-Die Ablehnung löscht keine Tokenserien anderer Geräte. Die bisherige normale Logout-
-und Token-Diebstahlbehandlung wird dadurch nicht geändert.
+Die Ablehnung löscht keine Tokenserien anderer Geräte. Die Token-Diebstahlbehandlung
+bleibt bei Spring. Normales Logout widerruft gezielt die eigene Tokenserie;
+Passwortwechsel und bestätigter E-Mail-Wechsel behalten ihren strengeren kontoweiten
+Widerruf. Die Zuordnung erklärt der [Sitzungsverwaltungsvertrag](session-management-contract.md).
 
 Beim Vaadin-Login wird die Remember-me-Auswahl pro Anfrage übergeben, statt die
 `alwaysRemember`-Eigenschaft des gemeinsam genutzten Dienstes umzuschalten. Dadurch
@@ -86,7 +90,7 @@ können parallele Anmeldungen ihre Checkbox-Auswahl nicht gegenseitig verändern
 ## Einführung und Betriebsgrenze
 
 Diese Version gilt für **eine Anwendungsinstanz mit lokalen Servlet-Sitzungen**.
-Es gibt keine neue Datenbanktabelle oder Migration. Einmaliger Anwendungsneustart
+Die erste Ausbaustufe benötigte keine neue Datenbanktabelle. Ausbaustufe 2 ergänzt JDBC-Metadaten für gespeicherte Anmeldungen, siehe [Sitzungsverwaltung](session-management-contract.md). Einmaliger Anwendungsneustart
 ist für die neuen Java-Komponenten erforderlich; danach wirkt das konfigurierte Limit
 ohne weiteren Neustart.
 
@@ -95,11 +99,14 @@ Remember-me-Rückkehr zählen anschließend neu. Sitzungsreplikation, persistier
 Sitzungen und mehrere Server benötigen einen gemeinsamen Bestand mit eigener Einführung;
 das lokale Register bietet hierfür ausdrücklich keine globale Grenze.
 
-Die [Geräte-/Sitzungsverwaltung im künftigen Kontokonfigurationspanel](umsetzungsplaene/kontokonfiguration/sitzungsverwaltung.md)
-bleibt **Ausbaustufe 2**, nachdem die fehlenden Konfigurationsfunktionen umgesetzt sind.
-Die [Kontoseite](account-settings-ui.md) besitzt inzwischen eine visuelle Vorschau;
-die echte Geräteverwaltung ist weiterhin offen. Bei erreichtem Limit gibt es zunächst
-keinen eigenen Zugangsweg zu einer Geräteverwaltung vor der Anmeldung.
+Die zweite Ausbaustufe ist auf `feature/account-session-management` implementiert:
+[eigene Sitzungen und gespeicherte Anmeldungen verwalten](session-management-contract.md).
+Nach korrektem Passwort ist bei erreichtem Limit ein auf fünf Minuten begrenzter,
+ausschließlich sitzungsbezogener Zugang möglich. Normale Fachbereiche bleiben bis
+zur regulären Zulassung gesperrt. Die vollständige QA vom 17.10.2026 bestand
+1.424 JUnit-Fälle und `all` mit je 136 Browserfällen DE/EN; die fünf neuen
+Sitzungsverwaltungsfälle und sämtliche `session-limits`-Fälle sind darin enthalten.
+Die manuelle Nutzerabnahme vor Main steht noch aus.
 
 ## Prüfungen
 
@@ -108,9 +115,10 @@ Tabs, ID-Wechsel, Timeout-/Invalidierungsfreigabe, Konkurrenz und Rücknahme bei
 Speicher-/Status-/Cookiefehlern. Die echte HTTP-Filterkette prüft denselben Bestand
 mit Vaadin und Remember-me, Token-Erhalt und Freigabe nach Logout.
 
-Die Browser-Suite `session-limits` umfasst vier neue Fälle SESSION-LIMIT-01–04 sowie
-bestehende Login-, Anmeldeversuchs-, Remember-me-, Rollen- und Sitzungsregressionen:
-**29 Fälle**, einschließlich der beiden ergänzten Serverneustartvarianten. Sie nutzt
+Die Browser-Suite `session-limits` umfasst SESSION-LIMIT-01–04, die fünf Fälle
+SESSIONS-01–05 zur eigenen Sitzungsverwaltung sowie bestehende Login-, Anmeldeversuchs-,
+Remember-me-, Rollen- und Sitzungsregressionen: **34 Fälle**, einschließlich echter
+Serverneustarts und der eingeschränkten Verwaltung bei erreichtem Limit. Sie nutzt
 ausschließlich eigene Docker-/H2-/Mailpit-Umgebungen.
 Browserschließen und Remember-me werden mit echten separaten Chromium-Prozessen
 geprüft. Timeout-/Konkurrenzregeln gehören in JUnit; der Browser wartet kein produktives

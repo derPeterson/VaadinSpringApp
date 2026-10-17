@@ -94,7 +94,7 @@ class UserStatusPersistenceTest {
   void cleanup() {
     registrations.forEach(Registration::remove);
     registrations.clear();
-    NotificationHelper.getInstance().closeAndClearAllNotifications();
+    if (UI.getCurrent() != null) NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
     ui = null;

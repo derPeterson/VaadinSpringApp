@@ -2,9 +2,11 @@ package de.derpeterson.browsertests;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import de.derpeterson.browsertests.suites.AccountSecurityBrowserTest;
 import de.derpeterson.browsertests.suites.AccountSettingsBrowserTest;
 import de.derpeterson.browsertests.suites.AuthenticationBrowserTest;
 import de.derpeterson.browsertests.suites.MaintenanceBrowserTest;
+import de.derpeterson.browsertests.suites.SessionManagementBrowserTest;
 import java.util.*;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -130,5 +132,28 @@ class BrowserExecutionPlanTest {
     for (var method : AccountSettingsBrowserTest.class.getDeclaredMethods())
       assertFalse(BrowserExecutionPlan.fast(method));
     assertThrows(IllegalStateException.class, BrowserTestRunner::restartTestApplication);
+  }
+
+  @Test
+  void newAccountJourneysAreIncludedOnceInAllAndOutsideFast() {
+    assertEquals(
+        List.of(AccountSecurityBrowserTest.class), BrowserSuites.select("account-security"));
+    assertEquals(
+        List.of(SessionManagementBrowserTest.class), BrowserSuites.select("session-management"));
+    for (var type : List.of(AccountSecurityBrowserTest.class, SessionManagementBrowserTest.class)) {
+      assertEquals(1, BrowserSuites.select("all").stream().filter(item -> item == type).count());
+      assertFalse(BrowserExecutionPlan.classes("fast").contains(type));
+    }
+    assertTrue(BrowserSuites.select("session-limits").contains(SessionManagementBrowserTest.class));
+    assertEquals(
+        4,
+        Arrays.stream(AccountSecurityBrowserTest.class.getDeclaredMethods())
+            .filter(method -> method.isAnnotationPresent(Test.class))
+            .count());
+    assertEquals(
+        5,
+        Arrays.stream(SessionManagementBrowserTest.class.getDeclaredMethods())
+            .filter(method -> method.isAnnotationPresent(Test.class))
+            .count());
   }
 }

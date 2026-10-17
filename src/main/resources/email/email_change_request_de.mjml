@@ -24,6 +24,11 @@
         background-image: linear-gradient(142deg, #101726, #090e19) !important;
         box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
       }
+      /* Adresslinks und innerer Text bleiben auch ohne automatische Client-Verlinkung erkennbar. */
+      .cosmos-email-address, .cosmos-email-address span {
+        color: #a9c0fb;
+        text-decoration: underline;
+      }
       .cosmos-email-button td, .cosmos-email-button a {
         background-color: #526ebc;
         background-image: linear-gradient(115deg, #3a538d, #526ebc) !important;
@@ -42,7 +47,7 @@
                   css-class="cosmos-email-card" padding="30px 18px 18px">
         <mj-column>
           <mj-text color="#edf2ff" font-size="26px" font-weight="600" line-height="34px" padding="0 12px 16px">Neue E-Mail-Adresse bestätigen</mj-text>
-          <mj-text>Bitte bestätigen Sie {{NEW_EMAIL}} als neue E-Mail-Adresse Ihres Kontos. Bis zur Bestätigung bleibt Ihre bisherige Adresse gültig.</mj-text>
+          <mj-text>Bitte bestätigen Sie <a href="mailto:{{NEW_EMAIL}}" class="cosmos-email-address"><span>{{NEW_EMAIL}}</span></a> als neue E-Mail-Adresse Ihres Kontos. Bis zur Bestätigung bleibt Ihre bisherige Adresse gültig.</mj-text>
           <mj-button href="{{CONFIRM_EMAIL_LINK}}" css-class="cosmos-email-button">E-MAIL-ADRESSE BESTÄTIGEN</mj-button>
           <mj-text color="#899ab8" font-size="12px" line-height="20px" padding="0 12px 8px">Der Link ist zeitlich begrenzt und kann einmal verwendet werden. Nach der Bestätigung werden alle Sitzungen und gespeicherten Anmeldungen beendet. Melden Sie sich dann mit der neuen Adresse an. Falls Sie diese Änderung nicht angefordert haben, ignorieren Sie diese E-Mail.</mj-text>
         </mj-column>

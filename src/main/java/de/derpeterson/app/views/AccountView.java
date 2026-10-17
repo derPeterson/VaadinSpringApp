@@ -19,6 +19,7 @@ import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.IsAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.SessionManagementService;
 import de.derpeterson.app.service.AccountProfileService;
 import de.derpeterson.app.service.AccountSecurityService;
 import de.derpeterson.app.service.ConfigService;
@@ -52,6 +53,7 @@ public class AccountView extends IsAuthenticatedBaseView {
       UserService users,
       AccountProfileService profiles,
       AccountSecurityService accountSecurity,
+      SessionManagementService sessions,
       UserStatusBroadcaster broadcaster) {
     super(messages, security, users, broadcaster, request);
     addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-account");
@@ -93,6 +95,10 @@ public class AccountView extends IsAuthenticatedBaseView {
           return changed;
         },
         change -> accountSecurity.requestEmailChange(request, change));
+    accountSettings.configureSessionActions(
+        () -> sessions.list(request),
+        handle -> sessions.revoke(request, handle),
+        () -> sessions.revokeOthers(request));
     accountSettings.addSectionChangeListener(
         section ->
             UI.getCurrent()

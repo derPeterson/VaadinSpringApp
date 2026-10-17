@@ -210,11 +210,15 @@ Diesen Nachweis und einen manuellen Status nicht miteinander verwechseln.
 
 <a id="auto-01"></a>
 
-### AUTO-01 · Serverneustart mit derselben Testdatenbank
+### AUTO-01 · Bestandsabgleich nach Neustart ohne Bootstrap
 
 **Einordnung:** Zur Automatisierung vorgesehen – Betriebsfixture.
 
-**Warum hier:** Der Runner verwendet frische Daten; der Chromium-Neustart von remember-me ist kein Serverneustart mit derselben Datenbank.
+**Warum hier:** Echte Serverneustarts mit derselben eigenen Datenbank sind inzwischen
+für Anmeldung und gespeicherte Sitzungszugänge automatisiert. Hier bleibt nur der
+zusätzliche Betriebsfall mit deaktiviertem Bootstrap und einem ausdrücklichen
+Vorher-/Nachher-Abgleich von Kontenzahl, Rollen/Freigabe und Konfigurationswert offen.
+Die Anmeldung nach Neustart allein ist kein Nachweis dieses gesamten Datenbestands.
 
 **Voraussetzung:** Eigene Dateidatenbank, ein über die UI angelegtes Testkonto und ein gespeicherter Konfigurationswert; Bootstrap deaktiviert.
 
@@ -332,7 +336,7 @@ Diesen Nachweis und einen manuellen Status nicht miteinander verwechseln.
 2. Nach Zustellung auf Home DE wählen und für dasselbe Konto erneut anfordern. Die zwei neuen Nachrichten anhand von Zeitpunkt/Mail-ID unterscheiden, nicht eine alte Mail wieder auswerten.
 3. Betreff, Inhalt und Footer vergleichen; die vorher empfangene englische Nachricht erneut ansehen.
 
-**Erwartet:** Neue Mails folgen der Sprache der auslösenden Sitzung; gespeicherte Kontosprache allein bestimmt eine anonyme Anfrage nicht. Frühere Mails ändern ihre Sprache nicht nachträglich. Es werden ausschließlich neue zulässige Anfragen benutzt.
+**Erwartet:** Neue Mails der anonymen Passwortanfrage folgen der Sprache der auslösenden Sitzung; gespeicherte Kontosprache allein bestimmt eine anonyme Anfrage nicht. Sicherheitsmails zu angemeldeten Passwort-/E-Mail-Änderungen folgen dagegen bewusst der gespeicherten Kontosprache; das ist ein eigener automatisierter Vertrag. Frühere Mails ändern ihre Sprache nicht nachträglich. Es werden ausschließlich neue zulässige Anfragen benutzt.
 
 - **Status:** OFFEN
 - **Beobachtung:** …

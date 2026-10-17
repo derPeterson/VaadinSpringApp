@@ -81,6 +81,25 @@ public final class LoginPage {
         .isVisible();
   }
 
+  @Step("Nach Passwortprüfung nur die eingeschränkte Sitzungsverwaltung anzeigen")
+  public void assertRestrictedManagement() {
+    assertThat(page).hasURL(urlPattern(LOGIN_ROUTE));
+    assertThat(page.locator("#session-recovery")).isVisible();
+    assertThat(page.locator("#session-recovery")).containsText(texts.getSessionRecoveryHint());
+    assertThat(page.locator("#session-recovery-continue")).isVisible();
+    assertThat(
+            page.getByLabel(
+                texts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true)))
+        .not()
+        .isVisible();
+  }
+
+  @Step("Eingeschränkte Verwaltung abbrechen und zur normalen Anmeldung zurückkehren")
+  public void cancelRecovery() {
+    UiActions.complete(page, () -> page.locator("#session-recovery-cancel").click());
+    assertFormVisible();
+  }
+
   @Step("Vorübergehende Anmeldesperre ohne Kontoauskunft prüfen")
   public void assertThrottled() {
     assertFormVisible();

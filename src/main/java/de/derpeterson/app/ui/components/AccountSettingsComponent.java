@@ -17,12 +17,15 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.function.SerializableConsumer;
 import com.vaadin.flow.function.SerializableFunction;
+import com.vaadin.flow.function.SerializableRunnable;
+import com.vaadin.flow.function.SerializableSupplier;
 import de.derpeterson.app.config.AppConstants;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.security.SessionManagementService.Snapshot;
 import de.derpeterson.app.service.AccountProfileService.Changes;
 import de.derpeterson.app.service.AccountProfileService.Profile;
 import de.derpeterson.app.service.AccountSecurityService.EmailChange;
@@ -58,6 +61,7 @@ public class AccountSettingsComponent extends Div {
   private final List<SerializableConsumer<AccountSection>> sectionChangeListeners =
       new ArrayList<>();
   private boolean restoringSection;
+  private final AccountSessionsComponent sessionPanel;
   private final Tabs tabs = new Tabs();
   private final TextField firstName = new TextField();
   private final TextField lastName = new TextField();
@@ -73,6 +77,7 @@ public class AccountSettingsComponent extends Div {
       SerializableFunction<Changes, Profile> saveProfile,
       int maxSessionsPerUser) {
     this.messages = messages;
+    sessionPanel = new AccountSessionsComponent(messages, maxSessionsPerUser);
     emailChangeDialog = new AccountEmailChangeDialog(messages);
     passwordChangeDialog = new AccountPasswordChangeDialog(messages);
     this.saveProfile = saveProfile;
@@ -102,7 +107,7 @@ public class AccountSettingsComponent extends Div {
         AccountSection.SESSIONS,
         devicesIcon(),
         messages::getAccountSettingsSessionsTab,
-        sessions(maxSessionsPerUser));
+        sessionPanel);
     tabs.addSelectedChangeListener(
         event -> {
           showSelectedPanel();
@@ -221,7 +226,9 @@ public class AccountSettingsComponent extends Div {
     // URL-Wiederherstellung darf keinen weiteren Historieneintrag auslösen.
     restoringSection = true;
     try {
-      tabs.setSelectedTab(sectionTabs.get(Objects.requireNonNull(section)));
+      boolean sameTab = tabs.getSelectedTab() == sectionTabs.get(Objects.requireNonNull(section));
+      tabs.setSelectedTab(sectionTabs.get(section));
+      if (sameTab && section == AccountSection.SESSIONS) sessionPanel.reload();
     } finally {
       restoringSection = false;
     }
@@ -229,6 +236,7 @@ public class AccountSettingsComponent extends Div {
 
   private void showSelectedPanel() {
     panels.forEach((tab, panel) -> panel.setVisible(tab == tabs.getSelectedTab()));
+    if (getSelectedSection() == AccountSection.SESSIONS) sessionPanel.reload();
   }
 
   private AccountPanelComponent profile(UserEntity user) {
@@ -386,61 +394,12 @@ public class AccountSettingsComponent extends Div {
     return devices;
   }
 
-  private AccountPanelComponent sessions(int maxSessionsPerUser) {
-    var panel =
-        panel(
-            "sessions",
-            VaadinIcon.DESKTOP,
-            messages::getAccountSettingsSessionsTitle,
-            messages::getAccountSettingsSessionsDescription,
-            messages::getAccountSettingsSessionsMeta);
-    panel.setIcon(devicesIcon());
-    var count = text(new Span(), messages::getAccountSettingsSessionsActiveTitle);
-    count.addClassName("account-entry-title");
-    var activity = text(new Span(), messages::getAccountSettingsSessionsActivity);
-    activity.addClassName("account-entry-description");
-    var limit =
-        text(new Span(), () -> messages.getAccountSettingsSessionsLimit(maxSessionsPerUser));
-    limit.setId("account-sessions-limit");
-    limit.addClassName("cosmos-admin-role-chip");
-    var heading = new Div(new Div(count, activity), limit);
-    heading.addClassName("account-session-heading");
-    var currentSession =
-        previewButton(VaadinIcon.DESKTOP, messages::getAccountSettingsCurrentSession, false);
-    currentSession.setId("account-current-session");
-    currentSession.setEnabled(false);
-    var current =
-        actionRow(
-            VaadinIcon.DESKTOP,
-            () -> "Windows-PC · Chrome",
-            messages::getAccountSettingsActiveNow,
-            currentSession);
-    var currentBadge = text(new Span(), messages::getAccountSettingsCurrentDevice);
-    currentBadge.getElement().getThemeList().add("badge");
-    currentBadge.getElement().getThemeList().add("success");
-    currentBadge.addClassName("account-current-device");
-    var currentCopy = (Div) current.getChildren().skip(1).findFirst().orElseThrow();
-    currentCopy.add(new Div(currentBadge));
-    panel
-        .getBody()
-        .add(
-            heading,
-            current,
-            actionRow(
-                VaadinIcon.MOBILE,
-                () -> "Android · Chrome",
-                messages::getAccountSettingsActiveHours,
-                previewButton(VaadinIcon.SIGN_OUT, messages::getBaseLogoutButton, false)),
-            actionRow(
-                VaadinIcon.DESKTOP,
-                () -> "Laptop · Edge",
-                messages::getAccountSettingsActiveYesterday,
-                previewButton(VaadinIcon.SIGN_OUT, messages::getBaseLogoutButton, false)));
-    var logout =
-        previewButton(VaadinIcon.SIGN_OUT, messages::getAccountSettingsLogoutOthers, false);
-    logout.addClassName("cosmos-delete-button");
-    panel.addFooter(text(new Span(), messages::getAccountSettingsLogoutHint), logout);
-    return panel;
+  public void configureSessionActions(
+      SerializableSupplier<Snapshot> loader,
+      SerializableConsumer<String> revoke,
+      SerializableRunnable revokeOthers) {
+    sessionPanel.configure(loader, revoke, revokeOthers);
+    sessionPanel.refreshTexts();
   }
 
   public void configureSecurityActions(
@@ -465,5 +424,6 @@ public class AccountSettingsComponent extends Div {
     textUpdates.forEach(Runnable::run);
     emailChangeDialog.refreshTexts();
     passwordChangeDialog.refreshTexts();
+    sessionPanel.refreshTexts();
   }
 }

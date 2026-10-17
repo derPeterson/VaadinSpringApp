@@ -21,6 +21,7 @@ import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.SessionManagementService;
 import de.derpeterson.app.service.AccountProfileService;
 import de.derpeterson.app.service.AccountProfileService.Changes;
 import de.derpeterson.app.service.AccountProfileService.Profile;
@@ -103,7 +104,15 @@ class AccountViewTest {
             mock(UserService.class),
             profiles,
             mock(AccountSecurityService.class),
+            sessionService(),
             new UserStatusBroadcaster());
+  }
+
+  private SessionManagementService sessionService() {
+    var sessions = mock(SessionManagementService.class);
+    when(sessions.list(any()))
+        .thenReturn(new SessionManagementService.Snapshot(java.util.List.of(), 0, 11));
+    return sessions;
   }
 
   @AfterEach

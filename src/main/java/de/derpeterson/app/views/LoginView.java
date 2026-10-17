@@ -7,6 +7,8 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.dependency.StyleSheet;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -29,12 +31,15 @@ import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.LoginThrottledException;
 import de.derpeterson.app.security.MaintenanceAuthenticationException;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionLimitException;
+import de.derpeterson.app.security.SessionManagementService;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.ui.components.AccountSessionsComponent;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosPageComponent;
 import jakarta.servlet.http.HttpServletRequest;
@@ -56,6 +61,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @Route(AppRouteConstants.LOGIN_ROUTE)
 @PageTitle(AppRouteConstants.LOGIN_PAGE_TITLE)
 @AnonymousAllowed
+@StyleSheet("custom-theme/cosmos-account.css")
 public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
   private static final Logger logger = LoggerFactory.getLogger(LoginView.class);
@@ -69,6 +75,14 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
   private Checkbox rememberMeCheckBox = null;
   private Button loginButton = null;
   private H1 title = null;
+  private final transient SessionManagementService sessions;
+  private final transient HttpServletRequest currentRequest;
+  private CosmosCardComponent loginCard;
+  private Div recoveryArea;
+  private AccountSessionsComponent recoverySessions;
+  private Button continueLogin;
+  private Button cancelRecovery;
+  private Span recoveryHint;
   private Span createAccountQuestionText = null;
 
   public LoginView(
@@ -76,10 +90,13 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
       AuthenticationManager authenticationManager,
       SecurityService securityService,
       HttpServletRequest request,
-      ConfigService configService) {
+      ConfigService configService,
+      SessionManagementService sessions) {
     super(securityService, request, new HorizontalLayout());
 
     this.messageProperties = messageProperties;
+    this.sessions = sessions;
+    this.currentRequest = request;
 
     ComponentUtil.addListener(
         UI.getCurrent(),
@@ -131,6 +148,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
           ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
           updateInputPlaceholders();
+          refreshRecoveryTexts();
           NotificationHelper.getInstance().updateText();
         });
 
@@ -179,6 +197,28 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
                     hasAdminRole(authentication) ? AdminView.class : HomeView.class;
                 getUI().ifPresent(ui -> ui.navigate(target));
               } catch (AuthenticationException e) {
+                if (e instanceof SessionLimitException) {
+                  try {
+                    sessions.startRecovery(
+                        currentRequest,
+                        emailField.getValue(),
+                        passwordField.getValue(),
+                        rememberMeCheckBox.getValue());
+                    passwordField.clear();
+                    showRecovery();
+                  } catch (AuthenticationException rejected) {
+                    showLoginFailure(
+                        rejected instanceof LoginThrottledException
+                            ? "throttled"
+                            : rejected instanceof MaintenanceAuthenticationException
+                                ? "maintenance"
+                                : "invalid");
+                  } catch (RuntimeException unavailable) {
+                    logger.warn("Restricted session management unavailable", unavailable);
+                    showLoginFailure("unavailable");
+                  }
+                  return;
+                }
                 showLoginFailure(
                     e instanceof MaintenanceAuthenticationException
                         ? "maintenance"
@@ -271,9 +311,64 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
         secondaryActionLayout);
     CosmosCardComponent cardComponent = new CosmosCardComponent(cardContentLayout);
 
-    mainContent.add(cardComponent);
+    loginCard = cardComponent;
+    recoverySessions =
+        new AccountSessionsComponent(
+            messageProperties, configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER));
+    recoverySessions.configure(
+        () -> sessions.recoveryList(currentRequest),
+        handle -> sessions.recoveryRevoke(currentRequest, handle),
+        () -> sessions.recoveryRevokeOthers(currentRequest));
+    recoverySessions.setRestricted(true);
+    recoverySessions.setFailureAction(this::hideRecovery);
+    recoveryHint = new Span();
+    recoveryHint.addClassName("cosmos-form-text");
+    continueLogin = new Button();
+    continueLogin.setId("session-recovery-continue");
+    continueLogin.setPrefixComponent(VaadinIcon.SIGN_IN.create());
+    continueLogin.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    continueLogin.addClickListener(
+        event -> {
+          try {
+            boolean admin =
+                sessions.finishRecovery(
+                    currentRequest, (HttpServletResponse) VaadinResponse.getCurrent());
+            NotificationHelper.getInstance()
+                .showNotification(
+                    messageProperties::getBaseSuccessTitle,
+                    messageProperties::getLoginSuccessMessage,
+                    NotificationHelper.NotificationType.SUCCESS);
+            Class<? extends Component> target = admin ? AdminView.class : HomeView.class;
+            getUI().ifPresent(ui -> ui.navigate(target));
+          } catch (SessionLimitException stillFull) {
+            showLoginFailure("sessions");
+          } catch (AuthenticationException expired) {
+            hideRecovery();
+            NotificationHelper.getInstance()
+                .showNotification(
+                    messageProperties::getBaseFailedTitle,
+                    messageProperties::getSessionRecoveryExpired,
+                    -1,
+                    NotificationHelper.NotificationType.ERROR);
+          } catch (RuntimeException unavailable) {
+            logger.warn("Restricted login completion failed", unavailable);
+            showLoginFailure("unavailable");
+          }
+        });
+    cancelRecovery = new Button();
+    cancelRecovery.setId("session-recovery-cancel");
+    cancelRecovery.setPrefixComponent(VaadinIcon.CLOSE_SMALL.create());
+    cancelRecovery.addClickListener(event -> hideRecovery());
+    var actions = new HorizontalLayout(cancelRecovery, continueLogin);
+    actions.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+    recoveryArea = new Div(recoveryHint, recoverySessions, actions);
+    recoveryArea.setId("session-recovery");
+    recoveryArea.addClassName("cosmos-account");
+    recoveryArea.setVisible(false);
+    mainContent.add(cardComponent, recoveryArea);
 
     updateInputPlaceholders();
+    refreshRecoveryTexts();
     add(pageLayout);
   }
 
@@ -281,6 +376,10 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
   public void beforeEnter(BeforeEnterEvent event) {
     super.beforeEnter(event);
     if (event.hasForwardTarget()) return;
+    if (sessions.hasRecovery(currentRequest)) {
+      showRecovery();
+      return;
+    }
     var errors = event.getLocation().getQueryParameters().getParameters().get("error");
     if (errors != null
         && errors.size() == 1
@@ -288,6 +387,27 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
             .contains(errors.getFirst())) {
       showLoginFailure(errors.getFirst());
     }
+  }
+
+  private void showRecovery() {
+    loginCard.setVisible(false);
+    recoveryArea.setVisible(true);
+    recoverySessions.reload();
+  }
+
+  private void hideRecovery() {
+    sessions.cancelRecovery(currentRequest);
+    recoveryArea.setVisible(false);
+    loginCard.setVisible(true);
+    passwordField.clear();
+  }
+
+  private void refreshRecoveryTexts() {
+    if (recoveryArea == null) return;
+    recoveryHint.setText(messageProperties.getSessionRecoveryHint());
+    continueLogin.setText(messageProperties.getSessionContinueLogin());
+    cancelRecovery.setText(messageProperties.getAdminUsersCancel());
+    recoverySessions.refreshTexts();
   }
 
   private void showLoginFailure(String reason) {
