@@ -61,7 +61,8 @@ public class SecurityService {
         storedContext instanceof SecurityContext context ? context.getAuthentication() : null;
     Object storedUser = session.getAttribute(AUTH_USER_SESSION_KEY);
     boolean valid =
-        (authentication == null
+        !admissions.isExpired(request)
+            && (authentication == null
                 || !(authentication.getPrincipal() instanceof UserDetails principal)
                 || hasCurrentPrivileges(principal, authentication))
             && (!(storedUser instanceof UserDetails storedPrincipal)
@@ -76,6 +77,10 @@ public class SecurityService {
   }
 
   public Optional<UserDetails> getAuthenticatedUser(HttpServletRequest request) {
+    if (admissions.isExpired(request)) {
+      clearStaleAuthentication(request);
+      return Optional.empty();
+    }
     SecurityContext securityContext = SecurityContextHolder.getContext();
     Authentication authentication = securityContext.getAuthentication();
     if (authentication != null

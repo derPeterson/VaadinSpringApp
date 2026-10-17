@@ -24,6 +24,7 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.AccountProfileService;
 import de.derpeterson.app.service.AccountProfileService.Changes;
 import de.derpeterson.app.service.AccountProfileService.Profile;
+import de.derpeterson.app.service.AccountSecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountSettingsComponent;
@@ -101,6 +102,7 @@ class AccountViewTest {
             config,
             mock(UserService.class),
             profiles,
+            mock(AccountSecurityService.class),
             new UserStatusBroadcaster());
   }
 

@@ -7,6 +7,7 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
+import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,17 @@ public class EmailService {
    */
   public void sendEmail(UserEntity userEntity, String subject, String htmlContent)
       throws MailException, MessagingException {
+    sendEmailResolved(() -> userEntity.getEmail(), subject, htmlContent);
+  }
+
+  /** Fester Empfänger für verifizierungsgebundene Sicherheitsmails; kein Entity-Umschreiben. */
+  public void sendEmailTo(String recipient, String subject, String htmlContent)
+      throws MailException, MessagingException {
+    sendEmailResolved(() -> recipient, subject, htmlContent);
+  }
+
+  private void sendEmailResolved(Supplier<String> recipient, String subject, String htmlContent)
+      throws MailException, MessagingException {
     MimeMessage message = mailSender.createMimeMessage();
     boolean includeLogo =
         htmlContent != null && htmlContent.contains("cid:" + EmailLogo.CONTENT_ID);
@@ -55,7 +67,7 @@ public class EmailService {
                 : MimeMessageHelper.MULTIPART_MODE_NO,
             "UTF-8");
 
-    helper.setTo(userEntity.getEmail());
+    helper.setTo(recipient.get());
     helper.setSubject(subject);
     helper.setText(htmlContent, true);
     helper.setFrom(configService.getString(ConfigEntry.EMAIL_FROM));

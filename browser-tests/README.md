@@ -62,7 +62,7 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler und Links | 6 |
-| `account-settings` | Basisdaten speichern/validieren, gespeicherte Sprache und vier Schließwege des E-Mail-Dialogentwurfs | 7 |
+| `account-settings` | Basisdaten speichern/validieren, gespeicherte Sprache und vier Schließwege des E-Mail-Dialogs | 7 |
 | `account-lifecycle` | Einzelvalidierungen, kanonisierte Dubletten, unverifizierte Anfrage und altes Resetformular | 5 |
 | `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung mit Datumeingabe/Kalenderauswahl und Tastaturlogin | 5 |
 | `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
@@ -85,6 +85,11 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `all` | Alle 24 Testklassen einschließlich der Fast-Fälle | 127 |
+
+Die sieben Account-Fälle prüfen noch keine erfolgreiche eigene Passwortänderung oder
+verifizierte E-Mail-Änderung. Diese Funktionen sind inzwischen implementiert und per
+JUnit geprüft; ihre neuen Browser-/Mailpit-Journeys bleiben bis zur ausdrücklichen
+Freigabe offen. Siehe [Kontosicherheitsvertrag](../docs/account-security-contract.md).
 
 SESSION-LIMIT-01–04 prüfen das gespeicherte Sitzungslimit über echte Anmeldungen:
 zusätzliche Tabs belegen keinen Platz, Logout gibt einen frei, Reduzierung erhält

@@ -11,10 +11,17 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.helper.ui.NotificationHelper;
+import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.service.AccountSecurityService.PasswordChange;
+import de.derpeterson.app.service.AccountSecurityService.PasswordChanged;
+import java.util.List;
+import java.util.Objects;
 
-/** Oberflächenentwurf für eine Passwortänderung; verändert noch keine Kontodaten. */
+/** Eigene Passwortänderung mit expliziter Validierung erst beim Absenden. */
 public class AccountPasswordChangeDialog extends Dialog {
   private final transient MessageProperties messages;
   private final H2 title = new H2();
@@ -26,6 +33,7 @@ public class AccountPasswordChangeDialog extends Dialog {
   private final Button close = new Button(VaadinIcon.CLOSE_CIRCLE.create(), event -> close());
   private final Button cancel = new Button("", event -> close());
   private final Button save = new Button();
+  private SerializableFunction<PasswordChange, PasswordChanged> changeAction;
 
   public AccountPasswordChangeDialog(MessageProperties messages) {
     this.messages = messages;
@@ -84,7 +92,7 @@ public class AccountPasswordChangeDialog extends Dialog {
     save.setId("account-password-save");
     save.setPrefixComponent(VaadinIcon.CHECK.create());
     save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    // Für die Gestaltungsabnahme aktiv. Passwortänderung/Validierung folgen im nächsten Schritt.
+    save.addClickListener(event -> submit());
     var actions = new Div(cancel, save);
     actions.addClassName("cosmos-dialog-actions");
     getFooter().add(actions);
@@ -93,6 +101,37 @@ public class AccountPasswordChangeDialog extends Dialog {
           if (!event.isOpened()) clearDraft();
         });
     refreshTexts();
+  }
+
+  public void setChangeAction(SerializableFunction<PasswordChange, PasswordChanged> action) {
+    changeAction = Objects.requireNonNull(action);
+  }
+
+  private void submit() {
+    if (!ValidationHelper.validateRequiredInputs(
+            List.of(newPassword, confirmPassword, currentPassword), messages)
+        || !ValidationHelper.validatePasswordSecureInputs(List.of(newPassword), messages)
+        || !ValidationHelper.validatePasswordConfirmInputs(newPassword, confirmPassword, messages))
+      return;
+    save.setEnabled(false);
+    try {
+      Objects.requireNonNull(changeAction, "Password change action required")
+          .apply(
+              new PasswordChange(
+                  currentPassword.getValue(), newPassword.getValue(), confirmPassword.getValue()));
+      close();
+      NotificationHelper.getInstance()
+          .showNotification(
+              messages::getBaseSuccessTitle,
+              messages::getAccountSecurityPasswordSuccess,
+              NotificationHelper.NotificationType.SUCCESS);
+    } catch (RuntimeException failure) {
+      var field = AccountSecurityFeedback.failure(messages, failure);
+      if (field == AccountSecurityFeedback.Field.CURRENT_PASSWORD) currentPassword.setInvalid(true);
+      if (field == AccountSecurityFeedback.Field.NEW_PASSWORD) newPassword.setInvalid(true);
+    } finally {
+      save.setEnabled(true);
+    }
   }
 
   @Override

@@ -20,6 +20,7 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.IsAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.AccountProfileService;
+import de.derpeterson.app.service.AccountSecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountSettingsComponent;
@@ -33,6 +34,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.time.Clock;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 @Route(AppRouteConstants.ACCOUNT_ROUTE)
 @PageTitle(AppRouteConstants.ACCOUNT_PAGE_TITLE)
@@ -49,6 +51,7 @@ public class AccountView extends IsAuthenticatedBaseView {
       ConfigService config,
       UserService users,
       AccountProfileService profiles,
+      AccountSecurityService accountSecurity,
       UserStatusBroadcaster broadcaster) {
     super(messages, security, users, broadcaster, request);
     addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-account");
@@ -82,6 +85,14 @@ public class AccountView extends IsAuthenticatedBaseView {
             currentUser,
             changes -> profiles.save(request, changes),
             config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER));
+    accountSettings.configureSecurityActions(
+        change -> {
+          var changed = accountSecurity.changePassword(request, change);
+          if (Objects.equals(currentUser.getVersion(), changed.previousVersion()))
+            currentUser.setVersion(changed.version());
+          return changed;
+        },
+        change -> accountSecurity.requestEmailChange(request, change));
     accountSettings.addSectionChangeListener(
         section ->
             UI.getCurrent()

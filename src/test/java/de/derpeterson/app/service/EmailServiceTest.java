@@ -535,4 +535,16 @@ class EmailServiceTest {
     assertNull(part.getDisposition());
     assertNull(part.getFileName());
   }
+
+  @Test
+  void addressedSecurityEmailUsesExactlyTheCapturedRecipientAndExistingMimeContract()
+      throws Exception {
+    var original = prepareMime();
+    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+    service.sendEmailTo(
+        "confirmed-new@example.test", "Sicherheitsmeldung", "<p>Änderung bestätigt</p>");
+    var message = roundTrip(sentMime(original));
+    assertEnvelope(message, "confirmed-new@example.test", FROM, "Sicherheitsmeldung");
+    assertEquals("<p>Änderung bestätigt</p>", message.getContent());
+  }
 }

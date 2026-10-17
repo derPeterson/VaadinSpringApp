@@ -325,4 +325,19 @@ class SessionAdmissionTest {
     // intact.
     assertTrue(registry.getAllPrincipals().isEmpty());
   }
+
+  @Test
+  void revokedSessionsAreRejectedAndImmediatelyFreeTheirAdmissionSlot() {
+    when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
+    var old = new MockHttpServletRequest();
+    admissions.onAuthentication(authentication(), old, response);
+    registry.getSessionInformation(old.getSession().getId()).expireNow();
+    assertTrue(admissions.isExpired(old));
+    var fresh = new MockHttpServletRequest();
+    assertDoesNotThrow(() -> admissions.onAuthentication(authentication(), fresh, response));
+    assertFalse(admissions.isExpired(fresh));
+    assertThrows(
+        AuthenticationServiceException.class,
+        () -> admissions.onAuthentication(authentication(), old, response));
+  }
 }

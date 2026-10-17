@@ -1646,4 +1646,76 @@ public class MessageTexts {
   public String getAccountPasswordDialogConfirmPassword() {
     return getTranslation("accountSettings.password.dialog.confirm.password");
   }
+
+  public String getAccountPasswordChangedSubject() {
+    return getTranslation("account.security.password.subject");
+  }
+
+  public String getAccountEmailChangeSubject() {
+    return getTranslation("account.security.email.request.subject");
+  }
+
+  public String getAccountEmailChangedSubject() {
+    return getTranslation("account.security.email.changed.subject");
+  }
+
+  public String getAccountSecurityPasswordSuccess() {
+    return getTranslation("account.security.password.success");
+  }
+
+  public String getAccountSecurityEmailRequested() {
+    return getTranslation("account.security.email.requested");
+  }
+
+  public String getAccountSecurityWrongPassword() {
+    return getTranslation("account.security.password.wrong");
+  }
+
+  public String getAccountSecurityFailed() {
+    return getTranslation("account.security.failed");
+  }
+
+  public String getAccountSecuritySameEmail() {
+    return getTranslation("account.security.email.same");
+  }
+
+  public String getAccountSecuritySamePassword() {
+    return getTranslation("account.security.password.same");
+  }
+
+  public String getAccountSecurityRequestPending() {
+    return getTranslation("account.security.email.pending");
+  }
+
+  public String getAccountEmailConfirmationTitle() {
+    return getTranslation("account.security.email.confirm.title");
+  }
+
+  public String getAccountEmailConfirmationReady() {
+    return getTranslation("account.security.email.confirm.ready");
+  }
+
+  public String getAccountEmailConfirmationSuccess() {
+    return getTranslation("account.security.email.confirm.success");
+  }
+
+  public String getAccountEmailConfirmationInvalid() {
+    return getTranslation("account.security.email.confirm.invalid");
+  }
+
+  public String getAccountEmailConfirmationExpired() {
+    return getTranslation("account.security.email.confirm.expired");
+  }
+
+  public String getAccountEmailConfirmationConflict() {
+    return getTranslation("account.security.email.confirm.conflict");
+  }
+
+  public String getAccountEmailConfirmationFailed() {
+    return getTranslation("account.security.email.confirm.failed");
+  }
+
+  public String getAccountEmailConfirmationAction() {
+    return getTranslation("account.security.email.confirm.action");
+  }
 }

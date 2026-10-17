@@ -138,3 +138,13 @@ Testanwendung mit zwei offenen Tabs: Remember-me stellt die Identität wieder he
 ohne Remember-me entsteht keine dauerhafte Anmeldung. Die Besonderheiten des
 IntelliJ-/DevTools-Betriebs und die Grenze der konkreten Fehlerreproduktion stehen
 in der [Neustart-Analyse](login-restart-analysis.md).
+
+
+## Widerruf bei eigenen Sicherheitsänderungen
+
+Der [Kontosicherheitsvertrag](account-security-contract.md) ergänzt den expliziten Widerruf:
+Passwortwechsel beendet andere Sitzungen, bestätigte E-Mail-Änderung alle bisherigen
+Sitzungen. Abgelaufene Registry-Einträge werden bei der Zulassung nicht mehr mitgezählt,
+bleiben aber bis zum tatsächlichen Sitzungsende als Widerrufsnachweis erhalten.
+Die HTTP-/Vaadin-/Push-Prüfung weist solche Sitzungen vor der Fachaktion zurück.
+Die Anwendungsinstanz-Grenze der Registry bleibt bestehen.

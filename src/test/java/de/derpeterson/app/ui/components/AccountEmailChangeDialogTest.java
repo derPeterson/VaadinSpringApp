@@ -13,8 +13,13 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.server.VaadinSession;
+import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.service.AccountSecurityService.EmailChange;
+import de.derpeterson.app.service.AccountSecurityService.Problem;
+import de.derpeterson.app.service.AccountSecurityService.Rejected;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -45,6 +50,7 @@ class AccountEmailChangeDialogTest {
   @AfterEach
   void cleanup() {
     dialog.close();
+    NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
   }
@@ -126,7 +132,7 @@ class AccountEmailChangeDialogTest {
   }
 
   @Test
-  void languageRefreshPreservesDraftsAndTheConfirmationActionRemainsAPreview() {
+  void languageRefreshPreservesDraftsAndIncompleteSubmissionKeepsTheDialogOpen() {
     dialog.open();
     ((EmailField) byId("account-email-new")).setValue("draft@example.test");
     locale.set(Locale.ENGLISH);
@@ -161,5 +167,38 @@ class AccountEmailChangeDialogTest {
     assertTrue(email.isEmpty());
     assertTrue(confirm.isEmpty());
     assertTrue(password.isEmpty());
+  }
+
+  @Test
+  void successfulRequestPassesConfirmedAddressAndClearsTheDraft() {
+    var calls = new ArrayList<EmailChange>();
+    dialog.setRequestAction(calls::add);
+    dialog.open();
+    ((EmailField) byId("account-email-new")).setValue("new@example.test");
+    ((EmailField) byId("account-email-confirm")).setValue("new@example.test");
+    ((PasswordField) byId("account-email-password")).setValue("Old-secret!");
+    ((Button) byId("account-email-request")).click();
+    assertEquals(1, calls.size());
+    assertEquals("new@example.test", calls.getFirst().newEmail());
+    assertFalse(dialog.isOpened());
+    assertTrue(((EmailField) byId("account-email-new")).isEmpty());
+    assertTrue(((PasswordField) byId("account-email-password")).isEmpty());
+  }
+
+  @Test
+  void conflictingAddressMarksBothEmailFieldsAndKeepsTheCurrentPasswordUnmarked() {
+    dialog.setRequestAction(
+        change -> {
+          throw new Rejected(Problem.EMAIL_UNAVAILABLE);
+        });
+    dialog.open();
+    ((EmailField) byId("account-email-new")).setValue("taken@example.test");
+    ((EmailField) byId("account-email-confirm")).setValue("taken@example.test");
+    ((PasswordField) byId("account-email-password")).setValue("Old-secret!");
+    ((Button) byId("account-email-request")).click();
+    assertTrue(dialog.isOpened());
+    assertTrue(((EmailField) byId("account-email-new")).isInvalid());
+    assertTrue(((EmailField) byId("account-email-confirm")).isInvalid());
+    assertFalse(((PasswordField) byId("account-email-password")).isInvalid());
   }
 }

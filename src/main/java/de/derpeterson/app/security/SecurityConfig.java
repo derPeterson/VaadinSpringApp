@@ -184,7 +184,8 @@ public class SecurityConfig {
                         AppRoute.REGISTRATION.getSecurityRoute(),
                         AppRoute.VERIFICATION.getSecurityRoute(),
                         AppRoute.FORGOT_PASSWORD.getSecurityRoute(),
-                        AppRoute.RESET_PASSWORD.getSecurityRoute())
+                        AppRoute.RESET_PASSWORD.getSecurityRoute(),
+                        AppRoute.EMAIL_CHANGE.getSecurityRoute())
                     .permitAll()
                     .requestMatchers(
                         AppRoute.H2.getSecurityRoute(), AppRoute.H2.getSecurityRoute() + "/**")
@@ -325,6 +326,7 @@ public class SecurityConfig {
         || requestUri.equals(AppRoute.FORGOT_PASSWORD.getSecurityRoute())
         || requestUri.startsWith(AppRoute.VERIFICATION.getSecurityRoute().replace("/**", ""))
         || requestUri.startsWith(AppRoute.RESET_PASSWORD.getSecurityRoute().replace("/**", ""))
+        || requestUri.startsWith(AppRoute.EMAIL_CHANGE.getSecurityRoute().replace("/**", ""))
         || requestUri.startsWith(AppRoute.H2.getSecurityRoute());
   }
 }

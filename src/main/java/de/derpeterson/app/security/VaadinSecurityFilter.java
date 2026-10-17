@@ -36,8 +36,14 @@ public class VaadinSecurityFilter implements Filter {
             || VaadinSession.getCurrent() != null
                 && VaadinSession.getCurrent().getAttribute(UserDetails.class) != null
             || session != null && session.getAttribute("authenticatedUser") instanceof UserDetails;
-    if (securityService.getObject().getAuthenticatedUser(httpRequest).isEmpty() && hadPrincipal) {
-      // Also stop UIDL/VAADIN callbacks to an already open privileged view.
+    boolean loginDocument =
+        "GET".equals(httpRequest.getMethod())
+            && AppRoute.LOGIN.getSecurityRoute().equals(httpRequest.getServletPath());
+    if (securityService.getObject().getAuthenticatedUser(httpRequest).isEmpty()
+        && hadPrincipal
+        && !loginDocument) {
+      // Stop old UI callbacks. Only the login document may continue after the security
+      // service cleared the stale context and invalidated its old HTTP/Vaadin session.
       ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
       return;
     }

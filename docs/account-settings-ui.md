@@ -1,4 +1,4 @@
-# Mein Konto: Oberfläche und Profildaten speichern
+# Mein Konto: Profildaten und Sicherheit
 
 Stand: 17.10.2026. Feature-Branch `feature/account-settings-ui`.
 
@@ -20,10 +20,10 @@ Das Speichern der eigenen Profildaten ist inzwischen implementiert:
   erhalten ungespeicherte Entwürfe. „Änderungen speichern“ übernimmt Vorname,
   Nachname, Geburtsdatum und bevorzugte Sprache (DE/EN).
 - Die E-Mail bleibt sichtbar, ist aber deaktiviert und nicht fokussierbar.
-  Der E-Mail-Ändern-Button unter Sicherheit öffnet den unten beschriebenen Dialogentwurf.
+  Der E-Mail-Ändern-Button unter Sicherheit öffnet den unten beschriebenen Änderungsdialog.
   Im Profil gibt es keinen Ändern-Button und keinen zusätzlichen E-Mail-Hilfetext.
-  Auch „Passwort ändern“ öffnet unter Sicherheit einen Dialogentwurf.
-  Beide Dialoge verändern noch keine Kontodaten. Profilbild- und Sitzungsabmeldeaktionen
+  Passwortänderung und E-Mail-Änderung sind jetzt funktional: [Sicherheitsvertrag](account-security-contract.md).
+  Profilbild- und Sitzungsabmeldeaktionen
   sind für die visuelle Abnahme aktiv dargestellt, besitzen aber noch keine Aktionslistener
   oder Serviceaufrufe. „Aktuelle Sitzung“ ist als reine Kennzeichnung deaktiviert.
 - Die drei Geräte und Aktivitätszeiten sind weiterhin statische Entwurfsdaten.
@@ -31,7 +31,7 @@ Das Speichern der eigenen Profildaten ist inzwischen implementiert:
   Das Limit rechts enthält dagegen den tatsächlichen Wert von `max.sessions.per.user`
   beim Öffnen der Kontoseite, ohne Beispielzusatz. Es erfolgt noch keine Abfrage des
   tatsächlichen Sitzungsregisters und keine Abmeldung von Geräten.
-- Vorhandene Passwörter, Hashes und Sitzungstokens werden weder gelesen noch angezeigt.
+- Die Oberfläche zeigt keine gespeicherten Passwörter, Hashes oder Sitzungstokens an.
 - DE/EN-Texte liegen im gemeinsamen typisierten `MessageTexts`-Katalog.
 
 Die vorhandene Sitzungsbegrenzung bleibt eigenständig wirksam. Die eigentliche
@@ -130,54 +130,29 @@ oder im Browserspeicher abgelegt. Dialoge werden nicht über die Tab-URL geöffn
 einschließlich Tab-URLs, Rückfallwerten, Zugriffsschutz, Sprachwechsel und Erhalt der Entwürfe.
 Die neuen Abläufe sind noch nicht mit einem echten Browser geprüft.
 
-## E-Mail ändern: Dialogentwurf
+## Passwort und E-Mail ändern
 
-Über „E-Mail ändern“ im Sicherheitstab öffnet sich die
-`AccountEmailChangeDialog`-Komponente. Im Profil wird die E-Mail nur angezeigt. Sie verwendet die vorhandenen
-Cosmos-Header-, Icon-, Feld-, Hinweis-, Schließen- und Buttonbausteine. Die
-Dialogfläche folgt der Card, der Header dem Benutzerdialog und der Footer dem
-Konto-Footer. Der Hintergrund-Blur von 6px auf dem nativen Backdrop ist inzwischen
-zentraler Standard für alle Cosmos-Dialoge; siehe [Designstandard](design-standard.md).
+Beide Dialoge unter Sicherheit sind funktional. Sie verwenden unverändert die
+abgestimmten Cosmos-Header, Card-/Footerflächen, Icons, Feld- und Notificationbausteine.
+Eingaben werden erst beim Absenden geprüft und ungültige Felder rot markiert. Schließen
+per Icon, Abbrechen, Escape oder Außenklick verwirft die Eingaben; Sprachwechsel erhalten
+Entwürfe. Passwort und Bestätigung stehen vor dem aktuellen Passwort, entsprechend der
+Anordnung im E-Mail-Dialog.
 
-Der Entwurf enthält neue E-Mail-Adresse, deren Bestätigung und aktuelles Passwort
-mit Sichtbarkeitsschalter. Ein Hinweis mit Info-Icon erläutert den späteren
-Bestätigungsschritt und den Erhalt der alten Adresse bis zur Bestätigung. Dieser Hinweis
-steht ausschließlich im Dialog. DE/EN und Sprachwechsel erhalten die offenen Eingaben.
-Schließen per Icon, Abbrechen, Escape oder Außenklick verwirft die Dialogeingaben,
-einschließlich des Passworts. Ungespeicherte Profildaten bleiben erhalten.
+„Passwort ändern“ prüft das aktuelle Passwort erneut, speichert einen neuen BCrypt-Hash
+und merkt eine Bestätigungsmail in der Outbox vor. Andere Sitzungen und gespeicherte
+Anmeldungen werden widerrufen; die aktuelle Sitzung bleibt erhalten. Profilentwürfe
+bleiben bestehen; eine fremde zwischenzeitliche Profiländerung wird nicht durch bloßes
+Fortschreiben der UI-Version übergangen.
 
-„Bestätigung anfordern“ ist für die Gestaltungsabnahme aktiv, führt aber noch
-keine Validierung, Passwortprüfung, Mailzustellung oder Kontoänderung aus.
-Die eigentliche E-Mail-Änderung ist weiterhin offen.
+„Bestätigung anfordern“ prüft aktuelle Zugangsdaten und die neue Adresse. Die bisherige
+Adresse bleibt bis zur ausdrücklichen Bestätigung gültig. Ein zeitlich begrenzter Einmallink
+führt zu einer eigenen Cosmos-Bestätigungsseite. Erst der Bestätigungsbutton ändert die
+Adresse, beendet alle bisherigen Sitzungen und merkt Sicherheitsmails an beide Adressen vor.
+Danach wird die neue Adresse zur Anmeldung verwendet. Der vollständige Ablauf einschließlich
+Fehlern, Versuchsbegrenzung und Prüfgrenzen steht im [Sicherheitsvertrag](account-security-contract.md).
 
-Die sieben JUnit-Dialogfälle prüfen unter anderem Konfiguration, Sprache und
-Verwerfen beim Schließen/Wiederöffnen. Im echten Browser wurde ein verbleibender
-Passwortentwurf nach Escape gefunden: Eingaben werden jetzt unmittelbar synchronisiert
-und vor jedem Öffnen zusätzlich verworfen. Die Browserfälle prüfen Icon, Abbrechen,
-Escape und Außenklick jeweils mit anschließender leerer Wiederöffnung. Die vollständige
-Anwendungstestsuite enthält diese Regression; bisherige Teiltestzahlen werden nicht
-zum Gesamtergebnis addiert.
-
-
-## Passwort ändern: Dialogentwurf
-
-„Passwort ändern“ unter Sicherheit öffnet `AccountPasswordChangeDialog` mit Schloss-Icon,
-passenden DE/EN-Texten und drei Passwortfeldern: neues Passwort, „Neues Passwort bestätigen“ und
-aktuelles Passwort. Wie im E-Mail-Dialog steht das aktuelle Passwort zuletzt. Die bestehenden Platzhalter, Sichtbarkeitsschalter, Schließen-/Abbrechen-
-und Bestätigungsicons bleiben der Standard. Der Infohinweis empfiehlt ein einzigartiges
-Passwort und die doppelte Eingabe zur Bestätigung.
-
-Beide Kontoänderungsdialoge verwenden dieselben lokalen Layoutregeln in
-`cosmos-account.css` und die zentralen Cosmos-Dialogfarben für Header, Inhalt, Footer
-und Border. Escape und Außenklick schließen nativ; der vorhandene Backdrop-Blur bleibt.
-Beim Schließen und vor jedem Öffnen werden alle Passwortfelder geleert. Ein Sprachwechsel
-übersetzt den offenen Dialog und erhält den aktuellen Entwurf. Der Profilentwurf bleibt
-beim Öffnen und Schließen unverändert.
-
-Der Bestätigungsbutton ist für die visuelle Abstimmung aktiv, führt aber noch keine
-Validierung, Passwortprüfung, Speicherung oder Sitzungsänderung aus. Es gibt keine
-Erfolgsmeldung ohne ausgeführte Änderung. Die eigentliche Funktion folgt gesondert.
-Für diesen Stand bestanden 38 gezielte JUnit-Fälle (Passwortdialog, E-Mail-Dialog,
-Kontokomponente, Konto-View und Übersetzungskatalog), ohne Fehler oder Skips.
-Browserprüfungen und visuelle Abnahme dieses neuen Dialogs stehen noch aus; Browserläufe
-erfolgen gesammelt und ausschließlich auf ausdrückliche Freigabe.
+Die statischen Infohinweise erklären die Sitzungsfolgen vor dem Absenden; die Sicherheitsmails
+wiederholen sie. Die Erfolgsmeldungen unterscheiden eine gespeicherte Änderung bzw. vorgemerkte
+Mail von einer tatsächlich nachgewiesenen Zustellung. Die realen Browser-/Mailpit-Abläufe
+beider Änderungen wurden in diesem Schritt nicht gestartet; sie bleiben ausdrücklich offen.

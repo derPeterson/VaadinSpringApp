@@ -98,3 +98,14 @@ Mailbilder und den über die Oberfläche gespeicherten sicheren DB-Fußtext in b
 Mailtypen. MJML wurde erfolgreich mit strikter Validierung in HTML übersetzt.
 Gmail/Outlook-Darstellung und reale Zustellung bleiben separat ungeprüft.
 Berichte: [Browserabdeckung](../browser-tests/abdeckung.md).
+
+
+## Adressfeste Konto-Sicherheitsmails (17.10.2026)
+
+`sendEmailTo(recipient, subject, html)` verwendet denselben MIME-/CID-/Transportablauf
+mit explizit gespeichertem Empfänger. Der vorhandene `sendEmail(user, ...)`-Vertrag
+bleibt einschließlich MIME-Erstellung und Validierungsreihenfolge erhalten.
+Neue Konto-Sicherheitsmails werden als NOTIFICATION mit `email_queue.recipient`
+gespeichert. Null bei älteren Einträgen erhält die bisherige Empfängerauswahl.
+Siehe [Kontosicherheitsvertrag](account-security-contract.md) für Vorlagen, Transaktionen,
+Sitzungsfolgen und die weiterhin offene tatsächliche Browser-/SMTP-Abnahme.

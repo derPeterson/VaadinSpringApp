@@ -22,6 +22,11 @@ public enum AppRoute {
       AppRouteConstants.ACCOUNT_SECURITY_ROUTE,
       AppRouteConstants.ACCOUNT_PAGE_TITLE,
       null),
+  EMAIL_CHANGE(
+      AppRouteConstants.EMAIL_CHANGE_ROUTE,
+      AppRouteConstants.EMAIL_CHANGE_SECURITY_ROUTE,
+      AppRouteConstants.EMAIL_CHANGE_PAGE_TITLE,
+      null),
   ADMIN(
       AppRouteConstants.ADMIN_ROUTE,
       AppRouteConstants.ADMIN_SECURITY_ROUTE,

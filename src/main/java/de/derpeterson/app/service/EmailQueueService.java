@@ -1,6 +1,7 @@
 package de.derpeterson.app.service;
 
 import de.derpeterson.app.model.AdminNotificationAttemptEntity;
+import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.model.EmailQueueEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.AdminNotificationStatus;
@@ -10,6 +11,7 @@ import de.derpeterson.app.model.enums.EmailType;
 import de.derpeterson.app.repository.AdminNotificationAttemptRepository;
 import de.derpeterson.app.repository.EmailQueueRepository;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.validation.UserInputRules;
 import jakarta.mail.MessagingException;
 import java.time.Clock;
 import java.time.Duration;
@@ -85,6 +87,10 @@ public class EmailQueueService {
     this.adminAttempts = Objects.requireNonNull(adminAttempts, "adminAttempts");
   }
 
+  private String deliveryRecipient(EmailQueueEntity email) {
+    return email.getRecipient() == null ? email.getUserEntity().getEmail() : email.getRecipient();
+  }
+
   private void requireUserAndType(UserEntity user, EmailType type) {
     Objects.requireNonNull(user, "userEntity");
     Objects.requireNonNull(user.getId(), "userEntity.id");
@@ -124,6 +130,29 @@ public class EmailQueueService {
     email.setSubject(subject);
     email.setBody(body);
     email.setEmailType(emailType);
+    email.setStatus(EmailStatus.PENDING);
+    email.setCreatedAt(LocalDateTime.now(clock));
+    emailQueueRepository.save(email);
+  }
+
+  /**
+   * Sicherheitsereignisse werden vollständig angelegt, nicht als beliebige NOTIFICATION
+   * dedupliziert.
+   */
+  @Transactional
+  public void addAddressedNotification(
+      UserEntity user, String recipient, String subject, String body) {
+    requireUserAndType(user, EmailType.NOTIFICATION);
+    if (!UserInputRules.isEmailValid(recipient)) {
+      throw new IllegalArgumentException("Invalid notification recipient");
+    }
+    var stored = userRepository.lockVerificationUser(user.getId()).orElseThrow();
+    var email = new EmailQueueEntity();
+    email.setUserEntity(stored);
+    email.setRecipient(EmailIdentity.canonicalize(recipient));
+    email.setSubject(Objects.requireNonNull(subject));
+    email.setBody(Objects.requireNonNull(body));
+    email.setEmailType(EmailType.NOTIFICATION);
     email.setStatus(EmailStatus.PENDING);
     email.setCreatedAt(LocalDateTime.now(clock));
     emailQueueRepository.save(email);
@@ -182,7 +211,11 @@ public class EmailQueueService {
     long attempt = (long) claimed.getRetryCount() + 1;
     Exception sendFailure = null;
     try {
-      emailService.sendEmail(claimed.getUserEntity(), claimed.getSubject(), claimed.getBody());
+      if (claimed.getRecipient() == null) {
+        emailService.sendEmail(claimed.getUserEntity(), claimed.getSubject(), claimed.getBody());
+      } else {
+        emailService.sendEmailTo(claimed.getRecipient(), claimed.getSubject(), claimed.getBody());
+      }
     } catch (MailException | MessagingException e) {
       // Transport errors may follow SMTP acceptance (for example a lost reply).
       // Do not confuse an exception with proof of non-delivery.
@@ -224,20 +257,18 @@ public class EmailQueueService {
             });
     if (failure == null) {
       logger.info(
-          "✅ Email successfully sent to {} on attempt {}.",
-          completed.getUserEntity().getEmail(),
-          attempt);
+          "✅ Email successfully sent to {} on attempt {}.", deliveryRecipient(completed), attempt);
     } else if (completed.getStatus() == EmailStatus.PENDING) {
       logger.warn(
           "⚠️ Error sending the email to {}, attempt {} of {}: {}",
-          completed.getUserEntity().getEmail(),
+          deliveryRecipient(completed),
           attempt,
           (long) maxRetry + 1,
           failure.getMessage());
     } else {
       logger.error(
           "❌ Email to {} failed after {} attempts: {}",
-          completed.getUserEntity().getEmail(),
+          deliveryRecipient(completed),
           attempt,
           failure.getMessage());
       sendAdminNotification(transaction, completed, failure, attempt);
@@ -294,7 +325,7 @@ public class EmailQueueService {
       String body =
           "The email to %s with the subject '%s' could not be delivered after %d attempts.\n\nError message: %s\nEmail type: %s\nSending time: %s" // NOSONAR
               .formatted(
-                  failedEmail.getUserEntity().getEmail(),
+                  deliveryRecipient(failedEmail),
                   failedEmail.getSubject(),
                   attempt,
                   e.getMessage(),

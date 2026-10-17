@@ -1,5 +1,18 @@
 # Browserabdeckung und offene Punkte
 
+## Kontosicherheit: JUnit-Nachweis, Browser noch offen (17.10.2026)
+
+Eigene Passwortänderung und verifizierte E-Mail-Änderung sind implementiert:
+[Verhalten und Prüfgrenzen](../docs/account-security-contract.md). Der Gesamtlauf bestand
+1.375 JUnit-Fälle ohne Fehler oder Skips; die letzte Login-Übergangskorrektur sowie die betroffenen Konto-/Sicherheitsbereiche
+bestanden anschließend 149 gezielte Nachprüfungen ohne Fehler oder Skips (überlappende Fälle). Die sechs DE/EN-MJML-Vorlagen sind strikt kompiliert. Es gab für diesen
+Featurestand keinen Browserlauf, keine echte SMTP-Zustellung und keinen neuen
+Browser-Code-Coverage-Nachweis. Die sieben vorhandenen Account-Fälle decken Profilspeichern
+und Dialogschließen ab; erfolgreiche Sicherheitsänderungen benötigen weitere Journeys.
+Die folgenden früheren Browserergebnisse und Coverage gelten für ihren jeweils beschriebenen
+Stand und sind keine Abdeckung dieser neuen Funktion.
+
+
 ## Nachtrag: Admin-Menüposition in der URL (17.10.2026)
 
 Auf `feature/account-settings-ui`, Basis `14e4bb62`, ergänzt die AdminView die

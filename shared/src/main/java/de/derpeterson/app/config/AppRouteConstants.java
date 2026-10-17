@@ -15,6 +15,10 @@ public final class AppRouteConstants {
   public static final String ACCOUNT_SECURITY_ROUTE = "/account";
   public static final String ACCOUNT_PAGE_TITLE = "My Account";
 
+  public static final String EMAIL_CHANGE_ROUTE = "confirm-email-change";
+  public static final String EMAIL_CHANGE_SECURITY_ROUTE = "/confirm-email-change/**";
+  public static final String EMAIL_CHANGE_PAGE_TITLE = "Confirm Email Change";
+
   public static final String ADMIN_ROUTE = "admin";
   public static final String ADMIN_SECURITY_ROUTE = "/admin";
   public static final String ADMIN_PAGE_TITLE = "Admin";

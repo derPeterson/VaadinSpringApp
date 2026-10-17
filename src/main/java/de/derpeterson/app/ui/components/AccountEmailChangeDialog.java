@@ -12,10 +12,16 @@ import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.function.SerializableConsumer;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.helper.ui.NotificationHelper;
+import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.service.AccountSecurityService.EmailChange;
+import java.util.List;
+import java.util.Objects;
 
-/** Erster Oberflächenentwurf; fordert noch keine Bestätigung an und verändert kein Konto. */
+/** Fordert eine verifizierte Adressänderung an; die bisherige Kontoadresse bleibt erhalten. */
 public class AccountEmailChangeDialog extends Dialog {
   private final transient MessageProperties messages;
   private final H2 title = new H2();
@@ -27,6 +33,7 @@ public class AccountEmailChangeDialog extends Dialog {
   private final Button close = new Button(VaadinIcon.CLOSE_CIRCLE.create(), event -> close());
   private final Button cancel = new Button("", event -> close());
   private final Button request = new Button();
+  private SerializableConsumer<EmailChange> requestAction;
 
   public AccountEmailChangeDialog(MessageProperties messages) {
     this.messages = messages;
@@ -81,7 +88,7 @@ public class AccountEmailChangeDialog extends Dialog {
     request.setId("account-email-request");
     request.setPrefixComponent(VaadinIcon.CHECK.create());
     request.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    // Für die Gestaltungsabnahme aktiv. Versand/Validierung folgen im nächsten Schritt.
+    request.addClickListener(event -> submit());
     var actions = new Div(cancel, request);
     actions.addClassName("cosmos-dialog-actions");
     getFooter().add(actions);
@@ -90,6 +97,36 @@ public class AccountEmailChangeDialog extends Dialog {
           if (!event.isOpened()) clearDraft();
         });
     refreshTexts();
+  }
+
+  public void setRequestAction(SerializableConsumer<EmailChange> action) {
+    requestAction = Objects.requireNonNull(action);
+  }
+
+  private void submit() {
+    if (!ValidationHelper.validateRequiredInputs(List.of(email, confirmEmail, password), messages)
+        || !ValidationHelper.validateEmailValidInputs(List.of(email, confirmEmail), messages)
+        || !ValidationHelper.validateEmailConfirmInputs(email, confirmEmail, messages)) return;
+    request.setEnabled(false);
+    try {
+      Objects.requireNonNull(requestAction, "Email change action required")
+          .accept(new EmailChange(email.getValue(), confirmEmail.getValue(), password.getValue()));
+      close();
+      NotificationHelper.getInstance()
+          .showNotification(
+              messages::getBaseSuccessTitle,
+              messages::getAccountSecurityEmailRequested,
+              NotificationHelper.NotificationType.SUCCESS);
+    } catch (RuntimeException failure) {
+      var field = AccountSecurityFeedback.failure(messages, failure);
+      if (field == AccountSecurityFeedback.Field.CURRENT_PASSWORD) password.setInvalid(true);
+      if (field == AccountSecurityFeedback.Field.EMAIL) {
+        email.setInvalid(true);
+        confirmEmail.setInvalid(true);
+      }
+    } finally {
+      request.setEnabled(true);
+    }
   }
 
   @Override

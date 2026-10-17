@@ -26,6 +26,10 @@ public class EmailQueueEntity {
   @JoinColumn(name = "user_id", nullable = false)
   private UserEntity userEntity;
 
+  // Neue Sicherheitsmails behalten ihren Empfänger auch nach einer Adressänderung.
+  // Null erhält für alte Queueeinträge den bisherigen dynamischen Empfänger.
+  @Column private String recipient;
+
   @Column(nullable = false)
   private String subject;
 

@@ -27,7 +27,7 @@ Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administ
 - Konfigurierbares Limit gleichzeitiger Sitzungen pro Benutzer für Passwortlogin und Remember-me; zusätzliche Tabs teilen ihren Sitzungsplatz.
 - Sofort wirksamer Wartungsmodus mit Zugang für Admin/Superadmin, pausierter normaler Nutzung und erhaltenen Sitzungen/Tokens.
 - Adminbereich mit Benutzerverwaltung, Rollen und Kontofreigabe, Konfiguration sowie Mail-Testversand. Die Menüposition steht in der URL und bleibt bei Refresh erhalten; Direktlinks und Zurück/Vorwärts sind möglich.
-- „Mein Konto“ über das Benutzermenü: eigene Profildaten und bevorzugte Sprache speichern, mit Validierung und Konfliktschutz. Der ausgewählte Tab steht in der URL (`/account?tab=security`) und wird beim Neuladen wiederhergestellt. E-Mail, Profilbild, Sicherheit und Geräte/Sitzungen bleiben für weitere Schritte vorbereitet. [Umfang](docs/account-settings-ui.md).
+- „Mein Konto“ über das Benutzermenü: eigene Profildaten und bevorzugte Sprache speichern, mit Validierung und Konfliktschutz. Der ausgewählte Tab steht in der URL (`/account?tab=security`) und wird beim Neuladen wiederhergestellt. Passwortwechsel mit Bestätigungsmail und E-Mail-Änderung per Einmallink sind umgesetzt. Profilbild und Geräteverwaltung folgen gesondert. [Sicherheitsvertrag](docs/account-security-contract.md). [Umfang](docs/account-settings-ui.md).
 - Deutsche und englische Oberfläche, manuell wählbarer Benutzerstatus und automatische Abwesenheitserkennung mit Push-Aktualisierung.
 - Datenbankgestützte E-Mail-Warteschlange mit Wiederholungsversuchen und geplanten Bereinigungsaufgaben.
 
@@ -550,7 +550,7 @@ Die vorausgehende Java-/Textbereinigung entfernte die alte `CardComponent`,
 Schlüssel je Sprache. Nach dieser damaligen Bereinigung blieben 336 Schlüssel
 je Sprache. Inzwischen sind es einschließlich der folgenden Sicherheitsfunktionen
 und des Wartungsmodus mit Betriebsstatus sowie der Kontoseite nach Entfernung
-der zwei doppelten E-Mail-/Sicherheitshinweise und Ergänzung des Passwortdialogs sowie Entfernung des Sitzungshinweises 398 je Sprache. Die drei
+der zwei doppelten E-Mail-/Sicherheitshinweise und Ergänzung des Passwortdialogs sowie Entfernung des Sitzungshinweises 416 je Sprache. Die drei
 `MessageCatalogueTest`-Fälle prüfen Sprachparität, vorhandene Gettertexte und
 verwaiste Einträge; sie sind im aktuellen JUnit-Gesamtergebnis enthalten.
 

@@ -25,6 +25,9 @@ import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.service.AccountProfileService.Changes;
 import de.derpeterson.app.service.AccountProfileService.Profile;
+import de.derpeterson.app.service.AccountSecurityService.EmailChange;
+import de.derpeterson.app.service.AccountSecurityService.PasswordChange;
+import de.derpeterson.app.service.AccountSecurityService.PasswordChanged;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,7 +38,7 @@ import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 
-/** Profilbearbeitung; Sicherheits-, Bild- und Sitzungsaktionen folgen in späteren Schritten. */
+/** Eigene Profildaten und Sicherheitsänderungen; Bild- und Geräteverwaltung folgen gesondert. */
 @Slf4j
 public class AccountSettingsComponent extends Div {
   public enum AccountSection {
@@ -438,6 +441,20 @@ public class AccountSettingsComponent extends Div {
     logout.addClassName("cosmos-delete-button");
     panel.addFooter(text(new Span(), messages::getAccountSettingsLogoutHint), logout);
     return panel;
+  }
+
+  public void configureSecurityActions(
+      SerializableFunction<PasswordChange, PasswordChanged> passwordAction,
+      SerializableConsumer<EmailChange> emailAction) {
+    passwordChangeDialog.setChangeAction(
+        change -> {
+          var changed = passwordAction.apply(change);
+          // Nur den eigenen unveränderten Profilstand fortschreiben; fremde Änderungen bleiben
+          // Konflikte.
+          if (Objects.equals(version, changed.previousVersion())) version = changed.version();
+          return changed;
+        });
+    emailChangeDialog.setRequestAction(emailAction);
   }
 
   public void addProfileSavedListener(SerializableConsumer<Profile> listener) {

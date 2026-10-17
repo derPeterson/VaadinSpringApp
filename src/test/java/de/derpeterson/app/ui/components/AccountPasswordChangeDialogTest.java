@@ -12,9 +12,14 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.server.VaadinSession;
+import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.service.AccountSecurityService.PasswordChange;
+import de.derpeterson.app.service.AccountSecurityService.PasswordChanged;
+import java.util.ArrayList;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
@@ -22,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.security.authentication.BadCredentialsException;
 
 class AccountPasswordChangeDialogTest {
   private AccountPasswordChangeDialog dialog;
@@ -43,6 +49,7 @@ class AccountPasswordChangeDialogTest {
   @AfterEach
   void cleanup() {
     dialog.close();
+    NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
   }
@@ -133,7 +140,7 @@ class AccountPasswordChangeDialogTest {
   }
 
   @Test
-  void languageRefreshPreservesDraftsAndSaveIsStillAPreview() {
+  void languageRefreshPreservesDraftsAndDoesNotValidateWhileTyping() {
     dialog.open();
     for (var suffix : new String[] {"current", "new", "confirm"})
       field(suffix).setValue("Local-" + suffix);
@@ -145,7 +152,6 @@ class AccountPasswordChangeDialogTest {
             .getAccountSettingsChangePassword(),
         save.getText());
     assertTrue(save.isEnabled());
-    save.click();
     assertTrue(dialog.isOpened());
     for (var suffix : new String[] {"current", "new", "confirm"}) {
       assertEquals("Local-" + suffix, field(suffix).getValue());
@@ -162,5 +168,67 @@ class AccountPasswordChangeDialogTest {
     dialog.open();
     for (var suffix : new String[] {"current", "new", "confirm"})
       assertTrue(field(suffix).isEmpty());
+  }
+
+  @Test
+  void successfulSubmissionCallsActionClosesAndClearsAllSecrets() {
+    var calls = new ArrayList<PasswordChange>();
+    dialog.setChangeAction(
+        change -> {
+          calls.add(change);
+          return new PasswordChanged(1L, 2L);
+        });
+    dialog.open();
+    field("current").setValue("Old-secret!");
+    field("new").setValue("New-secret!");
+    field("confirm").setValue("New-secret!");
+    ((Button) byId("account-password-save")).click();
+    assertEquals(1, calls.size());
+    assertEquals("Old-secret!", calls.getFirst().currentPassword());
+    assertEquals("New-secret!", calls.getFirst().newPassword());
+    assertFalse(dialog.isOpened());
+    for (var suffix : new String[] {"current", "new", "confirm"})
+      assertTrue(field(suffix).isEmpty());
+  }
+
+  @Test
+  void invalidAndMismatchedPasswordsNeverInvokeTheAction() {
+    var calls = new AtomicInteger();
+    dialog.setChangeAction(
+        change -> {
+          calls.incrementAndGet();
+          return null;
+        });
+    dialog.open();
+    ((Button) byId("account-password-save")).click();
+    assertTrue(field("current").isInvalid());
+    field("current").setValue("Old-secret!");
+    field("new").setValue("a");
+    field("confirm").setValue("a");
+    ((Button) byId("account-password-save")).click();
+    assertTrue(field("new").isInvalid());
+    field("new").setValue("New-secret!");
+    field("confirm").setValue("Other-secret!");
+    ((Button) byId("account-password-save")).click();
+    assertTrue(field("confirm").isInvalid());
+    assertEquals(0, calls.get());
+  }
+
+  @Test
+  void wrongCurrentPasswordMarksOnlyThatFieldAndKeepsDialogOpen() {
+    dialog.setChangeAction(
+        change -> {
+          throw new BadCredentialsException("invalid");
+        });
+    dialog.open();
+    field("current").setValue("Wrong-secret!");
+    field("new").setValue("New-secret!");
+    field("confirm").setValue("New-secret!");
+    ((Button) byId("account-password-save")).click();
+    assertTrue(dialog.isOpened());
+    assertTrue(field("current").isInvalid());
+    assertFalse(field("new").isInvalid());
+    assertFalse(field("confirm").isInvalid());
+    assertTrue(((Button) byId("account-password-save")).isEnabled());
   }
 }

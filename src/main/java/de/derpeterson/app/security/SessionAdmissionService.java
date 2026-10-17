@@ -31,6 +31,12 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
     Arrays.setAll(locks, index -> new Object());
   }
 
+  public boolean isExpired(HttpServletRequest request) {
+    var session = request == null ? null : request.getSession(false);
+    var information = session == null ? null : registry.getSessionInformation(session.getId());
+    return information != null && information.isExpired();
+  }
+
   @Override
   public void onAuthentication(
       Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
@@ -99,7 +105,7 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
           throw new AuthenticationServiceException("Session configuration unavailable", failure);
         }
         if (limit < 1) throw new AuthenticationServiceException("Invalid session limit");
-        if (registry.getAllSessions(identity, true).size() >= limit)
+        if (registry.getAllSessions(identity, false).size() >= limit)
           throw new SessionLimitException();
 
         // Keep Vaadin's UI/session attributes, changing only the identifier against fixation.
