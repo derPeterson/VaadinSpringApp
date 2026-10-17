@@ -26,6 +26,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
+import de.derpeterson.app.helper.ui.CompactDateInput;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
@@ -467,6 +468,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     this.birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
     birthDatePicker.setPrefixComponent(VaadinIcon.CALENDAR_USER.create());
     birthDatePicker.setAutoOpen(false);
+    CompactDateInput.configure(birthDatePicker, messageProperties);
     birthDatePicker.setPlaceholder(messageProperties.getRegistrationBirthDatePlaceholder());
     birthDatePicker.setClearButtonVisible(true);
     birthDatePicker.setWidthFull();

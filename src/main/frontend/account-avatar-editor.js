@@ -27,7 +27,7 @@ class AccountAvatarEditor extends HTMLElement {
   _initialize() {
     if (this._ready) return;
     const find = name => this.querySelector(`[data-avatar="${name}"]`);
-    const names = ['upload', 'filename', 'error', 'frame', 'crop', 'preview', 'zoom', 'percent', 'reset'];
+    const names = ['upload', 'filename', 'error', 'frame', 'crop', 'preview', 'zoom', 'percent', 'reset', 'cancel'];
     const elements = Object.fromEntries(names.map(name => [name, find(name)]));
     if (Object.values(elements).some(element => !element)) return;
     this._elements = elements;
@@ -68,6 +68,7 @@ class AccountAvatarEditor extends HTMLElement {
       this._draw();
     });
     on(elements.reset, 'click', () => this._resetCrop());
+    on(elements.cancel, 'click', () => this.cancelSelection());
     on(elements.crop, 'pointerdown', event => {
       if (!this._image || event.button !== 0) return;
       event.preventDefault();
@@ -239,7 +240,7 @@ class AccountAvatarEditor extends HTMLElement {
     if (this._pendingUrl) URL.revokeObjectURL(this._pendingUrl);
     this._url = this._pendingUrl = this._image = null;
     this.setAttribute('data-has-image', 'false');
-    this.setAttribute('data-mode', 'INITIALS');
+    // Den vom Server gesetzten Radiomodus erhalten: ein verzögerter Reset darf ihn nicht überschreiben.
     if (this._elements) {
       this._elements.filename.textContent = '';
       this._elements.upload.files = [];
@@ -247,6 +248,12 @@ class AccountAvatarEditor extends HTMLElement {
     this._showError(null);
     this._resetCrop();
     if (notify && this.isConnected) this.dispatchEvent(new CustomEvent('avatar-file-cleared'));
+  }
+
+  cancelSelection() {
+    this.clearImage(false);
+    // Nur die neue Auswahl verwerfen; der Dialog stellt ein gespeichertes Bild wieder her.
+    if (this.isConnected) this.dispatchEvent(new CustomEvent('avatar-file-cancelled'));
   }
 
   resetDraft() {

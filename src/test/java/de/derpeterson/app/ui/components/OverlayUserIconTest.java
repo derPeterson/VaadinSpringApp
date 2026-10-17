@@ -93,6 +93,13 @@ class OverlayUserIconTest {
     var status = (Div) ReflectionTestUtils.getField(avatar, "status");
     assertEquals("CD", initials.getText());
     assertEquals(1, status.getComponentCount());
+    assertTrue(
+        status.getComponentAt(0).getElement().getProperty("innerHTML").contains("fill=\"none\""));
+    assertTrue(status.getComponentAt(0).getElement().getProperty("innerHTML").contains("<circle"));
+    assertEquals(value.getColor(), avatar.getStyle().get("--cosmos-avatar-status-color"));
+    assertEquals(
+        "var(--cosmos-avatar-" + value.name().toLowerCase(Locale.ROOT) + "-shadow)",
+        avatar.getStyle().get("--cosmos-avatar-status-shadow"));
     assertEquals(value.getColor(), status.getComponentAt(0).getElement().getStyle().get("color"));
     assertEquals(
         "Christian Doebl – " + messages.getUserStatusLabel(value),
@@ -104,6 +111,8 @@ class OverlayUserIconTest {
     assertEquals(
         UserStatus.ABSENT.getColor(),
         status.getComponentAt(0).getElement().getStyle().get("color"));
+    assertEquals(
+        UserStatus.ABSENT.getColor(), avatar.getStyle().get("--cosmos-avatar-status-color"));
     assertEquals(7L, user.getVersion());
   }
 
@@ -160,6 +169,7 @@ class OverlayUserIconTest {
     assertEquals(first, photo.getSrc());
     var status = (Div) ReflectionTestUtils.getField(avatar, "status");
     assertFalse(status.isVisible());
+    assertFalse(avatar.hasClassName("cosmos-avatar-with-status"));
     assertEquals(0, status.getComponentCount());
     assertEquals("Christian Doebl", avatar.getElement().getAttribute("aria-label"));
     events.broadcast(new UserProfileBroadcaster.Message(12L, "New", "Name"));

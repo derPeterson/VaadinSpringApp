@@ -9,6 +9,7 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.server.streams.UploadEvent;
 import com.vaadin.flow.server.streams.UploadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -81,6 +82,7 @@ public class AccountAvatarDialog extends Dialog {
             value == AvatarMode.INITIALS
                 ? messages.getAccountAvatarInitials()
                 : messages.getAccountAvatarCustom());
+    mode.setRenderer(new ComponentRenderer<>(this::createModeLabel));
     mode.setValue(AvatarMode.INITIALS);
     mode.addValueChangeListener(
         event -> {
@@ -105,11 +107,14 @@ public class AccountAvatarDialog extends Dialog {
               uploadedImage = null;
               delete.setVisible(false);
             });
+    editor.getElement().addEventListener("avatar-file-cancelled", event -> cancelSelection());
     editor.addComponentAtIndex(1, mode);
     var infoIcon = VaadinIcon.INFO_CIRCLE_O.create();
     infoIcon.getElement().setAttribute("aria-hidden", "true");
-    var info = new Div(infoIcon, keepHint);
-    info.addClassName("cosmos-panel-hint");
+    var infoBadge = new Span(infoIcon);
+    infoBadge.addClassName("account-avatar-info-icon");
+    var info = new Div(infoBadge, keepHint);
+    info.addClassNames("cosmos-panel-hint", "account-avatar-info");
     var body = new Div(editor, info);
     body.addClassNames("cosmos-dialog-form", "account-change-dialog-form", "account-avatar-form");
     add(body);
@@ -143,6 +148,25 @@ public class AccountAvatarDialog extends Dialog {
         });
     addDetachListener(event -> clearDraft());
     refreshTexts();
+  }
+
+  private void cancelSelection() {
+    if (!isOpened()) return;
+    uploadedImage = null;
+    boolean restore = original.hasImage() && !deleteImage;
+    delete.setVisible(restore);
+    if (restore) editor.loadSaved(avatars, user.getId(), original.imageRevision());
+  }
+
+  private Span createModeLabel(AvatarMode value) {
+    var symbol =
+        value == AvatarMode.INITIALS ? new Span("Aa") : new Span(VaadinIcon.PICTURE.create());
+    symbol.addClassName("account-avatar-mode-icon");
+    symbol.getElement().setAttribute("aria-hidden", "true");
+    var label = new Span(mode.getItemLabelGenerator().apply(value));
+    var content = new Span(symbol, label);
+    content.addClassName("account-avatar-mode-label");
+    return content;
   }
 
   public void configure(UserAvatarService avatars, HttpServletRequest request) {
@@ -342,7 +366,7 @@ public class AccountAvatarDialog extends Dialog {
     getElement().setProperty("ariaLabel", title.getText());
     description.setText(messages.getAccountAvatarDescription());
     close.setAriaLabel(messages.getAdminUsersCloseDialog());
-    mode.setLabel(messages.getAccountAvatarMode());
+    mode.setAriaLabel(messages.getAccountAvatarMode());
     // Vaadin setzt die Auswahl beim Neuaufbau der Radiolabels zurück.
     var selectedMode = mode.getValue();
     mode.getDataProvider().refreshAll();

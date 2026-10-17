@@ -386,6 +386,10 @@ public class MessageTexts {
     return getTranslation("base.validation.email_confirm_message");
   }
 
+  public String getBaseValidationDateInvalidMessage() {
+    return getTranslation("base.validation.date_invalid_message");
+  }
+
   public String getBaseValidationBirthDatePastMessage() {
     return getTranslation("base.validation.birth_date_past_message");
   }

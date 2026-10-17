@@ -5,7 +5,9 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.timepicker.TimePicker;
+import de.derpeterson.app.helper.ui.CompactDateInput;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.ui.components.CompactTimePicker;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -15,7 +17,7 @@ import java.util.Locale;
 /** Inclusive local cutoff: a date without a time starts at midnight. */
 final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
   private final DatePicker date = new DatePicker();
-  private final TimePicker time = new TimePicker();
+  private final TimePicker time = new CompactTimePicker();
   private boolean presenting;
   private LocalTime placeholderTime = LocalTime.MIDNIGHT;
 
@@ -61,6 +63,7 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
   }
 
   void refreshTexts(MessageProperties texts) {
+    CompactDateInput.configure(date, texts);
     date.setLabel(texts.getAdminUsersFilterActiveSince());
     date.setAriaLabel(texts.getAdminUsersActivityDate());
     refreshPlaceholders();

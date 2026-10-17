@@ -132,7 +132,15 @@ public class OverlayUserIcon extends Div {
   public void setUserStatus(UserStatus value) {
     userStatus = value == null ? UserStatus.getDefaultStatus() : value;
     status.removeAll();
-    if (showStatus) status.add(userStatus.getComponent(iconSize, true));
+    if (showStatus) {
+      status.add(userStatus.getOutlineComponent(iconSize, true));
+      addClassName("cosmos-avatar-with-status");
+      getStyle().set("--cosmos-avatar-status-color", userStatus.getColor());
+      getStyle()
+          .set(
+              "--cosmos-avatar-status-shadow",
+              "var(--cosmos-avatar-" + userStatus.name().toLowerCase(Locale.ROOT) + "-shadow)");
+    }
     if (statusSelection != null) statusSelection.setValue(userStatus);
     refreshTexts();
   }
@@ -196,8 +204,10 @@ public class OverlayUserIcon extends Div {
     getElement()
         .setAttribute(
             "aria-label", showStatus && !name.isEmpty() ? label + " – " + statusLabel : label);
-    tooltip.setText(showStatus ? statusLabel : label);
+    tooltip.setManual(statusSelection != null);
+    tooltip.setText(statusSelection == null ? (showStatus ? statusLabel : label) : "");
     if (statusSelection != null) {
+      tooltip.setOpened(false);
       statusSelection.setAriaLabel(messages.getAdminUsersGridStatus());
       statusSelection.setItemLabelGenerator(messages::getUserStatusLabel);
       statusSelection.getDataProvider().refreshAll();

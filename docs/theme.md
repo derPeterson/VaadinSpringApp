@@ -155,10 +155,18 @@ muss ein Browser-Testimage frisch gebaut werden; `-NoBuild` würde ein altes Ima
 `--cosmos-avatar-background`, `--cosmos-avatar-text-color`,
 `--cosmos-avatar-border-color` und `--cosmos-avatar-shadow` in `cosmos-tokens.css`
 steuern die gemeinsame Initialen-/Bildfläche. Die lokale Größe kommt von der
-Avatar-Komponente. Kopfzeile und Kontozusammenfassung zeigen das separate Statussymbol.
+Avatar-Komponente. Kopfzeile, Benutzerpopup und Kontozusammenfassung zeigen dasselbe SVG-Kontursymbol
+wie die Statusauswahl. Diese drei Avatarflächen übernehmen über
+`--cosmos-avatar-status-color` und die vier zentralen `--cosmos-avatar-*-shadow`-
+Tokens die Statusfarbe für Rahmen und Glow. Die freigegebene Vorschauvariante
+„Kräftig“ kombiniert 6 px / 80 % und 26 px / 60 %; der Rahmen bleibt 2 px.
 Am Kontobild liegt ein nativer Select über der vergrößerten Klickfläche des Zeichens;
 nur dessen Feldfläche ist transparent, das Cosmos-Dropdown bleibt unverändert sichtbar.
 Der Tastaturfokus erhält einen sichtbaren Ring. Die lokalen Regeln stehen in
 `cosmos-account.css`; übrige Profilbildflächen zeigen Bild bzw. Initialen.
+Beide Statuslisten tragen `theme="cosmos-status"`. Nur dort ist der `checkmark`-Part
+ausgeblendet. Gewählte, gehoverte und fokussierte Einträge unter dem ListBox-Element
+verwenden `--cosmos-status-option-background` (Tabellenhighlight); die geschlossene
+Auswahl bleibt unverändert. Andere Selects behalten ihre Auswahlhaken.
 Die verwendeten Parts folgen der [Vaadin-Select-Styling-API](https://vaadin.com/docs/latest/components/select/styling).
 Bildspeicherung und Prüfgrenzen: [Profilbildvertrag](profile-avatar-contract.md).

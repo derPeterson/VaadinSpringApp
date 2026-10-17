@@ -20,13 +20,15 @@ class UserStatusResourceTest {
 
   @ParameterizedTest
   @EnumSource(IconSize.class)
-  void absentSvgHasOriginalShapeColorAndBothSizeVariantsWithoutHttp(IconSize size) {
-    check(UserStatus.ABSENT.getComponent(size, false), size, false);
-    check(UserStatus.ABSENT.getComponent(size, true), size, true);
+  void outlineSymbolsHaveShapeColorAndBothSizeVariantsWithoutExternalResources(IconSize size) {
+    for (UserStatus status : UserStatus.values()) {
+      check(status.getOutlineComponent(size, false), status, size, false);
+      check(status.getOutlineComponent(size, true), status, size, true);
+    }
   }
 
   @Test
-  void rendererLoadsItsResourceFromAPackedJar() throws Exception {
+  void outlineRendererWorksFromAPackedJarWithoutLegacySvg() throws Exception {
     Path jar = temporary.resolve("status-resource.jar");
     String className = UserStatus.class.getName();
     try (var output = new JarOutputStream(Files.newOutputStream(jar))) {
@@ -36,7 +38,6 @@ class UserStatusResourceTest {
       if (UserStatus.class.getResource("/" + helper) != null) {
         add(output, helper);
       }
-      add(output, UserStatus.ABSENT.getFileUrl().substring(1));
     }
     try (var loader =
         new URLClassLoader(new URL[] {jar.toUri().toURL()}, UserStatus.class.getClassLoader()) {
@@ -54,25 +55,16 @@ class UserStatusResourceTest {
             }
             return super.loadClass(name, resolve);
           }
-
-          @Override
-          public URL getResource(String name) {
-            // Ensure the tested SVG cannot fall back to exploded target/classes.
-            if (name.equals(UserStatus.ABSENT.getFileUrl().substring(1))) {
-              return findResource(name);
-            }
-            return super.getResource(name);
-          }
         }) {
       Class<?> packed = loader.loadClass(className);
-      assertEquals("jar", packed.getResource(UserStatus.ABSENT.getFileUrl()).getProtocol());
+      assertEquals(jar.toUri(), packed.getProtectionDomain().getCodeSource().getLocation().toURI());
       Object absent = packed.getField("ABSENT").get(null);
       Component rendered =
           (Component)
               packed
-                  .getMethod("getComponent", IconSize.class, Boolean.class)
+                  .getMethod("getOutlineComponent", IconSize.class, boolean.class)
                   .invoke(absent, IconSize.PIXEL_48, true);
-      check(rendered, IconSize.PIXEL_48, true);
+      check(rendered, UserStatus.ABSENT, IconSize.PIXEL_48, true);
     }
   }
 
@@ -85,22 +77,32 @@ class UserStatusResourceTest {
     }
   }
 
-  private void check(Component component, IconSize size, boolean overlay) {
+  private void check(Component component, UserStatus status, IconSize size, boolean overlay) {
     String svg = component.getElement().getProperty("innerHTML");
     assertNotNull(svg);
     assertTrue(svg.contains("<svg"));
     assertTrue(svg.contains("viewBox=\"0 0 24 24\""));
-    assertTrue(svg.contains("M 12 24 C 5.383 24"));
-    assertTrue(svg.contains("fill=\"var(--lumo-warning-color)\""));
-    double width = overlay ? Math.round(size.getWidth() * 0.2) : size.getWidth();
-    assertTrue(svg.contains("width=\"" + width + "\""));
-    assertTrue(svg.contains("height=\"" + width + "\""));
-    assertEquals(
-        (overlay ? Long.toString(Math.round(width)) : Double.toString(width)) + "px",
-        component.getElement().getStyle().get("width"));
+    assertTrue(svg.contains("fill=\"none\""));
+    assertTrue(svg.contains("stroke=\"currentColor\""));
+    assertTrue(svg.contains("<circle"));
+    String mark =
+        switch (status) {
+          case AVAILABLE -> "m7.5 12 3 3 6-6";
+          case EMPLOYED -> "M7.5 12h9";
+          case ABSENT -> "M12 6.5V12l4 2.5";
+          case OFFLINE -> "m8.5 8.5 7 7m0-7-7 7";
+        };
+    assertTrue(svg.contains(mark));
+    double expectedWidth = overlay ? Math.round(size.getWidth() * .3) : size.getWidth();
+    String width = Double.toString(expectedWidth) + size.getUnit().getSymbol();
+    assertEquals(width, component.getElement().getStyle().get("width"));
+    assertEquals(status.getColor(), component.getElement().getStyle().get("color"));
     assertEquals("50%", component.getElement().getStyle().get("border-radius"));
     if (overlay) {
       assertEquals("absolute", component.getElement().getStyle().get("position"));
+      assertEquals(
+          "var(--cosmos-avatar-status-anchor)", component.getElement().getStyle().get("bottom"));
+      assertEquals("translate(50%, 50%)", component.getElement().getStyle().get("transform"));
     }
   }
 }

@@ -210,7 +210,7 @@ public class UserPopoverMenu {
 
   private void addUserIcon(VerticalLayout contentLayout) {
     overlayIcon =
-        new OverlayUserIcon(messageProperties, currentUser, currentStatus, IconSize.PIXEL_96);
+        new OverlayUserIcon(messageProperties, currentUser, currentStatus, IconSize.PIXEL_96, true);
     overlayIcon.addClassName("user-popover-avatar");
     contentLayout.add(overlayIcon);
   }
@@ -299,6 +299,7 @@ public class UserPopoverMenu {
   /** Gleiche Auswahl und Speicherlogik für Benutzermenü und Kontobild. */
   public Select<UserStatus> createStatusSelect() {
     var select = new Select<UserStatus>();
+    select.getElement().getThemeList().add("cosmos-status");
     select.setEnabled(hasCurrentUser());
     select.setItems(UserStatus.values());
     select.setItemLabelGenerator(messageProperties::getUserStatusLabel);
@@ -322,7 +323,7 @@ public class UserPopoverMenu {
   }
 
   private void addStatusVisualComponent(HorizontalLayout parent, UserStatus userStatus) {
-    Object statusComponent = userStatus.getComponent();
+    Object statusComponent = userStatus.getOutlineComponent(IconSize.PIXEL_24, false);
 
     if (statusComponent instanceof Icon statusIcon) {
       parent.add(createCenteredWrapper(statusIcon));
@@ -568,7 +569,7 @@ public class UserPopoverMenu {
       return;
     }
 
-    Object prefixComponent = userStatus.getComponent(IconSize.PIXEL_16);
+    Object prefixComponent = userStatus.getOutlineComponent(IconSize.PIXEL_16, false);
 
     if (prefixComponent instanceof Icon statusIcon) {
       ComponentPrefixHelper.setPrefixComponent(userStatusSelect, createPrefixLayout(statusIcon));

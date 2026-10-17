@@ -62,7 +62,16 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-avatar-background: var(--cosmos-table-highlight-background);
     --cosmos-avatar-text-color: var(--lumo-primary-text-color);
     --cosmos-avatar-border-color: var(--lumo-primary-color-50pct);
+    --cosmos-avatar-border-width: 1px;
+    --cosmos-avatar-status-border-width: 2px;
+    --cosmos-avatar-status-optical-offset: 1.5px;
     --cosmos-avatar-shadow: 0 0 18px var(--lumo-primary-color-10pct);
+    /* Vorschauvariante „Kräftig“: naher Glow plus eine weiche äußere Schicht. */
+    --cosmos-avatar-available-shadow: 0 0 6px color-mix(in srgb, var(--lumo-success-color) 80%, transparent), 0 0 26px color-mix(in srgb, var(--lumo-success-color) 60%, transparent);
+    --cosmos-avatar-employed-shadow: 0 0 6px color-mix(in srgb, var(--lumo-error-color) 80%, transparent), 0 0 26px color-mix(in srgb, var(--lumo-error-color) 60%, transparent);
+    --cosmos-avatar-absent-shadow: 0 0 6px color-mix(in srgb, var(--lumo-warning-color) 80%, transparent), 0 0 26px color-mix(in srgb, var(--lumo-warning-color) 60%, transparent);
+    --cosmos-avatar-offline-shadow: 0 0 6px color-mix(in srgb, var(--lumo-secondary-text-color) 80%, transparent), 0 0 26px color-mix(in srgb, var(--lumo-secondary-text-color) 60%, transparent);
+    --cosmos-status-option-background: var(--cosmos-table-highlight-background);
     --cosmos-card-width: 430px;
     --cosmos-card-radius: 18px;
     --cosmos-card-border: rgba(169, 191, 233, .18);

@@ -134,9 +134,17 @@ class AccountAvatarDialogTest {
     locale.set(Locale.forLanguageTag(language));
     dialog.refreshTexts();
     assertEquals(AvatarMode.CUSTOM, mode().getValue());
-    assertEquals(messages.getAccountAvatarMode(), mode().getLabel());
+    assertEquals(messages.getAccountAvatarMode(), mode().getAriaLabel().orElseThrow());
     assertEquals(
         messages.getAccountAvatarCustom(), mode().getItemLabelGenerator().apply(AvatarMode.CUSTOM));
+    assertTrue(
+        mode().getElement().getTextRecursively().contains(messages.getAccountAvatarInitials()));
+    assertTrue(
+        mode().getElement().getTextRecursively().contains(messages.getAccountAvatarCustom()));
+    var choose = (Button) ReflectionTestUtils.getField(editor(), "choose");
+    assertEquals(messages.getAccountAvatarChoose(), choose.getAriaLabel().orElseThrow());
+    assertTrue(
+        choose.getElement().getTextRecursively().contains(messages.getAccountAvatarUploadHint()));
     assertEquals(messages.getAdminUsersSave(), button("save").getText());
     assertTrue(dialog.isCloseOnEsc());
     assertTrue(dialog.isCloseOnOutsideClick());
@@ -160,6 +168,32 @@ class AccountAvatarDialogTest {
     assertNotNull(notification);
     assertTrue(
         notification.getElement().getTextRecursively().contains(messages.getBaseSuccessTitle()));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void cancellingTheNewSelectionPreservesTheSavedPictureAndKeepsTheDialogOpen(boolean hasImage) {
+    var editor = spy(editor());
+    ReflectionTestUtils.setField(dialog, "editor", editor);
+    doNothing().when(editor).loadSaved(any(), any(), any());
+    UUID revision = hasImage ? UUID.randomUUID() : null;
+    when(avatars.open(any()))
+        .thenReturn(
+            new UserAvatarService.Open(
+                new UserAvatarService.State(7L, AvatarMode.INITIALS, hasImage, revision),
+                UUID.randomUUID()));
+    dialog.open();
+    mode().setValue(AvatarMode.CUSTOM);
+    ReflectionTestUtils.setField(dialog, "uploadedImage", UUID.randomUUID());
+    button("delete").setVisible(true);
+    ReflectionTestUtils.invokeMethod(dialog, "cancelSelection");
+    assertNull(ReflectionTestUtils.getField(dialog, "uploadedImage"));
+    assertEquals(AvatarMode.CUSTOM, mode().getValue());
+    assertTrue(dialog.isOpened());
+    assertEquals(hasImage, button("delete").isVisible());
+    assertEquals(false, ReflectionTestUtils.getField(dialog, "deleteImage"));
+    verify(avatars, never()).save(any(), any());
+    if (hasImage) verify(editor, times(2)).loadSaved(avatars, user.getId(), revision);
   }
 
   @Test

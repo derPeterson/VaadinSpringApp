@@ -29,6 +29,7 @@ import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.helper.ui.CompactDateInput;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -745,6 +746,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     DatePicker birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
     birthDatePicker.setAutoOpen(false);
+    CompactDateInput.configure(birthDatePicker, messageProperties);
     Runnable refreshBirthDate =
         () -> {
           birthDatePicker.setLocale(

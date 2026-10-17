@@ -130,7 +130,7 @@ vaadin-app-layout.cosmos-app-shell {
     box-sizing: border-box;
     overflow: hidden;
     border-radius: 50%;
-    border: 1px solid var(--cosmos-avatar-border-color);
+    border: var(--cosmos-avatar-border-width) solid var(--cosmos-avatar-border-color);
     background: var(--cosmos-avatar-background);
     color: var(--cosmos-avatar-text-color);
     box-shadow: var(--cosmos-avatar-shadow);
@@ -140,6 +140,11 @@ vaadin-app-layout.cosmos-app-shell {
     font-size: calc(var(--cosmos-avatar-size) / 3);
     font-weight: 600;
     line-height: 1;
+}
+
+/* Optische Zentrierung der Großbuchstaben; das neutrale Benutzersymbol ausnehmen. */
+.cosmos-avatar-initials:not(:has(> vaadin-icon)) {
+    transform: translateY(1px);
 }
 
 .cosmos-avatar-initials > vaadin-icon {
@@ -424,4 +429,35 @@ vaadin-select[theme~="cosmos"] {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+/* Mittelpunkt bei 45 Grad auf der Rahmenmitte: (1 - 1/sqrt(2))/2 der
+ * Avatargröße plus halbe Rahmenstärke entlang der Diagonalen. Die optische
+ * Korrektur rückt das Zeichen leicht nach außen. */
+.cosmos-avatar-with-status {
+    --cosmos-avatar-status-anchor: calc(14.64466% + var(--cosmos-avatar-status-border-width) * .3535534 - var(--cosmos-avatar-status-optical-offset));
+}
+
+/* Kopfzeile, Benutzerpopup und Kontobild übernehmen die Statusfarbe für Rahmen und Glow. */
+.cosmos-topbar .cosmos-avatar-with-status,
+.user-popover-avatar.cosmos-avatar-with-status,
+.account-summary-avatar.cosmos-avatar-with-status {
+    --cosmos-avatar-border-color: var(--cosmos-avatar-status-color);
+    --cosmos-avatar-border-width: var(--cosmos-avatar-status-border-width);
+    --cosmos-avatar-shadow: var(--cosmos-avatar-status-shadow);
+}
+
+/* Auswahlhaken nur in Statuslisten ausblenden. Auswahlzustand und Tastatursteuerung
+ * bleiben nativ; Hover, Fokus und gewählter Eintrag verwenden dieselbe Fläche. */
+vaadin-select[theme~="cosmos-status"] vaadin-select-item::part(checkmark) {
+    display: none;
+}
+
+vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-item:is([selected], [focused], :hover) {
+    background: var(--cosmos-status-option-background);
+}
+
+/* Etwas Luft vor den Symbolen, nur in den geöffneten Statuslisten. */
+vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-item::part(content) {
+    padding-inline-start: 5px;
 }

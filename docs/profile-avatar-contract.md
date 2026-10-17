@@ -33,16 +33,36 @@ Kontozusammenfassung, Benutzertabelle und Löschdialog verwendet. Die bisherigen
 Zeichen von Vor- und Nachname; ohne Namen erscheint das neutrale Benutzerzeichen.
 Farben, Rahmen und Schimmer stehen in `cosmos-tokens.css` unter `--cosmos-avatar-*`.
 
-Der Avatar oben rechts und das Bild in „Mein Konto“ zeigen Haken, Minus, Uhr oder
-Kreuz als separate Statusanzeige. Am Kontobild ist das Statuszeichen direkt bedienbar:
-Eine native Vaadin-Auswahl liegt mit etwas größerer Klickfläche über dem unverändert
-großen Zeichen. Klick bzw. Tastatur öffnen dieselben Statusoptionen wie im Benutzermenü.
+Die Avatare oben rechts, im Benutzermenü und in „Mein Konto“ zeigen Haken, Minus, Uhr oder
+Kreuz als separate Statusanzeige. Avatarzeichen, Dropdowneinträge und Auswahlpräfix
+verwenden dieselben SVG-Kontursymbole ohne farbige Vollfüllung. Kopfzeilenavatar,
+Benutzerpopup und Kontobild übernehmen die Statusfarbe auch für Rahmen und kräftigen Glow; die
+übrigen Profilbildflächen behalten den neutralen Standardrahmen. Die vier Schatten
+stehen zentral in `cosmos-tokens.css`: Variante „Kräftig“ mit 6 px bei 80 %
+Deckkraft und 26 px bei 60 %.
+
+Am Kontobild ist das Statuszeichen direkt bedienbar:
+Eine native Vaadin-Auswahl liegt mit etwas größerer Klickfläche über dem
+Statuszeichen. Die Konturindikatoren sind 30 Prozent der Avatargröße groß
+(14/22/29 px bei 48/72/96 px); die drei Statusavatare haben 2 px Rahmenbreite.
+Indikator und Klickfläche liegen mit ihrem Mittelpunkt bei 45 Grad auf der Mitte
+der Kreislinie; die Position berücksichtigt die Rahmenstärke und eine optische
+Korrektur von 1,5 px nach außen. Die SVGs sind ohne Inline-Grundlinienversatz als
+Block dargestellt.
+Klick bzw. Tastatur öffnen dieselben Statusoptionen wie im Benutzermenü. Der
+Avatar-Tooltip ist am interaktiven Kontobild ausgeschaltet; die zugängliche
+Beschriftung von Bildgruppe und Auswahl bleibt erhalten.
+Beide Statuslisten verzichten auf Vaadins zusätzlichen Auswahlhaken. Gewählter,
+gehoverter und fokussierter Eintrag verwenden dieselbe zentrale Hervorhebungsfläche;
+der native Auswahlzustand und die Tastaturbedienung bleiben erhalten. Andere
+Selects sind davon nicht betroffen.
+
 Die Auswahl speichert sofort über dessen vorhandene Aktion, unabhängig vom
 Profilformular. Fehler stellen den vorherigen Status wieder her und verwenden die
 bestehenden übersetzbaren Notifications. Menü, Kopfzeile und Kontobild synchronisieren
 sich auch bei externen Statusänderungen. Die Profilbildquelle bleibt dabei erhalten.
 
-Benutzermenü-Bild, Profilbilddialog, Benutzertabelle und Löschdialog zeigen weiterhin
+Profilbilddialog, Benutzertabelle und Löschdialog zeigen weiterhin
 nur Bild bzw. Initialen. Das interaktive Kontobild verwendet eine zugängliche Gruppe
 mit beschriftetem Select; der übrige Bildbereich öffnet keine Statusauswahl. Nach erfolgreichem Commit verteilt
 `UserProfileBroadcaster` Bild-/Modus- und gespeicherte Namensänderungen über den
@@ -148,3 +168,48 @@ Die verwendeten Schnittstellen wurden mit den lokalen Vaadin-25.3.0-Klassen und 
 [Upload-Dokumentation](https://vaadin.com/docs/latest/components/upload/file-handling)
 sowie [Download-Dokumentation](https://vaadin.com/docs/latest/flow/advanced/downloads)
 abgeglichen.
+
+## Archivierte alte Bildressourcen
+
+`user_icon.png` und `icons/clock_circle.svg` sind aus den ausgelieferten Ressourcen
+entfernt und im externen Design-Backup unter denselben relativen Pfaden archiviert.
+Der ungenutzte alte Status-Renderer und die alte Avatarpfad-Konstante sind entfernt.
+Die aktuellen Kontursymbole werden direkt erzeugt und benötigen keine SVG-Datei.
+`UserStatusResourceTest` prüft alle Status-/Größenvarianten und den Renderer aus
+einem eigenen JAR ohne die alte Bildressource; Avatar- und Kontotests ergänzen dies.
+
+## Dialogmodus beim Wiederöffnen
+
+Der Server setzt Radiobutton und Editor-Modus aus dem gespeicherten Zustand.
+Das clientseitige Zurücksetzen der Bilddaten verändert diesen Modus nicht:
+Flow kann den Aufruf erst nach der Übertragung der aktuellen Attribute ausführen.
+So bleiben „Eigenes Bild“ und der sichtbare Bildbereich beim Öffnen synchron;
+auch Initialen mit behaltenem Bild werden nicht ungewollt umgeschaltet.
+Zwei JavaScript-Regressionstests stellen diese Aufrufreihenfolge für beide Modi nach.
+
+## Gestaltung der Bildauswahl
+
+Der Dialog verwendet eine native Radiogruppe als zusammenhängende Auswahl mit
+„Aa“-/Bildsymbol und Primary-Fläche für den aktiven Modus. „Darstellung“ bleibt
+als zugänglicher Gruppenname erhalten. Die vollständig anklickbare Uploadfläche
+ist weiterhin der native Upload-Button; sie bündelt Icon, Titel und Dateihinweis.
+Der Hinweis zum Behalten des Bildes steht in einer eigenen Cosmos-Fläche mit
+Info-Icon. Header, Footer, Speichern und Bildverarbeitung bleiben unverändert.
+Die Gestaltung ist auf `.account-avatar-dialog` begrenzt und verwendet vorhandene
+Farb-/Flächentokens. Avatarvorschau weiterhin 96 px, ohne Statuszeichen.
+Gezielte Dialogtests prüfen auch lokalisierte Komponentenlabels und Upload-Namen;
+die visuelle Browserabnahme dieser Gestaltung steht noch aus.
+
+## Kompakte Upload-Variante zur Ansicht
+
+Nach erfolgreicher neuer Bildauswahl verschwindet die große Uploadfläche zugunsten
+von Ausschnitt, Zoom und einem lokalen „Abbrechen“-Button. Dieser verwirft nur die
+neue Auswahl, lässt den Dialog offen und zeigt wieder die Uploadfläche. Ein bereits
+gespeichertes Bild bleibt erhalten und wird erneut geladen; es findet kein Speichern
+oder Löschen statt. Der Footer-Abbrechen-Button schließt weiterhin den Dialog.
+Dateihinweise nennen nun ausdrücklich JPG/JPEG und PNG.
+
+Der vorherige Dialogstand ist im taskbezogenen lokalen Arbeitsordner als
+`avatar-dialog-before-compact-upload-20261018` gesichert. Bei Rücknahme nur die
+kompakte Variante zurücknehmen und zwischenzeitliche Änderungen erhalten;
+die JPG/JPEG-Beschriftung kann unabhängig bleiben. Keine Git-Sicherung erstellt.

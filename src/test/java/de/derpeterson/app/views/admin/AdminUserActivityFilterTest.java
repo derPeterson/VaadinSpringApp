@@ -145,6 +145,28 @@ class AdminUserActivityFilterTest {
     assertFalse(field.isInvalid());
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void compactClientDatesUpdateTheCutoffAndInvalidInputClearsTheTime(String language) {
+    Locale locale = Locale.forLanguageTag(language);
+    field.setLocale(locale);
+    field.refreshTexts(MessageProperties.forLocale(new CustomI18NProvider(), locale));
+    date()
+        .getElement()
+        .setProperty("_inputElementValue", language.equals("de") ? "121026" : "101226");
+    ReflectionTestUtils.invokeMethod(date(), "setModelValue", null, true);
+    assertEquals(day.atStartOfDay(), field.getValue());
+    assertTrue(time().isEnabled());
+    time().setValue(LocalTime.of(9, 30));
+    assertEquals(day.atTime(9, 30), field.getValue());
+    date().getElement().setProperty("_inputElementValue", "000086");
+    ReflectionTestUtils.invokeMethod(date(), "setModelValue", null, true);
+    assertNull(field.getValue());
+    assertTrue(field.isInvalid());
+    assertFalse(time().isEnabled());
+    assertNull(time().getValue());
+  }
+
   private DatePicker date() {
     return (DatePicker) ReflectionTestUtils.getField(field, "date");
   }

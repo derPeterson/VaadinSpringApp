@@ -31,7 +31,7 @@ nativeURL.revokeObjectURL = value => revoke.push(value);
 vm.runInThisContext(readFileSync(new URL('../../main/frontend/account-avatar-editor.js', import.meta.url), 'utf8'));
 function editor() {
   const element = new (registered.get('account-avatar-editor'))();
-  element.elements = Object.fromEntries(['upload','filename','error','frame','crop','preview','zoom','percent','reset'].map(name => [name,new FakeElement()]));
+  element.elements = Object.fromEntries(['upload','filename','error','frame','crop','preview','zoom','percent','reset','cancel'].map(name => [name,new FakeElement()]));
   element.elements.frame.clientWidth = 240;
   element.elements.crop.parentElement = element.elements.frame;
   element.elements.preview.parentElement = {clientWidth:96};
@@ -85,4 +85,67 @@ test('saved image can be displayed without submitting it as a new upload', async
   assert.equal(element.getAttribute('data-has-image'),'true');assert.equal(element.getCrop().local,false);
   assert.equal(element.elements.zoom.disabled,true);assert.equal(element.getCrop().imageId,null);
   element.resetDraft();element.disconnectedCallback();
+});
+
+for (const mode of ['CUSTOM', 'INITIALS']) {
+  test(`queued draft cleanup preserves the server-selected ${mode} mode when reopening a saved image`, async () => {
+    const element = editor();
+    await upload(element, 'previous-draft');
+    // Flow überträgt Attribute vor den vorgemerkten JS-Aufrufen resetDraft/loadSaved.
+    element.setAttribute('data-mode', mode);
+    element.setAttribute('data-draft-id', 'reopened-draft');
+    element.resetDraft();
+    assert.equal(element.getAttribute('data-mode'), mode);
+    assert.equal(element.getAttribute('data-has-image'), 'false');
+    assert.equal(element.getCrop().local, false);
+    assert.equal(element.getCrop().imageId, null);
+    element.loadSaved('/private-saved-image');
+    await settle();
+    assert.equal(element.getAttribute('data-mode'), mode);
+    assert.equal(element.getAttribute('data-has-image'), 'true');
+    assert.equal(element.getCrop().local, false);
+    assert.equal(element.elements.zoom.disabled, true);
+    element.disconnectedCallback();
+  });
+}
+
+test('cancelling a new picture releases its blob and returns to selection without closing the dialog', async () => {
+  const element = editor();
+  await upload(element, 'cancelled-image');
+  let cancelled = 0;
+  let cleared = 0;
+  element.addEventListener('avatar-file-cancelled', () => cancelled++);
+  element.addEventListener('avatar-file-cleared', () => cleared++);
+  revoke = [];
+  dispatch(element.elements.cancel, 'click', {});
+  assert.equal(cancelled, 1);
+  assert.equal(cleared, 0);
+  assert.equal(element.getAttribute('data-mode'), 'CUSTOM');
+  assert.equal(element.getAttribute('data-local-image'), 'false');
+  assert.equal(element.getAttribute('data-has-image'), 'false');
+  assert.equal(element.getCrop().imageId, null);
+  assert.equal(element.getCrop().loading, false);
+  assert.equal(revoke.length, 1);
+  await upload(element, 'next-image');
+  assert.equal(element.getCrop().imageId, 'next-image');
+  assert.equal(element.getAttribute('data-local-image'), 'true');
+  element.disconnectedCallback();
+});
+
+test('cancelled replacement allows the server to restore the saved picture as a nonlocal preview', async () => {
+  const element = editor();
+  element.setAttribute('data-mode', 'CUSTOM');
+  element.loadSaved('/saved-avatar');
+  await settle();
+  await upload(element, 'replacement');
+  element.addEventListener('avatar-file-cancelled', () => element.loadSaved('/saved-avatar'));
+  dispatch(element.elements.cancel, 'click', {});
+  await settle();
+  assert.equal(element._image.source, '/saved-avatar');
+  assert.equal(element.getAttribute('data-has-image'), 'true');
+  assert.equal(element.getAttribute('data-local-image'), 'false');
+  assert.equal(element.getAttribute('data-mode'), 'CUSTOM');
+  assert.equal(element.getCrop().imageId, null);
+  assert.equal(element.getCrop().local, false);
+  element.disconnectedCallback();
 });

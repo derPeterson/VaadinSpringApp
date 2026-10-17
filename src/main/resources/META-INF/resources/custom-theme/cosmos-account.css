@@ -334,13 +334,13 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     margin-top: var(--lumo-space-s);
 }
 
-/* PROFILBILD / bedienbarer Entwurf. Der portalisierte Dialog trägt seine eigene
+/* PROFILBILD / Bildauswahl und Ausschnitt. Der portalisierte Dialog trägt seine eigene
  * Klasse; Farben und Dialogflächen bleiben die gemeinsamen Cosmos-Tokens. */
 .account-avatar-dialog .account-avatar-editor {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    gap: var(--lumo-space-m);
+    gap: var(--lumo-space-l);
 }
 
 .account-avatar-dialog .account-avatar-preview {
@@ -349,6 +349,8 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     height: 96px;
     margin-inline: auto;
     flex-shrink: 0;
+    --cosmos-avatar-border-width: 2px;
+    --cosmos-avatar-shadow: var(--cosmos-button-primary-shadow);
 }
 
 .account-avatar-dialog .account-avatar-circle > canvas,
@@ -370,19 +372,98 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     display: none;
 }
 
+/* Native Radiogruppe mit Komponentenlabels; Auswahl, Pfeiltasten und Fokus bleiben nativ.
+ * Öffentliche Vaadin-Parts: radio und group-field, ausgewählter Zustand: checked. */
 .account-avatar-dialog #account-avatar-mode {
-    width: 100%;
+    width: min(360px, 100%);
+    margin-inline: auto;
+    padding: 0;
     font-size: 13px;
 }
 
-.account-avatar-dialog #account-avatar-mode::part(label) {
-    font-size: 12px;
-    color: var(--cosmos-input-label-color);
+.account-avatar-dialog #account-avatar-mode::part(group-field) {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--cosmos-input-border);
+    border-radius: 999px;
+    background: var(--cosmos-input-background);
 }
 
 .account-avatar-dialog #account-avatar-mode vaadin-radio-button {
+    box-sizing: border-box;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+    margin: 0;
+    padding: 6px 10px;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: center;
+    column-gap: 0;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: var(--lumo-primary-text-color);
+    --vaadin-radio-button-label-color: currentColor;
+    --vaadin-radio-button-label-font-size: 13px;
+    --vaadin-radio-button-label-font-weight: 600;
+}
+
+.account-avatar-dialog #account-avatar-mode vaadin-radio-button::part(radio) {
+    display: none;
+}
+
+.account-avatar-dialog #account-avatar-mode vaadin-radio-button > label {
+    grid-column: 1;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.account-avatar-dialog .account-avatar-mode-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    white-space: nowrap;
+}
+
+.account-avatar-dialog .account-avatar-mode-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--cosmos-panel-icon-border);
+    border-radius: 50%;
+    background: var(--cosmos-panel-icon-background);
     font-size: 13px;
-    color: var(--lumo-secondary-text-color);
+}
+
+.account-avatar-dialog .account-avatar-mode-icon > vaadin-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.account-avatar-dialog #account-avatar-mode vaadin-radio-button:hover:not([disabled]):not([checked]) {
+    background: var(--cosmos-table-highlight-background);
+}
+
+.account-avatar-dialog #account-avatar-mode vaadin-radio-button[checked] {
+    color: var(--cosmos-button-primary-color);
+    border-color: var(--cosmos-button-primary-border);
+    background: var(--cosmos-primary-background);
+    box-shadow: var(--cosmos-button-primary-shadow);
+}
+
+.account-avatar-dialog #account-avatar-mode vaadin-radio-button[focus-ring] {
+    outline: 2px solid var(--cosmos-focus-ring-color);
+    outline-offset: 2px;
+}
+
+.account-avatar-dialog #account-avatar-mode vaadin-radio-button[disabled] {
+    opacity: .5;
 }
 
 .account-avatar-dialog .account-avatar-custom,
@@ -398,10 +479,114 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     flex-direction: column;
     align-items: center;
     gap: var(--lumo-space-s);
-    padding: var(--lumo-space-m);
-    border: 1px dashed var(--cosmos-input-border);
+}
+
+.account-avatar-dialog #account-avatar-upload {
+    width: 100%;
+}
+
+.account-avatar-dialog #account-avatar-upload::part(primary-buttons) {
+    width: 100%;
+}
+
+.account-avatar-dialog #account-avatar-choose {
+    box-sizing: border-box;
+    width: 100%;
+    height: auto;
+    min-height: 164px;
+    margin: 0;
+    padding: 20px;
+    border: 1px dashed var(--cosmos-panel-icon-border);
     border-radius: var(--lumo-border-radius-l);
     background: var(--cosmos-input-background);
+    color: var(--lumo-body-text-color);
+    white-space: normal;
+}
+
+.account-avatar-dialog #account-avatar-choose::part(label) {
+    width: 100%;
+    white-space: normal;
+}
+
+.account-avatar-dialog #account-avatar-choose:hover:not([disabled]) {
+    border-color: var(--lumo-primary-text-color);
+    background: var(--cosmos-table-highlight-background);
+}
+
+.account-avatar-dialog .account-avatar-upload-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.account-avatar-dialog .account-avatar-upload-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border: 1px solid var(--cosmos-panel-icon-border);
+    border-radius: 50%;
+    background: var(--cosmos-panel-icon-background);
+    color: var(--lumo-primary-text-color);
+}
+
+.account-avatar-dialog .account-avatar-upload-icon > vaadin-icon {
+    width: 26px;
+    height: 26px;
+}
+
+.account-avatar-dialog .account-avatar-upload-title {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.account-avatar-dialog #account-avatar-choose .account-avatar-helper {
+    font-size: 12px;
+}
+
+.account-avatar-dialog .account-avatar-info {
+    box-sizing: border-box;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--cosmos-input-border);
+    border-radius: var(--lumo-border-radius-l);
+    background: var(--cosmos-input-background);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.account-avatar-dialog .account-avatar-info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--cosmos-panel-icon-background);
+    color: var(--lumo-primary-text-color);
+}
+
+.account-avatar-dialog .account-avatar-info-icon > vaadin-icon {
+    width: 20px;
+    height: 20px;
+}
+
+@media (max-width: 400px) {
+    .account-avatar-dialog .account-avatar-mode-label {
+        flex-direction: column;
+        gap: 4px;
+        white-space: normal;
+        text-align: center;
+    }
+
+    .account-avatar-dialog #account-avatar-mode vaadin-radio-button {
+        padding-inline: 6px;
+    }
 }
 
 .account-avatar-dialog .account-avatar-helper,
@@ -503,22 +688,51 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     display: none;
 }
 
+/* Kompakte Auswahlvariante: nach einem neuen Upload bleibt nur die Ausschnittbedienung.
+ * Abbrechen verwirft den lokalen Entwurf und macht die Uploadfläche wieder sichtbar. */
+.account-avatar-dialog account-avatar-editor[data-local-image="true"] .account-avatar-upload {
+    display: none;
+}
+
+/* Ausschnittaktionen teilen eine Zeile; alle übrigen Elemente bleiben darüber vollbreit. */
+.account-avatar-dialog .account-avatar-crop-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--lumo-space-m) 12px;
+}
+
+.account-avatar-dialog .account-avatar-crop-controls > :not(vaadin-button) {
+    grid-column: 1 / -1;
+}
+
+.account-avatar-dialog .account-avatar-crop-controls > vaadin-button {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: var(--lumo-size-m);
+    margin: 0;
+    align-self: stretch;
+    --vaadin-button-label-wrap: normal;
+}
+
 /* Der native Select liegt nur über dem Statuszeichen. Sein Feld ist transparent,
  * das separate Dropdown bleibt sichtbar und behält die native Tastaturbedienung. */
 .account-summary-avatar .cosmos-avatar-status-select {
     position: absolute;
-    right: 0;
-    bottom: 0;
+    right: var(--cosmos-avatar-status-anchor);
+    bottom: var(--cosmos-avatar-status-anchor);
+    transform: translate(50%, 50%);
     z-index: 1;
-    width: calc(var(--cosmos-avatar-size) * .3);
-    height: calc(var(--cosmos-avatar-size) * .3);
+    width: calc(var(--cosmos-avatar-size) * .4);
+    height: calc(var(--cosmos-avatar-size) * .4);
     min-width: 0;
     padding: 0;
     margin: 0;
     border-radius: 50%;
     cursor: pointer;
     --vaadin-select-overlay-width: min(320px, calc(100vw - 32px));
-    --vaadin-input-field-height: calc(var(--cosmos-avatar-size) * .3);
+    --vaadin-input-field-height: calc(var(--cosmos-avatar-size) * .4);
 }
 
 .account-summary-avatar .cosmos-avatar-status-select::part(input-field) {

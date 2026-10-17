@@ -19,6 +19,7 @@ import com.vaadin.flow.function.SerializableConsumer;
 import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.function.SerializableRunnable;
 import com.vaadin.flow.function.SerializableSupplier;
+import de.derpeterson.app.helper.ui.CompactDateInput;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -276,6 +277,7 @@ public class AccountSettingsComponent extends Div {
     preferredLanguage.setItemLabelGenerator(language -> language.getDisplayLanguage(language));
     preferredLanguage.setAllowCustomValue(false);
     birthDate.setAutoOpen(false);
+    CompactDateInput.configure(birthDate, messages);
     if (user != null) {
       firstName.setValue(Objects.toString(user.getFirstName(), ""));
       lastName.setValue(Objects.toString(user.getLastName(), ""));

@@ -8,8 +8,10 @@ import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -139,15 +141,27 @@ class AccountViewTest {
     var select = avatarStatus();
     assertEquals(UserStatus.getDefaultStatus(), select.getValue());
     assertTrue(select.isEnabled());
+    assertTrue(select.getElement().getThemeList().contains("cosmos-status"));
     assertEquals(List.of(UserStatus.values()), select.getListDataView().getItems().toList());
     assertEquals("Status", select.getAriaLabel().orElseThrow());
     when(users.updateUserStatus(user, UserStatus.ABSENT, true))
         .thenReturn(new UserService.StatusUpdate(UserStatus.ABSENT, true));
     ReflectionTestUtils.invokeMethod(select, "setModelValue", UserStatus.ABSENT, true);
     verify(users).updateUserStatus(user, UserStatus.ABSENT, true);
+    var popupAvatar =
+        (OverlayUserIcon)
+            ReflectionTestUtils.getField(
+                ReflectionTestUtils.getField(view, "userPopoverMenu"), "overlayIcon");
+    assertEquals(UserStatus.ABSENT, ReflectionTestUtils.getField(popupAvatar, "userStatus"));
+    assertTrue(((Div) ReflectionTestUtils.getField(popupAvatar, "status")).isVisible());
     assertEquals(UserStatus.ABSENT, user.getStatus());
     assertTrue(user.isStatusManuallySet());
     assertEquals(UserStatus.ABSENT, select.getValue());
+    var summary = ReflectionTestUtils.getField(settings(), "summaryAvatar");
+    var tooltip = (Tooltip) ReflectionTestUtils.getField(summary, "tooltip");
+    assertTrue(tooltip.isManual());
+    assertFalse(tooltip.isOpened());
+    assertEquals("", tooltip.getText());
     var menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
     assertEquals(
         UserStatus.ABSENT,
@@ -158,6 +172,7 @@ class AccountViewTest {
     assertEquals(UserStatus.EMPLOYED, select.getValue());
     LanguageChangeEvent.fire(ui, Locale.forLanguageTag(language.equals("de") ? "en" : "de"));
     assertEquals(UserStatus.EMPLOYED, select.getValue());
+    assertEquals("", tooltip.getText());
     assertEquals(
         new MessageProperties(new CustomI18NProvider()).getUserStatusEmployed(),
         select.getItemLabelGenerator().apply(UserStatus.EMPLOYED));
@@ -364,13 +379,10 @@ class AccountViewTest {
             .toList();
     assertEquals(3, avatars.size());
     for (var avatar : avatars) {
-      var headerIcon = ((Button) ReflectionTestUtils.getField(view, "userIconButton")).getIcon();
-      String expected = "Changed Name";
-      if (avatar == headerIcon || "group".equals(avatar.getElement().getAttribute("role")))
-        expected +=
-            " – "
-                + MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH)
-                    .getUserStatusLabel(UserStatus.getDefaultStatus());
+      String expected =
+          "Changed Name – "
+              + MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH)
+                  .getUserStatusLabel(UserStatus.getDefaultStatus());
       assertEquals(expected, avatar.getElement().getAttribute("aria-label"));
     }
 

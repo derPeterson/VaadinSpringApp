@@ -35,12 +35,14 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
   private final Div preview = new Div();
   private final Div custom = new Div();
   private final Button choose = new Button();
+  private final Span chooseLabel = new Span();
   private final Upload uploader = new Upload();
   private final Image savedSource = new Image();
   private final Span uploadHint = new Span();
   private final Span cropHint = new Span();
   private final Span zoomLabel = new Span();
   private final Button reset = new Button();
+  private final Button cancelSelection = new Button();
   private final Input zoom = new Input();
   private final Div cropFrame = new Div();
   private String name = "";
@@ -62,7 +64,14 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     preview.add(circle);
 
     choose.setId("account-avatar-choose");
-    choose.setPrefixComponent(VaadinIcon.UPLOAD.create());
+    var uploadSymbol = VaadinIcon.UPLOAD.create();
+    uploadSymbol.getElement().setAttribute("aria-hidden", "true");
+    var uploadBadge = new Span(uploadSymbol);
+    uploadBadge.addClassName("account-avatar-upload-icon");
+    chooseLabel.addClassName("account-avatar-upload-title");
+    var uploadContent = new Span(uploadBadge, chooseLabel, uploadHint);
+    uploadContent.addClassName("account-avatar-upload-content");
+    choose.getElement().appendChild(uploadContent.getElement());
     uploader.setId("account-avatar-upload");
     uploader.addClassName("account-avatar-upload-control");
     // RAW vermeidet eine vorgelagerte Multipart-Pufferung; tatsächliche Bytes begrenzt der Handler.
@@ -96,7 +105,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     filename.addClassName("account-avatar-filename");
     role(filename.getElement(), "filename");
     uploadHint.addClassName("account-avatar-helper");
-    var upload = new Div(uploader, filename, uploadHint, savedSource);
+    var upload = new Div(uploader, filename, savedSource);
     upload.addClassName("account-avatar-upload");
 
     var error = new Span();
@@ -128,7 +137,11 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     zoomRow.addClassName("account-avatar-zoom");
     reset.setPrefixComponent(VaadinIcon.ROTATE_LEFT.create());
     role(reset.getElement(), "reset");
-    var controls = new Div(cropFrame, cropHint, zoomRow, reset);
+    cancelSelection.setId("account-avatar-cancel-selection");
+    cancelSelection.setPrefixComponent(VaadinIcon.CLOSE_SMALL.create());
+    cancelSelection.addClassName("account-avatar-cancel-selection");
+    role(cancelSelection.getElement(), "cancel");
+    var controls = new Div(cropFrame, cropHint, zoomRow, reset, cancelSelection);
     controls.addClassName("account-avatar-crop-controls");
     custom.addClassName("account-avatar-custom");
     custom.add(upload, error, controls);
@@ -179,6 +192,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
 
   public void setUploadEnabled(boolean enabled) {
     choose.setEnabled(enabled);
+    cancelSelection.setEnabled(enabled);
   }
 
   public void loadSaved(UserAvatarService avatars, Long userId, UUID revision) {
@@ -193,7 +207,11 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
   }
 
   public void refreshTexts() {
-    choose.setText(messages.getAccountAvatarChoose());
+    chooseLabel.setText(messages.getAccountAvatarChoose());
+    choose.setAriaLabel(messages.getAccountAvatarChoose());
+    cancelSelection.setText(messages.getAdminUsersCancel());
+    cancelSelection.setAriaLabel(
+        messages.getAccountAvatarChoose() + ": " + messages.getAdminUsersCancel());
     uploader.setI18n(
         new UploadI18N()
             .setError(

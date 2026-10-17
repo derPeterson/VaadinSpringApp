@@ -29,6 +29,7 @@ Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administ
 - Adminbereich mit Benutzerverwaltung, Rollen und Kontofreigabe, Konfiguration sowie Mail-Testversand. Die Menüposition steht in der URL und bleibt bei Refresh erhalten; Direktlinks und Zurück/Vorwärts sind möglich.
 - „Mein Konto“ über das Benutzermenü oder das Zahnrad in der Kopfzeile: eigene Profildaten und bevorzugte Sprache speichern, mit Validierung und Konfliktschutz. Der ausgewählte Tab steht in der URL (`/account?tab=security`) und wird beim Neuladen wiederhergestellt. Passwortwechsel mit Bestätigungsmail und E-Mail-Änderung per Einmallink sind umgesetzt. Eigene Sitzungen und gespeicherte Anmeldungen lassen sich verwalten; bei erreichtem Limit gibt es nach Passwortprüfung einen eingeschränkten Zugang. Die Standardavatare in Kopfzeile, Benutzermenü, Kontoübersicht und Benutzerverwaltung zeigen gemeinsame Live-Initialen bzw. das eigene Bild. Kopfzeilenavatar und Kontobild zeigen zusätzlich den Verfügbarkeitsstatus; am Kontobild lässt sich dieser direkt über das Statuszeichen ändern. Eigene Profilbilder lassen sich mit Ausschnitt speichern, ersetzen oder löschen; beim Wechsel zu Initialen bleibt das Bild erhalten. [Profilbildvertrag und Prüfgrenzen](docs/profile-avatar-contract.md). [Sitzungsverwaltung und Prüfgrenzen](docs/session-management-contract.md). [Sicherheitsvertrag](docs/account-security-contract.md). [Umfang](docs/account-settings-ui.md).
 - Deutsche und englische Oberfläche, manuell wählbarer Benutzerstatus und automatische Abwesenheitserkennung mit Push-Aktualisierung.
+- Kompakte Datumseingaben in Registrierung, Konto und Benutzerverwaltung sowie Zeiteingaben im Aktivitätsfilter: [Formate und Grenzen](docs/date-time-input.md).
 - Datenbankgestützte E-Mail-Warteschlange mit Wiederholungsversuchen und geplanten Bereinigungsaufgaben.
 
 Admin-Unterseiten verwenden die vorhandenen Queryparameter, beispielsweise
@@ -555,7 +556,7 @@ Die vorausgehende Java-/Textbereinigung entfernte die alte `CardComponent`,
 Schlüssel je Sprache. Nach dieser damaligen Bereinigung blieben 336 Schlüssel
 je Sprache. Inzwischen sind es einschließlich der folgenden Sicherheitsfunktionen
 und des Wartungsmodus mit Betriebsstatus sowie der Kontoseite nach Entfernung
-der zwei doppelten E-Mail-/Sicherheitshinweise und Ergänzung des Passwortdialogs sowie Entfernung des Sitzungshinweises und dem neuen Kopfzeilenhinweis sowie dem Profilbild-Dialogentwurf 454 je Sprache. Die drei
+der zwei doppelten E-Mail-/Sicherheitshinweise und Ergänzung des Passwortdialogs sowie Entfernung des Sitzungshinweises und dem neuen Kopfzeilenhinweis sowie dem Profilbild-Dialogentwurf und der Datumsvalidierung 455 je Sprache. Die drei
 `MessageCatalogueTest`-Fälle prüfen Sprachparität, vorhandene Gettertexte und
 verwaiste Einträge; sie sind im aktuellen JUnit-Gesamtergebnis enthalten.
 
