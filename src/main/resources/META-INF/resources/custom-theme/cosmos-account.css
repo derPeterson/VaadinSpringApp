@@ -1,6 +1,6 @@
-/* MEIN KONTO / lokale Anordnung der ersten Gestaltungsstufe.
+/* MEIN KONTO / lokale Anordnung der Kontoansicht und ihrer Dialoge.
  * Cards, Felder, Buttons und Panelköpfe kommen unverändert aus Cosmos.
- * Alle neuen Selektoren sind auf diese View begrenzt: andere Seiten bleiben gleich. */
+ * View und portalisierte Dialoge haben eigene Selektoren; gemeinsame Werte stehen in den Tokens. */
 .cosmos-account .account-settings {
     display: flex;
     flex-direction: column;
@@ -22,8 +22,6 @@
     gap: var(--lumo-space-l);
 }
 
-
-
 .cosmos-account .account-summary-details {
     flex: 1 1 240px;
     min-width: 0;
@@ -38,12 +36,12 @@
 .cosmos-account .account-summary-name {
     color: var(--lumo-header-text-color);
     font-size: var(--lumo-font-size-xl);
-    font-weight: 700;
+    font-weight: var(--cosmos-font-weight-bold);
 }
 
 .cosmos-account .account-summary-email {
     color: var(--lumo-secondary-text-color);
-    font-size: 12px;
+    font-size: var(--cosmos-font-size-s);
     margin-block: var(--lumo-space-xs) var(--lumo-space-s);
 }
 
@@ -51,7 +49,7 @@
  * hier aus der vorhandenen grünen Success-Palette. */
 .cosmos-account .account-summary-status[theme~="success"] {
     color: var(--lumo-success-text-color);
-    border: 1px solid currentColor;
+    border: var(--cosmos-border-width) solid currentColor;
     background: var(--lumo-success-color-10pct);
 }
 
@@ -62,7 +60,7 @@
     width: 100%;
     min-width: 0;
     box-shadow: none;
-    border-bottom: 1px solid var(--cosmos-card-border);
+    border-bottom: var(--cosmos-border-width) solid var(--cosmos-card-border);
 }
 
 /* Gleich breite Tabs nach dem längsten Inhalt. Der Scrollcontainer darf bei
@@ -83,15 +81,15 @@
     gap: var(--lumo-space-s);
     padding: var(--lumo-space-m);
     color: var(--lumo-secondary-text-color);
-    font-size: 13px;
-    font-weight: 600;
+    font-size: var(--cosmos-font-size-m);
+    font-weight: var(--cosmos-font-weight-semibold);
     white-space: nowrap;
     min-width: max-content;
 }
 
 .cosmos-account .account-tabs vaadin-tab[selected] {
     color: var(--lumo-primary-text-color);
-    font-weight: 700;
+    font-weight: var(--cosmos-font-weight-bold);
 }
 
 /* Lumo zentriert seine kurze Markierung per translateX(-50%). Bei voller
@@ -115,7 +113,7 @@
 .cosmos-account .account-tabs vaadin-tab > .account-devices-icon {
     width: var(--lumo-icon-size-m);
     height: var(--lumo-icon-size-m);
-    font-size: 14px;
+    font-size: var(--cosmos-font-size-l);
     padding: 0.25em;
     margin: 0;
     box-sizing: border-box;
@@ -146,7 +144,7 @@
 .cosmos-account :is(#account-panel-profile, #account-panel-security, #account-panel-sessions) > .cosmos-panel-header {
     width: calc(100% - 2 * var(--account-panel-inline-padding));
     margin-inline: var(--account-panel-inline-padding);
-    padding-top: 32px;
+    padding-top: var(--cosmos-space-3xl);
 }
 
 .cosmos-account :is(#account-panel-profile, #account-panel-security, #account-panel-sessions) > .account-panel-body {
@@ -154,8 +152,8 @@
 }
 
 .cosmos-account :is(#account-panel-profile, #account-panel-security, #account-panel-sessions) > .cosmos-panel-footer {
-    border-top: 1px solid var(--cosmos-table-border-color);
-    padding: 18px 24px;
+    border-top: var(--cosmos-border-width) solid var(--cosmos-table-border-color);
+    padding: var(--cosmos-dialog-chrome-padding);
     background: var(--cosmos-account-footer-background);
 }
 
@@ -174,8 +172,8 @@
 
 .cosmos-account :is(vaadin-text-field, vaadin-email-field, vaadin-password-field,
     vaadin-combo-box, vaadin-date-picker)::part(helper-text) {
-    font-size: 11px;
-    font-weight: 400;
+    font-size: var(--cosmos-font-size-xs);
+    font-weight: var(--cosmos-font-weight-regular);
 }
 
 .cosmos-account .account-profile-email {
@@ -184,7 +182,7 @@
 
 .cosmos-account .account-entry {
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr) auto;
+    grid-template-columns: var(--cosmos-panel-icon-size) minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--lumo-space-m);
     padding-block: var(--lumo-space-l);
@@ -192,17 +190,17 @@
 
 /* Sicherheitsaktionen und Geräte: eine kleinere Stufe als die Panelköpfe. */
 .cosmos-account :is(#account-panel-security, #account-panel-sessions) .account-entry {
-    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-columns: var(--cosmos-panel-icon-size-small) minmax(0, 1fr) auto;
 }
 
 .cosmos-account :is(#account-panel-security, #account-panel-sessions) .account-entry > .cosmos-panel-icon {
-    width: 36px;
-    height: 36px;
+    width: var(--cosmos-panel-icon-size-small);
+    height: var(--cosmos-panel-icon-size-small);
 }
 
 .cosmos-account :is(#account-panel-security, #account-panel-sessions) .account-entry > .cosmos-panel-icon > vaadin-icon {
-    width: 20px;
-    height: 20px;
+    width: var(--cosmos-panel-icon-symbol-size-small);
+    height: var(--cosmos-panel-icon-symbol-size-small);
 }
 
 /* Gemeinsame Aktionsbreite fuer Passwort und E-Mail, auch bei Sprachwechsel.
@@ -213,7 +211,7 @@
 }
 
 .cosmos-account .account-entry + .account-entry {
-    border-top: 1px solid var(--cosmos-card-border);
+    border-top: var(--cosmos-border-width) solid var(--cosmos-card-border);
 }
 
 .cosmos-account .account-entry-copy {
@@ -228,27 +226,24 @@
 
 .cosmos-account .account-entry-title {
     color: var(--lumo-body-text-color);
-    font-size: 13px;
-    font-weight: 600;
+    font-size: var(--cosmos-font-size-m);
+    font-weight: var(--cosmos-font-weight-semibold);
 }
 
 .cosmos-account .account-entry-description {
     color: var(--lumo-secondary-text-color);
-    font-size: 11px;
-    line-height: 1.5;
-}
-
-.cosmos-account .account-entry-description {
+    font-size: var(--cosmos-font-size-xs);
+    line-height: var(--cosmos-line-height-copy);
     margin-top: var(--lumo-space-xs);
 }
 
 .cosmos-account .account-current-device {
-    border: 1px solid currentColor;
+    border: var(--cosmos-border-width) solid currentColor;
     white-space: nowrap;
 }
 
 .cosmos-account .account-session-heading .account-entry-title {
-    font-size: 15px;
+    font-size: var(--cosmos-font-size-xl);
 }
 
 /* Monitor hinten, Vaadin-Laptop links und Smartphone rechts als ein transparentes SVG. */
@@ -266,10 +261,9 @@
     gap: var(--lumo-space-s);
 }
 
-
 @media (max-width: 600px) {
     .cosmos-account :is(#account-panel-profile, #account-panel-security, #account-panel-sessions) > .cosmos-panel-footer {
-        padding: 16px;
+        padding: var(--cosmos-space-l);
     }
 
     .cosmos-account .account-profile-form {
@@ -277,11 +271,11 @@
     }
 
     .cosmos-account .account-entry {
-        grid-template-columns: 42px minmax(0, 1fr);
+        grid-template-columns: var(--cosmos-panel-icon-size) minmax(0, 1fr);
     }
 
     .cosmos-account :is(#account-panel-security, #account-panel-sessions) .account-entry {
-        grid-template-columns: 36px minmax(0, 1fr);
+        grid-template-columns: var(--cosmos-panel-icon-size-small) minmax(0, 1fr);
     }
 
     .cosmos-account .account-entry > vaadin-button {
@@ -296,7 +290,7 @@
  * Vaadin-25-Parts: https://vaadin.com/docs/latest/components/dialog/styling */
 vaadin-dialog[theme~="cosmos"].account-change-dialog::part(overlay) {
     box-sizing: border-box;
-    width: min(520px, calc(100vw - 32px));
+    width: min(var(--cosmos-dialog-width-account), calc(100vw - 32px));
     border-radius: var(--cosmos-overlay-radius);
     box-shadow: var(--cosmos-overlay-shadow);
 }
@@ -378,16 +372,16 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     width: min(360px, 100%);
     margin-inline: auto;
     padding: 0;
-    font-size: 13px;
+    font-size: var(--cosmos-font-size-m);
 }
 
 .account-avatar-dialog #account-avatar-mode::part(group-field) {
     display: flex;
     flex-flow: row nowrap;
-    gap: 4px;
-    padding: 4px;
-    border: 1px solid var(--cosmos-input-border);
-    border-radius: 999px;
+    gap: var(--cosmos-space-xs);
+    padding: var(--cosmos-space-xs);
+    border: var(--cosmos-border-width) solid var(--cosmos-input-border);
+    border-radius: var(--cosmos-segment-radius);
     background: var(--cosmos-input-background);
 }
 
@@ -401,12 +395,12 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     grid-template-columns: minmax(0, 1fr);
     align-items: center;
     column-gap: 0;
-    border: 1px solid transparent;
-    border-radius: 999px;
+    border: var(--cosmos-border-width) solid transparent;
+    border-radius: var(--cosmos-segment-radius);
     color: var(--lumo-primary-text-color);
     --vaadin-radio-button-label-color: currentColor;
-    --vaadin-radio-button-label-font-size: 13px;
-    --vaadin-radio-button-label-font-weight: 600;
+    --vaadin-radio-button-label-font-size: var(--cosmos-font-size-m);
+    --vaadin-radio-button-label-font-weight: var(--cosmos-font-weight-semibold);
 }
 
 .account-avatar-dialog #account-avatar-mode vaadin-radio-button::part(radio) {
@@ -435,10 +429,10 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     flex-shrink: 0;
     width: 28px;
     height: 28px;
-    border: 1px solid var(--cosmos-panel-icon-border);
+    border: var(--cosmos-border-width) solid var(--cosmos-panel-icon-border);
     border-radius: 50%;
     background: var(--cosmos-panel-icon-background);
-    font-size: 13px;
+    font-size: var(--cosmos-font-size-m);
 }
 
 .account-avatar-dialog .account-avatar-mode-icon > vaadin-icon {
@@ -458,7 +452,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 }
 
 .account-avatar-dialog #account-avatar-mode vaadin-radio-button[focus-ring] {
-    outline: 2px solid var(--cosmos-focus-ring-color);
+    outline: var(--cosmos-focus-ring-width) solid var(--cosmos-focus-ring-color);
     outline-offset: 2px;
 }
 
@@ -466,12 +460,18 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     opacity: .5;
 }
 
-.account-avatar-dialog .account-avatar-custom,
-.account-avatar-dialog .account-avatar-crop-controls {
+.account-avatar-dialog .account-avatar-custom {
     display: flex;
     flex-direction: column;
     min-width: 0;
     gap: var(--lumo-space-m);
+}
+
+.account-avatar-dialog .account-avatar-crop-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--lumo-space-m) var(--cosmos-space-m);
+    min-width: 0;
 }
 
 .account-avatar-dialog .account-avatar-upload {
@@ -495,8 +495,8 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     height: auto;
     min-height: 164px;
     margin: 0;
-    padding: 20px;
-    border: 1px dashed var(--cosmos-panel-icon-border);
+    padding: var(--cosmos-space-xl);
+    border: var(--cosmos-border-width) dashed var(--cosmos-panel-icon-border);
     border-radius: var(--lumo-border-radius-l);
     background: var(--cosmos-input-background);
     color: var(--lumo-body-text-color);
@@ -526,7 +526,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     justify-content: center;
     width: 56px;
     height: 56px;
-    border: 1px solid var(--cosmos-panel-icon-border);
+    border: var(--cosmos-border-width) solid var(--cosmos-panel-icon-border);
     border-radius: 50%;
     background: var(--cosmos-panel-icon-background);
     color: var(--lumo-primary-text-color);
@@ -538,24 +538,24 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 }
 
 .account-avatar-dialog .account-avatar-upload-title {
-    font-size: 15px;
-    font-weight: 600;
+    font-size: var(--cosmos-font-size-xl);
+    font-weight: var(--cosmos-font-weight-semibold);
     line-height: 1.4;
 }
 
 .account-avatar-dialog #account-avatar-choose .account-avatar-helper {
-    font-size: 12px;
+    font-size: var(--cosmos-font-size-s);
 }
 
 .account-avatar-dialog .account-avatar-info {
     box-sizing: border-box;
     align-items: flex-start;
-    gap: 12px;
+    gap: var(--cosmos-space-m);
     padding: 14px;
-    border: 1px solid var(--cosmos-input-border);
+    border: var(--cosmos-border-width) solid var(--cosmos-input-border);
     border-radius: var(--lumo-border-radius-l);
     background: var(--cosmos-input-background);
-    font-size: 12px;
+    font-size: var(--cosmos-font-size-s);
     line-height: 1.6;
 }
 
@@ -572,14 +572,14 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 }
 
 .account-avatar-dialog .account-avatar-info-icon > vaadin-icon {
-    width: 20px;
-    height: 20px;
+    width: var(--cosmos-icon-size-m);
+    height: var(--cosmos-icon-size-m);
 }
 
 @media (max-width: 400px) {
     .account-avatar-dialog .account-avatar-mode-label {
         flex-direction: column;
-        gap: 4px;
+        gap: var(--cosmos-space-xs);
         white-space: normal;
         text-align: center;
     }
@@ -591,9 +591,9 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 
 .account-avatar-dialog .account-avatar-helper,
 .account-avatar-dialog .account-avatar-filename {
-    font-size: 11px;
-    font-weight: 400;
-    line-height: 1.5;
+    font-size: var(--cosmos-font-size-xs);
+    font-weight: var(--cosmos-font-weight-regular);
+    line-height: var(--cosmos-line-height-copy);
     color: var(--lumo-secondary-text-color);
     text-align: center;
     overflow-wrap: anywhere;
@@ -606,7 +606,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 
 .account-avatar-dialog .account-avatar-error {
     color: var(--lumo-error-text-color);
-    font-size: 12px;
+    font-size: var(--cosmos-font-size-s);
 }
 
 .account-avatar-dialog .account-avatar-crop-frame {
@@ -615,7 +615,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     aspect-ratio: 1;
     margin-inline: auto;
     overflow: hidden;
-    border: 1px solid var(--cosmos-card-border);
+    border: var(--cosmos-border-width) solid var(--cosmos-card-border);
     border-radius: var(--lumo-border-radius-l);
     background: var(--cosmos-table-highlight-background);
 }
@@ -630,7 +630,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 }
 
 .account-avatar-dialog .account-avatar-crop-frame > canvas:focus-visible {
-    outline: 2px solid var(--cosmos-focus-ring-color);
+    outline: var(--cosmos-focus-ring-width) solid var(--cosmos-focus-ring-color);
     outline-offset: -3px;
 }
 
@@ -638,7 +638,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    border: 1px solid var(--lumo-primary-color-50pct);
+    border: var(--cosmos-border-width) solid var(--lumo-primary-color-50pct);
     box-shadow: 0 0 0 100px color-mix(in srgb, var(--lumo-base-color) 65%, transparent);
     pointer-events: none;
 }
@@ -648,7 +648,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     align-items: center;
     gap: var(--lumo-space-s);
     color: var(--lumo-secondary-text-color);
-    font-size: 12px;
+    font-size: var(--cosmos-font-size-s);
 }
 
 .account-avatar-dialog .account-avatar-zoom > input {
@@ -694,13 +694,6 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     display: none;
 }
 
-/* Ausschnittaktionen teilen eine Zeile; alle übrigen Elemente bleiben darüber vollbreit. */
-.account-avatar-dialog .account-avatar-crop-controls {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--lumo-space-m) 12px;
-}
-
 .account-avatar-dialog .account-avatar-crop-controls > :not(vaadin-button) {
     grid-column: 1 / -1;
 }
@@ -710,7 +703,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     width: 100%;
     min-width: 0;
     height: auto;
-    min-height: var(--lumo-size-m);
+    min-height: var(--cosmos-control-height);
     margin: 0;
     align-self: stretch;
     --vaadin-button-label-wrap: normal;
@@ -731,7 +724,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     margin: 0;
     border-radius: 50%;
     cursor: pointer;
-    --vaadin-select-overlay-width: min(320px, calc(100vw - 32px));
+    --vaadin-select-overlay-width: var(--cosmos-status-overlay-width);
     --vaadin-input-field-height: calc(var(--cosmos-avatar-size) * .4);
 }
 

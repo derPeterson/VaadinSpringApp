@@ -104,7 +104,7 @@ den zentralen blauen Verlauf `#3a538d` → `#526ebc`.
 | Zentrale Datei unter `custom-theme/` | Aufgabe |
 | --- | --- |
 | `typography.css` | Inter als Standardschrift für die gesamte Anwendung |
-| `cosmos-tokens.css` | Zentrale Palette, Komponentenfarben, Verläufe, Schatten und gemeinsame Designwerte |
+| `cosmos-tokens.css` | Zentrale Palette, Typografie, Abstände, Rahmen, Komponentenmaße, Verläufe und Schatten |
 | `cosmos-theme.css` | Kontoansichten, Cards, Formulare, Buttons, Tabellen und Benachrichtigungen |
 | `cosmos-shell.css` | App-Kopfzeile, Seitenkopf, Benutzermenü und Auswahl-Overlays |
 | `cosmos-admin.css` | Navigation, Panels, Konfiguration, Mail-Test und Dialogstandards |

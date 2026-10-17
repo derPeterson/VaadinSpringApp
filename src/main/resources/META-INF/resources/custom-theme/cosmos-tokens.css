@@ -45,7 +45,42 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --lumo-success-color-10pct: rgba(70, 140, 105, .13);
     --lumo-success-color-50pct: rgba(70, 140, 105, .5);
     --lumo-success-contrast-color: #fff;
-    --lumo-border-radius-l: 9px;
+    --lumo-border-radius-l: var(--cosmos-control-radius);
+
+    /* BASISSKALEN / explizite Pixelwerte erhalten den abgestimmten Stand.
+     * Nur wiederverwendete Designwerte zentralisieren; Seitengeometrie bleibt lokal.
+     * Native Lumo-Größen werden nicht pauschal überschrieben. */
+    --cosmos-font-size-xs: 11px;
+    --cosmos-font-size-s: 12px;
+    --cosmos-font-size-m: 13px;
+    --cosmos-font-size-l: 14px;
+    --cosmos-font-size-xl: 15px;
+    --cosmos-font-size-title: 18px;
+    --cosmos-font-weight-regular: 400;
+    --cosmos-font-weight-label: 450;
+    --cosmos-font-weight-medium: 500;
+    --cosmos-font-weight-semibold: 600;
+    --cosmos-font-weight-strong: 650;
+    --cosmos-font-weight-bold: 700;
+    --cosmos-line-height-copy: 1.5;
+    --cosmos-space-xs: 4px;
+    --cosmos-space-s: 8px;
+    --cosmos-space-m: 12px;
+    --cosmos-space-l: 16px;
+    --cosmos-space-xl: 20px;
+    --cosmos-space-2xl: 24px;
+    --cosmos-space-3xl: 32px;
+    --cosmos-border-width: 1px;
+    --cosmos-control-radius: 9px;
+    --cosmos-badge-radius: 5px;
+    --cosmos-segment-radius: 999px;
+    --cosmos-control-height: var(--lumo-size-m);
+    --cosmos-control-font-size: var(--cosmos-font-size-m);
+    /* Die 14px-Schriftbasis der em-Icons separat erhalten. */
+    --cosmos-control-icon-font-size: var(--cosmos-font-size-l);
+    --cosmos-surface-blur: 17px;
+    --cosmos-surface-blur-compact: 8px;
+    --cosmos-sidebar-blur: 10px;
 
     /* 2. CARDS, PRIMARY-VERLAUF UND TABELLEN
      * Die vier Tabellenfarben bleiben die öffentlichen, gemeinsam verwendeten Variablen. */
@@ -57,25 +92,35 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-table-alternate-row-background: #18213681;
     --cosmos-table-highlight-background: #1B2B42;
 
+    --cosmos-card-width: 430px;
+    --cosmos-card-radius: 18px;
+    --cosmos-card-border: rgba(169, 191, 233, .18);
+    --cosmos-card-shadow: 0 25px 95px rgba(0, 0, 0, .47), inset 0 1px rgba(255, 255, 255, .05);
+
     /* Standardavatar: Initialen und spätere eigene Bilder teilen denselben Rahmen.
      * Die Statusfarbe kommt weiterhin aus der semantischen Success-/Error-Palette. */
     --cosmos-avatar-background: var(--cosmos-table-highlight-background);
     --cosmos-avatar-text-color: var(--lumo-primary-text-color);
     --cosmos-avatar-border-color: var(--lumo-primary-color-50pct);
-    --cosmos-avatar-border-width: 1px;
+    --cosmos-avatar-border-width: var(--cosmos-border-width);
     --cosmos-avatar-status-border-width: 2px;
     --cosmos-avatar-status-optical-offset: 1.5px;
     --cosmos-avatar-shadow: 0 0 18px var(--lumo-primary-color-10pct);
+    --cosmos-avatar-glow-near-blur: 6px;
+    --cosmos-avatar-glow-far-blur: 26px;
+    --cosmos-avatar-glow-near-opacity: 80%;
+    --cosmos-avatar-glow-far-opacity: 60%;
     /* Vorschauvariante „Kräftig“: naher Glow plus eine weiche äußere Schicht. */
-    --cosmos-avatar-available-shadow: 0 0 6px color-mix(in srgb, var(--lumo-success-color) 80%, transparent), 0 0 26px color-mix(in srgb, var(--lumo-success-color) 60%, transparent);
-    --cosmos-avatar-employed-shadow: 0 0 6px color-mix(in srgb, var(--lumo-error-color) 80%, transparent), 0 0 26px color-mix(in srgb, var(--lumo-error-color) 60%, transparent);
-    --cosmos-avatar-absent-shadow: 0 0 6px color-mix(in srgb, var(--lumo-warning-color) 80%, transparent), 0 0 26px color-mix(in srgb, var(--lumo-warning-color) 60%, transparent);
-    --cosmos-avatar-offline-shadow: 0 0 6px color-mix(in srgb, var(--lumo-secondary-text-color) 80%, transparent), 0 0 26px color-mix(in srgb, var(--lumo-secondary-text-color) 60%, transparent);
+    --cosmos-avatar-available-shadow: 0 0 var(--cosmos-avatar-glow-near-blur) color-mix(in srgb, var(--lumo-success-color) var(--cosmos-avatar-glow-near-opacity), transparent),
+        0 0 var(--cosmos-avatar-glow-far-blur) color-mix(in srgb, var(--lumo-success-color) var(--cosmos-avatar-glow-far-opacity), transparent);
+    --cosmos-avatar-employed-shadow: 0 0 var(--cosmos-avatar-glow-near-blur) color-mix(in srgb, var(--lumo-error-color) var(--cosmos-avatar-glow-near-opacity), transparent),
+        0 0 var(--cosmos-avatar-glow-far-blur) color-mix(in srgb, var(--lumo-error-color) var(--cosmos-avatar-glow-far-opacity), transparent);
+    --cosmos-avatar-absent-shadow: 0 0 var(--cosmos-avatar-glow-near-blur) color-mix(in srgb, var(--lumo-warning-color) var(--cosmos-avatar-glow-near-opacity), transparent),
+        0 0 var(--cosmos-avatar-glow-far-blur) color-mix(in srgb, var(--lumo-warning-color) var(--cosmos-avatar-glow-far-opacity), transparent);
+    --cosmos-avatar-offline-shadow: 0 0 var(--cosmos-avatar-glow-near-blur) color-mix(in srgb, var(--lumo-secondary-text-color) var(--cosmos-avatar-glow-near-opacity), transparent),
+        0 0 var(--cosmos-avatar-glow-far-blur) color-mix(in srgb, var(--lumo-secondary-text-color) var(--cosmos-avatar-glow-far-opacity), transparent);
     --cosmos-status-option-background: var(--cosmos-table-highlight-background);
-    --cosmos-card-width: 430px;
-    --cosmos-card-radius: 18px;
-    --cosmos-card-border: rgba(169, 191, 233, .18);
-    --cosmos-card-shadow: 0 25px 95px rgba(0, 0, 0, .47), inset 0 1px rgba(255, 255, 255, .05);
+    --cosmos-status-overlay-width: min(320px, calc(100vw - var(--cosmos-space-3xl)));
 
     /* 3. KOPFZEILE UND NAVIGATION / eigene Flächen statt verstreuter Hexfarben */
     --cosmos-topbar-height: 68px;
@@ -87,7 +132,6 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-sidebar-border-color: #8cadd626;
     --cosmos-nav-active-background: linear-gradient(90deg, #204478a6, #24488630);
     --cosmos-nav-active-border-color: #668de43a;
-    --cosmos-input-font-size: 13px;
 
     /* 4. BUTTONS
      * Standardmäßig aus der Palette abgeleitet; für diese Komponente hier separat änderbar. */
@@ -101,10 +145,17 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-button-danger-color: var(--lumo-error-contrast-color);
     --cosmos-button-danger-border: var(--lumo-error-color-50pct);
     --cosmos-button-danger-shadow: 0 0 23px var(--lumo-error-color-10pct);
+    --cosmos-focus-ring-width: 2px;
+    --cosmos-focus-ring-offset: 3px;
+    --cosmos-icon-size-xs: 14px;
+    --cosmos-icon-size-s: 16px;
+    --cosmos-icon-size-m: 20px;
+    --cosmos-icon-size-l: 24px;
     --cosmos-focus-ring-color: var(--lumo-primary-text-color);
 
     /* 5. EINGABEFELDER
      * Standardmäßig aus der Palette abgeleitet; für diese Komponente hier separat änderbar. */
+    --cosmos-input-font-size: var(--cosmos-font-size-m);
     --cosmos-input-placeholder-color: var(--lumo-tertiary-text-color);
     --cosmos-input-border: var(--lumo-contrast-20pct);
     --cosmos-input-background: var(--lumo-contrast-5pct);
@@ -116,6 +167,9 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
 
     /* 6. TABELLEN
      * Standardmäßig aus der Palette abgeleitet; für diese Komponente hier separat änderbar. */
+    --cosmos-table-action-size: 32px;
+    --cosmos-table-action-icon-size: var(--cosmos-icon-size-s);
+    --cosmos-pagination-size: 28px;
     --cosmos-table-border-color: var(--lumo-contrast-20pct);
     --cosmos-table-header-color: var(--lumo-primary-text-color);
     --cosmos-table-body-color: var(--lumo-secondary-text-color);
@@ -133,15 +187,31 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-dialog-footer-background: #11192a;
     --cosmos-dialog-border-color: var(--cosmos-table-border-color);
     --cosmos-dialog-backdrop-blur: 6px;
+    --cosmos-dialog-width-account: 520px;
+    --cosmos-dialog-width-user: 760px;
+    --cosmos-dialog-width-confirm: 640px;
+    --cosmos-dialog-chrome-padding: 18px var(--cosmos-space-2xl);
+    --cosmos-dialog-content-padding: var(--cosmos-space-2xl);
+    --cosmos-dialog-compact-padding: var(--cosmos-space-l);
     --cosmos-account-footer-background: var(--cosmos-dialog-footer-background);
+
+    /* Meldungsgrößen bleiben unabhängig von Panel-/Buttonmaßen einstellbar. */
+    --cosmos-notification-icon-size: 36px;
+    --cosmos-notification-title-font-size: var(--cosmos-font-size-title);
+    --cosmos-notification-message-font-size: var(--cosmos-font-size-m);
 
     /* 8. BADGES UND PANELICONS
      * Standardmäßig aus der Palette abgeleitet; für diese Komponente hier separat änderbar. */
-    --cosmos-badge-font-size: 12px;
-    --cosmos-badge-font-weight: 400;
+    --cosmos-badge-font-size: var(--cosmos-font-size-s);
+    --cosmos-badge-font-weight: var(--cosmos-font-weight-regular);
     --cosmos-badge-border: var(--lumo-primary-color-50pct);
     --cosmos-badge-background: var(--lumo-primary-color-10pct);
     --cosmos-badge-color: var(--lumo-primary-text-color);
+    --cosmos-panel-icon-size: 42px;
+    --cosmos-panel-icon-symbol-size: 22px;
+    --cosmos-panel-icon-radius: 10px;
+    --cosmos-panel-icon-size-small: 36px;
+    --cosmos-panel-icon-symbol-size-small: var(--cosmos-icon-size-m);
     --cosmos-panel-icon-border: var(--lumo-primary-color-50pct);
     --cosmos-panel-icon-background: var(--lumo-primary-color-10pct);
     --cosmos-panel-icon-color: var(--lumo-primary-text-color);

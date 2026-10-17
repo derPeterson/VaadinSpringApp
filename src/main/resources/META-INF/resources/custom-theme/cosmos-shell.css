@@ -41,9 +41,9 @@ vaadin-app-layout.cosmos-app-shell {
     box-sizing: border-box;
     min-height: var(--cosmos-topbar-height);
     background: var(--cosmos-topbar-background);
-    border-bottom: 1px solid var(--cosmos-topbar-border-color);
+    border-bottom: var(--cosmos-border-width) solid var(--cosmos-topbar-border-color);
     box-shadow: var(--cosmos-topbar-shadow);
-    padding: 0 24px 0 20px;
+    padding: 0 var(--cosmos-space-2xl) 0 var(--cosmos-space-xl);
     gap: 18px;
 }
 
@@ -54,7 +54,7 @@ vaadin-app-layout.cosmos-app-shell {
     width: auto;
     flex: 1 1 auto;
     min-width: 0;
-    gap: 12px;
+    gap: var(--cosmos-space-m);
 }
 
 .cosmos-topbar-logo {
@@ -69,7 +69,7 @@ vaadin-app-layout.cosmos-app-shell {
     min-width: 0;
     color: var(--cosmos-topbar-text-color);
     font-size: 21px;
-    font-weight: 700;
+    font-weight: var(--cosmos-font-weight-bold);
     letter-spacing: -.6px;
     overflow-wrap: anywhere;
 }
@@ -99,8 +99,8 @@ vaadin-app-layout.cosmos-app-shell {
 
 /* Die beiden Symbole sitzen mit einem gleichmäßigen Rand in ihrer Buttonfläche. */
 .cosmos-topbar .cosmos-topbar-shortcut > vaadin-icon {
-    width: 24px;
-    height: 24px;
+    width: var(--cosmos-icon-size-l);
+    height: var(--cosmos-icon-size-l);
     padding: 0;
 }
 
@@ -138,7 +138,7 @@ vaadin-app-layout.cosmos-app-shell {
 
 .cosmos-avatar-initials {
     font-size: calc(var(--cosmos-avatar-size) / 3);
-    font-weight: 600;
+    font-weight: var(--cosmos-font-weight-semibold);
     line-height: 1;
 }
 
@@ -174,7 +174,7 @@ vaadin-app-layout.cosmos-app-shell {
     align-items: center;
     min-height: calc(100vh - var(--cosmos-topbar-height));
     min-height: calc(100dvh - var(--cosmos-topbar-height));
-    padding: 48px clamp(20px, 5vw, 76px) 24px;
+    padding: 48px clamp(20px, 5vw, 76px) var(--cosmos-space-2xl);
     gap: 40px;
 }
 
@@ -188,8 +188,8 @@ vaadin-app-layout.cosmos-app-shell {
     display: block;
     margin-bottom: 10px;
     color: var(--lumo-primary-text-color);
-    font-size: 11px;
-    font-weight: 600;
+    font-size: var(--cosmos-font-size-xs);
+    font-weight: var(--cosmos-font-weight-semibold);
     letter-spacing: .2em;
     text-transform: uppercase;
 }
@@ -199,7 +199,7 @@ vaadin-app-layout.cosmos-app-shell {
     margin: 0 0 6px;
     color: var(--lumo-header-text-color);
     font-size: clamp(28px, 4vw, 36px);
-    font-weight: 650;
+    font-weight: var(--cosmos-font-weight-strong);
     letter-spacing: -.04em;
     line-height: 1.25;
     overflow-wrap: anywhere;
@@ -212,7 +212,7 @@ vaadin-app-layout.cosmos-app-shell {
 .cosmos-dashboard-description {
     display: block;
     color: var(--lumo-secondary-text-color);
-    font-size: 12px;
+    font-size: var(--cosmos-font-size-s);
     line-height: 1.65;
     overflow-wrap: anywhere;
 }
@@ -227,18 +227,18 @@ vaadin-app-layout.cosmos-app-shell {
     min-width: 0;
     padding: 18px 22px 22px;
     color: var(--lumo-body-text-color);
-    font-size: 13px;
+    font-size: var(--cosmos-font-size-m);
 }
 
 .cosmos-user-menu .user-popover-header {
-    margin-bottom: 4px;
+    margin-bottom: var(--cosmos-space-xs);
 }
 
 .cosmos-user-menu .user-popover-header vaadin-button,
 .cosmos-theme vaadin-button.cosmos-overlay-close {
-    min-height: var(--lumo-size-m);
-    width: var(--lumo-size-m);
-    height: var(--lumo-size-m);
+    min-height: var(--cosmos-control-height);
+    width: var(--cosmos-control-height);
+    height: var(--cosmos-control-height);
     margin: 0;
     padding: 0;
 }
@@ -251,7 +251,7 @@ vaadin-app-layout.cosmos-app-shell {
 
 .cosmos-user-menu .user-popover-body {
     padding-block: 0;
-    gap: 12px;
+    gap: var(--cosmos-space-m);
     min-width: 0;
 }
 
@@ -266,14 +266,14 @@ vaadin-app-layout.cosmos-app-shell {
 }
 
 .cosmos-user-menu vaadin-select {
-    --vaadin-select-overlay-width: min(320px, calc(100vw - 32px));
-    --vaadin-input-field-value-font-size: 13px;
-    --vaadin-input-field-value-font-weight: 600;
+    --vaadin-select-overlay-width: var(--cosmos-status-overlay-width);
+    --vaadin-input-field-value-font-size: var(--cosmos-font-size-m);
+    --vaadin-input-field-value-font-weight: var(--cosmos-font-weight-semibold);
 }
 
 .cosmos-user-menu vaadin-select::part(input-field) {
-    min-height: var(--lumo-size-m);
-    border: 1px solid var(--cosmos-input-border);
+    min-height: var(--cosmos-control-height);
+    border: var(--cosmos-border-width) solid var(--cosmos-input-border);
     border-radius: var(--lumo-border-radius-l);
     background: var(--cosmos-input-background);
 }
@@ -289,7 +289,7 @@ vaadin-app-layout.cosmos-app-shell {
 .cosmos-app-shell .cosmos-footer {
     align-self: center;
     margin-top: auto;
-    padding-top: 16px;
+    padding-top: var(--cosmos-space-l);
 }
 
 /* 3. OVERLAYS UND AUSWAHLFELDER
@@ -303,31 +303,31 @@ vaadin-menu-bar-submenu[theme~="cosmos"]::part(overlay),
 .cosmos-theme vaadin-date-picker::part(overlay),
 .cosmos-theme vaadin-time-picker::part(overlay) {
     max-width: calc(100vw - 24px);
-    border: 1px solid var(--cosmos-overlay-border);
+    border: var(--cosmos-border-width) solid var(--cosmos-overlay-border);
     border-radius: var(--cosmos-overlay-radius);
     background: var(--cosmos-overlay-background);
     box-shadow: var(--cosmos-overlay-shadow);
-    -webkit-backdrop-filter: blur(17px);
-    backdrop-filter: blur(17px);
+    -webkit-backdrop-filter: blur(var(--cosmos-surface-blur));
+    backdrop-filter: blur(var(--cosmos-surface-blur));
 }
 
 /* ComboBox- und Uhrzeit-Einträge passen zur 13px-Schrift der Eingabefelder. */
 
 .cosmos-theme :is(vaadin-combo-box, vaadin-time-picker)::part(content) {
-    --lumo-font-size-m: 13px;
-    font-size: 13px;
+    --lumo-font-size-m: var(--cosmos-font-size-m);
+    font-size: var(--cosmos-font-size-m);
 }
 
 /* Kalendergrößen relativ zur 13px-Basis, auf ganze Pixel gerundet.
  * Die explizite Wochentaggröße wird auch für die Scroller-Höhenberechnung verwendet. */
 
 .cosmos-theme vaadin-date-picker::part(content) {
-    --lumo-font-size-m: 13px;
-    --lumo-font-size-s: 11px;
-    --vaadin-date-picker-month-header-font-size: 15px;
+    --lumo-font-size-m: var(--cosmos-font-size-m);
+    --lumo-font-size-s: var(--cosmos-font-size-xs);
+    --vaadin-date-picker-month-header-font-size: var(--cosmos-font-size-xl);
     --vaadin-date-picker-weekday-font-size: 10px;
     --vaadin-date-picker-week-number-font-size: 10px;
-    font-size: 13px;
+    font-size: var(--cosmos-font-size-m);
 }
 
 vaadin-popover[theme~="cosmos"]::part(content) {
@@ -368,7 +368,7 @@ vaadin-select[theme~="cosmos"] vaadin-select-item {
 @media (max-width: 380px) {
 
     .cosmos-user-menu {
-        padding-inline: 16px;
+        padding-inline: var(--cosmos-space-l);
     }
 }
 
@@ -390,7 +390,7 @@ vaadin-select[theme~="cosmos"] vaadin-select-item {
 @media (max-width: 700px) {
 
     .cosmos-app-main {
-        padding: 28px 16px 20px;
+        padding: 28px var(--cosmos-space-l) var(--cosmos-space-xl);
         gap: 28px;
     }
 }
