@@ -164,8 +164,8 @@ class SessionAuthorityPersistenceTest {
     "vaadin,/VAADIN/uidl",
     "remember,/VAADIN/uidl"
   })
-  void roleRevocationInvalidatesEveryExistingPrincipalSourceBeforeFurtherActions(
-      String source, String path) throws Exception {
+  void roleRevocationRefreshesEveryExistingPrincipalSourceWithoutLogout(String source, String path)
+      throws Exception {
     var first = request(source, path);
     var firstSession = (MockHttpSession) first.getSession(false);
     var second = new MockHttpServletRequest("POST", path);
@@ -180,13 +180,23 @@ class SessionAuthorityPersistenceTest {
     var response = new MockHttpServletResponse();
     var action = mock(FilterChain.class);
     filter.doFilter(first, response, action);
-    assertEquals(401, response.getStatus());
-    verifyNoInteractions(action);
-    assertTrue(firstSession.isInvalid());
-    assertNull(SecurityContextHolder.getContext().getAuthentication());
-    assertNull(vaadinPrincipal.get());
-    assertTrue(security.getAuthenticatedUser(second).isEmpty());
-    assertTrue(secondSession.isInvalid());
+    assertEquals(200, response.getStatus());
+    verify(action).doFilter(first, response);
+    assertFalse(firstSession.isInvalid());
+    assertEquals(
+        List.of("ROLE_USER"),
+        SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+            .map(Object::toString)
+            .toList());
+    assertEquals(
+        List.of("ROLE_USER"),
+        vaadinPrincipal.get().getAuthorities().stream().map(Object::toString).toList());
+    assertEquals(
+        List.of("ROLE_USER"),
+        security.getAuthenticatedUser(second).orElseThrow().getAuthorities().stream()
+            .map(Object::toString)
+            .toList());
+    assertFalse(secondSession.isInvalid());
     var current =
         new CustomUserDetailsService(repository).loadUserByUsername(oldPrincipal.getUsername());
     assertEquals(
@@ -204,12 +214,19 @@ class SessionAuthorityPersistenceTest {
     "vaadin,ROLE_GUEST",
     "remember,ROLE_GUEST"
   })
-  void replacingNewRolesAlsoRevokesEveryExistingPrincipalSource(String source, RoleType roleType) {
+  void replacingRolesRefreshesEveryExistingPrincipalSource(String source, RoleType roleType) {
     transaction.executeWithoutResult(
         tx -> {
           var role = RoleEntity.builder().name(roleType).build();
           entityManager.persist(role);
           form().setRoleEntities(new ArrayList<>(List.of(role)));
+          // Der Entzug testet die Sitzung; der neue Mindestschutz bleibt separat wirksam.
+          if (roleType == RoleType.ROLE_SUPERADMIN)
+            repository
+                .findByEmail("survivor@example.com")
+                .orElseThrow()
+                .getRoleEntities()
+                .add(role);
         });
     oldPrincipal =
         new CustomUserDetailsService(repository).loadUserByUsername("victim@example.com");
@@ -217,9 +234,16 @@ class SessionAuthorityPersistenceTest {
     var oldSession = (MockHttpSession) request.getSession(false);
     assertTrue(security.getAuthenticatedUser(request).isPresent());
     revoke();
-    assertTrue(security.getAuthenticatedUser(request).isEmpty());
-    assertTrue(oldSession.isInvalid());
-    assertNull(SecurityContextHolder.getContext().getAuthentication());
+    assertEquals(
+        List.of("ROLE_USER"),
+        security.getAuthenticatedUser(request).orElseThrow().getAuthorities().stream()
+            .map(Object::toString)
+            .toList());
+    assertFalse(oldSession.isInvalid());
+    if (source.equals("remember"))
+      assertInstanceOf(
+          RememberMeAuthenticationToken.class,
+          SecurityContextHolder.getContext().getAuthentication());
   }
 
   @Test
@@ -265,7 +289,11 @@ class SessionAuthorityPersistenceTest {
           assertTrue(stale.hasRole(RoleType.ROLE_ADMIN));
           independent.executeWithoutResult(other -> revoke());
           assertTrue(stale.hasRole(RoleType.ROLE_ADMIN));
-          assertTrue(security.getAuthenticatedUser(request).isEmpty());
+          assertEquals(
+              List.of("ROLE_USER"),
+              security.getAuthenticatedUser(request).orElseThrow().getAuthorities().stream()
+                  .map(Object::toString)
+                  .toList());
         });
   }
 

@@ -543,7 +543,9 @@ class VerificationServicePersistenceTest {
               repository,
               new UserStatusBroadcaster(),
               mock(PasswordEncoder.class),
-              mock(UserProfileBroadcaster.class));
+              mock(UserProfileBroadcaster.class),
+              mock(de.derpeterson.app.security.AdminRolePolicy.class),
+              mock(org.springframework.context.ApplicationEventPublisher.class));
       return new RegistrationService(users, verification, probes.config());
     }
 

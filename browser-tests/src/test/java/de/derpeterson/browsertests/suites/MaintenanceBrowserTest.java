@@ -32,7 +32,7 @@ public class MaintenanceBrowserTest extends BrowserFixture {
   void prepare() {
     var login = new LoginPage(page);
     login.open();
-    login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+    login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
     new UserMenu(page).selectTestLanguage();
     settings = new ConfigurationPage(page);
     settings.open(AdminConfigGroup.SECURITY);

@@ -27,13 +27,37 @@ public class PushSecurityInterceptor
 
   @Override
   public void requestStart(VaadinRequest request, VaadinResponse response) {
+    if (response == null)
+      org.springframework.security.core.context.SecurityContextHolder.clearContext();
     if (request instanceof VaadinServletRequest servletRequest
         && !securityService.hasCurrentSessionPrivileges(servletRequest.getHttpServletRequest())) {
       // requestStart is also called by PushHandler for an existing socket,
       // before resolving the UI or executing any ServerRpcHandler callback.
       // PushHandler calls requestStart outside its requestEnd finally.
       CurrentInstance.clearAll();
+      org.springframework.security.core.context.SecurityContextHolder.clearContext();
       throw new AccessDeniedException("Session privileges have changed");
+    }
+    if (response == null && request instanceof VaadinServletRequest servletRequest) {
+      var http = servletRequest.getHttpServletRequest();
+      var auth = securityService.refreshSessionAuthentication(http.getSession(false));
+      if (auth.isPresent()
+          && MaintenanceTransport.withUi(
+              http,
+              ui -> {
+                if (!RoleUiState.changed(ui, auth.get())) return false;
+                ui.access(
+                    () -> {
+                      RoleUiState.refresh(ui, auth.get(), http.getContextPath());
+                      if (ui.getPushConfiguration().getPushMode().isEnabled()) ui.push();
+                    });
+                return true;
+              },
+              false)) {
+        CurrentInstance.clearAll();
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        throw new AccessDeniedException("Old role UI requires refresh");
+      }
     }
     // HTTP is handled by MaintenanceHttpFilter. Only existing WebSocket messages
     // enter here without a response; blocking document/bootstrap requests would loop login.
@@ -43,6 +67,7 @@ public class PushSecurityInterceptor
         && !MaintenanceTransport.allowedUi(servletRequest.getHttpServletRequest())) {
       MaintenanceTransport.redirectUi(servletRequest.getHttpServletRequest());
       CurrentInstance.clearAll();
+      org.springframework.security.core.context.SecurityContextHolder.clearContext();
       throw new MaintenanceAccessException("UI actions paused for maintenance");
     }
   }
@@ -54,5 +79,8 @@ public class PushSecurityInterceptor
   }
 
   @Override
-  public void requestEnd(VaadinRequest request, VaadinResponse response, VaadinSession session) {}
+  public void requestEnd(VaadinRequest request, VaadinResponse response, VaadinSession session) {
+    if (response == null)
+      org.springframework.security.core.context.SecurityContextHolder.clearContext();
+  }
 }

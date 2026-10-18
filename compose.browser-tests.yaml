@@ -13,9 +13,11 @@ services:
       APP_CFG_BASE_URL: "http://127.0.0.1:${BROWSER_TEST_APP_PORT:-18081}/"
       APP_SECURITY_EXPOSE_H2_CONSOLE: "false"
       # Invented accounts only in the disposable browser-test database.
-      APP_BOOTSTRAP_DEFAULT_ADMIN_ENABLED: "true"
-      APP_BOOTSTRAP_DEFAULT_ADMIN_EMAIL: "browser-admin@example.test"
-      APP_BOOTSTRAP_DEFAULT_ADMIN_PASSWORD: "BrowserAdmin1!"
+      APP_BOOTSTRAP_ENABLED: "true"
+      APP_BOOTSTRAP_ADMINS_0_EMAIL: "browser-admin@example.test"
+      APP_BOOTSTRAP_ADMINS_0_PASSWORD: "BrowserAdmin1!"
+      APP_BOOTSTRAP_SUPERADMINS_0_EMAIL: "browser-superadmin@example.test"
+      APP_BOOTSTRAP_SUPERADMINS_0_PASSWORD: "BrowserSuperadmin1!"
 
   mailpit:
     extends:

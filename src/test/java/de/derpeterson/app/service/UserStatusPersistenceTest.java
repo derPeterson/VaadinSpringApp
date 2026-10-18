@@ -586,10 +586,10 @@ class UserStatusPersistenceTest {
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
-  void adminFormUpdateRetainsLastAdminProtection(boolean disable) {
+  void adminFormUpdateRetainsLastSuperadminProtection(boolean disable) {
     transaction.executeWithoutResult(
         status -> {
-          RoleEntity role = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
+          RoleEntity role = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
           entityManager.persist(role);
           repository.findById(userId).orElseThrow().setRoleEntities(new ArrayList<>(List.of(role)));
         });
@@ -603,9 +603,9 @@ class UserStatusPersistenceTest {
         IllegalStateException.class,
         () -> service.updateAdminUser(edited, edited.getVersion(), ""));
     assertTrue(stored().isEnabled());
-    assertTrue(form().hasRole(RoleType.ROLE_ADMIN));
+    assertTrue(form().hasRole(RoleType.ROLE_SUPERADMIN));
     service.updateUserStatus(stored(), UserStatus.AVAILABLE, true);
-    assertTrue(form().hasRole(RoleType.ROLE_ADMIN));
+    assertTrue(form().hasRole(RoleType.ROLE_SUPERADMIN));
   }
 
   @Test
@@ -615,7 +615,8 @@ class UserStatusPersistenceTest {
     assertTrue(users.getFirst().hasRole(RoleType.ROLE_USER));
     assertTrue(service.canDeleteUser(users.getFirst()));
     assertFalse(
-        service.wouldRemoveLastEnabledAdmin(userId, false, users.getFirst().getRoleEntities()));
+        service.wouldRemoveLastEnabledSuperadmin(
+            userId, false, users.getFirst().getRoleEntities()));
   }
 
   @ParameterizedTest

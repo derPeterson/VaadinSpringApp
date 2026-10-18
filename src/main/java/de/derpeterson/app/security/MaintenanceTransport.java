@@ -44,7 +44,7 @@ public final class MaintenanceTransport {
         false);
   }
 
-  private static <T> T withUi(HttpServletRequest request, Function<UI, T> action, T fallback) {
+  static <T> T withUi(HttpServletRequest request, Function<UI, T> action, T fallback) {
     var http = request.getSession(false);
     if (http == null) return fallback;
     int id;

@@ -45,6 +45,9 @@ class CopyrightConfigurationTest {
         config,
         mock(PasswordEncoder.class),
         environment,
-        mock(RoleSchemaUpdater.class));
+        mock(RoleSchemaUpdater.class),
+        mock(de.derpeterson.app.config.UserMessageSchemaUpdater.class),
+        new BootstrapAccountsProperties(),
+        mock(org.springframework.transaction.PlatformTransactionManager.class));
   }
 }

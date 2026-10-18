@@ -3,25 +3,26 @@ package de.derpeterson.app.config;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
-import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.RoleRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.service.ConfigService;
-import java.time.LocalDate;
 import java.util.EnumMap;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Configuration
+@EnableConfigurationProperties(BootstrapAccountsProperties.class)
 @RequiredArgsConstructor
 public class DatabaseInitializer {
 
@@ -34,14 +35,9 @@ public class DatabaseInitializer {
   private final Environment environment;
   private final RoleSchemaUpdater roleSchemaUpdater;
 
-  @Value("${app.bootstrap.default-admin.enabled:false}")
-  private boolean defaultAdminEnabled;
-
-  @Value("${app.bootstrap.default-admin.email:}")
-  private String defaultAdminEmail;
-
-  @Value("${app.bootstrap.default-admin.password:}")
-  private String defaultAdminPassword;
+  private final UserMessageSchemaUpdater messageSchemaUpdater;
+  private final BootstrapAccountsProperties bootstrap;
+  private final PlatformTransactionManager transactionManager;
 
   @Bean
   public CommandLineRunner initDatabase() {
@@ -49,53 +45,49 @@ public class DatabaseInitializer {
       configService.removeRetiredEntries();
       createDefaultConfigSettings();
       roleSchemaUpdater.updateRoleColumn();
-      createDefaultRolesAndAdminUser();
+      messageSchemaUpdater.updateTypeColumn();
+      createDefaultRolesAndAccounts();
     };
   }
 
-  private void createDefaultRolesAndAdminUser() {
-    var roles = new EnumMap<RoleType, RoleEntity>(RoleType.class);
-    for (RoleType role : RoleType.values()) {
-      roles.put(
-          role,
-          roleRepository
-              .findByName(role)
-              .orElseGet(() -> roleRepository.save(RoleEntity.builder().name(role).build())));
-    }
-    logger.info("✅ Roles checked or created: {}", roles.keySet());
-
-    if (!defaultAdminEnabled) {
-      logger.info("✅ Default admin bootstrap is disabled.");
-      return;
-    }
-
-    if (defaultAdminEmail == null
-        || defaultAdminEmail.isBlank()
-        || defaultAdminPassword == null
-        || defaultAdminPassword.isBlank()) {
-      logger.warn("⚠️ Default admin bootstrap is enabled but email/password are missing.");
-      return;
-    }
-
-    if (userRepository.findByEmail(defaultAdminEmail).isPresent()) {
-      logger.info("✅ Default admin user already exists: {}", defaultAdminEmail);
-      return;
-    }
-
-    UserEntity adminUserEntity =
-        UserEntity.builder()
-            .firstName("John")
-            .lastName("Doe")
-            .password(passwordEncoder.encode(defaultAdminPassword))
-            .email(defaultAdminEmail)
-            .gender(Gender.OTHER)
-            .birthDate(LocalDate.of(1990, 1, 1))
-            .roleEntities(Set.of(roles.get(RoleType.ROLE_ADMIN), roles.get(RoleType.ROLE_USER)))
-            .enabled(true)
-            .build();
-
-    userRepository.save(adminUserEntity);
-    logger.info("✅ Default admin user created: {}", adminUserEntity.getEmail());
+  private void createDefaultRolesAndAccounts() {
+    // Vor irgendeiner Benutzeranlage alle Gruppen prüfen; Fehler nennen keine Zugangsdaten.
+    var entries = bootstrap.validatedEntries();
+    new TransactionTemplate(transactionManager)
+        .executeWithoutResult(
+            status -> {
+              var roles = new EnumMap<RoleType, RoleEntity>(RoleType.class);
+              for (var role : RoleType.values())
+                roles.put(
+                    role,
+                    roleRepository
+                        .findByName(role)
+                        .orElseGet(
+                            () -> roleRepository.save(RoleEntity.builder().name(role).build())));
+              if (!bootstrap.isEnabled()) {
+                logger.info("Bootstrap account creation is disabled.");
+                return;
+              }
+              for (var entry : entries) {
+                var account = entry.account();
+                if (userRepository.findByEmail(account.getEmail()).isPresent()) continue;
+                var user =
+                    UserEntity.builder()
+                        .firstName(account.getFirstName().strip())
+                        .lastName(account.getLastName().strip())
+                        .email(account.getEmail())
+                        .password(passwordEncoder.encode(account.getPassword()))
+                        .birthDate(account.getBirthDate())
+                        .gender(account.getGender())
+                        .preferredLocale(account.getPreferredLocale())
+                        .roleEntities(Set.of(roles.get(entry.role())))
+                        .enabled(true)
+                        .build();
+                userRepository.save(user);
+                logger.info("Bootstrap account created with role {}", entry.role());
+              }
+              userRepository.flush();
+            });
   }
 
   private void createDefaultConfigSettings() {

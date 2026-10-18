@@ -38,7 +38,7 @@ durch Tests in frischen H2-Datenbanken nicht nachgewiesen.
   nach Benutzerlöschung solche Objekte nicht weiterverwenden. Nach einem
   fehlgeschlagenen Flush/Versionkonflikt die gesamte Transaktion zurückrollen.
   Keine Wiederverwendung eines gescheiterten PersistenceContexts.
-- Zu löschende Benutzer werden wie bisher gegen den letzten aktiven Admin und
+- Zu löschende Benutzer werden wie bisher gegen den letzten aktiven Superadmin und
   optimistische Versionskonflikte geschützt. Bereits vom Mailworker an SMTP
   übergebene Nachrichten lassen sich nicht zurückrufen; es gibt keine neue
   Zustellungs-/Outboxgarantie.

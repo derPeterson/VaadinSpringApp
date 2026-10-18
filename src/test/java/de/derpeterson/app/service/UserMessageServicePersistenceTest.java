@@ -255,7 +255,8 @@ class UserMessageServicePersistenceTest {
   void freshRoleCheckRejectsOldSuperadminSessionAfterDemotion() {
     mutate(sender, u -> u.setRoleEntities(new ArrayList<>()));
     assertFalse(service.canSend(adminSession));
-    assertThrows(AccessDeniedException.class, () -> service.inbox(adminSession, false, 0, 20));
+    assertEquals(0, service.inbox(adminSession, false, 0, 20).getTotalElements());
+    assertFalse(adminSession.isInvalid());
   }
 
   @Test

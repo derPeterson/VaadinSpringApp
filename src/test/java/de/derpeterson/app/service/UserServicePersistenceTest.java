@@ -59,7 +59,7 @@ class UserServicePersistenceTest {
           repository.deleteAll();
           repository.flush();
           entityManager.createQuery("delete from RoleEntity").executeUpdate();
-          RoleEntity role = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
+          RoleEntity role = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
           entityManager.persist(role);
           UserEntity admin = newUser("admin@example.com", role, true);
           entityManager.persist(admin);
@@ -84,7 +84,7 @@ class UserServicePersistenceTest {
                   }
                 }));
 
-    assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN));
+    assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
     assertTrue(repository.findById(adminId).orElseThrow().isEnabled());
   }
 
@@ -100,11 +100,11 @@ class UserServicePersistenceTest {
                   service.saveUser(admin);
                 }));
 
-    assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN));
+    assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
   }
 
   @Test
-  void detachedLastAdminCannotBeDeletedEvenWithStalePrivileges() {
+  void detachedLastSuperadminCannotBeDeletedEvenWithStalePrivileges() {
     UserEntity stale = repository.findById(adminId).orElseThrow();
     stale.setEnabled(false);
     stale.setRoleEntities(List.of());
@@ -112,7 +112,7 @@ class UserServicePersistenceTest {
     assertThrows(IllegalStateException.class, () -> service.deleteUser(stale));
 
     assertTrue(repository.existsById(adminId));
-    assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN));
+    assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
   }
 
   @Test
@@ -129,7 +129,7 @@ class UserServicePersistenceTest {
           entityManager.persist(newUser("ordinary@example.com", ordinaryRole, true));
         });
 
-    assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN));
+    assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
   }
 
   @Test
@@ -154,7 +154,7 @@ class UserServicePersistenceTest {
         });
 
     assertFalse(repository.findById(adminId).orElseThrow().isEnabled());
-    assertEquals(List.of(otherId), repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN));
+    assertEquals(List.of(otherId), repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
   }
 
   private static UserEntity newUser(String email, RoleEntity role, boolean enabled) {
@@ -214,11 +214,21 @@ class UserServicePersistenceTest {
     }
 
     @Bean
+    de.derpeterson.app.security.AdminRolePolicy adminRolePolicy() {
+      // Diese ursprünglichen Persistenzfälle prüfen Admin-Invarianten ohne Login-Fixture.
+      // Die echte neue Policy wird separat mit vollständiger Authentifizierung geprüft.
+      return mock(de.derpeterson.app.security.AdminRolePolicy.class);
+    }
+
+    @Bean
     UserService userService(
         UserRepository repository,
         UserStatusBroadcaster broadcaster,
-        UserProfileBroadcaster profiles) {
-      return new UserService(repository, broadcaster, new BCryptPasswordEncoder(), profiles);
+        UserProfileBroadcaster profiles,
+        de.derpeterson.app.security.AdminRolePolicy policy,
+        org.springframework.context.ApplicationEventPublisher publisher) {
+      return new UserService(
+          repository, broadcaster, new BCryptPasswordEncoder(), profiles, policy, publisher);
     }
 
     @Bean
@@ -228,8 +238,10 @@ class UserServicePersistenceTest {
         org.springframework.beans.factory.ObjectProvider<
                 de.derpeterson.app.security.SessionAdmissionService>
             admissions) {
+      var remembered = mock(PersistentTokenBasedRememberMeServices.class);
+      org.mockito.Mockito.when(remembered.getKey()).thenReturn("test-key");
       return new SecurityService(
-          mock(PersistentTokenBasedRememberMeServices.class),
+          remembered,
           service,
           repository,
           new de.derpeterson.app.security.CustomUserDetailsService(repository),

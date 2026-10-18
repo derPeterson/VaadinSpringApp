@@ -46,6 +46,10 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
   @QueryHints(@QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
   Optional<RoleEntity> lockRole(@Param("role") RoleType role);
 
+  @Query("select r.name from UserEntity u join u.roleEntities r where u.id = :id")
+  @QueryHints(@QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
+  List<RoleType> findExplicitRoles(@Param("id") Long id);
+
   interface MessageTargetRow {
     Long getId();
 

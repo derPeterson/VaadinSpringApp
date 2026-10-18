@@ -165,8 +165,7 @@ class SecurityChainRegressionTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"/admin", "/VAADIN/uidl"})
-  void actualChainRejectsRestoredStaleAdminBeforeServletOrVaadinCallback(String path)
-      throws Exception {
+  void actualChainUsesFreshRolesAndKeepsTheLogin(String path) throws Exception {
     Long victimId =
         transaction.execute(
             tx -> {
@@ -200,10 +199,19 @@ class SecurityChainRegressionTest {
     var response = new MockHttpServletResponse();
     FilterChain action = mock(FilterChain.class);
     new FilterChainProxy(chain).doFilter(request, response, action);
-    assertEquals(401, response.getStatus());
-    assertTrue(session.isInvalid());
-    verifyNoInteractions(action);
-    assertNull(SecurityContextHolder.getContext().getAuthentication());
+    assertFalse(session.isInvalid());
+    if (path.equals("/admin")) {
+      assertEquals("/home?error=admin-access-denied", response.getRedirectedUrl());
+      verifyNoInteractions(action);
+    } else {
+      assertEquals(200, response.getStatus());
+      verify(action).doFilter(any(), any());
+    }
+    var refreshed =
+        (org.springframework.security.core.context.SecurityContext)
+            session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+    assertNotNull(refreshed.getAuthentication());
+    assertTrue(refreshed.getAuthentication().getAuthorities().isEmpty());
   }
 
   @ParameterizedTest

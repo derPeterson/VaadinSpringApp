@@ -78,7 +78,7 @@ class UserIdentityPersistenceTest {
           repository.deleteAll();
           repository.flush();
           entityManager.createQuery("delete from RoleEntity").executeUpdate();
-          var admin = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
+          var admin = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
           ordinary = RoleEntity.builder().name(RoleType.ROLE_USER).build();
           entityManager.persist(admin);
           entityManager.persist(ordinary);
@@ -152,7 +152,7 @@ class UserIdentityPersistenceTest {
       assertTrue(children(table, otherId) > 0);
     }
     assertTrue(repository.existsById(otherId));
-    assertEquals(1, repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN).size());
+    assertEquals(1, repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN).size());
   }
 
   @Test
@@ -179,7 +179,7 @@ class UserIdentityPersistenceTest {
   }
 
   @Test
-  void emailPreflightCannotFlushAnUnguardedPendingDemotionOfTheLastAdmin() {
+  void emailPreflightCannotFlushAnUnguardedPendingDemotionOfTheLastSuperadmin() {
     assertThrows(
         IllegalStateException.class,
         () ->
@@ -198,7 +198,7 @@ class UserIdentityPersistenceTest {
                           .findFirst()
                           .orElseThrow());
                 }));
-    assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN));
+    assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
   }
 
   @Test

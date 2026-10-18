@@ -46,7 +46,10 @@ class DatabaseInitializerRolesTest {
             mock(ConfigService.class),
             mock(PasswordEncoder.class),
             mock(Environment.class),
-            mock(RoleSchemaUpdater.class));
+            mock(RoleSchemaUpdater.class),
+            mock(de.derpeterson.app.config.UserMessageSchemaUpdater.class),
+            new BootstrapAccountsProperties(),
+            mock(org.springframework.transaction.PlatformTransactionManager.class));
     initializer.initDatabase().run();
     initializer.initDatabase().run();
     assertEquals(Set.of(RoleType.values()), stored.keySet());
@@ -68,7 +71,10 @@ class DatabaseInitializerRolesTest {
             config,
             mock(PasswordEncoder.class),
             environment,
-            mock(RoleSchemaUpdater.class));
+            mock(RoleSchemaUpdater.class),
+            mock(de.derpeterson.app.config.UserMessageSchemaUpdater.class),
+            new BootstrapAccountsProperties(),
+            mock(org.springframework.transaction.PlatformTransactionManager.class));
 
     initializer.initDatabase().run();
     initializer.initDatabase().run();
@@ -85,7 +91,7 @@ class DatabaseInitializerRolesTest {
   }
 
   @Test
-  void optionalBootstrapKeepsAdminAndUserAndNeverAssignsSuperadminOrGuest() throws Exception {
+  void optionalBootstrapCreatesOnlyTheExplicitSuperadminRole() throws Exception {
     var roles = mock(RoleRepository.class);
     var users = mock(UserRepository.class);
     when(roles.findByName(any()))
@@ -98,16 +104,22 @@ class DatabaseInitializerRolesTest {
             mock(ConfigService.class),
             mock(PasswordEncoder.class),
             mock(Environment.class),
-            mock(RoleSchemaUpdater.class));
-    ReflectionTestUtils.setField(initializer, "defaultAdminEnabled", true);
-    ReflectionTestUtils.setField(
-        initializer, "defaultAdminEmail", "isolated-bootstrap@example.test");
-    ReflectionTestUtils.setField(initializer, "defaultAdminPassword", "OnlyATestPassword!");
+            mock(RoleSchemaUpdater.class),
+            mock(de.derpeterson.app.config.UserMessageSchemaUpdater.class),
+            new BootstrapAccountsProperties(),
+            mock(org.springframework.transaction.PlatformTransactionManager.class));
+    var bootstrap = new BootstrapAccountsProperties();
+    bootstrap.setEnabled(true);
+    var account = new BootstrapAccountsProperties.Account();
+    account.setEmail("isolated-bootstrap@example.test");
+    account.setPassword("OnlyATestPassword!");
+    bootstrap.setSuperadmins(java.util.List.of(account));
+    ReflectionTestUtils.setField(initializer, "bootstrap", bootstrap);
     initializer.initDatabase().run();
     var created = ArgumentCaptor.forClass(UserEntity.class);
     verify(users).save(created.capture());
     assertEquals(
-        Set.of(RoleType.ROLE_ADMIN, RoleType.ROLE_USER),
+        Set.of(RoleType.ROLE_SUPERADMIN),
         created.getValue().getRoleEntities().stream()
             .map(RoleEntity::getName)
             .collect(Collectors.toSet()));

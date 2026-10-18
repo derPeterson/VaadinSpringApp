@@ -116,6 +116,13 @@ class PushRpcSecurityPersistenceTest {
     vaadin = mock(VaadinSession.class);
     when(vaadin.getService()).thenReturn(service);
     when(vaadin.hasLock()).thenReturn(true);
+    when(vaadin.getLockInstance()).thenReturn(new java.util.concurrent.locks.ReentrantLock());
+    when(vaadin.access(any()))
+        .thenAnswer(
+            call -> {
+              ((com.vaadin.flow.server.Command) call.getArgument(0)).execute();
+              return java.util.concurrent.CompletableFuture.completedFuture(null);
+            });
     when(vaadin.getErrorHandler())
         .thenReturn(
             event -> {
@@ -128,6 +135,8 @@ class PushRpcSecurityPersistenceTest {
               return vaadin;
             });
     ui = new UI();
+    ui.getInternals()
+        .setRouterTargetChain(java.util.List.of(mock(de.derpeterson.app.views.HomeView.class)));
     ui.getInternals().setSession(vaadin);
     when(service.findUI(any()))
         .thenAnswer(
@@ -153,6 +162,9 @@ class PushRpcSecurityPersistenceTest {
     ui.getInternals().setPushConnection(connection);
     request = mock(AtmosphereRequest.class);
     httpSession = new MockHttpSession();
+    httpSession.setAttribute("test.vaadin", vaadin);
+    when(vaadin.getUIById(0)).thenReturn(ui);
+    when(request.getParameter("v-uiId")).thenReturn("0");
     when(request.getSession(false)).thenReturn(httpSession);
     resource = mock(AtmosphereResource.class);
     when(resource.getRequest()).thenReturn(request);
@@ -274,7 +286,7 @@ class PushRpcSecurityPersistenceTest {
     assertThrows(AccessDeniedException.class, () -> receive(ui.getCsrfToken()));
     assertEquals(1, calls.get());
     assertEquals("Mutation 1", form(targetId).getFirstName());
-    assertTrue(httpSession.isInvalid());
+    assertEquals(kind.equals("disable") || kind.equals("delete"), httpSession.isInvalid());
     assertNull(SecurityContextHolder.getContext().getAuthentication());
     assertNull(VaadinService.getCurrentRequest());
     assertNull(UI.getCurrent());

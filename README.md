@@ -25,6 +25,11 @@ Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administ
 > Superadmin-Versand implementiert; Browserabnahme und Produktionsbuild bleiben offen.
 > [Vertrag, Ergebnisse und Einführung](docs/user-messages.md).
 
+> Rollen/Bootstrap mit Schutz des letzten aktiven Superadmins vom 18.10.2026: 1667/1667 Anwendungs-JUnit-Tests und 47/47
+> Browser-Helfer erfolgreich. Neue Anmeldung bei Rollenänderung entfällt; Oberfläche wird
+> automatisch neu aufgebaut. Browserabnahme/Produktionsbuild offen.
+> [Einführung und neue Benutzerlisten](docs/role-updates-and-bootstrap.md).
+
 ## Funktionen
 
 - Registrierung mit zunächst deaktiviertem Konto und Aktivierung per E-Mail-Token.
@@ -70,10 +75,14 @@ Beide Rollen sind in Benutzerformular und Rollenfilter verfügbar (EN: Superadmi
 Gespeicherte Rollenzuweisungen und automatisch gewährte Berechtigungen bleiben getrennt:
 Superadmin gewährt bei der Anmeldung zusätzlich `ROLE_ADMIN`, ohne eine zweite
 Rollenzuweisung zu speichern. Rollenfilter zeigen die ausdrücklich zugewiesene Rolle.
-Der Schutz des letzten aktiven Administrators berücksichtigt Admin und Superadmin gemeinsam;
-ein Konto mit beiden Rollen zählt einmal. Bestehende Konten werden nicht umgestuft,
-Registrierungen erhalten weiterhin Benutzer, und das optionale Bootstrap-Konto behält
-Administrator und Benutzer. Fehlende Rollen werden beim Anwendungsstart ergänzt.
+Der letzte aktive Superadmin kann weder gelöscht oder deaktiviert werden noch seine
+Superadmin-Rolle verlieren. Für normale Admins gibt es keinen Mindestbestand. Bestehende Konten werden nicht umgestuft,
+Registrierungen erhalten weiterhin Benutzer. Die optionale Initialisierung verwendet
+je eine Liste für Superadmin, Admin, User und Guest; jedes Konto erhält genau diese eine
+gespeicherte Rolle. Nur Superadmins dürfen Superadmin-Rollen und -Konten verwalten.
+Rollenänderungen erhalten bestehende Anmeldungen, aktualisieren die Oberfläche und erzeugen
+eine persönliche Mitteilung. [Konfiguration, Verhalten und Prüfung](docs/role-updates-and-bootstrap.md).
+Fehlende Rollen werden beim Anwendungsstart ergänzt.
 Eine bestehende H2-Enum-Spalte wird zuvor gezielt um die Rollennamen erweitert;
 vorhandene Rollen-IDs und Kontozuweisungen bleiben erhalten.
 
@@ -392,7 +401,7 @@ Die folgenden Java-Pfade liegen unter `src/main/java/de/derpeterson/app/`:
 | `views/`, `views/admin/` | Kontoseiten und Adminbereich `/admin`; Routen in `config/AppRouteConstants.java` |
 | `security/` | Authentifizierung, Sitzungen, Remember-me und Zugriffsschutz |
 | `service/`, `repository/`, `model/` | Anwendungslogik und Speicherung von Benutzern, Rollen, Tokens, Einstellungen und Mailwarteschlange |
-| `config/DatabaseInitializer.java`, `service/ConfigService.java` | Initiale Rollen und Konfiguration, optionales erstes Adminkonto, datenbankgestützte Einstellungen |
+| `config/DatabaseInitializer.java`, `service/ConfigService.java` | Initiale Rollen und Konfiguration, optionale Benutzerlisten mit genau einer Rolle pro Konto, datenbankgestützte Einstellungen |
 | `scheduler/`, `websocket/UserStatusBroadcaster.java` | Automatische Statuswechsel und Verteilung von Statusänderungen an die UI |
 
 ## Einrichtung und Konfiguration
@@ -402,8 +411,8 @@ Alle Befehle im Projektverzeichnis ausführen. Zentrale Laufzeitkonfiguration: `
 | Konfigurationsname | Bedeutung |
 | --- | --- |
 | `PORT` | HTTP-Port; Vorgabe `8080` |
-| `APP_BOOTSTRAP_DEFAULT_ADMIN_ENABLED` | Optionales Adminkonto anlegen; Vorgabe `false` |
-| `APP_BOOTSTRAP_DEFAULT_ADMIN_EMAIL`, `APP_BOOTSTRAP_DEFAULT_ADMIN_PASSWORD` | Für die aktivierte Adminanlage beide erforderlich; eine vorhandene E-Mail wird übersprungen |
+| `APP_BOOTSTRAP_ENABLED` | Optionale Benutzerlisten bei der Initialisierung verarbeiten; Vorgabe `false` |
+| `app.bootstrap.superadmins[n]`, `.admins[n]`, `.users[n]`, `.guests[n]` | Listen mit E-Mail/Passwort und optionalen Profildaten; je Konto genau die Listenrolle, vorhandene E-Mails unverändert. [Beispiel](docs/bootstrap-accounts.example.properties) |
 | `APP_SECURITY_EXPOSE_H2_CONSOLE` | H2-Konsole unter `/h2` freigeben; Vorgabe `false` |
 | `APP_CFG_REMEMBER_ME_SECRET_KEY` | Eigener geheimer Schlüssel statt des eingebauten Platzhalters |
 | `APP_CFG_EMAIL_FROM`, `APP_CFG_EMAIL_ADMIN` | Absender und Empfänger für Adminbenachrichtigungen |

@@ -192,7 +192,12 @@ public class UserAccessBrowserTest extends BrowserFixture {
         **Erwartet:** Superadmin erbt Adminrechte ohne zusätzliche gespeicherte Administratorrolle.
         """)
   void superadminAloneHasAdminNavigationAndCanSaveItsOwnAccount() {
-    AdminUsersPage users = admin();
+    var login = new LoginPage(page);
+    login.open();
+    login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    login.assertAdminSignedIn(BrowserTestAccounts.SUPERADMIN_EMAIL);
+    AdminUsersPage users = new AdminUsersPage(page);
     String email = email("superadmin");
     users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
     AdminUserDialog form = users.openEdit(email);

@@ -234,7 +234,7 @@ class AdminUserErrorNotificationTest {
                   "INSERT secret SQL",
                   "uk_users_email"));
       case "admin" ->
-          new IllegalStateException("Der letzte aktive Administrator muss erhalten bleiben.");
+          new IllegalStateException("Der letzte aktive Superadmin muss erhalten bleiben.");
       case "argument" -> new IllegalArgumentException("Invalid password");
       case "unknown-argument" -> new IllegalArgumentException("secret configuration argument");
       case "integrity" ->
@@ -257,7 +257,7 @@ class AdminUserErrorNotificationTest {
     LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
     RuntimeException failure = failure(kind);
     if (operation.equals("delete")) doThrow(failure).when(users).deleteUser(any());
-    else if (operation.equals("create")) doThrow(failure).when(users).saveUser(any());
+    else if (operation.equals("create")) doThrow(failure).when(users).createAdminUser(any(), any());
     else doThrow(failure).when(users).updateAdminUser(any(), any(), any());
     submit(operation, user(operation.equals("create")));
     String expected =
@@ -269,8 +269,8 @@ class AdminUserErrorNotificationTest {
                   : texts.getBaseValidationEmailExistsMessage();
           case "admin" ->
               operation.equals("delete")
-                  ? texts.getAdminUsersErrorDeleteLastAdmin()
-                  : texts.getAdminUsersErrorLastActiveAdmin();
+                  ? texts.getAdminUsersErrorDeleteLastSuperadmin()
+                  : texts.getAdminUsersErrorLastActiveSuperadmin();
           case "argument" ->
               operation.equals("delete")
                   ? texts.getAdminUsersErrorDeleteFailed()
@@ -303,8 +303,8 @@ class AdminUserErrorNotificationTest {
                   : texts.getBaseValidationEmailExistsMessage();
           case "admin" ->
               operation.equals("delete")
-                  ? texts.getAdminUsersErrorDeleteLastAdmin()
-                  : texts.getAdminUsersErrorLastActiveAdmin();
+                  ? texts.getAdminUsersErrorDeleteLastSuperadmin()
+                  : texts.getAdminUsersErrorLastActiveSuperadmin();
           case "argument" ->
               operation.equals("delete")
                   ? texts.getAdminUsersErrorDeleteFailed()
@@ -317,7 +317,7 @@ class AdminUserErrorNotificationTest {
     assertNotEquals(expected, translated);
     assertNotification(translated);
     if (operation.equals("delete")) verify(users).deleteUser(any());
-    else if (operation.equals("create")) verify(users).saveUser(any());
+    else if (operation.equals("create")) verify(users).createAdminUser(any(), any());
     else verify(users).updateAdminUser(any(), eq(3L), any());
   }
 
@@ -358,7 +358,7 @@ class AdminUserErrorNotificationTest {
     if (guard.equals("remove-admin"))
       user.setRoleEntities(List.of(RoleEntity.builder().name(RoleType.ROLE_USER).build()));
     if (guard.equals("last-save"))
-      when(users.wouldRemoveLastEnabledAdmin(any(), anyBoolean(), any())).thenReturn(true);
+      when(users.wouldRemoveLastEnabledSuperadmin(any(), anyBoolean(), any())).thenReturn(true);
     if (guard.endsWith("delete")) ReflectionTestUtils.invokeMethod(section, "deleteUser", user);
     else submit("edit", user);
     String expected = guardText(guard);
@@ -373,11 +373,11 @@ class AdminUserErrorNotificationTest {
   private String guardText(String guard) {
     return switch (guard) {
       case "own-delete" -> texts.getAdminUsersErrorDeleteOwnUser();
-      case "last-delete" -> texts.getAdminUsersErrorDeleteLastAdmin();
+      case "last-delete" -> texts.getAdminUsersErrorDeleteLastSuperadmin();
       case "role" -> texts.getAdminUsersErrorRoleMissing();
       case "disable" -> texts.getAdminUsersErrorDisableOwnUser();
       case "remove-admin" -> texts.getAdminUsersErrorRemoveOwnAdminRole();
-      default -> texts.getAdminUsersErrorLastActiveAdmin();
+      default -> texts.getAdminUsersErrorLastActiveSuperadmin();
     };
   }
 
@@ -422,7 +422,7 @@ class AdminUserErrorNotificationTest {
       when(users.canDeleteUser(any())).thenThrow(failure);
       ReflectionTestUtils.invokeMethod(section, "deleteUser", user(false));
     } else {
-      when(users.wouldRemoveLastEnabledAdmin(any(), anyBoolean(), any())).thenThrow(failure);
+      when(users.wouldRemoveLastEnabledSuperadmin(any(), anyBoolean(), any())).thenThrow(failure);
       submit("edit", user(false));
     }
     assertNotification(
@@ -520,7 +520,7 @@ class AdminUserErrorNotificationTest {
     assertTrue(email.isInvalid());
     assertFalse(save.isEnabled());
     verify(users, never()).updatePassword(any(), any());
-    verify(users, never()).saveUser(any());
+    verify(users, never()).createAdminUser(any(), any());
     verify(users, never()).updateAdminUser(any(), any(), any());
     if (technical)
       assertTrue(
@@ -568,7 +568,9 @@ class AdminUserErrorNotificationTest {
     assertTrue(save.isEnabled());
     save.click();
     if (create)
-      verify(users).saveUser(argThat(edited -> edited.getEmail().equals("available@example.com")));
+      verify(users)
+          .createAdminUser(
+              argThat(edited -> edited.getEmail().equals("available@example.com")), any());
     else
       verify(users)
           .updateAdminUser(
@@ -603,7 +605,8 @@ class AdminUserErrorNotificationTest {
     assertTrue(save.isEnabled());
     save.click();
     verify(users)
-        .saveUser(argThat(edited -> !edited.isEnabled() && !edited.isVerificationPending()));
+        .createAdminUser(
+            argThat(edited -> !edited.isEnabled() && !edited.isVerificationPending()), any());
     assertFalse(dialog.isOpened());
   }
 
@@ -679,7 +682,7 @@ class AdminUserErrorNotificationTest {
     assertTrue(email.isInvalid());
     assertEquals(texts.getAdminUsersErrorSaveFailed(), email.getErrorMessage());
     verify(users, never()).updatePassword(any(), any());
-    verify(users, never()).saveUser(any());
+    verify(users, never()).createAdminUser(any(), any());
     verify(users, never()).updateAdminUser(any(), any(), any());
   }
 }

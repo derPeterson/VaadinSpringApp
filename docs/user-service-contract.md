@@ -11,23 +11,23 @@ nur Komponenten/Notifications und delegiert seine bisherigen Prüfmethoden.
 
 | Methode | Voraussetzungen / Verhalten |
 | --- | --- |
-| `save`, `saveUser` | Nicht-null Entity; Vor-/Nachname nicht blank, gültige Mail, Geschlecht, Geburtsdatum strikt vor heute, nicht-null Rollen mit nicht-null Enumname. Leere Rollen erlaubt. Bereits **kodiertes**, nicht-blank Passwort, nicht-null Locale/Status. Mail wird kanonisiert. Flush/letzter-Admin-Prüfung in derselben Transaktion. |
+| `save`, `saveUser` | Nicht-null Entity; Vor-/Nachname nicht blank, gültige Mail, Geschlecht, Geburtsdatum strikt vor heute, nicht-null Rollen mit nicht-null Enumname. Leere Rollen erlaubt. Bereits **kodiertes**, nicht-blank Passwort, nicht-null Locale/Status. Mail wird kanonisiert. Flush/letzter-Superadmin-Prüfung in derselben Transaktion. |
 | `updateAdminUser` | Entity mit ID und beim Formularöffnen fixierter Version; dieselben editierbaren Feldregeln. Null/blank Rohpasswort lässt den Hash unverändert; sonst bestehende Passwortregel. Nicht editierbare Status-/Aktivitäts-/Locale-Felder bleiben erhalten. |
 | `updatePassword` | Nicht-null Entity und Rohpasswort nach unveränderter Regel (trim-basiert: mindestens 8 Zeichen, Großbuchstabe, Sonderzeichen). Kodiert das unveränderte Rohpasswort; speichert **nicht** selbst. |
 | `updateUserLocale` | Gültige Mail und nicht-null Locale, keine neue Whitelist. Fehlendes Konto: keine Änderung. |
 | `updateUserStatus` | Entity mit ID, nicht-null Status; lädt gespeicherten Benutzer statt Snapshot zu mergen. Statusmeldung best-effort erst nach Commit. |
 | `updateLastActivity` | Nicht-null ID; gezielte Aktivitätsänderung ohne Snapshotmerge. |
 | `updateScheduledStatus` | Nicht-null ID/Cutoff, Ziel nur ABSENT/AVAILABLE; eigene Transaktion, Sperre und Recheck. Fehlende/ungeeignete Kandidaten: keine Änderung. |
-| `deleteUser` | Entity mit ID; Versions-/letzter-Admin-Schutz. Benutzer, Tokens und Mailqueue atomar gelöscht (migrierte FKs vorausgesetzt). |
+| `deleteUser` | Entity mit ID; Versions-/letzter-Superadmin-Schutz. Benutzer, Tokens und Mailqueue atomar gelöscht (migrierte FKs vorausgesetzt). |
 | `findByEmail`, `emailExistsForOtherUser` | Gemeinsame E-Mail-Kanonisierung. Exists schließt optional eigene ID aus; null/blank liefert false ohne Query. Nur Preflight, die DB entscheidet parallele Dubletten. |
 | `findAllUsers` | Vollständige Benutzerabfrage; keine Eingabe. |
 | `canDeleteUser` | Unverbindlicher Preflight; null/fehlende ID liefert false. |
-| `wouldRemoveLastEnabledAdmin` | Nicht-null Rollen mit gültigen Elementen; null ID bedeutet Neuanlage. Preflight ersetzt keine Mutationsprüfung. |
+| `wouldRemoveLastEnabledSuperadmin` | Nicht-null Rollen mit gültigen Elementen; null ID bedeutet Neuanlage. Preflight ersetzt keine Mutationsprüfung. |
 
 ## Exceptions und Transaktionen
 
 - `IllegalArgumentException`: ungültige oben genannte Eingabe.
-- `IllegalStateException`: letzter aktiver Admin würde entfernt, oder Benutzer
+- `IllegalStateException`: letzter aktiver Superadmin würde entfernt, oder Benutzer
   für Status-/Aktivitätsupdate fehlt.
 - `OptimisticLockingFailureException`: veralteter/gelöschter Adminsnapshot oder
   Versionskonflikt beim Speichern/Löschen.
@@ -69,3 +69,8 @@ Umschalten zugelassene laufende Vorgänge dürfen ansonsten enden.
 Die allgemeinen `UserService`-Methoden bleiben für Admin- und Hintergrundarbeit
 verwendbar; sie bekommen keinen pauschalen Thread-/Benutzerzwang. Schutzschichten,
 Tokenverhalten und Wiederfreigabe: [Wartungsvertrag](maintenance-mode-contract.md).
+
+Seit 18.10.2026 schützt der Mindestbestand ausschließlich aktive Superadmins. Normale
+Admins dürfen vollständig entfallen. Auch eine Herabstufung Superadmin → Admin ist beim
+letzten aktiven Superadmin gesperrt. Datenbanksperre, Vor-/Nachprüfung und vollständiger
+Rollback gelten weiterhin; ein anfänglicher Bestand ohne Superadmin wird nicht erzwungen.

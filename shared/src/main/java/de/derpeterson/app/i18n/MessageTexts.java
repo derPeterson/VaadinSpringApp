@@ -1372,8 +1372,8 @@ public class MessageTexts {
     return getTranslation("admin.users.error.remove_own_admin_role");
   }
 
-  public String getAdminUsersErrorLastActiveAdmin() {
-    return getTranslation("admin.users.error.last_active_admin");
+  public String getAdminUsersErrorLastActiveSuperadmin() {
+    return getTranslation("admin.users.error.last_active_superadmin");
   }
 
   public String getAdminUsersErrorSaveFailed() {
@@ -1384,8 +1384,8 @@ public class MessageTexts {
     return getTranslation("admin.users.error.delete_own_user");
   }
 
-  public String getAdminUsersErrorDeleteLastAdmin() {
-    return getTranslation("admin.users.error.delete_last_admin");
+  public String getAdminUsersErrorDeleteLastSuperadmin() {
+    return getTranslation("admin.users.error.delete_last_superadmin");
   }
 
   public String getAdminUsersErrorDeleteFailed() {
@@ -1982,5 +1982,17 @@ public class MessageTexts {
 
   public String getMessagesRequestConflict() {
     return getTranslation("messages.requestConflict");
+  }
+
+  public String getMessagesRolesChangedTitle() {
+    return getTranslation("messages.rolesChangedTitle");
+  }
+
+  public String getMessagesRolesChangedBody() {
+    return getTranslation("messages.rolesChangedBody");
+  }
+
+  public String getRolesPermissionDenied() {
+    return getTranslation("roles.permissionDenied");
   }
 }

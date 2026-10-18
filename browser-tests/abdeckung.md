@@ -1,5 +1,39 @@
 # Browserabdeckung und offene Punkte
 
+
+## Rollen ohne Neuanmeldung und Bootstrap-Listen (18.10.2026)
+
+Ausgangscommit `5d5ddc5`, Branch `feature/user-messages`. Der letzte vollständige
+Anwendungs-JUnit-Lauf enthält **1667/1667** erfolgreiche Fälle, 0 Fehler/Fehlschläge/Skips.
+54 neue Fälle plus angepasste bestehende Sicherheitsregressionen. Dazu **47/47 Browser-Helfer**
+erfolgreich, ebenfalls ohne Fehler oder Skips. Browserquellen kompiliert; **kein Browser gestartet**.
+
+Frische JaCoCo-Daten des vollständigen Laufs: **8643/10120 (85,41 %) Zeilen**,
+**2486/3387 (73,40 %) Zweige**, 209 ausführbare Anwendungs-Java-Klassen.
+Shared, Tests und Bibliotheken sind nicht im Nenner; keine CSS-/JS-/Browser-Coverage.
+Shared-Build, App-/Testcompile und Spotless erfolgreich. Produktionsbuild steht aus.
+
+Echte isolierte H2-/HTTP-/Push-Prüfungen sichern frische Rollen, erhaltene Sitzungen,
+gestoppte alte RPCs, weiter wirksame Sperre/Löschung/Widerruf, Superadmin-Vergabeschutz,
+Rollenmitteilungen/Rollback, atomare Bootstrap-Listen und Erweiterung des alten H2-Mitteilungs-
+Enums. Die ursprünglichen Unit-Fixtures für „anonym“ und Kontowechsel wurden auf tatsächlich
+getrennte HTTP-Sitzungen korrigiert; die ursprünglichen Sicherheitsassertionen sind erhalten.
+
+Der Browser-Compose-Override wurde auf getrennte erfundene Admin-/Superadmin-Listen
+umgestellt. Die Superadmin-Vergabe in USER-07F und den Wartungsrollen-Fixtures verwendet
+nun den dafür berechtigten Superadmin. **Diese Browserfälle wurden hier nicht ausgeführt**;
+frühere Browserzahlen gelten ausschließlich für ihre früheren Stände.
+
+[Konfiguration, Verhalten, Einführung und offene Browserprüfungen](../docs/role-updates-and-bootstrap.md).
+Vollständiger Neustart erforderlich; bestehende lokale Bootstrap-Einstellungen bei Bedarf
+in die neuen Listen übertragen. Die echte `.env` wurde nicht gelesen/geändert.
+
+Der Mindestbestand schützt jetzt ausschließlich aktive Superadmins: Löschen,
+Deaktivieren und Entziehen der Superadmin-Rolle sind beim letzten aktiven Konto blockiert,
+auch wenn normale Admins verbleiben. Normale Admins haben keinen Mindestbestand.
+14 zusätzliche JUnits sowie angepasste Parallelitäts-/Batch-/Dirty-Entity-/DE/EN-Fehlerfälle
+sichern diese Erweiterung. Die Java-Prüfung deckt keine sichtbare Browserabnahme ab.
+
 ## Mitteilungsfunktion: Java-Nachweis, Browserabnahme offen (18.10.2026)
 
 Feature-Branch `feature/user-messages`, Ausgangspunkt `7dedccc`. Persönliche Inbox,

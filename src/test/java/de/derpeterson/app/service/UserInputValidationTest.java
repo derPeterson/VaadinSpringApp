@@ -34,7 +34,14 @@ class UserInputValidationTest {
     repository = mock(UserRepository.class);
     encoder = mock(PasswordEncoder.class);
     broadcaster = mock(UserStatusBroadcaster.class);
-    service = new UserService(repository, broadcaster, encoder, mock(UserProfileBroadcaster.class));
+    service =
+        new UserService(
+            repository,
+            broadcaster,
+            encoder,
+            mock(UserProfileBroadcaster.class),
+            mock(de.derpeterson.app.security.AdminRolePolicy.class),
+            mock(org.springframework.context.ApplicationEventPublisher.class));
   }
 
   private UserEntity user() {

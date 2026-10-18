@@ -8,9 +8,9 @@ app.security.expose-h2-console=false
 spring.h2.console.enabled=false
 
 # Nur fuer die erste Adminanlage aktivieren; beide leeren Werte lokal ausfuellen.
-app.bootstrap.default-admin.enabled=true
-app.bootstrap.default-admin.email=manual-admin@example.test
-app.bootstrap.default-admin.password=
+app.bootstrap.enabled=true
+app.bootstrap.admins[0].email=manual-admin@example.test
+app.bootstrap.admins[0].password=
 app.config.defaults.rememberMe.secret.key=
 
 # Erstbefuellung: vorhandene DB-Werte gehen diesen Vorgaben vor.

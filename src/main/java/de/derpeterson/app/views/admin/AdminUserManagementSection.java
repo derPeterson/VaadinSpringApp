@@ -544,7 +544,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       }
 
       if (!userService.canDeleteUser(user)) {
-        showError(messageProperties::getAdminUsersErrorDeleteLastAdmin);
+        showError(messageProperties::getAdminUsersErrorDeleteLastSuperadmin);
         return;
       }
     } catch (RuntimeException exception) {
@@ -780,6 +780,8 @@ public class AdminUserManagementSection extends VerticalLayout {
     CheckboxGroup<RoleType> rolesGroup = new CheckboxGroup<>();
     rolesGroup.setLabel(messageProperties.getAdminUsersFieldRoles());
     rolesGroup.setItems(RoleType.values());
+    rolesGroup.setItemEnabledProvider(
+        role -> role != RoleType.ROLE_SUPERADMIN || userService.canManageSuperadmins());
     rolesGroup.setItemLabelGenerator(this::formatRoleType);
     rolesGroup.setRequired(true);
     rolesGroup.setHelperText(messageProperties.getAdminUsersRolesHelper());
@@ -984,9 +986,9 @@ public class AdminUserManagementSection extends VerticalLayout {
               return;
             }
 
-            if (userService.wouldRemoveLastEnabledAdmin(
+            if (userService.wouldRemoveLastEnabledSuperadmin(
                 formData.getId(), formData.isEnabled(), roleEntities)) {
-              showError(messageProperties::getAdminUsersErrorLastActiveAdmin);
+              showError(messageProperties::getAdminUsersErrorLastActiveSuperadmin);
               return;
             }
 
@@ -1006,8 +1008,7 @@ public class AdminUserManagementSection extends VerticalLayout {
             if (editMode) {
               userService.updateAdminUser(edited, expectedVersion, formData.getPassword());
             } else {
-              userService.updatePassword(edited, formData.getPassword());
-              userService.saveUser(edited);
+              userService.createAdminUser(edited, formData.getPassword());
             }
             dialog.close();
             refreshGrid();
@@ -1141,11 +1142,14 @@ public class AdminUserManagementSection extends VerticalLayout {
     Button editButton = new Button(VaadinIcon.EDIT.create(), e -> openDialog(user));
     editButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
     editButton.setTooltipText(messageProperties.getAdminUsersEdit());
+    boolean protectedAccount =
+        user.hasRole(RoleType.ROLE_SUPERADMIN) && !userService.canManageSuperadmins();
+    editButton.setEnabled(!protectedAccount);
 
     Button deleteButton = new Button(VaadinIcon.TRASH.create(), e -> deleteUser(user));
     deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
     deleteButton.setTooltipText(messageProperties.getAdminUsersDelete());
-    deleteButton.setEnabled(!isCurrentUser(user));
+    deleteButton.setEnabled(!isCurrentUser(user) && !protectedAccount);
 
     HorizontalLayout actions = new HorizontalLayout(editButton, deleteButton);
     actions.setPadding(false);
@@ -1288,19 +1292,20 @@ public class AdminUserManagementSection extends VerticalLayout {
 
   private void showMutationError(RuntimeException exception, boolean deleting) {
     log.error("Benutzer {} fehlgeschlagen", deleting ? "löschen" : "speichern", exception);
-    if (exception instanceof OptimisticLockingFailureException) {
+    if (exception instanceof org.springframework.security.access.AccessDeniedException) {
+      showError(messageProperties::getRolesPermissionDenied);
+    } else if (exception instanceof OptimisticLockingFailureException) {
       showError(messageProperties::getBaseUserUpdateConflict);
     } else if (!deleting && EmailConflict.isDuplicate(exception)) {
       showError(messageProperties::getBaseValidationEmailExistsMessage);
     } else if (exception instanceof IllegalStateException
-        && "Der letzte aktive Administrator muss erhalten bleiben."
-            .equals(exception.getMessage())) {
-      // Legacy service contract has no typed last-admin exception. Match
+        && "Der letzte aktive Superadmin muss erhalten bleiben.".equals(exception.getMessage())) {
+      // Legacy service contract has no typed last-superadmin exception. Match
       // only its exact business sentinel, never arbitrary IllegalStateExceptions.
       showError(
           deleting
-              ? messageProperties::getAdminUsersErrorDeleteLastAdmin
-              : messageProperties::getAdminUsersErrorLastActiveAdmin);
+              ? messageProperties::getAdminUsersErrorDeleteLastSuperadmin
+              : messageProperties::getAdminUsersErrorLastActiveSuperadmin);
     } else if (!deleting
         && exception instanceof IllegalArgumentException
         && Set.of(

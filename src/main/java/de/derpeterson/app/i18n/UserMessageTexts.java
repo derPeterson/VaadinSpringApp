@@ -16,6 +16,7 @@ public final class UserMessageTexts {
       case PASSWORD_CHANGED -> texts.getMessagesPasswordChangedTitle();
       case PASSWORD_RESET -> texts.getMessagesPasswordResetTitle();
       case EMAIL_CHANGED -> texts.getMessagesEmailChangedTitle();
+      case ROLES_CHANGED -> texts.getMessagesRolesChangedTitle();
     };
   }
 
@@ -25,6 +26,7 @@ public final class UserMessageTexts {
       case PASSWORD_CHANGED -> texts.getMessagesPasswordChangedBody();
       case PASSWORD_RESET -> texts.getMessagesPasswordResetBody();
       case EMAIL_CHANGED -> texts.getMessagesEmailChangedBody();
+      case ROLES_CHANGED -> texts.getMessagesRolesChangedBody();
     };
   }
 

@@ -5,6 +5,11 @@ Der erste Umfang ist implementiert. Browserabnahme und Produktionsbuild stehen n
 Die zuvor abgestimmte [Planung](mitteilungsfunktion-plan.md) bleibt als ursprüngliche
 Entscheidungsgrundlage erhalten; dieses Dokument beschreibt den tatsächlichen Vertrag.
 
+Erweiterung vom selben Tag: [Rollenänderungen ohne Neuanmeldung](role-updates-and-bootstrap.md)
+ergänzen den automatischen Typ `ROLES_CHANGED`, aktualisierte Zugriffssynchronisierung und
+die gezielte Erweiterung bestehender H2-Enum-Spalten. Die Nachweise des ersten Umfangs unten
+beziehen sich auf den Stand vor dieser Erweiterung.
+
 ## Bedienung
 
 - Angemeldet: Die vorhandene Glocke zeigt die Anzahl ungelesener Mitteilungen,
@@ -61,6 +66,7 @@ individuellen Leselisten, nachträgliche Bearbeitung oder Rücknahme der Sendung
 | --- | --- | --- |
 | Passwortwechsel im Konto | `PASSWORD_CHANGED` | UI-Rückmeldung und bestehende Sicherheitsmail bleiben erhalten |
 | Passwortreset über gültigen Link | `PASSWORD_RESET` | Bestehender Resetablauf bleibt erhalten; keine zusätzliche neue Reset-Bestätigungsmail eingeführt |
+| Rollenmenge erfolgreich geändert | `ROLES_CHANGED` | Konto bleibt angemeldet; keine zusätzliche E-Mail |
 | Bestätigte E-Mail-Änderung | `EMAIL_CHANGED` | Bestehende Hinweise an alte und neue Adresse bleiben erhalten |
 
 Eine bloß angeforderte E-Mail-Änderung erzeugt noch keinen Erfolgseintrag. Verwendete,

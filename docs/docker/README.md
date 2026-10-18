@@ -89,8 +89,8 @@ Variable Testwerte stehen unter `services.app.environment` in [compose.yaml](../
 | `APP_CFG_SERVICE_NAME` | Anzeigename `VaadinSpringApp (Docker-Test)` |
 | `APP_CFG_BASE_URL` | `http://localhost:18080/`; Basis für Links in E-Mails |
 | `APP_SECURITY_EXPOSE_H2_CONSOLE` | Schaltet H2-Konsole und deren Zugriffsfreigabe gemeinsam |
-| `APP_BOOTSTRAP_DEFAULT_ADMIN_ENABLED` | Aktiviert die Anlage des ersten Testadmins |
-| `APP_BOOTSTRAP_DEFAULT_ADMIN_EMAIL` / `APP_BOOTSTRAP_DEFAULT_ADMIN_PASSWORD` | Zugangsdaten für die erstmalige Adminanlage |
+| `APP_BOOTSTRAP_ENABLED` | Aktiviert die optionalen Benutzerlisten |
+| `APP_BOOTSTRAP_ADMINS_0_EMAIL` / `APP_BOOTSTRAP_ADMINS_0_PASSWORD` | Erster Docker-Testadmin, ausschließlich Admin; weitere Rollenlisten/Indizes siehe [Bootstrap-Vertrag](../role-updates-and-bootstrap.md) |
 | `APP_CFG_EMAIL_FROM` / `APP_CFG_EMAIL_ADMIN` | Test-Absender und Empfänger für Adminmails |
 | `APP_CFG_MAIL_HOST` / `APP_CFG_MAIL_PORT` | `mailpit` / `1025` |
 | `APP_CFG_MAIL_USERNAME` / `APP_CFG_MAIL_PASSWORD` | Leer; Mailpit benötigt hier keine Anmeldung |

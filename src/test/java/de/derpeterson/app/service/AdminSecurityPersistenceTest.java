@@ -34,6 +34,7 @@ class AdminSecurityPersistenceTest {
   private Long firstId;
   private Long secondId;
   private Long ordinaryId;
+  private Long adminId;
 
   @BeforeEach
   void seed() {
@@ -42,42 +43,33 @@ class AdminSecurityPersistenceTest {
           repository.deleteAll();
           repository.flush();
           entityManager.createQuery("delete from RoleEntity").executeUpdate();
-          var admin = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
+          var admin = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
           var ordinary = RoleEntity.builder().name(RoleType.ROLE_USER).build();
           entityManager.persist(admin);
           entityManager.persist(ordinary);
+          var adminRole = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
+          entityManager.persist(adminRole);
+          adminId = create("ordinary-admin@example.com", adminRole);
           firstId = create("first-admin@example.com", admin);
           secondId = create("second-admin@example.com", admin);
           ordinaryId = create("ordinary@example.com", ordinary);
         });
   }
 
-  private void assignSuperadmin(boolean bothAccounts, boolean keepAdminAssignment) {
+  private void makeFirstAdmin() {
     transaction.executeWithoutResult(
-        tx -> {
-          var role = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
-          entityManager.persist(role);
-          var first = form(firstId);
-          if (keepAdminAssignment) first.getRoleEntities().add(role);
-          else first.setRoleEntities(new ArrayList<>(List.of(role)));
-          if (bothAccounts) form(secondId).setRoleEntities(new ArrayList<>(List.of(role)));
-        });
+        tx -> form(firstId).setRoleEntities(new ArrayList<>(form(adminId).getRoleEntities())));
   }
 
   private List<Long> administratorIds() {
-    return java.util.stream.Stream.concat(
-            repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN).stream(),
-            repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN).stream())
-        .distinct()
-        .sorted()
-        .toList();
+    return repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"disable", "role", "form", "delete", "mixed"})
-  void parallelMixedAdminAndSuperadminMutationsPreserveAnAdministrator(String mutation)
+  void parallelMixedAdminAndSuperadminMutationsProtectOnlyTheSuperadmin(String mutation)
       throws Exception {
-    assignSuperadmin(false, false);
+    makeFirstAdmin();
     var barrier = new CyclicBarrier(2);
     try (var workers = Executors.newFixedThreadPool(2)) {
       var first =
@@ -86,7 +78,8 @@ class AdminSecurityPersistenceTest {
       var second =
           workers.submit(
               () -> compete(secondId, mutation.equals("mixed") ? "form" : mutation, barrier));
-      assertNotEquals(first.get(10, TimeUnit.SECONDS), second.get(10, TimeUnit.SECONDS));
+      assertTrue(first.get(10, TimeUnit.SECONDS), "Ordinary admin may be removed");
+      assertFalse(second.get(10, TimeUnit.SECONDS), "Last superadmin must remain");
     }
     assertEquals(1, administratorIds().size());
   }
@@ -94,16 +87,19 @@ class AdminSecurityPersistenceTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void lastSuperadminCannotBeRemovedIncludingWhenItAlsoHasAdmin(boolean keepAdminAssignment) {
-    assignSuperadmin(false, keepAdminAssignment);
+    if (keepAdminAssignment)
+      transaction.executeWithoutResult(
+          tx -> form(firstId).getRoleEntities().addAll(form(adminId).getRoleEntities()));
     service.deleteUser(form(secondId));
     assertEquals(List.of(firstId), administratorIds());
     assertFalse(service.canDeleteUser(form(firstId)));
     assertTrue(
-        service.wouldRemoveLastEnabledAdmin(firstId, false, form(firstId).getRoleEntities()));
+        service.wouldRemoveLastEnabledSuperadmin(firstId, false, form(firstId).getRoleEntities()));
     assertTrue(
-        service.wouldRemoveLastEnabledAdmin(firstId, true, form(ordinaryId).getRoleEntities()));
+        service.wouldRemoveLastEnabledSuperadmin(
+            firstId, true, form(ordinaryId).getRoleEntities()));
     assertFalse(
-        service.wouldRemoveLastEnabledAdmin(firstId, true, form(firstId).getRoleEntities()));
+        service.wouldRemoveLastEnabledSuperadmin(firstId, true, form(firstId).getRoleEntities()));
     assertThrows(IllegalStateException.class, () -> service.deleteUser(form(firstId)));
     assertThrows(IllegalStateException.class, () -> change(form(firstId), "disable"));
     assertThrows(IllegalStateException.class, () -> change(form(firstId), "role"));
@@ -111,33 +107,25 @@ class AdminSecurityPersistenceTest {
   }
 
   @Test
-  void soleAdminCanBeReplacedBySuperadminAndBackWithoutLosingAccess() {
-    assignSuperadmin(false, false);
+  void soleSuperadminCannotBeDowngradedEvenIfItRetainsAdminAndAnotherAdminExists() {
     service.deleteUser(form(secondId));
-    transaction.executeWithoutResult(
-        tx -> {
-          var admin =
-              entityManager
-                  .createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
-                  .setParameter("role", RoleType.ROLE_ADMIN)
-                  .getSingleResult();
-          var edited = form(firstId);
-          edited.setRoleEntities(new ArrayList<>(List.of(admin)));
-          service.updateAdminUser(edited, edited.getVersion(), "");
-        });
-    assertTrue(form(firstId).hasRole(RoleType.ROLE_ADMIN));
-    transaction.executeWithoutResult(
-        tx -> {
-          var superadmin =
-              entityManager
-                  .createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
-                  .setParameter("role", RoleType.ROLE_SUPERADMIN)
-                  .getSingleResult();
-          var edited = form(firstId);
-          edited.setRoleEntities(new ArrayList<>(List.of(superadmin)));
-          service.updateAdminUser(edited, edited.getVersion(), "");
-        });
+    var edited = form(firstId);
+    edited.setRoleEntities(new ArrayList<>(form(adminId).getRoleEntities()));
+    assertTrue(service.wouldRemoveLastEnabledSuperadmin(firstId, true, edited.getRoleEntities()));
+    assertThrows(
+        IllegalStateException.class,
+        () -> service.updateAdminUser(edited, edited.getVersion(), ""));
     assertTrue(form(firstId).hasRole(RoleType.ROLE_SUPERADMIN));
+    assertTrue(form(adminId).hasRole(RoleType.ROLE_ADMIN));
+  }
+
+  @Test
+  void disabledSuperadminDoesNotAllowRemovingTheLastActiveSuperadmin() {
+    transaction.executeWithoutResult(tx -> form(secondId).setEnabled(false));
+    assertFalse(service.canDeleteUser(form(firstId)));
+    assertTrue(service.canDeleteUser(form(secondId)));
+    assertThrows(IllegalStateException.class, () -> service.deleteUser(form(firstId)));
+    service.deleteUser(form(secondId));
     assertEquals(List.of(firstId), administratorIds());
   }
 
@@ -167,7 +155,7 @@ class AdminSecurityPersistenceTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"disable", "role", "form", "delete", "mixed"})
-  void parallelMutationsCanNeverRemoveBothAdmins(String mutation) throws Exception {
+  void parallelMutationsCanNeverRemoveBothSuperadmins(String mutation) throws Exception {
     var readBarrier = new CyclicBarrier(2);
     try (var workers = Executors.newFixedThreadPool(2)) {
       var first =
@@ -183,7 +171,7 @@ class AdminSecurityPersistenceTest {
           secondCommitted,
           "Exactly one removal must commit; the other must reject");
     }
-    assertEquals(1, repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN).size());
+    assertEquals(1, repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN).size());
     assertTrue(repository.existsById(ordinaryId));
   }
 
@@ -192,10 +180,10 @@ class AdminSecurityPersistenceTest {
       transaction.executeWithoutResult(
           tx -> {
             UserEntity candidate = form(id);
-            // Both preflights see two admins; only the locked mutation is
-            // authoritative once the competing request has committed.
-            assertTrue(service.canDeleteUser(candidate));
-            assertFalse(service.wouldRemoveLastEnabledAdmin(id, false, List.of()));
+            // Preflight bleibt unverbindlich; die gesperrte Mutation prüft den aktuellen Bestand.
+            assertEquals(
+                !service.canDeleteUser(candidate),
+                service.wouldRemoveLastEnabledSuperadmin(id, false, List.of()));
             try {
               barrier.await(5, TimeUnit.SECONDS);
             } catch (Exception exception) {
@@ -205,7 +193,7 @@ class AdminSecurityPersistenceTest {
           });
       return true;
     } catch (IllegalStateException rejection) {
-      assertTrue(rejection.getMessage().contains("letzte aktive Administrator"));
+      assertTrue(rejection.getMessage().contains("letzte aktive Superadmin"));
       return false;
     }
   }
@@ -239,11 +227,11 @@ class AdminSecurityPersistenceTest {
                 tx -> {
                   change(form(firstId), mutation);
                   assertFalse(service.canDeleteUser(form(secondId)));
-                  assertTrue(service.wouldRemoveLastEnabledAdmin(secondId, false, List.of()));
+                  assertTrue(service.wouldRemoveLastEnabledSuperadmin(secondId, false, List.of()));
                   change(form(secondId), mutation);
                 }));
     assertEquals(
-        List.of(firstId, secondId), repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN));
+        List.of(firstId, secondId), repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
   }
 
   @ParameterizedTest
@@ -266,7 +254,7 @@ class AdminSecurityPersistenceTest {
                           .findFirst()
                           .orElseThrow());
                 }));
-    assertEquals(2, repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN).size());
+    assertEquals(2, repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN).size());
   }
 
   @Test
@@ -279,7 +267,8 @@ class AdminSecurityPersistenceTest {
           change(form(firstId), "disable");
           change(form(secondId), "delete");
         });
-    assertEquals(List.of(ordinaryId), repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN));
+    assertEquals(
+        List.of(ordinaryId), repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
   }
 
   @Test
@@ -289,15 +278,15 @@ class AdminSecurityPersistenceTest {
     staleAdmin.setEnabled(false);
     staleAdmin.setRoleEntities(List.of());
     assertFalse(service.canDeleteUser(staleAdmin));
-    assertTrue(service.wouldRemoveLastEnabledAdmin(firstId, false, List.of()));
+    assertTrue(service.wouldRemoveLastEnabledSuperadmin(firstId, false, List.of()));
     assertThrows(IllegalStateException.class, () -> service.deleteUser(staleAdmin));
     assertThrows(IllegalStateException.class, () -> service.save(staleAdmin));
     UserEntity ordinary = form(ordinaryId);
     ordinary.setRoleEntities(form(firstId).getRoleEntities());
     assertTrue(service.canDeleteUser(ordinary));
-    assertFalse(service.wouldRemoveLastEnabledAdmin(ordinaryId, false, List.of()));
+    assertFalse(service.wouldRemoveLastEnabledSuperadmin(ordinaryId, false, List.of()));
     service.deleteUser(ordinary);
-    assertEquals(List.of(firstId), repository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN));
+    assertEquals(List.of(firstId), repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
   }
 
   @Test
@@ -306,7 +295,8 @@ class AdminSecurityPersistenceTest {
     transaction.executeWithoutResult(
         tx -> repository.findAll().forEach(user -> user.setEnabled(false)));
     UserEntity ordinary = form(ordinaryId);
-    assertFalse(service.wouldRemoveLastEnabledAdmin(ordinaryId, false, ordinary.getRoleEntities()));
+    assertFalse(
+        service.wouldRemoveLastEnabledSuperadmin(ordinaryId, false, ordinary.getRoleEntities()));
     ordinary.setFirstName("Updated");
     service.updateAdminUser(ordinary, ordinary.getVersion(), "");
     UserEntity created =
@@ -320,7 +310,7 @@ class AdminSecurityPersistenceTest {
             .preferredLocale(Locale.ENGLISH)
             .roleEntities(ordinary.getRoleEntities())
             .build();
-    assertFalse(service.wouldRemoveLastEnabledAdmin(null, false, created.getRoleEntities()));
+    assertFalse(service.wouldRemoveLastEnabledSuperadmin(null, false, created.getRoleEntities()));
     service.saveUser(created);
     assertTrue(repository.findByEmail("new@example.com").isPresent());
     assertEquals("Updated", form(ordinaryId).getFirstName());

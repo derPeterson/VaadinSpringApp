@@ -19,9 +19,9 @@ services:
       APP_CFG_BASE_URL: "http://localhost:18080/"
       # Controls both application access and the H2 web console.
       APP_SECURITY_EXPOSE_H2_CONSOLE: "true"
-      APP_BOOTSTRAP_DEFAULT_ADMIN_ENABLED: "true"
-      APP_BOOTSTRAP_DEFAULT_ADMIN_EMAIL: admin@example.test
-      APP_BOOTSTRAP_DEFAULT_ADMIN_PASSWORD: "Password1!"
+      APP_BOOTSTRAP_ENABLED: "true"
+      APP_BOOTSTRAP_ADMINS_0_EMAIL: admin@example.test
+      APP_BOOTSTRAP_ADMINS_0_PASSWORD: "Password1!"
       APP_CFG_REMEMBER_ME_SECRET_KEY: local-docker-test-key-not-for-production
       APP_CFG_EMAIL_FROM: no-reply@example.test
       APP_CFG_EMAIL_ADMIN: admin@example.test

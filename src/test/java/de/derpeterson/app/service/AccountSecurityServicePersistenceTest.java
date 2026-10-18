@@ -580,11 +580,12 @@ class AccountSecurityServicePersistenceTest {
     requestChange("new@example.test");
     var raw = linkToken();
     SecurityContextHolder.clearContext();
+    var anonymous = new MockHttpServletRequest();
     assertThrows(
         AccessDeniedException.class,
         () ->
             service.changePassword(
-                request, new PasswordChange("Old-secret!", "New-secret!", "New-secret!")));
+                anonymous, new PasswordChange("Old-secret!", "New-secret!", "New-secret!")));
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     try {
       assertThrows(MaintenanceAccessException.class, () -> service.confirm(raw));
@@ -600,6 +601,8 @@ class AccountSecurityServicePersistenceTest {
     requestChange("target@example.test");
     var first = linkToken();
     var secondAccount = users.saveAndFlush(newUser("second@example.test"));
+    request = new MockHttpServletRequest();
+    registry.registerNewSession(request.getSession().getId(), secondAccount.getEmail());
     authenticate(secondAccount);
     requestChange("target@example.test");
     var second = linkToken();

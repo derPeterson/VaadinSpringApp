@@ -5,6 +5,11 @@ Den aktuellen Prüfstand, offene Fehler und die Zuordnung der ursprünglichen
 manuellen Fälle findest du ausschließlich in [Abdeckung und offene Punkte](abdeckung.md).
 Ein vorhandener Testfall bedeutet noch nicht, dass sein Ablauf erfolgreich geprüft ist.
 
+Aktuelle Bootstrap-Listen: Der isolierte Compose-Override enthält einen gewöhnlichen
+Admin und einen getrennten Superadmin. Nur Fälle, die Superadmin vergeben müssen, verwenden
+das zweite Konto. Die Quellen wurden angepasst/kompiliert, aber noch nicht erneut im Browser
+ausgeführt. [Rollen-/Bootstrap-Vertrag](../docs/role-updates-and-bootstrap.md).
+
 ## Starten
 
 Voraussetzungen: Java 25, Docker Desktop mit Linux-Containern und Docker Compose

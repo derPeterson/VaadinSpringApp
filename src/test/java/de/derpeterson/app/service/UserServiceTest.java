@@ -47,7 +47,9 @@ class UserServiceTest {
             userRepository,
             userStatusBroadcaster,
             passwordEncoder,
-            mock(UserProfileBroadcaster.class));
+            mock(UserProfileBroadcaster.class),
+            mock(de.derpeterson.app.security.AdminRolePolicy.class),
+            mock(org.springframework.context.ApplicationEventPublisher.class));
   }
 
   @Test
@@ -179,7 +181,7 @@ class UserServiceTest {
   }
 
   @Nested
-  class MutationAdminProtection {
+  class MutationSuperadminProtection {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void nullSaveStillRaisesAnArgumentError(boolean useSaveUser) {
@@ -194,9 +196,10 @@ class UserServiceTest {
     }
 
     @Test
-    void deletionRejectsTheLastStoredAdminEvenIfTheSuppliedUserLooksOrdinary() {
+    void deletionRejectsTheLastStoredSuperadminEvenIfTheSuppliedUserLooksOrdinary() {
       UserEntity staleUser = user(1000L, false, RoleType.ROLE_USER);
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1000L));
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
+          .thenReturn(List.of(1000L));
 
       assertThrows(IllegalStateException.class, () -> userService.deleteUser(staleUser));
 
@@ -205,33 +208,35 @@ class UserServiceTest {
     }
 
     @Test
-    void deletionRejectsTheLastEnabledAdminWithoutAPreliminaryUiCheck() {
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1L));
+    void deletionRejectsTheLastEnabledSuperadminWithoutAPreliminaryUiCheck() {
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
+          .thenReturn(List.of(1L));
 
       assertThrows(
           IllegalStateException.class,
-          () -> userService.deleteUser(user(1L, true, RoleType.ROLE_ADMIN)));
+          () -> userService.deleteUser(user(1L, true, RoleType.ROLE_SUPERADMIN)));
 
       verify(userRepository, never()).delete(any());
     }
 
     @Test
     void deletionAllowsAnAdminIfAnotherEnabledAdminRemains() {
-      UserEntity admin = user(1L, true, RoleType.ROLE_ADMIN);
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN))
+      UserEntity admin = user(1L, true, RoleType.ROLE_SUPERADMIN);
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
           .thenReturn(List.of(1L, 2L));
 
       userService.deleteUser(admin);
 
       var order = inOrder(userRepository);
-      order.verify(userRepository).findEnabledUserIdsByRole(RoleType.ROLE_ADMIN);
+      order.verify(userRepository).findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN);
       order.verify(userRepository).delete(same(admin));
     }
 
     @Test
     void deletionAllowsADisabledAdminWhenTheStoredEnabledAdminIsSomeoneElse() {
-      UserEntity disabledAdmin = user(1L, false, RoleType.ROLE_ADMIN);
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(2L));
+      UserEntity disabledAdmin = user(1L, false, RoleType.ROLE_SUPERADMIN);
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
+          .thenReturn(List.of(2L));
 
       userService.deleteUser(disabledAdmin);
 
@@ -240,9 +245,10 @@ class UserServiceTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void bothSaveMethodsRejectDisablingTheLastStoredAdmin(boolean useSaveUser) {
-      UserEntity edited = user(1L, false, RoleType.ROLE_ADMIN);
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1L));
+    void bothSaveMethodsRejectDisablingTheLastStoredSuperadmin(boolean useSaveUser) {
+      UserEntity edited = user(1L, false, RoleType.ROLE_SUPERADMIN);
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
+          .thenReturn(List.of(1L));
 
       assertThrows(IllegalStateException.class, () -> save(edited, useSaveUser));
 
@@ -251,9 +257,10 @@ class UserServiceTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void bothSaveMethodsRejectRemovingTheLastAdminsRole(boolean useSaveUser) {
+    void bothSaveMethodsRejectRemovingTheLastSuperadminsRole(boolean useSaveUser) {
       UserEntity edited = user(1L, true, RoleType.ROLE_USER);
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1L));
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
+          .thenReturn(List.of(1L));
 
       assertThrows(IllegalStateException.class, () -> save(edited, useSaveUser));
 
@@ -263,8 +270,8 @@ class UserServiceTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void bothSaveMethodsAllowDisablingWhenAnotherAdminRemains(boolean useSaveUser) {
-      UserEntity edited = user(1L, false, RoleType.ROLE_ADMIN);
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN))
+      UserEntity edited = user(1L, false, RoleType.ROLE_SUPERADMIN);
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
           .thenReturn(List.of(1L, 2L));
 
       save(edited, useSaveUser);
@@ -276,7 +283,7 @@ class UserServiceTest {
     @ValueSource(booleans = {true, false})
     void bothSaveMethodsAllowRoleRemovalWhenAnotherAdminRemains(boolean useSaveUser) {
       UserEntity edited = user(1L, true, RoleType.ROLE_USER);
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN))
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
           .thenReturn(List.of(1L, 2L));
 
       save(edited, useSaveUser);
@@ -287,12 +294,12 @@ class UserServiceTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void bothSaveMethodsAllowUnchangedAdminPrivileges(boolean useSaveUser) {
-      UserEntity admin = user(1L, true, RoleType.ROLE_ADMIN);
+      UserEntity admin = user(1L, true, RoleType.ROLE_SUPERADMIN);
 
       save(admin, useSaveUser);
 
       verify(userRepository).save(same(admin));
-      verify(userRepository, atLeastOnce()).findEnabledUserIdsByRole(RoleType.ROLE_ADMIN);
+      verify(userRepository, atLeastOnce()).findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN);
     }
 
     @ParameterizedTest
@@ -303,14 +310,15 @@ class UserServiceTest {
       save(newUser, useSaveUser);
 
       verify(userRepository).save(same(newUser));
-      verify(userRepository).findEnabledUserIdsByRole(RoleType.ROLE_ADMIN);
+      verify(userRepository).findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN);
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void ordinaryAccountUpdatesDoNotDependOnBeingAnAdmin(boolean useSaveUser) {
       UserEntity ordinary = user(1L, true, RoleType.ROLE_USER);
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(2L));
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
+          .thenReturn(List.of(2L));
 
       save(ordinary, useSaveUser);
 
@@ -321,13 +329,13 @@ class UserServiceTest {
     @ValueSource(booleans = {true, false})
     void failedAdminLookupPreventsSavingAndPropagatesTheOriginalException(boolean useSaveUser) {
       var failure = repositoryFailure();
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenThrow(failure);
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN)).thenThrow(failure);
 
       assertSame(
           failure,
           assertThrows(
               DataAccessResourceFailureException.class,
-              () -> save(user(1L, false, RoleType.ROLE_ADMIN), useSaveUser)));
+              () -> save(user(1L, false, RoleType.ROLE_SUPERADMIN), useSaveUser)));
 
       verify(userRepository, never()).save(any());
     }
@@ -335,25 +343,25 @@ class UserServiceTest {
     @Test
     void failedAdminLookupPreventsDeletingAndPropagatesTheOriginalException() {
       var failure = repositoryFailure();
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenThrow(failure);
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN)).thenThrow(failure);
 
       assertSame(
           failure,
           assertThrows(
               DataAccessResourceFailureException.class,
-              () -> userService.deleteUser(user(1L, true, RoleType.ROLE_ADMIN))));
+              () -> userService.deleteUser(user(1L, true, RoleType.ROLE_SUPERADMIN))));
 
       verify(userRepository, never()).delete(any());
     }
 
     @Test
     void statusUpdateIgnoresDemotionInTheSuppliedSnapshot() {
-      UserEntity stored = user(1L, true, RoleType.ROLE_ADMIN);
+      UserEntity stored = user(1L, true, RoleType.ROLE_SUPERADMIN);
       when(userRepository.findById(1L)).thenReturn(Optional.of(stored));
       TransactionSynchronizationManager.initSynchronization();
       try {
         userService.updateUserStatus(
-            user(1L, false, RoleType.ROLE_ADMIN), UserStatus.AVAILABLE, true);
+            user(1L, false, RoleType.ROLE_SUPERADMIN), UserStatus.AVAILABLE, true);
         assertTrue(stored.isEnabled());
         verify(userRepository).save(same(stored));
         verify(userRepository, never()).findEnabledUserIdsByRole(any());
@@ -751,7 +759,7 @@ class UserServiceTest {
   }
 
   @Nested
-  class AdminProtection {
+  class SuperadminProtection {
     @Test
     void cannotDeleteANullUser() {
       assertFalse(userService.canDeleteUser(null));
@@ -761,7 +769,7 @@ class UserServiceTest {
     @Test
     void canDeleteAnOrdinaryUserBasedOnStoredPrivileges() {
       assertTrue(userService.canDeleteUser(user(1L, true, RoleType.ROLE_USER)));
-      verify(userRepository).findEnabledUserIdsByRole(RoleType.ROLE_ADMIN);
+      verify(userRepository).findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN);
     }
 
     @Test
@@ -770,26 +778,27 @@ class UserServiceTest {
       assertTrue(userService.canDeleteUser(withoutRoles));
       withoutRoles.setRoleEntities(null);
       assertTrue(userService.canDeleteUser(withoutRoles));
-      verify(userRepository, times(2)).findEnabledUserIdsByRole(RoleType.ROLE_ADMIN);
+      verify(userRepository, times(2)).findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN);
     }
 
     @Test
     void canDeleteADisabledAdminBasedOnStoredPrivileges() {
-      assertTrue(userService.canDeleteUser(user(1L, false, RoleType.ROLE_ADMIN)));
-      verify(userRepository).findEnabledUserIdsByRole(RoleType.ROLE_ADMIN);
+      assertTrue(userService.canDeleteUser(user(1L, false, RoleType.ROLE_SUPERADMIN)));
+      verify(userRepository).findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN);
     }
 
     @Test
     void cannotDeleteAnEnabledAdminWhenNoOtherAccountsExist() {
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1L));
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
+          .thenReturn(List.of(1L));
 
-      assertFalse(userService.canDeleteUser(user(1L, true, RoleType.ROLE_ADMIN)));
+      assertFalse(userService.canDeleteUser(user(1L, true, RoleType.ROLE_SUPERADMIN)));
     }
 
     @Test
-    void cannotDeleteLastEnabledAdminAndDoesNotCountSameIdOrIneligibleAccounts() {
-      UserEntity target = user(1000L, true, RoleType.ROLE_ADMIN);
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN))
+    void cannotDeleteLastEnabledSuperadminAndDoesNotCountSameIdOrIneligibleAccounts() {
+      UserEntity target = user(1000L, true, RoleType.ROLE_SUPERADMIN);
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
           .thenReturn(List.of(Long.valueOf("1000")));
 
       assertFalse(userService.canDeleteUser(target));
@@ -798,8 +807,8 @@ class UserServiceTest {
 
     @Test
     void canDeleteAdminWhenAnotherEnabledAdminRemains() {
-      UserEntity target = user(1L, true, RoleType.ROLE_ADMIN);
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN))
+      UserEntity target = user(1L, true, RoleType.ROLE_SUPERADMIN);
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
           .thenReturn(List.of(1L, 2L));
 
       assertTrue(userService.canDeleteUser(target));
@@ -809,84 +818,89 @@ class UserServiceTest {
     @Test
     void retainingEnabledAdminRoleNeedsNoOtherAdmin() {
       assertFalse(
-          userService.wouldRemoveLastEnabledAdmin(
-              1L, true, List.of(role(RoleType.ROLE_USER), role(RoleType.ROLE_ADMIN))));
+          userService.wouldRemoveLastEnabledSuperadmin(
+              1L, true, List.of(role(RoleType.ROLE_USER), role(RoleType.ROLE_SUPERADMIN))));
       verifyNoInteractions(userRepository);
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void removalOfRoleOrDisablingTheLastAdminIsBlocked(boolean remainsEnabled) {
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1L));
+    void removalOfRoleOrDisablingTheLastSuperadminIsBlocked(boolean remainsEnabled) {
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
+          .thenReturn(List.of(1L));
       List<RoleEntity> proposedRoles =
-          remainsEnabled ? List.of() : List.of(role(RoleType.ROLE_ADMIN));
+          remainsEnabled ? List.of() : List.of(role(RoleType.ROLE_SUPERADMIN));
 
-      assertTrue(userService.wouldRemoveLastEnabledAdmin(1L, remainsEnabled, proposedRoles));
+      assertTrue(userService.wouldRemoveLastEnabledSuperadmin(1L, remainsEnabled, proposedRoles));
     }
 
     @Test
     void missingProposedRolesAreRejectedBeforeTheAdminQuery() {
       assertThrows(
           IllegalArgumentException.class,
-          () -> userService.wouldRemoveLastEnabledAdmin(1L, true, null));
+          () -> userService.wouldRemoveLastEnabledSuperadmin(1L, true, null));
       verifyNoInteractions(userRepository);
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void roleRemovalOrDisablingIsAllowedWhenAnotherAdminRemains(boolean remainsEnabled) {
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN))
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
           .thenReturn(List.of(1L, 2L));
       List<RoleEntity> proposedRoles =
-          remainsEnabled ? List.of() : List.of(role(RoleType.ROLE_ADMIN));
+          remainsEnabled ? List.of() : List.of(role(RoleType.ROLE_SUPERADMIN));
 
-      assertFalse(userService.wouldRemoveLastEnabledAdmin(1L, remainsEnabled, proposedRoles));
+      assertFalse(userService.wouldRemoveLastEnabledSuperadmin(1L, remainsEnabled, proposedRoles));
     }
 
     @Test
-    void disabledAdminsAndOrdinaryUsersDoNotPreventLastAdminRemoval() {
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenReturn(List.of(1L));
+    void disabledAdminsAndOrdinaryUsersDoNotPreventLastSuperadminRemoval() {
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
+          .thenReturn(List.of(1L));
 
       assertTrue(
-          userService.wouldRemoveLastEnabledAdmin(1L, true, List.of(role(RoleType.ROLE_USER))));
+          userService.wouldRemoveLastEnabledSuperadmin(
+              1L, true, List.of(role(RoleType.ROLE_USER))));
     }
 
     @Test
     void newNonAdminAccountIsAllowedWhenAnEnabledAdminExists() {
       assertFalse(
-          userService.wouldRemoveLastEnabledAdmin(null, true, List.of(role(RoleType.ROLE_USER))));
+          userService.wouldRemoveLastEnabledSuperadmin(
+              null, true, List.of(role(RoleType.ROLE_USER))));
     }
 
     @Test
     void nonAdminCreationIsAllowedEvenBeforeTheFirstEnabledAdmin() {
       assertFalse(
-          userService.wouldRemoveLastEnabledAdmin(null, true, List.of(role(RoleType.ROLE_USER))));
+          userService.wouldRemoveLastEnabledSuperadmin(
+              null, true, List.of(role(RoleType.ROLE_USER))));
       verifyNoInteractions(userRepository);
     }
 
     @Test
     void propagatesAdminLookupFailureRatherThanGrantingDeletion() {
       var failure = repositoryFailure();
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenThrow(failure);
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN)).thenThrow(failure);
 
       assertSame(
           failure,
           assertThrows(
               DataAccessResourceFailureException.class,
-              () -> userService.canDeleteUser(user(1L, true, RoleType.ROLE_ADMIN))));
+              () -> userService.canDeleteUser(user(1L, true, RoleType.ROLE_SUPERADMIN))));
       verify(userRepository, never()).delete(any());
     }
 
     @Test
     void propagatesAdminLookupFailureRatherThanAllowingRemoval() {
       var failure = repositoryFailure();
-      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN)).thenThrow(failure);
+      when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN)).thenThrow(failure);
 
       assertSame(
           failure,
           assertThrows(
               DataAccessResourceFailureException.class,
-              () -> userService.wouldRemoveLastEnabledAdmin(1L, false, List.of())));
+              () -> userService.wouldRemoveLastEnabledSuperadmin(1L, false, List.of())));
       verify(userRepository, never()).save(any());
     }
   }

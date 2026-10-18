@@ -26,7 +26,7 @@ import org.springframework.util.Assert;
  * User saves and admin edits require valid names, mail, past birth date, gender and non-null
  * roles/elements. Empty roles remain allowed. Save accepts an encoded, nonblank password plus
  * non-null locale/status; password updates use the existing raw password rule. Invalid arguments
- * raise IllegalArgumentException; last-admin removal or missing status/activity users raise
+ * raise IllegalArgumentException; last-superadmin removal or missing status/activity users raise
  * IllegalStateException. Stale admin snapshots/deletes raise OptimisticLockingFailureException.
  * Persistence failures propagate (including unique email conflicts); roll back the whole
  * transaction, never reuse its persistence context after failure.
@@ -40,6 +40,27 @@ public class UserService {
   private final UserStatusBroadcaster userStatusBroadcaster;
   private final PasswordEncoder passwordEncoder;
   private final UserProfileBroadcaster profileEvents;
+  private final de.derpeterson.app.security.AdminRolePolicy rolePolicy;
+  private final org.springframework.context.ApplicationEventPublisher events;
+
+  private Set<RoleType> roleTypes(Collection<RoleEntity> roles) {
+    return roles.stream().map(RoleEntity::getName).collect(java.util.stream.Collectors.toSet());
+  }
+
+  public boolean canManageSuperadmins() {
+    return rolePolicy.canManageSuperadmins();
+  }
+
+  @Transactional
+  public void createAdminUser(UserEntity user, String password) {
+    Assert.notNull(user, "Entity must not be null");
+    Assert.isNull(user.getId(), "New account must not have an ID");
+    validateUserFields(user);
+    lockAndReadSuperadmins();
+    rolePolicy.authorizeMutation(null, roleTypes(user.getRoleEntities()));
+    updatePassword(user, password);
+    save(user);
+  }
 
   @Transactional
   public void saveUser(UserEntity userEntity) {
@@ -73,11 +94,22 @@ public class UserService {
     validateLocale(user.getPreferredLocale());
     Assert.notNull(user.getStatus(), "Status must not be null");
     user.setEmail(user.getEmail());
-    List<Long> admins = lockAndReadAdmins();
-    ensureAdminChangeAllowed(user.getId(), isEnabledAdmin(user), admins);
+    List<Long> superadmins = lockAndReadSuperadmins();
+    var previousRoles =
+        user.getId() == null ? null : Set.copyOf(userRepository.findExplicitRoles(user.getId()));
+    var desired = roleTypes(user.getRoleEntities());
+    if (previousRoles != null && !previousRoles.equals(desired)
+        || previousRoles == null && !desired.equals(Set.of(RoleType.ROLE_USER)))
+      rolePolicy.authorizeMutation(user.getId(), desired);
+    else rolePolicy.authorizeProtectedMutation(user.getId(), desired);
+    ensureSuperadminChangeAllowed(user.getId(), isEnabledSuperadmin(user), superadmins);
     userRepository.save(user);
     userRepository.flush();
-    ensureAdminsRemain(admins);
+    ensureSuperadminsRemain(superadmins);
+    if (previousRoles != null && !previousRoles.equals(roleTypes(user.getRoleEntities())))
+      events.publishEvent(
+          new de.derpeterson.app.events.UserRolesChanged(
+              user.getId(), previousRoles, roleTypes(user.getRoleEntities())));
   }
 
   @Transactional
@@ -203,7 +235,7 @@ public class UserService {
   public void updateAdminUser(UserEntity edited, Long expectedVersion, String rawPassword) {
     Assert.notNull(edited, "Entity must not be null");
     Assert.notNull(edited.getId(), "User ID must not be null");
-    List<Long> admins = lockAndReadAdmins();
+    List<Long> superadmins = lockAndReadSuperadmins();
     UserEntity stored =
         userRepository
             .findByIdForUpdate(edited.getId())
@@ -219,7 +251,10 @@ public class UserService {
     if (rawPassword != null && !rawPassword.isBlank()) {
       Assert.isTrue(UserInputRules.isPasswordSecure(rawPassword), "Invalid password");
     }
-    ensureAdminChangeAllowed(stored.getId(), isEnabledAdmin(edited), admins);
+    var previousRoles = Set.copyOf(userRepository.findExplicitRoles(stored.getId()));
+    var nextRoles = roleTypes(edited.getRoleEntities());
+    rolePolicy.authorizeMutation(stored.getId(), nextRoles);
+    ensureSuperadminChangeAllowed(stored.getId(), isEnabledSuperadmin(edited), superadmins);
     stored.setFirstName(edited.getFirstName());
     stored.setLastName(edited.getLastName());
     stored.setEmail(edited.getEmail());
@@ -232,7 +267,10 @@ public class UserService {
     }
     userRepository.saveAndFlush(stored);
     profileEvents.afterCommit(stored);
-    ensureAdminsRemain(admins);
+    ensureSuperadminsRemain(superadmins);
+    if (!previousRoles.equals(nextRoles))
+      events.publishEvent(
+          new de.derpeterson.app.events.UserRolesChanged(stored.getId(), previousRoles, nextRoles));
   }
 
   public List<UserEntity> findAllUsers() {
@@ -243,46 +281,44 @@ public class UserService {
   public void deleteUser(UserEntity user) {
     Assert.notNull(user, "Entity must not be null");
     Assert.notNull(user.getId(), "User ID must not be null");
-    List<Long> admins = lockAndReadAdmins();
-    ensureAdminChangeAllowed(user.getId(), false, admins);
+    List<Long> superadmins = lockAndReadSuperadmins();
+    rolePolicy.authorizeMutation(user.getId(), Set.of());
+    ensureSuperadminChangeAllowed(user.getId(), false, superadmins);
     userRepository.delete(user);
     userRepository.flush();
-    ensureAdminsRemain(admins);
+    ensureSuperadminsRemain(superadmins);
   }
 
-  private List<Long> lockAndReadAdmins() {
-    // Both administrative roles use the same lock, including mixed Admin/Superadmin changes.
-    userRepository.lockRole(RoleType.ROLE_ADMIN);
-    return readAdminIds();
+  private List<Long> lockAndReadSuperadmins() {
+    // Alle Rollenmutationen teilen die Sperre, auch parallele Entzüge/Deaktivierungen.
+    userRepository.lockRole(RoleType.ROLE_SUPERADMIN);
+    return readSuperadminIds();
   }
 
-  private List<Long> readAdminIds() {
-    return java.util.stream.Stream.concat(
-            userRepository.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN).stream(),
-            userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN).stream())
-        .distinct()
-        .sorted()
-        .toList();
+  private List<Long> readSuperadminIds() {
+    return userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN);
   }
 
-  private boolean removesLastAdmin(Long userId, boolean remainsAdmin, List<Long> admins) {
-    return !remainsAdmin
+  private boolean removesLastSuperadmin(
+      Long userId, boolean remainsSuperadmin, List<Long> superadmins) {
+    return !remainsSuperadmin
         && userId != null
-        && admins.size() == 1
-        && Objects.equals(admins.getFirst(), userId);
+        && superadmins.size() == 1
+        && Objects.equals(superadmins.getFirst(), userId);
   }
 
-  private void ensureAdminChangeAllowed(Long userId, boolean remainsAdmin, List<Long> admins) {
-    if (removesLastAdmin(userId, remainsAdmin, admins)) {
-      throw new IllegalStateException("Der letzte aktive Administrator muss erhalten bleiben.");
+  private void ensureSuperadminChangeAllowed(
+      Long userId, boolean remainsSuperadmin, List<Long> superadmins) {
+    if (removesLastSuperadmin(userId, remainsSuperadmin, superadmins)) {
+      throw new IllegalStateException("Der letzte aktive Superadmin muss erhalten bleiben.");
     }
   }
 
-  private void ensureAdminsRemain(List<Long> before) {
+  private void ensureSuperadminsRemain(List<Long> before) {
     // flush can include other users already dirtied by a caller in the same
     // transaction. Reject that entire batch, not just the submitted entity.
-    if (!before.isEmpty() && readAdminIds().isEmpty()) {
-      throw new IllegalStateException("Der letzte aktive Administrator muss erhalten bleiben.");
+    if (!before.isEmpty() && readSuperadminIds().isEmpty()) {
+      throw new IllegalStateException("Der letzte aktive Superadmin muss erhalten bleiben.");
     }
   }
 
@@ -293,6 +329,8 @@ public class UserService {
   public void updatePassword(UserEntity user, String rawPassword) {
     Assert.notNull(user, "Entity must not be null");
     Assert.isTrue(UserInputRules.isPasswordSecure(rawPassword), "Invalid password");
+    if (user.getId() != null)
+      rolePolicy.authorizeMutation(user.getId(), roleTypes(user.getRoleEntities()));
     user.setPassword(passwordEncoder.encode(rawPassword));
   }
 
@@ -308,29 +346,28 @@ public class UserService {
   public boolean canDeleteUser(UserEntity user) {
     return user != null
         && user.getId() != null
-        && !removesLastAdmin(user.getId(), false, readAdminIds());
+        && !removesLastSuperadmin(user.getId(), false, readSuperadminIds());
   }
 
   @Transactional(readOnly = true)
-  public boolean wouldRemoveLastEnabledAdmin(
+  public boolean wouldRemoveLastEnabledSuperadmin(
       Long editedUserId, boolean enabled, Collection<RoleEntity> roleEntities) {
     validateRoles(roleEntities);
-    if (editedUserId == null || enabled && hasAdminRole(roleEntities)) {
+    if (editedUserId == null || enabled && hasSuperadminRole(roleEntities)) {
       return false;
     }
-    return removesLastAdmin(editedUserId, enabled && hasAdminRole(roleEntities), readAdminIds());
+    return removesLastSuperadmin(
+        editedUserId, enabled && hasSuperadminRole(roleEntities), readSuperadminIds());
   }
 
-  private boolean isEnabledAdmin(UserEntity user) {
-    return user != null && user.isEnabled() && user.hasAdministrativeRole();
+  private boolean isEnabledSuperadmin(UserEntity user) {
+    return user != null && user.isEnabled() && user.hasRole(RoleType.ROLE_SUPERADMIN);
   }
 
-  private boolean hasAdminRole(Collection<RoleEntity> roleEntities) {
+  private boolean hasSuperadminRole(Collection<RoleEntity> roleEntities) {
     return roleEntities != null
         && roleEntities.stream()
-            .anyMatch(
-                roleEntity ->
-                    roleEntity.getName() != null && roleEntity.getName().isAdministrative());
+            .anyMatch(roleEntity -> roleEntity.getName() == RoleType.ROLE_SUPERADMIN);
   }
 
   private void validateUserFields(UserEntity user) {

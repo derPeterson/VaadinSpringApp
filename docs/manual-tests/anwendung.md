@@ -41,7 +41,7 @@ im lokalen Protokoll an seinen Ablageort an.
 | Eintrag in manual-tests.properties | Was ist nötig? |
 | --- | --- |
 | spring.datasource.url | Neuer eigener Pfad aus dem Block; für Fortsetzung/Neustart unverändert lassen. |
-| app.bootstrap.default-admin.password | Eigenes lokales Testpasswort, z. B. erfundenes `NurFuerTests1!`; keine echten Zugangsdaten. |
+| app.bootstrap.admins[0].password | Eigenes lokales Testpasswort, z. B. erfundenes `NurFuerTests1!`; keine echten Zugangsdaten. |
 | app.config.defaults.rememberMe.secret.key | Eigener lokaler zufälliger Schlüssel; nicht leer lassen, nicht ins Protokoll kopieren. |
 | server.port / app.config.defaults.base.url | Zusammen passend; vorbereitet ist 18090 / http://127.0.0.1:18090/. |
 | SMTP | Lokal Mailpit auf 18125, Weboberfläche 18126; keine externe Weiterleitung. |

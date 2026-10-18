@@ -141,10 +141,33 @@ class AdminUserDialogValidationTest {
     confirm().setValue("ValidPassword!");
     assertTrue(save().isEnabled());
     save().click();
-    verify(users).updatePassword(any(), eq("ValidPassword!"));
     verify(users)
-        .saveUser(
-            argThat(user -> Locale.forLanguageTag(language).equals(user.getPreferredLocale())));
+        .createAdminUser(
+            argThat(user -> Locale.forLanguageTag(language).equals(user.getPreferredLocale())),
+            eq("ValidPassword!"));
+  }
+
+  @Test
+  void superadminCheckboxIsOnlyEditableByASuperadmin() {
+    open("de", false);
+    @SuppressWarnings("unchecked")
+    var roles =
+        (com.vaadin.flow.component.checkbox.CheckboxGroup<de.derpeterson.app.model.enums.RoleType>)
+            descendants(dialog)
+                .filter(com.vaadin.flow.component.checkbox.CheckboxGroup.class::isInstance)
+                .findFirst()
+                .orElseThrow();
+    assertFalse(
+        roles
+            .getItemEnabledProvider()
+            .test(de.derpeterson.app.model.enums.RoleType.ROLE_SUPERADMIN));
+    assertTrue(
+        roles.getItemEnabledProvider().test(de.derpeterson.app.model.enums.RoleType.ROLE_ADMIN));
+    when(users.canManageSuperadmins()).thenReturn(true);
+    assertTrue(
+        roles
+            .getItemEnabledProvider()
+            .test(de.derpeterson.app.model.enums.RoleType.ROLE_SUPERADMIN));
   }
 
   @Test
@@ -214,7 +237,7 @@ class AdminUserDialogValidationTest {
     dialog.setOpened(false);
     assertFalse(dialog.isOpened());
     verify(users, never()).save(any());
-    verify(users, never()).saveUser(any());
+    verify(users, never()).createAdminUser(any(), any());
     verify(users, never()).updateAdminUser(any(), any(), any());
     verify(users, never()).deleteUser(any());
   }

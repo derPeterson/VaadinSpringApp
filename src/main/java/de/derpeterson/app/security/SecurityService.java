@@ -51,29 +51,23 @@ public class SecurityService {
    * require the session lock).
    */
   public boolean hasCurrentSessionPrivileges(HttpServletRequest request) {
-    HttpSession session = request.getSession(false);
-    if (session == null) {
-      return true; // Public requests have no authenticated UI to revoke.
-    }
-    Object storedContext =
-        session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-    Authentication authentication =
-        storedContext instanceof SecurityContext context ? context.getAuthentication() : null;
-    Object storedUser = session.getAttribute(AUTH_USER_SESSION_KEY);
-    boolean valid =
-        !admissions.isExpired(request)
-            && (authentication == null
-                || !(authentication.getPrincipal() instanceof UserDetails principal)
-                || hasCurrentPrivileges(principal, authentication))
-            && (!(storedUser instanceof UserDetails storedPrincipal)
-                || hasCurrentPrivileges(storedPrincipal, null));
-    if (!valid) {
+    var session = request.getSession(false);
+    if (session == null) return true;
+    boolean hadPrincipal =
+        sessionAuthentication(session) != null
+                && sessionAuthentication(session).getPrincipal() instanceof UserDetails
+            || session.getAttribute(AUTH_USER_SESSION_KEY) instanceof UserDetails;
+    var refreshed =
+        hadPrincipal ? refreshSessionAuthentication(session) : Optional.<Authentication>empty();
+    if (admissions.isExpired(request) || hadPrincipal && refreshed.isEmpty()) {
       session.removeAttribute(AUTH_USER_SESSION_KEY);
       session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-      session.invalidate(); // Discard every old UI associated with this connection.
+      session.invalidate();
       SecurityContextHolder.clearContext();
+      return false;
     }
-    return valid;
+    refreshed.ifPresent(this::useAuthentication);
+    return true;
   }
 
   public Optional<UserDetails> getAuthenticatedUser(HttpServletRequest request) {
@@ -81,60 +75,80 @@ public class SecurityService {
       clearStaleAuthentication(request);
       return Optional.empty();
     }
-    SecurityContext securityContext = SecurityContextHolder.getContext();
-    Authentication authentication = securityContext.getAuthentication();
-    if (authentication != null
-        && authentication.isAuthenticated()
-        && authentication.getPrincipal() instanceof UserDetails userDetails) {
-      if (hasCurrentPrivileges(userDetails, authentication)) {
-        return Optional.of(userDetails);
-      }
+    var session = request == null ? null : request.getSession(false);
+    Authentication auth = session == null ? null : sessionAuthentication(session);
+    UserDetails stored =
+        session == null
+            ? null
+            : session.getAttribute(AUTH_USER_SESSION_KEY) instanceof UserDetails p ? p : null;
+    if (auth == null && stored != null)
+      auth =
+          UsernamePasswordAuthenticationToken.authenticated(stored, null, stored.getAuthorities());
+    if (auth == null) auth = SecurityContextHolder.getContext().getAuthentication();
+    if ((auth == null || !(auth.getPrincipal() instanceof UserDetails))
+        && VaadinSession.getCurrent() != null
+        && VaadinSession.getCurrent().hasLock()) {
+      var p = VaadinSession.getCurrent().getAttribute(UserDetails.class);
+      if (p != null)
+        auth = UsernamePasswordAuthenticationToken.authenticated(p, null, p.getAuthorities());
+    }
+    if (auth == null || !(auth.getPrincipal() instanceof UserDetails)) return Optional.empty();
+    var fresh = refreshedAuthentication(auth);
+    if (fresh.isEmpty()) {
       clearStaleAuthentication(request);
       return Optional.empty();
     }
-
-    UserDetails userDetails = null;
-    // Stream-Handler laufen ohne UI-Sperre; dort nur die HTTP-Sitzung auswerten.
-    if (VaadinSession.getCurrent() != null && VaadinSession.getCurrent().hasLock()) {
-      userDetails = VaadinSession.getCurrent().getAttribute(UserDetails.class);
-    }
-
-    if (userDetails == null) {
-      HttpSession httpSession = request.getSession(false);
-      if (httpSession != null) {
-        userDetails = (UserDetails) httpSession.getAttribute(AUTH_USER_SESSION_KEY);
-      }
-    }
-
-    if (userDetails != null) {
-      if (!hasCurrentPrivileges(userDetails, null)) {
-        clearStaleAuthentication(request);
-        return Optional.empty();
-      }
-      restoreSecurityContext(userDetails);
-      return Optional.of(userDetails);
-    }
-
-    return Optional.empty();
+    install(session, fresh.get());
+    useAuthentication(fresh.get());
+    return Optional.of((UserDetails) fresh.get().getPrincipal());
   }
 
-  /** Sitzung der konkreten UI auch auf Push-Threads frisch prüfen; kein Thread-Kontext-Fallback. */
-  public Optional<UserEntity> getSessionUser(HttpSession session) {
+  /** Frische Rechte der gebundenen Sitzung; kein Zugriff auf den Kontext eines fremden Threads. */
+  public Optional<Authentication> refreshSessionAuthentication(HttpSession session) {
     if (session == null) return Optional.empty();
     try {
       if (admissions.isSessionExpired(session.getId())) return Optional.empty();
-      var stored =
-          session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-      if (!(stored instanceof SecurityContext context)) return Optional.empty();
-      var authentication = context.getAuthentication();
-      if (authentication == null
-          || !authentication.isAuthenticated()
-          || !(authentication.getPrincipal() instanceof UserDetails principal)
-          || !hasCurrentPrivileges(principal, authentication)) return Optional.empty();
-      return userRepository.findByEmail(principal.getUsername());
+      var auth = sessionAuthentication(session);
+      if (auth == null && session.getAttribute(AUTH_USER_SESSION_KEY) instanceof UserDetails p)
+        auth = UsernamePasswordAuthenticationToken.authenticated(p, null, p.getAuthorities());
+      var fresh = refreshedAuthentication(auth);
+      fresh.ifPresent(a -> install(session, a));
+      return fresh;
     } catch (IllegalStateException expired) {
       return Optional.empty();
     }
+  }
+
+  public Optional<UserEntity> getSessionUser(HttpSession session) {
+    return refreshSessionAuthentication(session)
+        .flatMap(a -> userRepository.findByEmail(((UserDetails) a.getPrincipal()).getUsername()));
+  }
+
+  private Authentication sessionAuthentication(HttpSession session) {
+    var value =
+        session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+    return value instanceof SecurityContext context ? context.getAuthentication() : null;
+  }
+
+  private void install(HttpSession session, Authentication authentication) {
+    if (session == null) return;
+    var existing = sessionAuthentication(session);
+    if (existing != authentication) {
+      var context = SecurityContextHolder.createEmptyContext();
+      context.setAuthentication(authentication);
+      session.setAttribute(
+          HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+    }
+    session.setAttribute(AUTH_USER_SESSION_KEY, authentication.getPrincipal());
+  }
+
+  private void useAuthentication(Authentication authentication) {
+    var context = SecurityContextHolder.createEmptyContext();
+    context.setAuthentication(authentication);
+    SecurityContextHolder.setContext(context);
+    if (VaadinSession.getCurrent() != null && VaadinSession.getCurrent().hasLock())
+      VaadinSession.getCurrent()
+          .setAttribute(UserDetails.class, (UserDetails) authentication.getPrincipal());
   }
 
   public void touchSession(HttpServletRequest request) {
@@ -238,16 +252,38 @@ public class SecurityService {
     SecurityContextHolder.clearContext();
   }
 
-  private boolean hasCurrentPrivileges(UserDetails principal, Authentication authentication) {
+  private Optional<Authentication> refreshedAuthentication(Authentication auth) {
+    if (auth == null
+        || !auth.isAuthenticated()
+        || !(auth.getPrincipal() instanceof UserDetails principal)) return Optional.empty();
+    var old = accountAuthorities(principal.getAuthorities());
+    var known =
+        java.util.Arrays.stream(de.derpeterson.app.model.enums.RoleType.values())
+            .map(Enum::name)
+            .collect(Collectors.toSet());
+    // Nur gespeicherte Kontorollen und echte Framework-Faktoren akzeptieren; keine erfundenen
+    // Privilegien.
+    if (!known.containsAll(old) || !old.equals(accountAuthorities(auth.getAuthorities())))
+      return Optional.empty();
     try {
-      UserDetails current = userDetailsService.loadUserByUsername(principal.getUsername());
-      var authorities = accountAuthorities(current.getAuthorities());
-      return current.isEnabled()
-          && authorities.equals(accountAuthorities(principal.getAuthorities()))
-          && (authentication == null
-              || authorities.equals(accountAuthorities(authentication.getAuthorities())));
-    } catch (UsernameNotFoundException exception) {
-      return false;
+      var current = userDetailsService.loadUserByUsername(principal.getUsername());
+      if (!current.isEnabled()) return Optional.empty();
+      if (old.equals(accountAuthorities(current.getAuthorities()))) return Optional.of(auth);
+      var authorities = new java.util.ArrayList<GrantedAuthority>(current.getAuthorities());
+      auth.getAuthorities().stream()
+          .filter(FactorGrantedAuthority.class::isInstance)
+          .forEach(authorities::add);
+      org.springframework.security.authentication.AbstractAuthenticationToken refreshed;
+      if (auth instanceof org.springframework.security.authentication.RememberMeAuthenticationToken)
+        refreshed =
+            new org.springframework.security.authentication.RememberMeAuthenticationToken(
+                rememberMeServices.getKey(), current, authorities);
+      else
+        refreshed = UsernamePasswordAuthenticationToken.authenticated(current, null, authorities);
+      refreshed.setDetails(auth.getDetails());
+      return Optional.of(refreshed);
+    } catch (UsernameNotFoundException missing) {
+      return Optional.empty();
     }
   }
 

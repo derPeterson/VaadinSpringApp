@@ -571,7 +571,9 @@ class VerificationQueueConcurrencyTest {
           probes.users(),
           mock(UserStatusBroadcaster.class),
           mock(PasswordEncoder.class),
-          mock(UserProfileBroadcaster.class));
+          mock(UserProfileBroadcaster.class),
+          mock(de.derpeterson.app.security.AdminRolePolicy.class),
+          mock(org.springframework.context.ApplicationEventPublisher.class));
     }
   }
 }
