@@ -4,12 +4,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class UserMessagePolicy {
+public class UserNotificationPolicy {
   private final int retentionDays;
 
-  public UserMessagePolicy(@Value("${app.user-messages.retention-days:180}") int retentionDays) {
+  public UserNotificationPolicy(
+      @Value("${app.user-notifications.retention-days:180}") int retentionDays) {
     if (retentionDays < 1)
-      throw new IllegalArgumentException("Positive message retention required");
+      throw new IllegalArgumentException("Positive notification retention required");
     this.retentionDays = retentionDays;
   }
 

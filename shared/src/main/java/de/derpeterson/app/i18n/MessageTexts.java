@@ -1844,152 +1844,152 @@ public class MessageTexts {
   }
 
   // Persönliche Mitteilungen und Superadmin-Versand
-  public String getMessagesTitle() {
-    return getTranslation("messages.title");
+  public String getNotificationsTitle() {
+    return getTranslation("notifications.title");
   }
 
-  public String getMessagesDescription() {
-    return getTranslation("messages.description");
+  public String getNotificationsDescription() {
+    return getTranslation("notifications.description");
   }
 
-  public String getMessagesUnread() {
-    return getTranslation("messages.unread");
+  public String getNotificationsUnread() {
+    return getTranslation("notifications.unread");
   }
 
-  public String getMessagesMarkAll() {
-    return getTranslation("messages.markAll");
+  public String getNotificationsMarkAll() {
+    return getTranslation("notifications.markAll");
   }
 
-  public String getMessagesEmpty() {
-    return getTranslation("messages.empty");
+  public String getNotificationsEmpty() {
+    return getTranslation("notifications.empty");
   }
 
-  public String getMessagesHistory() {
-    return getTranslation("messages.history");
+  public String getNotificationsHistory() {
+    return getTranslation("notifications.history");
   }
 
-  public String getMessagesRefresh() {
-    return getTranslation("messages.refresh");
+  public String getNotificationsRefresh() {
+    return getTranslation("notifications.refresh");
   }
 
-  public String getMessagesPrevious() {
-    return getTranslation("messages.previous");
+  public String getNotificationsPrevious() {
+    return getTranslation("notifications.previous");
   }
 
-  public String getMessagesNext() {
-    return getTranslation("messages.next");
+  public String getNotificationsNext() {
+    return getTranslation("notifications.next");
   }
 
-  public String getMessagesPage() {
-    return getTranslation("messages.page");
+  public String getNotificationsPage() {
+    return getTranslation("notifications.page");
   }
 
-  public String getMessagesRead() {
-    return getTranslation("messages.read");
+  public String getNotificationsRead() {
+    return getTranslation("notifications.read");
   }
 
-  public String getMessagesClose() {
-    return getTranslation("messages.close");
+  public String getNotificationsClose() {
+    return getTranslation("notifications.close");
   }
 
-  public String getMessagesUnavailable() {
-    return getTranslation("messages.unavailable");
+  public String getNotificationsUnavailable() {
+    return getTranslation("notifications.unavailable");
   }
 
-  public String getMessagesOpenAccount() {
-    return getTranslation("messages.openAccount");
+  public String getNotificationsOpenAccount() {
+    return getTranslation("notifications.openAccount");
   }
 
-  public String getMessagesRetention(int days) {
-    return getFormattedTranslation("messages.retention", days);
+  public String getNotificationsRetention(int days) {
+    return getFormattedTranslation("notifications.retention", days);
   }
 
-  public String getMessagesPasswordChangedTitle() {
-    return getTranslation("messages.passwordChangedTitle");
+  public String getNotificationsPasswordChangedTitle() {
+    return getTranslation("notifications.passwordChangedTitle");
   }
 
-  public String getMessagesPasswordChangedBody() {
-    return getTranslation("messages.passwordChangedBody");
+  public String getNotificationsPasswordChangedBody() {
+    return getTranslation("notifications.passwordChangedBody");
   }
 
-  public String getMessagesPasswordResetTitle() {
-    return getTranslation("messages.passwordResetTitle");
+  public String getNotificationsPasswordResetTitle() {
+    return getTranslation("notifications.passwordResetTitle");
   }
 
-  public String getMessagesPasswordResetBody() {
-    return getTranslation("messages.passwordResetBody");
+  public String getNotificationsPasswordResetBody() {
+    return getTranslation("notifications.passwordResetBody");
   }
 
-  public String getMessagesEmailChangedTitle() {
-    return getTranslation("messages.emailChangedTitle");
+  public String getNotificationsEmailChangedTitle() {
+    return getTranslation("notifications.emailChangedTitle");
   }
 
-  public String getMessagesEmailChangedBody() {
-    return getTranslation("messages.emailChangedBody");
+  public String getNotificationsEmailChangedBody() {
+    return getTranslation("notifications.emailChangedBody");
   }
 
-  public String getMessagesAdminDescription() {
-    return getTranslation("messages.adminDescription");
+  public String getNotificationsAdminDescription() {
+    return getTranslation("notifications.adminDescription");
   }
 
-  public String getMessagesEveryone() {
-    return getTranslation("messages.everyone");
+  public String getNotificationsEveryone() {
+    return getTranslation("notifications.everyone");
   }
 
-  public String getMessagesRecipients() {
-    return getTranslation("messages.recipients");
+  public String getNotificationsRecipients() {
+    return getTranslation("notifications.recipients");
   }
 
-  public String getMessagesSubject() {
-    return getTranslation("messages.subject");
+  public String getNotificationsSubject() {
+    return getTranslation("notifications.subject");
   }
 
-  public String getMessagesBody() {
-    return getTranslation("messages.body");
+  public String getNotificationsBody() {
+    return getTranslation("notifications.body");
   }
 
-  public String getMessagesPreview() {
-    return getTranslation("messages.preview");
+  public String getNotificationsPreview() {
+    return getTranslation("notifications.preview");
   }
 
-  public String getMessagesSend() {
-    return getTranslation("messages.send");
+  public String getNotificationsSend() {
+    return getTranslation("notifications.send");
   }
 
-  public String getMessagesPreviewHint() {
-    return getTranslation("messages.previewHint");
+  public String getNotificationsPreviewHint() {
+    return getTranslation("notifications.previewHint");
   }
 
-  public String getMessagesSent() {
-    return getTranslation("messages.sent");
+  public String getNotificationsSent() {
+    return getTranslation("notifications.sent");
   }
 
-  public String getMessagesSentHistory() {
-    return getTranslation("messages.sentHistory");
+  public String getNotificationsSentHistory() {
+    return getTranslation("notifications.sentHistory");
   }
 
-  public String getMessagesInvalidDraft() {
-    return getTranslation("messages.invalidDraft");
+  public String getNotificationsInvalidDraft() {
+    return getTranslation("notifications.invalidDraft");
   }
 
-  public String getMessagesNoRecipients() {
-    return getTranslation("messages.noRecipients");
+  public String getNotificationsNoRecipients() {
+    return getTranslation("notifications.noRecipients");
   }
 
-  public String getMessagesRecipientsChanged() {
-    return getTranslation("messages.recipientsChanged");
+  public String getNotificationsRecipientsChanged() {
+    return getTranslation("notifications.recipientsChanged");
   }
 
-  public String getMessagesRequestConflict() {
-    return getTranslation("messages.requestConflict");
+  public String getNotificationsRequestConflict() {
+    return getTranslation("notifications.requestConflict");
   }
 
-  public String getMessagesRolesChangedTitle() {
-    return getTranslation("messages.rolesChangedTitle");
+  public String getNotificationsRolesChangedTitle() {
+    return getTranslation("notifications.rolesChangedTitle");
   }
 
-  public String getMessagesRolesChangedBody() {
-    return getTranslation("messages.rolesChangedBody");
+  public String getNotificationsRolesChangedBody() {
+    return getTranslation("notifications.rolesChangedBody");
   }
 
   public String getRolesPermissionDenied() {

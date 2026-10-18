@@ -63,7 +63,7 @@ public class AdminView extends IsAuthenticatedBaseView {
     CONFIGURATION,
     MAIL_TEST,
     USER_MANAGEMENT,
-    MESSAGES
+    NOTIFICATIONS
   }
 
   private final transient ConfigService configService;
@@ -79,19 +79,20 @@ public class AdminView extends IsAuthenticatedBaseView {
   private SideNavItem configurationNavItem;
   private SideNavItem mailTestNavItem;
   private SideNavItem userManagementNavItem;
-  private SideNavItem messagesNavItem;
-  private de.derpeterson.app.views.admin.AdminUserMessagesSection messagesSection;
-  private transient de.derpeterson.app.service.UserMessageService messagesService;
+  private SideNavItem notificationsNavItem;
+  private de.derpeterson.app.views.admin.AdminUserNotificationsSection notificationsSection;
+  private transient de.derpeterson.app.service.UserNotificationService notificationsService;
 
   @org.springframework.beans.factory.annotation.Autowired
-  public void configureAdminMessages(de.derpeterson.app.service.UserMessageService service) {
-    messagesService = service;
-    messagesNavItem = createNavigationItem(VaadinIcon.BELL, AdminSection.MESSAGES, null);
-    messagesNavItem.setLabel(messageProperties.getMessagesTitle());
-    messagesNavItem.setVisible(service.canSend(request.getSession(false)));
-    sideNavigation.addItem(messagesNavItem);
-    messagesSection =
-        new de.derpeterson.app.views.admin.AdminUserMessagesSection(
+  public void configureAdminNotifications(
+      de.derpeterson.app.service.UserNotificationService service) {
+    notificationsService = service;
+    notificationsNavItem = createNavigationItem(VaadinIcon.BELL, AdminSection.NOTIFICATIONS, null);
+    notificationsNavItem.setLabel(messageProperties.getNotificationsTitle());
+    notificationsNavItem.setVisible(service.canSend(request.getSession(false)));
+    sideNavigation.addItem(notificationsNavItem);
+    notificationsSection =
+        new de.derpeterson.app.views.admin.AdminUserNotificationsSection(
             messageProperties, service, request);
   }
 
@@ -335,9 +336,10 @@ public class AdminView extends IsAuthenticatedBaseView {
 
   private void selectSection(AdminSection section, AdminConfigGroup configurationGroup) {
     serviceStatus.refresh();
-    boolean canSend = messagesService != null && messagesService.canSend(request.getSession(false));
-    if (messagesNavItem != null) messagesNavItem.setVisible(canSend);
-    if (section == AdminSection.MESSAGES && !canSend) section = AdminSection.DASHBOARD;
+    boolean canSend =
+        notificationsService != null && notificationsService.canSend(request.getSession(false));
+    if (notificationsNavItem != null) notificationsNavItem.setVisible(canSend);
+    if (section == AdminSection.NOTIFICATIONS && !canSend) section = AdminSection.DASHBOARD;
     activeSection = section;
 
     if (section == AdminSection.CONFIGURATION) {
@@ -362,9 +364,9 @@ public class AdminView extends IsAuthenticatedBaseView {
         sectionLayout.add(configurationSection);
         configurationSection.showGroup(activeConfigurationGroup);
       }
-      case MESSAGES -> {
-        sectionLayout.add(messagesSection);
-        messagesSection.activate();
+      case NOTIFICATIONS -> {
+        sectionLayout.add(notificationsSection);
+        notificationsSection.activate();
       }
       case MAIL_TEST -> sectionLayout.add(mailTestSection);
       case USER_MANAGEMENT -> sectionLayout.add(userManagementSection);
@@ -375,7 +377,7 @@ public class AdminView extends IsAuthenticatedBaseView {
   }
 
   private void updateNavigationState() {
-    applyNavigationItemState(messagesNavItem, activeSection == AdminSection.MESSAGES);
+    applyNavigationItemState(notificationsNavItem, activeSection == AdminSection.NOTIFICATIONS);
     applyNavigationItemState(dashboardNavItem, activeSection == AdminSection.DASHBOARD);
     applyNavigationItemState(configurationNavItem, activeSection == AdminSection.CONFIGURATION);
     applyNavigationItemState(mailTestNavItem, activeSection == AdminSection.MAIL_TEST);
@@ -415,8 +417,9 @@ public class AdminView extends IsAuthenticatedBaseView {
       headerTitle.setText(messageProperties.getAdminHeaderTitle());
     }
 
-    if (messagesNavItem != null) messagesNavItem.setLabel(messageProperties.getMessagesTitle());
-    if (messagesSection != null) messagesSection.refreshTexts();
+    if (notificationsNavItem != null)
+      notificationsNavItem.setLabel(messageProperties.getNotificationsTitle());
+    if (notificationsSection != null) notificationsSection.refreshTexts();
     dashboardNavItem.setLabel(messageProperties.getAdminNavDashboard());
     configurationNavItem.setLabel(messageProperties.getAdminNavConfiguration());
     mailTestNavItem.setLabel(messageProperties.getAdminNavMailTest());

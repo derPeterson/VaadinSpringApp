@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 /** Nur lokale Invalidierung nach Commit; die Datenbank bleibt die Nachrichtenquelle. */
 @Component
-public class UserMessageBroadcaster {
+public class UserNotificationBroadcaster {
   private final CopyOnWriteArrayList<Consumer<Set<Long>>> listeners = new CopyOnWriteArrayList<>();
 
   public Registration register(Consumer<Set<Long>> listener) {
@@ -24,7 +24,7 @@ public class UserMessageBroadcaster {
         listener.accept(immutable);
       } catch (RuntimeException failure) {
         LoggerFactory.getLogger(getClass())
-            .warn("Message refresh deferred until next request", failure);
+            .warn("Notification refresh deferred until next request", failure);
       }
     }
   }

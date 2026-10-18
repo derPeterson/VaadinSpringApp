@@ -18,24 +18,24 @@ import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Clock;
 
-@Route(AppRouteConstants.MESSAGES_ROUTE)
-@PageTitle(AppRouteConstants.MESSAGES_PAGE_TITLE)
+@Route(AppRouteConstants.NOTIFICATIONS_ROUTE)
+@PageTitle(AppRouteConstants.NOTIFICATIONS_PAGE_TITLE)
 @UIScope
 @PermitAll
-public class UserMessagesView extends IsAuthenticatedBaseView {
-  private final UserMessagesPanel inbox;
+public class UserNotificationsView extends IsAuthenticatedBaseView {
+  private final UserNotificationsPanel inbox;
   private final Span description = new Span();
   private final Button home = new Button();
   private transient Registration registration;
 
-  public UserMessagesView(
+  public UserNotificationsView(
       MessageProperties texts,
       SecurityService security,
       UserService users,
       UserStatusBroadcaster status,
       HttpServletRequest request,
       UserAvatarService avatars,
-      UserMessageService messages,
+      UserNotificationService notifications,
       ConfigService config) {
     super(texts, security, users, status, request, avatars);
     addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell");
@@ -55,8 +55,8 @@ public class UserMessagesView extends IsAuthenticatedBaseView {
     top.addClassName("cosmos-topbar");
     addToNavbar(top);
     var session = request.getSession(false);
-    inbox = new UserMessagesPanel(texts, messages, session, false);
-    description.setText(texts.getMessagesDescription());
+    inbox = new UserNotificationsPanel(texts, notifications, session, false);
+    description.setText(texts.getNotificationsDescription());
     description.addClassName("cosmos-panel-description");
     var card = new CosmosCardComponent(description, inbox);
     var main =
@@ -70,9 +70,9 @@ public class UserMessagesView extends IsAuthenticatedBaseView {
     addAttachListener(
         e -> {
           try {
-            var owner = messages.ownerId(session);
+            var owner = notifications.ownerId(session);
             registration =
-                messages
+                notifications
                     .events()
                     .register(
                         ids -> {
@@ -99,7 +99,7 @@ public class UserMessagesView extends IsAuthenticatedBaseView {
   @Override
   protected void onTrackedUserLanguageChanged() {
     home.setText(messageProperties.getHomeTitle());
-    description.setText(messageProperties.getMessagesDescription());
+    description.setText(messageProperties.getNotificationsDescription());
     if (inbox != null) inbox.refreshTexts();
   }
 }

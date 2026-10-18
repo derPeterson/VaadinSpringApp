@@ -470,29 +470,29 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
     padding-inline-start: 5px;
 }
 
-/* Persönliche Mitteilungen: vorhandene Cosmos-Tokens, keine neue globale Palette. */
-.cosmos-message-bell { position: relative; display: inline-flex; }
-.cosmos-message-count {
+/* Persönliche Benachrichtigungen: vorhandene Cosmos-Tokens, keine neue globale Palette. */
+.cosmos-notification-bell { position: relative; display: inline-flex; }
+.cosmos-notification-count {
     position: absolute; top: 0; right: -3px; pointer-events: none;
     padding: 1px var(--cosmos-space-xs); border-radius: var(--cosmos-control-radius);
     color: var(--lumo-primary-text-color); background: var(--cosmos-card-background);
     border: var(--cosmos-border-width) solid var(--lumo-primary-color);
     font-size: var(--cosmos-badge-font-size); line-height: 1.3;
 }
-.cosmos-messages-panel {
+.cosmos-notifications-panel {
     display: flex; flex-direction: column; gap: var(--cosmos-space-l);
     padding: var(--cosmos-space-2xl); min-width: 0; box-sizing: border-box; width: 100%;
 }
-#messages-preview { width: min(440px, calc(100vw - 40px)); max-height: 70vh; overflow: auto; padding: var(--cosmos-space-m); }
-.cosmos-messages-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cosmos-space-s); }
-.cosmos-messages-secondary { color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-m); }
-.cosmos-message-row { padding: var(--cosmos-space-m); border-bottom: var(--cosmos-border-width) solid var(--cosmos-card-border); overflow-wrap: anywhere; }
-.cosmos-message-row--unread { background: var(--cosmos-table-highlight-background); border-radius: var(--cosmos-control-radius); }
-.cosmos-message-title { max-width: 100%; height: auto; min-height: var(--lumo-size-m); text-align: start; white-space: normal; }
-.cosmos-message-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+#notifications-preview { width: min(440px, calc(100vw - 40px)); max-height: 70vh; overflow: auto; padding: var(--cosmos-space-m); }
+.cosmos-notifications-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cosmos-space-s); }
+.cosmos-notifications-secondary { color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-m); }
+.cosmos-notification-row { padding: var(--cosmos-space-m); border-bottom: var(--cosmos-border-width) solid var(--cosmos-card-border); overflow-wrap: anywhere; }
+.cosmos-notification-row--unread { background: var(--cosmos-table-highlight-background); border-radius: var(--cosmos-control-radius); }
+.cosmos-notification-title { max-width: 100%; height: auto; min-height: var(--lumo-size-m); text-align: start; white-space: normal; }
+.cosmos-notification-body { white-space: pre-wrap; overflow-wrap: anywhere; }
 
-vaadin-dialog.cosmos-message-dialog::part(overlay) {
+vaadin-dialog.cosmos-notification-dialog::part(overlay) {
     width: min(var(--cosmos-dialog-width-account), calc(100vw - 32px)); box-sizing: border-box;
 }
-.cosmos-message-detail-header { display: flex; align-items: center; gap: var(--cosmos-space-m); width: 100%; min-width: 0; }
-.cosmos-message-detail-header > h2 { flex: 1; overflow-wrap: anywhere; }
+.cosmos-notification-detail-header { display: flex; align-items: center; gap: var(--cosmos-space-m); width: 100%; min-width: 0; }
+.cosmos-notification-detail-header > h2 { flex: 1; overflow-wrap: anywhere; }

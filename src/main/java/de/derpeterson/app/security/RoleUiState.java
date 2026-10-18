@@ -33,7 +33,7 @@ public record RoleUiState(Set<String> authorities) implements Serializable {
     var path = location.getPath();
     if (path.equals(AppRoute.ADMIN.getRoute()) && !roles(auth).contains("ROLE_ADMIN"))
       return contextPath + "/home";
-    if (!Set.of("home", "account", "messages", "admin").contains(path))
+    if (!Set.of("home", "account", "notifications", "admin").contains(path))
       return contextPath + "/home";
     return contextPath + "/" + location.getPathWithQueryParameters();
   }

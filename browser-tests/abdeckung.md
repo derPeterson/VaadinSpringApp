@@ -1,9 +1,21 @@
 # Browserabdeckung und offene Punkte
 
+## Benachrichtigungen: aktueller Schnittstellenvertrag (18.10.2026)
+
+Einheitlich `UserNotification`, `/notifications`, `/admin?section=notifications` und
+`app.user-notifications.retention-days`; Datenmodell und SQL-Namen folgen demselben Vertrag.
+**119 gezielte Anwendungs-JUnits und 47 Helfertests**, 0 Fehler/Fehlschläge/Skips.
+Aufbewahrung, Adminnavigation, Rollen-UI-Guard, HTTP-Sicherheitskette, Persistenz und
+Java-Komponenten geprüft. Shared-Build, vollständiger App-/Testcompile,
+Browserquellencompile und Spotless erfolgreich. Frische isolierte Buildkopie mit
+SHA-256-Abgleich der 352 relevanten Quelldateien zum Arbeitsbaum.
+Kein Browserstart/Produktionsbuild, kein erneuter vollständiger JUnit-Lauf und keine neue
+Gesamt-Coverage-Messung. [Aktueller Vertrag](../docs/user-notifications.md).
+
 
 ## Rollen ohne Neuanmeldung und Bootstrap-Listen (18.10.2026)
 
-Ausgangscommit `5d5ddc5`, Branch `feature/user-messages`. Der letzte vollständige
+Ausgangscommit `5d5ddc5`. Der letzte vollständige
 Anwendungs-JUnit-Lauf enthält **1667/1667** erfolgreiche Fälle, 0 Fehler/Fehlschläge/Skips.
 54 neue Fälle plus angepasste bestehende Sicherheitsregressionen. Dazu **47/47 Browser-Helfer**
 erfolgreich, ebenfalls ohne Fehler oder Skips. Browserquellen kompiliert; **kein Browser gestartet**.
@@ -36,7 +48,7 @@ sichern diese Erweiterung. Die Java-Prüfung deckt keine sichtbare Browserabnahm
 
 ## Mitteilungsfunktion: Java-Nachweis, Browserabnahme offen (18.10.2026)
 
-Feature-Branch `feature/user-messages`, Ausgangspunkt `7dedccc`. Persönliche Inbox,
+Ausgangspunkt `7dedccc`. Persönliche Inbox,
 Superadmin-Versand und automatische Sicherheitseinträge sind umgesetzt.
 Der neue Stand wurde **nicht im Browser ausgeführt**. Die nachfolgenden historischen
 Browserzahlen gelten weiterhin nur für die dort benannten Stände.
@@ -61,7 +73,7 @@ fehlern, Rollen-/Sitzungswiderruf, fremde Empfangs-IDs, aktuelle Empfängervorsc
 altem Persistence Context, Snapshots, Lösch-FKs und Retention. JUnit verwendet ausschließlich
 isolierte H2-/Mock-Daten; keine Bestandsdatenbank oder reguläre Anwendung gestartet.
 
-[Funktionsvertrag und geplante MSG-01 bis MSG-07](../docs/user-messages.md#noch-auszuführende-browser-betriebsprüfungen)
+[Funktionsvertrag und geplante NOTIF-01 bis NOTIF-07](../docs/user-notifications.md#noch-auszuführende-browser-betriebsprüfungen)
 benennen die noch ausstehenden DE-/EN-Journeys, visuelle Prüfung und echte Neustart-/Schemafixture.
 Es wurden keine neuen Browserfälle als erfolgreich markiert. Einführung erfordert Shared-
 und Anwendungsbuild sowie vollständigen Neustart; HotSwap allein reicht nicht.

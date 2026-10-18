@@ -20,10 +20,10 @@ Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administ
 
 > Nachfolgende Workerpool-Umsetzung vom 18.10.2026: 1555/1555 Anwendungs-JUnit-Tests erfolgreich, darunter 26 neue Workerfälle mit isoliertem H2 und eigenem lokalem SMTP. Keine neue Browserrunde. [Verhalten und Einführung](docs/email-worker-pool.md), [Ergebnisse und Messgrenzen](browser-tests/abdeckung.md).
 
-> Mitteilungsfunktion vom 18.10.2026 auf `feature/user-messages`: 1613/1613
+> Benachrichtigungsfunktion vom 18.10.2026 auf dem Feature-Stand: 1613/1613
 > Anwendungs-JUnit-Tests erfolgreich, keine Fehler oder Skips. Persönliche Inbox und
 > Superadmin-Versand implementiert; Browserabnahme und Produktionsbuild bleiben offen.
-> [Vertrag, Ergebnisse und Einführung](docs/user-messages.md).
+> [Vertrag, Ergebnisse und Einführung](docs/user-notifications.md).
 
 > Rollen/Bootstrap mit Schutz des letzten aktiven Superadmins vom 18.10.2026: 1667/1667 Anwendungs-JUnit-Tests und 47/47
 > Browser-Helfer erfolgreich. Neue Anmeldung bei Rollenänderung entfällt; Oberfläche wird
@@ -58,10 +58,10 @@ Versandausgängen: [Mailqueue-Verarbeitung](docs/email-queue-processing.md).
 
 Belege: `views/RegistrationView.java`, `views/LoginView.java`, `views/admin/`, `service/VerificationService.java`, `service/PasswordResetService.java`, `service/EmailQueueService.java`, `security/SecurityConfig.java` und `scheduler/UserStatusScheduler.java` unter `src/main/java/de/derpeterson/app/`.
 
-Persönliche Mitteilungen sind über die Glocke und `/messages` erreichbar: persistente
-Inbox mit Lesestatus, Superadmin-Versand unter `/admin?section=messages` und automatische
+Persönliche Benachrichtigungen sind über die Glocke und `/notifications` erreichbar: persistente
+Inbox mit Lesestatus, Superadmin-Versand unter `/admin?section=notifications` und automatische
 Hinweise nach Passwortwechsel, Passwortreset und bestätigter E-Mail-Änderung.
-[Verhalten, Aufbewahrung und offene Browserabnahme](docs/user-messages.md).
+[Verhalten, Aufbewahrung und offene Browserabnahme](docs/user-notifications.md).
 Der Feature-Stand benötigt einen vollständigen Neustart mit gebautem Shared-Modul.
 
 ## Rollen und Zugriffsrechte

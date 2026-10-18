@@ -101,9 +101,10 @@ class SecurityChainRegressionTest {
 
   @Test
   void accountRouteRequiresAuthenticationAndUsesTheNormalLogin() throws Exception {
-    for (var route : java.util.List.of(AppRoute.ACCOUNT, AppRoute.MESSAGES)) {
+    for (var path :
+        java.util.List.of(
+            AppRoute.ACCOUNT.getSecurityRoute(), AppRoute.NOTIFICATIONS.getSecurityRoute())) {
       when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
-      var path = route.getSecurityRoute();
       var request = new MockHttpServletRequest("GET", path);
       request.setServletPath(path);
       var response = new MockHttpServletResponse();
@@ -120,9 +121,10 @@ class SecurityChainRegressionTest {
     String email = sessionUser(role);
     var login = postPassword(email, "OriginalPassword!");
     var session = (MockHttpSession) login.request().getSession(false);
-    for (var route : java.util.List.of(AppRoute.ACCOUNT, AppRoute.MESSAGES)) {
+    for (var path :
+        java.util.List.of(
+            AppRoute.ACCOUNT.getSecurityRoute(), AppRoute.NOTIFICATIONS.getSecurityRoute())) {
       when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
-      var path = route.getSecurityRoute();
       var request = new MockHttpServletRequest("GET", path);
       request.setServletPath(path);
       request.setSession(session);

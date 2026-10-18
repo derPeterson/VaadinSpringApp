@@ -20,6 +20,9 @@ import java.util.function.Supplier;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
+/**
+ * Kurzlebige UI-Rückmeldungen (Toasts); gespeicherte Hinweise verwaltet UserNotificationService.
+ */
 @NoArgsConstructor
 public class NotificationHelper implements Serializable {
 

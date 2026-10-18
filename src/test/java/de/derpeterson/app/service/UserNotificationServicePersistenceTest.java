@@ -6,10 +6,10 @@ import static org.mockito.Mockito.*;
 import de.derpeterson.app.model.*;
 import de.derpeterson.app.model.enums.*;
 import de.derpeterson.app.repository.*;
-import de.derpeterson.app.scheduler.UserMessageCleanup;
+import de.derpeterson.app.scheduler.UserNotificationCleanup;
 import de.derpeterson.app.security.*;
-import de.derpeterson.app.service.UserMessageService.*;
-import de.derpeterson.app.websocket.UserMessageBroadcaster;
+import de.derpeterson.app.service.UserNotificationService.*;
+import de.derpeterson.app.websocket.UserNotificationBroadcaster;
 import jakarta.persistence.*;
 import java.time.*;
 import java.util.*;
@@ -32,15 +32,15 @@ import org.springframework.transaction.IllegalTransactionStateException;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /** Eigene H2-Datenbank, echte Rollenprüfung/Transaktionen/FKs, kein Server und kein SMTP. */
-@SpringJUnitConfig(UserMessageServicePersistenceTest.Config.class)
+@SpringJUnitConfig(UserNotificationServicePersistenceTest.Config.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-class UserMessageServicePersistenceTest {
+class UserNotificationServicePersistenceTest {
   @Configuration
   @Import({
     UserServicePersistenceTest.Config.class,
-    UserMessageService.class,
-    UserMessageBroadcaster.class,
-    UserMessageCleanup.class
+    UserNotificationService.class,
+    UserNotificationBroadcaster.class,
+    UserNotificationCleanup.class
   })
   static class Config {
     @Bean
@@ -49,8 +49,8 @@ class UserMessageServicePersistenceTest {
     }
 
     @Bean
-    UserMessagePolicy policy() {
-      return new UserMessagePolicy(180);
+    UserNotificationPolicy policy() {
+      return new UserNotificationPolicy(180);
     }
 
     @Bean
@@ -64,12 +64,12 @@ class UserMessageServicePersistenceTest {
     }
   }
 
-  @Autowired UserMessageService service;
-  @Autowired UserMessageRepository messages;
-  @Autowired UserMessageRecipientRepository recipients;
+  @Autowired UserNotificationService service;
+  @Autowired UserNotificationRepository notifications;
+  @Autowired UserNotificationRecipientRepository recipients;
   @Autowired UserRepository users;
-  @Autowired UserMessageBroadcaster events;
-  @Autowired UserMessageCleanup cleanup;
+  @Autowired UserNotificationBroadcaster events;
+  @Autowired UserNotificationCleanup cleanup;
   @Autowired TransactionTemplate tx;
   @Autowired SessionRegistryImpl registry;
   @Autowired ConfigService config;
@@ -84,7 +84,7 @@ class UserMessageServicePersistenceTest {
     tx.executeWithoutResult(
         s -> {
           recipients.deleteAll();
-          messages.deleteAll();
+          notifications.deleteAll();
           users.deleteAll();
           users.flush();
           em.createQuery("delete from RoleEntity").executeUpdate();
@@ -151,8 +151,8 @@ class UserMessageServicePersistenceTest {
     return service.send(adminSession, UUID.randomUUID(), "Update", "Plain text", everyone());
   }
 
-  long messageCount() {
-    return messages.count();
+  long notificationCount() {
+    return notifications.count();
   }
 
   void mutate(UserEntity user, java.util.function.Consumer<UserEntity> change) {
@@ -226,7 +226,7 @@ class UserMessageServicePersistenceTest {
     assertThrows(
         AccessDeniedException.class,
         () -> service.send(session, UUID.randomUUID(), "X", "Y", everyone()));
-    assertEquals(0, messageCount());
+    assertEquals(0, notificationCount());
   }
 
   @Test
@@ -283,7 +283,7 @@ class UserMessageServicePersistenceTest {
     assertProblem(
         Problem.RECIPIENTS_CHANGED,
         () -> service.send(adminSession, UUID.randomUUID(), "X", "Y", preview));
-    assertEquals(0, messageCount());
+    assertEquals(0, notificationCount());
   }
 
   @Test
@@ -348,7 +348,7 @@ class UserMessageServicePersistenceTest {
     var preview = everyone();
     var first = service.send(adminSession, key, "title", "body", preview);
     assertEquals(first, service.send(adminSession, key, "title", "body", preview));
-    assertEquals(1, messageCount());
+    assertEquals(1, notificationCount());
     assertProblem(
         Problem.REQUEST_CONFLICT,
         () -> service.send(adminSession, key, "changed", "body", preview));
@@ -371,7 +371,7 @@ class UserMessageServicePersistenceTest {
       start.countDown();
       assertEquals(a.get(15, TimeUnit.SECONDS).id(), b.get(15, TimeUnit.SECONDS).id());
     }
-    assertEquals(1, messageCount());
+    assertEquals(1, notificationCount());
     assertEquals(3, recipients.count());
   }
 
@@ -430,7 +430,7 @@ class UserMessageServicePersistenceTest {
   }
 
   @Test
-  void persistedMessagesAreVisibleInNewSessionAndPagedNewestFirst() {
+  void persistedNotificationsAreVisibleInNewSessionAndPagedNewestFirst() {
     broadcast();
     var newer = broadcast();
     var fresh = session(ordinary);
@@ -464,7 +464,7 @@ class UserMessageServicePersistenceTest {
           s.setRollbackOnly();
         });
     assertEquals(0, count.get());
-    assertEquals(0, messageCount());
+    assertEquals(0, notificationCount());
     broadcast();
     assertEquals(1, count.get());
   }
@@ -479,15 +479,15 @@ class UserMessageServicePersistenceTest {
     var count = new AtomicInteger();
     subscriptions.add(events.register(ids -> count.incrementAndGet()));
     assertDoesNotThrow(this::broadcast);
-    assertEquals(1, messageCount());
+    assertEquals(1, notificationCount());
     assertEquals(1, count.get());
   }
 
   @ParameterizedTest
   @EnumSource(
-      value = UserMessageType.class,
+      value = UserNotificationType.class,
       names = {"PASSWORD_CHANGED", "PASSWORD_RESET", "EMAIL_CHANGED"})
-  void securityEventsAreMinimalAndRequireTheDomainTransaction(UserMessageType type) {
+  void securityEventsAreMinimalAndRequireTheDomainTransaction(UserNotificationType type) {
     assertThrows(
         IllegalTransactionStateException.class, () -> service.recordSecurityEvent(ordinary, type));
     tx.executeWithoutResult(
@@ -503,15 +503,15 @@ class UserMessageServicePersistenceTest {
   void rolledBackSecurityEventDoesNotClaimSuccess() {
     tx.executeWithoutResult(
         s -> {
-          service.recordSecurityEvent(ordinary, UserMessageType.PASSWORD_CHANGED);
+          service.recordSecurityEvent(ordinary, UserNotificationType.PASSWORD_CHANGED);
           s.setRollbackOnly();
         });
-    assertEquals(0, messageCount());
+    assertEquals(0, notificationCount());
     assertEquals(0, recipients.count());
   }
 
   @Test
-  void deletingRecipientKeepsSharedMessageForOthersAndDeletingSenderSetsNull() {
+  void deletingRecipientKeepsSharedNotificationForOthersAndDeletingSenderSetsNull() {
     var sent = broadcast();
     tx.executeWithoutResult(
         s -> {
@@ -519,7 +519,7 @@ class UserMessageServicePersistenceTest {
           users.flush();
         });
     assertEquals(2, recipients.count());
-    assertTrue(messages.existsById(sent.id()));
+    assertTrue(notifications.existsById(sent.id()));
     tx.executeWithoutResult(
         s -> {
           users.deleteById(sender.getId());
@@ -527,24 +527,24 @@ class UserMessageServicePersistenceTest {
         });
     assertEquals(1, recipients.count());
     tx.executeWithoutResult(
-        s -> assertNull(messages.findById(sent.id()).orElseThrow().getSender()));
+        s -> assertNull(notifications.findById(sent.id()).orElseThrow().getSender()));
     assertEquals(1, service.inbox(session(guest), false, 0, 20).getTotalElements());
   }
 
   @Test
-  void cleanupRemovesReadAndUnreadExpiredMessagesAndOrphanContents() {
+  void cleanupRemovesReadAndUnreadExpiredNotificationsAndOrphanContents() {
     var old = broadcast();
     var fresh = broadcast();
     // Unveränderliche Fachspalten nur als künstliche Altstruktur per SQL altern lassen.
     tx.executeWithoutResult(
         s ->
-            em.createNativeQuery("update user_messages set created_at = :old where id = :id")
+            em.createNativeQuery("update user_notifications set created_at = :old where id = :id")
                 .setParameter("old", Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS))
                 .setParameter("id", old.id())
                 .executeUpdate());
     assertEquals(1, cleanup.cleanup());
-    assertFalse(messages.existsById(old.id()));
-    assertTrue(messages.existsById(fresh.id()));
+    assertFalse(notifications.existsById(old.id()));
+    assertTrue(notifications.existsById(fresh.id()));
     assertEquals(3, recipients.count());
     tx.executeWithoutResult(s -> recipients.deleteAll());
     assertEquals(1, cleanup.cleanup());
@@ -552,8 +552,56 @@ class UserMessageServicePersistenceTest {
 
   @Test
   void retentionMustBePositiveAndVisiblePolicyUsesSameValue() {
-    assertThrows(IllegalArgumentException.class, () -> new UserMessagePolicy(0));
-    assertThrows(IllegalArgumentException.class, () -> new UserMessagePolicy(-1));
+    assertThrows(IllegalArgumentException.class, () -> new UserNotificationPolicy(0));
+    assertThrows(IllegalArgumentException.class, () -> new UserNotificationPolicy(-1));
     assertEquals(180, service.retentionDays());
+  }
+
+  @Test
+  void notificationSqlSchemaHasConsistentNamesAndPreservesStoredReadState() {
+    tx.executeWithoutResult(
+        s -> {
+          var columns =
+              em.createNativeQuery(
+                      "select column_name from information_schema.columns where table_name='USER_NOTIFICATION_RECIPIENTS'")
+                  .getResultList();
+          assertTrue(columns.contains("NOTIFICATION_ID"));
+          var constraints =
+              em.createNativeQuery(
+                      "select constraint_name from information_schema.table_constraints where table_name in ('USER_NOTIFICATIONS','USER_NOTIFICATION_RECIPIENTS')")
+                  .getResultList();
+          assertTrue(constraints.contains("UK_USER_NOTIFICATION_REQUEST"));
+          assertTrue(constraints.contains("UK_USER_NOTIFICATION_RECIPIENT"));
+          var indexes =
+              em.createNativeQuery(
+                      "select index_name from information_schema.indexes where table_name in ('USER_NOTIFICATIONS','USER_NOTIFICATION_RECIPIENTS')")
+                  .getResultList();
+          assertTrue(indexes.contains("IDX_USER_NOTIFICATION_CREATED"));
+          assertTrue(indexes.contains("IDX_USER_NOTIFICATION_INBOX"));
+        });
+    var created = Instant.parse("2026-10-18T10:00:00Z");
+    tx.executeWithoutResult(
+        s -> {
+          em.createNativeQuery(
+                  "insert into user_notifications (id, request_key, type, title, body, created_at, broadcast, recipient_count, sender_id) values (900001, 'schema:notification', 'ADMIN_ANNOUNCEMENT', 'Existing title', 'Existing body', :created, false, 1, :sender)")
+              .setParameter("created", created)
+              .setParameter("sender", sender.getId())
+              .executeUpdate();
+          em.createNativeQuery(
+                  "insert into user_notification_recipients (id, notification_id, user_id, read_at) values (900002, 900001, :owner, :read)")
+              .setParameter("owner", ordinary.getId())
+              .setParameter("read", created)
+              .executeUpdate();
+        });
+    var item = service.inbox(userSession, false, 0, 20).getContent().getFirst();
+    assertEquals(900002L, item.id());
+    assertEquals(UserNotificationType.ADMIN_ANNOUNCEMENT, item.type());
+    assertEquals("Existing title", item.title());
+    assertEquals("Existing body", item.body());
+    assertTrue(item.read());
+    assertEquals(0, service.unreadCount(userSession));
+    Long notificationId =
+        tx.execute(s -> recipients.findById(item.id()).orElseThrow().getNotification().getId());
+    assertEquals(Long.valueOf(900001L), notificationId);
   }
 }

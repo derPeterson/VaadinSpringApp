@@ -33,9 +33,9 @@ class RoleMutationPersistenceTest {
   @Configuration
   @Import({
     UserServicePersistenceTest.Config.class,
-    UserMessageService.class,
+    UserNotificationService.class,
     UserRoleChanges.class,
-    UserMessageBroadcaster.class,
+    UserNotificationBroadcaster.class,
     UserRoleBroadcaster.class
   })
   static class Config {
@@ -51,16 +51,16 @@ class RoleMutationPersistenceTest {
     }
 
     @Bean
-    UserMessagePolicy messagePolicy() {
-      return new UserMessagePolicy(180);
+    UserNotificationPolicy messagePolicy() {
+      return new UserNotificationPolicy(180);
     }
   }
 
   @Autowired UserService service;
   @Autowired UserRepository users;
-  @Autowired UserMessageRepository messages;
-  @Autowired UserMessageRecipientRepository recipients;
-  @Autowired UserMessageService inbox;
+  @Autowired UserNotificationRepository notifications;
+  @Autowired UserNotificationRecipientRepository recipients;
+  @Autowired UserNotificationService inbox;
   @Autowired UserRoleChanges changes;
   @Autowired UserRoleBroadcaster events;
   @Autowired SecurityService security;
@@ -74,7 +74,7 @@ class RoleMutationPersistenceTest {
     tx.executeWithoutResult(
         s -> {
           recipients.deleteAll();
-          messages.deleteAll();
+          notifications.deleteAll();
           users.deleteAll();
           users.flush();
           em.createQuery("delete from RoleEntity").executeUpdate();
@@ -151,8 +151,8 @@ class RoleMutationPersistenceTest {
     login(admin);
     assign(user, type);
     assertTrue(form(user).hasRole(type));
-    if (type != RoleType.ROLE_USER) assertEquals(1, messages.count());
-    else assertEquals(0, messages.count());
+    if (type != RoleType.ROLE_USER) assertEquals(1, notifications.count());
+    else assertEquals(0, notifications.count());
     assign(user, RoleType.ROLE_GUEST);
     assertTrue(form(user).hasRole(RoleType.ROLE_GUEST));
   }
@@ -170,7 +170,7 @@ class RoleMutationPersistenceTest {
     assertThrows(AccessDeniedException.class, () -> service.deleteUser(form(superadmin)));
     edited.setEnabled(false);
     assertThrows(AccessDeniedException.class, () -> service.save(edited));
-    assertEquals(0, messages.count());
+    assertEquals(0, notifications.count());
     assertTrue(form(superadmin).isEnabled());
     assertEquals("hash", form(superadmin).getPassword());
   }
@@ -189,12 +189,12 @@ class RoleMutationPersistenceTest {
     login(superadmin);
     assign(user, RoleType.ROLE_SUPERADMIN);
     assertTrue(form(user).hasRole(RoleType.ROLE_SUPERADMIN));
-    assertEquals(UserMessageType.ROLES_CHANGED, messages.findAll().getFirst().getType());
+    assertEquals(UserNotificationType.ROLES_CHANGED, notifications.findAll().getFirst().getType());
     assertEquals(1, recipients.count());
     assertEquals(user.getId(), tx.execute(s -> recipients.findAll().getFirst().getUser().getId()));
     assign(user, RoleType.ROLE_USER);
     assertFalse(form(user).hasRole(RoleType.ROLE_SUPERADMIN));
-    assertEquals(2, messages.count());
+    assertEquals(2, notifications.count());
   }
 
   @ParameterizedTest
@@ -214,7 +214,7 @@ class RoleMutationPersistenceTest {
       }
     }
     assertThrows(AccessDeniedException.class, () -> assign(user, RoleType.ROLE_ADMIN));
-    assertEquals(0, messages.count());
+    assertEquals(0, notifications.count());
   }
 
   @Test
@@ -235,7 +235,7 @@ class RoleMutationPersistenceTest {
     a.setRoleEntities(form(guest).getRoleEntities());
     service.createAdminUser(a, "OnlyForTests!");
     assertEquals(5, users.count());
-    assertEquals(0, messages.count());
+    assertEquals(0, notifications.count());
   }
 
   @Test
@@ -247,7 +247,7 @@ class RoleMutationPersistenceTest {
       var edit = form(user);
       edit.setFirstName("Changed");
       service.updateAdminUser(edit, edit.getVersion(), "");
-      assertEquals(0, messages.count());
+      assertEquals(0, notifications.count());
       assertEquals(0, pushes.get());
       tx.executeWithoutResult(
           s -> {
@@ -255,12 +255,12 @@ class RoleMutationPersistenceTest {
             assertEquals(0, pushes.get());
             s.setRollbackOnly();
           });
-      assertEquals(0, messages.count());
+      assertEquals(0, notifications.count());
       assertEquals(0, pushes.get());
       assertTrue(form(user).hasRole(RoleType.ROLE_USER));
       assign(user, RoleType.ROLE_ADMIN);
       assertEquals(1, pushes.get());
-      assertEquals(1, messages.count());
+      assertEquals(1, notifications.count());
     } finally {
       listener.remove();
     }
@@ -270,20 +270,20 @@ class RoleMutationPersistenceTest {
   void failedMandatoryNoticeRollsBackRoleAssignmentAndPublishesNoRoleRefresh() {
     login(superadmin);
     var target = org.springframework.test.util.AopTestUtils.getUltimateTargetObject(changes);
-    var failing = mock(UserMessageService.class);
+    var failing = mock(UserNotificationService.class);
     doThrow(new IllegalStateException("message persistence unavailable"))
         .when(failing)
         .recordSecurityEvent(any(), any());
     var count = new AtomicInteger();
     var listener = events.register(id -> count.incrementAndGet());
-    org.springframework.test.util.ReflectionTestUtils.setField(target, "messages", failing);
+    org.springframework.test.util.ReflectionTestUtils.setField(target, "notifications", failing);
     try {
       assertThrows(RuntimeException.class, () -> assign(user, RoleType.ROLE_SUPERADMIN));
       assertTrue(form(user).hasRole(RoleType.ROLE_USER));
-      assertEquals(0, messages.count());
+      assertEquals(0, notifications.count());
       assertEquals(0, count.get());
     } finally {
-      org.springframework.test.util.ReflectionTestUtils.setField(target, "messages", inbox);
+      org.springframework.test.util.ReflectionTestUtils.setField(target, "notifications", inbox);
       listener.remove();
     }
   }
@@ -329,7 +329,7 @@ class RoleMutationPersistenceTest {
       assertTrue(form(superadmin).isEnabled());
       assertTrue(form(superadmin).hasRole(RoleType.ROLE_SUPERADMIN));
       assertTrue(form(admin).hasRole(RoleType.ROLE_ADMIN));
-      assertEquals(0, messages.count());
+      assertEquals(0, notifications.count());
       assertEquals(0, recipients.count());
       assertEquals(0, count.get());
     } finally {

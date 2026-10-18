@@ -8,18 +8,18 @@ import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.router.QueryParameters;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.*;
-import de.derpeterson.app.model.enums.UserMessageType;
-import de.derpeterson.app.service.UserMessageService;
-import de.derpeterson.app.service.UserMessageService.Item;
+import de.derpeterson.app.model.enums.UserNotificationType;
+import de.derpeterson.app.service.UserNotificationService;
+import de.derpeterson.app.service.UserNotificationService.Item;
 import de.derpeterson.app.views.*;
 import jakarta.servlet.http.HttpSession;
 import java.util.*;
 import org.slf4j.LoggerFactory;
 
 /** Gemeinsame kompakte Vorschau und paginierter eigener Posteingang. */
-public class UserMessagesPanel extends Div {
+public class UserNotificationsPanel extends Div {
   private final transient MessageProperties texts;
-  private final transient UserMessageService service;
+  private final transient UserNotificationService service;
   private final transient HttpSession session;
   private final boolean compact;
   private final Div rows = new Div();
@@ -37,17 +37,20 @@ public class UserMessagesPanel extends Div {
   private Dialog detail;
   private Item openedItem;
 
-  public UserMessagesPanel(
-      MessageProperties texts, UserMessageService service, HttpSession session, boolean compact) {
+  public UserNotificationsPanel(
+      MessageProperties texts,
+      UserNotificationService service,
+      HttpSession session,
+      boolean compact) {
     this.texts = texts;
     this.service = service;
     this.session = session;
     this.compact = compact;
-    addClassNames("cosmos-theme", "cosmos-messages-panel");
-    setId(compact ? "messages-preview" : "messages-inbox");
+    addClassNames("cosmos-theme", "cosmos-notifications-panel");
+    setId(compact ? "notifications-preview" : "notifications-inbox");
     heading.addClassName("cosmos-panel-title");
     var toolbar = new Div(unread, refresh, markAll);
-    toolbar.addClassName("cosmos-messages-actions");
+    toolbar.addClassName("cosmos-notifications-actions");
     refresh.addClickListener(e -> refresh());
     markAll.addClickListener(e -> action(() -> service.markRead(session, unreadIds)));
     unread.addValueChangeListener(
@@ -65,12 +68,12 @@ public class UserMessagesPanel extends Div {
           page++;
           refresh();
         });
-    history.addClickListener(e -> UI.getCurrent().navigate(UserMessagesView.class));
+    history.addClickListener(e -> UI.getCurrent().navigate(UserNotificationsView.class));
     var paging = new Div(previous, pageLabel, next);
-    paging.addClassName("cosmos-messages-actions");
+    paging.addClassName("cosmos-notifications-actions");
     paging.setVisible(!compact);
     history.setVisible(compact);
-    retention.addClassName("cosmos-messages-secondary");
+    retention.addClassName("cosmos-notifications-secondary");
     add(heading, toolbar, rows, paging, history, retention);
     refreshTexts();
     addDetachListener(
@@ -80,14 +83,14 @@ public class UserMessagesPanel extends Div {
   }
 
   public void refreshTexts() {
-    heading.setText(texts.getMessagesTitle());
-    unread.setLabel(texts.getMessagesUnread());
-    refresh.setText(texts.getMessagesRefresh());
-    markAll.setText(texts.getMessagesMarkAll());
-    previous.setText(texts.getMessagesPrevious());
-    next.setText(texts.getMessagesNext());
-    history.setText(texts.getMessagesHistory());
-    retention.setText(texts.getMessagesRetention(service.retentionDays()));
+    heading.setText(texts.getNotificationsTitle());
+    unread.setLabel(texts.getNotificationsUnread());
+    refresh.setText(texts.getNotificationsRefresh());
+    markAll.setText(texts.getNotificationsMarkAll());
+    previous.setText(texts.getNotificationsPrevious());
+    next.setText(texts.getNotificationsNext());
+    history.setText(texts.getNotificationsHistory());
+    retention.setText(texts.getNotificationsRetention(service.retentionDays()));
     if (isAttached()) refresh();
     if (detail != null && detail.isOpened() && openedItem != null) renderDetail();
   }
@@ -103,12 +106,16 @@ public class UserMessagesPanel extends Div {
       unreadIds = service.unreadSnapshot(session);
       markAll.setEnabled(!unreadIds.isEmpty());
       rows.removeAll();
-      if (result.isEmpty()) rows.add(new Span(texts.getMessagesEmpty()));
+      if (result.isEmpty()) rows.add(new Span(texts.getNotificationsEmpty()));
       for (var item : result) rows.add(row(item));
       previous.setEnabled(page > 0);
       next.setEnabled(result.hasNext());
       pageLabel.setText(
-          texts.getMessagesPage() + " " + (page + 1) + " / " + Math.max(1, result.getTotalPages()));
+          texts.getNotificationsPage()
+              + " "
+              + (page + 1)
+              + " / "
+              + Math.max(1, result.getTotalPages()));
     } catch (RuntimeException failure) {
       unavailable();
     }
@@ -117,7 +124,7 @@ public class UserMessagesPanel extends Div {
   public void unavailable() {
     unreadIds = List.of();
     rows.removeAll();
-    rows.add(new Span(texts.getMessagesUnavailable()));
+    rows.add(new Span(texts.getNotificationsUnavailable()));
     markAll.setEnabled(false);
     previous.setEnabled(false);
     next.setEnabled(false);
@@ -125,17 +132,18 @@ public class UserMessagesPanel extends Div {
   }
 
   private Div row(Item item) {
-    var title = new Button(UserMessageTexts.title(texts, item), e -> action(() -> open(item)));
+    var title = new Button(UserNotificationTexts.title(texts, item), e -> action(() -> open(item)));
     title.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    title.addClassName("cosmos-message-title");
-    var time = new Span(UserMessageTexts.time(item.createdAt(), UI.getCurrent().getLocale()));
-    var state = new Span(item.read() ? texts.getMessagesRead() : texts.getMessagesUnread());
+    title.addClassName("cosmos-notification-title");
+    var time = new Span(UserNotificationTexts.time(item.createdAt(), UI.getCurrent().getLocale()));
+    var state =
+        new Span(item.read() ? texts.getNotificationsRead() : texts.getNotificationsUnread());
     var meta = new Div(time, state);
-    meta.addClassNames("cosmos-messages-actions", "cosmos-messages-secondary");
+    meta.addClassNames("cosmos-notifications-actions", "cosmos-notifications-secondary");
     var row = new Div(title, meta);
-    row.addClassName("cosmos-message-row");
-    row.getElement().setAttribute("data-message-id", item.id().toString());
-    if (!item.read()) row.addClassName("cosmos-message-row--unread");
+    row.addClassName("cosmos-notification-row");
+    row.getElement().setAttribute("data-notification-id", item.id().toString());
+    if (!item.read()) row.addClassName("cosmos-notification-row--unread");
     return row;
   }
 
@@ -146,10 +154,10 @@ public class UserMessagesPanel extends Div {
     } catch (RuntimeException failure) {
       if (failure instanceof org.springframework.security.access.AccessDeniedException)
         unavailable();
-      LoggerFactory.getLogger(getClass()).warn("Message action failed", failure);
+      LoggerFactory.getLogger(getClass()).warn("Notification action failed", failure);
       NotificationHelper.getInstance()
           .showNotification(
-              texts::getMessagesUnavailable, NotificationHelper.NotificationType.ERROR);
+              texts::getNotificationsUnavailable, NotificationHelper.NotificationType.ERROR);
     }
   }
 
@@ -158,7 +166,7 @@ public class UserMessagesPanel extends Div {
     if (detail != null) detail.close();
     openedItem = item;
     detail = new Dialog();
-    detail.addClassNames("cosmos-theme", "cosmos-message-dialog");
+    detail.addClassNames("cosmos-theme", "cosmos-notification-dialog");
     detail.setModality(com.vaadin.flow.component.ModalityMode.STRICT);
     detail.getThemeNames().add("cosmos");
     detail.setCloseOnOutsideClick(true);
@@ -171,7 +179,7 @@ public class UserMessagesPanel extends Div {
     detail.removeAll();
     detail.getHeader().removeAll();
     detail.getFooter().removeAll();
-    var title = new H2(UserMessageTexts.title(texts, openedItem));
+    var title = new H2(UserNotificationTexts.title(texts, openedItem));
     title.addClassName("cosmos-panel-title");
     var icon = com.vaadin.flow.component.icon.VaadinIcon.BELL.create();
     icon.getElement().setAttribute("aria-hidden", "true");
@@ -182,22 +190,22 @@ public class UserMessagesPanel extends Div {
             com.vaadin.flow.component.icon.VaadinIcon.CLOSE_CIRCLE.create(), e -> detail.close());
     closeIcon.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     closeIcon.addClassName("cosmos-overlay-close");
-    closeIcon.setAriaLabel(texts.getMessagesClose());
+    closeIcon.setAriaLabel(texts.getNotificationsClose());
     var header = new Div(badge, title, closeIcon);
-    header.addClassName("cosmos-message-detail-header");
+    header.addClassName("cosmos-notification-detail-header");
     detail.getHeader().add(header);
     detail.getElement().setProperty("ariaLabel", title.getText());
     var body = new Div();
-    body.setText(UserMessageTexts.body(texts, openedItem));
-    body.addClassName("cosmos-message-body");
+    body.setText(UserNotificationTexts.body(texts, openedItem));
+    body.addClassName("cosmos-notification-body");
     detail.add(body);
-    var close = new Button(texts.getMessagesClose(), e -> detail.close());
+    var close = new Button(texts.getNotificationsClose(), e -> detail.close());
     var actions = new Div(close);
     actions.addClassName("cosmos-dialog-actions");
-    if (openedItem.type() != UserMessageType.ADMIN_MESSAGE) {
+    if (openedItem.type() != UserNotificationType.ADMIN_ANNOUNCEMENT) {
       var account =
           new Button(
-              texts.getMessagesOpenAccount(),
+              texts.getNotificationsOpenAccount(),
               e -> {
                 detail.close();
                 UI.getCurrent()

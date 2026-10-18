@@ -110,32 +110,35 @@ class AdminViewNavigationTest {
   }
 
   @Test
-  void messagesNavigationIsHiddenAndDirectUrlFallsBackForOrdinaryAdmin() {
-    var messages = mock(de.derpeterson.app.service.UserMessageService.class);
-    view.configureAdminMessages(messages);
-    enter("?section=messages");
-    assertFalse(((SideNavItem) ReflectionTestUtils.getField(view, "messagesNavItem")).isVisible());
+  void notificationsNavigationIsHiddenAndDirectUrlFallsBackForOrdinaryAdmin() {
+    var notifications = mock(de.derpeterson.app.service.UserNotificationService.class);
+    view.configureAdminNotifications(notifications);
+    enter("?section=notifications");
+    assertFalse(
+        ((SideNavItem) ReflectionTestUtils.getField(view, "notificationsNavItem")).isVisible());
     assertEquals("DASHBOARD", ReflectionTestUtils.getField(view, "activeSection").toString());
-    verify(messages, never()).targets(any());
+    verify(notifications, never()).targets(any());
   }
 
   @Test
-  void superadminCanOpenMessagesAndRefreshUsesTheSameSection() {
-    var messages = mock(de.derpeterson.app.service.UserMessageService.class);
-    when(messages.canSend(any())).thenReturn(true);
-    when(messages.targets(any())).thenReturn(List.of());
-    when(messages.sent(any(), eq(0))).thenReturn(org.springframework.data.domain.Page.empty());
+  void superadminCanOpenNotificationsAndRefreshUsesTheSameSection() {
+    var notifications = mock(de.derpeterson.app.service.UserNotificationService.class);
+    when(notifications.canSend(any())).thenReturn(true);
+    when(notifications.targets(any())).thenReturn(List.of());
+    when(notifications.sent(any(), eq(0))).thenReturn(org.springframework.data.domain.Page.empty());
     try (var context =
         new org.springframework.context.annotation.AnnotationConfigApplicationContext()) {
-      context.registerBean(de.derpeterson.app.service.UserMessageService.class, () -> messages);
+      context.registerBean(
+          de.derpeterson.app.service.UserNotificationService.class, () -> notifications);
       context.refresh();
       context.getAutowireCapableBeanFactory().autowireBean(view);
     }
-    enter("?section=messages");
-    assertEquals("MESSAGES", ReflectionTestUtils.getField(view, "activeSection").toString());
-    assertTrue(((SideNavItem) ReflectionTestUtils.getField(view, "messagesNavItem")).isVisible());
-    when(messages.canSend(any())).thenReturn(false);
-    enter("?section=messages");
+    enter("?section=notifications");
+    assertEquals("NOTIFICATIONS", ReflectionTestUtils.getField(view, "activeSection").toString());
+    assertTrue(
+        ((SideNavItem) ReflectionTestUtils.getField(view, "notificationsNavItem")).isVisible());
+    when(notifications.canSend(any())).thenReturn(false);
+    enter("?section=notifications");
     assertEquals("DASHBOARD", ReflectionTestUtils.getField(view, "activeSection").toString());
   }
 

@@ -77,11 +77,14 @@ import org.springframework.transaction.support.TransactionTemplate;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class PasswordResetServicePersistenceTest {
   @Autowired private PasswordResetService service;
-  @Autowired private UserMessageService userMessages;
-  @Autowired private de.derpeterson.app.repository.UserMessageRepository userMessagesRepository;
+  @Autowired private UserNotificationService userNotifications;
 
   @Autowired
-  private de.derpeterson.app.repository.UserMessageRecipientRepository userRecipientsRepository;
+  private de.derpeterson.app.repository.UserNotificationRepository userNotificationsRepository;
+
+  @Autowired
+  private de.derpeterson.app.repository.UserNotificationRecipientRepository
+      userRecipientsRepository;
 
   @Autowired private PasswordResetTokenRepository tokens;
   @Autowired private UserRepository users;
@@ -109,7 +112,7 @@ class PasswordResetServicePersistenceTest {
     transaction.executeWithoutResult(
         tx -> {
           userRecipientsRepository.deleteAll();
-          userMessagesRepository.deleteAll();
+          userNotificationsRepository.deleteAll();
           mails.deleteAll();
           tokens.deleteAll();
           users.deleteAll();
@@ -166,10 +169,10 @@ class PasswordResetServicePersistenceTest {
     assertTrue(service.resetPassword("valid", "Password!"));
     assertEquals("hash-Password!", password());
     assertEquals(TokenStatus.USED, status("valid"));
-    assertEquals(1, userMessagesRepository.count());
+    assertEquals(1, userNotificationsRepository.count());
     assertEquals(
-        de.derpeterson.app.model.enums.UserMessageType.PASSWORD_RESET,
-        userMessagesRepository.findAll().getFirst().getType());
+        de.derpeterson.app.model.enums.UserNotificationType.PASSWORD_RESET,
+        userNotificationsRepository.findAll().getFirst().getType());
     assertTrue(service.existsToken("valid"));
     assertFalse(service.validateToken("valid"));
     assertFalse(service.resetPassword("valid", "OtherPassword!"));
@@ -181,20 +184,21 @@ class PasswordResetServicePersistenceTest {
   void messagePersistenceFailureRollsBackPasswordAndResetConsumption() {
     seed("message-failure", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
     var target = org.springframework.test.util.AopTestUtils.getTargetObject(service);
-    var failure = mock(UserMessageService.class);
+    var failure = mock(UserNotificationService.class);
     doThrow(new IllegalStateException("message storage failed"))
         .when(failure)
         .recordSecurityEvent(any(), any());
-    org.springframework.test.util.ReflectionTestUtils.setField(target, "userMessages", failure);
+    org.springframework.test.util.ReflectionTestUtils.setField(
+        target, "userNotifications", failure);
     try {
       assertThrows(
           IllegalStateException.class, () -> service.resetPassword("message-failure", "Password!"));
       assertEquals("old-hash", password());
       assertEquals(TokenStatus.ACTIVE, status("message-failure"));
-      assertEquals(0, userMessagesRepository.count());
+      assertEquals(0, userNotificationsRepository.count());
     } finally {
       org.springframework.test.util.ReflectionTestUtils.setField(
-          target, "userMessages", userMessages);
+          target, "userNotifications", userNotifications);
     }
   }
 
@@ -1171,19 +1175,19 @@ class PasswordResetServicePersistenceTest {
     }
 
     @Bean
-    UserMessageService userMessages(
-        de.derpeterson.app.repository.UserMessageRepository messages,
-        de.derpeterson.app.repository.UserMessageRecipientRepository recipients,
+    UserNotificationService userNotifications(
+        de.derpeterson.app.repository.UserNotificationRepository messages,
+        de.derpeterson.app.repository.UserNotificationRecipientRepository recipients,
         UserRepository users,
         ConfigService config) {
-      return new UserMessageService(
-          new UserMessagePolicy(180),
+      return new UserNotificationService(
+          new UserNotificationPolicy(180),
           messages,
           recipients,
           users,
           mock(de.derpeterson.app.security.SecurityService.class),
           config,
-          new de.derpeterson.app.websocket.UserMessageBroadcaster());
+          new de.derpeterson.app.websocket.UserNotificationBroadcaster());
     }
 
     @Bean
@@ -1193,7 +1197,7 @@ class PasswordResetServicePersistenceTest {
 
     @Bean
     PasswordResetService passwordResetService(
-        Probes probes, Clock clock, UserMessageService userMessages) {
+        Probes probes, Clock clock, UserNotificationService userNotifications) {
       var messages = mock(MessageProperties.class);
       when(messages.getEmailResetPasswordSubject()).thenReturn("Reset password");
       return new PasswordResetService(
@@ -1204,7 +1208,7 @@ class PasswordResetServicePersistenceTest {
           probes.encoder(),
           probes.queue(),
           mock(LoginAttemptService.class),
-          userMessages,
+          userNotifications,
           clock);
     }
   }

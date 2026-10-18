@@ -85,7 +85,7 @@ class PasswordResetServiceTest {
             encoder,
             queue,
             attempts,
-            mock(UserMessageService.class),
+            mock(UserNotificationService.class),
             CLOCK);
     user =
         UserEntity.builder()
@@ -115,7 +115,7 @@ class PasswordResetServiceTest {
                 encoder,
                 queue,
                 attempts,
-                mock(UserMessageService.class),
+                mock(UserNotificationService.class),
                 null));
   }
 

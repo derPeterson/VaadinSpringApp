@@ -34,15 +34,15 @@ public class AccountHeaderActions extends HorizontalLayout {
     refreshTexts();
   }
 
-  private UserMessageBell messageBell;
+  private UserNotificationBell notificationBell;
 
-  public void configureMessages(
-      de.derpeterson.app.service.UserMessageService service,
+  public void configureNotifications(
+      de.derpeterson.app.service.UserNotificationService service,
       jakarta.servlet.http.HttpServletRequest request) {
-    if (!isVisible() || messageBell != null) return;
+    if (!isVisible() || notificationBell != null) return;
     remove(notifications);
-    messageBell = new UserMessageBell(messages, service, request, notifications);
-    addComponentAtIndex(0, messageBell);
+    notificationBell = new UserNotificationBell(messages, service, request, notifications);
+    addComponentAtIndex(0, notificationBell);
   }
 
   public void refreshTexts() {
@@ -50,6 +50,6 @@ public class AccountHeaderActions extends HorizontalLayout {
     notifications.setTooltipText(messages.getBaseNotifications());
     settings.setAriaLabel(messages.getBaseManageAccountButton());
     settings.setTooltipText(messages.getBaseManageAccountButton());
-    if (messageBell != null) messageBell.refreshTexts();
+    if (notificationBell != null) notificationBell.refreshTexts();
   }
 }

@@ -3,8 +3,8 @@
 Stand: 18.10.2026. Geprüfte Codebasis: `main`, `7dedccc`.
 Ursprüngliche Planung vor der anschließenden Umsetzungsfreigabe. Die beschriebenen
 Ausgangsbefunde und Klassennamen sind daher als damalige Analyse/Vorschläge zu lesen.
-Der erste Umfang ist inzwischen auf `feature/user-messages` umgesetzt; der
-[aktuelle Funktions- und Prüfvertrag](user-messages.md) beschreibt gewählte Standardwerte,
+Der erste Umfang ist inzwischen auf dem Feature-Stand umgesetzt; der
+[aktuelle Funktions- und Prüfvertrag](user-notifications.md) beschreibt gewählte Standardwerte,
 tatsächliche Paketaufteilung und noch offene Browser-/Betriebsprüfungen.
 
 ## 1. Ziel und Machbarkeit
@@ -72,7 +72,7 @@ kein vollständiger Schutzplan.
 
 ### Superadminmaske
 
-Neuer Bereich **Mitteilungen** unter beispielsweise `/admin?section=messages`.
+Neuer Bereich **Mitteilungen** unter beispielsweise `/admin?section=notifications`.
 Einzeln bzw. mehrfach auswählbare Benutzer oder **alle aktiven Konten**, Titel,
 Nachrichtentext und eine Vorschau vor dem Versand. Die Oberfläche erhält vorhandene
 Cosmos-Cards, Buttons, Footer und Tokens; keine neue Palette oder globale CSS-Änderung.
@@ -125,9 +125,9 @@ Auch eine einzelne Systemmitteilung verwendet dieselben Strukturen.
 
 | Neuer Typ | Geplante Daten |
 | --- | --- |
-| `UserMessageEntity` | ID, Herkunft/Typ, Erstellungszeit als `Instant`, optionaler Absenderbezug, manueller Titel/Text ODER Systemvorlage mit kleinen validierten Ereignisdaten, stabile Vorgangs-ID gegen Duplikate |
-| `UserMessageRecipientEntity` | ID, Message-FK, Empfänger-FK auf stabile Benutzer-ID, `readAt` nullable; Unique-Constraint auf Mitteilung und Empfänger |
-| `UserMessageType` | Zum Beispiel `ADMIN_MESSAGE`, `PASSWORD_CHANGED`, `PASSWORD_RESET`, `EMAIL_CHANGED`; keine beliebigen vom Browser gewählten Systemtypen |
+| `UserNotificationEntity` | ID, Herkunft/Typ, Erstellungszeit als `Instant`, optionaler Absenderbezug, manueller Titel/Text ODER Systemvorlage mit kleinen validierten Ereignisdaten, stabile Vorgangs-ID gegen Duplikate |
+| `UserNotificationRecipientEntity` | ID, Benachrichtigungs-FK, Empfänger-FK auf stabile Benutzer-ID, `readAt` nullable; Unique-Constraint auf Mitteilung und Empfänger |
+| `UserNotificationType` | Zum Beispiel `ADMIN_ANNOUNCEMENT`, `PASSWORD_CHANGED`, `PASSWORD_RESET`, `EMAIL_CHANGED`; keine beliebigen vom Browser gewählten Systemtypen |
 
 Für Systemtexte werden Typ und unveränderliche, erlaubte Ereignisdaten gespeichert,
 keine Java-Getter-Namen, beliebigen Übersetzungsschlüssel oder beliebigen JSON-Objekte
@@ -147,7 +147,7 @@ ist kein unveränderliches Sicherheits-Auditarchiv.
 
 ## 6. Service- und Transaktionsregeln
 
-1. **Vertrauenswürdige Erzeugung:** Fachservices rufen den internen `UserMessageService`
+1. **Vertrauenswürdige Erzeugung:** Fachservices rufen den internen `UserNotificationService`
    auf. Separater administrativer Versand prüft den aktuellen Superadmin serverseitig.
    Ein Benutzer kann weder Absender noch Quelle „System“ oder Empfänger-ID einer Inboxabfrage bestimmen.
 2. **Gemeinsamer Commit:** Bei den ersten SQL-basierten Sicherheitsaktionen werden
@@ -192,7 +192,7 @@ die dauerhafte Speicherung bzw. Wiederverarbeitung von Ereignissen:
   tatsächlich eingesetzten Versionen geprüft werden. Für den ersten Umfang ist ein
   gezielter frischer Service-Guard passend zur bestehenden Architektur ausreichend.
   [Spring Security: Method Security](https://docs.spring.io/spring-security/reference/servlet/authorization/method-security.html)
-- Eigener `UserMessageBroadcaster` mit zielbezogenen Registrierungen. In Events keine
+- Eigener `UserNotificationBroadcaster` mit zielbezogenen Registrierungen. In Events keine
   Inhalte oder vollständigen Empfängerlisten an alle UIs senden.
 - UI bei Attach registrieren, bei Detach abmelden; kurze Updates über `UI.access` bzw.
   die passende Vaadin-25-API, ohne aufrufenden Request oder Benutzerkontext eines anderen
@@ -247,16 +247,16 @@ keine zusätzliche Architektur oder generische Benachrichtigungsplattform aufbau
 
 | Paket / Ort | Aufgabe |
 | --- | --- |
-| `model/` | `UserMessageEntity`, `UserMessageRecipientEntity` |
-| `model/enums/` | `UserMessageType` und nur tatsächlich benötigte Zustände |
+| `model/` | `UserNotificationEntity`, `UserNotificationRecipientEntity` |
+| `model/enums/` | `UserNotificationType` und nur tatsächlich benötigte Zustände |
 | `repository/` | Zwei Repositories: Inhalte und empfängergebundene Listen/Zähler/Read-Updates; Indizes/Constraints |
-| `service/` | `UserMessageService` für interne Erzeugung, `UserMessageInboxService` für eigene Inbox, `AdminUserMessageService` für autorisierten manuellen Versand; immutable Item-/Snapshot-DTOs wie bei vorhandenen Services |
+| `service/` | `UserNotificationService` für interne Erzeugung, `UserNotificationInboxService` für eigene Inbox, `AdminUserNotificationService` für autorisierten manuellen Versand; immutable Item-/Snapshot-DTOs wie bei vorhandenen Services |
 | `security/` | Kleiner gemeinsamer Zugriffs-Guard für aktuelle Identität und expliziten Superadmin; bestehende Authentifizierung wiederverwenden |
-| `i18n/` | `UserMessageTextRenderer` bildet erlaubte Systemtypen auf typisierte Übersetzungsgetter ab |
-| `websocket/` | `UserMessageBroadcaster` für zielbezogene Hinweise nach Commit und Lesestatusänderungen |
+| `i18n/` | `UserNotificationTextRenderer` bildet erlaubte Systemtypen auf typisierte Übersetzungsgetter ab |
+| `websocket/` | `UserNotificationBroadcaster` für zielbezogene Hinweise nach Commit und Lesestatusänderungen |
 | `ui/components/` | Glocken-/Popoverkomponente; Anschluss an `AccountHeaderActions` und bestehende gemeinsame Kopfzeile |
-| `views/` | `UserMessagesView` für die eigene paginierte Historie; Routenvertrag in bestehenden Konstanten ergänzen |
-| `views/admin/` | `AdminUserMessagesSection`; Einbindung und Superadmin-URL-Schutz in `AdminView` |
+| `views/` | `UserNotificationsView` für die eigene paginierte Historie; Routenvertrag in bestehenden Konstanten ergänzen |
+| `views/admin/` | `AdminUserNotificationsSection`; Einbindung und Superadmin-URL-Schutz in `AdminView` |
 | `scheduler/` | Gezielte Aufbewahrungsbereinigung nach abgestimmter Regel |
 | `shared/…/i18n/MessageTexts` und Ressourcen | Neue Getter sowie DE-/EN-Texte; Shared bleibt unabhängig von Spring/Vaadin |
 | `src/test/java/` | Rechte, Persistenz, Transaktionen, Duplikate, Zeitgrenzen, konkurrierender Lesestatus und gelöschte Benutzer |

@@ -120,7 +120,7 @@ class UserInputValidationTest {
             encoder,
             null,
             mock(LoginAttemptService.class),
-            mock(UserMessageService.class));
+            mock(UserNotificationService.class));
     assertThrows(IllegalArgumentException.class, () -> reset.resetPassword("token", password));
     verifyNoInteractions(tokens, repository, encoder, broadcaster);
   }
@@ -188,7 +188,7 @@ class UserInputValidationTest {
             encoder,
             null,
             mock(LoginAttemptService.class),
-            mock(UserMessageService.class));
+            mock(UserNotificationService.class));
     UserEntity user = user();
     user.setEnabled(true);
     when(tokens.findUserIdByToken("token")).thenReturn(Optional.of(user.getId()));

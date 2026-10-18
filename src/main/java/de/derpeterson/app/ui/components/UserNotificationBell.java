@@ -5,30 +5,30 @@ import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.popover.*;
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.i18n.MessageProperties;
-import de.derpeterson.app.service.UserMessageService;
+import de.derpeterson.app.service.UserNotificationService;
 import jakarta.servlet.http.*;
 
 /** Keine Request-Proxys auf Push-Threads: die beim Attach gebundene Sitzung wird frisch geprüft. */
-public class UserMessageBell extends Div {
+public class UserNotificationBell extends Div {
   private final transient MessageProperties texts;
-  private final transient UserMessageService service;
+  private final transient UserNotificationService service;
   private final Button target;
   private final Span count = new Span();
   private final Popover popover = new Popover();
   private transient HttpSession session;
   private transient Registration registration;
-  private UserMessagesPanel panel;
+  private UserNotificationsPanel panel;
 
-  public UserMessageBell(
+  public UserNotificationBell(
       MessageProperties texts,
-      UserMessageService service,
+      UserNotificationService service,
       HttpServletRequest request,
       Button target) {
     this.texts = texts;
     this.service = service;
     this.target = target;
-    addClassName("cosmos-message-bell");
-    count.addClassName("cosmos-message-count");
+    addClassName("cosmos-notification-bell");
+    count.addClassName("cosmos-notification-count");
     count.setVisible(false);
     count.getElement().setAttribute("aria-hidden", "true");
     add(target, count, popover);
@@ -41,7 +41,7 @@ public class UserMessageBell extends Div {
     popover.setAutofocus(true);
     popover.setPosition(PopoverPosition.BOTTOM_END);
     popover.getThemeNames().add("cosmos");
-    popover.setAriaLabel(texts.getMessagesTitle());
+    popover.setAriaLabel(texts.getNotificationsTitle());
     popover.addOpenedChangeListener(
         e -> {
           if (e.isOpened()) refresh();
@@ -49,7 +49,7 @@ public class UserMessageBell extends Div {
     addAttachListener(
         event -> {
           session = request.getSession(false);
-          panel = new UserMessagesPanel(texts, service, session, true);
+          panel = new UserNotificationsPanel(texts, service, session, true);
           popover.removeAll();
           popover.add(panel);
           try {
@@ -82,7 +82,7 @@ public class UserMessageBell extends Div {
   }
 
   public void refreshTexts() {
-    popover.setAriaLabel(texts.getMessagesTitle());
+    popover.setAriaLabel(texts.getNotificationsTitle());
     if (panel != null) panel.refreshTexts();
     if (isAttached()) refresh();
   }
@@ -93,7 +93,7 @@ public class UserMessageBell extends Div {
       target.setEnabled(true);
       count.setVisible(unread > 0);
       count.setText(unread > 99 ? "99+" : Long.toString(unread));
-      target.setAriaLabel(texts.getMessagesTitle() + " (" + unread + ")");
+      target.setAriaLabel(texts.getNotificationsTitle() + " (" + unread + ")");
       if (popover.isOpened() && panel != null) panel.refresh();
     } catch (RuntimeException failure) {
       count.setVisible(false);

@@ -8,17 +8,17 @@ import com.vaadin.flow.component.textfield.*;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.*;
-import de.derpeterson.app.service.UserMessageService;
-import de.derpeterson.app.service.UserMessageService.*;
+import de.derpeterson.app.service.UserNotificationService;
+import de.derpeterson.app.service.UserNotificationService.*;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.*;
 import org.slf4j.LoggerFactory;
 
 /** Superadmin-Entwurf mit serverseitiger Empfängervorschau und dauerhaftem Request-Schlüssel. */
-public class AdminUserMessagesSection extends Div {
+public class AdminUserNotificationsSection extends Div {
   private final transient MessageProperties texts;
-  private final transient UserMessageService service;
+  private final transient UserNotificationService service;
   private final transient HttpServletRequest request;
   private final H2 heading = new H2();
   private final Span description = new Span();
@@ -39,8 +39,8 @@ public class AdminUserMessagesSection extends Div {
   private UUID requestId = UUID.randomUUID();
   private int page;
 
-  public AdminUserMessagesSection(
-      MessageProperties texts, UserMessageService service, HttpServletRequest request) {
+  public AdminUserNotificationsSection(
+      MessageProperties texts, UserNotificationService service, HttpServletRequest request) {
     this.texts = texts;
     this.service = service;
     this.request = request;
@@ -49,15 +49,15 @@ public class AdminUserMessagesSection extends Div {
     heading.addClassName("cosmos-panel-title");
     historyTitle.addClassName("cosmos-panel-title");
     description.addClassName("cosmos-panel-description");
-    hint.addClassName("cosmos-messages-secondary");
+    hint.addClassName("cosmos-notifications-secondary");
     targets.setItemLabelGenerator(t -> t.name() + " · " + t.email());
     targets.setWidthFull();
-    targets.setId("admin-messages-recipients");
-    everyone.setId("admin-messages-everyone");
-    title.setId("admin-messages-title");
-    body.setId("admin-messages-body");
-    title.setMaxLength(UserMessageService.TITLE_LIMIT);
-    body.setMaxLength(UserMessageService.BODY_LIMIT);
+    targets.setId("admin-notifications-recipients");
+    everyone.setId("admin-notifications-everyone");
+    title.setId("admin-notifications-title");
+    body.setId("admin-notifications-body");
+    title.setMaxLength(UserNotificationService.TITLE_LIMIT);
+    body.setMaxLength(UserNotificationService.BODY_LIMIT);
     for (var field : List.of(title, body)) {
       field.setWidthFull();
       field.setRequiredIndicatorVisible(true);
@@ -70,8 +70,8 @@ public class AdminUserMessagesSection extends Div {
           invalidatePreview();
         });
     targets.addValueChangeListener(e -> invalidatePreview());
-    previewButton.setId("admin-messages-preview");
-    send.setId("admin-messages-send");
+    previewButton.setId("admin-notifications-preview");
+    send.setId("admin-notifications-send");
     previewButton.addClickListener(e -> preview());
     send.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     send.setEnabled(false);
@@ -80,7 +80,7 @@ public class AdminUserMessagesSection extends Div {
     actions.addClassName("cosmos-dialog-actions");
     var form =
         new Div(heading, description, everyone, targets, title, body, hint, previewArea, actions);
-    form.addClassName("cosmos-messages-panel");
+    form.addClassName("cosmos-notifications-panel");
     previous.addClickListener(
         e -> {
           if (page > 0) page--;
@@ -92,9 +92,9 @@ public class AdminUserMessagesSection extends Div {
           loadHistory();
         });
     var paging = new Div(previous, pageLabel, next);
-    paging.addClassName("cosmos-messages-actions");
+    paging.addClassName("cosmos-notifications-actions");
     var sent = new Div(historyTitle, history, paging);
-    sent.addClassName("cosmos-messages-panel");
+    sent.addClassName("cosmos-notifications-panel");
     add(new CosmosCardComponent(form), new CosmosCardComponent(sent));
     refreshTexts();
   }
@@ -118,7 +118,7 @@ public class AdminUserMessagesSection extends Div {
     title.setInvalid(title.getValue().isBlank());
     body.setInvalid(body.getValue().isBlank());
     if (title.isInvalid() || body.isInvalid()) {
-      feedback(texts::getMessagesInvalidDraft);
+      feedback(texts::getNotificationsInvalidDraft);
       return false;
     }
     return true;
@@ -139,14 +139,14 @@ public class AdminUserMessagesSection extends Div {
       var subject = new H3(title.getValue());
       var content = new Div();
       content.setText(body.getValue());
-      content.addClassName("cosmos-message-body");
+      content.addClassName("cosmos-notification-body");
       var recipients = new Div();
       var selected = new HashSet<>(preview.ids());
       service.targets(request.getSession(false)).stream()
           .filter(t -> selected.contains(t.id()))
           .forEach(t -> recipients.add(new Div(new Span(t.name() + " · " + t.email()))));
       previewArea.add(
-          new Span(texts.getMessagesRecipients() + " (" + preview.ids().size() + ")"),
+          new Span(texts.getNotificationsRecipients() + " (" + preview.ids().size() + ")"),
           recipients,
           subject,
           content);
@@ -171,7 +171,7 @@ public class AdminUserMessagesSection extends Div {
       NotificationHelper.getInstance()
           .showNotification(
               texts::getBaseSuccessTitle,
-              texts::getMessagesSent,
+              texts::getNotificationsSent,
               NotificationHelper.NotificationType.SUCCESS);
       loadHistory();
     } catch (RuntimeException failure) {
@@ -183,20 +183,20 @@ public class AdminUserMessagesSection extends Div {
   private void handle(RuntimeException failure) {
     if (failure instanceof Rejected rejected) {
       switch (rejected.problem()) {
-        case INVALID_DRAFT -> feedback(texts::getMessagesInvalidDraft);
-        case NO_RECIPIENTS -> feedback(texts::getMessagesNoRecipients);
+        case INVALID_DRAFT -> feedback(texts::getNotificationsInvalidDraft);
+        case NO_RECIPIENTS -> feedback(texts::getNotificationsNoRecipients);
         case RECIPIENTS_CHANGED -> {
           invalidatePreview();
-          feedback(texts::getMessagesRecipientsChanged);
+          feedback(texts::getNotificationsRecipientsChanged);
         }
         case REQUEST_CONFLICT -> {
           invalidatePreview();
-          feedback(texts::getMessagesRequestConflict);
+          feedback(texts::getNotificationsRequestConflict);
         }
       }
     } else {
-      LoggerFactory.getLogger(getClass()).warn("Admin message action failed", failure);
-      feedback(texts::getMessagesUnavailable);
+      LoggerFactory.getLogger(getClass()).warn("Admin notification action failed", failure);
+      feedback(texts::getNotificationsUnavailable);
     }
   }
 
@@ -208,45 +208,49 @@ public class AdminUserMessagesSection extends Div {
   private void loadHistory() {
     var result = service.sent(request.getSession(false), page);
     history.removeAll();
-    if (result.isEmpty()) history.add(new Span(texts.getMessagesEmpty()));
+    if (result.isEmpty()) history.add(new Span(texts.getNotificationsEmpty()));
     for (var item : result) {
       var text = new Div();
       text.setText(item.body());
-      text.addClassName("cosmos-message-body");
+      text.addClassName("cosmos-notification-body");
       var meta =
           new Span(
-              UserMessageTexts.time(
+              UserNotificationTexts.time(
                       item.createdAt(), com.vaadin.flow.component.UI.getCurrent().getLocale())
                   + " · "
-                  + texts.getMessagesRecipients()
+                  + texts.getNotificationsRecipients()
                   + ": "
                   + item.recipientCount());
-      meta.addClassName("cosmos-messages-secondary");
+      meta.addClassName("cosmos-notifications-secondary");
       var row = new Div(new H3(item.title()), meta, text);
-      row.addClassName("cosmos-message-row");
+      row.addClassName("cosmos-notification-row");
       history.add(row);
     }
     previous.setEnabled(page > 0);
     next.setEnabled(result.hasNext());
     pageLabel.setText(
-        texts.getMessagesPage() + " " + (page + 1) + " / " + Math.max(1, result.getTotalPages()));
+        texts.getNotificationsPage()
+            + " "
+            + (page + 1)
+            + " / "
+            + Math.max(1, result.getTotalPages()));
   }
 
   public void refreshTexts() {
-    heading.setText(texts.getMessagesTitle());
-    description.setText(texts.getMessagesAdminDescription());
-    everyone.setLabel(texts.getMessagesEveryone());
-    targets.setLabel(texts.getMessagesRecipients());
-    title.setLabel(texts.getMessagesSubject());
-    body.setLabel(texts.getMessagesBody());
-    title.setErrorMessage(texts.getMessagesInvalidDraft());
-    body.setErrorMessage(texts.getMessagesInvalidDraft());
-    previewButton.setText(texts.getMessagesPreview());
-    send.setText(texts.getMessagesSend());
-    hint.setText(texts.getMessagesPreviewHint());
-    historyTitle.setText(texts.getMessagesSentHistory());
-    previous.setText(texts.getMessagesPrevious());
-    next.setText(texts.getMessagesNext());
+    heading.setText(texts.getNotificationsTitle());
+    description.setText(texts.getNotificationsAdminDescription());
+    everyone.setLabel(texts.getNotificationsEveryone());
+    targets.setLabel(texts.getNotificationsRecipients());
+    title.setLabel(texts.getNotificationsSubject());
+    body.setLabel(texts.getNotificationsBody());
+    title.setErrorMessage(texts.getNotificationsInvalidDraft());
+    body.setErrorMessage(texts.getNotificationsInvalidDraft());
+    previewButton.setText(texts.getNotificationsPreview());
+    send.setText(texts.getNotificationsSend());
+    hint.setText(texts.getNotificationsPreviewHint());
+    historyTitle.setText(texts.getNotificationsSentHistory());
+    previous.setText(texts.getNotificationsPrevious());
+    next.setText(texts.getNotificationsNext());
     if (isAttached()) {
       invalidatePreview();
       loadHistory();

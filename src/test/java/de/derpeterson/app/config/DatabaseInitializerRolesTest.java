@@ -47,7 +47,7 @@ class DatabaseInitializerRolesTest {
             mock(PasswordEncoder.class),
             mock(Environment.class),
             mock(RoleSchemaUpdater.class),
-            mock(de.derpeterson.app.config.UserMessageSchemaUpdater.class),
+            mock(de.derpeterson.app.config.UserNotificationSchemaUpdater.class),
             new BootstrapAccountsProperties(),
             mock(org.springframework.transaction.PlatformTransactionManager.class));
     initializer.initDatabase().run();
@@ -72,7 +72,7 @@ class DatabaseInitializerRolesTest {
             mock(PasswordEncoder.class),
             environment,
             mock(RoleSchemaUpdater.class),
-            mock(de.derpeterson.app.config.UserMessageSchemaUpdater.class),
+            mock(de.derpeterson.app.config.UserNotificationSchemaUpdater.class),
             new BootstrapAccountsProperties(),
             mock(org.springframework.transaction.PlatformTransactionManager.class));
 
@@ -105,7 +105,7 @@ class DatabaseInitializerRolesTest {
             mock(PasswordEncoder.class),
             mock(Environment.class),
             mock(RoleSchemaUpdater.class),
-            mock(de.derpeterson.app.config.UserMessageSchemaUpdater.class),
+            mock(de.derpeterson.app.config.UserNotificationSchemaUpdater.class),
             new BootstrapAccountsProperties(),
             mock(org.springframework.transaction.PlatformTransactionManager.class));
     var bootstrap = new BootstrapAccountsProperties();

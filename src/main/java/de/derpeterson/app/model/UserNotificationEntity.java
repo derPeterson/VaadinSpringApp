@@ -1,6 +1,6 @@
 package de.derpeterson.app.model;
 
-import de.derpeterson.app.model.enums.UserMessageType;
+import de.derpeterson.app.model.enums.UserNotificationType;
 import jakarta.persistence.*;
 import java.time.Instant;
 import lombok.Getter;
@@ -11,13 +11,13 @@ import org.hibernate.annotations.OnDeleteAction;
 /** Unveränderlicher Inhalt; der Lesestatus gehört ausschließlich zum Empfänger. */
 @Entity
 @Table(
-    name = "user_messages",
+    name = "user_notifications",
     uniqueConstraints =
-        @UniqueConstraint(name = "uk_user_message_request", columnNames = "request_key"),
-    indexes = @Index(name = "idx_user_message_created", columnList = "created_at"))
+        @UniqueConstraint(name = "uk_user_notification_request", columnNames = "request_key"),
+    indexes = @Index(name = "idx_user_notification_created", columnList = "created_at"))
 @Getter
 @Setter
-public class UserMessageEntity {
+public class UserNotificationEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -27,7 +27,7 @@ public class UserMessageEntity {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, updatable = false)
-  private UserMessageType type;
+  private UserNotificationType type;
 
   @Column(length = 120, updatable = false)
   private String title;

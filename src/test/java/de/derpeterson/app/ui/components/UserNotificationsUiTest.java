@@ -13,11 +13,11 @@ import com.vaadin.flow.component.textfield.*;
 import com.vaadin.flow.server.*;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.*;
-import de.derpeterson.app.model.enums.UserMessageType;
-import de.derpeterson.app.service.UserMessageService;
-import de.derpeterson.app.service.UserMessageService.*;
-import de.derpeterson.app.views.admin.AdminUserMessagesSection;
-import de.derpeterson.app.websocket.UserMessageBroadcaster;
+import de.derpeterson.app.model.enums.UserNotificationType;
+import de.derpeterson.app.service.UserNotificationService;
+import de.derpeterson.app.service.UserNotificationService.*;
+import de.derpeterson.app.views.admin.AdminUserNotificationsSection;
+import de.derpeterson.app.websocket.UserNotificationBroadcaster;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -35,18 +35,18 @@ import org.springframework.test.util.ReflectionTestUtils;
 /**
  * Java-Komponentenprüfung ohne Browser; sichtbare Geometrie/Frontend bleiben getrennt zu prüfen.
  */
-class UserMessagesUiTest {
+class UserNotificationsUiTest {
   UI ui;
   MessageProperties texts;
-  UserMessageService service;
+  UserNotificationService service;
   MockHttpSession http;
   MockHttpServletRequest request;
   AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
-  UserMessageBroadcaster events;
+  UserNotificationBroadcaster events;
   Item item =
       new Item(
           7L,
-          UserMessageType.PASSWORD_CHANGED,
+          UserNotificationType.PASSWORD_CHANGED,
           null,
           null,
           Instant.parse("2026-10-18T10:00:00Z"),
@@ -68,11 +68,11 @@ class UserMessagesUiTest {
     VaadinSession.setCurrent(session);
     ui.getInternals().setSession(session);
     texts = new MessageProperties(new CustomI18NProvider());
-    service = mock(UserMessageService.class);
+    service = mock(UserNotificationService.class);
     http = new MockHttpSession();
     request = new MockHttpServletRequest();
     request.setSession(http);
-    events = new UserMessageBroadcaster();
+    events = new UserNotificationBroadcaster();
     when(service.events()).thenReturn(events);
     when(service.retentionDays()).thenReturn(180);
     when(service.ownerId(http)).thenReturn(5L);
@@ -102,9 +102,9 @@ class UserMessagesUiTest {
     return Stream.concat(Stream.of(component), component.getChildren().flatMap(this::tree));
   }
 
-  Button rowTitle(UserMessagesPanel panel) {
+  Button rowTitle(UserNotificationsPanel panel) {
     return tree(panel)
-        .filter(c -> c.hasClassName("cosmos-message-title"))
+        .filter(c -> c.hasClassName("cosmos-notification-title"))
         .map(Button.class::cast)
         .findFirst()
         .orElseThrow();
@@ -112,24 +112,24 @@ class UserMessagesUiTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void refreshOpeningAndLanguageNeverMarkMessagesRead(String language) {
+  void refreshOpeningAndLanguageNeverMarkNotificationsRead(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var panel = new UserMessagesPanel(texts, service, http, true);
+    var panel = new UserNotificationsPanel(texts, service, http, true);
     ui.add(panel);
     panel.refresh();
-    assertEquals(texts.getMessagesPasswordChangedTitle(), rowTitle(panel).getText());
+    assertEquals(texts.getNotificationsPasswordChangedTitle(), rowTitle(panel).getText());
     assertTrue(
         tree(panel)
             .filter(Span.class::isInstance)
             .map(Span.class::cast)
-            .anyMatch(s -> s.getText().equals(texts.getMessagesRetention(180))));
+            .anyMatch(s -> s.getText().equals(texts.getNotificationsRetention(180))));
     panel.refreshTexts();
     verify(service, never()).markRead(any(), any());
   }
 
   @Test
   void openingOneItemMarksOnlyThatItemAndUsesExistingDialogTheme() {
-    var panel = new UserMessagesPanel(texts, service, http, false);
+    var panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     rowTitle(panel).click();
@@ -147,12 +147,12 @@ class UserMessagesUiTest {
     item =
         new Item(
             7L,
-            UserMessageType.ADMIN_MESSAGE,
+            UserNotificationType.ADMIN_ANNOUNCEMENT,
             "<b>Titel</b>",
             "<img src=x onerror=alert(1)>\nText",
             Instant.now(),
             false);
-    var panel = new UserMessagesPanel(texts, service, http, false);
+    var panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     assertEquals(item.title(), rowTitle(panel).getText());
@@ -168,7 +168,7 @@ class UserMessagesUiTest {
 
   @Test
   void markAllSubmitsDisplayedSnapshotAndUnreadFilterResetsPage() {
-    var panel = new UserMessagesPanel(texts, service, http, false);
+    var panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     ((Button) field(panel, "markAll")).click();
@@ -184,7 +184,7 @@ class UserMessagesUiTest {
             c ->
                 new PageImpl<>(
                     List.of(item), PageRequest.of(c.getArgument(2), c.getArgument(3)), 30));
-    var panel = new UserMessagesPanel(texts, service, http, false);
+    var panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     ((Button) field(panel, "next")).click();
@@ -195,7 +195,7 @@ class UserMessagesUiTest {
 
   @Test
   void revokedSessionClearsContentsAndOpenDetail() {
-    var panel = new UserMessagesPanel(texts, service, http, false);
+    var panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     rowTitle(panel).click();
@@ -204,7 +204,7 @@ class UserMessagesUiTest {
         .thenThrow(new AccessDeniedException("expired"));
     panel.refresh();
     assertFalse(detail.isOpened());
-    assertTrue(tree(panel).noneMatch(c -> c.hasClassName("cosmos-message-title")));
+    assertTrue(tree(panel).noneMatch(c -> c.hasClassName("cosmos-notification-title")));
     assertFalse(((Button) field(panel, "markAll")).isEnabled());
   }
 
@@ -212,7 +212,7 @@ class UserMessagesUiTest {
   void liveBellCapsBadgeAndRefreshesOnlyItsOwnUserAndDetachesCleanly() {
     when(service.unreadCount(http)).thenReturn(125L);
     var button = new Button();
-    var bell = new UserMessageBell(texts, service, request, button);
+    var bell = new UserNotificationBell(texts, service, request, button);
     ui.add(bell);
     Span count = field(bell, "count");
     assertEquals("99+", count.getText());
@@ -231,7 +231,7 @@ class UserMessagesUiTest {
 
   @Test
   void bellOpensOnClickAndClosesWithEscapeOrOutsideWithoutMarkingAllRead() {
-    var bell = new UserMessageBell(texts, service, request, new Button());
+    var bell = new UserNotificationBell(texts, service, request, new Button());
     ui.add(bell);
     Popover popover = field(bell, "popover");
     assertTrue(popover.isOpenOnClick());
@@ -246,7 +246,7 @@ class UserMessagesUiTest {
   @Test
   void bellDoesNotReusePreviousCountOrContentsWhenSessionRevoked() {
     var button = new Button();
-    var bell = new UserMessageBell(texts, service, request, button);
+    var bell = new UserNotificationBell(texts, service, request, button);
     ui.add(bell);
     when(service.unreadCount(http)).thenThrow(new AccessDeniedException("expired"));
     events.publish(Set.of(5L));
@@ -258,16 +258,16 @@ class UserMessagesUiTest {
   @ValueSource(strings = {"de", "en"})
   void systemTypesRenderInCurrentLanguageAndManualBodyStaysOriginal(String language) {
     locale.set(Locale.forLanguageTag(language));
-    for (var type : UserMessageType.values()) {
+    for (var type : UserNotificationType.values()) {
       var message = new Item(1L, type, "Original title", "Original body", Instant.now(), false);
-      assertFalse(UserMessageTexts.title(texts, message).isBlank());
-      assertFalse(UserMessageTexts.body(texts, message).isBlank());
-      if (type == UserMessageType.ADMIN_MESSAGE)
-        assertEquals("Original body", UserMessageTexts.body(texts, message));
+      assertFalse(UserNotificationTexts.title(texts, message).isBlank());
+      assertFalse(UserNotificationTexts.body(texts, message).isBlank());
+      if (type == UserNotificationType.ADMIN_ANNOUNCEMENT)
+        assertEquals("Original body", UserNotificationTexts.body(texts, message));
     }
     assertEquals(
         language.equals("de") ? "Passwort geändert" : "Password changed",
-        UserMessageTexts.title(texts, item));
+        UserNotificationTexts.title(texts, item));
   }
 
   @Test
@@ -286,17 +286,17 @@ class UserMessagesUiTest {
     when(security.getCurrentUser(request)).thenReturn(Optional.of(identity));
     class HeaderView extends de.derpeterson.app.ui.base.TrackedUserAppLayout {
       HeaderView() {
-        super(texts, security, users, status, UserMessagesUiTest.this.request, testAvatars);
+        super(texts, security, users, status, UserNotificationsUiTest.this.request, testAvatars);
       }
     }
     try (var context =
         new org.springframework.context.annotation.AnnotationConfigApplicationContext()) {
-      context.registerBean(UserMessageService.class, () -> service);
+      context.registerBean(UserNotificationService.class, () -> service);
       context.refresh();
       var authenticated = new HeaderView();
       context.getAutowireCapableBeanFactory().autowireBean(authenticated);
       AccountHeaderActions actions = field(authenticated, "accountHeaderActions");
-      assertTrue(tree(actions).anyMatch(UserMessageBell.class::isInstance));
+      assertTrue(tree(actions).anyMatch(UserNotificationBell.class::isInstance));
       ui.add(actions);
       verify(service).ownerId(http);
       when(security.getCurrentUser(request)).thenReturn(Optional.empty());
@@ -304,14 +304,14 @@ class UserMessagesUiTest {
       context.getAutowireCapableBeanFactory().autowireBean(anonymous);
       AccountHeaderActions hidden = field(anonymous, "accountHeaderActions");
       assertFalse(hidden.isVisible());
-      assertTrue(tree(hidden).noneMatch(UserMessageBell.class::isInstance));
+      assertTrue(tree(hidden).noneMatch(UserNotificationBell.class::isInstance));
     }
   }
 
-  AdminUserMessagesSection admin() {
+  AdminUserNotificationsSection admin() {
     when(service.targets(http)).thenReturn(List.of(new Target(5L, "Own", "own@example.test")));
     when(service.sent(http, 0)).thenReturn(Page.empty());
-    var section = new AdminUserMessagesSection(texts, service, request);
+    var section = new AdminUserNotificationsSection(texts, service, request);
     section.activate();
     return section;
   }

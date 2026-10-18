@@ -35,7 +35,7 @@ public class DatabaseInitializer {
   private final Environment environment;
   private final RoleSchemaUpdater roleSchemaUpdater;
 
-  private final UserMessageSchemaUpdater messageSchemaUpdater;
+  private final UserNotificationSchemaUpdater notificationSchemaUpdater;
   private final BootstrapAccountsProperties bootstrap;
   private final PlatformTransactionManager transactionManager;
 
@@ -45,7 +45,7 @@ public class DatabaseInitializer {
       configService.removeRetiredEntries();
       createDefaultConfigSettings();
       roleSchemaUpdater.updateRoleColumn();
-      messageSchemaUpdater.updateTypeColumn();
+      notificationSchemaUpdater.updateTypeColumn();
       createDefaultRolesAndAccounts();
     };
   }

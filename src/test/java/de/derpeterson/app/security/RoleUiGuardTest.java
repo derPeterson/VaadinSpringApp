@@ -123,9 +123,9 @@ class RoleUiGuardTest {
 
   @ParameterizedTest
   @CsvSource({
-    "admin?section=messages,/ctx/home",
+    "admin?section=notifications,/ctx/home",
     "account?tab=security,/ctx/account?tab=security",
-    "messages,/ctx/messages",
+    "notifications,/ctx/notifications",
     "home,/ctx/home",
     "login,/ctx/home"
   })

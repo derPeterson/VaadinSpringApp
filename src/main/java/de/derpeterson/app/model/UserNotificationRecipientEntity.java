@@ -9,23 +9,23 @@ import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Table(
-    name = "user_message_recipients",
+    name = "user_notification_recipients",
     uniqueConstraints =
         @UniqueConstraint(
-            name = "uk_user_message_recipient",
-            columnNames = {"message_id", "user_id"}),
-    indexes = @Index(name = "idx_user_message_inbox", columnList = "user_id, read_at, id"))
+            name = "uk_user_notification_recipient",
+            columnNames = {"notification_id", "user_id"}),
+    indexes = @Index(name = "idx_user_notification_inbox", columnList = "user_id, read_at, id"))
 @Getter
 @Setter
-public class UserMessageRecipientEntity {
+public class UserNotificationRecipientEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "message_id", nullable = false)
+  @JoinColumn(name = "notification_id", nullable = false)
   @OnDelete(action = OnDeleteAction.CASCADE)
-  private UserMessageEntity message;
+  private UserNotificationEntity notification;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "user_id", nullable = false)

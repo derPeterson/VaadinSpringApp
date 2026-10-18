@@ -1,7 +1,7 @@
 package de.derpeterson.app.scheduler;
 
-import de.derpeterson.app.repository.UserMessageRepository;
-import de.derpeterson.app.service.UserMessagePolicy;
+import de.derpeterson.app.repository.UserNotificationRepository;
+import de.derpeterson.app.service.UserNotificationPolicy;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import lombok.RequiredArgsConstructor;
@@ -11,13 +11,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
-public class UserMessageCleanup {
-  private final UserMessageRepository messages;
-  private final UserMessagePolicy policy;
+public class UserNotificationCleanup {
+  private final UserNotificationRepository notifications;
+  private final UserNotificationPolicy policy;
 
   @Scheduled(cron = "0 20 3 * * *")
   @Transactional
   public int cleanup() {
-    return messages.deleteRetired(Instant.now().minus(policy.retentionDays(), ChronoUnit.DAYS));
+    return notifications.deleteRetired(
+        Instant.now().minus(policy.retentionDays(), ChronoUnit.DAYS));
   }
 }

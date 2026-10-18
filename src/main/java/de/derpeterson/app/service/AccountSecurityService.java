@@ -97,7 +97,7 @@ public class AccountSecurityService {
     }
   }
 
-  private final UserMessageService userMessages;
+  private final UserNotificationService userNotifications;
   private final SecurityService security;
   private final CustomUserDetailsService details;
   private final LoginAttemptService attempts;
@@ -132,8 +132,8 @@ public class AccountSecurityService {
           invalidateResets(user);
           queue.addAddressedNotification(
               user, user.getEmail(), mail.texts(user).getAccountPasswordChangedSubject(), body);
-          userMessages.recordSecurityEvent(
-              user, de.derpeterson.app.model.enums.UserMessageType.PASSWORD_CHANGED);
+          userNotifications.recordSecurityEvent(
+              user, de.derpeterson.app.model.enums.UserNotificationType.PASSWORD_CHANGED);
           remembered.removeUserTokens(identity);
           var session = request.getSession(false);
           revokeAfterCommit(identity, session == null ? null : session.getId());
@@ -232,8 +232,8 @@ public class AccountSecurityService {
             var subject = mail.texts(user).getAccountEmailChangedSubject();
             queue.addAddressedNotification(user, old, subject, body);
             queue.addAddressedNotification(user, target, subject, body);
-            userMessages.recordSecurityEvent(
-                user, de.derpeterson.app.model.enums.UserMessageType.EMAIL_CHANGED);
+            userNotifications.recordSecurityEvent(
+                user, de.derpeterson.app.model.enums.UserNotificationType.EMAIL_CHANGED);
             remembered.removeUserTokens(old);
             revokeAfterCommit(old, null);
             return Confirmation.SUCCESS;

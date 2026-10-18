@@ -53,9 +53,9 @@ class AccountSecurityServicePersistenceTest {
   @Import({
     UserServicePersistenceTest.Config.class,
     AccountSecurityService.class,
-    UserMessageService.class,
-    UserMessagePolicy.class,
-    de.derpeterson.app.websocket.UserMessageBroadcaster.class,
+    UserNotificationService.class,
+    UserNotificationPolicy.class,
+    de.derpeterson.app.websocket.UserNotificationBroadcaster.class,
     AccountSecurityMail.class,
     CustomUserDetailsService.class,
     LoginAttemptService.class,
@@ -120,8 +120,8 @@ class AccountSecurityServicePersistenceTest {
   }
 
   @Autowired AccountSecurityService service;
-  @Autowired UserMessageService userMessages;
-  @Autowired UserMessageRepository userMessageRepository;
+  @Autowired UserNotificationService userNotifications;
+  @Autowired UserNotificationRepository userNotificationRepository;
 
   @Autowired SecurityService security;
   @Autowired UserRepository users;
@@ -155,8 +155,8 @@ class AccountSecurityServicePersistenceTest {
     ReflectionTestUtils.setField(service, "clock", FIXED);
     tx.executeWithoutResult(
         status -> {
-          em.createQuery("delete from UserMessageRecipientEntity").executeUpdate();
-          em.createQuery("delete from UserMessageEntity").executeUpdate();
+          em.createQuery("delete from UserNotificationRecipientEntity").executeUpdate();
+          em.createQuery("delete from UserNotificationEntity").executeUpdate();
           em.createQuery("delete from EmailQueueEntity").executeUpdate();
           em.createQuery("delete from EmailChangeTokenEntity").executeUpdate();
           em.createQuery("delete from PasswordResetTokenEntity").executeUpdate();
@@ -242,9 +242,10 @@ class AccountSecurityServicePersistenceTest {
     var result =
         service.changePassword(
             request, new PasswordChange("Old-secret!", "New-secret!", "New-secret!"));
-    assertEquals(1, userMessageRepository.count());
+    assertEquals(1, userNotificationRepository.count());
     assertEquals(
-        UserMessageType.PASSWORD_CHANGED, userMessageRepository.findAll().getFirst().getType());
+        UserNotificationType.PASSWORD_CHANGED,
+        userNotificationRepository.findAll().getFirst().getType());
     assertEquals(account.getVersion(), result.previousVersion());
     assertTrue(result.version() > result.previousVersion());
     assertTrue(encoder.matches("New-secret!", stored().getPassword()));
@@ -268,11 +269,11 @@ class AccountSecurityServicePersistenceTest {
 
   @Test
   void failedRequiredMessageRollsBackPasswordAndOutboxWithoutRevokingSessions() {
-    var failing = mock(UserMessageService.class);
+    var failing = mock(UserNotificationService.class);
     doThrow(new IllegalStateException("message storage unavailable"))
         .when(failing)
         .recordSecurityEvent(any(), any());
-    ReflectionTestUtils.setField(service, "userMessages", failing);
+    ReflectionTestUtils.setField(service, "userNotifications", failing);
     try {
       assertThrows(
           IllegalStateException.class,
@@ -284,7 +285,7 @@ class AccountSecurityServicePersistenceTest {
       assertFalse(registry.getSessionInformation("other-device").isExpired());
       assertNotNull(remembered.getTokenForSeries("remember-series"));
     } finally {
-      ReflectionTestUtils.setField(service, "userMessages", userMessages);
+      ReflectionTestUtils.setField(service, "userNotifications", userNotifications);
     }
   }
 
@@ -292,11 +293,11 @@ class AccountSecurityServicePersistenceTest {
   void failedRequiredMessageRollsBackConfirmedEmailAndBothNotices() {
     requestChange("new@example.test");
     var raw = linkToken();
-    var failing = mock(UserMessageService.class);
+    var failing = mock(UserNotificationService.class);
     doThrow(new IllegalStateException("message storage unavailable"))
         .when(failing)
         .recordSecurityEvent(any(), any());
-    ReflectionTestUtils.setField(service, "userMessages", failing);
+    ReflectionTestUtils.setField(service, "userNotifications", failing);
     try {
       assertThrows(IllegalStateException.class, () -> service.confirm(raw));
       assertEquals("old@example.test", stored().getEmail());
@@ -304,7 +305,7 @@ class AccountSecurityServicePersistenceTest {
       assertEquals(1, emails.count());
       assertFalse(registry.getSessionInformation("other-device").isExpired());
     } finally {
-      ReflectionTestUtils.setField(service, "userMessages", userMessages);
+      ReflectionTestUtils.setField(service, "userNotifications", userNotifications);
     }
   }
 
@@ -373,11 +374,12 @@ class AccountSecurityServicePersistenceTest {
   void confirmationChangesIdentityOnceNotifiesBothAddressesAndRevokesEveryOldSession() {
     requestChange("new@example.test");
     var raw = linkToken();
-    assertEquals(0, userMessageRepository.count());
+    assertEquals(0, userNotificationRepository.count());
     assertEquals(Confirmation.SUCCESS, service.confirm(raw));
-    assertEquals(1, userMessageRepository.count());
+    assertEquals(1, userNotificationRepository.count());
     assertEquals(
-        UserMessageType.EMAIL_CHANGED, userMessageRepository.findAll().getFirst().getType());
+        UserNotificationType.EMAIL_CHANGED,
+        userNotificationRepository.findAll().getFirst().getType());
     assertEquals("new@example.test", stored().getEmail());
     assertEquals(TokenStatus.USED, tokens.findAll().getFirst().getStatus());
     assertEquals(3, emails.count());

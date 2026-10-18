@@ -433,7 +433,7 @@ class LoginAttemptPersistenceTest {
             encoder,
             mock(EmailQueueService.class),
             service,
-            mock(UserMessageService.class),
+            mock(UserNotificationService.class),
             clock);
     limit.set(1);
     bad(EMAIL);

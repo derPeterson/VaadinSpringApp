@@ -4,7 +4,7 @@ import de.derpeterson.app.model.*;
 import de.derpeterson.app.model.enums.*;
 import de.derpeterson.app.repository.*;
 import de.derpeterson.app.security.*;
-import de.derpeterson.app.websocket.UserMessageBroadcaster;
+import de.derpeterson.app.websocket.UserNotificationBroadcaster;
 import jakarta.servlet.http.HttpSession;
 import java.time.Instant;
 import java.util.*;
@@ -17,21 +17,21 @@ import org.springframework.transaction.support.*;
 
 @Service
 @RequiredArgsConstructor
-public class UserMessageService {
+public class UserNotificationService {
   public static final int TITLE_LIMIT = 120;
   public static final int BODY_LIMIT = 4000;
-  private final UserMessagePolicy policy;
+  private final UserNotificationPolicy policy;
 
   public int retentionDays() {
     return policy.retentionDays();
   }
 
-  private final UserMessageRepository messages;
-  private final UserMessageRecipientRepository recipients;
+  private final UserNotificationRepository notifications;
+  private final UserNotificationRecipientRepository recipients;
   private final UserRepository users;
   private final SecurityService security;
   private final ConfigService config;
-  private final UserMessageBroadcaster events;
+  private final UserNotificationBroadcaster events;
 
   public enum Problem {
     INVALID_DRAFT,
@@ -69,7 +69,12 @@ public class UserMessageService {
   }
 
   public record Item(
-      Long id, UserMessageType type, String title, String body, Instant createdAt, boolean read) {}
+      Long id,
+      UserNotificationType type,
+      String title,
+      String body,
+      Instant createdAt,
+      boolean read) {}
 
   public record Sent(Long id, String title, String body, Instant createdAt, int recipientCount) {}
 
@@ -83,7 +88,7 @@ public class UserMessageService {
     var state = new MaintenanceService(config).state();
     if (state != MaintenanceService.State.OPEN
         && (state != MaintenanceService.State.ACTIVE || !user.hasAdministrativeRole()))
-      throw new AccessDeniedException("Messages paused for maintenance");
+      throw new AccessDeniedException("Notifications paused for maintenance");
     return user;
   }
 
@@ -109,7 +114,7 @@ public class UserMessageService {
     return owner(session).getId();
   }
 
-  public UserMessageBroadcaster events() {
+  public UserNotificationBroadcaster events() {
     return events;
   }
 
@@ -158,7 +163,7 @@ public class UserMessageService {
   }
 
   private List<Target> eligible() {
-    return users.findMessageTargets().stream()
+    return users.findNotificationTargets().stream()
         .map(u -> new Target(u.getId(), u.getFirstName() + " " + u.getLastName(), u.getEmail()))
         .toList();
   }
@@ -187,13 +192,13 @@ public class UserMessageService {
     Objects.requireNonNull(preview);
     // Dieselbe Sperrreihenfolge wie bei Rollen-/Kontomutationen; serialisiert auch Wiederholungen.
     users
-        .lockRole(RoleType.ROLE_ADMIN)
-        .orElseThrow(() -> new IllegalStateException("Admin role missing"));
+        .lockRole(RoleType.ROLE_SUPERADMIN)
+        .orElseThrow(() -> new IllegalStateException("Superadmin role missing"));
     var sender = superadmin(session);
     title = clean(title, TITLE_LIMIT);
     body = clean(body, BODY_LIMIT);
     var key = "admin:" + requestId;
-    var existing = messages.findByRequestKey(key);
+    var existing = notifications.findByRequestKey(key);
     if (existing.isPresent()) {
       var m = existing.get();
       if (m.getSender() == null
@@ -208,9 +213,9 @@ public class UserMessageService {
     var selected = selected(preview.selection());
     var ids = selected.stream().map(Target::id).toList();
     if (!ids.equals(preview.ids()) || ids.isEmpty()) throw new Rejected(Problem.RECIPIENTS_CHANGED);
-    var m = new UserMessageEntity();
+    var m = new UserNotificationEntity();
     m.setRequestKey(key);
-    m.setType(UserMessageType.ADMIN_MESSAGE);
+    m.setType(UserNotificationType.ADMIN_ANNOUNCEMENT);
     m.setTitle(title);
     m.setBody(body);
     m.setSender(sender);
@@ -221,12 +226,12 @@ public class UserMessageService {
 
   @Transactional(readOnly = true)
   public Page<Sent> sent(HttpSession session, int page) {
-    return messages
+    return notifications
         .findBySenderIdOrderByIdDesc(superadmin(session).getId(), page(page, 20))
         .map(this::sent);
   }
 
-  private Sent sent(UserMessageEntity m) {
+  private Sent sent(UserNotificationEntity m) {
     return new Sent(m.getId(), m.getTitle(), m.getBody(), m.getCreatedAt(), m.getRecipientCount());
   }
 
@@ -245,25 +250,25 @@ public class UserMessageService {
    * Pflichtbestandteil der bereits gesperrten Kontoaktion, ohne eigenen Commit oder Mailversand.
    */
   @Transactional(propagation = Propagation.MANDATORY)
-  public void recordSecurityEvent(UserEntity user, UserMessageType type) {
-    if (type == null || type == UserMessageType.ADMIN_MESSAGE || user.getId() == null)
+  public void recordSecurityEvent(UserEntity user, UserNotificationType type) {
+    if (type == null || type == UserNotificationType.ADMIN_ANNOUNCEMENT || user.getId() == null)
       throw new IllegalArgumentException("Persisted security event required");
-    var m = new UserMessageEntity();
+    var m = new UserNotificationEntity();
     m.setRequestKey("security:" + UUID.randomUUID());
     m.setType(type);
     create(m, List.of(user));
   }
 
-  private void create(UserMessageEntity m, List<UserEntity> selected) {
+  private void create(UserNotificationEntity m, List<UserEntity> selected) {
     m.setCreatedAt(Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS));
     m.setRecipientCount(selected.size());
-    messages.saveAndFlush(m);
+    notifications.saveAndFlush(m);
     recipients.saveAllAndFlush(
         selected.stream()
             .map(
                 u -> {
-                  var r = new UserMessageRecipientEntity();
-                  r.setMessage(m);
+                  var r = new UserNotificationRecipientEntity();
+                  r.setNotification(m);
                   r.setUser(u);
                   return r;
                 })
@@ -273,7 +278,7 @@ public class UserMessageService {
 
   private void afterCommit(Set<Long> ids) {
     if (!TransactionSynchronizationManager.isActualTransactionActive())
-      throw new IllegalStateException("Message transaction required");
+      throw new IllegalStateException("Notification transaction required");
     TransactionSynchronizationManager.registerSynchronization(
         new TransactionSynchronization() {
           @Override
@@ -281,8 +286,8 @@ public class UserMessageService {
             try {
               events.publish(ids);
             } catch (RuntimeException failure) {
-              org.slf4j.LoggerFactory.getLogger(UserMessageService.class)
-                  .warn("Committed messages await refresh", failure);
+              org.slf4j.LoggerFactory.getLogger(UserNotificationService.class)
+                  .warn("Committed notifications await refresh", failure);
             }
           }
         });

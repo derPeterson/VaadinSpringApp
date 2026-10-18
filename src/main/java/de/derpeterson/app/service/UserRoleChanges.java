@@ -1,7 +1,7 @@
 package de.derpeterson.app.service;
 
 import de.derpeterson.app.events.UserRolesChanged;
-import de.derpeterson.app.model.enums.UserMessageType;
+import de.derpeterson.app.model.enums.UserNotificationType;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.websocket.UserRoleBroadcaster;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,7 @@ import org.springframework.transaction.support.*;
 @Component
 @RequiredArgsConstructor
 public class UserRoleChanges {
-  private final UserMessageService messages;
+  private final UserNotificationService notifications;
   private final UserRepository users;
   private final UserRoleBroadcaster events;
 
@@ -21,8 +21,8 @@ public class UserRoleChanges {
   @Transactional(propagation = Propagation.MANDATORY)
   public void changed(UserRolesChanged change) {
     if (change.before().equals(change.after())) return;
-    messages.recordSecurityEvent(
-        users.getReferenceById(change.userId()), UserMessageType.ROLES_CHANGED);
+    notifications.recordSecurityEvent(
+        users.getReferenceById(change.userId()), UserNotificationType.ROLES_CHANGED);
     TransactionSynchronizationManager.registerSynchronization(
         new TransactionSynchronization() {
           @Override

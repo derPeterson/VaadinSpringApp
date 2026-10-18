@@ -1,6 +1,6 @@
 # Initiale Benutzerlisten und Rollenänderungen ohne erneute Anmeldung
 
-Stand: 18.10.2026, Branch `feature/user-messages`, Ausgangscommit `5d5ddc5`.
+Stand: 18.10.2026, Ausgangscommit `5d5ddc5`.
 Implementierung und Java-Prüfung abgeschlossen; Browserabnahme und Produktionsbuild offen.
 
 ## Initialisierung
@@ -127,8 +127,8 @@ Unverändertes Speichern und Rollbacks erzeugen keinen dauerhaften Erfolgseintra
 Scheitert die Pflichtmitteilung, rollt die Rollenänderung zurück. Der Rollen-Push folgt
 erst nach Commit. Die bestehende Inbox behält ihre übrigen Regeln und Aufbewahrungsfrist.
 
-Beim Start erweitert `UserMessageSchemaUpdater` eine gegebenenfalls bestehende native
-H2-Enum-Spalte `user_messages.type` um die bekannten Java-Werte. Bestehende Mitteilungen
+Beim Start erweitert `UserNotificationSchemaUpdater` eine gegebenenfalls bestehende native
+H2-Enum-Spalte `user_notifications.type` um die bekannten Java-Werte. Bestehende Mitteilungen
 bleiben erhalten; VARCHAR-Spalten brauchen diese Erweiterung nicht. Die Migration ist
 wiederholbar und mit künstlichem alten H2-Schema getestet.
 

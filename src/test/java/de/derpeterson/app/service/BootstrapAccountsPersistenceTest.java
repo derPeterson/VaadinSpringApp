@@ -61,7 +61,7 @@ class BootstrapAccountsPersistenceTest {
         encoder,
         mock(Environment.class),
         mock(RoleSchemaUpdater.class),
-        mock(de.derpeterson.app.config.UserMessageSchemaUpdater.class),
+        mock(de.derpeterson.app.config.UserNotificationSchemaUpdater.class),
         settings,
         manager);
   }
