@@ -553,7 +553,8 @@ class VerificationQueueConcurrencyTest {
           mock(EmailService.class),
           probes.users(),
           manager,
-          mock(de.derpeterson.app.repository.AdminNotificationAttemptRepository.class));
+          mock(de.derpeterson.app.repository.AdminNotificationAttemptRepository.class),
+          QueueTestWorkers.inline());
     }
 
     @Bean

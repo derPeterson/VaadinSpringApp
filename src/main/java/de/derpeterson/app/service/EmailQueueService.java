@@ -51,6 +51,7 @@ public class EmailQueueService {
   private final PlatformTransactionManager transactionManager;
   private final Clock clock;
   private final AdminNotificationAttemptRepository adminAttempts;
+  private final EmailQueueWorkerPool workers;
 
   @Autowired
   public EmailQueueService(
@@ -59,7 +60,8 @@ public class EmailQueueService {
       EmailService emailService,
       UserRepository userRepository,
       PlatformTransactionManager transactionManager,
-      AdminNotificationAttemptRepository adminAttempts) {
+      AdminNotificationAttemptRepository adminAttempts,
+      EmailQueueWorkerPool workers) {
     this(
         configService,
         emailQueueRepository,
@@ -67,7 +69,8 @@ public class EmailQueueService {
         userRepository,
         transactionManager,
         adminAttempts,
-        Clock.systemDefaultZone());
+        Clock.systemDefaultZone(),
+        workers);
   }
 
   public EmailQueueService(
@@ -77,7 +80,9 @@ public class EmailQueueService {
       UserRepository userRepository,
       PlatformTransactionManager transactionManager,
       AdminNotificationAttemptRepository adminAttempts,
-      Clock clock) {
+      Clock clock,
+      EmailQueueWorkerPool workers) {
+    this.workers = Objects.requireNonNull(workers, "workers");
     this.configService = configService;
     this.emailQueueRepository = emailQueueRepository;
     this.emailService = emailService;
@@ -175,34 +180,43 @@ public class EmailQueueService {
     if (maxRetry < 0)
       throw new IllegalArgumentException("Email queue retry limit must not be negative.");
     LocalDateTime retryCutoff = LocalDateTime.now(clock).minus(RETRY_INTERVAL);
-    List<EmailQueueEntity> pendingEmails =
+    List<Long> pendingIds =
         transaction.execute(
             status ->
-                emailQueueRepository.findPendingEmails(retryCutoff, PageRequest.of(0, capacity)));
-    for (EmailQueueEntity candidate : pendingEmails) {
-      try {
-        EmailQueueEntity claimed =
-            transaction.execute(
-                status -> {
-                  var email = emailQueueRepository.lockById(candidate.getId()).orElse(null);
-                  if (email == null || email.getStatus() != EmailStatus.PENDING) return null;
-                  if (email.getLastRetryAt() != null
-                      && email
-                          .getLastRetryAt()
-                          .isAfter(LocalDateTime.now(clock).minus(RETRY_INTERVAL))) return null;
-                  // Initialize the lazy recipient while the claim transaction is open.
-                  email.getUserEntity().getEmail();
-                  email.setStatus(EmailStatus.IN_PROGRESS);
-                  emailQueueRepository.save(email);
-                  return email;
-                });
-        if (claimed != null) dispatchClaimed(transaction, claimed, maxRetry);
-      } catch (RuntimeException e) {
-        logger.error(
-            "❌ Queue entry {} could not be completed; no automatic release of IN_PROGRESS.",
-            candidate.getId(),
-            e);
-      }
+                emailQueueRepository
+                    .findPendingEmails(retryCutoff, PageRequest.of(0, capacity))
+                    .stream()
+                    .map(EmailQueueEntity::getId)
+                    .toList());
+    workers.process(pendingIds, id -> processCandidate(id, maxRetry));
+  }
+
+  private void processCandidate(long id, int maxRetry) {
+    var transaction = new TransactionTemplate(transactionManager);
+    transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    try {
+      EmailQueueEntity claimed =
+          transaction.execute(
+              status -> {
+                var email = emailQueueRepository.lockById(id).orElse(null);
+                if (email == null || email.getStatus() != EmailStatus.PENDING) return null;
+                if (email.getLastRetryAt() != null
+                    && email
+                        .getLastRetryAt()
+                        .isAfter(LocalDateTime.now(clock).minus(RETRY_INTERVAL))) return null;
+                // Empfänger im frischen Worker-Claim initialisieren, SMTP außerhalb der
+                // Transaktion.
+                email.getUserEntity().getEmail();
+                email.setStatus(EmailStatus.IN_PROGRESS);
+                emailQueueRepository.save(email);
+                return email;
+              });
+      if (claimed != null) dispatchClaimed(transaction, claimed, maxRetry);
+    } catch (RuntimeException failure) {
+      logger.error(
+          "Queue entry {} could not be completed; no automatic release of IN_PROGRESS.",
+          id,
+          failure);
     }
   }
 

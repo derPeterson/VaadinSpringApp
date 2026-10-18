@@ -18,6 +18,8 @@ Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administ
 
 > Gesamt-QA vom 18.10.2026 auf `main` abgeschlossen: 1524 Anwendungs-JUnit-Tests, 47 Browserhelfer, 205 Python- und 26 JavaScript-Offlinetests erfolgreich. Browser-`all` DE und EN je 141/141 am identischen finalen Produktionsimage, ohne Fehler oder Skips. Änderungen bleiben uncommittet. [Ergebnisse und Coverage](browser-tests/abdeckung.md), [Meilenstein](docs/meilensteine/2026-10-18-bereinigung-avatar-eingaben-und-gesamtqa.md), [Bereinigungsnachweis](docs/codebereinigung-2026-10-18.md).
 
+> Nachfolgende Workerpool-Umsetzung vom 18.10.2026: 1555/1555 Anwendungs-JUnit-Tests erfolgreich, darunter 26 neue Workerfälle mit isoliertem H2 und eigenem lokalem SMTP. Keine neue Browserrunde. [Verhalten und Einführung](docs/email-worker-pool.md), [Ergebnisse und Messgrenzen](browser-tests/abdeckung.md).
+
 ## Funktionen
 
 - Registrierung mit zunächst deaktiviertem Konto und Aktivierung per E-Mail-Token.
@@ -64,7 +66,7 @@ Administrator und Benutzer. Fehlende Rollen werden beim Anwendungsstart ergänzt
 Eine bestehende H2-Enum-Spalte wird zuvor gezielt um die Rollennamen erweitert;
 vorhandene Rollen-IDs und Kontozuweisungen bleiben erhalten.
 
-## Geplante Konfigurationsfunktionen
+## Konfigurationsfunktionen
 
 Die Begrenzung der Anmeldeversuche ist umgesetzt:
 [Verhalten, Datenbankerweiterung und Prüfgrenzen](docs/login-attempts-contract.md).
@@ -85,10 +87,14 @@ Neustart. Admin/Superadmin behalten Zugang; normale Konten und anonyme Besucher
 erhalten die Wartungscard. Hintergrundjobs laufen weiter. Für diese neue Java-
 Erweiterung Shared-Modul und Anwendung bauen und die Anwendung einmal neu starten.
 
-Für den noch offenen Konfigurationseintrag `email.queue.pool.size` liegt ein
-[Umsetzungsplan für den Mail-Workerpool](docs/umsetzungsplaene/konfiguration/email-queue-pool-size.md)
-vor. Der Plan aktiviert keine Funktion. Kontokonfigurationspanel und
-[Sitzungsverwaltung](docs/session-management-contract.md) sind bereits umgesetzt.
+Der [Mail-Workerpool](docs/email-worker-pool.md) ist umgesetzt:
+`email.queue.pool.size` begrenzt parallele Queue-Versandaufgaben pro Instanz und wird
+beim Start eingelesen. `email.queue.capacity` bleibt das live eingelesene
+Kandidatenlimit pro Lauf. Damit sind alle 28 aktiven Konfigurationseinträge angebunden.
+Shared und Anwendung bauen und die Anwendung vollständig neu starten; spätere
+Änderungen an der Workerzahl benötigen ebenfalls einen Neustart.
+Kontokonfigurationspanel und [Sitzungsverwaltung](docs/session-management-contract.md)
+sind bereits umgesetzt.
 
 
 ## Kontoansichten, Home und Admin: Silent Cosmos und Inter

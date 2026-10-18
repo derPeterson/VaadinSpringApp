@@ -100,7 +100,9 @@ class AccountSecurityServicePersistenceTest {
         UserRepository users,
         PlatformTransactionManager manager,
         AdminNotificationAttemptRepository attempts) {
-      return spy(new EmailQueueService(config, queue, sender, users, manager, attempts, FIXED));
+      return spy(
+          new EmailQueueService(
+              config, queue, sender, users, manager, attempts, FIXED, QueueTestWorkers.inline()));
     }
 
     @Bean

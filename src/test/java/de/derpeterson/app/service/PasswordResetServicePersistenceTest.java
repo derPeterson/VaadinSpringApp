@@ -1119,7 +1119,8 @@ class PasswordResetServicePersistenceTest {
           mock(EmailService.class),
           users,
           manager,
-          mock(AdminNotificationAttemptRepository.class));
+          mock(AdminNotificationAttemptRepository.class),
+          QueueTestWorkers.inline());
     }
 
     @Bean

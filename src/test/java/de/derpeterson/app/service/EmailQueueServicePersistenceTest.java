@@ -1350,7 +1350,14 @@ class EmailQueueServicePersistenceTest {
         JpaTransactionManager manager,
         MutableQueueClock clock) {
       return new EmailQueueService(
-          config, probes.emails(), mail, probes.users(), manager, probes.adminAttempts(), clock);
+          config,
+          probes.emails(),
+          mail,
+          probes.users(),
+          manager,
+          probes.adminAttempts(),
+          clock,
+          QueueTestWorkers.inline());
     }
   }
 }

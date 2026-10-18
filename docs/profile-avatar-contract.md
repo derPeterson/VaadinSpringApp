@@ -179,8 +179,6 @@ menschliche Abnahme, echte Handyfotos/Touch/Screenreader und ein gezielter tats�
 Anwendungsneustart mit zuvor hochgeladenem Bild; der Avatar-Persistenznachweis in H2
 und Reload-Journeys wird damit nicht gleichgesetzt.
 
-Persönliche Avatarfarben bleiben eine spätere Erweiterung:
-[offener Farbplan](umsetzungsplaene/kontokonfiguration/avatarfarben.md).
 Die verwendeten Schnittstellen wurden mit den lokalen Vaadin-25.3.0-Klassen und der
 [Upload-Dokumentation](https://vaadin.com/docs/latest/components/upload/file-handling)
 sowie [Download-Dokumentation](https://vaadin.com/docs/latest/flow/advanced/downloads)

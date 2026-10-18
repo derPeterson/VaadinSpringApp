@@ -60,7 +60,15 @@ class EmailQueueServiceTest {
         .thenAnswer(call -> new SimpleTransactionStatus());
     clock = new MutableQueueClock();
     service =
-        new EmailQueueService(config, emails, mail, users, transactions, adminAttempts, clock);
+        new EmailQueueService(
+            config,
+            emails,
+            mail,
+            users,
+            transactions,
+            adminAttempts,
+            clock,
+            QueueTestWorkers.inline());
     lenient()
         .when(adminAttempts.saveAndFlush(any()))
         .thenAnswer(
@@ -549,7 +557,15 @@ class EmailQueueServiceTest {
     assertThrows(
         NullPointerException.class,
         () ->
-            new EmailQueueService(config, emails, mail, users, transactions, adminAttempts, null));
+            new EmailQueueService(
+                config,
+                emails,
+                mail,
+                users,
+                transactions,
+                adminAttempts,
+                null,
+                QueueTestWorkers.inline()));
     verifyNoInteractions(emails, mail);
   }
 
@@ -605,7 +621,15 @@ class EmailQueueServiceTest {
         java.time.Clock.fixed(
             java.time.Instant.parse("2030-01-01T12:00:00Z"), java.time.ZoneId.of(zone));
     var localService =
-        new EmailQueueService(config, emails, mail, users, transactions, adminAttempts, fixed);
+        new EmailQueueService(
+            config,
+            emails,
+            mail,
+            users,
+            transactions,
+            adminAttempts,
+            fixed,
+            QueueTestWorkers.inline());
     when(users.lockVerificationUser(user.getId())).thenReturn(Optional.of(user));
     localService.addEmailToQueue(user, "", "", EmailType.NOTIFICATION);
     verify(emails).save(argThat(item -> item.getCreatedAt().equals(LocalDateTime.now(fixed))));
@@ -644,7 +668,15 @@ class EmailQueueServiceTest {
         java.time.Clock.fixed(
             java.time.Instant.parse("2030-10-28T12:00:00Z"), java.time.ZoneId.of("Europe/Berlin"));
     var localService =
-        new EmailQueueService(config, emails, mail, users, transactions, adminAttempts, fixed);
+        new EmailQueueService(
+            config,
+            emails,
+            mail,
+            users,
+            transactions,
+            adminAttempts,
+            fixed,
+            QueueTestWorkers.inline());
     localService.deleteFailedEmails();
     var expected = LocalDateTime.of(2030, 9, 28, 13, 0);
     verify(emails).deleteByStatusAndLastRetryAtBefore(EmailStatus.FAILED, expected);

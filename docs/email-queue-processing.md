@@ -23,6 +23,30 @@ prozesslokalen Java-Lock. Die Kandidatenliste ist keine Reservierung:
    Kandidat protokolliert; andere Einträge können weiterlaufen. Bereits committete
    Ergebnisse werden nicht durch spätere Fehler oder einen Aufruferrollback verloren.
 
+## Paralleler Versand
+
+Seit 18.10.2026 verwendet der Service den benannten `emailTaskExecutor` tatsächlich.
+`EmailQueueWorkerPool` übergibt nur Queue-IDs; jeder Worker lädt und beansprucht seinen
+Eintrag in einer eigenen frischen Transaktion. Der ausgewählte Batch enthält höchstens
+`email.queue.capacity` Kandidaten, und höchstens `email.queue.pool.size` Aufgaben sind
+gleichzeitig angenommen. Frei gewordene Plätze werden nach Abschluss einer beliebigen
+Aufgabe nachgefüllt; eine langsame erste Mail blockiert die übrigen Plätze nicht.
+Zusätzliche Läufe derselben Instanz überspringen die Ausführung eines überlappenden
+Batches. Andere Instanzen koordinieren sich weiterhin über Datenbank-Claims.
+
+Die Workerzahl ist startgebunden; Kapazität und Retrylimit werden pro Lauf festgehalten.
+Der Scheduler wartet auf den Batchabschluss und beginnt frühestens fünf Sekunden danach
+den nächsten Lauf. Nachgefüllt wird nur aus dem ausgewählten Batch, nicht aus weiteren
+Kandidatenseiten. Kein Mails-pro-Sekunde-Limit und keine globale Multiinstanz-Obergrenze.
+Der Direktversand des Admin-Mailtests gehört nicht zum Queue-Pool.
+
+Bei Context-Close werden keine neuen Kandidaten mehr begonnen. Laufende Aufgaben
+erhalten bei der Poolzerstörung bis zu 30 Sekunden Abschlusszeit; anschließend werden
+Unterbrechung und Future-Abbruch angefordert. Das kann ununterbrechbare SMTP-Bibliotheken
+nicht sicher stoppen. Daemon-Worker halten danach das JVM-Ende nicht auf; bestehende
+Claims bleiben konservativ ungeklärt. Keine automatische Freigabe oder erneute Zustellung.
+Details und Prüfumfang: [Mail-Workerpool](email-worker-pool.md).
+
 ## Retry und IN_PROGRESS
 
 Fällige PENDING-Nachrichten werden deterministisch nach `createdAt` aufsteigend
@@ -84,8 +108,10 @@ Recovery mit sicherer Entscheidung zwischen Verlust und Doppelzustellung.
 Konservative Quarantäne verhindert automatische erneute Zustellung, garantiert
 aber nicht, dass jeder Eintrag zugestellt wird oder selbständig fortschreitet.
 
-Die automatisierten Persistenzbelege verwenden isoliertes H2 und gemockten Versand.
-Sie ersetzen keine reale SMTP-, Prozessabsturz- oder Multiinstanz-Deploymentprüfung.
+Die Persistenzbelege verwenden isoliertes H2. Zusätzliche Workerprüfungen verwenden
+echte Threads und einen eigenen lokalen SMTP-Server mit synthetischen Mails. Zwei
+unabhängige Pools an derselben H2-Datenbank prüfen konkurrierende Claims. Dies ersetzt
+keine Prüfung realer Mailanbieter, Prozessabstürze oder verteilter Deployments.
 
 ## Eingabe-, Konfigurations- und Zeitverträge
 

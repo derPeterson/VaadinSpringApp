@@ -1,5 +1,51 @@
 # Browserabdeckung und offene Punkte
 
+## Mail-Workerpool implementiert und mit JUnit geprüft (18.10.2026)
+
+Geprüfter Stand: `main`, Basis `6b7952b`, plus uncommittierte Workerpool-Änderungen.
+Keine Browserfreigabe für dieses Paket; kein Browser-/Frontend-/Produktionslauf gestartet.
+Vertrag und Einführung: [Mail-Workerpool](../docs/email-worker-pool.md).
+
+| Prüfung | Tatsächliches Ergebnis |
+| --- | --- |
+| Java / Maven | Java 25.0.4.1; Maven Wrapper 3.9.16 |
+| Abschließende vollständige Anwendungs-JUnit-Suite | 1555/1555; 0 Fehler, 0 Fehlschläge, 0 Skips |
+| Neue Workerfälle innerhalb dieser Suite | 26: 12 Pool-, 6 Konfigurations-/Spring- und 8 Integrationsfälle |
+| Vorangegangene gezielte Queue-/Workerregression | 166/166; anschließend Kontextvererbungsschutz ergänzt und im abschließenden Gesamtlauf geprüft |
+| JaCoCo Zeilen | 7823/9173 (85,28 %) |
+| JaCoCo Zweige | 2193/2997 (73,17 %) |
+| Workerpool allein | 62/64 Zeilen (96,88 %), 29/32 Zweige (90,63 %) |
+| Format / Katalog / Diff | Spotless Apply/Check erfolgreich; weiterhin 447 eindeutige DE-/EN-Schlüssel, Codec erhalten; Diff geprüft |
+
+Frische getrennte JUnit-Ausführungsdaten dieses Stands, 177 ausführbare
+Anwendungs-Java-Klassen im Messumfang. Kein Shared-/Test-/Bibliothekscode im Nenner;
+keine Vermischung mit früheren Messungen und keine neue Browser-, CSS- oder JS-Coverage.
+Die nachfolgenden Browserergebnisse gehören weiterhin zu ihren ausdrücklich genannten
+früheren Ständen. Ein Compile-/JUnit-Erfolg ist kein Produktions- oder Browsertest.
+
+Belegt sind N=1/2/3 mit Latches, parallele SMTP-Verbindungen über den echten Sender,
+Nachfüllung bei langsamer erster Aufgabe, Batchkapazität und Nichtfälligkeit,
+übersprungene überlappende Läufe, eindeutige Claims zweier unabhängiger Pools an
+isoliertem H2, Claim-/Ergebnis-Commitfehler, getrennte SENT/FAILED/IN_PROGRESS-Ausgänge,
+Adminaudit sowie Ablehnung, Graceful-/Force-Shutdown und Koordinatorunterbrechung.
+Benannter Executor und Close-Lebenszyklus sind im eigenen Spring-Kontext geprüft;
+Worker erben keine InheritableThreadLocals des Aufrufers.
+
+Die erste gezielte Runde deckte Fehler neuer Testfixtures auf (unnötig striktes
+Coordinator-Stubbing in reinen Enqueuefällen, fehlender H2-Flush vor Wiederanlage und
+SMTP-CRLF im empfangenen Body). Fixtures korrigiert, bestehende Assertions erhalten.
+Die abschließenden oben genannten Läufe sind erfolgreich.
+
+Grenzen: keine realen Mailanbieter, keine TLS-/Provider- oder verteilte JVM-Prüfung,
+kein nachgestellter Prozessabsturz und kein Echtzeit-/Mails-pro-Sekunde-Versprechen.
+SMTP und Ergebnis-Commit bleiben nicht atomar. Ein Interrupt beendet blockierende
+Fremdbibliotheken nicht garantiert; unklare Claims werden nicht automatisch freigegeben.
+Nur eigene In-Memory-Daten und Loopback-SMTP verwendet; Fixture-Sockets und Worker abgebaut.
+Keine reale Datenbank, .env, Postfächer oder Nutzerprozesse angefasst.
+
+Zum Übernehmen Anwendung mit Shared-Abhängigkeit bauen und vollständig neu starten;
+HotSwap allein ersetzt den neuen Executor-/Bean-Lebenszyklus nicht.
+
 ## Gezielte Nachprüfung der Konfigurationsbereinigung (18.10.2026)
 
 Nach der vollständigen Gesamt-QA wurde ein bisher wirkungsloses SMTP-Feld samt
