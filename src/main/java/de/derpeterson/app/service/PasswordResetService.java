@@ -55,6 +55,7 @@ public class PasswordResetService {
 
   private final EmailQueueService emailQueueService;
   private final LoginAttemptService loginAttemptService;
+  private final UserMessageService userMessages;
   @NonNull private final Clock clock;
 
   @Autowired
@@ -65,7 +66,8 @@ public class PasswordResetService {
       ConfigService configService,
       PasswordEncoder passwordEncoder,
       EmailQueueService emailQueueService,
-      LoginAttemptService loginAttemptService) {
+      LoginAttemptService loginAttemptService,
+      UserMessageService userMessages) {
     this(
         messageProperties,
         tokenRepository,
@@ -74,6 +76,7 @@ public class PasswordResetService {
         passwordEncoder,
         emailQueueService,
         loginAttemptService,
+        userMessages,
         Clock.systemDefaultZone());
   }
 
@@ -211,6 +214,8 @@ public class PasswordResetService {
       userRepository.save(user);
       tokenEntity.get().setStatus(TokenStatus.USED);
       tokenRepository.save(tokenEntity.get());
+      userMessages.recordSecurityEvent(
+          user, de.derpeterson.app.model.enums.UserMessageType.PASSWORD_RESET);
       loginAttemptService.clearAfterPasswordReset(user.getEmail());
       return true;
     }

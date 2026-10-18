@@ -20,6 +20,11 @@ Java-Webanwendung als Grundlage für Anwendungen mit Benutzerkonten und Administ
 
 > Nachfolgende Workerpool-Umsetzung vom 18.10.2026: 1555/1555 Anwendungs-JUnit-Tests erfolgreich, darunter 26 neue Workerfälle mit isoliertem H2 und eigenem lokalem SMTP. Keine neue Browserrunde. [Verhalten und Einführung](docs/email-worker-pool.md), [Ergebnisse und Messgrenzen](browser-tests/abdeckung.md).
 
+> Mitteilungsfunktion vom 18.10.2026 auf `feature/user-messages`: 1613/1613
+> Anwendungs-JUnit-Tests erfolgreich, keine Fehler oder Skips. Persönliche Inbox und
+> Superadmin-Versand implementiert; Browserabnahme und Produktionsbuild bleiben offen.
+> [Vertrag, Ergebnisse und Einführung](docs/user-messages.md).
+
 ## Funktionen
 
 - Registrierung mit zunächst deaktiviertem Konto und Aktivierung per E-Mail-Token.
@@ -47,6 +52,12 @@ Worker-Koordination, Retry-Verhalten und konservativer Umgang mit unklaren
 Versandausgängen: [Mailqueue-Verarbeitung](docs/email-queue-processing.md).
 
 Belege: `views/RegistrationView.java`, `views/LoginView.java`, `views/admin/`, `service/VerificationService.java`, `service/PasswordResetService.java`, `service/EmailQueueService.java`, `security/SecurityConfig.java` und `scheduler/UserStatusScheduler.java` unter `src/main/java/de/derpeterson/app/`.
+
+Persönliche Mitteilungen sind über die Glocke und `/messages` erreichbar: persistente
+Inbox mit Lesestatus, Superadmin-Versand unter `/admin?section=messages` und automatische
+Hinweise nach Passwortwechsel, Passwortreset und bestätigter E-Mail-Änderung.
+[Verhalten, Aufbewahrung und offene Browserabnahme](docs/user-messages.md).
+Der Feature-Stand benötigt einen vollständigen Neustart mit gebautem Shared-Modul.
 
 ## Rollen und Zugriffsrechte
 

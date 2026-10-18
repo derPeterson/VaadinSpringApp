@@ -1,6 +1,12 @@
 # Eigene Passwort- und E-Mail-Änderungen
 
-Stand: 17.10.2026. Implementiert im bestehenden Konto-/Cosmos-Design, DE und EN.
+Stand: 18.10.2026. Implementiert im bestehenden Konto-/Cosmos-Design, DE und EN.
+
+Ergänzung: Erfolgreicher Passwortwechsel, Passwortreset und bestätigte E-Mail-Änderung
+speichern jetzt auch eine [persönliche Mitteilung](user-messages.md) in derselben
+Fachtransaktion. Kann diese Pflichtmitteilung nicht gespeichert werden, rollt die
+Fachaktion zurück. Bestehende Mail-/Sitzungsregeln bleiben erhalten; eine bloße
+E-Mail-Änderungsanfrage erzeugt noch keinen Inbox-Erfolgseintrag.
 
 ## Passwortwechsel
 

@@ -45,7 +45,7 @@ class AccountHeaderActionsTest {
   }
 
   @Test
-  void settingsOpensTheAccountDirectlyWhileTheBellHasNoAction() {
+  void settingsOpensTheAccountDirectlyWithoutUsingTheBell() {
     var actions = create(true);
     doReturn(Optional.empty()).when(ui).navigate(AccountView.class);
     button(actions, "account-header-notifications").click();

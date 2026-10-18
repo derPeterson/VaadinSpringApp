@@ -28,11 +28,21 @@ public class AccountHeaderActions extends HorizontalLayout {
       button.addThemeVariants(LUMO_TERTIARY_INLINE);
       button.addClassNames("cosmos-topbar-shortcut", LumoUtility.TextColor.PRIMARY);
     }
-    // Die Glocke ist vorerst nur der sichtbare Platzhalter für spätere Benachrichtigungen.
     if (authenticated)
       settings.addClickListener(event -> UI.getCurrent().navigate(AccountView.class));
     add(notifications, settings);
     refreshTexts();
+  }
+
+  private UserMessageBell messageBell;
+
+  public void configureMessages(
+      de.derpeterson.app.service.UserMessageService service,
+      jakarta.servlet.http.HttpServletRequest request) {
+    if (!isVisible() || messageBell != null) return;
+    remove(notifications);
+    messageBell = new UserMessageBell(messages, service, request, notifications);
+    addComponentAtIndex(0, messageBell);
   }
 
   public void refreshTexts() {
@@ -40,5 +50,6 @@ public class AccountHeaderActions extends HorizontalLayout {
     notifications.setTooltipText(messages.getBaseNotifications());
     settings.setAriaLabel(messages.getBaseManageAccountButton());
     settings.setTooltipText(messages.getBaseManageAccountButton());
+    if (messageBell != null) messageBell.refreshTexts();
   }
 }

@@ -11,6 +11,10 @@ public final class AppRouteConstants {
   public static final String HOME_SECURITY_ROUTE = "/home";
   public static final String HOME_PAGE_TITLE = "Home";
 
+  public static final String MESSAGES_ROUTE = "messages";
+  public static final String MESSAGES_SECURITY_ROUTE = "/messages";
+  public static final String MESSAGES_PAGE_TITLE = "Messages";
+
   public static final String ACCOUNT_ROUTE = "account";
   public static final String ACCOUNT_SECURITY_ROUTE = "/account";
   public static final String ACCOUNT_PAGE_TITLE = "My Account";

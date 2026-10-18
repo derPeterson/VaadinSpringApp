@@ -53,6 +53,9 @@ class AccountSecurityServicePersistenceTest {
   @Import({
     UserServicePersistenceTest.Config.class,
     AccountSecurityService.class,
+    UserMessageService.class,
+    UserMessagePolicy.class,
+    de.derpeterson.app.websocket.UserMessageBroadcaster.class,
     AccountSecurityMail.class,
     CustomUserDetailsService.class,
     LoginAttemptService.class,
@@ -117,6 +120,9 @@ class AccountSecurityServicePersistenceTest {
   }
 
   @Autowired AccountSecurityService service;
+  @Autowired UserMessageService userMessages;
+  @Autowired UserMessageRepository userMessageRepository;
+
   @Autowired SecurityService security;
   @Autowired UserRepository users;
   @Autowired EmailChangeTokenRepository tokens;
@@ -149,6 +155,8 @@ class AccountSecurityServicePersistenceTest {
     ReflectionTestUtils.setField(service, "clock", FIXED);
     tx.executeWithoutResult(
         status -> {
+          em.createQuery("delete from UserMessageRecipientEntity").executeUpdate();
+          em.createQuery("delete from UserMessageEntity").executeUpdate();
           em.createQuery("delete from EmailQueueEntity").executeUpdate();
           em.createQuery("delete from EmailChangeTokenEntity").executeUpdate();
           em.createQuery("delete from PasswordResetTokenEntity").executeUpdate();
@@ -234,6 +242,9 @@ class AccountSecurityServicePersistenceTest {
     var result =
         service.changePassword(
             request, new PasswordChange("Old-secret!", "New-secret!", "New-secret!"));
+    assertEquals(1, userMessageRepository.count());
+    assertEquals(
+        UserMessageType.PASSWORD_CHANGED, userMessageRepository.findAll().getFirst().getType());
     assertEquals(account.getVersion(), result.previousVersion());
     assertTrue(result.version() > result.previousVersion());
     assertTrue(encoder.matches("New-secret!", stored().getPassword()));
@@ -253,6 +264,48 @@ class AccountSecurityServicePersistenceTest {
     assertFalse(registry.getSessionInformation(request.getSession().getId()).isExpired());
     assertTrue(registry.getSessionInformation("other-device").isExpired());
     assertNull(remembered.getTokenForSeries("remember-series"));
+  }
+
+  @Test
+  void failedRequiredMessageRollsBackPasswordAndOutboxWithoutRevokingSessions() {
+    var failing = mock(UserMessageService.class);
+    doThrow(new IllegalStateException("message storage unavailable"))
+        .when(failing)
+        .recordSecurityEvent(any(), any());
+    ReflectionTestUtils.setField(service, "userMessages", failing);
+    try {
+      assertThrows(
+          IllegalStateException.class,
+          () ->
+              service.changePassword(
+                  request, new PasswordChange("Old-secret!", "New-secret!", "New-secret!")));
+      assertTrue(encoder.matches("Old-secret!", stored().getPassword()));
+      assertEquals(0, emails.count());
+      assertFalse(registry.getSessionInformation("other-device").isExpired());
+      assertNotNull(remembered.getTokenForSeries("remember-series"));
+    } finally {
+      ReflectionTestUtils.setField(service, "userMessages", userMessages);
+    }
+  }
+
+  @Test
+  void failedRequiredMessageRollsBackConfirmedEmailAndBothNotices() {
+    requestChange("new@example.test");
+    var raw = linkToken();
+    var failing = mock(UserMessageService.class);
+    doThrow(new IllegalStateException("message storage unavailable"))
+        .when(failing)
+        .recordSecurityEvent(any(), any());
+    ReflectionTestUtils.setField(service, "userMessages", failing);
+    try {
+      assertThrows(IllegalStateException.class, () -> service.confirm(raw));
+      assertEquals("old@example.test", stored().getEmail());
+      assertEquals(TokenStatus.ACTIVE, tokens.findAll().getFirst().getStatus());
+      assertEquals(1, emails.count());
+      assertFalse(registry.getSessionInformation("other-device").isExpired());
+    } finally {
+      ReflectionTestUtils.setField(service, "userMessages", userMessages);
+    }
   }
 
   @Test
@@ -320,7 +373,11 @@ class AccountSecurityServicePersistenceTest {
   void confirmationChangesIdentityOnceNotifiesBothAddressesAndRevokesEveryOldSession() {
     requestChange("new@example.test");
     var raw = linkToken();
+    assertEquals(0, userMessageRepository.count());
     assertEquals(Confirmation.SUCCESS, service.confirm(raw));
+    assertEquals(1, userMessageRepository.count());
+    assertEquals(
+        UserMessageType.EMAIL_CHANGED, userMessageRepository.findAll().getFirst().getType());
     assertEquals("new@example.test", stored().getEmail());
     assertEquals(TokenStatus.USED, tokens.findAll().getFirst().getStatus());
     assertEquals(3, emails.count());

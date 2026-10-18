@@ -17,6 +17,11 @@ public enum AppRoute {
       AppRouteConstants.HOME_SECURITY_ROUTE,
       AppRouteConstants.HOME_PAGE_TITLE,
       null),
+  MESSAGES(
+      AppRouteConstants.MESSAGES_ROUTE,
+      AppRouteConstants.MESSAGES_SECURITY_ROUTE,
+      AppRouteConstants.MESSAGES_PAGE_TITLE,
+      null),
   ACCOUNT(
       AppRouteConstants.ACCOUNT_ROUTE,
       AppRouteConstants.ACCOUNT_SECURITY_ROUTE,

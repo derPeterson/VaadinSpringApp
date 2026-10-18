@@ -139,7 +139,11 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
 
   public boolean isExpired(HttpServletRequest request) {
     var session = request == null ? null : request.getSession(false);
-    var information = session == null ? null : registry.getSessionInformation(session.getId());
+    return session != null && isSessionExpired(session.getId());
+  }
+
+  public boolean isSessionExpired(String sessionId) {
+    var information = registry.getSessionInformation(sessionId);
     return information != null && information.isExpired();
   }
 

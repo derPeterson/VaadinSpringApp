@@ -101,6 +101,11 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
         });
   }
 
+  @org.springframework.beans.factory.annotation.Autowired
+  public final void configureUserMessages(de.derpeterson.app.service.UserMessageService service) {
+    accountHeaderActions.configureMessages(service, request);
+  }
+
   protected Button createTrackedUserButton() {
     this.userIconButton =
         new Button(

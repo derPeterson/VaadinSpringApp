@@ -1,5 +1,37 @@
 # Browserabdeckung und offene Punkte
 
+## Mitteilungsfunktion: Java-Nachweis, Browserabnahme offen (18.10.2026)
+
+Feature-Branch `feature/user-messages`, Ausgangspunkt `7dedccc`. Persönliche Inbox,
+Superadmin-Versand und automatische Sicherheitseinträge sind umgesetzt.
+Der neue Stand wurde **nicht im Browser ausgeführt**. Die nachfolgenden historischen
+Browserzahlen gelten weiterhin nur für die dort benannten Stände.
+
+| Messung | Tatsächliches Ergebnis |
+| --- | --- |
+| Anwendungs-JUnit gesamt | 1613/1613, 0 Fehler, 0 Fehlschläge, 0 Skips; 58 zusätzliche Fälle |
+| Neue eigene Mitteilungstests | 38 Persistenzfälle und 15 Java-Komponentenfälle, ergänzt um bestehende Sicherheits-/Routingtests |
+| Java-Build / Shared | Java 25.0.4.1; Shared gebaut/installiert, App und Tests kompiliert |
+| JaCoCo gesamt | Zeilen 8410/9871 (85,20 %); Zweige 2354/3225 (72,99 %); 197 ausführbare Anwendungs-Java-Klassen |
+| Neue Mitteilungsklassen | Zeilen 540/654 (82,57 %); Zweige 126/187 (67,38 %), inklusive innerer Klassen |
+| Katalog / Format | 482 eindeutige DE-/EN-Schlüssel, Codec erhalten; Spotless Apply/Check erfolgreich |
+| Browser / Produktion | Nicht gestartet; keine neue Browser-, CSS- oder JavaScript-Coverage |
+
+Frische JaCoCo-Ausführungsdaten ausschließlich aus dem vollständigen JUnit-Lauf dieses
+Stands; Shared, Tests und Bibliotheken sind nicht im Nenner. Gemessene Java-Komponenten-
+aufrufe belegen weder sichtbare Geometrie noch echtes Browser-Push-/Fokusverhalten.
+Spring-Header-Anbindung und HTTP-Zugang zur neuen Route sind in Java geprüft.
+
+Persistenznachweise umfassen konkurrierende Wiederholung, Rollbacks bei Pflichtmitteilungs-
+fehlern, Rollen-/Sitzungswiderruf, fremde Empfangs-IDs, aktuelle Empfängervorschau trotz
+altem Persistence Context, Snapshots, Lösch-FKs und Retention. JUnit verwendet ausschließlich
+isolierte H2-/Mock-Daten; keine Bestandsdatenbank oder reguläre Anwendung gestartet.
+
+[Funktionsvertrag und geplante MSG-01 bis MSG-07](../docs/user-messages.md#noch-auszuführende-browser-betriebsprüfungen)
+benennen die noch ausstehenden DE-/EN-Journeys, visuelle Prüfung und echte Neustart-/Schemafixture.
+Es wurden keine neuen Browserfälle als erfolgreich markiert. Einführung erfordert Shared-
+und Anwendungsbuild sowie vollständigen Neustart; HotSwap allein reicht nicht.
+
 ## Mail-Workerpool implementiert und mit JUnit geprüft (18.10.2026)
 
 Geprüfter Stand: `main`, Basis `6b7952b`, plus uncommittierte Workerpool-Änderungen.

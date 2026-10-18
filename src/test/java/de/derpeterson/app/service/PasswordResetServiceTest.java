@@ -77,7 +77,16 @@ class PasswordResetServiceTest {
                         new CustomI18NProvider(), CustomI18NProvider.getCurrentLocale())
                     .getAccountCopyrightTemplate());
     service =
-        new PasswordResetService(messages, tokens, users, config, encoder, queue, attempts, CLOCK);
+        new PasswordResetService(
+            messages,
+            tokens,
+            users,
+            config,
+            encoder,
+            queue,
+            attempts,
+            mock(UserMessageService.class),
+            CLOCK);
     user =
         UserEntity.builder()
             .id(1L)
@@ -99,7 +108,15 @@ class PasswordResetServiceTest {
         NullPointerException.class,
         () ->
             new PasswordResetService(
-                messages, tokens, users, config, encoder, queue, attempts, null));
+                messages,
+                tokens,
+                users,
+                config,
+                encoder,
+                queue,
+                attempts,
+                mock(UserMessageService.class),
+                null));
   }
 
   @Test

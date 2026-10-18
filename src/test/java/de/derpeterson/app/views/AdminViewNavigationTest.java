@@ -109,6 +109,36 @@ class AdminViewNavigationTest {
     return event;
   }
 
+  @Test
+  void messagesNavigationIsHiddenAndDirectUrlFallsBackForOrdinaryAdmin() {
+    var messages = mock(de.derpeterson.app.service.UserMessageService.class);
+    view.configureAdminMessages(messages);
+    enter("?section=messages");
+    assertFalse(((SideNavItem) ReflectionTestUtils.getField(view, "messagesNavItem")).isVisible());
+    assertEquals("DASHBOARD", ReflectionTestUtils.getField(view, "activeSection").toString());
+    verify(messages, never()).targets(any());
+  }
+
+  @Test
+  void superadminCanOpenMessagesAndRefreshUsesTheSameSection() {
+    var messages = mock(de.derpeterson.app.service.UserMessageService.class);
+    when(messages.canSend(any())).thenReturn(true);
+    when(messages.targets(any())).thenReturn(List.of());
+    when(messages.sent(any(), eq(0))).thenReturn(org.springframework.data.domain.Page.empty());
+    try (var context =
+        new org.springframework.context.annotation.AnnotationConfigApplicationContext()) {
+      context.registerBean(de.derpeterson.app.service.UserMessageService.class, () -> messages);
+      context.refresh();
+      context.getAutowireCapableBeanFactory().autowireBean(view);
+    }
+    enter("?section=messages");
+    assertEquals("MESSAGES", ReflectionTestUtils.getField(view, "activeSection").toString());
+    assertTrue(((SideNavItem) ReflectionTestUtils.getField(view, "messagesNavItem")).isVisible());
+    when(messages.canSend(any())).thenReturn(false);
+    enter("?section=messages");
+    assertEquals("DASHBOARD", ReflectionTestUtils.getField(view, "activeSection").toString());
+  }
+
   @ParameterizedTest
   @CsvSource({
     "'', dashboardSection, dashboardNavItem",

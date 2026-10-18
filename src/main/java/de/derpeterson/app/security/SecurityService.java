@@ -118,6 +118,25 @@ public class SecurityService {
     return Optional.empty();
   }
 
+  /** Sitzung der konkreten UI auch auf Push-Threads frisch prüfen; kein Thread-Kontext-Fallback. */
+  public Optional<UserEntity> getSessionUser(HttpSession session) {
+    if (session == null) return Optional.empty();
+    try {
+      if (admissions.isSessionExpired(session.getId())) return Optional.empty();
+      var stored =
+          session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+      if (!(stored instanceof SecurityContext context)) return Optional.empty();
+      var authentication = context.getAuthentication();
+      if (authentication == null
+          || !authentication.isAuthenticated()
+          || !(authentication.getPrincipal() instanceof UserDetails principal)
+          || !hasCurrentPrivileges(principal, authentication)) return Optional.empty();
+      return userRepository.findByEmail(principal.getUsername());
+    } catch (IllegalStateException expired) {
+      return Optional.empty();
+    }
+  }
+
   public void touchSession(HttpServletRequest request) {
     admissions.touch(request);
   }

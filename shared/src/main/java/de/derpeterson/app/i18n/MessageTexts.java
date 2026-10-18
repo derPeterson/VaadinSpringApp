@@ -1842,4 +1842,145 @@ public class MessageTexts {
   public String getAccountAvatarOutputError() {
     return getTranslation("account.avatar.error.output");
   }
+
+  // Persönliche Mitteilungen und Superadmin-Versand
+  public String getMessagesTitle() {
+    return getTranslation("messages.title");
+  }
+
+  public String getMessagesDescription() {
+    return getTranslation("messages.description");
+  }
+
+  public String getMessagesUnread() {
+    return getTranslation("messages.unread");
+  }
+
+  public String getMessagesMarkAll() {
+    return getTranslation("messages.markAll");
+  }
+
+  public String getMessagesEmpty() {
+    return getTranslation("messages.empty");
+  }
+
+  public String getMessagesHistory() {
+    return getTranslation("messages.history");
+  }
+
+  public String getMessagesRefresh() {
+    return getTranslation("messages.refresh");
+  }
+
+  public String getMessagesPrevious() {
+    return getTranslation("messages.previous");
+  }
+
+  public String getMessagesNext() {
+    return getTranslation("messages.next");
+  }
+
+  public String getMessagesPage() {
+    return getTranslation("messages.page");
+  }
+
+  public String getMessagesRead() {
+    return getTranslation("messages.read");
+  }
+
+  public String getMessagesClose() {
+    return getTranslation("messages.close");
+  }
+
+  public String getMessagesUnavailable() {
+    return getTranslation("messages.unavailable");
+  }
+
+  public String getMessagesOpenAccount() {
+    return getTranslation("messages.openAccount");
+  }
+
+  public String getMessagesRetention(int days) {
+    return getFormattedTranslation("messages.retention", days);
+  }
+
+  public String getMessagesPasswordChangedTitle() {
+    return getTranslation("messages.passwordChangedTitle");
+  }
+
+  public String getMessagesPasswordChangedBody() {
+    return getTranslation("messages.passwordChangedBody");
+  }
+
+  public String getMessagesPasswordResetTitle() {
+    return getTranslation("messages.passwordResetTitle");
+  }
+
+  public String getMessagesPasswordResetBody() {
+    return getTranslation("messages.passwordResetBody");
+  }
+
+  public String getMessagesEmailChangedTitle() {
+    return getTranslation("messages.emailChangedTitle");
+  }
+
+  public String getMessagesEmailChangedBody() {
+    return getTranslation("messages.emailChangedBody");
+  }
+
+  public String getMessagesAdminDescription() {
+    return getTranslation("messages.adminDescription");
+  }
+
+  public String getMessagesEveryone() {
+    return getTranslation("messages.everyone");
+  }
+
+  public String getMessagesRecipients() {
+    return getTranslation("messages.recipients");
+  }
+
+  public String getMessagesSubject() {
+    return getTranslation("messages.subject");
+  }
+
+  public String getMessagesBody() {
+    return getTranslation("messages.body");
+  }
+
+  public String getMessagesPreview() {
+    return getTranslation("messages.preview");
+  }
+
+  public String getMessagesSend() {
+    return getTranslation("messages.send");
+  }
+
+  public String getMessagesPreviewHint() {
+    return getTranslation("messages.previewHint");
+  }
+
+  public String getMessagesSent() {
+    return getTranslation("messages.sent");
+  }
+
+  public String getMessagesSentHistory() {
+    return getTranslation("messages.sentHistory");
+  }
+
+  public String getMessagesInvalidDraft() {
+    return getTranslation("messages.invalidDraft");
+  }
+
+  public String getMessagesNoRecipients() {
+    return getTranslation("messages.noRecipients");
+  }
+
+  public String getMessagesRecipientsChanged() {
+    return getTranslation("messages.recipientsChanged");
+  }
+
+  public String getMessagesRequestConflict() {
+    return getTranslation("messages.requestConflict");
+  }
 }

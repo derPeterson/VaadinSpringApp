@@ -46,6 +46,21 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
   @QueryHints(@QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
   Optional<RoleEntity> lockRole(@Param("role") RoleType role);
 
+  interface MessageTargetRow {
+    Long getId();
+
+    String getFirstName();
+
+    String getLastName();
+
+    String getEmail();
+  }
+
+  // Keine veralteten OSIV-Entities für die aktuelle Versandberechtigung der Empfänger auswerten.
+  @Query(
+      "select u.id as id, u.firstName as firstName, u.lastName as lastName, u.email as email from UserEntity u where u.enabled = true and u.verificationPending = false order by u.id")
+  List<MessageTargetRow> findMessageTargets();
+
   interface SecurityUserRow {
     String getEmail();
 

@@ -101,14 +101,17 @@ class SecurityChainRegressionTest {
 
   @Test
   void accountRouteRequiresAuthenticationAndUsesTheNormalLogin() throws Exception {
-    var path = AppRoute.ACCOUNT.getSecurityRoute();
-    var request = new MockHttpServletRequest("GET", path);
-    request.setServletPath(path);
-    var response = new MockHttpServletResponse();
-    var servlet = mock(FilterChain.class);
-    new FilterChainProxy(chain).doFilter(request, response, servlet);
-    assertTrue(response.getRedirectedUrl().endsWith(AppRoute.LOGIN.getSecurityRoute()));
-    verifyNoInteractions(servlet);
+    for (var route : java.util.List.of(AppRoute.ACCOUNT, AppRoute.MESSAGES)) {
+      when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
+      var path = route.getSecurityRoute();
+      var request = new MockHttpServletRequest("GET", path);
+      request.setServletPath(path);
+      var response = new MockHttpServletResponse();
+      var servlet = mock(FilterChain.class);
+      new FilterChainProxy(chain).doFilter(request, response, servlet);
+      assertTrue(response.getRedirectedUrl().endsWith(AppRoute.LOGIN.getSecurityRoute()));
+      verifyNoInteractions(servlet);
+    }
   }
 
   @ParameterizedTest
@@ -117,22 +120,25 @@ class SecurityChainRegressionTest {
     String email = sessionUser(role);
     var login = postPassword(email, "OriginalPassword!");
     var session = (MockHttpSession) login.request().getSession(false);
-    var path = AppRoute.ACCOUNT.getSecurityRoute();
-    var request = new MockHttpServletRequest("GET", path);
-    request.setServletPath(path);
-    request.setSession(session);
-    var servlet = mock(FilterChain.class);
-    new FilterChainProxy(chain).doFilter(request, new MockHttpServletResponse(), servlet);
-    verify(servlet).doFilter(any(), any());
-    clearInvocations(servlet);
-    when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var response = new MockHttpServletResponse();
-    new FilterChainProxy(chain).doFilter(request, response, servlet);
-    if (role.isAdministrative()) verify(servlet).doFilter(any(), any());
-    else {
-      assertEquals(503, response.getStatus());
-      assertEquals(AppRoute.MAINTENANCE.getSecurityRoute(), response.getForwardedUrl());
-      verifyNoInteractions(servlet);
+    for (var route : java.util.List.of(AppRoute.ACCOUNT, AppRoute.MESSAGES)) {
+      when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
+      var path = route.getSecurityRoute();
+      var request = new MockHttpServletRequest("GET", path);
+      request.setServletPath(path);
+      request.setSession(session);
+      var servlet = mock(FilterChain.class);
+      new FilterChainProxy(chain).doFilter(request, new MockHttpServletResponse(), servlet);
+      verify(servlet).doFilter(any(), any());
+      clearInvocations(servlet);
+      when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+      var response = new MockHttpServletResponse();
+      new FilterChainProxy(chain).doFilter(request, response, servlet);
+      if (role.isAdministrative()) verify(servlet).doFilter(any(), any());
+      else {
+        assertEquals(503, response.getStatus());
+        assertEquals(AppRoute.MAINTENANCE.getSecurityRoute(), response.getForwardedUrl());
+        verifyNoInteractions(servlet);
+      }
     }
   }
 

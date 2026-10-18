@@ -77,6 +77,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class PasswordResetServicePersistenceTest {
   @Autowired private PasswordResetService service;
+  @Autowired private UserMessageService userMessages;
+  @Autowired private de.derpeterson.app.repository.UserMessageRepository userMessagesRepository;
+
+  @Autowired
+  private de.derpeterson.app.repository.UserMessageRecipientRepository userRecipientsRepository;
+
   @Autowired private PasswordResetTokenRepository tokens;
   @Autowired private UserRepository users;
   @Autowired private TransactionTemplate transaction;
@@ -102,6 +108,8 @@ class PasswordResetServicePersistenceTest {
     when(probes.encoder().encode(any())).thenAnswer(call -> "hash-" + call.getArgument(0));
     transaction.executeWithoutResult(
         tx -> {
+          userRecipientsRepository.deleteAll();
+          userMessagesRepository.deleteAll();
           mails.deleteAll();
           tokens.deleteAll();
           users.deleteAll();
@@ -158,11 +166,36 @@ class PasswordResetServicePersistenceTest {
     assertTrue(service.resetPassword("valid", "Password!"));
     assertEquals("hash-Password!", password());
     assertEquals(TokenStatus.USED, status("valid"));
+    assertEquals(1, userMessagesRepository.count());
+    assertEquals(
+        de.derpeterson.app.model.enums.UserMessageType.PASSWORD_RESET,
+        userMessagesRepository.findAll().getFirst().getType());
     assertTrue(service.existsToken("valid"));
     assertFalse(service.validateToken("valid"));
     assertFalse(service.resetPassword("valid", "OtherPassword!"));
     assertEquals("hash-Password!", password());
     verify(probes.encoder(), times(1)).encode(any());
+  }
+
+  @Test
+  void messagePersistenceFailureRollsBackPasswordAndResetConsumption() {
+    seed("message-failure", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+    var target = org.springframework.test.util.AopTestUtils.getTargetObject(service);
+    var failure = mock(UserMessageService.class);
+    doThrow(new IllegalStateException("message storage failed"))
+        .when(failure)
+        .recordSecurityEvent(any(), any());
+    org.springframework.test.util.ReflectionTestUtils.setField(target, "userMessages", failure);
+    try {
+      assertThrows(
+          IllegalStateException.class, () -> service.resetPassword("message-failure", "Password!"));
+      assertEquals("old-hash", password());
+      assertEquals(TokenStatus.ACTIVE, status("message-failure"));
+      assertEquals(0, userMessagesRepository.count());
+    } finally {
+      org.springframework.test.util.ReflectionTestUtils.setField(
+          target, "userMessages", userMessages);
+    }
   }
 
   @ParameterizedTest
@@ -1138,12 +1171,29 @@ class PasswordResetServicePersistenceTest {
     }
 
     @Bean
+    UserMessageService userMessages(
+        de.derpeterson.app.repository.UserMessageRepository messages,
+        de.derpeterson.app.repository.UserMessageRecipientRepository recipients,
+        UserRepository users,
+        ConfigService config) {
+      return new UserMessageService(
+          new UserMessagePolicy(180),
+          messages,
+          recipients,
+          users,
+          mock(de.derpeterson.app.security.SecurityService.class),
+          config,
+          new de.derpeterson.app.websocket.UserMessageBroadcaster());
+    }
+
+    @Bean
     Clock clock() {
       return mock(Clock.class);
     }
 
     @Bean
-    PasswordResetService passwordResetService(Probes probes, Clock clock) {
+    PasswordResetService passwordResetService(
+        Probes probes, Clock clock, UserMessageService userMessages) {
       var messages = mock(MessageProperties.class);
       when(messages.getEmailResetPasswordSubject()).thenReturn("Reset password");
       return new PasswordResetService(
@@ -1154,6 +1204,7 @@ class PasswordResetServicePersistenceTest {
           probes.encoder(),
           probes.queue(),
           mock(LoginAttemptService.class),
+          userMessages,
           clock);
     }
   }
