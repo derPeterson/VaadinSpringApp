@@ -62,6 +62,8 @@ Persönliche Benachrichtigungen sind über die Glocke und `/notifications` errei
 Inbox mit Lesestatus, Superadmin-Versand unter `/admin?section=notifications` und automatische
 Hinweise nach Passwortwechsel, Passwortreset und bestätigter E-Mail-Änderung.
 [Verhalten, Aufbewahrung und offene Browserabnahme](docs/user-notifications.md).
+Der manuelle Superadmin-Versand pausiert im Wartungsmodus; das Versandpanel zeigt den Status
+an und bleibt gesperrt. Nach Ende der Wartung ist eine neue Vorschauprüfung erforderlich.
 Der Feature-Stand benötigt einen vollständigen Neustart mit gebautem Shared-Modul.
 
 ## Rollen und Zugriffsrechte
@@ -729,3 +731,5 @@ aktualisiert beim Neuladen/Rendern, ohne eigenen Timer. Das vorhandene Avatarbil
 wird wiederverwendet; Benutzeruploads und benutzerdefinierte Bildspeicherung sind
 weiterhin nicht implementiert. Schutzregeln, Versionierung und Backendverträge
 bleiben unabhängig von den Dialogstilen bestehen.
+
+Der manuelle Mail-Test zeigt den Wartungsstatus an seiner SMTP-Kennung und ist bei Wartung gesperrt; Eingaben bleiben erhalten. [Verhalten und Prüfgrenzen](docs/email-service-contract.md#manueller-mail-test-im-wartungsmodus-19102026).

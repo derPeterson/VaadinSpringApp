@@ -87,7 +87,8 @@ public class AdminView extends IsAuthenticatedBaseView {
   public void configureAdminNotifications(
       de.derpeterson.app.service.UserNotificationService service) {
     notificationsService = service;
-    notificationsNavItem = createNavigationItem(VaadinIcon.BELL, AdminSection.NOTIFICATIONS, null);
+    notificationsNavItem =
+        createNavigationItem(VaadinIcon.PAPERPLANE, AdminSection.NOTIFICATIONS, null);
     notificationsNavItem.setLabel(messageProperties.getNotificationsTitle());
     notificationsNavItem.setVisible(service.canSend(request.getSession(false)));
     sideNavigation.addItem(notificationsNavItem);
@@ -141,7 +142,8 @@ public class AdminView extends IsAuthenticatedBaseView {
     configurationSection =
         new AdminConfigurationSection(
             messageProperties, configService, this::refreshConfigurationState);
-    mailTestSection = new AdminMailTestSection(messageProperties, emailService, authenticatedUser);
+    mailTestSection =
+        new AdminMailTestSection(messageProperties, emailService, maintenance, authenticatedUser);
     userManagementSection =
         new AdminUserManagementSection(
             messageProperties, userService, roleService, securityService);
@@ -226,6 +228,8 @@ public class AdminView extends IsAuthenticatedBaseView {
   private void refreshConfigurationState() {
     refreshServiceName();
     serviceStatus.refresh();
+    mailTestSection.refreshDeliveryState();
+    if (notificationsSection != null) notificationsSection.refreshDeliveryState();
   }
 
   private void refreshServiceName() {
@@ -336,6 +340,7 @@ public class AdminView extends IsAuthenticatedBaseView {
 
   private void selectSection(AdminSection section, AdminConfigGroup configurationGroup) {
     serviceStatus.refresh();
+    mailTestSection.refreshDeliveryState();
     boolean canSend =
         notificationsService != null && notificationsService.canSend(request.getSession(false));
     if (notificationsNavItem != null) notificationsNavItem.setVisible(canSend);
@@ -413,6 +418,7 @@ public class AdminView extends IsAuthenticatedBaseView {
 
   private void refreshTexts() {
     serviceStatus.refresh();
+    mailTestSection.refreshDeliveryState();
     if (headerTitle != null) {
       headerTitle.setText(messageProperties.getAdminHeaderTitle());
     }

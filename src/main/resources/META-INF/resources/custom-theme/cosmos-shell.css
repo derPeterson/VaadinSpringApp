@@ -314,6 +314,7 @@ vaadin-menu-bar-submenu[theme~="cosmos"]::part(overlay),
 
 /* ComboBox- und Uhrzeit-Einträge passen zur 13px-Schrift der Eingabefelder. */
 
+.cosmos-notification-compose vaadin-multi-select-combo-box::part(content),
 .cosmos-theme :is(vaadin-combo-box, vaadin-time-picker)::part(content) {
     --lumo-font-size-m: var(--cosmos-font-size-m);
     font-size: var(--cosmos-font-size-m);

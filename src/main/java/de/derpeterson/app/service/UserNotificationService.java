@@ -37,7 +37,8 @@ public class UserNotificationService {
     INVALID_DRAFT,
     NO_RECIPIENTS,
     RECIPIENTS_CHANGED,
-    REQUEST_CONFLICT
+    REQUEST_CONFLICT,
+    DELIVERY_PAUSED
   }
 
   public static class Rejected extends RuntimeException {
@@ -77,6 +78,15 @@ public class UserNotificationService {
       boolean read) {}
 
   public record Sent(Long id, String title, String body, Instant createdAt, int recipientCount) {}
+
+  public MaintenanceService.State deliveryState() {
+    return new MaintenanceService(config).state();
+  }
+
+  private void requireDeliveryOpen() {
+    if (deliveryState() != MaintenanceService.State.OPEN)
+      throw new Rejected(Problem.DELIVERY_PAUSED);
+  }
 
   private UserEntity owner(HttpSession session) {
     var user =
@@ -177,6 +187,7 @@ public class UserNotificationService {
   @Transactional(readOnly = true)
   public Preview preview(HttpSession session, Selection selection) {
     superadmin(session);
+    requireDeliveryOpen();
     var selected = selected(Objects.requireNonNull(selection));
     if (selected.isEmpty()) throw new Rejected(Problem.NO_RECIPIENTS);
     if (!selection.everyone()
@@ -195,6 +206,7 @@ public class UserNotificationService {
         .lockRole(RoleType.ROLE_SUPERADMIN)
         .orElseThrow(() -> new IllegalStateException("Superadmin role missing"));
     var sender = superadmin(session);
+    requireDeliveryOpen();
     title = clean(title, TITLE_LIMIT);
     body = clean(body, BODY_LIMIT);
     var key = "admin:" + requestId;

@@ -109,3 +109,28 @@ Neue Konto-Sicherheitsmails werden als NOTIFICATION mit `email_queue.recipient`
 gespeichert. Null bei älteren Einträgen erhält die bisherige Empfängerauswahl.
 Siehe [Kontosicherheitsvertrag](account-security-contract.md) für Vorlagen, Transaktionen,
 Sitzungsfolgen und die weiterhin offene tatsächliche Browser-/SMTP-Abnahme.
+
+## Manueller Mail-Test im Wartungsmodus (19.10.2026)
+
+Die SMTP-Kennung im Mail-Test zeigt denselben Statuspunkt wie der interne
+Benachrichtigungsversand: grün bei offenem Betrieb, rot bei Wartung oder nicht
+lesbarer Wartungskonfiguration. Das gesamte Mail-Testformular einschließlich
+Info- und Versandbuttons ist bei gesperrtem Betrieb deaktiviert. Entwürfe bleiben
+erhalten und sind nach Ende der Wartung wieder bearbeitbar.
+
+Konfigurationsänderungen im selben Adminbereich aktualisieren den Status direkt.
+Eine geöffnete Mail-Testansicht fragt ihn mit Vaadins nativem Polling spätestens
+beim nächsten Poll erneut ab (angefordert: höchstens fünf Sekunden; Browser können
+Hintergrundtabs verzögern). Beim Verlassen wird der eigene Listener entfernt und
+der vorherige Pollingabstand wiederhergestellt. Der Versandcallback prüft den
+Status zusätzlich frisch, bevor er den Maildienst aufruft. Ein bereits laufender
+SMTP-Aufruf wird nicht abgebrochen; es gibt keine Transaktionssperre gegen einen
+gleichzeitigen Wartungswechsel. Automatische Mails und deren Queue behalten ihr
+bestehendes Verhalten.
+
+Gezielte Prüfung: 70 JUnit-Fälle erfolgreich, keine Fehler oder Skips, davon neun
+neue Mail-Testfälle für DE/EN, Wartung, unlesbare Konfiguration, Entwurfserhalt,
+frische Versandprüfung und Polling-Lebenszyklus. Maildienst und Konfiguration sind
+gemockt; keine Anwendung, reale Datenbank oder SMTP-Verbindung wurde gestartet.
+Keine neuen Browserprüfungen oder Produktionsbuilds; sichtbare Geometrie und
+Mailzustellung sind damit nicht nachgewiesen.

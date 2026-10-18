@@ -1932,6 +1932,66 @@ public class MessageTexts {
     return getTranslation("notifications.adminDescription");
   }
 
+  public String getNotificationsComposeTitle() {
+    return getTranslation("notifications.composeTitle");
+  }
+
+  public String getNotificationsInternal() {
+    return getTranslation("notifications.internal");
+  }
+
+  public String getNotificationsDeliveryPaused() {
+    return getTranslation("notifications.deliveryPaused");
+  }
+
+  public String getNotificationsDeliveryInfo() {
+    return getTranslation("notifications.deliveryInfo");
+  }
+
+  public String getNotificationsEveryoneHint() {
+    return getTranslation("notifications.everyoneHint");
+  }
+
+  public String getNotificationsSelectRecipients() {
+    return getTranslation("notifications.selectRecipients");
+  }
+
+  public String getNotificationsReviewedPreview() {
+    return getTranslation("notifications.reviewedPreview");
+  }
+
+  public String getNotificationsRecipientDetails() {
+    return getTranslation("notifications.recipientDetails");
+  }
+
+  public String getNotificationsContentPreview() {
+    return getTranslation("notifications.contentPreview");
+  }
+
+  public String getNotificationsPreviewUpdated() {
+    return getTranslation("notifications.previewUpdated");
+  }
+
+  public String getNotificationsEveryonePlaceholder(int count) {
+    return getFormattedTranslation("notifications.everyonePlaceholder", count);
+  }
+
+  public String getNotificationsSelectedUsers(int count) {
+    return getFormattedTranslation("notifications.selectedUsers", count);
+  }
+
+  public String getNotificationsPreviewNeedsReview() {
+    return getTranslation("notifications.previewNeedsReview");
+  }
+
+  public String getNotificationsHideRecipientDetails() {
+    return getTranslation("notifications.hideRecipientDetails");
+  }
+
+  public String getNotificationsAdminPageDescription() {
+    return getTranslation("notifications.adminPageDescription");
+  }
+
   public String getNotificationsEveryone() {
     return getTranslation("notifications.everyone");
   }
@@ -1966,6 +2026,22 @@ public class MessageTexts {
 
   public String getNotificationsSentHistory() {
     return getTranslation("notifications.sentHistory");
+  }
+
+  public String getNotificationsInvalidSubject() {
+    return getTranslation("notifications.invalidSubject");
+  }
+
+  public String getNotificationsInvalidBody() {
+    return getTranslation("notifications.invalidBody");
+  }
+
+  public String getNotificationsPreviewFailedTitle() {
+    return getTranslation("notifications.previewFailedTitle");
+  }
+
+  public String getNotificationsPreviewFailedMessage() {
+    return getTranslation("notifications.previewFailedMessage");
   }
 
   public String getNotificationsInvalidDraft() {

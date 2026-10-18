@@ -2,6 +2,7 @@ package de.derpeterson.app.views.admin;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
@@ -14,13 +15,16 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.validator.EmailValidator;
+import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import java.util.Locale;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +37,12 @@ public class AdminMailTestSection extends VerticalLayout {
 
   private final transient MessageProperties messageProperties;
   private final transient EmailService emailService;
+  private final transient MaintenanceService maintenance;
+  private final VerticalLayout mailLayout;
+  private final Div deliveryMeta = new Div();
+  private transient Registration maintenancePolling;
+  private int previousPollInterval;
+  private int installedPollInterval;
 
   private final Span mailTestBreadcrumb;
   private final Span mailTestTitle;
@@ -52,9 +62,11 @@ public class AdminMailTestSection extends VerticalLayout {
   public AdminMailTestSection(
       MessageProperties messageProperties,
       EmailService emailService,
+      MaintenanceService maintenance,
       UserDetails authenticatedUser) {
     this.messageProperties = messageProperties;
     this.emailService = emailService;
+    this.maintenance = maintenance;
 
     setPadding(false);
     setSpacing(false);
@@ -69,7 +81,12 @@ public class AdminMailTestSection extends VerticalLayout {
     mailCardDescription = new Span();
     mailCardDescription.addClassName("cosmos-panel-description");
     mailCardBadge = new Span();
-    mailCardBadge.addClassName("cosmos-panel-meta");
+    var deliveryDot = new Span();
+    deliveryDot.addClassName("cosmos-mail-delivery-dot");
+    deliveryDot.getElement().setAttribute("aria-hidden", "true");
+    deliveryMeta.add(deliveryDot, mailCardBadge);
+    deliveryMeta.addClassNames("cosmos-panel-meta", "cosmos-mail-delivery");
+    deliveryMeta.getElement().setAttribute("role", "status");
     mailSendHint = new Span();
 
     mailTestDescription = new Span();
@@ -125,12 +142,47 @@ public class AdminMailTestSection extends VerticalLayout {
         .listenOn(testRecipientField, testSubjectField)
         .resetFocusOnActiveElement();
 
-    VerticalLayout mailLayout = createMailCardContent();
+    mailLayout = createMailCardContent();
     CosmosCardComponent mailCard = new CosmosCardComponent(mailLayout);
     mailCard.addClassNames("cosmos-admin-form-card", "cosmos-panel-card", "cosmos-mail-card");
     add(
         new CosmosSectionHeaderComponent(mailTestBreadcrumb, mailTestTitle, mailTestDescription),
         mailCard);
+    refreshDeliveryState();
+    addAttachListener(e -> startMaintenancePolling(e.getUI()));
+    addDetachListener(e -> stopMaintenancePolling(e.getUI()));
+  }
+
+  private void startMaintenancePolling(UI ui) {
+    refreshDeliveryState();
+    previousPollInterval = ui.getPollInterval();
+    installedPollInterval = previousPollInterval > 0 ? Math.min(previousPollInterval, 5000) : 5000;
+    ui.setPollInterval(installedPollInterval);
+    maintenancePolling = ui.addPollListener(e -> refreshDeliveryState());
+  }
+
+  private void stopMaintenancePolling(UI ui) {
+    if (maintenancePolling != null) maintenancePolling.remove();
+    maintenancePolling = null;
+    if (installedPollInterval != previousPollInterval
+        && ui.getPollInterval() == installedPollInterval) ui.setPollInterval(previousPollInterval);
+  }
+
+  public void refreshDeliveryState() {
+    var state = maintenance.state();
+    boolean open = state == MaintenanceService.State.OPEN;
+    mailLayout.setEnabled(open);
+    mailLayout.getElement().setAttribute("aria-disabled", Boolean.toString(!open));
+    deliveryMeta.getElement().setAttribute("data-state", state.name().toLowerCase(Locale.ROOT));
+    String status =
+        switch (state) {
+          case OPEN -> messageProperties.getMaintenanceStatusOnline();
+          case ACTIVE -> messageProperties.getMaintenanceStatusActive();
+          case UNAVAILABLE -> messageProperties.getMaintenanceStatusUnavailable();
+        };
+    deliveryMeta
+        .getElement()
+        .setAttribute("aria-label", messageProperties.getAdminMailCardBadge() + ": " + status);
   }
 
   private VerticalLayout createMailCardContent() {
@@ -140,7 +192,7 @@ public class AdminMailTestSection extends VerticalLayout {
     iconBadge.addClassName("cosmos-panel-icon");
     Div heading = new Div(mailCardTitle, mailCardDescription);
     heading.addClassName("cosmos-panel-heading");
-    Div header = new Div(iconBadge, heading, mailCardBadge);
+    Div header = new Div(iconBadge, heading, deliveryMeta);
     header.addClassName("cosmos-panel-header");
 
     VerticalLayout fields =
@@ -191,6 +243,7 @@ public class AdminMailTestSection extends VerticalLayout {
     mailCardTitle.setText(messageProperties.getAdminMailCardTitle());
     mailCardDescription.setText(messageProperties.getAdminMailCardDescription());
     mailCardBadge.setText(messageProperties.getAdminMailCardBadge());
+    refreshDeliveryState();
     mailSendHint.setText(messageProperties.getAdminMailSendHint());
     recipientInfoButton.refreshText();
     subjectInfoButton.refreshText();
@@ -220,6 +273,8 @@ public class AdminMailTestSection extends VerticalLayout {
   }
 
   private void sendTestMail() {
+    refreshDeliveryState();
+    if (!mailLayout.isEnabled()) return;
     String recipient = Optional.ofNullable(testRecipientField.getValue()).orElse("").trim();
     String subject = Optional.ofNullable(testSubjectField.getValue()).orElse("").trim();
     String body = Optional.ofNullable(testBodyField.getValue()).orElse("").trim();

@@ -277,6 +277,43 @@ class UserNotificationServicePersistenceTest {
   }
 
   @Test
+  void maintenanceBlocksManualReviewAndSendButKeepsSentHistoryReadable() {
+    broadcast();
+    var checked = everyone();
+    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    assertEquals(MaintenanceService.State.ACTIVE, service.deliveryState());
+    assertTrue(service.canSend(adminSession));
+    assertProblem(
+        Problem.DELIVERY_PAUSED,
+        () -> service.preview(adminSession, new Selection(true, Set.of())));
+    assertProblem(
+        Problem.DELIVERY_PAUSED,
+        () -> service.send(adminSession, UUID.randomUUID(), "New", "Body", checked));
+    assertEquals(1, service.sent(adminSession, 0).getTotalElements());
+    assertEquals(1, notificationCount());
+    assertEquals(3, recipients.count());
+    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
+    service.send(adminSession, UUID.randomUUID(), "Resumed", "Body", everyone());
+    assertEquals(2, notificationCount());
+  }
+
+  @Test
+  void unreadableMaintenanceSettingBlocksPreviouslyReviewedManualSend() {
+    var checked = everyone();
+    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE))
+        .thenThrow(new IllegalStateException("Isolated configuration failure"));
+    assertEquals(MaintenanceService.State.UNAVAILABLE, service.deliveryState());
+    assertThrows(
+        AccessDeniedException.class,
+        () -> service.preview(adminSession, new Selection(true, Set.of())));
+    assertThrows(
+        AccessDeniedException.class,
+        () -> service.send(adminSession, UUID.randomUUID(), "Subject", "Body", checked));
+    assertEquals(0, notificationCount());
+    assertEquals(0, recipients.count());
+  }
+
+  @Test
   void recipientMutationRequiresNewPreviewAndCreatesNothing() {
     var preview = everyone();
     mutate(ordinary, u -> u.setEnabled(false));

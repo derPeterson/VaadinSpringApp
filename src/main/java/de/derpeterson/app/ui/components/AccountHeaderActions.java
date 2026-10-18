@@ -13,7 +13,7 @@ import de.derpeterson.app.views.AccountView;
 /** Gemeinsame Konto-Schnelleinstiege neben dem Avatar; anonym vollständig ausgeblendet. */
 public class AccountHeaderActions extends HorizontalLayout {
   private final transient MessageProperties messages;
-  private final Button notifications = new Button(VaadinIcon.BELL.create());
+  private final Button notifications = new Button(VaadinIcon.PAPERPLANE.create());
   private final Button settings = new Button(VaadinIcon.COG.create());
 
   public AccountHeaderActions(MessageProperties messages, boolean authenticated) {

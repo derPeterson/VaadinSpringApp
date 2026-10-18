@@ -184,7 +184,7 @@ Designfeinschliff erfolgt nach der ersten Benutzeransicht im bestehenden Cosmos-
 
 Das Fachmodell heißt **UserNotification**; die Oberfläche verwendet
 „Benachrichtigungen“ / „Notifications“. Manuell vom Superadmin verfasste Mitteilungen
-heißen „Mitteilung senden“ / „Send announcement“; ihr Typ ist `ADMIN_ANNOUNCEMENT`.
+heißen „Benachrichtigung senden“ / „Send notification“; ihr Typ ist `ADMIN_ANNOUNCEMENT`.
 
 | Bereich | Bezeichnung |
 | --- | --- |
@@ -225,3 +225,151 @@ POM-Dateien zum Arbeitsbaum. Keine reale Datenbank, Zugangsdaten oder Nutzerproz
 Browserquellen kompiliert; kein Browserstart und kein Produktionsbuild. Dies war eine gezielte
 Prüfung; keine neue vollständige JUnit- oder Gesamt-Coverage-Messung behauptet.
 Die obigen Zahlen der ersten Funktionsumsetzung sind frühere Nachweise.
+
+## Versandpanel
+
+Das erste Adminpanel verwendet den gemeinsamen Cosmos-Panelheader mit Vaadin-Paperplane,
+Titel/Untertitel und der Metainformation „INTERN“ mit Betriebsstatuspunkt. Eingaben bleiben native Checkbox,
+MultiSelectComboBox, TextField und TextArea. Zeichenanzeigen folgen den Servicegrenzen
+120/4000, die TextArea nutzt native Min-/Max-Rows. Die Vorschau zeigt bis zu drei native
+Vaadin-Avatare mit Namen; eine native Details-Komponente enthält die vollständige Auswahl.
+Inhalt wird als Text ausgegeben. Bearbeitungen verwerfen die Versandfreigabe und markieren die letzte Vorschau als ungeprüft;
+die vorhandene Wiederholungserkennung nach unklarer Versandantwort bleibt erhalten.
+
+Eigene Darstellung besteht ausschließlich aus lokalen CSS-Regeln für Infozeile,
+Zeichenanzeigen und Vorschau-/Empfängeranordnung. Sie verwenden vorhandene Cosmos-/Lumo-
+Tokens. Keine selbst gezeichneten Icons, kein eigenes JavaScript und keine neue globale
+Farbpalette. Das zweite Panel bleibt bei der bisherigen Gestaltung.
+
+Gezielte Prüfung: 81 JUnits, 0 Fehler/Fehlschläge/Skips (17 Java-Komponentenfälle einschließlich
+zwei neuer DE/EN-Vorschaufälle, 3 Katalogfälle, 22 Adminnavigationsfälle, 39 Persistenzfälle).
+Shared-Build, App-/Testcompile und Spotless erfolgreich. Isolierte Buildkopie ohne reale Daten;
+kein Browserlauf oder Produktionsbuild, sichtbare Darstellung noch manuell zu prüfen.
+
+### Empfängerauswahl und Pflichtmarkierungen
+
+Die Pflichtpunkte stehen wieder direkt an Titel und Nachricht; die Zähler bleiben rechts
+auf derselben Beschriftungszeile. Das Mehrfachauswahl-Overlay nutzt die gleiche
+Schriftgestaltung wie die normale ComboBox und den vorhandenen Cosmos-Overlayrahmen.
+Bei „Alle aktiven Konten“ wird die Mehrfachauswahl deaktiviert und ausgeblendet.
+An ihrer Stelle zeigt ein natives, schreibgeschütztes und deaktiviertes TextField wie
+die Konto-E-Mail „Alle aktiven Benutzer (Anzahl)“. Die Anzahl stammt aus den aktuell
+freigeschalteten Empfängerkonten. Beim Entfernen des Häkchens bleibt eine vorherige
+Einzelauswahl erhalten. Sprachwechsel aktualisiert Beschriftung und Anzahltext.
+
+Gezielter Nachtest: 22 JUnits erfolgreich (19 Komponentenfälle, davon zwei neue DE/EN-
+Umschaltfälle, und drei Katalogfälle), 0 Fehler/Fehlschläge/Skips. Shared sowie alle
+Java-Anwendungs- und Testquellen in einer frischen isolierten Kopie kompiliert.
+Spotless und Diffprüfung erfolgreich. Keine Browserprüfung; die sichtbare Geometrie
+und Overlaydarstellung sind damit noch nicht visuell bestätigt.
+Die Einzelauswahl zeigt inzwischen ausschließlich die übersetzte Anzahl
+„{Anzahl} Benutzer ausgewählt“ statt einzelner Chips; die tatsächlichen Auswahlen bleiben
+im nativen Menü markiert. Ein lokaler Span/CSS ergänzt die Anzeige, ohne eigenes JavaScript
+oder Änderung der ausgewählten Empfänger. Beim Tippen bleibt der native Suchtext sichtbar.
+Die Anzahl aktualisiert sich auch beim Entfernen, Leeren und Sprachwechsel. Texte zu
+Empfängerkonten verwenden einheitlich „aktive Benutzer“ statt „freigeschaltete Benutzer“;
+fachlich bleiben aktivierte Konten gemeint, unabhängig vom Verfügbarkeitsstatus.
+Gezielter Nachtest: 24 JUnits, 0 Fehler/Fehlschläge/Skips (21 Komponentenfälle einschließlich
+zwei neuer DE/EN-Zählfälle, drei Katalogfälle). Shared, App- und Testcompile sowie Spotless
+und Diffprüfung erfolgreich. Keine Browserprüfung oder Bestätigung der sichtbaren Geometrie.
+### Prüfung vor dem Versand (19.10.2026)
+
+„Benachrichtigung senden“ ist initial deaktiviert und wird ausschließlich nach einer
+vollständig erfolgreichen Prüfung freigegeben. Titel, Nachricht, Einzelauswahl und
+„Alle aktiven Konten“ verwerfen bei Änderung die Freigabe und vorherigen Feldmarkierungen.
+Die letzte Vorschau bleibt dabei sichtbar und wird als erneut zu prüfen markiert. Eine neue, fehlgeschlagene Prüfung hebt auch ohne Eingabeänderung
+eine zuvor erfolgreiche Prüfung auf. Ein Versandaufruf ohne gültige Vorschau bleibt
+wirkungslos; die Serviceprüfungen gelten weiterhin unverändert.
+
+TextField, TextArea und MultiSelectComboBox verwenden manuelle Validierung. Die roten
+Markierungen und Fehlermeldungen werden erst beim Prüfen gesetzt, einschließlich leerer
+oder inzwischen ungültiger Empfängerauswahl. Automatische Validierungsaufrufe beim
+Bearbeiten/Fokuswechsel setzen keine neuen Feldfehler. Bei „Alle“ erscheint ein
+Empfängerfehler am deaktivierten Zusammenfassungsfeld. Dessen Einzelauswahl-Zählanzeige
+bleibt oberhalb einer gegebenenfalls eingeblendeten Fehlermeldung am Eingabefeld.
+Bei einer unklaren Versandantwort bleiben Vorschau und Request-Schlüssel zum sicheren
+Wiederholen erhalten; fachliche Ablehnungen verlangen eine neue Prüfung.
+
+Gezielter Nachtest: 35 JUnits, 0 Fehler/Fehlschläge/Skips (32 Komponentenfälle mit elf neuen
+Prüf-/Freigabefällen, drei Katalogfälle). Die neuen Fälle decken DE/EN-Fehleranzeige,
+ausdrückliche serverseitige Validierungsaufrufe, alle vier Eingabeänderungen,
+Längengrenzen und fehlgeschlagene erneute Prüfungen ab. Shared, App-/Testcompile,
+Spotless und Diffprüfung erfolgreich. Frische isolierte Kopie ohne reale Daten;
+keine Browserprüfung, daher keine Bestätigung tatsächlicher Browser-Fokusabläufe oder
+sichtbarer Geometrie. Übernahme in IntelliJ: Strg+F9, Reload, danach Browser Strg+F5.
+Feldtexte sind getrennt: Titel verlangt einen Titel mit maximal 120 Zeichen,
+Nachricht eine Nachricht mit maximal 4000 Zeichen (DE/EN). Der gemeinsame Entwurfsfehler
+bleibt als zusammenfassende Notification erhalten. Fehlertexte aller Eingabefelder im
+Versandformular verwenden lokal die vorhandenen Theme-Tokens für 11px und Schriftgewicht
+400. Erneuter Nachtest: 35 JUnits erfolgreich, 0 Fehler/Fehlschläge/Skips; vorhandene
+DE/EN-Prüfung sichert zusätzlich unterschiedliche und richtig zugeordnete Feldtexte ab.
+Shared, App-/Testcompile, Spotless und Diffprüfung erfolgreich; keine Browserprüfung.
+### Vorschaukopf und Empfängerdetails
+
+Der Status steht rechts im Vorschaukopf: „Vorschau geprüft“ in Success-Farbe oder
+„Vorschau erneut prüfen“ in Warning-Farbe. Nach Eingabeänderungen oder fehlgeschlagener
+erneuter Prüfung bleibt der zuletzt geprüfte Inhalt unverändert sichtbar. Die technische
+Versandfreigabe wird trotzdem gelöscht; ein deaktivierter Versand lässt sich dadurch
+nicht umgehen. Erst eine neue erfolgreiche Prüfung übernimmt den aktuellen Inhalt und
+setzt den Status wieder auf geprüft. Nach erfolgreichem Versand und beim Neuöffnen des
+Bereichs wird die Vorschau vollständig entfernt; ein Sprachwechsel verwirft sie ebenfalls.
+
+Ein nativer Vaadin-Button „Details anzeigen/ausblenden“ mit Vaadin-Winkelsymbol steht
+direkt neben den Empfängerchips. Wie bei den Benutzerfiltern steuert er ein natives
+Details mit ausgeblendeter eigener Summary. aria-controls/aria-expanded folgen dem
+Zustand. Die Liste öffnet darunter über die ganze Breite, Namen links und E-Mail-Adressen
+rechts; schmale Ansichten dürfen umbrechen. Keine eigenen Icons oder JavaScript.
+
+35 JUnits erneut erfolgreich, 0 Fehler/Fehlschläge/Skips. Bestehende DE/EN-Fälle prüfen
+Details über den Button, Statusposition und Statuswechsel, unveränderten alten Inhalt
+bis zur erneuten Prüfung, die weiterhin gesperrte Versandaktion sowie das anschließende
+Aktualisieren und vollständige Entfernen nach Versand. Shared, App-/Testcompile,
+Spotless und Diffprüfung erfolgreich. Keine Browserprüfung oder visuelle Bestätigung.
+### Interner Versand und Wartungsmodus (19.10.2026)
+
+Das Versandpanel trägt „INTERN“ / „INTERNAL“ mit grünem Punkt bei offenem Betrieb und
+rotem Punkt bei Wartung bzw. nicht lesbarer Wartungskonfiguration. Der Status hat eine
+sprachabhängige ARIA-Beschriftung. Während der Wartung wird das gesamte erste Panel über
+die native Vaadin-Enabled-Vererbung deaktiviert; der Verlauf gesendeter Benachrichtigungen
+bleibt für berechtigte Superadmins erreichbar. Entwürfe bleiben erhalten, eine vorherige
+Versandfreigabe wird verworfen und muss nach der Wartung neu geprüft werden.
+
+Geöffnete Versandpanels prüfen den Modus mit nativem UI-Polling spätestens im angeforderten
+5-Sekunden-Intervall, soweit der Browser Poll-Anfragen ausführt. Ein schon kürzeres Intervall
+wird erhalten. Beim Verlassen wird der eigene Listener entfernt und das vorherige Intervall
+wiederhergestellt, sofern es nicht zwischenzeitlich anderweitig geändert wurde. Speichern in
+der Konfiguration derselben AdminView aktualisiert den Panelstatus zusätzlich direkt.
+Die Anzeige ist damit keine allgemeine globale Wartungs-Push-Infrastruktur.
+
+Prüfen und Senden kontrollieren den Modus außerdem bei jeder Aktion frisch, unabhängig vom
+Polling. Der Service lehnt auch den direkten manuellen Aufruf während der Wartung ab, bevor
+Benachrichtigungen/Empfänger angelegt werden. Die bestehende Superadmin-Berechtigungsprüfung
+für Navigation und Verlauf bleibt erhalten. Automatische Sicherheitshinweise und das Lesen
+der eigenen Inbox behalten ihre bisherigen Regeln; gesperrt ist hier der manuelle Versand.
+Die Konfiguration wird vor der jeweiligen Operation gelesen, ohne globale Serialisierung
+zwischen einer bereits laufenden Operation und einem zeitgleichen Konfigurations-Commit.
+
+Vorschau-Nachrichtentext: 12px, Secondary-Farbe; Abstand der inneren Vorschautexte über
+var(--lumo-space-s), im bestehenden Theme 8px. Die bisherigen Chips/Buttons/Detailflächen
+bleiben in der zuletzt abgestimmten Gestaltung.
+
+Gezielter Nachweis: 105 JUnits erfolgreich, 0 Fehler/Fehlschläge/Skips: 39 Komponentenfälle,
+41 Persistenzfälle, 22 Adminnavigationsfälle und drei Katalogfälle. Neu sind sieben Fälle
+für Wartung, Reaktivierung, Aktionen vor dem nächsten Poll und Listener-/Intervall-Cleanup
+sowie zwei Persistenzfälle für direkten Versand/Prüfung während Wartung und unlesbare
+Konfiguration. Alle Java-Anwendungs-/Testquellen und Shared kompiliert, Spotless/Diffprüfung
+erfolgreich. Eigene frische H2-/Buildkopie ohne reale Daten; keine Browser-/Produktionsprüfung
+und keine neue Gesamt-Coverage-Messung. Shared wurde lokal installiert. Für die neue
+Wartungsanbindung wird einmalig ein vollständiger Neustart empfohlen.
+### Allgemeiner Hinweis bei ungültiger Vorschau
+
+Die Vorschauvalidierung meldet nun „Vorschau fehlgeschlagen“ und „Bitte überprüfen
+Sie Ihre Eingaben. Hinweise finden Sie direkt bei den betroffenen Feldern.“
+(DE/EN lokalisiert). Derselbe Hinweis gilt bei mehreren fehlerhaften Feldern,
+fehlenden Empfängern und bei der Prüfung inzwischen ungültigen Empfängern.
+Feldbezogene Hinweise bleiben erhalten; Wartungs- und technische Fehler behalten
+ihre eigenen Meldungen. Die Registrierung wurde nicht verändert.
+
+Gezielter Nachtest: 44 JUnits erfolgreich, keine Fehler oder Skips (41 Komponenten-
+und drei Katalogfälle). Shared gebaut; Java- und Testkompilierung sowie Spotless
+und Diffprüfung erfolgreich. Keine Browserprüfung.
