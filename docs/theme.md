@@ -225,3 +225,22 @@ verwenden `--cosmos-status-option-background` (Tabellenhighlight); die geschloss
 Auswahl bleibt unverändert. Andere Selects behalten ihre Auswahlhaken.
 Die verwendeten Parts folgen der [Vaadin-Select-Styling-API](https://vaadin.com/docs/latest/components/select/styling).
 Bildspeicherung und Prüfgrenzen: [Profilbildvertrag](profile-avatar-contract.md).
+
+
+## Begrenzung des Benutzermenüs
+
+Das Cosmos-Popover verwendet die native verfügbare Overlayhöhe neben seinem Auslöser.
+Sein Overlay ist ein vertikaler Flexrahmen; der Inhalt darf mit `min-height: 0`
+schrumpfen und scrollt intern. Eine Maximalhöhe aus der gesamten Viewporthöhe darf
+hier die kleinere verfügbare Höhe nicht übersteuern: Bei 320×568 war sonst die
+Abmeldeaktion abgeschnitten. Die Palette, Inhaltsabstände und Avatar-/Buttongrößen
+bleiben erhalten. CONFIG-05F prüft den Popupinhalt auf horizontalen Überlauf,
+die mobile Statusfläche innerhalb des Fensters sowie echtes Scrollen und Abmelden.
+Die native Select-Öffnungs- und Schließanimation wird dabei abgewartet.
+
+Die Bereinigung erhält native Lumo-Variablen, interne Grid-Klassen und die vier aus
+Java dynamisch gewählten Avatar-Schatten. Entfernt wurden nur drei nachweislich
+verwaiste eigene Klassen mit vier Regeln; Details im
+[Bereinigungsnachweis](codebereinigung-2026-10-18.md). Die vollständigen
+Sprachläufe bestehen DE/EN jeweils mit 141/141 Fällen am gleichen endgültigen Image;
+Ergebnisse und Messgrenzen stehen in der [Abdeckung](../browser-tests/abdeckung.md).

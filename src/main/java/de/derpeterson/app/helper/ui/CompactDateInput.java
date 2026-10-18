@@ -14,6 +14,10 @@ public final class CompactDateInput {
   public static void configure(DatePicker picker, MessageProperties messages) {
     var i18n = picker.getI18n() == null ? new DatePicker.DatePickerI18n() : picker.getI18n();
     i18n.setReferenceDate(LocalDate.of(2000, 1, 1));
+    // Die Ausgabe entspricht dem sichtbaren DE-Beispiel; kurze getrennte Eingaben bleiben erlaubt.
+    boolean german = Locale.GERMAN.getLanguage().equals(picker.getLocale().getLanguage());
+    if (german) i18n.setDateFormats("dd.MM.yyyy", "d.M.yyyy", "dd.MM.yy", "d.M.yy");
+    else i18n.setDateFormats("M/d/yyyy", "M/d/yy");
     picker.setI18n(i18n);
     picker.setFallbackParser(
         input -> parse(input, picker.getLocale(), messages.getBaseValidationDateInvalidMessage()));

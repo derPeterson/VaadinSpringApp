@@ -51,6 +51,10 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.save();
     form.assertMessage(texts.getAccountSettingsSaveSuccess());
     assertThat(page.locator(".account-summary-name")).hasText("Profile Saved");
+    assertThat(page.locator(".cosmos-topbar .cosmos-avatar-initials")).hasText("PS");
+    new UserMenu(page).open();
+    assertThat(page.locator(".user-popover-avatar .cosmos-avatar-initials")).hasText("PS");
+    new UserMenu(page).close();
     assertThat(form.host("account-email")).hasJSProperty("disabled", true);
     assertThat(form.input("account-email")).isDisabled();
     assertThat(form.input("account-email")).hasValue(email);
@@ -63,6 +67,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.assertMessage(texts.getAccountSettingsSaveSuccess());
     page.reload();
     assertThat(form.input("account-first-name")).hasValue("Second");
+    assertThat(page.locator(".cosmos-topbar .cosmos-avatar-initials")).hasText("SS");
     assertThat(form.host("account-birth-date")).hasJSProperty("value", "1993-04-05");
     assertThat(form.input("account-email")).hasValue(email);
   }
@@ -124,7 +129,8 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.assertMessage(translated.getAccountSettingsSaveSuccess());
     assertThat(page.locator(".account-settings"))
         .containsText(translated.getAccountSettingsTitle());
-    // Logout mit der tatsächlich gespeicherten Sprache, ohne sie vor der Prüfung zurückzustellen.
+    // Logout mit der tatsächlich gespeicherten Sprache, ohne sie vor der Prüfung
+    // zurückzustellen.
     new UserMenu(page).open();
     UiActions.complete(
         page,
@@ -147,7 +153,8 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
                     .setName(translated.getBaseLogoutButton())
                     .setExact(true)))
         .isVisible();
-    // Die gemeinsame Fixture meldet das Konto anschließend ab und stellt die Testsprache zurück.
+    // Die gemeinsame Fixture meldet das Konto anschließend ab und stellt die Testsprache
+    // zurück.
   }
 
   @ParameterizedTest
@@ -205,5 +212,229 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.host("account-tab-profile").click();
     assertThat(form.input("account-first-name")).hasValue("Draft");
     assertThat(form.input("account-email")).hasValue(email);
+  }
+
+  @ParameterizedTest
+  @CsvSource({"1280,900", "390,844"})
+  @DisplayName("AVATAR-01: Upload, Ausschnitt, Wiederöffnen, Initialen, Ersetzen und Löschen")
+  @Description(
+      "Eigenes Konto: Bild über Dateiauswahl hochladen, zuschneiden und speichern; Kopfzeile, Popup und Konto prüfen. Wiederöffnen behält den Bildmodus. Lokales Abbrechen und Footer-Abbrechen verwerfen Entwürfe; Initialen erhalten das Bild, Ersetzen und Löschen werden gespeichert. Desktop und schmale Ansicht.")
+  void avatarPersistsAcrossAllModes(int width, int height) throws Exception {
+    String email = account();
+    page.setViewportSize(width, height);
+    var form = new AccountPage(page);
+    form.open();
+    openAvatar();
+    chooseMode(texts.getAccountAvatarCustom());
+    uploadAvatar(java.awt.Color.BLUE);
+    assertThat(page.locator(".account-avatar-upload")).isHidden();
+    var reset = page.locator("[data-avatar='reset']");
+    var cancel = page.locator("#account-avatar-cancel-selection");
+    assertEquals(reset.boundingBox().width, cancel.boundingBox().width, 1);
+    assertEquals(reset.boundingBox().y, cancel.boundingBox().y, 1);
+    io.qameta.allure.playwright.AllurePlaywright.attachScreenshot(
+        "Profilbilddialog mit lokalem Ausschnitt", page);
+    page.locator("[data-avatar='zoom']").focus();
+    page.keyboard().press("ArrowRight");
+    reset.click();
+    assertThat(page.locator("[data-avatar='percent']")).hasText("100 %");
+    page.locator("[data-avatar='zoom']").focus();
+    page.keyboard().press("ArrowRight");
+    saveAvatar();
+    assertPhotos();
+    page.reload();
+    assertPhotos();
+    try (BrowserActor administrator = new BrowserActor(browser)) {
+      var users =
+          administrator.loginAdmin(
+              BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+      users.open();
+      users.search(email);
+      assertThat(users.emailCells(email)).hasCount(1);
+      assertThat(users.grid().locator(".cosmos-avatar-photo:visible")).hasCount(1);
+      assertThat(users.grid().locator(".cosmos-avatar-photo:visible")).isVisible();
+      assertThat(users.grid().locator(".cosmos-avatar-status")).hasCount(0);
+      new UserMenu(administrator.page).signOut();
+    }
+    openAvatar();
+    assertThat(page.locator("account-avatar-editor")).hasAttribute("data-mode", "CUSTOM");
+    assertThat(page.locator(".account-avatar-upload")).isVisible();
+    assertThat(page.locator(".account-avatar-crop-controls")).isHidden();
+    uploadAvatar(java.awt.Color.RED);
+    cancel.click();
+    assertThat(page.locator(".account-avatar-upload")).isVisible();
+    assertThat(page.locator("account-avatar-editor")).hasAttribute("data-local-image", "false");
+    uploadAvatar(java.awt.Color.RED);
+    page.locator("#account-avatar-cancel").click();
+    openAvatar();
+    assertThat(page.locator("account-avatar-editor")).hasAttribute("data-local-image", "false");
+    chooseMode(texts.getAccountAvatarInitials());
+    saveAvatar();
+    assertThat(page.locator(".account-summary-avatar .cosmos-avatar-photo")).isHidden();
+    openAvatar();
+    chooseMode(texts.getAccountAvatarCustom());
+    saveAvatar();
+    assertPhotos();
+    openAvatar();
+    uploadAvatar(java.awt.Color.RED);
+    saveAvatar();
+    assertPhotos();
+    io.qameta.allure.playwright.AllurePlaywright.attachScreenshot("Gespeichertes Profilbild", page);
+    openAvatar();
+    page.locator("#account-avatar-delete").click();
+    saveAvatar();
+    page.reload();
+    assertThat(page.locator(".account-summary-avatar .cosmos-avatar-photo")).isHidden();
+    openAvatar();
+    assertThat(page.locator("#account-avatar-delete")).isHidden();
+    page.locator("#account-avatar-cancel").click();
+  }
+
+  private void openAvatar() {
+    page.locator("#account-avatar-edit").click();
+    assertThat(page.locator("#account-avatar-choose")).isAttached();
+  }
+
+  private void chooseMode(String label) {
+    page.getByRole(AriaRole.RADIO, new Page.GetByRoleOptions().setName(label).setExact(true))
+        .click();
+  }
+
+  private void uploadAvatar(java.awt.Color color) throws Exception {
+    var image =
+        new java.awt.image.BufferedImage(160, 120, java.awt.image.BufferedImage.TYPE_INT_RGB);
+    var graphics = image.createGraphics();
+    graphics.setColor(color);
+    graphics.fillRect(0, 0, 160, 120);
+    graphics.setColor(java.awt.Color.WHITE);
+    graphics.fillRect(60, 40, 40, 40);
+    graphics.dispose();
+    var bytes = new java.io.ByteArrayOutputStream();
+    javax.imageio.ImageIO.write(image, color.equals(java.awt.Color.RED) ? "jpeg" : "png", bytes);
+    page.waitForFileChooser(() -> page.locator("#account-avatar-choose").click())
+        .setFiles(
+            new com.microsoft.playwright.options.FilePayload(
+                color.equals(java.awt.Color.RED) ? "fixture.jpeg" : "fixture.png",
+                color.equals(java.awt.Color.RED) ? "image/jpeg" : "image/png",
+                bytes.toByteArray()));
+    assertThat(page.locator("account-avatar-editor")).hasAttribute("data-local-image", "true");
+    assertThat(page.locator(".account-avatar-crop-controls")).isVisible();
+  }
+
+  private void saveAvatar() {
+    UiActions.complete(page, () -> page.locator("#account-avatar-save").click());
+    assertThat(page.locator("vaadin-dialog.account-avatar-dialog[opened]")).hasCount(0);
+    new AccountPage(page).assertMessage(texts.getAccountAvatarSaved());
+    new AccountPage(page).closeNotification();
+  }
+
+  private void assertPhotos() {
+    for (String selector : new String[] {".account-summary-avatar", ".cosmos-topbar"}) {
+      var image = page.locator(selector + " .cosmos-avatar-photo");
+      assertThat(image).isVisible();
+      assertThat(image).hasJSProperty("complete", true);
+      assertTrue(((Number) image.evaluate("e => e.naturalWidth")).intValue() > 0);
+    }
+    new UserMenu(page).open();
+    assertThat(page.locator(".user-popover-avatar .cosmos-avatar-photo")).isVisible();
+    new UserMenu(page).close();
+  }
+
+  @Test
+  @DisplayName("INPUT-01: Kompakte Geburtstage werden bei Blur und Enter lokalisiert übernommen")
+  @Description(
+      "Im echten Kontodatumsfeld vier/sechs/acht Ziffern und 1950/2049 prüfen; ungültiger Tag bleibt ungültig. Enter und Tab verwenden den geladenen Frontend-Parser in DE/EN.")
+  void compactBirthDatesUseTheRealFrontendParser() {
+    account();
+    var form = new AccountPage(page);
+    form.open();
+    boolean german = texts.language().equals("de");
+    String[][] samples = {
+      {"4586", "5486", "1986-05-04"},
+      {"260486", "042686", "1986-04-26"},
+      {"26041986", "04261986", "1986-04-26"},
+      {"010150", "010150", "1950-01-01"},
+      {"010149", "010149", "2049-01-01"},
+      {"1.1.50", "1/1/50", "1950-01-01"},
+      {"1.1.49", "1/1/49", "2049-01-01"}
+    };
+    for (int i = 0; i < samples.length; i++) {
+      form.input("account-birth-date").fill(samples[i][german ? 0 : 1]);
+      form.input("account-birth-date").press(i % 2 == 0 ? "Tab" : "Enter");
+      assertThat(form.host("account-birth-date")).hasJSProperty("value", samples[i][2]);
+      assertThat(form.input("account-birth-date"))
+          .hasValue(texts.dateInput(LocalDate.parse(samples[i][2])));
+    }
+    form.input("account-birth-date").fill(german ? "310286" : "023186");
+    form.input("account-birth-date").press("Tab");
+    assertThat(form.host("account-birth-date")).hasAttribute("invalid", "");
+  }
+
+  @Test
+  @DisplayName("STATUS-03: Status direkt am Kontobild mit Kontursymbol und gleichem Rahmen")
+  @Description(
+      "Am Kontobild jeden Status auswählen; Auswahlhintergrund ohne Haken, Kontursymbol, Rahmen und Glow in Konto, Kopfzeile und Popup prüfen, danach neu laden.")
+  void accountAvatarStatusIsSynchronized() {
+    account();
+    new AccountPage(page).open();
+    var statusButton = page.locator("#account-avatar-status vaadin-select-value-button");
+    statusButton.focus();
+    assertThat(statusButton).isFocused();
+    statusButton.press("Space");
+    assertThat(
+            page.getByRole(AriaRole.OPTION)
+                .filter(
+                    new com.microsoft.playwright.Locator.FilterOptions()
+                        .setHas(
+                            page.getByText(
+                                texts.getUserStatusAvailable(),
+                                new Page.GetByTextOptions().setExact(true)))))
+        .isVisible();
+    page.keyboard().press("Escape");
+    for (String label :
+        new String[] {
+          texts.getUserStatusEmployed(),
+          texts.getUserStatusAbsent(),
+          texts.getUserStatusOffline(),
+          texts.getUserStatusAvailable()
+        }) {
+      page.locator("#account-avatar-status").click();
+      var option =
+          page.getByRole(AriaRole.OPTION)
+              .filter(
+                  new com.microsoft.playwright.Locator.FilterOptions()
+                      .setHas(page.getByText(label, new Page.GetByTextOptions().setExact(true))));
+      assertThat(option.locator("svg")).hasCount(1);
+      UiActions.completeValueChange(page, () -> option.click());
+      page.locator("#account-avatar-status").click();
+      var selected =
+          page.getByRole(AriaRole.OPTION)
+              .filter(
+                  new com.microsoft.playwright.Locator.FilterOptions()
+                      .setHas(page.getByText(label, new Page.GetByTextOptions().setExact(true))));
+      assertThat(selected).hasAttribute("selected", java.util.regex.Pattern.compile(".*"));
+      assertThat(selected.locator("[part~='checkmark']")).isHidden();
+      assertNotEquals(
+          "rgba(0, 0, 0, 0)", selected.evaluate("e => getComputedStyle(e).backgroundColor"));
+      io.qameta.allure.playwright.AllurePlaywright.attachScreenshot(
+          "Statusauswahl am Kontobild", page);
+      page.keyboard().press("Escape");
+      var circle = page.locator(".account-summary-avatar .cosmos-avatar-circle");
+      assertEquals("2px", circle.evaluate("e => getComputedStyle(e).borderTopWidth"));
+      assertNotEquals("none", circle.evaluate("e => getComputedStyle(e).boxShadow"));
+      String color = (String) circle.evaluate("e => getComputedStyle(e).borderTopColor");
+      assertEquals(
+          color,
+          page.locator(".cosmos-topbar .cosmos-avatar-circle")
+              .evaluate("e => getComputedStyle(e).borderTopColor"));
+      new UserStatusMenu(page).expect(label);
+      assertEquals(
+          color,
+          page.locator(".user-popover-avatar .cosmos-avatar-circle")
+              .evaluate("e => getComputedStyle(e).borderTopColor"));
+      new UserMenu(page).close();
+    }
+    page.reload();
+    assertThat(page.locator("#account-avatar-status")).containsText(texts.getUserStatusAvailable());
   }
 }

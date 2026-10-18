@@ -22,9 +22,12 @@ public final class AccountPage {
   @Step("Kontoverwaltung über das Benutzermenü öffnen")
   public void open() {
     new UserMenu(page).open();
-    page.getByRole(
+    page.locator(".user-popover-body")
+        .getByRole(
             AriaRole.BUTTON,
-            new Page.GetByRoleOptions().setName(texts.getBaseManageAccountButton()).setExact(true))
+            new com.microsoft.playwright.Locator.GetByRoleOptions()
+                .setName(texts.getBaseManageAccountButton())
+                .setExact(true))
         .click();
     assertThat(page.locator("#account-panel-profile")).isVisible();
   }

@@ -15,7 +15,7 @@ public final class UserStatusMenu {
   }
 
   public Locator current() {
-    return page.locator("vaadin-select-value-button");
+    return page.locator(".user-popover-body vaadin-select-value-button");
   }
 
   @Step("Ausgewählten Benutzerstatus im geöffneten Menü prüfen")

@@ -753,6 +753,7 @@ public class AdminUserManagementSection extends VerticalLayout {
               VaadinSession.getCurrent() != null
                   ? VaadinSession.getCurrent().getLocale()
                   : Locale.getDefault());
+          CompactDateInput.configure(birthDatePicker, messageProperties);
           birthDatePicker.setLabel(messageProperties.getRegistrationBirthDateField());
           birthDatePicker.setPlaceholder(messageProperties.getRegistrationBirthDatePlaceholder());
         };

@@ -53,8 +53,10 @@ public class InfrastructureBrowserTest extends BrowserFixture {
       assertThat(avatar.locator(".cosmos-avatar-circle")).isVisible();
       assertThat(avatar.locator(".cosmos-avatar-initials vaadin-icon[icon='vaadin:user']"))
           .isVisible();
-      assertThat(avatar.locator(".cosmos-avatar-status vaadin-icon[icon='vaadin:close-circle']"))
-          .isVisible();
+      assertThat(avatar.locator(".cosmos-avatar-status svg")).isVisible();
+      assertThat(avatar.locator(".cosmos-avatar-status svg")).hasAttribute("fill", "none");
+      assertThat(avatar.locator(".cosmos-avatar-status svg path"))
+          .hasAttribute("d", "m8.5 8.5 7 7m0-7-7 7");
     }
   }
 

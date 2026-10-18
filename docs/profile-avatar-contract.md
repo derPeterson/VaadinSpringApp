@@ -1,11 +1,12 @@
 # Profilbilder und gemeinsame Avatare
 
-Stand: 17.10.2026, `feature/account-avatar-preview`. Die Speicherfunktion ist umgesetzt;
-die neue Browserreise wartet auf die ausdrückliche Freigabe und die menschliche Abnahme.
+Stand: 18.10.2026, `main`. Speicherung, gemeinsame Avatare, direkte Statuswahl und
+kompakte Bildauswahl sind umgesetzt. Automatisierte Nachweise und menschliche
+Abnahme sind getrennt; der aktuelle Gesamtstand steht in der [Abdeckung](../browser-tests/abdeckung.md).
 
 ## Bedienung
 
-„Profilbild bearbeiten“ öffnet den bestehenden Cosmos-Dialog. JPG/PNG auswählen,
+„Profilbild bearbeiten“ öffnet den bestehenden Cosmos-Dialog. JPG/JPEG oder PNG auswählen,
 Ausschnitt ziehen oder per Pfeiltasten verschieben, zwischen 100 und 300 Prozent
 zoomen und speichern. Fehler und Erfolg erscheinen als übersetzte Notifications.
 Es gibt keine Designvorschau-Meldung und keinen wirkungslosen Speicherbutton mehr.
@@ -96,7 +97,7 @@ empfangene Bilder lassen sich nicht aus privaten Kopien des Empfängers entferne
 
 ## Grenzen und Upload-Lebenszyklus
 
-- JPG/PNG, maximal 5 MiB tatsächlich gelesene Bytes, 8192 Pixel je Kante und 20 Megapixel.
+- JPG/JPEG oder PNG, maximal 5 MiB tatsächlich gelesene Bytes, 8192 Pixel je Kante und 20 Megapixel.
 - Kein SVG, GIF, animiertes PNG, WebP oder HEIC/HEIF; keine automatische HEIC-Konvertierung.
 - RAW-Upload über Vaadin; der Handler begrenzt den Stream selbst und vertraut weder
   Dateiname, Browserfilter, MIME-Behauptung noch deklarierter Länge.
@@ -127,7 +128,9 @@ Versionskonflikte, alle Rollen, Wartung/Sperren, Kontolöschung, HTTP-Status/Hea
 Uploadzuordnung, Status-/Profilereignisse und Listenerabbau. Die Tests verwenden
 frische H2-Datenbanken und eigene erzeugte Bilder, keine echten Kontodaten.
 
-Tatsächlicher Prüfstand: 512 gezielte JUnit-Fälle ohne Fehler oder Skips in der
+### Historische Entwicklungsprüfungen vor der Gesamt-QA
+
+512 gezielte JUnit-Fälle ohne Fehler oder Skips in der
 abschließenden Regression. Nach der RAW-Upload-Einstellung, den Ablehnungs-
 Notifications und der expliziten PNG-Speicherausgabe wurden 48 betroffene Fälle
 nochmals erfolgreich geprüft. Spotless Apply/Check, Shared-Build, Kompilierung,
@@ -153,14 +156,28 @@ Das vom Benutzer bereitgestellte JPEG wurde separat nur im Speicher erfolgreich
 validiert und normalisiert; es wird nicht als Testfixture oder im Repository abgelegt.
 Dies ist weiterhin kein Browsernachweis und keine neue vollständige Gesamttestrunde.
 
-Zusätzlich laufen vier isolierte JavaScript-Tests über Node:
+Zusätzlich laufen acht isolierte JavaScript-Tests über Node:
 `node --test src/test/frontend/account-avatar-editor.test.mjs`. Sie prüfen die
 Steuerung mit simulierten DOM-/Canvas-Schnittstellen, keine echte Browserdarstellung.
 
-Browser-, Produktions- und vollständige Gesamttests wurden für dieses Feature nicht
-neu gestartet. Offen bleiben die reale Upload-/Crop-Bedienung DE/EN, echte Handyfotos,
-Touch/Screenreader, mehrere Browserfenster und ein echter Anwendungsneustart mit Bild.
-Die vorherige Browserabdeckung ist kein Nachweis dieser neuen Profilbildreise.
+### Abgeschlossene Gesamt-QA am 18.10.2026
+
+Die vollständige Anwendungs-JUnit-Suite besteht mit 1524 Fällen, dazu acht
+Avatar-JavaScriptfälle innerhalb der 26 Offline-JavaScripttests. Die gezielte
+Konto-Browsersuite besteht DE mit 11/11 Fällen am Produktionsimage: echtes PNG-/JPEG-
+Uploaden, Ausschnitt/Zoom/Zurücksetzen, lokale und Footer-Abbrüche, Wiederöffnen,
+Initialen mit erhaltenem Bild, Ersetzen/Löschen und sichtbare Aktualisierung in
+Kopfzeile, Benutzermenü, Konto und Benutzerverwaltung. Namensänderungen aktualisieren
+auch die Initialen. Statusauswahl, Kontursymbole, Auswahlfläche ohne Zusatzhaken,
+Rahmen/Glow und Tastaturöffnung werden tatsächlich im Browser geprüft.
+Desktop und 390×844 verwenden getrennte Parameterfälle mit Screenshots.
+
+Die abschließenden vollständigen DE-/EN-Läufe bestehen jeweils mit 141/141 Fällen
+am identischen endgültigen Produktionsimage, ohne Fehler oder Skips. Ergebnisse und
+Coverage stehen in der [Abdeckungsübersicht](../browser-tests/abdeckung.md). Offen bleiben
+menschliche Abnahme, echte Handyfotos/Touch/Screenreader und ein gezielter tatsächlicher
+Anwendungsneustart mit zuvor hochgeladenem Bild; der Avatar-Persistenznachweis in H2
+und Reload-Journeys wird damit nicht gleichgesetzt.
 
 Persönliche Avatarfarben bleiben eine spätere Erweiterung:
 [offener Farbplan](umsetzungsplaene/kontokonfiguration/avatarfarben.md).
@@ -198,9 +215,10 @@ Info-Icon. Header, Footer, Speichern und Bildverarbeitung bleiben unverändert.
 Die Gestaltung ist auf `.account-avatar-dialog` begrenzt und verwendet vorhandene
 Farb-/Flächentokens. Avatarvorschau weiterhin 96 px, ohne Statuszeichen.
 Gezielte Dialogtests prüfen auch lokalisierte Komponentenlabels und Upload-Namen;
-die visuelle Browserabnahme dieser Gestaltung steht noch aus.
+die Desktop-/schmale Darstellung wird screenshotgestützt geprüft; eine menschliche
+Abnahme wird dadurch nicht ersetzt.
 
-## Kompakte Upload-Variante zur Ansicht
+## Kompakte Uploadvariante
 
 Nach erfolgreicher neuer Bildauswahl verschwindet die große Uploadfläche zugunsten
 von Ausschnitt, Zoom und einem lokalen „Abbrechen“-Button. Dieser verwirft nur die

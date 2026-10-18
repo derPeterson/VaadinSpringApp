@@ -408,7 +408,8 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         2. Allgemein über den echten mobilen Drawer öffnen und diesen wieder schließen.
         3. Service-Name-Info öffnen: Text lesbar, Breite 288 px und vollständig innerhalb des Fensters.
         4. Screenshot aufnehmen und die Info wieder über ihren Button schließen.
-        **Erwartet:** Die zentrale Tooltip-Breite berücksichtigt den schmalen Viewport ohne horizontalen Überlauf.
+        5. Benutzermenü öffnen, bis Abmelden scrollen, seine Position im Fenster prüfen und tatsächlich abmelden.
+        **Erwartet:** Tooltip und Benutzermenü bleiben schmal bedienbar; keine abgeschnittene Abmeldeaktion.
         """)
   void manualInfoRemainsWithinTheMobileViewport() {
     ConfigurationPage settings = admin();
@@ -436,6 +437,52 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("Mobiler Klick-Tooltip bei 320×568", page);
     settings.info(label).click();
     assertThat(settings.tooltip()).hasCount(0);
+    var menu = new UserMenu(page);
+    menu.open();
+    var menuContent =
+        page.locator("vaadin-popover-overlay[opened] > [part~='overlay'] > [part~='content']");
+    assertTrue(
+        (Boolean) menuContent.evaluate("e => e.scrollWidth <= e.clientWidth + 1"),
+        "Das schmale Benutzermenü darf keinen horizontalen Überlauf haben.");
+    var status = new UserStatusMenu(page).current();
+    status.scrollIntoViewIfNeeded();
+    status.click();
+    var statusOverlay = page.locator("vaadin-select-overlay[opened] > [part~='overlay']");
+    assertThat(statusOverlay).isVisible();
+    // Die native Overlayposition wird nach Größenmessung/Öffnungsanimation aktualisiert.
+    context.waitForCondition(
+        () -> {
+          var candidate = statusOverlay.boundingBox();
+          return candidate != null
+              && candidate.x >= 0
+              && candidate.x + candidate.width <= 321
+              && candidate.y >= 0
+              && candidate.y + candidate.height <= 569;
+        },
+        new BrowserContext.WaitForConditionOptions().setTimeout(5_000));
+    var statusBounds = statusOverlay.boundingBox();
+    assertTrue(
+        statusBounds.x >= 0
+            && statusBounds.x + statusBounds.width <= 321
+            && statusBounds.y >= 0
+            && statusBounds.y + statusBounds.height <= 569,
+        "Statusauswahl muss im mobilen Fenster bleiben: " + statusBounds);
+    AllurePlaywright.attachScreenshot("Mobile Statusauswahl", page);
+    page.keyboard().press("Escape");
+    assertThat(page.locator("vaadin-select-overlay[opened], vaadin-select-overlay[closing]"))
+        .hasCount(0);
+    menu.open();
+    var logout =
+        page.getByRole(
+            AriaRole.BUTTON,
+            new Page.GetByRoleOptions().setName(texts.getBaseLogoutButton()).setExact(true));
+    logout.scrollIntoViewIfNeeded();
+    var logoutBounds = logout.boundingBox();
+    assertTrue(
+        logoutBounds.y >= 0 && logoutBounds.y + logoutBounds.height <= 569,
+        "Abmelden muss im gescrollten Benutzermenü sichtbar bleiben: " + logoutBounds);
+    AllurePlaywright.attachScreenshot("Mobiles Benutzermenü mit erreichbarer Abmeldung", page);
+    menu.signOut();
   }
 
   private ConfigurationPage admin() {

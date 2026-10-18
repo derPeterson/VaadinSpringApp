@@ -5,7 +5,6 @@ import com.vaadin.flow.component.HasLabel;
 import com.vaadin.flow.component.HasText;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.datepicker.DatePicker;
-import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import java.util.Map;
@@ -15,12 +14,6 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ComponentTextUpdateHelper {
-  public static void updateToolTipComponents(
-      Map<Tooltip, Supplier<String>> tooltipTranslationSupplierMap) {
-    tooltipTranslationSupplierMap.forEach(
-        (tooltip, translationSupplier) -> tooltip.setText(translationSupplier.get()));
-  }
-
   public static void updateComponents(
       Map<Component, Supplier<String>> componentTranslationSupplierMap) {
     componentTranslationSupplierMap.forEach(

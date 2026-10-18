@@ -780,19 +780,9 @@ vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(overlay) {
     width: min(var(--cosmos-dialog-width-user), calc(100vw - 32px));
 }
 
-vaadin-dialog[theme~="cosmos"].cosmos-admin-info-dialog::part(overlay) {
-    max-width: min(var(--cosmos-dialog-width-confirm), calc(100vw - 32px));
-}
-
 .cosmos-dialog-form {
     gap: var(--cosmos-space-l);
     min-width: 0;
-}
-
-.cosmos-dialog-text {
-    white-space: normal;
-    line-height: 1.6;
-    overflow-wrap: anywhere;
 }
 
 .cosmos-dialog-actions {
@@ -822,15 +812,6 @@ vaadin-dialog[theme~="cosmos"].cosmos-admin-info-dialog::part(overlay) {
 
     .cosmos-admin-section {
         gap: var(--cosmos-space-2xl);
-    }
-
-    .cosmos-admin-form-actions {
-        flex-direction: column;
-        gap: var(--cosmos-space-s);
-    }
-
-    .cosmos-admin-form-actions > vaadin-horizontal-layout {
-        width: 100%;
     }
 
     .cosmos-dialog-actions > vaadin-button {

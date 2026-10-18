@@ -17,7 +17,9 @@ sowie für das Datum im Aktivitätsfilter der Benutzerverwaltung.
 
 Beispiele: DE `260486` und `26041986` ergeben `26.04.1986`, DE `4586` ergibt
 `04.05.1986`. EN `042686` und `04261986` ergeben `4/26/1986`, EN `4586` ergibt
-`4/5/1986`. Die Reihenfolge folgt also der Sprache des Feldes.
+`4/5/1986`. Die Reihenfolge folgt also der Sprache des Feldes. Deutsch wird als `dd.MM.yyyy`
+mit führenden Nullen angezeigt; Englisch bleibt bei `M/d/yyyy`. Kurze getrennte
+Eingaben mit ein- oder zweistelligem Tag/Monat und zweistelligem Jahr bleiben zulässig.
 Zweistellige Jahre liegen fest zwischen 1950 und 2049 (`50` → 1950, `49` → 2049).
 Dafür ist auch Vaadins Referenzdatum auf 01.01.2000 gesetzt; normale getrennte
 Eingaben mit zweistelligem Jahr verwenden dieselbe Regel.
@@ -50,11 +52,19 @@ Gezielte JUnit-Prüfungen decken Kurzformen, Sprachreihenfolge, Schaltjahre,
 Jahrhundertgrenze, ungültige Eingaben, native Bereichsvalidierung und die Weitergabe
 an den Aktivitätsfilter ab. Vier JavaScript-Offlinetests prüfen Uhrzeiten,
 native Formate und die erneute Installation nach Sprachwechsel.
-Ergebnis am 18.10.2026: 128 gezielte JUnit-Tests und vier JavaScript-Offlinetests
+Vor der Gesamt-QA am 18.10.2026 bestanden 128 gezielte JUnit-Tests und vier JavaScript-Offlinetests
 erfolgreich, jeweils ohne Fehler oder übersprungene Fälle. Shared `clean install`,
 Spotless `apply`/`check` und JavaScript-Syntaxprüfung erfolgreich.
-Browserprüfung und tatsächlicher Frontend-Modulladevorgang sind noch offen;
-Browsertests wurden für diese Änderung nicht gestartet.
+Die Gesamt-QA am 18.10.2026 enthält 1524 erfolgreiche Anwendungs-JUnit-Fälle,
+einschließlich eines zusätzlichen Format-/Locale-/Bereichserhaltungsfalls. INPUT-01
+prüft kompakte vier/sechs/acht Ziffern, 1950/2049, kurze getrennte Jahre und ungültige
+Tage mit Tab/Enter im echten Kontofeld. INPUT-02 prüft `930`/`1430`, Sprachwechsel und
+ungültige Zeit im echten Aktivitätsfilter. Beide gezielten DE-Browserjourneys sind
+erfolgreich; der Zeitfall wechselt dabei auch tatsächlich die Oberflächensprache.
+Damit ist die Frontend-Modulanbindung nachgewiesen, nicht nur die isolierte Parserfunktion.
+Die abschließenden vollständigen Sprachläufe bestehen DE/EN jeweils mit 141/141 Fällen
+am identischen endgültigen Produktionsimage. Ergebnisse und Messgrenzen stehen in der
+[Browserabdeckung](../browser-tests/abdeckung.md).
 
 Shared-Modul und Anwendung neu bauen, das neue Frontend-Modul einbinden und die
 Anwendung neu starten. Danach die Seite neu laden, gegebenenfalls mit Strg+F5.

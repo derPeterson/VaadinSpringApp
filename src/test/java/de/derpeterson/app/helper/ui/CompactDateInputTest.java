@@ -144,4 +144,22 @@ class CompactDateInputTest {
     commit("4586");
     assertEquals(LocalDate.of(1986, 5, 4), field.getValue());
   }
+
+  @Test
+  void localizedOutputKeepsPaddingAndUpdatesWithoutLosingDateOrRange() {
+    field.setValue(LocalDate.of(1986, 5, 4));
+    field.setMax(LocalDate.of(2026, 10, 18));
+    assertEquals(
+        List.of("dd.MM.yyyy", "d.M.yyyy", "dd.MM.yy", "d.M.yy"), field.getI18n().getDateFormats());
+    field.setLocale(Locale.ENGLISH);
+    CompactDateInput.configure(field, messages);
+    assertEquals(List.of("M/d/yyyy", "M/d/yy"), field.getI18n().getDateFormats());
+    assertEquals(LocalDate.of(1986, 5, 4), field.getValue());
+    assertEquals(LocalDate.of(2026, 10, 18), field.getMax());
+    field.setLocale(Locale.GERMAN);
+    CompactDateInput.configure(field, messages);
+    assertEquals(
+        List.of("dd.MM.yyyy", "d.M.yyyy", "dd.MM.yy", "d.M.yy"), field.getI18n().getDateFormats());
+    assertEquals(LocalDate.of(2000, 1, 1), field.getI18n().getReferenceDate());
+  }
 }

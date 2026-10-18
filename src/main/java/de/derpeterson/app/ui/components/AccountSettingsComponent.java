@@ -300,6 +300,7 @@ public class AccountSettingsComponent extends Div {
           email.setPlaceholder(messages.getAccountEmailPlaceholder());
           birthDate.setLabel(messages.getRegistrationBirthDateField());
           birthDate.setLocale(CustomI18NProvider.getCurrentLocale());
+          CompactDateInput.configure(birthDate, messages);
           birthDate.setPlaceholder(messages.getRegistrationBirthDatePlaceholder());
           preferredLanguage.setLabel(messages.getAccountSettingsLanguage());
           preferredLanguage.setHelperText(messages.getAccountSettingsLanguageHint());

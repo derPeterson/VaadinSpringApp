@@ -103,6 +103,35 @@ public class UserFiltersBrowserTest extends BrowserFixture {
     assertThat(users.emailCells(email)).hasCount(1);
   }
 
+  @Test
+  @DisplayName("INPUT-02: Kompakte Zeit 930/1430 bleibt nach Sprachwechsel verwendbar")
+  @Description(
+      "Aktivitätsfilter öffnen, Datum setzen, 930 per Tab und 1430 per Enter übernehmen. Sprache im UI wechseln, dieselben Eingaben mit neu lokalisiertem Zeitformat prüfen. Ungültige 2460 zurückweisen.")
+  void compactTimeSurvivesLocaleChanges() {
+    var users = login();
+    users.open();
+    users.activeSince(LocalDate.of(2000, 1, 1));
+    for (var expected :
+        new de.derpeterson.browsertests.i18n.UiTexts[] {
+          texts,
+          new de.derpeterson.browsertests.i18n.UiTexts(texts.language().equals("de") ? "en" : "de")
+        }) {
+      if (!expected.language().equals(texts.language())) {
+        new UserMenu(page).selectLanguage(expected.language());
+        users = new AdminUsersPage(page, expected);
+      }
+      users.activityTime().fill("930");
+      users.activityTime().press("Tab");
+      assertThat(users.activityTime()).hasValue(expected.timeInput(LocalTime.of(9, 30)));
+      users.activityTime().fill("1430");
+      users.activityTime().press("Enter");
+      assertThat(users.activityTime()).hasValue(expected.timeInput(LocalTime.of(14, 30)));
+    }
+    users.activityTime().fill("2460");
+    users.activityTime().press("Tab");
+    assertThat(page.locator("vaadin-time-picker")).hasAttribute("invalid", "");
+  }
+
   @Tag("fast")
   @Test
   @DisplayName(

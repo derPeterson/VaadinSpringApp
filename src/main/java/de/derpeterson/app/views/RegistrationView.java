@@ -181,9 +181,12 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
           updateInputPlaceholders();
           Optional.ofNullable(birthDatePicker)
               .ifPresent(
-                  picker ->
-                      picker.setPlaceholder(
-                          this.messageProperties.getRegistrationBirthDatePlaceholder()));
+                  picker -> {
+                    picker.setLocale(event.getNewLocale());
+                    CompactDateInput.configure(picker, messageProperties);
+                    picker.setPlaceholder(
+                        this.messageProperties.getRegistrationBirthDatePlaceholder());
+                  });
           Optional.ofNullable(genderComboBox)
               .ifPresent(
                   comboBox -> {
@@ -468,6 +471,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     this.birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
     birthDatePicker.setPrefixComponent(VaadinIcon.CALENDAR_USER.create());
     birthDatePicker.setAutoOpen(false);
+    birthDatePicker.setLocale(CustomI18NProvider.getCurrentLocale());
     CompactDateInput.configure(birthDatePicker, messageProperties);
     birthDatePicker.setPlaceholder(messageProperties.getRegistrationBirthDatePlaceholder());
     birthDatePicker.setClearButtonVisible(true);

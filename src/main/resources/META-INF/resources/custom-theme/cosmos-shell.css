@@ -330,10 +330,17 @@ vaadin-menu-bar-submenu[theme~="cosmos"]::part(overlay),
     font-size: var(--cosmos-font-size-m);
 }
 
+/* Die native Overlayhöhe berücksichtigt den Platz unter/über dem Auslöser.
+ * Der Inhalt muss innerhalb dieser Höhe schrumpfen können, damit Abmelden erreichbar bleibt. */
+vaadin-popover[theme~="cosmos"]::part(overlay) {
+    display: flex;
+    flex-direction: column;
+}
+
 vaadin-popover[theme~="cosmos"]::part(content) {
     padding: 0;
-    max-height: calc(100vh - 32px);
-    max-height: calc(100dvh - 32px);
+    min-height: 0;
+    max-height: 100%;
     overflow-y: auto;
 }
 

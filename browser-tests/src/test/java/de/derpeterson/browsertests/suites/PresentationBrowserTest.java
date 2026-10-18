@@ -202,13 +202,6 @@ public class PresentationBrowserTest extends BrowserFixture {
     return new UiTexts[] {new UiTexts(texts.language().equals("de") ? "en" : "de"), texts};
   }
 
-  private void assertNotice(UiTexts expected, String message) {
-    assertThat(page.locator("vaadin-notification-card:not([closing])"))
-        .containsText(expected.getBaseFailedTitle());
-    assertThat(page.locator("vaadin-notification-card:not([closing])"))
-        .containsText(expected.visibleText(page, message));
-  }
-
   private String create() {
     LoginPage login = new LoginPage(page);
     login.open();

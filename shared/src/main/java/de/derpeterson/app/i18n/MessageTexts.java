@@ -1587,24 +1587,8 @@ public class MessageTexts {
     return getTranslation("accountSettings.current.session");
   }
 
-  public String getAccountSettingsActiveNow() {
-    return getTranslation("accountSettings.active.now");
-  }
-
-  public String getAccountSettingsActiveHours() {
-    return getTranslation("accountSettings.active.hours");
-  }
-
-  public String getAccountSettingsActiveYesterday() {
-    return getTranslation("accountSettings.active.yesterday");
-  }
-
   public String getAccountSettingsLogoutOthers() {
     return getTranslation("accountSettings.logout.others");
-  }
-
-  public String getAccountSettingsLogoutHint() {
-    return getTranslation("accountSettings.logout.hint");
   }
 
   public String getAccountSettingsSaveSuccess() {

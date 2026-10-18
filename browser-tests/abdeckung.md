@@ -1,5 +1,116 @@
 # Browserabdeckung und offene Punkte
 
+## Bereinigung, Profilbilder und Eingaben vollständig geprüft (18.10.2026)
+
+Ausgangspunkt: sauberer Branch `main`, Commit `85712fee0ba1246784f815a185075db0525ad6f7`.
+Die autorisierten Bereinigungen/Korrekturen bleiben uncommittet. Keine Projekt-Commits,
+Stage-, Merge- oder Push-Aktionen. [Bereinigungsnachweis](../docs/codebereinigung-2026-10-18.md),
+[QA-Meilenstein](../docs/meilensteine/2026-10-18-bereinigung-avatar-eingaben-und-gesamtqa.md).
+
+| Prüfung des abschließenden Stands | Ergebnis |
+| --- | --- |
+| Java / Shared / Produktionsbuild | Java 25.0.4.1, Maven Wrapper 3.9.16; Shared und isolierter Docker-Produktionsbuild erfolgreich |
+| Vollständige Anwendungs-JUnit-Suite | 1524/1524; 0 Fehler, 0 Fehlschläge, 0 Skips |
+| Browserhelfer / Reporter / Workerplanung | 47/47; 0 Fehler, 0 Fehlschläge, 0 Skips |
+| Python offline | 205/205; keine Fehler/Skips oder Liveprovider-Anfragen |
+| JavaScript offline | 26/26; 8 Avatar-, 4 Zeit- und 14 Workflowfälle; keine Fehler/Skips |
+| Browser `all` DE / EN | Je 141/141, 26 Klassen; 0 Fehler/Skips, identische 141 Fall-/Parameteridentitäten |
+| Worker je Sprache | 59/59 und 82/82; je eigene JVM, H2, Docker und Mailpit |
+| Fast-Auswahl | Alle 34 markierten Fälle in beiden Gesamtrunden enthalten; kein zusätzlicher Fast-Lauf |
+| Aufbau / Abbau / HTML / Coverage | Beide abschließenden Sprachläufe vollständig erfolgreich |
+| Format / Review | Spotless Apply/Check und Diff-Prüfung; keine Python-Datei geändert, daher kein Ruff-Formatlauf erforderlich |
+
+DE endete um 06:58:28, EN um 07:21:31 Europe/Berlin. Beide verwenden exakt das
+gepinnte Produktionsimage `sha256:13d46c5afc56f276746f9431b2047115041c800c147546fcae4ee98dd872818f`.
+Die abschließenden Runden prüfen den bereinigten Stand nach allen Produktionskorrekturen.
+Frühere Runs oder Vorprüfungen wurden weder in die Erfolgszahlen noch in die folgenden
+Coverage-Daten hineingemischt.
+
+| JaCoCo-Messung | Zeilen | Zweige |
+| --- | ---: | ---: |
+| Vollständige Anwendungs-JUnit-Suite | 7735/9113 (84,88 %) | 2165/2987 (72,48 %) |
+| Browser `all` DE | 7769/9113 (85,25 %) | 1910/2987 (63,94 %) |
+| Browser `all` EN | 7780/9113 (85,37 %) | 1914/2987 (64,08 %) |
+
+Gemessen werden jeweils 174 ausführbare Anwendungs-Java-Klassen (210 Klassen im XML
+inklusive Klassen ohne ausführbare Zeilen). Shared, Testcode und Bibliotheken gehören
+nicht zu diesem Nenner. JUnit und Browser sind getrennte Messungen; die Browserdaten
+werden je Sprache aus den beiden Workern gegen die Klassen des tatsächlich getesteten
+JARs zusammengeführt, nicht gemittelt. Start und Hintergrundjobs zählen mit.
+Das misst **keine CSS-/JavaScript-Coverage und keinen Prozentwert aller denkbaren
+Fachanforderungen**. 141/141 ist eine Fall-Erfolgsquote. Die JUnit-Messung folgt dem
+letzten Java-Fix; spätere CSS-Bereinigungen ändern diesen Java-Messumfang nicht.
+
+### Neue und erhaltene Funktionsabdeckung
+
+| Bereich | Tatsächlich geprüfter Ablauf |
+| --- | --- |
+| AVATAR-01, zwei Parameterfälle | 1280×900 und 390×844: PNG/JPEG-Auswahl, Zoom/Reset, kompakte Uploadfläche, gleich große lokale Aktionen, Speichern/Reload, Wiederöffnen, lokales und Footer-Abbrechen, Initialen mit erhaltenem Bild, Ersetzen/Löschen; Bilder in Kopfzeile/Popup/Konto/Grid |
+| ACCOUNT-01 / STATUS-03 | Initialen nach Namensänderung; direkte Statuswahl am Kontobild, Tastaturöffnung, Kontursymbole, aktive Fläche ohne Zusatzhaken, Statusrahmen/Glow und Synchronisierung |
+| INPUT-01 | Vier/sechs/acht Ziffern, DE-/EN-Reihenfolge, 1950/2049, kurze getrennte Jahre, ungültiger Tag, Tab/Enter und tatsächliche normalisierte Feldwerte |
+| INPUT-02 | Tatsächliche Frontend-Modulanbindung: 930/1430, Tab/Enter, Sprachwechsel, ungültige Zeit im Aktivitätsfilter |
+| CONFIG-05F / Cosmos | 320×568: Info und mobile Statusfläche im Fenster, kein horizontaler Popupüberlauf, Scrollen bis Abmelden und echte Abmeldung; bestehende Desktop-/schmale/Querformat- und Fokusprüfungen bleiben erhalten |
+| Bestehende Fachjourneys | Anmeldung/Registrierung/Verifikation/Reset, Passwort-/E-Mail-Wechsel mit eigenen SMTP-Mails, Sitzungen/Remember-me samt echten Neustarts, Admin-CRUD/Filter/Pagination/Konfiguration/Mail, Rollen/Zugriff/Wartung und Tokenablauf |
+
+Technische Grenz-, Transaktions-, Versions-, Byte-/Pixel-/EXIF- und Konkurrenzregeln
+bleiben in JUnit/Offlinetests. Sichtbare Browserjourneys erstellen ihre Zustände über
+UI und eigene Mailpit-Mails, nicht über Datenbank-/Serviceabkürzungen. Die funktionale
+Abdeckung ist die beschriebene Matrix, kein erfundener Vollständigkeitsprozentsatz.
+
+### Bereinigungen, Fehler und Nachtests
+
+Entfernt: `JdbcHelper`, zwei unbenutzte Hilfsmethoden, drei verwaiste eigene CSS-Klassen
+mit vier Regeln und vier Getter/Schlüssel je Sprache. Die Sprachkataloge sinken von
+455 auf **451 eindeutige Schlüssel** bei Sprachparität und unverändertem Codec.
+Native Lumo-/Grid-Regeln, die vier dynamischen Avatar-Schatten und aktive Autoren- und
+Frameworkressourcen bleiben erhalten. Keine zusätzliche Bildarchivierung notwendig.
+
+Zwei bestätigte Bedien-/Darstellungsfehler wurden behoben: Deutsch formatiert kompakte
+Geburtstage jetzt mit führenden Nullen; das schmale Benutzermenü begrenzt seinen
+scrollbaren Inhalt auf Vaadins verfügbare Höhe, sodass Abmelden erreichbar bleibt.
+Veraltete Menü-/Status-/Gridselektoren, der fehlende Navigationsschritt im neuen Zeitfall
+und die Synchronisierung mit nativen Select-Animationen wurden im Testcode korrigiert.
+Assertions wurden nicht abgeschwächt.
+
+Die erste vollständige DE-Runde hatte 139/141: neuer Testaufbau und echter Popupfehler.
+Nach gezielten Vorprüfungen (Konfiguration 9/9, Cosmos 11/11, Filter 5/5, Konto 11/11)
+wurde wegen der gemeinsamen Popup-CSS-Korrektur ein neuer abschließender Stand gebaut
+und vollständig in beiden Sprachen geprüft. Die Vorprüfungen verwendeten den Fix vor
+der letzten Entfernung wirkungsloser CSS-Regeln; **beide abschließenden Gesamtrunden**
+prüfen das oben genannte endgültige Image. Zwei frühe abgebrochene Anläufe sind keine
+vollständigen Nachweise. Ein Python-Aufruf mit dem Systeminterpreter hatte 6 Importfehler
+bei 145 gefundenen Tests; mit der vorhandenen Projekt-`.venv` bestehen alle 205.
+Weitere Testaufbau-/Kompilierungskorrekturen wurden vor den abschließenden grünen Läufen
+behoben. Die alten Runs bleiben erhalten.
+
+### Grenzen und Übernahme
+
+Chromium 153.0.8010.12, simulierte Fenstergrößen und eigene frische H2-/Mailpit-Daten.
+Keine Aussage über echte Mobilgeräte/Touch/Screenreader, sämtliche Lade-/Netzausfall-
+zustände, externe SMTP-Provider mit Auth/TLS, Mailprogramme, Clusterbetrieb oder
+produktive Bestandsmigrationen. Ein gezielter Avatar-Neustartnachweis mit zuvor
+hochgeladenem Bild bleibt offen; H2-Persistenz und Reload sind geprüft.
+Die 15 begrenzten manuellen/Betriebs-/Integrationsfälle im
+[manuellen Katalog](../docs/manual-tests/README.md) bleiben davon getrennt.
+
+Alle eigenen Teststacks sind abgebaut; die abschließende Containerkontrolle war leer.
+Keine alten Runs gelöscht, keine Nutzer-/IntelliJ-/Vite-Prozesse beendet und keine
+Bestandsdatenbank oder realen Postfächer für Tests verwendet. Produktionsbuild und
+gepacktes JAR wurden in Docker gestartet/geprüft, kein regulärer IDE-Start ausgelöst.
+Für einen sauberen lokalen Übernahmestand Shared/App bauen, einmal regulär neu starten
+und den Browser aktualisieren (gegebenenfalls Strg+F5). HotSwap-Übernahme wurde nicht
+als eigener Nachweis geprüft.
+
+
+Die optionale vollständige Designkritik wurde **nicht ausgeführt**. Die frische
+Nutzungslimitabfrage nach Abschluss der QA meldete das Fünf-Stunden-Kontingent als
+100 % verbraucht; damit war kein ausreichendes reguläres Kontingent für eine sinnvoll
+abschließbare Zusatzanalyse vorhanden. Kein Reset und keine zusätzliche Buchung wurden
+ausgelöst. Die Designkritik bleibt ein ausdrücklich offener separater Punkt; die
+funktionalen QA-Ergebnisse oben sind vollständig abgeschlossen.
+
+Die folgenden datierten Abschnitte sind historische Nachweise.
+
 ## Sitzungsverwaltung und Kontosicherheit vollständig geprüft (17.10.2026)
 
 Branch `feature/account-session-management`, Basis

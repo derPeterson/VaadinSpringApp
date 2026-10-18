@@ -64,12 +64,12 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler und Links | 6 |
 | `account-security` | Passwortvalidierung/-wechsel mit SMTP-Mail und verifizierte E-Mail-Änderung mit beiden Sicherheitsmails | 4 |
 | `session-management` | Eigene Sitzungen, Einzel-/Sammelwiderruf, gespeicherte Zugänge nach Neustart und eingeschränkter Login | 5 |
-| `account-settings` | Basisdaten speichern/validieren, gespeicherte Sprache und vier Schließwege des E-Mail-Dialogs | 7 |
+| `account-settings` | Profil/Sprachen/E-Mail-Dialog, persistente Profilbilder Desktop/schmal, kompakte Geburtstage und Status am Kontobild | 11 |
 | `account-lifecycle` | Einzelvalidierungen, kanonisierte Dubletten, unverifizierte Anfrage und altes Resetformular | 5 |
 | `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung mit Datumeingabe/Kalenderauswahl und Tastaturlogin | 5 |
 | `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
-| `user-management` | Suche/Pagination, Filterentwürfe/Badges, Anlage, Bearbeitung, sichere Dialogaktionen und Passwortbestätigung | 14 |
-| `user-filters` | Entwürfe/Anwenden/Badges, Kalender/Datumabhängigkeit, Zeitoverlay und kombinierte Filter/Reset | 4 |
+| `user-management` | Suche/Pagination, Filterentwürfe/Badges, Anlage, Bearbeitung, sichere Dialogaktionen und Passwortbestätigung und kompakte Zeit | 15 |
+| `user-filters` | Entwürfe/Anwenden/Badges, Kalender/Datumabhängigkeit, Zeitoverlay und kombinierte Filter/Reset und kompakte Zeit mit Sprachwechsel | 5 |
 | `user-access` | Sperren/Freigeben, Rollenvergabe/-entzug, Superadmin-/Gastzugriff, unverifizierte Konten, zwei offene Formulare und Selbstschutz | 7 |
 | `session-security` | Alte Speichern-Aktion nach Rollenentzug/Sperre/Löschung, Sperre/Löschung auch mit Remember-me | 5 |
 | `blocked-links` | Alte Verifikations-/Resetbuttons nach Adminänderung; neutrale Anfrage gesperrter Adresse | 5 |
@@ -86,7 +86,18 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `cosmos-design` | Fünf Kontoansichten, mobiler Mailablauf, Copyright in UI/Mails, gemeinsames Theme sowie Home-/Adminnavigation bei drei Größen | 11 |
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
-| `all` | Alle 26 Testklassen einschließlich der Fast-Fälle | 136 |
+| `all` | Alle 26 Testklassen einschließlich der Fast-Fälle | 141 |
+
+AVATAR-01 prüft zwei eigenständige Parameterfälle bei 1280×900 und 390×844:
+PNG hochladen, Ausschnitt/Zoom, Uploadfläche ausblenden, gleich große lokale Aktionen,
+Speichern und echte Bilder in Kopfzeile/Popup/Konto/Benutzerverwaltung, Wiederöffnen im
+richtigen Modus, lokales und Footer-Abbrechen, Initialen/Bild sowie JPEG-Ersetzen und Löschen.
+INPUT-01 prüft kompakte Geburtstage mit vier/sechs/acht Ziffern, 1950/2049, ungültigen Tag
+und Tab/Enter im tatsächlichen Frontend. INPUT-02 prüft 930/1430 mit Tab/Enter,
+Sprachwechsel und ungültiger Zeit im echten Aktivitätsfilter. STATUS-03 prüft die direkte
+Wahl am Kontobild und synchronisierte Kontursymbole, Statusrahmen und Glow.
+Die detaillierten Schritte stehen in den Testbeschreibungen; Ausführungsergebnisse
+stehen getrennt in der Abdeckungsübersicht. Die 34 Fast-Fälle bleiben unverändert.
 
 Die sieben bisherigen Account-Fälle prüfen Profilspeichern und Dialogschließen.
 Die neuen Suites `account-security` und `session-management` ergänzen neun eigenständige
@@ -280,7 +291,9 @@ zweiten Tab und Zurück/Vorwärts zwischen Benutzerverwaltung und Security.
 CONFIG-05A–F prüfen die native Hierarchie mit Klick/Enter/Leertaste, den Erhalt
 ungespeicherter Werte und den echten Klick-Tooltip samt Außenklick, Sprache und
 Card-Stil. Alle 29 Feldinfos in sieben Gruppen sowie 320×568 mit begrenzter
-Tooltipbreite sind enthalten. Enter am Navigationspunkt darf nicht speichern;
+Tooltipbreite sind enthalten. CONFIG-05F prüft zusätzlich den horizontal begrenzten
+Benutzermenüinhalt, die native mobile Statusfläche und tatsächliches Scrollen/Abmelden.
+Native Öffnungs-/Schließanimationen werden vor Bounds- und Folgeaktionen abgewartet. Enter am Navigationspunkt darf nicht speichern;
 Enter im Eingabefeld muss den neuesten Wert übernehmen. Positive Queue-Dauern
 bleiben auch unter einer Minute zulässig. Geheimwerte werden nicht als Default gezeigt.
 
