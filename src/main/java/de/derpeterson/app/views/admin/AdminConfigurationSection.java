@@ -513,8 +513,6 @@ public class AdminConfigurationSection extends VerticalLayout {
       case EMAIL_FROM, EMAIL_ADMIN -> List.of(messageProperties.getAdminConfigValidationEmail());
       case MAIL_HOST -> List.of(messageProperties.getAdminConfigRuleHost());
       case MAIL_SMTP_SSL_TRUST -> List.of(messageProperties.getAdminConfigRuleSslTrust());
-      case MAIL_SMTP_SOCKETFACTORY_CLASS ->
-          List.of(messageProperties.getAdminConfigRuleJavaClass());
       case USER_AUTO_ABSENT_TIMEOUT ->
           List.of(
               messageProperties.getAdminConfigHelperDurationFormats(),
@@ -703,10 +701,6 @@ public class AdminConfigurationSection extends VerticalLayout {
           !isValidPort(trimmed) ? messageProperties.getAdminConfigValidationPort() : null;
       case MAIL_SMTP_SSL_TRUST ->
           !isValidSslTrustValue(trimmed) ? messageProperties.getAdminConfigValidationHost() : null;
-      case MAIL_SMTP_SOCKETFACTORY_CLASS ->
-          !isValidJavaClassName(trimmed)
-              ? messageProperties.getAdminConfigValidationJavaClass()
-              : null;
       default -> null;
     };
   }
@@ -945,42 +939,6 @@ public class AdminConfigurationSection extends VerticalLayout {
         return false;
       }
     }
-    return true;
-  }
-
-  private boolean isValidJavaClassName(String value) {
-    if (value == null || value.isBlank()) {
-      return true;
-    }
-
-    int start = 0;
-    int length = value.length();
-
-    while (start < length) {
-      int dotIndex = value.indexOf('.', start);
-      int end = dotIndex >= 0 ? dotIndex : length;
-
-      if (start == end || !isValidJavaIdentifier(value, start, end)) {
-        return false;
-      }
-
-      start = end + 1;
-    }
-
-    return true;
-  }
-
-  private boolean isValidJavaIdentifier(String value, int start, int end) {
-    if (!Character.isJavaIdentifierStart(value.charAt(start))) {
-      return false;
-    }
-
-    for (int i = start + 1; i < end; i++) {
-      if (!Character.isJavaIdentifierPart(value.charAt(i))) {
-        return false;
-      }
-    }
-
     return true;
   }
 

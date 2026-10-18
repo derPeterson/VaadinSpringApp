@@ -56,6 +56,23 @@ class AdminConfigurationGroupTest {
   }
 
   @Test
+  void smtpGroupContainsOnlyTheSupportedTransportSettings() {
+    section.showGroup(AdminConfigGroup.SMTP);
+    assertEquals(
+        List.of(
+            ConfigEntry.MAIL_HOST,
+            ConfigEntry.MAIL_PORT,
+            ConfigEntry.MAIL_USERNAME,
+            ConfigEntry.MAIL_PASSWORD,
+            ConfigEntry.MAIL_SMTP_AUTH,
+            ConfigEntry.MAIL_SMTP_STARTTLS_ENABLE,
+            ConfigEntry.MAIL_SMTP_SSL_ENABLE,
+            ConfigEntry.MAIL_SMTP_SSL_TRUST,
+            ConfigEntry.MAIL_DEBUG),
+        visibleEntries());
+  }
+
+  @Test
   void typedSelectionKeepsDefaultAndTokenFieldsAndIgnoresNull() {
     assertEquals(AdminConfigGroup.GENERAL, selectedGroup());
     assertEquals(

@@ -46,6 +46,7 @@ public class DatabaseInitializer {
   @Bean
   public CommandLineRunner initDatabase() {
     return args -> {
+      configService.removeRetiredEntries();
       createDefaultConfigSettings();
       roleSchemaUpdater.updateRoleColumn();
       createDefaultRolesAndAdminUser();

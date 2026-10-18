@@ -666,10 +666,6 @@ public class MessageTexts {
     return getTranslation("adminView.config.rule.ssl_trust");
   }
 
-  public String getAdminConfigRuleJavaClass() {
-    return getTranslation("adminView.config.rule.java_class");
-  }
-
   public String getAdminConfigRuleDurationNoMinimum() {
     return getTranslation("adminView.config.rule.duration_no_minimum");
   }
@@ -795,10 +791,6 @@ public class MessageTexts {
     return getTranslation("adminView.config.entry.mail_smtp_ssl_trust");
   }
 
-  public String getAdminConfigEntryMailSmtpSocketfactoryClass() {
-    return getTranslation("adminView.config.entry.mail_smtp_socketfactory_class");
-  }
-
   public String getAdminConfigEntryMailDebug() {
     return getTranslation("adminView.config.entry.mail_debug");
   }
@@ -915,10 +907,6 @@ public class MessageTexts {
     return getTranslation("adminView.config.entry.mail_smtp_ssl_trust.tooltip");
   }
 
-  public String getAdminConfigEntryMailSmtpSocketfactoryClassTooltip() {
-    return getTranslation("adminView.config.entry.mail_smtp_socketfactory_class.tooltip");
-  }
-
   public String getAdminConfigEntryMailDebugTooltip() {
     return getTranslation("adminView.config.entry.mail_debug.tooltip");
   }
@@ -989,10 +977,6 @@ public class MessageTexts {
 
   public String getAdminConfigValidationDuration() {
     return getTranslation("adminView.config.validation.duration");
-  }
-
-  public String getAdminConfigValidationJavaClass() {
-    return getTranslation("adminView.config.validation.java_class");
   }
 
   public String getAdminConfigValidationServiceName() {

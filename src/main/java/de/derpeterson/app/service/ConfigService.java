@@ -2,6 +2,7 @@ package de.derpeterson.app.service;
 
 import de.derpeterson.app.model.ConfigEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.RetiredConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,18 @@ public class ConfigService {
   private final ConfigRepository configRepository;
   private final PlatformTransactionManager transactionManager;
   private final Environment environment;
+
+  /** Entfernt ausschließlich ausdrücklich ausgemusterte Einträge; wiederholbar beim Start. */
+  public void removeRetiredEntries() {
+    var transaction = new TransactionTemplate(transactionManager);
+    transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    transaction.executeWithoutResult(
+        status -> {
+          for (RetiredConfigEntry entry : RetiredConfigEntry.values()) {
+            configRepository.findByKey(entry.getKey()).ifPresent(configRepository::delete);
+          }
+        });
+  }
 
   public boolean exists(ConfigEntry configEntry) {
     return configRepository.existsByKey(configEntry.getKey());

@@ -1,5 +1,28 @@
 # Browserabdeckung und offene Punkte
 
+## Gezielte Nachprüfung der Konfigurationsbereinigung (18.10.2026)
+
+Nach der vollständigen Gesamt-QA wurde ein bisher wirkungsloses SMTP-Feld samt
+Eingaberegeln, Defaults, Übersetzungen und Umsetzungsplan entfernt. Der aktuelle
+Katalog enthält 28 Konfigurationsfelder und 447 Übersetzungsschlüssel je Sprache.
+Ein gezielter Startschritt entfernt alle zentral in `RetiredConfigEntry` aufgeführten
+Datenbankwerte; aktuelle Werte und sonstige unbekannte Einträge bleiben erhalten.
+
+- Java 25.0.4.1; Shared neu gebaut und installiert.
+- 113 gezielte JUnit-Fälle erfolgreich, 0 Fehler, 0 Fehlschläge, 0 Skips:
+  Konfigurationsservice einschließlich isolierter H2-Transaktionen, wiederholbare
+  Altwertbereinigung, Startreihenfolge, aktuelle SMTP-Felder, Mail-Sender und DE/EN-Kataloge.
+  Der Enumvertrag prüft eindeutige, nicht leere Schlüssel ohne Überschneidung mit aktiven Einträgen.
+- Fünf neue Regressionstests sind in diesen 113 Fällen enthalten.
+- CONFIG-05D und Fallbeschreibung auf 28 Felder angepasst; Browserquellen erfolgreich
+  kompiliert, keine Browserläufe gestartet. Die folgenden Gesamtergebnisse beziehen
+  sich weiterhin auf den damaligen Stand vor dieser nachträglichen Bereinigung.
+- Spotless Apply/Check und Diff-Prüfung erfolgreich; Properties-Codec unverändert.
+  Kein neuer Produktions-/Frontendbuild und keine neue Coverage-Messung.
+
+Sichtbar nach Neubau von Shared und Anwendung, vollständigem Anwendungsneustart
+und erneutem Öffnen der Konfiguration. Reale Datenbanken wurden nicht angesprochen.
+
 ## Bereinigung, Profilbilder und Eingaben vollständig geprüft (18.10.2026)
 
 Ausgangspunkt: sauberer Branch `main`, Commit `85712fee0ba1246784f815a185075db0525ad6f7`.

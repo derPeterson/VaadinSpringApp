@@ -76,7 +76,7 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `security-journeys` | Sitzungs- und Maillinkfälle gemeinsam | 10 |
 | `remember-me` | Echter Chromium- und Anwendungsneustart mit/ohne Remember-me und nach Logout | 4 |
 | `user-status` | Manuelle Wahl, Live-Anzeige in zweitem Tab, Abwesenheit/Rückkehr | 2 |
-| `configuration` | String-, Boolean- und Ganzzahlwerte, native SideNav, alle 29 Klick-Infos, mobile Tooltipbreite und sichere Enter-Bedienung | 9 |
+| `configuration` | String-, Boolean- und Ganzzahlwerte, native SideNav, alle 28 Klick-Infos, mobile Tooltipbreite und sichere Enter-Bedienung | 9 |
 | `admin-mail` | Formularfehler, Feldinfos/Sprachwechsel, sicherer mehrzeiliger Text und tatsächliche Unicode-SMTP-Mails | 3 |
 | `token-expiry` | Echte Mindestdauer abwarten, erneuter Verifikationsversand, offenes Resetformular, Anfragefehler | 3 |
 | `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 15 |
@@ -290,7 +290,7 @@ CONFIG-05A prüft zusätzlich die Menü-URL, echten Browser-Refresh, Direktlinks
 zweiten Tab und Zurück/Vorwärts zwischen Benutzerverwaltung und Security.
 CONFIG-05A–F prüfen die native Hierarchie mit Klick/Enter/Leertaste, den Erhalt
 ungespeicherter Werte und den echten Klick-Tooltip samt Außenklick, Sprache und
-Card-Stil. Alle 29 Feldinfos in sieben Gruppen sowie 320×568 mit begrenzter
+Card-Stil. Alle 28 Feldinfos in sieben Gruppen sowie 320×568 mit begrenzter
 Tooltipbreite sind enthalten. CONFIG-05F prüft zusätzlich den horizontal begrenzten
 Benutzermenüinhalt, die native mobile Statusfläche und tatsächliches Scrollen/Abmelden.
 Native Öffnungs-/Schließanimationen werden vor Bounds- und Folgeaktionen abgewartet. Enter am Navigationspunkt darf nicht speichern;

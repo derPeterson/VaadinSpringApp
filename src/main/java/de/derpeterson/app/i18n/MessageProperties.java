@@ -79,7 +79,6 @@ public class MessageProperties extends MessageTexts {
       case MAIL_SMTP_STARTTLS_ENABLE -> getAdminConfigEntryMailSmtpStarttlsEnable();
       case MAIL_SMTP_SSL_ENABLE -> getAdminConfigEntryMailSmtpSslEnable();
       case MAIL_SMTP_SSL_TRUST -> getAdminConfigEntryMailSmtpSslTrust();
-      case MAIL_SMTP_SOCKETFACTORY_CLASS -> getAdminConfigEntryMailSmtpSocketfactoryClass();
       case MAIL_DEBUG -> getAdminConfigEntryMailDebug();
 
       case EMAIL_QUEUE_POOL_SIZE -> getAdminConfigEntryEmailQueuePoolSize();
@@ -122,7 +121,6 @@ public class MessageProperties extends MessageTexts {
       case MAIL_SMTP_STARTTLS_ENABLE -> getAdminConfigEntryMailSmtpStarttlsEnableTooltip();
       case MAIL_SMTP_SSL_ENABLE -> getAdminConfigEntryMailSmtpSslEnableTooltip();
       case MAIL_SMTP_SSL_TRUST -> getAdminConfigEntryMailSmtpSslTrustTooltip();
-      case MAIL_SMTP_SOCKETFACTORY_CLASS -> getAdminConfigEntryMailSmtpSocketfactoryClassTooltip();
       case MAIL_DEBUG -> getAdminConfigEntryMailDebugTooltip();
 
       case EMAIL_QUEUE_POOL_SIZE -> getAdminConfigEntryEmailQueuePoolSizeTooltip();

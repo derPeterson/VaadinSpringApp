@@ -85,12 +85,11 @@ Neustart. Admin/Superadmin behalten Zugang; normale Konten und anonyme Besucher
 erhalten die Wartungscard. Hintergrundjobs laufen weiter. Für diese neue Java-
 Erweiterung Shared-Modul und Anwendung bauen und die Anwendung einmal neu starten.
 
-Für die zwei noch offenen Konfigurationseinträge liegen
-[einzelne Umsetzungspläne](docs/umsetzungsplaene/konfiguration/README.md)
-vor: SMTP-SocketFactory und Nutzung des Mail-Workerpools. Diese übrigen Pläne
-aktivieren keine Funktion. Das Kontokonfigurationspanel wurde unabhängig davon bereits
-umgesetzt; die [Sitzungsverwaltung als zweite Ausbaustufe](docs/session-management-contract.md)
-ist auf dem Feature-Branch vollständig automatisiert geprüft und wartet auf die manuelle Nutzerabnahme vor der Übernahme in Main.
+Für den noch offenen Konfigurationseintrag `email.queue.pool.size` liegt ein
+[Umsetzungsplan für den Mail-Workerpool](docs/umsetzungsplaene/konfiguration/email-queue-pool-size.md)
+vor. Der Plan aktiviert keine Funktion. Kontokonfigurationspanel und
+[Sitzungsverwaltung](docs/session-management-contract.md) sind bereits umgesetzt.
+
 
 ## Kontoansichten, Home und Admin: Silent Cosmos und Inter
 
@@ -239,7 +238,7 @@ Breadcrumb zeigt Admin Center, Konfiguration und die ausgewählte Gruppe und wir
 bei Gruppen- und Sprachwechsel aktualisiert. Die Konfigurations-Card zeigt
 Gruppenicon, Kurzbeschreibung und tatsächliche Einstellungsanzahl; Trennlinien
 begrenzen Kopf und Fuß mit Speicherhinweis und rechts angeordneten Aktionsbuttons.
-Alle 29 Konfigurationsfelder verwenden denselben `ConfigInfoButton`: rechts am
+Alle 28 Konfigurationsfelder verwenden denselben `ConfigInfoButton`: rechts am
 Input, Lumo-Icongröße M, Primary-Farbe, manuelles Öffnen per Klick oder Tastatur.
 Ein Außenklick schließt den Tooltip; die Steuerung wird beim Entfernen des Felds
 aufgeräumt. Die Texte folgen beim Sprachwechsel der aktuellen Sprache.
@@ -282,7 +281,7 @@ Platzhalter „Leer lassen“. Gespeicherte Passwörter bleiben im vorhandenen P
 Die Regelhinweise wurden mit der bestehenden serverseitigen Prüfung abgeglichen:
 Token-Gültigkeit mindestens eine Minute, Token-Aufbewahrung mindestens zwei Minuten,
 Port 1–65535, positive Zähler bzw. nichtnegative Retry-Anzahl sowie vorhandene
-URL-, E-Mail-, Host-, Trustlisten-, Geheimschlüssel- und Klassenname-Prüfungen.
+URL-, E-Mail-, Host-, Trustlisten- und Geheimschlüssel-Prüfungen.
 Für automatische Abwesenheit existiert bisher keine Mindestdauer. Die
 Mailqueue-Aufbewahrung muss wie im Backend strikt positiv sein; Null und negative
 Werte werden bereits im Formular abgelehnt. Dafür gilt keine zusätzliche Minutengrenze. Zeitspannen
@@ -403,6 +402,15 @@ $env:APP_CFG_MAIL_PORT = '1025'
 $env:APP_CFG_MAIL_SMTP_AUTH = 'false'
 $env:APP_SECURITY_EXPOSE_H2_CONSOLE = 'false'
 ```
+
+Beim Anwendungsstart entfernt `ConfigService.removeRetiredEntries()` alle in
+`model/enums/RetiredConfigEntry.java` aufgeführten Datenbankschlüssel in einer eigenen
+Transaktion. Beim Ausmustern den Namen und Schlüssel aus `ConfigEntry` dorthin
+übernehmen; Defaultwerte und Übersetzungen werden dort nicht benötigt. Zugehörige
+Aufrufer, Defaults und UI-Texte ebenfalls entfernen. Ein Regressionstest verhindert,
+dass derselbe Schlüssel gleichzeitig aktiv und ausgemustert ist. Die Bereinigung ist
+wiederholbar; aktuelle Einstellungen und andere unbekannte Einträge bleiben erhalten.
+Neue Datenbanken enthalten 28 aktive Konfigurationseinträge.
 
 **Zwei Konfigurationsebenen beachten:** `DatabaseInitializer` übernimmt `app.config.defaults.<Schlüssel>` nur für noch fehlende Datenbankeinträge. Bereits gespeicherte Werte werden durch geänderte `APP_CFG_*`-Vorgaben nicht überschrieben. Die Schlüssel definiert `model/enums/ConfigEntry.java`; Änderungen vorhandener Werte sind im Adminbereich möglich. `service.name` bestimmt den Anzeigenamen, `base.url` die Basis für Mail-Links und muss zur erreichbaren URL passen. Für die Erstbefüllung ist beispielsweise `app.config.defaults.base.url=http://localhost:8080/` möglich.
 

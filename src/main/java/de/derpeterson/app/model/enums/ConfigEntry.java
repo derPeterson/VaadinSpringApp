@@ -38,7 +38,6 @@ public enum ConfigEntry {
   MAIL_SMTP_STARTTLS_ENABLE("mail.smtp.starttls.enable", false),
   MAIL_SMTP_SSL_ENABLE("mail.smtp.ssl.enable", false),
   MAIL_SMTP_SSL_TRUST("mail.smtp.ssl.trust", "*"),
-  MAIL_SMTP_SOCKETFACTORY_CLASS("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory"),
   MAIL_DEBUG("mail.debug", "false"),
 
   // Thread-Pool Konfiguration

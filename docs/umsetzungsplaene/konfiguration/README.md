@@ -1,24 +1,23 @@
 # Umsetzungspläne für bisher wirkungslose Konfiguration
 
-Stand: 16.10.2026. Ursprüngliche Bestandsaufnahme: `1d57a5e`.
+Stand: 18.10.2026. Ursprüngliche Bestandsaufnahme: `1d57a5e`.
 Wartungsumsetzung und Gesamtnachweis auf `feature/maintenance-mode`, Basis `05a67e8c`.
 Status: **Planung; diese Dokumente implementieren oder aktivieren keine Funktion.**
 
-Die zwei verbleibenden Einzelpläne beschreiben Iststand, empfohlenen ersten Umfang, sichtbare
+Der verbleibende Einzelplan beschreibt Iststand, empfohlenen ersten Umfang, sichtbare
 Verhaltensänderungen, technische Schritte, Einführung und Abnahmetests. Empfehlungen
 sind Vorschläge für die nächste Umsetzung, keine bereits abgestimmten Produktregeln.
 Als neu vorgeschlagen bezeichnete Klassen existieren noch nicht.
 
 ## Bestandsaufnahme
 
-Alle **29 Werte** aus `ConfigEntry` wurden mit Produktionsverbrauchern abgeglichen.
+Alle **28 Werte** aus `ConfigEntry` wurden mit Produktionsverbrauchern abgeglichen.
 Anzeige, Übersetzung, Validierung und Speicherung allein gelten dabei nicht als
 Umsetzung einer Fachfunktion. Dies ist eine Quellcodeprüfung; Bestandsdatenbanken,
 Zugangsdaten und laufende Anwendungen wurden nicht untersucht.
 
 | Eintrag | Enum-Standard | Heutige Wirkung | Plan |
 | --- | --- | --- | --- |
-| `mail.smtp.socketFactory.class` | `javax.net.ssl.SSLSocketFactory` | `MailConfig` reicht den Wert nicht weiter | [SMTP-SocketFactory](mail-smtp-socketfactory-class.md) |
 | `email.queue.pool.size` | `5` | Executor konfiguriert; Mailqueue verwendet ihn nicht | [Mail-Workerpool](email-queue-pool-size.md) |
 
 Das sind Enum-Standards, keine ausgelesenen Installationseinstellungen. Gespeicherte
@@ -29,7 +28,7 @@ umgesetzt. Die abgeschlossenen Pläne werden durch die verbindlichen Verträge f
 [Anmeldeversuche](../../login-attempts-contract.md),
 [gleichzeitige Sitzungen](../../session-limit-contract.md) und
 [Wartung](../../maintenance-mode-contract.md) ersetzt; der frühere
-Ausgangsstand der übrigen Pläne bleibt nachvollziehbar.
+Ausgangsstand des verbleibenden Plans bleibt nachvollziehbar.
 
 ### Bereits verwendete Werte
 
@@ -57,19 +56,17 @@ nur seine zweite Bedeutung als Executor-Puffer gehört zum offenen Workerpool.
 Für diese aktiven Einträge gibt es keinen Neuimplementierungsplan. Der Workerplan
 beschreibt, wie die wirksame Kapazitätsgrenze erhalten werden soll.
 
-## Empfohlene Reihenfolge
+## Nächstes Arbeitspaket
 
-1. **Mail-Workerpool:** eigenes Paket mit belastbaren Konkurrenztests.
-2. **SocketFactory:** Spezialfall; Bedarf und genaue Bedeutung des bisherigen Felds zuerst abstimmen.
+**Mail-Workerpool:** eigenes Paket mit belastbaren Konkurrenztests.
 
 Das **Kontokonfigurationspanel** ist inzwischen umgesetzt. Die
 [Sitzungsverwaltung darin](../../session-management-contract.md) ergänzt das Limit
 um echte eigene Sitzungen, gezielten Remember-me-Widerruf und einen befristeten
 Verwaltungszugang bei erreichtem Limit. Diese abgeschlossene Implementierung ist
-unabhängig von den beiden verbleibenden Konfigurationseinträgen; Main bleibt bis
-zur manuellen Nutzerabnahme unverändert.
+unabhängig vom verbleibenden Konfigurationseintrag und bereits auf Main übernommen.
 
-Jeder Plan ist ein eigenes Arbeitspaket. Gemeinsame Anmeldelogik schrittweise
+Der verbleibende Plan ist ein eigenes Arbeitspaket. Gemeinsame Anmeldelogik schrittweise
 verbessern, ohne nebenbei sämtliche Sicherheitsklassen umzubauen.
 
 ## Gemeinsame Leitplanken
@@ -77,7 +74,7 @@ verbessern, ohne nebenbei sämtliche Sicherheitsklassen umzubauen.
 - Superadmin behält sämtliche Adminrechte. Benutzer und Gast erhalten die gleichen
   hier vorgeschlagenen Grenzen; keine versteckten Rollenausnahmen.
 - Bedeutung, Eingaberegel und Aktivierungszeit jedes neuen Verbrauchers dokumentieren.
-  Die Einzelpläne unterscheiden sofortige Wirkung von startgebundenen Werten.
+  Der Plan unterscheidet sofortige Wirkung von startgebundenen Werten.
 - DE/EN-Texte über den gemeinsamen `MessageTexts`-Katalog und `MessageProperties` führen.
 - Bestehende Cosmos-Komponenten und den [Designstandard](../../design-standard.md)
   verwenden. Gemeinsame Styles und bestehende Icons nicht beiläufig ändern.
@@ -93,5 +90,5 @@ verbessern, ohne nebenbei sämtliche Sicherheitsklassen umzubauen.
 
 Die ursprüngliche Planung war eine reine Markdown-Aufgabe. Der inzwischen umgesetzte
 Login-, Sitzungs- und Wartungsschutz haben eigene Prüfungen; deren tatsächlich ausgeführte Ergebnisse stehen in
-[der aktuellen Abdeckung](../../../browser-tests/abdeckung.md). Die verbleibenden Pläne
-bleiben unimplementiert. Zum bloßen Lesen dieser Dateien ist kein Neustart nötig.
+[der aktuellen Abdeckung](../../../browser-tests/abdeckung.md). Der verbleibende Plan
+ist unimplementiert. Zum bloßen Lesen dieser Dateien ist kein Neustart nötig.

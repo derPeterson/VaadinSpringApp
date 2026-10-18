@@ -57,6 +57,34 @@ class DatabaseInitializerRolesTest {
   }
 
   @Test
+  void startupCleansRetiredConfigurationBeforeSeedingAndPreservesStoredValues() throws Exception {
+    var config = mock(ConfigService.class);
+    when(config.exists(any())).thenReturn(true);
+    var environment = mock(Environment.class);
+    var initializer =
+        new DatabaseInitializer(
+            mock(UserRepository.class),
+            mock(RoleRepository.class),
+            config,
+            mock(PasswordEncoder.class),
+            environment,
+            mock(RoleSchemaUpdater.class));
+
+    initializer.initDatabase().run();
+    initializer.initDatabase().run();
+
+    var order = inOrder(config);
+    for (int run = 0; run < 2; run++) {
+      order.verify(config).removeRetiredEntries();
+      for (var entry : de.derpeterson.app.model.enums.ConfigEntry.values()) {
+        order.verify(config).exists(entry);
+      }
+    }
+    order.verifyNoMoreInteractions();
+    verifyNoInteractions(environment);
+  }
+
+  @Test
   void optionalBootstrapKeepsAdminAndUserAndNeverAssignsSuperadminOrGuest() throws Exception {
     var roles = mock(RoleRepository.class);
     var users = mock(UserRepository.class);

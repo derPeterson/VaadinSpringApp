@@ -93,5 +93,5 @@ ist kein Datenbank-Offlinebetrieb und verlängert keine Tokens.
 Die alten Run-Ordner wurden nicht gelöscht oder archiviert. Dieser Meilenstein ist
 ohne lokale Screenshots, Traces, Run-Verzeichnisse und Rohberichte lesbar. Der
 umgesetzte Wartungsplan wurde durch den verbindlichen Vertrag ersetzt und entfernt.
-Offen bleiben SMTP-SocketFactory und Mail-Workerpool; danach das geplante Kontopanel.
+Als weiteres Arbeitspaket war der Mail-Workerpool vorgesehen; danach das geplante Kontopanel.
 Aktueller Gesamtstand: [Abdeckungsübersicht](../../browser-tests/abdeckung.md).

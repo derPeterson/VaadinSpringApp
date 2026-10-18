@@ -325,14 +325,14 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   }
 
   @Test
-  @DisplayName("CONFIG-05D: Alle 29 Feldinfos bleiben in ihren sieben Gruppen erreichbar")
+  @DisplayName("CONFIG-05D: Alle 28 Feldinfos bleiben in ihren sieben Gruppen erreichbar")
   @Description(
       """
         1. Alle sieben Konfigurationsgruppen über die native SideNav öffnen.
         2. Jede Feldinfo per Klick öffnen: übersetzter Standardwert und nicht leere Eingaberegeln.
         3. Nur eine Info gleichzeitig sichtbar; per Info-Button wieder schließen.
         4. Ein gesetzter Standard-Geheimschlüssel bleibt vertraulich; das leere SMTP-Passwort zeigt ausdrücklich den Leerhinweis.
-        5. Jede Card zeigt die Anzahl ihrer tatsächlichen Felder; insgesamt sind 29 Infos erreichbar.
+        5. Jede Card zeigt die Anzahl ihrer tatsächlichen Felder; insgesamt sind 28 Infos erreichbar.
         **Erwartet:** Keine Gruppe verliert ihre Bedienung; alle bisherigen Felder erhalten die gemeinsame Info-Funktion.
         """)
   void everyConfigurationFieldHasAnAccessibleLocalizedInfo() {
@@ -363,7 +363,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       }
       total += count;
     }
-    assertEquals(29, total);
+    assertEquals(28, total);
   }
 
   @Tag("fast")
