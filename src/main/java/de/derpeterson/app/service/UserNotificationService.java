@@ -221,6 +221,11 @@ public class UserNotificationService {
   }
 
   @Transactional(readOnly = true)
+  public long readCount(HttpSession session) {
+    return recipients.countRead(owner(session).getId(), policy.inboxCutoff(Instant.now()));
+  }
+
+  @Transactional(readOnly = true)
   public List<Long> unreadSnapshot(HttpSession session) {
     return List.copyOf(
         recipients.unreadIds(owner(session).getId(), policy.inboxCutoff(Instant.now())));
@@ -245,6 +250,14 @@ public class UserNotificationService {
     var owner = owner(session).getId();
     if (recipients.dismiss(owner, Objects.requireNonNull(id), Instant.now()) > 0)
       afterCommit(Set.of(owner));
+  }
+
+  /** Entfernt alle sichtbaren gelesenen Empfangseinträge des Kontos, unabhängig von UI-Filtern. */
+  @Transactional
+  public void dismissRead(HttpSession session) {
+    var owner = owner(session).getId();
+    var now = Instant.now();
+    if (recipients.dismissRead(owner, policy.inboxCutoff(now), now) > 0) afterCommit(Set.of(owner));
   }
 
   @Transactional(readOnly = true)

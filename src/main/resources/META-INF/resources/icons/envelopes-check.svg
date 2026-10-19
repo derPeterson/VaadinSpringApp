@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+  <!-- Konturen: Vaadin Icons 25.3.0 (envelope-open, check-circle), https://vaadin.com/icons.
+       Ein geöffneter Umschlag mit dem bestätigten gefüllten Häkchen-Badge rechts unten.
+       Freiraum und Häkchen sind transparent; sämtliche sichtbaren Flächen übernehmen currentColor. -->
+  <defs>
+    <mask id="notifications-read-all-badge-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+      <rect width="24" height="24" fill="white"/>
+      <circle cx="18" cy="18" r="6.5" fill="black"/>
+    </mask>
+  </defs>
+  <g mask="url(#notifications-read-all-badge-mask)">
+    <g transform="scale(1.25)"><path d="M14 3.7v3.7l2-1v-1.4z"></path>
+      <path d="M2 3.8l-2 1.2v1.5l2 1z"></path>
+      <path d="M11.2 2l-3.2-2-3.2 2z"></path>
+      <path d="M13 3h-10v4.9l3.4 1.7 1.6-1.2 1.6 1.2 3.4-1.7z"></path>
+      <path d="M16 7.6l-5.5 2.7 5.5 4.4z"></path>
+      <path d="M8 9.6l-8 6.4h16z"></path>
+      <path d="M5.5 10.3l-5.5-2.7v7.1z"></path></g>
+  </g>
+  <g transform="translate(12.5 12.5) scale(.6875)" fill-rule="evenodd"><path d="M8 0c-4.4 0-8 3.6-8 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zM7.1 11.7l-4.2-4.1 1.4-1.4 2.7 2.7 5-4.9 1.4 1.4-6.3 6.3z"></path></g>
+</svg>

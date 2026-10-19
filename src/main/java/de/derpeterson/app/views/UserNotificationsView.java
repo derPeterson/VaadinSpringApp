@@ -1,5 +1,6 @@
 package de.derpeterson.app.views;
 
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.shared.Registration;
@@ -16,10 +17,12 @@ import java.time.Clock;
 
 @Route(AppRouteConstants.NOTIFICATIONS_ROUTE)
 @PageTitle(AppRouteConstants.NOTIFICATIONS_PAGE_TITLE)
+@StyleSheet("custom-theme/cosmos-account.css")
 @UIScope
 @PermitAll
 public class UserNotificationsView extends IsAuthenticatedBaseView {
   private final UserNotificationsPanel inbox;
+  private final AccountNavigationTabs accountNavigation;
   private final Span overview = new Span();
   private final Span title = new Span();
   private final Span description = new Span();
@@ -39,13 +42,15 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
     addToNavbar(createApplicationHeader(config));
     var session = request.getSession(false);
     inbox = new UserNotificationsPanel(texts, notifications, session, false);
+    accountNavigation = new AccountNavigationTabs(texts, true);
     var sectionHeader = new CosmosSectionHeaderComponent(overview, title, description);
     var card = new CosmosCardComponent(inbox);
     card.addClassNames("cosmos-panel-card", "cosmos-notification-inbox-card");
+    var content = new Div(sectionHeader, accountNavigation, card);
+    content.addClassName("cosmos-notification-inbox-page");
     var main =
         new Div(
-            sectionHeader,
-            card,
+            content,
             new CosmosCopyrightComponent(
                 config, Clock.systemDefaultZone(), texts::getAccountCopyrightTemplate));
     main.addClassName("cosmos-app-main");
@@ -86,5 +91,6 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
     title.setText(messageProperties.getNotificationsTitle());
     description.setText(messageProperties.getNotificationsPageDescription());
     if (inbox != null) inbox.refreshTexts();
+    if (accountNavigation != null) accountNavigation.refreshTexts();
   }
 }

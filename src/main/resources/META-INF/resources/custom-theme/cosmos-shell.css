@@ -489,7 +489,7 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
 }
 /* Nur die Header-Vorschau erhält Dialogflächen und einen eigenen scrollenden Inhalt. */
 vaadin-popover[theme~="cosmos-notifications"]::part(overlay) {
-    width: min(440px, calc(100vw - 24px));
+    width: min(480px, calc(100vw - 24px));
     background: var(--cosmos-dialog-background);
     border-color: var(--cosmos-dialog-border-color);
 }
@@ -603,7 +603,8 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     display: block; min-width: 0; max-width: 100%; white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis;
 }
-.cosmos-notification-preview-title > .cosmos-notification-preview-dismiss {
+.cosmos-notification-preview-title > .cosmos-notification-preview-dismiss,
+.cosmos-notification-inbox-title > .cosmos-notification-preview-dismiss {
     flex-shrink: 0; width: var(--cosmos-pagination-size); min-width: var(--cosmos-pagination-size);
     height: var(--cosmos-pagination-size); min-height: var(--cosmos-pagination-size); padding: 0; margin: 0;
     color: var(--lumo-secondary-text-color);
@@ -617,7 +618,7 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
 .cosmos-notification-preview-dot[hidden] { display: none; }
 .cosmos-notification-preview-meta {
     display: flex; flex-wrap: wrap; align-items: center; gap: var(--cosmos-space-s);
-    margin-top: var(--cosmos-space-xs); color: var(--lumo-secondary-text-color);
+    margin-top: 0; color: var(--lumo-secondary-text-color);
     font-size: var(--cosmos-font-size-xs);
 }
 .cosmos-notification-preview-source { font-weight: var(--cosmos-font-weight-bold); }
@@ -635,11 +636,20 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
     overflow: hidden;
 }
+.cosmos-notification-preview-row-footer { margin-top: var(--cosmos-space-s); }
 .cosmos-notification-preview-actions {
-    display: flex; flex-wrap: wrap; align-items: center; gap: var(--cosmos-space-m);
-    margin-top: var(--cosmos-space-m);
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end;
+    gap: var(--cosmos-space-s); margin-inline-start: auto;
 }
 .cosmos-notification-preview-actions > vaadin-button { margin: 0; }
+.cosmos-notifications-panel vaadin-button.cosmos-notification-row-action {
+    width: var(--cosmos-control-height); min-width: var(--cosmos-control-height);
+    height: var(--cosmos-control-height); margin: 0; padding: 0;
+}
+.cosmos-notification-row-action > vaadin-icon {
+    font-size: var(--cosmos-control-icon-font-size);
+    width: var(--lumo-icon-size-m); height: var(--lumo-icon-size-m);
+}
 .cosmos-notification-preview-footer {
     display: flex; flex-direction: column; gap: var(--cosmos-space-m); flex-shrink: 0;
     padding: var(--cosmos-dialog-chrome-padding);
@@ -736,7 +746,8 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     line-height: var(--cosmos-line-height-copy); display: -webkit-box;
     -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
 }
-.cosmos-notification-inbox-row-footer {
+.cosmos-notification-inbox-row-footer,
+.cosmos-notification-preview-row-footer {
     display: flex; align-items: center; flex-wrap: wrap; min-width: 0;
     gap: var(--cosmos-space-s) var(--cosmos-space-l);
 }

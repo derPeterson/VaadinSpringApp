@@ -65,6 +65,41 @@ Spotless apply/check erfolgreich. Kein Produktions-/Frontendbuild und kein
 Browserlauf. Browserabnahme dieses Seitenkopfs offen. Shared ist installiert;
 Anwendung neu starten und Strg+F5.
 
+## Gemeinsame Konto-Seitenauswahl
+
+Unter dem Seitenkopf und über dem ersten Panel stehen auf der Konto- und der
+Benachrichtigungsseite die Tabs „Einstellungen“ (Cog) und „Benachrichtigungen“
+(Paperplane). Die gemeinsame Vaadin-Komponente verwendet dieselben CSS-Regeln
+wie die bestehenden Profil-/Sicherheits-/Gerätetabs, einschließlich gleich breiter
+Einträge, aktivem Unterstrich, Tastaturbedienung und Scrollverhalten. Ihre Breite
+folgt den mittig begrenzten Panels mit maximal 1100px. Seitenkopf, Tabs und erstes Panel liegen auf beiden
+Seiten in einer gemeinsamen Inhaltsgruppe mit `gap: var(--lumo-space-l)` (24px im
+bestehenden Theme). Der äußere Seitenabstand zum Copyright bleibt erhalten.
+
+Die aktive Auswahl folgt der aufgerufenen Seite; ein Wechsel navigiert nach
+`/account` beziehungsweise `/notifications`. Die vorhandenen drei Einstellungstabs
+und ihre Queryparameter bleiben erhalten. Beschriftungen und zugänglicher Name
+folgen einem Sprachwechsel. Die Komponente steht auf beiden Seiten an derselben
+Position; die Startseite erhält keine zusätzliche Tab-Leiste.
+
+Gezielter Nachweis: **177 JUnit-Prüfungen erfolgreich**, keine Fehler,
+Fehlschläge oder Skips: 20 gemeinsame Header-/Navigationsfälle, 21 Kontoseiten-,
+18 Kontokomponenten-, 105 Benachrichtigungskomponenten- und 13 Sprach-/Katalogfälle.
+Die Navigation ist in DE/EN für Benutzer/Admin/Superadmin einschließlich aktivem
+Tab, Position, Sprachwechsel, beiden Routenzielen und Wiederanheften ohne erneute
+Navigation geprüft. Der zunächst unvollständige UI-Router-Testaufbau wurde durch
+eine eigene aufzeichnende Test-UI ersetzt. Shared und sämtliche Java-/Testquellen
+mit Java 25 in eigener Quellkopie gebaut, 357 Quelldateien abgeglichen; Spotless,
+CSS-Syntax und Diffprüfung erfolgreich. Keine Browserprüfung und kein
+Produktions-/Frontendbuild. Zur Übernahme: Shared ist installiert; Anwendung
+neu starten und Strg+F5.
+
+Nachtest der einheitlichen Seitenabstände: 125 Komponenten-/Headerprüfungen
+erfolgreich, keine Fehler/Skips. Java-/Testkompilierung mit Java 25 in eigener
+Quellkopie, 357 Quelldateien abgeglichen, Spotless apply/check, CSS-Syntax und
+Diffprüfung erfolgreich. Keine Browserprüfung. Zur Übernahme Strg+F9, Reload
+und Strg+F5.
+
 ## Persönlicher Posteingang: Panelentwurf
 
 Die Inbox steht als mittig begrenzte Standard-Card (maximal 1100 px) unter dem
@@ -75,8 +110,9 @@ unabhängig von der aktuellen Suche und Seite; entfernte/abgelaufene Einträge f
 
 Die Werkzeugleiste zeigt links die Suche über Betreff/Nachricht/Herkunft, mittig
 die native Segmentauswahl Alle/Gelesen/Ungelesen mit denselben Styles wie die
-Header-Vorschau und rechts zwei Iconbuttons: Aktualisieren (Refresh) sowie alle als
-gelesen markieren (Envelope Open). Beide Buttons haben lokalisierte Tooltips und
+Header-Vorschau und rechts drei Iconbuttons: Aktualisieren (Refresh), alle als
+gelesen markieren (eigenes SVG mit geöffnetem Umschlag und Häkchen) sowie alle
+gelesenen Benachrichtigungen löschen (roter Mülleimer). Die Buttons haben lokalisierte Tooltips und
 zugängliche Namen; der bisherige Erklärungstext unter der Leiste ist entfernt.
 Bei schmalen Ansichten stehen Suche und Icons oben, die Segmentauswahl mittig
 darunter. Standardfilter ist Alle. Alle drei Zustände gelten auch bei der Suche und
@@ -93,13 +129,28 @@ für sämtliche Ergebnisse und Zähler wirksam.
 Karten zeigen Betreff, höchstens drei Vorschauzeilen, Datum, fett gesetzte Herkunft
 und Lesestatus-Badge. Metadaten und Aktionsbuttons teilen sich die unterste Zeile:
 Metadaten links, Aktionen rechts, vertikal mittig ausgerichtet. Bei wenig Platz dürfen
-die Aktionen unter die Metadaten umbrechen. Die kompakte Header-Vorschau behält ihre
-linksbündigen Aktionen. Betreff und Vorschautext nutzen darüber die gesamte
+die Aktionen unter die Metadaten umbrechen. Auch die Header-Vorschau zeigt Betreff
+und Nachricht vor einer gemeinsamen untersten Zeile mit Metadaten links und
+Iconbuttons rechts; bei wenig Platz darf diese Zeile umbrechen. Betreff und Vorschautext nutzen darüber die gesamte
 Kartenbreite; lange Betreffzeilen bleiben einzeilig mit Auslassungszeichen. Die inneren
 Gridspalten dürfen schrumpfen, damit weder Titel noch Vorschautext über die Karte
 laufen. Der vollständige Inhalt bleibt im Detaildialog verfügbar. CSS-Syntax geprüft,
 Browserabnahme der neuen Anordnung offen.
 Hintergrund und Ungelesen-Punkt entsprechen dem Overlay.
+Inbox und Overlay haben dasselbe Lösch-X rechts in der Betreffzeile (Close Circle,
+20px-Icon, lokalisierter Tooltip und zugänglicher Name mit Betreff). Beide verwenden
+die gemeinsame Button-Erzeugung und persönliche Löschaktion. Liste und Zähler
+werden danach aktualisiert; es wird weder ein Dialog geöffnet noch als gelesen
+markiert. Versandhistorie und andere Empfänger bleiben unberührt.
+Gezielter Nachtest: 101 Komponentenprüfungen erfolgreich, keine Fehler/Skips;
+vier neue DE/EN-Ausprägungen für gelesene und ungelesene Inboxeinträge prüfen
+Löschaktion, Tooltip, Empfänger-ID sowie Listen-/Zähleraktualisierung. Spotless,
+CSS-Syntax und Java-Build in eigener Quellkopie erfolgreich; keine Browserprüfung.
+„Öffnen“ und „Als gelesen markieren“ sind in Inbox und Header-Vorschau quadratische
+36px-Secondary-Iconbuttons mit Auge beziehungsweise Envelope Open. Ihre Texte
+stehen als lokalisierte Tooltips bereit; zugängliche Namen enthalten zusätzlich den
+Betreff. Die Einzel-Leseaktion bleibt nur für ungelesene Einträge sichtbar. Die
+beschrifteten Aktionen im Detaildialog bleiben erhalten.
 Einfacher Klick auf die Kartenfläche, Titel oder „Öffnen“ öffnet den bestehenden
 Detaildialog; Button-Ereignisse lösen die Kartenaktion nicht zusätzlich aus.
 „Als gelesen markieren“ betrifft nur den eigenen Eintrag. Öffnen verändert den
@@ -147,6 +198,50 @@ Java 25 in isolierter und per Hash abgeglichener Quellkopie gebaut; Spotless und
 CSS-Syntax erfolgreich. Kein Browserlauf oder Produktions-/Frontendbuild.
 Durch die neue Suchüberladung und den entfernten Hinweistext zur Übernahme
 Anwendung neu starten und Strg+F5.
+
+## Gelesene Benachrichtigungen gesammelt entfernen
+
+Nur auf der Seite „Alle Benachrichtigungen“ steht direkt rechts neben der Sammel-
+Leseaktion ein roter Mülleimer im bestehenden Delete-Button-Stil. Tooltip und
+zugänglicher Name lauten „Alle gelesenen Benachrichtigungen löschen“ (DE/EN).
+Im Header-Overlay wird dieser Button nicht angeboten. Ohne gelesene Einträge ist
+er deaktiviert. Suche, Lesestatusfilter und aktuelle Seite begrenzen die Aktion
+nicht; sie bleiben bei der anschließenden Aktualisierung erhalten, soweit die
+Seite noch vorhanden ist.
+
+Die Aktion entfernt ausschließlich aktuell gelesene, noch sichtbare Einträge des
+eigenen Kontos innerhalb der aktuellen Inbox-Aufbewahrung. Ungelesene Nachrichten,
+andere Empfänger und die Versandhistorie bleiben erhalten. Wie beim einzelnen X
+bleiben Empfangseinträge als persönlich ausgeblendet gespeichert, damit ein
+idempotenter Versandwiederholungsversuch sie nicht wieder einblendet. Die Datenbank
+prüft Eigentümer und Lesestatus unmittelbar beim Update. Erst nach erfolgreichem
+Commit werden die betroffenen Kontoansichten aktualisiert; ein wirkungsloser
+Wiederholungsaufruf und ein Rollback senden kein Ereignis.
+
+Gezielter Nachweis: **189 JUnit-Prüfungen erfolgreich**, keine Fehler,
+Fehlschläge oder Skips: 105 Komponenten-, 71 H2-Persistenz- und 13 Sprach-/Katalog-
+prüfungen. Neue Fälle prüfen die globale Aktion trotz Such-/Ungelesenfilter,
+Position/Tooltip/Deaktivierung, ihr Fehlen im Overlay, Eigentümertrennung,
+ungelesene und abgelaufene Einträge, unbegrenzte Aufbewahrung, automatische
+Hinweise, Versandhistorie, Idempotenz, Berechtigung und Rollback. Shared und alle
+Java-/Testquellen mit Java 25 in eigener Quellkopie gebaut; 356 Quelldateien und
+das SVG mit dem geprüften Stand abgeglichen. Spotless apply/check und Diffprüfung
+erfolgreich. Keine Browserprüfung und kein Produktions-/Frontendbuild.
+Zur Übernahme: Shared ist installiert; Anwendung neu starten und Strg+F5.
+
+## Eindeutiges Icon für die Sammel-Leseaktion
+
+„Alle als gelesen markieren“ verwendet in Header-Vorschau und Inbox dasselbe
+`icons/envelopes-check.svg`: ein geöffneter Vaadin-Umschlag mit einem gefüllten
+Bestätigungsbadge rechts unten. Die zusätzlichen Umschläge sind entfernt, damit
+die Sammelaktion bei normaler Icongröße klar erkennbar bleibt. Das SVG übernimmt
+`currentColor`; Freiräume und das Häkchen bleiben
+transparent, wie das vorhandene Geräte-Icon. Buttongrößen, Tooltips und Aktionen
+bleiben erhalten; einzelne Nachrichten verwenden weiterhin Envelope Open.
+97 gezielte Komponentenprüfungen erfolgreich, keine Fehler/Skips. SVG-Struktur
+geprüft und als Bild gerendert/angesehen; Java 25 in eigener Quellkopie gebaut,
+Spotless und Diffprüfung erfolgreich. Keine Browserprüfung oder neue Coverage.
+Zur Übernahme Strg+F9, Reload und Strg+F5.
 
 ## Header-Vorschau: Entwurf vom 19.10.2026
 

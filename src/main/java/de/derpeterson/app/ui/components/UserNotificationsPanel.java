@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.*;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.TextField;
@@ -37,6 +38,7 @@ public class UserNotificationsPanel extends Div {
   private final RadioButtonGroup<ReadFilter> readFilter = new RadioButtonGroup<>();
   private boolean updatingFilterLabels;
   private final Button markAll = new Button();
+  private final Button dismissRead = new Button(VaadinIcon.TRASH.create());
   private final Button previous = new Button();
   private final Button next = new Button();
   private final Button refresh = new Button();
@@ -85,6 +87,18 @@ public class UserNotificationsPanel extends Div {
         });
     var toolbar = new Div(readFilter, refresh);
     toolbar.addClassName("cosmos-notifications-actions");
+    var readAllIcon = new SvgIcon("icons/envelopes-check.svg");
+    readAllIcon.getElement().setAttribute("aria-hidden", "true");
+    markAll.setIcon(readAllIcon);
+    dismissRead.addClassName("cosmos-delete-button");
+    dismissRead.setEnabled(false);
+    dismissRead.addClickListener(
+        e ->
+            action(
+                () -> {
+                  service.dismissRead(session);
+                  if (detail != null && openedItem != null && openedItem.read()) detail.close();
+                }));
     refresh.addClickListener(e -> refresh());
     markAll.addClickListener(
         e ->
@@ -142,7 +156,6 @@ public class UserNotificationsPanel extends Div {
       refresh.setIcon(VaadinIcon.REFRESH.create());
       refresh.addClassNames(
           "cosmos-notification-preview-refresh", "cosmos-notification-preview-tool");
-      markAll.setIcon(VaadinIcon.ENVELOPE_OPEN.create());
       markAll.addClassNames(
           "cosmos-notification-preview-mark-all", "cosmos-notification-preview-tool");
       toolbar.add(markAll);
@@ -169,7 +182,6 @@ public class UserNotificationsPanel extends Div {
       var header = new Div(icon, titles, counts);
       header.addClassNames("cosmos-panel-header", "cosmos-notification-inbox-header");
       refresh.setIcon(VaadinIcon.REFRESH.create());
-      markAll.setIcon(VaadinIcon.ENVELOPE_OPEN.create());
       search.setId("notifications-inbox-search");
       search.setPrefixComponent(VaadinIcon.SEARCH.create());
       search.setClearButtonVisible(true);
@@ -180,10 +192,11 @@ public class UserNotificationsPanel extends Div {
             page = 0;
             refresh();
           });
-      var tools = new Div(refresh, markAll);
+      var tools = new Div(refresh, markAll, dismissRead);
       tools.addClassName("cosmos-notification-inbox-tools");
       refresh.addClassName("cosmos-notification-inbox-tool");
       markAll.addClassName("cosmos-notification-inbox-tool");
+      dismissRead.addClassName("cosmos-notification-inbox-tool");
       toolbar.removeAll();
       toolbar.add(search, readFilter, tools);
       toolbar.addClassName("cosmos-notification-inbox-toolbar");
@@ -257,6 +270,8 @@ public class UserNotificationsPanel extends Div {
     refresh.setTooltipText(texts.getNotificationsRefresh());
     markAll.setAriaLabel(texts.getNotificationsMarkAll());
     markAll.setTooltipText(texts.getNotificationsMarkAll());
+    dismissRead.setTooltipText(texts.getNotificationsDismissRead());
+    dismissRead.setAriaLabel(texts.getNotificationsDismissRead());
     pageLabel.setText(texts.getAdminUsersPaginationPerPage());
     pageSize.setAriaLabel(texts.getAdminUsersPaginationPerPage());
     previous.setAriaLabel(texts.getNotificationsPrevious());
@@ -342,6 +357,7 @@ public class UserNotificationsPanel extends Div {
                 });
       }
       markAll.setEnabled(!unreadIds.isEmpty());
+      dismissRead.setEnabled(!compact && service.readCount(session) > 0);
       rows.removeAll();
       if (result.isEmpty()) {
         var empty =
@@ -379,6 +395,7 @@ public class UserNotificationsPanel extends Div {
     rows.removeAll();
     rows.add(new Span(texts.getNotificationsUnavailable()));
     markAll.setEnabled(false);
+    dismissRead.setEnabled(false);
     previous.setEnabled(false);
     next.setEnabled(false);
     first.setEnabled(false);
@@ -434,7 +451,7 @@ public class UserNotificationsPanel extends Div {
     dot.addClassName("cosmos-notification-preview-dot");
     dot.getElement().setAttribute("aria-hidden", "true");
     dot.setVisible(!item.read());
-    var titleRow = new Div(dot, title);
+    var titleRow = new Div(dot, title, dismissButton(item));
     titleRow.addClassName("cosmos-notification-inbox-title");
     var source = new Span(source(item));
     source.addClassName("cosmos-notification-preview-source");
@@ -447,19 +464,15 @@ public class UserNotificationsPanel extends Div {
     body.addClassNames("cosmos-notification-body", "cosmos-notification-inbox-message");
     var content = new Div(titleRow, body);
     content.addClassName("cosmos-notification-inbox-content");
-    var open =
-        new Button(
-            texts.getNotificationsOpen(), VaadinIcon.EYE.create(), e -> action(() -> open(item)));
-    open.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    var open = new Button(VaadinIcon.EYE.create(), e -> action(() -> open(item)));
+    open.addClassNames("cosmos-notification-row-action", "cosmos-notification-row-open");
+    open.setTooltipText(texts.getNotificationsOpen());
     open.setAriaLabel(
         texts.getNotificationsOpen() + ": " + UserNotificationTexts.title(texts, item));
-    var mark =
-        new Button(
-            texts.getNotificationsMarkRead(),
-            VaadinIcon.ENVELOPE_OPEN.create(),
-            e -> action(() -> markRead(item)));
+    var mark = new Button(VaadinIcon.ENVELOPE_OPEN.create(), e -> action(() -> markRead(item)));
     mark.setVisible(!item.read());
-    mark.addClassName("cosmos-notification-inbox-mark-read");
+    mark.addClassNames("cosmos-notification-inbox-mark-read", "cosmos-notification-row-action");
+    mark.setTooltipText(texts.getNotificationsMarkRead());
     mark.setAriaLabel(
         texts.getNotificationsMarkRead() + ": " + UserNotificationTexts.title(texts, item));
     var actions = new Div(open, mark);
@@ -477,13 +490,7 @@ public class UserNotificationsPanel extends Div {
     return row;
   }
 
-  private Div previewRow(Item item, Button title, Span time, Span state) {
-    var dot = new Span();
-    dot.addClassName("cosmos-notification-preview-dot");
-    dot.getElement().setAttribute("aria-hidden", "true");
-    dot.setVisible(!item.read());
-    var titleRow = new Div(dot, title);
-    titleRow.addClassName("cosmos-notification-preview-title");
+  private Button dismissButton(Item item) {
     var dismiss =
         new Button(
             VaadinIcon.CLOSE_CIRCLE.create(),
@@ -499,7 +506,17 @@ public class UserNotificationsPanel extends Div {
     dismiss.setTooltipText(texts.getNotificationsDismiss());
     dismiss.setAriaLabel(
         texts.getNotificationsDismiss() + ": " + UserNotificationTexts.title(texts, item));
-    titleRow.add(dismiss);
+    return dismiss;
+  }
+
+  private Div previewRow(Item item, Button title, Span time, Span state) {
+    var dot = new Span();
+    dot.addClassName("cosmos-notification-preview-dot");
+    dot.getElement().setAttribute("aria-hidden", "true");
+    dot.setVisible(!item.read());
+    var titleRow = new Div(dot, title);
+    titleRow.addClassName("cosmos-notification-preview-title");
+    titleRow.add(dismissButton(item));
     var source =
         new Span(
             item.type() == UserNotificationType.ADMIN_ANNOUNCEMENT
@@ -513,20 +530,23 @@ public class UserNotificationsPanel extends Div {
     var body = new Div();
     body.setText(UserNotificationTexts.body(texts, item));
     body.addClassNames("cosmos-notification-body", "cosmos-notification-preview-message");
-    var open = new Button(texts.getNotificationsOpen(), e -> action(() -> open(item)));
-    open.setIcon(VaadinIcon.EYE.create());
+    var open = new Button(VaadinIcon.EYE.create(), e -> action(() -> open(item)));
     open.setAriaLabel(
         texts.getNotificationsOpen() + ": " + UserNotificationTexts.title(texts, item));
-    open.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    var markRead = new Button(texts.getNotificationsMarkRead(), e -> action(() -> markRead(item)));
-    markRead.setIcon(VaadinIcon.ENVELOPE_OPEN.create());
-    markRead.addClassName("cosmos-notification-preview-mark-read");
+    open.addClassNames("cosmos-notification-row-action", "cosmos-notification-row-open");
+    open.setTooltipText(texts.getNotificationsOpen());
+    var markRead = new Button(VaadinIcon.ENVELOPE_OPEN.create(), e -> action(() -> markRead(item)));
+    markRead.addClassNames(
+        "cosmos-notification-preview-mark-read", "cosmos-notification-row-action");
+    markRead.setTooltipText(texts.getNotificationsMarkRead());
     markRead.setVisible(!item.read());
     markRead.setAriaLabel(
         texts.getNotificationsMarkRead() + ": " + UserNotificationTexts.title(texts, item));
     var actions = new Div(open, markRead);
     actions.addClassName("cosmos-notification-preview-actions");
-    var row = new Div(titleRow, meta, body, actions);
+    var footer = new Div(meta, actions);
+    footer.addClassName("cosmos-notification-preview-row-footer");
+    var row = new Div(titleRow, body, footer);
     row.addClassNames("cosmos-notification-row", "cosmos-notification-preview-row");
     row.getElement().setAttribute("data-notification-id", item.id().toString());
     if (!item.read()) row.addClassName("cosmos-notification-row--unread");

@@ -488,6 +488,94 @@ class UserNotificationServicePersistenceTest {
   }
 
   @Test
+  void dismissReadPreservesUnreadOtherOwnersHistoryAndIdempotency() {
+    var key = UUID.randomUUID();
+    var preview = everyone();
+    var sent = service.send(adminSession, key, "Read notice", "Body", preview);
+    var own = service.inbox(userSession, false, 0, 20).getContent().getFirst();
+    var other = service.inbox(adminSession, false, 0, 20).getContent().getFirst();
+    service.markRead(userSession, List.of(own.id()));
+    service.markRead(adminSession, List.of(other.id()));
+    broadcast();
+    var unread = service.inbox(userSession, true, 0, 20).getContent().getFirst();
+    var expired = broadcast();
+    var expiredReceipt = service.inbox(userSession, false, 0, 20).getContent().getFirst();
+    service.markRead(userSession, List.of(expiredReceipt.id()));
+    createdAt(expired.id(), Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS));
+    assertEquals(1, service.readCount(userSession));
+    var pushes = new ArrayList<Set<Long>>();
+    subscriptions.add(events.register(pushes::add));
+    service.dismissRead(userSession);
+    service.dismissRead(userSession);
+    assertEquals(List.of(Set.of(ordinary.getId())), pushes);
+    assertEquals(0, service.readCount(session(ordinary)));
+    assertEquals(
+        List.of(unread.id()),
+        service.inbox(userSession, false, 0, 20).stream().map(Item::id).toList());
+    assertEquals(1, service.unreadCount(userSession));
+    assertEquals(1, service.readCount(adminSession));
+    assertNull(recipients.findById(other.id()).orElseThrow().getDismissedAt());
+    assertNull(recipients.findById(expiredReceipt.id()).orElseThrow().getDismissedAt());
+    var removed = recipients.findById(own.id()).orElseThrow();
+    assertNotNull(removed.getDismissedAt());
+    assertNotNull(removed.getReadAt());
+    assertEquals(3, service.sent(adminSession, 0, 20).getTotalElements());
+    assertEquals(3, recipients.recipientIds(sent.id()).size());
+    assertEquals(sent.id(), service.send(adminSession, key, "Read notice", "Body", preview).id());
+    assertEquals(0, service.readCount(userSession));
+    assertEquals(1, service.inbox(userSession, false, 0, 20).getTotalElements());
+  }
+
+  @Test
+  void dismissReadRollbackAndAuthorizationDoNotRemoveEntriesOrPublish() {
+    broadcast();
+    var own = service.inbox(userSession, false, 0, 20).getContent().getFirst();
+    service.markRead(userSession, List.of(own.id()));
+    var pushes = new ArrayList<Set<Long>>();
+    subscriptions.add(events.register(pushes::add));
+    tx.executeWithoutResult(
+        status -> {
+          service.dismissRead(userSession);
+          assertTrue(pushes.isEmpty());
+          status.setRollbackOnly();
+        });
+    assertTrue(pushes.isEmpty());
+    assertEquals(1, service.readCount(userSession));
+    assertNull(recipients.findById(own.id()).orElseThrow().getDismissedAt());
+    assertThrows(AccessDeniedException.class, () -> service.dismissRead(null));
+    assertThrows(AccessDeniedException.class, () -> service.readCount(null));
+    mutate(ordinary, user -> user.setEnabled(false));
+    assertThrows(AccessDeniedException.class, () -> service.dismissRead(userSession));
+    assertThrows(AccessDeniedException.class, () -> service.readCount(userSession));
+    assertTrue(pushes.isEmpty());
+    assertNull(recipients.findById(own.id()).orElseThrow().getDismissedAt());
+  }
+
+  @Test
+  void dismissReadHonorsUnlimitedRetentionAndHandlesAutomaticNotifications() {
+    var sent = broadcast();
+    var manual = service.inbox(userSession, false, 0, 20).getContent().getFirst();
+    service.markRead(userSession, List.of(manual.id()));
+    createdAt(sent.id(), Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS));
+    tx.executeWithoutResult(
+        status ->
+            service.recordSecurityEvent(
+                users.findById(ordinary.getId()).orElseThrow(),
+                UserNotificationType.PASSWORD_CHANGED));
+    var automatic = service.inbox(userSession, false, 0, 20).getContent().getFirst();
+    service.markRead(userSession, List.of(automatic.id()));
+    assertEquals(1, service.readCount(userSession));
+    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("");
+    assertEquals(2, service.readCount(userSession));
+    service.dismissRead(userSession);
+    assertTrue(service.inbox(userSession, false, 0, 20).isEmpty());
+    assertEquals(0, service.readCount(userSession));
+    assertNotNull(recipients.findById(manual.id()).orElseThrow().getDismissedAt());
+    assertNotNull(recipients.findById(automatic.id()).orElseThrow().getDismissedAt());
+    assertEquals(2, notificationCount());
+  }
+
+  @Test
   void dismissedNotificationDoesNotReappearOnIdempotentSendRetry() {
     var preview = everyone();
     var key = UUID.randomUUID();

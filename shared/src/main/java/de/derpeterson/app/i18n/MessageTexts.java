@@ -1481,6 +1481,10 @@ public class MessageTexts {
   }
 
   // Kontoverwaltung: erste Gestaltungsstufe, ohne schreibende Kontoaktionen.
+  public String getAccountNavigationSettings() {
+    return getTranslation("account.navigation.settings");
+  }
+
   public String getAccountSettingsOverview() {
     return getTranslation("accountSettings.overview");
   }
@@ -1932,6 +1936,10 @@ public class MessageTexts {
 
   public String getNotificationsDismiss() {
     return getTranslation("notifications.dismiss");
+  }
+
+  public String getNotificationsDismissRead() {
+    return getTranslation("notifications.dismissRead");
   }
 
   public String getNotificationsOpen() {

@@ -93,7 +93,12 @@ public class AccountSettingsComponent extends Div {
     var breadcrumb = text(new Span(), messages::getAccountSettingsOverview);
     var title = text(new Span(), messages::getAccountSettingsTitle);
     var description = text(new Span(), messages::getAccountSettingsDescription);
-    add(new CosmosSectionHeaderComponent(breadcrumb, title, description), summary(user));
+    var navigation = new AccountNavigationTabs(messages, false);
+    textUpdates.add(navigation::refreshTexts);
+    add(
+        new CosmosSectionHeaderComponent(breadcrumb, title, description),
+        navigation,
+        summary(user));
 
     tabs.setId("account-tabs");
     tabs.addClassName("account-tabs");

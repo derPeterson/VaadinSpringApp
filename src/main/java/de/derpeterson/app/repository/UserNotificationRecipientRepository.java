@@ -54,6 +54,10 @@ public interface UserNotificationRecipientRepository
   long countUnread(@Param("owner") Long owner, @Param("cutoff") Instant cutoff);
 
   @Query(
+      "select count(r) from UserNotificationRecipientEntity r where r.user.id = :owner and r.dismissedAt is null and r.readAt is not null and (:cutoff is null or r.notification.createdAt >= :cutoff)")
+  long countRead(@Param("owner") Long owner, @Param("cutoff") Instant cutoff);
+
+  @Query(
       "select r.id from UserNotificationRecipientEntity r where r.user.id = :owner and r.dismissedAt is null and r.readAt is null and (:cutoff is null or r.notification.createdAt >= :cutoff)")
   List<Long> unreadIds(@Param("owner") Long owner, @Param("cutoff") Instant cutoff);
 
@@ -67,6 +71,12 @@ public interface UserNotificationRecipientRepository
   @Query(
       "update UserNotificationRecipientEntity r set r.dismissedAt = :now where r.user.id = :owner and r.id = :id and r.dismissedAt is null")
   int dismiss(@Param("owner") Long owner, @Param("id") Long id, @Param("now") Instant now);
+
+  @Modifying
+  @Query(
+      "update UserNotificationRecipientEntity r set r.dismissedAt = :now where r.user.id = :owner and r.dismissedAt is null and r.readAt is not null and (:cutoff is null or r.notification.id in (select n.id from UserNotificationEntity n where n.createdAt >= :cutoff))")
+  int dismissRead(
+      @Param("owner") Long owner, @Param("cutoff") Instant cutoff, @Param("now") Instant now);
 
   @Query(
       "select r.user.id from UserNotificationRecipientEntity r where r.notification.id = :notification order by r.user.id")

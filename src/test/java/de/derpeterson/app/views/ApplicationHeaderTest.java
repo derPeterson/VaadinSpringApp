@@ -7,7 +7,9 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -22,6 +24,7 @@ import de.derpeterson.app.security.SessionManagementService;
 import de.derpeterson.app.service.*;
 import de.derpeterson.app.ui.base.TrackedUserAppLayout;
 import de.derpeterson.app.ui.components.AccountHeaderActions;
+import de.derpeterson.app.ui.components.AccountNavigationTabs;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import java.util.*;
@@ -203,6 +206,61 @@ class ApplicationHeaderTest {
       verify(ui).navigate(LoginView.class);
       assertNull(menuButton(menu, "logoutButton"));
     }
+    var accountNavigation = tree(view).filter(AccountNavigationTabs.class::isInstance).toList();
+    if (page.equals("home")) {
+      assertTrue(accountNavigation.isEmpty());
+    } else {
+      assertEquals(1, accountNavigation.size());
+      var navigation = (AccountNavigationTabs) accountNavigation.getFirst();
+      assertTrue(navigation.hasClassName("account-navigation-tabs"));
+      assertEquals(
+          texts.getAccountSettingsTitle(), navigation.getElement().getAttribute("aria-label"));
+      var tabs = navigation.getChildren().map(Tab.class::cast).toList();
+      assertEquals(2, tabs.size());
+      assertEquals(texts.getAccountNavigationSettings(), tabLabel(tabs.getFirst()));
+      assertEquals(texts.getNotificationsTitle(), tabLabel(tabs.getLast()));
+      assertSame(
+          page.equals("account") ? tabs.getFirst() : tabs.getLast(), navigation.getSelectedTab());
+      var parentChildren = navigation.getParent().orElseThrow().getChildren().toList();
+      assertEquals(1, parentChildren.indexOf(navigation));
+      assertTrue(parentChildren.get(0).hasClassName("cosmos-dashboard-introduction"));
+      assertTrue(
+          parentChildren
+              .get(2)
+              .hasClassName(
+                  page.equals("account") ? "account-summary" : "cosmos-notification-inbox-card"));
+      var routeRequests = new ArrayList<Class<? extends Component>>();
+      var tabUi =
+          new UI() {
+            @Override
+            public <T extends Component> Optional<T> navigate(Class<T> target) {
+              routeRequests.add(target);
+              return Optional.empty();
+            }
+          };
+      tabUi.getInternals().setSession(session);
+      tabUi.add(navigation);
+      navigation.setSelectedTab(page.equals("account") ? tabs.getLast() : tabs.getFirst());
+      assertEquals(
+          List.of(page.equals("account") ? UserNotificationsView.class : AccountView.class),
+          routeRequests);
+      tabUi.remove(navigation);
+      routeRequests.clear();
+      tabUi.add(navigation);
+      assertSame(
+          page.equals("account") ? tabs.getFirst() : tabs.getLast(), navigation.getSelectedTab());
+      assertTrue(routeRequests.isEmpty());
+      tabUi.remove(navigation);
+    }
+  }
+
+  private String tabLabel(Tab tab) {
+    return tab.getChildren()
+        .filter(Span.class::isInstance)
+        .map(Span.class::cast)
+        .findFirst()
+        .orElseThrow()
+        .getText();
   }
 
   private Button menuButton(UserPopoverMenu menu, String name) {
