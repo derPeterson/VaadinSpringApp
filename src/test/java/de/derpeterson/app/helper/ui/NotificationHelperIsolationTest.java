@@ -1,7 +1,10 @@
 package de.derpeterson.app.helper.ui;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
@@ -22,14 +25,14 @@ class NotificationHelperIsolationTest {
   private final List<VaadinSession> sessions = new ArrayList<>();
 
   private VaadinSession session() {
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     sessions.add(session);
     return session;
   }
 
   private UI window(VaadinSession session) {
-    var ui = new UI();
+    UI ui = new UI();
     ui.getInternals().setSession(session);
     windows.add(ui);
     select(ui);
@@ -67,13 +70,13 @@ class NotificationHelperIsolationTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void anotherWindowCannotCloseTheExistingNotice(boolean sameSession) {
-    var firstSession = session();
-    var first = window(firstSession);
+    VaadinSession firstSession = session();
+    UI first = window(firstSession);
     show("Hinweis des ersten Fensters");
-    var firstNotice = notification(NotificationHelper.getInstance());
-    var second = window(sameSession ? firstSession : session());
+    Notification firstNotice = notification(NotificationHelper.getInstance());
+    UI second = window(sameSession ? firstSession : session());
     show("Hinweis des zweiten Fensters");
-    var secondNotice = notification(NotificationHelper.getInstance());
+    Notification secondNotice = notification(NotificationHelper.getInstance());
     assertTrue(
         firstNotice.isOpened(), "Das andere Fenster darf den ersten Hinweis nicht schließen");
     assertTrue(secondNotice.isOpened());
@@ -86,17 +89,17 @@ class NotificationHelperIsolationTest {
 
   @Test
   void languageRefreshKeepsOtherWindowsTextAndSuppliers() {
-    var first = window(session());
-    var firstText = new AtomicReference<>("Erste Meldung DE");
-    var firstHelper = NotificationHelper.getInstance();
+    UI first = window(session());
+    AtomicReference<String> firstText = new AtomicReference<>("Erste Meldung DE");
+    NotificationHelper firstHelper = NotificationHelper.getInstance();
     firstHelper.showNotification(
         null, firstText::get, 0, NotificationHelper.NotificationType.ERROR);
     window(session());
-    var secondText = new AtomicReference<>("Second notice EN");
-    var secondHelper = NotificationHelper.getInstance();
+    AtomicReference<String> secondText = new AtomicReference<>("Second notice EN");
+    NotificationHelper secondHelper = NotificationHelper.getInstance();
     secondHelper.showNotification(
         null, secondText::get, 0, NotificationHelper.NotificationType.ERROR);
-    var secondMessage = message(secondHelper);
+    Html secondMessage = message(secondHelper);
     select(first);
     firstText.set("First notice EN");
     NotificationHelper.getInstance().updateText();
@@ -110,7 +113,7 @@ class NotificationHelperIsolationTest {
   void missingCurrentWindowCannotReuseAnExistingUsersHelper() {
     window(session());
     show("Privater Hinweis");
-    var current = notification(NotificationHelper.getInstance());
+    Notification current = notification(NotificationHelper.getInstance());
     UI.setCurrent(null);
     assertThrows(IllegalStateException.class, NotificationHelper::getInstance);
     assertTrue(current.isOpened());

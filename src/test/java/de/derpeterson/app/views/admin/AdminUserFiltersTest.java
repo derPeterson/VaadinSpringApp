@@ -1,6 +1,7 @@
 package de.derpeterson.app.views.admin;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
@@ -30,10 +31,12 @@ class AdminUserFiltersTest {
 
   @Test
   void searchMatchesOnlyNameAndEmailIgnoringCaseAndSurroundingSpaces() {
-    for (String query : List.of("", " LENA BAUER ", "bauer", "LENA@EXAMPLE"))
+    for (String query : List.of("", " LENA BAUER ", "bauer", "LENA@EXAMPLE")) {
       assertTrue(new AdminUserFilters(query, null, null, null, null).matches(user()), query);
-    for (String query : List.of("offline", "administrator", "2026", "absent", "no match"))
+    }
+    for (String query : List.of("offline", "administrator", "2026", "absent", "no match")) {
       assertFalse(new AdminUserFilters(query, null, null, null, null).matches(user()), query);
+    }
   }
 
   @Test

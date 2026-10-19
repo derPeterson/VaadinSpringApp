@@ -1,21 +1,32 @@
 package de.derpeterson.app.ui.components;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import com.vaadin.flow.component.*;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.helper.ui.NotificationHelper;
-import de.derpeterson.app.i18n.*;
-import de.derpeterson.app.security.*;
-import de.derpeterson.app.security.SessionManagementService.*;
+import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.security.DeviceDescription;
+import de.derpeterson.app.security.SessionManagementService.Entry;
+import de.derpeterson.app.security.SessionManagementService.Snapshot;
 import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.atomic.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -104,7 +115,7 @@ class AccountSessionsComponentTest {
   void realRowsDistinguishCurrentActiveAndSavedSignInsAndTranslate(String language) {
     locale.set(Locale.forLanguageTag(language));
     component.refreshTexts();
-    var expected = MessageProperties.forLocale(provider, locale.get());
+    MessageProperties expected = MessageProperties.forLocale(provider, locale.get());
     String content = component.getElement().getTextRecursively();
     assertTrue(content.contains("2 " + expected.getAccountSettingsSessionsActiveTitle()));
     assertTrue(content.contains(expected.getAccountSettingsSessionsLimit(7)));
@@ -129,7 +140,7 @@ class AccountSessionsComponentTest {
             .getElement()
             .getTextRecursively()
             .contains("1 " + texts.getAccountSettingsSessionsActiveTitle()));
-    var supplier =
+    Supplier<String> supplier =
         (Supplier<String>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
     assertEquals(texts.getSessionRevoked(), supplier.get());
@@ -154,7 +165,7 @@ class AccountSessionsComponentTest {
         () -> {});
     button("session-revoke-other-handle").click();
     assertTrue(button("session-revoke-other-handle").isEnabled());
-    var supplier =
+    Supplier<String> supplier =
         (Supplier<String>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
     assertEquals(texts.getSessionManagementFailed(), supplier.get());
@@ -163,7 +174,7 @@ class AccountSessionsComponentTest {
 
   @Test
   void refreshDropsStaleRowsOnExpiredAccessAndRunsTheRecoveryExitAction() {
-    var exited = new AtomicInteger();
+    AtomicInteger exited = new AtomicInteger();
     component.setFailureAction(exited::incrementAndGet);
     component.configure(
         () -> {

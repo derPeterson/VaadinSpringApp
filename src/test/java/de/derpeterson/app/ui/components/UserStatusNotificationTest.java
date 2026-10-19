@@ -1,7 +1,14 @@
 package de.derpeterson.app.ui.components;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
@@ -45,7 +52,7 @@ class UserStatusNotificationTest {
   void setup() {
     ui = new UI();
     session = mock(VaadinSession.class);
-    var locale = new AtomicReference<>(Locale.ENGLISH);
+    AtomicReference<Locale> locale = new AtomicReference<>(Locale.ENGLISH);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     when(session.hasLock()).thenReturn(true);
     doAnswer(
@@ -57,7 +64,7 @@ class UserStatusNotificationTest {
         .setLocale(any());
     UI.setCurrent(ui);
     VaadinSession.setCurrent(session);
-    var security = mock(SecurityService.class);
+    SecurityService security = mock(SecurityService.class);
     when(security.getCurrentUser(any(HttpServletRequest.class))).thenReturn(Optional.empty());
     layout =
         new TrackedUserAppLayout(
@@ -82,14 +89,14 @@ class UserStatusNotificationTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void visiblePopoverFailureAndNewFailureTranslateImmediatelyIncludingTitle(boolean conflict) {
-    var user = UserEntity.builder().id(7L).status(UserStatus.OFFLINE).build();
-    var service = mock(UserService.class);
+    UserEntity user = UserEntity.builder().id(7L).status(UserStatus.OFFLINE).build();
+    UserService service = mock(UserService.class);
     when(service.updateUserStatus(user, UserStatus.EMPLOYED, true))
         .thenThrow(
             conflict
                 ? new OptimisticLockingFailureException("conflict")
                 : new IllegalStateException("failed"));
-    var menu =
+    UserPopoverMenu menu =
         new UserPopoverMenu(
             texts,
             mock(SecurityService.class),
@@ -116,7 +123,7 @@ class UserStatusNotificationTest {
   @ValueSource(booleans = {true, false})
   void adminConflictSupplierUsesCurrentSessionLanguageAndUpdatesVisibleTitle(boolean startGerman) {
     LanguageChangeEvent.fire(ui, startGerman ? Locale.GERMAN : Locale.ENGLISH);
-    var admin =
+    AdminUserManagementSection admin =
         new AdminUserManagementSection(
             texts, mock(UserService.class), mock(RoleService.class), mock(SecurityService.class));
     ReflectionTestUtils.invokeMethod(
@@ -132,7 +139,7 @@ class UserStatusNotificationTest {
   }
 
   private void assertText(Locale locale, boolean conflict) {
-    var helper = NotificationHelper.getInstance();
+    NotificationHelper helper = NotificationHelper.getInstance();
     assertTrue(currentNotification().isOpened());
     Span title = (Span) ReflectionTestUtils.getField(helper, "titleText");
     Html message = (Html) ReflectionTestUtils.getField(helper, "messageText");

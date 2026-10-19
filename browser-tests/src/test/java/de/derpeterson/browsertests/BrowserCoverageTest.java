@@ -1,10 +1,16 @@
 package de.derpeterson.browsertests;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
-import java.nio.file.*;
-import java.util.zip.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -32,7 +38,8 @@ class BrowserCoverageTest {
 
   @Test
   void reportUsesClassesFromTheTestedJarRatherThanTheLocalBuild() throws Exception {
-    try (var zip = new ZipOutputStream(Files.newOutputStream(temporary.resolve("app.jar")))) {
+    try (ZipOutputStream zip =
+        new ZipOutputStream(Files.newOutputStream(temporary.resolve("app.jar")))) {
       zip.putNextEntry(new ZipEntry("BOOT-INF/classes/de/derpeterson/app/Example.class"));
       zip.write(new byte[] {1, 2, 3});
       zip.closeEntry();
@@ -44,14 +51,15 @@ class BrowserCoverageTest {
     assertArrayEquals(
         new byte[] {1, 2, 3},
         Files.readAllBytes(temporary.resolve("classes/de/derpeterson/app/Example.class")));
-    var command = BrowserCoverage.reportCommand(temporary, temporary, temporary);
+    List<String> command = BrowserCoverage.reportCommand(temporary, temporary, temporary);
     assertTrue(command.contains(temporary.resolve("classes").toString()));
     assertFalse(command.contains(temporary.resolve("target/classes").toString()));
   }
 
   @Test
   void classesCannotEscapeTheCoverageDirectory() throws Exception {
-    try (var zip = new ZipOutputStream(Files.newOutputStream(temporary.resolve("app.jar")))) {
+    try (ZipOutputStream zip =
+        new ZipOutputStream(Files.newOutputStream(temporary.resolve("app.jar")))) {
       zip.putNextEntry(
           new ZipEntry("BOOT-INF/classes/de/derpeterson/app/../../../../escape.class"));
       zip.write(1);

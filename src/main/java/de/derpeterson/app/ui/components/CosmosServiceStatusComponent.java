@@ -4,6 +4,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.MaintenanceService;
+import de.derpeterson.app.security.MaintenanceService.State;
 import java.util.Locale;
 
 /** Kompakter Betriebsstatus; keine technische Prüfung einzelner Hintergrunddienste. */
@@ -19,7 +20,7 @@ public class CosmosServiceStatusComponent extends Div {
     setId("admin-service-status");
     addClassName("cosmos-service-status");
     getElement().setAttribute("role", "status");
-    var dot = new Span();
+    Span dot = new Span();
     dot.addClassName("cosmos-service-status-dot");
     dot.getElement().setAttribute("aria-hidden", "true");
     title.addClassName("cosmos-service-status-title");
@@ -29,7 +30,7 @@ public class CosmosServiceStatusComponent extends Div {
   }
 
   public void refresh() {
-    var state = maintenance.state();
+    State state = maintenance.state();
     getElement().setAttribute("data-state", state.name().toLowerCase(Locale.ROOT));
     switch (state) {
       case OPEN -> {

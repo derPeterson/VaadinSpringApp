@@ -2,6 +2,7 @@ package de.derpeterson.app.service;
 
 import jakarta.annotation.PreDestroy;
 import java.time.Duration;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -46,15 +47,19 @@ public class EmailQueueWorkerPool {
     this.executor = java.util.Objects.requireNonNull(executor, "executor");
     this.parallelism = executor.getMaximumPoolSize();
     this.shutdownGrace = java.util.Objects.requireNonNull(shutdownGrace, "shutdownGrace");
-    if (shutdownGrace.isNegative()) throw new IllegalArgumentException("Negative shutdown grace.");
+    if (shutdownGrace.isNegative()) {
+      throw new IllegalArgumentException("Negative shutdown grace.");
+    }
   }
 
   public void process(List<Long> ids, LongConsumer dispatch) {
     // Zusätzliche manuelle Läufe überlappen keinen laufenden Batch; offene IDs bleiben in der DB.
-    if (stopping || !batch.tryLock()) return;
+    if (stopping || !batch.tryLock()) {
+      return;
+    }
     boolean interrupted = false;
     try {
-      var candidates = ids.iterator();
+      Iterator<Long> candidates = ids.iterator();
       BlockingQueue<FutureTask<Void>> completed = new LinkedBlockingQueue<>();
       int active = 0;
       boolean refill = true;
@@ -64,7 +69,9 @@ public class EmailQueueWorkerPool {
           var task =
               new FutureTask<Void>(
                   () -> {
-                    if (!stopping) dispatch.accept(id);
+                    if (!stopping) {
+                      dispatch.accept(id);
+                    }
                     return null;
                   }) {
                 @Override
@@ -84,9 +91,11 @@ public class EmailQueueWorkerPool {
                 "Queue worker rejected entry {}; remaining entries stay pending.", id, failure);
           }
         }
-        if (active == 0) break;
+        if (active == 0) {
+          break;
+        }
         try {
-          var finished = completed.take();
+          FutureTask<Void> finished = completed.take();
           active--;
           finished.get();
         } catch (InterruptedException failure) {
@@ -102,7 +111,9 @@ public class EmailQueueWorkerPool {
       }
     } finally {
       batch.unlock();
-      if (interrupted) Thread.currentThread().interrupt();
+      if (interrupted) {
+        Thread.currentThread().interrupt();
+      }
     }
   }
 
@@ -114,10 +125,14 @@ public class EmailQueueWorkerPool {
   @PreDestroy
   public void shutdown() {
     stopping = true;
-    if (!shutdownStarted.compareAndSet(false, true)) return;
+    if (!shutdownStarted.compareAndSet(false, true)) {
+      return;
+    }
     executor.shutdown();
     try {
-      if (executor.awaitTermination(shutdownGrace.toMillis(), TimeUnit.MILLISECONDS)) return;
+      if (executor.awaitTermination(shutdownGrace.toMillis(), TimeUnit.MILLISECONDS)) {
+        return;
+      }
     } catch (InterruptedException failure) {
       Thread.currentThread().interrupt();
     }

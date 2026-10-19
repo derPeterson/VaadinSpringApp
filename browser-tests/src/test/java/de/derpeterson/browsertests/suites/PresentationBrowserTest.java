@@ -1,19 +1,34 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
-import de.derpeterson.browsertests.*;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.i18n.UiTexts;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.RegistrationPage;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Story;
 import io.qameta.allure.playwright.AllurePlaywright;
+import io.qameta.allure.playwright.TraceSession;
 import java.time.LocalDate;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag("browser")
 @Feature("Sprache und Bedienung")
@@ -81,7 +96,7 @@ public class PresentationBrowserTest extends BrowserFixture {
                 .setBaseURL(System.getProperty("browser.tests.baseUrl"))
                 .setLocale(texts.browserLocale()))) {
       AllurePlaywright.register(other);
-      try (var otherTrace = AllurePlaywright.startTracing(other)) {
+      try (TraceSession otherTrace = AllurePlaywright.startTracing(other)) {
         Page visitor = other.newPage();
         visitor.navigate(path(HOME_ROUTE));
         new UserMenu(visitor).selectTestLanguage();

@@ -1,14 +1,22 @@
 package de.derpeterson.browsertests;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_PAGE_TITLE;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.LOGIN_PAGE_TITLE;
+import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.ServiceWorkerPolicy;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.pages.UserMenu;
-import io.qameta.allure.playwright.*;
+import io.qameta.allure.playwright.AllurePlaywright;
+import io.qameta.allure.playwright.TraceSession;
 import java.nio.file.Path;
 
 /** Real separate Chromium process using only its own temporary on-disk profile. */
@@ -43,7 +51,9 @@ public final class PersistentBrowserActor implements AutoCloseable {
     assertThat(page).hasURL(urlPattern(expectedRoute));
     assertThat(page)
         .hasTitle(expectedRoute.equals(LOGIN_ROUTE) ? LOGIN_PAGE_TITLE : HOME_PAGE_TITLE);
-    if (expectedRoute.equals(HOME_ROUTE)) new UserMenu(page).selectTestLanguage();
+    if (expectedRoute.equals(HOME_ROUTE)) {
+      new UserMenu(page).selectTestLanguage();
+    }
   }
 
   @Override

@@ -1,12 +1,15 @@
 package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.html.*;
-import com.vaadin.flow.component.popover.*;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.popover.Popover;
+import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.service.UserNotificationService;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 /** Keine Request-Proxys auf Push-Threads: die beim Attach gebundene Sitzung wird frisch geprüft. */
 public class UserNotificationBell extends Div {
@@ -45,7 +48,9 @@ public class UserNotificationBell extends Div {
     popover.setAriaLabel(texts.getNotificationsTitle());
     popover.addOpenedChangeListener(
         e -> {
-          if (e.isOpened()) refresh();
+          if (e.isOpened()) {
+            refresh();
+          }
         });
     addAttachListener(
         event -> {
@@ -60,18 +65,22 @@ public class UserNotificationBell extends Div {
           popover.removeAll();
           popover.add(panel);
           try {
-            var owner = service.ownerId(session);
+            Long owner = service.ownerId(session);
             registration =
                 service
                     .events()
                     .register(
                         ids -> {
-                          if (!ids.contains(owner)) return;
+                          if (!ids.contains(owner)) {
+                            return;
+                          }
                           event
                               .getUI()
                               .access(
                                   () -> {
-                                    if (isAttached()) refresh();
+                                    if (isAttached()) {
+                                      refresh();
+                                    }
                                   });
                         });
           } catch (org.springframework.security.access.AccessDeniedException denied) {
@@ -81,7 +90,9 @@ public class UserNotificationBell extends Div {
         });
     addDetachListener(
         event -> {
-          if (registration != null) registration.remove();
+          if (registration != null) {
+            registration.remove();
+          }
           registration = null;
           session = null;
           popover.close();
@@ -90,8 +101,12 @@ public class UserNotificationBell extends Div {
 
   public void refreshTexts() {
     popover.setAriaLabel(texts.getNotificationsTitle());
-    if (panel != null) panel.refreshTexts();
-    if (isAttached()) refresh();
+    if (panel != null) {
+      panel.refreshTexts();
+    }
+    if (isAttached()) {
+      refresh();
+    }
   }
 
   private void refresh() {
@@ -101,12 +116,16 @@ public class UserNotificationBell extends Div {
       count.setVisible(unread > 0);
       count.setText(unread > 99 ? "99+" : Long.toString(unread));
       target.setAriaLabel(texts.getNotificationsTitle() + " (" + unread + ")");
-      if (popover.isOpened() && panel != null) panel.refresh();
+      if (popover.isOpened() && panel != null) {
+        panel.refresh();
+      }
     } catch (RuntimeException failure) {
       count.setVisible(false);
       target.setEnabled(false);
       popover.close();
-      if (panel != null) panel.unavailable();
+      if (panel != null) {
+        panel.unavailable();
+      }
     }
   }
 }

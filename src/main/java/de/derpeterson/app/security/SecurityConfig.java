@@ -58,7 +58,8 @@ public class SecurityConfig {
   @Bean
   public AuthenticationManager authenticationManager(
       LoginAttemptService attempts, PasswordEncoder encoder) {
-    var provider = new DaoAuthenticationProvider(userDetailsService::loadPasswordUserByUsername);
+    DaoAuthenticationProvider provider =
+        new DaoAuthenticationProvider(userDetailsService::loadPasswordUserByUsername);
     provider.setPasswordEncoder(encoder);
     return new ProviderManager(
         List.of(
@@ -101,14 +102,15 @@ public class SecurityConfig {
   @Bean
   public SessionAdmissionService sessionAdmissionService(
       SessionRegistry registry, DeviceTokenRepository tokens) {
-    var admissions = new SessionAdmissionService(configService, registry);
+    SessionAdmissionService admissions = new SessionAdmissionService(configService, registry);
     admissions.setDeviceTokens(tokens);
     return admissions;
   }
 
   @Bean
   public FilterRegistrationBean<VaadinSecurityFilter> vaadinSecurityFilterRegistration() {
-    var registration = new FilterRegistrationBean<>(vaadinSecurityFilter);
+    FilterRegistrationBean<VaadinSecurityFilter> registration =
+        new FilterRegistrationBean<>(vaadinSecurityFilter);
     registration.setEnabled(false);
     return registration;
   }
@@ -133,7 +135,7 @@ public class SecurityConfig {
     String secretKey = configService.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY);
     int duration = configService.getInteger(ConfigEntry.REMEMBER_ME_DURATION);
 
-    var tempRememberMeServices =
+    DeviceRememberMeServices tempRememberMeServices =
         new DeviceRememberMeServices(secretKey, userDetailsService, tokenRepository, admissions);
     tempRememberMeServices.setTokenValiditySeconds(duration);
     return tempRememberMeServices;
@@ -265,8 +267,9 @@ public class SecurityConfig {
                   .successHandler(
                       (request, response, authentication) -> {
                         if (rememberMeServices instanceof DeviceRememberMeServices devices
-                            && !devices.requested(request))
+                            && !devices.requested(request)) {
                           devices.preparePasswordLogin(request, response, authentication.getName());
+                        }
                         boolean admin =
                             authentication.getAuthorities().stream()
                                 .anyMatch(
@@ -280,7 +283,7 @@ public class SecurityConfig {
                   .failureHandler(
                       (request, response, failure) -> {
                         if (failure instanceof SessionLimitException) {
-                          var sessions = sessionManagement.getIfAvailable();
+                          SessionManagementService sessions = sessionManagement.getIfAvailable();
                           if (sessions != null) {
                             try {
                               sessions.startRecovery(
@@ -299,16 +302,7 @@ public class SecurityConfig {
                             }
                           }
                         }
-                        String error =
-                            failure instanceof MaintenanceAuthenticationException
-                                ? "maintenance"
-                                : failure instanceof SessionLimitException
-                                    ? "sessions"
-                                    : failure instanceof LoginThrottledException
-                                        ? "throttled"
-                                        : failure instanceof AuthenticationServiceException
-                                            ? "unavailable"
-                                            : "invalid";
+                        String error = authenticationFailureCode(failure);
                         response.sendRedirect(
                             AppRoute.LOGIN.getSecurityRoute() + "?error=" + error);
                       })
@@ -338,6 +332,22 @@ public class SecurityConfig {
     logger.debug("🔧 SecurityConfig loaded!");
 
     return http.build();
+  }
+
+  private String authenticationFailureCode(AuthenticationException failure) {
+    if (failure instanceof MaintenanceAuthenticationException) {
+      return "maintenance";
+    }
+    if (failure instanceof SessionLimitException) {
+      return "sessions";
+    }
+    if (failure instanceof LoginThrottledException) {
+      return "throttled";
+    }
+    if (failure instanceof AuthenticationServiceException) {
+      return "unavailable";
+    }
+    return "invalid";
   }
 
   private boolean isKnownApplicationPath(String requestUri) {

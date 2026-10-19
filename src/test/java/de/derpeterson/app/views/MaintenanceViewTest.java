@@ -1,7 +1,16 @@
 package de.derpeterson.app.views;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -31,6 +40,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -51,7 +61,7 @@ class MaintenanceViewTest {
     page = mock(Page.class);
     doReturn(page).when(ui).getPage();
     UI.setCurrent(ui);
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     VaadinSession.setCurrent(session);
@@ -73,12 +83,12 @@ class MaintenanceViewTest {
 
   private void create(RoleType role) {
     if (role != null) {
-      var user =
+      UserDetails user =
           User.withUsername("own-test@example.test")
               .password("unused")
               .authorities(role.getLongName())
               .build();
-      var authentication =
+      UsernamePasswordAuthenticationToken authentication =
           UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities());
       request
           .getSession()
@@ -114,14 +124,14 @@ class MaintenanceViewTest {
   @EnumSource(RoleType.class)
   void authenticatedVisitorOnlySeesLogoutAndRetryWithoutChangingSession(RoleType role) {
     create(role);
-    var stored =
+    Object stored =
         request
             .getSession()
             .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
     for (Locale language : new Locale[] {Locale.GERMAN, Locale.ENGLISH}) {
       locale.set(language);
       LanguageChangeEvent.fire(ui, language);
-      var texts = MessageProperties.forLocale(provider, language);
+      MessageProperties texts = MessageProperties.forLocale(provider, language);
       assertFalse(button(texts.getMaintenanceLoginButton()).isVisible());
       assertTrue(button(texts.getBaseLogoutButton()).isVisible());
       assertTrue(button(texts.getMaintenanceRetryButton()).isVisible());
@@ -141,7 +151,7 @@ class MaintenanceViewTest {
     for (Locale language : new Locale[] {Locale.GERMAN, Locale.ENGLISH}) {
       locale.set(language);
       LanguageChangeEvent.fire(ui, language);
-      var texts = MessageProperties.forLocale(provider, language);
+      MessageProperties texts = MessageProperties.forLocale(provider, language);
       assertTrue(button(texts.getMaintenanceLoginButton()).isVisible());
       assertFalse(button(texts.getBaseLogoutButton()).isVisible());
       assertTrue(button(texts.getMaintenanceRetryButton()).isVisible());

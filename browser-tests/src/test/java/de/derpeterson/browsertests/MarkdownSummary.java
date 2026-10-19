@@ -3,9 +3,16 @@ package de.derpeterson.browsertests;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 /** Human checklist from Allure results; Allure itself still produces the HTML. */
 final class MarkdownSummary {
@@ -15,12 +22,14 @@ final class MarkdownSummary {
 
   static List<JsonNode> readResults(Path run) throws IOException {
     List<JsonNode> results = new ArrayList<>();
-    try (var files = Files.list(run.resolve("allure-results"))) {
+    try (Stream<Path> files = Files.list(run.resolve("allure-results"))) {
       for (Path file :
           files
               .filter(path -> path.getFileName().toString().endsWith("-result.json"))
               .sorted()
-              .toList()) results.add(new ObjectMapper().readTree(file.toFile()));
+              .toList()) {
+        results.add(new ObjectMapper().readTree(file.toFile()));
+      }
     }
     return results;
   }
@@ -37,8 +46,15 @@ final class MarkdownSummary {
             && (!metadata.containsKey("testsFound")
                 || results.size() == ((Number) metadata.get("testsFound")).longValue())
             && results.stream().allMatch(test -> "passed".equals(test.path("status").asText()));
-    String state = !finished ? "IN BEARBEITUNG" : passed ? "BESTANDEN" : "UNVOLLSTÄNDIG / FEHLER";
-    var text =
+    String state;
+    if (!finished) {
+      state = "IN BEARBEITUNG";
+    } else if (passed) {
+      state = "BESTANDEN";
+    } else {
+      state = "UNVOLLSTÄNDIG / FEHLER";
+    }
+    StringBuilder text =
         new StringBuilder(
             "# Automatisierter Browser-Testlauf (Java)\n\n**Status: "
                 + state
@@ -88,21 +104,23 @@ final class MarkdownSummary {
             "setup",
             "tests",
             "cleanup",
-            "html"))
+            "html")) {
       text.append("| ")
           .append(labels.get(key))
           .append(" | ")
           .append(cell(metadata.get(key)))
           .append(" |\n");
+    }
     text.append("| Lokale Änderungen | ")
         .append(
             metadata.getOrDefault("gitStatus", "").toString().isBlank()
                 ? "nein"
                 : "ja; siehe metadata.json")
         .append(" |\n");
-    if ("fast".equals(metadata.get("suite")))
+    if ("fast".equals(metadata.get("suite"))) {
       text.append(
           "\n**Schnellprüfung:** Nur explizit mit `fast` markierte Kernfälle. Lange Ablaufzeiten, vollständige Rechte-/Sitzungsprüfungen und weitere Spezialfälle sind hier nicht enthalten; `all` bleibt die vollständige Auswahl.\n");
+    }
     if (metadata.containsKey("workersActual")) {
       text.append("\n## Parallele Worker\n\n")
           .append("Angefordert: ")
@@ -113,9 +131,11 @@ final class MarkdownSummary {
               ". Eigene JVM, Browser, Docker-App, H2 und Mailpit je Worker; ein gemeinsames Image.\n\n")
           .append(
               "| Worker | Bestanden / gefunden | Aufbau | Abbau | Exitcode | Diagnose |\n| --- | --- | --- | --- | --- | --- |\n");
-      if (metadata.get("workerResults") instanceof List<?> workers)
+      if (metadata.get("workerResults") instanceof List<?> workers) {
         for (Object entry : workers) {
-          if (!(entry instanceof Map<?, ?> data)) continue;
+          if (!(entry instanceof Map<?, ?> data)) {
+            continue;
+          }
           String id = cell(data.get("worker"));
           text.append("| ")
               .append(id)
@@ -135,6 +155,7 @@ final class MarkdownSummary {
               .append(id)
               .append("/console.log) |\n");
         }
+      }
     }
     if ("passed".equals(metadata.get("coverage"))) {
       text.append(
@@ -156,7 +177,9 @@ final class MarkdownSummary {
             "Die verbleibenden Teilfälle und Betriebsgrenzen stehen in [Abdeckung und offene Punkte](../../abdeckung.md). Ein grüner Lauf bestätigt nur die tatsächlich aufgeführten Schritte.\n\n")
         .append(
             "Suites, Testfälle und Grenzen: [Browser-Testanleitung](../../README.md).\n\n## Ergebnisse\n\n");
-    if (results.isEmpty()) text.append("Keine Testfälle vom Reporter erfasst.\n");
+    if (results.isEmpty()) {
+      text.append("Keine Testfälle vom Reporter erfasst.\n");
+    }
     List<JsonNode> ordered = new ArrayList<>(results);
     ordered.sort(
         Comparator.comparing((JsonNode test) -> label(test, "feature"))
@@ -164,7 +187,9 @@ final class MarkdownSummary {
     String previousSuite = null;
     for (JsonNode test : ordered) {
       String suite = label(test, "feature");
-      if (suite.isBlank()) suite = "Weitere Prüfungen";
+      if (suite.isBlank()) {
+        suite = "Weitere Prüfungen";
+      }
       if (!suite.equals(previousSuite)) {
         text.append("### ").append(cell(suite)).append("\n\n");
         previousSuite = suite;
@@ -179,9 +204,13 @@ final class MarkdownSummary {
           };
       text.append("#### ").append(cell(test.path("name").asText())).append("\n\n");
       String story = label(test, "story");
-      if (!story.isBlank()) text.append("**Prüfbereich:** ").append(cell(story)).append("\n\n");
+      if (!story.isBlank()) {
+        text.append("**Prüfbereich:** ").append(cell(story)).append("\n\n");
+      }
       String description = test.path("description").asText();
-      if (!description.isBlank()) text.append(description).append("\n\n");
+      if (!description.isBlank()) {
+        text.append(description).append("\n\n");
+      }
       text.append("- [")
           .append("passed".equals(status) ? "x" : " ")
           .append("] **")
@@ -204,16 +233,18 @@ final class MarkdownSummary {
               })
           .append("\n\n");
       String error = test.path("statusDetails").path("message").asText();
-      if (!error.isBlank())
+      if (!error.isBlank()) {
         text.append("~~~~text\n").append(error.replace("~~~~", "''''")).append("\n~~~~\n\n");
+      }
       Map<String, String> attachments = new LinkedHashMap<>();
       for (JsonNode array : test.findValues("attachments")) {
         for (JsonNode attachment : array) {
           String source = attachment.path("source").asText();
           // Nur einfache Dateinamen aus ASCII-Buchstaben/Ziffern/Unterstrich/Punkt/Minus;
           // Pfadtrenner sind ausgeschlossen.
-          if (source.matches("[\\w.-]+"))
+          if (source.matches("[\\w.-]+")) {
             attachments.put(source, attachment.path("name").asText("Beleg"));
+          }
         }
       }
       if (!attachments.isEmpty()) {
@@ -229,12 +260,13 @@ final class MarkdownSummary {
       }
     }
     for (String key : List.of("error", "cleanupError", "reportError")) {
-      if (metadata.containsKey(key))
+      if (metadata.containsKey(key)) {
         text.append("\n**")
             .append(key)
             .append("**\n\n~~~~text\n")
             .append(metadata.get(key).toString().replace("~~~~", "''''"))
             .append("\n~~~~\n");
+      }
     }
     text.append(
             "\n## Belege des Durchlaufs\n\n- [HTML-Bericht starten](html/open-report.bat) — im Explorer doppelklicken; benötigt den lokalen Testordner.\n")
@@ -248,8 +280,11 @@ final class MarkdownSummary {
 
   private static String label(JsonNode test, String name) {
     List<String> values = new ArrayList<>();
-    for (JsonNode label : test.path("labels"))
-      if (name.equals(label.path("name").asText())) values.add(label.path("value").asText());
+    for (JsonNode label : test.path("labels")) {
+      if (name.equals(label.path("name").asText())) {
+        values.add(label.path("value").asText());
+      }
+    }
     return String.join("; ", values);
   }
 

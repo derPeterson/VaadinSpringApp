@@ -1,7 +1,11 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.ConfigEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -33,7 +37,7 @@ class UserNotificationPolicyTest {
         .withProperty("app.config.defaults.user.notifications.history.retention.days", "60");
     assertEquals(java.util.OptionalInt.of(30), policy.retentionDays());
     assertEquals(java.util.OptionalInt.of(60), policy.historyRetentionDays());
-    var stored =
+    ConfigEntity stored =
         new ConfigEntity(null, ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS.getKey(), "45");
     when(repository.findByKey(stored.getKey())).thenReturn(Optional.of(stored));
     assertEquals(java.util.OptionalInt.of(45), policy.retentionDays());
@@ -64,8 +68,8 @@ class UserNotificationPolicyTest {
 
   @Test
   void explicitlyStoredEmptyValuesOverrideDefaultsAndHaveNoCutoff() {
-    var inbox = ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS;
-    var history = ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS;
+    ConfigEntry inbox = ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS;
+    ConfigEntry history = ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS;
     when(repository.findByKey(inbox.getKey()))
         .thenReturn(Optional.of(new ConfigEntity(null, inbox.getKey(), "")));
     when(repository.findByKey(history.getKey()))

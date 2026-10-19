@@ -1,6 +1,8 @@
 package de.derpeterson.app.model.enums;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.vaadin.flow.component.Component;
 import java.io.InputStream;
@@ -31,7 +33,7 @@ class UserStatusResourceTest {
   void outlineRendererWorksFromAPackedJarWithoutLegacySvg() throws Exception {
     Path jar = temporary.resolve("status-resource.jar");
     String className = UserStatus.class.getName();
-    try (var output = new JarOutputStream(Files.newOutputStream(jar))) {
+    try (JarOutputStream output = new JarOutputStream(Files.newOutputStream(jar))) {
       add(output, className.replace('.', '/') + ".class");
       // Compiler-dependent enum switch helper, if present.
       String helper = className.replace('.', '/') + "$1.class";

@@ -7,6 +7,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -51,9 +52,9 @@ final class AdminUserFilterBar extends VerticalLayout {
     setWidthFull();
     addClassName("admin-user-filter-bar");
 
-    var filterIcon = VaadinIcon.FILTER.create();
+    Icon filterIcon = VaadinIcon.FILTER.create();
     filterIcon.getElement().setAttribute("aria-hidden", "true");
-    var filterToggle = LumoIcon.ANGLE_DOWN.create();
+    Icon filterToggle = LumoIcon.ANGLE_DOWN.create();
     filterToggle.addClassName("admin-user-filter-toggle");
     filterToggle.getElement().setAttribute("aria-hidden", "true");
     filterButton.addClassName("admin-user-filter-button");
@@ -63,7 +64,7 @@ final class AdminUserFilterBar extends VerticalLayout {
     applyFiltersButton.setPrefixComponent(VaadinIcon.CHECK.create());
     applyFiltersButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     applyFiltersButton.addClickListener(event -> applyFilters.run());
-    var hintIcon = VaadinIcon.INFO_CIRCLE_O.create();
+    Icon hintIcon = VaadinIcon.INFO_CIRCLE_O.create();
     hintIcon.getElement().setAttribute("aria-hidden", "true");
     Div hint = new Div(hintIcon, filterHint);
     hint.addClassName("cosmos-panel-hint");
@@ -71,7 +72,7 @@ final class AdminUserFilterBar extends VerticalLayout {
     filterActions.addClassName("cosmos-panel-actions");
     Div filterFooter = new Div(hint, filterActions);
     filterFooter.addClassNames("cosmos-panel-footer", "admin-user-filter-footer");
-    var panelIcon = VaadinIcon.FILTER.create();
+    Icon panelIcon = VaadinIcon.FILTER.create();
     panelIcon.getElement().setAttribute("aria-hidden", "true");
     activeFilterCountBadge.getElement().getThemeList().add("badge");
     activeFilterCountBadge.addClassName("admin-user-active-filter-count");
@@ -93,7 +94,9 @@ final class AdminUserFilterBar extends VerticalLayout {
           filterButton
               .getElement()
               .setAttribute("aria-expanded", Boolean.toString(event.isOpened()));
-          if (event.isOpened()) activity.refreshPlaceholders();
+          if (event.isOpened()) {
+            activity.refreshPlaceholders();
+          }
         });
 
     clearFilters.setPrefixComponent(VaadinIcon.ROTATE_LEFT.create());
@@ -153,6 +156,8 @@ final class AdminUserFilterBar extends VerticalLayout {
 
   private void clearAllFilters() {
     search.clear();
-    for (HasValue<?, ?> control : controls) control.clear();
+    for (HasValue<?, ?> control : controls) {
+      control.clear();
+    }
   }
 }

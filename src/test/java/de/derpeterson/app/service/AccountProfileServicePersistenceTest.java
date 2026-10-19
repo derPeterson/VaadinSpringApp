@@ -1,7 +1,14 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
@@ -13,6 +20,7 @@ import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.CustomUserDetailsService;
 import de.derpeterson.app.security.MaintenanceAccessException;
 import de.derpeterson.app.service.AccountProfileService.Changes;
+import de.derpeterson.app.service.AccountProfileService.Profile;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;
@@ -35,6 +43,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -70,14 +79,14 @@ class AccountProfileServicePersistenceTest {
           users.deleteAll();
           users.flush();
           em.createQuery("delete from RoleEntity").executeUpdate();
-          var role = RoleEntity.builder().name(RoleType.ROLE_USER).build();
+          RoleEntity role = RoleEntity.builder().name(RoleType.ROLE_USER).build();
           em.persist(role);
           account = newUser("profile@example.test", role);
           em.persist(account);
-          var other = newUser("other@example.test", role);
+          UserEntity other = newUser("other@example.test", role);
           em.persist(other);
           otherId = other.getId();
-          var token = new VerificationTokenEntity();
+          VerificationTokenEntity token = new VerificationTokenEntity();
           token.setToken("own-unconsumed-token");
           token.setUserEntity(account);
           token.setExpiryDate(LocalDateTime.now().plusDays(1));
@@ -103,7 +112,8 @@ class AccountProfileServicePersistenceTest {
   }
 
   private void authenticate() {
-    var principal = new CustomUserDetailsService(users).loadUserByUsername(account.getEmail());
+    UserDetails principal =
+        new CustomUserDetailsService(users).loadUserByUsername(account.getEmail());
     SecurityContextHolder.getContext()
         .setAuthentication(
             UsernamePasswordAuthenticationToken.authenticated(
@@ -124,19 +134,22 @@ class AccountProfileServicePersistenceTest {
   void allRolesCanSaveOnlyTheirProfileAndRepeatWithoutAStaleVersion(RoleType role) {
     transaction.executeWithoutResult(
         status -> {
-          var assigned = users.findById(account.getId()).orElseThrow();
-          var entity = RoleEntity.builder().name(role).build();
-          if (role == RoleType.ROLE_USER) entity = assigned.getRoleEntities().iterator().next();
-          else em.persist(entity);
+          UserEntity assigned = users.findById(account.getId()).orElseThrow();
+          RoleEntity entity = RoleEntity.builder().name(role).build();
+          if (role == RoleType.ROLE_USER) {
+            entity = assigned.getRoleEntities().iterator().next();
+          } else {
+            em.persist(entity);
+          }
           assigned.setRoleEntities(new ArrayList<>(List.of(entity)));
         });
     account = users.findById(account.getId()).orElseThrow();
     authenticate();
-    var saved = profiles.save(request, changes(account.getVersion()));
-    var stored =
+    Profile saved = profiles.save(request, changes(account.getVersion()));
+    UserEntity stored =
         transaction.execute(
             status -> {
-              var user = users.findById(account.getId()).orElseThrow();
+              UserEntity user = users.findById(account.getId()).orElseThrow();
               assertEquals(
                   List.of(role), user.getRoleEntities().stream().map(RoleEntity::getName).toList());
               return user;
@@ -178,8 +191,8 @@ class AccountProfileServicePersistenceTest {
   @ParameterizedTest
   @ValueSource(ints = {0, 1, 2, 3, 4, 5, 6})
   void invalidValuesAreRejectedServerSideWithoutPartialWrites(int input) {
-    var valid = changes(account.getVersion());
-    var invalid =
+    Changes valid = changes(account.getVersion());
+    Changes invalid =
         switch (input) {
           case 0 ->
               new Changes(
@@ -216,7 +229,7 @@ class AccountProfileServicePersistenceTest {
                   Locale.FRENCH);
         };
     assertThrows(IllegalArgumentException.class, () -> profiles.save(request, invalid));
-    var stored = users.findById(account.getId()).orElseThrow();
+    UserEntity stored = users.findById(account.getId()).orElseThrow();
     assertEquals("Before", stored.getFirstName());
     assertEquals(account.getVersion(), stored.getVersion());
     assertEquals(Locale.GERMAN, stored.getPreferredLocale());
@@ -259,20 +272,22 @@ class AccountProfileServicePersistenceTest {
   void maintenanceAllowsOnlyAdministrativeRoles(RoleType role) {
     transaction.executeWithoutResult(
         status -> {
-          var user = users.findById(account.getId()).orElseThrow();
-          var entity =
+          UserEntity user = users.findById(account.getId()).orElseThrow();
+          RoleEntity entity =
               role == RoleType.ROLE_USER
                   ? user.getRoleEntities().iterator().next()
                   : RoleEntity.builder().name(role).build();
-          if (role != RoleType.ROLE_USER) em.persist(entity);
+          if (role != RoleType.ROLE_USER) {
+            em.persist(entity);
+          }
           user.setRoleEntities(new ArrayList<>(List.of(entity)));
         });
     account = users.findById(account.getId()).orElseThrow();
     authenticate();
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    if (role.isAdministrative())
+    if (role.isAdministrative()) {
       assertDoesNotThrow(() -> profiles.save(request, changes(account.getVersion())));
-    else {
+    } else {
       assertThrows(
           MaintenanceAccessException.class,
           () -> profiles.save(request, changes(account.getVersion())));

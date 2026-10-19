@@ -3,6 +3,7 @@ package de.derpeterson.app.config;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
@@ -17,11 +18,12 @@ public class ThreadPoolConfig {
   @Bean(name = "emailTaskExecutor", destroyMethod = "shutdown")
   public ThreadPoolExecutor taskExecutor() {
     int poolSize = configService.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE);
-    if (poolSize < 1)
+    if (poolSize < 1) {
       throw new IllegalArgumentException("Email worker pool size must be positive.");
+    }
     // Keine vererbten Aufruferkontexte; blockierende Fremdbibliotheken dürfen das JVM-Ende nicht
     // verhindern.
-    var threads =
+    ThreadFactory threads =
         Thread.ofPlatform()
             .name("EmailSender-", 1)
             .daemon(true)

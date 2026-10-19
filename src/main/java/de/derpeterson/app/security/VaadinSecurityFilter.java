@@ -2,13 +2,18 @@ package de.derpeterson.app.security;
 
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.model.enums.AppRoute;
-import jakarta.servlet.*;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -29,7 +34,7 @@ public class VaadinSecurityFilter implements Filter {
           .sendRedirect(AppRoute.LOGIN.getSecurityRoute() + "?error=" + reason);
       return;
     }
-    var authentication = SecurityContextHolder.getContext().getAuthentication();
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     HttpSession session = httpRequest.getSession(false);
     boolean hadPrincipal =
         authentication != null && authentication.getPrincipal() instanceof UserDetails
@@ -48,8 +53,9 @@ public class VaadinSecurityFilter implements Filter {
       return;
     }
     if ("uidl".equals(httpRequest.getParameter("v-r"))
-        || httpRequest.getParameter("v-r") == null && "GET".equals(httpRequest.getMethod()))
+        || httpRequest.getParameter("v-r") == null && "GET".equals(httpRequest.getMethod())) {
       securityService.getObject().touchSession(httpRequest);
+    }
     chain.doFilter(request, response);
   }
 }

@@ -13,7 +13,11 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.BeforeEvent;
+import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.OptionalParameter;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -453,7 +457,8 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
   }
 
   private void updateInputPlaceholders() {
-    if (emailField != null)
+    if (emailField != null) {
       emailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
+    }
   }
 }

@@ -1,18 +1,32 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.NOTIFICATIONS_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 import de.derpeterson.app.config.AdminConfigGroup;
-import de.derpeterson.browsertests.*;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.BrowserActor;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.pages.AdminMailPage;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.ConfigurationPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.NotificationComposePage;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -20,7 +34,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Feature("Benachrichtigungen: Verfassen, eigene Inbox und Wartung")
 public class UserNotificationsBrowserTest extends BrowserFixture {
   private AdminUsersPage admin() {
-    var login = new LoginPage(page);
+    LoginPage login = new LoginPage(page);
     login.open();
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
     new UserMenu(page).selectTestLanguage();
@@ -41,7 +55,7 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
   void composeValidationAndReviewAtBothWidths(int width) {
     admin();
     page.setViewportSize(width, 1000);
-    var compose = new NotificationComposePage(page);
+    NotificationComposePage compose = new NotificationComposePage(page);
     compose.open();
     compose.assertEmptyReview();
     compose.select(BrowserTestAccounts.ADMIN_EMAIL);
@@ -94,7 +108,7 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
       Erwartet: Persistenter Versand, Empfängertrennung und Lesestatus ohne Benachrichtigungs-Header-Overlay oder gesendete Historie.
       """)
   void targetedAndEveryoneDeliveryRemainPrivateAndPersistent(boolean everyone) {
-    var users = admin();
+    AdminUsersPage users = admin();
     users.open();
     String first = "notify-first-" + UUID.randomUUID() + "@example.test";
     String second = "notify-second-" + UUID.randomUUID() + "@example.test";
@@ -103,23 +117,27 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
     users.createActiveUser(second, BrowserTestAccounts.USER_PASSWORD);
     String subject = "Notification " + UUID.randomUUID(),
         message = "Own persistent notification ÄÖÜ";
-    var compose = new NotificationComposePage(page);
+    NotificationComposePage compose = new NotificationComposePage(page);
     compose.open();
-    if (everyone) compose.everyone().setChecked(true);
-    else compose.select(first);
+    if (everyone) {
+      compose.everyone().setChecked(true);
+    } else {
+      compose.select(first);
+    }
     compose.draft(subject, message);
     compose.send().click();
     compose.notice(texts.getNotificationsSent());
     assertThat(compose.send()).isDisabled();
-    try (var actor = new BrowserActor(browser);
-        var other = new BrowserActor(browser)) {
+    try (BrowserActor actor = new BrowserActor(browser);
+        BrowserActor other = new BrowserActor(browser)) {
       actor.login(first, BrowserTestAccounts.USER_PASSWORD);
       new UserMenu(actor.page).selectTestLanguage();
       NotificationComposePage.readOwn(actor.page, subject, message);
       other.login(second, BrowserTestAccounts.USER_PASSWORD);
       new UserMenu(other.page).selectTestLanguage();
-      if (everyone) NotificationComposePage.readOwn(other.page, subject, message);
-      else {
+      if (everyone) {
+        NotificationComposePage.readOwn(other.page, subject, message);
+      } else {
         other.page.navigate(path(NOTIFICATIONS_ROUTE));
         assertThat(
                 other
@@ -144,13 +162,13 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
       """)
   void maintenanceUpdatesBothOpenPanelsAndPreservesDrafts() {
     admin();
-    var compose = new NotificationComposePage(page);
+    NotificationComposePage compose = new NotificationComposePage(page);
     compose.open();
     compose.everyone().setChecked(true);
     compose.draft("Maintenance draft", "Preserved draft");
     Page mailPage = context.newPage(), settingsPage = context.newPage();
-    var mail = new AdminMailPage(mailPage);
-    var settings = new ConfigurationPage(settingsPage);
+    AdminMailPage mail = new AdminMailPage(mailPage);
+    ConfigurationPage settings = new ConfigurationPage(settingsPage);
     try {
       mailPage.navigate(path(ADMIN_ROUTE) + "?section=mail_test");
       settingsPage.navigate(path(ADMIN_ROUTE));

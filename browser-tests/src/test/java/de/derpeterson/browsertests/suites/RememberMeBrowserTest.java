@@ -1,18 +1,28 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
-import de.derpeterson.browsertests.*;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.BrowserActor;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.BrowserTestRunner;
+import de.derpeterson.browsertests.PersistentBrowserActor;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
 import java.nio.file.Path;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;

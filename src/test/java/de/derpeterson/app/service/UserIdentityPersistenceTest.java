@@ -1,6 +1,10 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -17,8 +21,15 @@ import com.vaadin.flow.server.startup.ApplicationRouteRegistry;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
-import de.derpeterson.app.model.*;
-import de.derpeterson.app.model.enums.*;
+import de.derpeterson.app.model.EmailQueueEntity;
+import de.derpeterson.app.model.PasswordResetTokenEntity;
+import de.derpeterson.app.model.RoleEntity;
+import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.VerificationTokenEntity;
+import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.Gender;
+import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.CustomUserDetailsService;
 import de.derpeterson.app.security.SecurityService;
@@ -26,6 +37,7 @@ import de.derpeterson.app.validation.EmailConflict;
 import de.derpeterson.app.views.LoginView;
 import de.derpeterson.app.views.RegistrationView;
 import de.derpeterson.app.views.RegistrationViewTest;
+import de.derpeterson.app.views.RegistrationViewTest.TestService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,7 +48,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 import org.hibernate.exception.ConstraintViolationException;
@@ -78,7 +92,7 @@ class UserIdentityPersistenceTest {
           repository.deleteAll();
           repository.flush();
           entityManager.createQuery("delete from RoleEntity").executeUpdate();
-          var admin = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
+          RoleEntity admin = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
           ordinary = RoleEntity.builder().name(RoleType.ROLE_USER).build();
           entityManager.persist(admin);
           entityManager.persist(ordinary);
@@ -88,20 +102,20 @@ class UserIdentityPersistenceTest {
           for (Long id : List.of(targetId, otherId, adminId)) {
             UserEntity user = entityManager.find(UserEntity.class, id);
             for (TokenStatus status : TokenStatus.values()) {
-              var verification =
+              VerificationTokenEntity verification =
                   new VerificationTokenEntity(
                       null,
                       "verification-" + id + status,
                       user,
                       LocalDateTime.now().plusHours(1),
                       status);
-              var reset =
+              PasswordResetTokenEntity reset =
                   new PasswordResetTokenEntity(
                       null, "reset-" + id + status, user, LocalDateTime.now().plusHours(1), status);
               entityManager.persist(verification);
               entityManager.persist(reset);
             }
-            var mail = new EmailQueueEntity();
+            EmailQueueEntity mail = new EmailQueueEntity();
             mail.setUserEntity(user);
             mail.setSubject("Test");
             mail.setBody("Test");
@@ -185,7 +199,7 @@ class UserIdentityPersistenceTest {
         () ->
             transaction.executeWithoutResult(
                 tx -> {
-                  var users = repository.findAll();
+                  List<UserEntity> users = repository.findAll();
                   users.stream()
                       .filter(user -> user.getId().equals(adminId))
                       .findFirst()
@@ -279,21 +293,22 @@ class UserIdentityPersistenceTest {
 
   @Test
   void actualEmailConstraintCanBeDistinguishedFromOtherDatabaseFailures() {
-    var duplicate = user("TARGET@EXAMPLE.COM", ordinary);
-    var failure =
+    UserEntity duplicate = user("TARGET@EXAMPLE.COM", ordinary);
+    DataIntegrityViolationException failure =
         assertThrows(DataIntegrityViolationException.class, () -> service.saveUser(duplicate));
     assertTrue(
         EmailConflict.isDuplicate(failure),
         () -> {
           Throwable cause = failure;
-          while (cause.getCause() != null && !(cause instanceof ConstraintViolationException))
+          while (cause.getCause() != null && !(cause instanceof ConstraintViolationException)) {
             cause = cause.getCause();
+          }
           return cause instanceof ConstraintViolationException v
               ? "constraint=" + v.getConstraintName() + ", state=" + v.getSQLState()
               : cause.toString();
         });
     assertEquals(3, repository.count());
-    var invalid =
+    DataIntegrityViolationException invalid =
         assertThrows(
             DataIntegrityViolationException.class,
             () ->
@@ -308,13 +323,13 @@ class UserIdentityPersistenceTest {
 
   @Test
   void registrationCallbackHandlesARealCommittedDuplicateBetweenPreflightAndSave() {
-    var ui = new UI();
-    var session = Mockito.mock(VaadinSession.class);
+    UI ui = new UI();
+    VaadinSession session = Mockito.mock(VaadinSession.class);
     Mockito.when(session.hasLock()).thenReturn(true);
     Mockito.when(session.getLocale()).thenReturn(Locale.ENGLISH);
     var registry = new ApplicationRouteRegistry(Mockito.mock(VaadinContext.class)) {};
     registry.setRoute("login", LoginView.class, List.of());
-    var vaadin = Mockito.mock(RegistrationViewTest.TestService.class);
+    TestService vaadin = Mockito.mock(RegistrationViewTest.TestService.class);
     Mockito.when(vaadin.getRouter()).thenReturn(new Router(registry));
     Mockito.when(vaadin.getRouteRegistry()).thenReturn(registry);
     Mockito.when(session.getService()).thenReturn(vaadin);
@@ -322,7 +337,7 @@ class UserIdentityPersistenceTest {
     VaadinSession.setCurrent(session);
     VaadinService.setCurrent(vaadin);
     try {
-      var users = Mockito.mock(UserService.class);
+      UserService users = Mockito.mock(UserService.class);
       Mockito.when(users.findByEmail("registration@example.com"))
           .thenAnswer(
               call -> {
@@ -339,12 +354,12 @@ class UserIdentityPersistenceTest {
               })
           .when(users)
           .saveUser(ArgumentMatchers.any());
-      var roles = Mockito.mock(RoleService.class);
+      RoleService roles = Mockito.mock(RoleService.class);
       Mockito.when(roles.findByName(RoleType.ROLE_USER)).thenReturn(Optional.of(ordinary));
-      var encoder = Mockito.mock(PasswordEncoder.class);
+      PasswordEncoder encoder = Mockito.mock(PasswordEncoder.class);
       Mockito.when(encoder.encode("Password!")).thenReturn("hash");
-      var verification = Mockito.mock(VerificationService.class);
-      var view =
+      VerificationService verification = Mockito.mock(VerificationService.class);
+      RegistrationView view =
           new RegistrationView(
               new MessageProperties(new CustomI18NProvider()),
               users,
@@ -385,10 +400,12 @@ class UserIdentityPersistenceTest {
   @ValueSource(booleans = {false, true})
   void concurrentCanonicalDuplicatesAreRejectedByDatabaseEvenWithoutServiceGuard(boolean update)
       throws Exception {
-    var barrier = new CyclicBarrier(2);
-    try (var executor = Executors.newFixedThreadPool(2)) {
-      var first = executor.submit(() -> race(targetId, " RACE@Example.COM ", update, barrier));
-      var second = executor.submit(() -> race(otherId, "race@example.com", update, barrier));
+    CyclicBarrier barrier = new CyclicBarrier(2);
+    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+      Future<Boolean> first =
+          executor.submit(() -> race(targetId, " RACE@Example.COM ", update, barrier));
+      Future<Boolean> second =
+          executor.submit(() -> race(otherId, "race@example.com", update, barrier));
       assertNotEquals(first.get(10, TimeUnit.SECONDS), second.get(10, TimeUnit.SECONDS));
     }
     assertEquals(

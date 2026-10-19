@@ -1,8 +1,29 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.AdditionalAnswers.delegatesTo;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.contains;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.helper.image.ImageHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -34,7 +55,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +68,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.MockedStatic;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -90,7 +114,7 @@ class VerificationServicePersistenceTest {
           tokens.deleteAll();
           users.deleteAll();
           users.flush();
-          var user =
+          UserEntity user =
               UserEntity.builder()
                   .firstName("Test")
                   .lastName("User")
@@ -213,7 +237,7 @@ class VerificationServicePersistenceTest {
   void emailResendUsesCanonicalIdentityAndCommitsRotationWithoutActivatingAccount()
       throws IOException {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-    try (var locale = mockStatic(CustomI18NProvider.class)) {
+    try (MockedStatic<CustomI18NProvider> locale = mockStatic(CustomI18NProvider.class)) {
       locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.GERMAN);
       assertTrue(service.sendVerificationEmailByEmail("  TEST@EXAMPLE.COM  "));
     }
@@ -243,7 +267,7 @@ class VerificationServicePersistenceTest {
     seed("valid", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
     doAnswer(
             call -> {
-              var entity = (VerificationTokenEntity) call.getArgument(0);
+              VerificationTokenEntity entity = (VerificationTokenEntity) call.getArgument(0);
               if (entity.getStatus() == TokenStatus.USED) {
                 users.flush();
                 throw new IllegalStateException("simulated token persistence failure");
@@ -264,7 +288,7 @@ class VerificationServicePersistenceTest {
     doThrow(new IllegalStateException("simulated queue failure"))
         .when(probes.queue())
         .addEmailToQueue(any(), any(), any(), eq(EmailType.VERIFICATION));
-    try (var locale = mockStatic(CustomI18NProvider.class)) {
+    try (MockedStatic<CustomI18NProvider> locale = mockStatic(CustomI18NProvider.class)) {
       locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.ENGLISH);
       assertThrows(IllegalStateException.class, () -> resend(entry));
     }
@@ -286,9 +310,9 @@ class VerificationServicePersistenceTest {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
     seed("inactive", TokenStatus.INACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
     seed("used", TokenStatus.USED, LocalDateTime.now(CLOCK).plusDays(1));
-    var failure = new IOException("simulated classpath read failure");
-    try (var image = mockStatic(ImageHelper.class, CALLS_REAL_METHODS);
-        var locale = mockStatic(CustomI18NProvider.class)) {
+    IOException failure = new IOException("simulated classpath read failure");
+    try (MockedStatic<ImageHelper> image = mockStatic(ImageHelper.class, CALLS_REAL_METHODS);
+        MockedStatic<CustomI18NProvider> locale = mockStatic(CustomI18NProvider.class)) {
       locale
           .when(CustomI18NProvider::getCurrentLocale)
           .thenReturn(resource.equals("template") ? Locale.FRENCH : Locale.ENGLISH);
@@ -352,7 +376,7 @@ class VerificationServicePersistenceTest {
 
   @Test
   void concurrentCreationCommitsExactlyOneActiveTokenForTheSameAccount() throws Exception {
-    var bothRead = new CyclicBarrier(2);
+    CyclicBarrier bothRead = new CyclicBarrier(2);
     doAnswer(
             call -> {
               bothRead.await(10, TimeUnit.SECONDS);
@@ -361,7 +385,7 @@ class VerificationServicePersistenceTest {
         .when(probes.users())
         .lockVerificationUser(userId);
     UserEntity user = detachedUser();
-    var values = race(() -> service.createToken(user));
+    List<Object> values = race(() -> service.createToken(user));
     assertInstanceOf(String.class, values.get(0));
     assertInstanceOf(String.class, values.get(1));
     assertNotEquals(values.get(0), values.get(1));
@@ -373,7 +397,7 @@ class VerificationServicePersistenceTest {
   void concurrentValidationIsIdempotentWithoutHidingTechnicalFailures() throws Exception {
     seed("shared", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
     Long originalVersion = users.findById(userId).orElseThrow().getVersion();
-    var bothRead = new CyclicBarrier(2);
+    CyclicBarrier bothRead = new CyclicBarrier(2);
     doAnswer(
             call -> {
               bothRead.await(10, TimeUnit.SECONDS);
@@ -381,7 +405,7 @@ class VerificationServicePersistenceTest {
             })
         .when(probes.users())
         .lockVerificationUser(userId);
-    var results = race(() -> service.validateToken("shared"));
+    List<Object> results = race(() -> service.validateToken("shared"));
     assertEquals(List.of(true, true), results);
     assertTrue(users.findById(userId).orElseThrow().isEnabled());
     assertEquals(originalVersion + 1, users.findById(userId).orElseThrow().getVersion());
@@ -389,7 +413,7 @@ class VerificationServicePersistenceTest {
   }
 
   private List<Object> race(Callable<Object> work) throws Exception {
-    try (var executor = Executors.newFixedThreadPool(2)) {
+    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
       Callable<Object> capture =
           () -> {
             try {
@@ -398,8 +422,8 @@ class VerificationServicePersistenceTest {
               return failure;
             }
           };
-      var first = executor.submit(capture);
-      var second = executor.submit(capture);
+      Future<Object> first = executor.submit(capture);
+      Future<Object> second = executor.submit(capture);
       return List.of(first.get(20, TimeUnit.SECONDS), second.get(20, TimeUnit.SECONDS));
     }
   }
@@ -415,7 +439,7 @@ class VerificationServicePersistenceTest {
     transaction.executeWithoutResult(
         tx -> {
           assertTrue(service.validateToken("outer-verify"));
-          var managed = users.findById(userId).orElseThrow();
+          UserEntity managed = users.findById(userId).orElseThrow();
           managed.setFirstName("Local");
           service.setInactiveTokensForUser(managed);
           assertTrue(managed.isEnabled());
@@ -494,7 +518,7 @@ class VerificationServicePersistenceTest {
   @Test
   void maintenanceChangeBetweenAccountAndMailRollsBackTheWholeRegistration() {
     SecurityContextHolder.clearContext();
-    var candidate =
+    UserEntity candidate =
         UserEntity.builder()
             .firstName("New")
             .lastName("User")
@@ -524,7 +548,7 @@ class VerificationServicePersistenceTest {
     @Bean
     RegistrationService registrationService(
         Probes probes, UserRepository repository, VerificationService verification) {
-      var users =
+      UserService users =
           new UserService(
               repository,
               new UserStatusBroadcaster(),
@@ -545,7 +569,7 @@ class VerificationServicePersistenceTest {
 
     @Bean
     LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
-      var factory = new LocalContainerEntityManagerFactoryBean();
+      LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
       factory.setDataSource(dataSource);
       factory.setPackagesToScan("de.derpeterson.app.model");
       factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
@@ -574,7 +598,7 @@ class VerificationServicePersistenceTest {
 
     @Bean
     VerificationService verificationService(Probes probes, UserRepository users) {
-      var messages = mock(MessageProperties.class);
+      MessageProperties messages = mock(MessageProperties.class);
       when(messages.getEmailVerificationSubject()).thenReturn("Verify account");
       return new VerificationService(
           messages, probes.tokens(), probes.users(), probes.config(), probes.queue(), CLOCK);

@@ -1,12 +1,27 @@
 package de.derpeterson.browsertests;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.derpeterson.browsertests.BrowserParallelWorkers.Worker;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Stream;
+import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.core.LauncherFactory;
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
+import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
 /** Starts only disposable Docker data, then delegates tests to JUnit and HTML to Allure. */
 public final class BrowserTestRunner {
@@ -34,7 +49,9 @@ public final class BrowserTestRunner {
     this.module = module.toAbsolutePath().normalize();
     this.suite = options.contains("--failure-probe") ? "reporting-probe" : suite;
     workers = Integer.parseInt(System.getProperty("browser.tests.workers", "1"));
-    if (workers < 1 || workers > 4) throw new IllegalArgumentException("Use 1 to 4 workers.");
+    if (workers < 1 || workers > 4) {
+      throw new IllegalArgumentException("Use 1 to 4 workers.");
+    }
     worker = System.getProperty("browser.tests.workerRun") != null;
     repo = this.module.getParent();
     build = !options.contains("--no-build");
@@ -58,25 +75,30 @@ public final class BrowserTestRunner {
         worker
             ? Path.of(System.getProperty("browser.tests.workerRun")).toAbsolutePath().normalize()
             : this.module.resolve("runs").resolve(runId);
-    if (worker && !run.startsWith(this.module.resolve("runs")))
+    if (worker && !run.startsWith(this.module.resolve("runs"))) {
       throw new IllegalArgumentException("Worker output must be within runs/.");
+    }
     Files.createDirectories(run.resolve("allure-results"));
-    if (!worker) Files.writeString(this.module.resolve("runs/latest.txt"), runId);
+    if (!worker) {
+      Files.writeString(this.module.resolve("runs/latest.txt"), runId);
+    }
     project =
         worker
             ? System.getProperty("browser.tests.workerProject")
             : "vaadinspringapp-e2e-java-" + suffix;
     // Nur den eigenen fest definierten Projektnamensraum für Start/Abbau zulassen.
     // ASCII-Kleinbuchstaben, Ziffern und Minus; + verlangt mindestens ein Suffixzeichen.
-    if (project == null || !project.matches("vaadinspringapp-e2e-java-[a-z0-9-]+"))
+    if (project == null || !project.matches("vaadinspringapp-e2e-java-[a-z0-9-]+")) {
       throw new IllegalArgumentException("Invalid worker project.");
+    }
     docker = dockerExecutable();
-    var composeArguments =
+    ArrayList<String> composeArguments =
         new ArrayList<>(
             List.of(
                 docker, "compose", "-f", repo.resolve("compose.browser-tests.yaml").toString()));
-    if (coverage)
+    if (coverage) {
       composeArguments.addAll(List.of("-f", BrowserCoverage.prepare(module, run).toString()));
+    }
     composeArguments.addAll(List.of("-p", project));
     compose = List.copyOf(composeArguments);
     metadata.put("runId", worker ? run.getFileName().toString() : runId);
@@ -102,8 +124,11 @@ public final class BrowserTestRunner {
             () -> {
               shuttingDown = true;
               try {
-                if (parallel != null) cleanupWorkers();
-                else cleanup();
+                if (parallel != null) {
+                  cleanupWorkers();
+                } else {
+                  cleanup();
+                }
               } catch (Exception error) {
                 metadata.put("cleanup", "failed");
                 metadata.put("cleanupError", error.toString());
@@ -123,26 +148,32 @@ public final class BrowserTestRunner {
   }
 
   public static void main(String[] args) throws Exception {
-    if (Runtime.version().feature() != 25) throw new IllegalStateException("Java 25 is required.");
+    if (Runtime.version().feature() != 25) {
+      throw new IllegalStateException("Java 25 is required.");
+    }
     Path module = Path.of(args[0]).toAbsolutePath().normalize();
     Set<String> options = new HashSet<>(Arrays.asList(args).subList(1, args.length));
     if (options.contains("--report")) {
       Path report;
       int reportPathIndex = Arrays.asList(args).indexOf("--report-path");
       if (reportPathIndex >= 0) {
-        if (reportPathIndex + 1 >= args.length)
+        if (reportPathIndex + 1 >= args.length) {
           throw new IllegalArgumentException("Report path missing.");
+        }
         report = Path.of(args[reportPathIndex + 1]).toAbsolutePath().normalize();
       } else {
         String latest = Files.readString(module.resolve("runs/latest.txt")).trim();
         // Erlaubt nur ASCII-Buchstaben/Ziffern/Unterstrich, Punkt und Minus, also keine
         // Pfadtrenner; mindestens ein Zeichen.
-        if (!latest.matches("[\\w.-]+")) throw new IllegalArgumentException("Invalid report path.");
+        if (!latest.matches("[\\w.-]+")) {
+          throw new IllegalArgumentException("Invalid report path.");
+        }
         report = module.resolve("runs").resolve(latest).resolve("html");
       }
-      if (!Files.isRegularFile(report.resolve("index.html")))
+      if (!Files.isRegularFile(report.resolve("index.html"))) {
         throw new IOException("HTML report missing: " + report);
-      var process =
+      }
+      Process process =
           new ProcessBuilder(
                   allureCommand(module, "open", report.toString(), "--host", "127.0.0.1"))
               .inheritIO()
@@ -151,21 +182,24 @@ public final class BrowserTestRunner {
       System.exit(process.waitFor());
     }
     int languageIndex = Arrays.asList(args).indexOf("--language");
-    if (languageIndex >= 0 && languageIndex + 1 >= args.length)
+    if (languageIndex >= 0 && languageIndex + 1 >= args.length) {
       throw new IllegalArgumentException("Language missing.");
+    }
     String language = languageIndex >= 0 ? args[languageIndex + 1] : "de";
     new de.derpeterson.browsertests.i18n.UiTexts(
         language); // Validate before creating a Docker environment.
     System.setProperty("browser.tests.language", language);
     int suiteIndex = Arrays.asList(args).indexOf("--suite");
-    if (suiteIndex >= 0 && suiteIndex + 1 >= args.length)
+    if (suiteIndex >= 0 && suiteIndex + 1 >= args.length) {
       throw new IllegalArgumentException("Suite name missing.");
+    }
     String suite = suiteIndex >= 0 ? args[suiteIndex + 1] : "all";
     int workersIndex = Arrays.asList(args).indexOf("--workers");
-    if (workersIndex >= 0 && workersIndex + 1 >= args.length)
+    if (workersIndex >= 0 && workersIndex + 1 >= args.length) {
       throw new IllegalArgumentException("Worker count missing.");
+    }
     System.setProperty("browser.tests.workers", workersIndex >= 0 ? args[workersIndex + 1] : "1");
-    var runner = new BrowserTestRunner(module, options, suite);
+    BrowserTestRunner runner = new BrowserTestRunner(module, options, suite);
     System.exit(runner.workers > 1 ? runner.executeParallel(options) : runner.execute(options));
   }
 
@@ -175,7 +209,9 @@ public final class BrowserTestRunner {
     try {
       int appPort = port("BROWSER_TEST_APP_PORT", 18081);
       int mailPort = port("BROWSER_TEST_MAILPIT_PORT", 18026);
-      if (appPort == mailPort) throw new IllegalArgumentException("Test ports must differ.");
+      if (appPort == mailPort) {
+        throw new IllegalArgumentException("Test ports must differ.");
+      }
       environment.put("BROWSER_TEST_APP_PORT", String.valueOf(appPort));
       environment.put("BROWSER_TEST_MAILPIT_PORT", String.valueOf(mailPort));
       String appUrl = "http://127.0.0.1:" + appPort;
@@ -199,15 +235,15 @@ public final class BrowserTestRunner {
           "imageId",
           command(List.of(docker, "inspect", "--format", "{{.Image}}", appContainer)).trim());
       save();
-      var listener = new SummaryGeneratingListener();
-      var request = BrowserExecutionPlan.request(testClasses, suite);
+      SummaryGeneratingListener listener = new SummaryGeneratingListener();
+      LauncherDiscoveryRequest request = BrowserExecutionPlan.request(testClasses, suite);
       activeTestRunner = this;
       try {
         LauncherFactory.create().execute(request, listener);
       } finally {
         activeTestRunner = null;
       }
-      var result = listener.getSummary();
+      TestExecutionSummary result = listener.getSummary();
       metadata.put(
           "browser",
           "Chromium " + System.getProperty("browser.tests.browserVersion", "nicht verfügbar"));
@@ -223,17 +259,18 @@ public final class BrowserTestRunner {
           result.getTestsFoundCount() > 0
               && result.getTestsSucceededCount() == result.getTestsFoundCount()
               && result.getTotalFailureCount() == 0;
-      var collected = MarkdownSummary.readResults(run);
+      List<JsonNode> collected = MarkdownSummary.readResults(run);
       if (collected.size() != result.getTestsFoundCount()) {
         passed = false;
         metadata.put("error", "JUnit and Allure case counts differ; incomplete evidence.");
       }
-      if (result.getTotalFailureCount() > 0)
+      if (result.getTotalFailureCount() > 0) {
         metadata.put(
             "error",
             result.getFailures().stream()
                 .map(failure -> failure.getException().toString())
                 .collect(java.util.stream.Collectors.joining("\n")));
+      }
       metadata.put("tests", passed ? "passed" : "failed");
       result.printTo(new java.io.PrintWriter(System.out, true));
       result.printFailuresTo(new java.io.PrintWriter(System.out, true));
@@ -245,8 +282,9 @@ public final class BrowserTestRunner {
     } finally {
       if (coverage) {
         try {
-          if (appContainer == null || appContainer.isBlank())
+          if (appContainer == null || appContainer.isBlank()) {
             throw new IOException("No test application started; coverage unavailable.");
+          }
           command(withCompose("stop", "--timeout", "30", "app"));
           Path coverageFolder = run.resolve("coverage");
           command(
@@ -255,13 +293,14 @@ public final class BrowserTestRunner {
                   "cp",
                   appContainer + ":/app/logs/browser-jacoco.exec",
                   coverageFolder.resolve("browser-jacoco.exec").toString()));
-          if (!worker || Boolean.getBoolean("browser.tests.workerJar"))
+          if (!worker || Boolean.getBoolean("browser.tests.workerJar")) {
             command(
                 List.of(
                     docker,
                     "cp",
                     appContainer + ":/app/app.jar",
                     coverageFolder.resolve("app.jar").toString()));
+          }
           if (!worker) {
             BrowserCoverage.extractApplicationClasses(coverageFolder);
             command(BrowserCoverage.reportCommand(module, repo, coverageFolder));
@@ -299,8 +338,11 @@ public final class BrowserTestRunner {
                 + "\nDocker="
                 + project
                 + "\n");
-        if (!worker) generateHtml();
-        else metadata.put("html", "delegated-to-parent");
+        if (!worker) {
+          generateHtml();
+        } else {
+          metadata.put("html", "delegated-to-parent");
+        }
       } catch (Exception error) {
         metadata.put("html", "failed");
         metadata.put("reportError", error.toString());
@@ -321,7 +363,9 @@ public final class BrowserTestRunner {
     List<Path> coverageData = new ArrayList<>();
     try {
       command(withCompose("config", "--quiet"));
-      if (build) command(withCompose("build", "app"));
+      if (build) {
+        command(withCompose("build", "app"));
+      }
       String image =
           command(
                   List.of(
@@ -336,7 +380,7 @@ public final class BrowserTestRunner {
       // Alle Worker prüfen exakt dasselbe unveränderliche Image, auch wenn jemand das Tag neu baut.
       environment.put("BROWSER_TEST_APP_IMAGE", image);
       metadata.put("imageId", image);
-      var groups = BrowserExecutionPlan.partition(testClasses, workers, suite);
+      List<List<Class<?>>> groups = BrowserExecutionPlan.partition(testClasses, workers, suite);
       metadata.put("workersActual", groups.size());
       metadata.put(
           "workerPlan",
@@ -359,9 +403,9 @@ public final class BrowserTestRunner {
       boolean passed = true, setupPassed = true;
       long found = 0, succeeded = 0, failed = 0, skipped = 0;
       List<Map<String, Object>> details = new ArrayList<>();
-      for (var child : parallel.workers()) {
-        var data = JSON.readTree(child.directory().resolve("metadata.json").toFile());
-        var evidence = MarkdownSummary.readResults(child.directory());
+      for (Worker child : parallel.workers()) {
+        JsonNode data = JSON.readTree(child.directory().resolve("metadata.json").toFile());
+        List<JsonNode> evidence = MarkdownSummary.readResults(child.directory());
         int exit = child.process().exitValue();
         passed &= BrowserParallelWorkers.successful(data, exit, image, evidence.size());
         passed &= BrowserParallelWorkers.matchesClasses(data, child.classes());
@@ -395,13 +439,15 @@ public final class BrowserTestRunner {
         BrowserParallelWorkers.collect(
             child.directory().resolve("allure-results"), run.resolve("allure-results"));
         if (coverage) {
-          if (!data.path("coverage").asText().equals("passed"))
+          if (!data.path("coverage").asText().equals("passed")) {
             throw new IOException("Worker coverage incomplete: " + child.directory());
+          }
           coverageData.add(child.directory().resolve("coverage/browser-jacoco.exec"));
         }
         if (metadata.get("browser") == null) {
-          for (String key : List.of("browser", "viewport", "browserLocale", "browserTimezone"))
+          for (String key : List.of("browser", "viewport", "browserLocale", "browserTimezone")) {
             metadata.put(key, data.path(key).asText());
+          }
         }
       }
       metadata.put("workerResults", details);
@@ -411,26 +457,31 @@ public final class BrowserTestRunner {
       metadata.put("testsSkipped", skipped);
       metadata.put("setup", setupPassed ? "passed" : "failed");
       // Jeder Fall genau einmal: fehlende und doppelte Nachweise verhindern ein grünes Ergebnis.
-      var results = MarkdownSummary.readResults(run);
+      List<JsonNode> results = MarkdownSummary.readResults(run);
       Set<String> identities = new HashSet<>();
-      for (var result : results) {
+      for (JsonNode result : results) {
         String identity = result.path("fullName").asText() + result.path("parameters").toString();
-        if (!identities.add(identity)) passed = false;
-        if (!result.path("status").asText().equals("passed")) passed = false;
+        if (!identities.add(identity)) {
+          passed = false;
+        }
+        if (!result.path("status").asText().equals("passed")) {
+          passed = false;
+        }
       }
       passed &= found > 0 && results.size() == found && parallel.workers().size() == groups.size();
       metadata.put("tests", passed ? "passed" : "failed");
-      if (!passed)
+      if (!passed) {
         metadata.put(
             "error",
             "At least one worker, test or evidence check failed; inspect workers/*/metadata.json and console.log.");
+      }
       if (coverage) {
         Path folder = run.resolve("coverage");
         Files.createDirectories(folder);
         Files.move(
             parallel.workers().getFirst().directory().resolve("coverage/app.jar"),
             folder.resolve("app.jar"));
-        var merge =
+        ArrayList<String> merge =
             new ArrayList<>(
                 List.of(
                     BrowserParallelWorkers.javaExecutable(),
@@ -478,13 +529,15 @@ public final class BrowserTestRunner {
   }
 
   private synchronized void cleanupWorkers() throws Exception {
-    if (parallel == null) return;
+    if (parallel == null) {
+      return;
+    }
     parallel.stop();
     List<String> errors = new ArrayList<>();
-    for (var child : parallel.workers()) {
+    for (Worker child : parallel.workers()) {
       try {
         // Auch nach einem Prozessabbruch nur das eigene, vorher festgelegte Projekt abbauen.
-        var down =
+        ArrayList<String> down =
             new ArrayList<>(
                 List.of(
                     docker,
@@ -501,7 +554,9 @@ public final class BrowserTestRunner {
         errors.add(child.project() + ": " + error);
       }
     }
-    if (!errors.isEmpty()) throw new IOException(String.join("\n", errors));
+    if (!errors.isEmpty()) {
+      throw new IOException(String.join("\n", errors));
+    }
     metadata.put("cleanup", "passed");
     save();
   }
@@ -534,7 +589,9 @@ public final class BrowserTestRunner {
   }
 
   private synchronized void cleanup() throws Exception {
-    if (!environmentStarted) return;
+    if (!environmentStarted) {
+      return;
+    }
     command(withCompose("down", "--volumes", "--remove-orphans"));
     environmentStarted = false;
     metadata.put("cleanup", "passed");
@@ -544,7 +601,9 @@ public final class BrowserTestRunner {
   private void save() throws IOException {
     JSON.writerWithDefaultPrettyPrinter()
         .writeValue(run.resolve("metadata.json").toFile(), metadata);
-    if (!worker) MarkdownSummary.write(run, metadata);
+    if (!worker) {
+      MarkdownSummary.write(run, metadata);
+    }
   }
 
   private String command(List<String> arguments) throws Exception {
@@ -583,68 +642,78 @@ public final class BrowserTestRunner {
     try {
       exit = child.waitFor();
     } finally {
-      if (hookRegistered)
+      if (hookRegistered) {
         try {
           Runtime.getRuntime().removeShutdownHook(childShutdown);
         } catch (IllegalStateException ignored) {
           /* Shutdown hooks are already running. */
         }
+      }
     }
     String output = Files.readString(temporaryOutput);
     Files.writeString(run.resolve("runner.log"), output, StandardOpenOption.APPEND);
     Files.delete(temporaryOutput);
     System.out.print(output);
-    if (exit != 0)
+    if (exit != 0) {
       throw new IOException(
           "Process exited with " + exit + "; see runner.log: " + arguments.getFirst());
+    }
     return output;
   }
 
   /** Neustart ausschließlich der gerade vom Runner selbst erzeugten isolierten Testanwendung. */
   public static void restartTestApplication() throws Exception {
-    var runner = activeTestRunner;
-    if (runner == null || !runner.environmentStarted || runner.appContainer == null)
+    BrowserTestRunner runner = activeTestRunner;
+    if (runner == null || !runner.environmentStarted || runner.appContainer == null) {
       throw new IllegalStateException("No owned test application is running");
+    }
     runner.command(runner.withCompose("restart", "--timeout", "30", "app"));
     runner.command(
         runner.withCompose("up", "-d", "--no-build", "--wait", "--wait-timeout", "180", "app"));
   }
 
   private List<String> withCompose(String... args) {
-    var result = new ArrayList<>(compose);
+    ArrayList<String> result = new ArrayList<>(compose);
     result.addAll(List.of(args));
     return result;
   }
 
   private String git(String... args) throws Exception {
-    var command = new ArrayList<>(List.of("git"));
+    ArrayList<String> command = new ArrayList<>(List.of("git"));
     command.addAll(List.of(args));
     Process process =
         new ProcessBuilder(command).directory(repo.toFile()).redirectErrorStream(true).start();
     String output =
         new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
             .trim();
-    if (process.waitFor() != 0) throw new IOException("Cannot determine Git state: " + output);
+    if (process.waitFor() != 0) {
+      throw new IOException("Cannot determine Git state: " + output);
+    }
     return output;
   }
 
   private static int port(String key, int fallback) {
     int value = Integer.parseInt(System.getenv().getOrDefault(key, String.valueOf(fallback)));
-    if (value < 1024 || value > 65535 || value == 18080 || value == 18025)
+    if (value < 1024 || value > 65535 || value == 18080 || value == 18025) {
       throw new IllegalArgumentException(
           "Use free test ports from 1024 to 65535, excluding manual ports 18080/18025.");
+    }
     return value;
   }
 
   private static String dockerExecutable() {
-    if (System.getenv("DOCKER_BIN") != null) return System.getenv("DOCKER_BIN");
+    if (System.getenv("DOCKER_BIN") != null) {
+      return System.getenv("DOCKER_BIN");
+    }
     for (String candidate :
         List.of(
             System.getenv().getOrDefault("LOCALAPPDATA", "")
                 + "/Programs/DockerDesktop/resources/bin/docker.exe",
             System.getenv().getOrDefault("ProgramFiles", "")
                 + "/Docker/Docker/resources/bin/docker.exe")) {
-      if (Files.isRegularFile(Path.of(candidate))) return candidate;
+      if (Files.isRegularFile(Path.of(candidate))) {
+        return candidate;
+      }
     }
     return "docker";
   }
@@ -671,7 +740,7 @@ public final class BrowserTestRunner {
   private static List<String> allureCommand(Path module, String... args) throws IOException {
     Path tools = module.resolve("target/tools");
     Path lib;
-    try (var entries = Files.list(tools)) {
+    try (Stream<Path> entries = Files.list(tools)) {
       lib =
           entries
               .filter(path -> path.getFileName().toString().startsWith("allure-"))
@@ -680,7 +749,7 @@ public final class BrowserTestRunner {
               .findFirst()
               .orElseThrow(() -> new IOException("Allure tools missing; run test-compile first."));
     }
-    var result =
+    ArrayList<String> result =
         new ArrayList<>(
             List.of(
                 Path.of(System.getProperty("java.home"), "bin", "java").toString(),

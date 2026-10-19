@@ -1,18 +1,34 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.VERIFICATION_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
-import de.derpeterson.browsertests.*;
+import de.derpeterson.browsertests.BrowserActor;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.mail.MailpitInbox.CapturedMail;
+import de.derpeterson.browsertests.pages.ForgotPasswordPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.RegistrationPage;
+import de.derpeterson.browsertests.pages.ResetPasswordPage;
+import de.derpeterson.browsertests.pages.TokenConfigurationPage;
+import de.derpeterson.browsertests.pages.UserMenu;
+import de.derpeterson.browsertests.pages.VerificationPage;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag("browser")
 @Feature("Tatsächlicher Tokenablauf und erneuter Mailversand")
@@ -43,7 +59,7 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
         registration.submit();
         registration.assertSubmitted(email);
         MailpitInbox inbox = new MailpitInbox(actor.context);
-        var old = inbox.awaitVerificationMail(email);
+        CapturedMail old = inbox.awaitVerificationMail(email);
         waitForExpiry(actor.context);
         try (Page expired = inbox.openVerificationAction(old)) {
           assertThat(
@@ -61,7 +77,7 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
           assertThat(expired.locator("vaadin-notification-card:not([closing])"))
               .containsText(
                   texts.visibleText(expired, texts.getVerificationExpiredSuccessMessage()));
-          var fresh = inbox.awaitVerificationMailAfter(email, old);
+          CapturedMail fresh = inbox.awaitVerificationMailAfter(email, old);
           assertNotEquals(old.id(), fresh.id());
           inbox.openVerificationLink(fresh).close();
           try (Page stale = inbox.openVerificationAction(old)) {
@@ -158,7 +174,7 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
     registration.submit();
     registration.assertSubmitted(email);
     MailpitInbox inbox = new MailpitInbox(context);
-    var old = inbox.awaitVerificationMail(email);
+    CapturedMail old = inbox.awaitVerificationMail(email);
     page.navigate(path(VERIFICATION_ROUTE) + "/" + UUID.randomUUID());
     new VerificationPage(page).assertUnknownToken();
     Locator input =

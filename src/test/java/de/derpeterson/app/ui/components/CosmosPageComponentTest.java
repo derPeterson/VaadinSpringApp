@@ -1,7 +1,10 @@
 package de.derpeterson.app.ui.components;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -45,7 +48,7 @@ class CosmosPageComponentTest {
 
   @Test
   void configurationIsRenderedAsPlainTextWithoutHtmlElements() {
-    var page = page("<b>{serviceName}</b> & <script>alert(1)</script>");
+    CosmosPageComponent page = page("<b>{serviceName}</b> & <script>alert(1)</script>");
     assertEquals("<b>Example & Company</b> & <script>alert(1)</script>", footer(page).getText());
     assertEquals(1, footer(page).getElement().getChildCount());
     assertTrue(footer(page).getElement().getChild(0).isTextNode());
@@ -61,8 +64,8 @@ class CosmosPageComponentTest {
     UI ui = new UI();
     assertFalse(CosmosPageComponent.isDisplayed(null));
     assertFalse(CosmosPageComponent.isDisplayed(ui));
-    var page = page("Copyright");
-    var wrapper = new Div(page);
+    CosmosPageComponent page = page("Copyright");
+    Div wrapper = new Div(page);
     ui.add(wrapper);
     assertTrue(CosmosPageComponent.isDisplayed(ui));
     wrapper.remove(page);

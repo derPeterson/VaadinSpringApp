@@ -1,13 +1,29 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.function.DeploymentConfiguration;
 import com.vaadin.flow.internal.CurrentInstance;
-import com.vaadin.flow.server.*;
+import com.vaadin.flow.server.ServiceInitEvent;
+import com.vaadin.flow.server.VaadinResponse;
+import com.vaadin.flow.server.VaadinService;
+import com.vaadin.flow.server.VaadinServiceEventBus;
+import com.vaadin.flow.server.VaadinServletRequest;
+import com.vaadin.flow.server.VaadinServletService;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.communication.AtmospherePushConnection;
 import com.vaadin.flow.server.communication.PushHandler;
 import com.vaadin.flow.server.communication.ServerRpcHandler;
@@ -30,6 +46,7 @@ import jakarta.persistence.PersistenceContext;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +68,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -86,7 +104,7 @@ class PushRpcSecurityPersistenceTest {
           repository.deleteAll();
           repository.flush();
           entityManager.createQuery("delete from RoleEntity").executeUpdate();
-          var admin = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
+          RoleEntity admin = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
           ordinaryRole = RoleEntity.builder().name(RoleType.ROLE_USER).build();
           entityManager.persist(admin);
           entityManager.persist(ordinaryRole);
@@ -95,7 +113,7 @@ class PushRpcSecurityPersistenceTest {
           targetId = create("push-target@example.com", ordinaryRole);
         });
     service = mock(VaadinServletService.class);
-    var deployment = mock(DeploymentConfiguration.class);
+    DeploymentConfiguration deployment = mock(DeploymentConfiguration.class);
     when(deployment.isXsrfProtectionEnabled()).thenReturn(true);
     when(deployment.isSyncIdCheckEnabled()).thenReturn(true);
     when(deployment.getMaxRequestBodySize()).thenReturn(1024L * 1024);
@@ -104,7 +122,7 @@ class PushRpcSecurityPersistenceTest {
     when(service.getEventBus()).thenReturn(new VaadinServiceEventBus(service));
     // Use the actual registered interceptor collection and real requestStart
     // method. Only servlet/session lookup and outgoing network I/O are mocked.
-    var init = new ServiceInitEvent(service);
+    ServiceInitEvent init = new ServiceInitEvent(service);
     new PushSecurityInterceptor(security, new MaintenanceService(maintenanceConfig))
         .serviceInit(init);
     assertEquals(1, init.getAddedVaadinRequestInterceptor().count());
@@ -155,7 +173,7 @@ class PushRpcSecurityPersistenceTest {
             });
     ui.add(action);
     ui.getInternals().getStateTree().collectChanges(change -> {});
-    var connection = mock(AtmospherePushConnection.class);
+    AtmospherePushConnection connection = mock(AtmospherePushConnection.class);
     when(connection.getOrCreateFragmentedMessage(any()))
         .thenAnswer(call -> new AtmospherePushConnection.FragmentedMessage());
     ui.getPushConfiguration().setPushMode(PushMode.MANUAL);
@@ -176,7 +194,7 @@ class PushRpcSecurityPersistenceTest {
   }
 
   private Long create(String email, RoleEntity role) {
-    var user =
+    UserEntity user =
         UserEntity.builder()
             .email(email)
             .firstName("Test")
@@ -200,14 +218,14 @@ class PushRpcSecurityPersistenceTest {
   }
 
   private void authenticate(Long id, boolean remember, boolean customPrincipal) {
-    var principal =
+    UserDetails principal =
         new CustomUserDetailsService(repository).loadUserByUsername(form(id).getEmail());
     authentication =
         remember
             ? new RememberMeAuthenticationToken("test", principal, principal.getAuthorities())
             : UsernamePasswordAuthenticationToken.authenticated(
                 principal, null, principal.getAuthorities());
-    var context = SecurityContextHolder.createEmptyContext();
+    SecurityContext context = SecurityContextHolder.createEmptyContext();
     context.setAuthentication(authentication);
     httpSession.setAttribute(
         HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
@@ -238,7 +256,7 @@ class PushRpcSecurityPersistenceTest {
             new BufferedReader(
                 new StringReader(
                     message.length() + "" + PushConstants.MESSAGE_DELIMITER + message)));
-    var onMessage = PushHandler.class.getDeclaredMethod("onMessage", AtmosphereResource.class);
+    Method onMessage = PushHandler.class.getDeclaredMethod("onMessage", AtmosphereResource.class);
     onMessage.setAccessible(true);
     try {
       onMessage.invoke(handler, resource);
@@ -369,7 +387,7 @@ class PushRpcSecurityPersistenceTest {
   void maintenanceDoesNotRejectOrdinaryHttpBootstrapBeforeItsRouteGuard() {
     authenticate(targetId, false, true);
     when(maintenanceConfig.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var interceptor =
+    PushSecurityInterceptor interceptor =
         new PushSecurityInterceptor(security, new MaintenanceService(maintenanceConfig));
     assertDoesNotThrow(
         () ->
@@ -408,7 +426,7 @@ class PushRpcSecurityPersistenceTest {
 
   @Test
   void publicRequestDoesNotRequireOrCreateAnAuthenticatedSession() {
-    var publicRequest = new MockHttpServletRequest("GET", "/home");
+    MockHttpServletRequest publicRequest = new MockHttpServletRequest("GET", "/home");
     assertDoesNotThrow(
         () -> service.requestStart(new VaadinServletRequest(publicRequest, service), null));
     assertNull(publicRequest.getSession(false));

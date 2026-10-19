@@ -1,4 +1,4 @@
-# Java-Formatierung als Arbeitsstandard
+# Java-Formatierung und Lesbarkeit als Arbeitsstandard
 
 Seit 16.10.2026 gilt **Google Java Format**, Stil `GOOGLE` mit 2 Leerzeichen,
 für künftige Java-Änderungen. Die Konfiguration liegt zentral im Root-`pom.xml`:
@@ -12,15 +12,85 @@ Nach jeder eigenen Java-Änderung, vor Tests und spätestens vor dem Abschluss:
 ```powershell
 .\mvnw.cmd spotless:apply
 .\mvnw.cmd spotless:check
+.\mvnw.cmd checkstyle:check
 ```
 
 Auch kleine Korrekturen ohne Build/Testlauf werden so formatiert. Nach weiteren
-Java-Korrekturen beide Schritte wiederholen. Der Auftrag ist dauerhaft in
+Java-Korrekturen alle drei Schritte wiederholen. Der Auftrag ist dauerhaft in
 [AGENTS.md](../AGENTS.md) gespeichert und gilt damit auch in späteren Chats.
 
 Die Befehle im Projektroot erfassen Java-Quellen und Tests aus Anwendung,
 `shared` und `browser-tests`, obwohl die beiden Hilfsmodule eigenständige
 Maven-Projekte sind. Generierte Dateien und Buildausgaben sind nicht eingeschlossen.
+
+## Verbindliche Lesbarkeitsregeln
+
+Seit 20.10.2026 gelten zusätzlich die ausdrücklich abgestimmten Regeln:
+
+- `if`, `else`, `for`, erweitertes `for`, `while` und `do/while` erhalten immer
+  geschweifte Klammern, auch bei nur einer Anweisung. `else if` darf eine Kette
+  bleiben. Bei `try`/`catch`/`finally` sind Klammern ohnehin Java-Syntax;
+  Absätze und überschaubare Blöcke machen die Fehlerbehandlung lesbar.
+- Explizite lokale Typen sind der Standard. Besonders bei Service-/Factory-
+  Rückgaben soll der Leser den Objekttyp direkt erkennen. `var` bleibt erlaubt,
+  wenn es einen konkreten Vorteil hat: bei anonymen oder nicht direkt benennbaren
+  Typen oder sehr langen generischen Typen, die bereits im Konstruktor sichtbar
+  sind. Es gibt keinen pauschalen `var`-Zwang und kein pauschales Verbot.
+- Normale und statische Imports nennen die tatsächlich verwendeten Typen bzw.
+  Mitglieder. Keine Sternchenimporte. Spotless sortiert statische Imports zuerst,
+  normale Imports danach und entfernt unbenutzte Imports.
+- Fachliche Objekte und längere Lambdas bekommen sprechende Namen. Kurze
+  Schleifenindizes bleiben angemessen; Methodennamen beschreiben die Aufgabe.
+- Verschachtelte ternäre Ausdrücke durch verständliche Schritte oder benannte
+  Methoden ersetzen. Einfache kurze Fallunterscheidungen dürfen ternär bleiben.
+- Große Methoden nach echten Aufgaben gliedern. Keine starren Zeilenlimits und
+  kein Zerlegen in bedeutungslose Weiterleitungsfunktionen. Zusammengehörige
+  Formularbindungen dürfen zusammenstehen; Transaktionen, Sperren, Fehlergrenzen
+  und Listener-Lebensdauer bleiben erhalten.
+- Kommentare erklären Gründe, Verträge und Besonderheiten. Namen und Struktur
+  sollen den offensichtlichen Ablauf bereits verständlich machen.
+
+```java
+UserEntity currentUser = userService.loadUser(userId);
+
+if (currentUser.isEnabled()) {
+  refreshAccount(currentUser);
+} else {
+  showAccountUnavailable();
+}
+```
+
+Das Beispiel erläutert den Stil, keine neue Service-Schnittstelle. `var` bedeutet
+weiterhin statische Typableitung beim Kompilieren; es bietet keinen Laufzeit-
+oder Leistungsvorteil. Die verbliebenen konkreten Beispiele im Projekt sind
+überwiegend anonyme Test-/Wrappertypen und der gemeinsame, nicht unmittelbar
+benennbare Typ von Vaadin-TextField und TextArea.
+
+## Automatische Stilprüfung
+
+Die zentrale [Checkstyle-Konfiguration](../config/checkstyle.xml) prüft mit
+`NeedBraces` und `AvoidStarImport` sämtliche handgeschriebenen Java-Quellen der
+Anwendung, von Shared und der Browsertests, einschließlich Tests. Der Root-POM
+verwendet Maven Checkstyle Plugin 3.6.0 und Checkstyle 14.3.0 ausschließlich als
+Buildwerkzeug; Anwendungsabhängigkeiten und Google Java Format bleiben erhalten.
+
+```powershell
+.\mvnw.cmd checkstyle:check
+```
+
+Anders als der Spotless-Ratchet prüft dieser Aufruf den gesamten Bestand und
+benötigt kein Git-Checkout. Er verändert keine Quellen. Der Aufruf ist bewusst
+explizit und nicht an den normalen Build oder einen IDE-Hook gebunden. Für
+Coding-Agenten ist er über `AGENTS.md` vor Tests und Abschluss verbindlich.
+Bei Bedarf kann dieselbe Prüfung separat in eine CI-Pipeline aufgenommen werden;
+eine solche Workflowänderung wurde nicht vorgenommen.
+
+Checkstyle prüft Klammern und Imports, nicht die fachliche Qualität eines Namens,
+die sinnvolle `var`-Ausnahme oder die richtige Methodengliederung. Diese Punkte
+bleiben Teil des Reviews. Regeln:
+[NeedBraces](https://checkstyle.org/checks/blocks/needbraces.html),
+[AvoidStarImport](https://checkstyle.org/checks/imports/avoidstarimport.html),
+[Maven-Check-Ziel](https://maven.apache.org/plugins/maven-checkstyle-plugin/check-mojo.html).
 
 ## Umfang und Schutz vorhandener Arbeit
 
@@ -43,7 +113,8 @@ Markdown und sonstige Dateitypen werden von dieser Java-Konfiguration nicht form
 
 Der Formatter ist ein verbindlicher Arbeitsschritt des Agenten. Es wird kein
 Hintergrund-Dateiwächter und kein persönlicher IDE-Speicher-Hook installiert.
-Auch wird `spotless:apply` nicht in den normalen Maven-Build eingebunden: Ein Build
+Auch werden `spotless:apply` und die explizite Checkstyle-Prüfung nicht in den
+normalen Maven-Build eingebunden: Ein Build
 ändert dadurch keine Quellen, und Docker benötigt weiterhin kein `.git`-Verzeichnis.
 Zum expliziten Formatieren über Spotless wird ein lokales Git-Checkout mit `HEAD`
 benötigt. Der Eclipse-Formatter ist nicht mehr der von Spotless verwendete Standard.

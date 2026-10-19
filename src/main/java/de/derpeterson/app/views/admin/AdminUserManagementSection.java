@@ -16,6 +16,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -24,6 +25,7 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.Binder.Binding;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -52,7 +54,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -204,7 +213,7 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   private Div createUsersCardHeader() {
-    var usersIcon = VaadinIcon.USERS.create();
+    Icon usersIcon = VaadinIcon.USERS.create();
     usersIcon.getElement().setAttribute("aria-hidden", "true");
     Div iconBadge = new Div(usersIcon);
     iconBadge.addClassName("cosmos-panel-icon");
@@ -403,7 +412,9 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   private void applyFilterInputs() {
-    if (lastActivityFilter.isInvalid()) return;
+    if (lastActivityFilter.isInvalid()) {
+      return;
+    }
     appliedFilters =
         new AdminUserFilters(
             "",
@@ -524,9 +535,10 @@ public class AdminUserManagementSection extends VerticalLayout {
             .reduce((first, next) -> first.thenComparing(next))
             .orElse((left, right) -> 0);
     List<UserEntity> sortedUsers = filteredUsers.stream().sorted(comparator).toList();
-    var page = sortedUsers.subList(fromIndex, toIndex);
-    if (avatars != null)
+    List<UserEntity> page = sortedUsers.subList(fromIndex, toIndex);
+    if (avatars != null) {
       avatarStates = avatars.states(page.stream().map(UserEntity::getId).toList());
+    }
     userGrid.setItems(page);
     pagination.showPage(currentPage, filteredUsers.size(), pageSize);
     accountCount.setText(messageProperties.getAdminUsersAccountCount(users.size()));
@@ -574,7 +586,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     dialog.getHeader().add(dialogHeader);
     dialog.getElement().setProperty("ariaLabel", dialogTitle.getText());
 
-    var warningIcon = VaadinIcon.WARNING.create();
+    Icon warningIcon = VaadinIcon.WARNING.create();
     warningIcon.getElement().setAttribute("aria-hidden", "true");
     Div warningBadge = new Div(warningIcon);
     warningBadge.addClassNames("cosmos-panel-icon", "cosmos-delete-accent");
@@ -587,10 +599,12 @@ public class AdminUserManagementSection extends VerticalLayout {
     Div warning = new Div(warningBadge, warningHeading);
     warning.addClassName("admin-user-delete-warning");
 
-    var avatar = new OverlayUserIcon(messageProperties, user, user.getStatus(), IconSize.PIXEL_32);
-    if (avatars != null)
+    OverlayUserIcon avatar =
+        new OverlayUserIcon(messageProperties, user, user.getStatus(), IconSize.PIXEL_32);
+    if (avatars != null) {
       avatar.configureAvatar(
           avatars, avatarStates.getOrDefault(user.getId(), UserAvatarService.State.initial()));
+    }
     avatar.addClassName("admin-user-table-avatar");
     Span userName = new Span(getFullName(user));
     userName.addClassName("admin-user-delete-name");
@@ -683,7 +697,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     dialogDescription.addClassName("cosmos-panel-description");
     Div dialogHeading = new Div(dialogTitle, dialogDescription);
     dialogHeading.addClassName("cosmos-panel-heading");
-    var userIcon = VaadinIcon.USER.create();
+    Icon userIcon = VaadinIcon.USER.create();
     userIcon.getElement().setAttribute("aria-hidden", "true");
     Div iconBadge = new Div(userIcon);
     iconBadge.addClassName("cosmos-panel-icon");
@@ -792,7 +806,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                 ? messageProperties.getAdminUsersTechnicalInfoEdit()
                 : messageProperties.getAdminUsersTechnicalInfoCreate());
     technicalInfo.addClassName(LumoUtility.TextColor.SECONDARY);
-    var securityIcon = VaadinIcon.SHIELD.create();
+    Icon securityIcon = VaadinIcon.SHIELD.create();
     securityIcon.getElement().setAttribute("aria-hidden", "true");
     Div securityNote = new Div(securityIcon, technicalInfo);
     securityNote.addClassNames("cosmos-panel-hint", "admin-user-security-note");
@@ -839,7 +853,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     AtomicBoolean showPasswordErrors = new AtomicBoolean();
     AtomicBoolean showConfirmPasswordErrors = new AtomicBoolean();
-    var passwordBinding =
+    Binding<AdminUserFormData, String> passwordBinding =
         binder
             .forField(passwordField)
             .withValidationStatusHandler(
@@ -856,7 +870,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                         : messageProperties.getAdminUsersPasswordValidationCreate())
             .bind(AdminUserFormData::getPassword, AdminUserFormData::setPassword);
 
-    var confirmPasswordBinding =
+    Binding<AdminUserFormData, String> confirmPasswordBinding =
         binder
             .forField(confirmPasswordField)
             .withValidationStatusHandler(
@@ -1168,10 +1182,12 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   private Component createUserIdentity(UserEntity user) {
-    var avatar = new OverlayUserIcon(messageProperties, user, user.getStatus(), IconSize.PIXEL_32);
-    if (avatars != null)
+    OverlayUserIcon avatar =
+        new OverlayUserIcon(messageProperties, user, user.getStatus(), IconSize.PIXEL_32);
+    if (avatars != null) {
       avatar.configureAvatar(
           avatars, avatarStates.getOrDefault(user.getId(), UserAvatarService.State.initial()));
+    }
     avatar.addClassName("admin-user-table-avatar");
     Span name = new Span(getFullName(user));
     name.addClassName("admin-user-table-name");
@@ -1237,7 +1253,9 @@ public class AdminUserManagementSection extends VerticalLayout {
             ? formatDateTime(activity)
             : AdminUserActivityText.format(activity, now, messageProperties);
     Span label = new Span(text);
-    if (activity != null) label.getElement().setAttribute("title", formatDateTime(activity));
+    if (activity != null) {
+      label.getElement().setAttribute("title", formatDateTime(activity));
+    }
     return label;
   }
 

@@ -1,13 +1,23 @@
 package de.derpeterson.app.ui.components;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.dom.Element;
-import com.vaadin.flow.server.*;
+import com.vaadin.flow.server.VaadinServletRequest;
+import com.vaadin.flow.server.VaadinServletResponse;
+import com.vaadin.flow.server.VaadinServletService;
+import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.security.MaintenanceAccessException;
 import de.derpeterson.app.service.UserAvatarService;
-import java.util.*;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -19,13 +29,13 @@ import org.springframework.security.authentication.AuthenticationCredentialsNotF
 class AvatarImageResourceTest {
   @Test
   void imageResponseHasFixedTypePrivateCacheAndNoOriginalFilename() throws Exception {
-    var avatars = mock(UserAvatarService.class);
-    var revision = UUID.randomUUID();
+    UserAvatarService avatars = mock(UserAvatarService.class);
+    UUID revision = UUID.randomUUID();
     when(avatars.image(any(), eq(12L), eq(revision), eq(false)))
         .thenReturn(Optional.of(new byte[] {1, 2, 3}));
-    var service = mock(VaadinServletService.class);
-    var request = new VaadinServletRequest(new MockHttpServletRequest(), service);
-    var response = new MockHttpServletResponse();
+    VaadinServletService service = mock(VaadinServletService.class);
+    VaadinServletRequest request = new VaadinServletRequest(new MockHttpServletRequest(), service);
+    MockHttpServletResponse response = new MockHttpServletResponse();
     AvatarImageResource.handler(avatars, 12L, revision, false)
         .handleRequest(
             request,
@@ -43,11 +53,11 @@ class AvatarImageResourceTest {
   @ParameterizedTest
   @ValueSource(ints = {401, 403, 404, 503})
   void deniedOrOldResourcesReturnNoImageAndRemainUncacheable(int code) throws Exception {
-    var avatars = mock(UserAvatarService.class);
-    var revision = UUID.randomUUID();
-    if (code == 404)
+    UserAvatarService avatars = mock(UserAvatarService.class);
+    UUID revision = UUID.randomUUID();
+    if (code == 404) {
       when(avatars.image(any(), any(), any(), anyBoolean())).thenReturn(Optional.empty());
-    else
+    } else {
       when(avatars.image(any(), any(), any(), anyBoolean()))
           .thenThrow(
               switch (code) {
@@ -55,8 +65,9 @@ class AvatarImageResourceTest {
                 case 503 -> new MaintenanceAccessException("maintenance");
                 default -> new AccessDeniedException("forbidden");
               });
-    var service = mock(VaadinServletService.class);
-    var response = new MockHttpServletResponse();
+    }
+    VaadinServletService service = mock(VaadinServletService.class);
+    MockHttpServletResponse response = new MockHttpServletResponse();
     AvatarImageResource.handler(avatars, 12L, revision, false)
         .handleRequest(
             new VaadinServletRequest(new MockHttpServletRequest(), service),

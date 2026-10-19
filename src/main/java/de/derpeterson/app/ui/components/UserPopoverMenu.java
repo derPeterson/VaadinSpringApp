@@ -33,6 +33,7 @@ import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.service.UserService.StatusUpdate;
 import de.derpeterson.app.views.AccountView;
 import io.micrometer.common.util.StringUtils;
 import java.util.Locale;
@@ -241,12 +242,18 @@ public class UserPopoverMenu {
   }
 
   public void configureAvatars(UserAvatarService avatars) {
-    if (overlayIcon != null) overlayIcon.configureAvatar(avatars, null);
+    if (overlayIcon != null) {
+      overlayIcon.configureAvatar(avatars, null);
+    }
   }
 
   public void refreshProfileName() {
-    if (profileName != null) profileName.setText(buildFullName());
-    if (overlayIcon != null) overlayIcon.setIdentity(currentUser);
+    if (profileName != null) {
+      profileName.setText(buildFullName());
+    }
+    if (overlayIcon != null) {
+      overlayIcon.setIdentity(currentUser);
+    }
   }
 
   private void addOfflineUserInfo(VerticalLayout contentLayout) {
@@ -298,7 +305,7 @@ public class UserPopoverMenu {
 
   /** Gleiche Auswahl und Speicherlogik für Benutzermenü und Kontobild. */
   public Select<UserStatus> createStatusSelect() {
-    var select = new Select<UserStatus>();
+    Select<UserStatus> select = new Select<UserStatus>();
     select.getElement().getThemeList().add("cosmos-status");
     select.setEnabled(hasCurrentUser());
     select.setItems(UserStatus.values());
@@ -307,7 +314,9 @@ public class UserPopoverMenu {
     select.setValue(currentStatus);
     select.addValueChangeListener(
         event -> {
-          if (event.isFromClient()) handleUserStatusChange(event.getValue(), true);
+          if (event.isFromClient()) {
+            handleUserStatusChange(event.getValue(), true);
+          }
         });
     return select;
   }
@@ -372,7 +381,7 @@ public class UserPopoverMenu {
     }
     if (isFromClient && hasCurrentUser()) {
       try {
-        var result = userService.updateUserStatus(currentUser, userStatus, true);
+        StatusUpdate result = userService.updateUserStatus(currentUser, userStatus, true);
         currentUser.setStatusManuallySet(result.manuallySet());
         applyExternalStatus(result.status());
       } catch (RuntimeException exception) {

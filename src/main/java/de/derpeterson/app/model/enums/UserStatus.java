@@ -26,7 +26,7 @@ public enum UserStatus {
           case ABSENT -> "<path d=\"M12 6.5V12l4 2.5\"/>";
           case OFFLINE -> "<path d=\"m8.5 8.5 7 7m0-7-7 7\"/>";
         };
-    var symbol = new Div();
+    Div symbol = new Div();
     symbol
         .getElement()
         .setProperty(
@@ -44,13 +44,14 @@ public enum UserStatus {
     symbol.setWidth(width);
     symbol.setHeight(height);
     symbol.getStyle().setColor(color).setBackgroundColor(backgroundColor).setBorderRadius("50%");
-    if (overlay)
+    if (overlay) {
       symbol
           .getStyle()
           .setPosition(Style.Position.ABSOLUTE)
           .setBottom("var(--cosmos-avatar-status-anchor)")
           .setRight("var(--cosmos-avatar-status-anchor)")
           .set("transform", "translate(50%, 50%)");
+    }
     return symbol;
   }
 

@@ -1,9 +1,11 @@
 package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.RESET_PAGE_TITLE;
+import static de.derpeterson.app.config.AppRouteConstants.RESET_PASSWORD_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.browsertests.i18n.UiTexts;
@@ -58,7 +60,7 @@ public final class ResetPasswordPage {
 
   @Step("Erfolgreiche Passwortänderung wird sichtbar bestätigt")
   public void assertChanged() {
-    var notice = page.locator("vaadin-notification-card:not([closing])");
+    Locator notice = page.locator("vaadin-notification-card:not([closing])");
     assertThat(notice).containsText(texts.getBaseSuccessTitle());
     assertThat(notice)
         .containsText(texts.visibleText(page, texts.getResetPasswordSuccessMessage()));

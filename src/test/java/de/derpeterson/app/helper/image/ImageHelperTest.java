@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,7 +23,7 @@ class ImageHelperTest {
       assertArrayEquals(original.readAllBytes(), imageBytes);
     }
 
-    var image = ImageIO.read(new ByteArrayInputStream(imageBytes));
+    BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
     assertNotNull(image, "The classpath bytes must contain a readable image");
     assertTrue(image.getWidth() > 0 && image.getHeight() > 0);
   }

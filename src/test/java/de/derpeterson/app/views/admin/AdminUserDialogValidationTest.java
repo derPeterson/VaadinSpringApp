@@ -1,9 +1,21 @@
 package de.derpeterson.app.views.admin;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import com.vaadin.flow.component.*;
+import com.vaadin.flow.component.BlurNotifier;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentUtil;
+import com.vaadin.flow.component.FocusNotifier;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -20,12 +32,18 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /**
@@ -59,7 +77,9 @@ class AdminUserDialogValidationTest {
 
   @AfterEach
   void cleanup() {
-    if (dialog != null) dialog.close();
+    if (dialog != null) {
+      dialog.close();
+    }
     NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
@@ -151,7 +171,7 @@ class AdminUserDialogValidationTest {
   void superadminCheckboxIsOnlyEditableByASuperadmin() {
     open("de", false);
     @SuppressWarnings("unchecked")
-    var roles =
+    CheckboxGroup<RoleType> roles =
         (com.vaadin.flow.component.checkbox.CheckboxGroup<de.derpeterson.app.model.enums.RoleType>)
             descendants(dialog)
                 .filter(com.vaadin.flow.component.checkbox.CheckboxGroup.class::isInstance)
@@ -198,7 +218,7 @@ class AdminUserDialogValidationTest {
     assertEquals(texts.getRoleGuest(), roles.getItemLabelGenerator().apply(RoleType.ROLE_GUEST));
     roles.setValue(Set.of(RoleType.ROLE_SUPERADMIN, RoleType.ROLE_GUEST));
     save().click();
-    var edited = org.mockito.ArgumentCaptor.forClass(UserEntity.class);
+    ArgumentCaptor<UserEntity> edited = org.mockito.ArgumentCaptor.forClass(UserEntity.class);
     verify(users).updateAdminUser(edited.capture(), eq(3L), eq(""));
     assertEquals(
         Set.of(RoleType.ROLE_SUPERADMIN, RoleType.ROLE_GUEST),
@@ -211,7 +231,7 @@ class AdminUserDialogValidationTest {
   @ValueSource(strings = {"create", "edit", "delete"})
   void nativeDismissalIsEnabledAndClosingDoesNotPersistOrDelete(String action) {
     if (action.equals("delete")) {
-      var target =
+      UserEntity target =
           UserEntity.builder()
               .id(2L)
               .version(3L)

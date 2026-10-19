@@ -4,6 +4,7 @@ import com.vaadin.flow.server.streams.DownloadHandler;
 import de.derpeterson.app.security.MaintenanceAccessException;
 import de.derpeterson.app.service.UserAvatarService;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
@@ -19,7 +20,7 @@ public final class AvatarImageResource {
       event.getResponse().setHeader("X-Content-Type-Options", "nosniff");
       event.getResponse().setHeader("Content-Security-Policy", "default-src 'none'; sandbox");
       try {
-        var image =
+        Optional<byte[]> image =
             avatars.image((HttpServletRequest) event.getRequest(), userId, revision, editor);
         if (image.isEmpty()) {
           event.getResponse().setStatus(404);

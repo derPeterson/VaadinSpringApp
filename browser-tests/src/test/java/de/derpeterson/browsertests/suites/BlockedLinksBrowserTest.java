@@ -1,18 +1,30 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
-import de.derpeterson.browsertests.*;
+import de.derpeterson.browsertests.BrowserActor;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.mail.MailpitInbox.CapturedMail;
+import de.derpeterson.browsertests.pages.AdminUserDialog;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.ForgotPasswordPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.RegistrationPage;
+import de.derpeterson.browsertests.pages.ResetPasswordPage;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -38,8 +50,10 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
       registration.submit();
       registration.assertSubmitted(account);
       MailpitInbox inbox = new MailpitInbox(actor.context);
-      var mail = inbox.awaitVerificationMail(account);
-      if (previouslyActivated) inbox.openVerificationLink(mail).close();
+      CapturedMail mail = inbox.awaitVerificationMail(account);
+      if (previouslyActivated) {
+        inbox.openVerificationLink(mail).close();
+      }
       AdminUserDialog form = admin().openEdit(account);
       form.setEnabled(false);
       form.save();
@@ -95,10 +109,11 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
       forgot.submit();
       forgot.requestedResponse();
       MailpitInbox inbox = new MailpitInbox(actor.context);
-      var mail = inbox.awaitPasswordResetMail(account);
+      CapturedMail mail = inbox.awaitPasswordResetMail(account);
       AdminUserDialog form = users.openEdit(account);
-      if (change.equals("delete")) form.requestDelete().confirm();
-      else {
+      if (change.equals("delete")) {
+        form.requestDelete().confirm();
+      } else {
         form.setEnabled(false);
         form.save();
       }

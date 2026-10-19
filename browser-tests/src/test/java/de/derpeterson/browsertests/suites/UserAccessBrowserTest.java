@@ -1,17 +1,32 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.NOTIFICATIONS_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
-import com.microsoft.playwright.*;
-import de.derpeterson.browsertests.*;
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
+import de.derpeterson.browsertests.BrowserActor;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.pages.AdminUserDialog;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.RegistrationPage;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag("browser")
 @Feature("Benutzerverwaltung: Freigabe, Rollen und Versionskonflikte")
@@ -193,7 +208,7 @@ public class UserAccessBrowserTest extends BrowserFixture {
         **Erwartet:** Superadmin erbt Adminrechte ohne zusätzliche gespeicherte Administratorrolle.
         """)
   void superadminAloneHasAdminNavigationAndCanSaveItsOwnAccount() {
-    var login = new LoginPage(page);
+    LoginPage login = new LoginPage(page);
     login.open();
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
     new UserMenu(page).selectTestLanguage();
@@ -292,7 +307,7 @@ public class UserAccessBrowserTest extends BrowserFixture {
     try (BrowserActor actor = new BrowserActor(browser)) {
       actor.login(email, BrowserTestAccounts.USER_PASSWORD);
       new UserMenu(actor.page).selectTestLanguage();
-      var menu = new UserMenu(actor.page);
+      UserMenu menu = new UserMenu(actor.page);
       menu.assertUserSignedInWithoutAdminAction(email);
       menu.close();
       String sessionId =
@@ -301,17 +316,18 @@ public class UserAccessBrowserTest extends BrowserFixture {
               .findFirst()
               .orElseThrow()
               .value;
-      var loginPosts = new java.util.concurrent.atomic.AtomicInteger();
+      AtomicInteger loginPosts = new java.util.concurrent.atomic.AtomicInteger();
       actor.page.onRequest(
           request -> {
-            if (request.method().equals("POST") && request.url().endsWith(path(LOGIN_ROUTE)))
+            if (request.method().equals("POST") && request.url().endsWith(path(LOGIN_ROUTE))) {
               loginPosts.incrementAndGet();
+            }
           });
       AdminUserDialog change = users.openEdit(email);
       change.setAdministrator(true);
       change.save();
       menu.open();
-      var manage =
+      Locator manage =
           actor.page.getByRole(
               com.microsoft.playwright.options.AriaRole.BUTTON,
               new Page.GetByRoleOptions()
@@ -320,7 +336,7 @@ public class UserAccessBrowserTest extends BrowserFixture {
       assertThat(manage).isVisible();
       manage.click();
       assertThat(actor.page).hasURL(urlPattern(ADMIN_ROUTE));
-      var actorUsers = new AdminUsersPage(actor.page);
+      AdminUsersPage actorUsers = new AdminUsersPage(actor.page);
       actorUsers.open();
       actorUsers.openCreate();
       change = users.openEdit(email);

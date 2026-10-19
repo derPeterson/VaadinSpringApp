@@ -1,10 +1,15 @@
 package de.derpeterson.app.helper.ui;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.data.binder.Result;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -28,8 +33,8 @@ class CompactDateInputTest {
 
   @BeforeEach
   void setup() {
-    var ui = new UI();
-    var session = mock(VaadinSession.class);
+    UI ui = new UI();
+    VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     UI.setCurrent(ui);
@@ -67,7 +72,7 @@ class CompactDateInputTest {
   void compactDatesRespectOrderLeapYearsAndTheFixedCentury(
       String language, String input, String expected) throws Exception {
     field.setLocale(Locale.forLanguageTag(language));
-    var parsed = field.getFallbackParser().apply(input);
+    Result<LocalDate> parsed = field.getFallbackParser().apply(input);
     assertFalse(parsed.isError());
     assertEquals(LocalDate.parse(expected), parsed.getOrThrow(IllegalArgumentException::new));
     assertEquals(LocalDate.of(2000, 1, 1), field.getI18n().getReferenceDate());

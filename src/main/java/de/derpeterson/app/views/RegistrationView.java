@@ -242,22 +242,22 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     cardSecondaryTitleLayout.add(createAccountQuestionText);
     cardSecondaryTitleLayout.add(formComponents.loginLink);
 
-    var firstLineForm =
+    HorizontalLayout firstLineForm =
         new HorizontalLayout(formComponents.firstNameField, formComponents.lastNameField);
     firstLineForm.setWidthFull();
     firstLineForm.setSpacing(false);
     firstLineForm.addClassName("cosmos-form-row");
-    var secondLineForm =
+    HorizontalLayout secondLineForm =
         new HorizontalLayout(formComponents.emailField, formComponents.confirmEmailField);
     secondLineForm.setWidthFull();
     secondLineForm.setSpacing(false);
     secondLineForm.addClassName("cosmos-form-row");
-    var thirdLineForm =
+    HorizontalLayout thirdLineForm =
         new HorizontalLayout(formComponents.passwordField, formComponents.confirmPasswordField);
     thirdLineForm.setWidthFull();
     thirdLineForm.setSpacing(false);
     thirdLineForm.addClassName("cosmos-form-row");
-    var fourthLineForm =
+    HorizontalLayout fourthLineForm =
         new HorizontalLayout(formComponents.genderComboBox, formComponents.birthDatePicker);
     fourthLineForm.setWidthFull();
     fourthLineForm.setSpacing(false);
@@ -513,19 +513,26 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
       DatePicker birthDatePicker) {}
 
   private void updateInputPlaceholders() {
-    if (firstNameField != null)
+    if (firstNameField != null) {
       firstNameField.setPlaceholder(messageProperties.getAccountFirstNamePlaceholder());
-    if (lastNameField != null)
+    }
+    if (lastNameField != null) {
       lastNameField.setPlaceholder(messageProperties.getAccountLastNamePlaceholder());
-    if (emailField != null)
+    }
+    if (emailField != null) {
       emailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
-    if (confirmEmailField != null)
+    }
+    if (confirmEmailField != null) {
       confirmEmailField.setPlaceholder(messageProperties.getAccountConfirmEmailPlaceholder());
-    if (passwordField != null)
+    }
+    if (passwordField != null) {
       passwordField.setPlaceholder(messageProperties.getAccountPasswordPlaceholder());
-    if (confirmPasswordField != null)
+    }
+    if (confirmPasswordField != null) {
       confirmPasswordField.setPlaceholder(messageProperties.getAccountConfirmPasswordPlaceholder());
-    if (genderComboBox != null)
+    }
+    if (genderComboBox != null) {
       genderComboBox.setPlaceholder(messageProperties.getAccountGenderPlaceholder());
+    }
   }
 }

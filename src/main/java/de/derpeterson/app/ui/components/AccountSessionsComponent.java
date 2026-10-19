@@ -1,17 +1,23 @@
 package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.html.*;
-import com.vaadin.flow.component.icon.*;
-import com.vaadin.flow.function.*;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.SvgIcon;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.function.SerializableConsumer;
+import com.vaadin.flow.function.SerializableRunnable;
+import com.vaadin.flow.function.SerializableSupplier;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
-import de.derpeterson.app.security.SessionManagementService.*;
+import de.derpeterson.app.security.SessionManagementService.Entry;
+import de.derpeterson.app.security.SessionManagementService.Snapshot;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,7 +43,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     super("account-panel-sessions", VaadinIcon.DESKTOP);
     this.messages = messages;
     snapshot = new Snapshot(List.of(), 0, initialLimit);
-    var devices = new SvgIcon("icons/devices.svg");
+    SvgIcon devices = new SvgIcon("icons/devices.svg");
     devices.addClassName("account-devices-icon");
     devices.getElement().setAttribute("aria-hidden", "true");
     setIcon(devices);
@@ -45,7 +51,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     activity.addClassName("account-entry-description");
     limit.addClassName("cosmos-admin-role-chip");
     limit.setId("account-sessions-limit");
-    var heading = new Div(new Div(count, activity), limit);
+    Div heading = new Div(new Div(count, activity), limit);
     heading.addClassName("account-session-heading");
     rows.setId("account-session-entries");
     getBody().add(heading, rows);
@@ -56,7 +62,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     refresh.setId("account-sessions-refresh");
     refresh.setPrefixComponent(VaadinIcon.REFRESH.create());
     refresh.addClickListener(event -> reload());
-    var actions = new Div(refresh, logout);
+    Div actions = new Div(refresh, logout);
     actions.addClassName("cosmos-panel-actions");
     addFooter(hint, actions);
     refreshTexts();
@@ -82,7 +88,9 @@ public class AccountSessionsComponent extends AccountPanelComponent {
   }
 
   public void reload() {
-    if (loader == null) return;
+    if (loader == null) {
+      return;
+    }
     try {
       snapshot = Objects.requireNonNull(loader.get());
       refreshTexts();
@@ -113,7 +121,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
   }
 
   private Div row(Entry entry) {
-    var symbol =
+    Div symbol =
         new Div((entry.device().mobile() ? VaadinIcon.MOBILE : VaadinIcon.DESKTOP).create());
     symbol.addClassName("cosmos-panel-icon");
     String device =
@@ -122,9 +130,9 @@ public class AccountSessionsComponent extends AccountPanelComponent {
             Stream.of(entry.device().system(), entry.device().browser())
                 .filter(value -> !value.isBlank())
                 .toList());
-    var title = new Span(device.isBlank() ? messages.getSessionUnknownDevice() : device);
+    Span title = new Span(device.isBlank() ? messages.getSessionUnknownDevice() : device);
     title.addClassName("account-entry-title");
-    var formatter =
+    DateTimeFormatter formatter =
         DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
             .withLocale(
                 VaadinSession.getCurrent() == null
@@ -135,11 +143,11 @@ public class AccountSessionsComponent extends AccountPanelComponent {
         (entry.active() ? messages.getSessionLastActivity() : messages.getSessionSavedLogin())
             + ": "
             + formatter.format(entry.lastActivity());
-    var detail = new Span(description);
+    Span detail = new Span(description);
     detail.addClassName("account-entry-description");
-    var copy = new Div(title, detail);
+    Div copy = new Div(title, detail);
     copy.addClassName("account-entry-copy");
-    var since =
+    Span since =
         new Span(
             (entry.active() ? messages.getSessionStarted() : messages.getSessionSavedSince())
                 + ": "
@@ -147,22 +155,28 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     since.addClassName("account-entry-description");
     copy.add(since);
     if (entry.current()) {
-      var badge = new Span(messages.getAccountSettingsCurrentDevice());
+      Span badge = new Span(messages.getAccountSettingsCurrentDevice());
       badge.getElement().getThemeList().addAll(List.of("badge", "success"));
       badge.addClassName("account-current-device");
       copy.add(new Div(badge));
     } else if (entry.active() && entry.remembered()) {
-      var remembered = new Span(messages.getLoginRememberMeCheckbox());
+      Span remembered = new Span(messages.getLoginRememberMeCheckbox());
       remembered.addClassName("account-entry-description");
       copy.add(remembered);
     }
-    var action =
-        new Button(
-            entry.current()
-                ? messages.getAccountSettingsCurrentSession()
-                : entry.active()
-                    ? messages.getBaseLogoutButton()
-                    : messages.getSessionRevokeSaved());
+    String actionLabel;
+    String sessionState;
+    if (entry.current()) {
+      actionLabel = messages.getAccountSettingsCurrentSession();
+      sessionState = "current";
+    } else if (entry.active()) {
+      actionLabel = messages.getBaseLogoutButton();
+      sessionState = "active";
+    } else {
+      actionLabel = messages.getSessionRevokeSaved();
+      sessionState = "saved";
+    }
+    Button action = new Button(actionLabel);
     action.setPrefixComponent(VaadinIcon.SIGN_OUT.create());
     action.setEnabled(!entry.current() && revoke != null);
     action.setId(entry.current() ? "account-current-session" : "session-revoke-" + entry.handle());
@@ -172,12 +186,9 @@ public class AccountSessionsComponent extends AccountPanelComponent {
                 () ->
                     revoke.accept(
                         entry.savedHandle() == null ? entry.handle() : entry.savedHandle())));
-    var row = new Div(symbol, copy, action);
+    Div row = new Div(symbol, copy, action);
     row.addClassName("account-entry");
-    row.getElement()
-        .setAttribute(
-            "data-session-state",
-            entry.current() ? "current" : entry.active() ? "active" : "saved");
+    row.getElement().setAttribute("data-session-state", sessionState);
     return row;
   }
 

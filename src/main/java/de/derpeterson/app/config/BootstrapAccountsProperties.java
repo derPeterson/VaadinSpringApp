@@ -5,7 +5,11 @@ import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.validation.UserInputRules;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -41,9 +45,11 @@ public class BootstrapAccountsProperties {
   }
 
   public List<Entry> validatedEntries() {
-    if (!enabled) return List.of();
-    var entries = new ArrayList<Entry>();
-    var emails = new HashSet<String>();
+    if (!enabled) {
+      return List.of();
+    }
+    ArrayList<Entry> entries = new ArrayList<Entry>();
+    HashSet<String> emails = new HashSet<String>();
     add(entries, emails, RoleType.ROLE_SUPERADMIN, superadmins);
     add(entries, emails, RoleType.ROLE_ADMIN, admins);
     add(entries, emails, RoleType.ROLE_USER, users);
@@ -52,9 +58,11 @@ public class BootstrapAccountsProperties {
   }
 
   private void add(List<Entry> entries, Set<String> emails, RoleType role, List<Account> group) {
-    if (group == null) throw new IllegalArgumentException("Bootstrap list required: " + role);
+    if (group == null) {
+      throw new IllegalArgumentException("Bootstrap list required: " + role);
+    }
     for (int i = 0; i < group.size(); i++) {
-      var account = group.get(i);
+      Account account = group.get(i);
       if (account == null
           || !UserInputRules.isEmailValid(account.email)
           || !UserInputRules.isPasswordSecure(account.password)
@@ -63,13 +71,15 @@ public class BootstrapAccountsProperties {
           || !UserInputRules.isBirthDateValid(account.birthDate)
           || account.gender == null
           || account.preferredLocale == null
-          || !Set.of("de", "en").contains(account.preferredLocale.getLanguage()))
+          || !Set.of("de", "en").contains(account.preferredLocale.getLanguage())) {
         throw new IllegalArgumentException(
             "Invalid bootstrap account in " + role + " at index " + i);
-      var email = EmailIdentity.canonicalize(account.email);
-      if (!emails.add(email))
+      }
+      String email = EmailIdentity.canonicalize(account.email);
+      if (!emails.add(email)) {
         throw new IllegalArgumentException(
             "Duplicate bootstrap account in " + role + " at index " + i);
+      }
       entries.add(new Entry(role, account));
     }
   }

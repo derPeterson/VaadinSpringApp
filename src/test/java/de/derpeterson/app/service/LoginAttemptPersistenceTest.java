@@ -1,24 +1,61 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import de.derpeterson.app.model.*;
-import de.derpeterson.app.model.enums.*;
-import de.derpeterson.app.repository.*;
-import de.derpeterson.app.security.*;
+import de.derpeterson.app.model.LoginAttemptEntity;
+import de.derpeterson.app.model.PasswordResetTokenEntity;
+import de.derpeterson.app.model.RoleEntity;
+import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.Gender;
+import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.model.enums.TokenStatus;
+import de.derpeterson.app.repository.LoginAttemptGuardRepository;
+import de.derpeterson.app.repository.LoginAttemptRepository;
+import de.derpeterson.app.repository.PasswordResetTokenRepository;
+import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.CustomUserDetailsService;
+import de.derpeterson.app.security.LoginAuthenticationService;
+import de.derpeterson.app.security.LoginThrottledException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import java.time.*;
-import java.util.*;
-import java.util.concurrent.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.*;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.*;
-import org.springframework.security.authentication.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -197,15 +234,15 @@ class LoginAttemptPersistenceTest {
   void concurrentFirstAttemptsAcrossServiceInstancesCountExactlyOnceUntilThreshold()
       throws Exception {
     limit.set(2);
-    var start = new CyclicBarrier(8);
-    var calls = new AtomicInteger();
-    var other =
+    CyclicBarrier start = new CyclicBarrier(8);
+    AtomicInteger calls = new AtomicInteger();
+    LoginAttemptService other =
         new LoginAttemptService(
             attempts, guard, config, manager, clock, LoginAttemptService.MAX_IDENTITIES);
-    try (var workers = Executors.newFixedThreadPool(8)) {
-      var tasks = new ArrayList<Future<Boolean>>();
+    try (ExecutorService workers = Executors.newFixedThreadPool(8)) {
+      ArrayList<Future<Boolean>> tasks = new ArrayList<Future<Boolean>>();
       for (int i = 0; i < 8; i++) {
-        var target = i % 2 == 0 ? service : other;
+        LoginAttemptService target = i % 2 == 0 ? service : other;
         tasks.add(
             workers.submit(
                 () -> {
@@ -226,7 +263,11 @@ class LoginAttemptPersistenceTest {
                 }));
       }
       int blocked = 0;
-      for (var task : tasks) if (task.get(20, TimeUnit.SECONDS)) blocked++;
+      for (Future<Boolean> task : tasks) {
+        if (task.get(20, TimeUnit.SECONDS)) {
+          blocked++;
+        }
+      }
       assertEquals(6, blocked);
     }
     assertEquals(2, calls.get());
@@ -241,7 +282,7 @@ class LoginAttemptPersistenceTest {
           bad(EMAIL);
           tx.setRollbackOnly();
         });
-    var restarted =
+    LoginAttemptService restarted =
         new LoginAttemptService(
             attempts, guard, config, manager, clock, LoginAttemptService.MAX_IDENTITIES);
     restarted.authenticate(EMAIL, this::accepted);
@@ -254,7 +295,8 @@ class LoginAttemptPersistenceTest {
 
   @Test
   void boundedCapacityRefusesNewKeysButKeepsExistingKeysUsableAndCleanupReclaimsSpace() {
-    var bounded = new LoginAttemptService(attempts, guard, config, manager, clock, 2);
+    LoginAttemptService bounded =
+        new LoginAttemptService(attempts, guard, config, manager, clock, 2);
     bounded.authenticate("first@example.test", this::accepted);
     bounded.authenticate("second@example.test", this::accepted);
     assertThrows(
@@ -275,7 +317,8 @@ class LoginAttemptPersistenceTest {
     bad(EMAIL);
     transaction.executeWithoutResult(
         tx -> {
-          var row = attempts.lockIdentity(LoginAttemptService.identityKey(EMAIL)).orElseThrow();
+          LoginAttemptEntity row =
+              attempts.lockIdentity(LoginAttemptService.identityKey(EMAIL)).orElseThrow();
           row.setLastActivity(clock.instant().minus(Duration.ofDays(2)));
           row.setBlockedUntil(clock.instant().plus(Duration.ofHours(1)));
         });
@@ -299,10 +342,11 @@ class LoginAttemptPersistenceTest {
 
   @Test
   void concurrentDifferentKeysNeverExceedThePersistentCapacity() throws Exception {
-    var bounded = new LoginAttemptService(attempts, guard, config, manager, clock, 2);
-    var start = new CyclicBarrier(6);
-    try (var workers = Executors.newFixedThreadPool(6)) {
-      var results = new ArrayList<Future<Boolean>>();
+    LoginAttemptService bounded =
+        new LoginAttemptService(attempts, guard, config, manager, clock, 2);
+    CyclicBarrier start = new CyclicBarrier(6);
+    try (ExecutorService workers = Executors.newFixedThreadPool(6)) {
+      ArrayList<Future<Boolean>> results = new ArrayList<Future<Boolean>>();
       for (int i = 0; i < 6; i++) {
         String email = "capacity-" + i + "@example.test";
         results.add(
@@ -318,7 +362,11 @@ class LoginAttemptPersistenceTest {
                 }));
       }
       int accepted = 0;
-      for (var result : results) if (result.get(20, TimeUnit.SECONDS)) accepted++;
+      for (Future<Boolean> result : results) {
+        if (result.get(20, TimeUnit.SECONDS)) {
+          accepted++;
+        }
+      }
       assertEquals(2, accepted);
       assertEquals(2, attempts.count());
     }
@@ -327,10 +375,10 @@ class LoginAttemptPersistenceTest {
   @Test
   void concurrentSuccessAndFailureAreSerializedWithoutLosingTheLaterFailure() throws Exception {
     bad(EMAIL);
-    var inside = new CountDownLatch(1);
-    var release = new CountDownLatch(1);
-    try (var workers = Executors.newFixedThreadPool(2)) {
-      var success =
+    CountDownLatch inside = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    try (ExecutorService workers = Executors.newFixedThreadPool(2)) {
+      Future<Authentication> success =
           workers.submit(
               () ->
                   service.authenticate(
@@ -345,7 +393,7 @@ class LoginAttemptPersistenceTest {
                         return accepted();
                       }));
       assertTrue(inside.await(10, TimeUnit.SECONDS));
-      var failure = workers.submit(() -> bad(EMAIL));
+      Future<?> failure = workers.submit(() -> bad(EMAIL));
       release.countDown();
       assertNotNull(success.get(10, TimeUnit.SECONDS));
       failure.get(10, TimeUnit.SECONDS);
@@ -359,9 +407,9 @@ class LoginAttemptPersistenceTest {
   private UserEntity createAccount(RoleType type) {
     return transaction.execute(
         tx -> {
-          var role = RoleEntity.builder().name(type).build();
+          RoleEntity role = RoleEntity.builder().name(type).build();
           entityManager.persist(role);
-          var user =
+          UserEntity user =
               UserEntity.builder()
                   .email(EMAIL)
                   .firstName("Login")
@@ -382,12 +430,12 @@ class LoginAttemptPersistenceTest {
   @EnumSource(RoleType.class)
   void realPasswordProviderHasNoRoleExemptionsAndErasesCredentials(RoleType role) {
     createAccount(role);
-    var provider =
+    DaoAuthenticationProvider provider =
         new org.springframework.security.authentication.dao.DaoAuthenticationProvider(
             new CustomUserDetailsService(users)::loadPasswordUserByUsername);
     provider.setPasswordEncoder(encoder);
-    var authentication = new LoginAuthenticationService(provider, service);
-    var result =
+    LoginAuthenticationService authentication = new LoginAuthenticationService(provider, service);
+    Authentication result =
         authentication.authenticate(
             UsernamePasswordAuthenticationToken.unauthenticated(
                 " LOGIN-FIXTURE@EXAMPLE.TEST ", "OriginalPassword!"));
@@ -414,7 +462,7 @@ class LoginAttemptPersistenceTest {
 
   @Test
   void actualPasswordResetClearsOnlyOnCommitTogetherWithTokenAndPassword() {
-    var account = createAccount(RoleType.ROLE_USER);
+    UserEntity account = createAccount(RoleType.ROLE_USER);
     transaction.executeWithoutResult(
         tx ->
             entityManager.persist(
@@ -424,7 +472,7 @@ class LoginAttemptPersistenceTest {
                     entityManager.find(UserEntity.class, account.getId()),
                     LocalDateTime.now(clock).plusHours(1),
                     TokenStatus.ACTIVE)));
-    var reset =
+    PasswordResetService reset =
         new PasswordResetService(
             mock(de.derpeterson.app.i18n.MessageProperties.class),
             tokens,
@@ -468,7 +516,7 @@ class LoginAttemptPersistenceTest {
 
     @Bean
     ConfigService configService(AtomicInteger limit) {
-      var config = mock(ConfigService.class);
+      ConfigService config = mock(ConfigService.class);
       when(config.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenAnswer(call -> limit.get());
       return config;
     }

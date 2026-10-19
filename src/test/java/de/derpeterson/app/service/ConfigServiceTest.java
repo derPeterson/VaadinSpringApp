@@ -1,7 +1,21 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.same;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.ConfigEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -17,6 +31,7 @@ import org.junit.jupiter.params.provider.EmptySource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -50,7 +65,7 @@ class ConfigServiceTest {
 
   @Test
   void existencePropagatesRepositoryFailure() {
-    var failure = failure();
+    DataAccessResourceFailureException failure = failure();
     when(repository.existsByKey(ConfigEntry.SERVICE_NAME.getKey())).thenThrow(failure);
 
     assertSame(
@@ -212,7 +227,7 @@ class ConfigServiceTest {
     void malformedBooleansThrowWithEitherFallback(String raw) {
       stored(ConfigEntry.MAIL_SMTP_AUTH, raw);
 
-      var failure =
+      IllegalArgumentException failure =
           assertThrows(
               IllegalArgumentException.class, () -> service.getBoolean(ConfigEntry.MAIL_SMTP_AUTH));
       assertTrue(failure.getMessage().contains(ConfigEntry.MAIL_SMTP_AUTH.getKey()));
@@ -293,8 +308,8 @@ class ConfigServiceTest {
 
       service.set(ConfigEntry.SERVICE_NAME, value);
 
-      var captor = ArgumentCaptor.forClass(ConfigEntity.class);
-      var order = inOrder(repository);
+      ArgumentCaptor<ConfigEntity> captor = ArgumentCaptor.forClass(ConfigEntity.class);
+      InOrder order = inOrder(repository);
       order.verify(repository).findByKey(ConfigEntry.SERVICE_NAME.getKey());
       order.verify(repository).saveAndFlush(captor.capture());
       assertNull(captor.getValue().getId());
@@ -304,7 +319,7 @@ class ConfigServiceTest {
 
     @Test
     void failedLookupPreventsSaving() {
-      var failure = failure();
+      DataAccessResourceFailureException failure = failure();
       when(repository.findByKey(ConfigEntry.SERVICE_NAME.getKey())).thenThrow(failure);
 
       assertSame(
@@ -323,7 +338,7 @@ class ConfigServiceTest {
       } else {
         missing(ConfigEntry.SERVICE_NAME);
       }
-      var failure = failure();
+      DataAccessResourceFailureException failure = failure();
       when(repository.saveAndFlush(any(ConfigEntity.class))).thenThrow(failure);
 
       assertSame(
@@ -341,10 +356,11 @@ class ConfigServiceTest {
 
     @Test
     void failedCreationRetriesExistingRowAfterRollback() {
-      var existing = new ConfigEntity(7L, ConfigEntry.SERVICE_NAME.getKey(), "winner");
+      ConfigEntity existing = new ConfigEntity(7L, ConfigEntry.SERVICE_NAME.getKey(), "winner");
       when(repository.findByKey(existing.getKey()))
           .thenReturn(Optional.empty(), Optional.of(existing));
-      var failure = new DataIntegrityViolationException("duplicate key");
+      DataIntegrityViolationException failure =
+          new DataIntegrityViolationException("duplicate key");
       when(repository.saveAndFlush(any()))
           .thenThrow(failure)
           .thenAnswer(invocation -> invocation.getArgument(0));
@@ -352,7 +368,7 @@ class ConfigServiceTest {
       service.set(ConfigEntry.SERVICE_NAME, "loser");
 
       assertEquals("loser", existing.getValue());
-      var order = inOrder(repository, transactionManager);
+      InOrder order = inOrder(repository, transactionManager);
       order.verify(transactionManager).getTransaction(any());
       order.verify(repository).findByKey(existing.getKey());
       order.verify(repository).saveAndFlush(any());
@@ -366,7 +382,8 @@ class ConfigServiceTest {
     @Test
     void failedCreationWithoutCompetingRowPropagatesOriginalFailure() {
       missing(ConfigEntry.SERVICE_NAME);
-      var failure = new DataIntegrityViolationException("invalid value");
+      DataIntegrityViolationException failure =
+          new DataIntegrityViolationException("invalid value");
       when(repository.saveAndFlush(any())).thenThrow(failure);
 
       assertSame(
@@ -380,7 +397,8 @@ class ConfigServiceTest {
     @Test
     void updateIntegrityFailureIsNotRetried() {
       stored(ConfigEntry.SERVICE_NAME, "old");
-      var failure = new DataIntegrityViolationException("invalid value");
+      DataIntegrityViolationException failure =
+          new DataIntegrityViolationException("invalid value");
       when(repository.saveAndFlush(any())).thenThrow(failure);
 
       assertSame(
@@ -393,10 +411,10 @@ class ConfigServiceTest {
 
     @Test
     void retryFailureRemainsVisibleAndIsNotRetriedAgain() {
-      var existing = new ConfigEntity(7L, ConfigEntry.SERVICE_NAME.getKey(), "winner");
+      ConfigEntity existing = new ConfigEntity(7L, ConfigEntry.SERVICE_NAME.getKey(), "winner");
       when(repository.findByKey(existing.getKey()))
           .thenReturn(Optional.empty(), Optional.of(existing));
-      var retryFailure = failure();
+      DataAccessResourceFailureException retryFailure = failure();
       when(repository.saveAndFlush(any()))
           .thenThrow(new DataIntegrityViolationException("duplicate key"))
           .thenThrow(retryFailure);
@@ -414,7 +432,7 @@ class ConfigServiceTest {
 
   @Test
   void everyReadOverloadPropagatesLookupFailure() {
-    var failure = failure();
+    DataAccessResourceFailureException failure = failure();
     when(repository.findByKey(ConfigEntry.MAIL_PORT.getKey())).thenThrow(failure);
 
     assertSame(

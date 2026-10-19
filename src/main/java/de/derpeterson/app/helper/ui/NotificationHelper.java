@@ -45,11 +45,13 @@ public class NotificationHelper implements Serializable {
   private Notification currentNotification = new Notification();
 
   public static NotificationHelper getInstance() {
-    var ui = UI.getCurrent();
-    if (ui == null) throw new IllegalStateException("Notifications require a current UI");
+    UI ui = UI.getCurrent();
+    if (ui == null) {
+      throw new IllegalStateException("Notifications require a current UI");
+    }
     // Meldungen gehören zum einzelnen Browserfenster, auch bei mehreren Tabs derselben Sitzung.
     // Kein globaler Helfer darf Hinweise anderer Benutzer schließen oder deren Texte verändern.
-    var helper = ComponentUtil.getData(ui, NotificationHelper.class);
+    NotificationHelper helper = ComponentUtil.getData(ui, NotificationHelper.class);
     if (helper == null) {
       helper = new NotificationHelper();
       ComponentUtil.setData(ui, NotificationHelper.class, helper);

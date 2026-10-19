@@ -1,18 +1,33 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.microsoft.playwright.Page;
 import de.derpeterson.app.config.AdminConfigGroup;
-import de.derpeterson.browsertests.*;
+import de.derpeterson.browsertests.BrowserActor;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.mail.MailpitInbox.CapturedMail;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.ConfigurationPage;
+import de.derpeterson.browsertests.pages.ForgotPasswordPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.ResetPasswordPage;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag("browser")
 @Feature("Anmeldeversuche begrenzen")
@@ -22,7 +37,7 @@ public class LoginAttemptBrowserTest extends BrowserFixture {
 
   @BeforeEach
   void configureLimit() {
-    var login = new LoginPage(page);
+    LoginPage login = new LoginPage(page);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     new UserMenu(page).selectTestLanguage();
@@ -53,12 +68,12 @@ public class LoginAttemptBrowserTest extends BrowserFixture {
   void blockedPasswordDoesNotInvalidateAnExistingSession() {
     String email = createUser();
     limit(2);
-    try (var existing = new BrowserActor(browser);
-        var attacker = new BrowserActor(browser)) {
+    try (BrowserActor existing = new BrowserActor(browser);
+        BrowserActor attacker = new BrowserActor(browser)) {
       existing.login(email, BrowserTestAccounts.USER_PASSWORD, true);
       assertThat(existing.page).hasURL(urlPattern(HOME_ROUTE));
       attacker.login(email, "WrongPassword!", true);
-      var login = new LoginPage(attacker.page);
+      LoginPage login = new LoginPage(attacker.page);
       login.assertRejected();
       login.dismissFailure();
       login.signIn(email, "WrongPassword!");
@@ -92,14 +107,14 @@ public class LoginAttemptBrowserTest extends BrowserFixture {
     String email = createUser();
     String unknown = "unknown-limit-" + UUID.randomUUID() + "@example.test";
     limit(3);
-    try (var known = new BrowserActor(browser);
-        var missing = new BrowserActor(browser)) {
+    try (BrowserActor known = new BrowserActor(browser);
+        BrowserActor missing = new BrowserActor(browser)) {
       known.login(email, "WrongPassword!");
-      var first = new LoginPage(known.page);
+      LoginPage first = new LoginPage(known.page);
       first.assertRejected();
       first.dismissFailure();
       missing.login(unknown, "WrongPassword!");
-      var second = new LoginPage(missing.page);
+      LoginPage second = new LoginPage(missing.page);
       second.assertRejected();
       second.dismissFailure();
       limit(1);
@@ -124,33 +139,33 @@ public class LoginAttemptBrowserTest extends BrowserFixture {
   void completedMailPasswordResetClearsTheBlock() {
     String email = createUser();
     limit(1);
-    try (var actor = new BrowserActor(browser)) {
+    try (BrowserActor actor = new BrowserActor(browser)) {
       actor.login(email, "WrongPassword!");
-      var login = new LoginPage(actor.page);
+      LoginPage login = new LoginPage(actor.page);
       login.assertRejected();
       login.dismissFailure();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
       login.assertThrottled();
       login.dismissFailure();
-      var request = new ForgotPasswordPage(actor.page);
+      ForgotPasswordPage request = new ForgotPasswordPage(actor.page);
       request.open();
       request.enterEmail(email);
       request.submit();
       request.requestedResponse();
       request.dismissRequestedNotice();
-      var inbox = new MailpitInbox(actor.context);
-      var mail = inbox.awaitPasswordResetMail(email);
+      MailpitInbox inbox = new MailpitInbox(actor.context);
+      CapturedMail mail = inbox.awaitPasswordResetMail(email);
       login.open();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
       login.assertThrottled();
       login.dismissFailure();
       Page resetPage = inbox.openPasswordResetLink(mail);
-      var reset = new ResetPasswordPage(resetPage);
+      ResetPasswordPage reset = new ResetPasswordPage(resetPage);
       reset.assertFormVisible();
       reset.fillPasswords(BrowserTestAccounts.RESET_PASSWORD, BrowserTestAccounts.RESET_PASSWORD);
       reset.submit();
       reset.assertChanged();
-      var renewed = new LoginPage(resetPage);
+      LoginPage renewed = new LoginPage(resetPage);
       renewed.open();
       renewed.signIn(email, BrowserTestAccounts.RESET_PASSWORD);
       assertThat(resetPage).hasURL(urlPattern(HOME_ROUTE));

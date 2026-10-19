@@ -1,7 +1,15 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.config.ConnectionAwareJavaMailSender;
 import de.derpeterson.app.config.MailConfig;
@@ -40,7 +48,7 @@ class ConfigServiceConfiguredDefaultsTest {
     configure(ConfigEntry.MAIL_SMTP_SSL_ENABLE, "false");
     configure(ConfigEntry.REMEMBER_ME_SECRET_KEY, "fixture-only-key");
 
-    var sender =
+    ConnectionAwareJavaMailSender sender =
         assertInstanceOf(
             ConnectionAwareJavaMailSender.class, new MailConfig(service).javaMailSender());
 

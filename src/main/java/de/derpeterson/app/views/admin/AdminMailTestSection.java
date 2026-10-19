@@ -8,6 +8,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -20,6 +21,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.MaintenanceService;
+import de.derpeterson.app.security.MaintenanceService.State;
 import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
@@ -81,7 +83,7 @@ public class AdminMailTestSection extends VerticalLayout {
     mailCardDescription = new Span();
     mailCardDescription.addClassName("cosmos-panel-description");
     mailCardBadge = new Span();
-    var deliveryDot = new Span();
+    Span deliveryDot = new Span();
     deliveryDot.addClassName("cosmos-mail-delivery-dot");
     deliveryDot.getElement().setAttribute("aria-hidden", "true");
     deliveryMeta.add(deliveryDot, mailCardBadge);
@@ -162,14 +164,18 @@ public class AdminMailTestSection extends VerticalLayout {
   }
 
   private void stopMaintenancePolling(UI ui) {
-    if (maintenancePolling != null) maintenancePolling.remove();
+    if (maintenancePolling != null) {
+      maintenancePolling.remove();
+    }
     maintenancePolling = null;
     if (installedPollInterval != previousPollInterval
-        && ui.getPollInterval() == installedPollInterval) ui.setPollInterval(previousPollInterval);
+        && ui.getPollInterval() == installedPollInterval) {
+      ui.setPollInterval(previousPollInterval);
+    }
   }
 
   public void refreshDeliveryState() {
-    var state = maintenance.state();
+    State state = maintenance.state();
     boolean open = state == MaintenanceService.State.OPEN;
     mailLayout.setEnabled(open);
     mailLayout.getElement().setAttribute("aria-disabled", Boolean.toString(!open));
@@ -186,7 +192,7 @@ public class AdminMailTestSection extends VerticalLayout {
   }
 
   private VerticalLayout createMailCardContent() {
-    var envelope = VaadinIcon.ENVELOPE.create();
+    Icon envelope = VaadinIcon.ENVELOPE.create();
     envelope.getElement().setAttribute("aria-hidden", "true");
     Div iconBadge = new Div(envelope);
     iconBadge.addClassName("cosmos-panel-icon");
@@ -205,7 +211,7 @@ public class AdminMailTestSection extends VerticalLayout {
     fields.setWidthFull();
     fields.addClassName("cosmos-mail-fields");
 
-    var hintIcon = VaadinIcon.INFO_CIRCLE_O.create();
+    Icon hintIcon = VaadinIcon.INFO_CIRCLE_O.create();
     hintIcon.getElement().setAttribute("aria-hidden", "true");
     Div hint = new Div(hintIcon, mailSendHint);
     hint.addClassName("cosmos-panel-hint");
@@ -274,7 +280,9 @@ public class AdminMailTestSection extends VerticalLayout {
 
   private void sendTestMail() {
     refreshDeliveryState();
-    if (!mailLayout.isEnabled()) return;
+    if (!mailLayout.isEnabled()) {
+      return;
+    }
     String recipient = Optional.ofNullable(testRecipientField.getValue()).orElse("").trim();
     String subject = Optional.ofNullable(testSubjectField.getValue()).orElse("").trim();
     String body = Optional.ofNullable(testBodyField.getValue()).orElse("").trim();

@@ -1,7 +1,20 @@
 package de.derpeterson.app.ui.components;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -22,6 +35,7 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.AvatarMode;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.service.UserAvatarService;
+import de.derpeterson.app.service.UserAvatarService.Change;
 import java.io.ByteArrayInputStream;
 import java.util.Locale;
 import java.util.UUID;
@@ -34,6 +48,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.util.ReflectionTestUtils;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 class AccountAvatarDialogTest {
@@ -48,7 +63,7 @@ class AccountAvatarDialogTest {
   void setup() {
     ui = new UI();
     UI.setCurrent(ui);
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     VaadinSession.setCurrent(session);
@@ -141,7 +156,7 @@ class AccountAvatarDialogTest {
         mode().getElement().getTextRecursively().contains(messages.getAccountAvatarInitials()));
     assertTrue(
         mode().getElement().getTextRecursively().contains(messages.getAccountAvatarCustom()));
-    var choose = (Button) ReflectionTestUtils.getField(editor(), "choose");
+    Button choose = (Button) ReflectionTestUtils.getField(editor(), "choose");
     assertEquals(messages.getAccountAvatarChoose(), choose.getAriaLabel().orElseThrow());
     assertTrue(
         choose.getElement().getTextRecursively().contains(messages.getAccountAvatarUploadHint()));
@@ -153,16 +168,16 @@ class AccountAvatarDialogTest {
   @Test
   void savePersistsTheSelectedModeClosesTheDialogAndShowsTheRealSuccessMessage() {
     dialog.open();
-    var json =
+    JsonNode json =
         new ObjectMapper()
             .readTree("{\"local\":false,\"loading\":false,\"zoom\":1,\"x\":0,\"y\":0}");
     ReflectionTestUtils.invokeMethod(dialog, "save", json);
-    var captor = ArgumentCaptor.forClass(UserAvatarService.Change.class);
+    ArgumentCaptor<Change> captor = ArgumentCaptor.forClass(UserAvatarService.Change.class);
     verify(avatars).save(any(), captor.capture());
     assertEquals(AvatarMode.INITIALS, captor.getValue().mode());
     assertNull(captor.getValue().imageId());
     assertFalse(dialog.isOpened());
-    var notification =
+    Notification notification =
         (Notification)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
     assertNotNull(notification);
@@ -173,7 +188,7 @@ class AccountAvatarDialogTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void cancellingTheNewSelectionPreservesTheSavedPictureAndKeepsTheDialogOpen(boolean hasImage) {
-    var editor = spy(editor());
+    AccountAvatarEditor editor = spy(editor());
     ReflectionTestUtils.setField(dialog, "editor", editor);
     doNothing().when(editor).loadSaved(any(), any(), any());
     UUID revision = hasImage ? UUID.randomUUID() : null;
@@ -193,24 +208,26 @@ class AccountAvatarDialogTest {
     assertEquals(hasImage, button("delete").isVisible());
     assertEquals(false, ReflectionTestUtils.getField(dialog, "deleteImage"));
     verify(avatars, never()).save(any(), any());
-    if (hasImage) verify(editor, times(2)).loadSaved(avatars, user.getId(), revision);
+    if (hasImage) {
+      verify(editor, times(2)).loadSaved(avatars, user.getId(), revision);
+    }
   }
 
   @Test
   void uploadResponseBindsTheAcceptedOriginalToItsServerRevisionAndRejectsOldDrafts()
       throws Exception {
-    var editor = spy(editor());
+    AccountAvatarEditor editor = spy(editor());
     ReflectionTestUtils.setField(dialog, "editor", editor);
     dialog.configure(avatars, new MockHttpServletRequest());
-    var handler = ArgumentCaptor.forClass(UploadHandler.class);
+    ArgumentCaptor<UploadHandler> handler = ArgumentCaptor.forClass(UploadHandler.class);
     verify(editor).setUploadHandler(handler.capture());
     dialog.open();
-    var token = (UUID) ReflectionTestUtils.getField(dialog, "draft");
-    var request = new MockHttpServletRequest();
+    UUID token = (UUID) ReflectionTestUtils.getField(dialog, "draft");
+    MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("X-Avatar-Draft", token.toString());
-    var event = mock(UploadEvent.class);
-    var response = mock(VaadinResponse.class);
-    var uploadUi = mock(UI.class);
+    UploadEvent event = mock(UploadEvent.class);
+    VaadinResponse response = mock(VaadinResponse.class);
+    UI uploadUi = mock(UI.class);
     when(event.getRequest())
         .thenReturn(new VaadinServletRequest(request, mock(VaadinServletService.class)));
     when(event.getResponse()).thenReturn(response);
@@ -223,7 +240,7 @@ class AccountAvatarDialogTest {
             })
         .when(uploadUi)
         .accessSynchronously(any());
-    var revision = UUID.randomUUID();
+    UUID revision = UUID.randomUUID();
     when(avatars.upload(any(), eq(token), any())).thenReturn(revision);
     handler.getValue().handleUploadRequest(event);
     verify(response).setHeader("X-Avatar-Image", revision.toString());

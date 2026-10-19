@@ -1,7 +1,14 @@
 package de.derpeterson.app.ui.components;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -47,7 +54,7 @@ class AccountSettingsComponentTest {
   void setup() {
     ui = new UI();
     UI.setCurrent(ui);
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     VaadinSession.setCurrent(session);
@@ -89,11 +96,11 @@ class AccountSettingsComponentTest {
   void sessionsShowConfiguredLimitWithoutPresentingSampleCountAsReal(String language) {
     locale.set(Locale.forLanguageTag(language));
     content.refreshTexts();
-    var texts = MessageProperties.forLocale(provider, locale.get());
+    MessageProperties texts = MessageProperties.forLocale(provider, locale.get());
     assertEquals(
         texts.getAccountSettingsSessionsLimit(7),
         ((Span) byId("account-sessions-limit")).getText());
-    var panel = byId("account-panel-sessions").getElement().getTextRecursively();
+    String panel = byId("account-panel-sessions").getElement().getTextRecursively();
     assertTrue(panel.contains(texts.getAccountSettingsSessionsActiveTitle()));
     assertTrue(panel.contains(texts.getAccountSettingsSessionsActivity()));
     verifyNoInteractions(saver);
@@ -101,9 +108,9 @@ class AccountSettingsComponentTest {
 
   @Test
   void tabChangesPreserveDraftsAndNeverChangeTheAccount() {
-    var first = (TextField) byId("account-first-name");
+    TextField first = (TextField) byId("account-first-name");
     first.setValue("Draft");
-    var tabs = (Tabs) byId("account-tabs");
+    Tabs tabs = (Tabs) byId("account-tabs");
     for (int index : new int[] {1, 2, 0}) {
       tabs.setSelectedIndex(index);
       assertEquals(index == 0, byId("account-panel-profile").isVisible());
@@ -122,11 +129,11 @@ class AccountSettingsComponentTest {
   @ValueSource(strings = {"de", "en"})
   void languageRefreshKeepsSelectedTabAndInputsAndTranslatesSessions(String language) {
     ((TextField) byId("account-first-name")).setValue("Unsaved");
-    var tabs = (Tabs) byId("account-tabs");
+    Tabs tabs = (Tabs) byId("account-tabs");
     tabs.setSelectedIndex(2);
     locale.set(Locale.forLanguageTag(language));
     content.refreshTexts();
-    var texts = MessageProperties.forLocale(provider, locale.get());
+    MessageProperties texts = MessageProperties.forLocale(provider, locale.get());
     assertTrue(content.getElement().getTextRecursively().contains(texts.getAccountSettingsTitle()));
     assertTrue(
         byId("account-tab-sessions")
@@ -153,7 +160,7 @@ class AccountSettingsComponentTest {
 
   @Test
   void profileImagePreviewDoesNotSaveOrChangeProfileDrafts() {
-    var picture =
+    Button picture =
         tree(content)
             .filter(Button.class::isInstance)
             .map(Button.class::cast)
@@ -181,12 +188,14 @@ class AccountSettingsComponentTest {
   }
 
   private void assertNotification(String expected, boolean error) {
-    var helper = NotificationHelper.getInstance();
-    var message = (Supplier<String>) ReflectionTestUtils.getField(helper, "messageSupplier");
+    NotificationHelper helper = NotificationHelper.getInstance();
+    Supplier<String> message =
+        (Supplier<String>) ReflectionTestUtils.getField(helper, "messageSupplier");
     assertEquals(expected, message.get());
-    var notification = (Notification) ReflectionTestUtils.getField(helper, "currentNotification");
+    Notification notification =
+        (Notification) ReflectionTestUtils.getField(helper, "currentNotification");
     assertTrue(notification.isOpened());
-    var title = (Span) ReflectionTestUtils.getField(helper, "titleText");
+    Span title = (Span) ReflectionTestUtils.getField(helper, "titleText");
     assertTrue(
         title.hasClassName(error ? LumoUtility.TextColor.ERROR : LumoUtility.TextColor.SUCCESS));
     assertTrue(
@@ -205,10 +214,10 @@ class AccountSettingsComponentTest {
   void requiredFieldsAreMarkedOnlyOnSaveAndNothingIsWritten(String language) {
     locale.set(Locale.forLanguageTag(language));
     content.refreshTexts();
-    var first = (TextField) byId("account-first-name");
-    var last = (TextField) byId("account-last-name");
-    var birth = (DatePicker) byId("account-birth-date");
-    var choice = (ComboBox<?>) byId("account-language");
+    TextField first = (TextField) byId("account-first-name");
+    TextField last = (TextField) byId("account-last-name");
+    DatePicker birth = (DatePicker) byId("account-birth-date");
+    ComboBox<?> choice = (ComboBox<?>) byId("account-language");
     first.setValue("   ");
     last.clear();
     birth.clear();
@@ -227,8 +236,8 @@ class AccountSettingsComponentTest {
   @ValueSource(strings = {"de", "en"})
   void todayAndFutureBirthDatesAreRejectedAndCorrectionCanBeSaved(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var birth = (DatePicker) byId("account-birth-date");
-    for (var date : new LocalDate[] {LocalDate.now(), LocalDate.now().plusDays(1)}) {
+    DatePicker birth = (DatePicker) byId("account-birth-date");
+    for (LocalDate date : new LocalDate[] {LocalDate.now(), LocalDate.now().plusDays(1)}) {
       birth.setValue(date);
       save();
       assertTrue(birth.isInvalid());
@@ -236,7 +245,7 @@ class AccountSettingsComponentTest {
           new MessageProperties(provider).getBaseValidationBirthDatePastMessage(), true);
     }
     verifyNoInteractions(saver);
-    var date = LocalDate.of(1990, 2, 1);
+    LocalDate date = LocalDate.of(1990, 2, 1);
     birth.setValue(date);
     when(saver.apply(any())).thenReturn(new Profile(4L, "Alex", "Weber", date, Locale.GERMAN));
     save();
@@ -249,7 +258,7 @@ class AccountSettingsComponentTest {
   void successUsesReturnedDataAndNewVersionForTheNextSave(String language) {
     locale.set(Locale.forLanguageTag(language));
     ((TextField) byId("account-first-name")).setValue(" New ");
-    var date = LocalDate.of(1992, 3, 4);
+    LocalDate date = LocalDate.of(1992, 3, 4);
     ((DatePicker) byId("account-birth-date")).setValue(date);
     when(saver.apply(any())).thenReturn(new Profile(4L, "New", "Weber", date, Locale.ENGLISH));
     save();
@@ -280,7 +289,7 @@ class AccountSettingsComponentTest {
 
   @Test
   void emailIsVisibleButDisabledAndReadOnly() {
-    var field = (EmailField) byId("account-email");
+    EmailField field = (EmailField) byId("account-email");
     assertFalse(field.isEnabled());
     assertTrue(field.isReadOnly());
     assertEquals(user.getEmail(), field.getValue());
@@ -298,8 +307,10 @@ class AccountSettingsComponentTest {
   @Test
   void securityPasswordButtonOpensOnlyItsDialogAndPreservesProfileDraft() {
     ((TextField) byId("account-first-name")).setValue("Unsaved");
-    var passwordDialog = (AccountPasswordChangeDialog) byId("account-password-change-dialog");
-    var emailDialog = (AccountEmailChangeDialog) byId("account-email-change-dialog");
+    AccountPasswordChangeDialog passwordDialog =
+        (AccountPasswordChangeDialog) byId("account-password-change-dialog");
+    AccountEmailChangeDialog emailDialog =
+        (AccountEmailChangeDialog) byId("account-email-change-dialog");
     ((Button) byId("account-password-edit-security")).click();
     assertTrue(passwordDialog.isOpened());
     assertFalse(emailDialog.isOpened());
@@ -312,7 +323,8 @@ class AccountSettingsComponentTest {
   @Test
   void securityEmailButtonOpensTheDraftDialogWithoutChangingProfileFields() {
     ((TextField) byId("account-first-name")).setValue("Unsaved");
-    var dialog = (AccountEmailChangeDialog) byId("account-email-change-dialog");
+    AccountEmailChangeDialog dialog =
+        (AccountEmailChangeDialog) byId("account-email-change-dialog");
     assertFalse(dialog.isOpened());
     ((Button) byId("account-email-edit-security")).click();
     assertTrue(dialog.isOpened());

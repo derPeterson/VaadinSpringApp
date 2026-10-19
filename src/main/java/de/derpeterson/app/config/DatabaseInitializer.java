@@ -1,5 +1,7 @@
 package de.derpeterson.app.config;
 
+import de.derpeterson.app.config.BootstrapAccountsProperties.Account;
+import de.derpeterson.app.config.BootstrapAccountsProperties.Entry;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -8,6 +10,7 @@ import de.derpeterson.app.repository.RoleRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.service.ConfigService;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -52,26 +55,30 @@ public class DatabaseInitializer {
 
   private void createDefaultRolesAndAccounts() {
     // Vor irgendeiner Benutzeranlage alle Gruppen prüfen; Fehler nennen keine Zugangsdaten.
-    var entries = bootstrap.validatedEntries();
+    List<Entry> entries = bootstrap.validatedEntries();
     new TransactionTemplate(transactionManager)
         .executeWithoutResult(
             status -> {
-              var roles = new EnumMap<RoleType, RoleEntity>(RoleType.class);
-              for (var role : RoleType.values())
+              EnumMap<RoleType, RoleEntity> roles =
+                  new EnumMap<RoleType, RoleEntity>(RoleType.class);
+              for (RoleType role : RoleType.values()) {
                 roles.put(
                     role,
                     roleRepository
                         .findByName(role)
                         .orElseGet(
                             () -> roleRepository.save(RoleEntity.builder().name(role).build())));
+              }
               if (!bootstrap.isEnabled()) {
                 logger.info("Bootstrap account creation is disabled.");
                 return;
               }
-              for (var entry : entries) {
-                var account = entry.account();
-                if (userRepository.findByEmail(account.getEmail()).isPresent()) continue;
-                var user =
+              for (Entry entry : entries) {
+                Account account = entry.account();
+                if (userRepository.findByEmail(account.getEmail()).isPresent()) {
+                  continue;
+                }
+                UserEntity user =
                     UserEntity.builder()
                         .firstName(account.getFirstName().strip())
                         .lastName(account.getLastName().strip())

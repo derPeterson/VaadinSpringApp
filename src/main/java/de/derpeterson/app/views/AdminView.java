@@ -46,6 +46,7 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Clock;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -167,7 +168,9 @@ public class AdminView extends IsAuthenticatedBaseView {
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     super.beforeEnter(event);
-    if (event.hasForwardTarget()) return;
+    if (event.hasForwardTarget()) {
+      return;
+    }
 
     QueryParameters parameters = event.getLocation().getQueryParameters();
     AdminSection section =
@@ -181,9 +184,11 @@ public class AdminView extends IsAuthenticatedBaseView {
 
   private static <E extends Enum<E>> E parameter(
       QueryParameters parameters, String key, Class<E> type, E fallback) {
-    var values = parameters.getParameters().get(key);
+    List<String> values = parameters.getParameters().get(key);
     // Fehlende, mehrdeutige oder veraltete Links bekommen einen festen Standard.
-    if (values == null || values.size() != 1) return fallback;
+    if (values == null || values.size() != 1) {
+      return fallback;
+    }
     try {
       return Enum.valueOf(type, values.getFirst().toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException invalid) {
@@ -229,7 +234,9 @@ public class AdminView extends IsAuthenticatedBaseView {
     refreshServiceName();
     serviceStatus.refresh();
     mailTestSection.refreshDeliveryState();
-    if (notificationsSection != null) notificationsSection.refreshDeliveryState();
+    if (notificationsSection != null) {
+      notificationsSection.refreshDeliveryState();
+    }
   }
 
   private void refreshServiceName() {
@@ -343,8 +350,12 @@ public class AdminView extends IsAuthenticatedBaseView {
     mailTestSection.refreshDeliveryState();
     boolean canSend =
         notificationsService != null && notificationsService.canSend(request.getSession(false));
-    if (notificationsNavItem != null) notificationsNavItem.setVisible(canSend);
-    if (section == AdminSection.NOTIFICATIONS && !canSend) section = AdminSection.DASHBOARD;
+    if (notificationsNavItem != null) {
+      notificationsNavItem.setVisible(canSend);
+    }
+    if (section == AdminSection.NOTIFICATIONS && !canSend) {
+      section = AdminSection.DASHBOARD;
+    }
     activeSection = section;
 
     if (section == AdminSection.CONFIGURATION) {
@@ -423,9 +434,12 @@ public class AdminView extends IsAuthenticatedBaseView {
       headerTitle.setText(messageProperties.getAdminHeaderTitle());
     }
 
-    if (notificationsNavItem != null)
+    if (notificationsNavItem != null) {
       notificationsNavItem.setLabel(messageProperties.getNotificationsTitle());
-    if (notificationsSection != null) notificationsSection.refreshTexts();
+    }
+    if (notificationsSection != null) {
+      notificationsSection.refreshTexts();
+    }
     dashboardNavItem.setLabel(messageProperties.getAdminNavDashboard());
     configurationNavItem.setLabel(messageProperties.getAdminNavConfiguration());
     mailTestNavItem.setLabel(messageProperties.getAdminNavMailTest());

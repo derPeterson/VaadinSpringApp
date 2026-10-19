@@ -22,9 +22,9 @@ public class AccountPanelComponent extends CosmosCardComponent {
     title.addClassName("cosmos-panel-title");
     description.addClassName("cosmos-panel-description");
     meta.addClassName("cosmos-panel-meta");
-    var heading = new Div(title, description);
+    Div heading = new Div(title, description);
     heading.addClassName("cosmos-panel-heading");
-    var header = new Div(icon, heading, meta);
+    Div header = new Div(icon, heading, meta);
     header.addClassName("cosmos-panel-header");
     body.addClassName("account-panel-body");
     add(header, body);
@@ -46,11 +46,11 @@ public class AccountPanelComponent extends CosmosCardComponent {
   }
 
   public void addFooter(Component hint, Component action) {
-    var info = new Div(VaadinIcon.INFO_CIRCLE_O.create(), hint);
+    Div info = new Div(VaadinIcon.INFO_CIRCLE_O.create(), hint);
     info.addClassName("cosmos-panel-hint");
-    var actions = new Div(action);
+    Div actions = new Div(action);
     actions.addClassName("cosmos-panel-actions");
-    var footer = new Div(info, actions);
+    Div footer = new Div(info, actions);
     footer.addClassName("cosmos-panel-footer");
     add(footer);
   }

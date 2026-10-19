@@ -1,19 +1,32 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.microsoft.playwright.*;
-import de.derpeterson.browsertests.*;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.Page;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.pages.ForgotPasswordPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.RegistrationPage;
+import de.derpeterson.browsertests.pages.ResetPasswordPage;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Story;
 import io.qameta.allure.playwright.AllurePlaywright;
+import io.qameta.allure.playwright.TraceSession;
 import java.time.LocalDate;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag("browser")
 @Feature("Weitere Kontoabläufe")
@@ -181,7 +194,7 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
                 .setLocale(texts.browserLocale())
                 .setTimezoneId("Europe/Berlin"))) {
       AllurePlaywright.register(other);
-      try (var secondTrace = AllurePlaywright.startTracing(other)) {
+      try (TraceSession secondTrace = AllurePlaywright.startTracing(other)) {
         Page second = other.newPage();
         second.navigate(path(HOME_ROUTE));
         new UserMenu(second).selectTestLanguage();

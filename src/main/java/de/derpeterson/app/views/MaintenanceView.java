@@ -6,17 +6,22 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.AppRoute;
-import de.derpeterson.app.security.*;
+import de.derpeterson.app.security.MaintenanceService;
+import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosPageComponent;
@@ -39,35 +44,36 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
     this.request = request;
     setPadding(false);
     setSpacing(false);
-    var page = new CosmosPageComponent(config, false, messages::getAccountCopyrightTemplate);
-    var content = new VerticalLayout();
+    CosmosPageComponent page =
+        new CosmosPageComponent(config, false, messages::getAccountCopyrightTemplate);
+    VerticalLayout content = new VerticalLayout();
     content.setPadding(false);
     content.setSpacing(false);
     content.addClassName("cosmos-form");
     content.setAlignItems(FlexComponent.Alignment.STRETCH);
-    var icon = VaadinIcon.WARNING.create();
+    Icon icon = VaadinIcon.WARNING.create();
     icon.addClassNames("cosmos-status-icon", "cosmos-status-icon--warning");
-    var iconRow = new HorizontalLayout(icon);
+    HorizontalLayout iconRow = new HorizontalLayout(icon);
     iconRow.setWidthFull();
     iconRow.setPadding(false);
     iconRow.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    var title = new H1();
+    H1 title = new H1();
     title.addClassName("cosmos-headline");
-    var titleRow = new HorizontalLayout(title);
+    HorizontalLayout titleRow = new HorizontalLayout(title);
     titleRow.addClassName("cosmos-title-row");
     titleRow.setWidthFull();
     titleRow.setPadding(false);
     titleRow.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    var text = new Span();
+    Span text = new Span();
     text.addClassName("cosmos-form-text");
-    var textRow = new VerticalLayout(text);
+    VerticalLayout textRow = new VerticalLayout(text);
     textRow.addClassName("cosmos-intro");
     textRow.setWidthFull();
     textRow.setPadding(false);
     textRow.setSpacing(false);
     textRow.setAlignItems(FlexComponent.Alignment.CENTER);
     textRow.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    var login =
+    Button login =
         new Button(
             "",
             event ->
@@ -79,7 +85,7 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
     login.setPrefixComponent(VaadinIcon.SIGN_IN.create());
     login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     login.setWidthFull();
-    var retry =
+    Button retry =
         new Button(
             "",
             event ->
@@ -88,7 +94,7 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
                     .setLocation(request.getContextPath() + AppRoute.HOME.getSecurityRoute()));
     retry.setPrefixComponent(VaadinIcon.REFRESH.create());
     retry.setWidthFull();
-    var logout =
+    Button logout =
         new Button(
             "",
             event -> {
@@ -120,6 +126,8 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
 
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
-    if (!maintenance.blocks(request)) event.forwardTo(HomeView.class);
+    if (!maintenance.blocks(request)) {
+      event.forwardTo(HomeView.class);
+    }
   }
 }

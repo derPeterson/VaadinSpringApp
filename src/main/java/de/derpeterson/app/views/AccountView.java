@@ -19,6 +19,7 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionManagementService;
 import de.derpeterson.app.service.AccountProfileService;
 import de.derpeterson.app.service.AccountSecurityService;
+import de.derpeterson.app.service.AccountSecurityService.PasswordChanged;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
@@ -30,6 +31,7 @@ import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Clock;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -67,9 +69,10 @@ public class AccountView extends IsAuthenticatedBaseView {
     accountSettings.configureStatusSelection(userPopoverMenu.createStatusSelect());
     accountSettings.configureSecurityActions(
         change -> {
-          var changed = accountSecurity.changePassword(request, change);
-          if (Objects.equals(currentUser.getVersion(), changed.previousVersion()))
+          PasswordChanged changed = accountSecurity.changePassword(request, change);
+          if (Objects.equals(currentUser.getVersion(), changed.previousVersion())) {
             currentUser.setVersion(changed.version());
+          }
           return changed;
         },
         change -> accountSecurity.requestEmailChange(request, change));
@@ -98,10 +101,10 @@ public class AccountView extends IsAuthenticatedBaseView {
             LanguageChangeEvent.fire(UI.getCurrent(), saved.language());
           }
         });
-    var copyright =
+    CosmosCopyrightComponent copyright =
         new CosmosCopyrightComponent(
             config, Clock.systemDefaultZone(), messages::getAccountCopyrightTemplate);
-    var main = new Div(accountSettings, copyright);
+    Div main = new Div(accountSettings, copyright);
     main.addClassName("cosmos-app-main");
     main.getElement().setAttribute("role", "main");
     setContent(new Div(new CosmosBackgroundComponent(), main));
@@ -110,8 +113,10 @@ public class AccountView extends IsAuthenticatedBaseView {
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     super.beforeEnter(event);
-    if (event.hasForwardTarget()) return;
-    var values = event.getLocation().getQueryParameters().getParameters().get("tab");
+    if (event.hasForwardTarget()) {
+      return;
+    }
+    List<String> values = event.getLocation().getQueryParameters().getParameters().get("tab");
     AccountSection section = AccountSection.PROFILE;
     // Fehlende, unbekannte und mehrdeutige Tabwerte öffnen immer das Profil.
     if (values != null && values.size() == 1) {
@@ -126,17 +131,23 @@ public class AccountView extends IsAuthenticatedBaseView {
 
   @Override
   protected void onTrackedUserProfileChanged(String first, String last) {
-    if (accountSettings != null) accountSettings.refreshSummaryName(first, last);
+    if (accountSettings != null) {
+      accountSettings.refreshSummaryName(first, last);
+    }
   }
 
   @Override
   protected void updateHeaderStatusIcon(UserStatus status) {
     super.updateHeaderStatusIcon(status);
-    if (accountSettings != null) accountSettings.updateUserStatus(status);
+    if (accountSettings != null) {
+      accountSettings.updateUserStatus(status);
+    }
   }
 
   @Override
   protected void onTrackedUserLanguageChanged() {
-    if (accountSettings != null) accountSettings.refreshTexts();
+    if (accountSettings != null) {
+      accountSettings.refreshTexts();
+    }
   }
 }

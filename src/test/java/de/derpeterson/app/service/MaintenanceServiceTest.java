@@ -1,21 +1,42 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.server.ServiceInitEvent;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinServletRequest;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.communication.IndexHtmlRequestListener;
 import com.vaadin.flow.server.communication.IndexHtmlResponse;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.RoleType;
-import de.derpeterson.app.security.*;
+import de.derpeterson.app.security.MaintenanceAccessException;
+import de.derpeterson.app.security.MaintenanceAuthenticationException;
+import de.derpeterson.app.security.MaintenanceHttpFilter;
+import de.derpeterson.app.security.MaintenanceService;
+import de.derpeterson.app.security.MaintenanceTransport;
+import de.derpeterson.app.security.MaintenanceUiGuard;
+import de.derpeterson.app.security.SessionAdmissionService;
 import de.derpeterson.app.views.LoginView;
 import de.derpeterson.app.views.RegistrationView;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.HttpSession;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -23,15 +44,24 @@ import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import org.jsoup.Jsoup;
-import org.junit.jupiter.api.*;
+import org.jsoup.nodes.Document;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.*;
-import org.springframework.mock.web.*;
-import org.springframework.security.authentication.*;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -45,7 +75,7 @@ class MaintenanceServiceTest {
   }
 
   private Authentication actor(RoleType role) {
-    var user =
+    UserDetails user =
         User.withUsername("maintenance@example.test")
             .password("unused")
             .authorities(role.getGrantedRoles().stream().map(Enum::name).toArray(String[]::new))
@@ -56,9 +86,9 @@ class MaintenanceServiceTest {
   @ParameterizedTest
   @EnumSource(RoleType.class)
   void liveSwitchRespectsAllRolesWithoutEvictingExistingSession(RoleType role) {
-    var request = new MockHttpServletRequest();
-    var session = new MockHttpSession();
-    var context = SecurityContextHolder.createEmptyContext();
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpSession session = new MockHttpSession();
+    SecurityContext context = SecurityContextHolder.createEmptyContext();
     context.setAuthentication(actor(role));
     session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
     request.setSession(session);
@@ -76,15 +106,15 @@ class MaintenanceServiceTest {
   @Test
   void requestSessionIdentityWinsOverAnUnrelatedPushWorkerContext() {
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var request = new MockHttpServletRequest();
-    var session = new MockHttpSession();
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpSession session = new MockHttpSession();
     request.setSession(session);
     SecurityContextHolder.getContext().setAuthentication(actor(RoleType.ROLE_ADMIN));
     assertNull(MaintenanceService.authentication(request));
     assertTrue(maintenance.blocks(request));
     assertTrue(maintenance.blocks(new MockHttpServletRequest()));
-    var stored = SecurityContextHolder.createEmptyContext();
-    var user = actor(RoleType.ROLE_USER);
+    SecurityContext stored = SecurityContextHolder.createEmptyContext();
+    Authentication user = actor(RoleType.ROLE_USER);
     stored.setAuthentication(user);
     session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, stored);
     SecurityContextHolder.getContext().setAuthentication(actor(RoleType.ROLE_ADMIN));
@@ -93,7 +123,7 @@ class MaintenanceServiceTest {
     stored.setAuthentication(null);
     assertNull(MaintenanceService.authentication(request));
     assertTrue(maintenance.blocks(request));
-    var admin = actor(RoleType.ROLE_SUPERADMIN);
+    Authentication admin = actor(RoleType.ROLE_SUPERADMIN);
     stored.setAuthentication(admin);
     SecurityContextHolder.getContext().setAuthentication(user);
     assertSame(admin, MaintenanceService.authentication(request));
@@ -102,7 +132,7 @@ class MaintenanceServiceTest {
 
   @Test
   void anonymousAndUnreadableConfigurationFailClosed() {
-    var request = new MockHttpServletRequest();
+    MockHttpServletRequest request = new MockHttpServletRequest();
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     assertTrue(maintenance.blocks(request));
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE))
@@ -121,10 +151,10 @@ class MaintenanceServiceTest {
   void newAdmissionIsCheckedBeforeSessionAndRegistryAllocation(RoleType role) {
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(3);
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var registry = new SessionRegistryImpl();
-    var admission = new SessionAdmissionService(config, registry);
-    var request = new MockHttpServletRequest();
-    var response = new MockHttpServletResponse();
+    SessionRegistryImpl registry = new SessionRegistryImpl();
+    SessionAdmissionService admission = new SessionAdmissionService(config, registry);
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletResponse response = new MockHttpServletResponse();
     if (role.isAdministrative()) {
       admission.onAuthentication(actor(role), request, response);
       assertEquals(1, registry.getAllSessions("maintenance@example.test", true).size());
@@ -141,13 +171,13 @@ class MaintenanceServiceTest {
   @Test
   void existingSlotCanBeRestoredDuringMaintenanceAndReusedAfterwards() {
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
-    var registry = new SessionRegistryImpl();
-    var admission = new SessionAdmissionService(config, registry);
-    var request = new MockHttpServletRequest();
-    var response = new MockHttpServletResponse();
-    var user = actor(RoleType.ROLE_USER);
+    SessionRegistryImpl registry = new SessionRegistryImpl();
+    SessionAdmissionService admission = new SessionAdmissionService(config, registry);
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    Authentication user = actor(RoleType.ROLE_USER);
     admission.onAuthentication(user, request, response);
-    var session = request.getSession(false);
+    HttpSession session = request.getSession(false);
     String id = session.getId();
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     admission.complete(user, request, response, () -> {});
@@ -171,10 +201,10 @@ class MaintenanceServiceTest {
       })
   void initialDocumentUses503AndMaintenanceViewWithoutTokenEcho(String path) throws Exception {
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var request = new MockHttpServletRequest("GET", path);
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
     request.setServletPath(path);
-    var response = new MockHttpServletResponse();
-    var chain = mock(FilterChain.class);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    FilterChain chain = mock(FilterChain.class);
     new MaintenanceHttpFilter(maintenance).doFilter(request, response, chain);
     assertEquals(503, response.getStatus());
     assertEquals("/maintenance", response.getForwardedUrl());
@@ -195,10 +225,10 @@ class MaintenanceServiceTest {
       })
   void requiredResourcesAndRecoveryStayReachable(String path) throws Exception {
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var request = new MockHttpServletRequest("GET", path);
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
     request.setServletPath(path);
-    var response = new MockHttpServletResponse();
-    var chain = mock(FilterChain.class);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    FilterChain chain = mock(FilterChain.class);
     new MaintenanceHttpFilter(maintenance).doFilter(request, response, chain);
     verify(chain).doFilter(request, response);
   }
@@ -207,12 +237,12 @@ class MaintenanceServiceTest {
   @ValueSource(strings = {"/home", "/login", "/VAADIN/uidl"})
   void oldOrSpoofedUiCannotDispatchCallbacksThroughPublicLoginPath(String path) throws Exception {
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var request = new MockHttpServletRequest("POST", path);
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
     request.setServletPath(path);
     request.setParameter("v-r", "uidl");
     request.setParameter("v-uiId", "123");
-    var response = new MockHttpServletResponse();
-    var chain = mock(FilterChain.class);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    FilterChain chain = mock(FilterChain.class);
     new MaintenanceHttpFilter(maintenance).doFilter(request, response, chain);
     verifyNoInteractions(chain);
     assertTrue(response.getContentType().startsWith("application/json"));
@@ -224,31 +254,32 @@ class MaintenanceServiceTest {
   @ValueSource(strings = {"uidl", "push"})
   void deserializedSessionBeforeVaadinRestoresItsLockRejectsOldRpcWithoutServerErrors(String type)
       throws Exception {
-    var original = new VaadinSession(null);
+    VaadinSession original = new VaadinSession(null);
     ReflectionTestUtils.setField(original, "lock", new ReentrantLock());
     assertNotNull(original.getLockInstance());
-    var bytes = new ByteArrayOutputStream();
-    try (var output = new ObjectOutputStream(bytes)) {
+    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+    try (ObjectOutputStream output = new ObjectOutputStream(bytes)) {
       output.writeObject(original);
     }
     VaadinSession restored;
-    try (var input = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
+    try (ObjectInputStream input =
+        new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
       restored = (VaadinSession) input.readObject();
     }
     assertNull(restored.getLockInstance());
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var request = new MockHttpServletRequest("POST", "/");
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/");
     request.setServletPath("/");
     request.setParameter("v-r", type);
     request.setParameter("v-uiId", "17");
-    var http = new MockHttpSession();
+    MockHttpSession http = new MockHttpSession();
     request.setSession(http);
     http.setAttribute("com.vaadin.flow.server.VaadinSession.restored", restored);
     for (int attempt = 0; attempt < 3; attempt++) {
       assertFalse(MaintenanceTransport.allowedUi(request));
       assertDoesNotThrow(() -> MaintenanceTransport.redirectUi(request));
-      var response = new MockHttpServletResponse();
-      var chain = mock(FilterChain.class);
+      MockHttpServletResponse response = new MockHttpServletResponse();
+      FilterChain chain = mock(FilterChain.class);
       assertDoesNotThrow(
           () -> new MaintenanceHttpFilter(maintenance).doFilter(request, response, chain));
       verifyNoInteractions(chain);
@@ -262,14 +293,14 @@ class MaintenanceServiceTest {
 
   @Test
   void uninitializedSessionDoesNotPreventFindingAnAlreadyInitializedLoginUi() {
-    var request = new MockHttpServletRequest("POST", "/");
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/");
     request.setParameter("v-uiId", "17");
-    var http = new MockHttpSession();
+    MockHttpSession http = new MockHttpSession();
     request.setSession(http);
     http.setAttribute("com.vaadin.flow.server.VaadinSession.restored", new VaadinSession(null));
-    var initialized = mock(VaadinSession.class);
+    VaadinSession initialized = mock(VaadinSession.class);
     when(initialized.getLockInstance()).thenReturn(new ReentrantLock());
-    var ui = mock(UI.class, RETURNS_DEEP_STUBS);
+    UI ui = mock(UI.class, RETURNS_DEEP_STUBS);
     when(initialized.getUIById(17)).thenReturn(ui);
     when(ui.getInternals().getActiveRouterTargetsChain())
         .thenReturn(List.of(mock(LoginView.class)));
@@ -283,28 +314,32 @@ class MaintenanceServiceTest {
   @ValueSource(booleans = {false, true})
   void onlyTheActualLoginUiMayUseLoginRpc(boolean loginUi) throws Exception {
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var request = new MockHttpServletRequest("POST", "/");
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/");
     request.setServletPath("/");
     request.setParameter("v-r", "uidl");
     request.setParameter("v-uiId", "17");
-    var session = new MockHttpSession();
+    MockHttpSession session = new MockHttpSession();
     request.setSession(session);
-    var vaadin = mock(VaadinSession.class);
+    VaadinSession vaadin = mock(VaadinSession.class);
     when(vaadin.getLockInstance()).thenReturn(new ReentrantLock());
-    var ui = mock(UI.class, RETURNS_DEEP_STUBS);
+    UI ui = mock(UI.class, RETURNS_DEEP_STUBS);
     when(vaadin.getUIById(17)).thenReturn(ui);
     session.setAttribute("com.vaadin.flow.server.VaadinSession.test", vaadin);
-    if (loginUi)
+    if (loginUi) {
       when(ui.getInternals().getActiveRouterTargetsChain())
           .thenReturn(List.of(mock(LoginView.class)));
-    else
+    } else {
       when(ui.getInternals().getActiveRouterTargetsChain())
           .thenReturn(List.of(mock(RegistrationView.class)));
-    var chain = mock(FilterChain.class);
-    var response = new MockHttpServletResponse();
+    }
+    FilterChain chain = mock(FilterChain.class);
+    MockHttpServletResponse response = new MockHttpServletResponse();
     new MaintenanceHttpFilter(maintenance).doFilter(request, response, chain);
-    if (loginUi) verify(chain).doFilter(request, response);
-    else verifyNoInteractions(chain);
+    if (loginUi) {
+      verify(chain).doFilter(request, response);
+    } else {
+      verifyNoInteractions(chain);
+    }
     verify(vaadin).lock();
     verify(vaadin).unlock();
   }
@@ -324,46 +359,49 @@ class MaintenanceServiceTest {
   void protocolParametersDoNotReleaseOtherServletsEvenWithARealLoginUi(String path, String type)
       throws Exception {
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var request = new MockHttpServletRequest("POST", path);
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
     request.setServletPath(path);
     request.setParameter("v-r", type);
     request.setParameter("v-uiId", "17");
-    var session = new MockHttpSession();
+    MockHttpSession session = new MockHttpSession();
     request.setSession(session);
-    var vaadin = mock(VaadinSession.class);
+    VaadinSession vaadin = mock(VaadinSession.class);
     when(vaadin.getLockInstance()).thenReturn(new ReentrantLock());
-    var ui = mock(UI.class, RETURNS_DEEP_STUBS);
+    UI ui = mock(UI.class, RETURNS_DEEP_STUBS);
     when(vaadin.getUIById(17)).thenReturn(ui);
     when(ui.getInternals().getActiveRouterTargetsChain())
         .thenReturn(List.of(mock(LoginView.class)));
     session.setAttribute("com.vaadin.flow.server.VaadinSession.test", vaadin);
-    var chain = mock(FilterChain.class);
-    var response = new MockHttpServletResponse();
+    FilterChain chain = mock(FilterChain.class);
+    MockHttpServletResponse response = new MockHttpServletResponse();
     // Binding the fixture invokes HttpSessionBindingListener before the request under test.
     clearInvocations(vaadin);
     new MaintenanceHttpFilter(maintenance).doFilter(request, response, chain);
     verifyNoInteractions(chain, vaadin);
-    if (type.equals("init") || type.equals("heartbeat")) assertEquals(503, response.getStatus());
-    else assertTrue(response.getContentAsString().contains("/maintenance"));
+    if (type.equals("init") || type.equals("heartbeat")) {
+      assertEquals(503, response.getStatus());
+    } else {
+      assertTrue(response.getContentAsString().contains("/maintenance"));
+    }
   }
 
   @Test
   void realServerCreatedBlankUiCanCompleteItsRouteGuardedBootstrap() throws Exception {
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var request = new MockHttpServletRequest("POST", "/");
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/");
     request.setServletPath("/");
     request.setParameter("v-r", "uidl");
     request.setParameter("v-uiId", "17");
-    var session = new MockHttpSession();
+    MockHttpSession session = new MockHttpSession();
     request.setSession(session);
-    var vaadin = mock(VaadinSession.class);
+    VaadinSession vaadin = mock(VaadinSession.class);
     when(vaadin.getLockInstance()).thenReturn(new ReentrantLock());
-    var ui = mock(UI.class, RETURNS_DEEP_STUBS);
+    UI ui = mock(UI.class, RETURNS_DEEP_STUBS);
     when(vaadin.getUIById(17)).thenReturn(ui);
     when(ui.getInternals().getActiveRouterTargetsChain()).thenReturn(List.of());
     session.setAttribute("com.vaadin.flow.server.VaadinSession.test", vaadin);
-    var chain = mock(FilterChain.class);
-    var response = new MockHttpServletResponse();
+    FilterChain chain = mock(FilterChain.class);
+    MockHttpServletResponse response = new MockHttpServletResponse();
     new MaintenanceHttpFilter(maintenance).doFilter(request, response, chain);
     verify(chain).doFilter(request, response);
     verify(vaadin).lock();
@@ -373,15 +411,17 @@ class MaintenanceServiceTest {
   @ParameterizedTest
   @ValueSource(strings = {"", "/application"})
   void forwardedTokenDocumentKeepsBootstrapResourcesAtTheApplicationRoot(String contextPath) {
-    var service = mock(VaadinService.class);
-    var event = new ServiceInitEvent(service);
+    VaadinService service = mock(VaadinService.class);
+    ServiceInitEvent event = new ServiceInitEvent(service);
     new MaintenanceUiGuard(maintenance).serviceInit(event);
-    var request = new MockHttpServletRequest("GET", contextPath + "/maintenance");
+    MockHttpServletRequest request =
+        new MockHttpServletRequest("GET", contextPath + "/maintenance");
     request.setContextPath(contextPath);
-    var vaadinRequest = new VaadinServletRequest(request, null);
-    var document = Jsoup.parse("<html><head><base href='.'></head></html>");
-    var response = new IndexHtmlResponse(vaadinRequest, null, document);
-    var listener = event.getAddedIndexHtmlRequestListeners().findFirst().orElseThrow();
+    VaadinServletRequest vaadinRequest = new VaadinServletRequest(request, null);
+    Document document = Jsoup.parse("<html><head><base href='.'></head></html>");
+    IndexHtmlResponse response = new IndexHtmlResponse(vaadinRequest, null, document);
+    IndexHtmlRequestListener listener =
+        event.getAddedIndexHtmlRequestListeners().findFirst().orElseThrow();
     listener.modifyIndexHtmlResponse(response);
     assertEquals(".", document.head().selectFirst("base").attr("href"));
     request.setAttribute(MaintenanceHttpFilter.FORWARDED_DOCUMENT, Boolean.TRUE);
@@ -392,9 +432,9 @@ class MaintenanceServiceTest {
   @Test
   void publicServiceGuardRunsBeforeAnyAccountOrQueueInteraction() throws Exception {
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var users = mock(UserService.class);
-    var verification = mock(VerificationService.class);
-    var registration = new RegistrationService(users, verification, config);
+    UserService users = mock(UserService.class);
+    VerificationService verification = mock(VerificationService.class);
+    RegistrationService registration = new RegistrationService(users, verification, config);
     assertThrows(MaintenanceAccessException.class, () -> registration.register(new UserEntity()));
     verifyNoInteractions(users, verification);
   }

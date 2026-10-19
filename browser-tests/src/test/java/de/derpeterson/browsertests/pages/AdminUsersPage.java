@@ -5,6 +5,7 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.BoundingBox;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
 import java.time.LocalDate;
@@ -114,7 +115,9 @@ public final class AdminUsersPage {
   @Step("Filterpanel bei Bedarf öffnen; alle Filter bleiben dauerhaft vorhanden")
   public void openFilters() {
     Locator toggle = button(texts.getAdminUsersAddFilter());
-    if (!"true".equals(toggle.getAttribute("aria-expanded"))) toggle.click();
+    if (!"true".equals(toggle.getAttribute("aria-expanded"))) {
+      toggle.click();
+    }
     assertThat(toggle).hasAttribute("aria-expanded", "true");
     assertThat(button(texts.getAdminUsersApplyFilters())).isVisible();
   }
@@ -155,7 +158,9 @@ public final class AdminUsersPage {
   @Step("Aktivitätsfilter nur mit Datum setzen; Uhrzeit bleibt optional leer")
   public void activeSince(LocalDate date) {
     addActivityFilter();
-    if (activityTime().isEnabled()) activityTime().fill("");
+    if (activityTime().isEnabled()) {
+      activityTime().fill("");
+    }
     activityDate().fill(texts.dateInput(date));
     assertThat(activityDate()).hasValue(texts.dateInput(date));
     // Vaadin may remove leading zeroes on blur. Verify the exact parsed date below.
@@ -170,7 +175,9 @@ public final class AdminUsersPage {
   @Step("Aktivitätsdatum ohne Texteingabe über Kalender-Icon wählen und wiederfinden")
   public LocalDate activityDateUsingCalendar(int daysFromToday) {
     addActivityFilter();
-    if (activityTime().isEnabled()) activityTime().fill("");
+    if (activityTime().isEnabled()) {
+      activityTime().fill("");
+    }
     activityDate().click();
     assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     // The public value property is read only; selection itself uses ordinary UI actions.
@@ -189,8 +196,9 @@ public final class AdminUsersPage {
         page.getByRole(AriaRole.GRIDCELL).and(page.locator("[part~='date'][tabindex='0']"));
     assertThat(currentDay).hasCount(1);
     long delta = ChronoUnit.DAYS.between(base, selected);
-    for (long step = 0; step < Math.abs(delta); step++)
+    for (long step = 0; step < Math.abs(delta); step++) {
       currentDay.press(delta > 0 ? "ArrowRight" : "ArrowLeft");
+    }
     currentDay.click();
     assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     assertThat(activityPicker()).hasJSProperty("value", selected.toString());
@@ -222,13 +230,13 @@ public final class AdminUsersPage {
             new Page.GetByRoleOptions().setName(texts.timeInput(time)).setExact(true));
     // Die Liste hält unsichtbare Pufferzeilen vor. Das Mausrad muss über dem
     // sichtbaren Overlay liegen, nicht über dessen erstem DOM-Puffereintrag.
-    var bounds = overlay.locator("[part~='overlay']").boundingBox();
+    BoundingBox bounds = overlay.locator("[part~='overlay']").boundingBox();
     page.mouse().move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
     Locator scroller = page.locator("vaadin-time-picker-scroller:visible");
     for (int step = 0; step < 24 && target.count() == 0; step++) {
       // Vaadin hält auch eine unsichtbare Mitternachtszeile im DOM. Sie ist kein
       // Maß für die Scrollrichtung: maßgeblich ist die erste tatsächlich sichtbare Zeile.
-      var visibleBounds = scroller.boundingBox();
+      BoundingBox visibleBounds = scroller.boundingBox();
       String firstVisible =
           (String)
               options.evaluateAll(
@@ -240,8 +248,9 @@ public final class AdminUsersPage {
                   })?.textContent.trim()
                   """,
                   Map.of("top", visibleBounds.y, "bottom", visibleBounds.y + visibleBounds.height));
-      if (firstVisible == null)
+      if (firstVisible == null) {
         throw new IllegalStateException("No visible time option in the open dropdown");
+      }
       LocalTime firstTime =
           LocalTime.parse(
               firstVisible,

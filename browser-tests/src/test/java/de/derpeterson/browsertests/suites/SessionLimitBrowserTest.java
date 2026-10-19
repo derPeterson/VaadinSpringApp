@@ -1,19 +1,33 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.app.config.AdminConfigGroup;
-import de.derpeterson.browsertests.*;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.BrowserActor;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.PersistentBrowserActor;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.ConfigurationPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
 import java.nio.file.Path;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 @Tag("browser")
@@ -25,7 +39,7 @@ public class SessionLimitBrowserTest extends BrowserFixture {
 
   @BeforeEach
   void prepare() {
-    var login = new LoginPage(page);
+    LoginPage login = new LoginPage(page);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     new UserMenu(page).selectTestLanguage();
@@ -74,15 +88,15 @@ public class SessionLimitBrowserTest extends BrowserFixture {
   void tabsShareOneSlotAndLogoutMakesRoom() {
     String email = user();
     limit(1);
-    try (var first = new BrowserActor(browser);
-        var second = new BrowserActor(browser)) {
+    try (BrowserActor first = new BrowserActor(browser);
+        BrowserActor second = new BrowserActor(browser)) {
       first.login(email, BrowserTestAccounts.USER_PASSWORD);
       signedIn(first.page, email);
       Page tab = first.context.newPage();
       tab.navigate(path(HOME_ROUTE));
       signedIn(tab, email);
       second.login(email, BrowserTestAccounts.USER_PASSWORD, true);
-      var login = new LoginPage(second.page);
+      LoginPage login = new LoginPage(second.page);
       login.assertRestrictedManagement();
       assertFalse(
           second.context.cookies().stream().anyMatch(cookie -> cookie.name.equals("remember-me")));
@@ -108,9 +122,9 @@ public class SessionLimitBrowserTest extends BrowserFixture {
   void changesApplyWithoutEvictingExistingDevices() {
     String email = user();
     limit(3);
-    try (var first = new BrowserActor(browser);
-        var second = new BrowserActor(browser);
-        var third = new BrowserActor(browser)) {
+    try (BrowserActor first = new BrowserActor(browser);
+        BrowserActor second = new BrowserActor(browser);
+        BrowserActor third = new BrowserActor(browser)) {
       first.login(email, BrowserTestAccounts.USER_PASSWORD);
       signedIn(first.page, email);
       second.login(email, BrowserTestAccounts.USER_PASSWORD);
@@ -121,7 +135,7 @@ public class SessionLimitBrowserTest extends BrowserFixture {
       second.page.reload();
       signedIn(second.page, email);
       third.login(email, BrowserTestAccounts.USER_PASSWORD);
-      var login = new LoginPage(third.page);
+      LoginPage login = new LoginPage(third.page);
       login.assertRestrictedManagement();
       limit(3);
       login.cancelRecovery();
@@ -142,13 +156,13 @@ public class SessionLimitBrowserTest extends BrowserFixture {
   void closingBrowserDoesNotPretendToBeLogout() {
     String email = user();
     limit(1);
-    try (var persistent = new PersistentBrowserActor(playwright, profile)) {
-      var login = new LoginPage(persistent.page);
+    try (PersistentBrowserActor persistent = new PersistentBrowserActor(playwright, profile)) {
+      LoginPage login = new LoginPage(persistent.page);
       login.open();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
       signedIn(persistent.page, email);
     }
-    try (var next = new BrowserActor(browser)) {
+    try (BrowserActor next = new BrowserActor(browser)) {
       next.login(email, BrowserTestAccounts.USER_PASSWORD);
       new LoginPage(next.page).assertRestrictedManagement();
     }
@@ -168,8 +182,8 @@ public class SessionLimitBrowserTest extends BrowserFixture {
   void rememberMeCannotBypassTheLimit() {
     String email = user();
     limit(2);
-    try (var persistent = new PersistentBrowserActor(playwright, profile)) {
-      var login = new LoginPage(persistent.page);
+    try (PersistentBrowserActor persistent = new PersistentBrowserActor(playwright, profile)) {
+      LoginPage login = new LoginPage(persistent.page);
       login.open();
       persistent
           .page
@@ -185,11 +199,12 @@ public class SessionLimitBrowserTest extends BrowserFixture {
           persistent.context.cookies().stream()
               .anyMatch(cookie -> cookie.name.equals("remember-me")));
     }
-    try (var existing = new BrowserActor(browser)) {
+    try (BrowserActor existing = new BrowserActor(browser)) {
       existing.login(email, BrowserTestAccounts.USER_PASSWORD);
       signedIn(existing.page, email);
-      try (var persistent = new PersistentBrowserActor(playwright, profile, LOGIN_ROUTE)) {
-        var login = new LoginPage(persistent.page);
+      try (PersistentBrowserActor persistent =
+          new PersistentBrowserActor(playwright, profile, LOGIN_ROUTE)) {
+        LoginPage login = new LoginPage(persistent.page);
         login.assertSessionLimit();
         assertFalse(
             persistent.context.cookies().stream()

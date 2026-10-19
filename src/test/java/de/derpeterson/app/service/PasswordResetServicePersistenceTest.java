@@ -1,8 +1,28 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.AdditionalAnswers.delegatesTo;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -32,11 +52,14 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -51,6 +74,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.MockedConstruction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -187,8 +211,8 @@ class PasswordResetServicePersistenceTest {
   @Test
   void messagePersistenceFailureRollsBackPasswordAndResetConsumption() {
     seed("message-failure", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    var target = org.springframework.test.util.AopTestUtils.getTargetObject(service);
-    var failure = mock(UserNotificationService.class);
+    Object target = org.springframework.test.util.AopTestUtils.getTargetObject(service);
+    UserNotificationService failure = mock(UserNotificationService.class);
     doThrow(new IllegalStateException("message storage failed"))
         .when(failure)
         .recordSecurityEvent(any(), any());
@@ -210,11 +234,11 @@ class PasswordResetServicePersistenceTest {
   @ValueSource(strings = {"create", "invalidate"})
   void resetFollowedByAnotherAccountLockPreservesPasswordAtOuterCommit(String next) {
     seed("outer", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    var created = new AtomicReference<String>();
+    AtomicReference<String> created = new AtomicReference<String>();
     transaction.executeWithoutResult(
         tx -> {
           assertTrue(service.resetPassword("outer", "Password!"));
-          var managed = users.findById(userId).orElseThrow();
+          UserEntity managed = users.findById(userId).orElseThrow();
           // Also preserve another local edit, not just the reset method's field.
           managed.setFirstName("Updated");
           if (next.equals("create")) {
@@ -242,11 +266,11 @@ class PasswordResetServicePersistenceTest {
   void outerRollbackRestoresPasswordAndTokensAfterRepeatedAccountLock(String next) {
     seed("outer", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
     seed("other", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    var created = new AtomicReference<String>();
+    AtomicReference<String> created = new AtomicReference<String>();
     transaction.executeWithoutResult(
         tx -> {
           assertTrue(service.resetPassword("outer", "Password!"));
-          var managed = users.findById(userId).orElseThrow();
+          UserEntity managed = users.findById(userId).orElseThrow();
           managed.setFirstName("Updated");
           if (next.equals("create")) {
             created.set(service.createToken(managed));
@@ -292,7 +316,7 @@ class PasswordResetServicePersistenceTest {
     assertEquals(rollback ? 0 : 1, mails.count());
     assertEquals(rollback ? 1 : 2, tokens.count());
     if (!rollback) {
-      var active =
+      String active =
           transaction.execute(
               tx ->
                   tokens
@@ -308,7 +332,7 @@ class PasswordResetServicePersistenceTest {
   void firstAccountLockPreservesOwnPendingChangesWithoutCommittingThem() {
     transaction.executeWithoutResult(
         tx -> {
-          var managed = users.findById(userId).orElseThrow();
+          UserEntity managed = users.findById(userId).orElseThrow();
           managed.setFirstName("Local");
           assertSame(managed, users.lockVerificationUser(userId).orElseThrow());
           assertEquals("Local", managed.getFirstName());
@@ -320,16 +344,16 @@ class PasswordResetServicePersistenceTest {
   @Test
   void firstAccountLockRefreshesAnUnchangedStaleEnabledAccountBeforeReset() throws Exception {
     seed("blocked", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    var loaded = new CountDownLatch(1);
-    var disabled = new CountDownLatch(1);
-    var executor = Executors.newSingleThreadExecutor();
+    CountDownLatch loaded = new CountDownLatch(1);
+    CountDownLatch disabled = new CountDownLatch(1);
+    ExecutorService executor = Executors.newSingleThreadExecutor();
     try {
-      var result =
+      Future<Boolean> result =
           executor.submit(
               () ->
                   transaction.execute(
                       tx -> {
-                        var stale = users.findById(userId).orElseThrow();
+                        UserEntity stale = users.findById(userId).orElseThrow();
                         assertTrue(stale.isEnabled());
                         loaded.countDown();
                         try {
@@ -357,16 +381,16 @@ class PasswordResetServicePersistenceTest {
 
   @Test
   void dirtyStaleAccountCannotOverwriteAConcurrentDisableDuringLockFlush() throws Exception {
-    var loaded = new CountDownLatch(1);
-    var disabled = new CountDownLatch(1);
-    var executor = Executors.newSingleThreadExecutor();
+    CountDownLatch loaded = new CountDownLatch(1);
+    CountDownLatch disabled = new CountDownLatch(1);
+    ExecutorService executor = Executors.newSingleThreadExecutor();
     try {
-      var result =
+      Future<Optional<UserEntity>> result =
           executor.submit(
               () ->
                   transaction.execute(
                       tx -> {
-                        var stale = users.findById(userId).orElseThrow();
+                        UserEntity stale = users.findById(userId).orElseThrow();
                         stale.setFirstName("Stale edit");
                         loaded.countDown();
                         try {
@@ -381,14 +405,15 @@ class PasswordResetServicePersistenceTest {
       transaction.executeWithoutResult(
           tx -> users.findById(userId).orElseThrow().setEnabled(false));
       disabled.countDown();
-      var failure = assertThrows(ExecutionException.class, () -> result.get(10, TimeUnit.SECONDS));
+      ExecutionException failure =
+          assertThrows(ExecutionException.class, () -> result.get(10, TimeUnit.SECONDS));
       assertInstanceOf(OptimisticLockingFailureException.class, failure.getCause());
     } finally {
       disabled.countDown();
       executor.shutdownNow();
       assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
     }
-    var stored = users.findById(userId).orElseThrow();
+    UserEntity stored = users.findById(userId).orElseThrow();
     assertFalse(stored.isEnabled());
     assertEquals("Test", stored.getFirstName());
     assertEquals("old-hash", stored.getPassword());
@@ -479,7 +504,8 @@ class PasswordResetServicePersistenceTest {
   @ValueSource(strings = {"encoder", "user-save", "token-save"})
   void runtimeFailuresRollBackBothPasswordAndTokenAndPermitASubsequentRetry(String stage) {
     seed("valid", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    var failure = new DataAccessResourceFailureException("isolated " + stage);
+    DataAccessResourceFailureException failure =
+        new DataAccessResourceFailureException("isolated " + stage);
     if (stage.equals("encoder")) {
       doThrow(failure).when(probes.encoder()).encode("Password!");
     } else if (stage.equals("user-save")) {
@@ -552,10 +578,10 @@ class PasswordResetServicePersistenceTest {
   @ParameterizedTest
   @ValueSource(longs = {-1, 0, 1})
   void actualPersistenceUsesExclusiveExpiryForValidationAndReset(long offsetSeconds) {
-    var instant = Instant.parse("2026-10-08T10:00:00Z");
+    Instant instant = Instant.parse("2026-10-08T10:00:00Z");
     when(clock.getZone()).thenReturn(ZoneId.of("Europe/Berlin"));
     when(clock.instant()).thenReturn(instant);
-    var expiry = LocalDateTime.now(clock).plusSeconds(offsetSeconds);
+    LocalDateTime expiry = LocalDateTime.now(clock).plusSeconds(offsetSeconds);
     seed("validate-boundary", TokenStatus.ACTIVE, expiry);
     seed("reset-boundary", TokenStatus.ACTIVE, expiry);
     assertEquals(offsetSeconds > 0, service.validateToken("validate-boundary"));
@@ -569,7 +595,7 @@ class PasswordResetServicePersistenceTest {
 
   @Test
   void resetRechecksTimeAfterValidationWithoutConsumingAnExpiredToken() {
-    var instant = Instant.parse("2026-10-08T10:00:00Z");
+    Instant instant = Instant.parse("2026-10-08T10:00:00Z");
     when(clock.instant()).thenReturn(instant);
     seed("later", TokenStatus.ACTIVE, LocalDateTime.now(clock).plusSeconds(1));
     assertTrue(service.validateToken("later"));
@@ -582,15 +608,15 @@ class PasswordResetServicePersistenceTest {
 
   @Test
   void cleanupCommitsOnlyTokensStrictlyBeforeTheRetentionCutoffAndIsRepeatable() {
-    var now = LocalDateTime.of(2026, 10, 8, 12, 0);
-    var cutoff = now.minusDays(7);
+    LocalDateTime now = LocalDateTime.of(2026, 10, 8, 12, 0);
+    LocalDateTime cutoff = now.minusDays(7);
     for (TokenStatus status : TokenStatus.values()) {
       seed("old-" + status, status, cutoff.minusSeconds(1));
     }
     seed("boundary", TokenStatus.USED, cutoff);
     seed("recent", TokenStatus.EXPIRED, cutoff.plusSeconds(1));
     seed("future", TokenStatus.ACTIVE, now.plusDays(1));
-    var cutoffInstant = now.atZone(clock.getZone()).toInstant();
+    Instant cutoffInstant = now.atZone(clock.getZone()).toInstant();
     when(clock.instant()).thenReturn(cutoffInstant);
     assertDoesNotThrow(service::deleteExpiredTokens);
     assertDoesNotThrow(service::deleteExpiredTokens);
@@ -619,7 +645,7 @@ class PasswordResetServicePersistenceTest {
   void checkedTemplateIoFailureRollsBackTokenRotationWithoutQueuingMailAndAllowsRetry()
       throws IOException {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.getLocale()).thenReturn(Locale.FRENCH);
     VaadinSession.setCurrent(session);
     try {
@@ -649,8 +675,8 @@ class PasswordResetServicePersistenceTest {
   @ValueSource(strings = {"read", "close"})
   void templateStreamIoFailuresRollbackTheRealRotationAndCloseTheStream(String stage) {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    var failure = new IOException("isolated " + stage);
-    var closed = new AtomicBoolean();
+    IOException failure = new IOException("isolated " + stage);
+    AtomicBoolean closed = new AtomicBoolean();
     InputStream template =
         new InputStream() {
           @Override
@@ -669,7 +695,7 @@ class PasswordResetServicePersistenceTest {
             }
           }
         };
-    try (var resources =
+    try (MockedConstruction<ClassPathResource> resources =
         mockConstruction(
             ClassPathResource.class,
             (resource, context) ->
@@ -692,10 +718,10 @@ class PasswordResetServicePersistenceTest {
   @Test
   void checkedIoAfterActualQueueInsertionRollsBackQueueAndRotation() throws IOException {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    var failure = new IOException("isolated failure after queue write");
+    IOException failure = new IOException("isolated failure after queue write");
     doAnswer(
             call -> {
-              var mail = new EmailQueueEntity();
+              EmailQueueEntity mail = new EmailQueueEntity();
               mail.setUserEntity(call.getArgument(0));
               mail.setSubject(call.getArgument(1));
               mail.setBody(call.getArgument(2));
@@ -721,7 +747,7 @@ class PasswordResetServicePersistenceTest {
   @Test
   void caughtCheckedIoMarksTheOuterTransactionRollbackOnly() {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.getLocale()).thenReturn(Locale.FRENCH);
     VaadinSession.setCurrent(session);
     try {
@@ -747,7 +773,8 @@ class PasswordResetServicePersistenceTest {
   @Test
   void runtimeQueueFailureRollsBackTokenRotation() {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    var failure = new DataAccessResourceFailureException("isolated queue failure");
+    DataAccessResourceFailureException failure =
+        new DataAccessResourceFailureException("isolated queue failure");
     doThrow(failure).when(probes.queue()).addEmailToQueue(any(), any(), any(), any());
     assertSame(
         failure,
@@ -763,7 +790,7 @@ class PasswordResetServicePersistenceTest {
   void successfulMailRequestCommitsOneNewTokenAndQueuesItsLinkWithoutSmtp(boolean german)
       throws IOException {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.getLocale()).thenReturn(german ? Locale.GERMAN : Locale.ENGLISH);
     VaadinSession.setCurrent(session);
     try {
@@ -772,7 +799,7 @@ class PasswordResetServicePersistenceTest {
       VaadinSession.setCurrent(null);
     }
     assertEquals(TokenStatus.INACTIVE, status("old"));
-    var value =
+    String value =
         transaction.execute(
             tx ->
                 tokens
@@ -780,7 +807,7 @@ class PasswordResetServicePersistenceTest {
                         users.findById(userId).orElseThrow(), TokenStatus.ACTIVE)
                     .getFirst()
                     .getToken());
-    var html = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<String> html = ArgumentCaptor.forClass(String.class);
     verify(probes.queue())
         .addEmailToQueue(
             argThat(user -> userId.equals(user.getId())),
@@ -797,13 +824,13 @@ class PasswordResetServicePersistenceTest {
   @RepeatedTest(3)
   void secondTransactionResolvingTheAccountBeforeFirstCommitCannotReuseTheToken() throws Exception {
     seed("race", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    var activeRead = new CountDownLatch(1);
-    var firstCommitted = new CountDownLatch(1);
-    var staleReader = new AtomicReference<Thread>();
+    CountDownLatch activeRead = new CountDownLatch(1);
+    CountDownLatch firstCommitted = new CountDownLatch(1);
+    AtomicReference<Thread> staleReader = new AtomicReference<Thread>();
     // Resolve the scalar account ID, then pause before acquiring its lock.
     doAnswer(
             call -> {
-              var result = tokens.findUserIdByToken("race");
+              Optional<Long> result = tokens.findUserIdByToken("race");
               if (Thread.currentThread() == staleReader.get()) {
                 assertTrue(result.isPresent());
                 activeRead.countDown();
@@ -813,9 +840,9 @@ class PasswordResetServicePersistenceTest {
             })
         .when(probes.tokens())
         .findUserIdByToken("race");
-    var executor = Executors.newSingleThreadExecutor();
+    ExecutorService executor = Executors.newSingleThreadExecutor();
     try {
-      var second =
+      Future<Boolean> second =
           executor.submit(
               () -> {
                 staleReader.set(Thread.currentThread());
@@ -838,15 +865,15 @@ class PasswordResetServicePersistenceTest {
 
   /** The first transaction holds the actual DB lock when the second attempts it. */
   private <T> List<T> overlap(Callable<T> first, Callable<T> second) throws Exception {
-    var locked = new CountDownLatch(1);
-    var contender = new CountDownLatch(1);
-    var owner = new AtomicReference<Thread>();
+    CountDownLatch locked = new CountDownLatch(1);
+    CountDownLatch contender = new CountDownLatch(1);
+    AtomicReference<Thread> owner = new AtomicReference<Thread>();
     doAnswer(
             call -> {
               if (Thread.currentThread() != owner.get()) {
                 contender.countDown();
               }
-              var result = users.lockVerificationUser(userId);
+              Optional<UserEntity> result = users.lockVerificationUser(userId);
               if (Thread.currentThread() == owner.get()) {
                 locked.countDown();
                 assertTrue(contender.await(10, TimeUnit.SECONDS));
@@ -855,16 +882,16 @@ class PasswordResetServicePersistenceTest {
             })
         .when(probes.users())
         .lockVerificationUser(userId);
-    var executor = Executors.newFixedThreadPool(2);
+    ExecutorService executor = Executors.newFixedThreadPool(2);
     try {
-      var a =
+      Future<T> a =
           executor.submit(
               () -> {
                 owner.set(Thread.currentThread());
                 return first.call();
               });
       assertTrue(locked.await(10, TimeUnit.SECONDS));
-      var b = executor.submit(second);
+      Future<T> b = executor.submit(second);
       return List.of(a.get(10, TimeUnit.SECONDS), b.get(10, TimeUnit.SECONDS));
     } finally {
       contender.countDown();
@@ -876,7 +903,7 @@ class PasswordResetServicePersistenceTest {
   @RepeatedTest(3)
   void overlappingResetsConsumeTheTokenExactlyOnce() throws Exception {
     seed("overlap", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    var results =
+    List<Boolean> results =
         overlap(
             () -> service.resetPassword("overlap", "FirstPassword!"),
             () -> service.resetPassword("overlap", "SecondPassword!"));
@@ -888,8 +915,9 @@ class PasswordResetServicePersistenceTest {
 
   @RepeatedTest(3)
   void overlappingCreationLeavesOnlyTheLastTokenActive() throws Exception {
-    var detached = users.findById(userId).orElseThrow();
-    var results = overlap(() -> service.createToken(detached), () -> service.createToken(detached));
+    UserEntity detached = users.findById(userId).orElseThrow();
+    List<String> results =
+        overlap(() -> service.createToken(detached), () -> service.createToken(detached));
     assertNotEquals(results.getFirst(), results.getLast());
     assertEquals(TokenStatus.INACTIVE, status(results.getFirst()));
     assertEquals(TokenStatus.ACTIVE, status(results.getLast()));
@@ -905,14 +933,14 @@ class PasswordResetServicePersistenceTest {
 
   @RepeatedTest(3)
   void overlappingMailRequestsPersistOneMailWhoseTokenRemainsActive() throws Exception {
-    var results =
+    List<Boolean> results =
         overlap(
             () -> service.sendPasswordResetEmail("test@example.com"),
             () -> service.sendPasswordResetEmail("test@example.com"));
     assertEquals(List.of(true, true), results);
     assertEquals(1, mails.count());
     assertEquals(1, tokens.count());
-    var active =
+    String active =
         transaction.execute(
             tx ->
                 tokens
@@ -928,7 +956,7 @@ class PasswordResetServicePersistenceTest {
   @ValueSource(booleans = {false, true})
   void overlappingDirectCreationAndMailRequestKeepTheQueuedLinkActive(boolean mailFirst)
       throws Exception {
-    var detached = users.findById(userId).orElseThrow();
+    UserEntity detached = users.findById(userId).orElseThrow();
     if (mailFirst) {
       assertEquals(
           List.of(true, false),
@@ -940,7 +968,7 @@ class PasswordResetServicePersistenceTest {
               }));
       assertEquals(1, tokens.count());
     } else {
-      var results =
+      List<String> results =
           overlap(
               () -> service.createToken(detached),
               () -> {
@@ -951,7 +979,7 @@ class PasswordResetServicePersistenceTest {
       assertEquals(2, tokens.count());
     }
     assertEquals(1, mails.count());
-    var active =
+    List<PasswordResetTokenEntity> active =
         transaction.execute(
             tx ->
                 tokens.findAllByUserEntityAndStatus(
@@ -967,7 +995,7 @@ class PasswordResetServicePersistenceTest {
 
   @Test
   void detachedEnabledUserCannotCreateTokensAfterAccountWasDisabled() {
-    var detached = users.findById(userId).orElseThrow();
+    UserEntity detached = users.findById(userId).orElseThrow();
     transaction.executeWithoutResult(tx -> users.findById(userId).orElseThrow().setEnabled(false));
     assertThrows(IllegalStateException.class, () -> service.createToken(detached));
     assertEquals(0, tokens.count());
@@ -982,8 +1010,8 @@ class PasswordResetServicePersistenceTest {
     when(probes.config().getString(ConfigEntry.BASE_URL)).thenReturn("https://example.invalid/");
     doAnswer(
             call -> {
-              var user = (UserEntity) call.getArgument(0);
-              var broken = new EmailQueueEntity();
+              UserEntity user = (UserEntity) call.getArgument(0);
+              EmailQueueEntity broken = new EmailQueueEntity();
               broken.setUserEntity(user);
               broken.setEmailType(EmailType.PASSWORD_RESET);
               broken.setStatus(EmailStatus.PENDING);
@@ -1007,7 +1035,7 @@ class PasswordResetServicePersistenceTest {
   void directRotationCannotInvalidateATokenInAnOpenMail(EmailStatus mailStatus) throws IOException {
     assertTrue(service.sendPasswordResetEmail("test@example.com"));
     transaction.executeWithoutResult(tx -> mails.findAll().getFirst().setStatus(mailStatus));
-    var active =
+    String active =
         transaction.execute(
             tx ->
                 tokens
@@ -1031,7 +1059,8 @@ class PasswordResetServicePersistenceTest {
     seed("closed", terminal, LocalDateTime.now().plusDays(1));
     assertThrows(
         IllegalArgumentException.class, () -> service.setTokenStatus("closed", TokenStatus.ACTIVE));
-    for (var target : List.of(TokenStatus.USED, TokenStatus.INACTIVE, TokenStatus.EXPIRED)) {
+    for (TokenStatus target :
+        List.of(TokenStatus.USED, TokenStatus.INACTIVE, TokenStatus.EXPIRED)) {
       if (target == terminal) {
         service.setTokenStatus("closed", target);
       } else {
@@ -1044,16 +1073,17 @@ class PasswordResetServicePersistenceTest {
   @Test
   void staleManagedTokenCannotBeReusedAfterAnotherTransactionCommitsConsumption() throws Exception {
     seed("stale", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    var read = new CountDownLatch(1);
-    var committed = new CountDownLatch(1);
-    var executor = Executors.newSingleThreadExecutor();
+    CountDownLatch read = new CountDownLatch(1);
+    CountDownLatch committed = new CountDownLatch(1);
+    ExecutorService executor = Executors.newSingleThreadExecutor();
     try {
-      var stale =
+      Future<Boolean> stale =
           executor.submit(
               () ->
                   transaction.execute(
                       tx -> {
-                        var managed = tokens.findByToken("stale").orElseThrow();
+                        PasswordResetTokenEntity managed =
+                            tokens.findByToken("stale").orElseThrow();
                         assertEquals(TokenStatus.ACTIVE, managed.getStatus());
                         read.countDown();
                         try {
@@ -1125,7 +1155,7 @@ class PasswordResetServicePersistenceTest {
 
     @Bean
     LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource source) {
-      var factory = new LocalContainerEntityManagerFactoryBean();
+      LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
       factory.setDataSource(source);
       factory.setPackagesToScan("de.derpeterson.app.model");
       factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
@@ -1202,7 +1232,7 @@ class PasswordResetServicePersistenceTest {
     @Bean
     PasswordResetService passwordResetService(
         Probes probes, Clock clock, UserNotificationService userNotifications) {
-      var messages = mock(MessageProperties.class);
+      MessageProperties messages = mock(MessageProperties.class);
       when(messages.getEmailResetPasswordSubject()).thenReturn("Reset password");
       return new PasswordResetService(
           messages,

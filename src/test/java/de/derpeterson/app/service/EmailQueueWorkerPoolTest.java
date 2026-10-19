@@ -1,12 +1,23 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.LongStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,15 +43,15 @@ class EmailQueueWorkerPoolTest {
   @ParameterizedTest
   @ValueSource(ints = {1, 2, 3})
   void reachesTheConfiguredLimitAndRefillsOnlyCompletedSlots(int limit) throws Exception {
-    var executor = executor(limit);
-    var pool = new EmailQueueWorkerPool(executor);
-    var started = new CountDownLatch(limit);
-    var release = new CountDownLatch(1);
-    var active = new AtomicInteger();
-    var maximum = new AtomicInteger();
+    ThreadPoolExecutor executor = executor(limit);
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor);
+    CountDownLatch started = new CountDownLatch(limit);
+    CountDownLatch release = new CountDownLatch(1);
+    AtomicInteger active = new AtomicInteger();
+    AtomicInteger maximum = new AtomicInteger();
     Set<Long> seen = ConcurrentHashMap.newKeySet();
-    try (var caller = Executors.newSingleThreadExecutor()) {
-      var run =
+    try (ExecutorService caller = Executors.newSingleThreadExecutor()) {
+      Future<?> run =
           caller.submit(
               () ->
                   pool.process(
@@ -77,12 +88,12 @@ class EmailQueueWorkerPoolTest {
 
   @Test
   void aSlowFirstTaskDoesNotPreventRefillingTheOtherWorker() throws Exception {
-    var pool = new EmailQueueWorkerPool(executor(2));
-    var slow = new CountDownLatch(1);
-    var firstStarted = new CountDownLatch(1);
-    var thirdStarted = new CountDownLatch(1);
-    try (var caller = Executors.newSingleThreadExecutor()) {
-      var run =
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor(2));
+    CountDownLatch slow = new CountDownLatch(1);
+    CountDownLatch firstStarted = new CountDownLatch(1);
+    CountDownLatch thirdStarted = new CountDownLatch(1);
+    try (ExecutorService caller = Executors.newSingleThreadExecutor()) {
+      Future<?> run =
           caller.submit(
               () ->
                   pool.process(
@@ -92,8 +103,12 @@ class EmailQueueWorkerPoolTest {
                           firstStarted.countDown();
                           await(slow);
                         }
-                        if (id == 2) await(firstStarted);
-                        if (id == 3) thirdStarted.countDown();
+                        if (id == 2) {
+                          await(firstStarted);
+                        }
+                        if (id == 3) {
+                          thirdStarted.countDown();
+                        }
                       }));
       try {
         await(thirdStarted);
@@ -110,12 +125,12 @@ class EmailQueueWorkerPoolTest {
 
   @Test
   void anOverlappingBatchIsSkippedAndCanRunOnTheNextCycle() throws Exception {
-    var pool = new EmailQueueWorkerPool(executor(1));
-    var entered = new CountDownLatch(1);
-    var release = new CountDownLatch(1);
-    var calls = new AtomicInteger();
-    try (var caller = Executors.newSingleThreadExecutor()) {
-      var run =
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor(1));
+    CountDownLatch entered = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    AtomicInteger calls = new AtomicInteger();
+    try (ExecutorService caller = Executors.newSingleThreadExecutor()) {
+      Future<?> run =
           caller.submit(
               () ->
                   pool.process(
@@ -142,13 +157,15 @@ class EmailQueueWorkerPoolTest {
 
   @Test
   void taskFailureDoesNotDiscardHealthyCandidates() {
-    var pool = new EmailQueueWorkerPool(executor(1));
-    var completed = new AtomicInteger();
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor(1));
+    AtomicInteger completed = new AtomicInteger();
     try {
       pool.process(
           List.of(1L, 2L),
           id -> {
-            if (id == 1) throw new IllegalStateException("isolated worker failure");
+            if (id == 1) {
+              throw new IllegalStateException("isolated worker failure");
+            }
             completed.incrementAndGet();
           });
       assertEquals(1, completed.get());
@@ -159,10 +176,10 @@ class EmailQueueWorkerPoolTest {
 
   @Test
   void executorRejectionBeforeAdmissionDoesNotDispatch() {
-    var executor = executor(2);
-    var pool = new EmailQueueWorkerPool(executor);
+    ThreadPoolExecutor executor = executor(2);
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor);
     executor.shutdown();
-    var calls = new AtomicInteger();
+    AtomicInteger calls = new AtomicInteger();
     try {
       pool.process(List.of(1L, 2L), id -> calls.incrementAndGet());
       assertEquals(0, calls.get());
@@ -173,18 +190,19 @@ class EmailQueueWorkerPoolTest {
 
   @Test
   void partialRejectionDrainsAcceptedWorkAndStopsRefilling() throws Exception {
-    var accepted = new AtomicInteger();
+    AtomicInteger accepted = new AtomicInteger();
     var executor =
         new ThreadPoolExecutor(2, 2, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(2)) {
           @Override
           public void execute(Runnable task) {
-            if (accepted.incrementAndGet() == 2)
+            if (accepted.incrementAndGet() == 2) {
               throw new RejectedExecutionException("fixture rejection");
+            }
             super.execute(task);
           }
         };
-    var pool = new EmailQueueWorkerPool(executor);
-    var calls = new AtomicInteger();
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor);
+    AtomicInteger calls = new AtomicInteger();
     try {
       pool.process(List.of(1L, 2L, 3L), id -> calls.incrementAndGet());
       assertEquals(1, calls.get());
@@ -196,13 +214,13 @@ class EmailQueueWorkerPoolTest {
 
   @Test
   void contextCloseStopsNewCandidatesButLetsTheRunningTaskFinish() throws Exception {
-    var pool = new EmailQueueWorkerPool(executor(1));
-    var entered = new CountDownLatch(1);
-    var release = new CountDownLatch(1);
-    var calls = new AtomicInteger();
-    try (var caller = Executors.newSingleThreadExecutor();
-        var context = new GenericApplicationContext()) {
-      var run =
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor(1));
+    CountDownLatch entered = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    AtomicInteger calls = new AtomicInteger();
+    try (ExecutorService caller = Executors.newSingleThreadExecutor();
+        GenericApplicationContext context = new GenericApplicationContext()) {
+      Future<?> run =
           caller.submit(
               () ->
                   pool.process(
@@ -229,7 +247,7 @@ class EmailQueueWorkerPoolTest {
 
   @Test
   void shutdownWaitsForAnAcceptedTaskWithinTheGracePeriod() throws Exception {
-    var shutdownCalled = new CountDownLatch(1);
+    CountDownLatch shutdownCalled = new CountDownLatch(1);
     var executor =
         new ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(1)) {
           @Override
@@ -238,11 +256,11 @@ class EmailQueueWorkerPoolTest {
             shutdownCalled.countDown();
           }
         };
-    var pool = new EmailQueueWorkerPool(executor);
-    var entered = new CountDownLatch(1);
-    var release = new CountDownLatch(1);
-    try (var callers = Executors.newFixedThreadPool(2)) {
-      var run =
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor);
+    CountDownLatch entered = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    try (ExecutorService callers = Executors.newFixedThreadPool(2)) {
+      Future<?> run =
           callers.submit(
               () ->
                   pool.process(
@@ -252,7 +270,7 @@ class EmailQueueWorkerPoolTest {
                         await(release);
                       }));
       await(entered);
-      var close = callers.submit(pool::shutdown);
+      Future<?> close = callers.submit(pool::shutdown);
       try {
         await(shutdownCalled);
         assertFalse(close.isDone());
@@ -271,13 +289,13 @@ class EmailQueueWorkerPoolTest {
 
   @Test
   void forcedShutdownCancelsTheFutureAndUnblocksTheCoordinator() throws Exception {
-    var executor = executor(1);
-    var pool = new EmailQueueWorkerPool(executor, Duration.ZERO);
-    var entered = new CountDownLatch(1);
-    var interrupted = new CountDownLatch(1);
-    var calls = new AtomicInteger();
-    try (var caller = Executors.newSingleThreadExecutor()) {
-      var run =
+    ThreadPoolExecutor executor = executor(1);
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor, Duration.ZERO);
+    CountDownLatch entered = new CountDownLatch(1);
+    CountDownLatch interrupted = new CountDownLatch(1);
+    AtomicInteger calls = new AtomicInteger();
+    try (ExecutorService caller = Executors.newSingleThreadExecutor()) {
+      Future<?> run =
           caller.submit(
               () ->
                   pool.process(
@@ -305,13 +323,13 @@ class EmailQueueWorkerPoolTest {
 
   @Test
   void interruptedCoordinatorDrainsAcceptedWorkAndRestoresItsInterruptFlag() throws Exception {
-    var pool = new EmailQueueWorkerPool(executor(1));
-    var entered = new CountDownLatch(1);
-    var release = new CountDownLatch(1);
-    var owner = new AtomicReference<Thread>();
-    var calls = new AtomicInteger();
-    try (var caller = Executors.newSingleThreadExecutor()) {
-      var run =
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor(1));
+    CountDownLatch entered = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    AtomicReference<Thread> owner = new AtomicReference<Thread>();
+    AtomicInteger calls = new AtomicInteger();
+    try (ExecutorService caller = Executors.newSingleThreadExecutor()) {
+      Future<Boolean> run =
           caller.submit(
               () -> {
                 owner.set(Thread.currentThread());

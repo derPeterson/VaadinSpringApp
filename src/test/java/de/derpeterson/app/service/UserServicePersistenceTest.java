@@ -1,6 +1,9 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import de.derpeterson.app.model.RoleEntity;
@@ -185,7 +188,7 @@ class UserServicePersistenceTest {
 
     @Bean
     LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
-      var factory = new LocalContainerEntityManagerFactoryBean();
+      LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
       factory.setDataSource(dataSource);
       factory.setPackagesToScan("de.derpeterson.app.model");
       factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
@@ -238,7 +241,8 @@ class UserServicePersistenceTest {
         org.springframework.beans.factory.ObjectProvider<
                 de.derpeterson.app.security.SessionAdmissionService>
             admissions) {
-      var remembered = mock(PersistentTokenBasedRememberMeServices.class);
+      PersistentTokenBasedRememberMeServices remembered =
+          mock(PersistentTokenBasedRememberMeServices.class);
       org.mockito.Mockito.when(remembered.getKey()).thenReturn("test-key");
       return new SecurityService(
           remembered,
@@ -248,7 +252,7 @@ class UserServicePersistenceTest {
           new org.springframework.security.web.context.HttpSessionSecurityContextRepository(),
           admissions.getIfAvailable(
               () -> {
-                var config = mock(ConfigService.class);
+                ConfigService config = mock(ConfigService.class);
                 org.mockito.Mockito.when(
                         config.getInteger(
                             de.derpeterson.app.model.enums.ConfigEntry.MAX_SESSIONS_PER_USER))

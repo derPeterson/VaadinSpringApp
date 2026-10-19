@@ -10,7 +10,13 @@ import de.derpeterson.app.validation.UserInputRules;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -77,7 +83,9 @@ public class UserService {
         .findByEmailForUpdate(EmailIdentity.canonicalize(email))
         .ifPresent(
             user -> {
-              if (!user.isStatusManuallySet()) updateUserStatus(user, UserStatus.AVAILABLE, false);
+              if (!user.isStatusManuallySet()) {
+                updateUserStatus(user, UserStatus.AVAILABLE, false);
+              }
               updateLastActivity(user.getId());
             });
   }
@@ -95,21 +103,24 @@ public class UserService {
     Assert.notNull(user.getStatus(), "Status must not be null");
     user.setEmail(user.getEmail());
     List<Long> superadmins = lockAndReadSuperadmins();
-    var previousRoles =
+    Set<RoleType> previousRoles =
         user.getId() == null ? null : Set.copyOf(userRepository.findExplicitRoles(user.getId()));
-    var desired = roleTypes(user.getRoleEntities());
+    Set<RoleType> desired = roleTypes(user.getRoleEntities());
     if (previousRoles != null && !previousRoles.equals(desired)
-        || previousRoles == null && !desired.equals(Set.of(RoleType.ROLE_USER)))
+        || previousRoles == null && !desired.equals(Set.of(RoleType.ROLE_USER))) {
       rolePolicy.authorizeMutation(user.getId(), desired);
-    else rolePolicy.authorizeProtectedMutation(user.getId(), desired);
+    } else {
+      rolePolicy.authorizeProtectedMutation(user.getId(), desired);
+    }
     ensureSuperadminChangeAllowed(user.getId(), isEnabledSuperadmin(user), superadmins);
     userRepository.save(user);
     userRepository.flush();
     ensureSuperadminsRemain(superadmins);
-    if (previousRoles != null && !previousRoles.equals(roleTypes(user.getRoleEntities())))
+    if (previousRoles != null && !previousRoles.equals(roleTypes(user.getRoleEntities()))) {
       events.publishEvent(
           new de.derpeterson.app.events.UserRolesChanged(
               user.getId(), previousRoles, roleTypes(user.getRoleEntities())));
+    }
   }
 
   @Transactional
@@ -251,8 +262,8 @@ public class UserService {
     if (rawPassword != null && !rawPassword.isBlank()) {
       Assert.isTrue(UserInputRules.isPasswordSecure(rawPassword), "Invalid password");
     }
-    var previousRoles = Set.copyOf(userRepository.findExplicitRoles(stored.getId()));
-    var nextRoles = roleTypes(edited.getRoleEntities());
+    Set<RoleType> previousRoles = Set.copyOf(userRepository.findExplicitRoles(stored.getId()));
+    Set<RoleType> nextRoles = roleTypes(edited.getRoleEntities());
     rolePolicy.authorizeMutation(stored.getId(), nextRoles);
     ensureSuperadminChangeAllowed(stored.getId(), isEnabledSuperadmin(edited), superadmins);
     stored.setFirstName(edited.getFirstName());
@@ -268,9 +279,10 @@ public class UserService {
     userRepository.saveAndFlush(stored);
     profileEvents.afterCommit(stored);
     ensureSuperadminsRemain(superadmins);
-    if (!previousRoles.equals(nextRoles))
+    if (!previousRoles.equals(nextRoles)) {
       events.publishEvent(
           new de.derpeterson.app.events.UserRolesChanged(stored.getId(), previousRoles, nextRoles));
+    }
   }
 
   public List<UserEntity> findAllUsers() {
@@ -329,8 +341,9 @@ public class UserService {
   public void updatePassword(UserEntity user, String rawPassword) {
     Assert.notNull(user, "Entity must not be null");
     Assert.isTrue(UserInputRules.isPasswordSecure(rawPassword), "Invalid password");
-    if (user.getId() != null)
+    if (user.getId() != null) {
       rolePolicy.authorizeMutation(user.getId(), roleTypes(user.getRoleEntities()));
+    }
     user.setPassword(passwordEncoder.encode(rawPassword));
   }
 

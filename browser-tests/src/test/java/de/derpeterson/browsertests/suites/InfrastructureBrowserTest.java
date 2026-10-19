@@ -2,17 +2,24 @@ package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static de.derpeterson.app.config.AppConstants.USER_ICON_ALT;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_PAGE_TITLE;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.microsoft.playwright.APIResponse;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.browsertests.BrowserFixture;
-import io.qameta.allure.*;
-import org.junit.jupiter.api.*;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Story;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag("browser")
 @Feature("Infrastruktur")
@@ -93,10 +100,10 @@ public class InfrastructureBrowserTest extends BrowserFixture {
             Das beweist noch keinen SMTP-Versand der Anwendung.
             """)
   void mailpitIsReachable() throws Exception {
-    var response =
+    APIResponse response =
         context.request().get(System.getProperty("browser.tests.mailpitUrl") + "/api/v1/messages");
     assertTrue(response.ok());
-    var inbox = new ObjectMapper().readTree(response.body());
+    JsonNode inbox = new ObjectMapper().readTree(response.body());
     assertTrue(inbox.path("messages").isArray());
     assertTrue(inbox.path("total").asInt(-1) >= inbox.path("messages").size());
   }

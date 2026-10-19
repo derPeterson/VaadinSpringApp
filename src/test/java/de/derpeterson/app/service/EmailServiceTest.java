@@ -1,14 +1,37 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.config.MailConfig;
+import de.derpeterson.app.helper.email.EmailLogo;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import jakarta.mail.Address;
+import jakarta.mail.BodyPart;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
+import jakarta.mail.Multipart;
 import jakarta.mail.Part;
 import jakarta.mail.Session;
 import jakarta.mail.internet.ContentType;
@@ -16,6 +39,8 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -29,10 +54,12 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.MailAuthenticationException;
 import org.springframework.mail.MailException;
 import org.springframework.mail.MailParseException;
+import org.springframework.mail.MailPreparationException;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -58,13 +85,13 @@ class EmailServiceTest {
   }
 
   private MimeMessage prepareMime() {
-    var message = spy(new MimeMessage(Session.getInstance(new Properties())));
+    MimeMessage message = spy(new MimeMessage(Session.getInstance(new Properties())));
     when(sender.createMimeMessage()).thenReturn(message);
     return message;
   }
 
   private MimeMessage sentMime(MimeMessage expected) {
-    var captured = ArgumentCaptor.forClass(MimeMessage.class);
+    ArgumentCaptor<MimeMessage> captured = ArgumentCaptor.forClass(MimeMessage.class);
     verify(sender).createMimeMessage();
     verify(sender).send(captured.capture());
     verifyNoMoreInteractions(sender);
@@ -73,7 +100,7 @@ class EmailServiceTest {
   }
 
   private SimpleMailMessage sentSimple() {
-    var captured = ArgumentCaptor.forClass(SimpleMailMessage.class);
+    ArgumentCaptor<SimpleMailMessage> captured = ArgumentCaptor.forClass(SimpleMailMessage.class);
     verify(sender).send(captured.capture());
     verifyNoMoreInteractions(sender);
     return captured.getValue();
@@ -82,14 +109,14 @@ class EmailServiceTest {
   @ParameterizedTest
   @ValueSource(strings = {"Normal subject", "Grüße – 密码 🔐", ""})
   void htmlMailRoundTripsRealMimeHeadersBodyAndUtf8(String subject) throws Exception {
-    var original = prepareMime();
+    MimeMessage original = prepareMime();
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     String body =
         "<html><body>Grüße &amp; 密码 🔐\r\n<a href=\"https://example.com/reset?t=abc\">Link</a></body></html>";
 
     service.sendEmail(user(RECIPIENT), subject, body);
 
-    var message = roundTrip(sentMime(original));
+    MimeMessage message = roundTrip(sentMime(original));
     assertEnvelope(message, RECIPIENT, FROM, subject);
     assertFalse(message.isMimeType("multipart/*"));
     assertEquals(1, message.getHeader("Content-Type").length);
@@ -105,19 +132,19 @@ class EmailServiceTest {
   @ParameterizedTest
   @ValueSource(strings = {"", "plain-looking text", "<b>Ä € 日本語 😀</b>", "<p>"})
   void htmlBodyIsPreservedEvenIfEmptyOrNotValidHtml(String body) throws Exception {
-    var original = prepareMime();
+    MimeMessage original = prepareMime();
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     service.sendEmail(user(RECIPIENT), "subject", body);
-    var message = roundTrip(sentMime(original));
+    MimeMessage message = roundTrip(sentMime(original));
     assertHtml(message, body);
   }
 
   @Test
   void namedAddressesRoundTripWithoutAddingCcBccOrReplyTo() throws Exception {
-    var original = prepareMime();
+    MimeMessage original = prepareMime();
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("Sender <sender@example.com>");
     service.sendEmail(user("Recipient <recipient@example.com>"), "subject", "<p>body</p>");
-    var message = roundTrip(sentMime(original));
+    MimeMessage message = roundTrip(sentMime(original));
     assertEnvelope(message, RECIPIENT, FROM, "subject");
     assertEquals(
         "Recipient",
@@ -128,7 +155,7 @@ class EmailServiceTest {
 
   @Test
   void htmlAddressParsingDoesNotEnforceAnInternetDomain() throws Exception {
-    var message = prepareMime();
+    MimeMessage message = prepareMime();
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("local-sender");
     service.sendEmail(user("local-recipient"), "subject", "body");
     assertEnvelope(roundTrip(sentMime(message)), "local-recipient", "local-sender", "subject");
@@ -140,7 +167,7 @@ class EmailServiceTest {
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     String body = "Grüße – 密码 🔐\nFailure details\n<b>literal markup</b>";
     service.sendAdminEmail(RECIPIENT, subject, body);
-    var message = sentSimple();
+    SimpleMailMessage message = sentSimple();
     assertArrayEquals(new String[] {RECIPIENT}, message.getTo());
     assertEquals(FROM, message.getFrom());
     assertEquals(subject, message.getSubject());
@@ -156,11 +183,11 @@ class EmailServiceTest {
   @ValueSource(strings = {"Normal subject", "Grüße – 密码 🔐", ""})
   void adminMailRoundTripsWithTheProductionSenderAndRealSpringAdapter(String subject)
       throws Exception {
-    var realSender = configuredSender();
+    JavaMailSenderImpl realSender = configuredSender();
     assertEquals("UTF-8", realSender.getDefaultEncoding());
     // Same conversion as JavaMailSenderImpl.send(SimpleMailMessage...), no transport.
-    var mime = realSender.createMimeMessage();
-    var adapter = new MimeMailMessage(mime);
+    MimeMessage mime = realSender.createMimeMessage();
+    MimeMailMessage adapter = new MimeMailMessage(mime);
     doAnswer(
             call -> {
               call.getArgument(0, SimpleMailMessage.class).copyTo(adapter);
@@ -171,9 +198,9 @@ class EmailServiceTest {
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     String body = "Ä € 日本語 😀\r\n<b>literal markup</b>";
     service.sendAdminEmail(RECIPIENT, subject, body);
-    var simple = sentSimple();
+    SimpleMailMessage simple = sentSimple();
     assertEquals(body, simple.getText());
-    var message = roundTrip(mime);
+    MimeMessage message = roundTrip(mime);
     assertEnvelope(message, RECIPIENT, FROM, subject);
     assertTrue(message.isMimeType("text/plain"));
     assertEquals("UTF-8", new ContentType(message.getContentType()).getParameter("charset"));
@@ -197,8 +224,8 @@ class EmailServiceTest {
   @ParameterizedTest
   @ValueSource(strings = {"recipient", "from"})
   void realAdminAdapterWrapsAddressErrorsAsMailParseException(String invalidField) {
-    var realSender = configuredSender();
-    var adapter = new MimeMailMessage(realSender.createMimeMessage());
+    JavaMailSenderImpl realSender = configuredSender();
+    MimeMailMessage adapter = new MimeMailMessage(realSender.createMimeMessage());
     doAnswer(
             call -> {
               call.getArgument(0, SimpleMailMessage.class).copyTo(adapter);
@@ -208,7 +235,7 @@ class EmailServiceTest {
         .send(any(SimpleMailMessage.class));
     when(config.getString(ConfigEntry.EMAIL_FROM))
         .thenReturn(invalidField.equals("from") ? "bad@@example.com" : FROM);
-    var failure =
+    MailParseException failure =
         assertThrows(
             MailParseException.class,
             () ->
@@ -235,7 +262,7 @@ class EmailServiceTest {
   void adminMailForwardsUnvalidatedRecipientAndFrom(String address) {
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(address);
     service.sendAdminEmail(address, null, "body");
-    var message = sentSimple();
+    SimpleMailMessage message = sentSimple();
     assertArrayEquals(new String[] {address}, message.getTo());
     assertEquals(address, message.getFrom());
     assertNull(message.getSubject());
@@ -243,8 +270,8 @@ class EmailServiceTest {
 
   @Test
   void subsequentCallsCreateIndependentMessagesAndReadCurrentFrom() throws Exception {
-    var first = new MimeMessage(Session.getInstance(new Properties()));
-    var second = new MimeMessage(Session.getInstance(new Properties()));
+    MimeMessage first = new MimeMessage(Session.getInstance(new Properties()));
+    MimeMessage second = new MimeMessage(Session.getInstance(new Properties()));
     when(sender.createMimeMessage()).thenReturn(first, second);
     when(config.getString(ConfigEntry.EMAIL_FROM))
         .thenReturn(FROM, "other@example.com", FROM, "other@example.com");
@@ -254,10 +281,10 @@ class EmailServiceTest {
     service.sendAdminEmail("other-recipient@example.com", "second", "two");
     assertEnvelope(roundTrip(first), RECIPIENT, FROM, "first");
     assertEnvelope(roundTrip(second), "other-recipient@example.com", "other@example.com", "second");
-    var messages = ArgumentCaptor.forClass(SimpleMailMessage.class);
+    ArgumentCaptor<SimpleMailMessage> messages = ArgumentCaptor.forClass(SimpleMailMessage.class);
     verify(sender, times(2)).send(messages.capture());
-    var adminFirst = messages.getAllValues().get(0);
-    var adminSecond = messages.getAllValues().get(1);
+    SimpleMailMessage adminFirst = messages.getAllValues().get(0);
+    SimpleMailMessage adminSecond = messages.getAllValues().get(1);
     assertNotSame(adminFirst, adminSecond);
     assertEquals(FROM, adminFirst.getFrom());
     assertEquals("other@example.com", adminSecond.getFrom());
@@ -291,7 +318,7 @@ class EmailServiceTest {
       throws Exception {
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     if (html) {
-      var message = prepareMime();
+      MimeMessage message = prepareMime();
       doThrow(failure).when(sender).send(message);
       assertSame(
           failure,
@@ -311,7 +338,7 @@ class EmailServiceTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void configFailuresPropagateBeforeSend(boolean html) {
-    var failure = new IllegalStateException("controlled config failure");
+    IllegalStateException failure = new IllegalStateException("controlled config failure");
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenThrow(failure);
     if (html) {
       prepareMime();
@@ -333,7 +360,7 @@ class EmailServiceTest {
 
   @Test
   void mimeCreationFailurePropagatesWithoutReadingConfigOrSending() {
-    var failure = new MailParseException("controlled creation failure");
+    MailParseException failure = new MailParseException("controlled creation failure");
     when(sender.createMimeMessage()).thenThrow(failure);
     assertSame(
         failure,
@@ -347,9 +374,9 @@ class EmailServiceTest {
   @ParameterizedTest
   @ValueSource(strings = {"content", "subject", "from"})
   void checkedMimeConstructionFailuresPropagateWithoutSending(String stage) throws Exception {
-    var message = spy(new MimeMessage(Session.getInstance(new Properties())));
+    MimeMessage message = spy(new MimeMessage(Session.getInstance(new Properties())));
     when(sender.createMimeMessage()).thenReturn(message);
-    var failure = new MessagingException("controlled " + stage + " failure");
+    MessagingException failure = new MessagingException("controlled " + stage + " failure");
     switch (stage) {
       case "content" ->
           doThrow(failure).when(message).setContent("body", "text/html;charset=UTF-8");
@@ -428,23 +455,23 @@ class EmailServiceTest {
   @ParameterizedTest
   @ValueSource(strings = {"<p>Grüße – 密码 🔐</p>", "<p>Reset</p>"})
   void inlineLogoRoundTripsItsCidPngBytesAndUtf8Html(String text) throws Exception {
-    var original = prepareMime();
+    MimeMessage original = prepareMime();
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     String cid = de.derpeterson.app.helper.email.EmailLogo.CONTENT_ID;
     String body = text + "<img src=\"cid:" + cid + "\" alt=\"Service\">";
     service.sendEmail(user(RECIPIENT), "Logo – Ä", body);
-    var message = roundTrip(sentMime(original));
+    MimeMessage message = roundTrip(sentMime(original));
     assertEnvelope(message, RECIPIENT, FROM, "Logo – Ä");
     assertTrue(message.isMimeType("multipart/related"));
-    var parts = (jakarta.mail.Multipart) message.getContent();
+    Multipart parts = (jakarta.mail.Multipart) message.getContent();
     assertEquals(2, parts.getCount());
     assertHtml(parts.getBodyPart(0), body);
-    var logo = parts.getBodyPart(1);
+    BodyPart logo = parts.getBodyPart(1);
     assertTrue(logo.isMimeType("image/png"));
     assertEquals(Part.INLINE, logo.getDisposition());
     assertEquals("service-logo.png", logo.getFileName());
     assertArrayEquals(new String[] {"<" + cid + ">"}, logo.getHeader("Content-ID"));
-    try (var stream = logo.getInputStream()) {
+    try (InputStream stream = logo.getInputStream()) {
       assertArrayEquals(
           de.derpeterson.app.helper.email.EmailLogo.readBytes(), stream.readAllBytes());
     }
@@ -452,12 +479,13 @@ class EmailServiceTest {
 
   @Test
   void unreadableInlineLogoFailsBeforeTransportWithoutRetry() {
-    var message = prepareMime();
+    MimeMessage message = prepareMime();
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
-    var failure = new java.io.IOException("controlled logo read failure");
-    try (var logo = mockStatic(de.derpeterson.app.helper.email.EmailLogo.class)) {
+    IOException failure = new java.io.IOException("controlled logo read failure");
+    try (MockedStatic<EmailLogo> logo =
+        mockStatic(de.derpeterson.app.helper.email.EmailLogo.class)) {
       logo.when(de.derpeterson.app.helper.email.EmailLogo::readBytes).thenThrow(failure);
-      var thrown =
+      MailPreparationException thrown =
           assertThrows(
               org.springframework.mail.MailPreparationException.class,
               () ->
@@ -476,20 +504,20 @@ class EmailServiceTest {
 
   @Test
   void unknownCidDoesNotTriggerAnUnrelatedLogoAttachment() throws Exception {
-    var message = prepareMime();
+    MimeMessage message = prepareMime();
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     String body = "<img src=\"cid:unknown-image\">";
     service.sendEmail(user(RECIPIENT), "subject", body);
-    var received = roundTrip(sentMime(message));
+    MimeMessage received = roundTrip(sentMime(message));
     assertFalse(received.isMimeType("multipart/*"));
     assertHtml(received, body);
   }
 
   @Test
   void unmarkedMultipartSendFailureRemainsUnknownAndIsNotRetried() {
-    var message = prepareMime();
+    MimeMessage message = prepareMime();
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
-    var failure = new MailSendException("unknown outcome");
+    MailSendException failure = new MailSendException("unknown outcome");
     doThrow(failure).when(sender).send(message);
     assertSame(
         failure,
@@ -506,10 +534,10 @@ class EmailServiceTest {
   }
 
   private MimeMessage roundTrip(MimeMessage message) throws Exception {
-    try (var bytes = new ByteArrayOutputStream()) {
+    try (ByteArrayOutputStream bytes = new ByteArrayOutputStream()) {
       message.saveChanges();
       message.writeTo(bytes);
-      try (var input = new ByteArrayInputStream(bytes.toByteArray())) {
+      try (ByteArrayInputStream input = new ByteArrayInputStream(bytes.toByteArray())) {
         return new MimeMessage(Session.getInstance(new Properties()), input);
       }
     }
@@ -529,7 +557,7 @@ class EmailServiceTest {
 
   private void assertHtml(Part part, String expected) throws Exception {
     assertTrue(part.isMimeType("text/html"));
-    var type = new ContentType(part.getContentType());
+    ContentType type = new ContentType(part.getContentType());
     assertEquals(StandardCharsets.UTF_8.name(), type.getParameter("charset"));
     assertEquals(expected, part.getContent());
     assertNull(part.getDisposition());
@@ -539,11 +567,11 @@ class EmailServiceTest {
   @Test
   void addressedSecurityEmailUsesExactlyTheCapturedRecipientAndExistingMimeContract()
       throws Exception {
-    var original = prepareMime();
+    MimeMessage original = prepareMime();
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     service.sendEmailTo(
         "confirmed-new@example.test", "Sicherheitsmeldung", "<p>Änderung bestätigt</p>");
-    var message = roundTrip(sentMime(original));
+    MimeMessage message = roundTrip(sentMime(original));
     assertEnvelope(message, "confirmed-new@example.test", FROM, "Sicherheitsmeldung");
     assertEquals("<p>Änderung bestätigt</p>", message.getContent());
   }

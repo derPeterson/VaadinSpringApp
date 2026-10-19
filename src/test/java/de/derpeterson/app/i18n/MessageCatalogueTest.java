@@ -76,10 +76,18 @@ class MessageCatalogueTest {
     return Arrays.stream(method.getParameterTypes())
         .map(
             type -> {
-              if (type == String.class) return (Object) "test@example.test";
-              if (type == int.class) return (Object) variant;
-              if (type == long.class) return (Object) (long) variant;
-              if (type.isEnum()) return type.getEnumConstants()[variant];
+              if (type == String.class) {
+                return (Object) "test@example.test";
+              }
+              if (type == int.class) {
+                return (Object) variant;
+              }
+              if (type == long.class) {
+                return (Object) (long) variant;
+              }
+              if (type.isEnum()) {
+                return type.getEnumConstants()[variant];
+              }
               throw new IllegalArgumentException(
                   "Testargument fehlt für " + method.getName() + ": " + type);
             })

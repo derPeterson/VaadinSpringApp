@@ -2,7 +2,8 @@ package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
 

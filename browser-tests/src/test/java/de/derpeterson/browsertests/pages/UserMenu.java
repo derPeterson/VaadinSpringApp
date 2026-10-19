@@ -22,8 +22,9 @@ public final class UserMenu {
   public void open() {
     // Während der Schließanimation sperrt das modale Overlay weiterhin den Hintergrund.
     assertThat(page.locator("vaadin-popover-overlay[closing]")).hasCount(0);
-    if (!page.locator("vaadin-popover-overlay[opened]").isVisible())
+    if (!page.locator("vaadin-popover-overlay[opened]").isVisible()) {
       UiActions.complete(page, () -> avatar().click());
+    }
     assertThat(page.locator("vaadin-popover-overlay[opened]")).isVisible();
   }
 

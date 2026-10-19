@@ -1,20 +1,40 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import de.derpeterson.app.config.*;
-import de.derpeterson.app.model.enums.*;
-import de.derpeterson.app.repository.*;
-import jakarta.persistence.*;
-import java.util.*;
-import org.junit.jupiter.api.*;
+import de.derpeterson.app.config.BootstrapAccountsProperties;
+import de.derpeterson.app.config.BootstrapAccountsProperties.Account;
+import de.derpeterson.app.config.DatabaseInitializer;
+import de.derpeterson.app.config.RoleSchemaUpdater;
+import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.repository.RoleRepository;
+import de.derpeterson.app.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.bind.*;
-import org.springframework.boot.context.properties.source.*;
-import org.springframework.core.env.*;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
+import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.StandardEnvironment;
+import org.springframework.core.env.SystemEnvironmentPropertySource;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
@@ -45,14 +65,14 @@ class BootstrapAccountsPersistenceTest {
   }
 
   BootstrapAccountsProperties.Account account(String email) {
-    var a = new BootstrapAccountsProperties.Account();
+    Account a = new BootstrapAccountsProperties.Account();
     a.setEmail(email);
     a.setPassword("OnlyForTests!");
     return a;
   }
 
   DatabaseInitializer initializer(PasswordEncoder encoder) {
-    var config = mock(ConfigService.class);
+    ConfigService config = mock(ConfigService.class);
     when(config.exists(any())).thenReturn(true);
     return new DatabaseInitializer(
         users,
@@ -81,7 +101,7 @@ class BootstrapAccountsPersistenceTest {
     run();
     assertEquals(5, users.count());
     assertEquals(4, roles.count());
-    var expected =
+    Map<String, RoleType> expected =
         Map.of(
             "super1",
             RoleType.ROLE_SUPERADMIN,
@@ -93,7 +113,7 @@ class BootstrapAccountsPersistenceTest {
             RoleType.ROLE_USER,
             "guest",
             RoleType.ROLE_GUEST);
-    for (var user : users.findAll()) {
+    for (UserEntity user : users.findAll()) {
       assertEquals(
           Set.of(expected.get(user.getEmail().split("@")[0])),
           user.getRoleEntities().stream()
@@ -109,15 +129,15 @@ class BootstrapAccountsPersistenceTest {
   void existingAccountIsNotPromotedRenamedOrGivenANewPassword() throws Exception {
     settings.setUsers(List.of(account("existing@example.test")));
     run();
-    var existing = users.findAll().getFirst();
-    var hash = existing.getPassword();
+    UserEntity existing = users.findAll().getFirst();
+    String hash = existing.getPassword();
     settings.setUsers(List.of());
-    var replacement = account(" EXISTING@example.test ");
+    Account replacement = account(" EXISTING@example.test ");
     replacement.setPassword("Changed-secret!");
     replacement.setFirstName("Changed");
     settings.setSuperadmins(List.of(replacement));
     run();
-    var stored = users.findAll().getFirst();
+    UserEntity stored = users.findAll().getFirst();
     assertEquals(hash, stored.getPassword());
     assertEquals(existing.getFirstName(), stored.getFirstName());
     assertEquals(1, users.count());
@@ -129,7 +149,7 @@ class BootstrapAccountsPersistenceTest {
   void duplicateAcrossListsIsRejectedBeforeAnyCreationAndDoesNotLeakCredentials() {
     settings.setSuperadmins(List.of(account("duplicate@example.test")));
     settings.setGuests(List.of(account(" DUPLICATE@example.test ")));
-    var error = assertThrows(IllegalArgumentException.class, this::run);
+    IllegalArgumentException error = assertThrows(IllegalArgumentException.class, this::run);
     assertFalse(error.getMessage().contains("OnlyForTests"));
     assertEquals(0, users.count());
   }
@@ -137,7 +157,7 @@ class BootstrapAccountsPersistenceTest {
   @ParameterizedTest
   @ValueSource(strings = {"email", "password", "firstName", "birthDate", "language"})
   void invalidLaterEntryDoesNotLeavePartialAccounts(String invalid) {
-    var broken = account("broken@example.test");
+    Account broken = account("broken@example.test");
     switch (invalid) {
       case "email" -> broken.setEmail("invalid");
       case "password" -> broken.setPassword("weak");
@@ -153,7 +173,7 @@ class BootstrapAccountsPersistenceTest {
   @Test
   void databaseFailureRollsBackTheWholeSeedTransaction() {
     settings.setAdmins(List.of(account("first@example.test"), account("second@example.test")));
-    var encoder = mock(PasswordEncoder.class);
+    PasswordEncoder encoder = mock(PasswordEncoder.class);
     when(encoder.encode(any()))
         .thenReturn("first-hash")
         .thenThrow(new IllegalStateException("test failure"));
@@ -173,16 +193,16 @@ class BootstrapAccountsPersistenceTest {
 
   @Test
   void springPropertiesBindEveryGroupAndOptionalProfileFields() {
-    var values = new HashMap<String, Object>();
+    HashMap<String, Object> values = new HashMap<String, Object>();
     values.put("app.bootstrap.enabled", "true");
-    for (var group : List.of("superadmins", "admins", "users", "guests")) {
+    for (String group : List.of("superadmins", "admins", "users", "guests")) {
       values.put("app.bootstrap." + group + "[0].email", group + "@example.test");
       values.put("app.bootstrap." + group + "[0].password", "OnlyForTests!");
     }
     values.put("app.bootstrap.superadmins[0].first-name", "Test");
     values.put("app.bootstrap.superadmins[0].birth-date", "1986-04-26");
     values.put("app.bootstrap.superadmins[0].preferred-locale", "de");
-    var bound =
+    BootstrapAccountsProperties bound =
         new Binder(new MapConfigurationPropertySource(values))
             .bind("app.bootstrap", Bindable.of(BootstrapAccountsProperties.class))
             .get();
@@ -194,7 +214,7 @@ class BootstrapAccountsPersistenceTest {
 
   @Test
   void indexedOperatingSystemEnvironmentBindsListsUsedByDocker() {
-    var env =
+    SystemEnvironmentPropertySource env =
         new SystemEnvironmentPropertySource(
             StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME,
             Map.of(
@@ -204,7 +224,7 @@ class BootstrapAccountsPersistenceTest {
                 "admin@example.test",
                 "APP_BOOTSTRAP_ADMINS_0_PASSWORD",
                 "OnlyForTests!"));
-    var bound =
+    BootstrapAccountsProperties bound =
         new Binder(ConfigurationPropertySources.from(env))
             .bind("app.bootstrap", Bindable.of(BootstrapAccountsProperties.class))
             .get();

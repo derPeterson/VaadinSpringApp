@@ -1,19 +1,34 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.derpeterson.app.service.AvatarImageProcessor.*;
-import java.io.*;
-import java.time.*;
-import java.util.*;
-import java.util.concurrent.*;
+import de.derpeterson.app.service.AvatarImageProcessor.InvalidImage;
+import de.derpeterson.app.service.AvatarImageProcessor.Problem;
+import java.io.ByteArrayInputStream;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 
 class AvatarDraftStoreTest {
   @Test
   void expiryOwnershipAndCapacityBoundTemporaryOriginals() throws Exception {
-    var now = new AtomicReference<>(Instant.parse("2026-10-17T12:00:00Z"));
+    AtomicReference<Instant> now = new AtomicReference<>(Instant.parse("2026-10-17T12:00:00Z"));
     Clock clock =
         new Clock() {
           public ZoneId getZone() {
@@ -28,16 +43,18 @@ class AvatarDraftStoreTest {
             return now.get();
           }
         };
-    var drafts = new AvatarDraftStore(new AvatarImageProcessor(), clock);
-    var token = drafts.begin(1L);
-    var id =
+    AvatarDraftStore drafts = new AvatarDraftStore(new AvatarImageProcessor(), clock);
+    UUID token = drafts.begin(1L);
+    UUID id =
         drafts.upload(
             token, 1L, new ByteArrayInputStream(AvatarImageProcessorTest.image("png", 10, 10)));
     assertNotNull(drafts.image(token, 1L, id));
     assertEquals(
         Problem.EXPIRED,
         assertThrows(InvalidImage.class, () -> drafts.image(token, 2L, id)).problem());
-    for (int i = 0; i < 15; i++) drafts.begin(1L);
+    for (int i = 0; i < 15; i++) {
+      drafts.begin(1L);
+    }
     assertEquals(Problem.BUSY, assertThrows(InvalidImage.class, () -> drafts.begin(1L)).problem());
     now.set(now.get().plusSeconds(601));
     drafts.expire();
@@ -49,9 +66,9 @@ class AvatarDraftStoreTest {
 
   @Test
   void invalidReplacementRetainsTheLastAcceptedOriginal() throws Exception {
-    var drafts = new AvatarDraftStore(new AvatarImageProcessor());
-    var token = drafts.begin(1L);
-    var id =
+    AvatarDraftStore drafts = new AvatarDraftStore(new AvatarImageProcessor());
+    UUID token = drafts.begin(1L);
+    UUID id =
         drafts.upload(
             token, 1L, new ByteArrayInputStream(AvatarImageProcessorTest.image("png", 10, 10)));
     assertThrows(
@@ -70,19 +87,20 @@ class AvatarDraftStoreTest {
 
   @Test
   void parallelUploadIsRejectedAndLateCompletionCannotRestoreACancelledDraft() throws Exception {
-    var drafts = new AvatarDraftStore(new AvatarImageProcessor());
-    var token = drafts.begin(1L);
-    var entered = new CountDownLatch(1);
-    var finish = new CountDownLatch(1);
-    var bytes = AvatarImageProcessorTest.image("png", 10, 10);
+    AvatarDraftStore drafts = new AvatarDraftStore(new AvatarImageProcessor());
+    UUID token = drafts.begin(1L);
+    CountDownLatch entered = new CountDownLatch(1);
+    CountDownLatch finish = new CountDownLatch(1);
+    byte[] bytes = AvatarImageProcessorTest.image("png", 10, 10);
     var input =
         new FilterInputStream(new ByteArrayInputStream(bytes)) {
           @Override
           public int read(byte[] data, int offset, int length) throws IOException {
             entered.countDown();
             try {
-              if (!finish.await(5, TimeUnit.SECONDS))
+              if (!finish.await(5, TimeUnit.SECONDS)) {
                 throw new IOException("test synchronization timeout");
+              }
             } catch (InterruptedException failure) {
               Thread.currentThread().interrupt();
               throw new IOException(failure);
@@ -90,8 +108,8 @@ class AvatarDraftStoreTest {
             return super.read(data, offset, length);
           }
         };
-    try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-      var transfer = executor.submit(() -> drafts.upload(token, 1L, input));
+    try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+      Future<UUID> transfer = executor.submit(() -> drafts.upload(token, 1L, input));
       try {
         assertTrue(entered.await(5, TimeUnit.SECONDS));
         assertEquals(
@@ -104,7 +122,8 @@ class AvatarDraftStoreTest {
       } finally {
         finish.countDown();
       }
-      var failure = assertThrows(ExecutionException.class, () -> transfer.get(5, TimeUnit.SECONDS));
+      ExecutionException failure =
+          assertThrows(ExecutionException.class, () -> transfer.get(5, TimeUnit.SECONDS));
       assertInstanceOf(InvalidImage.class, failure.getCause());
       assertEquals(Problem.EXPIRED, ((InvalidImage) failure.getCause()).problem());
     }

@@ -2,8 +2,13 @@ package de.derpeterson.app.security;
 
 import com.vaadin.flow.server.VaadinService;
 import de.derpeterson.app.model.enums.AppRoute;
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Set;
 
@@ -20,8 +25,8 @@ public final class MaintenanceHttpFilter implements Filter {
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {
-    var req = (HttpServletRequest) request;
-    var res = (HttpServletResponse) response;
+    HttpServletRequest req = (HttpServletRequest) request;
+    HttpServletResponse res = (HttpServletResponse) response;
     String path = req.getServletPath();
     if (!maintenance.blocks(req) || AppRoute.LOGOUT.getSecurityRoute().equals(path)) {
       chain.doFilter(request, response);
@@ -32,9 +37,9 @@ public final class MaintenanceHttpFilter implements Filter {
         || "push".equals(type)
         || "/VAADIN/uidl".equals(path)
         || "/VAADIN/push".equals(path)) {
-      if (flowEndpoint(path) && MaintenanceTransport.allowedUi(req))
+      if (flowEndpoint(path) && MaintenanceTransport.allowedUi(req)) {
         chain.doFilter(request, response);
-      else {
+      } else {
         // A Vaadin protocol message, never an HTML page in an existing UIDL response.
         res.setContentType("application/json;charset=UTF-8");
         res.setHeader("Cache-Control", "no-store");
@@ -58,7 +63,9 @@ public final class MaintenanceHttpFilter implements Filter {
         && (AppRoute.LOGIN.getSecurityRoute().equals(path)
             || AppRoute.MAINTENANCE.getSecurityRoute().equals(path)
             || resource(req, path))) {
-      if (AppRoute.MAINTENANCE.getSecurityRoute().equals(path)) res.setStatus(503);
+      if (AppRoute.MAINTENANCE.getSecurityRoute().equals(path)) {
+        res.setStatus(503);
+      }
       chain.doFilter(request, response);
       return;
     }
@@ -68,7 +75,9 @@ public final class MaintenanceHttpFilter implements Filter {
       res.setHeader("Cache-Control", "no-store");
       req.setAttribute(FORWARDED_DOCUMENT, Boolean.TRUE);
       req.getRequestDispatcher(AppRoute.MAINTENANCE.getSecurityRoute()).forward(request, response);
-    } else res.sendError(503);
+    } else {
+      res.sendError(503);
+    }
   }
 
   private boolean flowEndpoint(String path) {
@@ -81,7 +90,9 @@ public final class MaintenanceHttpFilter implements Filter {
   }
 
   private boolean resource(HttpServletRequest request, String path) {
-    if (!("GET".equals(request.getMethod()) || "HEAD".equals(request.getMethod()))) return false;
+    if (!("GET".equals(request.getMethod()) || "HEAD".equals(request.getMethod()))) {
+      return false;
+    }
     if (Set.of(
             "/favicon.ico",
             "/manifest.webmanifest",
@@ -89,7 +100,9 @@ public final class MaintenanceHttpFilter implements Filter {
             "/sw-runtime-resources-precache.js",
             "/offline.html",
             "/error")
-        .contains(path)) return true;
+        .contains(path)) {
+      return true;
+    }
     return Set.of(
             "/VAADIN/",
             "/themes/",

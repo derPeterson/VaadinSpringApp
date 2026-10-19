@@ -1,19 +1,39 @@
 package de.derpeterson.app.service;
 
-import de.derpeterson.app.model.*;
-import de.derpeterson.app.model.enums.*;
-import de.derpeterson.app.repository.*;
-import de.derpeterson.app.security.*;
+import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.UserNotificationEntity;
+import de.derpeterson.app.model.UserNotificationRecipientEntity;
+import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.model.enums.UserNotificationType;
+import de.derpeterson.app.repository.UserNotificationRecipientRepository;
+import de.derpeterson.app.repository.UserNotificationRecipientRepository.InboxRow;
+import de.derpeterson.app.repository.UserNotificationRepository;
+import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.MaintenanceService;
+import de.derpeterson.app.security.MaintenanceService.State;
+import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.websocket.UserNotificationBroadcaster;
 import jakarta.servlet.http.HttpSession;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.*;
-import org.springframework.transaction.support.*;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @RequiredArgsConstructor
@@ -90,28 +110,32 @@ public class UserNotificationService {
   }
 
   private void requireDeliveryOpen() {
-    if (deliveryState() != MaintenanceService.State.OPEN)
+    if (deliveryState() != MaintenanceService.State.OPEN) {
       throw new Rejected(Problem.DELIVERY_PAUSED);
+    }
   }
 
   private UserEntity owner(HttpSession session) {
-    var user =
+    UserEntity user =
         security
             .getSessionUser(session)
             .orElseThrow(() -> new AccessDeniedException("Authentication required"));
-    if (!user.isEnabled() || user.isVerificationPending())
+    if (!user.isEnabled() || user.isVerificationPending()) {
       throw new AccessDeniedException("Account unavailable");
-    var state = new MaintenanceService(config).state();
+    }
+    State state = new MaintenanceService(config).state();
     if (state != MaintenanceService.State.OPEN
-        && (state != MaintenanceService.State.ACTIVE || !user.hasAdministrativeRole()))
+        && (state != MaintenanceService.State.ACTIVE || !user.hasAdministrativeRole())) {
       throw new AccessDeniedException("Notifications paused for maintenance");
+    }
     return user;
   }
 
   private UserEntity superadmin(HttpSession session) {
-    var user = owner(session);
-    if (!user.hasRole(RoleType.ROLE_SUPERADMIN))
+    UserEntity user = owner(session);
+    if (!user.hasRole(RoleType.ROLE_SUPERADMIN)) {
       throw new AccessDeniedException("Superadmin required");
+    }
     return user;
   }
 
@@ -144,15 +168,7 @@ public class UserNotificationService {
         };
     return recipients
         .inbox(owner(session).getId(), read, policy.inboxCutoff(Instant.now()), page(page, size))
-        .map(
-            r ->
-                new Item(
-                    r.getId(),
-                    r.getType(),
-                    r.getTitle(),
-                    r.getBody(),
-                    r.getCreatedAt(),
-                    r.getReadAt() != null));
+        .map(UserNotificationService::toInboxItem);
   }
 
   @Transactional(readOnly = true)
@@ -170,8 +186,12 @@ public class UserNotificationService {
           case UNREAD -> false;
         };
     String term = Objects.requireNonNull(query).strip().toLowerCase(Locale.ROOT);
-    if (term.length() > TITLE_LIMIT) throw new IllegalArgumentException("Search is too long");
-    if (term.isEmpty()) return inbox(session, filter, page, size);
+    if (term.length() > TITLE_LIMIT) {
+      throw new IllegalArgumentException("Search is too long");
+    }
+    if (term.isEmpty()) {
+      return inbox(session, filter, page, size);
+    }
     // LIKE-Sonderzeichen bleiben wörtlicher Suchtext; ! ist das explizite Escapezeichen.
     String pattern = "%" + term.replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%";
     return recipients
@@ -182,15 +202,17 @@ public class UserNotificationService {
             pattern,
             Set.copyOf(matchingTypes),
             page(page, size))
-        .map(
-            row ->
-                new Item(
-                    row.getId(),
-                    row.getType(),
-                    row.getTitle(),
-                    row.getBody(),
-                    row.getCreatedAt(),
-                    row.getReadAt() != null));
+        .map(UserNotificationService::toInboxItem);
+  }
+
+  private static Item toInboxItem(InboxRow recipient) {
+    return new Item(
+        recipient.getId(),
+        recipient.getType(),
+        recipient.getTitle(),
+        recipient.getBody(),
+        recipient.getCreatedAt(),
+        recipient.getReadAt() != null);
   }
 
   @Transactional(readOnly = true)
@@ -216,31 +238,37 @@ public class UserNotificationService {
 
   @Transactional
   public void markRead(HttpSession session, Collection<Long> ids) {
-    var owner = owner(session).getId();
-    var snapshot = List.copyOf(ids);
+    Long owner = owner(session).getId();
+    List<Long> snapshot = List.copyOf(ids);
     // Kleine IN-Blöcke statt einer datenbankabhängigen Obergrenze bei langen Historien.
     int changed = 0;
-    for (int i = 0; i < snapshot.size(); i += 500)
+    for (int i = 0; i < snapshot.size(); i += 500) {
       changed +=
           recipients.markRead(
               owner, snapshot.subList(i, Math.min(i + 500, snapshot.size())), Instant.now());
-    if (changed > 0) afterCommit(Set.of(owner));
+    }
+    if (changed > 0) {
+      afterCommit(Set.of(owner));
+    }
   }
 
   /** Persönlich entfernen; der Versandnachweis bleibt für idempotente Wiederholungen erhalten. */
   @Transactional
   public void dismiss(HttpSession session, Long id) {
-    var owner = owner(session).getId();
-    if (recipients.dismiss(owner, Objects.requireNonNull(id), Instant.now()) > 0)
+    Long owner = owner(session).getId();
+    if (recipients.dismiss(owner, Objects.requireNonNull(id), Instant.now()) > 0) {
       afterCommit(Set.of(owner));
+    }
   }
 
   /** Entfernt alle sichtbaren gelesenen Empfangseinträge des Kontos, unabhängig von UI-Filtern. */
   @Transactional
   public void dismissRead(HttpSession session) {
-    var owner = owner(session).getId();
-    var now = Instant.now();
-    if (recipients.dismissRead(owner, policy.inboxCutoff(now), now) > 0) afterCommit(Set.of(owner));
+    Long owner = owner(session).getId();
+    Instant now = Instant.now();
+    if (recipients.dismissRead(owner, policy.inboxCutoff(now), now) > 0) {
+      afterCommit(Set.of(owner));
+    }
   }
 
   @Transactional(readOnly = true)
@@ -265,11 +293,14 @@ public class UserNotificationService {
   public Preview preview(HttpSession session, Selection selection) {
     superadmin(session);
     requireDeliveryOpen();
-    var selected = selected(Objects.requireNonNull(selection));
-    if (selected.isEmpty()) throw new Rejected(Problem.NO_RECIPIENTS);
+    List<Target> selected = selected(Objects.requireNonNull(selection));
+    if (selected.isEmpty()) {
+      throw new Rejected(Problem.NO_RECIPIENTS);
+    }
     if (!selection.everyone()
-        && !new HashSet<>(selected.stream().map(Target::id).toList()).equals(selection.ids()))
+        && !new HashSet<>(selected.stream().map(Target::id).toList()).equals(selection.ids())) {
       throw new Rejected(Problem.RECIPIENTS_CHANGED);
+    }
     return new Preview(selection, selected.stream().map(Target::id).toList());
   }
 
@@ -282,27 +313,30 @@ public class UserNotificationService {
     users
         .lockRole(RoleType.ROLE_SUPERADMIN)
         .orElseThrow(() -> new IllegalStateException("Superadmin role missing"));
-    var sender = superadmin(session);
+    UserEntity sender = superadmin(session);
     requireDeliveryOpen();
     title = clean(title, TITLE_LIMIT);
     body = clean(body, BODY_LIMIT);
-    var key = "admin:" + requestId;
-    var existing = notifications.findByRequestKey(key);
+    String key = "admin:" + requestId;
+    Optional<UserNotificationEntity> existing = notifications.findByRequestKey(key);
     if (existing.isPresent()) {
-      var m = existing.get();
+      UserNotificationEntity m = existing.get();
       if (m.getSender() == null
           || !m.getSender().getId().equals(sender.getId())
           || !Objects.equals(title, m.getTitle())
           || !Objects.equals(body, m.getBody())
           || m.isBroadcast() != preview.selection().everyone()
-          || !recipients.recipientIds(m.getId()).equals(preview.ids()))
+          || !recipients.recipientIds(m.getId()).equals(preview.ids())) {
         throw new Rejected(Problem.REQUEST_CONFLICT);
+      }
       return sent(m);
     }
-    var selected = selected(preview.selection());
-    var ids = selected.stream().map(Target::id).toList();
-    if (!ids.equals(preview.ids()) || ids.isEmpty()) throw new Rejected(Problem.RECIPIENTS_CHANGED);
-    var m = new UserNotificationEntity();
+    List<Target> selected = selected(preview.selection());
+    List<Long> ids = selected.stream().map(Target::id).toList();
+    if (!ids.equals(preview.ids()) || ids.isEmpty()) {
+      throw new Rejected(Problem.RECIPIENTS_CHANGED);
+    }
+    UserNotificationEntity m = new UserNotificationEntity();
     m.setRequestKey(key);
     m.setType(UserNotificationType.ADMIN_ANNOUNCEMENT);
     m.setTitle(title);
@@ -325,13 +359,16 @@ public class UserNotificationService {
   }
 
   private static String clean(String value, int max) {
-    if (value == null || value.isBlank() || value.length() > max)
+    if (value == null || value.isBlank() || value.length() > max) {
       throw new Rejected(Problem.INVALID_DRAFT);
+    }
     return value.strip();
   }
 
   private Pageable page(int number, int size) {
-    if (number < 0 || size < 1 || size > 100) throw new IllegalArgumentException("Invalid page");
+    if (number < 0 || size < 1 || size > 100) {
+      throw new IllegalArgumentException("Invalid page");
+    }
     return PageRequest.of(number, size);
   }
 
@@ -340,9 +377,10 @@ public class UserNotificationService {
    */
   @Transactional(propagation = Propagation.MANDATORY)
   public void recordSecurityEvent(UserEntity user, UserNotificationType type) {
-    if (type == null || type == UserNotificationType.ADMIN_ANNOUNCEMENT || user.getId() == null)
+    if (type == null || type == UserNotificationType.ADMIN_ANNOUNCEMENT || user.getId() == null) {
       throw new IllegalArgumentException("Persisted security event required");
-    var m = new UserNotificationEntity();
+    }
+    UserNotificationEntity m = new UserNotificationEntity();
     m.setRequestKey("security:" + UUID.randomUUID());
     m.setType(type);
     create(m, List.of(user));
@@ -356,7 +394,7 @@ public class UserNotificationService {
         selected.stream()
             .map(
                 u -> {
-                  var r = new UserNotificationRecipientEntity();
+                  UserNotificationRecipientEntity r = new UserNotificationRecipientEntity();
                   r.setNotification(m);
                   r.setUser(u);
                   return r;
@@ -366,8 +404,9 @@ public class UserNotificationService {
   }
 
   private void afterCommit(Set<Long> ids) {
-    if (!TransactionSynchronizationManager.isActualTransactionActive())
+    if (!TransactionSynchronizationManager.isActualTransactionActive()) {
       throw new IllegalStateException("Notification transaction required");
+    }
     TransactionSynchronizationManager.registerSynchronization(
         new TransactionSynchronization() {
           @Override

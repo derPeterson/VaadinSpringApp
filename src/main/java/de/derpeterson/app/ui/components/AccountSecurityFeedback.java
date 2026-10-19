@@ -24,8 +24,9 @@ final class AccountSecurityFeedback {
   static Field failure(MessageProperties messages, RuntimeException failure) {
     Supplier<String> text = messages::getAccountSecurityFailed;
     Field field = Field.NONE;
-    if (failure instanceof LoginThrottledException) text = messages::getLoginThrottledMessage;
-    else if (failure instanceof BadCredentialsException) {
+    if (failure instanceof LoginThrottledException) {
+      text = messages::getLoginThrottledMessage;
+    } else if (failure instanceof BadCredentialsException) {
       text = messages::getAccountSecurityWrongPassword;
       field = Field.CURRENT_PASSWORD;
     } else if (failure instanceof Rejected rejected) {
@@ -47,7 +48,9 @@ final class AccountSecurityFeedback {
     } else if (EmailConflict.isDuplicate(failure)) {
       text = messages::getBaseValidationEmailExistsMessage;
       field = Field.EMAIL;
-    } else log.error("Account security operation failed", failure);
+    } else {
+      log.error("Account security operation failed", failure);
+    }
     NotificationHelper.getInstance()
         .showNotification(
             messages::getBaseFailedTitle, text, -1, NotificationHelper.NotificationType.ERROR);

@@ -2,6 +2,7 @@ package de.derpeterson.app.security;
 
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.repository.UserRepository.SecurityUserRow;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     if (rows.isEmpty()) {
       throw new UsernameNotFoundException("User not found: " + email);
     }
-    var user = rows.getFirst();
+    SecurityUserRow user = rows.getFirst();
     List<GrantedAuthority> authorities =
         rows.stream()
             .map(UserRepository.SecurityUserRow::getRole)

@@ -1,6 +1,10 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
@@ -14,7 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,11 +49,11 @@ class AdminSecurityPersistenceTest {
           repository.deleteAll();
           repository.flush();
           entityManager.createQuery("delete from RoleEntity").executeUpdate();
-          var admin = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
-          var ordinary = RoleEntity.builder().name(RoleType.ROLE_USER).build();
+          RoleEntity admin = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
+          RoleEntity ordinary = RoleEntity.builder().name(RoleType.ROLE_USER).build();
           entityManager.persist(admin);
           entityManager.persist(ordinary);
-          var adminRole = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
+          RoleEntity adminRole = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
           entityManager.persist(adminRole);
           adminId = create("ordinary-admin@example.com", adminRole);
           firstId = create("first-admin@example.com", admin);
@@ -70,12 +76,12 @@ class AdminSecurityPersistenceTest {
   void parallelMixedAdminAndSuperadminMutationsProtectOnlyTheSuperadmin(String mutation)
       throws Exception {
     makeFirstAdmin();
-    var barrier = new CyclicBarrier(2);
-    try (var workers = Executors.newFixedThreadPool(2)) {
-      var first =
+    CyclicBarrier barrier = new CyclicBarrier(2);
+    try (ExecutorService workers = Executors.newFixedThreadPool(2)) {
+      Future<Boolean> first =
           workers.submit(
               () -> compete(firstId, mutation.equals("mixed") ? "delete" : mutation, barrier));
-      var second =
+      Future<Boolean> second =
           workers.submit(
               () -> compete(secondId, mutation.equals("mixed") ? "form" : mutation, barrier));
       assertTrue(first.get(10, TimeUnit.SECONDS), "Ordinary admin may be removed");
@@ -87,9 +93,10 @@ class AdminSecurityPersistenceTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void lastSuperadminCannotBeRemovedIncludingWhenItAlsoHasAdmin(boolean keepAdminAssignment) {
-    if (keepAdminAssignment)
+    if (keepAdminAssignment) {
       transaction.executeWithoutResult(
           tx -> form(firstId).getRoleEntities().addAll(form(adminId).getRoleEntities()));
+    }
     service.deleteUser(form(secondId));
     assertEquals(List.of(firstId), administratorIds());
     assertFalse(service.canDeleteUser(form(firstId)));
@@ -109,7 +116,7 @@ class AdminSecurityPersistenceTest {
   @Test
   void soleSuperadminCannotBeDowngradedEvenIfItRetainsAdminAndAnotherAdminExists() {
     service.deleteUser(form(secondId));
-    var edited = form(firstId);
+    UserEntity edited = form(firstId);
     edited.setRoleEntities(new ArrayList<>(form(adminId).getRoleEntities()));
     assertTrue(service.wouldRemoveLastEnabledSuperadmin(firstId, true, edited.getRoleEntities()));
     assertThrows(
@@ -130,7 +137,7 @@ class AdminSecurityPersistenceTest {
   }
 
   private Long create(String email, RoleEntity role) {
-    var user =
+    UserEntity user =
         UserEntity.builder()
             .email(email)
             .firstName("Test")
@@ -156,12 +163,12 @@ class AdminSecurityPersistenceTest {
   @ParameterizedTest
   @ValueSource(strings = {"disable", "role", "form", "delete", "mixed"})
   void parallelMutationsCanNeverRemoveBothSuperadmins(String mutation) throws Exception {
-    var readBarrier = new CyclicBarrier(2);
-    try (var workers = Executors.newFixedThreadPool(2)) {
-      var first =
+    CyclicBarrier readBarrier = new CyclicBarrier(2);
+    try (ExecutorService workers = Executors.newFixedThreadPool(2)) {
+      Future<Boolean> first =
           workers.submit(
               () -> compete(firstId, mutation.equals("mixed") ? "delete" : mutation, readBarrier));
-      var second =
+      Future<Boolean> second =
           workers.submit(
               () -> compete(secondId, mutation.equals("mixed") ? "form" : mutation, readBarrier));
       boolean firstCommitted = first.get(10, TimeUnit.SECONDS);
@@ -242,7 +249,7 @@ class AdminSecurityPersistenceTest {
         () ->
             transaction.executeWithoutResult(
                 tx -> {
-                  var users = repository.findAll();
+                  List<UserEntity> users = repository.findAll();
                   users.stream()
                       .filter(user -> user.getId().equals(firstId) || user.getId().equals(secondId))
                       .forEach(user -> user.setEnabled(false));

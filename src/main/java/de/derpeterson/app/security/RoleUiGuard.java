@@ -1,12 +1,25 @@
 package de.derpeterson.app.security;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.server.*;
-import com.vaadin.flow.server.communication.*;
+import com.vaadin.flow.server.HandlerHelper;
+import com.vaadin.flow.server.ServiceInitEvent;
+import com.vaadin.flow.server.SynchronizedRequestHandler;
+import com.vaadin.flow.server.VaadinRequest;
+import com.vaadin.flow.server.VaadinResponse;
+import com.vaadin.flow.server.VaadinServiceInitListener;
+import com.vaadin.flow.server.VaadinServletRequest;
+import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.communication.UidlRequestHandler;
+import com.vaadin.flow.server.communication.UidlWriter;
+import com.vaadin.flow.shared.Registration;
+import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.websocket.UserRoleBroadcaster;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 /** Aktualisiert alte Ansichten mit erhaltenem HTTP-Login und stoppt vorher ihre alten RPCs. */
@@ -29,18 +42,22 @@ public class RoleUiGuard implements VaadinServiceInitListener {
           public boolean synchronizedHandleRequest(
               VaadinSession session, VaadinRequest request, VaadinResponse response)
               throws IOException {
-            if (!(request instanceof VaadinServletRequest servlet)) return false;
-            var auth =
+            if (!(request instanceof VaadinServletRequest servlet)) {
+              return false;
+            }
+            Optional<Authentication> auth =
                 security.refreshSessionAuthentication(
                     servlet.getHttpServletRequest().getSession(false));
-            var ui = session.getService().findUI(request);
+            UI ui = session.getService().findUI(request);
             if (ui == null
                 || auth.isEmpty()
-                || !RoleUiState.refresh(ui, auth.get(), servlet.getContextPath())) return false;
+                || !RoleUiState.refresh(ui, auth.get(), servlet.getContextPath())) {
+              return false;
+            }
             // Framework-Writer statt selbstgebautem UIDL. Der alte Request wird nicht an RPC
             // weitergegeben.
             // Asynchron: der verworfene Client-Aufruf wird bewusst nicht als verarbeitet bestätigt.
-            var payload = new UidlWriter().createUidl(ui, true).toString();
+            String payload = new UidlWriter().createUidl(ui, true).toString();
             ui.getInternals().setLastRequestResponse(payload);
             UidlRequestHandler.commitJsonResponse(response, payload);
             return true;
@@ -50,31 +67,43 @@ public class RoleUiGuard implements VaadinServiceInitListener {
         .getSource()
         .addUIInitListener(
             init -> {
-              var ui = init.getUI();
+              UI ui = init.getUI();
               ui.addBeforeEnterListener(navigation -> bind(ui));
               bind(ui);
             });
   }
 
   void bind(UI ui) {
-    if (!(VaadinRequest.getCurrent() instanceof VaadinServletRequest request)) return;
-    var http = request.getHttpServletRequest().getSession(false);
-    var auth = security.refreshSessionAuthentication(http);
-    if (auth.isEmpty()) return;
+    if (!(VaadinRequest.getCurrent() instanceof VaadinServletRequest request)) {
+      return;
+    }
+    HttpSession http = request.getHttpServletRequest().getSession(false);
+    Optional<Authentication> auth = security.refreshSessionAuthentication(http);
+    if (auth.isEmpty()) {
+      return;
+    }
     RoleUiState.changed(ui, auth.get());
     String marker = RoleUiGuard.class.getName() + ".subscribed";
-    if (com.vaadin.flow.component.ComponentUtil.getData(ui, marker) != null) return;
-    var owner = security.getSessionUser(http).orElse(null);
-    if (owner == null) return;
+    if (com.vaadin.flow.component.ComponentUtil.getData(ui, marker) != null) {
+      return;
+    }
+    UserEntity owner = security.getSessionUser(http).orElse(null);
+    if (owner == null) {
+      return;
+    }
     com.vaadin.flow.component.ComponentUtil.setData(ui, marker, Boolean.TRUE);
-    var contextPath = request.getContextPath();
-    var registration =
+    String contextPath = request.getContextPath();
+    Registration registration =
         events.register(
             id -> {
-              if (!Objects.equals(owner.getId(), id)) return;
+              if (!Objects.equals(owner.getId(), id)) {
+                return;
+              }
               ui.access(
                   () -> {
-                    if (!ui.isAttached()) return;
+                    if (!ui.isAttached()) {
+                      return;
+                    }
                     security
                         .refreshSessionAuthentication(http)
                         .ifPresent(fresh -> RoleUiState.refresh(ui, fresh, contextPath));

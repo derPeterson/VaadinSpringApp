@@ -1,30 +1,64 @@
 package de.derpeterson.app.views;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
-import com.vaadin.flow.component.*;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.textfield.*;
+import com.vaadin.flow.component.textfield.EmailField;
+import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.function.DeploymentConfiguration;
 import com.vaadin.flow.internal.CurrentInstance;
 import com.vaadin.flow.router.Router;
-import com.vaadin.flow.server.*;
+import com.vaadin.flow.server.RouteRegistry;
+import com.vaadin.flow.server.VaadinContext;
+import com.vaadin.flow.server.VaadinRequest;
+import com.vaadin.flow.server.VaadinResponse;
+import com.vaadin.flow.server.VaadinService;
+import com.vaadin.flow.server.VaadinServletRequest;
+import com.vaadin.flow.server.VaadinServletResponse;
+import com.vaadin.flow.server.VaadinServletService;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.startup.ApplicationRouteRegistry;
 import de.derpeterson.app.helper.ui.NotificationHelper;
-import de.derpeterson.app.i18n.*;
+import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
-import de.derpeterson.app.security.*;
+import de.derpeterson.app.security.DeviceDescription;
+import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.SessionLimitException;
+import de.derpeterson.app.security.SessionManagementService;
 import de.derpeterson.app.service.ConfigService;
 import java.time.Instant;
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.function.Supplier;
-import org.junit.jupiter.api.*;
-import org.springframework.mock.web.*;
-import org.springframework.security.authentication.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class LoginSessionRecoveryTest {
@@ -43,7 +77,7 @@ class LoginSessionRecoveryTest {
   void setup() {
     ui = new TrackingUI();
     UI.setCurrent(ui);
-    var vaadinSession = mock(VaadinSession.class);
+    VaadinSession vaadinSession = mock(VaadinSession.class);
     when(vaadinSession.hasLock()).thenReturn(true);
     when(vaadinSession.getLocale()).thenReturn(Locale.GERMAN);
     VaadinSession.setCurrent(vaadinSession);
@@ -53,7 +87,7 @@ class LoginSessionRecoveryTest {
     var registry = new ApplicationRouteRegistry(mock(VaadinContext.class)) {};
     registry.setRoute("registration", RegistrationView.class, List.of());
     registry.setRoute("forgot-password", ForgotPasswordView.class, List.of());
-    var service = mock(TestService.class);
+    TestService service = mock(TestService.class);
     when(service.getRouter()).thenReturn(new Router(registry));
     when(service.getRouteRegistry()).thenReturn(registry);
     when(service.getDeploymentConfiguration()).thenReturn(mock(DeploymentConfiguration.class));
@@ -68,7 +102,8 @@ class LoginSessionRecoveryTest {
     messages = new MessageProperties(new CustomI18NProvider());
     view = new LoginView(messages, authentication, security, request, config, sessions);
     ui.add(view);
-    var principal = User.withUsername("own@example.test").password("").roles("USER").build();
+    UserDetails principal =
+        User.withUsername("own@example.test").password("").roles("USER").build();
     when(authentication.authenticate(any()))
         .thenReturn(
             UsernamePasswordAuthenticationToken.authenticated(
@@ -76,7 +111,7 @@ class LoginSessionRecoveryTest {
     doThrow(new SessionLimitException())
         .when(security)
         .storeAuthenticatedUser(any(), any(), any(), anyBoolean());
-    var when = Instant.parse("2026-10-17T03:00:00Z");
+    Instant when = Instant.parse("2026-10-17T03:00:00Z");
     when(sessions.recoveryList(request))
         .thenReturn(
             new SessionManagementService.Snapshot(
@@ -143,7 +178,7 @@ class LoginSessionRecoveryTest {
     assertFalse(field("recoveryArea", Div.class).isVisible());
     assertTrue(field("loginCard", Component.class).isVisible());
     verify(security, never()).storeAuthenticatedUser(any(), any(), any(), anyBoolean());
-    var text =
+    Supplier<String> text =
         (Supplier<String>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
     assertEquals(messages.getLoginFailedMessage(), text.get());
@@ -175,7 +210,7 @@ class LoginSessionRecoveryTest {
     button("session-recovery-continue").click();
     assertTrue(field("recoveryArea", Div.class).isVisible());
     assertNull(ui.target);
-    var text =
+    Supplier<String> text =
         (Supplier<String>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
     assertEquals(messages.getLoginSessionLimitMessage(), text.get());
@@ -190,7 +225,7 @@ class LoginSessionRecoveryTest {
     assertTrue(field("loginCard", Component.class).isVisible());
     assertFalse(field("recoveryArea", Div.class).isVisible());
     assertNull(ui.target);
-    var text =
+    Supplier<String> text =
         (Supplier<String>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
     assertEquals(messages.getSessionRecoveryExpired(), text.get());

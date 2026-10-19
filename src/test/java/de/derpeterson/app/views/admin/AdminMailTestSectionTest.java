@@ -1,7 +1,13 @@
 package de.derpeterson.app.views.admin;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
@@ -15,6 +21,7 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -46,7 +53,7 @@ class AdminMailTestSectionTest {
   void setup() {
     ui = new UI();
     UI.setCurrent(ui);
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenAnswer(c -> locale.get());
     VaadinSession.setCurrent(session);
@@ -65,7 +72,7 @@ class AdminMailTestSectionTest {
   }
 
   private AdminMailTestSection section() {
-    var section =
+    AdminMailTestSection section =
         new AdminMailTestSection(
             texts,
             email,
@@ -88,7 +95,7 @@ class AdminMailTestSectionTest {
   @ValueSource(strings = {"de", "en"})
   void maintenanceLocksEntirePanelAndReopeningPreservesDraft(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var section = section();
+    AdminMailTestSection section = section();
     TextField subject = field(section, "testSubjectField");
     TextArea body = field(section, "testBodyField");
     Button send = field(section, "sendTestMailButton");
@@ -142,7 +149,7 @@ class AdminMailTestSectionTest {
       value = MaintenanceService.State.class,
       names = {"ACTIVE", "UNAVAILABLE"})
   void sendingChecksFreshMaintenanceBeforeNextPoll(MaintenanceService.State state) {
-    var section = section();
+    AdminMailTestSection section = section();
     Button send = field(section, "sendTestMailButton");
     assertTrue(send.isEnabled());
     block(state);
@@ -161,7 +168,7 @@ class AdminMailTestSectionTest {
       names = {"ACTIVE", "UNAVAILABLE"})
   void initiallyBlockedStateNeverEnablesPanel(MaintenanceService.State state) {
     block(state);
-    var section = section();
+    AdminMailTestSection section = section();
     assertFalse(((VerticalLayout) field(section, "mailLayout")).isEnabled());
     assertFalse(((Button) field(section, "sendTestMailButton")).isEnabled());
     verifyNoInteractions(email);
@@ -172,9 +179,9 @@ class AdminMailTestSectionTest {
   void pollingRefreshesStateAndDetachingRestoresPreviousInterval(int previousInterval) {
     ui.setPollInterval(previousInterval);
     int[] unrelatedPolls = {0};
-    var unrelated = ui.addPollListener(e -> unrelatedPolls[0]++);
+    Registration unrelated = ui.addPollListener(e -> unrelatedPolls[0]++);
     try {
-      var section = section();
+      AdminMailTestSection section = section();
       ui.add(section);
       assertEquals(
           previousInterval > 0 ? Math.min(previousInterval, 5000) : 5000, ui.getPollInterval());

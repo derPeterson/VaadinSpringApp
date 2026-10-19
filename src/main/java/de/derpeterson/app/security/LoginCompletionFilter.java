@@ -1,7 +1,12 @@
 package de.derpeterson.app.security;
 
-import jakarta.servlet.*;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
@@ -25,7 +30,7 @@ public class LoginCompletionFilter implements Filter {
       chain.doFilter(request, response);
     } catch (IOException | ServletException | RuntimeException failure) {
       boolean newLogin = admissions.rollback((HttpServletRequest) request);
-      var httpResponse = (jakarta.servlet.http.HttpServletResponse) response;
+      HttpServletResponse httpResponse = (jakarta.servlet.http.HttpServletResponse) response;
       if (newLogin && !httpResponse.isCommitted()) {
         try {
           rememberMe.loginFail((HttpServletRequest) request, httpResponse);

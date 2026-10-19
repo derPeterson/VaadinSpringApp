@@ -17,7 +17,7 @@ public class UserNotificationCleanup {
   @Scheduled(cron = "0 20 3 * * *")
   @Transactional
   public int cleanup() {
-    var now = Instant.now();
+    Instant now = Instant.now();
     // Inhalte erst löschen, wenn sie weder in einer Inbox noch in der Historie gebraucht werden.
     return notifications.deleteRetired(policy.inboxCutoff(now), policy.historyCutoff(now));
   }

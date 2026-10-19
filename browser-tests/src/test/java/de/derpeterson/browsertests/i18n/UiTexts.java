@@ -3,6 +3,7 @@ package de.derpeterson.browsertests.i18n;
 import com.microsoft.playwright.Page;
 import de.derpeterson.app.i18n.MessageTexts;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -33,7 +34,7 @@ public final class UiTexts extends MessageTexts {
   private static Function<String, String> lookup(Locale locale) {
     String resource = "/i18n/messages_" + locale.getLanguage() + ".properties";
     final PropertyResourceBundle messages;
-    try (var input =
+    try (InputStream input =
         Objects.requireNonNull(
             UiTexts.class.getResourceAsStream(resource),
             "Translation resource missing: " + resource)) {
@@ -43,9 +44,10 @@ public final class UiTexts extends MessageTexts {
     }
     return key -> {
       String pattern = messages.containsKey(key) ? messages.getString(key) : null;
-      if (pattern == null || pattern.isBlank())
+      if (pattern == null || pattern.isBlank()) {
         throw new IllegalArgumentException(
             "Missing or empty translation: " + locale.getLanguage() + "/" + key);
+      }
       // Same translation/formatting sequence as CustomI18NProvider + MessageProperties.
       return MessageFormat.format(pattern, new Object[0]);
     };

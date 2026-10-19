@@ -7,6 +7,7 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.EmailField;
@@ -18,6 +19,7 @@ import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.service.AccountSecurityService.EmailChange;
+import de.derpeterson.app.ui.components.AccountSecurityFeedback.Field;
 import java.util.List;
 import java.util.Objects;
 
@@ -46,16 +48,16 @@ public class AccountEmailChangeDialog extends Dialog {
 
     title.addClassName("cosmos-panel-title");
     description.addClassName("cosmos-panel-description");
-    var heading = new Div(title, description);
+    Div heading = new Div(title, description);
     heading.addClassName("cosmos-panel-heading");
-    var icon = VaadinIcon.ENVELOPE.create();
+    Icon icon = VaadinIcon.ENVELOPE.create();
     icon.getElement().setAttribute("aria-hidden", "true");
-    var badge = new Div(icon);
+    Div badge = new Div(icon);
     badge.addClassName("cosmos-panel-icon");
     close.setId("account-email-close");
     close.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
     close.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    var header = new Div(badge, heading, close);
+    Div header = new Div(badge, heading, close);
     header.addClassName("account-change-dialog-header");
     getHeader().add(header);
 
@@ -75,11 +77,11 @@ public class AccountEmailChangeDialog extends Dialog {
     password.setWidthFull();
     password.setRevealButtonVisible(true);
     password.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
-    var infoIcon = VaadinIcon.INFO_CIRCLE_O.create();
+    Icon infoIcon = VaadinIcon.INFO_CIRCLE_O.create();
     infoIcon.getElement().setAttribute("aria-hidden", "true");
-    var info = new Div(infoIcon, hint);
+    Div info = new Div(infoIcon, hint);
     info.addClassName("cosmos-panel-hint");
-    var form = new Div(email, confirmEmail, password, info);
+    Div form = new Div(email, confirmEmail, password, info);
     form.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
     add(form);
 
@@ -89,12 +91,14 @@ public class AccountEmailChangeDialog extends Dialog {
     request.setPrefixComponent(VaadinIcon.CHECK.create());
     request.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     request.addClickListener(event -> submit());
-    var actions = new Div(cancel, request);
+    Div actions = new Div(cancel, request);
     actions.addClassName("cosmos-dialog-actions");
     getFooter().add(actions);
     addOpenedChangeListener(
         event -> {
-          if (!event.isOpened()) clearDraft();
+          if (!event.isOpened()) {
+            clearDraft();
+          }
         });
     refreshTexts();
   }
@@ -106,7 +110,9 @@ public class AccountEmailChangeDialog extends Dialog {
   private void submit() {
     if (!ValidationHelper.validateRequiredInputs(List.of(email, confirmEmail, password), messages)
         || !ValidationHelper.validateEmailValidInputs(List.of(email, confirmEmail), messages)
-        || !ValidationHelper.validateEmailConfirmInputs(email, confirmEmail, messages)) return;
+        || !ValidationHelper.validateEmailConfirmInputs(email, confirmEmail, messages)) {
+      return;
+    }
     request.setEnabled(false);
     try {
       Objects.requireNonNull(requestAction, "Email change action required")
@@ -118,8 +124,10 @@ public class AccountEmailChangeDialog extends Dialog {
               messages::getAccountSecurityEmailRequested,
               NotificationHelper.NotificationType.SUCCESS);
     } catch (RuntimeException failure) {
-      var field = AccountSecurityFeedback.failure(messages, failure);
-      if (field == AccountSecurityFeedback.Field.CURRENT_PASSWORD) password.setInvalid(true);
+      Field field = AccountSecurityFeedback.failure(messages, failure);
+      if (field == AccountSecurityFeedback.Field.CURRENT_PASSWORD) {
+        password.setInvalid(true);
+      }
       if (field == AccountSecurityFeedback.Field.EMAIL) {
         email.setInvalid(true);
         confirmEmail.setInvalid(true);

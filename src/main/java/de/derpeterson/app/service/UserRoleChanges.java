@@ -7,8 +7,10 @@ import de.derpeterson.app.websocket.UserRoleBroadcaster;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.*;
-import org.springframework.transaction.support.*;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Component
 @RequiredArgsConstructor
@@ -20,7 +22,9 @@ public class UserRoleChanges {
   @EventListener
   @Transactional(propagation = Propagation.MANDATORY)
   public void changed(UserRolesChanged change) {
-    if (change.before().equals(change.after())) return;
+    if (change.before().equals(change.after())) {
+      return;
+    }
     notifications.recordSecurityEvent(
         users.getReferenceById(change.userId()), UserNotificationType.ROLES_CHANGED);
     TransactionSynchronizationManager.registerSynchronization(

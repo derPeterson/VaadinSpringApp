@@ -48,7 +48,9 @@ final class AdminUserPagination extends HorizontalLayout {
     pageSize.setWidth("56px");
     pageSize.addValueChangeListener(
         event -> {
-          if (event.getValue() != null) selectPageSize.accept(event.getValue());
+          if (event.getValue() != null) {
+            selectPageSize.accept(event.getValue());
+          }
         });
     HorizontalLayout summary = new HorizontalLayout(rowsLabel, pageSize, totalLabel);
     summary.addClassName("admin-user-pagination-summary");
@@ -122,7 +124,9 @@ final class AdminUserPagination extends HorizontalLayout {
     pages.add(total - 1);
     int start = total <= 7 ? 0 : Math.max(1, Math.min(current - 1, total - 4));
     int end = total <= 7 ? total - 1 : Math.min(total - 2, Math.max(current + 1, 3));
-    for (int page = start; page <= end; page++) pages.add(page);
+    for (int page = start; page <= end; page++) {
+      pages.add(page);
+    }
     return List.copyOf(pages);
   }
 }

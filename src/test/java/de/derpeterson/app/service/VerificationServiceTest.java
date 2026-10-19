@@ -1,7 +1,21 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.helper.email.EmailLogo;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -35,6 +49,7 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.util.HtmlUtils;
 
@@ -80,17 +95,18 @@ class VerificationServiceTest {
 
   @Test
   void creationInvalidatesAllActiveTokensAndPersistsANewUuidWithConfiguredLifetime() {
-    var first = token(TokenStatus.ACTIVE, NOW.plusDays(1));
-    var second = token(TokenStatus.ACTIVE, NOW.minusDays(1));
+    VerificationTokenEntity first = token(TokenStatus.ACTIVE, NOW.plusDays(1));
+    VerificationTokenEntity second = token(TokenStatus.ACTIVE, NOW.minusDays(1));
     when(tokens.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE))
         .thenReturn(List.of(first, second));
     when(config.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("PT2H");
 
     String value = service.createToken(user);
 
-    var captor = ArgumentCaptor.forClass(VerificationTokenEntity.class);
+    ArgumentCaptor<VerificationTokenEntity> captor =
+        ArgumentCaptor.forClass(VerificationTokenEntity.class);
     verify(tokens, times(3)).save(captor.capture());
-    var created = captor.getAllValues().getLast();
+    VerificationTokenEntity created = captor.getAllValues().getLast();
     assertEquals(TokenStatus.INACTIVE, first.getStatus());
     assertEquals(TokenStatus.INACTIVE, second.getStatus());
     assertEquals(UUID.fromString(value).toString(), value);
@@ -125,7 +141,8 @@ class VerificationServiceTest {
   void minimumLifetimeIsAccepted() {
     when(config.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("PT1M");
     service.createToken(user);
-    var captor = ArgumentCaptor.forClass(VerificationTokenEntity.class);
+    ArgumentCaptor<VerificationTokenEntity> captor =
+        ArgumentCaptor.forClass(VerificationTokenEntity.class);
     verify(tokens).save(captor.capture());
     assertEquals(NOW.plusMinutes(1), captor.getValue().getExpiryDate());
   }
@@ -156,7 +173,7 @@ class VerificationServiceTest {
   @ParameterizedTest
   @ValueSource(longs = {-1, 0, 1})
   void expirationBoundaryRejectsEqualityAndConsumesOnlyFutureTokens(long offsetNanos) {
-    var entity = token(TokenStatus.ACTIVE, NOW.plusNanos(offsetNanos));
+    VerificationTokenEntity entity = token(TokenStatus.ACTIVE, NOW.plusNanos(offsetNanos));
     when(tokens.findByTokenAndStatus("token", TokenStatus.ACTIVE)).thenReturn(Optional.of(entity));
     assertEquals(offsetNanos > 0, service.validateToken("token"));
     assertEquals(offsetNanos > 0, user.isEnabled());
@@ -178,7 +195,7 @@ class VerificationServiceTest {
   @Test
   void enabledAccountIsNotSavedAndItsActiveTokenRemainsActive() {
     user.setEnabled(true);
-    var entity = token(TokenStatus.ACTIVE, NOW.plusDays(1));
+    VerificationTokenEntity entity = token(TokenStatus.ACTIVE, NOW.plusDays(1));
     when(tokens.findByTokenAndStatus("token", TokenStatus.ACTIVE)).thenReturn(Optional.of(entity));
 
     assertFalse(service.validateToken("token"));
@@ -192,7 +209,7 @@ class VerificationServiceTest {
       value = TokenStatus.class,
       names = {"INACTIVE", "USED", "EXPIRED"})
   void statusSetterOnlyCompletesActiveTokens(TokenStatus status) {
-    var entity = token(TokenStatus.ACTIVE, NOW.plusDays(1));
+    VerificationTokenEntity entity = token(TokenStatus.ACTIVE, NOW.plusDays(1));
     when(tokens.findByTokenAndStatus("token", TokenStatus.ACTIVE)).thenReturn(Optional.of(entity));
     service.setTokenStatus("token", status);
     assertEquals(status, entity.getStatus());
@@ -203,7 +220,7 @@ class VerificationServiceTest {
   void statusSetterCannotReactivateOrRewriteCompletedTokens() {
     assertThrows(
         IllegalArgumentException.class, () -> service.setTokenStatus("token", TokenStatus.ACTIVE));
-    var entity = token(TokenStatus.USED, NOW.plusDays(1));
+    VerificationTokenEntity entity = token(TokenStatus.USED, NOW.plusDays(1));
     when(tokens.findByToken("token")).thenReturn(Optional.of(entity));
     assertThrows(
         IllegalStateException.class, () -> service.setTokenStatus("token", TokenStatus.INACTIVE));
@@ -235,14 +252,15 @@ class VerificationServiceTest {
     when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Example Service");
     when(config.getString(ConfigEntry.BASE_URL)).thenReturn("https://example.com/app/");
     when(messages.getEmailVerificationSubject()).thenReturn("Verify account");
-    try (var locale = mockStatic(CustomI18NProvider.class)) {
+    try (MockedStatic<CustomI18NProvider> locale = mockStatic(CustomI18NProvider.class)) {
       locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.forLanguageTag(language));
       assertTrue(resend(entry));
     }
 
-    var tokenCaptor = ArgumentCaptor.forClass(VerificationTokenEntity.class);
+    ArgumentCaptor<VerificationTokenEntity> tokenCaptor =
+        ArgumentCaptor.forClass(VerificationTokenEntity.class);
     verify(tokens).save(tokenCaptor.capture());
-    var body = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
     verify(queue)
         .addEmailToQueue(
             eq(user), eq("Verify account"), body.capture(), eq(EmailType.VERIFICATION));
@@ -283,7 +301,7 @@ class VerificationServiceTest {
         .thenReturn("© {year} {serviceName} <b>Eigener Text</b>");
     when(messages.getEmailVerificationSubject()).thenReturn("subject");
     assertTrue(resend("email"));
-    var body = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
     verify(queue)
         .addEmailToQueue(eq(user), eq("subject"), body.capture(), eq(EmailType.VERIFICATION));
     assertTrue(
@@ -331,7 +349,7 @@ class VerificationServiceTest {
   void cleanupDeletesUsingConfiguredCutoffWithoutFormattingFailure() {
     when(config.getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn("P7D");
     assertDoesNotThrow(service::deleteExpiredTokens);
-    var cutoff = ArgumentCaptor.forClass(LocalDateTime.class);
+    ArgumentCaptor<LocalDateTime> cutoff = ArgumentCaptor.forClass(LocalDateTime.class);
     verify(tokens).deleteByExpiryDateBefore(cutoff.capture());
     assertEquals(NOW.minusDays(7), cutoff.getValue());
   }

@@ -1,7 +1,23 @@
 package de.derpeterson.app.views;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.same;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -14,7 +30,9 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.textfield.*;
+import com.vaadin.flow.component.textfield.EmailField;
+import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Router;
 import com.vaadin.flow.server.RouteRegistry;
 import com.vaadin.flow.server.VaadinContext;
@@ -25,23 +43,35 @@ import com.vaadin.flow.server.startup.ApplicationRouteRegistry;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.HtmlHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
-import de.derpeterson.app.i18n.*;
-import de.derpeterson.app.model.*;
-import de.derpeterson.app.model.enums.*;
+import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.RoleEntity;
+import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.Gender;
+import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.security.SecurityService;
-import de.derpeterson.app.service.*;
+import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.RegistrationService;
+import de.derpeterson.app.service.RoleService;
+import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.service.VerificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import org.hibernate.exception.ConstraintViolationException;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -64,7 +94,7 @@ public class RegistrationViewTest {
   void setup() {
     ui = new UI();
     session = mock(VaadinSession.class);
-    var locale = new AtomicReference<>(Locale.ENGLISH);
+    AtomicReference<Locale> locale = new AtomicReference<>(Locale.ENGLISH);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     when(session.hasLock()).thenReturn(true);
     doAnswer(
@@ -78,7 +108,7 @@ public class RegistrationViewTest {
     VaadinSession.setCurrent(session);
     var registry = new ApplicationRouteRegistry(mock(VaadinContext.class)) {};
     registry.setRoute("login", LoginView.class, List.of());
-    var vaadin = mock(TestService.class);
+    TestService vaadin = mock(TestService.class);
     when(vaadin.getRouter()).thenReturn(new Router(registry));
     when(vaadin.getRouteRegistry()).thenReturn(registry);
     when(session.getService()).thenReturn(vaadin);
@@ -200,7 +230,7 @@ public class RegistrationViewTest {
 
   private void assertNotification(
       Function<MessageProperties, String> messageGetter, Locale locale) {
-    var helper = NotificationHelper.getInstance();
+    NotificationHelper helper = NotificationHelper.getInstance();
     Span title = (Span) ReflectionTestUtils.getField(helper, "titleText");
     Html body = (Html) ReflectionTestUtils.getField(helper, "messageText");
     MessageProperties expectedTexts = MessageProperties.forLocale(provider, locale);
@@ -229,8 +259,9 @@ public class RegistrationViewTest {
     Function<MessageProperties, String> messageGetter =
         MessageProperties::getRegistrationUnavailableMessage;
     assertNotification(messageGetter, initial);
-    var helper = NotificationHelper.getInstance();
-    var notification = (Notification) ReflectionTestUtils.getField(helper, "currentNotification");
+    NotificationHelper helper = NotificationHelper.getInstance();
+    Notification notification =
+        (Notification) ReflectionTestUtils.getField(helper, "currentNotification");
     assertTrue(notification.isOpened());
     assertEquals(-1, notification.getDuration());
     String initialText = messageGetter.apply(MessageProperties.forLocale(provider, initial));
@@ -247,7 +278,8 @@ public class RegistrationViewTest {
     verifyNoMoreInteractions(users, roles);
     verifyNoInteractions(encoder, verification);
 
-    var failureLogs = logs.list.stream().filter(event -> event.getLevel() == Level.ERROR).toList();
+    List<ILoggingEvent> failureLogs =
+        logs.list.stream().filter(event -> event.getLevel() == Level.ERROR).toList();
     assertEquals(1, failureLogs.size());
     String technicalMessage = failureLogs.getFirst().getFormattedMessage();
     assertTrue(technicalMessage.contains("ROLE_USER"));
@@ -259,7 +291,7 @@ public class RegistrationViewTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void newRegistrationExplicitlyKeepsTheSelectedUiLanguage(String language) throws Exception {
-    var selected = Locale.forLanguageTag(language);
+    Locale selected = Locale.forLanguageTag(language);
     session.setLocale(selected);
     when(verification.sendVerificationEmailByUser(any())).thenReturn(true);
     click();
@@ -270,7 +302,7 @@ public class RegistrationViewTest {
 
   @Test
   void availableUserRoleStillSavesBeforeVerificationAndShowsDynamicSuccess() throws Exception {
-    var role = RoleEntity.builder().id(7L).name(RoleType.ROLE_USER).build();
+    RoleEntity role = RoleEntity.builder().id(7L).name(RoleType.ROLE_USER).build();
     when(roles.findByName(RoleType.ROLE_USER)).thenReturn(Optional.of(role));
     doAnswer(
             call -> {
@@ -284,13 +316,13 @@ public class RegistrationViewTest {
 
     click();
 
-    var captured = ArgumentCaptor.forClass(UserEntity.class);
-    var order = inOrder(roles, users, encoder, verification);
+    ArgumentCaptor<UserEntity> captured = ArgumentCaptor.forClass(UserEntity.class);
+    InOrder order = inOrder(roles, users, encoder, verification);
     order.verify(users).findByEmail("test@example.com");
     order.verify(roles).findByName(RoleType.ROLE_USER);
     order.verify(encoder).encode("Password!");
     order.verify(users).saveUser(captured.capture());
-    var user = captured.getValue();
+    UserEntity user = captured.getValue();
     order.verify(verification).sendVerificationEmailByUser(same(user));
     order.verifyNoMoreInteractions();
     assertEquals(42L, user.getId());
@@ -301,9 +333,9 @@ public class RegistrationViewTest {
     assertSame(role, user.getRoleEntities().iterator().next());
     assertTrue(logs.list.stream().noneMatch(event -> event.getLevel() == Level.ERROR));
 
-    var texts = new MessageProperties(provider);
-    var helper = NotificationHelper.getInstance();
-    var notification = ReflectionTestUtils.getField(helper, "currentNotification");
+    MessageProperties texts = new MessageProperties(provider);
+    NotificationHelper helper = NotificationHelper.getInstance();
+    Object notification = ReflectionTestUtils.getField(helper, "currentNotification");
     assertEquals(
         texts.getBaseSuccessTitle(),
         ((Span) ReflectionTestUtils.getField(helper, "titleText")).getText());
@@ -391,7 +423,7 @@ public class RegistrationViewTest {
   @ParameterizedTest
   @ValueSource(strings = {"uk_other", "ck_users_canonical_email", ""})
   void unrelatedIntegrityFailureIsNeverPresentedAsDuplicate(String constraint) {
-    var failure = integrity(constraint, "23505");
+    DataIntegrityViolationException failure = integrity(constraint, "23505");
     doThrow(failure).when(users).saveUser(any());
     assertSame(failure, assertThrows(DataIntegrityViolationException.class, this::click));
     assertFalse(field("emailField", EmailField.class).isInvalid());
@@ -400,10 +432,10 @@ public class RegistrationViewTest {
 
   @Test
   void namedConstraintWithOtherSqlStateAndUnexplainedArgumentFailurePropagate() {
-    var failure = integrity("uk_users_email", "23503");
+    DataIntegrityViolationException failure = integrity("uk_users_email", "23503");
     doThrow(failure).when(users).saveUser(any());
     assertSame(failure, assertThrows(DataIntegrityViolationException.class, this::click));
-    var argument = new IllegalArgumentException("not a form problem");
+    IllegalArgumentException argument = new IllegalArgumentException("not a form problem");
     doThrow(argument).when(users).saveUser(any());
     assertSame(argument, assertThrows(IllegalArgumentException.class, this::click));
     verifyNoInteractions(verification);

@@ -1,10 +1,21 @@
 package de.derpeterson.app.views.admin;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.server.VaadinSession;
@@ -14,6 +25,7 @@ import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -63,11 +75,11 @@ class AdminConfigurationGroupTest {
             ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS,
             ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS),
         visibleEntries());
-    var inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
-    var inbox =
+    Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
+    IntegerField inbox =
         (com.vaadin.flow.component.textfield.IntegerField)
             inputs.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS);
-    var history =
+    IntegerField history =
         (com.vaadin.flow.component.textfield.IntegerField)
             inputs.get(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS);
     assertEquals(180, inbox.getValue());
@@ -88,7 +100,8 @@ class AdminConfigurationGroupTest {
   @org.junit.jupiter.params.provider.ValueSource(strings = {"de", "en"})
   void emptyNotificationRetentionStaysEmptyAfterSaveReloadAndLanguageChange(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var stored = new java.util.EnumMap<ConfigEntry, String>(ConfigEntry.class);
+    EnumMap<ConfigEntry, String> stored =
+        new java.util.EnumMap<ConfigEntry, String>(ConfigEntry.class);
     when(config.getString(any()))
         .thenAnswer(
             call -> {
@@ -104,16 +117,16 @@ class AdminConfigurationGroupTest {
         .set(any(), anyString());
     section.showGroup(AdminConfigGroup.NOTIFICATIONS);
     section.refreshTexts();
-    var inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
-    var inbox =
+    Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
+    IntegerField inbox =
         (com.vaadin.flow.component.textfield.IntegerField)
             inputs.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS);
-    var history =
+    IntegerField history =
         (com.vaadin.flow.component.textfield.IntegerField)
             inputs.get(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS);
     inbox.clear();
     history.clear();
-    var messages = MessageProperties.forLocale(provider, locale.get());
+    MessageProperties messages = MessageProperties.forLocale(provider, locale.get());
     assertEquals(messages.getAdminConfigUnlimited(), inbox.getPlaceholder());
     assertEquals(messages.getAdminConfigUnlimited(), history.getPlaceholder());
     ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
@@ -131,9 +144,10 @@ class AdminConfigurationGroupTest {
     assertEquals(
         MessageProperties.forLocale(provider, locale.get()).getAdminConfigUnlimited(),
         inbox.getPlaceholder());
-    var infos = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInfoButtons");
-    var info = (ConfigInfoButton) infos.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS);
-    var translated = MessageProperties.forLocale(provider, locale.get());
+    Map<?, ?> infos = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInfoButtons");
+    ConfigInfoButton info =
+        (ConfigInfoButton) infos.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS);
+    MessageProperties translated = MessageProperties.forLocale(provider, locale.get());
     assertTrue(info.getTooltip().getText().contains(translated.getAdminConfigRuleEmptyUnlimited()));
     assertFalse(
         info.getTooltip().getText().contains(translated.getAdminConfigRuleEmptyUsesDefault()));
@@ -191,7 +205,7 @@ class AdminConfigurationGroupTest {
             ConfigEntry.MAX_SESSIONS_PER_USER,
             ConfigEntry.MAINTENANCE_MODE);
     assertEquals(securityEntries, visibleEntries());
-    var inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
+    Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
     PasswordField secretField = (PasswordField) inputs.get(ConfigEntry.REMEMBER_ME_SECRET_KEY);
     secretField.setValue("edited-test-value");
     H2 title = (H2) ReflectionTestUtils.getField(section, "currentGroupTitle");
@@ -224,8 +238,8 @@ class AdminConfigurationGroupTest {
     locale.set(Locale.forLanguageTag(language));
     section.refreshTexts();
     MessageProperties messages = MessageProperties.forLocale(provider, locale.get());
-    var inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
-    var infos = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInfoButtons");
+    Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
+    Map<?, ?> infos = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInfoButtons");
     TextField serviceName = (TextField) inputs.get(ConfigEntry.SERVICE_NAME);
     serviceName.setValue("Unsaved draft");
     ConfigInfoButton info = (ConfigInfoButton) infos.get(ConfigEntry.SERVICE_NAME);

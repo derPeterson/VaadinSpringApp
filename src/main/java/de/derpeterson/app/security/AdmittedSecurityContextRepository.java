@@ -3,6 +3,7 @@ package de.derpeterson.app.security;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
@@ -17,7 +18,7 @@ public class AdmittedSecurityContextRepository extends HttpSessionSecurityContex
   @Override
   public void saveContext(
       SecurityContext context, HttpServletRequest request, HttpServletResponse response) {
-    var authentication = context.getAuthentication();
+    Authentication authentication = context.getAuthentication();
     if (authentication == null
         || !authentication.isAuthenticated()
         || authentication instanceof AnonymousAuthenticationToken) {

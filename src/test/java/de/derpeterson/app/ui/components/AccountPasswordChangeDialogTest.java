@@ -1,7 +1,10 @@
 package de.derpeterson.app.ui.components;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ModalityMode;
@@ -38,7 +41,7 @@ class AccountPasswordChangeDialogTest {
   void setup() {
     ui = new UI();
     UI.setCurrent(ui);
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     VaadinSession.setCurrent(session);
@@ -86,7 +89,7 @@ class AccountPasswordChangeDialogTest {
     locale.set(Locale.forLanguageTag(language));
     dialog.refreshTexts();
     dialog.open();
-    var texts = MessageProperties.forLocale(new CustomI18NProvider(), locale.get());
+    MessageProperties texts = MessageProperties.forLocale(new CustomI18NProvider(), locale.get());
     assertEquals(
         texts.getAccountSettingsChangePassword(), dialog.getElement().getProperty("ariaLabel"));
     assertEquals(texts.getAccountPasswordDialogCurrentPassword(), field("current").getLabel());
@@ -116,7 +119,7 @@ class AccountPasswordChangeDialogTest {
     assertEquals(ModalityMode.STRICT, dialog.getModality());
     assertTrue(dialog.isCloseOnEsc());
     assertTrue(dialog.isCloseOnOutsideClick());
-    for (var suffix : new String[] {"current", "new", "confirm"}) {
+    for (String suffix : new String[] {"current", "new", "confirm"}) {
       assertTrue(field(suffix).isRequiredIndicatorVisible());
       assertTrue(field(suffix).isRevealButtonVisible());
       assertEquals(ValueChangeMode.EAGER, field(suffix).getValueChangeMode());
@@ -127,14 +130,17 @@ class AccountPasswordChangeDialogTest {
   @ValueSource(strings = {"account-password-close", "account-password-cancel", "native-close"})
   void closingDiscardsAllSecretsAndInvalidStatesImmediately(String action) {
     dialog.open();
-    for (var suffix : new String[] {"current", "new", "confirm"}) {
+    for (String suffix : new String[] {"current", "new", "confirm"}) {
       field(suffix).setValue("Local-test-secret");
       field(suffix).setInvalid(true);
     }
-    if (action.equals("native-close")) dialog.setOpened(false);
-    else ((Button) byId(action)).click();
+    if (action.equals("native-close")) {
+      dialog.setOpened(false);
+    } else {
+      ((Button) byId(action)).click();
+    }
     assertFalse(dialog.isOpened());
-    for (var suffix : new String[] {"current", "new", "confirm"}) {
+    for (String suffix : new String[] {"current", "new", "confirm"}) {
       assertTrue(field(suffix).isEmpty());
       assertFalse(field(suffix).isInvalid());
     }
@@ -143,18 +149,19 @@ class AccountPasswordChangeDialogTest {
   @Test
   void languageRefreshPreservesDraftsAndDoesNotValidateWhileTyping() {
     dialog.open();
-    for (var suffix : new String[] {"current", "new", "confirm"})
+    for (String suffix : new String[] {"current", "new", "confirm"}) {
       field(suffix).setValue("Local-" + suffix);
+    }
     locale.set(Locale.ENGLISH);
     dialog.refreshTexts();
-    var save = (Button) byId("account-password-save");
+    Button save = (Button) byId("account-password-save");
     assertEquals(
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH)
             .getAccountSettingsChangePassword(),
         save.getText());
     assertTrue(save.isEnabled());
     assertTrue(dialog.isOpened());
-    for (var suffix : new String[] {"current", "new", "confirm"}) {
+    for (String suffix : new String[] {"current", "new", "confirm"}) {
       assertEquals("Local-" + suffix, field(suffix).getValue());
       assertFalse(field(suffix).isInvalid());
     }
@@ -164,16 +171,18 @@ class AccountPasswordChangeDialogTest {
   void reopeningAlsoDiscardsLateClientSynchronization() {
     dialog.open();
     dialog.close();
-    for (var suffix : new String[] {"current", "new", "confirm"})
+    for (String suffix : new String[] {"current", "new", "confirm"}) {
       field(suffix).setValue("Late-draft");
+    }
     dialog.open();
-    for (var suffix : new String[] {"current", "new", "confirm"})
+    for (String suffix : new String[] {"current", "new", "confirm"}) {
       assertTrue(field(suffix).isEmpty());
+    }
   }
 
   @Test
   void successfulSubmissionCallsActionClosesAndClearsAllSecrets() {
-    var calls = new ArrayList<PasswordChange>();
+    ArrayList<PasswordChange> calls = new ArrayList<PasswordChange>();
     dialog.setChangeAction(
         change -> {
           calls.add(change);
@@ -188,13 +197,14 @@ class AccountPasswordChangeDialogTest {
     assertEquals("Old-secret!", calls.getFirst().currentPassword());
     assertEquals("New-secret!", calls.getFirst().newPassword());
     assertFalse(dialog.isOpened());
-    for (var suffix : new String[] {"current", "new", "confirm"})
+    for (String suffix : new String[] {"current", "new", "confirm"}) {
       assertTrue(field(suffix).isEmpty());
+    }
   }
 
   @Test
   void invalidAndMismatchedPasswordsNeverInvokeTheAction() {
-    var calls = new AtomicInteger();
+    AtomicInteger calls = new AtomicInteger();
     dialog.setChangeAction(
         change -> {
           calls.incrementAndGet();

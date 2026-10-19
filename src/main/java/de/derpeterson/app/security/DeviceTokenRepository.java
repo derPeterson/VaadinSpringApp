@@ -2,11 +2,15 @@ package de.derpeterson.app.security;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.function.Supplier;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.web.authentication.rememberme.*;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.PersistentRememberMeToken;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -39,8 +43,9 @@ public class DeviceTokenRepository extends JdbcTokenRepositoryImpl {
             result -> {
               return result.getMetaData().getPrecision(1);
             });
-    if (identityLength < 255)
+    if (identityLength < 255) {
       jdbc.execute("alter table persistent_logins alter column username varchar(255) not null");
+    }
     jdbc.execute(
         "create table if not exists remembered_device (series varchar(64) primary key, handle varchar(36) not null unique, username varchar(255) not null, device_system varchar(32) not null, browser varchar(32) not null, mobile boolean not null, created_at timestamp not null)");
   }
@@ -63,8 +68,10 @@ public class DeviceTokenRepository extends JdbcTokenRepositoryImpl {
   }
 
   public boolean belongsTo(String series, String identity) {
-    if (series == null) return false;
-    var token = getTokenForSeries(series);
+    if (series == null) {
+      return false;
+    }
+    PersistentRememberMeToken token = getTokenForSeries(series);
     return token != null && identity.equals(token.getUsername());
   }
 
@@ -90,7 +97,9 @@ public class DeviceTokenRepository extends JdbcTokenRepositoryImpl {
   }
 
   public void deleteExpired(int duration) {
-    if (duration < 1) throw new IllegalArgumentException("Invalid saved-login duration");
+    if (duration < 1) {
+      throw new IllegalArgumentException("Invalid saved-login duration");
+    }
     atomic(
         () -> {
           jdbc.update(
@@ -114,7 +123,7 @@ public class DeviceTokenRepository extends JdbcTokenRepositoryImpl {
               "delete from remembered_device where username=? and not exists (select 1 from persistent_logins p where p.series=remembered_device.series and p.username=remembered_device.username)",
               identity);
           // Frühere Tokenserien bekommen neutrale Metadaten, ohne Cookies zu erneuern.
-          var legacy =
+          List<Entry<String, Instant>> legacy =
               jdbc.query(
                   "select p.series,p.last_used from persistent_logins p left join remembered_device d on d.series=p.series where p.username=? and d.series is null",
                   (rs, row) -> Map.entry(rs.getString(1), rs.getTimestamp(2).toInstant()),

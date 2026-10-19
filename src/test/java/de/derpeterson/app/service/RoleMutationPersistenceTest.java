@@ -1,27 +1,55 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import de.derpeterson.app.model.*;
-import de.derpeterson.app.model.enums.*;
-import de.derpeterson.app.repository.*;
-import de.derpeterson.app.security.*;
+import com.vaadin.flow.shared.Registration;
+import de.derpeterson.app.model.RoleEntity;
+import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.Gender;
+import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.model.enums.UserNotificationType;
+import de.derpeterson.app.repository.UserNotificationRecipientRepository;
+import de.derpeterson.app.repository.UserNotificationRepository;
+import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.AdminRolePolicy;
+import de.derpeterson.app.security.CustomUserDetailsService;
+import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.UserNotificationService.ReadFilter;
-import de.derpeterson.app.websocket.*;
-import jakarta.persistence.*;
-import java.time.*;
-import java.util.*;
+import de.derpeterson.app.websocket.UserNotificationBroadcaster;
+import de.derpeterson.app.websocket.UserRoleBroadcaster;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.*;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -48,7 +76,7 @@ class RoleMutationPersistenceTest {
 
     @Bean
     ConfigService config() {
-      var config = mock(ConfigService.class);
+      ConfigService config = mock(ConfigService.class);
       when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("180");
       when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS))
           .thenReturn("365");
@@ -83,7 +111,9 @@ class RoleMutationPersistenceTest {
           users.deleteAll();
           users.flush();
           em.createQuery("delete from RoleEntity").executeUpdate();
-          for (var type : RoleType.values()) em.persist(RoleEntity.builder().name(type).build());
+          for (RoleType type : RoleType.values()) {
+            em.persist(RoleEntity.builder().name(type).build());
+          }
           superadmin = create("super", RoleType.ROLE_SUPERADMIN);
           admin = create("admin", RoleType.ROLE_ADMIN);
           user = create("user", RoleType.ROLE_USER);
@@ -97,7 +127,7 @@ class RoleMutationPersistenceTest {
   }
 
   UserEntity create(String name, RoleType type) {
-    var u =
+    UserEntity u =
         UserEntity.builder()
             .email(name + "@example.test")
             .password("hash")
@@ -118,7 +148,7 @@ class RoleMutationPersistenceTest {
   }
 
   void login(UserEntity actor) {
-    var p = new CustomUserDetailsService(users).loadUserByUsername(actor.getEmail());
+    UserDetails p = new CustomUserDetailsService(users).loadUserByUsername(actor.getEmail());
     SecurityContextHolder.getContext()
         .setAuthentication(
             UsernamePasswordAuthenticationToken.authenticated(p, null, p.getAuthorities()));
@@ -132,18 +162,18 @@ class RoleMutationPersistenceTest {
   }
 
   void assign(UserEntity target, RoleType... types) {
-    var edit = form(target);
-    var roles = tx.execute(s -> Arrays.stream(types).map(this::role).toList());
+    UserEntity edit = form(target);
+    List<RoleEntity> roles = tx.execute(s -> Arrays.stream(types).map(this::role).toList());
     edit.setRoleEntities(roles);
     service.updateAdminUser(edit, edit.getVersion(), "");
   }
 
   MockHttpSession session(UserEntity u) {
-    var p = new CustomUserDetailsService(users).loadUserByUsername(u.getEmail());
-    var c = SecurityContextHolder.createEmptyContext();
+    UserDetails p = new CustomUserDetailsService(users).loadUserByUsername(u.getEmail());
+    SecurityContext c = SecurityContextHolder.createEmptyContext();
     c.setAuthentication(
         UsernamePasswordAuthenticationToken.authenticated(p, null, p.getAuthorities()));
-    var http = new MockHttpSession();
+    MockHttpSession http = new MockHttpSession();
     http.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, c);
     return http;
   }
@@ -156,8 +186,11 @@ class RoleMutationPersistenceTest {
     login(admin);
     assign(user, type);
     assertTrue(form(user).hasRole(type));
-    if (type != RoleType.ROLE_USER) assertEquals(1, notifications.count());
-    else assertEquals(0, notifications.count());
+    if (type != RoleType.ROLE_USER) {
+      assertEquals(1, notifications.count());
+    } else {
+      assertEquals(0, notifications.count());
+    }
     assign(user, RoleType.ROLE_GUEST);
     assertTrue(form(user).hasRole(RoleType.ROLE_GUEST));
   }
@@ -167,7 +200,7 @@ class RoleMutationPersistenceTest {
     login(admin);
     assertThrows(AccessDeniedException.class, () -> assign(user, RoleType.ROLE_SUPERADMIN));
     assertThrows(AccessDeniedException.class, () -> assign(superadmin, RoleType.ROLE_ADMIN));
-    var edited = form(superadmin);
+    UserEntity edited = form(superadmin);
     edited.setFirstName("Changed");
     assertThrows(
         AccessDeniedException.class,
@@ -183,7 +216,7 @@ class RoleMutationPersistenceTest {
   @Test
   void genericSaveCannotBypassSuperadminAssignmentGuard() {
     login(admin);
-    var edit = form(user);
+    UserEntity edit = form(user);
     edit.setRoleEntities(form(superadmin).getRoleEntities());
     assertThrows(AccessDeniedException.class, () -> service.save(edit));
     assertFalse(form(user).hasRole(RoleType.ROLE_SUPERADMIN));
@@ -212,9 +245,12 @@ class RoleMutationPersistenceTest {
         login(admin);
         tx.executeWithoutResult(
             s -> {
-              var a = users.findById(admin.getId()).orElseThrow();
-              if (source.equals("disabled-admin")) a.setEnabled(false);
-              else a.setRoleEntities(new ArrayList<>());
+              UserEntity a = users.findById(admin.getId()).orElseThrow();
+              if (source.equals("disabled-admin")) {
+                a.setEnabled(false);
+              } else {
+                a.setRoleEntities(new ArrayList<>());
+              }
             });
       }
     }
@@ -225,7 +261,7 @@ class RoleMutationPersistenceTest {
   @Test
   void creatingAccountsUsesTheSameRoleGuardAndDoesNotSendRoleChangeForInitialAssignment() {
     login(admin);
-    var a =
+    UserEntity a =
         UserEntity.builder()
             .email("new@example.test")
             .firstName("New")
@@ -246,10 +282,10 @@ class RoleMutationPersistenceTest {
   @Test
   void unchangedSaveAndFailedTransactionCreateNoNoticeOrRolePush() {
     login(admin);
-    var pushes = new AtomicInteger();
-    var listener = events.register(id -> pushes.incrementAndGet());
+    AtomicInteger pushes = new AtomicInteger();
+    Registration listener = events.register(id -> pushes.incrementAndGet());
     try {
-      var edit = form(user);
+      UserEntity edit = form(user);
       edit.setFirstName("Changed");
       service.updateAdminUser(edit, edit.getVersion(), "");
       assertEquals(0, notifications.count());
@@ -274,13 +310,13 @@ class RoleMutationPersistenceTest {
   @Test
   void failedMandatoryNoticeRollsBackRoleAssignmentAndPublishesNoRoleRefresh() {
     login(superadmin);
-    var target = org.springframework.test.util.AopTestUtils.getUltimateTargetObject(changes);
-    var failing = mock(UserNotificationService.class);
+    Object target = org.springframework.test.util.AopTestUtils.getUltimateTargetObject(changes);
+    UserNotificationService failing = mock(UserNotificationService.class);
     doThrow(new IllegalStateException("message persistence unavailable"))
         .when(failing)
         .recordSecurityEvent(any(), any());
-    var count = new AtomicInteger();
-    var listener = events.register(id -> count.incrementAndGet());
+    AtomicInteger count = new AtomicInteger();
+    Registration listener = events.register(id -> count.incrementAndGet());
     org.springframework.test.util.ReflectionTestUtils.setField(target, "notifications", failing);
     try {
       assertThrows(RuntimeException.class, () -> assign(user, RoleType.ROLE_SUPERADMIN));
@@ -295,8 +331,8 @@ class RoleMutationPersistenceTest {
 
   @Test
   void roleChangeKeepsSessionIdentityAndMakesInboxUsableWithFreshRoles() {
-    var http = session(user);
-    var id = http.getId();
+    MockHttpSession http = session(user);
+    String id = http.getId();
     login(admin);
     assign(user, RoleType.ROLE_ADMIN);
     assertEquals(id, http.getId());
@@ -316,20 +352,24 @@ class RoleMutationPersistenceTest {
   @ValueSource(strings = {"delete", "disable", "demote", "remove"})
   void lastSuperadminIsProtectedEvenThoughAnOrdinaryAdminRemains(String operation) {
     login(superadmin);
-    var count = new AtomicInteger();
-    var registration = events.register(id -> count.incrementAndGet());
+    AtomicInteger count = new AtomicInteger();
+    Registration registration = events.register(id -> count.incrementAndGet());
     try {
-      var edited = form(superadmin);
+      UserEntity edited = form(superadmin);
       assertFalse(service.canDeleteUser(edited));
       assertThrows(
           IllegalStateException.class,
           () -> {
-            if (operation.equals("delete")) service.deleteUser(edited);
-            else if (operation.equals("disable")) {
+            if (operation.equals("delete")) {
+              service.deleteUser(edited);
+            } else if (operation.equals("disable")) {
               edited.setEnabled(false);
               service.updateAdminUser(edited, edited.getVersion(), "");
-            } else if (operation.equals("demote")) assign(superadmin, RoleType.ROLE_ADMIN);
-            else assign(superadmin);
+            } else if (operation.equals("demote")) {
+              assign(superadmin, RoleType.ROLE_ADMIN);
+            } else {
+              assign(superadmin);
+            }
           });
       assertTrue(form(superadmin).isEnabled());
       assertTrue(form(superadmin).hasRole(RoleType.ROLE_SUPERADMIN));
@@ -348,12 +388,15 @@ class RoleMutationPersistenceTest {
     login(superadmin);
     assign(user, RoleType.ROLE_SUPERADMIN);
     login(form(user));
-    if (operation.equals("delete")) service.deleteUser(form(superadmin));
-    else if (operation.equals("disable")) {
-      var edited = form(superadmin);
+    if (operation.equals("delete")) {
+      service.deleteUser(form(superadmin));
+    } else if (operation.equals("disable")) {
+      UserEntity edited = form(superadmin);
       edited.setEnabled(false);
       service.updateAdminUser(edited, edited.getVersion(), "");
-    } else assign(superadmin, RoleType.ROLE_ADMIN);
+    } else {
+      assign(superadmin, RoleType.ROLE_ADMIN);
+    }
     assertEquals(List.of(user.getId()), users.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
   }
 
@@ -367,8 +410,9 @@ class RoleMutationPersistenceTest {
     "demote,false"
   })
   void lastOrdinaryAdminHasNoMinimumRequirement(String operation, boolean hasSuperadmin) {
-    if (hasSuperadmin) login(superadmin);
-    else {
+    if (hasSuperadmin) {
+      login(superadmin);
+    } else {
       // Anfangsbestand ohne Superadmin: normales Admin-Konto bekommt keinen Mindestschutz.
       tx.executeWithoutResult(
           s -> users.findById(superadmin.getId()).orElseThrow().setEnabled(false));
@@ -376,12 +420,15 @@ class RoleMutationPersistenceTest {
     }
     assertTrue(service.canDeleteUser(form(admin)));
     assertFalse(service.wouldRemoveLastEnabledSuperadmin(admin.getId(), false, List.of()));
-    if (operation.equals("delete")) service.deleteUser(form(admin));
-    else if (operation.equals("disable")) {
-      var edited = form(admin);
+    if (operation.equals("delete")) {
+      service.deleteUser(form(admin));
+    } else if (operation.equals("disable")) {
+      UserEntity edited = form(admin);
       edited.setEnabled(false);
       service.updateAdminUser(edited, edited.getVersion(), "");
-    } else assign(admin, RoleType.ROLE_USER);
+    } else {
+      assign(admin, RoleType.ROLE_USER);
+    }
     assertTrue(users.findEnabledUserIdsByRole(RoleType.ROLE_ADMIN).isEmpty());
     assertEquals(
         hasSuperadmin ? List.of(superadmin.getId()) : List.of(),

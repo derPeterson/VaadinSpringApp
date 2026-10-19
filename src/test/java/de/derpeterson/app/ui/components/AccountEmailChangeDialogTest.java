@@ -1,7 +1,10 @@
 package de.derpeterson.app.ui.components;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ModalityMode;
@@ -38,7 +41,7 @@ class AccountEmailChangeDialogTest {
   void setup() {
     ui = new UI();
     UI.setCurrent(ui);
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     VaadinSession.setCurrent(session);
@@ -82,7 +85,7 @@ class AccountEmailChangeDialogTest {
     locale.set(Locale.forLanguageTag(language));
     dialog.refreshTexts();
     dialog.open();
-    var texts = MessageProperties.forLocale(new CustomI18NProvider(), locale.get());
+    MessageProperties texts = MessageProperties.forLocale(new CustomI18NProvider(), locale.get());
     assertTrue(dialog.isOpened());
     assertEquals(ModalityMode.STRICT, dialog.getModality());
     assertTrue(dialog.isCloseOnEsc());
@@ -94,7 +97,7 @@ class AccountEmailChangeDialogTest {
     assertEquals(
         texts.getAccountEmailDialogConfirmEmail(),
         ((EmailField) byId("account-email-confirm")).getLabel());
-    var password = (PasswordField) byId("account-email-password");
+    PasswordField password = (PasswordField) byId("account-email-password");
     assertEquals(texts.getAccountEmailDialogPassword(), password.getLabel());
     assertEquals(Autocomplete.CURRENT_PASSWORD, password.getAutocomplete());
     assertEquals(
@@ -122,8 +125,11 @@ class AccountEmailChangeDialogTest {
     ((EmailField) byId("account-email-new")).setValue("new@example.test");
     ((EmailField) byId("account-email-confirm")).setValue("new@example.test");
     ((PasswordField) byId("account-email-password")).setValue("Only-a-local-draft");
-    if (action.equals("native-close")) dialog.setOpened(false);
-    else ((Button) byId(action)).click();
+    if (action.equals("native-close")) {
+      dialog.setOpened(false);
+    } else {
+      ((Button) byId(action)).click();
+    }
     assertFalse(dialog.isOpened());
     dialog.open();
     assertTrue(((EmailField) byId("account-email-new")).isEmpty());
@@ -138,7 +144,7 @@ class AccountEmailChangeDialogTest {
     locale.set(Locale.ENGLISH);
     dialog.refreshTexts();
     assertEquals("draft@example.test", ((EmailField) byId("account-email-new")).getValue());
-    var request = (Button) byId("account-email-request");
+    Button request = (Button) byId("account-email-request");
     assertEquals(
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH)
             .getAccountEmailDialogRequest(),
@@ -152,9 +158,9 @@ class AccountEmailChangeDialogTest {
   @Test
   void unfinishedClientDraftsAreSynchronizedAndOpeningStartsWithEmptyFields() {
     dialog.open();
-    var email = (EmailField) byId("account-email-new");
-    var confirm = (EmailField) byId("account-email-confirm");
-    var password = (PasswordField) byId("account-email-password");
+    EmailField email = (EmailField) byId("account-email-new");
+    EmailField confirm = (EmailField) byId("account-email-confirm");
+    PasswordField password = (PasswordField) byId("account-email-password");
     assertEquals(ValueChangeMode.EAGER, email.getValueChangeMode());
     assertEquals(ValueChangeMode.EAGER, confirm.getValueChangeMode());
     assertEquals(ValueChangeMode.EAGER, password.getValueChangeMode());
@@ -171,7 +177,7 @@ class AccountEmailChangeDialogTest {
 
   @Test
   void successfulRequestPassesConfirmedAddressAndClearsTheDraft() {
-    var calls = new ArrayList<EmailChange>();
+    ArrayList<EmailChange> calls = new ArrayList<EmailChange>();
     dialog.setRequestAction(calls::add);
     dialog.open();
     ((EmailField) byId("account-email-new")).setValue("new@example.test");

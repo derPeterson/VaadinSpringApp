@@ -32,7 +32,9 @@ public class CosmosPageComponent extends Div {
   private CosmosPageComponent(
       ConfigService config, boolean wide, Clock clock, Supplier<String> localizedDefaultTemplate) {
     addClassNames("cosmos-page", "cosmos-theme");
-    if (wide) addClassName("cosmos-page--wide");
+    if (wide) {
+      addClassName("cosmos-page--wide");
+    }
     String serviceName = config.getString(ConfigEntry.SERVICE_NAME);
 
     Div brand = layer("cosmos-brand");

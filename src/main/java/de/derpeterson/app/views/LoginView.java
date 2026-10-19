@@ -45,6 +45,7 @@ import de.derpeterson.app.ui.components.CosmosPageComponent;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -207,28 +208,14 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
                     passwordField.clear();
                     showRecovery();
                   } catch (AuthenticationException rejected) {
-                    showLoginFailure(
-                        rejected instanceof LoginThrottledException
-                            ? "throttled"
-                            : rejected instanceof MaintenanceAuthenticationException
-                                ? "maintenance"
-                                : "invalid");
+                    showLoginFailure(restrictedLoginFailureCode(rejected));
                   } catch (RuntimeException unavailable) {
                     logger.warn("Restricted session management unavailable", unavailable);
                     showLoginFailure("unavailable");
                   }
                   return;
                 }
-                showLoginFailure(
-                    e instanceof MaintenanceAuthenticationException
-                        ? "maintenance"
-                        : e instanceof SessionLimitException
-                            ? "sessions"
-                            : e instanceof LoginThrottledException
-                                ? "throttled"
-                                : e instanceof AuthenticationServiceException
-                                    ? "unavailable"
-                                    : "invalid");
+                showLoginFailure(authenticationFailureCode(e));
               }
             });
 
@@ -359,7 +346,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     cancelRecovery.setId("session-recovery-cancel");
     cancelRecovery.setPrefixComponent(VaadinIcon.CLOSE_SMALL.create());
     cancelRecovery.addClickListener(event -> hideRecovery());
-    var actions = new HorizontalLayout(cancelRecovery, continueLogin);
+    HorizontalLayout actions = new HorizontalLayout(cancelRecovery, continueLogin);
     actions.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
     recoveryArea = new Div(recoveryHint, recoverySessions, actions);
     recoveryArea.setId("session-recovery");
@@ -375,12 +362,14 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     super.beforeEnter(event);
-    if (event.hasForwardTarget()) return;
+    if (event.hasForwardTarget()) {
+      return;
+    }
     if (sessions.hasRecovery(currentRequest)) {
       showRecovery();
       return;
     }
-    var errors = event.getLocation().getQueryParameters().getParameters().get("error");
+    List<String> errors = event.getLocation().getQueryParameters().getParameters().get("error");
     if (errors != null
         && errors.size() == 1
         && Set.of("maintenance", "sessions", "throttled", "unavailable", "invalid")
@@ -403,11 +392,39 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
   }
 
   private void refreshRecoveryTexts() {
-    if (recoveryArea == null) return;
+    if (recoveryArea == null) {
+      return;
+    }
     recoveryHint.setText(messageProperties.getSessionRecoveryHint());
     continueLogin.setText(messageProperties.getSessionContinueLogin());
     cancelRecovery.setText(messageProperties.getAdminUsersCancel());
     recoverySessions.refreshTexts();
+  }
+
+  private String restrictedLoginFailureCode(AuthenticationException failure) {
+    if (failure instanceof LoginThrottledException) {
+      return "throttled";
+    }
+    if (failure instanceof MaintenanceAuthenticationException) {
+      return "maintenance";
+    }
+    return "invalid";
+  }
+
+  private String authenticationFailureCode(AuthenticationException failure) {
+    if (failure instanceof MaintenanceAuthenticationException) {
+      return "maintenance";
+    }
+    if (failure instanceof SessionLimitException) {
+      return "sessions";
+    }
+    if (failure instanceof LoginThrottledException) {
+      return "throttled";
+    }
+    if (failure instanceof AuthenticationServiceException) {
+      return "unavailable";
+    }
+    return "invalid";
   }
 
   private void showLoginFailure(String reason) {
@@ -428,9 +445,11 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
   }
 
   private void updateInputPlaceholders() {
-    if (emailField != null)
+    if (emailField != null) {
       emailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
-    if (passwordField != null)
+    }
+    if (passwordField != null) {
       passwordField.setPlaceholder(messageProperties.getAccountPasswordPlaceholder());
+    }
   }
 }

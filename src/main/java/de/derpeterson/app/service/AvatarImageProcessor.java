@@ -1,13 +1,21 @@
 package de.derpeterson.app.service;
 
+import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Iterator;
 import java.util.concurrent.Semaphore;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
 import javax.imageio.stream.MemoryCacheImageInputStream;
 import javax.imageio.stream.MemoryCacheImageOutputStream;
 import org.springframework.stereotype.Component;
@@ -51,8 +59,10 @@ public class AvatarImageProcessor {
   }
 
   public static byte[] readLimited(InputStream input) throws IOException {
-    var bytes = input.readNBytes(MAX_UPLOAD + 1);
-    if (bytes.length > MAX_UPLOAD) throw new InvalidImage(Problem.SIZE);
+    byte[] bytes = input.readNBytes(MAX_UPLOAD + 1);
+    if (bytes.length > MAX_UPLOAD) {
+      throw new InvalidImage(Problem.SIZE);
+    }
     return bytes;
   }
 
@@ -65,51 +75,69 @@ public class AvatarImageProcessor {
   }
 
   private byte[] process(byte[] data, Crop crop, boolean encode) {
-    if (data == null || data.length == 0) throw new InvalidImage(Problem.IMAGE);
-    if (data.length > MAX_UPLOAD) throw new InvalidImage(Problem.SIZE);
+    if (data == null || data.length == 0) {
+      throw new InvalidImage(Problem.IMAGE);
+    }
+    if (data.length > MAX_UPLOAD) {
+      throw new InvalidImage(Problem.SIZE);
+    }
     boolean png = data.length >= 8 && ByteBuffer.wrap(data).getLong() == 0x89504e470d0a1a0aL;
     boolean jpeg =
         data.length >= 3
             && (data[0] & 255) == 255
             && (data[1] & 255) == 216
             && (data[2] & 255) == 255;
-    if (!png && !jpeg) throw new InvalidImage(Problem.TYPE);
+    if (!png && !jpeg) {
+      throw new InvalidImage(Problem.TYPE);
+    }
     if (png) {
       // Animierte PNGs würden in der Vorschau andere Frames zeigen als der Rasterdecoder.
       for (int p = 8; p <= data.length - 12; ) {
         long length = Integer.toUnsignedLong(ByteBuffer.wrap(data, p, 4).getInt());
-        if (length > data.length - p - 12) break;
-        if (ByteBuffer.wrap(data, p + 4, 4).getInt() == 0x6163544c)
+        if (length > data.length - p - 12) {
+          break;
+        }
+        if (ByteBuffer.wrap(data, p + 4, 4).getInt() == 0x6163544c) {
           throw new InvalidImage(Problem.TYPE);
+        }
         p += (int) length + 12;
       }
     }
-    if (!decoders.tryAcquire()) throw new InvalidImage(Problem.BUSY);
-    try (var input = new MemoryCacheImageInputStream(new ByteArrayInputStream(data))) {
-      var readers = ImageIO.getImageReaders(input);
-      if (!readers.hasNext()) throw new InvalidImage(Problem.IMAGE);
-      var reader = readers.next();
+    if (!decoders.tryAcquire()) {
+      throw new InvalidImage(Problem.BUSY);
+    }
+    try (MemoryCacheImageInputStream input =
+        new MemoryCacheImageInputStream(new ByteArrayInputStream(data))) {
+      Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+      if (!readers.hasNext()) {
+        throw new InvalidImage(Problem.IMAGE);
+      }
+      ImageReader reader = readers.next();
       try {
-        var format = reader.getFormatName();
-        if (!(png && "png".equalsIgnoreCase(format) || jpeg && "jpeg".equalsIgnoreCase(format)))
+        String format = reader.getFormatName();
+        if (!(png && "png".equalsIgnoreCase(format) || jpeg && "jpeg".equalsIgnoreCase(format))) {
           throw new InvalidImage(Problem.TYPE);
+        }
         reader.setInput(input, true, true);
         int w = reader.getWidth(0), h = reader.getHeight(0);
-        if (w < 1 || h < 1 || w > 8192 || h > 8192 || (long) w * h > 20_000_000)
+        if (w < 1 || h < 1 || w > 8192 || h > 8192 || (long) w * h > 20_000_000) {
           throw new InvalidImage(Problem.DIMENSIONS);
+        }
         // Header vor dem vollständigen Decode prüfen; die Vorschau allein ist kein
         // Sicherheitsfilter.
         BufferedImage image = reader.read(0);
         try {
-          if (!encode) return null;
+          if (!encode) {
+            return null;
+          }
           int orientation = orientation(data, png);
           int ow = orientation >= 5 ? h : w, oh = orientation >= 5 ? w : h;
           checkCrop(crop, ow, oh);
           double side = Math.min(ow, oh) / crop.zoom();
           double left = (ow - side) / 2 - crop.x() * side;
           double top = (oh - side) / 2 - crop.y() * side;
-          var result = new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB);
-          var graphics = result.createGraphics();
+          BufferedImage result = new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB);
+          Graphics2D graphics = result.createGraphics();
           try {
             graphics.setRenderingHint(
                 RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
@@ -120,7 +148,7 @@ public class AvatarImageProcessor {
           } finally {
             graphics.dispose();
           }
-          var output = new ByteArrayOutputStream();
+          ByteArrayOutputStream output = new ByteArrayOutputStream();
           try {
             var bounded =
                 new FilterOutputStream(output) {
@@ -139,10 +167,12 @@ public class AvatarImageProcessor {
                   }
 
                   private void limit(int n) {
-                    if ((count += n) > MAX_RESULT) throw new InvalidImage(Problem.OUTPUT);
+                    if ((count += n) > MAX_RESULT) {
+                      throw new InvalidImage(Problem.OUTPUT);
+                    }
                   }
                 };
-            try (var encoded = new MemoryCacheImageOutputStream(bounded)) {
+            try (MemoryCacheImageOutputStream encoded = new MemoryCacheImageOutputStream(bounded)) {
               ImageIO.write(result, "png", encoded);
               encoded.flush();
             }
@@ -151,7 +181,9 @@ public class AvatarImageProcessor {
             result.flush();
           }
         } finally {
-          if (image != null) image.flush();
+          if (image != null) {
+            image.flush();
+          }
         }
       } finally {
         reader.dispose();
@@ -171,11 +203,14 @@ public class AvatarImageProcessor {
         || !Double.isFinite(crop.x())
         || !Double.isFinite(crop.y())
         || crop.zoom() < 1
-        || crop.zoom() > 3) throw new InvalidImage(Problem.CROP);
+        || crop.zoom() > 3) {
+      throw new InvalidImage(Problem.CROP);
+    }
     double shortSide = Math.min(w, h);
     if (Math.abs(crop.x()) > (w / shortSide * crop.zoom() - 1) / 2 + 0.000001
-        || Math.abs(crop.y()) > (h / shortSide * crop.zoom() - 1) / 2 + 0.000001)
+        || Math.abs(crop.y()) > (h / shortSide * crop.zoom() - 1) / 2 + 0.000001) {
       throw new InvalidImage(Problem.CROP);
+    }
   }
 
   private AffineTransform transform(int o, int w, int h) {
@@ -197,24 +232,35 @@ public class AvatarImageProcessor {
     if (png) {
       for (int p = 8; p <= data.length - 12; ) {
         long length = Integer.toUnsignedLong(ByteBuffer.wrap(data, p, 4).getInt());
-        if (length > data.length - p - 12) break;
-        if (ByteBuffer.wrap(data, p + 4, 4).getInt() == 0x65584966)
+        if (length > data.length - p - 12) {
+          break;
+        }
+        if (ByteBuffer.wrap(data, p + 4, 4).getInt() == 0x65584966) {
           return tiff(data, p + 8, (int) length);
+        }
         p += (int) length + 12;
       }
     } else {
       int p = 2;
       while (p < data.length - 3) {
-        if ((data[p++] & 255) != 255) break;
+        if ((data[p++] & 255) != 255) {
+          break;
+        }
         int marker = data[p++] & 255;
         if (marker == 255) {
           p--;
           continue;
         }
-        if (marker == 218 || marker == 217) break;
-        if (marker == 1 || marker >= 208 && marker <= 215) continue;
+        if (marker == 218 || marker == 217) {
+          break;
+        }
+        if (marker == 1 || marker >= 208 && marker <= 215) {
+          continue;
+        }
         int length = (data[p] & 255) * 256 + (data[p + 1] & 255);
-        if (length < 2 || length > data.length - p) break;
+        if (length < 2 || length > data.length - p) {
+          break;
+        }
         if (marker == 225
             && length >= 8
             && data[p + 2] == 'E'
@@ -222,7 +268,9 @@ public class AvatarImageProcessor {
             && data[p + 4] == 'i'
             && data[p + 5] == 'f'
             && data[p + 6] == 0
-            && data[p + 7] == 0) return tiff(data, p + 8, length - 8);
+            && data[p + 7] == 0) {
+          return tiff(data, p + 8, length - 8);
+        }
         p += length;
       }
     }
@@ -230,17 +278,28 @@ public class AvatarImageProcessor {
   }
 
   private int tiff(byte[] data, int start, int length) {
-    if (length < 8) return 1;
-    var b = ByteBuffer.wrap(data, start, length).slice();
-    if (b.getShort(0) == 0x4949) b.order(ByteOrder.LITTLE_ENDIAN);
-    else if (b.getShort(0) != 0x4d4d) return 1;
-    if (b.getShort(2) != 42) return 1;
+    if (length < 8) {
+      return 1;
+    }
+    ByteBuffer b = ByteBuffer.wrap(data, start, length).slice();
+    if (b.getShort(0) == 0x4949) {
+      b.order(ByteOrder.LITTLE_ENDIAN);
+    } else if (b.getShort(0) != 0x4d4d) {
+      return 1;
+    }
+    if (b.getShort(2) != 42) {
+      return 1;
+    }
     long offset = Integer.toUnsignedLong(b.getInt(4));
-    if (offset > length - 2) return 1;
+    if (offset > length - 2) {
+      return 1;
+    }
     int count = Short.toUnsignedInt(b.getShort((int) offset));
     for (int i = 0; i < count; i++) {
       long pos = offset + 2 + (long) i * 12;
-      if (pos > length - 12) return 1;
+      if (pos > length - 12) {
+        return 1;
+      }
       int p = (int) pos;
       if (Short.toUnsignedInt(b.getShort(p)) == 0x112
           && b.getShort(p + 2) == 3

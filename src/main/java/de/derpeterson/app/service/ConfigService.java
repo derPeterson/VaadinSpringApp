@@ -29,7 +29,7 @@ public class ConfigService {
 
   /** Entfernt ausschließlich ausdrücklich ausgemusterte Einträge; wiederholbar beim Start. */
   public void removeRetiredEntries() {
-    var transaction = new TransactionTemplate(transactionManager);
+    TransactionTemplate transaction = new TransactionTemplate(transactionManager);
     transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     transaction.executeWithoutResult(
         status -> {
@@ -113,13 +113,13 @@ public class ConfigService {
   public void set(ConfigEntry configEntry, String value) {
     Objects.requireNonNull(configEntry, "configEntry");
     Objects.requireNonNull(value, "value");
-    var transaction = new TransactionTemplate(transactionManager);
+    TransactionTemplate transaction = new TransactionTemplate(transactionManager);
     transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     boolean[] creating = {false};
     try {
       transaction.executeWithoutResult(
           status -> {
-            var entity =
+            ConfigEntity entity =
                 configRepository
                     .findByKey(configEntry.getKey())
                     .orElseGet(
@@ -136,7 +136,7 @@ public class ConfigService {
       // The failed insert has rolled back before starting this retry.
       transaction.executeWithoutResult(
           status -> {
-            var entity =
+            ConfigEntity entity =
                 configRepository.findByKey(configEntry.getKey()).orElseThrow(() -> failure);
             update(entity, value);
           });

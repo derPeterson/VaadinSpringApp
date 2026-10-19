@@ -1,11 +1,19 @@
 package de.derpeterson.app.security;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.server.*;
+import com.vaadin.flow.server.DefaultErrorHandler;
+import com.vaadin.flow.server.ErrorHandler;
+import com.vaadin.flow.server.ServiceInitEvent;
+import com.vaadin.flow.server.VaadinRequest;
+import com.vaadin.flow.server.VaadinService;
+import com.vaadin.flow.server.VaadinServiceInitListener;
+import com.vaadin.flow.server.VaadinServletRequest;
+import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.views.LoginView;
 import de.derpeterson.app.views.MaintenanceView;
 import lombok.RequiredArgsConstructor;
+import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -25,8 +33,10 @@ public class MaintenanceUiGuard implements VaadinServiceInitListener {
             // A forward changes the server path, but the browser still has e.g.
             // /verification/token.
             // Its bootstrap resources must resolve from the application root, not /verification/.
-            var base = response.getDocument().head().selectFirst("base");
-            if (base != null) base.attr("href", request.getContextPath() + "/");
+            Element base = response.getDocument().head().selectFirst("base");
+            if (base != null) {
+              base.attr("href", request.getContextPath() + "/");
+            }
           }
         });
     event
@@ -34,10 +44,10 @@ public class MaintenanceUiGuard implements VaadinServiceInitListener {
         .addUIInitListener(
             init -> {
               UI ui = init.getUI();
-              var session = ui.getSession();
+              VaadinSession session = ui.getSession();
               String marker = MaintenanceUiGuard.class.getName() + ".errorHandler";
               if (session.getAttribute(marker) == null) {
-                var previous = session.getErrorHandler();
+                ErrorHandler previous = session.getErrorHandler();
                 session.setErrorHandler(
                     error -> {
                       Throwable failure = error.getThrowable();
@@ -54,11 +64,16 @@ public class MaintenanceUiGuard implements VaadinServiceInitListener {
                               .setLocation(contextPath + AppRoute.MAINTENANCE.getSecurityRoute());
                           return;
                         }
-                        if (failure == failure.getCause()) break;
+                        if (failure == failure.getCause()) {
+                          break;
+                        }
                         failure = failure.getCause();
                       }
-                      if (previous != null) previous.error(error);
-                      else new DefaultErrorHandler().error(error);
+                      if (previous != null) {
+                        previous.error(error);
+                      } else {
+                        new DefaultErrorHandler().error(error);
+                      }
                     });
                 session.setAttribute(marker, Boolean.TRUE);
               }
@@ -67,8 +82,9 @@ public class MaintenanceUiGuard implements VaadinServiceInitListener {
                     if (VaadinRequest.getCurrent() instanceof VaadinServletRequest request
                         && maintenance.blocks(request.getHttpServletRequest())
                         && navigation.getNavigationTarget() != LoginView.class
-                        && navigation.getNavigationTarget() != MaintenanceView.class)
+                        && navigation.getNavigationTarget() != MaintenanceView.class) {
                       navigation.rerouteTo(MaintenanceView.class);
+                    }
                   });
             });
   }

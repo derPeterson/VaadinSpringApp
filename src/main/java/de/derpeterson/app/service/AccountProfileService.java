@@ -14,6 +14,7 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,7 +50,7 @@ public class AccountProfileService {
   // Eigene Transaktion verhindert, dass ein alter OSIV-/UI-Zustand als aktuelle DB-Version gilt.
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public Profile save(HttpServletRequest request, Changes changes) {
-    var principal =
+    UserDetails principal =
         security
             .getAuthenticatedUser(request)
             .orElseThrow(() -> new AccessDeniedException("Authentication required"));
@@ -65,7 +66,9 @@ public class AccountProfileService {
         users
             .findByEmailForUpdate(principal.getUsername())
             .orElseThrow(() -> new AccessDeniedException("Account unavailable"));
-    if (!user.isEnabled()) throw new AccessDeniedException("Account disabled");
+    if (!user.isEnabled()) {
+      throw new AccessDeniedException("Account disabled");
+    }
     if (changes.version() == null || !Objects.equals(changes.version(), user.getVersion())) {
       throw new OptimisticLockingFailureException("Profile changed; reload before saving");
     }

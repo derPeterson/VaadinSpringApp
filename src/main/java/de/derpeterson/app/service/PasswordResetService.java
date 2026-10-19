@@ -229,7 +229,7 @@ public class PasswordResetService {
         LocalDateTime.now(clock)
             .minus(positiveDuration(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION));
     int deleted = tokenRepository.deleteByExpiryDateBefore(liveDateTime);
-    var formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+    String formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     logger.info(
         "✅ {} expired password reset tokens that are older than '{}' have been deleted.",
         deleted,

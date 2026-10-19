@@ -3,6 +3,7 @@ package de.derpeterson.app.service;
 import de.derpeterson.app.config.TokenDurationPolicy;
 import de.derpeterson.app.model.EmailChangeTokenEntity;
 import de.derpeterson.app.model.EmailIdentity;
+import de.derpeterson.app.model.PasswordResetTokenEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -16,6 +17,7 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.validation.EmailConflict;
 import de.derpeterson.app.validation.UserInputRules;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -26,6 +28,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -35,7 +38,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.stereotype.Service;
@@ -118,14 +123,15 @@ public class AccountSecurityService {
     Assert.notNull(change, "Password change required");
     Assert.isTrue(UserInputRules.isPasswordSecure(change.newPassword()), "Invalid password");
     Assert.isTrue(Objects.equals(change.newPassword(), change.confirmation()), "Password mismatch");
-    var identity = reauthenticate(request, change.currentPassword());
+    String identity = reauthenticate(request, change.currentPassword());
     return transaction(
         () -> {
-          var user = lockedAccount(identity, change.currentPassword());
-          if (encoder.matches(change.newPassword(), user.getPassword()))
+          UserEntity user = lockedAccount(identity, change.currentPassword());
+          if (encoder.matches(change.newPassword(), user.getPassword())) {
             throw new Rejected(Problem.SAME_PASSWORD);
-          var body = mail.render("password_changed", user, Map.of());
-          var previous = user.getVersion();
+          }
+          String body = mail.render("password_changed", user, Map.of());
+          Long previous = user.getVersion();
           user.setPassword(encoder.encode(change.newPassword()));
           users.saveAndFlush(user);
           invalidateEmailChanges(user);
@@ -135,7 +141,7 @@ public class AccountSecurityService {
           userNotifications.recordSecurityEvent(
               user, de.derpeterson.app.model.enums.UserNotificationType.PASSWORD_CHANGED);
           remembered.removeUserTokens(identity);
-          var session = request.getSession(false);
+          HttpSession session = request.getSession(false);
           revokeAfterCommit(identity, session == null ? null : session.getId());
           return new PasswordChanged(previous, user.getVersion());
         });
@@ -143,39 +149,43 @@ public class AccountSecurityService {
 
   public void requestEmailChange(HttpServletRequest request, EmailChange change) {
     Assert.notNull(change, "Email change required");
-    var target = EmailIdentity.canonicalize(change.newEmail());
+    String target = EmailIdentity.canonicalize(change.newEmail());
     Assert.isTrue(UserInputRules.isEmailValid(target), "Invalid email");
     Assert.isTrue(
         Objects.equals(target, EmailIdentity.canonicalize(change.confirmation())),
         "Email mismatch");
-    var identity = reauthenticate(request, change.currentPassword());
+    String identity = reauthenticate(request, change.currentPassword());
     transaction(
         () -> {
-          var user = lockedAccount(identity, change.currentPassword());
-          if (user.getEmail().equals(target)) throw new Rejected(Problem.SAME_EMAIL);
-          if (users.emailExistsForOtherUser(target, user.getId()))
+          UserEntity user = lockedAccount(identity, change.currentPassword());
+          if (user.getEmail().equals(target)) {
+            throw new Rejected(Problem.SAME_EMAIL);
+          }
+          if (users.emailExistsForOtherUser(target, user.getId())) {
             throw new Rejected(Problem.EMAIL_UNAVAILABLE);
-          var now = LocalDateTime.now(clock);
-          var active = tokens.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
+          }
+          LocalDateTime now = LocalDateTime.now(clock);
+          List<EmailChangeTokenEntity> active =
+              tokens.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
           if (active.stream().anyMatch(t -> t.getCreatedAt().isAfter(now.minusMinutes(1)))) {
             throw new Rejected(Problem.REQUEST_PENDING);
           }
-          var duration = duration(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION);
-          var raw = new byte[32];
+          Duration duration = duration(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION);
+          byte[] raw = new byte[32];
           random.nextBytes(raw);
-          var token = Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
-          var link =
+          String token = Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
+          String link =
               UriComponentsBuilder.fromUriString(config.getString(ConfigEntry.BASE_URL))
                   .pathSegment(AppRoute.EMAIL_CHANGE.getRoute(), token)
                   .toUriString();
-          var body =
+          String body =
               mail.render(
                   "email_change_request",
                   user,
                   Map.of("CONFIRM_EMAIL_LINK", link, "NEW_EMAIL", target));
           active.forEach(t -> t.setStatus(TokenStatus.INACTIVE));
           tokens.saveAll(active);
-          var pending = new EmailChangeTokenEntity();
+          EmailChangeTokenEntity pending = new EmailChangeTokenEntity();
           pending.setDigest(digest(token));
           pending.setUserEntity(user);
           pending.setOldEmail(user.getEmail());
@@ -192,8 +202,10 @@ public class AccountSecurityService {
 
   public Confirmation inspect(String token) {
     MaintenanceService.requirePublicAccess(config);
-    var hash = tokenDigest(token);
-    if (hash == null) return Confirmation.INVALID;
+    String hash = tokenDigest(token);
+    if (hash == null) {
+      return Confirmation.INVALID;
+    }
     return transaction(
         () -> tokens.findByDigest(hash).map(this::state).orElse(Confirmation.INVALID));
   }
@@ -201,27 +213,33 @@ public class AccountSecurityService {
   /** Erst der ausdrückliche Buttonklick verbraucht den Link, kein Mailscanner-GET. */
   public Confirmation confirm(String token) {
     MaintenanceService.requirePublicAccess(config);
-    var hash = tokenDigest(token);
-    if (hash == null) return Confirmation.INVALID;
+    String hash = tokenDigest(token);
+    if (hash == null) {
+      return Confirmation.INVALID;
+    }
     try {
       return transaction(
           () -> {
-            var user =
+            UserEntity user =
                 tokens.findUserIdByDigest(hash).flatMap(users::lockVerificationUser).orElse(null);
-            if (user == null) return Confirmation.INVALID;
-            var pending = tokens.findByDigest(hash).orElseThrow();
-            var state = state(pending);
+            if (user == null) {
+              return Confirmation.INVALID;
+            }
+            EmailChangeTokenEntity pending = tokens.findByDigest(hash).orElseThrow();
+            Confirmation state = state(pending);
             if (state != Confirmation.READY) {
-              if (state == Confirmation.EXPIRED) pending.setStatus(TokenStatus.EXPIRED);
+              if (state == Confirmation.EXPIRED) {
+                pending.setStatus(TokenStatus.EXPIRED);
+              }
               return state;
             }
             if (users.emailExistsForOtherUser(pending.getNewEmail(), user.getId())) {
               pending.setStatus(TokenStatus.INACTIVE);
               return Confirmation.CONFLICT;
             }
-            var old = user.getEmail();
-            var target = pending.getNewEmail();
-            var body =
+            String old = user.getEmail();
+            String target = pending.getNewEmail();
+            String body =
                 mail.render("email_changed", user, Map.of("OLD_EMAIL", old, "NEW_EMAIL", target));
             user.setEmail(target);
             users.saveAndFlush(user);
@@ -229,7 +247,7 @@ public class AccountSecurityService {
             tokens.save(pending);
             invalidateEmailChanges(user);
             invalidateResets(user);
-            var subject = mail.texts(user).getAccountEmailChangedSubject();
+            String subject = mail.texts(user).getAccountEmailChangedSubject();
             queue.addAddressedNotification(user, old, subject, body);
             queue.addAddressedNotification(user, target, subject, body);
             userNotifications.recordSecurityEvent(
@@ -239,37 +257,47 @@ public class AccountSecurityService {
             return Confirmation.SUCCESS;
           });
     } catch (RuntimeException failure) {
-      if (EmailConflict.isDuplicate(failure)) return Confirmation.CONFLICT;
+      if (EmailConflict.isDuplicate(failure)) {
+        return Confirmation.CONFLICT;
+      }
       throw failure;
     }
   }
 
   private Confirmation state(EmailChangeTokenEntity token) {
-    if (token.getStatus() != TokenStatus.ACTIVE) return Confirmation.INVALID;
-    if (!token.getExpiryDate().isAfter(LocalDateTime.now(clock))) return Confirmation.EXPIRED;
-    var user = token.getUserEntity();
+    if (token.getStatus() != TokenStatus.ACTIVE) {
+      return Confirmation.INVALID;
+    }
+    if (!token.getExpiryDate().isAfter(LocalDateTime.now(clock))) {
+      return Confirmation.EXPIRED;
+    }
+    UserEntity user = token.getUserEntity();
     if (!user.isEnabled()
         || !Objects.equals(user.getEmail(), token.getOldEmail())
-        || !Objects.equals(digest(user.getPassword()), token.getCredentialDigest()))
+        || !Objects.equals(digest(user.getPassword()), token.getCredentialDigest())) {
       return Confirmation.INVALID;
+    }
     return Confirmation.READY;
   }
 
   private String reauthenticate(HttpServletRequest request, String password) {
-    var principal =
+    UserDetails principal =
         security
             .getAuthenticatedUser(request)
             .orElseThrow(() -> new AccessDeniedException("Authentication required"));
     MaintenanceService.requirePublicAccess(config);
     Assert.hasText(password, "Current password required");
-    var auth =
+    Authentication auth =
         attempts.authenticate(
             principal.getUsername(),
             () -> {
-              var current = details.loadPasswordUserByUsername(principal.getUsername());
-              if (!current.isEnabled()) throw new DisabledException("Account disabled");
-              if (!encoder.matches(password, current.getPassword()))
+              UserDetails current = details.loadPasswordUserByUsername(principal.getUsername());
+              if (!current.isEnabled()) {
+                throw new DisabledException("Account disabled");
+              }
+              if (!encoder.matches(password, current.getPassword())) {
                 throw new BadCredentialsException("Current password invalid");
+              }
               return UsernamePasswordAuthenticationToken.authenticated(
                   current, null, current.getAuthorities());
             });
@@ -278,24 +306,29 @@ public class AccountSecurityService {
 
   private UserEntity lockedAccount(String identity, String password) {
     MaintenanceService.requirePublicAccess(config);
-    var user =
+    UserEntity user =
         users
             .findByEmailForUpdate(identity)
             .orElseThrow(() -> new AccessDeniedException("Account unavailable"));
-    if (!user.isEnabled()) throw new AccessDeniedException("Account disabled");
-    if (!encoder.matches(password, user.getPassword()))
+    if (!user.isEnabled()) {
+      throw new AccessDeniedException("Account disabled");
+    }
+    if (!encoder.matches(password, user.getPassword())) {
       throw new BadCredentialsException("Credentials changed");
+    }
     return user;
   }
 
   private void invalidateEmailChanges(UserEntity user) {
-    var active = tokens.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
+    List<EmailChangeTokenEntity> active =
+        tokens.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
     active.forEach(t -> t.setStatus(TokenStatus.INACTIVE));
     tokens.saveAll(active);
   }
 
   private void invalidateResets(UserEntity user) {
-    var active = resets.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
+    List<PasswordResetTokenEntity> active =
+        resets.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
     active.forEach(t -> t.setStatus(TokenStatus.INACTIVE));
     resets.saveAll(active);
   }
@@ -313,13 +346,13 @@ public class AccountSecurityService {
   }
 
   private <T> T transaction(Supplier<T> action) {
-    var tx = new TransactionTemplate(manager);
+    TransactionTemplate tx = new TransactionTemplate(manager);
     tx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     return tx.execute(status -> action.get());
   }
 
   private Duration duration(ConfigEntry entry) {
-    var value = Duration.parse(config.getString(entry));
+    Duration value = Duration.parse(config.getString(entry));
     Assert.isTrue(
         TokenDurationPolicy.isAtLeast(value, entry.getMinimumTokenDuration()),
         "Invalid token duration");
@@ -328,18 +361,21 @@ public class AccountSecurityService {
 
   @Scheduled(cron = "0 0 3 1/3 * ?")
   public void deleteExpiredTokens() {
-    var cutoff =
+    LocalDateTime cutoff =
         LocalDateTime.now(clock).minus(duration(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION));
     transaction(() -> tokens.deleteByExpiryDateBefore(cutoff));
   }
 
   private static String tokenDigest(String raw) {
-    if (raw == null || raw.length() != 43) return null;
+    if (raw == null || raw.length() != 43) {
+      return null;
+    }
     try {
-      var decoded = Base64.getUrlDecoder().decode(raw);
+      byte[] decoded = Base64.getUrlDecoder().decode(raw);
       if (decoded.length != 32
-          || !Base64.getUrlEncoder().withoutPadding().encodeToString(decoded).equals(raw))
+          || !Base64.getUrlEncoder().withoutPadding().encodeToString(decoded).equals(raw)) {
         return null;
+      }
       return digest(raw);
     } catch (IllegalArgumentException invalid) {
       return null;

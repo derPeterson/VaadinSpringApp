@@ -1,18 +1,20 @@
 package de.derpeterson.app.model.enums;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 class RetiredConfigEntryTest {
   @Test
   void retiredKeysAreUniqueNonBlankAndNeverActive() {
-    var activeKeys =
+    Set<String> activeKeys =
         Arrays.stream(ConfigEntry.values()).map(ConfigEntry::getKey).collect(Collectors.toSet());
-    var retiredKeys = new HashSet<String>();
+    HashSet<String> retiredKeys = new HashSet<String>();
     for (RetiredConfigEntry entry : RetiredConfigEntry.values()) {
       assertFalse(entry.getKey().isBlank());
       assertTrue(

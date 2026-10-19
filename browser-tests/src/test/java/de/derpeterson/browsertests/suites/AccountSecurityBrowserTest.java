@@ -1,34 +1,47 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.VERIFICATION_PAGE_TITEL;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
-import de.derpeterson.browsertests.*;
+import de.derpeterson.browsertests.BrowserActor;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.mail.MailpitInbox.CapturedMail;
+import de.derpeterson.browsertests.pages.AccountPage;
+import de.derpeterson.browsertests.pages.AccountSecurityPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.RegistrationPage;
+import de.derpeterson.browsertests.pages.UiActions;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag("browser")
 @Feature("Eigene Passwort- und verifizierte E-Mail-Änderung")
 public class AccountSecurityBrowserTest extends BrowserFixture {
   private String account(boolean remember) {
     String email = "account-security-" + UUID.randomUUID() + "@example.test";
-    var registration = new RegistrationPage(page);
+    RegistrationPage registration = new RegistrationPage(page);
     registration.open();
     registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
     registration.submit();
     registration.assertSubmitted(email);
-    var inbox = new MailpitInbox(context);
+    MailpitInbox inbox = new MailpitInbox(context);
     try (Page activated = inbox.openVerificationLink(inbox.awaitVerificationMail(email))) {
       assertThat(activated).hasTitle(VERIFICATION_PAGE_TITEL);
     }
-    var login = new LoginPage(page);
+    LoginPage login = new LoginPage(page);
     login.open();
     page.getByRole(
             AriaRole.CHECKBOX,
@@ -37,7 +50,7 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
     assertThat(page).hasURL(urlPattern(HOME_ROUTE));
     new UserMenu(page).selectTestLanguage();
-    var form = new AccountPage(page);
+    AccountPage form = new AccountPage(page);
     form.open();
     // Sicherheitsmails folgen der gespeicherten Kontosprache, nicht nur dem aktuellen UI-Menü.
     form.language(texts.language());
@@ -59,8 +72,8 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
       """)
   void passwordValidationIsExplicitAndCorrectable() {
     account(false);
-    var form = new AccountPage(page);
-    var security = new AccountSecurityPage(page);
+    AccountPage form = new AccountPage(page);
+    AccountSecurityPage security = new AccountSecurityPage(page);
     security.openPassword();
     security.input("account-password-new").fill("x");
     assertThat(security.host("account-password-new")).hasJSProperty("invalid", false);
@@ -102,10 +115,10 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
   void passwordChangeRetainsCurrentSessionAndSendsSecurityMail() {
     String email = account(true);
     String changed = "Changed!Password9";
-    try (var other = new BrowserActor(browser)) {
+    try (BrowserActor other = new BrowserActor(browser)) {
       other.login(email, BrowserTestAccounts.USER_PASSWORD, true);
       assertThat(other.page).hasURL(urlPattern(HOME_ROUTE));
-      var security = new AccountSecurityPage(page);
+      AccountSecurityPage security = new AccountSecurityPage(page);
       security.openPassword();
       assertThat(page.locator("vaadin-dialog.account-password-dialog[opened]"))
           .containsText(texts.getAccountPasswordDialogHint());
@@ -117,13 +130,13 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
       // Nach Reload bleibt bewusst der Sicherheits-Tab ausgewählt; das Profil erst öffnen.
       UiActions.complete(page, () -> page.locator("#account-tab-profile").click());
       assertThat(page.locator("#account-email input")).hasValue(email);
-      var inbox = new MailpitInbox(context);
+      MailpitInbox inbox = new MailpitInbox(context);
       inbox.assertSecurityNotice(
           inbox.awaitSecurityMail(email, texts.getAccountPasswordChangedSubject()),
           changed,
           BrowserTestAccounts.USER_PASSWORD);
       other.page.navigate(path(LOGIN_ROUTE));
-      var login = new LoginPage(other.page);
+      LoginPage login = new LoginPage(other.page);
       login.assertFormVisible();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
       login.assertRejected();
@@ -147,8 +160,8 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
       """)
   void emailValidationDoesNotChangeTheAccount() {
     String email = account(false);
-    var form = new AccountPage(page);
-    var security = new AccountSecurityPage(page);
+    AccountPage form = new AccountPage(page);
+    AccountSecurityPage security = new AccountSecurityPage(page);
     security.openEmail();
     security.email(
         "new-" + UUID.randomUUID() + "@example.test",
@@ -186,11 +199,11 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
   void emailChangeRequiresExplicitConfirmationAndNotifiesBothAddresses() {
     String oldEmail = account(true);
     String newEmail = "confirmed-" + UUID.randomUUID() + "@example.test";
-    try (var other = new BrowserActor(browser)) {
+    try (BrowserActor other = new BrowserActor(browser)) {
       other.login(oldEmail, BrowserTestAccounts.USER_PASSWORD, true);
       assertThat(other.page).hasURL(urlPattern(HOME_ROUTE));
-      var form = new AccountPage(page);
-      var security = new AccountSecurityPage(page);
+      AccountPage form = new AccountPage(page);
+      AccountSecurityPage security = new AccountSecurityPage(page);
       security.openEmail();
       security.email(newEmail, newEmail, BrowserTestAccounts.USER_PASSWORD);
       security.requestEmail();
@@ -198,8 +211,9 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
       form.closeNotification();
       form.host("account-tab-profile").click();
       assertThat(form.input("account-email")).hasValue(oldEmail);
-      var inbox = new MailpitInbox(context);
-      var requested = inbox.awaitSecurityMail(newEmail, texts.getAccountEmailChangeSubject());
+      MailpitInbox inbox = new MailpitInbox(context);
+      CapturedMail requested =
+          inbox.awaitSecurityMail(newEmail, texts.getAccountEmailChangeSubject());
       try (Page confirm = inbox.openEmailChangeAction(requested)) {
         assertThat(confirm.locator("#account-email-confirmation"))
             .containsText(texts.getAccountEmailConfirmationReady());
@@ -222,14 +236,14 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
         new LoginPage(confirm).assertFormVisible();
         other.page.navigate(path(LOGIN_ROUTE));
         new LoginPage(other.page).assertFormVisible();
-        var login = new LoginPage(confirm);
+        LoginPage login = new LoginPage(confirm);
         login.signIn(oldEmail, BrowserTestAccounts.USER_PASSWORD);
         login.assertRejected();
         login.open();
         login.signIn(newEmail, BrowserTestAccounts.USER_PASSWORD);
         assertThat(confirm).hasURL(urlPattern(HOME_ROUTE));
         new UserMenu(confirm).selectTestLanguage();
-        try (var replay = new BrowserActor(browser)) {
+        try (BrowserActor replay = new BrowserActor(browser)) {
           replay.page.navigate(capturedLink);
           assertThat(replay.page.locator("#account-email-confirmation"))
               .containsText(texts.getAccountEmailConfirmationInvalid());

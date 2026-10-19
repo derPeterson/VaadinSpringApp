@@ -30,10 +30,14 @@ public class AccountNavigationTabs extends Tabs {
     addAttachListener(event -> restoreSelection());
     addSelectedChangeListener(
         event -> {
-          if (restoringSelection) return;
-          if (event.getSelectedTab() == settings)
+          if (restoringSelection) {
+            return;
+          }
+          if (event.getSelectedTab() == settings) {
             getUI().ifPresent(ui -> ui.navigate(AccountView.class));
-          else getUI().ifPresent(ui -> ui.navigate(UserNotificationsView.class));
+          } else {
+            getUI().ifPresent(ui -> ui.navigate(UserNotificationsView.class));
+          }
         });
     refreshTexts();
   }

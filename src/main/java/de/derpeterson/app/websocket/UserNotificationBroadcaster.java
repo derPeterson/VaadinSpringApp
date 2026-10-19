@@ -18,8 +18,8 @@ public class UserNotificationBroadcaster {
   }
 
   public void publish(Set<Long> userIds) {
-    var immutable = Set.copyOf(userIds);
-    for (var listener : listeners) {
+    Set<Long> immutable = Set.copyOf(userIds);
+    for (Consumer<Set<Long>> listener : listeners) {
       try {
         listener.accept(immutable);
       } catch (RuntimeException failure) {

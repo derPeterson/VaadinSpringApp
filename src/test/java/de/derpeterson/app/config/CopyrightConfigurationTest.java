@@ -1,6 +1,11 @@
 package de.derpeterson.app.config;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.repository.RoleRepository;

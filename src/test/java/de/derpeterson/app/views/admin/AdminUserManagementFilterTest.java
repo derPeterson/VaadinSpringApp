@@ -1,7 +1,11 @@
 package de.derpeterson.app.views.admin;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -13,15 +17,19 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
-import de.derpeterson.app.model.enums.*;
+import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -220,9 +228,9 @@ class AdminUserManagementFilterTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void newRoleFiltersUseAssignedRolesAndTranslateAppliedBadges(String language) {
-    var roleFilter = filter("roleFilter");
+    ComboBox<Object> roleFilter = filter("roleFilter");
     assertEquals(List.of(RoleType.values()), roleFilter.getListDataView().getItems().toList());
-    var user = visibleUsers().getFirst();
+    UserEntity user = visibleUsers().getFirst();
     user.setRoleEntities(List.of(RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build()));
     roleFilter.setValue(RoleType.ROLE_SUPERADMIN);
     applyFilters();

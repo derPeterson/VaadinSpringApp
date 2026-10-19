@@ -1,7 +1,11 @@
 package de.derpeterson.app.service;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyList;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import java.util.function.LongConsumer;
@@ -13,7 +17,7 @@ final class QueueTestWorkers {
   private QueueTestWorkers() {}
 
   static EmailQueueWorkerPool inline() {
-    var workers = mock(EmailQueueWorkerPool.class);
+    EmailQueueWorkerPool workers = mock(EmailQueueWorkerPool.class);
     lenient()
         .doAnswer(
             call -> {

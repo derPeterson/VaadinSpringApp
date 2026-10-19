@@ -118,7 +118,8 @@ public class VerificationService {
     if (userId.isEmpty() || userRepository.lockVerificationUser(userId.get()).isEmpty()) {
       return;
     }
-    var active = tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
+    Optional<VerificationTokenEntity> active =
+        tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
     if (active.isPresent()) {
       active.get().setStatus(status);
       tokenRepository.save(active.get());
@@ -210,7 +211,9 @@ public class VerificationService {
 
   @Transactional(rollbackFor = IOException.class)
   public boolean sendVerificationEmailByUser(UserEntity user) throws IOException {
-    if (user == null || user.getId() == null) return false;
+    if (user == null || user.getId() == null) {
+      return false;
+    }
     MaintenanceService.requirePublicAccess(configService);
     return sendVerificationEmailByUserId(user.getId());
   }
@@ -288,7 +291,7 @@ public class VerificationService {
         LocalDateTime.now(clock)
             .minus(positiveDuration(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION));
     int deleted = tokenRepository.deleteByExpiryDateBefore(liveDateTime);
-    var formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+    String formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     logger.info(
         "✅ {} expired verification tokens that are older than '{}' have been deleted.",
         deleted,

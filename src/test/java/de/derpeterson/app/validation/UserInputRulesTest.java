@@ -1,6 +1,8 @@
 package de.derpeterson.app.validation;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.vaadin.flow.data.validator.EmailValidator;
 import de.derpeterson.app.helper.ui.ValidationHelper;

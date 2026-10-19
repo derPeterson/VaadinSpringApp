@@ -1,25 +1,58 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.UserRepository;
-import de.derpeterson.app.security.*;
-import java.util.*;
-import java.util.concurrent.*;
+import de.derpeterson.app.security.AdmittedSecurityContextRepository;
+import de.derpeterson.app.security.CustomUserDetailsService;
+import de.derpeterson.app.security.LoginCompletionFilter;
+import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.SessionAdmissionService;
+import de.derpeterson.app.security.SessionLimitException;
+import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.*;
-import org.springframework.mock.web.*;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.session.HttpSessionDestroyedEvent;
 import org.springframework.security.web.session.HttpSessionIdChangedEvent;
 
@@ -40,7 +73,7 @@ class SessionAdmissionTest {
   }
 
   private Authentication authentication(String email, RoleType role) {
-    var user =
+    UserDetails user =
         org.springframework.security.core.userdetails.User.withUsername(email)
             .password("unused")
             .authorities(role.getGrantedRoles().stream().map(Enum::name).toArray(String[]::new))
@@ -53,7 +86,7 @@ class SessionAdmissionTest {
   }
 
   private MockHttpServletRequest admit() {
-    var request = new MockHttpServletRequest();
+    MockHttpServletRequest request = new MockHttpServletRequest();
     admissions.onAuthentication(authentication(), request, response);
     return request;
   }
@@ -62,7 +95,9 @@ class SessionAdmissionTest {
   @ValueSource(ints = {1, 3})
   void exactlyNIndependentSessionsAreAllowed(int limit) {
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(limit);
-    for (int i = 0; i < limit; i++) admit();
+    for (int i = 0; i < limit; i++) {
+      admit();
+    }
     assertThrows(SessionLimitException.class, this::admit);
     assertEquals(limit, registry.getAllSessions("session@example.test", true).size());
   }
@@ -83,14 +118,14 @@ class SessionAdmissionTest {
   @Test
   void normalizedPrincipalAndExtraTabsReuseOneSlotWithoutRepeatingFixation() {
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
-    var first = new MockHttpServletRequest();
+    MockHttpServletRequest first = new MockHttpServletRequest();
     first.getSession().setAttribute("vaadin-ui", "preserved");
     String old = first.getSession().getId();
     admissions.onAuthentication(
         authentication(" Session@Example.Test ", RoleType.ROLE_ADMIN), first, response);
     String current = first.getSession().getId();
     assertNotEquals(old, current);
-    var tab = new MockHttpServletRequest();
+    MockHttpServletRequest tab = new MockHttpServletRequest();
     tab.setSession(first.getSession());
     admissions.onAuthentication(authentication(), tab, response);
     assertEquals(current, tab.getSession().getId());
@@ -101,8 +136,8 @@ class SessionAdmissionTest {
 
   @Test
   void changedLimitDoesNotEvictExistingSessions() {
-    var first = admit();
-    var second = admit();
+    MockHttpServletRequest first = admit();
+    MockHttpServletRequest second = admit();
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     admissions.onAuthentication(authentication(), first, response);
     assertFalse(((MockHttpSession) second.getSession()).isInvalid());
@@ -116,7 +151,7 @@ class SessionAdmissionTest {
   @ValueSource(ints = {0, -1})
   void invalidLimitFailsClosedWithoutCreatingSlot(int limit) {
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(limit);
-    var request = new MockHttpServletRequest();
+    MockHttpServletRequest request = new MockHttpServletRequest();
     assertThrows(
         AuthenticationServiceException.class,
         () -> admissions.onAuthentication(authentication(), request, response));
@@ -126,18 +161,20 @@ class SessionAdmissionTest {
 
   @Test
   void storageFailureAndStatusFailureReleaseOnlyTheNewSlot() {
-    var existing = admit();
-    var remember = mock(PersistentTokenBasedRememberMeServices.class);
-    var repo = mock(org.springframework.security.web.context.SecurityContextRepository.class);
-    var users = mock(UserService.class);
-    var data = mock(UserRepository.class);
-    var security =
+    MockHttpServletRequest existing = admit();
+    PersistentTokenBasedRememberMeServices remember =
+        mock(PersistentTokenBasedRememberMeServices.class);
+    SecurityContextRepository repo =
+        mock(org.springframework.security.web.context.SecurityContextRepository.class);
+    UserService users = mock(UserService.class);
+    UserRepository data = mock(UserRepository.class);
+    SecurityService security =
         new SecurityService(
             remember, users, data, mock(CustomUserDetailsService.class), repo, admissions);
     doThrow(new IllegalStateException("fixture save failure"))
         .when(repo)
         .saveContext(any(), any(), any());
-    var failed = new MockHttpServletRequest();
+    MockHttpServletRequest failed = new MockHttpServletRequest();
     assertThrows(
         AuthenticationServiceException.class,
         () ->
@@ -169,11 +206,12 @@ class SessionAdmissionTest {
 
   @Test
   void cookieFailureAlsoRemovesThePersistedPrincipalAndReservation() {
-    var remember = mock(PersistentTokenBasedRememberMeServices.class);
+    PersistentTokenBasedRememberMeServices remember =
+        mock(PersistentTokenBasedRememberMeServices.class);
     doThrow(new IllegalStateException("fixture cookie failure"))
         .when(remember)
         .loginSuccess(any(), any(), any());
-    var security =
+    SecurityService security =
         new SecurityService(
             remember,
             mock(UserService.class),
@@ -181,7 +219,7 @@ class SessionAdmissionTest {
             mock(CustomUserDetailsService.class),
             new AdmittedSecurityContextRepository(admissions),
             admissions);
-    var request = new MockHttpServletRequest();
+    MockHttpServletRequest request = new MockHttpServletRequest();
     assertThrows(
         AuthenticationServiceException.class,
         () ->
@@ -199,16 +237,16 @@ class SessionAdmissionTest {
 
   @Test
   void invalidationTimeoutAndIdentifierChangeReleaseTheCorrectSlot() {
-    var first = admit();
+    MockHttpServletRequest first = admit();
     String old = first.getSession().getId();
-    var session = (MockHttpSession) first.getSession();
+    MockHttpSession session = (MockHttpSession) first.getSession();
     session.changeSessionId();
     registry.onApplicationEvent(new HttpSessionIdChangedEvent(session, old));
     assertNull(registry.getSessionInformation(old));
     assertNotNull(registry.getSessionInformation(session.getId()));
     session.invalidate();
     assertTrue(registry.getAllPrincipals().isEmpty());
-    var timedOut = admit();
+    MockHttpServletRequest timedOut = admit();
     registry.onApplicationEvent(new HttpSessionDestroyedEvent(timedOut.getSession()));
     assertTrue(registry.getAllPrincipals().isEmpty());
   }
@@ -217,13 +255,13 @@ class SessionAdmissionTest {
   void concurrentAdmissionsCannotClaimTheSameLastSlot() throws Exception {
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     int total = 8;
-    var ready = new CountDownLatch(total);
-    var start = new CountDownLatch(1);
-    var allowed = new AtomicInteger();
-    var rejected = new AtomicInteger();
-    try (var pool = Executors.newFixedThreadPool(total)) {
-      var futures = new ArrayList<Future<?>>();
-      for (int i = 0; i < total; i++)
+    CountDownLatch ready = new CountDownLatch(total);
+    CountDownLatch start = new CountDownLatch(1);
+    AtomicInteger allowed = new AtomicInteger();
+    AtomicInteger rejected = new AtomicInteger();
+    try (ExecutorService pool = Executors.newFixedThreadPool(total)) {
+      ArrayList<Future<?>> futures = new ArrayList<Future<?>>();
+      for (int i = 0; i < total; i++) {
         futures.add(
             pool.submit(
                 () -> {
@@ -237,9 +275,12 @@ class SessionAdmissionTest {
                   }
                   return null;
                 }));
+      }
       assertTrue(ready.await(5, TimeUnit.SECONDS));
       start.countDown();
-      for (var future : futures) future.get(10, TimeUnit.SECONDS);
+      for (Future<?> future : futures) {
+        future.get(10, TimeUnit.SECONDS);
+      }
     }
     assertEquals(1, allowed.get());
     assertEquals(7, rejected.get());
@@ -247,14 +288,14 @@ class SessionAdmissionTest {
 
   @Test
   void concurrentDifferentAccountsCannotOverwriteOneBrowserSession() throws Exception {
-    var shared = new MockHttpSession();
-    var reserved = new CountDownLatch(1);
-    var competitor = new CountDownLatch(1);
-    try (var pool = Executors.newFixedThreadPool(2)) {
-      var first =
+    MockHttpSession shared = new MockHttpSession();
+    CountDownLatch reserved = new CountDownLatch(1);
+    CountDownLatch competitor = new CountDownLatch(1);
+    try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
+      Future<?> first =
           pool.submit(
               () -> {
-                var request = new MockHttpServletRequest();
+                MockHttpServletRequest request = new MockHttpServletRequest();
                 request.setSession(shared);
                 admissions.complete(
                     authentication(),
@@ -270,11 +311,11 @@ class SessionAdmissionTest {
                       }
                     });
               });
-      var second =
+      Future<Object> second =
           pool.submit(
               () -> {
                 assertTrue(reserved.await(5, TimeUnit.SECONDS));
-                var request = new MockHttpServletRequest();
+                MockHttpServletRequest request = new MockHttpServletRequest();
                 request.setSession(shared);
                 competitor.countDown();
                 assertThrows(
@@ -296,9 +337,10 @@ class SessionAdmissionTest {
 
   @Test
   void completionFilterReleasesReservationAfterLateFailure() {
-    var request = new MockHttpServletRequest();
-    var remember = mock(org.springframework.security.web.authentication.RememberMeServices.class);
-    var filter = new LoginCompletionFilter(admissions, remember);
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    RememberMeServices remember =
+        mock(org.springframework.security.web.authentication.RememberMeServices.class);
+    LoginCompletionFilter filter = new LoginCompletionFilter(admissions, remember);
     assertThrows(
         jakarta.servlet.ServletException.class,
         () ->
@@ -315,7 +357,7 @@ class SessionAdmissionTest {
 
   @Test
   void alreadyRegisteredOtherAccountCannotBeReplaced() {
-    var request = admit();
+    MockHttpServletRequest request = admit();
     assertThrows(
         AuthenticationServiceException.class,
         () ->
@@ -329,11 +371,11 @@ class SessionAdmissionTest {
   @Test
   void revokedSessionsAreRejectedAndImmediatelyFreeTheirAdmissionSlot() {
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
-    var old = new MockHttpServletRequest();
+    MockHttpServletRequest old = new MockHttpServletRequest();
     admissions.onAuthentication(authentication(), old, response);
     registry.getSessionInformation(old.getSession().getId()).expireNow();
     assertTrue(admissions.isExpired(old));
-    var fresh = new MockHttpServletRequest();
+    MockHttpServletRequest fresh = new MockHttpServletRequest();
     assertDoesNotThrow(() -> admissions.onAuthentication(authentication(), fresh, response));
     assertFalse(admissions.isExpired(fresh));
     assertThrows(

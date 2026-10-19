@@ -1,7 +1,12 @@
 package de.derpeterson.app.ui.components;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -37,7 +42,7 @@ class CosmosServiceStatusComponentTest {
   void setup() {
     ui = new UI();
     UI.setCurrent(ui);
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     when(session.hasLock()).thenReturn(true);
     VaadinSession.setCurrent(session);
@@ -63,11 +68,11 @@ class CosmosServiceStatusComponentTest {
   void statusUsesTranslatedTextAndDoesNotClaimReadinessOnReadFailure(
       Locale language, MaintenanceService.State state) {
     locale.set(language);
-    var maintenance = mock(MaintenanceService.class);
+    MaintenanceService maintenance = mock(MaintenanceService.class);
     when(maintenance.state()).thenReturn(state);
-    var texts = new MessageProperties(provider);
-    var status = new CosmosServiceStatusComponent(maintenance, texts);
-    var expectedTitle =
+    MessageProperties texts = new MessageProperties(provider);
+    CosmosServiceStatusComponent status = new CosmosServiceStatusComponent(maintenance, texts);
+    String expectedTitle =
         switch (state) {
           case OPEN -> texts.getMaintenanceStatusOnline();
           case ACTIVE -> texts.getMaintenanceStatusActive();
@@ -90,12 +95,13 @@ class CosmosServiceStatusComponentTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void languageRefreshPreservesTheCurrentMaintenanceState(String language) {
-    var maintenance = mock(MaintenanceService.class);
+    MaintenanceService maintenance = mock(MaintenanceService.class);
     when(maintenance.state()).thenReturn(MaintenanceService.State.ACTIVE);
-    var status = new CosmosServiceStatusComponent(maintenance, new MessageProperties(provider));
+    CosmosServiceStatusComponent status =
+        new CosmosServiceStatusComponent(maintenance, new MessageProperties(provider));
     locale.set(Locale.forLanguageTag(language));
     status.refresh();
-    var texts = MessageProperties.forLocale(provider, locale.get());
+    MessageProperties texts = MessageProperties.forLocale(provider, locale.get());
     assertTrue(
         status.getElement().getTextRecursively().contains(texts.getMaintenanceStatusActive()));
     assertTrue(
@@ -110,9 +116,11 @@ class CosmosServiceStatusComponentTest {
   @ValueSource(strings = {"de", "en"})
   void savingTheActualMaintenanceCheckboxRefreshesStatusInBothDirections(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var saved = new EnumMap<ConfigEntry, String>(ConfigEntry.class);
-    for (var entry : ConfigEntry.values()) saved.put(entry, entry.getDefaultValueString());
-    var config = mock(ConfigService.class);
+    EnumMap<ConfigEntry, String> saved = new EnumMap<ConfigEntry, String>(ConfigEntry.class);
+    for (ConfigEntry entry : ConfigEntry.values()) {
+      saved.put(entry, entry.getDefaultValueString());
+    }
+    ConfigService config = mock(ConfigService.class);
     when(config.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> saved.get(call.getArgument(0)));
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE))
@@ -124,14 +132,15 @@ class CosmosServiceStatusComponentTest {
             })
         .when(config)
         .set(any(ConfigEntry.class), anyString());
-    var texts = new MessageProperties(provider);
-    var status = new CosmosServiceStatusComponent(new MaintenanceService(config), texts);
-    var form = new AdminConfigurationSection(texts, config, status::refresh);
+    MessageProperties texts = new MessageProperties(provider);
+    CosmosServiceStatusComponent status =
+        new CosmosServiceStatusComponent(new MaintenanceService(config), texts);
+    AdminConfigurationSection form = new AdminConfigurationSection(texts, config, status::refresh);
     ui.add(form, status);
     form.showGroup(AdminConfigGroup.SECURITY);
-    var fields = (Map<?, ?>) ReflectionTestUtils.getField(form, "configInputs");
-    var checkbox = (Checkbox) fields.get(ConfigEntry.MAINTENANCE_MODE);
-    var save = (Button) ReflectionTestUtils.getField(form, "saveConfigButton");
+    Map<?, ?> fields = (Map<?, ?>) ReflectionTestUtils.getField(form, "configInputs");
+    Checkbox checkbox = (Checkbox) fields.get(ConfigEntry.MAINTENANCE_MODE);
+    Button save = (Button) ReflectionTestUtils.getField(form, "saveConfigButton");
     for (boolean enabled : new boolean[] {true, false}) {
       checkbox.setValue(enabled);
       save.click();

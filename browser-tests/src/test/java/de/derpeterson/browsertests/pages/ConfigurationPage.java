@@ -2,7 +2,8 @@ package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.i18n.UiTexts;
@@ -42,7 +43,9 @@ public final class ConfigurationPage {
     info(label).click();
     assertThat(tooltip()).isVisible();
     assertThat(tooltip()).containsText(description);
-    for (String rule : rules) assertThat(tooltip()).containsText(rule);
+    for (String rule : rules) {
+      assertThat(tooltip()).containsText(rule);
+    }
     assertThat(tooltip()).containsText(texts.getAdminConfigInputRules());
     info(label).click();
     assertThat(tooltip()).hasCount(0);

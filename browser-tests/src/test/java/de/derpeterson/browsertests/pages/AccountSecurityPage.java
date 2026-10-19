@@ -2,7 +2,8 @@ package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 import io.qameta.allure.Step;
 
 /** Sicherheitsdialoge ausschließlich über ihre sichtbaren Felder und Buttons. */

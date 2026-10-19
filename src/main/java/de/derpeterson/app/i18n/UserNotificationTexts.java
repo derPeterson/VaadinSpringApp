@@ -36,14 +36,16 @@ public final class UserNotificationTexts {
   /** Systemtexte und Herkunft in der sichtbaren Sprache für die Datenbanksuche abgleichen. */
   public static Set<UserNotificationType> matchingTypes(MessageProperties texts, String query) {
     String term = query.strip().toLowerCase(Locale.ROOT);
-    var matches = EnumSet.noneOf(UserNotificationType.class);
-    if (term.isEmpty()) return matches;
-    for (var type : UserNotificationType.values()) {
+    EnumSet<UserNotificationType> matches = EnumSet.noneOf(UserNotificationType.class);
+    if (term.isEmpty()) {
+      return matches;
+    }
+    for (UserNotificationType type : UserNotificationType.values()) {
       String visible;
       if (type == UserNotificationType.ADMIN_ANNOUNCEMENT) {
         visible = texts.getNotificationsSourceAdministration();
       } else {
-        var item = new Item(0L, type, null, null, java.time.Instant.EPOCH, false);
+        Item item = new Item(0L, type, null, null, java.time.Instant.EPOCH, false);
         visible =
             title(texts, item)
                 + " "
@@ -51,7 +53,9 @@ public final class UserNotificationTexts {
                 + " "
                 + texts.getNotificationsSourceSystem();
       }
-      if (visible.toLowerCase(Locale.ROOT).contains(term)) matches.add(type);
+      if (visible.toLowerCase(Locale.ROOT).contains(term)) {
+        matches.add(type);
+      }
     }
     return matches;
   }

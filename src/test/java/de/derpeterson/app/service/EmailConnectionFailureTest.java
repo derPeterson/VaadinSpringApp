@@ -1,8 +1,21 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.nullable;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.config.ConnectionAwareJavaMailSender;
 import de.derpeterson.app.model.UserEntity;
@@ -11,6 +24,7 @@ import jakarta.mail.AuthenticationFailedException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Session;
 import jakarta.mail.Transport;
+import jakarta.mail.internet.MimeMessage;
 import java.net.ConnectException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,7 +47,7 @@ class EmailConnectionFailureTest {
 
   @Test
   void plainSpringAdapterAlsoWrapsConnectionFailureInMailSendException() throws Exception {
-    var transport = mock(Transport.class);
+    Transport transport = mock(Transport.class);
     var sender =
         new JavaMailSenderImpl() {
           @Override
@@ -41,12 +55,12 @@ class EmailConnectionFailureTest {
             return transport;
           }
         };
-    var cause = new MessagingException("arbitrary", new ConnectException("fixture"));
+    MessagingException cause = new MessagingException("arbitrary", new ConnectException("fixture"));
     doThrow(cause)
         .when(transport)
         .connect(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
-    var message = sender.createMimeMessage();
-    var failure = assertThrows(MailSendException.class, () -> sender.send(message));
+    MimeMessage message = sender.createMimeMessage();
+    MailSendException failure = assertThrows(MailSendException.class, () -> sender.send(message));
     assertSame(cause, failure.getCause());
     assertSame(cause, failure.getFailedMessages().get(message));
     assertFalse(ConnectionAwareJavaMailSender.failedBeforeSending(failure, message));
@@ -55,20 +69,21 @@ class EmailConnectionFailureTest {
 
   @Test
   void connectionFailureIsTranslatedOnlyForTheExactSingleMessage() throws Exception {
-    var sender = new Sender();
-    var cause = new MessagingException("unrelated wording", new ConnectException("fixture"));
+    Sender sender = new Sender();
+    MessagingException cause =
+        new MessagingException("unrelated wording", new ConnectException("fixture"));
     doThrow(cause)
         .when(sender.transport)
         .connect(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
-    var message = sender.createMimeMessage();
-    var raw = assertThrows(MailSendException.class, () -> sender.send(message));
+    MimeMessage message = sender.createMimeMessage();
+    MailSendException raw = assertThrows(MailSendException.class, () -> sender.send(message));
     assertTrue(ConnectionAwareJavaMailSender.failedBeforeSending(raw, message));
     assertFalse(ConnectionAwareJavaMailSender.failedBeforeSending(raw, sender.createMimeMessage()));
-    var multiple =
+    MailSendException multiple =
         assertThrows(
             MailSendException.class, () -> sender.send(message, sender.createMimeMessage()));
     assertFalse(ConnectionAwareJavaMailSender.failedBeforeSending(multiple, message));
-    var translated =
+    MailPreparationException translated =
         assertThrows(
             MailPreparationException.class,
             () -> service(sender).sendEmail(user(), "subject", "body"));
@@ -81,13 +96,17 @@ class EmailConnectionFailureTest {
   @ValueSource(strings = {"send", "close", "sendAndClose"})
   void sendAndCloseFailuresRemainUnknownEvenWithConnectionErrorCauseAndText(String stage)
       throws Exception {
-    var sender = new Sender();
+    Sender sender = new Sender();
     // Deliberately looks like a connect error, but occurs after connection establishment.
-    var cause =
+    MessagingException cause =
         new MessagingException("Mail server connection failed", new ConnectException("fixture"));
-    if (!stage.equals("close")) doThrow(cause).when(sender.transport).sendMessage(any(), any());
-    if (!stage.equals("send")) doThrow(cause).when(sender.transport).close();
-    var failure =
+    if (!stage.equals("close")) {
+      doThrow(cause).when(sender.transport).sendMessage(any(), any());
+    }
+    if (!stage.equals("send")) {
+      doThrow(cause).when(sender.transport).close();
+    }
+    MailSendException failure =
         assertThrows(
             MailSendException.class, () -> service(sender).sendEmail(user(), "subject", "body"));
     assertFalse(
@@ -97,12 +116,12 @@ class EmailConnectionFailureTest {
 
   @Test
   void authenticationContractIsPreserved() throws Exception {
-    var sender = new Sender();
-    var cause = new AuthenticationFailedException("fixture");
+    Sender sender = new Sender();
+    AuthenticationFailedException cause = new AuthenticationFailedException("fixture");
     doThrow(cause)
         .when(sender.transport)
         .connect(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
-    var failure =
+    MailAuthenticationException failure =
         assertThrows(
             MailAuthenticationException.class,
             () -> service(sender).sendEmail(user(), "subject", "body"));
@@ -111,7 +130,7 @@ class EmailConnectionFailureTest {
   }
 
   private EmailService service(Sender sender) {
-    var config = mock(ConfigService.class);
+    ConfigService config = mock(ConfigService.class);
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("sender@example.com");
     return new EmailService(config, sender);
   }

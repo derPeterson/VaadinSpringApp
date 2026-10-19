@@ -1,8 +1,12 @@
 package de.derpeterson.browsertests.mail;
 
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.EMAIL_CHANGE_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.RESET_PASSWORD_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.VERIFICATION_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -98,9 +102,10 @@ class MailpitInboxTest {
           "First line\r\n\r\nSecond line ÄÖÜ ß 中文\r\n",
           "First line\r\nSecond line ÄÖÜ ß 中文\r\n\r\n",
           "First line\rSecond line ÄÖÜ ß 中文\r\n"
-        })
+        }) {
       assertThrows(
           AssertionError.class, () -> MailpitInbox.assertPlainTextContent(changed, expected));
+    }
   }
 
   @Test
@@ -121,9 +126,10 @@ class MailpitInboxTest {
                 own + token + "?redirect=elsewhere",
                 own + token + "#fragment",
                 "http://127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + token
-              })
+              }) {
             assertThrows(
                 AssertionError.class, () -> MailpitInbox.assertLocalEmailChangeLink(wrong));
+          }
         });
   }
 
@@ -133,8 +139,11 @@ class MailpitInboxTest {
       System.setProperty("browser.tests.baseUrl", "http://127.0.0.1:18082");
       test.run();
     } finally {
-      if (previous == null) System.clearProperty("browser.tests.baseUrl");
-      else System.setProperty("browser.tests.baseUrl", previous);
+      if (previous == null) {
+        System.clearProperty("browser.tests.baseUrl");
+      } else {
+        System.setProperty("browser.tests.baseUrl", previous);
+      }
     }
   }
 }

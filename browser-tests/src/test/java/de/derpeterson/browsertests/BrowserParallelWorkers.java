@@ -2,11 +2,20 @@ package de.derpeterson.browsertests;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
-import java.net.*;
-import java.nio.file.*;
-import java.time.*;
-import java.util.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 /** Processes and evidence only; each worker delegates its Docker lifecycle to BrowserTestRunner. */
 final class BrowserParallelWorkers {
@@ -36,7 +45,7 @@ final class BrowserParallelWorkers {
     List<ServerSocket> sockets = new ArrayList<>();
     try {
       for (int i = 0; i < groups.size() * 2; i++) {
-        var socket = new ServerSocket();
+        ServerSocket socket = new ServerSocket();
         socket.bind(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0));
         sockets.add(socket);
       }
@@ -65,10 +74,16 @@ final class BrowserParallelWorkers {
                     "--language",
                     language,
                     "--no-build"));
-        if (headed) command.add("--headed");
-        if (coverage) command.add("--coverage");
-        if (failureProbe) command.add("--failure-probe");
-        var builder =
+        if (headed) {
+          command.add("--headed");
+        }
+        if (coverage) {
+          command.add("--coverage");
+        }
+        if (failureProbe) {
+          command.add("--failure-probe");
+        }
+        ProcessBuilder builder =
             new ProcessBuilder(command)
                 .directory(module.getParent().toFile())
                 .redirectErrorStream(true)
@@ -92,7 +107,9 @@ final class BrowserParallelWorkers {
                 + groups.get(i).stream().map(Class::getSimpleName).toList());
       }
     } finally {
-      for (ServerSocket socket : sockets) socket.close();
+      for (ServerSocket socket : sockets) {
+        socket.close();
+      }
     }
   }
 
@@ -100,7 +117,9 @@ final class BrowserParallelWorkers {
     Set<Process> reported = new HashSet<>();
     while (reported.size() < workers.size()) {
       for (Worker worker : workers) {
-        if (reported.contains(worker.process())) continue;
+        if (reported.contains(worker.process())) {
+          continue;
+        }
         if (worker.process().waitFor(1, TimeUnit.SECONDS)) {
           reported.add(worker.process());
           System.out.println(
@@ -116,19 +135,22 @@ final class BrowserParallelWorkers {
   }
 
   synchronized void stop() {
-    for (Worker worker : workers)
+    for (Worker worker : workers) {
       if (worker.process().isAlive()) {
         // Auch laufende Compose-/Browser-Kindprozesse beenden, bevor Compose down läuft.
-        var descendants = worker.process().descendants().toList();
+        List<ProcessHandle> descendants = worker.process().descendants().toList();
         descendants.reversed().forEach(ProcessHandle::destroy);
         worker.process().destroy();
         try {
-          if (!worker.process().waitFor(10, TimeUnit.SECONDS)) worker.process().destroyForcibly();
+          if (!worker.process().waitFor(10, TimeUnit.SECONDS)) {
+            worker.process().destroyForcibly();
+          }
         } catch (InterruptedException error) {
           Thread.currentThread().interrupt();
         }
         descendants.stream().filter(ProcessHandle::isAlive).forEach(ProcessHandle::destroyForcibly);
       }
+    }
     // Auf Windows garantiert destroy() keinen JVM-Shutdown-Hook. Der Elternrunner
     // baut deshalb anschließend jedes eigene Compose-Projekt ausdrücklich ab.
   }
@@ -142,11 +164,14 @@ final class BrowserParallelWorkers {
   }
 
   static void collect(Path source, Path destination) throws IOException {
-    try (var files = Files.list(source)) {
+    try (Stream<Path> files = Files.list(source)) {
       for (Path file : files.toList()) {
-        if (file.getFileName().toString().equals("environment.properties")) continue;
-        if (!Files.isRegularFile(file))
+        if (file.getFileName().toString().equals("environment.properties")) {
+          continue;
+        }
+        if (!Files.isRegularFile(file)) {
           throw new IOException("Unexpected evidence directory: " + file);
+        }
         // Verschieben statt duplizieren: nur ein gemeinsamer Satz Screenshots/Traces.
         // Keine REPLACE_EXISTING-Option: Kollisionen dürfen keinen Nachweis überschreiben.
         Files.move(file, destination.resolve(file.getFileName()));
@@ -156,7 +181,9 @@ final class BrowserParallelWorkers {
 
   static boolean matchesClasses(JsonNode metadata, List<Class<?>> expected) {
     Set<String> actual = new HashSet<>();
-    for (var name : metadata.path("testClasses")) actual.add(name.asText());
+    for (JsonNode name : metadata.path("testClasses")) {
+      actual.add(name.asText());
+    }
     return metadata.path("testClasses").size() == expected.size()
         && actual.equals(new HashSet<>(expected.stream().map(Class::getSimpleName).toList()));
   }

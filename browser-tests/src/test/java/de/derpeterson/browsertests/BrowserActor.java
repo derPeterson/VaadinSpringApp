@@ -1,15 +1,21 @@
 package de.derpeterson.browsertests;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_PAGE_TITLE;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.ServiceWorkerPolicy;
 import de.derpeterson.browsertests.i18n.UiTexts;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.playwright.*;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.playwright.AllurePlaywright;
+import io.qameta.allure.playwright.TraceSession;
 
 /** A genuinely separate user's context; no cookies or application state are injected. */
 public final class BrowserActor implements AutoCloseable {
@@ -37,7 +43,9 @@ public final class BrowserActor implements AutoCloseable {
     page = context.newPage();
     page.navigate(path(HOME_ROUTE));
     assertThat(page).hasTitle(expectedInitialTitle);
-    if (HOME_PAGE_TITLE.equals(expectedInitialTitle)) new UserMenu(page).selectTestLanguage();
+    if (HOME_PAGE_TITLE.equals(expectedInitialTitle)) {
+      new UserMenu(page).selectTestLanguage();
+    }
   }
 
   public void login(String email, String password) {
@@ -70,8 +78,9 @@ public final class BrowserActor implements AutoCloseable {
   @Override
   public void close() {
     try {
-      if (!page.isClosed())
+      if (!page.isClosed()) {
         AllurePlaywright.attachScreenshot("Zusätzlicher Benutzerkontext am Testende", page);
+      }
     } finally {
       try {
         trace.close();

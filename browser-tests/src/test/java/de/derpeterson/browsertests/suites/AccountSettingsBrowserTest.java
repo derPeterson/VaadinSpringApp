@@ -1,18 +1,34 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
-import de.derpeterson.browsertests.*;
+import de.derpeterson.browsertests.BrowserActor;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.i18n.UiTexts;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.pages.AccountPage;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.UiActions;
+import de.derpeterson.browsertests.pages.UserMenu;
+import de.derpeterson.browsertests.pages.UserStatusMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -20,7 +36,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 @Feature("Kontoverwaltung: Profil und E-Mail-Dialogentwurf")
 public class AccountSettingsBrowserTest extends BrowserFixture {
   private String account() {
-    var login = new LoginPage(page);
+    LoginPage login = new LoginPage(page);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     new UserMenu(page).selectTestLanguage();
@@ -45,7 +61,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       """)
   void profilePersistsAndCanBeSavedTwice() {
     String email = account();
-    var form = new AccountPage(page);
+    AccountPage form = new AccountPage(page);
     form.open();
     form.fill("Profile", "Saved", LocalDate.of(1992, 3, 4));
     form.save();
@@ -83,7 +99,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       """)
   void invalidProfileNeverPersists() {
     account();
-    var form = new AccountPage(page);
+    AccountPage form = new AccountPage(page);
     form.open();
     String original = form.input("account-first-name").inputValue();
     form.input("account-first-name").fill(" ");
@@ -93,7 +109,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     assertThat(form.host("account-first-name")).hasAttribute("invalid", "");
     assertThat(form.host("account-last-name")).hasAttribute("invalid", "");
     form.closeNotification();
-    for (var date :
+    for (LocalDate date :
         new LocalDate[] {
           LocalDate.now(ZoneId.of("Europe/Berlin")),
           LocalDate.now(ZoneId.of("Europe/Berlin")).plusDays(1)
@@ -120,7 +136,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       """)
   void savedLanguageSurvivesNewLogin() {
     String email = account();
-    var form = new AccountPage(page);
+    AccountPage form = new AccountPage(page);
     form.open();
     String other = texts.language().equals("de") ? "en" : "de";
     UiTexts translated = new UiTexts(other);
@@ -142,7 +158,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
                         .setExact(true))
                 .click());
     new LoginPage(page).assertFormVisible();
-    var login = new LoginPage(page);
+    LoginPage login = new LoginPage(page);
     login.open();
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
     new UserMenu(page).open();
@@ -176,7 +192,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       """)
   void emailDraftClosesWithoutChangingTheProfile(String close, String caseId) {
     String email = account();
-    var form = new AccountPage(page);
+    AccountPage form = new AccountPage(page);
     form.open();
     form.input("account-first-name").fill("Draft");
     form.host("account-tab-security").click();
@@ -222,14 +238,14 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   void avatarPersistsAcrossAllModes(int width, int height) throws Exception {
     String email = account();
     page.setViewportSize(width, height);
-    var form = new AccountPage(page);
+    AccountPage form = new AccountPage(page);
     form.open();
     openAvatar();
     chooseMode(texts.getAccountAvatarCustom());
     uploadAvatar(java.awt.Color.BLUE);
     assertThat(page.locator(".account-avatar-upload")).isHidden();
-    var reset = page.locator("[data-avatar='reset']");
-    var cancel = page.locator("#account-avatar-cancel-selection");
+    Locator reset = page.locator("[data-avatar='reset']");
+    Locator cancel = page.locator("#account-avatar-cancel-selection");
     assertEquals(reset.boundingBox().width, cancel.boundingBox().width, 1);
     assertEquals(reset.boundingBox().y, cancel.boundingBox().y, 1);
     io.qameta.allure.playwright.AllurePlaywright.attachScreenshot(
@@ -245,7 +261,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     page.reload();
     assertPhotos();
     try (BrowserActor administrator = new BrowserActor(browser)) {
-      var users =
+      AdminUsersPage users =
           administrator.loginAdmin(
               BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
       users.open();
@@ -301,15 +317,15 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   }
 
   private void uploadAvatar(java.awt.Color color) throws Exception {
-    var image =
+    BufferedImage image =
         new java.awt.image.BufferedImage(160, 120, java.awt.image.BufferedImage.TYPE_INT_RGB);
-    var graphics = image.createGraphics();
+    Graphics2D graphics = image.createGraphics();
     graphics.setColor(color);
     graphics.fillRect(0, 0, 160, 120);
     graphics.setColor(java.awt.Color.WHITE);
     graphics.fillRect(60, 40, 40, 40);
     graphics.dispose();
-    var bytes = new java.io.ByteArrayOutputStream();
+    ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
     javax.imageio.ImageIO.write(image, color.equals(java.awt.Color.RED) ? "jpeg" : "png", bytes);
     page.waitForFileChooser(() -> page.locator("#account-avatar-choose").click())
         .setFiles(
@@ -330,7 +346,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
 
   private void assertPhotos() {
     for (String selector : new String[] {".account-summary-avatar", ".cosmos-topbar"}) {
-      var image = page.locator(selector + " .cosmos-avatar-photo");
+      Locator image = page.locator(selector + " .cosmos-avatar-photo");
       assertThat(image).isVisible();
       assertThat(image).hasJSProperty("complete", true);
       assertTrue(((Number) image.evaluate("e => e.naturalWidth")).intValue() > 0);
@@ -346,7 +362,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       "Im echten Kontodatumsfeld vier/sechs/acht Ziffern und 1950/2049 prüfen; ungültiger Tag bleibt ungültig. Enter und Tab verwenden den geladenen Frontend-Parser in DE/EN.")
   void compactBirthDatesUseTheRealFrontendParser() {
     account();
-    var form = new AccountPage(page);
+    AccountPage form = new AccountPage(page);
     form.open();
     boolean german = texts.language().equals("de");
     String[][] samples = {
@@ -377,7 +393,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   void accountAvatarStatusIsSynchronized() {
     account();
     new AccountPage(page).open();
-    var statusButton = page.locator("#account-avatar-status vaadin-select-value-button");
+    Locator statusButton = page.locator("#account-avatar-status vaadin-select-value-button");
     statusButton.focus();
     assertThat(statusButton).isFocused();
     statusButton.press("Space");
@@ -399,7 +415,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
           texts.getUserStatusAvailable()
         }) {
       page.locator("#account-avatar-status").click();
-      var option =
+      Locator option =
           page.getByRole(AriaRole.OPTION)
               .filter(
                   new com.microsoft.playwright.Locator.FilterOptions()
@@ -407,7 +423,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       assertThat(option.locator("svg")).hasCount(1);
       UiActions.completeValueChange(page, () -> option.click());
       page.locator("#account-avatar-status").click();
-      var selected =
+      Locator selected =
           page.getByRole(AriaRole.OPTION)
               .filter(
                   new com.microsoft.playwright.Locator.FilterOptions()
@@ -419,7 +435,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       io.qameta.allure.playwright.AllurePlaywright.attachScreenshot(
           "Statusauswahl am Kontobild", page);
       page.keyboard().press("Escape");
-      var circle = page.locator(".account-summary-avatar .cosmos-avatar-circle");
+      Locator circle = page.locator(".account-summary-avatar .cosmos-avatar-circle");
       assertEquals("2px", circle.evaluate("e => getComputedStyle(e).borderTopWidth"));
       assertNotEquals("none", circle.evaluate("e => getComputedStyle(e).boxShadow"));
       String color = (String) circle.evaluate("e => getComputedStyle(e).borderTopColor");

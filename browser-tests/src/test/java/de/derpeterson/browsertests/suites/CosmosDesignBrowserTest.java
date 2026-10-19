@@ -1,9 +1,19 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.FORGOT_PASSWORD_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_PAGE_TITLE;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.REGISTRATION_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.RESET_PASSWORD_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.VERIFICATION_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
@@ -12,11 +22,22 @@ import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.pages.AdminNavigation;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.ConfigurationPage;
+import de.derpeterson.browsertests.pages.ForgotPasswordPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.RegistrationPage;
+import de.derpeterson.browsertests.pages.ResetPasswordPage;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Story;
 import io.qameta.allure.playwright.AllurePlaywright;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -53,16 +74,18 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
         }) {
       page.navigate(route);
       checkDesign(page);
-      for (Locator input : page.locator(".cosmos-card vaadin-email-field").all())
+      for (Locator input : page.locator(".cosmos-card vaadin-email-field").all()) {
         assertThat(input)
             .hasJSProperty(
                 "placeholder",
                 texts.getRegistrationConfirmField().equals(input.evaluate("el => el.label"))
                     ? texts.getAccountConfirmEmailPlaceholder()
                     : texts.getAccountEmailPlaceholder());
-      if (route.equals(path(LOGIN_ROUTE)))
+      }
+      if (route.equals(path(LOGIN_ROUTE))) {
         assertThat(page.locator("vaadin-password-field"))
             .hasJSProperty("placeholder", texts.getAccountPasswordPlaceholder());
+      }
       if (route.equals(path(REGISTRATION_ROUTE))) {
         assertThat(
                 page.getByLabel(
@@ -298,7 +321,9 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     for (Locator field :
         page.locator(
                 "vaadin-dialog.admin-user-dialog vaadin-text-field, vaadin-dialog.admin-user-dialog vaadin-email-field, vaadin-dialog.admin-user-dialog vaadin-date-picker")
-            .all()) assertWithinViewport(field);
+            .all()) {
+      assertWithinViewport(field);
+    }
     AllurePlaywright.attachScreenshot(id + " Benutzerformular", page);
   }
 
@@ -396,7 +421,9 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
         target
             .locator(
                 ".cosmos-card, .cosmos-footer, .cosmos-card vaadin-button, .cosmos-card vaadin-text-field, .cosmos-card vaadin-email-field, .cosmos-card vaadin-password-field, .cosmos-card vaadin-date-picker, .cosmos-card vaadin-combo-box")
-            .all()) assertWithinViewport(control);
+            .all()) {
+      assertWithinViewport(control);
+    }
   }
 
   private void assertWithinViewport(Locator control) {

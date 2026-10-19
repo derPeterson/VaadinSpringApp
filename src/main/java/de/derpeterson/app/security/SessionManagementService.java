@@ -1,17 +1,35 @@
 package de.derpeterson.app.security;
 
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.security.DeviceTokenRepository.Saved;
+import de.derpeterson.app.security.SessionAdmissionService.Active;
 import de.derpeterson.app.service.ConfigService;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.security.*;
-import java.time.*;
-import java.util.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.HexFormat;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -74,7 +92,9 @@ public class SessionManagementService {
     // Dies ist startgebunden wie die Cookieprüfung. Bloßes Speichern einer neuen
     // Konfiguration darf vorhandene Zugänge noch nicht vorzeitig entfernen.
     int duration = remembered.validitySeconds();
-    if (duration < 1) throw new AuthenticationServiceException("Invalid saved-login duration");
+    if (duration < 1) {
+      throw new AuthenticationServiceException("Invalid saved-login duration");
+    }
     return duration;
   }
 
@@ -104,7 +124,7 @@ public class SessionManagementService {
   }
 
   private String owner(HttpServletRequest request) {
-    var user =
+    UserDetails user =
         security
             .getAuthenticatedUser(request)
             .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("Sign in required"));
@@ -127,10 +147,12 @@ public class SessionManagementService {
                 .thenComparing(SessionAdmissionService.Active::created))
         .forEach(
             item -> {
-              var savedLogin =
+              Optional<Saved> savedLogin =
                   saved.stream().filter(grant -> grant.series().equals(item.series())).findFirst();
               boolean remembered = savedLogin.isPresent();
-              if (remembered) activeSeries.add(item.series());
+              if (remembered) {
+                activeSeries.add(item.series());
+              }
               entries.add(
                   new Entry(
                       item.handle(),
@@ -156,21 +178,27 @@ public class SessionManagementService {
                         false,
                         true)));
     int limit = config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER);
-    if (limit < 1) throw new AuthenticationServiceException("Invalid session limit");
+    if (limit < 1) {
+      throw new AuthenticationServiceException("Invalid session limit");
+    }
     return new Snapshot(List.copyOf(entries), active.size(), limit);
   }
 
   private void revokeOwned(String identity, String current, String handle) {
-    if (handle == null || handle.isBlank()) throw new IllegalArgumentException("Entry required");
-    var active = admissions.active(identity);
-    var savedLogin =
+    if (handle == null || handle.isBlank()) {
+      throw new IllegalArgumentException("Entry required");
+    }
+    List<Active> active = admissions.active(identity);
+    Optional<Saved> savedLogin =
         tokens.saved(identity, savedLoginDuration()).stream()
             .filter(item -> item.handle().equals(handle))
             .findFirst();
-    var exact = active.stream().filter(item -> item.handle().equals(handle)).findFirst();
-    if (exact.isPresent() && exact.get().sessionId().equals(current))
+    Optional<Active> exact =
+        active.stream().filter(item -> item.handle().equals(handle)).findFirst();
+    if (exact.isPresent() && exact.get().sessionId().equals(current)) {
       throw new IllegalArgumentException("Use normal logout for the current session");
-    var target =
+    }
+    Optional<Active> target =
         exact.or(
             () ->
                 active.stream()
@@ -186,12 +214,15 @@ public class SessionManagementService {
             .anyMatch(
                 item ->
                     item.sessionId().equals(current)
-                        && savedLogin.get().series().equals(item.series())))
+                        && savedLogin.get().series().equals(item.series()))) {
       throw new IllegalArgumentException("Use normal logout for the current session");
+    }
     // Zuerst dauerhaft widerrufen; bei Datenbankfehlern keine nur teilweise abgemeldete Sitzung.
     if (target.isPresent()) {
-      var item = target.get();
-      if (item.series() != null) tokens.removeSeries(identity, item.series());
+      Active item = target.get();
+      if (item.series() != null) {
+        tokens.removeSeries(identity, item.series());
+      }
       active.stream()
           .filter(other -> !other.sessionId().equals(current))
           .filter(
@@ -206,7 +237,7 @@ public class SessionManagementService {
   }
 
   private void revokeOthersOwned(String identity, String current) {
-    var active = admissions.active(identity);
+    List<Active> active = admissions.active(identity);
     String keep =
         active.stream()
             .filter(item -> item.sessionId().equals(current))
@@ -240,14 +271,16 @@ public class SessionManagementService {
   public void startRecovery(
       HttpServletRequest request, String email, String password, boolean remember) {
     cancelRecovery(request);
-    var verified =
+    Authentication verified =
         authentication.authenticate(
             UsernamePasswordAuthenticationToken.unauthenticated(email, password));
-    if (!verified.isAuthenticated() || !(verified.getPrincipal() instanceof UserDetails))
+    if (!verified.isAuthenticated() || !(verified.getPrincipal() instanceof UserDetails)) {
       throw new BadCredentialsException("Invalid sign-in");
+    }
     UserDetails current = users.loadUserByUsername(verified.getName());
-    if (!current.isEnabled() || !encoder.matches(password, current.getPassword()))
+    if (!current.isEnabled() || !encoder.matches(password, current.getPassword())) {
       throw new BadCredentialsException("Sign-in changed");
+    }
     new MaintenanceService(config).requireLogin(verified);
     request.getSession(true);
     // Auch der eingeschränkte Zugang darf keine vorab bekannte Sitzungskennung übernehmen.
@@ -264,7 +297,7 @@ public class SessionManagementService {
   }
 
   public boolean hasRecovery(HttpServletRequest request) {
-    var session = request.getSession(false);
+    HttpSession session = request.getSession(false);
     return session != null
         && session.getAttribute(PROOF) instanceof Proof proof
         && clock.instant().isBefore(proof.expires());
@@ -293,15 +326,17 @@ public class SessionManagementService {
   }
 
   public boolean finishRecovery(HttpServletRequest request, HttpServletResponse response) {
-    var session = request.getSession(false);
-    if (session == null) throw new AuthenticationCredentialsNotFoundException("Sign in again");
+    HttpSession session = request.getSession(false);
+    if (session == null) {
+      throw new AuthenticationCredentialsNotFoundException("Sign in again");
+    }
     // Gleiche Sperrreihenfolge wie die reguläre Zulassung: HTTP-Sitzung vor Konto.
     synchronized (WebUtils.getSessionMutex(session)) {
       return recovery(
           request,
           user -> {
-            var proof = (Proof) session.getAttribute(PROOF);
-            var principal = User.withUserDetails(user).password("").build();
+            Proof proof = (Proof) session.getAttribute(PROOF);
+            UserDetails principal = User.withUserDetails(user).password("").build();
             security.storeAuthenticatedUser(request, response, principal, proof.remember());
             cancelRecovery(request);
             return principal.getAuthorities().stream()
@@ -311,14 +346,17 @@ public class SessionManagementService {
   }
 
   public void cancelRecovery(HttpServletRequest request) {
-    var session = request.getSession(false);
-    if (session != null) session.removeAttribute(PROOF);
+    HttpSession session = request.getSession(false);
+    if (session != null) {
+      session.removeAttribute(PROOF);
+    }
   }
 
   private <T> T recovery(HttpServletRequest request, Function<UserDetails, T> action) {
-    var session = request.getSession(false);
-    if (session == null || !(session.getAttribute(PROOF) instanceof Proof proof))
+    HttpSession session = request.getSession(false);
+    if (session == null || !(session.getAttribute(PROOF) instanceof Proof proof)) {
       throw new AuthenticationCredentialsNotFoundException("Sign in again");
+    }
     return admissions.withIdentity(
         proof.identity(),
         () -> {
@@ -326,7 +364,7 @@ public class SessionManagementService {
             cancelRecovery(request);
             throw new AuthenticationCredentialsNotFoundException("Sign in again");
           }
-          var current = users.loadUserByUsername(proof.identity());
+          UserDetails current = users.loadUserByUsername(proof.identity());
           if (!current.isEnabled() || !proof.fingerprint().equals(fingerprint(current))) {
             cancelRecovery(request);
             throw new AuthenticationCredentialsNotFoundException("Sign-in changed");
@@ -340,7 +378,7 @@ public class SessionManagementService {
   }
 
   private static String currentId(HttpServletRequest request) {
-    var session = request.getSession(false);
+    HttpSession session = request.getSession(false);
     return session == null ? null : session.getId();
   }
 

@@ -1,8 +1,16 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.AdditionalAnswers.delegatesTo;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import de.derpeterson.app.model.ConfigEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -10,9 +18,12 @@ import de.derpeterson.app.model.enums.RetiredConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
 import jakarta.persistence.EntityManagerFactory;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -54,9 +65,9 @@ class ConfigServicePersistenceTest {
     for (ConfigEntry entry : ConfigEntry.values()) {
       service.set(entry, "preserved:" + entry.getKey());
     }
-    var unrelated =
+    ConfigEntity unrelated =
         repository.saveAndFlush(new ConfigEntity(null, "custom.unknown.setting", "keep"));
-    var before =
+    Map<String, ConfigEntity> before =
         repository.findAll().stream()
             .collect(java.util.stream.Collectors.toMap(ConfigEntity::getKey, entity -> entity));
 
@@ -71,8 +82,8 @@ class ConfigServicePersistenceTest {
       assertFalse(repository.existsByKey(entry.getKey()), entry.getKey());
     }
     assertEquals(before.size(), repository.count());
-    for (var original : before.values()) {
-      var current = repository.findByKey(original.getKey()).orElseThrow();
+    for (ConfigEntity original : before.values()) {
+      ConfigEntity current = repository.findByKey(original.getKey()).orElseThrow();
       assertEquals(original.getId(), current.getId());
       assertEquals(original.getValue(), current.getValue());
     }
@@ -89,13 +100,13 @@ class ConfigServicePersistenceTest {
   @Test
   void createAndUpdatePreserveIdentityAndVerbatimValues() {
     service.set(ConfigEntry.SERVICE_NAME, "  Grüße  ");
-    var created = repository.findByKey(ConfigEntry.SERVICE_NAME.getKey()).orElseThrow();
+    ConfigEntity created = repository.findByKey(ConfigEntry.SERVICE_NAME.getKey()).orElseThrow();
     assertNotNull(created.getId());
     assertEquals("  Grüße  ", created.getValue());
 
     service.set(ConfigEntry.SERVICE_NAME, "");
 
-    var updated = repository.findByKey(created.getKey()).orElseThrow();
+    ConfigEntity updated = repository.findByKey(created.getKey()).orElseThrow();
     assertEquals(created.getId(), updated.getId());
     assertEquals("", updated.getValue());
     assertEquals(1, repository.count());
@@ -140,17 +151,17 @@ class ConfigServicePersistenceTest {
 
   @RepeatedTest(3)
   void concurrentMissingKeyInsertsRecoverInAFreshTransaction() throws Exception {
-    var bothReadMissing = new CyclicBarrier(2);
-    var missingReads = new AtomicInteger();
-    var conflicts = new AtomicInteger();
-    var insertedId = new AtomicReference<Long>();
-    var retryValue = new AtomicReference<String>();
+    CyclicBarrier bothReadMissing = new CyclicBarrier(2);
+    AtomicInteger missingReads = new AtomicInteger();
+    AtomicInteger conflicts = new AtomicInteger();
+    AtomicReference<Long> insertedId = new AtomicReference<Long>();
+    AtomicReference<String> retryValue = new AtomicReference<String>();
     // Only coordinate the reads; all queries, inserts, commits and rollbacks
     // go to the real repository. Both transactions must see the missing key.
-    var coordinated = mock(ConfigRepository.class, delegatesTo(repository));
+    ConfigRepository coordinated = mock(ConfigRepository.class, delegatesTo(repository));
     doAnswer(
             invocation -> {
-              var result = repository.findByKey(invocation.getArgument(0));
+              Optional<ConfigEntity> result = repository.findByKey(invocation.getArgument(0));
               if (result.isEmpty()) {
                 missingReads.incrementAndGet();
                 bothReadMissing.await(10, TimeUnit.SECONDS);
@@ -164,7 +175,7 @@ class ConfigServicePersistenceTest {
               ConfigEntity entity = invocation.getArgument(0);
               boolean inserting = entity.getId() == null;
               try {
-                var saved = repository.saveAndFlush(entity);
+                ConfigEntity saved = repository.saveAndFlush(entity);
                 if (inserting) {
                   insertedId.set(saved.getId());
                 }
@@ -178,12 +189,13 @@ class ConfigServicePersistenceTest {
         .when(coordinated)
         .saveAndFlush(any());
     // Distinct service instances: no JVM-local lock can hide the DB race.
-    var first = new ConfigService(coordinated, transactionManager, new MockEnvironment());
-    var second = new ConfigService(coordinated, transactionManager, new MockEnvironment());
-    var executor = Executors.newFixedThreadPool(2);
+    ConfigService first = new ConfigService(coordinated, transactionManager, new MockEnvironment());
+    ConfigService second =
+        new ConfigService(coordinated, transactionManager, new MockEnvironment());
+    ExecutorService executor = Executors.newFixedThreadPool(2);
     try {
-      var firstWrite = executor.submit(() -> first.set(ConfigEntry.SERVICE_NAME, "first"));
-      var secondWrite = executor.submit(() -> second.set(ConfigEntry.SERVICE_NAME, "second"));
+      Future<?> firstWrite = executor.submit(() -> first.set(ConfigEntry.SERVICE_NAME, "first"));
+      Future<?> secondWrite = executor.submit(() -> second.set(ConfigEntry.SERVICE_NAME, "second"));
       firstWrite.get(20, TimeUnit.SECONDS);
       secondWrite.get(20, TimeUnit.SECONDS);
     } finally {
@@ -194,7 +206,7 @@ class ConfigServicePersistenceTest {
     assertEquals(2, missingReads.get());
     assertEquals(1, conflicts.get(), "The test must exercise a real unique-key violation");
     assertEquals(1, repository.count());
-    var stored = repository.findByKey(ConfigEntry.SERVICE_NAME.getKey()).orElseThrow();
+    ConfigEntity stored = repository.findByKey(ConfigEntry.SERVICE_NAME.getKey()).orElseThrow();
     assertEquals(insertedId.get(), stored.getId());
     assertEquals(retryValue.get(), stored.getValue(), "The retry is the last committed write");
     verify(coordinated, times(3)).findByKey(ConfigEntry.SERVICE_NAME.getKey());
@@ -219,7 +231,7 @@ class ConfigServicePersistenceTest {
 
     @Bean
     LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
-      var factory = new LocalContainerEntityManagerFactoryBean();
+      LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
       factory.setDataSource(dataSource);
       factory.setPackagesToScan("de.derpeterson.app.model");
       factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());

@@ -1,9 +1,14 @@
 package de.derpeterson.browsertests.mail;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.derpeterson.app.config.AppRouteConstants.EMAIL_CHANGE_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.RESET_PASSWORD_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.VERIFICATION_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,6 +22,7 @@ import io.qameta.allure.Allure;
 import io.qameta.allure.Step;
 import io.qameta.allure.playwright.AllurePlaywright;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,18 +76,19 @@ public final class MailpitInbox {
 
   @Step("Sicherheitsmail mit echtem Inline-Logo, Footer und ohne Passwortinhalte prüfen")
   public void assertSecurityNotice(CapturedMail mail, String... forbidden) {
-    var actual = getJson("/api/v1/message/" + mail.id());
+    JsonNode actual = getJson("/api/v1/message/" + mail.id());
     assertTrue(addressedTo(actual, mail.recipient()));
     String html = actual.path("HTML").asText();
     assertFalse(html.isBlank());
     assertFalse(html.contains("{{"));
-    for (String secret : forbidden)
+    for (String secret : forbidden) {
       assertFalse(html.contains(secret), "Passwortinhalt in Sicherheitsmail");
+    }
     Page message = context.newPage();
     try {
       message.navigate(baseUrl + "/view/" + mail.id() + ".html");
       assertThat(message.locator("body")).containsText("VaadinSpringApp (Browser-Test)");
-      var logo = message.locator("img[alt='VaadinSpringApp (Browser-Test)']");
+      Locator logo = message.locator("img[alt='VaadinSpringApp (Browser-Test)']");
       assertThat(logo).hasCount(1);
       assertThat(logo).isVisible();
       message.waitForFunction(
@@ -108,7 +115,9 @@ public final class MailpitInbox {
     // ein angehängter Transport-Zeilenabschluss werden normalisiert; Unicode,
     // Leerzeichen und zusätzliche Leerzeilen bleiben für den Vergleich relevant.
     received = received.replace("\r\n", "\n");
-    if (received.endsWith("\n")) received = received.substring(0, received.length() - 1);
+    if (received.endsWith("\n")) {
+      received = received.substring(0, received.length() - 1);
+    }
     assertEquals(body.replace("\r\n", "\n"), received, "Unicode-Mailinhalt wurde verändert.");
   }
 
@@ -132,11 +141,15 @@ public final class MailpitInbox {
           for (JsonNode mail : getJson("/api/v1/messages?limit=100").path("messages")) {
             if (addressedTo(mail, recipient)
                 && expectedSubject.equals(mail.path("Subject").asText())
-                && !mail.path("ID").asText().equals(previousId)) matches.add(mail);
+                && !mail.path("ID").asText().equals(previousId)) {
+              matches.add(mail);
+            }
           }
           assertTrue(
               matches.size() <= 1, "Mehrere Mails desselben Typs an dieselbe neue Testadresse.");
-          if (matches.isEmpty()) return false;
+          if (matches.isEmpty()) {
+            return false;
+          }
           found.set(matches.getFirst());
           return true;
         },
@@ -149,7 +162,9 @@ public final class MailpitInbox {
         subject,
         "Mailbetreff muss zum angefragten Typ und zur ausgewählten Sprache passen.");
     String html = mail.path("HTML").asText();
-    if (htmlExpected) assertFalse(html.isBlank(), "Erfasste Mail hat keinen HTML-Inhalt.");
+    if (htmlExpected) {
+      assertFalse(html.isBlank(), "Erfasste Mail hat keinen HTML-Inhalt.");
+    }
     assertFalse(html.contains("{{"), "Nicht ersetzte Platzhalter in der versandten Mail.");
     Allure.attachment(
         "SMTP-Mail: Empfänger und Betreff",
@@ -193,8 +208,9 @@ public final class MailpitInbox {
     Page messagePage = context.newPage();
     try {
       messagePage.navigate(baseUrl + "/view/" + mail.id() + ".html");
-      if (VERIFICATION_ROUTE.equals(route))
+      if (VERIFICATION_ROUTE.equals(route)) {
         assertThat(messagePage.locator("body")).containsText("Browser Testuser");
+      }
       assertThat(messagePage.locator("body")).containsText("VaadinSpringApp (Browser-Test)");
       Locator link = messagePage.locator("a[href*='" + path(route) + "/']");
       assertThat(link).hasCount(1);
@@ -223,14 +239,16 @@ public final class MailpitInbox {
   }
 
   private String expectedFooter(String route) {
-    String resource =
-        "/email/"
-            + (VERIFICATION_ROUTE.equals(route)
-                ? "welcome_"
-                : EMAIL_CHANGE_ROUTE.equals(route) ? "email_change_request_" : "reset_password_")
-            + texts.language()
-            + ".html";
-    try (var source =
+    String templatePrefix;
+    if (VERIFICATION_ROUTE.equals(route)) {
+      templatePrefix = "welcome_";
+    } else if (EMAIL_CHANGE_ROUTE.equals(route)) {
+      templatePrefix = "email_change_request_";
+    } else {
+      templatePrefix = "reset_password_";
+    }
+    String resource = "/email/" + templatePrefix + texts.language() + ".html";
+    try (InputStream source =
         Objects.requireNonNull(
             MailpitInbox.class.getResourceAsStream(resource), "Mailvorlage fehlt: " + resource)) {
       String template = new String(source.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
@@ -295,8 +313,11 @@ public final class MailpitInbox {
   }
 
   private static boolean addressedTo(JsonNode mail, String recipient) {
-    for (JsonNode address : mail.path("To"))
-      if (recipient.equalsIgnoreCase(address.path("Address").asText())) return true;
+    for (JsonNode address : mail.path("To")) {
+      if (recipient.equalsIgnoreCase(address.path("Address").asText())) {
+        return true;
+      }
+    }
     return false;
   }
 

@@ -1,6 +1,8 @@
 package de.derpeterson.app.helper.text;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -20,7 +22,7 @@ class CopyrightTextFormatterTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void defaultUsesTypedTranslationAndTheClocksLocalYear(String language) {
-    var texts =
+    MessageProperties texts =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
     String result =
         CopyrightTextFormatter.format(

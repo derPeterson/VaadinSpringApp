@@ -1,7 +1,13 @@
 package de.derpeterson.app.views;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -18,7 +24,9 @@ import de.derpeterson.app.service.AccountSecurityService.Confirmation;
 import de.derpeterson.app.service.ConfigService;
 import java.util.Locale;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -32,12 +40,12 @@ class ConfirmEmailChangeViewTest {
   void setup() {
     ui = new UI();
     UI.setCurrent(ui);
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenReturn(Locale.GERMAN);
     VaadinSession.setCurrent(session);
     ui.getInternals().setSession(session);
-    var config = mock(ConfigService.class);
+    ConfigService config = mock(ConfigService.class);
     when(config.getString(any()))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     service = mock(AccountSecurityService.class);
@@ -114,7 +122,7 @@ class ConfirmEmailChangeViewTest {
     assertFalse(confirm().isVisible());
     assertEquals("vaadin:warning", statusIcon().getElement().getAttribute("icon"));
     assertTrue(statusIcon().hasClassName("text-error"));
-    var text = view.getElement().getTextRecursively();
+    String text = view.getElement().getTextRecursively();
     assertTrue(text.contains(messages.getAccountEmailConfirmationFailed()));
     assertFalse(text.contains("secret SQL"));
   }

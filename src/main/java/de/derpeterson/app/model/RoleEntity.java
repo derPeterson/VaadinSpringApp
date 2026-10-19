@@ -1,7 +1,15 @@
 package de.derpeterson.app.model;
 
 import de.derpeterson.app.model.enums.RoleType;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
 import java.util.Collection;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

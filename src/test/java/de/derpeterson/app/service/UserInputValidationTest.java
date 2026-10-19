@@ -1,11 +1,26 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.helper.ui.ValidationHelper;
-import de.derpeterson.app.model.*;
-import de.derpeterson.app.model.enums.*;
+import de.derpeterson.app.model.EmailIdentity;
+import de.derpeterson.app.model.PasswordResetTokenEntity;
+import de.derpeterson.app.model.RoleEntity;
+import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.Gender;
+import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.model.enums.TokenStatus;
+import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.repository.PasswordResetTokenRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
@@ -110,8 +125,8 @@ class UserInputValidationTest {
     UserEntity user = user();
     assertThrows(IllegalArgumentException.class, () -> service.updatePassword(user, password));
     assertEquals("old-hash", user.getPassword());
-    var tokens = mock(PasswordResetTokenRepository.class);
-    var reset =
+    PasswordResetTokenRepository tokens = mock(PasswordResetTokenRepository.class);
+    PasswordResetService reset =
         new PasswordResetService(
             null,
             tokens,
@@ -178,8 +193,8 @@ class UserInputValidationTest {
 
   @Test
   void validResetPasswordStillEncodesAndConsumesTheToken() {
-    var tokens = mock(PasswordResetTokenRepository.class);
-    var reset =
+    PasswordResetTokenRepository tokens = mock(PasswordResetTokenRepository.class);
+    PasswordResetService reset =
         new PasswordResetService(
             null,
             tokens,
@@ -193,7 +208,7 @@ class UserInputValidationTest {
     user.setEnabled(true);
     when(tokens.findUserIdByToken("token")).thenReturn(Optional.of(user.getId()));
     when(repository.lockVerificationUser(user.getId())).thenReturn(Optional.of(user));
-    var token =
+    PasswordResetTokenEntity token =
         new PasswordResetTokenEntity(
             null, "token", user, LocalDateTime.now().plusHours(1), TokenStatus.ACTIVE);
     when(tokens.findByTokenAndStatus("token", TokenStatus.ACTIVE)).thenReturn(Optional.of(token));

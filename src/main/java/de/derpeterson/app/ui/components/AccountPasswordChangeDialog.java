@@ -7,6 +7,7 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -18,6 +19,7 @@ import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.service.AccountSecurityService.PasswordChange;
 import de.derpeterson.app.service.AccountSecurityService.PasswordChanged;
+import de.derpeterson.app.ui.components.AccountSecurityFeedback.Field;
 import java.util.List;
 import java.util.Objects;
 
@@ -46,16 +48,16 @@ public class AccountPasswordChangeDialog extends Dialog {
 
     title.addClassName("cosmos-panel-title");
     description.addClassName("cosmos-panel-description");
-    var heading = new Div(title, description);
+    Div heading = new Div(title, description);
     heading.addClassName("cosmos-panel-heading");
-    var icon = VaadinIcon.LOCK.create();
+    Icon icon = VaadinIcon.LOCK.create();
     icon.getElement().setAttribute("aria-hidden", "true");
-    var badge = new Div(icon);
+    Div badge = new Div(icon);
     badge.addClassName("cosmos-panel-icon");
     close.setId("account-password-close");
     close.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
     close.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    var header = new Div(badge, heading, close);
+    Div header = new Div(badge, heading, close);
     header.addClassName("account-change-dialog-header");
     getHeader().add(header);
 
@@ -79,11 +81,11 @@ public class AccountPasswordChangeDialog extends Dialog {
     currentPassword.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
     newPassword.setAutocomplete(Autocomplete.NEW_PASSWORD);
     confirmPassword.setAutocomplete(Autocomplete.NEW_PASSWORD);
-    var infoIcon = VaadinIcon.INFO_CIRCLE_O.create();
+    Icon infoIcon = VaadinIcon.INFO_CIRCLE_O.create();
     infoIcon.getElement().setAttribute("aria-hidden", "true");
-    var info = new Div(infoIcon, hint);
+    Div info = new Div(infoIcon, hint);
     info.addClassName("cosmos-panel-hint");
-    var form = new Div(newPassword, confirmPassword, currentPassword, info);
+    Div form = new Div(newPassword, confirmPassword, currentPassword, info);
     form.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
     add(form);
 
@@ -93,12 +95,14 @@ public class AccountPasswordChangeDialog extends Dialog {
     save.setPrefixComponent(VaadinIcon.CHECK.create());
     save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     save.addClickListener(event -> submit());
-    var actions = new Div(cancel, save);
+    Div actions = new Div(cancel, save);
     actions.addClassName("cosmos-dialog-actions");
     getFooter().add(actions);
     addOpenedChangeListener(
         event -> {
-          if (!event.isOpened()) clearDraft();
+          if (!event.isOpened()) {
+            clearDraft();
+          }
         });
     refreshTexts();
   }
@@ -111,8 +115,10 @@ public class AccountPasswordChangeDialog extends Dialog {
     if (!ValidationHelper.validateRequiredInputs(
             List.of(newPassword, confirmPassword, currentPassword), messages)
         || !ValidationHelper.validatePasswordSecureInputs(List.of(newPassword), messages)
-        || !ValidationHelper.validatePasswordConfirmInputs(newPassword, confirmPassword, messages))
+        || !ValidationHelper.validatePasswordConfirmInputs(
+            newPassword, confirmPassword, messages)) {
       return;
+    }
     save.setEnabled(false);
     try {
       Objects.requireNonNull(changeAction, "Password change action required")
@@ -126,9 +132,13 @@ public class AccountPasswordChangeDialog extends Dialog {
               messages::getAccountSecurityPasswordSuccess,
               NotificationHelper.NotificationType.SUCCESS);
     } catch (RuntimeException failure) {
-      var field = AccountSecurityFeedback.failure(messages, failure);
-      if (field == AccountSecurityFeedback.Field.CURRENT_PASSWORD) currentPassword.setInvalid(true);
-      if (field == AccountSecurityFeedback.Field.NEW_PASSWORD) newPassword.setInvalid(true);
+      Field field = AccountSecurityFeedback.failure(messages, failure);
+      if (field == AccountSecurityFeedback.Field.CURRENT_PASSWORD) {
+        currentPassword.setInvalid(true);
+      }
+      if (field == AccountSecurityFeedback.Field.NEW_PASSWORD) {
+        newPassword.setInvalid(true);
+      }
     } finally {
       save.setEnabled(true);
     }

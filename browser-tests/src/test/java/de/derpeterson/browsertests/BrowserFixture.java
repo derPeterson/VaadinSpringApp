@@ -1,14 +1,22 @@
 package de.derpeterson.browsertests;
 
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_PAGE_TITLE;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.playwright.AllurePlaywright;
 import io.qameta.allure.playwright.TraceSession;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 public abstract class BrowserFixture {
   protected static Playwright playwright;
@@ -20,9 +28,10 @@ public abstract class BrowserFixture {
 
   @BeforeAll
   protected static void launchBrowser() {
-    if (!Boolean.getBoolean("browser.tests.managed"))
+    if (!Boolean.getBoolean("browser.tests.managed")) {
       throw new IllegalStateException(
           "Use run.ps1: browser tests require a disposable Docker environment.");
+    }
     playwright = Playwright.create();
     browser =
         playwright
@@ -61,7 +70,7 @@ public abstract class BrowserFixture {
         // A closed browser intentionally keeps its server slot until timeout. Explicitly
         // sign out the shared fixture account so independent cases do not consume its limit.
         page.navigate(path(HOME_ROUTE));
-        var menu = new UserMenu(page);
+        UserMenu menu = new UserMenu(page);
         menu.selectTestLanguage();
         menu.open();
         if (page.getByRole(
@@ -69,19 +78,27 @@ public abstract class BrowserFixture {
                 new Page.GetByRoleOptions().setName(texts.getBaseLogoutButton()).setExact(true))
             .isVisible()) {
           menu.requestSignOut();
-        } else menu.close();
+        } else {
+          menu.close();
+        }
       }
     } finally {
       try {
-        if (trace != null) trace.close();
+        if (trace != null) {
+          trace.close();
+        }
       } finally {
-        if (context != null) context.close();
+        if (context != null) {
+          context.close();
+        }
       }
     }
   }
 
   @AfterAll
   protected static void closeBrowser() {
-    if (playwright != null) playwright.close();
+    if (playwright != null) {
+      playwright.close();
+    }
   }
 }

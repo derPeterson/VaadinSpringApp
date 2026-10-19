@@ -13,7 +13,11 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.BeforeEvent;
+import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.OptionalParameter;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -390,9 +394,11 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
   }
 
   private void updateInputPlaceholders() {
-    if (passwordField != null)
+    if (passwordField != null) {
       passwordField.setPlaceholder(messageProperties.getAccountNewPasswordPlaceholder());
-    if (confirmPasswordField != null)
+    }
+    if (confirmPasswordField != null) {
       confirmPasswordField.setPlaceholder(messageProperties.getAccountConfirmPasswordPlaceholder());
+    }
   }
 }

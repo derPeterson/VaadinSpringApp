@@ -23,8 +23,10 @@ public class UserProfileBroadcaster {
   }
 
   public void afterCommit(UserEntity user) {
-    var message = new Message(user.getId(), user.getFirstName(), user.getLastName());
-    if (!TransactionSynchronizationManager.isSynchronizationActive()) return;
+    Message message = new Message(user.getId(), user.getFirstName(), user.getLastName());
+    if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+      return;
+    }
     TransactionSynchronizationManager.registerSynchronization(
         new TransactionSynchronization() {
           @Override
@@ -35,7 +37,7 @@ public class UserProfileBroadcaster {
   }
 
   public void broadcast(Message message) {
-    for (var listener : listeners) {
+    for (Consumer<Message> listener : listeners) {
       try {
         listener.accept(message);
       } catch (RuntimeException failure) {

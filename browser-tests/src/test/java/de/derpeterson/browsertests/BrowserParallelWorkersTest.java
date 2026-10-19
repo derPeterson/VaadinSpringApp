@@ -1,11 +1,17 @@
 package de.derpeterson.browsertests;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -33,16 +39,17 @@ class BrowserParallelWorkersTest {
     assertFalse(BrowserParallelWorkers.successful(complete(), 0, "sha256:other", 2));
     assertFalse(BrowserParallelWorkers.successful(complete(), 0, "sha256:example", 1));
     assertFalse(BrowserParallelWorkers.successful(complete(), 0, "sha256:example", 3));
-    for (String key : new String[] {"setup", "tests", "cleanup"})
+    for (String key : new String[] {"setup", "tests", "cleanup"}) {
       assertFalse(
           BrowserParallelWorkers.successful(complete().put(key, "failed"), 0, "sha256:example", 2));
+    }
     assertFalse(
         BrowserParallelWorkers.successful(
             complete().put("testsSkipped", 1), 0, "sha256:example", 2));
     assertFalse(
         BrowserParallelWorkers.successful(
             complete().put("testsFound", 0).put("testsPassed", 0), 0, "sha256:example", 0));
-    var unfinished = complete();
+    ObjectNode unfinished = complete();
     unfinished.remove("finishedAt");
     assertFalse(BrowserParallelWorkers.successful(unfinished, 0, "sha256:example", 2));
   }
@@ -73,11 +80,11 @@ class BrowserParallelWorkersTest {
 
   @Test
   void classMembershipMattersButDiscoveryOrderDoesNot() throws Exception {
-    var expected =
+    List<Class<?>> expected =
         java.util.List.<Class<?>>of(
             de.derpeterson.browsertests.suites.AuthenticationBrowserTest.class,
             de.derpeterson.browsertests.suites.RegistrationBrowserTest.class);
-    var data =
+    JsonNode data =
         new ObjectMapper()
             .readTree(
                 "{\"testClasses\":[\"RegistrationBrowserTest\",\"AuthenticationBrowserTest\"]}");

@@ -10,6 +10,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Input;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.UploadFormat;
@@ -53,9 +54,9 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     getElement().setAttribute("data-mode", "INITIALS");
     getElement().setAttribute("data-has-image", "false");
     initials.addClassNames("account-avatar-initials", "cosmos-avatar-initials");
-    var circle = new Div(initials);
+    Div circle = new Div(initials);
     circle.addClassNames("account-avatar-circle", "cosmos-avatar-circle");
-    var imagePreview = canvas("preview");
+    Element imagePreview = canvas("preview");
     imagePreview.setAttribute("aria-hidden", "true");
     circle.getElement().appendChild(imagePreview);
     preview.addClassNames("account-avatar-preview", "cosmos-user-avatar");
@@ -64,12 +65,12 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     preview.add(circle);
 
     choose.setId("account-avatar-choose");
-    var uploadSymbol = VaadinIcon.UPLOAD.create();
+    Icon uploadSymbol = VaadinIcon.UPLOAD.create();
     uploadSymbol.getElement().setAttribute("aria-hidden", "true");
-    var uploadBadge = new Span(uploadSymbol);
+    Span uploadBadge = new Span(uploadSymbol);
     uploadBadge.addClassName("account-avatar-upload-icon");
     chooseLabel.addClassName("account-avatar-upload-title");
-    var uploadContent = new Span(uploadBadge, chooseLabel, uploadHint);
+    Span uploadContent = new Span(uploadBadge, chooseLabel, uploadHint);
     uploadContent.addClassName("account-avatar-upload-content");
     choose.getElement().appendChild(uploadContent.getElement());
     uploader.setId("account-avatar-upload");
@@ -83,10 +84,11 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     uploader.addFileRejectedListener(
         event -> {
           Supplier<String> error = messages::getAccountAvatarBusy;
-          if (event.getErrorMessage().equals(messages.getAccountAvatarSizeError()))
+          if (event.getErrorMessage().equals(messages.getAccountAvatarSizeError())) {
             error = messages::getAccountAvatarSizeError;
-          else if (event.getErrorMessage().equals(messages.getAccountAvatarTypeError()))
+          } else if (event.getErrorMessage().equals(messages.getAccountAvatarTypeError())) {
             error = messages::getAccountAvatarTypeError;
+          }
           NotificationHelper.getInstance()
               .showNotification(
                   messages::getBaseFailedTitle,
@@ -97,29 +99,29 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     uploader.setUploadButton(choose);
     role(uploader.getElement(), "upload");
     // Eigene, ruhige Anzeige statt zusätzlicher nativer Dateiliste.
-    var fileList = new Div();
+    Div fileList = new Div();
     fileList.getElement().setAttribute("slot", "file-list");
     uploader.getElement().appendChild(fileList.getElement());
     savedSource.getStyle().set("display", "none");
-    var filename = new Span();
+    Span filename = new Span();
     filename.addClassName("account-avatar-filename");
     role(filename.getElement(), "filename");
     uploadHint.addClassName("account-avatar-helper");
-    var upload = new Div(uploader, filename, savedSource);
+    Div upload = new Div(uploader, filename, savedSource);
     upload.addClassName("account-avatar-upload");
 
-    var error = new Span();
+    Span error = new Span();
     error.addClassName("account-avatar-error");
     error.getElement().setAttribute("role", "status");
     error.getElement().setAttribute("aria-live", "polite");
     role(error.getElement(), "error");
     cropFrame.addClassName("account-avatar-crop-frame");
-    var crop = canvas("crop");
+    Element crop = canvas("crop");
     crop.setAttribute("tabindex", "0");
     crop.setAttribute("role", "img");
     role(cropFrame.getElement(), "frame");
     cropFrame.getElement().appendChild(crop);
-    var mask = new Div();
+    Div mask = new Div();
     mask.addClassName("account-avatar-crop-mask");
     mask.getElement().setAttribute("aria-hidden", "true");
     cropFrame.add(mask);
@@ -130,10 +132,10 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     zoom.getElement().setAttribute("step", "0.01");
     zoom.setValue("1");
     role(zoom.getElement(), "zoom");
-    var percent = new Span("100 %");
+    Span percent = new Span("100 %");
     percent.addClassName("account-avatar-zoom-value");
     role(percent.getElement(), "percent");
-    var zoomRow = new Div(zoomLabel, zoom, percent);
+    Div zoomRow = new Div(zoomLabel, zoom, percent);
     zoomRow.addClassName("account-avatar-zoom");
     reset.setPrefixComponent(VaadinIcon.ROTATE_LEFT.create());
     role(reset.getElement(), "reset");
@@ -141,7 +143,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     cancelSelection.setPrefixComponent(VaadinIcon.CLOSE_SMALL.create());
     cancelSelection.addClassName("account-avatar-cancel-selection");
     role(cancelSelection.getElement(), "cancel");
-    var controls = new Div(cropFrame, cropHint, zoomRow, reset, cancelSelection);
+    Div controls = new Div(cropFrame, cropHint, zoomRow, reset, cancelSelection);
     controls.addClassName("account-avatar-crop-controls");
     custom.addClassName("account-avatar-custom");
     custom.add(upload, error, controls);
@@ -155,7 +157,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
   }
 
   private static Element canvas(String value) {
-    var element = new Element("canvas");
+    Element element = new Element("canvas");
     role(element, value);
     return element;
   }
@@ -166,7 +168,9 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     name = (first + " " + last).strip();
     initials.removeAll();
     initials.setText(OverlayUserIcon.initialsFor(first, last));
-    if (initials.getText().isEmpty()) initials.add(VaadinIcon.USER.create());
+    if (initials.getText().isEmpty()) {
+      initials.add(VaadinIcon.USER.create());
+    }
     updatePreviewLabel();
   }
 

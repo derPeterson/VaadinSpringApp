@@ -1,8 +1,9 @@
 package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.FORGOT_PASSWORD_PAGE_TITLE;
+import static de.derpeterson.app.config.AppRouteConstants.FORGOT_PASSWORD_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;

@@ -31,7 +31,15 @@ import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.NonNull;
@@ -649,7 +657,9 @@ public class AdminConfigurationSection extends VerticalLayout {
 
   private String validateValue(ConfigEntry configEntry, String value) {
     String trimmed = value == null ? "" : value.trim();
-    if (isNotificationRetention(configEntry) && trimmed.isEmpty()) return null;
+    if (isNotificationRetention(configEntry) && trimmed.isEmpty()) {
+      return null;
+    }
 
     return switch (configEntry) {
       case SERVICE_NAME -> {
@@ -679,7 +689,7 @@ public class AdminConfigurationSection extends VerticalLayout {
         if (!isValidSpringDuration(trimmed)) {
           yield messageProperties.getAdminConfigValidationDuration();
         }
-        var duration = DurationStyle.detectAndParse(trimmed);
+        Duration duration = DurationStyle.detectAndParse(trimmed);
         yield duration.isZero() || duration.isNegative()
             ? messageProperties.getAdminConfigValidationPositiveDuration()
             : null;
@@ -688,7 +698,7 @@ public class AdminConfigurationSection extends VerticalLayout {
           VERIFICATION_TOKEN_LIVE_DURATION,
           PASSWORD_RESET_TOKEN_VALID_DURATION,
           PASSWORD_RESET_TOKEN_LIVE_DURATION -> {
-        var minimum = configEntry.getMinimumTokenDuration();
+        Duration minimum = configEntry.getMinimumTokenDuration();
         if (!isValidSpringDuration(trimmed)) {
           yield messageProperties.getAdminConfigValidationTokenDuration(minimum.toMinutes());
         }
@@ -740,9 +750,10 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     if (input instanceof IntegerField integerField) {
       Integer value = integerField.getValue();
-      return value == null
-          ? (isNotificationRetention(configEntry) ? "" : configuredDefault(configEntry))
-          : String.valueOf(value);
+      if (value != null) {
+        return String.valueOf(value);
+      }
+      return isNotificationRetention(configEntry) ? "" : configuredDefault(configEntry);
     }
 
     if (input instanceof PasswordField passwordField) {
@@ -776,7 +787,9 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private String buildPlaceholder(ConfigEntry configEntry) {
-    if (isNotificationRetention(configEntry)) return messageProperties.getAdminConfigUnlimited();
+    if (isNotificationRetention(configEntry)) {
+      return messageProperties.getAdminConfigUnlimited();
+    }
     String defaultValue = configuredDefault(configEntry);
     if (defaultValue.isEmpty()) {
       return messageProperties.getAdminConfigPlaceholderEmpty();
@@ -788,12 +801,12 @@ public class AdminConfigurationSection extends VerticalLayout {
 
   private String buildDefaultText(ConfigEntry configEntry) {
     String defaultValue = configuredDefault(configEntry);
-    String displayValue =
-        defaultValue.isEmpty()
-            ? messageProperties.getAdminConfigDefaultEmpty()
-            : isSecretEntry(configEntry)
-                ? messageProperties.getAdminConfigDefaultConfidential()
-                : defaultValue;
+    String displayValue = defaultValue;
+    if (defaultValue.isEmpty()) {
+      displayValue = messageProperties.getAdminConfigDefaultEmpty();
+    } else if (isSecretEntry(configEntry)) {
+      displayValue = messageProperties.getAdminConfigDefaultConfidential();
+    }
     return (isNotificationRetention(configEntry)
             ? messageProperties.getAdminConfigInitialValue()
             : messageProperties.getAdminConfigDefault())

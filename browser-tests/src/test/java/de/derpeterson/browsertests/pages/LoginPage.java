@@ -1,9 +1,13 @@
 package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.LOGIN_PAGE_TITLE;
+import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.browsertests.i18n.UiTexts;
@@ -111,7 +115,7 @@ public final class LoginPage {
 
   @Step("Vorhandenen Fehlerhinweis vor dem nächsten Anmeldeversuch schließen")
   public void dismissFailure() {
-    var notice = page.locator("vaadin-notification-card:not([closing])");
+    Locator notice = page.locator("vaadin-notification-card:not([closing])");
     assertThat(notice).hasCount(1);
     notice.getByRole(AriaRole.BUTTON).click();
     assertThat(notice).not().isVisible();

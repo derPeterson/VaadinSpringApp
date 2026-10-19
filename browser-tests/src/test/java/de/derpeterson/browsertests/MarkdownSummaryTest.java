@@ -1,9 +1,14 @@
 package de.derpeterson.browsertests;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class MarkdownSummaryTest {
@@ -24,7 +29,7 @@ class MarkdownSummaryTest {
 
   @Test
   void successfulCaseIsChecked() throws Exception {
-    var test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
+    JsonNode test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
     String report = MarkdownSummary.render(complete(), new ArrayList<>(List.of(test)));
     assertTrue(report.contains("**Status: BESTANDEN**"));
     assertTrue(report.contains("- [x] **BESTANDEN**"));
@@ -32,10 +37,10 @@ class MarkdownSummaryTest {
 
   @Test
   void requestedCoverageFailurePreventsAGreenOverallReport() throws Exception {
-    var metadata = complete();
+    Map<String, Object> metadata = complete();
     metadata.put("coverage", "failed");
     metadata.put("coverageError", "Missing execution data");
-    var test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
+    JsonNode test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
     String report = MarkdownSummary.render(metadata, List.of(test));
     assertTrue(report.contains("UNVOLLSTÄNDIG / FEHLER"));
     assertTrue(report.contains("Missing execution data"));
@@ -43,9 +48,9 @@ class MarkdownSummaryTest {
 
   @Test
   void measuredCoverageLinksToTheArchivedReportAndStatesItsScope() throws Exception {
-    var metadata = complete();
+    Map<String, Object> metadata = complete();
     metadata.put("coverage", "passed");
-    var test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
+    JsonNode test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
     String report = MarkdownSummary.render(metadata, List.of(test));
     assertTrue(report.contains("coverage/html/index.html"));
     assertTrue(report.contains("serverseitige Anwendungscode"));
@@ -54,7 +59,7 @@ class MarkdownSummaryTest {
 
   @Test
   void skippedCaseIsNotSuccess() throws Exception {
-    var test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"skipped\"}");
+    JsonNode test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"skipped\"}");
     String report = MarkdownSummary.render(complete(), new ArrayList<>(List.of(test)));
     assertTrue(report.contains("UNVOLLSTÄNDIG / FEHLER"));
     assertFalse(report.contains("- [x]"));
@@ -62,9 +67,9 @@ class MarkdownSummaryTest {
 
   @Test
   void cleanupFailurePreventsSuccess() throws Exception {
-    var metadata = complete();
+    Map<String, Object> metadata = complete();
     metadata.put("cleanup", "failed");
-    var test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
+    JsonNode test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
     assertTrue(
         MarkdownSummary.render(metadata, new ArrayList<>(List.of(test)))
             .contains("UNVOLLSTÄNDIG / FEHLER"));
@@ -74,16 +79,16 @@ class MarkdownSummaryTest {
   void emptyOrUnfinishedRunIsNotSuccess() {
     assertTrue(
         MarkdownSummary.render(complete(), new ArrayList<>()).contains("UNVOLLSTÄNDIG / FEHLER"));
-    var metadata = complete();
+    Map<String, Object> metadata = complete();
     metadata.remove("finishedAt");
     assertTrue(MarkdownSummary.render(metadata, new ArrayList<>()).contains("IN BEARBEITUNG"));
   }
 
   @Test
   void missingCaseOrDiagnosticCannotBeHidden() throws Exception {
-    var metadata = complete();
+    Map<String, Object> metadata = complete();
     metadata.put("testsFound", 2);
-    var test =
+    JsonNode test =
         new ObjectMapper()
             .readTree(
                 "{\"name\":\"Login\",\"status\":\"failed\",\"statusDetails\":{\"message\":\"Falscher Titel\"},\"attachments\":[{\"name\":\"Screenshot\",\"source\":\"probe.png\"}]}");
@@ -91,7 +96,7 @@ class MarkdownSummaryTest {
     assertTrue(report.contains("UNVOLLSTÄNDIG / FEHLER"));
     assertTrue(report.contains("Falscher Titel"));
     assertTrue(report.contains("[Screenshot](allure-results/probe.png)"));
-    var passed = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
+    JsonNode passed = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
     assertTrue(
         MarkdownSummary.render(metadata, new ArrayList<>(List.of(passed)))
             .contains("UNVOLLSTÄNDIG / FEHLER"));
@@ -99,7 +104,7 @@ class MarkdownSummaryTest {
 
   @Test
   void checklistKeepsStepsAreaAndTimeWithoutDependingOnManualTests() throws Exception {
-    var test =
+    JsonNode test =
         new ObjectMapper()
             .readTree(
                 """
@@ -107,7 +112,7 @@ class MarkdownSummaryTest {
                  "description":"1. Login öffnen.\\n\\n**Erwartet:** Keine Anmeldung.",
                  "labels":[{"name":"feature","value":"Anmeldung"},{"name":"story","value":"Abgelehnte Anmeldung"}]}
                 """);
-    var metadata = complete();
+    Map<String, Object> metadata = complete();
     metadata.put("uiLanguage", "en");
     String report = MarkdownSummary.render(metadata, List.of(test));
     assertTrue(report.contains("| Geprüfte Oberflächensprache | en |"));
@@ -122,7 +127,7 @@ class MarkdownSummaryTest {
 
   @Test
   void skippedChecklistRetainsItsInstructionsAndReason() throws Exception {
-    var test =
+    JsonNode test =
         new ObjectMapper()
             .readTree(
                 """
@@ -138,7 +143,7 @@ class MarkdownSummaryTest {
 
   @Test
   void fastParallelReportShowsItsScopeAndWorkerDiagnostics() throws Exception {
-    var metadata = complete();
+    Map<String, Object> metadata = complete();
     metadata.put("suite", "fast");
     metadata.put("workersRequested", 2);
     metadata.put("workersActual", 2);
@@ -158,7 +163,7 @@ class MarkdownSummaryTest {
                 "passed",
                 "exitCode",
                 0)));
-    var test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
+    JsonNode test = new ObjectMapper().readTree("{\"name\":\"Login\",\"status\":\"passed\"}");
     String report = MarkdownSummary.render(metadata, List.of(test));
     assertTrue(report.contains("Schnellprüfung"));
     assertTrue(report.contains("`all` bleibt die vollständige Auswahl"));

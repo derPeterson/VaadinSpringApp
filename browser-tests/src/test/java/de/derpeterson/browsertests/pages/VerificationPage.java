@@ -1,8 +1,9 @@
 package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.VERIFICATION_PAGE_TITEL;
+import static de.derpeterson.app.config.AppRouteConstants.VERIFICATION_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;

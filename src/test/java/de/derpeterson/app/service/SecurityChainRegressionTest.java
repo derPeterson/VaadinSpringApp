@@ -1,7 +1,20 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
@@ -19,12 +32,14 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionAdmissionService;
 import de.derpeterson.app.security.SessionLimitException;
 import de.derpeterson.app.security.SessionManagementService;
+import de.derpeterson.app.security.SessionManagementService.Snapshot;
 import de.derpeterson.app.security.VaadinSecurityFilter;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpSession;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -101,14 +116,14 @@ class SecurityChainRegressionTest {
 
   @Test
   void accountRouteRequiresAuthenticationAndUsesTheNormalLogin() throws Exception {
-    for (var path :
+    for (String path :
         java.util.List.of(
             AppRoute.ACCOUNT.getSecurityRoute(), AppRoute.NOTIFICATIONS.getSecurityRoute())) {
       when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
-      var request = new MockHttpServletRequest("GET", path);
+      MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
       request.setServletPath(path);
-      var response = new MockHttpServletResponse();
-      var servlet = mock(FilterChain.class);
+      MockHttpServletResponse response = new MockHttpServletResponse();
+      FilterChain servlet = mock(FilterChain.class);
       new FilterChainProxy(chain).doFilter(request, response, servlet);
       assertTrue(response.getRedirectedUrl().endsWith(AppRoute.LOGIN.getSecurityRoute()));
       verifyNoInteractions(servlet);
@@ -119,24 +134,25 @@ class SecurityChainRegressionTest {
   @EnumSource(RoleType.class)
   void accountRouteAllowsEveryAccountRoleAndRespectsMaintenance(RoleType role) throws Exception {
     String email = sessionUser(role);
-    var login = postPassword(email, "OriginalPassword!");
-    var session = (MockHttpSession) login.request().getSession(false);
-    for (var path :
+    PasswordResponse login = postPassword(email, "OriginalPassword!");
+    MockHttpSession session = (MockHttpSession) login.request().getSession(false);
+    for (String path :
         java.util.List.of(
             AppRoute.ACCOUNT.getSecurityRoute(), AppRoute.NOTIFICATIONS.getSecurityRoute())) {
       when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
-      var request = new MockHttpServletRequest("GET", path);
+      MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
       request.setServletPath(path);
       request.setSession(session);
-      var servlet = mock(FilterChain.class);
+      FilterChain servlet = mock(FilterChain.class);
       new FilterChainProxy(chain).doFilter(request, new MockHttpServletResponse(), servlet);
       verify(servlet).doFilter(any(), any());
       clearInvocations(servlet);
       when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-      var response = new MockHttpServletResponse();
+      MockHttpServletResponse response = new MockHttpServletResponse();
       new FilterChainProxy(chain).doFilter(request, response, servlet);
-      if (role.isAdministrative()) verify(servlet).doFilter(any(), any());
-      else {
+      if (role.isAdministrative()) {
+        verify(servlet).doFilter(any(), any());
+      } else {
         assertEquals(503, response.getStatus());
         assertEquals(AppRoute.MAINTENANCE.getSecurityRoute(), response.getForwardedUrl());
         verifyNoInteractions(servlet);
@@ -146,7 +162,7 @@ class SecurityChainRegressionTest {
 
   @Test
   void revalidationRunsAfterRememberMeBeforeAuthorizationAndNotAsAContainerFilter() {
-    var filters = chain.getFilters();
+    List<Filter> filters = chain.getFilters();
     assertTrue(
         index(filters, RememberMeAuthenticationFilter.class)
             < index(filters, VaadinSecurityFilter.class));
@@ -174,31 +190,31 @@ class SecurityChainRegressionTest {
               repository.deleteAll();
               repository.flush();
               entityManager.createQuery("delete from RoleEntity").executeUpdate();
-              var admin = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
+              RoleEntity admin = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
               entityManager.persist(admin);
               Long victim = create("chain-victim@example.com", admin);
               create("chain-survivor@example.com", admin);
               return victim;
             });
-    var principal =
+    UserDetails principal =
         new CustomUserDetailsService(repository).loadUserByUsername("chain-victim@example.com");
-    var context = SecurityContextHolder.createEmptyContext();
+    SecurityContext context = SecurityContextHolder.createEmptyContext();
     context.setAuthentication(
         UsernamePasswordAuthenticationToken.authenticated(
             principal, null, principal.getAuthorities()));
-    var session = new MockHttpSession();
+    MockHttpSession session = new MockHttpSession();
     session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-    var edited =
+    UserEntity edited =
         repository.findAll().stream()
             .filter(user -> user.getId().equals(victimId))
             .findFirst()
             .orElseThrow();
     edited.setRoleEntities(new ArrayList<>());
     users.updateAdminUser(edited, edited.getVersion(), "");
-    var request = new MockHttpServletRequest("POST", path);
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
     request.setServletPath(path);
     request.setSession(session);
-    var response = new MockHttpServletResponse();
+    MockHttpServletResponse response = new MockHttpServletResponse();
     FilterChain action = mock(FilterChain.class);
     new FilterChainProxy(chain).doFilter(request, response, action);
     assertFalse(session.isInvalid());
@@ -209,7 +225,7 @@ class SecurityChainRegressionTest {
       assertEquals(200, response.getStatus());
       verify(action).doFilter(any(), any());
     }
-    var refreshed =
+    SecurityContext refreshed =
         (org.springframework.security.core.context.SecurityContext)
             session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
     assertNotNull(refreshed.getAuthentication());
@@ -224,13 +240,13 @@ class SecurityChainRegressionTest {
           repository.deleteAll();
           repository.flush();
           entityManager.createQuery("delete from RoleEntity").executeUpdate();
-          var role = RoleEntity.builder().name(roleType).build();
+          RoleEntity role = RoleEntity.builder().name(roleType).build();
           entityManager.persist(role);
           create("role-access@example.test", role);
         });
-    var principal =
+    UserDetails principal =
         new CustomUserDetailsService(repository).loadUserByUsername("role-access@example.test");
-    var expected =
+    Set<String> expected =
         roleType == RoleType.ROLE_SUPERADMIN
             ? Set.of("ROLE_SUPERADMIN", "ROLE_ADMIN")
             : Set.of(roleType.name());
@@ -244,17 +260,17 @@ class SecurityChainRegressionTest {
           "Inherited permission must not add a stored assignment");
     }
     for (String path : List.of("/home", "/admin")) {
-      var context = SecurityContextHolder.createEmptyContext();
+      SecurityContext context = SecurityContextHolder.createEmptyContext();
       context.setAuthentication(
           UsernamePasswordAuthenticationToken.authenticated(
               principal, null, principal.getAuthorities()));
-      var session = new MockHttpSession();
+      MockHttpSession session = new MockHttpSession();
       session.setAttribute(
           HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-      var request = new MockHttpServletRequest("GET", path);
+      MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
       request.setServletPath(path);
       request.setSession(session);
-      var response = new MockHttpServletResponse();
+      MockHttpServletResponse response = new MockHttpServletResponse();
       FilterChain action = mock(FilterChain.class);
       new FilterChainProxy(chain).doFilter(request, response, action);
       if (path.equals("/home")
@@ -274,13 +290,13 @@ class SecurityChainRegressionTest {
   @EnumSource(RoleType.class)
   void actualHttpPasswordFilterCannotBypassThrottleAndExistingSessionSurvives(RoleType roleType)
       throws Exception {
-    var providers = assertInstanceOf(ProviderManager.class, passwordManager);
+    ProviderManager providers = assertInstanceOf(ProviderManager.class, passwordManager);
     assertTrue(
         providers.getProviders().stream().anyMatch(LoginAuthenticationService.class::isInstance));
     String email = "password-" + UUID.randomUUID() + "@example.test";
     transaction.executeWithoutResult(
         tx -> {
-          var role =
+          RoleEntity role =
               entityManager
                   .createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
                   .setParameter("role", roleType)
@@ -295,10 +311,10 @@ class SecurityChainRegressionTest {
           entityManager.find(UserEntity.class, id).setPassword(encoder.encode("OriginalPassword!"));
         });
     when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(2);
-    var successful = postPassword(email, "OriginalPassword!");
+    PasswordResponse successful = postPassword(email, "OriginalPassword!");
     assertEquals(
         roleType.isAdministrative() ? "/admin" : "/home", successful.response().getRedirectedUrl());
-    var originalSession = successful.request().getSession(false);
+    HttpSession originalSession = successful.request().getSession(false);
     assertNotNull(
         originalSession.getAttribute(
             HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
@@ -308,7 +324,7 @@ class SecurityChainRegressionTest {
     assertEquals(
         "/login?error=invalid",
         postPassword(email, "WrongPassword!").response().getRedirectedUrl());
-    var blocked = postPassword(email, "OriginalPassword!");
+    PasswordResponse blocked = postPassword(email, "OriginalPassword!");
     assertEquals("/login?error=throttled", blocked.response().getRedirectedUrl());
     assertFalse(
         Arrays.stream(blocked.response().getCookies())
@@ -322,13 +338,14 @@ class SecurityChainRegressionTest {
                 == null);
     assertEquals(
         2, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
-    var saved =
+    SecurityContext saved =
         (SecurityContext)
             originalSession.getAttribute(
                 HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-    var oldPrincipal = (UserDetails) saved.getAuthentication().getPrincipal();
-    var currentPrincipal = new CustomUserDetailsService(repository).loadUserByUsername(email);
-    var currentRoles =
+    UserDetails oldPrincipal = (UserDetails) saved.getAuthentication().getPrincipal();
+    UserDetails currentPrincipal =
+        new CustomUserDetailsService(repository).loadUserByUsername(email);
+    Set<String> currentRoles =
         currentPrincipal.getAuthorities().stream()
             .map(Object::toString)
             .collect(Collectors.toSet());
@@ -343,12 +360,12 @@ class SecurityChainRegressionTest {
             .anyMatch(FactorGrantedAuthority.class::isInstance));
     assertTrue(currentPrincipal.isEnabled());
     assertTrue(oldPrincipal.isEnabled());
-    var oldRequest =
+    MockHttpServletRequest oldRequest =
         new MockHttpServletRequest("GET", roleType.isAdministrative() ? "/admin" : "/home");
     oldRequest.setServletPath(oldRequest.getRequestURI());
     oldRequest.setSession(originalSession);
-    var response = new MockHttpServletResponse();
-    var servlet = mock(FilterChain.class);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    FilterChain servlet = mock(FilterChain.class);
     new FilterChainProxy(chain).doFilter(oldRequest, response, servlet);
     assertEquals(
         200,
@@ -359,10 +376,10 @@ class SecurityChainRegressionTest {
     // account.
     transaction.executeWithoutResult(
         tx -> repository.findByEmail(email).orElseThrow().setEnabled(false));
-    var revoked = new MockHttpServletRequest("GET", "/home");
+    MockHttpServletRequest revoked = new MockHttpServletRequest("GET", "/home");
     revoked.setServletPath("/home");
     revoked.setSession(originalSession);
-    var denied = new MockHttpServletResponse();
+    MockHttpServletResponse denied = new MockHttpServletResponse();
     new FilterChainProxy(chain).doFilter(revoked, denied, mock(FilterChain.class));
     assertEquals(401, denied.getStatus());
   }
@@ -389,13 +406,13 @@ class SecurityChainRegressionTest {
   void rememberMeUsesItsOwnProviderWithoutPasswordCountersEvenWithInvalidPasswordLimit() {
     when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(0);
     long before = attempts.count();
-    var principal =
+    UserDetails principal =
         User.withUsername("remember-fixture@example.test").password("unused").roles("USER").build();
-    var token =
+    RememberMeAuthenticationToken token =
         new RememberMeAuthenticationToken(
             "isolated-test-key", principal, principal.getAuthorities());
     assertTrue(passwordManager.authenticate(token).isAuthenticated());
-    var forged =
+    RememberMeAuthenticationToken forged =
         new RememberMeAuthenticationToken("wrong-key", principal, principal.getAuthorities());
     assertThrows(BadCredentialsException.class, () -> passwordManager.authenticate(forged));
     assertEquals(before, attempts.count());
@@ -408,8 +425,8 @@ class SecurityChainRegressionTest {
     String email = sessionUser(RoleType.ROLE_USER);
     when(settings.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     try {
-      var old = postPassword(email, "OriginalPassword!");
-      var restricted = postPassword(email, "OriginalPassword!");
+      PasswordResponse old = postPassword(email, "OriginalPassword!");
+      PasswordResponse restricted = postPassword(email, "OriginalPassword!");
       assertEquals("/login?error=sessions", restricted.response().getRedirectedUrl());
       assertTrue(management.hasRecovery(restricted.request()));
       assertNull(
@@ -417,21 +434,21 @@ class SecurityChainRegressionTest {
               .request()
               .getSession()
               .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
-      var request = new MockHttpServletRequest("GET", "/account");
+      MockHttpServletRequest request = new MockHttpServletRequest("GET", "/account");
       request.setServletPath("/account");
       request.setSession(restricted.request().getSession(false));
-      var response = new MockHttpServletResponse();
-      var business = mock(FilterChain.class);
+      MockHttpServletResponse response = new MockHttpServletResponse();
+      FilterChain business = mock(FilterChain.class);
       new FilterChainProxy(chain).doFilter(request, response, business);
       verifyNoInteractions(business);
       assertTrue(response.getRedirectedUrl().endsWith("/login"));
-      var list = management.recoveryList(request);
+      Snapshot list = management.recoveryList(request);
       assertEquals(1, list.active());
       management.recoveryRevoke(request, list.entries().getFirst().handle());
       assertTrue(admissions.isExpired(old.request()));
       assertFalse(management.finishRecovery(request, new MockHttpServletResponse()));
       assertFalse(management.hasRecovery(request));
-      var admitted = new MockHttpServletRequest("GET", "/account");
+      MockHttpServletRequest admitted = new MockHttpServletRequest("GET", "/account");
       admitted.setServletPath("/account");
       admitted.setSession(request.getSession(false));
       new FilterChainProxy(chain).doFilter(admitted, new MockHttpServletResponse(), business);
@@ -445,7 +462,7 @@ class SecurityChainRegressionTest {
   void restrictedEntryPointUsesTheSamePersistentPasswordAttemptProtection() {
     String email = sessionUser(RoleType.ROLE_USER);
     when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(1);
-    var request = new MockHttpServletRequest();
+    MockHttpServletRequest request = new MockHttpServletRequest();
     assertThrows(
         BadCredentialsException.class,
         () -> management.startRecovery(request, email, "WrongPassword!", false));
@@ -468,11 +485,11 @@ class SecurityChainRegressionTest {
     String email = sessionUser(roleType);
     when(settings.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     try {
-      var first = postPassword(email, "OriginalPassword!");
-      var session = first.request().getSession(false);
+      PasswordResponse first = postPassword(email, "OriginalPassword!");
+      HttpSession session = first.request().getSession(false);
       assertNotNull(session);
-      var principal = new CustomUserDetailsService(repository).loadUserByUsername(email);
-      var denied = postPassword(email, "OriginalPassword!");
+      UserDetails principal = new CustomUserDetailsService(repository).loadUserByUsername(email);
+      PasswordResponse denied = postPassword(email, "OriginalPassword!");
       assertEquals("/login?error=sessions", denied.response().getRedirectedUrl());
       assertEquals(
           0, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
@@ -482,7 +499,7 @@ class SecurityChainRegressionTest {
               actualSecurity.storeAuthenticatedUser(
                   new MockHttpServletRequest(), new MockHttpServletResponse(), principal, true));
       assertEquals(1, sessionRegistry.getAllSessions(email, true).size());
-      var logout = new MockHttpServletRequest("POST", "/logout");
+      MockHttpServletRequest logout = new MockHttpServletRequest("POST", "/logout");
       logout.setServletPath("/logout");
       logout.setSession(session);
       new FilterChainProxy(chain)
@@ -503,7 +520,7 @@ class SecurityChainRegressionTest {
     String email = sessionUser(RoleType.ROLE_USER);
     when(settings.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     try {
-      var first = postPassword(email, "OriginalPassword!");
+      PasswordResponse first = postPassword(email, "OriginalPassword!");
       String series = "series-" + UUID.randomUUID();
       String otherSeries = "other-" + UUID.randomUUID();
       tokens.createNewToken(
@@ -513,11 +530,11 @@ class SecurityChainRegressionTest {
       String cookie =
           Base64.getEncoder()
               .encodeToString((series + ":token-value").getBytes(StandardCharsets.UTF_8));
-      var request = new MockHttpServletRequest("GET", "/home");
+      MockHttpServletRequest request = new MockHttpServletRequest("GET", "/home");
       request.setServletPath("/home");
       request.setCookies(new Cookie("remember-me", cookie));
-      var response = new MockHttpServletResponse();
-      var servlet = mock(FilterChain.class);
+      MockHttpServletResponse response = new MockHttpServletResponse();
+      FilterChain servlet = mock(FilterChain.class);
       new FilterChainProxy(chain).doFilter(request, response, servlet);
       assertEquals("/login?error=sessions", response.getRedirectedUrl());
       verifyNoInteractions(servlet);
@@ -545,7 +562,7 @@ class SecurityChainRegressionTest {
               .getMaxAge());
       // Actual Remember-me admission is allowed immediately after raising the limit.
       when(settings.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(2);
-      var currentToken = tokens.getTokenForSeries(series);
+      PersistentRememberMeToken currentToken = tokens.getTokenForSeries(series);
       String updatedCookie =
           Base64.getEncoder()
               .encodeToString(
@@ -553,10 +570,10 @@ class SecurityChainRegressionTest {
                           + ":"
                           + URLEncoder.encode(currentToken.getTokenValue(), StandardCharsets.UTF_8))
                       .getBytes(StandardCharsets.UTF_8));
-      var allowed = new MockHttpServletRequest("GET", "/home");
+      MockHttpServletRequest allowed = new MockHttpServletRequest("GET", "/home");
       allowed.setServletPath("/home");
       allowed.setCookies(new Cookie("remember-me", updatedCookie));
-      var target = mock(FilterChain.class);
+      FilterChain target = mock(FilterChain.class);
       new FilterChainProxy(chain).doFilter(allowed, new MockHttpServletResponse(), target);
       verify(target).doFilter(any(), any());
       assertEquals(2, sessionRegistry.getAllSessions(email, true).size());
@@ -575,7 +592,7 @@ class SecurityChainRegressionTest {
       throws Exception {
     String email = sessionUser(role);
     when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var login = postPassword(email, "OriginalPassword!");
+    PasswordResponse login = postPassword(email, "OriginalPassword!");
     assertEquals(
         role.isAdministrative() ? "/admin" : "/login?error=maintenance",
         login.response().getRedirectedUrl());
@@ -594,16 +611,16 @@ class SecurityChainRegressionTest {
   @Test
   void realChainPausesExistingUserWithoutLosingContextAndAllowsLogout() throws Exception {
     String email = sessionUser(RoleType.ROLE_USER);
-    var login = postPassword(email, "OriginalPassword!");
-    var session = (MockHttpSession) login.request().getSession(false);
+    PasswordResponse login = postPassword(email, "OriginalPassword!");
+    MockHttpSession session = (MockHttpSession) login.request().getSession(false);
     Object context =
         session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
     when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var request = new MockHttpServletRequest("GET", "/home");
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/home");
     request.setServletPath("/home");
     request.setSession(session);
-    var response = new MockHttpServletResponse();
-    var servlet = mock(FilterChain.class);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    FilterChain servlet = mock(FilterChain.class);
     new FilterChainProxy(chain).doFilter(request, response, servlet);
     assertEquals(503, response.getStatus());
     assertEquals("/maintenance", response.getForwardedUrl());
@@ -615,7 +632,7 @@ class SecurityChainRegressionTest {
     new FilterChainProxy(chain).doFilter(request, new MockHttpServletResponse(), servlet);
     verify(servlet).doFilter(any(), any());
     when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var logout = new MockHttpServletRequest("POST", "/logout");
+    MockHttpServletRequest logout = new MockHttpServletRequest("POST", "/logout");
     logout.setServletPath("/logout");
     logout.setSession(session);
     new FilterChainProxy(chain)
@@ -626,16 +643,16 @@ class SecurityChainRegressionTest {
   @Test
   void explicitReloginCannotReuseOldUserSlotToBypassMaintenance() throws Exception {
     String email = sessionUser(RoleType.ROLE_USER);
-    var previous = postPassword(email, "OriginalPassword!");
-    var session = (MockHttpSession) previous.request().getSession(false);
+    PasswordResponse previous = postPassword(email, "OriginalPassword!");
+    MockHttpSession session = (MockHttpSession) previous.request().getSession(false);
     when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    var request = new MockHttpServletRequest("POST", "/login");
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
     request.setServletPath("/login");
     request.setSession(session);
     request.setParameter("username", email);
     request.setParameter("password", "OriginalPassword!");
     request.setParameter("remember-me", "true");
-    var response = new MockHttpServletResponse();
+    MockHttpServletResponse response = new MockHttpServletResponse();
     new FilterChainProxy(chain).doFilter(request, response, mock(FilterChain.class));
     assertEquals("/login?error=maintenance", response.getRedirectedUrl());
     assertFalse(session.isInvalid());
@@ -651,7 +668,7 @@ class SecurityChainRegressionTest {
     String email = "session-" + UUID.randomUUID() + "@example.test";
     transaction.executeWithoutResult(
         tx -> {
-          var role =
+          RoleEntity role =
               entityManager
                   .createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
                   .setParameter("role", roleType)
@@ -662,7 +679,7 @@ class SecurityChainRegressionTest {
             role = RoleEntity.builder().name(roleType).build();
             entityManager.persist(role);
           }
-          var id = create(email, role);
+          Long id = create(email, role);
           entityManager.find(UserEntity.class, id).setPassword(encoder.encode("OriginalPassword!"));
         });
     return email;
@@ -670,11 +687,11 @@ class SecurityChainRegressionTest {
 
   private PasswordResponse postPassword(String email, String password) throws Exception {
     SecurityContextHolder.clearContext();
-    var request = new MockHttpServletRequest("POST", "/login");
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
     request.setServletPath("/login");
     request.setParameter("username", email);
     request.setParameter("password", password);
-    var response = new MockHttpServletResponse();
+    MockHttpServletResponse response = new MockHttpServletResponse();
     new FilterChainProxy(chain).doFilter(request, response, mock(FilterChain.class));
     assertEquals(302, response.getStatus());
     return new PasswordResponse(request, response);
@@ -684,7 +701,7 @@ class SecurityChainRegressionTest {
       MockHttpServletRequest request, MockHttpServletResponse response) {}
 
   private Long create(String email, RoleEntity role) {
-    var user =
+    UserEntity user =
         UserEntity.builder()
             .email(email)
             .firstName("Test")
@@ -721,7 +738,7 @@ class SecurityChainRegressionTest {
 
     @Bean
     ConfigService configService() {
-      var config = mock(ConfigService.class);
+      ConfigService config = mock(ConfigService.class);
       when(config.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY)).thenReturn("isolated-test-key");
       when(config.getInteger(ConfigEntry.REMEMBER_ME_DURATION)).thenReturn(3600);
       when(config.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(10);

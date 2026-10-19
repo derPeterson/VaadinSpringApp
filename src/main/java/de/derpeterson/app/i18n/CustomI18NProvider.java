@@ -3,7 +3,11 @@ package de.derpeterson.app.i18n;
 import com.vaadin.flow.i18n.I18NProvider;
 import com.vaadin.flow.server.VaadinSession;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.ResourceBundle;
 import org.springframework.stereotype.Component;
 
 @Component

@@ -1,7 +1,20 @@
 package de.derpeterson.app.views;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Html;
@@ -73,7 +86,7 @@ class AccountViewTest {
   void setup() {
     ui = spy(new UI());
     UI.setCurrent(ui);
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     doAnswer(
@@ -87,7 +100,7 @@ class AccountViewTest {
     ui.getInternals().setSession(session);
     request = mock(HttpServletRequest.class);
     security = mock(SecurityService.class);
-    var config = mock(ConfigService.class);
+    ConfigService config = mock(ConfigService.class);
     when(config.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(11);
@@ -109,7 +122,7 @@ class AccountViewTest {
         .thenReturn(
             Optional.of(
                 User.withUsername("own@example.test").password("unused").roles("USER").build()));
-    var avatars = mock(UserAvatarService.class);
+    UserAvatarService avatars = mock(UserAvatarService.class);
     when(avatars.events()).thenReturn(new UserProfileBroadcaster());
     view =
         new AccountView(
@@ -138,7 +151,7 @@ class AccountViewTest {
   @ValueSource(strings = {"de", "en"})
   void avatarStatusUsesTheExistingSaveActionAndTracksOtherStatusChanges(String language) {
     LanguageChangeEvent.fire(ui, Locale.forLanguageTag(language));
-    var select = avatarStatus();
+    Select<UserStatus> select = avatarStatus();
     assertEquals(UserStatus.getDefaultStatus(), select.getValue());
     assertTrue(select.isEnabled());
     assertTrue(select.getElement().getThemeList().contains("cosmos-status"));
@@ -148,7 +161,7 @@ class AccountViewTest {
         .thenReturn(new UserService.StatusUpdate(UserStatus.ABSENT, true));
     ReflectionTestUtils.invokeMethod(select, "setModelValue", UserStatus.ABSENT, true);
     verify(users).updateUserStatus(user, UserStatus.ABSENT, true);
-    var popupAvatar =
+    OverlayUserIcon popupAvatar =
         (OverlayUserIcon)
             ReflectionTestUtils.getField(
                 ReflectionTestUtils.getField(view, "userPopoverMenu"), "overlayIcon");
@@ -157,16 +170,16 @@ class AccountViewTest {
     assertEquals(UserStatus.ABSENT, user.getStatus());
     assertTrue(user.isStatusManuallySet());
     assertEquals(UserStatus.ABSENT, select.getValue());
-    var summary = ReflectionTestUtils.getField(settings(), "summaryAvatar");
-    var tooltip = (Tooltip) ReflectionTestUtils.getField(summary, "tooltip");
+    Object summary = ReflectionTestUtils.getField(settings(), "summaryAvatar");
+    Tooltip tooltip = (Tooltip) ReflectionTestUtils.getField(summary, "tooltip");
     assertTrue(tooltip.isManual());
     assertFalse(tooltip.isOpened());
     assertEquals("", tooltip.getText());
-    var menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
+    UserPopoverMenu menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
     assertEquals(
         UserStatus.ABSENT,
         ((Select<?>) ReflectionTestUtils.getField(menu, "userStatusSelect")).getValue());
-    var header = (Button) ReflectionTestUtils.getField(view, "userIconButton");
+    Button header = (Button) ReflectionTestUtils.getField(view, "userIconButton");
     assertEquals(UserStatus.ABSENT, ReflectionTestUtils.getField(header.getIcon(), "userStatus"));
     menu.applyExternalStatus(UserStatus.EMPLOYED);
     assertEquals(UserStatus.EMPLOYED, select.getValue());
@@ -183,7 +196,7 @@ class AccountViewTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void failedAvatarStatusChangeRestoresBothSelectorsAndShowsTheExistingError(boolean conflict) {
-    var select = avatarStatus();
+    Select<UserStatus> select = avatarStatus();
     when(users.updateUserStatus(user, UserStatus.ABSENT, true))
         .thenThrow(
             conflict
@@ -192,16 +205,16 @@ class AccountViewTest {
     ReflectionTestUtils.invokeMethod(select, "setModelValue", UserStatus.ABSENT, true);
     assertEquals(UserStatus.getDefaultStatus(), select.getValue());
     assertEquals(UserStatus.getDefaultStatus(), user.getStatus());
-    var menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
+    UserPopoverMenu menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
     assertEquals(
         UserStatus.getDefaultStatus(),
         ((Select<?>) ReflectionTestUtils.getField(menu, "userStatusSelect")).getValue());
-    var notification =
+    Notification notification =
         (Notification)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
     assertTrue(notification.isOpened());
-    var texts = new MessageProperties(new CustomI18NProvider());
-    var message =
+    MessageProperties texts = new MessageProperties(new CustomI18NProvider());
+    Html message =
         (Html) ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText");
     assertEquals(
         conflict ? texts.getBaseUserUpdateConflict() : texts.getBaseUserStatusFailed(),
@@ -211,7 +224,7 @@ class AccountViewTest {
   }
 
   private SessionManagementService sessionService() {
-    var sessions = mock(SessionManagementService.class);
+    SessionManagementService sessions = mock(SessionManagementService.class);
     when(sessions.list(any()))
         .thenReturn(new SessionManagementService.Snapshot(java.util.List.of(), 0, 11));
     return sessions;
@@ -229,7 +242,7 @@ class AccountViewTest {
   }
 
   private void enter(String query) {
-    var event = mock(BeforeEnterEvent.class);
+    BeforeEnterEvent event = mock(BeforeEnterEvent.class);
     when(event.getLocation()).thenReturn(new Location(AppRouteConstants.ACCOUNT_ROUTE + query));
     view.beforeEnter(event);
   }
@@ -243,9 +256,9 @@ class AccountViewTest {
   void accountUrlsRestoreTheTabAndExactlyOneVisiblePanel(String query, AccountSection expected) {
     enter(query);
     assertEquals(expected, settings().getSelectedSection());
-    for (var section : AccountSection.values()) {
-      var id = "account-panel-" + section.name().toLowerCase(Locale.ROOT);
-      var panel =
+    for (AccountSection section : AccountSection.values()) {
+      String id = "account-panel-" + section.name().toLowerCase(Locale.ROOT);
+      Component panel =
           tree(settings()).filter(c -> c.getId().orElse("").equals(id)).findFirst().orElseThrow();
       assertEquals(section == expected, panel.isVisible());
     }
@@ -257,14 +270,14 @@ class AccountViewTest {
     doReturn(Optional.of(view))
         .when(ui)
         .navigate(eq(AccountView.class), any(QueryParameters.class));
-    var first =
+    TextField first =
         (TextField)
             tree(settings())
                 .filter(c -> c.getId().orElse("").equals("account-first-name"))
                 .findFirst()
                 .orElseThrow();
     first.setValue("Unsaved draft");
-    var tabs =
+    Tabs tabs =
         (Tabs)
             tree(settings())
                 .filter(c -> c.getId().orElse("").equals("account-tabs"))
@@ -296,19 +309,19 @@ class AccountViewTest {
 
   @Test
   void sessionsLimitComesFromConfigurationRatherThanTheThreeSampleDevices() {
-    var limit =
+    Component limit =
         tree(view)
             .filter(c -> c.getId().orElse("").equals("account-sessions-limit"))
             .findFirst()
             .orElseThrow();
-    var texts = MessageProperties.forLocale(new CustomI18NProvider(), Locale.GERMAN);
+    MessageProperties texts = MessageProperties.forLocale(new CustomI18NProvider(), Locale.GERMAN);
     assertEquals(texts.getAccountSettingsSessionsLimit(11), limit.getElement().getText());
   }
 
   @Test
   void viewForwardsAnUnauthenticatedVisitorToLogin() {
     when(security.getAuthenticatedUser(request)).thenReturn(Optional.empty());
-    var event = mock(BeforeEnterEvent.class);
+    BeforeEnterEvent event = mock(BeforeEnterEvent.class);
     when(event.hasForwardTarget()).thenReturn(true);
     view.beforeEnter(event);
     verify(event).forwardTo(LoginView.class);
@@ -317,8 +330,8 @@ class AccountViewTest {
 
   @Test
   void existingAccountMenuOpensTheNewAccountRouteAndClosesThePopover() {
-    var menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
-    var button = (Button) ReflectionTestUtils.getField(menu, "manageAccountButton");
+    UserPopoverMenu menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
+    Button button = (Button) ReflectionTestUtils.getField(menu, "manageAccountButton");
     assertTrue(button.isEnabled());
     doReturn(Optional.empty()).when(ui).navigate(AccountView.class);
     menu.getPopover().setOpened(true);
@@ -332,8 +345,9 @@ class AccountViewTest {
   @Test
   void trackedLanguageEventRefreshesTheAccountSurface() {
     LanguageChangeEvent.fire(ui, Locale.ENGLISH);
-    var content = (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettings");
-    var texts = MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH);
+    AccountSettingsComponent content =
+        (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettings");
+    MessageProperties texts = MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH);
     assertTrue(content.getElement().getTextRecursively().contains(texts.getAccountSettingsTitle()));
   }
 
@@ -343,8 +357,9 @@ class AccountViewTest {
 
   @Test
   void saveUsesAuthenticatedRequestRefreshesNameAndAppliesLanguageOnlyAfterSuccess() {
-    var content = (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettings");
-    var date = LocalDate.of(1990, 1, 1);
+    AccountSettingsComponent content =
+        (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettings");
+    LocalDate date = LocalDate.of(1990, 1, 1);
     when(profiles.save(eq(request), any()))
         .thenReturn(new Profile(4L, "Changed", "Name", date, Locale.ENGLISH));
     ((TextField)
@@ -368,7 +383,7 @@ class AccountViewTest {
     verify(profiles).save(request, new Changes(3L, "Changed", "Account", date, Locale.ENGLISH));
     assertEquals(Locale.ENGLISH, locale.get());
     assertEquals("Changed", user.getFirstName());
-    var avatars =
+    List<Component> avatars =
         Stream.concat(
                 tree(view),
                 tree(
@@ -378,7 +393,7 @@ class AccountViewTest {
             .distinct()
             .toList();
     assertEquals(3, avatars.size());
-    for (var avatar : avatars) {
+    for (Component avatar : avatars) {
       String expected =
           "Changed Name – "
               + MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH)
@@ -387,7 +402,7 @@ class AccountViewTest {
     }
 
     assertEquals(4L, user.getVersion());
-    var menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
+    UserPopoverMenu menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
     assertTrue(menu.getPopover().getElement().getTextRecursively().contains("Changed Name"));
     assertTrue(
         content
@@ -400,7 +415,8 @@ class AccountViewTest {
 
   @Test
   void failedSaveKeepsDraftAndDoesNotChangeLanguageOrTheUserSnapshot() {
-    var content = (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettings");
+    AccountSettingsComponent content =
+        (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettings");
     when(profiles.save(eq(request), any())).thenThrow(new IllegalStateException("Unavailable"));
     ((TextField)
             tree(content)

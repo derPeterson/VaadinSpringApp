@@ -1,7 +1,16 @@
 package de.derpeterson.app.scheduler;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -19,11 +28,11 @@ class UserStatusSchedulerTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void conflictAtOneCandidateDoesNotPreventTheNextCandidate(boolean toAbsent) {
-    var repository = mock(UserRepository.class);
-    var service = mock(UserService.class);
-    var config = mock(ConfigService.class);
-    var first = UserEntity.builder().id(1L).build();
-    var second = UserEntity.builder().id(2L).build();
+    UserRepository repository = mock(UserRepository.class);
+    UserService service = mock(UserService.class);
+    ConfigService config = mock(ConfigService.class);
+    UserEntity first = UserEntity.builder().id(1L).build();
+    UserEntity second = UserEntity.builder().id(2L).build();
     if (toAbsent) {
       when(config.getString(ConfigEntry.USER_AUTO_ABSENT_TIMEOUT)).thenReturn("PT5M");
       when(repository.findByLastActivityBeforeAndStatus(any(), eq(UserStatus.AVAILABLE)))
@@ -37,12 +46,13 @@ class UserStatusSchedulerTest {
     doThrow(new OptimisticLockingFailureException("candidate conflict"))
         .when(service)
         .updateScheduledStatus(eq(1L), eq(target), any());
-    var scheduler = new UserStatusScheduler(repository, service, config);
+    UserStatusScheduler scheduler = new UserStatusScheduler(repository, service, config);
     assertDoesNotThrow(() -> scan(scheduler, toAbsent));
     verify(service).updateScheduledStatus(eq(2L), eq(target), any());
 
     reset(service);
-    var databaseFailure = new DataAccessResourceFailureException("database unavailable");
+    DataAccessResourceFailureException databaseFailure =
+        new DataAccessResourceFailureException("database unavailable");
     doThrow(databaseFailure).when(service).updateScheduledStatus(eq(1L), eq(target), any());
     assertSame(
         databaseFailure,

@@ -1,7 +1,24 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.same;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
@@ -10,6 +27,7 @@ import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
+import de.derpeterson.app.websocket.UserStatusBroadcaster.UserStatusMessage;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -23,6 +41,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -54,7 +73,7 @@ class UserServiceTest {
 
   @Test
   void activityPropagatesOtherDatabaseFailuresWithoutLoadingOrRetryingAnEntity() {
-    var failure = repositoryFailure();
+    DataAccessResourceFailureException failure = repositoryFailure();
     when(userRepository.updateLastActivity(eq(1L), any())).thenThrow(failure);
     assertSame(
         failure,
@@ -82,7 +101,7 @@ class UserServiceTest {
     @ValueSource(booleans = {true, false})
     void bothSaveMethodsPropagatePersistenceFailures(boolean useSaveUser) {
       UserEntity user = user(1L, true);
-      var failure = repositoryFailure();
+      DataAccessResourceFailureException failure = repositoryFailure();
       when(userRepository.save(user)).thenThrow(failure);
 
       assertSame(
@@ -119,7 +138,7 @@ class UserServiceTest {
 
     @Test
     void propagatesEmailLookupFailure() {
-      var failure = repositoryFailure();
+      DataAccessResourceFailureException failure = repositoryFailure();
       when(userRepository.findByEmail("test@example.com")).thenThrow(failure);
 
       assertSame(
@@ -148,7 +167,7 @@ class UserServiceTest {
 
     @Test
     void propagatesListingFailure() {
-      var failure = repositoryFailure();
+      DataAccessResourceFailureException failure = repositoryFailure();
       when(userRepository.findAll()).thenThrow(failure);
 
       assertSame(
@@ -169,7 +188,7 @@ class UserServiceTest {
     @Test
     void propagatesDeletionFailure() {
       UserEntity user = user(1L, true);
-      var failure = repositoryFailure();
+      DataAccessResourceFailureException failure = repositoryFailure();
       doThrow(failure).when(userRepository).delete(user);
 
       assertSame(
@@ -227,7 +246,7 @@ class UserServiceTest {
 
       userService.deleteUser(admin);
 
-      var order = inOrder(userRepository);
+      InOrder order = inOrder(userRepository);
       order.verify(userRepository).findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN);
       order.verify(userRepository).delete(same(admin));
     }
@@ -328,7 +347,7 @@ class UserServiceTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void failedAdminLookupPreventsSavingAndPropagatesTheOriginalException(boolean useSaveUser) {
-      var failure = repositoryFailure();
+      DataAccessResourceFailureException failure = repositoryFailure();
       when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN)).thenThrow(failure);
 
       assertSame(
@@ -342,7 +361,7 @@ class UserServiceTest {
 
     @Test
     void failedAdminLookupPreventsDeletingAndPropagatesTheOriginalException() {
-      var failure = repositoryFailure();
+      DataAccessResourceFailureException failure = repositoryFailure();
       when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN)).thenThrow(failure);
 
       assertSame(
@@ -428,7 +447,7 @@ class UserServiceTest {
 
     @Test
     void doesNotSaveWhenLocaleLookupFails() {
-      var failure = repositoryFailure();
+      DataAccessResourceFailureException failure = repositoryFailure();
       when(userRepository.findByEmail("test@example.com")).thenThrow(failure);
 
       assertSame(
@@ -442,7 +461,7 @@ class UserServiceTest {
     @Test
     void propagatesLocalePersistenceFailure() {
       UserEntity user = user(1L, true);
-      var failure = repositoryFailure();
+      DataAccessResourceFailureException failure = repositoryFailure();
       when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
       when(userRepository.save(user)).thenThrow(failure);
 
@@ -481,7 +500,7 @@ class UserServiceTest {
     void leavesTheExistingPasswordUnchangedWhenEncodingFails() {
       UserEntity user = user(1L, true);
       user.setPassword("old-hash");
-      var failure = new IllegalStateException("Encoding failed");
+      IllegalStateException failure = new IllegalStateException("Encoding failed");
       when(passwordEncoder.encode("NewPassword!")).thenThrow(failure);
 
       assertSame(
@@ -543,7 +562,7 @@ class UserServiceTest {
       userService.updateUserStatus(user, UserStatus.EMPLOYED, true);
       commit();
 
-      var order = inOrder(userRepository, userStatusBroadcaster);
+      InOrder order = inOrder(userRepository, userStatusBroadcaster);
       order.verify(userRepository).save(same(user));
       order
           .verify(userStatusBroadcaster)
@@ -630,7 +649,7 @@ class UserServiceTest {
     void rejectedAutomaticChangeStillPropagatesPersistenceFailure(UserStatus previousStatus) {
       UserEntity user = user(1L, true);
       user.setManualStatus(previousStatus);
-      var failure = repositoryFailure();
+      DataAccessResourceFailureException failure = repositoryFailure();
       when(userRepository.save(user)).thenThrow(failure);
 
       assertSame(
@@ -663,7 +682,7 @@ class UserServiceTest {
     @ValueSource(booleans = {true, false})
     void doesNotBroadcastWhenSavingFails(boolean manualChange) {
       UserEntity user = user(1L, true);
-      var failure = repositoryFailure();
+      DataAccessResourceFailureException failure = repositoryFailure();
       when(userRepository.save(user)).thenThrow(failure);
 
       assertSame(
@@ -677,8 +696,8 @@ class UserServiceTest {
     @Test
     void isolatesBroadcastFailureAfterCommit() {
       UserEntity user = user(1L, true);
-      var event = message(user, UserStatus.OFFLINE, UserStatus.AVAILABLE);
-      var failure = new IllegalStateException("Listener failed");
+      UserStatusMessage event = message(user, UserStatus.OFFLINE, UserStatus.AVAILABLE);
+      IllegalStateException failure = new IllegalStateException("Listener failed");
       doThrow(failure).when(userStatusBroadcaster).broadcast(event);
 
       userService.updateUserStatus(user, UserStatus.AVAILABLE, true);
@@ -747,7 +766,7 @@ class UserServiceTest {
 
     @Test
     void propagatesUniquenessLookupFailure() {
-      var failure = repositoryFailure();
+      DataAccessResourceFailureException failure = repositoryFailure();
       when(userRepository.emailExistsForOtherUser("test@example.com", 1L)).thenThrow(failure);
 
       assertSame(
@@ -880,7 +899,7 @@ class UserServiceTest {
 
     @Test
     void propagatesAdminLookupFailureRatherThanGrantingDeletion() {
-      var failure = repositoryFailure();
+      DataAccessResourceFailureException failure = repositoryFailure();
       when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN)).thenThrow(failure);
 
       assertSame(
@@ -893,7 +912,7 @@ class UserServiceTest {
 
     @Test
     void propagatesAdminLookupFailureRatherThanAllowingRemoval() {
-      var failure = repositoryFailure();
+      DataAccessResourceFailureException failure = repositoryFailure();
       when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN)).thenThrow(failure);
 
       assertSame(

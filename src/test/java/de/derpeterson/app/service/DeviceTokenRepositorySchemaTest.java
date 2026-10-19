@@ -1,13 +1,19 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.derpeterson.app.security.*;
-import java.util.*;
-import org.junit.jupiter.api.*;
+import de.derpeterson.app.security.DeviceDescription;
+import de.derpeterson.app.security.DeviceTokenRepository;
+import java.util.Date;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.*;
-import org.springframework.security.web.authentication.rememberme.*;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.PersistentRememberMeToken;
 
 class DeviceTokenRepositorySchemaTest {
   private DriverManagerDataSource source;
@@ -24,7 +30,8 @@ class DeviceTokenRepositorySchemaTest {
   }
 
   private DeviceTokenRepository repository() throws Exception {
-    var repository = new DeviceTokenRepository(source, new DataSourceTransactionManager(source));
+    DeviceTokenRepository repository =
+        new DeviceTokenRepository(source, new DataSourceTransactionManager(source));
     repository.afterPropertiesSet();
     return repository;
   }
@@ -40,11 +47,11 @@ class DeviceTokenRepositorySchemaTest {
   @Test
   void longValidIdentityWorksWithTheOriginalSpringSchemaWithoutLosingOldTokens() throws Exception {
     jdbc.execute(JdbcTokenRepositoryImpl.CREATE_TABLE_SQL);
-    var original = new JdbcTokenRepositoryImpl();
+    JdbcTokenRepositoryImpl original = new JdbcTokenRepositoryImpl();
     original.setDataSource(source);
     original.createNewToken(
         new PersistentRememberMeToken("old@example.test", "old-series", "old-token", new Date()));
-    var repository = repository();
+    DeviceTokenRepository repository = repository();
     String identity = "a".repeat(64) + "@example.test";
     assertTrue(identity.length() > 64);
     repository.createNewToken(
@@ -56,7 +63,7 @@ class DeviceTokenRepositorySchemaTest {
 
   @Test
   void freshSchemaSupportsTheSameMaximumIdentityLengthAsTheUserColumn() throws Exception {
-    var repository = repository();
+    DeviceTokenRepository repository = repository();
     assertEquals(255, usernameLength());
     String identity =
         "a".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(62);
@@ -70,7 +77,7 @@ class DeviceTokenRepositorySchemaTest {
   void anAlreadyWiderColumnIsNotShrunkAndRepeatedStartupPreservesMetadata() throws Exception {
     jdbc.execute(
         "create table persistent_logins (username varchar(500) not null, series varchar(64) primary key, token varchar(64) not null, last_used timestamp not null)");
-    var first = repository();
+    DeviceTokenRepository first = repository();
     first.createNewToken(
         new PersistentRememberMeToken("old@example.test", "old-series", "old-token", new Date()));
     first.describe(
@@ -79,7 +86,7 @@ class DeviceTokenRepositorySchemaTest {
         DeviceDescription.from("Windows Chrome/130"),
         java.time.Instant.now());
     String handle = first.saved("old@example.test", 3600).getFirst().handle();
-    var second = repository();
+    DeviceTokenRepository second = repository();
     assertEquals(500, usernameLength());
     assertEquals(handle, second.saved("old@example.test", 3600).getFirst().handle());
     assertEquals("old-token", second.getTokenForSeries("old-series").getTokenValue());

@@ -1,40 +1,102 @@
 package de.derpeterson.app.ui.components;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anySet;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import com.vaadin.flow.component.*;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentUtil;
+import com.vaadin.flow.component.Html;
+import com.vaadin.flow.component.PollEvent;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
-import com.vaadin.flow.component.textfield.*;
-import com.vaadin.flow.server.*;
+import com.vaadin.flow.component.textfield.TextArea;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.dom.Element;
+import com.vaadin.flow.internal.nodefeature.ElementListenerMap;
+import com.vaadin.flow.server.Command;
+import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.helper.ui.NotificationHelper;
-import de.derpeterson.app.i18n.*;
+import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.i18n.UserNotificationTexts;
+import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.UserNotificationType;
 import de.derpeterson.app.security.MaintenanceService;
+import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserNotificationService;
-import de.derpeterson.app.service.UserNotificationService.*;
+import de.derpeterson.app.service.UserNotificationService.Item;
+import de.derpeterson.app.service.UserNotificationService.Preview;
+import de.derpeterson.app.service.UserNotificationService.Problem;
+import de.derpeterson.app.service.UserNotificationService.ReadFilter;
+import de.derpeterson.app.service.UserNotificationService.Rejected;
+import de.derpeterson.app.service.UserNotificationService.Selection;
+import de.derpeterson.app.service.UserNotificationService.Sent;
+import de.derpeterson.app.service.UserNotificationService.Target;
+import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.views.admin.AdminUserNotificationsSection;
 import de.derpeterson.app.websocket.UserNotificationBroadcaster;
+import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.data.domain.*;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Java-Komponentenprüfung ohne Browser; sichtbare Geometrie/Frontend bleiben getrennt zu prüfen.
@@ -60,7 +122,7 @@ class UserNotificationsUiTest {
   void setup() {
     ui = new UI();
     UI.setCurrent(ui);
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenAnswer(c -> locale.get());
     when(session.access(any()))
@@ -104,7 +166,7 @@ class UserNotificationsUiTest {
   }
 
   Stream<Component> tree(Component component) {
-    var children = component.getChildren();
+    Stream<Component> children = component.getChildren();
     // Vaadin verwaltet Header und Footer als separate Dialogbereiche.
     if (component instanceof Dialog dialog) {
       children =
@@ -119,7 +181,7 @@ class UserNotificationsUiTest {
   }
 
   private void assertReadAllIcon(Button button) {
-    var icon = assertInstanceOf(SvgIcon.class, button.getIcon());
+    SvgIcon icon = assertInstanceOf(SvgIcon.class, button.getIcon());
     assertEquals("icons/envelopes-check.svg", icon.getSrc());
     assertEquals("vaadin-icon", icon.getElement().getTag());
     assertEquals("true", icon.getElement().getAttribute("aria-hidden"));
@@ -138,14 +200,14 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void personalNotificationsPageUsesSharedAccountSectionHeaderAndUpdatesLanguage(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var security = mock(de.derpeterson.app.security.SecurityService.class);
-    var config = mock(de.derpeterson.app.service.ConfigService.class);
+    SecurityService security = mock(de.derpeterson.app.security.SecurityService.class);
+    ConfigService config = mock(de.derpeterson.app.service.ConfigService.class);
     when(config.getString(any(de.derpeterson.app.model.enums.ConfigEntry.class)))
         .thenAnswer(
             c ->
                 ((de.derpeterson.app.model.enums.ConfigEntry) c.getArgument(0))
                     .getDefaultValueString());
-    var user =
+    UserEntity user =
         de.derpeterson.app.model.UserEntity.builder()
             .id(5L)
             .firstName("Own")
@@ -153,8 +215,8 @@ class UserNotificationsUiTest {
             .enabled(true)
             .build();
     when(security.getCurrentUser(request)).thenReturn(Optional.of(user));
-    var users = mock(de.derpeterson.app.service.UserService.class);
-    var testAvatars = mock(de.derpeterson.app.service.UserAvatarService.class);
+    UserService users = mock(de.derpeterson.app.service.UserService.class);
+    UserAvatarService testAvatars = mock(de.derpeterson.app.service.UserAvatarService.class);
     class NotificationsView extends de.derpeterson.app.views.UserNotificationsView {
       NotificationsView() {
         super(
@@ -172,8 +234,8 @@ class UserNotificationsUiTest {
         onTrackedUserLanguageChanged();
       }
     }
-    var view = new NotificationsView();
-    var header =
+    NotificationsView view = new NotificationsView();
+    Component header =
         tree(view.getContent())
             .filter(CosmosSectionHeaderComponent.class::isInstance)
             .findFirst()
@@ -204,7 +266,7 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void refreshOpeningAndLanguageNeverMarkNotificationsRead(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var panel = new UserNotificationsPanel(texts, service, http, true);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, true);
     ui.add(panel);
     panel.refresh();
     assertEquals(texts.getNotificationsPasswordChangedTitle(), rowTitle(panel).getText());
@@ -221,7 +283,7 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void headerPreviewUsesAccountHeaderAndClosesExplicitlyWithoutReading(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var bell = new UserNotificationBell(texts, service, request, new Button());
+    UserNotificationBell bell = new UserNotificationBell(texts, service, request, new Button());
     ui.add(bell);
     Popover popover = field(bell, "popover");
     assertTrue(popover.getThemeNames().contains("cosmos-notifications"));
@@ -259,12 +321,12 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void segmentedReadFilterQueriesEachStateResetsPageAndSurvivesLanguageChange(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var readItem = new Item(8L, item.type(), item.title(), item.body(), item.createdAt(), true);
+    Item readItem = new Item(8L, item.type(), item.title(), item.body(), item.createdAt(), true);
     when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
         .thenAnswer(
             c -> {
               ReadFilter filter = c.getArgument(1);
-              var items =
+              List<Item> items =
                   switch (filter) {
                     case ALL -> List.of(readItem, item);
                     case READ -> List.of(readItem);
@@ -273,7 +335,7 @@ class UserNotificationsUiTest {
               return new PageImpl<>(
                   items, PageRequest.of(c.getArgument(2), c.getArgument(3)), items.size());
             });
-    var panel = new UserNotificationsPanel(texts, service, http, true);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, true);
     ui.add(panel);
     panel.refresh();
     RadioButtonGroup<ReadFilter> filter = field(panel, "readFilter");
@@ -283,7 +345,8 @@ class UserNotificationsUiTest {
     filter.setValue(ReadFilter.READ);
     verify(service).inbox(http, ReadFilter.READ, 0, 5);
     assertEquals(0, (int) field(panel, "page"));
-    var rows = tree(panel).filter(c -> c.hasClassName("cosmos-notification-preview-row")).toList();
+    List<Component> rows =
+        tree(panel).filter(c -> c.hasClassName("cosmos-notification-preview-row")).toList();
     assertEquals(1, rows.size());
     assertEquals("8", rows.getFirst().getElement().getAttribute("data-notification-id"));
     locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
@@ -317,7 +380,7 @@ class UserNotificationsUiTest {
             "<img src=x onerror=alert(1)>\nSecond line",
             Instant.now(),
             false);
-    var panel = new UserNotificationsPanel(texts, service, http, true);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, true);
     ui.add(panel);
     panel.refresh();
     assertEquals(item.title(), rowTitle(panel).getText());
@@ -363,7 +426,7 @@ class UserNotificationsUiTest {
 
   @Test
   void openingCompactItemKeepsPopoverWithoutMarkingRead() {
-    var bell = new UserNotificationBell(texts, service, request, new Button());
+    UserNotificationBell bell = new UserNotificationBell(texts, service, request, new Button());
     ui.add(bell);
     Popover popover = field(bell, "popover");
     popover.open();
@@ -387,24 +450,24 @@ class UserNotificationsUiTest {
       String language, boolean read) {
     locale.set(Locale.forLanguageTag(language));
     item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), read);
-    var bell = new UserNotificationBell(texts, service, request, new Button());
+    UserNotificationBell bell = new UserNotificationBell(texts, service, request, new Button());
     ui.add(bell);
     Popover popover = field(bell, "popover");
     popover.open();
     UserNotificationsPanel panel = field(bell, "panel");
-    var row =
+    Component row =
         tree(panel)
             .filter(c -> c.hasClassName("cosmos-notification-preview-row"))
             .findFirst()
             .orElseThrow();
-    var element = row.getElement();
-    var listeners =
+    Element element = row.getElement();
+    ElementListenerMap listeners =
         element.getNode().getFeature(com.vaadin.flow.internal.nodefeature.ElementListenerMap.class);
-    var data = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+    ObjectNode data = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
     listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "click", data));
     assertNull(field(panel, "detail"));
     verify(service, never()).markRead(any(), any());
-    var expressions = listeners.getExpressions("dblclick");
+    Set<String> expressions = listeners.getExpressions("dblclick");
     assertFalse(expressions.isEmpty());
     expressions.forEach(expression -> data.put(expression, false));
     listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "dblclick", data));
@@ -426,7 +489,7 @@ class UserNotificationsUiTest {
       String language, boolean read, String target) {
     locale.set(Locale.forLanguageTag(language));
     item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), read);
-    var bell = new UserNotificationBell(texts, service, request, new Button());
+    UserNotificationBell bell = new UserNotificationBell(texts, service, request, new Button());
     ui.add(bell);
     Popover popover = field(bell, "popover");
     popover.open();
@@ -464,7 +527,7 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void dismissPreviewItemUsesItsOwnRecipientIdWithoutReadingOrClosingPopup(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var bell = new UserNotificationBell(texts, service, request, new Button());
+    UserNotificationBell bell = new UserNotificationBell(texts, service, request, new Button());
     ui.add(bell);
     Popover popover = field(bell, "popover");
     popover.open();
@@ -496,10 +559,10 @@ class UserNotificationsUiTest {
     item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), read);
     when(service.inboxCount(http)).thenReturn(1L);
     when(service.unreadSnapshot(http)).thenReturn(read ? List.of() : List.of(7L));
-    var panel = new UserNotificationsPanel(texts, service, http, false);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
-    var dismiss =
+    Button dismiss =
         tree(panel)
             .filter(Button.class::isInstance)
             .map(Button.class::cast)
@@ -530,7 +593,7 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void bulkDismissReadIsAvailableAcrossFiltersAndSearchAndKeepsUnread(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var panel = new UserNotificationsPanel(texts, service, http, false);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     Button remove = field(panel, "dismissRead");
@@ -541,7 +604,7 @@ class UserNotificationsUiTest {
     assertEquals("vaadin:trash", remove.getIcon().getElement().getAttribute("icon"));
     assertEquals(texts.getNotificationsDismissRead(), remove.getTooltip().getText());
     assertEquals(texts.getNotificationsDismissRead(), remove.getAriaLabel().orElseThrow());
-    var controls = remove.getParent().orElseThrow().getChildren().toList();
+    List<Component> controls = remove.getParent().orElseThrow().getChildren().toList();
     assertEquals(controls.indexOf(markAll) + 1, controls.indexOf(remove));
     when(service.readCount(http)).thenReturn(3L);
     when(service.inboxCount(http)).thenReturn(4L);
@@ -586,7 +649,7 @@ class UserNotificationsUiTest {
   void bulkDismissReadIsAbsentFromOverlay(String language) {
     locale.set(Locale.forLanguageTag(language));
     when(service.readCount(http)).thenReturn(3L);
-    var panel = new UserNotificationsPanel(texts, service, http, true);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, true);
     ui.add(panel);
     panel.refresh();
     Button remove = field(panel, "dismissRead");
@@ -602,7 +665,7 @@ class UserNotificationsUiTest {
   void unlimitedRetentionUsesLocalizedFooterWithoutDayCount(String language) {
     locale.set(Locale.forLanguageTag(language));
     when(service.retentionDays()).thenReturn(OptionalInt.empty());
-    var panel = new UserNotificationsPanel(texts, service, http, true);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, true);
     ui.add(panel);
     panel.refresh();
     assertEquals(
@@ -616,7 +679,7 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void inboxRefreshAndLanguageNeverMarkNotificationsRead(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var panel = new UserNotificationsPanel(texts, service, http, false);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     assertEquals(texts.getNotificationsPasswordChangedTitle(), rowTitle(panel).getText());
@@ -631,7 +694,7 @@ class UserNotificationsUiTest {
 
   @Test
   void openingOneItemKeepsReadStatusAndUsesExistingDialogTheme() {
-    var panel = new UserNotificationsPanel(texts, service, http, false);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     rowTitle(panel).click();
@@ -672,18 +735,18 @@ class UserNotificationsUiTest {
     locale.set(Locale.forLanguageTag(language));
     item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), read);
     when(service.unreadSnapshot(http)).thenReturn(read ? List.of() : List.of(7L));
-    var panel = new UserNotificationsPanel(texts, service, http, compact);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, compact);
     ui.add(panel);
     panel.refresh();
     rowTitle(panel).click();
     Dialog dialog = field(panel, "detail");
     assertTrue(dialog.isOpened());
     verify(service, never()).markRead(any(), any());
-    var state = detailState(dialog);
+    Span state = detailState(dialog);
     assertEquals(
         read ? texts.getNotificationsRead() : texts.getNotificationsUnread(), state.getText());
     assertEquals("badge", state.getElement().getAttribute("theme"));
-    var dot =
+    Component dot =
         tree(dialog)
             .filter(c -> c.hasClassName("cosmos-notification-detail-dot"))
             .findFirst()
@@ -694,7 +757,7 @@ class UserNotificationsUiTest {
         tree(dialog).anyMatch(c -> c.hasClassName("cosmos-notification-detail-message--unread")));
     assertTrue(dot.hasClassName("cosmos-notification-preview-dot"));
     assertEquals("true", dot.getElement().getAttribute("aria-hidden"));
-    var header =
+    Component header =
         tree(dialog)
             .filter(c -> c.hasClassName("cosmos-notification-detail-header"))
             .findFirst()
@@ -702,7 +765,7 @@ class UserNotificationsUiTest {
     assertTrue(
         tree(header)
             .anyMatch(c -> "vaadin:paperplane".equals(c.getElement().getAttribute("icon"))));
-    var headerTitles = tree(header).filter(H2.class::isInstance).map(H2.class::cast).toList();
+    List<H2> headerTitles = tree(header).filter(H2.class::isInstance).map(H2.class::cast).toList();
     assertEquals(1, headerTitles.size());
     assertEquals(texts.getNotificationsDetailTitle(), headerTitles.getFirst().getText());
     assertTrue(
@@ -803,7 +866,7 @@ class UserNotificationsUiTest {
             "Original body\nSecond line",
             Instant.now(),
             false);
-    var panel = new UserNotificationsPanel(texts, service, http, true);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, true);
     ui.add(panel);
     panel.refresh();
     rowTitle(panel).click();
@@ -838,7 +901,7 @@ class UserNotificationsUiTest {
 
   @Test
   void failedExplicitReadDoesNotShowFalseSuccess() {
-    var panel = new UserNotificationsPanel(texts, service, http, true);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, true);
     ui.add(panel);
     panel.refresh();
     rowTitle(panel).click();
@@ -854,7 +917,7 @@ class UserNotificationsUiTest {
 
   @Test
   void pushReadRefreshUpdatesOpenDetailAndHeaderCount() {
-    var bell = new UserNotificationBell(texts, service, request, new Button());
+    UserNotificationBell bell = new UserNotificationBell(texts, service, request, new Button());
     ui.add(bell);
     Popover popover = field(bell, "popover");
     popover.open();
@@ -875,7 +938,7 @@ class UserNotificationsUiTest {
 
   @Test
   void openingDetailRechecksAccessWithoutMutatingReadStatus() {
-    var panel = new UserNotificationsPanel(texts, service, http, true);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, true);
     ui.add(panel);
     panel.refresh();
     when(service.ownerId(http)).thenThrow(new AccessDeniedException("expired"));
@@ -894,7 +957,7 @@ class UserNotificationsUiTest {
             "<img src=x onerror=alert(1)>\nText",
             Instant.now(),
             false);
-    var panel = new UserNotificationsPanel(texts, service, http, false);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     assertEquals(item.title(), rowTitle(panel).getText());
@@ -912,7 +975,7 @@ class UserNotificationsUiTest {
 
   @Test
   void markAllSubmitsDisplayedSnapshotAndUnreadFilterResetsPage() {
-    var panel = new UserNotificationsPanel(texts, service, http, false);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     ((Button) field(panel, "markAll")).click();
@@ -938,7 +1001,7 @@ class UserNotificationsUiTest {
             c ->
                 new PageImpl<>(
                     List.of(item), PageRequest.of(c.getArgument(4), c.getArgument(5)), 1));
-    var panel = new UserNotificationsPanel(texts, service, http, false);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     assertTrue(
@@ -956,8 +1019,8 @@ class UserNotificationsUiTest {
     assertFalse(((Button) field(panel, "next")).isEnabled());
     ((Button) field(panel, "first")).click();
     assertEquals(0, (int) field(panel, "page"));
-    var numbers = (Div) field(panel, "pageNumbers");
-    var third =
+    Div numbers = (Div) field(panel, "pageNumbers");
+    Button third =
         tree(numbers)
             .filter(Button.class::isInstance)
             .map(Button.class::cast)
@@ -1022,7 +1085,7 @@ class UserNotificationsUiTest {
                         item),
                     PageRequest.of(c.getArgument(4), c.getArgument(5)),
                     45));
-    var panel = new UserNotificationsPanel(texts, service, http, false);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     com.vaadin.flow.component.combobox.ComboBox<Integer> sizes = field(panel, "pageSize");
@@ -1080,7 +1143,7 @@ class UserNotificationsUiTest {
     when(service.searchInbox(
             eq(http), any(ReadFilter.class), anyString(), anySet(), anyInt(), anyInt()))
         .thenReturn(new PageImpl<>(List.of(item)));
-    var panel = new UserNotificationsPanel(texts, service, http, false);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     RadioButtonGroup<ReadFilter> filter = field(panel, "readFilter");
@@ -1126,10 +1189,10 @@ class UserNotificationsUiTest {
     item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), read);
     when(service.unreadSnapshot(http)).thenReturn(read ? List.of() : List.of(7L));
     when(service.inboxCount(http)).thenReturn(1L);
-    var panel = new UserNotificationsPanel(texts, service, http, false);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
-    var row =
+    Component row =
         tree(panel)
             .filter(c -> c.hasClassName("cosmos-notification-inbox-row"))
             .findFirst()
@@ -1140,11 +1203,11 @@ class UserNotificationsUiTest {
             .filter(Div.class::isInstance)
             .map(Div.class::cast)
             .anyMatch(div -> div.getText().equals(UserNotificationTexts.body(texts, item))));
-    var element = row.getElement();
-    var listeners =
+    Element element = row.getElement();
+    ElementListenerMap listeners =
         element.getNode().getFeature(com.vaadin.flow.internal.nodefeature.ElementListenerMap.class);
-    var data = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
-    var filters = listeners.getExpressions("click");
+    ObjectNode data = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+    Set<String> filters = listeners.getExpressions("click");
     assertFalse(filters.isEmpty());
     filters.forEach(expression -> data.put(expression, false));
     listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "click", data));
@@ -1158,7 +1221,7 @@ class UserNotificationsUiTest {
         detailState(detail).getText());
     verify(service, never()).markRead(any(), any());
     detail.close();
-    var mark =
+    Button mark =
         tree(panel)
             .filter(Button.class::isInstance)
             .map(Button.class::cast)
@@ -1194,7 +1257,7 @@ class UserNotificationsUiTest {
             c ->
                 new PageImpl<>(
                     List.of(item), PageRequest.of(c.getArgument(2), c.getArgument(3)), 30));
-    var panel = new UserNotificationsPanel(texts, service, http, false);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     ((Button) field(panel, "next")).click();
@@ -1205,7 +1268,7 @@ class UserNotificationsUiTest {
 
   @Test
   void revokedSessionClearsContentsAndOpenDetail() {
-    var panel = new UserNotificationsPanel(texts, service, http, false);
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     rowTitle(panel).click();
@@ -1221,8 +1284,8 @@ class UserNotificationsUiTest {
   @Test
   void liveBellCapsBadgeAndRefreshesOnlyItsOwnUserAndDetachesCleanly() {
     when(service.unreadCount(http)).thenReturn(125L);
-    var button = new Button();
-    var bell = new UserNotificationBell(texts, service, request, button);
+    Button button = new Button();
+    UserNotificationBell bell = new UserNotificationBell(texts, service, request, button);
     ui.add(bell);
     Span count = field(bell, "count");
     assertEquals("99+", count.getText());
@@ -1241,7 +1304,7 @@ class UserNotificationsUiTest {
 
   @Test
   void bellOpensOnClickAndClosesWithEscapeOrOutsideWithoutMarkingAllRead() {
-    var bell = new UserNotificationBell(texts, service, request, new Button());
+    UserNotificationBell bell = new UserNotificationBell(texts, service, request, new Button());
     ui.add(bell);
     Popover popover = field(bell, "popover");
     assertTrue(popover.isOpenOnClick());
@@ -1255,8 +1318,8 @@ class UserNotificationsUiTest {
 
   @Test
   void bellDoesNotReusePreviousCountOrContentsWhenSessionRevoked() {
-    var button = new Button();
-    var bell = new UserNotificationBell(texts, service, request, button);
+    Button button = new Button();
+    UserNotificationBell bell = new UserNotificationBell(texts, service, request, button);
     ui.add(bell);
     when(service.unreadCount(http)).thenThrow(new AccessDeniedException("expired"));
     events.publish(Set.of(5L));
@@ -1268,12 +1331,13 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void systemTypesRenderInCurrentLanguageAndManualBodyStaysOriginal(String language) {
     locale.set(Locale.forLanguageTag(language));
-    for (var type : UserNotificationType.values()) {
-      var message = new Item(1L, type, "Original title", "Original body", Instant.now(), false);
+    for (UserNotificationType type : UserNotificationType.values()) {
+      Item message = new Item(1L, type, "Original title", "Original body", Instant.now(), false);
       assertFalse(UserNotificationTexts.title(texts, message).isBlank());
       assertFalse(UserNotificationTexts.body(texts, message).isBlank());
-      if (type == UserNotificationType.ADMIN_ANNOUNCEMENT)
+      if (type == UserNotificationType.ADMIN_ANNOUNCEMENT) {
         assertEquals("Original body", UserNotificationTexts.body(texts, message));
+      }
     }
     assertEquals(
         language.equals("de") ? "Passwort geändert" : "Password changed",
@@ -1282,11 +1346,11 @@ class UserNotificationsUiTest {
 
   @Test
   void springWiresTheSharedBellForAuthenticatedViewsOnly() {
-    var security = mock(de.derpeterson.app.security.SecurityService.class);
-    var users = mock(de.derpeterson.app.service.UserService.class);
-    var testAvatars = mock(de.derpeterson.app.service.UserAvatarService.class);
-    var status = new de.derpeterson.app.websocket.UserStatusBroadcaster();
-    var identity =
+    SecurityService security = mock(de.derpeterson.app.security.SecurityService.class);
+    UserService users = mock(de.derpeterson.app.service.UserService.class);
+    UserAvatarService testAvatars = mock(de.derpeterson.app.service.UserAvatarService.class);
+    UserStatusBroadcaster status = new de.derpeterson.app.websocket.UserStatusBroadcaster();
+    UserEntity identity =
         de.derpeterson.app.model.UserEntity.builder()
             .id(5L)
             .firstName("Own")
@@ -1299,18 +1363,18 @@ class UserNotificationsUiTest {
         super(texts, security, users, status, UserNotificationsUiTest.this.request, testAvatars);
       }
     }
-    try (var context =
+    try (AnnotationConfigApplicationContext context =
         new org.springframework.context.annotation.AnnotationConfigApplicationContext()) {
       context.registerBean(UserNotificationService.class, () -> service);
       context.refresh();
-      var authenticated = new HeaderView();
+      HeaderView authenticated = new HeaderView();
       context.getAutowireCapableBeanFactory().autowireBean(authenticated);
       AccountHeaderActions actions = field(authenticated, "accountHeaderActions");
       assertTrue(tree(actions).anyMatch(UserNotificationBell.class::isInstance));
       ui.add(actions);
       verify(service).ownerId(http);
       when(security.getCurrentUser(request)).thenReturn(Optional.empty());
-      var anonymous = new HeaderView();
+      HeaderView anonymous = new HeaderView();
       context.getAutowireCapableBeanFactory().autowireBean(anonymous);
       AccountHeaderActions hidden = field(anonymous, "accountHeaderActions");
       assertFalse(hidden.isVisible());
@@ -1321,7 +1385,8 @@ class UserNotificationsUiTest {
   AdminUserNotificationsSection admin() {
     when(service.targets(http)).thenReturn(List.of(new Target(5L, "Own", "own@example.test")));
     when(service.sent(http, 0, 5)).thenReturn(Page.empty());
-    var section = new AdminUserNotificationsSection(texts, service, request);
+    AdminUserNotificationsSection section =
+        new AdminUserNotificationsSection(texts, service, request);
     section.activate();
     return section;
   }
@@ -1330,8 +1395,8 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void sentHistoryExpandsMessagesIndependentlyAndPaginates(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var section = admin();
-    var message = "<b>Plain text</b>\nSecond line";
+    AdminUserNotificationsSection section = admin();
+    String message = "<b>Plain text</b>\nSecond line";
     when(service.sent(http, 0, 5))
         .thenReturn(
             new PageImpl<>(
@@ -1353,12 +1418,13 @@ class UserNotificationsUiTest {
         texts.getAdminUsersPaginationTotal(21),
         ((Span) field(field(section, "historyPagination"), "totalLabel")).getText());
     Div history = field(section, "history");
-    var details =
+    List<Details> details =
         tree(history)
             .filter(com.vaadin.flow.component.details.Details.class::isInstance)
             .map(com.vaadin.flow.component.details.Details.class::cast)
             .toList();
-    var toggles = tree(history).filter(Button.class::isInstance).map(Button.class::cast).toList();
+    List<Button> toggles =
+        tree(history).filter(Button.class::isInstance).map(Button.class::cast).toList();
     assertEquals(2, details.size());
     assertTrue(details.stream().noneMatch(com.vaadin.flow.component.details.Details::isOpened));
     toggles.getFirst().click();
@@ -1408,8 +1474,8 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void sentHistoryPageSizeSelectionResetsThePageAndLoadsTheSelectedSize(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var section = admin();
-    var pagination = field(section, "historyPagination");
+    AdminUserNotificationsSection section = admin();
+    Object pagination = field(section, "historyPagination");
     com.vaadin.flow.component.combobox.ComboBox<Integer> sizes = field(pagination, "pageSize");
     assertEquals(List.of(5, 10, 15), sizes.getListDataView().getItems().toList());
     assertEquals(5, sizes.getValue());
@@ -1428,7 +1494,7 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void maintenanceKeepsSentHistoryPaginationAvailable(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var section = admin();
+    AdminUserNotificationsSection section = admin();
     when(service.sent(http, 0, 5))
         .thenReturn(
             new PageImpl<>(
@@ -1445,12 +1511,12 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void maintenanceDisablesComposeAndRequiresFreshReviewWhenReopened(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var section = admin();
+    AdminUserNotificationsSection section = admin();
 
     ((TextField) field(section, "title")).setValue("Subject");
     ((TextArea) field(section, "body")).setValue("Message");
     ((Checkbox) field(section, "everyone")).setValue(true);
-    var checked = new Preview(new Selection(true, Set.of()), List.of(5L));
+    Preview checked = new Preview(new Selection(true, Set.of()), List.of(5L));
     when(service.preview(http, checked.selection())).thenReturn(checked);
     Button review = field(section, "previewButton");
     Button send = field(section, "send");
@@ -1490,11 +1556,11 @@ class UserNotificationsUiTest {
       value = MaintenanceService.State.class,
       names = {"ACTIVE", "UNAVAILABLE"})
   void deliveryActionRechecksMaintenanceBeforeNextPoll(MaintenanceService.State state) {
-    var section = admin();
+    AdminUserNotificationsSection section = admin();
     ((TextField) field(section, "title")).setValue("Subject");
     ((TextArea) field(section, "body")).setValue("Message");
     ((Checkbox) field(section, "everyone")).setValue(true);
-    var checked = new Preview(new Selection(true, Set.of()), List.of(5L));
+    Preview checked = new Preview(new Selection(true, Set.of()), List.of(5L));
     when(service.preview(http, checked.selection())).thenReturn(checked);
     Button review = field(section, "previewButton");
     review.click();
@@ -1514,9 +1580,9 @@ class UserNotificationsUiTest {
   void deliveryPollingUpdatesStateAndRestoresPreviousIntervalOnDetach(int previousInterval) {
     ui.setPollInterval(previousInterval);
     int[] unrelatedPolls = {0};
-    var unrelated = ui.addPollListener(e -> unrelatedPolls[0]++);
+    Registration unrelated = ui.addPollListener(e -> unrelatedPolls[0]++);
     try {
-      var section = admin();
+      AdminUserNotificationsSection section = admin();
       ui.add(section);
       assertEquals(
           previousInterval > 0 ? Math.min(previousInterval, 5000) : 5000, ui.getPollInterval());
@@ -1539,13 +1605,13 @@ class UserNotificationsUiTest {
 
   @Test
   void adminRequiresValidFieldsAndFreshPreviewBeforeSend() {
-    var section = admin();
+    AdminUserNotificationsSection section = admin();
     ((Button) field(section, "previewButton")).click();
     assertTrue(((TextField) field(section, "title")).isInvalid());
     assertTrue(((TextArea) field(section, "body")).isInvalid());
     verify(service, never()).preview(any(), any());
     assertFalse(((Button) field(section, "send")).isEnabled());
-    var preview = new Preview(new Selection(true, Set.of()), List.of(5L));
+    Preview preview = new Preview(new Selection(true, Set.of()), List.of(5L));
     when(service.preview(http, preview.selection())).thenReturn(preview);
     ((TextField) field(section, "title")).setValue("Title");
     ((TextArea) field(section, "body")).setValue("Body");
@@ -1560,7 +1626,7 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void draftErrorsOnlyAppearAfterReviewAndEditingClearsThem(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var section = admin();
+    AdminUserNotificationsSection section = admin();
     TextField subject = field(section, "title");
     TextArea message = field(section, "body");
     com.vaadin.flow.component.combobox.MultiSelectComboBox<Target> recipients =
@@ -1612,7 +1678,7 @@ class UserNotificationsUiTest {
   }
 
   private void assertPreviewValidationHint() {
-    var helper = NotificationHelper.getInstance();
+    NotificationHelper helper = NotificationHelper.getInstance();
     Span hintTitle = field(helper, "titleText");
     Html hintMessage = field(helper, "messageText");
     assertEquals(texts.getNotificationsPreviewFailedTitle(), hintTitle.getText());
@@ -1630,7 +1696,7 @@ class UserNotificationsUiTest {
       value = Problem.class,
       names = {"NO_RECIPIENTS", "RECIPIENTS_CHANGED"})
   void rejectedPreviewKeepsRecipientDetailsAtFieldAndUsesGeneralHint(Problem problem) {
-    var section = admin();
+    AdminUserNotificationsSection section = admin();
     ((TextField) field(section, "title")).setValue("Subject");
     ((TextArea) field(section, "body")).setValue("Message");
     com.vaadin.flow.component.combobox.MultiSelectComboBox<Target> recipients =
@@ -1652,7 +1718,7 @@ class UserNotificationsUiTest {
   @ParameterizedTest
   @ValueSource(strings = {"title", "body", "recipients", "everyone"})
   void changingAnyDraftInputRequiresAnotherSuccessfulReview(String input) {
-    var section = admin();
+    AdminUserNotificationsSection section = admin();
     TextField subject = field(section, "title");
     TextArea message = field(section, "body");
     com.vaadin.flow.component.combobox.MultiSelectComboBox<Target> recipients =
@@ -1663,7 +1729,7 @@ class UserNotificationsUiTest {
     subject.setValue("Subject");
     message.setValue("Message");
     recipients.setValue(Set.of(new Target(5L, "Own", "own@example.test")));
-    var checked = new Preview(new Selection(false, Set.of(5L)), List.of(5L));
+    Preview checked = new Preview(new Selection(false, Set.of(5L)), List.of(5L));
     when(service.preview(http, checked.selection())).thenReturn(checked);
     assertFalse(send.isEnabled());
     review.click();
@@ -1694,11 +1760,11 @@ class UserNotificationsUiTest {
   @ParameterizedTest
   @ValueSource(strings = {"NO_RECIPIENTS", "RECIPIENTS_CHANGED", "UNAVAILABLE"})
   void failedRepeatReviewRevokesEarlierApproval(String problem) {
-    var section = admin();
+    AdminUserNotificationsSection section = admin();
     ((TextField) field(section, "title")).setValue("Subject");
     ((TextArea) field(section, "body")).setValue("Message");
     ((Checkbox) field(section, "everyone")).setValue(true);
-    var checked = new Preview(new Selection(true, Set.of()), List.of(5L));
+    Preview checked = new Preview(new Selection(true, Set.of()), List.of(5L));
     RuntimeException rejection =
         problem.equals("UNAVAILABLE")
             ? new IllegalStateException("Isolated review failure")
@@ -1728,15 +1794,17 @@ class UserNotificationsUiTest {
   @ParameterizedTest
   @ValueSource(strings = {"title", "body"})
   void overlongDraftIsMarkedOnlyWhenReviewed(String input) {
-    var section = admin();
+    AdminUserNotificationsSection section = admin();
     TextField subject = field(section, "title");
     TextArea message = field(section, "body");
     subject.setValue("Subject");
     message.setValue("Message");
     ((Checkbox) field(section, "everyone")).setValue(true);
-    if (input.equals("title"))
+    if (input.equals("title")) {
       subject.setValue("x".repeat(UserNotificationService.TITLE_LIMIT + 1));
-    else message.setValue("x".repeat(UserNotificationService.BODY_LIMIT + 1));
+    } else {
+      message.setValue("x".repeat(UserNotificationService.BODY_LIMIT + 1));
+    }
     assertFalse(subject.isInvalid());
     assertFalse(message.isInvalid());
     ((Button) field(section, "previewButton")).click();
@@ -1748,8 +1816,8 @@ class UserNotificationsUiTest {
 
   @Test
   void adminSendUsesSameRequestAfterAmbiguousFailureAndClearsOnlyAfterSuccess() {
-    var section = admin();
-    var preview = new Preview(new Selection(true, Set.of()), List.of(5L));
+    AdminUserNotificationsSection section = admin();
+    Preview preview = new Preview(new Selection(true, Set.of()), List.of(5L));
     when(service.preview(http, preview.selection())).thenReturn(preview);
     ((TextField) field(section, "title")).setValue("Title");
     ((TextArea) field(section, "body")).setValue("Body");
@@ -1773,13 +1841,14 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void recipientCountTracksSelectionRemovalAndLanguage(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var accounts =
+    List<Target> accounts =
         List.of(
             new Target(5L, "Own User", "own@example.test"),
             new Target(6L, "Second User", "second@example.test"));
     when(service.targets(http)).thenReturn(accounts);
     when(service.sent(http, 0, 5)).thenReturn(Page.empty());
-    var section = new AdminUserNotificationsSection(texts, service, request);
+    AdminUserNotificationsSection section =
+        new AdminUserNotificationsSection(texts, service, request);
     section.activate();
     com.vaadin.flow.component.combobox.MultiSelectComboBox<Target> recipients =
         field(section, "targets");
@@ -1804,13 +1873,14 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void allRecipientsShowsDisabledSummaryAndRestoresIndividualSelection(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var accounts =
+    List<Target> accounts =
         List.of(
             new Target(5L, "Own User", "own@example.test"),
             new Target(6L, "Second User", "second@example.test"));
     when(service.targets(http)).thenReturn(accounts);
     when(service.sent(http, 0, 5)).thenReturn(Page.empty());
-    var section = new AdminUserNotificationsSection(texts, service, request);
+    AdminUserNotificationsSection section =
+        new AdminUserNotificationsSection(texts, service, request);
     section.activate();
     com.vaadin.flow.component.combobox.MultiSelectComboBox<Target> recipients =
         field(section, "targets");
@@ -1844,7 +1914,7 @@ class UserNotificationsUiTest {
   @ValueSource(strings = {"de", "en"})
   void reviewedPreviewUsesNativeRecipientsAndInvalidatesAfterEditing(String language) {
     locale.set(Locale.forLanguageTag(language));
-    var accounts =
+    List<Target> accounts =
         List.of(
             new Target(5L, "Own User", "own@example.test"),
             new Target(6L, "Second User", "second@example.test"),
@@ -1852,12 +1922,13 @@ class UserNotificationsUiTest {
             new Target(8L, "Fourth User", "fourth@example.test"));
     when(service.targets(http)).thenReturn(accounts);
     when(service.sent(http, 0, 5)).thenReturn(Page.empty());
-    var section = new AdminUserNotificationsSection(texts, service, request);
+    AdminUserNotificationsSection section =
+        new AdminUserNotificationsSection(texts, service, request);
     section.activate();
     TextField titleField = field(section, "title");
     TextArea bodyField = field(section, "body");
     Checkbox all = field(section, "everyone");
-    var preview = new Preview(new Selection(true, Set.of()), List.of(5L, 6L, 7L, 8L));
+    Preview preview = new Preview(new Selection(true, Set.of()), List.of(5L, 6L, 7L, 8L));
     when(service.preview(http, preview.selection())).thenReturn(preview);
     titleField.setValue("<b>Title</b>");
     bodyField.setValue("<img src=x onerror=alert(1)>\nPlain text");
@@ -1888,14 +1959,14 @@ class UserNotificationsUiTest {
             .hasClassName("cosmos-notification-compose-preview-header"));
     assertEquals(
         3, tree(area).filter(com.vaadin.flow.component.avatar.Avatar.class::isInstance).count());
-    var details =
+    Details details =
         tree(area)
             .filter(com.vaadin.flow.component.details.Details.class::isInstance)
             .map(com.vaadin.flow.component.details.Details.class::cast)
             .findFirst()
             .orElseThrow();
     assertFalse(details.isOpened());
-    var detailsButton =
+    Button detailsButton =
         tree(area)
             .filter(Button.class::isInstance)
             .map(Button.class::cast)
@@ -1920,12 +1991,13 @@ class UserNotificationsUiTest {
     assertFalse(details.isOpened());
     assertEquals(texts.getNotificationsRecipientDetails(), detailsButton.getText());
     detailsButton.click();
-    for (var account : accounts)
+    for (Target account : accounts) {
       assertTrue(
           tree(details)
               .filter(Span.class::isInstance)
               .map(Span.class::cast)
               .anyMatch(span -> span.getText().equals(account.email())));
+    }
     assertTrue(tree(area).noneMatch(Html.class::isInstance));
     assertTrue(
         tree(area)

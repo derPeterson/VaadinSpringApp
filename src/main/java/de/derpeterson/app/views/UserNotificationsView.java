@@ -1,17 +1,29 @@
 package de.derpeterson.app.views;
 
-import com.vaadin.flow.component.html.*;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.UIScope;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.i18n.MessageProperties;
-import de.derpeterson.app.security.*;
-import de.derpeterson.app.service.*;
-import de.derpeterson.app.ui.components.*;
+import de.derpeterson.app.security.IsAuthenticatedBaseView;
+import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.UserAvatarService;
+import de.derpeterson.app.service.UserNotificationService;
+import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.ui.components.AccountNavigationTabs;
+import de.derpeterson.app.ui.components.CosmosBackgroundComponent;
+import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.CosmosCopyrightComponent;
+import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.ui.components.UserNotificationsPanel;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.time.Clock;
 
 @Route(AppRouteConstants.NOTIFICATIONS_ROUTE)
@@ -38,15 +50,16 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
     super(texts, security, users, status, request, avatars);
     addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell");
     addToNavbar(createApplicationHeader(config));
-    var session = request.getSession(false);
+    HttpSession session = request.getSession(false);
     inbox = new UserNotificationsPanel(texts, notifications, session, false);
     accountNavigation = new AccountNavigationTabs(texts, true);
-    var sectionHeader = new CosmosSectionHeaderComponent(overview, title, description);
-    var card = new CosmosCardComponent(inbox);
+    CosmosSectionHeaderComponent sectionHeader =
+        new CosmosSectionHeaderComponent(overview, title, description);
+    CosmosCardComponent card = new CosmosCardComponent(inbox);
     card.addClassNames("cosmos-panel-card", "cosmos-notification-inbox-card");
-    var content = new Div(sectionHeader, accountNavigation, card);
+    Div content = new Div(sectionHeader, accountNavigation, card);
     content.addClassName("cosmos-notification-inbox-page");
-    var main =
+    Div main =
         new Div(
             content,
             new CosmosCopyrightComponent(
@@ -57,18 +70,21 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
     addAttachListener(
         e -> {
           try {
-            var owner = notifications.ownerId(session);
+            Long owner = notifications.ownerId(session);
             registration =
                 notifications
                     .events()
                     .register(
                         ids -> {
-                          if (ids.contains(owner))
+                          if (ids.contains(owner)) {
                             e.getUI()
                                 .access(
                                     () -> {
-                                      if (isAttached()) inbox.refresh();
+                                      if (isAttached()) {
+                                        inbox.refresh();
+                                      }
                                     });
+                          }
                         });
             inbox.refresh();
           } catch (org.springframework.security.access.AccessDeniedException denied) {
@@ -77,7 +93,9 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
         });
     addDetachListener(
         e -> {
-          if (registration != null) registration.remove();
+          if (registration != null) {
+            registration.remove();
+          }
           registration = null;
         });
     onTrackedUserLanguageChanged();
@@ -88,7 +106,11 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
     overview.setText(messageProperties.getNotificationsOverview());
     title.setText(messageProperties.getNotificationsTitle());
     description.setText(messageProperties.getNotificationsPageDescription());
-    if (inbox != null) inbox.refreshTexts();
-    if (accountNavigation != null) accountNavigation.refreshTexts();
+    if (inbox != null) {
+      inbox.refreshTexts();
+    }
+    if (accountNavigation != null) {
+      accountNavigation.refreshTexts();
+    }
   }
 }

@@ -37,11 +37,14 @@ public class UserNotificationPolicy {
 
   private OptionalInt days(ConfigEntry entry) {
     String value = config.getString(entry);
-    if (value.isBlank()) return OptionalInt.empty();
+    if (value.isBlank()) {
+      return OptionalInt.empty();
+    }
     int days = Integer.parseInt(value.trim());
-    if (days < 1)
+    if (days < 1) {
       throw new IllegalArgumentException(
           "Positive notification retention required: " + entry.getKey());
+    }
     return OptionalInt.of(days);
   }
 }

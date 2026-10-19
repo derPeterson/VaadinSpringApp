@@ -1,6 +1,7 @@
 package de.derpeterson.app.config;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -16,11 +17,11 @@ class UserNotificationSchemaUpdaterTest {
 
   @Test
   void extendsOldNativeEnumAndPreservesExistingNotificationsIdempotently() {
-    var jdbc = jdbc();
+    JdbcTemplate jdbc = jdbc();
     jdbc.execute(
         "create table user_notifications(id bigint primary key,type enum('ADMIN_ANNOUNCEMENT','PASSWORD_CHANGED','PASSWORD_RESET','EMAIL_CHANGED') not null)");
     jdbc.execute("insert into user_notifications values (1,'PASSWORD_CHANGED')");
-    var migration = new UserNotificationSchemaUpdater(jdbc);
+    UserNotificationSchemaUpdater migration = new UserNotificationSchemaUpdater(jdbc);
     migration.updateTypeColumn();
     migration.updateTypeColumn();
     jdbc.execute("insert into user_notifications values (2,'ROLES_CHANGED')");
@@ -35,7 +36,7 @@ class UserNotificationSchemaUpdaterTest {
 
   @Test
   void varcharSchemaIsKeptAndAlreadyAcceptsRoleEvents() {
-    var jdbc = jdbc();
+    JdbcTemplate jdbc = jdbc();
     jdbc.execute(
         "create table user_notifications(id bigint primary key,type varchar(255) not null)");
     new UserNotificationSchemaUpdater(jdbc).updateTypeColumn();

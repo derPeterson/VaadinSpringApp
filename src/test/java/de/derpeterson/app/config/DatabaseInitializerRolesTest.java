@@ -1,11 +1,22 @@
 package de.derpeterson.app.config;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
+import de.derpeterson.app.config.BootstrapAccountsProperties.Account;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.RoleRepository;
 import de.derpeterson.app.repository.UserRepository;
@@ -16,6 +27,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -23,11 +35,11 @@ import org.springframework.test.util.ReflectionTestUtils;
 class DatabaseInitializerRolesTest {
   @Test
   void fillsMissingRolesOnceEvenWithBootstrapDisabledAndDoesNotModifyAccounts() throws Exception {
-    var roles = mock(RoleRepository.class);
-    var users = mock(UserRepository.class);
-    var stored = new EnumMap<RoleType, RoleEntity>(RoleType.class);
-    var admin = RoleEntity.builder().id(12L).name(RoleType.ROLE_ADMIN).build();
-    var user = RoleEntity.builder().id(13L).name(RoleType.ROLE_USER).build();
+    RoleRepository roles = mock(RoleRepository.class);
+    UserRepository users = mock(UserRepository.class);
+    EnumMap<RoleType, RoleEntity> stored = new EnumMap<RoleType, RoleEntity>(RoleType.class);
+    RoleEntity admin = RoleEntity.builder().id(12L).name(RoleType.ROLE_ADMIN).build();
+    RoleEntity user = RoleEntity.builder().id(13L).name(RoleType.ROLE_USER).build();
     stored.put(RoleType.ROLE_ADMIN, admin);
     stored.put(RoleType.ROLE_USER, user);
     when(roles.findByName(any()))
@@ -39,7 +51,7 @@ class DatabaseInitializerRolesTest {
               stored.put(role.getName(), role);
               return role;
             });
-    var initializer =
+    DatabaseInitializer initializer =
         new DatabaseInitializer(
             users,
             roles,
@@ -61,10 +73,10 @@ class DatabaseInitializerRolesTest {
 
   @Test
   void startupCleansRetiredConfigurationBeforeSeedingAndPreservesStoredValues() throws Exception {
-    var config = mock(ConfigService.class);
+    ConfigService config = mock(ConfigService.class);
     when(config.exists(any())).thenReturn(true);
-    var environment = mock(Environment.class);
-    var initializer =
+    Environment environment = mock(Environment.class);
+    DatabaseInitializer initializer =
         new DatabaseInitializer(
             mock(UserRepository.class),
             mock(RoleRepository.class),
@@ -79,10 +91,10 @@ class DatabaseInitializerRolesTest {
     initializer.initDatabase().run();
     initializer.initDatabase().run();
 
-    var order = inOrder(config);
+    InOrder order = inOrder(config);
     for (int run = 0; run < 2; run++) {
       order.verify(config).removeRetiredEntries();
-      for (var entry : de.derpeterson.app.model.enums.ConfigEntry.values()) {
+      for (ConfigEntry entry : de.derpeterson.app.model.enums.ConfigEntry.values()) {
         order.verify(config).exists(entry);
       }
     }
@@ -92,12 +104,12 @@ class DatabaseInitializerRolesTest {
 
   @Test
   void optionalBootstrapCreatesOnlyTheExplicitSuperadminRole() throws Exception {
-    var roles = mock(RoleRepository.class);
-    var users = mock(UserRepository.class);
+    RoleRepository roles = mock(RoleRepository.class);
+    UserRepository users = mock(UserRepository.class);
     when(roles.findByName(any()))
         .thenAnswer(call -> Optional.of(RoleEntity.builder().name(call.getArgument(0)).build()));
     when(users.findByEmail(anyString())).thenReturn(Optional.empty());
-    var initializer =
+    DatabaseInitializer initializer =
         new DatabaseInitializer(
             users,
             roles,
@@ -108,15 +120,15 @@ class DatabaseInitializerRolesTest {
             mock(de.derpeterson.app.config.UserNotificationSchemaUpdater.class),
             new BootstrapAccountsProperties(),
             mock(org.springframework.transaction.PlatformTransactionManager.class));
-    var bootstrap = new BootstrapAccountsProperties();
+    BootstrapAccountsProperties bootstrap = new BootstrapAccountsProperties();
     bootstrap.setEnabled(true);
-    var account = new BootstrapAccountsProperties.Account();
+    Account account = new BootstrapAccountsProperties.Account();
     account.setEmail("isolated-bootstrap@example.test");
     account.setPassword("OnlyATestPassword!");
     bootstrap.setSuperadmins(java.util.List.of(account));
     ReflectionTestUtils.setField(initializer, "bootstrap", bootstrap);
     initializer.initDatabase().run();
-    var created = ArgumentCaptor.forClass(UserEntity.class);
+    ArgumentCaptor<UserEntity> created = ArgumentCaptor.forClass(UserEntity.class);
     verify(users).save(created.capture());
     assertEquals(
         Set.of(RoleType.ROLE_SUPERADMIN),

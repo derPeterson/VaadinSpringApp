@@ -151,8 +151,8 @@ public class EmailQueueService {
     if (!UserInputRules.isEmailValid(recipient)) {
       throw new IllegalArgumentException("Invalid notification recipient");
     }
-    var stored = userRepository.lockVerificationUser(user.getId()).orElseThrow();
-    var email = new EmailQueueEntity();
+    UserEntity stored = userRepository.lockVerificationUser(user.getId()).orElseThrow();
+    EmailQueueEntity email = new EmailQueueEntity();
     email.setUserEntity(stored);
     email.setRecipient(EmailIdentity.canonicalize(recipient));
     email.setSubject(Objects.requireNonNull(subject));
@@ -172,13 +172,16 @@ public class EmailQueueService {
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   @Scheduled(fixedDelay = 5000)
   public void processQueue() {
-    var transaction = new TransactionTemplate(transactionManager);
+    TransactionTemplate transaction = new TransactionTemplate(transactionManager);
     transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     int capacity = configService.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY);
-    if (capacity <= 0) throw new IllegalArgumentException("Email queue capacity must be positive.");
+    if (capacity <= 0) {
+      throw new IllegalArgumentException("Email queue capacity must be positive.");
+    }
     int maxRetry = configService.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY);
-    if (maxRetry < 0)
+    if (maxRetry < 0) {
       throw new IllegalArgumentException("Email queue retry limit must not be negative.");
+    }
     LocalDateTime retryCutoff = LocalDateTime.now(clock).minus(RETRY_INTERVAL);
     List<Long> pendingIds =
         transaction.execute(
@@ -192,18 +195,22 @@ public class EmailQueueService {
   }
 
   private void processCandidate(long id, int maxRetry) {
-    var transaction = new TransactionTemplate(transactionManager);
+    TransactionTemplate transaction = new TransactionTemplate(transactionManager);
     transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     try {
       EmailQueueEntity claimed =
           transaction.execute(
               status -> {
-                var email = emailQueueRepository.lockById(id).orElse(null);
-                if (email == null || email.getStatus() != EmailStatus.PENDING) return null;
+                EmailQueueEntity email = emailQueueRepository.lockById(id).orElse(null);
+                if (email == null || email.getStatus() != EmailStatus.PENDING) {
+                  return null;
+                }
                 if (email.getLastRetryAt() != null
                     && email
                         .getLastRetryAt()
-                        .isAfter(LocalDateTime.now(clock).minus(RETRY_INTERVAL))) return null;
+                        .isAfter(LocalDateTime.now(clock).minus(RETRY_INTERVAL))) {
+                  return null;
+                }
                 // Empfänger im frischen Worker-Claim initialisieren, SMTP außerhalb der
                 // Transaktion.
                 email.getUserEntity().getEmail();
@@ -211,7 +218,9 @@ public class EmailQueueService {
                 emailQueueRepository.save(email);
                 return email;
               });
-      if (claimed != null) dispatchClaimed(transaction, claimed, maxRetry);
+      if (claimed != null) {
+        dispatchClaimed(transaction, claimed, maxRetry);
+      }
     } catch (RuntimeException failure) {
       logger.error(
           "Queue entry {} could not be completed; no automatic release of IN_PROGRESS.",
@@ -249,7 +258,7 @@ public class EmailQueueService {
     EmailQueueEntity completed =
         transaction.execute(
             status -> {
-              var email = emailQueueRepository.lockById(claimed.getId()).orElseThrow();
+              EmailQueueEntity email = emailQueueRepository.lockById(claimed.getId()).orElseThrow();
               if (email.getStatus() != EmailStatus.IN_PROGRESS
                   || email.getRetryCount() != claimed.getRetryCount()) {
                 throw new IllegalStateException("Queue claim no longer matches the stored state.");
@@ -296,12 +305,13 @@ public class EmailQueueService {
         Duration.parse(
             Objects.requireNonNull(
                 configService.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION), "retention"));
-    if (retention.isZero() || retention.isNegative())
+    if (retention.isZero() || retention.isNegative()) {
       throw new IllegalArgumentException("Email queue retention must be positive.");
+    }
     LocalDateTime liveDateTime = LocalDateTime.now(clock).minus(retention);
     int deleted =
         emailQueueRepository.deleteByStatusAndCreatedAtBefore(EmailStatus.SENT, liveDateTime);
-    var formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+    String formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     logger.info(
         "✅ {} emails with status SENT created before {} have been deleted.",
         deleted,
@@ -326,7 +336,7 @@ public class EmailQueueService {
     Long auditId =
         transaction.execute(
             status -> {
-              var audit = new AdminNotificationAttemptEntity();
+              AdminNotificationAttemptEntity audit = new AdminNotificationAttemptEntity();
               audit.setQueueId(failedEmail.getId());
               audit.setStartedAt(LocalDateTime.now(clock));
               return adminAttempts.saveAndFlush(audit).getId();
@@ -367,7 +377,7 @@ public class EmailQueueService {
     // Independent of the already committed FAILED; failure here leaves the durable start.
     transaction.executeWithoutResult(
         status -> {
-          var audit = adminAttempts.lockById(auditId).orElseThrow();
+          AdminNotificationAttemptEntity audit = adminAttempts.lockById(auditId).orElseThrow();
           if (audit.getStatus() != AdminNotificationStatus.IN_PROGRESS) {
             throw new IllegalStateException(
                 "Admin notification attempt no longer matches the stored state.");

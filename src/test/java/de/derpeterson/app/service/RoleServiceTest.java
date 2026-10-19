@@ -1,7 +1,13 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.enums.RoleType;
@@ -31,8 +37,8 @@ class RoleServiceTest {
   @ParameterizedTest
   @EnumSource(RoleType.class)
   void foundRoleReturnsTheSameOptionalAndUnmodifiedEntity(RoleType name) {
-    var entity = RoleEntity.builder().id(17L).name(name).build();
-    var result = Optional.of(entity);
+    RoleEntity entity = RoleEntity.builder().id(17L).name(name).build();
+    Optional<RoleEntity> result = Optional.of(entity);
     when(repository.findByName(name)).thenReturn(result);
 
     assertSame(result, service.findByName(name));
@@ -66,7 +72,8 @@ class RoleServiceTest {
 
   @Test
   void repositoryOutageIsPropagatedUnchangedWithoutRetry() {
-    var failure = new DataAccessResourceFailureException("isolated test failure");
+    DataAccessResourceFailureException failure =
+        new DataAccessResourceFailureException("isolated test failure");
     when(repository.findByName(RoleType.ROLE_USER)).thenThrow(failure);
 
     assertSame(
@@ -81,7 +88,8 @@ class RoleServiceTest {
 
   @Test
   void nonUniqueResultIsNotDisguisedAsAMissingRole() {
-    var failure = new IncorrectResultSizeDataAccessException(1, 2);
+    IncorrectResultSizeDataAccessException failure =
+        new IncorrectResultSizeDataAccessException(1, 2);
     when(repository.findByName(RoleType.ROLE_ADMIN)).thenThrow(failure);
 
     assertSame(

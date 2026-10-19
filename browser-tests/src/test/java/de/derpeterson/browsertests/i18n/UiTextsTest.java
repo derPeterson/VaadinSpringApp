@@ -1,6 +1,10 @@
 package de.derpeterson.browsertests.i18n;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
@@ -81,7 +85,7 @@ class UiTextsTest {
 
   @Test
   void dateEntryMatchesTheExplicitUiLanguage() {
-    var date = LocalDate.of(1990, 1, 1);
+    LocalDate date = LocalDate.of(1990, 1, 1);
     assertEquals("01.01.1990", new UiTexts("de").dateInput(date));
     assertEquals("1/1/1990", new UiTexts("en").dateInput(date));
   }

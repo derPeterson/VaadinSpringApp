@@ -1,7 +1,21 @@
 package de.derpeterson.app.views;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -21,13 +35,22 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionManagementService;
-import de.derpeterson.app.service.*;
+import de.derpeterson.app.service.AccountProfileService;
+import de.derpeterson.app.service.AccountSecurityService;
+import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.UserAvatarService;
+import de.derpeterson.app.service.UserNotificationService;
+import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.base.TrackedUserAppLayout;
 import de.derpeterson.app.ui.components.AccountHeaderActions;
 import de.derpeterson.app.ui.components.AccountNavigationTabs;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
@@ -44,7 +67,7 @@ class ApplicationHeaderTest {
   private UI ui;
 
   static Stream<Arguments> pagesRolesAndLanguages() {
-    var authenticated =
+    Stream<Arguments> authenticated =
         Stream.of("home", "account", "notifications")
             .flatMap(
                 page ->
@@ -71,8 +94,8 @@ class ApplicationHeaderTest {
       String page, RoleType role, Locale initialLocale) {
     ui = spy(new UI());
     UI.setCurrent(ui);
-    var locale = new AtomicReference<>(initialLocale);
-    var session = mock(VaadinSession.class);
+    AtomicReference<Locale> locale = new AtomicReference<>(initialLocale);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     doAnswer(
@@ -84,9 +107,9 @@ class ApplicationHeaderTest {
         .setLocale(any());
     VaadinSession.setCurrent(session);
     ui.getInternals().setSession(session);
-    var request = new MockHttpServletRequest();
+    MockHttpServletRequest request = new MockHttpServletRequest();
     request.setSession(new MockHttpSession());
-    var security = mock(SecurityService.class);
+    SecurityService security = mock(SecurityService.class);
     UserEntity user =
         role == null
             ? null
@@ -99,16 +122,16 @@ class ApplicationHeaderTest {
                 .roleEntities(List.of(RoleEntity.builder().name(role).build()))
                 .build();
     when(security.getCurrentUser(request)).thenReturn(Optional.ofNullable(user));
-    var config = mock(ConfigService.class);
+    ConfigService config = mock(ConfigService.class);
     when(config.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Header Test Service");
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(5);
-    var texts = new MessageProperties(new CustomI18NProvider());
-    var users = mock(UserService.class);
-    var avatars = mock(UserAvatarService.class);
-    var status = new UserStatusBroadcaster();
-    var notifications = mock(UserNotificationService.class);
+    MessageProperties texts = new MessageProperties(new CustomI18NProvider());
+    UserService users = mock(UserService.class);
+    UserAvatarService avatars = mock(UserAvatarService.class);
+    UserStatusBroadcaster status = new UserStatusBroadcaster();
+    UserNotificationService notifications = mock(UserNotificationService.class);
     when(notifications.inbox(
             eq(request.getSession()),
             any(UserNotificationService.ReadFilter.class),
@@ -136,37 +159,38 @@ class ApplicationHeaderTest {
                   texts, security, users, status, request, avatars, notifications, config);
           default -> throw new IllegalArgumentException(page);
         };
-    var headers = tree(view).filter(c -> c.hasClassName("cosmos-topbar")).toList();
+    List<Component> headers = tree(view).filter(c -> c.hasClassName("cosmos-topbar")).toList();
     assertEquals(1, headers.size());
-    var header = (HorizontalLayout) headers.getFirst();
+    HorizontalLayout header = (HorizontalLayout) headers.getFirst();
     assertFalse(header.isSpacing());
-    var parts = header.getChildren().toList();
+    List<Component> parts = header.getChildren().toList();
     assertEquals(2, parts.size());
-    var brand = parts.getFirst();
+    Component brand = parts.getFirst();
     assertTrue(brand.hasClassName("cosmos-topbar-brand"));
-    var brandParts = brand.getChildren().toList();
+    List<Component> brandParts = brand.getChildren().toList();
     assertEquals(2, brandParts.size());
-    var logo = assertInstanceOf(Image.class, brandParts.getFirst());
+    Image logo = assertInstanceOf(Image.class, brandParts.getFirst());
     assertEquals("custom-theme/service_logo.png", logo.getSrc());
     assertTrue(logo.hasClassName("cosmos-topbar-logo"));
     assertFalse(logo.getAlt().orElseThrow().isBlank());
     assertNotNull(getClass().getResource("/META-INF/resources/" + logo.getSrc()));
     assertEquals("Header Test Service", brandParts.getLast().getElement().getText());
     assertTrue(brandParts.getLast().hasClassName("cosmos-topbar-service-name"));
-    var right = parts.getLast();
+    Component right = parts.getLast();
     assertTrue(right.hasClassName("cosmos-topbar-account-menu"));
-    var rightParts = right.getChildren().toList();
+    List<Component> rightParts = right.getChildren().toList();
     assertEquals(2, rightParts.size());
-    var shortcuts = assertInstanceOf(AccountHeaderActions.class, rightParts.getFirst());
+    AccountHeaderActions shortcuts =
+        assertInstanceOf(AccountHeaderActions.class, rightParts.getFirst());
     assertEquals(user != null, shortcuts.isVisible());
-    var avatar = assertInstanceOf(Button.class, rightParts.getLast());
+    Button avatar = assertInstanceOf(Button.class, rightParts.getLast());
     assertTrue(avatar.hasClassName("tracked-user-button"));
-    var menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
+    UserPopoverMenu menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
     assertNotNull(menu);
     assertTrue(menu.getPopover().getThemeNames().contains("cosmos"));
     avatar.click();
     assertTrue(menu.getPopover().isOpened());
-    var settings =
+    Button settings =
         tree(shortcuts)
             .filter(c -> c.getId().orElse("").equals("account-header-settings"))
             .map(Button.class::cast)
@@ -175,7 +199,7 @@ class ApplicationHeaderTest {
     LanguageChangeEvent.fire(
         ui, initialLocale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
     assertEquals(texts.getBaseManageAccountButton(), settings.getAriaLabel().orElseThrow());
-    var admin = menuButton(menu, "manageApplicationButton");
+    Button admin = menuButton(menu, "manageApplicationButton");
     assertEquals(role != null && role.isAdministrative(), admin != null);
     if (admin != null) {
       assertEquals(texts.getBaseManageApplicationButton(), admin.getText());
@@ -183,7 +207,7 @@ class ApplicationHeaderTest {
       admin.click();
       verify(ui).navigate(AdminView.class);
     }
-    var home = menuButton(menu, "homeButton");
+    Button home = menuButton(menu, "homeButton");
     assertEquals(!page.equals("home"), home != null);
     if (home != null) {
       doReturn(Optional.empty()).when(ui).navigate(HomeView.class);
@@ -206,22 +230,23 @@ class ApplicationHeaderTest {
       verify(ui).navigate(LoginView.class);
       assertNull(menuButton(menu, "logoutButton"));
     }
-    var accountNavigation = tree(view).filter(AccountNavigationTabs.class::isInstance).toList();
+    List<Component> accountNavigation =
+        tree(view).filter(AccountNavigationTabs.class::isInstance).toList();
     if (page.equals("home")) {
       assertTrue(accountNavigation.isEmpty());
     } else {
       assertEquals(1, accountNavigation.size());
-      var navigation = (AccountNavigationTabs) accountNavigation.getFirst();
+      AccountNavigationTabs navigation = (AccountNavigationTabs) accountNavigation.getFirst();
       assertTrue(navigation.hasClassName("account-navigation-tabs"));
       assertEquals(
           texts.getAccountSettingsTitle(), navigation.getElement().getAttribute("aria-label"));
-      var tabs = navigation.getChildren().map(Tab.class::cast).toList();
+      List<Tab> tabs = navigation.getChildren().map(Tab.class::cast).toList();
       assertEquals(2, tabs.size());
       assertEquals(texts.getAccountNavigationSettings(), tabLabel(tabs.getFirst()));
       assertEquals(texts.getNotificationsTitle(), tabLabel(tabs.getLast()));
       assertSame(
           page.equals("account") ? tabs.getFirst() : tabs.getLast(), navigation.getSelectedTab());
-      var parentChildren = navigation.getParent().orElseThrow().getChildren().toList();
+      List<Component> parentChildren = navigation.getParent().orElseThrow().getChildren().toList();
       assertEquals(1, parentChildren.indexOf(navigation));
       assertTrue(parentChildren.get(0).hasClassName("cosmos-dashboard-introduction"));
       assertTrue(
@@ -229,7 +254,8 @@ class ApplicationHeaderTest {
               .get(2)
               .hasClassName(
                   page.equals("account") ? "account-summary" : "cosmos-notification-inbox-card"));
-      var routeRequests = new ArrayList<Class<? extends Component>>();
+      ArrayList<Class<? extends Component>> routeRequests =
+          new ArrayList<Class<? extends Component>>();
       var tabUi =
           new UI() {
             @Override

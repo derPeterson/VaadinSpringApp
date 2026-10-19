@@ -1,28 +1,72 @@
 package de.derpeterson.app.service;
 
 import static de.derpeterson.app.service.EmailQueueWorkerPoolTest.await;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.config.MailConfig;
 import de.derpeterson.app.config.ThreadPoolConfig;
+import de.derpeterson.app.model.AdminNotificationAttemptEntity;
 import de.derpeterson.app.model.EmailQueueEntity;
 import de.derpeterson.app.model.UserEntity;
-import de.derpeterson.app.model.enums.*;
+import de.derpeterson.app.model.enums.AdminNotificationStatus;
+import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.EmailStatus;
+import de.derpeterson.app.model.enums.EmailType;
+import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.repository.AdminNotificationAttemptRepository;
 import de.derpeterson.app.repository.EmailQueueRepository;
 import de.derpeterson.app.repository.UserRepository;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.time.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
-import org.junit.jupiter.api.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,6 +74,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailAuthenticationException;
 import org.springframework.mail.MailSendException;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -91,7 +136,8 @@ class EmailQueueWorkerIntegrationTest {
   }
 
   EmailQueueWorkerPool pool() {
-    var pool = new EmailQueueWorkerPool(new ThreadPoolConfig(config).taskExecutor());
+    EmailQueueWorkerPool pool =
+        new EmailQueueWorkerPool(new ThreadPoolConfig(config).taskExecutor());
     pools.add(pool);
     return pool;
   }
@@ -111,7 +157,7 @@ class EmailQueueWorkerIntegrationTest {
   Long insert(String subject, LocalDateTime retry) {
     return tx.execute(
         status -> {
-          var item = new EmailQueueEntity();
+          EmailQueueEntity item = new EmailQueueEntity();
           item.setUserEntity(users.findById(userId).orElseThrow());
           item.setSubject(subject);
           item.setBody("<p>body:" + subject + "</p>");
@@ -129,24 +175,25 @@ class EmailQueueWorkerIntegrationTest {
 
   @Test
   void realSmtpUsesTwoConcurrentTransportsAndRefillsWithoutMimeMixups() throws Exception {
-    try (var smtp = new SmtpFixture(2);
-        var caller = Executors.newSingleThreadExecutor()) {
+    try (SmtpFixture smtp = new SmtpFixture(2);
+        ExecutorService caller = Executors.newSingleThreadExecutor()) {
       when(config.getString(ConfigEntry.MAIL_HOST)).thenReturn("127.0.0.1");
       when(config.getInteger(ConfigEntry.MAIL_PORT)).thenReturn(smtp.port());
       when(config.getString(ConfigEntry.MAIL_SMTP_SSL_TRUST)).thenReturn("127.0.0.1");
       when(config.getString(ConfigEntry.MAIL_DEBUG)).thenReturn("false");
       when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("sender@example.test");
       when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(3);
-      var sender = new MailConfig(config).javaMailSender();
-      var properties =
+      JavaMailSender sender = new MailConfig(config).javaMailSender();
+      Properties properties =
           ((org.springframework.mail.javamail.JavaMailSenderImpl) sender).getJavaMailProperties();
       properties.put("mail.smtp.connectiontimeout", "5000");
       properties.put("mail.smtp.timeout", "5000");
       properties.put("mail.smtp.writetimeout", "5000");
-      var pendingRetry = insert("not-due", LocalDateTime.now(clock).minusSeconds(20));
-      var ids =
+      Long pendingRetry = insert("not-due", LocalDateTime.now(clock).minusSeconds(20));
+      List<Long> ids =
           List.of(insert("smtp-one", null), insert("smtp-two", null), insert("smtp-three", null));
-      var run = caller.submit(service(pool(), new EmailService(config, sender))::processQueue);
+      Future<?> run =
+          caller.submit(service(pool(), new EmailService(config, sender))::processQueue);
       try {
         await(smtp.firstWave);
         assertEquals(2, smtp.messages.size());
@@ -157,8 +204,9 @@ class EmailQueueWorkerIntegrationTest {
         smtp.release.countDown();
       }
       run.get(15, TimeUnit.SECONDS);
-      for (var id : ids)
+      for (Long id : ids) {
         assertEquals(EmailStatus.SENT, emails.findById(id).orElseThrow().getStatus());
+      }
       assertEquals(EmailStatus.PENDING, emails.findById(pendingRetry).orElseThrow().getStatus());
       assertEquals(Set.of("smtp-one", "smtp-two", "smtp-three"), smtp.messages.keySet());
       smtp.messages.forEach(
@@ -170,7 +218,7 @@ class EmailQueueWorkerIntegrationTest {
   @Test
   void batchCapacityBoundsSelectionDespiteFreeWorkers() throws Exception {
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(2);
-    var ids = List.of(insert("one", null), insert("two", null), insert("three", null));
+    List<Long> ids = List.of(insert("one", null), insert("two", null), insert("three", null));
     service(pool(), mail).processQueue();
     assertEquals(EmailStatus.SENT, emails.findById(ids.get(0)).orElseThrow().getStatus());
     assertEquals(EmailStatus.SENT, emails.findById(ids.get(1)).orElseThrow().getStatus());
@@ -180,33 +228,36 @@ class EmailQueueWorkerIntegrationTest {
 
   @Test
   void twoIndependentPoolsShareDatabaseClaimsWithoutDoubleSending() throws Exception {
-    var ids = List.of(insert("one", null), insert("two", null), insert("three", null));
-    var selected = new CyclicBarrier(2);
+    List<Long> ids = List.of(insert("one", null), insert("two", null), insert("three", null));
+    CyclicBarrier selected = new CyclicBarrier(2);
     doAnswer(
             call -> {
-              var result = emails.findPendingEmails(call.getArgument(0), call.getArgument(1));
+              List<EmailQueueEntity> result =
+                  emails.findPendingEmails(call.getArgument(0), call.getArgument(1));
               selected.await(10, TimeUnit.SECONDS);
               return result;
             })
         .when(probes.emails())
         .findPendingEmails(any(), any());
-    try (var callers = Executors.newFixedThreadPool(2)) {
-      var first = callers.submit(service(pool(), mail)::processQueue);
-      var second = callers.submit(service(pool(), mail)::processQueue);
+    try (ExecutorService callers = Executors.newFixedThreadPool(2)) {
+      Future<?> first = callers.submit(service(pool(), mail)::processQueue);
+      Future<?> second = callers.submit(service(pool(), mail)::processQueue);
       first.get(15, TimeUnit.SECONDS);
       second.get(15, TimeUnit.SECONDS);
     }
-    for (var id : ids)
+    for (Long id : ids) {
       assertEquals(EmailStatus.SENT, emails.findById(id).orElseThrow().getStatus());
-    for (String subject : List.of("one", "two", "three"))
+    }
+    for (String subject : List.of("one", "two", "three")) {
       verify(mail).sendEmail(any(), eq(subject), any());
+    }
   }
 
   @Test
   void rejectedTasksNeverClaimTheirCandidates() throws Exception {
-    var id = insert("pending", null);
-    var executor = new ThreadPoolConfig(config).taskExecutor();
-    var pool = new EmailQueueWorkerPool(executor);
+    Long id = insert("pending", null);
+    ThreadPoolExecutor executor = new ThreadPoolConfig(config).taskExecutor();
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor);
     pools.add(pool);
     executor.shutdown();
     service(pool, mail).processQueue();
@@ -217,12 +268,12 @@ class EmailQueueWorkerIntegrationTest {
   @Test
   void forcedShutdownKeepsACommittedClaimAndUnstartedCandidatesIntact() throws Exception {
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(1);
-    var firstId = insert("started", null);
-    var nextId = insert("not-started", null);
-    var executor = new ThreadPoolConfig(config).taskExecutor();
-    var pool = new EmailQueueWorkerPool(executor, Duration.ZERO);
+    Long firstId = insert("started", null);
+    Long nextId = insert("not-started", null);
+    ThreadPoolExecutor executor = new ThreadPoolConfig(config).taskExecutor();
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor, Duration.ZERO);
     pools.add(pool);
-    var sending = new CountDownLatch(1);
+    CountDownLatch sending = new CountDownLatch(1);
     doAnswer(
             call -> {
               assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
@@ -237,15 +288,15 @@ class EmailQueueWorkerIntegrationTest {
             })
         .when(mail)
         .sendEmail(any(), any(), any());
-    try (var caller = Executors.newSingleThreadExecutor()) {
-      var run = caller.submit(service(pool, mail)::processQueue);
+    try (ExecutorService caller = Executors.newSingleThreadExecutor()) {
+      Future<?> run = caller.submit(service(pool, mail)::processQueue);
       await(sending);
       assertEquals(EmailStatus.IN_PROGRESS, emails.findById(firstId).orElseThrow().getStatus());
       pool.shutdown();
       run.get(10, TimeUnit.SECONDS);
       assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
     }
-    var claimed = emails.findById(firstId).orElseThrow();
+    EmailQueueEntity claimed = emails.findById(firstId).orElseThrow();
     assertEquals(EmailStatus.IN_PROGRESS, claimed.getStatus());
     assertEquals(0, claimed.getRetryCount());
     assertNull(claimed.getLastRetryAt());
@@ -257,21 +308,21 @@ class EmailQueueWorkerIntegrationTest {
 
   @Test
   void parallelOutcomesAndAdminAuditStayIndependent() throws Exception {
-    var healthy = insert("healthy", null);
-    var known = insert("known", null);
-    var unknown = insert("unknown", null);
+    Long healthy = insert("healthy", null);
+    Long known = insert("known", null);
+    Long unknown = insert("unknown", null);
     doThrow(new MailAuthenticationException("fixture authentication failure"))
         .when(mail)
         .sendEmail(any(), eq("known"), any());
     doThrow(new MailSendException("fixture unknown SMTP outcome"))
         .when(mail)
         .sendEmail(any(), eq("unknown"), any());
-    var service = service(pool(), mail);
+    EmailQueueService service = service(pool(), mail);
     service.processQueue();
     assertEquals(EmailStatus.SENT, emails.findById(healthy).orElseThrow().getStatus());
     assertEquals(EmailStatus.FAILED, emails.findById(known).orElseThrow().getStatus());
     assertEquals(EmailStatus.IN_PROGRESS, emails.findById(unknown).orElseThrow().getStatus());
-    var audit = attempts.findAll().getFirst();
+    AdminNotificationAttemptEntity audit = attempts.findAll().getFirst();
     assertEquals(known, audit.getQueueId());
     assertEquals(AdminNotificationStatus.SENT, audit.getStatus());
     service.processQueue();
@@ -283,9 +334,9 @@ class EmailQueueWorkerIntegrationTest {
   @ValueSource(booleans = {false, true})
   void failedClaimOrResultCommitDoesNotRollbackAnotherWorker(boolean resultCommit)
       throws Exception {
-    var affected = insert("affected", null);
-    var healthy = insert("healthy", null);
-    var injected = new AtomicBoolean();
+    Long affected = insert("affected", null);
+    Long healthy = insert("healthy", null);
+    AtomicBoolean injected = new AtomicBoolean();
     doAnswer(
             call -> {
               EmailQueueEntity item = call.getArgument(0);
@@ -333,7 +384,9 @@ class EmailQueueWorkerIntegrationTest {
                 sockets.add(socket);
                 handlers.submit(() -> handle(socket));
               } catch (IOException failure) {
-                if (!server.isClosed()) failures.add(failure);
+                if (!server.isClosed()) {
+                  failures.add(failure);
+                }
               }
             }
           });
@@ -345,29 +398,30 @@ class EmailQueueWorkerIntegrationTest {
 
     void handle(Socket socket) {
       try (socket;
-          var reader =
+          BufferedReader reader =
               new BufferedReader(
                   new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-          var writer =
+          BufferedWriter writer =
               new BufferedWriter(
                   new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8))) {
         socket.setSoTimeout(10000);
         reply(writer, "220 fixture ESMTP");
         String command;
         while ((command = reader.readLine()) != null) {
-          if (command.startsWith("EHLO") || command.startsWith("HELO"))
+          if (command.startsWith("EHLO") || command.startsWith("HELO")) {
             reply(writer, "250 fixture");
-          else if (command.startsWith("MAIL FROM:")
+          } else if (command.startsWith("MAIL FROM:")
               || command.startsWith("RCPT TO:")
-              || command.equals("RSET")) reply(writer, "250 OK");
-          else if (command.equals("DATA")) {
+              || command.equals("RSET")) {
+            reply(writer, "250 OK");
+          } else if (command.equals("DATA")) {
             reply(writer, "354 Continue");
-            var data = new StringBuilder();
+            StringBuilder data = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null && !line.equals(".")) {
               data.append(line.startsWith("..") ? line.substring(1) : line).append("\r\n");
             }
-            var message =
+            MimeMessage message =
                 new MimeMessage(
                     Session.getInstance(new Properties()),
                     new ByteArrayInputStream(data.toString().getBytes(StandardCharsets.UTF_8)));
@@ -379,10 +433,14 @@ class EmailQueueWorkerIntegrationTest {
           } else if (command.equals("QUIT")) {
             reply(writer, "221 bye");
             break;
-          } else reply(writer, "502 unsupported");
+          } else {
+            reply(writer, "502 unsupported");
+          }
         }
       } catch (Throwable failure) {
-        if (!server.isClosed()) failures.add(failure);
+        if (!server.isClosed()) {
+          failures.add(failure);
+        }
       } finally {
         sockets.remove(socket);
       }
@@ -397,7 +455,9 @@ class EmailQueueWorkerIntegrationTest {
     public void close() throws Exception {
       release.countDown();
       server.close();
-      for (Socket socket : sockets) socket.close();
+      for (Socket socket : sockets) {
+        socket.close();
+      }
       handlers.shutdownNow();
       assertTrue(handlers.awaitTermination(10, TimeUnit.SECONDS));
     }

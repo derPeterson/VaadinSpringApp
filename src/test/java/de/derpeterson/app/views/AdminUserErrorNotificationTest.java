@@ -1,12 +1,32 @@
 package de.derpeterson.app.views;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import com.vaadin.flow.component.*;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentUtil;
+import com.vaadin.flow.component.Html;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -18,28 +38,39 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.NotificationHelper;
-import de.derpeterson.app.i18n.*;
-import de.derpeterson.app.model.*;
-import de.derpeterson.app.model.enums.*;
+import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.RoleEntity;
+import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.Gender;
+import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.security.SecurityService;
-import de.derpeterson.app.service.*;
+import de.derpeterson.app.service.RoleService;
+import de.derpeterson.app.service.UserAvatarService;
+import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.base.TrackedUserAppLayout;
 import de.derpeterson.app.views.admin.AdminUserManagementSection;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.hibernate.exception.ConstraintViolationException;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.*;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /** Real dialog/button callbacks and language events; no application, DB or SMTP. */
@@ -60,7 +91,7 @@ class AdminUserErrorNotificationTest {
   void setup() {
     ui = new UI();
     session = mock(VaadinSession.class);
-    var locale = new AtomicReference<>(Locale.ENGLISH);
+    AtomicReference<Locale> locale = new AtomicReference<>(Locale.ENGLISH);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     when(session.hasLock()).thenReturn(true);
     doAnswer(
@@ -256,9 +287,13 @@ class AdminUserErrorNotificationTest {
       boolean german, String operation, String kind) {
     LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
     RuntimeException failure = failure(kind);
-    if (operation.equals("delete")) doThrow(failure).when(users).deleteUser(any());
-    else if (operation.equals("create")) doThrow(failure).when(users).createAdminUser(any(), any());
-    else doThrow(failure).when(users).updateAdminUser(any(), any(), any());
+    if (operation.equals("delete")) {
+      doThrow(failure).when(users).deleteUser(any());
+    } else if (operation.equals("create")) {
+      doThrow(failure).when(users).createAdminUser(any(), any());
+    } else {
+      doThrow(failure).when(users).updateAdminUser(any(), any(), any());
+    }
     submit(operation, user(operation.equals("create")));
     String expected =
         switch (kind) {
@@ -316,13 +351,17 @@ class AdminUserErrorNotificationTest {
         };
     assertNotEquals(expected, translated);
     assertNotification(translated);
-    if (operation.equals("delete")) verify(users).deleteUser(any());
-    else if (operation.equals("create")) verify(users).createAdminUser(any(), any());
-    else verify(users).updateAdminUser(any(), eq(3L), any());
+    if (operation.equals("delete")) {
+      verify(users).deleteUser(any());
+    } else if (operation.equals("create")) {
+      verify(users).createAdminUser(any(), any());
+    } else {
+      verify(users).updateAdminUser(any(), eq(3L), any());
+    }
   }
 
   private void assertNotification(String expected) {
-    var helper = NotificationHelper.getInstance();
+    NotificationHelper helper = NotificationHelper.getInstance();
     assertEquals(
         texts.getBaseFailedTitle(),
         ((Span) ReflectionTestUtils.getField(helper, "titleText")).getText());
@@ -349,18 +388,30 @@ class AdminUserErrorNotificationTest {
   @MethodSource("guards")
   void preflightHintsAreDynamicInBothDirections(boolean german, String guard) {
     LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
-    var user = user(false);
-    if (guard.equals("own-delete") || guard.equals("disable") || guard.equals("remove-admin"))
+    UserEntity user = user(false);
+    if (guard.equals("own-delete") || guard.equals("disable") || guard.equals("remove-admin")) {
       when(security.getCurrentUser()).thenReturn(Optional.of(user));
-    if (guard.equals("last-delete")) when(users.canDeleteUser(any())).thenReturn(false);
-    if (guard.equals("role")) when(roles.findByName(any())).thenReturn(Optional.empty());
-    if (guard.equals("disable")) user.setEnabled(false);
-    if (guard.equals("remove-admin"))
+    }
+    if (guard.equals("last-delete")) {
+      when(users.canDeleteUser(any())).thenReturn(false);
+    }
+    if (guard.equals("role")) {
+      when(roles.findByName(any())).thenReturn(Optional.empty());
+    }
+    if (guard.equals("disable")) {
+      user.setEnabled(false);
+    }
+    if (guard.equals("remove-admin")) {
       user.setRoleEntities(List.of(RoleEntity.builder().name(RoleType.ROLE_USER).build()));
-    if (guard.equals("last-save"))
+    }
+    if (guard.equals("last-save")) {
       when(users.wouldRemoveLastEnabledSuperadmin(any(), anyBoolean(), any())).thenReturn(true);
-    if (guard.endsWith("delete")) ReflectionTestUtils.invokeMethod(section, "deleteUser", user);
-    else submit("edit", user);
+    }
+    if (guard.endsWith("delete")) {
+      ReflectionTestUtils.invokeMethod(section, "deleteUser", user);
+    } else {
+      submit("edit", user);
+    }
     String expected = guardText(guard);
     assertNotification(expected);
     LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
@@ -417,7 +468,8 @@ class AdminUserErrorNotificationTest {
   void unexpectedPreflightDatabaseFailuresAlsoUseGenericDynamicHints(
       boolean german, boolean deleting) {
     LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
-    var failure = new DataAccessResourceFailureException("secret SQL connection failure");
+    DataAccessResourceFailureException failure =
+        new DataAccessResourceFailureException("secret SQL connection failure");
     if (deleting) {
       when(users.canDeleteUser(any())).thenThrow(failure);
       ReflectionTestUtils.invokeMethod(section, "deleteUser", user(false));
@@ -456,11 +508,12 @@ class AdminUserErrorNotificationTest {
     LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
     ReflectionTestUtils.invokeMethod(section, "openDialog", user(create));
     Dialog dialog = dialog();
-    if (create)
+    if (create) {
       descendants(dialog)
           .filter(PasswordField.class::isInstance)
           .map(PasswordField.class::cast)
           .forEach(field -> field.setValue("Password!"));
+    }
     EmailField email =
         descendants(dialog)
             .filter(EmailField.class::isInstance)
@@ -482,8 +535,11 @@ class AdminUserErrorNotificationTest {
           case "integrity" -> new DataIntegrityViolationException("secret SQL integrity failure");
           default -> new IllegalStateException("secret SQL unexpected failure");
         };
-    if (technical) when(users.emailExistsForOtherUser(anyString(), any())).thenThrow(failure);
-    else when(users.emailExistsForOtherUser(anyString(), any())).thenReturn(true);
+    if (technical) {
+      when(users.emailExistsForOtherUser(anyString(), any())).thenThrow(failure);
+    } else {
+      when(users.emailExistsForOtherUser(anyString(), any())).thenReturn(true);
+    }
     email.setValue("other@example.com");
     assertTrue(email.isInvalid());
     assertEquals(
@@ -522,14 +578,16 @@ class AdminUserErrorNotificationTest {
     verify(users, never()).updatePassword(any(), any());
     verify(users, never()).createAdminUser(any(), any());
     verify(users, never()).updateAdminUser(any(), any(), any());
-    if (technical)
+    if (technical) {
       assertTrue(
           logs.list.stream()
               .anyMatch(
                   event ->
                       event.getThrowableProxy() != null
                           && event.getThrowableProxy().getMessage().equals(failure.getMessage())));
-    else assertTrue(logs.list.isEmpty());
+    } else {
+      assertTrue(logs.list.isEmpty());
+    }
   }
 
   @ParameterizedTest
@@ -539,11 +597,12 @@ class AdminUserErrorNotificationTest {
     LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
     ReflectionTestUtils.invokeMethod(section, "openDialog", user(create));
     Dialog dialog = dialog();
-    if (create)
+    if (create) {
       descendants(dialog)
           .filter(PasswordField.class::isInstance)
           .map(PasswordField.class::cast)
           .forEach(field -> field.setValue("Password!"));
+    }
     EmailField email =
         descendants(dialog)
             .filter(EmailField.class::isInstance)
@@ -567,14 +626,15 @@ class AdminUserErrorNotificationTest {
     assertFalse(email.isInvalid());
     assertTrue(save.isEnabled());
     save.click();
-    if (create)
+    if (create) {
       verify(users)
           .createAdminUser(
               argThat(edited -> edited.getEmail().equals("available@example.com")), any());
-    else
+    } else {
       verify(users)
           .updateAdminUser(
               argThat(edited -> edited.getEmail().equals("available@example.com")), eq(3L), any());
+    }
     assertFalse(dialog.isOpened());
   }
 
@@ -652,11 +712,12 @@ class AdminUserErrorNotificationTest {
     LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
     ReflectionTestUtils.invokeMethod(section, "openDialog", user(create));
     Dialog dialog = dialog();
-    if (create)
+    if (create) {
       descendants(dialog)
           .filter(PasswordField.class::isInstance)
           .map(PasswordField.class::cast)
           .forEach(field -> field.setValue("Password!"));
+    }
     Button save =
         descendants(dialog)
             .filter(Button.class::isInstance)

@@ -16,11 +16,12 @@ public class UserRoleBroadcaster {
   }
 
   public void publish(Long userId) {
-    for (var listener : listeners)
+    for (Consumer<Long> listener : listeners) {
       try {
         listener.accept(userId);
       } catch (RuntimeException failure) {
         LoggerFactory.getLogger(getClass()).warn("Role UI refresh deferred", failure);
       }
+    }
   }
 }

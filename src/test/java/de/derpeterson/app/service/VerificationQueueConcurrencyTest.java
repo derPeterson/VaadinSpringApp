@@ -1,24 +1,56 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.AdditionalAnswers.delegatesTo;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.helper.image.ImageHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.EmailQueueEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.VerificationTokenEntity;
-import de.derpeterson.app.model.enums.*;
-import de.derpeterson.app.repository.*;
+import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.EmailStatus;
+import de.derpeterson.app.model.enums.EmailType;
+import de.derpeterson.app.model.enums.Gender;
+import de.derpeterson.app.model.enums.TokenStatus;
+import de.derpeterson.app.repository.EmailQueueRepository;
+import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.repository.VerificationTokenRepository;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.persistence.EntityManagerFactory;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +60,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -67,7 +100,7 @@ class VerificationQueueConcurrencyTest {
           tokens.deleteAll();
           users.deleteAll();
           users.flush();
-          var user =
+          UserEntity user =
               UserEntity.builder()
                   .firstName("Test")
                   .lastName("User")
@@ -105,7 +138,7 @@ class VerificationQueueConcurrencyTest {
   @Test
   void activationAgainstResendHasACoherentStoredOutcomeInEitherOrder() throws Exception {
     rendezvous();
-    var results = compete(() -> verification.validateToken("old"), () -> resend("email"));
+    List<Object> results = compete(() -> verification.validateToken("old"), () -> resend("email"));
     if (Boolean.TRUE.equals(results.get(0))) {
       assertEquals(List.of(true, false), results);
       assertTrue(snapshot().isEnabled());
@@ -129,9 +162,9 @@ class VerificationQueueConcurrencyTest {
     "user,template"
   })
   void checkedResourceFailureAlsoRollsBackWithTheRealQueueService(String entry, String resource) {
-    var failure = new IOException("simulated image failure");
-    try (var image = mockStatic(ImageHelper.class, CALLS_REAL_METHODS);
-        var locale = mockStatic(CustomI18NProvider.class)) {
+    IOException failure = new IOException("simulated image failure");
+    try (MockedStatic<ImageHelper> image = mockStatic(ImageHelper.class, CALLS_REAL_METHODS);
+        MockedStatic<CustomI18NProvider> locale = mockStatic(CustomI18NProvider.class)) {
       locale
           .when(CustomI18NProvider::getCurrentLocale)
           .thenReturn(resource.equals("template") ? Locale.FRENCH : Locale.ENGLISH);
@@ -168,7 +201,8 @@ class VerificationQueueConcurrencyTest {
   @Test
   void standaloneCreationAgainstResendKeepsQueueAndTokenCoherentInEitherOrder() throws Exception {
     rendezvous();
-    var results = compete(() -> verification.createToken(snapshot()), () -> resend("email"));
+    List<Object> results =
+        compete(() -> verification.createToken(snapshot()), () -> resend("email"));
     assertEquals(true, results.get(1));
     assertTrue(results.get(0) instanceof String || results.get(0) instanceof IllegalStateException);
     assertCoherentQueue();
@@ -177,10 +211,11 @@ class VerificationQueueConcurrencyTest {
   @ParameterizedTest
   @ValueSource(strings = {"token", "email", "user"})
   void queueInsertFailureRollsBackBothTheRealQueueAndTokenRotation(String entry) {
-    var failure = new IllegalStateException("simulated failure after queue insert");
+    IllegalStateException failure =
+        new IllegalStateException("simulated failure after queue insert");
     doAnswer(
             call -> {
-              var saved = emails.save(call.getArgument(0));
+              EmailQueueEntity saved = emails.save(call.getArgument(0));
               emails.flush();
               throw failure;
             })
@@ -236,7 +271,7 @@ class VerificationQueueConcurrencyTest {
 
   @Test
   void adminCreatedDisabledAccountKeepsItsStoredIneligibility() throws IOException {
-    var created =
+    UserEntity created =
         UserEntity.builder()
             .firstName("Created")
             .lastName("User")
@@ -272,7 +307,7 @@ class VerificationQueueConcurrencyTest {
         status -> {
           UserEntity cached = users.findById(id).orElseThrow();
           assertTrue(cached.isVerificationPending());
-          try (var executor = Executors.newSingleThreadExecutor()) {
+          try (ExecutorService executor = Executors.newSingleThreadExecutor()) {
             executor
                 .submit(
                     () -> {
@@ -294,8 +329,8 @@ class VerificationQueueConcurrencyTest {
   @ValueSource(strings = {"validate", "token", "email", "user"})
   void committedAdminDisableWinsAgainstAWaitingVerificationOperation(String entry)
       throws Exception {
-    var adminHasWritten = new CountDownLatch(1);
-    var verificationAttempted = new CountDownLatch(1);
+    CountDownLatch adminHasWritten = new CountDownLatch(1);
+    CountDownLatch verificationAttempted = new CountDownLatch(1);
     doAnswer(
             call -> {
               verificationAttempted.countDown();
@@ -303,7 +338,7 @@ class VerificationQueueConcurrencyTest {
             })
         .when(probes.users())
         .lockVerificationUser(id);
-    var results =
+    List<Object> results =
         compete(
             () -> {
               tx.executeWithoutResult(
@@ -327,12 +362,12 @@ class VerificationQueueConcurrencyTest {
 
   @Test
   void activationFirstCannotMakeAFollowingAdminDisableReactivatable() throws Exception {
-    var verificationHasLock = new CountDownLatch(1);
-    var adminAttempted = new CountDownLatch(1);
-    var first = new AtomicBoolean(true);
+    CountDownLatch verificationHasLock = new CountDownLatch(1);
+    CountDownLatch adminAttempted = new CountDownLatch(1);
+    AtomicBoolean first = new AtomicBoolean(true);
     doAnswer(
             call -> {
-              var user = users.lockVerificationUser(call.getArgument(0));
+              Optional<UserEntity> user = users.lockVerificationUser(call.getArgument(0));
               if (first.getAndSet(false)) {
                 verificationHasLock.countDown();
                 await(adminAttempted);
@@ -348,7 +383,7 @@ class VerificationQueueConcurrencyTest {
             })
         .when(probes.users())
         .findByIdForUpdate(id);
-    var results =
+    List<Object> results =
         compete(
             () -> verification.validateToken("old"),
             () -> {
@@ -403,7 +438,7 @@ class VerificationQueueConcurrencyTest {
   }
 
   private void rendezvous() {
-    var barrier = new CyclicBarrier(2);
+    CyclicBarrier barrier = new CyclicBarrier(2);
     Set<Long> threads = ConcurrentHashMap.newKeySet();
     doAnswer(
             call -> {
@@ -417,9 +452,9 @@ class VerificationQueueConcurrencyTest {
   }
 
   private List<Object> compete(Callable<Object> one, Callable<Object> two) throws Exception {
-    try (var executor = Executors.newFixedThreadPool(2)) {
-      var first = executor.submit(() -> capture(one));
-      var second = executor.submit(() -> capture(two));
+    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+      Future<Object> first = executor.submit(() -> capture(one));
+      Future<Object> second = executor.submit(() -> capture(two));
       return List.of(first.get(20, TimeUnit.SECONDS), second.get(20, TimeUnit.SECONDS));
     }
   }
@@ -476,9 +511,9 @@ class VerificationQueueConcurrencyTest {
   }
 
   private void assertCoherentQueue() {
-    var active = activeTokens();
+    List<VerificationTokenEntity> active = activeTokens();
     assertEquals(1, active.size());
-    var queued = emails.findAll();
+    List<EmailQueueEntity> queued = emails.findAll();
     assertEquals(1, queued.size());
     assertEquals(EmailStatus.PENDING, queued.getFirst().getStatus());
     assertTrue(
@@ -506,7 +541,7 @@ class VerificationQueueConcurrencyTest {
 
     @Bean
     LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
-      var factory = new LocalContainerEntityManagerFactoryBean();
+      LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
       factory.setDataSource(dataSource);
       factory.setPackagesToScan("de.derpeterson.app.model");
       factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
@@ -535,7 +570,7 @@ class VerificationQueueConcurrencyTest {
 
     @Bean
     ConfigService configService() {
-      var config = mock(ConfigService.class);
+      ConfigService config = mock(ConfigService.class);
       when(config.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION)).thenReturn("PT1H");
       when(config.getString(ConfigEntry.COPYRIGHT_TEXT))
           .thenReturn("© {year} {serviceName} (isolated fixture)");
@@ -560,7 +595,7 @@ class VerificationQueueConcurrencyTest {
     @Bean
     VerificationService verificationService(
         ConfigService config, Probes probes, EmailQueueService queue) {
-      var messages = mock(MessageProperties.class);
+      MessageProperties messages = mock(MessageProperties.class);
       when(messages.getEmailVerificationSubject()).thenReturn("Verify account");
       return new VerificationService(messages, probes.tokens(), probes.users(), config, queue);
     }

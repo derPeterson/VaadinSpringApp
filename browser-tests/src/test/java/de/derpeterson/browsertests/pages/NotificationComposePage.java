@@ -1,10 +1,12 @@
 package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.NOTIFICATIONS_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
@@ -112,7 +114,9 @@ public final class NotificationComposePage {
   public void notice(String... expected) {
     Locator notice = page.locator("vaadin-notification-card:not([closing])");
     assertThat(notice).isVisible();
-    for (String text : expected) assertThat(notice).containsText(text);
+    for (String text : expected) {
+      assertThat(notice).containsText(text);
+    }
     notice.getByRole(AriaRole.BUTTON).click();
     assertThat(notice).not().isVisible();
   }

@@ -1,8 +1,35 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyCollection;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.contains;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -10,11 +37,14 @@ import ch.qos.logback.core.read.ListAppender;
 import de.derpeterson.app.model.AdminNotificationAttemptEntity;
 import de.derpeterson.app.model.EmailQueueEntity;
 import de.derpeterson.app.model.UserEntity;
-import de.derpeterson.app.model.enums.*;
+import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.EmailStatus;
+import de.derpeterson.app.model.enums.EmailType;
 import de.derpeterson.app.repository.AdminNotificationAttemptRepository;
 import de.derpeterson.app.repository.EmailQueueRepository;
 import de.derpeterson.app.repository.UserRepository;
 import jakarta.mail.MessagingException;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -29,6 +59,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
@@ -94,7 +125,7 @@ class EmailQueueServiceTest {
   @ParameterizedTest
   @EnumSource(EmailType.class)
   void openQueryUsesExactlyPendingAndInProgressForTheRequestedType(EmailType type) {
-    var statuses = List.of(EmailStatus.PENDING, EmailStatus.IN_PROGRESS);
+    List<EmailStatus> statuses = List.of(EmailStatus.PENDING, EmailStatus.IN_PROGRESS);
     when(emails.existsByUserEntityAndEmailTypeAndStatusIn(user, type, statuses))
         .thenReturn(true, false);
     assertTrue(service.hasOpenEmailForUserAndType(user, type));
@@ -105,7 +136,7 @@ class EmailQueueServiceTest {
   @ParameterizedTest
   @EnumSource(EmailType.class)
   void enqueueLocksAndUsesFreshAccountAndPreservesContent(EmailType type) {
-    var stale =
+    UserEntity stale =
         UserEntity.builder()
             .id(12L)
             .email("stale@example.com")
@@ -114,15 +145,15 @@ class EmailQueueServiceTest {
     when(users.lockVerificationUser(12L)).thenReturn(Optional.of(user));
     LocalDateTime before = LocalDateTime.now();
     service.addEmailToQueue(stale, "Grüße 🔐", "<b>日本語</b>\r\n", type);
-    var order = inOrder(users, emails);
+    InOrder order = inOrder(users, emails);
     order.verify(users).lockVerificationUser(12L);
     order
         .verify(emails)
         .existsByUserEntityAndEmailTypeAndStatusIn(
             user, type, List.of(EmailStatus.PENDING, EmailStatus.IN_PROGRESS));
-    var captor = ArgumentCaptor.forClass(EmailQueueEntity.class);
+    ArgumentCaptor<EmailQueueEntity> captor = ArgumentCaptor.forClass(EmailQueueEntity.class);
     order.verify(emails).save(captor.capture());
-    var queued = captor.getValue();
+    EmailQueueEntity queued = captor.getValue();
     assertSame(user, queued.getUserEntity());
     assertEquals(type, queued.getEmailType());
     assertEquals("Grüße 🔐", queued.getSubject());
@@ -179,7 +210,7 @@ class EmailQueueServiceTest {
   @Test
   void queueInsertFailurePropagatesUnchanged() {
     when(users.lockVerificationUser(12L)).thenReturn(Optional.of(user));
-    var failure = new IllegalStateException("queue storage failed");
+    IllegalStateException failure = new IllegalStateException("queue storage failed");
     when(emails.save(any())).thenThrow(failure);
     assertSame(
         failure,
@@ -209,7 +240,7 @@ class EmailQueueServiceTest {
   @ParameterizedTest
   @EnumSource(value = EmailStatus.class, names = "PENDING", mode = EnumSource.Mode.EXCLUDE)
   void nonPendingEntriesAreNotSentEvenIfReturnedByRepository(EmailStatus status) {
-    var item = item(status, 2);
+    EmailQueueEntity item = item(status, 2);
     batch(item);
     service.processQueue();
     verifyNoInteractions(mail);
@@ -221,10 +252,10 @@ class EmailQueueServiceTest {
   @Test
   void successSavesInProgressBeforeSendingAndSentAfterwardsWithoutResettingHistory()
       throws Exception {
-    var item = item(EmailStatus.PENDING, 2);
-    var retryAt = item.getLastRetryAt();
+    EmailQueueEntity item = item(EmailStatus.PENDING, 2);
+    LocalDateTime retryAt = item.getLastRetryAt();
     batch(item);
-    var transitions = new ArrayList<EmailStatus>();
+    ArrayList<EmailStatus> transitions = new ArrayList<EmailStatus>();
     when(emails.save(item))
         .thenAnswer(
             call -> {
@@ -242,7 +273,7 @@ class EmailQueueServiceTest {
     assertEquals(List.of(EmailStatus.IN_PROGRESS, EmailStatus.SENT), transitions);
     assertEquals(2, item.getRetryCount());
     assertEquals(retryAt, item.getLastRetryAt());
-    var order = inOrder(emails, mail);
+    InOrder order = inOrder(emails, mail);
     order.verify(emails).findPendingEmails(any(), eq(PageRequest.of(0, 3)));
     order.verify(emails).save(item);
     order.verify(mail).sendEmail(user, "subject", "body");
@@ -255,10 +286,12 @@ class EmailQueueServiceTest {
   @CsvSource({"0,3,false", "2,3,false", "3,3,true", "4,3,true", "0,0,true"})
   void retryBoundaryUsesStoredCounterAndConfiguredLimit(int retries, int limit, boolean terminal)
       throws Exception {
-    var item = item(EmailStatus.PENDING, retries);
+    EmailQueueEntity item = item(EmailStatus.PENDING, retries);
     batch(item);
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(limit);
-    if (terminal) when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
+    if (terminal) {
+      when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
+    }
     doThrow(new MailAuthenticationException("smtp failed"))
         .when(mail)
         .sendEmail(user, "subject", "body");
@@ -268,16 +301,18 @@ class EmailQueueServiceTest {
     assertEquals(terminal ? retries : retries + 1, item.getRetryCount());
     assertBetween(item.getLastRetryAt(), before);
     verify(emails, times(2)).save(item);
-    if (terminal)
+    if (terminal) {
       verify(mail)
           .sendAdminEmail(eq("admin@example.com"), eq("Email dispatch failed"), anyString());
-    else verify(mail, never()).sendAdminEmail(any(), any(), any());
+    } else {
+      verify(mail, never()).sendAdminEmail(any(), any(), any());
+    }
   }
 
   @Test
   void checkedMessagingFailureAlsoRequeuesAndContinuesBatch() throws Exception {
-    var first = item(EmailStatus.PENDING, 0);
-    var second = item(EmailStatus.PENDING, 0);
+    EmailQueueEntity first = item(EmailStatus.PENDING, 0);
+    EmailQueueEntity second = item(EmailStatus.PENDING, 0);
     second.setSubject("second");
     batch(first, second);
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(2);
@@ -292,7 +327,7 @@ class EmailQueueServiceTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void knownPreparationAndParseFailuresRetainRetrySemantics(boolean preparation) throws Exception {
-    var item = item(EmailStatus.PENDING, 0);
+    EmailQueueEntity item = item(EmailStatus.PENDING, 0);
     batch(item);
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(3);
     RuntimeException failure =
@@ -306,7 +341,7 @@ class EmailQueueServiceTest {
 
   @Test
   void deletedCandidateIsSkippedBeforeDispatch() {
-    var item = item(EmailStatus.PENDING, 0);
+    EmailQueueEntity item = item(EmailStatus.PENDING, 0);
     batch(item);
     when(emails.lockById(item.getId())).thenReturn(Optional.empty());
     service.processQueue();
@@ -316,7 +351,7 @@ class EmailQueueServiceTest {
 
   @Test
   void configuredThreeRetriesActuallyMeansFourFailedDispatches() throws Exception {
-    var item = item(EmailStatus.PENDING, 0);
+    EmailQueueEntity item = item(EmailStatus.PENDING, 0);
     batch(item);
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(3);
     when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
@@ -333,7 +368,7 @@ class EmailQueueServiceTest {
     assertEquals(EmailStatus.FAILED, item.getStatus());
     assertEquals(3, item.getRetryCount());
     verify(mail, times(4)).sendEmail(user, "subject", "body");
-    var body = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
     verify(mail)
         .sendAdminEmail(eq("admin@example.com"), eq("Email dispatch failed"), body.capture());
     assertEquals(
@@ -351,8 +386,8 @@ class EmailQueueServiceTest {
 
   @Test
   void adminMailExceptionIsSwallowedAndRemainingBatchContinues() throws Exception {
-    var first = item(EmailStatus.PENDING, 0);
-    var second = item(EmailStatus.PENDING, 0);
+    EmailQueueEntity first = item(EmailStatus.PENDING, 0);
+    EmailQueueEntity second = item(EmailStatus.PENDING, 0);
     second.setSubject("second");
     batch(first, second);
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
@@ -369,15 +404,15 @@ class EmailQueueServiceTest {
   @ParameterizedTest
   @ValueSource(ints = {0, 1, 3})
   void logsAndAdminBodyCountInitialAttemptPlusConfiguredRetries(int limit) throws Exception {
-    var item = item(EmailStatus.PENDING, 0);
+    EmailQueueEntity item = item(EmailStatus.PENDING, 0);
     batch(item);
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(limit);
     when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
     doThrow(new MailAuthenticationException("fixture failure"))
         .when(mail)
         .sendEmail(user, "subject", "body");
-    var logger = (Logger) LoggerFactory.getLogger(EmailQueueService.class);
-    var logs = threadLogs();
+    Logger logger = (Logger) LoggerFactory.getLogger(EmailQueueService.class);
+    ListAppender<ILoggingEvent> logs = threadLogs();
     String thread = Thread.currentThread().getName();
     logs.start();
     logger.addAppender(logs);
@@ -419,7 +454,7 @@ class EmailQueueServiceTest {
 
   @Test
   void terminalAttemptCountUsesStoredHistoryRatherThanChangedConfiguration() throws Exception {
-    var item = item(EmailStatus.PENDING, 4);
+    EmailQueueEntity item = item(EmailStatus.PENDING, 4);
     batch(item);
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(1);
     when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
@@ -436,10 +471,10 @@ class EmailQueueServiceTest {
 
   @Test
   void successfulRetryLogsActualAttemptWithoutChangingHistory() throws Exception {
-    var item = item(EmailStatus.PENDING, 2);
+    EmailQueueEntity item = item(EmailStatus.PENDING, 2);
     batch(item);
-    var logger = (Logger) LoggerFactory.getLogger(EmailQueueService.class);
-    var logs = threadLogs();
+    Logger logger = (Logger) LoggerFactory.getLogger(EmailQueueService.class);
+    ListAppender<ILoggingEvent> logs = threadLogs();
     String thread = Thread.currentThread().getName();
     logs.start();
     logger.addAppender(logs);
@@ -464,11 +499,11 @@ class EmailQueueServiceTest {
 
   @Test
   void unexpectedSenderRuntimeFailureKeepsClaimAndContinuesOtherDispatches() throws Exception {
-    var first = item(EmailStatus.PENDING, 0);
-    var second = item(EmailStatus.PENDING, 0);
+    EmailQueueEntity first = item(EmailStatus.PENDING, 0);
+    EmailQueueEntity second = item(EmailStatus.PENDING, 0);
     second.setSubject("second");
     batch(first, second);
-    var failure = new IllegalStateException("unexpected");
+    IllegalStateException failure = new IllegalStateException("unexpected");
     doThrow(failure).when(mail).sendEmail(user, "subject", "body");
     assertDoesNotThrow(service::processQueue);
     assertEquals(EmailStatus.IN_PROGRESS, first.getStatus());
@@ -481,9 +516,9 @@ class EmailQueueServiceTest {
   @ValueSource(strings = {"save", "adminConfig", "adminSender"})
   void infrastructureRuntimeFailuresAreIsolatedWithoutAutomaticRelease(String stage)
       throws Exception {
-    var item = item(EmailStatus.PENDING, 0);
+    EmailQueueEntity item = item(EmailStatus.PENDING, 0);
     batch(item);
-    var failure = new IllegalStateException(stage);
+    IllegalStateException failure = new IllegalStateException(stage);
     if (stage.equals("save")) {
       when(emails.save(item)).thenThrow(failure);
     } else {
@@ -492,17 +527,20 @@ class EmailQueueServiceTest {
           .sendEmail(user, "subject", "body");
       {
         when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
-        if (stage.equals("adminConfig"))
+        if (stage.equals("adminConfig")) {
           when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenThrow(failure);
-        else {
+        } else {
           when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
           doThrow(failure).when(mail).sendAdminEmail(any(), any(), any());
         }
       }
     }
     assertDoesNotThrow(service::processQueue);
-    if (stage.equals("save")) verifyNoInteractions(mail);
-    else assertEquals(EmailStatus.FAILED, item.getStatus());
+    if (stage.equals("save")) {
+      verifyNoInteractions(mail);
+    } else {
+      assertEquals(EmailStatus.FAILED, item.getStatus());
+    }
   }
 
   @ParameterizedTest
@@ -512,7 +550,7 @@ class EmailQueueServiceTest {
     LocalDateTime expected = LocalDateTime.now(clock).minus(java.time.Duration.parse(duration));
     when(emails.deleteByStatusAndCreatedAtBefore(eq(EmailStatus.SENT), any())).thenReturn(5);
     assertDoesNotThrow(service::deleteSentEmails);
-    var cutoff = ArgumentCaptor.forClass(LocalDateTime.class);
+    ArgumentCaptor<LocalDateTime> cutoff = ArgumentCaptor.forClass(LocalDateTime.class);
     verify(emails).deleteByStatusAndCreatedAtBefore(eq(EmailStatus.SENT), cutoff.capture());
     assertEquals(expected, cutoff.getValue());
     verifyNoInteractions(mail);
@@ -537,7 +575,7 @@ class EmailQueueServiceTest {
   @Test
   void retryConfigFailureStopsBeforeSelectionAndSending() {
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(1);
-    var failure = new IllegalStateException("config");
+    IllegalStateException failure = new IllegalStateException("config");
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenThrow(failure);
     assertSame(failure, assertThrows(IllegalStateException.class, service::processQueue));
     verifyNoInteractions(emails, mail, transactions);
@@ -572,7 +610,9 @@ class EmailQueueServiceTest {
   @ParameterizedTest
   @ValueSource(strings = {"user", "id", "subject", "body", "type"})
   void nullQueueRequiredFieldsFailBeforeRepositoryAccess(String field) {
-    if (field.equals("id")) user.setId(null);
+    if (field.equals("id")) {
+      user.setId(null);
+    }
     assertThrows(
         NullPointerException.class,
         () ->
@@ -587,7 +627,9 @@ class EmailQueueServiceTest {
   @ParameterizedTest
   @ValueSource(strings = {"user", "id", "type"})
   void nullOpenQueryRequiredFieldsFailBeforeRepositoryAccess(String field) {
-    if (field.equals("id")) user.setId(null);
+    if (field.equals("id")) {
+      user.setId(null);
+    }
     assertThrows(
         NullPointerException.class,
         () ->
@@ -600,7 +642,7 @@ class EmailQueueServiceTest {
   @ParameterizedTest
   @ValueSource(longs = {-1, 0, 1})
   void claimRechecksRetryBoundaryUsingClock(long offsetNanos) throws Exception {
-    var item = item(EmailStatus.PENDING, 1);
+    EmailQueueEntity item = item(EmailStatus.PENDING, 1);
     item.setLastRetryAt(LocalDateTime.now(clock).minusMinutes(1).plusNanos(offsetNanos));
     batch(item);
     service.processQueue();
@@ -617,10 +659,10 @@ class EmailQueueServiceTest {
   @ParameterizedTest
   @ValueSource(strings = {"Europe/Berlin", "America/New_York"})
   void injectedClockZoneDeterminesLocalCreationAndCleanup(String zone) {
-    var fixed =
+    Clock fixed =
         java.time.Clock.fixed(
             java.time.Instant.parse("2030-01-01T12:00:00Z"), java.time.ZoneId.of(zone));
-    var localService =
+    EmailQueueService localService =
         new EmailQueueService(
             config,
             emails,
@@ -664,10 +706,10 @@ class EmailQueueServiceTest {
 
   @Test
   void failedCleanupUsesLocalDaysAcrossDaylightSavingNotSevenHundredTwentyHours() {
-    var fixed =
+    Clock fixed =
         java.time.Clock.fixed(
             java.time.Instant.parse("2030-10-28T12:00:00Z"), java.time.ZoneId.of("Europe/Berlin"));
-    var localService =
+    EmailQueueService localService =
         new EmailQueueService(
             config,
             emails,
@@ -678,7 +720,7 @@ class EmailQueueServiceTest {
             fixed,
             QueueTestWorkers.inline());
     localService.deleteFailedEmails();
-    var expected = LocalDateTime.of(2030, 9, 28, 13, 0);
+    LocalDateTime expected = LocalDateTime.of(2030, 9, 28, 13, 0);
     verify(emails).deleteByStatusAndLastRetryAtBefore(EmailStatus.FAILED, expected);
     assertNotEquals(
         expected,
@@ -691,7 +733,9 @@ class EmailQueueServiceTest {
     return new ListAppender<>() {
       @Override
       protected void append(ILoggingEvent event) {
-        if (Thread.currentThread() == owner) super.append(event);
+        if (Thread.currentThread() == owner) {
+          super.append(event);
+        }
       }
     };
   }
@@ -706,7 +750,7 @@ class EmailQueueServiceTest {
   }
 
   private EmailQueueEntity item(EmailStatus status, int retries) {
-    var item = new EmailQueueEntity();
+    EmailQueueEntity item = new EmailQueueEntity();
     item.setUserEntity(user);
     item.setSubject("subject");
     item.setBody("body");

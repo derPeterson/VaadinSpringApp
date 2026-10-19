@@ -1,7 +1,11 @@
 package de.derpeterson.app.ui.base;
 
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.ErrorParameter;
+import com.vaadin.flow.router.HasErrorParameter;
+import com.vaadin.flow.router.NotFoundException;
+import com.vaadin.flow.router.QueryParameters;
 import de.derpeterson.app.model.enums.NavigationErrorCode;
 import de.derpeterson.app.views.HomeView;
 import jakarta.servlet.http.HttpServletResponse;

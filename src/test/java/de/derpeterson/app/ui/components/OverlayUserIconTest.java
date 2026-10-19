@@ -1,7 +1,14 @@
 package de.derpeterson.app.ui.components;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
@@ -19,6 +26,7 @@ import de.derpeterson.app.model.enums.AvatarMode;
 import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.service.UserAvatarService;
+import de.derpeterson.app.service.UserAvatarService.State;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import java.util.Locale;
 import java.util.UUID;
@@ -43,7 +51,7 @@ class OverlayUserIconTest {
   void setup() {
     ui = new UI();
     UI.setCurrent(ui);
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getResourceRegistry()).thenReturn(new StreamResourceRegistry(session));
     when(session.access(any()))
@@ -86,11 +94,12 @@ class OverlayUserIconTest {
   @ParameterizedTest
   @EnumSource(UserStatus.class)
   void allExistingStatusesAreIndependentOfInitials(UserStatus value) {
-    var user = UserEntity.builder().firstName("Christian").lastName("Doebl").version(7L).build();
-    var avatar = new OverlayUserIcon(messages, user, value, IconSize.PIXEL_48, true);
+    UserEntity user =
+        UserEntity.builder().firstName("Christian").lastName("Doebl").version(7L).build();
+    OverlayUserIcon avatar = new OverlayUserIcon(messages, user, value, IconSize.PIXEL_48, true);
     ui.add(avatar);
-    var initials = (Span) ReflectionTestUtils.getField(avatar, "initials");
-    var status = (Div) ReflectionTestUtils.getField(avatar, "status");
+    Span initials = (Span) ReflectionTestUtils.getField(avatar, "initials");
+    Div status = (Div) ReflectionTestUtils.getField(avatar, "status");
     assertEquals("CD", initials.getText());
     assertEquals(1, status.getComponentCount());
     assertTrue(
@@ -118,8 +127,8 @@ class OverlayUserIconTest {
 
   @Test
   void anonymousAvatarUsesNeutralSymbolAndCanBecomeAnInitialsAvatarWithoutStaleChildren() {
-    var avatar = new OverlayUserIcon(messages, null, null, IconSize.PIXEL_48);
-    var initials = (Span) ReflectionTestUtils.getField(avatar, "initials");
+    OverlayUserIcon avatar = new OverlayUserIcon(messages, null, null, IconSize.PIXEL_48);
+    Span initials = (Span) ReflectionTestUtils.getField(avatar, "initials");
     assertEquals(1, initials.getComponentCount());
     assertEquals(AppConstants.USER_ICON_ALT, avatar.getElement().getAttribute("aria-label"));
     avatar.setName("Christian", "Doebl");
@@ -131,8 +140,9 @@ class OverlayUserIconTest {
 
   @Test
   void attachedAvatarRefreshesItsCurrentStatusAndRemovesLanguageListenerOnDetach() {
-    var user = UserEntity.builder().firstName("Christian").lastName("Doebl").build();
-    var avatar = new OverlayUserIcon(messages, user, UserStatus.AVAILABLE, IconSize.PIXEL_48, true);
+    UserEntity user = UserEntity.builder().firstName("Christian").lastName("Doebl").build();
+    OverlayUserIcon avatar =
+        new OverlayUserIcon(messages, user, UserStatus.AVAILABLE, IconSize.PIXEL_48, true);
     ui.add(avatar);
     avatar.setUserStatus(UserStatus.EMPLOYED);
     locale.set(Locale.ENGLISH);
@@ -151,23 +161,24 @@ class OverlayUserIconTest {
 
   @Test
   void profileEventsRefreshTheImageWithoutRebuildingItForAStatusChangeAndDetachUnsubscribes() {
-    var service = mock(UserAvatarService.class);
-    var events = new UserProfileBroadcaster();
+    UserAvatarService service = mock(UserAvatarService.class);
+    UserProfileBroadcaster events = new UserProfileBroadcaster();
     when(service.events()).thenReturn(events);
-    var revision = UUID.randomUUID();
-    var custom = new UserAvatarService.State(1L, AvatarMode.CUSTOM, true, revision);
+    UUID revision = UUID.randomUUID();
+    State custom = new UserAvatarService.State(1L, AvatarMode.CUSTOM, true, revision);
     when(service.state(12L))
         .thenReturn(new UserAvatarService.State(2L, AvatarMode.INITIALS, true, revision), custom);
-    var user = UserEntity.builder().id(12L).firstName("Christian").lastName("Doebl").build();
-    var avatar = new OverlayUserIcon(messages, user, UserStatus.AVAILABLE, IconSize.PIXEL_48);
+    UserEntity user = UserEntity.builder().id(12L).firstName("Christian").lastName("Doebl").build();
+    OverlayUserIcon avatar =
+        new OverlayUserIcon(messages, user, UserStatus.AVAILABLE, IconSize.PIXEL_48);
     avatar.configureAvatar(service, custom);
     ui.add(avatar);
-    var photo = (Image) ReflectionTestUtils.getField(avatar, "photo");
-    var first = photo.getSrc();
+    Image photo = (Image) ReflectionTestUtils.getField(avatar, "photo");
+    String first = photo.getSrc();
     assertTrue(photo.isVisible());
     avatar.setUserStatus(UserStatus.ABSENT);
     assertEquals(first, photo.getSrc());
-    var status = (Div) ReflectionTestUtils.getField(avatar, "status");
+    Div status = (Div) ReflectionTestUtils.getField(avatar, "status");
     assertFalse(status.isVisible());
     assertFalse(avatar.hasClassName("cosmos-avatar-with-status"));
     assertEquals(0, status.getComponentCount());

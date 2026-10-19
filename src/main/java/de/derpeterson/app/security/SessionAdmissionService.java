@@ -3,14 +3,22 @@ package de.derpeterson.app.security;
 import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSessionBindingEvent;
+import jakarta.servlet.http.HttpSessionBindingListener;
 import java.time.Instant;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
@@ -51,7 +59,9 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
 
   public <T> T withIdentity(String identity, Supplier<T> action) {
     String key = EmailIdentity.canonicalize(identity);
-    if (key == null || key.isBlank()) throw new AuthenticationServiceException("Identity required");
+    if (key == null || key.isBlank()) {
+      throw new AuthenticationServiceException("Identity required");
+    }
     synchronized (locks[(key.hashCode() & Integer.MAX_VALUE) % locks.length]) {
       return action.get();
     }
@@ -86,7 +96,7 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
 
   /** Registry und Metadaten beim ID-Wechsel unter derselben Kontosperre veröffentlichen. */
   public void sessionIdChanged(String previous, String current, Runnable publishRegistryEvent) {
-    var old = metadata.get(previous);
+    Active old = metadata.get(previous);
     if (old == null) {
       publishRegistryEvent.run();
       return;
@@ -101,35 +111,44 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
   }
 
   public void sessionIdChanged(String previous, String current) {
-    var old = metadata.remove(previous);
-    if (old != null)
+    Active old = metadata.remove(previous);
+    if (old != null) {
       metadata.put(
           current,
           new Active(
               current, old.handle(), old.identity(), old.device(), old.created(), old.series()));
+    }
   }
 
   public Instant lastActivity(String sessionId) {
-    var info = registry.getSessionInformation(sessionId);
+    SessionInformation info = registry.getSessionInformation(sessionId);
     return info == null ? Instant.now() : info.getLastRequest().toInstant();
   }
 
   public void expire(String identity, String sessionId) {
-    var info = registry.getSessionInformation(sessionId);
-    if (info != null && identity.equals(info.getPrincipal())) info.expireNow();
+    SessionInformation info = registry.getSessionInformation(sessionId);
+    if (info != null && identity.equals(info.getPrincipal())) {
+      info.expireNow();
+    }
   }
 
   public void touch(HttpServletRequest request) {
-    var session = request.getSession(false);
-    if (session == null) return;
-    var info = registry.getSessionInformation(session.getId());
-    if (info != null && !info.isExpired()) registry.refreshLastRequest(session.getId());
+    HttpSession session = request.getSession(false);
+    if (session == null) {
+      return;
+    }
+    SessionInformation info = registry.getSessionInformation(session.getId());
+    if (info != null && !info.isExpired()) {
+      registry.refreshLastRequest(session.getId());
+    }
   }
 
   public void bindSeries(HttpServletRequest request, String series) {
     request.setAttribute(DeviceRememberMeServices.SERIES, series);
-    var session = request.getSession(false);
-    if (session == null) return;
+    HttpSession session = request.getSession(false);
+    if (session == null) {
+      return;
+    }
     session.setAttribute(DeviceRememberMeServices.SERIES, series);
     metadata.computeIfPresent(
         session.getId(),
@@ -138,12 +157,12 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
   }
 
   public boolean isExpired(HttpServletRequest request) {
-    var session = request == null ? null : request.getSession(false);
+    HttpSession session = request == null ? null : request.getSession(false);
     return session != null && isSessionExpired(session.getId());
   }
 
   public boolean isSessionExpired(String sessionId) {
-    var information = registry.getSessionInformation(sessionId);
+    SessionInformation information = registry.getSessionInformation(sessionId);
     return information != null && information.isExpired();
   }
 
@@ -177,13 +196,15 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
       HttpServletRequest request,
       HttpServletResponse response,
       Runnable completion) {
-    var session = request.getSession(false);
+    HttpSession session = request.getSession(false);
     if (session != null) {
       // Different account logins in the same browser must not overwrite each other's reservation.
       synchronized (WebUtils.getSessionMutex(session)) {
         completeForIdentity(authentication, request, response, completion);
       }
-    } else completeForIdentity(authentication, request, response, completion);
+    } else {
+      completeForIdentity(authentication, request, response, completion);
+    }
   }
 
   private void completeForIdentity(
@@ -200,10 +221,12 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
         String returningSeries = (String) request.getAttribute(DeviceRememberMeServices.SERIES);
         if (returningSeries != null
             && tokens != null
-            && !tokens.belongsTo(returningSeries, identity))
+            && !tokens.belongsTo(returningSeries, identity)) {
           throw new AuthenticationServiceException("Saved login was revoked");
-        var session = request.getSession(false);
-        var existing = session == null ? null : registry.getSessionInformation(session.getId());
+        }
+        HttpSession session = request.getSession(false);
+        SessionInformation existing =
+            session == null ? null : registry.getSessionInformation(session.getId());
         if (existing != null) {
           if (existing.isExpired() || !identity.equals(existing.getPrincipal())) {
             throw new AuthenticationServiceException("Session identity changed");
@@ -219,17 +242,21 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
         } catch (RuntimeException failure) {
           throw new AuthenticationServiceException("Session configuration unavailable", failure);
         }
-        if (limit < 1) throw new AuthenticationServiceException("Invalid session limit");
-        if (registry.getAllSessions(identity, false).size() >= limit)
+        if (limit < 1) {
+          throw new AuthenticationServiceException("Invalid session limit");
+        }
+        if (registry.getAllSessions(identity, false).size() >= limit) {
           throw new SessionLimitException();
+        }
 
         // Keep Vaadin's UI/session attributes, changing only the identifier against fixation.
         fixation.onAuthentication(authentication, request, response);
         session = request.getSession(true);
         request.setAttribute(NEW_SESSION, session);
         registry.registerNewSession(session.getId(), identity);
-        if (returningSeries != null)
+        if (returningSeries != null) {
           session.setAttribute(DeviceRememberMeServices.SERIES, returningSeries);
+        }
         metadata.put(
             session.getId(),
             new Active(
@@ -242,12 +269,13 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
         session.setAttribute(REGISTRATION, new Registration(registry, metadata));
         completion.run();
       } catch (RuntimeException failure) {
-        if (failure instanceof MaintenanceAuthenticationException)
+        if (failure instanceof MaintenanceAuthenticationException) {
           request.setAttribute(FAILURE_REASON, "maintenance");
-        else if (failure instanceof SessionLimitException)
+        } else if (failure instanceof SessionLimitException) {
           request.setAttribute(FAILURE_REASON, "sessions");
-        else if (failure instanceof AuthenticationServiceException)
+        } else if (failure instanceof AuthenticationServiceException) {
           request.setAttribute(FAILURE_REASON, "unavailable");
+        }
         rollback(request);
         throw failure;
       }

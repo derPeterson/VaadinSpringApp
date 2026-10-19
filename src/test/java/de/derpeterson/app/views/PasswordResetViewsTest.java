@@ -1,7 +1,18 @@
 package de.derpeterson.app.views;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -11,6 +22,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.server.VaadinSession;
@@ -49,7 +61,7 @@ class PasswordResetViewsTest {
   void setup() {
     ui = new UI();
     session = mock(VaadinSession.class);
-    var locale = new AtomicReference<>(Locale.ENGLISH);
+    AtomicReference<Locale> locale = new AtomicReference<>(Locale.ENGLISH);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     when(session.hasLock()).thenReturn(true);
     doAnswer(
@@ -94,9 +106,9 @@ class PasswordResetViewsTest {
   }
 
   private void notification(boolean success, String body, Locale locale) {
-    var helper = NotificationHelper.getInstance();
-    var title = (Span) ReflectionTestUtils.getField(helper, "titleText");
-    var message = (Html) ReflectionTestUtils.getField(helper, "messageText");
+    NotificationHelper helper = NotificationHelper.getInstance();
+    Span title = (Span) ReflectionTestUtils.getField(helper, "titleText");
+    Html message = (Html) ReflectionTestUtils.getField(helper, "messageText");
     MessageProperties expectedTexts = MessageProperties.forLocale(provider, locale);
     assertEquals(
         success ? expectedTexts.getBaseSuccessTitle() : expectedTexts.getBaseFailedTitle(),
@@ -138,8 +150,8 @@ class PasswordResetViewsTest {
         success,
         success ? texts.getResetPasswordSuccessMessage() : texts.getResetPasswordInvalidText(),
         Locale.ENGLISH);
-    var helper = NotificationHelper.getInstance();
-    var visible = ReflectionTestUtils.getField(helper, "currentNotification");
+    NotificationHelper helper = NotificationHelper.getInstance();
+    Object visible = ReflectionTestUtils.getField(helper, "currentNotification");
     LanguageChangeEvent.fire(ui, Locale.GERMAN);
     assertSame(visible, ReflectionTestUtils.getField(helper, "currentNotification"));
     notification(
@@ -167,14 +179,15 @@ class PasswordResetViewsTest {
   @Test
   void resetRepositoryFailureIsLoggedAndShowsOnlyDynamicNeutralText() {
     createResetForm();
-    var failure = new DataAccessResourceFailureException("secret SQL and password detail");
+    DataAccessResourceFailureException failure =
+        new DataAccessResourceFailureException("secret SQL and password detail");
     when(service.resetPassword("link-token", "Password!")).thenThrow(failure);
     assertLogged(
         ResetPasswordView.class,
         failure,
         () -> field(resetView, "resetButton", Button.class).click());
     notification(false, texts.getResetPasswordTechnicalErrorMessage(), Locale.ENGLISH);
-    var visible =
+    Object visible =
         ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
     LanguageChangeEvent.fire(ui, Locale.GERMAN);
     assertSame(
@@ -212,8 +225,8 @@ class PasswordResetViewsTest {
       field(forgotView, "sendButton", Button.class).click();
     }
     notification(true, texts.getForgotPasswordSuccessMessage(), Locale.ENGLISH);
-    var helper = NotificationHelper.getInstance();
-    var visible =
+    NotificationHelper helper = NotificationHelper.getInstance();
+    Notification visible =
         (com.vaadin.flow.component.notification.Notification)
             ReflectionTestUtils.getField(helper, "currentNotification");
     assertEquals(-1, visible.getDuration());
@@ -228,7 +241,8 @@ class PasswordResetViewsTest {
 
   @Test
   void validationFailureShowsTechnicalCardWithoutPasswordFormAndTranslates() {
-    var failure = new DataAccessResourceFailureException("secret SQL");
+    DataAccessResourceFailureException failure =
+        new DataAccessResourceFailureException("secret SQL");
     when(service.validateToken("link-token")).thenThrow(failure);
     resetView =
         new ResetPasswordView(
@@ -280,8 +294,8 @@ class PasswordResetViewsTest {
   }
 
   private void assertLogged(Class<?> source, Exception failure, Runnable action) {
-    var logger = (Logger) LoggerFactory.getLogger(source);
-    var logs = new ListAppender<ILoggingEvent>();
+    Logger logger = (Logger) LoggerFactory.getLogger(source);
+    ListAppender<ILoggingEvent> logs = new ListAppender<ILoggingEvent>();
     logs.start();
     logger.addAppender(logs);
     try {

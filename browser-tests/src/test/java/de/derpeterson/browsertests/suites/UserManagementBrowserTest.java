@@ -2,19 +2,31 @@ package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
-import de.derpeterson.browsertests.*;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.i18n.UiTexts;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.pages.AdminUserDeleteDialog;
+import de.derpeterson.browsertests.pages.AdminUserDialog;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
-import java.time.*;
-import java.util.*;
-import org.junit.jupiter.api.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag("browser")
 @Feature("Benutzerverwaltung: Finden, Filtern und Bearbeiten")
@@ -312,7 +324,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
     users.search(query);
     assertThat(users.emailCells(email)).hasCount(0);
     assertThat(total).hasText(texts.getAdminUsersAccountCount(original + 1));
-    var other =
+    UiTexts other =
         new de.derpeterson.browsertests.i18n.UiTexts(texts.language().equals("de") ? "en" : "de");
     try {
       new UserMenu(page).selectLanguage(other.language());

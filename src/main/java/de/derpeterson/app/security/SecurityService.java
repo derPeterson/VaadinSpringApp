@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
@@ -51,13 +52,15 @@ public class SecurityService {
    * require the session lock).
    */
   public boolean hasCurrentSessionPrivileges(HttpServletRequest request) {
-    var session = request.getSession(false);
-    if (session == null) return true;
+    HttpSession session = request.getSession(false);
+    if (session == null) {
+      return true;
+    }
     boolean hadPrincipal =
         sessionAuthentication(session) != null
                 && sessionAuthentication(session).getPrincipal() instanceof UserDetails
             || session.getAttribute(AUTH_USER_SESSION_KEY) instanceof UserDetails;
-    var refreshed =
+    Optional<Authentication> refreshed =
         hadPrincipal ? refreshSessionAuthentication(session) : Optional.<Authentication>empty();
     if (admissions.isExpired(request) || hadPrincipal && refreshed.isEmpty()) {
       session.removeAttribute(AUTH_USER_SESSION_KEY);
@@ -75,25 +78,34 @@ public class SecurityService {
       clearStaleAuthentication(request);
       return Optional.empty();
     }
-    var session = request == null ? null : request.getSession(false);
+    HttpSession session = request == null ? null : request.getSession(false);
     Authentication auth = session == null ? null : sessionAuthentication(session);
-    UserDetails stored =
-        session == null
-            ? null
-            : session.getAttribute(AUTH_USER_SESSION_KEY) instanceof UserDetails p ? p : null;
-    if (auth == null && stored != null)
+    UserDetails stored = null;
+    if (session != null
+        && session.getAttribute(AUTH_USER_SESSION_KEY) instanceof UserDetails principal) {
+      stored = principal;
+    }
+    if (auth == null && stored != null) {
       auth =
           UsernamePasswordAuthenticationToken.authenticated(stored, null, stored.getAuthorities());
-    if (auth == null) auth = SecurityContextHolder.getContext().getAuthentication();
+    }
+    if (auth == null) {
+      auth = SecurityContextHolder.getContext().getAuthentication();
+    }
     if ((auth == null || !(auth.getPrincipal() instanceof UserDetails))
         && VaadinSession.getCurrent() != null
         && VaadinSession.getCurrent().hasLock()) {
-      var p = VaadinSession.getCurrent().getAttribute(UserDetails.class);
-      if (p != null)
-        auth = UsernamePasswordAuthenticationToken.authenticated(p, null, p.getAuthorities());
+      UserDetails sessionPrincipal = VaadinSession.getCurrent().getAttribute(UserDetails.class);
+      if (sessionPrincipal != null) {
+        auth =
+            UsernamePasswordAuthenticationToken.authenticated(
+                sessionPrincipal, null, sessionPrincipal.getAuthorities());
+      }
     }
-    if (auth == null || !(auth.getPrincipal() instanceof UserDetails)) return Optional.empty();
-    var fresh = refreshedAuthentication(auth);
+    if (auth == null || !(auth.getPrincipal() instanceof UserDetails)) {
+      return Optional.empty();
+    }
+    Optional<Authentication> fresh = refreshedAuthentication(auth);
     if (fresh.isEmpty()) {
       clearStaleAuthentication(request);
       return Optional.empty();
@@ -105,13 +117,18 @@ public class SecurityService {
 
   /** Frische Rechte der gebundenen Sitzung; kein Zugriff auf den Kontext eines fremden Threads. */
   public Optional<Authentication> refreshSessionAuthentication(HttpSession session) {
-    if (session == null) return Optional.empty();
+    if (session == null) {
+      return Optional.empty();
+    }
     try {
-      if (admissions.isSessionExpired(session.getId())) return Optional.empty();
-      var auth = sessionAuthentication(session);
-      if (auth == null && session.getAttribute(AUTH_USER_SESSION_KEY) instanceof UserDetails p)
+      if (admissions.isSessionExpired(session.getId())) {
+        return Optional.empty();
+      }
+      Authentication auth = sessionAuthentication(session);
+      if (auth == null && session.getAttribute(AUTH_USER_SESSION_KEY) instanceof UserDetails p) {
         auth = UsernamePasswordAuthenticationToken.authenticated(p, null, p.getAuthorities());
-      var fresh = refreshedAuthentication(auth);
+      }
+      Optional<Authentication> fresh = refreshedAuthentication(auth);
       fresh.ifPresent(a -> install(session, a));
       return fresh;
     } catch (IllegalStateException expired) {
@@ -125,16 +142,18 @@ public class SecurityService {
   }
 
   private Authentication sessionAuthentication(HttpSession session) {
-    var value =
+    Object value =
         session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
     return value instanceof SecurityContext context ? context.getAuthentication() : null;
   }
 
   private void install(HttpSession session, Authentication authentication) {
-    if (session == null) return;
-    var existing = sessionAuthentication(session);
+    if (session == null) {
+      return;
+    }
+    Authentication existing = sessionAuthentication(session);
     if (existing != authentication) {
-      var context = SecurityContextHolder.createEmptyContext();
+      SecurityContext context = SecurityContextHolder.createEmptyContext();
       context.setAuthentication(authentication);
       session.setAttribute(
           HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
@@ -143,12 +162,13 @@ public class SecurityService {
   }
 
   private void useAuthentication(Authentication authentication) {
-    var context = SecurityContextHolder.createEmptyContext();
+    SecurityContext context = SecurityContextHolder.createEmptyContext();
     context.setAuthentication(authentication);
     SecurityContextHolder.setContext(context);
-    if (VaadinSession.getCurrent() != null && VaadinSession.getCurrent().hasLock())
+    if (VaadinSession.getCurrent() != null && VaadinSession.getCurrent().hasLock()) {
       VaadinSession.getCurrent()
           .setAttribute(UserDetails.class, (UserDetails) authentication.getPrincipal());
+    }
   }
 
   public void touchSession(HttpServletRequest request) {
@@ -193,8 +213,9 @@ public class SecurityService {
             restoreSecurityContext(user);
             securityContextRepository.saveContext(
                 SecurityContextHolder.getContext(), request, response);
-            if (rememberMeServices instanceof DeviceRememberMeServices devices)
+            if (rememberMeServices instanceof DeviceRememberMeServices devices) {
               devices.preparePasswordLogin(request, response, user.getUsername());
+            }
             if (Boolean.TRUE.equals(rememberMe)) {
               // Checkbox selection belongs to this request, never to the singleton service.
               var rememberedRequest =
@@ -208,8 +229,9 @@ public class SecurityService {
             }
           });
     } catch (RuntimeException failure) {
-      if (VaadinSession.getCurrent() != null)
+      if (VaadinSession.getCurrent() != null) {
         VaadinSession.getCurrent().setAttribute(UserDetails.class, null);
+      }
       SecurityContextHolder.clearContext();
       if (Boolean.TRUE.equals(rememberMe) && !response.isCommitted()) {
         try {
@@ -218,8 +240,9 @@ public class SecurityService {
           failure.addSuppressed(cleanupFailure);
         }
       }
-      if (failure instanceof AuthenticationException authenticationFailure)
+      if (failure instanceof AuthenticationException authenticationFailure) {
         throw authenticationFailure;
+      }
       throw new AuthenticationServiceException("Login completion failed", failure);
     }
   }
@@ -255,31 +278,41 @@ public class SecurityService {
   private Optional<Authentication> refreshedAuthentication(Authentication auth) {
     if (auth == null
         || !auth.isAuthenticated()
-        || !(auth.getPrincipal() instanceof UserDetails principal)) return Optional.empty();
-    var old = accountAuthorities(principal.getAuthorities());
-    var known =
+        || !(auth.getPrincipal() instanceof UserDetails principal)) {
+      return Optional.empty();
+    }
+    Set<String> old = accountAuthorities(principal.getAuthorities());
+    Set<String> known =
         java.util.Arrays.stream(de.derpeterson.app.model.enums.RoleType.values())
             .map(Enum::name)
             .collect(Collectors.toSet());
     // Nur gespeicherte Kontorollen und echte Framework-Faktoren akzeptieren; keine erfundenen
     // Privilegien.
-    if (!known.containsAll(old) || !old.equals(accountAuthorities(auth.getAuthorities())))
+    if (!known.containsAll(old) || !old.equals(accountAuthorities(auth.getAuthorities()))) {
       return Optional.empty();
+    }
     try {
-      var current = userDetailsService.loadUserByUsername(principal.getUsername());
-      if (!current.isEnabled()) return Optional.empty();
-      if (old.equals(accountAuthorities(current.getAuthorities()))) return Optional.of(auth);
-      var authorities = new java.util.ArrayList<GrantedAuthority>(current.getAuthorities());
+      UserDetails current = userDetailsService.loadUserByUsername(principal.getUsername());
+      if (!current.isEnabled()) {
+        return Optional.empty();
+      }
+      if (old.equals(accountAuthorities(current.getAuthorities()))) {
+        return Optional.of(auth);
+      }
+      ArrayList<GrantedAuthority> authorities =
+          new java.util.ArrayList<GrantedAuthority>(current.getAuthorities());
       auth.getAuthorities().stream()
           .filter(FactorGrantedAuthority.class::isInstance)
           .forEach(authorities::add);
       org.springframework.security.authentication.AbstractAuthenticationToken refreshed;
-      if (auth instanceof org.springframework.security.authentication.RememberMeAuthenticationToken)
+      if (auth
+          instanceof org.springframework.security.authentication.RememberMeAuthenticationToken) {
         refreshed =
             new org.springframework.security.authentication.RememberMeAuthenticationToken(
                 rememberMeServices.getKey(), current, authorities);
-      else
+      } else {
         refreshed = UsernamePasswordAuthenticationToken.authenticated(current, null, authorities);
+      }
       refreshed.setDetails(auth.getDetails());
       return Optional.of(refreshed);
     } catch (UsernameNotFoundException missing) {

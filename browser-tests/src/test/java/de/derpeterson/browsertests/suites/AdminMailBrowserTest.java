@@ -1,20 +1,28 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.app.config.AdminConfigGroup;
-import de.derpeterson.browsertests.*;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.mail.MailpitInbox.CapturedMail;
+import de.derpeterson.browsertests.pages.AdminMailPage;
+import de.derpeterson.browsertests.pages.ConfigurationPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.UiActions;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag("browser")
 @Feature("Admin-Testmail")
@@ -66,7 +74,7 @@ public class AdminMailBrowserTest extends BrowserFixture {
                 "vaadin-email-field[invalid],vaadin-text-field[invalid],vaadin-text-area[invalid]"))
         .hasCount(0);
     MailpitInbox inbox = new MailpitInbox(context);
-    var captured = inbox.awaitAdminMail(email, subject);
+    CapturedMail captured = inbox.awaitAdminMail(email, subject);
     inbox.assertPlainContent(captured, body);
     inbox.assertSender(captured, sender);
   }
@@ -127,7 +135,7 @@ public class AdminMailBrowserTest extends BrowserFixture {
           .click();
       assertThat(tooltip).hasCount(0);
     }
-    var other =
+    UiTexts other =
         new de.derpeterson.browsertests.i18n.UiTexts(texts.language().equals("de") ? "en" : "de");
     try {
       new UserMenu(page).selectLanguage(other.language());

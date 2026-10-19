@@ -1,7 +1,20 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -30,6 +43,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
@@ -87,10 +102,10 @@ class VerificationServiceMailTest {
   @CsvSource({"false,false", "true,false", "false,true", "true,true"})
   void templateStreamIsClosedOnSuccessAndOnReadFailure(boolean readFailure, boolean closeFailure)
       throws IOException {
-    var stream = new TemplateStream(readFailure, closeFailure);
-    try (var image = mockStatic(ImageHelper.class);
-        var locale = mockStatic(CustomI18NProvider.class);
-        var resources =
+    TemplateStream stream = new TemplateStream(readFailure, closeFailure);
+    try (MockedStatic<ImageHelper> image = mockStatic(ImageHelper.class);
+        MockedStatic<CustomI18NProvider> locale = mockStatic(CustomI18NProvider.class);
+        MockedConstruction<ClassPathResource> resources =
             mockConstruction(
                 ClassPathResource.class,
                 (resource, context) -> {
@@ -123,10 +138,10 @@ class VerificationServiceMailTest {
   @ValueSource(strings = {"queued", "duplicate", "queueFailure", "templateFailure"})
   void logReportsQueueAdditionOnlyAfterSuccessfulEnqueue(String outcome) throws IOException {
     Logger logger = (Logger) LoggerFactory.getLogger(VerificationService.class);
-    var logs = new ListAppender<ILoggingEvent>();
+    ListAppender<ILoggingEvent> logs = new ListAppender<ILoggingEvent>();
     logs.start();
     logger.addAppender(logs);
-    try (var locale = mockStatic(CustomI18NProvider.class)) {
+    try (MockedStatic<CustomI18NProvider> locale = mockStatic(CustomI18NProvider.class)) {
       locale
           .when(CustomI18NProvider::getCurrentLocale)
           .thenReturn(outcome.equals("templateFailure") ? Locale.FRENCH : Locale.ENGLISH);

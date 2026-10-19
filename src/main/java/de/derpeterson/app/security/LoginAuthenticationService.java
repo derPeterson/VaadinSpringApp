@@ -2,7 +2,9 @@ package de.derpeterson.app.security;
 
 import de.derpeterson.app.service.LoginAttemptService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.CredentialsContainer;
 
@@ -24,7 +26,9 @@ public class LoginAuthenticationService implements AuthenticationProvider {
     }
     Authentication result =
         attempts.authenticate(request.getName(), () -> provider.authenticate(request));
-    if (result instanceof CredentialsContainer credentials) credentials.eraseCredentials();
+    if (result instanceof CredentialsContainer credentials) {
+      credentials.eraseCredentials();
+    }
     return result;
   }
 }

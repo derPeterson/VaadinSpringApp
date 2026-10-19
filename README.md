@@ -1,5 +1,12 @@
 # VaadinSpringApp
 
+> Java-Lesbarkeit vom 20.10.2026: Kontrollblöcke geklammert, explizite Typen und
+> Imports verwendet, verschachtelte Fallunterscheidungen aufgelöst und zentrale
+> UI-Methoden gegliedert. Sinnvolle `var`-Ausnahmen bleiben erhalten. Regeln in
+> AGENTS.md und automatische Klammer-/Importprüfung ergänzt. 1823 Anwendungs-
+> JUnits und 48 Browserhelfer erfolgreich, keine Fehler oder Skips.
+> [Umfang und Prüfgrenzen](docs/java-lesbarkeit-2026-10-20.md).
+
 > Bereinigung vom 20.10.2026 auf `feature/user-messages`: ungenutzte APIs und zwei
 > Sprachschlüssel entfernt, Benachrichtigungs-CSS gebündelt und Theme-Struktur
 > vereinheitlicht. 1823 Anwendungs-JUnits und 48 Browserhelfer erfolgreich,

@@ -1,19 +1,42 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.microsoft.playwright.*;
-import com.microsoft.playwright.options.*;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Response;
+import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.WaitUntilState;
 import de.derpeterson.app.config.AdminConfigGroup;
-import de.derpeterson.browsertests.*;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.BrowserActor;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.BrowserTestRunner;
+import de.derpeterson.browsertests.PersistentBrowserActor;
+import de.derpeterson.browsertests.pages.AccountPage;
+import de.derpeterson.browsertests.pages.AccountSessionsPage;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.ConfigurationPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.UiActions;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
 import java.nio.file.Path;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 @Tag("browser")
@@ -25,7 +48,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
 
   @BeforeEach
   void prepare() {
-    var login = new LoginPage(page);
+    LoginPage login = new LoginPage(page);
     login.open();
     page.getByRole(
             AriaRole.CHECKBOX,
@@ -86,17 +109,17 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       """)
   void realListCountsTabsOnceAndReadsChangedLimit() {
     String email = user();
-    try (var owner = new BrowserActor(browser);
-        var other = new BrowserActor(browser)) {
+    try (BrowserActor owner = new BrowserActor(browser);
+        BrowserActor other = new BrowserActor(browser)) {
       login(owner, email, false);
       login(other, email, true);
       // Ein Fehler im ersten Fenster bleibt bestehen, wenn ein anderes Fenster eine Meldung zeigt.
-      var ownerForm = new AccountPage(owner.page);
+      AccountPage ownerForm = new AccountPage(owner.page);
       ownerForm.open();
       ownerForm.input("account-first-name").fill("");
       ownerForm.save();
       ownerForm.assertMessage(texts.getBaseValidationRequiredMessage());
-      var otherForm = new AccountPage(other.page);
+      AccountPage otherForm = new AccountPage(other.page);
       otherForm.open();
       otherForm.language(texts.language());
       otherForm.save();
@@ -105,7 +128,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       otherForm.closeNotification();
       ownerForm.assertMessage(texts.getBaseValidationRequiredMessage());
       ownerForm.closeNotification();
-      var sessions = new AccountSessionsPage(owner.page);
+      AccountSessionsPage sessions = new AccountSessionsPage(owner.page);
       sessions.open();
       sessions.assertCounts(2, 1, 0);
       try (Page tab = owner.context.newPage()) {
@@ -138,15 +161,15 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       """)
   void selectedRevokeBlocksOldFormAndSavedReturn() {
     String email = user();
-    try (var owner = new BrowserActor(browser);
-        var other = new BrowserActor(browser)) {
+    try (BrowserActor owner = new BrowserActor(browser);
+        BrowserActor other = new BrowserActor(browser)) {
       login(owner, email, false);
       login(other, email, true);
-      var stale = new AccountPage(other.page);
+      AccountPage stale = new AccountPage(other.page);
       stale.open();
       String originalName = stale.input("account-first-name").inputValue();
       stale.input("account-first-name").fill("MustNotBeSaved");
-      var sessions = new AccountSessionsPage(owner.page);
+      AccountSessionsPage sessions = new AccountSessionsPage(owner.page);
       sessions.open();
       sessions.assertCounts(2, 1, 0);
       sessions.revokeOther(0);
@@ -181,13 +204,13 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       """)
   void logoutOthersKeepsCurrentSessionAndItsSavedSignIn() {
     String email = user();
-    try (var owner = new BrowserActor(browser);
-        var second = new BrowserActor(browser);
-        var third = new BrowserActor(browser)) {
+    try (BrowserActor owner = new BrowserActor(browser);
+        BrowserActor second = new BrowserActor(browser);
+        BrowserActor third = new BrowserActor(browser)) {
       login(owner, email, true);
       login(second, email, true);
       login(third, email, false);
-      var sessions = new AccountSessionsPage(owner.page);
+      AccountSessionsPage sessions = new AccountSessionsPage(owner.page);
       sessions.open();
       sessions.assertCounts(3, 2, 0);
       sessions.revokeOthers();
@@ -215,8 +238,8 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       """)
   void savedSignInSurvivesRestartButCanBeRevokedWithoutAnActiveSession() throws Exception {
     String email = user();
-    try (var persistent = new PersistentBrowserActor(playwright, profile)) {
-      var login = new LoginPage(persistent.page);
+    try (PersistentBrowserActor persistent = new PersistentBrowserActor(playwright, profile)) {
+      LoginPage login = new LoginPage(persistent.page);
       login.open();
       persistent
           .page
@@ -229,20 +252,20 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
       assertThat(persistent.page).hasURL(urlPattern(HOME_ROUTE));
     }
-    try (var owner = new BrowserActor(browser)) {
+    try (BrowserActor owner = new BrowserActor(browser)) {
       login(owner, email, true);
       BrowserTestRunner.restartTestApplication();
       owner.page.reload();
       assertThat(owner.page).hasURL(urlPattern(HOME_ROUTE));
       new UserMenu(owner.page).selectTestLanguage();
-      var sessions = new AccountSessionsPage(owner.page);
+      AccountSessionsPage sessions = new AccountSessionsPage(owner.page);
       sessions.open();
       sessions.assertCounts(1, 0, 1);
       assertThat(sessions.rows("saved")).containsText(texts.getSessionSavedLogin());
       sessions.revokeSaved(0);
       sessions.assertCounts(1, 0, 0);
-      try (var persistent = new PersistentBrowserActor(playwright, profile)) {
-        var login = new LoginPage(persistent.page);
+      try (PersistentBrowserActor persistent = new PersistentBrowserActor(playwright, profile)) {
+        LoginPage login = new LoginPage(persistent.page);
         login.open();
         login.assertFormVisible();
       }
@@ -267,11 +290,11 @@ public class SessionManagementBrowserTest extends BrowserFixture {
   void reachedLimitCanBeResolvedWithoutGrantingNormalAccessEarly() {
     String email = user();
     limit(1);
-    try (var owner = new BrowserActor(browser);
-        var next = new BrowserActor(browser)) {
+    try (BrowserActor owner = new BrowserActor(browser);
+        BrowserActor next = new BrowserActor(browser)) {
       login(owner, email, true);
       next.login(email, BrowserTestAccounts.USER_PASSWORD, true);
-      var login = new LoginPage(next.page);
+      LoginPage login = new LoginPage(next.page);
       login.assertRestrictedManagement();
       assertFalse(
           next.context.cookies().stream().anyMatch(cookie -> cookie.name.equals("remember-me")));
@@ -291,7 +314,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       assertTrue(
           next.context.cookies().stream().anyMatch(cookie -> cookie.name.equals("remember-me")));
       revoked(owner.page);
-      var sessions = new AccountSessionsPage(next.page);
+      AccountSessionsPage sessions = new AccountSessionsPage(next.page);
       sessions.open();
       sessions.assertCounts(1, 0, 0);
     }

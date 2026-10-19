@@ -212,7 +212,8 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
   }
 
   private void updateInputPlaceholders() {
-    if (emailField != null)
+    if (emailField != null) {
       emailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
+    }
   }
 }

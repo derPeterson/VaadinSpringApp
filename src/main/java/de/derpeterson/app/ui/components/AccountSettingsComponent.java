@@ -90,10 +90,10 @@ public class AccountSettingsComponent extends Div {
     this.saveProfile = saveProfile;
     this.version = user == null ? null : user.getVersion();
     addClassName("account-settings");
-    var breadcrumb = text(new Span(), messages::getAccountSettingsOverview);
-    var title = text(new Span(), messages::getAccountSettingsTitle);
-    var description = text(new Span(), messages::getAccountSettingsDescription);
-    var navigation = new AccountNavigationTabs(messages, false);
+    Span breadcrumb = text(new Span(), messages::getAccountSettingsOverview);
+    Span title = text(new Span(), messages::getAccountSettingsTitle);
+    Span description = text(new Span(), messages::getAccountSettingsDescription);
+    AccountNavigationTabs navigation = new AccountNavigationTabs(messages, false);
     textUpdates.add(navigation::refreshTexts);
     add(
         new CosmosSectionHeaderComponent(breadcrumb, title, description),
@@ -104,7 +104,7 @@ public class AccountSettingsComponent extends Div {
     tabs.addClassName("account-tabs");
     textUpdates.add(
         () -> tabs.getElement().setAttribute("aria-label", messages.getAccountSettingsTitle()));
-    var profile = profile(user);
+    AccountPanelComponent profile = profile(user);
     addTab(
         AccountSection.PROFILE,
         VaadinIcon.USER.create(),
@@ -127,7 +127,7 @@ public class AccountSettingsComponent extends Div {
             sectionChangeListeners.forEach(listener -> listener.accept(getSelectedSection()));
           }
         });
-    var content = new Div(panels.values().toArray(AccountPanelComponent[]::new));
+    Div content = new Div(panels.values().toArray(AccountPanelComponent[]::new));
     content.addClassName("account-panels");
     add(tabs, content, emailChangeDialog, passwordChangeDialog, avatarDialog);
     refreshTexts();
@@ -140,28 +140,31 @@ public class AccountSettingsComponent extends Div {
   }
 
   private Button actionButton(VaadinIcon icon, Supplier<String> label, boolean primary) {
-    var button = text(new Button(), label);
+    Button button = text(new Button(), label);
     button.setPrefixComponent(icon.create());
-    if (primary) button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    if (primary) {
+      button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    }
     return button;
   }
 
   private Button emailChangeButton(String id) {
-    var button = actionButton(VaadinIcon.EDIT, messages::getAccountSettingsChangeEmail, false);
+    Button button = actionButton(VaadinIcon.EDIT, messages::getAccountSettingsChangeEmail, false);
     button.setId(id);
     button.addClickListener(event -> emailChangeDialog.open());
     return button;
   }
 
   private Button passwordChangeButton() {
-    var button = actionButton(VaadinIcon.EDIT, messages::getAccountSettingsChangePassword, false);
+    Button button =
+        actionButton(VaadinIcon.EDIT, messages::getAccountSettingsChangePassword, false);
     button.setId("account-password-edit-security");
     button.addClickListener(event -> passwordChangeDialog.open());
     return button;
   }
 
   private CosmosCardComponent summary(UserEntity user) {
-    var avatar =
+    OverlayUserIcon avatar =
         new OverlayUserIcon(
             messages,
             user,
@@ -178,9 +181,9 @@ public class AccountSettingsComponent extends Div {
                     + Objects.toString(user.getLastName(), ""))
                 .trim());
     summaryName.addClassName("account-summary-name");
-    var address = new Span(user == null ? "" : Objects.toString(user.getEmail(), ""));
+    Span address = new Span(user == null ? "" : Objects.toString(user.getEmail(), ""));
     address.addClassName("account-summary-email");
-    var active =
+    Span active =
         text(
             new Span(),
             user != null && user.isEnabled()
@@ -189,14 +192,14 @@ public class AccountSettingsComponent extends Div {
     active.addClassName("account-summary-status");
     active.getElement().getThemeList().add("badge");
     active.getElement().getThemeList().add(user != null && user.isEnabled() ? "success" : "error");
-    var info = new Div(summaryName, address, active);
+    Div info = new Div(summaryName, address, active);
     info.addClassName("account-summary-details");
-    var edit = actionButton(VaadinIcon.EDIT, messages::getAccountSettingsEditPicture, false);
+    Button edit = actionButton(VaadinIcon.EDIT, messages::getAccountSettingsEditPicture, false);
     edit.setId("account-avatar-edit");
     edit.addClickListener(event -> avatarDialog.open());
-    var row = new Div(avatar, info, edit);
+    Div row = new Div(avatar, info, edit);
     row.addClassName("account-summary-row");
-    var card = new CosmosCardComponent(row);
+    CosmosCardComponent card = new CosmosCardComponent(row);
     card.addClassName("account-summary");
     return card;
   }
@@ -207,7 +210,7 @@ public class AccountSettingsComponent extends Div {
       Supplier<String> title,
       Supplier<String> description,
       Supplier<String> meta) {
-    var panel = new AccountPanelComponent("account-panel-" + id, icon);
+    AccountPanelComponent panel = new AccountPanelComponent("account-panel-" + id, icon);
     textUpdates.add(() -> panel.setHeading(title.get(), description.get(), meta.get()));
     return panel;
   }
@@ -217,9 +220,9 @@ public class AccountSettingsComponent extends Div {
       Component symbol,
       Supplier<String> label,
       AccountPanelComponent panel) {
-    var id = section.name().toLowerCase(Locale.ROOT);
+    String id = section.name().toLowerCase(Locale.ROOT);
     symbol.getElement().setAttribute("aria-hidden", "true");
-    var tab = new Tab(symbol, text(new Span(), label));
+    Tab tab = new Tab(symbol, text(new Span(), label));
     tab.setId("account-tab-" + id);
     tab.getElement().setAttribute("aria-controls", "account-panel-" + id);
     panel.getElement().setAttribute("role", "tabpanel");
@@ -247,7 +250,9 @@ public class AccountSettingsComponent extends Div {
     try {
       boolean sameTab = tabs.getSelectedTab() == sectionTabs.get(Objects.requireNonNull(section));
       tabs.setSelectedTab(sectionTabs.get(section));
-      if (sameTab && section == AccountSection.SESSIONS) sessionPanel.reload();
+      if (sameTab && section == AccountSection.SESSIONS) {
+        sessionPanel.reload();
+      }
     } finally {
       restoringSection = false;
     }
@@ -255,11 +260,13 @@ public class AccountSettingsComponent extends Div {
 
   private void showSelectedPanel() {
     panels.forEach((tab, panel) -> panel.setVisible(tab == tabs.getSelectedTab()));
-    if (getSelectedSection() == AccountSection.SESSIONS) sessionPanel.reload();
+    if (getSelectedSection() == AccountSection.SESSIONS) {
+      sessionPanel.reload();
+    }
   }
 
   private AccountPanelComponent profile(UserEntity user) {
-    var panel =
+    AccountPanelComponent panel =
         panel(
             "profile",
             VaadinIcon.USER,
@@ -310,10 +317,10 @@ public class AccountSettingsComponent extends Div {
           preferredLanguage.setLabel(messages.getAccountSettingsLanguage());
           preferredLanguage.setHelperText(messages.getAccountSettingsLanguageHint());
         });
-    var form = new Div(firstName, lastName, email, birthDate, preferredLanguage);
+    Div form = new Div(firstName, lastName, email, birthDate, preferredLanguage);
     form.addClassName("account-profile-form");
     panel.getBody().add(form);
-    var save = actionButton(VaadinIcon.CHECK, messages::getAccountSettingsSave, true);
+    Button save = actionButton(VaadinIcon.CHECK, messages::getAccountSettingsSave, true);
     save.setId("account-save");
     save.addClickListener(event -> saveProfile());
     panel.addFooter(text(new Span(), messages::getAccountSettingsAccountHint), save);
@@ -324,8 +331,12 @@ public class AccountSettingsComponent extends Div {
     // Wie in der Registrierung erst beim Absenden prüfen, nicht beim ersten Tastendruck.
     birthDate.setInvalid(false);
     if (!ValidationHelper.validateRequiredInputs(
-        List.of(firstName, lastName, birthDate, preferredLanguage), messages)) return;
-    if (!ValidationHelper.validateBirthDateBeforeInput(birthDate, messages)) return;
+        List.of(firstName, lastName, birthDate, preferredLanguage), messages)) {
+      return;
+    }
+    if (!ValidationHelper.validateBirthDateBeforeInput(birthDate, messages)) {
+      return;
+    }
     Profile saved;
     try {
       saved =
@@ -371,21 +382,21 @@ public class AccountSettingsComponent extends Div {
 
   private Div actionRow(
       VaadinIcon icon, Supplier<String> title, Supplier<String> description, Button action) {
-    var symbol = new Div(icon.create());
+    Div symbol = new Div(icon.create());
     symbol.addClassName("cosmos-panel-icon");
-    var heading = text(new Span(), title);
+    Span heading = text(new Span(), title);
     heading.addClassName("account-entry-title");
-    var detail = text(new Span(), description);
+    Span detail = text(new Span(), description);
     detail.addClassName("account-entry-description");
-    var copy = new Div(heading, detail);
+    Div copy = new Div(heading, detail);
     copy.addClassName("account-entry-copy");
-    var row = new Div(symbol, copy, action);
+    Div row = new Div(symbol, copy, action);
     row.addClassName("account-entry");
     return row;
   }
 
   private AccountPanelComponent security(UserEntity user) {
-    var panel =
+    AccountPanelComponent panel =
         panel(
             "security",
             VaadinIcon.LOCK,
@@ -410,7 +421,7 @@ public class AccountSettingsComponent extends Div {
   }
 
   private SvgIcon devicesIcon() {
-    var devices = new SvgIcon("icons/devices.svg");
+    SvgIcon devices = new SvgIcon("icons/devices.svg");
     devices.addClassName("account-devices-icon");
     devices.getElement().setAttribute("aria-hidden", "true");
     return devices;
@@ -429,10 +440,12 @@ public class AccountSettingsComponent extends Div {
       SerializableConsumer<EmailChange> emailAction) {
     passwordChangeDialog.setChangeAction(
         change -> {
-          var changed = passwordAction.apply(change);
+          PasswordChanged changed = passwordAction.apply(change);
           // Nur den eigenen unveränderten Profilstand fortschreiben; fremde Änderungen bleiben
           // Konflikte.
-          if (Objects.equals(version, changed.previousVersion())) version = changed.version();
+          if (Objects.equals(version, changed.previousVersion())) {
+            version = changed.version();
+          }
           return changed;
         });
     emailChangeDialog.setRequestAction(emailAction);

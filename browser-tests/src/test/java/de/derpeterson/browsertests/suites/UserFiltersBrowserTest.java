@@ -2,15 +2,25 @@ package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
-import de.derpeterson.browsertests.*;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.i18n.UiTexts;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
-import java.time.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** Visible user filters, independently runnable without the edit/delete cases. */
 @Tag("browser")
@@ -108,10 +118,10 @@ public class UserFiltersBrowserTest extends BrowserFixture {
   @Description(
       "Aktivitätsfilter öffnen, Datum setzen, 930 per Tab und 1430 per Enter übernehmen. Sprache im UI wechseln, dieselben Eingaben mit neu lokalisiertem Zeitformat prüfen. Ungültige 2460 zurückweisen.")
   void compactTimeSurvivesLocaleChanges() {
-    var users = login();
+    AdminUsersPage users = login();
     users.open();
     users.activeSince(LocalDate.of(2000, 1, 1));
-    for (var expected :
+    for (UiTexts expected :
         new de.derpeterson.browsertests.i18n.UiTexts[] {
           texts,
           new de.derpeterson.browsertests.i18n.UiTexts(texts.language().equals("de") ? "en" : "de")

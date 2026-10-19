@@ -209,6 +209,10 @@
                             <include>browser-tests/src/main/java/**/*.java</include>
                             <include>browser-tests/src/test/java/**/*.java</include>
                         </includes>
+                        <importOrder>
+                            <order>\#,</order>
+                        </importOrder>
+                        <removeUnusedImports/>
                         <googleJavaFormat>
                             <version>1.36.1</version>
                             <style>GOOGLE</style>
@@ -230,6 +234,34 @@
                     </typescript>
                 -->
                 </configuration>
+            </plugin>
+            <!-- Explizite Lesbarkeitsprüfung: mvnw checkstyle:check im Projektroot. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.6.0</version>
+                <configuration>
+                    <configLocation>${project.basedir}/config/checkstyle.xml</configLocation>
+                    <consoleOutput>true</consoleOutput>
+                    <failOnViolation>true</failOnViolation>
+                    <includeResources>false</includeResources>
+                    <includeTestResources>false</includeTestResources>
+                    <sourceDirectories>
+                        <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+                        <sourceDirectory>${project.basedir}/src/test/java</sourceDirectory>
+                        <sourceDirectory>${project.basedir}/shared/src/main/java</sourceDirectory>
+                        <sourceDirectory>${project.basedir}/shared/src/test/java</sourceDirectory>
+                        <sourceDirectory>${project.basedir}/browser-tests/src/main/java</sourceDirectory>
+                        <sourceDirectory>${project.basedir}/browser-tests/src/test/java</sourceDirectory>
+                    </sourceDirectories>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>14.3.0</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>com.vaadin</groupId>

@@ -8,8 +8,11 @@ import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.VaadinServiceInitListener;
 import com.vaadin.flow.server.VaadinServletRequest;
 import com.vaadin.flow.server.VaadinSession;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -27,8 +30,9 @@ public class PushSecurityInterceptor
 
   @Override
   public void requestStart(VaadinRequest request, VaadinResponse response) {
-    if (response == null)
+    if (response == null) {
       org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
     if (request instanceof VaadinServletRequest servletRequest
         && !securityService.hasCurrentSessionPrivileges(servletRequest.getHttpServletRequest())) {
       // requestStart is also called by PushHandler for an existing socket,
@@ -39,17 +43,22 @@ public class PushSecurityInterceptor
       throw new AccessDeniedException("Session privileges have changed");
     }
     if (response == null && request instanceof VaadinServletRequest servletRequest) {
-      var http = servletRequest.getHttpServletRequest();
-      var auth = securityService.refreshSessionAuthentication(http.getSession(false));
+      HttpServletRequest http = servletRequest.getHttpServletRequest();
+      Optional<Authentication> auth =
+          securityService.refreshSessionAuthentication(http.getSession(false));
       if (auth.isPresent()
           && MaintenanceTransport.withUi(
               http,
               ui -> {
-                if (!RoleUiState.changed(ui, auth.get())) return false;
+                if (!RoleUiState.changed(ui, auth.get())) {
+                  return false;
+                }
                 ui.access(
                     () -> {
                       RoleUiState.refresh(ui, auth.get(), http.getContextPath());
-                      if (ui.getPushConfiguration().getPushMode().isEnabled()) ui.push();
+                      if (ui.getPushConfiguration().getPushMode().isEnabled()) {
+                        ui.push();
+                      }
                     });
                 return true;
               },
@@ -80,7 +89,8 @@ public class PushSecurityInterceptor
 
   @Override
   public void requestEnd(VaadinRequest request, VaadinResponse response, VaadinSession session) {
-    if (response == null)
+    if (response == null) {
       org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
   }
 }

@@ -12,7 +12,11 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.BeforeEvent;
+import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.OptionalParameter;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -51,7 +55,8 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
     this.messages = messages;
     this.service = service;
     setId("account-email-confirmation");
-    var page = new CosmosPageComponent(config, false, messages::getAccountCopyrightTemplate);
+    CosmosPageComponent page =
+        new CosmosPageComponent(config, false, messages::getAccountCopyrightTemplate);
     statusIcon.addClassName("cosmos-status-icon");
     statusIcon.getElement().setAttribute("aria-hidden", "true");
     text.addClassName("cosmos-form-text");
@@ -71,26 +76,26 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
                 .executeJs(
                     "this.onclick = () => window.location.assign(new URL($0, document.baseURI).href)",
                     AppRoute.LOGIN.getRoute()));
-    var iconRow = new HorizontalLayout(statusIcon);
+    HorizontalLayout iconRow = new HorizontalLayout(statusIcon);
     iconRow.setWidthFull();
     iconRow.setPadding(false);
     iconRow.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 
-    var titleRow = new HorizontalLayout(title);
+    HorizontalLayout titleRow = new HorizontalLayout(title);
     titleRow.addClassName("cosmos-title-row");
     titleRow.setWidthFull();
     titleRow.setPadding(false);
     titleRow.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 
-    var intro = new HorizontalLayout(text);
+    HorizontalLayout intro = new HorizontalLayout(text);
     intro.addClassName("cosmos-intro");
     intro.setWidthFull();
     intro.setPadding(false);
     intro.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 
-    var actions = new Div(login, confirm);
+    Div actions = new Div(login, confirm);
     actions.addClassNames("cosmos-dialog-actions", "cosmos-email-confirm-actions");
-    var form = new VerticalLayout(iconRow, titleRow, intro, actions);
+    VerticalLayout form = new VerticalLayout(iconRow, titleRow, intro, actions);
     form.addClassName("cosmos-form");
     form.setAlignItems(FlexComponent.Alignment.STRETCH);
     form.setPadding(false);
@@ -152,7 +157,9 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
   }
 
   private Supplier<String> message() {
-    if (technicalFailure) return messages::getAccountEmailConfirmationFailed;
+    if (technicalFailure) {
+      return messages::getAccountEmailConfirmationFailed;
+    }
     return switch (state) {
       case READY -> messages::getAccountEmailConfirmationReady;
       case SUCCESS -> messages::getAccountEmailConfirmationSuccess;
@@ -163,7 +170,7 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
   }
 
   private void updateStatusIcon() {
-    var icon =
+    VaadinIcon icon =
         technicalFailure
             ? VaadinIcon.WARNING
             : switch (state) {
@@ -172,7 +179,7 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
               case EXPIRED -> VaadinIcon.BELL;
               case INVALID, CONFLICT -> VaadinIcon.WARNING;
             };
-    var color =
+    String color =
         technicalFailure
             ? LumoUtility.TextColor.ERROR
             : switch (state) {

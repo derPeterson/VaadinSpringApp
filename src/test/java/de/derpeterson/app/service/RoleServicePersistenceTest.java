@@ -1,6 +1,9 @@
 package de.derpeterson.app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.enums.RoleType;
@@ -42,11 +45,11 @@ class RoleServicePersistenceTest {
   @ParameterizedTest
   @EnumSource(RoleType.class)
   void findsExactlyTheRequestedPersistedRole(RoleType name) {
-    for (var role : RoleType.values()) {
+    for (RoleType role : RoleType.values()) {
       repository.saveAndFlush(RoleEntity.builder().name(role).build());
     }
 
-    var found = service.findByName(name).orElseThrow();
+    RoleEntity found = service.findByName(name).orElseThrow();
 
     assertEquals(name, found.getName());
     assertNotNull(found.getId());
@@ -57,7 +60,7 @@ class RoleServicePersistenceTest {
   @ParameterizedTest
   @EnumSource(RoleType.class)
   void absentRoleIsNotConfusedWithAnotherRoleOrCreated(RoleType name) {
-    var other = name == RoleType.ROLE_ADMIN ? RoleType.ROLE_USER : RoleType.ROLE_ADMIN;
+    RoleType other = name == RoleType.ROLE_ADMIN ? RoleType.ROLE_USER : RoleType.ROLE_ADMIN;
     repository.saveAndFlush(RoleEntity.builder().name(other).build());
 
     assertTrue(service.findByName(name).isEmpty());
@@ -67,7 +70,7 @@ class RoleServicePersistenceTest {
 
   @Test
   void emptyDatabaseAndNullLookupReturnEmptyWithoutWrites() {
-    for (var name : RoleType.values()) {
+    for (RoleType name : RoleType.values()) {
       assertTrue(service.findByName(name).isEmpty());
     }
     assertTrue(service.findByName(null).isEmpty());
@@ -78,7 +81,8 @@ class RoleServicePersistenceTest {
 
   @Test
   void uniqueNameConstraintRejectsDuplicatesAndPreservesOriginalLookup() {
-    var original = repository.saveAndFlush(RoleEntity.builder().name(RoleType.ROLE_USER).build());
+    RoleEntity original =
+        repository.saveAndFlush(RoleEntity.builder().name(RoleType.ROLE_USER).build());
 
     assertThrows(
         DataIntegrityViolationException.class,
@@ -109,7 +113,7 @@ class RoleServicePersistenceTest {
 
     @Bean
     LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
-      var factory = new LocalContainerEntityManagerFactoryBean();
+      LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
       factory.setDataSource(dataSource);
       factory.setPackagesToScan("de.derpeterson.app.model");
       factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());

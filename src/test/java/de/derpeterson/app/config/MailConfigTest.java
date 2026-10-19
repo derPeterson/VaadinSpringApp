@@ -1,10 +1,13 @@
 package de.derpeterson.app.config;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
+import java.util.Properties;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -14,7 +17,7 @@ class MailConfigTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void productionSenderSetsUtf8AndPreservesConnectionProperties(boolean enabled) throws Exception {
-    var config = mock(ConfigService.class);
+    ConfigService config = mock(ConfigService.class);
     when(config.getString(ConfigEntry.MAIL_HOST)).thenReturn("smtp.invalid");
     when(config.getInteger(ConfigEntry.MAIL_PORT)).thenReturn(2525);
     when(config.getString(ConfigEntry.MAIL_USERNAME)).thenReturn("fixture-user");
@@ -25,7 +28,7 @@ class MailConfigTest {
     when(config.getBoolean(ConfigEntry.MAIL_SMTP_STARTTLS_ENABLE)).thenReturn(enabled);
     when(config.getBoolean(ConfigEntry.MAIL_SMTP_SSL_ENABLE)).thenReturn(enabled);
 
-    var sender =
+    ConnectionAwareJavaMailSender sender =
         assertInstanceOf(
             ConnectionAwareJavaMailSender.class, new MailConfig(config).javaMailSender());
 
@@ -35,7 +38,7 @@ class MailConfigTest {
     assertEquals(2525, sender.getPort());
     assertEquals("fixture-user", sender.getUsername());
     assertEquals("fixture-only-not-a-secret", sender.getPassword());
-    var properties = sender.getJavaMailProperties();
+    Properties properties = sender.getJavaMailProperties();
     assertEquals(enabled, properties.get(ConfigEntry.MAIL_SMTP_AUTH.getKey()));
     assertEquals(enabled, properties.get(ConfigEntry.MAIL_SMTP_STARTTLS_ENABLE.getKey()));
     assertEquals(enabled, properties.get(ConfigEntry.MAIL_SMTP_SSL_ENABLE.getKey()));

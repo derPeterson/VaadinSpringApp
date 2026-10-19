@@ -2,6 +2,7 @@ package de.derpeterson.app.security;
 
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.router.Location;
 import de.derpeterson.app.model.enums.AppRoute;
 import java.io.Serializable;
 import java.util.Set;
@@ -19,7 +20,7 @@ public record RoleUiState(Set<String> authorities) implements Serializable {
   }
 
   public static boolean changed(UI ui, Authentication authentication) {
-    var state = ComponentUtil.getData(ui, RoleUiState.class);
+    RoleUiState state = ComponentUtil.getData(ui, RoleUiState.class);
     if (state == null) {
       ComponentUtil.setData(ui, RoleUiState.class, new RoleUiState(roles(authentication)));
       return false;
@@ -28,18 +29,24 @@ public record RoleUiState(Set<String> authorities) implements Serializable {
   }
 
   public static String target(UI ui, Authentication auth, String contextPath) {
-    var location = ui.getInternals().getActiveViewLocation();
-    if (location == null) return contextPath + "/home";
-    var path = location.getPath();
-    if (path.equals(AppRoute.ADMIN.getRoute()) && !roles(auth).contains("ROLE_ADMIN"))
+    Location location = ui.getInternals().getActiveViewLocation();
+    if (location == null) {
       return contextPath + "/home";
-    if (!Set.of("home", "account", "notifications", "admin").contains(path))
+    }
+    String path = location.getPath();
+    if (path.equals(AppRoute.ADMIN.getRoute()) && !roles(auth).contains("ROLE_ADMIN")) {
       return contextPath + "/home";
+    }
+    if (!Set.of("home", "account", "notifications", "admin").contains(path)) {
+      return contextPath + "/home";
+    }
     return contextPath + "/" + location.getPathWithQueryParameters();
   }
 
   public static boolean refresh(UI ui, Authentication auth, String contextPath) {
-    if (!changed(ui, auth)) return false;
+    if (!changed(ui, auth)) {
+      return false;
+    }
     ui.getPage().setLocation(target(ui, auth, contextPath));
     return true;
   }

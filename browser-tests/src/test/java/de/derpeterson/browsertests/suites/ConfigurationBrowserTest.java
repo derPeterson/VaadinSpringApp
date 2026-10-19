@@ -1,19 +1,33 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_PAGE_TITLE;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.BoundingBox;
 import de.derpeterson.app.config.AdminConfigGroup;
-import de.derpeterson.browsertests.*;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.i18n.UiTexts;
+import de.derpeterson.browsertests.pages.AdminNavigation;
+import de.derpeterson.browsertests.pages.ConfigurationPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.UserMenu;
+import de.derpeterson.browsertests.pages.UserStatusMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag("browser")
 @Feature("Weitere sichtbare Konfigurationsverträge")
@@ -161,7 +175,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     assertThat(parent).hasJSProperty("expanded", false);
     page.keyboard().press("Enter");
     assertThat(parent).hasJSProperty("expanded", true);
-    for (AdminConfigGroup group : AdminConfigGroup.values())
+    for (AdminConfigGroup group : AdminConfigGroup.values()) {
       assertThat(
               parent.getByRole(
                   AriaRole.LINK,
@@ -169,7 +183,8 @@ public class ConfigurationBrowserTest extends BrowserFixture {
                       .setName(texts.getAdminConfigGroupLabel(group))
                       .setExact(true)))
           .isVisible();
-    var other =
+    }
+    UiTexts other =
         new de.derpeterson.browsertests.i18n.UiTexts(texts.language().equals("de") ? "en" : "de");
     try {
       new UserMenu(page).selectLanguage(other.language());
@@ -252,12 +267,13 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     Locator overlay = page.locator("vaadin-tooltip-overlay[opened] [part='overlay']");
     Locator card = page.locator(".cosmos-config-card");
     for (String property :
-        new String[] {"background-image", "border-radius", "border-top-color", "box-shadow"})
+        new String[] {"background-image", "border-radius", "border-top-color", "box-shadow"}) {
       assertThat(overlay)
           .hasCSS(
               property,
               (String)
                   card.evaluate("(el, p) => getComputedStyle(el).getPropertyValue(p)", property));
+    }
     assertThat(overlay).hasCSS("width", "360px");
     assertThat(settings.tooltip()).hasCSS("font-size", "12px");
     assertThat(settings.tooltip()).hasCSS("font-weight", "400");
@@ -280,7 +296,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         texts.getAdminConfigEntryServiceNameTooltip(),
         texts.getAdminConfigHelperServiceNameMax(30));
     assertThat(settings.input(label)).hasValue(draft);
-    var other =
+    UiTexts other =
         new de.derpeterson.browsertests.i18n.UiTexts(texts.language().equals("de") ? "en" : "de");
     try {
       new UserMenu(page).selectLanguage(other.language());
@@ -354,10 +370,11 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         assertTrue(
             settings.tooltip().innerText().contains("• "),
             "Feldinfo hat keine Eingaberegel: " + info.getAttribute("aria-labelledby"));
-        if (info.getAttribute("aria-labelledby").equals("config-label-remember_me_secret_key"))
+        if (info.getAttribute("aria-labelledby").equals("config-label-remember_me_secret_key")) {
           assertThat(settings.tooltip()).containsText(texts.getAdminConfigDefaultConfidential());
-        else if (info.getAttribute("aria-labelledby").equals("config-label-mail_password"))
+        } else if (info.getAttribute("aria-labelledby").equals("config-label-mail_password")) {
           assertThat(settings.tooltip()).containsText(texts.getAdminConfigDefaultEmpty());
+        }
         info.click();
         assertThat(settings.tooltip()).hasCount(0);
       }
@@ -425,7 +442,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     assertThat(settings.tooltip()).containsText(texts.getAdminConfigEntryServiceNameTooltip());
     Locator overlay = page.locator("vaadin-tooltip-overlay[opened] [part='overlay']");
     assertThat(overlay).hasCSS("width", "288px");
-    var bounds = overlay.boundingBox();
+    BoundingBox bounds = overlay.boundingBox();
     assertTrue(
         bounds.x >= -1
             && bounds.y >= -1
@@ -437,22 +454,22 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("Mobiler Klick-Tooltip bei 320×568", page);
     settings.info(label).click();
     assertThat(settings.tooltip()).hasCount(0);
-    var menu = new UserMenu(page);
+    UserMenu menu = new UserMenu(page);
     menu.open();
-    var menuContent =
+    Locator menuContent =
         page.locator("vaadin-popover-overlay[opened] > [part~='overlay'] > [part~='content']");
     assertTrue(
         (Boolean) menuContent.evaluate("e => e.scrollWidth <= e.clientWidth + 1"),
         "Das schmale Benutzermenü darf keinen horizontalen Überlauf haben.");
-    var status = new UserStatusMenu(page).current();
+    Locator status = new UserStatusMenu(page).current();
     status.scrollIntoViewIfNeeded();
     status.click();
-    var statusOverlay = page.locator("vaadin-select-overlay[opened] > [part~='overlay']");
+    Locator statusOverlay = page.locator("vaadin-select-overlay[opened] > [part~='overlay']");
     assertThat(statusOverlay).isVisible();
     // Die native Overlayposition wird nach Größenmessung/Öffnungsanimation aktualisiert.
     context.waitForCondition(
         () -> {
-          var candidate = statusOverlay.boundingBox();
+          BoundingBox candidate = statusOverlay.boundingBox();
           return candidate != null
               && candidate.x >= 0
               && candidate.x + candidate.width <= 321
@@ -460,7 +477,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
               && candidate.y + candidate.height <= 569;
         },
         new BrowserContext.WaitForConditionOptions().setTimeout(5_000));
-    var statusBounds = statusOverlay.boundingBox();
+    BoundingBox statusBounds = statusOverlay.boundingBox();
     assertTrue(
         statusBounds.x >= 0
             && statusBounds.x + statusBounds.width <= 321
@@ -472,12 +489,12 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     assertThat(page.locator("vaadin-select-overlay[opened], vaadin-select-overlay[closing]"))
         .hasCount(0);
     menu.open();
-    var logout =
+    Locator logout =
         page.getByRole(
             AriaRole.BUTTON,
             new Page.GetByRoleOptions().setName(texts.getBaseLogoutButton()).setExact(true));
     logout.scrollIntoViewIfNeeded();
-    var logoutBounds = logout.boundingBox();
+    BoundingBox logoutBounds = logout.boundingBox();
     assertTrue(
         logoutBounds.y >= 0 && logoutBounds.y + logoutBounds.height <= 569,
         "Abmelden muss im gescrollten Benutzermenü sichtbar bleiben: " + logoutBounds);

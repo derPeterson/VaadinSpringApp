@@ -24,12 +24,13 @@ public class AccountHeaderActions extends HorizontalLayout {
     setVisible(authenticated);
     notifications.setId("account-header-notifications");
     settings.setId("account-header-settings");
-    for (var button : new Button[] {notifications, settings}) {
+    for (Button button : new Button[] {notifications, settings}) {
       button.addThemeVariants(LUMO_TERTIARY_INLINE);
       button.addClassNames("cosmos-topbar-shortcut", LumoUtility.TextColor.PRIMARY);
     }
-    if (authenticated)
+    if (authenticated) {
       settings.addClickListener(event -> UI.getCurrent().navigate(AccountView.class));
+    }
     add(notifications, settings);
     refreshTexts();
   }
@@ -39,7 +40,9 @@ public class AccountHeaderActions extends HorizontalLayout {
   public void configureNotifications(
       de.derpeterson.app.service.UserNotificationService service,
       jakarta.servlet.http.HttpServletRequest request) {
-    if (!isVisible() || notificationBell != null) return;
+    if (!isVisible() || notificationBell != null) {
+      return;
+    }
     remove(notifications);
     notificationBell = new UserNotificationBell(messages, service, request, notifications);
     addComponentAtIndex(0, notificationBell);
@@ -50,6 +53,8 @@ public class AccountHeaderActions extends HorizontalLayout {
     notifications.setTooltipText(messages.getBaseNotifications());
     settings.setAriaLabel(messages.getBaseManageAccountButton());
     settings.setTooltipText(messages.getBaseManageAccountButton());
-    if (notificationBell != null) notificationBell.refreshTexts();
+    if (notificationBell != null) {
+      notificationBell.refreshTexts();
+    }
   }
 }

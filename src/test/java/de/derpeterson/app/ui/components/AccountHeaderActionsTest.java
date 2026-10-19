@@ -1,7 +1,12 @@
 package de.derpeterson.app.ui.components;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -46,7 +51,7 @@ class AccountHeaderActionsTest {
 
   @Test
   void settingsOpensTheAccountDirectlyWithoutUsingTheBell() {
-    var actions = create(true);
+    AccountHeaderActions actions = create(true);
     doReturn(Optional.empty()).when(ui).navigate(AccountView.class);
     button(actions, "account-header-notifications").click();
     verify(ui, never()).navigate(AccountView.class);
@@ -56,7 +61,7 @@ class AccountHeaderActionsTest {
 
   @Test
   void accessibleLabelsFollowLanguageChanges() {
-    var actions = create(true);
+    AccountHeaderActions actions = create(true);
     assertEquals(
         "Benachrichtigungen",
         button(actions, "account-header-notifications").getAriaLabel().orElseThrow());

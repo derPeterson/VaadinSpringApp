@@ -66,6 +66,29 @@
   für absolute Dateipfade. Fremde Änderungen erhalten. Den Ratchet nicht abschalten
   und keine projektweite Umformatierung ohne eigenen Auftrag ausführen.
   Anleitung und Grenzen: `docs/java-formatierung.md`.
+- Java-Lesbarkeit: Kontrollblöcke bei `if`, `else`, `for`, erweitertem `for`,
+  `while` und `do/while` immer mit geschweiften Klammern schreiben, auch für eine
+  Anweisung. `else if` darf als Kette stehen. `try`/`catch`/`finally` übersichtlich
+  gliedern; keine fachlich unterschiedlichen Aktionen in eine Zeile pressen.
+- Explizite lokale Typen sind der Standard. `var` nur verwenden, wenn es einen
+  konkreten Lesbarkeitsvorteil hat: z. B. anonyme oder nicht direkt benennbare
+  Typen sowie sehr lange generische Typen, die bereits direkt im Konstruktor
+  sichtbar sind. Bei Service-/Factory-Rückgaben den Typ grundsätzlich ausschreiben.
+  `var` ist keine dynamische Typisierung und hat keinen Laufzeitvorteil.
+- Explizite normale und statische Imports verwenden, keine Sternchenimporte.
+  Spotless ordnet die Imports und entfernt unbenutzte Imports.
+- Sprechende Namen für fachliche Objekte und längere Lambdas verwenden.
+  Verschachtelte ternäre Ausdrücke in verständliche Schritte oder benannte
+  Methoden aufteilen; einfache kurze Fallunterscheidungen dürfen ternär bleiben.
+  Große Methoden nach tatsächlichen Aufgaben gliedern; keine starren
+  Zeilenlimits und keine reine Verschiebung in bedeutungslose Hilfsmethoden.
+  Bestehende Transaktions-, Sperr- und Fehlergrenzen erhalten. Kommentare erklären
+  Gründe, Verträge und Besonderheiten statt den offensichtlichen Ablauf.
+- Nach eigenen Java-Änderungen zusätzlich im Projektroot
+  `.\mvnw.cmd checkstyle:check` vor Tests und Abschluss ausführen. Die zentrale
+  Konfiguration `config/checkstyle.xml` prüft Klammern und Sternchenimporte über
+  Anwendung, Shared und Browsertests. Die sinnvolle Typwahl und Methodengliederung
+  bleiben Teil des menschlichen Reviews. Anleitung: `docs/java-formatierung.md`.
 - Python-Standard ist Ruff, zentral in `ruff.toml`; die genaue Version steht auch
   in `requirements-dev.txt`. Installation nur in der virtuellen Projektumgebung:
   `.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt`.

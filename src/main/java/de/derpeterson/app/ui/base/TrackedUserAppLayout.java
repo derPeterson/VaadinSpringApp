@@ -62,21 +62,29 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
     this.accountHeaderActions = new AccountHeaderActions(messageProperties, currentUser != null);
     addAttachListener(
         event -> {
-          if (currentUser == null) return;
+          if (currentUser == null) {
+            return;
+          }
           profileRegistration =
               avatars
                   .events()
                   .register(
                       message -> {
-                        if (!Objects.equals(currentUser.getId(), message.userId())) return;
+                        if (!Objects.equals(currentUser.getId(), message.userId())) {
+                          return;
+                        }
                         event
                             .getUI()
                             .access(
                                 () -> {
-                                  if (!isAttached()) return;
+                                  if (!isAttached()) {
+                                    return;
+                                  }
                                   currentUser.setFirstName(message.firstName());
                                   currentUser.setLastName(message.lastName());
-                                  if (userPopoverMenu != null) userPopoverMenu.refreshProfileName();
+                                  if (userPopoverMenu != null) {
+                                    userPopoverMenu.refreshProfileName();
+                                  }
                                   refreshTrackedUserAvatar();
                                   onTrackedUserProfileChanged(
                                       message.firstName(), message.lastName());
@@ -128,21 +136,21 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
 
   protected final HorizontalLayout createApplicationHeader(
       ConfigService config, UserPopoverMenu.Actions actions) {
-    var logo = new Image("custom-theme/service_logo.png", "Service Icon");
+    Image logo = new Image("custom-theme/service_logo.png", "Service Icon");
     logo.addClassName("cosmos-topbar-logo");
-    var serviceName = new Span(config.getString(ConfigEntry.SERVICE_NAME));
+    Span serviceName = new Span(config.getString(ConfigEntry.SERVICE_NAME));
     serviceName.addClassName("cosmos-topbar-service-name");
-    var brand = new HorizontalLayout(logo, serviceName);
+    HorizontalLayout brand = new HorizontalLayout(logo, serviceName);
     brand.setSpacing(false);
     brand.addClassName("cosmos-topbar-brand");
 
-    var userButton = createTrackedUserButton();
+    Button userButton = createTrackedUserButton();
     createTrackedUserPopover(actions);
     userPopoverMenu.addThemeName("cosmos");
-    var userMenu = new HorizontalLayout(accountHeaderActions, userButton);
+    HorizontalLayout userMenu = new HorizontalLayout(accountHeaderActions, userButton);
     userMenu.setSpacing(false);
     userMenu.addClassName("cosmos-topbar-account-menu");
-    var header = new HorizontalLayout(brand, userMenu);
+    HorizontalLayout header = new HorizontalLayout(brand, userMenu);
     header.setSpacing(false);
     header.addClassName("cosmos-topbar");
     return header;

@@ -1,11 +1,19 @@
 package de.derpeterson.app.service;
 
-import static de.derpeterson.app.service.AvatarImageProcessor.Problem.*;
+import static de.derpeterson.app.service.AvatarImageProcessor.Problem.BUSY;
+import static de.derpeterson.app.service.AvatarImageProcessor.Problem.EXPIRED;
+import static de.derpeterson.app.service.AvatarImageProcessor.Problem.MISSING;
 
 import de.derpeterson.app.service.AvatarImageProcessor.InvalidImage;
-import java.io.*;
-import java.time.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.Semaphore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -46,7 +54,9 @@ public class AvatarDraftStore {
 
   public synchronized UUID begin(Long owner) {
     expire();
-    if (drafts.size() >= 16) throw new InvalidImage(BUSY);
+    if (drafts.size() >= 16) {
+      throw new InvalidImage(BUSY);
+    }
     UUID id = UUID.randomUUID();
     drafts.put(id, new Draft(owner, clock.instant().plus(Duration.ofMinutes(10))));
     return id;
@@ -54,22 +64,28 @@ public class AvatarDraftStore {
 
   private synchronized Draft require(UUID token, Long owner) {
     expire();
-    var draft = drafts.get(token);
-    if (draft == null || !Objects.equals(owner, draft.owner)) throw new InvalidImage(EXPIRED);
+    Draft draft = drafts.get(token);
+    if (draft == null || !Objects.equals(owner, draft.owner)) {
+      throw new InvalidImage(EXPIRED);
+    }
     return draft;
   }
 
   public UUID upload(UUID token, Long owner, InputStream input) throws IOException {
     Draft draft = require(token, owner);
     synchronized (this) {
-      if (draft.uploading || !transfers.tryAcquire()) throw new InvalidImage(BUSY);
+      if (draft.uploading || !transfers.tryAcquire()) {
+        throw new InvalidImage(BUSY);
+      }
       draft.uploading = true;
     }
     try {
       byte[] bytes = AvatarImageProcessor.readLimited(input);
       images.validate(bytes);
       synchronized (this) {
-        if (require(token, owner) != draft) throw new InvalidImage(EXPIRED);
+        if (require(token, owner) != draft) {
+          throw new InvalidImage(EXPIRED);
+        }
         draft.bytes = bytes;
         draft.imageId = UUID.randomUUID();
         return draft.imageId;
@@ -83,15 +99,20 @@ public class AvatarDraftStore {
   }
 
   public synchronized Image image(UUID token, Long owner, UUID imageId) {
-    var draft = require(token, owner);
-    if (draft.uploading) throw new InvalidImage(BUSY);
-    if (draft.bytes == null || imageId == null || !imageId.equals(draft.imageId))
+    Draft draft = require(token, owner);
+    if (draft.uploading) {
+      throw new InvalidImage(BUSY);
+    }
+    if (draft.bytes == null || imageId == null || !imageId.equals(draft.imageId)) {
       throw new InvalidImage(MISSING);
+    }
     return new Image(draft.imageId, draft.bytes);
   }
 
   public synchronized void release(UUID token) {
-    if (token != null) drafts.remove(token);
+    if (token != null) {
+      drafts.remove(token);
+    }
   }
 
   @Scheduled(fixedDelay = 60_000)

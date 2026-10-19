@@ -1,24 +1,51 @@
 package de.derpeterson.app.security;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
-import com.vaadin.flow.component.*;
+import com.vaadin.flow.component.ComponentUtil;
+import com.vaadin.flow.component.DetachEvent;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.function.DeploymentConfiguration;
 import com.vaadin.flow.router.Location;
-import com.vaadin.flow.server.*;
+import com.vaadin.flow.server.Command;
+import com.vaadin.flow.server.ServiceInitEvent;
+import com.vaadin.flow.server.SynchronizedRequestHandler;
+import com.vaadin.flow.server.VaadinRequest;
+import com.vaadin.flow.server.VaadinServletRequest;
+import com.vaadin.flow.server.VaadinServletResponse;
+import com.vaadin.flow.server.VaadinServletService;
+import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.websocket.UserRoleBroadcaster;
-import java.util.*;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.*;
-import org.junit.jupiter.api.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.springframework.mock.web.*;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /** Echte UIDL-Ausgabe des Frameworks; kein Browser und kein eigener JSON-Nachbau. */
@@ -37,7 +64,7 @@ class RoleUiGuardTest {
   @BeforeEach
   void setup() {
     servlet = mock(VaadinServletService.class);
-    var config = mock(DeploymentConfiguration.class);
+    DeploymentConfiguration config = mock(DeploymentConfiguration.class);
     when(servlet.getDeploymentConfiguration()).thenReturn(config);
     session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
@@ -80,7 +107,7 @@ class RoleUiGuardTest {
   }
 
   Authentication auth(String... roles) {
-    var p = User.withUsername("own@example.test").password("unused").roles(roles).build();
+    UserDetails p = User.withUsername("own@example.test").password("unused").roles(roles).build();
     return UsernamePasswordAuthenticationToken.authenticated(p, null, p.getAuthorities());
   }
 
@@ -89,7 +116,7 @@ class RoleUiGuardTest {
   }
 
   SynchronizedRequestHandler handler() {
-    var event = new ServiceInitEvent(servlet);
+    ServiceInitEvent event = new ServiceInitEvent(servlet);
     guard.serviceInit(event);
     return (SynchronizedRequestHandler) event.getAddedRequestHandlers().findFirst().orElseThrow();
   }
@@ -98,11 +125,12 @@ class RoleUiGuardTest {
   void changedRoleRequestWritesFrameworkRedirectWithoutDispatchOrLogout() throws Exception {
     guard.bind(ui);
     current.set(auth("USER"));
-    var raw = new MockHttpServletResponse();
-    var response = new VaadinServletResponse(raw, servlet);
-    var dispatch = new AtomicInteger();
-    if (!handler().synchronizedHandleRequest(session, request, response))
+    MockHttpServletResponse raw = new MockHttpServletResponse();
+    VaadinServletResponse response = new VaadinServletResponse(raw, servlet);
+    AtomicInteger dispatch = new AtomicInteger();
+    if (!handler().synchronizedHandleRequest(session, request, response)) {
       dispatch.incrementAndGet();
+    }
     assertEquals(0, dispatch.get());
     assertTrue(raw.getContentAsString().contains("\"async\":true"));
     assertTrue(raw.getContentAsString().contains("/home"));
@@ -116,7 +144,8 @@ class RoleUiGuardTest {
   @Test
   void unchangedRoleRequestPassesThroughWithoutConsumingBody() throws Exception {
     guard.bind(ui);
-    var response = new VaadinServletResponse(new MockHttpServletResponse(), servlet);
+    VaadinServletResponse response =
+        new VaadinServletResponse(new MockHttpServletResponse(), servlet);
     assertFalse(handler().synchronizedHandleRequest(session, request, response));
     verify(http, never()).getReader();
   }

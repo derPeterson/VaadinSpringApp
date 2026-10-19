@@ -1,16 +1,25 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.microsoft.playwright.*;
-import de.derpeterson.browsertests.*;
-import de.derpeterson.browsertests.pages.*;
-import io.qameta.allure.*;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Response;
+import de.derpeterson.browsertests.BrowserActor;
+import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.pages.AdminUserDialog;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -61,7 +70,7 @@ public class SessionSecurityBrowserTest extends BrowserFixture {
         // Rollenwechsel erhalten den Login; Push verwirft die alte privilegierte Ansicht.
         assertThat(actor.page).hasURL(urlPattern(HOME_ROUTE));
         assertThat(actor.page.locator("vaadin-dialog-overlay[opened]")).hasCount(0);
-        var menu = new UserMenu(actor.page);
+        UserMenu menu = new UserMenu(actor.page);
         menu.assertUserSignedInWithoutAdminAction(account);
         menu.close();
         users.open();

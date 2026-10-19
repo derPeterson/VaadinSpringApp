@@ -1,6 +1,7 @@
 package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.ComponentUtil;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
@@ -69,7 +70,7 @@ public class OverlayUserIcon extends Div {
               photo.setVisible(false);
               initials.setVisible(true);
             });
-    var circle = new Div(initials, photo);
+    Div circle = new Div(initials, photo);
     circle.addClassName("cosmos-avatar-circle");
     status.addClassName("cosmos-avatar-status");
     status.setVisible(showStatus);
@@ -110,7 +111,9 @@ public class OverlayUserIcon extends Div {
             .strip();
     initials.removeAll();
     initials.setText(initialsFor(firstName, lastName));
-    if (initials.getText().isEmpty()) initials.add(VaadinIcon.USER.create());
+    if (initials.getText().isEmpty()) {
+      initials.add(VaadinIcon.USER.create());
+    }
     refreshTexts();
   }
 
@@ -120,8 +123,10 @@ public class OverlayUserIcon extends Div {
 
   private static String initial(String value) {
     String name = Objects.toString(value, "").strip();
-    if (name.isEmpty()) return "";
-    var characters = BreakIterator.getCharacterInstance(Locale.ROOT);
+    if (name.isEmpty()) {
+      return "";
+    }
+    BreakIterator characters = BreakIterator.getCharacterInstance(Locale.ROOT);
     characters.setText(name);
     String upper = name.substring(0, characters.next()).toUpperCase(Locale.ROOT);
     // Auch bei Großschreibung mit mehreren Zeichen (z.B. ß → SS) nur ein Initial anzeigen.
@@ -141,12 +146,16 @@ public class OverlayUserIcon extends Div {
               "--cosmos-avatar-status-shadow",
               "var(--cosmos-avatar-" + userStatus.name().toLowerCase(Locale.ROOT) + "-shadow)");
     }
-    if (statusSelection != null) statusSelection.setValue(userStatus);
+    if (statusSelection != null) {
+      statusSelection.setValue(userStatus);
+    }
     refreshTexts();
   }
 
   public void setStatusSelection(Select<UserStatus> selection) {
-    if (statusSelection != null) remove(statusSelection);
+    if (statusSelection != null) {
+      remove(statusSelection);
+    }
     statusSelection = Objects.requireNonNull(selection);
     statusSelection.addClassName("cosmos-avatar-status-select");
     statusSelection.getElement().getThemeList().add("cosmos");
@@ -164,7 +173,9 @@ public class OverlayUserIcon extends Div {
   }
 
   private void applyState(UserAvatarService.State metadata) {
-    if (metadata == null) metadata = UserAvatarService.State.initial();
+    if (metadata == null) {
+      metadata = UserAvatarService.State.initial();
+    }
     boolean custom = metadata.mode() == AvatarMode.CUSTOM && metadata.hasImage();
     if (custom && !Objects.equals(displayedRevision, metadata.imageRevision())) {
       photo.setSrc(AvatarImageResource.handler(avatars, userId, metadata.imageRevision(), false));
@@ -179,17 +190,23 @@ public class OverlayUserIcon extends Div {
   }
 
   private void listenProfiles() {
-    if (avatars == null || userId == null || !isAttached() || profileRegistration != null) return;
-    var ui = getUI().orElseThrow();
+    if (avatars == null || userId == null || !isAttached() || profileRegistration != null) {
+      return;
+    }
+    UI ui = getUI().orElseThrow();
     profileRegistration =
         avatars
             .events()
             .register(
                 message -> {
-                  if (!Objects.equals(userId, message.userId())) return;
+                  if (!Objects.equals(userId, message.userId())) {
+                    return;
+                  }
                   ui.access(
                       () -> {
-                        if (!isAttached()) return;
+                        if (!isAttached()) {
+                          return;
+                        }
                         setName(message.firstName(), message.lastName());
                         applyState(avatars.state(userId));
                       });
@@ -197,7 +214,7 @@ public class OverlayUserIcon extends Div {
   }
 
   public void refreshTexts() {
-    var statusLabel =
+    String statusLabel =
         messages.getUserStatusLabel(
             userStatus == null ? UserStatus.getDefaultStatus() : userStatus);
     String label = name.isEmpty() ? AppConstants.USER_ICON_ALT : name;
@@ -205,7 +222,11 @@ public class OverlayUserIcon extends Div {
         .setAttribute(
             "aria-label", showStatus && !name.isEmpty() ? label + " – " + statusLabel : label);
     tooltip.setManual(statusSelection != null);
-    tooltip.setText(statusSelection == null ? (showStatus ? statusLabel : label) : "");
+    String tooltipText = "";
+    if (statusSelection == null) {
+      tooltipText = showStatus ? statusLabel : label;
+    }
+    tooltip.setText(tooltipText);
     if (statusSelection != null) {
       tooltip.setOpened(false);
       statusSelection.setAriaLabel(messages.getAdminUsersGridStatus());

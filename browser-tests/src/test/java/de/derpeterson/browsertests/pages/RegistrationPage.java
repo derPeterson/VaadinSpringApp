@@ -1,12 +1,15 @@
 package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.REGISTRATION_PAGE_TITLE;
+import static de.derpeterson.app.config.AppRouteConstants.REGISTRATION_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.BoundingBox;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
 import java.time.LocalDate;
@@ -92,8 +95,10 @@ public final class RegistrationPage {
     // über 300 ms stabile sichtbare Position anklicken; keine erzwungenen Events oder Werte.
     page.waitForCondition(
         () -> {
-          var bounds = day.boundingBox();
-          if (bounds == null) return false;
+          BoundingBox bounds = day.boundingBox();
+          if (bounds == null) {
+            return false;
+          }
           if (bounds.x != previous[0] || bounds.y != previous[1]) {
             previous[0] = bounds.x;
             previous[1] = bounds.y;

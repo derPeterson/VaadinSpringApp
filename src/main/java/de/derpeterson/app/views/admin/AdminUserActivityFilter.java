@@ -134,7 +134,9 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
             || time.isInvalid()
             || (date.getValue() == null && time.getValue() != null);
     setInvalid(invalid);
-    if (invalid || date.getValue() == null) return null;
+    if (invalid || date.getValue() == null) {
+      return null;
+    }
     return date.getValue().atTime(time.getValue() == null ? LocalTime.MIDNIGHT : time.getValue());
   }
 

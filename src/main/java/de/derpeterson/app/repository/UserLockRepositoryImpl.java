@@ -5,6 +5,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.FlushModeType;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
+import java.util.List;
 import java.util.Optional;
 
 class UserLockRepositoryImpl implements UserLockRepository {
@@ -13,7 +14,7 @@ class UserLockRepositoryImpl implements UserLockRepository {
   @Override
   public Optional<UserEntity> lockVerificationUser(Long id) {
     // Scalar projection avoids trusting a previously loaded, stale entity.
-    var ids =
+    List<Long> ids =
         entityManager
             .createQuery("select u.id from UserEntity u where u.id = :id", Long.class)
             .setParameter("id", id)

@@ -1,6 +1,7 @@
 package de.derpeterson.browsertests.pages;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Response;
@@ -30,12 +31,16 @@ public final class UiActions {
 
   private static boolean carriesValueChange(Response response) {
     String body = response.request().postData();
-    if (body == null) return false;
+    if (body == null) {
+      return false;
+    }
     try {
-      for (var change : JSON.readTree(body).path("rpc")) {
+      for (JsonNode change : JSON.readTree(body).path("rpc")) {
         String property = change.path("property").asText();
         if (change.path("type").asText().equals("mSync")
-            && (property.equals("value") || property.equals("selectedItem"))) return true;
+            && (property.equals("value") || property.equals("selectedItem"))) {
+          return true;
+        }
       }
     } catch (JsonProcessingException ignored) {
       // Andere POST-Inhalte sind keine bestätigte Feldänderung.

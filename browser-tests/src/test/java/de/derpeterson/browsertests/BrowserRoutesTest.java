@@ -1,7 +1,9 @@
 package de.derpeterson.browsertests;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
 class BrowserRoutesTest {
@@ -9,7 +11,7 @@ class BrowserRoutesTest {
   void localOriginIsLiteralAndCannotMatchASimilarHostOrAPrefixedUrl() {
     withOrigin(
         () -> {
-          var pattern = BrowserRoutes.urlPattern("home");
+          Pattern pattern = BrowserRoutes.urlPattern("home");
           assertTrue(pattern.matcher("http://127.0.0.1:18082/home").matches());
           assertTrue(pattern.matcher("http://127.0.0.1:18082/home?tab=account").matches());
           assertFalse(pattern.matcher("http://127X0X0X1:18082/home").matches());
@@ -23,7 +25,7 @@ class BrowserRoutesTest {
   void routeMetacharactersAreLiteralAndOtherPathsAreRejected() {
     withOrigin(
         () -> {
-          var pattern = BrowserRoutes.urlPattern("screen.v2");
+          Pattern pattern = BrowserRoutes.urlPattern("screen.v2");
           assertTrue(pattern.matcher("http://127.0.0.1:18082/screen.v2").matches());
           assertFalse(pattern.matcher("http://127.0.0.1:18082/screenXv2").matches());
           assertFalse(pattern.matcher("http://127.0.0.1:18082/screen.v2-extra").matches());
@@ -36,8 +38,11 @@ class BrowserRoutesTest {
       System.setProperty("browser.tests.baseUrl", "http://127.0.0.1:18082");
       test.run();
     } finally {
-      if (previous == null) System.clearProperty("browser.tests.baseUrl");
-      else System.setProperty("browser.tests.baseUrl", previous);
+      if (previous == null) {
+        System.clearProperty("browser.tests.baseUrl");
+      } else {
+        System.setProperty("browser.tests.baseUrl", previous);
+      }
     }
   }
 }

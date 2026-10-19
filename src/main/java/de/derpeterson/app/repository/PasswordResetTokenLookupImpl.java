@@ -4,6 +4,7 @@ import de.derpeterson.app.model.PasswordResetTokenEntity;
 import de.derpeterson.app.model.enums.TokenStatus;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,7 +14,7 @@ class PasswordResetTokenLookupImpl implements PasswordResetTokenLookup {
   @Override
   @Transactional
   public Optional<PasswordResetTokenEntity> findByToken(String token) {
-    var values =
+    List<PasswordResetTokenEntity> values =
         entityManager
             .createQuery(
                 "select t from PasswordResetTokenEntity t where t.token = :token",
@@ -23,7 +24,7 @@ class PasswordResetTokenLookupImpl implements PasswordResetTokenLookup {
     if (values.isEmpty()) {
       return Optional.empty();
     }
-    var value = values.getFirst();
+    PasswordResetTokenEntity value = values.getFirst();
     // The caller may have loaded ACTIVE before another transaction consumed it.
     // Flush our own pending changes before refreshing, never undo them.
     entityManager.flush();

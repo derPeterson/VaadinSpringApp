@@ -1,8 +1,12 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.*;
-import static de.derpeterson.browsertests.BrowserRoutes.*;
+import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_PAGE_TITLE;
+import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.REGISTRATION_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
@@ -13,7 +17,9 @@ import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.UserMenu;
-import io.qameta.allure.*;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Story;
 import io.qameta.allure.playwright.AllurePlaywright;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -118,13 +124,16 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
     Locator stars = page.locator(".cosmos-stars");
     assertThat(stars).hasCount(2);
     assertThat(page.locator(".cosmos-galaxy, .cosmos-glow")).hasCount(3);
-    for (Locator layer : stars.all())
+    for (Locator layer : stars.all()) {
       assertThat(layer).hasCSS("animation-name", "cosmos-stars-float");
-    for (Locator layer : page.locator(".cosmos-galaxy, .cosmos-glow").all())
+    }
+    for (Locator layer : page.locator(".cosmos-galaxy, .cosmos-glow").all()) {
       assertThat(layer).hasCSS("animation-name", "cosmos-nebula-float");
+    }
     page.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.REDUCE));
-    for (Locator layer : page.locator(".cosmos-stars, .cosmos-galaxy, .cosmos-glow").all())
+    for (Locator layer : page.locator(".cosmos-stars, .cosmos-galaxy, .cosmos-glow").all()) {
       assertThat(layer).hasCSS("animation-name", "none");
+    }
     AllurePlaywright.attachScreenshot("Login mit reduzierter Bewegung", page);
     page.getByRole(
             AriaRole.LINK,
@@ -136,7 +145,8 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
     assertThat(page).hasTitle(HOME_PAGE_TITLE);
     assertThat(page.locator(".cosmos-home.cosmos-theme")).isVisible();
     assertThat(page.locator(".cosmos-sky")).hasAttribute("aria-hidden", "true");
-    for (Locator layer : page.locator(".cosmos-stars, .cosmos-galaxy, .cosmos-glow").all())
+    for (Locator layer : page.locator(".cosmos-stars, .cosmos-galaxy, .cosmos-glow").all()) {
       assertThat(layer).hasCSS("animation-name", "none");
+    }
   }
 }

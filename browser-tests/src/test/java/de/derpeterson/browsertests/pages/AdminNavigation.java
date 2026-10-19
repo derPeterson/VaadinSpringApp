@@ -30,8 +30,9 @@ public final class AdminNavigation {
   @Step("Adminnavigation bei Bedarf öffnen")
   public void openDrawer() {
     Locator app = page.locator("vaadin-app-layout");
-    if (!Boolean.TRUE.equals(app.evaluate("el => el.hasAttribute('drawer-opened')")))
+    if (!Boolean.TRUE.equals(app.evaluate("el => el.hasAttribute('drawer-opened')"))) {
       UiActions.complete(page, () -> page.locator(".cosmos-drawer-toggle").click());
+    }
     assertThat(app).hasAttribute("drawer-opened", "");
     assertThat(page.locator("vaadin-app-layout [part='drawer']"))
         .hasCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
@@ -40,8 +41,9 @@ public final class AdminNavigation {
   @Step("Konfigurationsgruppe über das native Untermenü auswählen")
   public void openGroup(AdminConfigGroup group) {
     openDrawer();
-    if (!Boolean.TRUE.equals(configuration().evaluate("el => el.expanded")))
+    if (!Boolean.TRUE.equals(configuration().evaluate("el => el.expanded"))) {
       configuration().getByRole(AriaRole.BUTTON).click();
+    }
     assertThat(configuration()).hasJSProperty("expanded", true);
     Locator link =
         configuration()

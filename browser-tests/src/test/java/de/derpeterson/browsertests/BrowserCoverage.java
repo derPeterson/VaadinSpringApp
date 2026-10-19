@@ -1,15 +1,21 @@
 package de.derpeterson.browsertests;
 
 import java.io.IOException;
-import java.nio.file.*;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /** Optional JaCoCo measurement of the disposable application's exact production classes. */
 final class BrowserCoverage {
   static Path prepare(Path module, Path run) throws IOException {
     Path agent = module.resolve("target/tools/jacocoagent.jar").toAbsolutePath().normalize();
-    if (!Files.isRegularFile(agent)) throw new IOException("JaCoCo agent missing: " + agent);
+    if (!Files.isRegularFile(agent)) {
+      throw new IOException("JaCoCo agent missing: " + agent);
+    }
     Files.createDirectories(run.resolve("coverage"));
     Path override = run.resolve("compose.coverage.yaml");
     Files.writeString(override, overrideContents(agent));
@@ -38,23 +44,28 @@ final class BrowserCoverage {
     Path classes = folder.resolve("classes").toAbsolutePath().normalize();
     int count = 0;
     try (ZipFile jar = new ZipFile(folder.resolve("app.jar").toFile())) {
-      var entries = jar.entries();
+      Enumeration<? extends ZipEntry> entries = jar.entries();
       while (entries.hasMoreElements()) {
-        var entry = entries.nextElement();
+        ZipEntry entry = entries.nextElement();
         if (!entry.getName().startsWith("BOOT-INF/classes/de/derpeterson/app/")
-            || !entry.getName().endsWith(".class")) continue;
+            || !entry.getName().endsWith(".class")) {
+          continue;
+        }
         Path output =
             classes.resolve(entry.getName().substring("BOOT-INF/classes/".length())).normalize();
-        if (!output.startsWith(classes))
+        if (!output.startsWith(classes)) {
           throw new IOException("Invalid class path in application JAR.");
+        }
         Files.createDirectories(output.getParent());
-        try (var input = jar.getInputStream(entry)) {
+        try (InputStream input = jar.getInputStream(entry)) {
           Files.copy(input, output);
         }
         count++;
       }
     }
-    if (count == 0) throw new IOException("No application classes found in tested JAR.");
+    if (count == 0) {
+      throw new IOException("No application classes found in tested JAR.");
+    }
   }
 
   static List<String> reportCommand(Path module, Path repo, Path folder) {

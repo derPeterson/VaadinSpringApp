@@ -10,15 +10,20 @@ import de.derpeterson.app.security.LoginThrottledException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.*;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.AccountStatusException;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -62,8 +67,9 @@ public class LoginAttemptService {
     this.guard = guard;
     this.config = config;
     this.clock = Objects.requireNonNull(clock);
-    if (capacity < 1)
+    if (capacity < 1) {
       throw new IllegalArgumentException("Login identity capacity must be positive");
+    }
     this.capacity = capacity;
     independent = new TransactionTemplate(manager);
     independent.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -87,14 +93,18 @@ public class LoginAttemptService {
                         .orElse(null));
         // Cleanup can delete a previously idle row between lookup and lock; retry with a fresh row.
       }
-      if (outcome == null) throw new AuthenticationServiceException("Sign-in state unavailable");
+      if (outcome == null) {
+        throw new AuthenticationServiceException("Sign-in state unavailable");
+      }
     } catch (AuthenticationException exception) {
       throw exception;
     } catch (RuntimeException exception) {
       throw new AuthenticationServiceException("Sign-in temporarily unavailable", exception);
     }
     // Credential failures must be thrown only AFTER the independent counter commit.
-    if (outcome.failure() != null) throw outcome.failure();
+    if (outcome.failure() != null) {
+      throw outcome.failure();
+    }
     return outcome.authentication();
   }
 
@@ -126,7 +136,9 @@ public class LoginAttemptService {
       Instant completed = clock.instant();
       row.setFailures(row.getFailures() + 1);
       row.setLastActivity(completed);
-      if (row.getFailures() >= limit) row.setBlockedUntil(completed.plus(BLOCK_DURATION));
+      if (row.getFailures() >= limit) {
+        row.setBlockedUntil(completed.plus(BLOCK_DURATION));
+      }
       repository.save(row);
       return new Outcome(null, failure);
     }
@@ -134,23 +146,29 @@ public class LoginAttemptService {
 
   private int positiveLimit() {
     int value = config.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT);
-    if (value < 1) throw new AuthenticationServiceException("Invalid login attempt configuration");
+    if (value < 1) {
+      throw new AuthenticationServiceException("Invalid login attempt configuration");
+    }
     return value;
   }
 
   private void ensureIdentity(String key) {
-    if (repository.existsById(key)) return;
+    if (repository.existsById(key)) {
+      return;
+    }
     ensureGuard();
     independent.executeWithoutResult(
         status -> {
           guard
               .lockCreation()
               .orElseThrow(() -> new IllegalStateException("Missing login creation guard"));
-          if (repository.existsById(key)) return;
+          if (repository.existsById(key)) {
+            return;
+          }
           if (repository.count() >= capacity) {
             throw new AuthenticationServiceException("Sign-in temporarily unavailable");
           }
-          var row = new LoginAttemptEntity();
+          LoginAttemptEntity row = new LoginAttemptEntity();
           row.setIdentityHash(key);
           reset(row, clock.instant());
           repository.saveAndFlush(row);
@@ -158,12 +176,16 @@ public class LoginAttemptService {
   }
 
   private void ensureGuard() {
-    if (guard.existsById(1)) return;
+    if (guard.existsById(1)) {
+      return;
+    }
     try {
       independent.executeWithoutResult(
           status -> guard.saveAndFlush(new LoginAttemptGuardEntity(1)));
     } catch (DataIntegrityViolationException competingCreation) {
-      if (!guard.existsById(1)) throw competingCreation;
+      if (!guard.existsById(1)) {
+        throw competingCreation;
+      }
     }
   }
 
@@ -183,7 +205,7 @@ public class LoginAttemptService {
   public void deleteExpiredAttempts() {
     Instant now = clock.instant();
     Instant cutoff = now.minus(RETENTION);
-    var keys =
+    List<String> keys =
         independent.execute(
             status -> repository.staleIdentities(cutoff, now, PageRequest.of(0, 1000)));
     for (String key : Objects.requireNonNull(keys)) {

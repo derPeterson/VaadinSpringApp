@@ -1,7 +1,17 @@
 package de.derpeterson.app.views;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -29,6 +39,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserAvatarService;
+import de.derpeterson.app.service.UserNotificationService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
@@ -43,6 +54,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -56,14 +68,14 @@ class AdminViewNavigationTest {
   void setup() {
     ui = spy(new UI());
     UI.setCurrent(ui);
-    var session = mock(VaadinSession.class);
+    VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenReturn(Locale.GERMAN);
     VaadinSession.setCurrent(session);
     ui.getInternals().setSession(session);
     var registry = new ApplicationRouteRegistry(mock(VaadinContext.class)) {};
     registry.setRoute(AppRouteConstants.ADMIN_ROUTE, AdminView.class, List.of());
-    var service = mock(TestService.class);
+    TestService service = mock(TestService.class);
     when(service.getDeploymentConfiguration()).thenReturn(mock(DeploymentConfiguration.class));
     when(service.getRouter()).thenReturn(new Router(registry));
     when(service.getRouteRegistry()).thenReturn(registry);
@@ -75,10 +87,10 @@ class AdminViewNavigationTest {
         .thenReturn(
             Optional.of(
                 User.withUsername("admin@example.test").password("unused").roles("ADMIN").build()));
-    var config = mock(ConfigService.class);
+    ConfigService config = mock(ConfigService.class);
     when(config.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
-    var avatars = mock(UserAvatarService.class);
+    UserAvatarService avatars = mock(UserAvatarService.class);
     when(avatars.events()).thenReturn(new UserProfileBroadcaster());
     view =
         new AdminView(
@@ -103,7 +115,7 @@ class AdminViewNavigationTest {
   }
 
   private BeforeEnterEvent enter(String query) {
-    var event = mock(BeforeEnterEvent.class);
+    BeforeEnterEvent event = mock(BeforeEnterEvent.class);
     when(event.getLocation()).thenReturn(new Location(AppRouteConstants.ADMIN_ROUTE + query));
     view.beforeEnter(event);
     return event;
@@ -111,7 +123,8 @@ class AdminViewNavigationTest {
 
   @Test
   void notificationsNavigationIsHiddenAndDirectUrlFallsBackForOrdinaryAdmin() {
-    var notifications = mock(de.derpeterson.app.service.UserNotificationService.class);
+    UserNotificationService notifications =
+        mock(de.derpeterson.app.service.UserNotificationService.class);
     view.configureAdminNotifications(notifications);
     enter("?section=notifications");
     assertFalse(
@@ -122,12 +135,13 @@ class AdminViewNavigationTest {
 
   @Test
   void superadminCanOpenNotificationsAndRefreshUsesTheSameSection() {
-    var notifications = mock(de.derpeterson.app.service.UserNotificationService.class);
+    UserNotificationService notifications =
+        mock(de.derpeterson.app.service.UserNotificationService.class);
     when(notifications.canSend(any())).thenReturn(true);
     when(notifications.targets(any())).thenReturn(List.of());
     when(notifications.sent(any(), eq(0), eq(5)))
         .thenReturn(org.springframework.data.domain.Page.empty());
-    try (var context =
+    try (AnnotationConfigApplicationContext context =
         new org.springframework.context.annotation.AnnotationConfigApplicationContext()) {
       context.registerBean(
           de.derpeterson.app.service.UserNotificationService.class, () -> notifications);
@@ -155,10 +169,10 @@ class AdminViewNavigationTest {
   })
   void urlsSelectExactlyOnePanelAndItsNavigationItem(String query, String section, String item) {
     enter(query);
-    var layout = (VerticalLayout) ReflectionTestUtils.getField(view, "sectionLayout");
+    VerticalLayout layout = (VerticalLayout) ReflectionTestUtils.getField(view, "sectionLayout");
     assertEquals(1, layout.getComponentCount());
     assertSame(ReflectionTestUtils.getField(view, section), layout.getComponentAt(0));
-    var nav = (SideNavItem) ReflectionTestUtils.getField(view, item);
+    SideNavItem nav = (SideNavItem) ReflectionTestUtils.getField(view, item);
     assertEquals("page", nav.getElement().getAttribute("aria-current"));
   }
 
@@ -167,11 +181,11 @@ class AdminViewNavigationTest {
   void everyConfigurationGroupCanBeOpenedByDirectLink(AdminConfigGroup group) {
     enter("?section=configuration&group=" + group.name().toLowerCase(Locale.ROOT));
     assertEquals(group, ReflectionTestUtils.getField(view, "activeConfigurationGroup"));
-    var section = ReflectionTestUtils.getField(view, "configurationSection");
+    Object section = ReflectionTestUtils.getField(view, "configurationSection");
     assertEquals(group, ReflectionTestUtils.getField(section, "selectedGroup"));
-    var parent = (SideNavItem) ReflectionTestUtils.getField(view, "configurationNavItem");
+    SideNavItem parent = (SideNavItem) ReflectionTestUtils.getField(view, "configurationNavItem");
     assertTrue(parent.isExpanded());
-    var items = (Map<?, ?>) ReflectionTestUtils.getField(view, "configurationSubmenuItems");
+    Map<?, ?> items = (Map<?, ?>) ReflectionTestUtils.getField(view, "configurationSubmenuItems");
     assertEquals(
         "page", ((SideNavItem) items.get(group)).getElement().getAttribute("aria-current"));
   }
@@ -188,9 +202,10 @@ class AdminViewNavigationTest {
   @Test
   void menuSelectionUsesFlowNavigationWithTheSameParametersAsTheLink() {
     doReturn(Optional.of(view)).when(ui).navigate(eq(AdminView.class), any(QueryParameters.class));
-    var actions = (Map<String, Runnable>) ReflectionTestUtils.getField(view, "navigationActions");
-    var items = (Map<?, ?>) ReflectionTestUtils.getField(view, "configurationSubmenuItems");
-    var item = (SideNavItem) items.get(AdminConfigGroup.SECURITY);
+    Map<String, Runnable> actions =
+        (Map<String, Runnable>) ReflectionTestUtils.getField(view, "navigationActions");
+    Map<?, ?> items = (Map<?, ?>) ReflectionTestUtils.getField(view, "configurationSubmenuItems");
+    SideNavItem item = (SideNavItem) items.get(AdminConfigGroup.SECURITY);
     actions.get(item.getPath()).run();
     verify(ui)
         .navigate(
@@ -201,7 +216,7 @@ class AdminViewNavigationTest {
   @Test
   void restoringTheUrlDoesNotBypassTheExistingAccessCheck() {
     when(security.getAuthenticatedUser(request)).thenReturn(Optional.empty());
-    var event = mock(BeforeEnterEvent.class);
+    BeforeEnterEvent event = mock(BeforeEnterEvent.class);
     when(event.hasForwardTarget()).thenReturn(true);
     view.beforeEnter(event);
     verify(event).forwardTo(LoginView.class);

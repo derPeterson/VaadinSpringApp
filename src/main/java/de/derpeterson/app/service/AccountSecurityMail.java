@@ -8,12 +8,14 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
@@ -38,8 +40,8 @@ public class AccountSecurityMail {
   }
 
   public String render(String template, UserEntity user, Map<String, String> values) {
-    var service = config.getString(ConfigEntry.SERVICE_NAME);
-    var replacements = new HashMap<>(values);
+    String service = config.getString(ConfigEntry.SERVICE_NAME);
+    HashMap<String, String> replacements = new HashMap<>(values);
     try {
       replacements.put("SERVICE_LOGO", EmailLogo.validatedContentId());
     } catch (IOException failure) {
@@ -58,11 +60,11 @@ public class AccountSecurityMail {
             service,
             Clock.systemDefaultZone(),
             texts(user)::getAccountCopyrightTemplate));
-    try (var input =
+    try (InputStream input =
         new ClassPathResource("email/" + template + "_" + locale(user).getLanguage() + ".html")
             .getInputStream()) {
-      var html = new String(input.readAllBytes(), StandardCharsets.UTF_8);
-      for (var entry : replacements.entrySet()) {
+      String html = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+      for (Entry<String, String> entry : replacements.entrySet()) {
         html = html.replace("{{" + entry.getKey() + "}}", HtmlUtils.htmlEscape(entry.getValue()));
       }
       return html;
