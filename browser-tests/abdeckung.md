@@ -1,5 +1,33 @@
 # Browserabdeckung und offene Punkte
 
+## Nachfolgende Inbox-Werkzeugleiste (19.10.2026)
+
+Suche links, gemeinsame Segmentauswahl Alle/Gelesen/Ungelesen mittig und zwei
+Iconbuttons mit lokalisierten Tooltips rechts. Erklärungstext unter der Leiste entfernt;
+Gelesen-Suche wird vor Pagination mit Eigentümer-/Aufbewahrungsregeln gefiltert.
+198 gezielte JUnits erfolgreich, keine Fehler/Skips (97 UI-Komponenten, 68 H2,
+13 Sprache/Katalog, 20 Header). Fünf neue Ausprägungen; keine neue Browser- oder
+Coverage-Messung. Zentrierung, Umbruch und Fokus/Tooltips der neuen Leiste in
+Desktop/schmalen DE/EN-Ansichten bleiben im Browser ungeprüft.
+
+## Nachfolgender persönlicher Inbox-Entwurf (19.10.2026)
+
+Persönliche Liste mit Archive-Panelkopf, Gesamt-/Ungelesen-Zählern, Suche,
+Nachrichtenvorschauen, Einzel-Leseaktion und nummerierter Pagination umgesetzt.
+Einfacher Kartenklick öffnet den Detaildialog ohne automatische Lesemarkierung.
+**Kein Browserlauf für diesen neuen Stand**: Zentrierung, Desktop/schmale Ansichten,
+Umbrüche und native Fokus-/Klickgeometrie bleiben offen. Historische Browserwerte
+unten sind keine Abnahme des neuen Inbox-Entwurfs. Der bestehende Browserhelfer
+NOTIFY-02 bleibt auf Titelöffnung und ausdrücklich gelesen markieren ausgerichtet.
+Gezielte technische Nachweise: 93 Komponenten-, 65 H2- und 13 Sprach-/Katalogtests
+(171 insgesamt) sowie 48 Browser-Helfer-/Reportertests erfolgreich, keine Fehler/Skips.
+Nachfolgender Pagination-Nachtest: 95 Komponentenprüfungen erfolgreich, keine
+Fehler/Skips; Größen 10/20/50, Seitenreset, Such-/Ungelesen-Erhalt, Trefferzahl und
+Sprachwechsel. Der Aufbewahrungshinweis steht darunter mittig. Keine neue Browser-
+oder Coverage-Messung; die Ausrichtung ist weiterhin nicht im Browser abgenommen.
+Diese Ergebnisse ersetzen keine Browserabnahme.
+Vertrag und aktuelle gezielte Ergebnisse: [Benachrichtigungen](../docs/user-notifications.md#persönlicher-posteingang-panelentwurf).
+
 ## Nachfolgender Header-Filter (19.10.2026)
 
 Die Header-Vorschau verwendet nun eine native segmentierte Auswahl „Alle / Gelesen /

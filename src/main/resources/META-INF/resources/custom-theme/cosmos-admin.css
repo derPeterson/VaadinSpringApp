@@ -444,6 +444,19 @@ vaadin-app-layout.cosmos-admin {
     color: var(--lumo-primary-text-color);
 }
 
+/* Info-Icons in den abgestimmten Konto- und Adminhinweisen mittig zum Text. */
+.cosmos-config-save-hint,
+.cosmos-account .cosmos-panel-hint,
+:is(.cosmos-admin-section--mail, .cosmos-admin-section--notifications) .cosmos-panel-hint {
+    align-items: center;
+}
+
+.cosmos-config-save-hint > vaadin-icon,
+.cosmos-account .cosmos-panel-hint > vaadin-icon,
+:is(.cosmos-admin-section--mail, .cosmos-admin-section--notifications) .cosmos-panel-hint > vaadin-icon {
+    margin-top: 0;
+}
+
 .cosmos-config-card-actions,
 .cosmos-panel-actions {
     display: flex;
@@ -899,7 +912,7 @@ vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(overlay) {
     font-weight: var(--cosmos-font-weight-regular);
 }
 .cosmos-notification-compose-info {
-    display: flex; align-items: flex-start; gap: var(--cosmos-space-s);
+    display: flex; align-items: center; gap: var(--cosmos-space-s);
     padding: var(--cosmos-space-m); border: var(--cosmos-border-width) solid var(--cosmos-card-border);
     border-radius: var(--cosmos-control-radius); background: var(--lumo-primary-color-10pct);
     color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-s);

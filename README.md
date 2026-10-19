@@ -67,7 +67,7 @@ Versandausgängen: [Mailqueue-Verarbeitung](docs/email-queue-processing.md).
 Belege: `views/RegistrationView.java`, `views/LoginView.java`, `views/admin/`, `service/VerificationService.java`, `service/PasswordResetService.java`, `service/EmailQueueService.java`, `security/SecurityConfig.java` und `scheduler/UserStatusScheduler.java` unter `src/main/java/de/derpeterson/app/`.
 
 Persönliche Benachrichtigungen sind über das Benachrichtigungs-Icon und `/notifications` erreichbar: persistente
-Inbox mit ausdrücklichem „Als gelesen markieren“ (Öffnen allein ändert den Status nicht), Superadmin-Versand unter `/admin?section=notifications` und automatische
+Inbox mit Suche, Gesamt-/Ungelesen-Zählern und ausdrücklichem „Als gelesen markieren“ (Öffnen allein ändert den Status nicht), Superadmin-Versand unter `/admin?section=notifications` und automatische
 Hinweise nach Passwortwechsel, Passwortreset und bestätigter E-Mail-Änderung.
 [Verhalten, Aufbewahrung und offene Browserabnahme](docs/user-notifications.md).
 Der manuelle Superadmin-Versand pausiert im Wartungsmodus; das Versandpanel zeigt den Status

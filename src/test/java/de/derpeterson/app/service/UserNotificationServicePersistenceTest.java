@@ -605,6 +605,150 @@ class UserNotificationServicePersistenceTest {
   }
 
   @Test
+  void inboxSearchFiltersBeforePagingAndExcludesForeignDismissedExpiredEntries() {
+    service.send(adminSession, UUID.randomUUID(), "Alpha report", "First body", everyone());
+    var older = service.inbox(userSession, false, 0, 20).getContent().getFirst().id();
+    service.markRead(userSession, List.of(older));
+    service.send(adminSession, UUID.randomUUID(), "Second report", "ALPHA in the body", everyone());
+    var newer = service.inbox(userSession, false, 0, 20).getContent().getFirst().id();
+    service.send(
+        adminSession, UUID.randomUUID(), "Alpha private", "Foreign body", selected(sender.getId()));
+    service.send(adminSession, UUID.randomUUID(), "Alpha removed", "Removed body", everyone());
+    service.dismiss(
+        userSession, service.inbox(userSession, false, 0, 20).getContent().getFirst().id());
+    var expired =
+        service.send(adminSession, UUID.randomUUID(), "Alpha old", "Expired body", everyone());
+    createdAt(expired.id(), Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS));
+    assertEquals(2, service.inboxCount(userSession));
+    var first = service.searchInbox(session(ordinary), false, "  aLpHa  ", Set.of(), 0, 1);
+    assertEquals(2, first.getTotalElements());
+    assertEquals(newer, first.getContent().getFirst().id());
+    assertTrue(first.hasNext());
+    assertEquals(
+        older,
+        service
+            .searchInbox(userSession, false, "alpha", Set.of(), 1, 1)
+            .getContent()
+            .getFirst()
+            .id());
+    var unread = service.searchInbox(userSession, true, "alpha", Set.of(), 0, 20);
+    assertEquals(List.of(newer), unread.stream().map(Item::id).toList());
+    assertEquals(
+        List.of(older),
+        service.searchInbox(userSession, ReadFilter.READ, "alpha", Set.of(), 0, 20).stream()
+            .map(Item::id)
+            .toList());
+    assertEquals(
+        2, service.searchInbox(userSession, false, "  ", Set.of(), 0, 20).getTotalElements());
+    assertThrows(
+        AccessDeniedException.class,
+        () -> service.searchInbox(null, false, "alpha", Set.of(), 0, 20));
+    assertThrows(AccessDeniedException.class, () -> service.inboxCount(null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> service.searchInbox(userSession, false, "x".repeat(121), Set.of(), 0, 20));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> service.searchInbox(userSession, false, "alpha", Set.of(), -1, 20));
+    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("");
+    assertEquals(3, service.inboxCount(userSession));
+    assertEquals(
+        3, service.searchInbox(userSession, false, "alpha", Set.of(), 0, 20).getTotalElements());
+  }
+
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.EnumSource(ReadFilter.class)
+  void inboxSearchReadStatesAreAppliedBeforePagingAndForEmptyQueries(ReadFilter filter) {
+    service.send(adminSession, UUID.randomUUID(), "Alpha first", "Body", everyone());
+    var first = service.inbox(userSession, false, 0, 20).getContent().getFirst().id();
+    service.send(adminSession, UUID.randomUUID(), "Alpha second", "Body", everyone());
+    var second = service.inbox(userSession, false, 0, 20).getContent().getFirst().id();
+    service.markRead(userSession, List.of(first, second));
+    service.send(adminSession, UUID.randomUUID(), "Alpha third", "Body", everyone());
+    var third = service.inbox(userSession, false, 0, 20).getContent().getFirst().id();
+    var expected =
+        switch (filter) {
+          case ALL -> List.of(third, second, first);
+          case READ -> List.of(second, first);
+          case UNREAD -> List.of(third);
+        };
+    assertEquals(
+        expected,
+        service.searchInbox(userSession, filter, "alpha", Set.of(), 0, 20).stream()
+            .map(Item::id)
+            .toList());
+    assertEquals(
+        expected,
+        service.searchInbox(userSession, filter, "  ", Set.of(), 0, 20).stream()
+            .map(Item::id)
+            .toList());
+    var firstPage = service.searchInbox(userSession, filter, "alpha", Set.of(), 0, 1);
+    assertEquals(expected.size(), firstPage.getTotalElements());
+    assertEquals(expected.getFirst(), firstPage.getContent().getFirst().id());
+    if (expected.size() > 1) {
+      assertEquals(
+          expected.get(1),
+          service
+              .searchInbox(userSession, filter, "alpha", Set.of(), 1, 1)
+              .getContent()
+              .getFirst()
+              .id());
+    }
+    assertThrows(
+        AccessDeniedException.class,
+        () -> service.searchInbox(null, filter, "alpha", Set.of(), 0, 20));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"%", "_", "!"})
+  void inboxSearchTreatsLikeMetacharactersLiterally(String literal) {
+    service.send(adminSession, UUID.randomUUID(), "Needle " + literal, "Exact match", everyone());
+    var expected = service.inbox(userSession, false, 0, 20).getContent().getFirst().id();
+    broadcast();
+    var found = service.searchInbox(userSession, false, literal, Set.of(), 0, 20);
+    assertEquals(List.of(expected), found.stream().map(Item::id).toList());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void inboxSearchMatchesLocalizedSystemTitlesBodiesAndSources(String language) {
+    var provider = new de.derpeterson.app.i18n.CustomI18NProvider();
+    var texts =
+        de.derpeterson.app.i18n.MessageProperties.forLocale(
+            provider, Locale.forLanguageTag(language));
+    tx.executeWithoutResult(
+        status ->
+            service.recordSecurityEvent(
+                users.findById(ordinary.getId()).orElseThrow(),
+                UserNotificationType.PASSWORD_CHANGED));
+    service.send(
+        adminSession, UUID.randomUUID(), "Original notice", "Original manual body", everyone());
+    String title = texts.getNotificationsPasswordChangedTitle();
+    var types = de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(texts, title);
+    assertTrue(types.contains(UserNotificationType.PASSWORD_CHANGED));
+    assertEquals(
+        1, service.searchInbox(userSession, false, title, types, 0, 20).getTotalElements());
+    String body = texts.getNotificationsPasswordChangedBody().substring(0, 25);
+    types = de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(texts, body);
+    assertEquals(1, service.searchInbox(userSession, false, body, types, 0, 20).getTotalElements());
+    String system = texts.getNotificationsSourceSystem();
+    types = de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(texts, system);
+    assertEquals(
+        1, service.searchInbox(userSession, false, system, types, 0, 20).getTotalElements());
+    assertTrue(service.searchInbox(adminSession, false, system, types, 0, 20).isEmpty());
+    String administration = texts.getNotificationsSourceAdministration();
+    types = de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(texts, administration);
+    assertEquals(
+        UserNotificationType.ADMIN_ANNOUNCEMENT,
+        service
+            .searchInbox(userSession, false, administration, types, 0, 20)
+            .getContent()
+            .getFirst()
+            .type());
+    assertTrue(de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(texts, "   ").isEmpty());
+  }
+
+  @Test
   void paginationBoundsAreChecked() {
     assertThrows(IllegalArgumentException.class, () -> service.inbox(userSession, false, -1, 20));
     assertThrows(IllegalArgumentException.class, () -> service.inbox(userSession, false, 0, 101));

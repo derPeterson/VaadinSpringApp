@@ -15,8 +15,8 @@ beziehen sich auf den Stand vor dieser Erweiterung.
 - Angemeldet: Das Paperplane-Symbol im Header zeigt die Anzahl ungelesener Benachrichtigungen,
   oberhalb von 99 als `99+`. Ein Klick öffnet bis zu fünf aktuelle Einträge.
   Anonym bleiben Benachrichtigungen und Konto-Schnelleinstieg ausgeblendet.
-- Alle Benachrichtigungen anzeigen öffnet `/notifications`: 20 Einträge pro Seite, neueste zuerst,
-  Filter für ungelesene Einträge, Aktualisieren und Vor-/Zurückblättern.
+- Alle Benachrichtigungen anzeigen öffnet `/notifications`: wahlweise 10, 20 oder 50 Einträge pro Seite (Standard 10), neueste zuerst,
+  Filter Alle/Gelesen/Ungelesen, Aktualisieren und Vor-/Zurückblättern.
 - Das Öffnen der Header-Vorschau und eines Detaildialogs verändert den Lesestatus nicht.
   Nur „Als gelesen markieren“ beziehungsweise „Alle als gelesen markieren“ ändert ihn. „Alle als gelesen markieren“ verwendet die zuletzt geladene
   Liste der eigenen ungelesenen Empfangs-IDs; später eingetroffene Einträge bleiben ungelesen.
@@ -25,13 +25,143 @@ beziehen sich auf den Stand vor dieser Erweiterung.
 - Lesestatus gehört zum Konto, unabhängig vom verwendeten Tab oder Gerät.
   Neue Benachrichtigungen und Leseänderungen lösen nach Commit lokale Push-Aktualisierungen aus.
 
+## Gemeinsame Anwendungskopfzeile
+
+Home, Kontokonfiguration und `/notifications` erzeugen ihre Kopfzeile zentral über
+`TrackedUserAppLayout.createApplicationHeader`: Service-Logo und konfigurierter
+Servicename links, bestehende Konto-Schnelleinstiege und Avatar rechts. Darstellung,
+Avatar-/Popover-Anbindung und Cosmos-Menütheme werden nur dort gepflegt. Auf den
+persönlichen Seiten kommt auch die Menübelegung aus derselben Methode: Startseite
+im Avatar-Menü und Verwaltung ausschließlich für Admin/Superadmin. Home behält
+seine bisherigen Menüziele einschließlich Registrierung/Anmeldung für anonyme Gäste.
+Ein zusätzlicher Startseite-Button direkt im Header wird nicht erzeugt.
+
+Damit sind das fehlende Logo und der fehlende Verwaltungseinstieg der
+Benachrichtigungsseite korrigiert. Der Adminbereich behält seine eigene Navigation
+mit Drawer-Umschalter. Die bestehenden CSS-Regeln und Abmessungen bleiben erhalten.
+
+Gezielter Nachweis: **138 JUnit-Prüfungen**, keine Fehler/Fehlschläge/Skips: 20 neue
+Headerfälle für alle drei Seiten, Benutzer/Admin/Superadmin und anonymes Home in
+DE/EN einschließlich Sprachwechsel und tatsächlicher Button-Navigationsaktionen;
+zusätzlich 21 Kontoseiten-, vier Konto-Schnelleinstiegs- und 93 Benachrichtigungs-
+Komponentenprüfungen. Shared und Anwendung mit Java 25 in isolierter Quellkopie
+gebaut; Spotless apply/check und Diffprüfung erfolgreich. Kein Browserlauf und
+kein Produktions-/Frontendbuild. Durch die neue Basismethode ist zur Übernahme
+ein Anwendungsneustart mit anschließendem Strg+F5 empfohlen.
+
+## Persönliche Seite: Seitenkopf
+
+Die bestehende Seite `/notifications` verwendet denselben
+`CosmosSectionHeaderComponent` wie „Mein Konto“: Bereichszeile „MEIN KONTO /
+BENACHRICHTIGUNGEN“, Titel „Benachrichtigungen“ mit Akzentpunkt und Beschreibung
+„Alle Hinweise, Systemmeldungen und Aktualisierungen an einem Ort.“. Schriftgrößen,
+Farben und Abstände kommen vollständig aus dem bestehenden Seitenkopf-Standard.
+Alle drei Texte folgen der aktuellen Sprache (DE/EN); die Beschreibung steht im
+Seitenkopf statt zusätzlich in der Inbox-Card. Gezielte Prüfung: 87 Komponenten-
+und 13 Sprach-/Katalogprüfungen erfolgreich (100 insgesamt, keine Fehler/Skips),
+einschließlich zwei neuer Sprachwechselprüfungen des Seitenkopfs. Shared und
+Anwendung mit Java 25 in einer eigenen Quellkopie gebaut und abgeglichen;
+Spotless apply/check erfolgreich. Kein Produktions-/Frontendbuild und kein
+Browserlauf. Browserabnahme dieses Seitenkopfs offen. Shared ist installiert;
+Anwendung neu starten und Strg+F5.
+
+## Persönlicher Posteingang: Panelentwurf
+
+Die Inbox steht als mittig begrenzte Standard-Card (maximal 1100 px) unter dem
+Seitenkopf. Der Panelkopf verwendet Archive, „Benachrichtigungen“ und den
+Secondary-Text „Persönliche Hinweise lesen und den Lesestatus verwalten.“. Gesamt-
+und Ungelesen-Zähler rechts beziehen sich auf den eigenen sichtbaren Posteingang,
+unabhängig von der aktuellen Suche und Seite; entfernte/abgelaufene Einträge fehlen.
+
+Die Werkzeugleiste zeigt links die Suche über Betreff/Nachricht/Herkunft, mittig
+die native Segmentauswahl Alle/Gelesen/Ungelesen mit denselben Styles wie die
+Header-Vorschau und rechts zwei Iconbuttons: Aktualisieren (Refresh) sowie alle als
+gelesen markieren (Envelope Open). Beide Buttons haben lokalisierte Tooltips und
+zugängliche Namen; der bisherige Erklärungstext unter der Leiste ist entfernt.
+Bei schmalen Ansichten stehen Suche und Icons oben, die Segmentauswahl mittig
+darunter. Standardfilter ist Alle. Alle drei Zustände gelten auch bei der Suche und
+werden vor Pagination in der Datenbank angewendet; Suche und Filter wechseln auf
+Seite 1, während Sprache und Seitengrößenwechsel den gewählten Filter erhalten.
+Die Suche berücksichtigt die sichtbaren DE/EN-Texte automatischer Hinweise;
+manuelle Texte bleiben in ihrer Originalsprache. Sie wird vor der Pagination in der
+Datenbank angewendet. Groß-/Kleinschreibung ist unerheblich; `%`, `_` und `!` werden
+wörtlich gesucht. Maximal 120 Zeichen; ein leerer Suchtext stellt die normale Liste
+wieder her. Suche und Filter starten auf Seite 1, ein Sprachwechsel erhält die Eingaben.
+Eigentümertrennung, persönliche Löschung und aktuelle Aufbewahrungsfrist bleiben
+für sämtliche Ergebnisse und Zähler wirksam.
+
+Karten zeigen Betreff, höchstens drei Vorschauzeilen, Datum, fett gesetzte Herkunft
+und Lesestatus-Badge. Metadaten und Aktionsbuttons teilen sich die unterste Zeile:
+Metadaten links, Aktionen rechts, vertikal mittig ausgerichtet. Bei wenig Platz dürfen
+die Aktionen unter die Metadaten umbrechen. Die kompakte Header-Vorschau behält ihre
+linksbündigen Aktionen. Betreff und Vorschautext nutzen darüber die gesamte
+Kartenbreite; lange Betreffzeilen bleiben einzeilig mit Auslassungszeichen. Die inneren
+Gridspalten dürfen schrumpfen, damit weder Titel noch Vorschautext über die Karte
+laufen. Der vollständige Inhalt bleibt im Detaildialog verfügbar. CSS-Syntax geprüft,
+Browserabnahme der neuen Anordnung offen.
+Hintergrund und Ungelesen-Punkt entsprechen dem Overlay.
+Einfacher Klick auf die Kartenfläche, Titel oder „Öffnen“ öffnet den bestehenden
+Detaildialog; Button-Ereignisse lösen die Kartenaktion nicht zusätzlich aus.
+„Als gelesen markieren“ betrifft nur den eigenen Eintrag. Öffnen verändert den
+Lesestatus weiterhin nicht. Die Header-Vorschau behält ihren bisherigen Doppelklick
+auf die Kartenfläche.
+
+Die Pagination entspricht der Benutzerverwaltung: links „Zeilen pro Seite“, eine
+native 56px-ComboBox mit 10/20/50 (Standard 10) und die gefilterte Trefferzahl; rechts
+erste/vorherige/nummerierte/nächste/letzte Seite im kompakten Pagination-Stil.
+Beim Wechsel der Seitengröße beginnt die Liste auf Seite 1; Suche und Lesestatusfilter
+bleiben erhalten. Auch ein Sprachwechsel erhält Größe und Filter. Nach verkleinerter
+Trefferzahl wird eine nicht mehr vorhandene Seite zurückgesetzt. Der Footer zeigt
+darunter mittig die aktuelle Aufbewahrungsregel (einschließlich unbegrenzt). Auf schmalen Ansichten dürfen
+Kopfzähler, Werkzeuge, Kartenaktionen und Footer umbrechen. Verwendet werden native
+Vaadin-Komponenten/-Icons und lokale Anordnungsregeln mit vorhandenen Cosmos-Tokens.
+Browserdarstellung und tatsächliche Klick-/Fokusgeometrie dieses Entwurfs sind offen.
+
+Gezielter Nachweis: **93 Komponentenprüfungen, 65 H2-Persistenzprüfungen und
+13 Sprach-/Katalogprüfungen** erfolgreich (171 insgesamt, zwölf neue Ausprägungen).
+Zusätzlich **48 Browser-Helfer-/Reporterprüfungen** erfolgreich; jeweils keine
+Fehler oder Skips. Enthalten sind Suche vor Pagination, lokale Systemtexte,
+wörtliche LIKE-Sonderzeichen, Eigentümertrennung, Löschung/Aufbewahrung, Zähler,
+Seitenwechsel, Sprachwechsel, Kartenklick und ausdrückliche Einzel-Leseaktion.
+Shared und Java mit Java 25 in einer eigenen Quellkopie gebaut und per Hash
+abgeglichen. Spotless apply/check, CSS-Syntax/Tokenprüfung und Änderungsreview
+erfolgreich. Kein Browserlauf und kein Produktions-/Frontendbuild.
+Zur Übernahme: Shared ist installiert; Anwendung neu starten und Strg+F5.
+
+Gezielter Nachtest der Pagination: **95 Komponentenprüfungen erfolgreich**, keine
+Fehler/Fehlschläge/Skips. Zwei neue DE/EN-Ausprägungen prüfen Größenwechsel,
+Seitenreset, Such-/Ungelesen-Erhalt, Trefferzahl, Leerzustand und Sprachwechsel.
+Im ersten Lauf scheiterten diese zwei neuen Fälle an unvollständig simulierten
+letzten Seiten; die Testdaten wurden vervollständigt, die Assertions beibehalten.
+Java 25, isolierte Quellkopie, Shared-/Java-Build, Spotless apply/check und
+CSS-Syntaxprüfung erfolgreich. Kein Browserlauf und kein Produktions-/Frontendbuild.
+Zur Übernahme Anwendung neu starten und Strg+F5.
+
+Nachfolgender Nachtest der Inbox-Werkzeugleiste: **198 JUnit-Prüfungen erfolgreich**,
+keine Fehler/Fehlschläge/Skips: 97 Komponenten-, 68 H2-Persistenz-, 13 Sprach-/Katalog-
+und 20 gemeinsame Headerprüfungen. Fünf neue Ausprägungen prüfen alle Lesestatusfilter
+vor Suchpagination, leere Suchtexte, Tooltips und Filter-/Spracherhalt; vorhandene
+Checkbox-Erwartungen sind auf die neue Segmentauswahl umgestellt. Der bisherige
+Suchaufruf mit booleschem Ungelesen-Parameter bleibt kompatibel. Shared/Java mit
+Java 25 in isolierter und per Hash abgeglichener Quellkopie gebaut; Spotless und
+CSS-Syntax erfolgreich. Kein Browserlauf oder Produktions-/Frontendbuild.
+Durch die neue Suchüberladung und den entfernten Hinweistext zur Übernahme
+Anwendung neu starten und Strg+F5.
+
 ## Header-Vorschau: Entwurf vom 19.10.2026
 
 Die kompakte Vorschau verwendet den Header-Aufbau der Kontoansichten mit Paperplane,
 Titel, Beschreibung und Schließen-Icon. Kopf, Inhalt und Footer beziehen ihre Flächen
 und Trennlinien aus den gemeinsamen Dialog-Tokens. Der mittlere Bereich ist scrollbar;
-Footer und Kopf bleiben außerhalb dieses Scrollbereichs. Die Textvorschau ist auf drei
-Zeilen begrenzt; „Öffnen“ zeigt die vollständige Nachricht im bestehenden Detaildialog.
+Footer und Kopf bleiben außerhalb dieses Scrollbereichs. Die Liste verwendet eine
+schrumpfbare Gridspalte, damit auch maximale Betreff-/Nachrichtenlängen keine
+horizontale Scrollleiste erzeugen. Der Betreff bleibt einzeilig mit Auslassungszeichen;
+die Nachrichtenvorschau ist auf drei Zeilen begrenzt und endet bei Überlänge mit
+Auslassungszeichen. Lange Wörter dürfen innerhalb der Vorschau umbrechen. Die
+X-Achse des Inhaltsbereichs ist gesperrt, vertikales Scrollen bleibt erhalten.
+„Öffnen“ zeigt weiterhin den vollständigen unveränderten Inhalt im Detaildialog.
+Die gezielte CSS-Korrektur wurde auf Syntax geprüft; eine Browserprüfung mit
+maximalen Textlängen steht noch aus.
 
 Ein Doppelklick auf eine Vorschaukarte öffnet denselben Detaildialog wie „Öffnen“.
 Doppelklicks auf Buttons lösen diese Kartenaktion nicht zusätzlich aus. Auch dabei bleibt
@@ -55,7 +185,7 @@ Eine dezente Zeile nennt die Grenze von fünf neuesten Einträgen passend zum Fi
 Auswahl erhalten. Der Filter wird vor Sortierung und Pagination in der Datenbank
 angewendet. Eigentümertrennung, persönliche Löschung und Aufbewahrungsfrist gelten
 für alle drei Zustände. Der Filter selbst ändert keinen Lesestatus. Die eigenständige
-Inbox behält ihre bisherige Checkbox und Pagination. Native Vaadin-Radiobuttons
+Inbox verwendet inzwischen dieselbe Segmentauswahl und eine eigene Pagination. Native Vaadin-Radiobuttons
 übernehmen Tastatursteuerung, Auswahl und Fokus; die lokalen Styles verwenden die
 Pillenform, Farben und Auswahlfläche des Profilbilddialogs. Schmale Ansichten ordnen
 die Werkzeugbuttons bei Bedarf unter der Segmentauswahl an. Neue Browserabnahme offen.
@@ -115,7 +245,9 @@ zeigt keinen erfolgreichen Lesestatus. Der Service prüft vor dem Öffnen erneut
 aktuelle Sitzung. Bestehende Eigentümerprüfung und Push-Ereignisse für Leseänderungen
 bleiben erhalten; es gibt keine neue Datenbankmigration.
 
-Im Footer stehen „Alle Benachrichtigungen anzeigen“ (Envelopes), die Leseaktion
+Im Footer steht „Alle Benachrichtigungen anzeigen“ (Envelopes) nur beim Öffnen aus
+der Header-Vorschau; beim Öffnen aus der vollständigen Inbox ist der Einstieg
+ausgeblendet. Daneben stehen die Leseaktion
 (Envelope Open) und der primäre Schließen-Button (Close Circle). Automatische
 Sicherheits-/Rollenhinweise behalten den internen Kontoeinstieg (Cog). Navigation
 schließt Detail und Header-Popover; normales Schließen des Details erhält das Popover.

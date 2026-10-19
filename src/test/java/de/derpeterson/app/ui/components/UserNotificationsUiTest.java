@@ -82,11 +82,6 @@ class UserNotificationsUiTest {
     when(service.ownerId(http)).thenReturn(5L);
     when(service.unreadCount(http)).thenReturn(1L);
     when(service.unreadSnapshot(http)).thenReturn(List.of(7L));
-    when(service.inbox(eq(http), anyBoolean(), anyInt(), anyInt()))
-        .thenAnswer(
-            c ->
-                new PageImpl<>(
-                    List.of(item), PageRequest.of(c.getArgument(2), c.getArgument(3)), 1));
     when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
         .thenAnswer(
             c ->
@@ -128,6 +123,72 @@ class UserNotificationsUiTest {
         .map(Button.class::cast)
         .findFirst()
         .orElseThrow();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void personalNotificationsPageUsesSharedAccountSectionHeaderAndUpdatesLanguage(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    var security = mock(de.derpeterson.app.security.SecurityService.class);
+    var config = mock(de.derpeterson.app.service.ConfigService.class);
+    when(config.getString(any(de.derpeterson.app.model.enums.ConfigEntry.class)))
+        .thenAnswer(
+            c ->
+                ((de.derpeterson.app.model.enums.ConfigEntry) c.getArgument(0))
+                    .getDefaultValueString());
+    var user =
+        de.derpeterson.app.model.UserEntity.builder()
+            .id(5L)
+            .firstName("Own")
+            .lastName("User")
+            .enabled(true)
+            .build();
+    when(security.getCurrentUser(request)).thenReturn(Optional.of(user));
+    var users = mock(de.derpeterson.app.service.UserService.class);
+    var testAvatars = mock(de.derpeterson.app.service.UserAvatarService.class);
+    class NotificationsView extends de.derpeterson.app.views.UserNotificationsView {
+      NotificationsView() {
+        super(
+            UserNotificationsUiTest.this.texts,
+            security,
+            users,
+            new de.derpeterson.app.websocket.UserStatusBroadcaster(),
+            UserNotificationsUiTest.this.request,
+            testAvatars,
+            UserNotificationsUiTest.this.service,
+            config);
+      }
+
+      void refreshLanguage() {
+        onTrackedUserLanguageChanged();
+      }
+    }
+    var view = new NotificationsView();
+    var header =
+        tree(view.getContent())
+            .filter(CosmosSectionHeaderComponent.class::isInstance)
+            .findFirst()
+            .orElseThrow();
+    assertTrue(header.hasClassName("cosmos-dashboard-introduction"));
+    assertTrue(
+        tree(header)
+            .filter(H1.class::isInstance)
+            .anyMatch(h -> h.hasClassName("cosmos-section-title")));
+    Span overview = field(view, "overview");
+    Span title = field(view, "title");
+    Span description = field(view, "description");
+    assertTrue(overview.hasClassName("cosmos-dashboard-kicker"));
+    assertTrue(description.hasClassName("cosmos-dashboard-description"));
+    assertEquals(texts.getNotificationsOverview(), overview.getText());
+    assertEquals(texts.getNotificationsTitle(), title.getText());
+    assertEquals(texts.getNotificationsPageDescription(), description.getText());
+    locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    view.refreshLanguage();
+    assertEquals(texts.getNotificationsOverview(), overview.getText());
+    assertEquals(texts.getNotificationsTitle(), title.getText());
+    assertEquals(texts.getNotificationsPageDescription(), description.getText());
+    assertEquals(1, tree(view.getContent()).filter(c -> c == description).count());
+    verify(service, never()).markRead(any(), any());
   }
 
   @ParameterizedTest
@@ -553,6 +614,7 @@ class UserNotificationsUiTest {
     assertEquals(!read, mark.isVisible());
     assertEquals("vaadin:envelope-open", mark.getIcon().getElement().getAttribute("icon"));
     Button history = detailButton(dialog, "cosmos-notification-detail-history");
+    assertEquals(compact, history.isVisible());
     assertEquals(texts.getNotificationsHistory(), history.getText());
     assertEquals("vaadin:envelopes", history.getIcon().getElement().getAttribute("icon"));
     assertTrue(
@@ -728,13 +790,279 @@ class UserNotificationsUiTest {
     panel.refresh();
     ((Button) field(panel, "markAll")).click();
     verify(service).markRead(http, List.of(7L));
-    ((Checkbox) field(panel, "unread")).setValue(true);
-    verify(service).inbox(http, true, 0, 20);
+    ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).setValue(ReadFilter.UNREAD);
+    verify(service).inbox(http, ReadFilter.UNREAD, 0, 10);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void inboxArchiveHeaderCountsSearchPagingAndLanguageWorkTogether(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    when(service.inboxCount(http)).thenReturn(6L);
+    when(service.unreadSnapshot(http)).thenReturn(List.of(7L, 9L));
+    when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
+        .thenAnswer(
+            c ->
+                new PageImpl<>(
+                    List.of(item), PageRequest.of(c.getArgument(2), c.getArgument(3)), 45));
+    when(service.searchInbox(
+            eq(http), any(ReadFilter.class), anyString(), anySet(), anyInt(), anyInt()))
+        .thenAnswer(
+            c ->
+                new PageImpl<>(
+                    List.of(item), PageRequest.of(c.getArgument(4), c.getArgument(5)), 1));
+    var panel = new UserNotificationsPanel(texts, service, http, false);
+    ui.add(panel);
+    panel.refresh();
+    assertTrue(
+        tree(panel).anyMatch(c -> "vaadin:archive".equals(c.getElement().getAttribute("icon"))));
+    assertEquals(
+        texts.getNotificationsInboxDescription(), ((Span) field(panel, "description")).getText());
+    assertEquals("6", ((Span) field(panel, "totalCount")).getText());
+    assertEquals("2", ((Span) field(panel, "unreadCount")).getText());
+    assertEquals(
+        "vaadin:refresh",
+        ((Button) field(panel, "refresh")).getIcon().getElement().getAttribute("icon"));
+    assertEquals(
+        "vaadin:envelope-open",
+        ((Button) field(panel, "markAll")).getIcon().getElement().getAttribute("icon"));
+    ((Button) field(panel, "last")).click();
+    verify(service).inbox(http, ReadFilter.ALL, 4, 10);
+    assertFalse(((Button) field(panel, "next")).isEnabled());
+    ((Button) field(panel, "first")).click();
+    assertEquals(0, (int) field(panel, "page"));
+    var numbers = (Div) field(panel, "pageNumbers");
+    var third =
+        tree(numbers)
+            .filter(Button.class::isInstance)
+            .map(Button.class::cast)
+            .filter(b -> b.getText().equals("3"))
+            .findFirst()
+            .orElseThrow();
+    third.click();
+    TextField search = field(panel, "search");
+    search.setValue("alpha");
+    assertEquals(0, (int) field(panel, "page"));
+    verify(service).searchInbox(http, ReadFilter.ALL, "alpha", Set.of(), 0, 10);
+    assertEquals("6", ((Span) field(panel, "totalCount")).getText());
+    assertEquals("2", ((Span) field(panel, "unreadCount")).getText());
+    ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).setValue(ReadFilter.UNREAD);
+    verify(service).searchInbox(http, ReadFilter.UNREAD, "alpha", Set.of(), 0, 10);
+    locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    panel.refreshTexts();
+    assertEquals("alpha", search.getValue());
+    assertEquals(texts.getNotificationsSearch(), search.getPlaceholder());
+    assertEquals(
+        ReadFilter.UNREAD, ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).getValue());
+    when(service.searchInbox(
+            eq(http), any(ReadFilter.class), eq("no-hit"), anySet(), anyInt(), anyInt()))
+        .thenReturn(Page.empty());
+    search.setValue("no-hit");
+    assertTrue(
+        tree(panel)
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .anyMatch(span -> span.getText().equals(texts.getNotificationsSearchEmpty())));
+    assertFalse(((Button) field(panel, "first")).isEnabled());
+    assertFalse(((Button) field(panel, "last")).isEnabled());
+    search.clear();
+    verify(service, atLeastOnce()).inbox(http, ReadFilter.UNREAD, 0, 10);
+    verify(service, never()).markRead(any(), any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void inboxPageSizeResetsPageAndPreservesSearchUnreadAndLanguage(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
+        .thenAnswer(
+            c ->
+                new PageImpl<>(
+                    Collections.nCopies(
+                        Math.min(
+                            (int) c.getArgument(3),
+                            45 - (int) c.getArgument(2) * (int) c.getArgument(3)),
+                        item),
+                    PageRequest.of(c.getArgument(2), c.getArgument(3)),
+                    45));
+    when(service.searchInbox(
+            eq(http), any(ReadFilter.class), anyString(), anySet(), anyInt(), anyInt()))
+        .thenAnswer(
+            c ->
+                new PageImpl<>(
+                    Collections.nCopies(
+                        Math.min(
+                            (int) c.getArgument(5),
+                            45 - (int) c.getArgument(4) * (int) c.getArgument(5)),
+                        item),
+                    PageRequest.of(c.getArgument(4), c.getArgument(5)),
+                    45));
+    var panel = new UserNotificationsPanel(texts, service, http, false);
+    ui.add(panel);
+    panel.refresh();
+    com.vaadin.flow.component.combobox.ComboBox<Integer> sizes = field(panel, "pageSize");
+    Span pageTotal = field(panel, "pageTotal");
+    assertEquals(List.of(10, 20, 50), sizes.getListDataView().getItems().toList());
+    assertEquals(10, sizes.getValue());
+    assertFalse(sizes.isAllowCustomValue());
+    assertEquals(texts.getAdminUsersPaginationPerPage(), sizes.getAriaLabel().orElseThrow());
+    assertEquals(
+        texts.getAdminUsersPaginationPerPage(), ((Span) field(panel, "pageLabel")).getText());
+    assertEquals(texts.getAdminUsersPaginationTotal(45), pageTotal.getText());
+    ((Button) field(panel, "last")).click();
+    verify(service).inbox(http, ReadFilter.ALL, 4, 10);
+    sizes.setValue(20);
+    assertEquals(0, (int) field(panel, "page"));
+    verify(service, atLeastOnce()).inbox(http, ReadFilter.ALL, 0, 20);
+    ((Button) field(panel, "next")).click();
+    verify(service).inbox(http, ReadFilter.ALL, 1, 20);
+    sizes.setValue(50);
+    assertEquals(0, (int) field(panel, "page"));
+    verify(service).inbox(http, ReadFilter.ALL, 0, 50);
+    assertFalse(((Button) field(panel, "next")).isEnabled());
+    ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).setValue(ReadFilter.UNREAD);
+    TextField search = field(panel, "search");
+    search.setValue("alpha");
+    verify(service).searchInbox(http, ReadFilter.UNREAD, "alpha", Set.of(), 0, 50);
+    sizes.setValue(20);
+    verify(service).searchInbox(http, ReadFilter.UNREAD, "alpha", Set.of(), 0, 20);
+    ((Button) field(panel, "last")).click();
+    verify(service).searchInbox(http, ReadFilter.UNREAD, "alpha", Set.of(), 2, 20);
+    locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    panel.refreshTexts();
+    assertEquals(20, sizes.getValue());
+    assertEquals("alpha", search.getValue());
+    assertEquals(
+        ReadFilter.UNREAD, ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).getValue());
+    assertEquals(texts.getAdminUsersPaginationPerPage(), sizes.getAriaLabel().orElseThrow());
+    assertEquals(texts.getAdminUsersPaginationTotal(45), pageTotal.getText());
+    when(service.searchInbox(
+            eq(http), any(ReadFilter.class), eq("no-hit"), anySet(), anyInt(), anyInt()))
+        .thenReturn(Page.empty());
+    search.setValue("no-hit");
+    assertEquals(texts.getAdminUsersPaginationTotal(0), pageTotal.getText());
+    assertFalse(((Button) field(panel, "first")).isEnabled());
+    assertFalse(((Button) field(panel, "last")).isEnabled());
+    panel.unavailable();
+    assertEquals("–", pageTotal.getText());
+    verify(service, never()).markRead(any(), any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void inboxToolbarUsesSharedFilterAndIconToolsAndSearchesReadItems(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    when(service.searchInbox(
+            eq(http), any(ReadFilter.class), anyString(), anySet(), anyInt(), anyInt()))
+        .thenReturn(new PageImpl<>(List.of(item)));
+    var panel = new UserNotificationsPanel(texts, service, http, false);
+    ui.add(panel);
+    panel.refresh();
+    RadioButtonGroup<ReadFilter> filter = field(panel, "readFilter");
+    assertEquals("notifications-inbox-filter", filter.getId().orElseThrow());
+    assertEquals(ReadFilter.ALL, filter.getValue());
+    assertEquals(List.of(ReadFilter.values()), filter.getListDataView().getItems().toList());
+    assertTrue(tree(panel).noneMatch(Checkbox.class::isInstance));
+    assertTrue(tree(panel).noneMatch(c -> c.hasClassName("cosmos-notification-inbox-hint")));
+    Button reload = field(panel, "refresh");
+    Button markAll = field(panel, "markAll");
+    assertEquals("", reload.getText());
+    assertEquals("", markAll.getText());
+    assertEquals(texts.getNotificationsRefresh(), reload.getAriaLabel().orElseThrow());
+    assertEquals(texts.getNotificationsRefresh(), reload.getTooltip().getText());
+    assertEquals(texts.getNotificationsMarkAll(), markAll.getTooltip().getText());
+    filter.setValue(ReadFilter.READ);
+    verify(service).inbox(http, ReadFilter.READ, 0, 10);
+    TextField search = field(panel, "search");
+    search.setValue("alpha");
+    verify(service).searchInbox(http, ReadFilter.READ, "alpha", Set.of(), 0, 10);
+    ReflectionTestUtils.setField(panel, "page", 4);
+    filter.setValue(ReadFilter.UNREAD);
+    verify(service).searchInbox(http, ReadFilter.UNREAD, "alpha", Set.of(), 0, 10);
+    filter.setValue(ReadFilter.ALL);
+    verify(service).searchInbox(http, ReadFilter.ALL, "alpha", Set.of(), 0, 10);
+    locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    panel.refreshTexts();
+    assertEquals(ReadFilter.ALL, filter.getValue());
+    assertEquals(
+        texts.getNotificationsRead(), filter.getItemLabelGenerator().apply(ReadFilter.READ));
+    assertEquals(texts.getNotificationsRefresh(), reload.getTooltip().getText());
+    assertEquals(texts.getNotificationsMarkAll(), markAll.getTooltip().getText());
+    assertEquals("alpha", search.getValue());
+    reload.click();
+    markAll.click();
+    verify(service).markRead(http, List.of(7L));
+  }
+
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({"de,false", "en,false", "de,true", "en,true"})
+  void inboxCardSingleClickAndExplicitReadRemainSeparate(String language, boolean read) {
+    locale.set(Locale.forLanguageTag(language));
+    item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), read);
+    when(service.unreadSnapshot(http)).thenReturn(read ? List.of() : List.of(7L));
+    when(service.inboxCount(http)).thenReturn(1L);
+    var panel = new UserNotificationsPanel(texts, service, http, false);
+    ui.add(panel);
+    panel.refresh();
+    var row =
+        tree(panel)
+            .filter(c -> c.hasClassName("cosmos-notification-inbox-row"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(!read, row.hasClassName("cosmos-notification-row--unread"));
+    assertTrue(
+        tree(row)
+            .filter(Div.class::isInstance)
+            .map(Div.class::cast)
+            .anyMatch(div -> div.getText().equals(UserNotificationTexts.body(texts, item))));
+    var element = row.getElement();
+    var listeners =
+        element.getNode().getFeature(com.vaadin.flow.internal.nodefeature.ElementListenerMap.class);
+    var data = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+    var filters = listeners.getExpressions("click");
+    assertFalse(filters.isEmpty());
+    filters.forEach(expression -> data.put(expression, false));
+    listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "click", data));
+    assertNull(field(panel, "detail"));
+    filters.forEach(expression -> data.put(expression, true));
+    listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "click", data));
+    Dialog detail = field(panel, "detail");
+    assertTrue(detail.isOpened());
+    assertEquals(
+        read ? texts.getNotificationsRead() : texts.getNotificationsUnread(),
+        detailState(detail).getText());
+    verify(service, never()).markRead(any(), any());
+    detail.close();
+    var mark =
+        tree(panel)
+            .filter(Button.class::isInstance)
+            .map(Button.class::cast)
+            .filter(b -> b.hasClassName("cosmos-notification-inbox-mark-read"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(!read, mark.isVisible());
+    if (!read) {
+      doAnswer(
+              c -> {
+                item =
+                    new Item(
+                        item.id(), item.type(), item.title(), item.body(), item.createdAt(), true);
+                when(service.unreadSnapshot(http)).thenReturn(List.of());
+                return null;
+              })
+          .when(service)
+          .markRead(http, List.of(7L));
+      mark.click();
+      verify(service).markRead(http, List.of(7L));
+      assertEquals("0", ((Span) field(panel, "unreadCount")).getText());
+      assertEquals("1", ((Span) field(panel, "totalCount")).getText());
+      assertTrue(tree(panel).noneMatch(c -> c.hasClassName("cosmos-notification-row--unread")));
+    }
   }
 
   @Test
   void paginatedInboxRequestsNextPageAndBack() {
-    when(service.inbox(eq(http), anyBoolean(), anyInt(), anyInt()))
+    when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
         .thenAnswer(
             c ->
                 new PageImpl<>(
@@ -743,9 +1071,9 @@ class UserNotificationsUiTest {
     ui.add(panel);
     panel.refresh();
     ((Button) field(panel, "next")).click();
-    verify(service).inbox(http, false, 1, 20);
+    verify(service).inbox(http, ReadFilter.ALL, 1, 10);
     ((Button) field(panel, "previous")).click();
-    verify(service, times(2)).inbox(http, false, 0, 20);
+    verify(service, times(2)).inbox(http, ReadFilter.ALL, 0, 10);
   }
 
   @Test
@@ -755,7 +1083,7 @@ class UserNotificationsUiTest {
     panel.refresh();
     rowTitle(panel).click();
     Dialog detail = field(panel, "detail");
-    when(service.inbox(eq(http), anyBoolean(), anyInt(), anyInt()))
+    when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
         .thenThrow(new AccessDeniedException("expired"));
     panel.refresh();
     assertFalse(detail.isOpened());

@@ -2,11 +2,13 @@ package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.*;
-import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.QueryParameters;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.*;
@@ -32,7 +34,6 @@ public class UserNotificationsPanel extends Div {
   private final Button close = new Button(VaadinIcon.CLOSE_CIRCLE.create());
   private transient Runnable closeAction = () -> {};
   private transient java.util.function.Consumer<Boolean> detailOpenListener = open -> {};
-  private final Checkbox unread = new Checkbox();
   private final RadioButtonGroup<ReadFilter> readFilter = new RadioButtonGroup<>();
   private boolean updatingFilterLabels;
   private final Button markAll = new Button();
@@ -41,6 +42,17 @@ public class UserNotificationsPanel extends Div {
   private final Button refresh = new Button();
   private final Button history = new Button();
   private final Span pageLabel = new Span();
+  private final ComboBox<Integer> pageSize = new ComboBox<>();
+  private final Span pageTotal = new Span();
+  private final Button first = new Button(VaadinIcon.ANGLE_DOUBLE_LEFT.create());
+  private final Button last = new Button(VaadinIcon.ANGLE_DOUBLE_RIGHT.create());
+  private final Div pageNumbers = new Div();
+  private final TextField search = new TextField();
+  private final Span totalLabel = new Span();
+  private final Span totalCount = new Span("0");
+  private final Span unreadCount = new Span("0");
+  private final Span unreadLabel = new Span();
+  private int totalPages = 1;
   private final Span retention = new Span();
   private final Span previewHint = new Span();
   private List<Long> unreadIds = List.of();
@@ -60,7 +72,7 @@ public class UserNotificationsPanel extends Div {
     addClassNames("cosmos-theme", "cosmos-notifications-panel");
     setId(compact ? "notifications-preview" : "notifications-inbox");
     heading.addClassName("cosmos-panel-title");
-    readFilter.setId("notifications-preview-filter");
+    readFilter.setId(compact ? "notifications-preview-filter" : "notifications-inbox-filter");
     readFilter.setItems(ReadFilter.values());
     readFilter.setItemLabelGenerator(this::filterLabel);
     readFilter.setValue(ReadFilter.ALL);
@@ -71,7 +83,7 @@ public class UserNotificationsPanel extends Div {
             refresh();
           }
         });
-    var toolbar = new Div(compact ? readFilter : unread, refresh);
+    var toolbar = new Div(readFilter, refresh);
     toolbar.addClassName("cosmos-notifications-actions");
     refresh.addClickListener(e -> refresh());
     markAll.addClickListener(
@@ -83,11 +95,6 @@ public class UserNotificationsPanel extends Div {
                   service.markRead(session, snapshot);
                   if (includesOpened) updateOpenedRead();
                 }));
-    unread.addValueChangeListener(
-        e -> {
-          page = 0;
-          refresh();
-        });
     previous.addClickListener(
         e -> {
           if (page > 0) page--;
@@ -103,7 +110,17 @@ public class UserNotificationsPanel extends Div {
           closeAction.run();
           UI.getCurrent().navigate(UserNotificationsView.class);
         });
-    var paging = new Div(previous, pageLabel, next);
+    first.addClickListener(
+        e -> {
+          page = 0;
+          refresh();
+        });
+    last.addClickListener(
+        e -> {
+          page = Math.max(0, totalPages - 1);
+          refresh();
+        });
+    var paging = new Div(first, previous, pageNumbers, next, last);
     paging.addClassName("cosmos-notifications-actions");
     paging.setVisible(!compact);
     history.setVisible(compact);
@@ -138,14 +155,76 @@ public class UserNotificationsPanel extends Div {
       footer.addClassName("cosmos-notification-preview-footer");
       add(header, content, footer);
     } else {
-      toolbar.add(markAll);
-      add(heading, toolbar, rows, paging, history, retention);
+      var archive = VaadinIcon.ARCHIVE.create();
+      archive.getElement().setAttribute("aria-hidden", "true");
+      var icon = new Div(archive);
+      icon.addClassName("cosmos-panel-icon");
+      description.addClassName("cosmos-panel-description");
+      var titles = new Div(heading, description);
+      titles.addClassName("cosmos-panel-heading");
+      var counts = new Div(stat(totalLabel, totalCount), stat(unreadLabel, unreadCount));
+      counts.addClassName("cosmos-notification-inbox-counts");
+      totalCount.setId("notifications-inbox-total");
+      unreadCount.setId("notifications-inbox-unread-total");
+      var header = new Div(icon, titles, counts);
+      header.addClassNames("cosmos-panel-header", "cosmos-notification-inbox-header");
+      refresh.setIcon(VaadinIcon.REFRESH.create());
+      markAll.setIcon(VaadinIcon.ENVELOPE_OPEN.create());
+      search.setId("notifications-inbox-search");
+      search.setPrefixComponent(VaadinIcon.SEARCH.create());
+      search.setClearButtonVisible(true);
+      search.setMaxLength(UserNotificationService.TITLE_LIMIT);
+      search.setValueChangeMode(ValueChangeMode.EAGER);
+      search.addValueChangeListener(
+          e -> {
+            page = 0;
+            refresh();
+          });
+      var tools = new Div(refresh, markAll);
+      tools.addClassName("cosmos-notification-inbox-tools");
+      refresh.addClassName("cosmos-notification-inbox-tool");
+      markAll.addClassName("cosmos-notification-inbox-tool");
+      toolbar.removeAll();
+      toolbar.add(search, readFilter, tools);
+      toolbar.addClassName("cosmos-notification-inbox-toolbar");
+      rows.addClassName("cosmos-notification-inbox-rows");
+      previous.setIcon(VaadinIcon.ANGLE_LEFT.create());
+      next.setIcon(VaadinIcon.ANGLE_RIGHT.create());
+      pageNumbers.addClassName("cosmos-notification-inbox-page-numbers");
+      paging.addClassName("cosmos-notification-inbox-pagination");
+      pageSize.setId("notifications-inbox-page-size");
+      pageSize.setItems(10, 20, 50);
+      pageSize.setValue(10);
+      pageSize.setAllowCustomValue(false);
+      pageSize.setWidth("56px");
+      pageSize.addValueChangeListener(
+          e -> {
+            if (e.getValue() != null) {
+              page = 0;
+              refresh();
+            }
+          });
+      var summary = new Div(pageLabel, pageSize, pageTotal);
+      summary.addClassName("cosmos-notification-inbox-page-summary");
+      var paginationRow = new Div(summary, paging);
+      paginationRow.addClassName("cosmos-notification-inbox-pagination-row");
+      var footer = new Div(paginationRow, retention);
+      footer.addClassName("cosmos-notification-inbox-footer");
+      add(header, toolbar, rows, footer);
     }
     refreshTexts();
     addDetachListener(
         e -> {
           if (detail != null) detail.close();
         });
+  }
+
+  private Div stat(Span label, Span value) {
+    label.addClassName("cosmos-notification-inbox-stat-label");
+    value.addClassName("cosmos-notification-inbox-stat-value");
+    var stat = new Div(label, value);
+    stat.addClassName("cosmos-notification-inbox-stat");
+    return stat;
   }
 
   public void setCloseAction(Runnable closeAction) {
@@ -158,9 +237,13 @@ public class UserNotificationsPanel extends Div {
 
   public void refreshTexts() {
     heading.setText(texts.getNotificationsTitle());
-    description.setText(texts.getNotificationsDescription());
+    description.setText(
+        compact ? texts.getNotificationsDescription() : texts.getNotificationsInboxDescription());
+    totalLabel.setText(texts.getNotificationsTotal());
+    unreadLabel.setText(texts.getNotificationsUnread());
+    search.setPlaceholder(texts.getNotificationsSearch());
+    search.setAriaLabel(texts.getNotificationsSearch());
     close.setAriaLabel(texts.getNotificationsClose());
-    unread.setLabel(texts.getNotificationsUnread());
     readFilter.setAriaLabel(texts.getNotificationsFilter());
     updatingFilterLabels = true;
     try {
@@ -170,16 +253,20 @@ public class UserNotificationsPanel extends Div {
     } finally {
       updatingFilterLabels = false;
     }
-    refresh.setText(compact ? "" : texts.getNotificationsRefresh());
-    if (compact) {
-      refresh.setAriaLabel(texts.getNotificationsRefresh());
-      refresh.setTooltipText(texts.getNotificationsRefresh());
-      markAll.setAriaLabel(texts.getNotificationsMarkAll());
-      markAll.setTooltipText(texts.getNotificationsMarkAll());
-    }
-    markAll.setText(compact ? "" : texts.getNotificationsMarkAll());
-    previous.setText(texts.getNotificationsPrevious());
-    next.setText(texts.getNotificationsNext());
+    refresh.setAriaLabel(texts.getNotificationsRefresh());
+    refresh.setTooltipText(texts.getNotificationsRefresh());
+    markAll.setAriaLabel(texts.getNotificationsMarkAll());
+    markAll.setTooltipText(texts.getNotificationsMarkAll());
+    pageLabel.setText(texts.getAdminUsersPaginationPerPage());
+    pageSize.setAriaLabel(texts.getAdminUsersPaginationPerPage());
+    previous.setAriaLabel(texts.getNotificationsPrevious());
+    previous.setTooltipText(texts.getNotificationsPrevious());
+    next.setAriaLabel(texts.getNotificationsNext());
+    next.setTooltipText(texts.getNotificationsNext());
+    first.setAriaLabel(texts.getAdminUsersPaginationFirstPage());
+    first.setTooltipText(texts.getAdminUsersPaginationFirstPage());
+    last.setAriaLabel(texts.getAdminUsersPaginationLastPage());
+    last.setTooltipText(texts.getAdminUsersPaginationLastPage());
     history.setText(texts.getNotificationsHistory());
     refreshRetention();
     refreshPreviewHint();
@@ -223,13 +310,25 @@ public class UserNotificationsPanel extends Div {
       var result =
           compact
               ? service.inbox(session, selectedFilter(), page, PREVIEW_LIMIT)
-              : service.inbox(session, unread.getValue(), page, 20);
+              : search.isEmpty()
+                  ? service.inbox(session, selectedFilter(), page, selectedPageSize())
+                  : service.searchInbox(
+                      session,
+                      selectedFilter(),
+                      search.getValue(),
+                      UserNotificationTexts.matchingTypes(texts, search.getValue()),
+                      page,
+                      selectedPageSize());
       if (page > 0 && page >= result.getTotalPages()) {
         page = Math.max(0, result.getTotalPages() - 1);
         refresh();
         return;
       }
       unreadIds = service.unreadSnapshot(session);
+      if (!compact) {
+        totalCount.setText(Long.toString(service.inboxCount(session)));
+        unreadCount.setText(Integer.toString(unreadIds.size()));
+      }
       if (detail != null && detail.isOpened() && openedItem != null) {
         result.stream()
             .filter(item -> item.id().equals(openedItem.id()))
@@ -244,16 +343,32 @@ public class UserNotificationsPanel extends Div {
       }
       markAll.setEnabled(!unreadIds.isEmpty());
       rows.removeAll();
-      if (result.isEmpty()) rows.add(new Span(texts.getNotificationsEmpty()));
+      if (result.isEmpty()) {
+        var empty =
+            new Span(
+                !compact && !search.isEmpty()
+                    ? texts.getNotificationsSearchEmpty()
+                    : texts.getNotificationsEmpty());
+        if (compact) {
+          empty.addClassName("cosmos-notifications-secondary");
+          rows.add(empty);
+        } else {
+          var icon = VaadinIcon.INFO_CIRCLE_O.create();
+          icon.getElement().setAttribute("aria-hidden", "true");
+          var notice = new Div(icon, empty);
+          notice.addClassName("cosmos-notification-inbox-empty");
+          rows.add(notice);
+        }
+      }
       for (var item : result) rows.add(row(item));
+      totalPages = Math.max(1, result.getTotalPages());
+      first.setEnabled(page > 0);
       previous.setEnabled(page > 0);
       next.setEnabled(result.hasNext());
-      pageLabel.setText(
-          texts.getNotificationsPage()
-              + " "
-              + (page + 1)
-              + " / "
-              + Math.max(1, result.getTotalPages()));
+      last.setEnabled(result.hasNext());
+      if (!compact) renderPageNumbers();
+      pageTotal.setText(
+          texts.getAdminUsersPaginationTotal(Math.toIntExact(result.getTotalElements())));
     } catch (RuntimeException failure) {
       unavailable();
     }
@@ -266,7 +381,45 @@ public class UserNotificationsPanel extends Div {
     markAll.setEnabled(false);
     previous.setEnabled(false);
     next.setEnabled(false);
+    first.setEnabled(false);
+    last.setEnabled(false);
+    pageNumbers.removeAll();
+    pageTotal.setText("–");
+    totalCount.setText("–");
+    unreadCount.setText("–");
     if (detail != null) detail.close();
+  }
+
+  private int selectedPageSize() {
+    return Objects.requireNonNullElse(pageSize.getValue(), 10);
+  }
+
+  private void renderPageNumbers() {
+    pageNumbers.removeAll();
+    var pages = new TreeSet<Integer>();
+    pages.add(0);
+    pages.add(totalPages - 1);
+    int from = totalPages <= 7 ? 0 : Math.max(1, Math.min(page - 1, totalPages - 4));
+    int to = totalPages <= 7 ? totalPages - 1 : Math.min(totalPages - 2, Math.max(page + 1, 3));
+    for (int index = from; index <= to; index++) pages.add(index);
+    int preceding = -1;
+    for (int index : pages) {
+      if (preceding >= 0 && index - preceding > 1) pageNumbers.add(new Span("…"));
+      var button =
+          new Button(
+              Integer.toString(index + 1),
+              e -> {
+                page = index;
+                refresh();
+              });
+      button.setAriaLabel(texts.getAdminUsersPaginationPage(index + 1));
+      if (index == page) {
+        button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        button.getElement().setAttribute("aria-current", "page");
+      }
+      pageNumbers.add(button);
+      preceding = index;
+    }
   }
 
   private Div row(Item item) {
@@ -277,12 +430,50 @@ public class UserNotificationsPanel extends Div {
     var state =
         new Span(item.read() ? texts.getNotificationsRead() : texts.getNotificationsUnread());
     if (compact) return previewRow(item, title, time, state);
-    var meta = new Div(time, state);
-    meta.addClassNames("cosmos-notifications-actions", "cosmos-notifications-secondary");
-    var row = new Div(title, meta);
-    row.addClassName("cosmos-notification-row");
+    var dot = new Span();
+    dot.addClassName("cosmos-notification-preview-dot");
+    dot.getElement().setAttribute("aria-hidden", "true");
+    dot.setVisible(!item.read());
+    var titleRow = new Div(dot, title);
+    titleRow.addClassName("cosmos-notification-inbox-title");
+    var source = new Span(source(item));
+    source.addClassName("cosmos-notification-preview-source");
+    state.getElement().setAttribute("theme", "badge");
+    state.addClassName("cosmos-notification-preview-state");
+    var meta = new Div(time, source, state);
+    meta.addClassName("cosmos-notification-inbox-meta");
+    var body = new Div();
+    body.setText(UserNotificationTexts.body(texts, item));
+    body.addClassNames("cosmos-notification-body", "cosmos-notification-inbox-message");
+    var content = new Div(titleRow, body);
+    content.addClassName("cosmos-notification-inbox-content");
+    var open =
+        new Button(
+            texts.getNotificationsOpen(), VaadinIcon.EYE.create(), e -> action(() -> open(item)));
+    open.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    open.setAriaLabel(
+        texts.getNotificationsOpen() + ": " + UserNotificationTexts.title(texts, item));
+    var mark =
+        new Button(
+            texts.getNotificationsMarkRead(),
+            VaadinIcon.ENVELOPE_OPEN.create(),
+            e -> action(() -> markRead(item)));
+    mark.setVisible(!item.read());
+    mark.addClassName("cosmos-notification-inbox-mark-read");
+    mark.setAriaLabel(
+        texts.getNotificationsMarkRead() + ": " + UserNotificationTexts.title(texts, item));
+    var actions = new Div(open, mark);
+    actions.addClassName("cosmos-notification-inbox-actions");
+    var footer = new Div(meta, actions);
+    footer.addClassName("cosmos-notification-inbox-row-footer");
+    var row = new Div(content, footer);
+    row.addClassNames("cosmos-notification-row", "cosmos-notification-inbox-row");
     row.getElement().setAttribute("data-notification-id", item.id().toString());
     if (!item.read()) row.addClassName("cosmos-notification-row--unread");
+    // Buttons behalten ihre eigene Aktion; die restliche Karte öffnet per einfachem Klick.
+    row.getElement()
+        .addEventListener("click", e -> action(() -> open(item)))
+        .setFilter("!event.composedPath().some(node => node.localName === 'vaadin-button')");
     return row;
   }
 
@@ -323,10 +514,12 @@ public class UserNotificationsPanel extends Div {
     body.setText(UserNotificationTexts.body(texts, item));
     body.addClassNames("cosmos-notification-body", "cosmos-notification-preview-message");
     var open = new Button(texts.getNotificationsOpen(), e -> action(() -> open(item)));
+    open.setIcon(VaadinIcon.EYE.create());
     open.setAriaLabel(
         texts.getNotificationsOpen() + ": " + UserNotificationTexts.title(texts, item));
     open.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     var markRead = new Button(texts.getNotificationsMarkRead(), e -> action(() -> markRead(item)));
+    markRead.setIcon(VaadinIcon.ENVELOPE_OPEN.create());
     markRead.addClassName("cosmos-notification-preview-mark-read");
     markRead.setVisible(!item.read());
     markRead.setAriaLabel(
@@ -458,6 +651,7 @@ public class UserNotificationsPanel extends Div {
             });
     history.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     history.addClassName("cosmos-notification-detail-history");
+    history.setVisible(compact);
     var markRead =
         new Button(
             texts.getNotificationsMarkRead(),

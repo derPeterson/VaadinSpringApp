@@ -635,6 +635,14 @@ USER-07E wählt vor dem eigenen Adminrollenentzug eine normale Rolle: Bootstrap-
 haben jetzt ausschließlich Admin, und eine vollständig leere Rollenauswahl ist bereits
 im Formular ungültig. Die ursprüngliche Sicherheitsassertion bleibt erhalten.
 
+Für den nachfolgenden persönlichen Inbox-Entwurf vom 19.10.2026 stehen zusätzliche
+Browsernachweise für Gesamt-/Ungelesen-Zähler, Suche vor Pagination, Kartenklick,
+nummerierte Navigation, Seitengrößen 10/20/50 mit Filtererhalt, Alle/Gelesen/Ungelesen
+zusammen mit Suche, Icon-Tooltips und schmale Ansichten
+in DE/EN noch aus. NOTIFY-02 bleibt
+unverändert auf Versand, Eigentümertrennung und ausdrücklich gelesenen Status
+ausgerichtet; die Zahl implementierter Browserfälle wurde nicht erhöht.
+
 Die neuen Fälle bedienen weder das Benachrichtigungs-Header-Overlay noch die gesendete
 Historie. Details der **geprüften Empfängervorschau** sind ausdrücklich enthalten.
 Laufresultate und Messgrenzen stehen in `abdeckung.md`; diese Tabelle ist ein Fallkatalog.

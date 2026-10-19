@@ -161,6 +161,61 @@ public class UserNotificationService {
   }
 
   @Transactional(readOnly = true)
+  public Page<Item> searchInbox(
+      HttpSession session,
+      boolean unread,
+      String query,
+      Set<UserNotificationType> matchingTypes,
+      int page,
+      int size) {
+    return searchInbox(
+        session, unread ? ReadFilter.UNREAD : ReadFilter.ALL, query, matchingTypes, page, size);
+  }
+
+  @Transactional(readOnly = true)
+  public Page<Item> searchInbox(
+      HttpSession session,
+      ReadFilter filter,
+      String query,
+      Set<UserNotificationType> matchingTypes,
+      int page,
+      int size) {
+    Boolean read =
+        switch (Objects.requireNonNull(filter)) {
+          case ALL -> null;
+          case READ -> true;
+          case UNREAD -> false;
+        };
+    String term = Objects.requireNonNull(query).strip().toLowerCase(Locale.ROOT);
+    if (term.length() > TITLE_LIMIT) throw new IllegalArgumentException("Search is too long");
+    if (term.isEmpty()) return inbox(session, filter, page, size);
+    // LIKE-Sonderzeichen bleiben wörtlicher Suchtext; ! ist das explizite Escapezeichen.
+    String pattern = "%" + term.replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%";
+    return recipients
+        .searchInbox(
+            owner(session).getId(),
+            read,
+            policy.inboxCutoff(Instant.now()),
+            pattern,
+            Set.copyOf(matchingTypes),
+            page(page, size))
+        .map(
+            row ->
+                new Item(
+                    row.getId(),
+                    row.getType(),
+                    row.getTitle(),
+                    row.getBody(),
+                    row.getCreatedAt(),
+                    row.getReadAt() != null));
+  }
+
+  @Transactional(readOnly = true)
+  public long inboxCount(HttpSession session) {
+    return recipients.countVisible(owner(session).getId(), policy.inboxCutoff(Instant.now()));
+  }
+
+  @Transactional(readOnly = true)
   public long unreadCount(HttpSession session) {
     return recipients.countUnread(owner(session).getId(), policy.inboxCutoff(Instant.now()));
   }

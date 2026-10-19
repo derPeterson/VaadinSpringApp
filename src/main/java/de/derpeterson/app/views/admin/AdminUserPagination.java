@@ -45,7 +45,7 @@ final class AdminUserPagination extends HorizontalLayout {
     pageSize.setItems(pageSizes);
     pageSize.setValue(pageSizes.getFirst());
     pageSize.setAllowCustomValue(false);
-    pageSize.setWidth("80px");
+    pageSize.setWidth("56px");
     pageSize.addValueChangeListener(
         event -> {
           if (event.getValue() != null) selectPageSize.accept(event.getValue());

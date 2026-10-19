@@ -1,11 +1,8 @@
 package de.derpeterson.app.views;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -16,7 +13,6 @@ import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.AppRoute;
-import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.NavigationErrorCode;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
@@ -42,7 +38,6 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
 
   private final transient ConfigService configService;
 
-  private final Span serviceNameSpan = new Span();
   private final Span pageTitle = new Span();
   private final Span pageDescription = new Span();
   private final Span overviewLabel = new Span();
@@ -61,55 +56,9 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
     this.configService = configService;
 
     addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-home");
-    addToNavbar(createHeader());
+    addToNavbar(createApplicationHeader(configService, createPopoverActions()));
     setContent(createHomeContent());
     refreshTexts();
-  }
-
-  private HorizontalLayout createHeader() {
-    HorizontalLayout headerLayout = new HorizontalLayout();
-    headerLayout.setSpacing(false);
-    headerLayout.addClassName("cosmos-topbar");
-
-    HorizontalLayout serviceLayout = createServiceLayout();
-    HorizontalLayout userLayout = createUserLayout();
-
-    headerLayout.add(serviceLayout, userLayout);
-
-    return headerLayout;
-  }
-
-  private HorizontalLayout createServiceLayout() {
-    HorizontalLayout serviceLayout = new HorizontalLayout();
-    serviceLayout.addClassName("cosmos-topbar-brand");
-    serviceLayout.setSpacing(false);
-
-    Image serviceLogoIcon = new Image("custom-theme/service_logo.png", "Service Icon");
-    serviceLogoIcon.addClassName("cosmos-topbar-logo");
-    serviceNameSpan.addClassName("cosmos-topbar-service-name");
-
-    refreshServiceName();
-
-    serviceLayout.add(serviceLogoIcon, serviceNameSpan);
-    return serviceLayout;
-  }
-
-  private void refreshServiceName() {
-    serviceNameSpan.setText(configService.getString(ConfigEntry.SERVICE_NAME));
-  }
-
-  private HorizontalLayout createUserLayout() {
-    HorizontalLayout userLayout = new HorizontalLayout();
-    userLayout.addClassName("cosmos-topbar-account-menu");
-    userLayout.setSpacing(false);
-
-    Button userButton = createTrackedUserButton();
-    createTrackedUserPopover(createPopoverActions());
-    // Home und Admin verwenden dieselbe zentral markierte Menü-Palette.
-    userPopoverMenu.addThemeName("cosmos");
-
-    userLayout.add(accountHeaderActions, userButton);
-    return userLayout;
   }
 
   private Div createHomeContent() {

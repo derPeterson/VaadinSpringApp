@@ -1874,6 +1874,30 @@ public class MessageTexts {
     return getTranslation("notifications.title");
   }
 
+  public String getNotificationsInboxDescription() {
+    return getTranslation("notifications.inboxDescription");
+  }
+
+  public String getNotificationsTotal() {
+    return getTranslation("notifications.total");
+  }
+
+  public String getNotificationsSearch() {
+    return getTranslation("notifications.search");
+  }
+
+  public String getNotificationsSearchEmpty() {
+    return getTranslation("notifications.searchEmpty");
+  }
+
+  public String getNotificationsOverview() {
+    return getTranslation("notifications.overview");
+  }
+
+  public String getNotificationsPageDescription() {
+    return getTranslation("notifications.pageDescription");
+  }
+
   public String getNotificationsDetailTitle() {
     return getTranslation("notifications.detailTitle");
   }

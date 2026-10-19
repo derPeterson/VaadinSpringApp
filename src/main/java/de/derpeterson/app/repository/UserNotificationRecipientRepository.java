@@ -35,6 +35,21 @@ public interface UserNotificationRecipientRepository
       Pageable page);
 
   @Query(
+      "select r.id as id, m.type as type, m.title as title, m.body as body, m.createdAt as createdAt, r.readAt as readAt from UserNotificationRecipientEntity r join r.notification m where r.user.id = :owner and r.dismissedAt is null and (:cutoff is null or m.createdAt >= :cutoff) and (:read is null or (:read = true and r.readAt is not null) or (:read = false and r.readAt is null)) and (lower(coalesce(m.title, '')) like :pattern escape '!' or lower(coalesce(m.body, '')) like :pattern escape '!' or m.type in :matchingTypes) order by r.id desc")
+  Page<InboxRow> searchInbox(
+      @Param("owner") Long owner,
+      @Param("read") Boolean read,
+      @Param("cutoff") Instant cutoff,
+      @Param("pattern") String pattern,
+      @Param("matchingTypes")
+          Collection<de.derpeterson.app.model.enums.UserNotificationType> matchingTypes,
+      Pageable page);
+
+  @Query(
+      "select count(r) from UserNotificationRecipientEntity r where r.user.id = :owner and r.dismissedAt is null and (:cutoff is null or r.notification.createdAt >= :cutoff)")
+  long countVisible(@Param("owner") Long owner, @Param("cutoff") Instant cutoff);
+
+  @Query(
       "select count(r) from UserNotificationRecipientEntity r where r.user.id = :owner and r.dismissedAt is null and r.readAt is null and (:cutoff is null or r.notification.createdAt >= :cutoff)")
   long countUnread(@Param("owner") Long owner, @Param("cutoff") Instant cutoff);
 

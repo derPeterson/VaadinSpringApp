@@ -1,12 +1,8 @@
 package de.derpeterson.app.views;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.QueryParameters;
@@ -30,7 +26,6 @@ import de.derpeterson.app.ui.components.AccountSettingsComponent;
 import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
 import de.derpeterson.app.ui.components.CosmosBackgroundComponent;
 import de.derpeterson.app.ui.components.CosmosCopyrightComponent;
-import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
@@ -60,29 +55,7 @@ public class AccountView extends IsAuthenticatedBaseView {
       UserAvatarService avatars) {
     super(messages, security, users, broadcaster, request, avatars);
     addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-account");
-    var logo = new Image("custom-theme/service_logo.png", "Service Icon");
-    logo.addClassName("cosmos-topbar-logo");
-    var serviceName = new Span(config.getString(ConfigEntry.SERVICE_NAME));
-    serviceName.addClassName("cosmos-topbar-service-name");
-    var brand = new HorizontalLayout(logo, serviceName);
-    brand.setSpacing(false);
-    brand.addClassName("cosmos-topbar-brand");
-    Button userButton = createTrackedUserButton();
-    Runnable administration =
-        currentUser != null && currentUser.hasAdministrativeRole()
-            ? () -> UI.getCurrent().navigate(AdminView.class)
-            : null;
-    createTrackedUserPopover(
-        new UserPopoverMenu.Actions(
-            administration, () -> UI.getCurrent().navigate(HomeView.class), null, null));
-    userPopoverMenu.addThemeName("cosmos");
-    var userMenu = new HorizontalLayout(accountHeaderActions, userButton);
-    userMenu.setSpacing(false);
-    userMenu.addClassName("cosmos-topbar-account-menu");
-    var navbar = new HorizontalLayout(brand, userMenu);
-    navbar.setSpacing(false);
-    navbar.addClassName("cosmos-topbar");
-    addToNavbar(navbar);
+    addToNavbar(createApplicationHeader(config));
 
     accountSettings =
         new AccountSettingsComponent(

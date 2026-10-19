@@ -1,10 +1,13 @@
 package de.derpeterson.app.i18n;
 
+import de.derpeterson.app.model.enums.UserNotificationType;
 import de.derpeterson.app.service.UserNotificationService.Item;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.EnumSet;
 import java.util.Locale;
+import java.util.Set;
 
 /** Automatische Ereignisse folgen der aktuellen UI-Sprache; manuelle Texte bleiben unverändert. */
 public final class UserNotificationTexts {
@@ -28,6 +31,29 @@ public final class UserNotificationTexts {
       case EMAIL_CHANGED -> texts.getNotificationsEmailChangedBody();
       case ROLES_CHANGED -> texts.getNotificationsRolesChangedBody();
     };
+  }
+
+  /** Systemtexte und Herkunft in der sichtbaren Sprache für die Datenbanksuche abgleichen. */
+  public static Set<UserNotificationType> matchingTypes(MessageProperties texts, String query) {
+    String term = query.strip().toLowerCase(Locale.ROOT);
+    var matches = EnumSet.noneOf(UserNotificationType.class);
+    if (term.isEmpty()) return matches;
+    for (var type : UserNotificationType.values()) {
+      String visible;
+      if (type == UserNotificationType.ADMIN_ANNOUNCEMENT) {
+        visible = texts.getNotificationsSourceAdministration();
+      } else {
+        var item = new Item(0L, type, null, null, java.time.Instant.EPOCH, false);
+        visible =
+            title(texts, item)
+                + " "
+                + body(texts, item)
+                + " "
+                + texts.getNotificationsSourceSystem();
+      }
+      if (visible.toLowerCase(Locale.ROOT).contains(term)) matches.add(type);
+    }
+    return matches;
   }
 
   public static String time(java.time.Instant time, Locale locale) {
