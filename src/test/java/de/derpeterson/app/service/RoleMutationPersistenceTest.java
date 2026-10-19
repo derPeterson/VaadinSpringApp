@@ -7,6 +7,7 @@ import de.derpeterson.app.model.*;
 import de.derpeterson.app.model.enums.*;
 import de.derpeterson.app.repository.*;
 import de.derpeterson.app.security.*;
+import de.derpeterson.app.service.UserNotificationService.ReadFilter;
 import de.derpeterson.app.websocket.*;
 import jakarta.persistence.*;
 import java.time.*;
@@ -303,7 +304,7 @@ class RoleMutationPersistenceTest {
     assertTrue(
         security.refreshSessionAuthentication(http).orElseThrow().getAuthorities().stream()
             .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")));
-    assertEquals(1, inbox.inbox(http, false, 0, 20).getTotalElements());
+    assertEquals(1, inbox.inbox(http, ReadFilter.ALL, 0, 20).getTotalElements());
     assign(user, RoleType.ROLE_USER);
     assertFalse(http.isInvalid());
     assertFalse(

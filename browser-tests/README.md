@@ -361,7 +361,8 @@ menschliche Bewertung werden dadurch nicht ersetzt.
 ```
 
 Palette und Komponentenfarben stehen in `custom-theme/cosmos-tokens.css`; die Regeln
-in `cosmos-theme.css`, `cosmos-shell.css` und `cosmos-admin.css`. `admin-users.css`
+in `cosmos-theme.css`, `cosmos-shell.css`, `cosmos-admin.css` und
+`cosmos-notifications.css`. `admin-users.css`
 ergänzt das lokale Benutzerlayout. Die Dekoration steht in `cosmos-background.css`
 und der globale Font in `typography.css`. Siehe [Theme-Anleitung](../docs/theme.md). Die Java-Bausteine
 heißen `CosmosPageComponent`, `CosmosCardComponent`, `CosmosBackgroundComponent`

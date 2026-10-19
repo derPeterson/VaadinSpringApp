@@ -188,15 +188,6 @@ public class VerificationService {
     return tokenRepository.findByToken(token).orElse(null) != null;
   }
 
-  @Transactional
-  public int deleteToken(String token) {
-    Optional<Long> userId = tokenRepository.findUserIdByToken(token);
-    if (userId.isEmpty() || userRepository.lockVerificationUser(userId.get()).isEmpty()) {
-      return 0;
-    }
-    return tokenRepository.deleteByToken(token);
-  }
-
   @Transactional(rollbackFor = IOException.class)
   public boolean sendVerificationEmailByToken(String token) throws IOException {
     MaintenanceService.requirePublicAccess(configService);

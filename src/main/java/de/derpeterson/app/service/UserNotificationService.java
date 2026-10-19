@@ -135,11 +135,6 @@ public class UserNotificationService {
   }
 
   @Transactional(readOnly = true)
-  public Page<Item> inbox(HttpSession session, boolean unread, int page, int size) {
-    return inbox(session, unread ? ReadFilter.UNREAD : ReadFilter.ALL, page, size);
-  }
-
-  @Transactional(readOnly = true)
   public Page<Item> inbox(HttpSession session, ReadFilter filter, int page, int size) {
     Boolean read =
         switch (Objects.requireNonNull(filter)) {
@@ -158,18 +153,6 @@ public class UserNotificationService {
                     r.getBody(),
                     r.getCreatedAt(),
                     r.getReadAt() != null));
-  }
-
-  @Transactional(readOnly = true)
-  public Page<Item> searchInbox(
-      HttpSession session,
-      boolean unread,
-      String query,
-      Set<UserNotificationType> matchingTypes,
-      int page,
-      int size) {
-    return searchInbox(
-        session, unread ? ReadFilter.UNREAD : ReadFilter.ALL, query, matchingTypes, page, size);
   }
 
   @Transactional(readOnly = true)

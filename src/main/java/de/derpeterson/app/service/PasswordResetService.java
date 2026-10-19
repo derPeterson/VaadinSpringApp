@@ -236,11 +236,6 @@ public class PasswordResetService {
         formattedLiveDateTime);
   }
 
-  @Transactional
-  public boolean existsToken(String token) {
-    return tokenRepository.findByToken(token).orElse(null) != null;
-  }
-
   /**
    * Internal queue outcome only; anonymous callers must not expose this boolean or exceptions as
    * account signals.

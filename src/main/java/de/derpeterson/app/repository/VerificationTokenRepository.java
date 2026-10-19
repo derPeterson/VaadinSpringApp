@@ -23,7 +23,5 @@ public interface VerificationTokenRepository extends JpaRepository<VerificationT
 
   List<VerificationTokenEntity> findAllByUserEntityAndStatus(UserEntity user, TokenStatus status);
 
-  int deleteByToken(String token);
-
   int deleteByExpiryDateBefore(LocalDateTime now);
 }

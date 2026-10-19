@@ -26,6 +26,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @StyleSheet("custom-theme/cosmos-theme.css")
 @StyleSheet("custom-theme/cosmos-shell.css")
 @StyleSheet("custom-theme/cosmos-admin.css")
+@StyleSheet("custom-theme/cosmos-notifications.css")
 @StyleSheet("custom-theme/cosmos-background.css")
 @ColorScheme(ColorScheme.Value.DARK)
 public class Application implements AppShellConfigurator {

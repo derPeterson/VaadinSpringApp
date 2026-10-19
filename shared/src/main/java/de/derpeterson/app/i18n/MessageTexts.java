@@ -992,10 +992,6 @@ public class MessageTexts {
     return getFormattedTranslation("adminView.config.validation.token_duration", minutes);
   }
 
-  public String getAdminConfigHelperTokenDurationFormats(long minutes) {
-    return getFormattedTranslation("adminView.config.helper.token_duration_formats", minutes);
-  }
-
   public String getAdminConfigValidationPositiveDuration() {
     return getTranslation("adminView.config.validation.positive_duration");
   }
@@ -1984,10 +1980,6 @@ public class MessageTexts {
 
   public String getNotificationsNext() {
     return getTranslation("notifications.next");
-  }
-
-  public String getNotificationsPage() {
-    return getTranslation("notifications.page");
   }
 
   public String getNotificationsRead() {

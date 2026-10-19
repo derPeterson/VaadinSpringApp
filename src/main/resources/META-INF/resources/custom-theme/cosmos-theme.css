@@ -128,6 +128,7 @@
 
 /* Nur die E-Mail-Bestätigung: sichtbare Aktionen teilen den Platz gleichmäßig.
  * Längere Beschriftungen dürfen umbrechen, statt aus der schmalen Card zu ragen. */
+
 #account-email-confirmation .cosmos-email-confirm-actions {
     display: grid;
     grid-auto-flow: column;
@@ -143,7 +144,8 @@
     --vaadin-button-label-wrap: normal;
 }
 
-.cosmos-form-links a, .cosmos-options a {
+.cosmos-form-links a,
+.cosmos-options a {
     overflow-wrap: anywhere;
 }
 
@@ -390,6 +392,7 @@
 
 /* Einheitliche Schrift für native Badges und unsere Rollen-/Statuschips.
  * Die Varianten behalten ihre bisherigen Farben, Rahmen und Abstände. */
+
 .cosmos-theme [theme~="badge"],
 .cosmos-theme .cosmos-admin-role-chip,
 .cosmos-theme .cosmos-topbar-badge {
@@ -442,6 +445,7 @@ vaadin-notification-card[theme~="cosmos"] vaadin-vertical-layout {
 }
 
 /* Größen für den Meldungsinhalt; das Schließen-Icon bleibt separat. */
+
 vaadin-notification-card[theme~="cosmos"] .cosmos-notification-icon {
     width: var(--cosmos-notification-icon-size);
     height: var(--cosmos-notification-icon-size);
@@ -500,9 +504,88 @@ vaadin-notification-card[theme~="cosmos"] .cosmos-notification-message {
 
 @media (prefers-reduced-transparency: reduce) {
 
-    .cosmos-card, vaadin-notification-card[theme~="cosmos"]::part(overlay) {
+    .cosmos-card,
+    vaadin-notification-card[theme~="cosmos"]::part(overlay) {
         background: var(--lumo-base-color);
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
     }
+}
+
+/* Gemeinsame Konto-Navigation und Einstellungstabs. */
+
+/* Native Vaadin-Tabs behalten Tastatursteuerung, Scrollbuttons und Fokusrahmen.
+ * Nur Farbe, Typografie und Abstände werden an unsere bestehenden Buttons angelehnt.
+ * Styling-API: https://vaadin.com/docs/latest/components/tabs/styling */
+
+:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) {
+    width: 100%;
+    min-width: 0;
+    box-shadow: none;
+    border-bottom: var(--cosmos-border-width) solid var(--cosmos-card-border);
+}
+
+.cosmos-theme .account-navigation-tabs {
+    max-width: var(--cosmos-page-content-width);
+    align-self: center;
+}
+
+/* Gleich breite Tabs nach dem längsten Inhalt. Der Scrollcontainer darf bei
+ * wenig Platz schrumpfen; die gleich großen Gridspalten bleiben scrollbar. */
+
+:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs)::part(tabs) {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    flex: 0 1 auto;
+    width: max-content;
+    max-width: 100%;
+    min-width: 0;
+}
+
+:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-s);
+    padding: var(--lumo-space-m);
+    color: var(--lumo-secondary-text-color);
+    font-size: var(--cosmos-font-size-m);
+    font-weight: var(--cosmos-font-weight-semibold);
+    white-space: nowrap;
+    min-width: max-content;
+}
+
+:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab[selected] {
+    color: var(--lumo-primary-text-color);
+    font-weight: var(--cosmos-font-weight-bold);
+}
+
+/* Lumo zentriert seine kurze Markierung per translateX(-50%). Bei voller
+ * Tabbreite entfällt diese Verschiebung; auch der native Klickschimmer folgt. */
+
+:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab::before,
+:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab::after {
+    left: 0;
+    right: 0;
+    width: 100%;
+    transform: scaleX(0);
+    background: var(--lumo-primary-text-color);
+}
+
+:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab[selected]::before,
+:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab[selected]::after {
+    transform: scaleX(1);
+}
+
+/* Gleiche Außenmaße und dasselbe em-basierte Padding wie unsere Button-Icons. */
+
+:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab > vaadin-icon,
+:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab > .account-devices-icon {
+    width: var(--lumo-icon-size-m);
+    height: var(--lumo-icon-size-m);
+    font-size: var(--cosmos-font-size-l);
+    padding: 0.25em;
+    margin: 0;
+    box-sizing: border-box;
+    flex-shrink: 0;
 }

@@ -1,5 +1,11 @@
 # VaadinSpringApp
 
+> Bereinigung vom 20.10.2026 auf `feature/user-messages`: ungenutzte APIs und zwei
+> Sprachschlüssel entfernt, Benachrichtigungs-CSS gebündelt und Theme-Struktur
+> vereinheitlicht. 1823 Anwendungs-JUnits und 48 Browserhelfer erfolgreich,
+> keine Fehler oder Skips. Kein neuer Browserlauf oder Produktionsbuild.
+> [Änderungen und Prüfgrenzen](docs/codebereinigung-2026-10-20.md).
+
 > Nächtliche QA vom 19.10.2026 auf `feature/user-messages`: 1706 Anwendungs-JUnits,
 > 48 Browserhelfer, 205 Python- und 26 JavaScript-Offlinetests erfolgreich.
 > Browser DE: zunächst 146/147, anschließend 10/10 gezielte Nachtests; alle 147
@@ -150,14 +156,15 @@ den zentralen blauen Verlauf `#3a538d` → `#526ebc`.
 | --- | --- |
 | `typography.css` | Inter als Standardschrift für die gesamte Anwendung |
 | `cosmos-tokens.css` | Zentrale Palette, Typografie, Abstände, Rahmen, Komponentenmaße, Verläufe und Schatten |
-| `cosmos-theme.css` | Kontoansichten, Cards, Formulare, Buttons, Tabellen und Benachrichtigungen |
+| `cosmos-theme.css` | Gemeinsame Cards, Formulare, Buttons, Tabellen, Systemmeldungen und Konto-Tabs |
 | `cosmos-shell.css` | App-Kopfzeile, Seitenkopf, Benutzermenü und Auswahl-Overlays |
 | `cosmos-admin.css` | Navigation, Panels, Konfiguration, Mail-Test und Dialogstandards |
+| `cosmos-notifications.css` | Inbox, Header-Vorschau, Detaildialog, Admin-Versand und Versandarchiv |
 | `cosmos-background.css` | Anordnung und Animation von Sternen, Nebeln und Planeten; Farben aus den Tokens |
-| `cosmos-account.css` | Nur in AccountView geladen; lokale Kontoseiten-Anordnung und native Vaadin-Tabs |
+| `cosmos-account.css` | In AccountView/LoginView geladen; lokale Kontoformulare, Sitzungen und Konto-/Profilbilddialoge |
 | `admin-users.css` | Nur in AdminView geladen; lokale Tabellen-, Filter-, Pagination- und Dialoganordnung |
 
-Typografie, Tokens, Komponenten-, App-/Admin-Regeln und Hintergrund werden in dieser
+Typografie, Tokens, Komponenten-, App-/Admin-, Benachrichtigungsregeln und Hintergrund werden in dieser
 Reihenfolge einmalig in `Application.java` eingebunden. `admin-users.css` bleibt
 als lokale Ergänzung der Benutzerverwaltung getrennt:
 Filterwerkzeugleiste/-panel, Tabelleninhalte, Pagination und Benutzerdialoge. Gemeinsame
@@ -167,7 +174,8 @@ allgemeines Reset-Stylesheet. Es wird ausschließlich an `AdminView` geladen; di
 Selektoren verändern Home auch nach einer Navigation nicht. Die Cosmos-Palette
 gilt für `.cosmos-theme` und die aus diesen Ansichten geöffneten Notifications;
 `HomeView` und `AdminView` verwenden dieselbe Palette, Topbar und Avatar-Popup.
-Die Theme-Struktur behält Standardwerte und Regelreihenfolge bei. Die bisherige
+Die Theme-Struktur erhält die bestätigten Standardwerte; ihre feste Ladefolge steht
+in `Application.java` und der Theme-Anleitung. Die bisherige
 `styles.css` heißt jetzt `admin-users.css`. [Theme anpassen und als Vorlage nutzen](docs/theme.md)
 erklärt Palette, Komponentenwerte, CSS-Begriffe und das Vorgehen für ein weiteres Theme.
 
@@ -662,7 +670,7 @@ Gmail/Outlook-Darstellung bleibt separat zu prüfen. Nachweise: [Browserabdeckun
 
 ## Styles, Bilder und generierte Dateien
 
-- **Styles und UI-Bilder:** `src/main/resources/META-INF/resources/custom-theme/`, Palette und Komponentenfarben in `cosmos-tokens.css`, gemeinsame Regeln in `cosmos-theme.css`, App-/Admin-Bausteine in `cosmos-shell.css`/`cosmos-admin.css`, Dekoration in `cosmos-background.css` und Schrift in `typography.css`, zentral geladen in `Application.java`. `admin-users.css` wird nur an `AdminView` für Admin-Spezialfälle eingebunden. Weitere Icons: `src/main/resources/META-INF/resources/icons/`.
+- **Styles und UI-Bilder:** `src/main/resources/META-INF/resources/custom-theme/`, Palette und Komponentenfarben in `cosmos-tokens.css`, gemeinsame Regeln in `cosmos-theme.css`, App-/Admin-Bausteine in `cosmos-shell.css`/`cosmos-admin.css`, persönliche und administrative Benachrichtigungen in `cosmos-notifications.css`, Dekoration in `cosmos-background.css` und Schrift in `typography.css`, zentral geladen in `Application.java`. `admin-users.css` wird nur an `AdminView` für Admin-Spezialfälle eingebunden. Weitere Icons: `src/main/resources/META-INF/resources/icons/`.
 - **Übersetzungen:** `src/main/resources/i18n/messages_de.properties` und `messages_en.properties`.
 - **Mailvorlagen:** `src/main/resources/email/`; die Dienste laden HTML-Dateien. MJML-Quelldateien liegen daneben, eine automatische MJML-Kompilierung ist in `pom.xml` nicht eingerichtet.
 - **Generierte Dateien:** `src/main/frontend/generated/`, `vite.generated.ts` und Build-Ausgaben unter `target/`; nicht manuell pflegen. `node_modules/` enthält Frontend-Abhängigkeiten. Diese Pfade sind in `.gitignore` ausgeschlossen. Eigene Vite-Anpassungen gehören in `vite.config.ts`.

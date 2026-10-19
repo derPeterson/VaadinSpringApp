@@ -798,6 +798,21 @@ ihre eigenen Meldungen. Die Registrierung wurde nicht verändert.
 Gezielter Nachtest: 44 JUnits erfolgreich, keine Fehler oder Skips (41 Komponenten-
 und drei Katalogfälle). Shared gebaut; Java- und Testkompilierung sowie Spotless
 und Diffprüfung erfolgreich. Keine Browserprüfung.
+## Bereinigter Stand vom 20.10.2026
+
+Alle Inbox-Aufrufe verwenden jetzt den typisierten `ReadFilter`; die früheren
+booleschen Überladungen hatten keine Produktionsaufrufer mehr und sind entfernt.
+Auch die Tests verwenden die aktuellen Schnittstellen. Der alte Pagination-Text
+`notifications.page` ist mit seinem Getter entfernt; die native Pagination nutzt
+die bestehenden zugänglichen Navigationsbeschriftungen. Die Herkunftsbestimmung
+ist für Inbox, Overlay und Detaildialog gemeinsam.
+
+Die bereichsspezifischen Styles stehen zentral in `cosmos-notifications.css`.
+Konto-Tabs und Inhaltsrahmen kommen aus den gemeinsamen Komponenten-/Shellregeln;
+`UserNotificationsView` benötigt keine lokale Konto-CSS-Datei mehr. Farben,
+Abstände und Größen des bestätigten Designs sind im statischen Wertevergleich
+erhalten. Technische Tests und Grenzen: [Bereinigungsnachweis](codebereinigung-2026-10-20.md).
+
 ## Nächtliche Gesamt-QA vom 19.10.2026
 
 Neue Browserfälle prüfen das überarbeitete Verfassenpanel bei 1280/390 Pixeln,

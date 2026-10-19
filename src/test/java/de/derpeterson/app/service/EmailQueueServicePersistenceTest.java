@@ -128,6 +128,10 @@ class EmailQueueServicePersistenceTest {
         1, emails.findAll().stream().filter(e -> e.getEmailType() == EmailType.PROMOTION).count());
   }
 
+  private long statusCount(EmailStatus status) {
+    return emails.findAll().stream().filter(entry -> entry.getStatus() == status).count();
+  }
+
   @Test
   void staleEligibilityIsReloadedBeforeVerificationQueueDecision() {
     var stale = snapshot();
@@ -173,10 +177,10 @@ class EmailQueueServicePersistenceTest {
         .when(mail)
         .sendEmail(any(), anyString(), anyString());
     service.processQueue();
-    assertEquals(1, emails.findByStatus(EmailStatus.PENDING).size());
-    assertEquals(2, emails.findByStatus(EmailStatus.SENT).size());
-    assertEquals(1, emails.findByStatus(EmailStatus.IN_PROGRESS).size());
-    assertEquals(1, emails.findByStatus(EmailStatus.FAILED).size());
+    assertEquals(1, statusCount(EmailStatus.PENDING));
+    assertEquals(2, statusCount(EmailStatus.SENT));
+    assertEquals(1, statusCount(EmailStatus.IN_PROGRESS));
+    assertEquals(1, statusCount(EmailStatus.FAILED));
     verify(mail, times(1)).sendEmail(any(), anyString(), anyString());
   }
 
@@ -249,7 +253,7 @@ class EmailQueueServicePersistenceTest {
     reset(mail);
     service.processQueue();
     verifyNoInteractions(mail);
-    assertEquals(1, emails.findByStatus(EmailStatus.SENT).size());
+    assertEquals(1, statusCount(EmailStatus.SENT));
   }
 
   @Test
@@ -371,7 +375,7 @@ class EmailQueueServicePersistenceTest {
       }
       processing.get(20, TimeUnit.SECONDS);
     }
-    assertEquals(1, emails.findByStatus(EmailStatus.SENT).size());
+    assertEquals(1, statusCount(EmailStatus.SENT));
   }
 
   @Test
@@ -779,10 +783,7 @@ class EmailQueueServicePersistenceTest {
     service.processQueue();
     order.verify(mail).sendEmail(any(), eq("tie-second"), eq("body"));
     order.verify(mail).sendEmail(any(), eq("recent"), eq("body"));
-    assertEquals(
-        2,
-        emails.findByStatus(EmailStatus.PENDING).size()
-            + emails.findByStatus(EmailStatus.IN_PROGRESS).size());
+    assertEquals(2, statusCount(EmailStatus.PENDING) + statusCount(EmailStatus.IN_PROGRESS));
     assertEquals(EmailStatus.SENT, emails.findById(oldest).orElseThrow().getStatus());
     assertEquals(EmailStatus.SENT, emails.findById(equalFirst).orElseThrow().getStatus());
   }

@@ -49,6 +49,7 @@ vaadin-app-layout.cosmos-admin {
 
 /* Der Status bleibt unter der Navigation am unteren Rand. Bei wenig Höhe wächst
  * die Seitenleiste mit; vorhandene Cosmos-Flächen und Lumo-Statusfarben verwenden. */
+
 .cosmos-sidebar > .cosmos-service-status {
     flex-shrink: 0;
     display: flex;
@@ -445,6 +446,7 @@ vaadin-app-layout.cosmos-admin {
 }
 
 /* Info-Icons in den abgestimmten Konto- und Adminhinweisen mittig zum Text. */
+
 .cosmos-config-save-hint,
 .cosmos-account .cosmos-panel-hint,
 :is(.cosmos-admin-section--mail, .cosmos-admin-section--notifications) .cosmos-panel-hint {
@@ -664,7 +666,8 @@ vaadin-app-layout.cosmos-admin {
 
 .cosmos-admin vaadin-button.admin-user-refresh > vaadin-icon {
     font-size: var(--cosmos-control-icon-font-size);
-    width: var(--lumo-icon-size-m); height: var(--lumo-icon-size-m);
+    width: var(--lumo-icon-size-m);
+    height: var(--lumo-icon-size-m);
 }
 
 .cosmos-admin .admin-users-grid vaadin-button {
@@ -749,6 +752,7 @@ vaadin-app-layout.cosmos-admin {
 
 /* Nur den Hintergrund außerhalb des Dialogs weichzeichnen. Der native Backdrop
  * übernimmt weiterhin den Außenklick; der Dialoginhalt bleibt scharf. */
+
 vaadin-dialog[theme~="cosmos"]::part(backdrop) {
     -webkit-backdrop-filter: blur(var(--cosmos-dialog-backdrop-blur));
     backdrop-filter: blur(var(--cosmos-dialog-backdrop-blur));
@@ -756,6 +760,7 @@ vaadin-dialog[theme~="cosmos"]::part(backdrop) {
 
 /* Die Oberfläche trägt den Verlauf; Content bleibt transparent, damit er
  * nicht doppelt übereinander gezeichnet wird. Farben gelten für alle Dialoge. */
+
 vaadin-dialog[theme~="cosmos"]::part(overlay) {
     background: var(--cosmos-dialog-background);
     border: var(--cosmos-border-width) solid var(--cosmos-dialog-border-color);
@@ -771,6 +776,7 @@ vaadin-dialog[theme~="cosmos"]::part(footer) {
  * Innenradius = Außenradius minus 1px Rahmen: so übermalen Header und Footer
  * die Rundungen des Außenrahmens nicht. Kein overflow:hidden am Dialog,
  * damit die nativen Resize-Griffe außerhalb der Fläche bedienbar bleiben. */
+
 vaadin-dialog[theme~="cosmos"]::part(header) {
     background: var(--cosmos-dialog-header-background);
     border-bottom: var(--cosmos-border-width) solid var(--cosmos-dialog-border-color);
@@ -863,326 +869,4 @@ vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(overlay) {
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
     }
-}
-
-/* Benachrichtigungen verfassen: lokale Anordnung nativer Vaadin-Bausteine. */
-.cosmos-admin-section--notifications .cosmos-notification-compose { align-items: stretch; }
-.cosmos-notification-delivery,
-.cosmos-mail-delivery {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--cosmos-space-s);
-}
-.cosmos-notification-delivery-dot,
-.cosmos-mail-delivery-dot {
-    width: 6px;
-    height: 6px;
-    flex-shrink: 0;
-    border-radius: 50%;
-    background: var(--lumo-error-color);
-}
-.cosmos-notification-delivery[data-state="open"] > .cosmos-notification-delivery-dot,
-.cosmos-mail-delivery[data-state="open"] > .cosmos-mail-delivery-dot {
-    background: var(--lumo-success-color);
-}
-/* Gleich breite Versandaktionen; auf sehr schmalen Ansichten untereinander. */
-.cosmos-notification-compose .cosmos-panel-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-.cosmos-notification-compose .cosmos-panel-actions > vaadin-button {
-    width: 100%;
-    min-width: 0;
-}
-@media (max-width: 480px) {
-    .cosmos-notification-compose .cosmos-panel-actions {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
-/* Die Versandfreigabe bleibt auch optisch vom aktiven Primary-Zustand unterscheidbar. */
-.cosmos-notification-compose #admin-notifications-send[disabled] {
-    background: var(--cosmos-input-background);
-    color: var(--lumo-disabled-text-color);
-    border-color: var(--cosmos-button-secondary-border);
-    box-shadow: none;
-}
-/* Feldfehler im Versandformular: 11px und normales Schriftgewicht. */
-.cosmos-notification-compose :is(vaadin-text-field, vaadin-text-area, vaadin-multi-select-combo-box)::part(error-message) {
-    font-size: var(--cosmos-font-size-xs);
-    font-weight: var(--cosmos-font-weight-regular);
-}
-.cosmos-notification-compose-info {
-    display: flex; align-items: center; gap: var(--cosmos-space-s);
-    padding: var(--cosmos-space-m); border: var(--cosmos-border-width) solid var(--cosmos-card-border);
-    border-radius: var(--cosmos-control-radius); background: var(--lumo-primary-color-10pct);
-    color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-s);
-    line-height: var(--cosmos-line-height-copy);
-}
-.cosmos-notification-compose-info > vaadin-icon {
-    flex-shrink: 0; width: var(--cosmos-icon-size-xs); height: var(--cosmos-icon-size-xs);
-    color: var(--lumo-primary-text-color);
-}
-/* Beschriftungsblock wie bei „Aktiv“ im Benutzerdialog. */
-.cosmos-notification-compose-everyone {
-    --vaadin-checkbox-label-font-size: var(--cosmos-font-size-m);
-    --vaadin-checkbox-label-font-weight: var(--cosmos-font-weight-bold);
-    --vaadin-checkbox-label-color: var(--vaadin-input-field-value-color, var(--lumo-body-text-color));
-}
-.cosmos-notification-compose-everyone::part(checkbox) {
-    align-self: center;
-}
-.cosmos-notification-compose-everyone::part(label) {
-    font-size: var(--cosmos-font-size-m);
-    font-weight: var(--cosmos-font-weight-bold);
-    color: var(--vaadin-input-field-value-color, var(--lumo-body-text-color));
-}
-.cosmos-notification-compose-everyone-label > span {
-    display: block;
-}
-.cosmos-notification-compose-everyone-hint {
-    margin-top: var(--lumo-space-xs);
-    color: var(--lumo-secondary-text-color);
-    font-size: var(--cosmos-font-size-xs);
-    font-weight: var(--cosmos-font-weight-regular);
-}
-/* Die Mehrfachauswahl verwendet lokal dieselben Eingabetokens wie die ComboBox. */
-.cosmos-notification-compose vaadin-multi-select-combo-box {
-    --vaadin-input-field-value-font-size: var(--cosmos-input-font-size);
-    --vaadin-input-field-value-font-weight: var(--cosmos-font-weight-bold);
-    --vaadin-input-field-placeholder-color: var(--cosmos-input-placeholder-color);
-    width: 100%;
-    min-width: 0;
-    padding: 0;
-}
-.cosmos-notification-compose vaadin-multi-select-combo-box::part(input-field) {
-    min-height: var(--cosmos-control-height);
-    border: var(--cosmos-border-width) solid var(--cosmos-input-border);
-    border-radius: var(--cosmos-control-radius);
-    background: var(--cosmos-input-background);
-}
-.cosmos-notification-compose vaadin-multi-select-combo-box::part(label) {
-    color: var(--cosmos-input-label-color);
-    font-size: var(--cosmos-font-size-s);
-    font-weight: var(--cosmos-font-weight-label);
-}
-.cosmos-notification-compose vaadin-multi-select-combo-box[invalid]::part(input-field) {
-    border-color: var(--cosmos-input-error-border);
-    background: var(--cosmos-input-error-background);
-}
-.cosmos-notification-compose vaadin-multi-select-combo-box[focused]::part(input-field) {
-    border-color: var(--cosmos-input-focus-border);
-}
-.cosmos-notification-compose vaadin-multi-select-combo-box:not([has-value]) {
-    --vaadin-input-field-value-font-weight: var(--cosmos-font-weight-regular);
-}
-.cosmos-notification-compose vaadin-multi-select-combo-box:not([has-value])::part(input-field) {
-    font-size: var(--cosmos-input-font-size);
-    font-weight: var(--cosmos-font-weight-regular);
-}
-.cosmos-notification-compose vaadin-multi-select-combo-box > input:placeholder-shown,
-.cosmos-notification-compose vaadin-multi-select-combo-box > input::placeholder {
-    font-size: var(--cosmos-input-font-size);
-    font-weight: var(--cosmos-font-weight-regular);
-    color: var(--cosmos-input-placeholder-color);
-    opacity: 1;
-}
-/* Die native Auswahl bleibt filterbar; im Feld ersetzt die Anzahl die einzelnen Chips. */
-.cosmos-notification-compose-recipient-field {
-    position: relative;
-    width: 100%;
-    min-width: 0;
-}
-.cosmos-notification-compose-recipient-field vaadin-multi-select-combo-box::part(chips),
-.cosmos-notification-compose-recipient-field vaadin-multi-select-combo-box > [slot="overflow"] {
-    display: none;
-}
-.cosmos-notification-compose-recipient-field vaadin-multi-select-combo-box > input::placeholder {
-    color: transparent !important;
-}
-.cosmos-notification-compose-recipient-summary {
-    position: absolute;
-    inset-inline-start: var(--lumo-space-s);
-    /* Native Labelzeile: Schriftgröße plus 0.5em Abstand zum Feld. */
-    inset-block-start: calc(var(--cosmos-font-size-s) * 1.5);
-    display: flex;
-    align-items: center;
-    height: var(--cosmos-control-height);
-    max-width: calc(100% - var(--cosmos-control-height) * 2);
-    color: var(--lumo-body-text-color);
-    font-size: var(--cosmos-input-font-size);
-    font-weight: var(--cosmos-font-weight-regular);
-    white-space: nowrap;
-    overflow: hidden;
-    pointer-events: none;
-}
-.cosmos-notification-compose-recipient-field:has(> vaadin-multi-select-combo-box[has-value]) > .cosmos-notification-compose-recipient-summary {
-    font-weight: var(--cosmos-font-weight-bold);
-}
-/* Bei einer Suchtexteingabe bleibt das native Eingabefeld vollständig bedienbar. */
-.cosmos-notification-compose-recipient-field:has(> vaadin-multi-select-combo-box > input:not(:placeholder-shown)) > .cosmos-notification-compose-recipient-summary {
-    display: none;
-}
-/* Feld und Zähler teilen eine Rasterzelle; beide beginnen auf der Beschriftungszeile.
- * Platz am Labelende verhindert Überlappungen, auch bei schmalen Ansichten. */
-.cosmos-notification-compose-field {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    min-width: 0;
-    width: 100%;
-}
-.cosmos-notification-compose-field > :is(vaadin-text-field, vaadin-text-area) {
-    grid-area: 1 / 1 / 2 / -1;
-}
-.cosmos-notification-compose-field > :is(vaadin-text-field, vaadin-text-area)::part(label) {
-    max-width: calc(100% - 8ch);
-    line-height: var(--cosmos-font-size-s);
-}
-.cosmos-notification-compose-counter {
-    grid-area: 1 / 2;
-    align-self: start;
-    justify-self: end;
-    color: var(--lumo-secondary-text-color);
-    font-size: var(--cosmos-font-size-xs);
-    line-height: var(--cosmos-font-size-s);
-    pointer-events: none;
-}
-.cosmos-notification-compose-preview, .cosmos-notification-compose-preview-content {
-    display: flex; flex-direction: column; min-width: 0; gap: var(--cosmos-space-m);
-    padding: var(--cosmos-space-l); border: var(--cosmos-border-width) solid var(--cosmos-card-border);
-    border-radius: var(--cosmos-control-radius); background: var(--cosmos-input-background);
-}
-.cosmos-notification-compose-preview,
-.cosmos-notification-sent-row {
-    background: var(--lumo-primary-color-10pct);
-}
-.cosmos-notification-compose-preview-header, .cosmos-notification-compose-recipients {
-    display: flex; flex-wrap: wrap; align-items: center; gap: var(--cosmos-space-s);
-}
-.cosmos-notification-compose-preview-header { justify-content: space-between; }
-.cosmos-notification-compose-preview-title {
-    display: inline-flex; align-items: center; gap: var(--cosmos-space-s);
-    font-size: var(--cosmos-font-size-s);
-}
-.cosmos-notification-compose-preview-title { font-weight: var(--cosmos-font-weight-bold); }
-.cosmos-notification-compose-preview-title > vaadin-icon {
-    width: var(--cosmos-icon-size-xs); height: var(--cosmos-icon-size-xs); flex-shrink: 0;
-}
-.cosmos-notification-compose-preview-title > vaadin-icon { color: var(--lumo-primary-text-color); }
-.cosmos-notification-compose-status {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--cosmos-space-xs);
-    margin-inline-start: auto;
-    font-size: var(--cosmos-font-size-xs);
-    font-weight: var(--cosmos-font-weight-regular);
-    line-height: var(--cosmos-line-height-copy);
-}
-.cosmos-notification-compose-status > vaadin-icon {
-    width: var(--cosmos-icon-size-xs);
-    height: var(--cosmos-icon-size-xs);
-    color: inherit;
-}
-.cosmos-notification-compose-status[data-state="success"] { color: var(--lumo-success-text-color); }
-.cosmos-notification-compose-status[data-state="warning"] { color: var(--lumo-warning-text-color); }
-.cosmos-notification-compose-recipient {
-    display: inline-flex; align-items: center; gap: var(--cosmos-space-xs); max-width: 100%;
-    box-sizing: border-box;
-    height: 32px;
-    padding-block: 0;
-}
-.cosmos-notification-compose-recipient > span { overflow-wrap: anywhere; }
-.cosmos-notification-compose-recipient > vaadin-avatar {
-    --vaadin-avatar-background: var(--cosmos-badge-background); color: var(--cosmos-badge-color);
-    flex-shrink: 0;
-}
-.cosmos-notification-compose-recipient-list {
-    display: grid;
-    gap: var(--cosmos-space-s);
-    color: var(--lumo-secondary-text-color);
-    font-size: var(--cosmos-font-size-xs);
-    line-height: var(--cosmos-line-height-copy);
-}
-.cosmos-notification-compose-recipient-list > div {
-    display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--cosmos-space-s); overflow-wrap: anywhere;
-}
-.cosmos-notification-compose-recipient-list > div > span + span { margin-inline-start: auto; text-align: end; }
-.cosmos-notification-compose-details { width: 100%; margin: 0; }
-/* Wie bei den Benutzerfiltern steuert ein normaler Vaadin-Button das native Details. */
-.cosmos-notification-compose-details > vaadin-details-summary,
-.cosmos-notification-compose-details:not([opened]) { display: none; }
-.cosmos-notification-compose-details[opened]::part(content) {
-    box-sizing: border-box;
-    padding: var(--cosmos-space-l);
-    background: var(--cosmos-card-background);
-    border: var(--cosmos-border-width) solid var(--cosmos-card-border);
-    border-radius: var(--cosmos-control-radius);
-}
-.cosmos-notification-compose vaadin-button.cosmos-notification-compose-details-toggle {
-    margin: 0;
-    margin-inline-start: auto;
-    color: var(--lumo-primary-text-color);
-    font-size: var(--cosmos-font-size-s);
-    font-weight: var(--cosmos-font-weight-label);
-}
-.cosmos-notification-compose-details-toggle > vaadin-icon {
-    width: var(--cosmos-icon-size-xs);
-    height: var(--cosmos-icon-size-xs);
-}
-.cosmos-notification-compose-preview-content { background: var(--cosmos-card-background); gap: var(--lumo-space-s); }
-.cosmos-notification-compose-preview-content > .cosmos-panel-meta { text-align: start; }
-.cosmos-notification-compose-preview-subject {
-    font-size: var(--cosmos-font-size-l); font-weight: var(--cosmos-font-weight-semibold);
-    color: var(--lumo-header-text-color); overflow-wrap: anywhere;
-}
-.cosmos-notification-compose-preview-content > .cosmos-notification-body {
-    font-size: var(--cosmos-font-size-s);
-    color: var(--lumo-secondary-text-color);
-}
-
-/* Gesendete Benachrichtigungen: lokale Archivliste mit nativen Details und Buttons. */
-.cosmos-notification-sent { width: 100%; min-width: 0; }
-.cosmos-notification-sent-list { display: grid; gap: var(--cosmos-space-s); margin-top: var(--cosmos-space-l); }
-.cosmos-notification-sent-row {
-    display: grid;
-    grid-template-columns: var(--cosmos-panel-icon-size-small) minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--cosmos-space-m);
-    padding: var(--cosmos-space-m);
-    border: var(--cosmos-border-width) solid var(--cosmos-card-border);
-    border-radius: var(--cosmos-control-radius);
-}
-.cosmos-notification-sent-icon { width: var(--cosmos-panel-icon-size-small); height: var(--cosmos-panel-icon-size-small); }
-.cosmos-notification-sent-icon > vaadin-icon { width: var(--cosmos-icon-size-s); height: var(--cosmos-icon-size-s); }
-.cosmos-notification-sent-heading { min-width: 0; }
-.cosmos-notification-sent-title { margin: 0; font-size: var(--cosmos-font-size-m); font-weight: var(--cosmos-font-weight-bold); overflow-wrap: anywhere; }
-.cosmos-notification-sent-meta { display: block; overflow-wrap: anywhere; margin-top: var(--cosmos-space-xs); color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-xs); }
-.cosmos-notification-sent-actions { display: flex; align-items: center; gap: var(--cosmos-space-m); }
-.cosmos-notification-sent-status { display: inline-flex; align-items: center; gap: var(--cosmos-space-xs); white-space: nowrap; }
-.cosmos-notification-sent-status > vaadin-icon { width: var(--cosmos-icon-size-xs); height: var(--cosmos-icon-size-xs); }
-.cosmos-notification-sent-details {
-    grid-column: 1 / -1;
-    margin: 0 calc(-1 * var(--cosmos-space-m)) calc(-1 * var(--cosmos-space-m));
-    border-top: var(--cosmos-border-width) solid var(--cosmos-card-border);
-}
-.cosmos-notification-sent-details > vaadin-details-summary { display: none; }
-.cosmos-notification-sent-details::part(content) { padding: 0; }
-.cosmos-notification-sent-details:not([opened]) { display: none; }
-.cosmos-notification-sent-content { display: flex; flex-direction: column; gap: var(--lumo-space-s); padding: var(--cosmos-space-l); }
-.cosmos-notification-sent-detail-title { margin: 0; color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-s); font-weight: var(--cosmos-font-weight-bold); overflow-wrap: anywhere; }
-.cosmos-notification-sent-body, .cosmos-notification-sent-detail-meta { color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-s); }
-.cosmos-notification-sent-pagination { margin-top: var(--cosmos-space-l); }
-.cosmos-notification-sent-empty { color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-xs); }
-.cosmos-notification-sent-pagination .admin-user-pagination-summary {
-    color: var(--lumo-secondary-text-color);
-    font-size: var(--cosmos-font-size-xs);
-    font-weight: var(--cosmos-font-weight-regular);
-}
-.cosmos-notification-sent-pagination .admin-user-pagination-summary vaadin-combo-box {
-    --vaadin-input-field-value-font-size: var(--cosmos-font-size-s);
-    --vaadin-input-field-value-font-weight: var(--cosmos-font-weight-medium);
-    font-size: var(--cosmos-font-size-s);
-}
-@media (max-width: 600px) {
-    .cosmos-notification-sent-row { grid-template-columns: var(--cosmos-panel-icon-size-small) minmax(0, 1fr); }
-    .cosmos-notification-sent-actions { grid-column: 2; justify-content: space-between; flex-wrap: wrap; }
 }

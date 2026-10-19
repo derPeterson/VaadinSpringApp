@@ -1,6 +1,5 @@
 package de.derpeterson.app.views;
 
-import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.shared.Registration;
@@ -17,7 +16,6 @@ import java.time.Clock;
 
 @Route(AppRouteConstants.NOTIFICATIONS_ROUTE)
 @PageTitle(AppRouteConstants.NOTIFICATIONS_PAGE_TITLE)
-@StyleSheet("custom-theme/cosmos-account.css")
 @UIScope
 @PermitAll
 public class UserNotificationsView extends IsAuthenticatedBaseView {

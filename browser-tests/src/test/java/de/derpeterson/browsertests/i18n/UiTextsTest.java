@@ -42,7 +42,6 @@ class UiTextsTest {
         new String[] {
           texts.getAdminConfigValidationDurationMinimum(1),
           texts.getAdminConfigValidationTokenDuration(2),
-          texts.getAdminConfigHelperTokenDurationFormats(1),
           texts.getAdminConfigEntryVerificationTokenValidDurationTooltip(),
           texts.getAdminConfigEntryVerificationTokenLiveDurationTooltip(),
           texts.getAdminConfigEntryPasswordResetTokenValidDurationTooltip(),

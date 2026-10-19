@@ -226,12 +226,6 @@ class VerificationServiceTest {
     assertEquals(exists, service.existsToken("token"));
   }
 
-  @Test
-  void deletionReturnsRepositoryCount() {
-    when(tokens.deleteByToken("token")).thenReturn(1);
-    assertEquals(1, service.deleteToken("token"));
-  }
-
   @ParameterizedTest
   @CsvSource({"token,en", "email,en", "user,en", "token,de", "email,de", "user,de"})
   void resendForDisabledUserRotatesTokenAndQueuesRealClasspathTemplate(
@@ -360,15 +354,13 @@ class VerificationServiceTest {
   }
 
   @Test
-  void disappearedAccountRejectsValidationDeletionStatusChangesAndResend() throws IOException {
+  void disappearedAccountRejectsValidationStatusChangesAndResend() throws IOException {
     when(users.lockVerificationUser(1L)).thenReturn(Optional.empty());
     assertFalse(service.validateToken("token"));
-    assertEquals(0, service.deleteToken("token"));
     service.setTokenStatus("token", TokenStatus.INACTIVE);
     assertFalse(service.sendVerificationEmailByUser(user));
     assertThrows(IllegalStateException.class, () -> service.createToken(user));
     verify(tokens, never()).save(any());
-    verify(tokens, never()).deleteByToken(any());
     verifyNoInteractions(queue);
     verifyMaintenanceOnly(3);
   }

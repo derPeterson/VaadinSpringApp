@@ -9,8 +9,6 @@ import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.MailException;
 import org.springframework.mail.MailPreparationException;
@@ -23,8 +21,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class EmailService {
-
-  private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
   private final ConfigService configService;
 

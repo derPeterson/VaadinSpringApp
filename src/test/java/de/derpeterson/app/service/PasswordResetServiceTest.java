@@ -267,14 +267,12 @@ class PasswordResetServiceTest {
   @ParameterizedTest
   @NullAndEmptySource
   @ValueSource(strings = {"unknown"})
-  void unknownOrEmptyTokensAreNotValidDoNotResetAndDoNotExist(String value) {
+  void unknownOrEmptyTokensAreNotValidAndDoNotReset(String value) {
     when(tokens.findUserIdByToken(value)).thenReturn(Optional.empty());
     assertFalse(service.validateToken(value));
     assertFalse(service.resetPassword(value, "Password!"));
-    assertFalse(service.existsToken(value));
     service.setTokenStatus(value, TokenStatus.USED);
     verify(tokens, times(3)).findUserIdByToken(value);
-    verify(tokens).findByToken(value);
     verifyNoMoreInteractions(tokens);
     verifyNoInteractions(users, encoder, queue);
     verifyMaintenanceOnly(2);
@@ -385,17 +383,7 @@ class PasswordResetServiceTest {
   }
 
   @ParameterizedTest
-  @EnumSource(TokenStatus.class)
-  void existenceDoesNotMeanActiveUnexpiredOrEnabled(TokenStatus status) {
-    user.setEnabled(false);
-    when(tokens.findByToken("exists"))
-        .thenReturn(Optional.of(token("exists", status, NOW.minusDays(1))));
-    assertTrue(service.existsToken("exists"));
-    verifyNoInteractions(users, encoder);
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"validate", "reset", "exists", "status", "invalidate", "create"})
+  @ValueSource(strings = {"validate", "reset", "status", "invalidate", "create"})
   void repositoryLookupFailuresAreNotConvertedIntoFalseOrSwallowed(String operation) {
     var failure = new DataAccessResourceFailureException("test lookup");
     if (operation.equals("create")) {
@@ -416,7 +404,6 @@ class PasswordResetServiceTest {
               switch (operation) {
                 case "validate" -> service.validateToken("value");
                 case "reset" -> service.resetPassword("value", "Password!");
-                case "exists" -> service.existsToken("value");
                 case "status" -> service.setTokenStatus("value", TokenStatus.USED);
                 case "invalidate" -> service.setInactiveTokensForUser(user);
                 case "create" -> service.createToken(user);

@@ -27,8 +27,6 @@ public interface EmailQueueRepository extends JpaRepository<EmailQueueEntity, Lo
   @Query("SELECT e FROM EmailQueueEntity e WHERE e.id = :id")
   Optional<EmailQueueEntity> lockById(Long id);
 
-  List<EmailQueueEntity> findByStatus(EmailStatus status);
-
   boolean existsByUserEntityAndEmailTypeAndStatusIn(
       UserEntity userEntity, EmailType emailType, Collection<EmailStatus> statuses);
 

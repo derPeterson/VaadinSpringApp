@@ -76,6 +76,7 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-segment-radius: 999px;
     --cosmos-control-height: var(--lumo-size-m);
     --cosmos-control-font-size: var(--cosmos-font-size-m);
+
     /* Die 14px-Schriftbasis der em-Icons separat erhalten. */
     --cosmos-control-icon-font-size: var(--cosmos-font-size-l);
     --cosmos-surface-blur: 17px;
@@ -92,6 +93,10 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-table-alternate-row-background: #18213681;
     --cosmos-table-highlight-background: #1B2B42;
 
+    /* Gemeinsame Seitenbreite; Vorschaugröße separat vom übrigen Overlay-Theme. */
+    --cosmos-page-content-width: 1100px;
+    --cosmos-notification-preview-width: 480px;
+    --cosmos-notification-preview-max-height: min(720px, 75dvh);
     --cosmos-card-width: 430px;
     --cosmos-card-radius: 18px;
     --cosmos-card-border: rgba(169, 191, 233, .18);
@@ -110,6 +115,7 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-avatar-glow-far-blur: 26px;
     --cosmos-avatar-glow-near-opacity: 80%;
     --cosmos-avatar-glow-far-opacity: 60%;
+
     /* Vorschauvariante „Kräftig“: naher Glow plus eine weiche äußere Schicht. */
     --cosmos-avatar-available-shadow: 0 0 var(--cosmos-avatar-glow-near-blur) color-mix(in srgb, var(--lumo-success-color) var(--cosmos-avatar-glow-near-opacity), transparent),
         0 0 var(--cosmos-avatar-glow-far-blur) color-mix(in srgb, var(--lumo-success-color) var(--cosmos-avatar-glow-far-opacity), transparent);
@@ -180,6 +186,7 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-overlay-radius: var(--cosmos-card-radius);
     --cosmos-overlay-background: var(--cosmos-card-background);
     --cosmos-overlay-shadow: var(--cosmos-card-shadow);
+
     /* Alle Cosmos-Dialoge verwenden diese vier Werte. Header und Footer sind
      * bewusst getrennt: hier lassen sich ihre Farben unabhängig ändern. */
     --cosmos-dialog-background: var(--cosmos-card-background);

@@ -25,7 +25,5 @@ public interface PasswordResetTokenRepository
 
   List<PasswordResetTokenEntity> findAllByUserEntityAndStatus(UserEntity user, TokenStatus status);
 
-  int deleteByToken(String token);
-
   int deleteByExpiryDateBefore(LocalDateTime now);
 }

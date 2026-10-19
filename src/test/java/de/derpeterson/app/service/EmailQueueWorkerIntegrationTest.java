@@ -123,6 +123,10 @@ class EmailQueueWorkerIntegrationTest {
         });
   }
 
+  private long statusCount(EmailStatus status) {
+    return emails.findAll().stream().filter(entry -> entry.getStatus() == status).count();
+  }
+
   @Test
   void realSmtpUsesTwoConcurrentTransportsAndRefillsWithoutMimeMixups() throws Exception {
     try (var smtp = new SmtpFixture(2);
@@ -146,8 +150,8 @@ class EmailQueueWorkerIntegrationTest {
       try {
         await(smtp.firstWave);
         assertEquals(2, smtp.messages.size());
-        assertEquals(2, emails.findByStatus(EmailStatus.IN_PROGRESS).size());
-        assertEquals(2, emails.findByStatus(EmailStatus.PENDING).size());
+        assertEquals(2, statusCount(EmailStatus.IN_PROGRESS));
+        assertEquals(2, statusCount(EmailStatus.PENDING));
         assertFalse(run.isDone());
       } finally {
         smtp.release.countDown();

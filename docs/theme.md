@@ -13,22 +13,28 @@ Alle CSS-Dateien liegen unter `src/main/resources/META-INF/resources/custom-them
 | --- | --- |
 | `typography.css` | Lokale Inter-Schriften und globale Schriftfamilie |
 | `cosmos-tokens.css` | Palette, Typografie-/Abstandsskalen, Rahmen, Radien, Blur, Komponentenmaße, Flächen und Schatten |
-| `cosmos-theme.css` | Kontoansichten, Cards, Formularfelder, Buttons, Grids und Benachrichtigungen |
-| `cosmos-shell.css` | Gemeinsame Topbar, Seitenkopf, Benutzermenü und Auswahl-Overlays |
+| `cosmos-theme.css` | Gemeinsame Cards, Formularfelder, Buttons, Grids, Systemmeldungen und Konto-Tabs |
+| `cosmos-shell.css` | Gemeinsame Topbar, Seitenkopf, Konto-Inhaltsrahmen, Benutzermenü und Auswahl-Overlays |
 | `cosmos-admin.css` | Navigation, Dashboard, Panels, Konfiguration, Mail-Test, Komponentenmaße und Dialoge |
+| `cosmos-notifications.css` | Persönliche Inbox, Header-Vorschau, Detaildialog, Admin-Versand und Versandarchiv |
 | `cosmos-background.css` | Positionen, Animation und responsive Anordnung der Dekoration; Farben kommen aus den Tokens |
-| `cosmos-account.css` | An AccountView: Kontoübersicht, Formulare, echte Sitzungen, native Tabs sowie Konto-/Profilbilddialoge |
+| `cosmos-account.css` | Lokale Kontoformulare, Sitzungen und Konto-/Profilbilddialoge; an AccountView und dem eingeschränkten Sitzungszugang in LoginView |
 | `admin-users.css` | Lokale Anordnung von Benutzerfiltern, Tabelle, Pagination und Benutzer-/Löschdialogen |
 
-`Application.java` lädt die globalen Dateien in dieser Reihenfolge. Erst an
-`AdminView` kommt `admin-users.css` hinzu. Die bisherige `styles.css` wurde dafür
-umbenannt. `AccountView` lädt separat `cosmos-account.css`; alle dortigen Selektoren
+`Application.java` lädt zentral und in dieser Reihenfolge: `typography.css`,
+`cosmos-tokens.css`, `cosmos-theme.css`, `cosmos-shell.css`, `cosmos-admin.css`,
+`cosmos-notifications.css`, `cosmos-background.css`. An `AdminView` kommt
+`admin-users.css` hinzu; `AccountView` und `LoginView` laden bei Bedarf
+`cosmos-account.css`. Die persönlichen Benachrichtigungen benötigen diese lokale
+Kontodatei nicht mehr. Alle dortigen Selektoren
 sind auf `.cosmos-account`, `.account-change-dialog` oder `.account-avatar-dialog`
 begrenzt und verwenden die gemeinsamen Theme-Variablen. Dialoge tragen ihren
 eigenen Geltungsbereich, weil Vaadin sie außerhalb der View platzieren kann.
 Es gibt keine versteckten CSS-Imports und keine zusätzliche Buildtechnik.
 Die Regelreihenfolge ist Teil der CSS-Kaskade: Bei gleicher Priorität gewinnt der
-spätere Wert. Die Aufteilung behält die bisherige Reihenfolge bei.
+spätere Wert. Die neue Benachrichtigungsdatei wird nach den gemeinsamen Admin-/Dialogregeln
+geladen; ihre lokalen Selektoren erhalten die bisherigen Standardwerte. Regeln
+nicht beliebig umsortieren: Auch bei gleichen Einzelwerten kann die Kaskade wirken.
 
 ## Gemeinsame Werte ändern
 
@@ -46,6 +52,8 @@ Die bestehenden Token-Namen für Farben und die vier Tabellenflächen bleiben er
 | Icons | `--cosmos-icon-size-xs/s/m/l`; Panelicons separat über `--cosmos-panel-icon-size`, `--cosmos-panel-icon-symbol-size` und ihre `-small`-Varianten |
 | Tabellenaktionen / Pagination | `--cosmos-table-action-size`, `--cosmos-table-action-icon-size`, `--cosmos-pagination-size` |
 | Meldungen | `--cosmos-notification-icon-size`, `--cosmos-notification-title-font-size`, `--cosmos-notification-message-font-size` |
+| Gemeinsame Seitenbreite | `--cosmos-page-content-width` (1100px) |
+| Benachrichtigungsvorschau | `--cosmos-notification-preview-width` (480px), `--cosmos-notification-preview-max-height` (720px/75dvh) |
 | Dialogbreiten | `--cosmos-dialog-width-account`, `--cosmos-dialog-width-user`, `--cosmos-dialog-width-confirm` |
 | Dialogabstände | `--cosmos-dialog-chrome-padding`, `--cosmos-dialog-content-padding`, `--cosmos-dialog-compact-padding` |
 | Hintergrundweichzeichnung | `--cosmos-surface-blur`, `--cosmos-surface-blur-compact`, `--cosmos-sidebar-blur`; Dialogbackdrop separat über `--cosmos-dialog-backdrop-blur` |
@@ -82,6 +90,33 @@ Skalen und Komponentenparameter.
 Dieser Quellvergleich ersetzt keine Prüfung von Browserdarstellung, Vererbung
 oder der vollständigen Kaskade. Die visuelle Gesamtprüfung bleibt Teil der
 separat eingeplanten DE-/EN-Browsertestrunde; dafür hier kein Testlauf gestartet.
+
+### Bereinigung vom 20.10.2026
+
+Die gemeinsamen Konto-Tabs liegen jetzt bei den Komponentenregeln; Seitenkopf,
+Tabs und erstes Panel verwenden den gemeinsamen Inhaltsrahmen in `cosmos-shell.css`.
+Die neue `cosmos-notifications.css` bündelt sämtliche bereichsspezifischen Regeln
+für Inbox, Vorschau, Dialog, Verfassen und Versandarchiv. Alle neun Stylesheets sind
+mit vier Leerzeichen und einer Eigenschaft pro Zeile lesbar formatiert. Zwei direkt
+benachbarte doppelte Regeln der Versandvorschau sind zusammengeführt.
+
+Der statische Abgleich mit dem eingecheckten Ausgangsstand vergleicht nach Auflösung
+der Basistokens 2.555 Selektor-/Eigenschaftswerte, einschließlich Media-/Keyframe-
+Bedingungen: keine Wertabweichungen. Alle 179 bisherigen Basiswerte bleiben gleich;
+drei neue Größenparameter ergänzen den Block auf 182. Geprüft wurden 844
+Cosmos-Verweise, die beiden lokalen Schriftpfade und Tokenzyklen. Native Lumo-Werte,
+interne Grid-Klassen und dynamische Avatarwerte bleiben erhalten. Der Vergleich
+belegt die Quellwerte, nicht das Browser-Rendering oder sämtliche Auswirkungen
+der Vererbung/Kaskade. Die separate visuelle Prüfung ist noch offen.
+
+Die ungenutzte `custom-theme/theme.json` ist entfernt. Die Anwendung verwendet
+keine `@Theme`-Annotation; Lumo, Utility und Anwendungs-CSS kommen ausdrücklich aus
+`Application.java`. Vaadin 25 lädt Styles über `@StyleSheet`; die frühere
+`theme.json` gehört zum Theme-Ordnerverfahren. Referenz:
+[Vaadin-25-Umstellung](https://vaadin.com/docs/latest/upgrading), zusätzlich anhand
+von `ThemeUtils`/`Theme` aus den lokal verwendeten Flow-25.3.0-Quellen geprüft.
+Die sieben aktiven Bild-/Icon-/Fontdateien und die Fontlizenz bleiben erhalten.
+Details und technische Ergebnisse: [Bereinigungsnachweis](codebereinigung-2026-10-20.md).
 
 ## Einheitliche Badge-Schrift
 
@@ -179,7 +214,9 @@ Normale `@media (max-width: ...)` regeln schmale Fenster. Animationen werden bei
 1. `cosmos-tokens.css` unter einem eigenen Namen kopieren und dessen Werte anpassen.
 2. In `Application.java` den Verweis auf die Tokendatei austauschen. Es wird genau
    eine Basis-Tokendatei geladen; gemeinsame Komponentenregeln können wiederverwendet werden.
-3. Die vorhandenen Klassen und `theme="cosmos"` bleiben dabei zunächst die technischen
+3. Für eine helle Variante zusätzlich `@ColorScheme` in `Application.java` bewusst
+   anpassen; ein Palettenwechsel allein wechselt Vaadins Grundfarbschema nicht.
+   Die vorhandenen Klassen und `theme="cosmos"` bleiben dabei zunächst die technischen
    Markierungen der gemeinsamen Bausteine. Ein neuer Dateiname allein verlangt keine
    Änderung aller Java-Komponenten. Dies ist ein alternatives Theme beim App-Start,
    kein bereits implementierter Laufzeit-Themewechsel.

@@ -162,7 +162,7 @@ class PasswordResetServicePersistenceTest {
     assertTrue(tokens.findByTokenAndStatus(token, TokenStatus.ACTIVE).isEmpty());
     assertFalse(service.validateToken(token));
     assertFalse(service.resetPassword(token, "Password!"));
-    assertFalse(service.existsToken(token));
+    assertFalse(tokens.findByToken(token).isPresent());
     service.setTokenStatus(token, TokenStatus.USED);
     assertEquals("old-hash", password());
   }
@@ -177,7 +177,7 @@ class PasswordResetServicePersistenceTest {
     assertEquals(
         de.derpeterson.app.model.enums.UserNotificationType.PASSWORD_RESET,
         userNotificationsRepository.findAll().getFirst().getType());
-    assertTrue(service.existsToken("valid"));
+    assertTrue(tokens.findByToken("valid").isPresent());
     assertFalse(service.validateToken("valid"));
     assertFalse(service.resetPassword("valid", "OtherPassword!"));
     assertEquals("hash-Password!", password());
@@ -264,7 +264,7 @@ class PasswordResetServicePersistenceTest {
     assertEquals(TokenStatus.ACTIVE, status("other"));
     assertEquals(2, tokens.count());
     if (next.equals("create")) {
-      assertFalse(service.existsToken(created.get()));
+      assertFalse(tokens.findByToken(created.get()).isPresent());
     }
     assertTrue(service.resetPassword("outer", "RetryPassword!"));
   }
@@ -400,7 +400,7 @@ class PasswordResetServicePersistenceTest {
       names = {"USED", "INACTIVE", "EXPIRED"})
   void nonActiveTokensExistButCannotValidateOrChangePasswords(TokenStatus tokenStatus) {
     seed("closed", tokenStatus, LocalDateTime.now().plusDays(1));
-    assertTrue(service.existsToken("closed"));
+    assertTrue(tokens.findByToken("closed").isPresent());
     assertFalse(service.validateToken("closed"));
     assertFalse(service.resetPassword("closed", "Password!"));
     assertEquals(tokenStatus, status("closed"));
@@ -595,11 +595,11 @@ class PasswordResetServicePersistenceTest {
     assertDoesNotThrow(service::deleteExpiredTokens);
     assertDoesNotThrow(service::deleteExpiredTokens);
     for (TokenStatus status : TokenStatus.values()) {
-      assertFalse(service.existsToken("old-" + status));
+      assertFalse(tokens.findByToken("old-" + status).isPresent());
     }
-    assertTrue(service.existsToken("boundary"));
-    assertTrue(service.existsToken("recent"));
-    assertTrue(service.existsToken("future"));
+    assertTrue(tokens.findByToken("boundary").isPresent());
+    assertTrue(tokens.findByToken("recent").isPresent());
+    assertTrue(tokens.findByToken("future").isPresent());
     assertEquals(3, tokens.count());
   }
 
@@ -612,7 +612,7 @@ class PasswordResetServicePersistenceTest {
           assertEquals(0, tokens.count());
           tx.setRollbackOnly();
         });
-    assertTrue(service.existsToken("old"));
+    assertTrue(tokens.findByToken("old").isPresent());
   }
 
   @Test

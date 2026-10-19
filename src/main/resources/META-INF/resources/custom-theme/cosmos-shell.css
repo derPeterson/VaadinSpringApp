@@ -85,6 +85,7 @@ vaadin-app-layout.cosmos-app-shell {
 }
 
 /* Kontoaktionen bleiben kompakt; die Avatargröße und das bestehende Menü bleiben erhalten. */
+
 .cosmos-topbar-shortcuts {
     align-items: center;
     gap: var(--lumo-space-s);
@@ -98,6 +99,7 @@ vaadin-app-layout.cosmos-app-shell {
 }
 
 /* Die beiden Symbole sitzen mit einem gleichmäßigen Rand in ihrer Buttonfläche. */
+
 .cosmos-topbar .cosmos-topbar-shortcut > vaadin-icon {
     width: var(--cosmos-icon-size-l);
     height: var(--cosmos-icon-size-l);
@@ -112,6 +114,7 @@ vaadin-app-layout.cosmos-app-shell {
 
 /* Initialen entstehen als Text, ohne Bilddatei oder Datenbankeintrag.
  * Nur die Größe wird je Einsatzstelle gesetzt; Farben bleiben zentral in den Tokens. */
+
 .cosmos-user-avatar {
     position: relative;
     display: inline-flex;
@@ -143,6 +146,7 @@ vaadin-app-layout.cosmos-app-shell {
 }
 
 /* Optische Zentrierung der Großbuchstaben; das neutrale Benutzersymbol ausnehmen. */
+
 .cosmos-avatar-initials:not(:has(> vaadin-icon)) {
     transform: translateY(1px);
 }
@@ -178,10 +182,22 @@ vaadin-app-layout.cosmos-app-shell {
     gap: 40px;
 }
 
+/* Gemeinsame Inhaltsbreite und Abstände der beiden Konto-Seiten. */
+
+.cosmos-account .account-settings,
+.cosmos-theme .cosmos-notification-inbox-page {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: var(--cosmos-page-content-width);
+    min-width: 0;
+    gap: var(--lumo-space-l);
+}
+
 .cosmos-dashboard-introduction,
 .cosmos-section-header.cosmos-dashboard-introduction {
     width: 100%;
-    max-width: 1100px;
+    max-width: var(--cosmos-page-content-width);
 }
 
 .cosmos-dashboard-kicker {
@@ -334,6 +350,7 @@ vaadin-menu-bar-submenu[theme~="cosmos"]::part(overlay),
 
 /* Die native Overlayhöhe berücksichtigt den Platz unter/über dem Auslöser.
  * Der Inhalt muss innerhalb dieser Höhe schrumpfen können, damit Abmelden erreichbar bleibt. */
+
 vaadin-popover[theme~="cosmos"]::part(overlay) {
     display: flex;
     flex-direction: column;
@@ -443,11 +460,13 @@ vaadin-select[theme~="cosmos"] {
 /* Mittelpunkt bei 45 Grad auf der Rahmenmitte: (1 - 1/sqrt(2))/2 der
  * Avatargröße plus halbe Rahmenstärke entlang der Diagonalen. Die optische
  * Korrektur rückt das Zeichen leicht nach außen. */
+
 .cosmos-avatar-with-status {
     --cosmos-avatar-status-anchor: calc(14.64466% + var(--cosmos-avatar-status-border-width) * .3535534 - var(--cosmos-avatar-status-optical-offset));
 }
 
 /* Kopfzeile, Benutzerpopup und Kontobild übernehmen die Statusfarbe für Rahmen und Glow. */
+
 .cosmos-topbar .cosmos-avatar-with-status,
 .user-popover-avatar.cosmos-avatar-with-status,
 .account-summary-avatar.cosmos-avatar-with-status {
@@ -458,6 +477,7 @@ vaadin-select[theme~="cosmos"] {
 
 /* Auswahlhaken nur in Statuslisten ausblenden. Auswahlzustand und Tastatursteuerung
  * bleiben nativ; Hover, Fokus und gewählter Eintrag verwenden dieselbe Fläche. */
+
 vaadin-select[theme~="cosmos-status"] vaadin-select-item::part(checkmark) {
     display: none;
 }
@@ -467,371 +487,7 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
 }
 
 /* Etwas Luft vor den Symbolen, nur in den geöffneten Statuslisten. */
+
 vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-item::part(content) {
     padding-inline-start: 5px;
-}
-
-/* Persönliche Benachrichtigungen: vorhandene Cosmos-Tokens, keine neue globale Palette. */
-.cosmos-notification-bell { position: relative; display: inline-flex; }
-.cosmos-notification-count {
-    position: absolute; top: 0; right: -3px; pointer-events: none;
-    display: inline-flex; align-items: center; justify-content: center;
-    box-sizing: border-box; min-width: var(--cosmos-space-xl); height: var(--cosmos-space-xl);
-    padding: 0 var(--cosmos-space-xs); border-radius: calc(var(--cosmos-space-xl) / 2);
-    color: var(--lumo-error-contrast-color); background: var(--lumo-error-color);
-    border: var(--cosmos-border-width) solid var(--lumo-error-color);
-    font-size: var(--cosmos-badge-font-size); line-height: 1;
-}
-.cosmos-notification-count[hidden] { display: none; }
-.cosmos-notifications-panel {
-    display: flex; flex-direction: column; gap: var(--cosmos-space-l);
-    padding: var(--cosmos-space-2xl); min-width: 0; box-sizing: border-box; width: 100%;
-}
-/* Nur die Header-Vorschau erhält Dialogflächen und einen eigenen scrollenden Inhalt. */
-vaadin-popover[theme~="cosmos-notifications"]::part(overlay) {
-    width: min(480px, calc(100vw - 24px));
-    background: var(--cosmos-dialog-background);
-    border-color: var(--cosmos-dialog-border-color);
-}
-vaadin-popover[theme~="cosmos-notifications"]::part(content) {
-    display: flex; flex-direction: column; overflow: hidden;
-}
-#notifications-preview {
-    width: 100%; padding: 0; gap: 0; min-height: 0;
-    max-height: min(720px, 75dvh);
-    overflow: hidden; background: var(--cosmos-dialog-background);
-}
-.cosmos-notification-preview-header {
-    display: flex; align-items: center; gap: var(--cosmos-space-m);
-    flex-shrink: 0; padding: var(--cosmos-dialog-chrome-padding);
-    background: var(--cosmos-dialog-header-background);
-    border-bottom: var(--cosmos-border-width) solid var(--cosmos-dialog-border-color);
-    border-top-left-radius: calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width));
-    border-top-right-radius: calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width));
-}
-.cosmos-notification-preview-header > .cosmos-panel-heading { flex: 1; min-width: 0; }
-.cosmos-notification-preview-header > .cosmos-panel-icon { flex-shrink: 0; }
-.cosmos-notification-preview-content {
-    min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
-    padding: var(--cosmos-dialog-content-padding);
-}
-#notifications-preview .cosmos-notification-preview-toolbar {
-    flex-wrap: nowrap; justify-content: flex-start; margin-bottom: var(--cosmos-space-s);
-    padding-bottom: var(--cosmos-space-l);
-    border-bottom: var(--cosmos-border-width) solid var(--cosmos-card-border);
-}
-/* Native Radiogruppe wie im Profilbilddialog: Pillen, Auswahl und Tastaturfokus. */
-:is(#notifications-preview-filter, #notifications-inbox-filter) { flex: 0 0 auto; width: max-content; max-width: 100%; min-width: 0; margin: 0; padding: 0; }
-/* Intrinsische Gridbreite: alle Segmente so breit wie der längste Inhalt. */
-:is(#notifications-preview-filter, #notifications-inbox-filter)::part(group-field) {
-    display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-    width: max-content; gap: var(--cosmos-space-xs); padding: 3px;
-    border: var(--cosmos-border-width) solid var(--cosmos-input-border);
-    border-radius: var(--cosmos-segment-radius); background: var(--cosmos-input-background);
-}
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button {
-    box-sizing: border-box; min-width: 0; min-height: calc(var(--cosmos-control-height) - var(--cosmos-space-s));
-    height: calc(var(--cosmos-control-height) - var(--cosmos-space-s));
-    margin: 0; padding: 0 var(--cosmos-space-s); display: grid;
-    grid-template: minmax(0, 1fr) / minmax(0, 1fr); align-items: stretch; justify-items: stretch; gap: 0;
-    border: var(--cosmos-border-width) solid transparent; border-radius: var(--cosmos-segment-radius);
-    color: var(--lumo-primary-text-color);
-    --vaadin-radio-button-label-color: currentColor;
-    --vaadin-radio-button-label-font-size: var(--cosmos-font-size-m);
-    --vaadin-radio-button-label-font-weight: var(--cosmos-font-weight-semibold);
-}
-/* Die native Baseline-Hilfe wird für das einzeilige Segmentlayout nicht benötigt. */
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button::before,
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button::part(radio) { display: none; }
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button > [slot="label"] {
-    display: flex; align-items: center; justify-content: center; place-self: stretch;
-    grid-area: 1 / 1 / 2 / -1; box-sizing: border-box; margin: 0; padding: 0;
-    width: 100%; height: 100%; min-width: 0; min-height: 0;
-    text-align: center; white-space: nowrap;
-}
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button:hover:not([disabled]):not([checked]) {
-    background: var(--cosmos-table-highlight-background);
-}
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button[checked] {
-    color: var(--cosmos-button-primary-color); border-color: var(--cosmos-button-primary-border);
-    background: var(--cosmos-primary-background); box-shadow: var(--cosmos-button-primary-shadow);
-}
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button[focus-ring] {
-    outline: var(--cosmos-focus-ring-width) solid var(--cosmos-focus-ring-color); outline-offset: 2px;
-}
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button[disabled] { opacity: .5; }
-@media (max-width: 400px) {
-    #notifications-preview .cosmos-notification-preview-toolbar { flex-wrap: wrap; }
-}
-.cosmos-notification-preview-toolbar > vaadin-button { margin: 0; }
-.cosmos-notification-preview-toolbar > .cosmos-notification-preview-tool {
-    flex-shrink: 0; width: var(--cosmos-control-height); min-width: var(--cosmos-control-height); padding: 0;
-}
-.cosmos-notification-preview-toolbar > .cosmos-notification-preview-refresh { margin-inline-start: auto; }
-.cosmos-notification-preview-tool > vaadin-icon {
-    font-size: var(--cosmos-control-icon-font-size);
-    width: var(--lumo-icon-size-m); height: var(--lumo-icon-size-m);
-}
-.cosmos-notification-preview-hint {
-    display: block; margin-bottom: var(--cosmos-space-m);
-    color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-xs);
-    font-weight: var(--cosmos-font-weight-regular);
-}
-/* Lange Betreffzeilen dürfen die intrinsische Mindestbreite der Gridspalte nicht vergrößern. */
-.cosmos-notification-preview-rows { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: var(--cosmos-space-m); }
-#notifications-preview .cosmos-notification-preview-row {
-    box-sizing: border-box; min-width: 0; max-width: 100%;
-    padding: var(--cosmos-space-l);
-    border: var(--cosmos-border-width) solid var(--cosmos-card-border);
-    border-radius: var(--cosmos-control-radius);
-    background: var(--cosmos-card-background);
-}
-#notifications-preview .cosmos-notification-row--unread {
-    background: var(--cosmos-table-highlight-background);
-    border-color: var(--lumo-primary-color-50pct);
-}
-.cosmos-notification-preview-title { display: flex; min-width: 0; align-items: baseline; gap: var(--cosmos-space-s); }
-#notifications-preview .cosmos-notification-title {
-    min-height: 0; margin: 0; padding: 0; line-height: var(--cosmos-line-height-copy);
-    color: var(--lumo-header-text-color); font-size: var(--cosmos-font-size-l);
-    font-weight: var(--cosmos-font-weight-bold); overflow-wrap: anywhere;
-}
-.cosmos-notification-preview-title > .cosmos-notification-title {
-    flex: 1; min-width: 0; justify-content: flex-start; text-align: start; white-space: nowrap;
-}
-#notifications-preview .cosmos-notification-preview-title > .cosmos-notification-title::part(label) {
-    display: block; min-width: 0; max-width: 100%; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis;
-}
-.cosmos-notification-preview-title > .cosmos-notification-preview-dismiss,
-.cosmos-notification-inbox-title > .cosmos-notification-preview-dismiss {
-    flex-shrink: 0; width: var(--cosmos-pagination-size); min-width: var(--cosmos-pagination-size);
-    height: var(--cosmos-pagination-size); min-height: var(--cosmos-pagination-size); padding: 0; margin: 0;
-    color: var(--lumo-secondary-text-color);
-}
-.cosmos-notification-preview-dismiss > vaadin-icon { width: var(--cosmos-icon-size-m); height: var(--cosmos-icon-size-m); }
-.cosmos-notification-preview-dot {
-    flex-shrink: 0; width: var(--cosmos-space-s); height: var(--cosmos-space-s);
-    border-radius: 50%; background: var(--lumo-primary-color);
-    box-shadow: 0 0 0 var(--cosmos-space-xs) var(--lumo-primary-color-10pct);
-}
-.cosmos-notification-preview-dot[hidden] { display: none; }
-.cosmos-notification-preview-meta {
-    display: flex; flex-wrap: wrap; align-items: center; gap: var(--cosmos-space-s);
-    margin-top: 0; color: var(--lumo-secondary-text-color);
-    font-size: var(--cosmos-font-size-xs);
-}
-.cosmos-notification-preview-source { font-weight: var(--cosmos-font-weight-bold); }
-.cosmos-notification-preview-state,
-.cosmos-notification-detail-state {
-    border: var(--cosmos-border-width) solid var(--cosmos-badge-border);
-    border-radius: var(--cosmos-badge-radius);
-    background: var(--cosmos-badge-background);
-    color: var(--cosmos-badge-color);
-}
-.cosmos-notification-preview-message {
-    min-width: 0; max-width: 100%;
-    margin-top: var(--cosmos-space-s); color: var(--lumo-secondary-text-color);
-    font-size: var(--cosmos-font-size-s); line-height: var(--cosmos-line-height-copy);
-    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
-    overflow: hidden;
-}
-.cosmos-notification-preview-row-footer { margin-top: var(--cosmos-space-s); }
-.cosmos-notification-preview-actions {
-    display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end;
-    gap: var(--cosmos-space-s); margin-inline-start: auto;
-}
-.cosmos-notification-preview-actions > vaadin-button { margin: 0; }
-.cosmos-notifications-panel vaadin-button.cosmos-notification-row-action {
-    width: var(--cosmos-control-height); min-width: var(--cosmos-control-height);
-    height: var(--cosmos-control-height); margin: 0; padding: 0;
-}
-.cosmos-notification-row-action > vaadin-icon {
-    font-size: var(--cosmos-control-icon-font-size);
-    width: var(--lumo-icon-size-m); height: var(--lumo-icon-size-m);
-}
-.cosmos-notification-preview-footer {
-    display: flex; flex-direction: column; gap: var(--cosmos-space-m); flex-shrink: 0;
-    padding: var(--cosmos-dialog-chrome-padding);
-    background: var(--cosmos-dialog-footer-background);
-    border-top: var(--cosmos-border-width) solid var(--cosmos-dialog-border-color);
-    border-bottom-left-radius: calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width));
-    border-bottom-right-radius: calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width));
-}
-.cosmos-notification-preview-footer > vaadin-button { width: 100%; margin: 0; white-space: normal; height: auto; min-height: var(--cosmos-control-height); }
-.cosmos-notification-preview-footer > .cosmos-notifications-secondary { font-size: var(--cosmos-font-size-xs); text-align: center; }
-@media (max-width: 480px) {
-    .cosmos-notification-preview-header, .cosmos-notification-preview-footer,
-    .cosmos-notification-preview-content { padding: var(--cosmos-dialog-compact-padding); }
-}
-.cosmos-notifications-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cosmos-space-s); }
-.cosmos-notifications-secondary { color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-m); }
-.cosmos-notification-row { padding: var(--cosmos-space-m); border-bottom: var(--cosmos-border-width) solid var(--cosmos-card-border); overflow-wrap: anywhere; }
-.cosmos-notification-row--unread { background: var(--cosmos-table-highlight-background); border-radius: var(--cosmos-control-radius); }
-.cosmos-notification-title { max-width: 100%; height: auto; min-height: var(--lumo-size-m); text-align: start; white-space: normal; }
-.cosmos-notification-body { white-space: pre-wrap; overflow-wrap: anywhere; }
-
-/* Persönlicher Posteingang: zentrierte Standard-Card, Header, Liste und Footer. */
-.cosmos-notification-inbox-card { max-width: 1100px; margin-inline: auto; }
-#notifications-inbox { padding: 0; }
-.cosmos-notification-inbox-counts { display: flex; gap: var(--cosmos-space-s); }
-.cosmos-notification-inbox-stat {
-    display: grid; gap: 0; min-width: 76px; box-sizing: border-box;
-    padding: var(--cosmos-space-xs) calc(var(--cosmos-space-m) / 2);
-    background: var(--cosmos-badge-background);
-    border: var(--cosmos-border-width) solid var(--cosmos-badge-border);
-    border-radius: var(--cosmos-control-radius);
-}
-.cosmos-notification-inbox-stat-label {
-    text-align: center;
-    color: var(--lumo-primary-text-color); font-size: var(--cosmos-font-size-xs);
-    font-weight: var(--cosmos-font-weight-semibold); text-transform: uppercase; letter-spacing: .04em;
-}
-.cosmos-notification-inbox-stat-value { text-align: center; color: var(--lumo-header-text-color); font-size: var(--cosmos-font-size-title); font-weight: var(--cosmos-font-weight-bold); }
-.cosmos-notification-inbox-toolbar {
-    display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    align-items: center; gap: var(--cosmos-space-m);
-    padding-bottom: var(--cosmos-space-l);
-    border-bottom: var(--cosmos-border-width) solid var(--cosmos-card-border);
-}
-#notifications-inbox-search { width: min(300px, 100%); min-width: 0; max-width: 100%; }
-#notifications-inbox-filter { justify-self: center; }
-.cosmos-notification-inbox-tools { display: flex; justify-self: end; gap: var(--cosmos-space-s); }
-.cosmos-notification-inbox-tools > .cosmos-notification-inbox-tool {
-    width: var(--cosmos-control-height); min-width: var(--cosmos-control-height);
-    height: var(--cosmos-control-height); margin: 0; padding: 0;
-}
-.cosmos-notification-inbox-tool > vaadin-icon {
-    font-size: var(--cosmos-control-icon-font-size);
-    width: var(--lumo-icon-size-m); height: var(--lumo-icon-size-m);
-}
-#notifications-inbox-search vaadin-icon { width: var(--cosmos-icon-size-s); height: var(--cosmos-icon-size-s); }
-.cosmos-notification-inbox-empty {
-    display: flex; align-items: center; gap: var(--cosmos-space-s);
-    padding: var(--cosmos-space-m); border: var(--cosmos-border-width) solid var(--cosmos-badge-border);
-    border-radius: var(--cosmos-control-radius); background: var(--cosmos-badge-background);
-    color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-s); line-height: var(--cosmos-line-height-copy);
-}
-.cosmos-notification-inbox-empty > vaadin-icon {
-    flex-shrink: 0; width: var(--cosmos-icon-size-xs); height: var(--cosmos-icon-size-xs);
-    color: var(--lumo-primary-text-color);
-}
-.cosmos-notification-inbox-rows { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: var(--cosmos-space-m); }
-#notifications-inbox .cosmos-notification-inbox-row {
-    box-sizing: border-box; min-width: 0; max-width: 100%;
-    display: grid; grid-template-columns: minmax(0, 1fr); align-items: start;
-    gap: var(--cosmos-space-s); padding: var(--cosmos-space-l); cursor: pointer;
-    background: var(--cosmos-card-background);
-    border: var(--cosmos-border-width) solid var(--cosmos-card-border);
-    border-radius: var(--cosmos-control-radius);
-}
-#notifications-inbox .cosmos-notification-row--unread {
-    background: var(--cosmos-table-highlight-background); border-color: var(--lumo-primary-color-50pct);
-}
-.cosmos-notification-inbox-content { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--cosmos-space-s); min-width: 0; }
-.cosmos-notification-inbox-title { display: flex; align-items: center; gap: var(--cosmos-space-s); min-width: 0; }
-#notifications-inbox .cosmos-notification-title {
-    flex: 1; min-width: 0; min-height: 0; margin: 0; padding: 0;
-    justify-content: flex-start; color: var(--lumo-header-text-color);
-    font-size: var(--cosmos-font-size-l); font-weight: var(--cosmos-font-weight-bold);
-    line-height: var(--cosmos-line-height-copy); white-space: nowrap;
-}
-#notifications-inbox .cosmos-notification-title::part(label) {
-    display: block; min-width: 0; max-width: 100%; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis;
-}
-.cosmos-notification-inbox-message {
-    min-width: 0; max-width: 100%;
-    color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-s);
-    line-height: var(--cosmos-line-height-copy); display: -webkit-box;
-    -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
-}
-.cosmos-notification-inbox-row-footer,
-.cosmos-notification-preview-row-footer {
-    display: flex; align-items: center; flex-wrap: wrap; min-width: 0;
-    gap: var(--cosmos-space-s) var(--cosmos-space-l);
-}
-.cosmos-notification-inbox-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cosmos-space-s); color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-xs); }
-.cosmos-notification-inbox-actions { margin-inline-start: auto; display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: var(--cosmos-space-s); }
-.cosmos-notification-inbox-actions > vaadin-button { margin: 0; }
-.cosmos-notification-inbox-footer {
-    display: flex; flex-direction: column; align-items: stretch; gap: var(--cosmos-space-l);
-    padding-top: var(--cosmos-space-l); border-top: var(--cosmos-border-width) solid var(--cosmos-card-border);
-}
-.cosmos-notification-inbox-pagination-row { display: flex; align-items: center; flex-wrap: wrap; gap: var(--lumo-space-m); }
-.cosmos-notification-inbox-page-summary {
-    display: flex; align-items: center; flex-wrap: wrap; gap: var(--lumo-space-s);
-    color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-xs); font-weight: var(--cosmos-font-weight-regular);
-}
-.cosmos-notification-inbox-page-summary vaadin-combo-box {
-    --vaadin-input-field-value-font-size: var(--cosmos-font-size-s);
-    --vaadin-input-field-value-font-weight: var(--cosmos-font-weight-medium);
-    font-size: var(--cosmos-font-size-s);
-}
-.cosmos-notification-inbox-pagination, .cosmos-notification-inbox-page-numbers { display: flex; align-items: center; flex-wrap: wrap; gap: var(--cosmos-space-xs); }
-.cosmos-notification-inbox-pagination { margin-inline-start: auto; }
-.cosmos-notification-inbox-pagination vaadin-button {
-    width: var(--cosmos-pagination-size); min-width: var(--cosmos-pagination-size);
-    height: var(--cosmos-pagination-size); min-height: var(--cosmos-pagination-size);
-    margin: 0; padding: 0; font-size: var(--cosmos-font-size-xs);
-}
-.cosmos-notification-inbox-pagination vaadin-icon { width: var(--cosmos-icon-size-s); height: var(--cosmos-icon-size-s); }
-.cosmos-notification-inbox-footer > .cosmos-notifications-secondary {
-    width: 100%; color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-xs); text-align: center;
-}
-@media (max-width: 750px) {
-    .cosmos-notification-inbox-toolbar { grid-template-columns: minmax(0, 1fr) auto; }
-    #notifications-inbox-filter { grid-column: 1 / -1; grid-row: 2; }
-    .cosmos-notification-inbox-tools { grid-column: 2; grid-row: 1; }
-    #notifications-inbox .cosmos-notification-inbox-header { grid-template-columns: var(--cosmos-panel-icon-size) minmax(0, 1fr); }
-    .cosmos-notification-inbox-counts { grid-column: 2; flex-wrap: wrap; }
-}
-
-vaadin-dialog.cosmos-notification-dialog::part(overlay) {
-    width: min(var(--cosmos-dialog-width-user), calc(100vw - 32px)); box-sizing: border-box;
-}
-.cosmos-notification-detail-header { display: flex; align-items: center; gap: var(--cosmos-space-m); width: 100%; min-width: 0; }
-.cosmos-notification-detail-header > .cosmos-panel-heading { flex: 1; min-width: 0; }
-.cosmos-notification-detail-header > .cosmos-panel-icon { flex-shrink: 0; }
-.cosmos-notification-detail-message {
-    display: grid; gap: var(--cosmos-space-s); min-width: 0; padding: var(--cosmos-space-xl);
-    background: var(--cosmos-card-background);
-    border: var(--cosmos-border-width) solid var(--cosmos-card-border);
-    border-radius: var(--cosmos-control-radius);
-}
-.cosmos-notification-detail-message--unread {
-    background: var(--cosmos-table-highlight-background);
-}
-.cosmos-notification-detail-title-row {
-    display: flex; align-items: center; gap: var(--cosmos-space-s); min-width: 0;
-}
-.cosmos-notification-detail-title-row > .cosmos-notification-detail-title { flex: 1; min-width: 0; }
-.cosmos-notification-detail-title {
-    margin: 0; color: var(--lumo-header-text-color); font-size: var(--lumo-font-size-xxl);
-    font-weight: var(--cosmos-font-weight-bold); overflow-wrap: anywhere;
-}
-.cosmos-notification-detail-meta {
-    display: flex; flex-wrap: wrap; align-items: center; gap: var(--cosmos-space-s);
-    color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-s);
-}
-.cosmos-notification-detail-source { font-weight: var(--cosmos-font-weight-bold); }
-.cosmos-notification-detail-state {
-    flex-shrink: 0;
-    display: inline-flex; align-items: center; padding: var(--cosmos-space-xs) var(--cosmos-space-s);
-    font-size: var(--cosmos-badge-font-size); font-weight: var(--cosmos-badge-font-weight);
-    line-height: 1.4; white-space: nowrap;
-}
-.cosmos-notification-detail-body {
-    color: var(--lumo-body-text-color); font-size: var(--cosmos-font-size-l);
-    line-height: var(--cosmos-line-height-copy);
-}
-.cosmos-notification-detail-actions { width: 100%; min-width: 0; }
-.cosmos-notification-detail-actions > vaadin-button { margin: 0; white-space: normal; height: auto; min-height: var(--cosmos-control-height); }
-.cosmos-notification-detail-actions > .cosmos-notification-detail-history { margin-inline-end: auto; }
-@media (max-width: 600px) {
-    vaadin-dialog.cosmos-notification-dialog::part(header),
-    vaadin-dialog.cosmos-notification-dialog::part(content),
-    vaadin-dialog.cosmos-notification-dialog::part(footer) { padding: var(--cosmos-dialog-compact-padding); }
-    .cosmos-notification-detail-message { padding: var(--cosmos-space-l); }
-    .cosmos-notification-detail-actions > .cosmos-notification-detail-history { flex-basis: 100%; justify-content: flex-start; }
 }

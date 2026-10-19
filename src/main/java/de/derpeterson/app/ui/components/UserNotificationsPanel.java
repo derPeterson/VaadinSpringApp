@@ -517,11 +517,7 @@ public class UserNotificationsPanel extends Div {
     var titleRow = new Div(dot, title);
     titleRow.addClassName("cosmos-notification-preview-title");
     titleRow.add(dismissButton(item));
-    var source =
-        new Span(
-            item.type() == UserNotificationType.ADMIN_ANNOUNCEMENT
-                ? texts.getNotificationsSourceAdministration()
-                : texts.getNotificationsSourceSystem());
+    var source = new Span(source(item));
     source.addClassName("cosmos-notification-preview-source");
     state.addClassName("cosmos-notification-preview-state");
     state.getElement().setAttribute("theme", "badge");

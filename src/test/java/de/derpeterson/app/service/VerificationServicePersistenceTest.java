@@ -351,20 +351,6 @@ class VerificationServicePersistenceTest {
   }
 
   @Test
-  void deleteTokenCommitsWithoutAnExternalTransactionAndReturnsZeroWhenMissing() {
-    seed("delete", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-    seed("keep", TokenStatus.USED, LocalDateTime.now(CLOCK).plusDays(1));
-    int deleted = service.deleteToken("delete");
-    assertEquals(1, deleted);
-    assertFalse(service.existsToken("delete"));
-    int missing = service.deleteToken("delete");
-    assertEquals(0, missing);
-    assertEquals(TokenStatus.USED, status("keep"));
-    assertEquals(1, tokens.count());
-    assertTrue(users.existsById(userId));
-  }
-
-  @Test
   void concurrentCreationCommitsExactlyOneActiveTokenForTheSameAccount() throws Exception {
     var bothRead = new CyclicBarrier(2);
     doAnswer(

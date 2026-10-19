@@ -307,6 +307,7 @@ vaadin-dialog.admin-user-dialog::part(content) {
 }
 
 /* Aktiv- und Statusbadges: derselbe dezente Rahmen in Textfarbe wie im Konto. */
+
 .admin-users-grid [theme~="badge"] {
     border: var(--cosmos-border-width) solid currentColor;
 }
@@ -379,7 +380,8 @@ vaadin-dialog.admin-user-dialog::part(content) {
     flex-wrap: wrap;
 }
 
-.admin-user-pagination-number, .admin-user-pagination-arrow {
+.admin-user-pagination-number,
+.admin-user-pagination-arrow {
     min-width: var(--cosmos-pagination-size);
 }
 

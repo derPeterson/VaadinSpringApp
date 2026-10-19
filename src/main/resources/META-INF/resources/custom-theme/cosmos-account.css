@@ -1,15 +1,6 @@
 /* MEIN KONTO / lokale Anordnung der Kontoansicht und ihrer Dialoge.
  * Cards, Felder, Buttons und Panelköpfe kommen unverändert aus Cosmos.
  * View und portalisierte Dialoge haben eigene Selektoren; gemeinsame Werte stehen in den Tokens. */
-.cosmos-account .account-settings,
-.cosmos-theme .cosmos-notification-inbox-page {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: 1100px;
-    min-width: 0;
-    gap: var(--lumo-space-l);
-}
 
 .cosmos-account .account-summary {
     padding: var(--lumo-space-l);
@@ -48,82 +39,11 @@
 
 /* Wie der Löschakzent: dezente Fläche und Rahmen in Schriftfarbe,
  * hier aus der vorhandenen grünen Success-Palette. */
+
 .cosmos-account .account-summary-status[theme~="success"] {
     color: var(--lumo-success-text-color);
     border: var(--cosmos-border-width) solid currentColor;
     background: var(--lumo-success-color-10pct);
-}
-
-/* Native Vaadin-Tabs behalten Tastatursteuerung, Scrollbuttons und Fokusrahmen.
- * Nur Farbe, Typografie und Abstände werden an unsere bestehenden Buttons angelehnt.
- * Styling-API: https://vaadin.com/docs/latest/components/tabs/styling */
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) {
-    width: 100%;
-    min-width: 0;
-    box-shadow: none;
-    border-bottom: var(--cosmos-border-width) solid var(--cosmos-card-border);
-}
-
-.cosmos-theme .account-navigation-tabs {
-    max-width: 1100px;
-    align-self: center;
-}
-
-/* Gleich breite Tabs nach dem längsten Inhalt. Der Scrollcontainer darf bei
- * wenig Platz schrumpfen; die gleich großen Gridspalten bleiben scrollbar. */
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs)::part(tabs) {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
-    flex: 0 1 auto;
-    width: max-content;
-    max-width: 100%;
-    min-width: 0;
-}
-
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab {
-    display: flex;
-    align-items: center;
-    gap: var(--lumo-space-s);
-    padding: var(--lumo-space-m);
-    color: var(--lumo-secondary-text-color);
-    font-size: var(--cosmos-font-size-m);
-    font-weight: var(--cosmos-font-weight-semibold);
-    white-space: nowrap;
-    min-width: max-content;
-}
-
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab[selected] {
-    color: var(--lumo-primary-text-color);
-    font-weight: var(--cosmos-font-weight-bold);
-}
-
-/* Lumo zentriert seine kurze Markierung per translateX(-50%). Bei voller
- * Tabbreite entfällt diese Verschiebung; auch der native Klickschimmer folgt. */
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab::before,
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab::after {
-    left: 0;
-    right: 0;
-    width: 100%;
-    transform: scaleX(0);
-    background: var(--lumo-primary-text-color);
-}
-
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab[selected]::before,
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab[selected]::after {
-    transform: scaleX(1);
-}
-
-/* Gleiche Außenmaße und dasselbe em-basierte Padding wie unsere Button-Icons. */
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab > vaadin-icon,
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab > .account-devices-icon {
-    width: var(--lumo-icon-size-m);
-    height: var(--lumo-icon-size-m);
-    font-size: var(--cosmos-font-size-l);
-    padding: 0.25em;
-    margin: 0;
-    box-sizing: border-box;
-    flex-shrink: 0;
 }
 
 .cosmos-account .account-panels,
@@ -141,6 +61,7 @@
 /* Alle Kontofooter als durchgehende Fläche wie im Benutzerdialog.
  * Der Rahmen schneidet die Fläche an seinen runden unteren Ecken ab.
  * Kopf und Formular behalten ihre bisherigen seitlichen Innenabstände. */
+
 .cosmos-account :is(#account-panel-profile, #account-panel-security, #account-panel-sessions) {
     --account-panel-inline-padding: clamp(20px, 4vw, 36px);
     padding: 0;
@@ -164,6 +85,7 @@
 }
 
 /* Zwei Spalten auf großen Fenstern; Eingabefeld-Styles bleiben vollständig global. */
+
 .cosmos-account .account-profile-form {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -195,6 +117,7 @@
 }
 
 /* Sicherheitsaktionen und Geräte: eine kleinere Stufe als die Panelköpfe. */
+
 .cosmos-account :is(#account-panel-security, #account-panel-sessions) .account-entry {
     grid-template-columns: var(--cosmos-panel-icon-size-small) minmax(0, 1fr) auto;
 }
@@ -211,6 +134,7 @@
 
 /* Gemeinsame Aktionsbreite fuer Passwort und E-Mail, auch bei Sprachwechsel.
  * Auf schmalen Displays bleibt der Button innerhalb seiner Textspalte. */
+
 .cosmos-account #account-panel-security .account-entry > vaadin-button {
     width: 180px;
     max-width: 100%;
@@ -253,6 +177,7 @@
 }
 
 /* Monitor hinten, Vaadin-Laptop links und Smartphone rechts als ein transparentes SVG. */
+
 .cosmos-account .account-devices-icon {
     width: 32px;
     height: 28px;
@@ -268,6 +193,7 @@
 }
 
 @media (max-width: 600px) {
+
     .cosmos-account :is(#account-panel-profile, #account-panel-security, #account-panel-sessions) > .cosmos-panel-footer {
         padding: var(--cosmos-space-l);
     }
@@ -294,6 +220,7 @@
  * Der Dialog liegt als Overlay außerhalb der View; deshalb direkt am Dialog
  * selektieren. Der gemeinsame Backdrop-Blur steht in cosmos-admin.css.
  * Vaadin-25-Parts: https://vaadin.com/docs/latest/components/dialog/styling */
+
 vaadin-dialog[theme~="cosmos"].account-change-dialog::part(overlay) {
     box-sizing: border-box;
     width: min(var(--cosmos-dialog-width-account), calc(100vw - 32px));
@@ -329,6 +256,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 
 /* Der gemeinsame Hinweis ist in anderen Panels ein flexibles Footer-Element.
  * Im senkrechten Formular braucht er keine feste Mindesthöhe. */
+
 .account-change-dialog-form > .cosmos-panel-hint {
     flex: none;
     margin-top: var(--lumo-space-s);
@@ -336,6 +264,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 
 /* PROFILBILD / Bildauswahl und Ausschnitt. Der portalisierte Dialog trägt seine eigene
  * Klasse; Farben und Dialogflächen bleiben die gemeinsamen Cosmos-Tokens. */
+
 .account-avatar-dialog .account-avatar-editor {
     display: flex;
     flex-direction: column;
@@ -374,6 +303,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 
 /* Native Radiogruppe mit Komponentenlabels; Auswahl, Pfeiltasten und Fokus bleiben nativ.
  * Öffentliche Vaadin-Parts: radio und group-field, ausgewählter Zustand: checked. */
+
 .account-avatar-dialog #account-avatar-mode {
     width: min(360px, 100%);
     margin-inline: auto;
@@ -583,6 +513,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 }
 
 @media (max-width: 400px) {
+
     .account-avatar-dialog .account-avatar-mode-label {
         flex-direction: column;
         gap: var(--cosmos-space-xs);
@@ -690,12 +621,14 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 
 /* Ein gespeichertes Bild bleibt zum Umschalten verfügbar. Für einen neuen Ausschnitt
  * wird das Original erneut ausgewählt; nur frische Uploads zeigen die Crop-Steuerung. */
+
 .account-avatar-dialog account-avatar-editor[data-local-image="false"] .account-avatar-crop-controls {
     display: none;
 }
 
 /* Kompakte Auswahlvariante: nach einem neuen Upload bleibt nur die Ausschnittbedienung.
  * Abbrechen verwirft den lokalen Entwurf und macht die Uploadfläche wieder sichtbar. */
+
 .account-avatar-dialog account-avatar-editor[data-local-image="true"] .account-avatar-upload {
     display: none;
 }
@@ -717,6 +650,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 
 /* Der native Select liegt nur über dem Statuszeichen. Sein Feld ist transparent,
  * das separate Dropdown bleibt sichtbar und behält die native Tastaturbedienung. */
+
 .account-summary-avatar .cosmos-avatar-status-select {
     position: absolute;
     right: var(--cosmos-avatar-status-anchor);
