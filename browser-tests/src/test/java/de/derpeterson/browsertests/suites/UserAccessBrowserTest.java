@@ -171,6 +171,7 @@ public class UserAccessBrowserTest extends BrowserFixture {
     form.setEnabled(false);
     form.expectSaveError(texts.getAdminUsersErrorDisableOwnUser());
     form.setEnabled(true);
+    form.setRole(texts.getRoleUser(), true);
     form.setAdministrator(false);
     form.expectSaveError(texts.getAdminUsersErrorRemoveOwnAdminRole());
     form.cancel();
@@ -269,6 +270,77 @@ public class UserAccessBrowserTest extends BrowserFixture {
                   texts.getBaseErrorAdminAccessDenied(),
                   new Page.GetByTextOptions().setExact(true)))
           .isVisible();
+    }
+  }
+
+  @Test
+  @DisplayName(
+      "USER-07H: Rollenvergabe und -entzug aktualisieren eine bestehende Sitzung ohne erneuten Login")
+  @Description(
+      """
+      1. Eigenes normales Konto über die Benutzerverwaltung anlegen und in getrenntem Browserkontext anmelden.
+      2. Als ursprünglicher Admin Administrator zusätzlich vergeben; das bereits angemeldete Konto erhält die Adminaktion.
+      3. Dort den Adminbereich und ein ungespeichertes Benutzerformular öffnen.
+      4. Als ursprünglicher Admin Administrator entziehen: betroffene Sitzung landet automatisch auf Home, altes Formular verschwindet.
+      5. Dieselbe Sitzung öffnet ihre Inbox und findet die Rollenbenachrichtigung; kein Login-POST und dieselbe Session-ID.
+      Erwartet: Live aktualisierte Rechte ohne erneute Anmeldung und ohne Ausführung alter privilegierter Aktionen.
+      """)
+  void liveRoleChangesPreserveLoginAndRedirectRevokedAdministrator() {
+    AdminUsersPage users = admin();
+    String email = email("live-role");
+    users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+    try (BrowserActor actor = new BrowserActor(browser)) {
+      actor.login(email, BrowserTestAccounts.USER_PASSWORD);
+      new UserMenu(actor.page).selectTestLanguage();
+      var menu = new UserMenu(actor.page);
+      menu.assertUserSignedInWithoutAdminAction(email);
+      menu.close();
+      String sessionId =
+          actor.context.cookies().stream()
+              .filter(c -> c.name.equals("JSESSIONID"))
+              .findFirst()
+              .orElseThrow()
+              .value;
+      var loginPosts = new java.util.concurrent.atomic.AtomicInteger();
+      actor.page.onRequest(
+          request -> {
+            if (request.method().equals("POST") && request.url().endsWith(path(LOGIN_ROUTE)))
+              loginPosts.incrementAndGet();
+          });
+      AdminUserDialog change = users.openEdit(email);
+      change.setAdministrator(true);
+      change.save();
+      menu.open();
+      var manage =
+          actor.page.getByRole(
+              com.microsoft.playwright.options.AriaRole.BUTTON,
+              new Page.GetByRoleOptions()
+                  .setName(texts.getBaseManageApplicationButton())
+                  .setExact(true));
+      assertThat(manage).isVisible();
+      manage.click();
+      assertThat(actor.page).hasURL(urlPattern(ADMIN_ROUTE));
+      var actorUsers = new AdminUsersPage(actor.page);
+      actorUsers.open();
+      actorUsers.openCreate();
+      change = users.openEdit(email);
+      change.setAdministrator(false);
+      change.save();
+      assertThat(actor.page).hasURL(urlPattern(HOME_ROUTE));
+      assertThat(actor.page.locator("vaadin-dialog-overlay[opened]")).hasCount(0);
+      menu.assertUserSignedInWithoutAdminAction(email);
+      menu.close();
+      actor.page.navigate(path(NOTIFICATIONS_ROUTE));
+      assertThat(actor.page.locator("#notifications-inbox"))
+          .containsText(texts.getNotificationsRolesChangedTitle());
+      org.junit.jupiter.api.Assertions.assertEquals(0, loginPosts.get());
+      org.junit.jupiter.api.Assertions.assertEquals(
+          sessionId,
+          actor.context.cookies().stream()
+              .filter(c -> c.name.equals("JSESSIONID"))
+              .findFirst()
+              .orElseThrow()
+              .value);
     }
   }
 

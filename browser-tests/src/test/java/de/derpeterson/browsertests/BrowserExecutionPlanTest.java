@@ -17,6 +17,22 @@ import org.junit.platform.launcher.core.LauncherFactory;
 
 class BrowserExecutionPlanTest {
   @Test
+  void notificationCasesAreInAllAndKeepTheFastSelectionUnchanged() {
+    var type = de.derpeterson.browsertests.suites.UserNotificationsBrowserTest.class;
+    assertTrue(BrowserSuites.select("all").contains(type));
+    assertFalse(BrowserExecutionPlan.classes("fast").contains(type));
+    int cases = 0;
+    for (var method : type.getDeclaredMethods()) {
+      if (!method.isAnnotationPresent(Test.class)
+          && !method.isAnnotationPresent(ParameterizedTest.class)) continue;
+      assertFalse(method.isAnnotationPresent(Disabled.class));
+      var values = method.getAnnotation(org.junit.jupiter.params.provider.ValueSource.class);
+      cases += values == null ? 1 : values.ints().length + values.booleans().length;
+    }
+    assertEquals(5, cases);
+  }
+
+  @Test
   void fastUsesOnlyExplicitlyMarkedExistingCases() {
     var selected = BrowserExecutionPlan.classes("fast");
     assertFalse(selected.isEmpty());

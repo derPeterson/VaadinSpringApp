@@ -71,17 +71,38 @@ public final class RegistrationPage {
     LocalDate selected = LocalDate.now(ZoneId.of("Europe/Berlin")).minusDays(1);
     focusedDay.press("ArrowLeft");
     assertThat(focusedDay).hasCount(1);
-    focusedDay.click();
+    clickSettledCalendarDay(focusedDay);
     assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     assertBirthDateCommitted(selected);
     picker.locator("[part~='toggle-button']").click();
     Locator selectedDay =
         page.getByRole(AriaRole.GRIDCELL).and(page.locator("[aria-selected='true']"));
     assertThat(selectedDay).hasCount(1);
-    selectedDay.click();
+    clickSettledCalendarDay(selectedDay);
     assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     assertBirthDateCommitted(selected);
     return selected;
+  }
+
+  private void clickSettledCalendarDay(Locator day) {
+    day.scrollIntoViewIfNeeded();
+    double[] previous = {Double.NaN, Double.NaN};
+    long[] stableSince = {System.nanoTime()};
+    // Die virtuelle mobile Monatsliste scrollt nach Pfeiltasten noch nach. Erst eine
+    // über 300 ms stabile sichtbare Position anklicken; keine erzwungenen Events oder Werte.
+    page.waitForCondition(
+        () -> {
+          var bounds = day.boundingBox();
+          if (bounds == null) return false;
+          if (bounds.x != previous[0] || bounds.y != previous[1]) {
+            previous[0] = bounds.x;
+            previous[1] = bounds.y;
+            stableSince[0] = System.nanoTime();
+            return false;
+          }
+          return System.nanoTime() - stableSince[0] >= java.time.Duration.ofMillis(300).toNanos();
+        });
+    day.click();
   }
 
   @Step("Tatsächlich übernommenen Geburtstag prüfen")

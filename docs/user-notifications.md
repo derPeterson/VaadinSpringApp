@@ -373,3 +373,17 @@ ihre eigenen Meldungen. Die Registrierung wurde nicht verändert.
 Gezielter Nachtest: 44 JUnits erfolgreich, keine Fehler oder Skips (41 Komponenten-
 und drei Katalogfälle). Shared gebaut; Java- und Testkompilierung sowie Spotless
 und Diffprüfung erfolgreich. Keine Browserprüfung.
+## Nächtliche Gesamt-QA vom 19.10.2026
+
+Neue Browserfälle prüfen das überarbeitete Verfassenpanel bei 1280/390 Pixeln,
+Feldfehler erst nach ausdrücklicher Prüfung, allgemeinen Vorschauhinweis, native
+Einzelauswahl, gesperrte Zusammenfassung aller aktiven Konten, Zeichenstände,
+Vorschau-Empfängerdetails, erneute Freigabe nach Änderungen und sichtbaren Tastaturfokus.
+Einzel-/Sammelversand und persistenter Lesestatus werden in getrennten eigenen Inboxen
+über die tatsächliche Oberfläche geprüft, ohne Header-Overlay oder gesendete Historie.
+
+Genau diese beiden unfertigen Oberflächen bleiben bewusst ausgenommen. Dienste,
+Persistenz und Berechtigungen sowie die vollständige persönliche Inbox bleiben im
+Umfang. Fünf betroffene JUnit-Ausprägungen sind optional getaggt und nur für diesen
+Lauf nicht ausgewählt; keine dauerhafte Deaktivierung. Aktuelle Ergebnisse und
+Messgrenzen: [QA-Meilenstein](meilensteine/2026-10-19-benachrichtigungen-rollen-und-gesamtqa.md).

@@ -1,5 +1,59 @@
 # Browserabdeckung und offene Punkte
 
+## Nächtliche Gesamt-QA mit Bereichsausnahmen (19.10.2026)
+
+Ausgangspunkt: sauberer Feature-Branch, Commit `3fc09c1`. Produktionsbuild erfolgreich;
+alle Browserrunden prüfen dasselbe feste Produktionsimage. Die neuen Browserfälle
+stehen im [Fallkatalog](README.md#neue-benachrichtigungs--und-rollenfälle).
+
+| Prüfung | Ergebnis |
+| --- | --- |
+| Anwendungs-JUnit | 1706/1706, keine Fehler/Skips; fünf ausdrücklich getaggte UI-Ausprägungen nicht ausgewählt |
+| Browser-Helper/Reporter | 48/48, keine Fehler/Skips |
+| Python offline | 205/205, keine Fehler/Skips |
+| JavaScript offline | 26/26 (14 Workflow, 12 Profilbild/Zeit), keine Fehler/Skips |
+| Browser DE, erster Gesamtlauf | 146/147, ein Kalender-Synchronisierungsfehler, keine Skips |
+| Browser DE, gezielter Nachtest | 10/10, keine Fehler/Skips; alle 147 eindeutigen Katalogfälle danach erfolgreich, kein offener Fehlfall |
+| Browser EN, vollständiger finaler Teststand | 147/147, keine Fehler/Skips |
+
+Die erste gesonderte 13-Fall-Vorprüfung hatte sieben Erfolge und sechs rote
+Testhelfer-/Fixturebefunde. Diese wurden korrigiert, die rote Runde bleibt erhalten.
+Der spätere Kalenderfehler wurde durch Warten auf eine stabile sichtbare Zelle behoben;
+Auswahl, Wiederöffnen und echte Registrierung bleiben unverändert gefordert.
+Keine Produktionscodeänderung oder abgeschwächte Sicherheitsassertion erforderlich.
+
+**Ausgenommen:** gesendete Historie samt Details/Pagination und das Header-
+Benachrichtigungs-Overlay samt Einträgen/Aktionen. Keine Browserfälle dieser
+Oberflächen pauschal entfernt; fünf konkrete JUnit-Ausprägungen optional getaggt,
+keine dauerhafte Deaktivierung. Backend/Persistenz/Berechtigungen, persönliche Inbox,
+Headerzähler und Empfängerdetails der **geprüften Verfassen-Vorschau** bleiben im Umfang.
+
+Neue sichtbare Nachweise: Verfassen/Desktop/schmal, Fehler erst bei Prüfung,
+allgemeiner Vorschauhinweis und genaue Feldfehler, native Empfängerauswahl/Zähler,
+Vorschau und Freigabe nach Änderungen, eigene persistente Inboxen/Lesestatus,
+Live-Rollenwechsel in zwei Benutzerkontexten ohne neuen Login sowie die Sperre beider
+Versandpanels bei Wartungswechsel im anderen Tab. `all`: 147 Fälle/27 Klassen;
+`fast` unverändert 34 Fälle. Konkrete Schritte und Grenzen stehen im Fallkatalog.
+
+| JaCoCo-Messung | Zeilen | Zweige |
+| --- | --- | --- |
+| Vollständiger freigegebener JUnit-Umfang | 8978/10450 (85,91 %) | 2566/3474 (73,86 %) |
+| Browser DE-Gesamtlauf, separat | 8949/10450 (85,64 %) | 2248/3474 (64,71 %) |
+| Browser EN-Gesamtlauf, separat | 8958/10450 (85,72 %) | 2250/3474 (64,77 %) |
+| Browser DE + deutscher Nachtest + EN, Rohdaten vereinigt | 8960/10450 (85,74 %) | 2254/3474 (64,88 %) |
+
+209 ausführbare Anwendungsklassen, ohne Shared-JAR, Tests und Bibliotheken.
+Browserwerte enthalten Start/Hintergrundaufgaben und stammen aus dem exakt getesteten
+Produktions-JAR; vor dem Merge wurden alle drei JAR-Prüfsummen abgeglichen.
+Prozentwerte wurden nicht gemittelt. Keine CSS-/JavaScript-Coverage und keine behauptete
+vollständige Abdeckung aller denkbaren fachlichen Kombinationen. Die zwei UI-Ausnahmen,
+Realgeräte, Screenreader und reale Mailclients sind damit nicht geprüft.
+
+Eigene Umgebungen abgebaut, 355 relevante Quelldateien identisch, isolierte Buildkopie
+entfernt, Formatierung und Diffprüfung erfolgreich. Änderungen uncommittet und auf
+Tests/Dokumentation beschränkt; kein App-Neustart erforderlich.
+[Eigenständig lesbarer Meilenstein](../docs/meilensteine/2026-10-19-benachrichtigungen-rollen-und-gesamtqa.md).
+
 ## Benachrichtigungen: aktueller Schnittstellenvertrag (18.10.2026)
 
 Einheitlich `UserNotification`, `/notifications`, `/admin?section=notifications` und

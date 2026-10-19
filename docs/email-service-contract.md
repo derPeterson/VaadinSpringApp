@@ -134,3 +134,14 @@ frische Versandprüfung und Polling-Lebenszyklus. Maildienst und Konfiguration s
 gemockt; keine Anwendung, reale Datenbank oder SMTP-Verbindung wurde gestartet.
 Keine neuen Browserprüfungen oder Produktionsbuilds; sichtbare Geometrie und
 Mailzustellung sind damit nicht nachgewiesen.
+## Nächtliche Gesamt-QA vom 19.10.2026
+
+Die zuvor offene Browserprüfung der Mail-Test-Wartungssperre ist als MAINT-06 im
+Gesamtumfang enthalten: echter Konfigurationswechsel im anderen Tab, Aktualisierung
+von SMTP-Status und allen Mail-Test-Controls ohne Reload, erhaltene Betreff-/Nachricht-
+Entwürfe und erneute Bedienbarkeit nach Ende der Wartung. Der Fall versendet keine
+Mail. Die bestehenden MAIL-01–03-Journeys prüfen daneben ihre eigenen tatsächlich
+in Mailpit abgefangenen SMTP-Mails; keine realen Provider oder Postfächer.
+
+Der Maildienst selbst wurde nicht geändert. Aktuelle Ergebnisse und Grenzen stehen
+im [QA-Meilenstein](meilensteine/2026-10-19-benachrichtigungen-rollen-und-gesamtqa.md).

@@ -1,5 +1,13 @@
 # VaadinSpringApp
 
+> Nächtliche QA vom 19.10.2026 auf `feature/user-messages`: 1706 Anwendungs-JUnits,
+> 48 Browserhelfer, 205 Python- und 26 JavaScript-Offlinetests erfolgreich.
+> Browser DE: zunächst 146/147, anschließend 10/10 gezielte Nachtests; alle 147
+> eindeutigen Katalogfälle erfolgreich. EN: 147/147 am identischen Produktionsimage.
+> Fünf JUnit-Ausprägungen und die zwei ausdrücklich ausgenommenen unfertigen
+> Benachrichtigungsoberflächen bleiben transparent benannt. Nur Tests/Dokumentation
+> geändert. [Ergebnisse und Coverage](docs/meilensteine/2026-10-19-benachrichtigungen-rollen-und-gesamtqa.md).
+
 Lokale Docker-Testumgebung mit Mailpit und H2: [Docker-Anleitung](docs/docker/README.md).
 
 Automatisierte Browserprüfungen mit Java, JUnit und Allure in eigener Docker-Testumgebung; getrennte Suites für Infrastruktur, Anmeldung und Zugriffsrechte sowie Registrierung, Verifikation und Passwortreset über echte Testmails, Einzelvalidierung, Sprachpräferenz und grundlegende Bedienung: [Browser-Test-Anleitung](browser-tests/README.md).
@@ -58,7 +66,7 @@ Versandausgängen: [Mailqueue-Verarbeitung](docs/email-queue-processing.md).
 
 Belege: `views/RegistrationView.java`, `views/LoginView.java`, `views/admin/`, `service/VerificationService.java`, `service/PasswordResetService.java`, `service/EmailQueueService.java`, `security/SecurityConfig.java` und `scheduler/UserStatusScheduler.java` unter `src/main/java/de/derpeterson/app/`.
 
-Persönliche Benachrichtigungen sind über die Glocke und `/notifications` erreichbar: persistente
+Persönliche Benachrichtigungen sind über das Benachrichtigungs-Icon und `/notifications` erreichbar: persistente
 Inbox mit Lesestatus, Superadmin-Versand unter `/admin?section=notifications` und automatische
 Hinweise nach Passwortwechsel, Passwortreset und bestätigter E-Mail-Änderung.
 [Verhalten, Aufbewahrung und offene Browserabnahme](docs/user-notifications.md).
@@ -197,7 +205,7 @@ innerhalb der damals jeweils 100 Browserfälle. Den aktuellen Nachweis dokumenti
 
 `HomeView` verwendet dieselbe zentrale Palette und den animierten Hintergrund.
 Die Kopfzeile zeigt Service-Logo/-Name und das bestehende Benutzermenü. Angemeldete
-Benutzer sehen links neben dem Avatar eine Glocke als noch funktionslosen Platzhalter
+Benutzer sehen links neben dem Avatar das Paperplane-Icon für ihre Benachrichtigungen
 und ein Zahnrad als direkten Kontoeinstieg. Beide Icons sind anonym ausgeblendet;
 Home, Admin und Konto verwenden dafür `AccountHeaderActions` mit übersetzten
 Tooltips und zugänglichen Namen. Verlauf,

@@ -24,6 +24,7 @@ import de.derpeterson.browsertests.suites.TokenExpiryBrowserTest;
 import de.derpeterson.browsertests.suites.UserAccessBrowserTest;
 import de.derpeterson.browsertests.suites.UserFiltersBrowserTest;
 import de.derpeterson.browsertests.suites.UserManagementBrowserTest;
+import de.derpeterson.browsertests.suites.UserNotificationsBrowserTest;
 import de.derpeterson.browsertests.suites.UserStatusBrowserTest;
 import de.derpeterson.browsertests.suites.VerificationBrowserTest;
 import java.util.List;
@@ -34,6 +35,7 @@ final class BrowserSuites {
     return switch (suite) {
       case "all", "fast" ->
           List.of(
+              UserNotificationsBrowserTest.class,
               InfrastructureBrowserTest.class,
               AuthenticationBrowserTest.class,
               RegistrationBrowserTest.class,

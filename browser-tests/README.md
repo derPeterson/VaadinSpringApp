@@ -7,8 +7,7 @@ Ein vorhandener Testfall bedeutet noch nicht, dass sein Ablauf erfolgreich gepr�
 
 Aktuelle Bootstrap-Listen: Der isolierte Compose-Override enthält einen gewöhnlichen
 Admin und einen getrennten Superadmin. Nur Fälle, die Superadmin vergeben müssen, verwenden
-das zweite Konto. Die Quellen wurden angepasst/kompiliert, aber noch nicht erneut im Browser
-ausgeführt. [Rollen-/Bootstrap-Vertrag](../docs/role-updates-and-bootstrap.md).
+das zweite Konto. Die Rollenfälle berücksichtigen Live-Aktualisierung vorhandener Sitzungen; der tatsächliche aktuelle Nachweis steht in abdeckung.md. [Rollen-/Bootstrap-Vertrag](../docs/role-updates-and-bootstrap.md).
 
 ## Starten
 
@@ -63,7 +62,7 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit | 3 |
 | `authentication` | Admin-/Benutzerlogin, Fehler, Gastzugriff und Logout | 6 |
 | `login-attempts` | Drei Sperr-/Resetfälle plus sechs Anmelde- und vier Remember-me-Regressionsfälle | 13 |
-| `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 34 |
+| `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 35 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler und Links | 6 |
@@ -75,7 +74,7 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
 | `user-management` | Suche/Pagination, Filterentwürfe/Badges, Anlage, Bearbeitung, sichere Dialogaktionen und Passwortbestätigung und kompakte Zeit | 15 |
 | `user-filters` | Entwürfe/Anwenden/Badges, Kalender/Datumabhängigkeit, Zeitoverlay und kombinierte Filter/Reset und kompakte Zeit mit Sprachwechsel | 5 |
-| `user-access` | Sperren/Freigeben, Rollenvergabe/-entzug, Superadmin-/Gastzugriff, unverifizierte Konten, zwei offene Formulare und Selbstschutz | 7 |
+| `user-access` | Sperren/Freigeben, Rollenvergabe/-entzug mit und ohne bestehende Sitzung, Superadmin-/Gastzugriff, unverifizierte Konten, zwei offene Formulare und Selbstschutz | 8 |
 | `session-security` | Alte Speichern-Aktion nach Rollenentzug/Sperre/Löschung, Sperre/Löschung auch mit Remember-me | 5 |
 | `blocked-links` | Alte Verifikations-/Resetbuttons nach Adminänderung; neutrale Anfrage gesperrter Adresse | 5 |
 | `security-journeys` | Sitzungs- und Maillinkfälle gemeinsam | 10 |
@@ -91,7 +90,7 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `cosmos-design` | Fünf Kontoansichten, mobiler Mailablauf, Copyright in UI/Mails, gemeinsames Theme sowie Home-/Adminnavigation bei drei Größen | 11 |
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
-| `all` | Alle 26 Testklassen einschließlich der Fast-Fälle | 141 |
+| `all` | Alle 27 Testklassen einschließlich der Fast-Fälle | 147 |
 
 AVATAR-01 prüft zwei eigenständige Parameterfälle bei 1280×900 und 390×844:
 PNG hochladen, Ausschnitt/Zoom, Uploadfläche ausblenden, gleich große lokale Aktionen,
@@ -618,3 +617,24 @@ Bei der virtualisierten Liste bestimmt die erste tatsächlich sichtbare Zeile di
 Scrollrichtung; unsichtbare DOM-Pufferzeilen sind dafür ungeeignet. Der Test prüft
 die echte Mausradbewegung und wirksame Filterung in beiden Richtungen unabhängig von
 der aktuellen Uhrzeit, ohne künstliche DOM- oder Uhrmanipulation.
+## Neue Benachrichtigungs- und Rollenfälle
+
+Die Gesamtsuite enthält zusätzlich fünf Fälle in `UserNotificationsBrowserTest`
+und einen Live-Rollenfall in `UserAccessBrowserTest`. `fast` bleibt bei 34 Fällen.
+
+| ID | Schritte und erwartetes Verhalten |
+| --- | --- |
+| NOTIFY-01 (1280/390 px) | Entwurf leeren/Blur ohne Fehler; ausdrücklich prüfen markiert Empfänger, Titel und Nachricht mit allgemeiner Fehlernotification; alle aktiven Konten zeigen gesperrte Empfängerzusammenfassung; prüfen gibt Versand frei; Vorschau-Empfängerdetails öffnen/schließen; Eingabeänderung sperrt Versand; erneute Prüfung aktualisiert Inhalt. Gleiche Aktionsbreiten, 12px Nachrichtentext, 8px Textabstand, Fokus und kein Panelüberlauf. |
+| NOTIFY-02 (Einzel/Alle) | Zwei eigene aktive Benutzer über UI anlegen; geprüfte Benachrichtigung senden; getrennte Sitzungen öffnen direkt ihre Inbox. Empfänger liest und findet Nachricht nach Reload als gelesen. Nicht ausgewählter Benutzer erhält beim Einzelversand keinen Eintrag, beim Sammelversand seinen eigenen. |
+| MAINT-06 | Verfassenpanel, Mail-Test und Konfiguration in getrennten eigenen Tabs öffnen; Entwürfe vorbereiten; Wartung im Konfigurationstab schalten. Beide Panels aktualisieren sich ohne Reload, zeigen roten Status und sperren ihre Controls. Nach Wiederfreigabe bleiben Entwürfe erhalten; Benachrichtigungsversand erfordert neue Prüfung. |
+| USER-07H | Normales Konto in unabhängiger Sitzung anmelden; zweiter Admin vergibt Administrator. Bestehende Sitzung erhält Adminnavigation, öffnet Adminformular; Rollenentzug führt auf Home und entfernt altes Formular bei erhaltenem Login. Persönliche Rollenbenachrichtigung sichtbar, dieselbe Session-ID und kein erneuter Login-POST. |
+
+SESSION-01A erwartet beim Rollenentzug erhaltenen Login und automatisch verworfene
+Adminansicht. Die unveränderten Sperr-/Löschvarianten erwarten weiterhin 401 und Login.
+USER-07E wählt vor dem eigenen Adminrollenentzug eine normale Rolle: Bootstrap-Admins
+haben jetzt ausschließlich Admin, und eine vollständig leere Rollenauswahl ist bereits
+im Formular ungültig. Die ursprüngliche Sicherheitsassertion bleibt erhalten.
+
+Die neuen Fälle bedienen weder das Benachrichtigungs-Header-Overlay noch die gesendete
+Historie. Details der **geprüften Empfängervorschau** sind ausdrücklich enthalten.
+Laufresultate und Messgrenzen stehen in `abdeckung.md`; diese Tabelle ist ein Fallkatalog.

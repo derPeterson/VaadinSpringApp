@@ -195,3 +195,17 @@ Shared erneut gebaut/installiert, Spotless Apply/Check und alle 1667 Anwendungs-
 sowie 47 Helfertests erfolgreich. Browserquellen gegen den neuen Katalog kompiliert,
 weiterhin kein Browser-/Produktionslauf. Für die Übernahme die Anwendung neu starten;
 die neue Shared-Katalogsignatur und Texte werden dann gemeinsam geladen.
+## Nächtliche Gesamt-QA vom 19.10.2026
+
+USER-07H belegt Rollenvergabe und -entzug in zwei echten getrennten Browserkontexten:
+neue Adminnavigation, geöffnetes Adminformular, Weiterleitung auf Home nach Entzug,
+identische Session-ID, kein erneuter Login-POST und persönliche Rollenbenachrichtigung.
+Der Fall ist auf DE/EN erfolgreich. SESSION-01A folgt nun diesem erhaltenen Login;
+Sperre/Löschung verlangen weiterhin 401 und Anmeldung. USER-07E berücksichtigt die
+Bootstrap-Fixture mit ausschließlich Adminrolle, ohne den Selbstschutz abzuschwächen.
+
+Die aktuellen Gesamtzahlen, Coverage und verbleibenden Kombinationen stehen im
+[QA-Meilenstein](meilensteine/2026-10-19-benachrichtigungen-rollen-und-gesamtqa.md).
+Die früheren Aussagen „kein Browserlauf“ sind historische Stände; der genaue aktuelle Browserumfang ist im Meilenstein ausgewiesen.
+Konto-Tab-Erhalt und Remember-me nach Rollenwechsel sind weiterhin keine neuen
+separaten Browserkombinationen; die zugehörigen technischen Regeln bleiben geprüft.

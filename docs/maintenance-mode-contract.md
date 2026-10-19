@@ -181,3 +181,16 @@ mögliche Auflösung einer initialisierten Login-UI ab. Java 25 und Google Java
 Format geprüft. Kein erneuter Browser-Gesamtlauf und kein Neustart der regulären
 Benutzeranwendung durch den Agenten; die Anwendung muss für die Korrektur mit dem
 neuen Java-Stand neu gestartet werden.
+## Nächtliche Gesamt-QA vom 19.10.2026
+
+MAINT-06 ergänzt die Browserprüfung beider manuellen Versandpanels: Verfassen,
+Mail-Test und Konfiguration sind gleichzeitig in eigenen Tabs geöffnet. Ein echter
+Wartungswechsel im Konfigurationstab aktualisiert die anderen Tabs durch natives
+Polling. INTERN/SMTP wechseln auf rot und beide Formulare sind gesperrt. Nach
+Wiederfreigabe bleiben die Entwürfe erhalten; Benachrichtigungen erfordern eine neue
+Prüfung. Es wird dabei keine Testmail versandt. Frische Statusprüfung vor einem
+Versandcallback, unlesbare Konfiguration und Listener-/Pollingabbau sind zusätzlich
+technisch geprüft. Die automatische Mailqueue erhält ihr bisheriges Verhalten.
+
+Gesamtergebnisse und Messgrenzen stehen im
+[QA-Meilenstein](meilensteine/2026-10-19-benachrichtigungen-rollen-und-gesamtqa.md).
