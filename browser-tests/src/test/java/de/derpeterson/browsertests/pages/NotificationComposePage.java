@@ -134,6 +134,15 @@ public final class NotificationComposePage {
         .click();
     Locator dialog = target.locator("vaadin-dialog.cosmos-notification-dialog[opened]");
     assertThat(dialog).containsText(message);
+    assertThat(dialog.locator(".cosmos-notification-detail-state"))
+        .hasText(texts.getNotificationsUnread());
+    dialog
+        .getByRole(
+            AriaRole.BUTTON,
+            new Locator.GetByRoleOptions().setName(texts.getNotificationsMarkRead()).setExact(true))
+        .click();
+    assertThat(dialog.locator(".cosmos-notification-detail-state"))
+        .hasText(texts.getNotificationsRead());
     dialog
         .getByRole(
             AriaRole.BUTTON,

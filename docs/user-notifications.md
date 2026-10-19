@@ -17,11 +17,11 @@ beziehen sich auf den Stand vor dieser Erweiterung.
   Anonym bleiben Benachrichtigungen und Konto-Schnelleinstieg ausgeblendet.
 - Alle Benachrichtigungen anzeigen öffnet `/notifications`: 20 Einträge pro Seite, neueste zuerst,
   Filter für ungelesene Einträge, Aktualisieren und Vor-/Zurückblättern.
-- Das Öffnen der Header-Vorschau markiert nichts als gelesen. Erst das Öffnen eines Eintrags
-  markiert diesen. „Alle als gelesen markieren“ verwendet die zuletzt geladene
+- Das Öffnen der Header-Vorschau und eines Detaildialogs verändert den Lesestatus nicht.
+  Nur „Als gelesen markieren“ beziehungsweise „Alle als gelesen markieren“ ändert ihn. „Alle als gelesen markieren“ verwendet die zuletzt geladene
   Liste der eigenen ungelesenen Empfangs-IDs; später eingetroffene Einträge bleiben ungelesen.
 - Detaildialog: Escape, Außenklick, Schließen-Icon und Footer-Schließen. Systemeinträge
-  bieten ausschließlich den internen Einstieg in Konto/Sicherheit an.
+  bieten zusätzlich den internen Einstieg in Konto/Sicherheit an.
 - Lesestatus gehört zum Konto, unabhängig vom verwendeten Tab oder Gerät.
   Neue Benachrichtigungen und Leseänderungen lösen nach Commit lokale Push-Aktualisierungen aus.
 
@@ -34,14 +34,15 @@ Footer und Kopf bleiben außerhalb dieses Scrollbereichs. Die Textvorschau ist a
 Zeilen begrenzt; „Öffnen“ zeigt die vollständige Nachricht im bestehenden Detaildialog.
 
 Ein Doppelklick auf eine Vorschaukarte öffnet denselben Detaildialog wie „Öffnen“.
-Doppelklicks auf Buttons lösen diese Kartenaktion nicht zusätzlich aus. Die Nachricht
-wird dabei wie beim bisherigen Öffnen als gelesen markiert. Gezielter Nachweis der
+Doppelklicks auf Buttons lösen diese Kartenaktion nicht zusätzlich aus. Auch dabei bleibt
+der Lesestatus unverändert; gelesen wird ausdrücklich markiert. Historischer Nachweis der
 Ereignisbehandlung: 58 Komponentenprüfungen erfolgreich, keine Fehler oder Skips;
 die tatsächliche Browserausführung des Ereignisfilters bleibt ungeprüft.
 
 Ungelesene Einträge zeigen einen Punkt und eine hervorgehobene Fläche. „Als gelesen
 markieren“ betrifft nur den jeweiligen Eintrag und öffnet keinen Dialog. Der Filter
-„Nur ungelesen“, Aktualisieren und die bisherige Sammelaktion bleiben verfügbar.
+„Alle / Gelesen / Ungelesen“ im Stil des Profilbilddialogs ersetzt die Checkbox
+der Header-Vorschau. Aktualisieren und die bisherige Sammelaktion bleiben verfügbar.
 Manuelle Ankündigungen tragen „Administration“, automatische Sicherheits- und
 Rollenhinweise „System“. Beim Öffnen einer Nachricht bleibt das Popover hinter dem
 Detaildialog erhalten. Solange der Dialog offen ist, werden Außenklick und Escape nur
@@ -49,7 +50,22 @@ vom Dialog verarbeitet; danach gelten wieder die normalen Schließregeln des Pop
 Der Envelopes-Button zur vollständigen Liste schließt das Popover bei der Navigation.
 Die eigenständige Inbox behält ihre bisherige Darstellung. Der Aufbewahrungshinweis
 im Footer ist mittig; die Werkzeugleiste enthält Aktualisieren und die Sammel-Leseaktion.
-Eine dezente Zeile nennt die Grenze von fünf neuesten beziehungsweise ungelesenen Einträgen.
+Eine dezente Zeile nennt die Grenze von fünf neuesten Einträgen passend zum Filter
+(alle, gelesen oder ungelesen). Standard ist „Alle“; beim Sprachwechsel bleibt die
+Auswahl erhalten. Der Filter wird vor Sortierung und Pagination in der Datenbank
+angewendet. Eigentümertrennung, persönliche Löschung und Aufbewahrungsfrist gelten
+für alle drei Zustände. Der Filter selbst ändert keinen Lesestatus. Die eigenständige
+Inbox behält ihre bisherige Checkbox und Pagination. Native Vaadin-Radiobuttons
+übernehmen Tastatursteuerung, Auswahl und Fokus; die lokalen Styles verwenden die
+Pillenform, Farben und Auswahlfläche des Profilbilddialogs. Schmale Ansichten ordnen
+die Werkzeugbuttons bei Bedarf unter der Segmentauswahl an. Neue Browserabnahme offen.
+
+Gezielter Nachtest des Filters: **85 Komponentenprüfungen, 59 H2-Persistenzprüfungen
+und 13 Sprach-/Katalogprüfungen** erfolgreich (157 insgesamt, davon sechs neue
+Ausprägungen; keine Fehler/Skips). Shared und Anwendung mit Java 25 in einer eigenen
+Quellkopie gebaut und per Hash abgeglichen. Spotless apply/check, CSS-Syntax und
+Änderungsprüfung erfolgreich. Kein Browserlauf oder Produktions-/Frontendbuild.
+Zur Übernahme dieses neuen Filters Anwendung neu starten und Strg+F5.
 
 Jede Vorschaukarte hat ein Schließen-Icon mit „Benachrichtigung löschen“. Es entfernt
 nur diesen persönlichen Empfangseintrag aus Overlay, Inbox, Ungelesen-Zähler und
@@ -72,6 +88,75 @@ Für diese Erweiterung Shared und Anwendung bauen und die Anwendung vollständig
 neu starten. Hibernate ergänzt über die vorhandene `ddl-auto=update`-Konfiguration
 das nullable Empfangsfeld `dismissed_at`; vorhandene Einträge bleiben sichtbar.
 Die Nutzer-Datenbank wurde für diese Umsetzung weder gelesen noch verändert.
+
+## Detaildialog: Entwurf vom 19.10.2026
+
+Der Detaildialog verwendet den gemeinsamen Cosmos-Dialog mit Paperplane und dem
+allgemeinen Header „Benachrichtigung“ (EN: „Notification“). Die Secondary-Zeile lautet
+„Nachricht lesen und Lesestatus verwalten.“ (EN: „Read the message and manage its read status.“).
+Betreff, Datum/Uhrzeit,
+Herkunft und Lesestatus stehen ausschließlich in der gerahmten Inhaltskarte.
+„Ungelesen“ beziehungsweise „Gelesen“ verwendet den bestehenden Badge-Hintergrund
+und -Rahmen und steht direkt hinter der fett gesetzten Herkunft
+(System/Administration) in der Metazeile. Die Nachrichtenkarte verwendet abhängig vom Lesestatus dieselben
+Hintergründe wie die Overlay-Einträge: reguläre Card-Fläche bei gelesen, Tabellen-
+Hervorhebungsfläche bei ungelesen; die Dialogfläche bleibt davon unabhängig. Vor dem Betreff erscheint bei ungelesenen
+Einträgen derselbe blaue Punkt wie in der Header-Vorschau. Beim Markieren als gelesen
+verschwindet er. Die Inhaltskarte verwendet 8 px Abstand zwischen den Zeilen. Zeilenumbrüche bleiben
+erhalten, Inhalte werden weiterhin ausschließlich als Text dargestellt. Auf einen
+zusätzlichen Erklärungshinweis wird verzichtet; Badge und Leseaktion vermitteln
+das Verhalten.
+
+Öffnen, Doppelklick, Sprachwechsel und Schließen markieren keinen Eintrag mehr als
+gelesen. Die neue Secondary-Aktion „Als gelesen markieren“ betrifft ausschließlich
+den geöffneten Empfangseintrag, lässt den Dialog offen und aktualisiert den Status.
+Bei bereits gelesenem Eintrag entfällt die Aktion. Ein fehlgeschlagener Schreibzugriff
+zeigt keinen erfolgreichen Lesestatus. Der Service prüft vor dem Öffnen erneut die
+aktuelle Sitzung. Bestehende Eigentümerprüfung und Push-Ereignisse für Leseänderungen
+bleiben erhalten; es gibt keine neue Datenbankmigration.
+
+Im Footer stehen „Alle Benachrichtigungen anzeigen“ (Envelopes), die Leseaktion
+(Envelope Open) und der primäre Schließen-Button (Close Circle). Automatische
+Sicherheits-/Rollenhinweise behalten den internen Kontoeinstieg (Cog). Navigation
+schließt Detail und Header-Popover; normales Schließen des Details erhält das Popover.
+Breite und schmale Anordnung werden lokal mit bestehenden Tokens umgesetzt;
+andere Dialoge bleiben unverändert. Browserdarstellung und Fokus sind noch ungeprüft.
+Der vorhandene Browserhelfer für NOTIFY-02 markiert nun ausdrücklich als gelesen,
+statt das Lesen aus dem Öffnen abzuleiten. Für diesen Zwischenstand wurde kein
+Browserlauf gestartet.
+
+Gezielte Prüfung des Dialogumbaus vor Entfernen des Erklärungshinweises: **73 Komponentenprüfungen** (davon 13 neue
+Ausprägungen), **55 H2-Persistenzprüfungen** und **13 Sprach-/Katalogprüfungen**
+erfolgreich, insgesamt 141 eindeutige Anwendungs-JUnits. Zusätzlich **48 Browser-
+Helfer-/Reporterprüfungen** erfolgreich, ohne Browserstart. Jeweils keine verbleibenden
+Fehler oder Skips. Vorherige Fehler in der neuen Testbaum-Auswertung separater
+Vaadin-Header-/Footerbereiche wurden im Testhelfer korrigiert; keine Assertions
+abgeschwächt. Shared und Java mit Java 25 in einer eigenen, per Quellhash abgeglichenen
+Buildkopie gebaut. Spotless apply/check sowie CSS-Syntax und Tokenreferenzen geprüft.
+Keine neue vollständige JUnit-/Browserrunde, kein Produktions-/Frontendbuild.
+Nach vollständigem Entfernen des Erklärungshinweises wurden Shared und Anwendung
+erneut gebaut sowie 13 Sprach-/Katalogprüfungen erfolgreich ausgeführt (keine
+Fehler oder Skips). Hinweis, Getter, DE/EN-Schlüssel und zugehörige Styles sind entfernt.
+Nach Vereinheitlichung der Status-Badges und der fett gesetzten Herkunft in Header
+und Inhalt: 73 Komponentenprüfungen erfolgreich, keine Fehler/Skips; abschließende
+lokale CSS-Präzisierung separat syntaktisch geprüft, weiterhin kein Browserlauf.
+Nach Vereinfachung des Headers: **83 Komponentenprüfungen und 13 Sprach-/Katalogprüfungen**
+erfolgreich (96 insgesamt, keine Fehler/Skips). Darin werden einfacher Klick auf
+Titel/Öffnen sowie Doppelklick auf die übrige Vorschaukarte jeweils für gelesene und
+ungelesene Einträge in DE/EN geprüft; Button-Ereignisse lösen die Kartenaktion nicht
+zusätzlich aus. Die Klicklogik wurde nicht verändert. Dieser Nachweis betrifft
+Java-Handler und den registrierten Ereignisfilter, keine neue Browserreproduktion.
+Nach Ergänzung der Secondary-Zeile und rechtsbündigem Status-Badge: 8 gezielte
+Komponenten- und 13 Sprach-/Katalogprüfungen erfolgreich, keine Fehler/Skips.
+CSS-Syntax geprüft; kein Browserlauf.
+Nach Umsetzen des Badges direkt hinter die Herkunft und Ergänzen des ungelesenen
+Punkts: 8 gezielte Komponentenprüfungen erfolgreich (DE/EN, beide Lesestatus,
+Punkt nach Markieren verborgen), keine Fehler/Skips. Kein Browserlauf.
+Nach Angleichung der Nachrichtenkarte an beide Overlay-Hintergründe: 8 gezielte
+Komponentenprüfungen erfolgreich, einschließlich Wechsel nach explizitem Markieren;
+keine Fehler/Skips. CSS-Syntax und identische Hintergrund-Tokens separat geprüft.
+Kein Browserlauf.
+Zur Übernahme: Shared ist bereits installiert; Anwendung neu starten und Strg+F5.
 
 ## Superadmin-Versand
 
@@ -282,7 +367,7 @@ Bestandsdatenbanken oder Nutzerprozesse verwendet. JUnit-Fixtures wurden beendet
 | Geplanter Fall | Sichtbarer Ablauf / Erwartung | Status |
 | --- | --- | --- |
 | NOTIF-01 | Superadmin sendet an zwei über UI angelegte Konten; beide sehen die Nachricht, ein drittes nicht | Browser DE/EN offen |
-| NOTIF-02 | Glocke öffnen lässt ungelesen bestehen; Detail öffnen aktualisiert Zähler und zweiten Tab | Browser DE/EN offen |
+| NOTIF-02 | Vorschau und Detail öffnen lassen ungelesen bestehen; ausdrücklich gelesen markieren aktualisiert Zähler und zweiten Tab | Browser DE/EN offen |
 | NOTIF-03 | Alle/ungelesen, Pagination und „alle gelesen“ mit währenddessen eintreffender Nachricht | Browser DE/EN offen |
 | NOTIF-04 | Vorschau, Feldänderung, Doppelversand, deaktivierter Empfänger und direkte Admin-URL mit normalem Admin | Browser DE/EN offen; technische Regeln JUnit geprüft |
 | NOTIF-05 | Passwortwechsel/-reset und E-Mail-Bestätigung über echte UI-/Mailpit-Journeys erzeugen jeweils den eigenen Eintrag | Browser DE/EN offen; Fachtransaktionen JUnit geprüft |

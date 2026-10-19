@@ -89,7 +89,7 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
       """
       1. Zwei eigene aktive Benutzer ausschließlich über die Benutzerverwaltung anlegen.
       2. Als Superadmin wahlweise einen Empfänger oder alle aktiven Konten wählen, prüfen und senden.
-      3. In getrennter Benutzersitzung die direkte persönliche Inbox öffnen, Nachricht lesen und nach Reload als gelesen wiederfinden.
+      3. In getrennter Benutzersitzung die direkte persönliche Inbox öffnen, Detail zunächst ungelesen sehen, ausdrücklich als gelesen markieren und nach Reload als gelesen wiederfinden.
       4. Der zweite Benutzer erhält bei Einzelversand keinen Eintrag, bei Sammelversand seinen eigenen Eintrag.
       Erwartet: Persistenter Versand, Empfängertrennung und Lesestatus ohne Benachrichtigungs-Header-Overlay oder gesendete Historie.
       """)

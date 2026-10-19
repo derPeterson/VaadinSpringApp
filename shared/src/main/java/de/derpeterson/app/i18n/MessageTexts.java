@@ -1874,6 +1874,14 @@ public class MessageTexts {
     return getTranslation("notifications.title");
   }
 
+  public String getNotificationsDetailTitle() {
+    return getTranslation("notifications.detailTitle");
+  }
+
+  public String getNotificationsDetailDescription() {
+    return getTranslation("notifications.detailDescription");
+  }
+
   public String getNotificationsDescription() {
     return getTranslation("notifications.description");
   }
@@ -1886,8 +1894,16 @@ public class MessageTexts {
     return getFormattedTranslation("notifications.latestUnread", limit);
   }
 
-  public String getNotificationsOnlyUnread() {
-    return getTranslation("notifications.onlyUnread");
+  public String getNotificationsLatestRead(int limit) {
+    return getFormattedTranslation("notifications.latestRead", limit);
+  }
+
+  public String getNotificationsAll() {
+    return getTranslation("notifications.all");
+  }
+
+  public String getNotificationsFilter() {
+    return getTranslation("notifications.filter");
   }
 
   public String getNotificationsDismiss() {

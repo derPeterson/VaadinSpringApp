@@ -518,17 +518,48 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
 #notifications-preview .cosmos-notification-preview-toolbar {
     flex-wrap: nowrap; justify-content: flex-start; margin-bottom: var(--cosmos-space-s);
 }
-.cosmos-notification-preview-toolbar > vaadin-checkbox {
-    margin: 0; padding: 0; min-width: 0;
-    --vaadin-checkbox-label-font-size: var(--cosmos-font-size-m);
-    --vaadin-checkbox-label-font-weight: var(--cosmos-font-weight-bold);
-    --vaadin-checkbox-label-color: var(--vaadin-input-field-value-color, var(--lumo-body-text-color));
+/* Native Radiogruppe wie im Profilbilddialog: Pillen, Auswahl und Tastaturfokus. */
+#notifications-preview-filter { flex: 0 0 auto; width: max-content; max-width: 100%; min-width: 0; margin: 0; padding: 0; }
+/* Intrinsische Gridbreite: alle Segmente so breit wie der längste Inhalt. */
+#notifications-preview-filter::part(group-field) {
+    display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+    width: max-content; gap: var(--cosmos-space-xs); padding: 3px;
+    border: var(--cosmos-border-width) solid var(--cosmos-input-border);
+    border-radius: var(--cosmos-segment-radius); background: var(--cosmos-input-background);
 }
-.cosmos-notification-preview-toolbar > vaadin-checkbox::part(checkbox) { align-self: center; }
-.cosmos-notification-preview-toolbar > vaadin-checkbox::part(label) {
-    font-size: var(--cosmos-font-size-m);
-    font-weight: var(--cosmos-font-weight-bold);
-    color: var(--vaadin-input-field-value-color, var(--lumo-body-text-color));
+#notifications-preview-filter vaadin-radio-button {
+    box-sizing: border-box; min-width: 0; min-height: calc(var(--cosmos-control-height) - var(--cosmos-space-s));
+    height: calc(var(--cosmos-control-height) - var(--cosmos-space-s));
+    margin: 0; padding: 0 var(--cosmos-space-s); display: grid;
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr); align-items: stretch; justify-items: stretch; gap: 0;
+    border: var(--cosmos-border-width) solid transparent; border-radius: var(--cosmos-segment-radius);
+    color: var(--lumo-primary-text-color);
+    --vaadin-radio-button-label-color: currentColor;
+    --vaadin-radio-button-label-font-size: var(--cosmos-font-size-m);
+    --vaadin-radio-button-label-font-weight: var(--cosmos-font-weight-semibold);
+}
+/* Die native Baseline-Hilfe wird für das einzeilige Segmentlayout nicht benötigt. */
+#notifications-preview-filter vaadin-radio-button::before,
+#notifications-preview-filter vaadin-radio-button::part(radio) { display: none; }
+#notifications-preview-filter vaadin-radio-button > [slot="label"] {
+    display: flex; align-items: center; justify-content: center; place-self: stretch;
+    grid-area: 1 / 1 / 2 / -1; box-sizing: border-box; margin: 0; padding: 0;
+    width: 100%; height: 100%; min-width: 0; min-height: 0;
+    text-align: center; white-space: nowrap;
+}
+#notifications-preview-filter vaadin-radio-button:hover:not([disabled]):not([checked]) {
+    background: var(--cosmos-table-highlight-background);
+}
+#notifications-preview-filter vaadin-radio-button[checked] {
+    color: var(--cosmos-button-primary-color); border-color: var(--cosmos-button-primary-border);
+    background: var(--cosmos-primary-background); box-shadow: var(--cosmos-button-primary-shadow);
+}
+#notifications-preview-filter vaadin-radio-button[focus-ring] {
+    outline: var(--cosmos-focus-ring-width) solid var(--cosmos-focus-ring-color); outline-offset: 2px;
+}
+#notifications-preview-filter vaadin-radio-button[disabled] { opacity: .5; }
+@media (max-width: 400px) {
+    #notifications-preview .cosmos-notification-preview-toolbar { flex-wrap: wrap; }
 }
 .cosmos-notification-preview-toolbar > vaadin-button { margin: 0; }
 .cosmos-notification-preview-toolbar > .cosmos-notification-preview-tool {
@@ -582,14 +613,15 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     font-size: var(--cosmos-font-size-xs);
 }
 .cosmos-notification-preview-source { font-weight: var(--cosmos-font-weight-bold); }
-.cosmos-notification-preview-state {
+.cosmos-notification-preview-state,
+.cosmos-notification-detail-state {
     border: var(--cosmos-border-width) solid var(--cosmos-badge-border);
     border-radius: var(--cosmos-badge-radius);
     background: var(--cosmos-badge-background);
     color: var(--cosmos-badge-color);
 }
 .cosmos-notification-preview-message {
-    margin-top: var(--cosmos-space-m); color: var(--lumo-secondary-text-color);
+    margin-top: var(--cosmos-space-s); color: var(--lumo-secondary-text-color);
     font-size: var(--cosmos-font-size-s); line-height: var(--cosmos-line-height-copy);
     display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
     overflow: hidden;
@@ -621,7 +653,50 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
 .cosmos-notification-body { white-space: pre-wrap; overflow-wrap: anywhere; }
 
 vaadin-dialog.cosmos-notification-dialog::part(overlay) {
-    width: min(var(--cosmos-dialog-width-account), calc(100vw - 32px)); box-sizing: border-box;
+    width: min(var(--cosmos-dialog-width-user), calc(100vw - 32px)); box-sizing: border-box;
 }
 .cosmos-notification-detail-header { display: flex; align-items: center; gap: var(--cosmos-space-m); width: 100%; min-width: 0; }
-.cosmos-notification-detail-header > h2 { flex: 1; overflow-wrap: anywhere; }
+.cosmos-notification-detail-header > .cosmos-panel-heading { flex: 1; min-width: 0; }
+.cosmos-notification-detail-header > .cosmos-panel-icon { flex-shrink: 0; }
+.cosmos-notification-detail-message {
+    display: grid; gap: var(--cosmos-space-s); min-width: 0; padding: var(--cosmos-space-xl);
+    background: var(--cosmos-card-background);
+    border: var(--cosmos-border-width) solid var(--cosmos-card-border);
+    border-radius: var(--cosmos-control-radius);
+}
+.cosmos-notification-detail-message--unread {
+    background: var(--cosmos-table-highlight-background);
+}
+.cosmos-notification-detail-title-row {
+    display: flex; align-items: center; gap: var(--cosmos-space-s); min-width: 0;
+}
+.cosmos-notification-detail-title-row > .cosmos-notification-detail-title { flex: 1; min-width: 0; }
+.cosmos-notification-detail-title {
+    margin: 0; color: var(--lumo-header-text-color); font-size: var(--lumo-font-size-xxl);
+    font-weight: var(--cosmos-font-weight-bold); overflow-wrap: anywhere;
+}
+.cosmos-notification-detail-meta {
+    display: flex; flex-wrap: wrap; align-items: center; gap: var(--cosmos-space-s);
+    color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-s);
+}
+.cosmos-notification-detail-source { font-weight: var(--cosmos-font-weight-bold); }
+.cosmos-notification-detail-state {
+    flex-shrink: 0;
+    display: inline-flex; align-items: center; padding: var(--cosmos-space-xs) var(--cosmos-space-s);
+    font-size: var(--cosmos-badge-font-size); font-weight: var(--cosmos-badge-font-weight);
+    line-height: 1.4; white-space: nowrap;
+}
+.cosmos-notification-detail-body {
+    color: var(--lumo-body-text-color); font-size: var(--cosmos-font-size-l);
+    line-height: var(--cosmos-line-height-copy);
+}
+.cosmos-notification-detail-actions { width: 100%; min-width: 0; }
+.cosmos-notification-detail-actions > vaadin-button { margin: 0; white-space: normal; height: auto; min-height: var(--cosmos-control-height); }
+.cosmos-notification-detail-actions > .cosmos-notification-detail-history { margin-inline-end: auto; }
+@media (max-width: 600px) {
+    vaadin-dialog.cosmos-notification-dialog::part(header),
+    vaadin-dialog.cosmos-notification-dialog::part(content),
+    vaadin-dialog.cosmos-notification-dialog::part(footer) { padding: var(--cosmos-dialog-compact-padding); }
+    .cosmos-notification-detail-message { padding: var(--cosmos-space-l); }
+    .cosmos-notification-detail-actions > .cosmos-notification-detail-history { flex-basis: 100%; justify-content: flex-start; }
+}

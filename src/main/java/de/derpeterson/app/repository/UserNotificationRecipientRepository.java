@@ -27,10 +27,10 @@ public interface UserNotificationRecipientRepository
 
   // Skalare Projektionen sehen Bulk-Leseupdates auch bei bereits verwalteten Empfangseinträgen.
   @Query(
-      "select r.id as id, m.type as type, m.title as title, m.body as body, m.createdAt as createdAt, r.readAt as readAt from UserNotificationRecipientEntity r join r.notification m where r.user.id = :owner and r.dismissedAt is null and (:cutoff is null or m.createdAt >= :cutoff) and (:unread = false or r.readAt is null) order by r.id desc")
+      "select r.id as id, m.type as type, m.title as title, m.body as body, m.createdAt as createdAt, r.readAt as readAt from UserNotificationRecipientEntity r join r.notification m where r.user.id = :owner and r.dismissedAt is null and (:cutoff is null or m.createdAt >= :cutoff) and (:read is null or (:read = true and r.readAt is not null) or (:read = false and r.readAt is null)) order by r.id desc")
   Page<InboxRow> inbox(
       @Param("owner") Long owner,
-      @Param("unread") boolean unread,
+      @Param("read") Boolean read,
       @Param("cutoff") Instant cutoff,
       Pageable page);
 

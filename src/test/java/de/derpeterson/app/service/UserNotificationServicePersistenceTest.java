@@ -558,6 +558,52 @@ class UserNotificationServicePersistenceTest {
     assertEquals(1, service.inbox(fresh, false, 1, 1).getNumberOfElements());
   }
 
+  @ParameterizedTest
+  @EnumSource(ReadFilter.class)
+  void readFilterKeepsOwnershipDismissalRetentionAndPagination(ReadFilter filter) {
+    broadcast();
+    var unreadId = service.inbox(userSession, false, 0, 20).getContent().getFirst().id();
+    broadcast();
+    var readId = service.inbox(userSession, false, 0, 20).getContent().getFirst().id();
+    service.markRead(userSession, List.of(readId));
+    broadcast();
+    var dismissed = service.inbox(userSession, false, 0, 20).getContent().getFirst().id();
+    service.markRead(userSession, List.of(dismissed));
+    service.dismiss(userSession, dismissed);
+    var expired = broadcast();
+    createdAt(expired.id(), Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS));
+    var page = service.inbox(session(ordinary), filter, 0, 1);
+    assertEquals(filter == ReadFilter.ALL ? 2 : 1, page.getTotalElements());
+    assertEquals(
+        filter == ReadFilter.UNREAD ? unreadId : readId, page.getContent().getFirst().id());
+    if (filter == ReadFilter.ALL) {
+      assertTrue(page.hasNext());
+      assertEquals(unreadId, service.inbox(userSession, filter, 1, 1).getContent().getFirst().id());
+    } else assertFalse(page.hasNext());
+    assertTrue(service.inbox(adminSession, ReadFilter.READ, 0, 5).isEmpty());
+    assertEquals(List.of(unreadId), service.unreadSnapshot(userSession));
+    service.markRead(userSession, List.of(unreadId));
+    assertEquals(2, service.inbox(userSession, ReadFilter.READ, 0, 5).getTotalElements());
+    assertTrue(service.inbox(userSession, ReadFilter.UNREAD, 0, 5).isEmpty());
+  }
+
+  @Test
+  void readFilterSelectsBeforeApplyingFiveItemPreviewLimit() {
+    for (int i = 0; i < 7; i++) broadcast();
+    var all = service.inbox(userSession, false, 0, 20).getContent();
+    service.markRead(userSession, all.subList(1, 7).stream().map(Item::id).toList());
+    var first = service.inbox(userSession, ReadFilter.READ, 0, 5);
+    assertEquals(6, first.getTotalElements());
+    assertEquals(5, first.getNumberOfElements());
+    assertTrue(first.hasNext());
+    assertTrue(first.stream().allMatch(Item::read));
+    assertEquals(1, service.inbox(userSession, ReadFilter.READ, 1, 5).getNumberOfElements());
+    assertEquals(
+        all.getFirst().id(),
+        service.inbox(userSession, ReadFilter.UNREAD, 0, 5).getContent().getFirst().id());
+    assertThrows(AccessDeniedException.class, () -> service.inbox(null, ReadFilter.READ, 0, 5));
+  }
+
   @Test
   void paginationBoundsAreChecked() {
     assertThrows(IllegalArgumentException.class, () -> service.inbox(userSession, false, -1, 20));
@@ -759,7 +805,7 @@ class UserNotificationServicePersistenceTest {
         recipients
             .inbox(
                 ordinary.getId(),
-                false,
+                null,
                 cutoff,
                 org.springframework.data.domain.PageRequest.of(0, 5))
             .getTotalElements());
@@ -774,7 +820,7 @@ class UserNotificationServicePersistenceTest {
         recipients
             .inbox(
                 ordinary.getId(),
-                false,
+                null,
                 cutoff.plusSeconds(1),
                 org.springframework.data.domain.PageRequest.of(0, 5))
             .isEmpty());

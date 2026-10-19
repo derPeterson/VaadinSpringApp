@@ -69,6 +69,12 @@ public class UserNotificationService {
     }
   }
 
+  public enum ReadFilter {
+    ALL,
+    READ,
+    UNREAD
+  }
+
   public record Item(
       Long id,
       UserNotificationType type,
@@ -130,8 +136,19 @@ public class UserNotificationService {
 
   @Transactional(readOnly = true)
   public Page<Item> inbox(HttpSession session, boolean unread, int page, int size) {
+    return inbox(session, unread ? ReadFilter.UNREAD : ReadFilter.ALL, page, size);
+  }
+
+  @Transactional(readOnly = true)
+  public Page<Item> inbox(HttpSession session, ReadFilter filter, int page, int size) {
+    Boolean read =
+        switch (Objects.requireNonNull(filter)) {
+          case ALL -> null;
+          case READ -> true;
+          case UNREAD -> false;
+        };
     return recipients
-        .inbox(owner(session).getId(), unread, policy.inboxCutoff(Instant.now()), page(page, size))
+        .inbox(owner(session).getId(), read, policy.inboxCutoff(Instant.now()), page(page, size))
         .map(
             r ->
                 new Item(

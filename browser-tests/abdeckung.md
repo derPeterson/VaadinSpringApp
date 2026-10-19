@@ -1,5 +1,26 @@
 # Browserabdeckung und offene Punkte
 
+## Nachfolgender Header-Filter (19.10.2026)
+
+Die Header-Vorschau verwendet nun eine native segmentierte Auswahl „Alle / Gelesen /
+Ungelesen“ wie der Profilbilddialog. Der neue Gelesen-Filter wird vor Pagination in
+der Datenbank angewendet; maximal fünf passende Einträge bleiben die Vorschaugrenze.
+DE/EN, Zustandserhalt beim Sprachwechsel, Eigentümertrennung und Aufbewahrung werden
+gezielt in Komponenten-/H2-Tests geprüft: 85 Komponenten-, 59 H2- und 13 Sprach-/
+Katalogprüfungen erfolgreich (157 insgesamt, keine Fehler/Skips). Darstellung, native Tastaturbedienung und
+schmale Browseransichten dieses neuen Filters sind noch nicht im Browser geprüft.
+Die nachfolgend historischen Browsernachweise gelten nicht als Abnahme dieses Filters.
+
+## Nachfolgender Benachrichtigungs-Detaildialog (19.10.2026)
+
+Detaildialog mit Paperplane, Herkunft/Datum, Lesestatus-Badge und expliziter
+Leseaktion überarbeitet. Öffnen allein verändert den Status nicht mehr. Der
+Browserhelfer NOTIFY-02 wurde auf diese Anforderung angepasst; er prüft vor dem
+Markieren ausdrücklich „Ungelesen“ und danach „Gelesen“. **Noch kein Browserlauf
+für diesen neuen Stand**; die nächtlichen Browser-/Coveragewerte unten gehören
+zum früheren Stand und belegen weder das neue Layout noch die neue Lesejourney.
+Gezielte aktuelle JUnit-Ergebnisse stehen im [Benachrichtigungsvertrag](../docs/user-notifications.md#detaildialog-entwurf-vom-19102026).
+
 ## Nächtliche Gesamt-QA mit Bereichsausnahmen (19.10.2026)
 
 Ausgangspunkt: sauberer Feature-Branch, Commit `3fc09c1`. Produktionsbuild erfolgreich;

@@ -9,6 +9,7 @@ import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.popover.Popover;
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.*;
 import com.vaadin.flow.server.*;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -86,6 +87,11 @@ class UserNotificationsUiTest {
             c ->
                 new PageImpl<>(
                     List.of(item), PageRequest.of(c.getArgument(2), c.getArgument(3)), 1));
+    when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
+        .thenAnswer(
+            c ->
+                new PageImpl<>(
+                    List.of(item), PageRequest.of(c.getArgument(2), c.getArgument(3)), 1));
   }
 
   @AfterEach
@@ -102,7 +108,18 @@ class UserNotificationsUiTest {
   }
 
   Stream<Component> tree(Component component) {
-    return Stream.concat(Stream.of(component), component.getChildren().flatMap(this::tree));
+    var children = component.getChildren();
+    // Vaadin verwaltet Header und Footer als separate Dialogbereiche.
+    if (component instanceof Dialog dialog) {
+      children =
+          Stream.concat(
+              children,
+              Stream.concat(
+                      dialog.getHeader().getElement().getChildren(),
+                      dialog.getFooter().getElement().getChildren())
+                  .flatMap(element -> element.getComponent().stream()));
+    }
+    return Stream.concat(Stream.of(component), children.distinct().flatMap(this::tree));
   }
 
   Button rowTitle(UserNotificationsPanel panel) {
@@ -142,19 +159,78 @@ class UserNotificationsUiTest {
     UserNotificationsPanel panel = field(bell, "panel");
     assertEquals(
         texts.getNotificationsDescription(), ((Span) field(panel, "description")).getText());
+    RadioButtonGroup<ReadFilter> filter = field(panel, "readFilter");
+    assertEquals(ReadFilter.ALL, filter.getValue());
+    assertEquals(texts.getNotificationsAll(), filter.getItemLabelGenerator().apply(ReadFilter.ALL));
     assertEquals(
-        texts.getNotificationsOnlyUnread(), ((Checkbox) field(panel, "unread")).getLabel());
+        texts.getNotificationsRead(), filter.getItemLabelGenerator().apply(ReadFilter.READ));
+    assertEquals(
+        texts.getNotificationsUnread(), filter.getItemLabelGenerator().apply(ReadFilter.UNREAD));
+    assertEquals(texts.getNotificationsFilter(), filter.getAriaLabel().orElseThrow());
+    assertTrue(tree(panel).noneMatch(Checkbox.class::isInstance));
     Span previewHint = field(panel, "previewHint");
     assertEquals(texts.getNotificationsLatest(5), previewHint.getText());
-    ((Checkbox) field(panel, "unread")).setValue(true);
+    filter.setValue(ReadFilter.READ);
+    assertEquals(texts.getNotificationsLatestRead(5), previewHint.getText());
+    filter.setValue(ReadFilter.UNREAD);
     assertEquals(texts.getNotificationsLatestUnread(5), previewHint.getText());
-    ((Checkbox) field(panel, "unread")).setValue(false);
+    filter.setValue(ReadFilter.ALL);
     assertEquals(texts.getNotificationsLatest(5), previewHint.getText());
     Button close = field(panel, "close");
     assertEquals(texts.getNotificationsClose(), close.getAriaLabel().orElseThrow());
     assertTrue(close.hasClassName("cosmos-overlay-close"));
     close.click();
     assertFalse(popover.isOpened());
+    verify(service, never()).markRead(any(), any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void segmentedReadFilterQueriesEachStateResetsPageAndSurvivesLanguageChange(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    var readItem = new Item(8L, item.type(), item.title(), item.body(), item.createdAt(), true);
+    when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
+        .thenAnswer(
+            c -> {
+              ReadFilter filter = c.getArgument(1);
+              var items =
+                  switch (filter) {
+                    case ALL -> List.of(readItem, item);
+                    case READ -> List.of(readItem);
+                    case UNREAD -> List.of(item);
+                  };
+              return new PageImpl<>(
+                  items, PageRequest.of(c.getArgument(2), c.getArgument(3)), items.size());
+            });
+    var panel = new UserNotificationsPanel(texts, service, http, true);
+    ui.add(panel);
+    panel.refresh();
+    RadioButtonGroup<ReadFilter> filter = field(panel, "readFilter");
+    assertEquals(
+        2, tree(panel).filter(c -> c.hasClassName("cosmos-notification-preview-row")).count());
+    ReflectionTestUtils.setField(panel, "page", 2);
+    filter.setValue(ReadFilter.READ);
+    verify(service).inbox(http, ReadFilter.READ, 0, 5);
+    assertEquals(0, (int) field(panel, "page"));
+    var rows = tree(panel).filter(c -> c.hasClassName("cosmos-notification-preview-row")).toList();
+    assertEquals(1, rows.size());
+    assertEquals("8", rows.getFirst().getElement().getAttribute("data-notification-id"));
+    locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    panel.refreshTexts();
+    assertEquals(ReadFilter.READ, filter.getValue());
+    assertEquals(
+        texts.getNotificationsRead(), filter.getItemLabelGenerator().apply(ReadFilter.READ));
+    assertEquals(
+        texts.getNotificationsLatestRead(5), ((Span) field(panel, "previewHint")).getText());
+    filter.setValue(ReadFilter.UNREAD);
+    verify(service).inbox(http, ReadFilter.UNREAD, 0, 5);
+    rows = tree(panel).filter(c -> c.hasClassName("cosmos-notification-preview-row")).toList();
+    assertEquals(1, rows.size());
+    assertEquals("7", rows.getFirst().getElement().getAttribute("data-notification-id"));
+    assertTrue(rows.getFirst().hasClassName("cosmos-notification-row--unread"));
+    filter.setValue(ReadFilter.ALL);
+    assertEquals(
+        2, tree(panel).filter(c -> c.hasClassName("cosmos-notification-preview-row")).count());
     verify(service, never()).markRead(any(), any());
   }
 
@@ -199,8 +275,8 @@ class UserNotificationsUiTest {
     read.click();
     verify(service).markRead(http, List.of(7L));
     assertNull(field(panel, "detail"));
-    ((Checkbox) field(panel, "unread")).setValue(true);
-    verify(service).inbox(http, true, 0, 5);
+    ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).setValue(ReadFilter.UNREAD);
+    verify(service).inbox(http, ReadFilter.UNREAD, 0, 5);
     item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), true);
     panel.refresh();
     assertTrue(
@@ -215,7 +291,7 @@ class UserNotificationsUiTest {
   }
 
   @Test
-  void openingCompactItemKeepsPopoverAndMarksOnlyThisItemRead() {
+  void openingCompactItemKeepsPopoverWithoutMarkingRead() {
     var bell = new UserNotificationBell(texts, service, request, new Button());
     ui.add(bell);
     Popover popover = field(bell, "popover");
@@ -231,13 +307,15 @@ class UserNotificationsUiTest {
     assertTrue(popover.isOpened());
     assertTrue(popover.isCloseOnOutsideClick());
     assertTrue(popover.isCloseOnEsc());
-    verify(service).markRead(http, List.of(7L));
+    verify(service, never()).markRead(any(), any());
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"de", "en"})
-  void doubleClickOnPreviewCardOpensOnlyItsMessageAndIgnoresButtonEvents(String language) {
+  @org.junit.jupiter.params.provider.CsvSource({"de,false", "en,false", "de,true", "en,true"})
+  void doubleClickOnPreviewCardOpensOnlyItsMessageAndIgnoresButtonEvents(
+      String language, boolean read) {
     locale.set(Locale.forLanguageTag(language));
+    item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), read);
     var bell = new UserNotificationBell(texts, service, request, new Button());
     ui.add(bell);
     Popover popover = field(bell, "popover");
@@ -265,7 +343,42 @@ class UserNotificationsUiTest {
     listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "dblclick", data));
     assertTrue(popover.isOpened());
     assertTrue(((Dialog) field(panel, "detail")).isOpened());
-    verify(service).markRead(http, List.of(7L));
+    verify(service, never()).markRead(any(), any());
+  }
+
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "de,false,title", "en,false,title", "de,true,title", "en,true,title",
+    "de,false,open", "en,false,open", "de,true,open", "en,true,open"
+  })
+  void titleAndOpenButtonUseSingleClickForBothReadStates(
+      String language, boolean read, String target) {
+    locale.set(Locale.forLanguageTag(language));
+    item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), read);
+    var bell = new UserNotificationBell(texts, service, request, new Button());
+    ui.add(bell);
+    Popover popover = field(bell, "popover");
+    popover.open();
+    UserNotificationsPanel panel = field(bell, "panel");
+    Button button =
+        target.equals("title")
+            ? rowTitle(panel)
+            : tree(panel)
+                .filter(Button.class::isInstance)
+                .map(Button.class::cast)
+                .filter(b -> b.getText().equals(texts.getNotificationsOpen()))
+                .findFirst()
+                .orElseThrow();
+    button.click();
+    Dialog dialog = field(panel, "detail");
+    assertTrue(dialog.isOpened());
+    assertTrue(popover.isOpened());
+    assertEquals(
+        read ? texts.getNotificationsRead() : texts.getNotificationsUnread(),
+        detailState(dialog).getText());
+    verify(service, never()).markRead(any(), any());
+    dialog.close();
+    assertTrue(popover.isOpened());
   }
 
   @ParameterizedTest
@@ -287,7 +400,8 @@ class UserNotificationsUiTest {
             .findFirst()
             .orElseThrow();
     assertTrue(dismiss.getAriaLabel().orElseThrow().startsWith(texts.getNotificationsDismiss()));
-    when(service.inbox(eq(http), anyBoolean(), anyInt(), anyInt())).thenReturn(Page.empty());
+    when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
+        .thenReturn(Page.empty());
     dismiss.click();
     verify(service).dismiss(http, 7L);
     verify(service, never()).markRead(any(), any());
@@ -328,18 +442,257 @@ class UserNotificationsUiTest {
   }
 
   @Test
-  void openingOneItemMarksOnlyThatItemAndUsesExistingDialogTheme() {
+  void openingOneItemKeepsReadStatusAndUsesExistingDialogTheme() {
     var panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
     rowTitle(panel).click();
-    verify(service).markRead(http, List.of(7L));
+    verify(service, never()).markRead(any(), any());
     Dialog detail = field(panel, "detail");
     assertTrue(detail.isOpened());
     assertTrue(detail.getThemeNames().contains("cosmos"));
     assertTrue(detail.isCloseOnOutsideClick());
     assertTrue(detail.isCloseOnEsc());
     assertTrue(tree(detail).noneMatch(Html.class::isInstance));
+  }
+
+  Button detailButton(Dialog dialog, String css) {
+    return tree(dialog)
+        .filter(Button.class::isInstance)
+        .map(Button.class::cast)
+        .filter(button -> button.hasClassName(css))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  Span detailState(Dialog dialog) {
+    return tree(dialog)
+        .filter(Span.class::isInstance)
+        .map(Span.class::cast)
+        .filter(span -> span.hasClassName("cosmos-notification-detail-state"))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "de,true,false", "en,true,false", "de,false,false", "en,false,false",
+    "de,true,true", "en,true,true", "de,false,true", "en,false,true"
+  })
+  void detailUsesPaperplaneBadgeMetadataAndExplicitReadAction(
+      String language, boolean compact, boolean read) {
+    locale.set(Locale.forLanguageTag(language));
+    item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), read);
+    when(service.unreadSnapshot(http)).thenReturn(read ? List.of() : List.of(7L));
+    var panel = new UserNotificationsPanel(texts, service, http, compact);
+    ui.add(panel);
+    panel.refresh();
+    rowTitle(panel).click();
+    Dialog dialog = field(panel, "detail");
+    assertTrue(dialog.isOpened());
+    verify(service, never()).markRead(any(), any());
+    var state = detailState(dialog);
+    assertEquals(
+        read ? texts.getNotificationsRead() : texts.getNotificationsUnread(), state.getText());
+    assertEquals("badge", state.getElement().getAttribute("theme"));
+    var dot =
+        tree(dialog)
+            .filter(c -> c.hasClassName("cosmos-notification-detail-dot"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(!read, dot.isVisible());
+    assertEquals(
+        !read,
+        tree(dialog).anyMatch(c -> c.hasClassName("cosmos-notification-detail-message--unread")));
+    assertTrue(dot.hasClassName("cosmos-notification-preview-dot"));
+    assertEquals("true", dot.getElement().getAttribute("aria-hidden"));
+    var header =
+        tree(dialog)
+            .filter(c -> c.hasClassName("cosmos-notification-detail-header"))
+            .findFirst()
+            .orElseThrow();
+    assertTrue(
+        tree(header)
+            .anyMatch(c -> "vaadin:paperplane".equals(c.getElement().getAttribute("icon"))));
+    var headerTitles = tree(header).filter(H2.class::isInstance).map(H2.class::cast).toList();
+    assertEquals(1, headerTitles.size());
+    assertEquals(texts.getNotificationsDetailTitle(), headerTitles.getFirst().getText());
+    assertTrue(
+        tree(header)
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .anyMatch(
+                span ->
+                    span.getText().equals(texts.getNotificationsDetailDescription())
+                        && span.hasClassName("cosmos-panel-description")));
+    assertTrue(tree(header).noneMatch(c -> c.hasClassName("cosmos-notification-detail-state")));
+    assertEquals(
+        1,
+        tree(dialog)
+            .filter(H3.class::isInstance)
+            .map(H3.class::cast)
+            .filter(h -> h.getText().equals(UserNotificationTexts.title(texts, item)))
+            .count());
+    assertTrue(
+        tree(dialog)
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .anyMatch(
+                span ->
+                    span.getText().equals(texts.getNotificationsSourceSystem())
+                        && span.hasClassName("cosmos-notification-detail-source")));
+    assertTrue(
+        tree(dialog)
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .anyMatch(
+                span ->
+                    span.getText()
+                        .equals(UserNotificationTexts.time(item.createdAt(), ui.getLocale()))));
+    Button mark = detailButton(dialog, "cosmos-notification-detail-mark-read");
+    assertEquals(!read, mark.isVisible());
+    assertEquals("vaadin:envelope-open", mark.getIcon().getElement().getAttribute("icon"));
+    Button history = detailButton(dialog, "cosmos-notification-detail-history");
+    assertEquals(texts.getNotificationsHistory(), history.getText());
+    assertEquals("vaadin:envelopes", history.getIcon().getElement().getAttribute("icon"));
+    assertTrue(
+        tree(dialog)
+            .filter(Button.class::isInstance)
+            .map(Button.class::cast)
+            .anyMatch(button -> button.getText().equals(texts.getNotificationsOpenAccount())));
+    assertTrue(
+        tree(dialog)
+            .filter(Button.class::isInstance)
+            .map(Button.class::cast)
+            .anyMatch(
+                button ->
+                    button.getText().equals(texts.getNotificationsClose())
+                        && button.getThemeNames().contains("primary")
+                        && "vaadin:close-circle"
+                            .equals(button.getIcon().getElement().getAttribute("icon"))));
+    if (!read) {
+      doAnswer(
+              invocation -> {
+                item =
+                    new Item(
+                        item.id(), item.type(), item.title(), item.body(), item.createdAt(), true);
+                when(service.unreadSnapshot(http)).thenReturn(List.of());
+                return null;
+              })
+          .when(service)
+          .markRead(http, List.of(7L));
+      mark.click();
+      verify(service).markRead(http, List.of(7L));
+      assertTrue(dialog.isOpened());
+      assertEquals(texts.getNotificationsRead(), detailState(dialog).getText());
+      assertTrue(
+          tree(dialog)
+              .noneMatch(c -> c.hasClassName("cosmos-notification-detail-message--unread")));
+      assertFalse(
+          tree(dialog)
+              .filter(c -> c.hasClassName("cosmos-notification-detail-dot"))
+              .findFirst()
+              .orElseThrow()
+              .isVisible());
+      assertFalse(detailButton(dialog, "cosmos-notification-detail-mark-read").isVisible());
+      assertTrue(tree(panel).noneMatch(c -> c.hasClassName("cosmos-notification-row--unread")));
+    }
+    dialog.close();
+    rowTitle(panel).click();
+    assertEquals(texts.getNotificationsRead(), detailState(field(panel, "detail")).getText());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void closingAndReopeningDetailDoesNotReadAndLanguageRefreshPreservesManualContent(
+      String language) {
+    item =
+        new Item(
+            7L,
+            UserNotificationType.ADMIN_ANNOUNCEMENT,
+            "Original title",
+            "Original body\nSecond line",
+            Instant.now(),
+            false);
+    var panel = new UserNotificationsPanel(texts, service, http, true);
+    ui.add(panel);
+    panel.refresh();
+    rowTitle(panel).click();
+    Dialog dialog = field(panel, "detail");
+    dialog.close();
+    rowTitle(panel).click();
+    dialog = field(panel, "detail");
+    locale.set(Locale.forLanguageTag(language));
+    panel.refreshTexts();
+    assertEquals(texts.getNotificationsUnread(), detailState(dialog).getText());
+    assertEquals(
+        texts.getNotificationsMarkRead(),
+        detailButton(dialog, "cosmos-notification-detail-mark-read").getText());
+    assertTrue(
+        tree(dialog)
+            .filter(Div.class::isInstance)
+            .map(Div.class::cast)
+            .anyMatch(div -> div.getText().equals(item.body())));
+    assertTrue(
+        tree(dialog)
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .anyMatch(
+                span -> span.getText().contains(texts.getNotificationsSourceAdministration())));
+    assertFalse(
+        tree(dialog)
+            .filter(Button.class::isInstance)
+            .map(Button.class::cast)
+            .anyMatch(button -> button.getText().equals(texts.getNotificationsOpenAccount())));
+    verify(service, never()).markRead(any(), any());
+  }
+
+  @Test
+  void failedExplicitReadDoesNotShowFalseSuccess() {
+    var panel = new UserNotificationsPanel(texts, service, http, true);
+    ui.add(panel);
+    panel.refresh();
+    rowTitle(panel).click();
+    Dialog dialog = field(panel, "detail");
+    doThrow(new IllegalStateException("isolated failure"))
+        .when(service)
+        .markRead(http, List.of(7L));
+    detailButton(dialog, "cosmos-notification-detail-mark-read").click();
+    assertTrue(dialog.isOpened());
+    assertEquals(texts.getNotificationsUnread(), detailState(dialog).getText());
+    assertTrue(detailButton(dialog, "cosmos-notification-detail-mark-read").isVisible());
+  }
+
+  @Test
+  void pushReadRefreshUpdatesOpenDetailAndHeaderCount() {
+    var bell = new UserNotificationBell(texts, service, request, new Button());
+    ui.add(bell);
+    Popover popover = field(bell, "popover");
+    popover.open();
+    UserNotificationsPanel panel = field(bell, "panel");
+    rowTitle(panel).click();
+    Dialog dialog = field(panel, "detail");
+    item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), true);
+    when(service.unreadSnapshot(http)).thenReturn(List.of());
+    when(service.unreadCount(http)).thenReturn(0L);
+    events.publish(Set.of(5L));
+    assertTrue(dialog.isOpened());
+    assertTrue(popover.isOpened());
+    assertEquals(texts.getNotificationsRead(), detailState(dialog).getText());
+    assertFalse(detailButton(dialog, "cosmos-notification-detail-mark-read").isVisible());
+    assertFalse(((Span) field(bell, "count")).isVisible());
+    verify(service, never()).markRead(any(), any());
+  }
+
+  @Test
+  void openingDetailRechecksAccessWithoutMutatingReadStatus() {
+    var panel = new UserNotificationsPanel(texts, service, http, true);
+    ui.add(panel);
+    panel.refresh();
+    when(service.ownerId(http)).thenThrow(new AccessDeniedException("expired"));
+    rowTitle(panel).click();
+    assertNull(field(panel, "detail"));
+    verify(service, never()).markRead(any(), any());
   }
 
   @Test
@@ -363,7 +716,9 @@ class UserNotificationsUiTest {
             .filter(Div.class::isInstance)
             .map(Div.class::cast)
             .anyMatch(d -> d.getText().equals(item.body())));
-    assertTrue(tree(detail).noneMatch(c -> c.getElement().getTag().equals("img")));
+    assertTrue(
+        tree(detail)
+            .noneMatch(c -> !c.getElement().isTextNode() && c.getElement().getTag().equals("img")));
   }
 
   @Test
