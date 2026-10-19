@@ -22,7 +22,7 @@ public class UserNotificationService {
   public static final int BODY_LIMIT = 4000;
   private final UserNotificationPolicy policy;
 
-  public int retentionDays() {
+  public OptionalInt retentionDays() {
     return policy.retentionDays();
   }
 
@@ -131,7 +131,7 @@ public class UserNotificationService {
   @Transactional(readOnly = true)
   public Page<Item> inbox(HttpSession session, boolean unread, int page, int size) {
     return recipients
-        .inbox(owner(session).getId(), unread, page(page, size))
+        .inbox(owner(session).getId(), unread, policy.inboxCutoff(Instant.now()), page(page, size))
         .map(
             r ->
                 new Item(
@@ -145,12 +145,13 @@ public class UserNotificationService {
 
   @Transactional(readOnly = true)
   public long unreadCount(HttpSession session) {
-    return recipients.countByUserIdAndReadAtIsNull(owner(session).getId());
+    return recipients.countUnread(owner(session).getId(), policy.inboxCutoff(Instant.now()));
   }
 
   @Transactional(readOnly = true)
   public List<Long> unreadSnapshot(HttpSession session) {
-    return List.copyOf(recipients.unreadIds(owner(session).getId()));
+    return List.copyOf(
+        recipients.unreadIds(owner(session).getId(), policy.inboxCutoff(Instant.now())));
   }
 
   @Transactional
@@ -164,6 +165,14 @@ public class UserNotificationService {
           recipients.markRead(
               owner, snapshot.subList(i, Math.min(i + 500, snapshot.size())), Instant.now());
     if (changed > 0) afterCommit(Set.of(owner));
+  }
+
+  /** Persönlich entfernen; der Versandnachweis bleibt für idempotente Wiederholungen erhalten. */
+  @Transactional
+  public void dismiss(HttpSession session, Long id) {
+    var owner = owner(session).getId();
+    if (recipients.dismiss(owner, Objects.requireNonNull(id), Instant.now()) > 0)
+      afterCommit(Set.of(owner));
   }
 
   @Transactional(readOnly = true)
@@ -239,7 +248,7 @@ public class UserNotificationService {
   @Transactional(readOnly = true)
   public Page<Sent> sent(HttpSession session, int page, int size) {
     return notifications
-        .findBySenderIdOrderByIdDesc(superadmin(session).getId(), page(page, size))
+        .sent(superadmin(session).getId(), policy.historyCutoff(Instant.now()), page(page, size))
         .map(this::sent);
   }
 

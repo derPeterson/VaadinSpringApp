@@ -41,6 +41,7 @@ public class UserNotificationBell extends Div {
     popover.setAutofocus(true);
     popover.setPosition(PopoverPosition.BOTTOM_END);
     popover.getThemeNames().add("cosmos");
+    popover.getThemeNames().add("cosmos-notifications");
     popover.setAriaLabel(texts.getNotificationsTitle());
     popover.addOpenedChangeListener(
         e -> {
@@ -50,6 +51,12 @@ public class UserNotificationBell extends Div {
         event -> {
           session = request.getSession(false);
           panel = new UserNotificationsPanel(texts, service, session, true);
+          panel.setCloseAction(popover::close);
+          panel.setDetailOpenListener(
+              open -> {
+                popover.setCloseOnOutsideClick(!open);
+                popover.setCloseOnEsc(!open);
+              });
           popover.removeAll();
           popover.add(panel);
           try {

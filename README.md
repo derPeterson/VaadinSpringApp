@@ -74,6 +74,16 @@ Der manuelle Superadmin-Versand pausiert im Wartungsmodus; das Versandpanel zeig
 an und bleibt gesperrt. Nach Ende der Wartung ist eine neue Vorschauprüfung erforderlich.
 Der Feature-Stand benötigt einen vollständigen Neustart mit gebautem Shared-Modul.
 
+Die Aufbewahrung ist im Adminbereich unter **Konfiguration → Benachrichtigungen**
+getrennt einstellbar: Benutzer-Inbox standardmäßig **180 Tage**, gesendete Admin-Historie
+**365 Tage**. Ein leeres Feld bedeutet für diese beiden Einstellungen **unbegrenzt**;
+die Voreinstellungen gelten nur für neue oder fehlende Einträge. Änderungen gelten
+beim nächsten Abruf ohne Neustart. Die tägliche
+Bereinigung um 03:20 entfernt Inhalte erst, wenn keine der beiden Fristen sie mehr
+benötigt. Automatische Systemhinweise folgen nur der Inbox-Frist.
+[Verhalten, Default-Variablen und Grenzen](docs/user-notifications.md#getrennte-aufbewahrung-ab-19102026).
+Für die Einführung Shared und Anwendung bauen und die Anwendung einmal neu starten.
+
 ## Rollen und Zugriffsrechte
 
 Die Rollen werden in der Reihenfolge **Superadmin → Administrator → Benutzer → Gast**
@@ -120,7 +130,7 @@ Erweiterung Shared-Modul und Anwendung bauen und die Anwendung einmal neu starte
 Der [Mail-Workerpool](docs/email-worker-pool.md) ist umgesetzt:
 `email.queue.pool.size` begrenzt parallele Queue-Versandaufgaben pro Instanz und wird
 beim Start eingelesen. `email.queue.capacity` bleibt das live eingelesene
-Kandidatenlimit pro Lauf. Damit sind alle 28 aktiven Konfigurationseinträge angebunden.
+Kandidatenlimit pro Lauf. Damit sind alle 30 aktiven Konfigurationseinträge angebunden.
 Shared und Anwendung bauen und die Anwendung vollständig neu starten; spätere
 Änderungen an der Workerzahl benötigen ebenfalls einen Neustart.
 Kontokonfigurationspanel und [Sitzungsverwaltung](docs/session-management-contract.md)
@@ -446,7 +456,7 @@ Transaktion. Beim Ausmustern den Namen und Schlüssel aus `ConfigEntry` dorthin
 Aufrufer, Defaults und UI-Texte ebenfalls entfernen. Ein Regressionstest verhindert,
 dass derselbe Schlüssel gleichzeitig aktiv und ausgemustert ist. Die Bereinigung ist
 wiederholbar; aktuelle Einstellungen und andere unbekannte Einträge bleiben erhalten.
-Neue Datenbanken enthalten 28 aktive Konfigurationseinträge.
+Neue Datenbanken enthalten 30 aktive Konfigurationseinträge.
 
 **Zwei Konfigurationsebenen beachten:** `DatabaseInitializer` übernimmt `app.config.defaults.<Schlüssel>` nur für noch fehlende Datenbankeinträge. Bereits gespeicherte Werte werden durch geänderte `APP_CFG_*`-Vorgaben nicht überschrieben. Die Schlüssel definiert `model/enums/ConfigEntry.java`; Änderungen vorhandener Werte sind im Adminbereich möglich. `service.name` bestimmt den Anzeigenamen, `base.url` die Basis für Mail-Links und muss zur erreichbaren URL passen. Für die Erstbefüllung ist beispielsweise `app.config.defaults.base.url=http://localhost:8080/` möglich.
 

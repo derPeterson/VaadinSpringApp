@@ -29,6 +29,9 @@ public enum ConfigEntry {
   PASSWORD_RESET_TOKEN_LIVE_DURATION(
       "passwordResetToken.live.duration", Duration.ofDays(3).toString()),
 
+  USER_NOTIFICATIONS_INBOX_RETENTION_DAYS("user.notifications.inbox.retention.days", 180),
+  USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS("user.notifications.history.retention.days", 365),
+
   // EMail Konfiguration
   MAIL_HOST("mail.host", "localhost"),
   MAIL_PORT("mail.port", 1025),

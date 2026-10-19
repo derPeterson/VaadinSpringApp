@@ -12,18 +12,66 @@ beziehen sich auf den Stand vor dieser Erweiterung.
 
 ## Bedienung
 
-- Angemeldet: Die vorhandene Glocke zeigt die Anzahl ungelesener Benachrichtigungen,
+- Angemeldet: Das Paperplane-Symbol im Header zeigt die Anzahl ungelesener Benachrichtigungen,
   oberhalb von 99 als `99+`. Ein Klick öffnet bis zu fünf aktuelle Einträge.
-  Anonym bleiben Glocke und Konto-Schnelleinstieg ausgeblendet.
+  Anonym bleiben Benachrichtigungen und Konto-Schnelleinstieg ausgeblendet.
 - Alle Benachrichtigungen anzeigen öffnet `/notifications`: 20 Einträge pro Seite, neueste zuerst,
   Filter für ungelesene Einträge, Aktualisieren und Vor-/Zurückblättern.
-- Das Öffnen der Glocke markiert nichts als gelesen. Erst das Öffnen eines Eintrags
+- Das Öffnen der Header-Vorschau markiert nichts als gelesen. Erst das Öffnen eines Eintrags
   markiert diesen. „Alle als gelesen markieren“ verwendet die zuletzt geladene
   Liste der eigenen ungelesenen Empfangs-IDs; später eingetroffene Einträge bleiben ungelesen.
 - Detaildialog: Escape, Außenklick, Schließen-Icon und Footer-Schließen. Systemeinträge
   bieten ausschließlich den internen Einstieg in Konto/Sicherheit an.
 - Lesestatus gehört zum Konto, unabhängig vom verwendeten Tab oder Gerät.
   Neue Benachrichtigungen und Leseänderungen lösen nach Commit lokale Push-Aktualisierungen aus.
+
+## Header-Vorschau: Entwurf vom 19.10.2026
+
+Die kompakte Vorschau verwendet den Header-Aufbau der Kontoansichten mit Paperplane,
+Titel, Beschreibung und Schließen-Icon. Kopf, Inhalt und Footer beziehen ihre Flächen
+und Trennlinien aus den gemeinsamen Dialog-Tokens. Der mittlere Bereich ist scrollbar;
+Footer und Kopf bleiben außerhalb dieses Scrollbereichs. Die Textvorschau ist auf drei
+Zeilen begrenzt; „Öffnen“ zeigt die vollständige Nachricht im bestehenden Detaildialog.
+
+Ein Doppelklick auf eine Vorschaukarte öffnet denselben Detaildialog wie „Öffnen“.
+Doppelklicks auf Buttons lösen diese Kartenaktion nicht zusätzlich aus. Die Nachricht
+wird dabei wie beim bisherigen Öffnen als gelesen markiert. Gezielter Nachweis der
+Ereignisbehandlung: 58 Komponentenprüfungen erfolgreich, keine Fehler oder Skips;
+die tatsächliche Browserausführung des Ereignisfilters bleibt ungeprüft.
+
+Ungelesene Einträge zeigen einen Punkt und eine hervorgehobene Fläche. „Als gelesen
+markieren“ betrifft nur den jeweiligen Eintrag und öffnet keinen Dialog. Der Filter
+„Nur ungelesen“, Aktualisieren und die bisherige Sammelaktion bleiben verfügbar.
+Manuelle Ankündigungen tragen „Administration“, automatische Sicherheits- und
+Rollenhinweise „System“. Beim Öffnen einer Nachricht bleibt das Popover hinter dem
+Detaildialog erhalten. Solange der Dialog offen ist, werden Außenklick und Escape nur
+vom Dialog verarbeitet; danach gelten wieder die normalen Schließregeln des Popovers.
+Der Envelopes-Button zur vollständigen Liste schließt das Popover bei der Navigation.
+Die eigenständige Inbox behält ihre bisherige Darstellung. Der Aufbewahrungshinweis
+im Footer ist mittig; die Werkzeugleiste enthält Aktualisieren und die Sammel-Leseaktion.
+Eine dezente Zeile nennt die Grenze von fünf neuesten beziehungsweise ungelesenen Einträgen.
+
+Jede Vorschaukarte hat ein Schließen-Icon mit „Benachrichtigung löschen“. Es entfernt
+nur diesen persönlichen Empfangseintrag aus Overlay, Inbox, Ungelesen-Zähler und
+Sammel-Lesesnapshot. Technisch bleibt er mit `dismissed_at` bis zur regulären
+Aufbewahrungsbereinigung erhalten. Das bewahrt den ursprünglichen Versandnachweis
+und verhindert, dass ein idempotenter Versand-Retry den Eintrag wiederherstellt.
+Andere Empfänger und die gesendete Historie sind davon nicht betroffen. Fremde IDs
+werden nicht verändert; wiederholtes Entfernen bleibt folgenlos. Erst nach Commit
+wird ausschließlich der betroffene Besitzer per bestehendem Push aktualisiert.
+
+Vorheriger Overlay-Zwischenstand: 58 Komponentenprüfungen, 47 H2-Persistenzprüfungen,
+13 Sprach-/Katalogprüfungen und 22 Admin-Navigationsprüfungen erfolgreich: insgesamt
+140, keine Fehler oder Skips. Eigentümertrennung, Wiederholung, neue Sitzung,
+Transaktionsrollback und Versand-Idempotenz nach dem Entfernen sind enthalten.
+CSS-Syntax und verwendete Tokens separat geprüft.
+Browserdarstellung, Scrollgeometrie und Fokus nach dem Schließen wurden für diesen
+Entwurf noch nicht im Browser geprüft; die frühere nächtliche QA deckt ihn nicht ab.
+
+Für diese Erweiterung Shared und Anwendung bauen und die Anwendung vollständig
+neu starten. Hibernate ergänzt über die vorhandene `ddl-auto=update`-Konfiguration
+das nullable Empfangsfeld `dismissed_at`; vorhandene Einträge bleiben sichtbar.
+Die Nutzer-Datenbank wurde für diese Umsetzung weder gelesen noch verändert.
 
 ## Superadmin-Versand
 
@@ -99,17 +147,81 @@ anderer Empfänger bleiben erhalten. Index auf Empfänger/Lesestatus/ID sowie Ze
 Unique-Constraints werden durch das JPA-Schema angelegt. Empfangslisten lesen skalare
 Projektionen; Leseupdates benötigen kein Leeren fremder Änderungen im Persistence Context.
 
-Standardaufbewahrung: **180 Tage**, gelesen und ungelesen. Der tägliche Job um 03:20 in
-der Server-Zeitzone entfernt ältere Inhalte samt Empfangseinträgen sowie Inhalte ohne
-Empfänger. Die eigene Versandhistorie ist deshalb kein dauerhaftes Auditarchiv. Gelesen
-bedeutet keine nachgewiesene menschliche Kenntnisnahme.
+## Getrennte Aufbewahrung ab 19.10.2026
 
-Die tatsächlich verwendete Spring-Betriebseinstellung
-`app.user-notifications.retention-days` erlaubt positive ganze Tage; Standard 180. Anzeige und
-Bereinigung verwenden dieselbe `UserNotificationPolicy`. Ungültige nichtpositive Werte verhindern
-den Start. Dies ist zunächst kein zusätzliches Feld der Admin-Konfigurationsmaske; dort
-bleiben die bisherigen 28 Felder unverändert. Bereinigungsänderungen erscheinen beim nächsten
-Laden/Aktualisieren; der Job versendet keine individuellen Livehinweise über entfernte Einträge.
+Unter **Administration → Konfiguration → Benachrichtigungen** stehen zwei Felder
+für positive Tageswerte oder einen leeren Wert für unbegrenzte Aufbewahrung:
+
+| Einstellung | Datenbankschlüssel | Standard |
+| --- | --- | --- |
+| Aufbewahrung im Posteingang | `user.notifications.inbox.retention.days` | 180 Tage |
+| Aufbewahrung der Versandhistorie | `user.notifications.history.retention.days` | 365 Tage |
+
+Die Einheit und weitere Erläuterungen stehen in den Info-Tooltips. Ein leeres Feld
+zeigt den Platzhalter „Unbegrenzt“ und wird ausdrücklich als leer gespeichert. Es bleibt
+auch nach erneutem Öffnen und Sprachwechsel leer. Die Voreinstellungen 180/365 gelten
+für neue beziehungsweise fehlende Konfigurationseinträge; leere gespeicherte Werte
+haben Vorrang. Diese Leerwert-Regel gilt ausschließlich für diese beiden Felder.
+Null und negative Zahlen bleiben ungültig; die Zahl `0` bedeutet nicht unbegrenzt.
+
+Beide Werte sind unabhängig. Sie gelten ab Erstellung der Benachrichtigung und werden
+bei jedem Abruf neu aus `ConfigService` gelesen. Änderungen wirken ohne Neustart beim
+nächsten Abruf beziehungsweise Aktualisieren; der Inbox-Fußtext verwendet denselben Wert.
+Abgelaufene Inbox-Einträge fehlen auch in Ungelesen-Zähler und Sammel-Lesesnapshot.
+Die Historienfrist betrifft ausschließlich manuell versendete `ADMIN_ANNOUNCEMENT`-Einträge.
+Automatische Systemhinweise haben keine gesendete Admin-Historie und folgen nur der Inbox-Frist.
+
+Der tägliche Job um 03:20 in der Server-Zeitzone entfernt Inhalte physisch erst dann,
+wenn weder Inbox noch Historie sie noch benötigen. Bei 180/365 Tagen bleiben manuelle
+Inhalte zwischen beiden Grenzen ausschließlich für die Historie gespeichert. Wird die
+Historie kürzer als die Inbox eingestellt, bleibt der Inhalt bis zum Ende der Inbox-Frist
+erhalten. Empfangszuordnungen bleiben bis zur endgültigen Bereinigung als Versandnachweis
+für idempotente Wiederholungen bestehen. Verwaiste Systeminhalte werden direkt bereinigt;
+verwaiste manuelle Inhalte erst nach Ende der Historienfrist. Gelesen bedeutet keine
+nachgewiesene menschliche Kenntnisnahme.
+
+Genau auf der Zeitgrenze sind Einträge noch enthalten (`created_at >= cutoff`);
+die physische Bereinigung entfernt strikt ältere Inhalte. Eine Verlängerung der Frist
+kann bisher nur ausgeblendete Einträge wieder sichtbar machen; physisch bereinigte
+Inhalte bleiben entfernt. Persönlich per Lösch-Icon entfernte Einträge bleiben ausgeblendet.
+Bei unbegrenzter Aufbewahrung entfällt die jeweilige Altersgrenze vollständig;
+insbesondere darf eine kürzere Frist im anderen Bereich den Inhalt nicht entfernen.
+Auch automatische Systemhinweise bleiben bei unbegrenzter Inbox-Frist erhalten.
+Der Inbox-Fußtext lautet dann „Benachrichtigungen werden unbegrenzt aufbewahrt.“
+
+Nichtpositive Zahlen oder fehlerhafte Betriebswerte werden zurückgewiesen. Bei fehlerhafter
+Konfiguration bricht die Bereinigung ab, statt mit einer verkürzten Ersatzfrist zu löschen.
+
+Standardwerte für neue Datenbanken beziehungsweise noch fehlende Einträge lassen sich
+über `APP_CFG_USER_NOTIFICATIONS_INBOX_RETENTION_DAYS` und
+`APP_CFG_USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS` setzen; Beispiele stehen in
+`.env.example`. Gespeicherte Admin-Konfiguration hat Vorrang. Die neue Gruppe, Defaults
+und Shared-Klassen benötigen einmalig einen vollständigen Anwendungsneustart; spätere
+Friständerungen im Adminbereich nicht. Die reale `.env` und Nutzerdatenbank wurden nicht
+geöffnet oder verändert.
+
+### Prüfung der getrennten Aufbewahrung
+
+Am 19.10.2026 wurde die vollständige Anwendungs-JUnit-Suite in einer isolierten
+Buildkopie mit Java 25 ausgeführt: **1.738 Tests erfolgreich, keine Fehler oder Skips**.
+Darin enthalten: 50 Benachrichtigungs-Persistenztests, fünf Policytests und sechs
+Konfigurationsgruppen-Tests. Geprüft sind die Defaults 180/365, positive Ganzzahlen,
+gespeicherte Werte vor Umgebungsdefaults, Änderungen ohne Neustart, die genaue
+Zeitgrenze und die getrennte Sichtbarkeit/Bereinigung auch bei kürzerer Historienfrist.
+Die vorhandenen Passwort-, Rollen- und Kontoregressionen bleiben grün. Shared wurde
+vor dem Anwendungsbuild gebaut; Javaformatierung und Diff-Prüfung sind erfolgreich.
+Browser- und Produktionsbuild wurden für diese Änderung nicht ausgeführt.
+
+### Ergänzung: Leere Werte bedeuten unbegrenzt
+
+Nach dieser Anpassung wurde die vollständige Anwendungs-JUnit-Suite erneut in einer
+isolierten Kopie geprüft: **1.749 Tests erfolgreich, keine Fehler oder Skips**.
+Die zusätzlichen Prüfungen sichern alle vier Kombinationen begrenzter/unbegrenzter
+Fristen, alte Systemhinweise, leere gespeicherte Werte vor Defaults, Speichern und
+Wiederöffnen leerer Felder sowie den Sprachwechsel und den unbegrenzten Footer ab.
+Die übrigen Konfigurationsfelder behalten ihre bisherigen Leerwert-Regeln.
+Shared-Build, Spotless und Diff-Prüfung sind erfolgreich. Browser- und Produktionsbuild
+wurden auch für diese Anpassung nicht ausgeführt.
 
 ## Aufteilung und Einführung
 
@@ -197,8 +309,9 @@ heißen „Benachrichtigung senden“ / „Send notification“; ihr Typ ist `AD
 Die Inbox ist ausschließlich über `/notifications` erreichbar; der Superadminbereich über
 `/admin?section=notifications`. Getter und Übersetzungsschlüssel heißen `getNotifications...`
 beziehungsweise `notifications.*`; DOM-/CSS-Bezeichner verwenden `notification`/`notifications`.
-Die Aufbewahrung wird ausschließlich mit `app.user-notifications.retention-days` eingestellt,
-Standard 180 Tage. Es gibt keine weiteren Feature-Routen oder Ersatzkonfigurationsnamen.
+Die Aufbewahrung verwendet die zwei `ConfigEntry`-Werte der Gruppe Benachrichtigungen;
+Defaults sind 180 Tage für die Inbox und 365 Tage für die gesendete Historie.
+Es gibt keine weiteren Feature-Routen oder Ersatzkonfigurationsnamen.
 
 Das SQL-Schema besteht aus `user_notifications` und `user_notification_recipients` mit
 `notification_id`. Constraints heißen `uk_user_notification_request` und

@@ -6,6 +6,7 @@ public enum AdminConfigGroup {
   SECURITY,
   TOKENS,
   USER_STATUS,
+  NOTIFICATIONS,
   EMAIL_SENDER,
   SMTP,
   QUEUE

@@ -100,6 +100,10 @@ class PasswordResetServicePersistenceTest {
     when(clock.getZone()).thenReturn(ZoneId.systemDefault());
     when(clock.instant()).thenAnswer(call -> Instant.now());
     reset(probes.tokens(), probes.users(), probes.config(), probes.encoder(), probes.queue());
+    when(probes.config().getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS))
+        .thenReturn("180");
+    when(probes.config().getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS))
+        .thenReturn("365");
     when(probes.config().getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION))
         .thenReturn("PT1H");
     when(probes.config().getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION))
@@ -1181,7 +1185,7 @@ class PasswordResetServicePersistenceTest {
         UserRepository users,
         ConfigService config) {
       return new UserNotificationService(
-          new UserNotificationPolicy(180),
+          new UserNotificationPolicy(config),
           messages,
           recipients,
           users,

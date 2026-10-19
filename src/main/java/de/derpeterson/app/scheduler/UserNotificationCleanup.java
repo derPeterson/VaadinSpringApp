@@ -3,7 +3,6 @@ package de.derpeterson.app.scheduler;
 import de.derpeterson.app.repository.UserNotificationRepository;
 import de.derpeterson.app.service.UserNotificationPolicy;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -18,7 +17,8 @@ public class UserNotificationCleanup {
   @Scheduled(cron = "0 20 3 * * *")
   @Transactional
   public int cleanup() {
-    return notifications.deleteRetired(
-        Instant.now().minus(policy.retentionDays(), ChronoUnit.DAYS));
+    var now = Instant.now();
+    // Inhalte erst löschen, wenn sie weder in einer Inbox noch in der Historie gebraucht werden.
+    return notifications.deleteRetired(policy.inboxCutoff(now), policy.historyCutoff(now));
   }
 }

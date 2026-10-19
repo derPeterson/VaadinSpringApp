@@ -56,6 +56,91 @@ class AdminConfigurationGroupTest {
   }
 
   @Test
+  void notificationGroupContainsTwoPositiveDaySettingsAndSavesThemIndependently() {
+    section.showGroup(AdminConfigGroup.NOTIFICATIONS);
+    assertEquals(
+        List.of(
+            ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS,
+            ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS),
+        visibleEntries());
+    var inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
+    var inbox =
+        (com.vaadin.flow.component.textfield.IntegerField)
+            inputs.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS);
+    var history =
+        (com.vaadin.flow.component.textfield.IntegerField)
+            inputs.get(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS);
+    assertEquals(180, inbox.getValue());
+    assertEquals(365, history.getValue());
+    inbox.setValue(0);
+    ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
+    assertTrue(inbox.isInvalid());
+    verify(config, never()).set(any(), anyString());
+    inbox.setValue(30);
+    history.setValue(14);
+    ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
+    verify(config).set(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS, "30");
+    verify(config).set(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS, "14");
+    de.derpeterson.app.helper.ui.NotificationHelper.getInstance().closeAndClearAllNotifications();
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"de", "en"})
+  void emptyNotificationRetentionStaysEmptyAfterSaveReloadAndLanguageChange(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    var stored = new java.util.EnumMap<ConfigEntry, String>(ConfigEntry.class);
+    when(config.getString(any()))
+        .thenAnswer(
+            call -> {
+              ConfigEntry entry = call.getArgument(0);
+              return stored.getOrDefault(entry, entry.getDefaultValueString());
+            });
+    doAnswer(
+            call -> {
+              stored.put(call.getArgument(0), call.getArgument(1));
+              return null;
+            })
+        .when(config)
+        .set(any(), anyString());
+    section.showGroup(AdminConfigGroup.NOTIFICATIONS);
+    section.refreshTexts();
+    var inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
+    var inbox =
+        (com.vaadin.flow.component.textfield.IntegerField)
+            inputs.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS);
+    var history =
+        (com.vaadin.flow.component.textfield.IntegerField)
+            inputs.get(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS);
+    inbox.clear();
+    history.clear();
+    var messages = MessageProperties.forLocale(provider, locale.get());
+    assertEquals(messages.getAdminConfigUnlimited(), inbox.getPlaceholder());
+    assertEquals(messages.getAdminConfigUnlimited(), history.getPlaceholder());
+    ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
+    assertFalse(inbox.isInvalid());
+    assertFalse(history.isInvalid());
+    assertEquals("", stored.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS));
+    assertEquals("", stored.get(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS));
+    assertNull(inbox.getValue());
+    assertNull(history.getValue());
+    locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    section.refreshTexts();
+    ReflectionTestUtils.invokeMethod(section, "loadConfigValues");
+    assertNull(inbox.getValue());
+    assertNull(history.getValue());
+    assertEquals(
+        MessageProperties.forLocale(provider, locale.get()).getAdminConfigUnlimited(),
+        inbox.getPlaceholder());
+    var infos = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInfoButtons");
+    var info = (ConfigInfoButton) infos.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS);
+    var translated = MessageProperties.forLocale(provider, locale.get());
+    assertTrue(info.getTooltip().getText().contains(translated.getAdminConfigRuleEmptyUnlimited()));
+    assertFalse(
+        info.getTooltip().getText().contains(translated.getAdminConfigRuleEmptyUsesDefault()));
+    de.derpeterson.app.helper.ui.NotificationHelper.getInstance().closeAndClearAllNotifications();
+  }
+
+  @Test
   void smtpGroupContainsOnlyTheSupportedTransportSettings() {
     section.showGroup(AdminConfigGroup.SMTP);
     assertEquals(

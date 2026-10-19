@@ -448,6 +448,30 @@ public class MessageTexts {
     return getTranslation("adminView.nav.mail_test");
   }
 
+  public String getAdminConfigGroupNotifications() {
+    return getTranslation("adminView.config.group.notifications");
+  }
+
+  public String getAdminConfigGroupNotificationsDescription() {
+    return getTranslation("adminView.config.group.notifications.description");
+  }
+
+  public String getAdminConfigEntryNotificationInboxRetention() {
+    return getTranslation("adminView.config.entry.notification_inbox_retention");
+  }
+
+  public String getAdminConfigEntryNotificationHistoryRetention() {
+    return getTranslation("adminView.config.entry.notification_history_retention");
+  }
+
+  public String getAdminConfigEntryNotificationInboxRetentionTooltip() {
+    return getTranslation("adminView.config.entry.notification_inbox_retention.tooltip");
+  }
+
+  public String getAdminConfigEntryNotificationHistoryRetentionTooltip() {
+    return getTranslation("adminView.config.entry.notification_history_retention.tooltip");
+  }
+
   public String getAdminConfigGroupGeneral() {
     return getTranslation("adminView.config.group.general");
   }
@@ -624,6 +648,7 @@ public class MessageTexts {
       case USER_STATUS -> getAdminConfigGroupUserStatusDescription();
       case EMAIL_SENDER -> getAdminConfigGroupEmailSenderDescription();
       case SMTP -> getAdminConfigGroupSmtpDescription();
+      case NOTIFICATIONS -> getAdminConfigGroupNotificationsDescription();
       case QUEUE -> getAdminConfigGroupQueueDescription();
     };
   }
@@ -1401,6 +1426,7 @@ public class MessageTexts {
       case USER_STATUS -> getAdminConfigGroupUserStatus();
       case EMAIL_SENDER -> getAdminConfigGroupEmailSender();
       case SMTP -> getAdminConfigGroupSmtp();
+      case NOTIFICATIONS -> getAdminConfigGroupNotifications();
       case QUEUE -> getAdminConfigGroupQueue();
     };
   }
@@ -1852,6 +1878,38 @@ public class MessageTexts {
     return getTranslation("notifications.description");
   }
 
+  public String getNotificationsLatest(int limit) {
+    return getFormattedTranslation("notifications.latest", limit);
+  }
+
+  public String getNotificationsLatestUnread(int limit) {
+    return getFormattedTranslation("notifications.latestUnread", limit);
+  }
+
+  public String getNotificationsOnlyUnread() {
+    return getTranslation("notifications.onlyUnread");
+  }
+
+  public String getNotificationsDismiss() {
+    return getTranslation("notifications.dismiss");
+  }
+
+  public String getNotificationsOpen() {
+    return getTranslation("notifications.open");
+  }
+
+  public String getNotificationsMarkRead() {
+    return getTranslation("notifications.markRead");
+  }
+
+  public String getNotificationsSourceAdministration() {
+    return getTranslation("notifications.sourceAdministration");
+  }
+
+  public String getNotificationsSourceSystem() {
+    return getTranslation("notifications.sourceSystem");
+  }
+
   public String getNotificationsUnread() {
     return getTranslation("notifications.unread");
   }
@@ -1898,6 +1956,22 @@ public class MessageTexts {
 
   public String getNotificationsOpenAccount() {
     return getTranslation("notifications.openAccount");
+  }
+
+  public String getAdminConfigUnlimited() {
+    return getTranslation("adminView.config.unlimited");
+  }
+
+  public String getAdminConfigInitialValue() {
+    return getTranslation("adminView.config.initial_value");
+  }
+
+  public String getAdminConfigRuleEmptyUnlimited() {
+    return getTranslation("adminView.config.rule.empty_unlimited");
+  }
+
+  public String getNotificationsRetentionUnlimited() {
+    return getTranslation("notifications.retentionUnlimited");
   }
 
   public String getNotificationsRetention(int days) {

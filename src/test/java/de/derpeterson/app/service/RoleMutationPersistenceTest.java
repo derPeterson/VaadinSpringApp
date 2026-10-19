@@ -47,12 +47,16 @@ class RoleMutationPersistenceTest {
 
     @Bean
     ConfigService config() {
-      return mock(ConfigService.class);
+      var config = mock(ConfigService.class);
+      when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("180");
+      when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS))
+          .thenReturn("365");
+      return config;
     }
 
     @Bean
-    UserNotificationPolicy messagePolicy() {
-      return new UserNotificationPolicy(180);
+    UserNotificationPolicy messagePolicy(ConfigService config) {
+      return new UserNotificationPolicy(config);
     }
   }
 

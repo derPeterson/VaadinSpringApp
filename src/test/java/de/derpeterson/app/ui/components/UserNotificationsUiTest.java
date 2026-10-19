@@ -25,7 +25,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -77,7 +76,7 @@ class UserNotificationsUiTest {
     request.setSession(http);
     events = new UserNotificationBroadcaster();
     when(service.events()).thenReturn(events);
-    when(service.retentionDays()).thenReturn(180);
+    when(service.retentionDays()).thenReturn(OptionalInt.of(180));
     when(service.deliveryState()).thenReturn(MaintenanceService.State.OPEN);
     when(service.ownerId(http)).thenReturn(5L);
     when(service.unreadCount(http)).thenReturn(1L);
@@ -114,7 +113,6 @@ class UserNotificationsUiTest {
         .orElseThrow();
   }
 
-  @Tag("notification-ui-pending-redesign")
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void refreshOpeningAndLanguageNeverMarkNotificationsRead(String language) {
@@ -130,6 +128,186 @@ class UserNotificationsUiTest {
             .anyMatch(s -> s.getText().equals(texts.getNotificationsRetention(180))));
     panel.refreshTexts();
     verify(service, never()).markRead(any(), any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void headerPreviewUsesAccountHeaderAndClosesExplicitlyWithoutReading(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    var bell = new UserNotificationBell(texts, service, request, new Button());
+    ui.add(bell);
+    Popover popover = field(bell, "popover");
+    assertTrue(popover.getThemeNames().contains("cosmos-notifications"));
+    popover.open();
+    UserNotificationsPanel panel = field(bell, "panel");
+    assertEquals(
+        texts.getNotificationsDescription(), ((Span) field(panel, "description")).getText());
+    assertEquals(
+        texts.getNotificationsOnlyUnread(), ((Checkbox) field(panel, "unread")).getLabel());
+    Span previewHint = field(panel, "previewHint");
+    assertEquals(texts.getNotificationsLatest(5), previewHint.getText());
+    ((Checkbox) field(panel, "unread")).setValue(true);
+    assertEquals(texts.getNotificationsLatestUnread(5), previewHint.getText());
+    ((Checkbox) field(panel, "unread")).setValue(false);
+    assertEquals(texts.getNotificationsLatest(5), previewHint.getText());
+    Button close = field(panel, "close");
+    assertEquals(texts.getNotificationsClose(), close.getAriaLabel().orElseThrow());
+    assertTrue(close.hasClassName("cosmos-overlay-close"));
+    close.click();
+    assertFalse(popover.isOpened());
+    verify(service, never()).markRead(any(), any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void compactPreviewSupportsSafeTextAndIndividualReadWithoutOpening(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    item =
+        new Item(
+            7L,
+            UserNotificationType.ADMIN_ANNOUNCEMENT,
+            "<b>Title</b>",
+            "<img src=x onerror=alert(1)>\nSecond line",
+            Instant.now(),
+            false);
+    var panel = new UserNotificationsPanel(texts, service, http, true);
+    ui.add(panel);
+    panel.refresh();
+    assertEquals(item.title(), rowTitle(panel).getText());
+    assertTrue(
+        tree(panel)
+            .filter(Div.class::isInstance)
+            .map(Div.class::cast)
+            .anyMatch(
+                div ->
+                    div.hasClassName("cosmos-notification-preview-message")
+                        && div.getText().equals(item.body())));
+    assertTrue(tree(panel).noneMatch(Html.class::isInstance));
+    assertTrue(
+        tree(panel)
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .anyMatch(span -> span.getText().equals(texts.getNotificationsSourceAdministration())));
+    Button read =
+        tree(panel)
+            .filter(Button.class::isInstance)
+            .map(Button.class::cast)
+            .filter(button -> button.hasClassName("cosmos-notification-preview-mark-read"))
+            .findFirst()
+            .orElseThrow();
+    assertTrue(read.isVisible());
+    read.click();
+    verify(service).markRead(http, List.of(7L));
+    assertNull(field(panel, "detail"));
+    ((Checkbox) field(panel, "unread")).setValue(true);
+    verify(service).inbox(http, true, 0, 5);
+    item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), true);
+    panel.refresh();
+    assertTrue(
+        tree(panel)
+            .noneMatch(component -> component.hasClassName("cosmos-notification-row--unread")));
+    assertTrue(
+        tree(panel)
+            .filter(Button.class::isInstance)
+            .map(Button.class::cast)
+            .filter(button -> button.hasClassName("cosmos-notification-preview-mark-read"))
+            .noneMatch(Button::isVisible));
+  }
+
+  @Test
+  void openingCompactItemKeepsPopoverAndMarksOnlyThisItemRead() {
+    var bell = new UserNotificationBell(texts, service, request, new Button());
+    ui.add(bell);
+    Popover popover = field(bell, "popover");
+    popover.open();
+    UserNotificationsPanel panel = field(bell, "panel");
+    rowTitle(panel).click();
+    assertTrue(popover.isOpened());
+    Dialog detail = field(panel, "detail");
+    assertTrue(detail.isOpened());
+    assertFalse(popover.isCloseOnOutsideClick());
+    assertFalse(popover.isCloseOnEsc());
+    detail.close();
+    assertTrue(popover.isOpened());
+    assertTrue(popover.isCloseOnOutsideClick());
+    assertTrue(popover.isCloseOnEsc());
+    verify(service).markRead(http, List.of(7L));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void doubleClickOnPreviewCardOpensOnlyItsMessageAndIgnoresButtonEvents(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    var bell = new UserNotificationBell(texts, service, request, new Button());
+    ui.add(bell);
+    Popover popover = field(bell, "popover");
+    popover.open();
+    UserNotificationsPanel panel = field(bell, "panel");
+    var row =
+        tree(panel)
+            .filter(c -> c.hasClassName("cosmos-notification-preview-row"))
+            .findFirst()
+            .orElseThrow();
+    var element = row.getElement();
+    var listeners =
+        element.getNode().getFeature(com.vaadin.flow.internal.nodefeature.ElementListenerMap.class);
+    var data = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+    listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "click", data));
+    assertNull(field(panel, "detail"));
+    verify(service, never()).markRead(any(), any());
+    var expressions = listeners.getExpressions("dblclick");
+    assertFalse(expressions.isEmpty());
+    expressions.forEach(expression -> data.put(expression, false));
+    listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "dblclick", data));
+    assertNull(field(panel, "detail"));
+    verify(service, never()).markRead(any(), any());
+    expressions.forEach(expression -> data.put(expression, true));
+    listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "dblclick", data));
+    assertTrue(popover.isOpened());
+    assertTrue(((Dialog) field(panel, "detail")).isOpened());
+    verify(service).markRead(http, List.of(7L));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void dismissPreviewItemUsesItsOwnRecipientIdWithoutReadingOrClosingPopup(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    var bell = new UserNotificationBell(texts, service, request, new Button());
+    ui.add(bell);
+    Popover popover = field(bell, "popover");
+    popover.open();
+    UserNotificationsPanel panel = field(bell, "panel");
+    Button history = field(panel, "history");
+    assertEquals("vaadin:envelopes", history.getIcon().getElement().getAttribute("icon"));
+    Button dismiss =
+        tree(panel)
+            .filter(Button.class::isInstance)
+            .map(Button.class::cast)
+            .filter(button -> button.hasClassName("cosmos-notification-preview-dismiss"))
+            .findFirst()
+            .orElseThrow();
+    assertTrue(dismiss.getAriaLabel().orElseThrow().startsWith(texts.getNotificationsDismiss()));
+    when(service.inbox(eq(http), anyBoolean(), anyInt(), anyInt())).thenReturn(Page.empty());
+    dismiss.click();
+    verify(service).dismiss(http, 7L);
+    verify(service, never()).markRead(any(), any());
+    assertTrue(popover.isOpened());
+    assertTrue(tree(panel).noneMatch(c -> c.hasClassName("cosmos-notification-preview-row")));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void unlimitedRetentionUsesLocalizedFooterWithoutDayCount(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    when(service.retentionDays()).thenReturn(OptionalInt.empty());
+    var panel = new UserNotificationsPanel(texts, service, http, true);
+    ui.add(panel);
+    panel.refresh();
+    assertEquals(
+        texts.getNotificationsRetentionUnlimited(), ((Span) field(panel, "retention")).getText());
+    when(service.retentionDays()).thenReturn(OptionalInt.of(14));
+    panel.refresh();
+    assertEquals(texts.getNotificationsRetention(14), ((Span) field(panel, "retention")).getText());
   }
 
   @ParameterizedTest
@@ -252,7 +430,6 @@ class UserNotificationsUiTest {
   }
 
   @Test
-  @Tag("notification-ui-pending-redesign")
   void bellOpensOnClickAndClosesWithEscapeOrOutsideWithoutMarkingAllRead() {
     var bell = new UserNotificationBell(texts, service, request, new Button());
     ui.add(bell);

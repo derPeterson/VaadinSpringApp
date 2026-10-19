@@ -232,6 +232,10 @@ public class AdminConfigurationSection extends VerticalLayout {
 
   private void setIntegerFieldValue(
       IntegerField integerField, ConfigEntry configEntry, String safeValue) {
+    if (isNotificationRetention(configEntry) && safeValue.isBlank()) {
+      integerField.clear();
+      return;
+    }
     try {
       integerField.setValue(Integer.parseInt(safeValue));
     } catch (NumberFormatException ex) {
@@ -373,6 +377,11 @@ public class AdminConfigurationSection extends VerticalLayout {
     configGroupFilters.put(AdminConfigGroup.SECURITY, this::isSecurityConfig);
     configGroupFilters.put(AdminConfigGroup.TOKENS, this::isTokenConfig);
     configGroupFilters.put(AdminConfigGroup.USER_STATUS, this::isUserStatusConfig);
+    configGroupFilters.put(
+        AdminConfigGroup.NOTIFICATIONS,
+        entry ->
+            entry == ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS
+                || entry == ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS);
     configGroupFilters.put(AdminConfigGroup.EMAIL_SENDER, this::isEmailSenderConfig);
     configGroupFilters.put(AdminConfigGroup.SMTP, this::isSmtpConfig);
     configGroupFilters.put(AdminConfigGroup.QUEUE, this::isQueueConfig);
@@ -496,6 +505,10 @@ public class AdminConfigurationSection extends VerticalLayout {
           List.of(
               messageProperties.getAdminConfigRuleInteger(1, Integer.MAX_VALUE),
               messageProperties.getAdminConfigRuleEmptyUsesDefault());
+      case USER_NOTIFICATIONS_INBOX_RETENTION_DAYS, USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS ->
+          List.of(
+              messageProperties.getAdminConfigRuleInteger(1, Integer.MAX_VALUE),
+              messageProperties.getAdminConfigRuleEmptyUnlimited());
       case EMAIL_QUEUE_MAX_RETRY ->
           List.of(
               messageProperties.getAdminConfigRuleInteger(0, Integer.MAX_VALUE),
@@ -636,6 +649,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
   private String validateValue(ConfigEntry configEntry, String value) {
     String trimmed = value == null ? "" : value.trim();
+    if (isNotificationRetention(configEntry) && trimmed.isEmpty()) return null;
 
     return switch (configEntry) {
       case SERVICE_NAME -> {
@@ -685,7 +699,9 @@ public class AdminConfigurationSection extends VerticalLayout {
       case LOGIN_ATTEMPTS_LIMIT,
           MAX_SESSIONS_PER_USER,
           EMAIL_QUEUE_POOL_SIZE,
-          EMAIL_QUEUE_CAPACITY ->
+          EMAIL_QUEUE_CAPACITY,
+          USER_NOTIFICATIONS_INBOX_RETENTION_DAYS,
+          USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS ->
           isInvalidPositiveInteger(trimmed)
               ? messageProperties.getAdminConfigValidationMinOne()
               : null;
@@ -724,7 +740,9 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     if (input instanceof IntegerField integerField) {
       Integer value = integerField.getValue();
-      return value == null ? configuredDefault(configEntry) : String.valueOf(value);
+      return value == null
+          ? (isNotificationRetention(configEntry) ? "" : configuredDefault(configEntry))
+          : String.valueOf(value);
     }
 
     if (input instanceof PasswordField passwordField) {
@@ -752,7 +770,13 @@ public class AdminConfigurationSection extends VerticalLayout {
         || configEntry == ConfigEntry.MAIL_PASSWORD;
   }
 
+  private boolean isNotificationRetention(ConfigEntry entry) {
+    return entry == ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS
+        || entry == ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS;
+  }
+
   private String buildPlaceholder(ConfigEntry configEntry) {
+    if (isNotificationRetention(configEntry)) return messageProperties.getAdminConfigUnlimited();
     String defaultValue = configuredDefault(configEntry);
     if (defaultValue.isEmpty()) {
       return messageProperties.getAdminConfigPlaceholderEmpty();
@@ -770,7 +794,11 @@ public class AdminConfigurationSection extends VerticalLayout {
             : isSecretEntry(configEntry)
                 ? messageProperties.getAdminConfigDefaultConfidential()
                 : defaultValue;
-    return messageProperties.getAdminConfigDefault() + ": " + displayValue;
+    return (isNotificationRetention(configEntry)
+            ? messageProperties.getAdminConfigInitialValue()
+            : messageProperties.getAdminConfigDefault())
+        + ": "
+        + displayValue;
   }
 
   private void installValidationResetListener(Component input) {

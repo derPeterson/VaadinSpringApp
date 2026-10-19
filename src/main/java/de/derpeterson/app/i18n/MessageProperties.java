@@ -50,6 +50,10 @@ public class MessageProperties extends MessageTexts {
 
   public String getAdminConfigEntryLabel(ConfigEntry configEntry) {
     return switch (configEntry) {
+      case USER_NOTIFICATIONS_INBOX_RETENTION_DAYS ->
+          getAdminConfigEntryNotificationInboxRetention();
+      case USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS ->
+          getAdminConfigEntryNotificationHistoryRetention();
       case SERVICE_NAME -> getAdminConfigEntryServiceName();
       case COPYRIGHT_TEXT -> getAdminConfigEntryCopyrightText();
       case BASE_URL -> getAdminConfigEntryBaseUrl();
@@ -90,6 +94,10 @@ public class MessageProperties extends MessageTexts {
 
   public String getAdminConfigEntryTooltip(ConfigEntry configEntry) {
     return switch (configEntry) {
+      case USER_NOTIFICATIONS_INBOX_RETENTION_DAYS ->
+          getAdminConfigEntryNotificationInboxRetentionTooltip();
+      case USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS ->
+          getAdminConfigEntryNotificationHistoryRetentionTooltip();
       case SERVICE_NAME -> getAdminConfigEntryServiceNameTooltip();
       case COPYRIGHT_TEXT -> getAdminConfigEntryCopyrightTextTooltip();
       case BASE_URL -> getAdminConfigEntryBaseUrlTooltip();

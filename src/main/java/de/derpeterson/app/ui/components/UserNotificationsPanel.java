@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.*;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.QueryParameters;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.*;
@@ -18,12 +19,17 @@ import org.slf4j.LoggerFactory;
 
 /** Gemeinsame kompakte Vorschau und paginierter eigener Posteingang. */
 public class UserNotificationsPanel extends Div {
+  private static final int PREVIEW_LIMIT = 5;
   private final transient MessageProperties texts;
   private final transient UserNotificationService service;
   private final transient HttpSession session;
   private final boolean compact;
   private final Div rows = new Div();
   private final H2 heading = new H2();
+  private final Span description = new Span();
+  private final Button close = new Button(VaadinIcon.CLOSE_CIRCLE.create());
+  private transient Runnable closeAction = () -> {};
+  private transient java.util.function.Consumer<Boolean> detailOpenListener = open -> {};
   private final Checkbox unread = new Checkbox();
   private final Button markAll = new Button();
   private final Button previous = new Button();
@@ -32,6 +38,7 @@ public class UserNotificationsPanel extends Div {
   private final Button history = new Button();
   private final Span pageLabel = new Span();
   private final Span retention = new Span();
+  private final Span previewHint = new Span();
   private List<Long> unreadIds = List.of();
   private int page;
   private Dialog detail;
@@ -49,7 +56,7 @@ public class UserNotificationsPanel extends Div {
     addClassNames("cosmos-theme", "cosmos-notifications-panel");
     setId(compact ? "notifications-preview" : "notifications-inbox");
     heading.addClassName("cosmos-panel-title");
-    var toolbar = new Div(unread, refresh, markAll);
+    var toolbar = new Div(unread, refresh);
     toolbar.addClassName("cosmos-notifications-actions");
     refresh.addClickListener(e -> refresh());
     markAll.addClickListener(e -> action(() -> service.markRead(session, unreadIds)));
@@ -68,13 +75,49 @@ public class UserNotificationsPanel extends Div {
           page++;
           refresh();
         });
-    history.addClickListener(e -> UI.getCurrent().navigate(UserNotificationsView.class));
+    history.addClickListener(
+        e -> {
+          closeAction.run();
+          UI.getCurrent().navigate(UserNotificationsView.class);
+        });
     var paging = new Div(previous, pageLabel, next);
     paging.addClassName("cosmos-notifications-actions");
     paging.setVisible(!compact);
     history.setVisible(compact);
     retention.addClassName("cosmos-notifications-secondary");
-    add(heading, toolbar, rows, paging, history, retention);
+    if (compact) {
+      var icon = VaadinIcon.PAPERPLANE.create();
+      icon.getElement().setAttribute("aria-hidden", "true");
+      var badge = new Div(icon);
+      badge.addClassName("cosmos-panel-icon");
+      description.addClassName("cosmos-panel-description");
+      var titles = new Div(heading, description);
+      titles.addClassName("cosmos-panel-heading");
+      close.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+      close.addClassName("cosmos-overlay-close");
+      close.addClickListener(e -> closeAction.run());
+      var header = new Div(badge, titles, close);
+      header.addClassName("cosmos-notification-preview-header");
+      toolbar.addClassName("cosmos-notification-preview-toolbar");
+      refresh.setIcon(VaadinIcon.REFRESH.create());
+      refresh.addClassNames(
+          "cosmos-notification-preview-refresh", "cosmos-notification-preview-tool");
+      markAll.setIcon(VaadinIcon.ENVELOPE_OPEN.create());
+      markAll.addClassNames(
+          "cosmos-notification-preview-mark-all", "cosmos-notification-preview-tool");
+      toolbar.add(markAll);
+      rows.addClassName("cosmos-notification-preview-rows");
+      previewHint.addClassName("cosmos-notification-preview-hint");
+      var content = new Div(toolbar, previewHint, rows);
+      content.addClassName("cosmos-notification-preview-content");
+      history.setIcon(VaadinIcon.ENVELOPES.create());
+      var footer = new Div(history, retention);
+      footer.addClassName("cosmos-notification-preview-footer");
+      add(header, content, footer);
+    } else {
+      toolbar.add(markAll);
+      add(heading, toolbar, rows, paging, history, retention);
+    }
     refreshTexts();
     addDetachListener(
         e -> {
@@ -82,22 +125,56 @@ public class UserNotificationsPanel extends Div {
         });
   }
 
+  public void setCloseAction(Runnable closeAction) {
+    this.closeAction = Objects.requireNonNull(closeAction);
+  }
+
+  public void setDetailOpenListener(java.util.function.Consumer<Boolean> listener) {
+    detailOpenListener = Objects.requireNonNull(listener);
+  }
+
   public void refreshTexts() {
     heading.setText(texts.getNotificationsTitle());
-    unread.setLabel(texts.getNotificationsUnread());
-    refresh.setText(texts.getNotificationsRefresh());
-    markAll.setText(texts.getNotificationsMarkAll());
+    description.setText(texts.getNotificationsDescription());
+    close.setAriaLabel(texts.getNotificationsClose());
+    unread.setLabel(compact ? texts.getNotificationsOnlyUnread() : texts.getNotificationsUnread());
+    refresh.setText(compact ? "" : texts.getNotificationsRefresh());
+    if (compact) {
+      refresh.setAriaLabel(texts.getNotificationsRefresh());
+      refresh.setTooltipText(texts.getNotificationsRefresh());
+      markAll.setAriaLabel(texts.getNotificationsMarkAll());
+      markAll.setTooltipText(texts.getNotificationsMarkAll());
+    }
+    markAll.setText(compact ? "" : texts.getNotificationsMarkAll());
     previous.setText(texts.getNotificationsPrevious());
     next.setText(texts.getNotificationsNext());
     history.setText(texts.getNotificationsHistory());
-    retention.setText(texts.getNotificationsRetention(service.retentionDays()));
+    refreshRetention();
+    refreshPreviewHint();
     if (isAttached()) refresh();
     if (detail != null && detail.isOpened() && openedItem != null) renderDetail();
   }
 
+  private void refreshRetention() {
+    var days = service.retentionDays();
+    retention.setText(
+        days.isPresent()
+            ? texts.getNotificationsRetention(days.getAsInt())
+            : texts.getNotificationsRetentionUnlimited());
+  }
+
+  private void refreshPreviewHint() {
+    previewHint.setText(
+        unread.getValue()
+            ? texts.getNotificationsLatestUnread(PREVIEW_LIMIT)
+            : texts.getNotificationsLatest(PREVIEW_LIMIT));
+  }
+
   public void refresh() {
+    refreshRetention();
+    refreshPreviewHint();
     try {
-      var result = service.inbox(session, unread.getValue(), page, compact ? 5 : 20);
+      var result = service.inbox(session, unread.getValue(), page, compact ? PREVIEW_LIMIT : 20);
       if (page > 0 && page >= result.getTotalPages()) {
         page = Math.max(0, result.getTotalPages() - 1);
         refresh();
@@ -138,12 +215,74 @@ public class UserNotificationsPanel extends Div {
     var time = new Span(UserNotificationTexts.time(item.createdAt(), UI.getCurrent().getLocale()));
     var state =
         new Span(item.read() ? texts.getNotificationsRead() : texts.getNotificationsUnread());
+    if (compact) return previewRow(item, title, time, state);
     var meta = new Div(time, state);
     meta.addClassNames("cosmos-notifications-actions", "cosmos-notifications-secondary");
     var row = new Div(title, meta);
     row.addClassName("cosmos-notification-row");
     row.getElement().setAttribute("data-notification-id", item.id().toString());
     if (!item.read()) row.addClassName("cosmos-notification-row--unread");
+    return row;
+  }
+
+  private Div previewRow(Item item, Button title, Span time, Span state) {
+    var dot = new Span();
+    dot.addClassName("cosmos-notification-preview-dot");
+    dot.getElement().setAttribute("aria-hidden", "true");
+    dot.setVisible(!item.read());
+    var titleRow = new Div(dot, title);
+    titleRow.addClassName("cosmos-notification-preview-title");
+    var dismiss =
+        new Button(
+            VaadinIcon.CLOSE_CIRCLE.create(),
+            e ->
+                action(
+                    () -> {
+                      service.dismiss(session, item.id());
+                      if (detail != null && openedItem != null && openedItem.id().equals(item.id()))
+                        detail.close();
+                    }));
+    dismiss.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    dismiss.addClassName("cosmos-notification-preview-dismiss");
+    dismiss.setTooltipText(texts.getNotificationsDismiss());
+    dismiss.setAriaLabel(
+        texts.getNotificationsDismiss() + ": " + UserNotificationTexts.title(texts, item));
+    titleRow.add(dismiss);
+    var source =
+        new Span(
+            item.type() == UserNotificationType.ADMIN_ANNOUNCEMENT
+                ? texts.getNotificationsSourceAdministration()
+                : texts.getNotificationsSourceSystem());
+    source.addClassName("cosmos-notification-preview-source");
+    state.addClassName("cosmos-notification-preview-state");
+    state.getElement().setAttribute("theme", "badge");
+    var meta = new Div(time, source, state);
+    meta.addClassName("cosmos-notification-preview-meta");
+    var body = new Div();
+    body.setText(UserNotificationTexts.body(texts, item));
+    body.addClassNames("cosmos-notification-body", "cosmos-notification-preview-message");
+    var open = new Button(texts.getNotificationsOpen(), e -> action(() -> open(item)));
+    open.setAriaLabel(
+        texts.getNotificationsOpen() + ": " + UserNotificationTexts.title(texts, item));
+    open.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    var markRead =
+        new Button(
+            texts.getNotificationsMarkRead(),
+            e -> action(() -> service.markRead(session, List.of(item.id()))));
+    markRead.addClassName("cosmos-notification-preview-mark-read");
+    markRead.setVisible(!item.read());
+    markRead.setAriaLabel(
+        texts.getNotificationsMarkRead() + ": " + UserNotificationTexts.title(texts, item));
+    var actions = new Div(open, markRead);
+    actions.addClassName("cosmos-notification-preview-actions");
+    var row = new Div(titleRow, meta, body, actions);
+    row.addClassNames("cosmos-notification-row", "cosmos-notification-preview-row");
+    row.getElement().setAttribute("data-notification-id", item.id().toString());
+    if (!item.read()) row.addClassName("cosmos-notification-row--unread");
+    // Doppelklicks auf Schaltflächen bleiben deren eigener Aktion vorbehalten.
+    row.getElement()
+        .addEventListener("dblclick", e -> action(() -> open(item)))
+        .setFilter("!event.composedPath().some(node => node.localName === 'vaadin-button')");
     return row;
   }
 
@@ -166,6 +305,7 @@ public class UserNotificationsPanel extends Div {
     if (detail != null) detail.close();
     openedItem = item;
     detail = new Dialog();
+    detail.addOpenedChangeListener(e -> detailOpenListener.accept(e.isOpened()));
     detail.addClassNames("cosmos-theme", "cosmos-notification-dialog");
     detail.setModality(com.vaadin.flow.component.ModalityMode.STRICT);
     detail.getThemeNames().add("cosmos");

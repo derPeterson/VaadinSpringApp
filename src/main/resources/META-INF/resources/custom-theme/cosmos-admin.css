@@ -649,6 +649,11 @@ vaadin-app-layout.cosmos-admin {
     padding: 0;
 }
 
+.cosmos-admin vaadin-button.admin-user-refresh > vaadin-icon {
+    font-size: var(--cosmos-control-icon-font-size);
+    width: var(--lumo-icon-size-m); height: var(--lumo-icon-size-m);
+}
+
 .cosmos-admin .admin-users-grid vaadin-button {
     min-width: var(--cosmos-table-action-size);
     min-height: var(--cosmos-table-action-size);

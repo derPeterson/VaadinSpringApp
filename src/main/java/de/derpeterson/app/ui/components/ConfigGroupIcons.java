@@ -14,6 +14,7 @@ public final class ConfigGroupIcons {
       case TOKENS -> VaadinIcon.KEY;
       case USER_STATUS -> VaadinIcon.USER;
       case EMAIL_SENDER -> VaadinIcon.ENVELOPE;
+      case NOTIFICATIONS -> VaadinIcon.PAPERPLANE;
       case QUEUE -> VaadinIcon.LIST;
     };
   }

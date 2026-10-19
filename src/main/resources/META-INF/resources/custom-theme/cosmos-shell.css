@@ -487,7 +487,132 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
     display: flex; flex-direction: column; gap: var(--cosmos-space-l);
     padding: var(--cosmos-space-2xl); min-width: 0; box-sizing: border-box; width: 100%;
 }
-#notifications-preview { width: min(440px, calc(100vw - 40px)); max-height: 70vh; overflow: auto; padding: var(--cosmos-space-m); }
+/* Nur die Header-Vorschau erhält Dialogflächen und einen eigenen scrollenden Inhalt. */
+vaadin-popover[theme~="cosmos-notifications"]::part(overlay) {
+    width: min(440px, calc(100vw - 24px));
+    background: var(--cosmos-dialog-background);
+    border-color: var(--cosmos-dialog-border-color);
+}
+vaadin-popover[theme~="cosmos-notifications"]::part(content) {
+    display: flex; flex-direction: column; overflow: hidden;
+}
+#notifications-preview {
+    width: 100%; padding: 0; gap: 0; min-height: 0;
+    max-height: min(720px, 75dvh);
+    overflow: hidden; background: var(--cosmos-dialog-background);
+}
+.cosmos-notification-preview-header {
+    display: flex; align-items: center; gap: var(--cosmos-space-m);
+    flex-shrink: 0; padding: var(--cosmos-dialog-chrome-padding);
+    background: var(--cosmos-dialog-header-background);
+    border-bottom: var(--cosmos-border-width) solid var(--cosmos-dialog-border-color);
+    border-top-left-radius: calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width));
+    border-top-right-radius: calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width));
+}
+.cosmos-notification-preview-header > .cosmos-panel-heading { flex: 1; min-width: 0; }
+.cosmos-notification-preview-header > .cosmos-panel-icon { flex-shrink: 0; }
+.cosmos-notification-preview-content {
+    min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    padding: var(--cosmos-dialog-content-padding);
+}
+#notifications-preview .cosmos-notification-preview-toolbar {
+    flex-wrap: nowrap; justify-content: flex-start; margin-bottom: var(--cosmos-space-s);
+}
+.cosmos-notification-preview-toolbar > vaadin-checkbox {
+    margin: 0; padding: 0; min-width: 0;
+    --vaadin-checkbox-label-font-size: var(--cosmos-font-size-m);
+    --vaadin-checkbox-label-font-weight: var(--cosmos-font-weight-bold);
+    --vaadin-checkbox-label-color: var(--vaadin-input-field-value-color, var(--lumo-body-text-color));
+}
+.cosmos-notification-preview-toolbar > vaadin-checkbox::part(checkbox) { align-self: center; }
+.cosmos-notification-preview-toolbar > vaadin-checkbox::part(label) {
+    font-size: var(--cosmos-font-size-m);
+    font-weight: var(--cosmos-font-weight-bold);
+    color: var(--vaadin-input-field-value-color, var(--lumo-body-text-color));
+}
+.cosmos-notification-preview-toolbar > vaadin-button { margin: 0; }
+.cosmos-notification-preview-toolbar > .cosmos-notification-preview-tool {
+    flex-shrink: 0; width: var(--cosmos-control-height); min-width: var(--cosmos-control-height); padding: 0;
+}
+.cosmos-notification-preview-toolbar > .cosmos-notification-preview-refresh { margin-inline-start: auto; }
+.cosmos-notification-preview-tool > vaadin-icon {
+    font-size: var(--cosmos-control-icon-font-size);
+    width: var(--lumo-icon-size-m); height: var(--lumo-icon-size-m);
+}
+.cosmos-notification-preview-hint {
+    display: block; margin-bottom: var(--cosmos-space-m);
+    color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-xs);
+    font-weight: var(--cosmos-font-weight-regular);
+}
+.cosmos-notification-preview-rows { display: grid; gap: var(--cosmos-space-m); }
+#notifications-preview .cosmos-notification-preview-row {
+    padding: var(--cosmos-space-l);
+    border: var(--cosmos-border-width) solid var(--cosmos-card-border);
+    border-radius: var(--cosmos-control-radius);
+    background: var(--cosmos-card-background);
+}
+#notifications-preview .cosmos-notification-row--unread {
+    background: var(--cosmos-table-highlight-background);
+    border-color: var(--lumo-primary-color-50pct);
+}
+.cosmos-notification-preview-title { display: flex; align-items: baseline; gap: var(--cosmos-space-s); }
+#notifications-preview .cosmos-notification-title {
+    min-height: 0; margin: 0; padding: 0; line-height: var(--cosmos-line-height-copy);
+    color: var(--lumo-header-text-color); font-size: var(--cosmos-font-size-l);
+    font-weight: var(--cosmos-font-weight-bold); overflow-wrap: anywhere;
+}
+.cosmos-notification-preview-title > .cosmos-notification-title {
+    flex: 1; min-width: 0; justify-content: flex-start; text-align: start;
+}
+.cosmos-notification-preview-title > .cosmos-notification-preview-dismiss {
+    flex-shrink: 0; width: var(--cosmos-pagination-size); min-width: var(--cosmos-pagination-size);
+    height: var(--cosmos-pagination-size); min-height: var(--cosmos-pagination-size); padding: 0; margin: 0;
+    color: var(--lumo-secondary-text-color);
+}
+.cosmos-notification-preview-dismiss > vaadin-icon { width: var(--cosmos-icon-size-m); height: var(--cosmos-icon-size-m); }
+.cosmos-notification-preview-dot {
+    flex-shrink: 0; width: var(--cosmos-space-s); height: var(--cosmos-space-s);
+    border-radius: 50%; background: var(--lumo-primary-color);
+    box-shadow: 0 0 0 var(--cosmos-space-xs) var(--lumo-primary-color-10pct);
+}
+.cosmos-notification-preview-dot[hidden] { display: none; }
+.cosmos-notification-preview-meta {
+    display: flex; flex-wrap: wrap; align-items: center; gap: var(--cosmos-space-s);
+    margin-top: var(--cosmos-space-xs); color: var(--lumo-secondary-text-color);
+    font-size: var(--cosmos-font-size-xs);
+}
+.cosmos-notification-preview-source { font-weight: var(--cosmos-font-weight-bold); }
+.cosmos-notification-preview-state {
+    border: var(--cosmos-border-width) solid var(--cosmos-badge-border);
+    border-radius: var(--cosmos-badge-radius);
+    background: var(--cosmos-badge-background);
+    color: var(--cosmos-badge-color);
+}
+.cosmos-notification-preview-message {
+    margin-top: var(--cosmos-space-m); color: var(--lumo-secondary-text-color);
+    font-size: var(--cosmos-font-size-s); line-height: var(--cosmos-line-height-copy);
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+    overflow: hidden;
+}
+.cosmos-notification-preview-actions {
+    display: flex; flex-wrap: wrap; align-items: center; gap: var(--cosmos-space-m);
+    margin-top: var(--cosmos-space-m);
+}
+.cosmos-notification-preview-actions > vaadin-button { margin: 0; }
+.cosmos-notification-preview-footer {
+    display: flex; flex-direction: column; gap: var(--cosmos-space-m); flex-shrink: 0;
+    padding: var(--cosmos-dialog-chrome-padding);
+    background: var(--cosmos-dialog-footer-background);
+    border-top: var(--cosmos-border-width) solid var(--cosmos-dialog-border-color);
+    border-bottom-left-radius: calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width));
+    border-bottom-right-radius: calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width));
+}
+.cosmos-notification-preview-footer > vaadin-button { width: 100%; margin: 0; white-space: normal; height: auto; min-height: var(--cosmos-control-height); }
+.cosmos-notification-preview-footer > .cosmos-notifications-secondary { font-size: var(--cosmos-font-size-xs); text-align: center; }
+@media (max-width: 480px) {
+    .cosmos-notification-preview-header, .cosmos-notification-preview-footer,
+    .cosmos-notification-preview-content { padding: var(--cosmos-dialog-compact-padding); }
+}
 .cosmos-notifications-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cosmos-space-s); }
 .cosmos-notifications-secondary { color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-m); }
 .cosmos-notification-row { padding: var(--cosmos-space-m); border-bottom: var(--cosmos-border-width) solid var(--cosmos-card-border); overflow-wrap: anywhere; }

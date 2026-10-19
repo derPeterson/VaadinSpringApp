@@ -49,8 +49,8 @@ class UserNotificationServicePersistenceTest {
     }
 
     @Bean
-    UserNotificationPolicy policy() {
-      return new UserNotificationPolicy(180);
+    UserNotificationPolicy policy(ConfigService config) {
+      return new UserNotificationPolicy(config);
     }
 
     @Bean
@@ -81,6 +81,8 @@ class UserNotificationServicePersistenceTest {
   @BeforeEach
   void seed() {
     reset(config);
+    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("180");
+    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS)).thenReturn("365");
     tx.executeWithoutResult(
         s -> {
           recipients.deleteAll();
@@ -170,8 +172,8 @@ class UserNotificationServicePersistenceTest {
     assertEquals(3, recipients.count());
     assertEquals(1, service.unreadCount(adminSession));
     assertEquals(1, service.unreadCount(userSession));
-    assertEquals(0, recipients.countByUserIdAndReadAtIsNull(disabled.getId()));
-    assertEquals(0, recipients.countByUserIdAndReadAtIsNull(pending.getId()));
+    assertEquals(0, recipients.countUnread(disabled.getId(), Instant.EPOCH));
+    assertEquals(0, recipients.countUnread(pending.getId(), Instant.EPOCH));
     tx.executeWithoutResult(s -> create("later", RoleType.ROLE_USER, true));
     assertEquals(3, recipients.count());
   }
@@ -459,6 +461,64 @@ class UserNotificationServicePersistenceTest {
   }
 
   @Test
+  void dismissAffectsOnlyOwnInboxAndUnreadCountAndSurvivesNewSessions() {
+    var sent = broadcast();
+    var own = service.inbox(userSession, false, 0, 20).getContent().getFirst();
+    var foreign = service.inbox(adminSession, false, 0, 20).getContent().getFirst();
+    var pushes = new ArrayList<Set<Long>>();
+    subscriptions.add(service.events().register(pushes::add));
+    service.dismiss(userSession, foreign.id());
+    assertEquals(1, service.unreadCount(adminSession));
+    assertEquals(1, service.unreadCount(userSession));
+    assertTrue(pushes.isEmpty());
+    service.dismiss(userSession, own.id());
+    service.dismiss(userSession, own.id());
+    assertEquals(List.of(Set.of(ordinary.getId())), pushes);
+    assertTrue(service.inbox(session(ordinary), false, 0, 20).isEmpty());
+    assertTrue(service.inbox(userSession, true, 0, 20).isEmpty());
+    assertEquals(0, service.unreadCount(userSession));
+    assertTrue(service.unreadSnapshot(userSession).isEmpty());
+    service.markRead(userSession, List.of(own.id()));
+    assertNotNull(recipients.findById(own.id()).orElseThrow().getDismissedAt());
+    assertNull(recipients.findById(own.id()).orElseThrow().getReadAt());
+    assertEquals(1, service.inbox(adminSession, false, 0, 20).getTotalElements());
+    assertEquals(1, service.unreadCount(adminSession));
+    assertEquals(3, service.sent(adminSession, 0, 5).getContent().getFirst().recipientCount());
+    assertEquals(3, recipients.recipientIds(sent.id()).size());
+  }
+
+  @Test
+  void dismissedNotificationDoesNotReappearOnIdempotentSendRetry() {
+    var preview = everyone();
+    var key = UUID.randomUUID();
+    var first = service.send(adminSession, key, "Title", "Body", preview);
+    var own = service.inbox(userSession, false, 0, 20).getContent().getFirst();
+    service.dismiss(userSession, own.id());
+    assertEquals(first.id(), service.send(adminSession, key, "Title", "Body", preview).id());
+    assertEquals(1, notificationCount());
+    assertTrue(service.inbox(userSession, false, 0, 20).isEmpty());
+  }
+
+  @Test
+  void dismissRollbackPublishesNothingAndRequiresValidOwnerSession() {
+    broadcast();
+    var own = service.inbox(userSession, false, 0, 20).getContent().getFirst();
+    var pushes = new ArrayList<Set<Long>>();
+    subscriptions.add(service.events().register(pushes::add));
+    tx.executeWithoutResult(
+        status -> {
+          service.dismiss(userSession, own.id());
+          status.setRollbackOnly();
+        });
+    assertTrue(pushes.isEmpty());
+    assertEquals(1, service.unreadCount(userSession));
+    assertThrows(AccessDeniedException.class, () -> service.dismiss(null, own.id()));
+    mutate(ordinary, user -> user.setEnabled(false));
+    assertThrows(AccessDeniedException.class, () -> service.dismiss(userSession, own.id()));
+    assertNull(recipients.findById(own.id()).orElseThrow().getDismissedAt());
+  }
+
+  @Test
   void readUpdateIsVisibleInsideSamePersistenceContextWithoutClearingUnrelatedChanges() {
     broadcast();
     tx.executeWithoutResult(
@@ -596,7 +656,7 @@ class UserNotificationServicePersistenceTest {
     tx.executeWithoutResult(
         s ->
             em.createNativeQuery("update user_notifications set created_at = :old where id = :id")
-                .setParameter("old", Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS))
+                .setParameter("old", Instant.now().minus(366, java.time.temporal.ChronoUnit.DAYS))
                 .setParameter("id", old.id())
                 .executeUpdate());
     assertEquals(1, cleanup.cleanup());
@@ -604,14 +664,136 @@ class UserNotificationServicePersistenceTest {
     assertTrue(notifications.existsById(fresh.id()));
     assertEquals(3, recipients.count());
     tx.executeWithoutResult(s -> recipients.deleteAll());
+    assertEquals(0, cleanup.cleanup());
+    assertTrue(notifications.existsById(fresh.id()));
+  }
+
+  private void createdAt(Long id, Instant created) {
+    tx.executeWithoutResult(
+        status ->
+            em.createNativeQuery(
+                    "update user_notifications set created_at = :created where id = :id")
+                .setParameter("created", created)
+                .setParameter("id", id)
+                .executeUpdate());
+  }
+
+  @Test
+  void inboxAndAdminHistoryExpireIndependentlyAndReadLiveConfiguration() {
+    var sent = broadcast();
+    createdAt(sent.id(), Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS));
+    assertTrue(service.inbox(userSession, false, 0, 20).isEmpty());
+    assertTrue(service.inbox(userSession, true, 0, 20).isEmpty());
+    assertEquals(0, service.unreadCount(userSession));
+    assertTrue(service.unreadSnapshot(userSession).isEmpty());
+    assertEquals(1, service.sent(adminSession, 0, 5).getTotalElements());
+    assertEquals(0, cleanup.cleanup());
+    assertEquals(3, recipients.count());
+    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("365");
+    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS)).thenReturn("90");
+    assertEquals(1, service.inbox(userSession, false, 0, 20).getTotalElements());
+    assertEquals(1, service.unreadCount(userSession));
+    assertTrue(service.sent(adminSession, 0, 5).isEmpty());
+    assertEquals(0, cleanup.cleanup());
+    assertTrue(notifications.existsById(sent.id()));
+    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("90");
+    assertEquals(1, cleanup.cleanup());
+    assertFalse(notifications.existsById(sent.id()));
+    assertEquals(0, recipients.count());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"true,true", "true,false", "false,true", "false,false"})
+  void unlimitedAndLimitedPeriodsRemainIndependent(boolean inboxLimited, boolean historyLimited) {
+    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS))
+        .thenReturn(inboxLimited ? "180" : "");
+    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS))
+        .thenReturn(historyLimited ? "365" : "");
+    var sent = broadcast();
+    createdAt(sent.id(), Instant.now().minus(400, java.time.temporal.ChronoUnit.DAYS));
+    assertEquals(inboxLimited ? 0 : 1, service.inbox(userSession, false, 0, 20).getTotalElements());
+    assertEquals(inboxLimited ? 0 : 1, service.unreadCount(userSession));
+    assertEquals(inboxLimited ? 0 : 1, service.unreadSnapshot(userSession).size());
+    assertEquals(historyLimited ? 0 : 1, service.sent(adminSession, 0, 5).getTotalElements());
+    assertEquals(inboxLimited && historyLimited ? 1 : 0, cleanup.cleanup());
+    assertEquals(!(inboxLimited && historyLimited), notifications.existsById(sent.id()));
+  }
+
+  @Test
+  void unlimitedInboxAlsoProtectsOldAutomaticSystemNotifications() {
+    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("");
+    tx.executeWithoutResult(
+        status ->
+            service.recordSecurityEvent(
+                users.findById(ordinary.getId()).orElseThrow(),
+                UserNotificationType.PASSWORD_CHANGED));
+    var automatic = notifications.findAll().getFirst();
+    createdAt(automatic.getId(), Instant.now().minus(400, java.time.temporal.ChronoUnit.DAYS));
+    assertEquals(1, service.inbox(userSession, false, 0, 20).getTotalElements());
+    assertEquals(0, cleanup.cleanup());
+    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("180");
     assertEquals(1, cleanup.cleanup());
   }
 
   @Test
+  void automaticNotificationsUseOnlyTheInboxRetentionPeriod() {
+    tx.executeWithoutResult(
+        status ->
+            service.recordSecurityEvent(
+                users.findById(ordinary.getId()).orElseThrow(),
+                UserNotificationType.PASSWORD_CHANGED));
+    var automatic = notifications.findAll().getFirst();
+    createdAt(automatic.getId(), Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS));
+    assertEquals(1, cleanup.cleanup());
+    assertEquals(0, notificationCount());
+    assertEquals(0, recipients.count());
+  }
+
+  @Test
+  void exactCutoffIsVisibleAndCleanupDeletesOnlyStrictlyOlderMessages() {
+    var sent = broadcast();
+    var cutoff = Instant.parse("2026-01-01T00:00:00Z");
+    createdAt(sent.id(), cutoff);
+    assertEquals(
+        1,
+        recipients
+            .inbox(
+                ordinary.getId(),
+                false,
+                cutoff,
+                org.springframework.data.domain.PageRequest.of(0, 5))
+            .getTotalElements());
+    assertEquals(1, recipients.countUnread(ordinary.getId(), cutoff));
+    assertEquals(1, recipients.unreadIds(ordinary.getId(), cutoff).size());
+    assertEquals(
+        1,
+        notifications
+            .sent(sender.getId(), cutoff, org.springframework.data.domain.PageRequest.of(0, 5))
+            .getTotalElements());
+    assertTrue(
+        recipients
+            .inbox(
+                ordinary.getId(),
+                false,
+                cutoff.plusSeconds(1),
+                org.springframework.data.domain.PageRequest.of(0, 5))
+            .isEmpty());
+    assertEquals(
+        0, tx.<Integer>execute(status -> notifications.deleteRetired(cutoff, cutoff)).intValue());
+    assertEquals(
+        1,
+        tx.<Integer>execute(
+                status -> notifications.deleteRetired(cutoff.plusSeconds(1), cutoff.plusSeconds(1)))
+            .intValue());
+  }
+
+  @Test
   void retentionMustBePositiveAndVisiblePolicyUsesSameValue() {
-    assertThrows(IllegalArgumentException.class, () -> new UserNotificationPolicy(0));
-    assertThrows(IllegalArgumentException.class, () -> new UserNotificationPolicy(-1));
-    assertEquals(180, service.retentionDays());
+    var policy = new UserNotificationPolicy(config);
+    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS)).thenReturn("0");
+    assertThrows(IllegalArgumentException.class, policy::historyRetentionDays);
+    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS)).thenReturn("365");
+    assertEquals(OptionalInt.of(180), service.retentionDays());
   }
 
   @Test

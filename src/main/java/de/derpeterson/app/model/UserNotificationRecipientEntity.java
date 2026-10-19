@@ -34,4 +34,7 @@ public class UserNotificationRecipientEntity {
 
   @Column(name = "read_at")
   private Instant readAt;
+
+  @Column(name = "dismissed_at")
+  private Instant dismissedAt;
 }
