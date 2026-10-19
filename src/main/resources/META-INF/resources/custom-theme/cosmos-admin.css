@@ -1033,7 +1033,8 @@ vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(overlay) {
     padding: var(--cosmos-space-l); border: var(--cosmos-border-width) solid var(--cosmos-card-border);
     border-radius: var(--cosmos-control-radius); background: var(--cosmos-input-background);
 }
-.cosmos-notification-compose-preview {
+.cosmos-notification-compose-preview,
+.cosmos-notification-sent-row {
     background: var(--lumo-primary-color-10pct);
 }
 .cosmos-notification-compose-preview-header, .cosmos-notification-compose-recipients {
@@ -1118,4 +1119,52 @@ vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(overlay) {
 .cosmos-notification-compose-preview-content > .cosmos-notification-body {
     font-size: var(--cosmos-font-size-s);
     color: var(--lumo-secondary-text-color);
+}
+
+/* Gesendete Benachrichtigungen: lokale Archivliste mit nativen Details und Buttons. */
+.cosmos-notification-sent { width: 100%; min-width: 0; }
+.cosmos-notification-sent-list { display: grid; gap: var(--cosmos-space-s); margin-top: var(--cosmos-space-l); }
+.cosmos-notification-sent-row {
+    display: grid;
+    grid-template-columns: var(--cosmos-panel-icon-size-small) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--cosmos-space-m);
+    padding: var(--cosmos-space-m);
+    border: var(--cosmos-border-width) solid var(--cosmos-card-border);
+    border-radius: var(--cosmos-control-radius);
+}
+.cosmos-notification-sent-icon { width: var(--cosmos-panel-icon-size-small); height: var(--cosmos-panel-icon-size-small); }
+.cosmos-notification-sent-icon > vaadin-icon { width: var(--cosmos-icon-size-s); height: var(--cosmos-icon-size-s); }
+.cosmos-notification-sent-heading { min-width: 0; }
+.cosmos-notification-sent-title { margin: 0; font-size: var(--cosmos-font-size-m); font-weight: var(--cosmos-font-weight-bold); overflow-wrap: anywhere; }
+.cosmos-notification-sent-meta { display: block; overflow-wrap: anywhere; margin-top: var(--cosmos-space-xs); color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-xs); }
+.cosmos-notification-sent-actions { display: flex; align-items: center; gap: var(--cosmos-space-m); }
+.cosmos-notification-sent-status { display: inline-flex; align-items: center; gap: var(--cosmos-space-xs); white-space: nowrap; }
+.cosmos-notification-sent-status > vaadin-icon { width: var(--cosmos-icon-size-xs); height: var(--cosmos-icon-size-xs); }
+.cosmos-notification-sent-details {
+    grid-column: 1 / -1;
+    margin: 0 calc(-1 * var(--cosmos-space-m)) calc(-1 * var(--cosmos-space-m));
+    border-top: var(--cosmos-border-width) solid var(--cosmos-card-border);
+}
+.cosmos-notification-sent-details > vaadin-details-summary { display: none; }
+.cosmos-notification-sent-details::part(content) { padding: 0; }
+.cosmos-notification-sent-details:not([opened]) { display: none; }
+.cosmos-notification-sent-content { display: flex; flex-direction: column; gap: var(--lumo-space-s); padding: var(--cosmos-space-l); }
+.cosmos-notification-sent-detail-title { margin: 0; color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-s); font-weight: var(--cosmos-font-weight-bold); overflow-wrap: anywhere; }
+.cosmos-notification-sent-body, .cosmos-notification-sent-detail-meta { color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-s); }
+.cosmos-notification-sent-pagination { margin-top: var(--cosmos-space-l); }
+.cosmos-notification-sent-empty { color: var(--lumo-secondary-text-color); font-size: var(--cosmos-font-size-xs); }
+.cosmos-notification-sent-pagination .admin-user-pagination-summary {
+    color: var(--lumo-secondary-text-color);
+    font-size: var(--cosmos-font-size-xs);
+    font-weight: var(--cosmos-font-weight-regular);
+}
+.cosmos-notification-sent-pagination .admin-user-pagination-summary vaadin-combo-box {
+    --vaadin-input-field-value-font-size: var(--cosmos-font-size-s);
+    --vaadin-input-field-value-font-weight: var(--cosmos-font-weight-medium);
+    font-size: var(--cosmos-font-size-s);
+}
+@media (max-width: 600px) {
+    .cosmos-notification-sent-row { grid-template-columns: var(--cosmos-panel-icon-size-small) minmax(0, 1fr); }
+    .cosmos-notification-sent-actions { grid-column: 2; justify-content: space-between; flex-wrap: wrap; }
 }

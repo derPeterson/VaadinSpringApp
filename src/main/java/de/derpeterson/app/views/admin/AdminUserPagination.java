@@ -28,14 +28,22 @@ final class AdminUserPagination extends HorizontalLayout {
   private int totalItems;
 
   AdminUserPagination(MessageProperties texts, IntConsumer selectPage, IntConsumer selectPageSize) {
+    this(texts, selectPage, selectPageSize, List.of(10, 20, 50));
+  }
+
+  AdminUserPagination(
+      MessageProperties texts,
+      IntConsumer selectPage,
+      IntConsumer selectPageSize,
+      List<Integer> pageSizes) {
     this.texts = texts;
     this.selectPage = selectPage;
     addClassName("admin-user-pagination");
     setWidthFull();
     setAlignItems(Alignment.CENTER);
     setPadding(false);
-    pageSize.setItems(10, 20, 50);
-    pageSize.setValue(10);
+    pageSize.setItems(pageSizes);
+    pageSize.setValue(pageSizes.getFirst());
     pageSize.setAllowCustomValue(false);
     pageSize.setWidth("80px");
     pageSize.addValueChangeListener(

@@ -237,9 +237,9 @@ public class UserNotificationService {
   }
 
   @Transactional(readOnly = true)
-  public Page<Sent> sent(HttpSession session, int page) {
+  public Page<Sent> sent(HttpSession session, int page, int size) {
     return notifications
-        .findBySenderIdOrderByIdDesc(superadmin(session).getId(), page(page, 20))
+        .findBySenderIdOrderByIdDesc(superadmin(session).getId(), page(page, size))
         .map(this::sent);
   }
 

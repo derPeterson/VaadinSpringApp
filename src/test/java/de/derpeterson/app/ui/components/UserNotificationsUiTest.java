@@ -333,28 +333,125 @@ class UserNotificationsUiTest {
 
   AdminUserNotificationsSection admin() {
     when(service.targets(http)).thenReturn(List.of(new Target(5L, "Own", "own@example.test")));
-    when(service.sent(http, 0)).thenReturn(Page.empty());
+    when(service.sent(http, 0, 5)).thenReturn(Page.empty());
     var section = new AdminUserNotificationsSection(texts, service, request);
     section.activate();
     return section;
   }
 
-  @Tag("notification-ui-pending-redesign")
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void sentHistoryExpandsMessagesIndependentlyAndPaginates(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    var section = admin();
+    var message = "<b>Plain text</b>\nSecond line";
+    when(service.sent(http, 0, 5))
+        .thenReturn(
+            new PageImpl<>(
+                List.of(
+                    new Sent(1L, "First", message, Instant.now(), 2),
+                    new Sent(2L, "Second", "Other body", Instant.now(), 1)),
+                PageRequest.of(0, 5),
+                21));
+    when(service.sent(http, 4, 5))
+        .thenReturn(
+            new PageImpl<>(
+                List.of(new Sent(3L, "Last", "Last body", Instant.now(), 1)),
+                PageRequest.of(4, 5),
+                21));
+    section.activate();
+    assertEquals(
+        texts.getNotificationsHistoryCount(21), ((Span) field(section, "historyCount")).getText());
+    assertEquals(
+        texts.getAdminUsersPaginationTotal(21),
+        ((Span) field(field(section, "historyPagination"), "totalLabel")).getText());
+    Div history = field(section, "history");
+    var details =
+        tree(history)
+            .filter(com.vaadin.flow.component.details.Details.class::isInstance)
+            .map(com.vaadin.flow.component.details.Details.class::cast)
+            .toList();
+    var toggles = tree(history).filter(Button.class::isInstance).map(Button.class::cast).toList();
+    assertEquals(2, details.size());
+    assertTrue(details.stream().noneMatch(com.vaadin.flow.component.details.Details::isOpened));
+    toggles.getFirst().click();
+    assertTrue(details.getFirst().isOpened());
+    assertFalse(details.getLast().isOpened());
+    assertEquals("true", toggles.getFirst().getElement().getAttribute("aria-expanded"));
+    assertEquals(texts.getNotificationsClose(), toggles.getFirst().getText());
+    assertTrue(
+        tree(details.getFirst())
+            .filter(H4.class::isInstance)
+            .map(H4.class::cast)
+            .anyMatch(title -> title.getText().equals("First")));
+    assertTrue(
+        tree(details.getFirst())
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .anyMatch(
+                meta ->
+                    meta.getText().startsWith(texts.getNotificationsHistoryRecipients(2) + " · ")));
+    assertTrue(
+        tree(details.getFirst())
+            .filter(Div.class::isInstance)
+            .map(Div.class::cast)
+            .anyMatch(div -> div.getText().equals(message)));
+    assertTrue(tree(history).noneMatch(Html.class::isInstance));
+    toggles.getFirst().click();
+    assertFalse(details.getFirst().isOpened());
+    assertEquals("false", toggles.getFirst().getElement().getAttribute("aria-expanded"));
+    ((Button) field(field(section, "historyPagination"), "last")).click();
+    assertEquals(
+        texts.getAdminUsersPaginationTotal(21),
+        ((Span) field(field(section, "historyPagination"), "totalLabel")).getText());
+    assertFalse(((Button) field(field(section, "historyPagination"), "next")).isEnabled());
+    assertTrue(((Button) field(field(section, "historyPagination"), "previous")).isEnabled());
+    ((Button) field(field(section, "historyPagination"), "first")).click();
+    assertEquals(0, ((Integer) field(section, "page")).intValue());
+    when(service.sent(http, 0, 5)).thenReturn(Page.empty());
+    section.activate();
+    assertEquals(
+        texts.getAdminUsersPaginationTotal(0),
+        ((Span) field(field(section, "historyPagination"), "totalLabel")).getText());
+    assertFalse(((Button) field(field(section, "historyPagination"), "next")).isEnabled());
+    assertFalse(((Button) field(field(section, "historyPagination"), "previous")).isEnabled());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void sentHistoryPageSizeSelectionResetsThePageAndLoadsTheSelectedSize(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    var section = admin();
+    var pagination = field(section, "historyPagination");
+    com.vaadin.flow.component.combobox.ComboBox<Integer> sizes = field(pagination, "pageSize");
+    assertEquals(List.of(5, 10, 15), sizes.getListDataView().getItems().toList());
+    assertEquals(5, sizes.getValue());
+    assertEquals(texts.getAdminUsersPaginationPerPage(), sizes.getAriaLabel().orElseThrow());
+    for (int size : List.of(10, 15, 5)) {
+      when(service.sent(http, 0, size)).thenReturn(Page.empty());
+      ReflectionTestUtils.setField(section, "page", 3);
+      sizes.setValue(size);
+      assertEquals(0, ((Integer) field(section, "page")).intValue());
+      verify(service, atLeastOnce()).sent(http, 0, size);
+      assertEquals(size, ((Integer) field(section, "historyPageSize")).intValue());
+    }
+  }
+
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void maintenanceKeepsSentHistoryPaginationAvailable(String language) {
     locale.set(Locale.forLanguageTag(language));
     var section = admin();
-    when(service.sent(http, 0))
+    when(service.sent(http, 0, 5))
         .thenReturn(
             new PageImpl<>(
                 List.of(new Sent(1L, "Previous", "Body", Instant.now(), 1)),
-                PageRequest.of(0, 20),
+                PageRequest.of(0, 5),
                 21));
     section.activate();
     when(service.deliveryState()).thenReturn(MaintenanceService.State.ACTIVE);
     section.refreshDeliveryState();
-    assertTrue(((Button) field(section, "next")).isEnabled());
+    assertTrue(((Button) field(field(section, "historyPagination"), "next")).isEnabled());
   }
 
   @ParameterizedTest
@@ -694,7 +791,7 @@ class UserNotificationsUiTest {
             new Target(5L, "Own User", "own@example.test"),
             new Target(6L, "Second User", "second@example.test"));
     when(service.targets(http)).thenReturn(accounts);
-    when(service.sent(http, 0)).thenReturn(Page.empty());
+    when(service.sent(http, 0, 5)).thenReturn(Page.empty());
     var section = new AdminUserNotificationsSection(texts, service, request);
     section.activate();
     com.vaadin.flow.component.combobox.MultiSelectComboBox<Target> recipients =
@@ -725,7 +822,7 @@ class UserNotificationsUiTest {
             new Target(5L, "Own User", "own@example.test"),
             new Target(6L, "Second User", "second@example.test"));
     when(service.targets(http)).thenReturn(accounts);
-    when(service.sent(http, 0)).thenReturn(Page.empty());
+    when(service.sent(http, 0, 5)).thenReturn(Page.empty());
     var section = new AdminUserNotificationsSection(texts, service, request);
     section.activate();
     com.vaadin.flow.component.combobox.MultiSelectComboBox<Target> recipients =
@@ -767,7 +864,7 @@ class UserNotificationsUiTest {
             new Target(7L, "Third User", "third@example.test"),
             new Target(8L, "Fourth User", "fourth@example.test"));
     when(service.targets(http)).thenReturn(accounts);
-    when(service.sent(http, 0)).thenReturn(Page.empty());
+    when(service.sent(http, 0, 5)).thenReturn(Page.empty());
     var section = new AdminUserNotificationsSection(texts, service, request);
     section.activate();
     TextField titleField = field(section, "title");

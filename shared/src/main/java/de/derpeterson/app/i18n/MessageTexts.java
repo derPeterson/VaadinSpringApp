@@ -2024,6 +2024,24 @@ public class MessageTexts {
     return getTranslation("notifications.sent");
   }
 
+  public String getNotificationsHistoryDescription() {
+    return getTranslation("notifications.historyDescription");
+  }
+
+  public String getNotificationsHistoryCount(long count) {
+    return getFormattedTranslation(
+        count == 1 ? "notifications.historyCountSingle" : "notifications.historyCount", count);
+  }
+
+  public String getNotificationsHistoryRecipients(int count) {
+    return getFormattedTranslation(
+        count == 1 ? "notifications.historyRecipient" : "notifications.historyRecipients", count);
+  }
+
+  public String getNotificationsSentStatus() {
+    return getTranslation("notifications.sentStatus");
+  }
+
   public String getNotificationsSentHistory() {
     return getTranslation("notifications.sentHistory");
   }

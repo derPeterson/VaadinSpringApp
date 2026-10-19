@@ -222,7 +222,7 @@ class UserNotificationServicePersistenceTest {
     assertThrows(AccessDeniedException.class, () -> service.targets(session));
     assertThrows(
         AccessDeniedException.class, () -> service.preview(session, new Selection(true, Set.of())));
-    assertThrows(AccessDeniedException.class, () -> service.sent(session, 0));
+    assertThrows(AccessDeniedException.class, () -> service.sent(session, 0, 5));
     assertThrows(
         AccessDeniedException.class,
         () -> service.send(session, UUID.randomUUID(), "X", "Y", everyone()));
@@ -276,6 +276,26 @@ class UserNotificationServicePersistenceTest {
     assertFalse(service.canSend(adminSession));
   }
 
+  @ParameterizedTest
+  @ValueSource(ints = {5, 10, 15})
+  void sentHistoryUsesSelectedPageSizeAndKeepsSenderOwnership(int size) {
+    var checked = everyone();
+    for (int index = 0; index < 17; index++) {
+      service.send(adminSession, UUID.randomUUID(), "Update " + index, "Body", checked);
+    }
+    var first = service.sent(adminSession, 0, size);
+    var second = service.sent(adminSession, 1, size);
+    assertEquals(17, first.getTotalElements());
+    assertEquals(size, first.getNumberOfElements());
+    assertEquals(Math.min(size, 17 - size), second.getNumberOfElements());
+    assertEquals(size, first.getSize());
+    assertTrue(first.getContent().stream().noneMatch(second.getContent()::contains));
+    assertEquals("Update 16", first.getContent().getFirst().title());
+    UserEntity other =
+        tx.execute(status -> create("other-superadmin", RoleType.ROLE_SUPERADMIN, true));
+    assertTrue(service.sent(session(other), 0, size).isEmpty());
+  }
+
   @Test
   void maintenanceBlocksManualReviewAndSendButKeepsSentHistoryReadable() {
     broadcast();
@@ -289,7 +309,7 @@ class UserNotificationServicePersistenceTest {
     assertProblem(
         Problem.DELIVERY_PAUSED,
         () -> service.send(adminSession, UUID.randomUUID(), "New", "Body", checked));
-    assertEquals(1, service.sent(adminSession, 0).getTotalElements());
+    assertEquals(1, service.sent(adminSession, 0, 5).getTotalElements());
     assertEquals(1, notificationCount());
     assertEquals(3, recipients.count());
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
@@ -533,7 +553,7 @@ class UserNotificationServicePersistenceTest {
     assertEquals(type, item.type());
     assertNull(item.title());
     assertNull(item.body());
-    assertEquals(0, service.sent(adminSession, 0).getTotalElements());
+    assertEquals(0, service.sent(adminSession, 0, 5).getTotalElements());
   }
 
   @Test

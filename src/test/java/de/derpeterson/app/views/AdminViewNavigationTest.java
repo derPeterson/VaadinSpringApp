@@ -125,7 +125,8 @@ class AdminViewNavigationTest {
     var notifications = mock(de.derpeterson.app.service.UserNotificationService.class);
     when(notifications.canSend(any())).thenReturn(true);
     when(notifications.targets(any())).thenReturn(List.of());
-    when(notifications.sent(any(), eq(0))).thenReturn(org.springframework.data.domain.Page.empty());
+    when(notifications.sent(any(), eq(0), eq(5)))
+        .thenReturn(org.springframework.data.domain.Page.empty());
     try (var context =
         new org.springframework.context.annotation.AnnotationConfigApplicationContext()) {
       context.registerBean(

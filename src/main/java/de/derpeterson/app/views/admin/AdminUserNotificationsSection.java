@@ -62,10 +62,11 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private final Div previewArea = new Div();
   private final Span hint = new Span();
   private final H2 historyTitle = new H2();
+  private final Span historyDescription = new Span();
+  private final Span historyCount = new Span();
   private final Div history = new Div();
-  private final Button previous = new Button();
-  private final Button next = new Button();
-  private final Span pageLabel = new Span();
+  private final AdminUserPagination historyPagination;
+  private int historyPageSize = 5;
   private Preview preview;
   private UUID requestId = UUID.randomUUID();
   private int page;
@@ -187,24 +188,36 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     composeForm.setSpacing(false);
     composeForm.setWidthFull();
     composeForm.addClassNames("cosmos-admin-form", "cosmos-notification-compose");
-    previous.addClickListener(
-        e -> {
-          if (page > 0) page--;
-          loadHistory();
-        });
-    next.addClickListener(
-        e -> {
-          page++;
-          loadHistory();
-        });
-    var paging = new Div(previous, pageLabel, next);
-    paging.addClassName("cosmos-notifications-actions");
-    var sent = new Div(historyTitle, history, paging);
-    sent.addClassName("cosmos-notifications-panel");
+    historyPagination =
+        new AdminUserPagination(
+            texts,
+            selectedPage -> {
+              page = selectedPage;
+              loadHistory();
+            },
+            selectedSize -> {
+              historyPageSize = selectedSize;
+              page = 0;
+              loadHistory();
+            },
+            List.of(5, 10, 15));
+    historyPagination.addClassName("cosmos-notification-sent-pagination");
+    var archiveIcon = new Div(decorativeIcon(VaadinIcon.ARCHIVE));
+    archiveIcon.addClassName("cosmos-panel-icon");
+    historyDescription.addClassName("cosmos-panel-description");
+    var archiveHeading = new Div(historyTitle, historyDescription);
+    archiveHeading.addClassName("cosmos-panel-heading");
+    historyCount.addClassName("cosmos-panel-meta");
+    var archiveHeader = new Div(archiveIcon, archiveHeading, historyCount);
+    archiveHeader.addClassName("cosmos-panel-header");
+    history.addClassName("cosmos-notification-sent-list");
+    var sent = new Div(archiveHeader, history, historyPagination);
+    sent.setId("admin-notifications-sent");
+    sent.addClassName("cosmos-notification-sent");
     var formCard = new CosmosCardComponent(composeForm);
     formCard.addClassNames("cosmos-admin-form-card", "cosmos-panel-card");
     var sentCard = new CosmosCardComponent(sent);
-    sentCard.addClassName("cosmos-admin-form-card");
+    sentCard.addClassNames("cosmos-admin-form-card", "cosmos-panel-card");
     add(
         new CosmosSectionHeaderComponent(breadcrumb, pageTitle, pageDescription),
         formCard,
@@ -542,34 +555,81 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   }
 
   private void loadHistory() {
-    var result = service.sent(request.getSession(false), page);
-    history.removeAll();
-    if (result.isEmpty()) history.add(new Span(texts.getNotificationsEmpty()));
-    for (var item : result) {
-      var text = new Div();
-      text.setText(item.body());
-      text.addClassName("cosmos-notification-body");
-      var meta =
-          new Span(
-              UserNotificationTexts.time(
-                      item.createdAt(), com.vaadin.flow.component.UI.getCurrent().getLocale())
-                  + " · "
-                  + texts.getNotificationsRecipients()
-                  + ": "
-                  + item.recipientCount());
-      meta.addClassName("cosmos-notifications-secondary");
-      var row = new Div(new H3(item.title()), meta, text);
-      row.addClassName("cosmos-notification-row");
-      history.add(row);
+    var result = service.sent(request.getSession(false), page, historyPageSize);
+    if (page > 0 && page >= result.getTotalPages()) {
+      page = Math.max(0, result.getTotalPages() - 1);
+      loadHistory();
+      return;
     }
-    previous.setEnabled(page > 0);
-    next.setEnabled(result.hasNext());
-    pageLabel.setText(
-        texts.getNotificationsPage()
-            + " "
-            + (page + 1)
-            + " / "
-            + Math.max(1, result.getTotalPages()));
+    history.removeAll();
+    if (result.isEmpty()) {
+      var empty = new Span(texts.getNotificationsEmpty());
+      empty.addClassName("cosmos-notification-sent-empty");
+      history.add(empty);
+    }
+    for (var item : result) history.add(sentRow(item));
+    historyCount.setText(texts.getNotificationsHistoryCount(result.getTotalElements()));
+    historyPagination.showPage(page, Math.toIntExact(result.getTotalElements()), historyPageSize);
+  }
+
+  private Div sentRow(Sent item) {
+    var icon = new Div(decorativeIcon(VaadinIcon.PAPERPLANE));
+    icon.addClassNames("cosmos-panel-icon", "cosmos-notification-sent-icon");
+    var subject = new H3(item.title());
+    subject.addClassName("cosmos-notification-sent-title");
+    var metadata =
+        new Span(
+            UserNotificationTexts.time(item.createdAt(), UI.getCurrent().getLocale())
+                + " · "
+                + texts.getNotificationsHistoryRecipients(item.recipientCount()));
+    metadata.addClassName("cosmos-notification-sent-meta");
+    var heading = new Div(subject, metadata);
+    heading.addClassName("cosmos-notification-sent-heading");
+    var status =
+        new Span(decorativeIcon(VaadinIcon.CHECK), new Span(texts.getNotificationsSentStatus()));
+    status.getElement().setAttribute("theme", "badge success");
+    status.addClassName("cosmos-notification-sent-status");
+    var content = new Div();
+    content.setText(item.body());
+    content.addClassNames("cosmos-notification-body", "cosmos-notification-sent-body");
+    var detailSubject = new H4(item.title());
+    detailSubject.addClassName("cosmos-notification-sent-detail-title");
+    var detailMeta =
+        new Span(
+            texts.getNotificationsHistoryRecipients(item.recipientCount())
+                + " · "
+                + UserNotificationTexts.time(item.createdAt(), UI.getCurrent().getLocale()));
+    detailMeta.addClassName("cosmos-notification-sent-detail-meta");
+    var detailContent = new Div(detailSubject, content, detailMeta);
+    detailContent.addClassName("cosmos-notification-sent-content");
+    var details = new Details("", detailContent);
+    details.setId("admin-notifications-sent-detail-" + item.id());
+    details.addClassName("cosmos-notification-sent-details");
+    var toggle =
+        new Button(texts.getNotificationsRecipientDetails(), VaadinIcon.ANGLE_DOWN.create());
+    toggle.setIconAfterText(true);
+    toggle.addClassName("cosmos-notification-sent-toggle");
+    toggle.getElement().setAttribute("aria-controls", details.getId().orElseThrow());
+    toggle.getElement().setAttribute("aria-expanded", "false");
+    toggle.setAriaLabel(texts.getNotificationsRecipientDetails() + ": " + item.title());
+    toggle.addClickListener(e -> details.setOpened(!details.isOpened()));
+    details.addOpenedChangeListener(
+        e -> {
+          String label =
+              e.isOpened()
+                  ? texts.getNotificationsClose()
+                  : texts.getNotificationsRecipientDetails();
+          toggle.setText(label);
+          toggle.setAriaLabel(label + ": " + item.title());
+          toggle.setIcon(
+              e.isOpened() ? VaadinIcon.ANGLE_UP.create() : VaadinIcon.ANGLE_DOWN.create());
+          toggle.getElement().setAttribute("aria-expanded", Boolean.toString(e.isOpened()));
+        });
+    var actions = new Div(status, toggle);
+    actions.addClassName("cosmos-notification-sent-actions");
+    var row = new Div(icon, heading, actions, details);
+    row.addClassName("cosmos-notification-sent-row");
+    return row;
   }
 
   public void refreshTexts() {
@@ -597,8 +657,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     send.setText(texts.getNotificationsSend());
     hint.setText(texts.getNotificationsPreviewHint());
     historyTitle.setText(texts.getNotificationsSentHistory());
-    previous.setText(texts.getNotificationsPrevious());
-    next.setText(texts.getNotificationsNext());
+    historyDescription.setText(texts.getNotificationsHistoryDescription());
+    historyPagination.refreshTexts();
     if (isAttached()) {
       clearPreview();
       loadHistory();
