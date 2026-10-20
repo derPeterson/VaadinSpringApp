@@ -83,3 +83,26 @@ Keinen Scan, Commit, Push oder Merge ausgeführt.
 Designänderung und keine Datenmigration. Die Sonar-Statusänderungen sind bereits
 serverseitig wirksam. Keine bestehenden Container, realen Datenbanken oder
 Anmeldedaten verändert und keine realen E-Mails versandt.
+
+## Nachscan und letzte Testkorrektur
+
+Der anschließend erneuerte Export vom 21.10.2026 enthält **einen offenen Hinweis**:
+`768a1f82-cd06-44ed-ac06-ed12c5977c3f`, S9016, AccountAvatarDialogTest,
+Zeile 232. Gegenüber den ursprünglichen 36 offenen IDs sind 35 aus dem offenen
+Export entfallen; keine neue ID ist hinzugekommen. Das umfasst die elf eingeordneten
+Ausnahmen und 24 vom Scan nicht mehr offen gemeldete Codehinweise.
+
+Der verbliebene Mock der Upload-Antwort wurde in eine explizite lokale
+`VaadinResponse response`-Variable gezogen. Die vorherige Bereinigung hatte die
+Servlet-Service-Mocks vorbereitet, diesen Response-Mock jedoch übersehen.
+Testablauf und Assertions bleiben erhalten. S9016 wird nicht als Ausnahme akzeptiert;
+der nächste Scan muss den Entfall nach der Codekorrektur bestätigen.
+
+Nach der letzten Java-Änderung Spotless apply/check und Checkstyle im Projektroot
+erfolgreich, 0 Checkstyle-Verstöße. Gezielt **10 Avatar-Dialogtests**, 0 Fehler,
+0 Fehlschläge und 0 Skips, in der synchronisierten isolierten Buildkopie ausgeführt.
+`git diff --check` erfolgreich. Für diese reine Testvorbereitung kein erneuter
+Gesamt-/Produktionsbuild und keine neue Coverage-Messung oder Browserrunde.
+Die oben genannten 2.205 Tests und Coveragewerte gehören zum vorherigen Gesamtlauf.
+Die Korrektur wird im nächsten Test-/Scanlauf berücksichtigt. Kein Commit, Push,
+Scan oder weitere Sonar-Statusänderung ausgeführt; der Export bleibt unverändert.

@@ -229,7 +229,8 @@ class AccountAvatarDialogTest {
     UploadEvent event = mock(UploadEvent.class);
     VaadinServletService servletService = mock(VaadinServletService.class);
     when(event.getRequest()).thenReturn(new VaadinServletRequest(request, servletService));
-    when(event.getResponse()).thenReturn(mock(VaadinResponse.class));
+    VaadinResponse response = mock(VaadinResponse.class);
+    when(event.getResponse()).thenReturn(response);
     ByteArrayInputStream input = spy(new ByteArrayInputStream(new byte[] {1}));
     when(event.getInputStream()).thenReturn(input);
     UI uploadUi = mock(UI.class);
