@@ -167,6 +167,18 @@ class H2ConsoleOriginFilterTest {
   }
 
   @Test
+  void nativeConsoleSubclassDoesNotReceiveTheExactServletExemption() {
+    ServletRegistrationBean<JakartaWebServlet> alternative =
+        new ServletRegistrationBean<>(new JakartaWebServlet() {}, "/h2/*");
+    alternative.setName("h2Console");
+    H2ConsoleOriginFilter exactType = new H2ConsoleOriginFilter(true, () -> alternative);
+    MockHttpServletRequest request = request("POST", "/login.do");
+    request.addHeader("Origin", "http://localhost");
+    assertFalse(exactType.isConsoleRequest(request));
+    assertFalse(exactType.allowsConsoleRequest(request));
+  }
+
+  @Test
   void registrationWithoutServletDoesNotGrantAConsoleExemption() throws Exception {
     ServletRegistrationBean<JakartaWebServlet> incomplete = new ServletRegistrationBean<>();
     incomplete.setName("h2Console");
