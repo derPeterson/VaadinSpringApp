@@ -56,6 +56,13 @@ Mailpit nimmt die E-Mails der Anwendung entgegen und zeigt sie im Browser an. In
 
 ## H2-Datenbank öffnen
 
+**CSRF-Stand auf `fix/sonar-csrf`:** Nach Neubau und Neustart funktioniert die
+freigeschaltete Konsole direkt über `localhost`, `127.0.0.1` oder `[::1]` mit ihrem
+nativen Formular. Ein auf das tatsächliche H2-Servlet begrenzter Ursprungsschutz
+weist fremde oder unklare Herkunft ab; der Spring-Tokenschutz der Anwendung bleibt
+aktiv. Keine LAN-/Fremdhost-Freigabe. Vorhandene Images/Container wurden hier nicht
+ersetzt. [Umsetzung, HTTP-Nachweise und Grenzen](../h2-console-csrf-2026-10-20.md).
+
 1. Anwendung starten und [H2-Konsole](http://localhost:18080/h2/) öffnen.
 2. Folgende Werte eintragen:
 

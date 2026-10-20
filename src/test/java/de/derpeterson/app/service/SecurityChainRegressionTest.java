@@ -182,7 +182,7 @@ class SecurityChainRegressionTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"/admin", "/VAADIN/uidl"})
+  @ValueSource(strings = {"/admin", "/"})
   void actualChainUsesFreshRolesAndKeepsTheLogin(String path) throws Exception {
     Long victimId =
         transaction.execute(
@@ -204,6 +204,15 @@ class SecurityChainRegressionTest {
             principal, null, principal.getAuthorities()));
     MockHttpSession session = new MockHttpSession();
     session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
+    request.setServletPath(path);
+    request.setSession(session);
+    if (path.equals("/admin")) {
+      // Bootstrap before revocation: the POST itself must refresh the old authorities.
+      addCsrfToken(request);
+    } else {
+      request.setParameter("v-r", "uidl");
+    }
     UserEntity edited =
         repository.findAll().stream()
             .filter(user -> user.getId().equals(victimId))
@@ -211,9 +220,6 @@ class SecurityChainRegressionTest {
             .orElseThrow();
     edited.setRoleEntities(new ArrayList<>());
     users.updateAdminUser(edited, edited.getVersion(), "");
-    MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
-    request.setServletPath(path);
-    request.setSession(session);
     MockHttpServletResponse response = new MockHttpServletResponse();
     FilterChain action = mock(FilterChain.class);
     new FilterChainProxy(chain).doFilter(request, response, action);
@@ -502,6 +508,7 @@ class SecurityChainRegressionTest {
       MockHttpServletRequest logout = new MockHttpServletRequest("POST", "/logout");
       logout.setServletPath("/logout");
       logout.setSession(session);
+      addCsrfToken(logout);
       new FilterChainProxy(chain)
           .doFilter(logout, new MockHttpServletResponse(), mock(FilterChain.class));
       assertTrue(sessionRegistry.getAllSessions(email, true).isEmpty());
@@ -588,7 +595,7 @@ class SecurityChainRegressionTest {
 
   @ParameterizedTest
   @EnumSource(RoleType.class)
-  void realPasswordChainChecksMaintenanceAfterPasswordButBeforeSessionCreation(RoleType role)
+  void realPasswordChainChecksMaintenanceAfterPasswordButBeforeAuthenticatedAdmission(RoleType role)
       throws Exception {
     String email = sessionUser(role);
     when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
@@ -597,7 +604,12 @@ class SecurityChainRegressionTest {
         role.isAdministrative() ? "/admin" : "/login?error=maintenance",
         login.response().getRedirectedUrl());
     if (!role.isAdministrative()) {
-      assertNull(login.request().getSession(false));
+      HttpSession anonymous = login.request().getSession(false);
+      assertNotNull(anonymous);
+      assertNull(
+          anonymous.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
+      assertNull(anonymous.getAttribute("authenticatedUser"));
+      assertTrue(sessionRegistry.getAllSessions(email, false).isEmpty());
       assertEquals(
           0, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
       assertEquals(
@@ -635,6 +647,7 @@ class SecurityChainRegressionTest {
     MockHttpServletRequest logout = new MockHttpServletRequest("POST", "/logout");
     logout.setServletPath("/logout");
     logout.setSession(session);
+    addCsrfToken(logout);
     new FilterChainProxy(chain)
         .doFilter(logout, new MockHttpServletResponse(), mock(FilterChain.class));
     assertTrue(session.isInvalid());
@@ -649,6 +662,7 @@ class SecurityChainRegressionTest {
     MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
     request.setServletPath("/login");
     request.setSession(session);
+    addCsrfToken(request);
     request.setParameter("username", email);
     request.setParameter("password", "OriginalPassword!");
     request.setParameter("remember-me", "true");
@@ -685,10 +699,22 @@ class SecurityChainRegressionTest {
     return email;
   }
 
+  private void addCsrfToken(MockHttpServletRequest target) throws Exception {
+    MockHttpServletRequest bootstrap = new MockHttpServletRequest("GET", "/login");
+    bootstrap.setServletPath("/login");
+    bootstrap.setSession(target.getSession(false));
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    new FilterChainProxy(chain).doFilter(bootstrap, response, mock(FilterChain.class));
+    target.setSession(bootstrap.getSession(false));
+    assertNotNull(response.getHeader("X-CSRF-TOKEN"));
+    target.addHeader("X-CSRF-TOKEN", response.getHeader("X-CSRF-TOKEN"));
+  }
+
   private PasswordResponse postPassword(String email, String password) throws Exception {
     SecurityContextHolder.clearContext();
     MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
     request.setServletPath("/login");
+    addCsrfToken(request);
     request.setParameter("username", email);
     request.setParameter("password", password);
     MockHttpServletResponse response = new MockHttpServletResponse();

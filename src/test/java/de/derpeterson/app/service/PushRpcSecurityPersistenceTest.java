@@ -15,21 +15,29 @@ import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.function.DeploymentConfiguration;
 import com.vaadin.flow.internal.CurrentInstance;
 import com.vaadin.flow.server.ServiceInitEvent;
+import com.vaadin.flow.server.StreamRegistration;
+import com.vaadin.flow.server.StreamResourceRegistry;
 import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinServiceEventBus;
 import com.vaadin.flow.server.VaadinServletRequest;
+import com.vaadin.flow.server.VaadinServletResponse;
 import com.vaadin.flow.server.VaadinServletService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.communication.AtmospherePushConnection;
 import com.vaadin.flow.server.communication.PushHandler;
 import com.vaadin.flow.server.communication.ServerRpcHandler;
+import com.vaadin.flow.server.communication.StreamRequestHandler;
+import com.vaadin.flow.server.streams.UploadEvent;
+import com.vaadin.flow.server.streams.UploadHandler;
 import com.vaadin.flow.shared.ApplicationConstants;
 import com.vaadin.flow.shared.communication.PushConstants;
 import com.vaadin.flow.shared.communication.PushMode;
+import com.vaadin.flow.spring.ForwardingRequestWrapper;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -43,6 +51,7 @@ import de.derpeterson.app.security.PushSecurityInterceptor;
 import de.derpeterson.app.security.SecurityService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.servlet.ServletException;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
@@ -61,6 +70,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.RememberMeAuthenticationToken;
@@ -69,14 +79,19 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.FilterChainProxy;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /** Actual PushHandler -> ServerRpcHandler -> DOM callback, without a socket/server. */
-@SpringJUnitConfig(UserServicePersistenceTest.Config.class)
+@SpringJUnitConfig(SecurityChainRegressionTest.Config.class)
+@WebAppConfiguration
 class PushRpcSecurityPersistenceTest {
+  @Autowired SecurityFilterChain httpChain;
   @Autowired UserService users;
   @Autowired UserRepository repository;
   @Autowired SecurityService security;
@@ -236,21 +251,24 @@ class PushRpcSecurityPersistenceTest {
     }
   }
 
+  private String rpcMessage(String token) {
+    return "{\""
+        + ApplicationConstants.CSRF_TOKEN
+        + "\":\""
+        + token
+        + "\",\""
+        + ApplicationConstants.SERVER_SYNC_ID
+        + "\":0,\""
+        + ApplicationConstants.CLIENT_TO_SERVER_ID
+        + "\":"
+        + (ui.getInternals().getLastProcessedClientToServerId() + 1)
+        + ",\"rpc\":[{\"type\":\"event\",\"node\":"
+        + action.getElement().getNode().getId()
+        + ",\"event\":\"click\",\"data\":{}}]}";
+  }
+
   private void receive(String token) throws Exception {
-    String message =
-        "{\""
-            + ApplicationConstants.CSRF_TOKEN
-            + "\":\""
-            + token
-            + "\",\""
-            + ApplicationConstants.SERVER_SYNC_ID
-            + "\":0,\""
-            + ApplicationConstants.CLIENT_TO_SERVER_ID
-            + "\":"
-            + (ui.getInternals().getLastProcessedClientToServerId() + 1)
-            + ",\"rpc\":[{\"type\":\"event\",\"node\":"
-            + action.getElement().getNode().getId()
-            + ",\"event\":\"click\",\"data\":{}}]}";
+    String message = rpcMessage(token);
     when(request.getReader())
         .thenReturn(
             new BufferedReader(
@@ -395,6 +413,141 @@ class PushRpcSecurityPersistenceTest {
                 new VaadinServletRequest(request, service), mock(VaadinResponse.class)));
     assertFalse(httpSession.isInvalid());
     assertEquals(0, calls.get());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void actualRootUidlPassesHttpFiltersButStillRequiresFlowToken(boolean valid) throws Exception {
+    MockHttpServletRequest http = new MockHttpServletRequest("POST", "/");
+    http.setServletPath("/");
+    http.setParameter("v-r", "uidl");
+    http.setSession(httpSession);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    jakarta.servlet.FilterChain servlet =
+        (incoming, outgoing) -> {
+          VaadinServletRequest wrapped =
+              new VaadinServletRequest((jakarta.servlet.http.HttpServletRequest) incoming, service);
+          service.setCurrentInstances(wrapped, mock(VaadinResponse.class));
+          VaadinSession.setCurrent(vaadin);
+          UI.setCurrent(ui);
+          try {
+            new ServerRpcHandler()
+                .handleRpc(ui, rpcMessage(valid ? ui.getCsrfToken() : "invalid"), wrapped);
+          } catch (Exception failure) {
+            throw new ServletException(failure);
+          } finally {
+            CurrentInstance.clearAll();
+          }
+        };
+    if (valid) {
+      new FilterChainProxy(httpChain).doFilter(http, response, servlet);
+      assertEquals(200, response.getStatus());
+      assertEquals(1, calls.get());
+      assertEquals("Mutation 1", form(targetId).getFirstName());
+    } else {
+      ServletException failure =
+          assertThrows(
+              ServletException.class,
+              () -> new FilterChainProxy(httpChain).doFilter(http, response, servlet));
+      assertTrue(failure.getCause() instanceof ServerRpcHandler.InvalidUIDLSecurityKeyException);
+      assertEquals(0, calls.get());
+      assertEquals("Test", form(targetId).getFirstName());
+    }
+  }
+
+  @Test
+  void actualPushUrlPassesHttpFiltersAndExecutesProtectedRpc() throws Exception {
+    MockHttpServletRequest http = new MockHttpServletRequest("POST", "/VAADIN/push");
+    http.setServletPath("/VAADIN/push");
+    http.setParameter("v-r", "push");
+    http.setSession(httpSession);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    new FilterChainProxy(httpChain)
+        .doFilter(
+            http,
+            response,
+            (incoming, outgoing) -> {
+              try {
+                receive(ui.getCsrfToken());
+              } catch (Exception failure) {
+                throw new ServletException(failure);
+              }
+            });
+    assertEquals(200, response.getStatus());
+    assertEquals(1, calls.get());
+    assertEquals("Mutation 1", form(targetId).getFirstName());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"valid", "unknown-key", "disabled", "hidden"})
+  void actualDynamicUploadTransportRetainsResourceKeyAndElementGuards(String mode)
+      throws Exception {
+    StreamResourceRegistry resources = new StreamResourceRegistry(vaadin);
+    when(vaadin.getResourceRegistry()).thenReturn(resources);
+    UI.setCurrent(ui);
+    UploadHandler upload =
+        new UploadHandler() {
+          @Override
+          public void handleUploadRequest(UploadEvent event) {
+            throw new AssertionError("Multipart processing is outside this transport-guard test");
+          }
+
+          @Override
+          public void handleRequest(
+              com.vaadin.flow.server.VaadinRequest request,
+              VaadinResponse response,
+              VaadinSession session,
+              Element owner) {
+            // Only the file-I/O boundary is replaced; StreamRequestHandler performs its real
+            // checks.
+            calls.incrementAndGet();
+          }
+        };
+    StreamRegistration registration = resources.registerResource(upload, action.getElement());
+    String path = "/" + registration.getResourceUri();
+    if (mode.equals("unknown-key")) {
+      String[] parts = path.split("/", 7);
+      path = path.replace(parts[5], "unknown-key");
+    } else if (mode.equals("disabled")) {
+      action.setEnabled(false);
+    } else if (mode.equals("hidden")) {
+      action.setVisible(false);
+    }
+    MockHttpServletRequest http = new MockHttpServletRequest("POST", path);
+    http.setServletPath(path);
+    http.setSession(httpSession);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    try {
+      new FilterChainProxy(httpChain)
+          .doFilter(
+              http,
+              response,
+              (incoming, outgoing) -> {
+                VaadinServletRequest wrapped =
+                    new VaadinServletRequest(
+                        new ForwardingRequestWrapper(
+                            (jakarta.servlet.http.HttpServletRequest) incoming),
+                        service);
+                assertTrue(
+                    new StreamRequestHandler()
+                        .handleRequest(
+                            vaadin,
+                            wrapped,
+                            new VaadinServletResponse(
+                                (jakarta.servlet.http.HttpServletResponse) outgoing, service)));
+              });
+      int expectedStatus = 403;
+      if (mode.equals("valid")) {
+        expectedStatus = 200;
+      } else if (mode.equals("unknown-key")) {
+        expectedStatus = 404;
+      }
+      assertEquals(expectedStatus, response.getStatus());
+      assertEquals(mode.equals("valid") ? 1 : 0, calls.get());
+    } finally {
+      registration.unregister();
+      CurrentInstance.clearAll();
+    }
   }
 
   @Test

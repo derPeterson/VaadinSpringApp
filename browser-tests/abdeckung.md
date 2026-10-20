@@ -1,5 +1,40 @@
 # Browserabdeckung und offene Punkte
 
+## H2-Ergänzung nach der CSRF-Browserabnahme (20.10.2026)
+
+Die optionale lokale H2-Konsole ist mit eng begrenztem Ursprungsschutz wieder
+angebunden; die Spring-Tokenprüfung der Anwendung bleibt aktiv. 1956 Anwendungs-
+JUnits und 48 Helfer sowie Produktionsbuild und Stilprüfungen erfolgreich.
+44 zusätzliche H2-Testausprägungen, darunter neun echte HTTP-Fälle mit nativem
+H2-Servlet, vollständiger SecurityFilterChain und eigener flüchtiger Datenbank.
+Frische JUnit-Coverage: 87,59 % Zeilen / 76,66 % Zweige bei 218 Klassen.
+Kein neuer Browser-UI-Lauf oder Dockerimage-Build für diesen Nachtrag.
+Die folgenden 44/44-Runden je Sprache dokumentieren den Stand vor der H2-Ergänzung.
+[Änderungen, Bedienung und Prüfgrenzen](../docs/h2-console-csrf-2026-10-20.md).
+
+## CSRF-Nachprüfung vom 20.10.2026 – gezielte Abnahme abgeschlossen
+
+Auf `fix/sonar-csrf` ist Spring-CSRF für klassische HTTP-Mutationen aktiv; echte
+Flow-Transporte behalten ihren eigenen Schutz. 1912 Anwendungs-JUnits und 48
+Browser-Helfertests erfolgreich; 51 neue Testausprägungen, Produktionsbuild und
+Stilprüfungen grün. Ein instabiles Wartungsansichts-Testfixture wurde durch eine
+stark gehaltene VaadinSession korrigiert; keine Produktivänderung dafür.
+
+Nach ausdrücklicher Freigabe DE und EN jeweils **44/44 Browserfälle**, keine
+Fehler/Skips: `session-limits` 35 plus `maintenance` 9. Die Anmeldefälle sind bereits
+in `session-limits` enthalten. Alle Runden am identischen neuen Produktionsimage,
+Coverage und eigener Testumgebungsabbau erfolgreich. Ein durch das Dockerupdate
+unterbrochener Lauf wurde vollständig wiederholt und zählt nicht als Abnahme.
+
+Frische JUnit-Coverage: 87,5 % Zeilen / 76,2 % Zweige. Gemeinsame Browser-Coverage
+der vier gezielten Runden: **68,41 % / 46,51 %**, jeweils 216 Anwendungsklassen.
+Die Browserquote ist wegen der kleineren Fallauswahl nicht mit einer vollständigen
+152er-Runde gleichzusetzen. Die übrigen Browserfälle wurden hier nicht wiederholt.
+Die beim Abschluss offene H2-Kompatibilität wurde im oben verlinkten Nachtrag
+gezielt bearbeitet; keine pauschale Ausnahme. Kein neuer Sonar-Scan oder Sonar-Statuswechsel.
+[Änderungen, Nachweise und Grenzen](../docs/sonar-csrf-umsetzung-2026-10-20.md),
+[Meilenstein](../docs/meilensteine/2026-10-20-csrf-browserabnahme.md).
+
 ## Aktuelle Gesamt-QA vom 20.10.2026 – abgeschlossen
 
 Der vollständige Auftrag umfasst das fertige Header-Overlay, persönliche Inbox und

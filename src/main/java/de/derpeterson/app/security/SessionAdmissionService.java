@@ -23,6 +23,9 @@ import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
+import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
+import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
 import org.springframework.web.util.WebUtils;
 
 /** One-instance admission. Fixed stripes bound lock memory independently of login identities. */
@@ -46,6 +49,7 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
   private final Map<String, Active> metadata = new ConcurrentHashMap<>();
   private DeviceTokenRepository tokens;
   private final Object[] locks = new Object[256];
+  private final CsrfAuthenticationStrategy csrfAuthentication = csrfAuthenticationStrategy();
   private final ChangeSessionIdAuthenticationStrategy fixation =
       new ChangeSessionIdAuthenticationStrategy();
 
@@ -53,6 +57,14 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
     this.config = config;
     this.registry = registry;
     Arrays.setAll(locks, index -> new Object());
+  }
+
+  private static CsrfAuthenticationStrategy csrfAuthenticationStrategy() {
+    // Stateless repository instances share Spring's standard key in the same HTTP session.
+    CsrfAuthenticationStrategy strategy =
+        new CsrfAuthenticationStrategy(new HttpSessionCsrfTokenRepository());
+    strategy.setRequestHandler(new XorCsrfTokenRequestAttributeHandler());
+    return strategy;
   }
 
   public void setDeviceTokens(DeviceTokenRepository tokens) {
@@ -189,7 +201,16 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
       request.setAttribute(FAILURE_REASON, "unavailable");
       throw failure;
     }
-    complete(authentication, request, response, completion);
+    complete(
+        authentication,
+        request,
+        response,
+        () -> {
+          // All explicit login paths reach this completion after fixation/admission, including
+          // Flow and Remember-me. Ordinary context persistence calls complete() directly.
+          csrfAuthentication.onAuthentication(authentication, request, response);
+          completion.run();
+        });
   }
 
   /** Reserve before publishing any principal/cookie; roll back a failed completion. */

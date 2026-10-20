@@ -15,8 +15,10 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -38,6 +40,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.csrf.CsrfException;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.util.HttpSessionMutexListener;
@@ -56,6 +60,9 @@ public class SecurityConfig {
 
   @Value("${app.security.expose-h2-console:false}")
   private boolean exposeH2Console;
+
+  @Value("${vaadin.url-mapping:/*}")
+  private String vaadinServletMapping;
 
   @Bean
   public AuthenticationManager authenticationManager(
@@ -151,25 +158,28 @@ public class SecurityConfig {
       SessionAdmissionService admissions,
       MaintenanceService maintenance,
       SecurityContextRepository contextRepository,
-      ObjectProvider<SessionManagementService> sessionManagement)
+      ObjectProvider<SessionManagementService> sessionManagement,
+      @Qualifier("h2Console") ObjectProvider<ServletRegistrationBean<?>> h2Console)
       throws Exception {
     logger.debug("🔥 SecurityConfig is loading!");
 
+    H2ConsoleOriginFilter consoleProtection =
+        new H2ConsoleOriginFilter(exposeH2Console, h2Console::getIfAvailable);
+    FlowCsrfRequestMatcher flowProtection = new FlowCsrfRequestMatcher(vaadinServletMapping);
     http.authenticationManager(authenticationManager)
-        .csrf(csrf -> csrf.disable())
-        .headers(
-            headers ->
-                headers.frameOptions(
-                    frameOptions -> {
-                      if (exposeH2Console) {
-                        frameOptions.disable();
-                      } else {
-                        frameOptions.sameOrigin();
-                      }
-                    }))
+        .csrf(
+            csrf ->
+                csrf.requireCsrfProtectionMatcher(
+                    request ->
+                        flowProtection.matches(request)
+                            && !consoleProtection.allowsConsoleRequest(request)))
+        .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
+        .addFilterBefore(consoleProtection, CsrfFilter.class)
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers(
+                auth.requestMatchers(consoleProtection::isConsoleRequest)
+                    .access((authentication, context) -> new AuthorizationDecision(exposeH2Console))
+                    .requestMatchers(
                         "/VAADIN/**",
                         "/HILLA/**",
                         "/themes/**",
@@ -226,6 +236,10 @@ public class SecurityConfig {
                         })
                     .accessDeniedHandler(
                         (request, response, accessDeniedException) -> {
+                          if (accessDeniedException instanceof CsrfException) {
+                            response.sendError(403);
+                            return;
+                          }
                           String redirectTarget =
                               AppRoute.HOME.getSecurityRoute()
                                   + "?error="
@@ -244,6 +258,7 @@ public class SecurityConfig {
                             response.sendRedirect(redirectTarget);
                           }
                         }))
+        .addFilterAfter(new LoginCsrfTokenFilter(), RememberMeAuthenticationFilter.class)
         .addFilterBefore(vaadinSecurityFilter, AuthorizationFilter.class)
         .addFilterAfter(new MaintenanceHttpFilter(maintenance), VaadinSecurityFilter.class)
         .addFilterBefore(

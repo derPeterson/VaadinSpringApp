@@ -47,6 +47,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 /** Actual maintenance actions and visibility, without a running application or database. */
 class MaintenanceViewTest {
   private UI ui;
+  // CurrentInstance only retains weak references; keep the locale fixture alive for every
+  // assertion.
+  private VaadinSession session;
   private Page page;
   private SecurityService security;
   private ConfigService config;
@@ -61,7 +64,7 @@ class MaintenanceViewTest {
     page = mock(Page.class);
     doReturn(page).when(ui).getPage();
     UI.setCurrent(ui);
-    VaadinSession session = mock(VaadinSession.class);
+    session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     VaadinSession.setCurrent(session);
@@ -79,6 +82,7 @@ class MaintenanceViewTest {
     NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
+    session = null;
   }
 
   private void create(RoleType role) {

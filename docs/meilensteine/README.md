@@ -5,6 +5,7 @@ Sie bleiben auch dann verständlich, wenn lokale Testausgaben bereits bereinigt 
 
 | Datum | Meilenstein |
 | --- | --- |
+| 20.10.2026 | [CSRF-Schutz und gezielte Browserabnahme DE/EN](2026-10-20-csrf-browserabnahme.md) |
 | 18.10.2026 | [Bereinigung, Profilbilder und Eingaben vollständig geprüft](2026-10-18-bereinigung-avatar-eingaben-und-gesamtqa.md) |
 | 17.10.2026 | [Sitzungsverwaltung und Kontosicherheit vollständig geprüft](2026-10-17-sitzungsverwaltung-und-kontosicherheit.md) |
 | 17.10.2026 | [Kontoprofil, E-Mail-Dialog und Neustartprüfungen](2026-10-16-kontoprofil-und-browserpruefungen.md) |

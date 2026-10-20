@@ -1,5 +1,8 @@
 # P1-CSRF: konkreter Vorschlag und Regressionstestplan
 
+Nachfolgeauftrag: [Umsetzung und aktueller Prüfstand](sonar-csrf-umsetzung-2026-10-20.md)
+auf `fix/sonar-csrf`. Die folgenden Abschnitte dokumentieren den ursprünglichen Vorschlag.
+
 Stand: 20.10.2026, Branch `fix/sonar-validation-session`. **Nur untersucht und geplant; keine CSRF-Implementierung oder zugehörige neue Testklasse angelegt.**
 
 ## Bestätigter Ausgangspunkt
