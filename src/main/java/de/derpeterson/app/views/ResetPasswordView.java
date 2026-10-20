@@ -49,6 +49,9 @@ import org.slf4j.LoggerFactory;
 @AnonymousAllowed
 public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     implements HasUrlParameter<String> {
+  private static final String COSMOS_FORM_CLASS = "cosmos-form";
+  private static final String COSMOS_HEADLINE_CLASS = "cosmos-headline";
+  private static final String COSMOS_TITLE_ROW_CLASS = "cosmos-title-row";
 
   private static final Logger logger = LoggerFactory.getLogger(ResetPasswordView.class);
 
@@ -182,13 +185,13 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
     cardContentLayout.setPadding(false);
     cardContentLayout.setSpacing(false);
-    cardContentLayout.addClassName("cosmos-form");
+    cardContentLayout.addClassName(COSMOS_FORM_CLASS);
 
     this.title = new H1(messageProperties.getResetPasswordTitle());
-    title.addClassName("cosmos-headline");
+    title.addClassName(COSMOS_HEADLINE_CLASS);
 
     HorizontalLayout cardTitleLayout = new HorizontalLayout();
-    cardTitleLayout.addClassName("cosmos-title-row");
+    cardTitleLayout.addClassName(COSMOS_TITLE_ROW_CLASS);
     cardTitleLayout.setWidthFull();
     cardTitleLayout.setPadding(false);
     cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
@@ -287,7 +290,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
     cardContentLayout.setPadding(false);
     cardContentLayout.setSpacing(false);
-    cardContentLayout.addClassName("cosmos-form");
+    cardContentLayout.addClassName(COSMOS_FORM_CLASS);
 
     Icon successIcon = VaadinIcon.CHECK_CIRCLE.create();
     successIcon.addClassNames("cosmos-status-icon", LumoUtility.TextColor.SUCCESS);
@@ -299,9 +302,9 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     cardIconLayout.add(successIcon);
 
     this.successTitle = new H1(messageProperties.getBaseSuccessTitle());
-    successTitle.addClassName("cosmos-headline");
+    successTitle.addClassName(COSMOS_HEADLINE_CLASS);
     HorizontalLayout cardTitleLayout = new HorizontalLayout();
-    cardTitleLayout.addClassName("cosmos-title-row");
+    cardTitleLayout.addClassName(COSMOS_TITLE_ROW_CLASS);
     cardTitleLayout.setWidthFull();
     cardTitleLayout.setPadding(false);
     cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
@@ -333,7 +336,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
     cardContentLayout.setPadding(false);
     cardContentLayout.setSpacing(false);
-    cardContentLayout.addClassName("cosmos-form");
+    cardContentLayout.addClassName(COSMOS_FORM_CLASS);
 
     Icon warningIcon = VaadinIcon.WARNING.create();
     warningIcon.addClassNames(
@@ -351,10 +354,10 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
             technicalFailure
                 ? messageProperties.getBaseFailedTitle()
                 : messageProperties.getResetPasswordInvalidTitle());
-    invalidTitle.addClassName("cosmos-headline");
+    invalidTitle.addClassName(COSMOS_HEADLINE_CLASS);
 
     HorizontalLayout cardTitleLayout = new HorizontalLayout();
-    cardTitleLayout.addClassName("cosmos-title-row");
+    cardTitleLayout.addClassName(COSMOS_TITLE_ROW_CLASS);
     cardTitleLayout.setWidthFull();
     cardTitleLayout.setPadding(false);
     cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);

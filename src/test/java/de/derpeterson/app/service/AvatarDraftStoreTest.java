@@ -71,14 +71,13 @@ class AvatarDraftStoreTest {
     UUID id =
         drafts.upload(
             token, 1L, new ByteArrayInputStream(AvatarImageProcessorTest.image("png", 10, 10)));
-    assertThrows(
-        InvalidImage.class,
-        () -> drafts.upload(token, 1L, new ByteArrayInputStream("bad image".getBytes())));
+    ByteArrayInputStream imageInput = new ByteArrayInputStream("bad image".getBytes());
+    assertThrows(InvalidImage.class, () -> drafts.upload(token, 1L, imageInput));
     assertEquals(id, drafts.image(token, 1L, id).id());
+    UUID operationId = UUID.randomUUID();
     assertEquals(
         Problem.MISSING,
-        assertThrows(InvalidImage.class, () -> drafts.image(token, 1L, UUID.randomUUID()))
-            .problem());
+        assertThrows(InvalidImage.class, () -> drafts.image(token, 1L, operationId)).problem());
     drafts.release(token);
     assertEquals(
         Problem.EXPIRED,
@@ -112,12 +111,10 @@ class AvatarDraftStoreTest {
       Future<UUID> transfer = executor.submit(() -> drafts.upload(token, 1L, input));
       try {
         assertTrue(entered.await(5, TimeUnit.SECONDS));
+        ByteArrayInputStream imageInput = new ByteArrayInputStream(bytes);
         assertEquals(
             Problem.BUSY,
-            assertThrows(
-                    InvalidImage.class,
-                    () -> drafts.upload(token, 1L, new ByteArrayInputStream(bytes)))
-                .problem());
+            assertThrows(InvalidImage.class, () -> drafts.upload(token, 1L, imageInput)).problem());
         drafts.release(token);
       } finally {
         finish.countDown();

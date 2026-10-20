@@ -119,7 +119,8 @@ public class AvatarImageProcessor {
           throw new InvalidImage(Problem.TYPE);
         }
         reader.setInput(input, true, true);
-        int w = reader.getWidth(0), h = reader.getHeight(0);
+        int w = reader.getWidth(0);
+        int h = reader.getHeight(0);
         if (w < 1 || h < 1 || w > 8192 || h > 8192 || (long) w * h > 20_000_000) {
           throw new InvalidImage(Problem.DIMENSIONS);
         }
@@ -131,7 +132,8 @@ public class AvatarImageProcessor {
             return null;
           }
           int orientation = orientation(data, png);
-          int ow = orientation >= 5 ? h : w, oh = orientation >= 5 ? w : h;
+          int ow = orientation >= 5 ? h : w;
+          int oh = orientation >= 5 ? w : h;
           checkCrop(crop, ow, oh);
           double side = Math.min(ow, oh) / crop.zoom();
           double left = (ow - side) / 2 - crop.x() * side;
@@ -190,7 +192,7 @@ public class AvatarImageProcessor {
       }
     } catch (InvalidImage failure) {
       throw failure;
-    } catch (IOException | RuntimeException failure) {
+    } catch (IOException | RuntimeException _) {
       throw new InvalidImage(Problem.IMAGE);
     } finally {
       decoders.release();

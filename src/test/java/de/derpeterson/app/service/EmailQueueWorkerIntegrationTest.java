@@ -7,10 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -211,7 +209,7 @@ class EmailQueueWorkerIntegrationTest {
       assertEquals(Set.of("smtp-one", "smtp-two", "smtp-three"), smtp.messages.keySet());
       smtp.messages.forEach(
           (subject, body) -> assertEquals("<p>body:" + subject + "</p>\r\n", body));
-      assertTrue(smtp.failures.isEmpty(), () -> smtp.failures.toString());
+      assertTrue(smtp.failures.isEmpty(), smtp.failures::toString);
     }
   }
 
@@ -254,7 +252,7 @@ class EmailQueueWorkerIntegrationTest {
   }
 
   @Test
-  void rejectedTasksNeverClaimTheirCandidates() throws Exception {
+  void rejectedTasksNeverClaimTheirCandidates() {
     Long id = insert("pending", null);
     ThreadPoolExecutor executor = new ThreadPoolConfig(config).taskExecutor();
     EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor);

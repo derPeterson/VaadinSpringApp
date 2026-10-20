@@ -499,11 +499,13 @@ class SecurityChainRegressionTest {
       assertEquals("/login?error=sessions", denied.response().getRedirectedUrl());
       assertEquals(
           0, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
+      MockHttpServletRequest attemptRequest = new MockHttpServletRequest();
+      MockHttpServletResponse attemptResponse = new MockHttpServletResponse();
       assertThrows(
           SessionLimitException.class,
           () ->
               actualSecurity.storeAuthenticatedUser(
-                  new MockHttpServletRequest(), new MockHttpServletResponse(), principal, true));
+                  attemptRequest, attemptResponse, principal, true));
       assertEquals(1, sessionRegistry.getAllSessions(email, true).size());
       MockHttpServletRequest logout = new MockHttpServletRequest("POST", "/logout");
       logout.setServletPath("/logout");

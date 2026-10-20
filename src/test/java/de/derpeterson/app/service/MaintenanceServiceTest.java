@@ -139,9 +139,10 @@ class MaintenanceServiceTest {
         .thenThrow(new IllegalArgumentException("invalid boolean"));
     assertEquals(MaintenanceService.State.UNAVAILABLE, maintenance.state());
     assertTrue(maintenance.blocks(request));
+    Authentication attemptAuthentication = actor(RoleType.ROLE_SUPERADMIN);
     assertThrows(
         AuthenticationServiceException.class,
-        () -> maintenance.requireLogin(actor(RoleType.ROLE_SUPERADMIN)));
+        () -> maintenance.requireLogin(attemptAuthentication));
     assertThrows(
         MaintenanceAccessException.class, () -> MaintenanceService.requirePublicAccess(config));
   }
@@ -159,9 +160,10 @@ class MaintenanceServiceTest {
       admission.onAuthentication(actor(role), request, response);
       assertEquals(1, registry.getAllSessions("maintenance@example.test", true).size());
     } else {
+      Authentication attemptAuthentication = actor(role);
       assertThrows(
           MaintenanceAuthenticationException.class,
-          () -> admission.onAuthentication(actor(role), request, response));
+          () -> admission.onAuthentication(attemptAuthentication, request, response));
       assertNull(request.getSession(false));
       assertTrue(registry.getAllPrincipals().isEmpty());
       assertEquals("maintenance", request.getAttribute(SessionAdmissionService.FAILURE_REASON));
@@ -430,12 +432,13 @@ class MaintenanceServiceTest {
   }
 
   @Test
-  void publicServiceGuardRunsBeforeAnyAccountOrQueueInteraction() throws Exception {
+  void publicServiceGuardRunsBeforeAnyAccountOrQueueInteraction() {
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     UserService users = mock(UserService.class);
     VerificationService verification = mock(VerificationService.class);
     RegistrationService registration = new RegistrationService(users, verification, config);
-    assertThrows(MaintenanceAccessException.class, () -> registration.register(new UserEntity()));
+    UserEntity targetUser = new UserEntity();
+    assertThrows(MaintenanceAccessException.class, () -> registration.register(targetUser));
     verifyNoInteractions(users, verification);
   }
 }

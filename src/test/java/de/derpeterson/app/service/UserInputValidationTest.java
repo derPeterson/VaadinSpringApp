@@ -154,8 +154,9 @@ class UserInputValidationTest {
 
   @Test
   void nullStatusLocaleAndSchedulerArgumentsAreRejectedBeforeLookupAndNotifications() {
+    UserEntity targetUser = user();
     assertThrows(
-        IllegalArgumentException.class, () -> service.updateUserStatus(user(), null, true));
+        IllegalArgumentException.class, () -> service.updateUserStatus(targetUser, null, true));
     assertThrows(
         IllegalArgumentException.class, () -> service.updateUserLocale("test@example.com", null));
     assertThrows(IllegalArgumentException.class, () -> service.updateLastActivity(null));

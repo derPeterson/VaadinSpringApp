@@ -57,7 +57,7 @@ public final class MaintenanceTransport {
     int id;
     try {
       id = Integer.parseInt(request.getParameter("v-uiId"));
-    } catch (NumberFormatException missingOrInvalid) {
+    } catch (NumberFormatException _) {
       return fallback;
     }
     for (String key : Collections.list(http.getAttributeNames())) {

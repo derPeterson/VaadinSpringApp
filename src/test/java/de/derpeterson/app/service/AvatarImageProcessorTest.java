@@ -58,18 +58,17 @@ class AvatarImageProcessorTest {
 
   @Test
   void rejectsInvalidFormatsCorruptionAndCoordinates() throws Exception {
+    byte[] svgBytes = "<svg/>".getBytes();
+    Crop svgCrop = Crop.centered();
     assertEquals(
         Problem.TYPE,
-        assertThrows(
-                InvalidImage.class, () -> processor.normalize("<svg/>".getBytes(), Crop.centered()))
-            .problem());
+        assertThrows(InvalidImage.class, () -> processor.normalize(svgBytes, svgCrop)).problem());
+    byte[] corruptJpegBytes = new byte[] {(byte) 255, (byte) 216, (byte) 255};
+    Crop corruptJpegCrop = Crop.centered();
     assertEquals(
         Problem.IMAGE,
         assertThrows(
-                InvalidImage.class,
-                () ->
-                    processor.normalize(
-                        new byte[] {(byte) 255, (byte) 216, (byte) 255}, Crop.centered()))
+                InvalidImage.class, () -> processor.normalize(corruptJpegBytes, corruptJpegCrop))
             .problem());
     byte[] bytes = image("png", 20, 20);
     for (Crop crop :
@@ -167,8 +166,9 @@ class AvatarImageProcessorTest {
     ByteBuffer.wrap(chunk, 16, 4).putInt((int) crc.getValue());
     output.write(chunk);
     output.write(png, 33, png.length - 33);
+    byte[] imageBytes = output.toByteArray();
     assertEquals(
         Problem.TYPE,
-        assertThrows(InvalidImage.class, () -> processor.validate(output.toByteArray())).problem());
+        assertThrows(InvalidImage.class, () -> processor.validate(imageBytes)).problem());
   }
 }

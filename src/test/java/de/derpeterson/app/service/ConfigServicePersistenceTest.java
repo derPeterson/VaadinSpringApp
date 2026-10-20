@@ -125,14 +125,13 @@ class ConfigServicePersistenceTest {
   void databaseStillEnforcesNonNullAndUniqueKeyConstraints() {
     service.set(ConfigEntry.SERVICE_NAME, "old");
 
+    ConfigEntity configEntity =
+        new ConfigEntity(null, ConfigEntry.SERVICE_NAME.getKey(), "duplicate");
     assertThrows(
-        DataIntegrityViolationException.class,
-        () ->
-            repository.saveAndFlush(
-                new ConfigEntity(null, ConfigEntry.SERVICE_NAME.getKey(), "duplicate")));
+        DataIntegrityViolationException.class, () -> repository.saveAndFlush(configEntity));
+    ConfigEntity configEntity2 = new ConfigEntity(null, ConfigEntry.BASE_URL.getKey(), null);
     assertThrows(
-        DataIntegrityViolationException.class,
-        () -> repository.saveAndFlush(new ConfigEntity(null, ConfigEntry.BASE_URL.getKey(), null)));
+        DataIntegrityViolationException.class, () -> repository.saveAndFlush(configEntity2));
     assertEquals(1, repository.count());
     assertEquals("old", service.getString(ConfigEntry.SERVICE_NAME));
   }

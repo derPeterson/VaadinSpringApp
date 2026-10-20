@@ -183,7 +183,8 @@ class VerificationServicePersistenceTest {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
     when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION))
         .thenReturn("invalid");
-    assertThrows(DateTimeParseException.class, () -> service.createToken(detachedUser()));
+    UserEntity targetUser = detachedUser();
+    assertThrows(DateTimeParseException.class, () -> service.createToken(targetUser));
     assertEquals(TokenStatus.ACTIVE, status("old"));
     assertEquals(1, tokens.count());
   }
@@ -208,15 +209,12 @@ class VerificationServicePersistenceTest {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
     when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION))
         .thenReturn(lifetime);
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          if (entry.equals("create")) {
-            service.createToken(detachedUser());
-          } else {
-            resend(entry);
-          }
-        });
+    if (entry.equals("create")) {
+      UserEntity tokenUser = detachedUser();
+      assertThrows(IllegalArgumentException.class, () -> service.createToken(tokenUser));
+    } else {
+      assertThrows(IllegalArgumentException.class, () -> resend(entry));
+    }
     assertEquals(TokenStatus.ACTIVE, status("old"));
     assertEquals(1, tokens.count());
     assertFalse(users.findById(userId).orElseThrow().isEnabled());
@@ -490,8 +488,7 @@ class VerificationServicePersistenceTest {
       UserRepository users) {}
 
   @Test
-  void maintenanceCannotConsumeVerificationOrQueueMailAndExistingLinkWorksAfterwards()
-      throws Exception {
+  void maintenanceCannotConsumeVerificationOrQueueMailAndExistingLinkWorksAfterwards() {
     SecurityContextHolder.clearContext();
     String token = service.createToken(users.findById(userId).orElseThrow());
     long tokenCount = tokens.count();

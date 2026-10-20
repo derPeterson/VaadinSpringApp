@@ -26,7 +26,8 @@ class ThreadPoolConfigTest {
   void invalidWorkerCountsAreRejectedBeforeAnyThreadStarts(int count) {
     ConfigService config = mock(ConfigService.class);
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(count);
-    assertThrows(IllegalArgumentException.class, () -> new ThreadPoolConfig(config).taskExecutor());
+    ThreadPoolConfig threadPoolConfig = new ThreadPoolConfig(config);
+    assertThrows(IllegalArgumentException.class, () -> threadPoolConfig.taskExecutor());
   }
 
   @ParameterizedTest

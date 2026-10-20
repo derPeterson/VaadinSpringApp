@@ -83,7 +83,7 @@ public class UserNotificationBell extends Div {
                                     }
                                   });
                         });
-          } catch (org.springframework.security.access.AccessDeniedException denied) {
+          } catch (org.springframework.security.access.AccessDeniedException _) {
             target.setEnabled(false);
           }
           refresh();
@@ -119,7 +119,7 @@ public class UserNotificationBell extends Div {
       if (popover.isOpened() && panel != null) {
         panel.refresh();
       }
-    } catch (RuntimeException failure) {
+    } catch (RuntimeException _) {
       count.setVisible(false);
       target.setEnabled(false);
       popover.close();

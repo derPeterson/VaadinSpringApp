@@ -31,6 +31,9 @@ import java.util.function.Supplier;
 @Tag("account-avatar-editor")
 @JsModule("./account-avatar-editor.js")
 public class AccountAvatarEditor extends Component implements HasComponents, HasStyle {
+  private static final String ARIA_HIDDEN = "aria-hidden";
+  private static final String ARIA_LABEL = "aria-label";
+
   private final transient MessageProperties messages;
   private final Span initials = new Span();
   private final Div preview = new Div();
@@ -57,7 +60,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     Div circle = new Div(initials);
     circle.addClassNames("account-avatar-circle", "cosmos-avatar-circle");
     Element imagePreview = canvas("preview");
-    imagePreview.setAttribute("aria-hidden", "true");
+    imagePreview.setAttribute(ARIA_HIDDEN, "true");
     circle.getElement().appendChild(imagePreview);
     preview.addClassNames("account-avatar-preview", "cosmos-user-avatar");
     preview.getStyle().set("--cosmos-avatar-size", "96px");
@@ -66,7 +69,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
 
     choose.setId("account-avatar-choose");
     Icon uploadSymbol = VaadinIcon.UPLOAD.create();
-    uploadSymbol.getElement().setAttribute("aria-hidden", "true");
+    uploadSymbol.getElement().setAttribute(ARIA_HIDDEN, "true");
     Span uploadBadge = new Span(uploadSymbol);
     uploadBadge.addClassName("account-avatar-upload-icon");
     chooseLabel.addClassName("account-avatar-upload-title");
@@ -123,7 +126,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     cropFrame.getElement().appendChild(crop);
     Div mask = new Div();
     mask.addClassName("account-avatar-crop-mask");
-    mask.getElement().setAttribute("aria-hidden", "true");
+    mask.getElement().setAttribute(ARIA_HIDDEN, "true");
     cropFrame.add(mask);
     cropHint.addClassName("account-avatar-helper");
     zoom.setType("range");
@@ -207,7 +210,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
   private void updatePreviewLabel() {
     preview
         .getElement()
-        .setAttribute("aria-label", name.isEmpty() ? AppConstants.USER_ICON_ALT : name);
+        .setAttribute(ARIA_LABEL, name.isEmpty() ? AppConstants.USER_ICON_ALT : name);
   }
 
   public void refreshTexts() {
@@ -226,11 +229,11 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     uploadHint.setText(messages.getAccountAvatarUploadHint());
     cropHint.setText(messages.getAccountAvatarCropHint());
     zoomLabel.setText(messages.getAccountAvatarZoom());
-    zoom.getElement().setAttribute("aria-label", messages.getAccountAvatarZoom());
+    zoom.getElement().setAttribute(ARIA_LABEL, messages.getAccountAvatarZoom());
     cropFrame
         .getElement()
         .getChild(0)
-        .setAttribute("aria-label", messages.getAccountAvatarCropHint());
+        .setAttribute(ARIA_LABEL, messages.getAccountAvatarCropHint());
     reset.setText(messages.getAccountAvatarResetCrop());
     getElement().setAttribute("data-error-type", messages.getAccountAvatarTypeError());
     getElement().setAttribute("data-error-size", messages.getAccountAvatarSizeError());

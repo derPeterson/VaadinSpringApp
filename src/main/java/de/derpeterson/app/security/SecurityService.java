@@ -131,7 +131,7 @@ public class SecurityService {
       Optional<Authentication> fresh = refreshedAuthentication(auth);
       fresh.ifPresent(a -> install(session, a));
       return fresh;
-    } catch (IllegalStateException expired) {
+    } catch (IllegalStateException _) {
       return Optional.empty();
     }
   }
@@ -315,7 +315,7 @@ public class SecurityService {
       }
       refreshed.setDetails(auth.getDetails());
       return Optional.of(refreshed);
-    } catch (UsernameNotFoundException missing) {
+    } catch (UsernameNotFoundException _) {
       return Optional.empty();
     }
   }

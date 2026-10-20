@@ -27,7 +27,7 @@ public final class MaintenanceService {
   public State state() {
     try {
       return config.getBoolean(ConfigEntry.MAINTENANCE_MODE) ? State.ACTIVE : State.OPEN;
-    } catch (RuntimeException failure) {
+    } catch (RuntimeException _) {
       // An unreadable/invalid setting must never silently open the application.
       return State.UNAVAILABLE;
     }

@@ -2,8 +2,6 @@ package de.derpeterson.app.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyList;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 

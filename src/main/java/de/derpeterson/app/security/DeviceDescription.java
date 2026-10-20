@@ -3,6 +3,8 @@ package de.derpeterson.app.security;
 /** Nur grobe Hinweise aus dem User-Agent, niemals ein eindeutiger Gerätenachweis. */
 public record DeviceDescription(String system, String browser, boolean mobile)
     implements java.io.Serializable {
+  private static final String ANDROID = "Android";
+
   public static DeviceDescription from(String agent) {
     String value = agent == null ? "" : agent.substring(0, Math.min(agent.length(), 512));
     String system = detectSystem(value);
@@ -10,12 +12,12 @@ public record DeviceDescription(String system, String browser, boolean mobile)
     return new DeviceDescription(
         system,
         browser,
-        value.contains("Mobile") || value.contains("Android") || value.contains("iPad"));
+        value.contains("Mobile") || value.contains(ANDROID) || value.contains("iPad"));
   }
 
   private static String detectSystem(String value) {
-    if (value.contains("Android")) {
-      return "Android";
+    if (value.contains(ANDROID)) {
+      return ANDROID;
     }
     if (value.contains("iPhone") || value.contains("iPad")) {
       return "iOS";

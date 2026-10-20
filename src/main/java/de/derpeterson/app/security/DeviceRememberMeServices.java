@@ -144,7 +144,7 @@ public class DeviceRememberMeServices extends PersistentTokenBasedRememberMeServ
               && token.getTokenValue().equals(parts[1])
           ? parts[0]
           : null;
-    } catch (InvalidCookieException invalid) {
+    } catch (InvalidCookieException _) {
       return null;
     }
   }

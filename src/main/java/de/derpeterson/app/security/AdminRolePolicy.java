@@ -42,7 +42,7 @@ public class AdminRolePolicy {
   public boolean canManageSuperadmins() {
     try {
       return currentRoles().contains(RoleType.ROLE_SUPERADMIN);
-    } catch (AccessDeniedException denied) {
+    } catch (AccessDeniedException _) {
       return false;
     }
   }
@@ -69,7 +69,7 @@ public class AdminRolePolicy {
           .filter(Objects::nonNull)
           .forEach(result::add);
       return result;
-    } catch (UsernameNotFoundException missing) {
+    } catch (UsernameNotFoundException _) {
       throw new AccessDeniedException("Account unavailable");
     }
   }

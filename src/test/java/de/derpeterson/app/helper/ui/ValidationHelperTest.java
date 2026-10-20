@@ -7,17 +7,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 
-public class ValidationHelperTest {
+class ValidationHelperTest {
 
   @Test
-  public void testIsPasswordSecure_Blank() {
+  void testIsPasswordSecure_Blank() {
     assertFalse(ValidationHelper.isPasswordSecure(null));
     assertFalse(ValidationHelper.isPasswordSecure(""));
     assertFalse(ValidationHelper.isPasswordSecure("   "));
   }
 
   @Test
-  public void testIsPasswordSecure_MinLength() {
+  void testIsPasswordSecure_MinLength() {
     // Test with less than 8 characters - should all fail
     assertFalse(
         ValidationHelper.isPasswordSecure(
@@ -33,7 +33,7 @@ public class ValidationHelperTest {
   }
 
   @Test
-  public void testIsPasswordSecure_Requirements() {
+  void testIsPasswordSecure_Requirements() {
     // Test with valid passwords (8+ characters minimum with required elements)
     assertTrue(ValidationHelper.isPasswordSecure("Abc123!A")); // 8 chars: A-b-c-1-2-3-!-A
     assertTrue(ValidationHelper.isPasswordSecure("123ABC!B")); // 8 chars: 1-2-3-A-B-C-!-B
@@ -49,7 +49,7 @@ public class ValidationHelperTest {
   }
 
   @Test
-  public void testIsPasswordSecure_WithSpaces() {
+  void testIsPasswordSecure_WithSpaces() {
     // Test with spaces - password should be trimmed and validated
     // Outer spaces do not count toward the minimum length.
     assertFalse(ValidationHelper.isPasswordSecure(" Abc123! ")); // 7 chars after trimming
@@ -60,7 +60,7 @@ public class ValidationHelperTest {
   }
 
   @Test
-  public void testIsPasswordSecureAllowBlank() {
+  void testIsPasswordSecureAllowBlank() {
     // With allowBlank=false, blank inputs should be false
     assertFalse(ValidationHelper.isPasswordSecure(null, false));
     assertFalse(ValidationHelper.isPasswordSecure("", false));
@@ -87,7 +87,7 @@ public class ValidationHelperTest {
   }
 
   @Test
-  public void testIsEmailValid() {
+  void testIsEmailValid() {
     // Valid emails (Vaadin EmailValidator pattern)
     assertTrue(ValidationHelper.isEmailValid("test@example.com"));
     assertTrue(ValidationHelper.isEmailValid("user.name@domain.co.uk"));
@@ -113,7 +113,7 @@ public class ValidationHelperTest {
   }
 
   @Test
-  public void testIsBirthDateValid() {
+  void testIsBirthDateValid() {
     LocalDate today = LocalDate.now();
     LocalDate yesterday = today.minusDays(1);
     LocalDate tomorrow = today.plusDays(1);
@@ -130,7 +130,7 @@ public class ValidationHelperTest {
   }
 
   @Test
-  public void testIsRequiredTextValid() {
+  void testIsRequiredTextValid() {
     // Valid text
     assertTrue(ValidationHelper.isRequiredTextValid("Hello"));
     assertTrue(ValidationHelper.isRequiredTextValid("  Hello  "));
@@ -144,7 +144,7 @@ public class ValidationHelperTest {
   }
 
   @Test
-  public void testNormalize() {
+  void testNormalize() {
     // Normal cases
     assertEquals("", ValidationHelper.normalize(null));
     assertEquals("", ValidationHelper.normalize(""));

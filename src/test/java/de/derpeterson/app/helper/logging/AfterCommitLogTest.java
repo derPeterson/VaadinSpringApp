@@ -121,7 +121,9 @@ class AfterCommitLogTest {
     }
 
     @Override
-    protected void doBegin(Object transaction, TransactionDefinition definition) {}
+    protected void doBegin(Object transaction, TransactionDefinition definition) {
+      // Der Stub prüft Synchronisierungen und besitzt keine echte Transaktionsressource.
+    }
 
     @Override
     protected void doCommit(DefaultTransactionStatus status) {
@@ -131,6 +133,8 @@ class AfterCommitLogTest {
     }
 
     @Override
-    protected void doRollback(DefaultTransactionStatus status) {}
+    protected void doRollback(DefaultTransactionStatus status) {
+      // Ohne echte Ressource ist beim Rollback nur die Framework-Synchronisierung relevant.
+    }
   }
 }

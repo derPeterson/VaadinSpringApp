@@ -316,7 +316,7 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
       metadata.remove(session.getId());
       try {
         session.invalidate();
-      } catch (IllegalStateException alreadyEnded) {
+      } catch (IllegalStateException _) {
         /* Already released. */
       }
       SecurityContextHolder.clearContext();

@@ -41,6 +41,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -344,7 +345,7 @@ public class AccountSecurityService {
           public void afterCommit() {
             sessions.getAllSessions(identity, true).stream()
                 .filter(session -> !Objects.equals(session.getSessionId(), keep))
-                .forEach(session -> session.expireNow());
+                .forEach(SessionInformation::expireNow);
           }
         });
   }
@@ -381,7 +382,7 @@ public class AccountSecurityService {
         return null;
       }
       return digest(raw);
-    } catch (IllegalArgumentException invalid) {
+    } catch (IllegalArgumentException _) {
       return null;
     }
   }

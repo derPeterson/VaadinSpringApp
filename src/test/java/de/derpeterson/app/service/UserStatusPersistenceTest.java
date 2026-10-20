@@ -458,9 +458,10 @@ class UserStatusPersistenceTest {
         IllegalStateException.class,
         () -> service.updateUserStatus(snapshot, UserStatus.AVAILABLE, true));
     assertThrows(IllegalStateException.class, () -> service.updateLastActivity(userId));
+    Long snapshotVersion = snapshot.getVersion();
     assertThrows(
         OptimisticLockingFailureException.class,
-        () -> service.updateAdminUser(snapshot, snapshot.getVersion(), "new"));
+        () -> service.updateAdminUser(snapshot, snapshotVersion, "new"));
     assertDoesNotThrow(
         () -> service.updateScheduledStatus(userId, UserStatus.ABSENT, Instant.now()));
     assertFalse(repository.existsById(userId));
@@ -549,10 +550,11 @@ class UserStatusPersistenceTest {
     service.updateAdminUser(first, first.getVersion(), "");
     stale.setLastName("Second editor");
 
+    Long staleVersion = stale.getVersion();
     OptimisticLockingFailureException conflict =
         assertThrows(
             OptimisticLockingFailureException.class,
-            () -> service.updateAdminUser(stale, stale.getVersion(), ""));
+            () -> service.updateAdminUser(stale, staleVersion, ""));
     assertTrue(conflict.getMessage().contains("Formular neu öffnen"));
     assertEquals("First editor", stored().getFirstName());
     assertEquals("User", stored().getLastName());
@@ -560,9 +562,10 @@ class UserStatusPersistenceTest {
     UserEntity beforePasswordChange = form();
     transaction.executeWithoutResult(
         status -> repository.findById(userId).orElseThrow().setPassword("reset-hash"));
+    Long beforePasswordChangeVersion = beforePasswordChange.getVersion();
     assertThrows(
         OptimisticLockingFailureException.class,
-        () -> service.updateAdminUser(beforePasswordChange, beforePasswordChange.getVersion(), ""));
+        () -> service.updateAdminUser(beforePasswordChange, beforePasswordChangeVersion, ""));
     assertEquals("reset-hash", stored().getPassword());
   }
 
@@ -589,9 +592,10 @@ class UserStatusPersistenceTest {
     Long version = stored().getVersion();
     service.updateUserStatus(edited, UserStatus.AVAILABLE, true);
     assertEquals(version, stored().getVersion());
+    Long editedVersion = edited.getVersion();
     assertThrows(
         OptimisticLockingFailureException.class,
-        () -> service.updateAdminUser(edited, edited.getVersion(), ""));
+        () -> service.updateAdminUser(edited, editedVersion, ""));
     assertEquals(UserStatus.AVAILABLE, stored().getStatus());
   }
 
@@ -621,9 +625,9 @@ class UserStatusPersistenceTest {
     } else {
       edited.setRoleEntities(List.of());
     }
+    Long editedVersion = edited.getVersion();
     assertThrows(
-        IllegalStateException.class,
-        () -> service.updateAdminUser(edited, edited.getVersion(), ""));
+        IllegalStateException.class, () -> service.updateAdminUser(edited, editedVersion, ""));
     assertTrue(stored().isEnabled());
     assertTrue(form().hasRole(RoleType.ROLE_SUPERADMIN));
     service.updateUserStatus(stored(), UserStatus.AVAILABLE, true);

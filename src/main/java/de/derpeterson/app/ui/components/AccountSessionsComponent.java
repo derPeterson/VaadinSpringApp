@@ -26,6 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 /** Gleiche Sitzungsliste im Konto und im eingeschränkten Zugang nach Passwortprüfung. */
 @Slf4j
 public class AccountSessionsComponent extends AccountPanelComponent {
+  private static final String ENTRY_DESCRIPTION_CLASS = "account-entry-description";
+
   private final transient MessageProperties messages;
   private SerializableSupplier<Snapshot> loader;
   private SerializableConsumer<String> revoke;
@@ -50,7 +52,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     devices.getElement().setAttribute("aria-hidden", "true");
     setIcon(devices);
     count.addClassName("account-entry-title");
-    activity.addClassName("account-entry-description");
+    activity.addClassName(ENTRY_DESCRIPTION_CLASS);
     limit.addClassName("cosmos-admin-role-chip");
     limit.setId("account-sessions-limit");
     Div heading = new Div(new Div(count, activity), limit);
@@ -146,7 +148,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
             + ": "
             + formatter.format(entry.lastActivity());
     Span detail = new Span(description);
-    detail.addClassName("account-entry-description");
+    detail.addClassName(ENTRY_DESCRIPTION_CLASS);
     Div copy = new Div(title, detail);
     copy.addClassName("account-entry-copy");
     Span since =
@@ -154,7 +156,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
             (entry.active() ? messages.getSessionStarted() : messages.getSessionSavedSince())
                 + ": "
                 + formatter.format(entry.created()));
-    since.addClassName("account-entry-description");
+    since.addClassName(ENTRY_DESCRIPTION_CLASS);
     copy.add(since);
     if (entry.current()) {
       Span badge = new Span(messages.getAccountSettingsCurrentDevice());
@@ -163,7 +165,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
       copy.add(new Div(badge));
     } else if (entry.active() && entry.remembered()) {
       Span remembered = new Span(messages.getLoginRememberMeCheckbox());
-      remembered.addClassName("account-entry-description");
+      remembered.addClassName(ENTRY_DESCRIPTION_CLASS);
       copy.add(remembered);
     }
     String actionLabel;

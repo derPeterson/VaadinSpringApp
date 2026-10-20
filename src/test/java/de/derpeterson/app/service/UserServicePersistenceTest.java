@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
@@ -243,7 +244,7 @@ class UserServicePersistenceTest {
             admissions) {
       PersistentTokenBasedRememberMeServices remembered =
           mock(PersistentTokenBasedRememberMeServices.class);
-      org.mockito.Mockito.when(remembered.getKey()).thenReturn("test-key");
+      when(remembered.getKey()).thenReturn("test-key");
       return new SecurityService(
           remembered,
           service,
@@ -253,9 +254,8 @@ class UserServicePersistenceTest {
           admissions.getIfAvailable(
               () -> {
                 ConfigService config = mock(ConfigService.class);
-                org.mockito.Mockito.when(
-                        config.getInteger(
-                            de.derpeterson.app.model.enums.ConfigEntry.MAX_SESSIONS_PER_USER))
+                when(config.getInteger(
+                        de.derpeterson.app.model.enums.ConfigEntry.MAX_SESSIONS_PER_USER))
                     .thenReturn(3);
                 return new de.derpeterson.app.security.SessionAdmissionService(
                     config, new org.springframework.security.core.session.SessionRegistryImpl());

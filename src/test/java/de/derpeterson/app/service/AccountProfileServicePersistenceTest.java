@@ -180,11 +180,13 @@ class AccountProfileServicePersistenceTest {
   void staleAndMissingVersionsCannotOverwriteAnotherEdit() {
     transaction.executeWithoutResult(
         status -> users.findById(account.getId()).orElseThrow().setFirstName("Concurrent"));
+    Changes changesaccountVersion = changes(account.getVersion());
     assertThrows(
         OptimisticLockingFailureException.class,
-        () -> profiles.save(request, changes(account.getVersion())));
+        () -> profiles.save(request, changesaccountVersion));
+    Changes profileChanges = changes(null);
     assertThrows(
-        OptimisticLockingFailureException.class, () -> profiles.save(request, changes(null)));
+        OptimisticLockingFailureException.class, () -> profiles.save(request, profileChanges));
     assertEquals("Concurrent", users.findById(account.getId()).orElseThrow().getFirstName());
   }
 
@@ -238,13 +240,13 @@ class AccountProfileServicePersistenceTest {
   @Test
   void anonymousAndRevokedAccountsCannotSave() {
     SecurityContextHolder.clearContext();
-    assertThrows(
-        AccessDeniedException.class, () -> profiles.save(request, changes(account.getVersion())));
+    Changes changesaccountVersion2 = changes(account.getVersion());
+    assertThrows(AccessDeniedException.class, () -> profiles.save(request, changesaccountVersion2));
     authenticate();
     transaction.executeWithoutResult(
         status -> users.findById(account.getId()).orElseThrow().setEnabled(false));
-    assertThrows(
-        AccessDeniedException.class, () -> profiles.save(request, changes(account.getVersion())));
+    Changes changesaccountVersion3 = changes(account.getVersion());
+    assertThrows(AccessDeniedException.class, () -> profiles.save(request, changesaccountVersion3));
     assertEquals("Before", users.findById(account.getId()).orElseThrow().getFirstName());
   }
 
@@ -252,17 +254,17 @@ class AccountProfileServicePersistenceTest {
   void unavailableMaintenanceConfigurationDeniesWrites() {
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE))
         .thenThrow(new IllegalStateException("Unavailable"));
+    Changes changesaccountVersion4 = changes(account.getVersion());
     assertThrows(
-        MaintenanceAccessException.class,
-        () -> profiles.save(request, changes(account.getVersion())));
+        MaintenanceAccessException.class, () -> profiles.save(request, changesaccountVersion4));
     assertEquals("Before", users.findById(account.getId()).orElseThrow().getFirstName());
   }
 
   @Test
   void deletedAccountCannotSaveAnOldForm() {
     transaction.executeWithoutResult(status -> users.deleteById(account.getId()));
-    assertThrows(
-        AccessDeniedException.class, () -> profiles.save(request, changes(account.getVersion())));
+    Changes changesaccountVersion5 = changes(account.getVersion());
+    assertThrows(AccessDeniedException.class, () -> profiles.save(request, changesaccountVersion5));
     assertFalse(users.existsById(account.getId()));
     assertEquals("Before", users.findById(otherId).orElseThrow().getFirstName());
   }
@@ -288,9 +290,9 @@ class AccountProfileServicePersistenceTest {
     if (role.isAdministrative()) {
       assertDoesNotThrow(() -> profiles.save(request, changes(account.getVersion())));
     } else {
+      Changes changesaccountVersion6 = changes(account.getVersion());
       assertThrows(
-          MaintenanceAccessException.class,
-          () -> profiles.save(request, changes(account.getVersion())));
+          MaintenanceAccessException.class, () -> profiles.save(request, changesaccountVersion6));
       assertEquals("Before", users.findById(account.getId()).orElseThrow().getFirstName());
     }
   }

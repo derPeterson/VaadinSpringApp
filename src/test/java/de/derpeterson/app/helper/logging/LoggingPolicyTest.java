@@ -105,10 +105,10 @@ class LoggingPolicyTest {
     TransformerFactory.newInstance()
         .newTransformer()
         .transform(new DOMSource(document), new StreamResult(xml));
-    LoggerContext context = new LoggerContext();
+    LoggerContext isolatedContext = new LoggerContext();
     JoranConfigurator configurator = new JoranConfigurator();
-    configurator.setContext(context);
+    configurator.setContext(isolatedContext);
     configurator.doConfigure(new ByteArrayInputStream(xml.toByteArray()));
-    return context;
+    return isolatedContext;
   }
 }

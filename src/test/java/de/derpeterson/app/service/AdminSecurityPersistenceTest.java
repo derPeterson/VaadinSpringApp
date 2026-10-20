@@ -107,9 +107,12 @@ class AdminSecurityPersistenceTest {
             firstId, true, form(ordinaryId).getRoleEntities()));
     assertFalse(
         service.wouldRemoveLastEnabledSuperadmin(firstId, true, form(firstId).getRoleEntities()));
-    assertThrows(IllegalStateException.class, () -> service.deleteUser(form(firstId)));
-    assertThrows(IllegalStateException.class, () -> change(form(firstId), "disable"));
-    assertThrows(IllegalStateException.class, () -> change(form(firstId), "role"));
+    UserEntity userToDelete = form(firstId);
+    assertThrows(IllegalStateException.class, () -> service.deleteUser(userToDelete));
+    UserEntity userToDisable = form(firstId);
+    assertThrows(IllegalStateException.class, () -> change(userToDisable, "disable"));
+    UserEntity userToDemote = form(firstId);
+    assertThrows(IllegalStateException.class, () -> change(userToDemote, "role"));
     assertEquals(List.of(firstId), administratorIds());
   }
 
@@ -119,9 +122,9 @@ class AdminSecurityPersistenceTest {
     UserEntity edited = form(firstId);
     edited.setRoleEntities(new ArrayList<>(form(adminId).getRoleEntities()));
     assertTrue(service.wouldRemoveLastEnabledSuperadmin(firstId, true, edited.getRoleEntities()));
+    Long editedVersion = edited.getVersion();
     assertThrows(
-        IllegalStateException.class,
-        () -> service.updateAdminUser(edited, edited.getVersion(), ""));
+        IllegalStateException.class, () -> service.updateAdminUser(edited, editedVersion, ""));
     assertTrue(form(firstId).hasRole(RoleType.ROLE_SUPERADMIN));
     assertTrue(form(adminId).hasRole(RoleType.ROLE_ADMIN));
   }
@@ -131,7 +134,8 @@ class AdminSecurityPersistenceTest {
     transaction.executeWithoutResult(tx -> form(secondId).setEnabled(false));
     assertFalse(service.canDeleteUser(form(firstId)));
     assertTrue(service.canDeleteUser(form(secondId)));
-    assertThrows(IllegalStateException.class, () -> service.deleteUser(form(firstId)));
+    UserEntity targetUser = form(firstId);
+    assertThrows(IllegalStateException.class, () -> service.deleteUser(targetUser));
     service.deleteUser(form(secondId));
     assertEquals(List.of(firstId), administratorIds());
   }

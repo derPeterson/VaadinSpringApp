@@ -193,7 +193,7 @@ class EmailQueueWorkerPoolTest {
   }
 
   @Test
-  void partialRejectionDrainsAcceptedWorkAndStopsRefilling() throws Exception {
+  void partialRejectionDrainsAcceptedWorkAndStopsRefilling() {
     AtomicInteger accepted = new AtomicInteger();
     var executor =
         new ThreadPoolExecutor(2, 2, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(2)) {
@@ -309,7 +309,7 @@ class EmailQueueWorkerPoolTest {
                         entered.countDown();
                         try {
                           new CountDownLatch(1).await();
-                        } catch (InterruptedException failure) {
+                        } catch (InterruptedException _) {
                           interrupted.countDown();
                           Thread.currentThread().interrupt();
                         }

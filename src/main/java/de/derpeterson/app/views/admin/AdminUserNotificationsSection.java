@@ -47,6 +47,12 @@ import org.springframework.data.domain.Page;
 
 /** Superadmin-Entwurf mit serverseitiger Empfängervorschau und dauerhaftem Request-Schlüssel. */
 public class AdminUserNotificationsSection extends VerticalLayout {
+  private static final String COSMOS_PANEL_ICON_CLASS = "cosmos-panel-icon";
+  private static final String COSMOS_PANEL_META_CLASS = "cosmos-panel-meta";
+  private static final String ARIA_EXPANDED = "aria-expanded";
+  private static final String ARIA_HIDDEN = "aria-hidden";
+  private static final String DATA_STATE = "data-state";
+
   private final transient MessageProperties texts;
   private final transient UserNotificationService service;
   private final transient HttpServletRequest request;
@@ -171,14 +177,14 @@ public class AdminUserNotificationsSection extends VerticalLayout {
 
   private VerticalLayout createComposeForm() {
     Div panelIcon = new Div(decorativeIcon(VaadinIcon.PAPERPLANE));
-    panelIcon.addClassName("cosmos-panel-icon");
+    panelIcon.addClassName(COSMOS_PANEL_ICON_CLASS);
     Div panelHeading = new Div(heading, description);
     panelHeading.addClassName("cosmos-panel-heading");
     Span deliveryDot = new Span();
     deliveryDot.addClassName("cosmos-notification-delivery-dot");
-    deliveryDot.getElement().setAttribute("aria-hidden", "true");
+    deliveryDot.getElement().setAttribute(ARIA_HIDDEN, "true");
     deliveryMeta.add(deliveryDot, deliveryLabel);
-    deliveryMeta.addClassNames("cosmos-panel-meta", "cosmos-notification-delivery");
+    deliveryMeta.addClassNames(COSMOS_PANEL_META_CLASS, "cosmos-notification-delivery");
     deliveryMeta.getElement().setAttribute("role", "status");
     Div header = new Div(panelIcon, panelHeading, deliveryMeta);
     header.addClassName("cosmos-panel-header");
@@ -186,7 +192,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     info.addClassName("cosmos-notification-compose-info");
     everyone.addClassName("cosmos-notification-compose-everyone");
     everyoneHint.addClassName("cosmos-notification-compose-everyone-hint");
-    everyoneHint.getElement().setAttribute("aria-hidden", "true");
+    everyoneHint.getElement().setAttribute(ARIA_HIDDEN, "true");
     VerticalLayout everyoneLabel = new VerticalLayout(everyoneCaption, everyoneHint);
     everyoneLabel.setPadding(false);
     everyoneLabel.setSpacing(false);
@@ -196,7 +202,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     everyone.setLabelComponent(everyoneLabel);
     everyone.setAriaDescribedBy(everyoneHint);
     recipientSummary.addClassName("cosmos-notification-compose-recipient-summary");
-    recipientSummary.getElement().setAttribute("aria-hidden", "true");
+    recipientSummary.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div recipientField = new Div(targets, recipientSummary);
     recipientField.addClassName("cosmos-notification-compose-recipient-field");
     Div selection = new Div(everyone);
@@ -250,11 +256,11 @@ public class AdminUserNotificationsSection extends VerticalLayout {
 
   private Div createHistoryContent() {
     Div archiveIcon = new Div(decorativeIcon(VaadinIcon.ARCHIVE));
-    archiveIcon.addClassName("cosmos-panel-icon");
+    archiveIcon.addClassName(COSMOS_PANEL_ICON_CLASS);
     historyDescription.addClassName("cosmos-panel-description");
     Div archiveHeading = new Div(historyTitle, historyDescription);
     archiveHeading.addClassName("cosmos-panel-heading");
-    historyCount.addClassName("cosmos-panel-meta");
+    historyCount.addClassName(COSMOS_PANEL_META_CLASS);
     Div archiveHeader = new Div(archiveIcon, archiveHeading, historyCount);
     archiveHeader.addClassName("cosmos-panel-header");
     history.addClassName("cosmos-notification-sent-list");
@@ -295,7 +301,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     boolean open = state == MaintenanceService.State.OPEN;
     composeForm.setEnabled(open);
     composeForm.getElement().setAttribute("aria-disabled", Boolean.toString(!open));
-    deliveryMeta.getElement().setAttribute("data-state", state.name().toLowerCase(Locale.ROOT));
+    deliveryMeta.getElement().setAttribute(DATA_STATE, state.name().toLowerCase(Locale.ROOT));
     String status =
         switch (state) {
           case OPEN -> texts.getMaintenanceStatusOnline();
@@ -336,7 +342,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     if (previewArea.isVisible()) {
       previewStatus.setText(texts.getNotificationsPreviewNeedsReview());
       previewStatus.addComponentAtIndex(0, decorativeIcon(VaadinIcon.WARNING));
-      previewStatus.getElement().setAttribute("data-state", "warning");
+      previewStatus.getElement().setAttribute(DATA_STATE, "warning");
       previewStatus.setVisible(true);
     }
     send.setEnabled(false);
@@ -431,13 +437,13 @@ public class AdminUserNotificationsSection extends VerticalLayout {
 
   private static Icon decorativeIcon(VaadinIcon type) {
     Icon icon = type.create();
-    icon.getElement().setAttribute("aria-hidden", "true");
+    icon.getElement().setAttribute(ARIA_HIDDEN, "true");
     return icon;
   }
 
   private static Div fieldWithCounter(Component field, Span counter) {
     counter.addClassName("cosmos-notification-compose-counter");
-    counter.getElement().setAttribute("aria-hidden", "true");
+    counter.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div wrapper = new Div(field, counter);
     wrapper.addClassName("cosmos-notification-compose-field");
     return wrapper;
@@ -482,7 +488,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
             .filter(t -> selected.contains(t.id()))
             .toList();
     Span recipientLabel = new Span(texts.getNotificationsRecipients());
-    recipientLabel.addClassName("cosmos-panel-meta");
+    recipientLabel.addClassName(COSMOS_PANEL_META_CLASS);
     Div chips = new Div(recipientLabel);
     chips.addClassName("cosmos-notification-compose-recipients");
     selectedTargets.stream()
@@ -516,7 +522,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     detailsButton.addClassName("cosmos-notification-compose-details-toggle");
     detailsButton.setIconAfterText(true);
     detailsButton.getElement().setAttribute("aria-controls", details.getId().orElseThrow());
-    detailsButton.getElement().setAttribute("aria-expanded", "false");
+    detailsButton.getElement().setAttribute(ARIA_EXPANDED, "false");
     detailsButton.addClickListener(e -> details.setOpened(!details.isOpened()));
     details.addOpenedChangeListener(
         e -> {
@@ -526,12 +532,12 @@ public class AdminUserNotificationsSection extends VerticalLayout {
                   : texts.getNotificationsRecipientDetails());
           detailsButton.setIcon(
               e.isOpened() ? VaadinIcon.ANGLE_UP.create() : VaadinIcon.ANGLE_DOWN.create());
-          detailsButton.getElement().setAttribute("aria-expanded", Boolean.toString(e.isOpened()));
+          detailsButton.getElement().setAttribute(ARIA_EXPANDED, Boolean.toString(e.isOpened()));
         });
     chips.add(detailsButton);
 
     Span contentLabel = new Span(texts.getNotificationsContentPreview());
-    contentLabel.addClassName("cosmos-panel-meta");
+    contentLabel.addClassName(COSMOS_PANEL_META_CLASS);
     Span subject = new Span(title.getValue());
     subject.addClassName("cosmos-notification-compose-preview-subject");
     Div content = new Div();
@@ -543,7 +549,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     previewArea.setVisible(true);
     previewStatus.setText(texts.getNotificationsPreviewUpdated());
     previewStatus.addComponentAtIndex(0, decorativeIcon(VaadinIcon.CHECK_CIRCLE));
-    previewStatus.getElement().setAttribute("data-state", "success");
+    previewStatus.getElement().setAttribute(DATA_STATE, "success");
     previewStatus.setVisible(true);
   }
 
@@ -634,7 +640,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
 
   private Div sentRow(Sent item) {
     Div icon = new Div(decorativeIcon(VaadinIcon.PAPERPLANE));
-    icon.addClassNames("cosmos-panel-icon", "cosmos-notification-sent-icon");
+    icon.addClassNames(COSMOS_PANEL_ICON_CLASS, "cosmos-notification-sent-icon");
     H3 subject = new H3(item.title());
     subject.addClassName("cosmos-notification-sent-title");
     Span metadata =
@@ -643,8 +649,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
                 + " · "
                 + texts.getNotificationsHistoryRecipients(item.recipientCount()));
     metadata.addClassName("cosmos-notification-sent-meta");
-    Div heading = new Div(subject, metadata);
-    heading.addClassName("cosmos-notification-sent-heading");
+    Div sentHeading = new Div(subject, metadata);
+    sentHeading.addClassName("cosmos-notification-sent-heading");
     Span status =
         new Span(decorativeIcon(VaadinIcon.CHECK), new Span(texts.getNotificationsSentStatus()));
     status.getElement().setAttribute("theme", "badge success");
@@ -670,7 +676,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     toggle.setIconAfterText(true);
     toggle.addClassName("cosmos-notification-sent-toggle");
     toggle.getElement().setAttribute("aria-controls", details.getId().orElseThrow());
-    toggle.getElement().setAttribute("aria-expanded", "false");
+    toggle.getElement().setAttribute(ARIA_EXPANDED, "false");
     toggle.setAriaLabel(texts.getNotificationsRecipientDetails() + ": " + item.title());
     toggle.addClickListener(e -> details.setOpened(!details.isOpened()));
     details.addOpenedChangeListener(
@@ -683,11 +689,11 @@ public class AdminUserNotificationsSection extends VerticalLayout {
           toggle.setAriaLabel(label + ": " + item.title());
           toggle.setIcon(
               e.isOpened() ? VaadinIcon.ANGLE_UP.create() : VaadinIcon.ANGLE_DOWN.create());
-          toggle.getElement().setAttribute("aria-expanded", Boolean.toString(e.isOpened()));
+          toggle.getElement().setAttribute(ARIA_EXPANDED, Boolean.toString(e.isOpened()));
         });
     Div actions = new Div(status, toggle);
     actions.addClassName("cosmos-notification-sent-actions");
-    Div row = new Div(icon, heading, actions, details);
+    Div row = new Div(icon, sentHeading, actions, details);
     row.addClassName("cosmos-notification-sent-row");
     return row;
   }

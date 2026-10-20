@@ -58,6 +58,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @PageTitle(AppRouteConstants.ADMIN_PAGE_TITLE)
 @RolesAllowed(AppRouteConstants.ADMIN_ROUTE_ROLES)
 public class AdminView extends IsAuthenticatedBaseView {
+  private static final String ARIA_CURRENT = "aria-current";
 
   private enum AdminSection {
     DASHBOARD,
@@ -191,7 +192,7 @@ public class AdminView extends IsAuthenticatedBaseView {
     }
     try {
       return Enum.valueOf(type, values.getFirst().toUpperCase(Locale.ROOT));
-    } catch (IllegalArgumentException invalid) {
+    } catch (IllegalArgumentException _) {
       return fallback;
     }
   }
@@ -401,7 +402,7 @@ public class AdminView extends IsAuthenticatedBaseView {
 
     // Der Elternpunkt klappt nur auf; die aktive Seite ist der Unterpunkt.
     if (configurationNavItem != null) {
-      configurationNavItem.getElement().removeAttribute("aria-current");
+      configurationNavItem.getElement().removeAttribute(ARIA_CURRENT);
     }
 
     configurationSubmenuItems.forEach(
@@ -420,10 +421,10 @@ public class AdminView extends IsAuthenticatedBaseView {
 
     if (active) {
       item.getElement().getClassList().add("cosmos-nav-item--active");
-      item.getElement().setAttribute("aria-current", "page");
+      item.getElement().setAttribute(ARIA_CURRENT, "page");
     } else {
       item.getElement().getClassList().remove("cosmos-nav-item--active");
-      item.getElement().removeAttribute("aria-current");
+      item.getElement().removeAttribute(ARIA_CURRENT);
     }
   }
 

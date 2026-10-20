@@ -335,11 +335,10 @@ class AccountSecurityServicePersistenceTest {
         .recordSecurityEvent(any(), any());
     ReflectionTestUtils.setField(service, "userNotifications", failing);
     try {
+      PasswordChange passwordChange =
+          new PasswordChange("Old-secret!", "New-secret!", "New-secret!");
       assertThrows(
-          IllegalStateException.class,
-          () ->
-              service.changePassword(
-                  request, new PasswordChange("Old-secret!", "New-secret!", "New-secret!")));
+          IllegalStateException.class, () -> service.changePassword(request, passwordChange));
       assertTrue(encoder.matches("Old-secret!", stored().getPassword()));
       assertEquals(0, emails.count());
       assertFalse(registry.getSessionInformation("other-device").isExpired());
@@ -371,11 +370,9 @@ class AccountSecurityServicePersistenceTest {
 
   @Test
   void wrongCurrentPasswordPersistsTheAttemptButChangesNothing() {
+    PasswordChange passwordChange = new PasswordChange("Wrong!", "New-secret!", "New-secret!");
     assertThrows(
-        BadCredentialsException.class,
-        () ->
-            service.changePassword(
-                request, new PasswordChange("Wrong!", "New-secret!", "New-secret!")));
+        BadCredentialsException.class, () -> service.changePassword(request, passwordChange));
     assertTrue(encoder.matches("Old-secret!", stored().getPassword()));
     assertEquals(1, attempts.findAll().getFirst().getFailures());
     assertEquals(0, emails.count());
@@ -385,14 +382,14 @@ class AccountSecurityServicePersistenceTest {
 
   @Test
   void invalidPasswordOrConfirmationNeverPersistsOrAuthenticates() {
+    PasswordChange shortPasswordChange = new PasswordChange("Old-secret!", "x", "x");
+    assertThrows(
+        IllegalArgumentException.class, () -> service.changePassword(request, shortPasswordChange));
+    PasswordChange mismatchedConfirmation =
+        new PasswordChange("Old-secret!", "New-secret!", "Different!");
     assertThrows(
         IllegalArgumentException.class,
-        () -> service.changePassword(request, new PasswordChange("Old-secret!", "x", "x")));
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            service.changePassword(
-                request, new PasswordChange("Old-secret!", "New-secret!", "Different!")));
+        () -> service.changePassword(request, mismatchedConfirmation));
     assertEquals(0, attempts.count());
     assertEquals(0, emails.count());
   }
@@ -403,11 +400,9 @@ class AccountSecurityServicePersistenceTest {
     doThrow(new IllegalStateException("Own simulated outbox failure"))
         .when(queue)
         .addAddressedNotification(any(), anyString(), anyString(), anyString());
+    PasswordChange passwordChange = new PasswordChange("Old-secret!", "New-secret!", "New-secret!");
     assertThrows(
-        IllegalStateException.class,
-        () ->
-            service.changePassword(
-                request, new PasswordChange("Old-secret!", "New-secret!", "New-secret!")));
+        IllegalStateException.class, () -> service.changePassword(request, passwordChange));
     assertTrue(encoder.matches("Old-secret!", stored().getPassword()));
     assertEquals(TokenStatus.ACTIVE, tokens.findAll().getFirst().getStatus());
     assertEquals(1, emails.count());
@@ -530,11 +525,10 @@ class AccountSecurityServicePersistenceTest {
     assertEquals(
         Problem.EMAIL_UNAVAILABLE,
         assertThrows(Rejected.class, () -> requestChange("TAKEN@example.test")).problem());
+    EmailChange emailChange =
+        new EmailChange("new@example.test", "other@example.test", "Old-secret!");
     assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            service.requestEmailChange(
-                request, new EmailChange("new@example.test", "other@example.test", "Old-secret!")));
+        IllegalArgumentException.class, () -> service.requestEmailChange(request, emailChange));
     assertEquals(0, tokens.count());
     assertEquals(0, emails.count());
   }
@@ -626,16 +620,16 @@ class AccountSecurityServicePersistenceTest {
   void currentPasswordChecksUseTheConfiguredPersistentAttemptLimit() {
     when(config.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(1);
     try {
+      PasswordChange wrongPasswordChange =
+          new PasswordChange("Wrong!", "New-secret!", "New-secret!");
       assertThrows(
           BadCredentialsException.class,
-          () ->
-              service.changePassword(
-                  request, new PasswordChange("Wrong!", "New-secret!", "New-secret!")));
+          () -> service.changePassword(request, wrongPasswordChange));
+      PasswordChange blockedPasswordChange =
+          new PasswordChange("Old-secret!", "New-secret!", "New-secret!");
       assertThrows(
           LoginThrottledException.class,
-          () ->
-              service.changePassword(
-                  request, new PasswordChange("Old-secret!", "New-secret!", "New-secret!")));
+          () -> service.changePassword(request, blockedPasswordChange));
       assertTrue(encoder.matches("Old-secret!", stored().getPassword()));
       assertEquals(0, emails.count());
     } finally {
@@ -650,11 +644,9 @@ class AccountSecurityServicePersistenceTest {
     String raw = linkToken();
     SecurityContextHolder.clearContext();
     MockHttpServletRequest anonymous = new MockHttpServletRequest();
+    PasswordChange passwordChange = new PasswordChange("Old-secret!", "New-secret!", "New-secret!");
     assertThrows(
-        AccessDeniedException.class,
-        () ->
-            service.changePassword(
-                anonymous, new PasswordChange("Old-secret!", "New-secret!", "New-secret!")));
+        AccessDeniedException.class, () -> service.changePassword(anonymous, passwordChange));
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     try {
       assertThrows(MaintenanceAccessException.class, () -> service.confirm(raw));

@@ -15,18 +15,12 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.contains;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.nullable;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -204,11 +198,12 @@ class EmailQueueServicePersistenceTest {
             })
         .when(probes.emails())
         .save(any());
+    UserEntity targetUser = snapshot();
     assertSame(
         failure,
         assertThrows(
             IllegalStateException.class,
-            () -> service.addEmailToQueue(snapshot(), "subject", "body", EmailType.NOTIFICATION)));
+            () -> service.addEmailToQueue(targetUser, "subject", "body", EmailType.NOTIFICATION)));
     assertEquals(0, emails.count());
   }
 

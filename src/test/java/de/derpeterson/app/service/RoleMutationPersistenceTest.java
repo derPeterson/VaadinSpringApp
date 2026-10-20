@@ -202,10 +202,12 @@ class RoleMutationPersistenceTest {
     assertThrows(AccessDeniedException.class, () -> assign(superadmin, RoleType.ROLE_ADMIN));
     UserEntity edited = form(superadmin);
     edited.setFirstName("Changed");
+    Long editedVersion = edited.getVersion();
     assertThrows(
         AccessDeniedException.class,
-        () -> service.updateAdminUser(edited, edited.getVersion(), "Changed-secret!"));
-    assertThrows(AccessDeniedException.class, () -> service.deleteUser(form(superadmin)));
+        () -> service.updateAdminUser(edited, editedVersion, "Changed-secret!"));
+    UserEntity targetUser = form(superadmin);
+    assertThrows(AccessDeniedException.class, () -> service.deleteUser(targetUser));
     edited.setEnabled(false);
     assertThrows(AccessDeniedException.class, () -> service.save(edited));
     assertEquals(0, notifications.count());
@@ -357,20 +359,18 @@ class RoleMutationPersistenceTest {
     try {
       UserEntity edited = form(superadmin);
       assertFalse(service.canDeleteUser(edited));
-      assertThrows(
-          IllegalStateException.class,
-          () -> {
-            if (operation.equals("delete")) {
-              service.deleteUser(edited);
-            } else if (operation.equals("disable")) {
-              edited.setEnabled(false);
-              service.updateAdminUser(edited, edited.getVersion(), "");
-            } else if (operation.equals("demote")) {
-              assign(superadmin, RoleType.ROLE_ADMIN);
-            } else {
-              assign(superadmin);
-            }
-          });
+      if (operation.equals("delete")) {
+        assertThrows(IllegalStateException.class, () -> service.deleteUser(edited));
+      } else if (operation.equals("disable")) {
+        edited.setEnabled(false);
+        Long editedVersion = edited.getVersion();
+        assertThrows(
+            IllegalStateException.class, () -> service.updateAdminUser(edited, editedVersion, ""));
+      } else if (operation.equals("demote")) {
+        assertThrows(IllegalStateException.class, () -> assign(superadmin, RoleType.ROLE_ADMIN));
+      } else {
+        assertThrows(IllegalStateException.class, () -> assign(superadmin));
+      }
       assertTrue(form(superadmin).isEnabled());
       assertTrue(form(superadmin).hasRole(RoleType.ROLE_SUPERADMIN));
       assertTrue(form(admin).hasRole(RoleType.ROLE_ADMIN));

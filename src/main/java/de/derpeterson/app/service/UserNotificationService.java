@@ -149,7 +149,7 @@ public class UserNotificationService {
     try {
       superadmin(session);
       return true;
-    } catch (AccessDeniedException denied) {
+    } catch (AccessDeniedException _) {
       return false;
     }
   }

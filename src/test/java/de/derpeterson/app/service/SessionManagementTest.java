@@ -98,7 +98,7 @@ class SessionManagementTest {
   private record Login(MockHttpServletRequest request, MockHttpServletResponse response) {}
 
   @BeforeEach
-  void setup() throws Exception {
+  void setup() {
     when(config.getInteger(any()))
         .thenAnswer(
             call -> Integer.parseInt(((ConfigEntry) call.getArgument(0)).getDefaultValueString()));
@@ -119,7 +119,7 @@ class SessionManagementTest {
     restart();
   }
 
-  private void restart() throws Exception {
+  private void restart() {
     registry = new SessionRegistryImpl();
     admissions = new SessionAdmissionService(config, registry);
     admissions.setDeviceTokens(tokens);
@@ -153,7 +153,7 @@ class SessionManagementTest {
   }
 
   @Test
-  void changingSavedLoginDurationOnlyTakesEffectAfterRestart() throws Exception {
+  void changingSavedLoginDurationOnlyTakesEffectAfterRestart() {
     Login owner = login(true);
     String series = tokens.saved(IDENTITY, 3600).getFirst().series();
     jdbc.update(
@@ -227,12 +227,12 @@ class SessionManagementTest {
             registry.onApplicationEvent(
                 new org.springframework.security.web.session.HttpSessionIdChangedEvent(
                     privateSession, previous)));
-    Login second = login(false, "Mozilla/5.0 (Android) Chrome/130.0 Mobile");
+    login(false, "Mozilla/5.0 (Android) Chrome/130.0 Mobile");
     Snapshot snapshot = management.list(first.request());
     assertEquals(2, snapshot.active());
     assertEquals(3, snapshot.limit());
     assertEquals(2, snapshot.entries().size());
-    assertEquals(1, snapshot.entries().stream().filter(entry -> entry.current()).count());
+    assertEquals(1, snapshot.entries().stream().filter(Entry::current).count());
     assertTrue(snapshot.entries().getFirst().current());
     assertEquals("Windows", snapshot.entries().getFirst().device().system());
     assertTrue(snapshot.entries().getFirst().remembered());
@@ -269,8 +269,10 @@ class SessionManagementTest {
   void cannotRevokeCurrentSessionOrAHandleBelongingToAnotherAccount() {
     Login first = login(true);
     Entry own = management.list(first.request()).entries().getFirst();
+    MockHttpServletRequest attemptRequest = first.request();
+    String sessionHandle = own.handle();
     assertThrows(
-        IllegalArgumentException.class, () -> management.revoke(first.request(), own.handle()));
+        IllegalArgumentException.class, () -> management.revoke(attemptRequest, sessionHandle));
     UserDetails foreign =
         User.withUsername("foreign@example.test").password("unused").roles("USER").build();
     when(users.loadUserByUsername("foreign@example.test")).thenReturn(foreign);
@@ -353,7 +355,7 @@ class SessionManagementTest {
   }
 
   @Test
-  void restartKeepsSavedHandlesButDoesNotInventActiveSessions() throws Exception {
+  void restartKeepsSavedHandlesButDoesNotInventActiveSessions() {
     Login old = login(true);
     String handle = tokens.saved(IDENTITY, 3600).getFirst().handle();
     restart();
@@ -385,9 +387,10 @@ class SessionManagementTest {
             .findFirst()
             .orElseThrow();
     management.revoke(owner.request(), saved.handle());
+    MockHttpServletResponse attemptResponse = new MockHttpServletResponse();
     assertThrows(
         AuthenticationServiceException.class,
-        () -> admissions.onAuthentication(auth, request, new MockHttpServletResponse()));
+        () -> admissions.onAuthentication(auth, request, attemptResponse));
     assertEquals(1, registry.getAllSessions(IDENTITY, false).size());
   }
 
@@ -413,7 +416,7 @@ class SessionManagementTest {
                 if (auth != null) {
                   try {
                     admissions.onAuthentication(auth, returning, new MockHttpServletResponse());
-                  } catch (AuthenticationServiceException revoked) {
+                  } catch (AuthenticationServiceException _) {
                     /* Expected if the revocation won. */
                   }
                 }
@@ -449,9 +452,9 @@ class SessionManagementTest {
     assertTrue(security.getAuthenticatedUser(request).isEmpty());
     assertNull(request.getSession().getAttribute("authenticatedUser"));
     assertNull(SecurityContextHolder.getContext().getAuthentication());
+    MockHttpServletResponse attemptResponse = new MockHttpServletResponse();
     assertThrows(
-        SessionLimitException.class,
-        () -> management.finishRecovery(request, new MockHttpServletResponse()));
+        SessionLimitException.class, () -> management.finishRecovery(request, attemptResponse));
     Snapshot snapshot = management.recoveryList(request);
     assertEquals(1, snapshot.active());
     assertFalse(snapshot.entries().getFirst().current());
@@ -481,9 +484,10 @@ class SessionManagementTest {
   void proofExpiresExactlyAtFiveMinutesAndCannotBeTransferredToAnotherSession() {
     MockHttpServletRequest request = new MockHttpServletRequest();
     management.startRecovery(request, IDENTITY, PASSWORD, false);
+    MockHttpServletRequest attemptRequest = new MockHttpServletRequest();
     assertThrows(
         AuthenticationCredentialsNotFoundException.class,
-        () -> management.recoveryList(new MockHttpServletRequest()));
+        () -> management.recoveryList(attemptRequest));
     ReflectionTestUtils.setField(
         management, "clock", Clock.fixed(NOW.plusSeconds(300), ZoneOffset.UTC));
     assertFalse(management.hasRecovery(request));
@@ -519,11 +523,13 @@ class SessionManagementTest {
     MockHttpServletRequest request = new MockHttpServletRequest();
     management.startRecovery(request, IDENTITY, PASSWORD, false);
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    assertThrows(MaintenanceAuthenticationException.class, () -> management.list(owner.request()));
+    MockHttpServletRequest attemptRequest = owner.request();
+    assertThrows(MaintenanceAuthenticationException.class, () -> management.list(attemptRequest));
     assertThrows(MaintenanceAuthenticationException.class, () -> management.recoveryList(request));
+    MockHttpServletResponse attemptResponse = new MockHttpServletResponse();
     assertThrows(
         MaintenanceAuthenticationException.class,
-        () -> management.finishRecovery(request, new MockHttpServletResponse()));
+        () -> management.finishRecovery(request, attemptResponse));
     assertFalse(admissions.isExpired(owner.request()));
   }
 

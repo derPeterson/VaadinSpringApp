@@ -24,6 +24,8 @@ import java.util.UUID;
 
 /** Gemeinsames Profilbild mit optionalem Statuszeichen bzw. direkter Statusauswahl. */
 public class OverlayUserIcon extends Div {
+  private static final String ARIA_HIDDEN = "aria-hidden";
+
   private final transient MessageProperties messages;
   private final IconSize iconSize;
   private final boolean showStatus;
@@ -58,9 +60,9 @@ public class OverlayUserIcon extends Div {
     getStyle().set("--cosmos-avatar-size", iconSize.getWidth() + iconSize.getUnit().getSymbol());
     getElement().setAttribute("role", "img");
     initials.addClassName("cosmos-avatar-initials");
-    initials.getElement().setAttribute("aria-hidden", "true");
+    initials.getElement().setAttribute(ARIA_HIDDEN, "true");
     photo.addClassName("cosmos-avatar-photo");
-    photo.getElement().setAttribute("aria-hidden", "true");
+    photo.getElement().setAttribute(ARIA_HIDDEN, "true");
     photo.setVisible(false);
     photo
         .getElement()
@@ -74,7 +76,7 @@ public class OverlayUserIcon extends Div {
     circle.addClassName("cosmos-avatar-circle");
     status.addClassName("cosmos-avatar-status");
     status.setVisible(showStatus);
-    status.getElement().setAttribute("aria-hidden", "true");
+    status.getElement().setAttribute(ARIA_HIDDEN, "true");
     add(circle, status);
     tooltip = Tooltip.forComponent(this).withPosition(Tooltip.TooltipPosition.BOTTOM);
     setIdentity(user);

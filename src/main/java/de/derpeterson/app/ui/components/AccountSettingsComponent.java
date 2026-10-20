@@ -351,7 +351,7 @@ public class AccountSettingsComponent extends Div {
                   lastName.getValue(),
                   birthDate.getValue(),
                   preferredLanguage.getValue()));
-    } catch (OptimisticLockingFailureException conflict) {
+    } catch (OptimisticLockingFailureException _) {
       NotificationHelper.getInstance()
           .showNotification(
               messages::getBaseFailedTitle,

@@ -67,6 +67,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 @AnonymousAllowed
 @StyleSheet("custom-theme/cosmos-account.css")
 public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
+  private static final String LOGIN_ERROR_UNAVAILABLE = "unavailable";
+  private static final String LOGIN_ERROR_SESSIONS = "sessions";
+  private static final String LOGIN_ERROR_INVALID = "invalid";
+  private static final String LOGIN_ERROR_MAINTENANCE = "maintenance";
+  private static final String LOGIN_ERROR_THROTTLED = "throttled";
+  private static final String COSMOS_FORM_TEXT_CLASS = "cosmos-form-text";
 
   private static final Logger logger = LoggerFactory.getLogger(LoginView.class);
 
@@ -216,7 +222,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
                   } catch (RuntimeException unavailable) {
                     logger.warn(
                         "Restricted session management unavailable", safeFailure(unavailable));
-                    showLoginFailure("unavailable");
+                    showLoginFailure(LOGIN_ERROR_UNAVAILABLE);
                   }
                   return;
                 }
@@ -249,13 +255,13 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     createAccountLink.addClassNames("underline");
 
     HorizontalLayout cardSecondaryTitleLayout = new HorizontalLayout();
-    cardSecondaryTitleLayout.addClassNames("cosmos-intro", "cosmos-form-text");
+    cardSecondaryTitleLayout.addClassNames("cosmos-intro", COSMOS_FORM_TEXT_CLASS);
     cardSecondaryTitleLayout.setWidthFull();
     cardSecondaryTitleLayout.setPadding(false);
     cardSecondaryTitleLayout.setSpacing(false);
     cardSecondaryTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
     cardSecondaryTitleLayout.addClassNames(
-        LumoUtility.Gap.SMALL, "cosmos-form-links", "cosmos-form-text");
+        LumoUtility.Gap.SMALL, "cosmos-form-links", COSMOS_FORM_TEXT_CLASS);
     cardSecondaryTitleLayout.add(createAccountQuestionText);
     cardSecondaryTitleLayout.add(createAccountLink);
 
@@ -314,7 +320,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     recoverySessions.setRestricted(true);
     recoverySessions.setFailureAction(this::hideRecovery);
     recoveryHint = new Span();
-    recoveryHint.addClassName("cosmos-form-text");
+    recoveryHint.addClassName(COSMOS_FORM_TEXT_CLASS);
     continueLogin = new Button();
     continueLogin.setId("session-recovery-continue");
     continueLogin.setPrefixComponent(VaadinIcon.SIGN_IN.create());
@@ -332,9 +338,9 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
                     NotificationHelper.NotificationType.SUCCESS);
             Class<? extends Component> target = admin ? AdminView.class : HomeView.class;
             getUI().ifPresent(ui -> ui.navigate(target));
-          } catch (SessionLimitException stillFull) {
-            showLoginFailure("sessions");
-          } catch (AuthenticationException expired) {
+          } catch (SessionLimitException _) {
+            showLoginFailure(LOGIN_ERROR_SESSIONS);
+          } catch (AuthenticationException _) {
             hideRecovery();
             NotificationHelper.getInstance()
                 .showNotification(
@@ -344,7 +350,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
                     NotificationHelper.NotificationType.ERROR);
           } catch (RuntimeException unavailable) {
             logger.warn("Restricted login completion failed", safeFailure(unavailable));
-            showLoginFailure("unavailable");
+            showLoginFailure(LOGIN_ERROR_UNAVAILABLE);
           }
         });
     cancelRecovery = new Button();
@@ -377,7 +383,12 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     List<String> errors = event.getLocation().getQueryParameters().getParameters().get("error");
     if (errors != null
         && errors.size() == 1
-        && Set.of("maintenance", "sessions", "throttled", "unavailable", "invalid")
+        && Set.of(
+                LOGIN_ERROR_MAINTENANCE,
+                LOGIN_ERROR_SESSIONS,
+                LOGIN_ERROR_THROTTLED,
+                LOGIN_ERROR_UNAVAILABLE,
+                LOGIN_ERROR_INVALID)
             .contains(errors.getFirst())) {
       showLoginFailure(errors.getFirst());
     }
@@ -408,37 +419,37 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
   private String restrictedLoginFailureCode(AuthenticationException failure) {
     if (failure instanceof LoginThrottledException) {
-      return "throttled";
+      return LOGIN_ERROR_THROTTLED;
     }
     if (failure instanceof MaintenanceAuthenticationException) {
-      return "maintenance";
+      return LOGIN_ERROR_MAINTENANCE;
     }
-    return "invalid";
+    return LOGIN_ERROR_INVALID;
   }
 
   private String authenticationFailureCode(AuthenticationException failure) {
     if (failure instanceof MaintenanceAuthenticationException) {
-      return "maintenance";
+      return LOGIN_ERROR_MAINTENANCE;
     }
     if (failure instanceof SessionLimitException) {
-      return "sessions";
+      return LOGIN_ERROR_SESSIONS;
     }
     if (failure instanceof LoginThrottledException) {
-      return "throttled";
+      return LOGIN_ERROR_THROTTLED;
     }
     if (failure instanceof AuthenticationServiceException) {
-      return "unavailable";
+      return LOGIN_ERROR_UNAVAILABLE;
     }
-    return "invalid";
+    return LOGIN_ERROR_INVALID;
   }
 
   private void showLoginFailure(String reason) {
     Supplier<String> text =
         switch (reason) {
-          case "maintenance" -> messageProperties::getMaintenanceLoginMessage;
-          case "sessions" -> messageProperties::getLoginSessionLimitMessage;
-          case "throttled" -> messageProperties::getLoginThrottledMessage;
-          case "unavailable" -> messageProperties::getLoginUnavailableMessage;
+          case LOGIN_ERROR_MAINTENANCE -> messageProperties::getMaintenanceLoginMessage;
+          case LOGIN_ERROR_SESSIONS -> messageProperties::getLoginSessionLimitMessage;
+          case LOGIN_ERROR_THROTTLED -> messageProperties::getLoginThrottledMessage;
+          case LOGIN_ERROR_UNAVAILABLE -> messageProperties::getLoginUnavailableMessage;
           default -> messageProperties::getLoginFailedMessage;
         };
     NotificationHelper.getInstance()

@@ -253,9 +253,8 @@ class UserServiceTest {
       when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
           .thenReturn(List.of(1L));
 
-      assertThrows(
-          IllegalStateException.class,
-          () -> userService.deleteUser(user(1L, true, RoleType.ROLE_SUPERADMIN)));
+      UserEntity targetUser = user(1L, true, RoleType.ROLE_SUPERADMIN);
+      assertThrows(IllegalStateException.class, () -> userService.deleteUser(targetUser));
 
       verify(userRepository, never()).delete(any());
     }
@@ -372,11 +371,11 @@ class UserServiceTest {
       DataAccessResourceFailureException failure = repositoryFailure();
       when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN)).thenThrow(failure);
 
+      UserEntity targetUser = user(1L, false, RoleType.ROLE_SUPERADMIN);
       assertSame(
           failure,
           assertThrows(
-              DataAccessResourceFailureException.class,
-              () -> save(user(1L, false, RoleType.ROLE_SUPERADMIN), useSaveUser)));
+              DataAccessResourceFailureException.class, () -> save(targetUser, useSaveUser)));
 
       verify(userRepository, never()).save(any());
     }
@@ -386,11 +385,11 @@ class UserServiceTest {
       DataAccessResourceFailureException failure = repositoryFailure();
       when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN)).thenThrow(failure);
 
+      UserEntity targetUser = user(1L, true, RoleType.ROLE_SUPERADMIN);
       assertSame(
           failure,
           assertThrows(
-              DataAccessResourceFailureException.class,
-              () -> userService.deleteUser(user(1L, true, RoleType.ROLE_SUPERADMIN))));
+              DataAccessResourceFailureException.class, () -> userService.deleteUser(targetUser)));
 
       verify(userRepository, never()).delete(any());
     }
@@ -449,9 +448,9 @@ class UserServiceTest {
     @Test
     void rejectsNullLocaleBeforeLookingUpOrChangingTheUser() {
       UserEntity user = user(1L, true);
+      String accountEmail = user.getEmail();
       assertThrows(
-          IllegalArgumentException.class,
-          () -> userService.updateUserLocale(user.getEmail(), null));
+          IllegalArgumentException.class, () -> userService.updateUserLocale(accountEmail, null));
       assertEquals(Locale.ENGLISH, user.getPreferredLocale());
       verifyNoInteractions(userRepository);
     }
@@ -487,11 +486,12 @@ class UserServiceTest {
       when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
       when(userRepository.save(user)).thenThrow(failure);
 
+      String accountEmail = user.getEmail();
       assertSame(
           failure,
           assertThrows(
               DataAccessResourceFailureException.class,
-              () -> userService.updateUserLocale(user.getEmail(), Locale.GERMAN)));
+              () -> userService.updateUserLocale(accountEmail, Locale.GERMAN)));
     }
   }
 
@@ -924,11 +924,12 @@ class UserServiceTest {
       DataAccessResourceFailureException failure = repositoryFailure();
       when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN)).thenThrow(failure);
 
+      UserEntity targetUser = user(1L, true, RoleType.ROLE_SUPERADMIN);
       assertSame(
           failure,
           assertThrows(
               DataAccessResourceFailureException.class,
-              () -> userService.canDeleteUser(user(1L, true, RoleType.ROLE_SUPERADMIN))));
+              () -> userService.canDeleteUser(targetUser)));
       verify(userRepository, never()).delete(any());
     }
 

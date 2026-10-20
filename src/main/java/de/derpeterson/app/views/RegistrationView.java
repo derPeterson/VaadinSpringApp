@@ -65,6 +65,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @PageTitle(AppRouteConstants.REGISTRATION_PAGE_TITLE)
 @AnonymousAllowed
 public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
+  private static final String COSMOS_FORM_ROW_CLASS = "cosmos-form-row";
 
   private static final Logger logger = LoggerFactory.getLogger(RegistrationView.class);
 
@@ -249,22 +250,22 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         new HorizontalLayout(formComponents.firstNameField, formComponents.lastNameField);
     firstLineForm.setWidthFull();
     firstLineForm.setSpacing(false);
-    firstLineForm.addClassName("cosmos-form-row");
+    firstLineForm.addClassName(COSMOS_FORM_ROW_CLASS);
     HorizontalLayout secondLineForm =
         new HorizontalLayout(formComponents.emailField, formComponents.confirmEmailField);
     secondLineForm.setWidthFull();
     secondLineForm.setSpacing(false);
-    secondLineForm.addClassName("cosmos-form-row");
+    secondLineForm.addClassName(COSMOS_FORM_ROW_CLASS);
     HorizontalLayout thirdLineForm =
         new HorizontalLayout(formComponents.passwordField, formComponents.confirmPasswordField);
     thirdLineForm.setWidthFull();
     thirdLineForm.setSpacing(false);
-    thirdLineForm.addClassName("cosmos-form-row");
+    thirdLineForm.addClassName(COSMOS_FORM_ROW_CLASS);
     HorizontalLayout fourthLineForm =
         new HorizontalLayout(formComponents.genderComboBox, formComponents.birthDatePicker);
     fourthLineForm.setWidthFull();
     fourthLineForm.setSpacing(false);
-    fourthLineForm.addClassName("cosmos-form-row");
+    fourthLineForm.addClassName(COSMOS_FORM_ROW_CLASS);
 
     cardContentLayout.add(
         cardTitleLayout,

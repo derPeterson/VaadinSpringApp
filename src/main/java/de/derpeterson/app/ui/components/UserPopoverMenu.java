@@ -530,8 +530,7 @@ public class UserPopoverMenu {
       return;
     }
 
-    userStatusSelect.setItemLabelGenerator(
-        userStatus -> messageProperties.getUserStatusLabel(userStatus));
+    userStatusSelect.setItemLabelGenerator(messageProperties::getUserStatusLabel);
     userStatusSelect.setItems(UserStatus.values());
     userStatusSelect.getDataProvider().refreshAll();
     userStatusSelect.setValue(currentStatus);

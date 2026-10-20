@@ -56,6 +56,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -253,20 +254,17 @@ class PasswordResetServiceTest {
     if (operation.equals("mail")) {
       when(users.findByEmail("test@example.com")).thenReturn(Optional.of(user));
     }
-    assertSame(
-        failure,
-        assertThrows(
-            DataAccessResourceFailureException.class,
-            () -> {
-              switch (operation) {
-                case "create" -> service.createToken(user);
-                case "validate" -> service.validateToken("valid");
-                case "reset" -> service.resetPassword("valid", "Password!");
-                case "status" -> service.setTokenStatus("valid", TokenStatus.USED);
-                case "invalidate" -> service.setInactiveTokensForUser(user);
-                case "mail" -> service.sendPasswordResetEmail("test@example.com");
-              }
-            }));
+    Executable operationUnderTest =
+        switch (operation) {
+          case "create" -> () -> service.createToken(user);
+          case "validate" -> () -> service.validateToken("valid");
+          case "reset" -> () -> service.resetPassword("valid", "Password!");
+          case "status" -> () -> service.setTokenStatus("valid", TokenStatus.USED);
+          case "invalidate" -> () -> service.setInactiveTokensForUser(user);
+          case "mail" -> () -> service.sendPasswordResetEmail("test@example.com");
+          default -> throw new IllegalArgumentException("Unknown fixture operation: " + operation);
+        };
+    assertSame(failure, assertThrows(DataAccessResourceFailureException.class, operationUnderTest));
     verify(tokens, never()).save(any());
     verify(users, never()).save(any());
     verifyNoInteractions(encoder, queue);
@@ -430,19 +428,16 @@ class PasswordResetServiceTest {
     } else {
       when(tokens.findByToken("value")).thenThrow(failure);
     }
-    assertSame(
-        failure,
-        assertThrows(
-            DataAccessResourceFailureException.class,
-            () -> {
-              switch (operation) {
-                case "validate" -> service.validateToken("value");
-                case "reset" -> service.resetPassword("value", "Password!");
-                case "status" -> service.setTokenStatus("value", TokenStatus.USED);
-                case "invalidate" -> service.setInactiveTokensForUser(user);
-                case "create" -> service.createToken(user);
-              }
-            }));
+    Executable operationUnderTest =
+        switch (operation) {
+          case "validate" -> () -> service.validateToken("value");
+          case "reset" -> () -> service.resetPassword("value", "Password!");
+          case "status" -> () -> service.setTokenStatus("value", TokenStatus.USED);
+          case "invalidate" -> () -> service.setInactiveTokensForUser(user);
+          case "create" -> () -> service.createToken(user);
+          default -> throw new IllegalArgumentException("Unknown fixture operation: " + operation);
+        };
+    assertSame(failure, assertThrows(DataAccessResourceFailureException.class, operationUnderTest));
     verify(users, never()).save(any());
     verifyNoInteractions(encoder);
     if (!operation.equals("create")) {
@@ -666,7 +661,7 @@ class PasswordResetServiceTest {
           }
         };
     // Keep real classpath coverage above; intercept only resource construction here.
-    try (MockedConstruction<ClassPathResource> resources =
+    try (MockedConstruction<ClassPathResource> _ =
         mockConstruction(
             ClassPathResource.class,
             (resource, context) ->

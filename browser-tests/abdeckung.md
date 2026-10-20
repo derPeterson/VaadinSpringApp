@@ -1,5 +1,18 @@
 # Browserabdeckung und offene Punkte
 
+## Kosmetische Sonar-Bereinigung auf main vom 20.10.2026
+
+275 exportierte IDs in 84 Java-Dateien gezielt bearbeitet; die tatsächliche
+Sonar-Reduktion ist erst nach dem nächsten Scan bekannt. **1983/1983 Anwendungs-
+JUnits**, keine Fehler oder Skips; Produktionsbuild, Spotless und Checkstyle
+am finalen Stand erfolgreich. Frische JUnit-Coverage: **87,73 % Zeilen /
+76,91 % Zweige**, 219 Klassen. Keine neue Browserabnahme, kein Dockerimage,
+kein erneuter Browser-Helferlauf. Bestehende DE-/EN-Komponententests enthalten.
+Die vier früher offenen Kontextentscheidungen wurden inzwischen ausdrücklich
+freigegeben und im Sonar-Server umgesetzt (2 False Positive, 2 Accepted);
+das Gate des Ausgangsstands war danach grün. Kein neuer Scan dieses Pakets.
+[Änderungen, Finding-IDs, Nachweise und Grenzen](../docs/sonar-kosmetik-2026-10-20.md).
+
 ## Sieben Sonar-Codehinweise auf main vom 20.10.2026
 
 Eine H2-Nullabsicherung und sechs kleine Wartbarkeits-/Stilhinweise sind umgesetzt.

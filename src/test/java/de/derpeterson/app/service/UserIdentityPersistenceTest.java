@@ -185,7 +185,8 @@ class UserIdentityPersistenceTest {
 
   @Test
   void lastAdminRejectionLeavesAllTokensAndMailUntouched() {
-    assertThrows(IllegalStateException.class, () -> service.deleteUser(form(adminId)));
+    UserEntity targetUser = form(adminId);
+    assertThrows(IllegalStateException.class, () -> service.deleteUser(targetUser));
     assertTrue(repository.existsById(adminId));
     assertEquals(TokenStatus.values().length, children("verification_token", adminId));
     assertEquals(TokenStatus.values().length, children("password_reset_token", adminId));
@@ -259,28 +260,25 @@ class UserIdentityPersistenceTest {
   void directJpaBuilderAndUpdatesAlsoCanonicalizeAndDatabaseRejectsRawVariants() {
     Long id = transaction.execute(tx -> persist(" BUILDER@Example.COM ", ordinary));
     assertEquals("builder@example.com", form(id).getEmail());
+    JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
     assertThrows(
         DataIntegrityViolationException.class,
         () ->
-            new JdbcTemplate(dataSource)
-                .update(
-                    "update users set email = ? where id = ?", " BUILDER@Example.COM ", otherId));
+            jdbcTemplate.update(
+                "update users set email = ? where id = ?", " BUILDER@Example.COM ", otherId));
     assertThrows(
         DataIntegrityViolationException.class,
         () ->
-            new JdbcTemplate(dataSource)
-                .update(
-                    "update users set email = ? where id = ?", "\tbuilder@example.com\t", otherId));
+            jdbcTemplate.update(
+                "update users set email = ? where id = ?", "\tbuilder@example.com\t", otherId));
+    assertThrows(
+        DataIntegrityViolationException.class,
+        () -> jdbcTemplate.update("update users set email = ? where id = ?", "", otherId));
     assertThrows(
         DataIntegrityViolationException.class,
         () ->
-            new JdbcTemplate(dataSource)
-                .update("update users set email = ? where id = ?", "", otherId));
-    assertThrows(
-        DataIntegrityViolationException.class,
-        () ->
-            new JdbcTemplate(dataSource)
-                .update("update users set email = ? where id = ?", "builder@example.com", otherId));
+            jdbcTemplate.update(
+                "update users set email = ? where id = ?", "builder@example.com", otherId));
     assertEquals("other@example.com", form(otherId).getEmail());
     transaction.executeWithoutResult(
         tx -> {
@@ -308,15 +306,13 @@ class UserIdentityPersistenceTest {
               : cause.toString();
         });
     assertEquals(3, repository.count());
+    JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
     DataIntegrityViolationException invalid =
         assertThrows(
             DataIntegrityViolationException.class,
             () ->
-                new JdbcTemplate(dataSource)
-                    .update(
-                        "update users set email = ? where id = ?",
-                        " INVALID@EXAMPLE.COM ",
-                        otherId));
+                jdbcTemplate.update(
+                    "update users set email = ? where id = ?", " INVALID@EXAMPLE.COM ", otherId));
     assertFalse(EmailConflict.isDuplicate(invalid));
     assertEquals("other@example.com", form(otherId).getEmail());
   }

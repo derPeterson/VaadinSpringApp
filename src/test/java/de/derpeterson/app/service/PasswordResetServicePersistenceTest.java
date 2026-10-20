@@ -541,9 +541,8 @@ class PasswordResetServicePersistenceTest {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
     when(probes.config().getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION))
         .thenReturn("invalid");
-    assertThrows(
-        DateTimeParseException.class,
-        () -> service.createToken(users.findById(userId).orElseThrow()));
+    UserEntity targetUser = users.findById(userId).orElseThrow();
+    assertThrows(DateTimeParseException.class, () -> service.createToken(targetUser));
     assertEquals(TokenStatus.ACTIVE, status("old"));
     assertEquals(1, tokens.count());
   }
@@ -563,8 +562,8 @@ class PasswordResetServicePersistenceTest {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
     when(probes.config().getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION))
         .thenReturn(duration);
-    assertThrows(
-        RuntimeException.class, () -> service.createToken(users.findById(userId).orElseThrow()));
+    UserEntity targetUser = users.findById(userId).orElseThrow();
+    assertThrows(RuntimeException.class, () -> service.createToken(targetUser));
     assertThrows(RuntimeException.class, () -> service.sendPasswordResetEmail("test@example.com"));
     assertEquals(TokenStatus.ACTIVE, status("old"));
     assertEquals(1, tokens.count());
@@ -695,7 +694,7 @@ class PasswordResetServicePersistenceTest {
             }
           }
         };
-    try (MockedConstruction<ClassPathResource> resources =
+    try (MockedConstruction<ClassPathResource> _ =
         mockConstruction(
             ClassPathResource.class,
             (resource, context) ->
@@ -1043,9 +1042,8 @@ class PasswordResetServicePersistenceTest {
                         users.findById(userId).orElseThrow(), TokenStatus.ACTIVE)
                     .getFirst()
                     .getToken());
-    assertThrows(
-        IllegalStateException.class,
-        () -> service.createToken(users.findById(userId).orElseThrow()));
+    UserEntity targetUser = users.findById(userId).orElseThrow();
+    assertThrows(IllegalStateException.class, () -> service.createToken(targetUser));
     assertEquals(TokenStatus.ACTIVE, status(active));
     assertEquals(1, tokens.count());
     assertEquals(1, mails.count());
@@ -1114,7 +1112,7 @@ class PasswordResetServicePersistenceTest {
       EmailQueueService queue) {}
 
   @Test
-  void maintenancePreservesResetTokenPasswordAndQueueAndAllowsResume() throws Exception {
+  void maintenancePreservesResetTokenPasswordAndQueueAndAllowsResume() {
     SecurityContextHolder.clearContext();
     String token = service.createToken(users.findById(userId).orElseThrow());
     String password = users.findById(userId).orElseThrow().getPassword();

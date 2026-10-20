@@ -20,6 +20,8 @@ import java.util.List;
 
 /** Suche und Aktionen bleiben oben; alle Zusatzfilter werden gemeinsam aufgeklappt. */
 final class AdminUserFilterBar extends VerticalLayout {
+  private static final String ARIA_HIDDEN = "aria-hidden";
+
   private final MessageProperties texts;
   private final TextField search;
   private final Button clearFilters = new Button();
@@ -53,10 +55,10 @@ final class AdminUserFilterBar extends VerticalLayout {
     addClassName("admin-user-filter-bar");
 
     Icon filterIcon = VaadinIcon.FILTER.create();
-    filterIcon.getElement().setAttribute("aria-hidden", "true");
+    filterIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Icon filterToggle = LumoIcon.ANGLE_DOWN.create();
     filterToggle.addClassName("admin-user-filter-toggle");
-    filterToggle.getElement().setAttribute("aria-hidden", "true");
+    filterToggle.getElement().setAttribute(ARIA_HIDDEN, "true");
     filterButton.addClassName("admin-user-filter-button");
     filterButton.setPrefixComponent(filterIcon);
     filterButton.setSuffixComponent(filterToggle);
@@ -65,7 +67,7 @@ final class AdminUserFilterBar extends VerticalLayout {
     applyFiltersButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     applyFiltersButton.addClickListener(event -> applyFilters.run());
     Icon hintIcon = VaadinIcon.INFO_CIRCLE.create();
-    hintIcon.getElement().setAttribute("aria-hidden", "true");
+    hintIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div hint = new Div(hintIcon, filterHint);
     hint.addClassName("cosmos-panel-hint");
     Div filterActions = new Div(applyFiltersButton);
@@ -73,7 +75,7 @@ final class AdminUserFilterBar extends VerticalLayout {
     Div filterFooter = new Div(hint, filterActions);
     filterFooter.addClassNames("cosmos-panel-footer", "admin-user-filter-footer");
     Icon panelIcon = VaadinIcon.FILTER.create();
-    panelIcon.getElement().setAttribute("aria-hidden", "true");
+    panelIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     activeFilterCountBadge.getElement().getThemeList().add("badge");
     activeFilterCountBadge.addClassName("admin-user-active-filter-count");
     Div panelHeading = new Div(panelIcon, filterPanelTitle, activeFilterCountBadge);

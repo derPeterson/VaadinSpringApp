@@ -304,7 +304,7 @@ class UserNotificationServicePersistenceTest {
 
   @Test
   void emptySelectionRejected() {
-    assertProblem(Problem.NO_RECIPIENTS, () -> selected());
+    assertProblem(Problem.NO_RECIPIENTS, this::selected);
   }
 
   @Test
@@ -326,12 +326,13 @@ class UserNotificationServicePersistenceTest {
     MockHttpSession session = session(user);
     assertFalse(service.canSend(session));
     assertThrows(AccessDeniedException.class, () -> service.targets(session));
-    assertThrows(
-        AccessDeniedException.class, () -> service.preview(session, new Selection(true, Set.of())));
+    Selection selection = new Selection(true, Set.of());
+    assertThrows(AccessDeniedException.class, () -> service.preview(session, selection));
     assertThrows(AccessDeniedException.class, () -> service.sent(session, 0, 5));
+    UUID operationId = UUID.randomUUID();
+    Preview preview2 = everyone();
     assertThrows(
-        AccessDeniedException.class,
-        () -> service.send(session, UUID.randomUUID(), "X", "Y", everyone()));
+        AccessDeniedException.class, () -> service.send(session, operationId, "X", "Y", preview2));
     assertEquals(0, notificationCount());
   }
 
@@ -430,12 +431,12 @@ class UserNotificationServicePersistenceTest {
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE))
         .thenThrow(new IllegalStateException("Isolated configuration failure"));
     assertEquals(MaintenanceService.State.UNAVAILABLE, service.deliveryState());
+    Selection selection = new Selection(true, Set.of());
+    assertThrows(AccessDeniedException.class, () -> service.preview(adminSession, selection));
+    UUID operationId = UUID.randomUUID();
     assertThrows(
         AccessDeniedException.class,
-        () -> service.preview(adminSession, new Selection(true, Set.of())));
-    assertThrows(
-        AccessDeniedException.class,
-        () -> service.send(adminSession, UUID.randomUUID(), "Subject", "Body", checked));
+        () -> service.send(adminSession, operationId, "Subject", "Body", checked));
     assertEquals(0, notificationCount());
     assertEquals(0, recipients.count());
   }
@@ -705,9 +706,12 @@ class UserNotificationServicePersistenceTest {
         });
     assertTrue(pushes.isEmpty());
     assertEquals(1, service.unreadCount(userSession));
-    assertThrows(AccessDeniedException.class, () -> service.dismiss(null, own.id()));
+    Long ownNotificationId = own.id();
+    assertThrows(AccessDeniedException.class, () -> service.dismiss(null, ownNotificationId));
     mutate(ordinary, user -> user.setEnabled(false));
-    assertThrows(AccessDeniedException.class, () -> service.dismiss(userSession, own.id()));
+    Long disabledNotificationId = own.id();
+    assertThrows(
+        AccessDeniedException.class, () -> service.dismiss(userSession, disabledNotificationId));
     assertNull(recipients.findById(own.id()).orElseThrow().getDismissedAt());
   }
 
@@ -846,9 +850,13 @@ class UserNotificationServicePersistenceTest {
         AccessDeniedException.class,
         () -> service.searchInbox(null, ReadFilter.ALL, "alpha", Set.of(), 0, 20));
     assertThrows(AccessDeniedException.class, () -> service.inboxCount(null));
+    String longSearchText = "x".repeat(121);
+    Set<UserNotificationType> notificationTypes = Set.of();
     assertThrows(
         IllegalArgumentException.class,
-        () -> service.searchInbox(userSession, ReadFilter.ALL, "x".repeat(121), Set.of(), 0, 20));
+        () ->
+            service.searchInbox(
+                userSession, ReadFilter.ALL, longSearchText, notificationTypes, 0, 20));
     assertThrows(
         IllegalArgumentException.class,
         () -> service.searchInbox(userSession, ReadFilter.ALL, "alpha", Set.of(), -1, 20));

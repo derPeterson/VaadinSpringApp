@@ -255,9 +255,9 @@ class LoginAttemptPersistenceTest {
                           throw new BadCredentialsException("fixture");
                         });
                     throw new AssertionError("Must reject");
-                  } catch (LoginThrottledException blocked) {
+                  } catch (LoginThrottledException _) {
                     return true;
-                  } catch (BadCredentialsException bad) {
+                  } catch (BadCredentialsException _) {
                     return false;
                   }
                 }));
@@ -356,7 +356,7 @@ class LoginAttemptPersistenceTest {
                   try {
                     bounded.authenticate(email, this::accepted);
                     return true;
-                  } catch (AuthenticationServiceException unavailable) {
+                  } catch (AuthenticationServiceException _) {
                     return false;
                   }
                 }));
@@ -447,16 +447,14 @@ class LoginAttemptPersistenceTest {
         result.getAuthorities().stream()
             .anyMatch(authority -> authority.getAuthority().equals(role.name())));
     limit.set(1);
+    UsernamePasswordAuthenticationToken wrongCredentials =
+        UsernamePasswordAuthenticationToken.unauthenticated(EMAIL, "WrongPassword!");
     assertThrows(
-        BadCredentialsException.class,
-        () ->
-            authentication.authenticate(
-                UsernamePasswordAuthenticationToken.unauthenticated(EMAIL, "WrongPassword!")));
+        BadCredentialsException.class, () -> authentication.authenticate(wrongCredentials));
+    UsernamePasswordAuthenticationToken blockedCredentials =
+        UsernamePasswordAuthenticationToken.unauthenticated(EMAIL, "OriginalPassword!");
     assertThrows(
-        LoginThrottledException.class,
-        () ->
-            authentication.authenticate(
-                UsernamePasswordAuthenticationToken.unauthenticated(EMAIL, "OriginalPassword!")));
+        LoginThrottledException.class, () -> authentication.authenticate(blockedCredentials));
     assertTrue(users.findByEmail(EMAIL).orElseThrow().isEnabled());
   }
 

@@ -49,7 +49,7 @@ public final class CompactDateInput {
     boolean german = Locale.GERMAN.getLanguage().equals(locale.getLanguage());
     try {
       return Result.ok(LocalDate.of(year, german ? second : first, german ? first : second));
-    } catch (DateTimeException invalid) {
+    } catch (DateTimeException _) {
       return Result.error(error);
     }
   }

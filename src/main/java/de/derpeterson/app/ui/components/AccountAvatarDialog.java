@@ -38,6 +38,8 @@ import tools.jackson.databind.JsonNode;
 
 /** Eigener Avatar: Upload und Ausschnitt bleiben bis zum Speichern ein begrenzter Entwurf. */
 public class AccountAvatarDialog extends Dialog {
+  private static final String ARIA_HIDDEN = "aria-hidden";
+
   private final transient MessageProperties messages;
   private final UserEntity user;
   private final H2 title = new H2();
@@ -71,7 +73,7 @@ public class AccountAvatarDialog extends Dialog {
     Div heading = new Div(title, description);
     heading.addClassName("cosmos-panel-heading");
     Icon symbol = VaadinIcon.PICTURE.create();
-    symbol.getElement().setAttribute("aria-hidden", "true");
+    symbol.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div badge = new Div(symbol);
     badge.addClassName("cosmos-panel-icon");
     close.setId("account-avatar-close");
@@ -120,7 +122,7 @@ public class AccountAvatarDialog extends Dialog {
     editor.getElement().addEventListener("avatar-file-cancelled", event -> cancelSelection());
     editor.addComponentAtIndex(1, mode);
     Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
-    infoIcon.getElement().setAttribute("aria-hidden", "true");
+    infoIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Span infoBadge = new Span(infoIcon);
     infoBadge.addClassName("account-avatar-info-icon");
     Div info = new Div(infoBadge, keepHint);
@@ -178,7 +180,7 @@ public class AccountAvatarDialog extends Dialog {
     Span symbol =
         value == AvatarMode.INITIALS ? new Span("Aa") : new Span(VaadinIcon.PICTURE.create());
     symbol.addClassName("account-avatar-mode-icon");
-    symbol.getElement().setAttribute("aria-hidden", "true");
+    symbol.getElement().setAttribute(ARIA_HIDDEN, "true");
     Span label = new Span(mode.getItemLabelGenerator().apply(value));
     Span content = new Span(symbol, label);
     content.addClassName("account-avatar-mode-label");
@@ -210,7 +212,7 @@ public class AccountAvatarDialog extends Dialog {
             UUID token;
             try {
               token = UUID.fromString(event.getRequest().getHeader("X-Avatar-Draft"));
-            } catch (RuntimeException invalid) {
+            } catch (RuntimeException _) {
               event.reject();
               return;
             }

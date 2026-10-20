@@ -122,7 +122,7 @@ public class AccountView extends IsAuthenticatedBaseView {
     if (values != null && values.size() == 1) {
       try {
         section = AccountSection.valueOf(values.getFirst().toUpperCase(Locale.ROOT));
-      } catch (IllegalArgumentException invalid) {
+      } catch (IllegalArgumentException _) {
         section = AccountSection.PROFILE;
       }
     }

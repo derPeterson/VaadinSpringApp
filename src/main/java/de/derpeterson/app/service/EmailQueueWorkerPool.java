@@ -109,7 +109,7 @@ public class EmailQueueWorkerPool {
           FutureTask<Void> finished = completed.take();
           active--;
           finished.get();
-        } catch (InterruptedException failure) {
+        } catch (InterruptedException _) {
           // Angenommene Aufgaben erst abwarten, statt ihren Ausgang zu erraten oder neu zu starten.
           interrupted = true;
           refill = false;
@@ -117,7 +117,7 @@ public class EmailQueueWorkerPool {
           logger.error(
               "Queue worker failed; no automatic release of committed claims.",
               safeFailure(failure.getCause()));
-        } catch (CancellationException failure) {
+        } catch (CancellationException _) {
           logger.warn("Queue worker cancelled during shutdown; committed claims remain unchanged.");
         }
       }
@@ -145,7 +145,7 @@ public class EmailQueueWorkerPool {
       if (executor.awaitTermination(shutdownGrace.toMillis(), TimeUnit.MILLISECONDS)) {
         return;
       }
-    } catch (InterruptedException failure) {
+    } catch (InterruptedException _) {
       Thread.currentThread().interrupt();
     }
     // Auch nie gestartete FutureTasks abschließen, damit der Koordinator nicht endlos wartet.

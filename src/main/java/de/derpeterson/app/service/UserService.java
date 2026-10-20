@@ -46,6 +46,8 @@ import org.springframework.util.Assert;
 @Service
 @Slf4j
 public class UserService {
+  private static final String ENTITY_REQUIRED_MESSAGE = "Entity must not be null";
+  private static final String USER_ID_REQUIRED_MESSAGE = "User ID must not be null";
 
   private final UserRepository userRepository;
   private final UserStatusBroadcaster userStatusBroadcaster;
@@ -100,7 +102,7 @@ public class UserService {
 
   @Transactional
   public void createAdminUser(UserEntity user, String password) {
-    Assert.notNull(user, "Entity must not be null");
+    Assert.notNull(user, ENTITY_REQUIRED_MESSAGE);
     Assert.isNull(user.getId(), "New account must not have an ID");
     validateUserFields(user);
     lockAndReadSuperadmins();
@@ -137,7 +139,7 @@ public class UserService {
 
   @Transactional
   public void save(UserEntity user) {
-    Assert.notNull(user, "Entity must not be null");
+    Assert.notNull(user, ENTITY_REQUIRED_MESSAGE);
     validateUserFields(user);
     Assert.hasText(user.getPassword(), "Encoded password must not be blank");
     validateLocale(user.getPreferredLocale());
@@ -193,8 +195,8 @@ public class UserService {
   @Transactional
   public StatusUpdate updateUserStatus(
       UserEntity userEntity, UserStatus newStatus, boolean manualChange) {
-    Assert.notNull(userEntity, "Entity must not be null");
-    Assert.notNull(userEntity.getId(), "User ID must not be null");
+    Assert.notNull(userEntity, ENTITY_REQUIRED_MESSAGE);
+    Assert.notNull(userEntity.getId(), USER_ID_REQUIRED_MESSAGE);
     Assert.notNull(newStatus, "Status must not be null");
     UserEntity user =
         userRepository
@@ -263,7 +265,7 @@ public class UserService {
 
   @Transactional
   public void updateLastActivity(Long userId) {
-    Assert.notNull(userId, "User ID must not be null");
+    Assert.notNull(userId, USER_ID_REQUIRED_MESSAGE);
     if (userRepository.updateLastActivity(userId, clock.instant()) == 0) {
       throw new IllegalStateException("Der Benutzer ist nicht mehr vorhanden.");
     }
@@ -275,7 +277,7 @@ public class UserService {
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void updateScheduledStatus(Long userId, UserStatus target, Instant cutoff) {
-    Assert.notNull(userId, "User ID must not be null");
+    Assert.notNull(userId, USER_ID_REQUIRED_MESSAGE);
     Assert.notNull(cutoff, "Cutoff must not be null");
     Assert.isTrue(
         target == UserStatus.ABSENT || target == UserStatus.AVAILABLE, "Invalid scheduler status");
@@ -300,8 +302,8 @@ public class UserService {
    */
   @Transactional
   public void updateAdminUser(UserEntity edited, Long expectedVersion, String rawPassword) {
-    Assert.notNull(edited, "Entity must not be null");
-    Assert.notNull(edited.getId(), "User ID must not be null");
+    Assert.notNull(edited, ENTITY_REQUIRED_MESSAGE);
+    Assert.notNull(edited.getId(), USER_ID_REQUIRED_MESSAGE);
     List<Long> superadmins = lockAndReadSuperadmins();
     UserEntity stored =
         userRepository
@@ -354,8 +356,8 @@ public class UserService {
 
   @Transactional
   public void deleteUser(UserEntity user) {
-    Assert.notNull(user, "Entity must not be null");
-    Assert.notNull(user.getId(), "User ID must not be null");
+    Assert.notNull(user, ENTITY_REQUIRED_MESSAGE);
+    Assert.notNull(user.getId(), USER_ID_REQUIRED_MESSAGE);
     List<Long> superadmins = lockAndReadSuperadmins();
     rolePolicy.authorizeMutation(user.getId(), Set.of());
     ensureSuperadminChangeAllowed(user.getId(), false, superadmins);
@@ -404,7 +406,7 @@ public class UserService {
    * failures propagate.
    */
   public void updatePassword(UserEntity user, String rawPassword) {
-    Assert.notNull(user, "Entity must not be null");
+    Assert.notNull(user, ENTITY_REQUIRED_MESSAGE);
     Assert.isTrue(UserInputRules.isPasswordSecure(rawPassword), "Invalid password");
     if (user.getId() != null) {
       rolePolicy.authorizeMutation(user.getId(), roleTypes(user.getRoleEntities()));

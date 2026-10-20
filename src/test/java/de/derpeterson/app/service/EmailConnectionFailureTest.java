@@ -8,12 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.nullable;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -79,14 +76,16 @@ class EmailConnectionFailureTest {
     MailSendException raw = assertThrows(MailSendException.class, () -> sender.send(message));
     assertTrue(ConnectionAwareJavaMailSender.failedBeforeSending(raw, message));
     assertFalse(ConnectionAwareJavaMailSender.failedBeforeSending(raw, sender.createMimeMessage()));
+    MimeMessage mimeMessage = sender.createMimeMessage();
     MailSendException multiple =
-        assertThrows(
-            MailSendException.class, () -> sender.send(message, sender.createMimeMessage()));
+        assertThrows(MailSendException.class, () -> sender.send(message, mimeMessage));
     assertFalse(ConnectionAwareJavaMailSender.failedBeforeSending(multiple, message));
+    EmailService emailService = service(sender);
+    UserEntity targetUser = user();
     MailPreparationException translated =
         assertThrows(
             MailPreparationException.class,
-            () -> service(sender).sendEmail(user(), "subject", "body"));
+            () -> emailService.sendEmail(targetUser, "subject", "body"));
     assertInstanceOf(MailSendException.class, translated.getCause());
     assertSame(cause, translated.getCause().getCause().getCause());
     verify(sender.transport, never()).sendMessage(any(), any());
@@ -106,9 +105,11 @@ class EmailConnectionFailureTest {
     if (!stage.equals("send")) {
       doThrow(cause).when(sender.transport).close();
     }
+    EmailService emailService = service(sender);
+    UserEntity targetUser = user();
     MailSendException failure =
         assertThrows(
-            MailSendException.class, () -> service(sender).sendEmail(user(), "subject", "body"));
+            MailSendException.class, () -> emailService.sendEmail(targetUser, "subject", "body"));
     assertFalse(
         ConnectionAwareJavaMailSender.failedBeforeSending(failure, sender.createMimeMessage()));
     verify(sender.transport).sendMessage(any(), any());
@@ -121,10 +122,12 @@ class EmailConnectionFailureTest {
     doThrow(cause)
         .when(sender.transport)
         .connect(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
+    EmailService emailService = service(sender);
+    UserEntity targetUser = user();
     MailAuthenticationException failure =
         assertThrows(
             MailAuthenticationException.class,
-            () -> service(sender).sendEmail(user(), "subject", "body"));
+            () -> emailService.sendEmail(targetUser, "subject", "body"));
     assertSame(cause, failure.getCause());
     verify(sender.transport, never()).sendMessage(any(), any());
   }

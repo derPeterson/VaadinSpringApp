@@ -87,7 +87,7 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
                           }
                         });
             inbox.refresh();
-          } catch (org.springframework.security.access.AccessDeniedException denied) {
+          } catch (org.springframework.security.access.AccessDeniedException _) {
             inbox.unavailable();
           }
         });

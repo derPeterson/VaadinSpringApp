@@ -21,6 +21,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.server.Command;
 import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.VaadinServletRequest;
@@ -116,7 +117,7 @@ class AccountAvatarDialogTest {
         editor()
             .getElement()
             .getChildren()
-            .flatMap(element -> element.getChildren())
+            .flatMap(Element::getChildren)
             .noneMatch(element -> element.getClassList().contains("cosmos-avatar-status")));
     dialog.close();
     user.setFirstName("  Änne  ");

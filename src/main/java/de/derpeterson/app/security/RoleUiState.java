@@ -3,6 +3,7 @@ package de.derpeterson.app.security;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.Location;
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.model.enums.AppRoute;
 import java.io.Serializable;
 import java.util.Set;
@@ -12,6 +13,8 @@ import org.springframework.security.core.authority.FactorGrantedAuthority;
 
 /** Jede UI behält ihre ursprünglichen Rechte, bis ein neues Dokument aufgebaut wurde. */
 public record RoleUiState(Set<String> authorities) implements Serializable {
+  private static final String HOME_PATH = "/" + AppRouteConstants.HOME_ROUTE;
+
   public static Set<String> roles(Authentication auth) {
     return auth.getAuthorities().stream()
         .filter(a -> !(a instanceof FactorGrantedAuthority))
@@ -31,14 +34,14 @@ public record RoleUiState(Set<String> authorities) implements Serializable {
   public static String target(UI ui, Authentication auth, String contextPath) {
     Location location = ui.getInternals().getActiveViewLocation();
     if (location == null) {
-      return contextPath + "/home";
+      return contextPath + HOME_PATH;
     }
     String path = location.getPath();
     if (path.equals(AppRoute.ADMIN.getRoute()) && !roles(auth).contains("ROLE_ADMIN")) {
-      return contextPath + "/home";
+      return contextPath + HOME_PATH;
     }
     if (!Set.of("home", "account", "notifications", "admin").contains(path)) {
-      return contextPath + "/home";
+      return contextPath + HOME_PATH;
     }
     return contextPath + "/" + location.getPathWithQueryParameters();
   }

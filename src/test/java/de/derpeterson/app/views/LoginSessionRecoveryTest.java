@@ -90,7 +90,8 @@ class LoginSessionRecoveryTest {
     TestService service = mock(TestService.class);
     when(service.getRouter()).thenReturn(new Router(registry));
     when(service.getRouteRegistry()).thenReturn(registry);
-    when(service.getDeploymentConfiguration()).thenReturn(mock(DeploymentConfiguration.class));
+    DeploymentConfiguration deploymentConfiguration = mock(DeploymentConfiguration.class);
+    when(service.getDeploymentConfiguration()).thenReturn(deploymentConfiguration);
     when(vaadinSession.getService()).thenReturn(service);
     VaadinService.setCurrent(service);
     CurrentInstance.set(VaadinRequest.class, new VaadinServletRequest(request, service));

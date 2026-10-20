@@ -319,7 +319,8 @@ class PushRpcSecurityPersistenceTest {
     assertEquals("Mutation 1", form(targetId).getFirstName());
     change(kind);
     assertTrue(VaadinService.isCsrfTokenValid(ui, ui.getCsrfToken()));
-    assertThrows(AccessDeniedException.class, () -> receive(ui.getCsrfToken()));
+    String csrfToken = ui.getCsrfToken();
+    assertThrows(AccessDeniedException.class, () -> receive(csrfToken));
     assertEquals(1, calls.get());
     assertEquals("Mutation 1", form(targetId).getFirstName());
     assertEquals(kind.equals("disable") || kind.equals("delete"), httpSession.isInvalid());
@@ -380,7 +381,8 @@ class PushRpcSecurityPersistenceTest {
     authenticate(targetId, remember, true);
     receive(ui.getCsrfToken());
     when(maintenanceConfig.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    assertThrows(MaintenanceAccessException.class, () -> receive(ui.getCsrfToken()));
+    String csrfToken = ui.getCsrfToken();
+    assertThrows(MaintenanceAccessException.class, () -> receive(csrfToken));
     assertEquals(1, calls.get());
     assertEquals("Mutation 1", form(targetId).getFirstName());
     assertFalse(httpSession.isInvalid());

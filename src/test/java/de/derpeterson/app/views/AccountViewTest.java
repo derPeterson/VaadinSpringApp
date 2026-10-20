@@ -389,7 +389,7 @@ class AccountViewTest {
                 tree(
                     ((UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu"))
                         .getPopover()))
-            .filter(component -> component instanceof OverlayUserIcon)
+            .filter(OverlayUserIcon.class::isInstance)
             .distinct()
             .toList();
     assertEquals(3, avatars.size());

@@ -71,11 +71,9 @@ class LoginSingleConnectionTest {
             .authenticate(
                 UsernamePasswordAuthenticationToken.unauthenticated(email, "OriginalPassword!"))
             .isAuthenticated());
-    assertThrows(
-        BadCredentialsException.class,
-        () ->
-            login.authenticate(
-                UsernamePasswordAuthenticationToken.unauthenticated(email, "WrongPassword!")));
+    UsernamePasswordAuthenticationToken loginCredentials =
+        UsernamePasswordAuthenticationToken.unauthenticated(email, "WrongPassword!");
+    assertThrows(BadCredentialsException.class, () -> login.authenticate(loginCredentials));
     assertEquals(
         1, records.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
     assertEquals(0, source.getHikariPoolMXBean().getActiveConnections());

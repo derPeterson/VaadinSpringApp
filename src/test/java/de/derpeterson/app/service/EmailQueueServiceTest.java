@@ -15,14 +15,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyCollection;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.contains;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -143,7 +137,6 @@ class EmailQueueServiceTest {
             .preferredLocale(Locale.ENGLISH)
             .build();
     when(users.lockVerificationUser(12L)).thenReturn(Optional.of(user));
-    LocalDateTime before = LocalDateTime.now();
     service.addEmailToQueue(stale, "Grüße 🔐", "<b>日本語</b>\r\n", type);
     InOrder order = inOrder(users, emails);
     order.verify(users).lockVerificationUser(12L);
@@ -162,7 +155,7 @@ class EmailQueueServiceTest {
     assertEquals(0, queued.getRetryCount());
     assertNull(queued.getLastRetryAt());
     assertNull(queued.getId());
-    assertBetween(queued.getCreatedAt(), before);
+    assertAtFixedClock(queued.getCreatedAt());
     verifyNoInteractions(mail, config);
   }
 
@@ -295,11 +288,10 @@ class EmailQueueServiceTest {
     doThrow(new MailAuthenticationException("smtp failed"))
         .when(mail)
         .sendEmail(user, "subject", "body");
-    LocalDateTime before = LocalDateTime.now();
     service.processQueue();
     assertEquals(terminal ? EmailStatus.FAILED : EmailStatus.PENDING, item.getStatus());
     assertEquals(terminal ? retries : retries + 1, item.getRetryCount());
-    assertBetween(item.getLastRetryAt(), before);
+    assertAtFixedClock(item.getLastRetryAt());
     verify(emails, times(2)).save(item);
     if (terminal) {
       verify(mail)
@@ -514,7 +506,7 @@ class EmailQueueServiceTest {
   }
 
   @Test
-  void successfulRetryLogsActualAttemptWithoutChangingHistory() throws Exception {
+  void successfulRetryLogsActualAttemptWithoutChangingHistory() {
     EmailQueueEntity item = item(EmailStatus.PENDING, 2);
     batch(item);
     Logger logger = (Logger) LoggerFactory.getLogger(EmailQueueService.class);
@@ -636,18 +628,12 @@ class EmailQueueServiceTest {
   @Test
   void nullRetentionAndClockAreRejected() {
     assertThrows(NullPointerException.class, service::deleteSentEmails);
+    EmailQueueWorkerPool workers = QueueTestWorkers.inline();
     assertThrows(
         NullPointerException.class,
         () ->
             new EmailQueueService(
-                config,
-                emails,
-                mail,
-                users,
-                transactions,
-                adminAttempts,
-                null,
-                QueueTestWorkers.inline()));
+                config, emails, mail, users, transactions, adminAttempts, null, workers));
     verifyNoInteractions(emails, mail);
   }
 
@@ -657,14 +643,13 @@ class EmailQueueServiceTest {
     if (field.equals("id")) {
       user.setId(null);
     }
+    UserEntity targetUser = field.equals("user") ? null : user;
+    String subject2 = field.equals("subject") ? null : "";
+    String body2 = field.equals("body") ? null : "";
+    EmailType emailType = field.equals("type") ? null : EmailType.NOTIFICATION;
     assertThrows(
         NullPointerException.class,
-        () ->
-            service.addEmailToQueue(
-                field.equals("user") ? null : user,
-                field.equals("subject") ? null : "",
-                field.equals("body") ? null : "",
-                field.equals("type") ? null : EmailType.NOTIFICATION));
+        () -> service.addEmailToQueue(targetUser, subject2, body2, emailType));
     verifyNoInteractions(users, emails, mail);
   }
 
@@ -674,12 +659,11 @@ class EmailQueueServiceTest {
     if (field.equals("id")) {
       user.setId(null);
     }
+    UserEntity targetUser = field.equals("user") ? null : user;
+    EmailType emailType2 = field.equals("type") ? null : EmailType.NOTIFICATION;
     assertThrows(
         NullPointerException.class,
-        () ->
-            service.hasOpenEmailForUserAndType(
-                field.equals("user") ? null : user,
-                field.equals("type") ? null : EmailType.NOTIFICATION));
+        () -> service.hasOpenEmailForUserAndType(targetUser, emailType2));
     verifyNoInteractions(emails);
   }
 
@@ -804,7 +788,7 @@ class EmailQueueServiceTest {
     return item;
   }
 
-  private void assertBetween(LocalDateTime actual, LocalDateTime before) {
+  private void assertAtFixedClock(LocalDateTime actual) {
     assertNotNull(actual);
     assertEquals(LocalDateTime.now(clock), actual);
   }

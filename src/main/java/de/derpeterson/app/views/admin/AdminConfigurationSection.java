@@ -258,7 +258,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
     try {
       integerField.setValue(Integer.parseInt(safeValue));
-    } catch (NumberFormatException ex) {
+    } catch (NumberFormatException _) {
       integerField.setValue(Integer.parseInt(configuredDefault(configEntry)));
     }
   }
@@ -921,7 +921,7 @@ public class AdminConfigurationSection extends VerticalLayout {
           && uri.getHost() != null
           && ("http".equalsIgnoreCase(uri.getScheme())
               || "https".equalsIgnoreCase(uri.getScheme()));
-    } catch (URISyntaxException ex) {
+    } catch (URISyntaxException _) {
       return false;
     }
   }
@@ -943,7 +943,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     try {
       DurationStyle.detectAndParse(trimmed);
       return true;
-    } catch (IllegalArgumentException ex) {
+    } catch (IllegalArgumentException _) {
       return false;
     }
   }
@@ -951,7 +951,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   private boolean isInvalidPositiveInteger(String value) {
     try {
       return Integer.parseInt(value) < 1;
-    } catch (NumberFormatException ex) {
+    } catch (NumberFormatException _) {
       return true;
     }
   }
@@ -959,7 +959,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   private boolean isValidNonNegativeInteger(String value) {
     try {
       return Integer.parseInt(value) >= 0;
-    } catch (NumberFormatException ex) {
+    } catch (NumberFormatException _) {
       return false;
     }
   }
@@ -980,7 +980,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     try {
       int port = Integer.parseInt(value);
       return port >= 1 && port <= 65535;
-    } catch (NumberFormatException ex) {
+    } catch (NumberFormatException _) {
       return false;
     }
   }

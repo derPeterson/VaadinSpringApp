@@ -51,6 +51,11 @@ import org.slf4j.LoggerFactory;
 @AnonymousAllowed
 public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     implements HasUrlParameter<String> {
+  private static final String COSMOS_FORM_CLASS = "cosmos-form";
+  private static final String COSMOS_HEADLINE_CLASS = "cosmos-headline";
+  private static final String COSMOS_TITLE_ROW_CLASS = "cosmos-title-row";
+  private static final String COSMOS_FORM_TEXT_CLASS = "cosmos-form-text";
+  private static final String COSMOS_INTRO_CLASS = "cosmos-intro";
 
   private static final Logger logger = LoggerFactory.getLogger(VerificationView.class);
 
@@ -196,7 +201,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
     cardContentLayout.setPadding(false);
     cardContentLayout.setSpacing(false);
-    cardContentLayout.addClassName("cosmos-form");
+    cardContentLayout.addClassName(COSMOS_FORM_CLASS);
 
     Icon successIcon = VaadinIcon.BELL.create();
     successIcon.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.TextColor.WARNING);
@@ -208,10 +213,10 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     cardIconLayout.add(successIcon);
 
     this.expiredTitle = new H1(messageProperties.getVerificationExpiredTitle());
-    expiredTitle.addClassName("cosmos-headline");
+    expiredTitle.addClassName(COSMOS_HEADLINE_CLASS);
 
     HorizontalLayout cardTitleLayout = new HorizontalLayout();
-    cardTitleLayout.addClassName("cosmos-title-row");
+    cardTitleLayout.addClassName(COSMOS_TITLE_ROW_CLASS);
     cardTitleLayout.setWidthFull();
     cardTitleLayout.setPadding(false);
     cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
@@ -275,11 +280,11 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
   private VerticalLayout createExpiredCardTextLayout(String text1String, String text2String) {
     this.expiredText1 = new Span(text1String);
-    expiredText1.addClassName("cosmos-form-text");
+    expiredText1.addClassName(COSMOS_FORM_TEXT_CLASS);
     this.expiredText2 = new Span(text2String);
-    expiredText2.addClassName("cosmos-form-text");
+    expiredText2.addClassName(COSMOS_FORM_TEXT_CLASS);
     VerticalLayout cardTextLayout = new VerticalLayout();
-    cardTextLayout.addClassName("cosmos-intro");
+    cardTextLayout.addClassName(COSMOS_INTRO_CLASS);
     cardTextLayout.setWidthFull();
     cardTextLayout.setPadding(false);
     cardTextLayout.setSpacing(false);
@@ -292,11 +297,11 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
   private VerticalLayout createNotFoundCardTextLayout(String text1String, String text2String) {
     this.notFoundText1 = new Span(text1String);
-    notFoundText1.addClassName("cosmos-form-text");
+    notFoundText1.addClassName(COSMOS_FORM_TEXT_CLASS);
     this.notFoundText2 = new Span(text2String);
-    notFoundText2.addClassName("cosmos-form-text");
+    notFoundText2.addClassName(COSMOS_FORM_TEXT_CLASS);
     VerticalLayout cardTextLayout = new VerticalLayout();
-    cardTextLayout.addClassName("cosmos-intro");
+    cardTextLayout.addClassName(COSMOS_INTRO_CLASS);
     cardTextLayout.setWidthFull();
     cardTextLayout.setPadding(false);
     cardTextLayout.setSpacing(false);
@@ -312,7 +317,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
     cardContentLayout.setPadding(false);
     cardContentLayout.setSpacing(false);
-    cardContentLayout.addClassName("cosmos-form");
+    cardContentLayout.addClassName(COSMOS_FORM_CLASS);
 
     Icon successIcon = VaadinIcon.WARNING.create();
     successIcon.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.TextColor.ERROR);
@@ -324,10 +329,10 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     cardIconLayout.add(successIcon);
 
     this.notFoundTitle = new H1(messageProperties.getVerificationNotFoundTitle());
-    notFoundTitle.addClassName("cosmos-headline");
+    notFoundTitle.addClassName(COSMOS_HEADLINE_CLASS);
 
     HorizontalLayout cardTitleLayout = new HorizontalLayout();
-    cardTitleLayout.addClassName("cosmos-title-row");
+    cardTitleLayout.addClassName(COSMOS_TITLE_ROW_CLASS);
     cardTitleLayout.setWidthFull();
     cardTitleLayout.setPadding(false);
     cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
@@ -414,7 +419,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
     cardContentLayout.setPadding(false);
     cardContentLayout.setSpacing(false);
-    cardContentLayout.addClassName("cosmos-form");
+    cardContentLayout.addClassName(COSMOS_FORM_CLASS);
 
     Icon successIcon = VaadinIcon.CHECK_CIRCLE.create();
     successIcon.addClassNames(
@@ -427,19 +432,19 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     cardIconLayout.add(successIcon);
 
     this.successTitle = new H1(messageProperties.getVerificationSuccessTitle());
-    successTitle.addClassName("cosmos-headline");
+    successTitle.addClassName(COSMOS_HEADLINE_CLASS);
 
     HorizontalLayout cardTitleLayout = new HorizontalLayout();
-    cardTitleLayout.addClassName("cosmos-title-row");
+    cardTitleLayout.addClassName(COSMOS_TITLE_ROW_CLASS);
     cardTitleLayout.setWidthFull();
     cardTitleLayout.setPadding(false);
     cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
     cardTitleLayout.add(successTitle);
 
     this.successText = new Span(messageProperties.getVerificationSuccessText());
-    successText.addClassName("cosmos-form-text");
+    successText.addClassName(COSMOS_FORM_TEXT_CLASS);
     HorizontalLayout cardTextLayout = new HorizontalLayout();
-    cardTextLayout.addClassName("cosmos-intro");
+    cardTextLayout.addClassName(COSMOS_INTRO_CLASS);
     cardTextLayout.setWidthFull();
     cardTextLayout.setPadding(false);
     cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);

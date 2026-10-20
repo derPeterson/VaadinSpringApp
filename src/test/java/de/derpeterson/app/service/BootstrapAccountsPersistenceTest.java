@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
@@ -177,7 +178,8 @@ class BootstrapAccountsPersistenceTest {
     when(encoder.encode(any()))
         .thenReturn("first-hash")
         .thenThrow(new IllegalStateException("test failure"));
-    assertThrows(IllegalStateException.class, () -> initializer(encoder).initDatabase().run());
+    CommandLineRunner initialization = initializer(encoder).initDatabase();
+    assertThrows(IllegalStateException.class, () -> initialization.run());
     assertEquals(0, users.count());
     assertEquals(0, roles.count());
   }

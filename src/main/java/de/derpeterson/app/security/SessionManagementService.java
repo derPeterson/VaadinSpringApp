@@ -151,8 +151,8 @@ public class SessionManagementService {
             item -> {
               Optional<Saved> savedLogin =
                   saved.stream().filter(grant -> grant.series().equals(item.series())).findFirst();
-              boolean remembered = savedLogin.isPresent();
-              if (remembered) {
+              boolean hasSavedLogin = savedLogin.isPresent();
+              if (hasSavedLogin) {
                 activeSeries.add(item.series());
               }
               entries.add(
@@ -163,7 +163,7 @@ public class SessionManagementService {
                       admissions.lastActivity(item.sessionId()),
                       item.sessionId().equals(current),
                       true,
-                      remembered,
+                      hasSavedLogin,
                       savedLogin.map(DeviceTokenRepository.Saved::handle).orElse(null)));
             });
     saved.stream()

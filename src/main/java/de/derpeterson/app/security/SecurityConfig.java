@@ -50,6 +50,7 @@ import org.springframework.web.util.HttpSessionMutexListener;
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
+  private static final String LOGIN_ERROR_QUERY = "?error=";
 
   private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
@@ -160,8 +161,7 @@ public class SecurityConfig {
       MaintenanceService maintenance,
       SecurityContextRepository contextRepository,
       ObjectProvider<SessionManagementService> sessionManagement,
-      @Qualifier("h2Console") ObjectProvider<ServletRegistrationBean<?>> h2Console)
-      throws Exception {
+      @Qualifier("h2Console") ObjectProvider<ServletRegistrationBean<?>> h2Console) {
     logger.debug("🔥 SecurityConfig is loading!");
 
     H2ConsoleOriginFilter consoleProtection =
@@ -227,7 +227,7 @@ public class SecurityConfig {
                           if (!isKnownApplicationPath(requestUri)) {
                             redirectTarget =
                                 AppRoute.HOME.getSecurityRoute()
-                                    + "?error="
+                                    + LOGIN_ERROR_QUERY
                                     + NavigationErrorCode.PATH_NOT_FOUND.getCode();
                           }
 
@@ -243,7 +243,7 @@ public class SecurityConfig {
                           }
                           String redirectTarget =
                               AppRoute.HOME.getSecurityRoute()
-                                  + "?error="
+                                  + LOGIN_ERROR_QUERY
                                   + NavigationErrorCode.ACCESS_DENIED.getCode();
                           String requestUri = request.getServletPath();
 
@@ -251,7 +251,7 @@ public class SecurityConfig {
                               && requestUri.startsWith(AppRoute.ADMIN.getSecurityRoute())) {
                             redirectTarget =
                                 AppRoute.HOME.getSecurityRoute()
-                                    + "?error="
+                                    + LOGIN_ERROR_QUERY
                                     + NavigationErrorCode.ADMIN_ACCESS_DENIED.getCode();
                           }
 
@@ -324,7 +324,7 @@ public class SecurityConfig {
                         }
                         String error = authenticationFailureCode(failure);
                         response.sendRedirect(
-                            AppRoute.LOGIN.getSecurityRoute() + "?error=" + error);
+                            AppRoute.LOGIN.getSecurityRoute() + LOGIN_ERROR_QUERY + error);
                       })
                   .permitAll();
             })

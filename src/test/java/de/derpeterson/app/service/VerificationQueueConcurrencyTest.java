@@ -193,7 +193,8 @@ class VerificationQueueConcurrencyTest {
   void standaloneCreationCannotInvalidateAnAlreadyQueuedLink() throws IOException {
     assertTrue(resend("user"));
     String active = activeTokens().getFirst().getToken();
-    assertThrows(IllegalStateException.class, () -> verification.createToken(snapshot()));
+    UserEntity targetUser = snapshot();
+    assertThrows(IllegalStateException.class, () -> verification.createToken(targetUser));
     assertEquals(active, activeTokens().getFirst().getToken());
     assertCoherentQueue();
   }
@@ -215,7 +216,7 @@ class VerificationQueueConcurrencyTest {
         new IllegalStateException("simulated failure after queue insert");
     doAnswer(
             call -> {
-              EmailQueueEntity saved = emails.save(call.getArgument(0));
+              emails.save(call.getArgument(0));
               emails.flush();
               throw failure;
             })

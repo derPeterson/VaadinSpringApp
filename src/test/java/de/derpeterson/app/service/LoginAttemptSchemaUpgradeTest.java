@@ -28,7 +28,7 @@ class LoginAttemptSchemaUpgradeTest {
       throws Exception {
     DriverManagerDataSource source =
         new DriverManagerDataSource("jdbc:h2:mem:login-upgrade-" + UUID.randomUUID(), "sa", "");
-    try (Connection anchor = source.getConnection()) {
+    try (Connection _ = source.getConnection()) {
       LocalContainerEntityManagerFactoryBean old = factory(source);
       Long userId;
       try (EntityManager em = old.getObject().createEntityManager()) {

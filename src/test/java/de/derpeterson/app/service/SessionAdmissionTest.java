@@ -12,7 +12,6 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -108,11 +107,11 @@ class SessionAdmissionTest {
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     admissions.onAuthentication(
         authentication("role@example.test", role), new MockHttpServletRequest(), response);
+    Authentication attemptAuthentication = authentication("role@example.test", role);
+    MockHttpServletRequest attemptRequest = new MockHttpServletRequest();
     assertThrows(
         SessionLimitException.class,
-        () ->
-            admissions.onAuthentication(
-                authentication("role@example.test", role), new MockHttpServletRequest(), response));
+        () -> admissions.onAuthentication(attemptAuthentication, attemptRequest, response));
   }
 
   @Test
@@ -152,9 +151,10 @@ class SessionAdmissionTest {
   void invalidLimitFailsClosedWithoutCreatingSlot(int limit) {
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(limit);
     MockHttpServletRequest request = new MockHttpServletRequest();
+    Authentication attemptAuthentication = authentication();
     assertThrows(
         AuthenticationServiceException.class,
-        () -> admissions.onAuthentication(authentication(), request, response));
+        () -> admissions.onAuthentication(attemptAuthentication, request, response));
     assertNull(request.getSession(false));
     assertTrue(registry.getAllPrincipals().isEmpty());
   }
@@ -175,15 +175,11 @@ class SessionAdmissionTest {
         .when(repo)
         .saveContext(any(), any(), any());
     MockHttpServletRequest failed = new MockHttpServletRequest();
+    UserDetails userDetails =
+        (org.springframework.security.core.userdetails.UserDetails) authentication().getPrincipal();
     assertThrows(
         AuthenticationServiceException.class,
-        () ->
-            security.storeAuthenticatedUser(
-                failed,
-                response,
-                (org.springframework.security.core.userdetails.UserDetails)
-                    authentication().getPrincipal(),
-                true));
+        () -> security.storeAuthenticatedUser(failed, response, userDetails, true));
     assertEquals(1, registry.getAllSessions("session@example.test", true).size());
     assertNotNull(existing.getSession(false));
     assertNull(SecurityContextHolder.getContext().getAuthentication());
@@ -192,15 +188,12 @@ class SessionAdmissionTest {
     doThrow(new IllegalStateException("fixture status failure"))
         .when(users)
         .recordLogin(anyString());
+    MockHttpServletRequest attemptRequest = new MockHttpServletRequest();
+    UserDetails userDetails2 =
+        (org.springframework.security.core.userdetails.UserDetails) authentication().getPrincipal();
     assertThrows(
         AuthenticationServiceException.class,
-        () ->
-            security.storeAuthenticatedUser(
-                new MockHttpServletRequest(),
-                response,
-                (org.springframework.security.core.userdetails.UserDetails)
-                    authentication().getPrincipal(),
-                false));
+        () -> security.storeAuthenticatedUser(attemptRequest, response, userDetails2, false));
     assertEquals(1, registry.getAllSessions("session@example.test", true).size());
   }
 
@@ -220,18 +213,14 @@ class SessionAdmissionTest {
             new AdmittedSecurityContextRepository(admissions),
             admissions);
     MockHttpServletRequest request = new MockHttpServletRequest();
+    UserDetails userDetails3 =
+        (org.springframework.security.core.userdetails.UserDetails) authentication().getPrincipal();
     assertThrows(
         AuthenticationServiceException.class,
-        () ->
-            security.storeAuthenticatedUser(
-                request,
-                response,
-                (org.springframework.security.core.userdetails.UserDetails)
-                    authentication().getPrincipal(),
-                true));
+        () -> security.storeAuthenticatedUser(request, response, userDetails3, true));
     assertTrue(registry.getAllPrincipals().isEmpty());
     assertNull(SecurityContextHolder.getContext().getAuthentication());
-    verify(remember).loginFail(eq(request), eq(response));
+    verify(remember).loginFail(request, response);
     verify(remember, never()).setAlwaysRemember(anyBoolean());
   }
 
@@ -270,7 +259,7 @@ class SessionAdmissionTest {
                   try {
                     admit();
                     allowed.incrementAndGet();
-                  } catch (SessionLimitException expected) {
+                  } catch (SessionLimitException _) {
                     rejected.incrementAndGet();
                   }
                   return null;
@@ -318,13 +307,14 @@ class SessionAdmissionTest {
                 MockHttpServletRequest request = new MockHttpServletRequest();
                 request.setSession(shared);
                 competitor.countDown();
+                Authentication attemptAuthentication =
+                    authentication("other@example.test", RoleType.ROLE_USER);
+                MockHttpServletResponse attemptResponse = new MockHttpServletResponse();
                 assertThrows(
                     AuthenticationServiceException.class,
                     () ->
                         admissions.onAuthentication(
-                            authentication("other@example.test", RoleType.ROLE_USER),
-                            request,
-                            new MockHttpServletResponse()));
+                            attemptAuthentication, request, attemptResponse));
                 return null;
               });
       first.get(10, TimeUnit.SECONDS);
@@ -352,17 +342,17 @@ class SessionAdmissionTest {
                   throw new jakarta.servlet.ServletException("fixture failure after save");
                 }));
     assertTrue(registry.getAllPrincipals().isEmpty());
-    verify(remember).loginFail(eq(request), eq(response));
+    verify(remember).loginFail(request, response);
   }
 
   @Test
   void alreadyRegisteredOtherAccountCannotBeReplaced() {
     MockHttpServletRequest request = admit();
+    Authentication attemptAuthentication =
+        authentication("different@example.test", RoleType.ROLE_USER);
     assertThrows(
         AuthenticationServiceException.class,
-        () ->
-            admissions.onAuthentication(
-                authentication("different@example.test", RoleType.ROLE_USER), request, response));
+        () -> admissions.onAuthentication(attemptAuthentication, request, response));
     // Same request rollback undoes its initial reservation. A separate existing device stays
     // intact.
     assertTrue(registry.getAllPrincipals().isEmpty());
@@ -378,8 +368,9 @@ class SessionAdmissionTest {
     MockHttpServletRequest fresh = new MockHttpServletRequest();
     assertDoesNotThrow(() -> admissions.onAuthentication(authentication(), fresh, response));
     assertFalse(admissions.isExpired(fresh));
+    Authentication attemptAuthentication = authentication();
     assertThrows(
         AuthenticationServiceException.class,
-        () -> admissions.onAuthentication(authentication(), old, response));
+        () -> admissions.onAuthentication(attemptAuthentication, old, response));
   }
 }

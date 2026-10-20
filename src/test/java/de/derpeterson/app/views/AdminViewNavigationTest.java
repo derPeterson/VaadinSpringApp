@@ -76,7 +76,8 @@ class AdminViewNavigationTest {
     var registry = new ApplicationRouteRegistry(mock(VaadinContext.class)) {};
     registry.setRoute(AppRouteConstants.ADMIN_ROUTE, AdminView.class, List.of());
     TestService service = mock(TestService.class);
-    when(service.getDeploymentConfiguration()).thenReturn(mock(DeploymentConfiguration.class));
+    DeploymentConfiguration deploymentConfiguration = mock(DeploymentConfiguration.class);
+    when(service.getDeploymentConfiguration()).thenReturn(deploymentConfiguration);
     when(service.getRouter()).thenReturn(new Router(registry));
     when(service.getRouteRegistry()).thenReturn(registry);
     when(session.getService()).thenReturn(service);

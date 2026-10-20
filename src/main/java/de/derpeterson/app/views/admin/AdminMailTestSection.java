@@ -37,6 +37,8 @@ import org.springframework.mail.MailException;
 import org.springframework.security.core.userdetails.UserDetails;
 
 public class AdminMailTestSection extends VerticalLayout {
+  private static final String ARIA_HIDDEN = "aria-hidden";
+  private static final String ARIA_LABEL = "aria-label";
 
   private static final Logger logger = LoggerFactory.getLogger(AdminMailTestSection.class);
 
@@ -88,7 +90,7 @@ public class AdminMailTestSection extends VerticalLayout {
     mailCardBadge = new Span();
     Span deliveryDot = new Span();
     deliveryDot.addClassName("cosmos-mail-delivery-dot");
-    deliveryDot.getElement().setAttribute("aria-hidden", "true");
+    deliveryDot.getElement().setAttribute(ARIA_HIDDEN, "true");
     deliveryMeta.add(deliveryDot, mailCardBadge);
     deliveryMeta.addClassNames("cosmos-panel-meta", "cosmos-mail-delivery");
     deliveryMeta.getElement().setAttribute("role", "status");
@@ -192,12 +194,12 @@ public class AdminMailTestSection extends VerticalLayout {
         };
     deliveryMeta
         .getElement()
-        .setAttribute("aria-label", messageProperties.getAdminMailCardBadge() + ": " + status);
+        .setAttribute(ARIA_LABEL, messageProperties.getAdminMailCardBadge() + ": " + status);
   }
 
   private VerticalLayout createMailCardContent() {
     Icon envelope = VaadinIcon.ENVELOPE.create();
-    envelope.getElement().setAttribute("aria-hidden", "true");
+    envelope.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div iconBadge = new Div(envelope);
     iconBadge.addClassName("cosmos-panel-icon");
     Div heading = new Div(mailCardTitle, mailCardDescription);
@@ -216,7 +218,7 @@ public class AdminMailTestSection extends VerticalLayout {
     fields.addClassName("cosmos-mail-fields");
 
     Icon hintIcon = VaadinIcon.INFO_CIRCLE.create();
-    hintIcon.getElement().setAttribute("aria-hidden", "true");
+    hintIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div hint = new Div(hintIcon, mailSendHint);
     hint.addClassName("cosmos-panel-hint");
     Div actions = new Div(sendTestMailButton);
@@ -260,11 +262,11 @@ public class AdminMailTestSection extends VerticalLayout {
     bodyInfoButton.refreshText();
     recipientInfoButton
         .getElement()
-        .setAttribute("aria-label", messageProperties.getAdminMailRecipient());
+        .setAttribute(ARIA_LABEL, messageProperties.getAdminMailRecipient());
     subjectInfoButton
         .getElement()
-        .setAttribute("aria-label", messageProperties.getAdminMailSubject());
-    bodyInfoButton.getElement().setAttribute("aria-label", messageProperties.getAdminMailBody());
+        .setAttribute(ARIA_LABEL, messageProperties.getAdminMailSubject());
+    bodyInfoButton.getElement().setAttribute(ARIA_LABEL, messageProperties.getAdminMailBody());
     mailTestTitle.setText(messageProperties.getAdminMailTitle());
     mailTestDescription.setText(messageProperties.getAdminMailDescription());
     sendTestMailButton.setText(messageProperties.getAdminMailSend());

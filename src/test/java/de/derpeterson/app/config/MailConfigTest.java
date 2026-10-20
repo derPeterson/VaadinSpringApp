@@ -16,7 +16,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 class MailConfigTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
-  void productionSenderSetsUtf8AndPreservesConnectionProperties(boolean enabled) throws Exception {
+  void productionSenderSetsUtf8AndPreservesConnectionProperties(boolean enabled) {
     ConfigService config = mock(ConfigService.class);
     when(config.getString(ConfigEntry.MAIL_HOST)).thenReturn("smtp.invalid");
     when(config.getInteger(ConfigEntry.MAIL_PORT)).thenReturn(2525);

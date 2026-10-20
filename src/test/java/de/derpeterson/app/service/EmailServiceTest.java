@@ -235,14 +235,10 @@ class EmailServiceTest {
         .send(any(SimpleMailMessage.class));
     when(config.getString(ConfigEntry.EMAIL_FROM))
         .thenReturn(invalidField.equals("from") ? "bad@@example.com" : FROM);
+    String recipient2 = invalidField.equals("recipient") ? "bad@@example.com" : RECIPIENT;
     MailParseException failure =
         assertThrows(
-            MailParseException.class,
-            () ->
-                service.sendAdminEmail(
-                    invalidField.equals("recipient") ? "bad@@example.com" : RECIPIENT,
-                    "subject",
-                    "body"));
+            MailParseException.class, () -> service.sendAdminEmail(recipient2, "subject", "body"));
     assertInstanceOf(MessagingException.class, failure.getCause());
     sentSimple();
   }
@@ -320,10 +316,11 @@ class EmailServiceTest {
     if (html) {
       MimeMessage message = prepareMime();
       doThrow(failure).when(sender).send(message);
+      UserEntity targetUser = user(RECIPIENT);
       assertSame(
           failure,
           assertThrows(
-              MailException.class, () -> service.sendEmail(user(RECIPIENT), "subject", "body")));
+              MailException.class, () -> service.sendEmail(targetUser, "subject", "body")));
       sentMime(message);
     } else {
       doThrow(failure).when(sender).send(any(SimpleMailMessage.class));
@@ -342,11 +339,11 @@ class EmailServiceTest {
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenThrow(failure);
     if (html) {
       prepareMime();
+      UserEntity targetUser = user(RECIPIENT);
       assertSame(
           failure,
           assertThrows(
-              IllegalStateException.class,
-              () -> service.sendEmail(user(RECIPIENT), "subject", "body")));
+              IllegalStateException.class, () -> service.sendEmail(targetUser, "subject", "body")));
       verify(sender).createMimeMessage();
     } else {
       assertSame(
@@ -362,10 +359,11 @@ class EmailServiceTest {
   void mimeCreationFailurePropagatesWithoutReadingConfigOrSending() {
     MailParseException failure = new MailParseException("controlled creation failure");
     when(sender.createMimeMessage()).thenThrow(failure);
+    UserEntity targetUser = user(RECIPIENT);
     assertSame(
         failure,
         assertThrows(
-            MailParseException.class, () -> service.sendEmail(user(RECIPIENT), "subject", "body")));
+            MailParseException.class, () -> service.sendEmail(targetUser, "subject", "body")));
     verify(sender).createMimeMessage();
     verifyNoMoreInteractions(sender);
     verifyNoInteractions(config);
@@ -404,8 +402,9 @@ class EmailServiceTest {
   void invalidHtmlRecipientFailsBeforeConfigAndSend(String address) {
     prepareMime();
     if (address == null) {
+      UserEntity targetUser = user(null);
       assertThrows(
-          IllegalArgumentException.class, () -> service.sendEmail(user(null), "subject", "body"));
+          IllegalArgumentException.class, () -> service.sendEmail(targetUser, "subject", "body"));
     } else {
       assertThrows(
           MessagingException.class, () -> service.sendEmail(user(address), "subject", "body"));
@@ -422,9 +421,9 @@ class EmailServiceTest {
     prepareMime();
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(address);
     if (address == null) {
+      UserEntity targetUser = user(RECIPIENT);
       assertThrows(
-          IllegalArgumentException.class,
-          () -> service.sendEmail(user(RECIPIENT), "subject", "body"));
+          IllegalArgumentException.class, () -> service.sendEmail(targetUser, "subject", "body"));
     } else {
       assertThrows(
           MessagingException.class, () -> service.sendEmail(user(RECIPIENT), "subject", "body"));
@@ -519,17 +518,12 @@ class EmailServiceTest {
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     MailSendException failure = new MailSendException("unknown outcome");
     doThrow(failure).when(sender).send(message);
+    UserEntity targetUser = user(RECIPIENT);
+    String body2 = "<img src=\"cid:" + de.derpeterson.app.helper.email.EmailLogo.CONTENT_ID + "\">";
     assertSame(
         failure,
         assertThrows(
-            MailSendException.class,
-            () ->
-                service.sendEmail(
-                    user(RECIPIENT),
-                    "subject",
-                    "<img src=\"cid:"
-                        + de.derpeterson.app.helper.email.EmailLogo.CONTENT_ID
-                        + "\">")));
+            MailSendException.class, () -> service.sendEmail(targetUser, "subject", body2)));
     sentMime(message);
   }
 

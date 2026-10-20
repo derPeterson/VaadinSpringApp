@@ -30,11 +30,11 @@ public final class AvatarImageResource {
         event.setContentType("image/png");
         event.setContentLength(image.get().length);
         event.getOutputStream().write(image.get());
-      } catch (MaintenanceAccessException blocked) {
+      } catch (MaintenanceAccessException _) {
         event.getResponse().setStatus(503);
-      } catch (AuthenticationCredentialsNotFoundException denied) {
+      } catch (AuthenticationCredentialsNotFoundException _) {
         event.getResponse().setStatus(401);
-      } catch (AccessDeniedException denied) {
+      } catch (AccessDeniedException _) {
         event.getResponse().setStatus(403);
       }
     };

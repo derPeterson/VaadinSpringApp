@@ -77,6 +77,13 @@ import org.springframework.dao.OptimisticLockingFailureException;
 
 @Slf4j
 public class AdminUserManagementSection extends VerticalLayout {
+  private static final String COSMOS_PANEL_TITLE_CLASS = "cosmos-panel-title";
+  private static final String COSMOS_PANEL_DESCRIPTION_CLASS = "cosmos-panel-description";
+  private static final String ARIA_HIDDEN = "aria-hidden";
+  private static final String COSMOS_PANEL_ICON_CLASS = "cosmos-panel-icon";
+  private static final String COSMOS_PANEL_HEADING_CLASS = "cosmos-panel-heading";
+  private static final String ARIA_LABEL_PROPERTY = "ariaLabel";
+  private static final String COSMOS_FORM_ROW_CLASS = "cosmos-form-row";
 
   private static final DateTimeFormatter LAST_ACTIVITY_FORMATTER =
       new DateTimeFormatterBuilder()
@@ -164,9 +171,9 @@ public class AdminUserManagementSection extends VerticalLayout {
     breadcrumb = new Span();
     title = new Span();
     cardTitle = new H2();
-    cardTitle.addClassName("cosmos-panel-title");
+    cardTitle.addClassName(COSMOS_PANEL_TITLE_CLASS);
     cardDescription = new Span();
-    cardDescription.addClassName("cosmos-panel-description");
+    cardDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
     accountCount = new Span();
     accountCount.addClassName("cosmos-panel-meta");
 
@@ -236,11 +243,11 @@ public class AdminUserManagementSection extends VerticalLayout {
 
   private Div createUsersCardHeader() {
     Icon usersIcon = VaadinIcon.USERS.create();
-    usersIcon.getElement().setAttribute("aria-hidden", "true");
+    usersIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div iconBadge = new Div(usersIcon);
-    iconBadge.addClassName("cosmos-panel-icon");
+    iconBadge.addClassName(COSMOS_PANEL_ICON_CLASS);
     Div heading = new Div(cardTitle, cardDescription);
-    heading.addClassName("cosmos-panel-heading");
+    heading.addClassName(COSMOS_PANEL_HEADING_CLASS);
     Div header = new Div(iconBadge, heading, accountCount);
     header.addClassName("cosmos-panel-header");
     return header;
@@ -352,7 +359,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                 Comparator.comparing(
                     user ->
                         Optional.ofNullable(user.getStatus())
-                            .map(status -> messageProperties.getUserStatusLabel(status))
+                            .map(messageProperties::getUserStatusLabel)
                             .orElse(""),
                     String.CASE_INSENSITIVE_ORDER));
 
@@ -554,7 +561,7 @@ public class AdminUserManagementSection extends VerticalLayout {
             .map(
                 order ->
                     (Comparator<UserEntity>) order.getSorted().getComparator(order.getDirection()))
-            .reduce((first, next) -> first.thenComparing(next))
+            .reduce(Comparator::thenComparing)
             .orElse((left, right) -> 0);
     List<UserEntity> sortedUsers = filteredUsers.stream().sorted(comparator).toList();
     List<UserEntity> page = sortedUsers.subList(fromIndex, toIndex);
@@ -594,11 +601,11 @@ public class AdminUserManagementSection extends VerticalLayout {
     dialog.setCloseOnOutsideClick(true);
 
     H2 dialogTitle = new H2(messageProperties.getAdminUsersDeleteDialogTitle());
-    dialogTitle.addClassName("cosmos-panel-title");
+    dialogTitle.addClassName(COSMOS_PANEL_TITLE_CLASS);
     Span dialogDescription = new Span(messageProperties.getAdminUsersDeleteDialogDescription());
-    dialogDescription.addClassName("cosmos-panel-description");
+    dialogDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
     Div dialogHeading = new Div(dialogTitle, dialogDescription);
-    dialogHeading.addClassName("cosmos-panel-heading");
+    dialogHeading.addClassName(COSMOS_PANEL_HEADING_CLASS);
     Button closeButton = new Button(VaadinIcon.CLOSE_CIRCLE.create(), event -> dialog.close());
     closeButton.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
     closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
@@ -606,18 +613,18 @@ public class AdminUserManagementSection extends VerticalLayout {
     Div dialogHeader = new Div(dialogHeading, closeButton);
     dialogHeader.addClassName("admin-user-dialog-header");
     dialog.getHeader().add(dialogHeader);
-    dialog.getElement().setProperty("ariaLabel", dialogTitle.getText());
+    dialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
 
     Icon warningIcon = VaadinIcon.WARNING.create();
-    warningIcon.getElement().setAttribute("aria-hidden", "true");
+    warningIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div warningBadge = new Div(warningIcon);
-    warningBadge.addClassNames("cosmos-panel-icon", "cosmos-delete-accent");
+    warningBadge.addClassNames(COSMOS_PANEL_ICON_CLASS, "cosmos-delete-accent");
     Span warningTitle = new Span(messageProperties.getAdminUsersDeleteDialogQuestion());
     warningTitle.addClassName("admin-user-delete-warning-title");
     Span warningText = new Span(messageProperties.getAdminUsersDeleteDialogWarning());
-    warningText.addClassName("cosmos-panel-description");
+    warningText.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
     Div warningHeading = new Div(warningTitle, warningText);
-    warningHeading.addClassName("cosmos-panel-heading");
+    warningHeading.addClassName(COSMOS_PANEL_HEADING_CLASS);
     Div warning = new Div(warningBadge, warningHeading);
     warning.addClassName("admin-user-delete-warning");
 
@@ -631,9 +638,9 @@ public class AdminUserManagementSection extends VerticalLayout {
     Span userName = new Span(getFullName(user));
     userName.addClassName("admin-user-delete-name");
     Span userEmail = new Span(Optional.ofNullable(user.getEmail()).orElse("-"));
-    userEmail.addClassName("cosmos-panel-description");
+    userEmail.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
     Div userHeading = new Div(userName, userEmail);
-    userHeading.addClassName("cosmos-panel-heading");
+    userHeading.addClassName(COSMOS_PANEL_HEADING_CLASS);
     Div userIdentity = new Div(avatar, userHeading);
     userIdentity.addClassName("admin-user-delete-identity");
 
@@ -677,7 +684,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     Runnable refreshTexts =
         () -> {
           dialogTitle.setText(messageProperties.getAdminUsersDeleteDialogTitle());
-          dialog.getElement().setProperty("ariaLabel", dialogTitle.getText());
+          dialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
           dialogDescription.setText(messageProperties.getAdminUsersDeleteDialogDescription());
           closeButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
           warningTitle.setText(messageProperties.getAdminUsersDeleteDialogQuestion());
@@ -714,15 +721,15 @@ public class AdminUserManagementSection extends VerticalLayout {
             editMode
                 ? messageProperties.getAdminUsersEditDialogTitle()
                 : messageProperties.getAdminUsersCreateDialogTitle());
-    dialogTitle.addClassName("cosmos-panel-title");
+    dialogTitle.addClassName(COSMOS_PANEL_TITLE_CLASS);
     Span dialogDescription = new Span(messageProperties.getAdminUsersDialogDescription());
-    dialogDescription.addClassName("cosmos-panel-description");
+    dialogDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
     Div dialogHeading = new Div(dialogTitle, dialogDescription);
-    dialogHeading.addClassName("cosmos-panel-heading");
+    dialogHeading.addClassName(COSMOS_PANEL_HEADING_CLASS);
     Icon userIcon = VaadinIcon.USER.create();
-    userIcon.getElement().setAttribute("aria-hidden", "true");
+    userIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div iconBadge = new Div(userIcon);
-    iconBadge.addClassName("cosmos-panel-icon");
+    iconBadge.addClassName(COSMOS_PANEL_ICON_CLASS);
     Button closeButton = new Button(VaadinIcon.CLOSE_CIRCLE.create(), event -> dialog.close());
     closeButton.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
     closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
@@ -730,7 +737,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     Div dialogHeader = new Div(iconBadge, dialogHeading, closeButton);
     dialogHeader.addClassName("admin-user-dialog-header");
     dialog.getHeader().add(dialogHeader);
-    dialog.getElement().setProperty("ariaLabel", dialogTitle.getText());
+    dialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
 
     Binder<AdminUserFormData> binder = new Binder<>(AdminUserFormData.class);
 
@@ -804,7 +811,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     Span enabledCaption = new Span(messageProperties.getAdminUsersFieldEnabled());
     Span enabledHint = new Span(messageProperties.getAdminUsersEnabledHint());
     enabledHint.addClassName("admin-user-enabled-hint");
-    enabledHint.getElement().setAttribute("aria-hidden", "true");
+    enabledHint.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div enabledLabel = new Div(enabledCaption, enabledHint);
     enabledLabel.addClassName("admin-user-enabled-label");
     enabledCheckbox.setLabelComponent(enabledLabel);
@@ -830,7 +837,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                 : messageProperties.getAdminUsersTechnicalInfoCreate());
     technicalInfo.addClassName(LumoUtility.TextColor.SECONDARY);
     Icon securityIcon = VaadinIcon.SHIELD.create();
-    securityIcon.getElement().setAttribute("aria-hidden", "true");
+    securityIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div securityNote = new Div(securityIcon, technicalInfo);
     securityNote.addClassNames("cosmos-panel-hint", "admin-user-security-note");
 
@@ -992,7 +999,7 @@ public class AdminUserManagementSection extends VerticalLayout {
               showPasswordErrors.set(true);
               showConfirmPasswordErrors.set(true);
               binder.writeBean(formData);
-            } catch (ValidationException exception) {
+            } catch (ValidationException _) {
               showError(
                   emailCheckFailed.get()
                       ? messageProperties::getAdminUsersErrorSaveFailed
@@ -1068,20 +1075,20 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     HorizontalLayout nameRow = new HorizontalLayout(firstNameField, lastNameField);
     nameRow.setWidthFull();
-    nameRow.addClassName("cosmos-form-row");
+    nameRow.addClassName(COSMOS_FORM_ROW_CLASS);
     nameRow.expand(firstNameField, lastNameField);
 
     HorizontalLayout passwordRow = new HorizontalLayout(passwordField, confirmPasswordField);
     passwordRow.setWidthFull();
     passwordRow.setSpacing(false);
-    passwordRow.addClassName("cosmos-form-row");
+    passwordRow.addClassName(COSMOS_FORM_ROW_CLASS);
     passwordRow.expand(passwordField, confirmPasswordField);
     Div passwordFields = new Div(passwordRow, passwordHint);
     passwordFields.addClassName("admin-user-password-fields");
 
     HorizontalLayout masterDataRow = new HorizontalLayout(genderComboBox, birthDatePicker);
     masterDataRow.setWidthFull();
-    masterDataRow.addClassName("cosmos-form-row");
+    masterDataRow.addClassName(COSMOS_FORM_ROW_CLASS);
     masterDataRow.expand(genderComboBox, birthDatePicker);
 
     HorizontalLayout footer = new HorizontalLayout();
@@ -1126,7 +1133,7 @@ public class AdminUserManagementSection extends VerticalLayout {
               editMode
                   ? messageProperties.getAdminUsersEditDialogTitle()
                   : messageProperties.getAdminUsersCreateDialogTitle());
-          dialog.getElement().setProperty("ariaLabel", dialogTitle.getText());
+          dialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
           dialogDescription.setText(messageProperties.getAdminUsersDialogDescription());
           closeButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
           confirmPasswordField.setLabel(messageProperties.getRegistrationConfirmField());
