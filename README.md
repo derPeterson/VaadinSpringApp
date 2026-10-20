@@ -1,5 +1,9 @@
 # VaadinSpringApp
 
+> Sicherheitsupdates vom 20.10.2026: Tomcat 11.0.27, Jackson 3.1.8, Logback 1.6.5
+> und ASM 9.11.1 (Testabhängigkeit). Produktionsbuild, 1843 Anwendungs-JUnits und
+> 48 Browser-Helfertests erfolgreich. [CVE-Abgleich und Prüfgrenzen](docs/dependency-security-update-2026-10-20.md).
+
 > Vaadin am 20.10.2026 von 25.3.0 auf 25.3.2 aktualisiert. Produktionsbuild,
 > 1843 Anwendungs-JUnits, 48 Browserhelfer und zwölf Frontend-JavaScript-Tests
 > erfolgreich. [Umfang, Einführung und Prüfgrenzen](docs/vaadin-update-25.3.2.md).

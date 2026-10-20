@@ -16,7 +16,11 @@
         <java.version>25</java.version>
         <vaadin.version>25.3.2</vaadin.version>
         <lombok.version>1.18.48</lombok.version>
-        <asm.version>9.10.1</asm.version>
+        <!-- Gezielte Sicherheitsupdates; bei einem späteren Boot-Update erneut abgleichen. -->
+        <asm.version>9.11.1</asm.version>
+        <tomcat.version>11.0.27</tomcat.version>
+        <jackson-bom.version>3.1.8</jackson-bom.version>
+        <logback.version>1.6.5</logback.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
