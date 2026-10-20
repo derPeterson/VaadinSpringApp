@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
+import java.util.AbstractList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,11 +18,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.LongStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.support.GenericApplicationContext;
@@ -317,6 +321,124 @@ class EmailQueueWorkerPoolTest {
       assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
       assertEquals(1, calls.get());
     } finally {
+      pool.shutdown();
+    }
+  }
+
+  @ParameterizedTest
+  @CsvSource({"1,false", "1,true", "2,false", "2,true"})
+  void interruptBetweenCompletedResultAndRefillPreventsAnotherAdmission(int limit, boolean fail) {
+    AtomicInteger accepted = new AtomicInteger();
+    AtomicBoolean injected = new AtomicBoolean();
+    // Sofort abgeschlossene Futures erzwingen den Rückweg ohne unterbrechbares Warten.
+    var executor =
+        new ThreadPoolExecutor(
+            limit, limit, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(limit)) {
+          @Override
+          public void execute(Runnable task) {
+            accepted.incrementAndGet();
+            task.run();
+          }
+        };
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor);
+    List<Long> values = LongStream.rangeClosed(1, limit + 2).boxed().toList();
+    List<Long> candidates =
+        new AbstractList<>() {
+          @Override
+          public Long get(int index) {
+            return values.get(index);
+          }
+
+          @Override
+          public int size() {
+            return values.size();
+          }
+
+          @Override
+          public Iterator<Long> iterator() {
+            Iterator<Long> delegate = values.iterator();
+            return new Iterator<>() {
+              @Override
+              public boolean hasNext() {
+                // Wird nach dem ersten Ergebnis vor der nächsten Nachfüllung erreicht:
+                // Bei vollem Pool überspringt die innere Schleife hasNext().
+                if (accepted.get() == limit && injected.compareAndSet(false, true)) {
+                  Thread.currentThread().interrupt();
+                }
+                return delegate.hasNext();
+              }
+
+              @Override
+              public Long next() {
+                return delegate.next();
+              }
+            };
+          }
+        };
+    AtomicInteger calls = new AtomicInteger();
+    try {
+      pool.process(
+          candidates,
+          id -> {
+            calls.incrementAndGet();
+            if (fail) {
+              throw new IllegalStateException("controlled worker failure");
+            }
+          });
+      boolean preserved = Thread.interrupted();
+      assertTrue(injected.get(), "The interruption must hit the controlled refill boundary");
+      assertTrue(preserved, "The coordinator must restore its interrupt flag");
+      assertEquals(limit, accepted.get(), "No extra task may be accepted after interruption");
+      assertEquals(limit, calls.get());
+      // Der Batchlock bleibt nach dem Abwarten für einen späteren Lauf nutzbar.
+      pool.process(List.of(99L), id -> calls.incrementAndGet());
+      assertEquals(limit + 1, calls.get());
+    } finally {
+      Thread.interrupted();
+      pool.shutdown();
+    }
+  }
+
+  @Test
+  void coordinatorAlreadyInterruptedDoesNotAcceptWorkAndKeepsTheFlag() {
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor(1));
+    AtomicInteger calls = new AtomicInteger();
+    try {
+      Thread.currentThread().interrupt();
+      pool.process(List.of(1L), id -> calls.incrementAndGet());
+      boolean preserved = Thread.interrupted();
+      assertTrue(preserved);
+      assertEquals(0, calls.get());
+      pool.process(List.of(2L), id -> calls.incrementAndGet());
+      assertEquals(1, calls.get());
+    } finally {
+      Thread.interrupted();
+      pool.shutdown();
+    }
+  }
+
+  @Test
+  void interruptWhileFillingTheFirstSlotsStopsFurtherAdmission() {
+    AtomicInteger accepted = new AtomicInteger();
+    var executor =
+        new ThreadPoolExecutor(2, 2, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(2)) {
+          @Override
+          public void execute(Runnable task) {
+            accepted.incrementAndGet();
+            task.run();
+            Thread.currentThread().interrupt();
+          }
+        };
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor);
+    AtomicInteger calls = new AtomicInteger();
+    try {
+      pool.process(List.of(1L, 2L, 3L), id -> calls.incrementAndGet());
+      boolean preserved = Thread.interrupted();
+      assertTrue(preserved);
+      assertEquals(1, accepted.get());
+      assertEquals(1, calls.get());
+    } finally {
+      Thread.interrupted();
       pool.shutdown();
     }
   }

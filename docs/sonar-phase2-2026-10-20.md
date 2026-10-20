@@ -1,5 +1,14 @@
 # SonarQube – Phase 2, 20.10.2026
 
+**Aktualisierung zu späteren Folgepaketen:**
+[CSRF einschließlich lokaler H2-Konsole](sonar-csrf-umsetzung-2026-10-20.md),
+[P2-TIME für den vereinbarten Entwicklungs-Neuaufbau](sonar-time-umsetzung-2026-10-20.md)
+und der unten zunächst offen gebliebene
+[Worker-Abbruchbefund](email-worker-interrupt-2026-10-20.md) sind inzwischen
+umgesetzt und geprüft. Der Worker-Nachtrag besteht mit 1977 Anwendungs-JUnits und
+48 Helfern sowie Produktionsbuild. Die folgenden Angaben sind der historische
+Phase-2-Abschluss vor diesen Folgepaketen; keine Sonar-Serverstatusänderung.
+
 ## Ergebnis und Umfang
 
 Branch **fix/sonar-validation-session**, Ausgangscommit `5fbfee531724035f89e68fe2a552b01a9fe5b63c`. Keine Commits oder Pushes erstellt. Die drei beauftragten Korrekturpakete sind umgesetzt. Die zusätzliche Absicherung der betroffenen bestehenden E-Mail-Felder wurde vom Benutzer ausdrücklich als Teil von P1-REGEX freigegeben. Layout und Komponentenarten sind unverändert.

@@ -1,5 +1,17 @@
 # Browserabdeckung und offene Punkte
 
+## Mail-Worker-Unterbrechung vom 20.10.2026
+
+Der Koordinator stoppt nach erkanntem Interrupt vor weiterer Aufgabenannahme,
+wartet bereits angenommene Arbeit ab und stellt sein Interruptflag wieder her.
+Sechs gesteuerte Regressionen sind am unveränderten Worker fehlgeschlagen und
+nach der Korrektur erfolgreich. **1977/1977 Anwendungs-JUnits und 48/48 Helfer**,
+ohne Fehler/Skips; Produktionsbuild, Spotless und Checkstyle erfolgreich.
+Frische JUnit-Coverage: **87,71 % Zeilen / 76,86 % Zweige**, 219 analysierte Klassen.
+Keine neue Browserabnahme oder Dockerimage. Die folgenden Browsernachweise gelten
+weiterhin für ihre ausdrücklich genannten historischen Stände.
+[Änderungen, Reproduktion und Grenzen](../docs/email-worker-interrupt-2026-10-20.md).
+
 ## P2-TIME: Aktivitätszeitpunkte vom 20.10.2026
 
 Aktivitätszeiten sind auf `Instant` umgestellt, Anzeige und Kalendereingabe auf

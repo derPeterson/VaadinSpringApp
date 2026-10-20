@@ -67,6 +67,13 @@ public class EmailQueueWorkerPool {
       boolean refill = true;
       while ((refill && !stopping && candidates.hasNext()) || active > 0) {
         while (refill && !stopping && active < parallelism && candidates.hasNext()) {
+          // Bereits fertige Futures melden einen Interrupt nicht zwingend über get().
+          // Vor jeder Annahme prüfen; zum Abwarten kurz löschen und im finally wiederherstellen.
+          if (Thread.interrupted()) {
+            interrupted = true;
+            refill = false;
+            break;
+          }
           long id = candidates.next();
           var task =
               new FutureTask<Void>(

@@ -2,6 +2,12 @@
 
 Stand: 18.10.2026. Implementiert; keine Schemaänderung.
 
+**Nachtrag vom 20.10.2026:** Die Unterbrechung des Koordinators wird jetzt
+zusätzlich vor jeder weiteren Aufgabenannahme geprüft. Der zuvor offene
+Nachfüllbefund ist mit sechs gesteuerten Regressionen behoben; 1977 Anwendungs-
+JUnits, 48 Helfer und Produktionsbuild erfolgreich.
+[Ursache, Vorher-/Nachher-Nachweis und Grenzen](email-worker-interrupt-2026-10-20.md).
+
 ## Konfiguration und Wirkung
 
 | Einstellung | Wirkung | Aktivierung |
