@@ -1,5 +1,9 @@
 # VaadinSpringApp
 
+> Vaadin am 20.10.2026 von 25.3.0 auf 25.3.2 aktualisiert. Produktionsbuild,
+> 1843 Anwendungs-JUnits, 48 Browserhelfer und zwölf Frontend-JavaScript-Tests
+> erfolgreich. [Umfang, Einführung und Prüfgrenzen](docs/vaadin-update-25.3.2.md).
+
 Offene Arbeitspakete und ergänzende Abnahmen: [Aufgabenliste](TODO.md).
 
 > Logging-Überarbeitung vom 20.10.2026: INFO als Normalpegel, geerbte
@@ -432,10 +436,10 @@ Modulabhängigkeit. Die vorhandenen Anwendungsquellen und `target/` bleiben an i
 
 ## Technologien und Voraussetzungen
 
-- **JDK 25**, **Spring Boot 4.1.1**, **Vaadin 25.3.0**, Lombok; Versionen und Abhängigkeiten stehen in `pom.xml`.
+- **JDK 25**, **Spring Boot 4.1.1**, **Vaadin 25.3.2**, Lombok; Versionen und Abhängigkeiten stehen in `pom.xml`.
 - Spring Security, Spring Data JPA/Hibernate, dateibasierte H2-Datenbank und Spring Mail/SMTP.
 - Maven Wrapper: `mvnw` bzw. `mvnw.cmd`, konfiguriert für **Maven 3.9.16** in `.mvn/wrapper/maven-wrapper.properties`. Dies ist laut [Apache-Downloadseite](https://maven.apache.org/download.cgi) die aktuelle stabile Maven-3.9.x-Version (geprüft am 01.10.2026). Das vorhandene JAR-basierte Wrapper-Verfahren mit Wrapper 3.1.0 bleibt erhalten. Unter Windows muss `JAVA_HOME` auf das JDK zeigen.
-- Frontend-Werkzeuge: **Node.js 24 oder neuer**, bei Verwendung von npm **npm 11.3 oder neuer**, gemäß den [offiziellen Voraussetzungen für Vaadin 25.3.0](https://github.com/vaadin/platform/releases/tag/25.3.0). Lokal wurde Node.js **24.21.0** festgestellt; die npm-Version wurde nicht separat geprüft. Das Vaadin-Maven-Plugin bindet `prepare-frontend` und `build-frontend` an die Compile-Phase; Anpassungen stehen in `vite.config.ts`.
+- Frontend-Werkzeuge: **Node.js 24 oder neuer**, bei Verwendung von npm **npm 11.3 oder neuer**, gemäß den [offiziellen Voraussetzungen für Vaadin 25.3](https://github.com/vaadin/platform/releases/tag/25.3.0). Lokal wurde Node.js **24.21.0** festgestellt; die npm-Version wurde nicht separat geprüft. Das Vaadin-Maven-Plugin bindet `prepare-frontend` und `build-frontend` an die Compile-Phase; Anpassungen stehen in `vite.config.ts`.
 - Für den ersten Build ist Zugriff auf die Maven-/Frontend-Paketquellen erforderlich. Für Mailfunktionen wird zusätzlich ein erreichbarer SMTP-Server benötigt; er wird nicht mitgeliefert.
 
 ## Architektur und Einstiegspunkte
