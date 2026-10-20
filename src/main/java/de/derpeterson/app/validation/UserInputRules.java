@@ -2,6 +2,7 @@ package de.derpeterson.app.validation;
 
 import de.derpeterson.app.model.EmailIdentity;
 import java.time.LocalDate;
+import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 
 /** Shared business rules; deliberately independent of Vaadin components and sessions. */
@@ -18,12 +19,18 @@ public final class UserInputRules {
    */
   public static final String PASSWORD_REGEX = "^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$";
 
-  // Dieselbe Regel wie Flow 25.3 EmailValidator, keine neue E-Mail-Policy:
-  // vor @ mindestens ein ASCII-Buchstabe, eine Ziffer, _, Punkt, Minus oder Plus;
-  // danach durch Punkte getrennte Domainteile aus Buchstaben/Ziffern/Minus,
-  // letzter Teil mindestens zwei Zeichen. ^/$ begrenzen die ganze Adresse.
-  private static final String EMAIL_REGEX =
-      "^([a-zA-Z0-9_\\.\\-+])+@([a-zA-Z0-9-]+\\.)+[a-zA-Z0-9-]{2,}$";
+  // Dieselbe Adressregel wie Flow 25.3 EmailValidator, ohne rekursive Wiederholungsgruppen:
+  // vor @ ASCII-Buchstaben/Ziffern, _, Punkt, Minus oder Plus; danach Domainteile aus
+  // Buchstaben/Ziffern/Minus mit Punkten dazwischen, letzter Teil mindestens zwei Zeichen.
+  // ^/$ begrenzen die Adresse. Die beiden negativen Vorschauen schließen einen führenden
+  // Domainpunkt und doppelte Domainpunkte aus. Der letzte Teil enthält selbst keinen Punkt;
+  // dadurch werden die flachen Wiederholungen nur linear durchlaufen, ohne verschachtelte Gruppen.
+  // Die Regel ist auch als HTML-/JavaScript-Pattern verwendbar und schützt deshalb ebenfalls
+  // EmailFields automatische serverseitige Validierung, bevor unsere Formularprüfung läuft.
+  public static final String EMAIL_REGEX =
+      "^[a-zA-Z0-9_.+\\-]+@(?!\\.)(?![a-zA-Z0-9.\\-]*\\.\\.)[a-zA-Z0-9.\\-]+\\.[a-zA-Z0-9\\-]{2,}$";
+
+  private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
 
   public static boolean isPasswordSecure(String password) {
     return StringUtils.isNotBlank(password) && password.trim().matches(PASSWORD_REGEX);
@@ -34,7 +41,7 @@ public final class UserInputRules {
   }
 
   public static boolean isEmailValid(String email) {
-    return StringUtils.isNotBlank(email) && email.trim().matches(EMAIL_REGEX);
+    return StringUtils.isNotBlank(email) && EMAIL_PATTERN.matcher(email.trim()).matches();
   }
 
   public static boolean isBirthDateValid(LocalDate birthDate) {

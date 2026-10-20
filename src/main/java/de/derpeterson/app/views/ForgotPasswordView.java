@@ -32,6 +32,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.PasswordResetService;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosPageComponent;
+import de.derpeterson.app.validation.UserInputRules;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.HashMap;
@@ -160,6 +161,7 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
     cardTextLayout.add(text);
 
     this.emailField = new EmailField(messageProperties.getForgotPasswordEmailField());
+    emailField.setPattern(UserInputRules.EMAIL_REGEX);
     emailField.setClearButtonVisible(true);
     emailField.setWidthFull();
     emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());

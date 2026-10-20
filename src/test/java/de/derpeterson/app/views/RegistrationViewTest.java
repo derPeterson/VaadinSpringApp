@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.argThat;
@@ -58,6 +59,7 @@ import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.service.VerificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
@@ -461,5 +463,25 @@ public class RegistrationViewTest {
     when(config.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     return config;
+  }
+
+  @Test
+  void longEmailInputIsSafeBeforeTheRegistrationCallbackRuns() {
+    EmailField email = field("emailField", EmailField.class);
+    EmailField confirmation = field("confirmEmailField", EmailField.class);
+    String address = "a@" + "b.".repeat(8192) + "test";
+    assertTimeout(
+        Duration.ofSeconds(3),
+        () -> {
+          email.setValue(address);
+          confirmation.setValue(address);
+          assertFalse(email.isInvalid());
+          assertFalse(confirmation.isInvalid());
+          email.setValue(address + " x");
+          confirmation.setValue(address + " x");
+          assertTrue(email.isInvalid());
+          assertTrue(confirmation.isInvalid());
+        });
+    verifyNoInteractions(users, verification);
   }
 }

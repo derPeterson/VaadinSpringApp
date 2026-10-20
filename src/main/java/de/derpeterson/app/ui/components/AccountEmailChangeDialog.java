@@ -20,6 +20,7 @@ import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.service.AccountSecurityService.EmailChange;
 import de.derpeterson.app.ui.components.AccountSecurityFeedback.Field;
+import de.derpeterson.app.validation.UserInputRules;
 import java.util.List;
 import java.util.Objects;
 
@@ -39,6 +40,8 @@ public class AccountEmailChangeDialog extends Dialog {
 
   public AccountEmailChangeDialog(MessageProperties messages) {
     this.messages = messages;
+    email.setPattern(UserInputRules.EMAIL_REGEX);
+    confirmEmail.setPattern(UserInputRules.EMAIL_REGEX);
     setId("account-email-change-dialog");
     addClassNames("cosmos-theme", "account-change-dialog", "account-email-dialog");
     getThemeNames().add("cosmos");

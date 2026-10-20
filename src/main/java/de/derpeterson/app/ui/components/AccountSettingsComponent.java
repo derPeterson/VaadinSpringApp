@@ -36,6 +36,7 @@ import de.derpeterson.app.service.AccountSecurityService.EmailChange;
 import de.derpeterson.app.service.AccountSecurityService.PasswordChange;
 import de.derpeterson.app.service.AccountSecurityService.PasswordChanged;
 import de.derpeterson.app.service.UserAvatarService;
+import de.derpeterson.app.validation.UserInputRules;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -85,6 +86,7 @@ public class AccountSettingsComponent extends Div {
       SerializableFunction<Changes, Profile> saveProfile,
       int maxSessionsPerUser) {
     this.messages = messages;
+    email.setPattern(UserInputRules.EMAIL_REGEX);
     sessionPanel = new AccountSessionsComponent(messages, maxSessionsPerUser);
     emailChangeDialog = new AccountEmailChangeDialog(messages);
     passwordChangeDialog = new AccountPasswordChangeDialog(messages);

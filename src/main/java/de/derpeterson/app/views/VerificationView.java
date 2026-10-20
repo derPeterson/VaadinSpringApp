@@ -35,6 +35,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.VerificationService;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosPageComponent;
+import de.derpeterson.app.validation.UserInputRules;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.HashMap;
@@ -338,6 +339,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
             messageProperties.getVerificationNotFoundText2());
 
     this.emailField = new EmailField(messageProperties.getVerificationEmailField());
+    emailField.setPattern(UserInputRules.EMAIL_REGEX);
     emailField.setWidthFull();
     emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
     emailField.setClearButtonVisible(true);

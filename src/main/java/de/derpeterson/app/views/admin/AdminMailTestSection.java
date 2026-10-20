@@ -28,6 +28,7 @@ import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.validation.UserInputRules;
 import java.util.Locale;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -97,6 +98,7 @@ public class AdminMailTestSection extends VerticalLayout {
     mailTestDescription.addClassNames(LumoUtility.TextColor.SECONDARY);
 
     testRecipientField = new EmailField();
+    testRecipientField.setPattern(UserInputRules.EMAIL_REGEX);
     testRecipientField.setClearButtonVisible(true);
     testRecipientField.setWidthFull();
     testRecipientField.setRequiredIndicatorVisible(true);

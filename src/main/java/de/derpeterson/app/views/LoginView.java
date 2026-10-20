@@ -44,6 +44,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.AccountSessionsComponent;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosPageComponent;
+import de.derpeterson.app.validation.UserInputRules;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
@@ -164,6 +165,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     this.createAccountLink =
         new RouterLink(messageProperties.getLoginCreateAccountLink(), RegistrationView.class);
     this.emailField = new EmailField(messageProperties.getLoginEmailField());
+    emailField.setPattern(UserInputRules.EMAIL_REGEX);
     this.passwordField = new PasswordField(messageProperties.getLoginPasswordField());
     this.forgotPasswordLink =
         new RouterLink(messageProperties.getLoginForgotPasswordLink(), ForgotPasswordView.class);

@@ -59,6 +59,16 @@ public class AdminConfigurationSection extends VerticalLayout {
   // ganze Eingabe.
   private static final Pattern DURATION_NUMBER_ONLY_PATTERN = Pattern.compile("^\\d+$");
 
+  // Bestehende SMTP-Adressregel: vor/nach @ und nach einem Domainpunkt nichtleer.
+  // ^/$ begrenzen alles; ausgeschlossen sind @, Leerzeichen und ASCII-Steuerraum 09–0D.
+  // Die expliziten Hexbereiche erhalten Javas bisherige ASCII-\s-Regel auch in JavaScript,
+  // dessen \s zusätzlich Unicode-Leerraum erfassen würde. Nach dem ersten Domainzeichen
+  // führt die punktfreie Wiederholung zum ersten weiteren Punkt; der Rest darf Punkte enthalten.
+  // Flache Wiederholungen und eindeutige Trenner vermeiden verschachteltes Backtracking.
+  private static final String SMTP_EMAIL_REGEX =
+      "^[^\\x09-\\x0D @]+@[^\\x09-\\x0D @][^\\x09-\\x0D @.]*\\.[^\\x09-\\x0D @]+$";
+  private static final Pattern SMTP_EMAIL_PATTERN = Pattern.compile(SMTP_EMAIL_REGEX);
+
   private static final Set<ConfigEntry> DURATION_ENTRIES =
       Set.of(
           ConfigEntry.USER_AUTO_ABSENT_TIMEOUT,
@@ -407,6 +417,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       input = checkbox;
     } else if (isEmailEntry(configEntry)) {
       EmailField emailField = new EmailField();
+      emailField.setPattern(SMTP_EMAIL_REGEX);
       emailField.setClearButtonVisible(true);
       emailField.setWidthFull();
       input = emailField;
@@ -954,10 +965,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private boolean isValidEmail(String value) {
-    // Einfache Adresse: nichtleere Teile vor/nach @ und nach einem Domainpunkt; keine Leerzeichen
-    // oder weiteren @.
-    // Dies ist die bestehende SMTP-Konfigurationsprüfung; Benutzeradressen nutzen UserInputRules.
-    return value != null && !value.isBlank() && value.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+    return value != null && SMTP_EMAIL_PATTERN.matcher(value).matches();
   }
 
   private boolean isInvalidHost(String value) {

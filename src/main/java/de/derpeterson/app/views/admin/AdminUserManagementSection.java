@@ -52,6 +52,7 @@ import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.validation.EmailConflict;
+import de.derpeterson.app.validation.UserInputRules;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -723,6 +724,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     lastNameField.setWidthFull();
 
     EmailField emailField = new EmailField(messageProperties.getAdminUsersFieldEmail());
+    emailField.setPattern(UserInputRules.EMAIL_REGEX);
     emailField.setRequiredIndicatorVisible(true);
     emailField.setWidthFull();
     emailField.setClearButtonVisible(true);

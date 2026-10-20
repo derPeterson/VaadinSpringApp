@@ -56,9 +56,9 @@ public class SecurityService {
     if (session == null) {
       return true;
     }
+    Authentication authentication = sessionAuthentication(session);
     boolean hadPrincipal =
-        sessionAuthentication(session) != null
-                && sessionAuthentication(session).getPrincipal() instanceof UserDetails
+        authentication != null && authentication.getPrincipal() instanceof UserDetails
             || session.getAttribute(AUTH_USER_SESSION_KEY) instanceof UserDetails;
     Optional<Authentication> refreshed =
         hadPrincipal ? refreshSessionAuthentication(session) : Optional.<Authentication>empty();
