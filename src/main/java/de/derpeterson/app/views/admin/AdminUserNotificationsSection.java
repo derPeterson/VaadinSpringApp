@@ -182,7 +182,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     deliveryMeta.getElement().setAttribute("role", "status");
     Div header = new Div(panelIcon, panelHeading, deliveryMeta);
     header.addClassName("cosmos-panel-header");
-    Div info = new Div(decorativeIcon(VaadinIcon.INFO_CIRCLE_O), deliveryInfo);
+    Div info = new Div(decorativeIcon(VaadinIcon.INFO_CIRCLE), deliveryInfo);
     info.addClassName("cosmos-notification-compose-info");
     everyone.addClassName("cosmos-notification-compose-everyone");
     everyoneHint.addClassName("cosmos-notification-compose-everyone-hint");
@@ -203,7 +203,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     selection.addClassName("cosmos-notification-compose-selection");
     previewArea.addClassName("cosmos-notification-compose-preview");
     previewArea.setVisible(false);
-    Div footerHint = new Div(decorativeIcon(VaadinIcon.INFO_CIRCLE_O), hint);
+    Div footerHint = new Div(decorativeIcon(VaadinIcon.INFO_CIRCLE), hint);
     footerHint.addClassName("cosmos-panel-hint");
     Div actions = new Div(previewButton, send);
     actions.addClassName("cosmos-panel-actions");

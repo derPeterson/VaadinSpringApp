@@ -81,7 +81,7 @@ public class AccountPasswordChangeDialog extends Dialog {
     currentPassword.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
     newPassword.setAutocomplete(Autocomplete.NEW_PASSWORD);
     confirmPassword.setAutocomplete(Autocomplete.NEW_PASSWORD);
-    Icon infoIcon = VaadinIcon.INFO_CIRCLE_O.create();
+    Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
     infoIcon.getElement().setAttribute("aria-hidden", "true");
     Div info = new Div(infoIcon, hint);
     info.addClassName("cosmos-panel-hint");
@@ -90,7 +90,7 @@ public class AccountPasswordChangeDialog extends Dialog {
     add(form);
 
     cancel.setId("account-password-cancel");
-    cancel.setPrefixComponent(VaadinIcon.CLOSE_SMALL.create());
+    cancel.setPrefixComponent(VaadinIcon.CLOSE.create());
     save.setId("account-password-save");
     save.setPrefixComponent(VaadinIcon.CHECK.create());
     save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);

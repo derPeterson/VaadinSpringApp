@@ -178,7 +178,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     Div cardHeader = new Div(iconBadge, headingText, currentGroupSettingCount);
     cardHeader.addClassName("cosmos-config-card-header");
 
-    Icon hintIcon = VaadinIcon.INFO_CIRCLE_O.create();
+    Icon hintIcon = VaadinIcon.INFO_CIRCLE.create();
     hintIcon.getElement().setAttribute("aria-hidden", "true");
     Div saveHint = new Div(hintIcon, configurationSaveHint);
     saveHint.addClassName("cosmos-config-save-hint");

@@ -64,7 +64,7 @@ final class AdminUserFilterBar extends VerticalLayout {
     applyFiltersButton.setPrefixComponent(VaadinIcon.CHECK.create());
     applyFiltersButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     applyFiltersButton.addClickListener(event -> applyFilters.run());
-    Icon hintIcon = VaadinIcon.INFO_CIRCLE_O.create();
+    Icon hintIcon = VaadinIcon.INFO_CIRCLE.create();
     hintIcon.getElement().setAttribute("aria-hidden", "true");
     Div hint = new Div(hintIcon, filterHint);
     hint.addClassName("cosmos-panel-hint");
@@ -139,7 +139,7 @@ final class AdminUserFilterBar extends VerticalLayout {
     activeFilterChips.removeAll();
     for (ActiveFilter filter : activeFilters) {
       Span label = new Span(filter.label() + ": " + filter.value());
-      Button remove = new Button(VaadinIcon.CLOSE_SMALL.create(), event -> filter.remove().run());
+      Button remove = new Button(VaadinIcon.CLOSE.create(), event -> filter.remove().run());
       remove.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
       remove.addClassName("admin-user-filter-chip-remove");
       String removeText = texts.getAdminUsersRemoveFilter(filter.label());

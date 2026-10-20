@@ -619,7 +619,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     Button cancelButton =
         new Button(messageProperties.getAdminUsersCancel(), event -> dialog.close());
-    cancelButton.setPrefixComponent(VaadinIcon.CLOSE_SMALL.create());
+    cancelButton.setPrefixComponent(VaadinIcon.CLOSE.create());
     Button confirmButton =
         new Button(
             messageProperties.getAdminUsersDelete(),
@@ -1043,7 +1043,7 @@ public class AdminUserManagementSection extends VerticalLayout {
         });
 
     Button cancelButton = new Button(messageProperties.getAdminUsersCancel(), e -> dialog.close());
-    cancelButton.setPrefixComponent(VaadinIcon.CLOSE_SMALL.create());
+    cancelButton.setPrefixComponent(VaadinIcon.CLOSE.create());
 
     HorizontalLayout nameRow = new HorizontalLayout(firstNameField, lastNameField);
     nameRow.setWidthFull();

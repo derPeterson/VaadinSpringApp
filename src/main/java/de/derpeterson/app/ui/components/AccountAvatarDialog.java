@@ -119,7 +119,7 @@ public class AccountAvatarDialog extends Dialog {
             });
     editor.getElement().addEventListener("avatar-file-cancelled", event -> cancelSelection());
     editor.addComponentAtIndex(1, mode);
-    Icon infoIcon = VaadinIcon.INFO_CIRCLE_O.create();
+    Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
     infoIcon.getElement().setAttribute("aria-hidden", "true");
     Span infoBadge = new Span(infoIcon);
     infoBadge.addClassName("account-avatar-info-icon");
@@ -142,7 +142,7 @@ public class AccountAvatarDialog extends Dialog {
           delete.setVisible(false);
         });
     cancel.setId("account-avatar-cancel");
-    cancel.setPrefixComponent(VaadinIcon.CLOSE_SMALL.create());
+    cancel.setPrefixComponent(VaadinIcon.CLOSE.create());
     save.setId("account-avatar-save");
     save.setPrefixComponent(VaadinIcon.CHECK.create());
     save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);

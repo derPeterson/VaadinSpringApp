@@ -417,7 +417,7 @@ public class UserNotificationsPanel extends Div {
           empty.addClassName("cosmos-notifications-secondary");
           rows.add(empty);
         } else {
-          Icon icon = VaadinIcon.INFO_CIRCLE_O.create();
+          Icon icon = VaadinIcon.INFO_CIRCLE.create();
           icon.getElement().setAttribute("aria-hidden", "true");
           Div notice = new Div(icon, empty);
           notice.addClassName("cosmos-notification-inbox-empty");

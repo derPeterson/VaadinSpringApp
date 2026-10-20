@@ -140,7 +140,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     reset.setPrefixComponent(VaadinIcon.ROTATE_LEFT.create());
     role(reset.getElement(), "reset");
     cancelSelection.setId("account-avatar-cancel-selection");
-    cancelSelection.setPrefixComponent(VaadinIcon.CLOSE_SMALL.create());
+    cancelSelection.setPrefixComponent(VaadinIcon.CLOSE.create());
     cancelSelection.addClassName("account-avatar-cancel-selection");
     role(cancelSelection.getElement(), "cancel");
     Div controls = new Div(cropFrame, cropHint, zoomRow, reset, cancelSelection);

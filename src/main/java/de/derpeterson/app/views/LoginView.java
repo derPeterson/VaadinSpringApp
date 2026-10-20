@@ -347,7 +347,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
         });
     cancelRecovery = new Button();
     cancelRecovery.setId("session-recovery-cancel");
-    cancelRecovery.setPrefixComponent(VaadinIcon.CLOSE_SMALL.create());
+    cancelRecovery.setPrefixComponent(VaadinIcon.CLOSE.create());
     cancelRecovery.addClickListener(event -> hideRecovery());
     HorizontalLayout actions = new HorizontalLayout(cancelRecovery, continueLogin);
     actions.setJustifyContentMode(FlexComponent.JustifyContentMode.END);

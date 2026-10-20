@@ -46,7 +46,7 @@ public class AccountPanelComponent extends CosmosCardComponent {
   }
 
   public void addFooter(Component hint, Component action) {
-    Div info = new Div(VaadinIcon.INFO_CIRCLE_O.create(), hint);
+    Div info = new Div(VaadinIcon.INFO_CIRCLE.create(), hint);
     info.addClassName("cosmos-panel-hint");
     Div actions = new Div(action);
     actions.addClassName("cosmos-panel-actions");

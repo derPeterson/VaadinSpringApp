@@ -213,7 +213,7 @@ public class AdminMailTestSection extends VerticalLayout {
     fields.setWidthFull();
     fields.addClassName("cosmos-mail-fields");
 
-    Icon hintIcon = VaadinIcon.INFO_CIRCLE_O.create();
+    Icon hintIcon = VaadinIcon.INFO_CIRCLE.create();
     hintIcon.getElement().setAttribute("aria-hidden", "true");
     Div hint = new Div(hintIcon, mailSendHint);
     hint.addClassName("cosmos-panel-hint");

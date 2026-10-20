@@ -77,7 +77,7 @@ public class AccountEmailChangeDialog extends Dialog {
     password.setWidthFull();
     password.setRevealButtonVisible(true);
     password.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
-    Icon infoIcon = VaadinIcon.INFO_CIRCLE_O.create();
+    Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
     infoIcon.getElement().setAttribute("aria-hidden", "true");
     Div info = new Div(infoIcon, hint);
     info.addClassName("cosmos-panel-hint");
@@ -86,7 +86,7 @@ public class AccountEmailChangeDialog extends Dialog {
     add(form);
 
     cancel.setId("account-email-cancel");
-    cancel.setPrefixComponent(VaadinIcon.CLOSE_SMALL.create());
+    cancel.setPrefixComponent(VaadinIcon.CLOSE.create());
     request.setId("account-email-request");
     request.setPrefixComponent(VaadinIcon.CHECK.create());
     request.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
