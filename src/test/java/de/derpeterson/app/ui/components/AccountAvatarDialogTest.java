@@ -2,6 +2,7 @@ package de.derpeterson.app.ui.components;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -226,8 +227,8 @@ class AccountAvatarDialogTest {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("X-Avatar-Draft", token.toString());
     UploadEvent event = mock(UploadEvent.class);
-    when(event.getRequest())
-        .thenReturn(new VaadinServletRequest(request, mock(VaadinServletService.class)));
+    VaadinServletService servletService = mock(VaadinServletService.class);
+    when(event.getRequest()).thenReturn(new VaadinServletRequest(request, servletService));
     when(event.getResponse()).thenReturn(mock(VaadinResponse.class));
     ByteArrayInputStream input = spy(new ByteArrayInputStream(new byte[] {1}));
     when(event.getInputStream()).thenReturn(input);
@@ -250,7 +251,7 @@ class AccountAvatarDialogTest {
     verify(input).close();
     verify(avatars).release(token);
     assertTrue(dialog.isOpened());
-    assertFalse(token.equals(ReflectionTestUtils.getField(dialog, "draft")));
+    assertNotEquals(token, ReflectionTestUtils.getField(dialog, "draft"));
     assertNull(ReflectionTestUtils.getField(dialog, "uploadedImage"));
     assertEquals(AvatarMode.INITIALS, mode().getValue());
     assertFalse(button("delete").isVisible());
@@ -271,8 +272,8 @@ class AccountAvatarDialogTest {
     UploadEvent event = mock(UploadEvent.class);
     VaadinResponse response = mock(VaadinResponse.class);
     UI uploadUi = mock(UI.class);
-    when(event.getRequest())
-        .thenReturn(new VaadinServletRequest(request, mock(VaadinServletService.class)));
+    VaadinServletService servletService = mock(VaadinServletService.class);
+    when(event.getRequest()).thenReturn(new VaadinServletRequest(request, servletService));
     when(event.getResponse()).thenReturn(response);
     when(event.getUI()).thenReturn(uploadUi);
     when(event.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[] {1}));

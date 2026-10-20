@@ -12,10 +12,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionException;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -103,7 +105,7 @@ public final class DurableSessionRepository<S extends Session>
       logger.warn("Persisted session rejected; fresh sign-in required", safeFailure(failure));
       // Widerrufsnachweis bis zur HTTP-Invalidierung erhalten: alte RPCs brauchen eine
       // ausdrückliche 401 und dürfen nicht als neue anonyme Vaadin-Sitzung weiterlaufen.
-      stored.setAttribute(CONTEXT, null);
+      stored.removeAttribute(CONTEXT);
       stored.setAttribute(EXPIRED, Boolean.TRUE);
       backend.save(stored);
       return wrap(stored);
@@ -265,7 +267,7 @@ public final class DurableSessionRepository<S extends Session>
     }
 
     @Override
-    public void setAttribute(String name, Object value) {
+    public void setAttribute(String name, @Nullable Object value) {
       synchronized (state) {
         current();
         if (!PERSISTED.contains(name)) {
@@ -279,12 +281,15 @@ public final class DurableSessionRepository<S extends Session>
         fresh();
         Object storedValue = value;
         if (CONTEXT.equals(name) && value instanceof SecurityContext context) {
+          Authentication authentication = context.getAuthentication();
           storedValue =
-              context.getAuthentication() == null
-                  ? null
-                  : DurableAuthentication.capture(context.getAuthentication(), users);
+              authentication == null ? null : DurableAuthentication.capture(authentication, users);
         }
-        stored.setAttribute(name, storedValue);
+        if (storedValue == null) {
+          stored.removeAttribute(name);
+        } else {
+          stored.setAttribute(name, storedValue);
+        }
         backend.save(stored);
       }
     }

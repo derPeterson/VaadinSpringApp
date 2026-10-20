@@ -224,6 +224,21 @@ class AdminUserManagementFilterTest {
   }
 
   @Test
+  void pageNavigationClampsExtremeIndicesWithoutIntegerOverflow() {
+    assertEquals(
+        List.of(0, 16, 17, 18, 19), AdminUserPagination.pageIndices(Integer.MAX_VALUE, 20));
+    assertEquals(List.of(0, 1, 2, 3, 19), AdminUserPagination.pageIndices(Integer.MIN_VALUE, 20));
+    assertEquals(
+        List.of(
+            0,
+            Integer.MAX_VALUE - 4,
+            Integer.MAX_VALUE - 3,
+            Integer.MAX_VALUE - 2,
+            Integer.MAX_VALUE - 1),
+        AdminUserPagination.pageIndices(Integer.MAX_VALUE, Integer.MAX_VALUE));
+  }
+
+  @Test
   void draftFiltersWaitForApplyWhileSearchRemainsLive() {
     filter("enabledFilter").setValue(false);
     assertEquals(10, visibleUsers().size());

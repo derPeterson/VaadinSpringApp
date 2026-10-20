@@ -125,8 +125,8 @@ final class AdminUserPagination extends HorizontalLayout {
     TreeSet<Integer> pages = new TreeSet<>();
     pages.add(0);
     pages.add(total - 1);
-    int start = total <= 7 ? 0 : Math.clamp(current - 1, 1, total - 4);
-    int end = total <= 7 ? total - 1 : Math.clamp(current + 1, 3, total - 2);
+    int start = total <= 7 ? 0 : Math.clamp(current - 1L, 1, total - 4);
+    int end = total <= 7 ? total - 1 : Math.clamp(current + 1L, 3, total - 2);
     for (int page = start; page <= end; page++) {
       pages.add(page);
     }

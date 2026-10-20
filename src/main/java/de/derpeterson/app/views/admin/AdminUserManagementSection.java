@@ -54,6 +54,7 @@ import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.validation.EmailConflict;
 import de.derpeterson.app.validation.UserInputRules;
+import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
@@ -1270,13 +1271,13 @@ public class AdminUserManagementSection extends VerticalLayout {
                       : messageProperties.getAdminUsersSaveSuccessCreated(),
               NotificationHelper.NotificationType.SUCCESS);
     }
-  }
 
-  private Set<RoleEntity> resolveRoles(Set<RoleType> selectedRoles) {
-    return Optional.ofNullable(selectedRoles).orElseGet(Set::of).stream()
-        .map(roleService::findByName)
-        .flatMap(Optional::stream)
-        .collect(Collectors.toSet());
+    private Set<RoleEntity> resolveRoles(Set<RoleType> selectedRoles) {
+      return Optional.ofNullable(selectedRoles).orElseGet(Set::of).stream()
+          .map(roleService::findByName)
+          .flatMap(Optional::stream)
+          .collect(Collectors.toSet());
+    }
   }
 
   private Component createActionButtons(UserEntity user) {
@@ -1522,12 +1523,12 @@ public class AdminUserManagementSection extends VerticalLayout {
   // Die dauerhafte HTTP-Sitzung speichert nur Sicherheitsdaten. Dieses UI enthält
   // JPA-/Formular-/Uploadzustand und wird nach Neustart bewusst frisch aufgebaut.
   @Serial
-  private void writeObject(ObjectOutputStream output) throws NotSerializableException {
+  private void writeObject(ObjectOutputStream output) throws IOException {
     throw new NotSerializableException("Runtime UI must be rebuilt from the authenticated session");
   }
 
   @Serial
-  private void readObject(ObjectInputStream input) throws InvalidObjectException {
+  private void readObject(ObjectInputStream input) throws IOException, ClassNotFoundException {
     throw new InvalidObjectException("Runtime UI cannot be restored from a Java object graph");
   }
 }

@@ -1,6 +1,7 @@
 package de.derpeterson.app.views.admin;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,10 +38,13 @@ import de.derpeterson.app.ui.components.AccountAvatarDialog;
 import de.derpeterson.app.ui.components.AccountNavigationTabs;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InvalidObjectException;
 import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
@@ -285,7 +289,8 @@ class UiSerializationContractTest {
   }
 
   @Test
-  void entityBackedEditorsExplicitlyRejectJavaPassivationAndTheDurableCodecRejectsAllUi() {
+  void entityBackedEditorsExplicitlyRejectJavaPassivationAndTheDurableCodecRejectsAllUi()
+      throws Exception {
     MessageProperties messages = new MessageProperties(new CustomI18NProvider());
     AccountAvatarDialog avatar =
         new AccountAvatarDialog(messages, UserEntity.builder().firstName("Fixture").build());
@@ -295,10 +300,40 @@ class UiSerializationContractTest {
             mock(UserService.class),
             mock(RoleService.class),
             mock(SecurityService.class));
+    // Der Frameworkgraph darf bereits vor unseren Hooks ablehnen; beides separat nachweisen.
     assertThrows(NotSerializableException.class, () -> copy(avatar));
     assertThrows(NotSerializableException.class, () -> copy(users));
+    assertOwnSerializationHooksReject(avatar);
+    assertOwnSerializationHooksReject(users);
     SessionAttributeCodec codec = new SessionAttributeCodec();
     assertThrows(IllegalArgumentException.class, () -> codec.encode(avatar));
     assertThrows(IllegalArgumentException.class, () -> codec.encode(users));
+  }
+
+  private void assertOwnSerializationHooksReject(Object editor) throws Exception {
+    Method write = editor.getClass().getDeclaredMethod("writeObject", ObjectOutputStream.class);
+    write.setAccessible(true);
+    byte[] header;
+    try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        ObjectOutputStream output = new ObjectOutputStream(bytes)) {
+      InvocationTargetException rejected =
+          assertThrows(InvocationTargetException.class, () -> write.invoke(editor, output));
+      assertInstanceOf(NotSerializableException.class, rejected.getCause());
+      assertEquals(
+          "Runtime UI must be rebuilt from the authenticated session",
+          rejected.getCause().getMessage());
+      output.flush();
+      header = bytes.toByteArray();
+    }
+    Method read = editor.getClass().getDeclaredMethod("readObject", ObjectInputStream.class);
+    read.setAccessible(true);
+    try (ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(header))) {
+      InvocationTargetException rejected =
+          assertThrows(InvocationTargetException.class, () -> read.invoke(editor, input));
+      assertInstanceOf(InvalidObjectException.class, rejected.getCause());
+      assertEquals(
+          "Runtime UI cannot be restored from a Java object graph",
+          rejected.getCause().getMessage());
+    }
   }
 }

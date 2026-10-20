@@ -426,12 +426,12 @@ public class AccountAvatarDialog extends Dialog {
   // Die dauerhafte HTTP-Sitzung speichert nur Sicherheitsdaten. Dieses UI enthält
   // JPA-/Formular-/Uploadzustand und wird nach Neustart bewusst frisch aufgebaut.
   @Serial
-  private void writeObject(ObjectOutputStream output) throws NotSerializableException {
+  private void writeObject(ObjectOutputStream output) throws IOException {
     throw new NotSerializableException("Runtime UI must be rebuilt from the authenticated session");
   }
 
   @Serial
-  private void readObject(ObjectInputStream input) throws InvalidObjectException {
+  private void readObject(ObjectInputStream input) throws IOException, ClassNotFoundException {
     throw new InvalidObjectException("Runtime UI cannot be restored from a Java object graph");
   }
 }

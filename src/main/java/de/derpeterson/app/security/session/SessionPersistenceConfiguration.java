@@ -50,6 +50,7 @@ public class SessionPersistenceConfiguration {
 
   @Bean
   @Primary
+  // JdbcSession ist paketprivat; der Wildcard hält den Backendtyp ohne Rawtype/Cast gekapselt.
   public DurableSessionRepository<?> sessionRepository(
       @Qualifier("durableJdbcSessions") JdbcIndexedSessionRepository backend,
       CustomUserDetailsService users,

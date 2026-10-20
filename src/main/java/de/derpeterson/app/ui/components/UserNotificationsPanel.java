@@ -492,8 +492,8 @@ public class UserNotificationsPanel extends Div {
     TreeSet<Integer> pages = new TreeSet<Integer>();
     pages.add(0);
     pages.add(totalPages - 1);
-    int from = totalPages <= 7 ? 0 : Math.clamp(page - 1, 1, totalPages - 4);
-    int to = totalPages <= 7 ? totalPages - 1 : Math.clamp(page + 1, 3, totalPages - 2);
+    int from = totalPages <= 7 ? 0 : Math.clamp(page - 1L, 1, totalPages - 4);
+    int to = totalPages <= 7 ? totalPages - 1 : Math.clamp(page + 1L, 3, totalPages - 2);
     for (int index = from; index <= to; index++) {
       pages.add(index);
     }

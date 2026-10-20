@@ -3,6 +3,7 @@ package de.derpeterson.app.security;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.server.VaadinSession;
@@ -16,6 +17,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -53,6 +56,32 @@ class FlowUiRecoveryFilterTest {
       assertEquals("", response.getContentAsString());
     }
     return response;
+  }
+
+  @Test
+  void missingAuthenticationDoesNotRequestRecovery() throws Exception {
+    MockHttpServletRequest request = request("/", "uidl");
+    request
+        .getSession()
+        .setAttribute(
+            HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+            new SecurityContextImpl());
+    apply("/*", request, false);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void recoveryUsesOneAuthenticationSnapshot(boolean authenticated) throws Exception {
+    MockHttpServletRequest request = request("/", "uidl");
+    Authentication authentication = mock(Authentication.class);
+    when(authentication.isAuthenticated()).thenReturn(authenticated);
+    SecurityContext context = mock(SecurityContext.class);
+    when(context.getAuthentication()).thenReturn(authentication, null);
+    request
+        .getSession()
+        .setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+    apply("/*", request, authenticated);
+    verify(context).getAuthentication();
   }
 
   @ParameterizedTest

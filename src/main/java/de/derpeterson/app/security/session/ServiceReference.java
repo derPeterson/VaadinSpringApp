@@ -9,6 +9,7 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 /** Nur der Beantyp überlebt Serialisierung; Auflösung erfolgt im aktuellen Servletkontext. */
 public final class ServiceReference<T> implements Serializable {
   private final Class<T> type;
+  // Veröffentlicht nur die Beanreferenz; Zustand und Synchronisierung gehören zum Spring-Service.
   private transient volatile T live;
 
   public ServiceReference(Class<T> type, T live) {

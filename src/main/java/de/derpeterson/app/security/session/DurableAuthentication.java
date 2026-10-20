@@ -43,21 +43,22 @@ public record DurableAuthentication(
   public static DurableAuthentication capture(
       Authentication authentication, UserDetailsService users) {
     if (!authentication.isAuthenticated()
-        || !(authentication.getPrincipal() instanceof UserDetails)
+        || !(authentication.getPrincipal() instanceof UserDetails authenticated)
         || !(authentication instanceof UsernamePasswordAuthenticationToken
             || authentication instanceof RememberMeAuthenticationToken)) {
       throw new AuthenticationServiceException("Unsupported durable authentication");
     }
-    UserDetails current = users.loadUserByUsername(authentication.getName());
-    UserDetails authenticated = (UserDetails) authentication.getPrincipal();
+    UserDetails current = users.loadUserByUsername(authenticated.getUsername());
+    String authenticatedPassword = authenticated.getPassword();
+    String currentVersion = fingerprint(current);
     if (!current.isEnabled()
         || !current.isAccountNonLocked()
         || !current.isAccountNonExpired()
         || !current.isCredentialsNonExpired()
         // Spring/Flow entfernen Credentials nach erfolgreicher Passwortprüfung.
-        || authenticated.getPassword() != null
-            && !authenticated.getPassword().isEmpty()
-            && !fingerprint(current).equals(fingerprint(authenticated))) {
+        || authenticatedPassword != null
+            && !authenticatedPassword.isEmpty()
+            && !currentVersion.equals(fingerprint(authenticatedPassword))) {
       throw new AuthenticationServiceException("Account unavailable");
     }
     List<Factor> factors =
@@ -69,7 +70,7 @@ public record DurableAuthentication(
     boolean remembered = authentication instanceof RememberMeAuthenticationToken;
     int keyHash = remembered ? ((RememberMeAuthenticationToken) authentication).getKeyHash() : 0;
     return new DurableAuthentication(
-        current.getUsername(), fingerprint(current), remembered, keyHash, factors);
+        current.getUsername(), currentVersion, remembered, keyHash, factors);
   }
 
   public SecurityContext restore(UserDetailsService users, String rememberKey) {
@@ -118,11 +119,19 @@ public record DurableAuthentication(
   }
 
   private static String fingerprint(UserDetails user) {
+    return fingerprint(user.getPassword());
+  }
+
+  private static String fingerprint(String password) {
+    // Entfernte Login-Credentials sind zulässig, eine fehlende aktuelle DB-Version nicht.
+    if (password == null || password.isEmpty()) {
+      throw new AuthenticationServiceException("Account credential version unavailable");
+    }
     try {
       return HexFormat.of()
           .formatHex(
               MessageDigest.getInstance("SHA-256")
-                  .digest(user.getPassword().getBytes(StandardCharsets.UTF_8)));
+                  .digest(password.getBytes(StandardCharsets.UTF_8)));
     } catch (NoSuchAlgorithmException failure) {
       throw new IllegalStateException("SHA-256 unavailable", failure);
     }

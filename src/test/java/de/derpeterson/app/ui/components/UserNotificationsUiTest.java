@@ -1007,6 +1007,25 @@ class UserNotificationsUiTest {
   }
 
   @ParameterizedTest
+  @ValueSource(ints = {Integer.MIN_VALUE, Integer.MAX_VALUE})
+  void numberedInboxNavigationClampsExtremeIndicesWithoutIntegerOverflow(int page) {
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, false);
+    ReflectionTestUtils.setField(panel, "page", page);
+    ReflectionTestUtils.setField(panel, "totalPages", 20);
+    ReflectionTestUtils.invokeMethod(panel, "renderPageNumbers");
+    Div numbers = field(panel, "pageNumbers");
+    List<String> labels =
+        tree(numbers)
+            .filter(Button.class::isInstance)
+            .map(Button.class::cast)
+            .map(Button::getText)
+            .toList();
+    assertEquals(
+        page < 0 ? List.of("1", "2", "3", "4", "20") : List.of("1", "17", "18", "19", "20"),
+        labels);
+  }
+
+  @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void inboxArchiveHeaderCountsSearchPagingAndLanguageWorkTogether(String language) {
     locale.set(Locale.forLanguageTag(language));

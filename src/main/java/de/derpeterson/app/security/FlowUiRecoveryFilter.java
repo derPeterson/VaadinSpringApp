@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
@@ -75,9 +76,11 @@ public final class FlowUiRecoveryFilter implements Filter {
     }
     Object value =
         session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-    if (!(value instanceof SecurityContext context)
-        || context.getAuthentication() == null
-        || !context.getAuthentication().isAuthenticated()) {
+    if (!(value instanceof SecurityContext context)) {
+      return false;
+    }
+    Authentication authentication = context.getAuthentication();
+    if (authentication == null || !authentication.isAuthenticated()) {
       return false;
     }
     return Collections.list(session.getAttributeNames()).stream()

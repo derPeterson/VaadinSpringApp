@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -90,7 +91,7 @@ class DurableSessionPersistenceTest {
   }
 
   @AfterEach
-  void cleanup() throws Exception {
+  void cleanup() {
     for (JdbcIndexedSessionRepository backend : backends) {
       backend.destroy();
     }
@@ -182,6 +183,40 @@ class DurableSessionPersistenceTest {
     assertTrue(stored.startsWith("{"));
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"null-value", "remove", "empty-context"})
+  void removedSecurityAndRuntimeAttributesStayAbsentAfterRestart(String mode) {
+    DurableSessionRepository<?>.LiveSession session = repository.findById(admitted(false).getId());
+    assertNotNull(session);
+    session.setAttribute(CSRF, new DefaultCsrfToken("header", "parameter", "fixture"));
+    session.setAttribute("runtime-only", new Object());
+    session.setAttribute(CSRF, null);
+    session.setAttribute("runtime-only", null);
+    switch (mode) {
+      case "null-value" -> session.setAttribute(CONTEXT, null);
+      case "remove" -> session.removeAttribute(CONTEXT);
+      case "empty-context" -> session.setAttribute(CONTEXT, new SecurityContextImpl());
+      default -> throw new IllegalArgumentException(mode);
+    }
+    assertNull(session.getAttribute(CONTEXT));
+    assertNull(session.getAttribute(CSRF));
+    assertNull(session.getAttribute("runtime-only"));
+    assertFalse(session.getAttributeNames().contains(CONTEXT));
+    Session restored = restart().findById(session.getId());
+    assertNotNull(restored);
+    assertNotNull(restored.getAttribute(DurableSessionRepository.ACTIVE));
+    assertNull(restored.getAttribute(CONTEXT));
+    assertNull(restored.getAttribute(CSRF));
+    assertNull(restored.getAttribute(DurableSessionRepository.EXPIRED));
+    assertEquals(
+        0,
+        jdbc.queryForObject(
+            "select count(*) from SPRING_SESSION_ATTRIBUTES where ATTRIBUTE_NAME in (?, ?)",
+            Integer.class,
+            CONTEXT,
+            CSRF));
+  }
+
   @Test
   void currentRolesAreReadInsteadOfRestoringOldAdministratorPrivileges() {
     account.set(User.withUserDetails(account.get()).roles("ADMIN").build());
@@ -266,7 +301,8 @@ class DurableSessionPersistenceTest {
     existing.setAttribute(CSRF, new DefaultCsrfToken("header", "parameter", "old"));
     DurableSessionRepository<S>.LiveSession stale = sessions.findById(existing.getId());
     sessions.deleteById(existing.getId());
-    assertThrows(IllegalStateException.class, () -> stale.setLastAccessedTime(Instant.now()));
+    Instant accessed = Instant.now();
+    assertThrows(IllegalStateException.class, () -> stale.setLastAccessedTime(accessed));
     assertThrows(IllegalStateException.class, () -> sessions.save(stale));
     assertNull(sessions.findById(existing.getId()));
   }
@@ -340,7 +376,7 @@ class DurableSessionPersistenceTest {
                       new MockHttpServletResponse(),
                       () -> {});
                   admitted.set(true);
-                } catch (SessionLimitException expected) {
+                } catch (SessionLimitException _) {
                   admitted.set(false);
                 }
               });
@@ -391,10 +427,12 @@ class DurableSessionPersistenceTest {
     withRequest(
         restarted,
         null,
-        request ->
-            assertThrows(
-                SessionLimitException.class,
-                () -> admissions.complete(auth, request, new MockHttpServletResponse(), () -> {})));
+        request -> {
+          MockHttpServletResponse response = new MockHttpServletResponse();
+          assertThrows(
+              SessionLimitException.class,
+              () -> admissions.complete(auth, request, response, () -> {}));
+        });
     assertEquals(1, admissions.active(account.get().getUsername()).size());
   }
 
@@ -402,20 +440,20 @@ class DurableSessionPersistenceTest {
   void failedCompletionReleasesTheDurableReservationImmediately() throws Exception {
     SessionAdmissionService admissions =
         new SessionAdmissionService(config, new DurableSessionRegistry<>(repository));
+    Authentication authentication = context(false).getAuthentication();
     withRequest(
         repository,
         null,
-        request ->
-            assertThrows(
-                IllegalStateException.class,
-                () ->
-                    admissions.complete(
-                        context(false).getAuthentication(),
-                        request,
-                        new MockHttpServletResponse(),
-                        () -> {
-                          throw new IllegalStateException("fixture completion failure");
-                        })));
+        request -> {
+          MockHttpServletResponse response = new MockHttpServletResponse();
+          Runnable completion =
+              () -> {
+                throw new IllegalStateException("fixture completion failure");
+              };
+          assertThrows(
+              IllegalStateException.class,
+              () -> admissions.complete(authentication, request, response, completion));
+        });
     assertTrue(admissions.active(account.get().getUsername()).isEmpty());
     assertEquals(0, jdbc.queryForObject("select count(*) from SPRING_SESSION", Integer.class));
   }
@@ -462,11 +500,11 @@ class DurableSessionPersistenceTest {
             "{\"version\":2,\"kind\":\"text\",\"value\":\"x\"}",
             "{\"version\":1,\"kind\":\"java.lang.Runtime\",\"value\":{}}",
             "{\"version\":1,\"kind\":\"text\",\"value\":null}")) {
-      assertThrows(
-          IllegalArgumentException.class,
-          () -> codec.decode(invalid.getBytes(StandardCharsets.UTF_8)));
+      byte[] bytes = invalid.getBytes(StandardCharsets.UTF_8);
+      assertThrows(IllegalArgumentException.class, () -> codec.decode(bytes));
     }
-    assertThrows(IllegalArgumentException.class, () -> codec.encode("x".repeat(65536)));
+    String oversized = "x".repeat(65536);
+    assertThrows(IllegalArgumentException.class, () -> codec.encode(oversized));
   }
 
   @Test
@@ -479,7 +517,7 @@ class DurableSessionPersistenceTest {
     session.setAttribute("runtime-b", ui);
     repository.deleteById(session.getId());
     repository.deleteById(session.getId());
-    org.mockito.Mockito.verify(service).fireSessionDestroy(ui);
+    verify(service).fireSessionDestroy(ui);
     assertNull(repository.findById(session.getId()));
   }
 

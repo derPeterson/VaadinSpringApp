@@ -135,7 +135,8 @@ public class EmailQueueWorkerPool {
         active--;
         finished.get();
       } catch (InterruptedException _) {
-        // Angenommene Aufgaben erst abwarten, statt ihren Ausgang zu erraten oder neu zu starten.
+        // Angenommene Aufgaben erst abwarten; process() stellt den Interrupt danach im finally her.
+        // Sofortiges Wiederherstellen würde das blockierende Abwarten wiederholt unterbrechen.
         interrupted = true;
         refill = false;
       } catch (ExecutionException failure) {

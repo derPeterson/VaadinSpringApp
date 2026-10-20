@@ -98,6 +98,7 @@ public final class DurableSessionRegistry<S extends Session> implements SessionR
     private final transient S session;
 
     private DurableInformation(String identity, S session) {
+      // Spring Security verlangt hier Date; intern und in JDBC bleiben Zeitpunkte Instant.
       super(identity, session.getId(), Date.from(session.getLastAccessedTime()));
       this.session = session;
       if (Boolean.TRUE.equals(session.getAttribute(DurableSessionRepository.EXPIRED))) {
