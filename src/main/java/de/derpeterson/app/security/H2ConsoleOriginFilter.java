@@ -1,8 +1,11 @@
 package de.derpeterson.app.security;
 
+import static org.springframework.http.HttpHeaders.CACHE_CONTROL;
+
 import de.derpeterson.app.model.enums.AppRoute;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.Servlet;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
@@ -21,6 +24,7 @@ import org.springframework.boot.web.servlet.ServletRegistrationBean;
 
 /** H2's native forms use origin protection, only on its explicitly exposed local servlet. */
 final class H2ConsoleOriginFilter implements Filter {
+  private static final String NO_STORE = "no-store";
   private static final Set<String> LOCAL_HOSTS = Set.of("localhost", "127.0.0.1", "::1");
   private final boolean exposed;
   private final Supplier<ServletRegistrationBean<?>> registrations;
@@ -32,10 +36,12 @@ final class H2ConsoleOriginFilter implements Filter {
 
   boolean isConsoleRequest(HttpServletRequest request) {
     ServletRegistrationBean<?> registration = registrations.get();
-    if (registration == null
-        || !registration.isEnabled()
-        || !"org.h2.server.web.JakartaWebServlet"
-            .equals(registration.getServlet().getClass().getName())) {
+    if (registration == null || !registration.isEnabled()) {
+      return false;
+    }
+    Servlet servlet = registration.getServlet();
+    if (servlet == null
+        || !"org.h2.server.web.JakartaWebServlet".equals(servlet.getClass().getName())) {
       return false;
     }
     HttpServletMapping mapping = request.getHttpServletMapping();
@@ -58,7 +64,7 @@ final class H2ConsoleOriginFilter implements Filter {
     HttpServletRequest http = (HttpServletRequest) request;
     if (isConsoleRequest(http)) {
       HttpServletResponse outgoing = (HttpServletResponse) response;
-      outgoing.setHeader("Cache-Control", "no-store");
+      outgoing.setHeader(CACHE_CONTROL, NO_STORE);
       outgoing.addHeader("Vary", "Sec-Fetch-Site, Origin, Referer");
       if (!exposed || !eligibleMapping(http) || !trustedSource(http)) {
         outgoing.sendError(HttpServletResponse.SC_FORBIDDEN);
@@ -69,13 +75,13 @@ final class H2ConsoleOriginFilter implements Filter {
           new HttpServletResponseWrapper(outgoing) {
             @Override
             public void setHeader(String name, String value) {
-              super.setHeader(name, "Cache-Control".equalsIgnoreCase(name) ? "no-store" : value);
+              super.setHeader(name, CACHE_CONTROL.equalsIgnoreCase(name) ? NO_STORE : value);
             }
 
             @Override
             public void addHeader(String name, String value) {
-              if ("Cache-Control".equalsIgnoreCase(name)) {
-                super.setHeader(name, "no-store");
+              if (CACHE_CONTROL.equalsIgnoreCase(name)) {
+                super.setHeader(name, NO_STORE);
               } else {
                 super.addHeader(name, value);
               }
@@ -101,10 +107,8 @@ final class H2ConsoleOriginFilter implements Filter {
         unbracket(request.getServerName()).toLowerCase(java.util.Locale.ROOT))) {
       return false;
     }
-    for (String header : List.of("Origin", "Referer", "Sec-Fetch-Site")) {
-      if (repeated(request, header)) {
-        return false;
-      }
+    if (hasRepeatedSourceHeaders(request)) {
+      return false;
     }
     String site = request.getHeader("Sec-Fetch-Site");
     if (site != null && !"same-origin".equals(site) && !"none".equals(site)) {
@@ -127,6 +131,15 @@ final class H2ConsoleOriginFilter implements Filter {
         && (request.getPathInfo() == null || "/".equals(request.getPathInfo()))
         && request.getQueryString() == null
         && request.getParameterMap().isEmpty();
+  }
+
+  private boolean hasRepeatedSourceHeaders(HttpServletRequest request) {
+    for (String header : List.of("Origin", "Referer", "Sec-Fetch-Site")) {
+      if (repeated(request, header)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private boolean repeated(HttpServletRequest request, String header) {
@@ -157,7 +170,7 @@ final class H2ConsoleOriginFilter implements Filter {
       return scheme.equalsIgnoreCase(request.getScheme())
           && unbracket(source.getHost()).equalsIgnoreCase(unbracket(request.getServerName()))
           && port == request.getServerPort();
-    } catch (URISyntaxException invalid) {
+    } catch (URISyntaxException _) {
       return false;
     }
   }

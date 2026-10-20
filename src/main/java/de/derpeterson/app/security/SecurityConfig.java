@@ -29,6 +29,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.ObjectPostProcessor;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
@@ -173,7 +174,7 @@ public class SecurityConfig {
                     request ->
                         flowProtection.matches(request)
                             && !consoleProtection.allowsConsoleRequest(request)))
-        .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
+        .headers(headers -> headers.frameOptions(FrameOptionsConfig::sameOrigin))
         .addFilterBefore(consoleProtection, CsrfFilter.class)
         .authorizeHttpRequests(
             auth ->

@@ -167,6 +167,24 @@ class H2ConsoleOriginFilterTest {
   }
 
   @Test
+  void registrationWithoutServletDoesNotGrantAConsoleExemption() throws Exception {
+    ServletRegistrationBean<JakartaWebServlet> incomplete = new ServletRegistrationBean<>();
+    incomplete.setName("h2Console");
+    incomplete.setUrlMappings(java.util.List.of("/h2/*"));
+    H2ConsoleOriginFilter incompleteFilter = new H2ConsoleOriginFilter(true, () -> incomplete);
+    MockHttpServletRequest request = request("POST", "/login.do");
+    request.addHeader("Origin", "http://localhost");
+    assertFalse(incompleteFilter.isConsoleRequest(request));
+    assertFalse(incompleteFilter.allowsConsoleRequest(request));
+    AtomicInteger continued = new AtomicInteger();
+    incompleteFilter.doFilter(
+        request,
+        new MockHttpServletResponse(),
+        (incoming, outgoing) -> continued.incrementAndGet());
+    assertEquals(1, continued.get(), "The normal application security chain must continue");
+  }
+
+  @Test
   void disabledExposureRejectsNativeEntryEvenAtCustomPath() throws Exception {
     registration.setUrlMappings(java.util.List.of("/console/*"));
     MockHttpServletRequest request = request("GET", "/");

@@ -1,5 +1,15 @@
 # Browserabdeckung und offene Punkte
 
+## Sieben Sonar-Codehinweise auf main vom 20.10.2026
+
+Eine H2-Nullabsicherung und sechs kleine Wartbarkeits-/Stilhinweise sind umgesetzt.
+174 gezielte H2-/CSRF-/Flow-/Komponentenfälle sowie **1978/1978 Anwendungs-JUnits
+und 48/48 Helfer** erfolgreich, ohne Fehler/Skips. Produktionsbuild, Spotless und
+Checkstyle erfolgreich. Frische JUnit-Coverage: **87,72 % Zeilen / 76,88 % Zweige**,
+219 analysierte Klassen. Keine neue Browserabnahme oder Dockerimage. Vier
+Kontextmeldungen und die erneute Sonar-/Quality-Gate-Bewertung bleiben offen.
+[Änderungen, Nachweise und Einführungsgrenzen](../docs/sonar-nachscan-korrekturen-2026-10-20.md).
+
 ## Mail-Worker-Unterbrechung vom 20.10.2026
 
 Der Koordinator stoppt nach erkanntem Interrupt vor weiterer Aufgabenannahme,

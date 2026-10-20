@@ -1,5 +1,11 @@
 # H2-Konsole nach Aktivierung von Spring-CSRF
 
+**Nachtrag vom 20.10.2026 auf main:** Die Nullabsicherung einer unvollständigen
+Servlet-Registration und sechs kleine Sonar-Codehinweise sind anschließend
+[gezielt bearbeitet und geprüft worden](sonar-nachscan-korrekturen-2026-10-20.md).
+1978 Anwendungs-JUnits und 48 Helfer sowie Produktionsbuild erfolgreich.
+Die nachfolgenden 1956er-Zahlen beschreiben den ursprünglichen H2-Abschluss.
+
 Stand 20.10.2026, Nachtrag auf `fix/sonar-csrf`, Ausgangspunkt
 `6e8aa610dda9d452b6f97959645fef964f9d4479`. Eigene Änderungen uncommittet;
 keine Commits, Pushes, Sonar-Scans oder Sonar-Statusänderungen.

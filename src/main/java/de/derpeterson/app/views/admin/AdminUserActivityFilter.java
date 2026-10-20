@@ -152,7 +152,7 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
     try {
       UserActivityTime.inclusiveCutoff(local);
       return local;
-    } catch (DateTimeException exception) {
+    } catch (DateTimeException _) {
       setInvalid(true);
       return null;
     }
