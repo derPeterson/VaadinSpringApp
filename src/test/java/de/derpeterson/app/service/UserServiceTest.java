@@ -28,6 +28,9 @@ import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster.UserStatusMessage;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -82,6 +85,25 @@ class UserServiceTest {
     verify(userRepository, times(1)).updateLastActivity(eq(1L), any());
     verify(userRepository, never()).findById(any());
     verifyNoInteractions(userStatusBroadcaster, passwordEncoder);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"UTC", "Europe/Berlin", "America/New_York"})
+  void activityWritesTheInjectedInstantIndependentlyOfTheClocksZone(String zone) {
+    Instant now = Instant.parse("2026-10-25T01:30:00Z");
+    UserService timed =
+        new UserService(
+            userRepository,
+            userStatusBroadcaster,
+            passwordEncoder,
+            mock(UserProfileBroadcaster.class),
+            mock(de.derpeterson.app.security.AdminRolePolicy.class),
+            mock(org.springframework.context.ApplicationEventPublisher.class),
+            Clock.fixed(now, ZoneId.of(zone)));
+    when(userRepository.updateLastActivity(1L, now)).thenReturn(1);
+    timed.updateLastActivity(1L);
+    verify(userRepository).updateLastActivity(1L, now);
+    verify(userRepository, never()).save(any());
   }
 
   @Nested

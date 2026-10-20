@@ -9,10 +9,12 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.AdminRolePolicy;
 import de.derpeterson.app.validation.UserInputRules;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
-import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -20,8 +22,9 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -41,7 +44,6 @@ import org.springframework.util.Assert;
  * transaction, never reuse its persistence context after failure.
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class UserService {
 
@@ -49,8 +51,44 @@ public class UserService {
   private final UserStatusBroadcaster userStatusBroadcaster;
   private final PasswordEncoder passwordEncoder;
   private final UserProfileBroadcaster profileEvents;
-  private final de.derpeterson.app.security.AdminRolePolicy rolePolicy;
-  private final org.springframework.context.ApplicationEventPublisher events;
+  private final AdminRolePolicy rolePolicy;
+  private final ApplicationEventPublisher events;
+  private final Clock clock;
+
+  @Autowired
+  public UserService(
+      UserRepository userRepository,
+      UserStatusBroadcaster userStatusBroadcaster,
+      PasswordEncoder passwordEncoder,
+      UserProfileBroadcaster profileEvents,
+      AdminRolePolicy rolePolicy,
+      ApplicationEventPublisher events) {
+    this(
+        userRepository,
+        userStatusBroadcaster,
+        passwordEncoder,
+        profileEvents,
+        rolePolicy,
+        events,
+        Clock.systemUTC());
+  }
+
+  UserService(
+      UserRepository userRepository,
+      UserStatusBroadcaster userStatusBroadcaster,
+      PasswordEncoder passwordEncoder,
+      UserProfileBroadcaster profileEvents,
+      AdminRolePolicy rolePolicy,
+      ApplicationEventPublisher events,
+      Clock clock) {
+    this.userRepository = userRepository;
+    this.userStatusBroadcaster = userStatusBroadcaster;
+    this.passwordEncoder = passwordEncoder;
+    this.profileEvents = profileEvents;
+    this.rolePolicy = rolePolicy;
+    this.events = events;
+    this.clock = Objects.requireNonNull(clock);
+  }
 
   private Set<RoleType> roleTypes(Collection<RoleEntity> roles) {
     return roles.stream().map(RoleEntity::getName).collect(java.util.stream.Collectors.toSet());
@@ -226,7 +264,7 @@ public class UserService {
   @Transactional
   public void updateLastActivity(Long userId) {
     Assert.notNull(userId, "User ID must not be null");
-    if (userRepository.updateLastActivity(userId, LocalDateTime.now()) == 0) {
+    if (userRepository.updateLastActivity(userId, clock.instant()) == 0) {
       throw new IllegalStateException("Der Benutzer ist nicht mehr vorhanden.");
     }
   }
@@ -236,7 +274,7 @@ public class UserService {
    * under a per-user lock.
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public void updateScheduledStatus(Long userId, UserStatus target, LocalDateTime cutoff) {
+  public void updateScheduledStatus(Long userId, UserStatus target, Instant cutoff) {
     Assert.notNull(userId, "User ID must not be null");
     Assert.notNull(cutoff, "Cutoff must not be null");
     Assert.isTrue(

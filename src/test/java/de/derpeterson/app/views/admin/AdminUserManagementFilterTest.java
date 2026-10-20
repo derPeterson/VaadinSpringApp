@@ -11,8 +11,11 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.server.VaadinSession;
+import de.derpeterson.app.helper.time.UserActivityTime;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.RoleEntity;
@@ -22,7 +25,10 @@ import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
@@ -62,7 +68,7 @@ class AdminUserManagementFilterTest {
                         .email("user" + i + "@example.test")
                         .enabled(i % 2 == 0)
                         .status(i % 2 == 0 ? UserStatus.AVAILABLE : UserStatus.OFFLINE)
-                        .lastActivity(cutoff.plusMinutes(i - 13))
+                        .lastActivity(UserActivityTime.inclusiveCutoff(cutoff.plusMinutes(i - 13)))
                         .roleEntities(
                             List.of(
                                 RoleEntity.builder()
@@ -120,6 +126,56 @@ class AdminUserManagementFilterTest {
     assertEquals(cutoff, ((AdminUserActivityFilter) field("lastActivityFilter")).getValue());
     assertEquals(texts.getAdminUsersFilterRole(), filter("roleFilter").getLabel());
     assertEquals(6, visibleUsers().size());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void repeatedAutumnHourHasDistinctTooltipsAndChronologicalSortingAndFiltering(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    Instant first = Instant.parse("2026-10-25T00:30:00Z");
+    Instant second = Instant.parse("2026-10-25T01:30:00Z");
+    UserEntity earlier =
+        UserEntity.builder().id(1L).firstName("Z earlier").lastActivity(first).build();
+    UserEntity later =
+        UserEntity.builder().id(2L).firstName("A later").lastActivity(second).build();
+    UserService service = mock(UserService.class);
+    when(service.findAllUsers()).thenReturn(List.of(later, earlier));
+    Instant now = Instant.parse("2026-10-25T01:45:00Z");
+    section =
+        new AdminUserManagementSection(
+            texts,
+            service,
+            mock(RoleService.class),
+            mock(SecurityService.class),
+            Clock.fixed(now, ZoneId.of("America/New_York")));
+    Grid.Column<UserEntity> column = (Grid.Column<UserEntity>) field("lastActivityColumn");
+    grid()
+        .sort(
+            List.of(
+                new com.vaadin.flow.component.grid.GridSortOrder<>(
+                    column, SortDirection.ASCENDING)));
+    assertEquals(List.of(earlier, later), visibleUsers());
+    Span earlierLabel = ReflectionTestUtils.invokeMethod(section, "createLastActivity", earlier);
+    Span laterLabel = ReflectionTestUtils.invokeMethod(section, "createLastActivity", later);
+    assertEquals(texts.getAdminUsersActivityHours(1), earlierLabel.getText());
+    assertEquals(texts.getAdminUsersActivityMinutes(15), laterLabel.getText());
+    assertTrue(earlierLabel.getElement().getAttribute("title").endsWith("+02:00"));
+    assertTrue(laterLabel.getElement().getAttribute("title").endsWith("+01:00"));
+    ((AdminUserActivityFilter) field("lastActivityFilter"))
+        .setValue(LocalDateTime.of(2026, 10, 25, 2, 30));
+    applyFilters();
+    assertEquals(List.of(earlier, later), visibleUsers());
+    assertTrue(chips().getFirst().getElement().getTextRecursively().contains("+02:00"));
+    // A nonexistent draft must preserve the already applied autumn cutoff.
+    ((AdminUserActivityFilter) field("lastActivityFilter"))
+        .setValue(LocalDateTime.of(2026, 3, 29, 2, 30));
+    applyFilters();
+    assertEquals(List.of(earlier, later), visibleUsers());
+    assertTrue(((AdminUserActivityFilter) field("lastActivityFilter")).isInvalid());
+    UserEntity future = UserEntity.builder().lastActivity(now.plusSeconds(3600)).build();
+    Span futureLabel = ReflectionTestUtils.invokeMethod(section, "createLastActivity", future);
+    assertEquals(futureLabel.getElement().getAttribute("title"), futureLabel.getText());
+    assertTrue(futureLabel.getText().endsWith("+01:00"));
   }
 
   @Test

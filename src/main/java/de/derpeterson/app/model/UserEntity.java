@@ -24,8 +24,8 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Locale;
 import lombok.AccessLevel;
@@ -35,7 +35,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.OptimisticLock;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @DynamicUpdate
@@ -116,7 +118,8 @@ public class UserEntity {
   @Column(nullable = false)
   @Builder.Default
   @OptimisticLock(excluded = true)
-  private LocalDateTime lastActivity = LocalDateTime.now();
+  @JdbcTypeCode(SqlTypes.TIMESTAMP_UTC)
+  private Instant lastActivity = Instant.now();
 
   @ManyToMany
   @JoinTable(
@@ -157,10 +160,6 @@ public class UserEntity {
   public void setManualStatus(UserStatus newStatus) {
     this.status = newStatus;
     this.statusManuallySet = true;
-  }
-
-  public void updateLastActivity() {
-    this.lastActivity = LocalDateTime.now();
   }
 
   public boolean hasAdministrativeRole() {

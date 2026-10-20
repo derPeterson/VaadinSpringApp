@@ -7,12 +7,12 @@ import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class AdminUserFiltersTest {
-  private final LocalDateTime cutoff = LocalDateTime.of(2026, 10, 12, 10, 30);
+  private final Instant cutoff = Instant.parse("2026-10-12T08:30:00Z");
 
   private UserEntity user() {
     return UserEntity.builder()

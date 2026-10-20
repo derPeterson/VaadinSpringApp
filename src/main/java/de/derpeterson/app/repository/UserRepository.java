@@ -7,7 +7,7 @@ import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.jpa.HibernateHints;
@@ -112,7 +112,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
   // pending login status first; do not clear unrelated managed entities.
   @Modifying(flushAutomatically = true)
   @Query("update UserEntity u set u.lastActivity = :activity where u.id = :id")
-  int updateLastActivity(@Param("id") Long id, @Param("activity") LocalDateTime activity);
+  int updateLastActivity(@Param("id") Long id, @Param("activity") Instant activity);
 
   @Override
   @EntityGraph(attributePaths = "roleEntities")
@@ -125,8 +125,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
   @QueryHints(@QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
   List<Long> findEnabledUserIdsByRole(@Param("role") RoleType role);
 
-  List<UserEntity> findByLastActivityBeforeAndStatus(LocalDateTime lastActivity, UserStatus status);
+  List<UserEntity> findByLastActivityBeforeAndStatus(Instant lastActivity, UserStatus status);
 
   List<UserEntity> findByLastActivityAfterAndStatusAndStatusManuallySetFalse(
-      LocalDateTime lastActivity, UserStatus status);
+      Instant lastActivity, UserStatus status);
 }

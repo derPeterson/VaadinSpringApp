@@ -5,24 +5,34 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.timepicker.TimePicker;
+import de.derpeterson.app.helper.time.UserActivityTime;
 import de.derpeterson.app.helper.ui.CompactDateInput;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.ui.components.CompactTimePicker;
+import java.time.Clock;
+import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Objects;
 
-/** Inclusive local cutoff: a date without a time starts at midnight. */
+/** Berlin calendar input; a date without a time starts at midnight. DST gaps are invalid. */
 final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
   private final DatePicker date = new DatePicker();
   private final TimePicker time = new CompactTimePicker();
+  private final Clock clock;
   private boolean presenting;
   private LocalTime placeholderTime = LocalTime.MIDNIGHT;
 
   AdminUserActivityFilter() {
+    this(Clock.systemUTC());
+  }
+
+  AdminUserActivityFilter(Clock clock) {
     super(null, true);
+    this.clock = Objects.requireNonNull(clock);
     date.setAutoOpen(false);
     time.setAutoOpen(false);
     time.setEnabled(false);
@@ -73,7 +83,7 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
   void refreshPlaceholders() {
     Locale locale = date.getLocale();
     boolean german = Locale.GERMAN.getLanguage().equals(locale.getLanguage());
-    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), UserActivityTime.DISPLAY_ZONE);
     String datePattern = german ? "dd.MM.uuuu" : "MM/dd/uuuu";
     date.setPlaceholder(now.toLocalDate().format(DateTimeFormatter.ofPattern(datePattern, locale)));
     int stepMinutes = Math.toIntExact(time.getStep().toMinutes());
@@ -137,7 +147,15 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
     if (invalid || date.getValue() == null) {
       return null;
     }
-    return date.getValue().atTime(time.getValue() == null ? LocalTime.MIDNIGHT : time.getValue());
+    LocalDateTime local =
+        date.getValue().atTime(time.getValue() == null ? LocalTime.MIDNIGHT : time.getValue());
+    try {
+      UserActivityTime.inclusiveCutoff(local);
+      return local;
+    } catch (DateTimeException exception) {
+      setInvalid(true);
+      return null;
+    }
   }
 
   @Override
@@ -152,6 +170,7 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
         setInvalid(false);
       }
       updateTimeAvailability();
+      generateModelValue();
     } finally {
       presenting = false;
     }

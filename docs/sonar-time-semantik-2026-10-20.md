@@ -1,5 +1,13 @@
 # P2-TIME: Speicher- und Zeitzonensemantik
 
+**Nachtrag:** Die fachliche Entscheidung ist getroffen: vollständiger Neuaufbau
+ohne historische Aktivitätsdaten. P2-TIME wurde auf `fix/sonar-activity-time`
+mit eindeutigen Zeitpunkten, Anzeigezone Berlin und gezielten Zeitwechseltests
+[umgesetzt und geprüft](sonar-time-umsetzung-2026-10-20.md).
+1971 Anwendungs-JUnits und 48 Helfer sowie Produktionsbuild erfolgreich.
+Die folgende Analyse beschreibt ausdrücklich den früheren Zustand; ihre Frage
+nach einer historischen Datenübernahme ist durch den Entwicklungs-Neuaufbau entfallen.
+
 Stand: 20.10.2026. **Nur Analyse; keine Zeitberechnung, Spalte oder historische Zeile geändert. Keine bestehende Datenbank geöffnet.**
 
 ## Bestehender Vertrag

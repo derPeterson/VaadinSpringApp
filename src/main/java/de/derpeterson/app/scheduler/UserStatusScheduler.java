@@ -8,28 +8,48 @@ import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserService;
+import java.time.Clock;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
-import lombok.AllArgsConstructor;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
-@AllArgsConstructor
 @Slf4j
 public class UserStatusScheduler {
 
   private final UserRepository userRepository;
   private final UserService userService;
   private final ConfigService configService;
+  private final Clock clock;
+
+  @Autowired
+  public UserStatusScheduler(
+      UserRepository userRepository, UserService userService, ConfigService configService) {
+    this(userRepository, userService, configService, Clock.systemUTC());
+  }
+
+  public UserStatusScheduler(
+      UserRepository userRepository,
+      UserService userService,
+      ConfigService configService,
+      Clock clock) {
+    this.userRepository = userRepository;
+    this.userService = userService;
+    this.configService = configService;
+    this.clock = Objects.requireNonNull(clock);
+  }
 
   @Scheduled(fixedRate = 10000)
   public void checkInactiveAvailableUsers() {
-    LocalDateTime timeout =
-        LocalDateTime.now()
+    Instant timeout =
+        clock
+            .instant()
             .minus(Duration.parse(configService.getString(ConfigEntry.USER_AUTO_ABSENT_TIMEOUT)));
 
     List<UserEntity> inactiveAvailableUsers =
@@ -44,7 +64,7 @@ public class UserStatusScheduler {
 
   @Scheduled(fixedRate = 1000)
   public void checkRecentlyActiveAbsentUsers() {
-    LocalDateTime recentActivity = LocalDateTime.now().minusSeconds(5);
+    Instant recentActivity = clock.instant().minusSeconds(5);
 
     List<UserEntity> activeAbsentUsers =
         userRepository.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(
@@ -57,7 +77,7 @@ public class UserStatusScheduler {
     }
   }
 
-  private void updateCandidate(UserEntity user, UserStatus target, LocalDateTime cutoff) {
+  private void updateCandidate(UserEntity user, UserStatus target, Instant cutoff) {
     try {
       userService.updateScheduledStatus(user.getId(), target, cutoff);
     } catch (ConcurrencyFailureException exception) {

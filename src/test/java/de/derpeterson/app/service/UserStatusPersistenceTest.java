@@ -36,8 +36,8 @@ import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -101,7 +101,7 @@ class UserStatusPersistenceTest {
                   .preferredLocale(Locale.ENGLISH)
                   .roleEntities(new ArrayList<>(List.of(role)))
                   .status(UserStatus.OFFLINE)
-                  .lastActivity(LocalDateTime.now().minusHours(1))
+                  .lastActivity(Instant.now().minusSeconds(3600))
                   .build();
           entityManager.persist(user);
           userId = user.getId();
@@ -183,7 +183,7 @@ class UserStatusPersistenceTest {
     assertEquals(UserStatus.EMPLOYED, stored().getStatus());
     assertTrue(stored().isStatusManuallySet());
     assertEquals(1L, stored().getVersion());
-    assertTrue(stored().getLastActivity().isAfter(LocalDateTime.now().minusMinutes(1)));
+    assertTrue(stored().getLastActivity().isAfter(Instant.now().minusSeconds(60)));
     assertTrue(form().hasRole(RoleType.ROLE_USER));
   }
 
@@ -203,7 +203,7 @@ class UserStatusPersistenceTest {
     UserStatus initial = toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT;
     UserStatus target = toAbsent ? UserStatus.ABSENT : UserStatus.AVAILABLE;
     service.updateUserStatus(stored(), initial, false);
-    LocalDateTime activity = toAbsent ? LocalDateTime.now().minusHours(1) : LocalDateTime.now();
+    Instant activity = toAbsent ? Instant.now().minusSeconds(3600) : Instant.now();
     Long otherId =
         transaction.execute(
             tx -> {
@@ -268,9 +268,10 @@ class UserStatusPersistenceTest {
   @ValueSource(booleans = {true, false})
   void scheduledMutationWaitsForActivityCommitAndThenRechecks(boolean toAbsent) throws Exception {
     service.updateUserStatus(stored(), toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, false);
-    LocalDateTime cutoff = LocalDateTime.now().minusMinutes(5);
+    Instant cutoff = Instant.now().minusSeconds(300);
     transaction.executeWithoutResult(
-        tx -> stored().setLastActivity(toAbsent ? cutoff.minusMinutes(1) : cutoff.plusMinutes(1)));
+        tx ->
+            stored().setLastActivity(toAbsent ? cutoff.minusSeconds(60) : cutoff.plusSeconds(60)));
     List<UserEntity> candidates =
         toAbsent
             ? repository.findByLastActivityBeforeAndStatus(cutoff, UserStatus.AVAILABLE)
@@ -285,7 +286,7 @@ class UserStatusPersistenceTest {
       transaction.executeWithoutResult(
           tx -> {
             UserEntity active = repository.findByIdForUpdate(userId).orElseThrow();
-            active.setLastActivity(toAbsent ? cutoff.plusMinutes(1) : cutoff.minusMinutes(1));
+            active.setLastActivity(toAbsent ? cutoff.plusSeconds(60) : cutoff.minusSeconds(60));
             repository.flush();
             future.set(
                 worker.submit(
@@ -331,7 +332,7 @@ class UserStatusPersistenceTest {
           assertDoesNotThrow(() -> service.updateLastActivity(userId));
         });
     UserEntity fresh = stored();
-    assertTrue(fresh.getLastActivity().isAfter(LocalDateTime.now().minusMinutes(1)));
+    assertTrue(fresh.getLastActivity().isAfter(Instant.now().minusSeconds(60)));
     assertEquals(1L, fresh.getVersion());
     assertEquals(statusChange ? UserStatus.EMPLOYED : UserStatus.OFFLINE, fresh.getStatus());
     assertEquals(statusChange ? "Test" : "Latest profile", fresh.getFirstName());
@@ -345,8 +346,7 @@ class UserStatusPersistenceTest {
   @ValueSource(booleans = {true, false})
   void concurrentActivityIsNotOverwrittenByAnAlreadyLoadedStatusOrProfileEditor(
       boolean statusChange) {
-    AtomicReference<LocalDateTime> activity =
-        new java.util.concurrent.atomic.AtomicReference<LocalDateTime>();
+    AtomicReference<Instant> activity = new java.util.concurrent.atomic.AtomicReference<Instant>();
     transaction.executeWithoutResult(
         status -> {
           UserEntity editor = repository.findById(userId).orElseThrow();
@@ -396,7 +396,7 @@ class UserStatusPersistenceTest {
                         call.getArgument(0), UserStatus.ABSENT);
                 assertEquals(1, candidates.size());
                 transaction.executeWithoutResult(
-                    tx -> stored().setLastActivity(LocalDateTime.now().minusMinutes(10)));
+                    tx -> stored().setLastActivity(Instant.now().minusSeconds(600)));
                 return candidates;
               });
     }
@@ -422,10 +422,11 @@ class UserStatusPersistenceTest {
       service.updateUserStatus(stored(), toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, true);
       service.updateUserStatus(
           stored(), toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, false);
-      LocalDateTime cutoff = LocalDateTime.now().minusMinutes(5);
+      Instant cutoff = Instant.now().minusSeconds(300);
       transaction.executeWithoutResult(
           tx ->
-              stored().setLastActivity(toAbsent ? cutoff.minusMinutes(1) : cutoff.plusMinutes(1)));
+              stored()
+                  .setLastActivity(toAbsent ? cutoff.minusSeconds(60) : cutoff.plusSeconds(60)));
       List<UserEntity> candidates =
           toAbsent
               ? repository.findByLastActivityBeforeAndStatus(cutoff, UserStatus.AVAILABLE)
@@ -461,7 +462,7 @@ class UserStatusPersistenceTest {
         OptimisticLockingFailureException.class,
         () -> service.updateAdminUser(snapshot, snapshot.getVersion(), "new"));
     assertDoesNotThrow(
-        () -> service.updateScheduledStatus(userId, UserStatus.ABSENT, LocalDateTime.now()));
+        () -> service.updateScheduledStatus(userId, UserStatus.ABSENT, Instant.now()));
     assertFalse(repository.existsById(userId));
     assertTrue(messages.isEmpty());
   }
@@ -484,12 +485,12 @@ class UserStatusPersistenceTest {
     transaction.executeWithoutResult(tx -> stored().setPreferredLocale(Locale.GERMAN));
     UserEntity edited = form();
     service.updateLastActivity(userId);
-    LocalDateTime activity = stored().getLastActivity();
+    Instant activity = stored().getLastActivity();
     // These snapshot fields are not admin-editable and must not be merged.
     edited.setStatus(UserStatus.OFFLINE);
     edited.setStatusManuallySet(false);
     edited.setPreferredLocale(Locale.ENGLISH);
-    edited.setLastActivity(LocalDateTime.MIN);
+    edited.setLastActivity(Instant.EPOCH);
     edited.setFirstName("Admin edited");
     service.updateAdminUser(edited, edited.getVersion(), "Explicit-new-password!");
     UserEntity fresh = stored();
@@ -510,8 +511,8 @@ class UserStatusPersistenceTest {
     UserEntity stale = stored();
     assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
     assertFalse(Hibernate.isInitialized(stale.getRoleEntities()));
-    LocalDateTime activity =
-        LocalDateTime.now().minusMinutes(2).truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+    Instant activity =
+        Instant.now().minusSeconds(120).truncatedTo(java.time.temporal.ChronoUnit.MICROS);
     transaction.executeWithoutResult(
         status -> {
           UserEntity user = repository.findById(userId).orElseThrow();
@@ -572,7 +573,7 @@ class UserStatusPersistenceTest {
     for (int i = 0; i < 3; i++) {
       service.updateLastActivity(userId);
     }
-    LocalDateTime activity = stored().getLastActivity();
+    Instant activity = stored().getLastActivity();
     assertEquals(version, stored().getVersion());
     assertTrue(activity.isAfter(edited.getLastActivity()));
     edited.setFirstName("Edited");
@@ -663,7 +664,7 @@ class UserStatusPersistenceTest {
     service.updateUserStatus(stored(), UserStatus.AVAILABLE, false);
     UserEntity candidate =
         repository
-            .findByLastActivityBeforeAndStatus(LocalDateTime.now(), UserStatus.AVAILABLE)
+            .findByLastActivityBeforeAndStatus(Instant.now(), UserStatus.AVAILABLE)
             .getFirst();
     assertFalse(Hibernate.isInitialized(candidate.getRoleEntities()));
     listen();
@@ -763,7 +764,7 @@ class UserStatusPersistenceTest {
     if (manual) {
       service.updateUserStatus(stored(), UserStatus.EMPLOYED, true);
     }
-    LocalDateTime previousActivity = stored().getLastActivity();
+    Instant previousActivity = stored().getLastActivity();
     listen();
     security.handleLogin(
         org.springframework.security.core.userdetails.User.withUsername("status@example.com")

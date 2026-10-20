@@ -8,11 +8,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.timepicker.TimePicker;
+import de.derpeterson.app.helper.time.UserActivityTime;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,6 +29,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class AdminUserActivityFilterTest {
+  private static final Clock CLOCK =
+      Clock.fixed(Instant.parse("2026-10-12T12:07:33Z"), ZoneId.of("America/New_York"));
   private UI ui;
   private AdminUserActivityFilter field;
   private final LocalDate day = LocalDate.of(2026, 10, 12);
@@ -33,7 +39,7 @@ class AdminUserActivityFilterTest {
   void setup() {
     ui = new UI();
     UI.setCurrent(ui);
-    field = new AdminUserActivityFilter();
+    field = new AdminUserActivityFilter(CLOCK);
   }
 
   @AfterEach
@@ -114,7 +120,8 @@ class AdminUserActivityFilterTest {
     assertEquals(texts.getAdminUsersActivityDate(), date().getAriaLabel().orElseThrow());
     assertEquals(texts.getAdminUsersFilterActiveSince(), date().getLabel());
     assertEquals(
-        LocalDate.now()
+        LocalDateTime.ofInstant(CLOCK.instant(), UserActivityTime.DISPLAY_ZONE)
+            .toLocalDate()
             .format(
                 java.time.format.DateTimeFormatter.ofPattern(
                     language.equals("de") ? "dd.MM.uuuu" : "MM/dd/uuuu", locale)),
@@ -125,7 +132,9 @@ class AdminUserActivityFilterTest {
             java.time.format.DateTimeFormatter.ofPattern(
                 language.equals("de") ? "HH:mm" : "h:mm a", locale));
     assertEquals(0, placeholder.getMinute() % 15);
-    assertFalse(placeholder.isAfter(LocalTime.now()));
+    assertFalse(
+        placeholder.isAfter(
+            LocalDateTime.ofInstant(CLOCK.instant(), UserActivityTime.DISPLAY_ZONE).toLocalTime()));
     assertFalse(date().isAutoOpen());
     assertFalse(time().isAutoOpen());
     assertEquals(texts.getAdminUsersActivityTimeOptional(), time().getAriaLabel().orElseThrow());
@@ -175,6 +184,39 @@ class AdminUserActivityFilterTest {
     assertTrue(field.isInvalid());
     assertFalse(time().isEnabled());
     assertNull(time().getValue());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void missingSpringHourIsInvalidAndCanBeCorrectedWithoutLosingTheDate(String language) {
+    field.setLocale(Locale.forLanguageTag(language));
+    date().setValue(LocalDate.of(2026, 3, 29));
+    time().setValue(LocalTime.of(2, 30));
+    assertNull(field.getValue());
+    assertTrue(field.isInvalid());
+    assertEquals(LocalDate.of(2026, 3, 29), date().getValue());
+    assertEquals(LocalTime.of(2, 30), time().getValue());
+    time().setValue(LocalTime.of(3, 30));
+    assertFalse(field.isInvalid());
+    assertEquals(
+        Instant.parse("2026-03-29T01:30:00Z"), UserActivityTime.inclusiveCutoff(field.getValue()));
+  }
+
+  @Test
+  void repeatedAutumnHourStartsAtTheFirstOccurrenceAndClearRemovesGapErrors() {
+    date().setValue(LocalDate.of(2026, 10, 25));
+    time().setValue(LocalTime.of(2, 30));
+    assertFalse(field.isInvalid());
+    assertEquals(
+        Instant.parse("2026-10-25T00:30:00Z"), UserActivityTime.inclusiveCutoff(field.getValue()));
+    field.setValue(LocalDateTime.of(2026, 3, 29, 2, 30));
+    assertTrue(field.isInvalid());
+    assertNull(field.generateModelValue());
+    assertTrue(field.isInvalid());
+    field.clear();
+    assertFalse(field.isInvalid());
+    assertNull(field.getValue());
+    assertFalse(time().isEnabled());
   }
 
   private DatePicker date() {

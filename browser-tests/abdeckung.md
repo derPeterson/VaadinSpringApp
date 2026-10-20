@@ -1,5 +1,20 @@
 # Browserabdeckung und offene Punkte
 
+## P2-TIME: Aktivitätszeitpunkte vom 20.10.2026
+
+Aktivitätszeiten sind auf `Instant` umgestellt, Anzeige und Kalendereingabe auf
+`Europe/Berlin` festgelegt. Dauer, Statusgrenzen, Filter und Sortierung verwenden
+eindeutige Zeitpunkte. 15 neue Testausprägungen sichern beide Zeitwechsel,
+verschiedene Clock-/H2-Sitzungszeitzonen und DE-/EN-Komponentenverhalten ab.
+**1971/1971 Anwendungs-JUnits und 48/48 Helfer**, ohne Fehler/Skips;
+Produktionsbuild, Spotless und Checkstyle erfolgreich.
+Frische JUnit-Coverage: **87,71 % Zeilen / 76,85 % Zweige**, 219 analysierte Klassen.
+Keine neue Browser-UI-Runde oder Dockerimage für dieses Paket. Die folgenden
+Browsernachweise bleiben historische Abnahmen ihrer jeweils genannten Stände.
+Einführung mit frischem Datenbankschema gemäß vereinbartem Entwicklungs-Neuaufbau;
+keine Bestandsdaten durch diese Arbeit verändert.
+[Änderungen, Einführung und Prüfgrenzen](../docs/sonar-time-umsetzung-2026-10-20.md).
+
 ## H2-Ergänzung nach der CSRF-Browserabnahme (20.10.2026)
 
 Die optionale lokale H2-Konsole ist mit eng begrenztem Ursprungsschutz wieder

@@ -33,6 +33,7 @@ import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.helper.time.UserActivityTime;
 import de.derpeterson.app.helper.ui.CompactDateInput;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
@@ -53,9 +54,11 @@ import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.validation.EmailConflict;
 import de.derpeterson.app.validation.UserInputRules;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -76,12 +79,17 @@ import org.springframework.dao.OptimisticLockingFailureException;
 public class AdminUserManagementSection extends VerticalLayout {
 
   private static final DateTimeFormatter LAST_ACTIVITY_FORMATTER =
-      DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM);
+      new DateTimeFormatterBuilder()
+          .appendLocalized(FormatStyle.MEDIUM, FormatStyle.MEDIUM)
+          .appendPattern(" XXX")
+          .toFormatter()
+          .withZone(UserActivityTime.DISPLAY_ZONE);
 
   private final transient MessageProperties messageProperties;
   private final transient UserService userService;
   private final transient RoleService roleService;
   private final transient SecurityService securityService;
+  private final Clock clock;
 
   private final Span breadcrumb;
   private final Span title;
@@ -105,7 +113,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
   private final ComboBox<UserStatus> statusFilter = new ComboBox<>();
   private final ComboBox<RoleType> roleFilter = new ComboBox<>();
-  private final AdminUserActivityFilter lastActivityFilter = new AdminUserActivityFilter();
+  private final AdminUserActivityFilter lastActivityFilter;
   private final AdminUserPagination pagination;
   private final AdminUserFilterBar filterBar;
 
@@ -131,6 +139,17 @@ public class AdminUserManagementSection extends VerticalLayout {
       UserService userService,
       RoleService roleService,
       SecurityService securityService) {
+    this(messageProperties, userService, roleService, securityService, Clock.systemUTC());
+  }
+
+  AdminUserManagementSection(
+      MessageProperties messageProperties,
+      UserService userService,
+      RoleService roleService,
+      SecurityService securityService,
+      Clock clock) {
+    this.clock = Objects.requireNonNull(clock);
+    this.lastActivityFilter = new AdminUserActivityFilter(clock);
     this.messageProperties = messageProperties;
     this.userService = userService;
     this.roleService = roleService;
@@ -357,7 +376,7 @@ public class AdminUserManagementSection extends VerticalLayout {
             .setSortable(true)
             .setComparator(
                 Comparator.comparing(
-                    UserEntity::getLastActivity, Comparator.nullsLast(LocalDateTime::compareTo)));
+                    UserEntity::getLastActivity, Comparator.nullsLast(Instant::compareTo)));
 
     actionsHeader.setText(messageProperties.getAdminUsersGridActions());
     actionsHeader.addClassName("admin-users-actions-header");
@@ -424,7 +443,7 @@ public class AdminUserManagementSection extends VerticalLayout {
             enabledFilter.getValue(),
             statusFilter.getValue(),
             roleFilter.getValue(),
-            lastActivityFilter.getValue());
+            UserActivityTime.inclusiveCutoff(lastActivityFilter.getValue()));
     applyGridFilter();
   }
 
@@ -1250,8 +1269,8 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   private Component createLastActivity(UserEntity user) {
-    LocalDateTime activity = user.getLastActivity();
-    LocalDateTime now = LocalDateTime.now();
+    Instant activity = user.getLastActivity();
+    Instant now = clock.instant();
     String text =
         activity != null && activity.isAfter(now)
             ? formatDateTime(activity)
@@ -1263,7 +1282,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     return label;
   }
 
-  private String formatDateTime(LocalDateTime dateTime) {
+  private String formatDateTime(Instant dateTime) {
     if (dateTime == null) {
       return "-";
     }

@@ -4,13 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Locale;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class AdminUserActivityTextTest {
-  private final LocalDateTime now = LocalDateTime.of(2026, 10, 12, 14, 30);
+  private final ZonedDateTime now = ZonedDateTime.parse("2026-10-12T14:30:00+02:00[Europe/Berlin]");
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
@@ -45,8 +46,31 @@ class AdminUserActivityTextTest {
     assertEquals(texts.getAdminUsersActivityYears(2), format(now.minusYears(2), texts));
   }
 
-  private String format(LocalDateTime value, MessageProperties texts) {
-    return AdminUserActivityText.format(value, now, texts);
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void clockChangesUseElapsedHoursAndTwentyFourHourDays(String language) {
+    MessageProperties texts = texts(language);
+    assertEquals(
+        texts.getAdminUsersActivityHours(1),
+        AdminUserActivityText.format(
+            Instant.parse("2026-03-29T00:30:00Z"), Instant.parse("2026-03-29T01:30:00Z"), texts));
+    assertEquals(
+        texts.getAdminUsersActivityHours(1),
+        AdminUserActivityText.format(
+            Instant.parse("2026-10-25T00:30:00Z"), Instant.parse("2026-10-25T01:30:00Z"), texts));
+    assertEquals(
+        texts.getAdminUsersActivityHours(23),
+        AdminUserActivityText.format(
+            Instant.parse("2026-03-28T11:00:00Z"), Instant.parse("2026-03-29T10:00:00Z"), texts));
+    assertEquals(
+        texts.getAdminUsersActivityDays(1),
+        AdminUserActivityText.format(
+            Instant.parse("2026-10-24T10:00:00Z"), Instant.parse("2026-10-25T11:00:00Z"), texts));
+  }
+
+  private String format(ZonedDateTime value, MessageProperties texts) {
+    return AdminUserActivityText.format(
+        value == null ? null : value.toInstant(), now.toInstant(), texts);
   }
 
   private MessageProperties texts(String language) {
