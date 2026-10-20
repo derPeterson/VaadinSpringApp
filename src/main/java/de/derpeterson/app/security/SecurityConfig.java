@@ -6,6 +6,8 @@ import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.NavigationErrorCode;
 import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.security.session.DurableSessionRegistry;
+import de.derpeterson.app.security.session.DurableSessionRepository;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.LoginAttemptService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -100,8 +102,11 @@ public class SecurityConfig {
   }
 
   @Bean
-  public SessionRegistryImpl sessionRegistry() {
-    return new SessionRegistryImpl();
+  public SessionRegistry sessionRegistry(ObjectProvider<DurableSessionRepository<?>> sessions) {
+    DurableSessionRepository<?> persistent = sessions.getIfAvailable();
+    return persistent == null
+        ? new SessionRegistryImpl()
+        : new DurableSessionRegistry<>(persistent);
   }
 
   @Bean
@@ -180,6 +185,9 @@ public class SecurityConfig {
                             && !consoleProtection.allowsConsoleRequest(request)))
         .headers(headers -> headers.frameOptions(FrameOptionsConfig::sameOrigin))
         .addFilterBefore(consoleProtection, CsrfFilter.class)
+        .addFilterBefore(
+            new FlowUiRecoveryFilter(vaadinServletMapping, admissions, maintenance),
+            CsrfFilter.class)
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(consoleProtection::isConsoleRequest)

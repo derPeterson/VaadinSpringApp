@@ -17,6 +17,7 @@ import de.derpeterson.app.security.MaintenanceService.State;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.websocket.UserNotificationBroadcaster;
 import jakarta.servlet.http.HttpSession;
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
@@ -79,15 +80,15 @@ public class UserNotificationService {
     }
   }
 
-  public record Target(Long id, String name, String email) {}
+  public record Target(Long id, String name, String email) implements Serializable {}
 
-  public record Selection(boolean everyone, Set<Long> ids) {
+  public record Selection(boolean everyone, Set<Long> ids) implements Serializable {
     public Selection {
       ids = everyone || ids == null ? Set.of() : Set.copyOf(ids);
     }
   }
 
-  public record Preview(Selection selection, List<Long> ids) {
+  public record Preview(Selection selection, List<Long> ids) implements Serializable {
     public Preview {
       Objects.requireNonNull(selection);
       ids = List.copyOf(ids);
@@ -106,7 +107,8 @@ public class UserNotificationService {
       String title,
       String body,
       Instant createdAt,
-      boolean read) {}
+      boolean read)
+      implements Serializable {}
 
   public record Sent(Long id, String title, String body, Instant createdAt, int recipientCount) {}
 

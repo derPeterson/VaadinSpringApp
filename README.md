@@ -1,5 +1,9 @@
 # VaadinSpringApp
 
+Dauerhafte Anmeldung mit erhaltenem Sitzungsplatz nach Serverneustart und bewusst
+neu aufgebauter Vaadin-Oberfläche: [Vertrag und Einführung](docs/durable-session-contract.md).
+
+
 > Sicherheitsupdates vom 20.10.2026: Tomcat 11.0.27, Jackson 3.1.8, Logback 1.6.5
 > und ASM 9.11.1 (Testabhängigkeit). Produktionsbuild, 1843 Anwendungs-JUnits und
 > 48 Browser-Helfertests erfolgreich. [CVE-Abgleich und Prüfgrenzen](docs/dependency-security-update-2026-10-20.md).

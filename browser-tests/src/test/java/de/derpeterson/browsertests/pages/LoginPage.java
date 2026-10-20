@@ -98,6 +98,16 @@ public final class LoginPage {
         .isVisible();
   }
 
+  @Step("Eine bestehende Sitzung in der eingeschränkten Anmeldung widerrufen")
+  public void revokeRecoverySession(int index) {
+    UiActions.complete(
+        page,
+        () ->
+            page.locator("#account-session-entries [data-session-state='active'] vaadin-button")
+                .nth(index)
+                .click());
+  }
+
   @Step("Eingeschränkte Verwaltung abbrechen und zur normalen Anmeldung zurückkehren")
   public void cancelRecovery() {
     UiActions.complete(page, () -> page.locator("#session-recovery-cancel").click());

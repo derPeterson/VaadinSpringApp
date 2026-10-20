@@ -62,12 +62,13 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit | 3 |
 | `authentication` | Admin-/Benutzerlogin, Fehler, Gastzugriff und Logout | 6 |
 | `login-attempts` | Drei Sperr-/Resetfälle plus sechs Anmelde- und vier Remember-me-Regressionsfälle | 13 |
-| `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 35 |
+| `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung einschließlich Serverneustart und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 36 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler und Links | 6 |
 | `account-security` | Passwortvalidierung/-wechsel mit SMTP-Mail und verifizierte E-Mail-Änderung mit beiden Sicherheitsmails | 4 |
-| `session-management` | Eigene Sitzungen, Einzel-/Sammelwiderruf, gespeicherte Zugänge nach Neustart und eingeschränkter Login | 5 |
+| `session-persistence` | Gezielte Neustartabnahme: Sitzungs-/Loginfälle, Wartung und eigene Kontosicherheit | 49 |
+| `session-management` | Eigene Sitzungen, Einzel-/Sammelwiderruf, dauerhafte Anmeldung, UI-Neuaufbau und eingeschränkter Login | 6 |
 | `account-settings` | Profil/Sprachen/E-Mail-Dialog, persistente Profilbilder Desktop/schmal, kompakte Geburtstage und Status am Kontobild | 11 |
 | `account-lifecycle` | Einzelvalidierungen, kanonisierte Dubletten, unverifizierte Anfrage und altes Resetformular | 5 |
 | `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung mit Datumeingabe/Kalenderauswahl und Tastaturlogin | 5 |
@@ -91,7 +92,7 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
-| `all` | Alle 28 Testklassen einschließlich der Fast-Fälle | 152 |
+| `all` | Alle 28 Testklassen einschließlich der Fast-Fälle | 153 |
 
 AVATAR-01 prüft zwei eigenständige Parameterfälle bei 1280×900 und 390×844:
 PNG hochladen, Ausschnitt/Zoom, Uploadfläche ausblenden, gleich große lokale Aktionen,
@@ -105,8 +106,8 @@ Die detaillierten Schritte stehen in den Testbeschreibungen; Ausführungsergebni
 stehen getrennt in der Abdeckungsübersicht. Die 34 Fast-Fälle bleiben unverändert.
 
 Die sieben bisherigen Account-Fälle prüfen Profilspeichern und Dialogschließen.
-Die neuen Suites `account-security` und `session-management` ergänzen neun eigenständige
-Journeys ACCOUNT-SEC-01–04 und SESSIONS-01–05. Sie erstellen Zustände ausschließlich
+Die neuen Suites `account-security` und `session-management` ergänzen zehn eigenständige
+Journeys ACCOUNT-SEC-01–04 und SESSIONS-01–06. Sie erstellen Zustände ausschließlich
 über UI und eigene abgefangene Mailpit-Mails; Sicherheitsmails folgen der gespeicherten
 Kontosprache. Ein Mail-Linkaufruf allein darf die neue Adresse nicht übernehmen;
 Bestätigung, beide Benachrichtigungen, Sitzungswiderruf und Einmaligkeit werden geprüft.
@@ -123,7 +124,7 @@ SESSION-LIMIT-01–04 prüfen das gespeicherte Sitzungslimit über echte Anmeldu
 zusätzliche Tabs belegen keinen Platz, Logout gibt einen frei, Reduzierung erhält
 bestehende Geräte und Erhöhung wirkt sofort. Ein echter Chromium-Prozess wird
 beendet und neu gestartet, um Browserschließen ohne Logout und die begrenzte
-Remember-me-Rückkehr zu prüfen. Die gemeinsame Suite enthält mit den fünf Verwaltungsfällen 34 Fälle; `fast`
+Remember-me-Rückkehr zu prüfen. Die gemeinsame Suite enthält mit den sechs Verwaltungsfällen 36 Fälle; `fast`
 bleibt unverändert bei 34. Timeout- und Konkurrenzgrenzen prüft JUnit.
 
 Das gemeinsame Fixture meldet sein Konto nach dem abschließenden Screenshot über
@@ -654,3 +655,19 @@ COSMOS-06 ergänzt zwei Breiten für die vertikale Infoicon-Ausrichtung: alle dr
 Kontotabs, alle acht Konfigurationsgruppen, Mail-Test und Benachrichtigungsversand.
 Die Hinweiszeilen werden tatsächlich gerendert und ihre Iconmitten geometrisch
 verglichen. USER-05A prüft zusätzlich die 56px Seitenauswahl der Benutzerverwaltung.
+
+## Dauerhafte Sitzungen ab 21.10.2026
+
+AUTH-07C/D erhalten jetzt beide Loginarten über echte Serverneustarts und prüfen
+zusätzlich, dass Logout über den folgenden Neustart wirksam bleibt. AUTH-07A/B
+prüfen unverändert echte Browserprozess-Neustarts mit/ohne Remember-me.
+SESSIONS-04 erwartet beide erhaltenen aktiven Plätze und widerruft den anderen
+einschließlich seines gespeicherten Zugangs. Gespeicherte Zugänge ohne aktive
+Sitzung nach Timeout bleiben Gegenstand der JDBC-/Helpertests.
+SESSIONS-06 klickt nach Serverneustart eine alte Formularaktion: frisches Dokument,
+unveränderte gespeicherte Daten, erhaltenes Limit und gezielter Widerruf/Fortsetzen.
+Alle Fälle bleiben in `all`; Fast-Auswahl unverändert. Für dieses Paket ist nur die
+gezielte DE-/EN-Abnahme freigegeben. Aktuelle Ergebnisse siehe abdeckung.md.
+
+Gezielte Abnahme: `.\browser-tests\run.ps1 -Suite session-persistence -Workers 2 -Language de -Coverage`;
+anschließend EN mit `-NoBuild` und derselben gepinnten Image-ID.

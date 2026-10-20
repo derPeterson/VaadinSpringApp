@@ -127,10 +127,15 @@ public class AuthenticationBrowserTest extends BrowserFixture {
     otherTab.navigate(path(ADMIN_ROUTE));
     new LoginPage(otherTab).assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
     new UserMenu(page).signOut();
-    otherTab
-        .getByRole(
-            AriaRole.BUTTON, new Page.GetByRoleOptions().setName(USER_ICON_ALT).setExact(true))
-        .click();
+    com.microsoft.playwright.Locator staleMenu =
+        otherTab.getByRole(
+            AriaRole.BUTTON, new Page.GetByRoleOptions().setName(USER_ICON_ALT).setExact(true));
+    if (staleMenu.isVisible()) {
+      staleMenu.click();
+    } else {
+      // Sitzungsende darf die zweite UI bereits vor ihrer nächsten Aktion abmelden.
+      new LoginPage(otherTab).assertFormVisible();
+    }
     otherTab.navigate(path(ADMIN_ROUTE));
     new LoginPage(otherTab).assertFormVisible();
     page.goBack();

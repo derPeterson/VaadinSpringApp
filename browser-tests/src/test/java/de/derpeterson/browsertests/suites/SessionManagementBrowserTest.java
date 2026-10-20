@@ -65,6 +65,9 @@ public class SessionManagementBrowserTest extends BrowserFixture {
   @AfterEach
   void restore() {
     if (original != null) {
+      // Neustartfälle haben auch das Admin-Fixture verloren: frisches Dokument vor Navigation.
+      page.navigate(path(ADMIN_ROUTE));
+      new UserMenu(page).selectTestLanguage();
       configuration.open(AdminConfigGroup.SECURITY);
       configuration.enter(texts.getAdminConfigEntryMaxSessionsPerUser(), original);
       configuration.save();
@@ -227,16 +230,17 @@ public class SessionManagementBrowserTest extends BrowserFixture {
 
   @Test
   @DisplayName(
-      "SESSIONS-04: Gespeicherten Zugang nach echtem Anwendungsneustart getrennt anzeigen und widerrufen")
+      "SESSIONS-04: Aktive Sitzung samt gespeichertem Zugang nach echtem Neustart widerrufen")
   @Description(
       """
       1. Eigenes Konto im temporären Chromium-Profil mit Remember-me anmelden und Prozess schließen.
       2. In zweitem Kontext anmelden; nur die eigene Testanwendung neu starten.
-      3. Zweite Anmeldung automatisch wiederherstellen: eine aktive Sitzung und ein separat gespeicherter Zugang.
-      4. Gespeicherten Zugang widerrufen; alten Chromium-Prozess mit seinem Profil neu öffnen.
-      **Erwartet:** Neustart erfindet keine aktiven Geräte; widerrufener gespeicherter Zugang bleibt anonym.
+      3. Zweite Anmeldung wiederherstellen: zwei erhaltene aktive Sitzungen, keine zusätzliche gespeicherte Zeile.
+      4. Andere aktive Sitzung widerrufen; alten Chromium-Prozess mit seinem Profil neu öffnen.
+      5. Erneut den Server starten: Widerruf bleibt erhalten und es gibt genau einen aktiven Platz.
+      **Erwartet:** Neustart erhält aktive Geräte; Widerruf entfernt auch ihren gespeicherten Zugang.
       """)
-  void savedSignInSurvivesRestartButCanBeRevokedWithoutAnActiveSession() throws Exception {
+  void activeSignInSurvivesRestartAndItsSavedReturnCanBeRevoked() throws Exception {
     String email = user();
     try (PersistentBrowserActor persistent = new PersistentBrowserActor(playwright, profile)) {
       LoginPage login = new LoginPage(persistent.page);
@@ -260,9 +264,12 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       new UserMenu(owner.page).selectTestLanguage();
       AccountSessionsPage sessions = new AccountSessionsPage(owner.page);
       sessions.open();
-      sessions.assertCounts(1, 0, 1);
-      assertThat(sessions.rows("saved")).containsText(texts.getSessionSavedLogin());
-      sessions.revokeSaved(0);
+      sessions.assertCounts(2, 1, 0);
+      sessions.revokeOther(0);
+      sessions.assertCounts(1, 0, 0);
+      BrowserTestRunner.restartTestApplication();
+      owner.page.reload();
+      sessions.open();
       sessions.assertCounts(1, 0, 0);
       try (PersistentBrowserActor persistent = new PersistentBrowserActor(playwright, profile)) {
         LoginPage login = new LoginPage(persistent.page);
@@ -274,6 +281,47 @@ public class SessionManagementBrowserTest extends BrowserFixture {
     page.navigate(path(ADMIN_ROUTE));
     new UserMenu(page).selectTestLanguage();
     new LoginPage(page).assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
+  }
+
+  @Test
+  @DisplayName("SESSIONS-06: Neustart verwirft alte UI-Aktionen und erhält Sitzungsgrenzen")
+  @Description(
+      """
+      1. Eigenes Konto ohne Remember-me anmelden; Limit eins und ungespeicherten Profilentwurf setzen.
+      2. Nur den eigenen Testserver neu starten und den alten Speichern-Button verwenden.
+      3. Ein frisches Dokument wird angezeigt; Konto öffnen und unveränderten Namen prüfen.
+      4. Zweites Gerät muss weiterhin in die eingeschränkte Verwaltung; bestehender Platz zählt.
+      5. Alten Platz widerrufen und fortsetzen; nach weiterem Neustart bleibt nur die neue Sitzung.
+      **Erwartet:** Kein Replay alter RPCs, kein gespeicherter Entwurf und kein Limit-Bypass durch Neustart.
+      """)
+  void restartRebuildsUiWithoutReplayingDraftsOrLosingTheSlot() throws Exception {
+    String email = user();
+    limit(1);
+    try (BrowserActor owner = new BrowserActor(browser);
+        BrowserActor next = new BrowserActor(browser)) {
+      login(owner, email, false);
+      AccountPage form = new AccountPage(owner.page);
+      form.open();
+      String originalName = form.input("account-first-name").inputValue();
+      form.input("account-first-name").fill("MustNotSurviveRestart");
+      BrowserTestRunner.restartTestApplication();
+      form.host("account-save").click();
+      assertThat(owner.page).hasURL(urlPattern(HOME_ROUTE));
+      form.open();
+      assertThat(form.input("account-first-name")).hasValue(originalName);
+      next.login(email, BrowserTestAccounts.USER_PASSWORD);
+      LoginPage recovery = new LoginPage(next.page);
+      recovery.assertRestrictedManagement();
+      recovery.revokeRecoverySession(0);
+      UiActions.complete(next.page, () -> next.page.locator("#session-recovery-continue").click());
+      assertThat(next.page).hasURL(urlPattern(HOME_ROUTE));
+      BrowserTestRunner.restartTestApplication();
+      next.page.reload();
+      AccountSessionsPage sessions = new AccountSessionsPage(next.page);
+      sessions.open();
+      sessions.assertCounts(1, 0, 0);
+      revoked(owner.page);
+    }
   }
 
   @Test

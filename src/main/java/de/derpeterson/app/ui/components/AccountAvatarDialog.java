@@ -29,6 +29,11 @@ import de.derpeterson.app.service.UserAvatarService.Open;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InvalidObjectException;
+import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -416,5 +421,17 @@ public class AccountAvatarDialog extends Dialog {
     cancel.setText(messages.getAdminUsersCancel());
     save.setText(messages.getAdminUsersSave());
     editor.refreshTexts();
+  }
+
+  // Die dauerhafte HTTP-Sitzung speichert nur Sicherheitsdaten. Dieses UI enthält
+  // JPA-/Formular-/Uploadzustand und wird nach Neustart bewusst frisch aufgebaut.
+  @Serial
+  private void writeObject(ObjectOutputStream output) throws NotSerializableException {
+    throw new NotSerializableException("Runtime UI must be rebuilt from the authenticated session");
+  }
+
+  @Serial
+  private void readObject(ObjectInputStream input) throws InvalidObjectException {
+    throw new InvalidObjectException("Runtime UI cannot be restored from a Java object graph");
   }
 }

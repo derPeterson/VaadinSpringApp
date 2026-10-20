@@ -15,6 +15,7 @@ import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.CustomUserDetailsService;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.session.DurableSessionRegistry;
 import de.derpeterson.app.validation.EmailConflict;
 import de.derpeterson.app.validation.UserInputRules;
 import jakarta.servlet.http.HttpServletRequest;
@@ -343,6 +344,9 @@ public class AccountSecurityService {
         new TransactionSynchronization() {
           @Override
           public void afterCommit() {
+            if (keep != null && sessions instanceof DurableSessionRegistry<?> durable) {
+              durable.retainAfterPasswordChange(keep, identity);
+            }
             sessions.getAllSessions(identity, true).stream()
                 .filter(session -> !Objects.equals(session.getSessionId(), keep))
                 .forEach(SessionInformation::expireNow);

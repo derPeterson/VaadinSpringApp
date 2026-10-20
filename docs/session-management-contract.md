@@ -1,5 +1,12 @@
 # Vertrag: Eigene Sitzungen und gespeicherte Anmeldungen
 
+> Aktualisierung vom 21.10.2026: Der unten beschriebene frühere Verlust aktiver
+> Sitzungen bei Serverneustart ist durch die ausdrücklich beauftragte dauerhafte
+> Anmeldung ersetzt. Maßgeblich ist der [aktuelle Neustart-/Speichervertrag](durable-session-contract.md).
+> Frühere Prüfzahlen beschreiben den damaligen Stand. Eine gültige Sitzung zählt
+> jetzt auch nach Serverneustart weiter; die Vaadin-Oberfläche wird frisch aufgebaut.
+
+
 Stand: 17.10.2026. Implementierung auf `feature/account-session-management`.
 Die freigegebene Gesamtrunde begann am 17.10.2026 nach 08:00 Uhr Europe/Berlin;
 JUnit, Produktionsbuild und vollständige Browserläufe DE/EN sind erfolgreich abgeschlossen.

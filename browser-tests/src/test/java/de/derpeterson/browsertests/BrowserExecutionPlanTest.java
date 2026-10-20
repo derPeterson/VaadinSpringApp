@@ -117,6 +117,7 @@ class BrowserExecutionPlanTest {
             "authentication",
             "login-attempts",
             "session-limits",
+            "session-persistence",
             "maintenance",
             "user-management")) {
       List<Class<?>> selected = BrowserExecutionPlan.classes(suite);
@@ -130,6 +131,16 @@ class BrowserExecutionPlanTest {
         assertEquals(groups, BrowserExecutionPlan.partition(selected, workers, suite));
       }
     }
+  }
+
+  @Test
+  void persistenceAcceptanceCombinesSessionMaintenanceAndAccountSecurityWithoutDuplicates() {
+    List<Class<?>> selected = BrowserSuites.select("session-persistence");
+    assertEquals(9, selected.size());
+    assertEquals(selected.size(), new HashSet<>(selected).size());
+    assertTrue(selected.containsAll(BrowserSuites.select("session-limits")));
+    assertTrue(selected.containsAll(BrowserSuites.select("maintenance")));
+    assertTrue(selected.containsAll(BrowserSuites.select("account-security")));
   }
 
   @Test
@@ -202,7 +213,7 @@ class BrowserExecutionPlanTest {
             .filter(method -> method.isAnnotationPresent(Test.class))
             .count());
     assertEquals(
-        5,
+        6,
         Arrays.stream(SessionManagementBrowserTest.class.getDeclaredMethods())
             .filter(method -> method.isAnnotationPresent(Test.class))
             .count());

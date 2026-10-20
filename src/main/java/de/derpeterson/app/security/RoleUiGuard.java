@@ -13,21 +13,25 @@ import com.vaadin.flow.server.communication.UidlRequestHandler;
 import com.vaadin.flow.server.communication.UidlWriter;
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.security.session.ServiceReference;
 import de.derpeterson.app.websocket.UserRoleBroadcaster;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 /** Aktualisiert alte Ansichten mit erhaltenem HTTP-Login und stoppt vorher ihre alten RPCs. */
 @Component
-@RequiredArgsConstructor
 public class RoleUiGuard implements VaadinServiceInitListener {
-  private final SecurityService security;
-  private final UserRoleBroadcaster events;
+  private final ServiceReference<SecurityService> security;
+  private final ServiceReference<UserRoleBroadcaster> events;
+
+  public RoleUiGuard(SecurityService security, UserRoleBroadcaster events) {
+    this.security = new ServiceReference<>(SecurityService.class, security);
+    this.events = new ServiceReference<>(UserRoleBroadcaster.class, events);
+  }
 
   @Override
   public void serviceInit(ServiceInitEvent event) {
@@ -46,8 +50,10 @@ public class RoleUiGuard implements VaadinServiceInitListener {
               return false;
             }
             Optional<Authentication> auth =
-                security.refreshSessionAuthentication(
-                    servlet.getHttpServletRequest().getSession(false));
+                security
+                    .get()
+                    .refreshSessionAuthentication(
+                        servlet.getHttpServletRequest().getSession(false));
             UI ui = session.getService().findUI(request);
             if (ui == null
                 || auth.isEmpty()
@@ -78,7 +84,7 @@ public class RoleUiGuard implements VaadinServiceInitListener {
       return;
     }
     HttpSession http = request.getHttpServletRequest().getSession(false);
-    Optional<Authentication> auth = security.refreshSessionAuthentication(http);
+    Optional<Authentication> auth = security.get().refreshSessionAuthentication(http);
     if (auth.isEmpty()) {
       return;
     }
@@ -87,28 +93,31 @@ public class RoleUiGuard implements VaadinServiceInitListener {
     if (com.vaadin.flow.component.ComponentUtil.getData(ui, marker) != null) {
       return;
     }
-    UserEntity owner = security.getSessionUser(http).orElse(null);
+    UserEntity owner = security.get().getSessionUser(http).orElse(null);
     if (owner == null) {
       return;
     }
     com.vaadin.flow.component.ComponentUtil.setData(ui, marker, Boolean.TRUE);
     String contextPath = request.getContextPath();
     Registration registration =
-        events.register(
-            id -> {
-              if (!Objects.equals(owner.getId(), id)) {
-                return;
-              }
-              ui.access(
-                  () -> {
-                    if (!ui.isAttached()) {
-                      return;
-                    }
-                    security
-                        .refreshSessionAuthentication(http)
-                        .ifPresent(fresh -> RoleUiState.refresh(ui, fresh, contextPath));
-                  });
-            });
+        events
+            .get()
+            .register(
+                id -> {
+                  if (!Objects.equals(owner.getId(), id)) {
+                    return;
+                  }
+                  ui.access(
+                      () -> {
+                        if (!ui.isAttached()) {
+                          return;
+                        }
+                        security
+                            .get()
+                            .refreshSessionAuthentication(http)
+                            .ifPresent(fresh -> RoleUiState.refresh(ui, fresh, contextPath));
+                      });
+                });
     ui.addDetachListener(detach -> registration.remove());
   }
 }

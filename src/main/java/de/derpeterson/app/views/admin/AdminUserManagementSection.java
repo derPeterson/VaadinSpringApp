@@ -54,6 +54,11 @@ import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.validation.EmailConflict;
 import de.derpeterson.app.validation.UserInputRules;
+import java.io.InvalidObjectException;
+import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -1512,5 +1517,17 @@ public class AdminUserManagementSection extends VerticalLayout {
               .collect(Collectors.toSet());
       return formData;
     }
+  }
+
+  // Die dauerhafte HTTP-Sitzung speichert nur Sicherheitsdaten. Dieses UI enthält
+  // JPA-/Formular-/Uploadzustand und wird nach Neustart bewusst frisch aufgebaut.
+  @Serial
+  private void writeObject(ObjectOutputStream output) throws NotSerializableException {
+    throw new NotSerializableException("Runtime UI must be rebuilt from the authenticated session");
+  }
+
+  @Serial
+  private void readObject(ObjectInputStream input) throws InvalidObjectException {
+    throw new InvalidObjectException("Runtime UI cannot be restored from a Java object graph");
   }
 }

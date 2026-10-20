@@ -2,6 +2,10 @@ package de.derpeterson.app.i18n;
 
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.UserStatus;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
@@ -12,22 +16,43 @@ import org.springframework.stereotype.Component;
  * Application adapter: existing getters remain available, with a live session locale by default.
  */
 @Component
-public class MessageProperties extends MessageTexts {
+public class MessageProperties extends MessageTexts implements Serializable {
+  private final Locale fixedLocale;
 
   @Autowired
   public MessageProperties(CustomI18NProvider provider) {
     super(provider::getTranslation);
+    fixedLocale = null;
   }
 
-  private MessageProperties(UnaryOperator<String> lookup) {
+  private MessageProperties(UnaryOperator<String> lookup, Locale locale) {
     super(lookup);
+    fixedLocale = locale;
+  }
+
+  @Serial
+  private Object writeReplace() {
+    return new SerializedMessages(fixedLocale);
+  }
+
+  @Serial
+  private void readObject(ObjectInputStream input) throws InvalidObjectException {
+    throw new InvalidObjectException("Message serialization proxy required");
+  }
+
+  private record SerializedMessages(Locale locale) implements Serializable {
+    @Serial
+    private Object readResolve() {
+      CustomI18NProvider provider = new CustomI18NProvider();
+      return locale == null ? new MessageProperties(provider) : forLocale(provider, locale);
+    }
   }
 
   /** Fixed locale for explicit translations; does not read or change the Vaadin session. */
   public static MessageProperties forLocale(CustomI18NProvider provider, Locale locale) {
     Objects.requireNonNull(provider, "Translation provider required.");
     Objects.requireNonNull(locale, "Locale required.");
-    return new MessageProperties(key -> provider.getTranslation(key, locale));
+    return new MessageProperties(key -> provider.getTranslation(key, locale), locale);
   }
 
   public String getUserStatusLabel(UserStatus status) {

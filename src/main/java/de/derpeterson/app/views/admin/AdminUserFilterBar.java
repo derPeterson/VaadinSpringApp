@@ -11,10 +11,12 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.function.SerializableRunnable;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,7 +48,7 @@ final class AdminUserFilterBar extends VerticalLayout {
       ComboBox<UserStatus> status,
       ComboBox<RoleType> role,
       AdminUserActivityFilter activity,
-      Runnable applyFilters) {
+      SerializableRunnable applyFilters) {
     this.texts = texts;
     this.search = search;
     setPadding(false);
@@ -154,7 +156,8 @@ final class AdminUserFilterBar extends VerticalLayout {
     activeFiltersRow.setVisible(!activeFilters.isEmpty());
   }
 
-  record ActiveFilter(String label, String value, Runnable remove) {}
+  record ActiveFilter(String label, String value, SerializableRunnable remove)
+      implements Serializable {}
 
   private void clearAllFilters() {
     search.clear();

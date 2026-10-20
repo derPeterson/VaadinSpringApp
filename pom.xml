@@ -63,6 +63,11 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.springframework.session</groupId>
+            <artifactId>spring-session-jdbc</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>de.derpeterson</groupId>
             <artifactId>shared</artifactId>
             <version>1.0-SNAPSHOT</version>

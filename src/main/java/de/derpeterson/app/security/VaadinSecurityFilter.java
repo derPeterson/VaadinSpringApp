@@ -2,6 +2,7 @@ package de.derpeterson.app.security;
 
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.model.enums.AppRoute;
+import de.derpeterson.app.security.session.DurableSessionRepository;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -40,7 +41,8 @@ public class VaadinSecurityFilter implements Filter {
         authentication != null && authentication.getPrincipal() instanceof UserDetails
             || VaadinSession.getCurrent() != null
                 && VaadinSession.getCurrent().getAttribute(UserDetails.class) != null
-            || session != null && session.getAttribute("authenticatedUser") instanceof UserDetails;
+            || session != null && session.getAttribute("authenticatedUser") instanceof UserDetails
+            || session != null && session.getAttribute(DurableSessionRepository.ACTIVE) != null;
     boolean loginDocument =
         "GET".equals(httpRequest.getMethod())
             && AppRoute.LOGIN.getSecurityRoute().equals(httpRequest.getServletPath());

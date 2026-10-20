@@ -10,17 +10,20 @@ import com.vaadin.flow.server.VaadinServiceInitListener;
 import com.vaadin.flow.server.VaadinServletRequest;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.model.enums.AppRoute;
+import de.derpeterson.app.security.session.ServiceReference;
 import de.derpeterson.app.views.LoginView;
 import de.derpeterson.app.views.MaintenanceView;
-import lombok.RequiredArgsConstructor;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class MaintenanceUiGuard implements VaadinServiceInitListener {
-  private final MaintenanceService maintenance;
+  private final ServiceReference<MaintenanceService> maintenance;
+
+  public MaintenanceUiGuard(MaintenanceService maintenance) {
+    this.maintenance = new ServiceReference<>(MaintenanceService.class, maintenance);
+  }
 
   @Override
   public void serviceInit(ServiceInitEvent event) {
@@ -46,7 +49,7 @@ public class MaintenanceUiGuard implements VaadinServiceInitListener {
     ui.addBeforeEnterListener(
         navigation -> {
           if (VaadinRequest.getCurrent() instanceof VaadinServletRequest request
-              && maintenance.blocks(request.getHttpServletRequest())
+              && maintenance.get().blocks(request.getHttpServletRequest())
               && navigation.getNavigationTarget() != LoginView.class
               && navigation.getNavigationTarget() != MaintenanceView.class) {
             navigation.rerouteTo(MaintenanceView.class);

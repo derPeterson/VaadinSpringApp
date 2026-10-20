@@ -2,12 +2,15 @@ package de.derpeterson.app.security;
 
 import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.security.session.DurableSessionRegistry;
+import de.derpeterson.app.security.session.DurableSessionRepository;
 import de.derpeterson.app.service.ConfigService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpSessionBindingEvent;
 import jakarta.servlet.http.HttpSessionBindingListener;
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -26,6 +29,7 @@ import org.springframework.security.web.authentication.session.SessionAuthentica
 import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.util.WebUtils;
 
 /** One-instance admission. Fixed stripes bound lock memory independently of login identities. */
@@ -44,7 +48,8 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
       String identity,
       DeviceDescription device,
       Instant created,
-      String series) {}
+      String series)
+      implements Serializable {}
 
   private final Map<String, Active> metadata = new ConcurrentHashMap<>();
   private DeviceTokenRepository tokens;
@@ -85,6 +90,12 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
     return withIdentity(
         identity,
         () -> {
+          if (registry instanceof DurableSessionRegistry<?> persistent) {
+            return registry.getAllSessions(identity, false).stream()
+                .map(info -> persistent.metadata(info.getSessionId()))
+                .filter(java.util.Objects::nonNull)
+                .toList();
+          }
           metadata
               .entrySet()
               .removeIf(
@@ -164,6 +175,21 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
       return;
     }
     session.setAttribute(DeviceRememberMeServices.SERIES, series);
+    if (registry instanceof DurableSessionRegistry<?> persistent) {
+      Active previous = persistent.metadata(session.getId());
+      if (previous != null) {
+        session.setAttribute(
+            DurableSessionRepository.ACTIVE,
+            new Active(
+                session.getId(),
+                previous.handle(),
+                previous.identity(),
+                previous.device(),
+                previous.created(),
+                series));
+      }
+      return;
+    }
     metadata.computeIfPresent(
         session.getId(),
         (id, old) ->
@@ -172,12 +198,23 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
 
   public boolean isExpired(HttpServletRequest request) {
     HttpSession session = request == null ? null : request.getSession(false);
-    return session != null && isSessionExpired(session.getId());
+    if (session == null) {
+      return false;
+    }
+    SessionInformation information = registry.getSessionInformation(session.getId());
+    if (information != null) {
+      return information.isExpired();
+    }
+    // Ein alter Socket darf einen entfernten dauerhaften Bestand nicht neu zulassen.
+    return registry instanceof DurableSessionRegistry<?>
+        && session.getAttribute(DurableSessionRepository.ACTIVE) != null;
   }
 
   public boolean isSessionExpired(String sessionId) {
     SessionInformation information = registry.getSessionInformation(sessionId);
-    return information != null && information.isExpired();
+    return information == null
+        ? registry instanceof DurableSessionRegistry<?>
+        : information.isExpired();
   }
 
   @Override
@@ -311,15 +348,19 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
     if (returningSeries != null) {
       session.setAttribute(DeviceRememberMeServices.SERIES, returningSeries);
     }
-    metadata.put(
-        session.getId(),
+    Active active =
         new Active(
             session.getId(),
             UUID.randomUUID().toString(),
             identity,
             DeviceDescription.from(request.getHeader("User-Agent")),
             Instant.now(),
-            (String) session.getAttribute(DeviceRememberMeServices.SERIES)));
+            (String) session.getAttribute(DeviceRememberMeServices.SERIES));
+    if (registry instanceof DurableSessionRegistry<?>) {
+      session.setAttribute(DurableSessionRepository.ACTIVE, active);
+    } else {
+      metadata.put(session.getId(), active);
+    }
     session.setAttribute(REGISTRATION, new Registration(registry, metadata));
   }
 
@@ -350,13 +391,34 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
     return false;
   }
 
-  /** Binding callback also releases MockHttpSessions and explicit invalidations immediately. */
-  private record Registration(SessionRegistry registry, Map<String, Active> metadata)
-      implements HttpSessionBindingListener {
+  /** Freigabe auch für einfache Servlet-/Test-Sitzungen; keine Registry wird serialisiert. */
+  private static final class Registration implements HttpSessionBindingListener, Serializable {
+    private final transient SessionRegistry registry;
+    private final transient Map<String, Active> metadata;
+
+    private Registration(SessionRegistry registry, Map<String, Active> metadata) {
+      this.registry = registry;
+      this.metadata = metadata;
+    }
+
     @Override
     public void valueUnbound(HttpSessionBindingEvent event) {
-      registry.removeSessionInformation(event.getSession().getId());
-      metadata.remove(event.getSession().getId());
+      if (registry != null) {
+        registry.removeSessionInformation(event.getSession().getId());
+        metadata.remove(event.getSession().getId());
+        return;
+      }
+      // Nach Lesen an die aktuelle Anwendung anbinden, niemals einen alten Dienstgraph nutzen.
+      SessionAdmissionService current =
+          WebApplicationContextUtils.getRequiredWebApplicationContext(
+                  event.getSession().getServletContext())
+              .getBean(SessionAdmissionService.class);
+      current.releaseRegistration(event.getSession().getId());
     }
+  }
+
+  private void releaseRegistration(String id) {
+    registry.removeSessionInformation(id);
+    metadata.remove(id);
   }
 }

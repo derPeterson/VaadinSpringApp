@@ -101,11 +101,12 @@ public class RememberMeBrowserTest extends BrowserFixture {
       """
       1. Eigenes Konto über die Benutzerverwaltung erstellen und mit/ohne Remember-me anmelden.
       2. Zweiten angemeldeten Tab im selben Kontext öffnen und nur die eigene Testanwendung neu starten.
-      3. Beide Tabs neu laden; bei Remember-me muss dieselbe Identität zurückkehren.
-      4. Ohne Remember-me ist eine neue Anmeldung nötig; danach normale Anmeldung und Logout prüfen.
-      **Erwartet:** Neustart erhält dauerhaftes Remember-me, ohne Cookie-/Storage-Injektion.
+      3. Beide Tabs neu laden: dieselbe Identität bleibt mit und ohne Remember-me erhalten.
+      4. Abmelden, Anwendung erneut starten und beide Tabs laden: keine Anmeldung mehr.
+      **Erwartet:** Serverneustart erhält den bestehenden Sitzungsplatz, Logout beendet ihn dauerhaft.
+      Browserprozess-Neustarts ohne Remember-me bleiben gesondert anonym.
       """)
-  void serverRestartRestoresOnlyRememberedLogin(boolean remember, String caseId) throws Exception {
+  void serverRestartRestoresBothLoginKinds(boolean remember, String caseId) throws Exception {
     String email = createUser();
     try (BrowserActor actor = new BrowserActor(browser)) {
       actor.login(email, BrowserTestAccounts.USER_PASSWORD, remember);
@@ -116,18 +117,19 @@ public class RememberMeBrowserTest extends BrowserFixture {
       BrowserTestRunner.restartTestApplication();
       actor.page.reload();
       second.reload();
+      new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
+      new UserMenu(second).assertUserSignedInWithoutAdminAction(email);
       if (remember) {
-        new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
-        new UserMenu(second).assertUserSignedInWithoutAdminAction(email);
         assertTrue(
             actor.context.cookies().stream().anyMatch(cookie -> cookie.name.equals("remember-me")));
-      } else {
-        new UserMenu(actor.page).selectTestLanguage();
-        assertAnonymous(actor.page, email);
-        actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-        new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
       }
       new UserMenu(actor.page).requestSignOut();
+      BrowserTestRunner.restartTestApplication();
+      actor.page.navigate(path(HOME_ROUTE));
+      second.navigate(path(HOME_ROUTE));
+      new UserMenu(actor.page).selectTestLanguage();
+      assertAnonymous(actor.page, email);
+      assertAnonymous(second, email);
     }
   }
 

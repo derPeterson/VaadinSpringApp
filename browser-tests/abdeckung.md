@@ -1,5 +1,24 @@
 # Browserabdeckung und offene Punkte
 
+## Dauerhafte Sitzungen und UI-Serialisierungsvertrag vom 21.10.2026
+
+17 Export-Finding-IDs bearbeitet; dauerhaft wiederherstellbare Anmeldung auf
+ausdrücklichen zusätzlichen Benutzerwunsch eingeführt. Vaadin-UIs/Formularentwürfe
+werden nach Serverneustart frisch aufgebaut. Eininstanzvertrag, keine Cluster-
+oder vollständige UI-Passivierung. **2185/2185 Anwendungs-JUnits und 49/49 Browser-
+Helper** grün, null Fehler/Skips; Produktions-Clean-Verify, Spotless und Checkstyle
+erfolgreich. Frische JUnit-Coverage **88,23 % Zeilen / 77,67 % Zweige** (236 Klassen).
+
+Freigegebene gezielte Suite session-persistence: **DE 49/49, EN 49/49**, null Skips,
+identisches finales Produktionsimage, je zwei isolierte Worker, Cleanup und
+Berichterstellung erfolgreich. Echte Server-/Browserneustarts, alter Formular-RPC,
+Sitzungslimit, Widerruf, Logout, Remember-me, Rechte/Wartung und eigene Kontosicherheit.
+Kein neuer vollständiger all-Lauf. Zwischenbefunde einschließlich korrigierter
+401-Abwehr und unterbrochener alter Image-Referenz sind transparent dokumentiert.
+[17 IDs, Änderungen, Nachweise und Messgrenzen](../docs/sonar-ui-sessions-2026-10-21.md),
+[aktueller Neustart-/Speichervertrag](../docs/durable-session-contract.md).
+
+
 ## Komplexität und Fehlerbehandlung vom 20.10.2026
 
 19 Export-IDs bearbeitet: 17 S3776 und zwei S1141 in 16 Produktionsdateien.

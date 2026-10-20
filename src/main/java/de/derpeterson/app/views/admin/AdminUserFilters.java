@@ -3,12 +3,14 @@ package de.derpeterson.app.views.admin;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Locale;
 
 /** UI filter values; enum identity stays stable across translation changes. */
 record AdminUserFilters(
-    String search, Boolean enabled, UserStatus status, RoleType role, Instant activeSince) {
+    String search, Boolean enabled, UserStatus status, RoleType role, Instant activeSince)
+    implements Serializable {
   boolean matches(UserEntity user) {
     String query = normalize(search);
     String fullName = normalize(user.getFirstName()) + " " + normalize(user.getLastName());

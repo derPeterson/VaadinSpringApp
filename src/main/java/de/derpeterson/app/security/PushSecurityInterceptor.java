@@ -9,20 +9,24 @@ import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.VaadinServiceInitListener;
 import com.vaadin.flow.server.VaadinServletRequest;
 import com.vaadin.flow.server.VaadinSession;
+import de.derpeterson.app.security.session.ServiceReference;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class PushSecurityInterceptor
     implements VaadinServiceInitListener, VaadinRequestInterceptor {
 
-  private final SecurityService securityService;
-  private final MaintenanceService maintenance;
+  private final ServiceReference<SecurityService> securityService;
+  private final ServiceReference<MaintenanceService> maintenance;
+
+  public PushSecurityInterceptor(SecurityService securityService, MaintenanceService maintenance) {
+    this.securityService = new ServiceReference<>(SecurityService.class, securityService);
+    this.maintenance = new ServiceReference<>(MaintenanceService.class, maintenance);
+  }
 
   @Override
   public void serviceInit(ServiceInitEvent event) {
@@ -47,7 +51,7 @@ public class PushSecurityInterceptor
   }
 
   private void requireCurrentPrivileges(HttpServletRequest request) {
-    if (!securityService.hasCurrentSessionPrivileges(request)) {
+    if (!securityService.get().hasCurrentSessionPrivileges(request)) {
       // PushHandler calls requestStart before RPC dispatch, outside its requestEnd finally.
       clearRequestContexts();
       throw new AccessDeniedException("Session privileges have changed");
@@ -56,7 +60,7 @@ public class PushSecurityInterceptor
 
   private void requireCurrentRoleUi(HttpServletRequest request) {
     Optional<Authentication> auth =
-        securityService.refreshSessionAuthentication(request.getSession(false));
+        securityService.get().refreshSessionAuthentication(request.getSession(false));
     if (auth.isPresent()
         && Boolean.TRUE.equals(
             MaintenanceTransport.withUi(
@@ -81,7 +85,7 @@ public class PushSecurityInterceptor
   }
 
   private void requireMaintenanceAccess(HttpServletRequest request) {
-    if (maintenance.blocks(request) && !MaintenanceTransport.allowedUi(request)) {
+    if (maintenance.get().blocks(request) && !MaintenanceTransport.allowedUi(request)) {
       MaintenanceTransport.redirectUi(request);
       clearRequestContexts();
       throw new MaintenanceAccessException("UI actions paused for maintenance");

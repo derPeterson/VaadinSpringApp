@@ -6,15 +6,15 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.function.SerializableConsumer;
 import de.derpeterson.app.i18n.MessageProperties;
 import java.util.List;
 import java.util.TreeSet;
-import java.util.function.IntConsumer;
 
 /** Rows-per-page summary and compact numbered navigation, separate from CRUD. */
 final class AdminUserPagination extends HorizontalLayout {
   private final MessageProperties texts;
-  private final IntConsumer selectPage;
+  private final SerializableConsumer<Integer> selectPage;
   private final ComboBox<Integer> pageSize = new ComboBox<>();
   private final Span rowsLabel = new Span();
   private final Span totalLabel = new Span();
@@ -27,14 +27,17 @@ final class AdminUserPagination extends HorizontalLayout {
   private int totalPages = 1;
   private int totalItems;
 
-  AdminUserPagination(MessageProperties texts, IntConsumer selectPage, IntConsumer selectPageSize) {
+  AdminUserPagination(
+      MessageProperties texts,
+      SerializableConsumer<Integer> selectPage,
+      SerializableConsumer<Integer> selectPageSize) {
     this(texts, selectPage, selectPageSize, List.of(10, 20, 50));
   }
 
   AdminUserPagination(
       MessageProperties texts,
-      IntConsumer selectPage,
-      IntConsumer selectPageSize,
+      SerializableConsumer<Integer> selectPage,
+      SerializableConsumer<Integer> selectPageSize,
       List<Integer> pageSizes) {
     this.texts = texts;
     this.selectPage = selectPage;
