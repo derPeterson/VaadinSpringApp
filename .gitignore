@@ -42,3 +42,4 @@ dev-shell.bat
 /shared/target/
 /browser-tests/target/
 /browser-tests/runs/
+sonar-findings.json
