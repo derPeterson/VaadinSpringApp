@@ -78,7 +78,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     // RAW vermeidet eine vorgelagerte Multipart-Pufferung; tatsächliche Bytes begrenzt der Handler.
     uploader.setUploadFormat(UploadFormat.RAW);
     uploader.setDropAllowed(false);
-    uploader.setAcceptedFileTypes("image/jpeg", "image/png");
+    uploader.setAcceptedMimeTypes("image/jpeg", "image/png");
     uploader.setMaxFiles(1);
     uploader.setMaxFileSize(AvatarImageProcessor.MAX_UPLOAD);
     uploader.addFileRejectedListener(

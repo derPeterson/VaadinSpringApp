@@ -316,7 +316,7 @@ public class AccountAvatarDialog extends Dialog {
       throw new InvalidImage(Problem.BUSY);
     }
     boolean local = data.path("local").asBoolean();
-    UUID imageId = local ? UUID.fromString(data.path("imageId").asText()) : null;
+    UUID imageId = local ? UUID.fromString(data.path("imageId").asString()) : null;
     if (local && !Objects.equals(uploadedImage, imageId)) {
       throw new InvalidImage(Problem.MISSING);
     }
