@@ -1,5 +1,17 @@
 # Browserabdeckung und offene Punkte
 
+## Avatar-Parser vom 20.10.2026
+
+Fünf vorhandene Parser-Findings gezielt bearbeitet; Sonar-Abgleich ausstehend.
+70 neue öffentliche Bild-/Metadatenfälle; vor Überarbeitung 84/84 Charakterisierungen,
+danach 104/104 gezielte Avatarfälle und final **2070/2070 Anwendungs-JUnits**,
+keine Fehler oder Skips. Produktionsbuild, Spotless und Checkstyle erfolgreich.
+Frische JUnit-Coverage: **87,91 % Zeilen / 77,50 % Zweige**, 220 Klassen.
+AvatarImageProcessor: **94,84 % Zeilen / 78,48 % Zweige**. Keine neue Browserabnahme
+oder Browsercoverage. Workbox-Imports und Entwicklungs-Vite-Konfiguration nach
+Produktionsbuild erfolgreich nachgeprüft; Paketdateien unverändert.
+[Änderungen, Finding-IDs, Nachweise und Grenzen](../docs/sonar-avatar-parser-2026-10-20.md).
+
 ## Kleines Sonar-Wartbarkeitspaket vom 20.10.2026
 
 17 Findings in neun Java-Dateien gezielt bearbeitet; neun weitere kleine Hinweise
