@@ -165,6 +165,7 @@ class BootstrapAccountsPersistenceTest {
       case "firstName" -> broken.setFirstName(" ");
       case "birthDate" -> broken.setBirthDate(java.time.LocalDate.now().plusDays(1));
       case "language" -> broken.setPreferredLocale(Locale.FRENCH);
+      default -> throw new IllegalArgumentException("Unknown invalid bootstrap field: " + invalid);
     }
     settings.setAdmins(List.of(account("valid@example.test"), broken));
     assertThrows(IllegalArgumentException.class, this::run);

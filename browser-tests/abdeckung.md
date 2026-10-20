@@ -1,5 +1,18 @@
 # Browserabdeckung und offene Punkte
 
+## Kleines Sonar-Wartbarkeitspaket vom 20.10.2026
+
+17 Findings in neun Java-Dateien gezielt bearbeitet; neun weitere kleine Hinweise
+begründet zurückgestellt. **326/326 gezielte Tests und 2000/2000 Anwendungs-JUnits**,
+keine Fehler oder Skips. Produktionsbuild, Spotless und Checkstyle erfolgreich.
+Frische JUnit-Coverage: **87,79 % Zeilen / 77,03 % Zweige**, 219 Klassen.
+Keine neue Browserabnahme, kein Dockerimage und kein erneuter Browser-Helferlauf;
+vorhandene DE-/EN-Komponentenfälle sind enthalten. Kein neuer Sonar-Scan. Nach ausdrücklicher Folgefreigabe vier
+Kontextfälle als Accepted mit Kommentar gespeichert und geprüft; fünf weitere
+Zurückstellungen bleiben offen. Sonar danach: 75 offene Findings vor dem nächsten
+Scan. Ausgangsexport: 79; tatsächliche Code-Reduktion nach dem Scan prüfen.
+[Änderungen, Finding-IDs, Verträge und Grenzen](../docs/sonar-wartbarkeit-2026-10-20.md).
+
 ## Sonar-Abendpaket vom 20.10.2026
 
 48 Findings einzeln geprüft: 31 mit Codeänderungen bearbeitet, 17 begründet

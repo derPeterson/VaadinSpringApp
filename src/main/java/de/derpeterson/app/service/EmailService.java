@@ -17,6 +17,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 @Service
 @RequiredArgsConstructor
@@ -65,6 +66,7 @@ public class EmailService {
 
     helper.setTo(recipient.get());
     helper.setSubject(subject);
+    Assert.notNull(htmlContent, "Text must not be null");
     helper.setText(htmlContent, true);
     helper.setFrom(configService.getString(ConfigEntry.EMAIL_FROM));
 

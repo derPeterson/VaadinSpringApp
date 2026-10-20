@@ -6,6 +6,7 @@ import com.vaadin.flow.data.binder.Result;
 import de.derpeterson.app.i18n.MessageProperties;
 import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Locale;
 
 /** Zusätzliche reine Zifferneingaben; normale Datumsformate bleiben bei Vaadin. */
@@ -15,7 +16,7 @@ public final class CompactDateInput {
   public static void configure(DatePicker picker, MessageProperties messages) {
     DatePickerI18n i18n =
         picker.getI18n() == null ? new DatePicker.DatePickerI18n() : picker.getI18n();
-    i18n.setReferenceDate(LocalDate.of(2000, 1, 1));
+    i18n.setReferenceDate(LocalDate.of(2000, Month.JANUARY, 1));
     // Die Ausgabe entspricht dem sichtbaren DE-Beispiel; kurze getrennte Eingaben bleiben erlaubt.
     boolean german = Locale.GERMAN.getLanguage().equals(picker.getLocale().getLanguage());
     if (german) {

@@ -465,7 +465,7 @@ public class AdminUserManagementSection extends VerticalLayout {
             appliedFilters.status(),
             appliedFilters.role(),
             appliedFilters.activeSince());
-    filteredUsers = users.stream().filter(filters::matches).collect(Collectors.toList());
+    filteredUsers = users.stream().filter(filters::matches).toList();
 
     currentPage = 0;
     updateGridPage();

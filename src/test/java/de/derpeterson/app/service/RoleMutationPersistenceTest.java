@@ -241,6 +241,9 @@ class RoleMutationPersistenceTest {
   @ValueSource(strings = {"anonymous", "user", "guest", "disabled-admin", "stale-admin"})
   void freshServiceAuthorizationRejectsNonAdminsAndLostPrivileges(String source) {
     switch (source) {
+      case "anonymous" -> {
+        // Die Setup-Fixture besitzt noch keine Authentifizierung.
+      }
       case "user" -> login(user);
       case "guest" -> login(guest);
       case "disabled-admin", "stale-admin" -> {
@@ -255,6 +258,7 @@ class RoleMutationPersistenceTest {
               }
             });
       }
+      default -> throw new IllegalArgumentException("Unknown authorization fixture: " + source);
     }
     assertThrows(AccessDeniedException.class, () -> assign(user, RoleType.ROLE_ADMIN));
     assertEquals(0, notifications.count());

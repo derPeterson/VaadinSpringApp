@@ -34,7 +34,7 @@ import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -320,14 +320,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       return List.of();
     }
 
-    List<ConfigEntry> visibleEntries = new ArrayList<>();
-    for (ConfigEntry configEntry : ConfigEntry.values()) {
-      if (filter.test(configEntry)) {
-        visibleEntries.add(configEntry);
-      }
-    }
-
-    return visibleEntries;
+    return Arrays.stream(ConfigEntry.values()).filter(filter).toList();
   }
 
   private void clearValidationStatesForVisibleInputs() {

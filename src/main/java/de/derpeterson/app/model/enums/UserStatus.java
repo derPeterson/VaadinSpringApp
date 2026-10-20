@@ -9,10 +9,12 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum UserStatus {
-  AVAILABLE("var(--lumo-success-color)", "var(--lumo-base-color)"),
-  EMPLOYED("var(--lumo-error-color)", "var(--lumo-base-color)"),
-  ABSENT("var(--lumo-warning-color)", "var(--lumo-base-color)"),
-  OFFLINE("var(--lumo-secondary-text-color)", "var(--lumo-base-color)");
+  AVAILABLE("var(--lumo-success-color)", UserStatus.BACKGROUND_COLOR),
+  EMPLOYED("var(--lumo-error-color)", UserStatus.BACKGROUND_COLOR),
+  ABSENT("var(--lumo-warning-color)", UserStatus.BACKGROUND_COLOR),
+  OFFLINE("var(--lumo-secondary-text-color)", UserStatus.BACKGROUND_COLOR);
+
+  private static final String BACKGROUND_COLOR = "var(--lumo-base-color)";
 
   private final String color;
   private final String backgroundColor;

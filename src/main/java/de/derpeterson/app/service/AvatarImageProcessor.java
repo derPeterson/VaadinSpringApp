@@ -168,7 +168,8 @@ public class AvatarImageProcessor {
                   }
 
                   private void limit(int n) {
-                    if ((count += n) > MAX_RESULT) {
+                    count += n;
+                    if (count > MAX_RESULT) {
                       throw new InvalidImage(Problem.OUTPUT);
                     }
                   }
@@ -216,15 +217,16 @@ public class AvatarImageProcessor {
     }
   }
 
+  // Ein double-Literal wählt die double-Matrix statt der float-Überladung.
   private AffineTransform transform(int o, int w, int h) {
     return switch (o) {
-      case 2 -> new AffineTransform(-1, 0, 0, 1, w, 0);
-      case 3 -> new AffineTransform(-1, 0, 0, -1, w, h);
-      case 4 -> new AffineTransform(1, 0, 0, -1, 0, h);
-      case 5 -> new AffineTransform(0, 1, 1, 0, 0, 0);
-      case 6 -> new AffineTransform(0, 1, -1, 0, h, 0);
-      case 7 -> new AffineTransform(0, -1, -1, 0, h, w);
-      case 8 -> new AffineTransform(0, -1, 1, 0, 0, w);
+      case 2 -> new AffineTransform(-1.0, 0, 0, 1, w, 0);
+      case 3 -> new AffineTransform(-1.0, 0, 0, -1, w, h);
+      case 4 -> new AffineTransform(1.0, 0, 0, -1, 0, h);
+      case 5 -> new AffineTransform(0.0, 1, 1, 0, 0, 0);
+      case 6 -> new AffineTransform(0.0, 1, -1, 0, h, 0);
+      case 7 -> new AffineTransform(0.0, -1, -1, 0, h, w);
+      case 8 -> new AffineTransform(0.0, -1, 1, 0, 0, w);
       default -> new AffineTransform();
     };
   }
