@@ -89,6 +89,19 @@
   Konfiguration `config/checkstyle.xml` prüft Klammern und Sternchenimporte über
   Anwendung, Shared und Browsertests. Die sinnvolle Typwahl und Methodengliederung
   bleiben Teil des menschlichen Reviews. Anleitung: `docs/java-formatierung.md`.
+- Logging: Normalbetrieb INFO; DEBUG gezielt für fachliche Diagnose. Keine Methoden-/
+  Abzweig-/Poll-/Aktivitätsprotokollierung. Nur wichtige Ergebnisse, behandelbare
+  Störungen und Fehler melden; keine doppelten Fehlerlogs an mehreren Grenzen.
+  Erfolg innerhalb einer Transaktion erst nach Commit über `AfterCommitLog`; nach
+  unabhängigem TransactionTemplate-Commit darf direkt geloggt werden. Keine Entities
+  als verzögerte Logargumente. Queueaufnahme und Transportannahme klar unterscheiden.
+- Logs enthalten nur freigegebene Metadaten (interne IDs, Typen, Anzahlen, Zustände).
+  Keine Credentials, Token/Serien/Digests, Sessionkennungen, Principalobjekte,
+  E-Mail-Adressen, Nachrichtentexte oder rohe Formular-/Konfigurationswerte ausgeben.
+  Anwendungsfehler mit `LogSafety.safeFailure` protokollieren: Typ und Stackframes
+  bleiben, freie Exceptiontexte entfallen; Originale weiter unverändert behandeln.
+  Die beiden geerbten Security-Logger ausdrücklich auf INFO belassen, auch bei
+  Diagnose-DEBUG am Elternpaket. Regeln und Einführung: `docs/logging.md`.
 - Python-Standard ist Ruff, zentral in `ruff.toml`; die genaue Version steht auch
   in `requirements-dev.txt`. Installation nur in der virtuellen Projektumgebung:
   `.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt`.

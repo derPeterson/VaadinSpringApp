@@ -2,6 +2,7 @@ package de.derpeterson.app.config;
 
 import de.derpeterson.app.config.BootstrapAccountsProperties.Account;
 import de.derpeterson.app.config.BootstrapAccountsProperties.Entry;
+import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -91,21 +92,22 @@ public class DatabaseInitializer {
                         .enabled(true)
                         .build();
                 userRepository.save(user);
-                logger.info("Bootstrap account created with role {}", entry.role());
+                AfterCommitLog.info(logger, "Bootstrap account created with role {}", entry.role());
               }
               userRepository.flush();
             });
   }
 
   private void createDefaultConfigSettings() {
+    int created = 0;
     for (ConfigEntry configEntry : ConfigEntry.values()) {
       if (!configService.exists(configEntry)) {
         configService.set(configEntry, resolveDefaultValue(configEntry));
-        logger.info("✅ Config entry created: {}", configEntry.getKey());
-      } else {
-        logger.info("✅ Config entry already exists: {}", configEntry.getKey());
+        created++;
       }
     }
+    logger.info(
+        "Configuration initialized: entries={}, created={}", ConfigEntry.values().length, created);
   }
 
   private String resolveDefaultValue(ConfigEntry configEntry) {

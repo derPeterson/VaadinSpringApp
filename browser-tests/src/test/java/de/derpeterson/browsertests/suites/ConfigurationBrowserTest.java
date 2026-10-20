@@ -1,9 +1,11 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_PAGE_TITLE;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -215,13 +217,20 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       settings.save();
     }
     navigation.openSection(texts.getAdminUsersTitle());
-    assertEquals(
-        "user_management", page.evaluate("new URL(location.href).searchParams.get('section')"));
+    // Die UI-Antwort kann auch von einem Poll stammen. Auf die echte Ziel-URL warten.
+    // Das maskierte Fragezeichen startet genau das feste Querypaar; BrowserRoutes verankert die
+    // URL.
+    assertThat(page).hasURL(urlPattern(ADMIN_ROUTE, "\\?section=user_management"));
     page.reload();
     assertAdminHeading(page, texts.getAdminUsersTitle(), 1);
     assertThat(page.locator(".cosmos-nav-item--active[aria-current='page']")).hasCount(1);
     navigation.openGroup(AdminConfigGroup.SECURITY);
-    assertEquals("security", page.evaluate("new URL(location.href).searchParams.get('group')"));
+    // Die nichtfangende Alternative erlaubt nur die beiden Reihenfolgen der festen Querypaare.
+    assertThat(page)
+        .hasURL(
+            urlPattern(
+                ADMIN_ROUTE,
+                "\\?(?:section=configuration&group=security|group=security&section=configuration)"));
     String directLink = page.url();
     page.reload();
     assertAdminHeading(page, texts.getAdminConfigGroupSecurity(), 2);
@@ -341,14 +350,14 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   }
 
   @Test
-  @DisplayName("CONFIG-05D: Alle 28 Feldinfos bleiben in ihren sieben Gruppen erreichbar")
+  @DisplayName("CONFIG-05D: Alle 30 Feldinfos bleiben in ihren acht Gruppen erreichbar")
   @Description(
       """
-        1. Alle sieben Konfigurationsgruppen über die native SideNav öffnen.
+        1. Alle acht Konfigurationsgruppen über die native SideNav öffnen.
         2. Jede Feldinfo per Klick öffnen: übersetzter Standardwert und nicht leere Eingaberegeln.
         3. Nur eine Info gleichzeitig sichtbar; per Info-Button wieder schließen.
         4. Ein gesetzter Standard-Geheimschlüssel bleibt vertraulich; das leere SMTP-Passwort zeigt ausdrücklich den Leerhinweis.
-        5. Jede Card zeigt die Anzahl ihrer tatsächlichen Felder; insgesamt sind 28 Infos erreichbar.
+        5. Jede Card zeigt die Anzahl ihrer tatsächlichen Felder; insgesamt sind 30 Infos erreichbar.
         **Erwartet:** Keine Gruppe verliert ihre Bedienung; alle bisherigen Felder erhalten die gemeinsame Info-Funktion.
         """)
   void everyConfigurationFieldHasAnAccessibleLocalizedInfo() {
@@ -365,7 +374,12 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         info.click();
         assertThat(settings.tooltip()).hasCount(1);
         assertThat(settings.tooltip()).isVisible();
-        assertThat(settings.tooltip()).containsText(texts.getAdminConfigDefault());
+        if (group == AdminConfigGroup.NOTIFICATIONS) {
+          assertThat(settings.tooltip()).containsText(texts.getAdminConfigInitialValue() + ":");
+          assertThat(settings.tooltip()).containsText(texts.getAdminConfigRuleEmptyUnlimited());
+        } else {
+          assertThat(settings.tooltip()).containsText(texts.getAdminConfigDefault() + ":");
+        }
         assertThat(settings.tooltip()).containsText(texts.getAdminConfigInputRules() + ":");
         assertTrue(
             settings.tooltip().innerText().contains("• "),
@@ -380,7 +394,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       }
       total += count;
     }
-    assertEquals(28, total);
+    assertEquals(30, total);
   }
 
   @Tag("fast")

@@ -6,6 +6,7 @@ import de.derpeterson.app.model.enums.RetiredConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ConfigService {
 
   private final ConfigRepository configRepository;
@@ -116,6 +118,7 @@ public class ConfigService {
     TransactionTemplate transaction = new TransactionTemplate(transactionManager);
     transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     boolean[] creating = {false};
+    boolean[] changed = {false};
     try {
       transaction.executeWithoutResult(
           status -> {
@@ -127,6 +130,7 @@ public class ConfigService {
                           creating[0] = true;
                           return new ConfigEntity(null, configEntry.getKey(), value);
                         });
+            changed[0] = creating[0] || !Objects.equals(entity.getValue(), value);
             update(entity, value);
           });
     } catch (DataIntegrityViolationException failure) {
@@ -138,8 +142,17 @@ public class ConfigService {
           status -> {
             ConfigEntity entity =
                 configRepository.findByKey(configEntry.getKey()).orElseThrow(() -> failure);
+            changed[0] = creating[0] || !Objects.equals(entity.getValue(), value);
             update(entity, value);
           });
+    }
+    if (changed[0]) {
+      if (configEntry == ConfigEntry.MAINTENANCE_MODE
+          && ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value))) {
+        log.info("Maintenance configuration committed: enabled={}", Boolean.parseBoolean(value));
+      } else {
+        log.debug("Configuration entry committed: key={}", configEntry.name());
+      }
     }
   }
 

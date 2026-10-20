@@ -1,5 +1,7 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.component.ModalityMode;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -374,7 +376,7 @@ public class AccountAvatarDialog extends Dialog {
     if (!(failure instanceof InvalidImage)
         && !(failure instanceof OptimisticLockingFailureException)) {
       LoggerFactory.getLogger(AccountAvatarDialog.class)
-          .error("Unexpected failure while processing the account avatar", failure);
+          .error("Unexpected failure while processing the account avatar", safeFailure(failure));
     }
   }
 

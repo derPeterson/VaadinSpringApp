@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -39,6 +40,7 @@ import org.springframework.web.util.WebUtils;
 /** Eigene Sitzungen und gespeicherte Anmeldungen; kein Zugang zu fremden Konten. */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SessionManagementService {
   public record Entry(
       String handle,
@@ -230,10 +232,16 @@ public class SessionManagementService {
                   Objects.equals(other.series(), item.series()) && item.series() != null
                       || other.sessionId().equals(item.sessionId()))
           .forEach(other -> admissions.expire(identity, other.sessionId()));
+      log.info(
+          "Owned device access revoked: activeSession=true, savedLogin={}", item.series() != null);
       return;
     }
     // Fremde und bereits entfernte Kennungen liefern denselben neutralen Zustand.
-    savedLogin.ifPresent(item -> tokens.removeSeries(identity, item.series()));
+    savedLogin.ifPresent(
+        item -> {
+          tokens.removeSeries(identity, item.series());
+          log.info("Owned device access revoked: activeSession=false, savedLogin=true");
+        });
   }
 
   private void revokeOthersOwned(String identity, String current) {
@@ -262,6 +270,7 @@ public class SessionManagementService {
     active.stream()
         .filter(item -> !item.sessionId().equals(current))
         .forEach(item -> admissions.expire(identity, item.sessionId()));
+    log.info("Other device access revoked");
   }
 
   /**

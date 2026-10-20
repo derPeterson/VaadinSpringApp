@@ -1,5 +1,7 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -208,7 +210,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
   }
 
   private void failed(RuntimeException failure) {
-    log.warn("Own session management failed", failure);
+    log.warn("Own session management failed", safeFailure(failure));
     NotificationHelper.getInstance()
         .showNotification(
             messages::getBaseFailedTitle,

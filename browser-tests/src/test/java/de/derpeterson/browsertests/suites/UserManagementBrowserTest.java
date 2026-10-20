@@ -66,12 +66,15 @@ public class UserManagementBrowserTest extends BrowserFixture {
     assertEquals(expected, all);
     assertThat(button(texts.getAdminUsersPaginationPage(2))).hasAttribute("aria-current", "page");
     assertThat(button(texts.getAdminUsersPaginationNextPage())).isDisabled();
-    page.getByRole(
+    Locator pageSize =
+        page.getByRole(
             AriaRole.COMBOBOX,
             new Page.GetByRoleOptions()
                 .setName(texts.getAdminUsersPaginationPerPage())
-                .setExact(true))
-        .click();
+                .setExact(true));
+    assertEquals(
+        56, page.locator(".admin-user-pagination vaadin-combo-box").boundingBox().width, 1.0);
+    pageSize.click();
     page.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName("20").setExact(true))
         .click();
     assertThat(users.emailCells(prefix)).hasCount(12);

@@ -1,5 +1,7 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -628,7 +630,7 @@ public class UserNotificationsPanel extends Div {
       if (failure instanceof org.springframework.security.access.AccessDeniedException) {
         unavailable();
       }
-      LoggerFactory.getLogger(getClass()).warn("Notification action failed", failure);
+      LoggerFactory.getLogger(getClass()).warn("Notification action failed", safeFailure(failure));
       NotificationHelper.getInstance()
           .showNotification(
               texts::getNotificationsUnavailable, NotificationHelper.NotificationType.ERROR);

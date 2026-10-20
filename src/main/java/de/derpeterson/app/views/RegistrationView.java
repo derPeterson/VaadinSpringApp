@@ -1,5 +1,7 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.component.AbstractSinglePropertyField;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
@@ -384,7 +386,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
               NotificationHelper.NotificationType.ERROR);
       return;
     } catch (IOException failure) {
-      logger.error("Registration mail could not be prepared", failure);
+      logger.error("Registration mail could not be prepared", safeFailure(failure));
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,

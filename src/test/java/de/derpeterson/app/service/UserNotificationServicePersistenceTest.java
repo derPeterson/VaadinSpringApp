@@ -11,6 +11,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.RoleEntity;
@@ -63,6 +66,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -215,6 +219,54 @@ class UserNotificationServicePersistenceTest {
 
   void assertProblem(Problem problem, Runnable work) {
     assertEquals(problem, assertThrows(Rejected.class, work::run).problem());
+  }
+
+  @Test
+  void notificationLogFollowsCommitAndOmitsPrivateDraftAndIdentity() {
+    Logger logger = (Logger) LoggerFactory.getLogger(UserNotificationService.class);
+    ListAppender<ILoggingEvent> logs = new ListAppender<>();
+    logs.start();
+    logger.addAppender(logs);
+    try {
+      Preview preview = selected(ordinary.getId());
+      UUID request = UUID.randomUUID();
+      tx.executeWithoutResult(
+          status -> {
+            service.send(
+                adminSession, request, "private title", "private body token=secret", preview);
+            assertTrue(logs.list.isEmpty());
+            status.setRollbackOnly();
+          });
+      assertTrue(logs.list.isEmpty());
+      assertEquals(0, notifications.count());
+      Sent sent =
+          service.send(
+              adminSession, request, "private title", "private body token=secret", preview);
+      assertEquals(
+          1,
+          logs.list.stream()
+              .filter(e -> e.getFormattedMessage().startsWith("Admin notification created:"))
+              .count());
+      service.send(adminSession, request, "private title", "private body token=secret", preview);
+      assertEquals(
+          1,
+          logs.list.stream()
+              .filter(e -> e.getFormattedMessage().startsWith("Admin notification created:"))
+              .count());
+      assertTrue(
+          logs.list.getFirst().getFormattedMessage().contains("notificationId=" + sent.id()));
+      for (ILoggingEvent event : logs.list) {
+        String text = event.getFormattedMessage();
+        assertFalse(text.contains("private"));
+        assertFalse(text.contains("secret"));
+        assertFalse(text.contains(sender.getEmail()));
+        assertFalse(text.contains(ordinary.getEmail()));
+        assertFalse(text.contains(request.toString()));
+      }
+    } finally {
+      logger.detachAppender(logs);
+      logs.stop();
+    }
   }
 
   @Test

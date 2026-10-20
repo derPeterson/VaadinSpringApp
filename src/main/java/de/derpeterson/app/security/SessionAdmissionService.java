@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +26,7 @@ import org.springframework.security.web.authentication.session.SessionAuthentica
 import org.springframework.web.util.WebUtils;
 
 /** One-instance admission. Fixed stripes bound lock memory independently of login identities. */
+@Slf4j
 public class SessionAdmissionService implements SessionAuthenticationStrategy {
   public static final String FAILURE_REASON = SessionAdmissionService.class.getName() + ".failure";
   private static final String REGISTRATION =
@@ -268,6 +270,9 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
                 (String) session.getAttribute(DeviceRememberMeServices.SERIES)));
         session.setAttribute(REGISTRATION, new Registration(registry, metadata));
         completion.run();
+        log.info(
+            "Authenticated session admitted: authenticationType={}",
+            authentication.getClass().getSimpleName());
       } catch (RuntimeException failure) {
         if (failure instanceof MaintenanceAuthenticationException) {
           request.setAttribute(FAILURE_REASON, "maintenance");

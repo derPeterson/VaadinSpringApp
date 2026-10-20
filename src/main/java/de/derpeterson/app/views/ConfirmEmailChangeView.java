@@ -1,5 +1,7 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -121,7 +123,7 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
       state = service.inspect(token);
     } catch (RuntimeException failure) {
       technicalFailure = true;
-      log.error("Email change inspection failed", failure);
+      log.error("Email change inspection failed", safeFailure(failure));
     }
     refreshTexts();
   }
@@ -143,7 +145,7 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
                   : NotificationHelper.NotificationType.ERROR);
     } catch (RuntimeException failure) {
       technicalFailure = true;
-      log.error("Email change confirmation failed", failure);
+      log.error("Email change confirmation failed", safeFailure(failure));
       refreshTexts();
       NotificationHelper.getInstance()
           .showNotification(

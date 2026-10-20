@@ -1,5 +1,7 @@
 package de.derpeterson.app.websocket;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.shared.Registration;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -24,7 +26,7 @@ public class UserNotificationBroadcaster {
         listener.accept(immutable);
       } catch (RuntimeException failure) {
         LoggerFactory.getLogger(getClass())
-            .warn("Notification refresh deferred until next request", failure);
+            .warn("Notification refresh deferred until next request", safeFailure(failure));
       }
     }
   }

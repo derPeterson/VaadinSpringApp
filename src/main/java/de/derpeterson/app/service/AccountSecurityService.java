@@ -1,6 +1,7 @@
 package de.derpeterson.app.service;
 
 import de.derpeterson.app.config.TokenDurationPolicy;
+import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.model.EmailChangeTokenEntity;
 import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.model.PasswordResetTokenEntity;
@@ -33,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -55,6 +57,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 /** Frische Anmeldung, Kontolock, Änderung und Mail-Outbox bilden getrennte klare Grenzen. */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AccountSecurityService {
   public record PasswordChange(String currentPassword, String newPassword, String confirmation)
       implements Serializable {
@@ -196,6 +199,7 @@ public class AccountSecurityService {
           tokens.save(pending);
           queue.addAddressedNotification(
               user, target, mail.texts(user).getAccountEmailChangeSubject(), body);
+          AfterCommitLog.info(log, "Email change confirmation queued: userId={}", user.getId());
           return null;
         });
   }

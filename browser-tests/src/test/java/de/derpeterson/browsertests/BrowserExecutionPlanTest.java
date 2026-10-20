@@ -45,6 +45,13 @@ class BrowserExecutionPlanTest {
       cases += values == null ? 1 : values.ints().length + values.booleans().length;
     }
     assertEquals(5, cases);
+    assertTrue(
+        BrowserSuites.select("all")
+            .contains(de.derpeterson.browsertests.suites.NotificationInboxBrowserTest.class));
+    assertEquals(2, BrowserSuites.select("notifications").size());
+    assertFalse(
+        BrowserExecutionPlan.classes("fast")
+            .contains(de.derpeterson.browsertests.suites.NotificationInboxBrowserTest.class));
   }
 
   @Test

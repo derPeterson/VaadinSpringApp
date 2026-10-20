@@ -1,5 +1,7 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
@@ -241,7 +243,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
                           NotificationHelper.NotificationType.ERROR);
                 }
               } catch (IOException e) {
-                logger.error("❌ Exception occurred:", e);
+                logger.error("❌ Exception occurred:", safeFailure(e));
 
                 NotificationHelper.getInstance()
                     .showNotification(
@@ -376,7 +378,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
                           NotificationHelper.NotificationType.ERROR);
                 }
               } catch (IOException e) {
-                logger.error("❌ Exception occurred:", e);
+                logger.error("❌ Exception occurred:", safeFailure(e));
 
                 NotificationHelper.getInstance()
                     .showNotification(

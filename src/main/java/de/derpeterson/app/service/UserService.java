@@ -1,5 +1,8 @@
 package de.derpeterson.app.service;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
+import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
@@ -103,6 +106,7 @@ public class UserService {
     Assert.notNull(user.getStatus(), "Status must not be null");
     user.setEmail(user.getEmail());
     List<Long> superadmins = lockAndReadSuperadmins();
+    boolean creating = user.getId() == null;
     Set<RoleType> previousRoles =
         user.getId() == null ? null : Set.copyOf(userRepository.findExplicitRoles(user.getId()));
     Set<RoleType> desired = roleTypes(user.getRoleEntities());
@@ -116,6 +120,17 @@ public class UserService {
     userRepository.save(user);
     userRepository.flush();
     ensureSuperadminsRemain(superadmins);
+    if (creating) {
+      AfterCommitLog.info(
+          log,
+          "Account created: userId={}, enabled={}, roles={}",
+          user.getId(),
+          user.isEnabled(),
+          Set.copyOf(desired));
+    } else if (!previousRoles.equals(desired)) {
+      AfterCommitLog.info(
+          log, "Account roles changed: userId={}, roles={}", user.getId(), Set.copyOf(desired));
+    }
     if (previousRoles != null && !previousRoles.equals(roleTypes(user.getRoleEntities()))) {
       events.publishEvent(
           new de.derpeterson.app.events.UserRolesChanged(
@@ -200,7 +215,10 @@ public class UserService {
             new UserStatusBroadcaster.UserStatusMessage(
                 userId, oldStatus.name(), newStatus.name()));
       } catch (RuntimeException exception) {
-        log.error("Statuszustellung nach Commit fehlgeschlagen für Benutzer {}", userId, exception);
+        log.error(
+            "Statuszustellung nach Commit fehlgeschlagen für Benutzer {}",
+            userId,
+            safeFailure(exception));
       }
     }
   }
@@ -279,6 +297,13 @@ public class UserService {
     userRepository.saveAndFlush(stored);
     profileEvents.afterCommit(stored);
     ensureSuperadminsRemain(superadmins);
+    AfterCommitLog.info(
+        log,
+        "Admin account update committed: userId={}, enabled={}, roles={}, passwordChanged={}",
+        stored.getId(),
+        stored.isEnabled(),
+        Set.copyOf(nextRoles),
+        rawPassword != null && !rawPassword.isBlank());
     if (!previousRoles.equals(nextRoles)) {
       events.publishEvent(
           new de.derpeterson.app.events.UserRolesChanged(stored.getId(), previousRoles, nextRoles));
@@ -299,6 +324,7 @@ public class UserService {
     userRepository.delete(user);
     userRepository.flush();
     ensureSuperadminsRemain(superadmins);
+    AfterCommitLog.info(log, "Account deleted: userId={}", user.getId());
   }
 
   private List<Long> lockAndReadSuperadmins() {
@@ -322,6 +348,7 @@ public class UserService {
   private void ensureSuperadminChangeAllowed(
       Long userId, boolean remainsSuperadmin, List<Long> superadmins) {
     if (removesLastSuperadmin(userId, remainsSuperadmin, superadmins)) {
+      log.warn("Account mutation rejected: last enabled superadmin must remain, userId={}", userId);
       throw new IllegalStateException("Der letzte aktive Superadmin muss erhalten bleiben.");
     }
   }

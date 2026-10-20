@@ -1,5 +1,7 @@
 package de.derpeterson.app.websocket;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.model.UserEntity;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -41,7 +43,10 @@ public class UserProfileBroadcaster {
       try {
         listener.accept(message);
       } catch (RuntimeException failure) {
-        log.warn("Profilanzeige konnte nicht aktualisiert werden: {}", message.userId(), failure);
+        log.warn(
+            "Profilanzeige konnte nicht aktualisiert werden: {}",
+            message.userId(),
+            safeFailure(failure));
       }
     }
   }

@@ -11,7 +11,7 @@ import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
 
-/** Nur das freigegebene Verfassenpanel und die persönliche Inbox; kein Header-Overlay. */
+/** Versandformular und bestehende Zustellungsjourney; weitere Inbox-/Overlayaktionen separat. */
 public final class NotificationComposePage {
   private final Page page;
   private final UiTexts texts = UiTexts.selected();

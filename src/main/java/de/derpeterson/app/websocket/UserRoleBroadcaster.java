@@ -1,5 +1,7 @@
 package de.derpeterson.app.websocket;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.shared.Registration;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -20,7 +22,7 @@ public class UserRoleBroadcaster {
       try {
         listener.accept(userId);
       } catch (RuntimeException failure) {
-        LoggerFactory.getLogger(getClass()).warn("Role UI refresh deferred", failure);
+        LoggerFactory.getLogger(getClass()).warn("Role UI refresh deferred", safeFailure(failure));
       }
     }
   }

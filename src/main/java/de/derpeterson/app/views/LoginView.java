@@ -1,5 +1,7 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.Key;
@@ -210,7 +212,8 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
                   } catch (AuthenticationException rejected) {
                     showLoginFailure(restrictedLoginFailureCode(rejected));
                   } catch (RuntimeException unavailable) {
-                    logger.warn("Restricted session management unavailable", unavailable);
+                    logger.warn(
+                        "Restricted session management unavailable", safeFailure(unavailable));
                     showLoginFailure("unavailable");
                   }
                   return;
@@ -338,7 +341,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
                     -1,
                     NotificationHelper.NotificationType.ERROR);
           } catch (RuntimeException unavailable) {
-            logger.warn("Restricted login completion failed", unavailable);
+            logger.warn("Restricted login completion failed", safeFailure(unavailable));
             showLoginFailure("unavailable");
           }
         });

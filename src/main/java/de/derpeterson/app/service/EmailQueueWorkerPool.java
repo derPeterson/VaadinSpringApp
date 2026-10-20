@@ -1,5 +1,7 @@
 package de.derpeterson.app.service;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import jakarta.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.Iterator;
@@ -88,7 +90,9 @@ public class EmailQueueWorkerPool {
             inFlight.remove(task);
             refill = false;
             logger.warn(
-                "Queue worker rejected entry {}; remaining entries stay pending.", id, failure);
+                "Queue worker rejected entry {}; remaining entries stay pending.",
+                id,
+                safeFailure(failure));
           }
         }
         if (active == 0) {
@@ -104,7 +108,8 @@ public class EmailQueueWorkerPool {
           refill = false;
         } catch (ExecutionException failure) {
           logger.error(
-              "Queue worker failed; no automatic release of committed claims.", failure.getCause());
+              "Queue worker failed; no automatic release of committed claims.",
+              safeFailure(failure.getCause()));
         } catch (CancellationException failure) {
           logger.warn("Queue worker cancelled during shutdown; committed claims remain unchanged.");
         }

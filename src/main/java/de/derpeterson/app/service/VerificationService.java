@@ -2,6 +2,7 @@ package de.derpeterson.app.service;
 
 import de.derpeterson.app.config.TokenDurationPolicy;
 import de.derpeterson.app.helper.email.EmailLogo;
+import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.helper.text.CopyrightTextFormatter;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -175,6 +176,7 @@ public class VerificationService {
       userRepository.save(user);
       tokenEntity.get().setStatus(TokenStatus.USED);
       tokenRepository.save(tokenEntity.get());
+      AfterCommitLog.info(logger, "Account verification completed: userId={}", user.getId());
       return true;
     }
 
@@ -226,9 +228,7 @@ public class VerificationService {
     UserEntity user = userRepository.lockVerificationUser(id).orElse(null);
     if (user != null && canVerify(user)) {
       if (emailQueueService.hasOpenEmailForUserAndType(user, EmailType.VERIFICATION)) {
-        logger.warn(
-            "⚠️ Verification email for {} is already queued or in progress. Duplicate request skipped.",
-            user.getEmail());
+        logger.debug("Duplicate verification request skipped: userId={}", user.getId());
         return true;
       }
 
@@ -246,7 +246,8 @@ public class VerificationService {
         messageProperties.getEmailVerificationSubject(),
         loadEmailTemplate(user, token),
         EmailType.VERIFICATION);
-    logger.info("✅ Verification email for {} added to the mail queue.", user.getEmail());
+    AfterCommitLog.info(
+        logger, "Verification email added to the mail queue: userId={}", user.getId());
   }
 
   private String loadEmailTemplate(UserEntity user, String token) throws IOException {
@@ -292,9 +293,12 @@ public class VerificationService {
             .minus(positiveDuration(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION));
     int deleted = tokenRepository.deleteByExpiryDateBefore(liveDateTime);
     String formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-    logger.info(
-        "✅ {} expired verification tokens that are older than '{}' have been deleted.",
-        deleted,
-        formattedLiveDateTime);
+    if (deleted > 0) {
+      AfterCommitLog.info(
+          logger,
+          "Expired verification tokens deleted: count={}, cutoff={}",
+          deleted,
+          formattedLiveDateTime);
+    }
   }
 }

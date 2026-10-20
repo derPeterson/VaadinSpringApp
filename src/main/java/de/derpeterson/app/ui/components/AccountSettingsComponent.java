@@ -1,5 +1,7 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasText;
 import com.vaadin.flow.component.button.Button;
@@ -356,7 +358,7 @@ public class AccountSettingsComponent extends Div {
               NotificationHelper.NotificationType.ERROR);
       return;
     } catch (RuntimeException failure) {
-      log.warn("Kontoprofil konnte nicht gespeichert werden", failure);
+      log.warn("Kontoprofil konnte nicht gespeichert werden", safeFailure(failure));
       NotificationHelper.getInstance()
           .showNotification(
               messages::getBaseFailedTitle,

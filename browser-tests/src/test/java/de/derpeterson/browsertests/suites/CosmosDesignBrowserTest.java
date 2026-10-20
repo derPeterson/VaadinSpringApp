@@ -1,6 +1,7 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.FORGOT_PASSWORD_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_PAGE_TITLE;
@@ -40,6 +41,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("browser")
 @Feature("Gemeinsames Cosmos-Design")
@@ -325,6 +327,54 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
       assertWithinViewport(field);
     }
     AllurePlaywright.attachScreenshot(id + " Benutzerformular", page);
+  }
+
+  @ParameterizedTest(name = "COSMOS-06: Hinweisicons in Konto/Admin bei {0}px vertikal zentriert")
+  @ValueSource(ints = {1280, 390})
+  @Description(
+      """
+      1. Als Superadmin bei Desktop- bzw. schmaler Breite anmelden.
+      2. Alle drei Kontotabs öffnen und die Mitte des Infoicons mit der sichtbaren Hinweiszeile vergleichen.
+      3. Alle acht Konfigurationsgruppen über die native Navigation öffnen und denselben Footer-Vertrag prüfen.
+      4. Mail-Test und Benachrichtigungsversand öffnen: Footer- und Versandhinweise ebenfalls vertikal mittig.
+      Erwartet: Ein- und mehrzeilige Texte behalten ein mittig ausgerichtetes Infoicon; keine Datenänderung oder Sendung.
+      """)
+  void infoIconsStayCenteredAcrossAccountAndAdmin(int width) {
+    LoginPage login = new LoginPage(page);
+    login.open();
+    login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    page.setViewportSize(width, 1000);
+    page.navigate(path(ACCOUNT_ROUTE));
+    for (String section : new String[] {"profile", "security", "sessions"}) {
+      page.locator("#account-tab-" + section).click();
+      Locator panel = page.locator("#account-panel-" + section);
+      assertThat(panel).isVisible();
+      assertHintCentered(panel.locator(".cosmos-panel-hint"));
+    }
+    page.navigate(path(ADMIN_ROUTE));
+    ConfigurationPage settings = new ConfigurationPage(page);
+    for (AdminConfigGroup group : AdminConfigGroup.values()) {
+      settings.open(group);
+      assertHintCentered(page.locator(".cosmos-config-save-hint"));
+    }
+    page.navigate(path(ADMIN_ROUTE) + "?section=mail_test");
+    assertHintCentered(page.locator(".cosmos-admin-section--mail .cosmos-panel-hint"));
+    page.navigate(path(ADMIN_ROUTE) + "?section=notifications");
+    assertHintCentered(page.locator(".cosmos-admin-section--notifications .cosmos-panel-hint"));
+    assertHintCentered(page.locator(".cosmos-notification-compose-info"));
+    AllurePlaywright.attachScreenshot("Zentrierte Infohinweise", page);
+  }
+
+  private void assertHintCentered(Locator hint) {
+    assertThat(hint).isVisible();
+    assertThat(hint).hasCSS("align-items", "center");
+    Locator icon = hint.locator(":scope > vaadin-icon");
+    assertThat(icon).hasCount(1);
+    assertEquals(
+        hint.boundingBox().y + hint.boundingBox().height / 2,
+        icon.boundingBox().y + icon.boundingBox().height / 2,
+        1.0);
   }
 
   private void assertAppShell() {

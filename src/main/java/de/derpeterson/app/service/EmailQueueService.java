@@ -1,5 +1,8 @@
 package de.derpeterson.app.service;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
+import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.model.AdminNotificationAttemptEntity;
 import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.model.EmailQueueEntity;
@@ -123,10 +126,8 @@ public class EmailQueueService {
       return;
     }
     if (hasOpenEmailForUserAndType(userEntity, emailType)) {
-      logger.warn(
-          "⚠️ Email for {} with type {} is already queued or in progress. Duplicate request skipped.",
-          userEntity.getEmail(),
-          emailType);
+      logger.debug(
+          "Duplicate queue request skipped: userId={}, type={}", userEntity.getId(), emailType);
       return;
     }
 
@@ -138,6 +139,12 @@ public class EmailQueueService {
     email.setStatus(EmailStatus.PENDING);
     email.setCreatedAt(LocalDateTime.now(clock));
     emailQueueRepository.save(email);
+    AfterCommitLog.debug(
+        logger,
+        "Email queued: queueId={}, userId={}, type={}",
+        email.getId(),
+        email.getUserEntity().getId(),
+        email.getEmailType());
   }
 
   /**
@@ -161,6 +168,12 @@ public class EmailQueueService {
     email.setStatus(EmailStatus.PENDING);
     email.setCreatedAt(LocalDateTime.now(clock));
     emailQueueRepository.save(email);
+    AfterCommitLog.debug(
+        logger,
+        "Email queued: queueId={}, userId={}, type={}",
+        email.getId(),
+        email.getUserEntity().getId(),
+        email.getEmailType());
   }
 
   /**
@@ -225,7 +238,7 @@ public class EmailQueueService {
       logger.error(
           "Queue entry {} could not be completed; no automatic release of IN_PROGRESS.",
           id,
-          failure);
+          safeFailure(failure));
     }
   }
 
@@ -249,7 +262,7 @@ public class EmailQueueService {
         logger.error(
             "❌ Transport outcome for queue entry {} is unknown; IN_PROGRESS retained.",
             claimed.getId(),
-            e);
+            safeFailure(e));
         return;
       }
       sendFailure = e;
@@ -280,20 +293,23 @@ public class EmailQueueService {
             });
     if (failure == null) {
       logger.info(
-          "✅ Email successfully sent to {} on attempt {}.", deliveryRecipient(completed), attempt);
+          "Email accepted by transport: queueId={}, type={}, attempt={}",
+          completed.getId(),
+          completed.getEmailType(),
+          attempt);
     } else if (completed.getStatus() == EmailStatus.PENDING) {
       logger.warn(
-          "⚠️ Error sending the email to {}, attempt {} of {}: {}",
-          deliveryRecipient(completed),
+          "Email retry scheduled: queueId={}, attempt={} of {}, failureType={}",
+          completed.getId(),
           attempt,
           (long) maxRetry + 1,
-          failure.getMessage());
+          failure.getClass().getName());
     } else {
       logger.error(
-          "❌ Email to {} failed after {} attempts: {}",
-          deliveryRecipient(completed),
+          "Email permanently failed: queueId={}, attempts={}",
+          completed.getId(),
           attempt,
-          failure.getMessage());
+          safeFailure(failure));
       sendAdminNotification(transaction, completed, failure, attempt);
     }
   }
@@ -312,10 +328,10 @@ public class EmailQueueService {
     int deleted =
         emailQueueRepository.deleteByStatusAndCreatedAtBefore(EmailStatus.SENT, liveDateTime);
     String formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-    logger.info(
-        "✅ {} emails with status SENT created before {} have been deleted.",
-        deleted,
-        formattedLiveDateTime);
+    if (deleted > 0) {
+      AfterCommitLog.info(
+          logger, "Sent emails deleted: count={}, cutoff={}", deleted, formattedLiveDateTime);
+    }
   }
 
   @Transactional
@@ -324,10 +340,13 @@ public class EmailQueueService {
     LocalDateTime cutoff = LocalDateTime.now(clock).minusDays(30);
     int deleted =
         emailQueueRepository.deleteByStatusAndLastRetryAtBefore(EmailStatus.FAILED, cutoff);
-    logger.info(
-        "✅ {} FAILED emails with last attempt before {} have been deleted.",
-        deleted,
-        cutoff.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+    if (deleted > 0) {
+      AfterCommitLog.info(
+          logger,
+          "Failed emails deleted: count={}, cutoff={}",
+          deleted,
+          cutoff.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+    }
   }
 
   private void sendAdminNotification(
@@ -358,7 +377,10 @@ public class EmailQueueService {
       dispatchStarted = true;
       emailService.sendAdminEmail(adminEmail, subject, body);
       outcome = AdminNotificationStatus.SENT;
-      logger.info("✅ Notification sent to administrator: {}", adminEmail);
+      logger.info(
+          "Admin failure alert accepted by transport: queueId={}, attemptId={}",
+          failedEmail.getId(),
+          auditId);
     } catch (RuntimeException ex) {
       if (dispatchStarted
           && !(ex instanceof MailAuthenticationException
@@ -371,7 +393,7 @@ public class EmailQueueService {
           auditId,
           failedEmail.getId(),
           outcome,
-          ex);
+          safeFailure(ex));
     }
     final AdminNotificationStatus finalOutcome = outcome;
     // Independent of the already committed FAILED; failure here leaves the durable start.

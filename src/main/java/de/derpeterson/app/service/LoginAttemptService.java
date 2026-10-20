@@ -1,5 +1,6 @@
 package de.derpeterson.app.service;
 
+import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.model.LoginAttemptEntity;
 import de.derpeterson.app.model.LoginAttemptGuardEntity;
@@ -17,6 +18,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
@@ -35,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
+@Slf4j
 public class LoginAttemptService {
   public static final Duration WINDOW = Duration.ofMinutes(15);
   public static final Duration BLOCK_DURATION = Duration.ofMinutes(15);
@@ -119,6 +122,7 @@ public class LoginAttemptService {
     }
     if (row.getFailures() >= limit) {
       row.setBlockedUntil(now.plus(BLOCK_DURATION));
+      AfterCommitLog.warn(log, "Password sign-in temporarily blocked: attempt limit reached");
       row.setLastActivity(now);
       repository.save(row);
       return new Outcome(null, new LoginThrottledException());
@@ -138,6 +142,7 @@ public class LoginAttemptService {
       row.setLastActivity(completed);
       if (row.getFailures() >= limit) {
         row.setBlockedUntil(completed.plus(BLOCK_DURATION));
+        AfterCommitLog.warn(log, "Password sign-in temporarily blocked: attempt limit reached");
       }
       repository.save(row);
       return new Outcome(null, failure);

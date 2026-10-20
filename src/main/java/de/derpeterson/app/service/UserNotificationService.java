@@ -1,5 +1,8 @@
 package de.derpeterson.app.service;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
+import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.UserNotificationEntity;
 import de.derpeterson.app.model.UserNotificationRecipientEntity;
@@ -25,6 +28,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -37,6 +41,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserNotificationService {
   public static final int TITLE_LIMIT = 120;
   public static final int BODY_LIMIT = 4000;
@@ -248,6 +253,7 @@ public class UserNotificationService {
               owner, snapshot.subList(i, Math.min(i + 500, snapshot.size())), Instant.now());
     }
     if (changed > 0) {
+      AfterCommitLog.debug(log, "Notifications marked read: userId={}, count={}", owner, changed);
       afterCommit(Set.of(owner));
     }
   }
@@ -257,6 +263,7 @@ public class UserNotificationService {
   public void dismiss(HttpSession session, Long id) {
     Long owner = owner(session).getId();
     if (recipients.dismiss(owner, Objects.requireNonNull(id), Instant.now()) > 0) {
+      AfterCommitLog.debug(log, "Notification dismissed: userId={}, recipientId={}", owner, id);
       afterCommit(Set.of(owner));
     }
   }
@@ -266,7 +273,9 @@ public class UserNotificationService {
   public void dismissRead(HttpSession session) {
     Long owner = owner(session).getId();
     Instant now = Instant.now();
-    if (recipients.dismissRead(owner, policy.inboxCutoff(now), now) > 0) {
+    int changed = recipients.dismissRead(owner, policy.inboxCutoff(now), now);
+    if (changed > 0) {
+      AfterCommitLog.info(log, "Read notifications dismissed: userId={}, count={}", owner, changed);
       afterCommit(Set.of(owner));
     }
   }
@@ -329,6 +338,7 @@ public class UserNotificationService {
           || !recipients.recipientIds(m.getId()).equals(preview.ids())) {
         throw new Rejected(Problem.REQUEST_CONFLICT);
       }
+      log.debug("Notification send reused existing result: notificationId={}", m.getId());
       return sent(m);
     }
     List<Target> selected = selected(preview.selection());
@@ -400,6 +410,20 @@ public class UserNotificationService {
                   return r;
                 })
             .toList());
+    if (m.getType() == UserNotificationType.ADMIN_ANNOUNCEMENT) {
+      AfterCommitLog.info(
+          log,
+          "Admin notification created: notificationId={}, senderId={}, recipients={}",
+          m.getId(),
+          m.getSender().getId(),
+          selected.size());
+    } else {
+      AfterCommitLog.info(
+          log,
+          "Account security event recorded: userId={}, type={}",
+          selected.getFirst().getId(),
+          m.getType());
+    }
     afterCommit(new HashSet<>(selected.stream().map(UserEntity::getId).toList()));
   }
 
@@ -415,7 +439,7 @@ public class UserNotificationService {
               events.publish(ids);
             } catch (RuntimeException failure) {
               org.slf4j.LoggerFactory.getLogger(UserNotificationService.class)
-                  .warn("Committed notifications await refresh", failure);
+                  .warn("Committed notifications await refresh", safeFailure(failure));
             }
           }
         });

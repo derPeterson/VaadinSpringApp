@@ -1,5 +1,7 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
@@ -182,7 +184,7 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
               try {
                 passwordResetService.sendPasswordResetEmail(emailField.getValue());
               } catch (IOException | RuntimeException e) {
-                logger.error("Password reset request could not be processed", e);
+                logger.error("Password reset request could not be processed", safeFailure(e));
               }
               // Identical text, style and duration even for account-dependent failures.
               NotificationHelper.getInstance()

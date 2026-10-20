@@ -1,5 +1,7 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
@@ -166,7 +168,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
           invalidTokenCard();
         }
       } catch (RuntimeException failure) {
-        logger.error("Password reset link could not be validated", failure);
+        logger.error("Password reset link could not be validated", safeFailure(failure));
         technicalFailure = true;
         invalidTokenCard();
       }
@@ -245,7 +247,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
                           NotificationHelper.NotificationType.ERROR);
                 }
               } catch (RuntimeException failure) {
-                logger.error("Password could not be reset", failure);
+                logger.error("Password could not be reset", safeFailure(failure));
                 NotificationHelper.getInstance()
                     .showNotification(
                         messageProperties::getBaseFailedTitle,

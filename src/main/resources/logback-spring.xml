@@ -22,5 +22,8 @@
         <appender-ref ref="FILE"/>
     </root>
 
-    <logger name="de.derpeterson.app" level="debug" additivity="true"/>
+    <logger name="de.derpeterson.app" level="INFO" additivity="true"/>
+    <!-- Diese Klassen erben Framework-Logger, deren DEBUG-Ausgabe Principal/Cookie-Daten enthält. -->
+    <logger name="de.derpeterson.app.security.AdmittedSecurityContextRepository" level="INFO"/>
+    <logger name="de.derpeterson.app.security.DeviceRememberMeServices" level="INFO"/>
 </configuration>

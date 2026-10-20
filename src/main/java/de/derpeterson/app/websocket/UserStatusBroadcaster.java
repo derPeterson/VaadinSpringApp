@@ -1,5 +1,7 @@
 package de.derpeterson.app.websocket;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.shared.Registration;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +34,10 @@ public class UserStatusBroadcaster {
       try {
         listener.accept(message);
       } catch (RuntimeException exception) {
-        log.error("Status-Listener fehlgeschlagen für Benutzer {}", message.userId(), exception);
+        log.error(
+            "Status-Listener fehlgeschlagen für Benutzer {}",
+            message.userId(),
+            safeFailure(exception));
       }
     }
   }

@@ -1,5 +1,7 @@
 package de.derpeterson.app.views.admin;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasAriaLabel;
 import com.vaadin.flow.component.Key;
@@ -565,6 +567,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     try {
       boolean configurationChanged = false;
+      int changedEntries = 0;
 
       for (ConfigEntry configEntry : getVisibleConfigEntries()) {
         String newValue = normalizeValue(configEntry, extractInputValue(configEntry));
@@ -576,9 +579,18 @@ public class AdminConfigurationSection extends VerticalLayout {
         }
 
         configService.set(configEntry, newValue);
+        if (!Objects.equals(oldValue, newValue)) {
+          changedEntries++;
+        }
       }
 
       loadConfigValues();
+      if (changedEntries > 0) {
+        logger.info(
+            "Configuration group stored: group={}, changedEntries={}",
+            selectedGroup,
+            changedEntries);
+      }
 
       if (configurationChanged && configurationChangedAction != null) {
         configurationChangedAction.run();
@@ -590,7 +602,10 @@ public class AdminConfigurationSection extends VerticalLayout {
               messageProperties::getAdminConfigSaveSuccess,
               NotificationHelper.NotificationType.SUCCESS);
     } catch (Exception ex) {
-      logger.error("❌ Failed to store configuration values.", ex);
+      logger.error(
+          "Configuration group update interrupted: group={}, individual entries may already be committed",
+          selectedGroup,
+          safeFailure(ex));
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,
@@ -618,7 +633,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     if (firstInvalid != null) {
-      logger.warn("⚠️ First invalid config field in visible group: {}", firstInvalidEntry.name());
+      logger.debug("Configuration validation rejected field: key={}", firstInvalidEntry.name());
       firstInvalid.getElement().callJsFunction("focus");
     }
 
@@ -641,7 +656,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     setValidationError(input, errorMessage);
-    logger.warn("⚠️ Invalid config field: {} with value '{}'", configEntry.name(), rawValue);
+    logger.debug("Configuration validation rejected field: key={}", configEntry.name());
     return ValidationResult.invalid(input);
   }
 
@@ -918,7 +933,6 @@ public class AdminConfigurationSection extends VerticalLayout {
       DurationStyle.detectAndParse(trimmed);
       return true;
     } catch (IllegalArgumentException ex) {
-      logger.warn("⚠️ Invalid spring duration format: '{}'", trimmed, ex);
       return false;
     }
   }

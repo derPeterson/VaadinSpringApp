@@ -1,5 +1,20 @@
 # VaadinSpringApp
 
+Offene Arbeitspakete und ergänzende Abnahmen: [Aufgabenliste](TODO.md).
+
+> Logging-Überarbeitung vom 20.10.2026: INFO als Normalpegel, geerbte
+> SecurityContext-/Remember-me-Dumps bei Paket-DEBUG unterdrückt, gezielte
+> fachliche Ereignisse und sichere Fehlerdiagnose ergänzt. Erfolge folgen dem
+> Commit; Mailqueue und Transportannahme werden unterschieden.
+> [Betrieb und Einführung](docs/logging.md),
+> [Änderungen und Nachweise](docs/meilensteine/2026-10-20-gezielte-logging-ueberarbeitung.md).
+
+> Gesamt-QA vom 20.10.2026: 1823 Anwendungs-JUnits, 48 Browserhelfer, 205 Python-
+> und 26 JavaScript-Offlinetests erfolgreich. DE und EN jeweils alle 152 eindeutigen
+> Browserfälle nach vollständiger Runde und gezielten Nachtests grün, keine Skips,
+> identisches Produktionsimage. Fertiges Benachrichtigungsredesign eingeschlossen.
+> [Ergebnisse, Testkorrekturen und Coverage](docs/meilensteine/2026-10-20-gesamtqa-und-benachrichtigungsredesign.md).
+
 > Java-Lesbarkeit vom 20.10.2026: Kontrollblöcke geklammert, explizite Typen und
 > Imports verwendet, verschachtelte Fallunterscheidungen aufgelöst und zentrale
 > UI-Methoden gegliedert. Sinnvolle `var`-Ausnahmen bleiben erhalten. Regeln in
@@ -82,7 +97,7 @@ Belege: `views/RegistrationView.java`, `views/LoginView.java`, `views/admin/`, `
 Persönliche Benachrichtigungen sind über das Benachrichtigungs-Icon und `/notifications` erreichbar: persistente
 Inbox mit Suche, Gesamt-/Ungelesen-Zählern und ausdrücklichem „Als gelesen markieren“ (Öffnen allein ändert den Status nicht), Superadmin-Versand unter `/admin?section=notifications` und automatische
 Hinweise nach Passwortwechsel, Passwortreset und bestätigter E-Mail-Änderung.
-[Verhalten, Aufbewahrung und offene Browserabnahme](docs/user-notifications.md).
+[Verhalten, Aufbewahrung und Browserabnahme](docs/user-notifications.md).
 Der manuelle Superadmin-Versand pausiert im Wartungsmodus; das Versandpanel zeigt den Status
 an und bleibt gesperrt. Nach Ende der Wartung ist eine neue Vorschauprüfung erforderlich.
 Der Feature-Stand benötigt einen vollständigen Neustart mit gebautem Shared-Modul.

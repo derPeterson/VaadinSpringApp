@@ -1,5 +1,7 @@
 package de.derpeterson.app.views.admin;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.Avatar;
@@ -599,7 +601,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
         }
       }
     } else {
-      LoggerFactory.getLogger(getClass()).warn("Admin notification action failed", failure);
+      LoggerFactory.getLogger(getClass())
+          .warn("Admin notification action failed", safeFailure(failure));
       feedback(texts::getNotificationsUnavailable);
     }
   }

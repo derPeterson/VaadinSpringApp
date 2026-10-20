@@ -1,5 +1,7 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.LoginThrottledException;
@@ -49,7 +51,7 @@ final class AccountSecurityFeedback {
       text = messages::getBaseValidationEmailExistsMessage;
       field = Field.EMAIL;
     } else {
-      log.error("Account security operation failed", failure);
+      log.error("Account security operation failed", safeFailure(failure));
     }
     NotificationHelper.getInstance()
         .showNotification(

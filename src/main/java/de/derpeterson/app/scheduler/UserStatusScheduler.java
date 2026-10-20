@@ -1,5 +1,7 @@
 package de.derpeterson.app.scheduler;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.UserStatus;
@@ -60,7 +62,8 @@ public class UserStatusScheduler {
       userService.updateScheduledStatus(user.getId(), target, cutoff);
     } catch (ConcurrencyFailureException exception) {
       // The next scan reselects this candidate; other users still get processed.
-      log.warn("Automatischer Statuskonflikt für Benutzer {}", user.getId(), exception);
+      log.warn(
+          "Automatischer Statuskonflikt für Benutzer {}", user.getId(), safeFailure(exception));
     }
   }
 }

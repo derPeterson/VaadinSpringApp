@@ -2,6 +2,7 @@ package de.derpeterson.app.service;
 
 import de.derpeterson.app.config.TokenDurationPolicy;
 import de.derpeterson.app.helper.email.EmailLogo;
+import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.helper.text.CopyrightTextFormatter;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -230,10 +231,13 @@ public class PasswordResetService {
             .minus(positiveDuration(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION));
     int deleted = tokenRepository.deleteByExpiryDateBefore(liveDateTime);
     String formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-    logger.info(
-        "✅ {} expired password reset tokens that are older than '{}' have been deleted.",
-        deleted,
-        formattedLiveDateTime);
+    if (deleted > 0) {
+      AfterCommitLog.info(
+          logger,
+          "Expired password reset tokens deleted: count={}, cutoff={}",
+          deleted,
+          formattedLiveDateTime);
+    }
   }
 
   /**
@@ -249,9 +253,7 @@ public class PasswordResetService {
       UserEntity user = userOptional.get();
       if (user.isEnabled()) {
         if (emailQueueService.hasOpenEmailForUserAndType(user, EmailType.PASSWORD_RESET)) {
-          logger.warn(
-              "⚠️ Password reset email for {} is already queued or in progress. Duplicate request skipped.",
-              user.getEmail());
+          logger.debug("Duplicate password reset request skipped: userId={}", user.getId());
           return true;
         }
 
@@ -262,7 +264,8 @@ public class PasswordResetService {
             messageProperties.getEmailResetPasswordSubject(),
             loadEmailTemplate(token),
             EmailType.PASSWORD_RESET);
-        logger.info("✅ Password reset link for {} sent.", user.getEmail());
+        AfterCommitLog.info(
+            logger, "Password reset email added to the mail queue: userId={}", user.getId());
         return true;
       }
     }

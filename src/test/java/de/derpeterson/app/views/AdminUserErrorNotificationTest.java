@@ -324,7 +324,7 @@ class AdminUserErrorNotificationTest {
                 event ->
                     event.getThrowableProxy() != null
                         && Objects.equals(
-                            event.getThrowableProxy().getMessage(), failure.getMessage())));
+                            event.getThrowableProxy().getMessage(), failure.getClass().getName())));
     LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
     assertSame(
         notification,
@@ -487,7 +487,10 @@ class AdminUserErrorNotificationTest {
             .anyMatch(
                 event ->
                     event.getThrowableProxy() != null
-                        && event.getThrowableProxy().getMessage().equals(failure.getMessage())));
+                        && event
+                            .getThrowableProxy()
+                            .getMessage()
+                            .equals(failure.getClass().getName())));
   }
 
   static Stream<Arguments> emailChecks() {
@@ -584,7 +587,10 @@ class AdminUserErrorNotificationTest {
               .anyMatch(
                   event ->
                       event.getThrowableProxy() != null
-                          && event.getThrowableProxy().getMessage().equals(failure.getMessage())));
+                          && event
+                              .getThrowableProxy()
+                              .getMessage()
+                              .equals(failure.getClass().getName())));
     } else {
       assertTrue(logs.list.isEmpty());
     }

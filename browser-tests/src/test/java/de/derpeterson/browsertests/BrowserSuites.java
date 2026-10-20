@@ -12,6 +12,7 @@ import de.derpeterson.browsertests.suites.InfrastructureBrowserTest;
 import de.derpeterson.browsertests.suites.LoginAttemptBrowserTest;
 import de.derpeterson.browsertests.suites.LoginLayoutBrowserTest;
 import de.derpeterson.browsertests.suites.MaintenanceBrowserTest;
+import de.derpeterson.browsertests.suites.NotificationInboxBrowserTest;
 import de.derpeterson.browsertests.suites.PasswordResetBrowserTest;
 import de.derpeterson.browsertests.suites.PresentationBrowserTest;
 import de.derpeterson.browsertests.suites.RegistrationBrowserTest;
@@ -36,6 +37,7 @@ final class BrowserSuites {
       case "all", "fast" ->
           List.of(
               UserNotificationsBrowserTest.class,
+              NotificationInboxBrowserTest.class,
               InfrastructureBrowserTest.class,
               AuthenticationBrowserTest.class,
               RegistrationBrowserTest.class,
@@ -62,6 +64,8 @@ final class BrowserSuites {
               LoginAttemptBrowserTest.class,
               SessionLimitBrowserTest.class,
               MaintenanceBrowserTest.class);
+      case "notifications" ->
+          List.of(UserNotificationsBrowserTest.class, NotificationInboxBrowserTest.class);
       case "account-security" -> List.of(AccountSecurityBrowserTest.class);
       case "session-management" -> List.of(SessionManagementBrowserTest.class);
       case "account-settings" -> List.of(AccountSettingsBrowserTest.class);
@@ -125,7 +129,7 @@ final class BrowserSuites {
           throw new IllegalArgumentException(
               "Unknown suite: "
                   + suite
-                  + ". Choose all, fast, account-security, session-management, account-settings, cosmos-design, login-layout, login-checks, infrastructure, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, session-limits, maintenance, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
+                  + ". Choose all, fast, notifications, account-security, session-management, account-settings, cosmos-design, login-layout, login-checks, infrastructure, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, session-limits, maintenance, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
     };
   }
 }

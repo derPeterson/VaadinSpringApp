@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
@@ -35,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
+@Slf4j
 public class UserAvatarService {
   public record State(Long version, AvatarMode mode, boolean hasImage, UUID imageRevision)
       implements Serializable {
@@ -158,6 +160,11 @@ public class UserAvatarService {
               return new State(
                   row.getVersion(), row.getMode(), row.isHasImage(), row.getImageRevision());
             });
+    log.debug(
+        "Account avatar updated: userId={}, mode={}, hasImage={}",
+        owner,
+        saved.mode(),
+        saved.hasImage());
     drafts.release(change.draft());
     return saved;
   }

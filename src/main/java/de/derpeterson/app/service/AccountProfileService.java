@@ -1,5 +1,6 @@
 package de.derpeterson.app.service;
 
+import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.MaintenanceService;
@@ -12,6 +13,7 @@ import java.time.LocalDate;
 import java.util.Locale;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,6 +25,7 @@ import org.springframework.util.Assert;
 /** Speichert ausschließlich die freigegebenen Profilfelder des aktuell angemeldeten Kontos. */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AccountProfileService {
   private final SecurityService security;
   private final UserRepository users;
@@ -80,6 +83,7 @@ public class AccountProfileService {
     // erhalten.
     users.saveAndFlush(user);
     profileEvents.afterCommit(user);
+    AfterCommitLog.debug(log, "Account profile updated: userId={}", user.getId());
     return Profile.from(user);
   }
 }

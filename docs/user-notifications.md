@@ -1,7 +1,13 @@
 # Persönliche Benachrichtigungen
 
-Stand: 18.10.2026, auf Grundlage von `7dedccc`.
-Der erste Umfang ist implementiert. Browserabnahme und Produktionsbuild stehen noch aus.
+Aktualisierung 20.10.2026: Produktionsbuild und Browserabnahme des fertigen Redesigns
+sind abgeschlossen, DE/EN je 152 eindeutige Gesamtfälle erfolgreich.
+[Gesamt-QA, Erweiterungen und Messgrenzen](meilensteine/2026-10-20-gesamtqa-und-benachrichtigungsredesign.md).
+Die älteren Ergebnisabschnitte unten beschreiben den jeweiligen damaligen Stand.
+
+Erstimplementierung: 18.10.2026, auf Grundlage von `7dedccc`.
+Für diesen damaligen ersten Umfang waren Browserabnahme und Produktionsbuild noch offen;
+der aktuelle Abschluss des fertigen Redesigns ist oben verlinkt.
 Die zuvor abgestimmte [Planung](mitteilungsfunktion-plan.md) bleibt als ursprüngliche
 Entscheidungsgrundlage erhalten; dieses Dokument beschreibt den tatsächlichen Vertrag.
 

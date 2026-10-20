@@ -305,7 +305,10 @@ class PasswordResetViewsTest {
               .anyMatch(
                   event ->
                       event.getThrowableProxy() != null
-                          && event.getThrowableProxy().getMessage().equals(failure.getMessage())));
+                          && event
+                              .getThrowableProxy()
+                              .getMessage()
+                              .equals(failure.getClass().getName())));
     } finally {
       logger.detachAppender(logs);
       logs.stop();

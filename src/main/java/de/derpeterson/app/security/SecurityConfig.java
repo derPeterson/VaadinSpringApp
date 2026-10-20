@@ -1,5 +1,7 @@
 package de.derpeterson.app.security;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.NavigationErrorCode;
@@ -295,7 +297,9 @@ public class SecurityConfig {
                             } catch (AuthenticationException rejected) {
                               failure = rejected;
                             } catch (RuntimeException unavailable) {
-                              logger.warn("Restricted session management unavailable", unavailable);
+                              logger.warn(
+                                  "Restricted session management unavailable",
+                                  safeFailure(unavailable));
                               failure =
                                   new AuthenticationServiceException(
                                       "Sign-in temporarily unavailable");

@@ -421,14 +421,12 @@ class EmailQueueServiceTest {
         service.processQueue();
         String expected =
             attempt <= limit
-                ? "⚠️ Error sending the email to recipient@example.com, attempt "
+                ? "Email retry scheduled: queueId=1, attempt="
                     + attempt
                     + " of "
                     + (limit + 1)
-                    + ": fixture failure"
-                : "❌ Email to recipient@example.com failed after "
-                    + attempt
-                    + " attempts: fixture failure";
+                    + ", failureType=org.springframework.mail.MailAuthenticationException"
+                : "Email permanently failed: queueId=1, attempts=" + attempt;
         assertTrue(
             logs.list.stream()
                 .anyMatch(
@@ -446,6 +444,52 @@ class EmailQueueServiceTest {
               eq("admin@example.com"),
               eq("Email dispatch failed"),
               contains("after " + (limit + 1) + " attempts"));
+    } finally {
+      logger.detachAppender(logs);
+      logs.stop();
+    }
+  }
+
+  @Test
+  void transportFailureLogsUseQueueIdsAndSanitizedCausesInsteadOfMessageOrAddresses()
+      throws Exception {
+    EmailQueueEntity item = item(EmailStatus.PENDING, 0);
+    batch(item);
+    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
+    when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");
+    doThrow(new MailAuthenticationException("password=private token=private recipient@example.com"))
+        .when(mail)
+        .sendEmail(user, "subject", "body");
+    Logger logger = (Logger) LoggerFactory.getLogger(EmailQueueService.class);
+    ListAppender<ILoggingEvent> logs = threadLogs();
+    logs.start();
+    logger.addAppender(logs);
+    try {
+      service.processQueue();
+      assertEquals(EmailStatus.FAILED, item.getStatus());
+      assertTrue(
+          logs.list.stream().anyMatch(event -> event.getFormattedMessage().contains("queueId=1")));
+      for (ILoggingEvent event : logs.list) {
+        String text =
+            event.getFormattedMessage()
+                + (event.getThrowableProxy() == null
+                    ? ""
+                    : ch.qos.logback.classic.spi.ThrowableProxyUtil.asString(
+                        event.getThrowableProxy()));
+        assertFalse(text.contains("private"));
+        assertFalse(text.contains("recipient@example.com"));
+        assertFalse(text.contains("admin@example.com"));
+        assertFalse(text.contains("subject"));
+      }
+      assertTrue(
+          logs.list.stream()
+              .anyMatch(
+                  event ->
+                      event.getThrowableProxy() != null
+                          && event
+                              .getThrowableProxy()
+                              .getMessage()
+                              .equals(MailAuthenticationException.class.getName())));
     } finally {
       logger.detachAppender(logs);
       logs.stop();
@@ -488,7 +532,7 @@ class EmailQueueServiceTest {
                           && event
                               .getFormattedMessage()
                               .equals(
-                                  "✅ Email successfully sent to recipient@example.com on attempt 3.")));
+                                  "Email accepted by transport: queueId=1, type=NOTIFICATION, attempt=3")));
       assertEquals(EmailStatus.SENT, item.getStatus());
       assertEquals(2, item.getRetryCount());
     } finally {

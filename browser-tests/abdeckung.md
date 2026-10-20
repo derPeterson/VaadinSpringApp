@@ -1,5 +1,28 @@
 # Browserabdeckung und offene Punkte
 
+## Aktuelle Gesamt-QA vom 20.10.2026 – abgeschlossen
+
+Der vollständige Auftrag umfasst das fertige Header-Overlay, persönliche Inbox und
+Versandarchiv. Fünf neue Browserausprägungen ergänzen `all` auf 152 Fälle.
+1823 Anwendungs-JUnits, 48 Helfer, 205 Python- und 26 JavaScript-Offlinetests sind
+erfolgreich. DE und EN: jeweils alle 152 eindeutigen Fälle nach vollständigen Runden
+und gezielten Nachtests erfolgreich, ohne Skips, am identischen Produktionsimage.
+JUnit: 87,34 % Zeilen / 75,62 % Zweige; Browser DE/EN zusammen: 85,50 % / 66,06 %.
+Die nachfolgenden älteren Abschnitte dokumentieren frühere Zwischenstände; die dort
+noch offene Browserabnahme des fertigen Redesigns ist mit dieser QA abgeschlossen.
+[Nachweis, Korrekturen und Messgrenzen](../docs/meilensteine/2026-10-20-gesamtqa-und-benachrichtigungsredesign.md).
+
+## Anschließende Logging-Nachprüfung vom 20.10.2026
+
+Nach vollständigem QA-Abschluss wurde die gezielte Logging-Überarbeitung umgesetzt.
+Alle 1843 Anwendungs-JUnits erfolgreich; neues Produktionsimage gebaut und
+`notifications` DE/EN je 8/8 erfolgreich am identischen neuen Image, keine Fehler/Skips.
+Die Runtime-Logs zeigen keine geprüften Context-/Principal-/Credentials-Dumps oder
+Testzugangsdaten. JUnit jetzt 87,45 % Zeilen / 75,69 % Zweige bei 214 Klassen.
+Die 152er-Gesamtrunden und ihre Browserquote oben bleiben der Nachweis vor Logging;
+die anschließenden acht Fälle je Sprache sind gezielte Nachtests.
+[Logging-Änderungen, tatsächliche Nachweise und Grenzen](../docs/meilensteine/2026-10-20-gezielte-logging-ueberarbeitung.md).
+
 ## Nachfolgende Inbox-Werkzeugleiste (19.10.2026)
 
 Suche links, gemeinsame Segmentauswahl Alle/Gelesen/Ungelesen mittig und zwei

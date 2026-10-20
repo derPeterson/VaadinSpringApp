@@ -80,17 +80,18 @@ jeweiligen Fall angelegt, ohne von der Reihenfolge anderer Fälle abzuhängen.
 | `security-journeys` | Sitzungs- und Maillinkfälle gemeinsam | 10 |
 | `remember-me` | Echter Chromium- und Anwendungsneustart mit/ohne Remember-me und nach Logout | 4 |
 | `user-status` | Manuelle Wahl, Live-Anzeige in zweitem Tab, Abwesenheit/Rückkehr | 2 |
-| `configuration` | String-, Boolean- und Ganzzahlwerte, native SideNav, alle 28 Klick-Infos, mobile Tooltipbreite und sichere Enter-Bedienung | 9 |
+| `configuration` | String-, Boolean- und Ganzzahlwerte, native SideNav, alle 30 Klick-Infos, mobile Tooltipbreite und sichere Enter-Bedienung | 9 |
 | `admin-mail` | Formularfehler, Feldinfos/Sprachwechsel, sicherer mehrzeiliger Text und tatsächliche Unicode-SMTP-Mails | 3 |
 | `token-expiry` | Echte Mindestdauer abwarten, erneuter Verifikationsversand, offenes Resetformular, Anfragefehler | 3 |
 | `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 15 |
 | `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 21 |
 | `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 21 |
-| `cosmos-design` | Fünf Kontoansichten, mobiler Mailablauf, Copyright in UI/Mails, gemeinsames Theme sowie Home-/Adminnavigation bei drei Größen | 11 |
+| `cosmos-design` | Kontoansichten, mobiler Mailablauf, Copyright, Theme, Navigation sowie Infoicon-Ausrichtung in Konto/Admin bei Desktop/schmal | 13 |
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
-| `all` | Alle 27 Testklassen einschließlich der Fast-Fälle | 147 |
+| `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
+| `all` | Alle 28 Testklassen einschließlich der Fast-Fälle | 152 |
 
 AVATAR-01 prüft zwei eigenständige Parameterfälle bei 1280×900 und 390×844:
 PNG hochladen, Ausschnitt/Zoom, Uploadfläche ausblenden, gleich große lokale Aktionen,
@@ -621,12 +622,17 @@ der aktuellen Uhrzeit, ohne künstliche DOM- oder Uhrmanipulation.
 ## Neue Benachrichtigungs- und Rollenfälle
 
 Die Gesamtsuite enthält zusätzlich fünf Fälle in `UserNotificationsBrowserTest`
-und einen Live-Rollenfall in `UserAccessBrowserTest`. `fast` bleibt bei 34 Fällen.
+und einen Live-Rollenfall in `UserAccessBrowserTest`. Das fertige Redesign ergänzt
+drei Ausprägungen in `NotificationInboxBrowserTest` (NOTIFY-03 bei 1280/390 px und
+NOTIFY-04). `notifications` enthält alle acht Fälle beider Benachrichtigungsklassen,
+`all` insgesamt 152; `fast` bleibt bei 34 Fällen.
 
 | ID | Schritte und erwartetes Verhalten |
 | --- | --- |
 | NOTIFY-01 (1280/390 px) | Entwurf leeren/Blur ohne Fehler; ausdrücklich prüfen markiert Empfänger, Titel und Nachricht mit allgemeiner Fehlernotification; alle aktiven Konten zeigen gesperrte Empfängerzusammenfassung; prüfen gibt Versand frei; Vorschau-Empfängerdetails öffnen/schließen; Eingabeänderung sperrt Versand; erneute Prüfung aktualisiert Inhalt. Gleiche Aktionsbreiten, 12px Nachrichtentext, 8px Textabstand, Fokus und kein Panelüberlauf. |
 | NOTIFY-02 (Einzel/Alle) | Zwei eigene aktive Benutzer über UI anlegen; geprüfte Benachrichtigung senden; getrennte Sitzungen öffnen direkt ihre Inbox. Empfänger öffnet den Detaildialog zunächst weiterhin ungelesen, markiert ausdrücklich als gelesen und findet die Nachricht nach Reload als gelesen. Nicht ausgewählter Benutzer erhält beim Einzelversand keinen Eintrag, beim Sammelversand seinen eigenen. |
+| NOTIFY-03 (1280/390 px) | Drei echte Sendungen, davon 120 Zeichen Betreff/4000 Zeichen Inhalt. Gemeinsamer Header samt Logo/Adminzugang und Kontotabs; Vorschau-/Inboxdetails ohne automatische Lesemarkierung, Inbox-Link nur aus Vorschau. Iconaktionen und Metadaten im Footer ohne horizontalen Überlauf, lokalisierte Hover-Tooltips und Tab-Fokus. Gelesen-/Ungelesenfilter, Sammellöschen erhält ungelesene Nachrichten, Einzel-X öffnet kein Detail, Sammellesen und persistenter Leerzustand. |
+| NOTIFY-04 | Elf echte UI-Sendungen, Versandarchiv mit vollständigen Details und Pagination. Persönliche Inbox 10+1, 56px Seitenauswahl und Größen 20/50, Suche mit Lesefiltern/Leerzustand, Vorschaugrenze fünf, Sammellesen über alle elf mit Reload. |
 | MAINT-06 | Verfassenpanel, Mail-Test und Konfiguration in getrennten eigenen Tabs öffnen; Entwürfe vorbereiten; Wartung im Konfigurationstab schalten. Beide Panels aktualisieren sich ohne Reload, zeigen roten Status und sperren ihre Controls. Nach Wiederfreigabe bleiben Entwürfe erhalten; Benachrichtigungsversand erfordert neue Prüfung. |
 | USER-07H | Normales Konto in unabhängiger Sitzung anmelden; zweiter Admin vergibt Administrator. Bestehende Sitzung erhält Adminnavigation, öffnet Adminformular; Rollenentzug führt auf Home und entfernt altes Formular bei erhaltenem Login. Persönliche Rollenbenachrichtigung sichtbar, dieselbe Session-ID und kein erneuter Login-POST. |
 
@@ -636,14 +642,15 @@ USER-07E wählt vor dem eigenen Adminrollenentzug eine normale Rolle: Bootstrap-
 haben jetzt ausschließlich Admin, und eine vollständig leere Rollenauswahl ist bereits
 im Formular ungültig. Die ursprüngliche Sicherheitsassertion bleibt erhalten.
 
-Für den nachfolgenden persönlichen Inbox-Entwurf vom 19.10.2026 stehen zusätzliche
-Browsernachweise für Gesamt-/Ungelesen-Zähler, Suche vor Pagination, Kartenklick,
-nummerierte Navigation, Seitengrößen 10/20/50 mit Filtererhalt, Alle/Gelesen/Ungelesen
-zusammen mit Suche, Icon-Tooltips und schmale Ansichten
-in DE/EN noch aus. NOTIFY-02 bleibt
-unverändert auf Versand, Eigentümertrennung und ausdrücklich gelesenen Status
-ausgerichtet; die Zahl implementierter Browserfälle wurde nicht erhöht.
-
-Die neuen Fälle bedienen weder das Benachrichtigungs-Header-Overlay noch die gesendete
-Historie. Details der **geprüften Empfängervorschau** sind ausdrücklich enthalten.
+Seit dem QA-Auftrag vom 20.10.2026 sind das fertige Header-Overlay und das gesendete
+Archiv ausdrücklich im Prüfumfang. NOTIFY-03/04 ergänzen die bestehenden
+Zustellungs-/Berechtigungsfälle. Die Tests erzeugen ihren Zustand ausschließlich
+über native UI-Aktionen; keine Backend-/Datenbankabkürzung oder DOM-Manipulation.
+Ausführung: `.\browser-tests\run.ps1 -Suite notifications -Language de -Coverage`,
+anschließend dieselben Fälle auch im vollständigen `all`-Lauf beider Sprachen.
 Laufresultate und Messgrenzen stehen in `abdeckung.md`; diese Tabelle ist ein Fallkatalog.
+
+COSMOS-06 ergänzt zwei Breiten für die vertikale Infoicon-Ausrichtung: alle drei
+Kontotabs, alle acht Konfigurationsgruppen, Mail-Test und Benachrichtigungsversand.
+Die Hinweiszeilen werden tatsächlich gerendert und ihre Iconmitten geometrisch
+verglichen. USER-05A prüft zusätzlich die 56px Seitenauswahl der Benutzerverwaltung.

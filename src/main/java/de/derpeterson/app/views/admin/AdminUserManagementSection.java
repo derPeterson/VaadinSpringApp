@@ -1,5 +1,7 @@
 package de.derpeterson.app.views.admin;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -844,7 +846,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                         messageProperties.getBaseValidationEmailExistsMessage())
                     : ValidationResult.ok();
               } catch (RuntimeException exception) {
-                log.error("E-Mail-Vorprüfung fehlgeschlagen", exception);
+                log.error("E-Mail-Vorprüfung fehlgeschlagen", safeFailure(exception));
                 emailCheckFailed.set(true);
                 return ValidationResult.error(messageProperties.getAdminUsersErrorSaveFailed());
               }
@@ -1309,7 +1311,8 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   private void showMutationError(RuntimeException exception, boolean deleting) {
-    log.error("Benutzer {} fehlgeschlagen", deleting ? "löschen" : "speichern", exception);
+    log.error(
+        "Benutzer {} fehlgeschlagen", deleting ? "löschen" : "speichern", safeFailure(exception));
     if (exception instanceof org.springframework.security.access.AccessDeniedException) {
       showError(messageProperties::getRolesPermissionDenied);
     } else if (exception instanceof OptimisticLockingFailureException) {

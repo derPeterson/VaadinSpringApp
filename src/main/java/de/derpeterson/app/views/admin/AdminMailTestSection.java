@@ -1,5 +1,7 @@
 package de.derpeterson.app.views.admin;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
@@ -329,13 +331,14 @@ public class AdminMailTestSection extends VerticalLayout {
 
     try {
       emailService.sendAdminEmail(recipient, subject, body);
+      logger.info("Test email accepted by transport");
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseSuccessTitle,
               messageProperties::getAdminMailSuccess,
               NotificationHelper.NotificationType.SUCCESS);
     } catch (MailException ex) {
-      logger.error("❌ Test email failed for recipient {}.", recipient, ex);
+      logger.error("Test email dispatch failed", safeFailure(ex));
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,
