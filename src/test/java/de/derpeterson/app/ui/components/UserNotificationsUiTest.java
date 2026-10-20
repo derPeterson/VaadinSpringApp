@@ -730,16 +730,10 @@ class UserNotificationsUiTest {
     "de,true,false", "en,true,false", "de,false,false", "en,false,false",
     "de,true,true", "en,true,true", "de,false,true", "en,false,true"
   })
-  void detailUsesPaperplaneBadgeMetadataAndExplicitReadAction(
+  void detailShowsLocalizedHeaderMetadataAndReadState(
       String language, boolean compact, boolean read) {
-    locale.set(Locale.forLanguageTag(language));
-    item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), read);
-    when(service.unreadSnapshot(http)).thenReturn(read ? List.of() : List.of(7L));
-    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, compact);
-    ui.add(panel);
-    panel.refresh();
-    rowTitle(panel).click();
-    Dialog dialog = field(panel, "detail");
+    NotificationDetailFixture fixture = openNotificationDetail(language, compact, read);
+    Dialog dialog = fixture.dialog();
     assertTrue(dialog.isOpened());
     verify(service, never()).markRead(any(), any());
     Span state = detailState(dialog);
@@ -800,6 +794,18 @@ class UserNotificationsUiTest {
                 span ->
                     span.getText()
                         .equals(UserNotificationTexts.time(item.createdAt(), ui.getLocale()))));
+  }
+
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "de,true,false", "en,true,false", "de,false,false", "en,false,false",
+    "de,true,true", "en,true,true", "de,false,true", "en,false,true"
+  })
+  void detailReadAndHistoryActionsPreserveTheirContracts(
+      String language, boolean compact, boolean read) {
+    NotificationDetailFixture fixture = openNotificationDetail(language, compact, read);
+    UserNotificationsPanel panel = fixture.panel();
+    Dialog dialog = fixture.dialog();
     Button mark = detailButton(dialog, "cosmos-notification-detail-mark-read");
     assertEquals(!read, mark.isVisible());
     assertEquals("vaadin:envelope-open", mark.getIcon().getElement().getAttribute("icon"));
@@ -852,6 +858,22 @@ class UserNotificationsUiTest {
     dialog.close();
     rowTitle(panel).click();
     assertEquals(texts.getNotificationsRead(), detailState(field(panel, "detail")).getText());
+  }
+
+  private record NotificationDetailFixture(UserNotificationsPanel panel, Dialog dialog) {}
+
+  private NotificationDetailFixture openNotificationDetail(
+      String language, boolean compact, boolean read) {
+
+    locale.set(Locale.forLanguageTag(language));
+    item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), read);
+    when(service.unreadSnapshot(http)).thenReturn(read ? List.of() : List.of(7L));
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, compact);
+    ui.add(panel);
+    panel.refresh();
+    rowTitle(panel).click();
+    Dialog dialog = field(panel, "detail");
+    return new NotificationDetailFixture(panel, dialog);
   }
 
   @ParameterizedTest
@@ -1060,7 +1082,67 @@ class UserNotificationsUiTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void inboxPageSizeResetsPageAndPreservesSearchUnreadAndLanguage(String language) {
+  void inboxPageSizeControlsAndChangesResetThePage(String language) {
+    UserNotificationsPanel panel = inboxWithFortyFiveItems(language);
+    com.vaadin.flow.component.combobox.ComboBox<Integer> sizes = field(panel, "pageSize");
+    Span pageTotal = field(panel, "pageTotal");
+    assertEquals(List.of(10, 20, 50), sizes.getListDataView().getItems().toList());
+    assertEquals(10, sizes.getValue());
+    assertFalse(sizes.isAllowCustomValue());
+    assertEquals(texts.getAdminUsersPaginationPerPage(), sizes.getAriaLabel().orElseThrow());
+    assertEquals(
+        texts.getAdminUsersPaginationPerPage(), ((Span) field(panel, "pageLabel")).getText());
+    assertEquals(texts.getAdminUsersPaginationTotal(45), pageTotal.getText());
+    ((Button) field(panel, "last")).click();
+    verify(service).inbox(http, ReadFilter.ALL, 4, 10);
+    sizes.setValue(20);
+    assertEquals(0, (int) field(panel, "page"));
+    verify(service, atLeastOnce()).inbox(http, ReadFilter.ALL, 0, 20);
+    ((Button) field(panel, "next")).click();
+    verify(service).inbox(http, ReadFilter.ALL, 1, 20);
+    sizes.setValue(50);
+    assertEquals(0, (int) field(panel, "page"));
+    verify(service).inbox(http, ReadFilter.ALL, 0, 50);
+    assertFalse(((Button) field(panel, "next")).isEnabled());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void inboxPagingKeepsSearchUnreadLanguageAndEmptyFailureStates(String language) {
+    UserNotificationsPanel panel = inboxWithFortyFiveItems(language);
+    com.vaadin.flow.component.combobox.ComboBox<Integer> sizes = field(panel, "pageSize");
+    Span pageTotal = field(panel, "pageTotal");
+    sizes.setValue(50);
+    ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).setValue(ReadFilter.UNREAD);
+    TextField search = field(panel, "search");
+    search.setValue("alpha");
+    verify(service).searchInbox(http, ReadFilter.UNREAD, "alpha", Set.of(), 0, 50);
+    sizes.setValue(20);
+    verify(service).searchInbox(http, ReadFilter.UNREAD, "alpha", Set.of(), 0, 20);
+    ((Button) field(panel, "last")).click();
+    verify(service).searchInbox(http, ReadFilter.UNREAD, "alpha", Set.of(), 2, 20);
+    locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    panel.refreshTexts();
+    assertEquals(20, sizes.getValue());
+    assertEquals("alpha", search.getValue());
+    assertEquals(
+        ReadFilter.UNREAD, ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).getValue());
+    assertEquals(texts.getAdminUsersPaginationPerPage(), sizes.getAriaLabel().orElseThrow());
+    assertEquals(texts.getAdminUsersPaginationTotal(45), pageTotal.getText());
+    when(service.searchInbox(
+            eq(http), any(ReadFilter.class), eq("no-hit"), anySet(), anyInt(), anyInt()))
+        .thenReturn(Page.empty());
+    search.setValue("no-hit");
+    assertEquals(texts.getAdminUsersPaginationTotal(0), pageTotal.getText());
+    assertFalse(((Button) field(panel, "first")).isEnabled());
+    assertFalse(((Button) field(panel, "last")).isEnabled());
+    panel.unavailable();
+    assertEquals("–", pageTotal.getText());
+    verify(service, never()).markRead(any(), any());
+  }
+
+  private UserNotificationsPanel inboxWithFortyFiveItems(String language) {
+
     locale.set(Locale.forLanguageTag(language));
     when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
         .thenAnswer(
@@ -1088,52 +1170,7 @@ class UserNotificationsUiTest {
     UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, false);
     ui.add(panel);
     panel.refresh();
-    com.vaadin.flow.component.combobox.ComboBox<Integer> sizes = field(panel, "pageSize");
-    Span pageTotal = field(panel, "pageTotal");
-    assertEquals(List.of(10, 20, 50), sizes.getListDataView().getItems().toList());
-    assertEquals(10, sizes.getValue());
-    assertFalse(sizes.isAllowCustomValue());
-    assertEquals(texts.getAdminUsersPaginationPerPage(), sizes.getAriaLabel().orElseThrow());
-    assertEquals(
-        texts.getAdminUsersPaginationPerPage(), ((Span) field(panel, "pageLabel")).getText());
-    assertEquals(texts.getAdminUsersPaginationTotal(45), pageTotal.getText());
-    ((Button) field(panel, "last")).click();
-    verify(service).inbox(http, ReadFilter.ALL, 4, 10);
-    sizes.setValue(20);
-    assertEquals(0, (int) field(panel, "page"));
-    verify(service, atLeastOnce()).inbox(http, ReadFilter.ALL, 0, 20);
-    ((Button) field(panel, "next")).click();
-    verify(service).inbox(http, ReadFilter.ALL, 1, 20);
-    sizes.setValue(50);
-    assertEquals(0, (int) field(panel, "page"));
-    verify(service).inbox(http, ReadFilter.ALL, 0, 50);
-    assertFalse(((Button) field(panel, "next")).isEnabled());
-    ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).setValue(ReadFilter.UNREAD);
-    TextField search = field(panel, "search");
-    search.setValue("alpha");
-    verify(service).searchInbox(http, ReadFilter.UNREAD, "alpha", Set.of(), 0, 50);
-    sizes.setValue(20);
-    verify(service).searchInbox(http, ReadFilter.UNREAD, "alpha", Set.of(), 0, 20);
-    ((Button) field(panel, "last")).click();
-    verify(service).searchInbox(http, ReadFilter.UNREAD, "alpha", Set.of(), 2, 20);
-    locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
-    panel.refreshTexts();
-    assertEquals(20, sizes.getValue());
-    assertEquals("alpha", search.getValue());
-    assertEquals(
-        ReadFilter.UNREAD, ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).getValue());
-    assertEquals(texts.getAdminUsersPaginationPerPage(), sizes.getAriaLabel().orElseThrow());
-    assertEquals(texts.getAdminUsersPaginationTotal(45), pageTotal.getText());
-    when(service.searchInbox(
-            eq(http), any(ReadFilter.class), eq("no-hit"), anySet(), anyInt(), anyInt()))
-        .thenReturn(Page.empty());
-    search.setValue("no-hit");
-    assertEquals(texts.getAdminUsersPaginationTotal(0), pageTotal.getText());
-    assertFalse(((Button) field(panel, "first")).isEnabled());
-    assertFalse(((Button) field(panel, "last")).isEnabled());
-    panel.unavailable();
-    assertEquals("–", pageTotal.getText());
-    verify(service, never()).markRead(any(), any());
+    return panel;
   }
 
   @ParameterizedTest
@@ -1912,27 +1949,11 @@ class UserNotificationsUiTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void reviewedPreviewUsesNativeRecipientsAndInvalidatesAfterEditing(String language) {
-    locale.set(Locale.forLanguageTag(language));
-    List<Target> accounts =
-        List.of(
-            new Target(5L, "Own User", "own@example.test"),
-            new Target(6L, "Second User", "second@example.test"),
-            new Target(7L, "Third User", "third@example.test"),
-            new Target(8L, "Fourth User", "fourth@example.test"));
-    when(service.targets(http)).thenReturn(accounts);
-    when(service.sent(http, 0, 5)).thenReturn(Page.empty());
-    AdminUserNotificationsSection section =
-        new AdminUserNotificationsSection(texts, service, request);
-    section.activate();
+  void reviewedPreviewShowsPlainTextCountersRecipientsAndReviewStatus(String language) {
+    ComposePreviewFixture fixture = composePreviewFixture(language);
+    AdminUserNotificationsSection section = fixture.section();
     TextField titleField = field(section, "title");
     TextArea bodyField = field(section, "body");
-    Checkbox all = field(section, "everyone");
-    Preview preview = new Preview(new Selection(true, Set.of()), List.of(5L, 6L, 7L, 8L));
-    when(service.preview(http, preview.selection())).thenReturn(preview);
-    titleField.setValue("<b>Title</b>");
-    bodyField.setValue("<img src=x onerror=alert(1)>\nPlain text");
-    all.setValue(true);
     assertEquals(
         titleField.getValue().length() + " / " + UserNotificationService.TITLE_LIMIT,
         ((Span) field(section, "titleCount")).getText());
@@ -1959,6 +1980,24 @@ class UserNotificationsUiTest {
             .hasClassName("cosmos-notification-compose-preview-header"));
     assertEquals(
         3, tree(area).filter(com.vaadin.flow.component.avatar.Avatar.class::isInstance).count());
+    assertTrue(tree(area).noneMatch(Html.class::isInstance));
+    assertTrue(
+        tree(area)
+            .filter(Div.class::isInstance)
+            .map(Div.class::cast)
+            .anyMatch(div -> div.getText().equals(bodyField.getValue())));
+    assertTrue(((Button) field(section, "send")).isEnabled());
+    verify(service, never()).send(any(), any(), any(), any(), any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void reviewedPreviewRecipientDetailsKeepLabelsAriaAndAllRecipients(String language) {
+    ComposePreviewFixture fixture = composePreviewFixture(language);
+    AdminUserNotificationsSection section = fixture.section();
+    List<Target> accounts = fixture.accounts();
+    ((Button) field(section, "previewButton")).click();
+    Div area = field(section, "previewArea");
     Details details =
         tree(area)
             .filter(com.vaadin.flow.component.details.Details.class::isInstance)
@@ -1998,14 +2037,17 @@ class UserNotificationsUiTest {
               .map(Span.class::cast)
               .anyMatch(span -> span.getText().equals(account.email())));
     }
-    assertTrue(tree(area).noneMatch(Html.class::isInstance));
-    assertTrue(
-        tree(area)
-            .filter(Div.class::isInstance)
-            .map(Div.class::cast)
-            .anyMatch(div -> div.getText().equals(bodyField.getValue())));
-    assertTrue(((Button) field(section, "send")).isEnabled());
-    verify(service, never()).send(any(), any(), any(), any(), any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void editingReviewedPreviewKeepsOldContentAndRequiresAnotherReview(String language) {
+    ComposePreviewFixture fixture = composePreviewFixture(language);
+    AdminUserNotificationsSection section = fixture.section();
+    TextArea bodyField = field(section, "body");
+    ((Button) field(section, "previewButton")).click();
+    Div area = field(section, "previewArea");
+    Span status = field(section, "previewStatus");
     String checkedBody = bodyField.getValue();
     bodyField.setValue("Changed");
     assertTrue(area.isVisible());
@@ -2031,5 +2073,33 @@ class UserNotificationsUiTest {
             .filter(Div.class::isInstance)
             .map(Div.class::cast)
             .anyMatch(div -> div.getText().equals("Changed")));
+  }
+
+  private record ComposePreviewFixture(
+      AdminUserNotificationsSection section, List<Target> accounts) {}
+
+  private ComposePreviewFixture composePreviewFixture(String language) {
+
+    locale.set(Locale.forLanguageTag(language));
+    List<Target> accounts =
+        List.of(
+            new Target(5L, "Own User", "own@example.test"),
+            new Target(6L, "Second User", "second@example.test"),
+            new Target(7L, "Third User", "third@example.test"),
+            new Target(8L, "Fourth User", "fourth@example.test"));
+    when(service.targets(http)).thenReturn(accounts);
+    when(service.sent(http, 0, 5)).thenReturn(Page.empty());
+    AdminUserNotificationsSection section =
+        new AdminUserNotificationsSection(texts, service, request);
+    section.activate();
+    TextField titleField = field(section, "title");
+    TextArea bodyField = field(section, "body");
+    Checkbox all = field(section, "everyone");
+    Preview preview = new Preview(new Selection(true, Set.of()), List.of(5L, 6L, 7L, 8L));
+    when(service.preview(http, preview.selection())).thenReturn(preview);
+    titleField.setValue("<b>Title</b>");
+    bodyField.setValue("<img src=x onerror=alert(1)>\nPlain text");
+    all.setValue(true);
+    return new ComposePreviewFixture(section, accounts);
   }
 }

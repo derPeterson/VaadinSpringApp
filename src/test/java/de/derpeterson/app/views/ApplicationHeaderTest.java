@@ -90,8 +90,161 @@ class ApplicationHeaderTest {
 
   @ParameterizedTest
   @MethodSource("pagesRolesAndLanguages")
-  void sharedHeaderKeepsLogoShortcutsAvatarAndAuthorizedNavigation(
+  void sharedHeaderKeepsBrandShortcutsAndAvatar(String page, RoleType role, Locale initialLocale) {
+    HeaderFixture fixture = createHeader(page, role, initialLocale);
+    TrackedUserAppLayout view = fixture.view();
+    UserEntity user = fixture.user();
+    List<Component> headers = tree(view).filter(c -> c.hasClassName("cosmos-topbar")).toList();
+    assertEquals(1, headers.size());
+    HorizontalLayout header = (HorizontalLayout) headers.getFirst();
+    assertFalse(header.isSpacing());
+    List<Component> parts = header.getChildren().toList();
+    assertEquals(2, parts.size());
+    Component brand = parts.getFirst();
+    assertTrue(brand.hasClassName("cosmos-topbar-brand"));
+    List<Component> brandParts = brand.getChildren().toList();
+    assertEquals(2, brandParts.size());
+    Image logo = assertInstanceOf(Image.class, brandParts.getFirst());
+    assertEquals("custom-theme/service_logo.png", logo.getSrc());
+    assertTrue(logo.hasClassName("cosmos-topbar-logo"));
+    assertFalse(logo.getAlt().orElseThrow().isBlank());
+    assertNotNull(getClass().getResource("/META-INF/resources/" + logo.getSrc()));
+    assertEquals("Header Test Service", brandParts.getLast().getElement().getText());
+    assertTrue(brandParts.getLast().hasClassName("cosmos-topbar-service-name"));
+    Component right = parts.getLast();
+    assertTrue(right.hasClassName("cosmos-topbar-account-menu"));
+    List<Component> rightParts = right.getChildren().toList();
+    assertEquals(2, rightParts.size());
+    AccountHeaderActions shortcuts =
+        assertInstanceOf(AccountHeaderActions.class, rightParts.getFirst());
+    assertEquals(user != null, shortcuts.isVisible());
+    Button avatar = assertInstanceOf(Button.class, rightParts.getLast());
+    assertTrue(avatar.hasClassName("tracked-user-button"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("pagesRolesAndLanguages")
+  void headerMenuKeepsAuthorizedNavigationAndLanguageChanges(
       String page, RoleType role, Locale initialLocale) {
+    HeaderFixture fixture = createHeader(page, role, initialLocale);
+    TrackedUserAppLayout view = fixture.view();
+    UserEntity user = fixture.user();
+    MessageProperties texts = fixture.texts();
+    HorizontalLayout header =
+        (HorizontalLayout)
+            tree(view).filter(c -> c.hasClassName("cosmos-topbar")).findFirst().orElseThrow();
+    List<Component> rightParts = header.getChildren().toList().getLast().getChildren().toList();
+    AccountHeaderActions shortcuts = (AccountHeaderActions) rightParts.getFirst();
+    Button avatar = (Button) rightParts.getLast();
+    UserPopoverMenu menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
+    assertNotNull(menu);
+    assertTrue(menu.getPopover().getThemeNames().contains("cosmos"));
+    avatar.click();
+    assertTrue(menu.getPopover().isOpened());
+    Button settings =
+        tree(shortcuts)
+            .filter(c -> c.getId().orElse("").equals("account-header-settings"))
+            .map(Button.class::cast)
+            .findFirst()
+            .orElseThrow();
+    LanguageChangeEvent.fire(
+        ui, initialLocale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
+    assertEquals(texts.getBaseManageAccountButton(), settings.getAriaLabel().orElseThrow());
+    Button admin = menuButton(menu, "manageApplicationButton");
+    assertEquals(role != null && role.isAdministrative(), admin != null);
+    if (admin != null) {
+      assertEquals(texts.getBaseManageApplicationButton(), admin.getText());
+      doReturn(Optional.empty()).when(ui).navigate(AdminView.class);
+      admin.click();
+      verify(ui).navigate(AdminView.class);
+    }
+    Button home = menuButton(menu, "homeButton");
+    assertEquals(!page.equals("home"), home != null);
+    if (home != null) {
+      doReturn(Optional.empty()).when(ui).navigate(HomeView.class);
+      home.click();
+      verify(ui).navigate(HomeView.class);
+    }
+    if (user != null) {
+      doReturn(Optional.empty()).when(ui).navigate(AccountView.class);
+      settings.click();
+      verify(ui).navigate(AccountView.class);
+      assertNotNull(menuButton(menu, "logoutButton"));
+      assertNull(menuButton(menu, "registrationButton"));
+      assertNull(menuButton(menu, "loginButton"));
+    } else {
+      doReturn(Optional.empty()).when(ui).navigate(RegistrationView.class);
+      doReturn(Optional.empty()).when(ui).navigate(LoginView.class);
+      menuButton(menu, "registrationButton").click();
+      menuButton(menu, "loginButton").click();
+      verify(ui).navigate(RegistrationView.class);
+      verify(ui).navigate(LoginView.class);
+      assertNull(menuButton(menu, "logoutButton"));
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("pagesRolesAndLanguages")
+  void accountTabsKeepSelectedRoutePlacementAndReattachment(
+      String page, RoleType role, Locale initialLocale) {
+    HeaderFixture fixture = createHeader(page, role, initialLocale);
+    TrackedUserAppLayout view = fixture.view();
+    MessageProperties texts = fixture.texts();
+    VaadinSession session = fixture.session();
+    List<Component> accountNavigation =
+        tree(view).filter(AccountNavigationTabs.class::isInstance).toList();
+    if (page.equals("home")) {
+      assertTrue(accountNavigation.isEmpty());
+    } else {
+      assertEquals(1, accountNavigation.size());
+      AccountNavigationTabs navigation = (AccountNavigationTabs) accountNavigation.getFirst();
+      assertTrue(navigation.hasClassName("account-navigation-tabs"));
+      assertEquals(
+          texts.getAccountSettingsTitle(), navigation.getElement().getAttribute("aria-label"));
+      List<Tab> tabs = navigation.getChildren().map(Tab.class::cast).toList();
+      assertEquals(2, tabs.size());
+      assertEquals(texts.getAccountNavigationSettings(), tabLabel(tabs.getFirst()));
+      assertEquals(texts.getNotificationsTitle(), tabLabel(tabs.getLast()));
+      assertSame(
+          page.equals("account") ? tabs.getFirst() : tabs.getLast(), navigation.getSelectedTab());
+      List<Component> parentChildren = navigation.getParent().orElseThrow().getChildren().toList();
+      assertEquals(1, parentChildren.indexOf(navigation));
+      assertTrue(parentChildren.get(0).hasClassName("cosmos-dashboard-introduction"));
+      assertTrue(
+          parentChildren
+              .get(2)
+              .hasClassName(
+                  page.equals("account") ? "account-summary" : "cosmos-notification-inbox-card"));
+      ArrayList<Class<? extends Component>> routeRequests =
+          new ArrayList<Class<? extends Component>>();
+      var tabUi =
+          new UI() {
+            @Override
+            public <T extends Component> Optional<T> navigate(Class<T> target) {
+              routeRequests.add(target);
+              return Optional.empty();
+            }
+          };
+      tabUi.getInternals().setSession(session);
+      tabUi.add(navigation);
+      navigation.setSelectedTab(page.equals("account") ? tabs.getLast() : tabs.getFirst());
+      assertEquals(
+          List.of(page.equals("account") ? UserNotificationsView.class : AccountView.class),
+          routeRequests);
+      tabUi.remove(navigation);
+      routeRequests.clear();
+      tabUi.add(navigation);
+      assertSame(
+          page.equals("account") ? tabs.getFirst() : tabs.getLast(), navigation.getSelectedTab());
+      assertTrue(routeRequests.isEmpty());
+      tabUi.remove(navigation);
+    }
+  }
+
+  private record HeaderFixture(
+      TrackedUserAppLayout view, UserEntity user, MessageProperties texts, VaadinSession session) {}
+
+  private HeaderFixture createHeader(String page, RoleType role, Locale initialLocale) {
     ui = spy(new UI());
     UI.setCurrent(ui);
     AtomicReference<Locale> locale = new AtomicReference<>(initialLocale);
@@ -159,125 +312,7 @@ class ApplicationHeaderTest {
                   texts, security, users, status, request, avatars, notifications, config);
           default -> throw new IllegalArgumentException(page);
         };
-    List<Component> headers = tree(view).filter(c -> c.hasClassName("cosmos-topbar")).toList();
-    assertEquals(1, headers.size());
-    HorizontalLayout header = (HorizontalLayout) headers.getFirst();
-    assertFalse(header.isSpacing());
-    List<Component> parts = header.getChildren().toList();
-    assertEquals(2, parts.size());
-    Component brand = parts.getFirst();
-    assertTrue(brand.hasClassName("cosmos-topbar-brand"));
-    List<Component> brandParts = brand.getChildren().toList();
-    assertEquals(2, brandParts.size());
-    Image logo = assertInstanceOf(Image.class, brandParts.getFirst());
-    assertEquals("custom-theme/service_logo.png", logo.getSrc());
-    assertTrue(logo.hasClassName("cosmos-topbar-logo"));
-    assertFalse(logo.getAlt().orElseThrow().isBlank());
-    assertNotNull(getClass().getResource("/META-INF/resources/" + logo.getSrc()));
-    assertEquals("Header Test Service", brandParts.getLast().getElement().getText());
-    assertTrue(brandParts.getLast().hasClassName("cosmos-topbar-service-name"));
-    Component right = parts.getLast();
-    assertTrue(right.hasClassName("cosmos-topbar-account-menu"));
-    List<Component> rightParts = right.getChildren().toList();
-    assertEquals(2, rightParts.size());
-    AccountHeaderActions shortcuts =
-        assertInstanceOf(AccountHeaderActions.class, rightParts.getFirst());
-    assertEquals(user != null, shortcuts.isVisible());
-    Button avatar = assertInstanceOf(Button.class, rightParts.getLast());
-    assertTrue(avatar.hasClassName("tracked-user-button"));
-    UserPopoverMenu menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
-    assertNotNull(menu);
-    assertTrue(menu.getPopover().getThemeNames().contains("cosmos"));
-    avatar.click();
-    assertTrue(menu.getPopover().isOpened());
-    Button settings =
-        tree(shortcuts)
-            .filter(c -> c.getId().orElse("").equals("account-header-settings"))
-            .map(Button.class::cast)
-            .findFirst()
-            .orElseThrow();
-    LanguageChangeEvent.fire(
-        ui, initialLocale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
-    assertEquals(texts.getBaseManageAccountButton(), settings.getAriaLabel().orElseThrow());
-    Button admin = menuButton(menu, "manageApplicationButton");
-    assertEquals(role != null && role.isAdministrative(), admin != null);
-    if (admin != null) {
-      assertEquals(texts.getBaseManageApplicationButton(), admin.getText());
-      doReturn(Optional.empty()).when(ui).navigate(AdminView.class);
-      admin.click();
-      verify(ui).navigate(AdminView.class);
-    }
-    Button home = menuButton(menu, "homeButton");
-    assertEquals(!page.equals("home"), home != null);
-    if (home != null) {
-      doReturn(Optional.empty()).when(ui).navigate(HomeView.class);
-      home.click();
-      verify(ui).navigate(HomeView.class);
-    }
-    if (user != null) {
-      doReturn(Optional.empty()).when(ui).navigate(AccountView.class);
-      settings.click();
-      verify(ui).navigate(AccountView.class);
-      assertNotNull(menuButton(menu, "logoutButton"));
-      assertNull(menuButton(menu, "registrationButton"));
-      assertNull(menuButton(menu, "loginButton"));
-    } else {
-      doReturn(Optional.empty()).when(ui).navigate(RegistrationView.class);
-      doReturn(Optional.empty()).when(ui).navigate(LoginView.class);
-      menuButton(menu, "registrationButton").click();
-      menuButton(menu, "loginButton").click();
-      verify(ui).navigate(RegistrationView.class);
-      verify(ui).navigate(LoginView.class);
-      assertNull(menuButton(menu, "logoutButton"));
-    }
-    List<Component> accountNavigation =
-        tree(view).filter(AccountNavigationTabs.class::isInstance).toList();
-    if (page.equals("home")) {
-      assertTrue(accountNavigation.isEmpty());
-    } else {
-      assertEquals(1, accountNavigation.size());
-      AccountNavigationTabs navigation = (AccountNavigationTabs) accountNavigation.getFirst();
-      assertTrue(navigation.hasClassName("account-navigation-tabs"));
-      assertEquals(
-          texts.getAccountSettingsTitle(), navigation.getElement().getAttribute("aria-label"));
-      List<Tab> tabs = navigation.getChildren().map(Tab.class::cast).toList();
-      assertEquals(2, tabs.size());
-      assertEquals(texts.getAccountNavigationSettings(), tabLabel(tabs.getFirst()));
-      assertEquals(texts.getNotificationsTitle(), tabLabel(tabs.getLast()));
-      assertSame(
-          page.equals("account") ? tabs.getFirst() : tabs.getLast(), navigation.getSelectedTab());
-      List<Component> parentChildren = navigation.getParent().orElseThrow().getChildren().toList();
-      assertEquals(1, parentChildren.indexOf(navigation));
-      assertTrue(parentChildren.get(0).hasClassName("cosmos-dashboard-introduction"));
-      assertTrue(
-          parentChildren
-              .get(2)
-              .hasClassName(
-                  page.equals("account") ? "account-summary" : "cosmos-notification-inbox-card"));
-      ArrayList<Class<? extends Component>> routeRequests =
-          new ArrayList<Class<? extends Component>>();
-      var tabUi =
-          new UI() {
-            @Override
-            public <T extends Component> Optional<T> navigate(Class<T> target) {
-              routeRequests.add(target);
-              return Optional.empty();
-            }
-          };
-      tabUi.getInternals().setSession(session);
-      tabUi.add(navigation);
-      navigation.setSelectedTab(page.equals("account") ? tabs.getLast() : tabs.getFirst());
-      assertEquals(
-          List.of(page.equals("account") ? UserNotificationsView.class : AccountView.class),
-          routeRequests);
-      tabUi.remove(navigation);
-      routeRequests.clear();
-      tabUi.add(navigation);
-      assertSame(
-          page.equals("account") ? tabs.getFirst() : tabs.getLast(), navigation.getSelectedTab());
-      assertTrue(routeRequests.isEmpty());
-      tabUi.remove(navigation);
-    }
+    return new HeaderFixture(view, user, texts, session);
   }
 
   private String tabLabel(Tab tab) {

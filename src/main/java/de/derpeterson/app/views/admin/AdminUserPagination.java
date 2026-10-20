@@ -76,7 +76,7 @@ final class AdminUserPagination extends HorizontalLayout {
   void showPage(int page, int totalItems, int size) {
     this.totalItems = totalItems;
     totalPages = Math.max(1, (int) Math.ceil((double) totalItems / size));
-    currentPage = Math.min(Math.max(0, page), totalPages - 1);
+    currentPage = Math.clamp(page, 0, totalPages - 1);
     refreshTexts();
   }
 
@@ -122,8 +122,8 @@ final class AdminUserPagination extends HorizontalLayout {
     TreeSet<Integer> pages = new TreeSet<>();
     pages.add(0);
     pages.add(total - 1);
-    int start = total <= 7 ? 0 : Math.max(1, Math.min(current - 1, total - 4));
-    int end = total <= 7 ? total - 1 : Math.min(total - 2, Math.max(current + 1, 3));
+    int start = total <= 7 ? 0 : Math.clamp(current - 1, 1, total - 4);
+    int end = total <= 7 ? total - 1 : Math.clamp(current + 1, 3, total - 2);
     for (int page = start; page <= end; page++) {
       pages.add(page);
     }

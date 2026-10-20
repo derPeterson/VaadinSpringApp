@@ -1,5 +1,18 @@
 # Browserabdeckung und offene Punkte
 
+## Paging- und Testbereinigungen vom 20.10.2026
+
+Zehn Export-IDs berücksichtigt: fünf clamp-Stellen, vier fachlich aufgeteilte
+Tests und die zuvor erledigte Avatar-Lambda-Korrektur. Alle bisherigen Prüf-
+Ausdrücke und Parameterdimensionen erhalten. **263/263 gezielte Fälle und
+2124/2124 Anwendungs-JUnits**, keine Fehler oder Skips. 54 zusätzliche unabhängige
+Testausprägungen durch Aufteilung, keine 54 neuen Produktfälle. Produktionsbuild,
+Spotless und Checkstyle erfolgreich. Frische JUnit-Coverage: **87,91 % Zeilen /
+77,50 % Zweige**, 220 Klassen. Workbox und Entwicklungs-Vite-Konfiguration nach
+Build geprüft; Paketdateien unverändert. Keine neue Browserabnahme oder Sonar-
+Statusentscheidung; tatsächliche Finding-Reduktion nach dem Scan abgleichen.
+[Änderungen, zehn Finding-IDs, Nachweise und Grenzen](../docs/sonar-paging-tests-2026-10-20.md).
+
 ## Avatar-Parser vom 20.10.2026
 
 Fünf vorhandene Parser-Findings gezielt bearbeitet; Sonar-Abgleich ausstehend.

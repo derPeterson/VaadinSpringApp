@@ -159,10 +159,10 @@ class AvatarImageMetadataTest {
   void oversizedPngChunkDoesNotEscapeIntoFollowingExif(int declaredLength) throws Exception {
     byte[] png = withMetadata("png", tiff(ByteOrder.LITTLE_ENDIAN, 2));
     ByteBuffer.wrap(png).putInt(33, declaredLength);
+    Crop crop = Crop.centered();
     assertEquals(
         Problem.IMAGE,
-        assertThrows(InvalidImage.class, () -> processor.normalize(png, Crop.centered()))
-            .problem());
+        assertThrows(InvalidImage.class, () -> processor.normalize(png, crop)).problem());
   }
 
   private static List<Color> expectedCorners(int orientation) {
