@@ -215,6 +215,48 @@ class AccountAvatarDialogTest {
   }
 
   @Test
+  void completedUploadDoesNotChangeAReopenedDialogAndClosesItsInput() throws Exception {
+    AccountAvatarEditor editor = spy(editor());
+    ReflectionTestUtils.setField(dialog, "editor", editor);
+    dialog.configure(avatars, new MockHttpServletRequest());
+    ArgumentCaptor<UploadHandler> handler = ArgumentCaptor.forClass(UploadHandler.class);
+    verify(editor).setUploadHandler(handler.capture());
+    dialog.open();
+    UUID token = (UUID) ReflectionTestUtils.getField(dialog, "draft");
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.addHeader("X-Avatar-Draft", token.toString());
+    UploadEvent event = mock(UploadEvent.class);
+    when(event.getRequest())
+        .thenReturn(new VaadinServletRequest(request, mock(VaadinServletService.class)));
+    when(event.getResponse()).thenReturn(mock(VaadinResponse.class));
+    ByteArrayInputStream input = spy(new ByteArrayInputStream(new byte[] {1}));
+    when(event.getInputStream()).thenReturn(input);
+    UI uploadUi = mock(UI.class);
+    when(event.getUI()).thenReturn(uploadUi);
+    doAnswer(
+            call -> {
+              dialog.close();
+              dialog.open();
+              ((Command) call.getArgument(0)).execute();
+              return null;
+            })
+        .when(uploadUi)
+        .accessSynchronously(any());
+    when(avatars.upload(any(), eq(token), any())).thenReturn(UUID.randomUUID());
+
+    handler.getValue().handleUploadRequest(event);
+
+    verify(event).reject();
+    verify(input).close();
+    verify(avatars).release(token);
+    assertTrue(dialog.isOpened());
+    assertFalse(token.equals(ReflectionTestUtils.getField(dialog, "draft")));
+    assertNull(ReflectionTestUtils.getField(dialog, "uploadedImage"));
+    assertEquals(AvatarMode.INITIALS, mode().getValue());
+    assertFalse(button("delete").isVisible());
+  }
+
+  @Test
   void uploadResponseBindsTheAcceptedOriginalToItsServerRevisionAndRejectsOldDrafts()
       throws Exception {
     AccountAvatarEditor editor = spy(editor());

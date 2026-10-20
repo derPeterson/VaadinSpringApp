@@ -33,24 +33,8 @@ public final class MaintenanceHttpFilter implements Filter {
       return;
     }
     String type = req.getParameter("v-r");
-    if ("uidl".equals(type)
-        || "push".equals(type)
-        || "/VAADIN/uidl".equals(path)
-        || "/VAADIN/push".equals(path)) {
-      if (flowEndpoint(path) && MaintenanceTransport.allowedUi(req)) {
-        chain.doFilter(request, response);
-      } else {
-        // A Vaadin protocol message, never an HTML page in an existing UIDL response.
-        res.setContentType("application/json;charset=UTF-8");
-        res.setHeader("Cache-Control", "no-store");
-        res.getWriter()
-            .write(
-                VaadinService.createCriticalNotificationJSON(
-                    null,
-                    null,
-                    null,
-                    req.getContextPath() + AppRoute.MAINTENANCE.getSecurityRoute()));
-      }
+    if (isFlowMessage(path, type)) {
+      handleFlowMessage(req, res, chain, path);
       return;
     }
     // Initialization cannot invoke component RPC. The UI route guard and account services
@@ -59,10 +43,7 @@ public final class MaintenanceHttpFilter implements Filter {
       chain.doFilter(request, response);
       return;
     }
-    if (type == null
-        && (AppRoute.LOGIN.getSecurityRoute().equals(path)
-            || AppRoute.MAINTENANCE.getSecurityRoute().equals(path)
-            || resource(req, path))) {
+    if (type == null && permittedDocument(req, path)) {
       if (AppRoute.MAINTENANCE.getSecurityRoute().equals(path)) {
         res.setStatus(503);
       }
@@ -78,6 +59,39 @@ public final class MaintenanceHttpFilter implements Filter {
     } else {
       res.sendError(503);
     }
+  }
+
+  private boolean isFlowMessage(String path, String type) {
+    return "uidl".equals(type)
+        || "push".equals(type)
+        || "/VAADIN/uidl".equals(path)
+        || "/VAADIN/push".equals(path);
+  }
+
+  private void handleFlowMessage(
+      HttpServletRequest request, HttpServletResponse response, FilterChain chain, String path)
+      throws IOException, ServletException {
+    if (flowEndpoint(path) && MaintenanceTransport.allowedUi(request)) {
+      chain.doFilter(request, response);
+      return;
+    }
+    // A Vaadin protocol message, never an HTML page in an existing UIDL response.
+    response.setContentType("application/json;charset=UTF-8");
+    response.setHeader("Cache-Control", "no-store");
+    response
+        .getWriter()
+        .write(
+            VaadinService.createCriticalNotificationJSON(
+                null,
+                null,
+                null,
+                request.getContextPath() + AppRoute.MAINTENANCE.getSecurityRoute()));
+  }
+
+  private boolean permittedDocument(HttpServletRequest request, String path) {
+    return AppRoute.LOGIN.getSecurityRoute().equals(path)
+        || AppRoute.MAINTENANCE.getSecurityRoute().equals(path)
+        || resource(request, path);
   }
 
   private boolean flowEndpoint(String path) {

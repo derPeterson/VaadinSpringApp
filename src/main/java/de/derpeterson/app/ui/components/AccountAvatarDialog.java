@@ -209,50 +209,53 @@ public class AccountAvatarDialog extends Dialog {
 
           @Override
           public void handleUploadRequest(UploadEvent event) throws IOException {
-            UUID token;
-            try {
-              token = UUID.fromString(event.getRequest().getHeader("X-Avatar-Draft"));
-            } catch (RuntimeException _) {
-              event.reject();
-              return;
-            }
-            if (!Objects.equals(token, draft)) {
-              event.reject();
-              return;
-            }
-            try (InputStream input = event.getInputStream()) {
-              UUID id = avatars.upload((HttpServletRequest) event.getRequest(), token, input);
-              event.getResponse().setHeader("X-Avatar-Image", id.toString());
-              event
-                  .getUI()
-                  .accessSynchronously(
-                      () -> {
-                        if (!Objects.equals(token, draft) || !isOpened()) {
-                          return;
-                        }
-                        uploadedImage = id;
-                        editor.getElement().setAttribute("data-image-id", id.toString());
-                        deleteImage = false;
-                        mode.setValue(AvatarMode.CUSTOM);
-                        delete.setVisible(true);
-                      });
-              if (!Objects.equals(token, draft)) {
-                event.reject();
-              }
-            } catch (RuntimeException | IOException failure) {
-              logUnexpected(failure);
-              event.reject();
-              event
-                  .getUI()
-                  .access(
-                      () -> {
-                        if (Objects.equals(token, draft) && isOpened()) {
-                          failure(failure);
-                        }
-                      });
-            }
+            receiveUpload(event, avatars);
           }
         });
+  }
+
+  private void receiveUpload(UploadEvent event, UserAvatarService avatars) throws IOException {
+    UUID token;
+    try {
+      token = UUID.fromString(event.getRequest().getHeader("X-Avatar-Draft"));
+    } catch (RuntimeException _) {
+      event.reject();
+      return;
+    }
+    if (!Objects.equals(token, draft)) {
+      event.reject();
+      return;
+    }
+    try (InputStream input = event.getInputStream()) {
+      UUID id = avatars.upload((HttpServletRequest) event.getRequest(), token, input);
+      event.getResponse().setHeader("X-Avatar-Image", id.toString());
+      event.getUI().accessSynchronously(() -> showUploadedImage(token, id));
+      if (!Objects.equals(token, draft)) {
+        event.reject();
+      }
+    } catch (RuntimeException | IOException failure) {
+      logUnexpected(failure);
+      event.reject();
+      event
+          .getUI()
+          .access(
+              () -> {
+                if (Objects.equals(token, draft) && isOpened()) {
+                  failure(failure);
+                }
+              });
+    }
+  }
+
+  private void showUploadedImage(UUID token, UUID id) {
+    if (!Objects.equals(token, draft) || !isOpened()) {
+      return;
+    }
+    uploadedImage = id;
+    editor.getElement().setAttribute("data-image-id", id.toString());
+    deleteImage = false;
+    mode.setValue(AvatarMode.CUSTOM);
+    delete.setVisible(true);
   }
 
   @Override

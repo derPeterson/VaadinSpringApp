@@ -79,6 +79,21 @@ public class SecurityService {
       return Optional.empty();
     }
     HttpSession session = request == null ? null : request.getSession(false);
+    Authentication auth = authenticationFromAvailableContexts(session);
+    if (auth == null || !(auth.getPrincipal() instanceof UserDetails)) {
+      return Optional.empty();
+    }
+    Optional<Authentication> fresh = refreshedAuthentication(auth);
+    if (fresh.isEmpty()) {
+      clearStaleAuthentication(request);
+      return Optional.empty();
+    }
+    install(session, fresh.get());
+    useAuthentication(fresh.get());
+    return Optional.of((UserDetails) fresh.get().getPrincipal());
+  }
+
+  private Authentication authenticationFromAvailableContexts(HttpSession session) {
     Authentication auth = session == null ? null : sessionAuthentication(session);
     UserDetails stored = null;
     if (session != null
@@ -102,17 +117,7 @@ public class SecurityService {
                 sessionPrincipal, null, sessionPrincipal.getAuthorities());
       }
     }
-    if (auth == null || !(auth.getPrincipal() instanceof UserDetails)) {
-      return Optional.empty();
-    }
-    Optional<Authentication> fresh = refreshedAuthentication(auth);
-    if (fresh.isEmpty()) {
-      clearStaleAuthentication(request);
-      return Optional.empty();
-    }
-    install(session, fresh.get());
-    useAuthentication(fresh.get());
-    return Optional.of((UserDetails) fresh.get().getPrincipal());
+    return auth;
   }
 
   /** Frische Rechte der gebundenen Sitzung; kein Zugriff auf den Kontext eines fremden Threads. */
@@ -201,34 +206,7 @@ public class SecurityService {
           auth,
           request,
           response,
-          () -> {
-            handleLogin(user);
-            if (VaadinSession.getCurrent() != null) {
-              VaadinSession.getCurrent().setAttribute(UserDetails.class, user);
-              userService
-                  .findByEmail(user.getUsername())
-                  .ifPresent(
-                      entity -> VaadinSession.getCurrent().setLocale(entity.getPreferredLocale()));
-            }
-            request.getSession().setAttribute(AUTH_USER_SESSION_KEY, user);
-            restoreSecurityContext(user);
-            securityContextRepository.saveContext(
-                SecurityContextHolder.getContext(), request, response);
-            if (rememberMeServices instanceof DeviceRememberMeServices devices) {
-              devices.preparePasswordLogin(request, response, user.getUsername());
-            }
-            if (Boolean.TRUE.equals(rememberMe)) {
-              // Checkbox selection belongs to this request, never to the singleton service.
-              var rememberedRequest =
-                  new HttpServletRequestWrapper(request) {
-                    @Override
-                    public String getParameter(String name) {
-                      return "remember-me".equals(name) ? "true" : super.getParameter(name);
-                    }
-                  };
-              rememberMeServices.loginSuccess(rememberedRequest, response, auth);
-            }
-          });
+          () -> completeLoginContext(request, response, user, rememberMe, auth));
     } catch (RuntimeException failure) {
       if (VaadinSession.getCurrent() != null) {
         VaadinSession.getCurrent().setAttribute(UserDetails.class, null);
@@ -245,6 +223,38 @@ public class SecurityService {
         throw authenticationFailure;
       }
       throw new AuthenticationServiceException("Login completion failed", failure);
+    }
+  }
+
+  private void completeLoginContext(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      UserDetails user,
+      Boolean rememberMe,
+      Authentication auth) {
+    handleLogin(user);
+    if (VaadinSession.getCurrent() != null) {
+      VaadinSession.getCurrent().setAttribute(UserDetails.class, user);
+      userService
+          .findByEmail(user.getUsername())
+          .ifPresent(entity -> VaadinSession.getCurrent().setLocale(entity.getPreferredLocale()));
+    }
+    request.getSession().setAttribute(AUTH_USER_SESSION_KEY, user);
+    restoreSecurityContext(user);
+    securityContextRepository.saveContext(SecurityContextHolder.getContext(), request, response);
+    if (rememberMeServices instanceof DeviceRememberMeServices devices) {
+      devices.preparePasswordLogin(request, response, user.getUsername());
+    }
+    if (Boolean.TRUE.equals(rememberMe)) {
+      // Checkbox selection belongs to this request, never to the singleton service.
+      var rememberedRequest =
+          new HttpServletRequestWrapper(request) {
+            @Override
+            public String getParameter(String name) {
+              return "remember-me".equals(name) ? "true" : super.getParameter(name);
+            }
+          };
+      rememberMeServices.loginSuccess(rememberedRequest, response, auth);
     }
   }
 

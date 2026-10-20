@@ -136,41 +136,7 @@ public class UserAvatarService {
             : processor.normalize(
                 drafts.image(change.draft(), owner, change.imageId()).bytes(), change.crop());
     State saved =
-        transaction.execute(
-            status -> {
-              UserEntity user = requireUser(request, true);
-              if (!owner.equals(user.getId())) {
-                throw new AccessDeniedException("Identity changed");
-              }
-              UserAvatarEntity row = avatars.findById(owner).orElse(null);
-              if (!Objects.equals(change.version(), row == null ? null : row.getVersion())) {
-                throw new OptimisticLockingFailureException("Avatar changed; reopen dialog");
-              }
-              if (row == null) {
-                row = new UserAvatarEntity();
-                row.setUser(user);
-              }
-              if (change.deleteImage()) {
-                if (normalized != null || change.mode() != AvatarMode.INITIALS) {
-                  throw new InvalidImage(Problem.MISSING);
-                }
-                row.setImage(null);
-                row.setHasImage(false);
-                row.setImageRevision(null);
-              } else if (normalized != null) {
-                row.setImage(normalized);
-                row.setHasImage(true);
-                row.setImageRevision(UUID.randomUUID());
-              }
-              if (change.mode() == AvatarMode.CUSTOM && !row.isHasImage()) {
-                throw new InvalidImage(Problem.MISSING);
-              }
-              row.setMode(change.mode());
-              avatars.saveAndFlush(row);
-              events.afterCommit(user);
-              return new State(
-                  row.getVersion(), row.getMode(), row.isHasImage(), row.getImageRevision());
-            });
+        transaction.execute(status -> saveLockedAvatar(request, owner, change, normalized));
     log.debug(
         "Account avatar updated: userId={}, mode={}, hasImage={}",
         owner,
@@ -178,6 +144,46 @@ public class UserAvatarService {
         saved.hasImage());
     drafts.release(change.draft());
     return saved;
+  }
+
+  // Ausschließlich innerhalb der bestehenden Schreibtransaktion und Kontosperre aufrufen.
+  private State saveLockedAvatar(
+      HttpServletRequest request, Long owner, Change change, byte[] normalized) {
+    UserEntity user = requireUser(request, true);
+    if (!owner.equals(user.getId())) {
+      throw new AccessDeniedException("Identity changed");
+    }
+    UserAvatarEntity row = avatars.findById(owner).orElse(null);
+    if (!Objects.equals(change.version(), row == null ? null : row.getVersion())) {
+      throw new OptimisticLockingFailureException("Avatar changed; reopen dialog");
+    }
+    if (row == null) {
+      row = new UserAvatarEntity();
+      row.setUser(user);
+    }
+    applyImageChange(row, change, normalized);
+    if (change.mode() == AvatarMode.CUSTOM && !row.isHasImage()) {
+      throw new InvalidImage(Problem.MISSING);
+    }
+    row.setMode(change.mode());
+    avatars.saveAndFlush(row);
+    events.afterCommit(user);
+    return new State(row.getVersion(), row.getMode(), row.isHasImage(), row.getImageRevision());
+  }
+
+  private void applyImageChange(UserAvatarEntity row, Change change, byte[] normalized) {
+    if (change.deleteImage()) {
+      if (normalized != null || change.mode() != AvatarMode.INITIALS) {
+        throw new InvalidImage(Problem.MISSING);
+      }
+      row.setImage(null);
+      row.setHasImage(false);
+      row.setImageRevision(null);
+    } else if (normalized != null) {
+      row.setImage(normalized);
+      row.setHasImage(true);
+      row.setImageRevision(UUID.randomUUID());
+    }
   }
 
   public void release(UUID token) {

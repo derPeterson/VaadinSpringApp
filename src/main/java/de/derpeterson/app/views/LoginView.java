@@ -179,56 +179,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     this.loginButton =
         new Button(
             messageProperties.getBaseLoginButton(),
-            event -> {
-              try {
-                Authentication authentication =
-                    authenticationManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(
-                            emailField.getValue(), passwordField.getValue()));
-
-                if (authentication.getPrincipal() instanceof UserDetails userDetails) {
-                  securityService.storeAuthenticatedUser(
-                      (HttpServletRequest) VaadinRequest.getCurrent(),
-                      (HttpServletResponse) VaadinResponse.getCurrent(),
-                      userDetails,
-                      rememberMeCheckBox.getValue());
-
-                } else {
-                  logger.warn(
-                      "⚠️ Principal is not an instance of UserDetails, save and handle of login could not be performed.");
-                }
-
-                NotificationHelper.getInstance()
-                    .showNotification(
-                        messageProperties::getBaseSuccessTitle,
-                        messageProperties::getLoginSuccessMessage,
-                        NotificationHelper.NotificationType.SUCCESS);
-
-                Class<? extends Component> target =
-                    hasAdminRole(authentication) ? AdminView.class : HomeView.class;
-                getUI().ifPresent(ui -> ui.navigate(target));
-              } catch (AuthenticationException e) {
-                if (e instanceof SessionLimitException) {
-                  try {
-                    sessions.startRecovery(
-                        currentRequest,
-                        emailField.getValue(),
-                        passwordField.getValue(),
-                        rememberMeCheckBox.getValue());
-                    passwordField.clear();
-                    showRecovery();
-                  } catch (AuthenticationException rejected) {
-                    showLoginFailure(restrictedLoginFailureCode(rejected));
-                  } catch (RuntimeException unavailable) {
-                    logger.warn(
-                        "Restricted session management unavailable", safeFailure(unavailable));
-                    showLoginFailure(LOGIN_ERROR_UNAVAILABLE);
-                  }
-                  return;
-                }
-                showLoginFailure(authenticationFailureCode(e));
-              }
-            });
+            event -> authenticate(authenticationManager, securityService));
 
     CosmosPageComponent pageLayout =
         new CosmosPageComponent(
@@ -368,6 +319,61 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     updateInputPlaceholders();
     refreshRecoveryTexts();
     add(pageLayout);
+  }
+
+  private void authenticate(
+      AuthenticationManager authenticationManager, SecurityService securityService) {
+    try {
+      Authentication authentication =
+          authenticationManager.authenticate(
+              new UsernamePasswordAuthenticationToken(
+                  emailField.getValue(), passwordField.getValue()));
+
+      if (authentication.getPrincipal() instanceof UserDetails userDetails) {
+        securityService.storeAuthenticatedUser(
+            (HttpServletRequest) VaadinRequest.getCurrent(),
+            (HttpServletResponse) VaadinResponse.getCurrent(),
+            userDetails,
+            rememberMeCheckBox.getValue());
+
+      } else {
+        logger.warn(
+            "⚠️ Principal is not an instance of UserDetails, save and handle of login could not be performed.");
+      }
+
+      NotificationHelper.getInstance()
+          .showNotification(
+              messageProperties::getBaseSuccessTitle,
+              messageProperties::getLoginSuccessMessage,
+              NotificationHelper.NotificationType.SUCCESS);
+
+      Class<? extends Component> target =
+          hasAdminRole(authentication) ? AdminView.class : HomeView.class;
+      getUI().ifPresent(ui -> ui.navigate(target));
+    } catch (AuthenticationException e) {
+      if (e instanceof SessionLimitException) {
+        startSessionRecovery();
+        return;
+      }
+      showLoginFailure(authenticationFailureCode(e));
+    }
+  }
+
+  private void startSessionRecovery() {
+    try {
+      sessions.startRecovery(
+          currentRequest,
+          emailField.getValue(),
+          passwordField.getValue(),
+          rememberMeCheckBox.getValue());
+      passwordField.clear();
+      showRecovery();
+    } catch (AuthenticationException rejected) {
+      showLoginFailure(restrictedLoginFailureCode(rejected));
+    } catch (RuntimeException unavailable) {
+      logger.warn("Restricted session management unavailable", safeFailure(unavailable));
+      showLoginFailure(LOGIN_ERROR_UNAVAILABLE);
+    }
   }
 
   @Override

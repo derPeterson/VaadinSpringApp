@@ -1,5 +1,6 @@
 package de.derpeterson.app.security;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.internal.CurrentInstance;
 import com.vaadin.flow.server.ServiceInitEvent;
 import com.vaadin.flow.server.VaadinRequest;
@@ -33,53 +34,63 @@ public class PushSecurityInterceptor
     if (response == null) {
       org.springframework.security.core.context.SecurityContextHolder.clearContext();
     }
-    if (request instanceof VaadinServletRequest servletRequest
-        && !securityService.hasCurrentSessionPrivileges(servletRequest.getHttpServletRequest())) {
-      // requestStart is also called by PushHandler for an existing socket,
-      // before resolving the UI or executing any ServerRpcHandler callback.
-      // PushHandler calls requestStart outside its requestEnd finally.
-      CurrentInstance.clearAll();
-      org.springframework.security.core.context.SecurityContextHolder.clearContext();
-      throw new AccessDeniedException("Session privileges have changed");
-    }
-    if (response == null && request instanceof VaadinServletRequest servletRequest) {
+    if (request instanceof VaadinServletRequest servletRequest) {
       HttpServletRequest http = servletRequest.getHttpServletRequest();
-      Optional<Authentication> auth =
-          securityService.refreshSessionAuthentication(http.getSession(false));
-      if (auth.isPresent()
-          && Boolean.TRUE.equals(
-              MaintenanceTransport.withUi(
-                  http,
-                  ui -> {
-                    if (!RoleUiState.changed(ui, auth.get())) {
-                      return false;
-                    }
-                    ui.access(
-                        () -> {
-                          RoleUiState.refresh(ui, auth.get(), http.getContextPath());
-                          if (ui.getPushConfiguration().getPushMode().isEnabled()) {
-                            ui.push();
-                          }
-                        });
-                    return true;
-                  },
-                  false))) {
-        CurrentInstance.clearAll();
-        org.springframework.security.core.context.SecurityContextHolder.clearContext();
-        throw new AccessDeniedException("Old role UI requires refresh");
+      requireCurrentPrivileges(http);
+      // HTTP is handled by MaintenanceHttpFilter. Only existing WebSocket messages
+      // enter here without a response; blocking document/bootstrap requests would loop login.
+      if (response == null) {
+        requireCurrentRoleUi(http);
+        requireMaintenanceAccess(http);
       }
     }
-    // HTTP is handled by MaintenanceHttpFilter. Only existing WebSocket messages
-    // enter here without a response; blocking document/bootstrap requests would loop login.
-    if (response == null
-        && request instanceof VaadinServletRequest servletRequest
-        && maintenance.blocks(servletRequest.getHttpServletRequest())
-        && !MaintenanceTransport.allowedUi(servletRequest.getHttpServletRequest())) {
-      MaintenanceTransport.redirectUi(servletRequest.getHttpServletRequest());
-      CurrentInstance.clearAll();
-      org.springframework.security.core.context.SecurityContextHolder.clearContext();
+  }
+
+  private void requireCurrentPrivileges(HttpServletRequest request) {
+    if (!securityService.hasCurrentSessionPrivileges(request)) {
+      // PushHandler calls requestStart before RPC dispatch, outside its requestEnd finally.
+      clearRequestContexts();
+      throw new AccessDeniedException("Session privileges have changed");
+    }
+  }
+
+  private void requireCurrentRoleUi(HttpServletRequest request) {
+    Optional<Authentication> auth =
+        securityService.refreshSessionAuthentication(request.getSession(false));
+    if (auth.isPresent()
+        && Boolean.TRUE.equals(
+            MaintenanceTransport.withUi(
+                request, ui -> refreshRoleUi(ui, auth.get(), request.getContextPath()), false))) {
+      clearRequestContexts();
+      throw new AccessDeniedException("Old role UI requires refresh");
+    }
+  }
+
+  private boolean refreshRoleUi(UI ui, Authentication authentication, String contextPath) {
+    if (!RoleUiState.changed(ui, authentication)) {
+      return false;
+    }
+    ui.access(
+        () -> {
+          RoleUiState.refresh(ui, authentication, contextPath);
+          if (ui.getPushConfiguration().getPushMode().isEnabled()) {
+            ui.push();
+          }
+        });
+    return true;
+  }
+
+  private void requireMaintenanceAccess(HttpServletRequest request) {
+    if (maintenance.blocks(request) && !MaintenanceTransport.allowedUi(request)) {
+      MaintenanceTransport.redirectUi(request);
+      clearRequestContexts();
       throw new MaintenanceAccessException("UI actions paused for maintenance");
     }
+  }
+
+  private void clearRequestContexts() {
+    CurrentInstance.clearAll();
+    org.springframework.security.core.context.SecurityContextHolder.clearContext();
   }
 
   @Override

@@ -13,6 +13,7 @@ import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.views.LoginView;
 import de.derpeterson.app.views.MaintenanceView;
 import lombok.RequiredArgsConstructor;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
 
@@ -24,68 +25,72 @@ public class MaintenanceUiGuard implements VaadinServiceInitListener {
   @Override
   public void serviceInit(ServiceInitEvent event) {
     event.addIndexHtmlRequestListener(
-        response -> {
-          if (Boolean.TRUE.equals(
-                  response
-                      .getVaadinRequest()
-                      .getAttribute(MaintenanceHttpFilter.FORWARDED_DOCUMENT))
-              && response.getVaadinRequest() instanceof VaadinServletRequest request) {
-            // A forward changes the server path, but the browser still has e.g.
-            // /verification/token.
-            // Its bootstrap resources must resolve from the application root, not /verification/.
-            Element base = response.getDocument().head().selectFirst("base");
-            if (base != null) {
-              base.attr("href", request.getContextPath() + "/");
-            }
+        response -> adjustMaintenanceBase(response.getVaadinRequest(), response.getDocument()));
+    event.getSource().addUIInitListener(init -> initializeUi(init.getUI()));
+  }
+
+  private void adjustMaintenanceBase(VaadinRequest vaadinRequest, Document document) {
+    if (Boolean.TRUE.equals(vaadinRequest.getAttribute(MaintenanceHttpFilter.FORWARDED_DOCUMENT))
+        && vaadinRequest instanceof VaadinServletRequest request) {
+      // A forward changes the server path, but the browser still has e.g. /verification/token.
+      // Its bootstrap resources must resolve from the application root, not /verification/.
+      Element base = document.head().selectFirst("base");
+      if (base != null) {
+        base.attr("href", request.getContextPath() + "/");
+      }
+    }
+  }
+
+  private void initializeUi(UI ui) {
+    installMaintenanceErrorHandler(ui.getSession());
+    ui.addBeforeEnterListener(
+        navigation -> {
+          if (VaadinRequest.getCurrent() instanceof VaadinServletRequest request
+              && maintenance.blocks(request.getHttpServletRequest())
+              && navigation.getNavigationTarget() != LoginView.class
+              && navigation.getNavigationTarget() != MaintenanceView.class) {
+            navigation.rerouteTo(MaintenanceView.class);
           }
         });
-    event
-        .getSource()
-        .addUIInitListener(
-            init -> {
-              UI ui = init.getUI();
-              VaadinSession session = ui.getSession();
-              String marker = MaintenanceUiGuard.class.getName() + ".errorHandler";
-              if (session.getAttribute(marker) == null) {
-                ErrorHandler previous = session.getErrorHandler();
-                session.setErrorHandler(
-                    error -> {
-                      Throwable failure = error.getThrowable();
-                      while (failure != null) {
-                        if (failure instanceof MaintenanceAccessException
-                            && UI.getCurrent() != null) {
-                          String contextPath =
-                              VaadinService.getCurrentRequest()
-                                      instanceof VaadinServletRequest current
-                                  ? current.getContextPath()
-                                  : "";
-                          UI.getCurrent()
-                              .getPage()
-                              .setLocation(contextPath + AppRoute.MAINTENANCE.getSecurityRoute());
-                          return;
-                        }
-                        if (failure == failure.getCause()) {
-                          break;
-                        }
-                        failure = failure.getCause();
-                      }
-                      if (previous != null) {
-                        previous.error(error);
-                      } else {
-                        new DefaultErrorHandler().error(error);
-                      }
-                    });
-                session.setAttribute(marker, Boolean.TRUE);
-              }
-              ui.addBeforeEnterListener(
-                  navigation -> {
-                    if (VaadinRequest.getCurrent() instanceof VaadinServletRequest request
-                        && maintenance.blocks(request.getHttpServletRequest())
-                        && navigation.getNavigationTarget() != LoginView.class
-                        && navigation.getNavigationTarget() != MaintenanceView.class) {
-                      navigation.rerouteTo(MaintenanceView.class);
-                    }
-                  });
-            });
+  }
+
+  private void installMaintenanceErrorHandler(VaadinSession session) {
+    String marker = MaintenanceUiGuard.class.getName() + ".errorHandler";
+    if (session.getAttribute(marker) != null) {
+      return;
+    }
+    ErrorHandler previous = session.getErrorHandler();
+    session.setErrorHandler(
+        error -> {
+          if (redirectMaintenanceFailure(error.getThrowable())) {
+            return;
+          }
+          if (previous != null) {
+            previous.error(error);
+          } else {
+            new DefaultErrorHandler().error(error);
+          }
+        });
+    session.setAttribute(marker, Boolean.TRUE);
+  }
+
+  private boolean redirectMaintenanceFailure(Throwable failure) {
+    while (failure != null) {
+      if (failure instanceof MaintenanceAccessException && UI.getCurrent() != null) {
+        String contextPath =
+            VaadinService.getCurrentRequest() instanceof VaadinServletRequest current
+                ? current.getContextPath()
+                : "";
+        UI.getCurrent()
+            .getPage()
+            .setLocation(contextPath + AppRoute.MAINTENANCE.getSecurityRoute());
+        return true;
+      }
+      if (failure == failure.getCause()) {
+        break;
+      }
+      failure = failure.getCause();
+    }
+    return false;
   }
 }

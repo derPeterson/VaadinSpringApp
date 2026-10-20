@@ -707,475 +707,564 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   private void openDialog(UserEntity user) {
-    boolean editMode = user.getId() != null;
-    AdminUserFormData formData = AdminUserFormData.fromUser(user);
-    Long expectedVersion = user.getVersion();
+    new UserEditor(user).open();
+  }
 
-    Dialog dialog = new Dialog();
-    dialog.addClassName("cosmos-theme");
-    dialog.getElement().getThemeList().add("cosmos");
-    dialog.setCloseOnEsc(true);
-    dialog.setCloseOnOutsideClick(true);
-    dialog.setDraggable(true);
-    dialog.setResizable(true);
-    dialog.addClassName("admin-user-dialog");
-    H2 dialogTitle =
-        new H2(
-            editMode
-                ? messageProperties.getAdminUsersEditDialogTitle()
-                : messageProperties.getAdminUsersCreateDialogTitle());
-    dialogTitle.addClassName(COSMOS_PANEL_TITLE_CLASS);
-    Span dialogDescription = new Span(messageProperties.getAdminUsersDialogDescription());
-    dialogDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
-    Div dialogHeading = new Div(dialogTitle, dialogDescription);
-    dialogHeading.addClassName(COSMOS_PANEL_HEADING_CLASS);
-    Icon userIcon = VaadinIcon.USER.create();
-    userIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
-    Div iconBadge = new Div(userIcon);
-    iconBadge.addClassName(COSMOS_PANEL_ICON_CLASS);
-    Button closeButton = new Button(VaadinIcon.CLOSE_CIRCLE.create(), event -> dialog.close());
-    closeButton.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
-    closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    closeButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
-    Div dialogHeader = new Div(iconBadge, dialogHeading, closeButton);
-    dialogHeader.addClassName("admin-user-dialog-header");
-    dialog.getHeader().add(dialogHeader);
-    dialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
+  /** Zustand und Rückmeldungen genau eines geöffneten Benutzerformulars. */
+  private final class UserEditor {
+    private final UserEntity user;
+    private final boolean editMode;
+    private final AdminUserFormData formData;
+    private final Long expectedVersion;
+    private Dialog dialog;
+    private H2 dialogTitle;
+    private Span dialogDescription;
+    private Button closeButton;
+    private Binder<AdminUserFormData> binder;
+    private TextField firstNameField;
+    private TextField lastNameField;
+    private EmailField emailField;
+    private PasswordField passwordField;
+    private Span passwordHint;
+    private PasswordField confirmPasswordField;
+    private ComboBox<Gender> genderComboBox;
+    private DatePicker birthDatePicker;
+    private Checkbox enabledCheckbox;
+    private Span enabledCaption;
+    private Span enabledHint;
+    private Hr enabledDivider;
+    private Hr rolesDivider;
+    private CheckboxGroup<RoleType> rolesGroup;
+    private Span technicalInfo;
+    private Div securityNote;
+    private AtomicBoolean emailCheckFailed;
+    private AtomicBoolean showPasswordErrors;
+    private AtomicBoolean showConfirmPasswordErrors;
+    private Binding<AdminUserFormData, String> passwordBinding;
+    private Binding<AdminUserFormData, String> confirmPasswordBinding;
+    private Button saveButton;
+    private Button cancelButton;
 
-    Binder<AdminUserFormData> binder = new Binder<>(AdminUserFormData.class);
-
-    TextField firstNameField = new TextField(messageProperties.getAdminUsersFieldFirstName());
-    firstNameField.setRequiredIndicatorVisible(true);
-    firstNameField.setWidthFull();
-
-    TextField lastNameField = new TextField(messageProperties.getAdminUsersFieldLastName());
-    lastNameField.setRequiredIndicatorVisible(true);
-    lastNameField.setWidthFull();
-
-    EmailField emailField = new EmailField(messageProperties.getAdminUsersFieldEmail());
-    emailField.setPattern(UserInputRules.EMAIL_REGEX);
-    emailField.setRequiredIndicatorVisible(true);
-    emailField.setWidthFull();
-    emailField.setClearButtonVisible(true);
-
-    PasswordField passwordField = new PasswordField(messageProperties.getAdminUsersFieldPassword());
-    passwordField.setWidthFull();
-    passwordField.setRevealButtonVisible(true);
-    passwordField.setValueChangeMode(ValueChangeMode.EAGER);
-    passwordField.setRequiredIndicatorVisible(!editMode);
-    passwordField.setPlaceholder(
-        editMode
-            ? messageProperties.getAdminUsersPasswordPlaceholderEdit()
-            : messageProperties.getAccountPasswordPlaceholder());
-    Span passwordHint =
-        new Span(
-            editMode
-                ? messageProperties.getAdminUsersPasswordHelperEdit()
-                : messageProperties.getAdminUsersPasswordHelperCreate());
-    passwordHint.addClassName("admin-user-password-hint");
-    passwordField.setAriaDescribedBy(passwordHint);
-
-    PasswordField confirmPasswordField =
-        new PasswordField(messageProperties.getRegistrationConfirmField());
-    confirmPasswordField.setWidthFull();
-    confirmPasswordField.setRevealButtonVisible(true);
-    confirmPasswordField.setValueChangeMode(ValueChangeMode.EAGER);
-    confirmPasswordField.setPlaceholder(messageProperties.getAccountConfirmPasswordPlaceholder());
-    confirmPasswordField.setEnabled(false);
-    confirmPasswordField.setAriaDescribedBy(passwordHint);
-
-    ComboBox<Gender> genderComboBox =
-        new ComboBox<>(messageProperties.getRegistrationGenderCombobox());
-    genderComboBox.setItems(Gender.values());
-    genderComboBox.setWidthFull();
-    genderComboBox.setRequired(true);
-    genderComboBox.setItemLabelGenerator(this::formatGender);
-
-    DatePicker birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
-    birthDatePicker.setAutoOpen(false);
-    CompactDateInput.configure(birthDatePicker, messageProperties);
-    Runnable refreshBirthDate =
-        () -> {
-          birthDatePicker.setLocale(
-              VaadinSession.getCurrent() != null
-                  ? VaadinSession.getCurrent().getLocale()
-                  : Locale.getDefault());
-          CompactDateInput.configure(birthDatePicker, messageProperties);
-          birthDatePicker.setLabel(messageProperties.getRegistrationBirthDateField());
-          birthDatePicker.setPlaceholder(messageProperties.getRegistrationBirthDatePlaceholder());
-        };
-    refreshBirthDate.run();
-    birthDatePicker.setWidthFull();
-    birthDatePicker.setRequired(true);
-    birthDatePicker.setMax(LocalDate.now(ZoneId.systemDefault()));
-
-    Checkbox enabledCheckbox = new Checkbox();
-    enabledCheckbox.addClassName("admin-user-enabled-checkbox");
-    Span enabledCaption = new Span(messageProperties.getAdminUsersFieldEnabled());
-    Span enabledHint = new Span(messageProperties.getAdminUsersEnabledHint());
-    enabledHint.addClassName("admin-user-enabled-hint");
-    enabledHint.getElement().setAttribute(ARIA_HIDDEN, "true");
-    Div enabledLabel = new Div(enabledCaption, enabledHint);
-    enabledLabel.addClassName("admin-user-enabled-label");
-    enabledCheckbox.setLabelComponent(enabledLabel);
-    enabledCheckbox.setAriaDescribedBy(enabledHint);
-    Hr enabledDivider = new Hr();
-    enabledDivider.addClassName("admin-user-dialog-separator");
-    Hr rolesDivider = new Hr();
-    rolesDivider.addClassName("admin-user-dialog-separator");
-
-    CheckboxGroup<RoleType> rolesGroup = new CheckboxGroup<>();
-    rolesGroup.setLabel(messageProperties.getAdminUsersFieldRoles());
-    rolesGroup.setItems(RoleType.values());
-    rolesGroup.setItemEnabledProvider(
-        role -> role != RoleType.ROLE_SUPERADMIN || userService.canManageSuperadmins());
-    rolesGroup.setItemLabelGenerator(this::formatRoleType);
-    rolesGroup.setRequired(true);
-    rolesGroup.setHelperText(messageProperties.getAdminUsersRolesHelper());
-
-    Span technicalInfo =
-        new Span(
-            editMode
-                ? messageProperties.getAdminUsersTechnicalInfoEdit()
-                : messageProperties.getAdminUsersTechnicalInfoCreate());
-    technicalInfo.addClassName(LumoUtility.TextColor.SECONDARY);
-    Icon securityIcon = VaadinIcon.SHIELD.create();
-    securityIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
-    Div securityNote = new Div(securityIcon, technicalInfo);
-    securityNote.addClassNames("cosmos-panel-hint", "admin-user-security-note");
-
-    binder
-        .forField(firstNameField)
-        .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
-        .withValidator(
-            ValidationHelper::isRequiredTextValid,
-            context -> messageProperties.getBaseValidationRequiredMessage())
-        .bind(AdminUserFormData::getFirstName, AdminUserFormData::setFirstName);
-
-    binder
-        .forField(lastNameField)
-        .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
-        .withValidator(
-            ValidationHelper::isRequiredTextValid,
-            context -> messageProperties.getBaseValidationRequiredMessage())
-        .bind(AdminUserFormData::getLastName, AdminUserFormData::setLastName);
-
-    AtomicBoolean emailCheckFailed = new AtomicBoolean();
-    binder
-        .forField(emailField)
-        .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
-        .withValidator(
-            ValidationHelper::isEmailValid,
-            context -> messageProperties.getBaseValidationEmailInvalidMessage())
-        .withValidator(
-            (email, context) -> {
-              emailCheckFailed.set(false);
-              try {
-                return userService.emailExistsForOtherUser(
-                        ValidationHelper.normalize(email), formData.getId())
-                    ? ValidationResult.error(
-                        messageProperties.getBaseValidationEmailExistsMessage())
-                    : ValidationResult.ok();
-              } catch (RuntimeException exception) {
-                log.error("E-Mail-Vorprüfung fehlgeschlagen", safeFailure(exception));
-                emailCheckFailed.set(true);
-                return ValidationResult.error(messageProperties.getAdminUsersErrorSaveFailed());
-              }
-            })
-        .bind(AdminUserFormData::getEmail, AdminUserFormData::setEmail);
-
-    AtomicBoolean showPasswordErrors = new AtomicBoolean();
-    AtomicBoolean showConfirmPasswordErrors = new AtomicBoolean();
-    Binding<AdminUserFormData, String> passwordBinding =
-        binder
-            .forField(passwordField)
-            .withValidationStatusHandler(
-                status -> {
-                  boolean showError = showPasswordErrors.get() && status.isError();
-                  passwordField.setErrorMessage(showError ? status.getMessage().orElse("") : "");
-                  passwordField.setInvalid(showError);
-                })
-            .withValidator(
-                value -> ValidationHelper.isPasswordSecure(value, editMode),
-                context ->
-                    editMode
-                        ? messageProperties.getAdminUsersPasswordValidationEdit()
-                        : messageProperties.getAdminUsersPasswordValidationCreate())
-            .bind(AdminUserFormData::getPassword, AdminUserFormData::setPassword);
-
-    Binding<AdminUserFormData, String> confirmPasswordBinding =
-        binder
-            .forField(confirmPasswordField)
-            .withValidationStatusHandler(
-                status -> {
-                  boolean showError = showConfirmPasswordErrors.get() && status.isError();
-                  confirmPasswordField.setErrorMessage(
-                      showError ? status.getMessage().orElse("") : "");
-                  confirmPasswordField.setInvalid(showError);
-                })
-            .withValidator(
-                value ->
-                    !ValidationHelper.isRequiredTextValid(passwordField.getValue())
-                        || ValidationHelper.isRequiredTextValid(value),
-                context -> messageProperties.getBaseValidationRequiredMessage())
-            .withValidator(
-                value ->
-                    !ValidationHelper.isRequiredTextValid(passwordField.getValue())
-                        || Objects.equals(passwordField.getValue(), value),
-                context -> messageProperties.getBaseValidationPasswordConfirmMessage())
-            .bind(AdminUserFormData::getConfirmPassword, AdminUserFormData::setConfirmPassword);
-
-    binder
-        .forField(genderComboBox)
-        .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
-        .bind(AdminUserFormData::getGender, AdminUserFormData::setGender);
-
-    binder
-        .forField(birthDatePicker)
-        .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
-        .withValidator(
-            ValidationHelper::isBirthDateValid,
-            context -> messageProperties.getBaseValidationBirthDatePastMessage())
-        .bind(AdminUserFormData::getBirthDate, AdminUserFormData::setBirthDate);
-
-    binder
-        .forField(enabledCheckbox)
-        .bind(AdminUserFormData::isEnabled, AdminUserFormData::setEnabled);
-
-    binder
-        .forField(rolesGroup)
-        .withValidator(
-            selectedRoles -> selectedRoles != null && !selectedRoles.isEmpty(),
-            context -> messageProperties.getBaseValidationRequiredMessage())
-        .bind(AdminUserFormData::getRoles, AdminUserFormData::setRoles);
-
-    binder.readBean(formData);
-
-    passwordField.addValueChangeListener(
-        event -> {
-          boolean passwordEntered = ValidationHelper.isRequiredTextValid(event.getValue());
-          confirmPasswordField.setEnabled(passwordEntered);
-          confirmPasswordField.setRequiredIndicatorVisible(passwordEntered);
-          if (!passwordEntered) {
-            showConfirmPasswordErrors.set(false);
-            confirmPasswordField.clear();
-          }
-          confirmPasswordBinding.validate();
-        });
-
-    // Sofort prüfen, aber Fehlermeldungen erst nach dem Verlassen des Feldes anzeigen.
-    passwordField.addFocusListener(
-        event -> {
-          showPasswordErrors.set(false);
-          passwordField.setInvalid(false);
-          passwordField.setErrorMessage("");
-        });
-    passwordField.addBlurListener(
-        event -> {
-          showPasswordErrors.set(true);
-          passwordBinding.validate();
-        });
-    confirmPasswordField.addFocusListener(
-        event -> {
-          showConfirmPasswordErrors.set(false);
-          confirmPasswordField.setInvalid(false);
-          confirmPasswordField.setErrorMessage("");
-        });
-    confirmPasswordField.addBlurListener(
-        event -> {
-          showConfirmPasswordErrors.set(true);
-          confirmPasswordBinding.validate();
-        });
-
-    Button saveButton = new Button(messageProperties.getAdminUsersSave());
-    saveButton.setPrefixComponent(VaadinIcon.CHECK.create());
-    saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    saveButton.setEnabled(binder.isValid());
-
-    binder.addStatusChangeListener(event -> saveButton.setEnabled(binder.isValid()));
-
-    saveButton.addClickListener(
-        event -> {
-          try {
-            try {
-              emailCheckFailed.set(false);
-              showPasswordErrors.set(true);
-              showConfirmPasswordErrors.set(true);
-              binder.writeBean(formData);
-            } catch (ValidationException _) {
-              showError(
-                  emailCheckFailed.get()
-                      ? messageProperties::getAdminUsersErrorSaveFailed
-                      : messageProperties::getAdminUsersValidationCheckFields);
-              return;
-            }
-            // Status listeners may recheck validity during writeBean. Never
-            // proceed if such a check failed technically either.
-            if (emailCheckFailed.get()) {
-              showError(messageProperties::getAdminUsersErrorSaveFailed);
-              return;
-            }
-
-            Set<RoleEntity> roleEntities = resolveRoles(formData.getRoles());
-            if (roleEntities.size() != formData.getRoles().size()) {
-              showError(messageProperties::getAdminUsersErrorRoleMissing);
-              return;
-            }
-
-            if (isCurrentUser(user) && !formData.isEnabled()) {
-              showError(messageProperties::getAdminUsersErrorDisableOwnUser);
-              return;
-            }
-
-            if (isCurrentUser(user)
-                && formData.getRoles().stream().noneMatch(RoleType::isAdministrative)) {
-              showError(messageProperties::getAdminUsersErrorRemoveOwnAdminRole);
-              return;
-            }
-
-            if (userService.wouldRemoveLastEnabledSuperadmin(
-                formData.getId(), formData.isEnabled(), roleEntities)) {
-              showError(messageProperties::getAdminUsersErrorLastActiveSuperadmin);
-              return;
-            }
-
-            UserEntity edited =
-                UserEntity.builder()
-                    .id(formData.getId())
-                    .firstName(clean(formData.getFirstName()))
-                    .lastName(clean(formData.getLastName()))
-                    .email(clean(formData.getEmail()))
-                    .gender(formData.getGender())
-                    .birthDate(formData.getBirthDate())
-                    .enabled(formData.isEnabled())
-                    .verificationPending(false)
-                    .preferredLocale(CustomI18NProvider.getCurrentLocale())
-                    .roleEntities(roleEntities)
-                    .build();
-            if (editMode) {
-              userService.updateAdminUser(edited, expectedVersion, formData.getPassword());
-            } else {
-              userService.createAdminUser(edited, formData.getPassword());
-            }
-            dialog.close();
-            refreshGrid();
-
-            NotificationHelper.getInstance()
-                .showNotification(
-                    messageProperties::getBaseSuccessTitle,
-                    () ->
-                        editMode
-                            ? messageProperties.getAdminUsersSaveSuccessUpdated()
-                            : messageProperties.getAdminUsersSaveSuccessCreated(),
-                    NotificationHelper.NotificationType.SUCCESS);
-          } catch (RuntimeException exception) {
-            showMutationError(exception, false);
-          }
-        });
-
-    Button cancelButton = new Button(messageProperties.getAdminUsersCancel(), e -> dialog.close());
-    cancelButton.setPrefixComponent(VaadinIcon.CLOSE.create());
-
-    HorizontalLayout nameRow = new HorizontalLayout(firstNameField, lastNameField);
-    nameRow.setWidthFull();
-    nameRow.addClassName(COSMOS_FORM_ROW_CLASS);
-    nameRow.expand(firstNameField, lastNameField);
-
-    HorizontalLayout passwordRow = new HorizontalLayout(passwordField, confirmPasswordField);
-    passwordRow.setWidthFull();
-    passwordRow.setSpacing(false);
-    passwordRow.addClassName(COSMOS_FORM_ROW_CLASS);
-    passwordRow.expand(passwordField, confirmPasswordField);
-    Div passwordFields = new Div(passwordRow, passwordHint);
-    passwordFields.addClassName("admin-user-password-fields");
-
-    HorizontalLayout masterDataRow = new HorizontalLayout(genderComboBox, birthDatePicker);
-    masterDataRow.setWidthFull();
-    masterDataRow.addClassName(COSMOS_FORM_ROW_CLASS);
-    masterDataRow.expand(genderComboBox, birthDatePicker);
-
-    HorizontalLayout footer = new HorizontalLayout();
-    footer.addClassName("cosmos-dialog-actions");
-    footer.setWidthFull();
-    footer.setAlignItems(Alignment.CENTER);
-    if (editMode) {
-      Button deleteButton =
-          new Button(
-              messageProperties.getAdminUsersDelete(),
-              VaadinIcon.TRASH.create(),
-              event -> deleteUser(user, dialog::close));
-      deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
-      deleteButton.addClassName("cosmos-delete-button");
-      deleteButton.setEnabled(!isCurrentUser(user));
-      footer.add(deleteButton);
+    private UserEditor(UserEntity user) {
+      this.user = user;
+      editMode = user.getId() != null;
+      formData = AdminUserFormData.fromUser(user);
+      expectedVersion = user.getVersion();
     }
-    cancelButton.addClassName("cosmos-dialog-cancel");
-    footer.add(cancelButton, saveButton);
 
-    VerticalLayout dialogLayout =
-        new VerticalLayout(
-            nameRow,
-            emailField,
-            passwordFields,
-            masterDataRow,
-            enabledCheckbox,
-            enabledDivider,
-            rolesGroup,
-            rolesDivider,
-            securityNote);
-    dialog.getFooter().add(footer);
-    dialogLayout.setPadding(false);
-    dialogLayout.setSpacing(false);
-    dialogLayout.addClassName("cosmos-dialog-form");
+    private void open() {
+      configureHeader();
+      configureFields();
+      bindFields();
+      configurePasswordFeedback();
+      configureActions();
+      composeLayout();
+      registerTextRefresh();
+      dialog.open();
+    }
 
-    dialog.add(dialogLayout);
-    Runnable refreshErrors =
-        () -> {
-          refreshBirthDate.run();
-          dialogTitle.setText(
+    private void configureHeader() {
+      dialog = new Dialog();
+      dialog.addClassName("cosmos-theme");
+      dialog.getElement().getThemeList().add("cosmos");
+      dialog.setCloseOnEsc(true);
+      dialog.setCloseOnOutsideClick(true);
+      dialog.setDraggable(true);
+      dialog.setResizable(true);
+      dialog.addClassName("admin-user-dialog");
+      dialogTitle =
+          new H2(
               editMode
                   ? messageProperties.getAdminUsersEditDialogTitle()
                   : messageProperties.getAdminUsersCreateDialogTitle());
-          dialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
-          dialogDescription.setText(messageProperties.getAdminUsersDialogDescription());
-          closeButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
-          confirmPasswordField.setLabel(messageProperties.getRegistrationConfirmField());
-          confirmPasswordField.setPlaceholder(
-              messageProperties.getAccountConfirmPasswordPlaceholder());
-          enabledCaption.setText(messageProperties.getAdminUsersFieldEnabled());
-          enabledHint.setText(messageProperties.getAdminUsersEnabledHint());
-          passwordField.setPlaceholder(
-              editMode
-                  ? messageProperties.getAdminUsersPasswordPlaceholderEdit()
-                  : messageProperties.getAccountPasswordPlaceholder());
-          passwordHint.setText(
+      dialogTitle.addClassName(COSMOS_PANEL_TITLE_CLASS);
+      dialogDescription = new Span(messageProperties.getAdminUsersDialogDescription());
+      dialogDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
+      Div dialogHeading = new Div(dialogTitle, dialogDescription);
+      dialogHeading.addClassName(COSMOS_PANEL_HEADING_CLASS);
+      Icon userIcon = VaadinIcon.USER.create();
+      userIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
+      Div iconBadge = new Div(userIcon);
+      iconBadge.addClassName(COSMOS_PANEL_ICON_CLASS);
+      closeButton = new Button(VaadinIcon.CLOSE_CIRCLE.create(), event -> dialog.close());
+      closeButton.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
+      closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+      closeButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
+      Div dialogHeader = new Div(iconBadge, dialogHeading, closeButton);
+      dialogHeader.addClassName("admin-user-dialog-header");
+      dialog.getHeader().add(dialogHeader);
+      dialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
+    }
+
+    private void configureFields() {
+      binder = new Binder<>(AdminUserFormData.class);
+
+      firstNameField = new TextField(messageProperties.getAdminUsersFieldFirstName());
+      firstNameField.setRequiredIndicatorVisible(true);
+      firstNameField.setWidthFull();
+
+      lastNameField = new TextField(messageProperties.getAdminUsersFieldLastName());
+      lastNameField.setRequiredIndicatorVisible(true);
+      lastNameField.setWidthFull();
+
+      emailField = new EmailField(messageProperties.getAdminUsersFieldEmail());
+      emailField.setPattern(UserInputRules.EMAIL_REGEX);
+      emailField.setRequiredIndicatorVisible(true);
+      emailField.setWidthFull();
+      emailField.setClearButtonVisible(true);
+
+      passwordField = new PasswordField(messageProperties.getAdminUsersFieldPassword());
+      passwordField.setWidthFull();
+      passwordField.setRevealButtonVisible(true);
+      passwordField.setValueChangeMode(ValueChangeMode.EAGER);
+      passwordField.setRequiredIndicatorVisible(!editMode);
+      passwordField.setPlaceholder(
+          editMode
+              ? messageProperties.getAdminUsersPasswordPlaceholderEdit()
+              : messageProperties.getAccountPasswordPlaceholder());
+      passwordHint =
+          new Span(
               editMode
                   ? messageProperties.getAdminUsersPasswordHelperEdit()
                   : messageProperties.getAdminUsersPasswordHelperCreate());
-          technicalInfo.setText(
+      passwordHint.addClassName("admin-user-password-hint");
+      passwordField.setAriaDescribedBy(passwordHint);
+
+      confirmPasswordField = new PasswordField(messageProperties.getRegistrationConfirmField());
+      confirmPasswordField.setWidthFull();
+      confirmPasswordField.setRevealButtonVisible(true);
+      confirmPasswordField.setValueChangeMode(ValueChangeMode.EAGER);
+      confirmPasswordField.setPlaceholder(messageProperties.getAccountConfirmPasswordPlaceholder());
+      confirmPasswordField.setEnabled(false);
+      confirmPasswordField.setAriaDescribedBy(passwordHint);
+
+      genderComboBox = new ComboBox<>(messageProperties.getRegistrationGenderCombobox());
+      genderComboBox.setItems(Gender.values());
+      genderComboBox.setWidthFull();
+      genderComboBox.setRequired(true);
+      genderComboBox.setItemLabelGenerator(AdminUserManagementSection.this::formatGender);
+
+      birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
+      birthDatePicker.setAutoOpen(false);
+      CompactDateInput.configure(birthDatePicker, messageProperties);
+      refreshBirthDate();
+      birthDatePicker.setWidthFull();
+      birthDatePicker.setRequired(true);
+      birthDatePicker.setMax(LocalDate.now(ZoneId.systemDefault()));
+
+      enabledCheckbox = new Checkbox();
+      enabledCheckbox.addClassName("admin-user-enabled-checkbox");
+      enabledCaption = new Span(messageProperties.getAdminUsersFieldEnabled());
+      enabledHint = new Span(messageProperties.getAdminUsersEnabledHint());
+      enabledHint.addClassName("admin-user-enabled-hint");
+      enabledHint.getElement().setAttribute(ARIA_HIDDEN, "true");
+      Div enabledLabel = new Div(enabledCaption, enabledHint);
+      enabledLabel.addClassName("admin-user-enabled-label");
+      enabledCheckbox.setLabelComponent(enabledLabel);
+      enabledCheckbox.setAriaDescribedBy(enabledHint);
+      enabledDivider = new Hr();
+      enabledDivider.addClassName("admin-user-dialog-separator");
+      rolesDivider = new Hr();
+      rolesDivider.addClassName("admin-user-dialog-separator");
+
+      rolesGroup = new CheckboxGroup<>();
+      rolesGroup.setLabel(messageProperties.getAdminUsersFieldRoles());
+      rolesGroup.setItems(RoleType.values());
+      rolesGroup.setItemEnabledProvider(
+          role -> role != RoleType.ROLE_SUPERADMIN || userService.canManageSuperadmins());
+      rolesGroup.setItemLabelGenerator(AdminUserManagementSection.this::formatRoleType);
+      rolesGroup.setRequired(true);
+      rolesGroup.setHelperText(messageProperties.getAdminUsersRolesHelper());
+
+      technicalInfo =
+          new Span(
               editMode
                   ? messageProperties.getAdminUsersTechnicalInfoEdit()
                   : messageProperties.getAdminUsersTechnicalInfoCreate());
-          if (binder
-              .getFields()
-              .anyMatch(
-                  field ->
-                      field
-                              instanceof
-                              com.vaadin.flow.component.shared.HasValidationProperties validation
-                          && validation.isInvalid())) {
-            binder.validate();
-          }
-        };
-    dialogErrorRefreshers.add(refreshErrors);
-    dialog.addOpenedChangeListener(
-        event -> {
-          if (!event.isOpened()) {
-            dialogErrorRefreshers.remove(refreshErrors);
-          }
-        });
-    dialog.addDetachListener(event -> dialogErrorRefreshers.remove(refreshErrors));
-    dialog.open();
+      technicalInfo.addClassName(LumoUtility.TextColor.SECONDARY);
+      Icon securityIcon = VaadinIcon.SHIELD.create();
+      securityIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
+      securityNote = new Div(securityIcon, technicalInfo);
+      securityNote.addClassNames("cosmos-panel-hint", "admin-user-security-note");
+    }
+
+    private void refreshBirthDate() {
+
+      birthDatePicker.setLocale(
+          VaadinSession.getCurrent() != null
+              ? VaadinSession.getCurrent().getLocale()
+              : Locale.getDefault());
+      CompactDateInput.configure(birthDatePicker, messageProperties);
+      birthDatePicker.setLabel(messageProperties.getRegistrationBirthDateField());
+      birthDatePicker.setPlaceholder(messageProperties.getRegistrationBirthDatePlaceholder());
+    }
+
+    private void bindFields() {
+      binder
+          .forField(firstNameField)
+          .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
+          .withValidator(
+              ValidationHelper::isRequiredTextValid,
+              context -> messageProperties.getBaseValidationRequiredMessage())
+          .bind(AdminUserFormData::getFirstName, AdminUserFormData::setFirstName);
+
+      binder
+          .forField(lastNameField)
+          .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
+          .withValidator(
+              ValidationHelper::isRequiredTextValid,
+              context -> messageProperties.getBaseValidationRequiredMessage())
+          .bind(AdminUserFormData::getLastName, AdminUserFormData::setLastName);
+
+      emailCheckFailed = new AtomicBoolean();
+      binder
+          .forField(emailField)
+          .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
+          .withValidator(
+              ValidationHelper::isEmailValid,
+              context -> messageProperties.getBaseValidationEmailInvalidMessage())
+          .withValidator(
+              (email, context) -> {
+                emailCheckFailed.set(false);
+                try {
+                  return userService.emailExistsForOtherUser(
+                          ValidationHelper.normalize(email), formData.getId())
+                      ? ValidationResult.error(
+                          messageProperties.getBaseValidationEmailExistsMessage())
+                      : ValidationResult.ok();
+                } catch (RuntimeException exception) {
+                  log.error("E-Mail-Vorprüfung fehlgeschlagen", safeFailure(exception));
+                  emailCheckFailed.set(true);
+                  return ValidationResult.error(messageProperties.getAdminUsersErrorSaveFailed());
+                }
+              })
+          .bind(AdminUserFormData::getEmail, AdminUserFormData::setEmail);
+
+      bindPasswordFields();
+
+      binder
+          .forField(genderComboBox)
+          .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
+          .bind(AdminUserFormData::getGender, AdminUserFormData::setGender);
+
+      binder
+          .forField(birthDatePicker)
+          .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
+          .withValidator(
+              ValidationHelper::isBirthDateValid,
+              context -> messageProperties.getBaseValidationBirthDatePastMessage())
+          .bind(AdminUserFormData::getBirthDate, AdminUserFormData::setBirthDate);
+
+      binder
+          .forField(enabledCheckbox)
+          .bind(AdminUserFormData::isEnabled, AdminUserFormData::setEnabled);
+
+      binder
+          .forField(rolesGroup)
+          .withValidator(
+              selectedRoles -> selectedRoles != null && !selectedRoles.isEmpty(),
+              context -> messageProperties.getBaseValidationRequiredMessage())
+          .bind(AdminUserFormData::getRoles, AdminUserFormData::setRoles);
+
+      binder.readBean(formData);
+    }
+
+    private void bindPasswordFields() {
+      showPasswordErrors = new AtomicBoolean();
+      showConfirmPasswordErrors = new AtomicBoolean();
+      passwordBinding =
+          binder
+              .forField(passwordField)
+              .withValidationStatusHandler(
+                  status -> {
+                    boolean showError = showPasswordErrors.get() && status.isError();
+                    passwordField.setErrorMessage(showError ? status.getMessage().orElse("") : "");
+                    passwordField.setInvalid(showError);
+                  })
+              .withValidator(
+                  value -> ValidationHelper.isPasswordSecure(value, editMode),
+                  context ->
+                      editMode
+                          ? messageProperties.getAdminUsersPasswordValidationEdit()
+                          : messageProperties.getAdminUsersPasswordValidationCreate())
+              .bind(AdminUserFormData::getPassword, AdminUserFormData::setPassword);
+
+      confirmPasswordBinding =
+          binder
+              .forField(confirmPasswordField)
+              .withValidationStatusHandler(
+                  status -> {
+                    boolean showError = showConfirmPasswordErrors.get() && status.isError();
+                    confirmPasswordField.setErrorMessage(
+                        showError ? status.getMessage().orElse("") : "");
+                    confirmPasswordField.setInvalid(showError);
+                  })
+              .withValidator(
+                  value ->
+                      !ValidationHelper.isRequiredTextValid(passwordField.getValue())
+                          || ValidationHelper.isRequiredTextValid(value),
+                  context -> messageProperties.getBaseValidationRequiredMessage())
+              .withValidator(
+                  value ->
+                      !ValidationHelper.isRequiredTextValid(passwordField.getValue())
+                          || Objects.equals(passwordField.getValue(), value),
+                  context -> messageProperties.getBaseValidationPasswordConfirmMessage())
+              .bind(AdminUserFormData::getConfirmPassword, AdminUserFormData::setConfirmPassword);
+    }
+
+    private void configurePasswordFeedback() {
+      passwordField.addValueChangeListener(
+          event -> {
+            boolean passwordEntered = ValidationHelper.isRequiredTextValid(event.getValue());
+            confirmPasswordField.setEnabled(passwordEntered);
+            confirmPasswordField.setRequiredIndicatorVisible(passwordEntered);
+            if (!passwordEntered) {
+              showConfirmPasswordErrors.set(false);
+              confirmPasswordField.clear();
+            }
+            confirmPasswordBinding.validate();
+          });
+
+      // Sofort prüfen, aber Fehlermeldungen erst nach dem Verlassen des Feldes anzeigen.
+      passwordField.addFocusListener(
+          event -> {
+            showPasswordErrors.set(false);
+            passwordField.setInvalid(false);
+            passwordField.setErrorMessage("");
+          });
+      passwordField.addBlurListener(
+          event -> {
+            showPasswordErrors.set(true);
+            passwordBinding.validate();
+          });
+      confirmPasswordField.addFocusListener(
+          event -> {
+            showConfirmPasswordErrors.set(false);
+            confirmPasswordField.setInvalid(false);
+            confirmPasswordField.setErrorMessage("");
+          });
+      confirmPasswordField.addBlurListener(
+          event -> {
+            showConfirmPasswordErrors.set(true);
+            confirmPasswordBinding.validate();
+          });
+    }
+
+    private void configureActions() {
+      saveButton = new Button(messageProperties.getAdminUsersSave());
+      saveButton.setPrefixComponent(VaadinIcon.CHECK.create());
+      saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      saveButton.setEnabled(binder.isValid());
+
+      binder.addStatusChangeListener(event -> saveButton.setEnabled(binder.isValid()));
+
+      saveButton.addClickListener(event -> saveUser());
+
+      cancelButton = new Button(messageProperties.getAdminUsersCancel(), e -> dialog.close());
+      cancelButton.setPrefixComponent(VaadinIcon.CLOSE.create());
+    }
+
+    private void composeLayout() {
+      HorizontalLayout nameRow = new HorizontalLayout(firstNameField, lastNameField);
+      nameRow.setWidthFull();
+      nameRow.addClassName(COSMOS_FORM_ROW_CLASS);
+      nameRow.expand(firstNameField, lastNameField);
+
+      HorizontalLayout passwordRow = new HorizontalLayout(passwordField, confirmPasswordField);
+      passwordRow.setWidthFull();
+      passwordRow.setSpacing(false);
+      passwordRow.addClassName(COSMOS_FORM_ROW_CLASS);
+      passwordRow.expand(passwordField, confirmPasswordField);
+      Div passwordFields = new Div(passwordRow, passwordHint);
+      passwordFields.addClassName("admin-user-password-fields");
+
+      HorizontalLayout masterDataRow = new HorizontalLayout(genderComboBox, birthDatePicker);
+      masterDataRow.setWidthFull();
+      masterDataRow.addClassName(COSMOS_FORM_ROW_CLASS);
+      masterDataRow.expand(genderComboBox, birthDatePicker);
+
+      HorizontalLayout footer = new HorizontalLayout();
+      footer.addClassName("cosmos-dialog-actions");
+      footer.setWidthFull();
+      footer.setAlignItems(Alignment.CENTER);
+      if (editMode) {
+        Button deleteButton =
+            new Button(
+                messageProperties.getAdminUsersDelete(),
+                VaadinIcon.TRASH.create(),
+                event -> deleteUser(user, dialog::close));
+        deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+        deleteButton.addClassName("cosmos-delete-button");
+        deleteButton.setEnabled(!isCurrentUser(user));
+        footer.add(deleteButton);
+      }
+      cancelButton.addClassName("cosmos-dialog-cancel");
+      footer.add(cancelButton, saveButton);
+
+      VerticalLayout dialogLayout =
+          new VerticalLayout(
+              nameRow,
+              emailField,
+              passwordFields,
+              masterDataRow,
+              enabledCheckbox,
+              enabledDivider,
+              rolesGroup,
+              rolesDivider,
+              securityNote);
+      dialog.getFooter().add(footer);
+      dialogLayout.setPadding(false);
+      dialogLayout.setSpacing(false);
+      dialogLayout.addClassName("cosmos-dialog-form");
+
+      dialog.add(dialogLayout);
+    }
+
+    private void registerTextRefresh() {
+      Runnable refreshErrors =
+          () -> {
+            refreshBirthDate();
+            dialogTitle.setText(
+                editMode
+                    ? messageProperties.getAdminUsersEditDialogTitle()
+                    : messageProperties.getAdminUsersCreateDialogTitle());
+            dialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
+            dialogDescription.setText(messageProperties.getAdminUsersDialogDescription());
+            closeButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
+            confirmPasswordField.setLabel(messageProperties.getRegistrationConfirmField());
+            confirmPasswordField.setPlaceholder(
+                messageProperties.getAccountConfirmPasswordPlaceholder());
+            enabledCaption.setText(messageProperties.getAdminUsersFieldEnabled());
+            enabledHint.setText(messageProperties.getAdminUsersEnabledHint());
+            passwordField.setPlaceholder(
+                editMode
+                    ? messageProperties.getAdminUsersPasswordPlaceholderEdit()
+                    : messageProperties.getAccountPasswordPlaceholder());
+            passwordHint.setText(
+                editMode
+                    ? messageProperties.getAdminUsersPasswordHelperEdit()
+                    : messageProperties.getAdminUsersPasswordHelperCreate());
+            technicalInfo.setText(
+                editMode
+                    ? messageProperties.getAdminUsersTechnicalInfoEdit()
+                    : messageProperties.getAdminUsersTechnicalInfoCreate());
+            if (binder
+                .getFields()
+                .anyMatch(
+                    field ->
+                        field
+                                instanceof
+                                com.vaadin.flow.component.shared.HasValidationProperties validation
+                            && validation.isInvalid())) {
+              binder.validate();
+            }
+          };
+      dialogErrorRefreshers.add(refreshErrors);
+      dialog.addOpenedChangeListener(
+          event -> {
+            if (!event.isOpened()) {
+              dialogErrorRefreshers.remove(refreshErrors);
+            }
+          });
+      dialog.addDetachListener(event -> dialogErrorRefreshers.remove(refreshErrors));
+    }
+
+    private void saveUser() {
+      try {
+        if (!validateForm()) {
+          return;
+        }
+
+        Set<RoleEntity> roleEntities = resolveRoles(formData.getRoles());
+        if (roleEntities.size() != formData.getRoles().size()) {
+          showError(messageProperties::getAdminUsersErrorRoleMissing);
+          return;
+        }
+
+        if (!validateAccountChange(roleEntities)) {
+          return;
+        }
+        persistUser(roleEntities);
+      } catch (RuntimeException exception) {
+        showMutationError(exception, false);
+      }
+    }
+
+    private boolean validateForm() {
+      try {
+        emailCheckFailed.set(false);
+        showPasswordErrors.set(true);
+        showConfirmPasswordErrors.set(true);
+        binder.writeBean(formData);
+      } catch (ValidationException _) {
+        showError(
+            emailCheckFailed.get()
+                ? messageProperties::getAdminUsersErrorSaveFailed
+                : messageProperties::getAdminUsersValidationCheckFields);
+        return false;
+      }
+      // Status listeners may recheck validity during writeBean. Never
+      // proceed if such a check failed technically either.
+      if (emailCheckFailed.get()) {
+        showError(messageProperties::getAdminUsersErrorSaveFailed);
+        return false;
+      }
+
+      return true;
+    }
+
+    private boolean validateAccountChange(Set<RoleEntity> roleEntities) {
+      if (isCurrentUser(user) && !formData.isEnabled()) {
+        showError(messageProperties::getAdminUsersErrorDisableOwnUser);
+        return false;
+      }
+
+      if (isCurrentUser(user)
+          && formData.getRoles().stream().noneMatch(RoleType::isAdministrative)) {
+        showError(messageProperties::getAdminUsersErrorRemoveOwnAdminRole);
+        return false;
+      }
+
+      if (userService.wouldRemoveLastEnabledSuperadmin(
+          formData.getId(), formData.isEnabled(), roleEntities)) {
+        showError(messageProperties::getAdminUsersErrorLastActiveSuperadmin);
+        return false;
+      }
+
+      return true;
+    }
+
+    private void persistUser(Set<RoleEntity> roleEntities) {
+      UserEntity edited =
+          UserEntity.builder()
+              .id(formData.getId())
+              .firstName(clean(formData.getFirstName()))
+              .lastName(clean(formData.getLastName()))
+              .email(clean(formData.getEmail()))
+              .gender(formData.getGender())
+              .birthDate(formData.getBirthDate())
+              .enabled(formData.isEnabled())
+              .verificationPending(false)
+              .preferredLocale(CustomI18NProvider.getCurrentLocale())
+              .roleEntities(roleEntities)
+              .build();
+      if (editMode) {
+        userService.updateAdminUser(edited, expectedVersion, formData.getPassword());
+      } else {
+        userService.createAdminUser(edited, formData.getPassword());
+      }
+      dialog.close();
+      refreshGrid();
+
+      NotificationHelper.getInstance()
+          .showNotification(
+              messageProperties::getBaseSuccessTitle,
+              () ->
+                  editMode
+                      ? messageProperties.getAdminUsersSaveSuccessUpdated()
+                      : messageProperties.getAdminUsersSaveSuccessCreated(),
+              NotificationHelper.NotificationType.SUCCESS);
+    }
   }
 
   private Set<RoleEntity> resolveRoles(Set<RoleType> selectedRoles) {

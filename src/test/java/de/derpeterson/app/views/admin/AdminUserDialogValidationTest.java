@@ -2,6 +2,7 @@ package de.derpeterson.app.views.admin;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.argThat;
@@ -262,7 +263,43 @@ class AdminUserDialogValidationTest {
     verify(users, never()).deleteUser(any());
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void simultaneousEditorsKeepTheirValidationAndSaveStateSeparate(String language) {
+    open(language, false);
+    Dialog editing = dialog;
+    password().setValue("EditedPassword!");
+    confirm().setValue("EditedPassword!");
+    assertTrue(save().isEnabled());
+
+    open(language, true);
+    Dialog creating = dialog;
+    assertNotSame(editing, creating);
+    password().setValue("CreatedPassword!");
+    confirm().setValue("DifferentPassword!");
+    blur(confirm());
+    assertFalse(save().isEnabled());
+
+    dialog = editing;
+    assertTrue(save().isEnabled());
+    assertFalse(confirm().isInvalid());
+    save().click();
+    verify(users).updateAdminUser(any(), eq(3L), eq("EditedPassword!"));
+    assertFalse(editing.isOpened());
+    assertTrue(creating.isOpened());
+    verify(users, never()).createAdminUser(any(), any());
+
+    dialog = creating;
+    assertEquals("CreatedPassword!", password().getValue());
+    assertTrue(confirm().isInvalid());
+    confirm().setValue("CreatedPassword!");
+    save().click();
+    verify(users).createAdminUser(any(), eq("CreatedPassword!"));
+    assertFalse(creating.isOpened());
+  }
+
   private void open(String language, boolean create) {
+    Dialog previouslyOpened = dialog;
     locale.set(Locale.forLanguageTag(language));
     UserEntity user =
         UserEntity.builder()
@@ -283,6 +320,7 @@ class AdminUserDialogValidationTest {
             .filter(Dialog.class::isInstance)
             .map(Dialog.class::cast)
             .filter(Dialog::isOpened)
+            .filter(candidate -> candidate != previouslyOpened)
             .findFirst()
             .orElseThrow();
   }

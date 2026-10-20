@@ -8,7 +8,10 @@ import de.derpeterson.app.model.enums.NavigationErrorCode;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.LoginAttemptService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSessionEvent;
+import java.io.IOException;
 import java.util.List;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.ProviderManager;
@@ -30,6 +34,7 @@ import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.ObjectPostProcessor;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
@@ -142,7 +147,6 @@ public class SecurityConfig {
       DeviceTokenRepository tokenRepository,
       CustomUserDetailsService userDetailsService,
       SessionAdmissionService admissions) {
-
     String secretKey = configService.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY);
     int duration = configService.getInteger(ConfigEntry.REMEMBER_ME_DURATION);
 
@@ -220,45 +224,8 @@ public class SecurityConfig {
             exceptionHandling ->
                 exceptionHandling
                     .authenticationEntryPoint(
-                        (request, response, authException) -> {
-                          String requestUri = request.getServletPath();
-                          String redirectTarget = AppRoute.LOGIN.getSecurityRoute();
-
-                          if (!isKnownApplicationPath(requestUri)) {
-                            redirectTarget =
-                                AppRoute.HOME.getSecurityRoute()
-                                    + LOGIN_ERROR_QUERY
-                                    + NavigationErrorCode.PATH_NOT_FOUND.getCode();
-                          }
-
-                          if (!response.isCommitted()) {
-                            response.sendRedirect(redirectTarget);
-                          }
-                        })
-                    .accessDeniedHandler(
-                        (request, response, accessDeniedException) -> {
-                          if (accessDeniedException instanceof CsrfException) {
-                            response.sendError(403);
-                            return;
-                          }
-                          String redirectTarget =
-                              AppRoute.HOME.getSecurityRoute()
-                                  + LOGIN_ERROR_QUERY
-                                  + NavigationErrorCode.ACCESS_DENIED.getCode();
-                          String requestUri = request.getServletPath();
-
-                          if (requestUri != null
-                              && requestUri.startsWith(AppRoute.ADMIN.getSecurityRoute())) {
-                            redirectTarget =
-                                AppRoute.HOME.getSecurityRoute()
-                                    + LOGIN_ERROR_QUERY
-                                    + NavigationErrorCode.ADMIN_ACCESS_DENIED.getCode();
-                          }
-
-                          if (!response.isCommitted()) {
-                            response.sendRedirect(redirectTarget);
-                          }
-                        }))
+                        (request, response, authException) -> commenceLogin(request, response))
+                    .accessDeniedHandler(this::handleAccessDenied))
         .addFilterAfter(new LoginCsrfTokenFilter(), RememberMeAuthenticationFilter.class)
         .addFilterBefore(vaadinSecurityFilter, AuthorizationFilter.class)
         .addFilterAfter(new MaintenanceHttpFilter(maintenance), VaadinSecurityFilter.class)
@@ -283,48 +250,17 @@ public class SecurityConfig {
                   .loginPage(AppRoute.LOGIN.getSecurityRoute())
                   .defaultSuccessUrl(AppRoute.ADMIN.getSecurityRoute(), true)
                   .successHandler(
-                      (request, response, authentication) -> {
-                        if (rememberMeServices instanceof DeviceRememberMeServices devices
-                            && !devices.requested(request)) {
-                          devices.preparePasswordLogin(request, response, authentication.getName());
-                        }
-                        boolean admin =
-                            authentication.getAuthorities().stream()
-                                .anyMatch(
-                                    authority ->
-                                        RoleType.ROLE_ADMIN
-                                            .name()
-                                            .equals(authority.getAuthority()));
-                        response.sendRedirect(
-                            (admin ? AppRoute.ADMIN : AppRoute.HOME).getSecurityRoute());
-                      })
+                      (request, response, authentication) ->
+                          completeFormLogin(request, response, authentication, rememberMeServices))
                   .failureHandler(
                       (request, response, failure) -> {
-                        if (failure instanceof SessionLimitException) {
-                          SessionManagementService sessions = sessionManagement.getIfAvailable();
-                          if (sessions != null) {
-                            try {
-                              sessions.startRecovery(
-                                  request,
-                                  request.getParameter("username"),
-                                  request.getParameter("password"),
-                                  rememberMeServices instanceof DeviceRememberMeServices devices
-                                      && devices.requested(request));
-                            } catch (AuthenticationException rejected) {
-                              failure = rejected;
-                            } catch (RuntimeException unavailable) {
-                              logger.warn(
-                                  "Restricted session management unavailable",
-                                  safeFailure(unavailable));
-                              failure =
-                                  new AuthenticationServiceException(
-                                      "Sign-in temporarily unavailable");
-                            }
-                          }
-                        }
-                        String error = authenticationFailureCode(failure);
+                        AuthenticationException result =
+                            recoverSessionLimit(
+                                request, failure, rememberMeServices, sessionManagement);
                         response.sendRedirect(
-                            AppRoute.LOGIN.getSecurityRoute() + LOGIN_ERROR_QUERY + error);
+                            AppRoute.LOGIN.getSecurityRoute()
+                                + LOGIN_ERROR_QUERY
+                                + authenticationFailureCode(result));
                       })
                   .permitAll();
             })
@@ -352,6 +288,93 @@ public class SecurityConfig {
     logger.debug("🔧 SecurityConfig loaded!");
 
     return http.build();
+  }
+
+  private void commenceLogin(HttpServletRequest request, HttpServletResponse response)
+      throws IOException {
+    String requestUri = request.getServletPath();
+    String redirectTarget = AppRoute.LOGIN.getSecurityRoute();
+
+    if (!isKnownApplicationPath(requestUri)) {
+      redirectTarget =
+          AppRoute.HOME.getSecurityRoute()
+              + LOGIN_ERROR_QUERY
+              + NavigationErrorCode.PATH_NOT_FOUND.getCode();
+    }
+
+    if (!response.isCommitted()) {
+      response.sendRedirect(redirectTarget);
+    }
+  }
+
+  private void handleAccessDenied(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      AccessDeniedException accessDeniedException)
+      throws IOException {
+    if (accessDeniedException instanceof CsrfException) {
+      response.sendError(403);
+      return;
+    }
+    String redirectTarget =
+        AppRoute.HOME.getSecurityRoute()
+            + LOGIN_ERROR_QUERY
+            + NavigationErrorCode.ACCESS_DENIED.getCode();
+    String requestUri = request.getServletPath();
+
+    if (requestUri != null && requestUri.startsWith(AppRoute.ADMIN.getSecurityRoute())) {
+      redirectTarget =
+          AppRoute.HOME.getSecurityRoute()
+              + LOGIN_ERROR_QUERY
+              + NavigationErrorCode.ADMIN_ACCESS_DENIED.getCode();
+    }
+
+    if (!response.isCommitted()) {
+      response.sendRedirect(redirectTarget);
+    }
+  }
+
+  private void completeFormLogin(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      Authentication authentication,
+      PersistentTokenBasedRememberMeServices rememberMeServices)
+      throws IOException {
+    if (rememberMeServices instanceof DeviceRememberMeServices devices
+        && !devices.requested(request)) {
+      devices.preparePasswordLogin(request, response, authentication.getName());
+    }
+    boolean admin =
+        authentication.getAuthorities().stream()
+            .anyMatch(authority -> RoleType.ROLE_ADMIN.name().equals(authority.getAuthority()));
+    response.sendRedirect((admin ? AppRoute.ADMIN : AppRoute.HOME).getSecurityRoute());
+  }
+
+  private AuthenticationException recoverSessionLimit(
+      HttpServletRequest request,
+      AuthenticationException failure,
+      PersistentTokenBasedRememberMeServices rememberMeServices,
+      ObjectProvider<SessionManagementService> sessionManagement) {
+    if (failure instanceof SessionLimitException) {
+      SessionManagementService sessions = sessionManagement.getIfAvailable();
+      if (sessions != null) {
+        try {
+          sessions.startRecovery(
+              request,
+              request.getParameter("username"),
+              request.getParameter("password"),
+              rememberMeServices instanceof DeviceRememberMeServices devices
+                  && devices.requested(request));
+        } catch (AuthenticationException rejected) {
+          failure = rejected;
+        } catch (RuntimeException unavailable) {
+          logger.warn("Restricted session management unavailable", safeFailure(unavailable));
+          failure = new AuthenticationServiceException("Sign-in temporarily unavailable");
+        }
+      }
+    }
+
+    return failure;
   }
 
   private String authenticationFailureCode(AuthenticationException failure) {

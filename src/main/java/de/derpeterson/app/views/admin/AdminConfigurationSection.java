@@ -681,15 +681,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     return switch (configEntry) {
-      case SERVICE_NAME -> {
-        if (trimmed.isBlank()) {
-          yield messageProperties.getAdminConfigValidationServiceName();
-        }
-        if (trimmed.length() > SERVICE_NAME_MAX_LENGTH) {
-          yield messageProperties.getAdminConfigValidationServiceNameMax(SERVICE_NAME_MAX_LENGTH);
-        }
-        yield null;
-      }
+      case SERVICE_NAME -> validateServiceName(trimmed);
       case BASE_URL ->
           !isValidHttpUrl(trimmed) ? messageProperties.getAdminConfigValidationUrl() : null;
       case REMEMBER_ME_DURATION ->
@@ -704,27 +696,12 @@ public class AdminConfigurationSection extends VerticalLayout {
           !isValidSpringDuration(trimmed)
               ? messageProperties.getAdminConfigValidationDuration()
               : null;
-      case EMAIL_QUEUE_SENT_LIVE_DURATION -> {
-        if (!isValidSpringDuration(trimmed)) {
-          yield messageProperties.getAdminConfigValidationDuration();
-        }
-        Duration duration = DurationStyle.detectAndParse(trimmed);
-        yield duration.isZero() || duration.isNegative()
-            ? messageProperties.getAdminConfigValidationPositiveDuration()
-            : null;
-      }
+      case EMAIL_QUEUE_SENT_LIVE_DURATION -> validateQueueRetention(trimmed);
       case VERIFICATION_TOKEN_VALID_DURATION,
           VERIFICATION_TOKEN_LIVE_DURATION,
           PASSWORD_RESET_TOKEN_VALID_DURATION,
-          PASSWORD_RESET_TOKEN_LIVE_DURATION -> {
-        Duration minimum = configEntry.getMinimumTokenDuration();
-        if (!isValidSpringDuration(trimmed)) {
-          yield messageProperties.getAdminConfigValidationTokenDuration(minimum.toMinutes());
-        }
-        yield TokenDurationPolicy.isAtLeast(DurationStyle.detectAndParse(trimmed), minimum)
-            ? null
-            : messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes());
-      }
+          PASSWORD_RESET_TOKEN_LIVE_DURATION ->
+          validateTokenDuration(configEntry, trimmed);
       case LOGIN_ATTEMPTS_LIMIT,
           MAX_SESSIONS_PER_USER,
           EMAIL_QUEUE_POOL_SIZE,
@@ -748,6 +725,36 @@ public class AdminConfigurationSection extends VerticalLayout {
           !isValidSslTrustValue(trimmed) ? messageProperties.getAdminConfigValidationHost() : null;
       default -> null;
     };
+  }
+
+  private String validateServiceName(String trimmed) {
+    if (trimmed.isBlank()) {
+      return messageProperties.getAdminConfigValidationServiceName();
+    }
+    if (trimmed.length() > SERVICE_NAME_MAX_LENGTH) {
+      return messageProperties.getAdminConfigValidationServiceNameMax(SERVICE_NAME_MAX_LENGTH);
+    }
+    return null;
+  }
+
+  private String validateQueueRetention(String trimmed) {
+    if (!isValidSpringDuration(trimmed)) {
+      return messageProperties.getAdminConfigValidationDuration();
+    }
+    Duration duration = DurationStyle.detectAndParse(trimmed);
+    return duration.isZero() || duration.isNegative()
+        ? messageProperties.getAdminConfigValidationPositiveDuration()
+        : null;
+  }
+
+  private String validateTokenDuration(ConfigEntry configEntry, String trimmed) {
+    Duration minimum = configEntry.getMinimumTokenDuration();
+    if (!isValidSpringDuration(trimmed)) {
+      return messageProperties.getAdminConfigValidationTokenDuration(minimum.toMinutes());
+    }
+    return TokenDurationPolicy.isAtLeast(DurationStyle.detectAndParse(trimmed), minimum)
+        ? null
+        : messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes());
   }
 
   private String normalizeValue(ConfigEntry configEntry, String value) {

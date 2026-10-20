@@ -269,28 +269,7 @@ public class EmailQueueService {
     }
     final Exception failure = sendFailure;
     EmailQueueEntity completed =
-        transaction.execute(
-            status -> {
-              EmailQueueEntity email = emailQueueRepository.lockById(claimed.getId()).orElseThrow();
-              if (email.getStatus() != EmailStatus.IN_PROGRESS
-                  || email.getRetryCount() != claimed.getRetryCount()) {
-                throw new IllegalStateException("Queue claim no longer matches the stored state.");
-              }
-              if (failure == null) {
-                email.setStatus(EmailStatus.SENT);
-              } else {
-                email.setLastRetryAt(LocalDateTime.now(clock));
-                if (email.getRetryCount() < maxRetry) {
-                  email.setRetryCount(email.getRetryCount() + 1);
-                  email.setStatus(EmailStatus.PENDING);
-                } else {
-                  email.setStatus(EmailStatus.FAILED);
-                }
-              }
-              emailQueueRepository.save(email);
-              email.getUserEntity().getEmail();
-              return email;
-            });
+        transaction.execute(status -> completeClaimed(claimed, failure, maxRetry));
     if (failure == null) {
       logger.info(
           "Email accepted by transport: queueId={}, type={}, attempt={}",
@@ -312,6 +291,30 @@ public class EmailQueueService {
           safeFailure(failure));
       sendAdminNotification(transaction, completed, failure, attempt);
     }
+  }
+
+  // Prüfung und Statuswechsel bleiben in derselben unabhängigen Abschlusstransaktion.
+  private EmailQueueEntity completeClaimed(
+      EmailQueueEntity claimed, Exception failure, int maxRetry) {
+    EmailQueueEntity email = emailQueueRepository.lockById(claimed.getId()).orElseThrow();
+    if (email.getStatus() != EmailStatus.IN_PROGRESS
+        || email.getRetryCount() != claimed.getRetryCount()) {
+      throw new IllegalStateException("Queue claim no longer matches the stored state.");
+    }
+    if (failure == null) {
+      email.setStatus(EmailStatus.SENT);
+    } else {
+      email.setLastRetryAt(LocalDateTime.now(clock));
+      if (email.getRetryCount() < maxRetry) {
+        email.setRetryCount(email.getRetryCount() + 1);
+        email.setStatus(EmailStatus.PENDING);
+      } else {
+        email.setStatus(EmailStatus.FAILED);
+      }
+    }
+    emailQueueRepository.save(email);
+    email.getUserEntity().getEmail();
+    return email;
   }
 
   @Transactional

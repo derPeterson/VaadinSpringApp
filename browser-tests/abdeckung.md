@@ -1,5 +1,20 @@
 # Browserabdeckung und offene Punkte
 
+## Komplexität und Fehlerbehandlung vom 20.10.2026
+
+19 Export-IDs bearbeitet: 17 S3776 und zwei S1141 in 16 Produktionsdateien.
+Private fachliche Helfer; bestehende Sperr-, Transaktions-, Rechte- und
+Fehlergrenzen erhalten. Vier neue Regressionstest-Ausprägungen. **191/191
+Sicherheitsfälle, 459/459 gezielte Fälle und final 2128/2128 Anwendungs-JUnits**,
+null Fehler oder Skips; Teilmengen nicht hinzuaddiert. Produktions-Clean-Verify,
+Spotless und Checkstyle erfolgreich. Wegen laufender Entwicklungsprozesse
+Abschluss in getrennter Quellkopie; 358 Build-Eingaben per SHA-256 mit dem
+Arbeitsverzeichnis abgeglichen. Frische JUnit-Coverage: **88,02 % Zeilen /
+77,59 % Zweige**, 222 Klassen. Workbox und Entwicklungs-Vite-Konfiguration
+weiterhin geprüft. Keine neue Browserabnahme, kein Dockerimage und kein
+Sonar-Scan/-Statuswechsel. Tatsächlichen Finding-Entfall nach dem Scan prüfen.
+[Änderungen, 19 IDs, Nachweise, Zwischenfehler und Grenzen](../docs/sonar-komplexitaet-2026-10-20.md).
+
 ## Paging- und Testbereinigungen vom 20.10.2026
 
 Zehn Export-IDs berücksichtigt: fünf clamp-Stellen, vier fachlich aufgeteilte

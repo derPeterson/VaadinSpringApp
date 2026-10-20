@@ -59,72 +59,91 @@ public class EmailQueueWorkerPool {
     if (stopping || !batch.tryLock()) {
       return;
     }
-    boolean interrupted = false;
+    BatchExecution execution = new BatchExecution();
     try {
-      Iterator<Long> candidates = ids.iterator();
-      BlockingQueue<FutureTask<Void>> completed = new LinkedBlockingQueue<>();
-      int active = 0;
-      boolean refill = true;
+      execution.run(ids.iterator(), dispatch);
+    } finally {
+      batch.unlock();
+      if (execution.interrupted) {
+        Thread.currentThread().interrupt();
+      }
+    }
+  }
+
+  /** Annahme und Abschluss gehören zu genau diesem Lauf; kein geteilter Koordinatorzustand. */
+  private final class BatchExecution {
+    private final BlockingQueue<FutureTask<Void>> completed = new LinkedBlockingQueue<>();
+    private int active;
+    private boolean refill = true;
+    private boolean interrupted;
+
+    private void run(Iterator<Long> candidates, LongConsumer dispatch) {
       while ((refill && !stopping && candidates.hasNext()) || active > 0) {
-        while (refill && !stopping && active < parallelism && candidates.hasNext()) {
-          // Bereits fertige Futures melden einen Interrupt nicht zwingend über get().
-          // Vor jeder Annahme prüfen; zum Abwarten kurz löschen und im finally wiederherstellen.
-          if (Thread.interrupted()) {
-            interrupted = true;
-            refill = false;
-            break;
-          }
-          long id = candidates.next();
-          var task =
-              new FutureTask<Void>(
-                  () -> {
-                    if (!stopping) {
-                      dispatch.accept(id);
-                    }
-                    return null;
-                  }) {
-                @Override
-                protected void done() {
-                  inFlight.remove(this);
-                  completed.add(this);
-                }
-              };
-          inFlight.add(task);
-          try {
-            executor.execute(task);
-            active++;
-          } catch (RejectedExecutionException failure) {
-            inFlight.remove(task);
-            refill = false;
-            logger.warn(
-                "Queue worker rejected entry {}; remaining entries stay pending.",
-                id,
-                safeFailure(failure));
-          }
-        }
+        submitAvailable(candidates, dispatch);
         if (active == 0) {
           break;
         }
-        try {
-          FutureTask<Void> finished = completed.take();
-          active--;
-          finished.get();
-        } catch (InterruptedException _) {
-          // Angenommene Aufgaben erst abwarten, statt ihren Ausgang zu erraten oder neu zu starten.
+        awaitCompletion();
+      }
+    }
+
+    private void submitAvailable(Iterator<Long> candidates, LongConsumer dispatch) {
+      while (refill && !stopping && active < parallelism && candidates.hasNext()) {
+        // Bereits fertige Futures melden einen Interrupt nicht zwingend über get().
+        // Vor jeder Annahme prüfen; zum Abwarten kurz löschen und im finally wiederherstellen.
+        if (Thread.interrupted()) {
           interrupted = true;
           refill = false;
-        } catch (ExecutionException failure) {
-          logger.error(
-              "Queue worker failed; no automatic release of committed claims.",
-              safeFailure(failure.getCause()));
-        } catch (CancellationException _) {
-          logger.warn("Queue worker cancelled during shutdown; committed claims remain unchanged.");
+          break;
         }
+        submit(candidates.next(), dispatch);
       }
-    } finally {
-      batch.unlock();
-      if (interrupted) {
-        Thread.currentThread().interrupt();
+    }
+
+    private void submit(long id, LongConsumer dispatch) {
+      var task =
+          new FutureTask<Void>(
+              () -> {
+                if (!stopping) {
+                  dispatch.accept(id);
+                }
+                return null;
+              }) {
+            @Override
+            protected void done() {
+              inFlight.remove(this);
+              completed.add(this);
+            }
+          };
+      inFlight.add(task);
+      try {
+        executor.execute(task);
+        active++;
+      } catch (RejectedExecutionException failure) {
+        inFlight.remove(task);
+        refill = false;
+        logger.warn(
+            "Queue worker rejected entry {}; remaining entries stay pending.",
+            id,
+            safeFailure(failure));
+      }
+    }
+
+    private void awaitCompletion() {
+      try {
+        FutureTask<Void> finished = completed.take();
+        active--;
+        finished.get();
+      } catch (InterruptedException _) {
+        // Angenommene Aufgaben erst abwarten, statt ihren Ausgang zu erraten oder neu zu starten.
+        interrupted = true;
+        refill = false;
+      } catch (ExecutionException failure) {
+        logger.error(
+            "Queue worker failed; no automatic release of committed claims.",
+            safeFailure(failure.getCause()));
+      } catch (CancellationException _) {
+        logger.warn("Queue worker cancelled during shutdown; committed claims remain unchanged.");
       }
     }
   }

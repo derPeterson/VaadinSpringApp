@@ -217,6 +217,31 @@ class EmailQueueWorkerPoolTest {
   }
 
   @Test
+  void rejectionDoesNotPreventTheNextBatchFromAcceptingAllItsCandidates() {
+    AtomicBoolean rejectNext = new AtomicBoolean(true);
+    var executor =
+        new ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(1)) {
+          @Override
+          public void execute(Runnable task) {
+            if (rejectNext.getAndSet(false)) {
+              throw new RejectedExecutionException("one rejected batch");
+            }
+            super.execute(task);
+          }
+        };
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor);
+    List<Long> dispatched = new java.util.concurrent.CopyOnWriteArrayList<>();
+    try {
+      pool.process(List.of(1L, 2L), dispatched::add);
+      assertTrue(dispatched.isEmpty());
+      pool.process(List.of(3L, 4L), dispatched::add);
+      assertEquals(List.of(3L, 4L), dispatched);
+    } finally {
+      pool.shutdown();
+    }
+  }
+
+  @Test
   void contextCloseStopsNewCandidatesButLetsTheRunningTaskFinish() throws Exception {
     EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor(1));
     CountDownLatch entered = new CountDownLatch(1);

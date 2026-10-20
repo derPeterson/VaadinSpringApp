@@ -241,70 +241,95 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
     }
     synchronized (locks[(identity.hashCode() & Integer.MAX_VALUE) % locks.length]) {
       try {
-        String returningSeries = (String) request.getAttribute(DeviceRememberMeServices.SERIES);
-        if (returningSeries != null
-            && tokens != null
-            && !tokens.belongsTo(returningSeries, identity)) {
-          throw new AuthenticationServiceException("Saved login was revoked");
-        }
-        HttpSession session = request.getSession(false);
-        SessionInformation existing =
-            session == null ? null : registry.getSessionInformation(session.getId());
-        if (existing != null) {
-          if (existing.isExpired() || !identity.equals(existing.getPrincipal())) {
-            throw new AuthenticationServiceException("Session identity changed");
-          }
-          // Context restoration and extra tabs reuse their slot, even after a limit reduction.
-          completion.run();
-          return;
-        }
-        new MaintenanceService(config).requireLogin(authentication);
-        int limit;
-        try {
-          limit = config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER);
-        } catch (RuntimeException failure) {
-          throw new AuthenticationServiceException("Session configuration unavailable", failure);
-        }
-        if (limit < 1) {
-          throw new AuthenticationServiceException("Invalid session limit");
-        }
-        if (registry.getAllSessions(identity, false).size() >= limit) {
-          throw new SessionLimitException();
-        }
-
-        // Keep Vaadin's UI/session attributes, changing only the identifier against fixation.
-        fixation.onAuthentication(authentication, request, response);
-        session = request.getSession(true);
-        request.setAttribute(NEW_SESSION, session);
-        registry.registerNewSession(session.getId(), identity);
-        if (returningSeries != null) {
-          session.setAttribute(DeviceRememberMeServices.SERIES, returningSeries);
-        }
-        metadata.put(
-            session.getId(),
-            new Active(
-                session.getId(),
-                UUID.randomUUID().toString(),
-                identity,
-                DeviceDescription.from(request.getHeader("User-Agent")),
-                Instant.now(),
-                (String) session.getAttribute(DeviceRememberMeServices.SERIES)));
-        session.setAttribute(REGISTRATION, new Registration(registry, metadata));
-        completion.run();
-        log.info(
-            "Authenticated session admitted: authenticationType={}",
-            authentication.getClass().getSimpleName());
+        completeLocked(authentication, identity, request, response, completion);
       } catch (RuntimeException failure) {
-        if (failure instanceof MaintenanceAuthenticationException) {
-          request.setAttribute(FAILURE_REASON, "maintenance");
-        } else if (failure instanceof SessionLimitException) {
-          request.setAttribute(FAILURE_REASON, "sessions");
-        } else if (failure instanceof AuthenticationServiceException) {
-          request.setAttribute(FAILURE_REASON, "unavailable");
-        }
+        recordFailureReason(request, failure);
         rollback(request);
         throw failure;
       }
+    }
+  }
+
+  private void completeLocked(
+      Authentication authentication,
+      String identity,
+      HttpServletRequest request,
+      HttpServletResponse response,
+      Runnable completion) {
+    String returningSeries = (String) request.getAttribute(DeviceRememberMeServices.SERIES);
+    if (returningSeries != null && tokens != null && !tokens.belongsTo(returningSeries, identity)) {
+      throw new AuthenticationServiceException("Saved login was revoked");
+    }
+    HttpSession session = request.getSession(false);
+    SessionInformation existing =
+        session == null ? null : registry.getSessionInformation(session.getId());
+    if (existing != null) {
+      if (existing.isExpired() || !identity.equals(existing.getPrincipal())) {
+        throw new AuthenticationServiceException("Session identity changed");
+      }
+      // Context restoration and extra tabs reuse their slot, even after a limit reduction.
+      completion.run();
+      return;
+    }
+    new MaintenanceService(config).requireLogin(authentication);
+    int limit = sessionLimit();
+    if (registry.getAllSessions(identity, false).size() >= limit) {
+      throw new SessionLimitException();
+    }
+
+    registerSession(authentication, identity, returningSeries, request, response);
+    completion.run();
+    log.info(
+        "Authenticated session admitted: authenticationType={}",
+        authentication.getClass().getSimpleName());
+  }
+
+  private int sessionLimit() {
+    int limit;
+    try {
+      limit = config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER);
+    } catch (RuntimeException failure) {
+      throw new AuthenticationServiceException("Session configuration unavailable", failure);
+    }
+    if (limit < 1) {
+      throw new AuthenticationServiceException("Invalid session limit");
+    }
+    return limit;
+  }
+
+  private void registerSession(
+      Authentication authentication,
+      String identity,
+      String returningSeries,
+      HttpServletRequest request,
+      HttpServletResponse response) {
+    // Keep Vaadin's UI/session attributes, changing only the identifier against fixation.
+    fixation.onAuthentication(authentication, request, response);
+    HttpSession session = request.getSession(true);
+    request.setAttribute(NEW_SESSION, session);
+    registry.registerNewSession(session.getId(), identity);
+    if (returningSeries != null) {
+      session.setAttribute(DeviceRememberMeServices.SERIES, returningSeries);
+    }
+    metadata.put(
+        session.getId(),
+        new Active(
+            session.getId(),
+            UUID.randomUUID().toString(),
+            identity,
+            DeviceDescription.from(request.getHeader("User-Agent")),
+            Instant.now(),
+            (String) session.getAttribute(DeviceRememberMeServices.SERIES)));
+    session.setAttribute(REGISTRATION, new Registration(registry, metadata));
+  }
+
+  private void recordFailureReason(HttpServletRequest request, RuntimeException failure) {
+    if (failure instanceof MaintenanceAuthenticationException) {
+      request.setAttribute(FAILURE_REASON, "maintenance");
+    } else if (failure instanceof SessionLimitException) {
+      request.setAttribute(FAILURE_REASON, "sessions");
+    } else if (failure instanceof AuthenticationServiceException) {
+      request.setAttribute(FAILURE_REASON, "unavailable");
     }
   }
 

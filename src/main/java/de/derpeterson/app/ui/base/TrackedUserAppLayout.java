@@ -28,6 +28,7 @@ import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.views.AdminView;
 import de.derpeterson.app.views.HomeView;
+import de.derpeterson.app.websocket.UserProfileBroadcaster.Message;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Objects;
@@ -60,37 +61,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
     this.avatars = avatars;
     this.currentUser = securityService.getCurrentUser(request).orElse(null);
     this.accountHeaderActions = new AccountHeaderActions(messageProperties, currentUser != null);
-    addAttachListener(
-        event -> {
-          if (currentUser == null) {
-            return;
-          }
-          profileRegistration =
-              avatars
-                  .events()
-                  .register(
-                      message -> {
-                        if (!Objects.equals(currentUser.getId(), message.userId())) {
-                          return;
-                        }
-                        event
-                            .getUI()
-                            .access(
-                                () -> {
-                                  if (!isAttached()) {
-                                    return;
-                                  }
-                                  currentUser.setFirstName(message.firstName());
-                                  currentUser.setLastName(message.lastName());
-                                  if (userPopoverMenu != null) {
-                                    userPopoverMenu.refreshProfileName();
-                                  }
-                                  refreshTrackedUserAvatar();
-                                  onTrackedUserProfileChanged(
-                                      message.firstName(), message.lastName());
-                                });
-                      });
-        });
+    addAttachListener(event -> registerProfileUpdates(event.getUI()));
     addDetachListener(
         event -> {
           if (profileRegistration != null) {
@@ -114,6 +85,34 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
 
           NotificationHelper.getInstance().updateText();
         });
+  }
+
+  private void registerProfileUpdates(UI ui) {
+    if (currentUser == null) {
+      return;
+    }
+    profileRegistration =
+        avatars
+            .events()
+            .register(
+                message -> {
+                  if (Objects.equals(currentUser.getId(), message.userId())) {
+                    ui.access(() -> applyProfileUpdate(message));
+                  }
+                });
+  }
+
+  private void applyProfileUpdate(Message message) {
+    if (!isAttached()) {
+      return;
+    }
+    currentUser.setFirstName(message.firstName());
+    currentUser.setLastName(message.lastName());
+    if (userPopoverMenu != null) {
+      userPopoverMenu.refreshProfileName();
+    }
+    refreshTrackedUserAvatar();
+    onTrackedUserProfileChanged(message.firstName(), message.lastName());
   }
 
   @org.springframework.beans.factory.annotation.Autowired

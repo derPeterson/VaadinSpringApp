@@ -158,6 +158,15 @@ public class AccountSessionsComponent extends AccountPanelComponent {
                 + formatter.format(entry.created()));
     since.addClassName(ENTRY_DESCRIPTION_CLASS);
     copy.add(since);
+    addSessionBadges(copy, entry);
+    Button action = sessionAction(entry);
+    Div row = new Div(symbol, copy, action);
+    row.addClassName("account-entry");
+    row.getElement().setAttribute("data-session-state", sessionState(entry));
+    return row;
+  }
+
+  private void addSessionBadges(Div copy, Entry entry) {
     if (entry.current()) {
       Span badge = new Span(messages.getAccountSettingsCurrentDevice());
       badge.getElement().getThemeList().addAll(List.of("badge", "success"));
@@ -168,17 +177,16 @@ public class AccountSessionsComponent extends AccountPanelComponent {
       remembered.addClassName(ENTRY_DESCRIPTION_CLASS);
       copy.add(remembered);
     }
+  }
+
+  private Button sessionAction(Entry entry) {
     String actionLabel;
-    String sessionState;
     if (entry.current()) {
       actionLabel = messages.getAccountSettingsCurrentSession();
-      sessionState = "current";
     } else if (entry.active()) {
       actionLabel = messages.getBaseLogoutButton();
-      sessionState = "active";
     } else {
       actionLabel = messages.getSessionRevokeSaved();
-      sessionState = "saved";
     }
     Button action = new Button(actionLabel);
     action.setPrefixComponent(VaadinIcon.SIGN_OUT.create());
@@ -190,10 +198,14 @@ public class AccountSessionsComponent extends AccountPanelComponent {
                 () ->
                     revoke.accept(
                         entry.savedHandle() == null ? entry.handle() : entry.savedHandle())));
-    Div row = new Div(symbol, copy, action);
-    row.addClassName("account-entry");
-    row.getElement().setAttribute("data-session-state", sessionState);
-    return row;
+    return action;
+  }
+
+  private String sessionState(Entry entry) {
+    if (entry.current()) {
+      return "current";
+    }
+    return entry.active() ? "active" : "saved";
   }
 
   private void perform(Runnable action) {

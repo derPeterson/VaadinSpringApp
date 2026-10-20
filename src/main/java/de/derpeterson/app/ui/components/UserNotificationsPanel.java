@@ -406,41 +406,10 @@ public class UserNotificationsPanel extends Div {
         totalCount.setText(Long.toString(service.inboxCount(session)));
         unreadCount.setText(Integer.toString(unreadIds.size()));
       }
-      if (detail != null && detail.isOpened() && openedItem != null) {
-        result.stream()
-            .filter(item -> item.id().equals(openedItem.id()))
-            .findFirst()
-            .ifPresent(
-                item -> {
-                  if (item.read() != openedItem.read()) {
-                    openedItem = item;
-                    renderDetail();
-                  }
-                });
-      }
+      refreshOpenedDetail(result);
       markAll.setEnabled(!unreadIds.isEmpty());
       dismissRead.setEnabled(!compact && service.readCount(session) > 0);
-      rows.removeAll();
-      if (result.isEmpty()) {
-        Span empty =
-            new Span(
-                !compact && !search.isEmpty()
-                    ? texts.getNotificationsSearchEmpty()
-                    : texts.getNotificationsEmpty());
-        if (compact) {
-          empty.addClassName("cosmos-notifications-secondary");
-          rows.add(empty);
-        } else {
-          Icon icon = VaadinIcon.INFO_CIRCLE.create();
-          icon.getElement().setAttribute(ARIA_HIDDEN, "true");
-          Div notice = new Div(icon, empty);
-          notice.addClassName("cosmos-notification-inbox-empty");
-          rows.add(notice);
-        }
-      }
-      for (Item item : result) {
-        rows.add(row(item));
-      }
+      renderRows(result);
       totalPages = Math.max(1, result.getTotalPages());
       first.setEnabled(page > 0);
       previous.setEnabled(page > 0);
@@ -453,6 +422,45 @@ public class UserNotificationsPanel extends Div {
           texts.getAdminUsersPaginationTotal(Math.toIntExact(result.getTotalElements())));
     } catch (RuntimeException _) {
       unavailable();
+    }
+  }
+
+  private void refreshOpenedDetail(Page<Item> result) {
+    if (detail != null && detail.isOpened() && openedItem != null) {
+      result.stream()
+          .filter(item -> item.id().equals(openedItem.id()))
+          .findFirst()
+          .ifPresent(
+              item -> {
+                if (item.read() != openedItem.read()) {
+                  openedItem = item;
+                  renderDetail();
+                }
+              });
+    }
+  }
+
+  private void renderRows(Page<Item> result) {
+    rows.removeAll();
+    if (result.isEmpty()) {
+      Span empty =
+          new Span(
+              !compact && !search.isEmpty()
+                  ? texts.getNotificationsSearchEmpty()
+                  : texts.getNotificationsEmpty());
+      if (compact) {
+        empty.addClassName("cosmos-notifications-secondary");
+        rows.add(empty);
+      } else {
+        Icon icon = VaadinIcon.INFO_CIRCLE.create();
+        icon.getElement().setAttribute(ARIA_HIDDEN, "true");
+        Div notice = new Div(icon, empty);
+        notice.addClassName("cosmos-notification-inbox-empty");
+        rows.add(notice);
+      }
+    }
+    for (Item item : result) {
+      rows.add(row(item));
     }
   }
 
