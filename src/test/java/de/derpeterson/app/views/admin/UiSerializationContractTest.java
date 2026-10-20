@@ -184,10 +184,11 @@ class UiSerializationContractTest {
             new TextField(),
             new Button(),
             new Button(),
-            new ComboBox<>(),
-            new ComboBox<>(),
-            new ComboBox<>(),
-            new AdminUserActivityFilter(),
+            new AdminUserFilterBar.FilterControls(
+                new ComboBox<>(),
+                new ComboBox<>(),
+                new ComboBox<>(),
+                new AdminUserActivityFilter()),
             probe::run);
     filter.showActiveFilters(
         List.of(new AdminUserFilterBar.ActiveFilter("Role", "User", probe::run)));

@@ -39,18 +39,23 @@ final class AdminUserFilterBar extends VerticalLayout {
   private final Div activeFiltersRow = new Div(activeFiltersLabel, activeFilterChips);
   private final List<HasValue<?, ?>> controls = new ArrayList<>();
 
+  /** Zusammengehörige Filterfelder; Werkzeugleistenaktionen und Callback bleiben separat. */
+  record FilterControls(
+      ComboBox<Boolean> enabled,
+      ComboBox<UserStatus> status,
+      ComboBox<RoleType> role,
+      AdminUserActivityFilter activity) {}
+
   AdminUserFilterBar(
       MessageProperties texts,
       TextField search,
       Button refresh,
       Button addUser,
-      ComboBox<Boolean> enabled,
-      ComboBox<UserStatus> status,
-      ComboBox<RoleType> role,
-      AdminUserActivityFilter activity,
+      FilterControls filterControls,
       SerializableRunnable applyFilters) {
     this.texts = texts;
     this.search = search;
+    AdminUserActivityFilter activity = filterControls.activity();
     setPadding(false);
     setSpacing(false);
     setWidthFull();
@@ -122,8 +127,10 @@ final class AdminUserFilterBar extends VerticalLayout {
     activeFiltersRow.setVisible(false);
     add(toolbar, activeFiltersRow, filterDetails);
 
-    filters.add(enabled, status, role, activity);
-    controls.addAll(List.of(enabled, status, role, activity));
+    filters.add(filterControls.enabled(), filterControls.status(), filterControls.role(), activity);
+    controls.addAll(
+        List.of(
+            filterControls.enabled(), filterControls.status(), filterControls.role(), activity));
     refreshTexts();
   }
 

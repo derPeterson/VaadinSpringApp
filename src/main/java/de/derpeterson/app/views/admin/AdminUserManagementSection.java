@@ -224,10 +224,8 @@ public class AdminUserManagementSection extends VerticalLayout {
             searchField,
             refreshButton,
             addUserButton,
-            enabledFilter,
-            statusFilter,
-            roleFilter,
-            lastActivityFilter,
+            new AdminUserFilterBar.FilterControls(
+                enabledFilter, statusFilter, roleFilter, lastActivityFilter),
             this::applyFilterInputs);
 
     Div paginationFooter = new Div(pagination);
