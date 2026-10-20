@@ -2,6 +2,7 @@ package de.derpeterson.app.validation;
 
 import de.derpeterson.app.model.EmailIdentity;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 
@@ -45,7 +46,8 @@ public final class UserInputRules {
   }
 
   public static boolean isBirthDateValid(LocalDate birthDate) {
-    return birthDate != null && birthDate.isBefore(LocalDate.now());
+    // Geburtsdaten bleiben Kalendertage der bisherigen Server-Zeitzone, keine UTC-Zeitpunkte.
+    return birthDate != null && birthDate.isBefore(LocalDate.now(ZoneId.systemDefault()));
   }
 
   public static boolean isRequiredTextValid(String value) {

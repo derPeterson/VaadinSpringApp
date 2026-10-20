@@ -1,5 +1,19 @@
 # Browserabdeckung und offene Punkte
 
+## Sonar-Abendpaket vom 20.10.2026
+
+48 Findings einzeln geprüft: 31 mit Codeänderungen bearbeitet, 17 begründet
+beibehalten; kein neuer Scan und keine Server-Statusänderungen. Unter den
+Codeänderungen bleibt die Benutzerermittlung ein erforderliches Sonar-Review.
+17 neue Testausprägungen; **591/591 gezielte Fälle und 2000/2000 Anwendungs-
+JUnits**, keine Fehler oder Skips. Produktionsbuild, Spotless und Checkstyle
+am finalen Stand erfolgreich. Frische JUnit-Coverage: **87,79 % Zeilen /
+77,06 % Zweige**, 219 Klassen. Sechs neue Prüfungen schlugen zuvor reproduzierbar
+am unveränderten Produktionscode fehl. Keine neue Browserabnahme, kein
+Dockerimage und kein erneuter Browser-Helferlauf; vorhandene DE-/EN-Komponentenfälle
+sind enthalten. Der neue Einzel-Metadaten-/Repository-Proxytest verwendet eigene H2-Daten.
+[Änderungen, 48 Finding-IDs, Nachweise und Grenzen](../docs/sonar-abendpaket-2026-10-20.md).
+
 ## Kosmetische Sonar-Bereinigung auf main vom 20.10.2026
 
 275 exportierte IDs in 84 Java-Dateien gezielt bearbeitet; die tatsächliche

@@ -274,11 +274,10 @@ class UserAvatarServicePersistenceTest {
           new Element("img"));
       assertEquals(200, imageResponse.getStatus());
       assertEquals("image/png", imageResponse.getContentType());
-      assertEquals(
-          512,
-          javax.imageio.ImageIO.read(
-                  new ByteArrayInputStream(imageResponse.getContentAsByteArray()))
-              .getWidth());
+      try (ByteArrayInputStream downloadedImage =
+          new ByteArrayInputStream(imageResponse.getContentAsByteArray())) {
+        assertEquals(512, javax.imageio.ImageIO.read(downloadedImage).getWidth());
+      }
       tx.executeWithoutResult(
           status -> users.findById(user.getId()).orElseThrow().setEnabled(false));
       SecurityContextHolder.clearContext();
@@ -440,6 +439,39 @@ class UserAvatarServicePersistenceTest {
     assertThrows(
         AuthenticationCredentialsNotFoundException.class,
         () -> service.image(request, disabledUserId, disabledImageRevision, false));
+  }
+
+  @Test
+  void repositoryDefaultMethodRetainsTheIndependentSecurityRead() {
+    tx.executeWithoutResult(
+        status -> {
+          UserEntity pending = users.findById(user.getId()).orElseThrow();
+          pending.setEnabled(false);
+          em.flush();
+
+          assertTrue(users.findSecurityUser(user.getEmail()).getFirst().isEnabled());
+
+          status.setRollbackOnly();
+        });
+    assertTrue(users.findById(user.getId()).orElseThrow().isEnabled());
+  }
+
+  @Test
+  void singleMetadataReadIsIndependentOfPendingOuterChanges() throws Exception {
+    State committed = uploadAndSave();
+    tx.executeWithoutResult(
+        status -> {
+          de.derpeterson.app.model.UserAvatarEntity pending =
+              avatars.findById(user.getId()).orElseThrow();
+          pending.setMode(AvatarMode.INITIALS);
+          em.flush();
+
+          assertEquals(committed, service.state(user.getId()));
+          assertEquals(committed, service.states(List.of(user.getId())).get(user.getId()));
+
+          status.setRollbackOnly();
+        });
+    assertEquals(committed, service.state(user.getId()));
   }
 
   @Test

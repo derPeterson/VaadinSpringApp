@@ -199,7 +199,7 @@ public class AccountAvatarDialog extends Dialog {
 
           @Override
           public long getRequestSizeMax() {
-            return AvatarImageProcessor.MAX_UPLOAD + 65536;
+            return AvatarImageProcessor.MAX_UPLOAD + 65536L;
           }
 
           @Override

@@ -65,7 +65,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.MockedConstruction;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -661,7 +660,7 @@ class PasswordResetServiceTest {
           }
         };
     // Keep real classpath coverage above; intercept only resource construction here.
-    try (MockedConstruction<ClassPathResource> _ =
+    try (var _ =
         mockConstruction(
             ClassPathResource.class,
             (resource, context) ->

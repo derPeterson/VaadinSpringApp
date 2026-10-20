@@ -109,9 +109,8 @@ class AvatarDraftStoreTest {
         };
     try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
       Future<UUID> transfer = executor.submit(() -> drafts.upload(token, 1L, input));
-      try {
+      try (ByteArrayInputStream imageInput = new ByteArrayInputStream(bytes)) {
         assertTrue(entered.await(5, TimeUnit.SECONDS));
-        ByteArrayInputStream imageInput = new ByteArrayInputStream(bytes);
         assertEquals(
             Problem.BUSY,
             assertThrows(InvalidImage.class, () -> drafts.upload(token, 1L, imageInput)).problem());

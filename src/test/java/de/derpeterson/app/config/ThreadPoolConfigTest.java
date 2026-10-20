@@ -27,7 +27,7 @@ class ThreadPoolConfigTest {
     ConfigService config = mock(ConfigService.class);
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(count);
     ThreadPoolConfig threadPoolConfig = new ThreadPoolConfig(config);
-    assertThrows(IllegalArgumentException.class, () -> threadPoolConfig.taskExecutor());
+    assertThrows(IllegalArgumentException.class, threadPoolConfig::taskExecutor);
   }
 
   @ParameterizedTest

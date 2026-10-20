@@ -458,9 +458,7 @@ public class AdminView extends IsAuthenticatedBaseView {
     if (configurationSection != null) {
       configurationSection.refreshTexts();
     }
-    if (mailTestSection != null) {
-      mailTestSection.refreshTexts();
-    }
+    mailTestSection.refreshTexts();
     if (userManagementSection != null) {
       userManagementSection.refreshTexts();
     }

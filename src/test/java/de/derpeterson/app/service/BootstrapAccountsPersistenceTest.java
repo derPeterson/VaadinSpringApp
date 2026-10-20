@@ -179,7 +179,7 @@ class BootstrapAccountsPersistenceTest {
         .thenReturn("first-hash")
         .thenThrow(new IllegalStateException("test failure"));
     CommandLineRunner initialization = initializer(encoder).initDatabase();
-    assertThrows(IllegalStateException.class, () -> initialization.run());
+    assertThrows(IllegalStateException.class, initialization::run);
     assertEquals(0, users.count());
     assertEquals(0, roles.count());
   }

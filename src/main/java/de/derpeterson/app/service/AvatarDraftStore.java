@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -35,7 +36,38 @@ public class AvatarDraftStore {
     }
   }
 
-  public record Image(UUID id, byte[] bytes) {}
+  public record Image(UUID id, byte[] bytes) {
+    public Image {
+      bytes = bytes == null ? null : bytes.clone();
+    }
+
+    @Override
+    public byte[] bytes() {
+      return bytes == null ? null : bytes.clone();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      return this == other
+          || other instanceof Image image
+              && Objects.equals(id, image.id)
+              && Arrays.equals(bytes, image.bytes);
+    }
+
+    @Override
+    public int hashCode() {
+      return 31 * Objects.hashCode(id) + Arrays.hashCode(bytes);
+    }
+
+    @Override
+    public String toString() {
+      return "Image[id="
+          + id
+          + ", byteCount="
+          + (bytes == null ? "null" : Integer.toString(bytes.length))
+          + "]";
+    }
+  }
 
   private final Map<UUID, Draft> drafts = new HashMap<>();
   private final Semaphore transfers = new Semaphore(2);

@@ -9,7 +9,6 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import jakarta.persistence.EntityManager;
-import java.sql.Connection;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -28,7 +27,7 @@ class LoginAttemptSchemaUpgradeTest {
       throws Exception {
     DriverManagerDataSource source =
         new DriverManagerDataSource("jdbc:h2:mem:login-upgrade-" + UUID.randomUUID(), "sa", "");
-    try (Connection _ = source.getConnection()) {
+    try (var _ = source.getConnection()) {
       LocalContainerEntityManagerFactoryBean old = factory(source);
       Long userId;
       try (EntityManager em = old.getObject().createEntityManager()) {

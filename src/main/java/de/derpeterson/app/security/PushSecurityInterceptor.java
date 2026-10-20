@@ -47,22 +47,23 @@ public class PushSecurityInterceptor
       Optional<Authentication> auth =
           securityService.refreshSessionAuthentication(http.getSession(false));
       if (auth.isPresent()
-          && MaintenanceTransport.withUi(
-              http,
-              ui -> {
-                if (!RoleUiState.changed(ui, auth.get())) {
-                  return false;
-                }
-                ui.access(
-                    () -> {
-                      RoleUiState.refresh(ui, auth.get(), http.getContextPath());
-                      if (ui.getPushConfiguration().getPushMode().isEnabled()) {
-                        ui.push();
-                      }
-                    });
-                return true;
-              },
-              false)) {
+          && Boolean.TRUE.equals(
+              MaintenanceTransport.withUi(
+                  http,
+                  ui -> {
+                    if (!RoleUiState.changed(ui, auth.get())) {
+                      return false;
+                    }
+                    ui.access(
+                        () -> {
+                          RoleUiState.refresh(ui, auth.get(), http.getContextPath());
+                          if (ui.getPushConfiguration().getPushMode().isEnabled()) {
+                            ui.push();
+                          }
+                        });
+                    return true;
+                  },
+                  false))) {
         CurrentInstance.clearAll();
         org.springframework.security.core.context.SecurityContextHolder.clearContext();
         throw new AccessDeniedException("Old role UI requires refresh");

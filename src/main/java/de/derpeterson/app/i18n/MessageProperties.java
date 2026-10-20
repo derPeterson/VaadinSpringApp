@@ -4,7 +4,7 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.UserStatus;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +19,7 @@ public class MessageProperties extends MessageTexts {
     super(provider::getTranslation);
   }
 
-  private MessageProperties(Function<String, String> lookup) {
+  private MessageProperties(UnaryOperator<String> lookup) {
     super(lookup);
   }
 

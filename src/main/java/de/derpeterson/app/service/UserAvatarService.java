@@ -82,6 +82,23 @@ public class UserAvatarService {
   // Interne UI-Metadaten, ausdrücklich ohne BLOBs; Grid lädt eine sichtbare Seite gesammelt.
   @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
   public Map<Long, State> states(Collection<Long> ids) {
+    return readStates(ids);
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+  public State state(Long userId) {
+    return readState(userId);
+  }
+
+  private State readState(Long userId) {
+    return userId == null
+        ? State.initial()
+        : readStates(List.of(userId)).getOrDefault(userId, State.initial());
+  }
+
+  // Aufrufer besitzt die passende Transaktion. open verwendet seine laufende Transaktion,
+  // öffentliche Einzel-/Sammelabfragen erhalten ihre unabhängige Lesetransaktion am Proxy.
+  private Map<Long, State> readStates(Collection<Long> ids) {
     if (ids.isEmpty()) {
       return Map.of();
     }
@@ -94,17 +111,11 @@ public class UserAvatarService {
     return result;
   }
 
-  public State state(Long userId) {
-    return userId == null
-        ? State.initial()
-        : states(List.of(userId)).getOrDefault(userId, State.initial());
-  }
-
   public Open open(HttpServletRequest request) {
     return transaction.execute(
         status -> {
           UserEntity user = requireUser(request, false);
-          return new Open(state(user.getId()), drafts.begin(user.getId()));
+          return new Open(readState(user.getId()), drafts.begin(user.getId()));
         });
   }
 

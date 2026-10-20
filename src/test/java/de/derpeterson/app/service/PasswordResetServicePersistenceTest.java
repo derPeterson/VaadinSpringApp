@@ -74,7 +74,6 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
-import org.mockito.MockedConstruction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -694,7 +693,7 @@ class PasswordResetServicePersistenceTest {
             }
           }
         };
-    try (MockedConstruction<ClassPathResource> _ =
+    try (var _ =
         mockConstruction(
             ClassPathResource.class,
             (resource, context) ->

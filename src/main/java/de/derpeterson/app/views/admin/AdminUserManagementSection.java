@@ -57,6 +57,7 @@ import de.derpeterson.app.validation.UserInputRules;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
@@ -272,7 +273,9 @@ public class AdminUserManagementSection extends VerticalLayout {
     enabledFilter.setPlaceholder(messageProperties.getAdminUsersFilterAll());
     enabledFilter.setItemLabelGenerator(
         enabled ->
-            enabled ? messageProperties.getAdminUsersYes() : messageProperties.getAdminUsersNo());
+            Boolean.TRUE.equals(enabled)
+                ? messageProperties.getAdminUsersYes()
+                : messageProperties.getAdminUsersNo());
     statusFilter.setLabel(messageProperties.getAdminUsersGridStatus());
     statusFilter.setPlaceholder(messageProperties.getAdminUsersFilterAll());
     statusFilter.setItemLabelGenerator(messageProperties::getUserStatusLabel);
@@ -473,7 +476,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     List<AdminUserFilterBar.ActiveFilter> activeFilters = new ArrayList<>();
     if (appliedFilters.enabled() != null) {
       String value =
-          appliedFilters.enabled()
+          Boolean.TRUE.equals(appliedFilters.enabled())
               ? messageProperties.getAdminUsersYes()
               : messageProperties.getAdminUsersNo();
       activeFilters.add(
@@ -804,7 +807,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     refreshBirthDate.run();
     birthDatePicker.setWidthFull();
     birthDatePicker.setRequired(true);
-    birthDatePicker.setMax(LocalDate.now());
+    birthDatePicker.setMax(LocalDate.now(ZoneId.systemDefault()));
 
     Checkbox enabledCheckbox = new Checkbox();
     enabledCheckbox.addClassName("admin-user-enabled-checkbox");
@@ -1206,7 +1209,9 @@ public class AdminUserManagementSection extends VerticalLayout {
     boolean enabled = user.isEnabled();
     Span badge =
         new Span(
-            enabled ? messageProperties.getAdminUsersYes() : messageProperties.getAdminUsersNo());
+            Boolean.TRUE.equals(enabled)
+                ? messageProperties.getAdminUsersYes()
+                : messageProperties.getAdminUsersNo());
     badge.getElement().getThemeList().add("badge " + (enabled ? "success" : "error"));
     return badge;
   }

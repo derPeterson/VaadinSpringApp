@@ -15,6 +15,7 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -62,5 +63,7 @@ public class EmailQueueEntity {
   @Column private LocalDateTime lastRetryAt;
 
   @Column(nullable = false)
-  private LocalDateTime createdAt = LocalDateTime.now();
+  // Mailqueue behält ihre lokale Speichersemantik; nur Aktivitätszeiten sind auf Instant
+  // umgestellt.
+  private LocalDateTime createdAt = LocalDateTime.now(ZoneId.systemDefault());
 }

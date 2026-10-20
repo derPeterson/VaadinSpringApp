@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,7 +31,6 @@ import org.springframework.security.web.authentication.rememberme.PersistentToke
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -151,6 +151,7 @@ public class SecurityService {
     if (session == null) {
       return;
     }
+    Objects.requireNonNull(authentication, "Authentication required");
     Authentication existing = sessionAuthentication(session);
     if (existing != authentication) {
       SecurityContext context = SecurityContextHolder.createEmptyContext();
@@ -347,7 +348,7 @@ public class SecurityService {
     SecurityContextHolder.clearContext();
   }
 
-  @Transactional
+  // Der injizierte UserService setzt die Persistenzgrenze; dieser Adapter schreibt selbst nichts.
   public void handleLogin(UserDetails user) throws AuthenticationException {
     userService.recordLogin(user.getUsername());
   }

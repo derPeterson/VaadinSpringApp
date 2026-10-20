@@ -129,7 +129,7 @@ public class AvatarImageProcessor {
         BufferedImage image = reader.read(0);
         try {
           if (!encode) {
-            return null;
+            return new byte[0];
           }
           int orientation = orientation(data, png);
           int ow = orientation >= 5 ? h : w;
@@ -150,9 +150,8 @@ public class AvatarImageProcessor {
           } finally {
             graphics.dispose();
           }
-          ByteArrayOutputStream output = new ByteArrayOutputStream();
-          try {
-            var bounded =
+          try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            try (FilterOutputStream bounded =
                 new FilterOutputStream(output) {
                   private int count;
 
@@ -173,10 +172,12 @@ public class AvatarImageProcessor {
                       throw new InvalidImage(Problem.OUTPUT);
                     }
                   }
-                };
-            try (MemoryCacheImageOutputStream encoded = new MemoryCacheImageOutputStream(bounded)) {
-              ImageIO.write(result, "png", encoded);
-              encoded.flush();
+                }) {
+              try (MemoryCacheImageOutputStream encoded =
+                  new MemoryCacheImageOutputStream(bounded)) {
+                ImageIO.write(result, "png", encoded);
+                encoded.flush();
+              }
             }
             return output.toByteArray();
           } finally {

@@ -26,16 +26,16 @@ public class AdminRolePolicy {
   public void authorizeMutation(Long targetId, Set<RoleType> desired) {
     Set<RoleType> current = currentRoles();
     if (!current.contains(RoleType.ROLE_ADMIN) && !current.contains(RoleType.ROLE_SUPERADMIN)) {
-      denied();
+      throw denied();
     }
     if (protectedTarget(targetId, desired) && !current.contains(RoleType.ROLE_SUPERADMIN)) {
-      denied();
+      throw denied();
     }
   }
 
   public void authorizeProtectedMutation(Long targetId, Set<RoleType> desired) {
     if (protectedTarget(targetId, desired) && !currentRoles().contains(RoleType.ROLE_SUPERADMIN)) {
-      denied();
+      throw denied();
     }
   }
 
@@ -54,14 +54,15 @@ public class AdminRolePolicy {
 
   private Set<RoleType> currentRoles() {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-    if (auth == null || !auth.isAuthenticated() || !(auth.getPrincipal() instanceof UserDetails)) {
-      denied();
+    if (auth == null
+        || !auth.isAuthenticated()
+        || !(auth.getPrincipal() instanceof UserDetails principal)) {
+      throw denied();
     }
     try {
-      List<SecurityUserRow> rows =
-          users.findSecurityUser(((UserDetails) auth.getPrincipal()).getUsername());
+      List<SecurityUserRow> rows = users.findSecurityUser(principal.getUsername());
       if (rows.isEmpty() || !rows.getFirst().isEnabled()) {
-        denied();
+        throw denied();
       }
       EnumSet<RoleType> result = EnumSet.noneOf(RoleType.class);
       rows.stream()
@@ -74,7 +75,7 @@ public class AdminRolePolicy {
     }
   }
 
-  private static void denied() {
-    throw new AccessDeniedException("Administrative role assignment denied");
+  private static AccessDeniedException denied() {
+    return new AccessDeniedException("Administrative role assignment denied");
   }
 }

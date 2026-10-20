@@ -13,7 +13,7 @@ import org.springframework.security.core.authority.FactorGrantedAuthority;
 
 /** Jede UI behält ihre ursprünglichen Rechte, bis ein neues Dokument aufgebaut wurde. */
 public record RoleUiState(Set<String> authorities) implements Serializable {
-  private static final String HOME_PATH = "/" + AppRouteConstants.HOME_ROUTE;
+  private static final String HOME_PATH = AppRouteConstants.HOME_SECURITY_ROUTE;
 
   public static Set<String> roles(Authentication auth) {
     return auth.getAuthorities().stream()

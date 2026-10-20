@@ -21,19 +21,18 @@ public class CustomUserDetailsService implements UserDetailsService {
 
   @Override
   public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-    return toUserDetails(email, userRepository.findSecurityUser(email));
+    return toUserDetails(userRepository.findSecurityUser(email));
   }
 
   public UserDetails loadPasswordUserByUsername(String email) {
     return toUserDetails(
-        email,
         userRepository.findPasswordSecurityUser(
             de.derpeterson.app.model.EmailIdentity.canonicalize(email)));
   }
 
-  private UserDetails toUserDetails(String email, List<UserRepository.SecurityUserRow> rows) {
+  private UserDetails toUserDetails(List<UserRepository.SecurityUserRow> rows) {
     if (rows.isEmpty()) {
-      throw new UsernameNotFoundException("User not found: " + email);
+      throw new UsernameNotFoundException("User not found");
     }
     SecurityUserRow user = rows.getFirst();
     List<GrantedAuthority> authorities =

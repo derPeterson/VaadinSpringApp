@@ -371,7 +371,9 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     body.setInvalid(
         body.getValue().isBlank() || body.getValue().length() > UserNotificationService.BODY_LIMIT);
     boolean noRecipients =
-        everyone.getValue() ? eligibleTargets.isEmpty() : targets.getSelectedItems().isEmpty();
+        Boolean.TRUE.equals(everyone.getValue())
+            ? eligibleTargets.isEmpty()
+            : targets.getSelectedItems().isEmpty();
     if (noRecipients) {
       markRecipientError(texts.getNotificationsNoRecipients());
     }
@@ -391,7 +393,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   }
 
   private void markRecipientError(String message) {
-    if (everyone.getValue()) {
+    if (Boolean.TRUE.equals(everyone.getValue())) {
       everyoneRecipients.setErrorMessage(message);
       everyoneRecipients.setInvalid(true);
     } else {
@@ -413,7 +415,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
           service.preview(
               request.getSession(false),
               new Selection(
-                  everyone.getValue(),
+                  Boolean.TRUE.equals(everyone.getValue()),
                   targets.getSelectedItems().stream()
                       .map(Target::id)
                       .collect(java.util.stream.Collectors.toSet())));
@@ -455,7 +457,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   }
 
   private void refreshRecipientField() {
-    boolean all = everyone.getValue();
+    boolean all = Boolean.TRUE.equals(everyone.getValue());
     targets.setEnabled(!all);
     targets.setVisible(!all);
     targets.getParent().ifPresent(wrapper -> wrapper.setVisible(!all));
