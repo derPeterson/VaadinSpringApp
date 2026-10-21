@@ -56,8 +56,6 @@ class DatabaseInitializerRolesTest {
             mock(ConfigService.class),
             mock(PasswordEncoder.class),
             mock(Environment.class),
-            mock(RoleSchemaUpdater.class),
-            mock(de.derpeterson.app.config.UserNotificationSchemaUpdater.class),
             new BootstrapAccountsProperties(),
             mock(org.springframework.transaction.PlatformTransactionManager.class));
     initializer.initDatabase().run();
@@ -70,7 +68,7 @@ class DatabaseInitializerRolesTest {
   }
 
   @Test
-  void startupCleansRetiredConfigurationBeforeSeedingAndPreservesStoredValues() throws Exception {
+  void startupKeepsConfiguredValuesAndSeedsOnlyMissingKeys() throws Exception {
     ConfigService config = mock(ConfigService.class);
     when(config.exists(any())).thenReturn(true);
     Environment environment = mock(Environment.class);
@@ -81,8 +79,6 @@ class DatabaseInitializerRolesTest {
             config,
             mock(PasswordEncoder.class),
             environment,
-            mock(RoleSchemaUpdater.class),
-            mock(de.derpeterson.app.config.UserNotificationSchemaUpdater.class),
             new BootstrapAccountsProperties(),
             mock(org.springframework.transaction.PlatformTransactionManager.class));
 
@@ -91,7 +87,6 @@ class DatabaseInitializerRolesTest {
 
     InOrder order = inOrder(config);
     for (int run = 0; run < 2; run++) {
-      order.verify(config).removeRetiredEntries();
       for (ConfigEntry entry : de.derpeterson.app.model.enums.ConfigEntry.values()) {
         order.verify(config).exists(entry);
       }
@@ -114,8 +109,6 @@ class DatabaseInitializerRolesTest {
             mock(ConfigService.class),
             mock(PasswordEncoder.class),
             mock(Environment.class),
-            mock(RoleSchemaUpdater.class),
-            mock(de.derpeterson.app.config.UserNotificationSchemaUpdater.class),
             new BootstrapAccountsProperties(),
             mock(org.springframework.transaction.PlatformTransactionManager.class));
     BootstrapAccountsProperties bootstrap = new BootstrapAccountsProperties();

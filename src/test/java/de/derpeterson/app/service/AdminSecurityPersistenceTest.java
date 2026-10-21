@@ -302,7 +302,7 @@ class AdminSecurityPersistenceTest {
 
   @Test
   void initiallyZeroAdminsDoNotBlockOrdinaryCreationOrUpdate() {
-    // Legacy/initial state is constructed only in this isolated database.
+    // Der bewusst ungeschützte Anfangszustand gehört nur zu dieser isolierten Testdatenbank.
     transaction.executeWithoutResult(
         tx -> repository.findAll().forEach(user -> user.setEnabled(false)));
     UserEntity ordinary = form(ordinaryId);

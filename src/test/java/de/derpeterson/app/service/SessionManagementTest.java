@@ -641,7 +641,7 @@ class SessionManagementTest {
   }
 
   @Test
-  void expiredLegacyTokensAreNotPresentedAsActiveOrSavedDevices() {
+  void expiredTokensAreNotPresentedAsActiveOrSavedDevices() {
     Login owner = login(false);
     tokens.createNewToken(
         new PersistentRememberMeToken(

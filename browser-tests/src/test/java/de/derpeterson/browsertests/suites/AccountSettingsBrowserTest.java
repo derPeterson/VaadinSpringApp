@@ -306,6 +306,39 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     page.locator("#account-avatar-cancel").click();
   }
 
+  @Test
+  @DisplayName("AVATAR-02: Beschädigten Bildupload ablehnen und gültiges Bild speichern")
+  @Description(
+      """
+      1. Eigenes Konto anlegen, Profilbilddialog öffnen und Bildmodus wählen.
+      2. Eine als PNG bezeichnete Datei mit ungültigen Bilddaten hochladen.
+      3. Lokalisierte Bildfehlermeldung und fehlenden lokalen Ausschnitt prüfen.
+      4. Im selben Dialog ein gültiges PNG wählen, speichern und Seite neu laden.
+      **Erwartet:** Ungültige Daten werden abgelehnt; der Dialog bleibt bedienbar,
+      nur das anschließend gültige Profilbild wird dauerhaft angezeigt.
+      """)
+  void corruptAvatarCanBeCorrectedWithoutReopeningDialog() throws Exception {
+    account();
+    AccountPage form = new AccountPage(page);
+    form.open();
+    openAvatar();
+    chooseMode(texts.getAccountAvatarCustom());
+    page.waitForFileChooser(() -> page.locator("#account-avatar-choose").click())
+        .setFiles(
+            new com.microsoft.playwright.options.FilePayload(
+                "broken.png", "image/png", new byte[] {(byte) 137, 80, 78, 71, 13, 10, 26, 10}));
+    assertThat(page.locator("[data-avatar='error']")).hasText(texts.getAccountAvatarImageError());
+    assertThat(page.locator("account-avatar-editor")).hasAttribute("data-local-image", "false");
+    assertThat(page.locator(".account-avatar-crop-controls")).isHidden();
+    form.assertMessage(texts.getAccountAvatarImageError());
+    form.closeNotification();
+    uploadAvatar(java.awt.Color.BLUE);
+    assertThat(page.locator("[data-avatar='error']")).isEmpty();
+    saveAvatar();
+    page.reload();
+    assertPhotos();
+  }
+
   private void openAvatar() {
     page.locator("#account-avatar-edit").click();
     assertThat(page.locator("#account-avatar-choose")).isAttached();

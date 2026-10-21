@@ -2,6 +2,7 @@ package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static de.derpeterson.app.config.AppConstants.USER_ICON_ALT;
+import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
@@ -104,6 +105,44 @@ public class AuthenticationBrowserTest extends BrowserFixture {
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions().setName(texts.getAdminDashboardTitle()).setExact(true)))
         .hasCount(0);
+  }
+
+  @Test
+  @DisplayName("AUTH-01E: Konto mit maximal langer E-Mail bleibt nach Neuladen angemeldet")
+  @Story("Anmeldung an der Identitätsgrenze")
+  @Description(
+      """
+      1. Als Administrator ein aktives Testkonto mit einer gültigen 255-Zeichen-Adresse anlegen.
+      2. Abmelden und über das normale Formular mit diesem Konto anmelden.
+      3. Home und die genaue Identität im Kontomenü prüfen; die Seite neu laden.
+      4. Weiterhin angemeldetes Konto prüfen, abmelden und den geschützten Kontobereich aufrufen.
+      **Erwartet:** Die gesamte erlaubte Kontoadresse passt auch in die dauerhafte
+      Sitzung; Neuladen erhält die Anmeldung, nach Logout verlangt der Kontobereich erneut Login.
+      """)
+  void maximumAccountIdentityCanSignInAndSurviveReload() {
+    signInAsAdmin();
+    String email =
+        UUID.randomUUID().toString()
+            + "a".repeat(28)
+            + "@"
+            + "b".repeat(63)
+            + "."
+            + "c".repeat(63)
+            + "."
+            + "d".repeat(62);
+    new AdminUsersPage(page).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+    new UserMenu(page).signOut();
+    LoginPage login = new LoginPage(page);
+    login.open();
+    login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+    assertThat(page).hasURL(urlPattern(HOME_ROUTE));
+    new UserMenu(page).assertUserSignedInWithoutAdminAction(email);
+    page.reload();
+    assertThat(page).hasURL(urlPattern(HOME_ROUTE));
+    new UserMenu(page).assertUserSignedInWithoutAdminAction(email);
+    new UserMenu(page).requestSignOut();
+    page.navigate(path(ACCOUNT_ROUTE));
+    login.assertFormVisible();
   }
 
   @Tag("fast")

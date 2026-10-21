@@ -1,5 +1,5 @@
 # Lokale Handpruefung; nach data/manual-tests/__LAUF__/ kopieren.
-# __LAUF__ durch einen eigenen neuen Laufnamen ersetzen (siehe anwendung.md).
+# __LAUF__ durch einen eigenen neuen Laufnamen ersetzen (siehe README.md).
 # Werte ohne Anfuehrungszeichen; Windows-Pfade mit / schreiben.
 spring.datasource.url=jdbc:h2:file:./data/manual-tests/__LAUF__/appdb;AUTO_SERVER=TRUE;MODE=MySQL;DB_CLOSE_DELAY=-1;SCHEMA=PUBLIC
 server.port=18090

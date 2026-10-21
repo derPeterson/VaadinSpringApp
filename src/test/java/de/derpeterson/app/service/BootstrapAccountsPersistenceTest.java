@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 import de.derpeterson.app.config.BootstrapAccountsProperties;
 import de.derpeterson.app.config.BootstrapAccountsProperties.Account;
 import de.derpeterson.app.config.DatabaseInitializer;
-import de.derpeterson.app.config.RoleSchemaUpdater;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.RoleRepository;
@@ -76,15 +75,7 @@ class BootstrapAccountsPersistenceTest {
     ConfigService config = mock(ConfigService.class);
     when(config.exists(any())).thenReturn(true);
     return new DatabaseInitializer(
-        users,
-        roles,
-        config,
-        encoder,
-        mock(Environment.class),
-        mock(RoleSchemaUpdater.class),
-        mock(de.derpeterson.app.config.UserNotificationSchemaUpdater.class),
-        settings,
-        manager);
+        users, roles, config, encoder, mock(Environment.class), settings, manager);
   }
 
   void run() throws Exception {

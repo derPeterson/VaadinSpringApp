@@ -11,6 +11,17 @@
 
 ## 2. Project conventions
 
+- Das Projekt ist ausschließlich lokale Entwicklung ohne reale/produktive Daten.
+  Es gibt keine Unterstützung anderer historischer Schemata. Keine Schema-Updater,
+  Altspalten-/Umbenennungswege oder Backfills vorsorglich einführen. Das aktuelle
+  H2-Schema steht in `db/application-schema-h2.sql`, JPA validiert es. Modell und
+  Schema gemeinsam ändern und mit frischen isolierten Testdaten prüfen. Aktuelle
+  Eingabe-, Rechte-, Widerrufs- und Versionsprüfungen sind keine Altlasten.
+- Dokumentation beschreibt den heutigen Funktionsvertrag. Kurze Entscheidungen mit
+  Vorteilen/Grenzen und echte offene Aufgaben sind erwünscht; keine neuen Triage-CSV,
+  Nachscan-/Updatechroniken oder fortlaufenden QA-Meilensteinserien. Der aktuelle
+  Prüfstand steht in `docs/status.md`; Git enthält die Entwicklungsgeschichte.
+
 - Keep Java 25 and the Spring Boot / Vaadin Flow stack defined in `pom.xml`.
 - Build views with the existing Vaadin Java components. Do not replace them with
   HTML templates, React or another frontend.
@@ -65,7 +76,7 @@
   auf die selbst bearbeiteten Dateien begrenzen; der Wert enthält reguläre Ausdrücke
   für absolute Dateipfade. Fremde Änderungen erhalten. Den Ratchet nicht abschalten
   und keine projektweite Umformatierung ohne eigenen Auftrag ausführen.
-  Anleitung und Grenzen: `docs/java-formatierung.md`.
+  Anleitung und Grenzen: `docs/entwicklung.md`, Abschnitt Codestil.
 - Java-Lesbarkeit: Kontrollblöcke bei `if`, `else`, `for`, erweitertem `for`,
   `while` und `do/while` immer mit geschweiften Klammern schreiben, auch für eine
   Anweisung. `else if` darf als Kette stehen. `try`/`catch`/`finally` übersichtlich
@@ -88,7 +99,7 @@
   `.\mvnw.cmd checkstyle:check` vor Tests und Abschluss ausführen. Die zentrale
   Konfiguration `config/checkstyle.xml` prüft Klammern und Sternchenimporte über
   Anwendung, Shared und Browsertests. Die sinnvolle Typwahl und Methodengliederung
-  bleiben Teil des menschlichen Reviews. Anleitung: `docs/java-formatierung.md`.
+  bleiben Teil des menschlichen Reviews. Anleitung: `docs/entwicklung.md#codestil`.
 - Logging: Normalbetrieb INFO; DEBUG gezielt für fachliche Diagnose. Keine Methoden-/
   Abzweig-/Poll-/Aktivitätsprotokollierung. Nur wichtige Ergebnisse, behandelbare
   Störungen und Fehler melden; keine doppelten Fehlerlogs an mehreren Grenzen.
@@ -113,7 +124,7 @@
   Anders als Spotless hat Ruff hier keinen Git-Ratchet: nur selbst bearbeitete
   Dateien übergeben, fremde Änderungen erhalten. Keine projektweite Formatierung
   ohne eigenen Auftrag; kein `ruff check --fix` als Formatierungsersatz.
-  Anleitung und Grenzen: `docs/python-formatierung.md`.
+  Anleitung und Grenzen: `docs/entwicklung.md`, Abschnitt Codestil.
 
 ## 3. Execution and troubleshooting
 
@@ -158,16 +169,17 @@
   Preserve sequential JUnit execution inside each worker. Never enable shared-fixture
   thread parallelism as a shortcut. Build the image once and pin all workers to its ID;
   compile shared/browser sources once before forking, not concurrently per worker.
+  Do not build/retag/remove app images during a browser run. Restart cases need
+  their exact image reference until cleanup; a running container alone is insufficient.
   Document each browser case independently with its ID, area, steps and expected result.
   Keep browser documentation and reports independent of the manual-test catalogue.
   Keep technical rules, transactions and concurrency in JUnit/persistence tests; browser
   tests check visible UI behavior and user journeys. Manual checks cover special cases
   requiring human judgment or unsuitable for automation.
-  Manual special checks live under docs/manual-tests/: keep only human acceptance
-  and explicit gaps, mark future browser/operations/integration cases accordingly.
-  Remove their manual duplication after a successful automated replacement. Keep
-  properties.example, anwendung.md and vorlage.md minimal and synchronized;
-  vorlage_ausgefüllt.md contains fictional examples only, never real QA evidence.
+  Manual special checks live in docs/manual-tests/README.md: human acceptance and
+  explicit gaps only. Keep properties.example minimal. Do not recreate redundant
+  protocol templates or fictional example result archives. Once automated, remove
+  the manual duplication; preserve checks that require human judgment.
   Use the shared MessageTexts getters through UiTexts for browser labels/messages,
   and the shared AppRouteConstants/AppConstants for existing route/title/avatar contracts;
   BrowserRoutes derives local browser paths (never security wildcards). Read original
@@ -194,10 +206,9 @@
 - Browser-Testausgaben unter `browser-tests/runs/` sind ignorierte, bereinigbare
   Diagnosedaten. Ihre dauerhafte Aufbewahrung oder Sicherung ist nicht erforderlich.
   Keine konkreten alten Run-Pfade oder Run-Listen in dauerhafte Dokumentation aufnehmen.
-  Wichtige Meilensteine eigenständig lesbar unter `docs/meilensteine/` dokumentieren:
-  Datum, geprüfter Stand, tatsächliche Ergebnisse, Coverage samt Messgrenzen und
-  wesentliche Erkenntnisse. Keine Abhängigkeit von lokalen Screenshots, Traces,
-  HTML-Berichten oder Rohdaten; nicht jeden Lauf als Meilenstein festhalten.
+  Aktuellen Funktions-/Prüfstand knapp in docs/status.md pflegen: geprüfter Stand,
+  tatsächliche Ergebnisse, wesentliche Erkenntnisse und offene Lücken. Keine
+  Abhängigkeit von lokalen Screenshots/Traces und keine Serie alter Laufberichte.
   Bestehende Run-Ordner nur auf entsprechenden Auftrag löschen; keine automatische
   Aufräumroutine oder neue unbegrenzte Archivablage einführen.
 - Before finishing, run `git diff --check` and review the scope of changes.
@@ -243,9 +254,8 @@
   Icons und individuelle Pagination-/Tabellenaktionen nicht global umskalieren.
 - Fragezeichen-, Erfolgs- und Warnsymbole der Kontoansichten verwenden zentral
   var(--lumo-font-size-xxxl) für Breite und Höhe (standardmäßig 40px).
-- Das Redesign ist seit 15.10.2026 als Standard bestätigt: siehe docs/design-standard.md.
-  Die anschließende vollständige QA wurde ausdrücklich freigegeben. Neue Designänderungen
-  bleiben auf den angefragten Umfang begrenzt. Nicht ohne Auftrag committen; der Benutzer
+- Die verbindlichen Gestaltungsregeln stehen in docs/theme.md#gestaltungsregeln.
+  Neue Designänderungen bleiben auf den angefragten Umfang begrenzt. Nicht ohne Auftrag committen; der Benutzer
   sichert den Stand selbst.
 - Nach jeder Änderung ausdrücklich angeben, wie sie sichtbar wird: Browser-Refresh
   (gegebenenfalls Strg+F5), Anwendungsneustart oder vorheriger Build. Dabei den

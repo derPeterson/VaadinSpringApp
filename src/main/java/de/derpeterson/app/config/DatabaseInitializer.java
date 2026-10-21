@@ -37,19 +37,13 @@ public class DatabaseInitializer {
   private final ConfigService configService;
   private final PasswordEncoder passwordEncoder;
   private final Environment environment;
-  private final RoleSchemaUpdater roleSchemaUpdater;
-
-  private final UserNotificationSchemaUpdater notificationSchemaUpdater;
   private final BootstrapAccountsProperties bootstrap;
   private final PlatformTransactionManager transactionManager;
 
   @Bean
   public CommandLineRunner initDatabase() {
     return args -> {
-      configService.removeRetiredEntries();
       createDefaultConfigSettings();
-      roleSchemaUpdater.updateRoleColumn();
-      notificationSchemaUpdater.updateTypeColumn();
       createDefaultRolesAndAccounts();
     };
   }

@@ -2,7 +2,6 @@ package de.derpeterson.app.service;
 
 import de.derpeterson.app.model.ConfigEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
-import de.derpeterson.app.model.enums.RetiredConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -15,10 +14,10 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Missing entries (including legacy null values) use the requested default. Without an explicit
- * default, configured application defaults take precedence over the enum default, including before
- * database initialization. Stored values win. Strings are preserved verbatim; typed getters reject
- * malformed values rather than silently falling back. Every method requires a non-null ConfigEntry.
+ * Missing values use the requested default. Without an explicit default, configured application
+ * defaults take precedence over the enum default, including before database initialization. Stored
+ * values win. Strings are preserved verbatim; typed getters reject malformed values rather than
+ * silently falling back. Every method requires a non-null ConfigEntry.
  */
 @Service
 @RequiredArgsConstructor
@@ -28,18 +27,6 @@ public class ConfigService {
   private final ConfigRepository configRepository;
   private final PlatformTransactionManager transactionManager;
   private final Environment environment;
-
-  /** Entfernt ausschließlich ausdrücklich ausgemusterte Einträge; wiederholbar beim Start. */
-  public void removeRetiredEntries() {
-    TransactionTemplate transaction = new TransactionTemplate(transactionManager);
-    transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-    transaction.executeWithoutResult(
-        status -> {
-          for (RetiredConfigEntry entry : RetiredConfigEntry.values()) {
-            configRepository.findByKey(entry.getKey()).ifPresent(configRepository::delete);
-          }
-        });
-  }
 
   public boolean exists(ConfigEntry configEntry) {
     return configRepository.existsByKey(configEntry.getKey());

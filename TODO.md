@@ -1,33 +1,26 @@
 # Offene Aufgaben
 
-Stand: 20.10.2026. Diese Datei bündelt die vereinbarten nächsten Arbeitspakete.
-Ausführliche Prüfschritte und Ergebnisse bleiben in den verlinkten Fachdokumenten.
+## Als Nächstes
 
-## Nächste Arbeitspakete
+- [ ] Designkritik mit Stitch: repräsentative Ansichten auswählen und Vorschläge
+  gegen den verbindlichen [Theme-Standard](docs/theme.md) bewerten.
+- [ ] Lokales HTTPS: Zertifikate, Weiterleitung, Basis-URL, Cookieflags und Mail-Links
+  gemeinsam festlegen und testen.
 
-- [ ] Designkritik mit Stitch vorbereiten: repräsentative Ansichten auswählen,
-  einen konkreten Prüfauftrag erstellen und Verbesserungsvorschläge gemeinsam
-  priorisieren. Grundlage bleibt der abgestimmte [Designstandard](docs/design-standard.md).
-- [ ] Anwendung auf HTTPS umstellen: Zielumgebung und Zertifikatsverwaltung festlegen;
-  Weiterleitungen, externe Anwendungslinks und Sitzungsverhalten über HTTPS prüfen.
+## Ergänzende Prüfungen
 
-## Ergänzende Abnahme- und Betriebsprüfungen
+- [ ] Echte Mobilgeräte, Bildschirmtastatur, Zoom, Tastaturfokus und Screenreader.
+- [ ] Verständlichkeit der deutschen und englischen Texte durch einen Menschen.
+- [ ] E-Mail-Darstellung in den tatsächlich verwendeten Mailprogrammen.
+- [ ] Nur bei Bedarf: ausdrücklich freigegebener SMTP-Server mit Auth/TLS und Testpostfach.
+- [ ] Kontrollierte Verbindungsabbrüche und Wiederanlauf während laufender UI-/Mailaktionen.
 
-- [ ] Reale Mobilgeräte und Bedienbarkeit prüfen: Bildschirmtastatur, Tastaturfokus,
-  Zoom und Screenreader sowie Verständlichkeit der deutschen und englischen Texte.
-- [ ] E-Mail-Betrieb abnehmen: Darstellung in den vorgesehenen Mailprogrammen,
-  tatsächliche Zustellung über den vorgesehenen SMTP-Server mit Auth/TLS sowie
-  Ausfall, Wiederanlauf und Recovery bei unklarem Versandausgang.
-- [ ] Bestandsmigrationen an vorbereiteten Testkopien prüfen; Mehrinstanzbetrieb
-  bei entsprechender Zielumgebung gesondert nachweisen.
+Die [manuellen Sonderprüfungen](docs/manual-tests/README.md) grenzen menschliche
+Abnahmen von Automatisierungskandidaten ab. Aktuelle Ergebnisse und offene Fehler
+stehen im [Prüfstand](docs/status.md).
 
-Die detaillierten Restprüfungen einschließlich ergänzender Browser-, Neustart- und
-Offline-/Online-Folgen stehen im [Prüfkatalog](docs/manual-tests/README.md).
-Die Ausführung richtet sich nach den vorgesehenen Geräten, Mailzielen und Betriebsumgebungen.
+## Pflege
 
-## Pflege und Nachweise
-
-Neue vereinbarte Aufgaben hier ergänzen und erledigte Punkte entfernen.
-Abgeschlossene Arbeiten werden bei Bedarf unter [Meilensteine](docs/meilensteine/README.md)
-festgehalten. Aktuelle automatisierte Testnachweise und Messgrenzen stehen in der
-[Browserabdeckung](browser-tests/abdeckung.md).
+Hier stehen nur offene, tatsächlich gewünschte Arbeiten. Erledigte Punkte entfernen.
+Aktuelle Funktionen werden in der Fachdokumentation beschrieben; Testergebnisse
+werden im aktuellen Prüfstand ersetzt. Keine weitere Sammlung alter Aufgabenberichte.

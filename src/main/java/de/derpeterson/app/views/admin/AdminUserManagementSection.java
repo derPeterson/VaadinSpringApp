@@ -1447,8 +1447,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       showError(messageProperties::getBaseValidationEmailExistsMessage);
     } else if (exception instanceof IllegalStateException
         && "Der letzte aktive Superadmin muss erhalten bleiben.".equals(exception.getMessage())) {
-      // Legacy service contract has no typed last-superadmin exception. Match
-      // only its exact business sentinel, never arbitrary IllegalStateExceptions.
+      // Nur dieses fachliche Schutzsignal zuordnen, keine beliebigen IllegalStateExceptions.
       showError(
           deleting
               ? messageProperties::getAdminUsersErrorDeleteLastSuperadmin

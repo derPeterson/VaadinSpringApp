@@ -48,6 +48,13 @@ class DurableAuthenticationTest {
   }
 
   @Test
+  void identityBeyondTheAccountColumnLimitIsRejected() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new DurableAuthentication("a".repeat(256), "0".repeat(64), false, 0, List.of()));
+  }
+
+  @Test
   void principalAndBothPasswordVersionsAreReadOnlyOnceDuringCapture() {
     UserDetails principal = account("fixture-encoded-version");
     when(principal.getPassword()).thenReturn("fixture-encoded-version", null);

@@ -30,7 +30,7 @@ public record DurableAuthentication(
   public DurableAuthentication {
     if (username == null
         || username.isBlank()
-        || username.length() > 254
+        || username.length() > 255
         || credentialVersion == null
         || credentialVersion.length() != 64
         || factors == null

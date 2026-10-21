@@ -91,7 +91,7 @@ class ConfigServiceConfiguredDefaultsTest {
   }
 
   @Test
-  void legacyNullUsesConfiguredFallbackAndAllowsBlankStrings() {
+  void missingValueUsesConfiguredFallbackAndAllowsBlankStrings() {
     configure(ConfigEntry.MAIL_HOST, "");
     configure(ConfigEntry.MAIL_PORT, "2525");
     stored(ConfigEntry.MAIL_HOST, null);

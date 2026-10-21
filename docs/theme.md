@@ -1,283 +1,90 @@
-# Das Cosmos-Theme anpassen und als Vorlage verwenden
+# Silent Cosmos: Theme und Gestaltung
 
-Das bestehende Aussehen bleibt der Standard. Farben, Schriftwerte, gemeinsame Maße und Flächen werden zentral in
-[cosmos-tokens.css](../src/main/resources/META-INF/resources/custom-theme/cosmos-tokens.css)
-bearbeitet. Die übrigen Dateien beschreiben, wie Komponenten diese Werte benutzen
-und wie die Oberfläche angeordnet ist.
+## Gestaltungsregeln
 
-## Welche Datei ist für was da?
+Vaadin Flow ist die Komponentenbasis. Das gemeinsame Cosmos-Theme ist der Standard.
+Neue Ansichten verwenden vorhandene Bausteine. Lokale Anpassungen verändern keine
+anderen Views, Icons oder Maße als Nebenwirkung.
 
-Alle CSS-Dateien liegen unter `src/main/resources/META-INF/resources/custom-theme/`.
-
-| Datei | Zuständigkeit |
+| Element | Standard |
 | --- | --- |
-| `typography.css` | Lokale Inter-Schriften und globale Schriftfamilie |
-| `cosmos-tokens.css` | Palette, Typografie-/Abstandsskalen, Rahmen, Radien, Blur, Komponentenmaße, Flächen und Schatten |
-| `cosmos-theme.css` | Gemeinsame Cards, Formularfelder, Buttons, Grids, Systemmeldungen und Konto-Tabs |
-| `cosmos-shell.css` | Gemeinsame Topbar, Seitenkopf, Konto-Inhaltsrahmen, Benutzermenü und Auswahl-Overlays |
-| `cosmos-admin.css` | Navigation, Dashboard, Panels, Konfiguration, Mail-Test, Komponentenmaße und Dialoge |
-| `cosmos-notifications.css` | Persönliche Inbox, Header-Vorschau, Detaildialog, Admin-Versand und Versandarchiv |
-| `cosmos-background.css` | Positionen, Animation und responsive Anordnung der Dekoration; Farben kommen aus den Tokens |
-| `cosmos-account.css` | Lokale Kontoformulare, Sitzungen und Konto-/Profilbilddialoge; an AccountView und dem eingeschränkten Sitzungszugang in LoginView |
-| `admin-users.css` | Lokale Anordnung von Benutzerfiltern, Tabelle, Pagination und Benutzer-/Löschdialogen |
+| Primary-/Secondary-Button | Lumo M (36 px), 9 px Radius, 13 px / 600 |
+| Primary | Blauer Cosmos-Verlauf, Primary-Border, Kontrastschrift |
+| Secondary | Input-Hintergrund, Primary-Text, 1 px lumo-contrast-20pct |
+| Buttonicons | Vorhandene Größe; die 14-px-Basis für em-Icons erhalten |
+| Tabellenaktionen | 32×32 px, Icons 16×16 px |
+| Pagination | 28×28 px, 11 px Schrift, 4 px Abstand; aktiv Primary |
+| Eingaben | Lumo M, 13 px / 700; Platzhalter/leere Eingaben 13 px / 400 |
+| Labels | 12 px / 450, Secondary |
+| Paneltitel/-beschreibung | Gemeinsame cosmos-panel-title / cosmos-panel-description |
+| Schließen | cosmos-overlay-close und bestehendes CLOSE_CIRCLE |
 
-`Application.java` lädt zentral und in dieser Reihenfolge: `typography.css`,
-`cosmos-tokens.css`, `cosmos-theme.css`, `cosmos-shell.css`, `cosmos-admin.css`,
-`cosmos-notifications.css`, `cosmos-background.css`. An `AdminView` kommt
-`admin-users.css` hinzu; `AccountView` und `LoginView` laden bei Bedarf
-`cosmos-account.css`. Die persönlichen Benachrichtigungen benötigen diese lokale
-Kontodatei nicht mehr. Alle dortigen Selektoren
-sind auf `.cosmos-account`, `.account-change-dialog` oder `.account-avatar-dialog`
-begrenzt und verwenden die gemeinsamen Theme-Variablen. Dialoge tragen ihren
-eigenen Geltungsbereich, weil Vaadin sie außerhalb der View platzieren kann.
-Es gibt keine versteckten CSS-Imports und keine zusätzliche Buildtechnik.
-Die Regelreihenfolge ist Teil der CSS-Kaskade: Bei gleicher Priorität gewinnt der
-spätere Wert. Die neue Benachrichtigungsdatei wird nach den gemeinsamen Admin-/Dialogregeln
-geladen; ihre lokalen Selektoren erhalten die bisherigen Standardwerte. Regeln
-nicht beliebig umsortieren: Auch bei gleichen Einzelwerten kann die Kaskade wirken.
+Formularpaare nutzen `cosmos-form-row` und stehen unter 600 px untereinander.
+Die Löschaktion verwendet die vereinbarte 50-%-Mischung der Error- und Basisfarbe;
+weitere rote Komponentenfarben werden nicht parallel eingeführt.
 
-## Gemeinsame Werte ändern
+Alle Cosmos-Grids verwenden dieselben vier zentralen Variablen:
 
-Der Tokenblock ist die feste Basis des Webthemes. Die Konsolidierung vom
-18.10.2026 übernimmt die bisherigen Werte; sie ist kein weiterer Designentwurf.
-Die bestehenden Token-Namen für Farben und die vier Tabellenflächen bleiben erhalten.
-
-| Gewünschte Änderung | Zentrale Tokens |
+| Token | Wert |
 | --- | --- |
-| Wiederverwendete Schriftgrößen | `--cosmos-font-size-xs/s/m/l/xl/title` = 11/12/13/14/15/18 px |
-| Schriftgewichte | `--cosmos-font-weight-regular/label/medium/semibold/strong/bold` = 400/450/500/600/650/700 |
-| Wiederverwendete Abstände | `--cosmos-space-xs/s/m/l/xl/2xl/3xl` = 4/8/12/16/20/24/32 px |
-| Rahmen und Rundungen | `--cosmos-border-width`, `--cosmos-control-radius`, `--cosmos-badge-radius`, `--cosmos-segment-radius` |
-| Gemeinsame Controls | `--cosmos-control-height`, `--cosmos-control-font-size`, `--cosmos-control-icon-font-size` |
-| Icons | `--cosmos-icon-size-xs/s/m/l`; Panelicons separat über `--cosmos-panel-icon-size`, `--cosmos-panel-icon-symbol-size` und ihre `-small`-Varianten |
-| Tabellenaktionen / Pagination | `--cosmos-table-action-size`, `--cosmos-table-action-icon-size`, `--cosmos-pagination-size` |
-| Meldungen | `--cosmos-notification-icon-size`, `--cosmos-notification-title-font-size`, `--cosmos-notification-message-font-size` |
-| Gemeinsame Seitenbreite | `--cosmos-page-content-width` (1100px) |
-| Benachrichtigungsvorschau | `--cosmos-notification-preview-width` (480px), `--cosmos-notification-preview-max-height` (720px/75dvh) |
-| Dialogbreiten | `--cosmos-dialog-width-account`, `--cosmos-dialog-width-user`, `--cosmos-dialog-width-confirm` |
-| Dialogabstände | `--cosmos-dialog-chrome-padding`, `--cosmos-dialog-content-padding`, `--cosmos-dialog-compact-padding` |
-| Hintergrundweichzeichnung | `--cosmos-surface-blur`, `--cosmos-surface-blur-compact`, `--cosmos-sidebar-blur`; Dialogbackdrop separat über `--cosmos-dialog-backdrop-blur` |
-| Alle Status-Glows gemeinsam | `--cosmos-avatar-glow-near-blur`, `--cosmos-avatar-glow-far-blur`, `--cosmos-avatar-glow-near-opacity`, `--cosmos-avatar-glow-far-opacity` |
-| Breite der Statusauswahl | `--cosmos-status-overlay-width` |
+| --cosmos-table-header-background | #223353b3 |
+| --cosmos-table-row-background | #101a2a73 |
+| --cosmos-table-alternate-row-background | #18213681 |
+| --cosmos-table-highlight-background | #1B2B42 für Hover und Auswahl |
 
-Die Schreibweise mit Schrägstrichen in der Tabelle steht für einzelne Variablen,
-z. B. `--cosmos-font-size-xs` und `--cosmos-font-size-s`.
-Komponententokens sind häufig Aliase einer gemeinsamen Skala. Für eine Änderung
-nur an Buttons `--cosmos-control-font-size` setzen; eine Änderung an
-`--cosmos-font-size-m` betrifft dagegen alle bisher mit 13 px gestalteten Bereiche.
-Die 14-px-Schriftbasis em-basierter Buttonicons bleibt bewusst separat.
+Zeilenwechsel gilt automatisch; keine zusätzliche ROW_STRIPES-Variante nötig.
+Tastaturfokus, native Lumo-Zustände und die vorhandenen responsiven Gridregeln erhalten.
 
-Nicht jedes zufällig gleiche Maß wird gekoppelt: Bildausschnitt, Dekoration,
-seitenbezogene Maximalbreiten und besondere Displayüberschriften bleiben lokal.
-Bestehende Lumo-Abstände und native Größen behalten ihren eigenen Bezug;
-`--cosmos-control-height` folgt standardmäßig weiter `--lumo-size-m`.
-Die Breakpoints bleiben wörtliche `@media`-Bedingungen: normale CSS-Variablen
-lassen sich dort nicht als Bildschirmbreite einsetzen. Keine zusätzlichen
-Override-Dateien oder wechselnden Themes werden gleichzeitig geladen.
+## Dateien und Ladereihenfolge
 
-### Prüfung der Konsolidierung
+Basis: `src/main/resources/META-INF/resources/custom-theme/`.
 
-Alle acht Stylesheets wurden syntaktisch und auf auflösbare Cosmos-Verweise,
-Tokenzyklen und lokale Ressourcen geprüft. Der statische Vergleich mit dem
-vorherigen Gitstand löst die Basis-Tokens auf und vergleicht die letzten Werte je
-Selektor, Eigenschaft und Media-/Keyframe-Bedingung. Die nachträglichen Konto-
-Regeln sind zusammengeführt; eine wirkungslose Flex-Richtung am Grid entfällt.
-Ergebnis: acht Stylesheets, 1.732 verglichene Einstellungen und alle 121
-bisherigen Basiswerte ohne Wertabweichungen; 513 Cosmos-Verweise und zwei lokale
-Schriftressourcen geprüft, keine Tokenzyklen, Media-/Keyframe-Struktur erhalten.
-Der zentrale Block enthält jetzt 179 Basiswerte, darunter 58 neue gemeinsame
-Skalen und Komponentenparameter.
-Dieser Quellvergleich ersetzt keine Prüfung von Browserdarstellung, Vererbung
-oder der vollständigen Kaskade. Die visuelle Gesamtprüfung bleibt Teil der
-separat eingeplanten DE-/EN-Browsertestrunde; dafür hier kein Testlauf gestartet.
-
-### Bereinigung vom 20.10.2026
-
-Die gemeinsamen Konto-Tabs liegen jetzt bei den Komponentenregeln; Seitenkopf,
-Tabs und erstes Panel verwenden den gemeinsamen Inhaltsrahmen in `cosmos-shell.css`.
-Die neue `cosmos-notifications.css` bündelt sämtliche bereichsspezifischen Regeln
-für Inbox, Vorschau, Dialog, Verfassen und Versandarchiv. Alle neun Stylesheets sind
-mit vier Leerzeichen und einer Eigenschaft pro Zeile lesbar formatiert. Zwei direkt
-benachbarte doppelte Regeln der Versandvorschau sind zusammengeführt.
-
-Der statische Abgleich mit dem eingecheckten Ausgangsstand vergleicht nach Auflösung
-der Basistokens 2.555 Selektor-/Eigenschaftswerte, einschließlich Media-/Keyframe-
-Bedingungen: keine Wertabweichungen. Alle 179 bisherigen Basiswerte bleiben gleich;
-drei neue Größenparameter ergänzen den Block auf 182. Geprüft wurden 844
-Cosmos-Verweise, die beiden lokalen Schriftpfade und Tokenzyklen. Native Lumo-Werte,
-interne Grid-Klassen und dynamische Avatarwerte bleiben erhalten. Der Vergleich
-belegt die Quellwerte, nicht das Browser-Rendering oder sämtliche Auswirkungen
-der Vererbung/Kaskade. Die separate visuelle Prüfung ist noch offen.
-
-Die ungenutzte `custom-theme/theme.json` ist entfernt. Die Anwendung verwendet
-keine `@Theme`-Annotation; Lumo, Utility und Anwendungs-CSS kommen ausdrücklich aus
-`Application.java`. Vaadin 25 lädt Styles über `@StyleSheet`; die frühere
-`theme.json` gehört zum Theme-Ordnerverfahren. Referenz:
-[Vaadin-25-Umstellung](https://vaadin.com/docs/latest/upgrading), zusätzlich anhand
-von `ThemeUtils`/`Theme` aus den lokal verwendeten Flow-25.3.0-Quellen geprüft.
-Die sieben aktiven Bild-/Icon-/Fontdateien und die Fontlizenz bleiben erhalten.
-Details und technische Ergebnisse: [Bereinigungsnachweis](codebereinigung-2026-10-20.md).
-
-## Einheitliche Badge-Schrift
-
-Alle nativen Badges sowie Cosmos-Rollen- und Topbar-Badges verwenden 12 px bei
-Schriftgewicht 400. Das betrifft Kontoaktivierung, „Dieses Gerät“, Sitzungslimit,
-Dashboard-Rollen, Tabellenstatus und Rollen sowie aktive Filter und deren Anzahl.
-Die gemeinsame Regel steht in `cosmos-theme.css`; die beiden Werte lassen sich über
-`--cosmos-badge-font-size` und `--cosmos-badge-font-weight` in `cosmos-tokens.css` ändern.
-Lokale Farben, Rahmen, Abstände und Groß-/Kleinschreibung bleiben davon unabhängig.
-
-## Farben ändern: Palette oder einzelne Komponente?
-
-Ein Token ist eine benannte CSS-Variable. `var(--cosmos-input-background)` setzt
-den Wert mit diesem Namen ein. Es ist weder Java noch ein zusätzlicher Compiler nötig.
-
-Die erste Gruppe in `cosmos-tokens.css` verwendet Vaadins etablierte Namen:
-`--lumo-base-color`, `--lumo-body-text-color`, `--lumo-primary-color`, die Kontrastflächen
-und die Error-/Warning-/Success-Farben. Änderungen wirken auf alle Bausteine, die
-von dieser Palette abhängen, einschließlich nativer Vaadin-Zustände.
-Die transparenten Farbstufen sind einzeln abgestimmt; 10pct ist keine Anweisung,
-alle bisherigen Werte neu zu berechnen.
-
-Danach folgen die Komponentenwerte. Sie beziehen ihre Standardfarben häufig aus
-der Palette. Eine einzelne Komponente kann hier davon abweichen:
-
-```css
-/* Im bestehenden zentralen Tokenblock ändern: */
---cosmos-input-background: var(--lumo-contrast-5pct);
---cosmos-input-border: var(--lumo-contrast-20pct);
---cosmos-input-focus-border: var(--lumo-primary-color-50pct);
-```
-
-| Gewünschte Änderung | Zuständige Werte |
+| Datei | Aufgabe |
 | --- | --- |
-| Grundflächen und normale Texte | `--lumo-base-color`, `--lumo-body-text-color`, `--lumo-secondary-text-color` |
-| Cards | `--cosmos-card-background`, `--cosmos-card-border`, `--cosmos-card-shadow`, `--cosmos-card-radius` |
-| Primary-Buttons | `--cosmos-primary-background`, `--cosmos-button-primary-color`, `--cosmos-button-primary-border` |
-| Secondary-Buttonrahmen | `--cosmos-button-secondary-border`; native Flächen/Zustände folgen weiter der Lumo-Palette |
-| Löschen | `--cosmos-delete-accent-*` und `--cosmos-button-danger-*` |
-| Eingaben / Fehler / Fokus | `--cosmos-input-*` |
-| Tabellen | `--cosmos-table-header-background`, `--cosmos-table-row-background`, `--cosmos-table-alternate-row-background`, `--cosmos-table-highlight-background`, `--cosmos-table-*-color` |
-| Kopfzeile / Seitenleiste | `--cosmos-topbar-*`, `--cosmos-sidebar-*` |
-| Navigation | `--cosmos-nav-*`, `--cosmos-subnav-color` |
-| Badges / Panelicons | `--cosmos-badge-*`, `--cosmos-panel-icon-*` |
-| Overlays | `--cosmos-overlay-*` |
-| Dialoge | `--cosmos-dialog-background`, `--cosmos-dialog-header-background`, `--cosmos-dialog-footer-background`, `--cosmos-dialog-border-color`, `--cosmos-dialog-backdrop-blur` |
-| Filterfläche | `--cosmos-filter-panel-background` |
-| Sterne / Nebel / Planeten | Letzte Tokengruppe: vollständige Verläufe und Schatten |
+| typography.css | Lokale Inter-Schrift und Schriftfamilie |
+| cosmos-tokens.css | Palette, Schrift-/Abstandsskalen, Maße, Rahmen, Flächen, Verläufe und Schatten |
+| cosmos-theme.css | Gemeinsame Cards, Formulare, Buttons, Grids und Systemmeldungen |
+| cosmos-shell.css | Appkopf, Inhaltsrahmen, Benutzermenü und Overlays |
+| cosmos-admin.css | Adminnavigation, Panels, Konfiguration und Dialogstandards |
+| cosmos-notifications.css | Inbox, Vorschau, Detail, Versand und Archiv |
+| cosmos-background.css | Dekoration, Animation und responsive Anordnung |
+| cosmos-account.css | Lokale Konto-/Profilbild-/Sitzungsansichten |
+| admin-users.css | Lokale Benutzerfilter, Tabelle, Pagination und Dialoge |
 
-Filterfläche und gemeinsamer Dialogheader folgen zunächst der Tabellenheaderfarbe.
-Ein eigener Wert an diesen beiden Tokens trennt sie bewusst davon. Schatten und
-Verläufe sind ebenfalls Werte: Ein Verlauf darf z.B. durch eine einfarbige Fläche,
-ein dekorativer Schatten durch `none` ersetzt werden.
+`Application.java` lädt die ersten sieben Dateien in dieser Reihenfolge.
+AdminView ergänzt admin-users.css; AccountView/LoginView die benötigten Kontoregeln.
+Die Reihenfolge ist Teil der Kaskade. Dialoge brauchen eigene Klassen, da Vaadin
+sie außerhalb der View platzieren kann. Keine versteckten CSS-Imports einführen.
 
-Alle Cosmos-Dialoge, einschließlich E-Mail-/Passwortwechsel, Profilbild und
-Benutzer anlegen/bearbeiten/löschen, verwenden die gemeinsamen Farbregeln in `cosmos-admin.css`. Lokale Stylesheets
-regeln ihre Anordnung und Breite. Der Standard bleibt Card-Verlauf für den Inhalt,
-Tabellenheaderfarbe für den Header, `#11192a` für den Footer und Tabellenborder für
-Außenrahmen und Trennlinien. Der Content selbst bleibt transparent, damit der Verlauf
-der Dialogfläche nur einmal gezeichnet wird. Header und Footer verwenden innen
-den Außenradius abzüglich des 1px-Rahmens; Lumos eigene kleinere Rundung würde sonst
-den Außenrand übermalen. Die Dialogfläche bleibt für native Resize-Griffe nach außen
-offen. Außenklick und Escape bleiben native Vaadin-Funktionen; der Hintergrund-Blur
-ist eine Cosmos-CSS-Ergänzung auf dem nativen Backdrop. Der Profil-Footer folgt über
-`--cosmos-account-footer-background` standardmäßig ebenfalls dem Dialogfooter;
-bei Bedarf kann sein Token separat überschrieben werden.
+## Theme ersetzen oder erweitern
 
-## Warum werden die Werte an mehreren Elementen gesetzt?
+1. Palette, Typografie, Flächen und Schatten in `cosmos-tokens.css` ändern.
+2. Gemeinsame Bausteine verwenden diese Tokens; keine neuen lokalen Hex-/RGBA-Farben
+   neben der zentralen Palette anlegen.
+3. Gemeinsame Regeln in cosmos-theme/shell/admin pflegen, nur Anordnung in lokalen Dateien.
+4. Ein neues Theme ersetzt die aktive Basis an der zentralen Ladestelle; keine
+   zweite unübersichtliche Override-Kaskade parallel laden.
+5. Desktop, schmale Ansichten, Fokus, Fehler, Hover, Auswahl und Dialoge prüfen.
 
-`.cosmos-theme` begrenzt die Gestaltung auf die vorgesehenen Seiten. Popups wie
-Dialogs, Notifications und Statusauswahl können außerhalb des ursprünglichen
-Layouts erscheinen. Deshalb erhalten auch ausdrücklich mit `theme="cosmos"`
-markierte Overlay-Komponenten die Palette. Beim zentralen Ändern bleibt diese
-Selektorliste erhalten. Globale Farbregeln an `:root` würden andere Themes mit verändern.
+Typische Skalen: `--cosmos-space-xs/s/m/l/xl/2xl/3xl` und
+`--cosmos-font-size-xs/s/m/l/xl/title`. Komponentenmaße haben eigene Aliase,
+z. B. `--cosmos-control-height`, `--cosmos-pagination-size`, `--cosmos-panel-icon-size`
+und `--cosmos-notification-preview-width`. Die vier Tabellenfarben bleiben gemeinsame Tokens.
 
-CSS-Variablen werden dort aufgelöst, wo sie definiert sind. Deshalb zusammengehörige
-Palette und Komponentenwerte im zentralen Block ändern. Lokale Overrides sollen
-bewusst die konkrete Komponentenvariable überschreiben; ein später geänderter
-Palettewert an einem einzelnen Kind berechnet bereits geerbte Aliaswerte nicht neu.
+Nicht jedes gleiche Maß muss gekoppelt werden: Bildausschnitt, Dekoration und
+besondere Seitenbreiten können eigene Verträge haben. CSS-Variablen sind keine
+Viewportwerte für Mediaqueries; die vorhandenen Breakpoints bleiben wörtlich.
 
-`::part(input-field)` ist eine von Vaadin freigegebene Oberfläche im Inneren eines
-Felds. `:is(...)` fasst mehrere passende Typen zusammen. `:where(...)` gruppiert
-Selektoren ohne zusätzliche Priorität, damit individuelle Ausnahmen weiter gewinnen.
-`[focused]`, `[invalid]` und `[opened]` beschreiben Komponentenzustände.
-Die Kommentare an den Regeln erklären die wichtigen Stellen.
+## Avatare und Overlays
 
-Die benannten `@media lumo_cosmos_grid_colors` und `lumo_cosmos_grid_hover` sind
-Vaadin-/Lumo-Einschübe für interne Grid-Zeilen, keine Bildschirmgrößen. Ihre Namen,
-Zuordnung und Reihenfolge nicht wie normale responsive Regeln behandeln.
-Normale `@media (max-width: ...)` regeln schmale Fenster. Animationen werden bei
-`prefers-reduced-motion: reduce` abgeschaltet; diese Regel bleibt erhalten.
+`OverlayUserIcon` verbindet Initialen/Bild mit Statuskontur und Glow. Gemeinsame
+`--cosmos-avatar-*`-Tokens steuern die Flächen. Header, Popup und Kontobild verwenden
+dieselben Statussymbole. Eigene Avatar-/Dialogregeln nicht global auf Buttonicons übertragen.
+Benutzermenü und Vorschau bleiben durch Viewportgrenzen scrollbar und erreichbar.
 
-## Ein weiteres Theme auf dieser Grundlage bauen
+## Sichtbar machen
 
-1. `cosmos-tokens.css` unter einem eigenen Namen kopieren und dessen Werte anpassen.
-2. In `Application.java` den Verweis auf die Tokendatei austauschen. Es wird genau
-   eine Basis-Tokendatei geladen; gemeinsame Komponentenregeln können wiederverwendet werden.
-3. Für eine helle Variante zusätzlich `@ColorScheme` in `Application.java` bewusst
-   anpassen; ein Palettenwechsel allein wechselt Vaadins Grundfarbschema nicht.
-   Die vorhandenen Klassen und `theme="cosmos"` bleiben dabei zunächst die technischen
-   Markierungen der gemeinsamen Bausteine. Ein neuer Dateiname allein verlangt keine
-   Änderung aller Java-Komponenten. Dies ist ein alternatives Theme beim App-Start,
-   kein bereits implementierter Laufzeit-Themewechsel.
-4. Für bewusst neue Komponentenregeln eine nachgelagerte Ergänzungsdatei verwenden.
-   Palette, Komponentenregeln und lokale Seitenanordnung dabei getrennt halten.
-5. Kontoansichten, Home/Admin, Navigation, Fehler/Fokus, Grids, Badges und alle
-   portalierten Overlays auf Desktop und schmalen Fenstern prüfen. Die festgelegten
-   Maße und Icongrößen ändern sich durch eine reine Farbanpassung nicht.
-
-Schriftwechsel werden separat in `typography.css` vorgenommen. Die dortigen Fonts
-sind lokale Ressourcen; Schriftfamilie und benötigte Fontdateien gehören zusammen.
-Die Farb-Tokens ändern keine Icons und ersetzen nicht die Gestaltung des Mail-HTMLs:
-E-Mails bleiben eigenständige statische MJML-/HTML-Vorlagen.
-
-## Änderungen sichtbar machen und prüfen
-
-Beim aktuellen Entwicklungsstand die Anwendung aus IntelliJ/Eclipse neu starten,
-damit die IDE Klassen und Ressourcen übernimmt, anschließend im Browser aktualisieren.
-`DevelopmentCssConfiguration` verhindert im Entwicklungsmodus alte komprimierte
-CSS-Antworten. Ein zusätzlicher Konsolenbuild ist für den normalen IDE-Start nicht nötig.
-
-[Designstandard](design-standard.md) und [Browser-Testanleitung](../browser-tests/README.md)
-bleiben maßgeblich für die vereinbarten Größen und Prüfabläufe. Nach CSS-Änderungen
-muss ein Browser-Testimage frisch gebaut werden; `-NoBuild` würde ein altes Image verwenden.
-
-## Gemeinsame Avatarflächen
-
-`--cosmos-avatar-background`, `--cosmos-avatar-text-color`,
-`--cosmos-avatar-border-color` und `--cosmos-avatar-shadow` in `cosmos-tokens.css`
-steuern die gemeinsame Initialen-/Bildfläche. Die lokale Größe kommt von der
-Avatar-Komponente. Kopfzeile, Benutzerpopup und Kontozusammenfassung zeigen dasselbe SVG-Kontursymbol
-wie die Statusauswahl. Diese drei Avatarflächen übernehmen über
-`--cosmos-avatar-status-color` und die vier zentralen `--cosmos-avatar-*-shadow`-
-Tokens die Statusfarbe für Rahmen und Glow. Die freigegebene Vorschauvariante
-„Kräftig“ kombiniert 6 px / 80 % und 26 px / 60 %; der Rahmen bleibt 2 px.
-Am Kontobild liegt ein nativer Select über der vergrößerten Klickfläche des Zeichens;
-nur dessen Feldfläche ist transparent, das Cosmos-Dropdown bleibt unverändert sichtbar.
-Der Tastaturfokus erhält einen sichtbaren Ring. Die lokalen Regeln stehen in
-`cosmos-account.css`; übrige Profilbildflächen zeigen Bild bzw. Initialen.
-Beide Statuslisten tragen `theme="cosmos-status"`. Nur dort ist der `checkmark`-Part
-ausgeblendet. Gewählte, gehoverte und fokussierte Einträge unter dem ListBox-Element
-verwenden `--cosmos-status-option-background` (Tabellenhighlight); die geschlossene
-Auswahl bleibt unverändert. Andere Selects behalten ihre Auswahlhaken.
-Die verwendeten Parts folgen der [Vaadin-Select-Styling-API](https://vaadin.com/docs/latest/components/select/styling).
-Bildspeicherung und Prüfgrenzen: [Profilbildvertrag](profile-avatar-contract.md).
-
-
-## Begrenzung des Benutzermenüs
-
-Das Cosmos-Popover verwendet die native verfügbare Overlayhöhe neben seinem Auslöser.
-Sein Overlay ist ein vertikaler Flexrahmen; der Inhalt darf mit `min-height: 0`
-schrumpfen und scrollt intern. Eine Maximalhöhe aus der gesamten Viewporthöhe darf
-hier die kleinere verfügbare Höhe nicht übersteuern: Bei 320×568 war sonst die
-Abmeldeaktion abgeschnitten. Die Palette, Inhaltsabstände und Avatar-/Buttongrößen
-bleiben erhalten. CONFIG-05F prüft den Popupinhalt auf horizontalen Überlauf,
-die mobile Statusfläche innerhalb des Fensters sowie echtes Scrollen und Abmelden.
-Die native Select-Öffnungs- und Schließanimation wird dabei abgewartet.
-
-Die Bereinigung erhält native Lumo-Variablen, interne Grid-Klassen und die vier aus
-Java dynamisch gewählten Avatar-Schatten. Entfernt wurden nur drei nachweislich
-verwaiste eigene Klassen mit vier Regeln; Details im
-[Bereinigungsnachweis](codebereinigung-2026-10-18.md). Die vollständigen
-Sprachläufe bestehen DE/EN jeweils mit 141/141 Fällen am gleichen endgültigen Image;
-Ergebnisse und Messgrenzen stehen in der [Abdeckung](../browser-tests/abdeckung.md).
+Im Entwicklungsmodus werden Quellstyles geladen. Bei optimiertem Frontend zuerst
+neu bauen und die Anwendung neu starten, dann die Seite neu laden, bei Bedarf Strg+F5.
+Ein Browserrefresh allein ersetzt kein bereits gepacktes Stylesheet.
+Die tatsächlichen Prüfungen stehen im [aktuellen Stand](status.md).

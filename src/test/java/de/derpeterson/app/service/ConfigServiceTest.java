@@ -194,7 +194,7 @@ class ConfigServiceTest {
     }
 
     @Test
-    void legacyNullWithIncompatibleDeclaredDefaultAlsoFails() {
+    void missingValueWithIncompatibleDeclaredDefaultAlsoFails() {
       stored(ConfigEntry.SERVICE_NAME, null);
 
       assertThrows(NumberFormatException.class, () -> service.getInteger(ConfigEntry.SERVICE_NAME));

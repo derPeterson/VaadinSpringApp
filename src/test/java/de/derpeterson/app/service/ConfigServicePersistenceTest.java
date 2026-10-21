@@ -1,7 +1,6 @@
 package de.derpeterson.app.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,7 +13,6 @@ import static org.mockito.Mockito.verify;
 
 import de.derpeterson.app.model.ConfigEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
-import de.derpeterson.app.model.enums.RetiredConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
 import jakarta.persistence.EntityManagerFactory;
 import java.util.Map;
@@ -58,43 +56,6 @@ class ConfigServicePersistenceTest {
   void clearDatabase() {
     repository.deleteAll();
     service = new ConfigService(repository, transactionManager, new MockEnvironment());
-  }
-
-  @Test
-  void startupCleanupRemovesOnlyRetiredKeysAndIsRepeatable() {
-    for (ConfigEntry entry : ConfigEntry.values()) {
-      service.set(entry, "preserved:" + entry.getKey());
-    }
-    ConfigEntity unrelated =
-        repository.saveAndFlush(new ConfigEntity(null, "custom.unknown.setting", "keep"));
-    Map<String, ConfigEntity> before =
-        repository.findAll().stream()
-            .collect(java.util.stream.Collectors.toMap(ConfigEntity::getKey, entity -> entity));
-
-    for (RetiredConfigEntry entry : RetiredConfigEntry.values()) {
-      repository.saveAndFlush(new ConfigEntity(null, entry.getKey(), "old-value"));
-    }
-
-    service.removeRetiredEntries();
-    service.removeRetiredEntries();
-
-    for (RetiredConfigEntry entry : RetiredConfigEntry.values()) {
-      assertFalse(repository.existsByKey(entry.getKey()), entry.getKey());
-    }
-    assertEquals(before.size(), repository.count());
-    for (ConfigEntity original : before.values()) {
-      ConfigEntity current = repository.findByKey(original.getKey()).orElseThrow();
-      assertEquals(original.getId(), current.getId());
-      assertEquals(original.getValue(), current.getValue());
-    }
-    assertEquals(
-        unrelated.getId(), repository.findByKey("custom.unknown.setting").orElseThrow().getId());
-  }
-
-  @Test
-  void cleanupAlsoWorksOnAFreshEmptyDatabase() {
-    service.removeRetiredEntries();
-    assertEquals(0, repository.count());
   }
 
   @Test

@@ -781,28 +781,6 @@ class UserStatusPersistenceTest {
   }
 
   @Test
-  void documentedMigrationBackfillsLegacyRowsBeforeVersionedJpaUpdates() {
-    // Isolated in-memory test DB only: emulate a legacy table without version.
-    transaction.executeWithoutResult(
-        status -> {
-          entityManager.createNativeQuery("alter table users drop column version").executeUpdate();
-          entityManager
-              .createNativeQuery("alter table users add column version bigint default 0")
-              .executeUpdate();
-          entityManager.createNativeQuery("update users set version = null").executeUpdate();
-          entityManager
-              .createNativeQuery("update users set version = 0 where version is null")
-              .executeUpdate();
-          entityManager
-              .createNativeQuery("alter table users alter column version set not null")
-              .executeUpdate();
-        });
-    assertEquals(0L, stored().getVersion());
-    service.updateUserStatus(stored(), UserStatus.AVAILABLE, true);
-    assertEquals(1L, stored().getVersion());
-  }
-
-  @Test
   void faultyFirstListenerDoesNotBlockHealthyListenerOrSuccessfulPersistence() {
     registrations.add(
         broadcaster.register(

@@ -3,8 +3,6 @@ package de.derpeterson.app.security;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.function.Supplier;
 import javax.sql.DataSource;
@@ -33,19 +31,9 @@ public class DeviceTokenRepository extends JdbcTokenRepositoryImpl {
     setDataSource(source);
     jdbc = new JdbcTemplate(source);
     transaction = new TransactionTemplate(manager);
-    // Springs Komfortschema begrenzt usernames auf 64 Zeichen, unsere Kontoadresse auf 255.
-    // Nur verbreitern: vorhandene Token und eventuell bereits größere Spalten bleiben erhalten.
+    // Aktuelles Remember-me-Schema mit derselben maximalen Identitätslänge wie Benutzerkonten.
     jdbc.execute(
         "create table if not exists persistent_logins (username varchar(255) not null, series varchar(64) primary key, token varchar(64) not null, last_used timestamp not null)");
-    int identityLength =
-        jdbc.query(
-            "select username from persistent_logins where 1=0",
-            result -> {
-              return result.getMetaData().getPrecision(1);
-            });
-    if (identityLength < 255) {
-      jdbc.execute("alter table persistent_logins alter column username varchar(255) not null");
-    }
     jdbc.execute(
         "create table if not exists remembered_device (series varchar(64) primary key, handle varchar(36) not null unique, username varchar(255) not null, device_system varchar(32) not null, browser varchar(32) not null, mobile boolean not null, created_at timestamp not null)");
   }
@@ -122,16 +110,6 @@ public class DeviceTokenRepository extends JdbcTokenRepositoryImpl {
           jdbc.update(
               "delete from remembered_device where username=? and not exists (select 1 from persistent_logins p where p.series=remembered_device.series and p.username=remembered_device.username)",
               identity);
-          // Frühere Tokenserien bekommen neutrale Metadaten, ohne Cookies zu erneuern.
-          List<Entry<String, Instant>> legacy =
-              jdbc.query(
-                  "select p.series,p.last_used from persistent_logins p left join remembered_device d on d.series=p.series where p.username=? and d.series is null",
-                  (rs, row) -> Map.entry(rs.getString(1), rs.getTimestamp(2).toInstant()),
-                  identity);
-          legacy.forEach(
-              entry ->
-                  describe(
-                      entry.getKey(), identity, DeviceDescription.from(null), entry.getValue()));
           return jdbc.query(
               "select d.handle,d.series,d.username,d.device_system,d.browser,d.mobile,d.created_at,p.last_used from remembered_device d join persistent_logins p on p.series=d.series and p.username=d.username where d.username=? order by p.last_used desc",
               (rs, row) ->

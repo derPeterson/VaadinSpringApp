@@ -38,8 +38,7 @@ public class EmailQueueEntity {
   @JoinColumn(name = "user_id", nullable = false)
   private UserEntity userEntity;
 
-  // Neue Sicherheitsmails behalten ihren Empfänger auch nach einer Adressänderung.
-  // Null erhält für alte Queueeinträge den bisherigen dynamischen Empfänger.
+  // Sicherheitsmails fixieren ihre Zieladresse; andere Mailaufträge verwenden die Kontoadresse.
   @Column private String recipient;
 
   @Column(nullable = false)
@@ -63,7 +62,6 @@ public class EmailQueueEntity {
   @Column private LocalDateTime lastRetryAt;
 
   @Column(nullable = false)
-  // Mailqueue behält ihre lokale Speichersemantik; nur Aktivitätszeiten sind auf Instant
-  // umgestellt.
+  // Die Mailqueue verwendet lokale Serverzeit; Aktivitätszeiten sind absolute Instant-Werte.
   private LocalDateTime createdAt = LocalDateTime.now(ZoneId.systemDefault());
 }

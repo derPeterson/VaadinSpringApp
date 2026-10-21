@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.derpeterson.app.security.DeviceDescription;
 import de.derpeterson.app.security.DeviceTokenRepository;
+import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentRememberMeToken;
 
 class DeviceTokenRepositorySchemaTest {
@@ -36,35 +36,16 @@ class DeviceTokenRepositorySchemaTest {
     return repository;
   }
 
-  private int usernameLength() {
-    return jdbc.query(
-        "select username from persistent_logins where 1=0",
-        result -> {
-          return result.getMetaData().getPrecision(1);
-        });
-  }
-
-  @Test
-  void longValidIdentityWorksWithTheOriginalSpringSchemaWithoutLosingOldTokens() throws Exception {
-    jdbc.execute(JdbcTokenRepositoryImpl.CREATE_TABLE_SQL);
-    JdbcTokenRepositoryImpl original = new JdbcTokenRepositoryImpl();
-    original.setDataSource(source);
-    original.createNewToken(
-        new PersistentRememberMeToken("old@example.test", "old-series", "old-token", new Date()));
-    DeviceTokenRepository repository = repository();
-    String identity = "a".repeat(64) + "@example.test";
-    assertTrue(identity.length() > 64);
-    repository.createNewToken(
-        new PersistentRememberMeToken(identity, "long-series", "long-token", new Date()));
-    assertEquals(identity, repository.getTokenForSeries("long-series").getUsername());
-    assertEquals("old-token", repository.getTokenForSeries("old-series").getTokenValue());
-    assertTrue(usernameLength() >= 255);
-  }
-
   @Test
   void freshSchemaSupportsTheSameMaximumIdentityLengthAsTheUserColumn() throws Exception {
     DeviceTokenRepository repository = repository();
-    assertEquals(255, usernameLength());
+    assertEquals(
+        255,
+        jdbc.<Integer>query(
+            "select username from persistent_logins where 1=0",
+            result -> {
+              return result.getMetaData().getPrecision(1);
+            }));
     String identity =
         "a".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(62);
     assertEquals(255, identity.length());
@@ -74,21 +55,26 @@ class DeviceTokenRepositorySchemaTest {
   }
 
   @Test
-  void anAlreadyWiderColumnIsNotShrunkAndRepeatedStartupPreservesMetadata() throws Exception {
-    jdbc.execute(
-        "create table persistent_logins (username varchar(500) not null, series varchar(64) primary key, token varchar(64) not null, last_used timestamp not null)");
+  void repeatedStartupOfTheCurrentSchemaKeepsTokensAndDeviceHandles() throws Exception {
     DeviceTokenRepository first = repository();
+    String identity = "fixture@example.test";
     first.createNewToken(
-        new PersistentRememberMeToken("old@example.test", "old-series", "old-token", new Date()));
+        new PersistentRememberMeToken(identity, "fixture-series", "fixture-token", new Date()));
     first.describe(
-        "old-series",
-        "old@example.test",
-        DeviceDescription.from("Windows Chrome/130"),
-        java.time.Instant.now());
-    String handle = first.saved("old@example.test", 3600).getFirst().handle();
+        "fixture-series", identity, DeviceDescription.from("Windows Chrome/130"), Instant.now());
+    String handle = first.saved(identity, 3600).getFirst().handle();
     DeviceTokenRepository second = repository();
-    assertEquals(500, usernameLength());
-    assertEquals(handle, second.saved("old@example.test", 3600).getFirst().handle());
-    assertEquals("old-token", second.getTokenForSeries("old-series").getTokenValue());
+    assertEquals(handle, second.saved(identity, 3600).getFirst().handle());
+    assertEquals("fixture-token", second.getTokenForSeries("fixture-series").getTokenValue());
+  }
+
+  @Test
+  void listingDoesNotInventMetadataForAnIncompleteToken() throws Exception {
+    DeviceTokenRepository repository = repository();
+    repository.createNewToken(
+        new PersistentRememberMeToken(
+            "fixture@example.test", "incomplete-series", "fixture-token", new Date()));
+    assertTrue(repository.saved("fixture@example.test", 3600).isEmpty());
+    assertEquals(0, jdbc.queryForObject("select count(*) from remembered_device", Integer.class));
   }
 }

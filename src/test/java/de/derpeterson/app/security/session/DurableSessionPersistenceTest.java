@@ -129,6 +129,25 @@ class DurableSessionPersistenceTest {
     return new SecurityContextImpl(auth);
   }
 
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void maximumAccountIdentityRemainsAuthenticatedAfterRepositoryRestart(boolean remembered) {
+    String identity =
+        "a".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(62);
+    assertEquals(255, identity.length());
+    account.set(
+        User.withUsername(identity).password("fixture-encoded-password").roles("USER").build());
+    Session session = admitted(remembered);
+    DurableSessionRepository<?> restarted = restart();
+    Session restored = restarted.findById(session.getId());
+    assertNotNull(restored);
+    SecurityContext restoredContext = restored.getAttribute(CONTEXT);
+    assertNotNull(restoredContext);
+    assertEquals(identity, restoredContext.getAuthentication().getName());
+    assertTrue(restoredContext.getAuthentication().isAuthenticated());
+    assertEquals(1, restarted.findByPrincipalName(identity).size());
+  }
+
   private Session admitted(boolean remembered) {
     Session session = repository.createSession();
     session.setAttribute(
