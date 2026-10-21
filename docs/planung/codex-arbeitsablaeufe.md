@@ -1,9 +1,9 @@
 # Codex-Arbeitsabläufe und SonarQube
 
-Status: teilweise umgesetzt. „Große Testrunde“ und „Sonar bereinigen“ sind angelegt
+Status: teilweise umgesetzt. „Große Testrunde“, „Sonar bereinigen“ und „Umsetzung starten“ sind angelegt
 und strukturell/trocken geprüft. Keine echte Gesamtrunde oder Sonar-Ausführung wurde
 dabei gestartet. Bedienung: `docs/tests.md` und `docs/entwicklung.md`.
-Offen sind drei weitere Skills, die SonarQube-Anbindung und die praktische Abnahme
+Offen sind zwei weitere Skills, die SonarQube-Anbindung und die praktische Abnahme
 im verwendeten Client. Der Plan enthält nur verbleibende Arbeiten und wird nach Abschluss gelöscht.
 
 ## Vereinbarter Rahmen
@@ -43,25 +43,18 @@ Werkzeugparameter innerhalb dieses Rahmens werden bei der Umsetzung festgelegt.
 - [ ] Im tatsächlich verwendeten Codex-Client prüfen, dass die Skills gefunden werden
   und auf dem Desktop sowie über den vorhandenen Fernzugriff aufrufbar sind.
 
-## 3. Drei weitere wiederholbare Aufträge einrichten
+## 3. Zwei weitere wiederholbare Aufträge einrichten
 
 | Auftrag | Verbindlicher Inhalt |
 | --- | --- |
 | Änderungen prüfen | Diff und Funktion bewerten; passende Nachweise prüfen; offene Punkte nennen; deutsche Commit-Message für die tatsächlich fertigen Änderungen vorschlagen |
 | Branch lokal mergen | Ausdrücklich genannten Quell-/Zielbranch, Arbeitsstand, Tests und Konflikte prüfen; lokalen Merge durchführen; Ergebnis berichten |
-| Umsetzung starten | Abgestimmten Auftrag und Abnahmekriterien übernehmen; Arbeitsstand prüfen; auf Wunsch einen eigenen Branch anlegen; fachlich umsetzen, gezielte Regressionen und vorgeschriebene Prüfungen ausführen; Dokumentation und erledigten Plan bereinigen; Ergebnis und deutsche Commit-Message liefern |
 
 - [ ] Bei Sonar-Paketen und Umsetzungen notwendigen, noch nicht ausgeführten
   automatisierten Testbedarf in `docs/testbedarf.md` übergeben: Funktion, Szenario, Erwartung und Lücke
   der bestehenden Abdeckung. Im Abschlussbericht/Chat darauf hinweisen. Die Aufgabe
   bleibt bis zur erfolgreichen Abnahme bestehen, auch wenn Paketplan oder Bericht
   ersetzt/gelöscht werden; die große Testrunde übernimmt sie ausdrücklich.
-- [ ] Beim Auftrag „Umsetzung starten“ ohne Branchwunsch im aktuellen Branch arbeiten.
-  Bei gewünschtem eigenen Branch den genannten Namen verwenden oder einen passenden
-  Namen wählen, falls keiner vorgegeben ist. Fremde Änderungen erhalten; nur tatsächliche
-  Konflikte oder fehlende fachliche Angaben klären, keine erneute pauschale Freigabe
-  für bereits beauftragte Arbeit verlangen. Browserläufe benötigen den dafür vereinbarten
-  ausdrücklichen Umfang; eine Umsetzung startet nicht automatisch die große Testrunde.
 - [ ] Die bekannte Beauftragung einer großen Testrunde muss ihren Browserumfang klar
   einschließen. Ein ausdrücklich aufgerufener vollständiger Auftrag gilt für diese Runde;
   automatische Skillwahl allein erteilt keine Browserfreigabe. Bereits vorliegende

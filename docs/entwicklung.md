@@ -64,6 +64,30 @@ Browser-Neuladen erforderlich. `vite.config.ts` ist für eigene Vite-Anpassungen
 generierte Frontenddateien und `target/` nicht von Hand bearbeiten.
 Classpathressourcen als Streams laden, damit auch das gepackte JAR funktioniert.
 
+## Umsetzung starten
+
+Der Projekt-Skill [umsetzung-starten](../.agents/skills/umsetzung-starten/SKILL.md)
+begleitet ein Feature bis zur gemeinsamen Abnahme. „Umsetzung starten: FEATURE“
+legt standardmäßig einen eigenen Feature-Branch und einen knappen Plan unter
+`docs/planung/<feature>.md` an. Noch keine Funktion wird dadurch implementiert.
+Explizit gewünschte andere Branch-/Ausgangsstände gelten vorrangig.
+
+Danach normal weiterreden: Plan besprechen und anpassen, „Plan komplett umsetzen“
+oder „erst Schritt 1 und 2“ beauftragen. Eine zusätzliche UI-Integration oder kleine
+Bedienungs-/Designänderungen gehören zum selben Feature; der Skill muss nicht jedes
+Mal erneut aufgerufen werden. Bestehende Vaadin-/Cosmos-Komponenten bilden die Grundlage.
+
+Sinnvolle JUnit-Regressionen gehören zur Umsetzung. Nicht ausgeführter Browserbedarf
+bleibt im [Testbedarf](testbedarf.md), bis er erfolgreich geprüft ist. Weder Browser-
+noch große Testrunden starten automatisch. Größere fachliche Zusatzentscheidungen
+werden abgestimmt; die technische Fertigstellung ersetzt nicht die gemeinsame UI-Abnahme.
+
+Der Plan enthält die offenen Schritte und bleibt während der Abstimmung bestehen.
+Bei „Umsetzung abgeschlossen“ gültige Dokumentation pflegen, featurebezogene Provisorien
+und den erledigten Plan bereinigen; offene Folge-/Testaufgaben erhalten. Der Branch kann
+viele Zwischencommits enthalten. Tatsächliche Commits, Merge nach main und Push benötigen
+den entsprechenden Auftrag. Danach den tatsächlichen Stand und Prüfgrenzen berichten.
+
 ## Sonar bereinigen
 
 Der Projekt-Skill [sonar-bereinigen](../.agents/skills/sonar-bereinigen/SKILL.md)
