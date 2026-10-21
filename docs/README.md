@@ -20,3 +20,13 @@ lokal mit Testdaten; eine neue Testdatenbank wird aus dem aktuellen Schema angel
 
 Details zu automatisierten Browserfällen stehen bei deren Testbeschreibungen und
 in der [Browser-Testanleitung](../browser-tests/README.md).
+
+## Aktive Umsetzungspläne
+
+Die nächsten beiden Aufgaben sind in dieser Reihenfolge vereinbart:
+
+1. [Codex-Arbeitsabläufe und SonarQube](planung/codex-arbeitsablaeufe.md)
+2. [HTTPS für die lokale Anwendung](planung/https.md)
+
+Diese Pläne beschreiben offene Arbeiten. Nach Umsetzung werden sie samt Verweisen
+entfernt; die gültige Bedienung und Konfiguration steht dann in den obigen Fachdokumenten.

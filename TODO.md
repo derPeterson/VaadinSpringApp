@@ -2,10 +2,18 @@
 
 ## Als Nächstes
 
-- [ ] Designkritik mit Stitch: repräsentative Ansichten auswählen und Vorschläge
-  gegen den verbindlichen [Theme-Standard](docs/theme.md) bewerten.
-- [ ] Lokales HTTPS: Zertifikate, Weiterleitung, Basis-URL, Cookieflags und Mail-Links
-  gemeinsam festlegen und testen.
+Die vereinbarte Reihenfolge ist:
+
+- [ ] [Codex-Arbeitsabläufe und SonarQube-Anbindung](docs/planung/codex-arbeitsablaeufe.md):
+  Projekt-Skills einrichten, benötigte Helfer übernehmen und OpenCode separat erhalten.
+- [ ] [Lokales HTTPS](docs/planung/https.md): vertrauenswürdigen Zugang über einen
+  Reverse Proxy einrichten und Anwendung sowie Testumgebungen darauf abstimmen.
+- [ ] Danach Designkritik mit Stitch auf einem eigenen Branch: eine Spielwiese mit
+  vorhandenen Komponenten, Panels, Dialogen und Zuständen zum Ausprobieren aufbauen.
+  Den verbindlichen [Theme-Standard](docs/theme.md) als Ausgangspunkt verwenden.
+
+Paseo ist zurückgestellt; der vorhandene mobile Zugang und Fernzugriff reichen aus.
+Die Pläne werden nach Umsetzung gelöscht, nicht als Verlauf aufbewahrt.
 
 ## Ergänzende Prüfungen
 

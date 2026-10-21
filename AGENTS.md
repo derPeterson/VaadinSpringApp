@@ -21,6 +21,15 @@
   Vorteilen/Grenzen und echte offene Aufgaben sind erwünscht; keine neuen Triage-CSV,
   Nachscan-/Updatechroniken oder fortlaufenden QA-Meilensteinserien. Der aktuelle
   Prüfstand steht in `docs/status.md`; Git enthält die Entwicklungsgeschichte.
+- Ausdrücklich abgestimmte Entscheidungen und aktuelle Funktionsverträge gelten als
+  Arbeitsgrundlage, bis sie bewusst geändert werden. Sie nicht bei jeder Aufgabe
+  erneut zur Diskussion stellen; konkrete neue Widersprüche gezielt ansprechen.
+- `docs/planung/` enthält ausschließlich befristete Pläne für offene, vereinbarte
+  Arbeiten. Eine Umsetzung ist erst abgeschlossen, wenn im selben Arbeitsstand die
+  aktuelle Fach-/Bedienungsdokumentation und TODO-Verweise angepasst, die zugehörige
+  Plandatei gelöscht und ihre Verweise bereinigt sind. Einen danach leeren Planordner
+  entfernen. Kein Planarchiv und keine Sammlung abgeschlossener Arbeitsaufträge
+  anlegen. Bei Teilumsetzung nur tatsächlich offene Schritte im Plan belassen.
 
 - Keep Java 25 and the Spring Boot / Vaadin Flow stack defined in `pom.xml`.
 - Build views with the existing Vaadin Java components. Do not replace them with
