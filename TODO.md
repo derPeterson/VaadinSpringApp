@@ -5,8 +5,8 @@
 Die vereinbarte Reihenfolge ist:
 
 - [ ] [Codex-Arbeitsabläufe und SonarQube-Anbindung](docs/planung/codex-arbeitsablaeufe.md):
-  „Branch lokal mergen“ und Sonar-Anbindung einrichten; die übrigen vier Skills sind
-  angelegt. OpenCode vollständig unverändert belassen.
+  Sonar-Anbindung und praktische Client-Abnahme abschließen. Alle fünf Skills sind angelegt.
+  OpenCode vollständig unverändert belassen.
 - [ ] [Lokales HTTPS](docs/planung/https.md): vertrauenswürdigen Zugang über einen
   Reverse Proxy einrichten und Anwendung sowie Testumgebungen darauf abstimmen.
 - [ ] Danach Designkritik mit Stitch auf einem eigenen Branch: eine Spielwiese mit

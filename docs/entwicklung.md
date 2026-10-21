@@ -88,6 +88,12 @@ und den erledigten Plan bereinigen; offene Folge-/Testaufgaben erhalten. Der Bra
 viele Zwischencommits enthalten. Tatsächliche Commits, Merge nach main und Push benötigen
 den entsprechenden Auftrag. Danach den tatsächlichen Stand und Prüfgrenzen berichten.
 
+„Bitte nach main mergen“ gilt zugleich als fachliche Abnahme und Auftrag zum
+Featureabschluss einschließlich Bereinigung; keine zusätzliche Abschlussformel nötig.
+Bei anderen Zielbranches den tatsächlichen Auftrag beachten. Den Abschluss erst
+nach erfolgreicher Integration und Nachprüfung melden; offene Änderungen, Bereinigung
+oder Fehler bleiben als ausstehend benannt.
+
 ## Änderungen prüfen und Commit-Message
 
 Der Projekt-Skill [aenderungen-pruefen](../.agents/skills/aenderungen-pruefen/SKILL.md)
@@ -108,6 +114,33 @@ Prüfungen und offene Punkte, anschließend die kopierbare deutsche Commit-Messa
 Keine neue Berichtsdatei und keine Git-Aktion durch diesen Auftrag. Nach Rückmeldungen
 die Message auf den aktuellen Stand bringen. Ein Zwischencommit beendet nicht
 automatisch das gesamte Feature.
+
+## Branch lokal mergen
+
+Der Projekt-Skill [branch-lokal-mergen](../.agents/skills/branch-lokal-mergen/SKILL.md)
+verwendet die ausdrücklich genannten oder eindeutig vereinbarten Quell-/Zielbranches.
+Aktueller Branch und main sind keine zwingenden Vorgaben. Ein Merge nach main gilt
+zugleich als Feature-Abnahme und Abschlussauftrag; andere Ziele nicht automatisch.
+
+Bei bestehenden uncommittierten Änderungen stoppt der Ablauf sofort. Der Benutzer
+prüft/committet zuerst; kein automatisches Stashen, Verwerfen oder Mitcommitten.
+Bei sauberem Stand die vereinbarte featurebezogene Bereinigung prüfen: erledigte
+Pläne, Provisorien, nachweislich überflüssiger Code und gültige Dokumentation.
+Offene Folge-/Testaufgaben erhalten. Erzeugt die Bereinigung neue Änderungen, diese
+mit Commit-Message zurückgeben und vor dem Merge auf Benutzercommit/Weiterauftrag warten.
+
+Nur den sauberen geprüften Stand lokal integrieren. Quellbranch und bisherige
+Commit-Historie behalten; kein Push oder automatisches Löschen von Branches/Worktrees.
+Überschaubare Konflikte fachlich lösen, unklare Entscheidungen abstimmen.
+Danach auf dem tatsächlichen Ziel optimiert bauen, vollständige JUnit-Anwendungstests
+und einen isolierten Start bis zur Betriebsbereitschaft prüfen. Keine echten Daten,
+lokalen SMTP-Zugänge oder laufenden Entwicklerprozesse verwenden. Keine automatische
+Browserrunde/große QA; zusätzlichen umfangreichen Bedarf vorher freigeben lassen.
+
+Ergebnis kurz im Chat: Merge, Bereinigung, tatsächliche Tests, Build, Start und offene
+Punkte. Bei Fehlern nicht vollständig erfolgreich melden; eventuelle neue Korrekturen
+zur Benutzerprüfung zurückgeben. Die letzte große QA-Baseline bleibt unberührt.
+Manuell vom Benutzer ausgeführte Merges lösen keinen Agentenablauf aus.
 
 ## Sonar bereinigen
 

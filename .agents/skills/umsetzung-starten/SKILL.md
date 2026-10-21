@@ -42,7 +42,7 @@ beim Erstellen dieses Skills sind keine tatsächlichen Umsetzungsaufträge.
 | „Integriere jetzt die Oberfläche mit unseren Komponenten“ | Freigegebenen UI-Umfang im bestehenden Theme umsetzen; keine freie Neugestaltung |
 | „Buttons rechtsbündig; zeige fünf Einträge; ergänze diesen Filter“ | Als konkrete Änderung am aktiven Feature behandeln, nicht als neuen Featurestart |
 | „Umsetzung abgeschlossen“ / „Das Feature ist fertig“ | Fachliche Abnahme und Abschlussvorbereitung; allein daraus keinen Merge oder Commit ableiten |
-| „Merge das nach main“ | Entsprechender Integrationsauftrag; tatsächlichen Stand und nötige Prüfungen beachten |
+| „Merge das nach main“ | Zugleich fachliche Abnahme und Auftrag zur Abschlussbereinigung/Integration; keine zusätzliche Abschlussformel verlangen |
 
 - Der Benutzer muss den Skill nicht wiederholt aufrufen. Aktiven Zusammenhang aus
   Gespräch, Git-Branch und Feature-Plan erhalten. Bei neuem Chat den Plan zur
@@ -83,6 +83,16 @@ beim Erstellen dieses Skills sind keine tatsächlichen Umsetzungsaufträge.
 - Technisch fertige Pakete als solche melden, nicht eigenmächtig das gesamte Feature
   schließen. Bei UI auf die gemeinsame Funktions-, Bedienungs- und Designabnahme warten.
   Der Feature-Plan bleibt bis dahin mit den tatsächlich offenen Schritten bestehen.
+- Ein ausdrücklicher Mergeauftrag nach main gilt bereits als Benutzerabnahme und
+  Abschlussauftrag. Nicht zusätzlich „Umsetzung abgeschlossen“ verlangen. Bei einem
+  anderen Zielbranch nicht automatisch den endgültigen Featureabschluss annehmen,
+  sofern dieser nicht ebenfalls eindeutig beauftragt ist. Tatsächlich abgeschlossen
+  erst nach erforderlicher Bereinigung, erfolgreicher Integration und Nachprüfung melden;
+  bei offenen Änderungen oder fehlgeschlagenem Merge/Build den Rest ausdrücklich offen halten.
+- Bei einem Mergeauftrag zuerst den [Merge-Skill](../branch-lokal-mergen/SKILL.md)
+  anwenden, insbesondere dessen Prüfung auf bestehende uncommittierte Änderungen
+  vor jeder Abschlussbereinigung. Die Regeln für einen sauberen Arbeitsstand und
+  den Benutzercommit gelten auch im Featureablauf.
 - Kleine iterative Änderungen bleiben auf demselben Branch. Viele sinnvolle
   Zwischencommits sind möglich; die Zahl bestimmt nicht den fachlichen Abschluss.
   Standardmäßig Commit-Messages liefern. Nur auf entsprechenden Auftrag committen;

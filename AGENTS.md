@@ -31,6 +31,10 @@
   entfernen. Kein Planarchiv und keine Sammlung abgeschlossener Arbeitsaufträge
   anlegen. Bei Teilumsetzung nur tatsächlich offene Schritte im Plan belassen.
 
+- Codex-Projektabläufe liegen unter `.agents/skills/`; Bedienung in `docs/entwicklung.md`
+  und `docs/tests.md`. OpenCode bleibt vollständig unverändert am bisherigen Ort.
+  Geeigneten vorhandenen Code nur bei konkretem Bedarf prüfen/gezielt übernehmen;
+  keinen vorsorglichen Umzug oder Umbau des OpenCode-Workflows durchführen.
 - Keep Java 25 and the Spring Boot / Vaadin Flow stack defined in `pom.xml`.
 - Build views with the existing Vaadin Java components. Do not replace them with
   HTML templates, React or another frontend.
