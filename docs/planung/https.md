@@ -36,13 +36,12 @@ Bedienung und Grenzen: [Entwicklung](../entwicklung.md#lokales-https),
 
 ## Noch offen
 
+- [ ] Offene JUnit-/Helferregressionen aus dem [Testbedarf](../testbedarf.md)
+  ergänzen und JUnit-/Helfertests am aktuellen vollständigen Stand erfolgreich prüfen.
 - [ ] Vollständige HTTPS-Browserabnahme DE/EN nach gesonderter Freigabe am selben
   unveränderten Image: bestehende Login-, Mail-Link-, CSRF-, Rechte-, Sitzungs-,
   Remember-me-, Neustart-, Upload- und Push-Journeys wiederverwenden.
   Automatisierte Restarbeiten stehen ausschließlich im [Testbedarf](../testbedarf.md).
-- [ ] Verbleibende manuelle Einrichtung abnehmen: Docker-Zugang sowie Rückbau des
-  Zertifikatsvertrauens prüfen. Der lokale HTTPS-Start über die BAT-Dateien ist vom
-  Benutzer als funktionierend bestätigt; dies ist keine Gesamtfreigabe des Features.
 - [ ] Nach gemeinsamer Abnahme erledigten TODO-Eintrag, diesen Plan und Verweise
   entfernen. Offenen Testbedarf unabhängig erhalten. `docs/status.md` bleibt der
   Stand der letzten großen QA und wird durch diese Einzelprüfungen nicht ersetzt.

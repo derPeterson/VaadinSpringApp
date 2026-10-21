@@ -4,9 +4,9 @@
 
 Die vereinbarte Reihenfolge ist:
 
-- [ ] [Lokales HTTPS abnehmen](docs/planung/https.md): HTTPS-Browserabnahme und
-  verbleibende manuelle Abnahmen durchführen;
-  offene automatisierte Regressionen stehen im [Testbedarf](docs/testbedarf.md).
+- [ ] [Lokales HTTPS abnehmen](docs/planung/https.md): offene JUnit-/Helferregressionen
+  ergänzen, aktuellen JUnit-/Helferstand sowie Browser DE/EN prüfen und gemeinsam
+  abschließen. Offene automatisierte Regressionen stehen im [Testbedarf](docs/testbedarf.md).
 - [ ] Danach Designkritik mit Stitch auf einem eigenen Branch: eine Spielwiese mit
   vorhandenen Komponenten, Panels, Dialogen und Zuständen zum Ausprobieren aufbauen.
   Den verbindlichen [Theme-Standard](docs/theme.md) als Ausgangspunkt verwenden.
