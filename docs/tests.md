@@ -22,9 +22,9 @@ technischen Prüfungen und ihre Ausführung.
 ## Übergabe offener Testaufgaben
 
 [docs/testbedarf.md](testbedarf.md) ist die einzige gemeinsame Liste offener
-Ergänzungen oder Anpassungen automatisierter Tests. Umsetzungen, Sonar-Pakete,
-Reviews und QA tragen dort sinnvolle erkannte Lücken ein, sofern sie diese nicht
-im selben Auftrag bereits schließen und prüfen. Keine parallelen Listen in TODO,
+Ergänzungen oder Anpassungen automatisierter Tests, getrennt nach Browser- und
+JUnit-Tests. Umsetzungen, Sonar-Pakete, Reviews und QA tragen dort sinnvolle erkannte
+Lücken ein, sofern sie diese nicht im selben Auftrag bereits schließen und prüfen. Keine parallelen Listen in TODO,
 Abschlussberichten oder Paketplänen als alleinige Übergabe führen.
 
 Ein Eintrag enthält kurz: betroffene Funktion, Testart (JUnit/Browser), Szenario,
@@ -43,10 +43,28 @@ Umbau, gezielt fragen. Ohne Antwort bleibt sie mit Grund wartend; unabhängige A
 gehen weiter. Offener Bedarf wird weder durch einen grünen Teiltest noch beim Löschen
 eines erledigten Paketplans entfernt. Im Bericht die verbleibende Lücke nennen.
 
+Menschliche Sonderprüfungen stehen im [manuellen Katalog](manual-tests/README.md).
+Die Properties-Vorlage bleibt minimal; keine zusätzlichen Protokollvorlagen oder
+fiktiven Ergebnisarchive anlegen. Nach Automatisierung entfallene manuelle Doppelungen
+entfernen, Abnahmen mit menschlichem Urteil erhalten.
+
 Die Datei bleibt bei leerer Liste mit einer kurzen Leermeldung bestehen. Keine
 Erledigt-Historie anhängen und die Liste nicht blind überschreiben. Der aktuelle
 Ergebnisbericht steht in `docs/status.md`, menschliche Sonderprüfungen bleiben im
 manuellen Katalog. Der Git-/Codevergleich ergänzt die Liste und erkennt nicht notierte Lücken.
+
+## JUnit-Regressionsprüfungen
+
+Anwendungstests liegen unter `src/test/java/`; vorhandene JUnit-Muster verwenden.
+`ImageHelperTest` ist ein Beispiel ohne Anwendungsstart oder Datenbank.
+Technische Regeln, Rollback und Konkurrenz bevorzugt hier prüfen, sichtbare Journeys
+im Browser. Konkurrenz mit kontrollierter Synchronisierung statt allein mit Wartezeiten
+prüfen. Benötigte UI-/Sessionfixtures stark referenzieren; Listener und Kontexte nach
+jedem Test bereinigen. Nur isolierte Testdatenbanken verwenden.
+
+Build-Erfolg, ausgeführte Tests und menschliche Abnahme unterscheiden: Ein Build ohne
+Testklassen ist kein bestandener Funktionstest. Schon die Compile-Phase kann
+Frontenddateien erzeugen; das Maven-Profil `it` startet und stoppt die Anwendung.
 
 ## Java und Frontend
 
@@ -81,15 +99,19 @@ Frisches Schema und Wiederanlauf desselben Schemas werden separat geprüft.
 DE baut das optimierte Image einmal; EN verwendet denselben unveränderten Image-Stand.
 Der Runner legt pro Worker eigene Datenbank, Mailpit und Ports an und räumt seine
 Umgebung wieder ab. Bestehende Entwicklungscontainer werden nicht als Testfixture benutzt.
-Keine zweite Testausführung starten, während der eigene Runner noch arbeitet.
+Keine zweite unabhängige Testausführung gegen dieselben Ausgaben starten, während
+der eigene Runner noch arbeitet. Seine getrennten Worker laufen ausdrücklich parallel;
+innerhalb jedes Workers bleibt JUnit sequenziell.
 
 Schritte und erwartete Ergebnisse stehen pro Fall in `@Description`, die ID in
 `@DisplayName`. Gemeinsame UI-Aktionen gehören in `pages/`, technische Regeln in JUnit.
 Neue Fälle nicht als Kopie vorhandener Journeys hinzufügen; konkrete Lücken schließen.
 
-Die [Browseranleitung](../browser-tests/README.md) beschreibt Auswahl, Reports und
-Fehlerdiagnose. Lokale Screenshots/Traces unter `browser-tests/runs/` sind temporäre
-Diagnosedaten. Wichtige aktuelle Ergebnisse werden knapp im Prüfstand festgehalten.
+Vor dem Schreiben, Ändern oder Ausführen von Browserfällen die
+[Browseranleitung](../browser-tests/README.md) lesen und anwenden. Sie beschreibt
+Auswahl, [Worker-Parallelisierung](../browser-tests/README.md#parallelisierung),
+Isolation, Fallgestaltung, Reports und Fehlerdiagnose. Lokale Screenshots/Traces
+unter `browser-tests/runs/` sind temporäre Diagnosedaten. Wichtige aktuelle Ergebnisse werden knapp im Prüfstand festgehalten.
 Browserläufe durch Agenten benötigen eine ausdrückliche Freigabe pro Auftrag.
 
 ## Mailansicht mit eigenem Postfach

@@ -4,7 +4,7 @@ Hier stehen ausschließlich offene Aufgaben zur Ergänzung oder Anpassung
 automatisierter Tests. Pflege und Abnahme: [Testablauf](tests.md#übergabe-offener-testaufgaben).
 Erledigte Einträge werden entfernt; die Datei bleibt als gemeinsame Anlaufstelle bestehen.
 
-## Gezielte Sonderfälle
+## Browser-Tests
 
 Die folgenden Prüfanleitungen benennen noch abzugleichenden Testbedarf. Zuerst die
 vorhandenen JUnit- und Browsernachweise prüfen und wiederverwenden; sie sind keine
@@ -26,3 +26,9 @@ SMTP-Ausfallprüfungen verwenden ausschließlich eigene isolierte Testdienste. D
 ist aktuell nicht beauftragt und kein Pflichtteil der großen Testrunde. Sie setzt
 einen ausdrücklich freigegebenen Zugang und Empfänger voraus. Menschliche
 Abnahmen bleiben im manuellen Katalog.
+
+## JUnit-Tests
+
+Aktuell sind hier keine konkreten offenen JUnit-Testaufgaben erfasst.
+Auch größere oder wegen einer Benutzerentscheidung wartende Aufgaben hier aufnehmen:
+betroffene Funktion, Szenario, Erwartung und Zustand mit Begründung nennen.

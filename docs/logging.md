@@ -1,5 +1,9 @@
 # Logging
 
+Bei Loggingarbeiten diesen Vertrag einschließlich der Beispiele lesen und anwenden.
+Eigene Logmeldungen sind einheitlich **Englisch**, unabhängig von der UI-Sprache.
+Keine Übersetzung über `MessageProperties`; Dokumentation und Kommunikation bleiben Deutsch.
+
 ## Pegel und Diagnose
 
 Normalbetrieb ist INFO. Die Dateiausgabe steht in `src/main/resources/logback-spring.xml`;
@@ -45,3 +49,36 @@ Ein transaktionaler Erfolg wird über `AfterCommitLog` erst nach Commit gemeldet
 Nach einem eigenständig abgeschlossenen TransactionTemplate darf direkt geloggt werden.
 Queueaufnahme, SMTP-Annahme und bestätigtes Ergebnis sind verschiedene Ereignisse.
 Ein unklarer IN_PROGRESS-Auftrag wird nicht als sicher zugestellt oder fehlgeschlagen ausgegeben.
+
+## Kurze Beispiele
+
+Die Ausschnitte zeigen die Schreibweise an der zuständigen Fehler-/Erfolgsgrenze;
+sie sind keine zusätzlichen Loggingpflichten für jeden Ablauf.
+
+Nach einer erfolgreichen Profiländerung innerhalb einer Transaktion wird erst nach
+Commit ein Erfolg gemeldet. Die interne ID vorher als unveränderlichen Wert erfassen,
+keine Entity als verzögertes Argument übergeben:
+
+```java
+AfterCommitLog.info(log, "Account profile updated: accountId={}", accountId);
+```
+
+Gezieltes DEBUG kann erklären, warum eine konkrete Bearbeitung nicht übernommen wurde,
+ohne Formulardaten auszugeben. Das ist kein Log bei jedem Laden oder Poll:
+
+```java
+log.debug("Profile update rejected: accountId={}, reason=VERSION_CONFLICT", accountId);
+```
+
+Ein technischer Fehler wird einmal an der verantwortlichen Grenze mit sicheren
+Metadaten gemeldet. Die Originalexception weiter wie vorgesehen behandeln, nicht
+durch die bereinigte Logkopie ersetzen:
+
+```java
+log.error("Profile update failed: accountId={}", accountId, LogSafety.safeFailure(failure));
+```
+
+Ausgeschöpfte Mailwiederholungen können als WARN gemeldet werden; jeder normale
+Scheduler-Durchlauf oder dieselbe weiterbestehende Störung braucht keine neue Meldung.
+Queueaufnahme bedeutet nur vorgemerkten Versand, SMTP-Annahme noch keine bestätigte
+Posteingangszustellung. Logtexte müssen diese Unterschiede ausdrücklich erhalten.

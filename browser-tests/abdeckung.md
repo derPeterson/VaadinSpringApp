@@ -21,4 +21,5 @@ unter JUnit kontrolliert, nicht durch zufälliges Browser-Timing erzeugt.
 
 Die [manuellen Sonderprüfungen](../docs/manual-tests/README.md) ergänzen nur diese
 Lücken. Neue Automatisierung soll eine konkrete Lücke schließen und keine schon
-vollständig geprüfte Journey duplizieren. Offene Vorhaben stehen in [TODO](../TODO.md).
+vollständig geprüfte Journey duplizieren. Offene automatisierte Testaufgaben stehen
+zentral im [Testbedarf](../docs/testbedarf.md); geplante Erweiterungen in [TODO](../TODO.md).

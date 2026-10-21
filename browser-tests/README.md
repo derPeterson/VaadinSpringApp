@@ -5,6 +5,22 @@ benötigt. Playwright, JUnit und Allure sind im unabhängigen Maven-Modul defini
 Der [aktuelle Prüfstand](../docs/status.md) enthält die tatsächlich ausgeführten
 Prüfungen; der [Umfang](abdeckung.md) erklärt die Grenzen.
 
+## Arbeiten an Browsertests
+
+Vor dem Schreiben, Ändern oder Ausführen von Browserfällen diese Anleitung lesen
+und anwenden; [Codestil](../docs/entwicklung.md#codestil) und
+[Testgrundlagen](../docs/tests.md) gelten ergänzend.
+
+Agenten starten Browserläufe nur mit ausdrücklicher Freigabe für den aktuellen
+Auftrag. Der Auftrag „große Testrunde“ umfasst die vollständigen isolierten DE-/EN-
+Läufe; dafür nicht erneut fragen. Das Bearbeiten einer Anleitung oder eines Skills
+ist keine Testfreigabe.
+
+Offene Browserergänzungen stehen zentral im [Testbedarf](../docs/testbedarf.md#browser-tests).
+Vor neuen Fällen vorhandene Abdeckung prüfen; erledigte Einträge erst nach passender
+Implementierung und erfolgreicher DE-/EN-Prüfung entfernen. Nicht erledigte oder
+wegen einer Entscheidung wartende Aufgaben dort erhalten.
+
 ## Starten
 
 ```powershell
@@ -103,6 +119,21 @@ Nicht enthalten sind die vollständige Rechte-/Sitzungsmatrix, Tokenwartezeiten,
 Chromium-Neustarts, alle Konfigurationsvarianten und die große Pagination-Anlage.
 Nach Sicherheits- oder Kontovertragsänderungen die passende Suite bzw. `all` nutzen.
 
+## Parallelisierung
+
+`-Workers 2` führt bis zu zwei Worker gleichzeitig aus; erlaubt sind 1–4.
+Es starten höchstens so viele Worker wie ausgewählte Testklassen. Ganze Klassen
+werden verteilt, jeder Worker besitzt eine eigene JVM, Anwendung, H2-Datenbank,
+Mailpit-Instanz und Ports. Innerhalb eines Workers läuft JUnit sequenziell;
+Threadparallelität mit gemeinsamem Fixture nicht als Ersatz aktivieren.
+
+Der Elternrunner kompiliert Shared-/Browserquellen und baut das Anwendungsimage
+einmal vor der Verteilung. Alle Worker verwenden dieselbe unveränderliche Image-ID.
+Das Build-Verbot während eines Laufs verbietet keine parallelen Worker, sondern
+verhindert wechselnde oder entfernte Images bei laufenden Tests und Neustartfällen.
+Die vollständige Runde läuft üblicherweise zuerst auf DE, anschließend EN mit
+`-NoBuild`; beide Sprachläufe können jeweils die Worker-Parallelisierung nutzen.
+
 ## Isolation
 
 Der Runner verwendet `compose.browser-tests.yaml` mit eindeutigem Projektnamen
@@ -110,12 +141,11 @@ und eigenen wegwerfbaren Volumes. Standardports sind 18081 für die Anwendung un
 18026 für Mailpit; Worker reservieren eigene freie Ports. Die manuelle Umgebung
 18080/18025 bleibt unberührt. H2-Webkonsole und externe SMTP-Zustellung sind aus.
 
-Der Elternrunner baut einmal und übergibt die unveränderliche Image-ID an alle
-Worker. Während eines Laufs keine Appimages neu bauen, Tags umhängen oder
-benutzte Images entfernen: Neustartfälle benötigen dieselbe verfügbare Referenz
-bis zum Abbau. Ganze Klassen werden verteilt, innerhalb jedes Workers läuft JUnit
-sequenziell. Tests verwenden frische Browserkontexte, erfundene Konten und echte
-UI-Aktionen. Kontoanlage/Änderungen niemals durch SQL oder Serviceaufrufe ersetzen.
+Die [Parallelisierungsregeln](#parallelisierung) gelten auch bei Neustartfällen:
+Die verwendete Image-Referenz muss bis zum Abbau verfügbar bleiben. Ein noch
+laufender Container allein genügt dafür nicht. Tests verwenden frische Browserkontexte,
+erfundene Konten und echte UI-Aktionen. Kontoanlage/Änderungen niemals durch SQL oder Serviceaufrufe ersetzen.
+Mailjourneys lösen ihre Nachrichten über diese UI aus, nicht über Mailgenerierungs-APIs.
 `MailpitInbox` liest nur eigene Empfänger mit lokalisiertem Betreff; Mail-Links
 müssen auf die genaue lokale Runner-Adresse zeigen. Konfigurationsfälle stellen
 ihre Ausgangswerte wieder her. Das normale Fixture meldet sich über die UI ab,
@@ -148,8 +178,15 @@ fehlgeschlagener Abbau sind kein grüner Gesamtlauf.
 Properties; feste Labels über UiTexts beziehen. Keine gleichzeitige Akzeptanz
 beider Sprachen. Nach Login normalerweise die Laufsprache wählen; ein Test der
 gespeicherten Präferenz setzt sie bewusst nicht erneut. Routen und Konstanten
-ebenfalls aus Shared beziehen. In IntelliJ Shared und Browser-POM als eigene
+ebenfalls aus Shared beziehen: `AppRouteConstants`/`AppConstants` für vorhandene
+Routen-/Titel-/Avatarverträge, `BrowserRoutes` für lokale Pfade statt Security-Wildcards.
+Fehlende Übersetzungsschlüssel müssen fehlschlagen. Erfundenes Testmaterial von
+übersetzten UI-Texten unterscheiden. In IntelliJ Shared und Browser-POM als eigene
 Maven-Projekte importieren, keine zweiten Shared-Source-Roots anlegen.
+
+Jeden Fall unabhängig mit ID, Bereich, Schritten und Erwartung beschreiben. Browser-
+fälle und Berichte hängen nicht vom manuellen Katalog ab; `fast` bleibt eine Auswahl
+derselben Implementierungen aus `all`. Bei neuen Fast-Tags die Fallliste oben pflegen.
 
 ## Berichte und Fehlerhilfe
 
@@ -162,6 +199,6 @@ Metadaten und verfügbare Ports prüfen. Falsches JDK nicht durch Downgrade umge
 
 Runs sind ignorierte lokale Diagnosedaten. Sie können Testeingaben und
 Sitzungstoken enthalten und müssen nicht dauerhaft archiviert werden. Nicht mehr
-benötigte ganze Runs dürfen nach bewusster Auswahl gelöscht werden; keine
-automatische Löschroutine. Der dauerhafte Prüfstand steht knapp in docs/status.md,
-ohne eine Liste alter Run-Ordner.
+benötigte ganze Runs dürfen auf entsprechenden Benutzerauftrag nach bewusster
+Auswahl gelöscht werden; keine automatische Löschroutine. Der dauerhafte Prüfstand
+steht knapp in [docs/status.md](../docs/status.md), ohne eine Liste alter Run-Ordner.

@@ -89,8 +89,112 @@ Testbefehle stehen in der [Testanleitung](tests.md).
 
 ## Codestil
 
-Java folgt Google Java Format, zwei Leerzeichen. Nach jeder eigenen Java-Änderung
-vor Tests und Abschluss im Projektroot:
+Bei Codearbeiten diesen Abschnitt lesen und die Regeln bei Umsetzung und Review
+anwenden. Die Beispiele illustrieren Schreibweise und Lesbarkeit; sie sind keine
+fertigen Implementierungen oder zusätzlichen fachlichen Anforderungen.
+
+### Namen und Methodenaufgaben
+
+Für Menschen lesbare Namen beschreiben die fachliche Bedeutung. Listen heißen im
+Plural, einzelne Objekte im Singular; Booleans benennen eine erkennbare Bedingung.
+Übliche kleine Schleifenindizes sind in ihrem unmittelbaren Kontext in Ordnung.
+Keine kryptischen Kürzel, unnötigen Typpräfixe oder künstlich langen Namen.
+
+| Wenig aussagekräftig | Verständlicher im passenden Kontext |
+| --- | --- |
+| `list`, `data` | `unreadNotifications` |
+| `u` in einer längeren Verarbeitung | `account` |
+| `flag` | `hasUnreadNotifications` |
+| `process()` | `markNotificationsAsRead()` |
+
+Eine Methode hat eine klar erkennbare Aufgabe; ihr Name passt zu Ergebnis und
+Seiteneffekten. Laden, Validieren und Speichern nicht hinter einem vagen Namen
+verstecken. Sinnvoll benannte Teilaufgaben auslagern, ohne Transaktions-, Sperr-
+oder Fehlergrenzen zu verschieben. Keine starren Zeilenlimits und keine neue
+Hilfsmethode für jede einzelne Anweisung.
+
+### Klammern und Kontrollfluss
+
+`if`, `else`, `for`, erweitertes `for`, `while` und `do/while` haben auch bei einer
+Anweisung geschweifte Klammern. `else if` darf als Kette stehen. `try`, `catch` und
+`finally` übersichtlich gliedern; Fehlerbehandlung nicht mit anderen Aktionen in
+eine Zeile pressen. Frühe Rückgaben oder `continue` können Verschachtelung reduzieren,
+sofern sie den Ablauf und bestehende Aufräum-/Fehlerverträge erhalten.
+
+Beispiel für einen gut überblickbaren Filter mit bewusstem Umgang mit leeren Namen:
+
+```java
+private List<String> collectNonBlankNames(List<String> candidateNames) {
+  List<String> names = new ArrayList<>();
+  for (String candidateName : candidateNames) {
+    if (candidateName == null || candidateName.isBlank()) {
+      continue;
+    }
+    names.add(candidateName);
+  }
+  return names;
+}
+```
+
+Einfache kurze Bedingungen dürfen ternär bleiben. Verschachtelte ternäre Ausdrücke
+in verständliche Schritte oder fachlich benannte Methoden aufteilen. Eine Schleife
+ist oft verständlicher als eine lange Stream-Kette; kurze klare Streams sind ebenfalls
+in Ordnung. Die Aufgabe entscheidet, nicht eine bevorzugte Syntax.
+
+### Explizite Typen und sinnvoller Einsatz von var
+
+Explizite lokale Typen sind Standard, besonders bei Service- und Factory-Rückgaben.
+Normale und statische Einzelimporte verwenden; keine Sternchenimporte.
+
+```java
+List<String> supportedLanguages = List.of("de", "en");
+Instant notificationTime = clock.instant();
+```
+
+`var` nur verwenden, wenn es einen konkreten Lesbarkeitsvorteil hat: bei anonymen
+oder nicht direkt benennbaren Typen sowie bei sehr langen generischen Typen,
+die unmittelbar im Konstruktor sichtbar sind. Beispielsweise entfällt hier eine
+lange doppelte Typangabe:
+
+```java
+var translationsByAccount = new LinkedHashMap<Long, Map<Locale, List<String>>>();
+```
+
+`var` ist weder dynamische Typisierung noch ein Laufzeitvorteil. Bei einer unklaren
+Rückgabe wie `service.load(...)` den Typ ausschreiben.
+
+### Kommentare und Javadoc
+
+Verträge, notwendige Voraussetzungen, wichtige Seiteneffekte und ungewöhnliche
+Fehlerfälle erklären, soweit sie aus Namen und Code nicht klar hervorgehen.
+Selbsterklärende Getter oder offensichtliche Schritte brauchen keinen Kommentar.
+
+```java
+// Der Grenzzeitpunkt ist bereits fällig; Gleichheit darf keinen Retry verzögern.
+boolean retryIsDue = !nextAttemptAt.isAfter(now);
+```
+
+Eine Methodendokumentation kann knapp bleiben, muss aber den wichtigen Vertrag nennen:
+
+```java
+/**
+ * Prüft die Retry-Fälligkeit einschließlich des Grenzzeitpunkts; beide Werte sind nicht null.
+ */
+private boolean isRetryDue(Instant nextAttemptAt, Instant now) {
+  return !nextAttemptAt.isAfter(now);
+}
+```
+
+Regex direkt daneben auf Deutsch erläutern: Zweck, erlaubte Zeichen, Anker,
+Gruppen und bei Ersetzungen die verwendeten Gruppenreferenzen, soweit vorhanden.
+Vor einer neuen Regel vorhandene zentrale Validierung prüfen und wiederverwenden.
+
+### Java formatieren und prüfen
+
+Google Java Format (`GOOGLE`, zwei Leerzeichen) ist über Spotless im Root-`pom.xml`
+konfiguriert und umfasst Anwendung, Shared und Browsertests. Nach jeder eigenen
+Java-Änderungsrunde vor Tests und Abschluss im Projektroot ausführen, auch ohne
+weiteren Build/Testlauf; nach späteren Korrekturen wiederholen:
 
 ```powershell
 .\mvnw.cmd spotless:apply
@@ -98,30 +202,80 @@ vor Tests und Abschluss im Projektroot:
 .\mvnw.cmd checkstyle:check
 ```
 
-Code soll für Menschen lesbar sein: sprechende, verständliche Variablen- und
-Methodennamen statt kryptischer Kürzel. Methoden haben eine klar erkennbare fachliche
-Aufgabe. Tiefe Verschachtelung und verschachtelte ternäre Ausdrücke vermeiden;
-Hilfsmethoden nur für tatsächlich benennbare Aufgaben, nicht zur bloßen Zeilenverteilung.
-Javadoc oder Kommentare erklären nötige Verträge, Gründe und Besonderheiten;
-offensichtlichen Ablauf nicht nacherzählen. Regex direkt auf Deutsch erläutern.
+Spotless ordnet Imports und entfernt unbenutzte Imports. `ratchetFrom=HEAD`
+begrenzt die Bearbeitung auf geänderte/neue Java-Dateien. Bei fremden Java-Änderungen
+beide Spotless-Aufrufe zusätzlich mit `-DspotlessFiles=...` auf die eigenen Dateien
+begrenzen; der Wert ist ein regulärer Ausdruck für absolute Dateipfade.
+Beispiel ausschließlich für eine selbst bearbeitete `views/AccountView.java`:
 
-Kontrollblöcke bei `if`/`else`, Schleifen und `try`/`catch` übersichtlich mit Klammern
-gliedern, auch bei einzelnen Anweisungen. Explizite Typen und Imports sind Standard;
-`var` nur bei einem konkreten Lesbarkeitsvorteil, etwa bei nicht direkt benennbaren
-Typen. Keine Sternchenimporte. Transaktions-, Sperr- und Fehlergrenzen erhalten.
-Spotless berücksichtigt Änderungen gegen HEAD. Bei fremden Java-Änderungen mit
-`-DspotlessFiles=...` auf die eigenen Pfade begrenzen; Anleitung der Option beachten.
+```powershell
+.\mvnw.cmd '-DspotlessFiles=.*[\\/]views[\\/]AccountView\.java' spotless:apply
+.\mvnw.cmd '-DspotlessFiles=.*[\\/]views[\\/]AccountView\.java' spotless:check
+.\mvnw.cmd checkstyle:check
+```
 
-Python verwendet Ruff aus `requirements-dev.txt`, installiert in `.venv`:
+Den Filter passend zu den tatsächlich eigenen Dateien wählen; den Ratchet nicht
+abschalten. Keine ungefragte projektweite Umformatierung. Checkstyle prüft Klammern
+und Sternchenimporte; gute Namen, sinnvolle Typwahl und Methodengliederung bleiben
+Teil des Reviews.
+
+### Python formatieren
+
+Ruff-Version und Regeln stehen in `requirements-dev.txt` und `ruff.toml`.
+Nur in der virtuellen Projektumgebung installieren:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+```
+
+Nach jeder eigenen Python-Änderungsrunde vor Tests und Abschluss die eigenen
+Dateien formatieren und prüfen; nach Korrekturen wiederholen:
+
+```powershell
 .\.venv\Scripts\python.exe -m ruff format PFAD
 .\.venv\Scripts\python.exe -m ruff format --check PFAD
 ```
 
-Nur eigene Python-Dateien formatieren. Verbindliche Agentenregeln stehen in [AGENTS.md](../AGENTS.md).
-Neue feste Texte über den gemeinsamen `MessageTexts`-/`MessageProperties`-Katalog
-bereitstellen. Dynamische UI-Texte müssen dem aktuellen Sprachwechsel folgen.
+`PFAD` durch explizite eigene Dateipfade ersetzen und bei Leerzeichen zitieren.
+Ruff hat hier keinen Git-Ratchet; fremde Dateien nicht mitformatieren.
+`ruff check --fix` ersetzt die Formatierung nicht. OpenCode bleibt eingefroren.
 
+Verbindliche Agentenregeln: [AGENTS.md](../AGENTS.md).
 Für sinnvolle Ereignisse, Logpegel und sichere Diagnose gilt der [Logging-Vertrag](logging.md).
+
+## Übersetzungen und Ressourcen
+
+Bei Arbeiten an diesen Bereichen die folgenden Hinweise lesen und anwenden.
+
+### Gemeinsamer Textkatalog und Sprachwechsel
+
+- Übersetzungsdateien liegen unter `src/main/resources/i18n/`, Mailvorlagen unter
+  `src/main/resources/email/`. Feste Schlüssel und typisierte Getter sind einmalig in
+  Shared-`MessageTexts` definiert; keine zweite Liste im Anwendungs-/Testmodul pflegen.
+- In Anwendungskomponenten die vorhandenen `MessageProperties`-Getter verwenden.
+  Direkte rohe Übersetzungsabfragen bleiben innerhalb der i18n-Schicht.
+- Normales `MessageProperties` folgt bei jedem Zugriff der aktuellen Sitzungssprache.
+  `MessageProperties.forLocale(provider, locale)` bindet ausdrücklich eine feste Sprache,
+  ohne die Sitzung zu lesen oder zu ändern; nur für entsprechend feste Übersetzungen verwenden.
+- Für Konfigurationsgruppen `AdminConfigGroup` als Identität verwenden, nicht Properties-
+  Schlüssel oder übersetzte Labels. Vorhandene typisierte Methoden für Konfigurations-
+  und Statusbeschriftungen nutzen.
+- Texte sichtbarer Komponenten über den vorhandenen Sprachwechselmechanismus aktualisieren.
+  Dynamische Benachrichtigungen erhalten Titel und Inhalt als `Supplier<String>` über
+  `NotificationHelper`; seine Textaktualisierung wertet die Supplier erneut aus.
+  Bereits übersetzte Strings nicht vorab festhalten, wenn die Meldung die Sprache wechseln soll.
+- Browsertests verwenden die gemeinsamen Getter über `UiTexts` mit fester Testsprache;
+  keine eigene DE-/EN-Textliste und keine Erwartung „eine von beiden Sprachen“.
+  Details: [Browser-Testanleitung](../browser-tests/README.md).
+
+### Ressourcen im gepackten JAR
+
+Serverseitige Dateien über Classpath-Streams laden, beispielsweise mit
+`ClassPathResource.getInputStream()` oder `getResourceAsStream(...)`. Eigene Streams
+zuverlässig schließen, üblicherweise mit `try`-with-resources. Ressourcen nicht über
+`new File("src/main/resources/...")` oder die Annahme einer normalen Datei im JAR öffnen.
+Öffentliche Theme-/Iconressourcen liegen unter `META-INF/resources/`.
+
+`src/main/frontend/generated/`, `vite.generated.ts` und `target/` werden von Werkzeugen
+erzeugt und nicht von Hand bearbeitet. Eigene Vite-Konfiguration gehört in
+`vite.config.ts`. Die [Theme-Anleitung](theme.md) beschreibt Stylesheets und Ladereihenfolge.

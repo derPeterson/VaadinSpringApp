@@ -1,7 +1,7 @@
 # Offene Fehler
 
 Bestätigte offene Anwendungsfehler, nach Dringlichkeit sortiert. Sie haben Vorrang
-vor neuen Funktionen, sofern nicht ausdrücklich anders entschieden.
+vor allen anderen Aufgaben.
 
 Aktuell sind keine bestätigten offenen Anwendungsfehler erfasst.
 
