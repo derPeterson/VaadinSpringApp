@@ -49,9 +49,12 @@ class DurableAuthenticationTest {
 
   @Test
   void identityBeyondTheAccountColumnLimitIsRejected() {
+    String overlongIdentity = "a".repeat(256);
+    String credentialVersion = "0".repeat(64);
+    List<DurableAuthentication.Factor> factors = List.of();
     assertThrows(
         IllegalArgumentException.class,
-        () -> new DurableAuthentication("a".repeat(256), "0".repeat(64), false, 0, List.of()));
+        () -> new DurableAuthentication(overlongIdentity, credentialVersion, false, 0, factors));
   }
 
   @Test

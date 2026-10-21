@@ -66,6 +66,14 @@ Fehlerdiagnose. Lokale Screenshots/Traces unter `browser-tests/runs/` sind tempo
 Diagnosedaten. Wichtige aktuelle Ergebnisse werden knapp im Prüfstand festgehalten.
 Browserläufe durch Agenten benötigen eine ausdrückliche Freigabe pro Auftrag.
 
+## Mailansicht mit eigenem Postfach
+
+Der ausdrücklich aktivierte `ManualEmailPreviewIT` sendet Beispiele zur menschlichen
+Sichtprüfung. Er gehört nicht zum normalen Testlauf. Einrichtung und Sprachwahl:
+[Mailbeispiele zur Sichtprüfung](manual-tests/README.md#mailbeispiele-zur-sichtprüfung).
+`MailVisualPreviewTest` prüft Katalog, Empfängergrenzen und MIME-Versand offline mit
+gemocktem Transport; dort werden keine echten E-Mails versendet.
+
 ## Grenzen
 
 Mailpit prüft tatsächlichen SMTP-Versand im Testnetz, keine reale Internetzustellung.

@@ -17,11 +17,14 @@ halten die wesentlichen technischen Grenzen fest.
 
 ## Qualitätsstand
 
-SonarQube laut zuletzt bestätigtem Benutzerscan: **0 offene Issues**, **28 begründete
-Ausnahmen**. Die Begründungen stehen eigenständig verständlich am Server. Nach dieser
-Bereinigung wurde kein neuer Sonar-Scan gestartet; der Zähler ersetzt keine Tests.
+Der aktuelle Sonar-Export enthält **4 Hinweise im Testcode**. Alle vier sind im
+Arbeitsstand korrigiert; die Bestätigung durch einen erneuten Scan steht aus.
+Begründungen akzeptierter Ausnahmen stehen eigenständig verständlich am Server.
+Es wurden keine Sonar-Statusänderungen oder neuen Scans durch den Agenten ausgeführt.
 
-Die automatisierte QA der aktuellen Bereinigung ist abgeschlossen. Es gibt keine
+Die vollständige automatisierte QA der Dokumentations-/Schemabereinigung ist abgeschlossen.
+Der zusätzliche Mail-Sichttest wurde anschließend gezielt offline geprüft; ein neuer
+vollständiger JUnit-/Browserlauf war dafür nicht erforderlich (keine Änderung am Anwendungscode). Es gibt keine
 ungeklärten Fehler aus den folgenden Prüfungen:
 
 | Prüfung | Aktuelle Runde |
@@ -30,6 +33,7 @@ ungeklärten Fehler aus den folgenden Prüfungen:
 | Vollständige JUnit-Anwendungstests | 2.200 Tests, 0 Fehler, 0 übersprungen |
 | Optimierter Build | grün, einschließlich aller Anwendungstests |
 | Browser-Helfertests | 49 Tests grün |
+| Mail-Sichttest und Sessionregressionen (gezielt) | 34 Tests bestanden; echter Versandtest absichtlich übersprungen |
 | Browser all DE | alle 155 Fälle erfolgreich abgedeckt; Gesamtlauf plus Anmeldenachtest |
 | Browser all EN | 155/155 bestanden, 0 Fehler, 0 übersprungen |
 | Frontend-JavaScript | 12 Tests grün |

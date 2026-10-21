@@ -54,6 +54,54 @@ das benötigte private Testnetz freigeben und danach zurücknehmen. Nicht die
 Entwicklungsinstanz oder H2-Konsole allgemein freigeben. Ohne diese Vorbereitung
 die Gerätevariante als BLOCKIERT führen.
 
+## Mailbeispiele zur Sichtprüfung
+
+[`ManualEmailPreviewIT`](../../src/test/java/de/derpeterson/app/manual/ManualEmailPreviewIT.java)
+sendet vorhandene Mailvorlagen an genau ein ausdrücklich angegebenes Postfach.
+Er ist durch seinen `*IT`-Namen außerhalb des normalen `mvn test`-Laufs und zusätzlich
+ohne `-Dmail.preview.send=true` deaktiviert. Kein `@Disabled` entfernen.
+
+In IntelliJ eine lokale JUnit-Startkonfiguration für diese Klasse anlegen, als
+VM-Option `-Dmail.preview.send=true` und folgende Umgebungsvariablen setzen:
+
+| Variable | Inhalt |
+| --- | --- |
+| `MAIL_PREVIEW_TO` | Deine einzelne reale Empfängeradresse |
+| `MAIL_PREVIEW_LANGUAGES` | `de`, `en` oder `de,en`; Standard beide |
+| `MAIL_PREVIEW_FROM` | Für deinen SMTP-Zugang erlaubte Absenderadresse |
+| `MAIL_PREVIEW_SMTP_HOST` | SMTP-Server |
+| `MAIL_PREVIEW_SMTP_PORT` | Port; Standard `587` |
+| `MAIL_PREVIEW_SMTP_USERNAME` | SMTP-Benutzername |
+| `MAIL_PREVIEW_SMTP_PASSWORD` | SMTP-Passwort bzw. freigegebenes App-Passwort |
+| `MAIL_PREVIEW_SECURITY` | `starttls` (Standard), `ssl` oder ausdrücklich `none` |
+| `MAIL_PREVIEW_SMTP_AUTH` | Standard `true`; `false` nur für einen passenden eigenen Relay/Testserver |
+
+Für direktes TLS typischerweise Port `465` und `ssl` wählen; maßgeblich sind die
+Vorgaben des eigenen SMTP-Zugangs. Zugangsdaten und reale Adressen nur lokal in der
+Startkonfiguration halten, nicht in Java-Dateien oder versionierten Konfigurationen.
+Es werden weder `.env` noch die Anwendungsdatenbank geladen; kein Anwendungsstart nötig.
+
+Alternativ mit denselben lokalen Umgebungsvariablen vom Projektroot starten:
+
+```powershell
+.\mvnw.cmd '-Dtest=ManualEmailPreviewIT' '-Dmail.preview.send=true' test
+```
+
+Der Test verwendet den normalen MIME-Versand einschließlich eingebettetem Logo und
+die vorhandenen HTML-Vorlagen: Aktivierung, Passwortreset, Passwort geändert,
+E-Mail-Änderung bestätigen und E-Mail geändert. Dazu kommen die lokalisierte
+Admin-Testmail und einmal die technische, auch in der Anwendung englische
+Versandfehlermeldung als Klartext. Ergebnis: **7 Mails bei einer Sprache, 13 bei DE+EN**.
+Für unveränderte gleiche Inhalte an alter/neuer Adresse gibt es nur ein Beispiel.
+`PROMOTION` ist ein Queue-Typ ohne eigenen Versandablauf oder eigene Vorlage.
+
+Die Betreffzeilen beginnen mit `[SICHTTEST][DE/EN]`. Alle Kontodaten sind erfunden;
+Links zeigen absichtlich auf `https://preview.invalid/` und enthalten keine gültigen
+Tokens. Das prüft Aussehen und SMTP-Annahme, keine Registrierung oder Kontomutation.
+Optisch nach [HUM-06](#hum-06) beurteilen. Ein grüner JUnit-Test bestätigt weder
+Posteingangszustellung noch gutes Layout. Bei Versandfehler stoppt der Test ohne
+Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
+
 ## Prüffälle
 
 <a id="hum-01"></a>
@@ -132,11 +180,11 @@ die Gerätevariante als BLOCKIERT führen.
 
 **Einordnung:** Menschliche Abnahme.
 
-**Voraussetzung:** Eigene tatsächlich erzeugte Testmail; Mailprogramm benennen. EML-Import nur falls unterstützt; externe Zustellung getrennt unter AUTO-08.
+**Voraussetzung:** Beispiele aus dem JUnit-Sichttest oder eigene tatsächlich erzeugte Testmails; Mailprogramm benennen. EML-Import nur falls unterstützt; technische Zustellung getrennt unter AUTO-08.
 
-1. Verifikations- und Resetmail in den tatsächlich genutzten Clients öffnen; breite/schmale Ansicht und hell/dunkel soweit verfügbar vergleichen.
+1. Alle vorhandenen Mailvorlagen in den tatsächlich genutzten Clients öffnen; breite/schmale Ansicht und hell/dunkel soweit verfügbar vergleichen.
 2. Logo, Abstände, Text, Footer und erkennbare Link-/Buttonbeschriftung beurteilen. Verhalten bei blockierten Bildern ansehen.
-3. Prüfen, ob sich der Handlungszweck ohne externe Bilder verstehen lässt und das Linkziel zur eigenen Testinstanz passt.
+3. Prüfen, ob sich der Handlungszweck ohne externe Bilder verstehen lässt. Sichttestbeispiele verwenden bewusst `preview.invalid`; funktionale Testmails müssen zur eigenen Testinstanz führen.
 
 **Erwartet:** Die Mail ist lesbar, vertrauenswürdig zuzuordnen und bedienbar; Layout oder Clientfarben verdecken keine Aktion. Nicht verfügbare Clients einzeln als nicht geprüft aufführen; ein Mailpit-Screenshot ersetzt sie nicht.
 
