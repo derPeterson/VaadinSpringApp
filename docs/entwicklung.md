@@ -11,6 +11,7 @@ Die Paketnamen beziehen sich auf `src/main/java/de/derpeterson/app/`:
 | Paket | Zuständigkeit |
 | --- | --- |
 | `Application` (Basispaket) | Spring-Boot-Einstieg, App-Shell und zentrale Stylesheets |
+| `development` | Expliziter IDE-HTTPS-Starter mit eigener Caddy-Prozessverwaltung; vom Anwendungs-JAR ausgeschlossen |
 | `config` | Spring-/Vaadin-Startkonfiguration, Bootstrap, Schemaanlage, Mail und Threadpools |
 | `views`, `views/admin` | Navigierbare Seiten und Administrationsbereiche |
 | `ui/base`, `ui/components` | Gemeinsame View-Basen und wiederverwendbare Komponenten/Dialoge |
@@ -95,9 +96,45 @@ Proxyadressen. Nach einem Wechsel der Proxy-IP die App neu starten.
 
 Für die IDE Caddy **v2.10.2** aus der offiziellen Distribution unter
 `data/https/tools/caddy.exe` bereitstellen. Dieser ignorierte lokale Werkzeugpfad
-bleibt bei Maven-Clean erhalten. Im Projektroot `https-server-starten.bat` per
-Doppelklick starten und das Fenster offen lassen. Strg+C beendet den eigenen Proxy.
-Die BAT-Datei startet nur Caddy; die Anwendung weiterhin separat in IntelliJ starten.
+bleibt bei Maven-Clean erhalten.
+
+### Gemeinsamer Start in IntelliJ
+
+Die im Repository gespeicherte `.run/Application HTTPS.run.xml` erscheint nach
+Projektaktualisierung in der Run-/Debug-Auswahl als **Application HTTPS**.
+Diese Konfiguration auswählen und **Run** oder **Debug** drücken; anschließend
+`https://localhost:8443/` öffnen. JDK 25 aus dem Modul `app` verwenden.
+Falls die Auswahl nach dem Anlegen noch fehlt, das Projekt bzw. Maven-Projekt neu
+laden. Bei Bedarf lässt sich eine normale Application-Konfiguration mit Hauptklasse
+`de.derpeterson.app.development.HttpsDevelopmentApplication`, Modul `app`, Arbeitsordner
+Projektroot und Programmargumenten `--spring.profiles.active=https --server.port=8080`
+auch manuell auswählen.
+
+Der Einstieg liegt in `src/main/java/de/derpeterson/app/development`, damit die IDE
+ihn ohne Testklassen startet und Spring keine Testkonfigurationen einliest.
+Dieses Entwicklungspaket wird beim Packen ausdrücklich aus dem Anwendungs-JAR
+ausgeschlossen; dessen Einstieg bleibt `Application`. Der IDE-Einstieg prüft
+Caddy-Version und freie Ports 8080/8081/8443, wartet auf
+Caddys eigene erfolgreiche Startbestätigung und startet danach Spring Boot mit
+Profil `https`. Eine separate JVM überwacht den selbst gestarteten Caddy anhand
+seines Prozesshandles und der Steuerleitung. Stoppen, Startfehler und harter
+Abbruch des Appprozesses räumen diesen eigenen Proxy ab. Stirbt Caddy unerwartet,
+wird auch die Entwicklungsanwendung beendet. Bestehende Prozesse werden weder
+übernommen noch beendet; insbesondere vor dem IDE-Start einen über die BAT-Datei
+gestarteten Caddy mit Strg+C stoppen. Die Konfiguration erlaubt nur eine Instanz.
+
+Java-Breakpoints und HotSwap bleiben nutzbar. Der automatische Spring-DevTools-
+Neustart ist in diesem Einstieg deaktiviert, damit er keinen zweiten Proxy
+startet. Bei Änderungen, die HotSwap nicht übernehmen kann, über IntelliJ neu starten.
+Ein anderer lokaler Caddy-Pfad lässt sich in den VM-Optionen mit
+`-Dhttps.dev.caddy=C:\Dev\Tools\Caddy\caddy.exe` setzen; Pfade mit Leerzeichen
+als ganze VM-Option in doppelte Anführungszeichen setzen.
+
+### Separater Proxy und Zertifikatseinrichtung
+
+Alternativ im Projektroot `https-server-starten.bat` per Doppelklick starten und
+das Fenster offen lassen. Strg+C beendet den eigenen Proxy. Die BAT-Datei startet
+nur Caddy; die Anwendung dann separat in IntelliJ starten.
 
 Nach dem ersten Proxystart einmalig `https-zertifikat-einrichten.bat` per Doppelklick
 ausführen und den Windows-Dialog bestätigen. Dadurch wird die eigene lokale CA
@@ -114,7 +151,8 @@ Alternativ in einem eigenen PowerShell-Terminal aus dem Projektroot starten:
 
 Der konkrete Binärpfad ist lokal wählbar. Das Skript prüft die Version und läuft
 im Vordergrund; Strg+C beendet den eigenen Proxy. Seine CA liegt geschützt im
-ignorierten `data/https/ide/`. Der Zugriff über `http://localhost:8081` leitet
+ignorierten `data/https/ide/`; automatisches Speichern der Konfiguration im
+allgemeinen Caddy-Benutzerverzeichnis ist deaktiviert. Der Zugriff über `http://localhost:8081` leitet
 GET/HEAD auf HTTPS um; andere HTTP-Methoden werden abgewiesen.
 
 Nach dem ersten Proxystart die **eigene** CA bewusst für den Windows-Benutzer
@@ -155,7 +193,8 @@ kein HSTS ausgeliefert. Es erfolgt keine LAN-/Firewallfreigabe; ein Laptopzugrif
 und spätere öffentliche Domains benötigen eine eigene Zugangsplanung.
 
 Technische Grundlagen: [Caddy Local HTTPS](https://caddyserver.com/docs/automatic-https#local-https),
-[Tomcat RemoteIpValve](https://tomcat.apache.org/tomcat-11.0-doc/config/valve.html#Remote_IP_Valve).
+[Tomcat RemoteIpValve](https://tomcat.apache.org/tomcat-11.0-doc/config/valve.html#Remote_IP_Valve),
+[IntelliJ Application-Konfiguration](https://www.jetbrains.com/help/idea/run-debug-configuration-java-application.html).
 
 ## SonarQube und Codex
 

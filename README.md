@@ -39,10 +39,12 @@ Im Projektverzeichnis:
 
 Der lokale HTTPS-Zugang ist `https://localhost:8443`; dafür den Caddy-Proxy und
 das Zertifikatsvertrauen gemäß [Entwicklungsanleitung](docs/entwicklung.md#lokales-https)
-einrichten. Im Projektroot startet `https-server-starten.bat` den Proxy per
-Doppelklick; `https-zertifikat-einrichten.bat` richtet nach dem ersten Proxystart
-einmalig das Windows-Zertifikatsvertrauen ein. Die Anwendung separat in IntelliJ
-mit `--spring.profiles.active=https` oder über Maven starten.
+einrichten. In IntelliJ startet die gespeicherte Konfiguration **Application HTTPS**
+Anwendung und Caddy gemeinsam über Run oder Debug und beendet den eigenen Proxy
+beim Stoppen. `https-zertifikat-einrichten.bat` richtet nach dem ersten Proxystart
+einmalig das Windows-Zertifikatsvertrauen ein. Alternativ startet
+`https-server-starten.bat` nur den Proxy; dazu die Anwendung separat mit Profil
+`https` in IntelliJ oder über Maven starten.
 Der interne HTTP-Port 8080 dient dem Proxy. Lokale
 Einstellungen werden über Spring Properties, Umgebungsvariablen oder die nicht
 versionierte `.env` gesetzt. Zugangsdaten gehören nicht ins Repository.

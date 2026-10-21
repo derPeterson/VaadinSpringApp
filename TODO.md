@@ -6,8 +6,9 @@ Die vereinbarte Reihenfolge ist:
 
 - [ ] [Lokales HTTPS](docs/planung/https.md): vertrauenswürdigen Zugang über einen
   Reverse Proxy einrichten und Anwendung sowie Testumgebungen darauf abstimmen;
-  Grundfunktion und BAT-Starter vorhanden. Komfortablen IntelliJ-Run-/Debug-Start
-  ergänzen; HTTPS-Browserabnahme und verbleibende manuelle Abnahmen stehen noch aus.
+  Grundfunktion, BAT-Starter und gespeicherter IntelliJ-Komfortstart vorhanden.
+  IntelliJ-Run/Debug gemeinsam prüfen; HTTPS-Browserabnahme und verbleibende
+  manuelle Abnahmen stehen noch aus.
 - [ ] Danach Designkritik mit Stitch auf einem eigenen Branch: eine Spielwiese mit
   vorhandenen Komponenten, Panels, Dialogen und Zuständen zum Ausprobieren aufbauen.
   Den verbindlichen [Theme-Standard](docs/theme.md) als Ausgangspunkt verwenden.

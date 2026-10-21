@@ -1,7 +1,8 @@
 # HTTPS für die lokale Anwendung
 
 Status: HTTPS-Grundfunktion und BAT-Starter umgesetzt; manueller Start vom Benutzer
-als funktionierend bestätigt. Komfortabler IDE-Start und vollständige Abnahme offen.
+als funktionierend bestätigt. Gespeicherter IDE-Komfortstart umgesetzt;
+gemeinsame IntelliJ-Prüfung und vollständige Abnahme offen.
 Branch: `feature/lokales-https`, Basis: `2ffcd4a5d7a1d13e73f94b273871afc6ba32f077` (lokales main).
 Die drei vorgeschalteten Zertifikatsprüfungen sind erfolgreich: normales und
 persistentes Playwright-Chromium mit echtem Prozessneustart und Secure-Cookie,
@@ -32,12 +33,11 @@ Bedienung und Grenzen: [Entwicklung](../entwicklung.md#lokales-https),
 
 ## Noch offen
 
-- [ ] Komfortablen Start aus IntelliJ einrichten: eine gespeicherte Run-/Debug-
-  Konfiguration startet die Anwendung mit Profil `https` und Caddy gemeinsam.
-  Java-Debugging bleibt nutzbar. Wiederholter Start, belegte Ports und Stoppen
-  werden verständlich behandelt; ausschließlich selbst gestartete Prozesse beenden.
-  Zertifikatsvertrauen bleibt eine getrennte bewusste einmalige Einrichtung.
-  Bedienung dokumentieren und gemeinsam in der tatsächlich verwendeten IDE prüfen.
+- [ ] Gespeicherten Komfortstart **Application HTTPS** gemeinsam in der tatsächlich
+  verwendeten IntelliJ-Installation prüfen: Run, Debug mit Breakpoint, Stop und
+  erneuter Start. Die Prozessverwaltung ist automatisiert isoliert geprüft;
+  daraus folgt noch kein beobachteter IDE-Lauf. Zertifikatsvertrauen bleibt eine
+  getrennte bewusste einmalige Einrichtung.
 - [ ] Vollständige HTTPS-Browserabnahme DE/EN nach gesonderter Freigabe am selben
   unveränderten Image: bestehende Login-, Mail-Link-, CSRF-, Rechte-, Sitzungs-,
   Remember-me-, Neustart-, Upload- und Push-Journeys wiederverwenden.

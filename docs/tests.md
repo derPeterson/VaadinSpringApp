@@ -88,6 +88,18 @@ Gezielte Regressionen verwenden `-Dtest=KlasseA,KlasseB`; in PowerShell das ganz
 Argument zitieren. Datenbanktests verwenden ausschließlich eigene isolierte H2-Datenbanken.
 Frisches Schema und Wiederanlauf desselben Schemas werden separat geprüft.
 
+`IdeHttpsProxyTest` prüft den IDE-Starter mit eigenen kurzlebigen Prozessen,
+einschließlich hartem Besitzerabbruch mit aktiviertem Java-Debugger. Der optionale
+echte Caddy- und Anwendungsstart wird mit `-Dhttps.test.caddy=<absoluter Pfad zur caddy.exe>`
+zugeschaltet: eigene temporäre CA, vollständige HTTPS-Zertifikatsprüfung und
+frische In-Memory-Datenbank ohne `.env`-Import. Der vollständige Starterfall
+benötigt freie IDE-Ports 8080/8081/8443 und verwendet ausschließlich eigene
+Prozesse; ein belegter Port führt zum Fehler, vorhandene Dienste bleiben erhalten.
+Der Anwendungsprozess startet ohne Testklassen und ohne Windows-Trustimport. Den gemeinsamen
+Run-/Debug-Ablauf in IntelliJ nimmt der Benutzer zusätzlich manuell ab.
+Für den vollständigen Starterfall zuvor den optimierten Vaadin-Frontendbuild
+erstellen; dieser Fall verwendet dessen Ressourcen und startet keinen Entwicklungs-Frontendbau.
+
 ## Sonar-Helfertests
 
 ```powershell
