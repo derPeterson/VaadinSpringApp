@@ -21,7 +21,7 @@ class MailpitInboxTest {
             assertDoesNotThrow(
                 () ->
                     MailpitInbox.assertLocalVerificationLink(
-                        "http://127.0.0.1:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN)));
+                        "https://127.0.0.1:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN)));
   }
 
   @Test
@@ -30,12 +30,12 @@ class MailpitInboxTest {
         () -> {
           for (String wrongLink :
               new String[] {
-                "http://127.0.0.1:18080" + path(VERIFICATION_ROUTE) + "/" + TOKEN,
-                "http://example.test:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN,
-                "https://127.0.0.1:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN,
-                "http://user@127.0.0.1:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN,
-                "http://127.0.0.1:18082" + path(ADMIN_ROUTE),
-                "http://127.0.0.1:18082"
+                "https://127.0.0.1:18080" + path(VERIFICATION_ROUTE) + "/" + TOKEN,
+                "https://example.test:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN,
+                "http://127.0.0.1:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN,
+                "https://user@127.0.0.1:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN,
+                "https://127.0.0.1:18082" + path(ADMIN_ROUTE),
+                "https://127.0.0.1:18082"
                     + path(VERIFICATION_ROUTE)
                     + "/"
                     + TOKEN
@@ -54,7 +54,7 @@ class MailpitInboxTest {
             assertDoesNotThrow(
                 () ->
                     MailpitInbox.assertLocalPasswordResetLink(
-                        "http://127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN)));
+                        "https://127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN)));
   }
 
   @Test
@@ -63,18 +63,18 @@ class MailpitInboxTest {
         () -> {
           for (String wrongLink :
               new String[] {
-                "http://127.0.0.1:18080" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN,
-                "http://example.test:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN,
-                "https://127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN,
-                "http://user@127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN,
-                "http://127.0.0.1:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN,
-                "http://127.0.0.1:18082" + path(ADMIN_ROUTE),
-                "http://127.0.0.1:18082"
+                "https://127.0.0.1:18080" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN,
+                "https://example.test:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN,
+                "http://127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN,
+                "https://user@127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN,
+                "https://127.0.0.1:18082" + path(VERIFICATION_ROUTE) + "/" + TOKEN,
+                "https://127.0.0.1:18082" + path(ADMIN_ROUTE),
+                "https://127.0.0.1:18082"
                     + path(RESET_PASSWORD_ROUTE)
                     + "/"
                     + TOKEN
                     + "?redirect=elsewhere",
-                "http://127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN + "#elsewhere"
+                "https://127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + TOKEN + "#elsewhere"
               }) {
             assertThrows(
                 AssertionError.class, () -> MailpitInbox.assertLocalPasswordResetLink(wrongLink));
@@ -113,19 +113,19 @@ class MailpitInboxTest {
     withRunnerOrigin(
         () -> {
           String token = "a".repeat(42) + "A";
-          String own = "http://127.0.0.1:18082" + path(EMAIL_CHANGE_ROUTE) + "/";
+          String own = "https://127.0.0.1:18082" + path(EMAIL_CHANGE_ROUTE) + "/";
           assertDoesNotThrow(() -> MailpitInbox.assertLocalEmailChangeLink(own + token));
           for (String wrong :
               new String[] {
-                "http://127.0.0.1:18080" + path(EMAIL_CHANGE_ROUTE) + "/" + token,
-                "https://127.0.0.1:18082" + path(EMAIL_CHANGE_ROUTE) + "/" + token,
-                "http://example.test:18082" + path(EMAIL_CHANGE_ROUTE) + "/" + token,
+                "https://127.0.0.1:18080" + path(EMAIL_CHANGE_ROUTE) + "/" + token,
+                "http://127.0.0.1:18082" + path(EMAIL_CHANGE_ROUTE) + "/" + token,
+                "https://example.test:18082" + path(EMAIL_CHANGE_ROUTE) + "/" + token,
                 own + TOKEN,
                 own + token + "A",
                 own + token.substring(1),
                 own + token + "?redirect=elsewhere",
                 own + token + "#fragment",
-                "http://127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + token
+                "https://127.0.0.1:18082" + path(RESET_PASSWORD_ROUTE) + "/" + token
               }) {
             assertThrows(
                 AssertionError.class, () -> MailpitInbox.assertLocalEmailChangeLink(wrong));
@@ -136,7 +136,7 @@ class MailpitInboxTest {
   private static void withRunnerOrigin(Runnable test) {
     String previous = System.getProperty("browser.tests.baseUrl");
     try {
-      System.setProperty("browser.tests.baseUrl", "http://127.0.0.1:18082");
+      System.setProperty("browser.tests.baseUrl", "https://127.0.0.1:18082");
       test.run();
     } finally {
       if (previous == null) {

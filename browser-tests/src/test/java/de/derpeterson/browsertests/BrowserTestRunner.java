@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.core.LauncherFactory;
@@ -39,6 +40,7 @@ public final class BrowserTestRunner {
   private final List<Class<?>> testClasses;
   private boolean environmentStarted;
   private volatile boolean shuttingDown;
+  private volatile Process activeCommand;
   private final int workers;
   private final boolean worker;
   private final String suite;
@@ -124,6 +126,7 @@ public final class BrowserTestRunner {
             () -> {
               shuttingDown = true;
               try {
+                BrowserHttps.stopBeforeTrustCleanup(activeCommand);
                 if (parallel != null) {
                   cleanupWorkers();
                 } else {
@@ -209,17 +212,20 @@ public final class BrowserTestRunner {
     try {
       int appPort = port("BROWSER_TEST_APP_PORT", 18081);
       int mailPort = port("BROWSER_TEST_MAILPIT_PORT", 18026);
-      if (appPort == mailPort) {
+      int httpPort = port("BROWSER_TEST_HTTP_PORT", 18082);
+      if (appPort == mailPort || appPort == httpPort || mailPort == httpPort) {
         throw new IllegalArgumentException("Test ports must differ.");
       }
       environment.put("BROWSER_TEST_APP_PORT", String.valueOf(appPort));
       environment.put("BROWSER_TEST_MAILPIT_PORT", String.valueOf(mailPort));
-      String appUrl = "http://127.0.0.1:" + appPort;
+      environment.put("BROWSER_TEST_HTTP_PORT", String.valueOf(httpPort));
+      String appUrl = "https://127.0.0.1:" + appPort;
       String mailUrl = "http://127.0.0.1:" + mailPort;
       metadata.put("appUrl", appUrl);
       metadata.put("mailpitUrl", mailUrl);
       System.setProperty("browser.tests.managed", "true");
       System.setProperty("browser.tests.baseUrl", appUrl);
+      System.setProperty("browser.tests.httpUrl", "http://127.0.0.1:" + httpPort);
       System.setProperty("browser.tests.mailpitUrl", mailUrl);
       System.setProperty("browser.tests.headed", String.valueOf(options.contains("--headed")));
       System.setProperty("allure.results.directory", run.resolve("allure-results").toString());
@@ -229,7 +235,19 @@ public final class BrowserTestRunner {
       command(
           withCompose(
               "up", "-d", "--wait", "--wait-timeout", "180", build ? "--build" : "--no-build"));
+      Path certificates = run.resolve("https");
+      Files.createDirectories(certificates);
+      for (String file : List.of("root.crt", "intermediate.crt")) {
+        command(
+            withCompose(
+                "cp",
+                "proxy:/data/caddy/pki/authorities/local/" + file,
+                certificates.resolve(file).toString()));
+      }
+      command(BrowserHttps.trustCommand(repo, certificates, "Add"));
+      BrowserHttps.awaitReady(appUrl, certificates.resolve("root.crt"));
       metadata.put("setup", "passed");
+      metadata.put("https", "certificate-chain-and-hostname-verified");
       appContainer = command(withCompose("ps", "-q", "app")).trim();
       metadata.put(
           "imageId",
@@ -536,6 +554,13 @@ public final class BrowserTestRunner {
     List<String> errors = new ArrayList<>();
     for (Worker child : parallel.workers()) {
       try {
+        if (BrowserHttps.ownsTrust(child.directory().resolve("https"))) {
+          command(BrowserHttps.trustCommand(repo, child.directory().resolve("https"), "Remove"));
+        }
+      } catch (Exception error) {
+        errors.add(child.project() + " trust cleanup: " + error);
+      }
+      try {
         // Auch nach einem Prozessabbruch nur das eigene, vorher festgelegte Projekt abbauen.
         ArrayList<String> down =
             new ArrayList<>(
@@ -592,8 +617,26 @@ public final class BrowserTestRunner {
     if (!environmentStarted) {
       return;
     }
-    command(withCompose("down", "--volumes", "--remove-orphans"));
-    environmentStarted = false;
+    Exception trustFailure = null;
+    try {
+      if (BrowserHttps.ownsTrust(run.resolve("https"))) {
+        command(BrowserHttps.trustCommand(repo, run.resolve("https"), "Remove"));
+      }
+    } catch (Exception error) {
+      trustFailure = error;
+    }
+    try {
+      command(withCompose("down", "--volumes", "--remove-orphans"));
+      environmentStarted = false;
+    } catch (Exception error) {
+      if (trustFailure != null) {
+        error.addSuppressed(trustFailure);
+      }
+      throw error;
+    }
+    if (trustFailure != null) {
+      throw trustFailure;
+    }
     metadata.put("cleanup", "passed");
     save();
   }
@@ -628,6 +671,7 @@ public final class BrowserTestRunner {
               Path.of(docker).getParent() + java.io.File.pathSeparator + System.getenv("PATH"));
     }
     Process child = builder.start();
+    activeCommand = child;
     Thread childShutdown = new Thread(child::destroy);
     boolean hookRegistered = false;
     if (!shuttingDown) {
@@ -640,8 +684,17 @@ public final class BrowserTestRunner {
     }
     int exit;
     try {
+      if (arguments.stream().anyMatch(argument -> argument.endsWith("trust.ps1"))
+          && !child.waitFor(120, TimeUnit.SECONDS)) {
+        child.destroyForcibly();
+        child.waitFor();
+        throw new IOException("Windows certificate confirmation timed out after 120 seconds");
+      }
       exit = child.waitFor();
     } finally {
+      if (activeCommand == child) {
+        activeCommand = null;
+      }
       if (hookRegistered) {
         try {
           Runtime.getRuntime().removeShutdownHook(childShutdown);
@@ -694,9 +747,14 @@ public final class BrowserTestRunner {
 
   private static int port(String key, int fallback) {
     int value = Integer.parseInt(System.getenv().getOrDefault(key, String.valueOf(fallback)));
-    if (value < 1024 || value > 65535 || value == 18080 || value == 18025) {
+    if (value < 1024
+        || value > 65535
+        || value == 18080
+        || value == 18025
+        || value == 18443
+        || value == 8443) {
       throw new IllegalArgumentException(
-          "Use free test ports from 1024 to 65535, excluding manual ports 18080/18025.");
+          "Use free test ports from 1024 to 65535, excluding manual ports 8443/18080/18025/18443.");
     }
     return value;
   }

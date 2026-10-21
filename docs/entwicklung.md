@@ -82,6 +82,81 @@ Browser-Neuladen erforderlich. `vite.config.ts` ist für eigene Vite-Anpassungen
 generierte Frontenddateien und `target/` nicht von Hand bearbeiten.
 Classpathressourcen als Streams laden, damit auch das gepackte JAR funktioniert.
 
+## Lokales HTTPS
+
+TLS endet an Caddy; die Anwendung verwendet intern HTTP. Das Profil `https`
+bindet den IDE-Appport an `127.0.0.1` und akzeptiert außer dem harmlosen internen
+`GET /internal/health` nur die konfigurierte äußere HTTPS-Origin.
+`APP_HTTPS_ORIGIN` ist standardmäßig `https://localhost:8443`,
+`APP_HTTPS_PROXY_HOST` die konkrete lokale Proxyadresse. Im Dockerprofil werden
+Bindadresse und Proxyhost ausdrücklich durch Compose gesetzt. Die nativen
+Tomcat-Forwarded-Header vertrauen ausschließlich den beim Appstart aufgelösten
+Proxyadressen. Nach einem Wechsel der Proxy-IP die App neu starten.
+
+Für die IDE Caddy **v2.10.2** aus der offiziellen Distribution unter
+`data/https/tools/caddy.exe` bereitstellen. Dieser ignorierte lokale Werkzeugpfad
+bleibt bei Maven-Clean erhalten. Im Projektroot `https-server-starten.bat` per
+Doppelklick starten und das Fenster offen lassen. Strg+C beendet den eigenen Proxy.
+Die BAT-Datei startet nur Caddy; die Anwendung weiterhin separat in IntelliJ starten.
+
+Nach dem ersten Proxystart einmalig `https-zertifikat-einrichten.bat` per Doppelklick
+ausführen und den Windows-Dialog bestätigen. Dadurch wird die eigene lokale CA
+für den Windows-Benutzer bis zum ausdrücklichen Entfernen als vertrauenswürdig
+eingerichtet. Beide Starter wechseln selbst ins Projektverzeichnis und setzen
+`RemoteSigned` nur für den gestarteten PowerShell-Prozess, ohne eine dauerhafte
+Ausführungsrichtlinie zu ändern. Fehler bleiben im Fenster sichtbar.
+
+Alternativ in einem eigenen PowerShell-Terminal aus dem Projektroot starten:
+
+```powershell
+.\scripts\https\ide.ps1 -CaddyPath C:\Tools\caddy.exe
+```
+
+Der konkrete Binärpfad ist lokal wählbar. Das Skript prüft die Version und läuft
+im Vordergrund; Strg+C beendet den eigenen Proxy. Seine CA liegt geschützt im
+ignorierten `data/https/ide/`. Der Zugriff über `http://localhost:8081` leitet
+GET/HEAD auf HTTPS um; andere HTTP-Methoden werden abgewiesen.
+
+Nach dem ersten Proxystart die **eigene** CA bewusst für den Windows-Benutzer
+freigeben; dieser Schritt verändert dessen Zertifikatsspeicher und bleibt bis zum
+ausdrücklichen Entfernen wirksam:
+
+```powershell
+.\scripts\https\trust.ps1 -Action Add -Certificate .\data\https\ide\pki\authorities\local\root.crt -Intermediate .\data\https\ide\pki\authorities\local\intermediate.crt
+# Rückbau vor dem Löschen der CA-Dateien:
+.\scripts\https\trust.ps1 -Action Remove -Certificate .\data\https\ide\pki\authorities\local\root.crt -Intermediate .\data\https\ide\pki\authorities\local\intermediate.crt
+```
+
+`Add` gehört zur Einrichtung, `Remove` ausschließlich zum späteren Rückbau.
+Der Marker `root.crt.owned` bindet den Rückbau an die tatsächlich aufgenommenen
+Fingerabdrücke. Das Skript übernimmt keine bereits vorhandenen Trust-Einträge.
+Nur öffentliche CA-Zertifikate an Clients weitergeben; CA-Schlüssel verbleiben
+lokal. Ohne bestätigtes Vertrauen sind Zertifikatsfehler erwartbar; nicht umgehen.
+
+Beim direkten IntelliJ-Start der Klasse `Application` im Feld **Program arguments**
+`--spring.profiles.active=https` eintragen. Alternativ gehört
+`-Dspring.profiles.active=https` in **VM options**; bei einer Spring-Boot-
+Run-Konfiguration kann das Feld **Active profiles** auf `https` gesetzt werden.
+`-Dspring-boot.run.profiles=https` gehört ausschließlich zum Maven-Ziel
+`spring-boot:run` und aktiviert beim direkten Klassenstart kein Profil.
+Danach die Anwendung vollständig neu starten. Direkte Aufrufe von
+`http://localhost:8080/` bzw. `/login` werden im HTTPS-Profil mit 403 abgewiesen;
+der harmlose interne Healthcheck bleibt die Ausnahme. Der äußere Zugang über den
+separat gestarteten Caddy-Proxy ist `https://localhost:8443/`.
+Die Mailbasis wird als Default aus der HTTPS-Origin gesetzt. Bereits gespeicherte
+Adminwerte behalten Vorrang; einen dort noch gespeicherten HTTP-Wert bewusst in
+der Oberfläche ändern. Kein Backfill und keine Änderung vorhandener Daten beim Start.
+Für Nachweise ausschließlich frische isolierte Daten verwenden.
+
+JSESSIONID und Remember-me werden bei HTTPS als Secure und HttpOnly ausgegeben,
+beide verwenden SameSite=Lax. Caddy überschreibt fremde Forwarded-Header und prüft
+den äußeren Host einschließlich Port. Für die wechselnden lokalen Zugänge wird
+kein HSTS ausgeliefert. Es erfolgt keine LAN-/Firewallfreigabe; ein Laptopzugriff
+und spätere öffentliche Domains benötigen eine eigene Zugangsplanung.
+
+Technische Grundlagen: [Caddy Local HTTPS](https://caddyserver.com/docs/automatic-https#local-https),
+[Tomcat RemoteIpValve](https://tomcat.apache.org/tomcat-11.0-doc/config/valve.html#Remote_IP_Valve).
+
 ## SonarQube und Codex
 
 Die lokale Anbindung liegt unter `scripts/sonar/`. Sie benötigt die virtuelle

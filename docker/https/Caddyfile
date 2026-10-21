@@ -1,0 +1,41 @@
+{
+	admin off
+	skip_install_trust
+	auto_https disable_redirects
+	default_sni {$APP_HTTPS_HOST}
+}
+
+https://{$APP_HTTPS_HOST}:443 {
+	tls internal
+	@wrongHost expression `{http.request.hostport} != "{$APP_HTTPS_HOST}:{$APP_HTTPS_PORT}"`
+	respond @wrongHost 421
+	header -Strict-Transport-Security
+	reverse_proxy app:8080 {
+		header_up -Forwarded
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto https
+		header_up X-Forwarded-Host {$APP_HTTPS_HOST}
+		header_up X-Forwarded-Port {$APP_HTTPS_PORT}
+		header_up Host {$APP_HTTPS_HOST}:{$APP_HTTPS_PORT}
+	}
+}
+
+http://{$APP_HTTPS_HOST}:80 {
+	@unsafe not method GET HEAD
+	route {
+		respond @unsafe 403
+		redir https://{$APP_HTTPS_HOST}:{$APP_HTTPS_PORT}{uri} 308
+	}
+}
+
+https://:443 {
+	respond 421
+}
+
+http://:80 {
+	respond 421
+}
+
+:8081 {
+	respond /health "OK"
+}

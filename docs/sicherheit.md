@@ -78,6 +78,14 @@ Spring-CSRF schützt zustandsändernde HTTP-Aktionen einschließlich Login/Logou
 Vaadin Flow hat zusätzlich seinen Transportvertrag. Ausnahmen sind auf tatsächlich
 erkannte Transporte begrenzt, keine pauschale Freigabe von `/VAADIN/**` oder allen POSTs.
 JSESSIONID ist HttpOnly und SameSite=Lax; Secure richtet sich nach HTTPS.
+Remember-me setzt ebenfalls SameSite=Lax und bei HTTPS Secure/HttpOnly.
+Im Profil `https` akzeptiert die Anwendung nur die festgelegte äußere HTTPS-Origin;
+der interne harmlose Livenessabruf ist die einzige HTTP-Ausnahme. Native
+Proxy-Header gelten ausschließlich von den konkret konfigurierten Proxyadressen.
+Caddy ersetzt eingehende Forwarded-Header, begrenzt Host/Port und veröffentlicht
+in Docker ausschließlich seine eigenen Zugänge. Lokale Prozesse auf derselben
+vertrauten IDE-Loopbackadresse sind damit nicht gegeneinander isoliert.
+Zertifikatsvertrauen und Rückbau: [Lokales HTTPS](entwicklung.md#lokales-https).
 
 Die H2-Konsole ist standardmäßig abgeschaltet. Bei ausdrücklicher lokaler Freigabe
 ist sie auf Loopbackhosts und ihren eigenen Ursprungsschutz begrenzt. Sie ist kein

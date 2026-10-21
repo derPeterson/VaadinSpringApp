@@ -1,0 +1,38 @@
+{
+	admin off
+	skip_install_trust
+	auto_https disable_redirects
+	default_bind 127.0.0.1
+	storage file_system {$APP_HTTPS_CA_DIR}
+}
+
+https://localhost:8443 {
+	tls internal
+	@wrongHost expression `{http.request.hostport} != "localhost:8443"`
+	respond @wrongHost 421
+	header -Strict-Transport-Security
+	reverse_proxy 127.0.0.1:8080 {
+		header_up -Forwarded
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto https
+		header_up X-Forwarded-Host localhost
+		header_up X-Forwarded-Port 8443
+		header_up Host localhost:8443
+	}
+}
+
+http://localhost:8081 {
+	@unsafe not method GET HEAD
+	route {
+		respond @unsafe 403
+		redir https://localhost:8443{uri} 308
+	}
+}
+
+https://:8443 {
+	respond 421
+}
+
+http://:8081 {
+	respond 421
+}

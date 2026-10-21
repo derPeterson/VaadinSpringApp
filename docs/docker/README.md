@@ -18,12 +18,31 @@ Im Projektverzeichnis:
 | Nur App neu starten | `docker compose restart app` |
 | Container entfernen, Testdaten behalten | `docker compose down` |
 
-Anwendung: `http://localhost:18080/home`; Mailpit: `http://localhost:18025`.
-Compose bindet beide Oberflächen nur an Loopback. SMTP ist intern `mailpit:1025`.
+Anwendung: `https://127.0.0.1:18443/home`; Mailpit: `http://localhost:18025`.
+Caddy veröffentlicht TLS auf 18443; GET/HEAD auf HTTP-Port 18080 werden dorthin
+umgeleitet, andere Methoden erhalten 403. Der Appport wird nicht veröffentlicht.
+Compose bindet die äußeren Zugänge nur an Loopback. SMTP ist intern `mailpit:1025`.
 Die Compose-Datei definiert die lokalen Bootstrap-Testkonten; sie überschreibt
 beim Wiederanlauf keine bestehenden Konten. Keine echten SMTP-Ziele erforderlich.
 
 ## Konfiguration
+
+Vor dem ersten Browserzugriff das eigene CA-Vertrauen einrichten:
+
+```powershell
+New-Item -ItemType Directory -Force .\data\https\docker | Out-Null
+docker compose cp proxy:/data/caddy/pki/authorities/local/root.crt .\data\https\docker\root.crt
+docker compose cp proxy:/data/caddy/pki/authorities/local/intermediate.crt .\data\https\docker\intermediate.crt
+.\scripts\https\trust.ps1 -Action Add -Certificate .\data\https\docker\root.crt -Intermediate .\data\https\docker\intermediate.crt
+```
+
+Der bewusst bestätigte Windows-Trust bleibt für diese lokale Umgebung erhalten.
+Zum Rückbau dieselben Zertifikatsdateien mit `-Action Remove` verwenden, **bevor**
+die Dateien oder Proxy-Volumes gelöscht werden. CA-Schlüssel bleiben ausschließlich
+im eigenen `proxy-data`-Volume; sie gehören nicht ins Repository oder ins Appimage.
+Normales `down` erhält auch die Proxy-CA. `down --volumes` entfernt sie; vor dem
+nächsten Start altes Trustmaterial entfernen und danach die neue CA einrichten.
+Hintergrund und IDE-Bedienung: [Lokales HTTPS](../entwicklung.md#lokales-https).
 
 `APP_CFG_*` liefert Startvorgaben; gespeicherte Adminwerte haben Vorrang.
 SMTP, Remember-me und Workerzahl benötigen nach Änderung einen Appneustart.
@@ -48,7 +67,7 @@ bei leerem Datenbestand neu angelegt und anschließend durch JPA validiert.
 
 Compose kann die lokale Konsole über `APP_SECURITY_EXPOSE_H2_CONSOLE=true` freigeben;
 Standard der Anwendung ist aus. Erlaubt sind die vorgesehenen Loopbackhosts und
-der geschützte H2-Ursprung. Aufruf: `http://localhost:18080/h2/`.
+der geschützte H2-Ursprung. Aufruf: `https://127.0.0.1:18443/h2/`.
 
 Treiber `org.h2.Driver`, Benutzer `sa`, Passwort leer. JDBC URL:
 

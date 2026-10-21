@@ -158,6 +158,7 @@ public class SecurityConfig {
     DeviceRememberMeServices tempRememberMeServices =
         new DeviceRememberMeServices(secretKey, userDetailsService, tokenRepository, admissions);
     tempRememberMeServices.setTokenValiditySeconds(duration);
+    tempRememberMeServices.setCookieCustomizer(cookie -> cookie.setAttribute("SameSite", "Lax"));
     return tempRememberMeServices;
   }
 

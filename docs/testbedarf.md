@@ -6,6 +6,15 @@ Erledigte Einträge werden entfernt; die Datei bleibt als gemeinsame Anlaufstell
 
 ## Browser-Tests
 
+### HTTPS (wartend auf gesonderte Browserfreigabe)
+
+| Funktion | Szenario und erwartetes Verhalten | Zustand |
+| --- | --- | --- |
+| HTTPS-Einstieg und Vaadin-Transporte | DE/EN am selben Image mit eigener Workerumgebung: vertrauenswürdiges Zertifikat ohne TLS-Ausnahmen, HTTP-Navigation auf HTTPS, keine unsicheren Fachaktionen oder gemischten Inhalte; Login/Logout, UIDL, Upload und Push funktionieren. INFRA-04 für HTTPS sowie GET-/POST-Grenze ist ergänzt und kompiliert; vorhandene Journeys wiederverwenden. | Wartend: Browserlauf nicht freigegeben; noch kein DE-/EN-Nachweis. |
+| HTTPS-Mail-Links und dauerhafte Anmeldung | Vorhandene Verifikations-, Reset-, E-Mail-Änderungs- und Neustartfälle über HTTPS prüfen: exakte äußere Origin, Secure/HttpOnly/SameSite-Cookies, Remember-me, Sitzungswiderruf und Browser-/Serverneustarts einschließlich Zertifikatsvertrauen im persistenten Profil bleiben korrekt. | Wartend: Browserlauf nicht freigegeben; noch kein DE-/EN-Nachweis. |
+
+### Bisheriger Prüfbedarf
+
 Die folgenden Prüfanleitungen benennen noch abzugleichenden Testbedarf. Zuerst die
 vorhandenen JUnit- und Browsernachweise prüfen und wiederverwenden; sie sind keine
 Liste bereits festgestellter Fehler. Nur fehlende Szenarien ergänzen, keine
@@ -29,6 +38,9 @@ Abnahmen bleiben im manuellen Katalog.
 
 ## JUnit-Tests
 
-Aktuell sind hier keine konkreten offenen JUnit-Testaufgaben erfasst.
+| Funktion / Testart | Szenario und erwartetes Verhalten | Zustand |
+| --- | --- | --- |
+| HTTPS-Runner / Helferregressionen | Fehlende Importrechte, abgebrochene oder abgelehnte Windows-Bestätigung und der 120-Sekunden-Timeout müssen einen Aufbaufehler ergeben; danach darf kein eigener Trust-Eintrag verbleiben. Den Elternabbau nach hartem Workerabbruch und die drei reservierten Ports gezielt absichern. Vorhandene Runner-/Mail-Link-Prüfungen wiederverwenden; erfolgreicher Trust-/Rückbau ist isoliert praktisch geprüft. | Offen: automatisierte Fehler- und Abbruchfälle ergänzen und erfolgreich prüfen. |
+
 Auch größere oder wegen einer Benutzerentscheidung wartende Aufgaben hier aufnehmen:
 betroffene Funktion, Szenario, Erwartung und Zustand mit Begründung nennen.

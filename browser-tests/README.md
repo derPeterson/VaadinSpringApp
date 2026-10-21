@@ -56,7 +56,7 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 
 | Suite | Inhalt | Fälle |
 | --- | --- | ---: |
-| `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit | 3 |
+| `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit und HTTPS-/HTTP-Grenze | 4 |
 | `authentication` | Admin-/Benutzerlogin, Fehler, Gastzugriff und Logout | 7 |
 | `login-attempts` | Drei Sperr-/Resetfälle plus sieben Anmelde- und vier Remember-me-Regressionsfälle | 14 |
 | `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung einschließlich Serverneustart und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 37 |
@@ -89,7 +89,7 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
-| `all` | Alle 28 Testklassen einschließlich der Fast-Fälle | 155 |
+| `all` | Alle 28 Testklassen einschließlich der Fast-Fälle | 156 |
 
 IDs, Schritte und erwartetes Ergebnis stehen pro Fall in `@DisplayName` und
 `@Description`; diese Angaben übernimmt der Bericht. AVATAR-01 enthält zwei
@@ -137,9 +137,26 @@ Die vollständige Runde läuft üblicherweise zuerst auf DE, anschließend EN mi
 ## Isolation
 
 Der Runner verwendet `compose.browser-tests.yaml` mit eindeutigem Projektnamen
-und eigenen wegwerfbaren Volumes. Standardports sind 18081 für die Anwendung und
-18026 für Mailpit; Worker reservieren eigene freie Ports. Die manuelle Umgebung
-18080/18025 bleibt unberührt. H2-Webkonsole und externe SMTP-Zustellung sind aus.
+und eigenen wegwerfbaren Volumes. Standardports sind 18081 für den HTTPS-Proxy,
+18082 für HTTP-Weiterleitung und 18026 für Mailpit; Worker reservieren drei eigene
+freie Ports. Die manuellen Zugänge 8443/18443/18080/18025 bleiben unberührt.
+H2-Webkonsole und externe SMTP-Zustellung sind aus.
+
+Der lokale HTTPS-Runner benötigt derzeit Windows. Jeder Worker besitzt einen eigenen
+Caddy samt CA und Datenvolumes. Vor dem Browserstart kopiert er nur die öffentlichen
+CA-Zertifikate, fragt das temporäre Benutzervertrauen über `scripts/https/trust.ps1`
+ab und prüft die äußere HTTPS-Origin mit vollständiger Ketten-/Hostnamenprüfung.
+Windows kann je Worker einen Bestätigungsdialog anzeigen. Nach 120 Sekunden ohne
+Abschluss scheitert der Aufbau; der Runner bereinigt seine eigenen Trust-Einträge.
+Es gibt keine Option zum Ignorieren von TLS-Fehlern. Das Vertrauen gilt auch für
+die eigenen persistenten Browserprofile und wird nach dem Lauf wieder entfernt.
+
+Beim Abbruch übernimmt nötigenfalls der Elternrunner den Trust- und Compose-Abbau.
+Nach einem harten Rechnerabbruch die eigene Umgebung anhand von `metadata.json`
+prüfen und den Import mit `-Action Remove`, `-Certificate <Run>/https/root.crt` und
+`-Intermediate <Run>/https/intermediate.crt` zurückbauen, bevor Zertifikatsdateien
+oder Volumes entfernt werden. Der Marker `root.crt.owned` belegt die eigene Aufnahme;
+keine fremden Zertifikate oder systemweiten Stores bereinigen.
 
 Die [Parallelisierungsregeln](#parallelisierung) gelten auch bei Neustartfällen:
 Die verwendete Image-Referenz muss bis zum Abbau verfügbar bleiben. Ein noch

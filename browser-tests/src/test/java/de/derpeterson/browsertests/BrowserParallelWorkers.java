@@ -44,7 +44,7 @@ final class BrowserParallelWorkers {
     // bei einer externen Kollision scheitert Compose, bevor ein Browser startet.
     List<ServerSocket> sockets = new ArrayList<>();
     try {
-      for (int i = 0; i < groups.size() * 2; i++) {
+      for (int i = 0; i < groups.size() * 3; i++) {
         ServerSocket socket = new ServerSocket();
         socket.bind(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0));
         sockets.add(socket);
@@ -91,13 +91,17 @@ final class BrowserParallelWorkers {
         builder.environment().putAll(environment);
         builder
             .environment()
-            .put("BROWSER_TEST_APP_PORT", String.valueOf(sockets.get(i * 2).getLocalPort()));
+            .put("BROWSER_TEST_APP_PORT", String.valueOf(sockets.get(i * 3).getLocalPort()));
         builder
             .environment()
             .put(
-                "BROWSER_TEST_MAILPIT_PORT", String.valueOf(sockets.get(i * 2 + 1).getLocalPort()));
-        sockets.get(i * 2).close();
-        sockets.get(i * 2 + 1).close();
+                "BROWSER_TEST_MAILPIT_PORT", String.valueOf(sockets.get(i * 3 + 1).getLocalPort()));
+        builder
+            .environment()
+            .put("BROWSER_TEST_HTTP_PORT", String.valueOf(sockets.get(i * 3 + 2).getLocalPort()));
+        sockets.get(i * 3).close();
+        sockets.get(i * 3 + 1).close();
+        sockets.get(i * 3 + 2).close();
         Process process = builder.start();
         workers.add(new Worker(directory, workerProject, groups.get(i), process, Instant.now()));
         System.out.println(

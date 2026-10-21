@@ -5,6 +5,7 @@ import static de.derpeterson.app.config.AppConstants.USER_ICON_ALT;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_PAGE_TITLE;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -13,6 +14,7 @@ import com.microsoft.playwright.APIResponse;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.RequestOptions;
 import de.derpeterson.browsertests.BrowserFixture;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
@@ -24,6 +26,40 @@ import org.junit.jupiter.api.Test;
 @Tag("browser")
 @Feature("Infrastruktur")
 public class InfrastructureBrowserTest extends BrowserFixture {
+  @Test
+  @DisplayName("INFRA-04: HTTPS ist vertrauenswürdig und HTTP führt keine Fachaktionen aus")
+  @Story("HTTPS-Zugang")
+  @Description(
+      """
+      1. Die Startseite ohne Zertifikatsausnahme über HTTPS laden.
+      2. GET am eigenen HTTP-Einstieg ohne automatische Weiterleitung abrufen.
+      3. POST /login am HTTP-Einstieg ohne automatische Weiterleitung absenden.
+
+      **Erwartet:** Die Browserseite verwendet HTTPS. GET antwortet mit 308 und
+      der exakten HTTPS-Origin, POST mit 403 ohne Weiterleitung oder Anmeldung.
+      """)
+  void httpsIsTrustedAndUnsafeHttpIsRejectedBeforeRedirect() {
+    String origin = System.getProperty("browser.tests.baseUrl");
+    assertTrue(page.url().startsWith(origin + "/"));
+    assertTrue(origin.startsWith("https://"));
+    String plain = System.getProperty("browser.tests.httpUrl");
+    APIResponse navigation =
+        context.request().get(plain + "/login", RequestOptions.create().setMaxRedirects(0));
+    try {
+      assertEquals(308, navigation.status());
+      assertEquals(origin + "/login", navigation.headers().get("location"));
+    } finally {
+      navigation.dispose();
+    }
+    APIResponse login =
+        context.request().post(plain + "/login", RequestOptions.create().setMaxRedirects(0));
+    try {
+      assertEquals(403, login.status());
+    } finally {
+      login.dispose();
+    }
+  }
+
   @Tag("fast")
   @Test
   @DisplayName("INFRA-01: Startseite, Logo, Avatare und Sprachflaggen werden geladen")

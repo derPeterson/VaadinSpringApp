@@ -34,10 +34,16 @@ Im Projektverzeichnis:
 ```powershell
 .\mvnw.cmd --version
 .\mvnw.cmd -f shared/pom.xml clean install
-.\mvnw.cmd spring-boot:run
+.\mvnw.cmd '-Dspring-boot.run.profiles=https' spring-boot:run
 ```
 
-Die Anwendung ist standardmäßig unter `http://localhost:8080` erreichbar. Lokale
+Der lokale HTTPS-Zugang ist `https://localhost:8443`; dafür den Caddy-Proxy und
+das Zertifikatsvertrauen gemäß [Entwicklungsanleitung](docs/entwicklung.md#lokales-https)
+einrichten. Im Projektroot startet `https-server-starten.bat` den Proxy per
+Doppelklick; `https-zertifikat-einrichten.bat` richtet nach dem ersten Proxystart
+einmalig das Windows-Zertifikatsvertrauen ein. Die Anwendung separat in IntelliJ
+mit `--spring.profiles.active=https` oder über Maven starten.
+Der interne HTTP-Port 8080 dient dem Proxy. Lokale
 Einstellungen werden über Spring Properties, Umgebungsvariablen oder die nicht
 versionierte `.env` gesetzt. Zugangsdaten gehören nicht ins Repository.
 

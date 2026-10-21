@@ -248,6 +248,24 @@ class CsrfSecurityChainTest {
     assertEquals(403, execute(request).response().getStatus());
   }
 
+  @Test
+  void httpsPasswordLoginIssuesSecureHttpOnlySameSiteRememberCookie() throws Exception {
+    String email = user();
+    Exchange bootstrap = bootstrap(null);
+    MockHttpServletRequest request = request("POST", "/login", session(bootstrap));
+    request.setSecure(true);
+    request.addHeader("X-CSRF-TOKEN", bootstrap.response().getHeader("X-CSRF-TOKEN"));
+    request.setParameter("username", email);
+    request.setParameter("password", "SecretPassword!");
+    request.setParameter("remember-me", "true");
+    Exchange authenticated = execute(request);
+    assertEquals(302, authenticated.response().getStatus());
+    Cookie cookie = rememberCookie(authenticated);
+    assertTrue(cookie.getSecure());
+    assertTrue(cookie.isHttpOnly());
+    assertEquals("Lax", cookie.getAttribute("SameSite"));
+  }
+
   private Exchange login(String email, Exchange bootstrap, boolean body, boolean remember)
       throws Exception {
     MockHttpServletRequest request = request("POST", "/login", session(bootstrap));
