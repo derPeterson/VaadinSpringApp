@@ -1,0 +1,3 @@
+interface:
+  display_name: "Änderungen prüfen"
+  short_description: "Zwischenstand prüfen und Commit-Message vorbereiten"

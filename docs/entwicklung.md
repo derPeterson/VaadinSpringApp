@@ -88,6 +88,27 @@ und den erledigten Plan bereinigen; offene Folge-/Testaufgaben erhalten. Der Bra
 viele Zwischencommits enthalten. Tatsächliche Commits, Merge nach main und Push benötigen
 den entsprechenden Auftrag. Danach den tatsächlichen Stand und Prüfgrenzen berichten.
 
+## Änderungen prüfen und Commit-Message
+
+Der Projekt-Skill [aenderungen-pruefen](../.agents/skills/aenderungen-pruefen/SKILL.md)
+gehört auch zu „Gib mir bitte eine Commit-Message“. Er prüft den tatsächlichen
+uncommittierten Zwischenstand auf Fehler, Sicherheit, Menschenlesbarkeit, passende
+Tests und aktuelle Dokumentation. Namen, Methodenzuständigkeit und verständliche
+Kontrollflüsse beachten; Kommentare nur für sinnvolle Verträge/Besonderheiten ergänzen.
+
+Kleine zusammenhängende Probleme darf der Agent direkt korrigieren. Größere Umbauten
+oder neue fachliche Entscheidungen werden abgestimmt. Erfolgreiche unveränderte
+Prüfungen berücksichtigen; nach Korrekturen nötige Stil-/Regressionstests ausführen.
+Keine automatische vollständige QA, Browserrunde oder Sonar-Bereinigung. Offenen
+Testbedarf zentral erhalten. Reiner Text-/Nur-Lese-Auftrag und explizite Dateiauswahl
+haben Vorrang; bei teilweise gestagten Dateien den geprüften Stand klar unterscheiden.
+
+Das Ergebnis steht ausschließlich im Chat: kurze Zusammenfassung, tatsächliche
+Prüfungen und offene Punkte, anschließend die kopierbare deutsche Commit-Message.
+Keine neue Berichtsdatei und keine Git-Aktion durch diesen Auftrag. Nach Rückmeldungen
+die Message auf den aktuellen Stand bringen. Ein Zwischencommit beendet nicht
+automatisch das gesamte Feature.
+
 ## Sonar bereinigen
 
 Der Projekt-Skill [sonar-bereinigen](../.agents/skills/sonar-bereinigen/SKILL.md)

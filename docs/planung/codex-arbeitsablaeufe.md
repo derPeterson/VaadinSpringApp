@@ -1,9 +1,9 @@
 # Codex-Arbeitsabläufe und SonarQube
 
-Status: teilweise umgesetzt. „Große Testrunde“, „Sonar bereinigen“ und „Umsetzung starten“ sind angelegt
+Status: teilweise umgesetzt. „Große Testrunde“, „Sonar bereinigen“, „Umsetzung starten“ und „Änderungen prüfen“ sind angelegt
 und strukturell/trocken geprüft. Keine echte Gesamtrunde oder Sonar-Ausführung wurde
 dabei gestartet. Bedienung: `docs/tests.md` und `docs/entwicklung.md`.
-Offen sind zwei weitere Skills, die SonarQube-Anbindung und die praktische Abnahme
+Offen sind „Branch lokal mergen“, die SonarQube-Anbindung und die praktische Abnahme
 im verwendeten Client. Der Plan enthält nur verbleibende Arbeiten und wird nach Abschluss gelöscht.
 
 ## Vereinbarter Rahmen
@@ -43,11 +43,10 @@ Werkzeugparameter innerhalb dieses Rahmens werden bei der Umsetzung festgelegt.
 - [ ] Im tatsächlich verwendeten Codex-Client prüfen, dass die Skills gefunden werden
   und auf dem Desktop sowie über den vorhandenen Fernzugriff aufrufbar sind.
 
-## 3. Zwei weitere wiederholbare Aufträge einrichten
+## 3. Letzten wiederholbaren Auftrag einrichten
 
 | Auftrag | Verbindlicher Inhalt |
 | --- | --- |
-| Änderungen prüfen | Diff und Funktion bewerten; passende Nachweise prüfen; offene Punkte nennen; deutsche Commit-Message für die tatsächlich fertigen Änderungen vorschlagen |
 | Branch lokal mergen | Ausdrücklich genannten Quell-/Zielbranch, Arbeitsstand, Tests und Konflikte prüfen; lokalen Merge durchführen; Ergebnis berichten |
 
 - [ ] Bei Sonar-Paketen und Umsetzungen notwendigen, noch nicht ausgeführten
