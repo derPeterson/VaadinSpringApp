@@ -14,6 +14,34 @@
 Aktuelle Ergebnisse stehen nur im [Prüfstand](status.md), nicht in einer Kette alter
 Laufberichte. Vorhandene Testfälle sind kein Nachweis eines erfolgreich ausgeführten Laufs.
 
+## Codex: Große Testrunde
+
+Der Projekt-Skill [grosse-testrunde](../.agents/skills/grosse-testrunde/SKILL.md)
+fasst den vereinbarten Gesamtauftrag zusammen. Im tatsächlichen Projektverzeichnis
+„Starte die große Testrunde“ schreiben oder den Skill mit `$grosse-testrunde` aufrufen.
+Der ausdrückliche Gesamtauftrag umfasst Browser DE/EN; keine zweite Freigabe nötig.
+Einzelne Änderungen oder das Prüfen des Skills starten keine Gesamtrunde.
+
+Der Ablauf bewertet Änderungen seit der letzten vollständigen QA, ergänzt sinnvolle
+Regressionen, behebt Fehler innerhalb bestehender Verträge und führt die vorhandenen
+Prüfungen aus. Neue Fachfunktionen oder grundlegende Vertragsänderungen werden abgestimmt.
+Sonar wird mitgeprüft; kleine fachlich klare Fehler und Blocker werden gezielt behoben.
+Größere Umbauten und umfangreiche Finding-Pakete gehören zum separaten Auftrag
+„Sonar bereinigen“, dessen Ziel möglichst null berechtigte offene Issues ist.
+Eine bestandene Testrunde setzt keine Null-Issue-Zahl voraus: Testergebnisse, offene
+Sonar-Findings und Quality Gate werden getrennt ausgewiesen. Keine Umbau-/Scanschleife
+bis null während der QA. Sonar-Ergebnisse werden nur mit passendem Analysestand bestätigt;
+die direkte Anbindung ist noch offen. Kein echter Mailversand oder automatischer Git-Abschluss.
+
+`docs/status.md` bleibt der einzige knappe aktuelle Ergebnisbericht. Der lokale
+Zwischenstand unter `.codex/qa/state.json` wird erst beim tatsächlichen Auftrag
+angelegt und ist ignoriert. Er hält erfolgreiche Baseline und laufende Runde getrennt;
+bei Unterbrechung bleiben erfolgreiche passende Belege erhalten. Der
+[Zustandsvertrag](../.agents/skills/grosse-testrunde/references/zustand.md) definiert
+Vergleich, Wiederaufnahme und Zählung. Kontingent wird gelegentlich geprüft; bei
+Erschöpfung wird gesichert und nach Reset über einen eigenen Folgeauftrag fortgesetzt.
+Ein ausdrückliches Stopp hebt diese Fortsetzung auf.
+
 ## Java und Frontend
 
 Nach Shared-Änderungen zuerst `shared/pom.xml clean install` ausführen. Java25 und

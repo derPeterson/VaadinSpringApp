@@ -43,3 +43,6 @@ dev-shell.bat
 /browser-tests/target/
 /browser-tests/runs/
 sonar-findings.json
+
+# Lokaler aktueller QA-Zustand, kein Berichtarchiv
+/.codex/qa/

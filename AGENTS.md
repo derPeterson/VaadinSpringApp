@@ -161,6 +161,10 @@
   Gezielte JUnit-/Helpertests sowie Formatierungs- und Ressourcenpruefungen
   bleiben davon unberuehrt. Eine fruehere Testfreigabe gilt nicht pauschal
   fuer spaetere Aufgaben.
+  Der ausdrückliche Auftrag „große Testrunde“ umfasst die vollständigen isolierten
+  Browserrunden DE/EN gemäß `.agents/skills/grosse-testrunde/SKILL.md`; hierfür
+  nicht erneut fragen. Automatische Skillwahl, Skill-Erstellung und Trockenprüfungen
+  allein erteilen keine Browserfreigabe.
 - For behavior changes, add focused tests for the expected behavior.
 - Java tests belong under `src/test/java/`; follow existing JUnit patterns.
   `ImageHelperTest` is an example without application startup or a database.

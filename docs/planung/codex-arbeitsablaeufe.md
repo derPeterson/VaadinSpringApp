@@ -1,13 +1,17 @@
 # Codex-Arbeitsabläufe und SonarQube
 
-Status: beschlossen, noch nicht umgesetzt. Dieses Dokument ist der befristete
-Arbeitsauftrag; es wird mit Abschluss der Aufgabe gelöscht.
+Status: teilweise umgesetzt. Der erste Skill „Große Testrunde“ ist angelegt und
+strukturell/trocken geprüft; eine echte Gesamtrunde wurde dabei nicht ausgeführt.
+Die gültige Bedienung steht in `docs/tests.md`. Offen sind die vier weiteren Skills,
+die SonarQube-Anbindung und die gemeinsame praktische Abnahme. Dieses Dokument bleibt
+nur für diese offenen Arbeiten bestehen und wird mit ihrem Abschluss gelöscht.
 
 ## Vereinbarter Rahmen
 
 - Codex ist das primäre Werkzeug für die gemeinsame Entwicklungsarbeit.
 - Zuerst diese Arbeitsabläufe und die SonarQube-Anbindung einrichten, danach HTTPS.
-- Den OpenCode-Workflow separat erhalten; benötigte allgemeine Helfer weiterverwenden.
+- OpenCode vollständig unverändert am bisherigen Ort belassen; nichts verschieben oder entfernen.
+- Codex unabhängig nach den heutigen Anforderungen aufbauen, ohne OpenCode-Abläufe zu übernehmen.
 - Den bereits funktionierenden Fernzugriff weiter nutzen. Paseo ist zurückgestellt.
 - Kleine, verständliche Projekt-Skills statt eines neuen umfangreichen Workflow-Frameworks.
 - Die Anwendung bleibt ein lokales Entwicklungsprojekt mit austauschbaren Testdaten.
@@ -15,19 +19,18 @@ Arbeitsauftrag; es wird mit Abschluss der Aufgabe gelöscht.
 Diese Entscheidungen gelten, bis sie bewusst geändert werden. Konkrete Pfade und
 Werkzeugparameter innerhalb dieses Rahmens werden bei der Umsetzung festgelegt.
 
-## 1. Projektbezug und Werkzeugbestand ordnen
+## 1. Projektbezug und Anforderungen klären
 
 - [ ] Prüfen, dass Codex im tatsächlichen Repository arbeitet und dessen `AGENTS.md`
   sowie Projekt-Skills lädt. Ein ChatGPT-Projektspiegel ist keine zweite Codequelle.
-- [ ] OpenCode-Befehle, Python-/Node-Helfer, Tests, Abhängigkeiten und Verweise erfassen.
-  Allgemeine Funktionen wie Branchprüfung, Benchmarks und Auswertungen nach Bedarf
-  übernehmen; OpenCode-spezifische Bedienung getrennt halten.
-- [ ] Einen eigenen Ablageort außerhalb des Anwendungsprojekts für die vollständigen
-  OpenCode-Werkzeugquellen festlegen und ihren Erhalt prüfen, bevor dort etwas entfernt wird.
-  Keine Credentials, lokalen Laufdaten oder fremden Änderungen mit umräumen.
-- [ ] Weiterverwendete allgemeine Helfer an einer eindeutigen Stelle im Projekt ablegen,
-  etwa unter `tools/`. Aufrufer, Tests, Abhängigkeiten und Anleitungen gemeinsam anpassen.
-  Keine parallelen Kopien oder dauerhaften Weiterleitungs-/Kompatibilitätswege behalten.
+- [ ] Die fünf vereinbarten Aufträge aus den heutigen Anforderungen und aktuellen
+  Projektregeln ausarbeiten. OpenCode ist keine Vorlage für den neuen Ablauf.
+- [ ] OpenCode einschließlich Befehlen, Helfern, Tests, Abhängigkeiten und Konfiguration
+  unverändert belassen. Für dieses Paket ist kein Umzug und keine Bereinigung vorgesehen.
+- [ ] Nur wenn bei einer konkreten Aufgabe eine passende vorhandene Lösung auffällt,
+  gezielt den relevanten OpenCode-Code prüfen und geeignete Teile übernehmen.
+  Keine vorsorgliche Portierung oder vollständige OpenCode-Bestandsaufnahme einplanen;
+  eine Übernahme darf den bestehenden OpenCode-Ablauf nicht verändern und ist zu testen.
 
 ## 2. Native Codex-Struktur einrichten
 
@@ -40,26 +43,37 @@ Werkzeugparameter innerhalb dieses Rahmens werden bei der Umsetzung festgelegt.
 - [ ] Im tatsächlich verwendeten Codex-Client prüfen, dass die Skills gefunden werden
   und auf dem Desktop sowie über den vorhandenen Fernzugriff aufrufbar sind.
 
-## 3. Vier wiederholbare Aufträge festlegen
+## 3. Vier weitere wiederholbare Aufträge einrichten
 
 | Auftrag | Verbindlicher Inhalt |
 | --- | --- |
-| Große Testrunde | Git-/Quellstand und laufende Prozesse prüfen; Java 25 und Stilregeln; vollständige JUnit-, Helfer-, Frontend- und Pythonprüfungen; ein optimiertes Image; vollständige Browserrunde DE/EN am identischen Image; Fehlerbehebung, erforderliche Nachtests und ehrlicher Abschluss |
-| Sonar prüfen | Analysestand und Codezuordnung prüfen; Findings, Quality Gate und vorhandene Coverage abrufen; fachlich bewerten, passende Korrekturen testen und nach neuem Scan nachprüfen |
+| Sonar bereinigen | Aktuelle Findings fachlich bewerten und möglichst null berechtigte offene Issues erreichen; auch größere Refactorings innerhalb der abgestimmten Funktionsverträge umsetzen, Regressionen ergänzen und durch Nachscan prüfen; echte Vertrags-/Architekturentscheidungen abstimmen, keine pauschalen Suppressions oder unbeauftragten Statuswechsel |
 | Änderungen prüfen | Diff und Funktion bewerten; passende Nachweise prüfen; offene Punkte nennen; deutsche Commit-Message für die tatsächlich fertigen Änderungen vorschlagen |
 | Branch lokal mergen | Ausdrücklich genannten Quell-/Zielbranch, Arbeitsstand, Tests und Konflikte prüfen; lokalen Merge durchführen; Ergebnis berichten |
+| Umsetzung starten | Abgestimmten Auftrag und Abnahmekriterien übernehmen; Arbeitsstand prüfen; auf Wunsch einen eigenen Branch anlegen; fachlich umsetzen, gezielte Regressionen und vorgeschriebene Prüfungen ausführen; Dokumentation und erledigten Plan bereinigen; Ergebnis und deutsche Commit-Message liefern |
 
+- [ ] Beim Auftrag „Umsetzung starten“ ohne Branchwunsch im aktuellen Branch arbeiten.
+  Bei gewünschtem eigenen Branch den genannten Namen verwenden oder einen passenden
+  Namen wählen, falls keiner vorgegeben ist. Fremde Änderungen erhalten; nur tatsächliche
+  Konflikte oder fehlende fachliche Angaben klären, keine erneute pauschale Freigabe
+  für bereits beauftragte Arbeit verlangen. Browserläufe benötigen den dafür vereinbarten
+  ausdrücklichen Umfang; eine Umsetzung startet nicht automatisch die große Testrunde.
 - [ ] Die bekannte Beauftragung einer großen Testrunde muss ihren Browserumfang klar
   einschließen. Ein ausdrücklich aufgerufener vollständiger Auftrag gilt für diese Runde;
   automatische Skillwahl allein erteilt keine Browserfreigabe. Bereits vorliegende
   Freigaben nutzen, keine erneuten Rückfragen für denselben genehmigten Umfang.
 - [ ] Kein automatischer Commit, Merge, Push, echter Mailversand oder Sonar-Statuswechsel
-  allein durch einen Prüfauftrag. Ein ausdrücklich angeforderter Merge ist ein eigener Auftrag.
+  allein durch einen Prüf- oder Umsetzungsauftrag. Ein ausdrücklich angeforderter Merge
+  ist ein eigener Auftrag.
 - [ ] Unterbrechungen so festhalten, dass Branch, geänderte Quellen, fertige Nachweise,
   laufende Tests und verwendetes Image eindeutig sind. Unveränderte erfolgreiche Prüfungen
   berücksichtigen; keine doppelten Läufe oder Image-Neubauten während Browserrunden.
 - [ ] Ergebnisse im aktuellen Prüfstand pflegen. Keine neue Sammlung alter Runberichte
   oder zusätzliche Coverageauswertung ohne entsprechenden Auftrag aufbauen.
+
+Die große Testrunde enthält Sonar-Kontrolle und begrenzte kleine Korrekturen.
+Größere Bereinigungspakete sind ein eigener Auftrag und keine Voraussetzung für
+einen belegten Testabschluss; der offene Qualitätsstand bleibt im Bericht sichtbar.
 
 ## 4. SonarQube direkt anbinden
 
@@ -78,13 +92,14 @@ Werkzeugparameter innerhalb dieses Rahmens werden bei der Umsetzung festgelegt.
 
 ## Abnahme
 
-- [ ] Alle vier Aufträge sind im verwendeten Client auffindbar, knapp dokumentiert und
+- [ ] Alle fünf Aufträge sind im verwendeten Client auffindbar, knapp dokumentiert und
   anhand eines überschaubaren Beispiels überprüft. Prüfung und tatsächliche Git-Aktion
   sind eindeutig unterschieden.
 - [ ] Sonar-Daten stammen nachweislich vom richtigen Projekt/Analysestand; fehlende
   Verbindung wird nicht als „keine Findings“ gewertet. Keine unbeauftragten Statusänderungen.
-- [ ] Übernommene Helfer und angepasste Aufrufer sind getestet; Java-/Pythonänderungen
-  erfüllen die jeweiligen Stilregeln. OpenCode-Quellen sind separat vollständig erhalten.
+- [ ] Codex funktioniert unabhängig vom OpenCode-Workflow; dessen Dateien und Abläufe
+  sind unverändert. Falls gezielt Code übernommen wurde, ist diese Übernahme getestet.
+  Java-/Pythonänderungen erfüllen die jeweiligen Stilregeln.
 - [ ] Unnötige zweite Implementierungen, kaputte Pfade und doppelte Anleitungen fehlen.
 
 ## Pflichtabschluss: Plan entfernen

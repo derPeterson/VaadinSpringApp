@@ -5,7 +5,8 @@
 Die vereinbarte Reihenfolge ist:
 
 - [ ] [Codex-Arbeitsabläufe und SonarQube-Anbindung](docs/planung/codex-arbeitsablaeufe.md):
-  Projekt-Skills einrichten, benötigte Helfer übernehmen und OpenCode separat erhalten.
+  Vier weitere Skills und Sonar-Anbindung einrichten; der erste Skill „Große Testrunde“
+  ist angelegt. OpenCode vollständig unverändert belassen.
 - [ ] [Lokales HTTPS](docs/planung/https.md): vertrauenswürdigen Zugang über einen
   Reverse Proxy einrichten und Anwendung sowie Testumgebungen darauf abstimmen.
 - [ ] Danach Designkritik mit Stitch auf einem eigenen Branch: eine Spielwiese mit
