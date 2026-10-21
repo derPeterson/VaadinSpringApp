@@ -1,4 +1,8 @@
 # Offene Fehler
 
-Aktuelle bestätigte Fehler und noch nicht abgeschlossene Prüfungen stehen im
-[Prüfstand](docs/status.md). Geplante Erweiterungen stehen in [TODO](TODO.md).
+Bestätigte offene Anwendungsfehler, nach Dringlichkeit sortiert. Sie haben Vorrang
+vor neuen Funktionen, sofern nicht ausdrücklich anders entschieden.
+
+Aktuell sind keine bestätigten offenen Anwendungsfehler erfasst.
+
+Fehlerdetails und Prüfergebnisse: [Prüfstand](docs/status.md#offene-fehler).

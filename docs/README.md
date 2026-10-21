@@ -8,6 +8,7 @@ lokal mit Testdaten; eine neue Testdatenbank wird aus dem aktuellen Schema angel
 | [Anwendung](anwendung.md) | Funktionen, Konto, Administration und Benachrichtigungen |
 | [Sicherheit](sicherheit.md) | Anmeldung, Rollen, Tokens, Sitzungen, CSRF und Datenverträge |
 | [Entwicklung](entwicklung.md) | Voraussetzungen, Aufbau, Konfiguration, Build und Codestil |
+| [Arbeiten mit Codex](codex-skills.md) | Die fünf Projekt-Skills, Aufträge, Grenzen und Ergebnisse |
 | [Docker](docker/README.md) | Lokale Testanwendung und Mailpit |
 | [Theme](theme.md) | Verbindliche Gestaltung, CSS-Zuständigkeiten und Themewechsel |
 | [Mailqueue](mailqueue.md) | Versand, Wiederholungen und unklare Versandausgänge |
@@ -15,8 +16,9 @@ lokal mit Testdaten; eine neue Testdatenbank wird aus dem aktuellen Schema angel
 | [Entscheidungen](entscheidungen.md) | Wesentliche technische Entscheidungen, Vorteile und Grenzen |
 | [Tests](tests.md) | Testarten und Ausführung |
 | [Offener Testbedarf](testbedarf.md) | Gemeinsame Aufgabenliste für fehlende oder anzupassende automatisierte Tests |
-| [Aktueller Stand](status.md) | Heutiger Funktions- und Prüfstand |
-| [Manuelle Sonderprüfungen](manual-tests/README.md) | Menschliche Abnahmen und gezielte Lücken |
+| [Aktueller Stand](status.md) | Funktionsstand und Ergebnisse der letzten vollständigen Testrunde |
+| [Manuelle Sonderprüfungen](manual-tests/README.md) | Menschliche Abnahmen, Mailbeispiele und Anleitungen für Sonderfälle |
+| [Offene Fehler](../BUGS.md) | Kurze priorisierte Liste bestätigter Anwendungsfehler |
 | [Offene Aufgaben](../TODO.md) | Vereinbarte nächste Arbeiten |
 
 Details zu automatisierten Browserfällen stehen bei deren Testbeschreibungen und
@@ -26,7 +28,7 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
 
 Die nächsten beiden Aufgaben sind in dieser Reihenfolge vereinbart:
 
-1. [Codex-Arbeitsabläufe und SonarQube](planung/codex-arbeitsablaeufe.md)
+1. [Sonar-Anbindung und praktische Abnahme der fünf Codex-Skills](planung/codex-arbeitsablaeufe.md)
 2. [HTTPS für die lokale Anwendung](planung/https.md)
 
 Diese Pläne beschreiben offene Arbeiten. Nach Umsetzung werden sie samt Verweisen

@@ -6,15 +6,32 @@ JDK 25 und der Maven Wrapper sind verbindlich. Die tatsächlichen Bibliotheksver
 stehen in `pom.xml`; Node-Abhängigkeiten in `package-lock.json`. Nicht neben diesen
 Dateien eine zweite Versionsliste pflegen. Docker Desktop verwendet Linux-Container.
 
-| Verzeichnis | Zuständigkeit |
+Die Paketnamen beziehen sich auf `src/main/java/de/derpeterson/app/`:
+
+| Paket | Zuständigkeit |
 | --- | --- |
-| `src/main/java/de/derpeterson/app/views`, `ui` | Vaadin-Views und Komponenten |
-| `service`, `repository`, `model` | Fachlogik, JPA-Zugriff und Datenmodell |
-| `security`, `config`, `scheduler` | Zugangsschutz, Startkonfiguration und Hintergrundaufgaben |
-| `shared` | Eigenes Maven-Modul für typisierte Texte und gemeinsame Konstanten |
+| `Application` (Basispaket) | Spring-Boot-Einstieg, App-Shell und zentrale Stylesheets |
+| `config` | Spring-/Vaadin-Startkonfiguration, Bootstrap, Schemaanlage, Mail und Threadpools |
+| `views`, `views/admin` | Navigierbare Seiten und Administrationsbereiche |
+| `ui/base`, `ui/components` | Gemeinsame View-Basen und wiederverwendbare Komponenten/Dialoge |
+| `service` | Fachaktionen, Transaktionen, Konto-/Bild-/Benachrichtigungslogik und Mailqueue |
+| `repository` | JPA-Abfragen, Datenzugriff und Sperren |
+| `model`, `model/enums` | Persistente Datenmodelle und fachliche Typen |
+| `security`, `security/session` | Login, Rechte, Wartungsschutz, Geräte und dauerhafte Sitzungen |
+| `scheduler` | Zeitgesteuerte Verfügbarkeitsprüfung und Benachrichtigungsbereinigung |
+| `i18n` | Sitzungsabhängige Übersetzungen und Sprachanbindung |
+| `validation` | Gemeinsame Eingaberegeln und fachliche Validierungsfehler |
+| `events`, `websocket` | Sprach-/Rollenereignisse und Live-Aktualisierung angebundener UIs |
+| `helper/*` (email, image, logging, text, time, ui) | Begrenzte Hilfsfunktionen für Ressourcen, Diagnose, Zeit und Komponenten |
+
+| Weiterer Bereich | Zuständigkeit |
+| --- | --- |
+| `shared/src/main/java` | Eigenes Maven-Modul mit typisiertem Textkatalog, Konfigurations-/Routenkonstanten und Token-Zeitregeln |
 | `src/main/resources/i18n`, `email` | DE-/EN-Texte und Mailvorlagen |
 | `src/main/resources/db` | Aktuelles H2-Anwendungs- und Session-Schema |
-| `src/test`, `browser-tests` | Technische Tests und echte Browserjourneys |
+| `src/main/resources/META-INF/resources/{custom-theme,icons}` | Gemeinsames Theme und zusätzliche Icons |
+| `src/test`, `browser-tests` | Technische Tests, echte Browserjourneys und deren Runner |
+| `.agents/skills` | Codex-Projektabläufe; Bedienung unter [Arbeiten mit Codex](codex-skills.md) |
 
 Shared-Quellen nicht als Quellordner in andere Module einhängen. Vor einem frischen
 Anwendungsbuild oder nach Shared-Änderungen das Modul installieren:
@@ -64,119 +81,11 @@ Browser-Neuladen erforderlich. `vite.config.ts` ist für eigene Vite-Anpassungen
 generierte Frontenddateien und `target/` nicht von Hand bearbeiten.
 Classpathressourcen als Streams laden, damit auch das gepackte JAR funktioniert.
 
-## Umsetzung starten
+## Arbeiten mit Codex
 
-Der Projekt-Skill [umsetzung-starten](../.agents/skills/umsetzung-starten/SKILL.md)
-begleitet ein Feature bis zur gemeinsamen Abnahme. „Umsetzung starten: FEATURE“
-legt standardmäßig einen eigenen Feature-Branch und einen knappen Plan unter
-`docs/planung/<feature>.md` an. Noch keine Funktion wird dadurch implementiert.
-Explizit gewünschte andere Branch-/Ausgangsstände gelten vorrangig.
-
-Danach normal weiterreden: Plan besprechen und anpassen, „Plan komplett umsetzen“
-oder „erst Schritt 1 und 2“ beauftragen. Eine zusätzliche UI-Integration oder kleine
-Bedienungs-/Designänderungen gehören zum selben Feature; der Skill muss nicht jedes
-Mal erneut aufgerufen werden. Bestehende Vaadin-/Cosmos-Komponenten bilden die Grundlage.
-
-Sinnvolle JUnit-Regressionen gehören zur Umsetzung. Nicht ausgeführter Browserbedarf
-bleibt im [Testbedarf](testbedarf.md), bis er erfolgreich geprüft ist. Weder Browser-
-noch große Testrunden starten automatisch. Größere fachliche Zusatzentscheidungen
-werden abgestimmt; die technische Fertigstellung ersetzt nicht die gemeinsame UI-Abnahme.
-
-Der Plan enthält die offenen Schritte und bleibt während der Abstimmung bestehen.
-Bei „Umsetzung abgeschlossen“ gültige Dokumentation pflegen, featurebezogene Provisorien
-und den erledigten Plan bereinigen; offene Folge-/Testaufgaben erhalten. Der Branch kann
-viele Zwischencommits enthalten. Tatsächliche Commits, Merge nach main und Push benötigen
-den entsprechenden Auftrag. Danach den tatsächlichen Stand und Prüfgrenzen berichten.
-
-„Bitte nach main mergen“ gilt zugleich als fachliche Abnahme und Auftrag zum
-Featureabschluss einschließlich Bereinigung; keine zusätzliche Abschlussformel nötig.
-Bei anderen Zielbranches den tatsächlichen Auftrag beachten. Den Abschluss erst
-nach erfolgreicher Integration und Nachprüfung melden; offene Änderungen, Bereinigung
-oder Fehler bleiben als ausstehend benannt.
-
-## Änderungen prüfen und Commit-Message
-
-Der Projekt-Skill [aenderungen-pruefen](../.agents/skills/aenderungen-pruefen/SKILL.md)
-gehört auch zu „Gib mir bitte eine Commit-Message“. Er prüft den tatsächlichen
-uncommittierten Zwischenstand auf Fehler, Sicherheit, Menschenlesbarkeit, passende
-Tests und aktuelle Dokumentation. Namen, Methodenzuständigkeit und verständliche
-Kontrollflüsse beachten; Kommentare nur für sinnvolle Verträge/Besonderheiten ergänzen.
-
-Kleine zusammenhängende Probleme darf der Agent direkt korrigieren. Größere Umbauten
-oder neue fachliche Entscheidungen werden abgestimmt. Erfolgreiche unveränderte
-Prüfungen berücksichtigen; nach Korrekturen nötige Stil-/Regressionstests ausführen.
-Keine automatische vollständige QA, Browserrunde oder Sonar-Bereinigung. Offenen
-Testbedarf zentral erhalten. Reiner Text-/Nur-Lese-Auftrag und explizite Dateiauswahl
-haben Vorrang; bei teilweise gestagten Dateien den geprüften Stand klar unterscheiden.
-
-Das Ergebnis steht ausschließlich im Chat: kurze Zusammenfassung, tatsächliche
-Prüfungen und offene Punkte, anschließend die kopierbare deutsche Commit-Message.
-Keine neue Berichtsdatei und keine Git-Aktion durch diesen Auftrag. Nach Rückmeldungen
-die Message auf den aktuellen Stand bringen. Ein Zwischencommit beendet nicht
-automatisch das gesamte Feature.
-
-## Branch lokal mergen
-
-Der Projekt-Skill [branch-lokal-mergen](../.agents/skills/branch-lokal-mergen/SKILL.md)
-verwendet die ausdrücklich genannten oder eindeutig vereinbarten Quell-/Zielbranches.
-Aktueller Branch und main sind keine zwingenden Vorgaben. Ein Merge nach main gilt
-zugleich als Feature-Abnahme und Abschlussauftrag; andere Ziele nicht automatisch.
-
-Bei bestehenden uncommittierten Änderungen stoppt der Ablauf sofort. Der Benutzer
-prüft/committet zuerst; kein automatisches Stashen, Verwerfen oder Mitcommitten.
-Bei sauberem Stand die vereinbarte featurebezogene Bereinigung prüfen: erledigte
-Pläne, Provisorien, nachweislich überflüssiger Code und gültige Dokumentation.
-Offene Folge-/Testaufgaben erhalten. Erzeugt die Bereinigung neue Änderungen, diese
-mit Commit-Message zurückgeben und vor dem Merge auf Benutzercommit/Weiterauftrag warten.
-
-Nur den sauberen geprüften Stand lokal integrieren. Quellbranch und bisherige
-Commit-Historie behalten; kein Push oder automatisches Löschen von Branches/Worktrees.
-Überschaubare Konflikte fachlich lösen, unklare Entscheidungen abstimmen.
-Danach auf dem tatsächlichen Ziel optimiert bauen, vollständige JUnit-Anwendungstests
-und einen isolierten Start bis zur Betriebsbereitschaft prüfen. Keine echten Daten,
-lokalen SMTP-Zugänge oder laufenden Entwicklerprozesse verwenden. Keine automatische
-Browserrunde/große QA; zusätzlichen umfangreichen Bedarf vorher freigeben lassen.
-
-Ergebnis kurz im Chat: Merge, Bereinigung, tatsächliche Tests, Build, Start und offene
-Punkte. Bei Fehlern nicht vollständig erfolgreich melden; eventuelle neue Korrekturen
-zur Benutzerprüfung zurückgeben. Die letzte große QA-Baseline bleibt unberührt.
-Manuell vom Benutzer ausgeführte Merges lösen keinen Agentenablauf aus.
-
-## Sonar bereinigen
-
-Der Projekt-Skill [sonar-bereinigen](../.agents/skills/sonar-bereinigen/SKILL.md)
-kennt drei ausdrücklich gewählte Aufträge:
-
-| Auftrag | Verhalten |
-| --- | --- |
-| Sonar analysieren und planen | Frischer Scan, vollständige Bewertung und befristeter Paketplan; keine Code-, Git- oder Issue-Statusänderungen |
-| Sonar-Paket X umsetzen | Genau ein geplantes Paket, eigener Branch, Regressionen, eigene lokale Commits/Merge und main-Nachscan; danach anhalten |
-| Sonar komplett bereinigen | Analyse und Planung, geeignete Pakete sequenziell ausführen, integrieren und nachscannen; Ziel möglichst null berechtigte offene Issues |
-
-Die Ausführungsmodi enthalten eigene lokale Paketcommits/Merges und begründete
-Accepted-/False-Positive-Entscheidungen. Kein Push. Wesentliche neue Fachfunktionen
-oder Vertragsänderungen werden abgestimmt; ohne Antwort bleibt das Paket wartend.
-Die direkte MCP-/Scanner-Anbindung ist noch offen und muss vor einem tatsächlichen
-Lauf eingerichtet/verfügbar sein. Dieser Skill allein installiert sie nicht.
-
-Community Build verwendet im Hauptprojekt main-Analysen. Deshalb zuerst auf einem
-Paket-Branch arbeiten und testen, dann lokal nach main übernehmen und dort nachscannen.
-Ein separates Prüfprojekt für Vorab-Branchscans ist kein Bestandteil dieses Ablaufs.
-Browserläufe bleiben ausdrücklich zu beauftragen; nötige offene Fälle werden im
-[Testbedarf](testbedarf.md) für die nächste große Testrunde erhalten.
-
-Es gibt genau einen aktuellen lokalen Sonar-Bericht: `.codex/sonar/bericht.md`.
-Er wird beim nächsten Auftrag ersetzt; Datum und Modus stehen im Inhalt. Der
-Wiederaufnahmestand liegt daneben in `state.json`. Beide Dateien sind ignoriert
-und entstehen erst bei einem tatsächlichen Auftrag. Der Bericht ist im Abschlusschat
-verlinkt und bleibt bis zum nächsten Lauf zum Nachlesen vorhanden.
-
-Offene Umsetzungspakete stehen unter `docs/planung/sonar-pakete.md`, offene Tests
-im Testbedarf. Diese Aufgaben vor dem Ersetzen eines Berichts erhalten. Erledigte
-Paketpläne samt Verweisen entfernen; keine datierten Berichtssammlungen anlegen.
-Fiktive Beispiele liegen getrennt unter einem festen Namen im temporären Chatordner
-und werden beim nächsten Beispiel ersetzt. Wer einen Bericht persönlich archivieren
-möchte, kann ihn selbst mit Datum außerhalb der Projektdokumentation sichern.
+Die [Skill-Anleitung](codex-skills.md) beschreibt alle fünf Abläufe: große Testrunde,
+Sonar-Bereinigung, Umsetzung starten, Änderungen prüfen und lokal mergen.
+Testbefehle stehen in der [Testanleitung](tests.md).
 
 ## Codestil
 
@@ -189,9 +98,17 @@ vor Tests und Abschluss im Projektroot:
 .\mvnw.cmd checkstyle:check
 ```
 
-Kontrollblöcke verwenden immer Klammern. Explizite Typen und Imports sind Standard;
-`var` nur bei einem konkreten Lesbarkeitsvorteil. Keine Sternchenimporte. Methoden
-nach fachlichen Aufgaben gliedern, Transaktions-/Sperrgrenzen bewusst erhalten.
+Code soll für Menschen lesbar sein: sprechende, verständliche Variablen- und
+Methodennamen statt kryptischer Kürzel. Methoden haben eine klar erkennbare fachliche
+Aufgabe. Tiefe Verschachtelung und verschachtelte ternäre Ausdrücke vermeiden;
+Hilfsmethoden nur für tatsächlich benennbare Aufgaben, nicht zur bloßen Zeilenverteilung.
+Javadoc oder Kommentare erklären nötige Verträge, Gründe und Besonderheiten;
+offensichtlichen Ablauf nicht nacherzählen. Regex direkt auf Deutsch erläutern.
+
+Kontrollblöcke bei `if`/`else`, Schleifen und `try`/`catch` übersichtlich mit Klammern
+gliedern, auch bei einzelnen Anweisungen. Explizite Typen und Imports sind Standard;
+`var` nur bei einem konkreten Lesbarkeitsvorteil, etwa bei nicht direkt benennbaren
+Typen. Keine Sternchenimporte. Transaktions-, Sperr- und Fehlergrenzen erhalten.
 Spotless berücksichtigt Änderungen gegen HEAD. Bei fremden Java-Änderungen mit
 `-DspotlessFiles=...` auf die eigenen Pfade begrenzen; Anleitung der Option beachten.
 
@@ -203,6 +120,8 @@ Python verwendet Ruff aus `requirements-dev.txt`, installiert in `.venv`:
 .\.venv\Scripts\python.exe -m ruff format --check PFAD
 ```
 
-Nur eigene Python-Dateien formatieren. Technische Projektregeln stehen in `AGENTS.md`.
+Nur eigene Python-Dateien formatieren. Verbindliche Agentenregeln stehen in [AGENTS.md](../AGENTS.md).
 Neue feste Texte über den gemeinsamen `MessageTexts`-/`MessageProperties`-Katalog
 bereitstellen. Dynamische UI-Texte müssen dem aktuellen Sprachwechsel folgen.
+
+Für sinnvolle Ereignisse, Logpegel und sichere Diagnose gilt der [Logging-Vertrag](logging.md).

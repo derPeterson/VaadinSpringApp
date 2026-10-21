@@ -18,8 +18,16 @@ Dateirotation: 25 MiB pro Teil, tägliche Aufteilung und maxHistory=1.
 | WARN | Behandelbare Störungen oder verworfene ungültige Zustände |
 | ERROR | Fehlgeschlagene Verarbeitung, Persistenz-/Commit- und technische Fehler |
 
-Keine Protokollierung jedes Methodenaufrufs, Polls oder Zweigs. Eine Fehlergrenze
-protokolliert den Fehler; nicht dieselbe Exception auf jeder Ebene erneut ausgeben.
+Sinnvolle Ereignisse sind der Abschluss einer wichtigen Konto-/Adminaktion,
+Queueaufnahme und Transportergebnis, ausgeschöpfte Wiederholungen oder ein
+behandelbarer Speicher-/Konfigurationsfehler. Diagnose soll erkennen lassen, welcher
+Vorgang betroffen ist und ob eine nächste Maßnahme nötig ist; zulässige Metadaten
+stehen unten. Technische Umsetzungsvorgaben gelten auch für neue Features:
+[Agentenregeln](../AGENTS.md).
+
+Keine Protokollierung jedes Methodenaufrufs, Polls oder `if`-/`else`-Zweigs. Eine
+Fehlergrenze protokolliert den Fehler; nicht dieselbe Exception auf jeder Ebene
+erneut ausgeben. DEBUG nur ergänzen, wenn es eine konkrete Diagnosefrage beantwortet.
 
 ## Inhalte
 

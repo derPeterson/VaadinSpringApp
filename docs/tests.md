@@ -8,39 +8,16 @@
 | Browser DE und EN | Sichtbare Abläufe über echte UI und eigene Mailpit-Mails |
 | Browser-Helfertests | Auswahl, Reporter, Sprachkatalog und Runner ohne App-Container |
 | JavaScript-Offlinetests | Frontendparser und Bildeditorfunktionen |
-| Pythonprüfungen | Lokale Test-/Benchmarkwerkzeuge |
 | Manuelle Abnahme | Menschliche Wahrnehmung, echte Geräte, Hilfsmittel und Mailclients |
 
 Aktuelle Ergebnisse stehen nur im [Prüfstand](status.md), nicht in einer Kette alter
 Laufberichte. Vorhandene Testfälle sind kein Nachweis eines erfolgreich ausgeführten Laufs.
 
-## Codex: Große Testrunde
+## Große Testrunde mit Codex
 
-Der Projekt-Skill [grosse-testrunde](../.agents/skills/grosse-testrunde/SKILL.md)
-fasst den vereinbarten Gesamtauftrag zusammen. Im tatsächlichen Projektverzeichnis
-„Starte die große Testrunde“ schreiben oder den Skill mit `$grosse-testrunde` aufrufen.
-Der ausdrückliche Gesamtauftrag umfasst Browser DE/EN; keine zweite Freigabe nötig.
-Einzelne Änderungen oder das Prüfen des Skills starten keine Gesamtrunde.
-
-Der Ablauf bewertet Änderungen seit der letzten vollständigen QA, ergänzt sinnvolle
-Regressionen, behebt Fehler innerhalb bestehender Verträge und führt die vorhandenen
-Prüfungen aus. Neue Fachfunktionen oder grundlegende Vertragsänderungen werden abgestimmt.
-Sonar wird mitgeprüft; kleine fachlich klare Fehler und Blocker werden gezielt behoben.
-Größere Umbauten und umfangreiche Finding-Pakete gehören zum separaten Auftrag
-[„Sonar bereinigen“](entwicklung.md#sonar-bereinigen), dessen Ziel möglichst null berechtigte offene Issues ist.
-Eine bestandene Testrunde setzt keine Null-Issue-Zahl voraus: Testergebnisse, offene
-Sonar-Findings und Quality Gate werden getrennt ausgewiesen. Keine Umbau-/Scanschleife
-bis null während der QA. Sonar-Ergebnisse werden nur mit passendem Analysestand bestätigt;
-die direkte Anbindung ist noch offen. Kein echter Mailversand oder automatischer Git-Abschluss.
-
-`docs/status.md` bleibt der einzige knappe aktuelle Ergebnisbericht. Der lokale
-Zwischenstand unter `.codex/qa/state.json` wird erst beim tatsächlichen Auftrag
-angelegt und ist ignoriert. Er hält erfolgreiche Baseline und laufende Runde getrennt;
-bei Unterbrechung bleiben erfolgreiche passende Belege erhalten. Der
-[Zustandsvertrag](../.agents/skills/grosse-testrunde/references/zustand.md) definiert
-Vergleich, Wiederaufnahme und Zählung. Kontingent wird gelegentlich geprüft; bei
-Erschöpfung wird gesichert und nach Reset über einen eigenen Folgeauftrag fortgesetzt.
-Ein ausdrückliches Stopp hebt diese Fortsetzung auf.
+Auftrag, Umfang, Sonar-Abgrenzung und Wiederaufnahme stehen gemeinsam bei den
+[Codex-Skills](codex-skills.md#große-testrunde). Diese Testanleitung beschreibt die
+technischen Prüfungen und ihre Ausführung.
 
 ## Übergabe offener Testaufgaben
 
@@ -84,21 +61,13 @@ die [Stilprüfungen](entwicklung.md#codestil) gehören vor den Testlauf.
 node --test src/test/frontend/*.test.mjs
 ```
 
-Die Offlineprüfungen der lokalen Werkzeuge separat vom Projektroot ausführen:
-
-```powershell
-Push-Location .opencode/scripts
-..\..\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
-node --test tests/test_workflow_usage.mjs
-Pop-Location
-```
-
-Die Dateien unter `.opencode/scripts/prompt/tests` sind gesonderte manuelle
-Provider-Smoke-Skripte, keine zusätzliche unittest-Suite. Sie gehören nicht zum
-Offline-Prüflauf und können echte Anfragen auslösen.
+Der eingefrorene OpenCode-Workflow einschließlich seiner Python-/JavaScript-
+Werkzeugtests gehört nicht zum gepflegten Standardprüflauf. Keine Anpassungen für
+OpenCode vornehmen. Seine Provider-Smokes können echte Anfragen auslösen und werden
+ebenfalls nicht ausgeführt. Eine gezielte Wiederaufnahme braucht einen eigenen Auftrag.
 
 Gezielte Regressionen verwenden `-Dtest=KlasseA,KlasseB`; in PowerShell das ganze
-Argument zitieren. Datenbanktests verwenden ausschließlich eigene In-Memory-Datenbanken.
+Argument zitieren. Datenbanktests verwenden ausschließlich eigene isolierte H2-Datenbanken.
 Frisches Schema und Wiederanlauf desselben Schemas werden separat geprüft.
 
 ## Vollständige Browserrunde

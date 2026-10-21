@@ -1,5 +1,12 @@
 # Lokaler OpenCode-Workflow
 
+> **Eingefroren – derzeit nicht genutzt oder gepflegt.** Dieser Ordner bleibt als
+> Referenz auf dem Stand des Wechsels zu Codex erhalten. Neue Arbeiten erfolgen
+> über die [Codex-Projektabläufe](../docs/codex-skills.md). Bei Änderungen an der
+> Anwendung keine OpenCode-Anpassungen, Kompatibilitätspflege oder eigenen
+> OpenCode-Testläufe vorsehen. Die folgende Anleitung beschreibt den eingefrorenen
+> Stand; eine spätere Wiederaufnahme oder gezielte Codeübernahme bleibt möglich.
+
 Dieses optionale Entwicklungswerkzeug bereitet Aufgaben vor und dokumentiert
 deren Ergebnisse. Die eigentliche Codearbeit übernimmt das ausgewählte OpenCode-
 Modell nach [AGENTS.md](../AGENTS.md). Die Anwendung selbst benötigt diesen

@@ -1,7 +1,7 @@
 # Codex-Arbeitsabläufe: verbleibende Einrichtung
 
 Alle fünf Projekt-Skills sind angelegt und strukturell/trocken geprüft.
-Bedienung: [Entwicklung](../entwicklung.md) und [Tests](../tests.md).
+Bedienung: [Arbeiten mit Codex](../codex-skills.md).
 Noch offen sind die direkte SonarQube-Anbindung und die praktische Abnahme im
 verwendeten Client. Diese Datei enthält nur diese offenen Arbeiten und wird danach gelöscht.
 

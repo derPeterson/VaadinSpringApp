@@ -88,8 +88,10 @@ keinen zweiten Testrunner und keine OpenCode-Portierung aufbauen.
 
 - Java 25 bestätigen; Shared-Modul bei frischem Stand/Änderungen installieren.
   Vollständige Anwendungstests mit optimiertem Produktionsbuild sowie vorhandene
-  Shared-, Browser-Helfer-, Frontend- und Offline-Werkzeugprüfungen ausführen.
-  Provider-Smokes und der echte Mail-Sichtversand gehören nicht zur Gesamtrunde.
+  Shared-, Browser-Helfer-, Frontend- und weitere gepflegte Offlineprüfungen ausführen.
+  Der eingefrorene OpenCode-Workflow einschließlich seiner eigenen Python-/JavaScript-
+  Werkzeugtests wird nicht mitgeprüft oder angepasst. Provider-Smokes und der echte
+  Mail-Sichtversand gehören ebenfalls nicht zur Gesamtrunde.
 - Vorhandenen Browserrunner nutzen: `all` auf DE und EN, eigene isolierte H2-/Mailpit-
   Umgebungen und dasselbe unveränderliche aktuelle Anwendungsimage. Worker wie in
   der Projektanleitung einsetzen; keinen doppelten Build für die zweite Sprache.

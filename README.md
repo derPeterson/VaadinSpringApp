@@ -9,15 +9,22 @@ Sie wird ausschließlich auf der Entwicklungsmaschine mit austauschbaren Testdat
 | Ich möchte … | Hier weiterlesen |
 | --- | --- |
 | die Funktionen verstehen | [Anwendung](docs/anwendung.md) |
-| das Projekt starten oder daran arbeiten | [Entwicklung](docs/entwicklung.md) |
+| entwickeln und konfigurieren | [Entwicklung](docs/entwicklung.md) |
+| die fünf Codex-Arbeitsabläufe nutzen | [Arbeiten mit Codex](docs/codex-skills.md) |
 | die Docker-Testumgebung mit Mailpit verwenden | [Docker](docs/docker/README.md) |
 | Anmeldung, Rechte und Sitzungen verstehen | [Sicherheit](docs/sicherheit.md) |
 | Farben, Komponenten oder das Theme anpassen | [Theme](docs/theme.md) |
-| Tests ausführen und den Prüfstand sehen | [Tests](docs/tests.md) und [aktueller Stand](docs/status.md) |
+| Mailversand, Wiederholungen und Versandfehler verstehen | [Mailqueue](docs/mailqueue.md) |
+| Logmeldungen und Diagnose verstehen | [Logging](docs/logging.md) |
+| automatisierte Tests ausführen | [Tests](docs/tests.md) und [Browser-Testanleitung](browser-tests/README.md) |
+| manuell prüfen oder Mailbeispiele versenden | [Manuelle Sonderprüfungen](docs/manual-tests/README.md) |
+| noch fehlende automatisierte Prüfungen sehen | [Testbedarf](docs/testbedarf.md) |
+| die letzten Prüfergebnisse sehen | [Aktueller Stand](docs/status.md) |
+| technische Entscheidungen und ihre Grenzen verstehen | [Entscheidungen](docs/entscheidungen.md) |
+| offene Anwendungsfehler sehen | [BUGS](BUGS.md) |
 | die nächsten Aufgaben sehen | [TODO](TODO.md) |
 
-Der [Dokumentationseinstieg](docs/README.md) zeigt alle Themen. Fachliche Entscheidungen
-und ihre Grenzen stehen kompakt unter [Entscheidungen](docs/entscheidungen.md).
+Der [Dokumentationseinstieg](docs/README.md) führt zusätzlich zu den aktiven Umsetzungsplänen.
 
 ## Start und Build
 

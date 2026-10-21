@@ -1,16 +1,19 @@
 # Manuelle Sonderprüfungen
 
-Dieser Katalog enthält sieben menschliche Abnahmen und acht noch offene
-Automatisierungskandidaten. Er beschreibt konkrete heutige Prüfschritte, keine
-bestandenen Ergebnisse. Normale automatisierte Journeys stehen im
+Dieser Katalog beschreibt menschliche Abnahmen und Prüfanleitungen für besondere
+Betriebs-, Browser- und Integrationsfälle. Er ist kein Ergebnisbericht und keine
+zweite Aufgabenliste. Offener Automatisierungsbedarf steht ausschließlich im
+[Testbedarf](../testbedarf.md). Normale automatisierte Journeys stehen im
 [Browserkatalog](../../browser-tests/README.md); technische Regeln prüft JUnit.
 
 ## Auswahl und Protokoll
 
 Für Design/Text/Bedienung HUM-01–05 auswählen, für Mailprogramme HUM-06 und für
-die Entscheidung bei unklarem Versand HUM-07. AUTO-01–08 bleiben gezielte offene
-Betriebs-/Browser-/Integrationsprüfungen, bis ein echter automatisierter Nachweis
-vorliegt. Keine menschliche Abnahme durch einen Screenshot allein ersetzen.
+die Entscheidung bei unklarem Versand HUM-07. AUTO-01–07 liefern Szenarien für die
+gezielte Prüfung vorhandener Abdeckung und gegebenenfalls neue automatisierte Tests;
+welche Arbeit noch offen ist, bestimmt der zentrale Testbedarf. AUTO-08 ist eine
+optionale Prüfung eines tatsächlich vorgesehenen externen SMTP-Anbieters.
+Keine menschliche Abnahme durch einen Screenshot allein ersetzen.
 
 Das kurze eigene Protokoll nennt Code-/Änderungsstand, Sprache, Gerät/Browser,
 ausgewählte IDs, Schritte und tatsächliche Beobachtung. Status pro Variante:
@@ -124,7 +127,7 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 
 **Einordnung:** Menschliche Abnahme.
 
-**Voraussetzung:** Eigenes Mobilgerät im lokalen Netz; Testanwendung erreichbar, base.url passend; Hinweise zur Netzfreigabe unten beachten.
+**Voraussetzung:** Eigenes Mobilgerät im lokalen Netz; Testanwendung erreichbar, base.url passend; Hinweise zur Netzfreigabe im Abschnitt „Eigene Testumgebung“ beachten.
 
 1. In Hoch- und Querformat ein längeres Formular ausfüllen. Bildschirmtastatur, Scrollen, Datumsauswahl und Passwortanzeige benutzen.
 2. Filterpanel und Date-/TimePicker sowie Benutzerdialog bedienen; Öffnen/Schließen und erreichbare Aktionen bei geöffneter Tastatur beurteilen.
@@ -212,7 +215,7 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 
 1. Konto über die Oberfläche wiederfinden; E-Mail, Freigabe/Rolle, Kontenzahl und einen nicht geheimen Konfigurationswert als Ausgangsstand notieren.
 2. Nur die eigene Anwendung ordentlich stoppen und mit exakt derselben Properties-Datei/Datenbank neu starten; keine neue Datenbank wählen.
-3. Frisch anmelden und die notierten Werte erneut prüfen. Ein normales Sitzungsende durch den Serverneustart ist kein Datenverlust.
+3. Anwendung neu aufrufen und die notierten Werte erneut prüfen. Eine gültige persistierte Anmeldung soll den Neustart gemäß dem [Sitzungsvertrag](../sicherheit.md) überstehen; die Oberfläche wird dabei neu aufgebaut.
 
 **Erwartet:** Konto und gespeicherte Einstellungen bleiben erhalten; keine zusätzlichen Bootstrapkonten oder Datenverluste. Alte offene Browseransichten nicht als alleinigen Persistenznachweis verwenden.
 
@@ -304,7 +307,11 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 
 ### AUTO-08 · Vorgesehener SMTP-Transport mit Auth/TLS und Testpostfach
 
-**Einordnung:** Zur Automatisierung vorgesehen – Integrationsfixture.
+**Einordnung:** Optionale Anbieterabnahme; bei rein lokalem Mailpit-Betrieb nicht erforderlich.
+
+SMTP-Authentifizierung, STARTTLS und direktes TLS sind vorhanden. Dieser Fall prüft
+die konkrete Anbieteranbindung einschließlich der Anwendungs-Mailqueue; er beschreibt
+keine fehlende Funktion. Der Mail-Sichttest prüft Vorlagen und SMTP-Annahme separat.
 
 **Voraussetzung:** Nur falls dieser Transport eingesetzt werden soll: ausdrücklich freigegebenes eigenes SMTP-Testziel und Empfängerpostfach; Zugangsdaten ausschließlich lokal.
 

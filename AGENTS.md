@@ -21,6 +21,15 @@
   Vorteilen/Grenzen und echte offene Aufgaben sind erwünscht; keine neuen Triage-CSV,
   Nachscan-/Updatechroniken oder fortlaufenden QA-Meilensteinserien. Der aktuelle
   Prüfstand steht in `docs/status.md`; Git enthält die Entwicklungsgeschichte.
+- `BUGS.md` ist die kurze, nach Dringlichkeit sortierte Liste bestätigter offener
+  Anwendungsfehler: Priorität, verständliches Stichwort und Verweis auf die konkreten
+  Fehlerdetails in `docs/status.md`. Neue bestätigte Fehler dort eintragen, nach
+  Korrektur und passendem erfolgreichen Nachtest entfernen; keine Erledigt-Historie.
+  Beim Ersetzen des Prüfstands Details weiterhin offener Bugs erhalten; ein neuer
+  Testbericht erledigt keinen Bug und darf seine Reproduktion nicht verlieren.
+  Bestätigte Bugs haben Vorrang vor neuen Funktionen, außer der Benutzer entscheidet
+  ausdrücklich anders. Fehlende Prüfungen gehören in `docs/testbedarf.md` bzw. den
+  manuellen Katalog, geplante Erweiterungen in TODO; sie sind keine bestätigten Bugs.
 - Ausdrücklich abgestimmte Entscheidungen und aktuelle Funktionsverträge gelten als
   Arbeitsgrundlage, bis sie bewusst geändert werden. Sie nicht bei jeder Aufgabe
   erneut zur Diskussion stellen; konkrete neue Widersprüche gezielt ansprechen.
@@ -31,10 +40,15 @@
   entfernen. Kein Planarchiv und keine Sammlung abgeschlossener Arbeitsaufträge
   anlegen. Bei Teilumsetzung nur tatsächlich offene Schritte im Plan belassen.
 
-- Codex-Projektabläufe liegen unter `.agents/skills/`; Bedienung in `docs/entwicklung.md`
-  und `docs/tests.md`. OpenCode bleibt vollständig unverändert am bisherigen Ort.
-  Geeigneten vorhandenen Code nur bei konkretem Bedarf prüfen/gezielt übernehmen;
-  keinen vorsorglichen Umzug oder Umbau des OpenCode-Workflows durchführen.
+- Codex-Projektabläufe liegen unter `.agents/skills/`; gemeinsame Bedienungsanleitung:
+  `docs/codex-skills.md`. `docs/entwicklung.md` enthält Aufbau/Codestil,
+  `docs/tests.md` die technische Testausführung.
+- OpenCode ist eingefroren und wird derzeit weder genutzt noch weiterentwickelt.
+  Seine Dateien, Konfiguration und eigenen Tests nicht für Anwendungsänderungen
+  anpassen oder im Standardprüflauf ausführen. Die ausdrücklich gewünschte
+  Kennzeichnung steht am Anfang von `.opencode/README.md`; der restliche Ordner
+  bleibt unverändert. Geeigneten Code nur bei konkretem Bedarf gezielt übernehmen;
+  kein vorsorglicher Umzug, Umbau oder Erhalt seiner Kompatibilität.
 - Keep Java 25 and the Spring Boot / Vaadin Flow stack defined in `pom.xml`.
 - Build views with the existing Vaadin Java components. Do not replace them with
   HTML templates, React or another frontend.
@@ -242,7 +256,7 @@
 - Before changes, check the branch and working tree with `git status --short --branch`.
 - Preserve the user's existing changes. Do not overwrite or discard them.
 - Follow the branch, commit and final-state workflow of an explicitly invoked
-  OpenCode command. Do not invent another workflow; clarify ambiguities.
+  project skill or command. Do not invent another workflow; clarify ambiguities.
 - Do not commit, merge or push without a corresponding instruction.
 - When a commit is authorized, describe the completed change in the message
   (German past tense), not a planned change.

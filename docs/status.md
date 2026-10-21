@@ -65,12 +65,21 @@ und fremde Container wurden nicht verändert. Keine zusätzliche Coverageauswert
   Sitzungsneustart/-widerruf, Konfiguration und Benachrichtigungen auf DE und EN.
 - Die aktuellen Markdown-Verweise sind geprüft und führen auf vorhandene Dateien.
 
+## Offene Fehler
+
+Aus den oben dokumentierten Prüfungen sind keine bestätigten offenen
+Anwendungsfehler erfasst. Die laufende priorisierte Übersicht steht in
+[BUGS.md](../BUGS.md). Bei neuen Fehlern hier die zugehörigen Details ergänzen:
+Reproduktion, erwartetes/tatsächliches Verhalten und noch nötiger Nachtest.
+
 ## Offene Punkte
 
 Die automatisierte Runde ersetzt keine menschliche Abnahme. Echte Geräte,
 Screenreader, Textverständlichkeit und Mailclients bleiben gesondert zu prüfen.
-Weitere Testlücken und die konkreten Schritte stehen in den
+Offener automatisierter Testbedarf steht zentral in [testbedarf.md](testbedarf.md),
+Anleitungen für menschliche Abnahmen und Sonderfälle in den
 [manuellen Sonderprüfungen](manual-tests/README.md); geplante Arbeiten in [TODO](../TODO.md).
+Ausstehende Prüfungen sind kein bestätigter Anwendungsfehler.
 
 Für die lokale Übernahme neu bauen und mit einer frischen Testdatenbank starten.
 Vorhandene Entwicklerdaten wurden während dieser Aufgabe nicht zurückgesetzt.
