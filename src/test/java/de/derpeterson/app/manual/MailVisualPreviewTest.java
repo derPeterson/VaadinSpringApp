@@ -118,7 +118,8 @@ class MailVisualPreviewTest {
     JavaMailSender sender = mock(JavaMailSender.class);
     when(sender.createMimeMessage())
         .thenAnswer(ignored -> new MimeMessage(Session.getInstance(new Properties())));
-    preview.send(sender);
+    int accepted = preview.send(sender);
+    assertEquals(13, accepted);
     ArgumentCaptor<MimeMessage> html = ArgumentCaptor.forClass(MimeMessage.class);
     verify(sender, times(10)).send(html.capture());
     for (MimeMessage message : html.getAllValues()) {

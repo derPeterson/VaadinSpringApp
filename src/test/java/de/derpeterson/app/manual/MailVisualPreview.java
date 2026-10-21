@@ -199,8 +199,9 @@ final class MailVisualPreview {
     return sender;
   }
 
-  void send(JavaMailSender sender) {
+  int send(JavaMailSender sender) {
     EmailService service = new EmailService(configuration, sender);
+    int accepted = 0;
     for (Example example : examples) {
       String subject =
           "[SICHTTEST]["
@@ -213,6 +214,7 @@ final class MailVisualPreview {
         } else {
           service.sendAdminEmail(recipient, subject, example.body());
         }
+        accepted++;
       } catch (MessagingException | MailException failure) {
         // SMTP-Exceptiontexte können Adresse/Zugangsdaten enthalten; nicht in Testreports
         // übernehmen.
@@ -226,6 +228,7 @@ final class MailVisualPreview {
                 + "). Bereits versandte Beispiele im Postfach prüfen; kein automatischer Retry.");
       }
     }
+    return accepted;
   }
 
   private static List<Locale> languages(String selected) {

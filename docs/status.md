@@ -17,8 +17,9 @@ halten die wesentlichen technischen Grenzen fest.
 
 ## Qualitätsstand
 
-Der aktuelle Sonar-Export enthält **4 Hinweise im Testcode**. Alle vier sind im
-Arbeitsstand korrigiert; die Bestätigung durch einen erneuten Scan steht aus.
+Der aktuelle Sonar-Export enthält **einen Hinweis zur fehlenden Assertion im manuellen
+Mailtest**. Im Arbeitsstand wird die Anzahl der vom Transport angenommenen Beispiele
+jetzt ausdrücklich geprüft; die Bestätigung durch einen erneuten Scan steht aus.
 Begründungen akzeptierter Ausnahmen stehen eigenständig verständlich am Server.
 Es wurden keine Sonar-Statusänderungen oder neuen Scans durch den Agenten ausgeführt.
 

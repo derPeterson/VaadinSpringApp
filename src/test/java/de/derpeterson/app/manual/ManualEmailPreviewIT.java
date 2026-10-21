@@ -1,5 +1,7 @@
 package de.derpeterson.app.manual;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -60,10 +62,14 @@ class ManualEmailPreviewIT {
   @DisplayName("Mailbeispiele für die menschliche Sichtprüfung ausdrücklich versenden")
   void sendExamplesToTheExplicitRecipient() {
     MailVisualPreview preview = MailVisualPreview.prepare(System::getenv);
-    preview.send(preview.createSender());
+    int accepted = preview.send(preview.createSender());
+    assertEquals(
+        preview.examples().size(),
+        accepted,
+        "Der SMTP-Transport muss alle Mailbeispiele annehmen.");
     System.out.println(
         "Mailbeispiele vom SMTP-Transport angenommen: "
-            + preview.examples().size()
+            + accepted
             + ". Zustellung und Aussehen jetzt im eigenen Postfach prüfen.");
   }
 }
