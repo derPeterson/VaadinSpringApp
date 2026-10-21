@@ -4,8 +4,6 @@
 
 Die vereinbarte Reihenfolge ist:
 
-- [ ] [SonarQube-Anbindung](docs/planung/codex-arbeitsablaeufe.md): native Client-/Skill-Abnahme
-  und frischen main-Scan nach Integration abschließen.
 - [ ] [Lokales HTTPS](docs/planung/https.md): vertrauenswürdigen Zugang über einen
   Reverse Proxy einrichten und Anwendung sowie Testumgebungen darauf abstimmen.
 - [ ] Danach Designkritik mit Stitch auf einem eigenen Branch: eine Spielwiese mit

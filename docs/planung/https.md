@@ -1,6 +1,6 @@
 # HTTPS für die lokale Anwendung
 
-Status: beschlossen, noch nicht umgesetzt. Umsetzung nach den Codex-Arbeitsabläufen.
+Status: beschlossen, noch nicht umgesetzt. Als nächste Umsetzung vereinbart.
 Dieses Dokument ist ein befristeter Arbeitsauftrag und wird bei Abschluss gelöscht.
 
 ## Vereinbarter Rahmen

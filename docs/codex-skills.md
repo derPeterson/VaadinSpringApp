@@ -16,7 +16,6 @@ oder diese Anleitung zu lesen startet keinen Ablauf.
 Normale Folgeantworten gehören zum laufenden Auftrag; der Skillname muss nicht bei
 jedem Arbeitsschritt wiederholt werden. Explizite Einschränkungen des Benutzers gelten.
 Einrichtung und technische Sonar-Bedienung: [Entwicklungsanleitung](entwicklung.md#sonarqube-und-codex).
-Noch ausstehende reale Abnahmen: [verbleibende Einrichtung](planung/codex-arbeitsablaeufe.md).
 
 ## Große Testrunde
 
