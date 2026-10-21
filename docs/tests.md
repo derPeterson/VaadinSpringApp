@@ -27,7 +27,7 @@ Regressionen, behebt Fehler innerhalb bestehender Verträge und führt die vorha
 Prüfungen aus. Neue Fachfunktionen oder grundlegende Vertragsänderungen werden abgestimmt.
 Sonar wird mitgeprüft; kleine fachlich klare Fehler und Blocker werden gezielt behoben.
 Größere Umbauten und umfangreiche Finding-Pakete gehören zum separaten Auftrag
-„Sonar bereinigen“, dessen Ziel möglichst null berechtigte offene Issues ist.
+[„Sonar bereinigen“](entwicklung.md#sonar-bereinigen), dessen Ziel möglichst null berechtigte offene Issues ist.
 Eine bestandene Testrunde setzt keine Null-Issue-Zahl voraus: Testergebnisse, offene
 Sonar-Findings und Quality Gate werden getrennt ausgewiesen. Keine Umbau-/Scanschleife
 bis null während der QA. Sonar-Ergebnisse werden nur mit passendem Analysestand bestätigt;
@@ -41,6 +41,35 @@ bei Unterbrechung bleiben erfolgreiche passende Belege erhalten. Der
 Vergleich, Wiederaufnahme und Zählung. Kontingent wird gelegentlich geprüft; bei
 Erschöpfung wird gesichert und nach Reset über einen eigenen Folgeauftrag fortgesetzt.
 Ein ausdrückliches Stopp hebt diese Fortsetzung auf.
+
+## Übergabe offener Testaufgaben
+
+[docs/testbedarf.md](testbedarf.md) ist die einzige gemeinsame Liste offener
+Ergänzungen oder Anpassungen automatisierter Tests. Umsetzungen, Sonar-Pakete,
+Reviews und QA tragen dort sinnvolle erkannte Lücken ein, sofern sie diese nicht
+im selben Auftrag bereits schließen und prüfen. Keine parallelen Listen in TODO,
+Abschlussberichten oder Paketplänen als alleinige Übergabe führen.
+
+Ein Eintrag enthält kurz: betroffene Funktion, Testart (JUnit/Browser), Szenario,
+erwartetes Verhalten sowie Zustand offen oder wartend mit Grund. Geeignete vorhandene
+Tests berücksichtigen, ähnliche Aufgaben zusammenführen und bestehende Einträge erhalten.
+Eine Testaufgabe darf auch älter als der letzte Git-Vergleichsstand sein.
+
+Der Agent liest die Liste bei der großen Testrunde, prüft vorhandene Abdeckung,
+ergänzt oder korrigiert geeignete Tests und lässt sie ausführen. Playwright führt die
+Browserfälle aus; es wertet diese Aufgabenliste nicht selbst aus. Erst nach passender
+Implementierung und erfolgreichen Nachweisen den Eintrag entfernen. Bei Browserfällen
+gehören DE und EN dazu. Schon passende vorhandene Tests nachweisen, keine Duplikate anlegen.
+
+Erfordert eine Aufgabe zuvor eine neue Fachentscheidung oder einen grundlegenden
+Umbau, gezielt fragen. Ohne Antwort bleibt sie mit Grund wartend; unabhängige Arbeiten
+gehen weiter. Offener Bedarf wird weder durch einen grünen Teiltest noch beim Löschen
+eines erledigten Paketplans entfernt. Im Bericht die verbleibende Lücke nennen.
+
+Die Datei bleibt bei leerer Liste mit einer kurzen Leermeldung bestehen. Keine
+Erledigt-Historie anhängen und die Liste nicht blind überschreiben. Der aktuelle
+Ergebnisbericht steht in `docs/status.md`, menschliche Sonderprüfungen bleiben im
+manuellen Katalog. Der Git-/Codevergleich ergänzt die Liste und erkennt nicht notierte Lücken.
 
 ## Java und Frontend
 

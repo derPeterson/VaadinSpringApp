@@ -6,7 +6,7 @@ description: "Große Testrunde für VaadinSpringApp durchführen oder nach Unter
 # Große Testrunde
 
 Arbeite im tatsächlichen VaadinSpringApp-Repository. Lies zuerst `README.md`,
-`AGENTS.md`, `docs/tests.md`, `docs/status.md` und die relevanten Teile von
+`AGENTS.md`, `docs/tests.md`, `docs/status.md`, `docs/testbedarf.md`, `TODO.md` und relevante Teile von
 `browser-tests/README.md`. Die vorhandenen Anleitungen und Runner sind maßgeblich;
 keinen zweiten Testrunner und keine OpenCode-Portierung aufbauen.
 
@@ -37,6 +37,11 @@ keinen zweiten Testrunner und keine OpenCode-Portierung aufbauen.
   uncommittete Quellen und Tests bewerten, nicht nur über Commit-Nachrichten.
   Bei fehlender/ungeeigneter Baseline die Unsicherheit nennen und einen ersten
   aktuellen Vergleichsstand aufbauen; keine erfundene Änderungshistorie erzeugen.
+- Offenen automatisierten Testbedarf in `docs/testbedarf.md` ausdrücklich mit den vorhandenen
+  Tests abgleichen, einschließlich Übergaben aus Sonar-Paketen und anderen Umsetzungen.
+  Relevante aktive Paketpläne ergänzend lesen. Der Git-Vergleich ersetzt diese Übergabe
+  nicht: offene Fälle können älter als die letzte Baseline oder bereits committet sein.
+  Umgekehrt ist die Testbedarfsliste kein Ersatz für die eigene Prüfung neuer Änderungen.
 - Eine kurze Arbeitsliste nach Funktionen führen: bereits passend getestet,
   JUnit-Lücke, Browserlücke oder menschliche Sonderprüfung. Diese Liste dient dem
   aktuellen Auftrag, nicht einer neuen dauerhaften Triage-Sammlung.
@@ -126,6 +131,12 @@ keinen zweiten Testrunner und keine OpenCode-Portierung aufbauen.
   Vergleichs-/Endstand, wichtige Korrekturen, neue/überarbeitete Tests nach Funktion,
   echte Testzahlen je Ebene/Sprache, Nachtests, Sonar und verbleibende Lücken.
   Normalerweise 1–2, höchstens etwa 4 lesbare Seiten; keine Einzelfall-Protokollflut.
+- Übernommene Testaufgaben erst aus `docs/testbedarf.md` entfernen, wenn die passende
+  automatisierte Abdeckung vorhanden und im nötigen Umfang (Browser: DE/EN) erfolgreich
+  ausgeführt ist. Bei schon vorhandener Abdeckung deren Eignung und Lauf belegen;
+  keinen doppelten Test hinzufügen. Blockierte oder nur implementierte Fälle bleiben offen.
+  Bei grundlegendem Umbau als Voraussetzung gezielt fragen; ohne Antwort den Eintrag
+  mit Grund auf wartend setzen und unabhängige Tests weiterbearbeiten. Nicht ungefragt umbauen.
 - Gültiges Verhalten in der bestehenden Fachdokumentation aktualisieren. Erledigte
   Pläne/TODO-Verweise gemäß `AGENTS.md` entfernen, keine historischen Runberichte
   oder Planarchive hinzufügen. Keine zusätzliche Coverageauswertung beauftragen.

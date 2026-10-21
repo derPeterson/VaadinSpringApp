@@ -64,6 +64,42 @@ Browser-Neuladen erforderlich. `vite.config.ts` ist für eigene Vite-Anpassungen
 generierte Frontenddateien und `target/` nicht von Hand bearbeiten.
 Classpathressourcen als Streams laden, damit auch das gepackte JAR funktioniert.
 
+## Sonar bereinigen
+
+Der Projekt-Skill [sonar-bereinigen](../.agents/skills/sonar-bereinigen/SKILL.md)
+kennt drei ausdrücklich gewählte Aufträge:
+
+| Auftrag | Verhalten |
+| --- | --- |
+| Sonar analysieren und planen | Frischer Scan, vollständige Bewertung und befristeter Paketplan; keine Code-, Git- oder Issue-Statusänderungen |
+| Sonar-Paket X umsetzen | Genau ein geplantes Paket, eigener Branch, Regressionen, eigene lokale Commits/Merge und main-Nachscan; danach anhalten |
+| Sonar komplett bereinigen | Analyse und Planung, geeignete Pakete sequenziell ausführen, integrieren und nachscannen; Ziel möglichst null berechtigte offene Issues |
+
+Die Ausführungsmodi enthalten eigene lokale Paketcommits/Merges und begründete
+Accepted-/False-Positive-Entscheidungen. Kein Push. Wesentliche neue Fachfunktionen
+oder Vertragsänderungen werden abgestimmt; ohne Antwort bleibt das Paket wartend.
+Die direkte MCP-/Scanner-Anbindung ist noch offen und muss vor einem tatsächlichen
+Lauf eingerichtet/verfügbar sein. Dieser Skill allein installiert sie nicht.
+
+Community Build verwendet im Hauptprojekt main-Analysen. Deshalb zuerst auf einem
+Paket-Branch arbeiten und testen, dann lokal nach main übernehmen und dort nachscannen.
+Ein separates Prüfprojekt für Vorab-Branchscans ist kein Bestandteil dieses Ablaufs.
+Browserläufe bleiben ausdrücklich zu beauftragen; nötige offene Fälle werden im
+[Testbedarf](testbedarf.md) für die nächste große Testrunde erhalten.
+
+Es gibt genau einen aktuellen lokalen Sonar-Bericht: `.codex/sonar/bericht.md`.
+Er wird beim nächsten Auftrag ersetzt; Datum und Modus stehen im Inhalt. Der
+Wiederaufnahmestand liegt daneben in `state.json`. Beide Dateien sind ignoriert
+und entstehen erst bei einem tatsächlichen Auftrag. Der Bericht ist im Abschlusschat
+verlinkt und bleibt bis zum nächsten Lauf zum Nachlesen vorhanden.
+
+Offene Umsetzungspakete stehen unter `docs/planung/sonar-pakete.md`, offene Tests
+im Testbedarf. Diese Aufgaben vor dem Ersetzen eines Berichts erhalten. Erledigte
+Paketpläne samt Verweisen entfernen; keine datierten Berichtssammlungen anlegen.
+Fiktive Beispiele liegen getrennt unter einem festen Namen im temporären Chatordner
+und werden beim nächsten Beispiel ersetzt. Wer einen Bericht persönlich archivieren
+möchte, kann ihn selbst mit Datum außerhalb der Projektdokumentation sichern.
+
 ## Codestil
 
 Java folgt Google Java Format, zwei Leerzeichen. Nach jeder eigenen Java-Änderung

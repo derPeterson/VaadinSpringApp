@@ -5,8 +5,8 @@
 Die vereinbarte Reihenfolge ist:
 
 - [ ] [Codex-Arbeitsabläufe und SonarQube-Anbindung](docs/planung/codex-arbeitsablaeufe.md):
-  Vier weitere Skills und Sonar-Anbindung einrichten; der erste Skill „Große Testrunde“
-  ist angelegt. OpenCode vollständig unverändert belassen.
+  Drei weitere Skills und Sonar-Anbindung einrichten; „Große Testrunde“ und
+  „Sonar bereinigen“ sind angelegt. OpenCode vollständig unverändert belassen.
 - [ ] [Lokales HTTPS](docs/planung/https.md): vertrauenswürdigen Zugang über einen
   Reverse Proxy einrichten und Anwendung sowie Testumgebungen darauf abstimmen.
 - [ ] Danach Designkritik mit Stitch auf einem eigenen Branch: eine Spielwiese mit
@@ -33,3 +33,5 @@ stehen im [Prüfstand](docs/status.md).
 Hier stehen nur offene, tatsächlich gewünschte Arbeiten. Erledigte Punkte entfernen.
 Aktuelle Funktionen werden in der Fachdokumentation beschrieben; Testergebnisse
 werden im aktuellen Prüfstand ersetzt. Keine weitere Sammlung alter Aufgabenberichte.
+
+Offene automatisierte Testaufgaben stehen zentral im [Testbedarf](docs/testbedarf.md).

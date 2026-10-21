@@ -1,10 +1,10 @@
 # Codex-Arbeitsabläufe und SonarQube
 
-Status: teilweise umgesetzt. Der erste Skill „Große Testrunde“ ist angelegt und
-strukturell/trocken geprüft; eine echte Gesamtrunde wurde dabei nicht ausgeführt.
-Die gültige Bedienung steht in `docs/tests.md`. Offen sind die vier weiteren Skills,
-die SonarQube-Anbindung und die gemeinsame praktische Abnahme. Dieses Dokument bleibt
-nur für diese offenen Arbeiten bestehen und wird mit ihrem Abschluss gelöscht.
+Status: teilweise umgesetzt. „Große Testrunde“ und „Sonar bereinigen“ sind angelegt
+und strukturell/trocken geprüft. Keine echte Gesamtrunde oder Sonar-Ausführung wurde
+dabei gestartet. Bedienung: `docs/tests.md` und `docs/entwicklung.md`.
+Offen sind drei weitere Skills, die SonarQube-Anbindung und die praktische Abnahme
+im verwendeten Client. Der Plan enthält nur verbleibende Arbeiten und wird nach Abschluss gelöscht.
 
 ## Vereinbarter Rahmen
 
@@ -43,15 +43,19 @@ Werkzeugparameter innerhalb dieses Rahmens werden bei der Umsetzung festgelegt.
 - [ ] Im tatsächlich verwendeten Codex-Client prüfen, dass die Skills gefunden werden
   und auf dem Desktop sowie über den vorhandenen Fernzugriff aufrufbar sind.
 
-## 3. Vier weitere wiederholbare Aufträge einrichten
+## 3. Drei weitere wiederholbare Aufträge einrichten
 
 | Auftrag | Verbindlicher Inhalt |
 | --- | --- |
-| Sonar bereinigen | Aktuelle Findings fachlich bewerten und möglichst null berechtigte offene Issues erreichen; auch größere Refactorings innerhalb der abgestimmten Funktionsverträge umsetzen, Regressionen ergänzen und durch Nachscan prüfen; echte Vertrags-/Architekturentscheidungen abstimmen, keine pauschalen Suppressions oder unbeauftragten Statuswechsel |
 | Änderungen prüfen | Diff und Funktion bewerten; passende Nachweise prüfen; offene Punkte nennen; deutsche Commit-Message für die tatsächlich fertigen Änderungen vorschlagen |
 | Branch lokal mergen | Ausdrücklich genannten Quell-/Zielbranch, Arbeitsstand, Tests und Konflikte prüfen; lokalen Merge durchführen; Ergebnis berichten |
 | Umsetzung starten | Abgestimmten Auftrag und Abnahmekriterien übernehmen; Arbeitsstand prüfen; auf Wunsch einen eigenen Branch anlegen; fachlich umsetzen, gezielte Regressionen und vorgeschriebene Prüfungen ausführen; Dokumentation und erledigten Plan bereinigen; Ergebnis und deutsche Commit-Message liefern |
 
+- [ ] Bei Sonar-Paketen und Umsetzungen notwendigen, noch nicht ausgeführten
+  automatisierten Testbedarf in `docs/testbedarf.md` übergeben: Funktion, Szenario, Erwartung und Lücke
+  der bestehenden Abdeckung. Im Abschlussbericht/Chat darauf hinweisen. Die Aufgabe
+  bleibt bis zur erfolgreichen Abnahme bestehen, auch wenn Paketplan oder Bericht
+  ersetzt/gelöscht werden; die große Testrunde übernimmt sie ausdrücklich.
 - [ ] Beim Auftrag „Umsetzung starten“ ohne Branchwunsch im aktuellen Branch arbeiten.
   Bei gewünschtem eigenen Branch den genannten Namen verwenden oder einen passenden
   Namen wählen, falls keiner vorgegeben ist. Fremde Änderungen erhalten; nur tatsächliche

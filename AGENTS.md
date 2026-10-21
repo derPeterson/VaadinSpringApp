@@ -166,6 +166,11 @@
   nicht erneut fragen. Automatische Skillwahl, Skill-Erstellung und Trockenprüfungen
   allein erteilen keine Browserfreigabe.
 - For behavior changes, add focused tests for the expected behavior.
+- Erkannten, im Auftrag nicht bereits geschlossenen und geprüften automatisierten
+  Testbedarf zentral in `docs/testbedarf.md` pflegen; gilt auch für Sonar und Reviews.
+  Keine parallelen Übergabelisten. Große Testrunden lesen die Datei ausdrücklich.
+  Einträge erst nach passender Abdeckung und erfolgreicher Prüfung entfernen;
+  ausstehende Grundsatzentscheidungen mit Grund zurückstellen. Pflege: `docs/tests.md`.
 - Java tests belong under `src/test/java/`; follow existing JUnit patterns.
   `ImageHelperTest` is an example without application startup or a database.
 - Browser tests live under `browser-tests/src/test/java/` and use

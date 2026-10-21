@@ -1,0 +1,3 @@
+interface:
+  display_name: "Sonar bereinigen"
+  short_description: "Sonar analysieren und Pakete gezielt bereinigen"

@@ -46,3 +46,6 @@ sonar-findings.json
 
 # Lokaler aktueller QA-Zustand, kein Berichtarchiv
 /.codex/qa/
+
+# Aktueller lokaler Sonar-Bericht und Wiederaufnahmestand
+/.codex/sonar/

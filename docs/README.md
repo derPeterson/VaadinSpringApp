@@ -14,6 +14,7 @@ lokal mit Testdaten; eine neue Testdatenbank wird aus dem aktuellen Schema angel
 | [Logging](logging.md) | Logpegel, zulässige Inhalte und Diagnose |
 | [Entscheidungen](entscheidungen.md) | Wesentliche technische Entscheidungen, Vorteile und Grenzen |
 | [Tests](tests.md) | Testarten und Ausführung |
+| [Offener Testbedarf](testbedarf.md) | Gemeinsame Aufgabenliste für fehlende oder anzupassende automatisierte Tests |
 | [Aktueller Stand](status.md) | Heutiger Funktions- und Prüfstand |
 | [Manuelle Sonderprüfungen](manual-tests/README.md) | Menschliche Abnahmen und gezielte Lücken |
 | [Offene Aufgaben](../TODO.md) | Vereinbarte nächste Arbeiten |
