@@ -88,6 +88,19 @@ Gezielte Regressionen verwenden `-Dtest=KlasseA,KlasseB`; in PowerShell das ganz
 Argument zitieren. Datenbanktests verwenden ausschließlich eigene isolierte H2-Datenbanken.
 Frisches Schema und Wiederanlauf desselben Schemas werden separat geprüft.
 
+## Sonar-Helfertests
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s scripts/sonar -p test_sonar.py -v
+```
+
+Die Offline-Regressionen prüfen Zugangsbehandlung, Pagination, Quellenzuordnung,
+Branch-/Parallelitätsschutz und Serverabschluss ohne echten Sonar-/Docker-/Mavenzugriff.
+Sie gehören als gepflegte Python-Helfer zur großen Testrunde. Unter Windows wird
+auch DPAPI mit künstlichen Testwerten geprüft; echte Zugangsdaten werden nicht gelesen.
+Die tatsächliche MCP-Verbindung und der main-Projektscan bleiben separate Abnahmen:
+[Einrichtung und Bedienung](entwicklung.md#sonarqube-und-codex).
+
 ## Vollständige Browserrunde
 
 ```powershell

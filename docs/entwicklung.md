@@ -31,6 +31,7 @@ Die Paketnamen beziehen sich auf `src/main/java/de/derpeterson/app/`:
 | `src/main/resources/db` | Aktuelles H2-Anwendungs- und Session-Schema |
 | `src/main/resources/META-INF/resources/{custom-theme,icons}` | Gemeinsames Theme und zusätzliche Icons |
 | `src/test`, `browser-tests` | Technische Tests, echte Browserjourneys und deren Runner |
+| `scripts/sonar` | Lokale Codex-/Sonar-Anbindung, geschützter Zugang und main-Scanner; keine Anwendungslogik |
 | `.agents/skills` | Codex-Projektabläufe; Bedienung unter [Arbeiten mit Codex](codex-skills.md) |
 
 Shared-Quellen nicht als Quellordner in andere Module einhängen. Vor einem frischen
@@ -80,6 +81,87 @@ lädt Vaadin die Quellstyles; bei optimiertem Frontend sind Neubau und anschlie�
 Browser-Neuladen erforderlich. `vite.config.ts` ist für eigene Vite-Anpassungen;
 generierte Frontenddateien und `target/` nicht von Hand bearbeiten.
 Classpathressourcen als Streams laden, damit auch das gepackte JAR funktioniert.
+
+## SonarQube und Codex
+
+Die lokale Anbindung liegt unter `scripts/sonar/`. Sie benötigt die virtuelle
+Python-Projektumgebung (Python 3.11 oder neuer), Docker Desktop und den vorhandenen
+SonarQube Community Build unter `http://localhost:9000`. Die Versionen von MCP-Image
+und Maven-Scanner sind im Helfer festgelegt; das Image ist zusätzlich per Digest gebunden.
+
+Einmalige Einrichtung im Projektroot:
+
+```powershell
+# Offizielles Image in der im Helfer festgelegten Version bereitstellen:
+docker pull sonarsource/sonarqube-mcp:1.29.0.4488
+# Verdecktes lokales Eingabefenster öffnen:
+.\.venv\Scripts\python.exe scripts/sonar/sonar.py token
+# Projektbezogene Codex-Konfiguration erzeugen:
+.\.venv\Scripts\python.exe scripts/sonar/sonar.py configure
+```
+
+Unter SonarQube „My Account → Security“ einen **Benutzertoken** erstellen.
+Das Konto benötigt Browse für `vaadin-spring-app`, für Scans zusätzlich Execute
+Analysis und für ausdrücklich beauftragte Statusentscheidungen die entsprechenden
+Issue-/Hotspot-Rechte. Ein Projekt-/globaler Analysetoken ersetzt den MCP-Benutzertoken nicht.
+Token ausschließlich im lokalen Fenster eingeben. Die Datei
+`%LOCALAPPDATA%/VaadinSpringApp/Sonar/token.dpapi` ist mit Windows DPAPI an den
+Windows-Benutzer gebunden und liegt außerhalb des Repositorys. Zum Ersetzen das
+Fenster erneut aufrufen. Alternativ ist `SONARQUBE_TOKEN` im aufrufenden Prozess
+möglich. Keine Werte in Chat, Skript, Konfiguration oder Befehlsargumente kopieren.
+
+`configure` erzeugt die ignorierte `.codex/config.toml` mit lokalen absoluten Pfaden.
+Nach einem Umzug die vorhandene lokale Konfiguration bewusst abgleichen; fremde
+Konfiguration wird nicht überschrieben. In Codex das tatsächliche Repository als
+vertrauenswürdiges Projekt öffnen und MCP neu laden. Lokale Clients verwenden die
+[Codex-MCP-Konfiguration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli);
+Werkzeuge in einem ChatGPT-Chat mit lokalem Ausführer sind dadurch nicht automatisch
+verfügbar. Im jeweiligen Client einen echten Leseaufruf prüfen. `codex mcp get/list`
+verwaltet globale Einträge und ist keine Abnahme dieser Projektkonfiguration.
+
+Der MCP-Start öffnet einen eigenen kurzlebigen Container ohne Arbeitsverzeichnismount,
+Docker-Socket oder veröffentlichten Port. Er verbindet sich über
+`host.docker.internal:9000` mit dem vorhandenen Sonar-Dienst. Aktiviert sind die für
+Projekt, Findings, Regeln, Gate, Metriken und Hotspots benötigten Werkzeuggruppen.
+Schreibende Werkzeuge ausschließlich im freigegebenen Sonar-Ausführungsmodus nutzen;
+Einrichtung, Analyseplanung und große QA verändern keine Issue-Status.
+
+Zusätzliche technische Leseprüfung, ohne Scan oder Statusänderung:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/sonar/sonar.py read
+```
+
+Sie prüft Authentifizierung, Hauptbranch, vollständige Findings/Hotspots, Gate,
+Metriken und Analyseidentität. Die Ausgabe enthält getrennte Anzahlen sowie die
+Quellzuordnung zu lokalem main. `sourceMatchesLocalMain: false` bedeutet abweichenden
+Stand; `null` bedeutet fehlende Revision. Fehlende Coverage bleibt fehlend. Ein
+Verbindungs-/Seitenfehler ist kein erfolgreicher Abruf mit null Findings.
+Im normalen Skill-Ablauf werden die einzelnen Codestellen über MCP abgerufen.
+
+Vollständigen Scan nur als beauftragten Analyseschritt auf sauberem **main** starten:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/sonar/sonar.py scan
+```
+
+Der Ablauf prüft JDK 25, installiert Shared, prüft den Stil, baut optimiert samt
+Anwendungstests und lädt danach den Scan mit fester Quellrevision hoch. Kein Browserlauf.
+Feature-Branches und uncommittierte Änderungen werden abgewiesen. Eine lokale
+`.codex/sonar/scan.lock` verhindert doppelte Helferläufe; nach einem harten Abbruch
+vor Entfernen einer verbliebenen Sperre den tatsächlichen Prozessstand prüfen.
+Serverwarteschlange und Quellstand werden vor Upload erneut geprüft. Andere externe
+Scanner müssen ebenfalls koordiniert werden; die Sperre erfasst nur diesen Helfer.
+
+Der konkrete Serverauftrag muss erfolgreich enden und zur erwarteten Analyse-ID
+und Revision gehören. Ein rotes Gate liefert trotz abgeschlossener Verarbeitung
+einen Fehlerstatus. Task-Metadaten stehen nur aktuell unter `.codex/sonar/`;
+kein Berichtarchiv und kein manueller JSON-Export sind nötig. Eine gelesene frühere
+Analyse ersetzt keinen neuen Scan. Die bestehenden lokalen Scanner-Batchdateien
+sind kein Bestandteil dieses zugangsdatenfreien Ablaufs.
+
+Offizielle Grundlagen: [Sonar-MCP-Einrichtung](https://docs.sonarsource.com/sonarqube-mcp-server/setup/quickstart-guides/codex-cli),
+[Maven-Scanner](https://docs.sonarsource.com/sonarqube-server/analyzing-source-code/scanners/sonarscanner-for-maven).
 
 ## Arbeiten mit Codex
 

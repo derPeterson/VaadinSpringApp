@@ -1,50 +1,35 @@
-# Codex-Arbeitsabläufe: verbleibende Einrichtung
+# SonarQube-Anbindung: offene Abnahmen
 
-Alle fünf Projekt-Skills sind angelegt und strukturell/trocken geprüft.
-Bedienung: [Arbeiten mit Codex](../codex-skills.md).
-Noch offen sind die direkte SonarQube-Anbindung und die praktische Abnahme im
-verwendeten Client. Diese Datei enthält nur diese offenen Arbeiten und wird danach gelöscht.
+Branch: `feature/sonarqube-anbindung`, Basis: `66908545a7610c2cd9cc5ad9623a33c7318cd40a`.
+Die vollständige Umsetzung des Plans ist freigegeben. Einrichtung und technische
+Bedienung stehen in der [Entwicklungsanleitung](../entwicklung.md#sonarqube-und-codex).
+Dieser Plan bleibt nur für die tatsächlich offenen Schritte bestehen.
 
-## 1. SonarQube direkt anbinden
+## Noch offen
 
-- [ ] Aktuelle SonarQube-Edition/-Version mit der passenden offiziellen MCP-Version
-  abgleichen und den tatsächlichen Netzwerkweg vom MCP-Ausführungsort prüfen.
-- [ ] Projektbezogene Konfiguration und lokal hinterlegten Zugang einrichten.
-  Keine Tokens im Chat, Repository, Befehlsverlauf oder Bericht ausgeben.
-  Benötigte Werkzeuge/Berechtigungen prüfen; schreibende Issue-Aktionen nur in den
-  dafür ausdrücklich freigegebenen Sonar-Ausführungsmodi verwenden.
-- [ ] Projekt, Hauptbranch, Scanzeitpunkt und analysierten Quellstand verlässlich
-  zuordnen. Veraltete/unvollständige Analysen, fehlende Rechte und Verbindungsfehler
-  sichtbar melden; kein Verbindungsfehler darf als null Findings erscheinen.
-- [ ] Findings mit IDs, Regeln, Codestellen, vollständiger Pagination sowie Quality
-  Gate und vorhandene Coverage direkt abrufen. JSON-Export nicht als Voraussetzung
-  des normalen Arbeitsablaufs beibehalten.
-- [ ] Aktuellen Projektscan als separaten Build-/Analyseschritt anbinden und dessen
-  tatsächlichen Serverabschluss prüfen. Abruf alter Ergebnisse ist kein neuer Scan.
-- [ ] Community-Build-Grenze berücksichtigen: Hauptprojekt analysiert main;
-  Paket-Branches dürfen dessen Stand nicht durch vermeintliche Branchscans ersetzen.
+- [ ] Offiziellen MCP-Server mit echtem Werkzeugaufruf im gewünschten Client abnehmen.
+  Aktueller Chat: ChatGPT-Projektspiegel mit lokalem Ausführer; projektbezogene
+  Codex-Konfiguration allein belegt keine Werkzeugeinbindung in diesen Chat.
+  Tatsächliche Auffindbarkeit von AGENTS und allen fünf Skills im Client mitprüfen.
+- [ ] Nach ordnungsgemäßer Integration einen frischen vollständigen main-Scan abnehmen:
+  Serverauftrag, Analyse-ID, Revision und Gate müssen zusammenpassen. Kein Feature-
+  Branchscan in das Hauptprojekt, kein Merge oder Commit allein zur Einrichtung.
+- [ ] Danach erledigten TODO-Eintrag, diese Datei und Planverweise entfernen;
+  keinen Abschlussbericht archivieren. Der separate HTTPS-Plan bleibt bestehen.
 
-## 2. Praktische Abnahme
+## Bereits verfügbarer technischer Stand
 
-- [ ] Im tatsächlichen Repository und verwendeten Codex-Client prüfen, dass AGENTS
-  und alle fünf Projekt-Skills geladen/auffindbar sind. Ein ChatGPT-Projektspiegel
-  ist keine zweite Codequelle. Vorhandenen Fernzugriff dabei berücksichtigen.
-- [ ] Sonar-Anbindung mit überschaubarem echten Lese-/Analyseauftrag prüfen und
-  Projekt/Quellstand sowie Fehlerfälle nachvollziehbar bestätigen.
-- [ ] Weitere reale Skill-Abnahmen nur im tatsächlich beauftragten Umfang durchführen;
-  keine ungefragte große QA, Feature-Umsetzung oder echten Merge zur Installation starten.
-- [ ] Verbleibende Grenzen knapp nennen; technische Strukturprüfung nicht als
-  erfolgreiche vollständige Laufzeitabnahme ausgeben.
+SonarQube Community `26.10.0.133078` läuft lokal; der Netzwerkweg aus dem festgelegten
+MCP-Container über `host.docker.internal:9000` liefert `UP`. Offizielles MCP-Image
+`1.29.0.4488` mit festem Digest ist bereitgestellt, Maven-Scanner `5.8.0.7211` festgelegt.
+Lokaler Zugang ist benutzergebunden verschlüsselt hinterlegt. Authentifizierter API-
+Abruf und echte Lese-Werkzeugaufrufe am offiziellen MCP-Server sind erfolgreich;
+33 Ausnahmen wurden über zwei MCP-Seiten vollständig mit eindeutigen IDs gelesen.
+Die vorhandene Analyse zeigt 0 offene Issues, 26 Accepted, 7 False Positives und ein
+grünes Gate. Ihre Revision `3153a24d9af33508304c379178b854b533942f29` weicht von
+lokalem main ab; sie bestätigt nicht den neuen Featurestand.
 
-## Pflichtabschluss
-
-- [ ] Tatsächliche Bedienung und Konfiguration in bestehenden Fachdokumenten pflegen,
-  verbleibende offene Testaufgaben zentral in `docs/testbedarf.md` erhalten.
-- [ ] Erledigten TODO-Eintrag und Verweis im Dokumentationseinstieg entfernen.
-- [ ] Diese Plandatei im selben Arbeitsstand löschen, kein Abschluss-/Planarchiv
-  anlegen. Verweise prüfen und einen danach leeren Planordner entfernen.
-  Der separate HTTPS-Plan bleibt bis zu seiner eigenen Umsetzung bestehen.
-
-Referenzen: [Projekt-Skills](https://learn.chatgpt.com/docs/build-skills),
-[Codex-MCP-Konfiguration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli),
-[offizieller SonarQube-MCP-Server](https://docs.sonarsource.com/sonarqube-mcp-server/about-the-mcp-server).
+36 neue Offline-Regressionen, Ruff und der Branchschutz am echten Repository sind
+geprüft. Maven Wrapper verwendet JDK 25. Das ersetzt weder native Werkzeugverfügbarkeit
+in diesem Chat noch den frischen main-Scan. Anwendung und bestehende Sonar-Befunde
+wurden nicht verändert.

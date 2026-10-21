@@ -15,8 +15,8 @@ oder diese Anleitung zu lesen startet keinen Ablauf.
 
 Normale Folgeantworten gehören zum laufenden Auftrag; der Skillname muss nicht bei
 jedem Arbeitsschritt wiederholt werden. Explizite Einschränkungen des Benutzers gelten.
-Die direkte Sonar-Anbindung und praktische Client-Abnahme sind noch offen:
-[verbleibende Einrichtung](planung/codex-arbeitsablaeufe.md).
+Einrichtung und technische Sonar-Bedienung: [Entwicklungsanleitung](entwicklung.md#sonarqube-und-codex).
+Noch ausstehende reale Abnahmen: [verbleibende Einrichtung](planung/codex-arbeitsablaeufe.md).
 
 ## Große Testrunde
 
@@ -53,6 +53,8 @@ Die Ausführungsmodi erlauben begründete Accepted-/False-Positive-Entscheidunge
 eigenständig verständlichem Kommentar direkt am Befund. Kein Push. Wesentliche neue
 Funktionen oder Vertragsänderungen abstimmen; ohne Antwort bleiben sie wartend.
 Die benötigte MCP-/Scanner-Anbindung muss verfügbar sein; der Skill installiert sie nicht.
+Der vorbereitete Projektscan läuft über `scripts/sonar/sonar.py scan`; Voraussetzungen
+und MCP-Bedienung stehen in der [Entwicklungsanleitung](entwicklung.md#sonarqube-und-codex).
 
 Community Build analysiert im Hauptprojekt main. Paket-Branches daher zuerst lokal
 testen und integrieren, anschließend main scannen. Kein separates Branch-Prüfprojekt.
