@@ -95,8 +95,10 @@ zugeschaltet: eigene temporäre CA, vollständige HTTPS-Zertifikatsprüfung und
 frische In-Memory-Datenbank ohne `.env`-Import. Der vollständige Starterfall
 benötigt freie IDE-Ports 8080/8081/8443 und verwendet ausschließlich eigene
 Prozesse; ein belegter Port führt zum Fehler, vorhandene Dienste bleiben erhalten.
-Der Anwendungsprozess startet ohne Testklassen und ohne Windows-Trustimport. Den gemeinsamen
-Run-/Debug-Ablauf in IntelliJ nimmt der Benutzer zusätzlich manuell ab.
+Der Anwendungsprozess startet ohne Testklassen und ohne Windows-Trustimport.
+Die zusätzliche menschliche Abnahme des IDE-Komfortstarts ist bestätigt:
+Start, Stop, harter Reset, Debug mit Breakpoint und HotSwap wurden vom Benutzer
+in IntelliJ erfolgreich geprüft.
 Für den vollständigen Starterfall zuvor den optimierten Vaadin-Frontendbuild
 erstellen; dieser Fall verwendet dessen Ressourcen und startet keinen Entwicklungs-Frontendbau.
 
