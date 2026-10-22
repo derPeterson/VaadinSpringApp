@@ -15,7 +15,7 @@ final class BrowserHttpsSetup {
   static void setup(Path repo) throws Exception {
     Path directory = BrowserTestCa.directory(repo);
     BrowserTestCa.initialize(directory);
-    try (BrowserTestCa.Lease _ = BrowserTestCa.lease(directory, false)) {
+    try (var _ = BrowserTestCa.lease(directory, false)) {
       X509Certificate root = BrowserTestCa.ownedCertificate(directory);
       if (BrowserHttps.ownsTrust(directory)) {
         BrowserTestCa.requireOwnershipMarker(directory, root);
@@ -51,7 +51,7 @@ final class BrowserHttpsSetup {
       System.out.println("No browser test CA is configured.");
       return;
     }
-    try (BrowserTestCa.Lease _ = BrowserTestCa.lease(directory, false)) {
+    try (var _ = BrowserTestCa.lease(directory, false)) {
       X509Certificate root = BrowserTestCa.ownedCertificate(directory);
       if (BrowserHttps.ownsTrust(directory)) {
         BrowserTestCa.requireOwnershipMarker(directory, root);

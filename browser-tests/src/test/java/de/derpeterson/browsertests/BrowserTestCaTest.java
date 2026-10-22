@@ -148,7 +148,7 @@ class BrowserTestCaTest {
 
   @Test
   void activeRunPreventsConcurrentSetupOrRemoval() throws Exception {
-    try (BrowserTestCa.Lease _ = BrowserTestCa.lease(authority, true)) {
+    try (var _ = BrowserTestCa.lease(authority, true)) {
       assertThrows(IOException.class, () -> BrowserTestCa.lease(authority, false));
     }
     try (BrowserTestCa.Lease lease = BrowserTestCa.lease(authority, false)) {

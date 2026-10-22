@@ -216,7 +216,7 @@ public final class BrowserTestRunner {
     Path authority = BrowserTestCa.directory(module.getParent());
     BrowserTestCa.requireTrusted(authority);
     int exit;
-    try (BrowserTestCa.Lease _ = BrowserTestCa.lease(authority, true)) {
+    try (var _ = BrowserTestCa.lease(authority, true)) {
       BrowserTestCa.requireTrusted(authority);
       BrowserTestRunner runner = new BrowserTestRunner(module, options, suite);
       exit = runner.workers > 1 ? runner.executeParallel(options) : runner.execute(options);

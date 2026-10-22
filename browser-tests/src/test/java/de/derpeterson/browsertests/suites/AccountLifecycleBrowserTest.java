@@ -21,7 +21,6 @@ import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Story;
 import io.qameta.allure.playwright.AllurePlaywright;
-import io.qameta.allure.playwright.TraceSession;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -194,7 +193,7 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
                 .setLocale(texts.browserLocale())
                 .setTimezoneId("Europe/Berlin"))) {
       AllurePlaywright.register(other);
-      try (TraceSession _ = AllurePlaywright.startTracing(other)) {
+      try (var _ = AllurePlaywright.startTracing(other)) {
         Page second = other.newPage();
         second.navigate(path(HOME_ROUTE));
         new UserMenu(second).selectTestLanguage();

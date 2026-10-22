@@ -23,7 +23,6 @@ import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Story;
 import io.qameta.allure.playwright.AllurePlaywright;
-import io.qameta.allure.playwright.TraceSession;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -96,7 +95,7 @@ public class PresentationBrowserTest extends BrowserFixture {
                 .setBaseURL(System.getProperty("browser.tests.baseUrl"))
                 .setLocale(texts.browserLocale()))) {
       AllurePlaywright.register(other);
-      try (TraceSession _ = AllurePlaywright.startTracing(other)) {
+      try (var _ = AllurePlaywright.startTracing(other)) {
         Page visitor = other.newPage();
         visitor.navigate(path(HOME_ROUTE));
         new UserMenu(visitor).selectTestLanguage();

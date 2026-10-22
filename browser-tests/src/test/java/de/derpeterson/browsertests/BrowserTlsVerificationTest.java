@@ -31,7 +31,7 @@ class BrowserTlsVerificationTest {
     Path authority = BrowserTestCa.directory(Path.of("..").toAbsolutePath().normalize());
     BrowserTestCa.requireTrusted(authority);
     List<Process> proxies = new ArrayList<>();
-    try (BrowserTestCa.Lease _ = BrowserTestCa.lease(authority, true);
+    try (var _ = BrowserTestCa.lease(authority, true);
         Playwright playwright = Playwright.create();
         Browser browser = playwright.chromium().launch();
         BrowserContext context = browser.newContext()) {

@@ -11,7 +11,10 @@ Kommentaren sind unverändert auf die verschobenen App-Dateien übernommen.
 ## Ein freigegebenes Paket
 
 31 Code-Smells: 28 Browser, drei Shared; keine Bugs, Vulnerabilities oder Hotspots.
-23 Hinweise durch kleine Codekorrekturen bearbeitet; Serverbestätigung ausstehend.
+23 Hinweise sind im Nachscan als Fixed bestätigt. Die sieben daraus folgenden
+S7466-Stilhinweise werden ebenfalls durch Code mit `var _` behoben; der Benutzer hat
+diese konkrete sinnvolle Verwendung bestätigt. Zwischenzeitliche Accepted-Entscheidungen
+dieser sieben Hinweise sind mit Begründung wieder geöffnet. Nachscan steht aus.
 Fünf begründete Accepted-Entscheidungen für begrenzte Retryabstände und zusammenhängende
 Zustandsreisen sowie drei False positives für Launcherparameter und fremdes stdout
 direkt am Finding dokumentiert. Bisherige Ausnahmen bleiben erhalten.
@@ -59,6 +62,8 @@ keine entfernten Assertions, Sperren oder Aufräumgrenzen. Kein Gate-/Profil-/Sc
   - `2a53eb6e-1a8b-4716-b860-251b3ecf4d9a`: shared/src/main/java/de/derpeterson/app/i18n/MessageTexts.java (14).
 - java:S2093: 1 Finding(s)
   - `d90f026e-c776-47cc-851f-30e2668d6a33`: browser-tests/src/test/java/de/derpeterson/browsertests/BrowserTestRunner.java (230).
+
+S7466-Folgehinweise: `c6144e89-253c-4ecd-be1a-d38d623e18cc`, `d973aed0-42c9-4045-9f4a-fee380fa18f8`, `0407e198-7521-451e-88fa-5c09cb01dcad`, `566662dc-965e-461d-a146-faafef7297d5`, `3d5707e9-77be-4754-bc1c-52fcbf8bfb03`, `def2dbe5-e86e-4aaf-8eeb-b818fc83ba19`, `752f9010-9a47-4c1d-a79f-f025bf0ddb19`.
 
 ## Nachweis und Abschluss
 
