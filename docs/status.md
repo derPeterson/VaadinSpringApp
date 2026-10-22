@@ -100,7 +100,7 @@ Dies ist ein gezielter Nachtest, keine erneut ausgeführte große QA: Die vollst
 161 DE-/EN-Fälle oben stammen vom vorherigen interaktiven Runner. Anwendungsquellen
 und Produktionsimage wurden durch den Nachtlaufumbau nicht verändert.
 
-## Sonar und verbleibender Abschluss
+## Sonar und HTTPS-Abnahme
 
 Beide Sonar-Pakete sind auf eigenen Branches umgesetzt und lokal nach `main`
 integriert. Der IDE-Starter schützt seine kurzlebigen Argumentdateien bereits bei
@@ -146,7 +146,12 @@ keine System- oder Projektkonfiguration wurde dafür geändert.
 
 Es sind keine bestätigten offenen Anwendungsfehler bekannt; siehe [BUGS.md](../BUGS.md).
 Offene automatisierte Testarbeit bleibt im [Testbedarf](testbedarf.md), menschliche
-Sonderprüfungen im [manuellen Katalog](manual-tests/README.md). Die
-[HTTPS-Planung](planung/https.md) bleibt bis zur gemeinsamen Gesamt-Abnahme erhalten.
-Lokale Paketcommits und Integration sind erfolgt, kein Push und kein Featureabschluss.
+Sonderprüfungen im [manuellen Katalog](manual-tests/README.md).
+Das vereinbarte lokale HTTPS-Feature ist vom Benutzer insgesamt abgenommen und
+am 22.10.2026 abgeschlossen. Die bestätigte IDE-/BAT-Abnahme bleibt gültig;
+die Grenzen der großen Browserrunde und der gezielten Nachprüfungen stehen oben.
+Der erledigte Feature-Plan und seine TODO-/Dokumentationsverweise sind entfernt.
+Gültige Bedienung und Grenzen stehen in der [Entwicklungsanleitung](entwicklung.md#lokales-https),
+der [Dockeranleitung](docker/README.md) und der [Browser-Testanleitung](../browser-tests/README.md#isolation).
+Lokale Paketcommits und Integration sind erfolgt; kein Push.
 Entwicklerdaten und fremde Prozesse wurden nicht als Fixtures verwendet oder verändert.

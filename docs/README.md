@@ -26,9 +26,8 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
 
 ## Aktive Umsetzungspläne
 
-Als nächste Umsetzung ist vereinbart:
-
-- [HTTPS für die lokale Anwendung](planung/https.md)
+Aktuell gibt es keine offenen Umsetzungspläne. Vereinbarte nächste Arbeiten stehen
+in [TODO](../TODO.md).
 
 Diese Pläne beschreiben offene Arbeiten. Nach Umsetzung werden sie samt Verweisen
 entfernt; die gültige Bedienung und Konfiguration steht dann in den obigen Fachdokumenten.
