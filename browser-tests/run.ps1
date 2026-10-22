@@ -1,6 +1,6 @@
 ﻿param(
     [switch]$Headed,
-    [ValidateSet('all', 'fast', 'notifications', 'account-settings', 'account-security', 'session-management', 'cosmos-design', 'login-layout', 'login-checks', 'infrastructure', 'operations', 'authentication', 'login-attempts', 'session-limits', 'session-persistence', 'maintenance', 'registration', 'verification', 'password-reset', 'account-lifecycle', 'presentation', 'token-configuration', 'user-management', 'user-filters', 'user-access', 'session-security', 'blocked-links', 'security-journeys', 'remember-me', 'user-status', 'configuration', 'admin-mail', 'token-expiry', 'remaining-configuration', 'remaining-coverage')]
+    [ValidateSet('all', 'fast', 'notifications', 'account-settings', 'account-security', 'session-management', 'cosmos-design', 'login-layout', 'login-checks', 'infrastructure', 'https-night', 'operations', 'authentication', 'login-attempts', 'session-limits', 'session-persistence', 'maintenance', 'registration', 'verification', 'password-reset', 'account-lifecycle', 'presentation', 'token-configuration', 'user-management', 'user-filters', 'user-access', 'session-security', 'blocked-links', 'security-journeys', 'remember-me', 'user-status', 'configuration', 'admin-mail', 'token-expiry', 'remaining-coverage', 'remaining-configuration')]
     [string]$Suite = 'all',
     [ValidateSet('de', 'en')]
     [string]$Language = 'de',
@@ -10,12 +10,15 @@
     [switch]$Coverage,
     [switch]$FailureProbe,
     [switch]$ReportingTests,
+    [switch]$SetupHttps,
+    [switch]$RemoveHttps,
     [switch]$Report,
     [string]$ReportPath,
     [switch]$InstallBrowsers,
     [string]$Trace
 )
 $ErrorActionPreference = 'Stop'
+if ($SetupHttps -and $RemoveHttps) { throw 'Choose SetupHttps or RemoveHttps, not both.' }
 if ($ReportPath) { $Report = $true }
 $modulePath = $PSScriptRoot
 $repoPath = Split-Path $modulePath -Parent
@@ -52,6 +55,8 @@ if ($Headed) { $javaArguments += '--headed' }
 if ($NoBuild) { $javaArguments += '--no-build' }
 if ($Coverage) { $javaArguments += '--coverage' }
 if ($FailureProbe) { $javaArguments += '--failure-probe' }
+if ($SetupHttps) { $javaArguments += '--setup-https' }
+if ($RemoveHttps) { $javaArguments += '--remove-https' }
 if ($Report) { $javaArguments += '--report' }
 if ($ReportPath) { $javaArguments += @('--report-path', $ReportPath) }
 $previousDownloadSetting = $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD

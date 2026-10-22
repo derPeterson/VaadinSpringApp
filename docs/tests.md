@@ -13,6 +13,12 @@
 Aktuelle Ergebnisse stehen nur im [Prüfstand](status.md), nicht in einer Kette alter
 Laufberichte. Vorhandene Testfälle sind kein Nachweis eines erfolgreich ausgeführten Laufs.
 
+Für unbeaufsichtigte HTTPS-Browserläufe die separate Test-CA einmalig bewusst mit
+`browser-tests-zertifikat-einrichten.bat` im Projektroot einrichten. Normale Läufe
+lesen Windows-Vertrauen nur und scheitern bei fehlender/ungültiger Einrichtung vor
+Appstart. Einrichtung, Rückbau, Schlüsselisolation und der gezielte TLS-Negativtest
+stehen in der [Browseranleitung](../browser-tests/README.md#isolation).
+
 ## Große Testrunde mit Codex
 
 Auftrag, Umfang, Sonar-Abgrenzung und Wiederaufnahme stehen gemeinsam bei den

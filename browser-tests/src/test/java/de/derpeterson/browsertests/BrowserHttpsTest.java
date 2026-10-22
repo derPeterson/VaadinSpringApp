@@ -17,16 +17,26 @@ import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class BrowserHttpsTest {
   @TempDir Path directory;
 
   @ParameterizedTest
-  @ValueSource(strings = {"rights", "denied", "cancelled", "partial"})
+  @CsvSource({
+    "rights,false",
+    "rights,true",
+    "denied,false",
+    "denied,true",
+    "cancelled,false",
+    "cancelled,true",
+    "partial,false",
+    "partial,true"
+  })
   @EnabledOnOs(OS.WINDOWS)
-  void actualTrustHelperCleansFailedImportsWithoutTouchingForeignEntries(String scenario)
-      throws Exception {
+  void actualTrustHelperCleansFailedImportsWithoutTouchingForeignEntries(
+      String scenario, boolean rootOnly) throws Exception {
     Process process =
         new ProcessBuilder(
                 "powershell.exe",
@@ -41,7 +51,9 @@ class BrowserHttpsTest {
                 "-Directory",
                 directory.toString(),
                 "-Scenario",
-                scenario)
+                scenario,
+                "-RootOnlyMode",
+                String.valueOf(rootOnly))
             .redirectErrorStream(true)
             .start();
     try {
@@ -64,10 +76,10 @@ class BrowserHttpsTest {
     Files.writeString(
         scripts.resolve("trust.ps1"),
         """
-        param([string]$Action, [string]$Certificate, [string]$Intermediate)
+        param([string]$Action, [string]$Certificate, [switch]$RootOnly)
         Write-Output $Action
         Write-Output $Certificate
-        Write-Output $Intermediate
+        Write-Output ([bool]$RootOnly)
         Write-Output $env:PSExecutionPolicyPreference
         """);
     ProcessBuilder builder =
@@ -80,11 +92,7 @@ class BrowserHttpsTest {
       String output = new String(command.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
       assertEquals(0, command.exitValue(), output);
       assertEquals(
-          List.of(
-              "Add",
-              certificates.resolve("root.crt").toString(),
-              certificates.resolve("intermediate.crt").toString(),
-              "RemoteSigned"),
+          List.of("Add", certificates.resolve("root.crt").toString(), "True", "RemoteSigned"),
           output.lines().toList());
     } finally {
       BrowserHttps.stopBeforeTrustCleanup(command);

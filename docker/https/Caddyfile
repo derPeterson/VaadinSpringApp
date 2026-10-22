@@ -6,7 +6,7 @@
 }
 
 https://{$APP_HTTPS_HOST}:443 {
-	tls internal
+	tls {$APP_TLS_CERT:internal} {$APP_TLS_KEY:}
 	@wrongHost expression `{http.request.hostport} != "{$APP_HTTPS_HOST}:{$APP_HTTPS_PORT}"`
 	respond @wrongHost 421
 	header -Strict-Transport-Security

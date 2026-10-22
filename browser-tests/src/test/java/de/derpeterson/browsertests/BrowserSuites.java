@@ -81,6 +81,7 @@ final class BrowserSuites {
               PresentationBrowserTest.class,
               RememberMeBrowserTest.class);
       case "infrastructure" -> List.of(InfrastructureBrowserTest.class);
+      case "https-night" -> List.of(InfrastructureBrowserTest.class, RememberMeBrowserTest.class);
       case "operations" -> List.of(OperationsBrowserTest.class);
       case "session-persistence" ->
           List.of(
@@ -143,7 +144,7 @@ final class BrowserSuites {
           throw new IllegalArgumentException(
               "Unknown suite: "
                   + suite
-                  + ". Choose all, fast, notifications, account-security, session-management, account-settings, cosmos-design, login-layout, login-checks, infrastructure, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, session-limits, session-persistence, maintenance, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
+                  + ". Choose all, fast, notifications, account-security, session-management, account-settings, cosmos-design, login-layout, login-checks, infrastructure, https-night, operations, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, session-limits, session-persistence, maintenance, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
     };
   }
 }

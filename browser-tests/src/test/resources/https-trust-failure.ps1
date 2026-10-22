@@ -1,4 +1,4 @@
-param([string]$Repository, [string]$Directory, [string]$Scenario)
+param([string]$Repository, [string]$Directory, [string]$Scenario, [string]$RootOnlyMode = 'false')
 $ErrorActionPreference = 'Stop'
 # Nur die vier .NET-Konstruktoren ersetzen. Der eigentliche Add-/Remove-Ablauf
 # wird unverändert ausgeführt, ohne den Windows-Zertifikatsspeicher zu öffnen.
@@ -35,14 +35,18 @@ if ($source.Contains('::new(')) { throw 'Unexpected unmocked constructor in trus
 $helper = [scriptblock]::Create($source)
 $certificate = Join-Path $Directory 'root.crt'
 $intermediate = Join-Path $Directory 'intermediate.crt'
+$parameters = @{ Action = 'Add'; Certificate = $certificate }
+if ($RootOnlyMode -eq 'true') { $parameters.RootOnly = $true }
+else { $parameters.Intermediate = $intermediate }
 $failed = $false
-try { & $helper -Action Add -Certificate $certificate -Intermediate $intermediate } catch { $failed = $true }
+try { & $helper @parameters } catch { $failed = $true }
 if (-not $failed) { throw 'Failed import was accepted' }
 if ($Scenario -ne 'rights' -and -not (Test-Path -LiteralPath ($certificate + '.owned'))) {
     throw 'Failed import lost ownership evidence'
 }
 $script:failure = ''
-& $helper -Action Remove -Certificate $certificate -Intermediate $intermediate
+$parameters.Action = 'Remove'
+& $helper @parameters
 if (Test-Path -LiteralPath ($certificate + '.owned')) { throw 'Ownership marker remains' }
 foreach ($store in $script:stores.Values) {
     if ($store.Certificates.Count -ne 1 -or $store.Certificates[0].Thumbprint -ne 'foreign') {

@@ -19,10 +19,11 @@ ist verstrichen. Der einmalige Zeitauftrag ist beendet. Kein Commit/Merge/Push b
 - IDE: `https://localhost:8443/`, HTTP-Weiterleitung auf 8081; App auf Loopback 8080.
 - Manuelles Docker: `https://127.0.0.1:18443/`, HTTP-Weiterleitung auf 18080;
   Appport nicht veröffentlicht. Unterschiedliche Hosts vermeiden Cookiekollisionen.
-- Jeder Browserworker hat eigenen Proxy, CA, Daten, Browserprofile und drei Ports.
-  Windows-Benutzervertrauen wird temporär mit Eigentumsmarker und Zeitgrenze
-  eingerichtet und entfernt. Keine TLS-Fehlerausnahmen. Dauerhaftes Vertrauen der
-  manuellen Zugänge benötigt die bewusst ausgeführte Einrichtung durch den Benutzer.
+- Jeder Browserworker hat eigenen Proxy, Tageszertifikat samt Schlüssel, Daten,
+  Browserprofile und drei Ports. Eine separate Browser-Test-CA wird einmalig bewusst
+  im Windows-Benutzerkonto eingerichtet; normale Läufe verändern Trust nicht.
+  Ihr privater Schlüssel bleibt geschützt auf dem Host außerhalb von Git und Containern.
+  Keine TLS-Fehlerausnahmen. Manuelle Zugänge verwenden weiterhin ihre eigene CA.
 - Konkretes Proxy-Vertrauen über native Tomcat-Verarbeitung; kein pauschales Vertrauen
   privater Netze. Lokale IDE-Prozesse sind untereinander nicht isoliert. Caddy ersetzt
   fremde Forwarded-Header und begrenzt die äußere Origin. Lokale Zugänge ohne HSTS.
@@ -36,13 +37,17 @@ Bedienung und Grenzen: [Entwicklung](../entwicklung.md#lokales-https),
 
 ## Prüfstand und verbleibender Abschluss
 
-- [x] Offene HTTPS-JUnit-/Helferregressionen ergänzt und erfolgreich geprüft:
-  Produktionsbuild mit 2.241 bestandenen Anwendungstests (zwei optionale IDE-Skips)
-  sowie 63 bestandene Browser-Helfertests. Tatsächlicher Stand: [Prüfbericht](../status.md).
-- [x] Vollständige HTTPS-Browserfälle am selben unveränderten Image geprüft:
-  DE 161/161 und EN 161/161 bestanden. Beim DE-Rückbau trat ein Windows-
-  Bestätigungs-Timeout auf; der Elternrunner hat ihn erfolgreich bereinigt.
-  EN einschließlich Abbau bestanden. Alle eigenen Testressourcen sind entfernt.
+Die große interaktive Runde ist dokumentiert. Der danach freigegebene Umbau für
+unbeaufsichtigte Nachtläufe ist umgesetzt und gezielt geprüft: 75 Helfertests,
+je 8 DE-/EN-Browserfälle mit zwei Workern und echtem Profil-/Browserneustart,
+TLS-Negativtest und harter Workerabbruch. Windows-Vertrauen und dauerhafte
+CA-Dateien blieben während der Läufe unverändert; eigene Worker-Schlüssel und
+Compose-Ressourcen sind entfernt. Der frühere interaktive Runner-Timeout ist damit
+gezielt nachgeprüft; die gesamte große Runde wurde nicht erneut ausgeführt.
+Tatsächliche Ergebnisse und Grenzen: [Prüfstand](../status.md).
+
+- [ ] Gemeinsame Gesamt-Abnahme des HTTPS-Features. Die bestehende menschliche
+  IDE-/BAT-Abnahme bleibt gültig; keine erneute Pflichtprüfung dieses Komfortstarts.
 - [ ] Aktuellen Sonar-Nachweis nach ausdrücklich beauftragter Integration auf
   sauberem `main` erbringen. Die vorhandene grüne Analyse belegt den HTTPS-Stand nicht.
 - [ ] Nach gemeinsamer Abnahme erledigten TODO-Eintrag, diesen Plan und Verweise

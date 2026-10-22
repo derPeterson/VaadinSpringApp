@@ -38,8 +38,7 @@ final class BrowserHttps {
         action,
         "-Certificate",
         directory.resolve("root.crt").toString(),
-        "-Intermediate",
-        directory.resolve("intermediate.crt").toString());
+        "-RootOnly");
   }
 
   static boolean ownsTrust(Path directory) {

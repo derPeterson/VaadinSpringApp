@@ -5,7 +5,8 @@
 Die vereinbarte Reihenfolge ist:
 
 - [ ] [Lokales HTTPS gemeinsam abnehmen und abschließen](docs/planung/https.md).
-  Automatisierte Tests sind bestanden; der aktuelle Sonar-Nachweis erfolgt nach
+  Die gezielten unbeaufsichtigten HTTPS-Nachweise sind DE/EN bestanden.
+  Offen bleiben die gemeinsame Gesamt-Abnahme und der aktuelle Sonar-Nachweis nach
   ausdrücklich beauftragter Integration auf sauberem `main`.
 - [ ] Danach Designkritik mit Stitch auf einem eigenen Branch: eine Spielwiese mit
   vorhandenen Komponenten, Panels, Dialogen und Zuständen zum Ausprobieren aufbauen.

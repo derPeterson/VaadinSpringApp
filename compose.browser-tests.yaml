@@ -27,6 +27,13 @@ services:
       - "127.0.0.1:${BROWSER_TEST_HTTP_PORT:-18082}:80"
     environment:
       APP_HTTPS_PORT: "${BROWSER_TEST_APP_PORT:-18081}"
+      APP_TLS_CERT: /run/browser-tls/server.crt
+      APP_TLS_KEY: /run/browser-tls/server.key
+    volumes:
+      - type: bind
+        source: "${BROWSER_TEST_TLS_DIRECTORY:?Use browser-tests/run.ps1 with its own worker TLS directory}"
+        target: /run/browser-tls
+        read_only: true
 
   mailpit:
     extends:

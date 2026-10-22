@@ -4,8 +4,8 @@ Stand: 22.10.2026. Ausschließlich lokale Entwicklung mit austauschbaren Testdat
 
 ## Ergebnis der großen Testrunde
 
-Die automatisierten Tests sind vollständig bestanden. Der aktuelle HTTPS-Stand
-hat noch keinen eigenen Sonar-Scan; die Gesamt-QA ist deshalb nicht vollständig
+Die automatisierten Fälle der großen Runde sind vollständig bestanden. Der aktuelle
+HTTPS-Stand hat noch keinen eigenen Sonar-Scan; die Gesamt-QA ist deshalb nicht vollständig
 grün belegt. Geprüft wurde `feature/lokales-https`, Commit
 `fe1f47ee94e27d07ee90a3d6dac8a8daa4f611a4` einschließlich der uncommittierten
 Testergänzungen. Eine revisiongebundene erfolgreiche lokale QA-Baseline lag nicht
@@ -67,6 +67,37 @@ Echter Mail-Sichtversand, externe Provider und der eingefrorene OpenCode-Workflo
 gehören nicht zu dieser Runde. Mailpit belegt SMTP-Annahme im eigenen Testnetz,
 keine externe Postfachzustellung.
 
+## Gezielter Nachtest des unbeaufsichtigten HTTPS-Runners
+
+Der danach überarbeitete Runner verwendet eine einmalig bewusst eingerichtete
+separate Browser-Test-CA. Normale Läufe lesen Windows-Vertrauen ausschließlich;
+Worker erhalten eigene Tageszertifikate und private Schlüssel. Der CA-Schlüssel
+bleibt mit benutzerexklusiven Dateirechten auf dem Host, außerhalb von Git und
+Containern. Fehlende, abgelaufene oder ungültige Einrichtung scheitert vor Appstart.
+
+| Gezielte Prüfung am überarbeiteten Runner | Tatsächliches Ergebnis |
+| --- | --- |
+| Java-Formatierung / Checkstyle | Bestanden, keine Verstöße |
+| Browser-Helfer | 75 bestanden, 0 Fehler oder Skips; einschließlich paralleler Ausstellung, Gültigkeits-/Trustfehler und Schlüsselabbau nach hartem Workerabbruch |
+| `https-night` DE und EN | Je 8/8 bestanden, je zwei getrennte Worker; Aufbau, Tests und Abbau bestanden, beide Gesamtläufe Exitcode 0 |
+| Echter Chromium-TLS-Negativtest | 1 bestanden: gültige eigene CA akzeptiert, falscher Hostname und unvertraute CA abgelehnt |
+| Harter Abbruch beider eigener bereiter Worker | Erwarteter Gesamtexit 1; Elternabbau bestanden, keine privaten Worker-Schlüssel oder Compose-Ressourcen verblieben |
+| Windows-Vertrauen / dauerhafte CA-Dateien | `CurrentUser/Root` und `CurrentUser/CA` vor/nach allen gezielten Läufen identisch; sämtliche CA-Dateihashes unverändert |
+| Bewusste Einrichtung erneut gestartet | Bereits konfigurierte CA wiederverwendet; kein neuer Import |
+| Gemeinsames Caddyfile im manuellen Standardmodus | Isolierte Syntaxprüfung mit `tls internal` bestanden |
+
+Die gezielten Sprachläufe verwenden dasselbe oben genannte unveränderte Image:
+`browser-tests/runs/2026-10-22T09-36-06_UTC__4e981458__30cb3efb/` (DE) und
+`browser-tests/runs/2026-10-22T09-42-42_UTC__4e981458__f0f4b1bd/` (EN).
+Normale und persistente Profile einschließlich echtem Chromium- und Serverneustart
+sind enthalten. Bei diesen Läufen und beim Abbruch waren keine weiteren
+Windows-Zertifikatsbestätigungen nötig. Die dauerhafte Test-CA bleibt absichtlich
+eingerichtet; ihr ausdrücklicher Rückbau ist ein eigener Bedienvorgang.
+
+Dies ist ein gezielter Nachtest, keine erneut ausgeführte große QA: Die vollständigen
+161 DE-/EN-Fälle oben stammen vom vorherigen interaktiven Runner. Anwendungsquellen
+und Produktionsimage wurden durch den Nachtlaufumbau nicht verändert.
+
 ## Sonar und verbleibender Abschluss
 
 MCP-Verbindung und geschützter Lesehelfer funktionieren. Die bestehende
@@ -79,8 +110,9 @@ Integration offen. Keine Scans oder Sonar-Statusänderungen in dieser Runde.
 Die erfolgreiche lokale QA-Baseline wurde wegen dieses offenen Nachweises nicht ersetzt.
 
 Es sind keine bestätigten offenen Anwendungsfehler bekannt; siehe [BUGS.md](../BUGS.md).
-Die erfolgreich geprüften automatisierten Ergänzungen sind aus dem
-[Testbedarf](testbedarf.md) entfernt. Menschliche Sonderprüfungen bleiben im
+Die erfolgreich geprüften bisherigen Ergänzungen sind aus dem
+[Testbedarf](testbedarf.md) entfernt; auch der gezielte Nachtlaufbedarf ist nachgewiesen.
+Menschliche Sonderprüfungen bleiben im
 [manuellen Katalog](manual-tests/README.md). Die [HTTPS-Planung](planung/https.md)
 bleibt bis zur gemeinsamen Gesamt-Abnahme erhalten. Keine Commits, Merges oder Pushes;
 Entwicklerdaten und fremde Prozesse wurden nicht als Fixtures verwendet oder verändert.

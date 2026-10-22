@@ -76,6 +76,7 @@ public final class BrowserTestRunner {
         worker
             ? Path.of(System.getProperty("browser.tests.workerRun")).toAbsolutePath().normalize()
             : this.module.resolve("runs").resolve(runId);
+    environment.put("BROWSER_TEST_TLS_DIRECTORY", run.resolve("https").toString());
     if (worker && !run.startsWith(this.module.resolve("runs"))) {
       throw new IllegalArgumentException("Worker output must be within runs/.");
     }
@@ -155,6 +156,17 @@ public final class BrowserTestRunner {
     }
     Path module = Path.of(args[0]).toAbsolutePath().normalize();
     Set<String> options = new HashSet<>(Arrays.asList(args).subList(1, args.length));
+    if (options.contains("--setup-https") || options.contains("--remove-https")) {
+      if (options.contains("--setup-https") && options.contains("--remove-https")) {
+        throw new IllegalArgumentException("Choose HTTPS setup or removal, not both");
+      }
+      if (options.contains("--setup-https")) {
+        BrowserHttpsSetup.setup(module.getParent());
+      } else {
+        BrowserHttpsSetup.remove(module.getParent());
+      }
+      return;
+    }
     if (options.contains("--report")) {
       Path report;
       int reportPathIndex = Arrays.asList(args).indexOf("--report-path");
@@ -201,8 +213,15 @@ public final class BrowserTestRunner {
       throw new IllegalArgumentException("Worker count missing.");
     }
     System.setProperty("browser.tests.workers", workersIndex >= 0 ? args[workersIndex + 1] : "1");
-    BrowserTestRunner runner = new BrowserTestRunner(module, options, suite);
-    System.exit(runner.workers > 1 ? runner.executeParallel(options) : runner.execute(options));
+    Path authority = BrowserTestCa.directory(module.getParent());
+    BrowserTestCa.requireTrusted(authority);
+    int exit;
+    try (BrowserTestCa.Lease lease = BrowserTestCa.lease(authority, true)) {
+      BrowserTestCa.requireTrusted(authority);
+      BrowserTestRunner runner = new BrowserTestRunner(module, options, suite);
+      exit = runner.workers > 1 ? runner.executeParallel(options) : runner.execute(options);
+    }
+    System.exit(exit);
   }
 
   private int execute(Set<String> options) throws Exception {
@@ -229,21 +248,13 @@ public final class BrowserTestRunner {
       System.setProperty("browser.tests.headed", String.valueOf(options.contains("--headed")));
       System.setProperty("allure.results.directory", run.resolve("allure-results").toString());
       save();
+      Path certificates = run.resolve("https");
+      BrowserTestCa.issue(BrowserTestCa.directory(repo), certificates);
       command(withCompose("config", "--quiet"));
       environmentStarted = true;
       command(
           withCompose(
               "up", "-d", "--wait", "--wait-timeout", "180", build ? "--build" : "--no-build"));
-      Path certificates = run.resolve("https");
-      Files.createDirectories(certificates);
-      for (String file : List.of("root.crt", "intermediate.crt")) {
-        command(
-            withCompose(
-                "cp",
-                "proxy:/data/caddy/pki/authorities/local/" + file,
-                certificates.resolve(file).toString()));
-      }
-      command(BrowserHttps.trustCommand(repo, certificates, "Add"));
       BrowserHttps.awaitReady(appUrl, certificates.resolve("root.crt"));
       metadata.put("setup", "passed");
       metadata.put("https", "certificate-chain-and-hostname-verified");
@@ -332,14 +343,13 @@ public final class BrowserTestRunner {
           exitCode = 1;
         }
       }
-      if (environmentStarted) {
-        try {
-          cleanup();
-        } catch (Exception error) {
-          metadata.put("cleanup", "failed");
-          metadata.put("cleanupError", error.toString());
-          exitCode = 1;
-        }
+      try {
+        // Auch ein Fehler vor Compose-up kann bereits einen eigenen Worker-Schlüssel hinterlassen.
+        cleanup();
+      } catch (Exception error) {
+        metadata.put("cleanup", "failed");
+        metadata.put("cleanupError", error.toString());
+        exitCode = 1;
       }
       try {
         Files.writeString(
@@ -553,13 +563,6 @@ public final class BrowserTestRunner {
     List<String> errors = new ArrayList<>();
     for (Worker child : parallel.workers()) {
       try {
-        if (BrowserHttps.ownsTrust(child.directory().resolve("https"))) {
-          command(BrowserHttps.trustCommand(repo, child.directory().resolve("https"), "Remove"));
-        }
-      } catch (Exception error) {
-        errors.add(child.project() + " trust cleanup: " + error);
-      }
-      try {
         // Auch nach einem Prozessabbruch nur das eigene, vorher festgelegte Projekt abbauen.
         ArrayList<String> down =
             new ArrayList<>(
@@ -576,6 +579,11 @@ public final class BrowserTestRunner {
         command(down);
       } catch (Exception error) {
         errors.add(child.project() + ": " + error);
+      }
+      try {
+        BrowserTestCa.cleanupWorker(child.directory().resolve("https"));
+      } catch (Exception error) {
+        errors.add(child.project() + " TLS key cleanup: " + error);
       }
     }
     if (!errors.isEmpty()) {
@@ -613,28 +621,13 @@ public final class BrowserTestRunner {
   }
 
   private synchronized void cleanup() throws Exception {
-    if (!environmentStarted) {
-      return;
-    }
-    Exception trustFailure = null;
     try {
-      if (BrowserHttps.ownsTrust(run.resolve("https"))) {
-        command(BrowserHttps.trustCommand(repo, run.resolve("https"), "Remove"));
+      if (environmentStarted) {
+        command(withCompose("down", "--volumes", "--remove-orphans"));
+        environmentStarted = false;
       }
-    } catch (Exception error) {
-      trustFailure = error;
-    }
-    try {
-      command(withCompose("down", "--volumes", "--remove-orphans"));
-      environmentStarted = false;
-    } catch (Exception error) {
-      if (trustFailure != null) {
-        error.addSuppressed(trustFailure);
-      }
-      throw error;
-    }
-    if (trustFailure != null) {
-      throw trustFailure;
+    } finally {
+      BrowserTestCa.cleanupWorker(run.resolve("https"));
     }
     metadata.put("cleanup", "passed");
     save();
@@ -683,9 +676,6 @@ public final class BrowserTestRunner {
     }
     int exit;
     try {
-      if (arguments.stream().anyMatch(argument -> argument.endsWith("trust.ps1"))) {
-        BrowserHttps.awaitTrustCommand(child, java.time.Duration.ofSeconds(120));
-      }
       exit = child.waitFor();
     } finally {
       if (activeCommand == child) {

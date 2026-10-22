@@ -26,6 +26,8 @@ wegen einer Entscheidung wartende Aufgaben dort erhalten.
 ```powershell
 # Einmalig den passenden Chromium bereitstellen:
 .\browser-tests\run.ps1 -InstallBrowsers
+# Einmalig die separate Browser-Test-CA bewusst im Windows-Benutzerkonto einrichten:
+.\browser-tests-zertifikat-einrichten.bat
 # Helfer und Reporter ohne App-Container:
 .\browser-tests\run.ps1 -ReportingTests
 # Gesamtprüfung, einmal bauen und dasselbe Image in beiden Sprachen verwenden:
@@ -46,6 +48,7 @@ wegen einer Entscheidung wartende Aufgaben dort erhalten.
 | `-ReportPath PFAD` | Bestimmten vorhandenen HTML-Bericht öffnen |
 | `-Trace PFAD` | Gespeicherte Playwright-Trace-ZIP öffnen |
 | `-FailureProbe` | Eigenständiger absichtlich falscher Titelvergleich; Exitcode 1 erwartet |
+| `-SetupHttps` / `-RemoveHttps` | Bewusste einmalige Test-CA-Einrichtung bzw. ausdrücklicher Rückbau, keine Browserfälle |
 
 Standardauswahl ist `all`, `de`, ein Worker. Nach App-, Shared-, Text- oder
 Styleänderungen zuerst ohne `-NoBuild` ausführen. Der Starter baut Shared und
@@ -57,6 +60,7 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | Suite | Inhalt | Fälle |
 | --- | --- | ---: |
 | `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit und HTTPS-/HTTP-Grenze | 4 |
+| `https-night` | Infrastruktur und Remember-me: normale Profile, echter Chromium-/Serverneustart; mit zwei Workern gezielter Nachtlaufnachweis | 8 |
 | `authentication` | Admin-/Benutzerlogin, Fehler, Gastzugriff und Logout | 7 |
 | `login-attempts` | Drei Sperr-/Resetfälle plus sieben Anmelde- und vier Remember-me-Regressionsfälle | 14 |
 | `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung einschließlich Serverneustart und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 37 |
@@ -148,21 +152,37 @@ und eigenen wegwerfbaren Volumes. Standardports sind 18081 für den HTTPS-Proxy,
 freie Ports. Die manuellen Zugänge 8443/18443/18080/18025 bleiben unberührt.
 H2-Webkonsole und externe SMTP-Zustellung sind aus.
 
-Der lokale HTTPS-Runner benötigt derzeit Windows. Jeder Worker besitzt einen eigenen
-Caddy samt CA und Datenvolumes. Vor dem Browserstart kopiert er nur die öffentlichen
-CA-Zertifikate, fragt das temporäre Benutzervertrauen über `scripts/https/trust.ps1`
-ab und prüft die äußere HTTPS-Origin mit vollständiger Ketten-/Hostnamenprüfung.
-Windows kann je Worker einen Bestätigungsdialog anzeigen. Nach 120 Sekunden ohne
-Abschluss scheitert der Aufbau; der Runner bereinigt seine eigenen Trust-Einträge.
-Es gibt keine Option zum Ignorieren von TLS-Fehlern. Das Vertrauen gilt auch für
-die eigenen persistenten Browserprofile und wird nach dem Lauf wieder entfernt.
+Der lokale HTTPS-Runner benötigt derzeit Windows. Die separate Browser-Test-CA wird
+einmalig mit `browser-tests-zertifikat-einrichten.bat` im Projektroot eingerichtet.
+Nur dieser bewusst gestartete Vorgang darf einen Windows-Bestätigungsdialog öffnen
+(Zeitgrenze 120 Sekunden). Er verwendet ausschließlich `CurrentUser/Root` und ist
+von der CA des IDE-/manuellen Zugangs getrennt. Eine vorhandene gültige Einrichtung
+wird wiederverwendet. Das Vertrauen bleibt bis zum ausdrücklichen Rückbau bestehen.
 
-Beim Abbruch übernimmt nötigenfalls der Elternrunner den Trust- und Compose-Abbau.
-Nach einem harten Rechnerabbruch die eigene Umgebung anhand von `metadata.json`
-prüfen und den Import mit `-Action Remove`, `-Certificate <Run>/https/root.crt` und
-`-Intermediate <Run>/https/intermediate.crt` zurückbauen, bevor Zertifikatsdateien
-oder Volumes entfernt werden. Der Marker `root.crt.owned` belegt die eigene Aufnahme;
-keine fremden Zertifikate oder systemweiten Stores bereinigen.
+Normale Läufe lesen den Zertifikatsspeicher ausschließlich. Fehlende, nicht vertraute,
+beschädigte oder binnen eines Tages ablaufende CA-Einrichtung führt vor App-/Dockerstart
+zum Fehler; nachts erfolgt kein Import und keine automatische Reparatur. Jeder Worker
+erhält einen eigenen Schlüssel und ein für einen Tag gültiges Serverzertifikat für
+`127.0.0.1`. Kette, Gültigkeit und Hostname werden vollständig geprüft, auch in eigenen
+persistenten Chromium-Profilen. Es gibt keine TLS-Fehlerausnahme.
+
+CA-Schlüssel und zufälliges Keystorepasswort liegen unter
+`data/https/browser-tests-ca/`, außerhalb von Git und mit Dateirechten ausschließlich
+für den aktuellen Benutzer. Die CA ist drei Jahre gültig; sie darf ausschließlich
+für lokale Tests verwendet werden. Nur das Worker-Verzeichnis mit dessen eigenem
+Serverzertifikat/-schlüssel und öffentlicher CA wird schreibgeschützt in seinen
+Proxy eingebunden. Der CA-Schlüssel gelangt in keinen Container. Nach regulärem Ende,
+Fehler oder vom Elternrunner erkanntem hartem Workerabbruch werden eigene
+Worker-Schlüssel sowie Compose-Ressourcen entfernt; das Windows-Vertrauen bleibt gleich.
+
+`browser-tests-zertifikat-entfernen.bat` entfernt ausdrücklich nur den eigenen,
+durch Zertifikat und Besitzmarker nachgewiesenen Trust samt CA-Schlüsseldateien.
+Ein Windows-Entfernungsdialog ist hierbei möglich. Einrichtung/Rückbau sind während
+laufender Tests gesperrt. Für Erneuerung vor dem Ablauf bewusst entfernen und neu
+einrichten; keinen privaten CA-Schlüssel teilen oder die Dateien vor dem Rückbau löschen.
+Nach hartem Rechnerabbruch die eigene Umgebung anhand von `metadata.json` prüfen und
+deren Compose-Ressourcen und Worker-Schlüssel gezielt abbauen. Keine fremden
+Zertifikate oder systemweiten Stores bereinigen.
 
 Die [Parallelisierungsregeln](#parallelisierung) gelten auch bei Neustartfällen:
 Die verwendete Image-Referenz muss bis zum Abbau verfügbar bleiben. Ein noch
@@ -177,6 +197,20 @@ damit sein Sitzungsplatz frei wird; Neustartfälle verwalten ihr Profil selbst.
 Nach Abschluss oder Testfehler baut der Runner nur seine Container/Volumes ab.
 Bei hartem Systemabbruch das konkrete eigene Projekt aus `metadata.json` prüfen;
 keine globale Docker-Bereinigung ausführen.
+
+Der explizite TLS-Negativtest startet nur eigene native Caddy-/Chromium-Prozesse,
+keine Anwendung und keinen Trustimport. Er benötigt die eingerichtete Test-CA und
+einen vorhandenen Caddy. Beispiel aus dem Projektroot:
+
+```powershell
+.\mvnw.cmd -f browser-tests/pom.xml test '-Dtest=BrowserTlsVerificationTest' `
+  '-Dbrowser.tests.excludedGroups=none' '-Dbrowser.tests.tlsProbe=true' `
+  '-Dbrowser.tests.caddyExecutable=C:/Dev/Tools/caddy.exe'
+```
+
+Geprüft werden die Annahme der eigenen CA sowie die Ablehnung eines falschen
+Hostnamens und einer frischen unvertrauten CA. Ohne ausdrückliche Aktivierung
+gehört dieser Prozess-/Browsertest weder zu `-ReportingTests` noch zur Suite `all`.
 
 ## Aufbau und Pflege
 
