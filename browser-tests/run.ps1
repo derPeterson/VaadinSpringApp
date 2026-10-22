@@ -22,20 +22,24 @@ if ($SetupHttps -and $RemoveHttps) { throw 'Choose SetupHttps or RemoveHttps, no
 if ($ReportPath) { $Report = $true }
 $modulePath = $PSScriptRoot
 $repoPath = Split-Path $modulePath -Parent
-$pomPath = Join-Path $modulePath 'pom.xml'
+$rootPomPath = Join-Path $repoPath 'pom.xml'
 $wrapperPath = Join-Path $repoPath 'mvnw.cmd'
 $targetPath = Join-Path $modulePath 'target'
 # This file only bootstraps Java. Docker, test execution and reports are handled in Java.
-& $wrapperPath --version
+$versionOutput = & $wrapperPath --version
+$versionOutput | Write-Output
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-# Rebuild the shared dependency before compiling either helper tests or the runner.
-& $wrapperPath -f (Join-Path $repoPath 'shared/pom.xml') clean install
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+# Maven meldet die tatsächlich verwendete Java-Version am Zeilenanfang; nur Major 25 zulassen.
+if (($versionOutput -join "`n") -notmatch '(?m)^Java version: 25(?:[.,\s]|$)') {
+    throw 'The browser runner requires Maven with Java 25.'
+}
+# Der gemeinsame Reactor baut Shared vor dem Browsermodul; app wird nicht ausgewählt.
+$reactorArguments = @('-f', $rootPomPath, '-pl', 'browser-tests', '-am')
 if ($ReportingTests) {
-    & $wrapperPath -f $pomPath test
+    & $wrapperPath @reactorArguments test
     exit $LASTEXITCODE
 }
-& $wrapperPath -f $pomPath test-compile dependency:build-classpath "-Dmdep.outputFile=$targetPath/classpath.txt"
+& $wrapperPath @reactorArguments package dependency:build-classpath '-DskipTests' "-Dmdep.outputFile=$targetPath/classpath.txt"
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $javaPath = if ($env:JAVA_HOME) { Join-Path $env:JAVA_HOME 'bin/java.exe' } else { 'java' }
 $classpath = (Join-Path $targetPath 'test-classes') + ';' + (Get-Content (Join-Path $targetPath 'classpath.txt') -Raw).Trim()

@@ -48,9 +48,10 @@ Shared vor seinen Verbrauchern; kein vorheriges manuelles Shared-Install nötig:
 ```
 
 Stilprüfungen laufen einmal zentral im Root mit `-N` über alle Modulquellen;
-Anwendungsartefakte liegen unter `app/target/`. Docker-, Browserstarter- und
-Sonar-Umstellung bleiben im [aktiven Multi-Modul-Plan](planung/multi-modul-sonarqube.md)
-offen. Der lokale IDE-/HTTPS-Start ist an die Modulstruktur angepasst.
+Anwendungsartefakte liegen unter `app/target/`. IDE-/HTTPS-Start, Docker-Build und
+Browserstarter sind an die Modulstruktur angepasst. Sonar-Umstellung und die
+abschließende Gesamtprüfung bleiben im
+[aktiven Multi-Modul-Plan](planung/multi-modul-sonarqube.md) offen.
 
 ## Konfiguration und Datenbank
 
@@ -492,8 +493,8 @@ Bei Arbeiten an diesen Bereichen die folgenden Hinweise lesen und anwenden.
 
 ### Gemeinsamer Textkatalog und Sprachwechsel
 
-- Übersetzungsdateien liegen unter `src/main/resources/i18n/`, Mailvorlagen unter
-  `src/main/resources/email/`. Feste Schlüssel und typisierte Getter sind einmalig in
+- Übersetzungsdateien liegen unter `app/src/main/resources/i18n/`, Mailvorlagen unter
+  `app/src/main/resources/email/`. Feste Schlüssel und typisierte Getter sind einmalig in
   Shared-`MessageTexts` definiert; keine zweite Liste im Anwendungs-/Testmodul pflegen.
 - In Anwendungskomponenten die vorhandenen `MessageProperties`-Getter verwenden.
   Direkte rohe Übersetzungsabfragen bleiben innerhalb der i18n-Schicht.

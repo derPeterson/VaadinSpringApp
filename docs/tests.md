@@ -87,9 +87,18 @@ node --test app/src/test/frontend/*.test.mjs
 
 Der Root-Build führt Anwendungstests und die normalen Browser-Helfertests aus,
 keine mit `browser` markierten Journeys. Gezielte Anwendungsbuilds verwenden
-`-pl app -am`; Stilprüfungen laufen mit `-N` zentral im Root. Die Docker-/Runner-
-und Sonar-Anpassungen sowie deren gesonderte Nachweise bleiben im
+`-pl app -am`; Stilprüfungen laufen mit `-N` zentral im Root. Docker und
+Browserstarter verwenden ebenfalls den Reactor. Sonar-Anpassung und die
+abschließende Gesamtprüfung bleiben im
 [Multi-Modul-Plan](planung/multi-modul-sonarqube.md) offen.
+
+`BrowserBootstrapTest` prüft unter Windows den echten PowerShell-Einstieg mit einem
+eigenen Maven-Ersatz: abhängige Modulauswahl, Abbruch bei Buildfehlern und Ablehnung
+eines falschen JDK vor dem Build. `BrowserCoverageTest` prüft App-/Shared-Extraktion
+aus den Imagearchiven, zugehörige Quellen, fehlende Module/Archive, Pfadgrenzen und
+die Ablehnung vorhandener Extraktionsstände. Die Helfer starten keine Journeys,
+Anwendungscontainer oder Windows-Trustimporte. Der frische Docker-Build samt eigener
+Start-/Coverageprüfung ist ein gesonderter, ausdrücklich freizugebender Nachweis.
 
 Der eingefrorene OpenCode-Workflow einschließlich seiner Python-/JavaScript-
 Werkzeugtests gehört nicht zum gepflegten Standardprüflauf. Keine Anpassungen für

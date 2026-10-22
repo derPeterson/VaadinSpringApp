@@ -8,6 +8,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 /** Optional JaCoCo measurement of the disposable application's exact production classes. */
 final class BrowserCoverage {
@@ -40,35 +41,78 @@ final class BrowserCoverage {
         .formatted(source);
   }
 
-  static void extractApplicationClasses(Path folder) throws IOException {
+  static void extractTestedCode(Path folder) throws IOException {
     Path classes = folder.resolve("classes").toAbsolutePath().normalize();
-    int count = 0;
+    Files.createDirectory(classes);
+    int appClasses = 0;
+    int sharedClasses = 0;
+    int sharedJars = 0;
     try (ZipFile jar = new ZipFile(folder.resolve("app.jar").toFile())) {
       Enumeration<? extends ZipEntry> entries = jar.entries();
       while (entries.hasMoreElements()) {
         ZipEntry entry = entries.nextElement();
-        if (!entry.getName().startsWith("BOOT-INF/classes/de/derpeterson/app/")
-            || !entry.getName().endsWith(".class")) {
-          continue;
+        if (entry.getName().startsWith("BOOT-INF/lib/shared-")
+            && entry.getName().endsWith(".jar")) {
+          sharedJars++;
+          try (ZipInputStream shared = new ZipInputStream(jar.getInputStream(entry))) {
+            ZipEntry sharedEntry;
+            while ((sharedEntry = shared.getNextEntry()) != null) {
+              if (sharedEntry.getName().startsWith("de/derpeterson/app/")
+                  && sharedEntry.getName().endsWith(".class")) {
+                copyEntry(shared, classes, sharedEntry.getName());
+                sharedClasses++;
+              }
+            }
+          }
         }
-        Path output =
-            classes.resolve(entry.getName().substring("BOOT-INF/classes/".length())).normalize();
-        if (!output.startsWith(classes)) {
-          throw new IOException("Invalid class path in application JAR.");
+        if (entry.getName().startsWith("BOOT-INF/classes/de/derpeterson/app/")
+            && entry.getName().endsWith(".class")) {
+          try (InputStream input = jar.getInputStream(entry)) {
+            copyEntry(input, classes, entry.getName().substring("BOOT-INF/classes/".length()));
+          }
+          appClasses++;
         }
-        Files.createDirectories(output.getParent());
-        try (InputStream input = jar.getInputStream(entry)) {
-          Files.copy(input, output);
-        }
-        count++;
       }
     }
-    if (count == 0) {
-      throw new IOException("No application classes found in tested JAR.");
+    if (appClasses == 0 || sharedJars != 1 || sharedClasses == 0) {
+      throw new IOException(
+          "Tested JAR must contain application classes and exactly one Shared JAR.");
+    }
+    // Auch die Quellen stammen aus demselben Container; lokale target-/src-Stände bleiben außen
+    // vor.
+    Path sources = folder.resolve("sources").toAbsolutePath().normalize();
+    Files.createDirectory(sources);
+    try (ZipFile jar = new ZipFile(folder.resolve("coverage-sources.jar").toFile())) {
+      for (String module : List.of("app", "shared")) {
+        String prefix = module + "/src/main/java/";
+        int sourceCount = 0;
+        Enumeration<? extends ZipEntry> entries = jar.entries();
+        while (entries.hasMoreElements()) {
+          ZipEntry entry = entries.nextElement();
+          if (entry.getName().startsWith(prefix) && entry.getName().endsWith(".java")) {
+            try (InputStream input = jar.getInputStream(entry)) {
+              copyEntry(input, sources.resolve(prefix), entry.getName().substring(prefix.length()));
+            }
+            sourceCount++;
+          }
+        }
+        if (sourceCount == 0) {
+          throw new IOException("Java sources missing from tested image: " + module);
+        }
+      }
     }
   }
 
-  static List<String> reportCommand(Path module, Path repo, Path folder) {
+  private static void copyEntry(InputStream input, Path root, String name) throws IOException {
+    Path output = root.resolve(name).normalize();
+    if (!output.startsWith(root)) {
+      throw new IOException("Invalid path in tested code archive.");
+    }
+    Files.createDirectories(output.getParent());
+    Files.copy(input, output);
+  }
+
+  static List<String> reportCommand(Path module, Path folder) {
     String java =
         Path.of(
                 System.getProperty("java.home"),
@@ -84,7 +128,9 @@ final class BrowserCoverage {
         "--classfiles",
         folder.resolve("classes").toString(),
         "--sourcefiles",
-        repo.resolve("src/main/java").toString(),
+        folder.resolve("sources/app/src/main/java").toString(),
+        "--sourcefiles",
+        folder.resolve("sources/shared/src/main/java").toString(),
         "--html",
         folder.resolve("html").toString(),
         "--xml",

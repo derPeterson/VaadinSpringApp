@@ -51,8 +51,13 @@ wegen einer Entscheidung wartende Aufgaben dort erhalten.
 | `-SetupHttps` / `-RemoveHttps` | Bewusste einmalige Test-CA-Einrichtung bzw. ausdrücklicher Rückbau, keine Browserfälle |
 
 Standardauswahl ist `all`, `de`, ein Worker. Nach App-, Shared-, Text- oder
-Styleänderungen zuerst ohne `-NoBuild` ausführen. Der Starter baut Shared und
-kompiliert die Browserquellen einmal, bevor er Worker verteilt. Keine zwei Starter
+Styleänderungen zuerst ohne `-NoBuild` ausführen. Der Starter prüft Java 25 und
+baut Shared und Browserquellen gemeinsam über die Root-POM mit
+`-pl browser-tests -am`, bevor er Worker verteilt. Die Anwendung wird dabei nicht
+auf dem Host gebaut. `-ReportingTests` führt die normalen Helfertests im selben
+Reactor aus; der Klassenpfadaufbau für Journeys verwendet `package` und das
+Dependency-Ziel mit übersprungenen Tests. Ein separates Shared-Install entfällt.
+Keine zwei Starter
 gleichzeitig gegen dieselben Ausgabeordner ausführen.
 
 ## Suites
@@ -143,6 +148,18 @@ Das Build-Verbot während eines Laufs verbietet keine parallelen Worker, sondern
 verhindert wechselnde oder entfernte Images bei laufenden Tests und Neustartfällen.
 Die vollständige Runde läuft üblicherweise zuerst auf DE, anschließend EN mit
 `-NoBuild`; beide Sprachläufe können jeweils die Worker-Parallelisierung nutzen.
+
+Bei `-Coverage` stammen App-Klassen und das eingebettete Shared-JAR aus dem
+tatsächlich gestarteten Container. Das Image enthält zusätzlich
+`/app/coverage-sources.jar` mit den beim Imagebuild verwendeten
+Java-Quellen beider Module; sie werden zusammen mit dem App-JAR aus demselben
+Container übernommen. Der Bericht verwendet ausschließlich diese Klassen und
+Quellen, keine lokalen `target/`- oder `src/`-Bestände. Alle Worker müssen dieselbe
+Image-ID nachweisen; der Elternrunner übernimmt deren Messdaten und die Archive
+des ersten Workers. Fehlende Shared-Klassen/-Quellen, fehlende Archive und bereits
+vorhandene Extraktionsverzeichnisse führen zum Fehler statt zu Teilberichten oder
+zur Wiederverwendung alter Messstände. Die optionale Browsermessung ersetzt keine
+JUnit-Coverage und startet durch sich selbst keine Journeys.
 
 ## Isolation
 
@@ -238,8 +255,9 @@ gespeicherten Präferenz setzt sie bewusst nicht erneut. Routen und Konstanten
 ebenfalls aus Shared beziehen: `AppRouteConstants`/`AppConstants` für vorhandene
 Routen-/Titel-/Avatarverträge, `BrowserRoutes` für lokale Pfade statt Security-Wildcards.
 Fehlende Übersetzungsschlüssel müssen fehlschlagen. Erfundenes Testmaterial von
-übersetzten UI-Texten unterscheiden. In IntelliJ Shared und Browser-POM als eigene
-Maven-Projekte importieren, keine zweiten Shared-Source-Roots anlegen.
+übersetzten UI-Texten unterscheiden. In IntelliJ ausschließlich die Root-POM
+verknüpfen; Shared und Browsermodul werden daraus gemeinsam importiert. Keine
+zweiten Shared-Source-Roots anlegen.
 
 Jeden Fall unabhängig mit ID, Bereich, Schritten und Erwartung beschreiben. Browser-
 fälle und Berichte hängen nicht vom manuellen Katalog ab; `fast` bleibt eine Auswahl

@@ -4,6 +4,21 @@ Docker Desktop verwendet Linux-Container. `compose.yaml` startet die Anwendung
 mit eigener H2-Datei sowie Mailpit für synthetische Testmails. Der optimierte
 Vaadin-Build im Container ist kein produktiver Einsatz der Anwendung.
 
+Der Build verwendet die Root-POM mit `-pl app -am`: Shared wird vor der Anwendung
+gebaut, Browserjourneys werden nicht ausgewählt. Das App-Artefakt stammt aus
+`app/target/`. Der Buildkontext erlaubt nur Wrapper, Reactor-/Modul-POMs und die
+benötigten App-/Shared-Quellen und Frontendkonfigurationen. Lokale `.env`, Daten,
+Logs, Browserbelege, `target/`, `node_modules/` und generierte Frontendbundles
+bleiben ausgeschlossen. Das Browsermodul wird nur mit seiner POM zur Reactor-
+Erkennung aufgenommen.
+
+Für die optionale Browser-Coverage enthält das lokale Testimage zusätzlich
+`/app/coverage-sources.jar`. Dieses Archiv enthält ausschließlich die
+Java-Quellen von App und Shared aus demselben Imagebuild; lokale Konfiguration,
+Daten und CA-Schlüssel sind nicht enthalten. Der Browserrunner verwendet es mit
+den Klassen aus dem getesteten App-/Shared-JAR, ohne lokale Buildstände zu mischen.
+Laufzeitnutzer und HTTPS-/Health-Vertrag bleiben unverändert.
+
 ## Bedienung
 
 Im Projektverzeichnis:

@@ -1,9 +1,13 @@
 # Gemeinsames Maven-Projekt und vollständige SonarQube-Analyse
 
-Status: Arbeitspakete 1 und 2 sind umgesetzt und mit passenden Build-/JUnit-/
+Status: Arbeitspakete 1 bis 3 sind umgesetzt und mit passenden Build-/JUnit-/
 Stilprüfungen nachgewiesen. Der angepasste IDE-Start ist vom Benutzer mit
-Start/Stop, Debug und Breakpoint bestätigt. Pakete 3 bis 7 sind noch nicht freigegeben.
-Keine Browserjourneys, Scans, Commits, Merges oder Pushes.
+Start/Stop, Debug und Breakpoint bestätigt. Docker-/Runner-/Coveragepfade sind
+umgestellt und mit eigenen isolierten Testressourcen nachgewiesen.
+Pakete 4 bis 7 sind noch nicht freigegeben.
+Der lokale Commit des geprüften Stands auf `feature/multi-modul-sonarqube` ist
+ausdrücklich beauftragt. Keine Integration nach `main` und kein Gesamtabschluss.
+Keine Browserjourneys, Scans, Merges oder Pushes.
 Branch: `feature/multi-modul-sonarqube`, Basis: lokales `main`,
 `93086b9d73b00280f3f1e0e560599dc9c37f9656`. Arbeitsstand vor Plananlage sauber.
 `BUGS.md` enthält keine bestätigten offenen Anwendungsfehler.
@@ -67,8 +71,8 @@ inhaltlich unverändert. `app` behält seinen Boot-Parent mit explizit leerem
 und verbleibende Pluginversionen sowie der Browser-Abhängigkeitsbaum sind gegenüber
 dem Ausgang unverändert. Stilprüfungen laufen mit `-N` einmal zentral über alle Module.
 Der originale Text-/Mailressourcenverweis des Browsermoduls ist bereits angepasst,
-damit die normalen Helfertests im Reactor funktionieren; die übrige Runnerumstellung
-bleibt Paket 3.
+damit die normalen Helfertests im Reactor funktionieren. Der Browserstarter wählt
+Shared und Browsermodul gemeinsam über die Root-POM aus, ohne separates Install.
 
 Nachgewiesen: optimierter `clean verify` des gesamten Reactors mit eigener, zunächst
 leerer Maven-Ablage ohne installierte Projektartefakte; 2.242 App-JUnit bestanden,
@@ -95,31 +99,30 @@ Nach dem erneuten Verknüpfen ausschließlich der Root-POM heißt das Anwendungs
 Der Benutzer hat die Funktion auch nach diesem Maven-Neuimport bestätigt.
 Die Entwicklungshilfe beschreibt die gemeinsame Maven-Verknüpfung und Modulwahl.
 
-Dies ist kein vollständiger Featureabschluss und keine neue große QA. Docker,
-Browserstarter, optionale Browser-Coverage und Sonar-Helfer bleiben offen.
+Docker baut `app` mit benötigtem Shared-Modul im Reactor und übernimmt das JAR aus
+`app/target/`. Der tatsächlich exportierte Buildkontext enthält nur 374 benötigte
+Dateien (rund 5,38 MB), keine lokalen Daten, Logs, `.env`, Browserbelege, Buildausgaben
+oder Abhängigkeiten. Browser-POM nur zur Reactor-Erkennung, keine Browserjourneys im
+Imagebuild. App-/Shared-Klassen und die Java-Quellen für optionale
+Browser-Coverage stammen aus demselben getesteten Image; kein lokaler Klassen-/
+Quellenfallback. Workerparallelisierung und gemeinsame Imagezuordnung bleiben erhalten.
+
+Nachgewiesen: 83 Browser-Helferfälle einschließlich echter PowerShell-Fixtures,
+erfolgreicher Reactor-Klassenpfadaufbau ohne Shared-Install, Spotless apply/check
+und Checkstyle. Frischer optimierter Docker-Build ohne Layer-Wiederverwendung mit
+2.244 bestandenen App-JUnit und zwei erwarteten optionalen Starter-Skips
+(113 Testsuiten, keine Fehler). Eigener isolierter Compose-Start mit UID 10001,
+frischer Datenbank, Mailpit und Proxy-CA: HTTPS-Login und CSS mit vollständiger
+Zertifikatsprüfung, HTTP-Redirect/POST-Abweisung, interner Healthcheck 200 und
+direkter Login 403 bestanden; keine Mails. Echte JaCoCo-Erstellung aus genau diesem
+Image mit App-/Shared-Klassen und 193 Quelldateien erfolgreich, auch ausgeführter
+Shared-Code nachgewiesen. Eigene Container/Volumes sauber entfernt, kein Trustimport.
+
+Dies ist kein vollständiger Featureabschluss und keine neue große QA. Die volle
+Browserrunde DE/EN, Sonar-Umfang und Sonar-Helfer bleiben offen.
 Die bestehende Sonar-Analyse ist kein Nachweis für die neue Struktur.
 
 ## Offene Arbeitspakete
-
-### 3. Docker, Browserrunner und Testressourcen
-
-Docker-Build auf den Reactor und `app`-Artefaktpfad umstellen. Buildkontext und
-Allowlist müssen alle benötigten POMs/Buildvorgaben enthalten und weiterhin lokale
-Geheimnisse, Daten und Ausgaben ausschließen. Unbenötigte Browserausführung bleibt
-auch im Imagebuild aus. Laufzeitimage, Nutzerrechte, HTTPS-/Health-Vertrag erhalten.
-
-Browserstarter auf eine gemeinsame abhängige Modulauswahl umstellen; bestehende
-klassenweise Worker-Parallelisierung behalten. Originalübersetzungen und Mailvorlagen
-aus dem neuen Anwendungsressourcenpfad beziehen, keine Kopien oder Anwendungs-JAR-
-Abhängigkeit einführen. Testfixtures, Schema-/Theme-/Ressourcenpfade und den optionalen
-Browser-Coveragepfad anpassen. Bei optionaler Coverage nur zum tatsächlich geprüften
-Image passende App-/Shared-Klassen und Quellen verwenden, einschließlich des Shared-
-JARs; keine alten Laufdaten stillschweigend übernehmen.
-
-Nachweis nach Freigabe: Runner-/Coverage-/Ressourcenhelfer, frischer isolierter
-Imagebuild und Startprüfung; Browser DE/EN erst mit ausdrücklicher Freigabe.
-Beide Sprachen am selben unveränderten Image, keine konkurrierenden Builds.
-Abhängigkeiten: Pakete 1 und 2. Risiko: alte Hostpfade funktionieren nur durch Caches.
 
 ### 4. Vollständiger Sonar-Umfang und korrekte Coverage
 
@@ -197,8 +200,12 @@ und erledigte TODO-/Dokumentationsverweise entfernen. Kein Push ohne Auftrag.
 
 ## Freigaben und Abschlusskriterien
 
-Die freigegebenen Arbeitspakete 1 und 2 sind umgesetzt und geprüft.
-Pakete 3 bis 7 benötigen einen weiteren Umsetzungsauftrag; nötige eigene
+Die freigegebenen Arbeitspakete 1 bis 3 sind umgesetzt und geprüft.
+Der Benutzer hat ausschließlich den lokalen Commit des aktuellen Stands auf dem
+Feature-Branch beauftragt. Dies gibt keine Main-Integration, weiteren Pakete oder
+Sonar-Uploads frei.
+Browserjourneys sind nicht freigegeben.
+Pakete 4 bis 7 benötigen einen weiteren Umsetzungsauftrag; nötige eigene
 isolierte Anwendungs-/Dockerstarts, Browser DE/EN sowie main-Integration und Upload
 im jeweiligen Auftrag ausdrücklich mit erfassen. Keine automatische große QA,
 Sonar-Bereinigung, Commits oder Merges aus bloßer Planabnahme.

@@ -328,10 +328,16 @@ public final class BrowserTestRunner {
                     "cp",
                     appContainer + ":/app/app.jar",
                     coverageFolder.resolve("app.jar").toString()));
+            command(
+                List.of(
+                    docker,
+                    "cp",
+                    appContainer + ":/app/coverage-sources.jar",
+                    coverageFolder.resolve("coverage-sources.jar").toString()));
           }
           if (!worker) {
-            BrowserCoverage.extractApplicationClasses(coverageFolder);
-            command(BrowserCoverage.reportCommand(module, repo, coverageFolder));
+            BrowserCoverage.extractTestedCode(coverageFolder);
+            command(BrowserCoverage.reportCommand(module, coverageFolder));
           }
           metadata.put("coverage", "passed");
           metadata.put(
@@ -508,6 +514,9 @@ public final class BrowserTestRunner {
         Files.move(
             parallel.workers().getFirst().directory().resolve("coverage/app.jar"),
             folder.resolve("app.jar"));
+        Files.move(
+            parallel.workers().getFirst().directory().resolve("coverage/coverage-sources.jar"),
+            folder.resolve("coverage-sources.jar"));
         ArrayList<String> merge =
             new ArrayList<>(
                 List.of(
@@ -518,8 +527,8 @@ public final class BrowserTestRunner {
         merge.addAll(coverageData.stream().map(Path::toString).toList());
         merge.addAll(List.of("--destfile", folder.resolve("browser-jacoco.exec").toString()));
         command(merge);
-        BrowserCoverage.extractApplicationClasses(folder);
-        command(BrowserCoverage.reportCommand(module, repo, folder));
+        BrowserCoverage.extractTestedCode(folder);
+        command(BrowserCoverage.reportCommand(module, folder));
         metadata.put("coverage", "passed");
         metadata.put("coverageReport", "coverage/html/index.html");
       }

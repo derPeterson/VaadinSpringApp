@@ -43,10 +43,11 @@ entsteht unter `app/target/`. Gezielter Build mit benötigtem Shared-Modul:
 .\mvnw.cmd -pl app -am verify -Pproduction -Dvaadin.productionMode=true
 ```
 
-Der Multi-Modul-Umbau ist teilweise umgesetzt: Reactor und lokaler IDE-/HTTPS-Start
-sind geprüft. Docker, Browserstarter und Sonar-Ablauf werden in den weiteren
-[Arbeitspaketen](docs/planung/multi-modul-sonarqube.md) angepasst. Deren bisherige
-Startanleitungen sind auf diesem Zwischenstand noch nicht erneut freigegeben.
+Der Multi-Modul-Umbau ist teilweise umgesetzt: Reactor, lokaler IDE-/HTTPS-Start,
+Docker-Build und Browserstarter sind angepasst und gezielt geprüft. Sonar-Ablauf
+und abschließende Gesamtprüfung bleiben in den weiteren
+[Arbeitspaketen](docs/planung/multi-modul-sonarqube.md) offen. Eine neue vollständige
+Browserrunde DE/EN ist damit noch nicht nachgewiesen.
 
 Der lokale HTTPS-Zugang ist `https://localhost:8443`; dafür den Caddy-Proxy und
 das Zertifikatsvertrauen gemäß [Entwicklungsanleitung](docs/entwicklung.md#lokales-https)
