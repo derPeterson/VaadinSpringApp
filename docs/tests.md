@@ -89,9 +89,8 @@ Der Root-Build führt Anwendungstests und die normalen Browser-Helfertests aus,
 keine mit `browser` markierten Journeys. Gezielte Anwendungsbuilds verwenden
 `-pl app -am`; Stilprüfungen laufen mit `-N` zentral im Root. Docker,
 Browserstarter und geschützter Sonar-Ablauf verwenden ebenfalls den Reactor.
-Die gemeinsame Funktionsprüfung ist im [Prüfstand](status.md) belegt;
-Main-Integration und Servernachweis bleiben im
-[Multi-Modul-Plan](planung/multi-modul-sonarqube.md) offen.
+Gemeinsame Funktionsprüfung, lokale Integration und Sonar-Servernachweis sind im
+[Prüfstand](status.md) belegt. Der Multi-Modul-Umbau ist insgesamt abgenommen.
 
 Die gemeinsame Java-Coverage wird gezielt mit dem Profil `coverage` gebaut und
 gegen das wirksame Maven-Modell geprüft; Befehle und Grenzen stehen unter

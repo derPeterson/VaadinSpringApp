@@ -46,9 +46,9 @@ entsteht unter `app/target/`. Gezielter Build mit benötigtem Shared-Modul:
 Reactor, lokaler IDE-/HTTPS-Start, Docker-Build, Browserstarter und gemeinsamer
 Coverage-/Sonar-Ablauf sind eingerichtet. Die gemeinsame Funktionsprüfung samt
 vollständiger Browserrunde DE/EN am selben aktuellen Image ist bestanden;
-Ergebnisse und Grenzen stehen im [Prüfstand](docs/status.md). Main-Integration,
-Sonar-Servernachweis und gemeinsame Gesamtabnahme bleiben im
-[Multi-Modul-Plan](docs/planung/multi-modul-sonarqube.md) offen.
+Ergebnisse und Grenzen stehen im [Prüfstand](docs/status.md). Der gemeinsame Umfang
+ist lokal nach `main` integriert und auf dem Sonar-Server mit grünem Quality Gate
+nachgewiesen. Der Multi-Modul-Umbau ist insgesamt abgenommen.
 
 Der lokale HTTPS-Zugang ist `https://localhost:8443`; dafür den Caddy-Proxy und
 das Zertifikatsvertrauen gemäß [Entwicklungsanleitung](docs/entwicklung.md#lokales-https)

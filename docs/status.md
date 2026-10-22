@@ -74,18 +74,52 @@ Workflow gehören nicht zu dieser Prüfung. Mailpit belegt Annahme im eigenen
 Testnetz, keine externe Postfachzustellung. Browserfälle ersetzen keine Abnahme
 auf echten Mobilgeräten, mit Hilfsmitteln oder in realen Mailclients.
 
-## Sonar und verbleibender Abschluss
+## Integration und gemeinsamer Sonar-Nachweis
 
-In diesem Paket wurde kein Scan oder Upload ausgeführt. Der zuvor dokumentierte
-grüne Sonar-Stand gehört zum früheren engeren Analyseumfang und bestätigt die neue
-Modulstruktur nicht. Gate, vollständige Findings/Hotspots, bestehende Ausnahmen,
-Analyse-ID und Revision des gemeinsamen Umfangs bleiben für
-[Arbeitspaket 7](planung/multi-modul-sonarqube.md) offen. Die früher beobachteten
-Java-25-Typauflösungs-/Preview-Warnungen sind dort erneut einzuordnen; der aktuelle
-Java-25-Build ist bestanden.
+Alle Module sind lokal nach `main` integriert. Geprüfter und hochgeladener Codestand:
+`951452da7e89fc3f14db910f910734cfd5bf8008`. Serverauftrag
+`e54b1666-44b9-4acb-b046-b6d8a386b6c0` ist SUCCESS; zugehörige Analyse
+`226deebd-5a32-4336-8986-5deb9891eb71` vom 22.10.2026, 23:02:38 UTC.
+Revision, Projektkey `vaadin-spring-app` und lokales main stimmen überein.
 
-Kein Commit, Merge, Push oder Gesamtabschluss aus dieser Funktionsprüfung.
-Die gemeinsame Abnahme und der Servernachweis bleiben erforderlich.
+Der Serverumfang ist vollständig mit den lokalen Dateien abgeglichen:
+188 App- und fünf Shared-Quellen, 117 App- und 77 Browser-Testquellen. Keine fehlende,
+zusätzliche oder falsch klassifizierte Java-Datei; 387 Java-Dateien insgesamt.
+Das technische Coverage-POM wird nicht als Anwendung analysiert. Gemeinsame JaCoCo-
+Messdaten und wirksames Maven-Modell sind vor dem Upload erfolgreich geprüft.
+
+Quality Gate **OK**: neue Coverage 82,2 % bei mindestens 80 %, neue Duplikation 0 %
+bei höchstens 3 %, neue Issues 0 bei zulässig 0. Gesamtcoverage 85,5 %,
+Zeilencoverage 88,1 %, Branchcoverage 77,3 %. Keine offenen Issues im Gesamtcode
+oder New Code, keine offenen Bugs, Vulnerabilities oder Hotspots.
+
+Die erstmals einbezogenen Shared-/Browser-Findings sind geprüft: 23 ursprüngliche
+Hinweise und sieben nachfolgende Stilhinweise sind im Servernachscan als Fixed
+bestätigt. Fünf Hinweise sind einzeln begründet Accepted, drei False positives;
+die 37 bestehenden Ausnahmen behalten IDs, Status und Kommentare und sind korrekt
+auf die verschobenen App-Dateien zugeordnet. Insgesamt bestehen 33 Accepted und
+12 False positives. Bei der Finding-Bereinigung wurden Regeln, Profile, Analyseumfang,
+Gate und Baseline nicht verändert.
+Die sieben `var _`-Stellen sind durch Code behoben und nicht akzeptiert geblieben.
+
+Auf diesem finalen Codestand sind zentraler Stil, optimierter vollständiger Reactor-
+Install, 2.244 App-JUnit bei zwei erwarteten Skips und alle 83 Browser-Helfer bestanden.
+Vor Integration waren 60 gezielte Regressionen erfolgreich; nach der `var`-Korrektur
+acht CA-/Sperrfälle erneut. Der frische isolierte JAR-Start erreicht Health 200,
+weist direkten HTTP-Login mit 403 ab und liefert mit vertrauenswürdigen Proxyheadern
+200; kein SMTP-Verbindungsversuch, eigener Prozess vollständig beendet.
+
+Dies ersetzt keine neue große QA: Die vollständigen DE-/EN-Läufe oben gehören zum
+dort genannten früheren Codestand. Nach den verhaltensgleichen Sonar-Korrekturen
+wurden alle Browserquellen kompiliert, keine Journeys erneut gestartet. Keine
+Assertions, Sperren oder Abbaugrenzen entfernt. Die bekannten Java-25-Typauflösungs-/
+Preview-Warnungen bleiben eine Scannergrenze; der Java-25-Build ist bestanden.
+
+Der Benutzer hat den Multi-Modul-Umbau am 23.10.2026 insgesamt abgenommen und den
+Abschluss beauftragt. Die erledigten Pläne und ihre Aufgaben-/Dokumentationsverweise
+sind entfernt. Codeänderungen sind lokal in main committiert und integriert; die
+abschließenden Dokumentationsänderungen bleiben zur Benutzerprüfung uncommittiert.
+Kein Push erfolgt.
 
 ## Offene Fehler
 

@@ -24,12 +24,7 @@ lokal mit Testdaten; eine neue Testdatenbank wird aus dem aktuellen Schema angel
 Details zu automatisierten Browserfällen stehen bei deren Testbeschreibungen und
 in der [Browser-Testanleitung](../browser-tests/README.md).
 
-## Aktive Umsetzungspläne
+## Offene Arbeiten
 
-- [Gemeinsames Maven-Projekt und vollständige SonarQube-Analyse](planung/multi-modul-sonarqube.md):
-  Arbeitspakete 1 bis 6 umgesetzt und geprüft; Integration, Servernachweis und Abnahme offen.
-
-Weitere vereinbarte Arbeiten stehen in [TODO](../TODO.md).
-
-Diese Pläne beschreiben offene Arbeiten. Nach Umsetzung werden sie samt Verweisen
-entfernt; die gültige Bedienung und Konfiguration steht dann in den obigen Fachdokumenten.
+Derzeit bestehen keine aktiven Umsetzungspläne. Weitere vereinbarte Arbeiten stehen
+in [TODO](../TODO.md); gültige Bedienung und Konfiguration in den obigen Fachdokumenten.

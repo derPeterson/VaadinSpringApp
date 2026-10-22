@@ -53,9 +53,9 @@ Stilprüfungen laufen einmal zentral im Root mit `-N` über alle Modulquellen;
 Anwendungsartefakte liegen unter `app/target/`. IDE-/HTTPS-Start, Docker-Build und
 Browserstarter sind an die Modulstruktur angepasst. Gemeinsamer Java-Analyseumfang
 und JUnit-Coverage sind konfiguriert. Der geschützte Sonar-Ablauf verwendet ebenfalls
-den vollständigen Reactor. Die gemeinsame Funktionsprüfung ist im [Prüfstand](status.md)
-belegt; Main-Integration und Servernachweis bleiben im
-[aktiven Multi-Modul-Plan](planung/multi-modul-sonarqube.md) offen.
+den vollständigen Reactor. Gemeinsame Funktionsprüfung, lokale Main-Integration und
+Servernachweis mit grünem Gate sind im [Prüfstand](status.md) belegt. Der Multi-Modul-
+Umbau ist insgesamt abgenommen.
 
 ## Konfiguration und Datenbank
 
@@ -295,8 +295,9 @@ Grundlagen: [Sonar-Maven-Analyseumfang](https://docs.sonarsource.com/sonarqube-s
 ## SonarQube und Codex
 
 Der geschützte Scanner-Helfer baut und prüft den gemeinsamen Modul-/Coverageumfang.
-Ein Servernachweis des neuen Gesamtumfangs ist erst nach gesonderter Main-Integration
-und Scanfreigabe vorgesehen; lokale Helferprüfungen ersetzen ihn nicht.
+Der Servernachweis umfasst App, Shared und alle Java-Browsertests unter demselben
+Projektkey; das technische Berichtsmodul selbst bleibt ausgeschlossen. Aktuelle
+Revision, Ergebnisse und Analysegrenzen stehen im [Prüfstand](status.md).
 
 Die lokale Anbindung liegt unter `scripts/sonar/`. Sie benötigt die virtuelle
 Python-Projektumgebung (Python 3.11 oder neuer), Docker Desktop und den vorhandenen

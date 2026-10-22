@@ -9,8 +9,7 @@ Derzeit keine offenen Ergänzungen oder ausstehenden Browserläufe.
 
 ## JUnit-Tests
 
-Derzeit keine offenen Ergänzungen. Integration und echter Sonar-Servernachweis
-bleiben im [aktiven Plan](planung/multi-modul-sonarqube.md) offen.
+Derzeit keine offenen Ergänzungen.
 
 Menschliche Abnahmen und die nicht beauftragte optionale externe SMTP-Abnahme
 bleiben im [manuellen Katalog](manual-tests/README.md).
