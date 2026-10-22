@@ -26,8 +26,10 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
 
 ## Aktive Umsetzungspläne
 
-Aktuell gibt es keine offenen Umsetzungspläne. Vereinbarte nächste Arbeiten stehen
-in [TODO](../TODO.md).
+- [Gemeinsames Maven-Projekt und vollständige SonarQube-Analyse](planung/multi-modul-sonarqube.md):
+  Planung in Arbeitspaketen; noch keine Umsetzung freigegeben.
+
+Weitere vereinbarte Arbeiten stehen in [TODO](../TODO.md).
 
 Diese Pläne beschreiben offene Arbeiten. Nach Umsetzung werden sie samt Verweisen
 entfernt; die gültige Bedienung und Konfiguration steht dann in den obigen Fachdokumenten.
