@@ -64,12 +64,7 @@ public final class IdeHttpsProxy implements AutoCloseable {
                       "Cannot read Caddy startup confirmation", failure);
                 }
               });
-      String ready;
-      try {
-        ready = confirmation.get(20, TimeUnit.SECONDS);
-      } catch (ExecutionException | TimeoutException failure) {
-        throw new IOException("Cannot confirm HTTPS supervisor startup", failure);
-      }
+      String ready = awaitSupervisorConfirmation(confirmation);
       if (ready == null || !ready.startsWith("READY ")) {
         throw new IOException("Caddy could not start. See the preceding proxy diagnostic.");
       }
@@ -83,6 +78,15 @@ public final class IdeHttpsProxy implements AutoCloseable {
         }
       }
       throw failure;
+    }
+  }
+
+  private static String awaitSupervisorConfirmation(CompletableFuture<String> confirmation)
+      throws IOException, InterruptedException {
+    try {
+      return confirmation.get(20, TimeUnit.SECONDS);
+    } catch (ExecutionException | TimeoutException failure) {
+      throw new IOException("Cannot confirm HTTPS supervisor startup", failure);
     }
   }
 
