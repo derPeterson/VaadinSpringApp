@@ -5,8 +5,8 @@ Stand: 22.10.2026. Ausschließlich lokale Entwicklung mit austauschbaren Testdat
 ## Ergebnis der großen Testrunde
 
 Die automatisierten Fälle der großen Runde sind vollständig bestanden. Der aktuelle
-HTTPS-Stand hat noch keinen eigenen Sonar-Scan; die Gesamt-QA ist deshalb nicht vollständig
-grün belegt. Geprüft wurde `feature/lokales-https`, Commit
+HTTPS-Stand hat inzwischen einen zugeordneten Sonar-Scan mit rotem Quality Gate;
+die Gesamt-QA ist damit nicht grün. Geprüft wurde `feature/lokales-https`, Commit
 `fe1f47ee94e27d07ee90a3d6dac8a8daa4f611a4` einschließlich der uncommittierten
 Testergänzungen. Eine revisiongebundene erfolgreiche lokale QA-Baseline lag nicht
 vor; bisheriger Prüfbericht, tatsächliche Änderungen und offener Testbedarf wurden
@@ -100,19 +100,40 @@ und Produktionsimage wurden durch den Nachtlaufumbau nicht verändert.
 
 ## Sonar und verbleibender Abschluss
 
-MCP-Verbindung und geschützter Lesehelfer funktionieren. Die bestehende
-`main`-Analyse vom 21.10.2026, 16:34:35 UTC, Revision
-`20d1775e418b97a7d5781b4eb9c0d356b555bb94`, meldet Gate **OK**, 0 offene Issues,
-0 Hotspots und 33 Ausnahmen. Sie entspricht weder dem aktuellen lokalen `main`
-noch dem HTTPS-Featurestand. Der neue Scan ist laut Projektvertrag ausschließlich
-auf sauberem `main` zulässig und bleibt bis zur ausdrücklich beauftragten
-Integration offen. Keine Scans oder Sonar-Statusänderungen in dieser Runde.
-Die erfolgreiche lokale QA-Baseline wurde wegen dieses offenen Nachweises nicht ersetzt.
+Nach lokalem Fast-forward-Merge ist `main` auf
+`e5b6e681320885f44b5902b1fa9b037eb4d4c690` geprüft: optimierter Build erfolgreich,
+2.241 Anwendungstests bestanden, zwei erwartete optionale IDE-Skips. Der frisch
+gebaute JAR startete isoliert mit HTTPS-Profil und frischer In-Memory-Datenbank:
+Health 200, direkter HTTP-Login 403, Login mit konkreten Proxy-Headern 200.
+Eigener Prozess beendet, Port freigegeben, keine SMTP-Verbindung. Diese Mergeprüfung
+ersetzt keine vollständige Browser-QA und keine gemeinsame Featureabnahme.
+
+Der anschließend ausdrücklich beauftragte Scan wurde mit diesen unveränderten
+Build-/Coverage-Artefakten hochgeladen. Serverauftrag
+`4528517b-21da-4410-8dcb-a23fed416dba` endete mit **SUCCESS**;
+Analyse `bfb3a47f-be62-4c71-b604-04c39a303df8` vom 22.10.2026, 10:06:37 UTC.
+Die Serverrevision stimmt exakt mit dem genannten lokalen `main` überein.
+
+Quality Gate **ERROR** wegen 21 neuen offenen Issues, zulässig 0. Neue Coverage
+82,7 % (Mindestwert 80 %) und neue Duplikation 0 % (Höchstwert 3 %) bestehen.
+Gesamtcode und New Code enthalten dieselben 21 offenen Issues: eine von Sonar
+klassifizierte Vulnerability im IDE-Starter, zwei Bugs in Test-Assertions und
+18 Code Smells. Kein Nachweis eines ausnutzbaren Sicherheitsfehlers allein durch
+diese Klassifikation. 0 Hotspots; bestehende 26 Accepted und 7 False positives
+unverändert. Gesamtcoverage 85,0 %, Zeilencoverage 87,6 %, Branchcoverage 77,1 %.
+
+Offene fachlich eingeordnete Arbeiten: [Sonar-Pakete](planung/sonar-pakete.md).
+Keine Codebehebung oder Issue-Statusänderung in diesem Scanauftrag. Der Scanner
+meldete Typauflösungs-/Preview-Warnungen; Analyseumfang des Hauptmoduls unverändert.
+Hotspots wurden über den geschützten vollständigen REST-Lesehelfer geprüft, da
+der MCP-Hotspotaufruf einen nicht unterstützten Filterparameter sendete (HTTP 400).
+Die erfolgreiche lokale QA-Baseline wird wegen des roten Gates nicht ersetzt.
 
 Es sind keine bestätigten offenen Anwendungsfehler bekannt; siehe [BUGS.md](../BUGS.md).
 Die erfolgreich geprüften bisherigen Ergänzungen sind aus dem
 [Testbedarf](testbedarf.md) entfernt; auch der gezielte Nachtlaufbedarf ist nachgewiesen.
 Menschliche Sonderprüfungen bleiben im
 [manuellen Katalog](manual-tests/README.md). Die [HTTPS-Planung](planung/https.md)
-bleibt bis zur gemeinsamen Gesamt-Abnahme erhalten. Keine Commits, Merges oder Pushes;
+bleibt bis zur gemeinsamen Gesamt-Abnahme erhalten. Der Merge ist erfolgt;
+kein Featureabschluss, keine zusätzlichen Commits oder Pushes im Scanauftrag.
 Entwicklerdaten und fremde Prozesse wurden nicht als Fixtures verwendet oder verändert.

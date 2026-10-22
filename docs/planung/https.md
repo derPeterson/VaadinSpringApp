@@ -11,7 +11,8 @@ Die drei vorgeschalteten Zertifikatsprüfungen sind erfolgreich: normales und
 persistentes Playwright-Chromium mit echtem Prozessneustart und Secure-Cookie,
 Caddy-Neustart sowie vollständiger Rückbau mit anschließender Zertifikatsablehnung.
 Der früheste freigegebene Startzeitpunkt (21. Oktober 2026, 21:45 Uhr Europe/Berlin)
-ist verstrichen. Der einmalige Zeitauftrag ist beendet. Kein Commit/Merge/Push beauftragt.
+ist verstrichen. Der einmalige Zeitauftrag ist beendet. Der ausdrücklich beauftragte
+lokale Merge nach `main` ist erfolgt; die Umsetzung bleibt auf Benutzerwunsch offen.
 
 ## Geltender Rahmen
 
@@ -48,8 +49,10 @@ Tatsächliche Ergebnisse und Grenzen: [Prüfstand](../status.md).
 
 - [ ] Gemeinsame Gesamt-Abnahme des HTTPS-Features. Die bestehende menschliche
   IDE-/BAT-Abnahme bleibt gültig; keine erneute Pflichtprüfung dieses Komfortstarts.
-- [ ] Aktuellen Sonar-Nachweis nach ausdrücklich beauftragter Integration auf
-  sauberem `main` erbringen. Die vorhandene grüne Analyse belegt den HTTPS-Stand nicht.
+- [ ] Die im aktuellen main-Scan erfassten 21 Sonar-Findings fachlich bearbeiten und
+  mit passendem Nachscan ein grünes Gate nachweisen. Scan und Serverrevision sind
+  zugeordnet; Gate aktuell ERROR. [Offene Pakete](sonar-pakete.md), Umsetzung noch
+  nicht beauftragt.
 - [ ] Nach gemeinsamer Abnahme erledigten TODO-Eintrag, diesen Plan und Verweise
   entfernen. Offenen Testbedarf unabhängig erhalten. `docs/status.md` bleibt der
   Stand der großen QA einschließlich ihrer belegten Grenzen.

@@ -16,11 +16,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Eigene Prozessaufsicht überlebt auch einen harten IDE-Abbruch des Anwendungsprozesses. */
 public final class IdeHttpsProxy implements AutoCloseable {
+  private static final Logger log = LoggerFactory.getLogger(IdeHttpsProxy.class);
   private final Process supervisor;
   private final long proxyPid;
   private final AtomicBoolean closing = new AtomicBoolean();
@@ -31,20 +36,19 @@ public final class IdeHttpsProxy implements AutoCloseable {
   }
 
   static IdeHttpsProxy start(Path directory, List<String> command, Map<String, String> environment)
-      throws Exception {
-    Path arguments = Files.createTempFile("ide-https-", ".args");
+      throws IOException, InterruptedException {
     List<String> javaArguments =
         new ArrayList<>(
             List.of("-cp", System.getProperty("java.class.path"), IdeHttpsProxy.class.getName()));
     javaArguments.addAll(command);
-    Files.write(
-        arguments,
-        javaArguments.stream().map(IdeHttpsProxy::quoteArgument).toList(),
-        StandardCharsets.UTF_8);
     Process supervisor = null;
-    try {
+    try (IdeHttpsArguments arguments = IdeHttpsArguments.create(directory)) {
+      Files.write(
+          arguments.path(),
+          javaArguments.stream().map(IdeHttpsProxy::quoteArgument).toList(),
+          StandardCharsets.UTF_8);
       ProcessBuilder builder =
-          new ProcessBuilder(javaExecutable(), "@" + arguments)
+          new ProcessBuilder(javaExecutable(), "@" + arguments.path())
               .directory(directory.toFile())
               .redirectError(ProcessBuilder.Redirect.INHERIT);
       builder.environment().putAll(environment);
@@ -60,22 +64,25 @@ public final class IdeHttpsProxy implements AutoCloseable {
                       "Cannot read Caddy startup confirmation", failure);
                 }
               });
-      String ready = confirmation.get(20, TimeUnit.SECONDS);
+      String ready;
+      try {
+        ready = confirmation.get(20, TimeUnit.SECONDS);
+      } catch (ExecutionException | TimeoutException failure) {
+        throw new IOException("Cannot confirm HTTPS supervisor startup", failure);
+      }
       if (ready == null || !ready.startsWith("READY ")) {
         throw new IOException("Caddy could not start. See the preceding proxy diagnostic.");
       }
       return new IdeHttpsProxy(supervisor, Long.parseLong(ready.substring(6)));
-    } catch (Exception failure) {
+    } catch (IOException | InterruptedException | RuntimeException failure) {
       if (supervisor != null) {
         try {
-          new IdeHttpsProxy(supervisor, -1).close();
+          stopSupervisor(supervisor);
         } catch (RuntimeException cleanupFailure) {
           failure.addSuppressed(cleanupFailure);
         }
       }
       throw failure;
-    } finally {
-      Files.deleteIfExists(arguments);
     }
   }
 
@@ -105,7 +112,7 @@ public final class IdeHttpsProxy implements AutoCloseable {
         .thenRun(
             () -> {
               if (!closing.get()) {
-                System.err.println(
+                log.error(
                     "HTTPS proxy stopped unexpectedly; stopping the development application.");
                 System.exit(1);
               }
@@ -117,6 +124,10 @@ public final class IdeHttpsProxy implements AutoCloseable {
     if (!closing.compareAndSet(false, true)) {
       return;
     }
+    stopSupervisor(supervisor);
+  }
+
+  private static void stopSupervisor(Process supervisor) {
     try {
       // EOF ist der normale Stopauftrag; kein Kill fremder Prozesse über Namen oder Ports.
       supervisor.getOutputStream().close();
@@ -147,14 +158,14 @@ public final class IdeHttpsProxy implements AutoCloseable {
    * Separater JVM-Prozess: stdout ist ausschließlich das Startprotokoll, Caddy-Ausgaben gehen an
    * stderr.
    */
-  public static void main(String[] args) throws Exception {
+  public static void main(String[] args) throws IOException, InterruptedException {
     ProcessHandle owner = ProcessHandle.current().parent().orElseThrow();
     CompletableFuture<Void> stopRequested =
         CompletableFuture.runAsync(
             () -> {
               try {
                 System.in.read();
-              } catch (IOException ignored) {
+              } catch (IOException _) {
                 // Auch eine unterbrochene Steuerleitung verlangt den Abbau des eigenen Proxys.
               }
             });
@@ -172,7 +183,7 @@ public final class IdeHttpsProxy implements AutoCloseable {
               () -> {
                 try {
                   child.getInputStream().transferTo(System.err);
-                } catch (IOException ignored) {
+                } catch (IOException _) {
                   // Der Prozessabbau kann den Ausgabestrom schließen.
                 }
               });
@@ -200,7 +211,7 @@ public final class IdeHttpsProxy implements AutoCloseable {
       ProcessHandle owner,
       Process child,
       CompletableFuture<Void> stopRequested)
-      throws Exception {
+      throws IOException {
     Instant deadline = Instant.now().plusSeconds(15);
     while (owner.isAlive()
         && child.isAlive()
@@ -211,7 +222,7 @@ public final class IdeHttpsProxy implements AutoCloseable {
         if (Arrays.equals(expected, confirmation.getInputStream().readNBytes(expected.length))) {
           return;
         }
-      } catch (SocketTimeoutException ignored) {
+      } catch (SocketTimeoutException _) {
         // Begrenzt auf die eigene Startbestätigung warten und zugleich Besitzer/Kind überwachen.
       }
     }

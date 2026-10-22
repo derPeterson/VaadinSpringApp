@@ -102,6 +102,14 @@ bleibt bei Maven-Clean erhalten.
 
 Die im Repository gespeicherte `.run/Application HTTPS.run.xml` erscheint nach
 Projektaktualisierung in der Run-/Debug-Auswahl als **Application HTTPS**.
+
+Die Prozessaufsicht übergibt ihren Java-Klassenpfad über eine kurzlebige Argumentdatei
+unter `data/https/ide-launcher/start-*/launcher.args`. Verzeichnis und Datei erhalten
+bereits bei der Anlage ausschließlich Benutzerrechte (Windows-ACL bzw. POSIX-Rechte).
+Die eigene Startablage wird nach erfolgreicher Bestätigung und bei Startfehlern
+entfernt; CA-Dateien und fremde Ablagen bleiben unberührt. Kann das Dateisystem die
+Rechte nicht sicher setzen, startet der Proxy nicht. Technische Grundlage:
+[initiale ACLs mit Java NIO](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/nio/file/attribute/AclFileAttributeView.html).
 Diese Konfiguration auswählen und **Run** oder **Debug** drücken; anschließend
 `https://localhost:8443/` öffnen. JDK 25 aus dem Modul `app` verwenden.
 Falls die Auswahl nach dem Anlegen noch fehlt, das Projekt bzw. Maven-Projekt neu

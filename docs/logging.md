@@ -4,6 +4,12 @@ Bei Loggingarbeiten diesen Vertrag einschließlich der Beispiele lesen und anwen
 Eigene Logmeldungen sind einheitlich **Englisch**, unabhängig von der UI-Sprache.
 Keine Übersetzung über `MessageProperties`; Dokumentation und Kommunikation bleiben Deutsch.
 
+Beim eigenen IDE-HTTPS-Supervisor ist stdout ausschließlich das maschinenlesbare
+`READY <pid>`-Startprotokoll samt Flush. Das ist keine Logmeldung. Die vom eigenen
+Caddy bereits erzeugte Diagnose wird als Prozessausgabe unverändert an stderr
+weitergeleitet. Normale eigene Lifecyclemeldungen verwenden den Logger; die beiden
+Prozesskanäle nicht durch zusätzliche Loggerformatierung verändern.
+
 ## Pegel und Diagnose
 
 Normalbetrieb ist INFO. Die Dateiausgabe steht in `src/main/resources/logback-spring.xml`;

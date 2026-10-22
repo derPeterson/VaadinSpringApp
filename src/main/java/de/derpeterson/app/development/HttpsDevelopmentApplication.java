@@ -11,15 +11,19 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 
 /**
  * IDE-Einstieg ohne Testklassenpfad; das Entwicklungspaket wird vom Anwendungs-JAR ausgeschlossen.
  */
 public final class HttpsDevelopmentApplication {
+  private static final Logger log = LoggerFactory.getLogger(HttpsDevelopmentApplication.class);
+
   private HttpsDevelopmentApplication() {}
 
-  public static void main(String[] args) throws Exception {
+  public static void main(String[] args) throws IOException, InterruptedException {
     if (Runtime.version().feature() != 25 || !System.getProperty("os.name").startsWith("Windows")) {
       throw new IllegalStateException("The HTTPS IDE launcher requires Windows and Java 25");
     }
@@ -50,14 +54,19 @@ public final class HttpsDevelopmentApplication {
       SpringApplication application = new SpringApplication(Application.class);
       application.setAdditionalProfiles("https");
       application.run(args);
-      System.out.println("HTTPS development access: https://localhost:8443");
+      log.info("HTTPS development access: https://localhost:8443");
     } catch (Throwable failure) {
-      proxy.close();
+      // Auch Linkage-/VM-Startfehler beenden nur den eigenen Proxy; kein Wiederherstellungsversuch.
+      try {
+        proxy.close();
+      } catch (RuntimeException cleanupFailure) {
+        failure.addSuppressed(cleanupFailure);
+      }
       throw failure;
     }
   }
 
-  static void verifyCaddy(Path executable) throws Exception {
+  static void verifyCaddy(Path executable) throws IOException, InterruptedException {
     if (!Files.isRegularFile(executable)) {
       throw new IOException(
           "Caddy is missing. Place v2.10.2 in data/https/tools/caddy.exe or set -Dhttps.dev.caddy=<path>");

@@ -18,6 +18,11 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.AclEntryType;
+import java.nio.file.attribute.AclFileAttributeView;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.attribute.UserPrincipal;
 import java.security.KeyStore;
 import java.security.cert.CertificateFactory;
 import java.time.Duration;
@@ -29,6 +34,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import org.junit.jupiter.api.Test;
@@ -39,10 +45,47 @@ class IdeHttpsProxyTest {
   @TempDir Path directory;
 
   @Test
+  void launcherArgumentsArePrivateFromCreationUntilCleanup() throws Exception {
+    Path file;
+    Path folder;
+    try (IdeHttpsArguments arguments = IdeHttpsArguments.create(directory)) {
+      file = arguments.path();
+      folder = arguments.directory();
+      UserPrincipal owner =
+          directory
+              .getFileSystem()
+              .getUserPrincipalLookupService()
+              .lookupPrincipalByName(System.getProperty("user.name"));
+      for (Path path : List.of(folder, file)) {
+        AclFileAttributeView acl = Files.getFileAttributeView(path, AclFileAttributeView.class);
+        if (acl != null) {
+          List<AclEntry> entries = acl.getAcl();
+          assertFalse(entries.isEmpty());
+          assertTrue(
+              entries.stream()
+                  .allMatch(
+                      entry ->
+                          entry.type() == AclEntryType.ALLOW && entry.principal().equals(owner)),
+              entries::toString);
+        } else {
+          assertEquals(
+              PosixFilePermissions.fromString(Files.isDirectory(path) ? "rwx------" : "rw-------"),
+              Files.getPosixFilePermissions(path));
+        }
+      }
+      Files.writeString(file, "owned fixture arguments");
+      assertEquals("owned fixture arguments", Files.readString(file));
+    }
+    assertFalse(Files.exists(file));
+    assertFalse(Files.exists(folder));
+  }
+
+  @Test
   void ownedProxyCanStartStopAndRestartWithPathsContainingSpaces() throws Exception {
     Path work = Files.createDirectories(directory.resolve("test project"));
     for (int attempt = 0; attempt < 2; attempt++) {
       IdeHttpsProxy proxy = IdeHttpsProxy.start(work, fakeCommand("ready"), Map.of());
+      assertNoLauncherArguments(work);
       ProcessHandle child = ProcessHandle.of(proxy.proxyPid()).orElseThrow();
       ProcessHandle supervisor = ProcessHandle.of(proxy.supervisorPid()).orElseThrow();
       assertTrue(child.isAlive());
@@ -60,6 +103,7 @@ class IdeHttpsProxyTest {
       assertThrows(
           Exception.class,
           () -> IdeHttpsProxy.start(directory, fakeCommand(mode, pidFile.toString()), Map.of()));
+      assertNoLauncherArguments(directory);
       ProcessHandle child =
           ProcessHandle.of(Long.parseLong(Files.readString(pidFile))).orElse(null);
       assertTrue(child == null || !child.isAlive());
@@ -72,6 +116,7 @@ class IdeHttpsProxyTest {
     assertThrows(
         Exception.class,
         () -> IdeHttpsProxy.start(directory, fakeCommand("stall", pidFile.toString()), Map.of()));
+    assertNoLauncherArguments(directory);
     ProcessHandle child = ProcessHandle.of(Long.parseLong(Files.readString(pidFile))).orElse(null);
     assertTrue(child == null || !child.isAlive());
   }
@@ -319,6 +364,12 @@ class IdeHttpsProxyTest {
   private List<String> fakeCommand(String... arguments) throws IOException {
     return List.of(
         IdeHttpsProxy.javaExecutable(), "@" + javaArguments(FakeCaddy.class, List.of(arguments)));
+  }
+
+  private void assertNoLauncherArguments(Path project) throws IOException {
+    try (Stream<Path> remaining = Files.list(project.resolve("data/https/ide-launcher"))) {
+      assertEquals(List.of(), remaining.toList());
+    }
   }
 
   private Path javaArguments(Class<?> mainClass, List<String> arguments) throws IOException {
