@@ -49,7 +49,8 @@ Shared vor seinen Verbrauchern; kein vorheriges manuelles Shared-Install nötig:
 
 Stilprüfungen laufen einmal zentral im Root mit `-N` über alle Modulquellen;
 Anwendungsartefakte liegen unter `app/target/`. IDE-/HTTPS-Start, Docker-Build und
-Browserstarter sind an die Modulstruktur angepasst. Sonar-Umstellung und die
+Browserstarter sind an die Modulstruktur angepasst. Gemeinsamer Java-Analyseumfang
+und JUnit-Coverage sind konfiguriert. Geschützter Sonar-Ablauf und die
 abschließende Gesamtprüfung bleiben im
 [aktiven Multi-Modul-Plan](planung/multi-modul-sonarqube.md) offen.
 
@@ -244,7 +245,56 @@ Technische Grundlagen: [Caddy Local HTTPS](https://caddyserver.com/docs/automati
 [Tomcat RemoteIpValve](https://tomcat.apache.org/tomcat-11.0-doc/config/valve.html#Remote_IP_Valve),
 [IntelliJ Application-Konfiguration](https://www.jetbrains.com/help/idea/run-debug-configuration-java-application.html).
 
+## Gemeinsame Java-Coverage
+
+Die Root-POM legt den bestehenden Sonar-Projektkey `vaadin-spring-app` fest.
+Der Maven-Scanner übernimmt die Java-Quell-/Testverzeichnisse, Klassen und
+Abhängigkeiten aus den Modulen. Keine globalen `sonar.sources`-/`sonar.tests`-
+Listen oder neuen Quell-/Coverage-Ausschlüsse setzen. Shared bleibt Anwendungscode;
+die vollständigen Browserquellen unter `browser-tests/src/test/java` bleiben Testcode.
+
+Das optionale Profil `coverage` ergänzt ausschließlich das technische POM-Modul
+`coverage-report`; die drei fachlichen Module bleiben unverändert. Dieses Modul
+wird mit `sonar.skip=true` nicht als Anwendung analysiert. JaCoCo führt App- und
+Shared-Klassen samt Quellen zusammen; das Browsermodul liefert über seine
+Testabhängigkeit nur Messdaten. Die festen Messsitzungen `app` und `browser-tests`
+belegen, dass beide Testmodule im Bericht angekommen sind. Nur `target/jacoco.exec`
+aus den Modulen wird geladen, keine optionale Browsermessung aus `runs/`.
+Das Berichtsmodul benötigt keine transitiven Framework-/Browserbibliotheken;
+die dortigen Maven-Abhängigkeitsausschlüsse verändern nicht die Anwendung oder
+den Sonar-Quellumfang. Die bereits vorhandene JaCoCo-Version bleibt erhalten.
+
+Aus dem Projektroot den frischen Bericht und das dazu passende wirksame Maven-Modell
+erzeugen und offline prüfen:
+
+```powershell
+.\mvnw.cmd --version
+.\mvnw.cmd clean verify '-Pproduction,coverage' '-Dvaadin.productionMode=true'
+.\mvnw.cmd '-Pproduction,coverage' '-Dvaadin.productionMode=true' help:effective-pom '-Doutput=coverage-report/target/effective-pom.xml'
+.\.venv\Scripts\python.exe scripts/coverage/verify_coverage.py
+```
+
+XML und HTML liegen unter `coverage-report/target/site/jacoco-aggregate/`.
+Alle analysierten Module verwenden diesen absoluten gemeinsamen XML-Berichtspfad,
+auch `app` mit seinem separaten Boot-Parent. Der Prüfer kontrolliert die drei
+Java-Module, vollständigen Bytecode, getrennte Quell-/Testverzeichnisse,
+Quellzuordnung, Messdateien/-sitzungen und Aktualität von Maven-Modell und Bericht.
+Messdaten müssen außerdem mindestens so aktuell wie die eigenen Klassen und
+Quellen sowie die gemeinsam verwendeten Shared-Klassen und -Quellen sein. Fehlende oder
+veraltete Nachweise führen zum Fehler; eine tatsächlich gemessene Null bleibt ein
+gültiger Zahlenwert. JaCoCo-Zeilencoverage ist nicht mit der Sonar-Gate-Bewertung
+gleichzusetzen. Dieser lokale Nachweis ist keine Serveranalyse.
+
+Grundlagen: [Sonar-Maven-Analyseumfang](https://docs.sonarsource.com/sonarqube-server/analyzing-source-code/scanners/sonarscanner-for-maven),
+[Java-Coverage und Berichtsaggregation](https://docs.sonarsource.com/sonarqube-server/analyzing-source-code/test-coverage/java-test-coverage),
+[JaCoCo-Aggregation der verwendeten Version](https://github.com/jacoco/jacoco/blob/v0.8.15/jacoco-maven-plugin/src/org/jacoco/maven/ReportAggregateMojo.java).
+
 ## SonarQube und Codex
+
+Zwischenstand des Multi-Modul-Umbaus: Der geschützte Scanner-Helfer wird erst in
+Paket 5 auf den gemeinsamen Coverage-Build und diese Vorprüfung umgestellt.
+Ein Servernachweis des neuen Gesamtumfangs ist erst nach gesonderter Main-Integration
+und Scanfreigabe vorgesehen. Die folgenden Scanbefehle sind dafür noch nicht angepasst.
 
 Die lokale Anbindung liegt unter `scripts/sonar/`. Sie benötigt die virtuelle
 Python-Projektumgebung (Python 3.11 oder neuer), Docker Desktop und den vorhandenen

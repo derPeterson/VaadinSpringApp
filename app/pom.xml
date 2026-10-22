@@ -238,6 +238,24 @@
 
     <profiles>
         <profile>
+            <id>coverage</id>
+            <!-- app erbt den Boot-Parent, daher denselben Berichtspfad ausdrücklich setzen. -->
+            <properties>
+                <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/coverage-report/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <configuration>
+                            <sessionId>app</sessionId>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <!-- Production mode is activated using -Pproduction -->
             <id>production</id>
             <dependencies>

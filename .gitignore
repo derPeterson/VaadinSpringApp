@@ -49,6 +49,7 @@ dev-shell.bat
 # Browser-test build output and local evidence
 /shared/target/
 /browser-tests/target/
+/coverage-report/target/
 /browser-tests/runs/
 sonar-findings.json
 

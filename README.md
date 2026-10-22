@@ -44,8 +44,9 @@ entsteht unter `app/target/`. Gezielter Build mit benötigtem Shared-Modul:
 ```
 
 Der Multi-Modul-Umbau ist teilweise umgesetzt: Reactor, lokaler IDE-/HTTPS-Start,
-Docker-Build und Browserstarter sind angepasst und gezielt geprüft. Sonar-Ablauf
-und abschließende Gesamtprüfung bleiben in den weiteren
+Docker-Build und Browserstarter sind angepasst und gezielt geprüft. Gemeinsamer
+Java-Analyseumfang und modulübergreifende JUnit-Coverage sind lokal eingerichtet.
+Geschützter Sonar-Ablauf und abschließende Gesamtprüfung bleiben in den weiteren
 [Arbeitspaketen](docs/planung/multi-modul-sonarqube.md) offen. Eine neue vollständige
 Browserrunde DE/EN ist damit noch nicht nachgewiesen.
 

@@ -88,9 +88,29 @@ node --test app/src/test/frontend/*.test.mjs
 Der Root-Build führt Anwendungstests und die normalen Browser-Helfertests aus,
 keine mit `browser` markierten Journeys. Gezielte Anwendungsbuilds verwenden
 `-pl app -am`; Stilprüfungen laufen mit `-N` zentral im Root. Docker und
-Browserstarter verwenden ebenfalls den Reactor. Sonar-Anpassung und die
+Browserstarter verwenden ebenfalls den Reactor. Geschützter Sonar-Ablauf und die
 abschließende Gesamtprüfung bleiben im
 [Multi-Modul-Plan](planung/multi-modul-sonarqube.md) offen.
+
+Die gemeinsame Java-Coverage wird gezielt mit dem Profil `coverage` gebaut und
+gegen das wirksame Maven-Modell geprüft; Befehle und Grenzen stehen unter
+[gemeinsamer Java-Coverage](entwicklung.md#gemeinsame-java-coverage). Das Profil
+startet keine Browserjourneys. Es aggregiert die Messdaten der Anwendungstests
+und der normalen Browser-Helfertests für App und Shared; Browsercode wird nicht
+zu Anwendungscode umklassifiziert. Die optionale serverseitige Browsermessung
+aus dem Runner bleibt separat.
+
+Die Offline-Regressionen des Coverage-Prüfers gehören zu den gepflegten Helfern:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s scripts/coverage -p 'test_*.py' -v
+```
+
+Sie prüfen vollständige Module, Quell-/Testtrennung, Bytecode, Messsitzungen,
+Berichtspfad und Aktualität sowie den Unterschied zwischen fehlendem Bericht und
+gemessener Null. Ein neuer Bericht darf keine vor der Neukompilierung erhobenen
+Messdaten verdecken; beide Testmodule benötigen Messdaten passend zu Shared.
+Sie starten weder Maven noch Anwendung, Docker oder Sonar.
 
 `BrowserBootstrapTest` prüft unter Windows den echten PowerShell-Einstieg mit einem
 eigenen Maven-Ersatz: abhängige Modulauswahl, Abbruch bei Buildfehlern und Ablehnung

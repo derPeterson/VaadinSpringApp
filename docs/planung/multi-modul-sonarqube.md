@@ -1,12 +1,13 @@
 # Gemeinsames Maven-Projekt und vollständige SonarQube-Analyse
 
-Status: Arbeitspakete 1 bis 3 sind umgesetzt und mit passenden Build-/JUnit-/
+Status: Arbeitspakete 1 bis 4 sind umgesetzt und mit passenden Build-/JUnit-/
 Stilprüfungen nachgewiesen. Der angepasste IDE-Start ist vom Benutzer mit
 Start/Stop, Debug und Breakpoint bestätigt. Docker-/Runner-/Coveragepfade sind
 umgestellt und mit eigenen isolierten Testressourcen nachgewiesen.
-Pakete 4 bis 7 sind noch nicht freigegeben.
-Der lokale Commit des geprüften Stands auf `feature/multi-modul-sonarqube` ist
-ausdrücklich beauftragt. Keine Integration nach `main` und kein Gesamtabschluss.
+Gemeinsamer Java-Analyseumfang und JUnit-Coverage sind lokal konfiguriert und geprüft.
+Pakete 5 bis 7 sind noch nicht freigegeben.
+Paket 3 ist auf dem Feature-Branch committet. Für Paket 4 sind weder Commit noch
+Integration nach `main` oder Gesamtabschluss beauftragt.
 Keine Browserjourneys, Scans, Merges oder Pushes.
 Branch: `feature/multi-modul-sonarqube`, Basis: lokales `main`,
 `93086b9d73b00280f3f1e0e560599dc9c37f9656`. Arbeitsstand vor Plananlage sauber.
@@ -118,31 +119,31 @@ direkter Login 403 bestanden; keine Mails. Echte JaCoCo-Erstellung aus genau die
 Image mit App-/Shared-Klassen und 193 Quelldateien erfolgreich, auch ausgeführter
 Shared-Code nachgewiesen. Eigene Container/Volumes sauber entfernt, kein Trustimport.
 
+Das Profil `coverage` ergänzt das rein technische POM-Modul `coverage-report` mit
+JaCoCo-Aggregation für App und Shared. Die normalen Browser-Helfertests liefern
+Messdaten für Shared, bleiben aber vollständig Testcode. Alle drei analysierten
+Module verwenden denselben XML-Bericht; der Sonar-Projektkey bleibt unverändert.
+Keine neuen Quell-/Test-/Coverage-Ausschlüsse. Das technische POM-Modul selbst wird
+nicht als Anwendung analysiert; die drei fachlichen Module bleiben unabhängig.
+
+Nachgewiesen: frischer optimierter Reactor-Build mit Coverage-Profil, 2.244 App-JUnit
+bestanden, zwei optionale Starter-Skips, 83 Helferfälle bestanden. Wirksames Maven-
+Modell und vollständiger Bytecode für 188 App- und fünf Shared-Quellen sowie 117
+App- und 77 Browser-Testquellen geprüft, keine überlappenden Quell-/Testverzeichnisse.
+Aggregat enthält die Messsitzungen beider Testmodule und genau die Quellmodule App
+und Shared. Shared: 586 gedeckte Zeilen aus App-Tests, 37 aus Helfertests; gemeinsam
+586/586 gedeckte Zeilen. App: 10.870 gedeckte und 1.548 ungedeckte Zeilen.
+18 Offline-Regressionen prüfen unter anderem fehlende oder veraltete Berichte/Modelle,
+Bytecode, Pfad-/Modulzuordnung, nicht übernommene Messdaten und gemessene Null.
+Auch nach neu erzeugtem Bericht müssen App- und Helfermessdaten mindestens so
+aktuell wie ihre eigenen und die gemeinsam verwendeten Shared-Klassen sein.
+Ruff-Formatierung/-Check, Spotless-Check und Checkstyle erfolgreich.
+
 Dies ist kein vollständiger Featureabschluss und keine neue große QA. Die volle
-Browserrunde DE/EN, Sonar-Umfang und Sonar-Helfer bleiben offen.
+Browserrunde DE/EN, geschützter Sonar-Ablauf und dessen Servernachweis bleiben offen.
 Die bestehende Sonar-Analyse ist kein Nachweis für die neue Struktur.
 
 ## Offene Arbeitspakete
-
-### 4. Vollständiger Sonar-Umfang und korrekte Coverage
-
-Eine Reactor-Analyse unter dem bestehenden Projektkey konfigurieren; keine drei
-Projektkeys und keine aufeinanderfolgenden Teiluploads auf denselben Key.
-App-/Shared-Quellen und sämtliche Browser-Testquellen mit aktuellen Klassen und
-Abhängigkeiten erfassen. Testcode als Testcode belassen; seine Qualitätsregeln
-anwenden, ohne ihn für Coverage künstlich als Anwendungscode zu klassifizieren.
-Keine pauschalen neuen Ausschlüsse zur Gate-Beruhigung.
-
-JaCoCo-Ausführung und XML-Berichte so zuordnen, dass auch Shared-Code, den App-
-oder Helfertests ausführen, korrekt berücksichtigt wird. Bei nötiger Aggregation
-ein rein technisches Berichtsmodul im Coverage-Profil vorsehen; die drei fachlichen
-Module bleiben getrennt. Gemessene Null und fehlender Bericht müssen unterscheidbar
-sein. Die optionale Browsermessung bleibt separat und löst keine Browserläufe aus.
-
-Nachweis nach Freigabe: Quell-/Testdateien aller Module vollständig und ohne
-Doppelindexierung nachlesen; vorhandene modulübergreifende Tests zur Coverage-
-Zuordnung nutzen. Zählwerte und neue Gate-Bewertung ehrlich vom bisherigen engeren
-Analyseumfang unterscheiden. Abhängigkeiten: Pakete 1 und 3.
 
 ### 5. Geschützter Sonar-Ablauf und Codex-Skills
 
@@ -152,6 +153,8 @@ Scanlock, Serverwarteschlange, sicherer Tokenzugriff, feste Revision und Abwarte
 des konkreten Serverauftrags erhalten. Unvollständiger Build oder fehlendes Modul
 darf keine erfolgreiche Gesamtanalyse ergeben. Ein aktueller Bericht und Zustand
 genügen weiterhin; keine Berichtsdateien pro Modul oder neue Archivserie.
+Den Coverage-Prüfer aus Paket 4 mit dem wirksamen Maven-Modell vor dem Upload
+verwenden; Scope-/Berichtsprüfung nicht im Sonar-Helfer duplizieren.
 
 Alle fünf Projekt-Skills auf tatsächlich betroffene Pfade, Build-/Testaufrufe,
 Artefakte und den gemeinsamen Sonar-Vertrag abgleichen und gezielt aktualisieren.
@@ -200,12 +203,11 @@ und erledigte TODO-/Dokumentationsverweise entfernen. Kein Push ohne Auftrag.
 
 ## Freigaben und Abschlusskriterien
 
-Die freigegebenen Arbeitspakete 1 bis 3 sind umgesetzt und geprüft.
-Der Benutzer hat ausschließlich den lokalen Commit des aktuellen Stands auf dem
-Feature-Branch beauftragt. Dies gibt keine Main-Integration, weiteren Pakete oder
-Sonar-Uploads frei.
+Die freigegebenen Arbeitspakete 1 bis 4 sind umgesetzt und geprüft.
+Die Commitfreigabe für Paket 3 ist erfüllt. Paket 4 bleibt uncommittiert;
+keine Main-Integration oder Sonar-Uploads freigegeben.
 Browserjourneys sind nicht freigegeben.
-Pakete 4 bis 7 benötigen einen weiteren Umsetzungsauftrag; nötige eigene
+Pakete 5 bis 7 benötigen einen weiteren Umsetzungsauftrag; nötige eigene
 isolierte Anwendungs-/Dockerstarts, Browser DE/EN sowie main-Integration und Upload
 im jeweiligen Auftrag ausdrücklich mit erfassen. Keine automatische große QA,
 Sonar-Bereinigung, Commits oder Merges aus bloßer Planabnahme.
