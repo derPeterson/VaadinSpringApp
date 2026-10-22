@@ -167,7 +167,10 @@ Maven-Modell und Scanner, die gemeinsame Coverage-Vorprüfung sowie genau einen 
 Stil-/Modul-/Modellfehler, fehlgeschlagene Coverage-Prüfung, ein neuer Serverauftrag
 oder geänderte Revision verhindern den Upload; alte Task-Metadaten gelten nicht als
 neuer Scan. Die getrennten Coverage-Regressionen prüfen die konkreten fehlenden
-Module, Quellen, Klassen und Messdaten. Beide Helfersuiten zusammen ausführen.
+Module, Quellen, Klassen und Messdaten. Der manuelle Findings-Export prüft
+Analysezuordnung, vollständige Kategorien und den Erhalt vorhandener Exporte bei
+Analysewechsel oder Schreibfehler; Tests arbeiten ausschließlich mit künstlichen
+Serverantworten und temporären Dateien. Beide Helfersuiten zusammen ausführen.
 Sie gehören als gepflegte Python-Helfer zur großen Testrunde. Unter Windows wird
 auch DPAPI mit künstlichen Testwerten geprüft; echte Zugangsdaten werden nicht gelesen.
 Die tatsächliche MCP-Verbindung und der main-Projektscan bleiben separate Abnahmen:

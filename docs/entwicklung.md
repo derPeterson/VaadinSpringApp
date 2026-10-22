@@ -379,8 +379,25 @@ Der konkrete Serverauftrag muss erfolgreich enden und zur erwarteten Analyse-ID
 und Revision gehören. Ein rotes Gate liefert trotz abgeschlossener Verarbeitung
 einen Fehlerstatus. Task-Metadaten stehen nur aktuell unter `.codex/sonar/`;
 kein Berichtarchiv und kein manueller JSON-Export sind nötig. Eine gelesene frühere
-Analyse ersetzt keinen neuen Scan. Die bestehenden lokalen Scanner-Batchdateien
-sind kein Bestandteil dieses zugangsdatenfreien Ablaufs.
+Analyse ersetzt keinen neuen Scan.
+
+Die manuellen BAT-Einstiege im Projektroot verwenden denselben geschützten Helfer
+und die Python-Projektumgebung, unabhängig vom aufrufenden Arbeitsverzeichnis:
+
+```powershell
+.\sonar-scan.bat
+.\sonar-extract-findings.bat
+```
+
+`sonar-scan.bat` startet den oben beschriebenen vollständigen Scan auf sauberem main.
+`sonar-extract-findings.bat` führt nur `sonar.py export` aus, ohne Build, Scan oder
+Statusänderung. Der lesende Export enthält Analyse/Revision, Gate, Metriken und alle
+paginiert gelesenen offenen Issues, Ausnahmen und Hotspots. Er ersetzt erst nach
+vollständigem Abruf atomar die ignorierte `sonar-findings.json` im Projektroot;
+ein fehlgeschlagener Abruf erhält einen vorhandenen Export. Ohne bisherigen Export
+bleibt die Datei bis zum ersten bewussten Aufruf aus. Beide BATs geben Fehlercodes
+weiter und enthalten keine Zugangsdaten; sie verwenden die vorhandene DPAPI-Ablage
+oder Prozessvariable. Mit `--help` nur die Bedienhilfe anzeigen, ohne Serverzugriff.
 
 Offizielle Grundlagen: [Sonar-MCP-Einrichtung](https://docs.sonarsource.com/sonarqube-mcp-server/setup/quickstart-guides/codex-cli),
 [Maven-Scanner](https://docs.sonarsource.com/sonarqube-server/analyzing-source-code/scanners/sonarscanner-for-maven).

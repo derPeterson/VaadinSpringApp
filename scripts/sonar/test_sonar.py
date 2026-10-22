@@ -1,6 +1,7 @@
 """Offline-Regressionen; kein echter Sonar-, Docker-, Maven- oder Mailzugriff."""
 
 import io
+import json
 import os
 import tempfile
 import unittest
@@ -347,6 +348,63 @@ class SnapshotTest(unittest.TestCase):
                     self.assertRaises(sonar.SonarError),
                 ):
                     sonar.read_project(self.api)
+
+    def test_export_contains_revision_complete_categories_and_unicode(self):
+        self.api.pages.side_effect = [
+            [{"key": "open", "message": "Übersetzung prüfen"}],
+            [{"key": "accepted"}],
+            [{"key": "hotspot"}],
+        ]
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch.object(sonar, "ROOT", Path(directory)),
+            patch.object(sonar, "git", return_value="revision"),
+            redirect_stdout(io.StringIO()) as output,
+        ):
+            sonar.export_project(self.api)
+            path = Path(directory) / "sonar-findings.json"
+            exported = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual("revision", exported["analysis"]["revision"])
+            self.assertTrue(exported["sourceMatchesLocalMain"])
+            self.assertEqual("Übersetzung prüfen", exported["openIssues"][0]["message"])
+            self.assertEqual([{"key": "accepted"}], exported["exceptions"])
+            self.assertEqual([{"key": "hotspot"}], exported["hotspots"])
+            self.assertEqual("OK", exported["qualityGate"]["status"])
+            self.assertEqual(str(path), json.loads(output.getvalue())["exportPath"])
+            self.assertEqual([path], list(Path(directory).iterdir()))
+
+    def test_export_keeps_previous_file_when_analysis_changes_during_read(self):
+        self.api.latest_analysis.side_effect = [{"key": "before"}, {"key": "after"}]
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch.object(sonar, "ROOT", Path(directory)),
+        ):
+            path = Path(directory) / "sonar-findings.json"
+            path.write_text("previous complete export", encoding="utf-8")
+            with self.assertRaisesRegex(sonar.SonarError, "änderte"):
+                sonar.export_project(self.api)
+            self.assertEqual(
+                "previous complete export", path.read_text(encoding="utf-8")
+            )
+            self.assertEqual([path], list(Path(directory).iterdir()))
+
+    def test_export_keeps_previous_file_and_removes_temporary_file_on_write_failure(
+        self,
+    ):
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch.object(sonar, "ROOT", Path(directory)),
+            patch.object(sonar, "git", return_value="revision"),
+            patch.object(Path, "replace", side_effect=OSError("destination locked")),
+        ):
+            path = Path(directory) / "sonar-findings.json"
+            path.write_text("previous complete export", encoding="utf-8")
+            with self.assertRaisesRegex(OSError, "locked"):
+                sonar.export_project(self.api)
+            self.assertEqual(
+                "previous complete export", path.read_text(encoding="utf-8")
+            )
+            self.assertEqual([path], list(Path(directory).iterdir()))
 
 
 class ScanLockTest(unittest.TestCase):

@@ -6,6 +6,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -232,6 +233,31 @@ def read_summary(snapshot):
         "qualityGate": snapshot["qualityGate"]["status"],
         "measures": snapshot["measures"],
     }
+
+
+def export_project(api):
+    """Nur einen vollständig zugeordneten Serverstand als manuellen Export ersetzen."""
+    snapshot = read_project(api)
+    destination = ROOT / "sonar-findings.json"
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=ROOT, suffix=".tmp", delete=False
+        ) as output:
+            temporary = Path(output.name)
+            json.dump(snapshot, output, indent=2, ensure_ascii=False)
+            output.write("\n")
+        temporary.replace(destination)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+    print(
+        json.dumps(
+            {**read_summary(snapshot), "exportPath": str(destination)},
+            indent=2,
+            ensure_ascii=False,
+        )
+    )
 
 
 def start_mcp(token):
@@ -466,7 +492,9 @@ def scan(api, token):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["token", "configure", "mcp", "read", "scan"])
+    parser.add_argument(
+        "action", choices=["token", "configure", "mcp", "read", "export", "scan"]
+    )
     args = parser.parse_args()
     try:
         if args.action == "token":
@@ -481,6 +509,8 @@ def main():
             if args.action == "scan":
                 with scan_lock():
                     scan(api, token)
+            elif args.action == "export":
+                export_project(api)
             else:
                 print(
                     json.dumps(
