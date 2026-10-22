@@ -100,40 +100,53 @@ und Produktionsimage wurden durch den Nachtlaufumbau nicht verändert.
 
 ## Sonar und verbleibender Abschluss
 
-Nach lokalem Fast-forward-Merge ist `main` auf
-`e5b6e681320885f44b5902b1fa9b037eb4d4c690` geprüft: optimierter Build erfolgreich,
-2.241 Anwendungstests bestanden, zwei erwartete optionale IDE-Skips. Der frisch
-gebaute JAR startete isoliert mit HTTPS-Profil und frischer In-Memory-Datenbank:
-Health 200, direkter HTTP-Login 403, Login mit konkreten Proxy-Headern 200.
-Eigener Prozess beendet, Port freigegeben, keine SMTP-Verbindung. Diese Mergeprüfung
-ersetzt keine vollständige Browser-QA und keine gemeinsame Featureabnahme.
+Sonar-Paket 1 ist auf `codex/sonar-ide-https` umgesetzt und lokal nach main
+integriert. Die kurzlebige Java-Argumentdatei liegt in einer eigenen Startablage
+mit initialen Benutzerrechten und Ressourcenabbau bei Erfolg und Startfehler.
+Normale Diagnose nutzt Logger; das maschinenlesbare READY/PID-Protokoll bleibt
+unverändert. Fehlergrenzen sind konkretisiert, Startfehler behalten ihre Ursache.
 
-Der anschließend ausdrücklich beauftragte Scan wurde mit diesen unveränderten
-Build-/Coverage-Artefakten hochgeladen. Serverauftrag
-`4528517b-21da-4410-8dcb-a23fed416dba` endete mit **SUCCESS**;
-Analyse `bfb3a47f-be62-4c71-b604-04c39a303df8` vom 22.10.2026, 10:06:37 UTC.
-Die Serverrevision stimmt exakt mit dem genannten lokalen `main` überein.
+Die 14 ursprünglichen Paket-Findings sind vollständig nachgelesen: zehn durch Code
+behoben, zwei fachlich Accepted und zwei False positives. Eine kleine neue
+Verschachtelungsmeldung aus dem Nachscan ist zusätzlich durch Code behoben.
+Begründungen und Status der vier Entscheidungen sind am Server nachgelesen.
+Keine Regel-, Profil-, Gate- oder Scopeänderung und keine manuelle Fixed-Markierung.
 
-Quality Gate **ERROR** wegen 21 neuen offenen Issues, zulässig 0. Neue Coverage
-82,7 % (Mindestwert 80 %) und neue Duplikation 0 % (Höchstwert 3 %) bestehen.
-Gesamtcode und New Code enthalten dieselben 21 offenen Issues: eine von Sonar
-klassifizierte Vulnerability im IDE-Starter, zwei Bugs in Test-Assertions und
-18 Code Smells. Kein Nachweis eines ausnutzbaren Sicherheitsfehlers allein durch
-diese Klassifikation. 0 Hotspots; bestehende 26 Accepted und 7 False positives
-unverändert. Gesamtcoverage 85,0 %, Zeilencoverage 87,6 %, Branchcoverage 77,1 %.
+Formatierung und Stilprüfungen sind bestanden. 21 unterschiedliche gezielte
+JUnit-Fälle sind nachgewiesen, einschließlich der zuvor separat aktivierten beiden
+echten Caddy-/Anwendungsstartfälle ohne Windows-Trustimport. Die kleine
+Folgekorrektur ist gezielt nachgeprüft. Auf dem finalen Codestand sind optimierter
+Build und vollständige Anwendungstests erfolgreich: 2.244 erfasst, 2.242 bestanden,
+0 Fehler, zwei erwartete optionale IDE-Skips. Ein frischer isolierter JAR-Start
+mit HTTPS-Profil und In-Memory-Datenbank bestätigt Health 200, direkten HTTP-Login
+403 und Login mit konkreten Proxy-Headern 200. Eigener Prozess beendet, keine
+SMTP-Verbindung. Diese Nachweise ersetzen keine neue vollständige Browser-QA.
 
-Offene fachlich eingeordnete Arbeiten: [Sonar-Pakete](planung/sonar-pakete.md).
-Keine Codebehebung oder Issue-Statusänderung in diesem Scanauftrag. Der Scanner
-meldete Typauflösungs-/Preview-Warnungen; Analyseumfang des Hauptmoduls unverändert.
-Hotspots wurden über den geschützten vollständigen REST-Lesehelfer geprüft, da
-der MCP-Hotspotaufruf einen nicht unterstützten Filterparameter sendete (HTTP 400).
-Die erfolgreiche lokale QA-Baseline wird wegen des roten Gates nicht ersetzt.
+Nachscan des Code-Commits `bebd699853aa786dbf5a32ee082761aaef793146`:
+Analyse `0cf8f070-524a-461d-b7a4-7187461a527a` vom 22.10.2026, 10:35:12 UTC;
+Serverauftrag `3ee95a03-a8f6-47e3-9a4e-b161164742f6` **SUCCESS**.
+Die analysierte Revision stimmt mit diesem geprüften Codestand überein.
+Reine Dokumentationsabschlusscommits verändern diese Code-/Testnachweise nicht;
+die jeweils zuletzt hochgeladene Analyse steht im lokalen Sonar-Bericht.
+
+Quality Gate **ERROR** ausschließlich wegen der sieben verbliebenen neuen Issues
+aus Paket 2, zulässig 0. Neue Coverage 82,4 % (Mindestwert 80 %) und neue
+Duplikation 0 % (Höchstwert 3 %) bestehen. Gesamtcode und New Code enthalten
+dieselben sieben offenen Issues: zwei Bugs in Test-Assertions und fünf Code Smells.
+Keine offene Vulnerability, keine Hotspots. 28 Accepted und 9 False positives,
+darunter die vier begründeten Entscheidungen dieses Pakets. Gesamtcoverage 84,9 %,
+Zeilencoverage 87,5 %, Branchcoverage 77,1 %.
+
+Offen: [Sonar-Paket 2](planung/sonar-pakete.md), Umsetzung nicht beauftragt.
+Der Scanner meldet weiterhin Typauflösungs-/Preview-Warnungen; Hauptmodulumfang
+unverändert, separater Browser-Testmodulcode nicht zusätzlich analysiert.
+Hotspots sind über den geschützten vollständigen REST-Helfer geprüft.
+Für den Scannerhelfer war prozessbezogenes UTF-8 erforderlich; keine System- oder
+Projektkonfiguration geändert. Die erfolgreiche QA-Baseline bleibt bei rotem Gate offen.
 
 Es sind keine bestätigten offenen Anwendungsfehler bekannt; siehe [BUGS.md](../BUGS.md).
-Die erfolgreich geprüften bisherigen Ergänzungen sind aus dem
-[Testbedarf](testbedarf.md) entfernt; auch der gezielte Nachtlaufbedarf ist nachgewiesen.
-Menschliche Sonderprüfungen bleiben im
-[manuellen Katalog](manual-tests/README.md). Die [HTTPS-Planung](planung/https.md)
-bleibt bis zur gemeinsamen Gesamt-Abnahme erhalten. Der Merge ist erfolgt;
-kein Featureabschluss, keine zusätzlichen Commits oder Pushes im Scanauftrag.
+Offene automatisierte Testarbeit bleibt im [Testbedarf](testbedarf.md), menschliche
+Sonderprüfungen im [manuellen Katalog](manual-tests/README.md). Die
+[HTTPS-Planung](planung/https.md) bleibt bis zur gemeinsamen Gesamt-Abnahme erhalten.
+Lokale Paketcommits und Integration sind erfolgt, kein Push und kein Featureabschluss.
 Entwicklerdaten und fremde Prozesse wurden nicht als Fixtures verwendet oder verändert.
