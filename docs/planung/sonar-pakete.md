@@ -1,6 +1,8 @@
 # Offene Sonar-Pakete nach dem HTTPS-Merge
 
-Status: Ausschließlich Paket 2 bleibt offen und ist nicht zur Umsetzung beauftragt.
+Status: Paket 2 ist auf eigenem Branch umgesetzt; 21 gezielte JUnit-Fälle samt
+echtem isoliertem Caddy-/Anwendungsstart sowie Formatierung und Stilprüfungen sind
+bestanden. Lokale Integration und bestätigender main-Nachscan stehen aus.
 Paket 1 ist lokal integriert und durch Nachscan bestätigt. Das HTTPS-Feature
 bleibt ausdrücklich bis zur gemeinsamen Gesamt-Abnahme offen.
 
@@ -55,4 +57,4 @@ der separate Browser-Testmodulcode wird durch diesen Hauptprojektscan nicht zus�
 analysiert. Der Scanner meldet Warnungen zu unaufgelösten Typen/Imports und erkannten
 Preview-Merkmalen bei konfiguriertem Java 25 ohne Preview. Ursachen vor einer
 belastbaren abschließenden Bewertung der Analysegrenzen gezielt untersuchen.
-Keine neue vollständige Browserrunde und keine Ausführung von Paket 2 beauftragt.
+Keine neue vollständige Browserrunde beauftragt.

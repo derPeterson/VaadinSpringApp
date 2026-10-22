@@ -137,7 +137,12 @@ Keine offene Vulnerability, keine Hotspots. 28 Accepted und 9 False positives,
 darunter die vier begründeten Entscheidungen dieses Pakets. Gesamtcoverage 84,9 %,
 Zeilencoverage 87,5 %, Branchcoverage 77,1 %.
 
-Offen: [Sonar-Paket 2](planung/sonar-pakete.md), Umsetzung nicht beauftragt.
+Offen: bestätigender Nachscan für [Sonar-Paket 2](planung/sonar-pakete.md).
+Die Testvorbereitung ist von den Fehlerassertions getrennt, die Startfehler prüfen
+gezielt auf `IOException`. Geplante HTTPS-Proben ersetzen die Schlafschleife;
+künstliche Caddy-Prozesse warten begrenzt auf den Stop durch ihren Besitzer.
+Alle 21 gezielten Fälle einschließlich echtem Caddy-/Anwendungsstart sind bestanden,
+ebenso Formatierung und Checkstyle. Keine zusätzliche Browserrunde ausgeführt.
 Der Scanner meldet weiterhin Typauflösungs-/Preview-Warnungen; Hauptmodulumfang
 unverändert, separater Browser-Testmodulcode nicht zusätzlich analysiert.
 Hotspots sind über den geschützten vollständigen REST-Helfer geprüft.

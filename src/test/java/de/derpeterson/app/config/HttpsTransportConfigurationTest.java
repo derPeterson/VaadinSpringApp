@@ -120,9 +120,8 @@ class HttpsTransportConfigurationTest {
         "https://localhost#fragment"
       })
   void invalidExternalOriginsFailConfiguration(String origin) {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new HttpsTransportConfiguration().httpsOrigin(origin));
+    HttpsTransportConfiguration configuration = new HttpsTransportConfiguration();
+    assertThrows(IllegalArgumentException.class, () -> configuration.httpsOrigin(origin));
   }
 
   @Test

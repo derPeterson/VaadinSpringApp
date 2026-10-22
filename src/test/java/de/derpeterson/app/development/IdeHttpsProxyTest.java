@@ -32,6 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -100,9 +103,8 @@ class IdeHttpsProxyTest {
   void startupFailureAndWrongConfirmationDoNotLeaveOwnedChildren() throws Exception {
     for (String mode : List.of("fail", "wrong")) {
       Path pidFile = directory.resolve(mode + ".pid");
-      assertThrows(
-          Exception.class,
-          () -> IdeHttpsProxy.start(directory, fakeCommand(mode, pidFile.toString()), Map.of()));
+      List<String> command = fakeCommand(mode, pidFile.toString());
+      assertThrows(IOException.class, () -> IdeHttpsProxy.start(directory, command, Map.of()));
       assertNoLauncherArguments(directory);
       ProcessHandle child =
           ProcessHandle.of(Long.parseLong(Files.readString(pidFile))).orElse(null);
@@ -113,9 +115,8 @@ class IdeHttpsProxyTest {
   @Test
   void missingStartupConfirmationTimesOutAndStopsTheOwnedChild() throws Exception {
     Path pidFile = directory.resolve("timeout.pid");
-    assertThrows(
-        Exception.class,
-        () -> IdeHttpsProxy.start(directory, fakeCommand("stall", pidFile.toString()), Map.of()));
+    List<String> command = fakeCommand("stall", pidFile.toString());
+    assertThrows(IOException.class, () -> IdeHttpsProxy.start(directory, command, Map.of()));
     assertNoLauncherArguments(directory);
     ProcessHandle child = ProcessHandle.of(Long.parseLong(Files.readString(pidFile))).orElse(null);
     assertTrue(child == null || !child.isAlive());
@@ -263,33 +264,8 @@ class IdeHttpsProxyTest {
       List<ProcessHandle> ownedChildren = List.of();
       try {
         Path root = work.resolve("data/https/ide/pki/authorities/local/root.crt");
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(60);
-        boolean ready = false;
-        while (application.isAlive() && System.nanoTime() < deadline && !ready) {
-          if (Files.isRegularFile(root)) {
-            try (HttpClient client =
-                HttpClient.newBuilder()
-                    .sslContext(trustOnly(root))
-                    .connectTimeout(Duration.ofSeconds(1))
-                    .build()) {
-              HttpResponse<String> response =
-                  client.send(
-                      HttpRequest.newBuilder(URI.create("https://localhost:8443/login"))
-                          .timeout(Duration.ofSeconds(2))
-                          .GET()
-                          .build(),
-                      HttpResponse.BodyHandlers.ofString());
-              ready = response.statusCode() == 200;
-            } catch (IOException ignored) {
-              // Ausschließlich auf die eigene frisch gestartete Anwendung warten.
-            }
-          }
-          if (!ready) {
-            Thread.sleep(250);
-          }
-        }
         assertTrue(
-            ready,
+            awaitApplicationReady(application, root),
             () -> {
               try {
                 return Files.readString(output);
@@ -366,6 +342,43 @@ class IdeHttpsProxyTest {
         IdeHttpsProxy.javaExecutable(), "@" + javaArguments(FakeCaddy.class, List.of(arguments)));
   }
 
+  private static boolean awaitApplicationReady(Process application, Path root) throws Exception {
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(60);
+    try (ScheduledExecutorService probes = Executors.newSingleThreadScheduledExecutor()) {
+      while (application.isAlive() && System.nanoTime() < deadline) {
+        if (probes
+            .schedule(() -> isLoginReady(root), 250, TimeUnit.MILLISECONDS)
+            .get(5, TimeUnit.SECONDS)) {
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+
+  private static boolean isLoginReady(Path root) throws Exception {
+    if (!Files.isRegularFile(root)) {
+      return false;
+    }
+    try (HttpClient client =
+        HttpClient.newBuilder()
+            .sslContext(trustOnly(root))
+            .connectTimeout(Duration.ofSeconds(1))
+            .build()) {
+      HttpResponse<String> response =
+          client.send(
+              HttpRequest.newBuilder(URI.create("https://localhost:8443/login"))
+                  .timeout(Duration.ofSeconds(2))
+                  .GET()
+                  .build(),
+              HttpResponse.BodyHandlers.ofString());
+      return response.statusCode() == 200;
+    } catch (IOException _) {
+      // Ausschließlich auf die eigene frisch gestartete Anwendung warten.
+      return false;
+    }
+  }
+
   private void assertNoLauncherArguments(Path project) throws IOException {
     try (Stream<Path> remaining = Files.list(project.resolve("data/https/ide-launcher"))) {
       assertEquals(List.of(), remaining.toList());
@@ -437,7 +450,7 @@ class IdeHttpsProxyTest {
         System.exit(7);
       }
       if (args[0].equals("stall")) {
-        Thread.sleep(60000);
+        awaitOwnerShutdown();
         return;
       }
       byte[] challenge = System.in.readAllBytes();
@@ -451,7 +464,16 @@ class IdeHttpsProxyTest {
       if (args[0].equals("wrong")) {
         System.exit(7);
       }
-      Thread.sleep(60000);
+      awaitOwnerShutdown();
+    }
+
+    private static void awaitOwnerShutdown() throws InterruptedException {
+      CountDownLatch shutdown = new CountDownLatch(1);
+      Runtime.getRuntime().addShutdownHook(new Thread(shutdown::countDown));
+      // Der Fake bleibt bis zum Stop durch seinen Besitzer aktiv, höchstens 60 Sekunden.
+      if (!shutdown.await(60, TimeUnit.SECONDS)) {
+        throw new IllegalStateException("Owner did not stop fake Caddy");
+      }
     }
   }
 }
