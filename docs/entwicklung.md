@@ -6,7 +6,7 @@ JDK 25 und der Maven Wrapper sind verbindlich. Die tatsächlichen Bibliotheksver
 stehen in `pom.xml`; Node-Abhängigkeiten in `package-lock.json`. Nicht neben diesen
 Dateien eine zweite Versionsliste pflegen. Docker Desktop verwendet Linux-Container.
 
-Die Paketnamen beziehen sich auf `src/main/java/de/derpeterson/app/`:
+Die Paketnamen beziehen sich auf `app/src/main/java/de/derpeterson/app/`:
 
 | Paket | Zuständigkeit |
 | --- | --- |
@@ -28,21 +28,29 @@ Die Paketnamen beziehen sich auf `src/main/java/de/derpeterson/app/`:
 | Weiterer Bereich | Zuständigkeit |
 | --- | --- |
 | `shared/src/main/java` | Eigenes Maven-Modul mit typisiertem Textkatalog, Konfigurations-/Routenkonstanten und Token-Zeitregeln |
-| `src/main/resources/i18n`, `email` | DE-/EN-Texte und Mailvorlagen |
-| `src/main/resources/db` | Aktuelles H2-Anwendungs- und Session-Schema |
-| `src/main/resources/META-INF/resources/{custom-theme,icons}` | Gemeinsames Theme und zusätzliche Icons |
-| `src/test`, `browser-tests` | Technische Tests, echte Browserjourneys und deren Runner |
+| `app/src/main/resources/i18n`, `email` | DE-/EN-Texte und Mailvorlagen |
+| `app/src/main/resources/db` | Aktuelles H2-Anwendungs- und Session-Schema |
+| `app/src/main/resources/META-INF/resources/{custom-theme,icons}` | Gemeinsames Theme und zusätzliche Icons |
+| `app/src/test`, `browser-tests` | Technische Tests, echte Browserjourneys und deren Runner |
 | `scripts/sonar` | Lokale Codex-/Sonar-Anbindung, geschützter Zugang und main-Scanner; keine Anwendungslogik |
 | `.agents/skills` | Codex-Projektabläufe; Bedienung unter [Arbeiten mit Codex](codex-skills.md) |
 
-Shared-Quellen nicht als Quellordner in andere Module einhängen. Vor einem frischen
-Anwendungsbuild oder nach Shared-Änderungen das Modul installieren:
+Die Root-POM aggregiert alle drei Module. Shared und Browser-Tests erben die neutrale
+Root-POM; `app` behält den Spring-Boot-Parent und dessen bestehende Buildvorgaben.
+Die Aggregation erfordert keine gemeinsame Eltern-POM. Dadurch gelangen Boot-/Vaadin-
+Vorgaben nicht in Shared oder Browser-Tests. Java 25 gilt für alle Module.
+Shared-Quellen nicht als Quellordner in andere Module einhängen. Der Reactor baut
+Shared vor seinen Verbrauchern; kein vorheriges manuelles Shared-Install nötig:
 
 ```powershell
 .\mvnw.cmd --version
-.\mvnw.cmd -f shared/pom.xml clean install
-.\mvnw.cmd spring-boot:run
+.\mvnw.cmd -pl app -am verify -Pproduction -Dvaadin.productionMode=true
 ```
+
+Stilprüfungen laufen einmal zentral im Root mit `-N` über alle Modulquellen;
+Anwendungsartefakte liegen unter `app/target/`. IDE-/HTTPS-, Docker-, Browserstarter-
+und Sonar-Umstellung bleiben im [aktiven Multi-Modul-Plan](planung/multi-modul-sonarqube.md)
+offen. Die folgenden bisherigen Startanleitungen sind dafür noch anzupassen.
 
 ## Konfiguration und Datenbank
 
@@ -401,9 +409,9 @@ Java-Änderungsrunde vor Tests und Abschluss im Projektroot ausführen, auch ohn
 weiteren Build/Testlauf; nach späteren Korrekturen wiederholen:
 
 ```powershell
-.\mvnw.cmd spotless:apply
-.\mvnw.cmd spotless:check
-.\mvnw.cmd checkstyle:check
+.\mvnw.cmd -N spotless:apply
+.\mvnw.cmd -N spotless:check
+.\mvnw.cmd -N checkstyle:check
 ```
 
 Spotless ordnet Imports und entfernt unbenutzte Imports. `ratchetFrom=HEAD`
@@ -413,9 +421,9 @@ begrenzen; der Wert ist ein regulärer Ausdruck für absolute Dateipfade.
 Beispiel ausschließlich für eine selbst bearbeitete `views/AccountView.java`:
 
 ```powershell
-.\mvnw.cmd '-DspotlessFiles=.*[\\/]views[\\/]AccountView\.java' spotless:apply
-.\mvnw.cmd '-DspotlessFiles=.*[\\/]views[\\/]AccountView\.java' spotless:check
-.\mvnw.cmd checkstyle:check
+.\mvnw.cmd -N '-DspotlessFiles=.*[\\/]views[\\/]AccountView\.java' spotless:apply
+.\mvnw.cmd -N '-DspotlessFiles=.*[\\/]views[\\/]AccountView\.java' spotless:check
+.\mvnw.cmd -N checkstyle:check
 ```
 
 Den Filter passend zu den tatsächlich eigenen Dateien wählen; den Ratchet nicht

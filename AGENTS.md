@@ -17,7 +17,7 @@
   Einsatz. Der gemeinsam beschlossene aktuelle Stand gilt; historische Schemata,
   Migrationen, Backfills und vorsorgliche Kompatibilitätswege nicht unterstützen.
 - Datenmodell und aktuelles H2-Schema gemeinsam ändern; JPA validiert das Schema aus
-  `src/main/resources/db/application-schema-h2.sql`. Änderungen mit frischen isolierten
+  `app/src/main/resources/db/application-schema-h2.sql`. Änderungen mit frischen isolierten
   Testdaten prüfen. Alte Mechaniken nicht zur Unterstützung überholter Stände behalten.
 - Aktuelle Sicherheits-, Eingabe-, Rechte-, Widerrufs- und Konsistenzprüfungen bleiben
   erhalten und sind keine Altlasten.
@@ -58,7 +58,7 @@
 - Oberflächen mit den vorhandenen Vaadin-Java-Komponenten aufbauen; keinen Wechsel
   zu HTML-Templates, React oder einem anderen Frontend vornehmen.
 - Bestehende Paketaufteilung, Konstruktorinjektion, Lombok- und Namenskonventionen
-  beachten. Anwendungsquellen: `src/main/java/de/derpeterson/app/`.
+  beachten. Anwendungsquellen: `app/src/main/java/de/derpeterson/app/`.
   Paketübersicht und Zuständigkeiten: [Entwicklung](docs/entwicklung.md).
 - Fachlogik und Berechtigungsprüfungen gehören in die zuständigen Dienste; sichtbare
   oder ausgeblendete UI-Aktionen ersetzen keine fachliche Zugriffskontrolle.
@@ -83,7 +83,8 @@
 - Bestehende Transaktions-, Sperr- und Fehlergrenzen beim Gliedern erhalten.
 - Java: Google Java Format mit zwei Leerzeichen. Nach jeder eigenen Java-Änderungsrunde
   vor Tests und Abschluss verbindlich `spotless:apply`, `spotless:check` und
-  `checkstyle:check` über den Maven Wrapper ausführen; nach Korrekturen wiederholen.
+  `checkstyle:check` über den Maven Wrapper mit `-N` im Projektroot ausführen;
+  die Root-Konfiguration erfasst alle Module einmal. Nach Korrekturen wiederholen.
 - Python: Ruff aus der Projektumgebung. Nach jeder eigenen Python-Änderungsrunde vor
   Tests und Abschluss `ruff format` und `ruff format --check` für die eigenen Dateien
   ausführen; nach Korrekturen wiederholen. Befehle und Grenzen stehen in der Anleitung.
@@ -127,11 +128,11 @@
   (`.\mvnw.cmd`, unter Linux/macOS `./mvnw`), kein globales Maven.
 - Vor Builds mit `.\mvnw.cmd --version` prüfen, dass tatsächlich JDK 25 verwendet wird.
   Bei Abweichungen nicht weiterbauen oder stillschweigend Systemsoftware ändern.
-- Vor direkten Anwendungsbuilds auf einem frischen Stand oder nach Shared-Änderungen
-  das Shared-Modul installieren; Befehl siehe Entwicklungsanleitung. Browserstarter
-  und Docker-Build bauen diese Abhängigkeit selbst.
-- Maven immer mit ausdrücklichem Ziel aufrufen: Ein Aufruf ohne Ziel startet gemäß
-  `pom.xml` standardmäßig die Anwendung.
+- Anwendungsbuilds über den Reactor mit `-pl app -am` oder als vollständigen
+  Root-Build ausführen; Shared wird vor seinen Verbrauchern gebaut. Direkte
+  Modulaufrufe ohne Reactor benötigen zuvor installierte Abhängigkeiten.
+- Maven immer mit ausdrücklichem Ziel aufrufen. Root und Anwendungsmodul haben
+  keinen automatischen Anwendungsstart als Defaultziel.
 - Bei Fehlern den eigenen Diff und die erste relevante Ursache untersuchen, statt
   nur Folgefehler zu behandeln. Externe Blocker klar benennen.
 - Keine Funktionen entfernen und Java nicht herunterstufen, um Fehler zu umgehen.

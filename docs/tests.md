@@ -61,7 +61,7 @@ manuellen Katalog. Der Git-/Codevergleich ergänzt die Liste und erkennt nicht n
 
 ## JUnit-Regressionsprüfungen
 
-Anwendungstests liegen unter `src/test/java/`; vorhandene JUnit-Muster verwenden.
+Anwendungstests liegen unter `app/src/test/java/`; vorhandene JUnit-Muster verwenden.
 `ImageHelperTest` ist ein Beispiel ohne Anwendungsstart oder Datenbank.
 Technische Regeln, Rollback und Konkurrenz bevorzugt hier prüfen, sichtbare Journeys
 im Browser. Konkurrenz mit kontrollierter Synchronisierung statt allein mit Wartezeiten
@@ -74,7 +74,7 @@ Frontenddateien erzeugen; das Maven-Profil `it` startet und stoppt die Anwendung
 
 ## Java und Frontend
 
-Nach Shared-Änderungen zuerst `shared/pom.xml clean install` ausführen. Java25 und
+Reactor-Builds bauen Shared vor den Verbrauchern. Java25 und
 die [Stilprüfungen](entwicklung.md#codestil) gehören vor den Testlauf.
 
 ```powershell
@@ -82,8 +82,14 @@ die [Stilprüfungen](entwicklung.md#codestil) gehören vor den Testlauf.
 .\mvnw.cmd test
 # Alternativ: optimierter Build einschließlich aller Anwendungstests:
 .\mvnw.cmd clean verify -Pproduction -Dvaadin.productionMode=true
-node --test src/test/frontend/*.test.mjs
+node --test app/src/test/frontend/*.test.mjs
 ```
+
+Der Root-Build führt Anwendungstests und die normalen Browser-Helfertests aus,
+keine mit `browser` markierten Journeys. Gezielte Anwendungsbuilds verwenden
+`-pl app -am`; Stilprüfungen laufen mit `-N` zentral im Root. Die Starter-/Docker-
+und Sonar-Anpassungen sowie deren gesonderte Nachweise bleiben im
+[Multi-Modul-Plan](planung/multi-modul-sonarqube.md) offen.
 
 Der eingefrorene OpenCode-Workflow einschließlich seiner Python-/JavaScript-
 Werkzeugtests gehört nicht zum gepflegten Standardprüflauf. Keine Anpassungen für

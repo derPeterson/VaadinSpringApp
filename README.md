@@ -33,9 +33,20 @@ Im Projektverzeichnis:
 
 ```powershell
 .\mvnw.cmd --version
-.\mvnw.cmd -f shared/pom.xml clean install
-.\mvnw.cmd '-Dspring-boot.run.profiles=https' spring-boot:run
+.\mvnw.cmd clean verify -Pproduction -Dvaadin.productionMode=true
 ```
+
+Die Root-POM aggregiert `shared`, `app` und `browser-tests`; das Anwendungs-JAR
+entsteht unter `app/target/`. Gezielter Build mit benötigtem Shared-Modul:
+
+```powershell
+.\mvnw.cmd -pl app -am verify -Pproduction -Dvaadin.productionMode=true
+```
+
+Der Multi-Modul-Umbau ist teilweise umgesetzt: IDE-/HTTPS-Startpfade, Docker,
+Browserstarter und Sonar-Ablauf werden in den weiteren
+[Arbeitspaketen](docs/planung/multi-modul-sonarqube.md) angepasst. Ihre bisherigen
+Startanleitungen sind auf diesem Zwischenstand noch nicht erneut freigegeben.
 
 Der lokale HTTPS-Zugang ist `https://localhost:8443`; dafür den Caddy-Proxy und
 das Zertifikatsvertrauen gemäß [Entwicklungsanleitung](docs/entwicklung.md#lokales-https)
