@@ -29,6 +29,61 @@ import org.junit.jupiter.api.Test;
 @Tag("browser")
 @Feature("Passwort-Zurücksetzen")
 public class PasswordResetBrowserTest extends BrowserFixture {
+  @Test
+  @DisplayName("RESET-05: Neue anonyme Reset-Mails folgen der Sitzungssprache desselben Kontos")
+  @Description(
+      """
+      1. Eigenes Konto aktivieren und anonym eine Reset-Mail in der Testsprache anfordern.
+      2. Auf Home die andere Sprache wählen und für dasselbe Konto erneut anfordern.
+      3. Neue Mail-ID, übersetzten Betreff und Inhalt prüfen; die erste Mail bleibt unverändert.
+      **Erwartet:** Die auslösende anonyme Sitzung bestimmt die Sprache neuer Reset-Mails.
+      """)
+  void anonymousResetMailsFollowCurrentSessionLanguage() {
+    String email = activateAccount();
+    ForgotPasswordPage request = new ForgotPasswordPage(page);
+    request.open();
+    request.enterEmail(email);
+    request.submit();
+    request.requestedResponse();
+    MailpitInbox firstInbox = new MailpitInbox(context);
+    MailpitInbox.CapturedMail first = firstInbox.awaitPasswordResetMail(email);
+    try (Page oldMail = context.newPage()) {
+      oldMail.navigate(
+          System.getProperty("browser.tests.mailpitUrl") + "/view/" + first.id() + ".html");
+      String original = oldMail.locator("body").innerText();
+      de.derpeterson.browsertests.i18n.UiTexts other =
+          new de.derpeterson.browsertests.i18n.UiTexts(texts.language().equals("de") ? "en" : "de");
+      page.navigate(path(HOME_ROUTE));
+      new UserMenu(page).selectLanguage(other.language());
+      page.navigate(path(de.derpeterson.app.config.AppRouteConstants.FORGOT_PASSWORD_ROUTE));
+      page.getByLabel(
+              other.getForgotPasswordEmailField(), new Page.GetByLabelOptions().setExact(true))
+          .fill(email);
+      page.getByRole(
+              com.microsoft.playwright.options.AriaRole.BUTTON,
+              new Page.GetByRoleOptions().setName(other.getBaseSendButton()).setExact(true))
+          .click();
+      MailpitInbox.CapturedMail second =
+          new MailpitInbox(context, null, other).awaitPasswordResetMail(email);
+      org.junit.jupiter.api.Assertions.assertNotEquals(first.id(), second.id());
+      try (Page target = new MailpitInbox(context, null, other).openPasswordResetAction(second)) {
+        org.junit.jupiter.api.Assertions.assertTrue(
+            target.url().startsWith(System.getProperty("browser.tests.baseUrl")));
+      }
+      try (Page newMail = context.newPage()) {
+        newMail.navigate(
+            System.getProperty("browser.tests.mailpitUrl") + "/view/" + second.id() + ".html");
+        org.junit.jupiter.api.Assertions.assertNotEquals(
+            original, newMail.locator("body").innerText());
+      }
+      oldMail.reload();
+      assertEquals(original, oldMail.locator("body").innerText());
+    } finally {
+      page.navigate(path(HOME_ROUTE));
+      new UserMenu(page).selectTestLanguage();
+    }
+  }
+
   @Tag("fast")
   @Test
   @DisplayName("RESET-01A: Echte Reset-Mail ermöglicht ein neues Passwort und die Anmeldung")

@@ -12,7 +12,7 @@ services:
       APP_HTTPS_ORIGIN: "https://127.0.0.1:${BROWSER_TEST_APP_PORT:-18081}"
       APP_SECURITY_EXPOSE_H2_CONSOLE: "false"
       # Invented accounts only in the disposable browser-test database.
-      APP_BOOTSTRAP_ENABLED: "true"
+      APP_BOOTSTRAP_ENABLED: "${BROWSER_TEST_BOOTSTRAP_ENABLED:-true}"
       APP_BOOTSTRAP_ADMINS_0_EMAIL: "browser-admin@example.test"
       APP_BOOTSTRAP_ADMINS_0_PASSWORD: "BrowserAdmin1!"
       APP_BOOTSTRAP_SUPERADMINS_0_EMAIL: "browser-superadmin@example.test"
@@ -34,6 +34,15 @@ services:
       service: mailpit
     ports: !override
       - "127.0.0.1:${BROWSER_TEST_MAILPIT_PORT:-18026}:8025"
+
+  # Zweites eigenes SMTP-Ziel ohne zusätzliche Hostports für den Neustartvertrag.
+  mailpit-secondary:
+    image: axllent/mailpit:v1.31.4
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
 
 volumes:
   app-data:

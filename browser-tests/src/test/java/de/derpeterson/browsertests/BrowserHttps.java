@@ -46,6 +46,20 @@ final class BrowserHttps {
     return Files.isRegularFile(directory.resolve("root.crt.owned"));
   }
 
+  static void awaitTrustCommand(Process command, Duration timeout)
+      throws IOException, InterruptedException {
+    try {
+      if (!command.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
+        throw new IOException("Windows certificate confirmation timed out after " + timeout);
+      }
+      if (command.exitValue() != 0) {
+        throw new IOException("Certificate command failed with exit code " + command.exitValue());
+      }
+    } finally {
+      stopBeforeTrustCleanup(command);
+    }
+  }
+
   /** Einen noch wartenden Import beenden, bevor dessen Trust-Einträge entfernt werden. */
   static void stopBeforeTrustCleanup(Process command) throws IOException, InterruptedException {
     if (command != null && command.isAlive()) {

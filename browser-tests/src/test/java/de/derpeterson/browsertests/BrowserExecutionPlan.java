@@ -24,6 +24,7 @@ final class BrowserExecutionPlan {
   // Lange Klassen zuerst verteilen; kein Zugriff auf aufbewahrte Run-Ordner nötig.
   private static final Map<String, Integer> SECONDS =
       Map.ofEntries(
+          Map.entry("OperationsBrowserTest", 320),
           Map.entry("TokenExpiryBrowserTest", 209),
           Map.entry("UserManagementBrowserTest", 173),
           Map.entry("SessionSecurityBrowserTest", 116),

@@ -9,9 +9,8 @@ zweite Aufgabenliste. Offener Automatisierungsbedarf steht ausschließlich im
 ## Auswahl und Protokoll
 
 Für Design/Text/Bedienung HUM-01–05 auswählen, für Mailprogramme HUM-06 und für
-die Entscheidung bei unklarem Versand HUM-07. AUTO-01–07 liefern Szenarien für die
-gezielte Prüfung vorhandener Abdeckung und gegebenenfalls neue automatisierte Tests;
-welche Arbeit noch offen ist, bestimmt der zentrale Testbedarf. AUTO-08 ist eine
+die Entscheidung bei unklarem Versand HUM-07. Die automatisierten Neustart-,
+SMTP-, Sprachwechsel- und Offlinefälle stehen im Browserkatalog. AUTO-08 ist eine
 optionale Prüfung eines tatsächlich vorgesehenen externen SMTP-Anbieters.
 Keine menschliche Abnahme durch einen Screenshot allein ersetzen.
 
@@ -204,104 +203,6 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 3. Benötigte Queue-ID, Versandfenster, beendete Worker, Providerbelege und Tokenzustand benennen. Einen widersprechenden oder fehlenden Beleg bewusst berücksichtigen.
 
 **Erwartet:** Entscheidung und Begründung folgen dem Recovery-Vertrag. Fehlende Mail und alter Claim gelten nicht als Nichtversandbeweis. Diese Übung verändert keine Daten und führt keinen Retry aus.
-
-<a id="auto-01"></a>
-
-### AUTO-01 · Bestandsabgleich nach Neustart ohne Bootstrap
-
-**Einordnung:** Zur Automatisierung vorgesehen – Betriebsfixture.
-
-**Voraussetzung:** Eigene Dateidatenbank, ein über die UI angelegtes Testkonto und ein gespeicherter Konfigurationswert; Bootstrap deaktiviert.
-
-1. Konto über die Oberfläche wiederfinden; E-Mail, Freigabe/Rolle, Kontenzahl und einen nicht geheimen Konfigurationswert als Ausgangsstand notieren.
-2. Nur die eigene Anwendung ordentlich stoppen und mit exakt derselben Properties-Datei/Datenbank neu starten; keine neue Datenbank wählen.
-3. Anwendung neu aufrufen und die notierten Werte erneut prüfen. Eine gültige persistierte Anmeldung soll den Neustart gemäß dem [Sitzungsvertrag](../sicherheit.md) überstehen; die Oberfläche wird dabei neu aufgebaut.
-
-**Erwartet:** Konto und gespeicherte Einstellungen bleiben erhalten; keine zusätzlichen Bootstrapkonten oder Datenverluste. Alte offene Browseransichten nicht als alleinigen Persistenznachweis verwenden.
-
-<a id="auto-02"></a>
-
-### AUTO-02 · SMTP-Vorgaben beim Erststart und Wechsel nach Neustart
-
-**Einordnung:** Zur Automatisierung vorgesehen – Betriebsfixture.
-
-**Voraussetzung:** Für die Erststartvariante eigene leere DB; Mailpit A auf 18125/18126 und optional B auf 18127/18128. Andere Ports nur mit dokumentierter Anpassung.
-
-1. Beim allerersten Start mit vorbereiteter Properties-Datei eine eindeutige Admin-Testmail senden; Empfang in A prüfen, bevor ein zusätzlicher Neustart stattfindet.
-2. Im Adminbereich mail.port auf 18127 speichern. Vor dem Prozessneustart eine zweite eindeutig benannte Testmail senden: der bestehende SMTP-Sender nutzt weiterhin A.
-3. Dieselbe Anwendung/DB neu starten, dritte eindeutige Mail senden und Empfang in B prüfen. mail.port danach zurücksetzen und nochmals neu starten.
-
-**Erwartet:** Konfigurierte Defaults gelten bereits bei leerer DB. Eine gespeicherte Änderung des startgebundenen SMTP-Ports wirkt erst nach Neustart; bestehende DB-Werte werden nicht durch app.config.defaults.* überschrieben. B fehlt: Wechselvariante BLOCKIERT.
-
-<a id="auto-03"></a>
-
-### AUTO-03 · Realer SMTP-Ausfall mit anschließendem Wiederanlauf
-
-**Einordnung:** Zur Automatisierung vorgesehen – Betriebsfixture.
-
-**Voraussetzung:** Nur eigenes Mailpit; Queue-Retrylimit größer null und notierter Ausgangswert. Diese Prüfung registriert ein neues Konto, statt den direkten Admin-Mailtest als Queue-Test zu verwenden.
-
-1. Eigenes Mailpit vor der Anfrage stoppen. Über Registrierung eine neue eindeutige Testadresse verwenden und den erwarteten Verbindungsfehler im Anwendungslog zuordnen.
-2. Mailpit wieder starten; mindestens den Retryabstand von einer Minute und weitere Schedulerzeit abwarten. Ausgang nur anhand des eigenen Empfängers/Zeitfensters zuordnen.
-3. Empfang und verwendbaren Link prüfen; einen weiteren Retryzeitraum beobachten und dokumentieren, ob eine weitere identische Zustellung erscheint.
-
-**Erwartet:** Bei nachgewiesenem Verbindungsfehler vor SMTP-Annahme kann die wartende Mail nach Wiederanlauf zugestellt werden. Keine vorschnelle Bewertung nach wenigen Sekunden. Unklarer Transportausgang ist ein anderer Fall; keine Queuezeilen manuell zurücksetzen.
-
-<a id="auto-04"></a>
-
-### AUTO-04 · Dauerhafter SMTP-Ausfall und brauchbare Betriebsdiagnose
-
-**Einordnung:** Zur Automatisierung vorgesehen – Betriebsfixture.
-
-**Voraussetzung:** Isolierte Umgebung, ursprüngliches Retrylimit notiert, für diesen Fall z. B. auf 1 reduziert; eigene Logs und vorgesehenes Betriebsbeobachtungsverfahren verfügbar.
-
-1. Mailpit vor Registrierung einer neuen eindeutigen Adresse stoppen und bis zum initialen Versuch plus konfigurierten Wiederholungen warten; mindestens eine Minute Retryabstand beachten.
-2. Anhand zusammengehöriger Logs/Auditbelege feststellen, ob die Verarbeitung begrenzt endet und ein Betreiber Empfängerbezug, Zeitpunkt und nächste Maßnahme zuordnen kann.
-3. Mailpit wieder starten und länger als einen Retryabstand beobachten; die terminal fehlgeschlagene Nachricht darf nicht automatisch neu versandt werden. Einstellungen wiederherstellen.
-
-**Erwartet:** Die reale Verarbeitung endet begrenzt und ist diagnostizierbar. Bei ausgefallenem SMTP ist auch die Admin-Benachrichtigung nicht garantiert; fehlende Audit-/Sendebelege bedeuten keinen Erfolg. Ohne belastbare Einsicht BLOCKIERT; keine neue Admin-Queueoberfläche voraussetzen.
-
-<a id="auto-05"></a>
-
-### AUTO-05 · Sprachwechsel mit sichtbaren Feldfehlern und Entwürfen
-
-**Einordnung:** Zur Automatisierung vorgesehen – Browserfall.
-
-**Voraussetzung:** Admin-Konfiguration; ein ungültiger unkritischer Entwurf, z. B. ungültige Basis-URL. Ursprünglichen Wert notieren.
-
-1. Ungültigen Entwurf eingeben und Speichern auslösen; sichtbare Feld-/Benachrichtigungsfehler dokumentieren.
-2. Über den tatsächlich erreichbaren Benutzermenü-Sprachschalter DE nach EN und zurück wechseln. Labels, noch sichtbare Fehlertexte und Erhalt des Entwurfs prüfen.
-3. Entwurf korrigieren oder verwerfen; danach die gespeicherte Originalkonfiguration prüfen.
-
-**Erwartet:** Weiterhin sichtbare Texte folgen der gewählten Sprache; der ungültige Wert wird nicht gespeichert und der Entwurf nicht still übernommen. Bereits geschlossene Meldungen sind nicht nachträglich prüfbar. Keine Sprachwahl hinter einem modalen Dialog erzwingen.
-
-<a id="auto-06"></a>
-
-### AUTO-06 · Neue Mails nach Sprachwechsel für dasselbe Konto
-
-**Einordnung:** Zur Automatisierung vorgesehen – Browserfall.
-
-**Voraussetzung:** Ein bereits aktiviertes Testkonto; eigenes Mailpit; für jede Mail Zeitpunkt/Empfänger und Sprache der auslösenden Sitzung notieren.
-
-1. Mit dem vorhandenen Konto die Sprache wechseln und abmelden. Auf Home den angebotenen Sprachschalter bewusst auf EN setzen, dann die Passwortanfrage öffnen und eine neue Mail anfordern.
-2. Nach Zustellung auf Home DE wählen und für dasselbe Konto erneut anfordern. Die zwei neuen Nachrichten anhand von Zeitpunkt/Mail-ID unterscheiden, nicht eine alte Mail wieder auswerten.
-3. Betreff, Inhalt und Footer vergleichen; die vorher empfangene englische Nachricht erneut ansehen.
-
-**Erwartet:** Neue Mails der anonymen Passwortanfrage folgen der Sprache der auslösenden Sitzung; gespeicherte Kontosprache allein bestimmt eine anonyme Anfrage nicht. Sicherheitsmails zu angemeldeten Passwort-/E-Mail-Änderungen folgen dagegen bewusst der gespeicherten Kontosprache; das ist ein eigener automatisierter Vertrag. Frühere Mails ändern ihre Sprache nicht nachträglich. Es werden ausschließlich neue zulässige Anfragen benutzt.
-
-<a id="auto-07"></a>
-
-### AUTO-07 · Verbindungsunterbrechung während einer Bearbeitung
-
-**Einordnung:** Zur Automatisierung vorgesehen – Browserfall.
-
-**Voraussetzung:** Eigenes unkritisches Testkonto; gespeicherter Ausgangswert; Browser-Entwicklerwerkzeuge mit Offline-Schalter oder andere begrenzte Unterbrechung nur für diesen Browser.
-
-1. Bearbeitungsformular öffnen, einen Namen ändern und die Verbindung nur für diesen Browser unterbrechen.
-2. Speichern versuchen; Rückmeldung/Verbindungsanzeige festhalten. Verbindung wiederherstellen und angebotene Wiederverbindung bzw. bewusstes Neuladen durchführen.
-3. Konto frisch über die Suche öffnen und gespeicherten Stand feststellen; bei nötig erneutem Speichern genau einmal bewusst auslösen.
-
-**Erwartet:** Es erscheint keine irreführende Erfolgsbestätigung für einen nicht verarbeiteten Vorgang. Nach Wiederverbindung lässt sich der tatsächliche gespeicherte Stand eindeutig feststellen und weiterarbeiten. Verlorene Entwürfe/unklare Bedienung gesondert als Befund erfassen.
 
 <a id="auto-08"></a>
 

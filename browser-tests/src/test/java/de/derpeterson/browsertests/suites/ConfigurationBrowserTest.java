@@ -40,7 +40,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   @Description(
       """
         1. Allgemeine Gruppe öffnen; Originalnamen und URL merken.
-        2. Blanken Namen bzw. ungültige URL versuchen: Feldfehler und unveränderte Werte nach Neuladen.
+        2. Blanken Namen bzw. ungültige URL versuchen: Feldfehler, Sprachwechsel mit erhaltenem ungültigem Entwurf und unveränderte Werte nach Neuladen.
         3. Eigenen kurzen Unicode-Dienstnamen speichern und frisch laden: identischer Wert.
         4. Originalnamen wieder speichern; Basis-URL bleibt unverändert.
         **Erwartet:** Stringvalidierung und Speicherung sind sichtbar wirksam; kein Neustartnachweis.
@@ -57,6 +57,18 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       assertThat(settings.input(name)).hasValue(original);
       settings.enter(url, "invalid");
       settings.reject("vaadin-text-field", texts.getAdminConfigValidationUrl());
+      UiTexts other = new UiTexts(texts.language().equals("de") ? "en" : "de");
+      try {
+        new UserMenu(page).selectLanguage(other.language());
+        assertThat(settings.input(other.getAdminConfigEntryBaseUrl())).hasValue("invalid");
+        assertThat(page.locator("vaadin-text-field[invalid]"))
+            .hasJSProperty("errorMessage", other.getAdminConfigValidationUrl());
+      } finally {
+        new UserMenu(page).selectTestLanguage();
+      }
+      assertThat(settings.input(url)).hasValue("invalid");
+      assertThat(page.locator("vaadin-text-field[invalid]"))
+          .hasJSProperty("errorMessage", texts.getAdminConfigValidationUrl());
       settings.reload();
       assertThat(settings.input(url)).hasValue(originalUrl);
       settings.enter(name, "Browserprüfung ÄÖÜ");
@@ -523,5 +535,57 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     new UserMenu(page).selectTestLanguage();
     login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
     return new ConfigurationPage(page);
+  }
+
+  @Test
+  @DisplayName("CONFIG-06: Offline-Speichern meldet keinen Erfolg; Bearbeitung bleibt fortsetzbar")
+  @Description(
+      """
+      1. Eigenen Konfigurationsentwurf öffnen und nur diesen Browser offline schalten.
+      2. Speichern auslösen und den fehlgeschlagenen UIDL-Transport beobachten: keine Erfolgsmeldung.
+      3. Verbindung wiederherstellen und frisch laden: der ursprüngliche Wert ist gespeichert.
+      4. Den Entwurf bewusst erneut speichern, neu laden und den Originalwert wiederherstellen.
+      **Erwartet:** Kein falscher Offline-Erfolg; nach Wiederverbindung ist Weiterarbeiten möglich.
+      """)
+  void offlineSaveHasNoFalseSuccessAndCanBeContinued() {
+    ConfigurationPage settings = admin();
+    settings.open(AdminConfigGroup.GENERAL);
+    String label = texts.getAdminConfigEntryServiceName();
+    String original = settings.value(label);
+    String draft = "Offline " + UUID.randomUUID().toString().substring(0, 8);
+    java.util.concurrent.atomic.AtomicBoolean failed =
+        new java.util.concurrent.atomic.AtomicBoolean();
+    page.onRequestFailed(
+        request -> {
+          if (request.method().equals("POST") && request.url().contains("v-r=uidl")) {
+            failed.set(true);
+          }
+        });
+    try {
+      settings.enter(label, draft);
+      context.setOffline(true);
+      page.getByRole(
+              AriaRole.BUTTON,
+              new Page.GetByRoleOptions().setName(texts.getAdminConfigSave()).setExact(true))
+          .click(new Locator.ClickOptions().setForce(true));
+      context.waitForCondition(failed::get);
+      assertThat(
+              page.locator("vaadin-notification-card")
+                  .filter(
+                      new Locator.FilterOptions().setHasText(texts.getAdminConfigSaveSuccess())))
+          .hasCount(0);
+      context.setOffline(false);
+      page.reload();
+      assertThat(settings.input(label)).hasValue(original);
+      settings.enter(label, draft);
+      settings.save();
+      settings.reload();
+      assertThat(settings.input(label)).hasValue(draft);
+    } finally {
+      context.setOffline(false);
+      page.reload();
+      settings.enter(label, original);
+      settings.save();
+    }
   }
 }

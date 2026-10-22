@@ -62,7 +62,7 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung einschließlich Serverneustart und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 37 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
-| `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler und Links | 6 |
+| `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler, Links und Sprache neuer anonymer Anfragen | 7 |
 | `account-security` | Passwortvalidierung/-wechsel mit SMTP-Mail und verifizierte E-Mail-Änderung mit beiden Sicherheitsmails | 4 |
 | `session-persistence` | Gezielte Neustartabnahme: Sitzungs-/Loginfälle, Wartung und eigene Kontosicherheit | 50 |
 | `session-management` | Eigene Sitzungen, Einzel-/Sammelwiderruf, dauerhafte Anmeldung, UI-Neuaufbau und eingeschränkter Login | 6 |
@@ -78,10 +78,11 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `security-journeys` | Sitzungs- und Maillinkfälle gemeinsam | 10 |
 | `remember-me` | Echter Chromium- und Anwendungsneustart mit/ohne Remember-me und nach Logout | 4 |
 | `user-status` | Manuelle Wahl, Live-Anzeige in zweitem Tab, Abwesenheit/Rückkehr | 2 |
-| `configuration` | String-, Boolean- und Ganzzahlwerte, native SideNav, alle 30 Klick-Infos, mobile Tooltipbreite und sichere Enter-Bedienung | 9 |
+| `configuration` | String-, Boolean- und Ganzzahlwerte, Sprachwechsel mit Feldfehlern, Offline-Speichern, native SideNav, Klick-Infos und Enter-Bedienung | 10 |
+| `operations` | Persistenz ohne Bootstrap, zwei eigene SMTP-Ziele und echte begrenzte Transportausfälle mit Wiederanlauf | 3 |
 | `admin-mail` | Formularfehler, Feldinfos/Sprachwechsel, sicherer mehrzeiliger Text und tatsächliche Unicode-SMTP-Mails | 3 |
 | `token-expiry` | Echte Mindestdauer abwarten, erneuter Verifikationsversand, offenes Resetformular, Anfragefehler | 3 |
-| `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 15 |
+| `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 16 |
 | `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 21 |
 | `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 22 |
@@ -89,7 +90,7 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
-| `all` | Alle 28 Testklassen einschließlich der Fast-Fälle | 156 |
+| `all` | Alle 29 Testklassen einschließlich der Fast-Fälle | 161 |
 
 IDs, Schritte und erwartetes Ergebnis stehen pro Fall in `@DisplayName` und
 `@Description`; diese Angaben übernimmt der Bericht. AVATAR-01 enthält zwei
@@ -126,6 +127,11 @@ Es starten höchstens so viele Worker wie ausgewählte Testklassen. Ganze Klasse
 werden verteilt, jeder Worker besitzt eine eigene JVM, Anwendung, H2-Datenbank,
 Mailpit-Instanz und Ports. Innerhalb eines Workers läuft JUnit sequenziell;
 Threadparallelität mit gemeinsamem Fixture nicht als Ersatz aktivieren.
+
+Die Suite `operations` verwendet zusätzlich ein zweites eigenes Mailpit ohne
+Hostports. Sie prüft die beim Start gebundene SMTP-Konfiguration sowie echte
+Verbindungsfehler mit Retry und terminalem Ende. Anwendungsneustarts verwenden
+dieselbe eigene Datenbank und deaktivieren Bootstrap ausdrücklich.
 
 Der Elternrunner kompiliert Shared-/Browserquellen und baut das Anwendungsimage
 einmal vor der Verteilung. Alle Worker verwenden dieselbe unveränderliche Image-ID.

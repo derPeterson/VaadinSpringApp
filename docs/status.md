@@ -1,85 +1,86 @@
-# Aktueller Stand
+# Aktueller Prüfstand
 
-Stand: 21.10.2026. Ausschließlich lokale Entwicklung mit austauschbaren Testdaten.
+Stand: 22.10.2026. Ausschließlich lokale Entwicklung mit austauschbaren Testdaten.
 
-## Funktionsstand
+## Ergebnis der großen Testrunde
 
-- Kontoanlage, Aktivierung, Passwortlogin, Reset und verifizierte E-Mail-Änderung.
-- Rollen, letzter aktiver Superadmin, Wartung und Anmeldeversuchsschutz.
-- Dauerhafte HTTP-Anmeldung, Sitzungslimit, Geräteverwaltung und Remember-me.
-- Profil, Profilbilder, Verfügbarkeit und Live-Aktualisierung.
-- Persönliche Benachrichtigungen und Superadmin-Versand mit getrenntem Archiv.
-- Deutsches/englisches Cosmos-Theme, Administration, Mailpit und Mailqueue.
-- Festes aktuelles H2-Schema mit JPA-Validierung.
+Die automatisierten Tests sind vollständig bestanden. Der aktuelle HTTPS-Stand
+hat noch keinen eigenen Sonar-Scan; die Gesamt-QA ist deshalb nicht vollständig
+grün belegt. Geprüft wurde `feature/lokales-https`, Commit
+`fe1f47ee94e27d07ee90a3d6dac8a8daa4f611a4` einschließlich der uncommittierten
+Testergänzungen. Eine revisiongebundene erfolgreiche lokale QA-Baseline lag nicht
+vor; bisheriger Prüfbericht, tatsächliche Änderungen und offener Testbedarf wurden
+abgeglichen. Erfolgreiche unveränderte Prüfphasen wurden bei der Fortsetzung erhalten.
 
-Die [Anwendungsbeschreibung](anwendung.md) erklärt die Bedienung; [Entscheidungen](entscheidungen.md)
-halten die wesentlichen technischen Grenzen fest.
-
-## Qualitätsstand
-
-Der aktuelle Sonar-Export enthält **einen Hinweis zur fehlenden Assertion im manuellen
-Mailtest**. Im Arbeitsstand wird die Anzahl der vom Transport angenommenen Beispiele
-jetzt ausdrücklich geprüft; die Bestätigung durch einen erneuten Scan steht aus.
-Begründungen akzeptierter Ausnahmen stehen eigenständig verständlich am Server.
-Es wurden keine Sonar-Statusänderungen oder neuen Scans durch den Agenten ausgeführt.
-
-Die vollständige automatisierte QA der Dokumentations-/Schemabereinigung ist abgeschlossen.
-Der zusätzliche Mail-Sichttest wurde anschließend gezielt offline geprüft; ein neuer
-vollständiger JUnit-/Browserlauf war dafür nicht erforderlich (keine Änderung am Anwendungscode). Es gibt keine
-ungeklärten Fehler aus den folgenden Prüfungen:
-
-| Prüfung | Aktuelle Runde |
+| Prüfung | Tatsächliches Ergebnis |
 | --- | --- |
-| Java 25, Spotless und Checkstyle | grün |
-| Vollständige JUnit-Anwendungstests | 2.200 Tests, 0 Fehler, 0 übersprungen |
-| Optimierter Build | grün, einschließlich aller Anwendungstests |
-| Browser-Helfertests | 49 Tests grün |
-| Mail-Sichttest und Sessionregressionen (gezielt) | 34 Tests bestanden; echter Versandtest absichtlich übersprungen |
-| Browser all DE | alle 155 Fälle erfolgreich abgedeckt; Gesamtlauf plus Anmeldenachtest |
-| Browser all EN | 155/155 bestanden, 0 Fehler, 0 übersprungen |
-| Frontend-JavaScript | 12 Tests grün |
-| Workflow-JavaScript | 14 Tests grün |
-| Python-Offlineprüfungen | 205 Tests grün |
+| Java 25, Spotless und Checkstyle | Bestanden, keine Stilabweichungen |
+| Shared | `clean install` erfolgreich; keine eigenen Testquellen |
+| Optimierter Produktionsbuild / Anwendungs-JUnit | 2.243 erfasst, 2.241 bestanden, 0 Fehler, 2 erwartete optionale Skips |
+| Browser-Helfer | 63 bestanden, 0 Fehler oder Skips |
+| Frontend-JavaScript | 12 bestanden |
+| Gepflegte Sonar-Python-Helfer | 36 bestanden, einschließlich künstlicher DPAPI-Testwerte |
+| Browser all DE | 161/161 bestanden, 0 Testfehler oder Skips; Rückbau-Timeout eines Workers durch Elternabbau erfolgreich bereinigt |
+| Browser all EN | 161/161 bestanden, 0 Fehler oder Skips; Aufbau und Abbau bestanden, Exitcode 0 |
+| Eigene Testressourcen | Alle eigenen Test-CAs samt Zwischenzertifikaten und Besitzmarkern sowie Container, Volumes und Netze entfernt |
 
-Der DE-Gesamtlauf hatte 154 bestandene Fälle und eine falsche neue Testannahme:
-Logout muss von der öffentlichen Startseite nicht zum Login weiterleiten. Der
-korrigierte Test prüft den erneuten Anmeldeschutz des Kontobereichs. Die vollständige
-Anmeldegruppe bestand anschließend mit **7/7**; damit ist jeder der 155 deutschen
-Fälle erfolgreich geprüft, ohne die unveränderten erfolgreichen Fälle erneut auszuführen.
+Die DE-Fälle sind sämtlich bestanden. Der Gesamtrunner meldete dennoch Exitcode 1,
+weil Worker 1 beim Entfernen seiner CA nach 120 Sekunden noch auf Windows wartete.
+Nach der Benutzerbestätigung hat der Elternrunner dessen Abbau erfolgreich
+nachgeholt. Der spätere gezielte Ressourcencheck bestätigt den vollständigen
+Rückbau. Dieser Fehlerstatus wird nicht als grüner DE-Gesamtlauf ausgegeben;
+er ist kein fehlgeschlagener Browserfall. EN hat einschließlich Abbau bestanden.
 
-Beide Sprachen wurden am identischen Produktionsimage geprüft:
-`sha256:d554d29604ee270f448a4d714478c5c41c14f025046460042d9f9c8181e5dd81`.
-Die eigenen isolierten Testumgebungen sind abgebaut. Bestehende Entwicklungsdaten
-und fremde Container wurden nicht verändert. Keine zusätzliche Coverageauswertung.
+Beide Sprachen verwendeten dasselbe unveränderte Produktionsimage:
+`sha256:000b9da0a570ae540c651010181ce96c848f9715dd17cb4ff1017028a3ada99f`.
+Die temporären Laufbelege stehen unter
+`browser-tests/runs/2026-10-22T07-44-38_UTC__fe1f47ee__44d6ad37/` (DE) und
+`browser-tests/runs/2026-10-22T08-21-38_UTC__fe1f47ee__2c3614b2/` (EN).
+Keine zusätzliche Coverageauswertung und kein Berichtarchiv.
 
-## Geprüfte Schwerpunkte
+## Ergänzungen und geprüfte Verträge
 
-- Das aktuelle Schema passt zu allen JPA-Modellen und Rollen-/Benachrichtigungstypen.
-  Wiederholte Initialisierung und Neustart erhalten Konten, Versionen und Anmeldesperren.
-- Die erlaubte E-Mail-Länge von 255 Zeichen gilt durchgängig für Konto, Remember-me
-  und dauerhafte Sitzung. Der dabei gefundene Speichergrenzfehler ist behoben;
-  ungültige längere Identitäten bleiben abgewiesen.
-- Beschädigte Bilduploads werden abgelehnt. Danach lässt sich im selben Dialog ein
-  gültiges Bild speichern und erneut anzeigen.
-- Die vollständigen Browserfälle prüfen außerdem Rechte, Wartung, Tokenabläufe,
-  Sitzungsneustart/-widerruf, Konfiguration und Benachrichtigungen auf DE und EN.
-- Die aktuellen Markdown-Verweise sind geprüft und führen auf vorhandene Dateien.
+- Importfehler, verweigerte Rechte, Abbruch, Teilimport und Timeout sind durch
+  Helferregressionen abgesichert. Der originale Trust-Ablauf wird dabei mit
+  künstlichen Zertifikatsspeichern geprüft; fremde Einträge bleiben erhalten.
+- Der Elternabbau wartet nach hartem Workerabbruch auf die eigenen Kindprozesse,
+  bevor Trust entfernt wird. Ein wartender Import wird beendet. Drei gleichzeitig
+  reservierte Loopbackports je Worker sind separat geprüft.
+- Neue Betriebsfälle belegen Persistenz von Konto, Rollen und Konfiguration ohne
+  erneuten Bootstrap, den SMTP-Zielwechsel erst nach Neustart sowie echte
+  SMTP-Verbindungsfehler mit Wiederanlauf oder terminalem Ende. Ein weiterer
+  Retryzeitraum belegt keine doppelte bzw. terminal erneuerte Zustellung.
+- Sprachwechsel erhält ungültige Konfigurationsentwürfe und übersetzt sichtbare
+  Feldfehler. Offline-Speichern meldet keinen falschen Erfolg; nach Wiederverbindung
+  kann bewusst weitergearbeitet werden. Neue anonyme Reset-Mails folgen der
+  auslösenden Sitzungssprache; bereits empfangene Mails bleiben unverändert.
+- HTTPS ist ohne TLS-Ausnahmen im normalen und persistenten Chromium geprüft:
+  HTTP-Weiterleitung und POST-Grenze, Login/Logout, Mail-Origins, sichere Cookies,
+  UIDL, Upload, Push, Widerruf sowie Browser- und Serverneustarts sind abgedeckt.
+  Die ergänzten Browserfälle und die wiederverwendeten Journeys sind DE/EN bestanden.
 
-## Offene Fehler
+Die beiden optionalen echten IDE-Starterfälle benötigen `https.test.caddy` und
+freie feste IDE-Ports. Sie wurden in dieser Runde nicht aktiviert. Ihre bereits
+bestandenen isolierten Nachweise und die menschliche IDE-Abnahme bleiben gültig:
+Start/Stop, harter Reset, Debug/Breakpoint und HotSwap sind abgenommen.
+Echter Mail-Sichtversand, externe Provider und der eingefrorene OpenCode-Workflow
+gehören nicht zu dieser Runde. Mailpit belegt SMTP-Annahme im eigenen Testnetz,
+keine externe Postfachzustellung.
 
-Aus den oben dokumentierten Prüfungen sind keine bestätigten offenen
-Anwendungsfehler erfasst. Die laufende priorisierte Übersicht steht in
-[BUGS.md](../BUGS.md). Bei neuen Fehlern hier die zugehörigen Details ergänzen:
-Reproduktion, erwartetes/tatsächliches Verhalten und noch nötiger Nachtest.
+## Sonar und verbleibender Abschluss
 
-## Offene Punkte
+MCP-Verbindung und geschützter Lesehelfer funktionieren. Die bestehende
+`main`-Analyse vom 21.10.2026, 16:34:35 UTC, Revision
+`20d1775e418b97a7d5781b4eb9c0d356b555bb94`, meldet Gate **OK**, 0 offene Issues,
+0 Hotspots und 33 Ausnahmen. Sie entspricht weder dem aktuellen lokalen `main`
+noch dem HTTPS-Featurestand. Der neue Scan ist laut Projektvertrag ausschließlich
+auf sauberem `main` zulässig und bleibt bis zur ausdrücklich beauftragten
+Integration offen. Keine Scans oder Sonar-Statusänderungen in dieser Runde.
+Die erfolgreiche lokale QA-Baseline wurde wegen dieses offenen Nachweises nicht ersetzt.
 
-Die automatisierte Runde ersetzt keine menschliche Abnahme. Echte Geräte,
-Screenreader, Textverständlichkeit und Mailclients bleiben gesondert zu prüfen.
-Offener automatisierter Testbedarf steht zentral in [testbedarf.md](testbedarf.md),
-Anleitungen für menschliche Abnahmen und Sonderfälle in den
-[manuellen Sonderprüfungen](manual-tests/README.md); geplante Arbeiten in [TODO](../TODO.md).
-Ausstehende Prüfungen sind kein bestätigter Anwendungsfehler.
-
-Für die lokale Übernahme neu bauen und mit einer frischen Testdatenbank starten.
-Vorhandene Entwicklerdaten wurden während dieser Aufgabe nicht zurückgesetzt.
+Es sind keine bestätigten offenen Anwendungsfehler bekannt; siehe [BUGS.md](../BUGS.md).
+Die erfolgreich geprüften automatisierten Ergänzungen sind aus dem
+[Testbedarf](testbedarf.md) entfernt. Menschliche Sonderprüfungen bleiben im
+[manuellen Katalog](manual-tests/README.md). Die [HTTPS-Planung](planung/https.md)
+bleibt bis zur gemeinsamen Gesamt-Abnahme erhalten. Keine Commits, Merges oder Pushes;
+Entwicklerdaten und fremde Prozesse wurden nicht als Fixtures verwendet oder verändert.

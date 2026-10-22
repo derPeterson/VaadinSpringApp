@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.core.LauncherFactory;
@@ -684,11 +683,8 @@ public final class BrowserTestRunner {
     }
     int exit;
     try {
-      if (arguments.stream().anyMatch(argument -> argument.endsWith("trust.ps1"))
-          && !child.waitFor(120, TimeUnit.SECONDS)) {
-        child.destroyForcibly();
-        child.waitFor();
-        throw new IOException("Windows certificate confirmation timed out after 120 seconds");
+      if (arguments.stream().anyMatch(argument -> argument.endsWith("trust.ps1"))) {
+        BrowserHttps.awaitTrustCommand(child, java.time.Duration.ofSeconds(120));
       }
       exit = child.waitFor();
     } finally {
@@ -720,9 +716,56 @@ public final class BrowserTestRunner {
     if (runner == null || !runner.environmentStarted || runner.appContainer == null) {
       throw new IllegalStateException("No owned test application is running");
     }
-    runner.command(runner.withCompose("restart", "--timeout", "30", "app"));
+    runner.environment.put("BROWSER_TEST_BOOTSTRAP_ENABLED", "false");
     runner.command(
-        runner.withCompose("up", "-d", "--no-build", "--wait", "--wait-timeout", "180", "app"));
+        runner.withCompose(
+            "up",
+            "-d",
+            "--no-build",
+            "--no-deps",
+            "--force-recreate",
+            "--wait",
+            "--wait-timeout",
+            "180",
+            "app"));
+    runner.appContainer = runner.command(runner.withCompose("ps", "-q", "app")).trim();
+  }
+
+  /** Ausschließlich der Maildienst des aktiven eigenen Workers; keine fremden Dienste. */
+  public static void setTestMailpitAvailable(boolean available) throws Exception {
+    BrowserTestRunner runner = ownedRunner();
+    runner.command(
+        available
+            ? runner.withCompose("up", "-d", "--no-deps", "--wait", "mailpit")
+            : runner.withCompose("stop", "mailpit"));
+  }
+
+  public static String testApplicationLogs() throws Exception {
+    BrowserTestRunner runner = ownedRunner();
+    return runner.command(runner.withCompose("logs", "--no-color", "--tail", "250", "app"));
+  }
+
+  public static JsonNode testMailpitMessages(boolean secondary) throws Exception {
+    BrowserTestRunner runner = ownedRunner();
+    String host = secondary ? "mailpit-secondary" : "mailpit";
+    return JSON.readTree(
+        runner.command(
+            runner.withCompose(
+                "exec",
+                "-T",
+                "app",
+                "curl",
+                "--fail",
+                "--silent",
+                "http://" + host + ":8025/api/v1/messages?limit=100")));
+  }
+
+  private static BrowserTestRunner ownedRunner() {
+    BrowserTestRunner runner = activeTestRunner;
+    if (runner == null || !runner.environmentStarted || runner.appContainer == null) {
+      throw new IllegalStateException("No owned test application is running");
+    }
+    return runner;
   }
 
   private List<String> withCompose(String... args) {

@@ -5,18 +5,54 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class BrowserHttpsTest {
   @TempDir Path directory;
+
+  @ParameterizedTest
+  @ValueSource(strings = {"rights", "denied", "cancelled", "partial"})
+  @EnabledOnOs(OS.WINDOWS)
+  void actualTrustHelperCleansFailedImportsWithoutTouchingForeignEntries(String scenario)
+      throws Exception {
+    Process process =
+        new ProcessBuilder(
+                "powershell.exe",
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "RemoteSigned",
+                "-File",
+                Path.of("src/test/resources/https-trust-failure.ps1").toAbsolutePath().toString(),
+                "-Repository",
+                Path.of("..").toAbsolutePath().normalize().toString(),
+                "-Directory",
+                directory.toString(),
+                "-Scenario",
+                scenario)
+            .redirectErrorStream(true)
+            .start();
+    try {
+      assertTrue(process.waitFor(20, TimeUnit.SECONDS));
+      String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+      assertEquals(0, process.exitValue(), output);
+      assertTrue(output.contains("cleanup verified"), output);
+    } finally {
+      BrowserHttps.stopBeforeTrustCleanup(process);
+    }
+  }
 
   @Test
   @EnabledOnOs(OS.WINDOWS)
@@ -82,6 +118,87 @@ class BrowserHttpsTest {
     } finally {
       waiting.destroyForcibly();
       waiting.waitFor();
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1, 5, 1223})
+  void deniedCancelledOrUnauthorizedImportCannotPassSetup(int exitCode) throws Exception {
+    Process failed = child(ImportChild.class, String.valueOf(exitCode));
+    try {
+      IOException error =
+          assertThrows(
+              IOException.class,
+              () -> BrowserHttps.awaitTrustCommand(failed, Duration.ofSeconds(10)));
+      assertTrue(error.getMessage().contains(String.valueOf(exitCode)));
+      assertFalse(failed.isAlive());
+    } finally {
+      BrowserHttps.stopBeforeTrustCleanup(failed);
+    }
+  }
+
+  @Test
+  void confirmationTimeoutStopsImporterBeforeCleanup() throws Exception {
+    Process waiting = child(WaitingChild.class);
+    try {
+      assertEquals("ready", waiting.inputReader().readLine());
+      IOException error =
+          assertThrows(
+              IOException.class,
+              () -> BrowserHttps.awaitTrustCommand(waiting, Duration.ofMillis(50)));
+      assertTrue(error.getMessage().contains("timed out"));
+      assertFalse(waiting.isAlive());
+    } finally {
+      BrowserHttps.stopBeforeTrustCleanup(waiting);
+    }
+  }
+
+  @Test
+  void hardWorkerAbortAlsoStopsWaitingImporterBeforeParentCleanup() throws Exception {
+    Process worker = child(WorkerChild.class);
+    ProcessHandle importer = null;
+    try {
+      importer = ProcessHandle.of(Long.parseLong(worker.inputReader().readLine())).orElseThrow();
+      assertTrue(importer.isAlive());
+      BrowserParallelWorkers.stopWorker(worker);
+      assertFalse(worker.isAlive());
+      assertFalse(importer.isAlive());
+    } finally {
+      BrowserHttps.stopBeforeTrustCleanup(worker);
+      if (importer != null && importer.isAlive()) {
+        importer.destroyForcibly();
+        importer.onExit().get(10, TimeUnit.SECONDS);
+      }
+    }
+  }
+
+  private static Process child(Class<?> type, String... arguments) throws IOException {
+    java.util.ArrayList<String> command =
+        new java.util.ArrayList<>(
+            List.of(
+                BrowserParallelWorkers.javaExecutable(),
+                "-cp",
+                System.getProperty("java.class.path"),
+                type.getName()));
+    command.addAll(List.of(arguments));
+    return new ProcessBuilder(command).start();
+  }
+
+  public static class ImportChild {
+    public static void main(String[] args) {
+      System.exit(Integer.parseInt(args[0]));
+    }
+  }
+
+  public static class WorkerChild {
+    public static void main(String[] args) throws Exception {
+      Process importer = child(WaitingChild.class);
+      if (!"ready".equals(importer.inputReader().readLine())) {
+        throw new IOException("Importer did not start");
+      }
+      System.out.println(importer.pid());
+      System.out.flush();
+      Thread.sleep(60000);
     }
   }
 

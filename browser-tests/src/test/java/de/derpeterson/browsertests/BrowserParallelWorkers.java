@@ -42,13 +42,8 @@ final class BrowserParallelWorkers {
       throws IOException {
     // Ports während der Planung reservieren. Nach Freigabe bindet nur Docker daran;
     // bei einer externen Kollision scheitert Compose, bevor ein Browser startet.
-    List<ServerSocket> sockets = new ArrayList<>();
+    List<ServerSocket> sockets = reservePorts(groups.size());
     try {
-      for (int i = 0; i < groups.size() * 3; i++) {
-        ServerSocket socket = new ServerSocket();
-        socket.bind(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0));
-        sockets.add(socket);
-      }
       for (int i = 0; i < groups.size(); i++) {
         Path directory = run.resolve("workers/" + (i + 1));
         Files.createDirectories(directory);
@@ -117,6 +112,27 @@ final class BrowserParallelWorkers {
     }
   }
 
+  static List<ServerSocket> reservePorts(int workers) throws IOException {
+    List<ServerSocket> sockets = new ArrayList<>();
+    try {
+      for (int i = 0; i < workers * 3; i++) {
+        ServerSocket socket = new ServerSocket();
+        sockets.add(socket);
+        socket.bind(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0));
+      }
+      return sockets;
+    } catch (IOException error) {
+      for (ServerSocket socket : sockets) {
+        try {
+          socket.close();
+        } catch (IOException closeError) {
+          error.addSuppressed(closeError);
+        }
+      }
+      throw error;
+    }
+  }
+
   void await() throws InterruptedException, IOException {
     Set<Process> reported = new HashSet<>();
     while (reported.size() < workers.size()) {
@@ -142,21 +158,32 @@ final class BrowserParallelWorkers {
     for (Worker worker : workers) {
       if (worker.process().isAlive()) {
         // Auch laufende Compose-/Browser-Kindprozesse beenden, bevor Compose down läuft.
-        List<ProcessHandle> descendants = worker.process().descendants().toList();
-        descendants.reversed().forEach(ProcessHandle::destroy);
-        worker.process().destroy();
         try {
-          if (!worker.process().waitFor(10, TimeUnit.SECONDS)) {
-            worker.process().destroyForcibly();
-          }
+          stopWorker(worker.process());
+        } catch (IOException error) {
+          throw new IllegalStateException("Worker remains alive; trust cleanup is unsafe", error);
         } catch (InterruptedException error) {
           Thread.currentThread().interrupt();
+          throw new IllegalStateException("Worker cleanup interrupted", error);
         }
-        descendants.stream().filter(ProcessHandle::isAlive).forEach(ProcessHandle::destroyForcibly);
       }
     }
     // Auf Windows garantiert destroy() keinen JVM-Shutdown-Hook. Der Elternrunner
     // baut deshalb anschließend jedes eigene Compose-Projekt ausdrücklich ab.
+  }
+
+  static void stopWorker(Process worker) throws IOException, InterruptedException {
+    List<ProcessHandle> descendants = worker.descendants().toList();
+    descendants.reversed().forEach(ProcessHandle::destroyForcibly);
+    BrowserHttps.stopBeforeTrustCleanup(worker);
+    for (ProcessHandle descendant : descendants) {
+      try {
+        descendant.onExit().get(10, TimeUnit.SECONDS);
+      } catch (java.util.concurrent.ExecutionException
+          | java.util.concurrent.TimeoutException error) {
+        throw new IOException("Worker child remains alive; trust cleanup is unsafe", error);
+      }
+    }
   }
 
   static String javaExecutable() {

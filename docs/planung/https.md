@@ -34,15 +34,18 @@ Bedienung und Grenzen: [Entwicklung](../entwicklung.md#lokales-https),
 [Docker](../docker/README.md), [Sicherheit](../sicherheit.md) und
 [Browserrunner](../../browser-tests/README.md#isolation).
 
-## Noch offen
+## Prüfstand und verbleibender Abschluss
 
-- [ ] Offene JUnit-/Helferregressionen aus dem [Testbedarf](../testbedarf.md)
-  ergänzen und JUnit-/Helfertests am aktuellen vollständigen Stand erfolgreich prüfen.
-- [ ] Vollständige HTTPS-Browserabnahme DE/EN nach gesonderter Freigabe am selben
-  unveränderten Image: bestehende Login-, Mail-Link-, CSRF-, Rechte-, Sitzungs-,
-  Remember-me-, Neustart-, Upload- und Push-Journeys wiederverwenden.
-  Automatisierte Restarbeiten stehen ausschließlich im [Testbedarf](../testbedarf.md).
+- [x] Offene HTTPS-JUnit-/Helferregressionen ergänzt und erfolgreich geprüft:
+  Produktionsbuild mit 2.241 bestandenen Anwendungstests (zwei optionale IDE-Skips)
+  sowie 63 bestandene Browser-Helfertests. Tatsächlicher Stand: [Prüfbericht](../status.md).
+- [x] Vollständige HTTPS-Browserfälle am selben unveränderten Image geprüft:
+  DE 161/161 und EN 161/161 bestanden. Beim DE-Rückbau trat ein Windows-
+  Bestätigungs-Timeout auf; der Elternrunner hat ihn erfolgreich bereinigt.
+  EN einschließlich Abbau bestanden. Alle eigenen Testressourcen sind entfernt.
+- [ ] Aktuellen Sonar-Nachweis nach ausdrücklich beauftragter Integration auf
+  sauberem `main` erbringen. Die vorhandene grüne Analyse belegt den HTTPS-Stand nicht.
 - [ ] Nach gemeinsamer Abnahme erledigten TODO-Eintrag, diesen Plan und Verweise
   entfernen. Offenen Testbedarf unabhängig erhalten. `docs/status.md` bleibt der
-  Stand der letzten großen QA und wird durch diese Einzelprüfungen nicht ersetzt.
+  Stand der großen QA einschließlich ihrer belegten Grenzen.
   Kein Planarchiv und kein zusätzlicher Abschlussbericht.

@@ -73,6 +73,10 @@ public class RememberMeBrowserTest extends BrowserFixture {
               .anyMatch(
                   cookie ->
                       cookie.name.equals("remember-me")
+                          && cookie.secure
+                          && cookie.httpOnly
+                          && cookie.sameSite
+                              == com.microsoft.playwright.options.SameSiteAttribute.LAX
                           && cookie.expires > System.currentTimeMillis() / 1000.0),
           "Dauerhaftes Remember-me-Cookie fehlt.");
     }

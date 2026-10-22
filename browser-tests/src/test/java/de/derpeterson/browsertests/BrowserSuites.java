@@ -13,6 +13,7 @@ import de.derpeterson.browsertests.suites.LoginAttemptBrowserTest;
 import de.derpeterson.browsertests.suites.LoginLayoutBrowserTest;
 import de.derpeterson.browsertests.suites.MaintenanceBrowserTest;
 import de.derpeterson.browsertests.suites.NotificationInboxBrowserTest;
+import de.derpeterson.browsertests.suites.OperationsBrowserTest;
 import de.derpeterson.browsertests.suites.PasswordResetBrowserTest;
 import de.derpeterson.browsertests.suites.PresentationBrowserTest;
 import de.derpeterson.browsertests.suites.RegistrationBrowserTest;
@@ -39,6 +40,7 @@ final class BrowserSuites {
               UserNotificationsBrowserTest.class,
               NotificationInboxBrowserTest.class,
               InfrastructureBrowserTest.class,
+              OperationsBrowserTest.class,
               AuthenticationBrowserTest.class,
               RegistrationBrowserTest.class,
               VerificationBrowserTest.class,
@@ -79,6 +81,7 @@ final class BrowserSuites {
               PresentationBrowserTest.class,
               RememberMeBrowserTest.class);
       case "infrastructure" -> List.of(InfrastructureBrowserTest.class);
+      case "operations" -> List.of(OperationsBrowserTest.class);
       case "session-persistence" ->
           List.of(
               SessionLimitBrowserTest.class,

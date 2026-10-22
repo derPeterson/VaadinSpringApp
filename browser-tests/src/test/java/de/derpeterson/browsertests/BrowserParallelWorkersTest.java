@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -17,6 +19,30 @@ import org.junit.jupiter.api.io.TempDir;
 
 class BrowserParallelWorkersTest {
   @TempDir Path temporary;
+
+  @Test
+  void everyWorkerReservesThreeDistinctLoopbackPortsUntilRelease() throws Exception {
+    List<ServerSocket> ports = BrowserParallelWorkers.reservePorts(2);
+    try {
+      assertEquals(6, ports.size());
+      assertEquals(6, ports.stream().map(ServerSocket::getLocalPort).distinct().count());
+      for (ServerSocket port : ports) {
+        assertTrue(port.getInetAddress().isLoopbackAddress());
+        try (ServerSocket collision = new ServerSocket()) {
+          assertThrows(
+              IOException.class,
+              () -> collision.bind(new InetSocketAddress("127.0.0.1", port.getLocalPort())));
+        }
+      }
+    } finally {
+      for (ServerSocket port : ports) {
+        port.close();
+      }
+    }
+    for (ServerSocket port : ports) {
+      assertTrue(port.isClosed());
+    }
+  }
 
   private ObjectNode complete() {
     return new ObjectMapper()

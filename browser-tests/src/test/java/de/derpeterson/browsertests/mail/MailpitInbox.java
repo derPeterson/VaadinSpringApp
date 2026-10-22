@@ -33,8 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class MailpitInbox {
   private static final ObjectMapper JSON = new ObjectMapper();
   private final BrowserContext context;
-  private final de.derpeterson.browsertests.i18n.UiTexts texts =
-      de.derpeterson.browsertests.i18n.UiTexts.selected();
+  private final de.derpeterson.browsertests.i18n.UiTexts texts;
   private final String baseUrl = System.getProperty("browser.tests.mailpitUrl");
 
   private final String configuredFooter;
@@ -45,8 +44,16 @@ public final class MailpitInbox {
 
   /** Erwartung stammt beim Konfigurationstest aus der über die UI gespeicherten Fußzeile. */
   public MailpitInbox(BrowserContext context, String configuredFooter) {
+    this(context, configuredFooter, de.derpeterson.browsertests.i18n.UiTexts.selected());
+  }
+
+  public MailpitInbox(
+      BrowserContext context,
+      String configuredFooter,
+      de.derpeterson.browsertests.i18n.UiTexts texts) {
     this.context = context;
     this.configuredFooter = configuredFooter;
+    this.texts = texts;
   }
 
   public record CapturedMail(String id, String recipient, String subject) {}
