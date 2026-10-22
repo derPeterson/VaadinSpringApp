@@ -6,9 +6,9 @@ Die vereinbarte Reihenfolge ist:
 
 - [ ] [Lokales HTTPS gemeinsam abnehmen und abschließen](docs/planung/https.md).
   Die gezielten unbeaufsichtigten HTTPS-Nachweise sind DE/EN bestanden.
-  Der lokale Merge und zugeordnete Sonar-Scan sind erfolgt. Offen bleiben die
-  [sieben Sonar-Findings aus Paket 2](docs/planung/sonar-pakete.md) mit rotem Gate und die gemeinsame
-  Gesamt-Abnahme; die Umsetzung ist ausdrücklich noch nicht abgeschlossen.
+  Der lokale Merge und die Sonar-Bereinigung sind mit grünem Gate nachgewiesen.
+  Offen bleibt die gemeinsame Gesamt-Abnahme; die Umsetzung ist ausdrücklich
+  noch nicht abgeschlossen.
 - [ ] Danach Designkritik mit Stitch auf einem eigenen Branch: eine Spielwiese mit
   vorhandenen Komponenten, Panels, Dialogen und Zuständen zum Ausprobieren aufbauen.
   Den verbindlichen [Theme-Standard](docs/theme.md) als Ausgangspunkt verwenden.

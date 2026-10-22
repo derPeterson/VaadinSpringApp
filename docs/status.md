@@ -5,8 +5,10 @@ Stand: 22.10.2026. Ausschließlich lokale Entwicklung mit austauschbaren Testdat
 ## Ergebnis der großen Testrunde
 
 Die automatisierten Fälle der großen Runde sind vollständig bestanden. Der aktuelle
-HTTPS-Stand hat inzwischen einen zugeordneten Sonar-Scan mit rotem Quality Gate;
-die Gesamt-QA ist damit nicht grün. Geprüft wurde `feature/lokales-https`, Commit
+HTTPS-Stand hat nach lokaler Integration und Sonar-Bereinigung einen zugeordneten
+Scan mit grünem Quality Gate. Die vollständige Browserrunde wurde danach nicht
+erneut ausgeführt; ihre Grenzen und die gezielten Nachweise stehen unten.
+Geprüft wurde in der großen Runde `feature/lokales-https`, Commit
 `fe1f47ee94e27d07ee90a3d6dac8a8daa4f611a4` einschließlich der uncommittierten
 Testergänzungen. Eine revisiongebundene erfolgreiche lokale QA-Baseline lag nicht
 vor; bisheriger Prüfbericht, tatsächliche Änderungen und offener Testbedarf wurden
@@ -100,54 +102,47 @@ und Produktionsimage wurden durch den Nachtlaufumbau nicht verändert.
 
 ## Sonar und verbleibender Abschluss
 
-Sonar-Paket 1 ist auf `codex/sonar-ide-https` umgesetzt und lokal nach main
-integriert. Die kurzlebige Java-Argumentdatei liegt in einer eigenen Startablage
-mit initialen Benutzerrechten und Ressourcenabbau bei Erfolg und Startfehler.
-Normale Diagnose nutzt Logger; das maschinenlesbare READY/PID-Protokoll bleibt
-unverändert. Fehlergrenzen sind konkretisiert, Startfehler behalten ihre Ursache.
+Beide Sonar-Pakete sind auf eigenen Branches umgesetzt und lokal nach `main`
+integriert. Der IDE-Starter schützt seine kurzlebigen Argumentdateien bereits bei
+Erstellung und erhält Fehlerursachen sowie das READY/PID-Protokoll. Die Tests
+trennen Fixturevorbereitung von Fehlerassertions und prüfen gezielt auf
+`IOException`. Geplante HTTPS-Proben ersetzen die Schlafschleife; künstliche
+Caddy-Prozesse warten begrenzt auf den Stop durch ihren Besitzer.
 
-Die 14 ursprünglichen Paket-Findings sind vollständig nachgelesen: zehn durch Code
-behoben, zwei fachlich Accepted und zwei False positives. Eine kleine neue
-Verschachtelungsmeldung aus dem Nachscan ist zusätzlich durch Code behoben.
-Begründungen und Status der vier Entscheidungen sind am Server nachgelesen.
+Paket 2 ist vollständig durch Code behoben: alle sieben Finding-IDs sind im
+Servernachscan als Fixed bestätigt. Keine neuen oder wiedereröffneten Issues,
+keine zusätzlichen Accepted-/False-positive-Entscheidungen. Die bestehenden
+28 Accepted und 9 False positives bleiben unverändert. Die vier Entscheidungen
+von Paket 1 sind direkt an ihren Findings begründet und nachgelesen.
 Keine Regel-, Profil-, Gate- oder Scopeänderung und keine manuelle Fixed-Markierung.
 
-Formatierung und Stilprüfungen sind bestanden. 21 unterschiedliche gezielte
-JUnit-Fälle sind nachgewiesen, einschließlich der zuvor separat aktivierten beiden
-echten Caddy-/Anwendungsstartfälle ohne Windows-Trustimport. Die kleine
-Folgekorrektur ist gezielt nachgeprüft. Auf dem finalen Codestand sind optimierter
-Build und vollständige Anwendungstests erfolgreich: 2.244 erfasst, 2.242 bestanden,
-0 Fehler, zwei erwartete optionale IDE-Skips. Ein frischer isolierter JAR-Start
-mit HTTPS-Profil und In-Memory-Datenbank bestätigt Health 200, direkten HTTP-Login
-403 und Login mit konkreten Proxy-Headern 200. Eigener Prozess beendet, keine
-SMTP-Verbindung. Diese Nachweise ersetzen keine neue vollständige Browser-QA.
+Formatierung und Checkstyle sind bestanden. Alle 21 gezielten JUnit-Fälle der
+beiden betroffenen Klassen sind erfolgreich, einschließlich echtem Caddy- und
+vollständigem Anwendungsstart mit eigener temporärer CA, voller HTTPS-Prüfung,
+frischer In-Memory-Datenbank und Prozessabbau ohne Windows-Trustimport.
+Auf dem integrierten Codestand sind Shared-Installation, optimierter Build und
+vollständige Anwendungstests erfolgreich: 2.244 erfasst, 2.242 bestanden,
+0 Fehler, zwei erwartete optionale IDE-Skips. Diese beiden Fälle sind im gezielten
+Lauf ausdrücklich aktiviert und bestanden. Keine zusätzliche Browserrunde.
 
-Nachscan des Code-Commits `bebd699853aa786dbf5a32ee082761aaef793146`:
-Analyse `0cf8f070-524a-461d-b7a4-7187461a527a` vom 22.10.2026, 10:35:12 UTC;
-Serverauftrag `3ee95a03-a8f6-47e3-9a4e-b161164742f6` **SUCCESS**.
+Nachscan des Code-Commits `5af925df1acba30e15337ba020b0f47b82676a4a`:
+Analyse `bb70315d-1ba4-4ac7-aeec-1ee17f9b6560` vom 22.10.2026, 10:54:15 UTC;
+Serverauftrag `1bca6867-b8b6-454e-a915-778523a66999` **SUCCESS**.
 Die analysierte Revision stimmt mit diesem geprüften Codestand überein.
 Reine Dokumentationsabschlusscommits verändern diese Code-/Testnachweise nicht;
 die jeweils zuletzt hochgeladene Analyse steht im lokalen Sonar-Bericht.
 
-Quality Gate **ERROR** ausschließlich wegen der sieben verbliebenen neuen Issues
-aus Paket 2, zulässig 0. Neue Coverage 82,4 % (Mindestwert 80 %) und neue
-Duplikation 0 % (Höchstwert 3 %) bestehen. Gesamtcode und New Code enthalten
-dieselben sieben offenen Issues: zwei Bugs in Test-Assertions und fünf Code Smells.
-Keine offene Vulnerability, keine Hotspots. 28 Accepted und 9 False positives,
-darunter die vier begründeten Entscheidungen dieses Pakets. Gesamtcoverage 84,9 %,
-Zeilencoverage 87,5 %, Branchcoverage 77,1 %.
+Quality Gate **OK**: keine offenen Issues im Gesamtcode oder New Code, keine
+offenen Vulnerabilities oder Hotspots. Neue Coverage 82,4 % (Mindestwert 80 %),
+neue Duplikation 0 % (Höchstwert 3 %) und neue Issues 0 (zulässig 0) bestehen.
+Gesamtcoverage 84,9 %, Zeilencoverage 87,5 %, Branchcoverage 77,1 %.
 
-Offen: bestätigender Nachscan für [Sonar-Paket 2](planung/sonar-pakete.md).
-Die Testvorbereitung ist von den Fehlerassertions getrennt, die Startfehler prüfen
-gezielt auf `IOException`. Geplante HTTPS-Proben ersetzen die Schlafschleife;
-künstliche Caddy-Prozesse warten begrenzt auf den Stop durch ihren Besitzer.
-Alle 21 gezielten Fälle einschließlich echtem Caddy-/Anwendungsstart sind bestanden,
-ebenso Formatierung und Checkstyle. Keine zusätzliche Browserrunde ausgeführt.
-Der Scanner meldet weiterhin Typauflösungs-/Preview-Warnungen; Hauptmodulumfang
-unverändert, separater Browser-Testmodulcode nicht zusätzlich analysiert.
-Hotspots sind über den geschützten vollständigen REST-Helfer geprüft.
-Für den Scannerhelfer war prozessbezogenes UTF-8 erforderlich; keine System- oder
-Projektkonfiguration geändert. Die erfolgreiche QA-Baseline bleibt bei rotem Gate offen.
+Der Scanner meldet weiterhin Typauflösungs-/Preview-Warnungen bei Java 25 ohne
+aktivierte Preview; dies bleibt eine Analysegrenze und ist kein belegter
+Compilerfehler. Hauptmodulumfang unverändert, separater Browser-Testmodulcode
+nicht zusätzlich analysiert. Hotspots sind über den geschützten vollständigen
+REST-Helfer geprüft. Prozessbezogenes UTF-8 ist für den Scannerhelfer erforderlich;
+keine System- oder Projektkonfiguration wurde dafür geändert.
 
 Es sind keine bestätigten offenen Anwendungsfehler bekannt; siehe [BUGS.md](../BUGS.md).
 Offene automatisierte Testarbeit bleibt im [Testbedarf](testbedarf.md), menschliche

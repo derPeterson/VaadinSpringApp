@@ -49,9 +49,6 @@ Tatsächliche Ergebnisse und Grenzen: [Prüfstand](../status.md).
 
 - [ ] Gemeinsame Gesamt-Abnahme des HTTPS-Features. Die bestehende menschliche
   IDE-/BAT-Abnahme bleibt gültig; keine erneute Pflichtprüfung dieses Komfortstarts.
-- [ ] Die sieben verbliebenen Sonar-Findings aus Paket 2 bearbeiten und mit passendem
-  Nachscan ein grünes Gate nachweisen. Paket 1 ist lokal integriert und nachgeprüft;
-  Gate aktuell ERROR. [Paket 2](sonar-pakete.md) ist beauftragt und in Bearbeitung.
 - [ ] Nach gemeinsamer Abnahme erledigten TODO-Eintrag, diesen Plan und Verweise
   entfernen. Offenen Testbedarf unabhängig erhalten. `docs/status.md` bleibt der
   Stand der großen QA einschließlich ihrer belegten Grenzen.
