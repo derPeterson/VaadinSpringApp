@@ -16,6 +16,7 @@ src/main/frontend/generated/
 app/src/main/frontend/generated/
 pnpmfile.js
 vite.generated.ts
+.vaadin-node-tasks.lock
 
 # Browser drivers for local integration tests
 drivers/

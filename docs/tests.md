@@ -87,7 +87,7 @@ node --test app/src/test/frontend/*.test.mjs
 
 Der Root-Build führt Anwendungstests und die normalen Browser-Helfertests aus,
 keine mit `browser` markierten Journeys. Gezielte Anwendungsbuilds verwenden
-`-pl app -am`; Stilprüfungen laufen mit `-N` zentral im Root. Die Starter-/Docker-
+`-pl app -am`; Stilprüfungen laufen mit `-N` zentral im Root. Die Docker-/Runner-
 und Sonar-Anpassungen sowie deren gesonderte Nachweise bleiben im
 [Multi-Modul-Plan](planung/multi-modul-sonarqube.md) offen.
 
@@ -104,15 +104,26 @@ Frisches Schema und Wiederanlauf desselben Schemas werden separat geprüft.
 einschließlich hartem Besitzerabbruch mit aktiviertem Java-Debugger. Der optionale
 echte Caddy- und Anwendungsstart wird mit `-Dhttps.test.caddy=<absoluter Pfad zur caddy.exe>`
 zugeschaltet: eigene temporäre CA, vollständige HTTPS-Zertifikatsprüfung und
-frische In-Memory-Datenbank ohne `.env`-Import. Der vollständige Starterfall
-benötigt freie IDE-Ports 8080/8081/8443 und verwendet ausschließlich eigene
+frische In-Memory-Datenbank ohne `.env`-Import. Die vollständigen Starterfälle
+benötigen freie IDE-Ports 8080/8081/8443 und verwenden ausschließlich eigene
 Prozesse; ein belegter Port führt zum Fehler, vorhandene Dienste bleiben erhalten.
 Der Anwendungsprozess startet ohne Testklassen und ohne Windows-Trustimport.
 Die zusätzliche menschliche Abnahme des IDE-Komfortstarts ist bestätigt:
 Start, Stop, harter Reset, Debug mit Breakpoint und HotSwap wurden vom Benutzer
 in IntelliJ erfolgreich geprüft.
-Für den vollständigen Starterfall zuvor den optimierten Vaadin-Frontendbuild
-erstellen; dieser Fall verwendet dessen Ressourcen und startet keinen Entwicklungs-Frontendbau.
+Nach dem Multi-Modul-Umbau sind außerdem Start/Stop, Debug und Breakpoint mit dem
+richtigen Anwendungsmodul erneut vom Benutzer bestätigt.
+
+Für die vollständigen Starterfälle zuvor den optimierten Vaadin-Frontendbuild
+erstellen. Die Fälle starten sowohl im Produktions- als auch im Entwicklungsmodus
+mit aktiviertem Java-Debugger. Das isolierte Laufzeitverzeichnis enthält eigene
+Proxy-/CA-Ressourcen; der Vaadin-Projektpfad zeigt auf das echte `app`-Modul.
+Eine bereinigte Kindprozessumgebung verhindert die Übernahme lokaler
+Anwendungskonfiguration. Die HTTPS-Prüfung vergleicht die ausgelieferte CSS-Ressource
+mit der gebauten Classpathressource und kontrolliert den anschließenden Prozessabbau.
+Im Entwicklungsmodus kann Vaadin sein versioniertes `app/src/main/bundles/dev.bundle`
+automatisch erneuern; Änderungen daran prüfen und benennen. Der Lauf startet keinen
+Browser und importiert kein Zertifikat in den Windows-Truststore.
 
 ## Sonar-Helfertests
 

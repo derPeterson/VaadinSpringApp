@@ -170,6 +170,10 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>de.derpeterson.app.Application</mainClass>
+                    <workingDirectory>${project.basedir}/..</workingDirectory>
+                    <systemPropertyVariables>
+                        <vaadin.project.basedir>${project.basedir}</vaadin.project.basedir>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             <plugin>

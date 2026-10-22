@@ -48,9 +48,9 @@ Shared vor seinen Verbrauchern; kein vorheriges manuelles Shared-Install nötig:
 ```
 
 Stilprüfungen laufen einmal zentral im Root mit `-N` über alle Modulquellen;
-Anwendungsartefakte liegen unter `app/target/`. IDE-/HTTPS-, Docker-, Browserstarter-
-und Sonar-Umstellung bleiben im [aktiven Multi-Modul-Plan](planung/multi-modul-sonarqube.md)
-offen. Die folgenden bisherigen Startanleitungen sind dafür noch anzupassen.
+Anwendungsartefakte liegen unter `app/target/`. Docker-, Browserstarter- und
+Sonar-Umstellung bleiben im [aktiven Multi-Modul-Plan](planung/multi-modul-sonarqube.md)
+offen. Der lokale IDE-/HTTPS-Start ist an die Modulstruktur angepasst.
 
 ## Konfiguration und Datenbank
 
@@ -91,6 +91,26 @@ Browser-Neuladen erforderlich. `vite.config.ts` ist für eigene Vite-Anpassungen
 generierte Frontenddateien und `target/` nicht von Hand bearbeiten.
 Classpathressourcen als Streams laden, damit auch das gepackte JAR funktioniert.
 
+Für einen direkten Maven-Entwicklungsstart zuerst Shared samt Root-POM installieren;
+das Startziel danach ausschließlich auf `app` anwenden:
+
+```powershell
+.\mvnw.cmd -pl shared -am install
+.\mvnw.cmd -pl app '-Dspring-boot.run.profiles=https' spring-boot:run
+```
+
+Beim Startziel kein `-am` verwenden, da sonst auch die anderen Reactorprojekte
+das Boot-Startziel ausführen würden. Das Boot-Maven-Plugin setzt das
+Arbeitsverzeichnis auf den Repositoryroot und `vaadin.project.basedir` auf `app`.
+So bleiben `.env`, Daten und Logs im Root, während Vaadin seine Frontendquellen
+im Anwendungsmodul findet. Caddy bei diesem Start separat starten.
+
+Das optimierte JAR ebenfalls vom Repositoryroot aus starten:
+
+```powershell
+java -jar .\app\target\app-1.0-SNAPSHOT.jar --spring.profiles.active=https --vaadin.productionMode=true
+```
+
 ## Lokales HTTPS
 
 TLS endet an Caddy; die Anwendung verwendet intern HTTP. Das Profil `https`
@@ -119,14 +139,23 @@ entfernt; CA-Dateien und fremde Ablagen bleiben unberührt. Kann das Dateisystem
 Rechte nicht sicher setzen, startet der Proxy nicht. Technische Grundlage:
 [initiale ACLs mit Java NIO](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/nio/file/attribute/AclFileAttributeView.html).
 Diese Konfiguration auswählen und **Run** oder **Debug** drücken; anschließend
-`https://localhost:8443/` öffnen. JDK 25 aus dem Modul `app` verwenden.
-Falls die Auswahl nach dem Anlegen noch fehlt, das Projekt bzw. Maven-Projekt neu
-laden. Bei Bedarf lässt sich eine normale Application-Konfiguration mit Hauptklasse
-`de.derpeterson.app.development.HttpsDevelopmentApplication`, Modul `app`, Arbeitsordner
-Projektroot und Programmargumenten `--spring.profiles.active=https --server.port=8080`
-auch manuell auswählen.
+`https://localhost:8443/` öffnen. JDK 25 und den Klassenpfad des Anwendungsmoduls
+mit Quellen unter `app/src/main/java` verwenden. Die gespeicherte Konfiguration
+verwendet das Modul `app`. Maven über die Root-`pom.xml` verknüpfen; die drei
+Module werden daraus gemeinsam eingelesen und nicht zusätzlich einzeln verknüpft.
+Maßgeblich für die Klassenpfadauswahl ist das Anwendungsmodul mit seinen Quellen,
+nicht der Root-Aggregator.
 
-Der Einstieg liegt in `src/main/java/de/derpeterson/app/development`, damit die IDE
+Nach dem Modulumbau im Maven-Fenster **Reload All Maven Projects** ausführen;
+**Reload from Disk** allein synchronisiert das Maven-Modell nicht vollständig.
+Bei einer `ClassNotFoundException` für die Startklasse unter **Run → Edit
+Configurations → Application HTTPS → Use classpath of module** das Anwendungsmodul
+auswählen. Arbeitsordner ist `$PROJECT_DIR$`, die VM-Option lautet
+`"-Dvaadin.project.basedir=$PROJECT_DIR$/app"`. Hauptklasse ist
+`de.derpeterson.app.development.HttpsDevelopmentApplication`, die Programmargumente
+lauten `--spring.profiles.active=https --server.port=8080`.
+
+Der Einstieg liegt in `app/src/main/java/de/derpeterson/app/development`, damit die IDE
 ihn ohne Testklassen startet und Spring keine Testkonfigurationen einliest.
 Dieses Entwicklungspaket wird beim Packen ausdrücklich aus dem Anwendungs-JAR
 ausgeschlossen; dessen Einstieg bleibt `Application`. Der IDE-Einstieg prüft
@@ -193,6 +222,8 @@ Beim direkten IntelliJ-Start der Klasse `Application` im Feld **Program argument
 Run-Konfiguration kann das Feld **Active profiles** auf `https` gesetzt werden.
 `-Dspring-boot.run.profiles=https` gehört ausschließlich zum Maven-Ziel
 `spring-boot:run` und aktiviert beim direkten Klassenstart kein Profil.
+Auch hier das Anwendungsmodul als Klassenpfad, den Repositoryroot als Arbeitsordner
+und `"-Dvaadin.project.basedir=$PROJECT_DIR$/app"` als VM-Option verwenden.
 Danach die Anwendung vollständig neu starten. Direkte Aufrufe von
 `http://localhost:8080/` bzw. `/login` werden im HTTPS-Profil mit 403 abgewiesen;
 der harmlose interne Healthcheck bleibt die Ausnahme. Der äußere Zugang über den

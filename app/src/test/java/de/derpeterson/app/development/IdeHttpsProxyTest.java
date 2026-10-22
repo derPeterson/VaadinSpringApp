@@ -1,5 +1,6 @@
 package de.derpeterson.app.development;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -29,7 +30,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -43,6 +46,8 @@ import javax.net.ssl.TrustManagerFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class IdeHttpsProxyTest {
   @TempDir Path directory;
@@ -222,11 +227,36 @@ class IdeHttpsProxyTest {
   }
 
   @Test
+  void applicationModuleIsSeparateFromTheRuntimeRepository() throws Exception {
+    Path module = Files.createDirectories(directory.resolve("app"));
+    Files.writeString(module.resolve("pom.xml"), "owned module fixture");
+    Path scripts = Files.createDirectories(directory.resolve("scripts/https"));
+    Files.writeString(scripts.resolve("Caddyfile.ide"), "owned proxy fixture");
+    assertEquals(module, HttpsDevelopmentApplication.requireApplicationModule(directory));
+    assertThrows(
+        IOException.class, () -> HttpsDevelopmentApplication.requireApplicationModule(module));
+  }
+
+  @Test
+  void incompleteRepositoryIsRejectedBeforeCreatingRuntimeData() throws Exception {
+    Path module = Files.createDirectories(directory.resolve("app"));
+    Files.writeString(module.resolve("pom.xml"), "owned module fixture");
+    assertThrows(
+        IOException.class, () -> HttpsDevelopmentApplication.requireApplicationModule(directory));
+    assertFalse(Files.exists(directory.resolve("data")));
+    assertFalse(Files.exists(module.resolve("data")));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
   @EnabledIfSystemProperty(named = "https.test.caddy", matches = ".+")
-  void fullIdeApplicationStartsWithoutTestConfigurationsAndCleansUpAfterStop() throws Exception {
+  void fullIdeApplicationStartsWithoutTestConfigurationsAndCleansUpAfterStop(boolean productionMode)
+      throws Exception {
     HttpsDevelopmentApplication.requireFreePorts(8080, 8081, 8443);
-    Path repo = Path.of("").toAbsolutePath();
+    Path repo = Path.of("").toAbsolutePath().getParent();
     Path work = Files.createDirectories(directory.resolve("isolated IDE project"));
+    Path module = Files.createDirectories(work.resolve("app"));
+    Files.copy(repo.resolve("app/pom.xml"), module.resolve("pom.xml"));
     Path scripts = Files.createDirectories(work.resolve("scripts/https"));
     Files.copy(repo.resolve("scripts/https/Caddyfile.ide"), scripts.resolve("Caddyfile.ide"));
     Path output = work.resolve("application-output.txt");
@@ -246,26 +276,44 @@ class IdeHttpsProxyTest {
                   "--app.config.defaults.mail.host=127.0.0.1",
                   "--app.config.defaults.mail.port=" + smtp.getLocalPort(),
                   "--app.config.defaults.mail.smtp.auth=false",
-                  "--vaadin.productionMode=true",
+                  "--vaadin.productionMode=" + productionMode,
+                  "--vaadin.frontend.hotdeploy=false",
                   "--vaadin.launch-browser=false",
                   "--spring.h2.console.enabled=false",
                   "--app.security.expose-h2-console=false"),
               applicationClasspath());
-      Process application =
+      ProcessBuilder applicationBuilder =
           new ProcessBuilder(
                   IdeHttpsProxy.javaExecutable(),
+                  "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=127.0.0.1:0",
                   "-Dhttps.dev.caddy="
                       + Path.of(System.getProperty("https.test.caddy")).toAbsolutePath(),
+                  "-Dvaadin.project.basedir=" + repo.resolve("app"),
+                  "-Dvaadin.productionMode=" + productionMode,
                   "@" + arguments)
               .directory(work.toFile())
               .redirectErrorStream(true)
-              .redirectOutput(output.toFile())
-              .start();
+              .redirectOutput(output.toFile());
+      Set<String> inheritedNames =
+          Set.of(
+              "SYSTEMROOT",
+              "WINDIR",
+              "TEMP",
+              "TMP",
+              "PATH",
+              "USERPROFILE",
+              "APPDATA",
+              "LOCALAPPDATA");
+      applicationBuilder
+          .environment()
+          .keySet()
+          .removeIf(name -> !inheritedNames.contains(name.toUpperCase(Locale.ROOT)));
+      Process application = applicationBuilder.start();
       List<ProcessHandle> ownedChildren = List.of();
       try {
         Path root = work.resolve("data/https/ide/pki/authorities/local/root.crt");
         assertTrue(
-            awaitApplicationReady(application, root),
+            awaitApplicationReady(application, root, output),
             () -> {
               try {
                 return Files.readString(output);
@@ -274,6 +322,31 @@ class IdeHttpsProxyTest {
               }
             });
         assertFalse(Files.readString(output).contains("BeanDefinitionOverrideException"));
+        assertTrue(
+            Files.readString(output).contains("Listening for transport dt_socket at address:"));
+        if (!productionMode) {
+          assertTrue(Files.readString(output).contains("Vaadin is running in DEVELOPMENT mode"));
+          assertTrue(
+              Files.readString(output)
+                  .contains("Starting dev-mode updaters in " + repo.resolve("app") + " folder."));
+        }
+        try (HttpClient client = HttpClient.newBuilder().sslContext(trustOnly(root)).build();
+            InputStream expected =
+                IdeHttpsProxyTest.class.getResourceAsStream(
+                    "/META-INF/resources/custom-theme/cosmos-tokens.css")) {
+          HttpResponse<byte[]> stylesheet =
+              client.send(
+                  HttpRequest.newBuilder(
+                          URI.create("https://localhost:8443/custom-theme/cosmos-tokens.css"))
+                      .timeout(Duration.ofSeconds(5))
+                      .GET()
+                      .build(),
+                  HttpResponse.BodyHandlers.ofByteArray());
+          assertEquals(200, stylesheet.statusCode());
+          assertArrayEquals(expected.readAllBytes(), stylesheet.body());
+        }
+        assertFalse(Files.exists(module.resolve("data")));
+        assertFalse(Files.exists(module.resolve("logs")));
         ownedChildren = application.descendants().toList();
         assertTrue(ownedChildren.size() >= 2);
         IdeHttpsProxy.stopOwnedProcess(application);
@@ -342,18 +415,28 @@ class IdeHttpsProxyTest {
         IdeHttpsProxy.javaExecutable(), "@" + javaArguments(FakeCaddy.class, List.of(arguments)));
   }
 
-  private static boolean awaitApplicationReady(Process application, Path root) throws Exception {
+  private static boolean awaitApplicationReady(Process application, Path root, Path output)
+      throws Exception {
     long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(60);
     try (ScheduledExecutorService probes = Executors.newSingleThreadScheduledExecutor()) {
       while (application.isAlive() && System.nanoTime() < deadline) {
         if (probes
-            .schedule(() -> isLoginReady(root), 250, TimeUnit.MILLISECONDS)
+            .schedule(
+                () -> isLoginReady(root) && developmentBundleReady(output),
+                250,
+                TimeUnit.MILLISECONDS)
             .get(5, TimeUnit.SECONDS)) {
           return true;
         }
       }
       return false;
     }
+  }
+
+  private static boolean developmentBundleReady(Path output) throws IOException {
+    String startup = Files.readString(output);
+    return !startup.contains("Creating a new development mode bundle.")
+        || startup.contains("Development frontend bundle built");
   }
 
   private static boolean isLoginReady(Path root) throws Exception {

@@ -5,7 +5,7 @@
 Die vereinbarte Reihenfolge ist:
 
 - [ ] [Gemeinsames Maven-Multi-Modul-Projekt und SonarQube-Integration](docs/planung/multi-modul-sonarqube.md).
-  Arbeitspaket 1 umgesetzt und geprüft; weitere Pakete und deren Ausführungen noch nicht freigegeben.
+  Arbeitspakete 1 und 2 umgesetzt und geprüft; weitere Pakete nicht freigegeben.
 - [ ] Designkritik mit Stitch auf einem eigenen Branch: eine Spielwiese mit
   vorhandenen Komponenten, Panels, Dialogen und Zuständen zum Ausprobieren aufbauen.
   Den verbindlichen [Theme-Standard](docs/theme.md) als Ausgangspunkt verwenden.

@@ -13,7 +13,7 @@ automatisierter Tests. Pflege und Abnahme: [Testablauf](tests.md#übergabe-offen
 
 | Funktion | Szenario und Erwartung | Zustand |
 | --- | --- | --- |
-| Modul-/Ressourcenpfade und IDE-Starter | Noch offene Starter-/Runnerpfade anpassen; IDE-HTTPS nutzt die richtigen Laufzeitpfade und baut eigene Prozesse sauber ab. Vorhandene Regressionen wiederverwenden. | App-JUnit und normale Browser-Helfertests nach Quellverschiebung bestanden; weitere Laufzeitpfade und optionale echte Starterprüfungen warten auf Pakete 2/3 des [aktiven Plans](planung/multi-modul-sonarqube.md). |
+| Modul-/Ressourcenpfade des Browserrunners | Noch offene Runnerpfade und zugehörige Helfertests anpassen; Ressourcen, Artefaktwahl und isolierter Aufbau/Abbau verwenden die neue Modulstruktur. Vorhandene Regressionen wiederverwenden. | Wartend auf Paket 3 des [aktiven Plans](planung/multi-modul-sonarqube.md). |
 | Gemeinsamer Sonar-Helfer | Gepflegte Offline-Regressionen auf Reactor-Aufrufe, Modulfehler, fehlende Berichte und vollständige Quellen-/Revisionszuordnung erweitern. Fehler verhindern einen als vollständig erfolgreichen Upload; Sicherheits- und Serverabschlussfälle erhalten. | Wartend auf Umsetzung; technische Python-Helferprüfung entsprechend der Testanleitung. |
 | Modulübergreifende Coverage | Vorhandene App-/Helfertests für Shared-Regeln nutzen; JaCoCo ordnet Ausführung den richtigen App-/Shared-Quellen zu. Fehlender Report wird von gemessener Null unterschieden, Testcode nicht als Anwendungscode gezählt. | Wartend auf Coverage-Umstellung; vorhandene Tests/Reportprüfungen passend erweitern. |
 

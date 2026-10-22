@@ -28,9 +28,12 @@ public final class HttpsDevelopmentApplication {
       throw new IllegalStateException("The HTTPS IDE launcher requires Windows and Java 25");
     }
     Path repo = Path.of("").toAbsolutePath().normalize();
+    Path module = requireApplicationModule(repo);
+    // Laufzeitdaten bleiben im Root; Vaadin muss die Quellen im app-Modul finden.
+    System.getProperties().putIfAbsent("vaadin.project.basedir", module.toString());
     Path caddy =
-        Path.of(System.getProperty("https.dev.caddy", "data/https/tools/caddy.exe"))
-            .toAbsolutePath();
+        repo.resolve(System.getProperty("https.dev.caddy", "data/https/tools/caddy.exe"))
+            .normalize();
     verifyCaddy(caddy);
     requireFreePorts(8080, 8081, 8443);
     // Ein DevTools-Neustart des Main würde einen zweiten Proxy starten. Java-Debugging bleibt
@@ -64,6 +67,17 @@ public final class HttpsDevelopmentApplication {
       }
       throw failure;
     }
+  }
+
+  static Path requireApplicationModule(Path repository) throws IOException {
+    Path root = repository.toAbsolutePath().normalize();
+    Path module = root.resolve("app");
+    if (!Files.isRegularFile(module.resolve("pom.xml"))
+        || !Files.isRegularFile(root.resolve("scripts/https/Caddyfile.ide"))) {
+      throw new IOException(
+          "Start Application HTTPS with the repository root as working directory; app/pom.xml and scripts/https/Caddyfile.ide are required.");
+    }
+    return module;
   }
 
   static void verifyCaddy(Path executable) throws IOException, InterruptedException {

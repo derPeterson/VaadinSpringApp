@@ -2,8 +2,10 @@
   <configuration default="false" name="Application HTTPS" type="Application" factoryName="Application" singleton="true">
     <option name="MAIN_CLASS_NAME" value="de.derpeterson.app.development.HttpsDevelopmentApplication" />
     <module name="app" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
     <option name="PROGRAM_PARAMETERS" value="--spring.profiles.active=https --server.port=8080" />
     <shortenClasspath name="ARGS_FILE" />
+    <option name="VM_PARAMETERS" value="&quot;-Dvaadin.project.basedir=$PROJECT_DIR$/app&quot;" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

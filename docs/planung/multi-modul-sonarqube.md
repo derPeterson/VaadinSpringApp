@@ -1,8 +1,9 @@
 # Gemeinsames Maven-Projekt und vollständige SonarQube-Analyse
 
-Status: Arbeitspaket 1 ist umgesetzt und mit Build-/JUnit-/Stilprüfungen nachgewiesen.
-Offen sind die Pakete 2 bis 7; ihre Umsetzung ist noch nicht freigegeben.
-Keine Browserjourneys, eigenständigen Anwendungsstarts, Scans, Commits, Merges oder Pushes.
+Status: Arbeitspakete 1 und 2 sind umgesetzt und mit passenden Build-/JUnit-/
+Stilprüfungen nachgewiesen. Der angepasste IDE-Start ist vom Benutzer mit
+Start/Stop, Debug und Breakpoint bestätigt. Pakete 3 bis 7 sind noch nicht freigegeben.
+Keine Browserjourneys, Scans, Commits, Merges oder Pushes.
 Branch: `feature/multi-modul-sonarqube`, Basis: lokales `main`,
 `93086b9d73b00280f3f1e0e560599dc9c37f9656`. Arbeitsstand vor Plananlage sauber.
 `BUGS.md` enthält keine bestätigten offenen Anwendungsfehler.
@@ -76,30 +77,29 @@ gezielter App-/Shared-Paketbuild mit `-pl app -am` ohne Tests zu wiederholen,
 Shared-Auswahl samt leerem Abhängigkeitsbaum, 12 Frontend-Offlinetests sowie
 Spotless apply/check, Checkstyle und `git diff --check` bestanden. Das gepackte
 App-JAR enthält Schema, DE-/EN-Ressourcen und Shared-JAR, keine IDE-Werkzeuge.
-Die beiden optionalen echten IDE-Starterfälle wurden nicht aktiviert.
+Die optionalen echten Starterprüfungen wurden anschließend in Paket 2 aktiviert.
 
-Dies ist kein vollständiger Featureabschluss und keine neue große QA. IDE-/HTTPS-
-Laufzeitpfade, Docker, Browserstarter, optionale Browser-Coverage und Sonar-Helfer
-sind auf diesem Zwischenstand noch nicht umgestellt oder erneut abgenommen.
+IntelliJ-Konfiguration und Boot-Maven-Plugin setzen das Laufzeitverzeichnis
+explizit auf den Repositoryroot und den Vaadin-Projektpfad auf `app`. Die isolierten
+Starter-/HTTPS-Regressionen sind mit 24 bestandenen Fällen nachgewiesen, einschließlich
+Entwicklungs-/Produktionsmodus, Debugger, TLS-/CSS-Prüfung und Prozessabbau. Auch der
+isolierte Start des gepackten JARs ist bestanden. Das Entwicklungsbundle wurde beim
+echten Entwicklungsstart automatisch neu erzeugt; Paket-/Lockdateien sind unverändert.
+Der optimierte Paketbuild, Spotless apply/check, Checkstyle, das effektive
+Boot-Maven-Modell und die PowerShell-Syntaxprüfungen sind erfolgreich. Die Root-BAT-
+und PowerShell-Einstiege behalten ihre bisherigen Rootpfade und die bestehende CA.
+Die zunächst fehlende IntelliJ-Startklasse war dem falschen Modulklassenpfad
+zugeordnet; Run/Stop, Debug und Breakpoint sind vom Benutzer erfolgreich bestätigt.
+Nach dem erneuten Verknüpfen ausschließlich der Root-POM heißt das Anwendungsmodul
+`app`; die gespeicherte Run-Konfiguration verwendet diese eindeutige Zuordnung.
+Der Benutzer hat die Funktion auch nach diesem Maven-Neuimport bestätigt.
+Die Entwicklungshilfe beschreibt die gemeinsame Maven-Verknüpfung und Modulwahl.
+
+Dies ist kein vollständiger Featureabschluss und keine neue große QA. Docker,
+Browserstarter, optionale Browser-Coverage und Sonar-Helfer bleiben offen.
 Die bestehende Sonar-Analyse ist kein Nachweis für die neue Struktur.
 
 ## Offene Arbeitspakete
-
-### 2. Lokale Entwicklung und IDE-/HTTPS-Komfortstart
-
-Gespeicherte Run-Konfiguration, Maven-Startbefehle, eigene Vite-Anpassungen,
-BAT-/PowerShell-Einstiege und pfadabhängige Startertests auf die neue Struktur
-abstimmen. Vaadin muss im Entwicklungsmodus das richtige Frontend finden.
-IDE-Start und gepackter JAR-Start benötigen einen eindeutigen Vertrag für Repository-,
-Modul- und Laufzeitverzeichnis; keine Abhängigkeit von zufälligem `user.dir`.
-Root-Datenpfade, Proxykonfiguration, Ports, eigene Prozessaufsicht und CA-Vertrauen
-erhalten. Keine zweite CA-Einrichtung durch die Quellverschiebung.
-
-Nachweis nach Freigabe: bestehende isolierte Starter-/HTTPS-Regressionen und
-Ressourcentests wiederverwenden. Run/Stop und Debug der angepassten IDE-Konfiguration
-gezielt gemeinsam prüfen; weitere bereits abgenommene IDE-Eigenschaften nur bei
-betroffenen Änderungen nachprüfen. Bestehende Entwicklerprozesse bleiben unberührt.
-Abhängigkeit: Paket 1. Risiko: Modul- und Laufzeitverzeichnis werden verwechselt.
 
 ### 3. Docker, Browserrunner und Testressourcen
 
@@ -197,8 +197,8 @@ und erledigte TODO-/Dokumentationsverweise entfernen. Kein Push ohne Auftrag.
 
 ## Freigaben und Abschlusskriterien
 
-Die Freigabe für Arbeitspaket 1 ist erfüllt; danach wird angehalten.
-Die übrigen Pakete benötigen einen weiteren Umsetzungsauftrag; nötige eigene
+Die freigegebenen Arbeitspakete 1 und 2 sind umgesetzt und geprüft.
+Pakete 3 bis 7 benötigen einen weiteren Umsetzungsauftrag; nötige eigene
 isolierte Anwendungs-/Dockerstarts, Browser DE/EN sowie main-Integration und Upload
 im jeweiligen Auftrag ausdrücklich mit erfassen. Keine automatische große QA,
 Sonar-Bereinigung, Commits oder Merges aus bloßer Planabnahme.
