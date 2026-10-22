@@ -12,7 +12,7 @@ Prozesskanäle nicht durch zusätzliche Loggerformatierung verändern.
 
 ## Pegel und Diagnose
 
-Normalbetrieb ist INFO. Die Dateiausgabe steht in `src/main/resources/logback-spring.xml`;
+Normalbetrieb ist INFO. Die Dateiausgabe steht in `app/src/main/resources/logback-spring.xml`;
 Spring-Pegel in `application.properties`. Für eine Untersuchung gezielt einen Dienst
 auf DEBUG setzen, danach wieder zurückstellen.
 

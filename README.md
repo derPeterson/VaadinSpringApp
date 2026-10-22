@@ -43,13 +43,12 @@ entsteht unter `app/target/`. Gezielter Build mit benötigtem Shared-Modul:
 .\mvnw.cmd -pl app -am verify -Pproduction -Dvaadin.productionMode=true
 ```
 
-Der Multi-Modul-Umbau ist teilweise umgesetzt: Reactor, lokaler IDE-/HTTPS-Start,
-Docker-Build und Browserstarter sind angepasst und gezielt geprüft. Gemeinsamer
-Java-Analyseumfang und modulübergreifende JUnit-Coverage sind lokal eingerichtet.
-Der geschützte Sonar-Ablauf und die Projekt-Skills sind auf den gemeinsamen Umfang
-umgestellt. Gesamtprüfung und Servernachweis bleiben in den weiteren
-[Arbeitspaketen](docs/planung/multi-modul-sonarqube.md) offen. Eine neue vollständige
-Browserrunde DE/EN ist damit noch nicht nachgewiesen.
+Reactor, lokaler IDE-/HTTPS-Start, Docker-Build, Browserstarter und gemeinsamer
+Coverage-/Sonar-Ablauf sind eingerichtet. Die gemeinsame Funktionsprüfung samt
+vollständiger Browserrunde DE/EN am selben aktuellen Image ist bestanden;
+Ergebnisse und Grenzen stehen im [Prüfstand](docs/status.md). Main-Integration,
+Sonar-Servernachweis und gemeinsame Gesamtabnahme bleiben im
+[Multi-Modul-Plan](docs/planung/multi-modul-sonarqube.md) offen.
 
 Der lokale HTTPS-Zugang ist `https://localhost:8443`; dafür den Caddy-Proxy und
 das Zertifikatsvertrauen gemäß [Entwicklungsanleitung](docs/entwicklung.md#lokales-https)

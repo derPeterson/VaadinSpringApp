@@ -220,7 +220,8 @@ keine Anwendung und keinen Trustimport. Er benötigt die eingerichtete Test-CA u
 einen vorhandenen Caddy. Beispiel aus dem Projektroot:
 
 ```powershell
-.\mvnw.cmd -f browser-tests/pom.xml test '-Dtest=BrowserTlsVerificationTest' `
+.\mvnw.cmd -pl browser-tests -am test '-Dtest=BrowserTlsVerificationTest' `
+  '-Dsurefire.failIfNoSpecifiedTests=false' `
   '-Dbrowser.tests.excludedGroups=none' '-Dbrowser.tests.tlsProbe=true' `
   '-Dbrowser.tests.caddyExecutable=C:/Dev/Tools/caddy.exe'
 ```
@@ -231,7 +232,7 @@ gehört dieser Prozess-/Browsertest weder zu `-ReportingTests` noch zur Suite `a
 
 ## Aufbau und Pflege
 
-| Bereich unter `src/test/java/de/derpeterson/browsertests/` | Aufgabe |
+| Bereich unter `browser-tests/src/test/java/de/derpeterson/browsertests/` | Aufgabe |
 | --- | --- |
 | `suites/` | Unabhängige fachliche Fälle |
 | `pages/` | Wiederkehrende echte UI-Aktionen, Vaadin-Wartebedingungen |

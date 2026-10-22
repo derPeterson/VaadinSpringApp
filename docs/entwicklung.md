@@ -3,7 +3,8 @@
 ## Voraussetzungen und Aufbau
 
 JDK 25 und der Maven Wrapper sind verbindlich. Die tatsächlichen Bibliotheksversionen
-stehen in `pom.xml`; Node-Abhängigkeiten in `package-lock.json`. Nicht neben diesen
+stehen in den Modul-POMs und der Root-`pom.xml`; Node-Abhängigkeiten in
+`app/package-lock.json`. Nicht neben diesen
 Dateien eine zweite Versionsliste pflegen. Docker Desktop verwendet Linux-Container.
 
 Die Paketnamen beziehen sich auf `app/src/main/java/de/derpeterson/app/`:
@@ -33,6 +34,7 @@ Die Paketnamen beziehen sich auf `app/src/main/java/de/derpeterson/app/`:
 | `app/src/main/resources/META-INF/resources/{custom-theme,icons}` | Gemeinsames Theme und zusätzliche Icons |
 | `app/src/test`, `browser-tests` | Technische Tests, echte Browserjourneys und deren Runner |
 | `scripts/sonar` | Lokale Codex-/Sonar-Anbindung, geschützter Zugang und main-Scanner; keine Anwendungslogik |
+| `scripts/coverage`, `coverage-report` | Gemeinsamer Offline-Prüfer und technisches JaCoCo-Berichtsmodul im optionalen Profil `coverage` |
 | `.agents/skills` | Codex-Projektabläufe; Bedienung unter [Arbeiten mit Codex](codex-skills.md) |
 
 Die Root-POM aggregiert alle drei Module. Shared und Browser-Tests erben die neutrale
@@ -51,7 +53,8 @@ Stilprüfungen laufen einmal zentral im Root mit `-N` über alle Modulquellen;
 Anwendungsartefakte liegen unter `app/target/`. IDE-/HTTPS-Start, Docker-Build und
 Browserstarter sind an die Modulstruktur angepasst. Gemeinsamer Java-Analyseumfang
 und JUnit-Coverage sind konfiguriert. Der geschützte Sonar-Ablauf verwendet ebenfalls
-den vollständigen Reactor. Gesamtprüfung und Servernachweis bleiben im
+den vollständigen Reactor. Die gemeinsame Funktionsprüfung ist im [Prüfstand](status.md)
+belegt; Main-Integration und Servernachweis bleiben im
 [aktiven Multi-Modul-Plan](planung/multi-modul-sonarqube.md) offen.
 
 ## Konfiguration und Datenbank
@@ -89,7 +92,7 @@ als Build-Eingaben oder Dokumentationsarchiv übernehmen.
 
 Java-/Konfigurationsänderungen benötigen Build und Neustart. Im Entwicklungsmodus
 lädt Vaadin die Quellstyles; bei optimiertem Frontend sind Neubau und anschließendes
-Browser-Neuladen erforderlich. `vite.config.ts` ist für eigene Vite-Anpassungen;
+Browser-Neuladen erforderlich. `app/vite.config.ts` ist für eigene Vite-Anpassungen;
 generierte Frontenddateien und `target/` nicht von Hand bearbeiten.
 Classpathressourcen als Streams laden, damit auch das gepackte JAR funktioniert.
 
@@ -576,6 +579,6 @@ zuverlässig schließen, üblicherweise mit `try`-with-resources. Ressourcen nic
 `new File("src/main/resources/...")` oder die Annahme einer normalen Datei im JAR öffnen.
 Öffentliche Theme-/Iconressourcen liegen unter `META-INF/resources/`.
 
-`src/main/frontend/generated/`, `vite.generated.ts` und `target/` werden von Werkzeugen
-erzeugt und nicht von Hand bearbeitet. Eigene Vite-Konfiguration gehört in
-`vite.config.ts`. Die [Theme-Anleitung](theme.md) beschreibt Stylesheets und Ladereihenfolge.
+`app/src/main/frontend/generated/`, `app/vite.generated.ts` und die Modul-`target/`-Ordner
+werden von Werkzeugen erzeugt und nicht von Hand bearbeitet. Eigene Vite-Konfiguration gehört in
+`app/vite.config.ts`. Die [Theme-Anleitung](theme.md) beschreibt Stylesheets und Ladereihenfolge.

@@ -58,7 +58,7 @@ die Gerätevariante als BLOCKIERT führen.
 
 ## Mailbeispiele zur Sichtprüfung
 
-[`ManualEmailPreviewIT`](../../src/test/java/de/derpeterson/app/manual/ManualEmailPreviewIT.java)
+[`ManualEmailPreviewIT`](../../app/src/test/java/de/derpeterson/app/manual/ManualEmailPreviewIT.java)
 sendet vorhandene Mailvorlagen an genau ein ausdrücklich angegebenes Postfach.
 Er ist durch seinen `*IT`-Namen außerhalb des normalen `mvn test`-Laufs und zusätzlich
 ohne `-Dmail.preview.send=true` deaktiviert. Kein `@Disabled` entfernen.
@@ -86,7 +86,7 @@ Es werden weder `.env` noch die Anwendungsdatenbank geladen; kein Anwendungsstar
 Alternativ mit denselben lokalen Umgebungsvariablen vom Projektroot starten:
 
 ```powershell
-.\mvnw.cmd '-Dtest=ManualEmailPreviewIT' '-Dmail.preview.send=true' test
+.\mvnw.cmd -pl app -am test '-Dtest=ManualEmailPreviewIT' '-Dsurefire.failIfNoSpecifiedTests=false' '-Dmail.preview.send=true'
 ```
 
 Der Test verwendet den normalen MIME-Versand einschließlich eingebettetem Logo und

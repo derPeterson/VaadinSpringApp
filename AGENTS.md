@@ -104,7 +104,7 @@
 - Serverseitige Ressourcen über Classpath-Streams laden. Sie müssen auch im gepackten
   JAR funktionieren; keine Abhängigkeit von lokalen `src/`-Dateipfaden einführen.
 - Generierte Frontenddateien, `vite.generated.ts` und Buildausgaben nicht manuell
-  bearbeiten. Eigene Vite-Anpassungen gehören in `vite.config.ts`.
+  bearbeiten. Eigene Vite-Anpassungen gehören in `app/vite.config.ts`.
 
 ## 7. Logging
 

@@ -8,7 +8,7 @@ und wird bei jeder ausdrücklich freigegebenen Erweiterung im selben Arbeitsstan
 
 Das gemeinsame Template besteht aus den vorhandenen Theme-CSS-Dateien und ihren
 Tokens. Es gibt derzeit keine separate Template-Eingabedatei und keinen eigenen
-CSS-Generator. Die CSS-Dateien unter `src/main/resources/META-INF/resources/custom-theme/`
+CSS-Generator. Die CSS-Dateien unter `app/src/main/resources/META-INF/resources/custom-theme/`
 sind die gepflegten Quellen; der optimierte Vaadin-Build erzeugt die ausgelieferten
 Frontend-/JAR-Ressourcen. Generierte Ausgaben nicht von Hand bearbeiten.
 
@@ -82,7 +82,7 @@ zusätzliche globale Feldregeln sind dafür nicht nötig.
 
 ## Dateien und Ladereihenfolge
 
-Basis: `src/main/resources/META-INF/resources/custom-theme/`.
+Basis: `app/src/main/resources/META-INF/resources/custom-theme/`.
 
 | Datei | Aufgabe |
 | --- | --- |

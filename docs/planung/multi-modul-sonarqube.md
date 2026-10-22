@@ -1,217 +1,87 @@
 # Gemeinsames Maven-Projekt und vollständige SonarQube-Analyse
 
-Status: Arbeitspakete 1 bis 5 sind umgesetzt und mit passenden Build-/JUnit-/
-Stilprüfungen nachgewiesen. Der angepasste IDE-Start ist vom Benutzer mit
-Start/Stop, Debug und Breakpoint bestätigt. Docker-/Runner-/Coveragepfade sind
-umgestellt und mit eigenen isolierten Testressourcen nachgewiesen.
-Gemeinsamer Java-Analyseumfang und JUnit-Coverage sind lokal konfiguriert und geprüft.
-Der geschützte Sonar-Ablauf und alle fünf Projekt-Skills sind umgestellt und
-offline geprüft. Pakete 6 und 7 sind noch nicht freigegeben.
-Pakete 3 und 4 sind auf dem Feature-Branch committet. Für Paket 5 sind weder Commit
-noch Integration nach `main` oder Gesamtabschluss beauftragt.
-Keine Browserjourneys, Scans, Merges oder Pushes.
-Branch: `feature/multi-modul-sonarqube`, Basis: lokales `main`,
-`93086b9d73b00280f3f1e0e560599dc9c37f9656`. Arbeitsstand vor Plananlage sauber.
+Status: Arbeitspakete 1 bis 6 sind umgesetzt und passend geprüft. Offen sind nur
+Integration, Sonar-Servernachweis und gemeinsame Abnahme aus Paket 7.
+Paket 6 bleibt uncommittiert; kein Commit, Merge, Push oder Scan beauftragt.
+
+Branch: `feature/multi-modul-sonarqube`. Basis: lokales `main`,
+`93086b9d73b00280f3f1e0e560599dc9c37f9656`. Geprüfter Code-Commit vor den
+Dokumentationskorrekturen aus Paket 6:
+`e9f5884ff923118cf2815380e37e55e8f53cd377`.
 `BUGS.md` enthält keine bestätigten offenen Anwendungsfehler.
 
-## Ziel und geprüfter Ausgangsstand
+## Ziel und geltende Entscheidungen
 
 Anwendung, Shared und Browser-Tests gehören dauerhaft zu derselben Anwendung.
-Sie erhalten einen gemeinsamen Maven-Einstieg und werden unter dem bestehenden
-Sonar-Projekt `vaadin-spring-app` mit einem gemeinsamen Quality Gate analysiert.
-Jede Analyse muss vollständig demselben Quellstand zugeordnet sein.
+Der gemeinsame Maven-Reactor und Sonar-Einstieg verwenden weiterhin genau den
+Projektkey `vaadin-spring-app` mit einem gemeinsamen Quality Gate. Jede Analyse
+muss vollständig demselben Quellstand zugeordnet sein.
 
-Ausgang vor dem Umbau: drei eigenständige Maven-Projekte ohne gemeinsamen Aggregator.
-Die bisherige Root-POM baut das Anwendungs-JAR; Shared wird vorher separat installiert.
-Der geschützte Sonar-Helfer analysiert anschließend nur das Hauptmodul.
-Shared enthält fünf Java-Dateien, das Browsermodul 76 Java-Dateien im Testquellbaum.
-Die bisherige grüne Analyse gilt für ihren dokumentierten bisherigen Umfang;
-für die Planung wurde keine neue Analyse durchgeführt.
+- Root-POM als neutraler Aggregator; `app` behält den Boot-Parent. Boot-/Vaadin-
+  Vorgaben und Anwendungsstart bleiben auf `app` begrenzt. Java 25 und bestehende
+  Bibliotheksversionen bleiben erhalten.
+- `shared` bleibt ein unabhängiges Java-JAR ohne Spring-/Vaadin-Abhängigkeit.
+  App und Browser-Tests konsumieren dieses JAR, keine zusätzlich eingehängten Quellen.
+- Anwendung und Frontend liegen unter `app/`, Browser-Testcode unter `browser-tests/`.
+  Shared wird im Reactor vor seinen Verbrauchern gebaut; Stilprüfung einmal im Root
+  mit `-N`. Bestehende lokale Daten-, Log-, Konfigurations- und CA-Ablagen bleiben erhalten.
+- Das optionale Profil `coverage` ergänzt nur das technische POM-Modul
+  `coverage-report`. App und Shared sind Coverage-Ziele; Browsercode bleibt Testcode
+  und liefert Helfermessdaten. Keine pauschalen neuen Quell-/Coverage-Ausschlüsse.
+- Der geschützte Sonar-Helfer baut/installiert den gesamten Reactor mit gleichen
+  Profilen für Build, Maven-Modell und Scanner. Der gemeinsame Coverage-Prüfer
+  verhindert unvollständige Nachweise vor genau einem Upload. Hauptbranch,
+  Sauberkeit, Scanlock, sichere Tokenbehandlung und konkreter Serverabschluss bleiben Pflicht.
+- Normale Maven-Prüfungen starten keine Browserjourneys, Container oder Trustimporte.
+  Freigegebene Browserläufe verwenden getrennte Worker und dasselbe unveränderliche
+  Image. Keine Entwicklerdaten oder fremden Prozesse als Fixtures, keine echten Mails
+  und keine TLS-Fehlerausnahmen. Der eingefrorene OpenCode-Workflow bleibt unverändert.
 
-Konkrete Umbaustellen sind unter anderem `Dockerfile` und `.dockerignore`,
-`browser-tests/run.ps1`, dessen Ressourcenverweis auf `../src/main/resources`,
-`BrowserCoverage`, der IDE-Starter mit dem bisherigen Arbeitsverzeichnis als
-Repositoryroot, pfadabhängige Ressourcen-/JUnit-Tests sowie die Root-Stilprüfungen.
+Gültiger Aufbau und Bedienung: [Entwicklung](../entwicklung.md),
+[Tests](../tests.md), [Docker](../docker/README.md),
+[Browseranleitung](../../browser-tests/README.md) und [Codex-Skills](../codex-skills.md).
 
-## Vorgeschlagenes Zielbild
+## Aktueller Nachweis und Freigaben
 
-```text
-pom.xml                 Gemeinsamer Aggregator und gemeinsame Buildregeln
-app/                    Spring-Boot-/Vaadin-Anwendung samt Quellen und Frontend
-shared/                 Eigenes Java-JAR mit gemeinsamen Texten und Regeln
-browser-tests/          Browserfälle, Runner und technische Helfertests
-scripts/, config/       Gemeinsame Werkzeuge und Prüfvorgaben
-docs/, .agents/         Dokumentation und Projektabläufe
-```
+Die gemeinsame Funktionsprüfung ist im [Prüfstand](../status.md) dokumentiert:
+frischer optimierter Reactor-Install, 2.244 App-JUnit bestanden und zwei erwartete
+optionale Skips, 83 Browser-Helfer, 44 Sonar- und 18 Coverage-Offlinefälle sowie
+12 Frontendtests bestanden. Isolierter JAR-Start und Browser `all` DE/EN mit je
+161/161 Fällen sind einschließlich Aufbau/Abbau erfolgreich. Beide Sprachen
+verwenden dasselbe aktuelle Image; kein Zertifikatsdialog, keine Truständerung
+oder verbliebene eigene Workerressource.
 
-- Root-POM mit Packaging `pom`; Modulnamen und bestehende JAR-Koordinaten möglichst
-  erhalten. Gemeinsame Java-/Pluginvorgaben zentral verwalten. Spring-Boot-/Vaadin-
-  Abhängigkeiten, Repackage, Frontendbau, Startziele und Profil `it` bleiben auf `app`
-  begrenzt. Shared und Browser-Tests bekommen keine Anwendungsabhängigkeit.
-- `app` und Browser-Tests konsumieren weiterhin das Shared-JAR, keine eingehängten
-  Shared-Quellen. Shared bleibt frei von Spring und Vaadin.
-- Ein Reactor-Build baut benötigte Module in Abhängigkeitsreihenfolge. Gezielte
-  Modulbuilds bleiben möglich. Root-Aufrufe führen nur ausdrückliche Ziele aus;
-  der bisherige automatische Anwendungsstart ohne Ziel wird nicht vererbt.
-- Eigene Vaadin-/Frontendquellen, Frontendtests und zugehörige Konfiguration gehören
-  zu `app`. Generierte Frontenddateien entstehen durch den Build; keine manuellen
-  Änderungen an generierten Inhalten und keine ungefragten Versionsupdates.
-- Wrapper, gemeinsame BAT-Einstiege und HTTPS-Werkzeuge bleiben im Repositoryroot.
-  Bestehende lokale `.env`, Daten-, Log- und CA-Ablagen bleiben an ihrem Ort und
-  werden weder gelesen noch verschoben oder als Tests verwendet. Arbeitsverzeichnis
-  und Modulpfad werden an den Einstiegspunkten ausdrücklich passend festgelegt.
-- Normales `test`/`verify` und der Sonar-Ablauf starten keine Browserjourneys,
-  Container, Trustimporte oder echte Mails. Die Helfertests im Browsermodul bleiben
-  ausführbar; bestehende Browser-Tags und die Workerisolation bleiben erhalten.
+IDE-Start/Stop, harter Reset, Debug/Breakpoint und HotSwap sind vom Benutzer bestätigt;
+Start/Stop und Debug nach Maven-Neuverknüpfung mit eindeutigem Modul `app` ebenfalls.
+Diese Abnahmen nicht erneut zur Pflicht machen. Pakete 1 bis 5 sind committet;
+Paket 6 ist technisch abgeschlossen und uncommittiert.
 
-## Aktueller Teilstand
+Paket 7 benötigt einen weiteren Auftrag mit ausdrücklicher Commit-/Merge- und
+Scanfreigabe. Der erfolgreiche lokale Teststand ist keine Main-Integration,
+Serveranalyse oder gemeinsame Gesamtabnahme. Keine automatische Sonar-Bereinigung.
 
-Die Root-POM aggregiert `shared`, `app` und `browser-tests`. Die Anwendungsquellen
-und eigenen Frontenddateien liegen unter `app`; alle 365 verschobenen Dateien sind
-inhaltlich unverändert. `app` behält seinen Boot-Parent mit explizit leerem
-`relativePath`; Shared und Browser-Tests erben die neutrale Root-POM. App-Abhängigkeiten
-und verbleibende Pluginversionen sowie der Browser-Abhängigkeitsbaum sind gegenüber
-dem Ausgang unverändert. Stilprüfungen laufen mit `-N` einmal zentral über alle Module.
-Der originale Text-/Mailressourcenverweis des Browsermoduls ist bereits angepasst,
-damit die normalen Helfertests im Reactor funktionieren. Der Browserstarter wählt
-Shared und Browsermodul gemeinsam über die Root-POM aus, ohne separates Install.
-
-Nachgewiesen: optimierter `clean verify` des gesamten Reactors mit eigener, zunächst
-leerer Maven-Ablage ohne installierte Projektartefakte; 2.242 App-JUnit bestanden,
-zwei erwartete optionale IDE-Skips, 75 Browser-Helfertests bestanden. Zusätzlich
-gezielter App-/Shared-Paketbuild mit `-pl app -am` ohne Tests zu wiederholen,
-Shared-Auswahl samt leerem Abhängigkeitsbaum, 12 Frontend-Offlinetests sowie
-Spotless apply/check, Checkstyle und `git diff --check` bestanden. Das gepackte
-App-JAR enthält Schema, DE-/EN-Ressourcen und Shared-JAR, keine IDE-Werkzeuge.
-Die optionalen echten Starterprüfungen wurden anschließend in Paket 2 aktiviert.
-
-IntelliJ-Konfiguration und Boot-Maven-Plugin setzen das Laufzeitverzeichnis
-explizit auf den Repositoryroot und den Vaadin-Projektpfad auf `app`. Die isolierten
-Starter-/HTTPS-Regressionen sind mit 24 bestandenen Fällen nachgewiesen, einschließlich
-Entwicklungs-/Produktionsmodus, Debugger, TLS-/CSS-Prüfung und Prozessabbau. Auch der
-isolierte Start des gepackten JARs ist bestanden. Das Entwicklungsbundle wurde beim
-echten Entwicklungsstart automatisch neu erzeugt; Paket-/Lockdateien sind unverändert.
-Der optimierte Paketbuild, Spotless apply/check, Checkstyle, das effektive
-Boot-Maven-Modell und die PowerShell-Syntaxprüfungen sind erfolgreich. Die Root-BAT-
-und PowerShell-Einstiege behalten ihre bisherigen Rootpfade und die bestehende CA.
-Die zunächst fehlende IntelliJ-Startklasse war dem falschen Modulklassenpfad
-zugeordnet; Run/Stop, Debug und Breakpoint sind vom Benutzer erfolgreich bestätigt.
-Nach dem erneuten Verknüpfen ausschließlich der Root-POM heißt das Anwendungsmodul
-`app`; die gespeicherte Run-Konfiguration verwendet diese eindeutige Zuordnung.
-Der Benutzer hat die Funktion auch nach diesem Maven-Neuimport bestätigt.
-Die Entwicklungshilfe beschreibt die gemeinsame Maven-Verknüpfung und Modulwahl.
-
-Docker baut `app` mit benötigtem Shared-Modul im Reactor und übernimmt das JAR aus
-`app/target/`. Der tatsächlich exportierte Buildkontext enthält nur 374 benötigte
-Dateien (rund 5,38 MB), keine lokalen Daten, Logs, `.env`, Browserbelege, Buildausgaben
-oder Abhängigkeiten. Browser-POM nur zur Reactor-Erkennung, keine Browserjourneys im
-Imagebuild. App-/Shared-Klassen und die Java-Quellen für optionale
-Browser-Coverage stammen aus demselben getesteten Image; kein lokaler Klassen-/
-Quellenfallback. Workerparallelisierung und gemeinsame Imagezuordnung bleiben erhalten.
-
-Nachgewiesen: 83 Browser-Helferfälle einschließlich echter PowerShell-Fixtures,
-erfolgreicher Reactor-Klassenpfadaufbau ohne Shared-Install, Spotless apply/check
-und Checkstyle. Frischer optimierter Docker-Build ohne Layer-Wiederverwendung mit
-2.244 bestandenen App-JUnit und zwei erwarteten optionalen Starter-Skips
-(113 Testsuiten, keine Fehler). Eigener isolierter Compose-Start mit UID 10001,
-frischer Datenbank, Mailpit und Proxy-CA: HTTPS-Login und CSS mit vollständiger
-Zertifikatsprüfung, HTTP-Redirect/POST-Abweisung, interner Healthcheck 200 und
-direkter Login 403 bestanden; keine Mails. Echte JaCoCo-Erstellung aus genau diesem
-Image mit App-/Shared-Klassen und 193 Quelldateien erfolgreich, auch ausgeführter
-Shared-Code nachgewiesen. Eigene Container/Volumes sauber entfernt, kein Trustimport.
-
-Das Profil `coverage` ergänzt das rein technische POM-Modul `coverage-report` mit
-JaCoCo-Aggregation für App und Shared. Die normalen Browser-Helfertests liefern
-Messdaten für Shared, bleiben aber vollständig Testcode. Alle drei analysierten
-Module verwenden denselben XML-Bericht; der Sonar-Projektkey bleibt unverändert.
-Keine neuen Quell-/Test-/Coverage-Ausschlüsse. Das technische POM-Modul selbst wird
-nicht als Anwendung analysiert; die drei fachlichen Module bleiben unabhängig.
-
-Nachgewiesen: frischer optimierter Reactor-Build mit Coverage-Profil, 2.244 App-JUnit
-bestanden, zwei optionale Starter-Skips, 83 Helferfälle bestanden. Wirksames Maven-
-Modell und vollständiger Bytecode für 188 App- und fünf Shared-Quellen sowie 117
-App- und 77 Browser-Testquellen geprüft, keine überlappenden Quell-/Testverzeichnisse.
-Aggregat enthält die Messsitzungen beider Testmodule und genau die Quellmodule App
-und Shared. Shared: 586 gedeckte Zeilen aus App-Tests, 37 aus Helfertests; gemeinsam
-586/586 gedeckte Zeilen. App: 10.870 gedeckte und 1.548 ungedeckte Zeilen.
-18 Offline-Regressionen prüfen unter anderem fehlende oder veraltete Berichte/Modelle,
-Bytecode, Pfad-/Modulzuordnung, nicht übernommene Messdaten und gemessene Null.
-Auch nach neu erzeugtem Bericht müssen App- und Helfermessdaten mindestens so
-aktuell wie ihre eigenen und die gemeinsam verwendeten Shared-Klassen sein.
-Ruff-Formatierung/-Check, Spotless-Check und Checkstyle erfolgreich.
-
-Der geschützte Sonar-Einstieg prüft den Stil einmal im Root mit `-N`, baut/installiert
-den vollständigen Reactor mit `production,coverage`, erzeugt das wirksame Maven-Modell
-und verwendet den vorhandenen Coverage-Prüfer vor genau einem Upload. Kein separates
-Shared-Install und keine duplizierte Scopeprüfung. Build, Modell und Scanner verwenden
-dieselben Profile. Hauptbranch-/Sauberkeitsprüfung, Scanlock, Tokenbehandlung,
-Serverwarteschlange und konkreter Serverabschluss bleiben erhalten; der Quellstand
-wird außerdem unmittelbar vor dem Upload erneut geprüft. Alle fünf Projekt-Skills
-und die betroffenen Referenzen verwenden die aktuellen Modul-/Build-/Coveragepfade.
-Git-/Browserbefugnisse und Kontingentregeln bleiben erhalten, OpenCode unverändert.
-
-Nachgewiesen: 44 Sonar- und 18 Coverage-Offlinefälle bestanden, einschließlich
-Reactor-/Profilwahl, Abbruch bei Build-/Modell-/Coveragefehlern, Revision und erneut
-belegtem Server vor Upload sowie alter Task-Metadaten. Bestehende Sicherheits-,
-Pagination-, DPAPI- und Serverabschlussfälle bestehen. Ruff-Formatprüfung und Lint
-sowie der echte neue Coverage-Aufruf gegen den vorhandenen lokalen Build bestanden.
-Ein echter Install-/Scanner-/Serverlauf wurde in Paket 5 nicht ausgeführt.
-
-Dies ist kein vollständiger Featureabschluss und keine neue große QA. Die volle
-Browserrunde DE/EN und der Servernachweis bleiben offen.
-Die bestehende Sonar-Analyse ist kein Nachweis für die neue Struktur.
-
-## Offene Arbeitspakete
-
-### 6. Dokumentation und gemeinsame Funktionsprüfung
-
-README, Entwicklungs-/Test-/Docker-/Browseranleitung, Projektregeln und Skill-
-Bedienung auf tatsächliche neue Pfade und Befehle aktualisieren. Keine zweite
-Versionsliste und keine Unterstützung der überholten Ordnerstruktur aufbauen.
-Alle gepflegten Aufrufer, Ressourcen und Verweise im Aufgabenbereich abgleichen.
-
-Nachweis nach Freigabe: vollständiger optimierter Reactor-Build, App-JUnit,
-Browser-Helfer, gepflegte Python-/Frontend-Offlinetests und vorgeschriebene
-Stilprüfungen. Frischer isolierter JAR-/Docker-Start. Wegen der breiten Pfadänderungen
-ist abschließend eine vollständige Browserrunde DE/EN vorgesehen, benötigt aber
-einen ausdrücklichen Auftrag. Resultate und offene Fehler in `docs/status.md`,
-offene automatisierte Nachweise ausschließlich in `docs/testbedarf.md` erhalten.
-Abhängigkeiten: Pakete 1 bis 5. Größter Prüfaufwand: vollständige Browserrunde.
+## Offenes Arbeitspaket
 
 ### 7. Integration, Servernachweis und gemeinsame Abnahme
 
 Nach ausdrücklichem Commit-/Mergeauftrag lokal integrieren und den gesamten
-aktuellen main-Stand analysieren. Community Build weiter nur als main verwenden;
-keinen Feature-Branch unter falscher Quellenzuordnung hochladen. Konkreten Server-
-Task, Analyse-ID, Revision, Module, Reports, Gate, vollständige Findings und Hotspots
-prüfen. Bestehende Accepted-/False-positive-Begründungen erhalten und nach
-Dateiverschiebungen ihre tatsächliche Zuordnung kontrollieren; keine pauschale
-erneute Ausnahmevergabe, kein Zurücksetzen der Baseline oder Schwächen des Gates.
+aktuellen main-Stand über `scripts/sonar/sonar.py scan` analysieren. Community Build
+weiter nur als main verwenden; keinen Feature-Branch unter falscher Quellenzuordnung
+hochladen. Konkreten Server-Task, Analyse-ID, Revision, vollständigen Modul-/Quell-/
+Testumfang, Reports, Gate, sämtliche Findings und Hotspots prüfen. Bestehende
+Accepted-/False-positive-Begründungen erhalten und nach Dateiverschiebungen ihre
+wirkliche Zuordnung kontrollieren. Keine pauschale erneute Ausnahmevergabe, kein
+Zurücksetzen der Baseline oder Schwächen des Gates.
 
 Ziel ist ein grünes gemeinsames Gate bei korrektem Umfang. Neu sichtbar werdende
 Shared-/Browser-Findings fachlich bewerten; Umbaufehler und überschaubare nötige
 Korrekturen gezielt beheben und nachprüfen. Eine größere unabhängige Bestands-
-bereinigung vor Ausführung gesondert abstimmen. Ein rotes Gate oder fehlender
-Modulnachweis bleibt ausdrücklich offen und verhindert den behaupteten grünen
-Gesamtabschluss. Danach gemeinsame Abnahme; erst bei tatsächlichem Abschluss Plan
-und erledigte TODO-/Dokumentationsverweise entfernen. Kein Push ohne Auftrag.
+bereinigung vorher gesondert abstimmen. Ein rotes Gate oder fehlender Modulnachweis
+bleibt offen und verhindert den behaupteten grünen Gesamtabschluss.
 
-## Freigaben und Abschlusskriterien
-
-Die freigegebenen Arbeitspakete 1 bis 5 sind umgesetzt und passend geprüft.
-Pakete 3 und 4 sind committet. Paket 5 bleibt uncommittiert;
-keine Main-Integration oder Sonar-Uploads freigegeben.
-Browserjourneys sind nicht freigegeben.
-Pakete 6 und 7 benötigen einen weiteren Umsetzungsauftrag; nötige eigene
-isolierte Anwendungs-/Dockerstarts, Browser DE/EN sowie main-Integration und Upload
-im jeweiligen Auftrag ausdrücklich mit erfassen. Keine automatische große QA,
-Sonar-Bereinigung, Commits oder Merges aus bloßer Planabnahme.
-
-Fertig ist das Feature erst bei funktionsfähigem gemeinsamen und gezieltem Build,
-korrekter Modultrennung, erhaltenem IDE-/HTTPS-Komfort, belegtem Test-/Ressourcen-
-verhalten und einer revisionsgebundenen vollständigen Sonar-Analyse samt gemeinsamer
-Abnahme. Bestehende Daten und Windows-Vertrauen bleiben durch den Umbau unberührt.
-Keine neue Fachfunktion, Designänderung, Java-Absenkung oder Versionsmodernisierung.
+Danach gemeinsame Abnahme. Erst bei tatsächlichem Abschluss gültige Fachdokumentation
+pflegen und diesen Plan samt erledigten TODO-/Dokumentationsverweisen entfernen.
+Offenen automatisierten Testbedarf zentral erhalten. Kein Push ohne Auftrag.
 
 Technische Grundlagen: [Maven-Reaktor](https://maven.apache.org/guides/mini/guide-multiple-modules.html),
 [SonarScanner für Maven](https://docs.sonarsource.com/sonarqube-server/analyzing-source-code/scanners/sonarscanner-for-maven),

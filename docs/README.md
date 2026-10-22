@@ -27,7 +27,7 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
 ## Aktive Umsetzungspläne
 
 - [Gemeinsames Maven-Projekt und vollständige SonarQube-Analyse](planung/multi-modul-sonarqube.md):
-  Arbeitspakete 1 bis 5 umgesetzt und passend geprüft; weitere Pakete offen.
+  Arbeitspakete 1 bis 6 umgesetzt und geprüft; Integration, Servernachweis und Abnahme offen.
 
 Weitere vereinbarte Arbeiten stehen in [TODO](../TODO.md).
 
