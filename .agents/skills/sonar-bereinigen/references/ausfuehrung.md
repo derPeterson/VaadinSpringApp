@@ -22,7 +22,8 @@ Der Analysemodus ändert keine Codes oder Issue-Status.
 6. Nach bestandenen Prüfungen lokal nach main übernehmen. Konflikte anhand beider
    fachlichen Verträge lösen, passende Nachtests durchführen; keine fremden Arbeiten
    verwerfen oder erfolglose Integration durch destruktiven Reset verschleiern.
-7. main aktuell bauen/analysieren, den konkreten Serverabschluss abwarten und die
+7. main über `scripts/sonar/sonar.py scan` als vollständigen Reactor samt gemeinsamer
+   Coverage neu bauen/analysieren, den konkreten Serverabschluss abwarten und die
    Paket-Findings prüfen. Keine konkurrierenden Scans desselben Projekts starten.
    Ohne zuordenbaren Nachscan bleibt die Paketabnahme offen.
 8. Erst danach im Komplettmodus zum nächsten unabhängigen Paket gehen. Paketmodus

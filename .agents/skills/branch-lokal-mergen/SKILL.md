@@ -61,7 +61,9 @@ Ein Trocken-/Nur-Prüfauftrag und die Erstellung dieses Skills verändern keine 
 ## 4. Auf dem tatsächlichen Ziel nachprüfen
 
 - Die [Nachprüfung](references/nachpruefung.md) anwenden: Java 25, aktueller Build,
-  vollständige JUnit-Anwendungstests und isolierter Start bis zur Betriebsbereitschaft.
+  vollständige App-/Shared- und Browser-Helfertests samt gemeinsamer Java-Coverage
+  im Root-Reactor und isolierter Start des frischen `app/target/`-JARs bis zur
+  Betriebsbereitschaft. Der technische Bericht liegt in `coverage-report/target/`.
   Zielbranch nennen, nicht immer main behaupten. Build und JUnit möglichst in einem
   Lauf kombinieren; nicht dieselben Anwendungstests mehrfach unnötig ausführen.
 - Keine automatische Browserrunde, große QA oder Sonar-Bereinigung. Zusätzliche

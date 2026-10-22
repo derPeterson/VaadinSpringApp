@@ -7,11 +7,16 @@ Keine echten Anwendungsprozesse, Entwicklerdatenbanken oder externen Maildienste
 
 - Vor Maven die tatsächliche Java-Version prüfen; JDK 25 ist verbindlich. Nach eigenen
   Java-/Pythonkorrekturen die jeweiligen Stilprüfungen gemäß `AGENTS.md` durchführen.
-- Shared bei frischem Stand/geänderten Quellen zuerst bauen/installieren, damit
-  Anwendung und Tests keinen veralteten gemeinsamen Katalog verwenden.
-- Optimierten Build mit vollständigen Anwendungstests bevorzugt zusammen ausführen:
-  `mvnw.cmd clean verify -Pproduction -Dvaadin.productionMode=true` im Projektroot.
-  Ein reiner Build ohne Tests bzw. ein leerer Testlauf ist kein bestandener JUnit-Nachweis.
+- Den vollständigen Root-Reactor bauen, damit Shared vor seinen Verbrauchern
+  entsteht; kein separates Shared-Install und keine direkten Modulbuilds mit alten JARs.
+- Optimierten Build mit vollständigen App-/Shared- und Browser-Helfertests kombinieren:
+  `.\mvnw.cmd clean verify '-Pproduction,coverage' '-Dvaadin.productionMode=true'`
+  im Projektroot. Mit denselben Profilen das wirksame Maven-Modell erzeugen und
+  `scripts/coverage/verify_coverage.py` gemäß `docs/entwicklung.md` ausführen.
+  Der technische Coverage-Bericht umfasst App und Shared, Browsercode bleibt Testcode.
+  Stilprüfungen laufen zentral mit `-N`, Anwendungs-JAR und Klassen liegen in
+  `app/target/`. Ein reiner Build ohne Tests bzw. ein leerer Testlauf ist kein
+  bestandener JUnit-Nachweis.
 - Tatsächliche Testzahlen und Skips aus den Reports ermitteln. Erwartete manuelle
   Opt-in-Ausschlüsse getrennt von unerwarteten Skips behandeln. Vorhandene passende
   Nachweise vor Integration ergänzen die Prüfung, ersetzen den beauftragten Ziellauf nicht.

@@ -39,6 +39,11 @@ hat Vorrang. Beim Anlegen oder Erklären dieses Skills keine rekursive Prüfung 
   Seiteneffekte, Fehlerfälle oder besondere Verträge erklären. Selbsterklärenden
   Code nicht mit formelhaften Kommentaren wiederholen. Keine starren Methoden-
   längen, künstlichen Hilfsmethoden oder allgemeinen Stilumbauten erzwingen.
+- Bei Modul-/Buildänderungen den Root-Reactor und betroffene Verbraucher prüfen:
+  Anwendung/Frontend unter `app/`, Shared-JAR und Browser-Testcode unter ihren Modulen.
+  Stilprüfung zentral mit `-N`; generierte `target/`-Verzeichnisse einschließlich
+  `coverage-report/target/` müssen ignoriert bleiben. Bei Coverageänderungen den
+  gemeinsamen Prüfer samt Offline-Regressionen verwenden, nicht Sonar automatisch starten.
 - Prüfen, ob passende Regressionen existieren und Dokumentation, Übersetzungen,
   Ressourcen und aktive Aufgaben zum tatsächlichen Verhalten passen. Auf den
   Änderungsumfang fokussieren, keine zusätzliche Projektbereinigung eröffnen.

@@ -17,6 +17,13 @@ Normale Folgeantworten gehören zum laufenden Auftrag; der Skillname muss nicht 
 jedem Arbeitsschritt wiederholt werden. Explizite Einschränkungen des Benutzers gelten.
 Einrichtung und technische Sonar-Bedienung: [Entwicklungsanleitung](entwicklung.md#sonarqube-und-codex).
 
+Alle Abläufe beachten den gemeinsamen Root-Reactor: Anwendung/Frontend liegen in
+`app/`, gemeinsame Java-Regeln in `shared/`, Browser-Testcode in `browser-tests/`.
+Stilprüfungen laufen zentral mit `-N`. Gesamt-Java-Prüfungen bei großer Testrunde
+und Merge nutzen das Profil `coverage` samt technischem Berichtsmodul und gemeinsamem
+Offline-Prüfer; die Befehle stehen in der Entwicklungsanleitung. Einzelaufträge
+behalten ihren begrenzten Umfang. Eine Skill-Anpassung startet keine QA oder Scans.
+
 ## Große Testrunde
 
 Der Gesamtauftrag umfasst vollständige JUnit-/Shared-, Browser-Helfer-, Frontend-
@@ -54,6 +61,9 @@ Funktionen oder Vertragsänderungen abstimmen; ohne Antwort bleiben sie wartend.
 Die benötigte MCP-/Scanner-Anbindung muss verfügbar sein; der Skill installiert sie nicht.
 Der vorbereitete Projektscan läuft über `scripts/sonar/sonar.py scan`; Voraussetzungen
 und MCP-Bedienung stehen in der [Entwicklungsanleitung](entwicklung.md#sonarqube-und-codex).
+Er baut/installiert alle Module mit gemeinsamen Coverage-Profilen, prüft Modell,
+Klassen und Messdaten vor genau einer Analyse unter `vaadin-spring-app`.
+Browser-Testcode bleibt Testcode; App- und Shared-Coverage werden zusammengeführt.
 
 Community Build analysiert im Hauptprojekt main. Paket-Branches daher zuerst lokal
 testen und integrieren, anschließend main scannen. Kein separates Branch-Prüfprojekt.
@@ -110,7 +120,8 @@ zurückgeben und vor dem Merge auf Commit und Weiterauftrag warten.
 Den sauberen Stand lokal integrieren; Quellbranch und Commit-Historie behalten.
 Kein Push oder automatisches Löschen. Überschaubare Konflikte lösen, unklare
 Fachentscheidungen abstimmen. Danach auf dem Ziel optimiert bauen, vollständige
-JUnit-Anwendungstests und einen eigenen isolierten Start prüfen. Keine automatische
+JUnit-App-/Shared- und Browser-Helfertests samt gemeinsamer Java-Coverage und einen
+eigenen isolierten Start des frischen App-JARs prüfen. Keine automatische
 Browserrunde oder große QA; die letzte große QA-Baseline bleibt unverändert.
 
 Ergebnis kurz im Chat, einschließlich offener Fehler und uncommittierter Nachkorrekturen.

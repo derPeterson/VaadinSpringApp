@@ -138,6 +138,8 @@ class SourceAndScanTest(unittest.TestCase):
         self.assertIn(f"-Dsonar.host.url={sonar.HOST_URL}", arguments)
         self.assertFalse(any("token" in argument.lower() for argument in arguments))
         self.assertFalse(any("branch.name" in argument for argument in arguments))
+        self.assertIn("-Pproduction,coverage", arguments)
+        self.assertIn("-Dvaadin.productionMode=true", arguments)
 
     def test_running_server_scan_blocks_build(self):
         api = Mock()
@@ -425,57 +427,206 @@ class ConfigurationAndMetadataTest(unittest.TestCase):
 
 
 class ScanCompletionContractTest(unittest.TestCase):
-    def run_isolated_scan(self, analysis_key="analysis", gate="OK"):
-        snapshot = {
+    def setUp(self):
+        self.directory = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        self.metadata = self.directory / ".codex/sonar/scanner-task.properties"
+        self.metadata.parent.mkdir(parents=True)
+        self.snapshot = {
             "project": sonar.PROJECT,
             "branch": "main",
-            "analysis": {"key": analysis_key, "revision": "revision"},
+            "analysis": {"key": "analysis", "revision": "revision"},
             "sourceMatchesLocalMain": True,
-            "qualityGate": {"status": gate},
+            "qualityGate": {"status": "OK"},
             "measures": {},
             "openIssues": [],
             "exceptions": [],
             "hotspots": [],
         }
-        with tempfile.TemporaryDirectory() as directory:
+        self.events = []
 
-            def maven(arguments, token):
-                if sonar.SCANNER in arguments:
-                    path = (
-                        Path(directory) / ".codex" / "sonar" / "scanner-task.properties"
-                    )
-                    path.write_text(
-                        f"projectKey={sonar.PROJECT}\nserverUrl={sonar.HOST_URL}\nceTaskId=task\n",
-                        encoding="utf-8",
-                    )
+        def maven(arguments, token):
+            self.events.append(("maven", arguments))
+            if sonar.SCANNER in arguments:
+                self.metadata.write_text(
+                    f"projectKey={sonar.PROJECT}\nserverUrl={sonar.HOST_URL}\nceTaskId=task\n",
+                    encoding="utf-8",
+                )
 
-            api = Mock()
-            api.get.side_effect = [{"valid": True}, {}, {}]
-            with (
-                patch.object(sonar, "ROOT", Path(directory)),
-                patch.object(sonar, "require_clean_main", return_value="revision"),
-                patch.object(
-                    sonar.subprocess,
-                    "run",
-                    return_value=Mock(returncode=0, stdout="Java version: 25.0.1"),
-                ),
-                patch.object(sonar, "run_maven", side_effect=maven),
-                patch.object(sonar, "wait_for_analysis", return_value="analysis"),
-                patch.object(sonar, "read_project", return_value=snapshot),
-                redirect_stdout(io.StringIO()),
-            ):
-                sonar.scan(api, "isolated-artificial-test-value")
+        def process(command, **kwargs):
+            self.events.append(
+                ("java" if "--version" in command else "coverage", command)
+            )
+            return Mock(returncode=0, stdout="Java version: 25.0.1")
+
+        self.api = Mock()
+        self.api.get.side_effect = lambda path, **kwargs: (
+            {"valid": True} if path == "authentication/validate" else {}
+        )
+        self.enterContext(patch.object(sonar, "ROOT", self.directory))
+        self.source = self.enterContext(
+            patch.object(sonar, "require_clean_main", return_value="revision")
+        )
+        self.process = self.enterContext(
+            patch.object(sonar.subprocess, "run", side_effect=process)
+        )
+        self.maven = self.enterContext(
+            patch.object(sonar, "run_maven", side_effect=maven)
+        )
+        self.wait = self.enterContext(
+            patch.object(sonar, "wait_for_analysis", return_value="analysis")
+        )
+        self.enterContext(
+            patch.object(sonar, "read_project", return_value=self.snapshot)
+        )
+        self.enterContext(redirect_stdout(io.StringIO()))
+
+    def run_scan(self):
+        sonar.scan(self.api, "isolated-artificial-test-value")
+
+    def assert_no_upload(self):
+        self.assertFalse(
+            any(sonar.SCANNER in call.args[0] for call in self.maven.call_args_list)
+        )
+        self.wait.assert_not_called()
 
     def test_matching_task_source_and_gate_complete_successfully(self):
-        self.run_isolated_scan()
+        self.run_scan()
+        self.wait.assert_called_once_with(self.api, "task", "revision")
+
+    def test_complete_reactor_and_coverage_check_precede_one_upload(self):
+        self.run_scan()
+        calls = [call.args[0] for call in self.maven.call_args_list]
+        self.assertEqual(["-N", "spotless:check", "checkstyle:check"], calls[0])
+        self.assertEqual(
+            [
+                "clean",
+                "install",
+                "-Pproduction,coverage",
+                "-Dvaadin.productionMode=true",
+            ],
+            calls[1],
+        )
+        self.assertEqual(
+            [
+                "-Pproduction,coverage",
+                "-Dvaadin.productionMode=true",
+                "help:effective-pom",
+                f"-Doutput={(self.directory / 'coverage-report/target/effective-pom.xml').as_posix()}",
+            ],
+            calls[2],
+        )
+        self.assertEqual(4, len(calls))
+        self.assertEqual(1, sum(sonar.SCANNER in arguments for arguments in calls))
+        self.assertEqual(
+            ["java", "maven", "maven", "maven", "coverage", "maven"],
+            [event[0] for event in self.events],
+        )
+        command = self.events[4][1]
+        self.assertEqual(
+            [
+                sonar.sys.executable,
+                str(self.directory / "scripts/coverage/verify_coverage.py"),
+                "--root",
+                str(self.directory),
+                "--model",
+                str(self.directory / "coverage-report/target/effective-pom.xml"),
+            ],
+            command,
+        )
+        self.assertFalse(
+            any(
+                "isolated-artificial-test-value" in argument
+                for _, arguments in self.events
+                for argument in arguments
+            )
+        )
+
+    def test_style_module_build_or_effective_model_failure_prevents_upload(self):
+        for stage in ("spotless:check", "install", "help:effective-pom"):
+            with self.subTest(stage=stage):
+                original = self.maven.side_effect
+
+                def maven(arguments, token, stage=stage, original=original):
+                    if stage in arguments:
+                        raise sonar.SonarError("isolated module/build failure")
+                    original(arguments, token)
+
+                with patch.object(
+                    sonar, "run_maven", side_effect=maven
+                ) as failed_maven:
+                    with self.assertRaisesRegex(
+                        sonar.SonarError, "module/build failure"
+                    ):
+                        self.run_scan()
+                    self.assertFalse(
+                        any(
+                            sonar.SCANNER in call.args[0]
+                            for call in failed_maven.call_args_list
+                        )
+                    )
+                self.wait.assert_not_called()
+
+    def test_coverage_failure_prevents_upload_even_after_successful_build(self):
+        self.process.side_effect = lambda command, **kwargs: Mock(
+            returncode=0 if "--version" in command else 1, stdout="Java version: 25.0.1"
+        )
+        with self.assertRaisesRegex(
+            sonar.SonarError, "Coverage-Prüfung fehlgeschlagen"
+        ):
+            self.run_scan()
+        self.assert_no_upload()
+
+    def test_wrong_or_unavailable_java_prevents_build(self):
+        for code, output in (
+            (0, "Java version: 21.0.1"),
+            (1, "Java version: 25.0.1"),
+            (0, ""),
+        ):
+            with self.subTest(code=code, output=output):
+                self.process.side_effect = None
+                self.process.return_value = Mock(returncode=code, stdout=output)
+                with self.assertRaisesRegex(sonar.SonarError, "JDK 25"):
+                    self.run_scan()
+                self.maven.assert_not_called()
+
+    def test_changed_revision_after_build_or_immediately_before_upload_is_rejected(
+        self,
+    ):
+        for revisions in (("revision", "foreign"), ("revision", "revision", "foreign")):
+            with self.subTest(revisions=revisions):
+                self.source.side_effect = revisions
+                with self.assertRaisesRegex(sonar.SonarError, "Quellstand"):
+                    self.run_scan()
+                self.assert_no_upload()
+
+    def test_new_server_job_before_upload_is_rejected(self):
+        self.api.get.side_effect = [{"valid": True}, {}, {"queue": [{"id": "foreign"}]}]
+        with self.assertRaisesRegex(sonar.SonarError, "bereits"):
+            self.run_scan()
+        self.assert_no_upload()
+
+    def test_missing_new_metadata_cannot_reuse_old_server_task(self):
+        self.metadata.write_text("ceTaskId=old-task\n", encoding="utf-8")
+        self.maven.side_effect = None
+        with self.assertRaisesRegex(sonar.SonarError, "keinen neuen Serverauftrag"):
+            self.run_scan()
+        self.assertFalse(self.metadata.exists())
+        self.wait.assert_not_called()
+
+    def test_revision_change_after_upload_leaves_acceptance_open(self):
+        self.source.side_effect = ["revision", "revision", "revision", "foreign"]
+        with self.assertRaisesRegex(sonar.SonarError, "nach Upload verändert"):
+            self.run_scan()
 
     def test_another_analysis_of_same_revision_is_not_our_scan(self):
+        self.snapshot["analysis"]["key"] = "foreign"
         with self.assertRaisesRegex(sonar.SonarError, "andere Analyse"):
-            self.run_isolated_scan(analysis_key="foreign")
+            self.run_scan()
 
     def test_completed_server_processing_with_red_gate_still_fails(self):
+        self.snapshot["qualityGate"]["status"] = "ERROR"
         with self.assertRaisesRegex(sonar.SonarError, "Quality Gate"):
-            self.run_isolated_scan(gate="ERROR")
+            self.run_scan()
 
 
 if __name__ == "__main__":

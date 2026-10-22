@@ -66,6 +66,12 @@ beim Erstellen dieses Skills sind keine tatsächlichen Umsetzungsaufträge.
   Gestaltung und spätere Verfeinerung gemeinsam mit dem Benutzer abstimmen.
 - Backend-only-Aufgaben ohne unnötige UI-Phase bearbeiten. Ein technischer Erfolg
   führt nicht automatisch zu einer zusätzlich erfundenen sichtbaren Funktion.
+- Modulgrenzen erhalten: Anwendungsquellen/Frontend und JAR unter `app/`, gemeinsame
+  Regeln unter `shared/`, Browser-Testcode unter `browser-tests/`. Maven aus dem Root
+  mit vollständigem Reactor oder `-pl app -am` ausführen, Stil zentral mit `-N`; kein
+  separates Shared-Install. Bei Coveragearbeiten das Profil `coverage`, das technische
+  Berichtsmodul und den gemeinsamen Offline-Prüfer gemäß Entwicklungsanleitung
+  verwenden; keinen parallelen Bericht oder künstlichen Anwendungscode aus Tests anlegen.
 - Sinnvolle JUnit-/isolierte Regressionstests für das geänderte Verhalten ergänzen
   und passende vorhandene Tests ausführen. Vorgeschriebene Stil-/Formatierungsschritte
   gemäß `AGENTS.md` vor Tests und Abschluss beachten. Keine Implementationskopien als Tests.

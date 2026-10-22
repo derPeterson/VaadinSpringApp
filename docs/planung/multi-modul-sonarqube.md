@@ -1,13 +1,14 @@
 # Gemeinsames Maven-Projekt und vollständige SonarQube-Analyse
 
-Status: Arbeitspakete 1 bis 4 sind umgesetzt und mit passenden Build-/JUnit-/
+Status: Arbeitspakete 1 bis 5 sind umgesetzt und mit passenden Build-/JUnit-/
 Stilprüfungen nachgewiesen. Der angepasste IDE-Start ist vom Benutzer mit
 Start/Stop, Debug und Breakpoint bestätigt. Docker-/Runner-/Coveragepfade sind
 umgestellt und mit eigenen isolierten Testressourcen nachgewiesen.
 Gemeinsamer Java-Analyseumfang und JUnit-Coverage sind lokal konfiguriert und geprüft.
-Pakete 5 bis 7 sind noch nicht freigegeben.
-Paket 3 ist auf dem Feature-Branch committet. Für Paket 4 sind weder Commit noch
-Integration nach `main` oder Gesamtabschluss beauftragt.
+Der geschützte Sonar-Ablauf und alle fünf Projekt-Skills sind umgestellt und
+offline geprüft. Pakete 6 und 7 sind noch nicht freigegeben.
+Pakete 3 und 4 sind auf dem Feature-Branch committet. Für Paket 5 sind weder Commit
+noch Integration nach `main` oder Gesamtabschluss beauftragt.
 Keine Browserjourneys, Scans, Merges oder Pushes.
 Branch: `feature/multi-modul-sonarqube`, Basis: lokales `main`,
 `93086b9d73b00280f3f1e0e560599dc9c37f9656`. Arbeitsstand vor Plananlage sauber.
@@ -139,34 +140,28 @@ Auch nach neu erzeugtem Bericht müssen App- und Helfermessdaten mindestens so
 aktuell wie ihre eigenen und die gemeinsam verwendeten Shared-Klassen sein.
 Ruff-Formatierung/-Check, Spotless-Check und Checkstyle erfolgreich.
 
+Der geschützte Sonar-Einstieg prüft den Stil einmal im Root mit `-N`, baut/installiert
+den vollständigen Reactor mit `production,coverage`, erzeugt das wirksame Maven-Modell
+und verwendet den vorhandenen Coverage-Prüfer vor genau einem Upload. Kein separates
+Shared-Install und keine duplizierte Scopeprüfung. Build, Modell und Scanner verwenden
+dieselben Profile. Hauptbranch-/Sauberkeitsprüfung, Scanlock, Tokenbehandlung,
+Serverwarteschlange und konkreter Serverabschluss bleiben erhalten; der Quellstand
+wird außerdem unmittelbar vor dem Upload erneut geprüft. Alle fünf Projekt-Skills
+und die betroffenen Referenzen verwenden die aktuellen Modul-/Build-/Coveragepfade.
+Git-/Browserbefugnisse und Kontingentregeln bleiben erhalten, OpenCode unverändert.
+
+Nachgewiesen: 44 Sonar- und 18 Coverage-Offlinefälle bestanden, einschließlich
+Reactor-/Profilwahl, Abbruch bei Build-/Modell-/Coveragefehlern, Revision und erneut
+belegtem Server vor Upload sowie alter Task-Metadaten. Bestehende Sicherheits-,
+Pagination-, DPAPI- und Serverabschlussfälle bestehen. Ruff-Formatprüfung und Lint
+sowie der echte neue Coverage-Aufruf gegen den vorhandenen lokalen Build bestanden.
+Ein echter Install-/Scanner-/Serverlauf wurde in Paket 5 nicht ausgeführt.
+
 Dies ist kein vollständiger Featureabschluss und keine neue große QA. Die volle
-Browserrunde DE/EN, geschützter Sonar-Ablauf und dessen Servernachweis bleiben offen.
+Browserrunde DE/EN und der Servernachweis bleiben offen.
 Die bestehende Sonar-Analyse ist kein Nachweis für die neue Struktur.
 
 ## Offene Arbeitspakete
-
-### 5. Geschützter Sonar-Ablauf und Codex-Skills
-
-`scripts/sonar/sonar.py` samt Offline-Regressionen auf gemeinsamen Build, aktuelle
-Reports und eine einzige Gesamtanalyse umstellen. JDK-25-Prüfung, sauberes main,
-Scanlock, Serverwarteschlange, sicherer Tokenzugriff, feste Revision und Abwarten
-des konkreten Serverauftrags erhalten. Unvollständiger Build oder fehlendes Modul
-darf keine erfolgreiche Gesamtanalyse ergeben. Ein aktueller Bericht und Zustand
-genügen weiterhin; keine Berichtsdateien pro Modul oder neue Archivserie.
-Den Coverage-Prüfer aus Paket 4 mit dem wirksamen Maven-Modell vor dem Upload
-verwenden; Scope-/Berichtsprüfung nicht im Sonar-Helfer duplizieren.
-
-Alle fünf Projekt-Skills auf tatsächlich betroffene Pfade, Build-/Testaufrufe,
-Artefakte und den gemeinsamen Sonar-Vertrag abgleichen und gezielt aktualisieren.
-Insbesondere Sonar-Bereinigung, große Testrunde und lokaler Merge müssen sämtliche
-Module berücksichtigen. Bestehende Git-/Browserfreigaben und Kontingentregeln bleiben
-erhalten. Gepflegte Sonar-Einstiege konsistent dokumentieren; der eingefrorene
-OpenCode-Workflow bleibt unverändert.
-
-Nachweis nach Freigabe: Offline-Helfertests für Reactor-Aufrufe, fehlgeschlagene
-Modulbuilds, fehlende Reports und Quellenzuordnung erweitern, vorhandene Sicherheits-
-und Serverabschlussfälle erhalten. Eine echte main-Analyse ist erst in Paket 7
-nach gesonderter Integration möglich. Abhängigkeit: Paket 4.
 
 ### 6. Dokumentation und gemeinsame Funktionsprüfung
 
@@ -203,11 +198,11 @@ und erledigte TODO-/Dokumentationsverweise entfernen. Kein Push ohne Auftrag.
 
 ## Freigaben und Abschlusskriterien
 
-Die freigegebenen Arbeitspakete 1 bis 4 sind umgesetzt und geprüft.
-Die Commitfreigabe für Paket 3 ist erfüllt. Paket 4 bleibt uncommittiert;
+Die freigegebenen Arbeitspakete 1 bis 5 sind umgesetzt und passend geprüft.
+Pakete 3 und 4 sind committet. Paket 5 bleibt uncommittiert;
 keine Main-Integration oder Sonar-Uploads freigegeben.
 Browserjourneys sind nicht freigegeben.
-Pakete 5 bis 7 benötigen einen weiteren Umsetzungsauftrag; nötige eigene
+Pakete 6 und 7 benötigen einen weiteren Umsetzungsauftrag; nötige eigene
 isolierte Anwendungs-/Dockerstarts, Browser DE/EN sowie main-Integration und Upload
 im jeweiligen Auftrag ausdrücklich mit erfassen. Keine automatische große QA,
 Sonar-Bereinigung, Commits oder Merges aus bloßer Planabnahme.

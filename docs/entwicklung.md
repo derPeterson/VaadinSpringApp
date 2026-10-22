@@ -50,8 +50,8 @@ Shared vor seinen Verbrauchern; kein vorheriges manuelles Shared-Install nötig:
 Stilprüfungen laufen einmal zentral im Root mit `-N` über alle Modulquellen;
 Anwendungsartefakte liegen unter `app/target/`. IDE-/HTTPS-Start, Docker-Build und
 Browserstarter sind an die Modulstruktur angepasst. Gemeinsamer Java-Analyseumfang
-und JUnit-Coverage sind konfiguriert. Geschützter Sonar-Ablauf und die
-abschließende Gesamtprüfung bleiben im
+und JUnit-Coverage sind konfiguriert. Der geschützte Sonar-Ablauf verwendet ebenfalls
+den vollständigen Reactor. Gesamtprüfung und Servernachweis bleiben im
 [aktiven Multi-Modul-Plan](planung/multi-modul-sonarqube.md) offen.
 
 ## Konfiguration und Datenbank
@@ -291,10 +291,9 @@ Grundlagen: [Sonar-Maven-Analyseumfang](https://docs.sonarsource.com/sonarqube-s
 
 ## SonarQube und Codex
 
-Zwischenstand des Multi-Modul-Umbaus: Der geschützte Scanner-Helfer wird erst in
-Paket 5 auf den gemeinsamen Coverage-Build und diese Vorprüfung umgestellt.
+Der geschützte Scanner-Helfer baut und prüft den gemeinsamen Modul-/Coverageumfang.
 Ein Servernachweis des neuen Gesamtumfangs ist erst nach gesonderter Main-Integration
-und Scanfreigabe vorgesehen. Die folgenden Scanbefehle sind dafür noch nicht angepasst.
+und Scanfreigabe vorgesehen; lokale Helferprüfungen ersetzen ihn nicht.
 
 Die lokale Anbindung liegt unter `scripts/sonar/`. Sie benötigt die virtuelle
 Python-Projektumgebung (Python 3.11 oder neuer), Docker Desktop und den vorhandenen
@@ -357,8 +356,15 @@ Vollständigen Scan nur als beauftragten Analyseschritt auf sauberem **main** st
 .\.venv\Scripts\python.exe scripts/sonar/sonar.py scan
 ```
 
-Der Ablauf prüft JDK 25, installiert Shared, prüft den Stil, baut optimiert samt
-Anwendungstests und lädt danach den Scan mit fester Quellrevision hoch. Kein Browserlauf.
+Der Ablauf prüft JDK 25 und den Stil zentral mit `-N`. Er baut und installiert
+den vollständigen Reactor mit `clean install`, Profilen `production,coverage` und
+optimiertem Frontend einschließlich App-/Shared- und Browser-Helfertests. Das
+Install ist für den separaten Maven-Scanner erforderlich; ein einzelnes Shared-
+Install entfällt. Danach erzeugt er mit denselben Profilen das wirksame Maven-Modell
+und ruft den gemeinsamen Coverage-Prüfer auf. Fehlende Module, Klassen, Berichte
+oder unpassende Messdaten verhindern den Upload. Build, Modell und Scanner verwenden
+denselben Modulumfang. Nur ein Gesamtscan unter `vaadin-spring-app` wird mit fester
+Quellrevision hochgeladen; keine Teiluploads oder Browserjourneys.
 Feature-Branches und uncommittierte Änderungen werden abgewiesen. Eine lokale
 `.codex/sonar/scan.lock` verhindert doppelte Helferläufe; nach einem harten Abbruch
 vor Entfernen einer verbliebenen Sperre den tatsächlichen Prozessstand prüfen.

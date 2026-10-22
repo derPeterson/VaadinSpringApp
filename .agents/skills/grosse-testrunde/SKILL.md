@@ -86,9 +86,15 @@ keinen zweiten Testrunner und keine OpenCode-Portierung aufbauen.
 
 ## 4. Vollständige Prüfung und Fehlerkorrektur
 
-- Java 25 bestätigen; Shared-Modul bei frischem Stand/Änderungen installieren.
-  Vollständige Anwendungstests mit optimiertem Produktionsbuild sowie vorhandene
-  Shared-, Browser-Helfer-, Frontend- und weitere gepflegte Offlineprüfungen ausführen.
+- Java 25 bestätigen und zentralen Stil mit `-N` prüfen. Den vollständigen Root-
+  Reactor mit `clean verify`, `-Pproduction,coverage` und `-Dvaadin.productionMode=true`
+  bauen (kombinierte Profile in PowerShell zitieren). Shared wird vor App und
+  Browser-Helfern gebaut; kein separates Shared-Install und kein Modulbuild mit alten
+  lokalen JARs. Vollständige App-/Shared- und Browser-Helfertests sowie Frontendtests
+  unter `app/src/test/frontend/` und gepflegte Offlineprüfungen ausführen. Das wirksame
+  Maven-Modell mit denselben Profilen erzeugen und die gemeinsame Java-Coverage gemäß
+  `docs/entwicklung.md` durch `scripts/coverage/verify_coverage.py` prüfen. Sonar- und
+  Coverage-Offlinetests gemäß `docs/tests.md` einschließen.
   Der eingefrorene OpenCode-Workflow einschließlich seiner eigenen Python-/JavaScript-
   Werkzeugtests wird nicht mitgeprüft oder angepasst. Provider-Smokes und der echte
   Mail-Sichtversand gehören ebenfalls nicht zur Gesamtrunde.
@@ -104,7 +110,12 @@ keinen zweiten Testrunner und keine OpenCode-Portierung aufbauen.
   wiederholen. Für einen abschließend vollständig aktuellen Browsernachweis müssen
   beide Sprachen zum finalen Image passen. Erfolg aus einem früheren Image nicht
   stillschweigend übertragen; unveränderte passende Belege weiterverwenden.
-- Sonar über eine verfügbare konfigurierte Anbindung mitprüfen. Schwerpunkt dieser
+- Sonar über eine verfügbare konfigurierte Anbindung mitprüfen. Ein freigegebener
+  Upload läuft ausschließlich über `scripts/sonar/sonar.py scan` auf sauberem main:
+  ein Reactor-Scan unter `vaadin-spring-app`, App und Shared als Anwendungscode,
+  Browserquellen als Testcode. Auf einem Feature-Branch nur den verfügbaren
+  main-Analysestand lesen und die fehlende Zuordnung offen nennen; kein automatischer
+  Commit/Merge, Ersatzkey oder Branchparameter. Schwerpunkt dieser
   Aufgabe bleibt die Testabnahme, nicht die vollständige Sonar-Bereinigung.
   Projekt/Analysestand prüfen und kleine echte Fehler oder Blocker beheben, wenn die
   Korrektur fachlich klar, lokal begrenzt und mit passenden Regressionen absicherbar ist.
@@ -141,7 +152,8 @@ keinen zweiten Testrunner und keine OpenCode-Portierung aufbauen.
   mit Grund auf wartend setzen und unabhängige Tests weiterbearbeiten. Nicht ungefragt umbauen.
 - Gültiges Verhalten in der bestehenden Fachdokumentation aktualisieren. Erledigte
   Pläne/TODO-Verweise gemäß `AGENTS.md` entfernen, keine historischen Runberichte
-  oder Planarchive hinzufügen. Keine zusätzliche Coverageauswertung beauftragen.
+  oder Planarchive hinzufügen. Die optionale serverseitige Coverage aus echten
+  Browserläufen bleibt getrennt und benötigt einen eigenen Auftrag.
 - Zustand sichern, nur eigene Testumgebungen abbauen, eigene erledigte Folgeaufträge
   entfernen, Diff prüfen und knapp auf Deutsch berichten. Die erfolgreiche Baseline
   nur bei vollständigem belegtem Abschluss ersetzen.

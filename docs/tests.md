@@ -88,8 +88,8 @@ node --test app/src/test/frontend/*.test.mjs
 Der Root-Build führt Anwendungstests und die normalen Browser-Helfertests aus,
 keine mit `browser` markierten Journeys. Gezielte Anwendungsbuilds verwenden
 `-pl app -am`; Stilprüfungen laufen mit `-N` zentral im Root. Docker und
-Browserstarter verwenden ebenfalls den Reactor. Geschützter Sonar-Ablauf und die
-abschließende Gesamtprüfung bleiben im
+Browserstarter und geschützter Sonar-Ablauf verwenden ebenfalls den Reactor.
+Abschließende Gesamtprüfung und Servernachweis bleiben im
 [Multi-Modul-Plan](planung/multi-modul-sonarqube.md) offen.
 
 Die gemeinsame Java-Coverage wird gezielt mit dem Profil `coverage` gebaut und
@@ -162,6 +162,12 @@ Browser und importiert kein Zertifikat in den Windows-Truststore.
 
 Die Offline-Regressionen prüfen Zugangsbehandlung, Pagination, Quellenzuordnung,
 Branch-/Parallelitätsschutz und Serverabschluss ohne echten Sonar-/Docker-/Mavenzugriff.
+Sie prüfen außerdem den vollständigen Reactor-Install, gleiche Profile bei Build,
+Maven-Modell und Scanner, die gemeinsame Coverage-Vorprüfung sowie genau einen Upload.
+Stil-/Modul-/Modellfehler, fehlgeschlagene Coverage-Prüfung, ein neuer Serverauftrag
+oder geänderte Revision verhindern den Upload; alte Task-Metadaten gelten nicht als
+neuer Scan. Die getrennten Coverage-Regressionen prüfen die konkreten fehlenden
+Module, Quellen, Klassen und Messdaten. Beide Helfersuiten zusammen ausführen.
 Sie gehören als gepflegte Python-Helfer zur großen Testrunde. Unter Windows wird
 auch DPAPI mit künstlichen Testwerten geprüft; echte Zugangsdaten werden nicht gelesen.
 Die tatsächliche MCP-Verbindung und der main-Projektscan bleiben separate Abnahmen:

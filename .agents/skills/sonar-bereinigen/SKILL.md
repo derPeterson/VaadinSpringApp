@@ -34,9 +34,14 @@ hat Vorrang. Das Anlegen oder Prüfen dieses Skills ist kein Sonar-Auftrag.
 - Der Hauptprojekt-Scan muss zum tatsächlichen main-Stand gehören. Community Build
   bietet dort keine getrennte Branchanalyse: Paket-Branches nicht als main ausgeben.
   Der Scan selbst braucht keinen Git-Push. Edition und Möglichkeiten bei Bedarf prüfen.
-- Für Java zugehörige aktuelle Klassen und benötigte Reports bereitstellen, Java 25
-  sowie vorgeschriebene Prüfungen beachten. Fremde/alte Buildartefakte nicht als aktuell
-  übernehmen. Reine Planung benötigt keine vollständige Browserrunde.
+- Den geschützten Einstieg `scripts/sonar/sonar.py scan` verwenden: JDK 25,
+  zentraler Stil mit `-N`, vollständiger optimierter Reactor-Install mit Profilen
+  `production,coverage`, wirksames Maven-Modell und gemeinsamer Coverage-Prüfer vor
+  einem einzigen Upload unter `vaadin-spring-app`. Alle drei Java-Module gehören zur
+  Analyse; App/Shared sind Anwendungscode, Browserquellen bleiben Testcode. Keine
+  Einzeluploads pro Modul, Ersatzkeys oder manuellen Scope-/Coverage-Ausschlüsse.
+  Fremde/alte Buildartefakte nicht als aktuell übernehmen. Quellstand, Reports und
+  Modell müssen zusammenpassen. Reine Planung benötigt keine vollständige Browserrunde.
 - Scannerbericht hochladen lassen und den konkreten Serverauftrag bis zum Abschluss
   verfolgen. Danach Analyse-ID, Zeitpunkt, Projekt, Quellstand und Quality Gate zuordnen.
   Scanner-Erfolg allein oder eine fremde neuere Analyse ist kein passender Nachweis.

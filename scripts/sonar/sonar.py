@@ -28,6 +28,8 @@ METRICS = (
     "coverage,line_coverage,branch_coverage,tests,bugs,vulnerabilities,code_smells"
 )
 TOOLSETS = "issues,projects,quality-gates,measures,coverage,rules,security-hotspots"
+# Build, Modell und Scanner müssen dieselben Module und Profile verwenden.
+ANALYSIS_BUILD_OPTIONS = ["-Pproduction,coverage", "-Dvaadin.productionMode=true"]
 
 
 class SonarError(RuntimeError):
@@ -307,6 +309,7 @@ def run_maven(arguments, token):
 
 def scan_arguments(revision, report_path):
     return [
+        *ANALYSIS_BUILD_OPTIONS,
         SCANNER,
         f"-Dsonar.projectKey={PROJECT}",
         f"-Dsonar.host.url={HOST_URL}",
@@ -314,6 +317,24 @@ def scan_arguments(revision, report_path):
         f"-Dsonar.scanner.metadataFilePath={report_path.as_posix()}",
         "-Dsonar.scanner.skipJreProvisioning=true",
     ]
+
+
+def check_coverage():
+    """Den gemeinsamen Offline-Vertrag vor jedem Upload prüfen, ohne ihn zu duplizieren."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "coverage" / "verify_coverage.py"),
+            "--root",
+            str(ROOT),
+            "--model",
+            str(ROOT / "coverage-report" / "target" / "effective-pom.xml"),
+        ],
+        check=False,
+        cwd=ROOT,
+    )
+    if result.returncode:
+        raise SonarError("Gemeinsame Coverage-Prüfung fehlgeschlagen; kein Upload.")
 
 
 def wait_for_analysis(api, task_id, revision, timeout=600):
@@ -388,11 +409,19 @@ def scan(api, token):
         r"Java version:\s*25(?:[.,\s]|$)", version.stdout
     ):
         raise SonarError("Build benötigt JDK 25; Maven-Version zuerst prüfen.")
-    run_maven(["-f", "shared/pom.xml", "clean", "install"], token)
-    run_maven(["spotless:check", "checkstyle:check"], token)
+    run_maven(["-N", "spotless:check", "checkstyle:check"], token)
+    # Der separate Maven-Scanner benötigt installierte aktuelle Reactor-Artefakte.
+    run_maven(["clean", "install", *ANALYSIS_BUILD_OPTIONS], token)
+    model_path = ROOT / "coverage-report" / "target" / "effective-pom.xml"
     run_maven(
-        ["clean", "verify", "-Pproduction", "-Dvaadin.productionMode=true"], token
+        [
+            *ANALYSIS_BUILD_OPTIONS,
+            "help:effective-pom",
+            f"-Doutput={model_path.as_posix()}",
+        ],
+        token,
     )
+    check_coverage()
     if require_clean_main() != revision:
         raise SonarError("Quellstand hat sich beim Build verändert; kein Upload.")
     directory = ROOT / ".codex" / "sonar"
@@ -401,6 +430,8 @@ def scan(api, token):
     # Nur eigene frühere Task-Metadaten entfernen, damit kein alter Scan bestätigt wird.
     report_path.unlink(missing_ok=True)
     require_idle_server(api)
+    if require_clean_main() != revision:
+        raise SonarError("Quellstand vor Upload verändert; kein Upload.")
     run_maven(scan_arguments(revision, report_path), token)
     if not report_path.is_file():
         raise SonarError("Scanner hat keinen neuen Serverauftrag hinterlegt.")

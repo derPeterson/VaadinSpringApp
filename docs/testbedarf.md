@@ -11,9 +11,9 @@ automatisierter Tests. Pflege und Abnahme: [Testablauf](tests.md#übergabe-offen
 
 ## JUnit-Tests
 
-| Funktion | Szenario und Erwartung | Zustand |
-| --- | --- | --- |
-| Gemeinsamer Sonar-Helfer | Gepflegte Offline-Regressionen auf Reactor-Aufrufe, Modulfehler, fehlende Berichte und vollständige Quellen-/Revisionszuordnung erweitern. Fehler verhindern einen als vollständig erfolgreichen Upload; Sicherheits- und Serverabschlussfälle erhalten. | Wartend auf Umsetzung; technische Python-Helferprüfung entsprechend der Testanleitung. |
+Derzeit keine offenen Ergänzungen. Die vollständige gemeinsame Funktionsprüfung
+und der echte Sonar-Servernachweis bleiben im [aktiven Plan](planung/multi-modul-sonarqube.md)
+offen; vorhandene Prüfungen dafür wiederverwenden.
 
 Menschliche Abnahmen und die nicht beauftragte optionale externe SMTP-Abnahme
 bleiben im [manuellen Katalog](manual-tests/README.md).
