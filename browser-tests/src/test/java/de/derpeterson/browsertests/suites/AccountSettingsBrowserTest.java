@@ -454,7 +454,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
                   new com.microsoft.playwright.Locator.FilterOptions()
                       .setHas(page.getByText(label, new Page.GetByTextOptions().setExact(true))));
       assertThat(option.locator("svg")).hasCount(1);
-      UiActions.completeValueChange(page, () -> option.click());
+      UiActions.completeValueChange(page, option::click);
       page.locator("#account-avatar-status").click();
       Locator selected =
           page.getByRole(AriaRole.OPTION)

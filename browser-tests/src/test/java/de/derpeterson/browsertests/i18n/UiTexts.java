@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.PropertyResourceBundle;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /** Reads the application's original translation resources, without Spring or a Vaadin session. */
 public final class UiTexts extends MessageTexts {
@@ -31,7 +31,7 @@ public final class UiTexts extends MessageTexts {
     this.locale = locale;
   }
 
-  private static Function<String, String> lookup(Locale locale) {
+  private static UnaryOperator<String> lookup(Locale locale) {
     String resource = "/i18n/messages_" + locale.getLanguage() + ".properties";
     final PropertyResourceBundle messages;
     try (InputStream input =

@@ -42,7 +42,7 @@ public final class UiActions {
           return true;
         }
       }
-    } catch (JsonProcessingException ignored) {
+    } catch (JsonProcessingException _) {
       // Andere POST-Inhalte sind keine bestätigte Feldänderung.
     }
     return false;

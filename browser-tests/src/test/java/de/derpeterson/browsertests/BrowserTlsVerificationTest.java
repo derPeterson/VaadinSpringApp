@@ -31,7 +31,7 @@ class BrowserTlsVerificationTest {
     Path authority = BrowserTestCa.directory(Path.of("..").toAbsolutePath().normalize());
     BrowserTestCa.requireTrusted(authority);
     List<Process> proxies = new ArrayList<>();
-    try (BrowserTestCa.Lease lease = BrowserTestCa.lease(authority, true);
+    try (BrowserTestCa.Lease _ = BrowserTestCa.lease(authority, true);
         Playwright playwright = Playwright.create();
         Browser browser = playwright.chromium().launch();
         BrowserContext context = browser.newContext()) {
@@ -41,10 +41,9 @@ class BrowserTlsVerificationTest {
       String unknown = startProxy(untrusted, directory.resolve("untrusted worker"), proxies);
       Page page = context.newPage();
       assertEquals(200, page.navigate(trusted).status());
+      String wrongHostname = trusted.replace("127.0.0.1", "localhost");
       PlaywrightException hostname =
-          assertThrows(
-              PlaywrightException.class,
-              () -> page.navigate(trusted.replace("127.0.0.1", "localhost")));
+          assertThrows(PlaywrightException.class, () -> page.navigate(wrongHostname));
       assertTrue(hostname.getMessage().contains("ERR_CERT_COMMON_NAME_INVALID"));
       PlaywrightException chain =
           assertThrows(PlaywrightException.class, () -> page.navigate(unknown));

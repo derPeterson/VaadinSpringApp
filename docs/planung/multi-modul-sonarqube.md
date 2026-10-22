@@ -2,7 +2,10 @@
 
 Status: Arbeitspakete 1 bis 6 sind umgesetzt und passend geprüft. Offen sind nur
 Integration, Sonar-Servernachweis und gemeinsame Abnahme aus Paket 7.
-Paket 6 bleibt uncommittiert; kein Commit, Merge, Push oder Scan beauftragt.
+Paket 6 ist committet. Paket 7 samt lokaler Integration und Scan ist freigegeben;
+der erste gemeinsame Servernachweis ist erfolgt, das Gate wegen 31 Code-Smells rot.
+Die gesondert freigegebene [Sonar-Bereinigung](sonar-pakete.md) läuft auf eigenem Branch.
+Kein Push beauftragt; gemeinsame Gesamtabnahme bleibt offen.
 
 Branch: `feature/multi-modul-sonarqube`. Basis: lokales `main`,
 `93086b9d73b00280f3f1e0e560599dc9c37f9656`. Geprüfter Code-Commit vor den
@@ -54,11 +57,13 @@ oder verbliebene eigene Workerressource.
 IDE-Start/Stop, harter Reset, Debug/Breakpoint und HotSwap sind vom Benutzer bestätigt;
 Start/Stop und Debug nach Maven-Neuverknüpfung mit eindeutigem Modul `app` ebenfalls.
 Diese Abnahmen nicht erneut zur Pflicht machen. Pakete 1 bis 5 sind committet;
-Paket 6 ist technisch abgeschlossen und uncommittiert.
+Paket 6 ist technisch abgeschlossen und committet.
 
-Paket 7 benötigt einen weiteren Auftrag mit ausdrücklicher Commit-/Merge- und
-Scanfreigabe. Der erfolgreiche lokale Teststand ist keine Main-Integration,
-Serveranalyse oder gemeinsame Gesamtabnahme. Keine automatische Sonar-Bereinigung.
+Paket 7 ist freigegeben. Main wurde auf `f9556c09837e3b6adcb44ba92ddc5f226bf7c481`
+integriert; Build, Tests und isolierter JAR-Start sind bestanden. Die Serveranalyse
+`ee5346a6-78e3-40c9-bb93-43a30ae8e687` bestätigt alle 387 Java-Dateien und die
+unveränderte Übernahme der 37 bisherigen Ausnahmen samt Begründungen. Das rote Gate
+bleibt bis zur freigegebenen gezielten Bereinigung offen; keine Gesamtabnahme behaupten.
 
 ## Offenes Arbeitspaket
 

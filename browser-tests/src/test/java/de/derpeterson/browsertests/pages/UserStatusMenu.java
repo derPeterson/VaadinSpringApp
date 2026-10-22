@@ -35,7 +35,7 @@ public final class UserStatusMenu {
                 new Locator.FilterOptions()
                     .setHas(page.getByText(label, new Page.GetByTextOptions().setExact(true))));
     assertThat(option).hasCount(1);
-    UiActions.completeValueChange(page, () -> option.click());
+    UiActions.completeValueChange(page, option::click);
     assertThat(current()).containsText(label);
   }
 }

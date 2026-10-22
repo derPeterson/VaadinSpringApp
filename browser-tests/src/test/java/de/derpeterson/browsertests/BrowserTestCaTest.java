@@ -16,6 +16,7 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -147,7 +148,7 @@ class BrowserTestCaTest {
 
   @Test
   void activeRunPreventsConcurrentSetupOrRemoval() throws Exception {
-    try (BrowserTestCa.Lease lease = BrowserTestCa.lease(authority, true)) {
+    try (BrowserTestCa.Lease _ = BrowserTestCa.lease(authority, true)) {
       assertThrows(IOException.class, () -> BrowserTestCa.lease(authority, false));
     }
     try (BrowserTestCa.Lease lease = BrowserTestCa.lease(authority, false)) {
@@ -196,7 +197,8 @@ class BrowserTestCaTest {
     public static void main(String[] args) throws Exception {
       BrowserTestCa.issue(Path.of(args[0]), Path.of(args[1]));
       System.out.println("ready");
-      Thread.sleep(60000);
+      // Der Elternprozess prüft den harten Abbruch; ohne Abbruch endet die Fixture begrenzt.
+      new CountDownLatch(1).await(60, TimeUnit.SECONDS);
     }
   }
 

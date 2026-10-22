@@ -4,14 +4,14 @@ import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.app.config.TokenDurationPolicy;
 import java.text.MessageFormat;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /** Typed translation getters shared by the application and external browser tests. */
 public class MessageTexts {
 
-  private final Function<String, String> lookup;
+  private final UnaryOperator<String> lookup;
 
-  public MessageTexts(Function<String, String> lookup) {
+  public MessageTexts(UnaryOperator<String> lookup) {
     this.lookup = Objects.requireNonNull(lookup, "Translation lookup required.");
   }
 
@@ -654,9 +654,11 @@ public class MessageTexts {
   }
 
   public String getAdminConfigSettingsCount(int count) {
-    return count == 1
-        ? getFormattedTranslation("adminView.config.settings_count.one", count)
-        : getFormattedTranslation("adminView.config.settings_count.other", count);
+    return getFormattedTranslation(
+        count == 1
+            ? "adminView.config.settings_count.one"
+            : "adminView.config.settings_count.other",
+        count);
   }
 
   public String getAdminConfigSaveHint() {
@@ -1037,9 +1039,8 @@ public class MessageTexts {
   }
 
   public String getAdminUsersAccountCount(int count) {
-    return count == 1
-        ? getFormattedTranslation("admin.users.account_count.one", count)
-        : getFormattedTranslation("admin.users.account_count.other", count);
+    return getFormattedTranslation(
+        count == 1 ? "admin.users.account_count.one" : "admin.users.account_count.other", count);
   }
 
   public String getAdminUsersDescription() {

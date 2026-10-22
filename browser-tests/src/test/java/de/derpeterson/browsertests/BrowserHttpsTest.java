@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
@@ -206,21 +207,23 @@ class BrowserHttpsTest {
       }
       System.out.println(importer.pid());
       System.out.flush();
-      Thread.sleep(60000);
+      // Die Fixture bleibt bis zum Elternabbruch bereit, spätestens 60 Sekunden.
+      new CountDownLatch(1).await(60, TimeUnit.SECONDS);
     }
   }
 
   public static class WaitingChild {
     public static void main(String[] args) throws InterruptedException {
       System.out.println("ready");
-      Thread.sleep(60000);
+      new CountDownLatch(1).await(60, TimeUnit.SECONDS);
     }
   }
 
   @Test
   void readinessRejectsHttpBeforeAnyConnectionOrCertificateRead() {
+    Path absentCertificate = directory.resolve("absent.crt");
     assertThrows(
         IllegalArgumentException.class,
-        () -> BrowserHttps.awaitReady("http://127.0.0.1:18081", directory.resolve("absent.crt")));
+        () -> BrowserHttps.awaitReady("http://127.0.0.1:18081", absentCertificate));
   }
 }

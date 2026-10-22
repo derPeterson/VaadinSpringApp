@@ -153,14 +153,14 @@ class BrowserExecutionPlanTest {
         () ->
             BrowserExecutionPlan.workerClasses(
                 "all", "AuthenticationBrowserTest,AuthenticationBrowserTest"));
+    List<Class<?>> empty = List.of();
+    List<Class<?>> all = BrowserExecutionPlan.classes("all");
     assertThrows(
-        IllegalArgumentException.class, () -> BrowserExecutionPlan.partition(List.of(), 2, "all"));
+        IllegalArgumentException.class, () -> BrowserExecutionPlan.partition(empty, 2, "all"));
     assertThrows(
-        IllegalArgumentException.class,
-        () -> BrowserExecutionPlan.partition(BrowserExecutionPlan.classes("all"), 0, "all"));
+        IllegalArgumentException.class, () -> BrowserExecutionPlan.partition(all, 0, "all"));
     assertThrows(
-        IllegalArgumentException.class,
-        () -> BrowserExecutionPlan.partition(BrowserExecutionPlan.classes("all"), 5, "all"));
+        IllegalArgumentException.class, () -> BrowserExecutionPlan.partition(all, 5, "all"));
     assertEquals(
         List.of(AuthenticationBrowserTest.class),
         BrowserExecutionPlan.workerClasses("all", "AuthenticationBrowserTest"));

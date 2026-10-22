@@ -96,7 +96,7 @@ public class PresentationBrowserTest extends BrowserFixture {
                 .setBaseURL(System.getProperty("browser.tests.baseUrl"))
                 .setLocale(texts.browserLocale()))) {
       AllurePlaywright.register(other);
-      try (TraceSession otherTrace = AllurePlaywright.startTracing(other)) {
+      try (TraceSession _ = AllurePlaywright.startTracing(other)) {
         Page visitor = other.newPage();
         visitor.navigate(path(HOME_ROUTE));
         new UserMenu(visitor).selectTestLanguage();

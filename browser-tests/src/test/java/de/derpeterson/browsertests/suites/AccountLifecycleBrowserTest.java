@@ -194,7 +194,7 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
                 .setLocale(texts.browserLocale())
                 .setTimezoneId("Europe/Berlin"))) {
       AllurePlaywright.register(other);
-      try (TraceSession secondTrace = AllurePlaywright.startTracing(other)) {
+      try (TraceSession _ = AllurePlaywright.startTracing(other)) {
         Page second = other.newPage();
         second.navigate(path(HOME_ROUTE));
         new UserMenu(second).selectTestLanguage();

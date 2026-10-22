@@ -143,7 +143,7 @@ public final class BrowserTestRunner {
               metadata.put("finishedAt", Instant.now().toString());
               try {
                 save();
-              } catch (IOException ignored) {
+              } catch (IOException _) {
                 /* Existing metadata still cannot certify success. */
               }
             },
@@ -216,7 +216,7 @@ public final class BrowserTestRunner {
     Path authority = BrowserTestCa.directory(module.getParent());
     BrowserTestCa.requireTrusted(authority);
     int exit;
-    try (BrowserTestCa.Lease lease = BrowserTestCa.lease(authority, true)) {
+    try (BrowserTestCa.Lease _ = BrowserTestCa.lease(authority, true)) {
       BrowserTestCa.requireTrusted(authority);
       BrowserTestRunner runner = new BrowserTestRunner(module, options, suite);
       exit = runner.workers > 1 ? runner.executeParallel(options) : runner.execute(options);
@@ -679,7 +679,7 @@ public final class BrowserTestRunner {
       try {
         Runtime.getRuntime().addShutdownHook(childShutdown);
         hookRegistered = true;
-      } catch (IllegalStateException ignored) {
+      } catch (IllegalStateException _) {
         /* JVM shutdown began between the check and registration. */
       }
     }
@@ -693,7 +693,7 @@ public final class BrowserTestRunner {
       if (hookRegistered) {
         try {
           Runtime.getRuntime().removeShutdownHook(childShutdown);
-        } catch (IllegalStateException ignored) {
+        } catch (IllegalStateException _) {
           /* Shutdown hooks are already running. */
         }
       }
