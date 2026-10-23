@@ -12,13 +12,20 @@ und keine Anwendungsoberfläche verändert.
 Footer und Farbwelt folgen C; Contentstruktur und seitliche Kontonavigation folgen B.
 Der Copyrighttext wird horizontal im Footer zentriert. Die zwei übereinanderliegenden
 Tabreihen aus C werden durch die seitliche Navigation aus B ersetzt. A wird nicht
-weiterverfolgt. Der kombinierte Entwurf selbst wurde noch nicht erstellt.
+weiterverfolgt. Der erste Vorschau-Schritt aus Paket 3 ist durchgeführt:
+die Kombination sichtbar zusammensetzen, ihre Desktop-/schmale Darstellung und
+die Seitennavigation als möglichen gemeinsamen Rahmen für Home prüfen. Der
+kombinierte Entwurf liegt als geprüfte Vorschau vor. Die gemeinsame Rückmeldung
+legt die nächste Verfeinerung und einen zusammenhängenden klickbaren HTML-Prototyp
+des angemeldeten Benutzerportals fest. **Aktueller Auftrag ist die Planung dieses
+Ablaufs; noch keine weitere Generierung, Aufnahme oder Implementierung.**
+Vaadin-Spielwiese und globale Theme-Übernahme sind noch nicht begonnen.
 A/B/C wurden aus derselben Account-Referenz erzeugt. Erfundene
 Fachangaben wurden anschließend in den HTML-Exporten gezielt bereinigt; die
 maßgeblichen Screens tragen den Zusatz „· Vergleich“. Der lokale Vergleich zeigt
 Ausgangsstand und alle drei Richtungen bei `1440×1000` ohne externe Laufzeitressourcen.
-Paket 3 und das gesamte Designfeature bleiben offen; keine automatische Umsetzung
-oder Git-Aktion. Die Anwendungsoberfläche ist unverändert.
+Die weiteren Schritte aus Paket 3 und das gesamte Designfeature bleiben offen;
+keine automatische Git-Aktion. Die Anwendungsoberfläche ist unverändert.
 
 - Branch: `feature/designkritik-stitch`.
 - Basis: lokales `main`, Commit `ac3b239fac5ae0e2e6f56be3483ae5811be51648`;
@@ -60,7 +67,7 @@ Unverändert gelten bis zu einer ausdrücklichen neuen Vereinbarung:
 - Erst eine lokale Spielwiese. Ein neuer gemeinsamer Theme-Standard, der Umbau aller
   Seiten sowie Commit, Merge und Push gehören nicht zur jetzigen Freigabe.
 
-## Empfehlung: Konto als Pilot, kleine Komponentenprobe als Ergänzung
+## Gewählter Weg: Profilreferenz, klickbares Portal, danach Vaadin
 
 **Erster Entwurf ist die Kontoansicht mit Profil**, einschließlich Appkopf,
 Navigation, Avatar/Status, Formular und Hauptaktion. Sie enthält genug echte
@@ -68,24 +75,28 @@ Aufgaben, um Gestaltung und Bedienung zu bewerten. Die aktuelle Startseite enth�
 vor allem Einleitung und Hintergrund; sie würde ein schönes Bild erlauben, aber
 wenig über die spätere Alltagstauglichkeit aussagen.
 
-Der erste Versuch umfasst nur Konto/Profil, einen Dialog und einen Fehlerzustand.
-Die weiteren sinnvollen Ideen bleiben als optionale spätere Vertiefungen erhalten.
-Die Spielwiese kann damit später aus drei überschaubaren Szenen bestehen:
+Nach der positiven Rückmeldung zum kombinierten Profilentwurf möchte der Benutzer
+vor dem Vaadin-Umbau das Zusammenspiel des angemeldeten Portals beurteilen.
+Der nächste geplante Schritt erweitert deshalb die bisherige kleine Profilprobe
+um einen klickbaren HTML-Prototyp. Erst dessen gemeinsame Bewertung entscheidet
+über die Übertragung nach Vaadin. Der Prototyp umfasst:
 
 | Szene | Zweck und Einordnung |
 | --- | --- |
-| Konto | Kern: realistischer Profilentwurf mit einem Dialog und einem Fehlerzustand. Optional später: Sicherheit und Sitzungen als umschaltbare Beispiele |
-| Benachrichtigungen | Optional später: Transferprobe mit gelesenen/ungelesenen Einträgen, langen Texten, Filtern und Pagination |
-| Komponenten/Zustände | Optional später: zusätzliche Felder, Buttons, Badge, Grid, Dialoge sowie leere und weitere Rückmeldezustände |
+| Portal | Startseite mit ehrlichem Inhaltsplatzhalter, Benachrichtigungen mit Beispieldaten und vorhandener Pagination |
+| Mein Konto | Persönliche Daten, Sicherheit sowie Geräte und Sitzungen mit erfundenen Daten |
+| Gemeinsamer Rahmen | Header, Seitenkopf, Navigation, Footer, Benutzermenü und Benachrichtigungsvorschau |
+| Dialoge/Zustände | Vorhandene Benutzeraktionen inventarisieren; E-Mail-/Passwortänderung, Profilbild, Nachrichtendetail und tatsächlich vorhandene Bestätigungen/Fehler als visuelle Beispiele |
 
 Keine riesige Seite mit allen Widgets auf einmal und keine vollständige Kopie der
-Anwendung. Die Komponentenprobe prüft die Tragfähigkeit der gewählten Gestaltung;
-sie ersetzt den realistischen Seitenkontext nicht. Die Startseite kann später
-zusätzlich als Vergleich für Hintergrund und Appkopf dienen. Neue Dashboard-Inhalte
-werden nicht erfunden, um ein leeres Bild attraktiver zu machen.
+Anwendung. Die Szenen zeigen die bestehenden Funktionen im Seitenkontext, ohne
+deren Dienste nachzubauen. Neue Dashboard-Inhalte werden nicht erfunden, um ein
+leeres Bild attraktiver zu machen. Administration und anonyme Zugangsseiten sind
+vorerst ausgenommen; ein berechtigungsabhängiger Admin-Menüeintrag kann separat
+demonstriert werden, ohne Adminansichten zu gestalten.
 
 Vor dem Bau der Spielwiese werden bereits vorhandene Ansichten als Referenz
-aufgenommen. Erst nach Auswahl einer Richtung entsteht der Vaadin-Pilot. Damit
+aufgenommen. Erst nach Bewertung des HTML-Portals entsteht der Vaadin-Pilot. Damit
 kann der Benutzer frühe Entwürfe ablehnen, bevor viel Implementierungsarbeit anfällt.
 
 ## Bestandskritik: Quellenhypothesen und Profilaufnahme
@@ -235,6 +246,39 @@ Es werden weder kostenpflichtige Zugänge aktiviert noch Generierungslimits umga
 
 ## Gestalterische Leitplanken für den Versuch
 
+### Vereinbarte Verfeinerung des kombinierten Entwurfs
+
+- Den charakteristischen Seitenkopf auf allen Seiten erhalten: übergeordnete
+  Einordnung, Seitentitel mit dem vorhandenen Punktmotiv und kurze Beschreibung.
+  Im Konto lautet die Einordnung **Mein Konto**, der Titel **Persönliche Daten**.
+  Keine erfundene Zwischenebene „Einstellungen“. Navigation und Karte dürfen
+  ebenfalls „Persönliche Daten“ heißen; „Profil“, „Persönliches Profil“ und
+  zusätzliche „Einstellungen“-Überschriften nicht parallel verwenden.
+- Desktopnavigation: Portal mit Startseite und Benachrichtigungen; **Mein Konto**
+  als sichtbare Gruppenüberschrift über Persönliche Daten, Sicherheit sowie Geräte
+  und Sitzungen. Schmal ist sie einklappbar; Seitenkopf und Kartentitel bleiben
+  zur Orientierung sichtbar. Zahnrad führt zu Persönliche Daten, der Zugang zur
+  vollständigen Inbox zu Benachrichtigungen; die bestehende Glocken-Vorschau erhalten.
+- Identitätskarte behalten. Gewählter Anwesenheitsstatus erscheint mit Text und
+  passender Statusfarbe und wird in Header, Karte und Benutzermenü konsistent
+  dargestellt. Anwesenheit und Kontofreigabe nicht miteinander verwechseln.
+- Gelbe Kennzeichnung „Schreibgeschützt“ behalten. Den allgemeinen Aktualitätshinweis
+  unter der gesperrten E-Mail entfernen; nötige Hinweise zur Adressänderung gehören
+  zum vorhandenen Sicherheitsablauf. Footer bleibt dezent, Copyright zentriert.
+- C-Farben, Kartenabgrenzung und eingerückten Rahmen erhalten. Dasselbe Szenario
+  mit zwei umschaltbaren Hintergründen zeigen: dezente Stitch-Atmosphäre sowie
+  vorhandener CSS-Kosmos, an die dunkle Palette angepasst. Nur der Hintergrund
+  wechselt, nicht Inhalt, Abstände oder Karten. Keine dritte Designrichtung.
+- Das Blumenzeichen aus dem Entwurf als bevorzugte Logorichtung festhalten;
+  die spätere Übertragung ist noch keine Änderung des gemeinsamen Anwendungslogos.
+- Kurze und sehr lange erfundene Namen/E-Mail-Adressen umschaltbar zeigen.
+  Headername bekommt begrenzten Platz; schmal darf der Avatar allein den Zugang
+  bilden. In der Identitätskarte sind begrenzter Umbruch/Kürzung erlaubt, ohne
+  die Seitennavigation zu verbreitern. Vollständige Werte bleiben im Profil und
+  auch per Tastatur/Touch erreichbar; kein ausschließliches Hover-Tooltip-Konzept.
+
+### Weiterhin geltende Gestaltungsziele
+
 - **Atmosphäre außen, Klarheit innen:** Weltraum sichtbar lassen, Text und Formulare
   auf ruhigeren, ausreichend deckenden Flächen darstellen. Keine Sternen-/Neonoptik
   an jedem Control und keine Dekoration, die einen Zustand vortäuscht.
@@ -264,24 +308,30 @@ Tokenliste neben `docs/theme.md` und den Stylesheets.
 ## Arbeitspakete und Entscheidungspunkte
 
 Pakete 1 und 2 sind fertig; die menschliche Richtungsentscheidung ist getroffen.
-Paket 3 ist der nächste offene Schritt. Pakete 3 bis 5 sowie die optionalen
-Vertiefungen bleiben ohne weiteren Auftrag offen; die Anwendungsoberfläche wurde
-noch nicht verändert.
+Der erste Vorschau-Schritt von Paket 3 ist durchgeführt. Der weitere HTML-Ablauf
+ist nach Benutzerfeedback unten geplant und wartet auf einen Umsetzungsauftrag.
+Vaadin-Integration und Theme-Übernahme bleiben nachgelagert; die Anwendungsoberfläche
+wurde noch nicht verändert.
 
-### Kleiner Kern und optionale Vertiefungen
+### Gestufter Kern und optionale Vertiefungen
 
 Die fünf Pakete und die ausführlichen Überlegungen bleiben erhalten. Für den
-ersten vollständigen Versuch gilt jedoch nur der folgende Kern:
+weiteren Versuch gilt nach der Richtungswahl der folgende Kern:
 
 | Paket | Kern des ersten Versuchs | Optional später / Nice to have |
 | --- | --- | --- |
 | 1 | Profil am Desktop und schmal aufnehmen, Bestandskritik, bereinigte HTML-Vorschau und kurzen Stitch-Übergabetest vorbereiten/durchführen | Weitere Seiten und Sprachvarianten aufnehmen, Export über den Profilfall hinaus ausbauen, Automatisierung vertiefen |
 | 2 | Drei vergleichbare Designrichtungen vorstellen und eine auswählen | Zusätzliche Varianten oder weitere Screens erzeugen |
-| 3 | Gewählte Richtung als kleine Vaadin-Spielwiese mit Profil, einem Dialog und einem Fehlerzustand erleben | Sicherheit/Sitzungen, weitere Dialoge und umfassenderen DESIGN.md-Austausch ergänzen |
-| 4 | Kein Pflichtschritt für den ersten Versuch | Benachrichtigungen, Pagination, Grid und zusätzliche Zustände als Transferprobe ergänzen |
-| 5 | Nach dem kleinen Versuch über Fortführung, Übernahme oder Verwerfen entscheiden | Bei Bedarf nach einer Vertiefung erneut entscheiden |
+| 3a | Profilreferenz mit vereinbartem Seitenkopf verfeinern; lange Namen und zwei Hintergründe vergleichen | Zusätzliche rein ästhetische Varianten |
+| 3b | Aufnahme-/Stitch-Kreislauf an Sicherheit und E-Mail-Dialog nachweisen; anschließend übrige angemeldete Benutzerbereiche und Overlays aufnehmen/gestalten | Allgemeiner Exporter für beliebige Vaadin-Anwendungen, zusätzliche Stitch-Anbindung |
+| 3c | Ergebnisse in einem lokal klickbaren, zusammenhängenden HTML-Portal mit gemeinsamen Bausteinen beurteilen | Vollständige EN-Ausarbeitung und anonyme Zugangsseiten |
+| 3d | Nach positiver HTML-Bewertung einen begrenzten Vaadin-Piloten mit Profil, Dialog und Fehlerzustand erproben | Weitere echte Anwendungsansichten erst nach vereinbarter Übernahmereichweite |
+| 4 | Kein Pflichtschritt vor der HTML-Bewertung | Vertiefte Komponenten-/Vaadin-Transferprobe, Administration und zusätzliche Zustände |
+| 5 | Nach HTML-Vorschau und gegebenenfalls Vaadin-Pilot über Fortführung, Übernahme oder Verwerfen entscheiden | Bei Bedarf nach einer Vertiefung erneut entscheiden |
 
-Die Reihenfolge des Kerns ist **1 → 2 → 3 → 5**. Paket 4 und die anderen optionalen
+Die Reihenfolge ist **1 → 2 → 3a → 3b → 3c → gemeinsame Entscheidung → 3d/5**.
+Die Erweiterung des HTML-Portals ist jetzt geplant; die Ausführung startet erst
+mit entsprechendem Folgeauftrag. Paket 4 und die anderen optionalen
 Vertiefungen werden nur bei erkennbarem Nutzen und mit einem passenden Folgeauftrag
 aufgenommen. Eine Freigabe des kleinen Versuchs umfasst diese Erweiterungen nicht
 automatisch. Sie müssen auch nicht erledigt sein, um den ersten Versuch abzunehmen
@@ -520,7 +570,148 @@ bekommt Ausgangsstand und A/B/C in vergleichbarer Darstellung, dazu je wenige
 konkrete Vor-/Nachteile. Er wählt eine Richtung, eine begründete Kombination oder
 verwirft alle. **Hier liegt der erste bewusste Designentscheid.**
 
-### Paket 3 – Gewählte Richtung verfeinern und in Vaadin erleben
+### Paket 3 – Zusammenhängendes HTML-Portal, danach Vaadin-Pilot
+
+Aktueller Auftrag ist nur die Fortschreibung der Planung. Die folgende Umsetzung
+erfolgt vor dem Java-Umbau. Die fünf Hauptszenen sind Startseite, Benachrichtigungen,
+Persönliche Daten, Sicherheit sowie Geräte und Sitzungen. Home erhält den
+Platzhalter „Hier kommen später Inhalte“ ohne erfundene Dashboard-Funktionen.
+In der schmalen Ansicht ist die Navigation aufklappbar. Kein Administrationsbereich
+für den normalen Beispielbenutzer.
+
+#### 3a – Eine verbindliche Entwurfsreferenz verfeinern
+
+Die oben vereinbarten Änderungen am bestehenden C/B-Entwurf umsetzen, mit langen
+erfundenen Namen und zwei Hintergründen zeigen. Header/Footer, Seitenkopf,
+Navigation, Karten, Controls und Typografie gemeinsam prüfen. Das Ergebnis als
+neue eindeutig bezeichnete Referenz im bestehenden Stitch-Versuchsprojekt sichern;
+noch nicht als gültigen Anwendungstheme-Standard ausgeben. Diese Referenz bleibt
+für alle folgenden Seiten gleich. Keine weiteren unabhängigen A/B/C-Reihen.
+
+#### 3b – Referenzen aufnehmen und kontrolliert an Stitch übergeben
+
+1. **Bestand inventarisieren:** Die fünf Hauptszenen und ihre erreichbaren Dialoge,
+   Popovers und wichtigen Zustände mit dem aktuellen Java-Code abgleichen. Pro
+   Szene Felder, Aktionen und Inhalte festhalten, die beim Entwurf erhalten bleiben.
+   Dazu gehören Benutzermenü mit Sprache/Status/Abmelden, Glocken-Vorschau,
+   E-Mail-/Passwortänderung, Profilbild sowie Nachrichtendetail. Bestätigungen
+   nur dort aufnehmen, wo die Anwendung sie tatsächlich besitzt. Bestehende
+   Sicherheitsabläufe nicht durch erfundene Aktionen vereinfachen.
+2. **Eigene Referenzumgebung:** Für die später beauftragten Aufnahmen eine frische
+   isolierte Instanz mit erfundenen Benutzern, Nachrichten und Sitzungen nutzen.
+   Keine Entwicklerdaten oder fremden Prozesse; keine echten Mails. Normales
+   Benutzerkonto als Hauptfall. Den berechtigungsabhängigen Admin-Menüeintrag nur
+   in einer getrennt bezeichneten Rollenansicht zeigen; kein Rollenwechsel als
+   vermeintliche Benutzerfunktion.
+3. **Automatisierung zuerst erproben:** Sicherheit und den geöffneten E-Mail-Dialog
+   über die vorhandenen Aufnahmehelfer erfassen. Dialoge und Popovers sind eigene
+   UI-Zustände, keine automatisch im Seitenexport enthaltenen Unterseiten.
+   Shadow DOM, Eingabewerte, Icons, Schriften und portalisierte Overlays müssen
+   im bereinigten Offline-HTML tatsächlich sichtbar sein. Der automatische Export
+   ist für diese Zustände noch nicht nachgewiesen. Falls er scheitert, gezielt den
+   bewährten SingleFile-Weg verwenden und verbleibende Handarbeit benennen; keinen
+   universellen Vaadin-Exporter oder neue Erweiterungsinstallation daraus machen.
+4. **Vollständigen Kreislauf nachweisen:** Bereinigte Originalszene per CLI als
+   Referenzscreen importieren, ausgewählte Designreferenz und denselben begrenzten
+   Änderungsauftrag mitgeben, genau einen passenden Entwurf anfordern. Nach
+   unabhängigem Abruf HTML und Bild kontrollieren: keine fehlenden Felder,
+   zusätzlichen Versprechen, neuen Funktionen oder geänderten Sicherheitsabläufe.
+   Ein erfolgreicher Upload allein ist kein Nachweis eines brauchbaren Ergebnisses.
+5. **Restliche Szenen abarbeiten:** Nach erfolgreicher Probe denselben Ablauf
+   für die übrigen Seiten und nötigen Overlay-Zustände nutzen. Kurze Zuordnung
+   von Szene, Eingabedatei, Quell-/Ergebnisscreen und Prüfzustand in den temporären
+   Arbeitsdaten halten. Verlorene Felder gezielt korrigieren; bei Timeout zuerst
+   gespeicherten Projektstand abrufen und keine blinden Doppelgenerierungen starten.
+
+CLI-Import, Generierung und Rückabruf sind im Profilfall erprobt. Die verlässliche
+vollautomatische Vaadin-Aufnahme aller Zustände und ein einheitlicher Portalentwurf
+sind damit noch nicht bewiesen. Unterschiedliche Stitch-Ausgaben werden vor dem
+Zusammenbau geprüft und nötigenfalls an den gemeinsamen Rahmen angeglichen.
+Eine zusätzliche Stitch-Integration in die Anwendung ist dafür nicht nötig.
+
+#### 3c – Einen zusammenhängenden klickbaren Prototyp zusammensetzen
+
+- Aus den gewählten Entwürfen einen gemeinsamen responsiven HTML-/CSS-Rahmen mit
+  wiederverwendbaren Header-, Seitenkopf-, Navigations-, Footer- und Overlayteilen
+  aufbauen. Die fünf Szenen wechseln innerhalb dieses Rahmens. Rohentwürfe nicht
+  als fünf unabhängig gestaltete Seiten aneinanderhängen.
+- Zahnrad und Kontozugang öffnen Persönliche Daten; Portalnavigation führt zu
+  Startseite und Inbox. Glocke öffnet die Vorschau mit Zugang zur vollständigen
+  Inbox; Benutzeravatar öffnet das Benutzermenü. Profilbild-, Passwort- und
+  E-Mail-Aktionen öffnen die zugehörigen Beispieldialoge. Schließen/Abbrechen,
+  Escape, Fokus und schmale Darstellung berücksichtigen.
+- Jeder sichtbare Aktionsknopf erhält eine nachvollziehbare lokale Reaktion oder
+  einen klaren Hinweis auf die Simulation. Statuswahl aktualisiert die sichtbaren
+  Statusstellen; Inbox-Pagination und Filter arbeiten auf einem festen Beispielsatz.
+  Speichern, Widerruf, Passwort-/E-Mail-Wechsel und Abmelden zeigen ausschließlich
+  Demo-Rückmeldungen. Keine echten Dienste, Sitzungseingriffe, Uploads oder Mails;
+  kein Nachbau der fachlichen Validierung. Sprache ist als Menüelement beurteilbar;
+  eine vollständige englische Demo bleibt optional und wird nicht vorgetäuscht.
+- Hintergrundumschaltung und Auswahl kurzer/langer Beispieldaten außerhalb des
+  dargestellten Produktbereichs platzieren. Beide Hintergründe in derselben Szene
+  vergleichen können, einschließlich geöffneter Overlays. Desktop und Smartphone
+  zeigen dieselben Inhalte, keine getrennten Designrichtungen.
+- Vor lokalem Öffnen fremde Skripte/Netzverweise prüfen; Styles, Schriften und
+  benötigte Assets lokal bündeln. Nur überprüfte Vorschau-Interaktionen behalten.
+  Als lokal nutzbares Paket mit Einstieg und kurzen Bedienhinweisen bereitstellen.
+  Der Prototyp darf keine Verbindung zur echten Anwendung benötigen.
+- Tatsächlich prüfen: alle Navigationsziele und sichtbaren Aktionen, Overlay-
+  Öffnen/Schließen und Fokus, Namens-/E-Mail-Überlängen, Statusfarben mit Text,
+  erreichbare Aktionen und keine unbeabsichtigten horizontalen Überläufe bei
+  `1440×1000` und `390×844`. Das sind gezielte Prototypprüfungen, keine große QA
+  und keine Abnahme echter Konto-/Sicherheitsfunktionen.
+
+**Entscheidungspunkt:** Der Benutzer beurteilt das Zusammenspiel des Portals und
+wählt den Hintergrund. Erst danach den Umfang der Vaadin-Übertragung festlegen.
+
+#### Bereits geprüfte Grundlage des kombinierten Entwurfs
+
+**Erste kombinierte Vorschau fertig; Rückmeldung in 3a–3c berücksichtigt:**
+
+- Maßgeblicher Screen im Projekt „Workflow testen – Cosmos“:
+  `3491682885136864837`, **„Kombination C + B · Vorschau“**. Der erzeugte
+  Stitch-Rohentwurf `84d8420ec22449859b2f6ebe205ba420` bleibt als Ausgangspunkt
+  erhalten; maßgeblich ist die anschließend lokal präzisierte und neu importierte
+  Vorschau. Keine vorhandenen Screens gelöscht.
+- Header und Content besitzen bei `1440×1000` denselben begrenzten Innenbereich
+  (gemessene Kanten bei 100 und 1340 CSS-Pixeln). C-Grundfarben und cyanblauer
+  Hauptakzent wurden gezielt beibehalten; die leicht abweichenden Aliasfarben der
+  Stitch-Ausgabe wurden an C angeglichen. Die beiden C-Hintergrundbausteine sind
+  übernommen. Der Footer ist bei Desktop und schmaler Ansicht horizontal zentriert.
+- Die B-Seitennavigation ist in Portalziele (Startseite, Benachrichtigungen) und
+  Kontobereiche gegliedert. Keine doppelten horizontalen Tabreihen und keine große
+  zusätzliche C-Profilkarte neben dem Formular. Die Identität sitzt kompakt in der
+  Seitenleiste; Home wird nur als Navigationsziel dargestellt, ohne neuen Seiteninhalt.
+- Geprüft bei `1440×1000` und `390×844`: keine horizontalen Überläufe; alle fünf
+  Profilfelder und Ausgangswerte, readonly E-Mail, zwei Sprachoptionen, Status,
+  Profilbild-/Speicheraktion sowie die bestehenden Kontoziele erhalten. Schmal
+  stehen die Felder untereinander. Die Speicheraktion ist durch Scrollen erreichbar.
+- Das schmale Menü wurde geöffnet und mit Escape geschlossen; `aria-expanded`
+  und Beschriftung folgen dem Zustand, der Fokus kehrt zum Menüsymbol zurück.
+  Diese kleine lokale Vorschau-Interaktion ersetzt keine Vaadin-Funktionsprüfung.
+  Die eigentlichen Navigationsziele und Speichern sind weiterhin nur Designreferenzen.
+- Nach Einbetten von Styles/Inter und Entfernen externer Skripte und Styles wurde
+  die Vorschau erneut geladen und geprüft. Ein überprüftes lokales Menüskript bleibt;
+  es ruft keine Dienste auf. Kein Anwendungsstart, keine Mail-/Datenbankaktionen,
+  keine JUnit-/Browserjourney-Suite und keine globale Theme-Änderung.
+- Arbeitsdateien unter `target/designkritik-stitch/combined/`: `preview/kombination.html`
+  ist die eigenständig responsive Datei, `desktop.html`/`smartphone.html` stellen
+  feste Vorschaugrößen bereit. `cosmos-kombination.zip` enthält diese drei Dateien
+  und Bedienhinweise. Belege: `desktop-vorschau.jpg`, `smartphone-vorschau.jpg`,
+  `smartphone-formular-footer.jpg`, `smartphone-menue.jpg`. Der lokale Vorschau-Server
+  wurde nach der Prüfung beendet. Quellen und fremde Rohantworten bleiben ignoriert.
+- SHA256 der hochgeladenen Vorschau:
+  `0C5E220A8D3C390CF0B5836421BC6B4A63F524AC1C1A0F9F056C387CA8EFEB33`.
+  Projekt-Ruff-Formatierung und Formatprüfung der lokalen Python-Helfer bestanden.
+  Der hochgeladene Endstand wurde zusätzlich unabhängig per CLI abgerufen.
+
+Die gemeinsame Rückmeldung ist in 3a–3c aufgenommen. Offen sind deren Umsetzung
+und gemeinsame Bewertung, danach die ausdrücklich beauftragte Vaadin-Spielwiese.
+Reales Smartphone, EN-Layout, Kontrastmessung, Screenreader sowie echte Fachabläufe
+sind nicht abgenommen.
+Paket 3 und das Gesamtfeature sind damit noch nicht abgeschlossen.
+
+#### 3d – Nach gemeinsamer HTML-Bewertung in Vaadin erleben
 
 - Gewählte Grundlage: Header, Footer und Farben aus C mit Content/Seitennavigation
   aus B verbinden. Copyright im Footer zentrieren; die doppelten horizontalen
@@ -554,10 +745,13 @@ verwirft alle. **Hier liegt der erste bewusste Designentscheid.**
 - Baseline und Entwurf bei gleichem Szenario umschaltbar machen; ein Dialog oder
   zwei widersprüchliche Themes dürfen nicht aus der vorherigen Variante fortleben.
 
-**Optional später / Nice to have:** Sicherheit/Sitzungen als bedienbare Beispiele,
-weitere Dialoge und Zustände sowie ein umfassenderer DESIGN.md-Austausch. Auch dann
+**Optional später / Nice to have im Vaadin-Piloten:** Sicherheit/Sitzungen als
+bedienbare Vaadin-Beispiele, weitere Dialoge und Zustände sowie ein umfassenderer
+DESIGN.md-Austausch. Im vorangehenden HTML-Portal gehören diese Benutzerbereiche
+bereits zum geplanten Umfang. Auch im Vaadin-Piloten
 bleiben Passwortwechsel, Widerruf und Versand eindeutig simuliert und ohne fachliche
-Seiteneffekte. Beispiel-Pagination gehört zur optionalen Transferprobe in Paket 4.
+Seiteneffekte. Pagination ist im HTML-Portal enthalten; ihre Vaadin-Transferprobe
+gehört zu Paket 4.
 
 **Ergebnis:** Der Benutzer beurteilt die Gestaltung mit den tatsächlichen
 Vaadin-Bedienelementen. Abweichungen vom Stitch-Bild werden erklärt. Ein schönes
@@ -565,9 +759,10 @@ Stitch-Preview allein gilt nicht als erfolgreiche Integration.
 
 ### Paket 4 – Optional später: Tragfähigkeit an weiteren Beispielen prüfen
 
-Dieses Paket ist eine erhaltene Vertiefungsoption, keine Pflicht für den ersten
-Versuch. Erst nach positiver Richtungsaussage zum Konto und passendem Folgeauftrag
-den Entwurf auf eine kleine Inbox-Szene und die Komponentenprobe übertragen.
+Dieses Paket ist eine erhaltene Vertiefungsoption für den Vaadin-Transfer, keine
+Pflicht vor der HTML-Bewertung. Die Inbox-Vorschau gehört bereits zu 3b/3c.
+Erst nach positivem HTML-Vergleich und passendem Folgeauftrag den Entwurf auf
+eine echte Vaadin-Inbox-Szene und die Komponentenprobe übertragen.
 Schwerpunkt sind dichte Inhalte, Pagination, Suche/Filter, eindeutige
 gelesen/ungelesen-Zustände, ein Dialog sowie Formularfehler. Keine vollständige
 Administration nachbauen.
@@ -589,7 +784,8 @@ ausgeglichen werden. Weitere Designrunden nur mit einer konkreten neuen Hypothes
 
 ### Paket 5 – Versuch bewerten und bewusst abschließen oder weiterführen
 
-Diese Entscheidung folgt bereits auf den kleinen Piloten aus Paket 3. Paket 4
+Diese Entscheidung ist bereits nach dem HTML-Portal aus 3c möglich; die technische
+Tragfähigkeit in Vaadin wird erst mit 3d beurteilt. Paket 4
 und die anderen optionalen Vertiefungen sind dafür keine Voraussetzung. Der
 Benutzer entscheidet zwischen:
 
@@ -633,7 +829,7 @@ Ausgangsprompt für Paket 2, nach der Bestandsaufnahme konkretisieren:
 > Verwende die vorhandenen Beispielinhalte, Profilfelder und Profilaktionen.
 > Erhalte Avatar/Status und die Sprachauswahl. Andere Kontobereiche bleiben als
 > Navigationsziele erkennbar, werden jetzt aber nicht als eigene Screens ausgearbeitet.
-> Inbox und Pagination gehören erst zu einer späteren optionalen Transferprobe;
+> Inbox und Pagination sind nicht Teil dieser ersten Richtungsvarianten;
 > eine dort vorhandene Pagination darf nicht durch Endlosscrollen ersetzt werden.
 > Erfinde keine zusätzlichen Features. Zeige zu jeder Variante ein zusammenhängendes
 > Farbkonzept mit benannten Rollen. Das Zielsystem ist Vaadin Flow;
@@ -649,12 +845,13 @@ kontrolliert, ob der Auftrag wirklich umgesetzt wurde.
 ## Bewertung und Prüfgrenzen
 
 Jede Variante wird gegen dieselben Aufgaben des jeweils gewählten Umfangs beurteilt.
-Im ersten Versuch: Profilangabe ändern, den Beispieldialog öffnen/schließen und
-einen Formularfehler erkennen und korrigieren. In frühen Bildern ist das eine
-Durchsicht, in der Spielwiese eine simulierte Bedienung; echte Fachfunktion folgt
-erst bei Übernahme. Sicherheitsbereich finden, aktuelle Sitzung erkennen,
-ungelesene Nachricht finden und zur nächsten Seite wechseln kommen erst hinzu,
-wenn die entsprechenden optionalen Beispiele beauftragt sind.
+Im geplanten HTML-Portal: zwischen den fünf Bereichen wechseln, Profilangabe
+bearbeiten, Beispieldialoge öffnen/schließen, Status im Benutzermenü wählen,
+aktuelle Sitzung erkennen, ungelesene Nachricht finden und zur nächsten Seite
+wechseln. Lange Namen und beide Hintergründe sind im selben Szenario vergleichbar.
+In frühen Bildern ist das eine Durchsicht, im Prototyp eine simulierte Bedienung;
+echte Fachfunktion folgt erst bei Übernahme. Der spätere kleine Vaadin-Pilot prüft
+zusätzlich die Übertragung auf native Controls anhand Profil, Dialog und Fehlerzustand.
 
 | Kriterium | Entscheidende Frage |
 | --- | --- |
@@ -662,8 +859,8 @@ wenn die entsprechenden optionalen Beispiele beauftragt sind.
 | Eigenständigkeit | Erkenne ich Cosmos wieder, und gefällt mir die Wirkung auch nach längerer Betrachtung? |
 | Bedienbarkeit | Finde und verstehe ich die Aktionen ohne zusätzliche Erklärung? |
 | Lesbarkeit | Sind lange Texte, Hilfen und Zustände angenehm erfassbar? |
-| Konsistenz | Trägt dieselbe Gestaltung die im gewählten Umfang vorhandenen Controls und Zustände; beim Piloten Profil, Beispieldialog und Formularfehler? |
-| Technische Tragfähigkeit | Funktioniert sie mit nativen Vaadin-Controls und lokal begrenzten Styles? |
+| Konsistenz | Trägt dieselbe Gestaltung die fünf Portalszenen, gemeinsame Navigation, Popovers und Dialoge? |
+| Technische Tragfähigkeit | HTML zunächst als Gestaltungsvorlage; funktioniert die spätere Übertragung mit nativen Vaadin-Controls und lokal begrenzten Styles? |
 
 Der Benutzer benennt zu jeder Richtung konkret „behalten“, „stört“ und „ändern“.
 Optional hilft eine grobe Bewertung von 1 bis 5 pro Kriterium; eine errechnete
@@ -690,9 +887,10 @@ Java-Änderungen mit den zentralen `-N`-Zielen für Spotless und Checkstyle prü
 Browseraufnahmen, gezielte Browsertests und eine spätere große DE/EN-Runde haben
 unterschiedlichen Umfang und werden im jeweiligen Auftrag ausdrücklich freigegeben.
 Bei DE/EN dasselbe unveränderte aktuelle Image und die bestehende Isolation verwenden.
-Aktuell sind nur der für Paket 1 notwendige isolierte Build/Start, die gezielten
-Profilaufnahmen, die lokale HTML-Prüfung und der begrenzte Stitch-Übergabetest
-freigegeben; keine große QA oder Sonar-Scans.
+Der bisherige isolierte Build/Start, Profilaufnahmen und HTML-/Stitch-Prüfungen
+sind durchgeführt. Aktuell ist die weitere Planung beauftragt. Zusätzliche
+Aufnahmen/Starts, Stitch-Generierungen und Prototypimplementierung erfolgen mit
+dem entsprechenden Umsetzungsauftrag; keine große QA oder Sonar-Scans ableiten.
 
 Sobald konkrete Implementierungen neue Testlücken erzeugen, diese in
 `docs/testbedarf.md` aufnehmen und erst nach erfolgreichem Nachweis entfernen.
@@ -720,5 +918,7 @@ Reset-Guthaben oder separater API-Abrechnung. Zwischen größeren Schritten Kont
 prüfen und bei Erschöpfung stoppen. Eine automatische Fortsetzung ist nicht eingerichtet.
 
 Zeit und Kontingent sind eine Obergrenze, kein Verbrauchsziel. Zuerst ein kleiner
-vollständiger Kreislauf aus Referenz, Variante, Auswahl und Vaadin-Vergleich; weitere
-Runden nur, wenn sie eine konkrete offene Frage beantworten.
+vollständiger Kreislauf aus verfeinerter Referenz, einer weiteren Szene samt
+Overlay und geprüftem Rückabruf. Danach gezielt zum geplanten HTML-Portal ausbauen;
+Vaadin-Vergleich folgt nach dessen Bewertung. Weitere Designrunden nur, wenn sie
+eine konkrete offene Frage beantworten.

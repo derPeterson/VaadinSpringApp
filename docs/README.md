@@ -30,7 +30,10 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
   Paket 1 technisch fertig: Profilreferenzen, HTML-Vorschauen und Bestandskritik
   vorhanden; direkter CLI-Import der Account-Seite als sichtbarer Screen geprüft.
   Paket 2 abgeschlossen: C für Header/Footer/Farben, B für Content/Seitennavigation
-  gewählt; Copyright wird zentriert. Kombinierter Entwurf und Vaadin-Pilot stehen aus.
+  gewählt; Copyright zentriert. Kombinierter Entwurf vorhanden; Rückmeldung ist
+  in die Planung eines klickbaren Benutzerportals mit durchgängigem Seitenkopf,
+  Dialogen, langen Beispieldaten und zwei Hintergründen aufgenommen. Dieser
+  HTML-Vergleich geht dem noch offenen Vaadin-Piloten voraus.
 
 Weitere vereinbarte Arbeiten stehen in [TODO](../TODO.md); gültige Bedienung und
 Konfiguration in den obigen Fachdokumenten.
