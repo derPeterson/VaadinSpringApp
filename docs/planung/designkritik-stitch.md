@@ -2,10 +2,13 @@
 
 ## Auftrag und aktueller Stand
 
-**Aktuell freigegeben: Recherche, Planung und eigener Branch.** Der Plan wird zur
-Diskussion vorgelegt; seine Umsetzung beginnt erst mit dem nächsten Auftrag.
-Es wurden weder Anwendung noch Tests gestartet, keine Designs hochgeladen und
-keine Stitch-Erweiterungen installiert.
+**Paket 1 ist technisch fertig.** Profilaufnahmen, Bestandskritik und bereinigte
+HTML-Referenzen sind vorhanden. Die benutzerseitige SingleFile-Aufnahme der
+Account-Seite wurde über die vorhandene Stitch-CLI in das private Versuchsprojekt
+„Workflow testen – Cosmos“ als sichtbarer Screen importiert und anschließend
+erneut abgerufen sowie im Browser kontrolliert. Keine Designvarianten erzeugt,
+keine Stitch-Erweiterungen installiert und keine Anwendungsoberfläche verändert.
+Paket 2 benötigt den nächsten Auftrag; das gesamte Designfeature bleibt offen.
 
 - Branch: `feature/designkritik-stitch`.
 - Basis: lokales `main`, Commit `ac3b239fac5ae0e2e6f56be3483ae5811be51648`;
@@ -75,12 +78,14 @@ Vor dem Bau der Spielwiese werden bereits vorhandene Ansichten als Referenz
 aufgenommen. Erst nach Auswahl einer Richtung entsteht der Vaadin-Pilot. Damit
 kann der Benutzer frühe Entwürfe ablehnen, bevor viel Implementierungsarbeit anfällt.
 
-## Vorläufige Bestandskritik
+## Bestandskritik: Quellenhypothesen und Profilaufnahme
 
 Grundlage sind `docs/theme.md`, die gepflegten Cosmos-CSS-Quellen sowie
 `HomeView`, `AccountView`, `UserNotificationsView`, `AccountSettingsComponent`,
-`AccountNavigationTabs` und `AccountPanelComponent`. **Dies ist eine Quellenanalyse,
-noch keine visuelle Abnahme der laufenden Anwendung.**
+`AccountNavigationTabs` und `AccountPanelComponent`. Die folgende Tabelle enthält
+die ursprünglichen Quellenhypothesen. Die darunter beschriebene Profilaufnahme
+ergänzt sie um tatsächliche visuelle Beobachtungen; eine gemeinsame Designabnahme
+ist damit noch nicht erfolgt.
 
 | Beobachtung | Einschätzung / zu prüfende Verbesserung |
 | --- | --- |
@@ -93,12 +98,39 @@ noch keine visuelle Abnahme der laufenden Anwendung.**
 | Zahlreiche Texte liegen auf kleinen Schriftstufen; ausgefüllte Eingaben sind kräftig gewichtet | Lesbarkeit und Hierarchie prüfen, insbesondere längere Hilfen und DE/EN. Kein pauschales Größenurteil ohne Darstellung |
 | Transparenz und bewegter Hintergrund wirken zusammen | Kontrast am tatsächlich zusammengesetzten Hintergrund messen, nicht nur einzelne Tokenwerte vergleichen |
 
-Diese Hypothesen werden in Paket 1 für die ausgewählte Profilansicht bestätigt,
-widerlegt oder präzisiert; Beobachtungen anderer Ansichten bleiben bis zu deren
+Diese Hypothesen wurden in Paket 1 für die ausgewählte Profilansicht anhand der
+Aufnahmen geprüft und präzisiert; Beobachtungen anderer Ansichten bleiben bis zu deren
 optionaler Vertiefung offen. Geschmack, nachweisbares Bedienhindernis und technische
 Ursache werden getrennt benannt.
 Ein Finding erhält Ort/Zustand, Beleg, Auswirkung, Priorität und einen konkreten
 Verbesserungsvorschlag. Gute Eigenschaften werden ebenso ausdrücklich festgehalten.
+
+### Beobachtungen am Profil
+
+Vergleichsstand: `ff108b19ea5ea194e250926c54d8b987e2fa2c35`, optimiertes JAR,
+Chromium `153.0.8010.12`, Deutsch, Desktop `1440×1000` und schmal `390×844`.
+Der sichtbare Benutzer „Lea Sommer“ und sämtliche Kontodaten sind erfunden.
+Die Aufnahmen zeigen denselben Profilinhalt; Hintergrundbewegung wurde nur für
+die Screenshots angehalten. Das ist keine Prüfung der Animation im normalen Betrieb.
+
+**Erhalten:** Die dunkelblaue Farbwelt ist zusammenhängend; die Aufnahme zeigt
+kein wahlloses Mischen vieler bunter Panelhintergründe. Hintergrund und Planeten
+geben eine erkennbare Identität. Das zweispaltige Desktopformular ist ordentlich
+ausgerichtet. In der schmalen Ansicht stehen die Felder verständlich untereinander,
+und die Speicheraktion bleibt nach Scrollen erreichbar.
+
+| Priorität | Ort und beobachteter Zustand | Auswirkung und Verbesserungshypothese |
+| --- | --- | --- |
+| Hoch im Designversuch | Schmal: Kopf, Einleitung, Seitentabs, große Profilzusammenfassung, Untertabs und Panelkopf stehen vor den Feldern; im ersten Viewport ist noch kein Eingabefeld sichtbar | Die eigentliche Profilaufgabe beginnt spät. Identitätsbereich kompakter machen und redundante Kopf-/Navigationsebenen zusammenführen |
+| Mittel | Desktop: „Mein Konto / Einstellungen“, „Einstellungen“, aktive Einstellungen-Navigation, „Persönliches Profil“, „Persönliche Daten“ und „PROFIL“ markieren ähnliche Zusammenhänge mehrfach | Die Hierarchie wirkt aufwendig. Pro Ebene einen eindeutigen Zweck geben, wiederholte Beschriftungen reduzieren, Funktionen und Orientierung erhalten |
+| Mittel | Schmal: Der Anwendungsname bricht mit einem einzelnen letzten Buchstaben in eine zweite Zeile um | Die Kopfzeile wirkt beengt. Platzverteilung von Logo, Name und Aktionen als Teil der Gestaltung prüfen; Namen nicht unkontrolliert umbrechen lassen |
+| Mittel | Beide Größen: Der grün leuchtende Avatar erscheint im Appkopf und nochmals groß in der Profilzusammenfassung | Status und Identität ziehen viel Aufmerksamkeit auf sich. Eine primäre Identitätsstelle festlegen und die zusätzliche Statusdarstellung zurücknehmen |
+| Mittel | Hintergrund, Cardrahmen, Trennlinien, Iconkästen und aktive Tabunterstreichungen sind gleichzeitig sichtbar | Mehrere Gliederungssignale konkurrieren. Weniger Rahmen-/Flächenwechsel mit klareren Abständen und Typografie vergleichen; kosmischen Hintergrund erhalten |
+
+Dies sind Designbefunde, keine nachgewiesenen Fehler in Speichern, Rechten oder
+Sitzungsabläufen. Kontrastwerte, Tastaturbedienung, EN-Layout und echte Mobilgeräte
+wurden in dieser Referenzaufnahme nicht abgenommen. Andere Ansichten bleiben
+bei den oben gekennzeichneten Quellenhypothesen.
 
 ## Was Stitch beitragen kann und was offen bleibt
 
@@ -115,28 +147,40 @@ Recherche vom 23. Oktober 2026:
 Zum Recherchezeitpunkt waren **keine Stitch-Werkzeuge verbunden**. Die Plugin-Suche nach
 Stitch lieferte keinen Treffer im verfügbaren Katalog. Das schließt eine direkte
 MCP-Anbindung oder den im Google-Labs-Repository beschriebenen Marketplace nicht aus.
-Installation, Authentifizierung und reale Übertragbarkeit sind noch nicht geprüft.
+Eine zusätzliche MCP-Anbindung wurde nicht eingerichtet oder praktisch geprüft.
+Der unten beschriebene CLI-Übergabeweg ist dagegen nachgewiesen.
 
-### HTML-Export: zuerst die einfache, verlässliche Referenz
+### HTML-Vorschau als Übergabe, Screenshots als Vergleich
 
 Ein gespeichertes Seiten-HTML ist bei Vaadin nicht automatisch ein vollständiges
 Abbild. Komponenten nutzen Shadow DOM; Werte, Icons, Overlay-Inhalte und Styles
 müssen tatsächlich mitkommen. Ein normaler Quelltext- oder `outerHTML`-Export kann
 deshalb unvollständig sein. [Vaadin-Komponentenstyling](https://vaadin.com/docs/latest/styling/styling-components)
 
-Für den ersten Versuch genügen Screenshots und Beschreibung. Der HTML-Export ist
-eine optionale spätere Verbesserung, falls er einen konkreten Nutzen für die
-Übergabe oder weitere Iterationen bietet; er ist keine Voraussetzung für Paket 2.
-Falls er später beauftragt wird, gilt folgende Reihenfolge:
+Der Benutzer hat für diesen Ablauf nach seinem eigenen Stitch-Versuch eine
+HTML-Vorschau statt einer reinen Screenshot-Übergabe vorgegeben. Die HTML-Vorlage
+gehört damit zum Kern von Paket 1; die Screenshots bleiben Vergleichsbelege.
+Das ist die Entscheidung für unseren Arbeitsweg, keine allgemeine Behauptung,
+Stitch könne grundsätzlich keine Bilddateien annehmen.
 
-1. Bereinigte Screenshots mit festen Ansichtsgrößen, realistischen Beispieltexten
-   und einer kurzen Liste der Funktionen/Zustände als verlässliche Referenz.
-2. Einen kleinen HTML-Export exemplarisch prüfen: Feldwert, Button/Icon, Tabs,
-   geöffneter Dialog und Hintergrund. Nach Abschalten der eigenen Ausgangsinstanz
-   muss die exportierte Ansicht noch vollständig dargestellt werden.
-3. Nur bei ausreichender Darstellungstreue HTML zusätzlich verwenden. Andernfalls
-   bei Bildern und Beschreibung bleiben. Keinen allgemeinen Vaadin-Exporter bauen,
-   nur um diesen Designversuch zu ermöglichen.
+1. Bereinigte Ausgangsaufnahmen mit festen Ansichtsgrößen und realistischen
+   Beispieltexten als Vergleich verwenden.
+2. Für den nachgewiesenen CLI-Weg die Seite mit SingleFile speichern und bereinigen;
+   dessen deklarative Shadow-DOM-Vorlagen und eingebettete Gestaltung erhalten.
+   Skripte, Handler, Sicherheitstoken und lokale Serververweise entfernen. Nur
+   erfundene sichtbare Profildaten übernehmen. Die getrennt erstellten statischen
+   Desktop-/schmalen Vorschauen mit aufgelösten Slots und berechneten Styles
+   bleiben zusätzliches Vergleichsmaterial, kein allgemeiner Vaadin-Exporter.
+3. Nach Abschalten der Ausgangsinstanz Desktop und schmale Vorschau in Chromium
+   prüfen: Felder, Werte, Logo und Darstellung müssen erhalten bleiben; externe
+   Netzaufrufe sind nicht erforderlich. Abweichungen im Vergleich korrigieren.
+4. Die HTML-Datei in ein eigenes Stitch-Projekt übergeben und den dortigen Import
+   tatsächlich prüfen. Keinen allgemeinen Vaadin-Exporter aus dieser einmaligen
+   Profilaufnahme entwickeln.
+
+Die vorbereiteten Dateien sind getrennte statische Momentaufnahmen für Desktop
+und schmale Ansicht. Sie enthalten keine Fachlogik und sind weder ein fertig
+responsives Theme noch ein Ersatz für die laufende Vaadin-Anwendung.
 
 Die vorhandene Google-Labs-Extraktion ist ein Kandidat, kein nachgewiesener
 Vaadin-Konverter. [Quellbeschreibung der HTML-Extraktion](https://github.com/google-labs-code/stitch-skills/blob/main/plugins/stitch-design/skills/extract-static-html/SKILL.md)
@@ -145,8 +189,15 @@ eingesetzt; ihre React-Buildabläufe passen nicht zum Projektauftrag.
 
 ### Automatisierung mit überprüfbaren Ergebnissen
 
-Bevorzugt: Stitch-MCP für Projekt-/Screenauswahl, Erzeugung, Varianten, Abruf und
-Designsystem. Nur benötigte Designfunktionen einrichten. Zugangsdaten gehören in
+Für den aktuellen Versuch die bereits vorhandene Stitch-CLI verwenden. Der frühere
+SingleFile-/CLI-Import ist durch die Ausgabe im
+[geteilten Chat](https://chatgpt.com/share/6adb81e8-b7c8-83eb-8189-4b4e7c4da813)
+und die sichtbare Benachrichtigungsreferenz im bestehenden Projekt belegt.
+`stitch upload screen` importiert HTML als Screen; das Anhängen einer Codedatei im
+Webdialog hat diesen Ablauf im aktuellen Versuch nicht ersetzt.
+Eine zusätzliche MCP-Anbindung bleibt eine mögliche spätere Vertiefung, keine
+Voraussetzung für den ersten funktionierenden Kreislauf.
+Nur benötigte Designfunktionen einrichten. Zugangsdaten gehören in
 eine geschützte lokale Einrichtung, weder in Chat-Ausgaben noch ins Repository.
 Kein vollständiger Repository-Upload und keine Veröffentlichung/Tunnel der lokalen
 Anwendung. Ein lokaler Link wird nicht als von Google erreichbare Vorlage behandelt.
@@ -165,8 +216,9 @@ Projektstand prüfen, statt durch blindes Wiederholen doppelte Entwürfe anzuleg
 [Stitch-SDK-Issue 361](https://github.com/google-labs-code/stitch-sdk/issues/361)
 
 Falls MCP bei Import oder Bearbeitung nicht zuverlässig funktioniert, bleibt der
-Ablauf nutzbar: Codex bereitet Bilder und kopierbare Prompts vor, der Benutzer oder
-ein verfügbarer Browserzugriff führt den Schritt in Stitch aus, anschließend werden
+Ablauf nutzbar: Codex bereitet bereinigte HTML-Vorschauen und kopierbare Prompts vor.
+CLI oder ein verfügbarer Browserzugriff führen den Schritt in Stitch aus; falls
+nötig übernimmt der Benutzer die Dateiauswahl. Anschließend werden
 die ausgewählten Ergebnisse zurückgegeben. Nach einem gezielten Nachversuch die
 Alternative nutzen; die Designaufgabe nicht in eine Integrationsbaustelle verwandeln.
 Es werden weder kostenpflichtige Zugänge aktiviert noch Generierungslimits umgangen.
@@ -201,7 +253,8 @@ Tokenliste neben `docs/theme.md` und den Stylesheets.
 
 ## Arbeitspakete und Entscheidungspunkte
 
-Alle folgenden Pakete sind offen und noch nicht zur Umsetzung freigegeben.
+Paket 1 ist technisch fertig. Pakete 2 bis 5 sowie die optionalen
+Vertiefungen bleiben ohne weiteren Auftrag offen; es wurde keine Neugestaltung begonnen.
 
 ### Kleiner Kern und optionale Vertiefungen
 
@@ -210,7 +263,7 @@ ersten vollständigen Versuch gilt jedoch nur der folgende Kern:
 
 | Paket | Kern des ersten Versuchs | Optional später / Nice to have |
 | --- | --- | --- |
-| 1 | Eine Profilansicht am Desktop und schmal aufnehmen, gezielte Bestandskritik, kurzen Stitch-Verbindungs-/Übergabetest durchführen | Weitere Seiten und Sprachvarianten aufnehmen, HTML-Export erproben, Automatisierung ausbauen |
+| 1 | Profil am Desktop und schmal aufnehmen, Bestandskritik, bereinigte HTML-Vorschau und kurzen Stitch-Übergabetest vorbereiten/durchführen | Weitere Seiten und Sprachvarianten aufnehmen, Export über den Profilfall hinaus ausbauen, Automatisierung vertiefen |
 | 2 | Drei vergleichbare Designrichtungen vorstellen und eine auswählen | Zusätzliche Varianten oder weitere Screens erzeugen |
 | 3 | Gewählte Richtung als kleine Vaadin-Spielwiese mit Profil, einem Dialog und einem Fehlerzustand erleben | Sicherheit/Sitzungen, weitere Dialoge und umfassenderen DESIGN.md-Austausch ergänzen |
 | 4 | Kein Pflichtschritt für den ersten Versuch | Benachrichtigungen, Pagination, Grid und zusätzliche Zustände als Transferprobe ergänzen |
@@ -228,6 +281,89 @@ schmale Bedienbarkeit und erforderliche gezielte Regressionen bleiben verbindlic
 
 ### Paket 1 – Kleinen Ausgangspunkt aufnehmen und Stitch-Weg erproben
 
+**Stand: abgeschlossen für den vereinbarten Referenzumfang.** Bestandskritik,
+Desktop-/schmale Profilaufnahmen und der funktionierende Stitch-Übergabeweg sind
+vorhanden. Die mobile HTML wurde noch nicht zusätzlich in Stitch importiert.
+Paket 2 wurde nicht begonnen.
+
+Der verwendete Weg ist **SingleFile → Bereinigung → CLI `upload screen`**.
+Installiert ist `@google/stitch` in Version `0.11.1`; die vorhandene OAuth-/Canvas-
+Anmeldung ließ sich automatisch erneuern. Neue Installation oder Anmeldung war
+nicht erforderlich. Projektanlage, Screen-Upload und unabhängiger anschließender
+Abruf wurden tatsächlich ausgeführt. Der Webdialog hatte die vorige HTML dagegen
+als Codeanhang übernommen; die danach versuchte Generierung scheiterte. Eine
+allgemeine HTML-Unverträglichkeit oder ein Größenlimit ist damit nicht nachgewiesen.
+Der bisherige private Entwurf „Cosmos UI Design Review“ blieb unverändert.
+
+Aktueller externer Arbeitsstand:
+
+- Privates Projekt: [Workflow testen – Cosmos](https://stitch.withgoogle.com/projects/14011270174485926515),
+  ID `14011270174485926515`.
+- Referenzscreen: „Account – Ausgangsreferenz“, ID `5775520971778872726`.
+  Der unabhängige CLI-Abruf bestätigt Titel und Abmessungen `2560×1600`.
+- Nach Neuladen im Browser war die gerenderte Account-Seite mit Kopfbereich,
+  kosmischem Hintergrund, Identitätsbereich und Profilfeldern sichtbar. Keine
+  Designverbesserung oder Funktionsprüfung; es handelt sich um eine statische Vorlage.
+- Die CLI meldete zusätzlich drei bereinigte mögliche Geheimnis-/Tokenwerte.
+  Das ist eine Meldung ihres Scrubbers, kein Nachweis dreier echter Zugangsdaten.
+  Die lokale Quelldatei blieb laut SHA256 unverändert.
+
+Benutzerseitige SingleFile-Vorlage und lokale Belege unter
+`target/designkritik-stitch/user-reference/`:
+
+- `account-bereinigt.html`: erfundene Profilwerte und eingebettete Gestaltung;
+  ursprüngliche CSRF-Metadaten, lokale Serverziele und Skripte entfernt.
+  SHA256: `A2F5D389C76549C7A1B38FE064A49F05D84F741CABB1E986F7B88BA157DE4FA6`.
+- `account-vorschau.jpg` und `account-formular.jpg`: bereinigte HTML bei `1280×720`
+  lokal visuell geprüft, einschließlich gescrolltem Formular. Der nur für diese
+  Datei gestartete lokale Vorschau-Server wurde anschließend beendet.
+- `stitch-workflow-import.jpg`: nach Neuladen sichtbarer Referenzscreen in Stitch.
+- `stitch-import.json`: Zuordnung von Projekt, Screen, Quelldatei und Prüfgrenzen.
+
+Aktuelle HTML-Übergabe unter
+`target/designkritik-stitch/html-reference-20261023-112909/`:
+
+- `stitch-handoff/profile-desktop.html` und `profile-mobile.html`: eigenständige
+  statische Referenzen für `1440×1000` und `390×844`.
+- `stitch-handoff/uebergabe.txt`: konkreter Auftrag für einen Referenzimport ohne
+  Designvarianten; `manifest.json`: Revision, Browser, Ansichtsgrößen und Prüfgrenzen.
+- `stitch-profil-html.zip`: nur diese zwei HTML-Dateien, Übergabetext und Manifest.
+- `preview-desktop.png` und `preview-mobile.png`: lokale Darstellung der HTML-Dateien
+  nach Abschalten der Testanwendung. Beide Dateien wurden mit den erwarteten
+  Profilwerten und geladenem Logo ohne externe HTTP-Aufrufe geprüft; die Desktop-
+  Darstellung wurde zusätzlich visuell mit der ursprünglichen Aufnahme verglichen.
+- `stitch-import-result.jpg`: sichtbarer Stitch-Fehler beim Referenzauftrag mit
+  importierter HTML-Datei im eigenen Projekt; kein erfolgreicher Designscreen.
+
+Die vorherige reine Bildübergabe ist durch diese HTML-Übergabe ersetzt. Die folgenden
+ursprünglichen Profilaufnahmen bleiben Vergleichsmaterial.
+
+Lokale Belege unter
+`target/designkritik-stitch/reference-20261023-110804/`:
+
+- `profile-desktop.png`: Ausgangsansicht `1440×1000`.
+- `profile-mobile.png` und `profile-mobile-form.png`: Anfang und gescrollter
+  Formularbereich derselben Seite bei `390×844`; kein künstlich zusammengesetztes Bild.
+- `stitch-handoff/`: ausschließlich diese drei Bilder, `uebergabe.txt` und
+  `manifest.json`; zusätzlich als `stitch-profil-referenz.zip` gepackt. Keine Logs,
+  Zertifikate, Datenbanken, Kennwörter oder Sitzungsdaten in dieser Übergabe.
+- Das Manifest ordnet Revision, Browser, Ansichtsgrößen und das JAR eindeutig zu.
+  JAR-SHA256: `6BAD2442F3ECAF429FB58695320C5949806617B41C1109189FE59E6D35EE3D0D`.
+
+Die Referenz verwendet einen frischen nativen JAR-/Caddy-/H2-Aufbau, da die
+Docker-Linux-Engine beim Startversuch nicht erreichbar war. Das normale Testkonto
+wurde über die vorhandene Bootstrap-Konfiguration angelegt, nicht aus Entwicklerdaten
+übernommen. Es wurden keine Mailaktionen ausgeführt; als SMTP-Ziel war ausschließlich
+ein eigens reservierter Loopbackport konfiguriert. Bestehendes Windows-Testvertrauen
+wurde nur gelesen, HTTPS ohne Fehlerausnahmen geprüft. Eigene App-/Proxyprozesse,
+Datenbank und temporäre private Serverschlüssel wurden nach der Aufnahme abgebaut.
+
+Ausgeführt: Java-25-Prüfung, Reactor-Paketierung für App und Browserhilfen mit
+übersprungenen Tests, zentrale Spotless-/Checkstyle-Prüfungen des temporären
+Aufnahmehelfers sowie gezielte Anmeldung und Profilaufnahmen in Chromium. Keine
+JUnit-Suite, keine große Browserrunde und kein Sonar-Scan. Die spätere sichtbare
+Vaadin-Spielwiese wurde noch nicht implementiert.
+
 **Kern des ersten Versuchs:**
 
 - Eigene frische Testumgebung mit erfundenem normalen Benutzer vorbereiten;
@@ -243,7 +379,7 @@ schmale Bedienbarkeit und erforderliche gezielte Regressionen bleiben verbindlic
 - Stitch-Anbindung mit dem Benutzer einrichten, zunächst lesend prüfen. Ein eigenes
   Designprojekt und einen bereinigten Referenzscreen für einen kurzen Übergabetest
   verwenden. Falls die Anbindung nicht zeitnah trägt, den vorbereiteten manuellen
-  Bild-/Prompt-Weg verwenden, damit erste Entwürfe nicht an der Integration warten.
+  HTML-/Prompt-Weg verwenden, damit erste Entwürfe nicht an der Integration warten.
   Dokumentierte Funktionen von tatsächlich getesteten unterscheiden; verwendete
   automatisierte Änderungen weiterhin durch erneuten Abruf kontrollieren.
 
@@ -251,8 +387,8 @@ schmale Bedienbarkeit und erforderliche gezielte Regressionen bleiben verbindlic
 
 - Sicherheit, Sitzungen, Inbox, ein Dialog sowie Home/Appkopf zusätzlich erfassen;
   längere DE/EN-Texte und weitere Ansichtsgrößen als Referenz ergänzen.
-- Den kleinen HTML-Versuch durchführen, falls der Export die Übergabe tatsächlich
-  verbessert. Bilder bleiben der tragfähige Ausgangspunkt.
+- Den HTML-Export bei Bedarf auf zusätzliche Ansichten und Zustände erweitern;
+  die aktuelle Profilvorschau bleibt eine bewusst begrenzte Referenz.
 - Den automatisierten Ablauf für Import, Generierung, gezielte Änderung, erneuten
   Abruf und Download vertiefen, soweit die wiederholte Nutzung den Aufwand rechtfertigt.
 
@@ -450,7 +586,9 @@ Java-Änderungen mit den zentralen `-N`-Zielen für Spotless und Checkstyle prü
 Browseraufnahmen, gezielte Browsertests und eine spätere große DE/EN-Runde haben
 unterschiedlichen Umfang und werden im jeweiligen Auftrag ausdrücklich freigegeben.
 Bei DE/EN dasselbe unveränderte aktuelle Image und die bestehende Isolation verwenden.
-Jetzt keine Builds, Browserjourneys, große QA oder Sonar-Scans.
+Aktuell sind nur der für Paket 1 notwendige isolierte Build/Start, die gezielten
+Profilaufnahmen, die lokale HTML-Prüfung und der begrenzte Stitch-Übergabetest
+freigegeben; keine große QA oder Sonar-Scans.
 
 Sobald konkrete Implementierungen neue Testlücken erzeugen, diese in
 `docs/testbedarf.md` aufnehmen und erst nach erfolgreichem Nachweis entfernen.

@@ -27,7 +27,9 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
 ## Offene Arbeiten
 
 - [Designkritik und Spielwiese mit Stitch](planung/designkritik-stitch.md):
-  Bestandskritik, Varianten und begrenzter Vaadin-Pilot; zunächst nur geplant.
+  Paket 1 technisch fertig: Profilreferenzen, HTML-Vorschauen und Bestandskritik
+  vorhanden; direkter CLI-Import der Account-Seite als sichtbarer Screen geprüft.
+  Varianten und Vaadin-Pilot sind noch nicht begonnen.
 
 Weitere vereinbarte Arbeiten stehen in [TODO](../TODO.md); gültige Bedienung und
 Konfiguration in den obigen Fachdokumenten.
