@@ -29,7 +29,8 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
 - [Designkritik und Spielwiese mit Stitch](planung/designkritik-stitch.md):
   Paket 1 technisch fertig: Profilreferenzen, HTML-Vorschauen und Bestandskritik
   vorhanden; direkter CLI-Import der Account-Seite als sichtbarer Screen geprüft.
-  Varianten und Vaadin-Pilot sind noch nicht begonnen.
+  Paket 2 abgeschlossen: C für Header/Footer/Farben, B für Content/Seitennavigation
+  gewählt; Copyright wird zentriert. Kombinierter Entwurf und Vaadin-Pilot stehen aus.
 
 Weitere vereinbarte Arbeiten stehen in [TODO](../TODO.md); gültige Bedienung und
 Konfiguration in den obigen Fachdokumenten.

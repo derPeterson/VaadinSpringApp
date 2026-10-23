@@ -10,7 +10,9 @@ Die vereinbarte Reihenfolge ist:
   weitere Beispiele bleiben optionale Vertiefungen. Paket 1 ist technisch fertig:
   Profilaufnahmen, Kritik und HTML-Vorschauen vorhanden; die bereinigte SingleFile-
   Account-Seite ist per CLI als sichtbare Referenz in „Workflow testen – Cosmos“
-  importiert und erneut geprüft. Nächster Schritt nach Auftrag: Paket 2;
+  importiert und erneut geprüft. Paket 2 ist abgeschlossen: Header, Footer und Farben
+  aus C, Content/Seitennavigation aus B; Copyright zentrieren. Als Nächstes die
+  gewählte Kombination in Paket 3 nach Folgeauftrag erproben;
   der verbindliche [Theme-Standard](docs/theme.md) bleibt der Ausgangspunkt.
 
 ## Menschliche Abnahmen

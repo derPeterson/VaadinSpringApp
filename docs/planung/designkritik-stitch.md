@@ -6,9 +6,19 @@
 HTML-Referenzen sind vorhanden. Die benutzerseitige SingleFile-Aufnahme der
 Account-Seite wurde über die vorhandene Stitch-CLI in das private Versuchsprojekt
 „Workflow testen – Cosmos“ als sichtbarer Screen importiert und anschließend
-erneut abgerufen sowie im Browser kontrolliert. Keine Designvarianten erzeugt,
-keine Stitch-Erweiterungen installiert und keine Anwendungsoberfläche verändert.
-Paket 2 benötigt den nächsten Auftrag; das gesamte Designfeature bleibt offen.
+erneut abgerufen sowie im Browser kontrolliert. Keine Stitch-Erweiterungen installiert
+und keine Anwendungsoberfläche verändert.
+**Paket 2 ist abgeschlossen: Gewählt ist die Kombination aus C und B.** Header,
+Footer und Farbwelt folgen C; Contentstruktur und seitliche Kontonavigation folgen B.
+Der Copyrighttext wird horizontal im Footer zentriert. Die zwei übereinanderliegenden
+Tabreihen aus C werden durch die seitliche Navigation aus B ersetzt. A wird nicht
+weiterverfolgt. Der kombinierte Entwurf selbst wurde noch nicht erstellt.
+A/B/C wurden aus derselben Account-Referenz erzeugt. Erfundene
+Fachangaben wurden anschließend in den HTML-Exporten gezielt bereinigt; die
+maßgeblichen Screens tragen den Zusatz „· Vergleich“. Der lokale Vergleich zeigt
+Ausgangsstand und alle drei Richtungen bei `1440×1000` ohne externe Laufzeitressourcen.
+Paket 3 und das gesamte Designfeature bleiben offen; keine automatische Umsetzung
+oder Git-Aktion. Die Anwendungsoberfläche ist unverändert.
 
 - Branch: `feature/designkritik-stitch`.
 - Basis: lokales `main`, Commit `ac3b239fac5ae0e2e6f56be3483ae5811be51648`;
@@ -253,8 +263,10 @@ Tokenliste neben `docs/theme.md` und den Stylesheets.
 
 ## Arbeitspakete und Entscheidungspunkte
 
-Paket 1 ist technisch fertig. Pakete 2 bis 5 sowie die optionalen
-Vertiefungen bleiben ohne weiteren Auftrag offen; es wurde keine Neugestaltung begonnen.
+Pakete 1 und 2 sind fertig; die menschliche Richtungsentscheidung ist getroffen.
+Paket 3 ist der nächste offene Schritt. Pakete 3 bis 5 sowie die optionalen
+Vertiefungen bleiben ohne weiteren Auftrag offen; die Anwendungsoberfläche wurde
+noch nicht verändert.
 
 ### Kleiner Kern und optionale Vertiefungen
 
@@ -284,7 +296,7 @@ schmale Bedienbarkeit und erforderliche gezielte Regressionen bleiben verbindlic
 **Stand: abgeschlossen für den vereinbarten Referenzumfang.** Bestandskritik,
 Desktop-/schmale Profilaufnahmen und der funktionierende Stitch-Übergabeweg sind
 vorhanden. Die mobile HTML wurde noch nicht zusätzlich in Stitch importiert.
-Paket 2 wurde nicht begonnen.
+Die Designentwürfe und ihre Bewertung stehen im Abschnitt zu Paket 2.
 
 Der verwendete Weg ist **SingleFile → Bereinigung → CLI `upload screen`**.
 Installiert ist `@google/stitch` in Version `0.11.1`; die vorhandene OAuth-/Canvas-
@@ -398,6 +410,94 @@ blockiert nicht die Vorbereitung des Briefings.
 
 ### Paket 2 – Drei vergleichbare Richtungen in Stitch
 
+**Aktiver Vergleichsstand im privaten Projekt „Workflow testen – Cosmos“:**
+
+| Richtung | Maßgeblicher bereinigter Screen | Einschätzung und Grenzen |
+| --- | --- | --- |
+| A – Ruhiger Cosmos | `7790207111094436567`, „A – Ruhiger Cosmos · Vergleich“ | Vertraute horizontale Anordnung, kompaktere Identität und Formular im ersten Desktop-Viewport. Zwei Navigationsebenen und mehrere Kopf-/Paneltitel bleiben; kleine Hilfstexte und Feldgrenzen verdienen weitere Prüfung |
+| B – Klarer Kontobereich | `12192353632977007112`, „B – Klarer Kontobereich · Vergleich“ | Klarste Gruppierung der Kontobereiche links, ruhige zusammenhängende Formularfläche. Zusätzliche Navigationsbreite und recht dunkle Trennlinien; kosmischer Charakter deutlich zurückgenommen |
+| C – Persönlicher Arbeitsbereich | `11377747199826892012`, „C – Persönlicher Arbeitsbereich · Vergleich“ | Identität und Formular stehen als zwei klar erkennbare Bereiche nebeneinander. Identitätskarte beansprucht weiterhin viel Raum, horizontale Navigation bleibt doppelt; in schmaler Ansicht noch nicht geprüft |
+
+Alle drei Richtungen verwenden sehr dunkle bläuliche Grundflächen, helle Texte,
+gedämpfte sekundäre Beschriftungen und blaue beziehungsweise cyanblaue Hauptakzente.
+Die kleinen grünen Anzeigen dienen Status/Konto. Rahmen und aktive Flächen trennen
+Bereiche statt vieler bunter Karten. Das ist ein erster Vergleich, noch kein
+abgenommener Farb-/Kontraststandard oder Nachweis einer exakt auf fünf Farben
+reduzierten Palette. **Gemeinsame Schwäche:** Stitch hat den ursprünglichen
+Weltraum-/Planetencharakter zu stark zurückgenommen; für eine Weiterführung den
+atmosphärischen Hintergrund ausdrücklich mit der ursprünglichen Referenz vergleichen.
+
+**Benutzerentscheidung für die Weiterführung:**
+
+| Bereich | Gewählte Grundlage / Präzisierung |
+| --- | --- |
+| Header | C: eingerückter, klar begrenzter Kopfbereich; Einrückungen und Proportionen erhalten |
+| Footer | C mit Copyright; Copyrighttext horizontal im Footer zentrieren |
+| Farben | C ist der bevorzugte Ausgangspunkt für Grundflächen, Texte und Akzente; keine Übernahme der B-Palette als Nebenwirkung des B-Layouts |
+| Content und Navigation | B: seitliche Kontonavigation und die ruhige zusammenhängende Formularfläche |
+| Navigationsebenen | Keine zwei horizontalen Tabreihen wie in C; die Ziele über die gruppierte Seitennavigation aus B anbieten |
+| A | Am nächsten am Original, vom Benutzer aber als schwächste Variante bewertet; nicht weiterverfolgen |
+
+Maßgebliche Referenzen bleiben C `11377747199826892012` für Rahmen/Farben und
+B `12192353632977007112` für Content/Navigation. Diese Kombination ist die gewählte
+Versuchsrichtung, noch keine Abnahme eines fertigen kombinierten Screens oder
+Freigabe für eine globale Theme-Übernahme. Die atmosphärische Hintergrundgestaltung
+bleibt Bestandteil des vereinbarten Kosmos-Ziels.
+
+**Nachweise und Arbeitsweg:**
+
+- Die drei Stitch-Generierungen lieferten zunächst A `1679b0bb7f7c466d913b2eebfd109280`,
+  B `04a768ba9fd8448f9bfa395b12a1d01f`, C `77712c7881974f08a7e5798a4be461dc`.
+  Sie sind Rohentwürfe, nicht der maßgebliche Vergleichsstand.
+- Erfundene Supportverträge, System-/Sitzungsangaben, Rollen-/Mandanteninformationen,
+  Zusatzaktionen und Fremdsprachen wurden nicht als neue Fachverträge übernommen.
+  Die separat erzeugten Stitch-Korrekturen A `2a0b4c15e4dd4fa8bb998415f554d031` und
+  B `1559957313fb47958efac402f8af3510` sind ungeeignet: Sie ließen Geburtsdatum und
+  Sprachauswahl weg. Keine weitere solche Korrekturrunde und keine Löschung externer
+  Entwürfe; die ursprünglichen Layoutideen wurden im lokalen HTML erhalten.
+- In den Exporten wurden die erfundenen Angaben entfernt, nur Deutsch/English
+  belassen, E-Mail als readonly und „Verfügbar“ ausdrücklich sichtbar erhalten.
+  Bei C wurden weiße/schlecht lesbare Eingaben dunkel korrigiert. Die Hauptaktion
+  ist rechts angeordnet. Kein echter Speichervorgang und keine zweite Fachlogik.
+- Die vorhandenen externen Tailwind-/Schriftverweise wurden vor der lokalen Vorschau
+  geprüft; nur deklarative Farb-/Schriftkonfiguration und der bekannte Tailwind-CDN-
+  Compiler wurden dafür zugelassen, Eventhandler entfernt. Anschließend wurden die
+  erzeugten Styles und die vorhandene lokale Inter-Schrift eingebettet und sämtliche
+  Skripte/externen Styles entfernt. Der finale Vergleich ist statisch und offline nutzbar.
+- Alle finalen lokalen Ansichten wurden nach Neuladen bei `1440×1000` geprüft:
+  je vier Eingaben und eine Sprachauswahl, die Ausgangswerte, readonly E-Mail,
+  Profilbild-/Speicheraktion, Status und die bestehenden Navigationsziele erhalten.
+  Keine Skripte oder externen Styles in den finalen Dateien. Lokale Python-Helfer
+  wurden mit Projekt-Ruff formatiert und die Formatierung erfolgreich geprüft.
+- Die bereinigten HTML-Dateien wurden als oben benannte Vergleichsscreens erneut
+  hochgeladen und unabhängig per CLI abgerufen. Stitch meldet native Bildgrößen
+  A `2560×2000`, B `2880×2000`, C `2560×1600`; diese sind kein Beleg gleicher
+  CSS-Viewports. Der gleich große lokale Vergleich ist dafür maßgeblich.
+- Lokale Dateien unter `target/designkritik-stitch/variants/`: `preview/vergleich.html`
+  mit `original.html`, `a.html`, `b.html`, `c.html`; gemeinsam als
+  `cosmos-designvergleich.zip`. `original-vergleich.jpg`, `a-vergleich.jpg`,
+  `b-vergleich.jpg`, `c-vergleich.jpg` zeigen denselben Vergleichsrahmen.
+  Rohantworten und temporäre Helfer bleiben ignorierte Arbeitsdaten. Ein Root-`clean`
+  entfernt diese Dateien; die extern gespeicherten Vergleichsscreens bleiben abrufbar.
+
+Nicht geprüft: echtes Speichern, Sicherheit/Sitzungen, Tastatur-/Screenreader-Verhalten,
+Kontrastmessung, Smartphone und EN-Layout. Es wurden keine Anwendungstests oder
+Builds für Paket 2 gestartet; `docs/status.md` bleibt die letzte große QA.
+Die Richtungswahl ist getroffen. Mit Folgeauftrag die gewählte Kombination in
+Paket 3 zunächst sichtbar zusammensetzen, gemeinsam prüfen und in Vaadin erleben.
+
+Gemeinsames Briefing: Deep Midnight Blue mit kühlen blaugrauen Flächen und blauen
+Akzenten, keine violette Hauptpalette. Ungefähr fünf begründete Grundflächen,
+kosmischer Hintergrund erhalten, weniger Glows und wiederholte Titel. Alle
+Richtungen erhalten dieselben erfundenen Angaben „Design Stitch“, die fünf
+Profilfelder, schreibgeschützte E-Mail, Sprachauswahl, Profilbild-/Speicheraktion
+sowie die bestehenden Konto-/Benachrichtigungsziele. Angeforderter Vergleichsviewport
+ist `1440×1000`; tatsächliche Ausgabegrößen werden nach Abruf geprüft. Jede Richtung
+wird einzeln aus Screen `5775520971778872726` erzeugt, damit die Layoutaufträge
+eindeutig bleiben. Gemeinsames Briefing und Richtungsaufträge liegen vorläufig unter
+`target/designkritik-stitch/variants/`; Screens und kritische Abweichungen werden
+im aktuellen Plan zugeordnet. Noch keine Dialog-/Fehler- oder mobilen Zusatzscreens.
+
 Für denselben Konto-/Profilinhalt drei gezielt verschiedene Entwürfe erzeugen.
 Sprache, Datenmenge und Viewport bleiben gleich; die im gewählten Umfang enthaltenen
 Felder und Aktionen werden nicht weggelassen. Weitere Kontobereiche müssen im
@@ -422,6 +522,10 @@ verwirft alle. **Hier liegt der erste bewusste Designentscheid.**
 
 ### Paket 3 – Gewählte Richtung verfeinern und in Vaadin erleben
 
+- Gewählte Grundlage: Header, Footer und Farben aus C mit Content/Seitennavigation
+  aus B verbinden. Copyright im Footer zentrieren; die doppelten horizontalen
+  Tabreihen entfallen. Zuerst einen zusammenhängenden kombinierten Entwurf zeigen,
+  bevor einzelne Bausteine in die Vaadin-Spielwiese übertragen werden.
 - Zunächst ein bis zwei gezielte Stitch-Runden: pro Runde die benannten Probleme
   ändern und gelungene Eigenschaften festhalten. Bei mehreren widersprüchlichen
   Änderungswünschen erneut priorisieren, statt alles gleichzeitig zu vermischen.
