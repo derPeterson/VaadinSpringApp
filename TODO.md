@@ -4,9 +4,11 @@
 
 Die vereinbarte Reihenfolge ist:
 
-- [ ] Designkritik mit Stitch auf einem eigenen Branch: eine Spielwiese mit
-  vorhandenen Komponenten, Panels, Dialogen und Zuständen zum Ausprobieren aufbauen.
-  Den verbindlichen [Theme-Standard](docs/theme.md) als Ausgangspunkt verwenden.
+- [ ] [Designkritik und Spielwiese mit Stitch](docs/planung/designkritik-stitch.md):
+  Cosmos anhand des Kontobereichs untersuchen, Varianten vergleichen und eine
+  gewählte Richtung zunächst als kleinen Profilpiloten mit Vaadin erproben;
+  weitere Beispiele bleiben optionale Vertiefungen. Aktuell ist nur die Planung freigegeben;
+  der verbindliche [Theme-Standard](docs/theme.md) bleibt der Ausgangspunkt.
 
 ## Menschliche Abnahmen
 
