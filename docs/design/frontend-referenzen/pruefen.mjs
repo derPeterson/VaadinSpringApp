@@ -29,6 +29,11 @@ for (const file of files) {
     const languages = [...markup.matchAll(/<button\b[^>]*data-menu-language="(de|en)"[^>]*>/g)];
     assert.deepEqual(languages.map(match => match[1]), ['de','en'], `${file}: Sprachumschalter fehlt`);
     assert.equal(languages.filter(match => match[0].includes('aria-pressed="true"')).length, 1);
+    if (file === 'public.html') {
+      const header = markup.match(/<header\b[\s\S]*?<\/header>/i)?.[0];
+      assert(header?.includes('id="public-language-switch"'), 'Sprachumschalter fehlt im öffentlichen Header');
+      assert(!markup.includes('id="languageDropdown"') && !markup.includes('id="spracheTrigger"'), 'Öffentliche Sprachauswahl darf kein Popup sein');
+    }
   }
   // Nur Referenzanker, eingebettete Ressourcen und Dateien desselben Ordners zulassen.
   for (const [, , value] of markup.matchAll(/\s(?:src|href|xlink:href)\s*=\s*(["'])(.*?)\1/gi)) {

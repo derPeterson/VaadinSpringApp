@@ -1221,9 +1221,10 @@ der aktive Eintrag ist cyan ohne Unterstrich. Sehr schmal bleiben die beschrifte
 zugänglichen Iconaktionen erhalten; der Markenname kann Platz machen.
 
 Die öffentliche Sprachauswahl übernimmt auf Benutzerwunsch den DE/EN-Umschalter
-aus dem Avatar-Menü der festen Referenz. Der kompakte Sprachbutton im Header
-öffnet ihn als kleines Popup, mit gleicher Schrift, Flächenpalette und ausgewähltem
-Zustand. Geschlecht verwendet weiterhin die vorhandene gestaltete Listbox, Geburtsdatum
+aus dem Avatar-Menü der festen Referenz direkt in den öffentlichen Header.
+Sichtbar ist ausschließlich die DE/EN-Umschaltfläche mit gleicher Schrift,
+Flächenpalette und ausgewähltem Zustand; kein zusätzlicher Sprachbutton und kein
+Popup. Geschlecht verwendet weiterhin die vorhandene gestaltete Listbox, Geburtsdatum
 das vorhandene Textfeld mit Kalenderauslöser und Kalender einschließlich Monats-/
 Jahrauswahl. Die sichtbaren nativen Browserauswahlen sind ersetzt. Gemeinsam verwendet
 werden Overlaygeometrie, Kalenderquelle und Tooltips. `public-controls.js` ergänzt
@@ -1367,9 +1368,9 @@ Gestaltung bleibt erhalten. `docs/design/frontend-referenzen/pruefen.mjs` prüft
 die Exporte ohne Zusatzpakete sowie diese Regressionen und die Absender-/Origin-
 Grenzen in einer kleinen DOM-Testumgebung für HTTP und lokale Dateien. Eine neue
 gerenderte Browserrunde wurde für diese beiden Reviewkorrekturen nicht ausgeführt.
-Die anschließend beauftragte Sprach-Popup-Anpassung wurde gezielt am Desktop und
-im Smartphone-Hoch-/Querformat geprüft: Auswahl, Pfeiltasten/Enter, Escape,
-Fokusrückkehr, Verankerung und unveränderte Geschlechtsauswahl. Die Demo bleibt Deutsch.
+Die öffentliche Sprachauswahl ist nach Benutzerkorrektur unmittelbar im Header
+platziert. Auswahl und Pfeiltasten/Enter werden direkt am Umschalter bedient;
+die übrigen Auswahl- und Kalenderoverlays bleiben davon unabhängig. Die Demo bleibt Deutsch.
 
 Tatsächlich geprüft: neun Grundansichten in drei Formaten (27 Ansichten) und
 21 zusätzliche Erfolgs-/Link-/Fehlerzustände je Format (63 Zustandsprüfungen).

@@ -710,11 +710,6 @@ body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-ite
 .vp-nav-link>svg{width:16px;height:16px;color:var(--accent)}
 .vp-nav-link:hover{color:var(--text-primary);background:var(--state-hover)}
 .vp-nav-link[aria-current=page]{color:var(--accent);background:var(--state-selected);border-color:var(--border-active)}
-.public-reference .vp-language-trigger{display:flex;align-items:center;justify-content:space-between;gap:8px;width:78px;height:36px;padding:0 10px;font:500 12px/1.4 Inter,system-ui}
-.vp-language-trigger>span>span:first-child{display:none}
-.vp-language-trigger>svg{width:16px;height:16px;flex-shrink:0}
-body.public-reference #languageDropdown{padding:0!important}
-body.public-reference #languageDropdown>.vp-language-row{padding:12px!important;background:var(--surface-overlay)}
 .vp-main [data-public-page]:focus{outline:none}
 .vp-card,.vp-outcome{width:100%;max-width:600px;margin:0 auto}
 .vp-card.wide{max-width:880px}
@@ -787,8 +782,8 @@ body.public-reference #languageDropdown>.vp-language-row{padding:12px!important;
 .vp-toast-message{margin:0;font:400 12px/1.7 Inter,system-ui;color:var(--text-secondary)}
 .vp-toast-close{width:36px;height:36px;min-width:36px;border:1px solid var(--border-subtle);border-radius:9px;display:grid;place-items:center;background:var(--surface-input);color:var(--accent);cursor:pointer}
 .vp-toast-close svg{width:18px;height:18px}
-.public-reference :is(#languageDropdown,#genderDropdown){position:fixed!important;margin:0!important;z-index:90!important}
-.public-reference :is(#languageDropdown,#genderDropdown) [role=option][aria-selected=false]>svg{visibility:hidden}
+.public-reference #genderDropdown{position:fixed!important;margin:0!important;z-index:90!important}
+.public-reference #genderDropdown [role=option][aria-selected=false]>svg{visibility:hidden}
 .public-reference #genderDropdown [role=option]>div>span:first-child{background:#64748b}
 .public-reference #genderDropdown [role=option][aria-selected=true]>div>span:first-child{background:var(--accent)}
 .public-reference #genderTrigger[data-empty=true]>span>span:first-child{background:#64748b}
@@ -809,12 +804,10 @@ body.public-reference #languageDropdown>.vp-language-row{padding:12px!important;
 <span class="text-slate-400 font-normal">{</span>ServiceName<span class="text-slate-400 font-normal">}</span>
 </span>
 </a>
-<nav aria-label="Öffentliche Navigation"><a href="#public-home" class="vp-nav-link" aria-label="Startseite"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"></path></svg><span>Startseite</span></a><a href="#public-login" class="vp-nav-link" aria-label="Anmelden"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5M3 12h12m-4-4 4 4-4 4"></path></svg><span>Anmelden</span></a><a href="#public-register" class="vp-nav-link" aria-label="Registrieren"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="7" r="4"></circle><path d="M2 21v-2a7 7 0 0 1 14 0v2m3-14v8m-4-4h8"></path></svg><span>Registrieren</span></a><span id="public-language-label" class="sr-only">Sprache</span><button class="custom-input rounded-lg vp-language-trigger" id="spracheTrigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="languageDropdown" aria-label="Sprache auswählen">
-<span class="text-white font-normal flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-400"></span><span id="selectedLanguageText">Deutsch</span></span>
-<svg class="w-4 h-4 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewbox="0 0 24 24">
-<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-</svg>
-</button>
+<nav aria-label="Öffentliche Navigation"><a href="#public-home" class="vp-nav-link" aria-label="Startseite"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"></path></svg><span>Startseite</span></a><a href="#public-login" class="vp-nav-link" aria-label="Anmelden"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5M3 12h12m-4-4 4 4-4 4"></path></svg><span>Anmelden</span></a><a href="#public-register" class="vp-nav-link" aria-label="Registrieren"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="7" r="4"></circle><path d="M2 21v-2a7 7 0 0 1 14 0v2m3-14v8m-4-4h8"></path></svg><span>Registrieren</span></a><div class="flex items-center gap-1 bg-white/[0.05] p-0.5 rounded-md border border-white/[0.08]" id="public-language-switch" role="group" aria-label="Sprache auswählen">
+<button class="px-2 py-0.5 rounded text-[11px] font-semibold text-sky-400 bg-sky-950/80 border border-sky-500/25" type="button" data-menu-language="de" aria-label="Deutsch" aria-pressed="true">DE</button>
+<button class="px-2 py-0.5 rounded text-[11px] font-medium text-slate-400 hover:text-white" type="button" data-menu-language="en" aria-label="English" aria-pressed="false">EN</button>
+</div>
 </nav></div>
 </header>
 <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 vp-main"><div class="mb-6 sm:mb-8" id="portalPageHead"><div class="flex items-center gap-2 text-xs font-semibold tracking-wider text-sky-400 uppercase">
@@ -969,21 +962,7 @@ body.public-reference #languageDropdown>.vp-language-row{padding:12px!important;
         </p>
 </div>
 </footer>
-</div><div class=" absolute z-30 left-0 right-0 mt-1.5 bg-[#0d192e] border border-[#1e3256] rounded-xl shadow-2xl overflow- backdrop-blur-md" id="languageDropdown" role="dialog" aria-labelledby="public-language-label" hidden="">
-<div class="p-3 bg-[#090f1d]/50 flex items-center justify-between text-xs vp-language-row">
-<span class="text-slate-400 flex items-center gap-1.5">
-<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
-<path d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
-</svg>
-        Sprache
-      </span>
-<div class="flex items-center gap-1 bg-white/[0.05] p-0.5 rounded-md border border-white/[0.08]" role="group" aria-label="Sprache auswählen">
-<button class="px-2 py-0.5 rounded text-[11px] font-semibold text-sky-400 bg-sky-950/80 border border-sky-500/25" type="button" data-menu-language="de" aria-label="Deutsch" aria-pressed="true">DE</button>
-<button class="px-2 py-0.5 rounded text-[11px] font-medium text-slate-400 hover:text-white" type="button" data-menu-language="en" aria-label="English" aria-pressed="false">EN</button>
-</div>
-</div>
-</div>
-<div class=" absolute z-30 left-0 right-0 mt-1.5 bg-[#0d192e] border border-[#1e3256] rounded-xl shadow-2xl overflow- backdrop-blur-md" id="genderDropdown" role="listbox" aria-labelledby="genderLabel" hidden="">
+</div><div class=" absolute z-30 left-0 right-0 mt-1.5 bg-[#0d192e] border border-[#1e3256] rounded-xl shadow-2xl overflow- backdrop-blur-md" id="genderDropdown" role="listbox" aria-labelledby="genderLabel" hidden="">
 <div class="p-1.5 space-y-1">
 
 
@@ -1175,15 +1154,8 @@ body.public-reference #languageDropdown>.vp-language-row{padding:12px!important;
 })();
 </script><script nonce="cosmos-public">(() => {
   const byId = id => document.getElementById(id);
-  const languageTrigger = byId('spracheTrigger');
-  const languageMenu = byId('languageDropdown');
-  const languageButtons = [...languageMenu.querySelectorAll('[data-menu-language]')];
-  const closeLanguage = (focus = false) => {
-    languageMenu.hidden = true;
-    languageTrigger.setAttribute('aria-expanded', 'false');
-    if (focus) { languageTrigger.focus(); }
-  };
-  const positionLanguage = () => window.CosmosPreview.positionOverlay(languageMenu, languageTrigger, 260, 'end');
+  const languageSwitch = byId('public-language-switch');
+  const languageButtons = [...languageSwitch.querySelectorAll('[data-menu-language]')];
   const lists = [
     {trigger: byId('genderTrigger'), menu: byId('genderDropdown'), selected: byId('selectedGenderText'), attribute: 'gender'}
   ];
@@ -1193,7 +1165,7 @@ body.public-reference #languageDropdown>.vp-language-row{padding:12px!important;
     list.trigger.removeAttribute('aria-activedescendant');
     if (focus) { list.trigger.focus(); }
   };
-  const closeAll = () => { closeLanguage(); lists.forEach(list => close(list)); };
+  const closeAll = () => lists.forEach(list => close(list));
   const position = list => window.CosmosPreview.positionOverlay(list.menu, list.trigger);
   const activate = (list, index) => {
     const entries = options(list); list.index = (index + entries.length) % entries.length;
@@ -1230,43 +1202,21 @@ body.public-reference #languageDropdown>.vp-language-row{padding:12px!important;
     list.menu.addEventListener('click', event => { const option = event.target.closest('[role=option]'); if (option) { choose(list, option); } });
     list.menu.addEventListener('pointermove', event => { const option = event.target.closest('[role=option]'); if (option) { activate(list, options(list).indexOf(option)); } });
   });
-  const openLanguage = () => {
-    document.dispatchEvent(new Event('cosmos-close-calendar'));
-    closeAll();
-    languageMenu.hidden = false;
-    languageTrigger.setAttribute('aria-expanded', 'true');
-    positionLanguage();
-    languageButtons.find(button => button.getAttribute('aria-pressed') === 'true').focus();
-  };
-  languageTrigger.addEventListener('click', () => languageMenu.hidden ? openLanguage() : closeLanguage(true));
-  languageTrigger.addEventListener('keydown', event => {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); openLanguage(); }
-  });
   languageButtons.forEach(button => button.addEventListener('click', () => {
     languageButtons.forEach(entry => entry.setAttribute('aria-pressed', String(entry === button)));
-    byId('selectedLanguageText').textContent = button.dataset.menuLanguage.toUpperCase();
-    closeLanguage(true);
-    window.PublicNotifications.show('Die Sprachauswahl ist eine Designvorschau. Die Texte bleiben Deutsch.');
   }));
-  languageMenu.addEventListener('keydown', event => {
-    if (event.key === 'Escape') { event.preventDefault(); closeLanguage(true); return; }
-    if (event.key === 'Tab') { closeLanguage(true); return; }
+  languageSwitch.addEventListener('keydown', event => {
     if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) { return; }
     event.preventDefault();
     const current = languageButtons.indexOf(document.activeElement);
     const next = event.key === 'Home' ? 0 : event.key === 'End' ? languageButtons.length - 1 : (current + (event.key === 'ArrowLeft' ? -1 : 1) + languageButtons.length) % languageButtons.length;
     languageButtons[next].focus();
   });
-  byId('selectedLanguageText').textContent = 'DE';
-  document.addEventListener('pointerdown', event => {
-    if (!languageMenu.contains(event.target) && !languageTrigger.contains(event.target)) { closeLanguage(); }
-  });
   document.addEventListener('pointerdown', event => lists.forEach(list => {
     if (!list.menu.contains(event.target) && !list.trigger.contains(event.target)) { close(list); }
   }));
   document.addEventListener('cosmos-close-overlays', closeAll);
   const reposition = () => {
-    if (!languageMenu.hidden) { positionLanguage(); }
     lists.forEach(list => { if (!list.menu.hidden) { position(list); } });
   };
   window.addEventListener('resize', reposition);
