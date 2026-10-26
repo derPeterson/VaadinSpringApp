@@ -1,0 +1,10 @@
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Vierfarbiger Ring">
+                  <path d="M48 12C67.8823 12 84 28.1177 84 48H66C66 38.0589 57.9411 30 48 30V12Z" fill="#F43F5E"/>
+                  <path d="M84 48C84 67.8823 67.8823 84 48 84V66C57.9411 66 66 57.9411 66 48H84Z" fill="#F59E0B"/>
+                  <path d="M48 84C28.1177 84 12 67.8823 12 48H30C30 57.9411 38.0589 66 48 66V84Z" fill="#14B8A6"/>
+                  <path d="M12 48C12 28.1177 28.1177 12 48 12V30C38.0589 30 30 38.0589 30 48H12Z" fill="#8B5CF6"/>
+                  <line x1="48" y1="8" x2="48" y2="88" stroke="#050811" stroke-width="4"/>
+                  <line x1="8" y1="48" x2="88" y2="48" stroke="#050811" stroke-width="4"/>
+                  <circle cx="48" cy="48" r="14" fill="#080E1B" stroke="#050811" stroke-width="3"/>
+                  <circle cx="48" cy="48" r="6" fill="#F8FAFC"/>
+                </svg>

@@ -16,10 +16,46 @@ weiterverfolgt. Der erste Vorschau-Schritt aus Paket 3 ist durchgeführt:
 die Kombination sichtbar zusammensetzen, ihre Desktop-/schmale Darstellung und
 die Seitennavigation als möglichen gemeinsamen Rahmen für Home prüfen. Der
 kombinierte Entwurf liegt als geprüfte Vorschau vor. Die gemeinsame Rückmeldung
-legt die nächste Verfeinerung und einen zusammenhängenden klickbaren HTML-Prototyp
-des angemeldeten Benutzerportals fest. **Aktueller Auftrag ist die Planung dieses
-Ablaufs; noch keine weitere Generierung, Aufnahme oder Implementierung.**
+legt die Verfeinerung und einen zusammenhängenden klickbaren HTML-Prototyp
+des angemeldeten Benutzerportals fest. **Die HTML-Umsetzung aus 3a–3c ist
+gestalterisch als Referenz abgenommen.** Der einmalige Folgeauftrag wurde am
+24. Oktober 2026 nach Prüfung der Uhrzeit und des regulären Kontingents ausgeführt.
+Die fünf Portalszenen, gemeinsame Navigation und zugehörige Beispieldialoge sind
+lokal klickbar. Der angemeldete Benutzerbereich gilt inzwischen als feste
+Gestaltungsreferenz. Der Besucherbereich ist nach den letzten Schriftkorrekturen
+ebenfalls als feste HTML-Gestaltungsreferenz abgenommen. Gesamtfeature und
+technische Übertragung bleiben offen; Paket 3d ist nicht freigegeben.
 Vaadin-Spielwiese und globale Theme-Übernahme sind noch nicht begonnen.
+**Inbox-Variante C und die ergänzende Overlayrunde sind als zusätzliche
+HTML-Entwurfsreferenz übernommen.** Die zuletzt gewünschten Kleinkorrekturen sind
+umgesetzt: horizontale Toolbartrennung erhalten, vertikale Trennlinie entfernt
+und kompakte konturierte Zahlenplakette ohne sichtbares „ungelesen“.
+Persönliche Daten bleiben der gestalterische Maßstab;
+Header, Seitenkopf, Seitennavigation, Footer, Farbpalette und die gelungenen
+Benutzer-/Sprach-/Statusoverlays bleiben fest. Die drei Contentlösungen erhalten
+den bestehenden Funktionsumfang einschließlich Pagination als statische
+Gestaltungsvorlage. Der vollständige Benachrichtigungsbereich ergänzt Persönliche
+Daten im klickbaren Portalprototyp einschließlich Glockenvorschau,
+Nachrichtendetail und gemeinsamem Bestätigungsdialog. Die abschließende Sichtung
+der Kleinkorrekturen und des Zusammenspiels bleibt möglich. Danach werden
+weitere Seiten einzeln abgestimmt, nicht automatisch parallel umgestaltet.
+**Startseite mit Stitch-Willkommensmotiv ist als vorläufiger Platzhalter positiv
+bewertet und Arbeitsgrundlage.** Der Entwurf bleibt im unveränderten Referenzrahmen
+klickbar. Die Benachrichtigungstoolbar hat eine durchgehende
+horizontale Trennung; die zuvor gemischten Tooltipdarstellungen sind vereinheitlicht.
+Beim Geburtsdatum ist der fehlende blaue Pflichtpunkt in der HTML-Referenz ergänzt;
+der Anwendungscode kennzeichnet es bereits als Pflichtfeld. Die Markierung der
+aktiven Sprache bleibt auf ausdrücklichen Benutzerwunsch unverändert.
+Die Sicherheitsrunde einschließlich Passwort- und E-Mail-Änderungsdialog ist vom
+Benutzer als Teil der HTML-Entwurfsreferenz abgenommen. Geräte & Sitzungen samt
+gemeinsamer Bestätigung liegen jetzt als zusätzlicher HTML-Vorschlag zur Sichtung vor.
+Der gesondert freigegebene Besucherbereich ist mit den bestehenden öffentlichen
+Abläufen abgeglichen und als zusätzlicher HTML-Prototyp mit neun Szenen aufgebaut.
+Die nachgearbeitete Besucherfassung übernimmt die festen Referenzbausteine und ist
+nun ebenfalls gestalterisch abgenommen. Die Anwendung bleibt unverändert.
+Der Profilbild-Dialog hat jetzt eine eigene Stitch-Entwurfsrunde und ist in die
+HTML-Referenz eingepasst und vom Benutzer gestalterisch abgenommen. Drei separate
+Stitch-Logoideen stehen zur Auswahl, ohne das bisherige Servicezeichen zu ersetzen.
 A/B/C wurden aus derselben Account-Referenz erzeugt. Erfundene
 Fachangaben wurden anschließend in den HTML-Exporten gezielt bereinigt; die
 maßgeblichen Screens tragen den Zusatz „· Vergleich“. Der lokale Vergleich zeigt
@@ -256,8 +292,11 @@ Es werden weder kostenpflichtige Zugänge aktiviert noch Generierungslimits umga
   zusätzliche „Einstellungen“-Überschriften nicht parallel verwenden.
 - Desktopnavigation: Portal mit Startseite und Benachrichtigungen; **Mein Konto**
   als sichtbare Gruppenüberschrift über Persönliche Daten, Sicherheit sowie Geräte
-  und Sitzungen. Schmal ist sie einklappbar; Seitenkopf und Kartentitel bleiben
-  zur Orientierung sichtbar. Zahnrad führt zu Persönliche Daten, der Zugang zur
+  und Sitzungen. Schmal fährt dieselbe Desktop-Seitenleiste mit dunklem
+  Seitenhintergrund über den Content zwischen sichtbarem Header und Footer.
+  Keine Einfügung in den Seitenfluss und kein zusätzlicher Schließen-Bereich.
+  Der Menüknopf im Header öffnet/schließt; Auswahl und Escape schließen ebenfalls;
+  Seitenkopf und Kartentitel orientieren nach dem Schließen. Zahnrad führt zu Persönliche Daten, der Zugang zur
   vollständigen Inbox zu Benachrichtigungen; die bestehende Glocken-Vorschau erhalten.
 - Identitätskarte behalten. Gewählter Anwesenheitsstatus erscheint mit Text und
   passender Statusfarbe und wird in Header, Karte und Benutzermenü konsistent
@@ -308,8 +347,10 @@ Tokenliste neben `docs/theme.md` und den Stylesheets.
 ## Arbeitspakete und Entscheidungspunkte
 
 Pakete 1 und 2 sind fertig; die menschliche Richtungsentscheidung ist getroffen.
-Der erste Vorschau-Schritt von Paket 3 ist durchgeführt. Der weitere HTML-Ablauf
-ist nach Benutzerfeedback unten geplant und wartet auf einen Umsetzungsauftrag.
+Die HTML-Arbeit aus 3a–3c ist einschließlich der gezielten Verfeinerungen
+durchgeführt. Angemeldeter Bereich und Besucherbereich sind als feste
+Gestaltungsreferenzen abgenommen. Als Nächstes sind Umfang und Reihenfolge des
+Vaadin-Piloten auf dieser Grundlage gemeinsam festzulegen.
 Vaadin-Integration und Theme-Übernahme bleiben nachgelagert; die Anwendungsoberfläche
 wurde noch nicht verändert.
 
@@ -324,14 +365,17 @@ weiteren Versuch gilt nach der Richtungswahl der folgende Kern:
 | 2 | Drei vergleichbare Designrichtungen vorstellen und eine auswählen | Zusätzliche Varianten oder weitere Screens erzeugen |
 | 3a | Profilreferenz mit vereinbartem Seitenkopf verfeinern; lange Namen und zwei Hintergründe vergleichen | Zusätzliche rein ästhetische Varianten |
 | 3b | Aufnahme-/Stitch-Kreislauf an Sicherheit und E-Mail-Dialog nachweisen; anschließend übrige angemeldete Benutzerbereiche und Overlays aufnehmen/gestalten | Allgemeiner Exporter für beliebige Vaadin-Anwendungen, zusätzliche Stitch-Anbindung |
-| 3c | Ergebnisse in einem lokal klickbaren, zusammenhängenden HTML-Portal mit gemeinsamen Bausteinen beurteilen | Vollständige EN-Ausarbeitung und anonyme Zugangsseiten |
+| 3c | Ergebnisse in einem lokal klickbaren, zusammenhängenden HTML-Portal mit gemeinsamen Bausteinen beurteilen; zusätzlich beauftragte Besucheransichten sind enthalten | Vollständige EN-Ausarbeitung |
 | 3d | Nach positiver HTML-Bewertung einen begrenzten Vaadin-Piloten mit Profil, Dialog und Fehlerzustand erproben | Weitere echte Anwendungsansichten erst nach vereinbarter Übernahmereichweite |
 | 4 | Kein Pflichtschritt vor der HTML-Bewertung | Vertiefte Komponenten-/Vaadin-Transferprobe, Administration und zusätzliche Zustände |
 | 5 | Nach HTML-Vorschau und gegebenenfalls Vaadin-Pilot über Fortführung, Übernahme oder Verwerfen entscheiden | Bei Bedarf nach einer Vertiefung erneut entscheiden |
 
 Die Reihenfolge ist **1 → 2 → 3a → 3b → 3c → gemeinsame Entscheidung → 3d/5**.
-Die Erweiterung des HTML-Portals ist jetzt geplant; die Ausführung startet erst
-mit entsprechendem Folgeauftrag. Paket 4 und die anderen optionalen
+3a–3c sind für den HTML-Versuch ausgeführt und gestalterisch als Referenzen
+abgenommen. Die Entscheidung über Umfang und Freigabe der technischen Übertragung
+bleibt offen. Gemeinsame
+Quellen für Header, Footer, Navigation, Palette und wiederkehrende Overlays
+vermeiden unabhängige Kopien je Seite. Paket 4 und die anderen optionalen
 Vertiefungen werden nur bei erkennbarem Nutzen und mit einem passenden Folgeauftrag
 aufgenommen. Eine Freigabe des kleinen Versuchs umfasst diese Erweiterungen nicht
 automatisch. Sie müssen auch nicht erledigt sein, um den ersten Versuch abzunehmen
@@ -572,10 +616,11 @@ verwirft alle. **Hier liegt der erste bewusste Designentscheid.**
 
 ### Paket 3 – Zusammenhängendes HTML-Portal, danach Vaadin-Pilot
 
-Aktueller Auftrag ist nur die Fortschreibung der Planung. Die folgende Umsetzung
-erfolgt vor dem Java-Umbau. Die fünf Hauptszenen sind Startseite, Benachrichtigungen,
-Persönliche Daten, Sicherheit sowie Geräte und Sitzungen. Home erhält den
-Platzhalter „Hier kommen später Inhalte“ ohne erfundene Dashboard-Funktionen.
+Die HTML-Umsetzung aus 3a–3c einschließlich geöffneter Sprach-, Status-, Kalender-,
+Benachrichtigungs- und Kontodialoge ist als Gestaltungsreferenz abgenommen.
+Die fünf Hauptszenen sind Startseite, Benachrichtigungen, Persönliche Daten,
+Sicherheit sowie Geräte und Sitzungen. Home verwendet das abgestimmte
+Willkommensmotiv als Inhaltsplatzhalter ohne erfundene Dashboard-Funktionen.
 In der schmalen Ansicht ist die Navigation aufklappbar. Kein Administrationsbereich
 für den normalen Beispielbenutzer.
 
@@ -588,81 +633,937 @@ neue eindeutig bezeichnete Referenz im bestehenden Stitch-Versuchsprojekt sicher
 noch nicht als gültigen Anwendungstheme-Standard ausgeben. Diese Referenz bleibt
 für alle folgenden Seiten gleich. Keine weiteren unabhängigen A/B/C-Reihen.
 
-#### 3b – Referenzen aufnehmen und kontrolliert an Stitch übergeben
+**Erste Runde zur gemeinsamen Bewertung bereit:**
 
-1. **Bestand inventarisieren:** Die fünf Hauptszenen und ihre erreichbaren Dialoge,
-   Popovers und wichtigen Zustände mit dem aktuellen Java-Code abgleichen. Pro
-   Szene Felder, Aktionen und Inhalte festhalten, die beim Entwurf erhalten bleiben.
-   Dazu gehören Benutzermenü mit Sprache/Status/Abmelden, Glocken-Vorschau,
-   E-Mail-/Passwortänderung, Profilbild sowie Nachrichtendetail. Bestätigungen
-   nur dort aufnehmen, wo die Anwendung sie tatsächlich besitzt. Bestehende
-   Sicherheitsabläufe nicht durch erfundene Aktionen vereinfachen.
-2. **Eigene Referenzumgebung:** Für die später beauftragten Aufnahmen eine frische
-   isolierte Instanz mit erfundenen Benutzern, Nachrichten und Sitzungen nutzen.
-   Keine Entwicklerdaten oder fremden Prozesse; keine echten Mails. Normales
-   Benutzerkonto als Hauptfall. Den berechtigungsabhängigen Admin-Menüeintrag nur
-   in einer getrennt bezeichneten Rollenansicht zeigen; kein Rollenwechsel als
-   vermeintliche Benutzerfunktion.
-3. **Automatisierung zuerst erproben:** Sicherheit und den geöffneten E-Mail-Dialog
-   über die vorhandenen Aufnahmehelfer erfassen. Dialoge und Popovers sind eigene
-   UI-Zustände, keine automatisch im Seitenexport enthaltenen Unterseiten.
-   Shadow DOM, Eingabewerte, Icons, Schriften und portalisierte Overlays müssen
-   im bereinigten Offline-HTML tatsächlich sichtbar sein. Der automatische Export
-   ist für diese Zustände noch nicht nachgewiesen. Falls er scheitert, gezielt den
-   bewährten SingleFile-Weg verwenden und verbleibende Handarbeit benennen; keinen
-   universellen Vaadin-Exporter oder neue Erweiterungsinstallation daraus machen.
-4. **Vollständigen Kreislauf nachweisen:** Bereinigte Originalszene per CLI als
-   Referenzscreen importieren, ausgewählte Designreferenz und denselben begrenzten
-   Änderungsauftrag mitgeben, genau einen passenden Entwurf anfordern. Nach
-   unabhängigem Abruf HTML und Bild kontrollieren: keine fehlenden Felder,
-   zusätzlichen Versprechen, neuen Funktionen oder geänderten Sicherheitsabläufe.
-   Ein erfolgreicher Upload allein ist kein Nachweis eines brauchbaren Ergebnisses.
-5. **Restliche Szenen abarbeiten:** Nach erfolgreicher Probe denselben Ablauf
-   für die übrigen Seiten und nötigen Overlay-Zustände nutzen. Kurze Zuordnung
-   von Szene, Eingabedatei, Quell-/Ergebnisscreen und Prüfzustand in den temporären
-   Arbeitsdaten halten. Verlorene Felder gezielt korrigieren; bei Timeout zuerst
-   gespeicherten Projektstand abrufen und keine blinden Doppelgenerierungen starten.
+- Originale Sprachliste und Benutzermenü/Statusliste wurden mit erfundenem Konto
+  in einer eigenen HTTPS-JAR-/Caddy-/H2-Umgebung aufgenommen. JAR-Hash entspricht
+  der Profilaufnahme; kein neuer Anwendungsbuild. Java 25 wurde geprüft.
+  Browserbedienung und sichtbare DOM-Aufnahme erfolgten über den Codex-Browser.
+  Die HTML-Vorlagen enthalten aufgelöste Shadow-/Slot-Inhalte, eingebettete Assets
+  und keine Skripte, Serverziele oder Sicherheitswerte. Die ausgeschnittenen
+  Overlay-Referenzen vereinfachen die Positionierung und zwei Schrifticons;
+  Originalaufnahmen bleiben zusätzlich erhalten. Kein allgemeiner Exporter.
+- Originalscreens: Sprache `17228422313398362564`, Benutzermenü/Status
+  `10844645901642133007`. Zusammen mit der C/B-Vorschau an Stitch übergeben.
+  Eine gezielte REFINE-Generierung lieferte
+  `1c9ce322af294971a8a39c7c4438d923`, **„Cosmos C+B – Persönliche Daten mit
+  geöffneten Overlays“**. Seite, geöffnete Sprachliste und Statusoptionen stammen
+  aus diesem Entwurf. Stitch schlägt die vier Statusoptionen direkt im
+  Benutzermenü vor, statt eines weiteren verschachtelten Auswahlmenüs; diese
+  Anordnung steht ausdrücklich zur gemeinsamen Bewertung.
+- Lokal wurden C-Farben/Einrückungen erhalten, Kopf/Navigation/Titel vereinheitlicht,
+  das Profilbadge und der allgemeine Hinweis unter E-Mail entfernt. Der gelbe
+  Schreibgeschützt-Hinweis bleibt. Geprüfte eigene Vorschau-Interaktionen ersetzen
+  die fremden Ereignisskripte; keine fachlichen Dienste. Kurze/lange Namen sowie
+  beide statischen Hintergründe sind außerhalb des Produktbereichs umschaltbar.
+- In Stitch gesicherte Screens der ersten Referenzrunde im bestehenden Projekt:
+  `6286106089878372220` **„Referenzrunde 1 · geprüft – Persönliche Daten“**,
+  `1467870673497310996` **„Referenzrunde 1 · geprüft – Sprache geöffnet“**,
+  `5370950163606447208` **„Referenzrunde 1 · geprüft – Status geöffnet“**.
+  Alle drei wurden unabhängig per CLI abgerufen. Frühere Zwischenstände bleiben
+  erhalten; nur die mit „· geprüft“ bezeichneten Screens sind diese Referenzrunde.
+- Lokale Dateien unter `target/designkritik-stitch/refinement-01/preview/`:
+  `index.html` mit Vergleichssteuerung, `referenz.html`, `sprache-offen.html`,
+  `status-offen.html`, `kalender-offen.html` und `Hinweise.txt`; gemeinsam als
+  `target/designkritik-stitch/refinement-01/cosmos-referenzrunde-1.zip`.
+  Keine externen Skripte/Styles/Schriften nötig; ein geprüftes lokales Skript für
+  die Demo. SHA256 von `referenz.html`:
+  `9BA37459C29F570A7AC1205AE9BDC531074CE9FD2C89E9848138ED00C00EA39F`.
+  Dieser lokale Stand enthält die mobile Navigationskorrektur sowie die vereinheitlichte
+  Palette, Avatare und den Kalender. Aktuelle skriptfreie DOM-Aufnahmen sind in Stitch
+  als `6943287812131813050` **„Arbeitsreferenz geprüft – feste Flächenpalette und Avatare“**
+  und `8911068278616302149` **„Arbeitsreferenz geprüft – Kalender geöffnet, feste Flächenpalette“**
+  gespeichert und unabhängig per CLI mit Titel, HTML- und Screenshotartefakt abgerufen.
+  Die älteren Screens bleiben erhalten; für den Folgeauftrag diese Arbeitsreferenzen
+  und die neueste lokale Vorschau verwenden. Die interaktive Vorschau und ihre
+  gemeinsam gepflegten Quellen liegen ausschließlich lokal unter `target/`.
+- Tatsächlich geprüft: `1440×1000` und `390×844`, alle fünf Profilfelder,
+  kein horizontaler Seitenüberlauf, begrenzte lange Namen in Header/Sidebar/Menü,
+  beide Hintergründe, Sprachwahl mit sichtbarer Auswahlmarkierung, Pfeil-/Home-/End-/
+  Enter-/Escape-Bedienung und Fokusrückkehr. Vier Statusoptionen schalten lokal
+  die Markierung und passende Avatar-/Kartenfarbe um. Schmale Navigation und
+  Popover bleiben erreichbar; Copyright am Desktop mittig. Eigene Helfer wurden
+  formatiert/geprüft (Java Spotless/Checkstyle, Python Ruff), JavaScript-Syntax und
+  ZIP-Integrität geprüft. Keine JUnit-/Browserjourney-Suite und keine große QA.
+- Eigene Referenzanwendung/Proxy beendet, eigene Datenbank und private TLS-Dateien
+  entfernt; Windows-Vertrauen unverändert. Der reine lokale Vorschau-Server darf
+  während der gemeinsamen Sichtung das ausschließlich synthetische HTML-Paket
+  bereitstellen. Kein Zugriff auf Entwicklerdaten oder echter Mailversand.
 
-CLI-Import, Generierung und Rückabruf sind im Profilfall erprobt. Die verlässliche
-vollautomatische Vaadin-Aufnahme aller Zustände und ein einheitlicher Portalentwurf
-sind damit noch nicht bewiesen. Unterschiedliche Stitch-Ausgaben werden vor dem
-Zusammenbau geprüft und nötigenfalls an den gemeinsamen Rahmen angeglichen.
-Eine zusätzliche Stitch-Integration in die Anwendung ist dafür nicht nötig.
+Die geöffnete Sprachliste und das Benutzermenü gefallen dem Benutzer. Die
+konkret beauftragte Verfeinerung ist lokal umgesetzt und als Teil der Referenz abgenommen:
 
-#### 3c – Einen zusammenhängenden klickbaren Prototyp zusammensetzen
+- Sprachliste mit 6 px Abstand zum Auslöser und einheitlicher Innenkante.
+- Alle drei Avatare verwenden denselben neutralen Rahmen; Anwesenheit bleibt als
+  farbiger Badge erkennbar. Karte und Benutzermenü zeigen dieselbe Statusauswahl.
+- Der Avatar der Identitätskarte öffnet zusätzlich die vier vorhandenen Statusoptionen,
+  auch in der mobilen Navigation. Auswählen synchronisiert beide Zugänge und die
+  Statusdarstellung; Escape führt zum Auslöser zurück.
+- Stitch lieferte eine schriftliche fachliche Bewertung: hellere Overlays unterstützen
+  die räumliche Trennung; zusätzliche gesättigte Blautöne und verschiedenfarbige
+  Popup-Sektionen sind unnötig. Dies ist ausdrücklich eine **nachträgliche Bewertung**,
+  kein Nachweis seiner ursprünglichen Absicht. Behauptete Bestandsfarbduplikate aus
+  der Antwort wurden nicht ungeprüft als Code-Inventar übernommen.
+- Der Kalender stammt aus Stitch-Screen `a807a6ca902d4cf186ae7c89ad85959f`.
+  Sein Kalenderfragment wurde ohne fremde Skripte übernommen und lokal bedienbar
+  gemacht: Tag/Monat/Jahr, Heute, Abbrechen, Pfeiltasten und Escape. Der zusätzlich
+  vorgeschlagene Übernehmen-Knopf entfällt, weil die Datumsauswahl direkt übernimmt.
+  Das ist eine HTML-Gestaltungsvorlage, keine nachgewiesene Vaadin-Integration.
+  Der echte geöffnete Vaadin-Kalender wurde für diese Runde nicht separat aufgenommen;
+  aktueller DatePicker und CompactDateInput wurden im Quellcode abgeglichen. Keine
+  neuen Datumsgrenzen oder fachlichen Validierungsregeln ergänzt.
 
-- Aus den gewählten Entwürfen einen gemeinsamen responsiven HTML-/CSS-Rahmen mit
-  wiederverwendbaren Header-, Seitenkopf-, Navigations-, Footer- und Overlayteilen
-  aufbauen. Die fünf Szenen wechseln innerhalb dieses Rahmens. Rohentwürfe nicht
-  als fünf unabhängig gestaltete Seiten aneinanderhängen.
-- Zahnrad und Kontozugang öffnen Persönliche Daten; Portalnavigation führt zu
-  Startseite und Inbox. Glocke öffnet die Vorschau mit Zugang zur vollständigen
-  Inbox; Benutzeravatar öffnet das Benutzermenü. Profilbild-, Passwort- und
-  E-Mail-Aktionen öffnen die zugehörigen Beispieldialoge. Schließen/Abbrechen,
-  Escape, Fokus und schmale Darstellung berücksichtigen.
-- Jeder sichtbare Aktionsknopf erhält eine nachvollziehbare lokale Reaktion oder
-  einen klaren Hinweis auf die Simulation. Statuswahl aktualisiert die sichtbaren
-  Statusstellen; Inbox-Pagination und Filter arbeiten auf einem festen Beispielsatz.
-  Speichern, Widerruf, Passwort-/E-Mail-Wechsel und Abmelden zeigen ausschließlich
-  Demo-Rückmeldungen. Keine echten Dienste, Sitzungseingriffe, Uploads oder Mails;
-  kein Nachbau der fachlichen Validierung. Sprache ist als Menüelement beurteilbar;
-  eine vollständige englische Demo bleibt optional und wird nicht vorgetäuscht.
-- Hintergrundumschaltung und Auswahl kurzer/langer Beispieldaten außerhalb des
-  dargestellten Produktbereichs platzieren. Beide Hintergründe in derselben Szene
-  vergleichen können, einschließlich geöffneter Overlays. Desktop und Smartphone
-  zeigen dieselben Inhalte, keine getrennten Designrichtungen.
-- Vor lokalem Öffnen fremde Skripte/Netzverweise prüfen; Styles, Schriften und
-  benötigte Assets lokal bündeln. Nur überprüfte Vorschau-Interaktionen behalten.
-  Als lokal nutzbares Paket mit Einstieg und kurzen Bedienhinweisen bereitstellen.
-  Der Prototyp darf keine Verbindung zur echten Anwendung benötigen.
-- Tatsächlich prüfen: alle Navigationsziele und sichtbaren Aktionen, Overlay-
-  Öffnen/Schließen und Fokus, Namens-/E-Mail-Überlängen, Statusfarben mit Text,
-  erreichbare Aktionen und keine unbeabsichtigten horizontalen Überläufe bei
-  `1440×1000` und `390×844`. Das sind gezielte Prototypprüfungen, keine große QA
-  und keine Abnahme echter Konto-/Sicherheitsfunktionen.
+**Gemeinsame Arbeitsregeln für Flächenfarben:**
 
-**Entscheidungspunkt:** Der Benutzer beurteilt das Zusammenspiel des Portals und
-wählt den Hintergrund. Erst danach den Umfang der Vaadin-Übertragung festlegen.
+| Rolle | Arbeitswert | Verwendung |
+| --- | --- | --- |
+| Seitenhintergrund | `#050811` | Seite, Header/Footer, mobile Navigationsgrundfläche |
+| Panel | `#080E1B` | Content- und Identitätskarten |
+| Overlay | `#0E1726` | Benutzermenü samt Kopf/Fuß, Sprach-/Statusliste und Kalender |
+| Eingabe | `#091120` | Alle fünf Profilfelder und Avatargrundfläche |
+| Hover | `#152238` | Interaktive Menü-/Navigations-/Kalendereinträge |
+| Auswahl | `#122342` | Aktive Einträge mit gemeinsamer cyanblauer Kontur |
+
+Vier deckende Basisflächen plus zwei Zustände, keine neuen Panelwerte pro Seite.
+Stitchs optionale Alpha-Varianten wurden bewusst nicht übernommen. Deko, Konturen,
+Schrift- und semantische Status-/Warn-/Aktionsfarben sind getrennte Rollen und keine
+weiteren Panel-Hintergründe. Die Werte gelten für den **HTML-Versuch**, noch nicht
+als neuer globaler Vaadin-Theme-Standard. „Verbunden“ bleibt vorerst stehen; der
+Stitch-Hintergrund ist bevorzugt, weitere kosmische Dekoration bleibt offen.
+
+Geprüft in der Vorschau: gleiche berechnete Panel-/Input-/Overlayfarben, einheitliche
+Avatarrahmen, Statussynchronisation, Combo-Abstand, Datum-/Jahreswahl und Übernahme,
+Kalenderpfeile/Escape samt Fokusrückkehr, lange Namen sowie Smartphone `390×844` und
+Querformat `844×390` ohne horizontalen Überlauf. Der Kalender bleibt im Querformat
+innerhalb des Viewports scrollbar. Stil-/Syntaxprüfungen und Offline-ZIP bestanden;
+keine Anwendungstests oder große QA. Die Credits-Nutzung wurde ausschließlich für
+diese laufende Referenzrunde ausdrücklich erlaubt. Der Folgeauftrag um 06:00 Uhr
+prüft reguläres Kontingent und darf keine Credits verwenden.
+
+Die mobile Navigation zeigt lokal dieselbe Desktop-Seitenleiste über dem Content,
+mit dem dunklen Seitenhintergrund statt einer zusätzlichen andersfarbigen Fläche.
+Header und Footer bleiben sichtbar. Ein zusätzlicher Navigationstitel und
+Schließen-Knopf entfallen; der Menüknopf im Header öffnet und schließt die Ebene.
+Geprüft bei `390×844`: Navigation exakt zwischen Headerunterkante und Footeroberkante,
+Menüknopf und Escape schließen und geben den Content wieder frei. Bei `844×390`
+bleibt die schmale seitliche Navigation scrollbar; Auswahl schließt und führt den
+Fokus zum Menüknopf zurück. Kein horizontaler Überlauf in beiden Ansichten. Beim
+Wechsel auf `1440×1000` schließt die Ebene und die ursprüngliche Desktopnavigation
+kehrt in ihren Layoutbereich zurück. Vergleichssteuerung und Offline-ZIP sind
+aktualisiert; keine neue Stitch-Generierung und keine Änderung der eigentlichen
+Anwendung.
+Diese mobile Navigation ist vom Benutzer gestalterisch bestätigt.
+
+Offen bleiben Geschmack/Feinarbeit, die gemeinsame Wahl des Hintergrunds und die
+Freigabe der Referenz für weitere Seiten. Vollständige EN-Oberfläche, echte
+Mobilgeräte, Screenreader, Kontrastabnahme und Vaadin-Übertragung sind nicht geprüft.
+
+#### 3b – Referenzen und Stitch-Kreislauf: technisch durchgeführt
+
+- Aktuelle UI-Komponenten und ihre Fachverträge abgeglichen: Sicherheitsfelder und
+  Hinweise, aktive/gespeicherte Sitzungen, Profilbildmodi und Ausschnittbedienung,
+  Inbox-/Vorschaufilter, Lesestatus, Entfernen, Detailaktionen und Pagination.
+- Originale aus einem eigenen frischen HTTPS-/H2-JAR-Aufbau mit normalem erfundenem
+  Benutzer aufgenommen. JAR-SHA256 entspricht der Profilreferenz; Java 25 geprüft,
+  kein Anwendungsneubuild. CUA-Browserbedienung und reine DOM-/Style-Lesung lösen
+  Shadow-/Slot-Inhalte auf. Abschnittsweise Übertragung wurde auf vollständigen
+  HTML-Abschluss geprüft. Sicherheitswerte, Passwortinhalte, Fremdskripte und
+  Serverziele sind ausgeschlossen; Schriften/Bilder eingebettet. Für die Referenz
+  herausgelöste Dialoge behalten ihre Inhalte; leere Passwortfelder sind neutral
+  nachgebildet. Sicherheit und E-Mail-Dialog im Offline-Export sichtbar kontrolliert.
+- Die Original-Inbox war leer, die echte Sitzungsliste enthielt nur das eigene Gerät.
+  Gefüllte Inbox, Nachrichtendetail und weitere Geräte sind ausdrücklich synthetische
+  Gestaltungsszenen nach dem aktuellen Codevertrag, keine Aufnahme echter Nutzerdaten.
+  Der echte Kalender ist jetzt ebenfalls separat als Original-HTML vorhanden.
+- Eigene Anwendungs-/Proxyprozesse sind beendet; eigene Datenbanken, temporäre
+  Konfiguration und private Worker-TLS-Dateien entfernt. Bestehendes Windows-Vertrauen
+  wurde nur gelesen; kein Import, echter Mailversand oder fremder Dienst als Fixture.
+
+| Bereich | Hochgeladene Originalreferenzen | Neuer Stitch-Entwurf |
+| --- | --- | --- |
+| Sicherheit / E-Mail-Dialog | `3832466833126774545`, `9998790273924165944` | `ac4f0421af9f462b853594b54d4b4990` |
+| Inbox / Glockenvorschau / Detail | `14393985130048207485`, `14376026531723469630` | `aad2b75d163442bab1d7463a3a36ea34` |
+| Startseite / Sitzungen / Passwort / Profilbild | `2708411696220003083`, `1102108285391529627`, `304663314998354812`, `3712410914537252687` | `5baae01ff18e46099936767236264f6a` |
+
+Alle drei neuen Entwürfe wurden unabhängig per CLI abgerufen. HTML kam je nach
+Artefaktzugang über den Downloadlink oder den tatsächlich sichtbaren authentifizierten
+Stitch-Vorschauframe; Browserzugang umgeht keine Schutzprüfung. Inhalte und sichtbare
+Vorlagen wurden kontrolliert; Inbox-/Benutzerbereiche-Bilder liegen zusätzlich lokal.
+Stitch blieb teilweise im Textmodus bzw. lieferte eine falsche Profilseite. Erst
+gezielte Browser-Chat-Korrekturen erzeugten die passenden HTML-Szenen. Der Kreislauf
+funktioniert damit mit kontrollierten Eingriffen, nicht als garantierte unbeaufsichtigte
+Ein-Klick-Automatisierung. Erfundene 2FA, Sicherheitsbewertungen, Aktivitätsversprechen
+und unpassende Unterteilungen wurden nicht übernommen. Fremde Ausführungsskripte
+bleiben ausschließlich in ignorierten Rohartefakten, niemals im lokalen Portal.
+
+#### 3c – Gemeinsamer klickbarer Portalprototyp: technisch bereit
+
+Aktueller Einstieg: `http://127.0.0.1:60825/preview/index.html`.
+Dateien unter `target/designkritik-stitch/portal/`: `preview/index.html`,
+`preview/portal.html`, `preview/Hinweise.txt` und `cosmos-portalprototyp.zip`.
+`build_portal.py`, `portal-core.js`, `portal.js` und `portal.css` sind die lokalen
+Prototypquellen; die geprüfte Profilreferenz liefert den gemeinsamen Rahmen.
+`integrate_notifications.py` übernimmt die verfeinerte Benachrichtigungsquelle samt
+gemeinsamer Zustands-/Overlaylogik aus der separaten Designprobe. Die alte parallele
+Benachrichtigungslogik und deren HTML-Erzeugung sind entfernt.
+Die Dateien sind bewusst temporäre, ignorierte Entwurfsartefakte. Vor einem
+Root-Clean die gewünschte ZIP sichern; sie startet ohne Anwendung oder Internet.
+
+- **Fünf Szenen:** Startseite mit ehrlichem Inhaltsplatzhalter, Persönliche Daten,
+  Benachrichtigungen, Sicherheit sowie Geräte/Sitzungen. Seitenkopf, Navigation,
+  Identität, Header/Footer und sechs Farbrollen werden gemeinsam gepflegt. Der
+  vorangegangene Stitch-Entwurf bleibt visuelle Grundlage; neue Rohentwürfe wurden
+  fachlich bereinigt und in diese gemeinsamen Bausteine übertragen statt als
+  unabhängig gestaltete Vollseiten angehängt. Gemeinsame Primäraktion und genau
+  eine aktive Navigationsmarkierung; keine zusätzlichen Panel-Farben pro Seite.
+- **Verbundene Aktionen:** Zahnrad/Kontozugang zur Profilseite; Glocke zur Vorschau
+  mit maximal fünf Meldungen, von dort Detail oder Inbox. Suche, drei Lesefilter,
+  10/20/50 Zeilen, nummerierte Pagination samt erster/letzter Seite auf 23 festen
+  Beispielen. Lesen/Entfernen/Bereinigung verändern nur den lokalen Beispielsatz;
+  Öffnen allein setzt den Lesestatus nicht. Systemdetails zeigen Konto öffnen,
+  Verwaltungsmitteilungen nicht. Kopf-/Sidebar-Zähler und Detailstatus bleiben synchron.
+- **Vier gemeinsame Dialoge:** E-Mail mit neuer/Bestätigungsadresse und aktuellem
+  Passwort; Passwort mit neuem/Bestätigungs-/aktuellem Passwort; Profilbild mit
+  Initialen/Eigenes Bild, synthetischem Bild, Zoom, per Pfeiltasten verschiebbarem
+  Beispielausschnitt, Zurücksetzen/Verwerfen/Löschen; Nachrichtendetail. Ursprüngliche
+  Sicherheits-/Sitzungshinweise sind erhalten. Native modale Ebene, Escape,
+  Schließen/Abbrechen und Fokusrückkehr; Passwortentwürfe werden auch nach Reveal
+  beim Schließen geleert. Kontoaktionen/Widerruf/Logout sind reine Demo-Rückmeldungen.
+  Es gibt keine echte Dateiauswahl, Mails, Speicherung oder Sitzungseingriffe.
+- **Gemeinsame Overlays:** Sprache, Avatarstatus, Benutzermenü, Kalender,
+  Benachrichtigungsvorschau und Seitengröße verwenden dieselbe begrenzte
+  Overlaypositionierung und Palette. Mobile Navigation bleibt zwischen sichtbarem
+  Header/Footer und schließt bei Zielwahl. Sprachwahl ist beurteilbar, die Demo
+  bleibt Deutsch; eine vollständige EN-Ausarbeitung wird nicht vorgetäuscht.
+- **Geprüfter Stand:** alle fünf Szenen bei `1440×1000`, `390×844` und `844×390`
+  ohne horizontalen Überlauf. Lange Identität/E-Mail, mobile Navigation, modale
+  Begrenzung/Scrollen, verschachtelte Nachrichtendetails und Fokusrückkehr geprüft.
+  Suche, Paginationgrenzen, Seitengröße, Filter, Lesen/Entfernen, synchrone Zähler,
+  synthetische Bildauswahl/Zoom/Ausschnitt und Demo-Hinweise gezielt bedient.
+  Kalender-/Sprachliste und 6-px-Combo-Abstand erhalten. Python-Ruff,
+  JavaScript-Syntax, skriptfreie Referenzen, Selbstständigkeit und ZIP-Integrität
+  geprüft. Kein Java geändert; keine JUnit-/Browserjourney-Suite, große QA oder Sonar.
+
+Maßgebliche konsistente Referenzen im bestehenden Stitch-Projekt; alle fünf nach
+Upload unabhängig mit HTML-/Bildartefakt erneut abgerufen:
+
+| Portalszene | Screen mit Präfix „Portalprototyp Endstand“ |
+| --- | --- |
+| Startseite | `13326829905224710828` |
+| Benachrichtigungen | `12468834517238631217` |
+| Persönliche Daten | `15723986144608948394` |
+| Sicherheit | `8097382058482847080` |
+| Geräte & Sitzungen | `17584143165337575147` |
+
+Der aktuelle lokale Portalprototyp enthält zusätzlich die danach verfeinerte
+Benachrichtigungsreferenz; die oben genannten Stitch-Screens enthalten diese lokale
+Ergänzung noch nicht.
+Der reine Loopback-Vorschauserver für die synthetischen Artefakte bleibt zur
+Benutzersichtung verfügbar. `docs/status.md` bleibt unverändert die letzte große QA;
+Anwendungsquellen, Theme, bestehende Entwicklerdaten und fremde Prozesse unverändert.
+Der einmalige Folgeauftrag ist beendet und seine Automation entfernt. Es wurde
+ausschließlich reguläres Kontingent verwendet; das Creditguthaben blieb unverändert.
+
+**Noch offen:** Umfang und Beauftragung von 3d sowie die zurückgestellte
+Logoentscheidung. Popup-Anordnung auf echten Geräten, Kontrastmessung,
+Smartphone-Tastatur, Screenreader und vollständiges EN sind nicht abgenommen.
+Spätere ästhetische Vertiefungen bleiben optional; die abgenommene HTML-Gestaltung
+wird dadurch nicht erneut zur offenen Richtungsentscheidung. Paket 3 mit seinem
+technischen Piloten und das Gesamtfeature sind nicht abgeschlossen.
+
+Die erste Gesamtsichtung hatte die Profilseite bestätigt, die neuen Contentbereiche
+aber noch als zu wenig ausgearbeitet bewertet. Die inzwischen umgesetzte Feinarbeit betraf:
+passende konsistente Aktions-/Geräteicons, gleiche Buttonhöhen und sinnvolle
+Aktionsgruppen, rechtsbündige gemeinsame Abschlussaktionen, erkennbare Infohinweise,
+lesbarer einheitlicher Dialog-Schließknopf sowie eine klare Hierarchie der
+Benachrichtigungswerkzeuge, Zähler und Pagination. Aktive Sitzungen und gespeicherte
+Anmeldungen erhielten eine verständlichere Gliederung; deren unterschiedliche
+Widerrufsaktionen sind bestehende Fachfunktionen, keine Stitch-Erfindung.
+Die anschließenden Designrunden erfolgten einzeln nach Benutzerfreigabe, beginnend
+mit dem folgenden Vergleich dreier Inbox-Contentvarianten.
+
+**Separater Benachrichtigungsvergleich:**
+`http://127.0.0.1:60825/notifications-variants/index.html`, mit Umschaltung A/B/C,
+unveränderter Profilreferenz sowie Desktop-/Smartphoneformat. Alle drei Entwürfe
+wurden im bestehenden Stitch-Projekt erzeugt und unabhängig samt HTML abgerufen:
+
+| Lokaler Vergleich | Stitch-Screen | Gestaltung |
+| --- | --- | --- |
+| A | `df4a5fc58e124a758502aa7121e15e1a` | Kompakte Inbox, Zeilenaktionen oben rechts |
+| B | `5529ff78df5b4c4091ea1b6cd91b6c5f` | Zeitgruppen und größere Karten mit eigener Aktionszeile |
+| C | `e5579c073372412e823f80757194eb48` | Strukturierte Karten und deutlichere Zähler-Badges |
+
+A und C sind verwandte Vorschläge, B unterscheidet sich stärker. Der CLI-Aufruf
+endete mit Timeout; der Browserweg wurde kontrolliert genutzt und die gespeicherten
+Ergebnisse anschließend unabhängig gelesen. Die Rohbilder waren wegen fehlender
+Utilitystyles bzw. blockierter CDN-Skripte teilweise unbrauchbar. Für den lokalen
+Vergleich werden ausschließlich die Contentfragmente in den identischen bestehenden
+Referenzrahmen gesetzt. Entwurfs-CSS ist auf den Content begrenzt; benötigte
+Utilityregeln wurden mit dem bekannten Tailwind-Compiler erzeugt und eingefroren.
+Die ausgelieferten Varianten enthalten keine Skripte oder externen Laufzeitressourcen.
+Erfundene „als ungelesen“-Aktionen und fachfremde Beispielversprechen sind entfernt;
+gleiche harmlose Nachrichtentexte, feste Flächenrollen und schmale Umbrüche gelten
+für alle Varianten. Keine stillschweigende neue Designentscheidung oder Übernahme.
+
+Arbeitsquellen liegen unter `target/designkritik-stitch/notifications-variants/`,
+statische Vergleichsseiten unter `target/designkritik-stitch/portal/notifications-variants/`.
+Das Offlinepaket heißt `cosmos-benachrichtigungen-varianten.zip`. Desktopvorschauen
+wurden visuell geprüft; bei 390 px bleiben die Inhaltsaktionen innerhalb der Breite.
+Der gemeinsame Rahmen ist strukturell mit der unveränderten Referenz abgeglichen.
+Python-Formatierung/Formatprüfung, Offline- und ZIP-Prüfung sind erfolgt; keine
+Anwendungsbuilds, Browserjourneys oder große QA. Der bisherige klickbare Prototyp
+bleibt unverändert. Der Benutzer hat C gewählt; die anderen Varianten bleiben als
+Vergleich erhalten.
+
+**Aktuelle C-Verfeinerung zur Sichtung:**
+`http://127.0.0.1:60825/notifications-variants/c-refined-preview.html`.
+Sie enthält C vorher/nachher sowie die Profilseite mit dem vereinbarten roten
+Ungelesen-Zähler. Karten und linke cyanblaue Ungelesen-Markierung bleiben erhalten.
+Zähler sind gleich groß und mittig, die drei Lesefilter gleich breit. Toolbar und
+Nachrichten verwenden quadratische Iconbuttons mit verständlichen Tooltips bei
+Hover/Tastaturfokus und zugänglichen Namen. Aktualisieren, Gelesen-Markieren und
+Löschen behalten ihre getrennte Bedeutung; Löschicons sind rot. Pagination ist in
+Seitengröße, mittigen Eintragsbereich und gleichmäßige Seitenschaltflächen gegliedert;
+die 180-Tage-Information steht separat mit Info-Icon. Glocken sind konsistent,
+Header-/Navigationsplaketten rot mit weißer Zahl; innerhalb der Inbox bleibt Blau.
+Die Farbregel zum Ausblenden bei Zähler null ist enthalten, die statische Vorschau
+zeigt jedoch fest zwölf ungelesene Nachrichten und simuliert keine Kontoaktionen.
+
+Stitch-Screen `3da36e95ce76444fab9a45f9914a1331`, „Portalprototyp verfeinert –
+Benachrichtigungen“, wurde neu erzeugt und unabhängig samt HTML/Bild abgerufen.
+Er bestätigt die gewünschte Pagination-/Iconanordnung, verändert jedoch zusätzlich
+den Referenzrahmen und verdichtet die Karten. Die lokale Sichtvorlage setzt deshalb
+die konkret vereinbarten Anpassungen gezielt auf die bisherige C-Grundlage; der
+neue Stitch-Rohentwurf wird nicht als vollständige Seite übernommen. Der direkte
+Vergleich und diese Herkunftsunterscheidung bleiben erhalten.
+
+Quellen: `refine_c.py`/`c-refined.css` im bestehenden ignorierten Variantenbereich;
+Offlinepaket `cosmos-benachrichtigungen-c-verfeinert.zip`. Geprüft: Desktop,
+Smartphone Hoch-/Querformat, gleiche Maße, lesbare Namenszuordnung aller Iconbuttons,
+Tastatur-Tooltip sowie Paginationumbruch und Profil-Zählervorschau. Formatprüfung,
+Offline-/ZIP-Prüfung und `git diff --check` durchgeführt. Keine Anwendungsänderung,
+kein Build/Scan und keine Browserjourneys. Die Profil-Zählervorschau ist ausdrücklich
+eine statische Referenz; die interaktiven Benutzer-/Sprach-/Statusoverlays bleiben
+im Portal erhalten. Der vollständige Benachrichtigungsbereich ist nach der
+gemeinsamen Sichtung einschließlich der folgenden Kleinkorrekturen übernommen.
+
+**Aktuelle Overlayrunde:**
+`http://127.0.0.1:60825/notifications-overlays/index.html`.
+Lesefilter stehen links, die drei Sammelaktionsicons rechts in der ersten Zeile;
+die senkrechte Trennlinie entfällt. Die horizontale Linie zwischen dieser Zeile
+und der darunter vollbreiten Suche reicht ohne seitliche Einrückung von innerer
+Panelkante zu innerer Panelkante. Die Inhalte behalten ihre normalen Einrückungen.
+Filterzahlen sind abgesetzte runde Badges, auch in der Glockenvorschau.
+Die bestehende C-Kartenstruktur,
+Zähler, Highlight-/Icongestaltung und Pagination bleiben die Grundlage.
+
+- Glockenvorschau: rechts unter der Glocke, höchstens fünf neueste Meldungen mit
+  scrollbar begrenztem Inhalt, Lesefiltern, Iconaktionen, sichtbarem Schließsymbol,
+  mittigem blauem Inbox-Zugang über die volle Breite und 180-Tage-Info. Der Kopf
+  nennt „Neueste Nachrichten · max. 5“; seine Zahl zählt alle ungelesenen Nachrichten
+  im Postfach, unabhängig vom Filter oder den höchstens fünf sichtbaren Einträgen.
+  Die Zahl steht ohne sichtbaren Zusatz in einer kompakten blau konturierten
+  Plakette; Tooltip und zugänglicher Name erklären „ungelesene Nachrichten insgesamt“.
+  Nachrichtendetail lässt die Vorschau
+  im Hintergrund bestehen; Escape und Schließen führen zum Auslöser zurück.
+- Nachrichtendetail: Betreff, Herkunft, Zeit und Lesestatus, vollständiger Text,
+  Gelesen-Aktion nur wenn nötig, Konto-Zugang nur bei Systemnachrichten und
+  Inbox-Zugang bei Aufruf aus der Glockenvorschau. Öffnen allein bleibt ohne
+  Änderung des Lesestatus. Einheitliche Text-/Iconbuttons und Schließen-Symbole.
+- Gemeinsamer Bestätigungsdialog als ausdrücklich gewünschter neuer Vorschlag:
+  eine Struktur für Titel, Erklärung, betroffene Nachricht/Anzahl, Info und
+  rechtsbündige Abbrechen-/Bestätigenaktionen. Einzelnes Entfernen und alle
+  gelesenen Nachrichten verwenden Rot; eine neutrale Sammelbestätigung für
+  Gelesen-Markieren wird separat blau gezeigt. Abbrechen erhält initial den Fokus.
+  Es gibt derzeit keinen solchen Löschdialog in `UserNotificationsPanel`; die
+  Anwendung entfernt direkt. Der neue Ablauf wird ausschließlich in der Designprobe
+  simuliert. Ob künftig beim Sammel-Gelesen-Markieren bestätigt werden soll, bleibt
+  eine offene Entscheidung; einzelne Leseklicks erhalten keine Pflichtbestätigung.
+
+Stitch-Arbeitsreferenz: importierter synthetischer C-Screen `2428522476801571352`;
+Original-Glockenreferenz `14376026531723469630`. Fachvertrag der Detailanzeige und
+des direkten Entfernens wurde mit `UserNotificationsPanel`/`UserNotificationBell`
+abgeglichen. Es wurde keine neue Originalaufnahme oder ein vorhandener Löschdialog
+behauptet. Stitch lieferte `2a01d06a65994f20bd60cf4d880378e2`, „Cosmos
+Benachrichtigungen – Overlays & Toolbar“; HTML und Bild sind unabhängig abgerufen.
+Seine Overlay-/Bestätigungsstruktur und gruppierte Toolbar wurden für die lokale
+Probe an den erhaltenen C-Rahmen, feste Flächen und vorhandene Schließen-Symbole
+angepasst. Fremde Skripte, erfundene Sicherheits-/Supportversprechen und zusätzliche
+Fachfunktionen wurden nicht übernommen. Die lokale Bedienung stammt aus eigenen
+Vorschauskripten und verändert ausschließlich synthetische Daten im Browser.
+
+Die Prüfsteuerung zeigt Inbox, Glockenvorschau, Nachricht, einzelne/Sammelentfernung
+und optionale neutrale Bestätigung. Suche, Lesefilter, Seitengrößen 10/20/50,
+Pagination, Markieren und Entfernen sind innerhalb dieser isolierten Probe bedienbar;
+Zurücksetzen stellt 23/12 Beispieldaten wieder her. Andere Portalbereiche dienen
+als unveränderter Rahmen, die bisherigen Benutzer-/Sprach-/Statusoverlays bleiben
+im vollständigen Portal erhalten. Nach positiver Benutzersichtung ist diese Runde
+einschließlich der gewünschten Kleinkorrekturen als zusätzliche Referenz übernommen;
+Profil und andere Portalinhalte sind gestalterisch unverändert.
+
+Inbox, Glockenvorschau und Nachrichtendetail verwenden dieselbe Metadatendarstellung:
+Herkunfts-Badge System/Administration, Zeit und separater Lesestatus. Ein gemeinsamer
+Renderer und gemeinsame CSS-Klassen verhindern drei voneinander abweichende Varianten.
+Ungelesen hat in allen drei Ansichten denselben dunklen Eingabehintergrund,
+cyanfarbenen linken Rand sowie einen blauen Punkt im Status-Badge; Gelesen verwendet
+die normale Panelfläche und den zurückhaltenden Status ohne Punkt. Das Markieren
+aktualisiert Darstellung, Filterzahlen und globale Zähler gemeinsam. Der äußere
+Overlayrahmen ist mit dem tatsächlich berechneten Avatarmenü abgeglichen: Grundfläche,
+Kontur, Rundung und Schatten folgen derselben Referenz. Nachrichtenzustände bleiben
+innere Panel-/Statusrollen innerhalb der festen Palette, keine neuen Overlayfarben.
+
+Gezielt nachgeprüft: Trennlinie 0 px und Sammelaktionen an der rechten Innenkante,
+gleich breite Filter mit Zahlen-Badges, fünf Vorschauzeilen und mittiger Zugang über
+die volle Breite. Hochformat 390×844 und Querformat 844×390 bleiben ohne horizontalen
+Überlauf; der Vorschauabschluss bleibt erreichbar. Der Lesestatuswechsel im Detail
+ändert die globale Zahl von zwölf auf elf und dieselbe Nachricht in der Vorschau
+auf Gelesen. Hintergrund, Kontur, 16-px-Rundung und Schatten der äußeren Vorschau
+entsprechen den berechneten Werten des bestehenden Avatarmenüs. Synthetische
+Nachrichten sind innerhalb der Tage absteigend datiert, passend zur Neueste-Angabe.
+
+Quellen: `target/designkritik-stitch/notifications-variants/overlay-round/`;
+Vorschau: `target/designkritik-stitch/portal/notifications-overlays/`;
+Offlinepaket: `cosmos-benachrichtigungen-overlays.zip`. Tatsächlich geprüft:
+Desktop und Smartphone Hoch-/Querformat ohne seitliches Abschneiden, begrenzte
+scrollbare Inhalte, erreichbare Dialogaktionen, Escape/Fokusrückkehr, getrennte
+System-/Administrationsaktionen, Öffnen ohne Gelesen-Markieren, Abbrechen ohne
+Änderung, Einzelentfernung 23/12 → 22/11 und Entfernen von elf gelesenen Nachrichten
+mit zwölf ungelesenen verbleibend. Neutrale Bestätigung arbeitet mit sichtbarem
+Snapshot; bei null Ungelesenen verschwinden beide roten Plaketten. Suche und
+Paginationgrenzen sowie Seitengrößen 20/50 sind beobachtet. Ruff-Formatierung,
+JavaScript-Syntax, Offline-/ZIP- und Diffprüfung sind erfolgt. Keine Anwendungs-
+oder Themeänderung, kein Build, Scan, JUnit- oder vollständiger Browserlauf.
+Der gezielte Stitch-Nachvorschlag `a197ed446e8648dfbf34f6d7bd1e415a`,
+„Cosmos Benachrichtigungen – Verfeinerte Glockenvorschau & Toolbar“, wurde erzeugt
+und unabhängig samt HTML/Bild abgerufen. Er zeigt die gewünschte kompakte blaue
+Zahlenkontur ohne Zusatzwort; eine separate textliche Begründung lieferte er nicht.
+Nur diese Kleingestaltung ist übernommen, keine weiteren Rahmen-/Iconänderungen
+aus seinem Rohentwurf. Die horizontale Trennung bleibt ausdrücklich erhalten.
+
+Gemeinsamer Einstieg ist wieder `http://127.0.0.1:60825/preview/index.html`;
+die separate Overlayprobe bleibt zum Vergleich verfügbar. Profil, Glockenvorschau,
+Inbox und Detail verwenden nun denselben Benachrichtigungsbestand. „Alle anzeigen“
+führt in die Inbox, der Systemnachrichten-Kontozugang zu Sicherheit. Profilmenüs,
+Sprache und mobile Navigation sind gezielt zusammen mit der Integration geprüft;
+der Leseklick aktualisiert beide roten Zähler von zwölf auf elf. Die technische
+Übernahme in die HTML-Referenz ist erfolgt, keine Vaadin- oder globale Themefreigabe.
+
+**Gemeinsame Tooltips im HTML-Prototyp:** Die bisherige Mischung aus nativen
+Browser-Tooltips und lokalen CSS-Pseudoelementen war kein abgestimmter Stitch-
+Tooltipentwurf. `portal/tooltips.css` und `tooltips.js` liefern nun denselben
+lokalen Baustein für den Portalprototyp und die separate Benachrichtigungsprobe:
+vorhandene Overlayfläche, einheitliche Schrift/Kontur/Rundung, begrenzte Breite und
+Viewportposition, Hover sowie Tastaturfokus. Ein manuelles Popover hält den Hinweis
+auch über nativen modalen Dialogen sichtbar; vorhandene ARIA-Beschreibungen bleiben
+erhalten. Scrollen, Escape, Schließen und Zielwechsel entfernen den Hinweis.
+Diese lokale Vereinheitlichung ist keine neue Vaadin-Themefreigabe.
+
+**Startseitenprobe:** Stitch-Screen `1e20dc6febf94039a8a2af2cdc51a283`,
+„Silent Cosmos – Startseite (Atmosphärischer Einstieg)“, aus der bestehenden
+Profilreferenz `15723986144608948394` erzeugt und unabhängig erneut abgerufen.
+HTML und Vorschaubild sind vorhanden. Die authentifizierungspflichtigen direkten
+Downloadlinks waren nicht anonym lesbar; die zusätzlich in der Generierungsantwort
+gelieferten Artefaktlinks funktionierten ohne Übernahme von Zugangsdaten.
+Die Bildidee und SVG-Illustration mit Planet/Umlaufbahnen stammen aus Stitch.
+Der lokale Entwurf erhält den Referenzrahmen und übernimmt nur den Inhaltsbereich:
+ruhige Willkommenskomposition, vorhandene Flächen/Buttons und eine Illustration
+ohne externe Bild-/Schriftanforderungen. Eine erfundene Versionsnummer, eine
+automatische Verfügbarkeitszusage und der redundante zusätzliche Identitätsstatus
+wurden nicht übernommen; die Texte folgen der bisherigen Sie-Ansprache.
+
+`portal/prepare_home.py`, `home.html` und `home.css` bilden die lokale Probe.
+Einstieg: `http://127.0.0.1:60825/preview/home.html` oder Startseite im normalen
+Portal. Die Zugänge führen ausschließlich zu bestehenden Szenen: Persönliche
+Daten und Benachrichtigungen. Der optionale Zahlenhinweis teilt deren lokalen
+Nachrichtenbestand; es gibt keine Registrierung oder erfundenen neuen Dienst.
+Die Startseite ist ausdrücklich ein vorläufiger gestalterischer Inhaltsplatzhalter
+und wurde vom Benutzer positiv bewertet. Die Sicherheitsrunde folgt unten;
+Geräte bleiben für die gesonderte seitenweise Überarbeitung offen.
+
+Gezielt beobachtet: Desktop 1440×1000, Smartphone 390×844 und Querformat 844×390
+ohne horizontalen Überlauf; beide Startseitenziele, synchroner Hero-Zähler 12→11,
+durchgehende Toolbarlinie bis auf die 1-px-Panelkontur am Desktop und Smartphone,
+gleich gestalteter Tastaturtooltip einschließlich über dem Nachrichtendialog.
+JavaScript-Syntax, Python-Ruff, Offline-/ZIP- und Diffprüfungen durchgeführt.
+Kein Anwendungsbuild, keine Browserjourneys, JUnit oder Sonar. Der gemeinsame
+Portalprototyp und seine ZIP enthalten die neue Probe, keine Übernahme ins
+Anwendungstheme und keine endgültige Startseitenabnahme.
+
+**Sicherheitsrunde – als HTML-Entwurfsreferenz abgenommen:**
+`http://127.0.0.1:60825/preview/security.html`, ebenfalls über die bestehende
+Seitennavigation erreichbar. Gestaltung ausschließlich im HTML-Prototyp.
+
+| Stitch-Vorschlag | Unabhängig abgerufener Screen |
+| --- | --- |
+| Sicherheit & Zugang | `f668de3795f94ddca333ac4b2046e3df` |
+| Passwort ändern | `bacb7fba36e3488cb0dac981f113b2d2` |
+| E-Mail-Adresse ändern | `98c623f6051a4ebc8bafd9b2caa8a728` |
+
+Alle drei basieren auf der bestehenden Profilreferenz und den zugehörigen
+bereinigten Originalen. Sicherheitsseite und E-Mail-Dialog sind mit HTML/Bild
+heruntergeladen. Der Passwortscreen war über die angebotenen Downloadlinks nicht
+anonym abrufbar; sein tatsächlich gerenderter HTML-Vorschauframe wurde im bereits
+angemeldeten Stitch-Projekt gelesen und lokal gesichert. Seine Felder und Hinweise
+sind damit ebenfalls inhaltlich geprüft. Kein Lesen oder Übertragen von Zugangsdaten.
+
+Übernommen wurden zwei geordnete Zugangsbereiche, gleich breite Ändern-Buttons
+mit Stifticon, ein Briefumschlag für E-Mail und gemeinsame Infohinweise mit
+Info-Kreis. Fremde Rahmen-/Footeränderungen, neue Fachfunktionen und die von Stitch
+ergänzte pauschale Aufforderung zum regelmäßigen Passwortwechsel sind nicht
+übernommen. Die lokalen Quellen `refine_security.py` und `security.css` erhalten
+die gemeinsamen Flächenrollen; Passwort-/E-Mail-Dialoge übernehmen das vorhandene
+Schließen-Symbol und die 36-px-Aktionen der Referenz. Andere Szenen ändern dadurch
+weder Layout noch eigene Dialoggestaltung. Die Passwortanzeige hat ein echtes
+Augensymbol sowie passende zugängliche Anzeigen-/Verbergen-Bezeichnungen.
+Die Panelköpfe von Persönliche Daten, Benachrichtigungen und Sicherheit verwenden
+auf Benutzerwunsch den größeren Benachrichtigungsmaßstab gemeinsam. Die lokale
+Quelle `panel-heads.css` bündelt 40-px-Iconfläche mit 20-px-SVG, blauer Kontur,
+gleicher Fläche/Rundung sowie identische 18-px-Titel und 12-px-Beschreibungen.
+Die untergeordneten Passwort-/E-Mail-Symbole sind ebenfalls cyanfarben; Passwort
+verwendet zur Unterscheidung vom Sicherheits-Schloss einen Schlüssel, auch im
+Änderungsdialog. Die Eingabefelder behalten ihre bekannten Passwortsymbole.
+Berechnete Icon-/Titelwerte aller drei Köpfe sind direkt verglichen und stimmen
+überein; die Sicherheitsansicht ist zusätzlich schmal ohne horizontalen Überlauf
+geprüft. Diese Vereinheitlichung gilt weiterhin nur für die HTML-Entwurfsreferenz.
+Die Titelicons sind zur vollständigen Titel-/Beschreibungsgruppe mittig ausgerichtet;
+bei Benachrichtigungen sind die Mittelpunkte direkt als gleich geprüft. Die
+Headericons aller fünf Inhaltsdialoge (Passwort, E-Mail, Profilbild, Nachricht,
+Bestätigung) tragen einen sichtbaren Rahmen. Neutrale Icons verwenden dieselbe
+blaue Kontur; die Danger-Bestätigung behält ihre fachlich rote Gestaltung.
+
+Fachlicher Abgleich mit `AccountSettingsComponent`, `AccountPasswordChangeDialog`
+und `AccountEmailChangeDialog`: je drei vorhandene Felder in bestehender Reihenfolge;
+beim Passwortwechsel Ende anderer Sitzungen/gespeicherter Anmeldungen, diese Sitzung
+bleibt; bei E-Mail-Änderung bisherige Adresse bis zur Bestätigung gültig, erst danach
+Ende aller Sitzungen/gespeicherter Anmeldungen. Die Vorschau versendet keine Mail und
+ändert keine echten Zugangsdaten. Native Dialoge, Escape, Abbrechen und das Leeren
+auch zuvor sichtbar gemachter Entwürfe bleiben erhalten. Die neue Passwortanzeige
+setzt beim Schließen Typ, Bezeichnung und Tooltip zurück.
+
+Gezielt geprüft: Desktop 1440×1000 und Smartphone 390×844/844×390; lange
+Beispielidentität/-adresse ohne horizontalen Überlauf; beide Übersichtsaktionen
+110×36 px, Dialogaktionen 36 px; gemeinsamer Overlayhintergrund; Feldreihenfolge,
+Passwortanzeige, Escape-/Abbrechen-Rücksetzung und Fokusrückkehr. Im Querformat
+scrollt der Body bei sichtbarer Aktionsleiste. Python-Ruff, JavaScript-Syntax,
+Offline-/ZIP- und Diffprüfungen sind erfolgt. Kein Anwendungsbuild, JUnit,
+vollständiger Browserlauf oder Sonar. Die Sicherheitsrunde einschließlich beider
+Änderungsdialoge ist vom Benutzer gestalterisch abgenommen. Geräte/Sitzungen und
+der nicht angemeldete Bereich bleiben offen; deren Umsetzung beginnt nicht allein
+durch diese Teilabnahme. Vaadin-Pilot und Gesamtfeature bleiben ebenfalls offen.
+
+**Profilbild bearbeiten – als HTML-Entwurfsreferenz gestalterisch abgenommen:**
+Die aktuelle synthetische HTML-Referenz ist als Screen `15014059398700707951`
+hochgeladen. Stitch-Entwurf `3cb18e0f282f4e69a556c142ff42c0c1`, „Cosmos – Profilbild
+bearbeiten (Verfeinerter Dialog)“, ist unabhängig abgerufen. Übernommen sind
+geordnete Moduswahl mit Icons, runde Vorschau, gegliederte Bildauswahl/Zoom,
+Infohinweis und gemeinsame Dialogrollen. Der Rohentwurf ließ den bestehenden
+Ausschnitteditor weg und verwendete ein Personenicon. Ein gezielter Nachauftrag
+lieferte keinen neuen verwendbaren Screen. Daher bleiben Ausschnitteditor und
+seine Bedienung aus der vorhandenen Demo erhalten, mit runder Maske und dem
+Stitch-Bildicon ergänzt; diese Korrekturen sind lokale Anpassungen.
+
+`refine_avatar.py` und `avatar.css` begrenzen die Gestaltung auf diesen Dialog.
+Initialen/eigenes Bild bleiben zwei gleich breite Optionen nebeneinander.
+JPG/JPEG oder PNG bis 5 MiB sind der bestehende Anwendungsvertrag; die Demo lädt
+ausschließlich ihr synthetisches SVG, keine lokale Datei. Auswahl, Zoom,
+Pfeiltasten-Ausschnitt, Zurücksetzen, Auswahl verwerfen, bedingtes Bildlöschen,
+Abbrechen und Speichern bleiben vorhanden. Vorschau und Ausschnitt verwenden
+denselben proportionalen Transform; der lokal übernommene Beispielausschnitt bleibt
+beim erneuten Öffnen erhalten. Abbrechen verwirft Änderungen einschließlich einer
+vorgemerkten Löschung. Kein echter Upload oder Kontoeingriff.
+
+Geprüft: Desktop sowie Smartphone 390×844 und 844×390 ohne horizontalen Überlauf;
+gleich hohe Modusbuttons auf einer Zeile, erreichbarer Footer und scrollbar
+begrenzter Body. Zoom/Pfeiltasten aktualisieren Vorschau und Editor gleich;
+Zurücksetzen, Demoübernahme/erneutes Öffnen und Abbrechen nach Änderungen/Löschung
+geprüft. Escape schließt. Ruff, JavaScript-Syntax, Offline-/ZIP- und Diffprüfung
+erfolgt. Keine Anwendungstests oder große QA. Der Benutzer hat die Profilbildgestaltung
+einschließlich der letzten Zentrierungen abgenommen; der ergänzte Besucherbereich
+ist inzwischen ebenfalls als eigene Gestaltungsreferenz abgenommen.
+
+Der Hinweis unter dem Ausschnitt ist auf Benutzerwunsch zentriert. Die beiden
+Ausschnittaktionen teilen am Desktop eine Zeile in gleich breite, mittig
+beschriftete Buttons; schmal stehen sie gleich breit untereinander. Die gemeinsame
+HTML-Referenz richtet Info-Icons neben ein- und mehrzeiligen Hinweistexten mittig
+zum gesamten Textblock aus, über die zentrale Regel in `reference-controls.css`.
+Desktop und Smartphone geprüft: gleiche Buttonbreiten/-höhen, zentrierter
+Ausschnitthinweis, mittige Icons auch neben mehrzeiligem Text und kein horizontaler
+Überlauf. Die Regel gilt für die HTML-Entwurfsreferenz, nicht für das Anwendungstheme.
+
+**Besucherbereich – feste, gestalterisch abgenommene HTML-Referenz:**
+Der ausdrücklich beauftragte einmalige Folgeauftrag vom 26. Oktober 2026 ist
+technisch umgesetzt. Vor Beginn wurden tatsächliche Uhrzeit und das erneuerte
+reguläre Kontingent geprüft; zwischen größeren Abschnitten erneut geprüft.
+Keine Credits, Käufe, Resets oder API-Abrechnung verwendet. Die eigene Automation
+`besucherbereich-heute-03-15-angleichen` ist nach der Ausführung entfernt.
+Nach den gezielten Nacharbeiten und der letzten Schriftkorrektur hat der Benutzer
+die aktuelle Fassung als Referenz für nicht angemeldete Benutzer bestätigt.
+Diese Abnahme umfasst die Gestaltung des HTML-Prototyps, keine Vaadin-Übertragung,
+technische Anwendungsabnahme oder abschließende Logoentscheidung.
+
+Die neun Szenen bleiben an die vorhandenen öffentlichen Fachverträge gebunden:
+Startseite, Anmeldung, Registrierung mit acht Pflichtfeldern, Passwort vergessen,
+Passwort zurücksetzen, Kontoaktivierung, ausdrückliche E-Mail-Änderungsbestätigung,
+eingeschränkte Anmeldung bei Sitzungsgrenze und Wartung. Keine sozialen Logins,
+Magic-Links, Einladungen, zusätzlichen Einwilligungen oder Betriebsversprechen.
+Die Passwort-vergessen-Antwort ist kontounabhängig. Ein E-Mail-Änderungslink zeigt
+zunächst die Bestätigungsfrage; erst die Demo-Aktion führt zum Ergebniszustand.
+Gespeicherte Anmeldungen ohne aktive Sitzung belegen keinen Sitzungsplatz.
+
+Die feste angemeldete Referenz wird gestalterisch nicht verändert. Ihr Headerrahmen,
+Footer-DOM, Seitenkopf, eingebettete Schriften, gemeinsame Styles und Formularbausteine
+werden für die Besucheransicht wiederverwendet. `public_reference.py` übernimmt diese
+Quellen beim Zusammenbau; `public.css` ergänzt nur die öffentliche Anordnung sowie
+die lokalen Checkbox-/Meldungsmuster. Kein unabhängiges Besucher-Farb- oder Titelsystem.
+Kicker cyan/großgeschrieben, Titelpunkt, Titel/Beschreibung und responsive Abstände
+folgen der Referenz. Headeraktionen besitzen passende Haus-/Anmelde-/Registrierungsicons;
+der aktive Eintrag ist cyan ohne Unterstrich. Sehr schmal bleiben die beschrifteten
+zugänglichen Iconaktionen erhalten; der Markenname kann Platz machen.
+
+Die öffentliche Sprachauswahl übernimmt auf Benutzerwunsch den DE/EN-Umschalter
+aus dem Avatar-Menü der festen Referenz. Der kompakte Sprachbutton im Header
+öffnet ihn als kleines Popup, mit gleicher Schrift, Flächenpalette und ausgewähltem
+Zustand. Geschlecht verwendet weiterhin die vorhandene gestaltete Listbox, Geburtsdatum
+das vorhandene Textfeld mit Kalenderauslöser und Kalender einschließlich Monats-/
+Jahrauswahl. Die sichtbaren nativen Browserauswahlen sind ersetzt. Gemeinsam verwendet
+werden Overlaygeometrie, Kalenderquelle und Tooltips. `public-controls.js` ergänzt
+Auswahl/Tastatur/Fokus; `public-calendar.js` wird aus der bestehenden Kalenderquelle
+mit angepasster Feld-ID und gemeinsamer Verankerung erzeugt. Die ausgewählte Sprache
+bleibt ausdrücklich Designvorschau; sämtliche Texte bleiben Deutsch.
+
+Stitch wurde mit zwei bereinigten, skriptfreien Referenzimporten gezielt beauftragt.
+Maßgebliche unabhängig erneut abgerufene Entwürfe sind
+`8059efa75bd0454dba334130d524360d` (globale transiente Meldungen) und
+`edecfc5050544ddfb67b08a0bea59d77` (Registrierung nach gezielter Korrekturrunde).
+Der erste Kontrollentwurf hatte erneut Pflichtfelder ausgelassen und Sprache,
+Einwilligung sowie Sicherheitsversprechen erfunden. Das wurde ausdrücklich bei
+Stitch korrigiert und lokal am tatsächlichen Fachvertrag geprüft. Die generierten
+Tailwind-/Fremdskripte werden nicht ausgeführt oder übernommen. Roh-HTML/Bilder und
+Aufträge liegen temporär unter `portal/stitch/alignment-*`. Die lokale Einpassung
+wiederverwendet die bereits akzeptierten Komponenten statt unkontrolliert eine
+neue generierte Seite zu übernehmen.
+
+Das tatsächliche `NotificationHelper`-Verhalten wurde samt Theme geprüft: vier
+Meldungstypen, TOP_CENTER, jeweils eine aktuelle Meldung, Standarddauer und mögliche
+dauerhafte Meldungen, semantische Icons/Farben und manuelles Schließen. Der lokale
+Vorschlag `public-notifications.js` zeigt eine begrenzte globale Meldung unter dem
+Header außerhalb des Layoutflusses, mit Titel/Text, Cyan-Kreis-X, Alert/Status-Ausgabe
+und pausierender Ablaufzeit bei Hover/Fokus. Fehler sind rot mit Warnsymbol, Erfolg
+grün mit Hakenkreis, Warnungen gelb mit Ausrufekreis; normale Demohinweise cyan. Wichtige
+Beispiel-Fehler können bis zum Schließen stehen bleiben. Escape schließt die Meldung,
+sofern kein Auswahl-/Kalenderoverlay Vorrang hat. Kein automatischer Fokuswechsel.
+Dauerhafte Link-/Ergebnisansichten ersetzen die jeweilige Karte, während transiente
+Fehler keinen zusätzlichen Bereich im Seitenfluss einfügen. Erfolgskarten sind
+dezent grün konturiert. Das ist ein HTML-Gestaltungsvorschlag, keine Änderung des
+Anwendungs-NotificationHelper oder seines Themes.
+
+Buttons einschließlich dynamischer Ergebnisse haben richtige semantische SVGs,
+gemeinsame Rollen/Größen und Cyan-Secondary-/weiße Primary-Icons. Refresh und Anmelden
+sind unterscheidbar; Danger bleibt rot. Info-Icons stehen mittig zum gesamten Text.
+Die Recovery-Szene trennt Informationen und Aktionsflächen mit durchgehenden Linien;
+Aktualisieren/Abmelden und Abbrechen/Fortsetzen folgen demselben Panelstandard.
+
+Die aktuelle Feinkorrektur der ersten sieben Besucheransichten übernimmt die
+hellweiße Aktionsschrift der festen Referenz; aktiv bleibt die Navigation cyan.
+Kontowechselfragen und Textlinks bilden eine Gruppe mit acht Pixel Abstand:
+„Sie haben noch kein Konto? Jetzt registrieren“ beziehungsweise „Sie haben bereits
+ein Konto? Anmelden“. Passwort-vergessen, Passwort-Reset und E-Mail-Bestätigung
+bündeln gleich breite Secondary-/Primary-Aktionen rechts in einer Fußleiste;
+schmal stehen sie gleich breit untereinander. Der ungültige Aktivierungslink hat
+seine Anforderung ebenfalls in dieser Fußleiste und nur eine Primary-Aktion.
+Globale Meldungen verwenden 28-px-Symbole; ungültige/abgelaufene Links bekommen
+einen Ausrufekreis statt der für die Inbox verwendeten Glocke. Technische Fehler
+behalten das Warndreieck. Die Anwendung und ihre Warnsymbolzuordnung bleiben unverändert.
+
+Die gezielte Stitch-Nachrunde ist Screen `4e5fca3bc97d43db9e7430677fa8fc63`
+(„Komponenten-Korrekturboard“), unabhängig ohne CLI-Cache erneut mit HTML/Bild
+abgerufen. Sie zeigt die rechts gruppierten Abschlussaktionen und eine eindeutige
+Primary-Hierarchie. Die erste Runde ließ diese Korrekturen noch aus. Erfundenen
+Statuscode, 24-Stunden-Frist, Versandversprechen und weitere Farb-/Textabweichungen
+aus dem Rohentwurf nicht übernommen. Lokale Aufträge/Belege: `stitch/public-polish-*`.
+
+Die Texte dieser sieben Ansichten sind mit `messages_de.properties` und den
+tatsächlichen Views abgeglichen: Die Kontowechselfragen folgen der Anwendung,
+die Registrierung heißt jetzt „Registrierung erfolgreich“ mit weiterhin nötiger
+E-Mail-Aktivierung. Passwort-vergessen übernimmt den kontounabhängigen Hinweis
+einschließlich Spamordner; E-Mail-Bestätigung nennt den tatsächlichen Sitzungswiderruf
+und die erneute Anmeldung. Ungültiger, abgelaufener und konkurrierender E-Mail-Link
+behalten ihre unterschiedlichen Folgen. Klarere Begriffe wie „Link“ statt „Schlüssel“
+und die einheitliche Sie-Anrede bleiben erhalten. Technische Fehlermeldungen nennen
+den betroffenen Vorgang, ohne pauschal zu behaupten, es sei kein Konto angelegt worden.
+Anwendungskatalog und Fachabläufe wurden nicht geändert.
+
+Gezielter Nachtest: sieben Grundansichten und 19 ergänzende Zustände jeweils in
+Desktop/Hoch-/Querformat, insgesamt 78 geprüfte Kombinationen. Kein Überlauf,
+keine doppelte Primary-Aktion pro sichtbarer Karte, gleiche Buttonbreiten/-höhen
+in den Aktionspaaren, Footer weiterhin 41 px und keine fehlenden Aktionsicons.
+Anforderung per Enter nach Verlagerung der Aktivierungsaktion sowie der ausdrückliche
+E-Mail-Bestätigungsbutton sind bedient. Temporäre Belege: `alignment-checks/public-polish-*`.
+Die angemeldete Referenz bleibt unverändert. Die anschließend ausdrücklich
+beauftragte Detailrunde für **Sitzungsgrenze/Anmeldung fortsetzen und Wartung**
+ist ebenfalls lokal eingepasst und liegt zur gemeinsamen Sichtung vor.
+Die aktuelle Besucherfassung ist nach der letzten Schriftkorrektur gestalterisch abgenommen.
+
+Die eingeschränkte Anmeldung übernimmt Zeilen, Geräte-/Zustandssymbole,
+Zustandsbadges, Aktivitäts-/Anmeldezeiten und Limitplakette aus der festen
+Gerätereferenz. `apply_recovery_reference` verwendet deren DOM und gemeinsame Styles;
+kein zweites Geräte-Design. Vier synthetische Einträge bilden bewusst drei aktive
+Sitzungen und eine gespeicherte Anmeldung ohne aktive Sitzung ab. Nur die drei
+aktiven zählen gegen „Limit: 3 Sitzungen“. Die gespeicherte Zeile zeigt „Keine aktive
+Sitzung“ und „Anmeldung gespeichert“, aktive Zeilen das blaue Sitzungsbadge und bei
+Bedarf den gespeicherten Zugang. Im eingeschränkten Login gibt es keine bereits
+angemeldete aktuelle Sitzung und daher kein grünes „Dieses Gerät“. Alle betroffenen
+Zeilenaktionen bleiben bedienbar. Einzelaktionen übernehmen den neutralen
+Secondary-Stil der Referenz; die Sammelaktion bleibt Danger.
+
+Der Wartungsbereich verwendet einen Schraubenschlüssel statt der Glocke. Die vom
+Benutzer positiv bewerteten aktuellen Texte bleiben erhalten; sie sind nicht
+wortgleich mit der Anwendung. `MaintenanceView` zeigt „Wartungsarbeiten“ und je nach
+Zustand „Die Anwendung wird gerade gewartet. Bitte versuchen Sie es später erneut.“
+oder die vorübergehende Nichtverfügbarkeit. Die Anwendung nennt die Loginaktion
+„Administrative Anmeldung“; der Prototyp bleibt bei „Anmelden“. Das ändert keine
+Zugangsrechte oder realen Abläufe. Der abgelaufene eingeschränkte Anmeldeschritt
+verwendet nun ebenfalls den gelben Ausrufekreis; technische Meldungen das rote
+Warndreieck und Hinweise den blauen Infokreis. Die private Inbox-Glocke bleibt erhalten.
+
+Die geerbte Gerätetypografie gilt nur für die normale Recovery-Geräteliste.
+Ergebnisansichten wie „Anmeldeschritt abgelaufen“ verwenden den gemeinsamen
+13-px-Hinweistext in Secondary-Farbe; die Listenregel darf dort nicht die
+16-px-Basisschrift und helle Primärfarbe erzwingen. Die übrige Gestaltung dieser
+beiden Seiten ist vom Benutzer positiv bewertet; die Schriftabweichung ist korrigiert.
+
+Gezielt geprüft: beide Seiten samt den vorhandenen Recovery-Zuständen in Desktop,
+Hoch-/Querformat (12 Kombinationen), ohne horizontalen Überlauf, Footer weiterhin
+41 px. Schrift, Farben und Zeilenbausteine direkt mit der gerenderten Gerätereferenz
+verglichen. Gespeicherten Zugang entfernen lässt drei aktive Sitzungen und die
+gesperrte Fortsetzung unverändert. Aktive Sitzung entfernen gibt einen Platz frei;
+Aktualisieren erhält den Demozustand. Nach vollständiger Abmeldung ist die leere
+Sammelaktion deaktiviert. Keine echte Sitzung oder Anmeldung verändert.
+
+Vorschau: `http://127.0.0.1:60825/preview/visitors.html`, mit externer Seiten-/
+Zustandswahl und Desktop/Smartphone Hoch-/Querformat. Diese Prüfsteuerung gehört
+nicht zur späteren Oberfläche. Der gemeinsame Download `cosmos-portalprototyp.zip`
+enthält Besucher- und angemeldeten Bereich einschließlich eingebetteter Schriften/SVGs.
+Lokale Quellen unter `target/designkritik-stitch/portal/`: `build_public.py`,
+`public_reference.py`, `public.css`, `public.js`, `public-controls.js`,
+`public-notifications.js`, `public-viewer.js`, `validate_public.py` sowie die bestehenden
+Referenzquellen. Nach einer bewussten Neugenerierung der angemeldeten Referenz zuerst
+`build_portal.py`, danach `build_public.py` ausführen. In dieser Runde wurde nur
+`build_public.py` ausgeführt. Die freigegebenen Referenzen sind auf Benutzerwunsch
+unter [`docs/design/frontend-referenzen/`](../design/frontend-referenzen/README.md)
+als feste HTML-Momentaufnahmen gesichert: `portal.html` und `public.html` mit
+eingebettetem CSS, Schriften, SVGs und Demo-Skripten sowie `index.html` und
+`visitors.html` für die gemeinsame Vorschau-Steuerung. Alle vier Dateien bleiben
+im selben Ordner offline nutzbar und sind unabhängig von `target/`.
+Vor einem Clean weiterhin benötigte Arbeitsgeneratoren und Rohentwürfe bewusst
+sichern; diese sind nicht Bestandteil der HTML-Sicherung. Vorhandene Quellen und
+Artefakte wurden nicht bereinigt oder gelöscht.
+
+Die gesicherten Exporte enthalten eine rein funktionale Korrektur der
+Besucher-Demologik: Ein nachlaufendes Hash-Ereignis setzt einen bereits gewählten
+Fehlerzustand nicht mehr zurück. Erfolgreiche Registrierungs-/Reset-Beispiele
+leeren auch zuvor über das Augensymbol sichtbare Passwortentwürfe. Die abgenommene
+Gestaltung bleibt erhalten. `docs/design/frontend-referenzen/pruefen.mjs` prüft
+die Exporte ohne Zusatzpakete sowie diese Regressionen und die Absender-/Origin-
+Grenzen in einer kleinen DOM-Testumgebung für HTTP und lokale Dateien. Eine neue
+gerenderte Browserrunde wurde für diese beiden Reviewkorrekturen nicht ausgeführt.
+Die anschließend beauftragte Sprach-Popup-Anpassung wurde gezielt am Desktop und
+im Smartphone-Hoch-/Querformat geprüft: Auswahl, Pfeiltasten/Enter, Escape,
+Fokusrückkehr, Verankerung und unveränderte Geschlechtsauswahl. Die Demo bleibt Deutsch.
+
+Tatsächlich geprüft: neun Grundansichten in drei Formaten (27 Ansichten) und
+21 zusätzliche Erfolgs-/Link-/Fehlerzustände je Format (63 Zustandsprüfungen).
+Kein horizontaler Überlauf, keine fehlenden Aktions-SVGs und keine sichtbaren nativen
+Datums-/Geschlechtsauswahlen. Äußerer Footer überall 41 px, Padding 12 px/0,
+Copyright Inter 12 px/16 px, zentriert, gleiche Farben und Kontur wie die feste
+Referenz; Header 65 px. Der Login-Kartenkopf und die Kartenhöhe bleiben bei der
+globalen Fehlermeldung unverändert. Geöffnete Menüs/Kalender liegen in den geprüften
+Viewports; Sprachmenü sechs Pixel unter dem Auslöser, auch nach Größenwechsel.
+Kalender ist im kurzen Querformat intern scrollbar. Auswahl per Tastatur,
+Datumspfeiltaste/Enter, Escape und Fokusrückkehr geprüft. Checkbox-Auswahl,
+lange synthetische Namen/Adressen, Bestätigungsabgleich und Passwortentwurfsleerung
+geprüft. Zwei verschiedene Adressen ergeben dieselbe Passwort-vergessen-Rückmeldung.
+Nur gespeicherten Zugang entfernen lässt drei aktive Sitzungen und die gesperrte
+Fortsetzung unverändert; aktive Sitzung entfernen gibt einen Platz frei, Aktualisieren
+erhält den Demozustand. Explizite E-Mail-Bestätigung wurde bedient.
+
+Ruff-Format/Formatcheck, JavaScript-Syntax, Offline-/CSP-/ZIP-Prüfung und
+`git diff --check` sind erfolgreich durchgeführt. `validate_public.py` prüft unter anderem
+neun Szenen, acht Pflichtfelder, eindeutige IDs, keine Fremdressourcen/-skripte,
+unterbundenen Netzwerk-/Formularversand und aktuelle Offline-Dateien. Temporäre
+Browserbelege liegen unter `portal/alignment-checks/`. Die feste `preview/portal.html`
+ist byteidentisch geblieben. Keine Anwendung, Datenbank, echten Zugangsdaten,
+Mails, Tokens oder Sitzungen verwendet; keine Builds, JUnit, große QA oder Sonar.
+`docs/status.md` bleibt die letzte große Testrunde. Reale Mobilgeräte,
+Bildschirmtastatur und Screenreader sind damit nicht abgenommen. Die menschliche
+Designsichtung der HTML-Referenz ist erfolgt. Logoentscheidung sowie Umfang und
+Freigabe des Vaadin-Piloten bleiben offen.
+
+**Service-Logo – gesonderte Stitch-Auswahl, noch nicht übernommen:**
+Die ersten blau/cyanfarbenen A/B/C-Entwürfe sind vom Benutzer verworfen. Das
+Servicezeichen darf ausdrücklich mehrfarbig sein und eine eigene Farbwelt haben.
+Die neue, unabhängig abgerufene Stitch-Auswahl ist Screen
+`94bb9052d0474c6f8bd38a037bdab905`, „Cosmos – Logo Exploration Board (Richtungen
+D / E / F · Mehrfarbig)“: farbige Blüte, geschwungene Flügel und vierfarbiger Ring.
+Stitch bevorzugt E; die gestalterische Auswahl bleibt beim Benutzer offen.
+
+`portal/logo-options.html` zeigt die geprüfte native SVG-Geometrie jeder Variante
+groß, unverändert in 16/24/40 px, neben `{ServiceName}` sowie auf hellem Grund.
+Die Vektordateien sind einzeln herunterladbar. `prepare_logo_preview.py` übernimmt
+nur erlaubte SVG-Elemente ohne Fremdskripte/-ressourcen; die Vergleichsansicht ist
+lokal aufgebaut. Kein fester Servicename erfunden und keine ungeprüften Aussagen
+zu garantierter Erkennbarkeit oder Markeneigenständigkeit übernommen. Das bestehende
+Headerlogo und die feste Oberflächenpalette bleiben unverändert. Auswahl und
+eventuelle Vereinfachung kleiner Details sind offen; keine automatische Übernahme.
+Der Benutzer möchte D/E/F ausdrücklich als Kandidaten behalten. Die unveränderten
+Vektorentwürfe sind deshalb unabhängig von temporären Buildausgaben unter
+[`docs/design/service-logo/`](../design/service-logo/README.md) gesichert.
+Diese positive Bewertung ist noch keine endgültige Logoauswahl.
+Die endgültige Logoentscheidung ist auf Benutzerwunsch zurückgestellt. D/E/F
+bleiben mögliche Platzhalter und sind keine Voraussetzung für die nächste
+Designrunde. Der angemeldete Benutzerbereich gilt als feste Gestaltungsreferenz;
+der nicht angemeldete Besucherbereich ist nun ebenfalls als feste HTML-Referenz abgenommen.
+Dies schließt weder das Gesamtfeature noch die spätere Vaadin-Übertragung ab.
+
+**Geräte & Sitzungen – HTML-Vorschlag zur Sichtung:**
+`http://127.0.0.1:60825/preview/sessions.html` oder Seitennavigation. Vorhandene
+Credits sind ausdrücklich nur für diese Runde freigegeben, nicht für den Besucherbereich.
+Stitch-Screens `fda011c939ef46a4975640584b5febb4` „Cosmos – Geräte und Sitzungen“
+und `bc0e4225a35c4b18b5a869f99efe932b` „Cosmos – Geräte & Sitzungen
+(Bestätigungsdialog)“ sind unabhängig mit HTML/Bild abgerufen. Ihre Geräteanordnung,
+Zustände und Bestätigungsstruktur sind in den gemeinsamen Rahmen übertragen;
+zusätzliche helle Konturen, Fremdskripte und globale Rahmenänderungen nicht übernommen.
+Lokale Quellen: `refine_sessions.py`, `sessions.css`, `sessions.js`.
+
+Der gemeinsame 40-px-Panelkopf übernimmt das vorhandene kombinierte Geräte-SVG aus
+der Anwendung, mit eindeutigen Masken-IDs für Kopf und Navigation. Zeilen zeigen
+passende farbige Desktop-/Smartphone-Symbole. Drei synthetische Zustände: aktuelles
+Gerät (grün, nicht abmeldbar), andere aktive Sitzung (blau, Anmeldung gespeichert) und
+nur gespeicherte Anmeldung (neutral). Die zwei aktiven Sitzungen zählen getrennt
+vom gespeicherten Zugang gegen das Limit drei. Rechte 36-px-Aktionen, Infohinweis
+mit Info-Kreis und gemeinsame rechtsbündige Footeraktionen folgen der Referenz.
+„Widerrufen“ hat die eindeutige zugängliche Bezeichnung „Gespeicherte Anmeldung
+widerrufen“. Abgleich mit `AccountSessionsComponent` bestätigt diese vorhandene
+Funktion; sie ist keine Erfindung von Stitch.
+
+Der Bestätigungsdialog ist ein bewusst neuer Vorschlag nur für den Prototyp;
+die Anwendung führt Sitzungsaktionen bisher direkt aus. Er entsteht aus derselben
+Struktur wie der Benachrichtigungs-Confirm, mit vorhandener Danger-/Schließen-Gestaltung.
+Einzelne aktive Sitzung, gespeicherter Zugang und Sammelaktion erhalten passende
+Titel, Kontext und Hinweise. Abbrechen hat initialen Fokus. Bestätigen entfernt
+ausschließlich synthetische Zeilen; die aktuelle Sitzung bleibt stets erhalten.
+Aktualisieren erhält den Beispielsatz, Neuladen setzt ihn zurück. Keine echte
+Sitzung, Datenbank oder externe Verbindung wird verändert.
+
+Gezielt geprüft: Desktop 1440×1000, Smartphone 390×844 und Querformat 844×390,
+lange Identität, kein horizontaler Überlauf, 160×36-px-Zeilenaktionen und erreichbare
+Dialogaktionen bei scrollbar begrenztem Body. Abbrechen/Escape erhalten drei
+Einträge/zwei aktive Sitzungen; Fokusrückkehr beobachtet. Einzelne aktive Abmeldung
+ergibt zwei Einträge/eine aktive Sitzung; nur gespeicherten Zugang widerrufen lässt
+den Aktivzähler bei zwei. Sammelaktion lässt das aktuelle Gerät/eine aktive Sitzung
+übrig und deaktiviert Alle-anderen; Aktualisieren setzt dies nicht zurück.
+Sicherheit bleibt erreichbar. Ruff, JavaScript-Syntax, Offline-/ZIP- und Diffprüfung
+erfolgt. Kein Anwendungsbuild, JUnit, Browserjourneys oder Sonar. Gerätebereich
+und ergänzter Besucherbereich gehören inzwischen zu den gestalterisch abgenommenen
+HTML-Referenzen. Gesamtfeature und technische Übertragung bleiben offen.
+
+Die Limitplakette verwendet auf Benutzerwunsch die vorhandene gelbe Hinweisrolle.
+Hinweis und Geräteaktionen sind durch eine durchgehende horizontale Linie getrennt.
+`panel-footers.css` bündelt Profil-/Geräteaktionsleisten mit 16 px unterem Abstand
+und gleichen seitlichen Einrückungen. Beim Profil lagen zuvor 32 px Formularpadding
+unter dem Speichern-Button, bei Geräten 18 px. Die Profilaktion ist nun als eigene
+Leiste unter dem Formular angeordnet; Felder, Demo-Speichern und andere Szenen bleiben
+erhalten. Für aktuelle gerenderte Quellen enthalten die Vorschauframes eine aus
+ihrem Inhalt berechnete Revisionskennung, damit Neuladen keine alte Framefassung zeigt.
+
+Erneuter Codeabgleich in `AccountSessionsComponent.sessionAction` und
+`SessionManagementService.snapshot`/`revokeOwned`: aktive Sitzung und gespeicherte
+Anmeldung können zum selben Eintrag gehören. Abmelden beendet den aktiven Zugang
+und widerruft gegebenenfalls auch dessen gespeicherten Zugang; ein ausschließlich
+gespeicherter Eintrag widerruft nur die spätere automatische Anmeldung. „Aktiv“ ist
+eine vom vorhandenen Aktivzustand abgeleitete Prototypkennzeichnung. Die bisherige
+Checkboxbeschriftung „Login speichern“ wird dort als Zustand „Anmeldung gespeichert“
+verständlicher formuliert. „2 aktive Sitzungen“ bleibt grammatisch kleingeschrieben.
+Desktop und Smartphone erneut geprüft: gelbe Limitwerte, volle Trennlinie, jeweils
+16 px untere Innenkante, kein horizontaler Überlauf, Gerätebuttons 36 px und
+Profil-Demospeichern weiterhin ohne echte Speicherung. Keine Anwendungstests gestartet.
+
+**Gezielter Stilabgleich als Rückmeldung zur Geräterunde:** Der Benutzer bestätigt
+die Geräteanordnung grundsätzlich, benennt aber uneinheitliche Panel-/Contentflächen
+und Buttonfarben/-größen als gemeinsame Stilentscheidung. Gewählt und in die normale
+HTML-Referenz übernommen sind der dunklere Inhaltsbereich und cyanfarbene
+Secondary-Icons. Der Vergleich unter `http://127.0.0.1:60825/preview/style.html`
+bleibt optional verfügbar und startet ebenfalls mit der gewählten Kombination.
+Keine zusätzliche Besucheransicht.
+
+Gemessene Ausgangslage: Benachrichtigungslistenbody `rgba(5,8,17,.3)` bei transparentem
+äußerem Panel, die anderen Inhalte innerhalb blickdichter Panelkarten; Ändern 12 px,
+Gerätezeilenaktionen 11 px, neutraler Text und teils cyanfarbene, teils helle/graue
+Aktionsicons. Diese Unterschiede stammen aus den einzelnen Entwurfsrunden und sind
+keine einheitliche Bedeutungskennzeichnung.
+
+Stitch-Screen `95b56505514c43139a5bb804878bc720`, „Cosmos – Stilabgleich &
+Vereinheitlichung“, ist unabhängig mit HTML/Bild abgerufen. Seine ausdrücklich
+formulierte Empfehlung lautet: blickdichte Hauptpanels und neutrale Secondary-
+Icons wie der helle Text; Cyan für Fachicons/ausgewählte Zustände. Die Musterseite
+zeigt ebenfalls die eindeutigen parallelen Sitzungszustände. Ihre Bezeichnungen
+„verbindlich“ und „produktiv“ sind keine Benutzerabnahme; abweichende Rohvorgaben
+wie 38-px-Primarybuttons sind nicht übernommen.
+
+Der lokale Vergleich zeigt A (durchgehender Panelgrund) und B (dunklerer, ebenfalls
+blickdichter Inhaltsbereich in Canvasfarbe), jeweils wahlweise neutrale oder
+cyanfarbene Secondary-Icons. Sternenhintergrund bleibt außerhalb der Hauptpanels.
+Gleiche sekundäre Rollen verwenden nun 12 px/600, 36 px Texthöhe, 16 px Icons,
+gleiche Text-/Kontur-/Hoverwerte. Primary bleibt blau/weiß, Danger rot, dekorative
+Kategorie-/Geräteicons cyan, Disabled gedimmt. Kompakte Iconaktionen/Pagination
+behalten ihre begründete kleinere Dichte. Die Standardwerte liegen zentral in
+`reference-controls.css`; Vergleichsabweichungen werden ausschließlich über
+`style-preview.js`, `style-controls.html` und `style-viewer.js` gewählt. Ohne diese
+Vergleichssteuerung gilt automatisch die freigegebene Kombination.
+
+Auch „Profilbild bearbeiten“ ist in die gemeinsamen Secondary-Regeln aufgenommen.
+„Mein Konto“ im Benutzermenü besitzt das exakt aus dem Header kopierte Zahnrad;
+als Primary ist es weiß. Header-Zahnrad und Menübutton heißen beide „Mein Konto“,
+einschließlich Tooltip/zugänglichem Namen, und führen zu Persönliche Daten.
+Startseitenicon im Benutzermenü ist cyan, Abmelden bleibt rot. Der Nachrichtenbereich
+der Glockenvorschau erhält ebenfalls den dunkleren Grund; Kopf/Fuß behalten die
+Overlayfläche. Das Benutzermenü erhält keine zusätzliche künstliche Contentfläche.
+
+Die Glockenvorschau trennt ihren vollbreiten Verlaufsbutton und den
+Aufbewahrungshinweis durch eine durchgehende horizontale Linie, auch mobil.
+Dialoge verwenden dasselbe Kontur-Schließen aus `portal/close-icon.svg`:
+Kreis mit Kreuz, cyan im Kopf/auf Secondary, weiß auf Primary. E-Mail, Passwort,
+Profilbild, Nachrichtendetail und beide Bestätigungsdialoge teilen diese Quelle;
+keine gefüllten grauen Schließenkreise mehr. Bestehende Fokusrahmen, Escape und
+Schließaktionen bleiben erhalten. Die Kopfbuttons und das Nachrichtendetail
+sind in der Vorschau geprüft; keine Änderung am Vaadin-Theme.
+
+Für die Herkunft „System“ ist Indigo vom Benutzer freigegeben und umgesetzt,
+einheitlich in Inbox, Glockenvorschau und Nachrichtendetail: heller Text
+`#A5B4FC`, Fläche `rgba(99,102,241,.10)` und Kontur `rgba(129,140,248,.30)`.
+Administration bleibt cyan; Herkunft
+und Lesestatus sind weiterhin unabhängig. Auf ausdrücklichen Benutzerwunsch
+bewertet Stitch dies im Screen `f92d1b69269341e9a428480cf8422013`,
+„Cosmos – Entscheidungsvorlage: Herkunftsbadge System“. Stitch hält Violett für
+geeignet, bevorzugt gestalterisch jedoch kühleres Indigo (`#A5B4FC`), näher an der
+blauen Grundpalette. Diese ästhetische Einschätzung ist kein Nachweis für die
+weitergehenden Wahrnehmungsbehauptungen des Rohentwurfs. Ein kleiner lokaler
+Vergleich `portal/system-badge-comparison.html` zeigt beide Farbwerte auf gleichen
+Flächen. Im Portal gilt die freigegebene Indigo-Variante; die Farbwahl ist abgeschlossen.
+Keine neuen Funktionen, Statusfarben oder Rohentwurfsinhalte übernommen.
+
+Die gespeicherten Zugänge sind bereits verständlicher parallel benannt:
+„Aktive Sitzung · Anmeldung gespeichert“ und „Keine aktive Sitzung · Anmeldung
+gespeichert“. Es ist dieselbe Speicherfunktion, aber mit bzw. ohne laufende Sitzung;
+es gibt keine zweite Remember-me-Funktion. Das aktuelle Gerät bleibt gesondert markiert.
+
+Geprüft: identische gemessene Hintergrundwerte aller vier Contentbereiche in A,
+Umschaltung zu Canvasfarbe in B, neutrale/cyanfarbene Aktionsicons, gemeinsame
+12-px-Typografie und 36-px-Dialogaktionen; Referenzmodus stellt die freigegebenen
+Standardwerte wieder her. Seitennavigation, Sicherheitsdialog und Smartphone ohne
+horizontalen Überlauf geprüft. Syntax-/Ruff-, Offline-/ZIP- und Diffprüfungen
+durchgeführt. Die gemeinsame Stilwahl ist übernommen; kein Anwendungstheme geändert
+und keine Gesamt-QA gestartet. Weitere gestalterische Details bleiben separat abstimmbar.
 
 #### Bereits geprüfte Grundlage des kombinierten Entwurfs
 
@@ -705,8 +1606,9 @@ wählt den Hintergrund. Erst danach den Umfang der Vaadin-Übertragung festlegen
   Projekt-Ruff-Formatierung und Formatprüfung der lokalen Python-Helfer bestanden.
   Der hochgeladene Endstand wurde zusätzlich unabhängig per CLI abgerufen.
 
-Die gemeinsame Rückmeldung ist in 3a–3c aufgenommen. Offen sind deren Umsetzung
-und gemeinsame Bewertung, danach die ausdrücklich beauftragte Vaadin-Spielwiese.
+Die gemeinsame Rückmeldung ist in 3a–3c umgesetzt; der aktuelle Portalprototyp
+steht oben und ist als Gestaltungsreferenz abgenommen. Offen bleiben Umfang und
+gesonderte Beauftragung einer Vaadin-Spielwiese.
 Reales Smartphone, EN-Layout, Kontrastmessung, Screenreader sowie echte Fachabläufe
 sind nicht abgenommen.
 Paket 3 und das Gesamtfeature sind damit noch nicht abgeschlossen.
@@ -717,8 +1619,9 @@ Paket 3 und das Gesamtfeature sind damit noch nicht abgeschlossen.
   aus B verbinden. Copyright im Footer zentrieren; die doppelten horizontalen
   Tabreihen entfallen. Zuerst einen zusammenhängenden kombinierten Entwurf zeigen,
   bevor einzelne Bausteine in die Vaadin-Spielwiese übertragen werden.
-- Zunächst ein bis zwei gezielte Stitch-Runden: pro Runde die benannten Probleme
-  ändern und gelungene Eigenschaften festhalten. Bei mehreren widersprüchlichen
+- Pro gezielter Stitch-Runde die benannten Probleme ändern und gelungene
+  Eigenschaften festhalten. Weitere Runden nach gemeinsamer Rückmeldung, bis die
+  Referenz passt. Bei mehreren widersprüchlichen
   Änderungswünschen erneut priorisieren, statt alles gleichzeitig zu vermischen.
 - Bereits vor dem Java-Umbau die gewählte Richtung zusätzlich schmal darstellen:
   Navigation, Formularreihenfolge und erreichbare Aktionen am Smartphone prüfen.
@@ -888,9 +1791,9 @@ Browseraufnahmen, gezielte Browsertests und eine spätere große DE/EN-Runde hab
 unterschiedlichen Umfang und werden im jeweiligen Auftrag ausdrücklich freigegeben.
 Bei DE/EN dasselbe unveränderte aktuelle Image und die bestehende Isolation verwenden.
 Der bisherige isolierte Build/Start, Profilaufnahmen und HTML-/Stitch-Prüfungen
-sind durchgeführt. Aktuell ist die weitere Planung beauftragt. Zusätzliche
-Aufnahmen/Starts, Stitch-Generierungen und Prototypimplementierung erfolgen mit
-dem entsprechenden Umsetzungsauftrag; keine große QA oder Sonar-Scans ableiten.
+sind durchgeführt. 3a–3c samt Originalaufnahmen und gezielten Prototypprüfungen
+sind technisch bereit. Zusätzliche Bereiche ab 3d benötigen einen entsprechenden
+Umsetzungsauftrag; keine große QA oder Sonar-Scans ableiten.
 
 Sobald konkrete Implementierungen neue Testlücken erzeugen, diese in
 `docs/testbedarf.md` aufnehmen und erst nach erfolgreichem Nachweis entfernen.
@@ -913,9 +1816,12 @@ Menschliche Abnahmen orientieren sich an HUM-01 bis HUM-05 im manuellen Katalog.
   gültige Erkenntnisse in die Fachdokumentation übernehmen und den erledigten Plan
   samt Verweisen entfernen; kein automatisches Archiv.
 
-Es wird nur reguläres Codex-Kontingent verwendet, kein Kauf oder Einsatz von Credits,
-Reset-Guthaben oder separater API-Abrechnung. Zwischen größeren Schritten Kontingent
-prüfen und bei Erschöpfung stoppen. Eine automatische Fortsetzung ist nicht eingerichtet.
+Grundsätzlich wird nur reguläres Codex-Kontingent verwendet. Für Geräte & Sitzungen
+und später gesondert für die öffentliche Besucherrunde hat der Benutzer nach
+ausgeschöpftem Fünfstundenlimit den Einsatz vorhandener Credits ausdrücklich
+freigegeben. Die Ausnahmen gelten nur für die jeweils benannten Runden.
+Kein Kauf von Credits, kein Reset-Guthaben und keine separate API-Abrechnung.
+Eine automatische Fortsetzung ist nicht eingerichtet.
 
 Zeit und Kontingent sind eine Obergrenze, kein Verbrauchsziel. Zuerst ein kleiner
 vollständiger Kreislauf aus verfeinerter Referenz, einer weiteren Szene samt

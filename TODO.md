@@ -5,18 +5,14 @@
 Die vereinbarte Reihenfolge ist:
 
 - [ ] [Designkritik und Spielwiese mit Stitch](docs/planung/designkritik-stitch.md):
-  Cosmos anhand des Kontobereichs untersuchen, Varianten vergleichen und eine
-  gewählte Richtung zuerst als zusammenhängendes klickbares HTML-Portal beurteilen,
-  danach den Vaadin-Piloten eingrenzen. Paket 1 ist technisch fertig:
-  Profilaufnahmen, Kritik und HTML-Vorschauen vorhanden; die bereinigte SingleFile-
-  Account-Seite ist per CLI als sichtbare Referenz in „Workflow testen – Cosmos“
-  importiert und erneut geprüft. Paket 2 ist abgeschlossen: Header, Footer und Farben
-  aus C, Content/Seitennavigation aus B; Copyright zentriert. Kombinierte Vorschau
-  vorhanden; Rückmeldung zu Seitenkopf, Begriffen, Status und langen Namen ist
-  aufgenommen. Als Nächstes sind Referenzverfeinerung, Aufnahme-/Stitch-Probe und
-  das klickbare Benutzerportal mit Dialogen und zwei Hintergründen geplant;
-  Ausführung und Vaadin-Spielwiese stehen noch aus;
-  der verbindliche [Theme-Standard](docs/theme.md) bleibt der Ausgangspunkt.
+  Auf Grundlage der gestalterisch abgenommenen HTML-Referenzen für angemeldete
+  und nicht angemeldete Benutzer den Umfang und die Reihenfolge eines
+  Vaadin-Piloten festlegen. Die Referenzen umfassen Seiten, Zustände, gemeinsame
+  Controls und Dialoge; die technische Übertragung ist noch nicht freigegeben.
+  Die endgültige Service-Logoauswahl ist zurückgestellt; die gespeicherten
+  Kandidaten D/E/F stehen bei Bedarf als Platzhalter zur Verfügung.
+  Die Anwendungsoberfläche und der verbindliche [Theme-Standard](docs/theme.md)
+  sind unverändert. Keine Gesamt-Abnahme oder Vaadin-Übernahme vorwegnehmen.
 
 ## Menschliche Abnahmen
 

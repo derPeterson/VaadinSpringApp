@@ -11,6 +11,7 @@ lokal mit Testdaten; eine neue Testdatenbank wird aus dem aktuellen Schema angel
 | [Arbeiten mit Codex](codex-skills.md) | Die fünf Projekt-Skills, Aufträge, Grenzen und Ergebnisse |
 | [Docker](docker/README.md) | Lokale Testanwendung und Mailpit |
 | [Theme](theme.md) | Verbindliche Gestaltung, CSS-Zuständigkeiten und Themewechsel |
+| [Frontend-Referenzen](design/frontend-referenzen/README.md) | Freigegebene HTML-Gestaltung für angemeldete und nicht angemeldete Benutzer, offline gesichert |
 | [Mailqueue](mailqueue.md) | Versand, Wiederholungen und unklare Versandausgänge |
 | [Logging](logging.md) | Logpegel, zulässige Inhalte und Diagnose |
 | [Entscheidungen](entscheidungen.md) | Wesentliche technische Entscheidungen, Vorteile und Grenzen |
@@ -27,13 +28,12 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
 ## Offene Arbeiten
 
 - [Designkritik und Spielwiese mit Stitch](planung/designkritik-stitch.md):
-  Paket 1 technisch fertig: Profilreferenzen, HTML-Vorschauen und Bestandskritik
-  vorhanden; direkter CLI-Import der Account-Seite als sichtbarer Screen geprüft.
-  Paket 2 abgeschlossen: C für Header/Footer/Farben, B für Content/Seitennavigation
-  gewählt; Copyright zentriert. Kombinierter Entwurf vorhanden; Rückmeldung ist
-  in die Planung eines klickbaren Benutzerportals mit durchgängigem Seitenkopf,
-  Dialogen, langen Beispieldaten und zwei Hintergründen aufgenommen. Dieser
-  HTML-Vergleich geht dem noch offenen Vaadin-Piloten voraus.
+  Der zusammenhängende HTML-Portalprototyp aus 3a–3c ist technisch bereit:
+  fünf angemeldete Benutzerseiten samt Overlays/Kontodialogen und die ergänzte
+  Besucher-Vorschau mit neun öffentlichen Szenen. Feste Palette und gemeinsame
+  Desktop-/Smartphone-Vorschau. Angemeldeter Bereich und Besucherbereich sind
+  gestalterisch als feste HTML-Referenzen abgenommen. Umfang und Reihenfolge
+  des Vaadin-Piloten bleiben festzulegen; die Übertragung ist noch nicht freigegeben.
 
 Weitere vereinbarte Arbeiten stehen in [TODO](../TODO.md); gültige Bedienung und
 Konfiguration in den obigen Fachdokumenten.
