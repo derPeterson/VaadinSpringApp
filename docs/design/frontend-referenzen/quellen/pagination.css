@@ -1,0 +1,19 @@
+/* Gemeinsame Auswahl der Seitengröße in den lokalen HTML-Referenzen. */
+.c-page-select .ref-pagination-native { display:none!important; }
+.c-page-select[data-ref-pagination]>svg { display:none; }
+.ref-pagination-trigger { display:inline-flex;align-items:center;justify-content:space-between;gap:8px;min-width:64px;height:32px;padding:0 8px 0 12px;border:1px solid #ffffff1c;border-radius:8px;background:#091120;color:#e2e8f0;font:600 12px Inter,system-ui;cursor:pointer; }
+.ref-pagination-trigger>svg { width:12px;height:12px;color:#94a3b8;flex:0 0 12px; }
+.ref-pagination-trigger:hover:not(:disabled) { border-color:#ffffff38;color:#fff; }
+.ref-pagination-trigger:hover:not(:disabled)>svg { color:#e2e8f0; }
+.ref-pagination-trigger[aria-expanded=true]>svg { color:#38bdf8; }
+.ref-pagination-trigger:focus-visible { outline:2px solid #38bdf8;outline-offset:3px; }
+.ref-pagination-trigger:disabled { opacity:.35;cursor:default; }
+.ref-pagination-menu { position:fixed;inset:auto;margin:0;padding:4px;border:1px solid #ffffff26;border-radius:8px;background:#091120;color:#e2e8f0;box-shadow:0 12px 32px #0008;max-height:min(240px,calc(100dvh - 24px));overflow:auto;overscroll-behavior:contain; }
+.ref-pagination-menu:not(:popover-open) { display:none; }
+.ref-pagination-option { display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:32px;padding:7px 9px;border:1px solid transparent;border-radius:5px;background:none;color:#94a3b8;font:500 12px/1.4 Inter,system-ui;text-align:left;cursor:pointer; }
+.ref-pagination-option>svg { width:13px;height:13px;flex:0 0 13px;visibility:hidden; }
+.ref-pagination-option[aria-selected=true] { background:#122342;color:#38bdf8; }
+.ref-pagination-option[aria-selected=true]>svg { visibility:visible; }
+.ref-pagination-option:hover:not(:disabled) { background:#152238;color:#fff; }
+.ref-pagination-option:focus-visible { outline:1px solid #38bdf8;outline-offset:-1px; }
+.ref-pagination-option:disabled { opacity:.35;cursor:default; }

@@ -5,7 +5,7 @@ und die getrennten Admin-Passworthinweise übernommen. Die übrige Dialoganordnu
 bleibt beim bestehenden Stand. Platzhalter verwenden den Anwendungskatalog,
 der Rollenhinweis steht direkt bei der Auswahl. Das grüne Badge „Dein Benutzer“
 steht unter dem Namen und übernimmt den Stil von „Dieses Gerät“ mit Punkt.
-Maßgeblich sind `admin.html` und `admin-users.html`. Der Löschdialog wurde
+Maßgeblich sind `admin-inhalt.html` und `admin.html`. Der Löschdialog wurde
 nicht verändert.
 
 Der aktuelle, skriptfreie Dialogstand wurde mit ausschließlich synthetischen Daten

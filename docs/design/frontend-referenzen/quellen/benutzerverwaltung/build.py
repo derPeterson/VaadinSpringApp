@@ -80,6 +80,20 @@ def prepare_reference(document):
 drawer = html.fromstring(source)
 controller = prepare_reference(drawer)
 logo_helper["replace_header_logo"](drawer)
+portal_reference = html.fromstring(
+    (reference / "portal.html").read_text(encoding="utf-8")
+)
+notification_icon = portal_reference.xpath(
+    '//*[@data-portal-route="notifications"]//svg'
+)[0]
+navigation_icon = drawer.xpath('//button[@data-admin-route="send"]/svg')[0]
+replacement = deepcopy(notification_icon)
+replacement.set("class", navigation_icon.get("class"))
+navigation_icon.getparent().replace(navigation_icon, replacement)
+notification_symbol = etree.SubElement(
+    drawer.get_element_by_id("vp-symbols"), "span", attrib={"data-symbol": "bell"}
+)
+notification_symbol.append(deepcopy(notification_icon))
 for button in drawer.xpath("//table//th/button[@data-sort]"):
     previous_icon = button.find("svg")
     button.remove(previous_icon)
@@ -339,10 +353,19 @@ etree.SubElement(drawer.find("head"), "style", id="admin-table-header-style").te
 ).read_text(encoding="utf-8")
 drawer.find("head/title").text = "Cosmos · Benutzerverwaltung · Filter-Drawer"
 fields_helper["harmonize_document"](drawer, "admin")
-write("admin.html", drawer)
-revision = hashlib.sha256((reference / "admin.html").read_bytes()).hexdigest()[:12]
+runpy.run_path(str(root.parent / "pagination.py"))["harmonize_document"](drawer)
+write("admin-inhalt.html", drawer)
+revision = hashlib.sha256((reference / "admin-inhalt.html").read_bytes()).hexdigest()[
+    :12
+]
 
 viewer = html.fromstring((root / "viewer.html").read_text(encoding="utf-8"))
-viewer.get_element_by_id("account-preview").set("src", "admin.html?rev=" + revision)
-write("admin-users.html", viewer)
+viewer.get_element_by_id("account-preview").set(
+    "src", "admin-inhalt.html?rev=" + revision
+)
+write("admin.html", viewer)
+appearance = root.parent / "erscheinungsbild.py"
+if appearance.exists():
+    runpy.run_path(str(appearance))["apply"]()
+runpy.run_path(str(root.parent / "admin-entwuerfe/build.py"))
 print("Freigegebene Benutzerverwaltung mit Vorschau aktualisiert.")

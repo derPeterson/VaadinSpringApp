@@ -1,0 +1,1630 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cosmos – Admin Interne Benachrichtigungen Design Review Board (Option A &amp; B)</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    :root {
+      --bg-canvas: #050811;
+      --bg-panel: #080E1B;
+      --bg-header: #0E1726;
+      --bg-inset: #091120;
+      --border-subtle: #1E293B;
+      --border-focus: #38BDF8;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-subtle: #64748B;
+      --primary: #0088CC;
+      --primary-hover: #0077B5;
+      --cyan: #38BDF8;
+      --danger: #F87171;
+      --success: #34D399;
+      --warning: #FBBF24;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      font-size: 13px;
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: 40px;
+    }
+
+    /* Board Header */
+    .board-meta-strip {
+      background: #060A14;
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .board-tag-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .board-pill {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+    }
+    .board-pill.neutral {
+      background: rgba(148, 163, 184, 0.1);
+      border-color: var(--text-subtle);
+      color: var(--text-muted);
+    }
+    .board-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #FFF;
+      letter-spacing: 0.2px;
+    }
+
+    /* Icon Utility */
+    .icon {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      vertical-align: middle;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    /* Sektion Wrapper */
+    .section-board {
+      max-width: 1440px;
+      margin: 24px auto;
+      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .board-section-title-wrap {
+      border-left: 3px solid var(--cyan);
+      padding-left: 12px;
+    }
+    .board-section-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--cyan);
+    }
+    .board-section-heading {
+      font-size: 20px;
+      font-weight: 700;
+      color: #FFF;
+      margin-top: 2px;
+    }
+    .board-section-desc {
+      color: var(--text-muted);
+      font-size: 12px;
+      max-width: 980px;
+      margin-top: 4px;
+      line-height: 1.6;
+    }
+
+    /* Shell Mockup Styling (1:1 Cosmos Reference) */
+    .cosmos-app-shell {
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+    }
+
+    /* App Header */
+    .app-header {
+      background-color: var(--bg-header);
+      border-bottom: 1px solid var(--border-subtle);
+      height: 56px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-left-trail {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-k-logo {
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .brand-text {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      color: #FFFFFF;
+    }
+    .crumb-sep {
+      color: var(--text-subtle);
+      font-size: 12px;
+    }
+    .crumb-trail {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .crumb-current {
+      color: var(--cyan);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .crumb-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background-color: var(--cyan);
+    }
+    .header-right-tools {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .bell-tool {
+      position: relative;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 4px;
+    }
+    .bell-badge {
+      position: absolute;
+      top: -2px;
+      right: -4px;
+      background: #EF4444;
+      color: #FFF;
+      font-size: 9px;
+      font-weight: 700;
+      border-radius: 10px;
+      padding: 1px 4px;
+    }
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-left: 10px;
+      border-left: 1px solid var(--border-subtle);
+    }
+    .avatar-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #FFF;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .avatar-circle.subtle {
+      background: #1E293B;
+      color: var(--cyan);
+    }
+    .user-meta-txt {
+      line-height: 1.2;
+    }
+    .user-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .user-role {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* Shell Body */
+    .app-body-layout {
+      display: flex;
+      min-height: 560px;
+    }
+
+    /* Sidenav */
+    .app-sidenav {
+      width: 230px;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border-subtle);
+      padding: 18px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      flex-shrink: 0;
+    }
+    .nav-group-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-subtle);
+      padding-left: 8px;
+      margin-bottom: 6px;
+    }
+    .nav-group-title.cyan-highlight {
+      color: var(--cyan);
+    }
+    .nav-item-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 10px;
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 12px;
+      text-decoration: none;
+      font-weight: 500;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+    }
+    .nav-item-link:hover {
+      background: var(--bg-header);
+      color: var(--text-main);
+    }
+    .nav-item-link.active {
+      background: #122342;
+      border-color: var(--cyan);
+      color: #FFF;
+      font-weight: 600;
+    }
+    .nav-left-sub {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .subnav-tree {
+      margin-left: 18px;
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      border-left: 1px solid var(--border-subtle);
+      padding-left: 8px;
+    }
+    .subnav-link {
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 3px 6px;
+      border-radius: 4px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .subnav-link:hover {
+      color: var(--text-main);
+    }
+    .subnav-badge {
+      font-size: 9px;
+      background: var(--bg-inset);
+      padding: 0 4px;
+      border-radius: 3px;
+      color: var(--text-subtle);
+    }
+
+    /* Workspace */
+    .app-workspace {
+      flex: 1;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-width: 0;
+      background: var(--bg-canvas);
+    }
+
+    /* Workspace Header */
+    .workspace-top-bar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .ws-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ws-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #FFF;
+    }
+    .ws-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+    }
+    .ws-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+    .ws-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Buttons (36px Standard) */
+    .btn-cosmos {
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+    .btn-secondary {
+      background: var(--bg-panel);
+      border-color: var(--border-subtle);
+      color: var(--text-main);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--bg-header);
+      border-color: #334155;
+    }
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #FFF;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+    .btn-cosmos:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: var(--border-subtle);
+    }
+
+    /* Karten & Panels */
+    .cosmos-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .card-head {
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-head-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-head-status {
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Form Fields */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .form-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #CBD5E1;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .req-star {
+      color: var(--cyan);
+      font-size: 14px;
+      line-height: 1;
+    }
+    .field-counter {
+      font-size: 11px;
+      color: var(--text-subtle);
+    }
+    .form-input, .form-textarea {
+      width: 100%;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text-main);
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .form-input:focus, .form-textarea:focus {
+      border-color: var(--border-focus);
+    }
+    .form-input {
+      height: 36px;
+    }
+    .form-textarea {
+      min-height: 84px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    /* Recipient Controls */
+    .recipient-toggle-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 12px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+    }
+    .checkbox-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-main);
+      cursor: pointer;
+      user-select: none;
+    }
+    .custom-check-box {
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 3px;
+      background: var(--bg-canvas);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: transparent;
+      flex-shrink: 0;
+    }
+    .custom-check-box.checked {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #FFF;
+    }
+    .recipient-chips-tray {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px 12px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      min-height: 42px;
+      align-items: center;
+    }
+    .recipient-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 8px;
+      border-radius: 14px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      font-size: 11px;
+      color: var(--text-main);
+    }
+    .recipient-pill-remove {
+      color: var(--text-subtle);
+      cursor: pointer;
+      font-size: 12px;
+      border: none;
+      background: transparent;
+    }
+    .recipient-pill-remove:hover {
+      color: var(--danger);
+    }
+
+    /* Preview Card (Echte Inbox-Simulation) */
+    .preview-box {
+      border: 1px dashed var(--border-subtle);
+      border-radius: 6px;
+      padding: 16px;
+      background: #060B16;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .preview-box.is-valid {
+      border-style: solid;
+      border-color: rgba(56, 189, 248, 0.4);
+      background: rgba(8, 14, 27, 0.9);
+    }
+    .preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 8px;
+    }
+    .preview-sender-tag {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .preview-origin-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+    }
+    .preview-time {
+      font-size: 11px;
+      color: var(--text-subtle);
+    }
+    .preview-recipients-cluster {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .avatar-stack {
+      display: flex;
+      align-items: center;
+      margin-left: 2px;
+    }
+    .stacked-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--bg-panel);
+      background: #1E293B;
+      color: var(--cyan);
+      font-size: 9px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: -6px;
+    }
+    .stacked-avatar:first-child {
+      margin-left: 0;
+    }
+    .preview-title-render {
+      font-size: 14px;
+      font-weight: 700;
+      color: #FFF;
+    }
+    .preview-body-render {
+      font-size: 12px;
+      color: #CBD5E1;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    /* Eigene Gesendete Historie */
+    .history-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .history-th {
+      background: var(--bg-header);
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .history-tr {
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background-color 0.15s ease;
+    }
+    .history-tr:hover {
+      background: var(--bg-inset);
+    }
+    .history-td {
+      padding: 12px 14px;
+      vertical-align: middle;
+      color: var(--text-main);
+    }
+    .history-detail-subrow {
+      background: #060B16;
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 14px 20px;
+    }
+    .recipients-paginated-deck {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .recipient-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+    }
+
+    /* Reference Pagination Bar */
+    .cosmos-pagination-bar {
+      background: var(--bg-header);
+      border-top: 1px solid var(--border-subtle);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .page-nav-btns {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .page-num-btn {
+      min-width: 26px;
+      height: 26px;
+      padding: 0 6px;
+      border-radius: 4px;
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .page-num-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #FFF;
+    }
+    .page-num-btn.disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    /* Status State Badges Matrix */
+    .states-matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+      gap: 16px;
+    }
+    .state-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .state-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 8px;
+    }
+    .state-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .state-badge {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    /* Option A vs Option B Comparison Container */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+
+    /* 2-Spalten Layout B */
+    .split-b-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .split-b-grid {
+        grid-template-columns: 1fr;
+      }
+      .app-body-layout {
+        flex-direction: column;
+      }
+      .app-sidenav {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+    }
+  </style>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"></head>
+<body>
+
+  <!-- Top Metadata Bar -->
+  <aside class="board-meta-strip">
+    <div class="board-tag-group">
+      <span class="board-pill">Cosmos Design Review Board</span>
+      <span class="board-pill neutral">Admin Interne Benachrichtigungen</span>
+      <span class="board-pill neutral">Reines Postfach-Messaging (Keine E-Mail)</span>
+    </div>
+    <div style="font-size: 11px; color: var(--text-muted);">
+      Basis: Verbindliche Shell #0E1726 • Flächenpalette #050811 • 36px Actions • Superadmin-Sicherheitsgrenze
+    </div>
+  </aside>
+
+  <div class="section-board">
+
+    <!-- Einführung & Rationale -->
+    <div class="board-section-title-wrap">
+      <div class="board-section-eyebrow">Architektur- &amp; Ergonomie-Vergleich</div>
+      <h1 class="board-section-heading">Zwei eigenständige Layouts für administrative Systembenachrichtigungen</h1>
+      <p class="board-section-desc">
+        Gezielte Entwurfsausarbeitung für den Administrationsbereich <strong>„Benachrichtigungen“</strong>. Es handelt sich ausschließlich um <em>internes Inbox-Messaging</em> für angemeldete Benutzer, nicht um externen E-Mail-Versand (dafür existiert das separate Modul „Mailtest“). Das Versenden erfordert zwingend die Rolle <strong>Superadmin</strong>; ein einfacher Administrator besitzt ausschließlich Leserechte. Vor dem Freigeben des Sende-Buttons ist eine erfolgreiche Vorschau-Generierung verbindlich vorgeschrieben.
+      </p>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- OPTION A: FOKUSSIERTER COMPOSER MIT VORSCHAU DARUNTER -->
+    <!-- ========================================== -->
+    <div class="comparison-grid">
+
+      <div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <div>
+            <span class="board-pill" style="margin-right: 8px;">Option A</span>
+            <strong style="color: #FFF; font-size: 16px;">Fokussierter Single-Column Composer mit Vorschau darunter</strong>
+          </div>
+          <span style="font-size: 11px; color: var(--cyan);">Optimale vertikale Lese-Hierarchie • Großzügiges Textfeld für lange Systemmeldungen</span>
+        </div>
+
+        <!-- Shell Simulation Option A -->
+        <div class="cosmos-app-shell">
+          <!-- App Header -->
+          <header class="app-header">
+            <div class="header-left-trail">
+              <div class="brand-cluster">
+                <!-- Echte K-Logo SVG Silhouette -->
+                <div class="brand-k-logo">
+                  <svg width="24" height="24" viewbox="0 0 24 24" fill="none">
+                    <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" stroke="#38BDF8" stroke-width="1.5" stroke-linejoin="round" fill="rgba(56,189,248,0.12)"></path>
+                    <circle cx="12" cy="12" r="3" fill="#FFF"></circle>
+                    <path d="M12 5v3M12 16v3M5 12h3M16 12h3" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round"></path>
+                  </svg>
+                </div>
+                <span class="brand-text">{ServiceName}</span>
+              </div>
+              <span class="crumb-sep">/</span>
+              <div class="crumb-trail">
+                <span>Administration</span>
+                <span class="crumb-sep">/</span>
+                <span class="crumb-current">
+                  <span class="crumb-dot"></span>
+                  Benachrichtigungen
+                </span>
+              </div>
+            </div>
+            <div class="header-right-tools">
+              <button class="bell-tool" title="Ungelesene Meldungen">
+                <svg class="icon" viewbox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                <span class="bell-badge">12</span>
+              </button>
+              <div class="user-pill">
+                <div class="avatar-circle">DS</div>
+                <div class="user-meta-txt">
+                  <div class="user-name">David Schmidt</div>
+                  <div class="user-role" style="color: var(--cyan); font-weight: 600;">Superadmin (Berechtigt)</div>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <div class="app-body-layout">
+            <!-- Left Sidenav -->
+            <aside class="app-sidenav">
+              <div>
+                <div class="nav-group-title">Portal</div>
+                <a href="#" class="nav-item-link">
+                  <span class="nav-left-sub">
+                    <svg class="icon" viewbox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                    Startseite
+                  </span>
+                </a>
+              </div>
+
+              <div>
+                <div class="nav-group-title cyan-highlight">Administration</div>
+                <a href="#" class="nav-item-link">
+                  <span class="nav-left-sub">
+                    <svg class="icon" viewbox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect></svg>
+                    Dashboard
+                  </span>
+                </a>
+
+                <!-- Konfiguration mit 8 Untergruppen -->
+                <a href="#" class="nav-item-link">
+                  <span class="nav-left-sub">
+                    <svg class="icon" viewbox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    Konfiguration
+                  </span>
+                </a>
+                <div class="subnav-tree">
+                  <span class="subnav-link">1. Allgemein <span class="subnav-badge">3</span></span>
+                  <span class="subnav-link">2. Sicherheit <span class="subnav-badge">5</span></span>
+                  <span class="subnav-link">3. Tokens <span class="subnav-badge">4</span></span>
+                  <span class="subnav-link">4. Benutzerstatus <span class="subnav-badge">1</span></span>
+                  <span class="subnav-link">5. Benachrichtigungen <span class="subnav-badge">2</span></span>
+                  <span class="subnav-link">6. E-Mail-Absender <span class="subnav-badge">2</span></span>
+                  <span class="subnav-link">7. Postausgang (SMTP) <span class="subnav-badge">9</span></span>
+                  <span class="subnav-link">8. E-Mail Queue <span class="subnav-badge">4</span></span>
+                </div>
+
+                <a href="#" class="nav-item-link" style="margin-top: 4px;">
+                  <span class="nav-left-sub">
+                    <svg class="icon" viewbox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+                    Mailtest
+                  </span>
+                </a>
+
+                <a href="#" class="nav-item-link">
+                  <span class="nav-left-sub">
+                    <svg class="icon" viewbox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    Benutzerverwaltung
+                  </span>
+                </a>
+
+                <a href="#" class="nav-item-link active">
+                  <span class="nav-left-sub">
+                    <svg class="icon" viewbox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
+                    Benachrichtigungen
+                  </span>
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--cyan);"></span>
+                </a>
+              </div>
+            </aside>
+
+            <!-- Workspace A -->
+            <main class="app-workspace">
+              <div class="workspace-top-bar">
+                <div>
+                  <div class="ws-title-wrap">
+                    <h2 class="ws-title">Systembenachrichtigung verfassen</h2>
+                    <span class="ws-badge">Internes Postfach</span>
+                    <span class="ws-badge" style="color: var(--cyan); border-color: rgba(56,189,248,0.4);">Option A: Linearer Flow</span>
+                  </div>
+                  <p class="ws-desc">Senden Sie verbindliche Systemhinweise direkt in die Postfächer aktiver Portalkonten. Keine SMTP-Zustellung.</p>
+                </div>
+                <div class="ws-actions">
+                  <button class="btn-cosmos btn-secondary" title="Zurücksetzen">
+                    <svg class="icon" viewbox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path><path d="M3 21v-5h5"></path></svg>
+                    Eingaben leeren
+                  </button>
+                </div>
+              </div>
+
+              <!-- Composer Card Option A -->
+              <div class="cosmos-card">
+                <div class="card-head">
+                  <div class="card-head-title">
+                    <svg class="icon" style="color: var(--cyan);" viewbox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    1. Benachrichtigungsparameter
+                  </div>
+                  <div class="card-head-status">
+                    <span style="color: var(--success); font-weight: 600;">✓ Superadmin autorisiert</span>
+                  </div>
+                </div>
+                <div class="card-body">
+
+                  <!-- Empfängerauswahl -->
+                  <div class="form-group">
+                    <div class="form-label-row">
+                      <label class="form-label">
+                        Empfängerkreis <span class="req-star">*</span>
+                      </label>
+                      <span class="field-counter">Ausschließend aktivierbar</span>
+                    </div>
+
+                    <div class="recipient-toggle-strip">
+                      <label class="checkbox-control">
+                        <span class="custom-check-box"></span>
+                        <span>An alle aktiven Konten zustellen (Broadcast)</span>
+                      </label>
+                      <span style="font-size: 11px; color: var(--text-subtle);">ODER gezielte Einzelauswahl:</span>
+                    </div>
+
+                    <!-- Ausgewählte Empfänger Chips -->
+                    <div class="recipient-chips-tray">
+                      <div class="recipient-pill">
+                        <span class="avatar-circle subtle" style="width: 18px; height: 18px; font-size: 9px;">AB</span>
+                        <span>Alex Berger</span>
+                        <span style="color: var(--text-subtle);">&lt;alex.berger@example.test&gt;</span>
+                        <button class="recipient-pill-remove" title="Entfernen">×</button>
+                      </div>
+                      <div class="recipient-pill">
+                        <span class="avatar-circle subtle" style="width: 18px; height: 18px; font-size: 9px;">ES</span>
+                        <span>Elena Sommer</span>
+                        <span style="color: var(--text-subtle);">&lt;elena.sommer@example.test&gt;</span>
+                        <button class="recipient-pill-remove" title="Entfernen">×</button>
+                      </div>
+                      <div class="recipient-pill" style="border-color: rgba(56,189,248,0.3); background: rgba(56,189,248,0.06);">
+                        <span class="avatar-circle" style="width: 18px; height: 18px; font-size: 9px;">DS</span>
+                        <span>David Schmidt</span>
+                        <span style="color: var(--cyan);">&lt;david.schmidt@example.test&gt;</span>
+                        <button class="recipient-pill-remove" title="Entfernen">×</button>
+                      </div>
+                      <span style="font-size: 11px; color: var(--text-subtle); margin-left: 4px;">+ 4 weitere berechtigte Konten ausgewählt</span>
+                    </div>
+                  </div>
+
+                  <!-- Betreff / Titel -->
+                  <div class="form-group">
+                    <div class="form-label-row">
+                      <label class="form-label">
+                        Betreff der Benachrichtigung <span class="req-star">*</span>
+                      </label>
+                      <span class="field-counter">38 / 120 Zeichen</span>
+                    </div>
+                    <input type="text" class="form-input" value="Wartungsfenster am kommenden Wochenende" placeholder="Prägnanter Betreff für das Benutzerpostfach...">
+                  </div>
+
+                  <!-- Nachrichtentext -->
+                  <div class="form-group">
+                    <div class="form-label-row">
+                      <label class="form-label">
+                        Nachrichtentext <span class="req-star">*</span>
+                      </label>
+                      <span class="field-counter">242 / 4000 Zeichen</span>
+                    </div>
+                    <textarea class="form-textarea" placeholder="Detaillierte Systemmeldung eingeben...">Sehr geehrte Portalnutzer,
+
+am kommenden Sonntag werden von 02:00 bis 04:00 Uhr planmäßige Sicherheitsupdates am Authentifizierungs-Cluster durchgeführt. Ihr Portalzugang bleibt grundsätzlich erhalten, es kann jedoch zu kurzen Sitzungsunterbrechungen kommen.</textarea>
+                  </div>
+
+                  <!-- Action Bar: Vorschau & Senden -->
+                  <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-subtle); padding-top: 12px; margin-top: 4px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <button class="btn-cosmos btn-secondary" style="border-color: var(--border-focus); color: var(--cyan);">
+                        <svg class="icon" viewbox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        Vorschau aktualisieren
+                      </button>
+                      <span style="font-size: 11px; color: var(--success); display: inline-flex; align-items: center; gap: 4px;">
+                        <svg class="icon" style="width: 13px; height: 13px;" viewbox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Vorschau aktuell &amp; freigegeben
+                      </span>
+                    </div>
+
+                    <!-- Sende Button (Aktiv, da Vorschau generiert) -->
+                    <button class="btn-cosmos btn-primary">
+                      <svg class="icon" viewbox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
+                      In Postfächer zustellen
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Vorschau Panel darunter (Option A) -->
+              <div class="cosmos-card">
+                <div class="card-head">
+                  <div class="card-head-title">
+                    <svg class="icon" viewbox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    2. Empfänger-Vorschau (Echtes Postfach-Rendering)
+                  </div>
+                  <div class="card-head-status" style="color: var(--text-subtle);">
+                    Wird 1:1 so in der Portal-Inbox der Empfänger angezeigt
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="preview-box is-valid">
+                    <div class="preview-header">
+                      <div class="preview-sender-tag">
+                        <span class="preview-origin-badge">Administration</span>
+                        <span style="font-weight: 600; color: #FFF; font-size: 12px;">Systemnachricht</span>
+                        <span class="preview-time">• Heute, 14:15 Uhr</span>
+                      </div>
+                      <div class="preview-recipients-cluster">
+                        <span>Zustellung an:</span>
+                        <div class="avatar-stack">
+                          <div class="stacked-avatar" title="Alex Berger">AB</div>
+                          <div class="stacked-avatar" title="Elena Sommer">ES</div>
+                          <div class="stacked-avatar" title="David Schmidt">DS</div>
+                        </div>
+                        <span style="color: var(--cyan); font-weight: 600;">+4 weitere</span>
+                      </div>
+                    </div>
+                    <div class="preview-title-render">Wartungsfenster am kommenden Wochenende</div>
+                    <div class="preview-body-render">Sehr geehrte Portalnutzer,
+
+am kommenden Sonntag werden von 02:00 bis 04:00 Uhr planmäßige Sicherheitsupdates am Authentifizierungs-Cluster durchgeführt. Ihr Portalzugang bleibt grundsätzlich erhalten, es kann jedoch zu kurzen Sitzungsunterbrechungen kommen.</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Eigene Gesendete Historie (Nur eigene, unlöschbar) -->
+              <div class="history-card">
+                <div class="card-head">
+                  <div class="card-head-title">
+                    <svg class="icon" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    Eigene gesendete Benachrichtigungen (Revisionssichere Historie)
+                  </div>
+                  <div class="card-head-status">
+                    <span style="font-size: 11px; color: var(--text-subtle);">Unveränderliche Log-Einträge • Keine Löschfunktion</span>
+                  </div>
+                </div>
+                <table class="history-table">
+                  <thead>
+                    <tr>
+                      <th class="history-th">Zeitpunkt</th>
+                      <th class="history-th">Betreff / Titel</th>
+                      <th class="history-th">Empfängerkreis</th>
+                      <th class="history-th" style="text-align: right;">Detail</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="history-tr">
+                      <td class="history-td" style="white-space: nowrap; color: var(--text-muted);">Heute, 09:30 Uhr</td>
+                      <td class="history-td" style="font-weight: 600;">Erinnerung: Zwei-Faktor-Authentifizierung aktivieren</td>
+                      <td class="history-td">
+                        <span class="recipient-tag" style="color: var(--cyan); border-color: rgba(56,189,248,0.3);">Alle aktiven Konten (24)</span>
+                      </td>
+                      <td class="history-td" style="text-align: right;">
+                        <button class="btn-cosmos btn-secondary" style="height: 28px; padding: 0 8px; font-size: 11px;">
+                          Aufklappen ↓
+                        </button>
+                      </td>
+                    </tr>
+                    <!-- Aufgeklappter Beispieldatensatz -->
+                    <tr>
+                      <td colspan="4" class="history-detail-subrow">
+                        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Vollständiger gesendeter Wortlaut:</div>
+                        <div style="font-size: 12px; color: #FFF; background: var(--bg-inset); padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border-subtle); margin-bottom: 10px;">
+                          Bitte aktivieren Sie bis zum Monatsende die Zwei-Faktor-Authentifizierung in Ihrem Kontobereich &gt; Sicherheit.
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px;">
+                          <span style="color: var(--text-subtle);">Aufgeschlüsselte Empfängerliste (Seite 1 von 5):</span>
+                          <span style="color: var(--cyan);">Alex Berger, Elena Sommer, David Schmidt, 21 weitere Konten</span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr class="history-tr">
+                      <td class="history-td" style="white-space: nowrap; color: var(--text-muted);">22.10.2026, 16:45 Uhr</td>
+                      <td class="history-td" style="font-weight: 600;">Neue Sicherheitsrichtlinie für Session-Timeouts</td>
+                      <td class="history-td"><span class="recipient-tag">3 Konten</span></td>
+                      <td class="history-td" style="text-align: right;">
+                        <button class="btn-cosmos btn-secondary" style="height: 28px; padding: 0 8px; font-size: 11px;">
+                          Aufklappen ↓
+                        </button>
+                      </td>
+                    </tr>
+                    <tr class="history-tr">
+                      <td class="history-td" style="white-space: nowrap; color: var(--text-muted);">18.10.2026, 11:20 Uhr</td>
+                      <td class="history-td" style="font-weight: 600;">Willkommen im überarbeiteten Cosmos Administrationsbereich</td>
+                      <td class="history-td"><span class="recipient-tag">Alle aktiven Konten (24)</span></td>
+                      <td class="history-td" style="text-align: right;">
+                        <button class="btn-cosmos btn-secondary" style="height: 28px; padding: 0 8px; font-size: 11px;">
+                          Aufklappen ↓
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <!-- Pagination Bar (Echte Referenz: Links 5, Mitte Bereich, Rechts Buttons) -->
+                <div class="cosmos-pagination-bar">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>Einträge pro Seite:</span>
+                    <span style="padding: 2px 8px; background: var(--bg-canvas); border: 1px solid var(--border-subtle); border-radius: 4px; font-weight: 600; color: #FFF;">5</span>
+                  </div>
+                  <div>
+                    Zeige <strong>1–3</strong> von <strong>7</strong> eigenen Aussendungen
+                  </div>
+                  <div class="page-nav-btns">
+                    <button class="page-num-btn disabled">«</button>
+                    <button class="page-num-btn disabled">‹</button>
+                    <button class="page-num-btn active">1</button>
+                    <button class="page-num-btn">2</button>
+                    <button class="page-num-btn">›</button>
+                    <button class="page-num-btn">»</button>
+                  </div>
+                </div>
+              </div>
+
+            </main>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- OPTION B: 2-SPALTEN WORKSPACE (COMPOSER LINKS, VORSCHAU RECHTS) -->
+      <!-- ========================================== -->
+      <div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; margin-top: 20px;">
+          <div>
+            <span class="board-pill" style="margin-right: 8px;">Option B</span>
+            <strong style="color: #FFF; font-size: 16px;">2-Spalten Split-Deck: Composer links • Live-Vorschau rechts • Historie darunter</strong>
+          </div>
+          <span style="font-size: 11px; color: var(--cyan);">Sofortige visuelle Rückkopplung • Maximale Sicherheit vor dem Absenden • Responsive Stack</span>
+        </div>
+
+        <!-- Shell Simulation Option B -->
+        <div class="cosmos-app-shell">
+          <!-- App Header -->
+          <header class="app-header">
+            <div class="header-left-trail">
+              <div class="brand-cluster">
+                <div class="brand-k-logo">
+                  <svg width="24" height="24" viewbox="0 0 24 24" fill="none">
+                    <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" stroke="#38BDF8" stroke-width="1.5" stroke-linejoin="round" fill="rgba(56,189,248,0.12)"></path>
+                    <circle cx="12" cy="12" r="3" fill="#FFF"></circle>
+                    <path d="M12 5v3M12 16v3M5 12h3M16 12h3" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round"></path>
+                  </svg>
+                </div>
+                <span class="brand-text">{ServiceName}</span>
+              </div>
+              <span class="crumb-sep">/</span>
+              <div class="crumb-trail">
+                <span>Administration</span>
+                <span class="crumb-sep">/</span>
+                <span class="crumb-current">
+                  <span class="crumb-dot"></span>
+                  Benachrichtigungen (Option B)
+                </span>
+              </div>
+            </div>
+            <div class="header-right-tools">
+              <div class="user-pill">
+                <div class="avatar-circle">DS</div>
+                <div class="user-meta-txt">
+                  <div class="user-name">David Schmidt</div>
+                  <div class="user-role" style="color: var(--cyan); font-weight: 600;">Superadmin</div>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <div class="app-body-layout">
+            <!-- Left Sidenav (Kompakter Auszug) -->
+            <aside class="app-sidenav">
+              <div class="nav-group-title">Portal</div>
+              <a href="#" class="nav-item-link"><span class="nav-left-sub"><svg class="icon" viewbox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>Startseite</span></a>
+              <div class="nav-group-title cyan-highlight" style="margin-top: 10px;">Administration</div>
+              <a href="#" class="nav-item-link"><span class="nav-left-sub"><svg class="icon" viewbox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect></svg>Dashboard</span></a>
+              <a href="#" class="nav-item-link"><span class="nav-left-sub"><svg class="icon" viewbox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Konfiguration (8)</span></a>
+              <a href="#" class="nav-item-link"><span class="nav-left-sub"><svg class="icon" viewbox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>Mailtest</span></a>
+              <a href="#" class="nav-item-link"><span class="nav-left-sub"><svg class="icon" viewbox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>Benutzerverwaltung</span></a>
+              <a href="#" class="nav-item-link active"><span class="nav-left-sub"><svg class="icon" viewbox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>Benachrichtigungen</span><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--cyan);"></span></a>
+            </aside>
+
+            <!-- Workspace B -->
+            <main class="app-workspace">
+              <div class="workspace-top-bar">
+                <div>
+                  <div class="ws-title-wrap">
+                    <h2 class="ws-title">Interne Benachrichtigungen</h2>
+                    <span class="ws-badge" style="color: var(--cyan); border-color: rgba(56,189,248,0.4);">Option B: Dual-Pane Composer</span>
+                  </div>
+                  <p class="ws-desc">Direkter Split-View aus Formularmaske und synchronisierter Empfänger-Vorschau.</p>
+                </div>
+              </div>
+
+              <!-- 2-Spalten Split Grid -->
+              <div class="split-b-grid">
+
+                <!-- Linke Spalte: Composer -->
+                <div class="cosmos-card">
+                  <div class="card-head">
+                    <div class="card-head-title">
+                      <svg class="icon" viewbox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                      Composer
+                    </div>
+                    <span style="font-size: 11px; color: var(--text-subtle);">Eingabe entwertet Senden</span>
+                  </div>
+                  <div class="card-body">
+
+                    <!-- Empfängerauswahl -->
+                    <div class="form-group">
+                      <label class="form-label">Empfänger festlegen <span class="req-star">*</span></label>
+                      <div class="recipient-toggle-strip" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                        <label class="checkbox-control">
+                          <span class="custom-check-box checked">
+                            <svg style="width: 12px; height: 12px; stroke: #FFF; fill: none; stroke-width: 2.5;" viewbox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                          </span>
+                          <span style="font-weight: 600;">Alle aktiven Konten (Gesamtes Portal)</span>
+                        </label>
+                        <span style="font-size: 10px; color: var(--text-subtle);">Aktuell 24 aktive berechtigte Benutzerkonten erfasst.</span>
+                      </div>
+                    </div>
+
+                    <!-- Betreff -->
+                    <div class="form-group">
+                      <div class="form-label-row">
+                        <label class="form-label">Titel <span class="req-star">*</span></label>
+                        <span class="field-counter">31 / 120</span>
+                      </div>
+                      <input type="text" class="form-input" value="Wichtiger Systemhinweis: Wartung" placeholder="Betreff...">
+                    </div>
+
+                    <!-- Nachrichtentext -->
+                    <div class="form-group">
+                      <div class="form-label-row">
+                        <label class="form-label">Inhalt <span class="req-star">*</span></label>
+                        <span class="field-counter">168 / 4000</span>
+                      </div>
+                      <textarea class="form-textarea" style="min-height: 120px;" placeholder="Nachrichtentext...">Liebe Kolleginnen und Kollegen,
+
+bitte beachten Sie, dass heute Nacht zwischen 03:00 und 03:30 Uhr eine kurze Datenbank-Wartung durchgeführt wird. Alle Sitzungen bleiben gespeichert.</textarea>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+                      <button class="btn-cosmos btn-secondary" style="border-color: var(--cyan); color: var(--cyan);">
+                        <svg class="icon" viewbox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        Vorschau generieren
+                      </button>
+
+                      <button class="btn-cosmos btn-primary">
+                        <svg class="icon" viewbox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
+                        Verbindlich senden
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- Rechte Spalte: Live-Vorschau Deck -->
+                <div class="cosmos-card">
+                  <div class="card-head">
+                    <div class="card-head-title">
+                      <svg class="icon" style="color: var(--cyan);" viewbox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      Postfach-Vorschau
+                    </div>
+                    <span class="board-pill" style="font-size: 9px; padding: 1px 6px;">Live-Mock</span>
+                  </div>
+                  <div class="card-body">
+                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 2px;">
+                      So erscheint diese Benachrichtigung in der <em>Benutzer-Inbox</em>:
+                    </div>
+
+                    <div class="preview-box is-valid">
+                      <div class="preview-header">
+                        <div class="preview-sender-tag">
+                          <span class="preview-origin-badge">Administration</span>
+                          <span class="preview-time">• Soeben</span>
+                        </div>
+                        <div class="preview-recipients-cluster">
+                          <span>Empfänger:</span>
+                          <span style="color: var(--cyan); font-weight: 600;">Alle (24)</span>
+                        </div>
+                      </div>
+
+                      <div class="preview-title-render">Wichtiger Systemhinweis: Wartung</div>
+
+                      <div class="preview-body-render">Liebe Kolleginnen und Kollegen,
+
+bitte beachten Sie, dass heute Nacht zwischen 03:00 und 03:30 Uhr eine kurze Datenbank-Wartung durchgeführt wird. Alle Sitzungen bleiben gespeichert.</div>
+
+                      <div style="border-top: 1px solid var(--border-subtle); padding-top: 8px; margin-top: 6px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--text-subtle);">
+                        <span>Status: Gelesen-Markierung möglich</span>
+                        <div style="display: flex; gap: 4px;">
+                          <span style="padding: 2px 6px; background: var(--bg-inset); border-radius: 3px;">Als gelesen</span>
+                          <span style="padding: 2px 6px; background: var(--bg-inset); border-radius: 3px;">Entfernen</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56,189,248,0.25); border-radius: 4px; padding: 10px; font-size: 11px; color: var(--text-muted); line-height: 1.4;">
+                      <strong style="color: var(--cyan);">Sicherheitskriterium:</strong> Bei jeder Änderung im Betreff, Text oder Empfängerkreis erlischt der Freigabestatus und der Sende-Button wird sofort deaktiviert, bis erneut auf <em>„Vorschau generieren“</em> geklickt wird.
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Gesendete Historie Option B (Darunter) -->
+              <div class="history-card" style="margin-top: 6px;">
+                <div class="card-head">
+                  <div class="card-head-title">
+                    <svg class="icon" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    Eigene gesendete Benachrichtigungen
+                  </div>
+                  <span style="font-size: 11px; color: var(--text-subtle);">Historien-Auszug • Seite 1 von 2</span>
+                </div>
+                <table class="history-table">
+                  <thead>
+                    <tr>
+                      <th class="history-th">Datum &amp; Zeit</th>
+                      <th class="history-th">Titel der Nachricht</th>
+                      <th class="history-th">Empfänger</th>
+                      <th class="history-th" style="text-align: right;">Aktion</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="history-tr">
+                      <td class="history-td" style="color: var(--text-muted);">24.10.2026, 09:30</td>
+                      <td class="history-td" style="font-weight: 600;">Erinnerung: Zwei-Faktor-Authentifizierung aktivieren</td>
+                      <td class="history-td"><span class="recipient-tag">24 Konten</span></td>
+                      <td class="history-td" style="text-align: right;">
+                        <button class="btn-cosmos btn-secondary" style="height: 26px; padding: 0 8px; font-size: 10px;">Details</button>
+                      </td>
+                    </tr>
+                    <tr class="history-tr">
+                      <td class="history-td" style="color: var(--text-muted);">22.10.2026, 16:45</td>
+                      <td class="history-td" style="font-weight: 600;">Neue Sicherheitsrichtlinie für Session-Timeouts</td>
+                      <td class="history-td"><span class="recipient-tag">Alex Berger, Elena Sommer (+1)</span></td>
+                      <td class="history-td" style="text-align: right;">
+                        <button class="btn-cosmos btn-secondary" style="height: 26px; padding: 0 8px; font-size: 10px;">Details</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="cosmos-pagination-bar">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>Zeilen:</span>
+                    <span style="padding: 1px 6px; background: var(--bg-canvas); border: 1px solid var(--border-subtle); border-radius: 3px; color: #FFF;">5</span>
+                  </div>
+                  <div>1–2 von 2 Einträgen</div>
+                  <div class="page-nav-btns">
+                    <button class="page-num-btn active">1</button>
+                  </div>
+                </div>
+              </div>
+
+            </main>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- ZUSTANDSMATRIX (EXPLICIT SYSTEM STATES) -->
+    <!-- ========================================== -->
+    <div style="margin-top: 10px;">
+      <div class="board-section-title-wrap">
+        <div class="board-section-eyebrow">Validierungs- &amp; Berechtigungsmatrix</div>
+        <h2 class="board-section-heading">6 verbindliche Betriebszustände der Schnittstelle</h2>
+        <p class="board-section-desc">
+          Um Fehlbedienungen und fehlerhafte Aussendungen auszuschließen, visualisiert die Benutzeroberfläche deterministische Systemzustände. Senden ist ausschließlich aktiv, wenn eine gültige Vorschau vorliegt.
+        </p>
+      </div>
+
+      <div class="states-matrix-grid" style="margin-top: 18px;">
+
+        <!-- Zustand 1: Initial / Vorschau entwertet -->
+        <div class="state-card">
+          <div class="state-card-header">
+            <span class="state-title">1. Vorschau entwertet (Invalidated)</span>
+            <span class="state-badge" style="background: rgba(251,191,36,0.15); color: var(--warning); border: 1px solid rgba(251,191,36,0.4);">Senden gesperrt</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            Nach einer Bearbeitung im Text- oder Empfängerfeld erlischt die vorherige Vorschau.
+          </div>
+          <div style="background: var(--bg-inset); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 8px; font-size: 11px;">
+            <div style="color: var(--warning); display: flex; align-items: center; gap: 6px; font-weight: 600;">
+              <svg class="icon" style="width: 14px; height: 14px;" viewbox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              Eingabe modifiziert • Vorschau ungültig
+            </div>
+            <div style="color: var(--text-subtle); margin-top: 3px;">Klicken Sie erneut auf „Vorschau“, um Senden zu aktivieren.</div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-cosmos btn-secondary" style="height: 30px; font-size: 11px;">Vorschau generieren</button>
+            <button class="btn-cosmos btn-primary" disabled style="height: 30px; font-size: 11px;">Senden (Gesperrt)</button>
+          </div>
+        </div>
+
+        <!-- Zustand 2: Pflichtfeld-Validierung -->
+        <div class="state-card">
+          <div class="state-card-header">
+            <span class="state-title">2. Pflichtfeld fehlt (Validierung)</span>
+            <span class="state-badge" style="background: rgba(248,113,113,0.15); color: var(--danger); border: 1px solid rgba(248,113,113,0.4);">Fehler</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            Betreff oder Nachrichtentext ist leer bzw. überschreitet Maximalgrenze (120/4000).
+          </div>
+          <div style="background: var(--bg-inset); border: 1px solid rgba(248,113,113,0.3); border-radius: 4px; padding: 8px; font-size: 11px;">
+            <span style="color: var(--danger); font-weight: 600;">× Bitte geben Sie einen Betreff ein.</span>
+            <div style="color: var(--text-subtle); margin-top: 2px;">Vorschau kann nicht erzeugt werden.</div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-cosmos btn-secondary" disabled style="height: 30px; font-size: 11px;">Vorschau (Gesperrt)</button>
+            <button class="btn-cosmos btn-primary" disabled style="height: 30px; font-size: 11px;">Senden (Gesperrt)</button>
+          </div>
+        </div>
+
+        <!-- Zustand 3: Keine Empfänger gewählt -->
+        <div class="state-card">
+          <div class="state-card-header">
+            <span class="state-title">3. Keine Empfänger gewählt</span>
+            <span class="state-badge" style="background: rgba(248,113,113,0.15); color: var(--danger); border: 1px solid rgba(248,113,113,0.4);">Unvollständig</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            Checkbox „Alle Konten“ ist inaktiv und kein Einzelempfänger selektiert.
+          </div>
+          <div style="background: var(--bg-inset); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 8px; font-size: 11px; color: var(--text-muted);">
+            Empfängerkreis ist leer. Wählen Sie entweder <em>„Alle aktiven Konten“</em> oder mindestens ein Zielkonto.
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-cosmos btn-secondary" disabled style="height: 30px; font-size: 11px;">Vorschau prüfen</button>
+            <button class="btn-cosmos btn-primary" disabled style="height: 30px; font-size: 11px;">Senden (Gesperrt)</button>
+          </div>
+        </div>
+
+        <!-- Zustand 4: Vorschau freigegeben (Bereit zum Senden) -->
+        <div class="state-card">
+          <div class="state-card-header">
+            <span class="state-title">4. Vorschau gültig (Send Ready)</span>
+            <span class="state-badge" style="background: rgba(52,211,153,0.15); color: var(--success); border: 1px solid rgba(52,211,153,0.4);">Bereit</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            Vorschau wurde ohne nachträgliche Feldänderungen geprüft. Sende-Button ist aktiv.
+          </div>
+          <div style="background: var(--bg-inset); border: 1px solid rgba(52,211,153,0.3); border-radius: 4px; padding: 8px; font-size: 11px; color: var(--success);">
+            ✓ 7 Empfänger bestätigt • Vorschau synchronisiert.
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-cosmos btn-secondary" style="height: 30px; font-size: 11px;">Vorschau aktualisieren</button>
+            <button class="btn-cosmos btn-primary" style="height: 30px; font-size: 11px;">In Postfächer senden</button>
+          </div>
+        </div>
+
+        <!-- Zustand 5: Berechtigung verweigert (Einfacher Administrator) -->
+        <div class="state-card">
+          <div class="state-card-header">
+            <span class="state-title">5. Keine Sendeberechtigung</span>
+            <span class="state-badge" style="background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.4);">Rolle: Admin</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            Angemeldeter Benutzer ist „Administrator“, nicht „Superadmin“.
+          </div>
+          <div style="background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.3); border-radius: 4px; padding: 8px; font-size: 11px; color: #FCA5A5;">
+            <strong>Zugriff eingeschränkt:</strong> Das Erstellen und Aussenden von Systemnachrichten ist ausschließlich der Rolle <em>Superadmin</em> vorbehalten.
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <span style="font-size: 11px; color: var(--text-subtle);">Nur Lesezugriff auf gesendete Historie aktiv.</span>
+          </div>
+        </div>
+
+        <!-- Zustand 6: Wartungsmodus / Backend offline -->
+        <div class="state-card">
+          <div class="state-card-header">
+            <span class="state-title">6. Postfachdienst blockiert</span>
+            <span class="state-badge" style="background: rgba(251,191,36,0.15); color: var(--warning); border: 1px solid rgba(251,191,36,0.4);">Wartung</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            Systemwartung aktiv oder Inbox-Dienst vorübergehend nicht erreichbar.
+          </div>
+          <div style="background: var(--bg-inset); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 8px; font-size: 11px; color: var(--warning);">
+            <svg class="icon" style="width: 12px; height: 12px;" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            Systemwartung aktiv: Ausgehende Nachrichten sind temporär gesperrt.
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-cosmos btn-secondary" disabled style="height: 30px; font-size: 11px;">Dienst gesperrt</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- FACHLICHE BEGRÜNDUNG & DESIGNEMPFEHLUNG -->
+    <!-- ========================================== -->
+    <div style="background: var(--bg-panel); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 20px; margin-top: 12px;">
+      <h3 style="color: #FFF; font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+        <span style="color: var(--cyan);">★</span>
+        Fachliche Designbewertung &amp; Empfehlung: Option A vs. Option B
+      </h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; font-size: 12px; color: var(--text-muted); line-height: 1.6;">
+        <div>
+          <strong style="color: #FFF; display: block; margin-bottom: 4px;">Option A (Single-Column Composer): Empfohlen für lange Textinhalte</strong>
+          <p>
+            Option A gewährt dem Nachrichtentextfeld die volle Breite des Panels (max. 4000 Zeichen). Dies erleichtert das Verfassen komplexer technischer Wartungsanweisungen ohne horizontales Gedränge. Die Vorschau darunter dient als formaler Prüfschritt vor dem Senden.
+          </p>
+        </div>
+        <div>
+          <strong style="color: #FFF; display: block; margin-bottom: 4px;">Option B (2-Spalten Split-Deck): Empfohlen für schnelle visuelle Kontrolle</strong>
+          <p>
+            Option B positioniert die Vorschau direkt neben dem Composer. Der Administrator sieht synchron bei jedem Tastendruck die Auswirkung auf Betreff und Absenderkarten. Bei Viewports unter 960px bricht das Layout sauber in eine vertikale Stapelung um.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

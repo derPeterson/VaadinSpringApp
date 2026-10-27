@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cosmos · Administration · Entwürfe</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-cosmos-viewer'; frame-src 'self' file:; base-uri 'none'; form-action 'none'">
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#03050b;color:#e2e8f0;font:14px/1.5 system-ui,sans-serif}
+    .preview-toolbar{padding:16px 22px;border-bottom:1px solid #26334b;background:#0b101e;display:flex;align-items:center;gap:12px 24px;flex-wrap:wrap}
+    .preview-title{margin:0;font-size:17px;font-weight:650}.preview-note{margin:0;color:#a7b5cb;font-size:12px}
+    fieldset{border:0;padding:0;margin:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}legend{float:left;margin-right:12px;color:#a7b5cb;font-size:12px}
+    label{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;min-height:32px}input{accent-color:#38bdf8}button{font:inherit}
+    .preview-stage{padding:20px;overflow:auto}.preview-viewport{display:block;box-sizing:content-box;border:1px solid #26334b;border-radius:10px;background:#05070e;width:1440px;height:1000px;margin:0 auto}
+    body[data-size="desktop"]{min-width:1482px}body[data-size="desktop"] .preview-stage{overflow:visible}
+    body[data-size="phone"] .preview-viewport{width:390px;height:844px}
+    body[data-size="landscape"] .preview-viewport{width:844px;height:390px}
+    body[data-size="auto"] .preview-viewport{width:100%;max-width:1440px;height:calc(100dvh - 180px);min-height:650px}
+    :focus-visible{outline:2px solid #38bdf8;outline-offset:3px}a{color:#7dd3fc}
+    @media(max-width:600px){.preview-toolbar{padding:12px;gap:8px 20px}.preview-stage{padding:10px}body[data-size="auto"] .preview-viewport{min-height:700px}}
+  </style>
+<style>.preview-toolbar fieldset{margin-right:8px}.preview-toolbar label{cursor:pointer}body[data-size=auto] .preview-viewport{height:calc(100dvh - var(--preview-toolbar-height,180px) - 40px);min-height:360px}</style></head>
+<body data-size="auto">
+  <div class="preview-toolbar"><div style="width:100%"><h1 class="preview-title">Cosmos · Administration · Entwürfe</h1><p class="preview-note">Zusätzliche Sichtung der abgestimmten Adminbereiche: Dashboard, Benutzerverwaltung, Konfiguration, Mailtest und Benachrichtigungen B. Alle Bereiche sind in der festen Adminreferenz übernommen. Alle Aktionen sind lokal simuliert.</p><p class="preview-note"><a href="index.html" data-admin-extension="">Angemeldete Referenz</a> · <a href="visitors.html" data-admin-extension="">Besucherreferenz</a> · <a href="admin.html" data-admin-extension="">Abgenommene Benutzerverwaltung</a> · <a href="admin-entwurf.html" data-admin-extension="">Direktansicht der Entwürfe</a></p></div><fieldset><legend>Ansicht</legend><label><input type="radio" name="size" value="auto" checked>Fensterbreite</label><label><input type="radio" name="size" value="desktop">Desktop</label><label><input type="radio" name="size" value="phone">Smartphone</label><label><input type="radio" name="size" value="landscape">Smartphone quer</label></fieldset><div id="preview-appearance-controls" class="preview-appearance-controls"><label>Service-Logo <select id="preview-logo"><option value="a">A · Orbitale Rosette</option><option value="b">B · Stern und Umlaufbahn</option><option value="c">C · Abstraktes Portal</option><option value="d">D · Farbige Blüte</option><option value="e">E · Geschwungene Flügel</option><option value="f">F · Vierfarbiger Ring</option><option value="g">G · Verschränkte Formen</option><option value="h">H · Prisma</option><option value="i">I · Offener Orbit</option><option value="j">J · Orbital-Korona</option><option value="k" selected>K · Pulsar-Nova</option><option value="l">L · Nebula-Vortex</option><option value="m">M · Korona-Finsternis</option><option value="n">N · Astro-Sextant</option><option value="o">O · Kometen-Drift</option></select></label><label>Hintergrund <select id="preview-background"><option value="reference">Aktuelle Referenz</option><option value="bg-01">01 · Marineblaue Staubwolke</option><option value="bg-02">02 · Stiller Violettnebel</option><option value="bg-03">03 · Türkiser Rand</option><option value="bg-04">04 · Finsternis-Saum</option><option value="bg-05">05 · Sparsames Sternfeld</option><option value="bg-06">06 · Fernes Sternenband</option><option value="bg-07">07 · Gedämpfter Bernstein</option><option value="bg-08">08 · Kühler Doppelorbit</option><option value="bg-09">09 · Tintenblaue Vignette</option><option value="bg-10">10 · Ferne Magentawolke</option><option value="bg-11">11 · Mitternachtspunkte</option><option value="bg-12">12 · Kosmisches Anthrazit</option></select></label><a href="admin-entwuerfe.html">Weitere Adminentwürfe A/B</a></div><div class="preview-appearance-controls" data-admin-extension=""><label>Bereich <select id="ad-page"><option value="dashboard">Dashboard</option><option value="users">Benutzerverwaltung · bestehend</option><optgroup label="Konfiguration · alle acht Bereiche"><option value="settings:GENERAL">Allgemein</option><option value="settings:SECURITY">Sicherheit &amp; Session</option><option value="settings:TOKENS">Token Laufzeiten</option><option value="settings:USER_STATUS">Benutzerstatus</option><option value="settings:NOTIFICATIONS">Benachrichtigungen</option><option value="settings:EMAIL_SENDER">E-Mail Absender</option><option value="settings:SMTP">SMTP Einstellungen</option><option value="settings:QUEUE">E-Mail Queue</option></optgroup><option value="mail">Mail Test</option><option value="send">Interne Benachrichtigungen</option></select></label><label>Layout <select id="ad-variant"><option value="a">A · Bild und Schnellzugriffe / Formulare</option><option value="b">B · Kompakte Zeilen / Arbeitsbereich mit Vorschau</option></select></label><label>Beispielzustand <select id="ad-state"><option value="ready">Ausgangszustand</option><option value="empty">Leerer Bestand</option><option value="maintenance">Wartungsmodus</option><option value="unavailable">Technisch nicht verfügbar</option><option value="validation">Pflichteingabe fehlt</option><option value="error">Fehler / ungültiger Wert</option><option value="success">Erfolg · simuliert</option><option value="permission-denied">Keine Berechtigung</option><option value="preview-valid">Aktuelle Vorschau</option><option value="preview-invalidated">Vorschau nach Änderung ungültig</option><option value="no-recipients">Keine berechtigten Empfänger</option></select></label></div></div>
+  <div class="preview-stage"><iframe class="preview-viewport" id="account-preview" title="Administration · zusätzliche Layoutentwürfe" src="admin-entwurf.html?rev=451b4d069a1e" sandbox="allow-scripts"></iframe></div>
+  <script nonce="cosmos-viewer">(() => {
+  const toolbar = document.querySelector('.preview-toolbar');
+  new ResizeObserver(() => document.body.style.setProperty('--preview-toolbar-height',`${toolbar.getBoundingClientRect().height}px`)).observe(toolbar);
+  document.querySelectorAll('[name=size]').forEach(input => input.addEventListener('change',() => { document.body.dataset.size = input.value; }));
+})();</script>
+<!-- appearance:start --><style>.preview-appearance-controls{display:flex;flex-wrap:wrap;gap:12px 24px;width:100%}.preview-appearance-controls label{max-width:100%;flex-wrap:wrap}.preview-appearance-controls select{background:#091120;color:#e2e8f0;border:1px solid #ffffff26;border-radius:6px;padding:7px;max-width:100%;font:inherit}body[data-size=auto] .preview-viewport{box-sizing:border-box;height:calc(100dvh - var(--preview-toolbar-height,220px) - 40px);min-height:360px}</style><script nonce="cosmos-viewer" id="preview-appearance-sender">(() => {
+  const frame = document.getElementById('account-preview');
+  const logo = document.getElementById('preview-logo');
+  const background = document.getElementById('preview-background');
+  const send = () => frame.contentWindow.postMessage({
+    type: 'cosmos-appearance', logo: logo.value, background: background.value
+  }, '*');
+  logo.addEventListener('change', send);
+  background.addEventListener('change', send);
+  frame.addEventListener('load', send);
+  const toolbar = document.querySelector('.preview-toolbar');
+  new ResizeObserver(() => document.body.style.setProperty(
+    '--preview-toolbar-height', `${toolbar.getBoundingClientRect().height}px`
+  )).observe(toolbar);
+})();
+</script><!-- appearance:end --><script nonce="cosmos-viewer" data-admin-extension="">(() => {
+  const frame=document.getElementById('account-preview');
+  const page=document.getElementById('ad-page');
+  const variant=document.getElementById('ad-variant');
+  const state=document.getElementById('ad-state');
+  const requestedPage=location.hash?.slice(1);
+  if([...page.options].some(option=>option.value===requestedPage)){page.value=requestedPage;}
+  let latestRequest=0;
+  const states={dashboard:['ready'],settings:['ready','error','unavailable'],mail:['ready','validation','success','error','maintenance','unavailable'],send:['ready','preview-valid','preview-invalidated','no-recipients','validation','success','error','empty','maintenance','unavailable','permission-denied'],users:['ready']};
+  const restrict=()=>{
+    const route=page.value.split(':')[0];
+    [...state.options].forEach(option=>{option.disabled=!states[route].includes(option.value);option.hidden=option.disabled;});
+    if(!states[route].includes(state.value)){state.value='ready';}
+    if(route==='dashboard'||route==='settings'||route==='mail'){variant.value='a';}
+    if(route==='send'){variant.value='b';}
+    variant.disabled=true;
+  };
+  const send=()=>{
+    restrict();const [route,group]=page.value.split(':');
+    frame.contentWindow.postMessage({type:'cosmos-admin-proposal',requestId:++latestRequest,route,group,variant:variant.value,state:state.value},'*');
+  };
+  page.addEventListener('change',()=>{state.value='ready';send();});
+  variant.addEventListener('change',send);state.addEventListener('change',send);frame.addEventListener('load',send);
+  window.addEventListener('message',event=>{
+    if(latestRequest===0){return;}
+    const ownSandbox=event.origin==='null'&&frame.hasAttribute('sandbox');
+    if(event.source!==frame.contentWindow||(event.origin!==location.origin&&!ownSandbox)){return;}
+    if(event.data?.type!=='cosmos-admin-proposal-route'){return;}
+    if(event.data.requestId!==null&&event.data.requestId!==latestRequest){return;}
+    const value=event.data.route==='settings'?`settings:${event.data.group}`:event.data.route;
+    if([...page.options].some(option=>option.value===value)){page.value=value;restrict();}
+    if([...state.options].some(option=>!option.disabled&&option.value===event.data.state)){state.value=event.data.state;}
+  });
+})();
+</script></body>
+</html>

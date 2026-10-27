@@ -1,0 +1,1216 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cosmos – 12 Statische CSS-Hintergrundvarianten (Design Review Board)</title>
+  <style>
+    /* =========================================================================
+       COSMOS DESIGN SYSTEM - BASICS & PALETTE
+       ========================================================================= */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-base: #050811;
+      --bg-panel: #050811;
+      --bg-header: #0e1726;
+      --bg-inset: #091120;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-card: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+      --cyan: #38bdf8;
+      --primary: #0088cc;
+      --primary-hover: #0077b5;
+      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    body {
+      background-color: #03050a;
+      color: var(--text-main);
+      font-family: var(--font-stack);
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 32px 24px 80px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1480px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+
+    /* TYPOGRAFIE & BOARD-HEADER */
+    .board-header {
+      background: #080e1b;
+      border: 1px solid var(--border-card);
+      border-radius: 12px;
+      padding: 28px 32px;
+      position: relative;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--cyan);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .board-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .board-desc {
+      color: var(--text-muted);
+      font-size: 14px;
+      max-width: 1050px;
+      line-height: 1.6;
+    }
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .tag-badge {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+    }
+    .tag-badge.active {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      background: rgba(56, 189, 248, 0.08);
+      font-weight: 600;
+    }
+
+    /* SECTION TITLES */
+    .section-headline-group {
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* =========================================================================
+       DIE 12 ECHTEN, PUREN CSS-HINTERGRÜNDE (bg-01 bis bg-12)
+       Alle Klassen deklarieren eine vollständige, autonome 'background'-Property
+       auf Basis #050811 ohne Pseudoelemente oder externe Bilder.
+       ========================================================================= */
+
+    /* 01: Deep Navy Dust */
+    .bg-01 {
+      background:
+        radial-gradient(1.5px 1.5px at 15% 20%, rgba(148, 163, 184, 0.22) 100%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 78% 35%, rgba(148, 163, 184, 0.18) 100%, transparent 100%),
+        radial-gradient(1px 1px at 45% 75%, rgba(148, 163, 184, 0.15) 100%, transparent 100%),
+        radial-gradient(850px 550px at 10% 10%, rgba(15, 30, 65, 0.45), transparent 70%),
+        radial-gradient(700px 450px at 85% 85%, rgba(10, 24, 52, 0.35), transparent 70%),
+        #050811;
+    }
+
+    /* 02: Quiet Violet Haze */
+    .bg-02 {
+      background:
+        radial-gradient(900px 600px at 50% -10%, rgba(42, 22, 68, 0.28), transparent 70%),
+        radial-gradient(650px 450px at 80% 90%, rgba(26, 16, 48, 0.22), transparent 70%),
+        linear-gradient(180deg, rgba(20, 10, 36, 0.18) 0%, transparent 40%),
+        #050811;
+    }
+
+    /* 03: Teal Edge */
+    .bg-03 {
+      background:
+        radial-gradient(750px 500px at 100% 30%, rgba(13, 59, 74, 0.35), transparent 70%),
+        radial-gradient(450px 450px at 95% 40%, rgba(20, 110, 120, 0.15), transparent 60%),
+        linear-gradient(90deg, transparent 65%, rgba(6, 40, 52, 0.22) 100%),
+        #050811;
+    }
+
+    /* 04: Eclipse Rim */
+    .bg-04 {
+      background:
+        radial-gradient(480px 480px at 50% 115%, transparent 64%, rgba(56, 189, 248, 0.12) 66%, rgba(15, 23, 42, 0.85) 74%, transparent 85%),
+        radial-gradient(800px 500px at 50% 120%, rgba(2, 6, 23, 0.95), transparent 80%),
+        #050811;
+    }
+
+    /* 05: Sparse Starfield */
+    .bg-05 {
+      background:
+        radial-gradient(1px 1px at 12% 18%, rgba(248, 250, 252, 0.35) 100%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 32% 44%, rgba(248, 250, 252, 0.30) 100%, transparent 100%),
+        radial-gradient(1px 1px at 64% 22%, rgba(248, 250, 252, 0.25) 100%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 85% 68%, rgba(248, 250, 252, 0.35) 100%, transparent 100%),
+        radial-gradient(1px 1px at 20% 80%, rgba(248, 250, 252, 0.20) 100%, transparent 100%),
+        radial-gradient(1px 1px at 74% 88%, rgba(248, 250, 252, 0.25) 100%, transparent 100%),
+        #050811;
+      background-size: 320px 320px, 420px 420px, 360px 360px, 480px 480px, 280px 280px, 520px 520px, auto;
+    }
+
+    /* 06: Diagonal Distant Band */
+    .bg-06 {
+      background:
+        linear-gradient(135deg, transparent 32%, rgba(26, 38, 74, 0.18) 45%, rgba(40, 52, 98, 0.24) 50%, rgba(26, 38, 74, 0.18) 55%, transparent 68%),
+        radial-gradient(900px 500px at 50% 50%, rgba(14, 25, 52, 0.25), transparent 75%),
+        #050811;
+    }
+
+    /* 07: Muted Amber Horizon */
+    .bg-07 {
+      background:
+        radial-gradient(850px 320px at 50% 102%, rgba(92, 54, 18, 0.22), transparent 70%),
+        linear-gradient(0deg, rgba(64, 36, 10, 0.14) 0%, transparent 28%),
+        #050811;
+    }
+
+    /* 08: Cool Double Orbit */
+    .bg-08 {
+      background:
+        radial-gradient(650px 400px at 15% 25%, transparent 68%, rgba(56, 189, 248, 0.08) 70%, transparent 73%),
+        radial-gradient(750px 480px at 85% 75%, transparent 69%, rgba(14, 165, 233, 0.07) 71%, transparent 74%),
+        #050811;
+    }
+
+    /* 09: Ink-Blue Vignette */
+    .bg-09 {
+      background:
+        radial-gradient(ellipse at 50% 45%, rgba(11, 23, 48, 0.38) 0%, rgba(7, 14, 30, 0.15) 55%, rgba(3, 5, 12, 0.85) 100%),
+        #050811;
+    }
+
+    /* 10: Distant Magenta Cloud */
+    .bg-10 {
+      background:
+        radial-gradient(700px 450px at 85% 15%, rgba(68, 18, 52, 0.24), transparent 65%),
+        radial-gradient(550px 380px at 20% 80%, rgba(38, 12, 42, 0.20), transparent 65%),
+        #050811;
+    }
+
+    /* 11: Midnight Grid Dots */
+    .bg-11 {
+      background:
+        radial-gradient(1px 1px at center, rgba(148, 163, 184, 0.12) 100%, transparent 100%),
+        linear-gradient(180deg, rgba(14, 23, 38, 0.25) 0%, transparent 100%),
+        #050811;
+      background-size: 28px 28px, 100% 100%, auto;
+    }
+
+    /* 12: Pure Charcoal Cosmic Depth */
+    .bg-12 {
+      background:
+        radial-gradient(900px 600px at 50% 0%, rgba(18, 24, 38, 0.26), transparent 75%),
+        linear-gradient(180deg, rgba(8, 12, 22, 0.4) 0%, rgba(5, 8, 17, 0.95) 100%),
+        #050811;
+    }
+
+    /* =========================================================================
+       12-GRID KARTEN DES REVIEW BOARDS
+       ========================================================================= */
+    .swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    .swatch-card {
+      background: #080e1b;
+      border: 1px solid var(--border-card);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .swatch-preview {
+      height: 160px;
+      border-bottom: 1px solid var(--border-card);
+      position: relative;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .swatch-badge-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .swatch-id {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--cyan);
+      background: rgba(8, 14, 27, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    .swatch-tag {
+      font-size: 10px;
+      color: var(--text-subtle);
+      background: rgba(8, 14, 27, 0.85);
+      border: 1px solid var(--border-subtle);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* Mockup-Miniatur im Swatch zur Kontrastprobe */
+    .swatch-mini-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .mini-panel-text {
+      font-size: 11px;
+      color: var(--text-main);
+      font-weight: 600;
+    }
+    .mini-panel-sub {
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+    .mini-btn {
+      font-size: 9px;
+      background: var(--primary);
+      color: #fff;
+      padding: 3px 7px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    .swatch-content {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+    .swatch-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .swatch-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    /* CSS CODE BOX */
+    .css-code-box {
+      margin-top: auto;
+      background: #04060c;
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 10px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: #93c5fd;
+      line-height: 1.4;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 115px;
+      overflow-y: auto;
+    }
+
+    /* =========================================================================
+       LIVE DEMONSTRATION: REPRÄSENTATIVE SKINS (DESKTOP & MOBILE)
+       Zeigt die freigegebene Cosmos-UI 1:1 unverändert vor zwei Hintergründen
+       ========================================================================= */
+    .demo-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+
+    .demo-card {
+      border: 1px solid var(--border-card);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #080e1b;
+    }
+
+    .demo-bar {
+      padding: 14px 20px;
+      background: #0b1325;
+      border-bottom: 1px solid var(--border-card);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .demo-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .demo-viewport-desktop {
+      min-height: 480px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ECHTER REPRÄSENTATIVER KOPF & ARBEITSBEREICH */
+    .rep-header {
+      background-color: var(--bg-header);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      height: 54px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .rep-logo-grp {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .rep-logo-icon {
+      width: 26px;
+      height: 26px;
+      background: linear-gradient(135deg, #0088cc, #38bdf8);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 11px;
+    }
+    .rep-logo-txt {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .rep-breadcrumb {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .rep-crumb-active {
+      color: var(--cyan);
+      font-weight: 600;
+    }
+    .rep-user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .rep-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #0088cc;
+      color: #fff;
+      font-weight: 700;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* PANEL (1:1 mit #050811) */
+    .rep-panel {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .rep-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .rep-panel-title-grp {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .rep-panel-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .rep-panel-badge {
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .rep-btn-primary {
+      background: var(--primary);
+      border: 1px solid var(--primary);
+      color: #ffffff;
+      height: 34px;
+      padding: 0 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .rep-btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    /* TABELLE */
+    .rep-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .rep-table th {
+      padding: 10px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-subtle);
+      background: #080e1b;
+    }
+    .rep-table td {
+      padding: 12px;
+      font-size: 12px;
+      color: var(--text-main);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .rep-table tr:last-child td {
+      border-bottom: none;
+    }
+    .rep-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #34d399;
+      margin-right: 6px;
+    }
+
+    /* FORMULAR CONTROL PROBE (Eingabe #091120) */
+    .rep-filter-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .rep-input {
+      height: 34px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 0 12px;
+      color: var(--text-main);
+      font-size: 12px;
+      font-family: inherit;
+      width: 240px;
+      outline: none;
+    }
+    .rep-btn-secondary {
+      height: 34px;
+      background: #080e1b;
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 0 14px;
+      color: var(--text-main);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* DEMO VIEWPORT MOBILE (390px) */
+    .demo-mobile-outer {
+      display: flex;
+      justify-content: center;
+      padding: 30px 20px;
+    }
+    .demo-mobile-screen {
+      width: 390px;
+      border: 1px solid var(--border-card);
+      border-radius: 24px;
+      padding: 18px 16px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .mob-status-bar {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 0 4px 6px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .mob-panel-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* =========================================================================
+       FACHLICHE BEGRÜNDUNG & GESTALTUNGSFAVORIT (Außerhalb der Produkt-UI)
+       ========================================================================= */
+    .board-evaluation-card {
+      background: #080e1b;
+      border: 1px solid var(--border-card);
+      border-radius: 12px;
+      padding: 28px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .eval-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(251, 191, 36, 0.12);
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      color: #fbbf24;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      align-self: flex-start;
+    }
+    .eval-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .eval-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .eval-h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .eval-txt {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* FOOTER */
+    .board-footer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-subtle);
+      padding-top: 20px;
+      border-top: 1px solid var(--border-subtle);
+    }
+  </style>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"></head>
+<body>
+
+  <div class="container">
+
+    <!-- 1. KOPFBEREICH DES REVIEW BOARDS -->
+    <header class="board-header">
+      <div class="eyebrow">Cosmos Design Review Board • Statische Oberflächenarchitektur</div>
+      <h1 class="board-title">12 Sehr Dunkle Cosmos-Hintergrundvarianten (CSS-Only)</h1>
+      <p class="board-desc">
+        Gezielte Entwurfsausarbeitung zur Behebung übermäßig heller Weltraumnebel. Alle 12 Hintergründe basieren strikt auf dem tiefdunklen Farbwert <code>#050811</code> und nutzen ausschließlich subtile, niedrig-deckende CSS-Gradienten (radiale, lineare oder feine Punkt-Muster).
+        Es werden keine externen Bilder, keine Skripte, keine dekorativen SVGs und keine CSS-Animationen eingesetzt.
+        Die etablierten Cosmos-Komponenten (Header <code>#0E1726</code>, Panels <code>#050811</code>, Eingabefelder <code>#091120</code>) bleiben vollständig unangetastet.
+      </p>
+      <div class="badge-bar">
+        <span class="tag-badge active">&amp;check; Basis #050811 verbindlich</span>
+        <span class="tag-badge">&amp;check; Kein weißer Dunst / keine grellen Nebel</span>
+        <span class="tag-badge">&amp;check; 100 % reine CSS-Hintergrund-Properties</span>
+        <span class="tag-badge">&amp;check; Keine Pseudoelemente erforderlich</span>
+        <span class="tag-badge">&amp;check; Unveränderte Portal- &amp; Admin-Controls</span>
+      </div>
+    </header>
+
+    <!-- 2. DIE 12 VARIANTEN IM ÜBERBLICK (SWATCHES & CSS-CODE) -->
+    <section>
+      <div class="section-headline-group">
+        <h2 class="section-title">Übersicht der 12 eigenständigen Kompositionen (.bg-01 bis .bg-12)</h2>
+        <p class="section-desc">Jede Karte visualisiert den echten Hintergrund mit einem Mini-UI-Element zur visuellen Ruheprüfung und bietet den exakten, wiederverwendbaren CSS-Code.</p>
+      </div>
+
+      <div class="swatch-grid">
+
+        <!-- 01: Deep Navy Dust -->
+        <article class="swatch-card">
+          <div class="swatch-preview bg-01">
+            <div class="swatch-badge-row">
+              <span class="swatch-id">.bg-01</span>
+              <span class="swatch-tag">Klassisch ruhig</span>
+            </div>
+            <div class="swatch-mini-panel">
+              <div>
+                <div class="mini-panel-text">Benutzerverwaltung</div>
+                <div class="mini-panel-sub">24 Konten synchronisiert</div>
+              </div>
+              <span class="mini-btn">+ Neu</span>
+            </div>
+          </div>
+          <div class="swatch-content">
+            <h3 class="swatch-title">1. Deep Navy Dust</h3>
+            <p class="swatch-desc">Sanfter, tiefblauer Raumschleier mit mikroskopisch zarten Staubpartikeln. Höchste Nähe zum Enterprise-Stil ohne jegliche Ablenkung.</p>
+            <div class="css-code-box">.bg-01 {
+  background:
+    radial-gradient(1.5px 1.5px at 15% 20%, rgba(148, 163, 184, 0.22) 100%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 78% 35%, rgba(148, 163, 184, 0.18) 100%, transparent 100%),
+    radial-gradient(1px 1px at 45% 75%, rgba(148, 163, 184, 0.15) 100%, transparent 100%),
+    radial-gradient(850px 550px at 10% 10%, rgba(15, 30, 65, 0.45), transparent 70%),
+    radial-gradient(700px 450px at 85% 85%, rgba(10, 24, 52, 0.35), transparent 70%),
+    #050811;
+}</div>
+          </div>
+        </article>
+
+        <!-- 02: Quiet Violet Haze -->
+        <article class="swatch-card">
+          <div class="swatch-preview bg-02">
+            <div class="swatch-badge-row">
+              <span class="swatch-id">.bg-02</span>
+              <span class="swatch-tag">Sphärisch tief</span>
+            </div>
+            <div class="swatch-mini-panel">
+              <div>
+                <div class="mini-panel-text">Persönliche Daten</div>
+                <div class="mini-panel-sub">Sicherheit &amp; Zugang</div>
+              </div>
+              <span class="mini-btn">Speichern</span>
+            </div>
+          </div>
+          <div class="swatch-content">
+            <h3 class="swatch-title">2. Quiet Violet Haze</h3>
+            <p class="swatch-desc">Stark gedämpftes, ultraviolettes Glühen am oberen Viewportrand. Verleiht dem Portal noble kosmische Tiefe ohne Sättigung.</p>
+            <div class="css-code-box">.bg-02 {
+  background:
+    radial-gradient(900px 600px at 50% -10%, rgba(42, 22, 68, 0.28), transparent 70%),
+    radial-gradient(650px 450px at 80% 90%, rgba(26, 16, 48, 0.22), transparent 70%),
+    linear-gradient(180deg, rgba(20, 10, 36, 0.18) 0%, transparent 40%),
+    #050811;
+}</div>
+          </div>
+        </article>
+
+        <!-- 03: Teal Edge -->
+        <article class="swatch-card">
+          <div class="swatch-preview bg-03">
+            <div class="swatch-badge-row">
+              <span class="swatch-id">.bg-03</span>
+              <span class="swatch-tag">Cyan-harmonisch</span>
+            </div>
+            <div class="swatch-mini-panel">
+              <div>
+                <div class="mini-panel-text">Filter-Konsole</div>
+                <div class="mini-panel-sub">3 Kriterien aktiv</div>
+              </div>
+              <span class="mini-btn">Anwenden</span>
+            </div>
+          </div>
+          <div class="swatch-content">
+            <h3 class="swatch-title">3. Teal Edge</h3>
+            <p class="swatch-desc">Asymmetrischer, dunkler Petrol-/Teal-Verlauf am rechten Bildrand. Unterstützt das Cosmos-Cyan (#38bdf8) organisch aus dem Hintergrund.</p>
+            <div class="css-code-box">.bg-03 {
+  background:
+    radial-gradient(750px 500px at 100% 30%, rgba(13, 59, 74, 0.35), transparent 70%),
+    radial-gradient(450px 450px at 95% 40%, rgba(20, 110, 120, 0.15), transparent 60%),
+    linear-gradient(90deg, transparent 65%, rgba(6, 40, 52, 0.22) 100%),
+    #050811;
+}</div>
+          </div>
+        </article>
+
+        <!-- 04: Eclipse Rim -->
+        <article class="swatch-card">
+          <div class="swatch-preview bg-04">
+            <div class="swatch-badge-row">
+              <span class="swatch-id">.bg-04</span>
+              <span class="swatch-tag">Kosmischer Bogen</span>
+            </div>
+            <div class="swatch-mini-panel">
+              <div>
+                <div class="mini-panel-text">Sitzungskontrolle</div>
+                <div class="mini-panel-sub">Aktive Session: Chrome</div>
+              </div>
+              <span class="mini-btn">Prüfen</span>
+            </div>
+          </div>
+          <div class="swatch-content">
+            <h3 class="swatch-title">4. Eclipse Rim</h3>
+            <p class="swatch-desc">Ein tiefer, geometrischer Finsternis-Bogen an der Unterseite. Bringt die geschwungene Planeten-Silhouette der Originalentwürfe rein mit CSS zurück.</p>
+            <div class="css-code-box">.bg-04 {
+  background:
+    radial-gradient(480px 480px at 50% 115%, transparent 64%, rgba(56, 189, 248, 0.12) 66%, rgba(15, 23, 42, 0.85) 74%, transparent 85%),
+    radial-gradient(800px 500px at 50% 120%, rgba(2, 6, 23, 0.95), transparent 80%),
+    #050811;
+}</div>
+          </div>
+        </article>
+
+        <!-- 05: Sparse Starfield -->
+        <article class="swatch-card">
+          <div class="swatch-preview bg-05">
+            <div class="swatch-badge-row">
+              <span class="swatch-id">.bg-05</span>
+              <span class="swatch-tag">Pure Geometrie</span>
+            </div>
+            <div class="swatch-mini-panel">
+              <div>
+                <div class="mini-panel-text">Benachrichtigungen</div>
+                <div class="mini-panel-sub">12 ungelesene Post</div>
+              </div>
+              <span class="mini-btn">Öffnen</span>
+            </div>
+          </div>
+          <div class="swatch-content">
+            <h3 class="swatch-title">5. Sparse Starfield</h3>
+            <p class="swatch-desc">Nicht-flackerndes, extrem feines Sternenmuster (1px–1.5px) mit gedämpfter Deckkraft (0.2–0.35) über asynchronen background-sizes gestreut.</p>
+            <div class="css-code-box">.bg-05 {
+  background:
+    radial-gradient(1px 1px at 12% 18%, rgba(248, 250, 252, 0.35) 100%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 32% 44%, rgba(248, 250, 252, 0.30) 100%, transparent 100%),
+    radial-gradient(1px 1px at 64% 22%, rgba(248, 250, 252, 0.25) 100%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 85% 68%, rgba(248, 250, 252, 0.35) 100%, transparent 100%),
+    radial-gradient(1px 1px at 20% 80%, rgba(248, 250, 252, 0.20) 100%, transparent 100%),
+    radial-gradient(1px 1px at 74% 88%, rgba(248, 250, 252, 0.25) 100%, transparent 100%),
+    #050811;
+  background-size: 320px 320px, 420px 420px, 360px 360px, 480px 480px, 280px 280px, 520px 520px, auto;
+}</div>
+          </div>
+        </article>
+
+        <!-- 06: Diagonal Distant Band -->
+        <article class="swatch-card">
+          <div class="swatch-preview bg-06">
+            <div class="swatch-badge-row">
+              <span class="swatch-id">.bg-06</span>
+              <span class="swatch-tag">Milchstraßen-Spur</span>
+            </div>
+            <div class="swatch-mini-panel">
+              <div>
+                <div class="mini-panel-text">Konfiguration</div>
+                <div class="mini-panel-sub">SMTP &amp; Sicherheit</div>
+              </div>
+              <span class="mini-btn">Laden</span>
+            </div>
+          </div>
+          <div class="swatch-content">
+            <h3 class="swatch-title">6. Diagonal Distant Band</h3>
+            <p class="swatch-desc">Eine um 135 Grad geneigte, transluzente Raumschleier-Linie. Erzeugt Dynamik und Raumtiefe, bleibt jedoch strikt hinter den Panels verborgen.</p>
+            <div class="css-code-box">.bg-06 {
+  background:
+    linear-gradient(135deg, transparent 32%, rgba(26, 38, 74, 0.18) 45%, rgba(40, 52, 98, 0.24) 50%, rgba(26, 38, 74, 0.18) 55%, transparent 68%),
+    radial-gradient(900px 500px at 50% 50%, rgba(14, 25, 52, 0.25), transparent 75%),
+    #050811;
+}</div>
+          </div>
+        </article>
+
+        <!-- 07: Muted Amber Horizon -->
+        <article class="swatch-card">
+          <div class="swatch-preview bg-07">
+            <div class="swatch-badge-row">
+              <span class="swatch-id">.bg-07</span>
+              <span class="swatch-tag">Warme Nuance</span>
+            </div>
+            <div class="swatch-mini-panel">
+              <div>
+                <div class="mini-panel-text">Mailtest Status</div>
+                <div class="mini-panel-sub">Relay bereit • Port 587</div>
+              </div>
+              <span class="mini-btn">Test</span>
+            </div>
+          </div>
+          <div class="swatch-content">
+            <h3 class="swatch-title">7. Muted Amber Horizon</h3>
+            <p class="swatch-desc">Gedämpfter Bernsteinton an der Basis. Schafft eine erdende Wärme, ohne gelbstichig oder blendend zu wirken (maximal 22% Opazität).</p>
+            <div class="css-code-box">.bg-07 {
+  background:
+    radial-gradient(850px 320px at 50% 102%, rgba(92, 54, 18, 0.22), transparent 70%),
+    linear-gradient(0deg, rgba(64, 36, 10, 0.14) 0%, transparent 28%),
+    #050811;
+}</div>
+          </div>
+        </article>
+
+        <!-- 08: Cool Double Orbit -->
+        <article class="swatch-card">
+          <div class="swatch-preview bg-08">
+            <div class="swatch-badge-row">
+              <span class="swatch-id">.bg-08</span>
+              <span class="swatch-tag">Orbital-Ringe</span>
+            </div>
+            <div class="swatch-mini-panel">
+              <div>
+                <div class="mini-panel-text">Geräte &amp; Sitzungen</div>
+                <div class="mini-panel-sub">2 aktive Endgeräte</div>
+              </div>
+              <span class="mini-btn">Abmelden</span>
+            </div>
+          </div>
+          <div class="swatch-content">
+            <h3 class="swatch-title">8. Cool Double Orbit</h3>
+            <p class="swatch-desc">Zwei weit gefasste, zarte Orbitalkurven mit minimaler 8%-Deckkraft. Wirkt hochtechnisch und verweist auf astronomische Umlaufbahnen.</p>
+            <div class="css-code-box">.bg-08 {
+  background:
+    radial-gradient(650px 400px at 15% 25%, transparent 68%, rgba(56, 189, 248, 0.08) 70%, transparent 73%),
+    radial-gradient(750px 480px at 85% 75%, transparent 69%, rgba(14, 165, 233, 0.07) 71%, transparent 74%),
+    #050811;
+}</div>
+          </div>
+        </article>
+
+        <!-- 09: Ink-Blue Vignette -->
+        <article class="swatch-card">
+          <div class="swatch-preview bg-09">
+            <div class="swatch-badge-row">
+              <span class="swatch-id">.bg-09</span>
+              <span class="swatch-tag">Fokussiert</span>
+            </div>
+            <div class="swatch-mini-panel">
+              <div>
+                <div class="mini-panel-text">Passwort ändern</div>
+                <div class="mini-panel-sub">Zwei-Faktor aktiv</div>
+              </div>
+              <span class="mini-btn">Ändern</span>
+            </div>
+          </div>
+          <div class="swatch-content">
+            <h3 class="swatch-title">9. Ink-Blue Vignette</h3>
+            <p class="swatch-desc">Zentrierte Tintendunkel-Vignette. Führt den Blick automatisch auf die Anwendungsmitte und lässt die Bildschirmkanten in fast reinem Schwarz versinken.</p>
+            <div class="css-code-box">.bg-09 {
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(11, 23, 48, 0.38) 0%, rgba(7, 14, 30, 0.15) 55%, rgba(3, 5, 12, 0.85) 100%),
+    #050811;
+}</div>
+          </div>
+        </article>
+
+        <!-- 10: Distant Magenta Cloud -->
+        <article class="swatch-card">
+          <div class="swatch-preview bg-10">
+            <div class="swatch-badge-row">
+              <span class="swatch-id">.bg-10</span>
+              <span class="swatch-tag">Tiefer Nebel</span>
+            </div>
+            <div class="swatch-mini-panel">
+              <div>
+                <div class="mini-panel-text">Registrierung</div>
+                <div class="mini-panel-sub">Konto anlegen</div>
+              </div>
+              <span class="mini-btn">Weiter</span>
+            </div>
+          </div>
+          <div class="swatch-content">
+            <h3 class="swatch-title">10. Distant Magenta Cloud</h3>
+            <p class="swatch-desc">Extrem dunkler Brombeer-/Magenta-Schleier an zwei Diagonalpunkten. Erzeugt dramatische Raumtiefe völlig ohne störendes Flimmern.</p>
+            <div class="css-code-box">.bg-10 {
+  background:
+    radial-gradient(700px 450px at 85% 15%, rgba(68, 18, 52, 0.24), transparent 65%),
+    radial-gradient(550px 380px at 20% 80%, rgba(38, 12, 42, 0.20), transparent 65%),
+    #050811;
+}</div>
+          </div>
+        </article>
+
+        <!-- 11: Midnight Grid Dots -->
+        <article class="swatch-card">
+          <div class="swatch-preview bg-11">
+            <div class="swatch-badge-row">
+              <span class="swatch-id">.bg-11</span>
+              <span class="swatch-tag">Strukturiert</span>
+            </div>
+            <div class="swatch-mini-panel">
+              <div>
+                <div class="mini-panel-text">Dashboard Kacheln</div>
+                <div class="mini-panel-sub">Metriken • 99.9% Uptime</div>
+              </div>
+              <span class="mini-btn">Live</span>
+            </div>
+          </div>
+          <div class="swatch-content">
+            <h3 class="swatch-title">11. Midnight Grid Dots</h3>
+            <p class="swatch-desc">Diskretes 28px-Punktraster mit ultrafeiner Deckkraft (0.12). Erinnert an astronomische Koordinatennetze und bietet maximale Ordnung.</p>
+            <div class="css-code-box">.bg-11 {
+  background:
+    radial-gradient(1px 1px at center, rgba(148, 163, 184, 0.12) 100%, transparent 100%),
+    linear-gradient(180deg, rgba(14, 23, 38, 0.25) 0%, transparent 100%),
+    #050811;
+  background-size: 28px 28px, 100% 100%, auto;
+}</div>
+          </div>
+        </article>
+
+        <!-- 12: Pure Charcoal Cosmic Depth -->
+        <article class="swatch-card">
+          <div class="swatch-preview bg-12">
+            <div class="swatch-badge-row">
+              <span class="swatch-id">.bg-12</span>
+              <span class="swatch-tag">Minimalistisch</span>
+            </div>
+            <div class="swatch-mini-panel">
+              <div>
+                <div class="mini-panel-text">Systemkonsole</div>
+                <div class="mini-panel-sub">Keine Warnungen</div>
+              </div>
+              <span class="mini-btn">OK</span>
+            </div>
+          </div>
+          <div class="swatch-content">
+            <h3 class="swatch-title">12. Pure Charcoal Cosmic Depth</h3>
+            <p class="swatch-desc">Fast monochrome Kohleschwärze mit minimaler Helligkeitsaufhellung am oberen Scheitel. Der maximal ruhige Hintergrund für reine Typografie.</p>
+            <div class="css-code-box">.bg-12 {
+  background:
+    radial-gradient(900px 600px at 50% 0%, rgba(18, 24, 38, 0.26), transparent 75%),
+    linear-gradient(180deg, rgba(8, 12, 22, 0.4) 0%, rgba(5, 8, 17, 0.95) 100%),
+    #050811;
+}</div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- 3. LIVE-DEMONSTRATION: ZWEI REPRÄSENTATIVE SKINS (DESKTOP & MOBILE) -->
+    <section class="demo-wrapper">
+      <div class="section-headline-group">
+        <h2 class="section-title">Reale Schnittstellen-Simulation (Desktop &amp; Mobile Viewport)</h2>
+        <p class="section-desc">Beweis der nahtlosen Integration: Die genehmigte Cosmos-Oberfläche (Header #0e1726, Hauptpanel #050811, Inputs #091120) bleibt 100 % identisch, während der Hintergrund ausgewechselt wird.</p>
+      </div>
+
+      <!-- DEMO 1: DESKTOP (mit bg-01: Deep Navy Dust) -->
+      <div class="demo-card">
+        <div class="demo-bar">
+          <div class="demo-title">
+            <span style="color: var(--cyan);">•</span>
+            Demonstration 1 (Desktop 1440px): <strong>Hintergrund .bg-01 (Deep Navy Dust)</strong>
+          </div>
+          <div class="tag-badge">Feste Header- &amp; Tabellenkomponenten unverändert</div>
+        </div>
+
+        <div class="demo-viewport-desktop bg-01">
+          <!-- Cosmos Top Header (#0e1726) -->
+          <div class="rep-header">
+            <div class="rep-logo-grp">
+              <div class="rep-logo-icon">C</div>
+              <span class="rep-logo-txt">{ServiceName}</span>
+              <span style="color: var(--border-subtle); margin: 0 4px;">/</span>
+              <div class="rep-breadcrumb">
+                <span>Administration</span>
+                <span>/</span>
+                <span class="rep-crumb-active">Benutzerverwaltung</span>
+              </div>
+            </div>
+            <div class="rep-user-info">
+              <span style="font-size: 11px; color: var(--text-muted);">Jonas Weber (Admin)</span>
+              <div class="rep-avatar">JW</div>
+            </div>
+          </div>
+
+          <!-- Cosmos Data Panel (#050811) -->
+          <div class="rep-panel">
+            <div class="rep-panel-header">
+              <div class="rep-panel-title-grp">
+                <h3 class="rep-panel-title">Benutzerkonten</h3>
+                <span class="rep-panel-badge">24 Konten</span>
+              </div>
+              <button class="rep-btn-primary">+ Benutzer anlegen</button>
+            </div>
+
+            <!-- Filter Controls (#091120) -->
+            <div class="rep-filter-row">
+              <input type="text" class="rep-input" placeholder="Benutzer suchen..." value="alex.berger">
+              <button class="rep-btn-secondary">Filter (0)</button>
+              <button class="rep-btn-secondary">↻ Aktualisieren</button>
+            </div>
+
+            <!-- Tabelle -->
+            <table class="rep-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>E-Mail</th>
+                  <th>Aktiv</th>
+                  <th>Status</th>
+                  <th>Rollen</th>
+                  <th>Letzte Aktivität</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="font-weight: 600;">Alex Berger</td>
+                  <td style="color: var(--text-muted);">alex.berger@example.test</td>
+                  <td>Ja</td>
+                  <td><span class="rep-dot"></span>Verfügbar</td>
+                  <td><span style="color: var(--cyan);">Benutzer</span></td>
+                  <td style="color: var(--text-subtle);">vor 15 Minuten</td>
+                </tr>
+                <tr>
+                  <td style="font-weight: 600;">Elena Sommer</td>
+                  <td style="color: var(--text-muted);">elena.sommer@example.test</td>
+                  <td>Ja</td>
+                  <td><span class="rep-dot"></span>Verfügbar</td>
+                  <td><span style="color: var(--cyan);">Benutzer</span></td>
+                  <td style="color: var(--text-subtle);">vor 22 Minuten</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEMO 2: MOBILE VIEWPORT (mit bg-04: Eclipse Rim) -->
+      <div class="demo-card">
+        <div class="demo-bar">
+          <div class="demo-title">
+            <span style="color: var(--cyan);">•</span>
+            Demonstration 2 (Mobile 390px Viewport): <strong>Hintergrund .bg-04 (Eclipse Rim)</strong>
+          </div>
+          <div class="tag-badge">Planeten-Bogen am Fußbereich • Kein Überstrahlen</div>
+        </div>
+
+        <div class="demo-mobile-outer">
+          <div class="demo-mobile-screen bg-04">
+            <div class="mob-status-bar">
+              <span>09:41</span>
+              <span>5G • 100%</span>
+            </div>
+
+            <!-- Mobile Header (#0e1726) -->
+            <div style="background: var(--bg-header); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="rep-logo-icon" style="width: 22px; height: 22px; font-size: 10px;">C</div>
+                <span style="font-size: 13px; font-weight: 700; color: #fff;">Benutzer</span>
+              </div>
+              <div class="rep-avatar" style="width: 26px; height: 26px; font-size: 10px;">JW</div>
+            </div>
+
+            <!-- Mobile Card (#050811) -->
+            <div class="mob-panel-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 700; font-size: 13px; color: #fff;">Alex Berger</span>
+                <span style="font-size: 10px; background: rgba(56,189,248,0.1); color: var(--cyan); padding: 2px 6px; border-radius: 4px;">Benutzer</span>
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted);">alex.berger@example.test</div>
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 11px;">
+                <span class="rep-dot"></span>
+                <span>Aktiv • Vor 15 Minuten</span>
+              </div>
+              <button class="rep-btn-primary" style="justify-content: center; height: 32px; font-size: 11px; margin-top: 4px;">Profil bearbeiten</button>
+            </div>
+
+            <!-- Mobile Card 2 (#050811) -->
+            <div class="mob-panel-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 700; font-size: 13px; color: #fff;">Elena Sommer</span>
+                <span style="font-size: 10px; background: rgba(56,189,248,0.1); color: var(--cyan); padding: 2px 6px; border-radius: 4px;">Benutzer</span>
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted);">elena.sommer@example.test</div>
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 11px;">
+                <span class="rep-dot"></span>
+                <span>Aktiv • Vor 22 Minuten</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. GESTALTERISCHE RATIONALE & SUBJEKTIVER FAVORIT (Außerhalb der Produkt-UI) -->
+    <section class="board-evaluation-card">
+      <div class="eval-badge">&amp;star; Fachliche Begründung &amp; Designempfehlung</div>
+
+      <div class="eval-grid">
+        <div class="eval-col">
+          <h3 class="eval-h3">1. Warum frühere Weltraum-Hintergründe zu hell wirkten</h3>
+          <p class="eval-txt">
+            In vorherigen Entwurfsphasen wurden großflächige Radial-Gradients mit hohen Helligkeitswerten (#1e293b, #38bdf8 oder weißliche Haze-Mischungen mit &gt;25% Opazität) verwendet. Dies führte zu zwei Problemen: Erstens trat ein starker Kontrastverlust bei dunklen Textfeldern und subtilen Rändern (#1e293b) auf; zweitens flimmerte der helle Sternenhimmel optisch hinter den Formular-Panels hervor.
+          </p>
+        </div>
+
+        <div class="eval-col">
+          <h3 class="eval-h3">2. Die Lösung durch das strikte #050811-Fundament</h3>
+          <p class="eval-txt">
+            Durch das Verankern jedes Gradienten-Stacks auf <code>#050811</code> bleibt das gesamte Portal im tiefsten Dämmerbereich. Alle Farbtöne (Navy, Violett, Teal, Amber) sind in extrem niedrigen Deckungsgraden (meist 8 % bis max. 25 %) gehalten. Sie erzeugen eine wahrnehmbare Räumlichkeit am Rand des Sichtfelds, ohne das Auge beim Lesen tabellarischer Daten zu ermüden.
+          </p>
+        </div>
+
+        <div class="eval-col">
+          <h3 class="eval-h3">3. Subjektiver Favorit: Variante .bg-01 &amp; .bg-04</h3>
+          <p class="eval-txt">
+            <strong>Für administrative Tabellen (Admin &amp; Einstellungen):</strong> Variante <strong>.bg-01 (Deep Navy Dust)</strong> ist der Favorit. Sie liefert die perfekte Brücke zwischen technischer Sachlichkeit und dezentem Weltraumgefühl.<br><br>
+            <strong>Für Startseite &amp; Besucherbereich:</strong> Variante <strong>.bg-04 (Eclipse Rim)</strong> fängt den kosmischen Charakter der ursprünglichen Planetenentwürfe ein, bleibt aber durch die reine CSS-Konstruktion 100 % performant und blendfrei.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="board-footer">
+      <div>© 2026 Cosmos Design System • 12 Statische CSS-Hintergrundvarianten Review Board • Desktop 1480px</div>
+      <div style="margin-top: 4px;">Alle CSS-Properties sind vollständig eigenständig und ohne zusätzliche HTML-Elemente oder Pseudoelemente wiederverwendbar.</div>
+    </footer>
+
+  </div>
+
+</body>
+</html>

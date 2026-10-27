@@ -2,6 +2,54 @@
 
 ## Auftrag und aktueller Stand
 
+## Aktuelle gemeinsame Sichtung
+
+Die sofort beauftragte Nachtrunde hat zusätzliche [Administrationsentwürfe A/B](../design/frontend-referenzen/admin-entwuerfe.html),
+die Logo-/Hintergrundwahl in allen drei äußeren Referenzviewern und eine
+[Vaadin-Machbarkeitsstudie](../design/frontend-referenzen/quellen/vaadin-studie/README.md) geliefert.
+Quellinventar: acht Konfigurationsgruppen mit 30 Feldern, tatsächliche Mail- und
+Nachrichtenfelder samt Rechten/Zuständen. Quellen und bereinigte Stitch-Boards
+liegen unter den Frontend-Referenzen; der frühere Inspirationsordner bleibt entfernt.
+
+Die Konfiguration A mit acht Gruppen und 30 Feldern ist einschließlich des
+abgestimmten rechten Hilfeoverlays C in die feste Adminreferenz übernommen.
+Auch der abgestimmte Mailtest A ist übernommen: Originaltexte, Klartext-Hinweis,
+globale Notifications mit Feldmarkierung und SMTP-Konfigurationszugang ohne Pfeil.
+Auch Dashboard A ist nach gemeinsamer Durchsicht als Einstieg der festen
+Adminreferenz übernommen: dunkles eingebettetes Bildmotiv, Orientierung, Ausblick
+und Schnellzugriffe mit Logo K und Referenzicons, ohne Statistik. Benachrichtigungen B
+ist nach gemeinsamer Durchsicht ebenfalls übernommen. Seitennavigation, Bereichsauswahl
+und Dashboard-Schnellzugriff öffnen den Versand innerhalb derselben Referenz.
+Dashboard, Benutzerverwaltung, Konfiguration, Mailtest und Benachrichtigungen sind
+gemeinsam erreichbar; Anwendung und Vaadin-Theme bleiben unverändert.
+
+Die Adminvorschau heißt `admin.html`, die eigenständige Oberfläche
+`admin-inhalt.html`; der Einstieg ohne Fragment ist das Dashboard. Die frühere
+Datei `admin-users.html` ist entsprechend umbenannt. Frontend und Administration
+verwenden bei der Pagination nun dieselbe gestaltete Seitengrößenauswahl mit
+Popover statt des nativen Browsermenüs.
+
+Der abgestimmte Versandbereich enthält Empfängerauswahl, Vorschau mit runden
+Avataren unter dem Nachrichteninhalt, globale Fehlermeldungen und eigene Historie.
+Die Historie nutzt Glockenicons, durchgehende Trennlinien, „Details“ und die
+Frontend-Pagination. Aufgeklappt erscheinen „Nachrichteninhalt“, Nachrichtentext
+und die ausdrücklich nur gestalterische untere Zeile. Die ursprünglichen Stitch-
+Boards und die zusätzliche HTML-Sichtung bleiben erhalten.
+
+Offen ist die gemeinsame Durchsicht und Auswahl:
+
+1. Logo A–O und aktuelle Referenz plus zwölf dunkle CSS-Hintergründe bewerten.
+   Die äußeren Dropdowns sind umgesetzt; die endgültige Auswahl bleibt offen.
+2. Anhand der Studie den Umfang eines gesonderten Vaadin-Piloten abstimmen.
+   Ein isoliertes Java-Beispiel für Login/Registrierung ist kompiliert; eine
+   gerenderte Vaadin-Vorschau und die Übernahme in echte Kontoflüsse stehen aus.
+
+Browserfreigabe für diese Nachtrunde: alle neuen HTML-Entwürfe sowie Logo- und
+Hintergrundwahl auf Desktop und Smartphone. Kein Anwendungsstart, keine echten
+Kontoaktionen, kein Mailversand und kein Datenbankeingriff. Keine weitere Git-
+Aktion beauftragt; Zwischenstand nach `cec4e4f` bleibt zur Sichtung uncommittiert.
+`docs/status.md` bleibt der letzte Gesamt-QA-Stand. Keine eigenmächtige Designabnahme.
+
 **Kandidat K zur Sichtung in den Referenzen:** Der Benutzer lässt K „Pulsar-Nova“
 im Besucherportal, angemeldeten Portal und der Benutzerverwaltung einsetzen und
 optisch vergrößern. Das Zeichen nutzt am Desktop 40 px sichtbare SVG-Größe innerhalb
@@ -1692,8 +1740,8 @@ Paket 3 und das Gesamtfeature sind damit noch nicht abgeschlossen.
 
 **Abgenommen: Benutzerverwaltung, überarbeitete Variante 2.** Die maßgebliche
 HTML-Referenz liegt gemeinsam mit Portal und Besucherbereich unter
-`docs/design/frontend-referenzen/`: `admin-users.html` als Vorschau und
-`admin.html` als eigenständige Oberfläche. Aktuelle bearbeitbare Quellen unter
+`docs/design/frontend-referenzen/`: `admin.html` als Vorschau und
+`admin-inhalt.html` als eigenständige Oberfläche. Aktuelle bearbeitbare Quellen unter
 `quellen/benutzerverwaltung/` sind unabhängig von target gesichert. Die vorherige
 Inspirationsablage mit alternativen Varianten und A/B-Steuerung ist auf Benutzerwunsch
 entfernt. Die Gestaltung der beiden anderen Referenzen bleibt erhalten; die Vorschauen

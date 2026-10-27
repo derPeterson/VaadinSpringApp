@@ -10,12 +10,96 @@ entfernt. Sie gehören zur Git-versionierbaren Projektdokumentation.
 | --- | --- | --- |
 | Angemeldete Benutzer | [Referenz öffnen](index.html) | [Portal](portal.html) |
 | Nicht angemeldete Benutzer | [Referenz öffnen](visitors.html) | [Besucherportal](public.html) |
-| Admin · Benutzerverwaltung | [Referenz öffnen](admin-users.html) | [Benutzerverwaltung](admin.html) |
+| Administration · Dashboard, Benutzerverwaltung, Konfiguration, Mailtest und Benachrichtigungen | [Referenz öffnen](admin.html) | [Administration](admin-inhalt.html) |
+
+`admin.html` ist die Vorschau mit Steuerung und startet ohne Seitenfragment immer
+mit dem Dashboard. `admin-inhalt.html` ist die eigenständige Oberfläche. Die
+frühere Datei `admin-users.html` wurde umbenannt; es gibt keine zweite Altversion.
+
+Die feste Adminreferenz enthält alle abgestimmten Bereiche: Dashboard A,
+Benutzerverwaltung, Konfiguration, Mailtest A und Benachrichtigungen B. Der interne
+Versand ist über Seitennavigation, Bereichsauswahl und Dashboard-Schnellzugriff
+innerhalb derselben Referenz erreichbar. Empfängerauswahl, Vorschau und eigene
+Versandhistorie bleiben synthetisch; es werden keine Nachrichten oder E-Mails versendet.
+Die [zusätzliche Adminsichtung](admin-entwuerfe.html) und gesicherten Stitch-Originale
+bleiben zum Vergleich erhalten. Die Konfiguration ist
+mit Originaltexten, Einstellungsbadges sowie den Paneloberflächen der persönlichen
+Daten abgeglichen. [Inhalt, Varianten und Quellinventar](quellen/admin-entwuerfe/README.md)
+erläutern die Unterschiede zur bestehenden Anwendung.
+Für das Dashboard liegen inzwischen [neue Stitch-Originalvorschläge ohne Statistik](quellen/admin-entwuerfe/README.md#varianten)
+mit dunklem Bildmotiv, kurzem Orientierungstext und Schnellzugriffen vor.
+Variante A ist als Einstieg der [Adminreferenz](admin.html#dashboard)
+mit Logo K, Referenzicons und bedienbaren Schnellzugriffen übernommen. Auch
+Benachrichtigungen öffnen jetzt direkt innerhalb der Adminreferenz.
+Der Mailtest zeigt die gewählte kompakte Variante A mit Anwendungstexten,
+einem Klartext-Hinweis unter der Nachricht, globalen Fehlermeldungen mit Feldmarkierung
+und einem SMTP-Hinweis samt Konfigurationszugang ohne Pfeil
+über der Buttonzeile. Er ist über die Bereichsauswahl und die Seitennavigation der Adminreferenz erreichbar; es erfolgt kein echter Mailversand.
+
+Für die Feldhinweise zeigt der [Originalvergleich](konfiguration-hilfe-originale.html)
+die drei unveränderten Stitch-Entwurfsboards mit Auswahl und Zoom. Die
+[bedienbaren Referenz-Nachbauten](konfiguration-hilfe-vorschlaege.html) sind separat
+gekennzeichnet: Sie interpretieren die Ideen und geben das Originaldesign nicht
+unverändert wieder. Zur Designauswahl zuerst die Originale vergleichen.
+Die freigegebene Konfiguration verwendet C als rechte Hilfeseitenleiste:
+Infoicon öffnet den Originalhilfetext als Overlay, ohne die Eingabefelder zu verschieben.
+X, Schließen, Escape oder Außenklick schließen die Leiste. Der Inhalt zeigt die
+vollständigen Hilfen, kompakte Platzhalterchips, Standardwert und Eingaberegeln.
+Checkboxen, Pflichtpunkte und blaue Zahlenpfeile entsprechen dem abgestimmten Stand.
+Die [separate Komponentenansicht](konfiguration-seitenleiste.html) bleibt zum Vergleich erhalten.
+Die Panelicons und die getrennte Hinweiszeile über
+den Aktionen sind bereits an persönliche Daten beziehungsweise Geräte angeglichen.
+
+Die Eintragsauswahl der Pagination verwendet im Frontend, in der Benutzerverwaltung
+und in der Versandhistorie dasselbe gestaltete Popover. Auswahl per Maus/Tap und
+Tastatur, Escape, Außenklick und erneutes Anklicken sind bedienbar; bei einem
+Bereichswechsel schließt das Menü. Die ursprünglichen Seitengrößen und bestehenden
+Seitenwechsel bleiben erhalten. Gemeinsame Quellen: `quellen/pagination.js`,
+`quellen/pagination.css` und `quellen/pagination.py`. Zum Aktualisieren zuerst
+`pagination.py`, anschließend `quellen/admin-entwuerfe/build.py` ausführen; die
+Sicherung wird inline eingebettet und benötigt keine externen Ressourcen.
+
+Alle drei äußeren Referenzvorschauen enthalten zwei Auswahllisten:
+**Service-Logo A–O** und **Hintergrund** mit aktueller Referenz plus zwölf dunklen
+CSS-Varianten. Die Auswahl verändert die vorhandene Oberfläche zur Laufzeit,
+ohne sie neu zu laden oder zusätzliche Oberflächenkopien anzulegen. Die alte
+Zweifachauswahl „Stitch · dezent / Kosmos · abgedunkelt“ ist dadurch ersetzt.
+Standalone bleiben K und der bisherige Hintergrund voreingestellt.
+Die Auswahl ist nur eine lokale Sichtung und wird nicht gespeichert.
 
 Eine der drei Vorschauseiten im Browser öffnen. Die Vorschauen sind gegenseitig
-verlinkt. Für die Steuerung und Navigation alle sechs HTML-Dateien im selben Ordner
+verlinkt. Für die gesamte Navigation einschließlich der Zusatzentwürfe alle dreizehn HTML-Dateien im selben Ordner
 belassen. Die drei Oberflächendateien lassen sich auch einzeln öffnen; die äußere Steuerung
 ergänzt Bildschirmgrößen, Beispieldaten und bei Besuchern die Seiten-/Zustandswahl.
+
+Die [Vaadin-Machbarkeitsstudie](quellen/vaadin-studie/README.md) ordnet die neun
+Besucherszenen bestehenden Flow-Komponenten zu. Das isolierte Java-Beispiel für
+Anmeldung/Registrierung ist kompiliert, aber ohne Route oder laufende Vaadin-Vorschau.
+Es verändert die Anwendung nicht und beweist noch keine pixelgleiche Darstellung.
+
+## Logo- und Hintergrundsichtung
+
+`quellen/erscheinungsbild.py` bettet die unveränderten gespeicherten SVG-Kandidaten
+mit getrennten Verlaufs-IDs in eine inerte Bibliothek ein. Der Empfänger akzeptiert
+nur bekannte Auswahl-IDs vom eigenen Elternfenster mit passender Origin; SVG oder
+CSS werden niemals aus Nachrichten übernommen. `sandbox="allow-scripts"` bleibt
+unverändert. Die Standardzeichen der eigenständigen Oberflächen ändern sich nicht.
+
+`quellen/hintergruende.json` enthält die zwölf tatsächlich von Stitch gelieferten
+CSS-Gradienten samt nötiger Hintergrundgrößen. Die Werte stammen aus dem unabhängig
+erneut abgerufenen [Originalboard](quellen/admin-entwuerfe/stitch/backgrounds.html).
+Sie ersetzen ausschließlich die dekorative Hintergrundebene; Panels, Eingaben,
+Buttons und Textfarben bleiben bei ihren Referenzwerten. Keine Bilder, Animationen
+oder CDNs. Stitch bevorzugt subjektiv 01 Marineblaue Staubwolke und 04 Finsternis-Saum.
+Für eine besonders ruhige Oberfläche eignen sich auch 09 Tintenblaue Vignette oder
+12 Kosmisches Anthrazit. Eine endgültige Auswahl steht aus.
+
+Nach gezielten Änderungen an den gespeicherten Referenzen `erscheinungsbild.py`
+erneut ausführen, danach bei Bedarf `quellen/admin-entwuerfe/build.py`. Der
+Benutzerverwaltungsbuilder ruft die Erscheinungsbildeinbettung selbst auf.
+Beide neuen HTML-Entwürfe und alle Quell-/Stitch-Dateien liegen außerhalb von
+`target/` und bleiben bei einem Clean erhalten. Zum Betrachten genügt ein
+Browser-Refresh; Anwendungsbuild und Neustart sind dafür nicht nötig.
 
 ## Inhalt und Grenzen
 
@@ -70,9 +154,9 @@ ergänzt Bildschirmgrößen, Beispieldaten und bei Besuchern die Seiten-/Zustand
   Im Anlegen-/Bearbeiten-Dialog liegt die Gruppentrennung oberhalb des gesamten
   Rollenblocks; seine Beschriftung steht mit normalem Labelabstand bei den Checkboxen.
   Die Admin-Sidenav entspricht dem Portal; Startseite und Glocke führen in dieselbe
-  gesicherte Portalreferenz. Dashboard, Konfiguration, Mailtest und Nachrichtenversand
-  sind hier noch deaktiviert und separat auszuarbeiten. Nur die Benutzerverwaltung
-  ist damit als Adminreferenz abgenommen.
+  gesicherte Portalreferenz. Dashboard A, Benutzerverwaltung, Konfiguration und
+  Mailtest und interne Benachrichtigungen sind abgenommen und gemeinsam erreichbar.
+  Der Dashboard-Schnellzugriff bleibt innerhalb der festen Referenz.
 - Standardaktionen in Dialogen: „Abbrechen“ verwendet das schlichte X wie bei
   E-Mail-/Passwortänderung; „Schließen“ im Dialogkopf bleibt das X im Kreis.
 - Benutzerlöschung und Entfernen von Benachrichtigungen verwenden denselben
@@ -173,8 +257,8 @@ Auswahl- und Statusmarkierungen bleiben erhalten.
 
 Die Benutzerverwaltung ist unter `quellen/benutzerverwaltung/` mit eigenständiger
 Ausgangsbasis, Drawer-CSS/-Controller, Viewervorlage und Generator gesichert.
-`build.py` benötigt Python mit lxml und erzeugt ausschließlich `admin.html` und
-`admin-users.html`; eine vorhandene lokale Vorschau wird mit aktualisiert.
+`build.py` benötigt Python mit lxml und erzeugt ausschließlich `admin-inhalt.html` und
+`admin.html`; eine vorhandene lokale Vorschau wird mit aktualisiert.
 Der Neubau benötigt weder den früheren Inspirationsordner noch Dateien unter target.
 Das Kopfzeichen wird aus `../service-logo/logo-k.svg` über `quellen/service_logo.py`
 eingebettet. Nach Änderung des Zeichens zuerst diesen Helfer, danach den

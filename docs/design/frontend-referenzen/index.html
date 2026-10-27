@@ -22,17 +22,16 @@
 </head>
 <body data-size="auto">
   <div class="preview-toolbar" aria-label="Steuerung der Gestaltungsvorschau">
-    <div><h1 class="preview-title">Cosmos · Portalprototyp</h1><a id="visitor-preview-link" href="visitors.html" style="font-size:12px;color:#38bdf8">Besucherbereich ansehen</a> · <a id="admin-preview-link" href="admin-users.html" style="font-size:12px;color:#38bdf8">Benutzerverwaltung ansehen</a><p class="preview-note">Gestaltungsvorschau mit erfundenen Daten. Alle Aktionen sind lokal simuliert; keine echten Zugangsdaten eingeben.</p></div>
-    <fieldset><legend>Hintergrund</legend><label><input type="radio" name="background" value="stitch" checked>Stitch · dezent</label><label><input type="radio" name="background" value="cosmos">Kosmos · abgedunkelt</label></fieldset>
+    <div><h1 class="preview-title">Cosmos · Portalprototyp</h1><a id="visitor-preview-link" href="visitors.html" style="font-size:12px;color:#38bdf8">Besucherbereich ansehen</a> · <a id="admin-preview-link" href="admin.html" style="font-size:12px;color:#38bdf8">Benutzerverwaltung ansehen</a><p class="preview-note">Gestaltungsvorschau mit erfundenen Daten. Alle Aktionen sind lokal simuliert; keine echten Zugangsdaten eingeben.</p></div>
     <fieldset><legend>Beispieldaten</legend><label><input type="radio" name="identity" value="short" checked>Kurze Namen</label><label><input type="radio" name="identity" value="long">Lange Namen</label></fieldset>
     <fieldset><legend>Ansicht</legend><label><input type="radio" name="size" value="auto" checked>Fensterbreite</label><label><input type="radio" name="size" value="desktop">Desktop</label><label><input type="radio" name="size" value="phone">Smartphone</label><label><input type="radio" name="size" value="landscape">Smartphone quer</label></fieldset>
     <p class="preview-note">Zum Prüfen: Sprache und Kalender öffnen; Avatar der Benutzerkarte und Benutzermenü im Header anklicken. Startseite, Benachrichtigungen, persönliche Daten, Sicherheit und Geräte sind jetzt klickbar.</p>
-  </div>
-  <div class="preview-stage"><iframe class="preview-viewport" id="account-preview" title="Benutzerportal – Gestaltungsvorschau" src="portal.html?rev=11251dd3f7c9" sandbox="allow-scripts"></iframe></div>
+  <div id="preview-appearance-controls" class="preview-appearance-controls"><label>Service-Logo <select id="preview-logo"><option value="a">A · Orbitale Rosette</option><option value="b">B · Stern und Umlaufbahn</option><option value="c">C · Abstraktes Portal</option><option value="d">D · Farbige Blüte</option><option value="e">E · Geschwungene Flügel</option><option value="f">F · Vierfarbiger Ring</option><option value="g">G · Verschränkte Formen</option><option value="h">H · Prisma</option><option value="i">I · Offener Orbit</option><option value="j">J · Orbital-Korona</option><option value="k" selected>K · Pulsar-Nova</option><option value="l">L · Nebula-Vortex</option><option value="m">M · Korona-Finsternis</option><option value="n">N · Astro-Sextant</option><option value="o">O · Kometen-Drift</option></select></label><label>Hintergrund <select id="preview-background"><option value="reference">Aktuelle Referenz</option><option value="bg-01">01 · Marineblaue Staubwolke</option><option value="bg-02">02 · Stiller Violettnebel</option><option value="bg-03">03 · Türkiser Rand</option><option value="bg-04">04 · Finsternis-Saum</option><option value="bg-05">05 · Sparsames Sternfeld</option><option value="bg-06">06 · Fernes Sternenband</option><option value="bg-07">07 · Gedämpfter Bernstein</option><option value="bg-08">08 · Kühler Doppelorbit</option><option value="bg-09">09 · Tintenblaue Vignette</option><option value="bg-10">10 · Ferne Magentawolke</option><option value="bg-11">11 · Mitternachtspunkte</option><option value="bg-12">12 · Kosmisches Anthrazit</option></select></label><a href="admin-entwuerfe.html">Weitere Adminentwürfe A/B</a></div></div>
+  <div class="preview-stage"><iframe class="preview-viewport" id="account-preview" title="Benutzerportal – Gestaltungsvorschau" src="portal.html?rev=cfb6a20ed5a3" sandbox="allow-scripts"></iframe></div>
   <script nonce="cosmos-viewer">
     (() => {
       const frame = document.getElementById('account-preview');
-      const send = () => frame.contentWindow.postMessage({type:'cosmos-preview',background:document.querySelector('[name="background"]:checked').value,identity:document.querySelector('[name="identity"]:checked').value},'*');
+      const send = () => frame.contentWindow.postMessage({type:'cosmos-preview',identity:document.querySelector('[name="identity"]:checked').value},'*');
       document.querySelectorAll('input').forEach(input => input.addEventListener('change', () => {
         document.body.dataset.size = document.querySelector('[name="size"]:checked').value;
         send();
@@ -40,5 +39,20 @@
       frame.addEventListener('load',send);
     })();
   </script>
-</body>
+<!-- appearance:start --><style>.preview-appearance-controls{display:flex;flex-wrap:wrap;gap:12px 24px;width:100%}.preview-appearance-controls label{max-width:100%;flex-wrap:wrap}.preview-appearance-controls select{background:#091120;color:#e2e8f0;border:1px solid #ffffff26;border-radius:6px;padding:7px;max-width:100%;font:inherit}body[data-size=auto] .preview-viewport{box-sizing:border-box;height:calc(100dvh - var(--preview-toolbar-height,220px) - 40px);min-height:360px}</style><script nonce="cosmos-viewer" id="preview-appearance-sender">(() => {
+  const frame = document.getElementById('account-preview');
+  const logo = document.getElementById('preview-logo');
+  const background = document.getElementById('preview-background');
+  const send = () => frame.contentWindow.postMessage({
+    type: 'cosmos-appearance', logo: logo.value, background: background.value
+  }, '*');
+  logo.addEventListener('change', send);
+  background.addEventListener('change', send);
+  frame.addEventListener('load', send);
+  const toolbar = document.querySelector('.preview-toolbar');
+  new ResizeObserver(() => document.body.style.setProperty(
+    '--preview-toolbar-height', `${toolbar.getBoundingClientRect().height}px`
+  )).observe(toolbar);
+})();
+</script><!-- appearance:end --></body>
 </html>

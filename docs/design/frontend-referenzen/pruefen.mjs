@@ -4,7 +4,7 @@ import {readFileSync, existsSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import vm from 'node:vm';
 
-const files = ['index.html', 'portal.html', 'public.html', 'visitors.html', 'admin.html', 'admin-users.html'];
+const files = ['index.html', 'portal.html', 'public.html', 'visitors.html', 'admin-inhalt.html', 'admin.html', 'admin-entwurf.html', 'admin-entwuerfe.html', 'konfiguration-hilfe.html', 'konfiguration-hilfe-vorschlaege.html', 'konfiguration-hilfe-originale.html', 'konfiguration-seitenleiste.html', 'konfiguration-seitenleiste-inhalt.html'];
 const scriptsByFile = new Map();
 let scriptCount = 0;
 for (const file of files) {
@@ -69,12 +69,96 @@ for (const file of files) {
   }
 }
 
-const adminSource = readFileSync(new URL('admin.html', import.meta.url), 'utf8');
+const adminSource = readFileSync(new URL('admin-inhalt.html', import.meta.url), 'utf8');
+const appearanceCode = scriptsByFile.get('portal.html').find(code => code.includes('preview-logo-library'));
+assert(appearanceCode, 'Vorschau-Empfänger fehlt');
+for (const file of ['public.html','admin-inhalt.html']) {
+  assert.equal(scriptsByFile.get(file).find(code => code.includes('preview-logo-library')), appearanceCode, `${file}: abweichende Erscheinungsbildsteuerung`);
+}
+const backgrounds = JSON.parse(readFileSync(new URL('quellen/hintergruende.json', import.meta.url), 'utf8'));
+assert.equal(backgrounds.length,12,'Zwölf neue Hintergründe erwartet');
+for (const protocol of ['http:','file:']) {
+  let handler, logo='k';
+  const body={dataset:{}};
+  const parent={};
+  const origin=protocol==='file:'?'null':'http://127.0.0.1:60825';
+  const window={parent,addEventListener(type,listener){assert.equal(type,'message');handler=listener;}};
+  const document={body,getElementById(id){
+    if(id==='preview-sky'){return {dataset:{allowed:'reference,'+backgrounds.map(item=>item.id).join(',')}};}
+    assert.equal(id,'preview-logo-library');
+    return {content:{querySelector(selector){const id=selector.match(/="([a-o])"/)?.[1];return id?{cloneNode(){return {id};}}:null;}}};
+  },querySelector(selector){assert.equal(selector,'header [data-service-logo]');return {dataset:{serviceLogo:logo},replaceWith(next){logo=next.id;}};}};
+  new vm.Script(appearanceCode).runInNewContext({window,document,location:{protocol,origin}});
+  const send=(data,source=parent,senderOrigin=origin)=>handler({source,origin:senderOrigin,data});
+  for(const id of 'abcdefghijklmno'){send({type:'cosmos-appearance',logo:id});assert.equal(logo,id);}
+  for(const id of ['reference',...backgrounds.map(item=>item.id)]){send({type:'cosmos-appearance',background:id});assert.equal(body.dataset.previewBackground,id);}
+  const previous={logo,background:body.dataset.previewBackground};
+  for(const [data,source,senderOrigin] of [
+    [{type:'cosmos-appearance',logo:'a',background:'reference'},{},origin],
+    [{type:'cosmos-appearance',logo:'a',background:'reference'},parent,'https://untrusted.example.test'],
+    [{type:'untrusted',logo:'a',background:'reference'},parent,origin],
+    [{type:'cosmos-appearance',logo:'<svg onload=alert(1)>',background:'unknown'},parent,origin],
+  ]){send(data,source,senderOrigin);assert.equal(logo,previous.logo);assert.equal(body.dataset.previewBackground,previous.background);}
+  if(protocol==='http:'){send({type:'cosmos-appearance',logo:'a'},parent,'null');assert.equal(logo,previous.logo);}
+  window.parent=window;send({type:'cosmos-appearance',logo:'a'},window);assert.equal(logo,previous.logo,'Eigenständige Oberfläche darf keine Auswahl übernehmen');
+}
+console.log('Erscheinungsbild: alle 15 Logos und 13 Hintergründe sowie fremde Absender, Origin, Nachrichtentyp und ungültige Werte für HTTP/Dateien geprüft.');
+// Verspätete Frame-Antworten dürfen eine gerade getroffene Auswahl nicht zurücksetzen.
+const draftViewerCode=scriptsByFile.get('admin-entwuerfe.html').find(code=>code.includes('latestRequest'));
+assert(draftViewerCode,'Steuerung der Adminentwürfe fehlt');
+const referenceViewerCode=scriptsByFile.get('admin.html').find(code=>code.includes('latestRequest'));
+assert(referenceViewerCode,'Steuerung der Adminreferenz fehlt');
+for(const [viewerCode,initialRoute] of [draftViewerCode,referenceViewerCode].flatMap(code=>[[code,'dashboard'],[code,'mail']])){
+  const callbacks=new Map(),messages=[];
+  const element=(value,values=[])=>({value,options:values.map(value=>({value})),events:{},addEventListener(name,handler){this.events[name]=handler;}});
+  const page=element('dashboard',['dashboard','users','settings:SMTP','send','mail']);
+  const variant=element('a'),state=element('ready',['ready','empty','unavailable','preview-valid','permission-denied']);
+  const child={postMessage(message){messages.push(message);}};
+  const frame={contentWindow:child,hasAttribute(name){return name==='sandbox';},events:{},addEventListener(name,handler){this.events[name]=handler;}};
+  const elements={'account-preview':frame,'ad-page':page,'ad-variant':variant,'ad-state':state};
+  const viewerLocation={origin:'http://127.0.0.1:60825',hash:initialRoute==='dashboard'?'':'#mail'};
+  new vm.Script(viewerCode).runInNewContext({document:{getElementById:id=>elements[id]},location:viewerLocation,window:{addEventListener:(name,handler)=>callbacks.set(name,handler)}});
+  assert.equal(page.value,initialRoute,'Ohne Fragment muss das Dashboard starten; ein Direktlink darf einen anderen Bereich vormerken');
+  callbacks.get('message')({source:child,origin:'null',data:{type:'cosmos-admin-proposal-route',requestId:0,route:'dashboard',state:'ready'}});
+  assert.equal(page.value,initialRoute,'Die Startmeldung des Frames darf den Einstieg nicht überschreiben');
+  frame.events.load();
+  assert.equal(messages[0].route,initialRoute,'Der erste Auftrag muss den gewählten Einstieg öffnen');
+  assert.equal(variant.disabled,true,'Gewähltes Mailtest-Layout A bleibt gesperrt');
+  assert.equal(messages[0].variant,'a','Mailtest verwendet die gewählte kompakte Variante A');
+  page.value='send';page.events.change();variant.value='b';variant.events.change();
+  assert.equal(messages[1].variant,'b','Der Benachrichtigungsentwurf muss direkt Variante B zeigen');
+  assert.equal(variant.disabled,true,'Die gewählte Benachrichtigungsvariante darf nicht zur alten A-Ansicht wechseln');
+  assert.deepEqual(messages.map(item=>item.requestId),[1,2,3]);
+  const reply=(requestId,route,source=child,origin='null',group='GENERAL')=>callbacks.get('message')({source,origin,data:{type:'cosmos-admin-proposal-route',requestId,route,group,state:'ready'}});
+  reply(0,'dashboard');reply(1,'dashboard');reply(2,'mail');
+  assert.equal(page.value,'send','Verspätete Antwort hat den Bereich überschrieben');
+  reply(3,'send');assert.equal(page.value,'send');assert.equal(variant.value,'b');
+  reply(3,'mail',{});reply(3,'mail',child,'https://untrusted.example.test');assert.equal(page.value,'send');
+  reply(null,'settings',child,'null','SMTP');assert.equal(page.value,'settings:SMTP','Navigation aus dem eigenen Frame muss weiter funktionieren');
+  assert.equal(variant.value,'a','Konfiguration verwendet die ausgewählte Variante A');
+  assert.equal(variant.disabled,true,'Die Layoutauswahl bleibt für die ausgewählte Konfiguration gesperrt');
+  page.value='dashboard';variant.value='b';state.value='unavailable';page.events.change();
+  assert.equal(variant.value,'a','Der gewählte Dashboardentwurf muss nach einem Bereichswechsel A zeigen');
+  assert.equal(variant.disabled,true,'Der Dashboardentwurf bietet keine alte Statistikvariante an');
+  assert.equal(state.value,'ready','Das statische Dashboard darf keinen erfundenen Datenabrufzustand behalten');
+  assert.equal(state.options.find(option=>option.value==='unavailable').hidden,true,'Der Dashboardplatzhalter benötigt keinen Abrufzustand');
+  assert(!viewerCode.includes('cosmos-admin-open-draft'),'Die Adminreferenz darf den Versand nicht mehr in einen separaten Entwurf umleiten');
+}
+console.log('Adminviewer: schnelle Auswahl, veraltete Antworten, fremde Absender und interne Navigation geprüft.');
 assert(adminSource.includes('data-admin-reference="users"'), 'Freigegebene Benutzerverwaltung fehlt');
+assert(adminSource.includes('data-admin-config-approved'), 'Freigegebene Konfiguration fehlt in der Adminreferenz');
+assert(adminSource.includes('data-admin-dashboard-approved'), 'Freigegebenes Dashboard fehlt in der Adminreferenz');
+assert(adminSource.includes('data-admin-notifications-approved'), 'Freigegebener Benachrichtigungsversand fehlt in der Adminreferenz');
+assert(readFileSync(new URL('admin.html',import.meta.url),'utf8').includes('<option value="send">'), 'Benachrichtigungen fehlen in der Bereichsauswahl der Referenz');
 assert(!adminSource.includes('window.AdminComparison'), 'Alte Vergleichssteuerung in der festen Referenz');
+assert(!existsSync(new URL('admin-users.html',import.meta.url)), 'Der alte Adminviewer darf nach der Umbenennung nicht erhalten bleiben');
+assert(readFileSync(new URL('admin.html',import.meta.url),'utf8').includes('admin-inhalt.html?rev='), 'Adminviewer muss seine eigenständige Oberfläche einbetten');
+for(const name of ['portal.html','admin-inhalt.html','admin-entwurf.html']){
+  assert(scriptsByFile.get(name).some(code=>code.includes('ref-pagination-options')), `${name}: gemeinsame Pagination-Auswahl fehlt`);
+}
 assert(!adminSource.includes('id="activeFilters"'), 'Entfernte Filterzeile wieder vorhanden');
 // Den ausgelieferten Filter gegen unabhängige Beispieldaten und Ergebnismengen prüfen.
-const visibleUsersCode = scriptsByFile.get('admin.html').find(code => code.includes('const visibleUsers = () =>'))
+const visibleUsersCode = scriptsByFile.get('admin-inhalt.html').find(code => code.includes('const visibleUsers = () =>'))
   ?.match(/  const visibleUsers = \(\) => \{[\s\S]*?\n  \};/)?.[0];
 assert(visibleUsersCode, 'Benutzerfilter fehlt');
 const filterUsers = [

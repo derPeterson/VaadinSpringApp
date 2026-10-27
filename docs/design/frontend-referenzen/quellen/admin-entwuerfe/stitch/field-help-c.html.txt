@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Entwurf 3 von 3 - Variante C: Geteiltes kontextuelles Hilfspanel (Field Guide)</title>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cosmic: {
+              950: '#03060c',
+              900: '#050811',
+              850: '#080e1b',
+              800: '#0c1424',
+              750: '#0f1a30',
+              700: '#14213d',
+              border: '#172744',
+              hoverBorder: '#203a66',
+              cyan: '#38bdf8',
+              cyanGlow: 'rgba(56, 189, 248, 0.15)',
+              primary: '#0284c7',
+              primaryHover: '#0369a1',
+              textMain: '#f1f5f9',
+              textMuted: '#94a3b8',
+              textDim: '#64748b'
+            }
+          },
+          fontFamily: {
+            sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Design Styles -->
+<style data-purpose="custom-decorations">
+    /* Subtle outer planet gradient matching reference snapshot */
+    .bg-space-radial {
+      background-color: #050811;
+      background-image:
+        radial-gradient(circle at 85% 75%, rgba(14, 38, 77, 0.45) 0%, rgba(5, 8, 17, 0) 55%),
+        radial-gradient(circle at 10% 20%, rgba(12, 28, 56, 0.25) 0%, rgba(5, 8, 17, 0) 40%);
+    }
+
+    /* Subtle custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080e1b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+<!-- END: Custom Design Styles -->
+</head>
+<body class="bg-cosmic-950 text-cosmic-textMain font-sans antialiased selection:bg-cosmic-cyan selection:text-cosmic-950">
+<!-- BEGIN: ReviewHeader -->
+<!-- Contextual UX Audit & Variant Presentation Header outside the actual product canvas -->
+<aside class="border-b border-cosmic-border bg-[#030712] py-4 px-6 md:px-10" data-purpose="ux-review-banner">
+<div class="max-w-[1440px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wider bg-sky-950/80 text-cosmic-cyan border border-sky-800">
+          Entwurf 3 von 3
+        </span>
+<h1 class="text-sm md:text-base font-bold text-white tracking-wide">
+          Variante C: Geteiltes kontextuelles Hilfspanel <span class="text-cosmic-cyan">(Split Contextual Inspector / Active Field Guide)</span>
+</h1>
+</div>
+<div class="flex items-center gap-2 text-xs text-cosmic-textMuted">
+<span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+<span>Simulierter Live-Fokus: <strong>Copyright Text</strong> ist aktiv selektiert</span>
+</div>
+</div>
+</aside>
+<!-- END: ReviewHeader -->
+<!-- BEGIN: MainApplicationCanvas -->
+<!-- 1440px Desktop Viewport exact replica of Cosmos Admin -->
+<div class="min-h-screen bg-space-radial flex flex-col justify-between" data-purpose="viewport-container">
+<!-- Top Global Navigation Header -->
+<header class="h-16 border-b border-cosmic-border bg-cosmic-900/90 backdrop-blur-md px-8 flex items-center justify-between z-30 sticky top-0">
+<div class="flex items-center gap-3">
+<!-- Logo Icon -->
+<div class="w-8 h-8 flex items-center justify-center text-cosmic-cyan">
+<svg aria-hidden="true" class="w-7 h-7 fill-current" viewbox="0 0 32 32">
+<path d="M16 2L18.8 11.2L28 14L18.8 16.8L16 26L13.2 16.8L4 14L13.2 11.2L16 2Z" fill="#38bdf8"></path>
+<path d="M24 22L25.4 26.6L30 28L25.4 29.4L24 34L22.6 29.4L18 28L22.6 26.6L24 22Z" fill="#818cf8" opacity="0.8"></path>
+</svg>
+</div>
+<span class="text-lg font-semibold tracking-tight text-white">{ServiceName}</span>
+</div>
+<!-- User & Status Quick Actions -->
+<div class="flex items-center gap-5">
+<!-- Notification Pill -->
+<div class="relative cursor-pointer text-cosmic-textMuted hover:text-white transition-colors">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+<span class="absolute -top-1.5 -right-2 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-600 text-white leading-tight">12</span>
+</div>
+<!-- Global Settings Icon -->
+<button aria-label="Systemeinstellungen" class="text-cosmic-textMuted hover:text-white transition-colors" type="button">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+</button>
+<!-- User Profile Avatar & Dropdown -->
+<div class="flex items-center gap-3 pl-2 border-l border-cosmic-border">
+<div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-200">
+            JW
+          </div>
+<div class="hidden sm:block text-left text-xs leading-tight">
+<div class="font-medium text-white flex items-center gap-1.5">
+<span>Jonas Weber</span>
+<span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>
+</div>
+<div class="text-[11px] text-cosmic-textDim">jonas.weber@example.test</div>
+</div>
+<svg class="w-3.5 h-3.5 text-cosmic-textDim ml-1" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+</header>
+<!-- Main Workspace Area -->
+<div class="max-w-[1440px] w-full mx-auto px-6 lg:px-10 py-8 flex-1 flex gap-8 items-start">
+<!-- BEGIN: NavigationSidebar -->
+<!-- Cosmos Navigation identical to https://lh3.googleusercontent.com/aida-public/AB6AXuA6JyIsVHPzrFBmZn3FrAdx4Lcoysk9QT07dfhkcqUBY4fmUzPPqoePZpcV-rXQ8-EaWI3OGsEvtrxC9F2LP0IREJ-z2t8VBleaEF52k5CBa7R7BnbE9CI53SWVCdlXR6UnVmGqOgyIHGmJO9W5VeTiBlbiU4AxinBKMLjLHQrY2k-0cplNSY7f_Zz3c90-SovV1tsUfR-HyV1Q-KGxzIxJ5qLL0BN1qj6l1J84yZiqQLUVWlD-C37h2KcaKek8eOu7dzF-DA2K1rvr -->
+<nav class="w-60 flex-shrink-0 flex flex-col gap-6 text-sm select-none" data-purpose="cosmos-sidebar">
+<!-- Breadcrumb / Section Label -->
+<div class="text-[11px] font-bold tracking-wider text-cosmic-cyan uppercase">
+          Administration / Konfiguration / Allgemein
+        </div>
+<div>
+<div class="text-[10px] font-bold tracking-widest text-cosmic-textDim uppercase mb-3 px-3">
+            Administration
+          </div>
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-cosmic-textMuted hover:text-white hover:bg-cosmic-800 transition" href="#">
+<svg class="w-4 h-4 text-cosmic-cyan" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-cosmic-textMuted hover:text-white hover:bg-cosmic-800 transition" href="#">
+<svg class="w-4 h-4 text-cosmic-cyan" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Benutzerverwaltung</span>
+</a>
+</li>
+<!-- Active Expandable Parent 'Konfiguration' -->
+<li class="pt-1">
+<div class="rounded-lg border border-sky-900/60 bg-cosmic-850/80 overflow-hidden">
+<button class="w-full flex items-center justify-between px-3 py-2 text-white font-medium hover:bg-cosmic-800 transition" type="button">
+<div class="flex items-center gap-3">
+<svg class="w-4 h-4 text-cosmic-cyan" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Konfiguration</span>
+</div>
+<svg class="w-3.5 h-3.5 text-cosmic-cyan" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 15l7-7 7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<!-- Submenu with Active Child 'Allgemein' -->
+<ul class="py-1 pl-4 pr-2 space-y-0.5 border-t border-cosmic-border/60 bg-cosmic-900/60">
+<li>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-cosmic-cyan bg-sky-950/50 font-medium" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-cosmic-cyan"></span>
+<span>Allgemein</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-cosmic-textMuted hover:text-white transition" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-transparent border border-cosmic-textDim"></span>
+<span>Sicherheit &amp; Session</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-cosmic-textMuted hover:text-white transition" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-transparent border border-cosmic-textDim"></span>
+<span>Token Laufzeiten</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-cosmic-textMuted hover:text-white transition" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-transparent border border-cosmic-textDim"></span>
+<span>Benutzerstatus</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-cosmic-textMuted hover:text-white transition" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-transparent border border-cosmic-textDim"></span>
+<span>Benachrichtigungen</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-cosmic-textMuted hover:text-white transition" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-transparent border border-cosmic-textDim"></span>
+<span>E-Mail Absender</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-cosmic-textMuted hover:text-white transition" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-transparent border border-cosmic-textDim"></span>
+<span>SMTP Einstellungen</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-cosmic-textMuted hover:text-white transition" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-transparent border border-cosmic-textDim"></span>
+<span>E-Mail Queue</span>
+</a>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-cosmic-textMuted hover:text-white hover:bg-cosmic-800 transition" href="#">
+<svg class="w-4 h-4 text-cosmic-cyan" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Mailtest</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-cosmic-textMuted hover:text-white hover:bg-cosmic-800 transition" href="#">
+<svg class="w-4 h-4 text-cosmic-cyan" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Benachrichtigungen</span>
+</a>
+</li>
+</ul>
+</div>
+<!-- Section: Portal -->
+<div class="pt-2">
+<div class="text-[10px] font-bold tracking-widest text-cosmic-textDim uppercase mb-2 px-3">
+            Portal
+          </div>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-cosmic-textMuted hover:text-white hover:bg-cosmic-800 transition" href="#">
+<svg class="w-4 h-4 text-cosmic-cyan" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Startseite</span>
+</a>
+</div>
+</nav>
+<!-- END: NavigationSidebar -->
+<!-- BEGIN: ContentAndInspectorArea -->
+<!-- Main Content Container containing Page Heading and the Split Workspace -->
+<main class="flex-1 min-w-0">
+<!-- Page Title & High-level Description -->
+<div class="flex flex-col sm:flex-row sm:items-baseline justify-between mb-8 pb-1">
+<div>
+<h1 class="text-3xl font-extrabold text-white tracking-tight">Konfiguration.</h1>
+</div>
+<p class="text-xs sm:text-sm text-cosmic-textMuted mt-1 sm:mt-0 font-normal">
+            Verwalte die Einstellungen deiner Anwendung.
+          </p>
+</div>
+<!-- Main Card Container (Outer Shell #080E1B) -->
+<div class="bg-cosmic-850 border border-cosmic-border rounded-xl shadow-2xl overflow-hidden flex flex-col">
+<!-- Card Header identical to reference -->
+<div class="px-6 py-5 border-b border-cosmic-border flex items-center justify-between bg-cosmic-900/60">
+<div class="flex items-center gap-3.5">
+<!-- 40px Icon-Badge mit Cyan-Rahmen -->
+<div class="w-10 h-10 rounded-lg bg-sky-950/60 border border-cosmic-cyan/60 flex items-center justify-center text-cosmic-cyan shadow-sm shadow-cyan-950/50">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div>
+<h2 class="text-base font-bold text-white tracking-wide leading-snug">Allgemein</h2>
+<p class="text-xs text-cosmic-textMuted">Grundeinstellungen deiner Anwendung.</p>
+</div>
+</div>
+<!-- Badge '3 EINSTELLUNGEN' -->
+<span class="px-2.5 py-1 rounded text-[11px] font-bold tracking-wider text-sky-400 bg-sky-950/80 border border-sky-800">
+              3 EINSTELLUNGEN
+            </span>
+</div>
+<!-- Split Workspace: Left 2-Column Form vs Right Synchronized Context Inspector (320px) -->
+<div class="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-cosmic-border">
+<!-- LEFT WORKSPACE: Minimal, ultra-clean Formular without cluttered hint accordions -->
+<div class="flex-1 p-6 md:p-8 space-y-6">
+<!-- Form Top Row (2 Columns) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Field 1: Service Name (Inactive state) -->
+<div class="space-y-2">
+<label class="block text-xs font-semibold text-cosmic-textMuted" for="service-name-input">
+                    Service Name <span class="text-cosmic-cyan text-sm leading-none">•</span>
+</label>
+<div class="relative">
+<input class="w-full bg-[#091120] border border-cosmic-border text-white text-sm rounded-lg px-3.5 py-2.5 focus:border-cosmic-cyan focus:ring-1 focus:ring-cosmic-cyan transition duration-150 ease-in-out cursor-text" id="service-name-input" type="text" value="Cosmos"/>
+</div>
+<div class="flex items-center justify-between text-[11px] text-cosmic-textDim px-1">
+<span>Feld-ID: <code class="font-mono text-slate-400">service_name</code></span>
+<span class="text-[10px] text-cosmic-textDim">Klick für Dokumentation</span>
+</div>
+</div>
+<!-- Field 2: Copyright Text (ACTIVE FOCUSED STATE) -->
+<div class="space-y-2 relative">
+<!-- Focus Indicator Ring & subtle glow highlighting active synchronisation with the right panel -->
+<div class="flex items-center justify-between">
+<label class="block text-xs font-semibold text-white" for="copyright-text-input">
+                      Copyright Text <span class="text-cosmic-cyan text-sm leading-none">•</span>
+</label>
+<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-cosmic-cyan bg-sky-950/90 px-2 py-0.5 rounded border border-sky-600/50">
+<span class="w-1.5 h-1.5 rounded-full bg-cosmic-cyan animate-pulse"></span>
+                      Aktiv im Inspektor
+                    </span>
+</div>
+<div class="relative group">
+<input class="w-full bg-[#091120] border-2 border-cosmic-cyan text-white text-sm rounded-lg px-3.5 py-2.5 shadow-[0_0_15px_rgba(56,189,248,0.18)] outline-none transition" id="copyright-text-input" type="text" value="© {year} {serviceName}. Alle Rechte vorbehalten."/>
+<!-- Subtle cursor/active indicator right mark -->
+<div class="absolute right-3 top-2.5 text-cosmic-cyan pointer-events-none">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+<div class="flex items-center justify-between text-[11px] px-1 text-cosmic-cyan/90 font-medium">
+<span>Synchronisiert mit Kontext-Panel →</span>
+<span class="font-mono text-[10px] bg-slate-800/80 px-1.5 py-0.5 rounded text-slate-300">string (interpoliert)</span>
+</div>
+</div>
+</div>
+<!-- Field 3: Basis URL (Inactive state) -->
+<div class="space-y-2 max-w-xl">
+<label class="block text-xs font-semibold text-cosmic-textMuted" for="base-url-input">
+                  Basis URL <span class="text-cosmic-cyan text-sm leading-none">•</span>
+</label>
+<div class="relative">
+<input class="w-full bg-[#091120] border border-cosmic-border text-white text-sm rounded-lg px-3.5 py-2.5 focus:border-cosmic-cyan focus:ring-1 focus:ring-cosmic-cyan transition duration-150 ease-in-out" id="base-url-input" type="url" value="https://portal.example.test"/>
+</div>
+<div class="flex items-center justify-between text-[11px] text-cosmic-textDim px-1">
+<span>Feld-ID: <code class="font-mono text-slate-400">app_base_url</code></span>
+<span class="text-[10px] text-cosmic-textDim">Klick für Dokumentation</span>
+</div>
+</div>
+</div>
+<!-- RIGHT WORKSPACE: Synchronized Contextual Inspector (320px) -->
+<!-- Provides zero UI shifts, deep docs, token hints, live render simulation -->
+<aside class="w-full lg:w-80 flex-shrink-0 bg-cosmic-900/90 p-5 flex flex-col justify-between text-xs border-t lg:border-t-0" data-purpose="field-inspector-panel">
+<div class="space-y-4">
+<!-- Inspector Header -->
+<div class="flex items-center justify-between border-b border-cosmic-border pb-3">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-cosmic-cyan shadow-sm shadow-cosmic-cyan"></span>
+<h3 class="font-bold uppercase tracking-wider text-[11px] text-white">
+                      Feld-Inspektor
+                    </h3>
+</div>
+<span class="text-[10px] font-mono bg-sky-950 px-2 py-0.5 rounded text-sky-400 border border-sky-800/80">
+                    Fokus: #copyright
+                  </span>
+</div>
+<!-- Field Title & Impact -->
+<div>
+<h4 class="text-sm font-bold text-white mb-1">Copyright Text</h4>
+<p class="text-cosmic-textMuted text-[11px] leading-relaxed">
+                    Definiert den globalen Footer-Vermerk für alle Kunden- und Admin-Oberflächen sowie automatisierte System-Mails.
+                  </p>
+</div>
+<!-- Valid Replacement Placeholders -->
+<div class="bg-cosmic-950/80 border border-cosmic-border rounded-lg p-3 space-y-2">
+<div class="font-bold text-[10px] uppercase tracking-wider text-cosmic-textMuted">
+                    Erlaubte Platzhalter
+                  </div>
+<div class="space-y-1.5 font-mono text-[11px]">
+<div class="flex items-start justify-between bg-cosmic-900 p-1.5 rounded border border-slate-800">
+<span class="text-cosmic-cyan font-bold">{year}</span>
+<span class="text-slate-400 text-[10px] font-sans">Aktuelles Kalenderjahr</span>
+</div>
+<div class="flex items-start justify-between bg-cosmic-900 p-1.5 rounded border border-slate-800">
+<span class="text-cosmic-cyan font-bold">{serviceName}</span>
+<span class="text-slate-400 text-[10px] font-sans">Wert aus Service Name</span>
+</div>
+</div>
+</div>
+<!-- Live Rendered Preview Simulation -->
+<div class="bg-slate-900/60 border border-cosmic-border rounded-lg p-3 space-y-1.5">
+<div class="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider text-cosmic-textMuted">
+<span>Echtzeit-Vorschau</span>
+<span class="text-emerald-400 flex items-center gap-1 font-mono text-[9px]">● Validiert</span>
+</div>
+<div class="p-2.5 bg-black/40 border border-dashed border-slate-700 rounded text-slate-200 font-sans text-xs italic leading-snug break-words">
+                    "© 2026 Cosmos. Alle Rechte vorbehalten."
+                  </div>
+</div>
+<!-- Default Fallback Value -->
+<div class="text-[11px] text-cosmic-textMuted border-t border-cosmic-border/60 pt-2.5 flex justify-between items-center">
+<span>Standardwert:</span>
+<span class="font-mono text-slate-300 text-[10px] bg-slate-800/80 px-2 py-0.5 rounded">© {year} {serviceName}</span>
+</div>
+</div>
+<!-- Technical Database Traceability Note inside Inspector -->
+<div class="mt-4 pt-3 border-t border-cosmic-border text-[10px] text-cosmic-textDim flex items-center justify-between">
+<span>Tabellenspalte: <code class="text-slate-400">core_app.settings</code></span>
+<span class="text-emerald-500">Live Sync ON</span>
+</div>
+</aside>
+</div>
+<!-- Full-width Storage Notice identical to https://lh3.googleusercontent.com/aida-public/AB6AXuA6JyIsVHPzrFBmZn3FrAdx4Lcoysk9QT07dfhkcqUBY4fmUzPPqoePZpcV-rXQ8-EaWI3OGsEvtrxC9F2LP0IREJ-z2t8VBleaEF52k5CBa7R7BnbE9CI53SWVCdlXR6UnVmGqOgyIHGmJO9W5VeTiBlbiU4AxinBKMLjLHQrY2k-0cplNSY7f_Zz3c90-SovV1tsUfR-HyV1Q-KGxzIxJ5qLL0BN1qj6l1J84yZiqQLUVWlD-C37h2KcaKek8eOu7dzF-DA2K1rvr -->
+<div class="px-6 py-3 border-t border-cosmic-border bg-cosmic-900/70 text-xs text-cosmic-textMuted flex items-center gap-2.5">
+<svg class="w-4 h-4 text-cosmic-cyan flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Änderungen werden in der Datenbank gespeichert. Einige Einstellungen werden erst nach einem Neustart wirksam.</span>
+</div>
+<!-- Action Footer identical to https://lh3.googleusercontent.com/aida-public/AB6AXuA6JyIsVHPzrFBmZn3FrAdx4Lcoysk9QT07dfhkcqUBY4fmUzPPqoePZpcV-rXQ8-EaWI3OGsEvtrxC9F2LP0IREJ-z2t8VBleaEF52k5CBa7R7BnbE9CI53SWVCdlXR6UnVmGqOgyIHGmJO9W5VeTiBlbiU4AxinBKMLjLHQrY2k-0cplNSY7f_Zz3c90-SovV1tsUfR-HyV1Q-KGxzIxJ5qLL0BN1qj6l1J84yZiqQLUVWlD-C37h2KcaKek8eOu7dzF-DA2K1rvr -->
+<div class="px-6 py-4 bg-cosmic-850 border-t border-cosmic-border flex items-center justify-end gap-3">
+<button class="h-9 px-4 rounded-lg border border-cosmic-border bg-cosmic-800 hover:bg-cosmic-750 text-white text-xs font-semibold flex items-center gap-2 transition" type="button">
+<svg class="w-3.5 h-3.5 text-cosmic-cyan" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Werte neu laden</span>
+</button>
+<button class="h-9 px-4 rounded-lg bg-cosmic-primary hover:bg-cosmic-primaryHover text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-sky-950/40 transition" type="button">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+<span>Konfiguration speichern</span>
+</button>
+</div>
+</div>
+<!-- Optional Inactive Inspector Simulation Showcase (Explaining behavior when no field has focus) -->
+<div class="mt-4 p-4 rounded-lg border border-dashed border-cosmic-border bg-cosmic-900/40 flex items-center justify-between text-xs text-cosmic-textDim">
+<div class="flex items-center gap-2">
+<span class="inline-block w-2 h-2 rounded-full bg-slate-600"></span>
+<span>Verhalten im Ruhezustand (kein Input fokussiert):</span>
+<span class="text-slate-300">Das rechte Panel wechselt automatisch zu <em>'Sektions-Übersicht: Allgemein'</em> mit Revisionsverlauf und globaler Rollback-Historie.</span>
+</div>
+<span class="font-mono text-[10px] text-cosmic-cyan">Null Layout-Shift garantiert</span>
+</div>
+</main>
+<!-- END: ContentAndInspectorArea -->
+</div>
+<!-- Global Application Footer identical to reference -->
+<footer class="py-6 border-t border-cosmic-border/50 text-center text-xs text-cosmic-textDim">
+      © 2026 {ServiceName}. Alle Rechte vorbehalten.
+    </footer>
+</div>
+<!-- END: MainApplicationCanvas -->
+<!-- BEGIN: ResponsiveMobileSimulation -->
+<!-- 390px Smartphone Stacking Simulation required by the prompt -->
+<section class="border-t-2 border-cosmic-border bg-[#03060d] py-12 px-6" data-purpose="mobile-preview-container">
+<div class="max-w-4xl mx-auto">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+<div>
+<span class="text-xs uppercase font-bold tracking-wider text-cosmic-cyan">Mobile Ergonomie</span>
+<h2 class="text-xl font-bold text-white">Responsive Smartphone-Stacking Vorschau (390px Viewport)</h2>
+</div>
+<div class="text-xs text-cosmic-textMuted">
+          Auf mobilen Endgeräten dockt der Inspector als elegantes Bottom-Sheet oder kontextuelles Accordion unter das fokussierte Element.
+        </div>
+</div>
+<!-- Smartphone Frame Container -->
+<div class="w-full flex justify-center">
+<div class="w-[390px] bg-cosmic-900 border-4 border-slate-800 rounded-[28px] overflow-hidden shadow-2xl flex flex-col">
+<!-- Mobile Status Bar -->
+<div class="h-6 bg-black flex items-center justify-between px-5 text-[10px] text-slate-400 font-mono">
+<span>09:41</span>
+<div class="flex items-center gap-1.5">
+<span>5G</span>
+<div class="w-4 h-2 border border-slate-400 rounded-sm p-0.5 flex items-center">
+<div class="w-full h-full bg-slate-400"></div>
+</div>
+</div>
+</div>
+<!-- Mobile App Bar -->
+<div class="p-3 border-b border-cosmic-border bg-cosmic-950 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded bg-sky-950 flex items-center justify-center text-cosmic-cyan text-xs font-bold">C</div>
+<span class="font-bold text-sm text-white">Allgemein</span>
+</div>
+<span class="text-[10px] text-sky-400 bg-sky-950 px-2 py-0.5 rounded border border-sky-800">3 Felder</span>
+</div>
+<!-- Mobile Form with In-Place Bottom Sheet Preview -->
+<div class="p-4 space-y-4 bg-cosmic-850 flex-1 overflow-y-auto">
+<!-- Mobile Field: Service Name -->
+<div class="space-y-1">
+<label class="text-[11px] font-semibold text-cosmic-textMuted">Service Name •</label>
+<input class="w-full bg-[#091120] border border-cosmic-border text-white text-xs rounded-lg p-2.5" readonly="" type="text" value="Cosmos"/>
+</div>
+<!-- Mobile Field: Copyright Text (ACTIVE) -->
+<div class="space-y-1.5">
+<label class="text-[11px] font-bold text-cosmic-cyan flex items-center justify-between">
+<span>Copyright Text •</span>
+<span class="text-[9px] bg-sky-950 text-cosmic-cyan px-1.5 py-0.5 rounded border border-sky-700">Fokus</span>
+</label>
+<input class="w-full bg-[#091120] border-2 border-cosmic-cyan text-white text-xs rounded-lg p-2.5" readonly="" type="text" value="© {year} {serviceName}."/>
+<!-- Stacked Mobile Inspector Sheet directly under the active field -->
+<div class="mt-2 p-3 bg-cosmic-900 border border-cosmic-cyan/60 rounded-lg space-y-2 text-[11px]">
+<div class="font-bold text-white flex items-center gap-1.5 text-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-cosmic-cyan"></span>
+<span>Hilfe: Copyright Text</span>
+</div>
+<div class="text-cosmic-textMuted text-[10px] leading-tight">
+                  Verfügbare Variablen: <code class="text-cosmic-cyan">{year}</code>, <code class="text-cosmic-cyan">{serviceName}</code>
+</div>
+<div class="bg-black/50 p-2 rounded border border-dashed border-slate-700 text-slate-300 text-[10px] italic">
+                  Vorschau: "© 2026 Cosmos."
+                </div>
+</div>
+</div>
+<!-- Mobile Field: Basis URL -->
+<div class="space-y-1 pt-1">
+<label class="text-[11px] font-semibold text-cosmic-textMuted">Basis URL •</label>
+<input class="w-full bg-[#091120] border border-cosmic-border text-white text-xs rounded-lg p-2.5" readonly="" type="text" value="https://portal.example.test"/>
+</div>
+<!-- Mobile Action Button -->
+<div class="pt-3">
+<button class="w-full py-2.5 bg-cosmic-primary text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1.5">
+<span>✓ Speichern</span>
+</button>
+</div>
+</div>
+<!-- Bottom Safe Area -->
+<div class="h-4 bg-cosmic-950 flex justify-center items-center">
+<div class="w-24 h-1 bg-slate-700 rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: ResponsiveMobileSimulation -->
+<!-- BEGIN: StrategicTradeOffEvaluation -->
+<!-- Exhaustive UX Trade-off analysis and final subjective design verdict -->
+<section class="border-t border-cosmic-border bg-cosmic-950 py-12 px-6 lg:px-10" data-purpose="trade-off-evaluation">
+<div class="max-w-[1440px] mx-auto space-y-8">
+<div>
+<span class="text-xs uppercase font-bold tracking-wider text-cosmic-cyan">Architektur &amp; Evaluierung</span>
+<h2 class="text-2xl font-bold text-white tracking-tight">Trade-off Analyse &amp; Fachliche Empfehlung</h2>
+<p class="text-sm text-cosmic-textMuted mt-1">
+          Gegenüberstellung von Variante C (Inspector Panel) mit Variante A (Akkordeon) und Variante B (Hover Tooltip / Popover).
+        </p>
+</div>
+<!-- Comparison Grid (3 Columns) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Card 1: Variante A -->
+<div class="bg-cosmic-900 border border-cosmic-border rounded-xl p-5 space-y-3">
+<div class="flex items-center justify-between">
+<h3 class="font-bold text-slate-200">Variante A: In-Line Akkordeons</h3>
+<span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">Referenz</span>
+</div>
+<p class="text-xs text-cosmic-textMuted leading-relaxed">
+            Eingeklappte 'Hinweis'-Zeilen unter jedem Formularfeld, die sich vertikal ausdehnen.
+          </p>
+<div class="space-y-1.5 pt-2 border-t border-cosmic-border/60 text-xs">
+<div class="text-rose-400 font-semibold">Nachteile:</div>
+<ul class="text-[11px] text-cosmic-textDim list-disc list-inside space-y-1">
+<li>Starker visueller Vertikal-Jank (Layout-Shift) beim Öffnen.</li>
+<li>Drückt Folgefelder und die Aktions-Buttons nach unten.</li>
+<li>Redundante 'Hinweis'-Texte wirken bei 10+ Feldern chaotisch.</li>
+</ul>
+</div>
+</div>
+<!-- Card 2: Variante B -->
+<div class="bg-cosmic-900 border border-cosmic-border rounded-xl p-5 space-y-3">
+<div class="flex items-center justify-between">
+<h3 class="font-bold text-slate-200">Variante B: Hover/Focus Popover</h3>
+<span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">Alternative 1</span>
+</div>
+<p class="text-xs text-cosmic-textMuted leading-relaxed">
+            Tooltip-Icon mit schwebendem Floating-Overlay neben dem Label.
+          </p>
+<div class="space-y-1.5 pt-2 border-t border-cosmic-border/60 text-xs">
+<div class="text-amber-400 font-semibold">Nachteile:</div>
+<ul class="text-[11px] text-cosmic-textDim list-disc list-inside space-y-1">
+<li>Z-Index-Kollisionen und Clipping-Risiko bei schmalen Cards.</li>
+<li>Verdeckt benachbarte Felder oder Validierungsfehler.</li>
+<li>Komplexe Variablenlisten lassen sich im Tooltip kaum bedienen.</li>
+</ul>
+</div>
+</div>
+<!-- Card 3: Variante C (Active Design) -->
+<div class="bg-cosmic-900 border-2 border-cosmic-cyan rounded-xl p-5 space-y-3 relative shadow-lg shadow-sky-950/30">
+<div class="flex items-center justify-between">
+<h3 class="font-bold text-white flex items-center gap-1.5">
+<span>Variante C: Inspector Panel</span>
+</h3>
+<span class="text-[10px] px-2 py-0.5 rounded bg-sky-950 text-cosmic-cyan font-bold border border-sky-700">Empfohlen</span>
+</div>
+<p class="text-xs text-cosmic-textMuted leading-relaxed">
+            Feste 320px breite Kontext-Spalte synchronisiert mit Feld-Fokus.
+          </p>
+<div class="space-y-1.5 pt-2 border-t border-cosmic-border/60 text-xs">
+<div class="text-emerald-400 font-semibold">Herausragende Vorteile:</div>
+<ul class="text-[11px] text-slate-300 list-disc list-inside space-y-1">
+<li><strong>Absolut 0 Layout-Shifts:</strong> Formularfelder bleiben unbeweglich fest verankert.</li>
+<li><strong>Hohe Informationstiefe:</strong> Platz für Code-Beispiele, Platzhalter und Live-Vorschau.</li>
+<li><strong>Ruhiges Formular:</strong> Keine überflüssigen 'Hinweis'-Zeilen stören den Lesefluss.</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Subjective Verdict Banner -->
+<div class="bg-gradient-to-r from-sky-950/70 via-cosmic-900 to-cosmic-900 border border-sky-800/80 rounded-xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+<div class="space-y-1">
+<div class="text-xs font-bold text-cosmic-cyan uppercase tracking-wider">Subjektive Design-Empfehlung des UI/UX-Spezialisten</div>
+<p class="text-sm text-slate-200">
+<strong>Variante C (Split Contextual Inspector)</strong> ist für anspruchsvolle Entwickler- und Enterprise-Tools wie <em>Cosmos</em> die ergonomischste Wahl. Sie verwandelt triviale Eingabefelder in eine vollwertige Dokumentations-Zentrale mit Realtime-Feedback, ohne die operative Formular-Ruhe zu opfern.
+          </p>
+</div>
+<div class="flex-shrink-0">
+<span class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition shadow-md">
+            ✓ Als Standard übernehmen
+          </span>
+</div>
+</div>
+</div>
+</section>
+<!-- END: StrategicTradeOffEvaluation -->
+</body></html>

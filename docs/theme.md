@@ -22,10 +22,56 @@ Spaltentrenner und getrennte Indikatoren bleiben;
 ein aktiver Buttonrahmen oder -hintergrund entfällt. Zuständig ist
 `docs/design/frontend-referenzen/quellen/benutzerverwaltung/table-header.css`.
 Diese lokale HTML-Gestaltung ändert keine Vaadin-Gridregeln.
+Die Pagination der HTML-Referenzen verwendet eine gemeinsame Seitengrößenauswahl:
+`.ref-pagination-trigger` öffnet `.ref-pagination-menu` mit den vorhandenen
+Seitengrößen als `.ref-pagination-option`. Dunkle Fläche, dezenter Rahmen und
+blauer Auswahl-/Fokuszustand folgen der Referenz. Gemeinsame Quellen sind
+`docs/design/frontend-referenzen/quellen/pagination.css`, `.js` und `.py`. Das
+native Select bleibt als ausgeblendeter Wertträger für die vorhandenen Controller
+erhalten; Maus/Tap, Pfeiltasten, Home/End, Escape und Außenklick bedienen das Popover.
+Dies ändert weder die zulässigen Seitengrößen noch das Vaadin-Anwendungstheme.
 Die drei HTML-Referenzköpfe verwenden zur Sichtung Kandidat K aus
 `docs/design/service-logo/logo-k.svg`. `quellen/service_logo.py` bettet ihn mit
 eigenen Verlaufs-IDs ein und vergrößert ihn optisch innerhalb des unveränderten
 Layoutplatzes. Es erfolgt keine Logoübernahme in die Anwendung.
+
+Die äußeren HTML-Viewer bieten zusätzlich die gespeicherten Logos A–O und zwölf
+dunkle CSS-Hintergründe zur Laufzeitsichtung. Zuständig sind ausschließlich
+`quellen/erscheinungsbild.py`, die zugehörigen beiden JS-Dateien und
+`quellen/hintergruende.json` unter `docs/design/frontend-referenzen/`.
+Die Auswahl verändert nur Marke beziehungsweise Dekoration; Standard-K, Panel-
+und Controlgestaltung der eigenständigen Referenzen bleiben erhalten. Die Admin-HTML-Bausteine unter `quellen/admin-entwuerfe/` sind lokal auf die
+abgestimmte Referenz begrenzt und keine neuen Vaadin-Themebausteine. Das isolierte Vaadin-Layoutbeispiel unter
+`quellen/vaadin-studie/` verändert keine ausgelieferte View oder Themequelle.
+Die freigegebene Adminreferenz enthält Dashboard A, Benutzerverwaltung, Konfiguration A, Mailtest A und Benachrichtigungen B.
+Dashboard A ist der Einstieg mit lokal eingebettetem dunklem Bildmotiv, kurzer
+Orientierung, Ausblick und Schnellzugriffsraster. Es verwendet Logo K, bestehende
+Iconrahmen, Infozeile und Buttons, ohne Kennzahlen oder Charts. Alle Schnellzugriffe
+öffnen ihren Bereich innerhalb derselben Adminreferenz. Der Benachrichtigungsversand
+verwendet Verfassen links, Vorschau mit runden Empfängeravataren rechts und eigene
+Historie darunter, mobil gestapelt. Die Historie übernimmt die Frontend-Pagination
+(`c-pagination-bar`), durchgehende Zeilentrenner und aufklappbaren Nachrichteninhalt
+auf Insetfläche mit blauer Kante. Die untere Protokollzeile bleibt ausdrücklich nur
+eine statische Gestaltung im HTML. Quellen liegen lokal unter
+`quellen/admin-entwuerfe/`; dies ändert kein Vaadin-Theme.
+Der Mailtest übernimmt die kompakten Panel-/Formularbausteine und das globale
+Notification-System; Eingabefehler markieren nur das betroffene Feld. Der
+Klartext-Hinweis steht unter der Nachricht, der SMTP-Hinweis samt Link ohne Pfeil
+in einer eigenen Zeile über der Senden-Aktion. Der SMTP-Test-Badge zeigt den
+vorhandenen Statuspunkt über `.ad-mail-badge > .ad-dot`; dessen Farbe folgt
+`--dot`. Auch dies bleibt eine HTML-Referenz.
+Die Konfiguration verwendet das rechte Hilfeoverlay C mit kompakten Abschnitten,
+außenliegenden Infoicons, dem vorhandenen Checkboxbaustein, regelbasierten
+Pflichtpunkten und lokalen blauen Zahlenpfeilen. Quellen liegen gemeinsam unter
+`quellen/admin-entwuerfe/`; diese HTML-Übernahme verändert kein Vaadin-Theme.
+Ihre Panels
+verwenden die Header-/Footerfläche aus `--surface-panel` wie die persönlichen
+Daten und die dunkle Inhaltsfläche. Die Einstellungssumme steht als cyanfarbenes
+Badge rechts im Kopf; die gemeinsame Icon-Zuordnung gilt für Navigation und Panel.
+Diese Regeln bleiben lokal in `quellen/admin-entwuerfe/entwurf.css`.
+Die Köpfe der zusätzlichen Adminpanels verwenden den bestehenden
+`portal-reference-icon`-Rahmen der HTML-Referenz. Der Konfigurationshinweis steht
+wie bei Geräte/Sitzungen in einer eigenen Zeile vor der Aktionsleiste.
 
 ## Theme-Quellen und Template
 

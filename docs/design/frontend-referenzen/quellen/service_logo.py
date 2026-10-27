@@ -54,8 +54,13 @@ def update_snapshot(name):
     # Nur das Kopfzeichen ersetzen; die übrige abgestimmte Momentaufnahme erhalten.
     pattern = r'<svg\b[^>]*class="[^"]*\bw-7\b[^"]*"[^>]*>[\s\S]*?</svg>'
     markup = etree.tostring(logo_element(), encoding="unicode", with_tail=False)
-    source, count = re.subn(pattern, lambda _: markup, source)
+    # Die zusätzlichen Kandidaten liegen außerhalb des Headers in einer inerten
+    # Vorschau-Bibliothek. Nur das tatsächlich angezeigte Kopfzeichen ersetzen.
+    header = re.search(r"<header\b[\s\S]*?</header>", source)
+    assert header is not None, name
+    replacement, count = re.subn(pattern, lambda _: markup, header.group())
     assert count == 1, name
+    source = source[: header.start()] + replacement + source[header.end() :]
     path.write_text(source, encoding="utf-8")
     preview = reference.parents[2] / "target/designkritik-stitch/portal/preview"
     if preview.exists():
