@@ -1,0 +1,13 @@
+/* Gemeinsame Feldgestaltung der drei HTML-Referenzen; normale Aktionsbuttons bleiben unverändert. */
+body :is(input,textarea)::placeholder{color:#64748b!important;font-weight:400!important;opacity:1!important}
+body button[data-ref-field-action] svg{color:#94a3b8!important}
+body button[data-ref-field-action]:hover:not(:disabled) svg{color:#e2e8f0!important}
+body button[data-ref-field-action]:not(:disabled):is(:focus-visible,[aria-expanded=true],[aria-pressed=true]) svg,
+body :is(.au-date,.au-password,.portal-password-wrap,.portal-security-input,.relative):has(>input:focus-visible)>button[data-ref-field-action]:not(:disabled) svg{color:#38bdf8!important}
+body button[data-ref-field-action]:disabled svg{color:#64748b!important}
+body :is(.au-search,.relative):has(>input:is([type=search],[type=email]))>svg{color:#94a3b8!important}
+body button[data-ref-placeholder][data-value=""]>span{color:#64748b;font-weight:400}
+body button[data-ref-placeholder][data-empty=true] #selectedGenderText{color:#64748b;font-weight:400}
+/* Ohne Präfix keine reservierte Iconfläche; Suchfelder behalten ihre Lupe. */
+body .portal-security-input.ref-no-prefix{padding-left:0;gap:0}
+body .portal-security-input.ref-no-prefix>input{padding-left:14px!important}

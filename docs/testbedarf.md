@@ -5,7 +5,7 @@ automatisierter Tests. Pflege und Abnahme: [Testablauf](tests.md#übergabe-offen
 
 ## Browser-Tests
 
-Derzeit keine offenen Ergänzungen oder ausstehenden Browserläufe.
+Derzeit keine offenen Ergänzungen.
 
 ## JUnit-Tests
 

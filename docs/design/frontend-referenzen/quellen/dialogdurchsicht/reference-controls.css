@@ -1,0 +1,46 @@
+/* Freigegebene HTML-Referenz: dunkler Inhalt, cyanfarbene Secondary-Icons. */
+body.portal-reference{--portal-content-surface:#050811;--portal-secondary-icon:#38bdf8}
+body.portal-reference[data-consistency-surface="panel"]{--portal-content-surface:#080e1b}
+body.portal-reference[data-consistency-icons="neutral"]{--portal-secondary-icon:#e2e8f0}
+body.portal-reference #notification-variant{background:#080e1b!important}
+body.portal-reference :is(#n-inbox-rows,#n-preview-rows,.portal-security-page .portal-card-body,.portal-sessions-page .portal-card-body,.profile-card .portal-profile-form,#emailDialog .portal-modal-body,#passwordDialog .portal-modal-body){background:var(--portal-content-surface)!important}
+body.portal-reference :is(.portal-button:not(.portal-icon-button),.n-button,[data-demo-action="save"],.portal-menu-action){height:36px!important;min-height:36px!important;padding:0 13px!important;font:600 12px/1.4 Inter,system-ui!important}
+body.portal-reference :is(.portal-button:not(.portal-icon-button),.n-button,[data-demo-action="save"],.portal-menu-action)>svg{width:16px!important;height:16px!important}
+body.portal-reference .portal-button:not(.primary):not(.danger):not(.sessions-danger):not(.active):not([data-demo-action="save"]):not(.portal-icon-button),body.portal-reference .n-button:not(.n-primary):not(.n-danger),body.portal-reference .c-icon-button:not(.c-danger):not([aria-current="page"]){color:#e2e8f0!important;background:#091120!important;border-color:#ffffff1f!important}
+body.portal-reference .portal-button:not(.primary):not(.danger):not(.sessions-danger):not(.active):not([data-demo-action="save"]):not(.portal-icon-button) svg,body.portal-reference .n-button:not(.n-primary):not(.n-danger) svg,body.portal-reference .c-icon-button:not(.c-danger):not([aria-current="page"]) svg{color:var(--portal-secondary-icon)!important}
+body.portal-reference .portal-button:not(.primary):not(.danger):not(.sessions-danger):not(.active):not([data-demo-action="save"]):not(.portal-icon-button):hover:not(:disabled),body.portal-reference .n-button:not(.n-primary):not(.n-danger):hover:not(:disabled),body.portal-reference .c-icon-button:not(.c-danger):not([aria-current="page"]):hover:not(:disabled){background:#152238!important;border-color:#ffffff38!important}
+body.portal-reference :is(.portal-button.primary,.n-button.n-primary,[data-demo-action="save"]){background:#0088cc!important;border-color:#0088cc!important;color:#fff!important}
+body.portal-reference :is(.portal-button.primary,.n-button.n-primary,[data-demo-action="save"]) svg{color:#fff!important}
+
+body.portal-reference .portal-menu-action{color:#e2e8f0}body.portal-reference .portal-menu-action svg{color:var(--portal-secondary-icon)}body.portal-reference .portal-menu-action[data-portal-action="logout"],body.portal-reference .portal-menu-action[data-portal-action="logout"] svg{color:#f87171}
+
+body.portal-reference :is(.portal-button.primary,.n-button.n-primary,[data-demo-action="save"]):hover:not(:disabled){background:#0078b4!important}
+
+/* Info-Icons mittig zum ganzen Hinweistext, auch bei mehreren Zeilen. */
+body.portal-reference :is(.portal-hint,.portal-security-note,.portal-security-hint,.sessions-note,.portal-avatar-hint,.n-info,.c-retention-info){align-items:center!important}
+body.portal-reference :is(.portal-hint,.portal-security-note,.portal-security-hint,.sessions-note,.portal-avatar-hint,.n-info,.c-retention-info) svg{margin-top:0!important;flex-shrink:0}
+body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-items:center}
+
+/* Gemeinsame Sidenav: helle Standardschrift und cyanfarbene Icons, auch bei aktiver Seite. */
+body.portal-reference #sidebarNav nav button[data-portal-route]{color:var(--text-primary)!important}
+body.portal-reference #sidebarNav nav button[data-portal-route] svg{color:var(--portal-secondary-icon)!important}
+body.portal-reference #sidebarNav nav>div>div:first-child{color:var(--accent)!important}
+
+/* Freigegebene Dialogdurchsicht: einheitliche Inhaltsfläche und gleich breite Aktionen. */
+body.portal-reference #n-detail>.n-dialog-body{background:var(--portal-content-surface)!important}
+body.portal-reference :is(#emailDialog,#passwordDialog) .portal-modal-foot{display:grid;grid-template-columns:repeat(2,minmax(0,200px));justify-content:end}
+body.portal-reference :is(#emailDialog,#passwordDialog) .portal-modal-foot>.n-button{width:100%;min-width:0;justify-content:center}
+body.portal-reference #emailDialog .portal-modal-foot>.n-button{white-space:nowrap}
+body.portal-reference #avatarDialog .portal-avatar-footer{display:flex;flex-wrap:wrap;gap:8px}
+body.portal-reference #avatarDialog .portal-avatar-footer .portal-actions{display:flex;gap:8px}
+body.portal-reference #avatarDialog .portal-avatar-footer .portal-button{width:140px;min-width:0;justify-content:center}
+body.portal-reference #sidebarStatusPopover>h2{color:var(--accent)!important}
+body.portal-reference #userMenuPopover .portal-presence-heading{color:var(--accent)!important}
+body.portal-reference #profileGenderDropdown{position:fixed;z-index:90;margin:0;background:#0e1726;border:1px solid #ffffff24;border-radius:12px;box-shadow:0 18px 50px #0008;overflow:auto;padding:0}
+body.portal-reference #profileGenderDropdown [role=option]>svg{visibility:hidden}
+body.portal-reference #profileGenderDropdown [role=option][aria-selected=true]>svg{visibility:visible}
+body.portal-reference #profileGenderDropdown [role=option][data-active=true]{background:#122342;color:#e2e8f0}
+body.portal-reference #profileGenderDropdown [role=option] span.rounded-full{background:#475569}
+body.portal-reference #profileGenderDropdown [role=option][aria-selected=true] span.rounded-full{background:#38bdf8}
+@media(max-width:639px){body.portal-reference :is(#emailDialog,#passwordDialog) .portal-modal-foot{grid-template-columns:repeat(2,minmax(0,1fr))}body.portal-reference #avatarDialog .portal-avatar-footer .portal-actions{width:100%;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}body.portal-reference #avatarDialog .portal-avatar-footer .portal-button{width:100%}body.portal-reference #avatarDialog .portal-avatar-footer>#avatarDelete{width:calc((100% - 8px)/2)}}
+@media(max-width:479px){body.portal-reference #emailDialog .portal-modal-foot{grid-template-columns:minmax(0,1fr)}}

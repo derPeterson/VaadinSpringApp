@@ -1,0 +1,25 @@
+<svg width="96" height="96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo H &#x2013; Stitch-Vorschlag" viewBox="0 0 96 96">
+            <defs>
+              <linearGradient id="gradH1" x1="48" y1="10" x2="86" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#34D399"/>
+                <stop offset="100%" stop-color="#059669"/>
+              </linearGradient>
+              <linearGradient id="gradH2" x1="86" y1="48" x2="48" y2="86" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#38BDF8"/>
+                <stop offset="100%" stop-color="#2563EB"/>
+              </linearGradient>
+              <linearGradient id="gradH3" x1="10" y1="48" x2="48" y2="86" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#A855F7"/>
+                <stop offset="100%" stop-color="#7C3AED"/>
+              </linearGradient>
+            </defs>
+            <!-- 3 dynamisch geschachtelte hexagonale Rhomben (Hex-Nexus) -->
+            <!-- Oben Rechts: Smaragd -->
+            <path d="M48 12 L84 32 L48 52 L12 32 Z" fill="url(#gradH1)" fill-opacity="0.95"/>
+            <!-- Unten Rechts: Deep Azure -->
+            <path d="M84 36 L84 72 L48 92 L48 56 Z" fill="url(#gradH2)" fill-opacity="0.95"/>
+            <!-- Unten Links: Kaltviolett -->
+            <path d="M48 56 L48 92 L12 72 L12 36 Z" fill="url(#gradH3)" fill-opacity="0.95"/>
+            <!-- Zentraler Portal-Kern (Weiß/Licht) -->
+            <polygon points="48,46 54,50 48,54 42,50" fill="#FFFFFF"/>
+          </svg>

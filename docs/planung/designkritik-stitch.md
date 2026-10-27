@@ -2,6 +2,64 @@
 
 ## Auftrag und aktueller Stand
 
+**Kandidat K zur Sichtung in den Referenzen:** Der Benutzer lässt K „Pulsar-Nova“
+im Besucherportal, angemeldeten Portal und der Benutzerverwaltung einsetzen und
+optisch vergrößern. Das Zeichen nutzt am Desktop 40 px sichtbare SVG-Größe innerhalb
+des vorhandenen 28-px-Layoutplatzes. Der bestehende mobile 24-px-Platz ergibt rund
+34 px sichtbare Größe; Headerhöhe und Servicename bleiben an ihrer Position.
+Die Einbettung kommt aus `quellen/service_logo.py` und der gesicherten Original-SVG.
+Alle erstellten Logos A–O liegen unter `docs/design/service-logo/`, einschließlich
+der früher verworfenen A/B/C. Keine endgültige Logoabnahme oder Vaadin-Übernahme.
+
+**Zusätzliche Cosmos-Logorunden J/K/L und M/N/O zur Auswahl:** Auf ausdrücklichen Benutzerauftrag
+entwarf Stitch drei weitere Zeichen mit Astronomiebezug und freier Farbwahl,
+ohne die bisherigen Logos oder Referenzen zu ersetzen. Der unabhängig abgerufene
+Screen `fd0ed2656fec4732a515d92f8f3a2de7` enthält J Orbital-Korona, K Pulsar-Nova
+und L Nebula-Vortex; Stitch bevorzugt subjektiv K. Original-HTML und Bild sind
+geprüft. J/K/L sind als SVGs unter `docs/design/service-logo/` gesichert; die
+separate temporäre Sichtung ist `preview/logos-j-k-l.html`. Dort sind Inter und
+gleiche Originalgeometrien für alle Größen eingebettet; keine Fremdskripte.
+Desktop und Smartphone sind geprüft. Die endgültige Logoauswahl steht aus.
+Eine weitere beauftragte Runde ergänzt M Korona-Finsternis, N Astro-Sextant und
+O Kometen-Drift im unabhängig erneut abgerufenen Screen
+`117f89e50c4e4748bf39519dd90664a8`. Stitch bevorzugt subjektiv N. HTML und Bild
+sind geprüft; die SVGs liegen neben den erhaltenen Kandidaten, der getrennte
+Vergleich unter `preview/logos-m-n-o.html`. Alle Größen verwenden dieselbe große
+Originalgeometrie. Desktop und Smartphone sind geprüft. Die vorhandenen Logos
+und Frontend-Referenz-HTMLs bleiben bytegleich erhalten; keine Auswahl übernommen.
+
+**Aktuelle gesonderte Sichtung: Tabellenkopf der Benutzerverwaltung und drei neue Logos.**
+Der Benutzer hat ausdrücklich eine neue Stitch-Runde mit freier Logo-Farbwahl
+beauftragt. Der skriptfreie aktuelle Adminstand ist als Screen
+`12095984541294395577` importiert. Der unabhängig erneut abgerufene Vorschlag
+`173ede4f60a74a71a637a49801da765a` enthält zwei Tabellenkopfvarianten und die
+neuen Vektorzeichen G/H/I. HTML und Bild wurden heruntergeladen und geprüft.
+Option 1 ist Stitchs Empfehlung: ruhige dunkle Fläche, neutrale Labels und eine
+eindeutige cyanfarbene aktive Sortierung; Option 2 setzt auf Versalien,
+vertikale Separatoren und separate Indikatorkästchen. Beide sind statische
+Gestaltungsvorschläge, keine neue Tabellenfunktion und keine Designabnahme.
+Die generierten Kontextzeilen und Pagination sind keine Übernahmevorlage für
+die bestehenden Funktionen. Lokal sind Inter und eine responsive Vergleichshülle
+ergänzt; der erfundene Gesamtzähler 23 ist auf die vorhandenen 24 berichtigt.
+Die ursprünglichen Vorschläge bleiben separat zur Sichtung erhalten:
+`preview/header-logo-vorschlag.html` und `preview/logos-g-h-i.html` in der
+temporären Spielwiese. G/H/I sind zusätzlich als eigenständige SVGs neben den
+erhaltenen Kandidaten D/E/F unter `docs/design/service-logo/` gesichert.
+Der Benutzer hat anschließend Tabellenkopf-Variante 2 gewählt und präzisiert:
+Großbuchstaben und Secondary-Beschriftungen, bei Hover sowie aktiver Sortierung
+weiß; ausschließlich der aktive Sortierpfeil blau. Hover ändert nur die Schrift,
+keine Kästen, Rahmen oder Hintergründe. Die aktive Sortierung erhält keinen
+zusätzlichen Buttonrahmen oder Hintergrund.
+Diese Fassung ist in der Benutzerverwaltungsreferenz übernommen. Sortierrichtung
+und Indikator folgen dem vorhandenen `aria-sort`; die Sortierfunktion bleibt erhalten.
+Die endgültige Logoentscheidung steht weiter aus.
+Die Tabelle bleibt auch auf Smartphones eine Tabelle; dort bleibt seitliches
+Scrollen erlaubt. Am Desktop passen alle Spalten durch kompaktere Kopfabstände
+und eine schmale Aufteilung mit E-Mail-Ellipse und umbrechender Aktivitätsüberschrift.
+Die Schrift wird nicht verkleinert und keine Spalte entfernt. Das eigene Konto
+kennzeichnet das grüne Badge „Dein Benutzer“ unter dem Namen, im Stil von
+„Dieses Gerät“ mit Punkt, dezentem Hintergrund und feinem Rahmen.
+
 **Paket 1 ist technisch fertig.** Profilaufnahmen, Bestandskritik und bereinigte
 HTML-Referenzen sind vorhanden. Die benutzerseitige SingleFile-Aufnahme der
 Account-Seite wurde über die vorhandene Stitch-CLI in das private Versuchsprojekt
@@ -26,6 +84,19 @@ Gestaltungsreferenz. Der Besucherbereich ist nach den letzten Schriftkorrekturen
 ebenfalls als feste HTML-Gestaltungsreferenz abgenommen. Gesamtfeature und
 technische Übertragung bleiben offen; Paket 3d ist nicht freigegeben.
 Vaadin-Spielwiese und globale Theme-Übernahme sind noch nicht begonnen.
+**Nächste vereinbarte Erweiterung sind die übrigen Adminbereiche als HTML-Referenz.**
+Die Dialog-/Notificationdurchsicht ist erfolgt; der Benutzer verwaltet die
+ergänzende Komponentenübersicht inzwischen separat. Sie ist kein Bestandteil
+der Repository-Referenzen. Neue Verbesserungen benötigen weiterhin eine
+gemeinsame Sichtung vor ihrer Übernahme.
+Der Benutzer möchte vor der technischen Übertragung auch diesen Bereich mit
+Stitch anhand der beiden festen Referenzen gestalten lassen. Zuerst dient die
+Benutzerverwaltung als Beispiel für dichte Inhalte; danach folgen die übrigen
+bestehenden Adminbereiche. Die beiden abgenommenen Referenzen bleiben der
+gestalterische Rahmen. Der konkrete Ablauf steht in der Ergänzung vor 3d.
+Die überarbeitete Variante 2 der Benutzerverwaltung ist mit synthetischen Konten
+als HTML-Referenz abgenommen und dauerhaft gesichert. Die übrigen Adminbereiche
+stehen noch aus.
 **Inbox-Variante C und die ergänzende Overlayrunde sind als zusätzliche
 HTML-Entwurfsreferenz übernommen.** Die zuletzt gewünschten Kleinkorrekturen sind
 umgesetzt: horizontale Toolbartrennung erhalten, vertikale Trennlinie entfernt
@@ -127,9 +198,10 @@ um einen klickbaren HTML-Prototyp. Erst dessen gemeinsame Bewertung entscheidet
 Keine riesige Seite mit allen Widgets auf einmal und keine vollständige Kopie der
 Anwendung. Die Szenen zeigen die bestehenden Funktionen im Seitenkontext, ohne
 deren Dienste nachzubauen. Neue Dashboard-Inhalte werden nicht erfunden, um ein
-leeres Bild attraktiver zu machen. Administration und anonyme Zugangsseiten sind
-vorerst ausgenommen; ein berechtigungsabhängiger Admin-Menüeintrag kann separat
-demonstriert werden, ohne Adminansichten zu gestalten.
+leeres Bild attraktiver zu machen. Die zusätzlich beauftragten anonymen
+Zugangsseiten sind inzwischen als Referenz abgenommen. Die Administration wird
+als nächste HTML-Erweiterung anhand derselben festen Gestaltung ergänzt;
+vorhandene Rechte und Funktionen bestimmen ihre sichtbaren Beispiele.
 
 Vor dem Bau der Spielwiese werden bereits vorhandene Ansichten als Referenz
 aufgenommen. Erst nach Bewertung des HTML-Portals entsteht der Vaadin-Pilot. Damit
@@ -349,8 +421,9 @@ Tokenliste neben `docs/theme.md` und den Stylesheets.
 Pakete 1 und 2 sind fertig; die menschliche Richtungsentscheidung ist getroffen.
 Die HTML-Arbeit aus 3a–3c ist einschließlich der gezielten Verfeinerungen
 durchgeführt. Angemeldeter Bereich und Besucherbereich sind als feste
-Gestaltungsreferenzen abgenommen. Als Nächstes sind Umfang und Reihenfolge des
-Vaadin-Piloten auf dieser Grundlage gemeinsam festzulegen.
+Gestaltungsreferenzen abgenommen. Als Nächstes wird die Administration als
+zusätzliche HTML-Referenz mit Stitch gestaltet und gemeinsam beurteilt.
+Danach sind Umfang und Reihenfolge des Vaadin-Piloten festzulegen.
 Vaadin-Integration und Theme-Übernahme bleiben nachgelagert; die Anwendungsoberfläche
 wurde noch nicht verändert.
 
@@ -365,14 +438,15 @@ weiteren Versuch gilt nach der Richtungswahl der folgende Kern:
 | 2 | Drei vergleichbare Designrichtungen vorstellen und eine auswählen | Zusätzliche Varianten oder weitere Screens erzeugen |
 | 3a | Profilreferenz mit vereinbartem Seitenkopf verfeinern; lange Namen und zwei Hintergründe vergleichen | Zusätzliche rein ästhetische Varianten |
 | 3b | Aufnahme-/Stitch-Kreislauf an Sicherheit und E-Mail-Dialog nachweisen; anschließend übrige angemeldete Benutzerbereiche und Overlays aufnehmen/gestalten | Allgemeiner Exporter für beliebige Vaadin-Anwendungen, zusätzliche Stitch-Anbindung |
-| 3c | Ergebnisse in einem lokal klickbaren, zusammenhängenden HTML-Portal mit gemeinsamen Bausteinen beurteilen; zusätzlich beauftragte Besucheransichten sind enthalten | Vollständige EN-Ausarbeitung |
+| 3c | Ergebnisse in einem lokal klickbaren, zusammenhängenden HTML-Portal mit gemeinsamen Bausteinen beurteilen; Besucheransichten sind abgenommen, Administration wird als nächste Erweiterung ergänzt | Vollständige EN-Ausarbeitung |
 | 3d | Nach positiver HTML-Bewertung einen begrenzten Vaadin-Piloten mit Profil, Dialog und Fehlerzustand erproben | Weitere echte Anwendungsansichten erst nach vereinbarter Übernahmereichweite |
-| 4 | Kein Pflichtschritt vor der HTML-Bewertung | Vertiefte Komponenten-/Vaadin-Transferprobe, Administration und zusätzliche Zustände |
+| 4 | Kein Pflichtschritt vor der HTML-Bewertung | Vertiefte Komponenten-/Vaadin-Transferprobe einschließlich Administration und zusätzlicher Zustände |
 | 5 | Nach HTML-Vorschau und gegebenenfalls Vaadin-Pilot über Fortführung, Übernahme oder Verwerfen entscheiden | Bei Bedarf nach einer Vertiefung erneut entscheiden |
 
 Die Reihenfolge ist **1 → 2 → 3a → 3b → 3c → gemeinsame Entscheidung → 3d/5**.
-3a–3c sind für den HTML-Versuch ausgeführt und gestalterisch als Referenzen
-abgenommen. Die Entscheidung über Umfang und Freigabe der technischen Übertragung
+3a–3c sind für Benutzerportal und Besucherbereich ausgeführt und gestalterisch
+als Referenzen abgenommen; die ergänzende Administration steht noch aus.
+Die Entscheidung über Umfang und Freigabe der technischen Übertragung
 bleibt offen. Gemeinsame
 Quellen für Header, Footer, Navigation, Palette und wiederkehrende Overlays
 vermeiden unabhängige Kopien je Seite. Paket 4 und die anderen optionalen
@@ -1614,6 +1688,130 @@ Reales Smartphone, EN-Layout, Kontrastmessung, Screenreader sowie echte Fachabl�
 sind nicht abgenommen.
 Paket 3 und das Gesamtfeature sind damit noch nicht abgeschlossen.
 
+#### Ergänzung vor 3d – Administration als HTML-Referenz
+
+**Abgenommen: Benutzerverwaltung, überarbeitete Variante 2.** Die maßgebliche
+HTML-Referenz liegt gemeinsam mit Portal und Besucherbereich unter
+`docs/design/frontend-referenzen/`: `admin-users.html` als Vorschau und
+`admin.html` als eigenständige Oberfläche. Aktuelle bearbeitbare Quellen unter
+`quellen/benutzerverwaltung/` sind unabhängig von target gesichert. Die vorherige
+Inspirationsablage mit alternativen Varianten und A/B-Steuerung ist auf Benutzerwunsch
+entfernt. Die Gestaltung der beiden anderen Referenzen bleibt erhalten; die Vorschauen
+sind verlinkt, und die Portalreferenz unterstützt den gezielten Home-/Inbox-Einstieg.
+
+Die Benutzerverwaltung enthält sieben Informationsspalten, 24 synthetische Konten,
+Sortierung, 10/20/50-Einträge-Pagination wie bei Benachrichtigungen und Anlegen-,
+Bearbeiten- und Löschdialoge. Eigene und geschützte Konten behalten die vorhandenen
+Einschränkungen. Die Sidenav übernimmt den Portalstandard mit cyanfarbenen Icons,
+heller Schrift und den Gruppen ADMINISTRATION/PORTAL. Noch nicht gestaltete
+Adminziele bleiben deaktiviert. Kontenzähler und Filterzähler sind blau;
+Benutzer hinzufügen verwendet das Personen-Plus, Zurücksetzen den Dangerstil.
+
+Der rechte Filter-Drawer übernimmt Smartphone-Sidenavverhalten, eine linke
+Rahmenlinie, Panelkopf/-fuß wie persönliche Daten und dunklen Inhalt.
+Der untere Abstand entspricht nur der sichtbaren Copyright-Footerfläche; bei
+nicht sichtbarem Footer endet der Drawer am Viewportrand. Header-/Footerklicks
+schließen mit Verwerfen. Die volle Backdrop-Klickfläche bleibt dort transparent;
+Neupositionierung auch bei Inhaltsänderungen und Rotation.
+Suche und
+Kriterien werden gemeinsam über Anwenden übernommen. Abbrechen, Escape und
+Hintergrundklick verwerfen den Entwurf einschließlich Suche; Zurücksetzen leert
+nur den Entwurf, die Tabelle ändert sich erst mit Anwenden. Abbrechen erhält die
+zuletzt übernommenen Filter auch nach Zurücksetzen. Aktiv ist Alle/Ja/Nein; Status und die vier bestehenden Rollen sind
+Mehrfach-Badges. Innerhalb einer Gruppe gilt ODER, zwischen Gruppen UND; keine
+oder alle vier Werte schränken nicht ein. Unausgewählte Rollen verwenden Secondary,
+Auswahl wird durch Fläche, Kontur und Häkchen erkennbar. Der 36px-Gruppenzähler
+passt zum Zurücksetzen; die externe aktive Filterzeile und zusätzliche Erklärungen
+sind entfernt. Die fünf Labels übernehmen den Stil der persönlichen Daten.
+Datum/Kalender und optionale Uhrzeit bleiben vorhanden; die Uhrzeit hat keine
+sichtbare Beschriftung und wird über eine Hinweisbox im E-Mail-Dialogstil erklärt.
+
+Standardaktionen und Löschdialoge bleiben im gemeinsam abgestimmten Referenzstil:
+Abbrechen mit schlichtem X, Kopf-Schließen im Kreis, dunkler Inhalt, Frage und
+Erklärung zusammen sowie Kontextkarte mit Avatar/Name/E-Mail. Der rote
+Bestätigungsbutton heißt Löschen. Keine neuen Fach-, Rechte- oder Sicherheitsregeln.
+Nur HTML-Simulation; kein Vaadin-/Java-Umbau, globaler Themewechsel, echte Anmeldung,
+Datenbank oder Mailaktion. Logoentscheidung bleibt zurückgestellt.
+
+Aus der gezielten Stitch-Nachsicht sind die Feldicon-Regel und getrennten
+Passworthinweise nach Benutzerfreigabe übernommen. Gemeinsame Feldregeln und
+Anwendungs-Platzhalter gelten nun in allen drei HTML-Referenzen; normale
+Aktionsbuttonicons bleiben unverändert. Nach weiterer Stitch-Rückfrage sind
+dekorative linke Feldsymbole entfernt; Suchlupen und rechte Bedienicons bleiben.
+Sonstige Dialoganordnung beibehalten,
+Rollenhinweis direkt bei der Auswahl und das grüne Badge „Dein Benutzer“ unter dem Namen. Das aktuelle
+Ergebnis steht zur gemeinsamen Sichtung bereit. Zusammenfassung und private Screens unter
+`docs/design/frontend-referenzen/quellen/benutzerverwaltung/stitch-dialogvorschlag.md`.
+Der fehlende Pflichtpunkt bei Geschlecht und das grüne Badge „Dein Benutzer“ in der Tabelle sind
+bereits in die Referenzen übernommen. Den bestehenden Löschdialog erhalten.
+
+Danach Dashboard, Konfiguration, Mailtest und berechtigten
+Benachrichtigungsversand mit Stitch auf derselben Grundlage gestalten. Dafür die
+bestehenden Anwendungsquellen und Fachverträge vor dem jeweiligen Entwurf prüfen.
+Die Konfiguration umfasst GENERAL, SECURITY, TOKENS, USER_STATUS, NOTIFICATIONS,
+EMAIL_SENDER, SMTP und QUEUE. Benachrichtigungsversand setzt canSend voraus.
+Keine erfundenen Dashboard-Kennzahlen oder Komfortfunktionen übernehmen.
+Ergebnisse unabhängig abrufen, mit vorhandenen Komponenten einpassen und gemeinsam
+sichten. Erst nach dem vollständigen HTML-Bild Umfang/Reihenfolge des Vaadin-Piloten
+abgrenzen; dessen Umsetzung und die übrigen Adminseiten sind noch nicht freigegeben.
+
+Gezielte Prüfungen der ausgewählten Variante umfassen kombinierte Status-/Rollenfilter,
+gemeinsames Anwenden der Suche, Abbrechen/Zurücksetzen, ungültiges Datum, leere
+Treffer, Sortierung und Pagination sowie Desktop/Smartphone hoch/quer. Labels und
+Infoausrichtung sind gerendert gemessen. Archivprüfung kontrolliert CSP, Scripts,
+Links und die gezielten Portal-Einstiegsrouten. Dies ist keine große QA;
+`docs/status.md`, offene echte Geräte-/Screenreader-/EN-Prüfungen und der zentrale
+Testbedarf bleiben erhalten. Kein Commit, Merge oder Push aus dieser Abnahme ableiten.
+
+**Vorgeschaltete Komponentenübersicht zur Sichtung:**
+`preview/dialogs.html` und `preview/notifications.html` bieten wie die Besuchervorschau
+eine gruppierte Auswahl, Vor/Zurück, Wiederöffnen und drei Prüfgrößen. Die separate Sicherung dieser Übersicht wurde vom Benutzer aus der Projektablage
+verschoben; sie wird nicht neu angelegt. Die freigegebenen Bausteine und ihre Quellen
+stehen in den Frontend-Referenzen. Die temporäre Übersicht enthält 50 Dialog-/Overlay-/Panelauswahlen
+(48 Bestands-/Standardbeispiele plus zwei Vergleiche) und 82 Meldungsauswahlen
+(57 Anwendungsaufrufer mit 58 Ergebniszweigen, 20 Standardmuster, vier Vergleiche).
+Alle aktuellen nativen HTML-Dialog-IDs sowie Dialogklassen/Instanziierungen und
+Notification-Aufrufer im Anwendungscode sind gegen das Inventar abgeglichen.
+Gerät abmelden, gespeicherte Anmeldung widerrufen und alle anderen abmelden sind
+getrennt enthalten, ebenso Recovery als ausdrücklich nichtmodaler Schritt.
+
+Stitch-Neuanlage `6337c98cfbc04e7ab5e4d01f9e0b55da` wurde getrennt erzeugt und
+unabhängig erneut abgerufen. HTML-Upload war mit 403 blockiert; Original-Downloads
+verlangen Anmeldung (401), der Webzugang war nicht angemeldet. Die anschließende
+Textkritik wurde gelesen und gesichert; lokale Vergleichsbeispiele daraus sind
+ausdrücklich keine visuell geprüften Originalexporte. Entscheidungen betreffen
+Warnakzent beim Abmelden, Sperrsymbol beim Widerrufen, Warn-Dreieck statt Glocke
+beziehungsweise aktuellem Hinweis-Kreis und kleinere 16px Glyphen in 28px
+Notificationflächen. Keine Fach-/Timer-/Stapelregeln oder unpräzisen Löschfolgen
+aus Stitch übernehmen. Vorschläge bleiben getrennt; Logos sind unverändert.
+
+Die vom Benutzer beauftragte Dialogdurchsicht ist in den HTML-Referenzen und
+Übersichten synchron eingepasst: gleiche Footerbuttonbreiten bei E-Mail, Passwort
+und Profilbild; dunkler Nachrichtendetail-Inhalt; Gerätebestätigungen im gemeinsamen
+Aufbau mit Geräteicon, Sitzungsdaten und Zustandskennzeichen; Nachrichtenkontext
+mit Herkunft, Datum/Uhrzeit und Lesestatus. Fachliche Aktionen bleiben Abmelden,
+Widerrufen beziehungsweise Löschen. Die persönlichen Daten enthalten nun die
+Geschlechtsauswahl entsprechend dem vorhandenen Dropdownstil. Statusüberschrift
+in Status- und Avatarmenü cyan; kein zusätzlicher Erklärungstext bei Geschlecht.
+Kontexticons mittig zum gesamten sichtbaren Textblock; E-Mail-Aktionen gleich breit
+und einzeilig, auf schmalen Smartphones untereinander. Uhrzeitlisten ohne
+zusätzlichen Punkt. Änderungsquellen außerhalb von
+target unter `docs/design/frontend-referenzen/quellen/dialogdurchsicht/` erhalten.
+16 betroffene Auswahlen in drei Größen gezielt nachgeprüft, Buttonbreiten und
+Inhaltsfarbe gemessen; neue Auswahl mit End/Enter/Escape in der Direktreferenz
+bedient. Frame-Tastaturgrenze bleibt im zentralen Testbedarf dokumentiert.
+
+Geprüft: alle 49 und 82 Auswahlen in Desktop/Hoch-/Querformat (147 + 246
+Sicht-/Überlaufprüfungen), ausgewählte Escape-/Abbrechen-/Fokusfälle, modale
+Meldungen, Originaldauer und Wiederöffnen. Der Frame wird pro Aufruf neu erzeugt;
+Antworten alter Szenen/Läufe oder fremder Absender/Origins werden verworfen.
+Ruff, JS-/CSP-/Offline-/Quellenhash-/ZIP-Prüfung und Neubau ausschließlich aus
+gesicherten Eingaben bestanden. Der verschachtelte Escape-Nachtest ist unter
+`docs/testbedarf.md` offen; keine Behauptung einer vollständigen Bedienabnahme.
+Kein Anwendungsstart, keine große QA und keine Änderung an `docs/status.md`.
+Die Benutzerverwaltung ist inzwischen als Referenz abgenommen; als Nächstes folgen
+einzeln Dashboard, Konfiguration, Mailtest und berechtigter Benachrichtigungsversand.
+
 #### 3d – Nach gemeinsamer HTML-Bewertung in Vaadin erleben
 
 - Gewählte Grundlage: Header, Footer und Farben aus C mit Content/Seitennavigation
@@ -1817,10 +2015,11 @@ Menschliche Abnahmen orientieren sich an HUM-01 bis HUM-05 im manuellen Katalog.
   gültige Erkenntnisse in die Fachdokumentation übernehmen und den erledigten Plan
   samt Verweisen entfernen; kein automatisches Archiv.
 
-Grundsätzlich wird nur reguläres Codex-Kontingent verwendet. Für Geräte & Sitzungen
-und später gesondert für die öffentliche Besucherrunde hat der Benutzer nach
-ausgeschöpftem Fünfstundenlimit den Einsatz vorhandener Credits ausdrücklich
-freigegeben. Die Ausnahmen gelten nur für die jeweils benannten Runden.
+Grundsätzlich wird nur reguläres Codex-Kontingent verwendet. Für Geräte & Sitzungen,
+die öffentliche Besucherrunde und nun gesondert die Admin-Benutzerverwaltungsrunde
+hat der Benutzer den Einsatz vorhandener Credits ausdrücklich freigegeben. Für
+die Adminrunde wurde die anfängliche Pausenwahl ausdrücklich als Fehlklick
+korrigiert. Die Ausnahmen gelten nur für die jeweils benannten Runden.
 Kein Kauf von Credits, kein Reset-Guthaben und keine separate API-Abrechnung.
 Eine automatische Fortsetzung ist nicht eingerichtet.
 

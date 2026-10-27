@@ -1,0 +1,32 @@
+<svg width="96" height="96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cosmos-Logo N &#x2013; Stitch-Vorschlag" viewBox="0 0 96 96">
+            <defs>
+              <linearGradient id="gradN_arc1" x1="12" y1="20" x2="84" y2="80" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#38BDF8"/>
+                <stop offset="50%" stop-color="#0284C7"/>
+                <stop offset="100%" stop-color="#1D4ED8"/>
+              </linearGradient>
+              <linearGradient id="gradN_arc2" x1="20" y1="84" x2="80" y2="12" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#C084FC"/>
+                <stop offset="60%" stop-color="#9333EA"/>
+                <stop offset="100%" stop-color="#6B21A8"/>
+              </linearGradient>
+              <linearGradient id="gradN_pointer" x1="26" y1="26" x2="70" y2="70" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#FFFFFF"/>
+                <stop offset="50%" stop-color="#E0E7FF"/>
+                <stop offset="100%" stop-color="#38BDF8"/>
+              </linearGradient>
+            </defs>
+            <!-- Äußerer Koordinatenkreis (Subtile Referenz) -->
+            <circle cx="48" cy="48" r="40" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.5" stroke-dasharray="4 8"/>
+            <!-- Azur-Meridianbogen (oben-links nach unten-rechts) -->
+            <path d="M 18 48 C 18 26 34 14 56 14 C 74 14 84 26 84 40 C 84 58 66 74 44 74 C 28 74 18 64 18 48 Z" stroke="url(#gradN_arc1)" stroke-width="6.5" stroke-linecap="round" fill="none"/>
+            <!-- Violetter Gegenbogen (geometrischer Sextant-Ausschnitt mit Überdeckung) -->
+            <path d="M 48 18 C 66 18 80 32 80 50 C 80 70 64 82 42 82 C 24 82 14 70 14 54" stroke="url(#gradN_arc2)" stroke-width="6.5" stroke-linecap="round" fill="none"/>
+            <!-- Zenitaler Vektor-Zielstern (präzise Raute im Kreuzungspunkt) -->
+            <path d="M 48 30 L 52 44 L 66 48 L 52 52 L 48 66 L 44 52 L 30 48 L 44 44 Z" fill="url(#gradN_pointer)"/>
+            <!-- Kern-Lichtpunkt -->
+            <circle cx="48" cy="48" r="3.5" fill="#FFFFFF"/>
+            <!-- Visier-Peillinien -->
+            <circle cx="48" cy="18" r="2.5" fill="#38BDF8"/>
+            <circle cx="78" cy="48" r="2.5" fill="#C084FC"/>
+          </svg>

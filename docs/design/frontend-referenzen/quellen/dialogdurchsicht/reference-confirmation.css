@@ -1,0 +1,48 @@
+/* Ein gemeinsamer Bestätigungsdialog; fachliche Texte und Aktionen bleiben getrennt. */
+body.portal-reference dialog.portal-confirm-dialog{position:fixed;inset:0;height:fit-content;box-sizing:border-box;width:540px;max-width:calc(100vw - 32px);max-height:calc(100dvh - 32px);margin:auto;padding:0;border:1px solid #ffffff24;border-radius:16px;background:var(--surface-overlay);color:var(--text-primary);overflow:hidden;box-shadow:0 24px 80px #0009}
+body.portal-reference dialog.portal-confirm-dialog[open]{display:flex;flex-direction:column}
+body.portal-reference dialog.portal-confirm-dialog::backdrop{background:#01040bbb;backdrop-filter:blur(3px)}
+body.portal-reference .portal-confirm-dialog>.n-overlay-head{display:flex;align-items:flex-start;gap:14px;flex-shrink:0;margin:0;padding:20px 24px!important;border-bottom:1px solid var(--border-subtle);background:var(--surface-overlay)!important}
+body.portal-reference .portal-confirm-dialog .n-title-icon{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;min-width:40px;border:1px solid #0088cc66;border-radius:12px;background:#122342;color:var(--accent)}
+body.portal-reference .portal-confirm-dialog.danger .n-title-icon{color:var(--danger);background:#f871710d;border-color:#f8717140}
+body.portal-reference .portal-confirm-dialog .n-title-icon>svg{display:block;width:20px;height:20px}
+body.portal-reference .portal-confirm-dialog .n-heading{flex:1;min-width:0}
+body.portal-reference .portal-confirm-dialog .n-heading h2{margin:0;font:600 16px/22px Inter,system-ui;letter-spacing:-.025em;color:var(--text-primary)}
+body.portal-reference .portal-confirm-dialog .n-heading p{margin:2px 0 0;font:400 12px/16px Inter,system-ui;color:var(--text-secondary)}
+body.portal-reference .portal-confirm-dialog .n-close{display:grid;place-items:center;flex-shrink:0;width:36px;height:36px;margin-left:auto;padding:0;border:1px solid #ffffff1f;border-radius:9px;background:var(--surface-input);color:var(--accent)}
+body.portal-reference .portal-confirm-dialog .n-close svg{width:18px;height:18px}
+body.portal-reference .portal-confirm-dialog>.n-dialog-body{display:flex;flex-direction:column;gap:16px;margin:0;padding:24px;background:var(--surface-canvas);overflow:auto;min-height:0}
+body.portal-reference .portal-confirm-dialog .portal-confirm-summary{display:flex;flex-direction:column;gap:6px}
+body.portal-reference .portal-confirm-dialog .portal-confirm-description{margin:0!important;font:600 15px/21px Inter,system-ui!important;color:var(--text-primary)!important}
+body.portal-reference .portal-confirm-dialog .portal-confirm-explanation{margin:0;font:400 13px/21px Inter,system-ui;color:var(--text-secondary)}
+body.portal-reference .portal-confirm-dialog .portal-confirm-explanation[hidden]{display:none}
+body.portal-reference .portal-confirm-dialog .portal-confirm-context{display:flex;align-items:center;gap:12px;box-sizing:border-box;margin:0;padding:14px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--surface-input);font:500 14px/20px Inter,system-ui;color:var(--text-primary);overflow-wrap:anywhere}
+body.portal-reference .portal-confirm-dialog .portal-confirm-object{display:grid;place-items:center;flex-shrink:0;box-sizing:border-box;width:36px;height:36px;border:1px solid #38bdf826;border-radius:50%;background:#122342;color:var(--accent)}
+body.portal-reference .portal-confirm-dialog .portal-confirm-object svg{display:block;width:18px;height:18px}
+body.portal-reference .portal-confirm-dialog .portal-confirm-avatar{font:600 12px/1 Inter,system-ui;color:#bae6fd}
+body.portal-reference .portal-confirm-dialog .portal-confirm-text{min-width:0}
+body.portal-reference .portal-confirm-dialog .portal-confirm-context strong{font:500 14px/20px Inter,system-ui}
+body.portal-reference .portal-confirm-dialog .portal-confirm-context p{margin:2px 0 0;font:400 12px/18px Inter,system-ui;color:var(--text-secondary)}
+body.portal-reference .portal-confirm-dialog .n-info{display:flex;align-items:center;gap:10px;margin:0;padding:0;font:400 12px/20px Inter,system-ui;color:var(--text-secondary)}
+body.portal-reference .portal-confirm-dialog .n-info>[data-n-symbol]{display:flex;align-items:center;flex-shrink:0;color:var(--accent)}
+body.portal-reference .portal-confirm-dialog .n-info svg{width:16px;height:16px}
+body.portal-reference .portal-confirm-dialog>.n-overlay-foot{display:flex;justify-content:flex-end;flex-shrink:0;margin:0;padding:16px 24px!important;border-top:1px solid var(--border-subtle);background:var(--surface-overlay)!important}
+body.portal-reference .portal-confirm-dialog .n-actions{display:grid;grid-template-columns:repeat(2,minmax(0,112px));gap:8px;justify-content:end}
+body.portal-reference .portal-confirm-dialog .n-button{box-sizing:border-box;width:100%;min-width:0;height:36px;min-height:36px;justify-content:center;gap:7px;padding:0 13px;font:600 12px/1.4 Inter,system-ui;border-radius:9px}
+body.portal-reference .portal-confirm-dialog .n-button svg{width:16px;height:16px;flex-shrink:0}
+body.portal-reference .portal-confirm-dialog .n-button.n-danger{color:var(--danger);background:#f871710d;border-color:#f8717140}
+body.portal-reference .portal-confirm-dialog .n-button.n-danger:hover{background:#f871711a;border-color:#f8717160}
+body.portal-reference .portal-confirm-dialog:not(.danger) .n-actions{display:flex;flex-wrap:wrap}
+body.portal-reference .portal-confirm-dialog:not(.danger) .n-button{width:auto}
+@media(max-width:639px){body.portal-reference dialog.portal-confirm-dialog{max-width:calc(100vw - 20px);max-height:calc(100dvh - 20px)}body.portal-reference .portal-confirm-dialog>.n-overlay-head{padding:20px!important;gap:12px}body.portal-reference .portal-confirm-dialog>.n-dialog-body{padding:20px}body.portal-reference .portal-confirm-dialog>.n-overlay-foot{padding:16px 20px!important}body.portal-reference .portal-confirm-dialog .n-actions{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:359px){body.portal-reference .portal-confirm-dialog .n-actions{grid-template-columns:minmax(0,1fr)}}
+
+body.portal-reference .portal-confirm-dialog>.n-overlay-head>.n-heading{padding:0!important}
+body.portal-reference .portal-confirm-dialog .portal-confirm-metadata{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 0}
+body.portal-reference #session-confirm .n-actions{grid-template-columns:repeat(2,minmax(0,180px))}
+body.portal-reference #session-confirm .portal-confirm-context{align-items:center}
+body.portal-reference #session-confirm .session-badges{margin-top:8px}
+body.portal-reference #session-confirm .portal-confirm-context-list{display:flex;flex-direction:column;gap:10px}
+body.portal-reference #session-confirm .portal-confirm-context-list>.portal-confirm-context{width:100%}
+@media(max-width:639px){body.portal-reference #session-confirm .n-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:359px){body.portal-reference #session-confirm .n-actions{grid-template-columns:minmax(0,1fr)}}

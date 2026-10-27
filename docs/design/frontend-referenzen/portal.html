@@ -695,7 +695,7 @@ body.portal-reference{--portal-content-surface:#050811;--portal-secondary-icon:#
 body.portal-reference[data-consistency-surface="panel"]{--portal-content-surface:#080e1b}
 body.portal-reference[data-consistency-icons="neutral"]{--portal-secondary-icon:#e2e8f0}
 body.portal-reference #notification-variant{background:#080e1b!important}
-body.portal-reference :is(#n-inbox-rows,#n-preview-rows,.portal-security-page .portal-card-body,.portal-sessions-page .portal-card-body,.profile-card .portal-profile-form){background:var(--portal-content-surface)!important}
+body.portal-reference :is(#n-inbox-rows,#n-preview-rows,.portal-security-page .portal-card-body,.portal-sessions-page .portal-card-body,.profile-card .portal-profile-form,#emailDialog .portal-modal-body,#passwordDialog .portal-modal-body){background:var(--portal-content-surface)!important}
 body.portal-reference :is(.portal-button:not(.portal-icon-button),.n-button,[data-demo-action="save"],.portal-menu-action){height:36px!important;min-height:36px!important;padding:0 13px!important;font:600 12px/1.4 Inter,system-ui!important}
 body.portal-reference :is(.portal-button:not(.portal-icon-button),.n-button,[data-demo-action="save"],.portal-menu-action)>svg{width:16px!important;height:16px!important}
 body.portal-reference .portal-button:not(.primary):not(.danger):not(.sessions-danger):not(.active):not([data-demo-action="save"]):not(.portal-icon-button),body.portal-reference .n-button:not(.n-primary):not(.n-danger),body.portal-reference .c-icon-button:not(.c-danger):not([aria-current="page"]){color:#e2e8f0!important;background:#091120!important;border-color:#ffffff1f!important}
@@ -712,6 +712,91 @@ body.portal-reference :is(.portal-button.primary,.n-button.n-primary,[data-demo-
 body.portal-reference :is(.portal-hint,.portal-security-note,.portal-security-hint,.sessions-note,.portal-avatar-hint,.n-info,.c-retention-info){align-items:center!important}
 body.portal-reference :is(.portal-hint,.portal-security-note,.portal-security-hint,.sessions-note,.portal-avatar-hint,.n-info,.c-retention-info) svg{margin-top:0!important;flex-shrink:0}
 body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-items:center}
+
+/* Gemeinsame Sidenav: helle Standardschrift und cyanfarbene Icons, auch bei aktiver Seite. */
+body.portal-reference #sidebarNav nav button[data-portal-route]{color:var(--text-primary)!important}
+body.portal-reference #sidebarNav nav button[data-portal-route] svg{color:var(--portal-secondary-icon)!important}
+body.portal-reference #sidebarNav nav>div>div:first-child{color:var(--accent)!important}
+
+/* Freigegebene Dialogdurchsicht: einheitliche Inhaltsfläche und gleich breite Aktionen. */
+body.portal-reference #n-detail>.n-dialog-body{background:var(--portal-content-surface)!important}
+body.portal-reference :is(#emailDialog,#passwordDialog) .portal-modal-foot{display:grid;grid-template-columns:repeat(2,minmax(0,200px));justify-content:end}
+body.portal-reference :is(#emailDialog,#passwordDialog) .portal-modal-foot>.n-button{width:100%;min-width:0;justify-content:center}
+body.portal-reference #emailDialog .portal-modal-foot>.n-button{white-space:nowrap}
+body.portal-reference #avatarDialog .portal-avatar-footer{display:flex;flex-wrap:wrap;gap:8px}
+body.portal-reference #avatarDialog .portal-avatar-footer .portal-actions{display:flex;gap:8px}
+body.portal-reference #avatarDialog .portal-avatar-footer .portal-button{width:140px;min-width:0;justify-content:center}
+body.portal-reference #sidebarStatusPopover>h2{color:var(--accent)!important}
+body.portal-reference #userMenuPopover .portal-presence-heading{color:var(--accent)!important}
+body.portal-reference #profileGenderDropdown{position:fixed;z-index:90;margin:0;background:#0e1726;border:1px solid #ffffff24;border-radius:12px;box-shadow:0 18px 50px #0008;overflow:auto;padding:0}
+body.portal-reference #profileGenderDropdown [role=option]>svg{visibility:hidden}
+body.portal-reference #profileGenderDropdown [role=option][aria-selected=true]>svg{visibility:visible}
+body.portal-reference #profileGenderDropdown [role=option][data-active=true]{background:#122342;color:#e2e8f0}
+body.portal-reference #profileGenderDropdown [role=option] span.rounded-full{background:#475569}
+body.portal-reference #profileGenderDropdown [role=option][aria-selected=true] span.rounded-full{background:#38bdf8}
+@media(max-width:639px){body.portal-reference :is(#emailDialog,#passwordDialog) .portal-modal-foot{grid-template-columns:repeat(2,minmax(0,1fr))}body.portal-reference #avatarDialog .portal-avatar-footer .portal-actions{width:100%;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}body.portal-reference #avatarDialog .portal-avatar-footer .portal-button{width:100%}body.portal-reference #avatarDialog .portal-avatar-footer>#avatarDelete{width:calc((100% - 8px)/2)}}
+@media(max-width:479px){body.portal-reference #emailDialog .portal-modal-foot{grid-template-columns:minmax(0,1fr)}}
+</style><style id="portal-confirmation-style">/* Ein gemeinsamer Bestätigungsdialog; fachliche Texte und Aktionen bleiben getrennt. */
+body.portal-reference dialog.portal-confirm-dialog{position:fixed;inset:0;height:fit-content;box-sizing:border-box;width:540px;max-width:calc(100vw - 32px);max-height:calc(100dvh - 32px);margin:auto;padding:0;border:1px solid #ffffff24;border-radius:16px;background:var(--surface-overlay);color:var(--text-primary);overflow:hidden;box-shadow:0 24px 80px #0009}
+body.portal-reference dialog.portal-confirm-dialog[open]{display:flex;flex-direction:column}
+body.portal-reference dialog.portal-confirm-dialog::backdrop{background:#01040bbb;backdrop-filter:blur(3px)}
+body.portal-reference .portal-confirm-dialog>.n-overlay-head{display:flex;align-items:flex-start;gap:14px;flex-shrink:0;margin:0;padding:20px 24px!important;border-bottom:1px solid var(--border-subtle);background:var(--surface-overlay)!important}
+body.portal-reference .portal-confirm-dialog .n-title-icon{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;min-width:40px;border:1px solid #0088cc66;border-radius:12px;background:#122342;color:var(--accent)}
+body.portal-reference .portal-confirm-dialog.danger .n-title-icon{color:var(--danger);background:#f871710d;border-color:#f8717140}
+body.portal-reference .portal-confirm-dialog .n-title-icon>svg{display:block;width:20px;height:20px}
+body.portal-reference .portal-confirm-dialog .n-heading{flex:1;min-width:0}
+body.portal-reference .portal-confirm-dialog .n-heading h2{margin:0;font:600 16px/22px Inter,system-ui;letter-spacing:-.025em;color:var(--text-primary)}
+body.portal-reference .portal-confirm-dialog .n-heading p{margin:2px 0 0;font:400 12px/16px Inter,system-ui;color:var(--text-secondary)}
+body.portal-reference .portal-confirm-dialog .n-close{display:grid;place-items:center;flex-shrink:0;width:36px;height:36px;margin-left:auto;padding:0;border:1px solid #ffffff1f;border-radius:9px;background:var(--surface-input);color:var(--accent)}
+body.portal-reference .portal-confirm-dialog .n-close svg{width:18px;height:18px}
+body.portal-reference .portal-confirm-dialog>.n-dialog-body{display:flex;flex-direction:column;gap:16px;margin:0;padding:24px;background:var(--surface-canvas);overflow:auto;min-height:0}
+body.portal-reference .portal-confirm-dialog .portal-confirm-summary{display:flex;flex-direction:column;gap:6px}
+body.portal-reference .portal-confirm-dialog .portal-confirm-description{margin:0!important;font:600 15px/21px Inter,system-ui!important;color:var(--text-primary)!important}
+body.portal-reference .portal-confirm-dialog .portal-confirm-explanation{margin:0;font:400 13px/21px Inter,system-ui;color:var(--text-secondary)}
+body.portal-reference .portal-confirm-dialog .portal-confirm-explanation[hidden]{display:none}
+body.portal-reference .portal-confirm-dialog .portal-confirm-context{display:flex;align-items:center;gap:12px;box-sizing:border-box;margin:0;padding:14px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--surface-input);font:500 14px/20px Inter,system-ui;color:var(--text-primary);overflow-wrap:anywhere}
+body.portal-reference .portal-confirm-dialog .portal-confirm-object{display:grid;place-items:center;flex-shrink:0;box-sizing:border-box;width:36px;height:36px;border:1px solid #38bdf826;border-radius:50%;background:#122342;color:var(--accent)}
+body.portal-reference .portal-confirm-dialog .portal-confirm-object svg{display:block;width:18px;height:18px}
+body.portal-reference .portal-confirm-dialog .portal-confirm-avatar{font:600 12px/1 Inter,system-ui;color:#bae6fd}
+body.portal-reference .portal-confirm-dialog .portal-confirm-text{min-width:0}
+body.portal-reference .portal-confirm-dialog .portal-confirm-context strong{font:500 14px/20px Inter,system-ui}
+body.portal-reference .portal-confirm-dialog .portal-confirm-context p{margin:2px 0 0;font:400 12px/18px Inter,system-ui;color:var(--text-secondary)}
+body.portal-reference .portal-confirm-dialog .n-info{display:flex;align-items:center;gap:10px;margin:0;padding:0;font:400 12px/20px Inter,system-ui;color:var(--text-secondary)}
+body.portal-reference .portal-confirm-dialog .n-info>[data-n-symbol]{display:flex;align-items:center;flex-shrink:0;color:var(--accent)}
+body.portal-reference .portal-confirm-dialog .n-info svg{width:16px;height:16px}
+body.portal-reference .portal-confirm-dialog>.n-overlay-foot{display:flex;justify-content:flex-end;flex-shrink:0;margin:0;padding:16px 24px!important;border-top:1px solid var(--border-subtle);background:var(--surface-overlay)!important}
+body.portal-reference .portal-confirm-dialog .n-actions{display:grid;grid-template-columns:repeat(2,minmax(0,112px));gap:8px;justify-content:end}
+body.portal-reference .portal-confirm-dialog .n-button{box-sizing:border-box;width:100%;min-width:0;height:36px;min-height:36px;justify-content:center;gap:7px;padding:0 13px;font:600 12px/1.4 Inter,system-ui;border-radius:9px}
+body.portal-reference .portal-confirm-dialog .n-button svg{width:16px;height:16px;flex-shrink:0}
+body.portal-reference .portal-confirm-dialog .n-button.n-danger{color:var(--danger);background:#f871710d;border-color:#f8717140}
+body.portal-reference .portal-confirm-dialog .n-button.n-danger:hover{background:#f871711a;border-color:#f8717160}
+body.portal-reference .portal-confirm-dialog:not(.danger) .n-actions{display:flex;flex-wrap:wrap}
+body.portal-reference .portal-confirm-dialog:not(.danger) .n-button{width:auto}
+@media(max-width:639px){body.portal-reference dialog.portal-confirm-dialog{max-width:calc(100vw - 20px);max-height:calc(100dvh - 20px)}body.portal-reference .portal-confirm-dialog>.n-overlay-head{padding:20px!important;gap:12px}body.portal-reference .portal-confirm-dialog>.n-dialog-body{padding:20px}body.portal-reference .portal-confirm-dialog>.n-overlay-foot{padding:16px 20px!important}body.portal-reference .portal-confirm-dialog .n-actions{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:359px){body.portal-reference .portal-confirm-dialog .n-actions{grid-template-columns:minmax(0,1fr)}}
+
+body.portal-reference .portal-confirm-dialog>.n-overlay-head>.n-heading{padding:0!important}
+body.portal-reference .portal-confirm-dialog .portal-confirm-metadata{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 0}
+body.portal-reference #session-confirm .n-actions{grid-template-columns:repeat(2,minmax(0,180px))}
+body.portal-reference #session-confirm .portal-confirm-context{align-items:center}
+body.portal-reference #session-confirm .session-badges{margin-top:8px}
+body.portal-reference #session-confirm .portal-confirm-context-list{display:flex;flex-direction:column;gap:10px}
+body.portal-reference #session-confirm .portal-confirm-context-list>.portal-confirm-context{width:100%}
+@media(max-width:639px){body.portal-reference #session-confirm .n-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:359px){body.portal-reference #session-confirm .n-actions{grid-template-columns:minmax(0,1fr)}}
+</style><style id="reference-field-controls">/* Gemeinsame Feldgestaltung der drei HTML-Referenzen; normale Aktionsbuttons bleiben unverändert. */
+body :is(input,textarea)::placeholder{color:#64748b!important;font-weight:400!important;opacity:1!important}
+body button[data-ref-field-action] svg{color:#94a3b8!important}
+body button[data-ref-field-action]:hover:not(:disabled) svg{color:#e2e8f0!important}
+body button[data-ref-field-action]:not(:disabled):is(:focus-visible,[aria-expanded=true],[aria-pressed=true]) svg,
+body :is(.au-date,.au-password,.portal-password-wrap,.portal-security-input,.relative):has(>input:focus-visible)>button[data-ref-field-action]:not(:disabled) svg{color:#38bdf8!important}
+body button[data-ref-field-action]:disabled svg{color:#64748b!important}
+body :is(.au-search,.relative):has(>input:is([type=search],[type=email]))>svg{color:#94a3b8!important}
+body button[data-ref-placeholder][data-value=""]>span{color:#64748b;font-weight:400}
+body button[data-ref-placeholder][data-empty=true] #selectedGenderText{color:#64748b;font-weight:400}
+/* Ohne Präfix keine reservierte Iconfläche; Suchfelder behalten ihre Lupe. */
+body .portal-security-input.ref-no-prefix{padding-left:0;gap:0}
+body .portal-security-input.ref-no-prefix>input{padding-left:14px!important}
 </style></head>
 <body class="relative selection:bg-sky-500/30 selection:text-sky-200 cosmos-preview portal-reference"><div id="sourceBackground" class="cosmos-sky" aria-hidden="true"><div class="cosmos-stars cosmos-stars--small"></div><div class="cosmos-stars cosmos-stars--far"></div><div class="cosmos-galaxy"></div><div class="cosmos-glow cosmos-glow--blue"></div><div class="cosmos-glow cosmos-glow--violet"></div><div class="cosmos-horizon"></div><div class="cosmos-planet"></div><div class="cosmos-moon"></div></div><div class="planet-glow-curve" aria-hidden="true"></div><div class="star-canvas-overlay" aria-hidden="true"></div><!-- Vorschau-Schaltleiste für die geöffneten Vaadin-Overlays -->
 
@@ -731,18 +816,70 @@ body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-ite
 </svg>
 </button>
 <!-- SVG Logo aus C -->
-<div class="flex items-center gap-2.5">
-<svg class="w-7 h-7 flex-shrink-0" fill="none" viewbox="0 0 32 32">
-<circle cx="10" cy="10" fill="#f43f5e" r="4.5"></circle>
-<circle cx="22" cy="10" fill="#38bdf8" r="4.5"></circle>
-<circle cx="10" cy="22" fill="#3b82f6" r="4.5"></circle>
-<circle cx="22" cy="22" fill="#10b981" r="4.5"></circle>
-<circle cx="16" cy="16" fill="#fbbf24" r="3"></circle>
-</svg>
+<a class="flex items-center gap-2.5" href="#home" data-portal-route="home" aria-label="Startseite" id="portalBrand">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" width="28" height="28" viewBox="0 0 96 96" aria-hidden="true" focusable="false" class="w-7 h-7 flex-shrink-0" style="transform:scale(1.4285714286);transform-origin:center" data-service-logo="k">
+          <defs>
+            <!-- Vertikaler Hauptstrahl (Nord-Süd) -->
+            <linearGradient id="service-logo-k-beam-v" x1="48" y1="6" x2="48" y2="90" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.1"/>
+              <stop offset="30%" stop-color="#38BDF8"/>
+              <stop offset="50%" stop-color="#FFFFFF"/>
+              <stop offset="70%" stop-color="#38BDF8"/>
+              <stop offset="100%" stop-color="#38BDF8" stop-opacity="0.1"/>
+            </linearGradient>
+            <!-- Horizontaler Strahl (West-Ost) -->
+            <linearGradient id="service-logo-k-beam-h" x1="6" y1="48" x2="90" y2="48" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#818CF8" stop-opacity="0.1"/>
+              <stop offset="30%" stop-color="#818CF8"/>
+              <stop offset="50%" stop-color="#FFFFFF"/>
+              <stop offset="70%" stop-color="#818CF8"/>
+              <stop offset="100%" stop-color="#818CF8" stop-opacity="0.1"/>
+            </linearGradient>
+            <!-- Gezeiten-Facetten (Violett zu Smaragd & Cyan) -->
+            <linearGradient id="service-logo-k-facet-1" x1="36" y1="20" x2="68" y2="52" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#C084FC"/>
+              <stop offset="100%" stop-color="#6366F1"/>
+            </linearGradient>
+            <linearGradient id="service-logo-k-facet-2" x1="52" y1="68" x2="20" y2="36" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#2DD4BF"/>
+              <stop offset="100%" stop-color="#0284C7"/>
+            </linearGradient>
+            <!-- Äußerer Akkretions-Ring -->
+            <radialGradient id="service-logo-k-core" cx="48" cy="48" r="14" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#FFFFFF"/>
+              <stop offset="45%" stop-color="#67E8F9"/>
+              <stop offset="85%" stop-color="#0284C7"/>
+              <stop offset="100%" stop-color="#080E1B"/>
+            </radialGradient>
+          </defs>
+
+          <!-- 1. Akkretions-Ellipse (Himmelsäquator / Plasma-Scheibe) -->
+          <ellipse cx="48" cy="48" rx="38" ry="15" stroke="#A855F7" stroke-width="2.5" stroke-dasharray="8 6" opacity="0.6" transform="rotate(-28 48 48)"/>
+
+          <!-- 2. Dynamische Gezeiten-Schwingen (Zwei sich umschlingende Raumkrümmungen) -->
+          <path d="M 48 14 C 62 26, 78 38, 82 48 C 66 48, 54 40, 48 14 Z" fill="url(#service-logo-k-facet-1)"/>
+          <path d="M 48 82 C 34 70, 18 58, 14 48 C 30 48, 42 56, 48 82 Z" fill="url(#service-logo-k-facet-2)"/>
+
+          <!-- 3. Vierstrahlige Pulsar-Nadeln (Schlanke astrophysikalische Jets) -->
+          <!-- Vertikaler Jet -->
+          <polygon points="48,8 51.5,42 48,48 44.5,42" fill="url(#service-logo-k-beam-v)"/>
+          <polygon points="48,88 51.5,54 48,48 44.5,54" fill="url(#service-logo-k-beam-v)"/>
+          <!-- Horizontaler Jet -->
+          <polygon points="8,48 42,44.5 48,48 42,51.5" fill="url(#service-logo-k-beam-h)"/>
+          <polygon points="88,48 54,44.5 48,48 54,51.5" fill="url(#service-logo-k-beam-h)"/>
+
+          <!-- 4. Kompakte Singularität / Kristalliner Kern -->
+          <circle cx="48" cy="48" r="10" fill="url(#service-logo-k-core)"/>
+          <circle cx="48" cy="48" r="4.5" fill="#FFFFFF"/>
+
+          <!-- 5. Diagonale Mikro-Satellitenpunkte (Sternbegleiter) -->
+          <circle cx="28" cy="28" r="2.2" fill="#FDE047"/>
+          <circle cx="68" cy="68" r="2.2" fill="#22D3EE"/>
+        </svg>
 <span class="text-base font-semibold tracking-tight text-white flex items-center brand-name">
 <span class="text-slate-400 font-normal">{</span>ServiceName<span class="text-slate-400 font-normal">}</span>
 </span>
-</div>
+</a>
 </div>
 <!-- Rechts: Kopfaktionen aus C (Glocke mit 0, Zahnrad/Einstellungen, Benutzerprofil-Menü) -->
 <div class="flex items-center gap-2 sm:gap-4 header-actions">
@@ -911,13 +1048,13 @@ body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-ite
 <label class="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1" for="vorname">
       Vorname <span class="text-sky-400 text-sm leading-none">•</span>
 </label>
-<input class="custom-input w-full px-3.5 py-2.5 rounded-lg text-sm" id="vorname" name="vorname" type="text" value="Design">
+<input class="custom-input w-full px-3.5 py-2.5 rounded-lg text-sm" id="vorname" name="vorname" type="text" value="Design" placeholder="Vornamen eingeben">
 </div>
 <div>
 <label class="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1" for="nachname">
       Nachname <span class="text-sky-400 text-sm leading-none">•</span>
 </label>
-<input class="custom-input w-full px-3.5 py-2.5 rounded-lg text-sm" id="nachname" name="nachname" type="text" value="Stitch">
+<input class="custom-input w-full px-3.5 py-2.5 rounded-lg text-sm" id="nachname" name="nachname" type="text" value="Stitch" placeholder="Nachnamen eingeben">
 </div>
 </div>
 <div>
@@ -933,7 +1070,7 @@ body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-ite
     </span>
 </div>
 <div class="relative">
-<input class="custom-input w-full px-3.5 py-2.5 rounded-lg text-sm pr-10 border-dashed" id="email" name="email" readonly type="email" value="design@stitch.de">
+<input class="custom-input w-full px-3.5 py-2.5 rounded-lg text-sm pr-10 border-dashed" id="email" name="email" readonly type="email" value="design@stitch.de" placeholder="E-Mail-Adresse eingeben">
 <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-500">
 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
 <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
@@ -942,14 +1079,27 @@ body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-ite
 </div>
 </div>
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
+<div class="relative" id="profileGenderContainer">
+<label class="block text-xs font-medium text-slate-300 mb-1.5" for="profileGenderTrigger" id="profileGenderLabel">Geschlecht <span class="text-sky-400 text-sm leading-none" aria-hidden="true">•</span></label>
+<div class="relative">
+<button class="custom-input w-full px-3.5 py-2.5 rounded-lg text-sm text-left flex items-center justify-between cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-400" id="profileGenderTrigger" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="profileGenderDropdown" aria-labelledby="profileGenderLabel" aria-required="true" data-ref-field-action="">
+<span class="text-white font-normal flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-400"></span><span id="selectedProfileGenderText">Männlich</span></span>
+<svg class="w-4 h-4 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<!-- Sprachauswahl-Overlay (Cosmos Deep Midnight Theme) -->
+</div>
+
+<input type="hidden" id="profileGender" name="geschlecht" value="Männlich"></div>
 <div>
 <label class="block text-xs font-medium text-slate-300 mb-1.5" for="geburtsdatum">
       Geburtsdatum
     <span class="text-sky-400 text-sm leading-none" aria-hidden="true">•</span>
 </label>
 <div class="relative">
-<input class="custom-input w-full px-3.5 py-2.5 rounded-lg text-sm pr-10" id="geburtsdatum" name="geburtsdatum" type="text" value="23.10.2006" aria-controls="calendarDropdown" aria-required="true">
-<button class="calendar-trigger" id="calendarTrigger" type="button" data-preview-control="" aria-label="Kalender öffnen" aria-expanded="false" aria-haspopup="dialog" aria-controls="calendarDropdown">
+<input class="custom-input w-full px-3.5 py-2.5 rounded-lg text-sm pr-10" id="geburtsdatum" name="geburtsdatum" type="text" value="23.10.2006" aria-controls="calendarDropdown" aria-required="true" placeholder="z. B. 31.12.1990">
+<button class="calendar-trigger" id="calendarTrigger" type="button" data-preview-control="" aria-label="Kalender öffnen" aria-expanded="false" aria-haspopup="dialog" aria-controls="calendarDropdown" data-ref-field-action="">
 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
 <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
 </svg>
@@ -962,7 +1112,7 @@ body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-ite
       Bevorzugte Sprache
     </label>
 <div class="relative">
-<button class="custom-input w-full px-3.5 py-2.5 rounded-lg text-sm text-left flex items-center justify-between cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-400" id="spracheTrigger" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="languageDropdown" aria-labelledby="languageLabel">
+<button class="custom-input w-full px-3.5 py-2.5 rounded-lg text-sm text-left flex items-center justify-between cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-400" id="spracheTrigger" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="languageDropdown" aria-labelledby="languageLabel" data-ref-field-action="">
 <span class="text-white font-normal flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-400"></span><span id="selectedLanguageText">Deutsch</span></span>
 <svg class="w-4 h-4 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewbox="0 0 24 24">
 <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
@@ -983,7 +1133,17 @@ body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-ite
 </button>
 </div></div>
 </section>
-<section class="col-span-1 md:col-span-8 lg:col-span-9 portal-page portal-home-page" data-portal-page="home" hidden tabindex="-1"><div class="portal-home-card"><div class="portal-home-layout"><div class="portal-home-copy"><div class="portal-home-kicker">IHR PORTAL · IHR KOSMOS</div><h2>Schön, dass Sie da sind<span class="portal-home-dot">.</span></h2><p class="portal-home-description">Ihr persönlicher Einstieg ins Portal. Verwalten Sie Ihr Konto und behalten Sie Ihre Benachrichtigungen im Blick.</p><div class="portal-home-actions"><button class="portal-button primary" data-portal-route="notifications" type="button"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg><span>Benachrichtigungen</span><span class="portal-home-unread" data-n-unread="">12</span></button><button class="portal-button" data-portal-route="profile" type="button"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg><span>Mein Konto</span></button></div></div><div class="portal-home-art" role="img" aria-label="Kosmische Illustration: Planet und leuchtende Umlaufbahnen"><svg class="portal-home-planet" fill="none" viewbox="0 0 280 280" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><radialgradient cx="50%" cy="50%" id="home-coreGlow" r="50%"><stop offset="0%" stop-color="#38bdf8" stop-opacity="0.4"></stop><stop offset="50%" stop-color="#1e3a8a" stop-opacity="0.15"></stop><stop offset="100%" stop-color="#080e1b" stop-opacity="0"></stop></radialgradient><radialgradient cx="35%" cy="35%" id="home-planetGrad" r="65%"><stop offset="0%" stop-color="#38bdf8"></stop><stop offset="40%" stop-color="#0284c7"></stop><stop offset="75%" stop-color="#0f172a"></stop><stop offset="100%" stop-color="#030712"></stop></radialgradient><radialgradient cx="30%" cy="30%" id="home-satGrad" r="70%"><stop offset="0%" stop-color="#fbbf24"></stop><stop offset="60%" stop-color="#d97706"></stop><stop offset="100%" stop-color="#451a03"></stop></radialgradient><lineargradient id="home-ringGrad" x1="0%" x2="100%" y1="0%" y2="100%"><stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8"></stop><stop offset="50%" stop-color="#6366f1" stop-opacity="0.3"></stop><stop offset="100%" stop-color="#38bdf8" stop-opacity="0.8"></stop></lineargradient></defs><circle cx="140" cy="140" fill="url(#home-coreGlow)" r="130"></circle><ellipse cx="140" cy="140" rx="115" ry="42" stroke="url(#home-ringGrad)" stroke-dasharray="4 3" stroke-width="1.5" transform="rotate(-24 140 140)"></ellipse><ellipse cx="140" cy="140" rx="88" ry="30" stroke="#38bdf8" stroke-opacity="0.4" stroke-width="1.2" transform="rotate(-24 140 140)"></ellipse><circle cx="140" cy="140" fill="url(#home-planetGrad)" r="48"></circle><ellipse cx="140" cy="140" rx="66" ry="16" stroke="url(#home-ringGrad)" stroke-width="2.5" transform="rotate(-24 140 140)"></ellipse><circle cx="218" cy="102" fill="url(#home-satGrad)" r="11"></circle><circle cx="218" cy="102" r="16" stroke="#fbbf24" stroke-opacity="0.3" stroke-width="1"></circle><circle cx="75" cy="65" fill="#ffffff" opacity="0.9" r="2"></circle><circle cx="195" cy="48" fill="#93c5fd" opacity="0.7" r="1.5"></circle><circle cx="60" cy="200" fill="#e0f2fe" opacity="0.8" r="2"></circle><circle cx="220" cy="215" fill="#ffffff" opacity="0.6" r="1.5"></circle><path d="M75 65L105 85" stroke="#38bdf8" stroke-opacity="0.2" stroke-width="1"></path><circle cx="105" cy="85" fill="#38bdf8" opacity="0.8" r="2"></circle></svg></div></div><div class="portal-home-note"><span aria-hidden="true">✦</span><span>Ein erster Ausblick. Die Inhalte der Startseite folgen später.</span></div></div></section><section class="col-span-1 md:col-span-8 lg:col-span-9 portal-page portal-security-page" data-portal-page="security" hidden tabindex="-1"><article class="portal-card"><div class="portal-card-head"><span class="portal-icon portal-security-title-icon portal-reference-icon" aria-hidden="true"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<section class="col-span-1 md:col-span-8 lg:col-span-9 portal-page portal-home-page" data-portal-page="home" hidden tabindex="-1"><div class="portal-home-card"><div class="portal-home-layout"><div class="portal-home-copy"><div class="portal-home-kicker">IHR PORTAL · IHR KOSMOS</div><h2>Schön, dass Sie da sind<span class="portal-home-dot">.</span></h2><p class="portal-home-description">Ihr persönlicher Einstieg ins Portal. Verwalten Sie Ihr Konto und behalten Sie Ihre Benachrichtigungen im Blick.</p><div class="portal-home-actions"><button class="portal-button primary" data-portal-route="notifications" type="button"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg><span>Benachrichtigungen</span><span class="portal-home-unread" data-n-unread="">12</span></button><button class="portal-button" data-portal-route="profile" type="button"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg><span>Mein Konto</span></button></div></div><div class="portal-home-art" role="img" aria-label="Kosmische Illustration: Planet und leuchtende Umlaufbahnen"><svg class="portal-home-planet" fill="none" viewbox="0 0 280 280" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><radialGradient cx="50%" cy="50%" id="home-coreGlow" r="50%"><stop offset="0%" stop-color="#38bdf8" stop-opacity="0.4"/><stop offset="50%" stop-color="#1e3a8a" stop-opacity="0.15"/><stop offset="100%" stop-color="#080e1b" stop-opacity="0"/></radialGradient><radialGradient cx="35%" cy="35%" id="home-planetGrad" r="65%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="40%" stop-color="#0284c7"/><stop offset="75%" stop-color="#0f172a"/><stop offset="100%" stop-color="#030712"/></radialGradient><radialGradient cx="30%" cy="30%" id="home-satGrad" r="70%"><stop offset="0%" stop-color="#fbbf24"/><stop offset="60%" stop-color="#d97706"/><stop offset="100%" stop-color="#451a03"/></radialGradient><linearGradient id="home-ringGrad" x1="0%" x2="100%" y1="0%" y2="100%"><stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8"/><stop offset="50%" stop-color="#6366f1" stop-opacity="0.3"/><stop offset="100%" stop-color="#38bdf8" stop-opacity="0.8"/></linearGradient><clipPath id="home-ring-front" clipPathUnits="userSpaceOnUse"><rect x="0" y="140" width="280" height="140"/></clipPath></defs><circle cx="140" cy="140" fill="url(#home-coreGlow)" r="130"/><g data-ring-layer="back" transform="rotate(-24 140 140)">
+    <ellipse cx="140" cy="140" rx="115" ry="42" stroke="url(#home-ringGrad)" stroke-dasharray="4 3" stroke-width="1.5"/>
+    <ellipse cx="140" cy="140" rx="88" ry="30" stroke="#38bdf8" stroke-opacity="0.4" stroke-width="1.2"/>
+    <ellipse cx="140" cy="140" rx="66" ry="16" stroke="url(#home-ringGrad)" stroke-width="2.5"/>
+  </g>
+  <circle cx="140" cy="140" fill="url(#home-planetGrad)" r="48"/>
+  <g data-ring-layer="front" transform="rotate(-24 140 140)"><g clip-path="url(#home-ring-front)">
+    <ellipse cx="140" cy="140" rx="115" ry="42" stroke="url(#home-ringGrad)" stroke-dasharray="4 3" stroke-width="1.5"/>
+    <ellipse cx="140" cy="140" rx="88" ry="30" stroke="#38bdf8" stroke-opacity="0.4" stroke-width="1.2"/>
+    <ellipse cx="140" cy="140" rx="66" ry="16" stroke="url(#home-ringGrad)" stroke-width="2.5"/>
+  </g></g><circle cx="218" cy="102" fill="url(#home-satGrad)" r="11"/><circle cx="218" cy="102" r="16" stroke="#fbbf24" stroke-opacity="0.3" stroke-width="1"/><circle cx="75" cy="65" fill="#ffffff" opacity="0.9" r="2"/><circle cx="195" cy="48" fill="#93c5fd" opacity="0.7" r="1.5"/><circle cx="60" cy="200" fill="#e0f2fe" opacity="0.8" r="2"/><circle cx="220" cy="215" fill="#ffffff" opacity="0.6" r="1.5"/><path d="M75 65L105 85" stroke="#38bdf8" stroke-opacity="0.2" stroke-width="1"/><circle cx="105" cy="85" fill="#38bdf8" opacity="0.8" r="2"/></svg></div></div><div class="portal-home-note"><span aria-hidden="true">✦</span><span>Ein erster Ausblick. Die Inhalte der Startseite folgen später.</span></div></div></section><section class="col-span-1 md:col-span-8 lg:col-span-9 portal-page portal-security-page" data-portal-page="security" hidden tabindex="-1"><article class="portal-card"><div class="portal-card-head"><span class="portal-icon portal-security-title-icon portal-reference-icon" aria-hidden="true"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24">
 <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
 </svg>
 </span><div class=" portal-reference-heading"><h2>Sicherheit &amp; Zugang</h2><p class="portal-copy">Ihre Zugangsdaten an einem Ort.</p></div></div><div class="portal-card-body"><div class="portal-row"><span class="portal-icon" aria-hidden="true"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="portal-button-icon" aria-hidden="true"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="M21 2 11.4 11.6M19 4l3 3-3.5 3.5-3-3"></path></svg></span><div class="portal-row-copy"><h3>Passwort</h3><p class="portal-copy">Legen Sie ein neues Passwort für Ihr Benutzerkonto fest.</p></div><button type="button" class="portal-button " data-open-dialog="password" aria-label="Passwort ändern"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
@@ -1083,7 +1243,7 @@ body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-ite
 <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
 </svg>
 </div>
-<input class="w-full h-10 pl-10 pr-4 bg-[#091120] border border-white/[0.08] rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#0088CC] focus:ring-1 focus:ring-[#0088CC] transition" placeholder="In Betreff, Text oder Absender suchen..." type="search" aria-label="Benachrichtigungen durchsuchen" id="n-search">
+<input class="w-full h-10 pl-10 pr-4 bg-[#091120] border border-white/[0.08] rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#0088CC] focus:ring-1 focus:ring-[#0088CC] transition" placeholder="Benachrichtigung suchen" type="search" aria-label="Benachrichtigungen durchsuchen" id="n-search">
 </div>
 </div><!-- Toolbar Reihe 2: Sekundäraktionen / Stapelverarbeitung -->
 <!-- 3. STRUKTURIERTE KARTEN-LISTE (10 Einträge, Seite 1) -->
@@ -1353,7 +1513,7 @@ body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-ite
 </div>
 <!-- Vaadin Status-Optionen Kacheln (4 definierte Zustände) -->
 <div class="p-3 space-y-1">
-<div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-2 pb-1">
+<div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-2 pb-1 portal-presence-heading">
         Anwesenheitsstatus
       </div>
 <!-- 1. Verfügbar (Aktiv) -->
@@ -1598,16 +1758,7 @@ body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-ite
 <div id="previewFeedback" role="status" aria-live="polite" hidden=""></div><dialog id="emailDialog" class="portal-modal portal-security-dialog" aria-labelledby="emailDialogTitle" aria-describedby="emailDialogDescription emailDialogHint"><div class="portal-modal-head"><span class="portal-icon" aria-hidden="true"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
             </svg>
-          </span><div><h2 id="emailDialogTitle">E-Mail-Adresse ändern</h2><p class="portal-copy" id="emailDialogDescription">Neue Adresse bestätigen</p></div><button type="button" class="n-close portal-close" data-close-dialog aria-label="Dialog schließen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="portal-button-icon"><circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6m0-6-6 6"></path></svg></button></div><div class="portal-modal-body"><div class="portal-field"><label class="portal-label" for="newEmail">Neue E-Mail-Adresse <span aria-hidden="true" style="color:var(--accent)">•</span></label><div class="portal-security-input"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-            </svg>
-          <input id="newEmail" class="portal-input" type="email" autocomplete="off" placeholder="name@example.test" autofocus=""></div></div><div class="portal-field"><label class="portal-label" for="confirmEmail">Neue E-Mail-Adresse bestätigen <span aria-hidden="true" style="color:var(--accent)">•</span></label><div class="portal-security-input"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-            </svg>
-          <input id="confirmEmail" class="portal-input" type="email" autocomplete="off" placeholder="name@example.test"></div></div><div class="portal-field"><label class="portal-label" for="emailPassword">Aktuelles Passwort <span aria-hidden="true" style="color:var(--accent)">•</span></label><div class="portal-password-wrap portal-security-input"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                </svg>
-              <input id="emailPassword" class="portal-input" type="password" autocomplete="off" placeholder="Aktuelles Passwort eingeben"><button type="button" class="portal-button portal-icon-button" data-reveal="emailPassword" aria-label="Aktuelles Passwort anzeigen" aria-pressed="false"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
+          </span><div><h2 id="emailDialogTitle">E-Mail-Adresse ändern</h2><p class="portal-copy" id="emailDialogDescription">Neue Adresse bestätigen</p></div><button type="button" class="n-close portal-close" data-close-dialog aria-label="Dialog schließen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="portal-button-icon"><circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6m0-6-6 6"></path></svg></button></div><div class="portal-modal-body"><div class="portal-field"><label class="portal-label" for="newEmail">Neue E-Mail-Adresse <span aria-hidden="true" style="color:var(--accent)">•</span></label><div class="portal-security-input ref-no-prefix"><input id="newEmail" class="portal-input" type="email" autocomplete="off" placeholder="E-Mail-Adresse eingeben" autofocus=""></div></div><div class="portal-field"><label class="portal-label" for="confirmEmail">Neue E-Mail-Adresse bestätigen <span aria-hidden="true" style="color:var(--accent)">•</span></label><div class="portal-security-input ref-no-prefix"><input id="confirmEmail" class="portal-input" type="email" autocomplete="off" placeholder="E-Mail-Adresse erneut eingeben"></div></div><div class="portal-field"><label class="portal-label" for="emailPassword">Aktuelles Passwort <span aria-hidden="true" style="color:var(--accent)">•</span></label><div class="portal-password-wrap portal-security-input ref-no-prefix"><input id="emailPassword" class="portal-input" type="password" autocomplete="off" placeholder="Passwort eingeben"><button type="button" class="portal-button portal-icon-button" data-reveal="emailPassword" aria-label="Aktuelles Passwort anzeigen" aria-pressed="false" data-ref-field-action=""><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                 </svg>
@@ -1617,24 +1768,15 @@ body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-ite
           <span>Abbrechen</span></button><button type="button" class="n-button n-primary" data-submit-demo="email"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7"></path>
           </svg>
-          <span>Bestätigung anfordern</span></button></div></dialog><dialog id="passwordDialog" class="portal-modal portal-security-dialog" aria-labelledby="passwordDialogTitle" aria-describedby="passwordDialogDescription passwordDialogHint"><div class="portal-modal-head"><span class="portal-icon" aria-hidden="true"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="portal-button-icon" aria-hidden="true"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="M21 2 11.4 11.6M19 4l3 3-3.5 3.5-3-3"></path></svg></span><div><h2 id="passwordDialogTitle">Passwort ändern</h2><p class="portal-copy" id="passwordDialogDescription">Neues Passwort festlegen</p></div><button type="button" class="n-close portal-close" data-close-dialog aria-label="Dialog schließen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="portal-button-icon"><circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6m0-6-6 6"></path></svg></button></div><div class="portal-modal-body"><div class="portal-field"><label class="portal-label" for="newPassword">Neues Passwort <span aria-hidden="true" style="color:var(--accent)">•</span></label><div class="portal-password-wrap portal-security-input"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                </svg>
-              <input id="newPassword" class="portal-input" type="password" autocomplete="off" placeholder="Neues Passwort eingeben" autofocus=""><button type="button" class="portal-button portal-icon-button" data-reveal="newPassword" aria-label="Neues Passwort anzeigen" aria-pressed="false"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
+          <span>Bestätigung anfordern</span></button></div></dialog><dialog id="passwordDialog" class="portal-modal portal-security-dialog" aria-labelledby="passwordDialogTitle" aria-describedby="passwordDialogDescription passwordDialogHint"><div class="portal-modal-head"><span class="portal-icon" aria-hidden="true"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="portal-button-icon" aria-hidden="true"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="M21 2 11.4 11.6M19 4l3 3-3.5 3.5-3-3"></path></svg></span><div><h2 id="passwordDialogTitle">Passwort ändern</h2><p class="portal-copy" id="passwordDialogDescription">Neues Passwort festlegen</p></div><button type="button" class="n-close portal-close" data-close-dialog aria-label="Dialog schließen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="portal-button-icon"><circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6m0-6-6 6"></path></svg></button></div><div class="portal-modal-body"><div class="portal-field"><label class="portal-label" for="newPassword">Neues Passwort <span aria-hidden="true" style="color:var(--accent)">•</span></label><div class="portal-password-wrap portal-security-input ref-no-prefix"><input id="newPassword" class="portal-input" type="password" autocomplete="off" placeholder="Neues Passwort eingeben" autofocus=""><button type="button" class="portal-button portal-icon-button" data-reveal="newPassword" aria-label="Neues Passwort anzeigen" aria-pressed="false" data-ref-field-action=""><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                 </svg>
-              </button></div></div><div class="portal-field"><label class="portal-label" for="confirmPassword">Neues Passwort bestätigen <span aria-hidden="true" style="color:var(--accent)">•</span></label><div class="portal-password-wrap portal-security-input"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                </svg>
-              <input id="confirmPassword" class="portal-input" type="password" autocomplete="off" placeholder="Neues Passwort wiederholen"><button type="button" class="portal-button portal-icon-button" data-reveal="confirmPassword" aria-label="Neues Passwort bestätigen anzeigen" aria-pressed="false"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
+              </button></div></div><div class="portal-field"><label class="portal-label" for="confirmPassword">Neues Passwort bestätigen <span aria-hidden="true" style="color:var(--accent)">•</span></label><div class="portal-password-wrap portal-security-input ref-no-prefix"><input id="confirmPassword" class="portal-input" type="password" autocomplete="off" placeholder="Passwort erneut eingeben"><button type="button" class="portal-button portal-icon-button" data-reveal="confirmPassword" aria-label="Neues Passwort bestätigen anzeigen" aria-pressed="false" data-ref-field-action=""><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                 </svg>
-              </button></div></div><div class="portal-field"><label class="portal-label" for="currentPassword">Aktuelles Passwort <span aria-hidden="true" style="color:var(--accent)">•</span></label><div class="portal-password-wrap portal-security-input"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                </svg>
-              <input id="currentPassword" class="portal-input" type="password" autocomplete="off" placeholder="Aktuelles Passwort zur Bestätigung"><button type="button" class="portal-button portal-icon-button" data-reveal="currentPassword" aria-label="Aktuelles Passwort anzeigen" aria-pressed="false"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
+              </button></div></div><div class="portal-field"><label class="portal-label" for="currentPassword">Aktuelles Passwort <span aria-hidden="true" style="color:var(--accent)">•</span></label><div class="portal-password-wrap portal-security-input ref-no-prefix"><input id="currentPassword" class="portal-input" type="password" autocomplete="off" placeholder="Passwort eingeben"><button type="button" class="portal-button portal-icon-button" data-reveal="currentPassword" aria-label="Aktuelles Passwort anzeigen" aria-pressed="false" data-ref-field-action=""><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                 </svg>
@@ -1644,7 +1786,7 @@ body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-ite
           <span>Abbrechen</span></button><button type="button" class="n-button n-primary" data-submit-demo="password"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7"></path>
           </svg>
-          <span>Passwort ändern</span></button></div></dialog><dialog id="avatarDialog" class="portal-modal portal-avatar-dialog" aria-labelledby="avatarDialogTitle" aria-describedby="avatarDialogDescription avatarHint"><div class="portal-modal-head"><span class="portal-icon" aria-hidden="true"><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></span><div><h2 id="avatarDialogTitle">Profilbild bearbeiten</h2><p class="portal-copy" id="avatarDialogDescription">Initialen oder eigenes Bild auswählen</p></div><button type="button" class="n-close portal-close" data-close-dialog aria-label="Dialog schließen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="portal-button-icon"><circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6m0-6-6 6"></path></svg></button></div><div class="portal-modal-body"><div class="portal-choice portal-avatar-modes" aria-label="Darstellung des Profilbilds" role="group"><button type="button" class="portal-button active" data-avatar-mode="initials" aria-pressed="true"><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M4 7V4h16v3M9 20h6M12 4v16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg><span>Initialen</span></button><button type="button" class="portal-button " data-avatar-mode="image" aria-pressed="false"><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg><span>Eigenes Bild</span></button></div><div class="portal-avatar-preview-group"><div id="avatarPreview" class="portal-avatar-preview"><span data-avatar-initials>DS</span></div><span>Ihre Profilbild-Vorschau</span></div><div id="avatarImageControls" hidden><div class="portal-avatar-upload-row"><div><strong>Bilddatei auswählen</strong><p>JPG/JPEG oder PNG, maximal 5 MiB</p></div><button type="button" class="portal-button " data-avatar-image="choose"><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg><span>Bild auswählen</span></button></div><div id="avatarCropControls" hidden><div class="portal-image-frame" id="avatarCropFrame" tabindex="0" role="img" aria-label="Bildausschnitt mit Pfeiltasten verschieben" aria-describedby="avatarCropHint"><svg viewbox="0 0 200 200" aria-label="Synthetisches Kosmos-Beispielbild" role="img"><rect width="200" height="200" fill="#091120"></rect><circle cx="95" cy="115" r="60" fill="#122342"></circle><circle cx="138" cy="58" r="23" fill="#0088cc"></circle><circle cx="36" cy="42" r="2" fill="#e2e8f0"></circle><circle cx="155" cy="145" r="2" fill="#e2e8f0"></circle></svg><span class="portal-avatar-crop-mask" aria-hidden="true"></span></div><p class="portal-copy" id="avatarCropHint">Bildausschnitt mit den Pfeiltasten verschieben. Der Kreis zeigt das spätere Profilbild.</p><label class="portal-label portal-avatar-zoom-label" for="avatarZoom">Vergrößerung <span id="avatarZoomValue">100 %</span></label><div class="portal-avatar-zoom-row"><span>100 %</span><input id="avatarZoom" class="portal-slider" type="range" min="1" max="3" step="0.01" value="1"><span>300 %</span></div><div class="portal-avatar-crop-actions"><button type="button" class="portal-button " data-avatar-image="reset"><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg><span>Ausschnitt zurücksetzen</span></button> <button type="button" class="portal-button " data-avatar-image="cancel"><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg><span>Auswahl verwerfen</span></button></div></div></div><p class="portal-avatar-hint" id="avatarHint"><svg aria-hidden="true" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-n-icon="info" class="portal-button-icon"><path d="M12 8h.01M11 12h1v4h1M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"></path></svg><span>Beim Wechsel zu Initialen bleibt Ihr gespeichertes Bild erhalten. Für einen neuen Ausschnitt wählen Sie das Original erneut.</span></p></div><div class="portal-modal-foot portal-avatar-footer"><button type="button" class="portal-button danger" data-avatar-image="delete" id="avatarDelete" hidden><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg><span>Bild löschen</span></button><div class="portal-actions"><button type="button" class="portal-button " data-close-dialog><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="portal-button-icon"><circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6m0-6-6 6"></path></svg><span>Abbrechen</span></button><button type="button" class="portal-button primary" data-submit-demo="avatar"><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg><span>Speichern</span></button></div></div></dialog><template id="n-icons"><svg class="c-action-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true" data-n-icon="refresh">
+          <span>Passwort ändern</span></button></div></dialog><dialog id="avatarDialog" class="portal-modal portal-avatar-dialog" aria-labelledby="avatarDialogTitle" aria-describedby="avatarDialogDescription avatarHint"><div class="portal-modal-head"><span class="portal-icon" aria-hidden="true"><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></span><div><h2 id="avatarDialogTitle">Profilbild bearbeiten</h2><p class="portal-copy" id="avatarDialogDescription">Initialen oder eigenes Bild auswählen</p></div><button type="button" class="n-close portal-close" data-close-dialog aria-label="Dialog schließen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="portal-button-icon"><circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6m0-6-6 6"></path></svg></button></div><div class="portal-modal-body"><div class="portal-choice portal-avatar-modes" aria-label="Darstellung des Profilbilds" role="group"><button type="button" class="portal-button active" data-avatar-mode="initials" aria-pressed="true"><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M4 7V4h16v3M9 20h6M12 4v16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg><span>Initialen</span></button><button type="button" class="portal-button " data-avatar-mode="image" aria-pressed="false"><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg><span>Eigenes Bild</span></button></div><div class="portal-avatar-preview-group"><div id="avatarPreview" class="portal-avatar-preview"><span data-avatar-initials>DS</span></div><span>Ihre Profilbild-Vorschau</span></div><div id="avatarImageControls" hidden><div class="portal-avatar-upload-row"><div><strong>Bilddatei auswählen</strong><p>JPG/JPEG oder PNG, maximal 5 MiB</p></div><button type="button" class="portal-button " data-avatar-image="choose"><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg><span>Bild auswählen</span></button></div><div id="avatarCropControls" hidden><div class="portal-image-frame" id="avatarCropFrame" tabindex="0" role="img" aria-label="Bildausschnitt mit Pfeiltasten verschieben" aria-describedby="avatarCropHint"><svg viewbox="0 0 200 200" aria-label="Synthetisches Kosmos-Beispielbild" role="img"><rect width="200" height="200" fill="#091120"></rect><circle cx="95" cy="115" r="60" fill="#122342"></circle><circle cx="138" cy="58" r="23" fill="#0088cc"></circle><circle cx="36" cy="42" r="2" fill="#e2e8f0"></circle><circle cx="155" cy="145" r="2" fill="#e2e8f0"></circle></svg><span class="portal-avatar-crop-mask" aria-hidden="true"></span></div><p class="portal-copy" id="avatarCropHint">Bildausschnitt mit den Pfeiltasten verschieben. Der Kreis zeigt das spätere Profilbild.</p><label class="portal-label portal-avatar-zoom-label" for="avatarZoom">Vergrößerung <span id="avatarZoomValue">100 %</span></label><div class="portal-avatar-zoom-row"><span>100 %</span><input id="avatarZoom" class="portal-slider" type="range" min="1" max="3" step="0.01" value="1"><span>300 %</span></div><div class="portal-avatar-crop-actions"><button type="button" class="portal-button " data-avatar-image="reset"><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg><span>Ausschnitt zurücksetzen</span></button> <button type="button" class="portal-button " data-avatar-image="cancel"><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg><span>Auswahl verwerfen</span></button></div></div></div><p class="portal-avatar-hint" id="avatarHint"><svg aria-hidden="true" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-n-icon="info" class="portal-button-icon"><path d="M12 8h.01M11 12h1v4h1M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"></path></svg><span>Beim Wechsel zu Initialen bleibt Ihr gespeichertes Bild erhalten. Für einen neuen Ausschnitt wählen Sie das Original erneut.</span></p></div><div class="portal-modal-foot portal-avatar-footer"><button type="button" class="portal-button danger" data-avatar-image="delete" id="avatarDelete" hidden><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg><span>Bild löschen</span></button><div class="portal-actions"><button type="button" class="portal-button " data-close-dialog><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" class="portal-button-icon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg><span>Abbrechen</span></button><button type="button" class="portal-button primary" data-submit-demo="avatar"><svg fill="none" stroke="currentColor" viewbox="0 0 24 24" class="portal-button-icon" aria-hidden="true"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg><span>Speichern</span></button></div></div></dialog><template id="n-icons"><svg class="c-action-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true" data-n-icon="refresh">
 <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
 </svg>
 <svg class="c-action-icon" aria-hidden="true" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-n-icon="read-all"><path d="M3 12l4 4L17 6M12 16l9-10"></path></svg><svg class="c-action-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true" data-n-icon="remove">
@@ -1667,7 +1809,7 @@ body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-ite
 <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
 <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
 </svg>
-<svg class="c-action-icon" aria-hidden="true" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-n-icon="first"><path d="M5 5v14M17 6l-6 6 6 6"></path></svg><svg class="c-action-icon" aria-hidden="true" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-n-icon="previous"><path d="M15 6l-6 6 6 6"></path></svg><svg class="c-action-icon" aria-hidden="true" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-n-icon="next"><path d="M9 6l6 6-6 6"></path></svg><svg class="c-action-icon" aria-hidden="true" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-n-icon="last"><path d="M19 5v14M7 6l6 6-6 6"></path></svg><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="c-action-icon" data-n-icon="close"><circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6m0-6-6 6"></path></svg></template><section id="n-preview" class="n-preview" role="dialog" aria-labelledby="n-preview-title" hidden>
+<svg class="c-action-icon" aria-hidden="true" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-n-icon="first"><path d="M5 5v14M17 6l-6 6 6 6"></path></svg><svg class="c-action-icon" aria-hidden="true" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-n-icon="previous"><path d="M15 6l-6 6 6 6"></path></svg><svg class="c-action-icon" aria-hidden="true" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-n-icon="next"><path d="M9 6l6 6-6 6"></path></svg><svg class="c-action-icon" aria-hidden="true" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-n-icon="last"><path d="M19 5v14M7 6l6 6-6 6"></path></svg><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="c-action-icon" data-n-icon="close"><circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6m0-6-6 6"></path></svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" class="c-action-icon" data-n-icon="cancel"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></template><section id="n-preview" class="n-preview" role="dialog" aria-labelledby="n-preview-title" hidden>
   <header class="n-overlay-head"><span class="n-title-icon" data-n-symbol="bell"></span><div class="n-heading"><h2 id="n-preview-title">Benachrichtigungen</h2><p>Neueste Nachrichten · max. 5</p></div><span class="n-count" id="n-preview-unread-total" role="img" aria-label="12 ungelesene Nachrichten insgesamt" title="12 ungelesene Nachrichten insgesamt"><span data-n-unread aria-hidden="true">12</span></span><button class="n-close" type="button" data-n-close="preview" aria-label="Benachrichtigungsvorschau schließen" data-n-symbol="close"></button></header>
   <div class="n-preview-tools"><div class="n-preview-filters" role="group" aria-label="Vorschau nach Lesestatus filtern"><button type="button" data-n-preview-filter="all" aria-pressed="true">Alle</button><button type="button" data-n-preview-filter="unread" aria-pressed="false">Ungelesen</button><button type="button" data-n-preview-filter="read" aria-pressed="false">Gelesen</button></div><div class="n-preview-actions"><button class="c-icon-button" type="button" data-n-action="preview-refresh" data-tooltip="Vorschau aktualisieren" aria-label="Vorschau aktualisieren" data-n-symbol="refresh"></button><button class="c-icon-button" type="button" data-n-action="preview-read-all" data-tooltip="Angezeigte ungelesene Nachrichten als gelesen markieren" aria-label="Angezeigte ungelesene Nachrichten als gelesen markieren" data-n-symbol="read-all"></button></div></div>
   <div id="n-preview-rows" class="n-preview-rows"></div>
@@ -1678,24 +1820,59 @@ body.portal-reference .n-info>[data-n-symbol="info"]{align-self:center;align-ite
   <div class="n-dialog-body"><article class="n-detail-message"><h3 id="n-detail-subject"></h3><div id="n-detail-meta" class="n-detail-meta"></div><div id="n-detail-body" class="n-detail-text"></div></article></div>
   <footer class="n-overlay-foot"><div class="n-actions"><button class="n-button" type="button" id="n-detail-history" data-n-action="history"><span data-n-symbol="open"></span>Alle Benachrichtigungen anzeigen</button><button class="n-button" type="button" id="n-detail-account" data-n-action="account"><span data-n-symbol="account"></span>Konto öffnen</button><button class="n-button" type="button" id="n-detail-read" data-n-action="detail-read"><span data-n-symbol="read"></span>Als gelesen markieren</button><button class="n-button n-primary" type="button" data-n-close="detail"><span data-n-symbol="close"></span>Schließen</button></div></footer>
 </dialog>
-<dialog id="n-confirm" class="n-dialog n-confirm" aria-labelledby="n-confirm-title" aria-describedby="n-confirm-description">
-  <header class="n-overlay-head"><span id="n-confirm-symbol" class="n-title-icon" data-n-symbol="remove"></span><div class="n-heading"><h2 id="n-confirm-title">Benachrichtigung entfernen?</h2><p id="n-confirm-subtitle">Bitte prüfen Sie Ihre Auswahl.</p></div><button class="n-close" type="button" data-n-close="confirm" aria-label="Bestätigung schließen" data-n-symbol="close"></button></header>
-  <div class="n-dialog-body"><p id="n-confirm-description"></p><div id="n-confirm-context" class="n-confirm-context"></div><p class="n-info"><span data-n-symbol="info"></span><span id="n-confirm-hint">Die Nachricht wird aus Ihrem persönlichen Postfach entfernt.</span></p></div>
-  <footer class="n-overlay-foot"><div class="n-actions"><button class="n-button" type="button" data-n-close="confirm" autofocus><span data-n-symbol="close"></span>Abbrechen</button><button id="n-confirm-submit" class="n-button n-danger" type="button" data-n-action="confirm"><span data-n-symbol="remove"></span><span id="n-confirm-label">Entfernen</span></button></div></footer>
+<dialog id="n-confirm" class="n-dialog n-confirm portal-confirm-dialog" aria-labelledby="n-confirm-title" aria-describedby="n-confirm-description">
+  <header class="n-overlay-head"><span id="n-confirm-symbol" class="n-title-icon" data-n-symbol="remove"></span><div class="n-heading"><h2 id="n-confirm-title">Benachrichtigung löschen</h2><p id="n-confirm-subtitle">Bitte prüfen Sie Ihre Auswahl.</p></div><button class="n-close" type="button" data-n-close="confirm" aria-label="Bestätigung schließen" data-n-symbol="close"></button></header>
+  <div class="n-dialog-body"><div class="portal-confirm-summary"><p id="n-confirm-description" class="portal-confirm-description">Möchten Sie diese Benachrichtigung aus Ihrem Postfach löschen?</p><p id="n-confirm-explanation" class="portal-confirm-explanation"></p></div><div id="n-confirm-context" class="n-confirm-context portal-confirm-context"></div><p class="n-info"><span data-n-symbol="info"></span><span id="n-confirm-hint">Es werden ausschließlich Nachrichten aus Ihrem persönlichen Postfach gelöscht.</span></p></div>
+  <footer class="n-overlay-foot"><div class="n-actions"><button class="n-button" type="button" data-n-close="confirm" autofocus><span data-n-symbol="cancel"></span>Abbrechen</button><button id="n-confirm-submit" class="n-button n-danger" type="button" data-n-action="confirm"><span data-n-symbol="remove"></span><span id="n-confirm-label">Löschen</span></button></div></footer>
 </dialog>
 <div id="n-feedback" class="n-feedback" role="status" hidden></div>
-<dialog id="session-confirm" class="n-dialog n-confirm danger" aria-labelledby="session-confirm-title" aria-describedby="session-confirm-description">
+<dialog id="session-confirm" class="n-dialog n-confirm danger portal-confirm-dialog" aria-labelledby="session-confirm-title" aria-describedby="session-confirm-description">
   <header class="n-overlay-head"><span id="session-confirm-symbol" class="n-title-icon"><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
           </svg>
-          </span><div class="n-heading"><h2 id="session-confirm-title">Benachrichtigung entfernen?</h2><p id="session-confirm-subtitle">Bitte prüfen Sie Ihre Auswahl.</p></div><button class="n-close" type="button" aria-label="Bestätigung schließen" data-n-symbol="close" data-session-close=""></button></header>
-  <div class="n-dialog-body"><p id="session-confirm-description"></p><div id="session-confirm-context" class="n-confirm-context"></div><p class="n-info"><span data-n-symbol="info"></span><span id="session-confirm-hint">Die Nachricht wird aus Ihrem persönlichen Postfach entfernt.</span></p></div>
-  <footer class="n-overlay-foot"><div class="n-actions"><button class="n-button" type="button" autofocus data-session-close=""><span data-n-symbol="close"></span>Abbrechen</button><button id="session-confirm-submit" class="n-button n-danger" type="button" data-session-action="confirm"><span><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
+          </span><div class="n-heading"><h2 id="session-confirm-title">Gerät abmelden</h2><p id="session-confirm-subtitle">Bitte prüfen Sie Ihre Auswahl.</p></div><button class="n-close" type="button" aria-label="Bestätigung schließen" data-n-symbol="close" data-session-close=""></button></header>
+  <div class="n-dialog-body"><div class="portal-confirm-summary"><p id="session-confirm-description" class="portal-confirm-description"></p><p id="session-confirm-hint" class="portal-confirm-explanation">Die Nachricht wird aus Ihrem persönlichen Postfach gelöscht.</p></div><div id="session-confirm-context" class="portal-confirm-context-list"></div></div>
+  <footer class="n-overlay-foot"><div class="n-actions"><button class="n-button" type="button" autofocus data-session-close=""><span data-n-symbol="cancel"></span>Abbrechen</button><button id="session-confirm-submit" class="n-button n-danger" type="button" data-session-action="confirm"><span><svg class="portal-button-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
           </svg>
-          </span><span id="session-confirm-label">Entfernen</span></button></div></footer>
+          </span><span id="session-confirm-label">Abmelden</span></button></div></footer>
 </dialog>
-<script nonce="cosmos-reference" id="preview-interactions">(() => {
+
+
+
+
+
+
+
+<div class=" absolute z-30 left-0 right-0 mt-1.5 bg-[#0d192e] border border-[#1e3256] rounded-xl shadow-2xl overflow- backdrop-blur-md" id="profileGenderDropdown" role="listbox" aria-labelledby="profileGenderLabel" hidden="">
+<div class="p-1.5 space-y-1"><div class="flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/[0.04] text-xs font-medium cursor-pointer transition" role="option" id="profile-gender-option-0" aria-selected="true" data-gender="Männlich">
+<div class="flex items-center gap-2.5">
+<span class="w-2 h-2 rounded-full bg-sky-400"></span>
+<span>Männlich</span>
+</div>
+<svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/[0.04] text-xs font-medium cursor-pointer transition" role="option" id="profile-gender-option-1" aria-selected="false" data-gender="Weiblich">
+<div class="flex items-center gap-2.5">
+<span class="w-2 h-2 rounded-full bg-sky-400"></span>
+<span>Weiblich</span>
+</div>
+<svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/[0.04] text-xs font-medium cursor-pointer transition" role="option" id="profile-gender-option-2" aria-selected="false" data-gender="Divers">
+<div class="flex items-center gap-2.5">
+<span class="w-2 h-2 rounded-full bg-sky-400"></span>
+<span>Divers</span>
+</div>
+<svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"></path>
+</svg>
+</div>
+</div></div><script nonce="cosmos-reference" id="preview-interactions">(() => {
   // Gemeinsame Overlaygeometrie für alle lokalen Vorschau-Komponenten.
   const positionOverlay = (overlay, trigger, requestedWidth, align = requestedWidth ? 'end' : 'start') => {
     if (overlay.hidden) { return; }
@@ -2116,8 +2293,8 @@ statusTrigger.addEventListener('click', () => { const open = statusPopover.hidde
     dialog.addEventListener('click',event=>{if(event.target===dialog){const bounds=dialog.getBoundingClientRect();if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom){closeDialog(dialog);}}});
   });
   document.addEventListener('click',event=>{
-    const button=event.target.closest('button');if(!button){return;}
-    if(button.dataset.portalRoute){switchRoute(button.dataset.portalRoute);return;}
+    const button=event.target.closest('button,a[data-portal-route]');if(!button){return;}
+    if(button.dataset.portalRoute){event.preventDefault();switchRoute(button.dataset.portalRoute);return;}
     if(button.dataset.openDialog){openDialog(button.dataset.openDialog);return;}
     if(button.hasAttribute('data-close-dialog')){closeDialog(button.closest('dialog'));return;}
     if(button.dataset.portalAction){notify(button.dataset.portalAction==='refresh'?'Vorschau aktualisiert. Die Beispieldaten bleiben unverändert.':button.dataset.portalAction==='revoke'?'Gestaltungsvorschau: Keine Sitzung und keine gespeicherte Anmeldung wurde beendet.':button.dataset.portalAction==='logout'?'Gestaltungsvorschau: Sie wurden nicht abgemeldet.':'Diese Aktion wird hier nur als Gestaltungsvorschau gezeigt.');return;}
@@ -2233,7 +2410,7 @@ statusTrigger.addEventListener('click', () => { const open = statusPopover.hidde
   function rowActions(item, target) {
     target.replaceChildren(iconButton(`Nachricht öffnen: ${item.title}`, 'open', 'open', item.id));
     if (!item.read) { target.append(iconButton(`Als gelesen markieren: ${item.title}`, 'read', 'read', item.id)); }
-    target.append(iconButton(`Nachricht entfernen: ${item.title}`, 'remove', 'delete', item.id, true));
+    target.append(iconButton(`Nachricht löschen: ${item.title}`, 'remove', 'delete', item.id, true));
   }
 
   function messageMetadata(item) {
@@ -2438,12 +2615,32 @@ statusTrigger.addEventListener('click', () => { const open = statusPopover.hidde
     const bulk = kind === 'delete-read';
     pending = {kind, ids: [...ids]};
     confirm.classList.toggle('danger', !neutral);
-    byId('n-confirm-title').textContent = neutral ? 'Nachrichten als gelesen markieren?' : bulk ? 'Gelesene Nachrichten entfernen?' : 'Benachrichtigung entfernen?';
-    byId('n-confirm-description').textContent = neutral ? 'Möchten Sie die angezeigten ungelesenen Nachrichten als gelesen markieren?' : bulk ? 'Möchten Sie alle gelesenen Benachrichtigungen aus Ihrem Postfach entfernen?' : 'Möchten Sie diese Benachrichtigung aus Ihrem Postfach entfernen?';
-    byId('n-confirm-context').textContent = kind === 'delete' ? messages.find(item => item.id === ids[0])?.title || 'Benachrichtigung' : `${ids.length} ${ids.length === 1 ? 'Nachricht' : 'Nachrichten'} betroffen`;
-    byId('n-confirm-hint').textContent = neutral ? 'Die Nachrichten bleiben in Ihrem Postfach erhalten.' : 'Es werden ausschließlich Nachrichten aus Ihrem persönlichen Postfach entfernt.';
+    byId('n-confirm-title').textContent = neutral ? 'Nachrichten als gelesen markieren?' : bulk ? 'Gelesene Benachrichtigungen löschen' : 'Benachrichtigung löschen';
+    byId('n-confirm-description').textContent = neutral ? 'Möchten Sie die angezeigten ungelesenen Nachrichten als gelesen markieren?' : bulk ? 'Möchten Sie alle gelesenen Benachrichtigungen aus Ihrem Postfach löschen?' : 'Möchten Sie diese Benachrichtigung aus Ihrem Postfach löschen?';
+    byId('n-confirm-explanation').textContent = bulk ? 'Die gelesenen Benachrichtigungen werden anschließend nicht mehr in Ihrer Nachrichtenliste aufgeführt.' : 'Der Eintrag wird anschließend nicht mehr in Ihrer Nachrichtenliste aufgeführt.';
+    byId('n-confirm-explanation').hidden = neutral;
+    // Beginn Nachrichtenkontext: dieselben Metadaten wie im Nachrichtendetail.
+const contextText = document.createElement('div');
+contextText.className = 'portal-confirm-text';
+const contextTitle = document.createElement('strong');
+const selectedMessage = kind === 'delete' ? messages.find(item => item.id === ids[0]) : null;
+contextTitle.textContent = selectedMessage?.title || `${ids.length} ${ids.length === 1 ? 'Nachricht' : 'Nachrichten'} betroffen`;
+contextText.append(contextTitle);
+if (selectedMessage) {
+  const metadata = document.createElement('div');
+  metadata.className = 'n-detail-meta portal-confirm-metadata';
+  metadata.append(messageMetadata(selectedMessage));
+  contextText.append(metadata);
+}
+const contextIcon = document.createElement('span');
+contextIcon.className = 'portal-confirm-object';
+contextIcon.setAttribute('aria-hidden','true');
+contextIcon.append(icon('bell'));
+byId('n-confirm-context').replaceChildren(contextIcon,contextText);
+// Ende Nachrichtenkontext.
+    byId('n-confirm-hint').textContent = neutral ? 'Die Nachrichten bleiben in Ihrem Postfach erhalten.' : 'Es werden ausschließlich Nachrichten aus Ihrem persönlichen Postfach gelöscht.';
     byId('n-confirm-symbol').replaceChildren(icon(neutral ? 'read-all' : 'remove'));
-    byId('n-confirm-label').textContent = neutral ? 'Als gelesen markieren' : bulk ? 'Gelesene entfernen' : 'Entfernen';
+    byId('n-confirm-label').textContent = neutral ? 'Als gelesen markieren' : 'Löschen';
     byId('n-confirm-submit').className = `n-button ${neutral ? 'n-primary' : 'n-danger'}`;
     byId('n-confirm-submit').querySelector('[data-n-symbol]').replaceChildren(icon(neutral ? 'read-all' : 'remove'));
     confirm.showModal();
@@ -2532,6 +2729,22 @@ statusTrigger.addEventListener('click', () => { const open = statusPopover.hidde
   let returnFocus = null;
   const feedback = text => document.dispatchEvent(new CustomEvent('portal-feedback', {detail: text}));
 
+  function contextCard(row) {
+    const card = document.createElement('div');
+    card.className = 'portal-confirm-context';
+    const device = document.createElement('span');
+    device.className = 'portal-confirm-object';
+    device.setAttribute('aria-hidden', 'true');
+    device.append(row.querySelector('.session-device svg').cloneNode(true));
+    const copy = document.createElement('div');
+    copy.className = 'portal-confirm-text';
+    const title = document.createElement('strong');
+    title.textContent = row.querySelector('h3').textContent;
+    copy.append(title, row.querySelector('.portal-copy').cloneNode(true), row.querySelector('.session-badges').cloneNode(true));
+    card.append(device, copy);
+    return card;
+  }
+
   function render() {
     const active = entries.filter(row => row.dataset.sessionState !== 'saved').length;
     panel.querySelector('[data-session-active-count]').textContent = String(active);
@@ -2549,14 +2762,16 @@ statusTrigger.addEventListener('click', () => { const open = statusPopover.hidde
     const saved = pending.filter(row => row.dataset.sessionState === 'saved').length;
     const active = pending.length - saved;
     const savedOnly = !all && saved === 1;
-    byId('-title').textContent = all ? 'Andere Sitzungen beenden?' : savedOnly ? 'Gespeicherte Anmeldung widerrufen?' : 'Gerät abmelden?';
+    byId('-title').textContent = all ? 'Alle anderen abmelden' : savedOnly ? 'Gespeicherte Anmeldung widerrufen' : 'Gerät abmelden';
     byId('-description').textContent = all
       ? 'Möchten Sie die anderen aktiven Sitzungen beenden und gespeicherte Anmeldungen widerrufen?'
       : savedOnly ? 'Auf diesem Gerät ist derzeit keine Sitzung aktiv. Möchten Sie die gespeicherte Anmeldung widerrufen?'
         : 'Möchten Sie die Sitzung auf diesem Gerät beenden?';
-    byId('-context').textContent = all
+    byId('-context').className = 'portal-confirm-context-list';
+    byId('-context').replaceChildren(...pending.map(contextCard));
+    byId('-subtitle').textContent = all
       ? `${active} ${active === 1 ? 'aktive Sitzung' : 'aktive Sitzungen'} und ${saved} ${saved === 1 ? 'gespeicherte Anmeldung' : 'gespeicherte Anmeldungen'}`
-      : pending[0].querySelector('h3').textContent;
+      : 'Bitte prüfen Sie Ihre Auswahl.';
     byId('-hint').textContent = savedOnly
       ? 'Bei der nächsten Nutzung ist dort eine neue Anmeldung erforderlich. Ihre aktuelle Sitzung bleibt erhalten.'
       : 'Ihre aktuelle Sitzung bleibt angemeldet. Auf den betroffenen Geräten ist danach eine neue Anmeldung erforderlich.';
@@ -2682,5 +2897,69 @@ statusTrigger.addEventListener('click', () => { const open = statusPopover.hidde
     document.body.dataset.consistencyIcons = icons;
   });
 })();
-</script></body>
+
+// Beginn Profil-Geschlechtsauswahl.
+(() => {
+  const trigger = document.getElementById('profileGenderTrigger');
+  const menu = document.getElementById('profileGenderDropdown');
+  if (!trigger || !menu) { return; }
+  const options = [...menu.querySelectorAll('[role=option]')];
+  let active = 0;
+  const close = (restore = false) => {
+    menu.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.removeAttribute('aria-activedescendant');
+    if (restore) { trigger.focus({preventScroll:true}); }
+  };
+  const mark = index => {
+    active = (index + options.length) % options.length;
+    options.forEach((option, cursor) => { option.dataset.active = String(cursor === active); });
+    trigger.setAttribute('aria-activedescendant', options[active].id);
+  };
+  const position = () => window.CosmosPreview.positionOverlay(menu, trigger);
+  const open = () => {
+    document.dispatchEvent(new Event('portal-close-overlays'));
+    document.dispatchEvent(new Event('cosmos-close-calendar'));
+    menu.hidden = false;
+    trigger.setAttribute('aria-expanded', 'true');
+    mark(Math.max(0, options.findIndex(option => option.getAttribute('aria-selected') === 'true')));
+    position();
+  };
+  const choose = option => {
+    options.forEach(entry => entry.setAttribute('aria-selected', String(entry === option)));
+    document.getElementById('selectedProfileGenderText').textContent = option.dataset.gender;
+    document.getElementById('profileGender').value = option.dataset.gender;
+    close(true);
+  };
+  trigger.addEventListener('click', () => menu.hidden ? open() : close());
+  trigger.addEventListener('keydown', event => {
+    if (!['ArrowDown','ArrowUp','Home','End','Enter',' ','Escape','Tab'].includes(event.key)) { return; }
+    if (event.key === 'Tab') { close(); return; }
+    if (event.key === 'Escape') { if (!menu.hidden) { event.preventDefault(); event.stopPropagation(); close(true); } return; }
+    event.preventDefault();
+    if (menu.hidden) { open(); return; }
+    if (event.key === 'Enter' || event.key === ' ') { choose(options[active]); return; }
+    mark(event.key === 'Home' ? 0 : event.key === 'End' ? options.length - 1 : active + (event.key === 'ArrowUp' ? -1 : 1));
+  });
+  menu.addEventListener('click', event => { const option = event.target.closest('[role=option]'); if (option) { choose(option); } });
+  menu.addEventListener('pointermove', event => { const option = event.target.closest('[role=option]'); if (option) { mark(options.indexOf(option)); } });
+  document.addEventListener('pointerdown', event => { if (!menu.contains(event.target) && !trigger.contains(event.target)) { close(); } });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && !menu.hidden) { close(true); } });
+  document.addEventListener('portal-close-overlays', () => close());
+  document.addEventListener('cosmos-close-overlays', () => close());
+  window.addEventListener('resize', () => { if (!menu.hidden) { position(); } });
+  window.addEventListener('scroll', () => { if (!menu.hidden) { position(); } }, {capture:true,passive:true});
+})();
+// Ende Profil-Geschlechtsauswahl.
+</script>
+<script nonce="cosmos-reference">
+// portal-entry-route: Ziel aus der Benutzerverwaltung beim Einstieg anzeigen.
+(() => {
+  const route = location.hash.slice(1);
+  if (['home','notifications','profile','security','sessions'].includes(route)) {
+    document.querySelector('[data-portal-route='+route+']')?.click();
+  }
+})();
+</script>
+</body>
 </html>

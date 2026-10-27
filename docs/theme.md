@@ -4,6 +4,29 @@ Vor Gestaltung oder Änderung einer Oberfläche diese Anleitung und die betroffe
 CSS-Quellen lesen und anwenden. Sie beschreibt den aktuellen gemeinsamen Standard
 und wird bei jeder ausdrücklich freigegebenen Erweiterung im selben Arbeitsstand gepflegt.
 
+Die freigegebenen HTML-Referenzen unter `docs/design/frontend-referenzen/` ergänzen
+eine abgestimmte Feldicon-Regel: neutral in Ruhe, heller bei Hover, Cyan bei Fokus
+oder geöffnetem Picker, gedämpft bei Disabled. Sie betrifft nur markierte
+Feldaktionen (`data-ref-field-action`), keine normalen Aktionsbuttonicons.
+Gemeinsame Quelle ist `quellen/eingabefelder.css` in dieser Referenzsammlung.
+Platzhalter übernehmen vorhandene Anwendungstexte und bleiben dezent und normal
+gewichtet. Diese HTML-Regeln sind noch keine Übernahme in das Vaadin-Anwendungstheme.
+Beschriftete Formularfelder verwenden keine dekorativen Präfix-Icons links.
+Suchfelder behalten ihre Lupe; rechte Passwort-, Kalender- und Auswahlaktionen
+bleiben erhalten. `ref-no-prefix` entfernt die alte reservierte Präfixfläche.
+Die HTML-Benutzerverwaltungsreferenz verwendet den abgestimmten Tabellenkopf aus
+Stitch-Variante 2: Versalien in Secondary, weiße Beschriftung bei Hover sowie
+aktiver Sortierung und nur der aktive Richtungspfeil in Cyan. Hover ändert allein
+die Schriftfarbe; Kästen und Hintergründe bleiben unverändert.
+Spaltentrenner und getrennte Indikatoren bleiben;
+ein aktiver Buttonrahmen oder -hintergrund entfällt. Zuständig ist
+`docs/design/frontend-referenzen/quellen/benutzerverwaltung/table-header.css`.
+Diese lokale HTML-Gestaltung ändert keine Vaadin-Gridregeln.
+Die drei HTML-Referenzköpfe verwenden zur Sichtung Kandidat K aus
+`docs/design/service-logo/logo-k.svg`. `quellen/service_logo.py` bettet ihn mit
+eigenen Verlaufs-IDs ein und vergrößert ihn optisch innerhalb des unveränderten
+Layoutplatzes. Es erfolgt keine Logoübernahme in die Anwendung.
+
 ## Theme-Quellen und Template
 
 Das gemeinsame Template besteht aus den vorhandenen Theme-CSS-Dateien und ihren
