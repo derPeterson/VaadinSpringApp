@@ -24,18 +24,17 @@ public final class AdminNavigation {
   }
 
   public Locator configuration() {
-    return page.locator(".cosmos-nav > vaadin-side-nav-item[has-children]");
+    return page.locator(
+        "#admin-sidebar .cosmos-side-navigation > vaadin-side-nav-item[has-children]");
   }
 
   @Step("Adminnavigation bei Bedarf öffnen")
   public void openDrawer() {
-    Locator app = page.locator("vaadin-app-layout");
-    if (!Boolean.TRUE.equals(app.evaluate("el => el.hasAttribute('drawer-opened')"))) {
-      UiActions.complete(page, () -> page.locator(".cosmos-drawer-toggle").click());
+    Locator toggle = page.locator("#account-navigation-toggle");
+    if (toggle.isVisible() && !"true".equals(toggle.getAttribute("aria-expanded"))) {
+      UiActions.complete(page, toggle::click);
     }
-    assertThat(app).hasAttribute("drawer-opened", "");
-    assertThat(page.locator("vaadin-app-layout [part='drawer']"))
-        .hasCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
+    assertThat(page.locator("#admin-sidebar")).isVisible();
   }
 
   @Step("Konfigurationsgruppe über das native Untermenü auswählen")
@@ -68,18 +67,18 @@ public final class AdminNavigation {
   public void openSection(String label) {
     openDrawer();
     Locator link =
-        page.locator(".cosmos-nav")
+        page.locator("#admin-sidebar .cosmos-side-navigation")
+            .first()
             .getByRole(AriaRole.LINK, new Locator.GetByRoleOptions().setName(label).setExact(true));
     UiActions.complete(page, link::click);
     closeOverlayDrawer();
   }
 
   public void closeOverlayDrawer() {
-    Locator app = page.locator("vaadin-app-layout");
-    if (Boolean.TRUE.equals(
-        app.evaluate("el => el.hasAttribute('overlay') && el.hasAttribute('drawer-opened')"))) {
+    Locator toggle = page.locator("#account-navigation-toggle");
+    if (toggle.isVisible() && "true".equals(toggle.getAttribute("aria-expanded"))) {
       page.keyboard().press("Escape");
-      assertThat(app).not().hasAttribute("drawer-opened", "");
+      assertThat(toggle).hasAttribute("aria-expanded", "false");
     }
   }
 }

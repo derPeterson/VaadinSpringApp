@@ -6,7 +6,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.function.SerializableConsumer;
 import com.vaadin.flow.function.SerializableRunnable;
 import com.vaadin.flow.function.SerializableSupplier;
@@ -42,16 +41,20 @@ public class AccountSessionsComponent extends AccountPanelComponent {
   private final Span hint = new Span();
   private final Button logout = new Button();
   private final Button refresh = new Button();
+  private final PortalConfirmationDialog confirmation;
 
   public AccountSessionsComponent(MessageProperties messages, int initialLimit) {
-    super("account-panel-sessions", VaadinIcon.DESKTOP);
+    super("account-panel-sessions", AppIcon.DESKTOP);
     this.messages = messages;
+    confirmation = new PortalConfirmationDialog(messages, "sessions-confirmation");
+    confirmation.addClassName("portal-session-confirmation");
+    add(confirmation);
     snapshot = new Snapshot(List.of(), 0, initialLimit);
-    SvgIcon devices = new SvgIcon("icons/devices.svg");
+    SvgIcon devices = AppIcon.DEVICES.create();
     devices.addClassName("account-devices-icon");
     devices.getElement().setAttribute("aria-hidden", "true");
     setIcon(devices);
-    count.addClassName("account-entry-title");
+    count.addClassNames("account-entry-title", "account-session-count");
     activity.addClassName(ENTRY_DESCRIPTION_CLASS);
     limit.addClassName("cosmos-admin-role-chip");
     limit.setId("account-sessions-limit");
@@ -60,12 +63,21 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     rows.setId("account-session-entries");
     getBody().add(heading, rows);
     logout.setId("account-logout-others");
-    logout.setPrefixComponent(VaadinIcon.SIGN_OUT.create());
+    logout.setPrefixComponent(AppIcon.SIGN_OUT.create());
     logout.addClassName("cosmos-delete-button");
-    logout.addClickListener(event -> perform(() -> revokeOthers.run()));
+    logout.addClickListener(event -> confirmOthers());
     refresh.setId("account-sessions-refresh");
-    refresh.setPrefixComponent(VaadinIcon.REFRESH.create());
-    refresh.addClickListener(event -> reload());
+    refresh.setPrefixComponent(AppIcon.REFRESH.create());
+    refresh.addClickListener(
+        event -> {
+          if (reload()) {
+            NotificationHelper.getInstance()
+                .showNotification(
+                    messages::getSessionRefreshSuccess,
+                    null,
+                    NotificationHelper.NotificationType.SUCCESS);
+          }
+        });
     Div actions = new Div(refresh, logout);
     actions.addClassName("cosmos-panel-actions");
     addFooter(hint, actions);
@@ -91,31 +103,53 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     failureAction = action;
   }
 
-  public void reload() {
+  public boolean reload() {
     if (loader == null) {
-      return;
+      return false;
     }
     try {
       snapshot = Objects.requireNonNull(loader.get());
       refreshTexts();
+      return true;
     } catch (RuntimeException failure) {
       snapshot = new Snapshot(List.of(), 0, snapshot.limit());
       refreshTexts();
       failed(failure);
+      return false;
     }
   }
 
   public void refreshTexts() {
+    confirmation.refreshTexts();
     setHeading(
-        messages.getAccountSettingsSessionsTitle(),
-        messages.getAccountSettingsSessionsDescription(),
-        messages.getAccountSettingsSessionsMeta());
-    count.setText(snapshot.active() + " " + messages.getAccountSettingsSessionsActiveTitle());
+        restricted
+            ? messages.getSessionRecoveryTitle()
+            : messages.getAccountSettingsSessionsTitle(),
+        restricted
+            ? messages.getSessionRecoveryHint()
+            : messages.getAccountSettingsSessionsDescription(),
+        restricted ? "" : messages.getAccountSettingsSessionsMeta());
+    String activeCountText = messages.getPortalSessionActiveCount(snapshot.active());
+    // Die DE-/EN-Texte beginnen mit der formatierten Anzahl; der Wortlaut bleibt erhalten.
+    int labelStart = activeCountText.indexOf(' ');
+    count.removeAll();
+    if (labelStart > 0) {
+      Span value = new Span(activeCountText.substring(0, labelStart));
+      value.addClassName("account-session-count-value");
+      Span divider = new Span();
+      divider.addClassName("account-session-count-divider");
+      divider.getElement().setAttribute("aria-hidden", "true");
+      Span label = new Span(activeCountText.substring(labelStart));
+      label.addClassName("account-session-count-label");
+      count.add(value, divider, label);
+    } else {
+      count.setText(activeCountText);
+    }
     activity.setText(messages.getAccountSettingsSessionsActivity());
     limit.setText(messages.getAccountSettingsSessionsLimit(snapshot.limit()));
     hint.setText(
-        restricted ? messages.getSessionRecoveryLogoutHint() : messages.getSessionManagementHint());
-    logout.setText(messages.getAccountSettingsLogoutOthers());
+        restricted ? messages.getSessionRecoveryListHint() : messages.getSessionManagementHint());
+    logout.setText(logoutActionText());
     refresh.setText(messages.getSessionRefresh());
     refresh.setEnabled(loader != null);
     logout.setEnabled(
@@ -125,8 +159,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
   }
 
   private Div row(Entry entry) {
-    Div symbol =
-        new Div((entry.device().mobile() ? VaadinIcon.MOBILE : VaadinIcon.DESKTOP).create());
+    Div symbol = new Div((entry.device().mobile() ? AppIcon.MOBILE : AppIcon.DESKTOP).create());
     symbol.addClassName("cosmos-panel-icon");
     String device =
         String.join(
@@ -144,7 +177,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
                     : VaadinSession.getCurrent().getLocale())
             .withZone(ZoneId.systemDefault());
     String description =
-        (entry.active() ? messages.getSessionLastActivity() : messages.getSessionSavedLogin())
+        (entry.active() ? messages.getSessionLastActivity() : messages.getPortalSessionLastUsed())
             + ": "
             + formatter.format(entry.lastActivity());
     Span detail = new Span(description);
@@ -158,7 +191,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
                 + formatter.format(entry.created()));
     since.addClassName(ENTRY_DESCRIPTION_CLASS);
     copy.add(since);
-    addSessionBadges(copy, entry);
+    copy.add(sessionBadges(entry));
     Button action = sessionAction(entry);
     Div row = new Div(symbol, copy, action);
     row.addClassName("account-entry");
@@ -166,17 +199,30 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     return row;
   }
 
-  private void addSessionBadges(Div copy, Entry entry) {
+  private Div sessionBadges(Entry entry) {
+    Div badges = new Div();
+    badges.addClassName("account-session-badges");
     if (entry.current()) {
       Span badge = new Span(messages.getAccountSettingsCurrentDevice());
       badge.getElement().getThemeList().addAll(List.of("badge", "success"));
       badge.addClassName("account-current-device");
-      copy.add(new Div(badge));
-    } else if (entry.active() && entry.remembered()) {
-      Span remembered = new Span(messages.getLoginRememberMeCheckbox());
-      remembered.addClassName(ENTRY_DESCRIPTION_CLASS);
-      copy.add(remembered);
+      badges.add(badge);
+    } else {
+      Span state =
+          new Span(
+              entry.active()
+                  ? messages.getPortalSessionActive()
+                  : messages.getPortalSessionInactive());
+      state.addClassName("account-session-state");
+      state.getElement().setAttribute("data-active", Boolean.toString(entry.active()));
+      badges.add(state);
+      if (entry.remembered()) {
+        Span remembered = new Span(messages.getPortalSessionRemembered());
+        remembered.addClassName("account-session-remembered");
+        badges.add(remembered);
+      }
     }
+    return badges;
   }
 
   private Button sessionAction(Entry entry) {
@@ -186,19 +232,131 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     } else if (entry.active()) {
       actionLabel = messages.getBaseLogoutButton();
     } else {
-      actionLabel = messages.getSessionRevokeSaved();
+      actionLabel = messages.getPortalSessionRevokeAction();
     }
     Button action = new Button(actionLabel);
-    action.setPrefixComponent(VaadinIcon.SIGN_OUT.create());
+    action.setPrefixComponent(entry.current() ? AppIcon.CHECK.create() : AppIcon.SIGN_OUT.create());
+    action.addClassName("account-session-action");
+    if (!entry.current()) {
+      action.addClassName("cosmos-delete-button");
+      action.setAriaLabel(
+          entry.active()
+              ? messages.getPortalSessionLogoutAria(deviceName(entry))
+              : messages.getPortalSessionSavedTitle());
+      action.setTooltipText(action.getAriaLabel().orElseThrow());
+    }
     action.setEnabled(!entry.current() && revoke != null);
     action.setId(entry.current() ? "account-current-session" : "session-revoke-" + entry.handle());
-    action.addClickListener(
-        event ->
+    action.addClickListener(event -> confirmEntry(entry));
+    return action;
+  }
+
+  private String deviceName(Entry entry) {
+    String name =
+        String.join(
+            " · ",
+            Stream.of(entry.device().system(), entry.device().browser())
+                .filter(value -> !value.isBlank())
+                .toList());
+    return name.isBlank() ? messages.getSessionUnknownDevice() : name;
+  }
+
+  private PortalContextCard context(Entry entry) {
+    DateTimeFormatter formatter =
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
+            .withLocale(
+                VaadinSession.getCurrent() == null
+                    ? getLocale()
+                    : VaadinSession.getCurrent().getLocale())
+            .withZone(ZoneId.systemDefault());
+    PortalContextCard card =
+        new PortalContextCard(
+            (entry.device().mobile() ? AppIcon.MOBILE : AppIcon.DESKTOP).create(),
+            deviceName(entry),
+            (entry.active()
+                    ? messages.getSessionLastActivity()
+                    : messages.getPortalSessionLastUsed())
+                + ": "
+                + formatter.format(entry.lastActivity()),
+            (entry.active() ? messages.getSessionStarted() : messages.getSessionSavedSince())
+                + ": "
+                + formatter.format(entry.created()));
+    card.addMetadata(sessionBadges(entry));
+    return card;
+  }
+
+  private String confirmationExplanation(Entry entry) {
+    if (restricted) {
+      return messages.getSessionRecoveryLogoutHint();
+    }
+    return entry.active()
+        ? messages.getPortalSessionRetainedHint()
+        : messages.getPortalSessionSavedExplanation();
+  }
+
+  private void confirmEntry(Entry entry) {
+    if (entry.current() || revoke == null) {
+      return;
+    }
+    confirmation.open(
+        new PortalConfirmationDialog.Prompt(
+            entry.active()
+                ? messages::getPortalSessionLogoutTitle
+                : messages::getPortalSessionSavedTitle,
+            messages::getPortalSessionCheckSelection,
+            entry.active()
+                ? messages::getPortalSessionLogoutQuestion
+                : messages::getPortalSessionSavedQuestion,
+            () -> confirmationExplanation(entry),
+            () -> context(entry),
+            () -> "",
+            entry.active() ? messages::getBaseLogoutButton : messages::getPortalSessionRevokeAction,
+            true,
+            AppIcon.SIGN_OUT::create),
+        () ->
             perform(
                 () ->
                     revoke.accept(
                         entry.savedHandle() == null ? entry.handle() : entry.savedHandle())));
-    return action;
+  }
+
+  private String logoutActionText() {
+    return restricted
+        ? messages.getSessionRecoveryLogoutAll()
+        : messages.getAccountSettingsLogoutOthers();
+  }
+
+  private void confirmOthers() {
+    if (revokeOthers == null) {
+      return;
+    }
+    List<Entry> selected = snapshot.entries().stream().filter(entry -> !entry.current()).toList();
+    if (selected.isEmpty()) {
+      return;
+    }
+    confirmation.open(
+        new PortalConfirmationDialog.Prompt(
+            this::logoutActionText,
+            () ->
+                messages.getPortalSessionSelection(
+                    (int) selected.stream().filter(Entry::active).count(),
+                    (int) selected.stream().filter(entry -> !entry.active()).count()),
+            messages::getPortalSessionOthersQuestion,
+            () ->
+                restricted
+                    ? messages.getSessionRecoveryLogoutHint()
+                    : messages.getPortalSessionRetainedHint(),
+            () -> {
+              Div cards = new Div();
+              cards.addClassName("portal-context-list");
+              selected.forEach(entry -> cards.add(context(entry)));
+              return cards;
+            },
+            () -> "",
+            this::logoutActionText,
+            true,
+            AppIcon.SIGN_OUT::create),
+        () -> perform(() -> revokeOthers.run()));
   }
 
   private String sessionState(Entry entry) {

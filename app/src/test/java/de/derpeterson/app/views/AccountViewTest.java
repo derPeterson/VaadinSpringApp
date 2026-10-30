@@ -25,7 +25,6 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.shared.Tooltip;
-import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.Location;
@@ -38,6 +37,7 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionManagementService;
@@ -51,6 +51,7 @@ import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountSettingsComponent;
 import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
+import de.derpeterson.app.ui.components.PageNavigationComponent;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
@@ -112,6 +113,7 @@ class AccountViewTest {
             .version(3L)
             .birthDate(LocalDate.of(1990, 1, 1))
             .preferredLocale(Locale.GERMAN)
+            .gender(Gender.OTHER)
             .firstName("Own")
             .lastName("Account")
             .email("own@example.test")
@@ -170,7 +172,8 @@ class AccountViewTest {
     assertEquals(UserStatus.ABSENT, user.getStatus());
     assertTrue(user.isStatusManuallySet());
     assertEquals(UserStatus.ABSENT, select.getValue());
-    Object summary = ReflectionTestUtils.getField(settings(), "summaryAvatar");
+    Object summary =
+        ReflectionTestUtils.getField(ReflectionTestUtils.getField(settings(), "sidebar"), "avatar");
     Tooltip tooltip = (Tooltip) ReflectionTestUtils.getField(summary, "tooltip");
     assertTrue(tooltip.isManual());
     assertFalse(tooltip.isOpened());
@@ -277,13 +280,13 @@ class AccountViewTest {
                 .findFirst()
                 .orElseThrow();
     first.setValue("Unsaved draft");
-    Tabs tabs =
-        (Tabs)
+    PageNavigationComponent navigation =
+        (PageNavigationComponent)
             tree(settings())
-                .filter(c -> c.getId().orElse("").equals("account-tabs"))
+                .filter(c -> c.getId().orElse("").equals("account-navigation"))
                 .findFirst()
                 .orElseThrow();
-    tabs.setSelectedIndex(2);
+    navigation.activate(navigation.getItems().get(2));
     verify(ui).navigate(AccountView.class, QueryParameters.simple(Map.of("tab", "sessions")));
     enter("?tab=security");
     assertEquals(AccountSection.SECURITY, settings().getSelectedSection());
@@ -361,7 +364,7 @@ class AccountViewTest {
         (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettings");
     LocalDate date = LocalDate.of(1990, 1, 1);
     when(profiles.save(eq(request), any()))
-        .thenReturn(new Profile(4L, "Changed", "Name", date, Locale.ENGLISH));
+        .thenReturn(new Profile(4L, "Changed", "Name", date, Locale.ENGLISH, Gender.OTHER));
     ((TextField)
             tree(content)
                 .filter(c -> c.getId().orElse("").equals("account-first-name"))
@@ -380,7 +383,8 @@ class AccountViewTest {
                 .findFirst()
                 .orElseThrow())
         .click();
-    verify(profiles).save(request, new Changes(3L, "Changed", "Account", date, Locale.ENGLISH));
+    verify(profiles)
+        .save(request, new Changes(3L, "Changed", "Account", date, Locale.ENGLISH, Gender.OTHER));
     assertEquals(Locale.ENGLISH, locale.get());
     assertEquals("Changed", user.getFirstName());
     List<Component> avatars =

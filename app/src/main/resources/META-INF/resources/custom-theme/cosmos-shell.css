@@ -2,6 +2,29 @@
  * Gemeinsame Kopfzeile, Seitenkopf, Benutzermenü und Popupflächen für Home/Admin.
  * Farben und Schatten stehen in cosmos-tokens.css; lokale Größen bleiben bei ihrem Baustein. */
 
+/* Ein Rahmen für Besucher, Benutzer und Administration; nur sein Servicekopf bleibt stehen. */
+.cosmos-page-frame { display:flex; flex-direction:column; position:relative; isolation:isolate; width:100%; min-width:0; min-height:100dvh; }
+.cosmos-frame-header { position:sticky; top:0; z-index:40; flex:none; width:100%; background:var(--cosmos-reference-page); border-bottom:1px solid var(--cosmos-reference-border); }
+/* Gemeinsamer Inhaltsrahmen: Seitentitel, Navigation und Panels scrollen zusammen. */
+.cosmos-reference-portal .cosmos-app-main { min-height: calc(100dvh - 65px); padding: 0; gap: 0; align-items: center; }
+.cosmos-reference-portal .account-settings { display: flex; flex-direction: column; width: 100%; min-width: 0; box-sizing: border-box; max-width: 1240px; padding: 32px; gap: 32px; flex: 1; }
+.account-columns { display: grid; grid-template-columns: calc(25% - 24px) minmax(0, 1fr); gap: 32px; align-items: start; }
+.account-sidebar, .account-panels { min-width: 0; }
+.account-navigation-toggle, .account-navigation-shade { display: none; }
+@media (min-width: 768px) and (max-width: 1023px) { .account-columns { grid-template-columns: calc((100% - 48px) / 3) minmax(0, 1fr); gap: 24px; } }
+@media (min-width: 640px) and (max-width: 1023px) { .cosmos-reference-portal .account-settings { padding-inline: 24px; } }
+@media (max-width: 767px), (max-width: 1023px) and (max-height: 500px) {
+    .cosmos-reference-portal .account-navigation-toggle { display: inline-flex; }
+    .account-columns { display: block; }
+    .account-sidebar { display: none; position: fixed; inset: 65px auto 0 0; width: min(320px, calc(100vw - 48px)); z-index: 30; padding: 20px; box-sizing: border-box; overflow: auto; background: var(--cosmos-reference-panel); border-right: 1px solid var(--cosmos-reference-border); }
+    .account-navigation-open .account-sidebar { display: block; }
+    .account-navigation-open .account-navigation-shade { display: block; position: fixed; inset: 65px 0 0; z-index: 29; background: var(--cosmos-reference-backdrop); backdrop-filter: blur(3px); }
+    .account-navigation-open { overflow: hidden; }
+}
+@media (max-width: 639px) {
+    .cosmos-reference-portal .account-settings { padding: 24px 16px; gap: 24px; }
+}
+
 /* 1. APP-RAHMEN UND TOPBAR */
 
 vaadin-app-layout.cosmos-app-shell {
@@ -184,7 +207,6 @@ vaadin-app-layout.cosmos-app-shell {
 
 /* Gemeinsame Inhaltsbreite und Abstände der beiden Konto-Seiten. */
 
-.cosmos-account .account-settings,
 .cosmos-theme .cosmos-notification-inbox-page {
     display: flex;
     flex-direction: column;
@@ -490,4 +512,534 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
 
 vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-item::part(content) {
     padding-inline-start: 5px;
+}
+
+/* Kontoheader der freigegebenen Referenz; andere App-Köpfe behalten ihre Maße. */
+.cosmos-topbar-home { display: flex; align-items: center; gap: var(--cosmos-space-m); color: inherit; text-decoration: none; min-width: 0; }
+.cosmos-reference-portal::part(navbar) { background: var(--cosmos-reference-page); border-bottom: 1px solid var(--cosmos-reference-border); }
+.cosmos-reference-portal .cosmos-topbar { height: 64px; min-height: 64px; width: 100%; max-width: 1240px; margin: auto; padding: 0 32px; border: 0; box-shadow: none; background: var(--cosmos-reference-page); gap: 16px; }
+.cosmos-reference-portal .cosmos-topbar-home { gap: 10px; }
+.cosmos-reference-portal .cosmos-topbar-logo { width: 28px; height: 28px; transform: scale(1.428571); }
+.cosmos-reference-portal .cosmos-topbar-service-name { color: var(--cosmos-reference-white); font: 600 16px Inter, sans-serif; letter-spacing: 0; }
+.cosmos-reference-portal .cosmos-topbar-account-menu, .cosmos-reference-portal .cosmos-topbar-shortcuts { gap: 16px; }
+.cosmos-reference-portal .cosmos-topbar-shortcut { margin: 0; padding: 0; width: 36px; min-width: 36px; height: 36px; color: var(--cosmos-reference-secondary); }
+.cosmos-reference-portal .cosmos-topbar-shortcut vaadin-icon { width: 20px; height: 20px; }
+.cosmos-reference-portal .tracked-user-button { display: inline-flex; align-items: center; gap: 12px; height: 40px; padding-left: 24px; border-left: 1px solid var(--cosmos-reference-border); border-radius: 0; }
+.cosmos-reference-portal .tracked-user-button::part(label) { display: flex; align-items: center; padding: 0; gap: 12px; }
+.cosmos-reference-portal .tracked-user-button::part(prefix) { margin-right: 12px; }
+.cosmos-reference-portal .tracked-user-button::before { display: none; }
+.cosmos-reference-portal .tracked-user-button vaadin-icon { width: 16px; height: 16px; color: var(--cosmos-reference-secondary); }
+.cosmos-header-identity { display: grid; text-align: left; gap: 3px; font: 500 12px/16px Inter, sans-serif; color: var(--cosmos-reference-text); }
+.cosmos-header-identity span:last-child { color: var(--cosmos-reference-secondary); font: 400 11px/14px Inter, sans-serif; }
+/* 45-Grad-Punkt auf der Mitte des zwei Pixel breiten Avatarrahmens. */
+.cosmos-reference-portal .cosmos-user-avatar,
+.cosmos-reference-overlay .portal-menu-avatar {
+    --cosmos-avatar-status-anchor: calc(14.64466% + .707107px);
+}
+.cosmos-reference-portal .cosmos-avatar-status > div { transform: translate(50%, 50%) !important; bottom: var(--cosmos-avatar-status-anchor) !important; right: var(--cosmos-avatar-status-anchor) !important; box-shadow: 0 0 0 2px var(--cosmos-reference-panel); }
+.cosmos-reference-portal .cosmos-avatar-circle { border: 2px solid var(--cosmos-reference-border); background: var(--cosmos-reference-input); box-shadow: none; }
+.cosmos-reference-portal :is(.cosmos-notification-count, .account-nav-count, .portal-home-unread) { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 22px; height: 20px; padding: 0 6px; background: var(--cosmos-reference-badge); border: 1px solid var(--cosmos-reference-badge-border); border-radius: 999px; color: var(--cosmos-reference-white); font: 700 11px/1 Inter, sans-serif; }
+.cosmos-reference-portal .cosmos-notification-count { top: 0; right: -4px; box-shadow: 0 0 0 2px var(--cosmos-reference-page); }
+@media (max-width: 1023px) and (min-width: 640px) { .cosmos-reference-portal .cosmos-topbar { padding-inline: 24px; } }
+@media (max-width: 639px) {
+    .cosmos-reference-portal .cosmos-topbar { padding-inline: 12px; gap: 8px; }
+    .cosmos-reference-portal .cosmos-topbar-service-name { font-size: 13px; }
+    .cosmos-reference-portal .cosmos-topbar-logo { width: 24px; height: 24px; }
+    .cosmos-reference-portal .cosmos-topbar-account-menu, .cosmos-reference-portal .cosmos-topbar-shortcuts { gap: 8px; }
+    .cosmos-reference-portal .tracked-user-button { padding: 0; border: 0; min-width: 32px; }
+    .cosmos-reference-portal .tracked-user-button::part(prefix) { margin: 0; }
+    .cosmos-reference-portal .tracked-user-button::part(label) { display: flex; }
+    .cosmos-reference-portal .cosmos-header-identity, .cosmos-reference-portal .tracked-user-button > vaadin-icon { display: none; }
+}
+
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-user-avatar[data-status=available] { --cosmos-reference-avatar-presence: var(--cosmos-reference-success); }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-user-avatar[data-status=employed] { --cosmos-reference-avatar-presence: var(--cosmos-reference-invalid); }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-user-avatar[data-status=absent] { --cosmos-reference-avatar-presence: var(--cosmos-reference-warning); }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-user-avatar[data-status=offline] { --cosmos-reference-avatar-presence: var(--cosmos-reference-secondary); }
+.cosmos-reference-portal .cosmos-user-avatar .cosmos-avatar-status > div { background: var(--cosmos-reference-avatar-presence, var(--cosmos-reference-secondary)) !important; border-radius: 50%; }
+
+.cosmos-reference-portal .cosmos-avatar-circle { color: var(--cosmos-reference-text); }
+
+.cosmos-reference-portal .account-navigation-toggle { width: 36px; min-width: 36px; height: 36px; margin: 0; padding: 0; }
+.cosmos-reference-portal .account-navigation-toggle vaadin-icon { width: 20px; height: 20px; color: var(--cosmos-reference-secondary); }
+
+.cosmos-reference-portal .cosmos-user-avatar .cosmos-avatar-status > div { box-sizing: border-box; width: 8px !important; height: 8px !important; border: 0; box-shadow: 0 0 0 2px var(--cosmos-reference-page); }
+.cosmos-reference-portal .account-summary-avatar .cosmos-avatar-status > div { width: 16px !important; height: 16px !important; border: 2px solid var(--cosmos-reference-panel); box-shadow: none; }
+
+/* Angemeldete Startseite: dieselbe Illustration und Anordnung wie in der festen Referenz. */
+/* Startseitenversuch: Inhalt aus Stitch, ausschließlich im eigenen Bereich. */
+
+.portal-home-card{position:relative;isolation:isolate;overflow:hidden;min-width:0;border:1px solid var(--cosmos-reference-border);border-radius:16px;background:var(--cosmos-reference-panel);box-shadow:0 18px 45px #0003}
+.portal-home-card::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 92% 42%,#122342cc,transparent 70%)}
+.portal-home-layout{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(220px,1fr);align-items:center;gap:16px;padding:38px 32px;min-height:380px}
+.portal-home-copy{min-width:0}.portal-home-kicker{margin:0 0 18px;color:var(--cosmos-reference-accent);font:600 10px/1.5 Inter,system-ui;letter-spacing:.16em}
+.portal-home-copy h2{margin:0 0 18px;color:var(--cosmos-reference-white);font:700 clamp(26px,3vw,38px)/1.17 Inter,system-ui;letter-spacing:-.04em;max-width:13ch}.portal-home-dot{color:#0088cc}
+.portal-home-description{margin:0;color:var(--cosmos-reference-secondary);font:400 13px/1.85 Inter,system-ui;max-width:40ch}.portal-home-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:26px}.portal-home-actions .portal-button{height:36px;min-height:36px;padding:0 12px;white-space:nowrap;font-size:12px}.portal-home-actions .portal-button[aria-current]{background:var(--action-primary)!important}
+.portal-home-art{min-width:0;display:flex;align-items:center;justify-content:center;aspect-ratio:1;filter:drop-shadow(0 12px 30px #0088cc22)}.portal-home-planet{display:block;width:100%;max-width:320px;height:auto}
+.portal-home-note{display:flex;align-items:center;justify-content:center;gap:8px;padding:15px 24px;border-top:1px solid var(--cosmos-reference-border);color:var(--cosmos-reference-secondary);font:400 11px/1.7 Inter,system-ui;text-align:center}.portal-home-note>span:first-child{color:var(--cosmos-reference-accent)}
+@media(max-width:1050px) and (min-width:640px){.portal-home-layout{grid-template-columns:minmax(0,1fr);gap:0;padding:28px}.portal-home-art{max-width:280px;width:100%;justify-self:center}.portal-home-copy h2{max-width:20ch}}
+@media(max-width:639px){.portal-home-layout{grid-template-columns:minmax(0,1fr);padding:26px 22px 12px;gap:0;min-height:0}.portal-home-copy h2{font-size:30px;max-width:14ch}.portal-home-description{font-size:12px}.portal-home-kicker{font-size:9px;margin-bottom:16px}.portal-home-actions{gap:8px;margin-top:22px}.portal-home-actions .portal-button{font-size:11px}.portal-home-art{width:100%;max-width:250px;justify-self:center}.portal-home-note{padding:14px 18px;font-size:10px}}
+@media(prefers-reduced-motion:reduce){.portal-home-page *{animation:none!important}}
+
+/* Gemeinsamer Dialograhmen des angemeldeten Portals; native Modalität und Scrollen bleiben erhalten. */
+vaadin-dialog[theme~=cosmos][theme~=cosmos-reference]::part(overlay) { width: min(580px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); box-sizing: border-box; border: 1px solid var(--cosmos-reference-control-border); border-radius: 16px; overflow: hidden; background: var(--cosmos-reference-dialog); box-shadow: 0 24px 80px #0009; }
+vaadin-dialog[theme~=cosmos][theme~=cosmos-reference]::part(header),
+vaadin-dialog[theme~=cosmos][theme~=cosmos-reference]::part(header-content) { padding: 0; background: var(--cosmos-reference-dialog); }
+vaadin-dialog[theme~=cosmos][theme~=cosmos-reference]::part(header) { border-bottom: 1px solid var(--cosmos-reference-border); }
+vaadin-dialog[theme~=cosmos][theme~=cosmos-reference]::part(content) { padding: 0; min-height: 0; background: var(--cosmos-reference-page); }
+vaadin-dialog[theme~=cosmos][theme~=cosmos-reference]::part(footer) { padding: 16px 24px; border-top: 1px solid var(--cosmos-reference-border); background: var(--cosmos-reference-dialog); }
+vaadin-dialog[theme~=cosmos][theme~=cosmos-reference]::part(backdrop) { background: var(--cosmos-reference-backdrop); backdrop-filter: blur(3px); }
+.cosmos-reference-overlay :is(.account-change-dialog-header, .cosmos-notification-detail-header) { display: flex; align-items: center; box-sizing: border-box; width: 100%; padding: 20px 24px; gap: 12px; }
+.cosmos-reference-overlay :is(.account-change-dialog-header, .cosmos-notification-detail-header) > .cosmos-panel-heading { flex: 1; min-width: 0; }
+.cosmos-reference-overlay .cosmos-panel-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; height: 36px; border: 1px solid var(--cosmos-reference-icon-border); border-radius: 12px; background: var(--cosmos-reference-selection); color: var(--cosmos-reference-accent); }
+.cosmos-reference-overlay .cosmos-panel-icon > vaadin-icon { width: 20px; height: 20px; }
+.cosmos-reference-overlay .cosmos-panel-title { margin: 0; color: var(--cosmos-reference-text); font: 600 16px/22px Inter, sans-serif; letter-spacing: -.025em; }
+.cosmos-reference-overlay .cosmos-panel-description { margin: 4px 0 0; color: var(--cosmos-reference-secondary); font: 400 11px/1.7 Inter, sans-serif; }
+.cosmos-reference-overlay .account-change-dialog-form { display: grid; box-sizing: border-box; padding: 24px; gap: 18px; }
+.cosmos-reference-overlay .account-change-dialog-form input[slot=input] { font-size: 12px; }
+.cosmos-reference-overlay .cosmos-dialog-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 200px)); justify-content: end; width: 100%; gap: 8px; }
+.cosmos-reference-overlay .cosmos-dialog-actions > vaadin-button { width: 100%; min-width: 0; }
+.cosmos-reference-overlay .cosmos-panel-hint { display: flex; align-items: center; gap: 10px; margin: 4px 0 0; padding: 14px; border: 1px solid var(--cosmos-reference-hint-border); border-radius: 9px; background: var(--cosmos-reference-input); color: var(--cosmos-reference-secondary); font: 400 11px/1.8 Inter, sans-serif; }
+.cosmos-reference-overlay .cosmos-panel-hint > vaadin-icon { width: 16px; height: 16px; flex-shrink: 0; color: var(--cosmos-reference-accent); }
+vaadin-dialog.account-avatar-dialog[theme~=cosmos-reference]::part(overlay) { width: min(600px, calc(100vw - 32px)); }
+.account-avatar-dialog.cosmos-reference-overlay .account-avatar-footer { gap: 12px; }
+.account-avatar-dialog.cosmos-reference-overlay .cosmos-dialog-actions { width: min(360px, 100%); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+vaadin-dialog.portal-confirmation-dialog[theme~=cosmos-reference]::part(overlay) { width: min(540px, calc(100vw - 32px)); }
+.portal-confirmation-dialog.cosmos-reference-overlay .cosmos-panel-icon { width: 40px; height: 40px; }
+.portal-confirm-destructive.cosmos-reference-overlay .cosmos-panel-icon { color: var(--cosmos-reference-invalid); border-color: var(--cosmos-reference-danger-border); background: var(--cosmos-reference-danger-surface); }
+.portal-confirm-body { display: grid; gap: 16px; padding: 24px; }
+.portal-confirm-lead { display: grid; gap: 6px; }
+.portal-confirm-question { color: var(--cosmos-reference-text); font: 600 15px/21px Inter, sans-serif; }
+.portal-confirm-explanation { color: var(--cosmos-reference-secondary); font: 400 13px/21px Inter, sans-serif; }
+.portal-confirmation-dialog.cosmos-reference-overlay .portal-confirm-body > .cosmos-panel-hint { padding: 0; margin: 0; border: 0; background: transparent; font: 400 12px/20px Inter, sans-serif; }
+.portal-confirmation-dialog .cosmos-dialog-actions { grid-template-columns: repeat(2, minmax(0, 112px)); }
+#sessions-confirmation .cosmos-dialog-actions { width: max-content; max-width: 100%; margin-inline-start: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#sessions-confirmation .cosmos-dialog-actions > vaadin-button { min-width: max-content; }
+#sessions-confirmation .cosmos-dialog-actions > vaadin-button::part(label) { white-space: nowrap; overflow: visible; text-overflow: clip; line-height: 1.4; }
+.portal-session-confirmation .account-change-dialog-header { align-items: flex-start; gap: 14px; }
+.portal-session-confirmation .cosmos-panel-description { margin-top: 2px; font: 400 12px/16px Inter, sans-serif; }
+.portal-session-confirmation .portal-context-list { gap: 10px; }
+.portal-session-confirmation .portal-context-card { box-sizing: border-box; width: 100%; }
+.portal-session-confirmation .portal-context-card > vaadin-icon { padding: 8px; }
+.portal-context-list { display: grid; gap: 8px; }
+.portal-context-card { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 14px; border: 1px solid var(--cosmos-reference-border); border-radius: 8px; background: var(--cosmos-reference-input); }
+.portal-context-card > vaadin-icon { width: 36px; height: 36px; min-width: 36px; box-sizing: border-box; padding: 8px; border: 1px solid var(--cosmos-reference-hint-border); border-radius: 50%; background: var(--cosmos-reference-selection); color: var(--cosmos-reference-accent); }
+.portal-context-copy { min-width: 0; overflow-wrap: anywhere; }
+.portal-context-title { display: block; color: var(--cosmos-reference-text); font: 500 14px/20px Inter, sans-serif; }
+.portal-context-detail { display: block; margin-top: 2px; color: var(--cosmos-reference-secondary); font: 400 12px/18px Inter, sans-serif; }
+
+/* Benutzermenü und native Statusauswahl, außerhalb des Seitenrasters. */
+.cosmos-reference-portal .portal-home-page,
+.cosmos-reference-portal .portal-home-page * { box-sizing: border-box; }
+vaadin-popover[theme~=cosmos-reference]::part(overlay) { box-sizing: border-box; width: min(330px, calc(100vw - 24px)); background: var(--cosmos-reference-dialog); border: 1px solid var(--cosmos-reference-control-border); border-radius: 14px; box-shadow: 0 24px 60px #0009; }
+vaadin-popover[theme~=cosmos-reference]::part(content) { padding: 0; }
+.cosmos-reference-overlay.cosmos-user-menu { width: 100%; padding: 16px; }
+.cosmos-reference-overlay .portal-user-menu-body { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: start; justify-content: start; gap: 0 12px; padding: 0; }
+.portal-user-menu-body > * { grid-column: 1 / -1; min-width: 0; }
+.portal-user-menu-body .portal-menu-avatar { grid-column: 1; grid-row: 1 / 4; margin: 0; width: 48px; height: 48px; --cosmos-avatar-size: 48px !important; }
+.portal-user-menu-body > .portal-menu-name { grid-column: 2; grid-row: 1; text-align: left; color: var(--cosmos-reference-white); font: 600 14px/20px Inter, sans-serif; }
+.portal-user-menu-body > .portal-menu-email { grid-column: 2; grid-row: 2; text-align: left; color: var(--cosmos-reference-secondary); font: 400 12px/18px Inter, sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cosmos-reference-overlay .portal-user-menu-body > :is(.portal-menu-name, .portal-menu-email, .portal-menu-section) { text-align: left; }
+.cosmos-reference-overlay .portal-user-menu-body > .portal-menu-avatar { margin: 0; align-self: start; }
+.portal-menu-badges { grid-column: 2; grid-row: 3; display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.portal-menu-badges > span { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border: 1px solid var(--cosmos-reference-success-border); border-radius: 4px; font: 500 10px/15px Inter, sans-serif; }
+.portal-menu-account-state { color: var(--cosmos-reference-success); background: var(--cosmos-reference-success-surface); }
+.portal-menu-presence { color: var(--account-presence-color); background: var(--cosmos-reference-hover); }
+.portal-menu-badges > span::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+.cosmos-reference-overlay .portal-user-menu-body > .portal-menu-action { display: flex; justify-content: center; width: calc(100% - 24px); margin: 0 12px 12px; border: 1px solid var(--cosmos-reference-control-border); background: var(--cosmos-reference-input); color: var(--cosmos-reference-white); padding: 0 13px; font-weight: 600; }
+.cosmos-reference-overlay .portal-user-menu-body > .portal-menu-action::part(label) { flex: initial; justify-content: center; text-align: center; }
+.cosmos-reference-overlay .portal-user-menu-body > .portal-menu-action > vaadin-icon { color: var(--cosmos-reference-accent); }
+.cosmos-reference-overlay .portal-user-menu-body > .portal-menu-action:hover { color: var(--cosmos-reference-white); background: var(--cosmos-reference-button-hover); border-color: #ffffff38; }
+.cosmos-reference-overlay .portal-user-menu-body > .portal-menu-logout { color: var(--cosmos-reference-invalid); margin-top: 12px; border-top: 1px solid var(--cosmos-reference-border); border-radius: 0; }
+.cosmos-reference-overlay .portal-menu-logout > vaadin-icon { color: inherit; }
+.cosmos-reference-overlay .portal-user-menu-body vaadin-select { width: 100%; margin-top: 14px; }
+.cosmos-reference-overlay .portal-user-menu-body vaadin-select::part(label), .portal-menu-section { color: var(--cosmos-reference-accent); font: 600 10px/15px Inter, sans-serif; letter-spacing: .5px; text-transform: uppercase; }
+.portal-menu-section { display: block; margin: 18px 0 8px; }
+.portal-language-switch { display: flex; width: 100%; gap: 4px; }
+.cosmos-reference-overlay .portal-language-switch > vaadin-button { flex: 1; border: 1px solid var(--cosmos-reference-border); background: var(--cosmos-reference-input); }
+.cosmos-reference-overlay .portal-language-switch > vaadin-button::part(prefix) { display: none; }
+.cosmos-reference-overlay .portal-language-switch > vaadin-button.portal-language-active { color: var(--cosmos-reference-accent); background: var(--cosmos-reference-selection); border-color: var(--cosmos-reference-primary); }
+vaadin-select[theme~=cosmos-reference]::part(overlay) { background: var(--cosmos-reference-dialog); border: 1px solid var(--cosmos-reference-control-border); border-radius: 10px; }
+vaadin-select[theme~=cosmos-reference] vaadin-select-item { min-height: 40px; font-size: 12px; }
+vaadin-select[theme~=cosmos-reference] vaadin-select-item[selected] { color: var(--cosmos-reference-accent); background: var(--cosmos-reference-selection); }
+.cosmos-reference-overlay .portal-menu-avatar .cosmos-avatar-circle { background: var(--cosmos-reference-input); border: 2px solid var(--cosmos-reference-border); box-shadow: none; }
+.cosmos-reference-overlay .portal-menu-avatar .cosmos-avatar-status > div { box-sizing: border-box; width: 16px !important; height: 16px !important; right: var(--cosmos-avatar-status-anchor) !important; bottom: var(--cosmos-avatar-status-anchor) !important; transform: translate(50%, 50%) !important; border: 2px solid var(--cosmos-reference-dialog); box-shadow: none; }
+.cosmos-reference-overlay .portal-menu-avatar .cosmos-avatar-status > div { border-radius: 50%; background: var(--cosmos-reference-avatar-presence, var(--cosmos-reference-secondary)) !important; }
+@media (max-width: 639px) {
+    .cosmos-reference-overlay :is(.account-change-dialog-header, .cosmos-notification-detail-header) { padding: 16px; gap: 10px; }
+    .cosmos-reference-overlay .account-change-dialog-form { padding: 20px 16px; }
+    vaadin-dialog[theme~=cosmos][theme~=cosmos-reference]::part(footer) { padding: 14px 16px; }
+    .cosmos-reference-overlay .cosmos-dialog-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .portal-confirm-body { padding: 20px; }
+    vaadin-dialog.portal-session-confirmation[theme~=cosmos-reference]::part(overlay) { width: min(540px, calc(100vw - 20px)); max-height: calc(100dvh - 20px); }
+    .portal-session-confirmation .account-change-dialog-header { padding: 20px; gap: 12px; }
+    #sessions-confirmation .cosmos-dialog-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    vaadin-dialog.portal-session-confirmation[theme~=cosmos-reference]::part(footer) { padding: 16px 20px; }
+}
+@media (max-width: 479px) { #sessions-confirmation .cosmos-dialog-actions { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 479px) {
+    .account-change-dialog.cosmos-reference-overlay .cosmos-dialog-actions { grid-template-columns: minmax(0, 1fr); }
+    .account-avatar-dialog.cosmos-reference-overlay .account-avatar-footer { flex-wrap: wrap; }
+    .account-avatar-dialog.cosmos-reference-overlay .account-avatar-footer .cosmos-dialog-actions { width: 100%; }
+    .account-avatar-dialog.cosmos-reference-overlay .cosmos-dialog-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Referenzmenü: Statusoptionen direkt sichtbar, Sprache und Fußaktionen kompakt. */
+.cosmos-reference-overlay.user-popover-content,
+.cosmos-reference-overlay .portal-user-menu-body {
+    display: block;
+    padding: 0;
+}
+
+.portal-menu-identity {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    border-bottom: 1px solid var(--cosmos-reference-border);
+}
+
+.portal-menu-identity-copy {
+    min-width: 0;
+    flex: 1;
+}
+
+.portal-menu-identity-copy .portal-menu-name {
+    display: block;
+    color: var(--cosmos-reference-white);
+    font: 600 14px/20px Inter, sans-serif;
+}
+
+.portal-menu-identity-copy .portal-menu-email {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--cosmos-reference-secondary);
+    font: 400 12px/18px Inter, sans-serif;
+}
+
+
+
+.cosmos-reference-overlay .portal-menu-primary {
+    width: calc(100% - 24px);
+    margin: 12px;
+}
+
+.portal-menu-status-options {
+    padding: 12px;
+    border-top: 1px solid var(--cosmos-reference-border);
+}
+
+.portal-menu-status-options .portal-menu-section {
+    margin: 0 8px 8px;
+}
+
+.cosmos-reference-overlay .portal-status-option {
+    display: flex;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    margin: 0 0 4px;
+    padding: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    text-align: left;
+    white-space: normal;
+}
+.cosmos-reference-overlay .portal-status-option[aria-pressed=true] {
+    background: var(--cosmos-reference-selection);
+    border-color: var(--cosmos-reference-icon-border);
+}
+
+.cosmos-reference-overlay .portal-status-option::part(label) {
+    width: 100%;
+    white-space: normal;
+}
+
+:is(.cosmos-reference-overlay, vaadin-select[theme~=cosmos-reference][theme~=cosmos-status]) .portal-status-option-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+}
+
+:is(.cosmos-reference-overlay, vaadin-select[theme~=cosmos-reference][theme~=cosmos-status]) .portal-status-option-content > :first-child {
+    flex-shrink: 0;
+}
+
+.cosmos-reference-overlay .portal-status-option-content > :first-child {
+    width: 20px !important;
+    height: 20px !important;
+    margin-top: 2px;
+}
+
+:is(.cosmos-reference-overlay, vaadin-select[theme~=cosmos-reference][theme~=cosmos-status]) .portal-status-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.portal-status-label {
+    display: block;
+    color: var(--cosmos-reference-text);
+    font: 500 12px/18px Inter, sans-serif;
+}
+
+.portal-status-option[aria-pressed=true] .portal-status-label {
+    color: var(--portal-option-status-color);
+    font-weight: 600;
+}
+
+.portal-status-description {
+    display: block;
+    margin-top: 2px;
+    color: var(--cosmos-reference-secondary);
+    font: 400 11px/15.125px Inter, sans-serif;
+}
+
+:is(.cosmos-reference-overlay, vaadin-select[theme~=cosmos-reference][theme~=cosmos-status]) .portal-status-symbol {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: color-mix(in srgb, currentColor 20%, transparent);
+}
+
+:is(.cosmos-reference-overlay, vaadin-select[theme~=cosmos-reference][theme~=cosmos-status]) .portal-status-symbol > vaadin-icon {
+    width: 12px;
+    height: 12px;
+    padding: 0;
+    color: inherit;
+}
+
+.portal-menu-language-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border-top: 1px solid var(--cosmos-reference-border);
+}
+
+.portal-menu-language-row .portal-menu-section {
+    margin: 0;
+    color: var(--cosmos-reference-secondary);
+    font: 400 12px/18px Inter, sans-serif;
+    text-transform: none;
+}
+
+.portal-menu-language-row .portal-language-switch {
+    width: auto;
+    margin: 0;
+    padding: 2px;
+    gap: 4px;
+    border: 1px solid var(--cosmos-reference-border);
+    border-radius: 6px;
+    background: var(--cosmos-reference-hover);
+}
+
+.cosmos-reference-overlay .portal-user-menu-body .portal-menu-language-row .portal-language-switch > vaadin-button[aria-pressed] {
+    flex: 0 0 auto;
+    height: 24px;
+    min-height: 24px;
+    min-width: 0;
+    margin: 0;
+    padding: 0 8px;
+    border-color: transparent;
+    border-radius: 4px;
+    font-size: 11px;
+    background: transparent;
+}
+
+.cosmos-reference-overlay .portal-user-menu-body .portal-menu-language-row .portal-language-switch > vaadin-button.portal-language-active[aria-pressed=true] {
+    border-color: var(--cosmos-reference-icon-border);
+    background: var(--cosmos-reference-selection);
+}
+
+.portal-menu-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px;
+    border-top: 1px solid var(--cosmos-reference-border);
+}
+
+.cosmos-reference-overlay .portal-menu-footer > vaadin-button {
+    width: auto;
+    margin: 0;
+    padding: 0 12px;
+    border: 0;
+    background: transparent;
+}
+
+
+/* Die Avatar-Statusauswahl bleibt nativ, erhält aber kompakte Referenzoptionen. */
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status]::part(overlay) {
+    width: min(320px, calc(100vw - 24px));
+    border-radius: 14px;
+}
+
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status]::part(content) {
+    padding: 12px;
+}
+
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] vaadin-select-list-box::before {
+    content: var(--portal-status-heading);
+    display: block;
+    margin: 2px 4px 10px;
+    color: var(--cosmos-reference-accent);
+    font: 600 11px/16px Inter, sans-serif;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] vaadin-select-item {
+    padding: 8px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    white-space: normal;
+}
+
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] vaadin-select-item[selected] {
+    border-color: var(--cosmos-reference-icon-border);
+    background: var(--cosmos-reference-selection);
+}
+
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] vaadin-select-item::part(content) {
+    padding: 0;
+}
+
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] .portal-status-option-content {
+    align-items: flex-start;
+    gap: 10px;
+}
+
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] .portal-status-copy hr {
+    display: none;
+}
+
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] .user-popover-status-label {
+    font: 500 12px/18px Inter, sans-serif;
+    color: var(--cosmos-reference-text);
+}
+
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] .portal-status-copy > span:last-child {
+    margin-top: 2px;
+    color: var(--cosmos-reference-secondary);
+    font: 400 11px/15.125px Inter, sans-serif;
+    white-space: normal;
+}
+
+
+.cosmos-reference-overlay .portal-status-option::part(prefix) {
+    display: block;
+    width: 100%;
+    margin: 0;
+}
+
+.cosmos-reference-overlay .portal-status-option::part(label) {
+    display: none;
+}
+
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] vaadin-select-item[selected] .user-popover-status-label {
+    color: var(--portal-option-status-color);
+}
+
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] {
+    --vaadin-select-overlay-width: 320px;
+}
+
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] vaadin-select-list-box {
+    display: block;
+}
+
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] vaadin-select-item {
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.cosmos-reference-overlay .portal-menu-avatar .cosmos-avatar-initials {
+    color: var(--cosmos-reference-text);
+}
+
+.cosmos-reference-overlay .portal-menu-footer > .portal-menu-logout {
+    color: var(--cosmos-reference-invalid);
+    margin-inline-start: auto;
+}
+
+.portal-menu-language-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--cosmos-reference-secondary);
+}
+
+.portal-menu-language-label > vaadin-icon {
+    width: 14px;
+    height: 14px;
+}
+
+vaadin-popover.portal-user-menu-popover[theme~=cosmos-reference]::part(overlay) {
+    width: min(320px, calc(100vw - 24px));
+}
+
+/* Die AppLayout-Scrollbar liegt innerhalb des Viewports und benötigt mobil eigenen Platz. */
+@media (max-width: 639px) {
+    vaadin-popover.portal-user-menu-popover[theme~=cosmos-reference]::part(overlay) {
+        width: min(320px, calc(100vw - 40px));
+        margin-inline-end: 16px;
+    }
+}
+
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] vaadin-select-item .portal-status-option-content > :first-child,
+vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] vaadin-select-item .portal-status-option-content > :first-child > div {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+/* Statusoptionen sind Auswahlzeilen, keine umrandeten Standardaktionen. */
+.cosmos-reference-overlay .portal-user-menu-body .portal-menu-status-options > vaadin-button.portal-status-option[aria-pressed=false] {
+    border-color: transparent;
+}
+
+.cosmos-reference-overlay .portal-user-menu-body .portal-menu-status-options > vaadin-button.portal-status-option[aria-pressed=true] {
+    border-color: var(--cosmos-reference-icon-border);
+}
+
+/* Native Navigation fuer Portal und Administration, einschliesslich Unterpunkten. */
+.cosmos-reference-portal .cosmos-side-navigation { width:100%; padding:0; margin:0; border:0; background:transparent; }
+.cosmos-reference-portal .cosmos-side-navigation::part(children) { display:flex; flex-direction:column; gap:4px; margin:0; padding:0; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item { gap:0; --vaadin-side-nav-child-indent:0px; --lumo-space-s:0px; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(content) { background:transparent; box-shadow:none; box-sizing:border-box; height:34px; min-height:34px; gap:0; padding:0; border-radius:8px; border:1px solid transparent; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(link) { box-sizing:border-box; height:32px; min-height:0; padding:8px 12px; gap:8px; color:var(--cosmos-reference-text); font:500 12px/16px Inter,sans-serif; justify-content:flex-start; text-align:left; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item > vaadin-icon { color:var(--cosmos-reference-accent); width:16px; height:16px; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--active::part(content) { border-color:var(--cosmos-reference-primary); background:var(--cosmos-reference-selection); }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--active:not(.cosmos-nav-item--sub)::part(link) { font-weight:600; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub::part(link) { height:30.5px; padding:7px 9px; font:400 11px/16.5px Inter,sans-serif; color:var(--cosmos-reference-secondary); }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub::part(content) { height:30.5px; min-height:30.5px; margin-inline-start:0; border:0; border-radius:7px; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(content)::before { display:none; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(toggle-button) { width:24px; height:32px; color:var(--cosmos-reference-accent); }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub>vaadin-icon { width:14px; height:14px; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub.cosmos-nav-item--active::part(content) { background:#008ecc1a; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub.cosmos-nav-item--active::part(link) { color:var(--cosmos-reference-accent); font-weight:500; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(children) { display:flex; flex-direction:column; gap:2px; margin:4px 0 0; padding:0 0 0 28px; border:0; }
+.cosmos-reference-portal .cosmos-side-navigation+.admin-portal-label { margin-top:16px; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item:not(.cosmos-nav-item--active)::part(content):hover { background:var(--cosmos-reference-button-hover); }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(link) { background:transparent; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub:not(.cosmos-nav-item--active)::part(content):hover { background:var(--cosmos-reference-button-hover); }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item:not([disabled])::part(link),
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item:not([disabled])::part(toggle-button) { cursor:pointer; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--active:not(.cosmos-nav-item--sub)::part(content) { box-shadow:inset 3px 0 var(--cosmos-reference-accent); }
+
+/* Bereichsueberschrift: eine Anordnung in Portal und Administration. */
+.cosmos-reference-portal .cosmos-section-header.cosmos-dashboard-introduction { margin: 0; position: relative; display: block; width: 100%; max-width: none; }
+.cosmos-reference-portal .cosmos-dashboard-kicker { margin: 0; font: 600 12px/16px Inter, sans-serif; letter-spacing: .6px; }
+.cosmos-reference-portal .cosmos-section-title { margin: 8px 0 0; font: 700 30px/36px Inter, sans-serif; letter-spacing: -.75px; }
+.cosmos-reference-portal .cosmos-dashboard-description { position: absolute; right: 0; bottom: 2px; font: 400 14px/20px Inter, sans-serif; }
+@media (max-width:639px) {
+    .cosmos-reference-portal .cosmos-section-title { font-size: 24px; line-height: 32px; }
+    .cosmos-reference-portal .cosmos-dashboard-description { position: static; display: block; margin-top: 4px; font-size: 12px; line-height: 16px; }
 }

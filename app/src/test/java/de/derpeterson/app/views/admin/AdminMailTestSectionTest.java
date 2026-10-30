@@ -14,12 +14,15 @@ import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.PollEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.function.DeploymentConfiguration;
+import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -31,6 +34,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
@@ -56,6 +60,11 @@ class AdminMailTestSectionTest {
     VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenAnswer(c -> locale.get());
+    VaadinService service = mock(VaadinService.class);
+    DeploymentConfiguration deployment = mock(DeploymentConfiguration.class);
+    when(deployment.getUrlSafeSchemes()).thenReturn(Set.of("http", "https"));
+    when(service.getDeploymentConfiguration()).thenReturn(deployment);
+    when(session.getService()).thenReturn(service);
     VaadinSession.setCurrent(session);
     ui.getInternals().setSession(session);
     config = mock(ConfigService.class);
@@ -89,6 +98,27 @@ class AdminMailTestSectionTest {
 
   private Stream<Component> tree(Component component) {
     return Stream.concat(Stream.of(component), component.getChildren().flatMap(this::tree));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void smtpSettingsUseANavigationLinkAndFollowLanguageChanges(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    AdminMailTestSection section = section();
+    Anchor link = field(section, "smtpLink");
+    TextArea body = field(section, "testBodyField");
+    Span bodyHint = field(section, "mailBodyHint");
+    assertEquals("admin?section=configuration&group=smtp", link.getHref());
+    assertEquals(texts.getAdminConfigGroupSmtp(), link.getText());
+    assertEquals(texts.getAdminMailBodyHint(), bodyHint.getText());
+    assertEquals(body.getHelperText(), bodyHint.getText());
+    assertEquals("true", bodyHint.getElement().getAttribute("aria-hidden"));
+    locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    section.refreshTexts();
+    assertEquals(texts.getAdminConfigGroupSmtp(), link.getText());
+    assertEquals(texts.getAdminMailBodyHint(), bodyHint.getText());
+    assertEquals(body.getHelperText(), bodyHint.getText());
+    verifyNoInteractions(email);
   }
 
   @ParameterizedTest

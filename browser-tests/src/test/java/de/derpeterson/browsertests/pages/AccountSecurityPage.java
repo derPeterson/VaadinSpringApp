@@ -24,7 +24,7 @@ public final class AccountSecurityPage {
 
   @Step("Passwortdialog unter Sicherheit öffnen")
   public void openPassword() {
-    host("account-tab-security").click();
+    new AccountPage(page).section("account-tab-security");
     host("account-password-edit-security").click();
     assertThat(input("account-password-new")).isVisible();
   }

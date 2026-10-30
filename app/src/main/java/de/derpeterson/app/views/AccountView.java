@@ -2,7 +2,7 @@ package de.derpeterson.app.views;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.StyleSheet;
-import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.QueryParameters;
@@ -25,12 +25,9 @@ import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountSettingsComponent;
 import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
-import de.derpeterson.app.ui.components.CosmosBackgroundComponent;
-import de.derpeterson.app.ui.components.CosmosCopyrightComponent;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.Clock;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -56,8 +53,13 @@ public class AccountView extends IsAuthenticatedBaseView {
       UserStatusBroadcaster broadcaster,
       UserAvatarService avatars) {
     super(messages, security, users, broadcaster, request, avatars);
-    addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-account");
-    addToNavbar(createApplicationHeader(config));
+    addClassNames(
+        "cosmos-page",
+        "cosmos-theme",
+        "cosmos-app-shell",
+        "cosmos-account",
+        "cosmos-reference-portal");
+    HorizontalLayout header = createApplicationHeader(config);
 
     accountSettings =
         new AccountSettingsComponent(
@@ -65,6 +67,8 @@ public class AccountView extends IsAuthenticatedBaseView {
             currentUser,
             changes -> profiles.save(request, changes),
             config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER));
+    accountSettings.configureNavigationToggle(accountNavigationToggle);
+    accountHeaderActions.setUnreadCountListener(accountSettings::updateUnreadCount);
     accountSettings.configureAvatars(avatars, request);
     accountSettings.configureStatusSelection(userPopoverMenu.createStatusSelect());
     accountSettings.configureSecurityActions(
@@ -93,6 +97,7 @@ public class AccountView extends IsAuthenticatedBaseView {
           currentUser.setFirstName(saved.firstName());
           currentUser.setLastName(saved.lastName());
           currentUser.setBirthDate(saved.birthDate());
+          currentUser.setGender(saved.gender());
           currentUser.setPreferredLocale(saved.language());
           currentUser.setVersion(saved.version());
           userPopoverMenu.refreshProfileName();
@@ -101,13 +106,7 @@ public class AccountView extends IsAuthenticatedBaseView {
             LanguageChangeEvent.fire(UI.getCurrent(), saved.language());
           }
         });
-    CosmosCopyrightComponent copyright =
-        new CosmosCopyrightComponent(
-            config, Clock.systemDefaultZone(), messages::getAccountCopyrightTemplate);
-    Div main = new Div(accountSettings, copyright);
-    main.addClassName("cosmos-app-main");
-    main.getElement().setAttribute("role", "main");
-    setContent(new Div(new CosmosBackgroundComponent(), main));
+    setPortalPage(header, accountSettings, config);
   }
 
   @Override

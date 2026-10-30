@@ -78,7 +78,7 @@ public final class VerificationPage {
         .hasCount(0);
     assertThat(
             page.getByLabel(
-                texts.getVerificationEmailField(), new Page.GetByLabelOptions().setExact(true)))
+                texts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true)))
         .isVisible();
   }
 }

@@ -10,9 +10,12 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.html.UnorderedList;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -27,6 +30,8 @@ import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.ui.components.AdminDurationField;
+import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
@@ -95,7 +100,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   private final Span configurationTitle;
   private final Span configurationDescription;
   private final H2 currentGroupTitle;
-  private final Icon currentGroupIcon;
+  private final SvgIcon currentGroupIcon;
   private final Span currentGroupDescription;
   private final Span currentGroupSettingCount;
   private final Span configurationSaveHint;
@@ -104,6 +109,8 @@ public class AdminConfigurationSection extends VerticalLayout {
   private final Button saveConfigButton;
   private final Button reloadConfigButton;
 
+  private final de.derpeterson.app.ui.components.AdminSidePanel helpPanel;
+  private ConfigEntry helpEntry;
   private AdminConfigGroup selectedGroup = null;
 
   public AdminConfigurationSection(
@@ -119,6 +126,11 @@ public class AdminConfigurationSection extends VerticalLayout {
     setWidthFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
     addClassNames("cosmos-admin-section", "cosmos-admin-section--config");
+    helpPanel =
+        new de.derpeterson.app.ui.components.AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
+    helpPanel.addClassName("admin-config-help");
+    helpPanel.setId("admin-config-help");
+    add(helpPanel);
 
     configurationBreadcrumb = new Span();
     configurationTitle = new Span();
@@ -128,7 +140,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     currentGroupTitle = new H2();
     currentGroupTitle.addClassName("cosmos-config-group-title");
-    currentGroupIcon = VaadinIcon.COG.create();
+    currentGroupIcon = AppIcon.COG.create();
     currentGroupIcon.getElement().setAttribute("aria-hidden", "true");
     currentGroupDescription = new Span();
     currentGroupDescription.addClassName("cosmos-config-group-description");
@@ -149,7 +161,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     saveConfigButton = new Button();
-    saveConfigButton.setPrefixComponent(VaadinIcon.CHECK.create());
+    saveConfigButton.setPrefixComponent(AppIcon.CHECK.create());
     saveConfigButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     saveConfigButton.addClickListener(clickEvent -> saveConfigValues());
     // Enter in der Navigation oder an einem Info-Button darf keine Werte speichern.
@@ -159,7 +171,7 @@ public class AdminConfigurationSection extends VerticalLayout {
         .resetFocusOnActiveElement();
 
     reloadConfigButton = new Button();
-    reloadConfigButton.setPrefixComponent(VaadinIcon.REFRESH.create());
+    reloadConfigButton.setPrefixComponent(AppIcon.REFRESH.create());
     reloadConfigButton.addClickListener(clickEvent -> reloadConfigValues());
 
     VerticalLayout configLayout = createConfigurationCardContent();
@@ -188,7 +200,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     Div cardHeader = new Div(iconBadge, headingText, currentGroupSettingCount);
     cardHeader.addClassName("cosmos-config-card-header");
 
-    Icon hintIcon = VaadinIcon.INFO_CIRCLE.create();
+    SvgIcon hintIcon = AppIcon.INFO_CIRCLE.create();
     hintIcon.getElement().setAttribute("aria-hidden", "true");
     Div saveHint = new Div(hintIcon, configurationSaveHint);
     saveHint.addClassName("cosmos-config-save-hint");
@@ -212,6 +224,9 @@ public class AdminConfigurationSection extends VerticalLayout {
     reloadConfigButton.setText(messageProperties.getAdminConfigReload());
     configurationSaveHint.setText(messageProperties.getAdminConfigSaveHint());
 
+    if (helpEntry != null && helpPanel.isOpened()) {
+      openHelp(helpEntry);
+    }
     refreshInputLabels();
     refreshInputHelp();
     refreshCurrentGroupTitle();
@@ -240,6 +255,13 @@ public class AdminConfigurationSection extends VerticalLayout {
   private void applyConfigValue(Component input, ConfigEntry configEntry, String safeValue) {
     switch (input) {
       case Checkbox checkbox -> checkbox.setValue(Boolean.parseBoolean(safeValue));
+      case AdminDurationField field -> {
+        try {
+          field.setStoredValue(safeValue);
+        } catch (IllegalArgumentException | ArithmeticException _) {
+          field.setStoredValue(configuredDefault(configEntry));
+        }
+      }
       case IntegerField integerField -> setIntegerFieldValue(integerField, configEntry, safeValue);
       case PasswordField passwordField -> passwordField.setValue(safeValue);
       case EmailField emailField -> emailField.setValue(safeValue);
@@ -342,7 +364,7 @@ public class AdminConfigurationSection extends VerticalLayout {
           messageProperties.getAdminConfigGroupDescription(selectedGroup));
       currentGroupSettingCount.setText(
           messageProperties.getAdminConfigSettingsCount(getVisibleConfigEntries().size()));
-      currentGroupIcon.setIcon(ConfigGroupIcons.forGroup(selectedGroup));
+      currentGroupIcon.setSrc(ConfigGroupIcons.forGroup(selectedGroup).getSource());
       breadcrumb += " / " + groupLabel;
     }
     configurationBreadcrumb.setText(breadcrumb);
@@ -356,7 +378,12 @@ public class AdminConfigurationSection extends VerticalLayout {
 
   private void refreshInputHelp() {
     configInputs.forEach(
-        (configEntry, input) -> updatePlaceholder(input, buildPlaceholder(configEntry)));
+        (configEntry, input) ->
+            updatePlaceholder(
+                input,
+                input instanceof AdminDurationField
+                    ? configuredDefault(configEntry)
+                    : buildPlaceholder(configEntry)));
     configInfoButtons.values().forEach(ConfigInfoButton::refreshText);
   }
 
@@ -378,6 +405,10 @@ public class AdminConfigurationSection extends VerticalLayout {
       case EmailField field -> field.setPlaceholder(safePlaceholder);
       case PasswordField field -> field.setPlaceholder(safePlaceholder);
       case IntegerField field -> field.setPlaceholder(safePlaceholder);
+      case AdminDurationField field -> {
+        field.setDefaultValue(safePlaceholder);
+        field.refreshTexts();
+      }
       case TextField field -> field.setPlaceholder(safePlaceholder);
       default -> {
         /* Checkboxen haben keinen Platzhalter. */
@@ -414,6 +445,16 @@ public class AdminConfigurationSection extends VerticalLayout {
       emailField.setClearButtonVisible(true);
       emailField.setWidthFull();
       input = emailField;
+    } else if (configEntry == ConfigEntry.REMEMBER_ME_DURATION
+        || DURATION_ENTRIES.contains(configEntry)
+        || isNotificationRetention(configEntry)) {
+      AdminDurationField.Storage storage =
+          DURATION_ENTRIES.contains(configEntry)
+              ? AdminDurationField.Storage.DURATION
+              : isNotificationRetention(configEntry)
+                  ? AdminDurationField.Storage.DAYS
+                  : AdminDurationField.Storage.SECONDS;
+      input = new AdminDurationField(messageProperties, storage);
     } else if (defaultValue instanceof Integer) {
       IntegerField integerField = new IntegerField();
       integerField.setWidthFull();
@@ -444,7 +485,11 @@ public class AdminConfigurationSection extends VerticalLayout {
       input = textField;
     }
 
-    updatePlaceholder(input, buildPlaceholder(configEntry));
+    updatePlaceholder(
+        input,
+        input instanceof AdminDurationField
+            ? configuredDefault(configEntry)
+            : buildPlaceholder(configEntry));
     installValidationResetListener(input);
     configInputs.put(configEntry, input);
 
@@ -457,10 +502,17 @@ public class AdminConfigurationSection extends VerticalLayout {
     wrapper.setSpacing(false);
     wrapper.setWidthFull();
     wrapper.addClassNames(LumoUtility.Gap.XSMALL, "cosmos-config-field");
+    wrapper.setClassName("admin-config-checkbox", input instanceof Checkbox);
 
     Span labelSpan = new Span(messageProperties.getAdminConfigEntryLabel(configEntry));
     labelSpan.setId("config-label-" + configEntry.name().toLowerCase(Locale.ROOT));
     labelSpan.addClassNames(LumoUtility.FontWeight.MEDIUM, LumoUtility.FontSize.SMALL);
+    labelSpan.setClassName(
+        "admin-config-required",
+        !(input instanceof Checkbox)
+            && !(input instanceof IntegerField)
+            && (!(input instanceof AdminDurationField) || DURATION_ENTRIES.contains(configEntry))
+            && validateValue(configEntry, "") != null);
     configLabelSpans.put(configEntry, labelSpan);
     if (input instanceof Checkbox checkbox) {
       checkbox.setLabelComponent(labelSpan);
@@ -477,13 +529,75 @@ public class AdminConfigurationSection extends VerticalLayout {
       labelledInput.setAriaLabelledBy(labelId);
     }
 
-    ConfigInfoButton infoButton = new ConfigInfoButton(() -> buildConfigTooltipText(configEntry));
+    ConfigInfoButton infoButton =
+        new ConfigInfoButton(
+            () -> buildConfigTooltipText(configEntry), () -> openHelp(configEntry));
     infoButton.getElement().setAttribute("aria-labelledby", labelId);
     configInfoButtons.put(configEntry, infoButton);
     Div inputRow = new Div(input, infoButton);
     inputRow.addClassName("cosmos-config-input-row");
     wrapper.add(inputRow);
     return wrapper;
+  }
+
+  private void openHelp(ConfigEntry entry) {
+    helpEntry = entry;
+    helpPanel.removeAll();
+    helpPanel.getFooter().removeAll();
+    helpPanel.setHeading(messageProperties.getAdminConfigHelpTitle());
+    helpPanel.setDescription(messageProperties.getAdminConfigHelpDescription());
+    helpPanel.refreshCloseText(messageProperties);
+    Span group = new Span(messageProperties.getAdminConfigGroupLabel(selectedGroup));
+    group.addClassName("admin-help-group");
+    H3 fieldTitle = new H3(messageProperties.getAdminConfigEntryLabel(entry));
+    fieldTitle.addClassName("admin-help-field-title");
+    Span description = new Span(messageProperties.getAdminConfigEntryTooltip(entry));
+    description.addClassName("admin-help-description");
+    Div defaultValue = new Div(new Span(defaultLabel(entry)), new Span(defaultDisplayValue(entry)));
+    defaultValue.addClassName("admin-help-default");
+    H4 rulesTitle = new H4(messageProperties.getAdminConfigInputRules());
+    UnorderedList rules = new UnorderedList();
+    buildInputRules(entry).forEach(rule -> rules.add(new ListItem(rule)));
+    Div rulesCard = new Div(rulesTitle, rules);
+    rulesCard.addClassName("admin-help-rules");
+    helpPanel.add(group, fieldTitle, description);
+    if (entry == ConfigEntry.COPYRIGHT_TEXT) {
+      Div placeholders =
+          new Div(
+              new H4(messageProperties.getAdminConfigHelpPlaceholders()),
+              placeholderRow("{year}", messageProperties.getAdminConfigHelpYear()),
+              placeholderRow("{serviceName}", messageProperties.getAdminConfigHelpServiceName()));
+      placeholders.addClassName("admin-help-placeholders");
+      helpPanel.add(placeholders);
+    }
+    if (configInputs.get(entry) instanceof AdminDurationField field) {
+      Div current =
+          new Div(
+              new Span(messageProperties.getAdminConfigDurationCurrent()),
+              new Span(field.getDisplayValue()));
+      Div equivalent =
+          new Div(
+              new Span(messageProperties.getAdminConfigDurationEquivalent()),
+              new Span(field.getEquivalentValue()));
+      current.addClassName("admin-help-default");
+      equivalent.addClassName("admin-help-default");
+      helpPanel.add(current, equivalent);
+    }
+    helpPanel.add(defaultValue, rulesCard);
+    Button closeHelp =
+        new Button(
+            messageProperties.getNotificationsClose(),
+            AppIcon.CLOSE.create(),
+            event -> helpPanel.close());
+    closeHelp.setWidthFull();
+    helpPanel.getFooter().add(closeHelp);
+    helpPanel.open();
+  }
+
+  private Div placeholderRow(String token, String meaning) {
+    Span code = new Span(token);
+    code.addClassName("admin-help-token");
+    return new Div(code, new Span(meaning));
   }
 
   private String buildConfigTooltipText(ConfigEntry configEntry) {
@@ -509,8 +623,8 @@ public class AdminConfigurationSection extends VerticalLayout {
           List.of(messageProperties.getAdminConfigValidationSecretKey(SECRET_KEY_MIN_LENGTH));
       case REMEMBER_ME_DURATION ->
           List.of(
-              messageProperties.getAdminConfigRuleInteger(1, Integer.MAX_VALUE),
-              messageProperties.getAdminConfigHelperSeconds(),
+              messageProperties.getAdminConfigDurationRule(Integer.MAX_VALUE),
+              messageProperties.getAdminConfigDurationUnitHint(),
               messageProperties.getAdminConfigRuleEmptyUsesDefault());
       case LOGIN_ATTEMPTS_LIMIT,
           MAX_SESSIONS_PER_USER,
@@ -542,18 +656,21 @@ public class AdminConfigurationSection extends VerticalLayout {
       case MAIL_SMTP_SSL_TRUST -> List.of(messageProperties.getAdminConfigRuleSslTrust());
       case USER_AUTO_ABSENT_TIMEOUT ->
           List.of(
-              messageProperties.getAdminConfigHelperDurationFormats(),
+              messageProperties.getAdminConfigDurationNumberRule(),
+              messageProperties.getAdminConfigDurationUnitHint(),
               messageProperties.getAdminConfigRuleDurationNoMinimum());
       case EMAIL_QUEUE_SENT_LIVE_DURATION ->
           List.of(
-              messageProperties.getAdminConfigHelperDurationFormats(),
+              messageProperties.getAdminConfigDurationNumberRule(),
+              messageProperties.getAdminConfigDurationUnitHint(),
               messageProperties.getAdminConfigValidationPositiveDuration());
       case VERIFICATION_TOKEN_VALID_DURATION,
           VERIFICATION_TOKEN_LIVE_DURATION,
           PASSWORD_RESET_TOKEN_VALID_DURATION,
           PASSWORD_RESET_TOKEN_LIVE_DURATION ->
           List.of(
-              messageProperties.getAdminConfigHelperDurationFormats(),
+              messageProperties.getAdminConfigDurationNumberRule(),
+              messageProperties.getAdminConfigDurationUnitHint(),
               messageProperties.getAdminConfigValidationDurationMinimum(
                   configEntry.getMinimumTokenDuration().toMinutes()));
     };
@@ -686,7 +803,7 @@ public class AdminConfigurationSection extends VerticalLayout {
           !isValidHttpUrl(trimmed) ? messageProperties.getAdminConfigValidationUrl() : null;
       case REMEMBER_ME_DURATION ->
           isInvalidPositiveInteger(trimmed)
-              ? messageProperties.getAdminConfigValidationSeconds()
+              ? messageProperties.getAdminConfigDurationInvalid()
               : null;
       case REMEMBER_ME_SECRET_KEY ->
           trimmed.length() < SECRET_KEY_MIN_LENGTH
@@ -774,6 +891,13 @@ public class AdminConfigurationSection extends VerticalLayout {
       return String.valueOf(checkbox.getValue());
     }
 
+    if (input instanceof AdminDurationField field) {
+      String value = field.getStoredValue();
+      return value.isEmpty() && configEntry == ConfigEntry.REMEMBER_ME_DURATION
+          ? configuredDefault(configEntry)
+          : value;
+    }
+
     if (input instanceof IntegerField integerField) {
       Integer value = integerField.getValue();
       if (value != null) {
@@ -826,22 +950,33 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private String buildDefaultText(ConfigEntry configEntry) {
+    return defaultLabel(configEntry) + ": " + defaultDisplayValue(configEntry);
+  }
+
+  private String defaultLabel(ConfigEntry configEntry) {
+    return isNotificationRetention(configEntry)
+        ? messageProperties.getAdminConfigInitialValue()
+        : messageProperties.getAdminConfigDefault();
+  }
+
+  private String defaultDisplayValue(ConfigEntry configEntry) {
     String defaultValue = configuredDefault(configEntry);
+    if (configInputs.get(configEntry) instanceof AdminDurationField field) {
+      return field.displayStoredValue(defaultValue);
+    }
     String displayValue = defaultValue;
     if (defaultValue.isEmpty()) {
       displayValue = messageProperties.getAdminConfigDefaultEmpty();
     } else if (isSecretEntry(configEntry)) {
       displayValue = messageProperties.getAdminConfigDefaultConfidential();
     }
-    return (isNotificationRetention(configEntry)
-            ? messageProperties.getAdminConfigInitialValue()
-            : messageProperties.getAdminConfigDefault())
-        + ": "
-        + displayValue;
+    return displayValue;
   }
 
   private void installValidationResetListener(Component input) {
-    if (input instanceof EmailField emailField) {
+    if (input instanceof AdminDurationField field) {
+      field.addChangeListener(() -> clearValidationState(field));
+    } else if (input instanceof EmailField emailField) {
       emailField.addValueChangeListener(event -> clearValidationState(emailField));
     } else if (input instanceof PasswordField passwordField) {
       passwordField.addValueChangeListener(event -> clearValidationState(passwordField));
@@ -855,7 +990,10 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private void clearValidationState(Component input) {
-    if (input instanceof EmailField emailField) {
+    if (input instanceof AdminDurationField field) {
+      field.setInvalid(false);
+      field.setErrorMessage(null);
+    } else if (input instanceof EmailField emailField) {
       emailField.setInvalid(false);
       emailField.setErrorMessage(null);
     } else if (input instanceof PasswordField passwordField) {
@@ -871,7 +1009,10 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private void setValidationError(Component input, String errorMessage) {
-    if (input instanceof EmailField emailField) {
+    if (input instanceof AdminDurationField field) {
+      field.setInvalid(true);
+      field.setErrorMessage(errorMessage);
+    } else if (input instanceof EmailField emailField) {
       emailField.setInvalid(true);
       emailField.setErrorMessage(errorMessage);
     } else if (input instanceof PasswordField passwordField) {
@@ -887,6 +1028,9 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private boolean isInputInvalid(Component input) {
+    if (input instanceof AdminDurationField field) {
+      return field.isInvalid();
+    }
     if (input instanceof EmailField emailField) {
       return emailField.isInvalid();
     }

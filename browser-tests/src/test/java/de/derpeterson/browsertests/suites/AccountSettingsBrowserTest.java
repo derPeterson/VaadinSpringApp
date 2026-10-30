@@ -64,6 +64,11 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     AccountPage form = new AccountPage(page);
     form.open();
     form.fill("Profile", "Saved", LocalDate.of(1992, 3, 4));
+    form.host("account-gender").click();
+    page.getByRole(
+            AriaRole.OPTION,
+            new Page.GetByRoleOptions().setName(texts.getGenderFemale()).setExact(true))
+        .click();
     form.save();
     form.assertMessage(texts.getAccountSettingsSaveSuccess());
     assertThat(page.locator(".account-summary-name")).hasText("Profile Saved");
@@ -71,13 +76,15 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     new UserMenu(page).open();
     assertThat(page.locator(".user-popover-avatar .cosmos-avatar-initials")).hasText("PS");
     new UserMenu(page).close();
-    assertThat(form.host("account-email")).hasJSProperty("disabled", true);
-    assertThat(form.input("account-email")).isDisabled();
+    assertThat(form.host("account-email")).hasJSProperty("readonly", true);
+    assertThat(form.input("account-email")).isEnabled();
+    assertThat(form.input("account-email")).hasAttribute("readonly", "");
     assertThat(form.input("account-email")).hasValue(email);
     page.reload();
     assertThat(form.input("account-first-name")).hasValue("Profile");
     assertThat(form.input("account-last-name")).hasValue("Saved");
     assertThat(form.host("account-birth-date")).hasJSProperty("value", "1992-03-04");
+    assertThat(form.input("account-gender")).hasValue(texts.getGenderFemale());
     form.fill("Second", "Saved", LocalDate.of(1993, 4, 5));
     form.save();
     form.assertMessage(texts.getAccountSettingsSaveSuccess());
@@ -210,9 +217,9 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     assertThat(form.host("account-email-request")).hasText(texts.getAccountEmailDialogRequest());
     assertThat(form.host("account-email-request")).isEnabled();
     assertThat(form.host("account-email-request").locator("vaadin-icon"))
-        .hasAttribute("icon", "vaadin:check");
+        .hasAttribute("src", "icons/lucide/check.svg");
     assertEquals(
-        "blur(6px)",
+        "blur(3px)",
         form.dialog()
             .locator("[part~='backdrop']")
             .evaluate("e => getComputedStyle(e).backdropFilter"));

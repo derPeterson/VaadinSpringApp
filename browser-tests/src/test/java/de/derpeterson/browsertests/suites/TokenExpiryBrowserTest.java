@@ -134,12 +134,12 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
           form.fillPasswords("ChangedPassword!", "ChangedPassword!");
           form.submit();
           assertThat(reset.locator("vaadin-notification-card:not([closing])"))
-              .containsText(texts.getResetPasswordInvalidText());
+              .containsText(texts.getResetPasswordExpiredText());
           assertThat(reset.locator("vaadin-notification-card:not([closing])"))
               .not()
               .containsText(texts.getBaseSuccessTitle());
           reset.reload();
-          new ResetPasswordPage(reset).assertInvalid();
+          new ResetPasswordPage(reset).assertExpired();
         }
         actor.login(email, "ChangedPassword!");
         new LoginPage(actor.page).assertRejected();
@@ -183,7 +183,9 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
     Locator send =
         page.getByRole(
             AriaRole.BUTTON,
-            new Page.GetByRoleOptions().setName(texts.getBaseSendButton()).setExact(true));
+            new Page.GetByRoleOptions()
+                .setName(texts.getVerificationRequestActivationLink())
+                .setExact(true));
     send.click();
     checkRequestError(texts.getBaseValidationRequiredMessage());
     input.fill("invalid");

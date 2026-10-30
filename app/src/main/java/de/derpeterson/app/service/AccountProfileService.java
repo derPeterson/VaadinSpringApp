@@ -2,6 +2,7 @@ package de.derpeterson.app.service;
 
 import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
@@ -34,11 +35,21 @@ public class AccountProfileService {
 
   // Kein Benutzerbezeichner aus dem Formular: Das Zielkonto kommt immer aus der Anmeldung.
   public record Changes(
-      Long version, String firstName, String lastName, LocalDate birthDate, Locale language)
+      Long version,
+      String firstName,
+      String lastName,
+      LocalDate birthDate,
+      Locale language,
+      Gender gender)
       implements Serializable {}
 
   public record Profile(
-      Long version, String firstName, String lastName, LocalDate birthDate, Locale language)
+      Long version,
+      String firstName,
+      String lastName,
+      LocalDate birthDate,
+      Locale language,
+      Gender gender)
       implements Serializable {
     public static Profile from(UserEntity user) {
       return new Profile(
@@ -46,7 +57,8 @@ public class AccountProfileService {
           user.getFirstName(),
           user.getLastName(),
           user.getBirthDate(),
-          user.getPreferredLocale());
+          user.getPreferredLocale(),
+          user.getGender());
     }
   }
 
@@ -62,6 +74,7 @@ public class AccountProfileService {
     Assert.isTrue(UserInputRules.isRequiredTextValid(changes.firstName()), "Invalid first name");
     Assert.isTrue(UserInputRules.isRequiredTextValid(changes.lastName()), "Invalid last name");
     Assert.isTrue(UserInputRules.isBirthDateValid(changes.birthDate()), "Invalid birth date");
+    Assert.notNull(changes.gender(), "Gender required");
     Assert.isTrue(
         Locale.GERMAN.equals(changes.language()) || Locale.ENGLISH.equals(changes.language()),
         "Unsupported language");
@@ -78,6 +91,7 @@ public class AccountProfileService {
     user.setFirstName(changes.firstName().trim());
     user.setLastName(changes.lastName().trim());
     user.setBirthDate(changes.birthDate());
+    user.setGender(changes.gender());
     user.setPreferredLocale(changes.language());
     // Keine Übernahme einer UI-Entity: E-Mail, Passwort, Freigabe, Rollen und Tokens bleiben
     // erhalten.

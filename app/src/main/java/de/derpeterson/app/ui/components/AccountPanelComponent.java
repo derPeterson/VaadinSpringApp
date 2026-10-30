@@ -4,7 +4,6 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.VaadinIcon;
 
 /** Kontopanel verwendet unverändert die vorhandenen Cosmos-Panelbausteine. */
 public class AccountPanelComponent extends CosmosCardComponent {
@@ -14,7 +13,7 @@ public class AccountPanelComponent extends CosmosCardComponent {
   private final Div body = new Div();
   private final Div icon = new Div();
 
-  public AccountPanelComponent(String id, VaadinIcon iconType) {
+  public AccountPanelComponent(String id, AppIcon iconType) {
     setId(id);
     addClassNames("cosmos-panel-card", "account-panel");
     icon.add(iconType.create());
@@ -46,11 +45,19 @@ public class AccountPanelComponent extends CosmosCardComponent {
   }
 
   public void addFooter(Component hint, Component action) {
-    Div info = new Div(VaadinIcon.INFO_CIRCLE.create(), hint);
+    Div info = new Div(AppIcon.INFO_CIRCLE.create(), hint);
     info.addClassName("cosmos-panel-hint");
     Div actions = new Div(action);
     actions.addClassName("cosmos-panel-actions");
     Div footer = new Div(info, actions);
+    footer.addClassName("cosmos-panel-footer");
+    add(footer);
+  }
+
+  public void addActionFooter(Component action) {
+    Div actions = new Div(action);
+    actions.addClassName("cosmos-panel-actions");
+    Div footer = new Div(actions);
     footer.addClassName("cosmos-panel-footer");
     add(footer);
   }

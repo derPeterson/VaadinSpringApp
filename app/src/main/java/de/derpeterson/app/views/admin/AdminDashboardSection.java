@@ -1,109 +1,125 @@
 package de.derpeterson.app.views.admin;
 
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.function.SerializableRunnable;
+import com.vaadin.flow.function.SerializableSupplier;
+import com.vaadin.flow.router.QueryParameters;
 import de.derpeterson.app.i18n.MessageProperties;
-import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.views.AdminView;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.springframework.security.core.userdetails.UserDetails;
 
+/** Abgestimmter Einstieg mit echten Schnellzugriffen, ohne erfundene Kennzahlen. */
 public class AdminDashboardSection extends VerticalLayout {
+  private final MessageProperties texts;
+  private final List<SerializableRunnable> translations = new ArrayList<>();
 
-  private final transient MessageProperties messageProperties;
-  private final transient UserDetails authenticatedUser;
-
-  private final Span dashboardOverview;
-  private final Span dashboardTitle;
-  private final Span dashboardDescription;
-  private final Span summaryEyebrow;
-  private final H2 summaryTitle;
-  private final Span summaryDescription;
-  private final Span welcomeLabel;
-  private final Span userEmail;
-  private final Span roleInfoText;
-  private final Div roleBadges;
-  private final Div roleRow;
-
-  public AdminDashboardSection(MessageProperties messageProperties, UserDetails authenticatedUser) {
-    this.messageProperties = messageProperties;
-    this.authenticatedUser = authenticatedUser;
-
+  public AdminDashboardSection(MessageProperties texts, UserDetails authenticatedUser) {
+    this.texts = texts;
     setPadding(false);
     setSpacing(false);
     setWidthFull();
     addClassNames("cosmos-admin-section", "cosmos-admin-section--dashboard");
+    Span overview = copy(texts::getAdminHeaderTitle);
+    Span title = copy(texts::getAdminDashboardTitle);
+    Span description = copy(texts::getAdminDashboardDescription);
+    Div eyebrow = new Div(copy(texts::getAdminDashboardHeroEyebrow));
+    eyebrow.addClassName("admin-dashboard-eyebrow");
+    H2 welcome = new H2();
+    translations.add(() -> welcome.setText(texts.getAdminDashboardHeroTitle() + "."));
+    Div copy = new Div(eyebrow, welcome, copy(texts::getAdminDashboardHeroDescription));
+    copy.addClassName("admin-dashboard-copy");
+    Image picture = new Image("images/admin-dashboard.jpg", "");
+    picture.addClassName("admin-dashboard-image");
+    Div intro = new Div(copy, picture);
+    intro.addClassName("admin-dashboard-intro");
+    Div hint = new Div(AppIcon.INFO_CIRCLE.create(), copy(texts::getAdminDashboardFutureHint));
+    hint.addClassName("admin-dashboard-hint");
+    Div hero = new Div(intro, hint);
+    hero.addClassName("admin-dashboard-hero");
+    H2 shortcuts = new H2();
+    translations.add(() -> shortcuts.setText(texts.getAdminDashboardShortcuts()));
+    Div grid = new Div();
+    grid.addClassName("admin-dashboard-shortcuts");
+    grid.add(
+        shortcut(
+            AppIcon.USERS,
+            texts::getAdminUsersTitle,
+            texts::getAdminUsersDescription,
+            "user_management"),
+        shortcut(
+            AppIcon.COGS,
+            texts::getAdminNavConfiguration,
+            texts::getAdminConfigDescription,
+            "configuration"),
+        shortcut(
+            AppIcon.ENVELOPE,
+            texts::getAdminMailTitle,
+            texts::getAdminMailDescription,
+            "mail_test"));
+    boolean canSend =
+        authenticatedUser != null
+            && authenticatedUser.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_SUPERADMIN"));
+    if (canSend) {
+      grid.add(
+          shortcut(
+              AppIcon.BELL,
+              texts::getNotificationsTitle,
+              texts::getNotificationsAdminPageDescription,
+              "notifications"));
+    }
+    Div accessHeading = new Div(shortcuts, copy(texts::getAdminDashboardShortcutsHint));
+    accessHeading.addClassName("admin-dashboard-access-heading");
+    add(new CosmosSectionHeaderComponent(overview, title, description), hero, accessHeading, grid);
+    refreshTexts();
+  }
 
-    dashboardOverview = new Span();
-    dashboardTitle = new Span();
-    dashboardDescription = new Span();
+  private Span copy(SerializableSupplier<String> source) {
+    Span span = new Span();
+    translations.add(() -> span.setText(source.get()));
+    return span;
+  }
 
-    summaryEyebrow = new Span();
-    summaryEyebrow.addClassName("cosmos-admin-summary-eyebrow");
-    summaryTitle = new H2();
-    summaryTitle.addClassName("cosmos-admin-summary-title");
-    summaryDescription = new Span();
-    summaryDescription.addClassName("cosmos-admin-summary-description");
-
-    welcomeLabel = new Span();
-    userEmail = new Span();
-    userEmail.addClassName("cosmos-admin-summary-email");
-    Span userInfoText = new Span(welcomeLabel, userEmail);
-    userInfoText.addClassName("cosmos-admin-summary-user");
-
-    roleInfoText = new Span();
-    roleBadges = new Div();
-    roleBadges.addClassName("cosmos-admin-summary-roles");
-    roleRow = new Div(roleInfoText, roleBadges);
-    roleRow.addClassName("cosmos-admin-summary-role-row");
-
-    VerticalLayout infoLayout =
-        new VerticalLayout(summaryEyebrow, summaryTitle, summaryDescription, userInfoText, roleRow);
-    infoLayout.setPadding(false);
-    infoLayout.setSpacing(false);
-    infoLayout.addClassName("cosmos-admin-account-summary");
-    infoLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-
-    CosmosCardComponent infoCard = new CosmosCardComponent(infoLayout);
-    infoCard.addClassName("cosmos-admin-dashboard-card");
-    add(
-        new CosmosSectionHeaderComponent(dashboardOverview, dashboardTitle, dashboardDescription),
-        infoCard);
+  private Div shortcut(
+      AppIcon icon,
+      SerializableSupplier<String> name,
+      SerializableSupplier<String> description,
+      String section) {
+    Div symbol = new Div(icon.create());
+    symbol.addClassName("cosmos-panel-icon");
+    H3 title = new H3();
+    translations.add(() -> title.setText(name.get()));
+    Div copy = new Div(title, copy(description));
+    Button open =
+        new Button(
+            "",
+            AppIcon.ARROW_FORWARD.create(),
+            event ->
+                UI.getCurrent()
+                    .navigate(AdminView.class, QueryParameters.simple(Map.of("section", section))));
+    translations.add(
+        () -> {
+          open.setText(texts.getAdminDashboardOpen());
+          open.setAriaLabel(name.get() + ": " + texts.getAdminDashboardOpen());
+        });
+    Div card = new Div(symbol, copy, open);
+    card.addClassName("admin-dashboard-shortcut");
+    return card;
   }
 
   public void refreshTexts() {
-    dashboardOverview.setText(
-        messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getHomeOverview());
-    dashboardTitle.setText(messageProperties.getAdminDashboardTitle());
-    dashboardDescription.setText(messageProperties.getAdminDashboardDescription());
-    summaryEyebrow.setText(messageProperties.getAdminDashboardWelcomeBack());
-    summaryTitle.setText(messageProperties.getAdminDashboardTitle());
-    summaryDescription.setText(messageProperties.getAdminDashboardDescription());
-
-    roleBadges.removeAll();
-    roleRow.setVisible(authenticatedUser != null);
-    if (authenticatedUser != null) {
-      welcomeLabel.setText(messageProperties.getAdminDashboardWelcome() + ": ");
-      userEmail.setText(authenticatedUser.getUsername());
-      roleInfoText.setText(messageProperties.getAdminDashboardRoles() + ":");
-      authenticatedUser.getAuthorities().stream()
-          .filter(
-              authority ->
-                  !(authority
-                      instanceof
-                      org.springframework.security.core.authority.FactorGrantedAuthority))
-          .forEach(
-              authority -> {
-                Span badge = new Span(authority.getAuthority());
-                badge.addClassName("cosmos-admin-role-chip");
-                roleBadges.add(badge);
-              });
-    } else {
-      welcomeLabel.setText(messageProperties.getAdminDashboardNotAuthenticated());
-      userEmail.setText("");
-      roleInfoText.setText("");
-    }
+    translations.forEach(SerializableRunnable::run);
   }
 }

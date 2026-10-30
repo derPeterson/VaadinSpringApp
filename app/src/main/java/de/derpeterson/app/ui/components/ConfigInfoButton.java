@@ -2,8 +2,7 @@ package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import java.util.function.Supplier;
@@ -46,8 +45,13 @@ public class ConfigInfoButton extends Button {
   private final transient Supplier<String> textSupplier;
 
   public ConfigInfoButton(Supplier<String> textSupplier) {
+    this(textSupplier, null);
+  }
+
+  public ConfigInfoButton(
+      Supplier<String> textSupplier, com.vaadin.flow.function.SerializableRunnable openHelp) {
     this.textSupplier = textSupplier;
-    Icon icon = VaadinIcon.INFO_CIRCLE.create();
+    SvgIcon icon = AppIcon.INFO_CIRCLE.create();
     icon.addClassName(LumoUtility.TextColor.PRIMARY);
     setIcon(icon);
     addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
@@ -60,6 +64,10 @@ public class ConfigInfoButton extends Button {
             .withManual(true);
     addClickListener(
         event -> {
+          if (openHelp != null) {
+            openHelp.run();
+            return;
+          }
           boolean opened = !tooltip.isOpened();
           tooltip.setOpened(opened);
           getElement().setAttribute(ARIA_EXPANDED, Boolean.toString(opened));

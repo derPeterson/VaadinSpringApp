@@ -2,20 +2,24 @@ package de.derpeterson.app.helper.ui;
 
 import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosPageComponent;
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.function.Supplier;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -32,6 +36,7 @@ public class NotificationHelper implements Serializable {
   private Html messageText = null;
   private transient Supplier<String> messageSupplier = null;
   private VerticalLayout textLayout = null;
+  private Button closeButton;
 
   public enum NotificationType {
     NORMAL,
@@ -98,13 +103,21 @@ public class NotificationHelper implements Serializable {
     if (CosmosPageComponent.isDisplayed(UI.getCurrent())) {
       currentNotification.getElement().getThemeList().add("cosmos");
     }
+    boolean referenceAccount = isReferencePortal(UI.getCurrent());
+    if (referenceAccount) {
+      currentNotification.getElement().getThemeList().add("cosmos-reference");
+      currentNotification
+          .getElement()
+          .getThemeList()
+          .add("cosmos-reference-" + notificationType.name().toLowerCase(Locale.ROOT));
+    }
     currentNotification.setPosition(Notification.Position.TOP_CENTER);
     currentNotification.setDuration(duration);
 
     this.titleText = null;
     if (StringUtils.isNotEmpty(title)) {
       titleText = new Span(title);
-      titleText.addClassNames("cosmos-notification-title", LumoUtility.FontWeight.SEMIBOLD);
+      titleText.addClassNames("cosmos-toast-title", LumoUtility.FontWeight.SEMIBOLD);
       currentNotification.add(titleText);
     }
 
@@ -115,21 +128,21 @@ public class NotificationHelper implements Serializable {
     contentLayout.setSpacing(false);
     contentLayout.addClassNames(LumoUtility.Gap.LARGE);
 
-    Icon icon = null;
+    SvgIcon icon = null;
     if (notificationType == NotificationType.ERROR) {
-      icon = VaadinIcon.WARNING.create();
+      icon = AppIcon.ERROR.create();
       icon.addClassNames(LumoUtility.TextColor.ERROR);
       if (titleText != null) {
         titleText.addClassNames(LumoUtility.TextColor.ERROR);
       }
     } else if (notificationType == NotificationType.SUCCESS) {
-      icon = VaadinIcon.CHECK_CIRCLE.create();
+      icon = AppIcon.CHECK_CIRCLE.create();
       icon.addClassNames(LumoUtility.TextColor.SUCCESS);
       if (titleText != null) {
         titleText.addClassNames(LumoUtility.TextColor.SUCCESS);
       }
     } else if (notificationType == NotificationType.WARNING) {
-      icon = VaadinIcon.BELL.create();
+      icon = AppIcon.WARNING.create();
       icon.addClassNames(LumoUtility.TextColor.WARNING);
       if (titleText != null) {
         titleText.addClassNames(LumoUtility.TextColor.WARNING);
@@ -140,7 +153,20 @@ public class NotificationHelper implements Serializable {
       icon.addClassName("cosmos-notification-icon");
     }
 
-    contentLayout.add(icon);
+    if (referenceAccount) {
+      AppIcon symbol =
+          switch (notificationType) {
+            case ERROR -> AppIcon.ERROR;
+            case SUCCESS -> AppIcon.CHECK_CIRCLE;
+            case WARNING -> AppIcon.WARNING;
+            case NORMAL -> AppIcon.INFO_CIRCLE;
+          };
+      SvgIcon referenceIcon = symbol.create();
+      referenceIcon.addClassName("cosmos-notification-icon");
+      contentLayout.add(referenceIcon);
+    } else if (icon != null) {
+      contentLayout.add(icon);
+    }
 
     this.textLayout = new VerticalLayout();
     textLayout.addClassNames(LumoUtility.Padding.SMALL);
@@ -152,13 +178,28 @@ public class NotificationHelper implements Serializable {
     contentLayout.add(textLayout);
 
     currentNotification.add(contentLayout);
-    currentNotification.add(createNotificationCloseButton(currentNotification));
+    closeButton = createNotificationCloseButton(currentNotification);
+    closeButton.setAriaLabel(localizedCloseLabel());
+    if (referenceAccount) {
+      closeButton.setIcon(AppIcon.CLOSE_CIRCLE.create());
+    }
+    currentNotification.add(closeButton);
     currentNotification.open();
+  }
+
+  private static boolean isReferencePortal(Component component) {
+    return component != null
+        && (component.getElement().getClassList().contains("cosmos-reference-portal")
+            || component.getChildren().anyMatch(NotificationHelper::isReferencePortal));
+  }
+
+  private static String localizedCloseLabel() {
+    return new MessageProperties(new CustomI18NProvider()).getNotificationsClose();
   }
 
   private static Button createNotificationCloseButton(Notification notification) {
     Button closeButton =
-        new Button(VaadinIcon.CLOSE_CIRCLE.create(), clickEvent -> notification.close());
+        new Button(AppIcon.CLOSE_CIRCLE.create(), clickEvent -> notification.close());
     closeButton.addClassNames(LumoUtility.TextColor.PRIMARY);
     closeButton.addThemeVariants(LUMO_TERTIARY_INLINE);
 
@@ -166,16 +207,17 @@ public class NotificationHelper implements Serializable {
   }
 
   private void createTextLayoutContent(String message) {
-    this.messageText = new Html(HtmlHelper.ensureParagraphTags(message));
-    messageText.addClassNames("cosmos-notification-message", LumoUtility.Margin.NONE);
-    messageText.getStyle().set("max-width", "520px");
-
     textLayout.removeAll();
-
     if (titleText != null) {
       textLayout.add(titleText);
     }
-    textLayout.add(messageText);
+    messageText = null;
+    if (StringUtils.isNotBlank(message)) {
+      messageText = new Html(HtmlHelper.ensureParagraphTags(message));
+      messageText.addClassNames("cosmos-notification-message", LumoUtility.Margin.NONE);
+      messageText.getStyle().set("max-width", "520px");
+      textLayout.add(messageText);
+    }
   }
 
   public void closeAndClearAllNotifications() {
@@ -187,15 +229,19 @@ public class NotificationHelper implements Serializable {
     this.titleSupplier = null;
     this.messageText = null;
     this.messageSupplier = null;
+    this.closeButton = null;
 
     currentNotification = new Notification();
   }
 
   public void updateText() {
+    if (closeButton != null) {
+      closeButton.setAriaLabel(localizedCloseLabel());
+    }
     if (titleText != null && titleSupplier != null) {
       titleText.setText(titleSupplier.get());
     }
-    if (messageText != null && messageSupplier != null) {
+    if (messageSupplier != null) {
       createTextLayoutContent(messageSupplier.get());
     }
   }

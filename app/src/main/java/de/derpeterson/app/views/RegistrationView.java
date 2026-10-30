@@ -12,7 +12,6 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -44,8 +43,11 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.RegistrationService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
-import de.derpeterson.app.ui.components.CosmosPageComponent;
+import de.derpeterson.app.ui.components.PortalFields;
+import de.derpeterson.app.ui.components.PublicPageComponent;
+import de.derpeterson.app.ui.components.PublicPanelComponent;
 import de.derpeterson.app.validation.EmailConflict;
 import de.derpeterson.app.validation.UserInputRules;
 import jakarta.servlet.http.HttpServletRequest;
@@ -149,12 +151,12 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
               .ifPresent(
                   component ->
                       componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getRegistrationEmailField));
+                          component, this.messageProperties::getPublicEmailField));
           Optional.ofNullable(confirmEmailField)
               .ifPresent(
                   component ->
                       componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getRegistrationConfirmField));
+                          component, this.messageProperties::getPublicConfirmEmailField));
           Optional.ofNullable(passwordField)
               .ifPresent(
                   component ->
@@ -164,7 +166,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
               .ifPresent(
                   component ->
                       componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getRegistrationConfirmField));
+                          component, this.messageProperties::getPublicConfirmPasswordField));
           Optional.ofNullable(genderComboBox)
               .ifPresent(
                   component ->
@@ -212,27 +214,15 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     requiredFormComponents = createRequiredFormComponents();
     Button registerButton = createRegisterButton();
 
-    CosmosPageComponent pageLayout =
-        new CosmosPageComponent(
-            configService, true, messageProperties::getAccountCopyrightTemplate);
+    PublicPageComponent pageLayout =
+        new PublicPageComponent(
+            configService, messageProperties, PublicPageComponent.Page.REGISTER);
     VerticalLayout mainContent = pageLayout.getCardContainer();
 
     // Layout
-    VerticalLayout cardContentLayout = new VerticalLayout();
-    cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-    cardContentLayout.setPadding(false);
-    cardContentLayout.setSpacing(false);
-    cardContentLayout.addClassName("cosmos-form");
 
     this.title = new H1(messageProperties.getRegistrationTitle());
     title.addClassName("cosmos-headline");
-
-    HorizontalLayout cardTitleLayout = new HorizontalLayout();
-    cardTitleLayout.addClassName("cosmos-title-row");
-    cardTitleLayout.setWidthFull();
-    cardTitleLayout.setPadding(false);
-    cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    cardTitleLayout.add(title);
 
     this.createAccountQuestionText = new Span(messageProperties.getRegistrationLoginQuestion());
 
@@ -267,16 +257,14 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     fourthLineForm.setSpacing(false);
     fourthLineForm.addClassName(COSMOS_FORM_ROW_CLASS);
 
-    cardContentLayout.add(
-        cardTitleLayout,
-        cardSecondaryTitleLayout,
-        firstLineForm,
-        secondLineForm,
-        thirdLineForm,
-        fourthLineForm,
-        registerButton);
-
-    CosmosCardComponent registrationCardComponent = new CosmosCardComponent(cardContentLayout);
+    CosmosCardComponent registrationCardComponent =
+        new PublicPanelComponent(
+            AppIcon.USER_PLUS.create(),
+            title,
+            messageProperties::getPublicRegisterSubtitle,
+            new Component[] {firstLineForm, secondLineForm, thirdLineForm, fourthLineForm},
+            cardSecondaryTitleLayout,
+            registerButton);
 
     mainContent.add(registrationCardComponent);
 
@@ -286,7 +274,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
   private Button createRegisterButton() {
     this.registrationButton = new Button(messageProperties.getBaseRegistrationButton());
-    registrationButton.setPrefixComponent(VaadinIcon.EDIT.create());
+    registrationButton.setPrefixComponent(AppIcon.USER_PLUS.create());
     registrationButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     registrationButton.setWidthFull();
     registrationButton.addClassName("cosmos-submit");
@@ -443,39 +431,33 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     this.loginLink = new RouterLink(messageProperties.getRegistrationLoginLink(), LoginView.class);
     loginLink.addClassNames("underline");
     this.firstNameField = new TextField(messageProperties.getRegistrationFirstNameField());
-    firstNameField.setPrefixComponent(VaadinIcon.USER.create());
     firstNameField.setClearButtonVisible(true);
     firstNameField.setWidthFull();
     this.lastNameField = new TextField(messageProperties.getRegistrationLastNameField());
-    lastNameField.setPrefixComponent(VaadinIcon.USER.create());
     lastNameField.setClearButtonVisible(true);
     lastNameField.setWidthFull();
-    this.emailField = new EmailField(messageProperties.getRegistrationEmailField());
+    this.emailField = new EmailField(messageProperties.getPublicEmailField());
     emailField.setPattern(UserInputRules.EMAIL_REGEX);
-    emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
     emailField.setClearButtonVisible(true);
     emailField.setWidthFull();
-    this.confirmEmailField = new EmailField(messageProperties.getRegistrationConfirmField());
+    this.confirmEmailField = new EmailField(messageProperties.getPublicConfirmEmailField());
     confirmEmailField.setPattern(UserInputRules.EMAIL_REGEX);
-    confirmEmailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
     confirmEmailField.setClearButtonVisible(true);
     confirmEmailField.setWidthFull();
     this.passwordField = new PasswordField(messageProperties.getRegistrationPasswordField());
-    passwordField.setPrefixComponent(VaadinIcon.LOCK.create());
     passwordField.setClearButtonVisible(true);
     passwordField.setWidthFull();
-    this.confirmPasswordField = new PasswordField(messageProperties.getRegistrationConfirmField());
-    confirmPasswordField.setPrefixComponent(VaadinIcon.LOCK.create());
+    this.confirmPasswordField =
+        new PasswordField(messageProperties.getPublicConfirmPasswordField());
     confirmPasswordField.setClearButtonVisible(true);
     confirmPasswordField.setWidthFull();
     this.genderComboBox = new ComboBox<>(messageProperties.getRegistrationGenderCombobox());
-    genderComboBox.setPrefixComponent(VaadinIcon.USERS.create());
     genderComboBox.setClearButtonVisible(true);
     genderComboBox.setWidthFull();
     genderComboBox.setItems(Gender.MALE, Gender.FEMALE, Gender.OTHER);
     genderComboBox.setItemLabelGenerator(this::formatGender);
+    PortalFields.styleChoice(genderComboBox, this::formatGender, true);
     this.birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
-    birthDatePicker.setPrefixComponent(VaadinIcon.CALENDAR_USER.create());
     birthDatePicker.setAutoOpen(false);
     birthDatePicker.setLocale(CustomI18NProvider.getCurrentLocale());
     CompactDateInput.configure(birthDatePicker, messageProperties);
@@ -539,6 +521,9 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     }
     if (genderComboBox != null) {
       genderComboBox.setPlaceholder(messageProperties.getAccountGenderPlaceholder());
+    }
+    if (birthDatePicker != null) {
+      birthDatePicker.setHelperText(messageProperties.getAccountBirthDateFormatHint());
     }
   }
 }

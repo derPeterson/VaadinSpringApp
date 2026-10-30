@@ -9,8 +9,7 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.server.streams.UploadEvent;
@@ -50,13 +49,14 @@ public class AccountAvatarDialog extends Dialog {
   private final H2 title = new H2();
   private final Span description = new Span();
   private final Span keepHint = new Span();
+  private final Span previewCaption = new Span();
   private transient UserAvatarService avatars;
   private transient HttpServletRequest request;
   private volatile UUID draft;
   private UserAvatarService.State original = UserAvatarService.State.initial();
   private boolean deleteImage;
   private UUID uploadedImage;
-  private final Button close = new Button(VaadinIcon.CLOSE_CIRCLE.create(), event -> close());
+  private final Button close = new Button(AppIcon.CLOSE_CIRCLE.create(), event -> close());
   private final Button cancel = new Button("", event -> close());
   private final Button save = new Button();
   private final Button delete = new Button();
@@ -69,7 +69,8 @@ public class AccountAvatarDialog extends Dialog {
     editor = new AccountAvatarEditor(messages, user);
     setId("account-avatar-dialog");
     addClassNames("cosmos-theme", "account-change-dialog", "account-avatar-dialog");
-    getThemeNames().add("cosmos");
+    getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
+    addClassName("cosmos-reference-overlay");
     setModality(ModalityMode.STRICT);
     setCloseOnEsc(true);
     setCloseOnOutsideClick(true);
@@ -77,11 +78,12 @@ public class AccountAvatarDialog extends Dialog {
     description.addClassName("cosmos-panel-description");
     Div heading = new Div(title, description);
     heading.addClassName("cosmos-panel-heading");
-    Icon symbol = VaadinIcon.PICTURE.create();
+    SvgIcon symbol = AppIcon.PICTURE.create();
     symbol.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div badge = new Div(symbol);
     badge.addClassName("cosmos-panel-icon");
     close.setId("account-avatar-close");
+    close.setIcon(AppIcon.CLOSE_CIRCLE.create());
     close.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
     close.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     Div header = new Div(badge, heading, close);
@@ -125,8 +127,10 @@ public class AccountAvatarDialog extends Dialog {
               delete.setVisible(false);
             });
     editor.getElement().addEventListener("avatar-file-cancelled", event -> cancelSelection());
-    editor.addComponentAtIndex(1, mode);
-    Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+    editor.addComponentAtIndex(0, mode);
+    previewCaption.addClassName("portal-avatar-preview-caption");
+    editor.addComponentAtIndex(2, previewCaption);
+    SvgIcon infoIcon = AppIcon.INFO_CIRCLE.create();
     infoIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Span infoBadge = new Span(infoIcon);
     infoBadge.addClassName("account-avatar-info-icon");
@@ -137,7 +141,7 @@ public class AccountAvatarDialog extends Dialog {
     add(body);
 
     delete.setId("account-avatar-delete");
-    delete.setPrefixComponent(VaadinIcon.TRASH.create());
+    delete.setPrefixComponent(AppIcon.TRASH.create());
     delete.addClassName("cosmos-delete-button");
     delete.setVisible(false);
     delete.addClickListener(
@@ -149,9 +153,9 @@ public class AccountAvatarDialog extends Dialog {
           delete.setVisible(false);
         });
     cancel.setId("account-avatar-cancel");
-    cancel.setPrefixComponent(VaadinIcon.CLOSE.create());
+    cancel.setPrefixComponent(AppIcon.CLOSE.create());
     save.setId("account-avatar-save");
-    save.setPrefixComponent(VaadinIcon.CHECK.create());
+    save.setPrefixComponent(AppIcon.CHECK.create());
     save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     save.addClickListener(event -> submit());
     Div actions = new Div(cancel, save);
@@ -183,7 +187,7 @@ public class AccountAvatarDialog extends Dialog {
 
   private Span createModeLabel(AvatarMode value) {
     Span symbol =
-        value == AvatarMode.INITIALS ? new Span("Aa") : new Span(VaadinIcon.PICTURE.create());
+        value == AvatarMode.INITIALS ? new Span("Aa") : new Span(AppIcon.PICTURE.create());
     symbol.addClassName("account-avatar-mode-icon");
     symbol.getElement().setAttribute(ARIA_HIDDEN, "true");
     Span label = new Span(mode.getItemLabelGenerator().apply(value));
@@ -417,6 +421,7 @@ public class AccountAvatarDialog extends Dialog {
     mode.getDataProvider().refreshAll();
     mode.setValue(selectedMode == null ? AvatarMode.INITIALS : selectedMode);
     keepHint.setText(messages.getAccountAvatarKeepHint());
+    previewCaption.setText(messages.getPortalAvatarPreview());
     delete.setText(messages.getAccountAvatarDelete());
     cancel.setText(messages.getAdminUsersCancel());
     save.setText(messages.getAdminUsersSave());

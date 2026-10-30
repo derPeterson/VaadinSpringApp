@@ -2,9 +2,12 @@ package de.derpeterson.app.ui.base;
 
 import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -16,6 +19,7 @@ import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.model.enums.UserStatus;
@@ -24,13 +28,18 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountHeaderActions;
+import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.CosmosCopyrightComponent;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
+import de.derpeterson.app.ui.components.PageFrameComponent;
+import de.derpeterson.app.ui.components.PortalPageComponent;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.views.AdminView;
 import de.derpeterson.app.views.HomeView;
 import de.derpeterson.app.websocket.UserProfileBroadcaster.Message;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Clock;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -46,6 +55,10 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
   private transient Registration profileRegistration;
   protected Button userIconButton;
   protected transient UserPopoverMenu userPopoverMenu;
+  protected final Button accountNavigationToggle = new Button(AppIcon.MENU.create());
+  private final Span applicationServiceName = new Span();
+  private final Span headerName = new Span();
+  private final Span headerEmail = new Span();
 
   protected TrackedUserAppLayout(
       MessageProperties messageProperties,
@@ -78,6 +91,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
 
           onTrackedUserLanguageChanged();
           accountHeaderActions.refreshTexts();
+          refreshHeaderIdentity();
 
           if (userPopoverMenu != null) {
             userPopoverMenu.refreshForLanguageChange();
@@ -122,6 +136,10 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
   }
 
   /** Gemeinsame Kopfzeile der persönlichen Seiten; die Startseite liefert eigene Menüziele. */
+  protected final void refreshApplicationServiceName(String name) {
+    applicationServiceName.setText(name);
+  }
+
   protected final HorizontalLayout createApplicationHeader(ConfigService config) {
     Runnable administration =
         currentUser != null && currentUser.hasAdministrativeRole()
@@ -133,19 +151,59 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
             administration, () -> UI.getCurrent().navigate(HomeView.class), null, null));
   }
 
+  protected final void setPortalPage(
+      Component header, PortalPageComponent content, ConfigService config) {
+    setContent(
+        new PageFrameComponent(
+            header,
+            content,
+            new CosmosCopyrightComponent(
+                config,
+                Clock.systemDefaultZone(),
+                messageProperties::getAccountCopyrightTemplate)));
+  }
+
   protected final HorizontalLayout createApplicationHeader(
       ConfigService config, UserPopoverMenu.Actions actions) {
     Image logo = new Image("custom-theme/service_logo.png", "Service Icon");
+    boolean referenceAccount = hasClassName("cosmos-reference-portal");
+    if (referenceAccount) {
+      logo.setSrc("icons/service-logo-k.svg");
+      logo.setAlt("");
+    }
     logo.addClassName("cosmos-topbar-logo");
-    Span serviceName = new Span(config.getString(ConfigEntry.SERVICE_NAME));
+    Span serviceName = applicationServiceName;
+    refreshApplicationServiceName(config.getString(ConfigEntry.SERVICE_NAME));
     serviceName.addClassName("cosmos-topbar-service-name");
-    HorizontalLayout brand = new HorizontalLayout(logo, serviceName);
+    Anchor home = new Anchor(AppRoute.HOME.getSecurityRoute(), logo, serviceName);
+    home.addClassName("cosmos-topbar-home");
+    HorizontalLayout brand =
+        referenceAccount ? new HorizontalLayout(home) : new HorizontalLayout(logo, serviceName);
+    accountNavigationToggle.setId("account-navigation-toggle");
+    accountNavigationToggle.addClassName("account-navigation-toggle");
+    accountNavigationToggle.addThemeVariants(LUMO_TERTIARY_INLINE);
+    accountNavigationToggle.setVisible(referenceAccount);
+    if (referenceAccount) {
+      brand.addComponentAsFirst(accountNavigationToggle);
+      accountHeaderActions.useReferenceIcons();
+    }
     brand.setSpacing(false);
     brand.addClassName("cosmos-topbar-brand");
 
     Button userButton = createTrackedUserButton();
+    if (referenceAccount) {
+      Div identity = new Div(headerName, headerEmail);
+      identity.addClassName("cosmos-header-identity");
+      userButton
+          .getElement()
+          .appendChild(identity.getElement(), AppIcon.ANGLE_DOWN.create().getElement());
+      refreshHeaderIdentity();
+    }
     createTrackedUserPopover(actions);
     userPopoverMenu.addThemeName("cosmos");
+    if (referenceAccount) {
+      userPopoverMenu.addThemeName("cosmos-reference");
+    }
     HorizontalLayout userMenu = new HorizontalLayout(accountHeaderActions, userButton);
     userMenu.setSpacing(false);
     userMenu.addClassName("cosmos-topbar-account-menu");
@@ -162,11 +220,11 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
                 messageProperties,
                 currentUser,
                 currentUser != null ? currentUser.getStatus() : UserStatus.getDefaultStatus(),
-                IconSize.PIXEL_48,
+                hasClassName("cosmos-reference-portal") ? IconSize.PIXEL_32 : IconSize.PIXEL_48,
                 true));
 
     ((OverlayUserIcon) userIconButton.getIcon()).configureAvatar(avatars, null);
-    userIconButton.setAriaLabel(AppConstants.USER_ICON_ALT);
+    refreshHeaderIdentity();
     userIconButton.addClassNames("tracked-user-button");
     userIconButton.addThemeVariants(LUMO_TERTIARY_INLINE);
 
@@ -207,6 +265,26 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
   protected void refreshTrackedUserAvatar() {
     if (userIconButton != null && userIconButton.getIcon() instanceof OverlayUserIcon avatar) {
       avatar.setIdentity(currentUser);
+    }
+    refreshHeaderIdentity();
+  }
+
+  private void refreshHeaderIdentity() {
+    String name =
+        currentUser == null
+            ? ""
+            : (Objects.toString(currentUser.getFirstName(), "")
+                    + " "
+                    + Objects.toString(currentUser.getLastName(), ""))
+                .trim();
+    headerName.setText(name);
+    headerEmail.setText(currentUser == null ? "" : Objects.toString(currentUser.getEmail(), ""));
+    accountNavigationToggle.setAriaLabel(messageProperties.getAccountOpenNavigation());
+    if (userIconButton != null) {
+      userIconButton.setAriaLabel(
+          hasClassName("cosmos-reference-portal")
+              ? messageProperties.getAccountOpenUserMenu(name)
+              : AppConstants.USER_ICON_ALT);
     }
   }
 

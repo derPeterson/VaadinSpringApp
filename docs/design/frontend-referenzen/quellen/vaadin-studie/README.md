@@ -1,4 +1,100 @@
-# Besucherfrontend mit Vaadin Flow
+# Vaadin-Studie und isolierter Gestaltungspilot
+
+## Persönliche Daten: bedienbarer Pilot
+
+Der beauftragte Pilot bildet die angemeldete Referenz mit Header, Logo K,
+Identitätskarte, SideNav, persönlichen Daten und einem echten E-Mail-Dialog nach.
+Er verwendet Vaadin Flow, `CosmosCardComponent` und `CosmosSectionHeaderComponent`.
+TextField, EmailField, ComboBox, DatePicker, PasswordField, Button und Dialog sind
+echte Vaadin-Komponenten, keine eingebettete HTML-Referenz. Die festen HTML-Dateien
+und das ausgelieferte Anwendungstheme bleiben unverändert.
+
+Quellen:
+
+- `app/src/test/java/de/derpeterson/designpilot/`: eigene Boot-Konfiguration und View.
+- `app/src/test/resources/personal-data-pilot/`: ausschließlich lokale Styles und SVG-Icons.
+- [pilot.ps1](pilot.ps1): Vorbereitung und optionaler lokaler Start.
+
+Aus dem Projektroot:
+
+```powershell
+# Nur kompilieren und den eigenen Laufzeitordner vorbereiten:
+& docs/design/frontend-referenzen/quellen/vaadin-studie/pilot.ps1
+# Zusätzlich den eigenen lokalen Vorschauprozess starten:
+& docs/design/frontend-referenzen/quellen/vaadin-studie/pilot.ps1 -Start
+```
+
+Die Vorschau läuft auf [127.0.0.1:60826](http://127.0.0.1:60826/).
+Das Zahnrad im Header öffnet für diesen Piloten den E-Mail-Dialog. Die übrigen
+Navigationsziele melden ausdrücklich den begrenzten Pilotumfang. Speichern und
+Bestätigung prüfen ausschließlich synthetische UI-Werte und zeigen einen Hinweis;
+sie speichern nichts und versenden keine E-Mail. Die Sprachwahl ist eine lokale
+Auswahl, noch kein vollständiger Sprachwechsel der Oberfläche.
+
+Der Starter verlangt JDK 25 und die über den Reactor aufgelösten Projektbibliotheken.
+Er kompiliert nur die beiden Pilotklassen und die zwei verwendeten Cosmos-Komponenten
+in `target/personal-data-pilot/`. Die normalen Anwendungsklassen, Shared,
+Security-, Datenbank-, Session- und Mailmodule fehlen im Laufzeitklassenpfad.
+Es werden keine normalen Anwendungseinstellungen oder `.env` geladen. Der Server
+bindet ausschließlich an Loopback. Die Pilotquellen liegen im Testbereich und
+werden nicht im Anwendungs-JAR ausgeliefert.
+
+Als Frontend verwendet er unverändert ausschließlich `META-INF/VAADIN/` aus dem
+vorhandenen Produktionsbundle `app/target/app-1.0-SNAPSHOT.jar.original`.
+Dieses muss zu den aktuellen Projektabhängigkeiten passen. Fehlt es nach einem
+Clean, ist zuvor ein regulärer Reactor-Produktionsbuild gemäß Entwicklungsanleitung
+nötig. Der Starter erzeugt oder ändert keine Frontendquellen und verwendet kein
+zweites Abhängigkeitsmodell. Schriften und Logo werden aus den bestehenden Quellen
+in den eigenen Laufzeitordner kopiert.
+
+Der eigene Prozess lässt sich anhand seiner gespeicherten ID beenden, nachdem
+geprüft wurde, dass diese weiterhin zum Pilotstart gehört:
+
+```powershell
+Get-Process -Id (Get-Content target/personal-data-pilot/process-id.txt)
+# Nur den eigenen Pilotprozess beenden:
+Stop-Process -Id (Get-Content target/personal-data-pilot/process-id.txt)
+```
+
+Änderungen an Java erfordern Vorbereitung und Neustart des eigenen Piloten;
+danach im Browser aktualisieren. Nach CSS-Änderungen die Ressourcen ebenfalls neu
+vorbereiten, den eigenen Piloten neu starten und aktualisieren; Vaadin versieht
+die ausgelieferten Styles mit einem beim Start ermittelten Cachewert. Der Pilot ist zur gemeinsamen Gestaltungssichtung
+gedacht. Native Picker, Detailabstände und mobile Overlays werden mit der festen
+Referenz verglichen; eine vollständige pixelgleiche oder fachliche Abnahme folgt
+daraus nicht. Erst danach gemeinsame Themebausteine übernehmen.
+
+Gezielt geprüft sind Compile, Spotless/Checkstyle und die Browseransichten mit
+1280 × 720, 1280 × 900, 1024 × 900, 390 × 844 und 844 × 390 Pixeln: ohne horizontalen Seitenüberlauf,
+aufklappende mobile Navigation einschließlich Escape/Fokusrückgabe,
+Geschlechtsauswahl, nativer Kalender sowie Öffnen, Abbrechen, Kopf-Schließen,
+Escape, Pflichtfeldmarkierung und synthetische Bestätigung des E-Mail-Dialogs.
+Die Bestätigung zeigte ausdrücklich, dass keine Bestätigung versendet wurde.
+Bei der Browsersteuerung wurden Formularwerte mit nativen Tastatureingaben und
+Feldwechsel geprüft; bloßes programmatisches Befüllen synchronisierte die
+Vaadin-Werte dort nicht zuverlässig. Keine große QA oder fachlichen Kontotests.
+Das Formular ist anhand der unveränderten HTML-Referenz vermessen: Bei 1280 × 900,
+1024 × 900, 390 × 844 und 844 × 390 stimmen Position, Breite und Höhe aller sechs
+Feldflächen sowie Panel, Formularinhalt und Aktionsleiste überein. Das gilt für
+den synthetischen Ausgangszustand, nicht pauschal für beliebige Inhalte oder Zoomstufen.
+Hilfetext-Abstände, 14-px-Eingabetexte, Innenabstände, Pflichtpunkte, Schreibschutz-
+und Kalendericons sowie die Navigation folgen den Referenzwerten. Im E-Mail-Dialog
+sind Kopf-, Inhalts- und Hinweisgrößen angeglichen. Lumo zentriert den Dialog
+weiterhin optisch etwas oberhalb der geometrischen Mitte; die native Kalender-
+und Auswahlbedienung bleibt erhalten. Offen bleibt die gemeinsame visuelle Abnahme.
+
+Der lokale Pilot übernimmt außerdem die Zahnradkontur, Copyright-Typografie sowie
+Sterne und Planetensilhouette des aktiven Referenzhintergrunds. Das rote Zählerbadge
+behält auf Benutzerwunsch seine Pillenform in größerer Darstellung. Die Avatarpunkte
+haben ausdrücklich begrenzte Außenmaße und überdecken die Initialen nicht;
+„Verfügbar“ erscheint grün. Beide ComboBoxen verwenden native Auswahlzustände mit
+Punkten, blauem Auswahlrahmen und Häkchen rechts. Ihr ComponentRenderer und die
+Itemklassen betreffen ausschließlich den Piloten. Der native Kalender bleibt auf
+Benutzerwunsch in seiner bisherigen Gestaltung. Diese Details wurden am Desktop
+sowie im Smartphone-Hoch-/Querformat nachgeprüft, einschließlich Auswahlwechsel,
+Escape, mobiler Navigation und fehlendem horizontalem Seitenüberlauf.
+
+## Vorherige Besucherfrontend-Studie
 
 Die HTML-Gestaltung lässt sich mit den bestehenden Java-Komponenten und lokalem
 CSS umsetzen. Es ist kein Wechsel des Frontends nötig. Die Studie ist eine

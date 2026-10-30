@@ -4,6 +4,7 @@ import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.component.page.ColorScheme;
 import com.vaadin.flow.component.page.Push;
+import com.vaadin.flow.server.AppShellSettings;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.lumo.Lumo;
 import org.springframework.boot.SpringApplication;
@@ -28,8 +29,14 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @StyleSheet("custom-theme/cosmos-admin.css")
 @StyleSheet("custom-theme/cosmos-notifications.css")
 @StyleSheet("custom-theme/cosmos-background.css")
+@StyleSheet("custom-theme/cosmos-icons.css")
 @ColorScheme(ColorScheme.Value.DARK)
 public class Application implements AppShellConfigurator {
+
+  @Override
+  public void configurePage(AppShellSettings settings) {
+    settings.addFavIcon("icon", "icons/service-logo-k.svg", "any");
+  }
 
   static void main(String[] args) {
     SpringApplication.run(Application.class, args);

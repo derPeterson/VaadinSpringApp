@@ -13,7 +13,6 @@ import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -42,8 +41,10 @@ import de.derpeterson.app.security.SessionLimitException;
 import de.derpeterson.app.security.SessionManagementService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.AccountSessionsComponent;
+import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
-import de.derpeterson.app.ui.components.CosmosPageComponent;
+import de.derpeterson.app.ui.components.PublicPageComponent;
+import de.derpeterson.app.ui.components.PublicPanelComponent;
 import de.derpeterson.app.validation.UserInputRules;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -87,12 +88,12 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
   private H1 title = null;
   private final transient SessionManagementService sessions;
   private final transient HttpServletRequest currentRequest;
+  private PublicPageComponent pageLayout;
   private CosmosCardComponent loginCard;
   private Div recoveryArea;
   private AccountSessionsComponent recoverySessions;
   private Button continueLogin;
   private Button cancelRecovery;
-  private Span recoveryHint;
   private Span createAccountQuestionText = null;
 
   public LoginView(
@@ -124,7 +125,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
               .ifPresent(
                   component ->
                       componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getLoginEmailField));
+                          component, this.messageProperties::getPublicEmailField));
           Optional.ofNullable(passwordField)
               .ifPresent(
                   component ->
@@ -170,7 +171,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     // UI Elements
     this.createAccountLink =
         new RouterLink(messageProperties.getLoginCreateAccountLink(), RegistrationView.class);
-    this.emailField = new EmailField(messageProperties.getLoginEmailField());
+    this.emailField = new EmailField(messageProperties.getPublicEmailField());
     emailField.setPattern(UserInputRules.EMAIL_REGEX);
     this.passwordField = new PasswordField(messageProperties.getLoginPasswordField());
     this.forgotPasswordLink =
@@ -181,29 +182,14 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
             messageProperties.getBaseLoginButton(),
             event -> authenticate(authenticationManager, securityService));
 
-    CosmosPageComponent pageLayout =
-        new CosmosPageComponent(
-            configService, false, messageProperties::getAccountCopyrightTemplate);
+    pageLayout =
+        new PublicPageComponent(configService, messageProperties, PublicPageComponent.Page.LOGIN);
     VerticalLayout mainContent = pageLayout.getCardContainer();
-
-    VerticalLayout cardContentLayout = new VerticalLayout();
-    cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-    cardContentLayout.setPadding(false);
-    cardContentLayout.setSpacing(false);
-    cardContentLayout.addClassNames(LumoUtility.TextColor.SECONDARY, "cosmos-form");
 
     this.title = new H1(messageProperties.getLoginTitle());
     title.addClassName("cosmos-headline");
 
-    HorizontalLayout cardTitleLayout = new HorizontalLayout();
-    cardTitleLayout.addClassName("cosmos-title-row");
-    cardTitleLayout.setWidthFull();
-    cardTitleLayout.setPadding(false);
-    cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    cardTitleLayout.add(title);
-
     this.createAccountQuestionText = new Span(messageProperties.getLoginCreateAccountQuestion());
-    createAccountLink.addClassNames("underline");
 
     HorizontalLayout cardSecondaryTitleLayout = new HorizontalLayout();
     cardSecondaryTitleLayout.addClassNames("cosmos-intro", COSMOS_FORM_TEXT_CLASS);
@@ -217,14 +203,14 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     cardSecondaryTitleLayout.add(createAccountLink);
 
     emailField.setWidthFull();
-    emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
     emailField.setClearButtonVisible(true);
+    emailField.setRequiredIndicatorVisible(true);
 
     passwordField.setWidthFull();
-    passwordField.setPrefixComponent(VaadinIcon.LOCK.create());
     passwordField.setClearButtonVisible(true);
+    passwordField.setRequiredIndicatorVisible(true);
 
-    loginButton.setPrefixComponent(VaadinIcon.SIGN_IN.create());
+    loginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
     loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     loginButton.setWidthFull();
 
@@ -237,7 +223,6 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     rememberMeLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
     rememberMeLayout.add(rememberMeCheckBox);
 
-    forgotPasswordLink.addClassNames("underline");
     HorizontalLayout forgotPasswordLayout = new HorizontalLayout();
     forgotPasswordLayout.addClassName("cosmos-forgot");
     forgotPasswordLayout.setAlignItems(FlexComponent.Alignment.CENTER);
@@ -251,30 +236,34 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
     secondaryActionLayout.add(rememberMeLayout, forgotPasswordLayout);
 
-    cardContentLayout.add(
-        cardTitleLayout,
-        cardSecondaryTitleLayout,
-        emailField,
-        passwordField,
-        loginButton,
-        secondaryActionLayout);
-    CosmosCardComponent cardComponent = new CosmosCardComponent(cardContentLayout);
+    CosmosCardComponent cardComponent =
+        new PublicPanelComponent(
+            AppIcon.SIGN_IN.create(),
+            title,
+            messageProperties::getPublicLoginSubtitle,
+            new Component[] {emailField, passwordField, secondaryActionLayout},
+            cardSecondaryTitleLayout,
+            loginButton);
 
     loginCard = cardComponent;
     recoverySessions =
         new AccountSessionsComponent(
             messageProperties, configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER));
+    continueLogin = new Button();
+    continueLogin.setEnabled(false);
     recoverySessions.configure(
-        () -> sessions.recoveryList(currentRequest),
+        () -> {
+          continueLogin.setEnabled(false);
+          SessionManagementService.Snapshot snapshot = sessions.recoveryList(currentRequest);
+          continueLogin.setEnabled(snapshot.active() < snapshot.limit());
+          return snapshot;
+        },
         handle -> sessions.recoveryRevoke(currentRequest, handle),
         () -> sessions.recoveryRevokeOthers(currentRequest));
     recoverySessions.setRestricted(true);
     recoverySessions.setFailureAction(this::hideRecovery);
-    recoveryHint = new Span();
-    recoveryHint.addClassName(COSMOS_FORM_TEXT_CLASS);
-    continueLogin = new Button();
     continueLogin.setId("session-recovery-continue");
-    continueLogin.setPrefixComponent(VaadinIcon.SIGN_IN.create());
+    continueLogin.setPrefixComponent(AppIcon.SIGN_IN.create());
     continueLogin.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     continueLogin.addClickListener(
         event -> {
@@ -290,6 +279,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
             Class<? extends Component> target = admin ? AdminView.class : HomeView.class;
             getUI().ifPresent(ui -> ui.navigate(target));
           } catch (SessionLimitException _) {
+            recoverySessions.reload();
             showLoginFailure(LOGIN_ERROR_SESSIONS);
           } catch (AuthenticationException _) {
             hideRecovery();
@@ -306,11 +296,12 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
         });
     cancelRecovery = new Button();
     cancelRecovery.setId("session-recovery-cancel");
-    cancelRecovery.setPrefixComponent(VaadinIcon.CLOSE.create());
+    cancelRecovery.setPrefixComponent(AppIcon.CLOSE.create());
     cancelRecovery.addClickListener(event -> hideRecovery());
-    HorizontalLayout actions = new HorizontalLayout(cancelRecovery, continueLogin);
-    actions.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
-    recoveryArea = new Div(recoveryHint, recoverySessions, actions);
+    Div actions = new Div(cancelRecovery, continueLogin);
+    actions.addClassName("public-panel-actions");
+    recoverySessions.addActionFooter(actions);
+    recoveryArea = new Div(recoverySessions);
     recoveryArea.setId("session-recovery");
     recoveryArea.addClassName("cosmos-account");
     recoveryArea.setVisible(false);
@@ -401,14 +392,17 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
   }
 
   private void showRecovery() {
+    pageLayout.showPage(PublicPageComponent.Page.RECOVERY);
     loginCard.setVisible(false);
     recoveryArea.setVisible(true);
     recoverySessions.reload();
   }
 
   private void hideRecovery() {
+    pageLayout.showPage(PublicPageComponent.Page.LOGIN);
     sessions.cancelRecovery(currentRequest);
     recoveryArea.setVisible(false);
+    continueLogin.setEnabled(false);
     loginCard.setVisible(true);
     passwordField.clear();
   }
@@ -417,7 +411,6 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     if (recoveryArea == null) {
       return;
     }
-    recoveryHint.setText(messageProperties.getSessionRecoveryHint());
     continueLogin.setText(messageProperties.getSessionContinueLogin());
     cancelRecovery.setText(messageProperties.getAdminUsersCancel());
     recoverySessions.refreshTexts();

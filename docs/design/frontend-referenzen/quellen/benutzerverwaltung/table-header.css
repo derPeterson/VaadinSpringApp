@@ -1,5 +1,5 @@
 /* Stitch-Variante 2: Versalien und getrennte Indikatoren; aktiv ist nur der Pfeil blau. */
-body[data-admin-reference=users] .au-table th{background:#0e1726;border-bottom:1px solid #1e293b;border-right:1px solid #1e293b80;color:#64748b;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase}
+body[data-admin-reference=users] .au-table th{background:#0e1726;border-bottom:1px solid #1e293b;border-right:0;color:#64748b;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase}
 body[data-admin-reference=users] .au-table th:last-child{border-right:0}
 body[data-admin-reference=users] .au-table th button{width:100%;justify-content:space-between;gap:4px;margin:0;padding:10px 0;border:0;border-radius:3px;background:transparent;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;white-space:nowrap}
 body[data-admin-reference=users] .au-table th button:hover,body[data-admin-reference=users] .au-table th:is([aria-sort=ascending],[aria-sort=descending]) button{color:#f8fafc}

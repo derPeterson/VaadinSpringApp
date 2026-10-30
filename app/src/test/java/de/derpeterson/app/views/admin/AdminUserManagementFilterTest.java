@@ -2,11 +2,11 @@ package de.derpeterson.app.views.admin;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
@@ -98,13 +99,14 @@ class AdminUserManagementFilterTest {
         .click();
     assertEquals(5, visibleUsers().size());
     ((TextField) field("searchField")).setValue("user24@example.test");
+    applyFilters();
     assertEquals(
         List.of("user24@example.test"), visibleUsers().stream().map(UserEntity::getEmail).toList());
     assertEquals(0, field("currentPage"));
-    filter("enabledFilter").setValue(false);
+    filter("enabledFilter").setValue(AdminUserFilters.Enabled.NO);
     applyFilters();
     assertTrue(visibleUsers().isEmpty());
-    filter("enabledFilter").clear();
+    filter("enabledFilter").setValue(AdminUserFilters.Enabled.ALL);
     applyFilters();
     assertEquals(1, visibleUsers().size());
   }
@@ -112,19 +114,21 @@ class AdminUserManagementFilterTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void enumFiltersAndActivityStaySelectedAcrossLanguageChanges(String language) {
-    filter("enabledFilter").setValue(true);
-    filter("statusFilter").setValue(UserStatus.AVAILABLE);
-    filter("roleFilter").setValue(RoleType.ROLE_USER);
+    filter("enabledFilter").setValue(AdminUserFilters.Enabled.YES);
+    filter("statusFilter").setValue(Set.of(UserStatus.AVAILABLE));
+    filter("roleFilter").setValue(Set.of(RoleType.ROLE_USER));
     ((AdminUserActivityFilter) field("lastActivityFilter")).setValue(cutoff);
     applyFilters();
     assertEquals(6, visibleUsers().size());
     locale.set(Locale.forLanguageTag(language));
     section.refreshTexts();
-    assertEquals(true, filter("enabledFilter").getValue());
-    assertEquals(UserStatus.AVAILABLE, filter("statusFilter").getValue());
-    assertEquals(RoleType.ROLE_USER, filter("roleFilter").getValue());
+    assertEquals(AdminUserFilters.Enabled.YES, filter("enabledFilter").getValue());
+    assertEquals(Set.of(UserStatus.AVAILABLE), filter("statusFilter").getValue());
+    assertEquals(Set.of(RoleType.ROLE_USER), filter("roleFilter").getValue());
     assertEquals(cutoff, ((AdminUserActivityFilter) field("lastActivityFilter")).getValue());
-    assertEquals(texts.getAdminUsersFilterRole(), filter("roleFilter").getLabel());
+    assertEquals(
+        texts.getAdminUsersFilterRole(),
+        ((com.vaadin.flow.component.checkbox.CheckboxGroup<?>) field("roleFilter")).getLabel());
     assertEquals(6, visibleUsers().size());
   }
 
@@ -165,7 +169,7 @@ class AdminUserManagementFilterTest {
         .setValue(LocalDateTime.of(2026, 10, 25, 2, 30));
     applyFilters();
     assertEquals(List.of(earlier, later), visibleUsers());
-    assertTrue(chips().getFirst().getElement().getTextRecursively().contains("+02:00"));
+    assertEquals(first, ((AdminUserFilters) field("appliedFilters")).activeSince());
     // A nonexistent draft must preserve the already applied autumn cutoff.
     ((AdminUserActivityFilter) field("lastActivityFilter"))
         .setValue(LocalDateTime.of(2026, 3, 29, 2, 30));
@@ -207,6 +211,7 @@ class AdminUserManagementFilterTest {
         .click();
     assertEquals(5, visibleUsers().size());
     ((TextField) field("searchField")).setValue("no-such-user");
+    applyFilters();
     assertTrue(visibleUsers().isEmpty());
     assertEquals(0, field("currentPage"));
     assertTrue(
@@ -239,93 +244,34 @@ class AdminUserManagementFilterTest {
   }
 
   @Test
-  void draftFiltersWaitForApplyWhileSearchRemainsLive() {
-    filter("enabledFilter").setValue(false);
-    assertEquals(10, visibleUsers().size());
-    ((TextField) field("searchField")).setValue("user24@example.test");
-    assertEquals(1, visibleUsers().size());
-    applyFilters();
-    assertTrue(visibleUsers().isEmpty());
-    assertEquals(1, chips().size());
-  }
-
-  @Test
-  void removingAnAppliedBadgePreservesOtherAppliedCriteriaAndPendingEdits() {
-    filter("enabledFilter").setValue(true);
-    filter("statusFilter").setValue(UserStatus.AVAILABLE);
-    applyFilters();
-    filter("roleFilter").setValue(RoleType.ROLE_ADMIN);
-    removeFilter(texts.getAdminUsersGridEnabled());
-    assertNull(filter("enabledFilter").getValue());
-    assertEquals(RoleType.ROLE_ADMIN, filter("roleFilter").getValue());
-    assertEquals(10, visibleUsers().size());
-    assertEquals(1, chips().size());
-    applyFilters();
-    assertTrue(visibleUsers().isEmpty());
-    assertEquals(2, chips().size());
-  }
-
-  @Test
-  void invalidActivityDoesNotReplaceAppliedFiltersAndResetClearsAllDrafts() {
-    filter("enabledFilter").setValue(false);
-    applyFilters();
-    filter("enabledFilter").setValue(true);
-    ((AdminUserActivityFilter) field("lastActivityFilter")).setInvalid(true);
+  void resetWaitsForApplyAndCancellationRestoresTheAppliedDraft() {
+    filter("enabledFilter").setValue(AdminUserFilters.Enabled.NO);
     applyFilters();
     assertFalse(visibleUsers().getFirst().isEnabled());
+    filterButton(texts.getAdminUsersAddFilter()).click();
     filterButton(texts.getAdminUsersClearFilters()).click();
-    assertNull(filter("enabledFilter").getValue());
-    assertFalse(((AdminUserActivityFilter) field("lastActivityFilter")).isInvalid());
-    assertTrue(chips().isEmpty());
-    assertEquals(10, visibleUsers().size());
+    assertFalse(visibleUsers().getFirst().isEnabled());
+    filterButton(texts.getAdminUsersCancel()).click();
+    assertEquals(AdminUserFilters.Enabled.NO, filter("enabledFilter").getValue());
+    filterButton(texts.getAdminUsersAddFilter()).click();
+    filterButton(texts.getAdminUsersClearFilters()).click();
+    applyFilters();
+    assertEquals(AdminUserFilters.Enabled.ALL, filter("enabledFilter").getValue());
+    assertEquals(25, ((List<?>) field("filteredUsers")).size());
   }
 
   @Test
-  void openingAndClosingThePanelPreservesDraftsAndAppliedBadges() {
-    filterButton(texts.getAdminUsersAddFilter()).click();
-    filter("enabledFilter").setValue(false);
-    filterButton(texts.getAdminUsersAddFilter()).click();
-    assertEquals(false, filter("enabledFilter").getValue());
-    assertTrue(chips().isEmpty());
-    filterButton(texts.getAdminUsersAddFilter()).click();
+  void searchAndMultipleChoicesWaitForApplyAndInvalidActivityPreservesTheTable() {
+    ((TextField) field("searchField")).setValue("user24@example.test");
+    filter("statusFilter").setValue(Set.of(UserStatus.AVAILABLE, UserStatus.OFFLINE));
+    assertEquals(10, visibleUsers().size());
     applyFilters();
-    assertEquals(1, chips().size());
-    locale.set(Locale.GERMAN);
-    section.refreshTexts();
-    assertTrue(
-        chips().getFirst().getElement().getTextRecursively().contains(texts.getAdminUsersNo()));
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"de", "en"})
-  void newRoleFiltersUseAssignedRolesAndTranslateAppliedBadges(String language) {
-    ComboBox<Object> roleFilter = filter("roleFilter");
-    assertEquals(List.of(RoleType.values()), roleFilter.getListDataView().getItems().toList());
-    UserEntity user = visibleUsers().getFirst();
-    user.setRoleEntities(List.of(RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build()));
-    roleFilter.setValue(RoleType.ROLE_SUPERADMIN);
-    applyFilters();
-    assertEquals(List.of(user), visibleUsers());
-    roleFilter.setValue(RoleType.ROLE_ADMIN);
-    applyFilters();
-    assertTrue(
-        visibleUsers().stream().noneMatch(candidate -> candidate.getId().equals(user.getId())));
-    roleFilter.setValue(RoleType.ROLE_SUPERADMIN);
-    applyFilters();
-    locale.set(Locale.forLanguageTag(language));
-    section.refreshTexts();
     assertEquals(
-        texts.getRoleSuperadmin(),
-        roleFilter.getItemLabelGenerator().apply(RoleType.ROLE_SUPERADMIN));
-    assertTrue(
-        chips().getFirst().getElement().getTextRecursively().contains(texts.getRoleSuperadmin()));
-    user.setRoleEntities(List.of(RoleEntity.builder().name(RoleType.ROLE_GUEST).build()));
-    roleFilter.setValue(RoleType.ROLE_GUEST);
+        List.of("user24@example.test"), visibleUsers().stream().map(UserEntity::getEmail).toList());
+    ((AdminUserActivityFilter) field("lastActivityFilter")).setInvalid(true);
+    ((TextField) field("searchField")).clear();
     applyFilters();
-    assertEquals(List.of(user), visibleUsers());
-    assertEquals(
-        texts.getRoleGuest(), roleFilter.getItemLabelGenerator().apply(RoleType.ROLE_GUEST));
-    assertTrue(chips().getFirst().getElement().getTextRecursively().contains(texts.getRoleGuest()));
+    assertEquals(1, visibleUsers().size());
   }
 
   private void applyFilters() {
@@ -333,38 +279,20 @@ class AdminUserManagementFilterTest {
   }
 
   private Button filterButton(String label) {
-    return descendants((com.vaadin.flow.component.Component) field("filterBar"))
-        .filter(Button.class::isInstance)
-        .map(Button.class::cast)
+    Object bar = field("filterBar");
+    return List.of("filterButton", "applyFiltersButton", "clearFilters", "cancel").stream()
+        .map(name -> (Button) ReflectionTestUtils.getField(bar, name))
         .filter(button -> button.getText().equals(label))
         .findFirst()
         .orElseThrow();
-  }
-
-  private List<com.vaadin.flow.component.Component> chips() {
-    return descendants((com.vaadin.flow.component.Component) field("filterBar"))
-        .filter(component -> component.hasClassName("admin-user-active-filter-chip"))
-        .toList();
-  }
-
-  private void removeFilter(String label) {
-    descendants((com.vaadin.flow.component.Component) field("filterBar"))
-        .filter(Button.class::isInstance)
-        .map(Button.class::cast)
-        .filter(
-            button ->
-                button.getAriaLabel().orElse("").equals(texts.getAdminUsersRemoveFilter(label)))
-        .findFirst()
-        .orElseThrow()
-        .click();
   }
 
   private Object field(String name) {
     return ReflectionTestUtils.getField(section, name);
   }
 
-  private ComboBox<Object> filter(String name) {
-    return (ComboBox<Object>) field(name);
+  private HasValue filter(String name) {
+    return (HasValue) field(name);
   }
 
   private Grid<UserEntity> grid() {

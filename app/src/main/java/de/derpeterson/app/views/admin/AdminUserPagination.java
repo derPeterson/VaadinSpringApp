@@ -4,10 +4,10 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.function.SerializableConsumer;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.ui.components.AppIcon;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -19,10 +19,10 @@ final class AdminUserPagination extends HorizontalLayout {
   private final Span rowsLabel = new Span();
   private final Span totalLabel = new Span();
   private final HorizontalLayout numbers = new HorizontalLayout();
-  private final Button first = new Button(VaadinIcon.ANGLE_DOUBLE_LEFT.create());
-  private final Button previous = new Button(VaadinIcon.ANGLE_LEFT.create());
-  private final Button next = new Button(VaadinIcon.ANGLE_RIGHT.create());
-  private final Button last = new Button(VaadinIcon.ANGLE_DOUBLE_RIGHT.create());
+  private final Button first = new Button(AppIcon.ANGLE_DOUBLE_LEFT.create());
+  private final Button previous = new Button(AppIcon.ANGLE_LEFT.create());
+  private final Button next = new Button(AppIcon.ANGLE_RIGHT.create());
+  private final Button last = new Button(AppIcon.ANGLE_DOUBLE_RIGHT.create());
   private int currentPage;
   private int totalPages = 1;
   private int totalItems;
@@ -48,6 +48,8 @@ final class AdminUserPagination extends HorizontalLayout {
     pageSize.setItems(pageSizes);
     pageSize.setValue(pageSizes.getFirst());
     pageSize.setAllowCustomValue(false);
+    de.derpeterson.app.ui.components.PortalFields.styleChoice(pageSize, Object::toString, false);
+    pageSize.addClassName("portal-pagination-size");
     pageSize.setWidth("56px");
     pageSize.addValueChangeListener(
         event -> {
@@ -72,7 +74,8 @@ final class AdminUserPagination extends HorizontalLayout {
     previous.addClickListener(event -> selectPage.accept(Math.max(0, currentPage - 1)));
     next.addClickListener(event -> selectPage.accept(Math.min(totalPages - 1, currentPage + 1)));
     last.addClickListener(event -> selectPage.accept(totalPages - 1));
-    add(summary, navigation);
+    summary.remove(totalLabel);
+    add(summary, totalLabel, navigation);
     refreshTexts();
   }
 
@@ -86,7 +89,10 @@ final class AdminUserPagination extends HorizontalLayout {
   void refreshTexts() {
     rowsLabel.setText(texts.getAdminUsersPaginationPerPage());
     pageSize.setAriaLabel(texts.getAdminUsersPaginationPerPage());
-    totalLabel.setText(texts.getAdminUsersPaginationTotal(totalItems));
+    int size = pageSize.getValue();
+    int from = totalItems == 0 ? 0 : currentPage * size + 1;
+    int to = Math.min((currentPage + 1) * size, totalItems);
+    totalLabel.setText(texts.getPortalPaginationRange(from, to, totalItems));
     label(first, texts.getAdminUsersPaginationFirstPage());
     label(previous, texts.getAdminUsersPaginationPreviousPage());
     label(next, texts.getAdminUsersPaginationNextPage());

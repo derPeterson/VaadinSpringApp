@@ -55,6 +55,11 @@ public class MessageProperties extends MessageTexts implements Serializable {
     return new MessageProperties(key -> provider.getTranslation(key, locale), locale);
   }
 
+  @Override
+  protected Locale formattingLocale() {
+    return fixedLocale == null ? CustomI18NProvider.getCurrentLocale() : fixedLocale;
+  }
+
   public String getUserStatusLabel(UserStatus status) {
     return switch (status) {
       case AVAILABLE -> getUserStatusAvailable();

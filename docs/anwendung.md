@@ -12,11 +12,16 @@
 
 ## Mein Konto
 
-`/account` enthält die Tabs persönliches Profil, Sicherheit sowie Geräte und Sitzungen.
+Angemeldete Startseite, Postfach und Konto teilen Header, Identitätskarte und
+seitliche Navigation. Die Startseite bietet den Kosmos-Ausblick mit echten
+Schnellzugriffen und ungelesener Nachrichtenanzahl, ohne erfundene Statistiken.
+
+`/account` bietet persönliche Daten, Sicherheit sowie Geräte und Sitzungen über eine
+seitliche Kontonavigation. Auf Smartphones öffnet sie als Overlay.
 `?tab=profile`, `?tab=security` und `?tab=sessions` halten den ausgewählten Bereich
 in der URL; unbekannte oder mehrdeutige Werte öffnen das Profil.
 
-Im Profil lassen sich Namen, Geburtstag und Sprache speichern. Die E-Mail-Adresse
+Im Profil lassen sich Namen, Geschlecht, Geburtstag und Sprache speichern. Die E-Mail-Adresse
 wird über den Sicherheitsablauf geändert. Parallele Änderungen werden mit einem
 Versionskonflikt gemeldet, statt ein anderes geöffnetes Formular zu überschreiben.
 
@@ -28,6 +33,8 @@ Adressen vorgesehen. Die Details stehen unter [Sicherheit](sicherheit.md).
 
 Geräte und Sitzungen zeigen aktive Zugänge und gespeicherte Anmeldungen mit
 Gerätebeschreibung. Einzelne oder alle anderen Zugänge können widerrufen werden.
+Die jeweilige Bestätigung nennt die betroffene Sitzung beziehungsweise gespeicherte
+Anmeldung. Abbrechen führt keinen Widerruf aus; die aktuelle Sitzung bleibt geschützt.
 Bei erreichtem Sitzungslimit gibt es nach Passwortprüfung einen eingeschränkten
 Verwaltungszugang zum Freigeben eines Platzes; er öffnet keine normalen Fachaktionen.
 
@@ -51,13 +58,17 @@ einen geschlossenen oder wieder geöffneten Dialog nicht verändern.
 ## Benachrichtigungen
 
 Die Kopfzeile bietet eine Vorschau; `/notifications` öffnet den vollständigen
-Posteingang. Beide haben die Auswahl Alle/Gelesen/Ungelesen. Die Inbox ergänzt Suche,
+Posteingang. Beide haben die Auswahl Alle/Ungelesen/Gelesen mit tatsächlichen Zählern. Die Inbox ergänzt Suche,
 Seitenwahl, Gesamt-/Ungelesen-Zähler, Aktualisieren und eine Sammel-Leseaktion.
 
 Öffnen ändert den Lesestatus nicht. Jede Karte bietet Öffnen und Als gelesen markieren
-als Iconbuttons sowie ein X zum persönlichen Entfernen. Metadaten und Aktionen stehen
-gemeinsam in der letzten Zeile. Die vollständige Inbox kann **gelesene** Hinweise
+als Iconbuttons sowie einen Papierkorb zum persönlichen Löschen. Metadaten und Aktionen
+stehen in der Inbox gemeinsam über dem Nachrichteninhalt, in der kompakten Vorschau
+unter dem Text. Lesen und Löschen verlangen eine ausdrückliche Bestätigung mit dem
+betroffenen Kontext. Die vollständige Inbox kann **gelesene** Hinweise
 gesammelt entfernen; die Header-Vorschau bietet diese Sammellöschung nicht.
+Die Sammel-Lesebestätigung verwendet die beim Öffnen erfassten ungelesenen IDs;
+zwischenzeitlich neue Hinweise werden davon nicht erfasst.
 
 Superadmins versenden Hinweise an ausgewählte Konten oder alle berechtigten Empfänger.
 Vorschau, ausdrückliche Bestätigung und Vorgangsschlüssel sichern den Versand gegen

@@ -7,10 +7,10 @@ import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -33,8 +33,11 @@ import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.PasswordResetService;
+import de.derpeterson.app.service.PasswordResetService.LinkState;
+import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
-import de.derpeterson.app.ui.components.CosmosPageComponent;
+import de.derpeterson.app.ui.components.PublicPageComponent;
+import de.derpeterson.app.ui.components.PublicPanelComponent;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
@@ -65,11 +68,14 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
   private PasswordField confirmPasswordField = null;
   private Button resetButton = null;
   private Button homeButton = null;
+  private Button loginButton = null;
+  private Button requestLinkButton = null;
   private H1 successTitle = null;
   private Span successText = null;
   private H1 invalidTitle = null;
   private Span invalidText = null;
   private boolean technicalFailure;
+  private LinkState linkState = LinkState.INVALID;
 
   public ResetPasswordView(
       MessageProperties messageProperties,
@@ -93,7 +99,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
               .ifPresent(
                   component ->
                       componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getResetPasswordTitle));
+                          component, this.messageProperties::getPublicResetFormTitle));
           Optional.ofNullable(passwordField)
               .ifPresent(
                   component ->
@@ -108,12 +114,22 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
               .ifPresent(
                   component ->
                       componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getBaseResetButton));
+                          component, this.messageProperties::getPublicSavePasswordAction));
+          Optional.ofNullable(loginButton)
+              .ifPresent(
+                  component ->
+                      componentTranslationSupplierMap.put(
+                          component, this.messageProperties::getBaseLoginButton));
           Optional.ofNullable(homeButton)
               .ifPresent(
                   component ->
                       componentTranslationSupplierMap.put(
                           component, this.messageProperties::getBaseHomeButton));
+          Optional.ofNullable(requestLinkButton)
+              .ifPresent(
+                  component ->
+                      componentTranslationSupplierMap.put(
+                          component, this.messageProperties::getPublicRequestNewLink));
           Optional.ofNullable(successTitle)
               .ifPresent(
                   component ->
@@ -127,21 +143,11 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
           Optional.ofNullable(invalidTitle)
               .ifPresent(
                   component ->
-                      componentTranslationSupplierMap.put(
-                          component,
-                          () ->
-                              technicalFailure
-                                  ? this.messageProperties.getBaseFailedTitle()
-                                  : this.messageProperties.getResetPasswordInvalidTitle()));
+                      componentTranslationSupplierMap.put(component, this::linkProblemTitle));
           Optional.ofNullable(invalidText)
               .ifPresent(
                   component ->
-                      componentTranslationSupplierMap.put(
-                          component,
-                          () ->
-                              technicalFailure
-                                  ? this.messageProperties.getResetPasswordTechnicalErrorMessage()
-                                  : this.messageProperties.getResetPasswordInvalidText()));
+                      componentTranslationSupplierMap.put(component, this::linkProblemText));
 
           ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
           updateInputPlaceholders();
@@ -152,9 +158,8 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     getContent().setPadding(false);
     getContent().removeAll();
     setSpacing(false);
-    CosmosPageComponent pageLayout =
-        new CosmosPageComponent(
-            configService, false, messageProperties::getAccountCopyrightTemplate);
+    PublicPageComponent pageLayout =
+        new PublicPageComponent(configService, messageProperties, PublicPageComponent.Page.RESET);
     mainContent = pageLayout.getCardContainer();
     add(pageLayout);
   }
@@ -165,7 +170,8 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
       mainContent.removeAll();
       technicalFailure = false;
       try {
-        if (passwordResetService.validateToken(token)) {
+        linkState = passwordResetService.inspectToken(token);
+        if (linkState == LinkState.VALID) {
           showResetPasswordCard(token);
         } else {
           invalidTokenCard();
@@ -181,30 +187,16 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
   }
 
   private void showResetPasswordCard(String token) {
-    VerticalLayout cardContentLayout = new VerticalLayout();
-    cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-    cardContentLayout.setPadding(false);
-    cardContentLayout.setSpacing(false);
-    cardContentLayout.addClassName(COSMOS_FORM_CLASS);
 
-    this.title = new H1(messageProperties.getResetPasswordTitle());
+    this.title = new H1(messageProperties.getPublicResetFormTitle());
     title.addClassName(COSMOS_HEADLINE_CLASS);
 
-    HorizontalLayout cardTitleLayout = new HorizontalLayout();
-    cardTitleLayout.addClassName(COSMOS_TITLE_ROW_CLASS);
-    cardTitleLayout.setWidthFull();
-    cardTitleLayout.setPadding(false);
-    cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    cardTitleLayout.add(title);
-
     this.passwordField = new PasswordField(messageProperties.getResetPasswordNewPasswordField());
-    passwordField.setPrefixComponent(VaadinIcon.LOCK.create());
     passwordField.setClearButtonVisible(true);
     passwordField.setRequiredIndicatorVisible(true);
     passwordField.setWidthFull();
 
     this.confirmPasswordField = new PasswordField(messageProperties.getResetPasswordConfirmField());
-    confirmPasswordField.setPrefixComponent(VaadinIcon.LOCK.create());
     confirmPasswordField.setClearButtonVisible(true);
     confirmPasswordField.setRequiredIndicatorVisible(true);
     confirmPasswordField.setWidthFull();
@@ -213,7 +205,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
 
     this.resetButton =
         new Button(
-            messageProperties.getBaseResetButton(),
+            messageProperties.getPublicSavePasswordAction(),
             event -> {
               if (!ValidationHelper.validateRequiredInputs(
                   List.of(passwordField, confirmPasswordField), messageProperties)) {
@@ -242,10 +234,15 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
                           -1,
                           NotificationHelper.NotificationType.SUCCESS);
                 } else {
+                  linkState = passwordResetService.inspectToken(token);
+                  if (linkState == LinkState.VALID) {
+                    linkState = LinkState.INVALID;
+                  }
+                  invalidTokenCard();
                   NotificationHelper.getInstance()
                       .showNotification(
                           messageProperties::getBaseFailedTitle,
-                          messageProperties::getResetPasswordInvalidText,
+                          this::linkProblemText,
                           -1,
                           NotificationHelper.NotificationType.ERROR);
                 }
@@ -259,21 +256,25 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
                         NotificationHelper.NotificationType.ERROR);
               }
             });
-    resetButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
+    resetButton.setPrefixComponent(AppIcon.CHECK.create());
     resetButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     resetButton.setWidthFull();
 
-    this.homeButton =
+    this.loginButton =
         new Button(
-            messageProperties.getBaseHomeButton(),
-            event -> UI.getCurrent().navigate(HomeView.class));
-    homeButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
-    homeButton.setWidthFull();
+            messageProperties.getBaseLoginButton(),
+            event -> UI.getCurrent().navigate(LoginView.class));
+    loginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
+    Div actions = new Div(loginButton, resetButton);
+    actions.addClassName("public-panel-actions");
 
-    cardContentLayout.add(
-        cardTitleLayout, passwordField, confirmPasswordField, resetButton, homeButton);
-
-    CosmosCardComponent cardComponent = new CosmosCardComponent(cardContentLayout);
+    CosmosCardComponent cardComponent =
+        new PublicPanelComponent(
+            AppIcon.KEY.create(),
+            title,
+            messageProperties::getPublicResetSubtitle,
+            new Component[] {passwordField, confirmPasswordField},
+            actions);
 
     mainContent.add(cardComponent);
   }
@@ -285,30 +286,13 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     passwordField = null;
     confirmPasswordField = null;
     resetButton = null;
+    loginButton = null;
 
-    VerticalLayout cardContentLayout = new VerticalLayout();
-    cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-    cardContentLayout.setPadding(false);
-    cardContentLayout.setSpacing(false);
-    cardContentLayout.addClassName(COSMOS_FORM_CLASS);
-
-    Icon successIcon = VaadinIcon.CHECK_CIRCLE.create();
+    SvgIcon successIcon = AppIcon.CHECK_CIRCLE.create();
     successIcon.addClassNames("cosmos-status-icon", LumoUtility.TextColor.SUCCESS);
-
-    HorizontalLayout cardIconLayout = new HorizontalLayout();
-    cardIconLayout.setWidthFull();
-    cardIconLayout.setPadding(false);
-    cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    cardIconLayout.add(successIcon);
 
     this.successTitle = new H1(messageProperties.getBaseSuccessTitle());
     successTitle.addClassName(COSMOS_HEADLINE_CLASS);
-    HorizontalLayout cardTitleLayout = new HorizontalLayout();
-    cardTitleLayout.addClassName(COSMOS_TITLE_ROW_CLASS);
-    cardTitleLayout.setWidthFull();
-    cardTitleLayout.setPadding(false);
-    cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    cardTitleLayout.add(successTitle);
 
     this.successText = new Span(messageProperties.getResetPasswordSuccessMessage());
     successText.addClassName("cosmos-form-text");
@@ -317,85 +301,106 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     cardTextLayout.setWidthFull();
     cardTextLayout.setPadding(false);
     cardTextLayout.setSpacing(false);
-    cardTextLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+    cardTextLayout.setAlignItems(FlexComponent.Alignment.START);
 
     this.homeButton =
         new Button(
             messageProperties.getBaseHomeButton(),
             event -> UI.getCurrent().navigate(HomeView.class));
-    homeButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
+    homeButton.setPrefixComponent(AppIcon.ARROW_FORWARD.create());
     homeButton.setWidthFull();
     homeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-    cardContentLayout.add(cardIconLayout, cardTitleLayout, cardTextLayout, homeButton);
-    mainContent.add(new CosmosCardComponent(cardContentLayout));
+    mainContent.add(
+        new PublicPanelComponent(
+            successIcon,
+            successTitle,
+            messageProperties::getPublicOutcomeSubtitle,
+            new Component[] {cardTextLayout},
+            homeButton));
   }
 
   private void invalidTokenCard() {
-    VerticalLayout cardContentLayout = new VerticalLayout();
-    cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-    cardContentLayout.setPadding(false);
-    cardContentLayout.setSpacing(false);
-    cardContentLayout.addClassName(COSMOS_FORM_CLASS);
+    mainContent.removeAll();
+    title = null;
+    passwordField = null;
+    confirmPasswordField = null;
+    resetButton = null;
+    loginButton = null;
 
-    Icon warningIcon = VaadinIcon.WARNING.create();
+    SvgIcon warningIcon = AppIcon.WARNING.create();
     warningIcon.addClassNames(
         "cosmos-status-icon",
-        technicalFailure ? LumoUtility.TextColor.ERROR : "cosmos-status-icon--warning");
+        !technicalFailure && linkState == LinkState.EXPIRED
+            ? "cosmos-status-icon--warning"
+            : LumoUtility.TextColor.ERROR);
 
-    HorizontalLayout cardIconLayout = new HorizontalLayout();
-    cardIconLayout.setWidthFull();
-    cardIconLayout.setPadding(false);
-    cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    cardIconLayout.add(warningIcon);
-
-    this.invalidTitle =
-        new H1(
-            technicalFailure
-                ? messageProperties.getBaseFailedTitle()
-                : messageProperties.getResetPasswordInvalidTitle());
+    this.invalidTitle = new H1(linkProblemTitle());
     invalidTitle.addClassName(COSMOS_HEADLINE_CLASS);
-
-    HorizontalLayout cardTitleLayout = new HorizontalLayout();
-    cardTitleLayout.addClassName(COSMOS_TITLE_ROW_CLASS);
-    cardTitleLayout.setWidthFull();
-    cardTitleLayout.setPadding(false);
-    cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    cardTitleLayout.add(invalidTitle);
 
     VerticalLayout cardTextLayout = getCardTextLayout();
 
-    this.homeButton =
-        new Button(
-            messageProperties.getBaseHomeButton(),
-            event -> UI.getCurrent().navigate(HomeView.class));
-    homeButton.setPrefixComponent(VaadinIcon.ARROW_FORWARD.create());
-    homeButton.setWidthFull();
-    homeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    Button action;
+    if (technicalFailure) {
+      requestLinkButton = null;
+      homeButton =
+          new Button(
+              messageProperties.getBaseHomeButton(),
+              event -> UI.getCurrent().navigate(HomeView.class));
+      homeButton.setPrefixComponent(AppIcon.HOME.create());
+      action = homeButton;
+    } else {
+      homeButton = null;
+      requestLinkButton =
+          new Button(
+              messageProperties.getPublicRequestNewLink(),
+              event -> UI.getCurrent().navigate(ForgotPasswordView.class));
+      requestLinkButton.setPrefixComponent(AppIcon.ENVELOPE.create());
+      action = requestLinkButton;
+    }
+    action.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-    cardContentLayout.add(cardIconLayout, cardTitleLayout, cardTextLayout, homeButton);
-
-    CosmosCardComponent cardComponent = new CosmosCardComponent(cardContentLayout);
+    CosmosCardComponent cardComponent =
+        new PublicPanelComponent(
+            warningIcon,
+            invalidTitle,
+            messageProperties::getPublicOutcomeSubtitle,
+            new Component[] {cardTextLayout},
+            action);
 
     mainContent.add(cardComponent);
   }
 
   private VerticalLayout getCardTextLayout() {
-    this.invalidText =
-        new Span(
-            technicalFailure
-                ? messageProperties.getResetPasswordTechnicalErrorMessage()
-                : messageProperties.getResetPasswordInvalidText());
+    this.invalidText = new Span(linkProblemText());
     invalidText.addClassName("cosmos-form-text");
     VerticalLayout cardTextLayout = new VerticalLayout();
     cardTextLayout.addClassName("cosmos-intro");
     cardTextLayout.setWidthFull();
     cardTextLayout.setPadding(false);
     cardTextLayout.setSpacing(false);
-    cardTextLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-    cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+    cardTextLayout.setAlignItems(FlexComponent.Alignment.START);
+    cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
     cardTextLayout.add(invalidText);
     return cardTextLayout;
+  }
+
+  private String linkProblemTitle() {
+    if (technicalFailure) {
+      return messageProperties.getBaseFailedTitle();
+    }
+    return linkState == LinkState.EXPIRED
+        ? messageProperties.getResetPasswordExpiredTitle()
+        : messageProperties.getResetPasswordInvalidTitle();
+  }
+
+  private String linkProblemText() {
+    if (technicalFailure) {
+      return messageProperties.getResetPasswordTechnicalErrorMessage();
+    }
+    return linkState == LinkState.EXPIRED
+        ? messageProperties.getResetPasswordExpiredText()
+        : messageProperties.getResetPasswordInvalidText();
   }
 
   private void updateInputPlaceholders() {

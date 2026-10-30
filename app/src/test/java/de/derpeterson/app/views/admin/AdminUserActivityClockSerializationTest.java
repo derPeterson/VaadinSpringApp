@@ -101,7 +101,7 @@ class AdminUserActivityClockSerializationTest {
       filter.refreshTexts(texts);
       DatePicker date = (DatePicker) ReflectionTestUtils.getField(filter, "date");
       TimePicker time = (TimePicker) ReflectionTestUtils.getField(filter, "time");
-      assertEquals("10/25/2026", date.getPlaceholder());
+      assertEquals(texts.getRegistrationBirthDatePlaceholder(), date.getPlaceholder());
       assertEquals(
           LocalTime.of(2, 45),
           LocalTime.parse(

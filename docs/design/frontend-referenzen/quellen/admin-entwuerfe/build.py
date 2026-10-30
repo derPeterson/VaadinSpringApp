@@ -84,6 +84,9 @@ etree.SubElement(document.find("body"), "script", nonce="cosmos-admin").text = (
     + ";"
 )
 etree.SubElement(document.find("body"), "script", nonce="cosmos-admin").text = (
+    root / "duration-controls.js"
+).read_text(encoding="utf-8")
+etree.SubElement(document.find("body"), "script", nonce="cosmos-admin").text = (
     root / "entwurf.js"
 ).read_text(encoding="utf-8")
 for node in document.iter():

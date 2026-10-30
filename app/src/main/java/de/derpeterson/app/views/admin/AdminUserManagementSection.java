@@ -8,6 +8,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
@@ -16,13 +17,12 @@ import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -49,9 +49,11 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
+import de.derpeterson.app.ui.components.PortalFields;
 import de.derpeterson.app.validation.EmailConflict;
 import de.derpeterson.app.validation.UserInputRules;
 import java.io.IOException;
@@ -116,7 +118,7 @@ public class AdminUserManagementSection extends VerticalLayout {
   private final Button refreshButton;
   private final Grid<UserEntity> userGrid = new Grid<>(UserEntity.class, false);
 
-  private final ComboBox<Boolean> enabledFilter = new ComboBox<>();
+  private final RadioButtonGroup<AdminUserFilters.Enabled> enabledFilter = new RadioButtonGroup<>();
   private transient UserAvatarService avatars;
   private Map<Long, UserAvatarService.State> avatarStates = Map.of();
 
@@ -125,8 +127,8 @@ public class AdminUserManagementSection extends VerticalLayout {
     updateGridPage();
   }
 
-  private final ComboBox<UserStatus> statusFilter = new ComboBox<>();
-  private final ComboBox<RoleType> roleFilter = new ComboBox<>();
+  private final CheckboxGroup<UserStatus> statusFilter = new CheckboxGroup<>();
+  private final CheckboxGroup<RoleType> roleFilter = new CheckboxGroup<>();
   private final AdminUserActivityFilter lastActivityFilter;
   private final AdminUserPagination pagination;
   private final AdminUserFilterBar filterBar;
@@ -142,7 +144,8 @@ public class AdminUserManagementSection extends VerticalLayout {
 
   private List<UserEntity> users = new ArrayList<>();
   private List<UserEntity> filteredUsers = new ArrayList<>();
-  private AdminUserFilters appliedFilters = new AdminUserFilters("", null, null, null, null);
+  private AdminUserFilters appliedFilters =
+      new AdminUserFilters("", null, Set.of(), Set.of(), null);
   private final List<Runnable> dialogErrorRefreshers = new ArrayList<>();
 
   private int currentPage = 0;
@@ -182,25 +185,25 @@ public class AdminUserManagementSection extends VerticalLayout {
     cardDescription = new Span();
     cardDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
     accountCount = new Span();
-    accountCount.addClassName("cosmos-panel-meta");
+    accountCount.addClassNames("cosmos-panel-meta", "admin-accounts-metric");
 
     description = new Span();
     description.addClassNames(LumoUtility.TextColor.SECONDARY);
 
     addUserButton = new Button();
-    addUserButton.setPrefixComponent(VaadinIcon.PLUS.create());
+    addUserButton.setPrefixComponent(AppIcon.USER_PLUS.create());
     addUserButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     addUserButton.addClickListener(e -> openDialog(new UserEntity()));
 
     searchField = new TextField();
-    searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
+    searchField.setPrefixComponent(AppIcon.SEARCH.create());
     searchField.setClearButtonVisible(true);
     searchField.setWidthFull();
     searchField.setMaxWidth("360px");
     searchField.setValueChangeMode(ValueChangeMode.EAGER);
-    searchField.addValueChangeListener(event -> applyGridFilter());
+    // Die Suche gehört zum Filterentwurf; erst Anwenden verändert die Tabelle.
 
-    refreshButton = new Button(VaadinIcon.REFRESH.create(), event -> refreshGrid());
+    refreshButton = new Button(AppIcon.REFRESH.create(), event -> refreshUsersWithFeedback());
     refreshButton.addClassName("admin-user-refresh");
 
     pagination =
@@ -247,7 +250,7 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   private Div createUsersCardHeader() {
-    Icon usersIcon = VaadinIcon.USERS.create();
+    SvgIcon usersIcon = AppIcon.USERS.create();
     usersIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div iconBadge = new Div(usersIcon);
     iconBadge.addClassName(COSMOS_PANEL_ICON_CLASS);
@@ -267,24 +270,27 @@ public class AdminUserManagementSection extends VerticalLayout {
     description.setText(messageProperties.getAdminUsersDescription());
     addUserButton.setText(messageProperties.getAdminUsersAdd());
 
-    searchField.setLabel(null);
+    searchField.setLabel(messageProperties.getAdminUsersSearchLabel());
     searchField.setAriaLabel(messageProperties.getAdminUsersSearchLabel());
     searchField.setPlaceholder(messageProperties.getAdminUsersSearchPlaceholder());
 
     refreshButton.setTooltipText(messageProperties.getAdminUsersRefreshTooltip());
     refreshButton.setAriaLabel(messageProperties.getAdminUsersRefreshTooltip());
     enabledFilter.setLabel(messageProperties.getAdminUsersGridEnabled());
-    enabledFilter.setPlaceholder(messageProperties.getAdminUsersFilterAll());
+
     enabledFilter.setItemLabelGenerator(
         enabled ->
-            Boolean.TRUE.equals(enabled)
-                ? messageProperties.getAdminUsersYes()
-                : messageProperties.getAdminUsersNo());
+            switch (enabled) {
+              case ALL -> messageProperties.getAdminUsersFilterAll();
+              case YES -> messageProperties.getAdminUsersYes();
+              case NO -> messageProperties.getAdminUsersNo();
+            });
     statusFilter.setLabel(messageProperties.getAdminUsersGridStatus());
-    statusFilter.setPlaceholder(messageProperties.getAdminUsersFilterAll());
+
     statusFilter.setItemLabelGenerator(messageProperties::getUserStatusLabel);
+    refreshStatusChoices();
     roleFilter.setLabel(messageProperties.getAdminUsersFilterRole());
-    roleFilter.setPlaceholder(messageProperties.getAdminUsersFilterAll());
+
     roleFilter.setItemLabelGenerator(this::formatRoleType);
     lastActivityFilter
         .getElement()
@@ -321,11 +327,20 @@ public class AdminUserManagementSection extends VerticalLayout {
       actionsHeader.setText(messageProperties.getAdminUsersGridActions());
     }
 
-    userGrid.setEmptyStateText(messageProperties.getAdminUsersGridEmptyState());
+    refreshEmptyState();
 
     updateGridPage();
     updateActiveFilters();
     List.copyOf(dialogErrorRefreshers).forEach(Runnable::run);
+  }
+
+  private void refreshEmptyState() {
+    Span title = new Span(messageProperties.getAdminUsersGridEmptyState());
+    title.addClassName("admin-grid-empty-title");
+    Span hint = new Span(messageProperties.getAdminUsersEmptyHint());
+    Div empty = new Div(AppIcon.USERS.create(), title, hint);
+    empty.addClassName("admin-grid-empty");
+    userGrid.setEmptyStateComponent(empty);
   }
 
   private void configureGrid() {
@@ -409,25 +424,55 @@ public class AdminUserManagementSection extends VerticalLayout {
         });
     userGrid.setWidthFull();
     userGrid.setAllRowsVisible(true);
-    userGrid.setEmptyStateText(messageProperties.getAdminUsersGridEmptyState());
+    refreshEmptyState();
     userGrid.sort(
         List.of(
             new GridSortOrder<>(
                 nameColumn, com.vaadin.flow.data.provider.SortDirection.ASCENDING)));
 
+    List<Grid.Column<UserEntity>> columns =
+        List.of(
+            nameColumn,
+            emailColumn,
+            enabledColumn,
+            statusColumn,
+            rolesColumn,
+            lastActivityColumn,
+            actionsColumn);
+    List<String> widths = List.of("186px", "160px", "85px", "108px", "106px", "160px", "114px");
+    for (int index = 0; index < columns.size(); index++) {
+      columns
+          .get(index)
+          .setAutoWidth(false)
+          .setWidth(widths.get(index))
+          .setFlexGrow(index == 1 ? 1 : 0);
+    }
     userGrid.addClassName("admin-users-grid");
     userGrid.addThemeVariants(GridVariant.ROW_STRIPES);
   }
 
   private void configureFilters() {
-    enabledFilter.setItems(true, false);
+    enabledFilter.setItems(AdminUserFilters.Enabled.values());
+    enabledFilter.setValue(AdminUserFilters.Enabled.ALL);
+    enabledFilter.addClassName("admin-filter-enabled");
     statusFilter.setItems(UserStatus.values());
     roleFilter.setItems(RoleType.values());
-    for (ComboBox<?> filter : List.of(enabledFilter, statusFilter, roleFilter)) {
-      filter.setClearButtonVisible(true);
-      filter.setAllowCustomValue(false);
-      filter.addClassName("admin-user-select-filter");
-    }
+    statusFilter.addClassName("admin-filter-choices");
+    roleFilter.addClassName("admin-filter-choices");
+  }
+
+  private void refreshStatusChoices() {
+    statusFilter.setRenderer(
+        new com.vaadin.flow.data.renderer.ComponentRenderer<>(
+            status -> {
+              Component symbol = status.getOutlineComponent(IconSize.PIXEL_16, false);
+              Div label = new Div(symbol, new Span(messageProperties.getUserStatusLabel(status)));
+              label.addClassName("admin-filter-status-label");
+              label
+                  .getElement()
+                  .setAttribute("data-status", status.name().toLowerCase(Locale.ROOT));
+              return label;
+            }));
     lastActivityFilter.addClassName("admin-user-activity-filter");
   }
 
@@ -436,6 +481,21 @@ public class AdminUserManagementSection extends VerticalLayout {
       return 1;
     }
     return (int) Math.ceil((double) filteredUsers.size() / pageSize);
+  }
+
+  private void refreshUsersWithFeedback() {
+    try {
+      refreshGrid();
+    } catch (RuntimeException failure) {
+      log.warn("User list refresh failed", safeFailure(failure));
+      showError(messageProperties::getAdminUsersRefreshFailed);
+      return;
+    }
+    NotificationHelper.getInstance()
+        .showNotification(
+            messageProperties::getAdminUsersRefreshSuccess,
+            null,
+            NotificationHelper.NotificationType.SUCCESS);
   }
 
   private void refreshGrid() {
@@ -453,8 +513,8 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
     appliedFilters =
         new AdminUserFilters(
-            "",
-            enabledFilter.getValue(),
+            searchField.getValue(),
+            enabledFilter.getValue().value(),
             statusFilter.getValue(),
             roleFilter.getValue(),
             UserActivityTime.inclusiveCutoff(lastActivityFilter.getValue()));
@@ -462,95 +522,20 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   private void applyGridFilter() {
-    AdminUserFilters filters =
-        new AdminUserFilters(
-            searchField.getValue(),
-            appliedFilters.enabled(),
-            appliedFilters.status(),
-            appliedFilters.role(),
-            appliedFilters.activeSince());
-    filteredUsers = users.stream().filter(filters::matches).toList();
-
+    filteredUsers = users.stream().filter(appliedFilters::matches).toList();
     currentPage = 0;
     updateGridPage();
     updateActiveFilters();
   }
 
   private void updateActiveFilters() {
-    List<AdminUserFilterBar.ActiveFilter> activeFilters = new ArrayList<>();
-    if (appliedFilters.enabled() != null) {
-      String value =
-          Boolean.TRUE.equals(appliedFilters.enabled())
-              ? messageProperties.getAdminUsersYes()
-              : messageProperties.getAdminUsersNo();
-      activeFilters.add(
-          new AdminUserFilterBar.ActiveFilter(
-              messageProperties.getAdminUsersGridEnabled(),
-              value,
-              () -> {
-                enabledFilter.clear();
-                appliedFilters =
-                    new AdminUserFilters(
-                        "",
-                        null,
-                        appliedFilters.status(),
-                        appliedFilters.role(),
-                        appliedFilters.activeSince());
-                applyGridFilter();
-              }));
-    }
-    if (appliedFilters.status() != null) {
-      activeFilters.add(
-          new AdminUserFilterBar.ActiveFilter(
-              messageProperties.getAdminUsersGridStatus(),
-              messageProperties.getUserStatusLabel(appliedFilters.status()),
-              () -> {
-                statusFilter.clear();
-                appliedFilters =
-                    new AdminUserFilters(
-                        "",
-                        appliedFilters.enabled(),
-                        null,
-                        appliedFilters.role(),
-                        appliedFilters.activeSince());
-                applyGridFilter();
-              }));
-    }
-    if (appliedFilters.role() != null) {
-      activeFilters.add(
-          new AdminUserFilterBar.ActiveFilter(
-              messageProperties.getAdminUsersFilterRole(),
-              formatRoleType(appliedFilters.role()),
-              () -> {
-                roleFilter.clear();
-                appliedFilters =
-                    new AdminUserFilters(
-                        "",
-                        appliedFilters.enabled(),
-                        appliedFilters.status(),
-                        null,
-                        appliedFilters.activeSince());
-                applyGridFilter();
-              }));
-    }
-    if (appliedFilters.activeSince() != null) {
-      activeFilters.add(
-          new AdminUserFilterBar.ActiveFilter(
-              messageProperties.getAdminUsersFilterActiveSince(),
-              formatDateTime(appliedFilters.activeSince()),
-              () -> {
-                lastActivityFilter.clear();
-                appliedFilters =
-                    new AdminUserFilters(
-                        "",
-                        appliedFilters.enabled(),
-                        appliedFilters.status(),
-                        appliedFilters.role(),
-                        null);
-                applyGridFilter();
-              }));
-    }
-    filterBar.showActiveFilters(activeFilters);
+    int count =
+        (appliedFilters.search().isBlank() ? 0 : 1)
+            + (appliedFilters.enabled() == null ? 0 : 1)
+            + appliedFilters.statuses().size()
+            + appliedFilters.roles().size()
+            + (appliedFilters.activeSince() == null ? 0 : 1);
+    filterBar.showActiveCount(count);
   }
 
   private void updateGridPage() {
@@ -577,7 +562,13 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
     userGrid.setItems(page);
     pagination.showPage(currentPage, filteredUsers.size(), pageSize);
-    accountCount.setText(messageProperties.getAdminUsersAccountCount(users.size()));
+    accountCount.removeAll();
+    accountCount.add(
+        new Span(messageProperties.getAdminUsersAccountsLabel()),
+        new Span(Integer.toString(users.size())));
+    accountCount
+        .getElement()
+        .setAttribute("aria-label", messageProperties.getAdminUsersAccountCount(users.size()));
   }
 
   private void deleteUser(UserEntity user) {
@@ -601,7 +592,8 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
 
     Dialog dialog = new Dialog();
-    dialog.addClassName("cosmos-theme");
+    dialog.addClassNames("cosmos-theme", "cosmos-reference-overlay", "admin-reference-dialog");
+    dialog.getThemeNames().add("cosmos-reference");
     dialog.getElement().getThemeList().add("cosmos");
     dialog.addClassName("admin-user-delete-dialog");
     dialog.setCloseOnEsc(true);
@@ -613,16 +605,18 @@ public class AdminUserManagementSection extends VerticalLayout {
     dialogDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
     Div dialogHeading = new Div(dialogTitle, dialogDescription);
     dialogHeading.addClassName(COSMOS_PANEL_HEADING_CLASS);
-    Button closeButton = new Button(VaadinIcon.CLOSE_CIRCLE.create(), event -> dialog.close());
+    Button closeButton = new Button(AppIcon.CLOSE_CIRCLE.create(), event -> dialog.close());
     closeButton.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
     closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     closeButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
-    Div dialogHeader = new Div(dialogHeading, closeButton);
+    Div deleteIcon = new Div(AppIcon.TRASH.create());
+    deleteIcon.addClassNames("cosmos-panel-icon", "cosmos-delete-accent");
+    Div dialogHeader = new Div(deleteIcon, dialogHeading, closeButton);
     dialogHeader.addClassName("admin-user-dialog-header");
     dialog.getHeader().add(dialogHeader);
     dialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
 
-    Icon warningIcon = VaadinIcon.WARNING.create();
+    SvgIcon warningIcon = AppIcon.TRASH.create();
     warningIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div warningBadge = new Div(warningIcon);
     warningBadge.addClassNames(COSMOS_PANEL_ICON_CLASS, "cosmos-delete-accent");
@@ -632,7 +626,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     warningText.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
     Div warningHeading = new Div(warningTitle, warningText);
     warningHeading.addClassName(COSMOS_PANEL_HEADING_CLASS);
-    Div warning = new Div(warningBadge, warningHeading);
+    Div warning = new Div(warningHeading);
     warning.addClassName("admin-user-delete-warning");
 
     OverlayUserIcon avatar =
@@ -653,10 +647,10 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     Button cancelButton =
         new Button(messageProperties.getAdminUsersCancel(), event -> dialog.close());
-    cancelButton.setPrefixComponent(VaadinIcon.CLOSE.create());
+    cancelButton.setPrefixComponent(AppIcon.CLOSE.create());
     Button confirmButton =
         new Button(
-            messageProperties.getAdminUsersDelete(),
+            messageProperties.getPortalDeleteAction(),
             event -> {
               try {
                 userService.deleteUser(user);
@@ -672,8 +666,8 @@ public class AdminUserManagementSection extends VerticalLayout {
                 showMutationError(exception, true);
               }
             });
-    confirmButton.setPrefixComponent(VaadinIcon.TRASH.create());
-    confirmButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
+    confirmButton.setPrefixComponent(AppIcon.TRASH.create());
+    confirmButton.addClassName("cosmos-delete-button");
     confirmButton.addClassName("admin-user-delete-confirm");
 
     HorizontalLayout footer = new HorizontalLayout(cancelButton, confirmButton);
@@ -697,7 +691,7 @@ public class AdminUserManagementSection extends VerticalLayout {
           warningTitle.setText(messageProperties.getAdminUsersDeleteDialogQuestion());
           warningText.setText(messageProperties.getAdminUsersDeleteDialogWarning());
           cancelButton.setText(messageProperties.getAdminUsersCancel());
-          confirmButton.setText(messageProperties.getAdminUsersDelete());
+          confirmButton.setText(messageProperties.getPortalDeleteAction());
         };
     dialogErrorRefreshers.add(refreshTexts);
     dialog.addOpenedChangeListener(
@@ -730,15 +724,15 @@ public class AdminUserManagementSection extends VerticalLayout {
     private EmailField emailField;
     private PasswordField passwordField;
     private Span passwordHint;
+    private Span confirmPasswordHint;
     private PasswordField confirmPasswordField;
     private ComboBox<Gender> genderComboBox;
     private DatePicker birthDatePicker;
     private Checkbox enabledCheckbox;
     private Span enabledCaption;
     private Span enabledHint;
-    private Hr enabledDivider;
-    private Hr rolesDivider;
-    private CheckboxGroup<RoleType> rolesGroup;
+    private MultiSelectComboBox<RoleType> rolesField;
+    private Span rolesSummary;
     private Span technicalInfo;
     private Div securityNote;
     private AtomicBoolean emailCheckFailed;
@@ -769,12 +763,13 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     private void configureHeader() {
       dialog = new Dialog();
-      dialog.addClassName("cosmos-theme");
+      dialog.addClassNames("cosmos-theme", "cosmos-reference-overlay", "admin-reference-dialog");
+      dialog.getThemeNames().add("cosmos-reference");
       dialog.getElement().getThemeList().add("cosmos");
       dialog.setCloseOnEsc(true);
       dialog.setCloseOnOutsideClick(true);
-      dialog.setDraggable(true);
-      dialog.setResizable(true);
+      dialog.setDraggable(false);
+      dialog.setResizable(false);
       dialog.addClassName("admin-user-dialog");
       dialogTitle =
           new H2(
@@ -786,11 +781,11 @@ public class AdminUserManagementSection extends VerticalLayout {
       dialogDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
       Div dialogHeading = new Div(dialogTitle, dialogDescription);
       dialogHeading.addClassName(COSMOS_PANEL_HEADING_CLASS);
-      Icon userIcon = VaadinIcon.USER.create();
+      SvgIcon userIcon = AppIcon.USERS.create();
       userIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
       Div iconBadge = new Div(userIcon);
       iconBadge.addClassName(COSMOS_PANEL_ICON_CLASS);
-      closeButton = new Button(VaadinIcon.CLOSE_CIRCLE.create(), event -> dialog.close());
+      closeButton = new Button(AppIcon.CLOSE_CIRCLE.create(), event -> dialog.close());
       closeButton.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
       closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
       closeButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
@@ -806,15 +801,18 @@ public class AdminUserManagementSection extends VerticalLayout {
       firstNameField = new TextField(messageProperties.getAdminUsersFieldFirstName());
       firstNameField.setRequiredIndicatorVisible(true);
       firstNameField.setWidthFull();
+      firstNameField.setPlaceholder(messageProperties.getAccountFirstNamePlaceholder());
 
       lastNameField = new TextField(messageProperties.getAdminUsersFieldLastName());
       lastNameField.setRequiredIndicatorVisible(true);
       lastNameField.setWidthFull();
+      lastNameField.setPlaceholder(messageProperties.getAccountLastNamePlaceholder());
 
       emailField = new EmailField(messageProperties.getAdminUsersFieldEmail());
       emailField.setPattern(UserInputRules.EMAIL_REGEX);
       emailField.setRequiredIndicatorVisible(true);
       emailField.setWidthFull();
+      emailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
       emailField.setClearButtonVisible(true);
 
       passwordField = new PasswordField(messageProperties.getAdminUsersFieldPassword());
@@ -826,25 +824,27 @@ public class AdminUserManagementSection extends VerticalLayout {
           editMode
               ? messageProperties.getAdminUsersPasswordPlaceholderEdit()
               : messageProperties.getAccountPasswordPlaceholder());
-      passwordHint =
-          new Span(
-              editMode
-                  ? messageProperties.getAdminUsersPasswordHelperEdit()
-                  : messageProperties.getAdminUsersPasswordHelperCreate());
+      passwordHint = new Span();
       passwordHint.addClassName("admin-user-password-hint");
+      refreshPasswordHint();
       passwordField.setAriaDescribedBy(passwordHint);
 
-      confirmPasswordField = new PasswordField(messageProperties.getRegistrationConfirmField());
+      confirmPasswordField = new PasswordField(messageProperties.getPublicConfirmPasswordField());
       confirmPasswordField.setWidthFull();
       confirmPasswordField.setRevealButtonVisible(true);
       confirmPasswordField.setValueChangeMode(ValueChangeMode.EAGER);
       confirmPasswordField.setPlaceholder(messageProperties.getAccountConfirmPasswordPlaceholder());
       confirmPasswordField.setEnabled(false);
       confirmPasswordField.setAriaDescribedBy(passwordHint);
+      confirmPasswordHint = new Span(messageProperties.getAdminUsersPasswordConfirmHelper());
+      confirmPasswordHint.addClassName("admin-user-password-hint");
 
       genderComboBox = new ComboBox<>(messageProperties.getRegistrationGenderCombobox());
       genderComboBox.setItems(Gender.values());
+      PortalFields.styleChoice(genderComboBox, AdminUserManagementSection.this::formatGender, true);
+      genderComboBox.setPlaceholder(messageProperties.getAccountGenderPlaceholder());
       genderComboBox.setWidthFull();
+      genderComboBox.setClearButtonVisible(true);
       genderComboBox.setRequired(true);
       genderComboBox.setItemLabelGenerator(AdminUserManagementSection.this::formatGender);
 
@@ -866,19 +866,22 @@ public class AdminUserManagementSection extends VerticalLayout {
       enabledLabel.addClassName("admin-user-enabled-label");
       enabledCheckbox.setLabelComponent(enabledLabel);
       enabledCheckbox.setAriaDescribedBy(enabledHint);
-      enabledDivider = new Hr();
-      enabledDivider.addClassName("admin-user-dialog-separator");
-      rolesDivider = new Hr();
-      rolesDivider.addClassName("admin-user-dialog-separator");
-
-      rolesGroup = new CheckboxGroup<>();
-      rolesGroup.setLabel(messageProperties.getAdminUsersFieldRoles());
-      rolesGroup.setItems(RoleType.values());
-      rolesGroup.setItemEnabledProvider(
-          role -> role != RoleType.ROLE_SUPERADMIN || userService.canManageSuperadmins());
-      rolesGroup.setItemLabelGenerator(AdminUserManagementSection.this::formatRoleType);
-      rolesGroup.setRequired(true);
-      rolesGroup.setHelperText(messageProperties.getAdminUsersRolesHelper());
+      rolesField = new MultiSelectComboBox<>(messageProperties.getAdminUsersFieldRoles());
+      rolesField.addClassName("admin-user-roles");
+      rolesField.setWidthFull();
+      rolesField
+          .setItems(RoleType.values())
+          .setFilter(
+              role -> role != RoleType.ROLE_SUPERADMIN || userService.canManageSuperadmins());
+      rolesField.setItemLabelGenerator(AdminUserManagementSection.this::formatRoleType);
+      rolesField.setClassNameGenerator(role -> "admin-user-role-option");
+      rolesField.setRequiredIndicatorVisible(true);
+      rolesField.setHelperText(messageProperties.getAdminUsersRolesHelper());
+      rolesSummary = new Span();
+      rolesSummary.addClassName("admin-user-role-summary");
+      rolesSummary.getElement().setAttribute(ARIA_HIDDEN, "true");
+      rolesField.addValueChangeListener(event -> refreshRolesSummary());
+      refreshRolesSummary();
 
       technicalInfo =
           new Span(
@@ -886,7 +889,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                   ? messageProperties.getAdminUsersTechnicalInfoEdit()
                   : messageProperties.getAdminUsersTechnicalInfoCreate());
       technicalInfo.addClassName(LumoUtility.TextColor.SECONDARY);
-      Icon securityIcon = VaadinIcon.SHIELD.create();
+      SvgIcon securityIcon = AppIcon.SHIELD_CHECK.create();
       securityIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
       securityNote = new Div(securityIcon, technicalInfo);
       securityNote.addClassNames("cosmos-panel-hint", "admin-user-security-note");
@@ -964,7 +967,7 @@ public class AdminUserManagementSection extends VerticalLayout {
           .bind(AdminUserFormData::isEnabled, AdminUserFormData::setEnabled);
 
       binder
-          .forField(rolesGroup)
+          .forField(rolesField)
           .withValidator(
               selectedRoles -> selectedRoles != null && !selectedRoles.isEmpty(),
               context -> messageProperties.getBaseValidationRequiredMessage())
@@ -1020,6 +1023,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       passwordField.addValueChangeListener(
           event -> {
             boolean passwordEntered = ValidationHelper.isRequiredTextValid(event.getValue());
+            refreshPasswordHint();
             confirmPasswordField.setEnabled(passwordEntered);
             confirmPasswordField.setRequiredIndicatorVisible(passwordEntered);
             if (!passwordEntered) {
@@ -1054,9 +1058,18 @@ public class AdminUserManagementSection extends VerticalLayout {
           });
     }
 
+    private void refreshPasswordHint() {
+      boolean passwordRequired =
+          !editMode || ValidationHelper.isRequiredTextValid(passwordField.getValue());
+      passwordHint.setText(
+          passwordRequired
+              ? messageProperties.getAdminUsersPasswordHelperCreate()
+              : messageProperties.getAdminUsersPasswordHelperEdit());
+    }
+
     private void configureActions() {
       saveButton = new Button(messageProperties.getAdminUsersSave());
-      saveButton.setPrefixComponent(VaadinIcon.CHECK.create());
+      saveButton.setPrefixComponent(AppIcon.CHECK.create());
       saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
       saveButton.setEnabled(binder.isValid());
 
@@ -1065,7 +1078,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       saveButton.addClickListener(event -> saveUser());
 
       cancelButton = new Button(messageProperties.getAdminUsersCancel(), e -> dialog.close());
-      cancelButton.setPrefixComponent(VaadinIcon.CLOSE.create());
+      cancelButton.setPrefixComponent(AppIcon.CLOSE.create());
     }
 
     private void composeLayout() {
@@ -1074,12 +1087,16 @@ public class AdminUserManagementSection extends VerticalLayout {
       nameRow.addClassName(COSMOS_FORM_ROW_CLASS);
       nameRow.expand(firstNameField, lastNameField);
 
-      HorizontalLayout passwordRow = new HorizontalLayout(passwordField, confirmPasswordField);
+      Div passwordColumn = new Div(passwordField, passwordHint);
+      passwordColumn.addClassName("admin-user-password-column");
+      Div confirmPasswordColumn = new Div(confirmPasswordField, confirmPasswordHint);
+      confirmPasswordColumn.addClassName("admin-user-password-column");
+      HorizontalLayout passwordRow = new HorizontalLayout(passwordColumn, confirmPasswordColumn);
       passwordRow.setWidthFull();
       passwordRow.setSpacing(false);
       passwordRow.addClassName(COSMOS_FORM_ROW_CLASS);
-      passwordRow.expand(passwordField, confirmPasswordField);
-      Div passwordFields = new Div(passwordRow, passwordHint);
+      passwordRow.expand(passwordColumn, confirmPasswordColumn);
+      Div passwordFields = new Div(passwordRow);
       passwordFields.addClassName("admin-user-password-fields");
 
       HorizontalLayout masterDataRow = new HorizontalLayout(genderComboBox, birthDatePicker);
@@ -1095,7 +1112,7 @@ public class AdminUserManagementSection extends VerticalLayout {
         Button deleteButton =
             new Button(
                 messageProperties.getAdminUsersDelete(),
-                VaadinIcon.TRASH.create(),
+                AppIcon.TRASH.create(),
                 event -> deleteUser(user, dialog::close));
         deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
         deleteButton.addClassName("cosmos-delete-button");
@@ -1105,23 +1122,26 @@ public class AdminUserManagementSection extends VerticalLayout {
       cancelButton.addClassName("cosmos-dialog-cancel");
       footer.add(cancelButton, saveButton);
 
+      Div rolesColumn = new Div(rolesField, rolesSummary);
+      rolesColumn.addClassName("admin-user-role-field");
+      Div permissionsRow = new Div(rolesColumn, enabledCheckbox);
+      permissionsRow.addClassName("admin-user-permissions");
       VerticalLayout dialogLayout =
-          new VerticalLayout(
-              nameRow,
-              emailField,
-              passwordFields,
-              masterDataRow,
-              enabledCheckbox,
-              enabledDivider,
-              rolesGroup,
-              rolesDivider,
-              securityNote);
-      dialog.getFooter().add(footer);
+          new VerticalLayout(nameRow, emailField, passwordFields, masterDataRow, permissionsRow);
+      Div footerSection = new Div(securityNote, footer);
+      footerSection.addClassName("admin-user-editor-footer");
+      dialog.getFooter().add(footerSection);
       dialogLayout.setPadding(false);
       dialogLayout.setSpacing(false);
       dialogLayout.addClassName("cosmos-dialog-form");
 
       dialog.add(dialogLayout);
+    }
+
+    private void refreshRolesSummary() {
+      String summary = messageProperties.getAdminUsersSelectedRoles(rolesField.getValue().size());
+      rolesSummary.setText(summary);
+      rolesField.setPlaceholder(summary);
     }
 
     private void registerTextRefresh() {
@@ -1135,19 +1155,23 @@ public class AdminUserManagementSection extends VerticalLayout {
             dialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
             dialogDescription.setText(messageProperties.getAdminUsersDialogDescription());
             closeButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
-            confirmPasswordField.setLabel(messageProperties.getRegistrationConfirmField());
+            confirmPasswordField.setLabel(messageProperties.getPublicConfirmPasswordField());
+            confirmPasswordHint.setText(messageProperties.getAdminUsersPasswordConfirmHelper());
             confirmPasswordField.setPlaceholder(
                 messageProperties.getAccountConfirmPasswordPlaceholder());
+            saveButton.setText(messageProperties.getAdminUsersSave());
+            cancelButton.setText(messageProperties.getAdminUsersCancel());
+            rolesField.setLabel(messageProperties.getAdminUsersFieldRoles());
+            rolesField.setHelperText(messageProperties.getAdminUsersRolesHelper());
+            rolesField.getDataProvider().refreshAll();
+            refreshRolesSummary();
             enabledCaption.setText(messageProperties.getAdminUsersFieldEnabled());
             enabledHint.setText(messageProperties.getAdminUsersEnabledHint());
             passwordField.setPlaceholder(
                 editMode
                     ? messageProperties.getAdminUsersPasswordPlaceholderEdit()
                     : messageProperties.getAccountPasswordPlaceholder());
-            passwordHint.setText(
-                editMode
-                    ? messageProperties.getAdminUsersPasswordHelperEdit()
-                    : messageProperties.getAdminUsersPasswordHelperCreate());
+            refreshPasswordHint();
             technicalInfo.setText(
                 editMode
                     ? messageProperties.getAdminUsersTechnicalInfoEdit()
@@ -1279,19 +1303,21 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   private Component createActionButtons(UserEntity user) {
-    Button editButton = new Button(VaadinIcon.EDIT.create(), e -> openDialog(user));
+    Button editButton = new Button(AppIcon.EDIT.create(), e -> openDialog(user));
     editButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
     editButton.setTooltipText(messageProperties.getAdminUsersEdit());
     boolean protectedAccount =
         user.hasRole(RoleType.ROLE_SUPERADMIN) && !userService.canManageSuperadmins();
     editButton.setEnabled(!protectedAccount);
 
-    Button deleteButton = new Button(VaadinIcon.TRASH.create(), e -> deleteUser(user));
+    Button deleteButton = new Button(AppIcon.TRASH.create(), e -> deleteUser(user));
     deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
+    deleteButton.addClassName("cosmos-delete-button");
     deleteButton.setTooltipText(messageProperties.getAdminUsersDelete());
     deleteButton.setEnabled(!isCurrentUser(user) && !protectedAccount);
 
     HorizontalLayout actions = new HorizontalLayout(editButton, deleteButton);
+    actions.addClassName("admin-user-table-actions");
     actions.setPadding(false);
     actions.setSpacing(true);
     actions.setJustifyContentMode(JustifyContentMode.CENTER);
@@ -1302,10 +1328,9 @@ public class AdminUserManagementSection extends VerticalLayout {
     boolean enabled = user.isEnabled();
     Span badge =
         new Span(
-            Boolean.TRUE.equals(enabled)
-                ? messageProperties.getAdminUsersYes()
-                : messageProperties.getAdminUsersNo());
+            enabled ? messageProperties.getAdminUsersYes() : messageProperties.getAdminUsersNo());
     badge.getElement().getThemeList().add("badge " + (enabled ? "success" : "error"));
+    badge.addClassName("admin-user-table-enabled");
     return badge;
   }
 
@@ -1319,7 +1344,14 @@ public class AdminUserManagementSection extends VerticalLayout {
     avatar.addClassName("admin-user-table-avatar");
     Span name = new Span(getFullName(user));
     name.addClassName("admin-user-table-name");
-    HorizontalLayout identity = new HorizontalLayout(avatar, name);
+    Div copy = new Div(name);
+    if (isCurrentUser(user)) {
+      Span self = new Span(messageProperties.getAdminUsersSelf());
+      self.addClassName("admin-user-self");
+      copy.add(self);
+    }
+    HorizontalLayout identity = new HorizontalLayout(avatar, copy);
+    identity.addClassName("admin-user-table-identity");
     identity.setAlignItems(Alignment.CENTER);
     identity.setPadding(false);
     identity.setSpacing(true);
@@ -1339,6 +1371,19 @@ public class AdminUserManagementSection extends VerticalLayout {
               case OFFLINE -> "contrast";
             };
     badge.getElement().getThemeList().add("badge " + variant);
+    badge.addClassName("admin-user-table-status");
+    if (status != null) {
+      AppIcon statusIcon =
+          switch (status) {
+            case AVAILABLE -> AppIcon.CHECK_CIRCLE;
+            case EMPLOYED -> AppIcon.CIRCLE_MINUS;
+            case ABSENT -> AppIcon.CLOCK;
+            case OFFLINE -> AppIcon.CLOSE_CIRCLE;
+          };
+      SvgIcon icon = statusIcon.create();
+      icon.getElement().setAttribute(ARIA_HIDDEN, "true");
+      badge.addComponentAtIndex(0, icon);
+    }
     return badge;
   }
 

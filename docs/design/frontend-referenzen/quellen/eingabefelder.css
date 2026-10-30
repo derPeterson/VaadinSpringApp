@@ -1,5 +1,6 @@
 /* Gemeinsame Feldgestaltung der drei HTML-Referenzen; normale Aktionsbuttons bleiben unverändert. */
 body :is(input,textarea)::placeholder{color:#64748b!important;font-weight:400!important;opacity:1!important}
+.public-reference .portal-password-wrap>input{font-size:14px;font-weight:400}
 body button[data-ref-field-action] svg{color:#94a3b8!important}
 body button[data-ref-field-action]:hover:not(:disabled) svg{color:#e2e8f0!important}
 body button[data-ref-field-action]:not(:disabled):is(:focus-visible,[aria-expanded=true],[aria-pressed=true]) svg,

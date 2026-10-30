@@ -36,6 +36,7 @@ import de.derpeterson.app.model.enums.EmailType;
 import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.PasswordResetTokenRepository;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.service.PasswordResetService.LinkState;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -256,7 +257,7 @@ class PasswordResetServiceTest {
     Executable operationUnderTest =
         switch (operation) {
           case "create" -> () -> service.createToken(user);
-          case "validate" -> () -> service.validateToken("valid");
+          case "validate" -> () -> service.inspectToken("valid");
           case "reset" -> () -> service.resetPassword("valid", "Password!");
           case "status" -> () -> service.setTokenStatus("valid", TokenStatus.USED);
           case "invalidate" -> () -> service.setInactiveTokensForUser(user);
@@ -292,7 +293,7 @@ class PasswordResetServiceTest {
   @ValueSource(strings = {"unknown"})
   void unknownOrEmptyTokensAreNotValidAndDoNotReset(String value) {
     when(tokens.findUserIdByToken(value)).thenReturn(Optional.empty());
-    assertFalse(service.validateToken(value));
+    assertEquals(LinkState.INVALID, service.inspectToken(value));
     assertFalse(service.resetPassword(value, "Password!"));
     service.setTokenStatus(value, TokenStatus.USED);
     verify(tokens, times(3)).findUserIdByToken(value);
@@ -302,20 +303,42 @@ class PasswordResetServiceTest {
   }
 
   @ParameterizedTest
+  @EnumSource(
+      value = TokenStatus.class,
+      names = {"EXPIRED", "USED", "INACTIVE"})
+  void closedLinksRetainTheirMeaningWithoutChangingPasswords(TokenStatus status) {
+    PasswordResetTokenEntity stored = token("closed", status, NOW.minusDays(1));
+    when(tokens.findByToken("closed")).thenReturn(Optional.of(stored));
+    assertEquals(
+        status == TokenStatus.EXPIRED ? LinkState.EXPIRED : LinkState.INVALID,
+        service.inspectToken("closed"));
+    assertEquals(
+        status == TokenStatus.EXPIRED ? LinkState.EXPIRED : LinkState.INVALID,
+        service.inspectToken("closed"));
+    assertEquals(status, stored.getStatus());
+    verify(tokens, never()).save(any());
+    verifyNoInteractions(encoder, queue);
+  }
+
+  @ParameterizedTest
   @CsvSource({"false,-1", "false,0", "false,1", "true,-1", "true,0", "true,1"})
   void expiryIsExclusiveAndResetRechecksItWithTheInjectedLocalClock(
       boolean resetPassword, long nanoseconds) {
     PasswordResetTokenEntity stored =
         token("boundary", TokenStatus.ACTIVE, NOW.plusNanos(nanoseconds));
-    when(tokens.findByTokenAndStatus("boundary", TokenStatus.ACTIVE))
-        .thenReturn(Optional.of(stored));
+    if (resetPassword) {
+      when(tokens.findByTokenAndStatus("boundary", TokenStatus.ACTIVE))
+          .thenReturn(Optional.of(stored));
+    } else {
+      when(tokens.findByToken("boundary")).thenReturn(Optional.of(stored));
+    }
     if (resetPassword && nanoseconds > 0) {
       when(encoder.encode("Password!")).thenReturn("new-hash");
     }
     boolean result =
         resetPassword
             ? service.resetPassword("boundary", "Password!")
-            : service.validateToken("boundary");
+            : service.inspectToken("boundary") == LinkState.VALID;
     assertEquals(nanoseconds > 0, result);
     TokenStatus expectedStatus = TokenStatus.ACTIVE;
     if (nanoseconds <= 0) {
@@ -340,12 +363,14 @@ class PasswordResetServiceTest {
     user.setEnabled(false);
     PasswordResetTokenEntity stored =
         token("disabled", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    when(tokens.findByTokenAndStatus("disabled", TokenStatus.ACTIVE))
-        .thenReturn(Optional.of(stored));
+    if (resetPassword) {
+      when(tokens.findByTokenAndStatus("disabled", TokenStatus.ACTIVE))
+          .thenReturn(Optional.of(stored));
+    }
     assertFalse(
         resetPassword
             ? service.resetPassword("disabled", "Password!")
-            : service.validateToken("disabled"));
+            : service.inspectToken("disabled") == LinkState.VALID);
     assertEquals(TokenStatus.ACTIVE, stored.getStatus());
     verify(tokens, never()).save(any());
     verify(users, never()).save(any());
@@ -420,7 +445,9 @@ class PasswordResetServiceTest {
     if (operation.equals("create")) {
       when(config.getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION)).thenReturn("PT1H");
     }
-    if (operation.equals("validate") || operation.equals("reset")) {
+    if (operation.equals("validate")) {
+      when(tokens.findByToken("value")).thenThrow(failure);
+    } else if (operation.equals("reset")) {
       when(tokens.findByTokenAndStatus("value", TokenStatus.ACTIVE)).thenThrow(failure);
     } else if (operation.equals("invalidate") || operation.equals("create")) {
       when(tokens.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE)).thenThrow(failure);
@@ -429,7 +456,7 @@ class PasswordResetServiceTest {
     }
     Executable operationUnderTest =
         switch (operation) {
-          case "validate" -> () -> service.validateToken("value");
+          case "validate" -> () -> service.inspectToken("value");
           case "reset" -> () -> service.resetPassword("value", "Password!");
           case "status" -> () -> service.setTokenStatus("value", TokenStatus.USED);
           case "invalidate" -> () -> service.setInactiveTokensForUser(user);

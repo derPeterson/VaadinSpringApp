@@ -39,10 +39,10 @@ body.portal-reference .portal-confirm-dialog:not(.danger) .n-button{width:auto}
 
 body.portal-reference .portal-confirm-dialog>.n-overlay-head>.n-heading{padding:0!important}
 body.portal-reference .portal-confirm-dialog .portal-confirm-metadata{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 0}
-body.portal-reference #session-confirm .n-actions{grid-template-columns:repeat(2,minmax(0,180px))}
+body.portal-reference #session-confirm .n-actions{width:max-content;max-width:100%;margin-inline-start:auto;grid-template-columns:repeat(2,minmax(0,1fr))}body.portal-reference #session-confirm .n-actions>button{min-width:max-content}
 body.portal-reference #session-confirm .portal-confirm-context{align-items:center}
 body.portal-reference #session-confirm .session-badges{margin-top:8px}
 body.portal-reference #session-confirm .portal-confirm-context-list{display:flex;flex-direction:column;gap:10px}
 body.portal-reference #session-confirm .portal-confirm-context-list>.portal-confirm-context{width:100%}
 @media(max-width:639px){body.portal-reference #session-confirm .n-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:359px){body.portal-reference #session-confirm .n-actions{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:479px){body.portal-reference #session-confirm .n-actions{grid-template-columns:minmax(0,1fr)}}

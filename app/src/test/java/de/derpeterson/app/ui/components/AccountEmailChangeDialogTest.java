@@ -10,6 +10,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ModalityMode;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -107,7 +108,8 @@ class AccountEmailChangeDialogTest {
         slottedTree(dialog.getHeader().getElement())
             .anyMatch(
                 component ->
-                    "vaadin:envelope".equals(component.getElement().getAttribute("icon"))));
+                    component instanceof SvgIcon icon
+                        && "icons/lucide/mail.svg".equals(icon.getSrc())));
     assertTrue(
         tree(dialog)
             .anyMatch(

@@ -15,6 +15,8 @@ import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -24,7 +26,10 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.ui.components.AdminDurationField;
+import de.derpeterson.app.ui.components.AdminSidePanel;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
+import java.math.BigDecimal;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
@@ -77,11 +82,13 @@ class AdminConfigurationGroupTest {
         visibleEntries());
     Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
     IntegerField inbox =
-        (com.vaadin.flow.component.textfield.IntegerField)
-            inputs.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS);
+        (IntegerField)
+            ReflectionTestUtils.getField(
+                inputs.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS), "amount");
     IntegerField history =
-        (com.vaadin.flow.component.textfield.IntegerField)
-            inputs.get(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS);
+        (IntegerField)
+            ReflectionTestUtils.getField(
+                inputs.get(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS), "amount");
     assertEquals(180, inbox.getValue());
     assertEquals(365, history.getValue());
     inbox.setValue(0);
@@ -119,11 +126,13 @@ class AdminConfigurationGroupTest {
     section.refreshTexts();
     Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
     IntegerField inbox =
-        (com.vaadin.flow.component.textfield.IntegerField)
-            inputs.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS);
+        (IntegerField)
+            ReflectionTestUtils.getField(
+                inputs.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS), "amount");
     IntegerField history =
-        (com.vaadin.flow.component.textfield.IntegerField)
-            inputs.get(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS);
+        (IntegerField)
+            ReflectionTestUtils.getField(
+                inputs.get(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS), "amount");
     inbox.clear();
     history.clear();
     MessageProperties messages = MessageProperties.forLocale(provider, locale.get());
@@ -192,6 +201,121 @@ class AdminConfigurationGroupTest {
     assertEquals(
         List.of(ConfigEntry.SERVICE_NAME, ConfigEntry.COPYRIGHT_TEXT, ConfigEntry.BASE_URL),
         visibleEntries());
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"de", "en"})
+  void allTimeSpanFieldsPreserveValuesMinimumsAndUnsavedUnitChanges(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    section.refreshTexts();
+    Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
+    for (ConfigEntry entry :
+        new ConfigEntry[] {
+          ConfigEntry.USER_AUTO_ABSENT_TIMEOUT, ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION,
+          ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION,
+              ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION,
+          ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION, ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION
+        }) {
+      AdminDurationField field = (AdminDurationField) inputs.get(entry);
+      field.setStoredValue("PT90.123456789S");
+      assertEquals("PT1M30.123456789S", field.getStoredValue());
+      assertTrue(field.getEquivalentValue().contains("123456789"));
+      field.setStoredValue("PT9223372036854775807.999999999S");
+      assertEquals("PT2562047788015215H30M7.999999999S", field.getStoredValue());
+      field.setStoredValue("PT2H");
+      @SuppressWarnings("unchecked")
+      Select<AdminDurationField.Unit> units =
+          (Select<AdminDurationField.Unit>) ReflectionTestUtils.getField(field, "unit");
+      units.setValue(AdminDurationField.Unit.MINUTES);
+      assertEquals("PT2M", field.getStoredValue());
+      BigDecimalField amount =
+          (BigDecimalField) ReflectionTestUtils.getField(field, "preciseAmount");
+      amount.setValue(new BigDecimal("0.5"));
+      assertEquals("PT30S", field.getStoredValue());
+      String error =
+          ReflectionTestUtils.invokeMethod(section, "validateValue", entry, field.getStoredValue());
+      if (entry.getMinimumTokenDuration() != null) {
+        assertTrue(error != null);
+      } else {
+        assertNull(error);
+      }
+      amount.clear();
+      assertEquals("", ReflectionTestUtils.invokeMethod(section, "extractInputValue", entry));
+      assertTrue(ReflectionTestUtils.invokeMethod(section, "validateValue", entry, "") != null);
+    }
+    verify(config, never()).set(any(), anyString());
+  }
+
+  @Test
+  void timeSpanSavingUsesExistingIsoFormatAndRejectsInvalidPrecision() {
+    section.showGroup(AdminConfigGroup.TOKENS);
+    Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
+    AdminDurationField field =
+        (AdminDurationField) inputs.get(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION);
+    BigDecimalField amount = (BigDecimalField) ReflectionTestUtils.getField(field, "preciseAmount");
+    field.setStoredValue("PT1S");
+    amount.setValue(new BigDecimal("0.0000000001"));
+    assertEquals("invalid", field.getStoredValue());
+    ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
+    assertTrue(field.isInvalid());
+    verify(config, never()).set(any(), anyString());
+    field.setStoredValue("PT90S");
+    ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
+    verify(config).set(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION, "PT1M30S");
+    de.derpeterson.app.helper.ui.NotificationHelper.getInstance().closeAndClearAllNotifications();
+  }
+
+  @Test
+  void durationConvertsExactlyAndRejectsOverflowWithoutSaving() {
+    section.showGroup(AdminConfigGroup.SECURITY);
+    Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
+    AdminDurationField field = (AdminDurationField) inputs.get(ConfigEntry.REMEMBER_ME_DURATION);
+    IntegerField amount = (IntegerField) ReflectionTestUtils.getField(field, "amount");
+    @SuppressWarnings("unchecked")
+    Select<AdminDurationField.Unit> unit =
+        (Select<AdminDurationField.Unit>) ReflectionTestUtils.getField(field, "unit");
+    assertEquals(14, amount.getValue());
+    assertEquals(AdminDurationField.Unit.DAYS, unit.getValue());
+    for (int seconds : new int[] {61, 3600, 1209600, Integer.MAX_VALUE}) {
+      field.setSecondsValue(seconds);
+      assertEquals(String.valueOf(seconds), field.getSecondsValue());
+    }
+    field.setSecondsValue(1209600);
+    unit.setValue(AdminDurationField.Unit.HOURS);
+    assertEquals("50400", field.getSecondsValue());
+    amount.setValue(999999);
+    ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
+    assertTrue(field.isInvalid());
+    verify(config, never()).set(any(), anyString());
+    amount.clear();
+    assertEquals(
+        "1209600",
+        ReflectionTestUtils.invokeMethod(
+            section, "extractInputValue", ConfigEntry.REMEMBER_ME_DURATION));
+    de.derpeterson.app.helper.ui.NotificationHelper.getInstance().closeAndClearAllNotifications();
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"de", "en"})
+  void durationHelpShowsUnsavedValueAndConversionOnlyInsideHelp(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    section.showGroup(AdminConfigGroup.SECURITY);
+    section.refreshTexts();
+    Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
+    AdminDurationField field = (AdminDurationField) inputs.get(ConfigEntry.REMEMBER_ME_DURATION);
+    IntegerField amount = (IntegerField) ReflectionTestUtils.getField(field, "amount");
+    amount.setValue(7);
+    ReflectionTestUtils.invokeMethod(section, "openHelp", ConfigEntry.REMEMBER_ME_DURATION);
+    AdminSidePanel help = (AdminSidePanel) ReflectionTestUtils.getField(section, "helpPanel");
+    String copy = help.getElement().getTextRecursively();
+    assertTrue(copy.contains(field.getDisplayValue()));
+    assertTrue(copy.contains(field.getEquivalentValue()));
+    assertFalse(field.getElement().getTextRecursively().contains(field.getEquivalentValue()));
+    locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    section.refreshTexts();
+    assertEquals(7, amount.getValue());
+    assertTrue(help.getElement().getTextRecursively().contains(field.getDisplayValue()));
+    verify(config, never()).set(any(), anyString());
   }
 
   @Test
@@ -267,6 +391,49 @@ class AdminConfigurationGroupTest {
 
   private AdminConfigGroup selectedGroup() {
     return (AdminConfigGroup) ReflectionTestUtils.getField(section, "selectedGroup");
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"de", "en"})
+  @SuppressWarnings("unchecked")
+  void everyFieldHelpKeepsRulesAndSafeDefaultsWithoutChangingConfiguration(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    section.refreshTexts();
+    MessageProperties messages = MessageProperties.forLocale(provider, locale.get());
+    Map<ConfigEntry, ConfigInfoButton> infos =
+        (Map<ConfigEntry, ConfigInfoButton>)
+            ReflectionTestUtils.getField(section, "configInfoButtons");
+    AdminSidePanel panel = (AdminSidePanel) ReflectionTestUtils.getField(section, "helpPanel");
+    int checkedFields = 0;
+    for (AdminConfigGroup group : AdminConfigGroup.values()) {
+      section.showGroup(group);
+      for (Object value : visibleEntries()) {
+        ConfigEntry entry = (ConfigEntry) value;
+        infos.get(entry).click();
+        assertTrue(panel.isOpened());
+        String content = panel.getElement().getTextRecursively();
+        assertTrue(content.contains(messages.getAdminConfigEntryLabel(entry)), entry.name());
+        assertTrue(content.contains(messages.getAdminConfigEntryTooltip(entry)), entry.name());
+        assertTrue(content.contains(messages.getAdminConfigGroupLabel(group)), entry.name());
+        assertTrue(content.contains(messages.getAdminConfigInputRules()), entry.name());
+        List<String> rules = ReflectionTestUtils.invokeMethod(section, "buildInputRules", entry);
+        for (String rule : rules) {
+          assertTrue(content.contains(rule), entry.name());
+        }
+        if (entry == ConfigEntry.COPYRIGHT_TEXT) {
+          assertTrue(content.contains(messages.getAdminConfigHelpYear()));
+          assertTrue(content.contains(messages.getAdminConfigHelpServiceName()));
+        }
+        if (entry == ConfigEntry.REMEMBER_ME_SECRET_KEY) {
+          assertFalse(content.contains(entry.getDefaultValueString()));
+          assertTrue(content.contains(messages.getAdminConfigDefaultConfidential()));
+        }
+        panel.close();
+        checkedFields++;
+      }
+    }
+    assertEquals(30, checkedFields);
+    verify(config, never()).set(any(ConfigEntry.class), anyString());
   }
 
   private List<?> visibleEntries() {

@@ -30,13 +30,14 @@ public final class LoginPage {
 
   @Step("E-Mail und Passwort eingeben und Anmeldung absenden")
   public void signIn(String email, String password) {
-    page.getByLabel(texts.getLoginEmailField(), new Page.GetByLabelOptions().setExact(true))
+    page.getByLabel(texts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true))
         .fill(email);
     page.getByLabel(texts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true))
         .fill(password);
-    page.getByRole(
+    page.locator(".public-panel")
+        .getByRole(
             AriaRole.BUTTON,
-            new Page.GetByRoleOptions().setName(texts.getBaseLoginButton()).setExact(true))
+            new Locator.GetByRoleOptions().setName(texts.getBaseLoginButton()).setExact(true))
         .click();
   }
 
@@ -46,7 +47,7 @@ public final class LoginPage {
     assertThat(page).hasTitle(LOGIN_PAGE_TITLE);
     assertThat(
             page.getByLabel(
-                texts.getLoginEmailField(), new Page.GetByLabelOptions().setExact(true)))
+                texts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true)))
         .isVisible();
     assertThat(
             page.getByLabel(

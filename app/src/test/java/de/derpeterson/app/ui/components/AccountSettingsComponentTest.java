@@ -17,7 +17,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.tabs.Tabs;
+import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.function.SerializableFunction;
@@ -27,8 +27,10 @@ import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.service.AccountProfileService.Changes;
 import de.derpeterson.app.service.AccountProfileService.Profile;
+import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
 import java.time.LocalDate;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
@@ -63,6 +65,7 @@ class AccountSettingsComponentTest {
     user =
         UserEntity.builder()
             .version(3L)
+            .gender(Gender.OTHER)
             .firstName("Alex")
             .lastName("Weber")
             .email("own-account@example.test")
@@ -84,6 +87,12 @@ class AccountSettingsComponentTest {
     return Stream.concat(Stream.of(component), component.getChildren().flatMap(this::tree));
   }
 
+  private void navigateTo(AccountSection section) {
+    PageNavigationComponent navigation = (PageNavigationComponent) byId("account-navigation");
+    navigation.activate(
+        (SideNavItem) byId("account-tab-" + section.name().toLowerCase(Locale.ROOT)));
+  }
+
   private Component byId(String id) {
     return tree(content)
         .filter(component -> component.getId().orElse("").equals(id))
@@ -101,8 +110,31 @@ class AccountSettingsComponentTest {
         texts.getAccountSettingsSessionsLimit(7),
         ((Span) byId("account-sessions-limit")).getText());
     String panel = byId("account-panel-sessions").getElement().getTextRecursively();
-    assertTrue(panel.contains(texts.getAccountSettingsSessionsActiveTitle()));
+    assertTrue(panel.contains(texts.getPortalSessionActiveCount(0)));
     assertTrue(panel.contains(texts.getAccountSettingsSessionsActivity()));
+    verifyNoInteractions(saver);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void securityHeadingAndActionNamesRefreshWithoutChangingTheDraft(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    navigateTo(AccountSection.SECURITY);
+    content.refreshTexts();
+    MessageProperties texts = MessageProperties.forLocale(provider, locale.get());
+    String heading =
+        tree(content)
+            .filter(CosmosSectionHeaderComponent.class::isInstance)
+            .findFirst()
+            .orElseThrow()
+            .getElement()
+            .getTextRecursively();
+    assertTrue(heading.contains(texts.getAccountSettingsSecurityIntroduction()));
+    assertFalse(heading.contains(texts.getAccountSettingsSecurityDescription()));
+    Button emailAction = (Button) byId("account-email-edit-security");
+    assertEquals(texts.getAccountSettingsChangeAction(), emailAction.getText());
+    assertEquals(texts.getAccountSettingsChangeEmail(), emailAction.getAriaLabel().orElseThrow());
+    assertEquals("Alex", ((TextField) byId("account-first-name")).getValue());
     verifyNoInteractions(saver);
   }
 
@@ -110,9 +142,8 @@ class AccountSettingsComponentTest {
   void tabChangesPreserveDraftsAndNeverChangeTheAccount() {
     TextField first = (TextField) byId("account-first-name");
     first.setValue("Draft");
-    Tabs tabs = (Tabs) byId("account-tabs");
     for (int index : new int[] {1, 2, 0}) {
-      tabs.setSelectedIndex(index);
+      navigateTo(AccountSection.values()[index]);
       assertEquals(index == 0, byId("account-panel-profile").isVisible());
       assertEquals(index == 1, byId("account-panel-security").isVisible());
       assertEquals(index == 2, byId("account-panel-sessions").isVisible());
@@ -129,8 +160,7 @@ class AccountSettingsComponentTest {
   @ValueSource(strings = {"de", "en"})
   void languageRefreshKeepsSelectedTabAndInputsAndTranslatesSessions(String language) {
     ((TextField) byId("account-first-name")).setValue("Unsaved");
-    Tabs tabs = (Tabs) byId("account-tabs");
-    tabs.setSelectedIndex(2);
+    navigateTo(AccountSection.SESSIONS);
     locale.set(Locale.forLanguageTag(language));
     content.refreshTexts();
     MessageProperties texts = MessageProperties.forLocale(provider, locale.get());
@@ -145,7 +175,7 @@ class AccountSettingsComponentTest {
             .getElement()
             .getTextRecursively()
             .contains(texts.getAccountSettingsSessionsActivity()));
-    assertEquals(2, tabs.getSelectedIndex());
+    assertEquals(AccountSection.SESSIONS, content.getSelectedSection());
     assertEquals("Unsaved", ((TextField) byId("account-first-name")).getValue());
     assertEquals("Alex", user.getFirstName());
   }
@@ -202,11 +232,14 @@ class AccountSettingsComponentTest {
         tree(notification)
             .anyMatch(
                 component ->
-                    component.getElement().getAttribute("icon") != null
+                    component.getElement().getAttribute("src") != null
                         && component
                             .getElement()
-                            .getAttribute("icon")
-                            .equals(error ? "vaadin:warning" : "vaadin:check-circle")));
+                            .getAttribute("src")
+                            .equals(
+                                error
+                                    ? "icons/lucide/triangle-alert.svg"
+                                    : "icons/lucide/circle-check.svg")));
   }
 
   @ParameterizedTest
@@ -218,16 +251,19 @@ class AccountSettingsComponentTest {
     TextField last = (TextField) byId("account-last-name");
     DatePicker birth = (DatePicker) byId("account-birth-date");
     ComboBox<?> choice = (ComboBox<?>) byId("account-language");
+    ComboBox<?> gender = (ComboBox<?>) byId("account-gender");
     first.setValue("   ");
     last.clear();
     birth.clear();
     choice.clear();
+    gender.clear();
     assertFalse(first.isInvalid());
     save();
     assertTrue(first.isInvalid());
     assertTrue(last.isInvalid());
     assertTrue(birth.isInvalid());
     assertTrue(choice.isInvalid());
+    assertTrue(gender.isInvalid());
     verifyNoInteractions(saver);
     assertNotification(new MessageProperties(provider).getBaseValidationRequiredMessage(), true);
   }
@@ -247,7 +283,8 @@ class AccountSettingsComponentTest {
     verifyNoInteractions(saver);
     LocalDate date = LocalDate.of(1990, 2, 1);
     birth.setValue(date);
-    when(saver.apply(any())).thenReturn(new Profile(4L, "Alex", "Weber", date, Locale.GERMAN));
+    when(saver.apply(any()))
+        .thenReturn(new Profile(4L, "Alex", "Weber", date, Locale.GERMAN, Gender.OTHER));
     save();
     assertFalse(birth.isInvalid());
     verify(saver).apply(any());
@@ -260,15 +297,16 @@ class AccountSettingsComponentTest {
     ((TextField) byId("account-first-name")).setValue(" New ");
     LocalDate date = LocalDate.of(1992, 3, 4);
     ((DatePicker) byId("account-birth-date")).setValue(date);
-    when(saver.apply(any())).thenReturn(new Profile(4L, "New", "Weber", date, Locale.ENGLISH));
+    when(saver.apply(any()))
+        .thenReturn(new Profile(4L, "New", "Weber", date, Locale.ENGLISH, Gender.OTHER));
     save();
-    verify(saver).apply(new Changes(3L, " New ", "Weber", date, Locale.GERMAN));
+    verify(saver).apply(new Changes(3L, " New ", "Weber", date, Locale.GERMAN, Gender.OTHER));
     assertTrue(content.getElement().getTextRecursively().contains("New Weber"));
     assertEquals("New", ((TextField) byId("account-first-name")).getValue());
     assertEquals(Locale.ENGLISH, ((ComboBox<?>) byId("account-language")).getValue());
     assertNotification(new MessageProperties(provider).getAccountSettingsSaveSuccess(), false);
     save();
-    verify(saver).apply(new Changes(4L, "New", "Weber", date, Locale.ENGLISH));
+    verify(saver).apply(new Changes(4L, "New", "Weber", date, Locale.ENGLISH, Gender.OTHER));
     assertEquals("Alex", user.getFirstName());
   }
 
@@ -288,9 +326,9 @@ class AccountSettingsComponentTest {
   }
 
   @Test
-  void emailIsVisibleButDisabledAndReadOnly() {
+  void emailIsVisibleAndReadOnlyWithoutBeingDisabled() {
     EmailField field = (EmailField) byId("account-email");
-    assertFalse(field.isEnabled());
+    assertTrue(field.isEnabled());
     assertTrue(field.isReadOnly());
     assertEquals(user.getEmail(), field.getValue());
     assertTrue(field.getHelperText() == null || field.getHelperText().isBlank());

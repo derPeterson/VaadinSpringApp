@@ -34,21 +34,68 @@ public final class ConfigurationPage {
         .and(page.locator("vaadin-button.cosmos-config-info"));
   }
 
-  public Locator tooltip() {
-    return page.getByRole(AriaRole.TOOLTIP);
+  public Locator helpPanel() {
+    return page.locator("#admin-config-help[opened]");
   }
 
   @Step("Feldinformation per Klick öffnen und die tatsächlichen Regeln prüfen")
   public void explain(String label, String description, String... rules) {
     info(label).click();
-    assertThat(tooltip()).isVisible();
-    assertThat(tooltip()).containsText(description);
+    assertThat(helpPanel()).isVisible();
+    assertThat(helpPanel()).containsText(description);
     for (String rule : rules) {
-      assertThat(tooltip()).containsText(rule);
+      assertThat(helpPanel()).containsText(rule);
     }
-    assertThat(tooltip()).containsText(texts.getAdminConfigInputRules());
-    info(label).click();
-    assertThat(tooltip()).hasCount(0);
+    assertThat(helpPanel()).containsText(texts.getAdminConfigInputRules());
+    closeHelp();
+    assertThat(helpPanel()).hasCount(0);
+  }
+
+  public void closeHelp() {
+    helpPanel()
+        .getByRole(
+            AriaRole.BUTTON,
+            new Locator.GetByRoleOptions().setName(texts.getNotificationsClose()).setExact(true))
+        .last()
+        .click();
+    assertThat(helpPanel()).hasCount(0);
+  }
+
+  public Locator duration(String label) {
+    return page.locator(".admin-duration-field")
+        .filter(new Locator.FilterOptions().setHas(input(label)));
+  }
+
+  public java.math.BigDecimal seconds(String label) {
+    Locator field = duration(label);
+    String selected = field.locator("vaadin-select-value-button").innerText().trim();
+    int factor;
+    if (selected.equals(texts.getAdminConfigDurationUnitDays())) {
+      factor = 86400;
+    } else if (selected.equals(texts.getAdminConfigDurationUnitHours())) {
+      factor = 3600;
+    } else if (selected.equals(texts.getAdminConfigDurationUnitMinutes())) {
+      factor = 60;
+    } else {
+      assertThat(field.locator("vaadin-select-value-button"))
+          .hasText(texts.getAdminConfigDurationUnitSeconds());
+      factor = 1;
+    }
+    return new java.math.BigDecimal(input(label).inputValue().replace(",", "."))
+        .multiply(java.math.BigDecimal.valueOf(factor));
+  }
+
+  public void enterSeconds(String label, java.math.BigDecimal value) {
+    duration(label).locator("vaadin-select").click();
+    page.getByRole(
+            AriaRole.OPTION,
+            new Page.GetByRoleOptions()
+                .setName(texts.getAdminConfigDurationUnitSeconds())
+                .setExact(true))
+        .click();
+    String number = value.toPlainString();
+    input(label).fill(texts.language().equals("de") ? number.replace('.', ',') : number);
+    input(label).press("Tab");
   }
 
   public String value(String label) {

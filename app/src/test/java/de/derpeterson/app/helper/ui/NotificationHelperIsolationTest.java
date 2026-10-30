@@ -1,6 +1,9 @@
 package de.derpeterson.app.helper.ui;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -8,6 +11,8 @@ import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.server.VaadinSession;
 import java.util.ArrayList;
@@ -16,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -107,6 +113,68 @@ class NotificationHelperIsolationTest {
         message(NotificationHelper.getInstance()).getInnerHtml().contains("First notice EN"));
     assertTrue(secondMessage.getInnerHtml().contains("Second notice EN"));
     assertTrue(notification(secondHelper).isOpened());
+  }
+
+  @ParameterizedTest
+  @EnumSource(NotificationHelper.NotificationType.class)
+  void referencePresentationKeepsNativeLifetimeAndDoesNotLeakToAnotherWindow(
+      NotificationHelper.NotificationType type) {
+    window(session());
+    Div referenceAccount = new Div();
+    referenceAccount.addClassNames("cosmos-theme", "cosmos-reference-portal");
+    UI.getCurrent().add(referenceAccount);
+    NotificationHelper helper = NotificationHelper.getInstance();
+    helper.showNotification(() -> "Title", () -> "Message", 4200, type);
+    Notification referenceNotice = notification(helper);
+    assertTrue(referenceNotice.getElement().getThemeList().contains("cosmos-reference"));
+    assertEquals(4200, referenceNotice.getDuration());
+    assertEquals(Notification.Position.TOP_CENTER, referenceNotice.getPosition());
+    assertTrue(message(helper).getInnerHtml().contains("Message"));
+    window(session());
+    NotificationHelper.getInstance().showNotification(() -> "Other window", type);
+    assertFalse(
+        notification(NotificationHelper.getInstance())
+            .getElement()
+            .getThemeList()
+            .contains("cosmos-reference"));
+    assertTrue(referenceNotice.isOpened());
+  }
+
+  @Test
+  void titleOnlySuccessKeepsItsTitleAndDoesNotCreateAnEmptyBody() {
+    window(session());
+    NotificationHelper helper = NotificationHelper.getInstance();
+    AtomicReference<String> title = new AtomicReference<>("Notifications refreshed.");
+    helper.showNotification(title::get, null, 4200, NotificationHelper.NotificationType.SUCCESS);
+    Notification notice = notification(helper);
+    Span heading = (Span) ReflectionTestUtils.getField(helper, "titleText");
+    assertEquals(title.get(), heading.getText());
+    assertNull(message(helper));
+    assertTrue(notice.isOpened());
+    title.set("Benachrichtigungen aktualisiert.");
+    helper.updateText();
+    assertEquals(title.get(), heading.getText());
+    assertNull(message(helper));
+    assertSame(notice, notification(helper));
+    assertEquals(4200, notice.getDuration());
+  }
+
+  @Test
+  void optionalBodyCanAppearAndDisappearDuringSupplierUpdates() {
+    window(session());
+    NotificationHelper helper = NotificationHelper.getInstance();
+    AtomicReference<String> body = new AtomicReference<>(" ");
+    helper.showNotification(
+        () -> "Title", body::get, 4200, NotificationHelper.NotificationType.SUCCESS);
+    Notification notice = notification(helper);
+    assertNull(message(helper));
+    body.set("Details");
+    helper.updateText();
+    assertTrue(message(helper).getInnerHtml().contains("Details"));
+    body.set("");
+    helper.updateText();
+    assertNull(message(helper));
+    assertSame(notice, notification(helper));
   }
 
   @Test

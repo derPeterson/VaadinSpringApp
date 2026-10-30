@@ -1,0 +1,124 @@
+/* Besucherbereich: native Flow-Komponenten im freigegebenen Referenzrahmen. */
+.cosmos-reference-portal.cosmos-reference-public { --cosmos-input-font-size:14px; }
+.cosmos-reference-public { display:flex;flex-direction:column;position:relative;isolation:isolate;min-height:100dvh;width:100%;box-sizing:border-box;background:var(--cosmos-reference-page);color:var(--cosmos-reference-text);font:400 13px/1.6 Inter,sans-serif; }
+.cosmos-reference-public .public-header { background:var(--cosmos-reference-page); }
+.cosmos-reference-public .public-header-inner { display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;max-width:1240px;height:64px;box-sizing:border-box;margin:0 auto;padding:0 32px; }
+.cosmos-reference-public .public-brand { display:flex;align-items:center;gap:10px;flex-shrink:0;color:var(--cosmos-reference-text);font:600 16px/24px Inter,sans-serif;text-decoration:none; }
+.cosmos-reference-public .public-brand img { display:block;width:40px;height:40px;margin:-6px; }
+.cosmos-reference-public .public-navigation { display:flex;align-items:center;gap:8px; }
+.cosmos-reference-public .public-navigation > vaadin-button { height:36px;margin:0;padding:0 12px;border-color:transparent;background:transparent;font:600 12px/1.4 Inter,sans-serif; }
+.cosmos-reference-public .public-navigation > vaadin-button::part(prefix) { margin-inline-start:0; }
+.cosmos-reference-public .public-navigation > vaadin-button > vaadin-icon { width:16px;height:16px; }
+.cosmos-reference-public .public-navigation > vaadin-button.public-nav-active { border-color:var(--cosmos-reference-primary);background:var(--cosmos-reference-selection);color:var(--cosmos-reference-accent); }
+.cosmos-reference-public .public-languages { display:flex;align-items:center;gap:4px;padding:2px;background:#ffffff0d;border:1px solid var(--cosmos-reference-border);border-radius:6px; }
+.cosmos-reference-public .public-languages vaadin-button { height:auto;min-height:0;min-width:0;margin:0;padding:2px 8px;border:0;border-radius:4px;background:transparent;color:var(--cosmos-reference-secondary);font:500 11px/16.5px Inter,sans-serif; }
+.cosmos-reference-public .public-languages vaadin-button[aria-pressed=true] { border:1px solid var(--cosmos-reference-primary);background:var(--cosmos-reference-selection);color:var(--cosmos-reference-accent);font-weight:600; }
+.cosmos-reference-public .public-main { flex:1;position:relative;z-index:1;width:100%;max-width:1240px;box-sizing:border-box;margin:0 auto;padding:32px; }
+.cosmos-reference-public .public-page-heading { margin:0; }
+.cosmos-reference-public .public-title-row { display:flex;align-items:baseline;justify-content:space-between;gap:4px;margin-top:8px; }
+.cosmos-reference-public .public-kicker { display:block;color:var(--cosmos-reference-accent);font:600 12px/16px Inter,sans-serif;letter-spacing:.05em; }
+.cosmos-reference-public .public-page-heading h1 { margin:0;color:var(--cosmos-reference-white);font:700 30px/36px Inter,sans-serif;letter-spacing:-.025em; }
+.cosmos-reference-public .public-page-description { color:var(--cosmos-reference-secondary);font:400 14px/20px Inter,sans-serif; }
+.cosmos-reference-public .public-cards { display:flex;align-items:stretch;width:100%;gap:24px; }
+.cosmos-reference-public .public-panel { display:flex;flex-direction:column;align-items:stretch;width:100%;max-width:600px;padding:0;margin:0 auto;background:var(--cosmos-reference-page);border:1px solid var(--cosmos-reference-border);border-radius:16px;box-shadow:none;overflow:hidden; }
+.cosmos-reference-public[data-public-page=register] .public-panel,.cosmos-reference-public:has(#session-recovery:not([hidden])) .public-cards { max-width:880px; }
+.cosmos-reference-public .public-panel > .cosmos-panel-header { display:flex;align-items:center;box-sizing:border-box;gap:12px;width:100%;padding:24px;background:var(--cosmos-reference-panel);border-bottom:1px solid var(--cosmos-reference-border);margin:0; }
+.cosmos-reference-public .public-panel .cosmos-panel-icon { display:flex;align-items:center;justify-content:center;flex-shrink:0;width:40px;height:40px;border:1px solid var(--cosmos-reference-icon-border);border-radius:12px;background:var(--cosmos-reference-selection);color:var(--cosmos-reference-accent); }
+.cosmos-reference-public .public-panel .cosmos-panel-icon > vaadin-icon { width:20px;height:20px;margin:0;padding:0;font-size:20px; }
+.cosmos-reference-public .public-panel .cosmos-panel-heading { min-width:0;flex:1; }
+.cosmos-reference-public .public-panel .cosmos-headline { margin:0;font:650 18px/25px Inter,sans-serif;letter-spacing:-.025em;text-align:left;color:var(--cosmos-reference-text); }
+.cosmos-reference-public .public-panel .cosmos-panel-description { display:block;margin-top:4px;font:400 12px/19px Inter,sans-serif;color:var(--cosmos-reference-secondary); }
+.public-email-outcome .cosmos-reference-public .public-panel .cosmos-panel-description { display:none; }
+.cosmos-reference-public[data-public-page=verification] .public-panel .cosmos-panel-description,
+.cosmos-reference-public[data-public-page=reset] .public-panel:has(.cosmos-status-icon) .cosmos-panel-description { display:none; }
+.cosmos-reference-public .public-panel-body { display:flex;flex-direction:column;gap:20px;padding:24px;background:var(--cosmos-reference-page);color:var(--cosmos-reference-secondary);font:400 13px/1.8 Inter,sans-serif; }
+.cosmos-reference-public .public-panel-body:empty { display:none; }
+.cosmos-reference-public .public-panel-body > .cosmos-panel-hint { display:flex;flex:none;align-items:center;gap:10px;margin:0;padding:12px;border:1px solid var(--cosmos-reference-border);border-radius:9px;background:var(--cosmos-reference-input);color:var(--cosmos-reference-secondary);font:400 11px/1.8 Inter,sans-serif; }
+.cosmos-reference-public .public-panel-body > .cosmos-panel-hint > vaadin-icon { width:16px;height:16px;flex-shrink:0;margin:0;color:var(--cosmos-reference-accent); }
+.cosmos-reference-public .public-panel-footer { display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:12px;width:100%;box-sizing:border-box;padding:16px 24px;background:var(--cosmos-reference-panel);border-top:1px solid var(--cosmos-reference-border); }
+.cosmos-reference-public .public-panel-footer > vaadin-button { width:auto!important;flex-shrink:0; }
+.cosmos-reference-public .public-panel-actions { display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px;max-width:100%; }
+.cosmos-reference-public .public-panel-actions > vaadin-button { width:100%;min-width:156px;margin:0; }
+.cosmos-reference-public .public-panel-footer > .cosmos-intro { width:auto!important;margin:0 auto 0 0;justify-content:flex-start;align-items:center;gap:8px;font:400 12px/19px Inter,sans-serif; }
+.cosmos-reference-public .public-panel-footer > .cosmos-intro > span { color:var(--cosmos-reference-secondary);font:inherit; }
+.cosmos-reference-public .public-panel-footer > .cosmos-intro > a { font:inherit;font-weight:600; }
+.cosmos-reference-public .public-panel-footer a { color:var(--cosmos-reference-accent);text-decoration:none;white-space:nowrap; }
+.cosmos-reference-public .public-panel-footer a:hover { text-decoration:underline; }
+.cosmos-reference-public .public-panel-body .cosmos-options { justify-content:space-between;margin:0;gap:12px; }
+.cosmos-reference-public .public-panel-body .cosmos-remember,.cosmos-reference-public .public-panel-body .cosmos-forgot { margin:0;padding:0; }
+.cosmos-reference-public .public-panel-body .cosmos-forgot a { color:var(--cosmos-reference-accent);font:400 12px/1.6 Inter,sans-serif;text-decoration:none; }
+.cosmos-reference-public .cosmos-form-row { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin:0; }
+.cosmos-reference-public .public-panel-body .cosmos-intro { margin:0;padding:0;align-items:flex-start;text-align:left;color:var(--cosmos-reference-secondary);font:400 13px/1.8 Inter,sans-serif; }
+.cosmos-reference-public .public-panel-body .cosmos-form-text { font:inherit;margin:0;text-align:left; }
+.cosmos-reference-portal.cosmos-reference-public > .cosmos-footer { position:relative;flex:0 0 auto;width:100%;box-sizing:border-box;margin:0;padding:12px 24px;border-top:1px solid var(--cosmos-reference-border);background:var(--cosmos-reference-page);color:var(--cosmos-reference-muted);font:400 11px/16px Inter,sans-serif;text-align:center; }
+.cosmos-reference-public .public-panel .cosmos-panel-icon:has(>.cosmos-status-icon--warning) { color:var(--cosmos-reference-warning);border-color:#fbbf2444;background:#fbbf2414; }
+.cosmos-reference-public .public-panel .cosmos-panel-icon:has(>.cosmos-status-icon.text-error) { color:var(--cosmos-reference-invalid);border-color:#f8717144;background:#f8717114; }
+.cosmos-reference-public .public-panel .cosmos-status-icon.text-error { color:var(--cosmos-reference-invalid)!important; }
+.cosmos-reference-public .public-panel .cosmos-status-icon--warning { color:var(--cosmos-reference-warning)!important; }
+.cosmos-reference-public .public-panel .cosmos-panel-icon:has(>.text-success) { color:var(--cosmos-reference-success);border-color:#10b98140;background:#10b98114; }
+.cosmos-reference-public .public-home { width:100%;max-width:none;border-radius:14px;box-shadow:none; }
+.cosmos-reference-public .public-home::before { content:none; }
+.cosmos-reference-public .public-home .portal-home-layout { grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px;min-height:0;padding:40px 40px 24px; }
+.cosmos-reference-public .public-home .portal-home-copy { font:400 16px/24px Inter,system-ui; }
+.cosmos-reference-public .public-home .portal-home-kicker { margin:0;font:600 12px/16px Inter,system-ui;letter-spacing:.05em; }
+.cosmos-reference-public .public-home .portal-home-copy h2 { max-width:none;margin:12px 0 16px;color:var(--cosmos-reference-text);font:700 32px/1.35 Inter,system-ui;letter-spacing:normal; }
+.cosmos-reference-public .public-home .portal-home-description { max-width:460px;margin:0;font:400 13px/1.9 Inter,system-ui; }
+.cosmos-reference-public .public-home .portal-home-actions { margin-top:22px;gap:8px; }
+.cosmos-reference-public .public-home .portal-home-actions > vaadin-button { font-size:12px; }
+.cosmos-reference-public .public-home .portal-home-art { width:100%;max-width:420px;margin:auto;justify-self:center;filter:none; }
+.cosmos-reference-public .public-home .portal-home-planet { width:100%;max-width:420px; }
+.cosmos-reference-public .public-cards:has(#session-recovery:not([hidden])) { margin-inline:auto; }
+.cosmos-reference-public #session-recovery { width:100%;max-width:880px;margin:0 auto; }
+.cosmos-reference-public #session-recovery .account-panel { margin:0; }
+.cosmos-reference-public #session-recovery .account-session-heading { grid-template-columns:minmax(0,1fr) auto; }
+.cosmos-reference-public #session-recovery .account-session-heading > div:first-child { display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0; }
+.cosmos-reference-public #session-recovery #account-panel-sessions > .cosmos-panel-footer:last-child > .cosmos-panel-actions { border-top:0;justify-content:flex-end; }
+.cosmos-reference-public vaadin-button:focus-visible { outline:2px solid var(--cosmos-reference-accent);outline-offset:2px; }
+.cosmos-reference-public .public-navigation vaadin-button::part(label) { white-space:nowrap; }
+@media(min-width:640px) and (max-width:1023px) {
+ .cosmos-reference-public .public-header-inner { padding:0 24px; }
+ .cosmos-reference-public .public-main { padding:32px 24px; }
+}
+@media(max-width:639px) {
+ .cosmos-reference-public .public-panel-actions { grid-auto-flow:row;grid-template-columns:minmax(0,1fr);width:100%; }
+ .cosmos-reference-public .public-panel-actions > vaadin-button { min-width:0; }
+ .cosmos-reference-public .public-home .portal-home-layout { grid-template-columns:minmax(0,1fr);padding:24px; }
+ .cosmos-reference-public .public-home .portal-home-copy h2 { font-size:28px; }
+ .cosmos-reference-public .public-home .portal-home-art { max-width:260px; }
+ .cosmos-reference-public .public-header-inner { padding:0 16px; }
+ .cosmos-reference-public .public-header .public-brand { min-width:0; }
+ .cosmos-reference-public .public-header .public-navigation { flex:0 0 auto;gap:4px;justify-content:flex-end; }
+ .cosmos-reference-public .public-header .public-navigation > vaadin-button { width:36px;min-width:36px;min-height:36px;padding:0; }
+ .cosmos-reference-public .public-header .public-navigation > vaadin-button::part(label) { display:none; }
+ .cosmos-reference-public .public-header .public-navigation > vaadin-button::part(prefix) { margin:0; }
+ .cosmos-reference-public .public-main { padding:24px 16px; }
+ .cosmos-reference-public .public-title-row { flex-direction:column;align-items:flex-start; }
+ .cosmos-reference-public .public-page-heading h1 { font-size:24px;line-height:32px; }
+ .cosmos-reference-public .public-page-description { font-size:12px;line-height:16px; }
+ .cosmos-reference-public .public-panel > .cosmos-panel-header { padding:20px; }
+ .cosmos-reference-public .public-panel-body { padding:20px; }
+ .cosmos-reference-public .public-panel-footer { padding:16px 20px; }
+ .cosmos-reference-public .cosmos-form-row { grid-template-columns:1fr; }
+ .cosmos-reference-public .public-panel-footer > .cosmos-intro { flex-basis:100%; }
+ .cosmos-reference-public .public-panel-footer > vaadin-button { min-width:0; }
+}
+@media(max-width:359px) {
+ .cosmos-reference-public #session-recovery .account-session-heading { grid-template-columns:minmax(0,1fr); }
+}
+
+.cosmos-reference-public .public-page-heading h1::after{content:".";color:var(--cosmos-reference-accent)}
+.cosmos-reference-public vaadin-checkbox::part(checkbox){width:16px;height:16px;box-sizing:border-box;border:1px solid var(--cosmos-reference-control-border);border-radius:5px;background:var(--cosmos-reference-input)}
+.cosmos-reference-public vaadin-checkbox[checked]::part(checkbox){background:var(--cosmos-reference-primary);border-color:var(--cosmos-reference-primary)}
+.cosmos-reference-public vaadin-checkbox::part(label){font:400 12px/18px Inter,sans-serif;color:var(--cosmos-reference-secondary);padding-inline-start:8px}
+.cosmos-reference-public .cosmos-remember vaadin-checkbox { display:inline-flex;align-items:center;vertical-align:middle;margin:0;padding:0; }
+.cosmos-reference-public .cosmos-remember vaadin-checkbox::part(checkbox) { width:18px;height:18px;margin:0;align-self:center; }
+.cosmos-reference-public .cosmos-remember vaadin-checkbox::part(label) { margin:0;padding:0 0 0 9px;line-height:19.2px;align-self:center; }
+.cosmos-reference-public .cosmos-remember vaadin-checkbox > label[slot=label] { padding:0; }
+
+@media(max-width:440px) {
+ .cosmos-reference-public .public-header-inner { padding:0 12px;gap:8px; }
+ .cosmos-reference-public .public-brand { font-size:13px; }
+}
+@media(max-width:380px) {
+ .cosmos-reference-public .public-brand > span { display:none; }
+}

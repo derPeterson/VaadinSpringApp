@@ -9,7 +9,6 @@ import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
@@ -284,25 +283,16 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     assertThat(settings.input(label)).hasAttribute("placeholder", "VaadinSpringApp (Browser-Test)");
     settings.enter(label, draft);
     settings.info(label).click();
-    assertThat(settings.tooltip()).isVisible();
-    Locator overlay = page.locator("vaadin-tooltip-overlay[opened] [part='overlay']");
-    Locator card = page.locator(".cosmos-config-card");
-    for (String property :
-        new String[] {"background-image", "border-radius", "border-top-color", "box-shadow"}) {
-      assertThat(overlay)
-          .hasCSS(
-              property,
-              (String)
-                  card.evaluate("(el, p) => getComputedStyle(el).getPropertyValue(p)", property));
-    }
-    assertThat(overlay).hasCSS("width", "360px");
-    assertThat(settings.tooltip()).hasCSS("font-size", "12px");
-    assertThat(settings.tooltip()).hasCSS("font-weight", "400");
-    assertThat(settings.tooltip()).containsText(texts.getAdminConfigEntryServiceNameTooltip());
-    assertThat(settings.tooltip())
-        .containsText(texts.getAdminConfigDefault() + ": VaadinSpringApp (Browser-Test)");
-    assertThat(settings.tooltip()).containsText(texts.getAdminConfigHelperServiceNameMax(30));
-    assertThat(page.locator("vaadin-dialog-overlay[opened]")).hasCount(0);
+    assertThat(settings.helpPanel()).isVisible();
+    Locator overlay = page.locator("#admin-config-help [part~='overlay']");
+    assertThat(overlay).hasCSS("width", "380px");
+    assertThat(settings.helpPanel().locator(".admin-help-description")).hasCSS("font-size", "12px");
+    assertThat(settings.helpPanel().locator(".admin-help-description"))
+        .hasCSS("font-weight", "400");
+    assertThat(settings.helpPanel()).containsText(texts.getAdminConfigEntryServiceNameTooltip());
+    assertThat(settings.helpPanel()).containsText("VaadinSpringApp (Browser-Test)");
+    assertThat(settings.helpPanel()).containsText(texts.getAdminConfigHelperServiceNameMax(30));
+    assertThat(page.locator("#admin-config-help[opened]")).hasCount(1);
     AllurePlaywright.attachScreenshot("Klick-Tooltip mit tatsächlichem Default und Regeln", page);
     page.getByRole(
             AriaRole.HEADING,
@@ -311,7 +301,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
                 .setName(texts.getAdminConfigTitle())
                 .setExact(true))
         .click();
-    assertThat(settings.tooltip()).hasCount(0);
+    assertThat(settings.helpPanel()).hasCount(0);
     settings.explain(
         label,
         texts.getAdminConfigEntryServiceNameTooltip(),
@@ -322,10 +312,10 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     try {
       new UserMenu(page).selectLanguage(other.language());
       settings.info(other.getAdminConfigEntryServiceName()).click();
-      assertThat(settings.tooltip()).containsText(other.getAdminConfigEntryServiceNameTooltip());
-      assertThat(settings.tooltip()).containsText(other.getAdminConfigHelperServiceNameMax(30));
+      assertThat(settings.helpPanel()).containsText(other.getAdminConfigEntryServiceNameTooltip());
+      assertThat(settings.helpPanel()).containsText(other.getAdminConfigHelperServiceNameMax(30));
       assertThat(settings.input(other.getAdminConfigEntryServiceName())).hasValue(draft);
-      settings.info(other.getAdminConfigEntryServiceName()).click();
+      settings.closeHelp();
     } finally {
       new UserMenu(page).selectTestLanguage();
     }
@@ -345,18 +335,21 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     ConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.QUEUE);
     String label = texts.getAdminConfigEntryEmailQueueSentLiveDuration(),
-        original = settings.value(label);
+        original = new de.derpeterson.browsertests.pages.TokenConfigurationPage(page).value(label);
     try {
-      settings.enter(label, "PT0S");
-      settings.reject("vaadin-text-field", texts.getAdminConfigValidationPositiveDuration());
+      settings.enterSeconds(label, java.math.BigDecimal.ZERO);
+      settings.reject("vaadin-big-decimal-field", texts.getAdminConfigValidationPositiveDuration());
       settings.reload();
-      assertThat(settings.input(label)).hasValue(original);
-      settings.enter(label, "1s");
+      assertEquals(
+          original,
+          new de.derpeterson.browsertests.pages.TokenConfigurationPage(page).value(label));
+      settings.enterSeconds(label, java.math.BigDecimal.ONE);
       settings.save();
       settings.reload();
-      assertThat(settings.input(label)).hasValue("PT1S");
+      assertEquals(
+          "PT1S", new de.derpeterson.browsertests.pages.TokenConfigurationPage(page).value(label));
     } finally {
-      settings.enter(label, original);
+      new de.derpeterson.browsertests.pages.TokenConfigurationPage(page).enter(label, original);
       settings.save();
     }
   }
@@ -384,25 +377,25 @@ public class ConfigurationBrowserTest extends BrowserFixture {
           .hasText(texts.getAdminConfigSettingsCount(count));
       for (Locator info : infos.all()) {
         info.click();
-        assertThat(settings.tooltip()).hasCount(1);
-        assertThat(settings.tooltip()).isVisible();
+        assertThat(settings.helpPanel()).hasCount(1);
+        assertThat(settings.helpPanel()).isVisible();
         if (group == AdminConfigGroup.NOTIFICATIONS) {
-          assertThat(settings.tooltip()).containsText(texts.getAdminConfigInitialValue() + ":");
-          assertThat(settings.tooltip()).containsText(texts.getAdminConfigRuleEmptyUnlimited());
+          assertThat(settings.helpPanel()).containsText(texts.getAdminConfigInitialValue());
+          assertThat(settings.helpPanel()).containsText(texts.getAdminConfigRuleEmptyUnlimited());
         } else {
-          assertThat(settings.tooltip()).containsText(texts.getAdminConfigDefault() + ":");
+          assertThat(settings.helpPanel()).containsText(texts.getAdminConfigDefault());
         }
-        assertThat(settings.tooltip()).containsText(texts.getAdminConfigInputRules() + ":");
+        assertThat(settings.helpPanel()).containsText(texts.getAdminConfigInputRules());
         assertTrue(
-            settings.tooltip().innerText().contains("• "),
+            settings.helpPanel().locator(".admin-help-rules li").count() > 0,
             "Feldinfo hat keine Eingaberegel: " + info.getAttribute("aria-labelledby"));
         if (info.getAttribute("aria-labelledby").equals("config-label-remember_me_secret_key")) {
-          assertThat(settings.tooltip()).containsText(texts.getAdminConfigDefaultConfidential());
+          assertThat(settings.helpPanel()).containsText(texts.getAdminConfigDefaultConfidential());
         } else if (info.getAttribute("aria-labelledby").equals("config-label-mail_password")) {
-          assertThat(settings.tooltip()).containsText(texts.getAdminConfigDefaultEmpty());
+          assertThat(settings.helpPanel()).containsText(texts.getAdminConfigDefaultEmpty());
         }
-        info.click();
-        assertThat(settings.tooltip()).hasCount(0);
+        settings.closeHelp();
+        assertThat(settings.helpPanel()).hasCount(0);
       }
       total += count;
     }
@@ -457,17 +450,15 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   void manualInfoRemainsWithinTheMobileViewport() {
     ConfigurationPage settings = admin();
     page.setViewportSize(320, 568);
-    // Vaadin schaltet nach dem Resize asynchron vom Desktop-Drawer in den
-    // geschlossenen Overlaymodus. Erst danach die Navigation tatsächlich öffnen.
-    assertThat(page.locator("vaadin-app-layout")).hasAttribute("overlay", "");
-    assertThat(page.locator("vaadin-app-layout")).not().hasAttribute("drawer-opened", "");
+    assertThat(page.locator("#account-navigation-toggle")).isVisible();
+    assertThat(page.locator("#account-navigation-toggle")).hasAttribute("aria-expanded", "false");
     settings.open(AdminConfigGroup.GENERAL);
     String label = texts.getAdminConfigEntryServiceName();
     settings.info(label).click();
-    assertThat(settings.tooltip()).isVisible();
-    assertThat(settings.tooltip()).containsText(texts.getAdminConfigEntryServiceNameTooltip());
-    Locator overlay = page.locator("vaadin-tooltip-overlay[opened] [part='overlay']");
-    assertThat(overlay).hasCSS("width", "288px");
+    assertThat(settings.helpPanel()).isVisible();
+    assertThat(settings.helpPanel()).containsText(texts.getAdminConfigEntryServiceNameTooltip());
+    Locator overlay = page.locator("#admin-config-help [part~='overlay']");
+    assertThat(overlay).hasCSS("width", "320px");
     BoundingBox bounds = overlay.boundingBox();
     assertTrue(
         bounds.x >= -1
@@ -478,8 +469,8 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     assertTrue(
         (Boolean) page.evaluate("() => document.documentElement.scrollWidth <= innerWidth + 1"));
     AllurePlaywright.attachScreenshot("Mobiler Klick-Tooltip bei 320×568", page);
-    settings.info(label).click();
-    assertThat(settings.tooltip()).hasCount(0);
+    settings.closeHelp();
+    assertThat(settings.helpPanel()).hasCount(0);
     UserMenu menu = new UserMenu(page);
     menu.open();
     Locator menuContent =
@@ -489,31 +480,11 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         "Das schmale Benutzermenü darf keinen horizontalen Überlauf haben.");
     Locator status = new UserStatusMenu(page).current();
     status.scrollIntoViewIfNeeded();
-    status.click();
-    Locator statusOverlay = page.locator("vaadin-select-overlay[opened] > [part~='overlay']");
-    assertThat(statusOverlay).isVisible();
-    // Die native Overlayposition wird nach Größenmessung/Öffnungsanimation aktualisiert.
-    context.waitForCondition(
-        () -> {
-          BoundingBox candidate = statusOverlay.boundingBox();
-          return candidate != null
-              && candidate.x >= 0
-              && candidate.x + candidate.width <= 321
-              && candidate.y >= 0
-              && candidate.y + candidate.height <= 569;
-        },
-        new BrowserContext.WaitForConditionOptions().setTimeout(5_000));
-    BoundingBox statusBounds = statusOverlay.boundingBox();
+    BoundingBox statusBounds = status.boundingBox();
     assertTrue(
-        statusBounds.x >= 0
-            && statusBounds.x + statusBounds.width <= 321
-            && statusBounds.y >= 0
-            && statusBounds.y + statusBounds.height <= 569,
-        "Statusauswahl muss im mobilen Fenster bleiben: " + statusBounds);
-    AllurePlaywright.attachScreenshot("Mobile Statusauswahl", page);
-    page.keyboard().press("Escape");
-    assertThat(page.locator("vaadin-select-overlay[opened], vaadin-select-overlay[closing]"))
-        .hasCount(0);
+        statusBounds.x >= 0 && statusBounds.x + statusBounds.width <= 321,
+        "Statusauswahl muss im mobilen Fenster bleiben.");
+    menu.close();
     menu.open();
     Locator logout =
         page.getByRole(

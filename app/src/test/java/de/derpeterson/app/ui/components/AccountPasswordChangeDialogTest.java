@@ -10,6 +10,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ModalityMode;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -115,7 +116,9 @@ class AccountPasswordChangeDialogTest {
     assertTrue(
         slot(dialog.getHeader().getElement())
             .anyMatch(
-                component -> "vaadin:lock".equals(component.getElement().getAttribute("icon"))));
+                component ->
+                    component instanceof SvgIcon icon
+                        && "icons/lucide/key-round.svg".equals(icon.getSrc())));
     assertEquals(ModalityMode.STRICT, dialog.getModality());
     assertTrue(dialog.isCloseOnEsc());
     assertTrue(dialog.isCloseOnOutsideClick());

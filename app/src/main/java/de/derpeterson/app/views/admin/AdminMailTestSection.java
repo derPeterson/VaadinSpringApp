@@ -7,11 +7,11 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
@@ -22,9 +22,11 @@ import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.MaintenanceService.State;
 import de.derpeterson.app.service.EmailService;
+import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
@@ -57,11 +59,14 @@ public class AdminMailTestSection extends VerticalLayout {
   private final Span mailCardDescription;
   private final Span mailCardBadge;
   private final Span mailSendHint;
+  private final Span mailBodyHint = new Span();
   private final Span mailTestDescription;
   private final EmailField testRecipientField;
   private final TextField testSubjectField;
   private final TextArea testBodyField;
   private final Button sendTestMailButton;
+  private final Anchor smtpLink =
+      new Anchor(AppRoute.ADMIN.getRoute() + "?section=configuration&group=smtp", "");
   private final ConfigInfoButton recipientInfoButton;
   private final ConfigInfoButton subjectInfoButton;
   private final ConfigInfoButton bodyInfoButton;
@@ -104,7 +109,6 @@ public class AdminMailTestSection extends VerticalLayout {
     testRecipientField.setClearButtonVisible(true);
     testRecipientField.setWidthFull();
     testRecipientField.setRequiredIndicatorVisible(true);
-    testRecipientField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
 
     if (authenticatedUser != null) {
       testRecipientField.setValue(authenticatedUser.getUsername());
@@ -113,7 +117,6 @@ public class AdminMailTestSection extends VerticalLayout {
     testSubjectField = new TextField();
     testSubjectField.setWidthFull();
     testSubjectField.setRequiredIndicatorVisible(true);
-    testSubjectField.setPrefixComponent(VaadinIcon.FONT.create());
 
     testBodyField = new TextArea();
     testBodyField.setWidthFull();
@@ -140,7 +143,7 @@ public class AdminMailTestSection extends VerticalLayout {
                     messageProperties.getAdminMailValidationBody()));
 
     sendTestMailButton = new Button();
-    sendTestMailButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
+    sendTestMailButton.setPrefixComponent(AppIcon.PAPERPLANE.create());
     sendTestMailButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     sendTestMailButton.addClickListener(clickEvent -> sendTestMail());
     // Enter im Nachrichtentext bleibt ein Zeilenumbruch. Navigation und Info-Buttons
@@ -198,7 +201,7 @@ public class AdminMailTestSection extends VerticalLayout {
   }
 
   private VerticalLayout createMailCardContent() {
-    Icon envelope = VaadinIcon.ENVELOPE.create();
+    SvgIcon envelope = AppIcon.ENVELOPE.create();
     envelope.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div iconBadge = new Div(envelope);
     iconBadge.addClassName("cosmos-panel-icon");
@@ -217,10 +220,15 @@ public class AdminMailTestSection extends VerticalLayout {
     fields.setWidthFull();
     fields.addClassName("cosmos-mail-fields");
 
-    Icon hintIcon = VaadinIcon.INFO_CIRCLE.create();
+    SvgIcon hintIcon = AppIcon.INFO_CIRCLE.create();
     hintIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
-    Div hint = new Div(hintIcon, mailSendHint);
+    Div hintCopy = new Div(mailSendHint, smtpLink);
+    hintCopy.addClassName("admin-mail-hint-copy");
+    Div hint = new Div(hintIcon, hintCopy);
     hint.addClassName("cosmos-panel-hint");
+    smtpLink.addClassName("admin-smtp-link");
+    smtpLink.setText(messageProperties.getAdminConfigGroupSmtp());
+    testBodyField.setHelperText(messageProperties.getAdminMailBodyHint());
     Div actions = new Div(sendTestMailButton);
     actions.addClassName("cosmos-panel-actions");
     Div footer = new Div(hint, actions);
@@ -238,6 +246,13 @@ public class AdminMailTestSection extends VerticalLayout {
   private Div createMailFieldRow(Component input, ConfigInfoButton infoButton) {
     Div row = new Div(input, infoButton);
     row.addClassNames("cosmos-config-input-row", "cosmos-mail-field-row");
+    if (input == testBodyField) {
+      row.addClassName("cosmos-mail-body-row");
+      mailBodyHint.addClassName("cosmos-mail-body-hint");
+      // Die native Hilfsbeschreibung bleibt für assistive Technik am Eingabefeld erhalten.
+      mailBodyHint.getElement().setAttribute(ARIA_HIDDEN, "true");
+      row.add(mailBodyHint);
+    }
     return row;
   }
 
@@ -257,6 +272,12 @@ public class AdminMailTestSection extends VerticalLayout {
     mailCardBadge.setText(messageProperties.getAdminMailCardBadge());
     refreshDeliveryState();
     mailSendHint.setText(messageProperties.getAdminMailSendHint());
+    smtpLink.setText(messageProperties.getAdminConfigGroupSmtp());
+    testBodyField.setHelperText(messageProperties.getAdminMailBodyHint());
+    mailBodyHint.setText(messageProperties.getAdminMailBodyHint());
+    testRecipientField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
+    testSubjectField.setPlaceholder(messageProperties.getAdminMailSubject());
+    testBodyField.setPlaceholder(messageProperties.getAdminMailBody());
     recipientInfoButton.refreshText();
     subjectInfoButton.refreshText();
     bodyInfoButton.refreshText();

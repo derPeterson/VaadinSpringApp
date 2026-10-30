@@ -76,6 +76,7 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
     CompactDateInput.configure(date, texts);
     date.setLabel(texts.getAdminUsersFilterActiveSince());
     date.setAriaLabel(texts.getAdminUsersActivityDate());
+    date.setPlaceholder(texts.getRegistrationBirthDatePlaceholder());
     refreshPlaceholders();
     time.setAriaLabel(texts.getAdminUsersActivityTimeOptional());
   }
@@ -84,8 +85,6 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
     Locale locale = date.getLocale();
     boolean german = Locale.GERMAN.getLanguage().equals(locale.getLanguage());
     LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), UserActivityTime.DISPLAY_ZONE);
-    String datePattern = german ? "dd.MM.uuuu" : "MM/dd/uuuu";
-    date.setPlaceholder(now.toLocalDate().format(DateTimeFormatter.ofPattern(datePattern, locale)));
     int stepMinutes = Math.toIntExact(time.getStep().toMinutes());
     LocalTime roundedTime =
         now.toLocalTime()

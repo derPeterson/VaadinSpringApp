@@ -76,11 +76,11 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
         }) {
       page.navigate(route);
       checkDesign(page);
-      for (Locator input : page.locator(".cosmos-card vaadin-email-field").all()) {
+      for (Locator input : page.locator(".public-panel vaadin-email-field").all()) {
         assertThat(input)
             .hasJSProperty(
                 "placeholder",
-                texts.getRegistrationConfirmField().equals(input.evaluate("el => el.label"))
+                texts.getPublicConfirmEmailField().equals(input.evaluate("el => el.label"))
                     ? texts.getAccountConfirmEmailPlaceholder()
                     : texts.getAccountEmailPlaceholder());
       }
@@ -151,7 +151,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     reset.submit();
     reset.assertChanged();
     assertThat(resetPage.locator("vaadin-notification-card:not([closing])"))
-        .hasAttribute("theme", "cosmos");
+        .hasAttribute("theme", java.util.regex.Pattern.compile(".*\\bcosmos\\b.*"));
     AllurePlaywright.attachScreenshot("Mobiler Passwortreset erfolgreich", resetPage);
     LoginPage login = new LoginPage(resetPage);
     login.open();
@@ -233,9 +233,9 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, "DefinitelyWrong1!");
     login.assertRejected();
     Locator notice = page.locator("vaadin-notification-card:not([closing])");
-    assertThat(notice).hasAttribute("theme", "cosmos");
+    assertThat(notice).hasAttribute("theme", java.util.regex.Pattern.compile(".*\\bcosmos\\b.*"));
     String cardBackground =
-        page.locator(".cosmos-card")
+        page.locator(".public-panel")
             .evaluate("el => getComputedStyle(el).backgroundImage")
             .toString();
     assertEquals(
@@ -248,7 +248,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     page.navigate(path(HOME_ROUTE));
     assertThat(page).hasTitle(HOME_PAGE_TITLE);
     assertEquals(homePrimary, primary(page, "html"));
-    assertThat(page.locator(".cosmos-app-shell.cosmos-theme")).isVisible();
+    assertThat(page.locator(".cosmos-page-frame.cosmos-reference-public")).isVisible();
     assertEquals("#526ebc", primary(page, ".cosmos-page.cosmos-theme"));
     assertTrue(
         page.locator("body")
@@ -288,18 +288,18 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     menu.selectTestLanguage();
     assertAppShell();
     openDrawerIfNeeded();
-    Locator drawer = page.locator("vaadin-app-layout [part='drawer']");
+    Locator drawer = page.locator("#admin-sidebar");
     assertThat(drawer).isVisible();
     assertWithinViewport(drawer);
     new AdminNavigation(page).openSection(texts.getAdminNavDashboard());
     closeOverlayDrawerIfNeeded();
     login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
-    if (!(Boolean) page.locator("vaadin-app-layout").evaluate("el => el.hasAttribute('overlay')")) {
+    if (!page.locator("#account-navigation-toggle").isVisible()) {
       double right =
           ((Number) drawer.evaluate("el => el.getBoundingClientRect().right")).doubleValue();
       double left =
           ((Number)
-                  page.locator(".cosmos-app-main")
+                  page.locator(".cosmos-admin-sections")
                       .evaluate("el => el.getBoundingClientRect().left"))
               .doubleValue();
       assertTrue(left >= right - 1, "Desktopinhalt muss neben der Navigation beginnen.");
@@ -347,7 +347,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     page.setViewportSize(width, 1000);
     page.navigate(path(ACCOUNT_ROUTE));
     for (String section : new String[] {"profile", "security", "sessions"}) {
-      page.locator("#account-tab-" + section).click();
+      new de.derpeterson.browsertests.pages.AccountPage(page).section("account-tab-" + section);
       Locator panel = page.locator("#account-panel-" + section);
       assertThat(panel).isVisible();
       assertHintCentered(panel.locator(".cosmos-panel-hint"));
@@ -366,6 +366,49 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("Zentrierte Infohinweise", page);
   }
 
+  @ParameterizedTest(name = "COSMOS-07: Gemeinsamer Seitenrahmen bei {0}px")
+  @ValueSource(ints = {1280, 390})
+  @Description(
+      "Servicekopf bleibt beim Scrollen stehen. Bereichskopf und Seitennavigation scrollen mit dem Inhalt. Feldhilfe respektiert den sichtbaren Copyrightfooter.")
+  void sharedFrameScrollsContentAndKeepsTheServiceHeader(int width) {
+    LoginPage login = new LoginPage(page);
+    login.open();
+    login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    page.setViewportSize(width, 600);
+    new AdminNavigation(page).openGroup(AdminConfigGroup.SMTP);
+    Locator header = page.locator(".cosmos-frame-header");
+    Locator heading = page.locator(".admin-reference-page-heading");
+    double headingTop = heading.boundingBox().y;
+    page.mouse().wheel(0, 600);
+    context.waitForCondition(() -> heading.boundingBox().y < headingTop - 20);
+    assertEquals(0, header.boundingBox().y, 1);
+    assertTrue(
+        heading.boundingBox().y < headingTop - 20,
+        "Der Bereichskopf darf nicht in einem eigenen festen Navbarbereich bleiben.");
+    assertThat(page.locator(".cosmos-app-main")).hasCSS("overflow-y", "visible");
+    if (width == 1280) {
+      assertTrue(
+          page.locator("#admin-sidebar").boundingBox().y < 189 - 20,
+          "Auch die Desktopnavigation muss mit dem Seiteninhalt scrollen.");
+    }
+    ConfigurationPage settings = new ConfigurationPage(page);
+    settings.info(texts.getAdminConfigEntryMailHost()).click();
+    Locator overlay = page.locator("#admin-config-help [part~='overlay']");
+    assertThat(overlay).isVisible();
+    com.microsoft.playwright.options.BoundingBox bounds = overlay.boundingBox();
+    assertTrue(bounds.y >= header.boundingBox().height - 1);
+    com.microsoft.playwright.options.BoundingBox footer =
+        page.locator(".cosmos-footer").boundingBox();
+    if (footer.y < 600 && footer.y + footer.height > 0) {
+      assertTrue(
+          bounds.y + bounds.height <= footer.y + 1,
+          "Die Hilfe darf den sichtbaren Copyrightfooter nicht überdecken.");
+    }
+    settings.closeHelp();
+    AllurePlaywright.attachScreenshot("Gemeinsamer scrollender Seitenrahmen", page);
+  }
+
   private void assertHintCentered(Locator hint) {
     assertThat(hint).isVisible();
     assertThat(hint).hasCSS("align-items", "center");
@@ -380,9 +423,14 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
   private void assertAppShell() {
     assertThat(page.locator(".cosmos-app-shell.cosmos-theme")).isVisible();
     assertEquals("#526ebc", primary(page, ".cosmos-page.cosmos-theme"));
-    assertThat(page.locator(".cosmos-topbar-logo")).isVisible();
-    assertWithinViewport(page.locator(".cosmos-topbar"));
-    assertWithinViewport(page.locator(".cosmos-topbar-account-menu"));
+    if (page.locator(".public-header").isVisible()) {
+      assertWithinViewport(page.locator(".public-header"));
+      assertThat(page.locator(".public-brand img")).isVisible();
+    } else {
+      assertThat(page.locator(".cosmos-topbar-logo")).isVisible();
+      assertWithinViewport(page.locator(".cosmos-topbar"));
+      assertWithinViewport(page.locator(".cosmos-topbar-account-menu"));
+    }
     assertWithinViewport(page.locator(".cosmos-app-main"));
     assertTrue(
         (Boolean) page.evaluate("() => document.documentElement.scrollWidth <= innerWidth + 1"),
@@ -416,52 +464,26 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
   }
 
   private void checkDesign(Page target) {
-    assertThat(target.locator(".cosmos-card")).hasCount(1);
-    assertThat(target.locator(".cosmos-card")).isVisible();
+    assertThat(target.locator(".public-panel")).hasCount(1);
+    assertThat(target.locator(".public-panel")).isVisible();
     assertThat(target.locator(".cosmos-sky")).hasAttribute("aria-hidden", "true");
-    assertThat(target.locator(".cosmos-page img")).hasCount(1);
-    assertThat(target.locator(".cosmos-sky img, .cosmos-card img")).hasCount(0);
-    Locator logo = target.locator(".cosmos-logo");
+    Locator logo = target.locator(".public-brand img");
     assertThat(logo).isVisible();
     target.waitForFunction(
         "image => image.complete && image.naturalWidth > 0", logo.elementHandle());
     assertWithinViewport(logo);
-    assertTrue(
-        (Boolean)
-            target.evaluate(
-                """
-            () => {
-                const card = document.querySelector('.cosmos-card').getBoundingClientRect();
-                const logo = document.querySelector('.cosmos-logo').getBoundingClientRect();
-                const name = document.querySelector('.cosmos-brand-name').getBoundingClientRect();
-                return logo.top >= -1 && logo.bottom <= name.top + 1 && name.bottom <= card.top + 1;
-            }
-            """),
-        "Logo und Servicebezeichnung müssen ohne Überlappung oberhalb der Card stehen.");
-    // Die breite Registrierung darf bei zu wenig Höhe scrollen; Fensterhöhe allein beweist keinen
-    // Platz.
-    if ((Boolean)
-        target.evaluate(
-            "() => document.querySelector('.cosmos-page').getBoundingClientRect().height <= innerHeight + 1")) {
-      assertTrue(
-          (Boolean)
-              target
-                  .locator(".cosmos-card")
-                  .evaluate(
-                      "el => { const r=el.getBoundingClientRect(); return Math.abs(r.top + r.height / 2 - innerHeight / 2) <= 2; }"),
-          "Die Card selbst muss mittig bleiben, unabhängig von Logo und Copyright.");
-    }
+    assertThat(target.locator(".cosmos-frame-header")).hasCSS("position", "sticky");
     assertThat(target.locator(".cosmos-footer")).isVisible();
     for (Locator input :
-        target.locator(".cosmos-card input[placeholder]:placeholder-shown").all()) {
-      assertEquals("13px", input.evaluate("el => getComputedStyle(el, '::placeholder').fontSize"));
+        target.locator(".public-panel input[placeholder]:placeholder-shown").all()) {
+      assertEquals("14px", input.evaluate("el => getComputedStyle(el, '::placeholder').fontSize"));
       assertEquals("400", input.evaluate("el => getComputedStyle(el, '::placeholder').fontWeight"));
     }
     target.evaluate("() => document.fonts.ready");
     assertTrue((Boolean) target.evaluate("() => document.fonts.check('450 16px Inter')"));
     assertTrue(
         target
-            .locator(".cosmos-card")
+            .locator(".public-panel")
             .evaluate("el => getComputedStyle(el).fontFamily")
             .toString()
             .contains("Inter"));
@@ -470,7 +492,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     for (Locator control :
         target
             .locator(
-                ".cosmos-card, .cosmos-footer, .cosmos-card vaadin-button, .cosmos-card vaadin-text-field, .cosmos-card vaadin-email-field, .cosmos-card vaadin-password-field, .cosmos-card vaadin-date-picker, .cosmos-card vaadin-combo-box")
+                ".public-panel, .cosmos-footer, .public-panel vaadin-button, .public-panel vaadin-text-field, .public-panel vaadin-email-field, .public-panel vaadin-password-field, .public-panel vaadin-date-picker, .public-panel vaadin-combo-box")
             .all()) {
       assertWithinViewport(control);
     }

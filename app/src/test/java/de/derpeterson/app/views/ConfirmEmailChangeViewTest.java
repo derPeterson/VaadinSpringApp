@@ -12,7 +12,7 @@ import static org.mockito.Mockito.when;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -72,8 +72,8 @@ class ConfirmEmailChangeViewTest {
             .orElseThrow();
   }
 
-  Icon statusIcon() {
-    return (Icon)
+  SvgIcon statusIcon() {
+    return (SvgIcon)
         tree(view)
             .filter(c -> c.getClassNames().contains("cosmos-status-icon"))
             .findFirst()
@@ -87,11 +87,21 @@ class ConfirmEmailChangeViewTest {
     view.setParameter(mock(BeforeEvent.class), "own-token");
     verify(service, never()).confirm(any());
     assertTrue(confirm().isVisible());
-    assertEquals("vaadin:envelope", statusIcon().getElement().getAttribute("icon"));
+    Component hint =
+        tree(view)
+            .filter(c -> c.getId().orElse("").equals("account-email-confirm-hint"))
+            .findFirst()
+            .orElseThrow();
+    assertTrue(hint.isVisible());
+    assertTrue(
+        hint.getElement().getTextRecursively().contains(messages.getPublicEmailConfirmationHint()));
+    assertTrue(view.getElement().getTextRecursively().contains(messages.getPublicEmailFormTitle()));
+    assertEquals("icons/lucide/mail.svg", statusIcon().getElement().getAttribute("src"));
     confirm().click();
     verify(service).confirm("own-token");
     assertFalse(confirm().isVisible());
-    assertEquals("vaadin:check-circle", statusIcon().getElement().getAttribute("icon"));
+    assertFalse(hint.isVisible());
+    assertEquals("icons/lucide/circle-check.svg", statusIcon().getElement().getAttribute("src"));
     assertTrue(statusIcon().hasClassName("text-success"));
     assertTrue(
         view.getElement()
@@ -107,11 +117,11 @@ class ConfirmEmailChangeViewTest {
     when(service.inspect(any())).thenReturn(state);
     view.setParameter(mock(BeforeEvent.class), "own-token");
     assertFalse(confirm().isVisible());
-    assertEquals(
-        state == Confirmation.EXPIRED ? "vaadin:bell" : "vaadin:warning",
-        statusIcon().getElement().getAttribute("icon"));
+    assertEquals("icons/lucide/circle-alert.svg", statusIcon().getElement().getAttribute("src"));
     assertTrue(
         statusIcon().hasClassName(state == Confirmation.EXPIRED ? "text-warning" : "text-error"));
+    assertEquals(
+        state == Confirmation.EXPIRED, statusIcon().hasClassName("cosmos-status-icon--warning"));
     verify(service, never()).confirm(any());
   }
 
@@ -120,7 +130,7 @@ class ConfirmEmailChangeViewTest {
     when(service.inspect(any())).thenThrow(new IllegalStateException("secret SQL details"));
     view.setParameter(mock(BeforeEvent.class), "own-token");
     assertFalse(confirm().isVisible());
-    assertEquals("vaadin:warning", statusIcon().getElement().getAttribute("icon"));
+    assertEquals("icons/lucide/circle-alert.svg", statusIcon().getElement().getAttribute("src"));
     assertTrue(statusIcon().hasClassName("text-error"));
     String text = view.getElement().getTextRecursively();
     assertTrue(text.contains(messages.getAccountEmailConfirmationFailed()));

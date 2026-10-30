@@ -85,12 +85,11 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
                   .page
                   .locator(".cosmos-topbar-logo")
                   .evaluate("el => el.complete && el.naturalWidth > 0"));
-      assertThat(actor.page.locator("#account-navigation-notifications"))
-          .hasAttribute("aria-selected", "true");
-      actor.page.locator("#account-navigation-settings").click();
-      assertThat(actor.page.locator("#account-navigation-settings"))
-          .hasAttribute("aria-selected", "true");
-      actor.page.locator("#account-navigation-notifications").click();
+      assertThat(actor.page.locator("#account-nav-notifications"))
+          .hasClass(java.util.regex.Pattern.compile(".*cosmos-nav-item--active.*"));
+      actor.page.locator("#account-navigation vaadin-side-nav-item").first().click();
+      assertThat(actor.page.locator("#account-tab-profile")).hasAttribute("aria-current", "page");
+      actor.page.locator("#account-nav-notifications").click();
       assertThat(inbox.rows(inbox.inbox())).hasCount(3);
       inbox.openPreview();
       assertThat(inbox.rows(inbox.preview())).hasCount(3);
@@ -109,11 +108,13 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       inbox.closeDetail();
       assertThat(actor.page.locator("#notifications-inbox-unread-total")).hasText("3");
       inbox.row(inbox.inbox(), subject).locator(".cosmos-notification-inbox-mark-read").click();
+      inbox.confirm();
       assertThat(actor.page.locator("#notifications-inbox-unread-total")).hasText("2");
       inbox.filter(inbox.inbox(), texts.getNotificationsRead());
       assertThat(inbox.rows(inbox.inbox())).hasCount(1);
       inbox.filter(inbox.inbox(), texts.getNotificationsAll());
       inbox.button(inbox.inbox(), texts.getNotificationsDismissRead()).click();
+      inbox.confirm();
       assertThat(inbox.rows(inbox.inbox())).hasCount(2);
       assertThat(inbox.row(inbox.inbox(), subject)).hasCount(0);
       assertThat(actor.page.locator("#notifications-inbox-unread-total")).hasText("2");
@@ -122,12 +123,15 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
           .row(inbox.inbox(), prefix + " first")
           .locator(".cosmos-notification-preview-dismiss")
           .click();
+      inbox.confirm();
       assertThat(inbox.rows(inbox.inbox())).hasCount(1);
       assertThat(inbox.dialog()).hasCount(0);
       inbox.button(inbox.inbox(), texts.getNotificationsMarkAll()).click();
+      inbox.confirm();
       assertThat(actor.page.locator("#notifications-inbox-unread-total")).hasText("0");
       assertThat(inbox.button(inbox.inbox(), texts.getNotificationsMarkAll())).isDisabled();
       inbox.button(inbox.inbox(), texts.getNotificationsDismissRead()).click();
+      inbox.confirm();
       assertThat(inbox.rows(inbox.inbox())).hasCount(0);
       assertThat(inbox.inbox().locator(".cosmos-notification-inbox-empty"))
           .containsText(texts.getNotificationsEmpty());
@@ -218,6 +222,7 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       inbox.openPreview();
       assertThat(inbox.rows(inbox.preview())).hasCount(5);
       inbox.button(inbox.preview(), texts.getNotificationsMarkAll()).click();
+      inbox.confirm();
       assertThat(inbox.button(inbox.preview(), texts.getNotificationsMarkAll())).isDisabled();
       inbox.button(inbox.preview(), texts.getNotificationsHistory()).click();
       assertThat(actor.page.locator("#notifications-inbox-unread-total")).hasText("0");

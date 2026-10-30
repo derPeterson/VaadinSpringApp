@@ -14,14 +14,13 @@ import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -35,6 +34,7 @@ import de.derpeterson.app.service.UserNotificationService.Rejected;
 import de.derpeterson.app.service.UserNotificationService.Selection;
 import de.derpeterson.app.service.UserNotificationService.Sent;
 import de.derpeterson.app.service.UserNotificationService.Target;
+import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import jakarta.servlet.http.HttpServletRequest;
@@ -84,6 +84,12 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private final Button previewButton = new Button();
   private final Button send = new Button();
   private final Div previewArea = new Div();
+  private final Div previewCard = new Div();
+  private final Div emptyPreview = new Div();
+  private final Span emptyPreviewText = new Span();
+  private final H2 previewTitle = new H2();
+  private final Span previewDescription = new Span();
+  private final Span beforeSend = new Span();
   private final Span hint = new Span();
   private final H2 historyTitle = new H2();
   private final Span historyDescription = new Span();
@@ -117,9 +123,11 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     formCard.addClassNames("cosmos-admin-form-card", "cosmos-panel-card");
     CosmosCardComponent sentCard = new CosmosCardComponent(sent);
     sentCard.addClassNames("cosmos-admin-form-card", "cosmos-panel-card");
+    Div columns = new Div(formCard, previewCard);
+    columns.addClassName("admin-notification-columns");
     add(
         new CosmosSectionHeaderComponent(breadcrumb, pageTitle, pageDescription),
-        formCard,
+        columns,
         sentCard);
     refreshTexts();
     addAttachListener(e -> startMaintenancePolling(e.getUI()));
@@ -128,12 +136,24 @@ public class AdminUserNotificationsSection extends VerticalLayout {
 
   private void configureComposeInputs() {
     targets.setItemLabelGenerator(target -> target.name() + " · " + target.email());
+    targets.setClassNameGenerator(target -> "admin-notification-recipient-option");
+    targets.setRenderer(
+        new ComponentRenderer<>(
+            target -> {
+              Span name = new Span(target.name());
+              Span email = new Span(target.email());
+              Div label = new Div(name, email);
+              label.addClassName("admin-notification-recipient-label");
+              return label;
+            }));
     targets.setWidthFull();
     targets.setManualValidation(true);
+    targets.setRequiredIndicatorVisible(true);
     targets.setId("admin-notifications-recipients");
     everyone.setId("admin-notifications-everyone");
     everyoneRecipients.setId("admin-notifications-everyone-recipients");
     everyoneRecipients.setManualValidation(true);
+    everyoneRecipients.setRequiredIndicatorVisible(true);
     everyoneRecipients.setReadOnly(true);
     everyoneRecipients.setEnabled(false);
     everyoneRecipients.setWidthFull();
@@ -142,7 +162,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     title.setMaxLength(UserNotificationService.TITLE_LIMIT);
     body.setMaxLength(UserNotificationService.BODY_LIMIT);
     body.setMinRows(4);
-    body.setMaxRows(10);
+    body.addClassName("admin-notification-body-field");
     title.setManualValidation(true);
     body.setManualValidation(true);
     for (var field : List.of(title, body)) {
@@ -166,8 +186,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
           invalidatePreview();
         });
     previewButton.setId("admin-notifications-preview");
-    previewButton.setIcon(VaadinIcon.EYE.create());
-    send.setIcon(VaadinIcon.PAPERPLANE.create());
+    previewButton.setIcon(AppIcon.EYE.create());
+    send.setIcon(AppIcon.PAPERPLANE.create());
     send.setId("admin-notifications-send");
     previewButton.addClickListener(e -> preview());
     send.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -176,7 +196,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   }
 
   private VerticalLayout createComposeForm() {
-    Div panelIcon = new Div(decorativeIcon(VaadinIcon.PAPERPLANE));
+    Div panelIcon = new Div(decorativeIcon(AppIcon.BELL));
     panelIcon.addClassName(COSMOS_PANEL_ICON_CLASS);
     Div panelHeading = new Div(heading, description);
     panelHeading.addClassName("cosmos-panel-heading");
@@ -188,7 +208,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     deliveryMeta.getElement().setAttribute("role", "status");
     Div header = new Div(panelIcon, panelHeading, deliveryMeta);
     header.addClassName("cosmos-panel-header");
-    Div info = new Div(decorativeIcon(VaadinIcon.INFO_CIRCLE), deliveryInfo);
+    Div info = new Div(decorativeIcon(AppIcon.INFO_CIRCLE), deliveryInfo);
     info.addClassName("cosmos-notification-compose-info");
     everyone.addClassName("cosmos-notification-compose-everyone");
     everyoneHint.addClassName("cosmos-notification-compose-everyone-hint");
@@ -209,11 +229,29 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     selection.addClassName("cosmos-notification-compose-selection");
     previewArea.addClassName("cosmos-notification-compose-preview");
     previewArea.setVisible(false);
-    Div footerHint = new Div(decorativeIcon(VaadinIcon.INFO_CIRCLE), hint);
+    Div footerHint = new Div(decorativeIcon(AppIcon.INFO_CIRCLE), hint);
     footerHint.addClassName("cosmos-panel-hint");
-    Div actions = new Div(previewButton, send);
+    previewTitle.addClassName("cosmos-panel-title");
+    previewDescription.addClassName("cosmos-panel-description");
+    Div previewHeading = new Div(previewTitle, previewDescription);
+    previewHeading.addClassName("cosmos-panel-heading");
+    Div previewIcon = new Div(decorativeIcon(AppIcon.EYE));
+    previewIcon.addClassName("cosmos-panel-icon");
+    Div rightHeader = new Div(previewIcon, previewHeading);
+    rightHeader.addClassName("cosmos-panel-header");
+    Div sendHint = new Div(decorativeIcon(AppIcon.INFO_CIRCLE), beforeSend);
+    sendHint.addClassName("cosmos-panel-hint");
+    Div sendActions = new Div(send);
+    sendActions.addClassName("cosmos-panel-actions");
+    Div rightFooter = new Div(sendHint, sendActions);
+    rightFooter.addClassName("cosmos-panel-footer");
+    emptyPreview.add(decorativeIcon(AppIcon.EYE), emptyPreviewText);
+    emptyPreview.addClassName("admin-preview-empty");
+    previewCard.add(rightHeader, emptyPreview, previewArea, rightFooter);
+    previewCard.addClassNames("cosmos-panel-card", "admin-notification-preview-card");
+    Div actions = new Div(previewButton);
     actions.addClassName("cosmos-panel-actions");
-    Div footer = new Div(footerHint, actions);
+    Div footer = new Div(info, footerHint, actions);
     footer.addClassName("cosmos-panel-footer");
     previewStatus.addClassName("cosmos-notification-compose-status");
     previewStatus.getElement().setAttribute("role", "status");
@@ -221,13 +259,11 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     VerticalLayout form =
         new VerticalLayout(
             header,
-            info,
             selection,
             recipientField,
             everyoneRecipients,
             fieldWithCounter(title, titleCount),
             fieldWithCounter(body, bodyCount),
-            previewArea,
             footer);
     form.setPadding(false);
     form.setSpacing(false);
@@ -255,7 +291,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   }
 
   private Div createHistoryContent() {
-    Div archiveIcon = new Div(decorativeIcon(VaadinIcon.ARCHIVE));
+    Div archiveIcon = new Div(decorativeIcon(AppIcon.BELL));
     archiveIcon.addClassName(COSMOS_PANEL_ICON_CLASS);
     historyDescription.addClassName("cosmos-panel-description");
     Div archiveHeading = new Div(historyTitle, historyDescription);
@@ -341,7 +377,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     preview = null;
     if (previewArea.isVisible()) {
       previewStatus.setText(texts.getNotificationsPreviewNeedsReview());
-      previewStatus.addComponentAtIndex(0, decorativeIcon(VaadinIcon.WARNING));
+      previewStatus.addComponentAtIndex(0, decorativeIcon(AppIcon.BELL));
       previewStatus.getElement().setAttribute(DATA_STATE, "warning");
       previewStatus.setVisible(true);
     }
@@ -353,6 +389,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     invalidatePreview();
     previewArea.removeAll();
     previewArea.setVisible(false);
+    emptyPreview.setVisible(true);
     previewStatus.setText("");
     previewStatus.setVisible(false);
   }
@@ -437,8 +474,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     }
   }
 
-  private static Icon decorativeIcon(VaadinIcon type) {
-    Icon icon = type.create();
+  private static SvgIcon decorativeIcon(AppIcon type) {
+    SvgIcon icon = type.create();
     icon.getElement().setAttribute(ARIA_HIDDEN, "true");
     return icon;
   }
@@ -478,10 +515,10 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private void renderPreview() {
     previewArea.removeAll();
     previewArea.getElement().setAttribute("aria-label", texts.getNotificationsReviewedPreview());
-    Span caption = new Span(texts.getNotificationsReviewedPreview());
-    Div captionRow = new Div(decorativeIcon(VaadinIcon.EYE), caption);
-    captionRow.addClassName("cosmos-notification-compose-preview-title");
-    Div previewHeader = new Div(captionRow, previewStatus);
+    Div previewHeading =
+        new Div(decorativeIcon(AppIcon.MESSAGE), new Span(texts.getNotificationsContentPreview()));
+    previewHeading.addClassName("admin-notification-preview-heading");
+    Div previewHeader = new Div(previewHeading, previewStatus);
     previewHeader.addClassName("cosmos-notification-compose-preview-header");
 
     HashSet<Long> selected = new HashSet<>(preview.ids());
@@ -489,8 +526,9 @@ public class AdminUserNotificationsSection extends VerticalLayout {
         service.targets(request.getSession(false)).stream()
             .filter(t -> selected.contains(t.id()))
             .toList();
-    Span recipientLabel = new Span(texts.getNotificationsRecipients());
-    recipientLabel.addClassName(COSMOS_PANEL_META_CLASS);
+    Span recipientLabel =
+        new Span(decorativeIcon(AppIcon.USERS), new Span(texts.getNotificationsRecipients()));
+    recipientLabel.addClassName("admin-notification-preview-recipient-label");
     Div chips = new Div(recipientLabel);
     chips.addClassName("cosmos-notification-compose-recipients");
     selectedTargets.stream()
@@ -499,10 +537,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
             t -> {
               Avatar avatar = new Avatar(t.name());
               avatar.addThemeVariants(AvatarVariant.LUMO_XSMALL);
-              Span chip = new Span(avatar, new Span(t.name()));
-              chip.getElement().setAttribute("theme", "badge");
-              chip.addClassNames("cosmos-admin-role-chip", "cosmos-notification-compose-recipient");
-              chips.add(chip);
+              avatar.getElement().setAttribute("title", t.name() + " · " + t.email());
+              chips.add(avatar);
             });
     if (selectedTargets.size() > 3) {
       Span moreRecipients = new Span("+" + (selectedTargets.size() - 3));
@@ -518,7 +554,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     details.addClassName("cosmos-notification-compose-details");
     details.setOpened(false);
     Button detailsButton =
-        new Button(texts.getNotificationsRecipientDetails(), VaadinIcon.ANGLE_DOWN.create());
+        new Button(texts.getNotificationsRecipientDetails(), AppIcon.ANGLE_DOWN.create());
     detailsButton.setId("admin-notifications-preview-details");
     detailsButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     detailsButton.addClassName("cosmos-notification-compose-details-toggle");
@@ -528,18 +564,19 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     detailsButton.addClickListener(e -> details.setOpened(!details.isOpened()));
     details.addOpenedChangeListener(
         e -> {
-          detailsButton.setText(
-              e.isOpened()
-                  ? texts.getNotificationsHideRecipientDetails()
-                  : texts.getNotificationsRecipientDetails());
           detailsButton.setIcon(
-              e.isOpened() ? VaadinIcon.ANGLE_UP.create() : VaadinIcon.ANGLE_DOWN.create());
+              e.isOpened() ? AppIcon.ANGLE_UP.create() : AppIcon.ANGLE_DOWN.create());
           detailsButton.getElement().setAttribute(ARIA_EXPANDED, Boolean.toString(e.isOpened()));
         });
     chips.add(detailsButton);
 
-    Span contentLabel = new Span(texts.getNotificationsContentPreview());
-    contentLabel.addClassName(COSMOS_PANEL_META_CLASS);
+    Span source = new Span(texts.getNotificationsSourceAdministration());
+    source.addClassNames("cosmos-notification-preview-source", "portal-notification-source-admin");
+    Span time =
+        new Span(UserNotificationTexts.time(java.time.Instant.now(), UI.getCurrent().getLocale()));
+    Div contentLabel = new Div(source, time);
+    contentLabel.addClassNames(
+        "cosmos-notification-message-meta", "admin-notification-preview-meta");
     Span subject = new Span(title.getValue());
     subject.addClassName("cosmos-notification-compose-preview-subject");
     Div content = new Div();
@@ -547,10 +584,11 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     content.addClassName("cosmos-notification-body");
     Div messagePreview = new Div(contentLabel, subject, content);
     messagePreview.addClassName("cosmos-notification-compose-preview-content");
-    previewArea.add(previewHeader, chips, details, messagePreview);
+    previewArea.add(previewHeader, messagePreview, chips, details);
+    emptyPreview.setVisible(false);
     previewArea.setVisible(true);
     previewStatus.setText(texts.getNotificationsPreviewUpdated());
-    previewStatus.addComponentAtIndex(0, decorativeIcon(VaadinIcon.CHECK_CIRCLE));
+    previewStatus.addComponentAtIndex(0, decorativeIcon(AppIcon.CHECK));
     previewStatus.getElement().setAttribute(DATA_STATE, "success");
     previewStatus.setVisible(true);
   }
@@ -641,7 +679,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   }
 
   private Div sentRow(Sent item) {
-    Div icon = new Div(decorativeIcon(VaadinIcon.PAPERPLANE));
+    Div icon = new Div(decorativeIcon(AppIcon.BELL));
     icon.addClassNames(COSMOS_PANEL_ICON_CLASS, "cosmos-notification-sent-icon");
     H3 subject = new H3(item.title());
     subject.addClassName("cosmos-notification-sent-title");
@@ -654,27 +692,26 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     Div sentHeading = new Div(subject, metadata);
     sentHeading.addClassName("cosmos-notification-sent-heading");
     Span status =
-        new Span(decorativeIcon(VaadinIcon.CHECK), new Span(texts.getNotificationsSentStatus()));
+        new Span(decorativeIcon(AppIcon.CHECK), new Span(texts.getNotificationsSentStatus()));
     status.getElement().setAttribute("theme", "badge success");
     status.addClassName("cosmos-notification-sent-status");
     Div content = new Div();
     content.setText(item.body());
     content.addClassNames("cosmos-notification-body", "cosmos-notification-sent-body");
-    H4 detailSubject = new H4(item.title());
-    detailSubject.addClassName("cosmos-notification-sent-detail-title");
-    Span detailMeta =
-        new Span(
-            texts.getNotificationsHistoryRecipients(item.recipientCount())
-                + " · "
-                + UserNotificationTexts.time(item.createdAt(), UI.getCurrent().getLocale()));
-    detailMeta.addClassName("cosmos-notification-sent-detail-meta");
-    Div detailContent = new Div(detailSubject, content, detailMeta);
+    Div contentHeading =
+        new Div(decorativeIcon(AppIcon.MESSAGE), new Span(texts.getNotificationsMessageContent()));
+    contentHeading.addClassName("admin-history-content-heading");
+    Div deliveryNote =
+        new Div(
+            new Span(texts.getNotificationsHistoryDelivery()),
+            new Span(texts.getNotificationsHistoryImmutableLog()));
+    deliveryNote.addClassName("admin-history-note");
+    Div detailContent = new Div(contentHeading, content, deliveryNote);
     detailContent.addClassName("cosmos-notification-sent-content");
     Details details = new Details("", detailContent);
     details.setId("admin-notifications-sent-detail-" + item.id());
     details.addClassName("cosmos-notification-sent-details");
-    Button toggle =
-        new Button(texts.getNotificationsRecipientDetails(), VaadinIcon.ANGLE_DOWN.create());
+    Button toggle = new Button(texts.getNotificationsHistoryDetails(), AppIcon.ANGLE_DOWN.create());
     toggle.setIconAfterText(true);
     toggle.addClassName("cosmos-notification-sent-toggle");
     toggle.getElement().setAttribute("aria-controls", details.getId().orElseThrow());
@@ -683,14 +720,10 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     toggle.addClickListener(e -> details.setOpened(!details.isOpened()));
     details.addOpenedChangeListener(
         e -> {
-          String label =
-              e.isOpened()
-                  ? texts.getNotificationsClose()
-                  : texts.getNotificationsRecipientDetails();
+          String label = texts.getNotificationsHistoryDetails();
           toggle.setText(label);
           toggle.setAriaLabel(label + ": " + item.title());
-          toggle.setIcon(
-              e.isOpened() ? VaadinIcon.ANGLE_UP.create() : VaadinIcon.ANGLE_DOWN.create());
+          toggle.setIcon(e.isOpened() ? AppIcon.ANGLE_UP.create() : AppIcon.ANGLE_DOWN.create());
           toggle.getElement().setAttribute(ARIA_EXPANDED, Boolean.toString(e.isOpened()));
         });
     Div actions = new Div(status, toggle);
@@ -704,6 +737,10 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     breadcrumb.setText(texts.getAdminHeaderTitle() + " / " + texts.getNotificationsTitle());
     pageTitle.setText(texts.getNotificationsTitle());
     pageDescription.setText(texts.getNotificationsAdminPageDescription());
+    emptyPreviewText.setText(texts.getNotificationsPreview());
+    previewTitle.setText(texts.getNotificationsPreviewTitle());
+    previewDescription.setText(texts.getNotificationsReviewAgain());
+    beforeSend.setText(texts.getNotificationsBeforeSendHint());
     heading.setText(texts.getNotificationsComposeTitle());
     deliveryLabel.setText(texts.getNotificationsInternal());
     refreshDeliveryState();
@@ -723,7 +760,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     body.setErrorMessage(texts.getNotificationsInvalidBody());
     previewButton.setText(texts.getNotificationsPreview());
     send.setText(texts.getNotificationsSend());
-    hint.setText(texts.getNotificationsPreviewHint());
+    hint.setText(texts.getNotificationsRecheckHint());
     historyTitle.setText(texts.getNotificationsSentHistory());
     historyDescription.setText(texts.getNotificationsHistoryDescription());
     historyPagination.refreshTexts();

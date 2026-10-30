@@ -165,9 +165,21 @@ class LoginSessionRecoveryTest {
     verify(sessions).startRecovery(request, "own@example.test", "Secret!Password8", true);
     verify(sessions).recoveryList(request);
     assertTrue(field("recoveryArea", Div.class).isVisible());
+    Div recovery = field("recoveryArea", Div.class);
+    assertEquals(1, recovery.getChildren().count());
+    assertTrue(
+        recovery.getElement().getTextRecursively().contains(messages.getSessionRecoveryTitle()));
+    assertTrue(
+        recovery.getElement().getTextRecursively().contains(messages.getSessionRecoveryHint()));
+    assertTrue(
+        recovery.getElement().getTextRecursively().contains(messages.getSessionRecoveryListHint()));
+    Component panel = recovery.getChildren().findFirst().orElseThrow();
+    assertTrue(tree(panel).anyMatch(item -> item == button("session-recovery-cancel")));
+    assertTrue(tree(panel).anyMatch(item -> item == button("session-recovery-continue")));
     assertFalse(field("loginCard", Component.class).isVisible());
     assertTrue(field("passwordField", PasswordField.class).isEmpty());
     assertNull(ui.target);
+    assertFalse(button("session-recovery-continue").isEnabled());
   }
 
   @Test
@@ -195,9 +207,33 @@ class LoginSessionRecoveryTest {
     assertTrue(field("passwordField", PasswordField.class).isEmpty());
   }
 
+  private void freeSessionSlot() {
+    when(sessions.recoveryList(request))
+        .thenReturn(new SessionManagementService.Snapshot(List.of(), 0, 1));
+    button("account-sessions-refresh").click();
+    assertTrue(button("session-recovery-continue").isEnabled());
+  }
+
+  @Test
+  void continueIsEnabledOnlyAfterAConfirmedRevocationFreesASlot() {
+    reachedLimit();
+    assertFalse(button("session-recovery-continue").isEnabled());
+    button("session-revoke-opaque-device").click();
+    assertFalse(button("session-recovery-continue").isEnabled());
+    Object sessionsPanel = ReflectionTestUtils.getField(view, "recoverySessions");
+    Object dialog = ReflectionTestUtils.getField(sessionsPanel, "confirmation");
+    when(sessions.recoveryList(request))
+        .thenReturn(new SessionManagementService.Snapshot(List.of(), 0, 1));
+    ((Button) ReflectionTestUtils.getField(dialog, "confirm")).click();
+    verify(sessions).recoveryRevoke(request, "opaque-device");
+    assertTrue(button("session-recovery-continue").isEnabled());
+    verify(sessions, never()).finishRecovery(request, vaadinResponse);
+  }
+
   @Test
   void successfulCompletionNavigatesOnlyAfterNormalAdmission() {
     reachedLimit();
+    freeSessionSlot();
     button("session-recovery-continue").click();
     verify(sessions).finishRecovery(request, vaadinResponse);
     assertEquals(HomeView.class, ui.target);
@@ -207,9 +243,15 @@ class LoginSessionRecoveryTest {
   @Test
   void fullLimitDoesNotNavigateOrDiscardManagement() {
     reachedLimit();
+    SessionManagementService.Snapshot full =
+        (SessionManagementService.Snapshot)
+            ReflectionTestUtils.getField(field("recoverySessions", Component.class), "snapshot");
+    freeSessionSlot();
+    when(sessions.recoveryList(request)).thenReturn(full);
     when(sessions.finishRecovery(request, vaadinResponse)).thenThrow(new SessionLimitException());
     button("session-recovery-continue").click();
     assertTrue(field("recoveryArea", Div.class).isVisible());
+    assertFalse(button("session-recovery-continue").isEnabled());
     assertNull(ui.target);
     Supplier<String> text =
         (Supplier<String>)
@@ -220,6 +262,7 @@ class LoginSessionRecoveryTest {
   @Test
   void expiredProofReturnsToLoginWithUnderstandableNotification() {
     reachedLimit();
+    freeSessionSlot();
     when(sessions.finishRecovery(request, vaadinResponse))
         .thenThrow(new AuthenticationCredentialsNotFoundException("expired"));
     button("session-recovery-continue").click();

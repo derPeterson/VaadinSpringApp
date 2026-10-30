@@ -7,11 +7,9 @@ import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
@@ -19,7 +17,6 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
@@ -30,8 +27,10 @@ import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.PasswordResetService;
+import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
-import de.derpeterson.app.ui.components.CosmosPageComponent;
+import de.derpeterson.app.ui.components.PublicPageComponent;
+import de.derpeterson.app.ui.components.PublicPanelComponent;
 import de.derpeterson.app.validation.UserInputRules;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -93,12 +92,12 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
               .ifPresent(
                   component ->
                       componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getForgotPasswordEmailField));
+                          component, this.messageProperties::getPublicEmailField));
           Optional.ofNullable(sendButton)
               .ifPresent(
                   component ->
                       componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getBaseSendButton));
+                          component, this.messageProperties::getPublicRequestLink));
           Optional.ofNullable(loginButton)
               .ifPresent(
                   component ->
@@ -114,64 +113,32 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
     getContent().setPadding(false);
     getContent().removeAll();
     setSpacing(false);
-    CosmosPageComponent pageLayout =
-        new CosmosPageComponent(
-            configService, false, messageProperties::getAccountCopyrightTemplate);
+    PublicPageComponent pageLayout =
+        new PublicPageComponent(configService, messageProperties, PublicPageComponent.Page.FORGOT);
     mainContent = pageLayout.getCardContainer();
     createPasswordResetCard();
     add(pageLayout);
   }
 
   private void createPasswordResetCard() {
-    VerticalLayout cardContentLayout = new VerticalLayout();
-    cardContentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-    cardContentLayout.setPadding(false);
-    cardContentLayout.setSpacing(false);
-    cardContentLayout.addClassName("cosmos-form");
-
-    Icon successIcon = VaadinIcon.QUESTION_CIRCLE.create();
-    successIcon.addClassNames(
-        "cosmos-forgot-icon", "cosmos-status-icon", LumoUtility.TextColor.PRIMARY);
-
-    HorizontalLayout cardIconLayout = new HorizontalLayout();
-    cardIconLayout.setWidthFull();
-    cardIconLayout.setPadding(false);
-    cardIconLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    cardIconLayout.add(successIcon);
 
     this.title = new H1(messageProperties.getForgotPasswordTitle());
     title.addClassName("cosmos-headline");
 
-    HorizontalLayout cardTitleLayout = new HorizontalLayout();
-    cardTitleLayout.addClassName("cosmos-title-row");
-    cardTitleLayout.setWidthFull();
-    cardTitleLayout.setPadding(false);
-    cardTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    cardTitleLayout.add(title);
-
     this.text = new Span(messageProperties.getForgotPasswordText());
     text.addClassName("cosmos-form-text");
-    VerticalLayout cardTextLayout = new VerticalLayout();
-    cardTextLayout.addClassName("cosmos-intro");
-    cardTextLayout.setWidthFull();
-    cardTextLayout.setPadding(false);
-    cardTextLayout.setSpacing(false);
-    cardTextLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-    cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    cardTextLayout.add(text);
-
-    this.emailField = new EmailField(messageProperties.getForgotPasswordEmailField());
+    this.emailField = new EmailField(messageProperties.getPublicEmailField());
     emailField.setPattern(UserInputRules.EMAIL_REGEX);
+    emailField.setRequiredIndicatorVisible(true);
     emailField.setClearButtonVisible(true);
     emailField.setWidthFull();
-    emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
     emailField.setClearButtonVisible(true);
 
     updateInputPlaceholders();
 
     this.sendButton =
         new Button(
-            messageProperties.getBaseSendButton(),
+            messageProperties.getPublicRequestLink(),
             event -> {
               if (!ValidationHelper.validateRequiredInputs(
                   List.of(emailField), messageProperties)) {
@@ -196,7 +163,7 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
                       -1,
                       NotificationHelper.NotificationType.SUCCESS);
             });
-    sendButton.setPrefixComponent(VaadinIcon.PAPERPLANE.create());
+    sendButton.setPrefixComponent(AppIcon.ENVELOPE.create());
     sendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     sendButton.setWidthFull();
 
@@ -204,13 +171,18 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
         new Button(
             messageProperties.getBaseLoginButton(),
             event -> UI.getCurrent().navigate(LoginView.class));
-    loginButton.setPrefixComponent(VaadinIcon.SIGN_IN.create());
+    loginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
     loginButton.setWidthFull();
+    Div actions = new Div(loginButton, sendButton);
+    actions.addClassName("public-panel-actions");
 
-    cardContentLayout.add(
-        cardIconLayout, cardTitleLayout, cardTextLayout, emailField, sendButton, loginButton);
-
-    CosmosCardComponent cardComponent = new CosmosCardComponent(cardContentLayout);
+    CosmosCardComponent cardComponent =
+        new PublicPanelComponent(
+            AppIcon.KEY.create(),
+            title,
+            messageProperties::getPublicForgotSubtitle,
+            new Component[] {emailField},
+            actions);
 
     mainContent.add(cardComponent);
   }

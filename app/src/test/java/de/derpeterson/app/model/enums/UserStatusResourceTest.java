@@ -2,9 +2,9 @@ package de.derpeterson.app.model.enums;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.icon.SvgIcon;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -22,7 +22,7 @@ class UserStatusResourceTest {
 
   @ParameterizedTest
   @EnumSource(IconSize.class)
-  void outlineSymbolsHaveShapeColorAndBothSizeVariantsWithoutExternalResources(IconSize size) {
+  void outlineSymbolsHaveShapeColorAndBothSizeVariantsWithLocalLucideResources(IconSize size) {
     for (UserStatus status : UserStatus.values()) {
       check(status.getOutlineComponent(size, false), status, size, false);
       check(status.getOutlineComponent(size, true), status, size, true);
@@ -80,21 +80,16 @@ class UserStatusResourceTest {
   }
 
   private void check(Component component, UserStatus status, IconSize size, boolean overlay) {
-    String svg = component.getElement().getProperty("innerHTML");
-    assertNotNull(svg);
-    assertTrue(svg.contains("<svg"));
-    assertTrue(svg.contains("viewBox=\"0 0 24 24\""));
-    assertTrue(svg.contains("fill=\"none\""));
-    assertTrue(svg.contains("stroke=\"currentColor\""));
-    assertTrue(svg.contains("<circle"));
-    String mark =
+    SvgIcon icon = (SvgIcon) component.getChildren().findFirst().orElseThrow();
+    String name =
         switch (status) {
-          case AVAILABLE -> "m7.5 12 3 3 6-6";
-          case EMPLOYED -> "M7.5 12h9";
-          case ABSENT -> "M12 6.5V12l4 2.5";
-          case OFFLINE -> "m8.5 8.5 7 7m0-7-7 7";
+          case AVAILABLE -> "circle-check";
+          case EMPLOYED -> "circle-minus";
+          case ABSENT -> "clock";
+          case OFFLINE -> "circle-x";
         };
-    assertTrue(svg.contains(mark));
+    assertEquals("icons/lucide/" + name + ".svg", icon.getSrc());
+    assertNotNull(UserStatus.class.getResource("/META-INF/resources/" + icon.getSrc()));
     double expectedWidth = overlay ? Math.round(size.getWidth() * .3) : size.getWidth();
     String width = Double.toString(expectedWidth) + size.getUnit().getSymbol();
     assertEquals(width, component.getElement().getStyle().get("width"));

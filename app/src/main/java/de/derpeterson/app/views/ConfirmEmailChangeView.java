@@ -9,11 +9,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.OptionalParameter;
@@ -30,8 +26,9 @@ import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.service.AccountSecurityService;
 import de.derpeterson.app.service.AccountSecurityService.Confirmation;
 import de.derpeterson.app.service.ConfigService;
-import de.derpeterson.app.ui.components.CosmosCardComponent;
-import de.derpeterson.app.ui.components.CosmosPageComponent;
+import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.PublicPageComponent;
+import de.derpeterson.app.ui.components.PublicPanelComponent;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,11 +40,14 @@ import lombok.extern.slf4j.Slf4j;
 public class ConfirmEmailChangeView extends Div implements HasUrlParameter<String> {
   private final transient MessageProperties messages;
   private final transient AccountSecurityService service;
-  private final Icon statusIcon = VaadinIcon.ENVELOPE.create();
+  private final SvgIcon statusIcon = AppIcon.ENVELOPE.create();
   private final H1 title = new H1();
   private final Span text = new Span();
+  private final Span consequenceText = new Span();
+  private final Div consequence = new Div();
   private final Button confirm = new Button();
   private final Button login = new Button();
+  private final Div actions = new Div();
   private String token;
   private Confirmation state = Confirmation.INVALID;
   private boolean technicalFailure;
@@ -57,18 +57,22 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
     this.messages = messages;
     this.service = service;
     setId("account-email-confirmation");
-    CosmosPageComponent page =
-        new CosmosPageComponent(config, false, messages::getAccountCopyrightTemplate);
+    PublicPageComponent page =
+        new PublicPageComponent(config, messages, PublicPageComponent.Page.EMAIL_CONFIRM);
     statusIcon.addClassName("cosmos-status-icon");
     statusIcon.getElement().setAttribute("aria-hidden", "true");
     text.addClassName("cosmos-form-text");
     title.addClassName("cosmos-headline");
     confirm.setId("account-email-confirm-action");
-    confirm.setPrefixComponent(VaadinIcon.CHECK.create());
+    confirm.setPrefixComponent(AppIcon.CHECK.create());
     confirm.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     confirm.addClickListener(event -> apply());
     login.setId("account-email-confirm-login");
-    login.setPrefixComponent(VaadinIcon.SIGN_IN.create());
+    login.setPrefixComponent(AppIcon.SIGN_IN.create());
+    consequence.setId("account-email-confirm-hint");
+    consequence.addClassName("cosmos-panel-hint");
+    consequence.add(AppIcon.INFO_CIRCLE.create(), consequenceText);
+    actions.add(login, confirm);
     // Nach der Bestätigung ist die bisherige Sitzung widerrufen. Zur Anmeldung deshalb
     // direkt im Browser wechseln, ohne einen weiteren RPC dieser Sitzung zu benötigen.
     login.addAttachListener(
@@ -78,31 +82,14 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
                 .executeJs(
                     "this.onclick = () => window.location.assign(new URL($0, document.baseURI).href)",
                     AppRoute.LOGIN.getRoute()));
-    HorizontalLayout iconRow = new HorizontalLayout(statusIcon);
-    iconRow.setWidthFull();
-    iconRow.setPadding(false);
-    iconRow.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-
-    HorizontalLayout titleRow = new HorizontalLayout(title);
-    titleRow.addClassName("cosmos-title-row");
-    titleRow.setWidthFull();
-    titleRow.setPadding(false);
-    titleRow.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-
-    HorizontalLayout intro = new HorizontalLayout(text);
-    intro.addClassName("cosmos-intro");
-    intro.setWidthFull();
-    intro.setPadding(false);
-    intro.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-
-    Div actions = new Div(login, confirm);
-    actions.addClassNames("cosmos-dialog-actions", "cosmos-email-confirm-actions");
-    VerticalLayout form = new VerticalLayout(iconRow, titleRow, intro, actions);
-    form.addClassName("cosmos-form");
-    form.setAlignItems(FlexComponent.Alignment.STRETCH);
-    form.setPadding(false);
-    form.setSpacing(false);
-    page.getCardContainer().add(new CosmosCardComponent(form));
+    page.getCardContainer()
+        .add(
+            new PublicPanelComponent(
+                statusIcon,
+                title,
+                messages::getPublicEmailSubtitle,
+                new com.vaadin.flow.component.Component[] {text, consequence},
+                actions));
     add(page);
     ComponentUtil.addListener(
         UI.getCurrent(),
@@ -172,14 +159,13 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
   }
 
   private void updateStatusIcon() {
-    VaadinIcon icon =
+    AppIcon icon =
         technicalFailure
-            ? VaadinIcon.WARNING
+            ? AppIcon.WARNING
             : switch (state) {
-              case READY -> VaadinIcon.ENVELOPE;
-              case SUCCESS -> VaadinIcon.CHECK_CIRCLE;
-              case EXPIRED -> VaadinIcon.BELL;
-              case INVALID, CONFLICT -> VaadinIcon.WARNING;
+              case READY -> AppIcon.ENVELOPE;
+              case SUCCESS -> AppIcon.CHECK_CIRCLE;
+              case EXPIRED, INVALID, CONFLICT -> AppIcon.WARNING;
             };
     String color =
         technicalFailure
@@ -190,21 +176,46 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
               case EXPIRED -> LumoUtility.TextColor.WARNING;
               case INVALID, CONFLICT -> LumoUtility.TextColor.ERROR;
             };
-    statusIcon.setIcon(icon);
+    statusIcon.setSrc(icon.getSource());
     statusIcon.removeClassNames(
         LumoUtility.TextColor.PRIMARY,
         LumoUtility.TextColor.SUCCESS,
         LumoUtility.TextColor.WARNING,
         LumoUtility.TextColor.ERROR);
     statusIcon.addClassName(color);
+    statusIcon.setClassName(
+        "cosmos-status-icon--warning", state == Confirmation.EXPIRED && !technicalFailure);
+  }
+
+  private String confirmationTitle() {
+    if (technicalFailure) {
+      return messages.getBaseFailedTitle();
+    }
+    return switch (state) {
+      case READY -> messages.getPublicEmailFormTitle();
+      case SUCCESS -> messages.getPublicEmailSuccessTitle();
+      case EXPIRED -> messages.getPublicEmailExpiredTitle();
+      case INVALID -> messages.getPublicEmailInvalidTitle();
+      case CONFLICT -> messages.getPublicEmailConflictTitle();
+    };
   }
 
   private void refreshTexts() {
     updateStatusIcon();
-    title.setText(messages.getAccountEmailConfirmationTitle());
+    boolean ready = state == Confirmation.READY && !technicalFailure;
+    setClassName("public-email-outcome", !ready);
+    title.setText(confirmationTitle());
     text.setText(message().get());
+    consequenceText.setText(messages.getPublicEmailConfirmationHint());
+    consequence.setVisible(ready);
+    actions.setClassName("public-panel-actions", ready);
     confirm.setText(messages.getAccountEmailConfirmationAction());
-    confirm.setVisible(state == Confirmation.READY && !technicalFailure);
+    confirm.setVisible(ready);
     login.setText(messages.getBaseLoginButton());
+    if (ready) {
+      login.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    } else {
+      login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    }
   }
 }

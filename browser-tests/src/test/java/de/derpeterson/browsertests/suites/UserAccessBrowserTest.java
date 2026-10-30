@@ -81,7 +81,7 @@ public class UserAccessBrowserTest extends BrowserFixture {
     form.setAdministrator(true);
     form.save();
     form = users.openEdit(email);
-    assertThat(form.administrator()).isChecked();
+    assertThat(form.administrator()).hasAttribute("aria-selected", "true");
     form.cancel();
     try (BrowserActor actor = new BrowserActor(browser)) {
       actor.loginAdmin(email, BrowserTestAccounts.USER_PASSWORD);
@@ -91,7 +91,7 @@ public class UserAccessBrowserTest extends BrowserFixture {
     form.setAdministrator(false);
     form.save();
     form = users.openEdit(email);
-    assertThat(form.administrator()).not().isChecked();
+    assertThat(form.administrator()).hasAttribute("aria-selected", "false");
     form.cancel();
     try (BrowserActor actor = new BrowserActor(browser)) {
       actor.login(email, BrowserTestAccounts.USER_PASSWORD);
@@ -192,7 +192,7 @@ public class UserAccessBrowserTest extends BrowserFixture {
     form.cancel();
     form = users.openEdit(BrowserTestAccounts.ADMIN_EMAIL);
     assertThat(form.enabled()).isChecked();
-    assertThat(form.administrator()).isChecked();
+    assertThat(form.administrator()).hasAttribute("aria-selected", "true");
     form.cancel();
   }
 
@@ -221,10 +221,10 @@ public class UserAccessBrowserTest extends BrowserFixture {
     form.setRole(texts.getRoleSuperadmin(), true);
     form.save();
     form = users.openEdit(email);
-    assertThat(form.role(texts.getRoleSuperadmin())).isChecked();
-    assertThat(form.role(texts.getRoleAdmin())).not().isChecked();
-    assertThat(form.role(texts.getRoleUser())).not().isChecked();
-    assertThat(form.role(texts.getRoleGuest())).not().isChecked();
+    assertThat(form.role(texts.getRoleSuperadmin())).hasAttribute("aria-selected", "true");
+    assertThat(form.role(texts.getRoleAdmin())).hasAttribute("aria-selected", "false");
+    assertThat(form.role(texts.getRoleUser())).hasAttribute("aria-selected", "false");
+    assertThat(form.role(texts.getRoleGuest())).hasAttribute("aria-selected", "false");
     form.cancel();
     try (BrowserActor actor = new BrowserActor(browser)) {
       actor.loginAdmin(email, BrowserTestAccounts.USER_PASSWORD);
@@ -268,10 +268,10 @@ public class UserAccessBrowserTest extends BrowserFixture {
     form.setRole(texts.getRoleGuest(), true);
     form.save();
     form = users.openEdit(email);
-    assertThat(form.role(texts.getRoleGuest())).isChecked();
-    assertThat(form.role(texts.getRoleUser())).not().isChecked();
-    assertThat(form.role(texts.getRoleAdmin())).not().isChecked();
-    assertThat(form.role(texts.getRoleSuperadmin())).not().isChecked();
+    assertThat(form.role(texts.getRoleGuest())).hasAttribute("aria-selected", "true");
+    assertThat(form.role(texts.getRoleUser())).hasAttribute("aria-selected", "false");
+    assertThat(form.role(texts.getRoleAdmin())).hasAttribute("aria-selected", "false");
+    assertThat(form.role(texts.getRoleSuperadmin())).hasAttribute("aria-selected", "false");
     form.cancel();
     try (BrowserActor actor = new BrowserActor(browser)) {
       actor.login(email, BrowserTestAccounts.USER_PASSWORD);

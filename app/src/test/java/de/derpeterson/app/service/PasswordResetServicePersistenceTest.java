@@ -183,7 +183,7 @@ class PasswordResetServicePersistenceTest {
   void absentTokenLookupsAndEntrypointsRemainEmpty(String token) {
     assertTrue(tokens.findByToken(token).isEmpty());
     assertTrue(tokens.findByTokenAndStatus(token, TokenStatus.ACTIVE).isEmpty());
-    assertFalse(service.validateToken(token));
+    assertEquals(PasswordResetService.LinkState.INVALID, service.inspectToken(token));
     assertFalse(service.resetPassword(token, "Password!"));
     assertFalse(tokens.findByToken(token).isPresent());
     service.setTokenStatus(token, TokenStatus.USED);
@@ -201,7 +201,7 @@ class PasswordResetServicePersistenceTest {
         de.derpeterson.app.model.enums.UserNotificationType.PASSWORD_RESET,
         userNotificationsRepository.findAll().getFirst().getType());
     assertTrue(tokens.findByToken("valid").isPresent());
-    assertFalse(service.validateToken("valid"));
+    assertEquals(PasswordResetService.LinkState.INVALID, service.inspectToken("valid"));
     assertFalse(service.resetPassword("valid", "OtherPassword!"));
     assertEquals("hash-Password!", password());
     verify(probes.encoder(), times(1)).encode(any());
@@ -425,7 +425,11 @@ class PasswordResetServicePersistenceTest {
   void nonActiveTokensExistButCannotValidateOrChangePasswords(TokenStatus tokenStatus) {
     seed("closed", tokenStatus, LocalDateTime.now().plusDays(1));
     assertTrue(tokens.findByToken("closed").isPresent());
-    assertFalse(service.validateToken("closed"));
+    assertEquals(
+        tokenStatus == TokenStatus.EXPIRED
+            ? PasswordResetService.LinkState.EXPIRED
+            : PasswordResetService.LinkState.INVALID,
+        service.inspectToken("closed"));
     assertFalse(service.resetPassword("closed", "Password!"));
     assertEquals(tokenStatus, status("closed"));
     assertEquals("old-hash", password());
@@ -436,7 +440,8 @@ class PasswordResetServicePersistenceTest {
   void expiredTokensAreMarkedExpiredByBothEntrypointsWithoutChangingPassword() {
     seed("validate-expired", TokenStatus.ACTIVE, LocalDateTime.now().minusDays(1));
     seed("reset-expired", TokenStatus.ACTIVE, LocalDateTime.now().minusDays(1));
-    assertFalse(service.validateToken("validate-expired"));
+    assertEquals(PasswordResetService.LinkState.EXPIRED, service.inspectToken("validate-expired"));
+    assertEquals(PasswordResetService.LinkState.EXPIRED, service.inspectToken("validate-expired"));
     assertFalse(service.resetPassword("reset-expired", "Password!"));
     assertEquals(TokenStatus.EXPIRED, status("validate-expired"));
     assertEquals(TokenStatus.EXPIRED, status("reset-expired"));
@@ -448,7 +453,9 @@ class PasswordResetServicePersistenceTest {
     seed("disabled", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
     transaction.executeWithoutResult(tx -> users.findById(userId).orElseThrow().setEnabled(false));
     assertFalse(service.resetPassword("disabled", "Password!"));
-    boolean valid = transaction.execute(tx -> service.validateToken("disabled"));
+    boolean valid =
+        transaction.execute(
+            tx -> service.inspectToken("disabled") == PasswordResetService.LinkState.VALID);
     assertFalse(valid);
     assertEquals(TokenStatus.ACTIVE, status("disabled"));
     assertEquals("old-hash", password());
@@ -457,8 +464,10 @@ class PasswordResetServicePersistenceTest {
   @Test
   void validTokenValidationWorksWithoutAnAmbientPersistenceContext() {
     seed("valid", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    assertTrue(service.validateToken("valid"));
-    boolean valid = transaction.execute(tx -> service.validateToken("valid"));
+    assertEquals(PasswordResetService.LinkState.VALID, service.inspectToken("valid"));
+    boolean valid =
+        transaction.execute(
+            tx -> service.inspectToken("valid") == PasswordResetService.LinkState.VALID);
     assertTrue(valid);
     assertEquals(TokenStatus.ACTIVE, status("valid"));
   }
@@ -582,7 +591,11 @@ class PasswordResetServicePersistenceTest {
     LocalDateTime expiry = LocalDateTime.now(clock).plusSeconds(offsetSeconds);
     seed("validate-boundary", TokenStatus.ACTIVE, expiry);
     seed("reset-boundary", TokenStatus.ACTIVE, expiry);
-    assertEquals(offsetSeconds > 0, service.validateToken("validate-boundary"));
+    assertEquals(
+        offsetSeconds > 0
+            ? PasswordResetService.LinkState.VALID
+            : PasswordResetService.LinkState.EXPIRED,
+        service.inspectToken("validate-boundary"));
     assertEquals(offsetSeconds > 0, service.resetPassword("reset-boundary", "Password!"));
     assertEquals(
         offsetSeconds > 0 ? TokenStatus.ACTIVE : TokenStatus.EXPIRED, status("validate-boundary"));
@@ -596,7 +609,7 @@ class PasswordResetServicePersistenceTest {
     Instant instant = Instant.parse("2026-10-08T10:00:00Z");
     when(clock.instant()).thenReturn(instant);
     seed("later", TokenStatus.ACTIVE, LocalDateTime.now(clock).plusSeconds(1));
-    assertTrue(service.validateToken("later"));
+    assertEquals(PasswordResetService.LinkState.VALID, service.inspectToken("later"));
     when(clock.instant()).thenReturn(instant.plusSeconds(1));
     assertFalse(service.resetPassword("later", "Password!"));
     assertEquals(TokenStatus.EXPIRED, status("later"));
@@ -947,7 +960,7 @@ class PasswordResetServicePersistenceTest {
                     .getFirst()
                     .getToken());
     assertTrue(mails.findAll().getFirst().getBody().contains("/reset-password/" + active));
-    assertTrue(service.validateToken(active));
+    assertEquals(PasswordResetService.LinkState.VALID, service.inspectToken(active));
   }
 
   @ParameterizedTest
@@ -1121,7 +1134,7 @@ class PasswordResetServicePersistenceTest {
     when(probes.config().getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     assertThrows(
         MaintenanceAccessException.class, () -> service.resetPassword(token, "NewPassword!"));
-    assertThrows(MaintenanceAccessException.class, () -> service.validateToken(token));
+    assertThrows(MaintenanceAccessException.class, () -> service.inspectToken(token));
     assertThrows(
         MaintenanceAccessException.class, () -> service.sendPasswordResetEmail("test@example.com"));
     assertEquals(password, users.findById(userId).orElseThrow().getPassword());

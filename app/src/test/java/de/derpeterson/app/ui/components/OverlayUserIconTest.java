@@ -3,6 +3,7 @@ package de.derpeterson.app.ui.components;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
@@ -102,9 +104,10 @@ class OverlayUserIconTest {
     Div status = (Div) ReflectionTestUtils.getField(avatar, "status");
     assertEquals("CD", initials.getText());
     assertEquals(1, status.getComponentCount());
-    assertTrue(
-        status.getComponentAt(0).getElement().getProperty("innerHTML").contains("fill=\"none\""));
-    assertTrue(status.getComponentAt(0).getElement().getProperty("innerHTML").contains("<circle"));
+    Component mark = status.getComponentAt(0).getChildren().findFirst().orElseThrow();
+    assertEquals("vaadin-icon", mark.getElement().getTag());
+    assertNotNull(mark.getElement().getAttribute("data-lucide"));
+    assertEquals("true", mark.getElement().getAttribute("aria-hidden"));
     assertEquals(value.getColor(), avatar.getStyle().get("--cosmos-avatar-status-color"));
     assertEquals(
         "var(--cosmos-avatar-" + value.name().toLowerCase(Locale.ROOT) + "-shadow)",

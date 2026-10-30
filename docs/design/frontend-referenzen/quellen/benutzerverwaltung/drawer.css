@@ -1,14 +1,39 @@
 /* Sidenav-Einschub, mit linker Rahmenlinie und Panelkopf/-fuß der Profilreferenz. */
-/* Die Gruppentrennung liegt außerhalb des Fieldsets, damit sie nicht die Legende schneidet. */
-#userEditor .au-editor-roles-section{border-top:1px solid var(--border-subtle);padding-top:18px}
-#userEditor .au-roles{border:0;padding:0;margin:0}
-#userEditor .au-roles legend{margin:0;padding:0 0 6px;color:#cbd5e1;font:500 12px/18px Inter,system-ui}
+/* Rollen und Aktivierung teilen eine Zeile; Hinweise stehen im separaten Footer. */
+#userEditor .au-editor-permissions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+#userEditor .au-editor-role-field{min-width:0;position:relative}
+#userEditor .au-editor-permissions>.au-enabled{margin-top:24px}
+#userEditor .au-role-trigger{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:40px;padding:0 38px 0 14px;color:#64748b;font:400 13px/20px Inter,system-ui;cursor:pointer;text-align:left}
+#userEditor .au-role-trigger.has-selection{color:#e2e8f0;font-weight:600}
+#userEditor .au-role-trigger::placeholder{color:transparent!important}
+#userEditor .au-role-summary{position:absolute;top:24px;left:14px;height:40px;max-width:calc(100% - 55px);display:flex;align-items:center;pointer-events:none;overflow:hidden;white-space:nowrap;color:#64748b;font:400 13px/20px Inter,system-ui}
+#userEditor .au-role-trigger.has-selection+.au-role-summary{color:#e2e8f0;font-weight:600}
+#userEditor .au-role-trigger:not(:placeholder-shown)+.au-role-summary{visibility:hidden}
+#userEditor .au-role-arrow{position:absolute;top:36px;right:14px;width:16px;height:16px;pointer-events:none;color:#94a3b8}
+#userEditor .au-role-trigger[aria-expanded=true]~.au-role-arrow{color:#38bdf8}
+#userEditor .au-role-options{position:fixed;inset:auto;box-sizing:border-box;margin:0;padding:7px;border:1px solid #ffffff26;border-radius:9px;background:#091120;color:#e2e8f0;overflow:auto;box-shadow:0 12px 32px #0005}
+#userEditor .au-role-options:popover-open{display:flex;flex-direction:column;gap:2px}
+#userEditor .au-role-options>button{display:flex;align-items:center;gap:9px;flex:none;width:100%;min-height:36px;padding:9px;border:0;border-radius:6px;background:transparent;color:inherit;font:600 12px/18px Inter,system-ui;text-align:left;cursor:pointer}
+#userEditor .au-role-options>button>svg{box-sizing:border-box;width:16px;height:16px;flex:none;padding:2px;border:1px solid #ffffff26;border-radius:5px;color:transparent}
+#userEditor .au-role-options>button[aria-selected=true]{background:transparent}
+#userEditor .au-role-options>button[aria-selected=true]>svg{background:#0088cc;border-color:#0088cc;color:#fff}
+#userEditor .au-role-options>button:hover:not(:disabled){background:#ffffff08}
+#userEditor .au-role-options>button:disabled{opacity:.4;cursor:default}
+#userEditor .au-role-options>button:focus-visible{outline:1px solid #38bdf8;outline-offset:-1px}
+#userEditor .au-role-options input[hidden],#userEditor .au-role-options>button[hidden]{display:none}
+#userEditor .portal-card-foot.au-editor-footer{display:block;padding:0}
+#userEditor .au-editor-footer>.au-security-note{margin:0;padding:16px 24px;border:0;border-bottom:1px solid var(--border-subtle);background:transparent}
+#userEditor .au-editor-actions{display:flex;align-items:center;gap:8px;padding:16px 24px}
+#userEditor .au-editor-actions>.portal-actions{margin-left:auto}
+@media(max-width:767px){#userEditor .au-editor-permissions{grid-template-columns:minmax(0,1fr)}#userEditor .au-editor-permissions>.au-enabled{margin-top:0}#userEditor .au-editor-actions{flex-wrap:wrap;padding:16px 20px}#userEditor .au-editor-footer>.au-security-note{padding:16px 20px}#userEditor .au-editor-actions>#editorDelete{width:100%;order:2}}
 .admin-reference .au-self-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border:1px solid #34d39940;border-radius:5px;background:#34d3990d;color:#34d399;font:400 10px/14px Inter,system-ui;white-space:nowrap}
 .admin-reference .au-self-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex:none}
 .admin-reference .au-name:has(>.au-self-badge){display:inline-flex;flex-direction:column;align-items:flex-start;gap:3px;max-width:160px;white-space:normal;overflow-wrap:anywhere}
 .admin-reference .au-name>.au-self-badge{flex:none;margin-left:0}
+.admin-reference .au-table .au-avatar{border:2px solid #ffffff14;background:#091120;color:#e2e8f0}
+.admin-reference #deleteUserDialog .portal-confirm-avatar{width:32px;height:32px;border:2px solid #ffffff14;background:#091120;color:#e2e8f0;font:600 10px/1 Inter,system-ui}
 #userEditor .au-password-help,#userEditor .au-role-help{margin-top:6px}
-body.admin-reference .au-filter-drawer{position:fixed;box-sizing:border-box;inset:var(--filter-drawer-top,65px) 0 var(--filter-drawer-bottom,0px) auto;width:380px;max-width:100%;height:calc(100dvh - var(--filter-drawer-top,65px) - var(--filter-drawer-bottom,0px));max-height:none;margin:0;padding:0;border:0;border-left:1px solid var(--border-subtle);border-radius:0;background:var(--surface-canvas);color:#e2e8f0;overflow:visible;box-shadow:none}
+body.admin-reference .au-filter-drawer{position:fixed;box-sizing:border-box;inset:var(--filter-drawer-top,65px) 0 var(--filter-drawer-bottom,0px) auto;width:380px;max-width:100%;height:calc(100dvh - var(--filter-drawer-top,65px) - var(--filter-drawer-bottom,0px));max-height:none;margin:0;padding:0;border:0;border-left:1px solid var(--border-subtle);border-block:1px solid var(--border-subtle);border-radius:0;background:var(--surface-canvas);color:#e2e8f0;overflow:visible;box-shadow:none}
 body.admin-reference .au-filter-drawer[open]{display:flex;flex-direction:column;animation:filter-drawer-enter .18s ease-out}
 /* Ganze Klickfläche abdecken; Header und sichtbaren Copyright-Footer nur optisch aussparen. */
 .au-filter-drawer::backdrop{position:fixed;inset:0;background:linear-gradient(to bottom,transparent var(--filter-drawer-top,65px),rgba(2,5,12,.72) var(--filter-drawer-top,65px),rgba(2,5,12,.72) calc(100% - var(--filter-drawer-bottom,0px)),transparent calc(100% - var(--filter-drawer-bottom,0px)));backdrop-filter:none}

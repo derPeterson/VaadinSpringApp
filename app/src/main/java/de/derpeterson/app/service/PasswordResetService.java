@@ -165,25 +165,37 @@ public class PasswordResetService {
     return tokenRepository.findUserIdByToken(token).flatMap(userRepository::lockVerificationUser);
   }
 
+  public enum LinkState {
+    VALID,
+    EXPIRED,
+    INVALID
+  }
+
+  /** Unterscheidet Linkzustände unter derselben Benutzersperre wie der Passwortwechsel. */
   @Transactional
-  public boolean validateToken(String token) {
+  public LinkState inspectToken(String token) {
     MaintenanceService.requirePublicAccess(configService);
     Optional<UserEntity> user = lockTokenUser(token);
-    if (user.isEmpty()) {
-      return false;
+    if (user.isEmpty() || !user.get().isEnabled()) {
+      return LinkState.INVALID;
     }
-    Optional<PasswordResetTokenEntity> tokenEntity =
-        tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
-    if (tokenEntity.isPresent()
-        && !tokenEntity.get().getExpiryDate().isAfter(LocalDateTime.now(clock))) {
-      tokenEntity.get().setStatus(TokenStatus.EXPIRED);
-      tokenRepository.save(tokenEntity.get());
-      return false;
+    Optional<PasswordResetTokenEntity> stored = tokenRepository.findByToken(token);
+    if (stored.isEmpty()) {
+      return LinkState.INVALID;
     }
-    if (tokenEntity.isPresent() && tokenEntity.get().getStatus() == TokenStatus.INACTIVE) {
-      return false;
+    PasswordResetTokenEntity resetToken = stored.get();
+    if (resetToken.getStatus() == TokenStatus.EXPIRED) {
+      return LinkState.EXPIRED;
     }
-    return tokenEntity.isPresent() && user.get().isEnabled();
+    if (resetToken.getStatus() != TokenStatus.ACTIVE) {
+      return LinkState.INVALID;
+    }
+    if (!resetToken.getExpiryDate().isAfter(LocalDateTime.now(clock))) {
+      resetToken.setStatus(TokenStatus.EXPIRED);
+      tokenRepository.save(resetToken);
+      return LinkState.EXPIRED;
+    }
+    return LinkState.VALID;
   }
 
   /** Invalid raw passwords raise IllegalArgumentException before encoding or token consumption. */

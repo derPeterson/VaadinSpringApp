@@ -1,0 +1,15 @@
+/* Nur ausdrücklich gesetzte Anwendungsicons. Native Vaadin-Symbole bleiben unverändert. */
+vaadin-icon.cosmos-lucide-icon {
+    --vaadin-icon-stroke-width: 2;
+    padding: 0;
+}
+
+/* Avataranzeigen bleiben bei jedem Status gefüllte Punkte; Auswahlzeilen behalten ihre Symbole. */
+.cosmos-avatar-status > div > vaadin-icon {
+    display: block;
+}
+
+.cosmos-reference-portal .cosmos-user-avatar .cosmos-avatar-status vaadin-icon,
+.cosmos-reference-overlay .portal-menu-avatar .cosmos-avatar-status vaadin-icon {
+    display: none;
+}

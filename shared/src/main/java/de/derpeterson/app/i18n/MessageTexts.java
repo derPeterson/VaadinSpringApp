@@ -2,7 +2,10 @@ package de.derpeterson.app.i18n;
 
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.app.config.TokenDurationPolicy;
+import java.math.BigDecimal;
 import java.text.MessageFormat;
+import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
@@ -30,6 +33,26 @@ public class MessageTexts {
 
   public String getHomeDescription() {
     return getTranslation("homeView.description");
+  }
+
+  public String getPortalHomeIntroduction() {
+    return getTranslation("portal.home.introduction");
+  }
+
+  public String getPortalHomeKicker() {
+    return getTranslation("portal.home.kicker");
+  }
+
+  public String getPortalHomeWelcome() {
+    return getTranslation("portal.home.welcome");
+  }
+
+  public String getPortalHomeDescription() {
+    return getTranslation("portal.home.description");
+  }
+
+  public String getPortalHomeNotice() {
+    return getTranslation("portal.home.notice");
   }
 
   public String getHomeOverview() {
@@ -177,10 +200,6 @@ public class MessageTexts {
     return getTranslation("registrationView.last_name_field");
   }
 
-  public String getRegistrationEmailField() {
-    return getTranslation("registrationView.email_field");
-  }
-
   public String getRegistrationPasswordField() {
     return getTranslation("registrationView.password_field");
   }
@@ -226,10 +245,6 @@ public class MessageTexts {
     return getTranslation("verificationView.expired.text1");
   }
 
-  public String getVerificationExpiredText2() {
-    return getTranslation("verificationView.expired.text2");
-  }
-
   public String getVerificationExpiredSuccessMessage() {
     return getTranslation("verificationView.expired.success_message");
   }
@@ -246,6 +261,10 @@ public class MessageTexts {
     return getTranslation("verificationView.not_found.text2");
   }
 
+  public String getVerificationRequestActivationLink() {
+    return getTranslation("verificationView.request_activation_link");
+  }
+
   public String getVerificationNotFoundSuccessMessage() {
     return getTranslation("verificationView.not_found.success_message");
   }
@@ -257,6 +276,14 @@ public class MessageTexts {
   // Reset Password View
   public String getResetPasswordInvalidTitle() {
     return getTranslation("resetPasswordView.invalid.title");
+  }
+
+  public String getResetPasswordExpiredTitle() {
+    return getTranslation("resetPasswordView.expired.title");
+  }
+
+  public String getResetPasswordExpiredText() {
+    return getTranslation("resetPasswordView.expired.text");
   }
 
   public String getResetPasswordInvalidText() {
@@ -304,10 +331,6 @@ public class MessageTexts {
     return getTranslation("base.registration_button");
   }
 
-  public String getBaseResetButton() {
-    return getTranslation("base.reset_button");
-  }
-
   public String getBaseNotifications() {
     return getTranslation("base.notifications");
   }
@@ -339,14 +362,6 @@ public class MessageTexts {
 
   public String getBaseFailedMessage() {
     return getTranslation("base.failed.message");
-  }
-
-  public String getBaseOnlineText() {
-    return getTranslation("base.online_text");
-  }
-
-  public String getBaseOfflineText() {
-    return getTranslation("base.offline_text");
   }
 
   public String getBaseErrorAdminAccessDenied() {
@@ -500,6 +515,34 @@ public class MessageTexts {
     return getTranslation("adminView.config.group.queue");
   }
 
+  public String getAdminDashboardHeroEyebrow() {
+    return getTranslation("adminView.dashboard.hero_eyebrow");
+  }
+
+  public String getAdminDashboardHeroTitle() {
+    return getTranslation("adminView.dashboard.hero_title");
+  }
+
+  public String getAdminDashboardHeroDescription() {
+    return getTranslation("adminView.dashboard.hero_description");
+  }
+
+  public String getAdminDashboardFutureHint() {
+    return getTranslation("adminView.dashboard.future_hint");
+  }
+
+  public String getAdminDashboardShortcuts() {
+    return getTranslation("adminView.dashboard.shortcuts");
+  }
+
+  public String getAdminDashboardShortcutsHint() {
+    return getTranslation("adminView.dashboard.shortcuts_hint");
+  }
+
+  public String getAdminDashboardOpen() {
+    return getTranslation("adminView.dashboard.open");
+  }
+
   public String getAdminDashboardTitle() {
     return getTranslation("adminView.dashboard.title");
   }
@@ -508,20 +551,8 @@ public class MessageTexts {
     return getTranslation("adminView.dashboard.description");
   }
 
-  public String getAdminDashboardWelcomeBack() {
-    return getTranslation("adminView.dashboard.welcome_back");
-  }
-
   public String getAdminDashboardWelcome() {
     return getTranslation("adminView.dashboard.welcome");
-  }
-
-  public String getAdminDashboardRoles() {
-    return getTranslation("adminView.dashboard.roles");
-  }
-
-  public String getAdminDashboardNotAuthenticated() {
-    return getTranslation("adminView.dashboard.not_authenticated");
   }
 
   public String getAdminMailTitle() {
@@ -720,6 +751,109 @@ public class MessageTexts {
 
   public String getAdminConfigDefault() {
     return getTranslation("adminView.config.default");
+  }
+
+  public String getAdminConfigDurationIncrease() {
+    return getTranslation("adminView.config.duration.increase");
+  }
+
+  public String getAdminConfigDurationDecrease() {
+    return getTranslation("adminView.config.duration.decrease");
+  }
+
+  public String getAdminConfigDurationNumberRule() {
+    return getTranslation("adminView.config.duration.number_rule");
+  }
+
+  public String getAdminConfigDurationUnit() {
+    return getTranslation("adminView.config.duration.unit");
+  }
+
+  public String getAdminConfigDurationUnitSeconds() {
+    return getTranslation("adminView.config.duration.unit.seconds");
+  }
+
+  public String getAdminConfigDurationUnitMinutes() {
+    return getTranslation("adminView.config.duration.unit.minutes");
+  }
+
+  public String getAdminConfigDurationUnitHours() {
+    return getTranslation("adminView.config.duration.unit.hours");
+  }
+
+  public String getAdminConfigDurationUnitDays() {
+    return getTranslation("adminView.config.duration.unit.days");
+  }
+
+  public String getAdminConfigDurationCurrent() {
+    return getTranslation("adminView.config.duration.current");
+  }
+
+  public String getAdminConfigDurationEquivalent() {
+    return getTranslation("adminView.config.duration.equivalent");
+  }
+
+  public String getAdminConfigDurationInvalid() {
+    return getTranslation("adminView.config.duration.invalid");
+  }
+
+  public String getAdminConfigDurationUnitHint() {
+    return getTranslation("adminView.config.duration.unit_hint");
+  }
+
+  public String getAdminConfigDurationSeconds(Number count) {
+    return durationTranslation("seconds", count);
+  }
+
+  public String getAdminConfigDurationMinutes(Number count) {
+    return durationTranslation("minutes", count);
+  }
+
+  public String getAdminConfigDurationHours(Number count) {
+    return durationTranslation("hours", count);
+  }
+
+  public String getAdminConfigDurationDays(Number count) {
+    return durationTranslation("days", count);
+  }
+
+  protected Locale formattingLocale() {
+    return Locale.getDefault();
+  }
+
+  private String durationTranslation(String unit, Number count) {
+    BigDecimal number = new BigDecimal(count.toString());
+    NumberFormat format = NumberFormat.getNumberInstance(formattingLocale());
+    format.setMaximumFractionDigits(Math.max(9, number.scale()));
+    String key =
+        "adminView.config.duration."
+            + unit
+            + (number.compareTo(BigDecimal.ONE) == 0 ? ".one" : ".many");
+    return getFormattedTranslation(key, format.format(number));
+  }
+
+  public String getAdminConfigDurationRule(int maximumSeconds) {
+    return getFormattedTranslation("adminView.config.duration.rule", maximumSeconds);
+  }
+
+  public String getAdminConfigHelpTitle() {
+    return getTranslation("adminView.config.help.title");
+  }
+
+  public String getAdminConfigHelpDescription() {
+    return getTranslation("adminView.config.help.description");
+  }
+
+  public String getAdminConfigHelpPlaceholders() {
+    return getTranslation("adminView.config.help.placeholders");
+  }
+
+  public String getAdminConfigHelpYear() {
+    return getTranslation("adminView.config.help.year");
+  }
+
+  public String getAdminConfigHelpServiceName() {
+    return getTranslation("adminView.config.help.service_name");
   }
 
   public String getAdminConfigSaveSuccess() {
@@ -1010,16 +1144,8 @@ public class MessageTexts {
     return getFormattedTranslation("adminView.config.validation.service_name_max", max);
   }
 
-  public String getAdminConfigValidationSeconds() {
-    return getTranslation("adminView.config.validation.seconds");
-  }
-
   public String getAdminConfigHelperDurationFormats() {
     return getTranslation("adminView.config.helper.duration_formats");
-  }
-
-  public String getAdminConfigHelperSeconds() {
-    return getTranslation("adminView.config.helper.seconds");
   }
 
   public String getAdminConfigHelperServiceNameMax(int max) {
@@ -1036,6 +1162,18 @@ public class MessageTexts {
 
   public String getAdminUsersCardDescription() {
     return getTranslation("admin.users.card_description");
+  }
+
+  public String getAdminUsersEmptyHint() {
+    return getTranslation("admin.users.empty_hint");
+  }
+
+  public String getAdminUsersAccountsLabel() {
+    return getTranslation("admin.users.accounts_label");
+  }
+
+  public String getAdminUsersSelf() {
+    return getTranslation("admin.users.self");
   }
 
   public String getAdminUsersAccountCount(int count) {
@@ -1211,10 +1349,6 @@ public class MessageTexts {
     return getTranslation("admin.users.filter.apply");
   }
 
-  public String getAdminUsersActiveFilters() {
-    return getTranslation("admin.users.filter.active");
-  }
-
   public String getAdminUsersActiveFilterCount(int count) {
     return getFormattedTranslation("admin.users.filter.active_count", count);
   }
@@ -1229,6 +1363,10 @@ public class MessageTexts {
 
   public String getAdminUsersFilterPanelTitle() {
     return getTranslation("admin.users.filter.title");
+  }
+
+  public String getAdminUsersFilterPanelDescription() {
+    return getTranslation("admin.users.filter.description");
   }
 
   public String getAdminUsersRemoveFilter(String label) {
@@ -1310,6 +1448,14 @@ public class MessageTexts {
     return getTranslation("admin.users.refresh.tooltip");
   }
 
+  public String getAdminUsersRefreshSuccess() {
+    return getTranslation("admin.users.refresh.success");
+  }
+
+  public String getAdminUsersRefreshFailed() {
+    return getTranslation("admin.users.refresh.failed");
+  }
+
   public String getAdminUsersPaginationPerPage() {
     return getTranslation("admin.users.pagination.per_page");
   }
@@ -1348,12 +1494,15 @@ public class MessageTexts {
 
   public String getAdminUsersPasswordHelperEdit() {
     return getFormattedTranslation(
-        "admin.users.password.helper.edit", getBaseValidationPasswordInvalidMessage());
+        "admin.users.password.helper.edit", getAdminUsersPasswordHelperCreate());
   }
 
   public String getAdminUsersPasswordHelperCreate() {
-    return getFormattedTranslation(
-        "admin.users.password.helper.create", getBaseValidationPasswordInvalidMessage());
+    return getTranslation("admin.users.password.helper.create");
+  }
+
+  public String getAdminUsersPasswordConfirmHelper() {
+    return getTranslation("admin.users.password.confirm.helper");
   }
 
   public String getAdminUsersPasswordValidationEdit() {
@@ -1364,6 +1513,11 @@ public class MessageTexts {
   public String getAdminUsersPasswordValidationCreate() {
     return getFormattedTranslation(
         "admin.users.password.validation.create", getBaseValidationPasswordInvalidMessage());
+  }
+
+  public String getAdminUsersSelectedRoles(int count) {
+    return getFormattedTranslation(
+        count == 1 ? "admin.users.roles.selected.one" : "admin.users.roles.selected.many", count);
   }
 
   public String getAdminUsersRolesHelper() {
@@ -1478,8 +1632,28 @@ public class MessageTexts {
   }
 
   // Kontoverwaltung: erste Gestaltungsstufe, ohne schreibende Kontoaktionen.
-  public String getAccountNavigationSettings() {
-    return getTranslation("account.navigation.settings");
+  public String getAccountNavigationPortal() {
+    return getTranslation("account.navigation.portal");
+  }
+
+  public String getAccountOpenNavigation() {
+    return getTranslation("account.navigation.open");
+  }
+
+  public String getAccountOpenUserMenu(String name) {
+    return getFormattedTranslation("account.user.menu.open", name);
+  }
+
+  public String getAccountEmailAddressLabel() {
+    return getTranslation("account.profile.email.label");
+  }
+
+  public String getAccountReadOnlyLabel() {
+    return getTranslation("account.profile.readonly");
+  }
+
+  public String getAccountBirthDateFormatHint() {
+    return getTranslation("account.profile.date.format");
   }
 
   public String getAccountSettingsOverview() {
@@ -1526,10 +1700,6 @@ public class MessageTexts {
     return getTranslation("accountSettings.profile.description");
   }
 
-  public String getAccountSettingsProfileMeta() {
-    return getTranslation("accountSettings.profile.meta");
-  }
-
   public String getAccountSettingsLanguage() {
     return getTranslation("accountSettings.language");
   }
@@ -1562,6 +1732,18 @@ public class MessageTexts {
     return getTranslation("accountSettings.security.title");
   }
 
+  public String getAccountSettingsChangeAction() {
+    return getTranslation("accountSettings.change.action");
+  }
+
+  public String getAccountSettingsSecurityIntroduction() {
+    return getTranslation("accountSettings.security.introduction");
+  }
+
+  public String getAccountSettingsSessionsIntroduction() {
+    return getTranslation("accountSettings.sessions.introduction");
+  }
+
   public String getAccountSettingsSecurityDescription() {
     return getTranslation("accountSettings.security.description");
   }
@@ -1580,10 +1762,6 @@ public class MessageTexts {
 
   public String getAccountSettingsSessionsActivity() {
     return getTranslation("accountSettings.sessions.activity");
-  }
-
-  public String getAccountSettingsSessionsActiveTitle() {
-    return getTranslation("accountSettings.sessions.active.title");
   }
 
   public String getAccountSettingsSessionsLimit(int limit) {
@@ -1738,16 +1916,8 @@ public class MessageTexts {
     return getTranslation("sessions.last.activity");
   }
 
-  public String getSessionSavedLogin() {
-    return getTranslation("sessions.saved.login");
-  }
-
   public String getSessionStarted() {
     return getTranslation("sessions.started");
-  }
-
-  public String getSessionRevokeSaved() {
-    return getTranslation("sessions.revoke.saved");
   }
 
   public String getSessionRevoked() {
@@ -1760,6 +1930,22 @@ public class MessageTexts {
 
   public String getSessionRecoveryHint() {
     return getTranslation("sessions.recovery.hint");
+  }
+
+  public String getSessionRefreshSuccess() {
+    return getTranslation("sessions.refresh.success");
+  }
+
+  public String getSessionRecoveryTitle() {
+    return getTranslation("sessions.recovery.title");
+  }
+
+  public String getSessionRecoveryListHint() {
+    return getTranslation("sessions.recovery.list.hint");
+  }
+
+  public String getSessionRecoveryLogoutAll() {
+    return getTranslation("sessions.recovery.logout.all");
   }
 
   public String getSessionContinueLogin() {
@@ -1891,10 +2077,6 @@ public class MessageTexts {
     return getTranslation("notifications.searchEmpty");
   }
 
-  public String getNotificationsOverview() {
-    return getTranslation("notifications.overview");
-  }
-
   public String getNotificationsPageDescription() {
     return getTranslation("notifications.pageDescription");
   }
@@ -1973,6 +2155,10 @@ public class MessageTexts {
 
   public String getNotificationsRefresh() {
     return getTranslation("notifications.refresh");
+  }
+
+  public String getNotificationsRefreshed() {
+    return getTranslation("notifications.refreshed");
   }
 
   public String getNotificationsPrevious() {
@@ -2079,6 +2265,38 @@ public class MessageTexts {
     return getTranslation("notifications.recipientDetails");
   }
 
+  public String getNotificationsPreviewTitle() {
+    return getTranslation("notifications.previewTitle");
+  }
+
+  public String getNotificationsReviewAgain() {
+    return getTranslation("notifications.reviewAgain");
+  }
+
+  public String getNotificationsRecheckHint() {
+    return getTranslation("notifications.recheckHint");
+  }
+
+  public String getNotificationsBeforeSendHint() {
+    return getTranslation("notifications.beforeSendHint");
+  }
+
+  public String getNotificationsHistoryDetails() {
+    return getTranslation("notifications.historyDetails");
+  }
+
+  public String getNotificationsMessageContent() {
+    return getTranslation("notifications.messageContent");
+  }
+
+  public String getNotificationsHistoryDelivery() {
+    return getTranslation("notifications.historyDelivery");
+  }
+
+  public String getNotificationsHistoryImmutableLog() {
+    return getTranslation("notifications.historyImmutableLog");
+  }
+
   public String getNotificationsContentPreview() {
     return getTranslation("notifications.contentPreview");
   }
@@ -2129,10 +2347,6 @@ public class MessageTexts {
 
   public String getNotificationsSend() {
     return getTranslation("notifications.send");
-  }
-
-  public String getNotificationsPreviewHint() {
-    return getTranslation("notifications.previewHint");
   }
 
   public String getNotificationsSent() {
@@ -2203,5 +2417,302 @@ public class MessageTexts {
 
   public String getRolesPermissionDenied() {
     return getTranslation("roles.permissionDenied");
+  }
+
+  public String getPortalDeleteAction() {
+    return getTranslation("portal.action.delete");
+  }
+
+  public String getPortalNotificationSelectionHint() {
+    return getTranslation("portal.notification.selection.hint");
+  }
+
+  public String getPortalDeleteNotificationQuestion() {
+    return getTranslation("portal.notification.delete.question");
+  }
+
+  public String getPortalDeleteNotificationExplanation() {
+    return getTranslation("portal.notification.delete.explanation");
+  }
+
+  public String getPortalDeleteNotificationHint() {
+    return getTranslation("portal.notification.delete.hint");
+  }
+
+  public String getPortalDeleteReadExplanation() {
+    return getTranslation("portal.notification.delete.read.explanation");
+  }
+
+  public String getPortalNotificationAffected(long count) {
+    return getFormattedTranslation(
+        count == 1
+            ? "portal.notification.affected.singular"
+            : "portal.notification.affected.plural",
+        count);
+  }
+
+  public String getPortalDeleteReadQuestion() {
+    return getTranslation("portal.notification.delete.read.question");
+  }
+
+  public String getPortalMarkReadQuestion() {
+    return getTranslation("portal.notification.read.question");
+  }
+
+  public String getPortalMarkReadExplanation() {
+    return getTranslation("portal.notification.read.explanation");
+  }
+
+  public String getPortalMarkAllQuestion() {
+    return getTranslation("portal.notification.read.all.question");
+  }
+
+  public String getPortalMarkAllExplanation() {
+    return getTranslation("portal.notification.read.all.explanation");
+  }
+
+  public String getPortalNotificationSyncHint() {
+    return getTranslation("portal.notification.sync.hint");
+  }
+
+  public String getPortalSessionLogoutTitle() {
+    return getTranslation("portal.session.logout.title");
+  }
+
+  public String getPortalSessionSavedTitle() {
+    return getTranslation("portal.session.saved.title");
+  }
+
+  public String getPortalSessionLogoutQuestion() {
+    return getTranslation("portal.session.logout.question");
+  }
+
+  public String getPortalSessionSavedQuestion() {
+    return getTranslation("portal.session.saved.question");
+  }
+
+  public String getPortalSessionSavedExplanation() {
+    return getTranslation("portal.session.saved.explanation");
+  }
+
+  public String getPortalSessionOthersQuestion() {
+    return getTranslation("portal.session.others.question");
+  }
+
+  public String getPortalSessionRetainedHint() {
+    return getTranslation("portal.session.retained.hint");
+  }
+
+  public String getPortalPresenceHeading() {
+    return getTranslation("portal.menu.presence");
+  }
+
+  public String getPortalLanguageHeading() {
+    return getTranslation("portal.menu.language");
+  }
+
+  public String getPortalPaginationRange(long first, long last, long total) {
+    return getFormattedTranslation("portal.pagination.range", first, last, total);
+  }
+
+  public String getPortalConfirmAction() {
+    return getTranslation("portal.action.confirm");
+  }
+
+  public String getPortalAvatarPreview() {
+    return getTranslation("portal.avatar.preview");
+  }
+
+  public String getPortalSessionActive() {
+    return getTranslation("portal.session.active");
+  }
+
+  public String getPortalSessionInactive() {
+    return getTranslation("portal.session.inactive");
+  }
+
+  public String getPortalSessionActiveCount(int count) {
+    return getFormattedTranslation(
+        count == 1 ? "portal.session.count.singular" : "portal.session.count.plural", count);
+  }
+
+  public String getPortalSessionSelection(int active, int saved) {
+    String savedCount =
+        getFormattedTranslation(
+            saved == 1
+                ? "portal.session.saved.count.singular"
+                : "portal.session.saved.count.plural",
+            saved);
+    return getFormattedTranslation(
+        "portal.session.selection", getPortalSessionActiveCount(active), savedCount);
+  }
+
+  public String getPortalSessionCheckSelection() {
+    return getTranslation("portal.session.check.selection");
+  }
+
+  public String getPortalSessionRevokeAction() {
+    return getTranslation("portal.session.revoke.action");
+  }
+
+  public String getPortalSessionLastUsed() {
+    return getTranslation("portal.session.last.used");
+  }
+
+  public String getPortalSessionRemembered() {
+    return getTranslation("portal.session.remembered");
+  }
+
+  public String getPortalSessionLogoutAria(String device) {
+    return getFormattedTranslation("portal.session.logout.aria", device);
+  }
+
+  // Öffentlicher Referenzrahmen
+  public String getPublicAreaLabel() {
+    return getTranslation("public.area");
+  }
+
+  public String getPublicHomeIntroduction() {
+    return getTranslation("public.home.introduction");
+  }
+
+  public String getPublicHomeDescription() {
+    return getTranslation("public.home.description");
+  }
+
+  public String getPublicHomeKicker() {
+    return getTranslation("public.home.kicker");
+  }
+
+  public String getPublicLoginIntroduction() {
+    return getTranslation("public.login.introduction");
+  }
+
+  public String getPublicLoginSubtitle() {
+    return getTranslation("public.login.subtitle");
+  }
+
+  public String getPublicRegisterIntroduction() {
+    return getTranslation("public.register.introduction");
+  }
+
+  public String getPublicRegisterSubtitle() {
+    return getTranslation("public.register.subtitle");
+  }
+
+  public String getPublicForgotTitle() {
+    return getTranslation("public.forgot.title");
+  }
+
+  public String getPublicForgotIntroduction() {
+    return getTranslation("public.forgot.introduction");
+  }
+
+  public String getPublicForgotSubtitle() {
+    return getTranslation("public.forgot.subtitle");
+  }
+
+  public String getPublicRequestLink() {
+    return getTranslation("public.request.link");
+  }
+
+  public String getPublicRequestNewLink() {
+    return getTranslation("public.request.new.link");
+  }
+
+  public String getPublicHomeAction() {
+    return getTranslation("public.home.action");
+  }
+
+  public String getPublicResetIntroduction() {
+    return getTranslation("public.reset.introduction");
+  }
+
+  public String getPublicResetSubtitle() {
+    return getTranslation("public.reset.subtitle");
+  }
+
+  public String getPublicResetFormTitle() {
+    return getTranslation("public.reset.form.title");
+  }
+
+  public String getPublicSavePasswordAction() {
+    return getTranslation("public.reset.save.password");
+  }
+
+  public String getPublicVerificationTitle() {
+    return getTranslation("public.verification.title");
+  }
+
+  public String getPublicVerificationIntroduction() {
+    return getTranslation("public.verification.introduction");
+  }
+
+  public String getPublicVerificationSubtitle() {
+    return getTranslation("public.verification.subtitle");
+  }
+
+  public String getPublicEmailIntroduction() {
+    return getTranslation("public.email.introduction");
+  }
+
+  public String getPublicEmailSubtitle() {
+    return getTranslation("public.email.subtitle");
+  }
+
+  public String getPublicEmailFormTitle() {
+    return getTranslation("public.email.form.title");
+  }
+
+  public String getPublicEmailExpiredTitle() {
+    return getTranslation("public.email.expired.title");
+  }
+
+  public String getPublicEmailInvalidTitle() {
+    return getTranslation("public.email.invalid.title");
+  }
+
+  public String getPublicEmailConflictTitle() {
+    return getTranslation("public.email.conflict.title");
+  }
+
+  public String getPublicEmailSuccessTitle() {
+    return getTranslation("public.email.success.title");
+  }
+
+  public String getPublicEmailConfirmationHint() {
+    return getTranslation("public.email.confirmation.hint");
+  }
+
+  public String getPublicMaintenanceIntroduction() {
+    return getTranslation("public.maintenance.introduction");
+  }
+
+  public String getPublicMaintenanceSubtitle() {
+    return getTranslation("public.maintenance.subtitle");
+  }
+
+  public String getPublicOutcomeSubtitle() {
+    return getTranslation("public.outcome.subtitle");
+  }
+
+  public String getPublicRecoveryTitle() {
+    return getTranslation("public.recovery.title");
+  }
+
+  public String getPublicRecoveryIntroduction() {
+    return getTranslation("public.recovery.introduction");
+  }
+
+  public String getPublicEmailField() {
+    return getTranslation("public.field.email");
+  }
+
+  public String getPublicConfirmEmailField() {
+    return getTranslation("public.field.email.confirm");
+  }
+
+  public String getPublicConfirmPasswordField() {
+    return getTranslation("public.field.password.confirm");
   }
 }

@@ -30,7 +30,7 @@ public final class AccountSessionsPage {
   public void assertCounts(int active, int other, int saved) {
     assertThat(
             page.locator("#account-panel-sessions .account-session-heading .account-entry-title"))
-        .hasText(active + " " + texts.getAccountSettingsSessionsActiveTitle());
+        .hasText(texts.getPortalSessionActiveCount(active));
     assertThat(rows("current")).hasCount(1);
     assertThat(page.locator("#account-current-session")).isDisabled();
     assertThat(rows("active")).hasCount(other);
@@ -40,16 +40,25 @@ public final class AccountSessionsPage {
   @Step("Andere Sitzung gezielt abmelden")
   public void revokeOther(int index) {
     UiActions.complete(page, () -> rows("active").nth(index).locator("vaadin-button").click());
+    confirm();
   }
 
   @Step("Gespeicherten Zugang widerrufen")
   public void revokeSaved(int index) {
     UiActions.complete(page, () -> rows("saved").nth(index).locator("vaadin-button").click());
+    confirm();
   }
 
   @Step("Alle anderen Sitzungen abmelden")
   public void revokeOthers() {
     UiActions.complete(page, () -> page.locator("#account-logout-others").click());
+    confirm();
+  }
+
+  private void confirm() {
+    assertThat(page.locator("#sessions-confirmation[opened]")).isVisible();
+    UiActions.complete(page, () -> page.locator("#sessions-confirmation-submit").click());
+    assertThat(page.locator("#sessions-confirmation[opened]")).hasCount(0);
   }
 
   @Step("Sitzungsliste über Aktualisieren neu laden")

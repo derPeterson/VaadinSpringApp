@@ -74,8 +74,8 @@ public final class AdminUserDialog {
     assertThat(root().locator("vaadin-date-picker")).hasJSProperty("value", "1990-01-01");
     assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     check(texts.getAdminUsersFieldEnabled(), enabled);
-    check(texts.getRoleUser(), true);
-    check(texts.getRoleAdmin(), administrator);
+    setRole(texts.getRoleUser(), true);
+    setRole(texts.getRoleAdmin(), administrator);
   }
 
   @Step("Freigabe im Benutzerformular ändern")
@@ -94,26 +94,34 @@ public final class AdminUserDialog {
 
   @Step("Administratorrolle im Benutzerformular vergeben oder entziehen")
   public void setAdministrator(boolean selected) {
-    check(texts.getRoleAdmin(), selected);
+    setRole(texts.getRoleAdmin(), selected);
   }
 
   public Locator administrator() {
-    return root()
-        .getByRole(
-            AriaRole.CHECKBOX,
-            new Locator.GetByRoleOptions().setName(texts.getRoleAdmin()).setExact(true));
+    return role(texts.getRoleAdmin());
   }
 
   @Step("Explizite Rolle im Benutzerformular vergeben oder entziehen")
   public void setRole(String translatedRole, boolean selected) {
-    role(translatedRole).setChecked(selected);
+    Locator option = role(translatedRole);
+    if (selected != "true".equals(option.getAttribute("aria-selected"))) {
+      option.click();
+    }
+    assertThat(option).hasAttribute("aria-selected", Boolean.toString(selected));
+    rolesInput().press("Escape");
   }
 
   public Locator role(String translatedRole) {
-    return root()
-        .getByRole(
-            AriaRole.CHECKBOX,
-            new Locator.GetByRoleOptions().setName(translatedRole).setExact(true));
+    Locator input = rolesInput();
+    if (!"true".equals(input.getAttribute("aria-expanded"))) {
+      input.click();
+    }
+    return page.getByRole(
+        AriaRole.OPTION, new Page.GetByRoleOptions().setName(translatedRole).setExact(true));
+  }
+
+  private Locator rolesInput() {
+    return root().locator("vaadin-multi-select-combo-box.admin-user-roles input");
   }
 
   @Step("Speichern versuchen und erwarteten fachlichen Hinweis prüfen")

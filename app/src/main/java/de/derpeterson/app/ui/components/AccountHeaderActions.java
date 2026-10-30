@@ -4,17 +4,17 @@ import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLIN
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.views.AccountView;
+import java.util.function.LongConsumer;
 
 /** Gemeinsame Konto-Schnelleinstiege neben dem Avatar; anonym vollständig ausgeblendet. */
 public class AccountHeaderActions extends HorizontalLayout {
   private final transient MessageProperties messages;
-  private final Button notifications = new Button(VaadinIcon.PAPERPLANE.create());
-  private final Button settings = new Button(VaadinIcon.COG.create());
+  private final Button notifications = new Button(AppIcon.PAPERPLANE.create());
+  private final Button settings = new Button(AppIcon.COG.create());
 
   public AccountHeaderActions(MessageProperties messages, boolean authenticated) {
     this.messages = messages;
@@ -36,6 +36,24 @@ public class AccountHeaderActions extends HorizontalLayout {
   }
 
   private UserNotificationBell notificationBell;
+  private boolean referenceStyle;
+  private LongConsumer unreadCountListener = value -> {};
+
+  public void setUnreadCountListener(LongConsumer listener) {
+    unreadCountListener = listener;
+    if (notificationBell != null) {
+      notificationBell.setUnreadCountListener(listener);
+    }
+  }
+
+  public void useReferenceIcons() {
+    referenceStyle = true;
+    if (notificationBell != null) {
+      notificationBell.useReferenceStyle();
+    }
+    settings.setIcon(AppIcon.COG.create());
+    notifications.setIcon(AppIcon.BELL.create());
+  }
 
   public void configureNotifications(
       de.derpeterson.app.service.UserNotificationService service,
@@ -45,6 +63,10 @@ public class AccountHeaderActions extends HorizontalLayout {
     }
     remove(notifications);
     notificationBell = new UserNotificationBell(messages, service, request, notifications);
+    notificationBell.setUnreadCountListener(unreadCountListener);
+    if (referenceStyle) {
+      notificationBell.useReferenceStyle();
+    }
     addComponentAtIndex(0, notificationBell);
   }
 

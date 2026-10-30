@@ -1,7 +1,6 @@
 package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppConstants.USER_ICON_ALT;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
@@ -35,16 +34,29 @@ public final class UserMenu {
 
   @Step("Sprache ausdrücklich über das Flaggenmenü wechseln")
   public void selectLanguage(String language) {
+    Locator publicLanguage =
+        page.locator(".public-languages vaadin-button[lang='" + language + "']");
+    if (publicLanguage.isVisible()) {
+      UiActions.complete(page, publicLanguage::click);
+      assertThat(publicLanguage).hasAttribute("aria-pressed", "true");
+      return;
+    }
     UiTexts expected = new UiTexts(language);
     open();
-    Locator flag =
-        page.getByRole(
-            AriaRole.IMG,
-            new Page.GetByRoleOptions()
-                .setName(language.equals("de") ? "German Flag Icon" : "English Flag Icon")
-                .setExact(true));
-    page.getByRole(AriaRole.BUTTON).filter(new Locator.FilterOptions().setHas(flag)).click();
-    assertThat(flag).hasCSS("filter", "none");
+    Locator languageButton = page.locator("#portal-language-" + language);
+    if (languageButton.isVisible()) {
+      languageButton.click();
+      assertThat(languageButton).hasAttribute("aria-pressed", "true");
+    } else {
+      Locator flag =
+          page.getByRole(
+              AriaRole.IMG,
+              new Page.GetByRoleOptions()
+                  .setName(language.equals("de") ? "German Flag Icon" : "English Flag Icon")
+                  .setExact(true));
+      page.getByRole(AriaRole.BUTTON).filter(new Locator.FilterOptions().setHas(flag)).click();
+      assertThat(flag).hasCSS("filter", "none");
+    }
     // The menu may be anonymous or authenticated; both expected labels use exactly this language.
     assertThat(
             page.getByRole(
@@ -114,7 +126,6 @@ public final class UserMenu {
   }
 
   private Locator avatar() {
-    return page.getByRole(
-        AriaRole.BUTTON, new Page.GetByRoleOptions().setName(USER_ICON_ALT).setExact(true));
+    return page.locator("vaadin-button.tracked-user-button");
   }
 }

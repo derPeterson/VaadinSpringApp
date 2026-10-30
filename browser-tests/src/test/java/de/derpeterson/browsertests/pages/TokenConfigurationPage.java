@@ -24,23 +24,30 @@ public final class TokenConfigurationPage {
   }
 
   public Locator field(String label) {
-    return page.locator("vaadin-text-field")
-        .filter(
-            new Locator.FilterOptions()
-                .setHas(
-                    page.getByRole(
-                        AriaRole.TEXTBOX,
-                        new Page.GetByRoleOptions().setName(label).setExact(true))));
+    return new ConfigurationPage(page).duration(label).locator("vaadin-big-decimal-field");
   }
 
   public String value(String label) {
-    return field(label).locator("input").inputValue();
+    java.math.BigDecimal seconds = new ConfigurationPage(page).seconds(label);
+    java.math.BigInteger[] parts =
+        seconds
+            .movePointRight(9)
+            .toBigIntegerExact()
+            .divideAndRemainder(java.math.BigInteger.valueOf(1_000_000_000));
+    return java.time.Duration.ofSeconds(parts[0].longValueExact(), parts[1].longValueExact())
+        .toString();
   }
 
-  @Step("Dauer im sichtbaren Feld eingeben")
+  @Step("Dauer als Zahl und Einheit eingeben")
   public void enter(String label, String value) {
-    field(label).locator("input").fill(value);
-    field(label).locator("input").press("Tab");
+    java.time.Duration duration =
+        value.startsWith("P")
+            ? java.time.Duration.parse(value)
+            : java.time.Duration.ofMinutes(Long.parseLong(value.substring(0, value.length() - 1)));
+    java.math.BigDecimal seconds =
+        java.math.BigDecimal.valueOf(duration.getSeconds())
+            .add(java.math.BigDecimal.valueOf(duration.getNano(), 9));
+    new ConfigurationPage(page).enterSeconds(label, seconds);
   }
 
   @Step("Dauer ablehnen und lokalisierten Feldfehler prüfen")
@@ -69,11 +76,7 @@ public final class TokenConfigurationPage {
   @Step("Mindestdauer und Erklärung im neuen Klick-Tooltip prüfen")
   public void explain(String label, long minutes, String explanation) {
     new ConfigurationPage(page)
-        .explain(
-            label,
-            explanation,
-            texts.getAdminConfigHelperDurationFormats(),
-            texts.getAdminConfigValidationDurationMinimum(minutes));
+        .explain(label, explanation, texts.getAdminConfigValidationDurationMinimum(minutes));
   }
 
   private Locator notice() {

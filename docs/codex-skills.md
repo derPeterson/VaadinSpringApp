@@ -1,6 +1,6 @@
 # Arbeiten mit Codex
 
-Die fünf Projekt-Skills liegen unter `.agents/skills/`. Diese Seite beschreibt ihre
+Die Projekt-Skills liegen unter `.agents/skills/`. Diese Seite beschreibt ihre
 Bedienung; die verlinkten `SKILL.md`-Dateien enthalten die vollständigen Agentenregeln.
 Aufträge im tatsächlichen Projektverzeichnis stellen. Ein Beispiel zu besprechen
 oder diese Anleitung zu lesen startet keinen Ablauf.
@@ -12,6 +12,7 @@ oder diese Anleitung zu lesen startet keinen Ablauf.
 | ein Feature planen und schrittweise umsetzen | „Umsetzung starten: FEATURE“ | [umsetzung-starten](../.agents/skills/umsetzung-starten/SKILL.md) |
 | den Zwischenstand prüfen und eine Commit-Message erhalten | „Gib mir bitte eine Commit-Message“ | [aenderungen-pruefen](../.agents/skills/aenderungen-pruefen/SKILL.md) |
 | einen fertigen Branch lokal integrieren | „Merge BRANCH nach ZIEL“ | [branch-lokal-mergen](../.agents/skills/branch-lokal-mergen/SKILL.md) |
+| einen Entwurf mit Stitch und den bestehenden Referenzen gestalten | „Lass Stitch für SEITE zwei Varianten mit ANREGUNGEN erstellen“ | [stitch-entwurf](../.agents/skills/stitch-entwurf/SKILL.md) |
 
 Normale Folgeantworten gehören zum laufenden Auftrag; der Skillname muss nicht bei
 jedem Arbeitsschritt wiederholt werden. Explizite Einschränkungen des Benutzers gelten.

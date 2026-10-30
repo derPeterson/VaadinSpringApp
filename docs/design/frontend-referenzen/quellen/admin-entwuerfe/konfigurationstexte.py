@@ -3,6 +3,7 @@
 import json
 import re
 import runpy
+from decimal import Decimal
 from pathlib import Path
 
 root = Path(__file__).parent
@@ -71,7 +72,8 @@ def configuration_texts(inventory):
     )
 
     def text(getter, *arguments):
-        value = texts[getter_keys[getter]]
+        # Properties-Zeilenumbrüche als reinen Text in die HTML-Referenz übernehmen.
+        value = texts[getter_keys[getter]].replace(r"\n", "\n")
         for index, argument in enumerate(arguments):
             value = value.replace("{" + str(index) + "}", str(argument))
         return value
@@ -256,6 +258,68 @@ def configuration_texts(inventory):
             if confidential
             else default
         )
+        duration_start = section.index("DURATION_ENTRIES =")
+        duration_end = section.index(");", duration_start)
+        duration_ids = set(
+            re.findall(r"ConfigEntry\.([A-Z_]+)", section[duration_start:duration_end])
+        )
+        retention_ids = {
+            "USER_NOTIFICATIONS_INBOX_RETENTION_DAYS",
+            "USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS",
+        }
+        storage = (
+            "duration"
+            if identifier in duration_ids
+            else "days"
+            if identifier in retention_ids
+            else "seconds"
+            if identifier == "REMEMBER_ME_DURATION"
+            else None
+        )
+        if storage:
+            field["durationStorage"] = storage
+            field["durationDefault"] = default
+            field["durationMinimumSeconds"] = (
+                token_minimums[identifier] * 60
+                if identifier in token_minimums
+                else 1
+                if storage in {"seconds", "days"}
+                else "0.000000001"
+                if identifier == "EMAIL_QUEUE_SENT_LIVE_DURATION"
+                else None
+            )
+            if default:
+                if storage == "duration":
+                    match = re.fullmatch(
+                        r"P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?",
+                        default,
+                    )
+                    assert match, default
+                    seconds = sum(
+                        Decimal(value or "0") * factor
+                        for value, factor in zip(match.groups(), (86400, 3600, 60, 1))
+                    )
+                else:
+                    seconds = Decimal(default) * (86400 if storage == "days" else 1)
+                for unit_name, factor in (
+                    ("days", 86400),
+                    ("hours", 3600),
+                    ("minutes", 60),
+                    ("seconds", 1),
+                ):
+                    if storage == "days" and unit_name != "days":
+                        continue
+                    if seconds % factor == 0 or factor == 1:
+                        number = seconds / factor
+                        key = (
+                            "adminView.config.duration."
+                            + unit_name
+                            + (".one" if number == 1 else ".many")
+                        )
+                        display_default = texts[key].replace(
+                            "{0}", format(number.normalize(), "f")
+                        )
+                        break
         retention = identifier in {
             "USER_NOTIFICATIONS_INBOX_RETENTION_DAYS",
             "USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS",
@@ -272,7 +336,10 @@ def configuration_texts(inventory):
                 for getter, _ in rules_by_entry[identifier]
             ),
             label=text(labels[identifier]),
-            tooltip=text(tooltips[identifier]),
+            tooltip=text(
+                tooltips[identifier],
+                *([token_minimums[identifier]] if identifier in token_minimums else []),
+            ),
             defaultText=(
                 text(
                     "getAdminConfigInitialValue"

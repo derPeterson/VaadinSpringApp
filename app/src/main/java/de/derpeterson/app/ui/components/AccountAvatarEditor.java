@@ -10,8 +10,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Input;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.UploadFormat;
 import com.vaadin.flow.component.upload.UploadI18N;
@@ -68,7 +67,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     preview.add(circle);
 
     choose.setId("account-avatar-choose");
-    Icon uploadSymbol = VaadinIcon.UPLOAD.create();
+    SvgIcon uploadSymbol = AppIcon.UPLOAD.create();
     uploadSymbol.getElement().setAttribute(ARIA_HIDDEN, "true");
     Span uploadBadge = new Span(uploadSymbol);
     uploadBadge.addClassName("account-avatar-upload-icon");
@@ -140,10 +139,10 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     role(percent.getElement(), "percent");
     Div zoomRow = new Div(zoomLabel, zoom, percent);
     zoomRow.addClassName("account-avatar-zoom");
-    reset.setPrefixComponent(VaadinIcon.ROTATE_LEFT.create());
+    reset.setPrefixComponent(AppIcon.ROTATE_LEFT.create());
     role(reset.getElement(), "reset");
     cancelSelection.setId("account-avatar-cancel-selection");
-    cancelSelection.setPrefixComponent(VaadinIcon.CLOSE.create());
+    cancelSelection.setPrefixComponent(AppIcon.CLOSE.create());
     cancelSelection.addClassName("account-avatar-cancel-selection");
     role(cancelSelection.getElement(), "cancel");
     Div controls = new Div(cropFrame, cropHint, zoomRow, reset, cancelSelection);
@@ -172,7 +171,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     initials.removeAll();
     initials.setText(OverlayUserIcon.initialsFor(first, last));
     if (initials.getText().isEmpty()) {
-      initials.add(VaadinIcon.USER.create());
+      initials.add(AppIcon.USER.create());
     }
     updatePreviewLabel();
   }

@@ -31,6 +31,7 @@ import de.derpeterson.app.views.admin.AdminUserManagementSection;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
@@ -131,6 +132,49 @@ class UserStatusNotificationTest {
     assertText(startGerman ? Locale.GERMAN : Locale.ENGLISH, true);
     LanguageChangeEvent.fire(ui, startGerman ? Locale.ENGLISH : Locale.GERMAN);
     assertText(startGerman ? Locale.ENGLISH : Locale.GERMAN, true);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  @SuppressWarnings("unchecked")
+  void referenceStatusButtonsPersistThroughTheExistingServiceAndKeepFailuresUnselected(
+      boolean fail) {
+    UserEntity user = UserEntity.builder().id(7L).status(UserStatus.OFFLINE).build();
+    UserService service = mock(UserService.class);
+    if (fail) {
+      when(service.updateUserStatus(user, UserStatus.EMPLOYED, true))
+          .thenThrow(new OptimisticLockingFailureException("conflict"));
+    } else {
+      when(service.updateUserStatus(user, UserStatus.EMPLOYED, true))
+          .thenReturn(new UserService.StatusUpdate(UserStatus.EMPLOYED, true));
+    }
+    UserPopoverMenu menu =
+        new UserPopoverMenu(
+            texts,
+            mock(SecurityService.class),
+            service,
+            user,
+            new Button(),
+            new UserPopoverMenu.Actions(null, null, null, null),
+            status -> {});
+    menu.addThemeName("cosmos-reference");
+    Map<UserStatus, Button> buttons =
+        (Map<UserStatus, Button>) ReflectionTestUtils.getField(menu, "referenceStatusButtons");
+    assertEquals(UserStatus.values().length, buttons.size());
+    buttons.get(UserStatus.EMPLOYED).click();
+    UserStatus expected = fail ? UserStatus.OFFLINE : UserStatus.EMPLOYED;
+    assertEquals(expected, user.getStatus());
+    for (UserStatus status : UserStatus.values()) {
+      assertEquals(
+          Boolean.toString(status == expected),
+          buttons.get(status).getElement().getAttribute("aria-pressed"));
+    }
+    session.setLocale(Locale.GERMAN);
+    menu.refreshForLanguageChange();
+    assertEquals(
+        texts.getUserStatusLabel(UserStatus.EMPLOYED),
+        buttons.get(UserStatus.EMPLOYED).getAriaLabel().orElseThrow());
+    org.mockito.Mockito.verify(service).updateUserStatus(user, UserStatus.EMPLOYED, true);
   }
 
   private Notification currentNotification() {

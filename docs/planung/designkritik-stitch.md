@@ -1,8 +1,194 @@
 # Designkritik und Spielwiese mit Google Stitch
 
-## Auftrag und aktueller Stand
+## Aktueller Auftrag: gemeinsamer Seitenrahmen und Abschlussprüfung
+
+Besucher, angemeldetes Frontend und Administration verwenden einen gemeinsamen
+Seitenrahmen mit Servicekopf, Seitenüberschrift, optionaler Navigation, Inhalt und
+Copyright. Nur der Servicekopf bleibt stehen. Seitentitel, Navigation und Inhalt
+scrollen zusammen. Fachkomponenten sowie die abgestimmte Gestaltung der Felder,
+Buttons, Tabellen und Dialoge bleiben erhalten.
+
+Vereinbarte Reihenfolge: Rahmen umsetzen und isoliert auf Desktop/Smartphone prüfen,
+nachweislich unbenutzte Umbau-Ressourcen, Klassen und Katalogtexte bereinigen,
+den gesamten aktuellen Änderungsstand ausführlich reviewen und committen, danach
+die große Testrunde nach dem Projektskill ausführen. Eigene Testdaten und Dienste
+sind freigegeben. Fehler, Korrekturen und offene Nachweise dokumentieren.
+Die gemeinsame Seitennavigation basiert in Portal und Administration auf nativer
+Vaadin SideNav. Besucher behalten ausschließlich die obere Navigation. Unterpunkte
+sind vorbereitet, ohne für Besucher eine Seitennavigation einzuführen.
+Der Review umfasst einen zweiten Blick auf Korrekturen und deren Aufrufer.
+Die bisherigen HTML-Referenzen und Vergleichsseiten bleiben erhalten.
+
+Nach der Prüfung gemeinsam das weitere Branch-Vorgehen und die Ablage der großen
+HTML-Referenzen planen. Der Projekt-Skill `stitch-entwurf` steht für künftige Entwurfsaufträge bereit. Keine automatische Featureabnahme oder Integration nach main.
+
+## Aktuelles freigegebenes Paket: vollständige Adminübernahme
+
+Die gesamte freigegebene Administration ist mit nativen Vaadin-Komponenten in
+die echte Anwendung übernommen: Dashboard A, Benutzerverwaltung samt rechtem
+Filteroverlay und Mehrfachauswahl, acht Konfigurationsgruppen mit rechter Feldhilfe,
+Mailtest A und Benachrichtigungen B einschließlich Vorschau, Verlauf und Dialogen.
+Bestehende Fach-, Validierungs-, Rechte- und Versandverträge bleiben maßgeblich.
+Lucide gilt für selbst gesetzte Symbole; native Feld- und Tabellensymbole bleiben
+bei Vaadin. Die HTML-Referenz wird nur für ausdrücklich abgestimmte Korrekturen mitgezogen.
+Die Dashboard-Schnellzugriffe übernehmen die Beschreibungstexte ihrer Zielseiten;
+das zusätzliche Superadmin-Badge entfällt in der Referenz. In Vaadin bleiben
+Schnellzugriff, Navigation, Direktzugriff und Versand auf Superadmins beschränkt.
+
+Das Benutzerfilter-Overlay wird im bestehenden Vaadin-Baustein optisch an die
+feste Referenz angeglichen: Kopftexte, Breite, Felder-/Auswahlabstände, Statusfarben,
+Aktivzähler und gleich breite Footerbuttons. Die Filterfunktion bleibt unverändert;
+die gemeinsame visuelle Durchsicht bleibt offen.
+
+Die aktuelle Dialogverfeinerung umfasst die kompakte Rollen-/Aktiv-Zeile für
+Anlegen und Bearbeiten, den Hinweisfooter mit durchgehender Trennlinie und den
+kombinierten Hinweis für optionale Passwortänderungen. HTML und Vaadin werden
+hierfür gemeinsam gepflegt. Offen bleibt die gemeinsame visuelle Abnahme.
+
+Der Benutzer erlaubt für dieses Paket isolierte Starts und Browserprüfungen
+DE/EN auf Desktop und Smartphone, ausschließlich mit eigenen Testdaten und ohne
+externen Mailversand. Die zusätzliche bedienbare Admin-Gegenüberstellung mit zwölf
+Szenen liegt unter `quellen/anwendungsvergleich/admin.html`; Start und Anmeldung
+stehen im zugehörigen README. Filteränderungen werden erst mit „Filter anwenden“
+übernommen; Zurücksetzen verändert nur den Entwurf, Abbrechen verwirft ihn.
+Konfigurationshilfen überlagern die Felder, ohne sie zu verschieben. Empfängervorschau,
+Vorschauinvalidierung und Versandberechtigung verwenden weiterhin die echten Dienste.
+
+Geprüft wurden 396 gezielte JUnit-Tests; nach den letzten Java-Verfeinerungen weitere
+40 betroffene Tests, jeweils erfolgreich. Stilprüfung und optimierter Reactor-Build
+waren erfolgreich. Interaktiv wurden alle zwölf Bereiche auf Desktop in DE und auf
+Smartphone in EN geöffnet, ohne horizontalen Seitenüberlauf; zusätzlich Filterentwurf,
+Abbrechen, Anwendung und Zurücksetzen, Benutzerdialog, Konfigurationshilfe,
+Nachrichtenvorschau und deren Invalidierung sowie Verlaufsdetails. Smartphone-Querformat
+und mobile Navigation wurden gezielt geprüft. Es erfolgte kein externer Versand.
+Native Tabellen-, Auswahl- und Kalenderdetails sowie verbleibende visuelle Unterschiede
+werden gemeinsam im Vergleich geprüft; eine pixelgenaue Übereinstimmung oder
+Designabnahme wird damit nicht behauptet. Die automatisierte Browser-Suite bleibt
+als eigener Nachweis in `docs/testbedarf.md` offen. Offen ist die gemeinsame visuelle
+Durchsicht; keine Git-Aktion oder Gesamt-QA.
+
+## Aktuelles freigegebenes Paket: Besucher und Buttonabgleich
+
+Der Benutzer hat den technischen Erststand des angemeldeten Portals zur weiteren
+Arbeit akzeptiert. Vor der Besucherübernahme werden Icon-/Textbuttons mit gleichem
+Abstand und mittiger Ausrichtung abgeglichen. Die konkrete Änderungsliste gehört
+zur anschließenden gemeinsamen Sichtung.
+
+Freigegeben sind der gesamte Besucherbereich anhand der festen HTML-Referenz,
+native Vaadin-Komponenten, DE/EN, alle bestehenden Formular-/Token-/Anmeldezustände
+und eine zusätzliche durchklickbare Gegenüberstellung. Sicherheits-, Validierungs-
+und Widerrufsverträge bleiben erhalten. Die HTML-Referenzen bleiben die Grundlage;
+ausdrücklich abgestimmte Korrekturen werden in HTML und Vaadin gemeinsam gepflegt.
+Passwortlinks unterscheiden ungültig (rot) und abgelaufen (gelb) mit eigenen
+DE-/EN-Texten. Verbrauchte oder widerrufene Links bleiben ungültig. Der Dienst
+ermittelt den Zustand unter der bestehenden Sperre; der Passwortwechsel prüft erneut.
+Ausdrücklich nachträglich angeglichen werden der öffentliche Startseitenhinweis
+an den angemeldeten Stil sowie die öffentlichen Passwort-Platzhalter an die
+übrigen 14-px-Eingaben; Vaadin verwendet dort ebenfalls 14 px und Gewicht 400.
+Isolierte Starts und Browserprüfungen auf Desktop und Smartphone sind ausdrücklich
+für dieses Paket erlaubt. Keine bestehenden Daten und kein externer Mailversand.
+Der technische Erststand ist umgesetzt: gemeinsamer Besucherrahmen, Startseite,
+Anmeldung, Registrierung, Passwortanforderung und -zurücksetzung, Aktivierung,
+E-Mail-Bestätigung, Wartung und eingeschränkte Anmeldung. Bestehende Dienste und
+Wirkungstexte bleiben maßgeblich. Der eigene Besuchervergleich bietet 15 Szenen.
+Beschriftete Iconbuttons im angemeldeten Bereich verwenden 8 px Abstand sowie
+zentrierte Präfix- und Labelzonen; Navigation, Kontotabs und Sitzungsaktionen sind
+angeglichen. Identitätskarten und reine Iconbuttons behalten ihre eigenen Abstände.
+
+Gezielt geprüft: 138 erfolgreiche JUnit-Tests, Stil-/Ressourcenprüfungen,
+Besucherszenen DE auf Desktop und EN auf Smartphone am selben optimierten Stand,
+ausgewählte Formulare im Querformat sowie Dialogbuttons auf Desktop/Smartphone.
+Leere Registrierung, Live-Sprachwechsel, native Auswahl-/Kalenderbedienung und
+die drei Sitzungsbestätigungen wurden interaktiv geprüft, ohne Versand oder
+Bestätigung einer Konto-/Widerrufsaktion. Die Browser-Suite bleibt als eigener
+offener Nachweis in docs/testbedarf.md erhalten. Offen ist die gemeinsame visuelle
+Durchsicht beider Pakete; keine globale Featureabnahme oder Git-Aktion.
+
+## Freigegebene Übernahme des angemeldeten Frontends
+
+Der Benutzer hat die Umsetzung auf das gesamte Frontend angemeldeter Benutzer erweitert.
+„Dashboard“ bezeichnet hier die Startseite des Benutzerportals; die Administration und
+Besucheransichten bleiben außerhalb dieses Pakets. Die feste HTML-Referenz bleibt erhalten.
+Native Vaadin-Komponenten, echte Daten, Rechte, Versionsprüfungen, Eingabevalidierung,
+Sprachwechsel und Widerrufsverträge bleiben maßgeblich. Neue Texte stehen in DE und EN.
+
+Zur gemeinsamen Durchsicht umgesetzt:
+
+- Gemeinsamer Rahmen für Startseite, Inbox und Konto: Header, Identität, vertikale
+  Navigation, mobile Seitenleiste, Zähler, Status, Profilbildzugang und Footer.
+- Startseite mit dem abgenommenen Kosmosmotiv und echten Navigationsaktionen.
+- Persönliche Daten und Sicherheit samt E-Mail-, Passwort- und Profilbilddialog.
+  Die bestehenden Upload-/Crop-Funktionen und nativen Kalender bleiben erhalten.
+- Geräte/Sitzungen mit Kontextkarten und Einzel-/Sammelbestätigungen für aktive
+  Sitzungen und gespeicherte Anmeldungen. Der eingeschränkte Zugang verwendet
+  denselben Bestätigungsbaustein mit seinem eigenen Wirkungshinweis.
+- Glockenvorschau, Inbox, Suche, Lesefilter, Pagination, Nachrichtendetail und
+  Einzel-/Sammelbestätigungen; Benutzermenü, Status-/Sprachauswahl und globale Meldungen.
+- [Durchklickbarer Vergleich samt Starter](../design/frontend-referenzen/quellen/anwendungsvergleich/README.md):
+  Bereichs- und Größenauswahl, freigegebene Referenz links, echte Anwendung rechts,
+  eigene flüchtige Testdaten mit Nachrichten- und Gerätebeispielen.
+
+Offen bleiben die gemeinsame visuelle Abnahme sowie die im zentralen Testbedarf
+aufgeführten automatisierten DE-/EN-Browsernachweise. Der begrenzte interaktive
+Vergleich ersetzt keine vollständige QA oder echte mobile Geräte-/Hilfsmittelprüfung.
+
+Aktuelle Korrekturvorgaben: Passwortdialog wie E-Mail-Dialog; weiße E-Mail in der
+Sicherheitskarte; kein übergroßer Abstand nach MEIN KONTO; Hinweistext vertikal
+zum Icon zentrieren; Schließen-Fläche und Abstände wie in der Referenz, Symbol aus
+Lucide. „Verfügbar“ bleibt bewusst
+grün, auch als Text; andere Anwesenheitszustände folgen ihrer eigenen Statusfarbe.
+Die Inbox wird mit kompakten, zentrierten Paginationcontrols, getrennten
+Werkzeug-/Suchzeilen, System-Badge in Indigo und gemeinsam aufgebauten
+Nachrichtenmetadaten abgeglichen. Detaildialog und Einzel-/Sammelbestätigungen
+verwenden Kontextkarten und die tatsächliche Auswahl; Funktionsverträge bleiben erhalten.
+Globale Meldungen direkt mit den gesicherten Notification-Beispielen vergleichen,
+insbesondere Symbolrolle, Titel-/Textabstand und Schließen.
+
+Die aktuelle Nachbesserung umfasst außerdem die Glockenvorschau mit festen
+Kopf-/Fußbereichen und Kartenaktionen rechts, das kompakte native Avatar-Statusmenü
+sowie direkt sichtbare Statusoptionen und eine kompakte Sprachzeile im Benutzermenü.
+Manuelles Neuladen erhält eine echte Erfolg-/Fehlerrückmeldung; automatische
+Aktualisierungen bleiben still. Die freigegebene Referenz bleibt Vergleichsgrundlage.
+Lösch-, Abmelde- und Widerrufsbuttons sind nach ausdrücklicher Abstimmung in
+Referenz und Anwendung auf denselben roten Normal-/Hoverstil vereinheitlicht.
+Die aktuelle Sitzung bleibt eine deaktivierte Statusanzeige. Die Vergleichsansicht
+verknüpft die Referenzrevision, damit aktualisierte Styles nicht aus dem Browsercache
+durch einen älteren Stand ersetzt werden.
+
+Die Sitzungsübersicht übernimmt die vom Benutzer gewählte Stitch-Variante B:
+[Originalboard A/B/C](https://stitch.google.com/projects/14011270174485926515?node-id=f287cab72d26463a91ae12a58d6df2b3).
+A betont die Zahl typografisch zusammen mit dem Limit, B verbindet Zahl und Einheit
+in einem Chip, C verwendet eine kompakte Pille mit Punkt. Der gemeinsame Chip aus
+Zahl und Einheit sowie das getrennte Limit sind in Vaadin umgesetzt und warten
+auf die gemeinsame visuelle Abnahme. Ausgangsscreenshot, Prompt,
+unabhängiger Screenabruf und Original-HTML liegen unter `target/iconvergleich/session-count-stitch-*`.
+Fachliche Zählung, Wortlaut und Widerrufsverträge bleiben unverändert.
+
+Die eigene isolierte Anwendung und Browserprüfungen auf Desktop/Smartphone sind für
+diesen laufenden Auftrag freigegeben. Keine bestehenden Anwendungsdaten, kein externer
+Mailversand und keine echte Passwortänderung im interaktiven Vergleich. Notwendige
+isolierte JUnit-Regressionen ergänzen; gezielt prüfen, keine ungefragte große QA.
+Automatisierten Restbedarf zentral in `docs/testbedarf.md` erhalten. Kein Commit,
+Merge oder Push; keine eigenmächtige Designabnahme. Der Benutzer sichtet das Ergebnis
+mit dem Vergleich bei seiner Rückkehr.
 
 ## Aktuelle gemeinsame Sichtung
+
+Lucide ist ausdrücklich für die selbst gesetzten Icons der echten Anwendung ausgewählt.
+Die HTML-Referenzen bleiben unverändert. Die Übernahme umfasst sämtliche direkten
+Anwendungsicons einschließlich Besucher- und Adminansichten. Auf Präzisierung des
+Benutzers bleiben native Komponentensymbole, Tabellenköpfe und Sortierung bei
+Vaadin; ausschließlich ausdrücklich gesetzte Anwendungsicons werden ersetzt.
+Offen bleibt die gemeinsame visuelle Abnahme dieser Umstellung anhand der
+[Icon-Gegenüberstellung](../design/frontend-referenzen/quellen/iconvergleich/index.html).
+Sie enthält den bisherigen Vaadin-Vergleich und zusätzlich Referenz, Tabler Outline
+und Lucide: 58 Vergleichspunkte mit Inventar und Fundstellen, einschließlich der
+24 Referenzicons und der Zuordnung aller 44 explizit verwendeten Vaadin-Konstanten.
+Abweichende Gerätegruppen und Nachrichten-Mehrfachobjekte sind gekennzeichnet;
+komponenteninterne Symbole sind nur Funktionsbeispiele, keine abgeschlossene
+Vaadin-Integration. Die Gegenüberstellung dokumentiert den Stand vor der Übernahme;
+die tatsächliche Umstellung wird in der isolierten Anwendung geprüft. Die festen
+Referenzen werden auch nach der Iconabnahme nicht automatisch angepasst.
 
 Die sofort beauftragte Nachtrunde hat zusätzliche [Administrationsentwürfe A/B](../design/frontend-referenzen/admin-entwuerfe.html),
 die Logo-/Hintergrundwahl in allen drei äußeren Referenzviewern und eine
@@ -21,7 +207,7 @@ und Schnellzugriffe mit Logo K und Referenzicons, ohne Statistik. Benachrichtigu
 ist nach gemeinsamer Durchsicht ebenfalls übernommen. Seitennavigation, Bereichsauswahl
 und Dashboard-Schnellzugriff öffnen den Versand innerhalb derselben Referenz.
 Dashboard, Benutzerverwaltung, Konfiguration, Mailtest und Benachrichtigungen sind
-gemeinsam erreichbar; Anwendung und Vaadin-Theme bleiben unverändert.
+gemeinsam erreichbar. Die HTML-Adminübernahme ändert die echte Administration nicht.
 
 Die Adminvorschau heißt `admin.html`, die eigenständige Oberfläche
 `admin-inhalt.html`; der Einstieg ohne Fragment ist das Dashboard. Die frühere
@@ -40,14 +226,14 @@ Offen ist die gemeinsame Durchsicht und Auswahl:
 
 1. Logo A–O und aktuelle Referenz plus zwölf dunkle CSS-Hintergründe bewerten.
    Die äußeren Dropdowns sind umgesetzt; die endgültige Auswahl bleibt offen.
-2. Anhand der Studie den Umfang eines gesonderten Vaadin-Piloten abstimmen.
-   Ein isoliertes Java-Beispiel für Login/Registrierung ist kompiliert; eine
-   gerenderte Vaadin-Vorschau und die Übernahme in echte Kontoflüsse stehen aus.
+2. Das gesamte angemeldete Portal anhand des neuen Anwendungsvergleichs gemeinsam
+   sichten. Der akzeptierte Pilot und die festen HTML-Dateien bleiben Vergleichsgrundlagen;
+   Besucher- und Adminbereiche bleiben gesonderte nächste Übernahmepakete.
 
-Browserfreigabe für diese Nachtrunde: alle neuen HTML-Entwürfe sowie Logo- und
-Hintergrundwahl auf Desktop und Smartphone. Kein Anwendungsstart, keine echten
-Kontoaktionen, kein Mailversand und kein Datenbankeingriff. Keine weitere Git-
-Aktion beauftragt; Zwischenstand nach `cec4e4f` bleibt zur Sichtung uncommittiert.
+Für das erste Anwendungspaket sind eigene frische Testdaten und ein isolierter
+Anwendungsstart mit gezielten Browserprüfungen DE/EN ausdrücklich freigegeben.
+Es gibt keinen externen Versand und keine weitere Git-Aktion. Der vorhandene
+HTML-Commit bleibt `c75db3f`; die neuere Umsetzung ist noch nicht committet.
 `docs/status.md` bleibt der letzte Gesamt-QA-Stand. Keine eigenmächtige Designabnahme.
 
 **Kandidat K zur Sichtung in den Referenzen:** Der Benutzer lässt K „Pulsar-Nova“
@@ -259,7 +445,7 @@ kann der Benutzer frühe Entwürfe ablehnen, bevor viel Implementierungsarbeit a
 
 Grundlage sind `docs/theme.md`, die gepflegten Cosmos-CSS-Quellen sowie
 `HomeView`, `AccountView`, `UserNotificationsView`, `AccountSettingsComponent`,
-`AccountNavigationTabs` und `AccountPanelComponent`. Die folgende Tabelle enthält
+`PageNavigationComponent` und `AccountPanelComponent`. Die folgende Tabelle enthält
 die ursprünglichen Quellenhypothesen. Die darunter beschriebene Profilaufnahme
 ergänzt sie um tatsächliche visuelle Beobachtungen; eine gemeinsame Designabnahme
 ist damit noch nicht erfolgt.
@@ -2046,6 +2232,18 @@ Sobald konkrete Implementierungen neue Testlücken erzeugen, diese in
 `docs/testbedarf.md` aufnehmen und erst nach erfolgreichem Nachweis entfernen.
 Menschliche Abnahmen orientieren sich an HUM-01 bis HUM-05 im manuellen Katalog.
 `docs/status.md` bleibt der Stand der letzten großen QA; Entwurfssichtungen ersetzen ihn nicht.
+
+Alle neun Zeitfelder der Konfiguration verwenden nach Freigabe Zahl und Einheit
+in Vaadin und der festen Adminreferenz. Aktueller Wert und Umrechnung stehen nur
+in der Feldhilfe. Speicherformate, Mindestdauern und Grenzen bleiben erhalten.
+Die beiden Benachrichtigungs-Aufbewahrungen behalten ganze Tage und leer bedeutet
+unbegrenzt. Konfigurations-Checkboxen sind links beschriftet und rechts angeordnet.
+Die gemeinsame Sichtung der aktuellen Konfiguration bleibt offen.
+
+Die Admin-Mitteilung wird an der festen Referenz nachgeprüft: Empfängerzahl und
+zweizeilige Auswahl, bündiger Vorschaukopf, vertikales Textarea-Resize sowie
+vollbreite Aktionsleisten und kompakter Prüfstatus. Die gemeinsame Sichtung bleibt
+offen. Versand- und Entwertungsregeln bleiben unverändert.
 
 ## Artefakte, Wiederaufnahme und Aufwandbegrenzung
 

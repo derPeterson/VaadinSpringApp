@@ -117,9 +117,9 @@ public final class RegistrationPage {
 
   @Step("E-Mail und E-Mail-Bestätigung eingeben")
   public void setEmails(String email, String confirmation) {
-    field(texts.getRegistrationEmailField()).fill(email);
+    field(texts.getPublicEmailField()).fill(email);
     Locator confirm = page.locator("vaadin-email-field").nth(1);
-    assertThat(confirm).hasJSProperty("label", texts.getRegistrationConfirmField());
+    assertThat(confirm).hasJSProperty("label", texts.getPublicConfirmEmailField());
     confirm.locator("input").fill(confirmation);
   }
 
@@ -127,7 +127,7 @@ public final class RegistrationPage {
   public void setPasswords(String password, String confirmation) {
     field(texts.getRegistrationPasswordField()).fill(password);
     Locator confirm = page.locator("vaadin-password-field").nth(1);
-    assertThat(confirm).hasJSProperty("label", texts.getRegistrationConfirmField());
+    assertThat(confirm).hasJSProperty("label", texts.getPublicConfirmPasswordField());
     confirm.locator("input").fill(confirmation);
   }
 

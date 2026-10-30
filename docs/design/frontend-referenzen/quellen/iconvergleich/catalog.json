@@ -1,0 +1,1217 @@
+[
+  {
+    "key": "user",
+    "label": "Benutzer",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/user.svg"
+    },
+    "tabler": [
+      "user"
+    ],
+    "lucide": [
+      "user-round"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSettingsComponent.java:112",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSettingsComponent.java:271",
+      "app/src/main/java/de/derpeterson/app/ui/components/PortalHomeComponent.java:42",
+      "app/src/main/java/de/derpeterson/app/ui/components/PortalSidebarComponent.java:106",
+      "app/src/main/java/de/derpeterson/app/views/RegistrationView.java:446",
+      "app/src/main/java/de/derpeterson/app/views/RegistrationView.java:450",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:789",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountAvatarEditor.java:175",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSettingsComponent.java:267",
+      "app/src/main/java/de/derpeterson/app/ui/components/ConfigGroupIcons.java:15",
+      "app/src/main/java/de/derpeterson/app/ui/components/OverlayUserIcon.java:117"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "bell",
+    "label": "Benachrichtigungen",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/bell.svg"
+    },
+    "tabler": [
+      "bell"
+    ],
+    "lucide": [
+      "bell"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountHeaderActions.java:56",
+      "app/src/main/java/de/derpeterson/app/ui/components/PortalHomeComponent.java:35",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:211",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:234",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:241",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:693",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:728",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:777",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:835",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:877",
+      "app/src/main/java/de/derpeterson/app/views/ConfirmEmailChangeView.java:181",
+      "app/src/main/java/de/derpeterson/app/views/VerificationView.java:206",
+      "app/src/main/java/de/derpeterson/app/helper/ui/NotificationHelper.java:147"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "home",
+    "label": "Startseite",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/home.svg"
+    },
+    "tabler": [
+      "home"
+    ],
+    "lucide": [
+      "house"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/UserPopoverMenu.java:177",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserPopoverMenu.java:548"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "lock",
+    "label": "Sicherheit",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/lock.svg"
+    },
+    "tabler": [
+      "lock"
+    ],
+    "lucide": [
+      "lock-keyhole"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSettingsComponent.java:117",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSettingsComponent.java:420",
+      "app/src/main/java/de/derpeterson/app/ui/components/PortalSidebarComponent.java:107",
+      "app/src/main/java/de/derpeterson/app/views/LoginView.java:224",
+      "app/src/main/java/de/derpeterson/app/views/RegistrationView.java:464",
+      "app/src/main/java/de/derpeterson/app/views/RegistrationView.java:468",
+      "app/src/main/java/de/derpeterson/app/views/ResetPasswordView.java:201",
+      "app/src/main/java/de/derpeterson/app/views/ResetPasswordView.java:207",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSettingsComponent.java:287",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSettingsComponent.java:398",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSettingsComponent.java:416",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSettingsComponent.java:425",
+      "app/src/main/java/de/derpeterson/app/ui/components/ConfigGroupIcons.java:13"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "edit",
+    "label": "Bearbeiten",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/edit.svg"
+    },
+    "tabler": [
+      "edit"
+    ],
+    "lucide": [
+      "square-pen"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/RegistrationView.java:289",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:1282",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSettingsComponent.java:165",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSettingsComponent.java:173",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserPopoverMenu.java:580"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "mail",
+    "label": "E-Mail",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/mail.svg"
+    },
+    "tabler": [
+      "mail"
+    ],
+    "lucide": [
+      "mail"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountEmailChangeDialog.java:57",
+      "app/src/main/java/de/derpeterson/app/views/AdminView.java:276",
+      "app/src/main/java/de/derpeterson/app/views/ConfirmEmailChangeView.java:46",
+      "app/src/main/java/de/derpeterson/app/views/ConfirmEmailChangeView.java:179",
+      "app/src/main/java/de/derpeterson/app/views/ForgotPasswordView.java:167",
+      "app/src/main/java/de/derpeterson/app/views/LoginView.java:220",
+      "app/src/main/java/de/derpeterson/app/views/RegistrationView.java:455",
+      "app/src/main/java/de/derpeterson/app/views/RegistrationView.java:460",
+      "app/src/main/java/de/derpeterson/app/views/VerificationView.java:349",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminMailTestSection.java:107",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminMailTestSection.java:201",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSettingsComponent.java:408",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSettingsComponent.java:430",
+      "app/src/main/java/de/derpeterson/app/ui/components/ConfigGroupIcons.java:16"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "settings",
+    "label": "Einstellungen",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/settings.svg"
+    },
+    "tabler": [
+      "settings"
+    ],
+    "lucide": [
+      "settings"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountHeaderActions.java:55",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:902",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserPopoverMenu.java:172",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserPopoverMenu.java:174",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminConfigurationSection.java:131",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountHeaderActions.java:18",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountNavigationTabs.java:18",
+      "app/src/main/java/de/derpeterson/app/ui/components/ConfigGroupIcons.java:12",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserPopoverMenu.java:362"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "devices",
+    "label": "Geräte kombiniert",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/devices.svg"
+    },
+    "tabler": [
+      "devices-2"
+    ],
+    "lucide": [
+      "monitor-smartphone"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/PortalSidebarComponent.java:109"
+    ],
+    "note": "Gerätegruppen mit anderer Anordnung. Die Alternativen zeigen nicht dieselbe Dreierkombination aus Monitor, Laptop und Smartphone.",
+    "exception": true
+  },
+  {
+    "key": "close",
+    "label": "Abbrechen / Schließen",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/close.svg"
+    },
+    "tabler": [
+      "x"
+    ],
+    "lucide": [
+      "x"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountAvatarDialog.java:156",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountEmailChangeDialog.java:94",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountPasswordChangeDialog.java:95",
+      "app/src/main/java/de/derpeterson/app/ui/components/PortalConfirmationDialog.java:94",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:894",
+      "app/src/main/java/de/derpeterson/app/views/LoginView.java:309",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserFilterBar.java:153",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:656",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:1068",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountAvatarEditor.java:146"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "close-circle",
+    "label": "Dialog schließen",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/close-circle.svg"
+    },
+    "tabler": [
+      "circle-x"
+    ],
+    "lucide": [
+      "circle-x"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountAvatarDialog.java:86",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountEmailChangeDialog.java:62",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountPasswordChangeDialog.java:59",
+      "app/src/main/java/de/derpeterson/app/ui/components/PortalConfirmationDialog.java:61",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:64",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:839",
+      "app/src/main/java/de/derpeterson/app/helper/ui/NotificationHelper.java:186",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:616",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:793",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountAvatarDialog.java:59",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountEmailChangeDialog.java:36",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountPasswordChangeDialog.java:35",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserPopoverMenu.java:286",
+      "app/src/main/java/de/derpeterson/app/helper/ui/NotificationHelper.java:204"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "check",
+    "label": "Bestätigen",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/check.svg"
+    },
+    "tabler": [
+      "check"
+    ],
+    "lucide": [
+      "check"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountAvatarDialog.java:158",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountEmailChangeDialog.java:96",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountPasswordChangeDialog.java:97",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSessionsComponent.java:210",
+      "app/src/main/java/de/derpeterson/app/ui/components/PortalFields.java:33",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:573",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:631",
+      "app/src/main/java/de/derpeterson/app/views/ConfirmEmailChangeView.java:67",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminConfigurationSection.java:152",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserFilterBar.java:73",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:1059",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:657",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSettingsComponent.java:335"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "info",
+    "label": "Information",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/info.svg"
+    },
+    "tabler": [
+      "info-circle"
+    ],
+    "lucide": [
+      "info"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountAvatarDialog.java:133",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountEmailChangeDialog.java:85",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountPanelComponent.java:49",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountPasswordChangeDialog.java:86",
+      "app/src/main/java/de/derpeterson/app/ui/components/PortalConfirmationDialog.java:88",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminConfigurationSection.java:191",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminMailTestSection.java:220",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserFilterBar.java:76",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:191",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:212",
+      "app/src/main/java/de/derpeterson/app/ui/components/ConfigInfoButton.java:50",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:480",
+      "app/src/main/java/de/derpeterson/app/helper/ui/NotificationHelper.java:158"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "key",
+    "label": "Passwort",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/key.svg"
+    },
+    "tabler": [
+      "key"
+    ],
+    "lucide": [
+      "key-round"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountPasswordChangeDialog.java:54",
+      "app/src/main/java/de/derpeterson/app/ui/components/ConfigGroupIcons.java:14"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "error",
+    "label": "Fehler",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/error.svg"
+    },
+    "tabler": [
+      "alert-triangle"
+    ],
+    "lucide": [
+      "triangle-alert"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/helper/ui/NotificationHelper.java:158"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "warning",
+    "label": "Warnung",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/warning.svg"
+    },
+    "tabler": [
+      "alert-circle"
+    ],
+    "lucide": [
+      "circle-alert"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/helper/ui/NotificationHelper.java:158"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "success",
+    "label": "Erfolg",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/success.svg"
+    },
+    "tabler": [
+      "circle-check"
+    ],
+    "lucide": [
+      "circle-check"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/ConfirmEmailChangeView.java:180",
+      "app/src/main/java/de/derpeterson/app/views/ResetPasswordView.java:295",
+      "app/src/main/java/de/derpeterson/app/views/VerificationView.java:424",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:553",
+      "app/src/main/java/de/derpeterson/app/helper/ui/NotificationHelper.java:141",
+      "app/src/main/java/de/derpeterson/app/helper/ui/NotificationHelper.java:158"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "trash",
+    "label": "Löschen",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/trash.svg"
+    },
+    "tabler": [
+      "trash"
+    ],
+    "lucide": [
+      "trash-2"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountAvatarDialog.java:144",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:600",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:675",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:1098",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:1289",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:70"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "desktop",
+    "label": "Computer",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/desktop.svg"
+    },
+    "tabler": [
+      "device-desktop"
+    ],
+    "lucide": [
+      "monitor"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSessionsComponent.java:48"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "mobile",
+    "label": "Smartphone",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/mobile.svg"
+    },
+    "tabler": [
+      "device-mobile"
+    ],
+    "lucide": [
+      "smartphone"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSessionsComponent.java:133",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSessionsComponent.java:245"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "refresh",
+    "label": "Aktualisieren",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/refresh.svg"
+    },
+    "tabler": [
+      "refresh"
+    ],
+    "lucide": [
+      "refresh-cw"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:224",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:254",
+      "app/src/main/java/de/derpeterson/app/views/MaintenanceView.java:95",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminConfigurationSection.java:162",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:203"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. Zwei unterschiedliche Referenzkonturen für dieselbe Aktualisieren-Aktion; beide Sets könnten das vereinheitlichen."
+  },
+  {
+    "key": "mail-open",
+    "label": "Als gelesen markieren",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/mail-open.svg"
+    },
+    "tabler": [
+      "mail-opened"
+    ],
+    "lucide": [
+      "mail-open"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:889"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "eye",
+    "label": "Anzeigen",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/eye.svg"
+    },
+    "tabler": [
+      "eye"
+    ],
+    "lucide": [
+      "eye"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:568",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:626",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:169",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:482"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "image",
+    "label": "Profilbild",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/image.svg"
+    },
+    "tabler": [
+      "photo"
+    ],
+    "lucide": [
+      "image"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountAvatarDialog.java:81",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserPopoverMenu.java:168",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountAvatarDialog.java:190"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. "
+  },
+  {
+    "key": "session-refresh",
+    "label": "Geräte aktualisieren",
+    "group": "reference",
+    "current": {
+      "file": "docs/design/frontend-referenzen/quellen/iconvergleich/assets/reference-icons/session-refresh.svg"
+    },
+    "tabler": [
+      "refresh"
+    ],
+    "lucide": [
+      "refresh-cw"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSessionsComponent.java:71"
+    ],
+    "note": "Gleiche Funktion, andere Kontur. Zwei unterschiedliche Referenzkonturen für dieselbe Aktualisieren-Aktion; beide Sets könnten das vereinheitlichen."
+  },
+  {
+    "key": "native-angle_double_left",
+    "label": "Erste Seite",
+    "group": "application",
+    "current": {
+      "native": "ANGLE_DOUBLE_LEFT"
+    },
+    "tabler": [
+      "chevrons-left"
+    ],
+    "lucide": [
+      "chevrons-left"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserPagination.java:22",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:79"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-angle_double_right",
+    "label": "Letzte Seite",
+    "group": "application",
+    "current": {
+      "native": "ANGLE_DOUBLE_RIGHT"
+    },
+    "tabler": [
+      "chevrons-right"
+    ],
+    "lucide": [
+      "chevrons-right"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserPagination.java:25",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:80"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-angle_down",
+    "label": "Auswahl / Details öffnen",
+    "group": "application",
+    "current": {
+      "native": "ANGLE_DOWN"
+    },
+    "tabler": [
+      "chevron-down"
+    ],
+    "lucide": [
+      "chevron-down"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:521",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:536",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:677",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:693",
+      "app/src/main/java/de/derpeterson/app/ui/base/TrackedUserAppLayout.java:176"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-angle_left",
+    "label": "Vorherige Seite",
+    "group": "application",
+    "current": {
+      "native": "ANGLE_LEFT"
+    },
+    "tabler": [
+      "chevron-left"
+    ],
+    "lucide": [
+      "chevron-left"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserPagination.java:23",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:274"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-angle_right",
+    "label": "Nächste Seite",
+    "group": "application",
+    "current": {
+      "native": "ANGLE_RIGHT"
+    },
+    "tabler": [
+      "chevron-right"
+    ],
+    "lucide": [
+      "chevron-right"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserPagination.java:24",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:275"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-angle_up",
+    "label": "Details schließen",
+    "group": "application",
+    "current": {
+      "native": "ANGLE_UP"
+    },
+    "tabler": [
+      "chevron-up"
+    ],
+    "lucide": [
+      "chevron-up"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:536",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:693"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-archive",
+    "label": "Versandhistorie / Archiv",
+    "group": "application",
+    "current": {
+      "native": "ARCHIVE"
+    },
+    "tabler": [
+      "archive"
+    ],
+    "lucide": [
+      "archive"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:258"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-arrow_forward",
+    "label": "Weiter",
+    "group": "application",
+    "current": {
+      "native": "ARROW_FORWARD"
+    },
+    "tabler": [
+      "arrow-forward"
+    ],
+    "lucide": [
+      "arrow-right"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/ResetPasswordView.java:270",
+      "app/src/main/java/de/derpeterson/app/views/ResetPasswordView.java:326",
+      "app/src/main/java/de/derpeterson/app/views/ResetPasswordView.java:372",
+      "app/src/main/java/de/derpeterson/app/views/VerificationView.java:270",
+      "app/src/main/java/de/derpeterson/app/views/VerificationView.java:406",
+      "app/src/main/java/de/derpeterson/app/views/VerificationView.java:457"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-calendar_user",
+    "label": "Geburtsdatum / Kalender",
+    "group": "application",
+    "current": {
+      "native": "CALENDAR_USER"
+    },
+    "tabler": [
+      "calendar-user"
+    ],
+    "lucide": [
+      "calendar-days"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/RegistrationView.java:478"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-cogs",
+    "label": "Administration",
+    "group": "application",
+    "current": {
+      "native": "COGS"
+    },
+    "tabler": [
+      "settings-2"
+    ],
+    "lucide": [
+      "settings-2"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/AdminView.java:274",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserPopoverMenu.java:389"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-dashboard",
+    "label": "Dashboard",
+    "group": "application",
+    "current": {
+      "native": "DASHBOARD"
+    },
+    "tabler": [
+      "dashboard"
+    ],
+    "lucide": [
+      "layout-dashboard"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/AdminView.java:271"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-filter",
+    "label": "Filter",
+    "group": "application",
+    "current": {
+      "native": "FILTER"
+    },
+    "tabler": [
+      "filter"
+    ],
+    "lucide": [
+      "list-filter"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserFilterBar.java:64",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserFilterBar.java:84"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-font",
+    "label": "Betreff / Text",
+    "group": "application",
+    "current": {
+      "native": "FONT"
+    },
+    "tabler": [
+      "typography"
+    ],
+    "lucide": [
+      "type"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminMailTestSection.java:116"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-list",
+    "label": "E-Mail-Queue / Liste",
+    "group": "application",
+    "current": {
+      "native": "LIST"
+    },
+    "tabler": [
+      "list"
+    ],
+    "lucide": [
+      "list"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/ConfigGroupIcons.java:18"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-menu",
+    "label": "Navigation öffnen",
+    "group": "application",
+    "current": {
+      "native": "MENU"
+    },
+    "tabler": [
+      "menu-2"
+    ],
+    "lucide": [
+      "menu"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/base/TrackedUserAppLayout.java:53"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-paperplane",
+    "label": "Senden",
+    "group": "application",
+    "current": {
+      "native": "PAPERPLANE"
+    },
+    "tabler": [
+      "send"
+    ],
+    "lucide": [
+      "send"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/AdminView.java:93",
+      "app/src/main/java/de/derpeterson/app/views/ForgotPasswordView.java:199",
+      "app/src/main/java/de/derpeterson/app/views/ResetPasswordView.java:262",
+      "app/src/main/java/de/derpeterson/app/views/VerificationView.java:262",
+      "app/src/main/java/de/derpeterson/app/views/VerificationView.java:398",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminMailTestSection.java:143",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:170",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:179",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:644",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountHeaderActions.java:17",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountNavigationTabs.java:19",
+      "app/src/main/java/de/derpeterson/app/ui/components/ConfigGroupIcons.java:17"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-plus",
+    "label": "Hinzufügen",
+    "group": "application",
+    "current": {
+      "native": "PLUS"
+    },
+    "tabler": [
+      "plus"
+    ],
+    "lucide": [
+      "plus"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:191"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-question_circle",
+    "label": "Hilfe",
+    "group": "application",
+    "current": {
+      "native": "QUESTION_CIRCLE"
+    },
+    "tabler": [
+      "help-circle"
+    ],
+    "lucide": [
+      "circle-help"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/ForgotPasswordView.java:132"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-rotate_left",
+    "label": "Zurücksetzen / Bild drehen",
+    "group": "application",
+    "current": {
+      "native": "ROTATE_LEFT"
+    },
+    "tabler": [
+      "rotate-2"
+    ],
+    "lucide": [
+      "rotate-ccw"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserFilterBar.java:111",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountAvatarEditor.java:143"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-search",
+    "label": "Suche",
+    "group": "application",
+    "current": {
+      "native": "SEARCH"
+    },
+    "tabler": [
+      "search"
+    ],
+    "lucide": [
+      "search"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:196",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java:256"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-shield",
+    "label": "Berechtigungen / Sicherheit",
+    "group": "application",
+    "current": {
+      "native": "SHIELD"
+    },
+    "tabler": [
+      "shield"
+    ],
+    "lucide": [
+      "shield"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:889"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-sign_in",
+    "label": "Anmelden",
+    "group": "application",
+    "current": {
+      "native": "SIGN_IN"
+    },
+    "tabler": [
+      "login"
+    ],
+    "lucide": [
+      "log-in"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/ConfirmEmailChangeView.java:71",
+      "app/src/main/java/de/derpeterson/app/views/ForgotPasswordView.java:207",
+      "app/src/main/java/de/derpeterson/app/views/LoginView.java:227",
+      "app/src/main/java/de/derpeterson/app/views/LoginView.java:277",
+      "app/src/main/java/de/derpeterson/app/views/MaintenanceView.java:85",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserPopoverMenu.java:593"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-sign_out",
+    "label": "Abmelden",
+    "group": "application",
+    "current": {
+      "native": "SIGN_OUT"
+    },
+    "tabler": [
+      "logout"
+    ],
+    "lucide": [
+      "log-out"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/MaintenanceView.java:106",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSessionsComponent.java:67",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSessionsComponent.java:210",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSessionsComponent.java:293",
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSessionsComponent.java:332",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserPopoverMenu.java:179",
+      "app/src/main/java/de/derpeterson/app/ui/components/UserPopoverMenu.java:566"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-upload",
+    "label": "Hochladen",
+    "group": "application",
+    "current": {
+      "native": "UPLOAD"
+    },
+    "tabler": [
+      "upload"
+    ],
+    "lucide": [
+      "upload"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountAvatarEditor.java:71"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-users",
+    "label": "Benutzerverwaltung / Empfänger",
+    "group": "application",
+    "current": {
+      "native": "USERS"
+    },
+    "tabler": [
+      "users"
+    ],
+    "lucide": [
+      "users-round"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/AdminView.java:278",
+      "app/src/main/java/de/derpeterson/app/views/RegistrationView.java:472",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:250"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "native-warning",
+    "label": "Warnsymbol in bestehenden Ansichten",
+    "group": "application",
+    "current": {
+      "native": "WARNING"
+    },
+    "tabler": [
+      "alert-triangle"
+    ],
+    "lucide": [
+      "triangle-alert"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/views/ConfirmEmailChangeView.java:177",
+      "app/src/main/java/de/derpeterson/app/views/ConfirmEmailChangeView.java:182",
+      "app/src/main/java/de/derpeterson/app/views/MaintenanceView.java:54",
+      "app/src/main/java/de/derpeterson/app/views/ResetPasswordView.java:341",
+      "app/src/main/java/de/derpeterson/app/views/VerificationView.java:322",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java:625",
+      "app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java:344",
+      "app/src/main/java/de/derpeterson/app/helper/ui/NotificationHelper.java:135"
+    ],
+    "note": "Vorhandenes Anwendungsicon. Die neuen Sets sind alternative Symbolfamilien, keine identischen Nachzeichnungen."
+  },
+  {
+    "key": "combined-devices",
+    "label": "Gerätebaustein · Monitor, Laptop, Smartphone",
+    "group": "application",
+    "current": {
+      "file": "app/src/main/resources/META-INF/resources/icons/devices.svg"
+    },
+    "tabler": [
+      "devices-2"
+    ],
+    "lucide": [
+      "monitor-smartphone"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/AccountSessionsComponent.java"
+    ],
+    "note": "Beide Alternativen sind Gerätegruppen, aber keine identische Anordnung aus drei Geräten.",
+    "exception": true
+  },
+  {
+    "key": "read-all",
+    "label": "Alle als gelesen markieren",
+    "group": "application",
+    "current": {
+      "file": "app/src/main/resources/META-INF/resources/icons/envelopes-check.svg"
+    },
+    "tabler": [
+      "mail-check"
+    ],
+    "lucide": [
+      "mail-check"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java"
+    ],
+    "note": "Ein Umschlag mit Haken statt mehrerer Umschläge. Funktional passend, das Mehrfachobjekt ist nicht gleich dargestellt.",
+    "exception": true
+  },
+  {
+    "key": "status-available",
+    "label": "Verfügbar",
+    "group": "status",
+    "current": {
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m7.5 12 3 3 6-6\"/></svg>"
+    },
+    "tabler": [
+      "circle-check"
+    ],
+    "lucide": [
+      "circle-check"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/model/enums/UserStatus.java:26"
+    ],
+    "note": "Aus der tatsächlichen Statusdarstellung. Semantische Statusfarben würden auch mit einem anderen Set erhalten bleiben."
+  },
+  {
+    "key": "status-busy",
+    "label": "Beschäftigt",
+    "group": "status",
+    "current": {
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M7.5 12h9\"/></svg>"
+    },
+    "tabler": [
+      "circle-minus"
+    ],
+    "lucide": [
+      "circle-minus"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/model/enums/UserStatus.java:26"
+    ],
+    "note": "Aus der tatsächlichen Statusdarstellung. Semantische Statusfarben würden auch mit einem anderen Set erhalten bleiben."
+  },
+  {
+    "key": "status-absent",
+    "label": "Abwesend",
+    "group": "status",
+    "current": {
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6.5V12l4 2.5\"/></svg>"
+    },
+    "tabler": [
+      "clock"
+    ],
+    "lucide": [
+      "clock"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/model/enums/UserStatus.java:26"
+    ],
+    "note": "Aus der tatsächlichen Statusdarstellung. Semantische Statusfarben würden auch mit einem anderen Set erhalten bleiben."
+  },
+  {
+    "key": "status-offline",
+    "label": "Offline",
+    "group": "status",
+    "current": {
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m8.5 8.5 7 7m0-7-7 7\"/></svg>"
+    },
+    "tabler": [
+      "circle-x"
+    ],
+    "lucide": [
+      "circle-x"
+    ],
+    "uses": [
+      "app/src/main/java/de/derpeterson/app/model/enums/UserStatus.java:26"
+    ],
+    "note": "Aus der tatsächlichen Statusdarstellung. Semantische Statusfarben würden auch mit einem anderen Set erhalten bleiben."
+  },
+  {
+    "key": "component-calendar",
+    "label": "Kalender öffnen",
+    "group": "component",
+    "current": null,
+    "tabler": [
+      "calendar"
+    ],
+    "lucide": [
+      "calendar-days"
+    ],
+    "uses": [],
+    "note": "Komponenteninterne Funktion von Vaadin: hier nur Kandidaten. Native Picker-, Upload-, Passwort- und Zahlenfeld-Symbole müssen in einem späteren Vaadin-Test gesondert abgeglichen werden."
+  },
+  {
+    "key": "component-eye-off",
+    "label": "Passwort verbergen",
+    "group": "component",
+    "current": null,
+    "tabler": [
+      "eye-off"
+    ],
+    "lucide": [
+      "eye-off"
+    ],
+    "uses": [],
+    "note": "Komponenteninterne Funktion von Vaadin: hier nur Kandidaten. Native Picker-, Upload-, Passwort- und Zahlenfeld-Symbole müssen in einem späteren Vaadin-Test gesondert abgeglichen werden."
+  }
+]

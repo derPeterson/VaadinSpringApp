@@ -7,8 +7,7 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -33,7 +32,7 @@ public class AccountEmailChangeDialog extends Dialog {
   private final EmailField email = new EmailField();
   private final EmailField confirmEmail = new EmailField();
   private final PasswordField password = new PasswordField();
-  private final Button close = new Button(VaadinIcon.CLOSE_CIRCLE.create(), event -> close());
+  private final Button close = new Button(AppIcon.CLOSE_CIRCLE.create(), event -> close());
   private final Button cancel = new Button("", event -> close());
   private final Button request = new Button();
   private SerializableConsumer<EmailChange> requestAction;
@@ -44,7 +43,8 @@ public class AccountEmailChangeDialog extends Dialog {
     confirmEmail.setPattern(UserInputRules.EMAIL_REGEX);
     setId("account-email-change-dialog");
     addClassNames("cosmos-theme", "account-change-dialog", "account-email-dialog");
-    getThemeNames().add("cosmos");
+    getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
+    addClassName("cosmos-reference-overlay");
     setModality(ModalityMode.STRICT);
     setCloseOnEsc(true);
     setCloseOnOutsideClick(true);
@@ -53,11 +53,12 @@ public class AccountEmailChangeDialog extends Dialog {
     description.addClassName("cosmos-panel-description");
     Div heading = new Div(title, description);
     heading.addClassName("cosmos-panel-heading");
-    Icon icon = VaadinIcon.ENVELOPE.create();
+    SvgIcon icon = AppIcon.ENVELOPE.create();
     icon.getElement().setAttribute("aria-hidden", "true");
     Div badge = new Div(icon);
     badge.addClassName("cosmos-panel-icon");
     close.setId("account-email-close");
+    close.setIcon(AppIcon.CLOSE_CIRCLE.create());
     close.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
     close.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     Div header = new Div(badge, heading, close);
@@ -80,7 +81,7 @@ public class AccountEmailChangeDialog extends Dialog {
     password.setWidthFull();
     password.setRevealButtonVisible(true);
     password.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
-    Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+    SvgIcon infoIcon = AppIcon.INFO_CIRCLE.create();
     infoIcon.getElement().setAttribute("aria-hidden", "true");
     Div info = new Div(infoIcon, hint);
     info.addClassName("cosmos-panel-hint");
@@ -89,9 +90,9 @@ public class AccountEmailChangeDialog extends Dialog {
     add(form);
 
     cancel.setId("account-email-cancel");
-    cancel.setPrefixComponent(VaadinIcon.CLOSE.create());
+    cancel.setPrefixComponent(AppIcon.CLOSE.create());
     request.setId("account-email-request");
-    request.setPrefixComponent(VaadinIcon.CHECK.create());
+    request.setPrefixComponent(AppIcon.CHECK.create());
     request.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     request.addClickListener(event -> submit());
     Div actions = new Div(cancel, request);

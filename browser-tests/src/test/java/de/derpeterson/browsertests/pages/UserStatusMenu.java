@@ -4,7 +4,6 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
-import com.microsoft.playwright.options.AriaRole;
 import io.qameta.allure.Step;
 
 /** Matches the visible selected value separately from options and their descriptions. */
@@ -16,7 +15,7 @@ public final class UserStatusMenu {
   }
 
   public Locator current() {
-    return page.locator(".user-popover-body vaadin-select-value-button");
+    return page.locator(".user-popover-body .portal-status-option[aria-pressed=true]");
   }
 
   @Step("Ausgewählten Benutzerstatus im geöffneten Menü prüfen")
@@ -28,9 +27,8 @@ public final class UserStatusMenu {
   @Step("Manuellen Status über die tatsächlich angebotene Option auswählen")
   public void select(String label) {
     new UserMenu(page).open();
-    current().click();
     Locator option =
-        page.getByRole(AriaRole.OPTION)
+        page.locator(".user-popover-body .portal-status-option")
             .filter(
                 new Locator.FilterOptions()
                     .setHas(page.getByText(label, new Page.GetByTextOptions().setExact(true))));

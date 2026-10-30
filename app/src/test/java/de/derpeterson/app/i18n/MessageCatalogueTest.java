@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
@@ -81,6 +82,9 @@ class MessageCatalogueTest {
               }
               if (type == int.class) {
                 return (Object) variant;
+              }
+              if (type == Number.class) {
+                return (Object) BigDecimal.valueOf(variant);
               }
               if (type == long.class) {
                 return (Object) (long) variant;

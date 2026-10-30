@@ -62,6 +62,14 @@
     drawer.querySelector('.hc-group').textContent=root.querySelector('.ad-head h2').textContent;
     drawer.querySelector('#hc-field-title').textContent=field.label;
     drawer.querySelector('.hc-copy').replaceChildren(field.content.cloneNode(true));
+    if(field.wrapper.querySelector('[data-duration-amount]')){
+      const result=window.AdminDuration.inspect(field.wrapper);
+      const copy=drawer.querySelector('.hc-copy'),standard=copy.querySelector('.hc-default');
+      for(const [label,text] of [['Aktueller Wert',result.current],['Entspricht',result.equivalent]]){
+        const row=document.createElement('div');row.className='hc-default';
+        const title=document.createElement('span'),value=document.createElement('code');title.textContent=label;value.textContent=text;row.append(title,value);standard.parentNode.insertBefore(row,standard);
+      }
+    }
     field.trigger.setAttribute('aria-expanded','true');field.wrapper.dataset.helpSelected='true';
     if(!drawer.open){
       initialOverflow=document.documentElement.style.overflow;

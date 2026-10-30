@@ -7,8 +7,7 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -32,7 +31,7 @@ public class AccountPasswordChangeDialog extends Dialog {
   private final PasswordField currentPassword = new PasswordField();
   private final PasswordField confirmPassword = new PasswordField();
   private final PasswordField newPassword = new PasswordField();
-  private final Button close = new Button(VaadinIcon.CLOSE_CIRCLE.create(), event -> close());
+  private final Button close = new Button(AppIcon.CLOSE_CIRCLE.create(), event -> close());
   private final Button cancel = new Button("", event -> close());
   private final Button save = new Button();
   private SerializableFunction<PasswordChange, PasswordChanged> changeAction;
@@ -41,7 +40,8 @@ public class AccountPasswordChangeDialog extends Dialog {
     this.messages = messages;
     setId("account-password-change-dialog");
     addClassNames("cosmos-theme", "account-change-dialog", "account-password-dialog");
-    getThemeNames().add("cosmos");
+    getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
+    addClassName("cosmos-reference-overlay");
     setModality(ModalityMode.STRICT);
     setCloseOnEsc(true);
     setCloseOnOutsideClick(true);
@@ -50,11 +50,12 @@ public class AccountPasswordChangeDialog extends Dialog {
     description.addClassName("cosmos-panel-description");
     Div heading = new Div(title, description);
     heading.addClassName("cosmos-panel-heading");
-    Icon icon = VaadinIcon.LOCK.create();
+    SvgIcon icon = AppIcon.KEY.create();
     icon.getElement().setAttribute("aria-hidden", "true");
     Div badge = new Div(icon);
     badge.addClassName("cosmos-panel-icon");
     close.setId("account-password-close");
+    close.setIcon(AppIcon.CLOSE_CIRCLE.create());
     close.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
     close.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     Div header = new Div(badge, heading, close);
@@ -81,7 +82,7 @@ public class AccountPasswordChangeDialog extends Dialog {
     currentPassword.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
     newPassword.setAutocomplete(Autocomplete.NEW_PASSWORD);
     confirmPassword.setAutocomplete(Autocomplete.NEW_PASSWORD);
-    Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+    SvgIcon infoIcon = AppIcon.INFO_CIRCLE.create();
     infoIcon.getElement().setAttribute("aria-hidden", "true");
     Div info = new Div(infoIcon, hint);
     info.addClassName("cosmos-panel-hint");
@@ -90,9 +91,9 @@ public class AccountPasswordChangeDialog extends Dialog {
     add(form);
 
     cancel.setId("account-password-cancel");
-    cancel.setPrefixComponent(VaadinIcon.CLOSE.create());
+    cancel.setPrefixComponent(AppIcon.CLOSE.create());
     save.setId("account-password-save");
-    save.setPrefixComponent(VaadinIcon.CHECK.create());
+    save.setPrefixComponent(AppIcon.CHECK.create());
     save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     save.addClickListener(event -> submit());
     Div actions = new Div(cancel, save);
@@ -170,6 +171,7 @@ public class AccountPasswordChangeDialog extends Dialog {
     confirmPassword.setPlaceholder(messages.getAccountConfirmPasswordPlaceholder());
     newPassword.setLabel(messages.getResetPasswordNewPasswordField());
     newPassword.setPlaceholder(messages.getAccountNewPasswordPlaceholder());
+    newPassword.setHelperText(messages.getBaseValidationPasswordInvalidMessage());
     hint.setText(messages.getAccountPasswordDialogHint());
     cancel.setText(messages.getAdminUsersCancel());
     save.setText(messages.getAccountSettingsChangePassword());

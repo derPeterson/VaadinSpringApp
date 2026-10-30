@@ -54,7 +54,7 @@ public final class ResetPasswordPage {
   public void submit() {
     page.getByRole(
             AriaRole.BUTTON,
-            new Page.GetByRoleOptions().setName(texts.getBaseResetButton()).setExact(true))
+            new Page.GetByRoleOptions().setName(texts.getPublicSavePasswordAction()).setExact(true))
         .click();
   }
 
@@ -74,7 +74,8 @@ public final class ResetPasswordPage {
                         .setExact(true)))
         .isVisible();
     assertThat(
-            page.locator(".cosmos-card vaadin-icon[icon='vaadin:check-circle'].cosmos-status-icon"))
+            page.locator(
+                ".cosmos-card vaadin-icon[src='icons/lucide/circle-check.svg'].cosmos-status-icon"))
         .isVisible();
     assertThat(page.locator(".cosmos-card"))
         .containsText(texts.visibleText(page, texts.getResetPasswordSuccessMessage()));
@@ -95,30 +96,39 @@ public final class ResetPasswordPage {
     assertError(texts.getBaseValidationPasswordConfirmMessage());
   }
 
-  @Step("Ungültiger oder verbrauchter Link zeigt einen neutralen Hinweis und kein Resetformular")
+  @Step("Ungültiger oder verbrauchter Link zeigt einen roten Hinweis und kein Resetformular")
   public void assertInvalid() {
+    assertRejectedLink(
+        texts.getResetPasswordInvalidTitle(), texts.getResetPasswordInvalidText(), "text-error");
+  }
+
+  @Step("Abgelaufener Link zeigt einen gelben Hinweis und kein Resetformular")
+  public void assertExpired() {
+    assertRejectedLink(
+        texts.getResetPasswordExpiredTitle(),
+        texts.getResetPasswordExpiredText(),
+        "cosmos-status-icon--warning");
+  }
+
+  private void assertRejectedLink(String title, String text, String iconClass) {
     assertThat(page).hasURL(urlPattern(RESET_PASSWORD_ROUTE, "/[0-9a-f-]+"));
     assertThat(page).hasTitle(RESET_PAGE_TITLE);
     assertThat(
             page.getByRole(
-                AriaRole.HEADING,
-                new Page.GetByRoleOptions()
-                    .setName(texts.getResetPasswordInvalidTitle())
-                    .setExact(true)))
+                AriaRole.HEADING, new Page.GetByRoleOptions().setName(title).setExact(true)))
         .isVisible();
-    assertThat(
-            page.getByText(
-                texts.getResetPasswordInvalidText(), new Page.GetByTextOptions().setExact(true)))
-        .isVisible();
+    assertThat(page.getByText(text, new Page.GetByTextOptions().setExact(true))).isVisible();
     assertThat(
             page.getByRole(
                 AriaRole.BUTTON,
-                new Page.GetByRoleOptions().setName(texts.getBaseResetButton()).setExact(true)))
+                new Page.GetByRoleOptions()
+                    .setName(texts.getPublicSavePasswordAction())
+                    .setExact(true)))
         .hasCount(0);
     assertThat(page.locator("vaadin-password-field")).hasCount(0);
     assertThat(
             page.locator(
-                ".cosmos-card vaadin-icon[icon='vaadin:warning'].cosmos-status-icon--warning"))
+                ".cosmos-card vaadin-icon[src='icons/lucide/circle-alert.svg']." + iconClass))
         .isVisible();
   }
 

@@ -84,7 +84,7 @@ public final class AdminUsersPage {
             .locator("vaadin-button:visible")
             .filter(
                 new Locator.FilterOptions()
-                    .setHas(page.locator("vaadin-icon[icon='vaadin:edit']")));
+                    .setHas(page.locator("vaadin-icon[src='icons/lucide/square-pen.svg']")));
     // No first-row assumption: filtering must yield one visible account and action.
     assertThat(edit).hasCount(1);
     // Finish the grid's native focus/scroll movement before the mouse click.
@@ -307,13 +307,9 @@ public final class AdminUsersPage {
   private void addActivityFilter() {
     openFilters();
     assertThat(activityDate()).isVisible();
-    LocalDate today = LocalDate.now(ZoneId.of("Europe/Berlin"));
-    String example =
-        today.format(
-            DateTimeFormatter.ofPattern(
-                texts.language().equals("de") ? "dd.MM.uuuu" : "MM/dd/uuuu"));
-    assertThat(activityDate()).hasAttribute("placeholder", example);
-    assertThat(page.locator(".admin-user-filter-footer"))
+    assertThat(activityDate())
+        .hasAttribute("placeholder", texts.getRegistrationBirthDatePlaceholder());
+    assertThat(page.locator("#admin-user-filter-panel .admin-filter-hint"))
         .containsText(texts.getAdminUsersFilterTimeHint());
   }
 

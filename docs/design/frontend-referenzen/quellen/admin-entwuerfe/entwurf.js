@@ -84,15 +84,15 @@
 
   function renderDashboard() {
     const shortcuts = [
-      ['go-users','Benutzerverwaltung','Benutzerkonten, Rollen und Berechtigungen verwalten.','users'],
-      ['go-settings','Konfiguration','Anwendung, Sicherheit und E-Mail-Einstellungen anpassen.','settings'],
-      ['go-mail',mail.title,'Den Versand mit der eingerichteten SMTP-Verbindung prüfen.','mail'],
-      ['go-send','Benachrichtigungen','Interne Nachrichten mit Vorschau erstellen und die eigene Versandhistorie ansehen.','bell']
+      ['go-users',labels.users,descriptions.users,'users'],
+      ['go-settings',labels.settings,descriptions.settings,'settings'],
+      ['go-mail',labels.mail,descriptions.mail,'mail'],
+      ['go-send',labels.send,descriptions.send,'bell']
     ].map(([action,title,description,symbol]) => `
       <article class="ad-dashboard-shortcut" aria-label="${escape(title)}">
         <span class="portal-reference-icon" aria-hidden="true">${icon(symbol)}</span>
         <div class="ad-dashboard-shortcut-copy">
-          <div class="ad-dashboard-shortcut-title"><h3>${escape(title)}</h3>${action==='go-send'?'<span class="ad-pill">Superadmin</span>':''}</div>
+          <div class="ad-dashboard-shortcut-title"><h3>${escape(title)}</h3></div>
           <p>${escape(description)}</p>
         </div>
         <button type="button" class="portal-button" data-ad-action="${action}" aria-label="${escape(title)} öffnen">${icon('right')}Öffnen</button>
@@ -122,6 +122,7 @@
     if(field.type==='boolean'){
       return `<div class="ad-field ad-toggle"><label for="${id}">${escape(field.label)}</label><input type="checkbox" role="switch" id="${id}" data-config-id="${field.id}" ${value?'checked':''} aria-label="${escape(field.label)}">${help}</div>`;
     }
+    if(field.durationStorage){return window.AdminDuration.render(field,value,help);}
     const type=field.type==='integer'?'number':field.type==='password'?'password':field.type==='email'?'email':'text';
     const placeholder=field.placeholder;
     const attributes=type==='number'?` min="${field.id==='EMAIL_QUEUE_MAX_RETRY'?0:1}" step="1" ${field.id==='MAIL_PORT'?'max="65535"':''}`:'';
@@ -141,8 +142,9 @@
       byId('ad-config-feedback').innerHTML=notice('Beispiel eines ungültigen Werts. Bitte Format und Hinweise prüfen.','error');
     }
     if(state==='unavailable'){
-      byId('ad-config-feedback').innerHTML=stateNotice();root.querySelectorAll('input,[data-ad-step],[data-ad-action=config-save]').forEach(node=>node.disabled=true);
+      byId('ad-config-feedback').innerHTML=stateNotice();root.querySelectorAll('input,[data-ad-step],[data-duration-trigger],[data-ad-action=config-save]').forEach(node=>node.disabled=true);
     }
+    root.querySelectorAll('[data-duration-amount]').forEach(input=>window.AdminDuration.update(input.closest('.ad-field')));
     syncNumberButtons();
   }
   function syncNumberButtons(){
@@ -157,7 +159,7 @@
   }
   function saveConfig() {
     const inputs=[...root.querySelectorAll('[data-config-id]')];
-    const invalid=inputs.find(input=>!input.checkValidity());
+    const invalid=root.querySelector('[data-duration-amount]:invalid')||inputs.find(input=>!input.checkValidity());
     if(invalid){invalid.setAttribute('aria-invalid','true');invalid.focus();byId('ad-config-feedback').innerHTML=notice('Bitte den markierten Wert prüfen.','error');return;}
     inputs.forEach(input=>{values[input.dataset.configId]=input.type==='checkbox'?input.checked:input.value;input.removeAttribute('aria-invalid');});
     // Dies ist nur der lokale Entwurf; vollständige Servicevalidierung bleibt Aufgabe der Anwendung.
@@ -230,10 +232,8 @@
     byId('ad-recipient-summary').value=notificationFormat(notificationText.everyonePlaceholder,state==='no-recipients'?0:targets.length);
     const selected=[...root.querySelectorAll('[data-recipient]:checked')];
     const count=selected.length;
-    const names=selected.slice(0,2).map(node=>targets[Number(node.dataset.recipient)].name).join(', ');
-    byId('ad-recipient-choice-label').textContent=count?names+(count>2?' +'+(count-2):''):notificationText.selectRecipients;
+    byId('ad-recipient-choice-label').textContent=notificationFormat(notificationText.selectedUsers,count);
     byId('ad-recipient-toggle').classList.toggle('ad-recipient-placeholder',count===0);
-    byId('ad-recipient-selection-count').textContent=notificationFormat(notificationText.selectedUsers,count);
     if(all&&byId('ad-recipient-options').matches(':popover-open')){byId('ad-recipient-options').hidePopover();}
   }
   function renderCompose() {
@@ -248,7 +248,6 @@
         <input id="ad-recipient-summary" type="text" readonly disabled>
         <div id="ad-recipient-picker" hidden>
           <button id="ad-recipient-toggle" type="button" class="ad-recipient-trigger" popovertarget="ad-recipient-options" aria-labelledby="ad-recipient-label ad-recipient-choice-label" aria-haspopup="dialog" aria-expanded="false" aria-controls="ad-recipient-options"><span id="ad-recipient-choice-label"></span>${icon('chevron')}</button>
-          <small id="ad-recipient-selection-count"></small>
         </div>
         <div id="ad-recipient-options" popover="auto" role="dialog" aria-label="${escape(notificationText.selectRecipients)}" class="ad-recipient-popover">${recipientChoices}</div>
       </div>
@@ -256,7 +255,7 @@
       <div class="ad-field"><label for="ad-notification-body">${escape(notificationText.body)}<span class="ad-required"> •</span></label><textarea id="ad-notification-body" maxlength="${notifications.bodyLimit}" required placeholder="${escape(notificationText.body)}">Am Samstag steht das Portal vorübergehend nicht zur Verfügung. Vielen Dank für Ihr Verständnis.</textarea><small id="ad-body-count" class="ad-count" aria-hidden="true"></small></div>
     </form>`;
     const badge=`<span class="ad-pill ad-delivery-badge" data-state="${blocked()?state:'ready'}" role="status" aria-label="${escape(notificationText.internal+': '+notifications.status[blocked()?state:'ready'])}">${escape(notificationText.internal)}</span>`;
-    const composeFooter=`<div class="ad-config-save-hint">${icon('info')}<p>${escape(notificationText.deliveryInfo)}</p></div><div class="ad-config-save-hint">${icon('info')}<p>Änderungen an der Mitteilung oder Auswahl erfordern ein erneutes Vorschau prüfen.</p></div><div class="ad-config-actions">${button('notification-preview',escape(notificationText.preview),'eye')}</div>`;
+    const composeFooter=`<div class="ad-config-save-hint">${icon('info')}<p>${escape(notificationText.deliveryInfo)}</p></div><div class="ad-config-save-hint">${icon('info')}<p>Prüfen Sie die Vorschau nach Änderungen erneut.</p></div><div class="ad-config-actions">${button('notification-preview',escape(notificationText.preview),'eye')}</div>`;
     const previewFooter=`<div class="ad-config-save-hint">${icon('info')}<p>Vor dem Senden die Empfänger prüfen.</p></div><div class="ad-config-actions">${button('notification-send',escape(notificationText.send),'send',true)}</div>`;
     const historyFooter=historyPaginationFooter();
     root.innerHTML=`<div class="ad-notifications ad-stack"><div class="ad-compose" data-variant="b"><div class="ad-compose-panel">${panel(escape(notificationText.composeTitle),'Mitteilung erstellen, Vorschau prüfen und innerhalb der Anwendung senden.','bell',form,composeFooter,badge)}</div><div class="ad-preview-column">${panel('Vorschau','Nach jeder Änderung erneut prüfen.','eye','<div id="ad-message-preview"></div>',previewFooter)}</div></div><div class="ad-notification-history">${panel(escape(notificationText.sentHistory),escape(notificationText.historyDescription),'bell','<div id="ad-history" class="ad-history"></div>',historyFooter,'<span id="ad-history-count" class="ad-pill ad-config-count"></span>')}</div></div>`;
@@ -328,9 +327,10 @@
       notificationFeedback(notificationText.previewFailedMessage+' '+messages.join(' '),'error',notificationText.previewFailedTitle);return;
     }
     const avatars=recipients.slice(0,3).map(target=>`<span class="au-avatar" role="img" aria-label="${escape(target.name)}">${escape(target.name.split(' ').map(part=>part[0]).join(''))}</span>`).join('');
-    const more=recipients.length>3?`<span class="au-avatar">+${recipients.length-3}</span>`:'';
-    const recipientDetails=`<details class="ad-preview-recipient-details" data-ad-preview-details><summary><span data-detail-label>${escape(notificationText.recipientDetails)}</span>${icon('chevron')}</summary><div class="ad-recipient-list">${recipients.map(target=>`<div><strong>${escape(target.name)}</strong><span>${escape(target.email)}</span></div>`).join('')}</div></details>`;
-    byId('ad-message-preview').innerHTML=`<div class="ad-preview-review-row"><div id="ad-preview-status" class="ad-preview-status" data-tone="success" role="status">${icon('check')}${escape(notificationText.previewUpdated)}</div></div><div class="ad-preview ad-preview-content"><small class="ad-preview-meta">${escape(notificationText.sourceAdministration)} · 27.10.2026 · 08:30</small><h3>${escape(title)}</h3><p>${escape(body)}</p></div><div class="ad-preview-audience"><span class="ad-label">${escape(notificationText.recipients)}</span><div class="ad-preview-targets">${avatars}${more}</div>${recipientDetails}</div>`;
+    const more=recipients.length>3?`<span class="au-avatar ad-preview-more">+${recipients.length-3}</span>`:'';
+    const recipientToggle=`<button type="button" class="ad-preview-recipient-toggle" data-ad-preview-details aria-expanded="false" aria-controls="ad-preview-recipient-list"><span data-detail-label>${escape(notificationText.recipientDetails)}</span>${icon('chevron')}</button>`;
+    const recipientDetails=`<div id="ad-preview-recipient-list" class="ad-preview-recipient-details ad-recipient-list" hidden>${recipients.map(target=>`<div><strong>${escape(target.name)}</strong><span>${escape(target.email)}</span></div>`).join('')}</div>`;
+    byId('ad-message-preview').innerHTML=`<div class="ad-preview-review-row"><div class="ad-history-label">${icon('history-message')}<span>${escape(notificationText.contentPreview)}</span></div><div id="ad-preview-status" class="ad-preview-status" data-tone="success" role="status">${icon('check')}${escape(notificationText.previewUpdated)}</div></div><div class="ad-preview ad-preview-content"><small class="ad-preview-meta"><span class="ad-preview-source">${escape(notificationText.sourceAdministration)}</span><span>27.10.2026 · 08:30</span></small><h3>${escape(title)}</h3><p>${escape(body)}</p></div><div class="ad-preview-audience"><span class="ad-label">${icon('users')}<span>${escape(notificationText.recipients)}</span></span><div class="ad-preview-targets">${avatars}${more}${recipientToggle}</div>${recipientDetails}</div>`;
     byId('ad-message-preview').dataset.created='true';
     previewValid=true;previewRevision=composedRevision;setSendState();
   }
@@ -382,20 +382,52 @@
     }).join(''):`<div class="ad-empty">${escape(notificationText.empty)}</div>`;
     byId('ad-history-pages').innerHTML=visible.length?pagination(visible.length,historyPage):'';
   }
-  root.addEventListener('toggle',event=>{
-    const details=event.target;
-    if(details.matches('details[data-ad-preview-details]')){
-      details.querySelector('[data-detail-label]').textContent=details.open?'Details ausblenden':notificationText.recipientDetails;
-    }
-  },true);
+  root.addEventListener('click',event=>{
+    const toggle=event.target.closest('button[data-ad-preview-details]');
+    if(!toggle){return;}
+    const list=byId(toggle.getAttribute('aria-controls'));
+    list.hidden=!list.hidden;
+    toggle.setAttribute('aria-expanded',String(!list.hidden));
+  });
   window.addEventListener('resize',()=>{if(route==='send'){positionRecipientPopover();}});
   root.addEventListener('submit',event=>event.preventDefault());
+  function closeDuration(){
+    root.querySelectorAll('.ad-duration-options').forEach(menu=>menu.hidden=true);
+    root.querySelectorAll('[data-duration-trigger]').forEach(trigger=>trigger.setAttribute('aria-expanded','false'));
+  }
+  root.addEventListener('input',event=>{if(event.target.matches('[data-duration-amount]')){window.AdminDuration.update(event.target.closest('.ad-field'));syncNumberButtons();}});
+  root.addEventListener('keydown',event=>{
+    const option=event.target.closest('[data-duration-unit]'),trigger=event.target.closest('[data-duration-trigger]');
+    if(event.key==='Escape'&&(option||trigger)){const active=event.target.closest('.ad-field').querySelector('[data-duration-trigger]');closeDuration();active.focus();event.preventDefault();}
+    if(option&&['ArrowDown','ArrowUp','Home','End'].includes(event.key)){
+      const options=[...option.closest('.ad-duration-options').querySelectorAll('[data-duration-unit]')],index=options.indexOf(option);
+      const next=event.key==='Home'?0:event.key==='End'?options.length-1:(index+(event.key==='ArrowDown'?1:-1)+options.length)%options.length;
+      options[next].focus();event.preventDefault();
+    }
+    if(event.target.matches('[data-duration-amount]')&&['ArrowUp','ArrowDown'].includes(event.key)){event.preventDefault();window.AdminDuration.step(event.target,event.key==='ArrowUp'?1:-1);}
+    if(event.key==='Tab'){closeDuration();}
+  });
+  document.addEventListener('click',event=>{if(!event.target.closest('.ad-duration-unit')){closeDuration();}});
   root.addEventListener('input',syncNumberButtons);
   root.addEventListener('click',event=>{
+    const unitTrigger=event.target.closest('[data-duration-trigger]');
+    if(unitTrigger){
+      const menu=unitTrigger.parentNode.querySelector('.ad-duration-options'),opening=menu.hidden;closeDuration();
+      menu.hidden=!opening;unitTrigger.setAttribute('aria-expanded',String(opening));
+      if(opening){menu.querySelector('[aria-selected=true]').focus();}return;
+    }
+    const unitOption=event.target.closest('[data-duration-unit]');
+    if(unitOption){
+      const wrapper=unitOption.closest('.ad-field');
+      wrapper.querySelectorAll('[data-duration-unit]').forEach(option=>option.setAttribute('aria-selected',String(option===unitOption)));
+      wrapper.querySelector('[data-duration-trigger] span').textContent=unitOption.firstChild.textContent;
+      closeDuration();window.AdminDuration.update(wrapper);syncNumberButtons();wrapper.querySelector('[data-duration-trigger]').focus();return;
+    }
     const step=event.target.closest('[data-ad-step]');
     if(step){
       const input=byId(step.dataset.adInput);
       if(input.disabled||input.readOnly){return;}
+      if(input.matches('[data-duration-amount]')){window.AdminDuration.step(input,Number(step.dataset.adStep));input.focus({preventScroll:true});return;}
       input.stepUp(Number(step.dataset.adStep));
       input.dispatchEvent(new Event('input',{bubbles:true}));
       input.dispatchEvent(new Event('change',{bubbles:true}));

@@ -4,7 +4,40 @@ Feste HTML-Momentaufnahmen der gemeinsam abgestimmten Gestaltung. Die Dateien
 liegen auf Benutzerwunsch außerhalb von `target/`, damit ein Clean sie nicht
 entfernt. Sie gehören zur Git-versionierbaren Projektdokumentation.
 
+Lösch-, Abmelde- und Widerrufsbuttons verwenden den gemeinsam freigegebenen roten
+Gefahrenstil: dezente rote Grundfläche und Rahmen, kräftigerer roter Hover mit
+hellerem Icon/Text, cyanfarbener Tastaturfokus. Die aktuelle Sitzung bleibt eine
+deaktivierte Statusanzeige. Gemeinsame Quelle ist
+`quellen/dialogdurchsicht/reference-controls.css`; die Regeln sind in den
+eigenständigen Referenzen und ihren HTML-Ausgangsquellen eingebettet.
+
+Der Nachrichtendialog verwendet links quadratische Iconbuttons für Übersicht,
+Kontosicherheit und Löschen mit Tooltips. Das Schloss entspricht „Sicherheit“ in
+der SideNav. Rechts bleiben „Als gelesen markieren“ und „Schließen“ beschriftet;
+mobil umbrechen die beiden Aktionsgruppen. Die Übersicht wird beim Öffnen aus
+der Glockenvorschau angeboten, Kontosicherheit bei Systemnachrichten. Löschen
+öffnet die vorhandene Bestätigung für die angezeigte synthetische Nachricht.
+
+Die Benutzerdialoge Anlegen/Bearbeiten zeigen Rollen als Mehrfachauswahl links
+neben Aktiv, auf dem Smartphone untereinander. Der Prüfhinweis steht im Footer
+über den Aktionen mit durchgehender Trennlinie. Beim Bearbeiten erklärt der
+Passworthinweis sowohl das Beibehalten als auch die Regeln für ein neues Passwort.
+
 ## Öffnen
+
+Die zusätzliche [Icon-Gegenüberstellung](quellen/iconvergleich/index.html) zeigt
+Referenz, Tabler Outline und Lucide mit Suche, Bereichs-, Größen- und gemeinsamer
+externer Strichstärkenauswahl. Ihr Inventar umfasst 58 Vergleichspunkte: die 24
+Referenzicons, weitere Anwendungsicons einschließlich der Zuordnung aller 44
+explizit verwendeten Vaadin-Konstanten, zusätzliche SVG-Bausteine, Statuskonturen
+und zwei klar gekennzeichnete Beispiele für komponenteninterne Funktionen.
+Fundstellen und abweichende Bildaussagen sind aufgeführt. Der
+[bisherige Vaadin-Vergleich](quellen/iconvergleich/vaadin.html) bleibt erhalten.
+Beide Seiten funktionieren lokal ohne Server. Die zusätzlichen SVGs samt Lizenzen
+und Paketquellen liegen in `quellen/iconvergleich/assets/`; `build.py` baut den
+externen Vergleich aus `catalog.json` und diesen Quellen erneut auf.
+Es werden keine Anwendungsicons ersetzt; die Setauswahl und der tatsächliche
+Abgleich nativer Vaadin-Komponenten bleiben gemeinsame nächste Schritte.
 
 | Bereich | Vorschau mit Steuerung | Eigenständige Oberfläche |
 | --- | --- | --- |
@@ -15,6 +48,15 @@ entfernt. Sie gehören zur Git-versionierbaren Projektdokumentation.
 `admin.html` ist die Vorschau mit Steuerung und startet ohne Seitenfragment immer
 mit dem Dashboard. `admin-inhalt.html` ist die eigenständige Oberfläche. Die
 frühere Datei `admin-users.html` wurde umbenannt; es gibt keine zweite Altversion.
+
+Ein [bedienbares Einzelbeispiel für Dauerfelder](quellen/admin-entwuerfe/dauer-beispiel/index.html)
+zeigt „Login speichern Dauer“ als Zahl mit auswählbarer Einheit. Der gemeinsame Baustein ist für alle neun Zeitfelder
+in der festen Adminreferenz und Vaadin übernommen. Aktueller Wert und Umrechnung
+in Sekunden stehen ausschließlich in der Feldhilfe, nicht unter der Eingabe.
+Die Einheit ändert die Bedeutung der unveränderten Zahl. Leere Eingabe verwendet bei Login speichern
+den bestehenden Standardwert. Bei Benachrichtigungs-Aufbewahrung bleibt sie unbegrenzt.
+Tokenfristen, automatische Abwesenheit und E-Mail-Aufbewahrung bleiben Pflichtfelder. Der Admin-Vergleichsstarter stellt das Beispiel
+unter `/vergleich/dauer-feld/index.html` bereit.
 
 Die feste Adminreferenz enthält alle abgestimmten Bereiche: Dashboard A,
 Benutzerverwaltung, Konfiguration, Mailtest A und Benachrichtigungen B. Der interne
@@ -76,6 +118,13 @@ Die [Vaadin-Machbarkeitsstudie](quellen/vaadin-studie/README.md) ordnet die neun
 Besucherszenen bestehenden Flow-Komponenten zu. Das isolierte Java-Beispiel für
 Anmeldung/Registrierung ist kompiliert, aber ohne Route oder laufende Vaadin-Vorschau.
 Es verändert die Anwendung nicht und beweist noch keine pixelgleiche Darstellung.
+Zusätzlich enthält die Studie jetzt einen isolierten, bedienbaren Vaadin-Piloten
+für **Persönliche Daten** mit Header, SideNav, nativen Feldern und E-Mail-Dialog.
+Start und Grenzen stehen in derselben [Anleitung](quellen/vaadin-studie/README.md).
+Er läuft getrennt auf Port 60826; die festen HTML-Referenzen werden nicht ersetzt.
+Die echte Kontoansicht übernimmt das erste akzeptierte Paket mit
+Header, SideNav, persönlichen Daten und E-Mail-Dialog; den Stand und die Grenzen
+beschreibt [Theme und Gestaltung](../../theme.md#übernahme-des-angemeldeten-benutzerportals).
 
 ## Logo- und Hintergrundsichtung
 
@@ -266,3 +315,25 @@ Benutzerverwaltungs-Generator ausführen; alle HTMLs bleiben eigenständig nutzb
 Die Ausgangsbasis dient nur dem Generator; geöffnet werden die Referenzdateien oben.
 Vergleichssteuerung, alternative Varianten und Stitch-Rohentwürfe gehören nicht mehr
 zur Referenzsammlung. Der frühere Inspirationsordner wurde auf Benutzerwunsch entfernt.
+
+## Echte Anwendung vergleichen
+
+Der [echte Anwendungsvergleich samt Startanleitung](quellen/anwendungsvergleich/README.md)
+öffnet die feste HTML-Referenz neben dem aktuellen Vaadin-Stand. Bereichsauswahl,
+Desktop, Smartphone und Querformat stehen gemeinsam bereit; Dialoge und Overlays
+lassen sich auf beiden Seiten unabhängig durchklicken. Die eigene Testumgebung
+enthält austauschbare Nachrichten- und Gerätebeispiele. Die feste Referenz bleibt
+unverändert; die gemeinsame Abnahme der Übernahme ist noch offen.
+
+Der [zusätzliche Besuchervergleich](http://127.0.0.1:60829/images/visitor-review/index.html#login)
+stellt die feste öffentliche Referenz neben die echten Vaadin-Views. Seine 15 Szenen
+umfassen auch die vorhandenen Linkzustände, Wartung und die eingeschränkte Anmeldung.
+Er läuft ohne Anmeldung in einer zweiten eigenen Testumgebung. Start und Isolation
+stehen in derselben Anleitung; nach einem Rechnerneustart muss er neu gestartet werden.
+
+Der [zusätzliche Adminvergleich](http://127.0.0.1:60830/vergleich/admin.html)
+zeigt Dashboard, Benutzerverwaltung, alle acht Konfigurationsgruppen, Mailtest und
+Benachrichtigungen. Er verwendet eine dritte eigene flüchtige Testumgebung mit
+25 synthetischen Konten. Vorher im dortigen [Testkonto anmelden](http://127.0.0.1:60830/login);
+Zugang, Start und Isolation stehen in der gemeinsamen Startanleitung. Die feste
+Referenz bleibt deutsch, die echte Anwendung ist in DE/EN bedienbar.

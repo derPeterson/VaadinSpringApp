@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.server.VaadinSession;
+import java.math.BigDecimal;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
@@ -36,6 +37,17 @@ class MessagePropertiesLocaleTest {
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
     assertEquals(expected, messages.getAdminUsersAccountCount(count));
     assertFalse(messages.getAdminUsersAccountCount(count).contains("{"));
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "de, '1,23456789 Sekunden'",
+    "en, '1.23456789 seconds'"
+  })
+  void durationNumbersUseTheSelectedLocaleAndKeepAllDigits(String language, String expected) {
+    MessageProperties messages =
+        MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
+    assertEquals(expected, messages.getAdminConfigDurationSeconds(new BigDecimal("1.23456789")));
   }
 
   @Test

@@ -1,8 +1,9 @@
 package de.derpeterson.app.views;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -14,22 +15,24 @@ import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.NavigationErrorCode;
+import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.base.TrackedUserAppLayout;
-import de.derpeterson.app.ui.components.CosmosBackgroundComponent;
-import de.derpeterson.app.ui.components.CosmosCopyrightComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.ui.components.PortalContentComponent;
+import de.derpeterson.app.ui.components.PortalHomeComponent;
+import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 
+@StyleSheet("custom-theme/cosmos-account.css")
 @Route(AppRouteConstants.HOME_ROUTE)
 @UIScope
 @PageTitle(AppRouteConstants.HOME_PAGE_TITLE)
@@ -37,6 +40,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class HomeView extends TrackedUserAppLayout implements AfterNavigationObserver {
 
   private final transient ConfigService configService;
+  private PortalContentComponent portalContent;
+  private PortalHomeComponent homeContent;
 
   private final Span pageTitle = new Span();
   private final Span pageDescription = new Span();
@@ -56,30 +61,72 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
     this.configService = configService;
 
     addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-home");
-    addToNavbar(createApplicationHeader(configService, createPopoverActions()));
-    setContent(createHomeContent());
+    if (currentUser != null) {
+      addClassName("cosmos-reference-portal");
+    }
+    if (currentUser == null) {
+      setContent(
+          new PublicPageComponent(configService, messageProperties, PublicPageComponent.Page.HOME));
+    } else {
+      createHomeContent();
+    }
     refreshTexts();
   }
 
-  private Div createHomeContent() {
+  private void createHomeContent() {
+    HorizontalLayout header = createApplicationHeader(configService, createPopoverActions());
     CosmosSectionHeaderComponent introduction =
         new CosmosSectionHeaderComponent(overviewLabel, pageTitle, pageDescription);
 
-    CosmosCopyrightComponent copyright =
-        new CosmosCopyrightComponent(
-            configService,
-            Clock.systemDefaultZone(),
-            messageProperties::getAccountCopyrightTemplate);
-    Div main = new Div(introduction, copyright);
-    main.addClassName("cosmos-app-main");
-    main.getElement().setAttribute("role", "main");
-    return new Div(new CosmosBackgroundComponent(), main);
+    homeContent = new PortalHomeComponent(messageProperties);
+    portalContent =
+        new PortalContentComponent(
+            messageProperties,
+            currentUser,
+            AppRoute.HOME,
+            introduction,
+            homeContent,
+            avatars,
+            request);
+    portalContent.configureNavigationToggle(accountNavigationToggle);
+    portalContent.getSidebar().configureStatusSelection(userPopoverMenu.createStatusSelect());
+    accountHeaderActions.setUnreadCountListener(
+        count -> {
+          portalContent.getSidebar().updateUnreadCount(count);
+          homeContent.updateUnreadCount(count);
+        });
+    setPortalPage(header, portalContent, configService);
   }
 
   private void refreshTexts() {
     pageTitle.setText(messageProperties.getHomeTitle());
-    pageDescription.setText(messageProperties.getHomeDescription());
-    overviewLabel.setText(messageProperties.getHomeOverview());
+    pageDescription.setText(
+        currentUser == null
+            ? messageProperties.getHomeDescription()
+            : messageProperties.getPortalHomeIntroduction());
+    overviewLabel.setText(
+        currentUser == null
+            ? messageProperties.getHomeOverview()
+            : messageProperties.getAccountNavigationPortal());
+    if (portalContent != null) {
+      portalContent.refreshTexts();
+      homeContent.refreshTexts();
+    }
+  }
+
+  @Override
+  protected void updateHeaderStatusIcon(UserStatus status) {
+    super.updateHeaderStatusIcon(status);
+    if (portalContent != null) {
+      portalContent.updateStatus(status);
+    }
+  }
+
+  @Override
+  protected void onTrackedUserProfileChanged(String first, String last) {
+    if (portalContent != null) {
+      portalContent.getSidebar().refreshName(first, last);
+    }
   }
 
   private UserPopoverMenu.Actions createPopoverActions() {

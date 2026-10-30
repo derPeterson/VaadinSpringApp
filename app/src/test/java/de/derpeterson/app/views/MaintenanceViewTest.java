@@ -1,5 +1,6 @@
 package de.derpeterson.app.views;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -15,7 +16,10 @@ import static org.mockito.Mockito.when;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.page.Page;
+import com.vaadin.flow.function.DeploymentConfiguration;
+import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -29,6 +33,7 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
@@ -66,8 +71,14 @@ class MaintenanceViewTest {
     UI.setCurrent(ui);
     session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
+    VaadinService vaadin = mock(VaadinService.class);
+    DeploymentConfiguration deployment = mock(DeploymentConfiguration.class);
+    when(session.getService()).thenReturn(vaadin);
+    when(vaadin.getDeploymentConfiguration()).thenReturn(deployment);
+    when(deployment.getUrlSafeSchemes()).thenReturn(Set.of("http", "https"));
     when(session.getLocale()).thenAnswer(call -> locale.get());
     VaadinSession.setCurrent(session);
+    ui.getInternals().setSession(session);
     security = mock(SecurityService.class);
     config = mock(ConfigService.class);
     when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Test");
@@ -119,6 +130,12 @@ class MaintenanceViewTest {
     return tree(view)
         .filter(Button.class::isInstance)
         .map(Button.class::cast)
+        .filter(
+            button ->
+                button
+                    .getParent()
+                    .map(parent -> parent.hasClassName("public-panel-footer"))
+                    .orElse(false))
         .filter(button -> label.equals(button.getText()))
         .findFirst()
         .orElseThrow();
@@ -152,6 +169,15 @@ class MaintenanceViewTest {
   @Test
   void anonymousVisitorOnlySeesLoginAndRetryAndCanOpenLogin() {
     create(null);
+    SvgIcon maintenanceIcon =
+        tree(view)
+            .filter(SvgIcon.class::isInstance)
+            .map(SvgIcon.class::cast)
+            .filter(icon -> icon.hasClassName("cosmos-status-icon"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals("icons/lucide/wrench.svg", maintenanceIcon.getSrc());
+    assertFalse(maintenanceIcon.hasClassName("cosmos-status-icon--warning"));
     for (Locale language : new Locale[] {Locale.GERMAN, Locale.ENGLISH}) {
       locale.set(language);
       LanguageChangeEvent.fire(ui, language);

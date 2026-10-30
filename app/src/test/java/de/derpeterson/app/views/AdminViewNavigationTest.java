@@ -2,6 +2,7 @@ package de.derpeterson.app.views;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
@@ -13,7 +14,9 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.function.DeploymentConfiguration;
@@ -41,6 +44,9 @@ import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserNotificationService;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.ui.components.PageFrameComponent;
+import de.derpeterson.app.ui.components.PageNavigationComponent;
+import de.derpeterson.app.ui.components.PortalPageComponent;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
@@ -120,6 +126,23 @@ class AdminViewNavigationTest {
     when(event.getLocation()).thenReturn(new Location(AppRouteConstants.ADMIN_ROUTE + query));
     view.beforeEnter(event);
     return event;
+  }
+
+  @Test
+  void sharedFrameKeepsHeadingAndNavigationInContentAndClosesMobileNavigationOnSelection() {
+    assertInstanceOf(PageFrameComponent.class, view.getContent());
+    PortalPageComponent page = (PortalPageComponent) ReflectionTestUtils.getField(view, "page");
+    Component heading = (Component) ReflectionTestUtils.getField(view, "pageHeading");
+    assertSame(page, heading.getParent().orElseThrow());
+    assertFalse(heading.getElement().hasAttribute("slot"));
+    Button toggle = (Button) ReflectionTestUtils.getField(view, "accountNavigationToggle");
+    assertEquals("admin-sidebar", toggle.getElement().getAttribute("aria-controls"));
+    toggle.click();
+    assertTrue(page.hasClassName("account-navigation-open"));
+    assertEquals("true", toggle.getElement().getAttribute("aria-expanded"));
+    enter("?section=mail_test");
+    assertFalse(page.hasClassName("account-navigation-open"));
+    assertEquals("false", toggle.getElement().getAttribute("aria-expanded"));
   }
 
   @Test
@@ -203,11 +226,11 @@ class AdminViewNavigationTest {
   @Test
   void menuSelectionUsesFlowNavigationWithTheSameParametersAsTheLink() {
     doReturn(Optional.of(view)).when(ui).navigate(eq(AdminView.class), any(QueryParameters.class));
-    Map<String, Runnable> actions =
-        (Map<String, Runnable>) ReflectionTestUtils.getField(view, "navigationActions");
+    PageNavigationComponent navigation =
+        (PageNavigationComponent) ReflectionTestUtils.getField(view, "sideNavigation");
     Map<?, ?> items = (Map<?, ?>) ReflectionTestUtils.getField(view, "configurationSubmenuItems");
     SideNavItem item = (SideNavItem) items.get(AdminConfigGroup.SECURITY);
-    actions.get(item.getPath()).run();
+    navigation.activate(item);
     verify(ui)
         .navigate(
             AdminView.class,

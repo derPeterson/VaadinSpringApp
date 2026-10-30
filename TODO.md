@@ -4,20 +4,16 @@
 
 Die vereinbarte Reihenfolge ist:
 
-- [ ] [Designkritik und Spielwiese mit Stitch](docs/planung/designkritik-stitch.md):
-  Auf Grundlage der gestalterisch abgenommenen HTML-Referenzen für angemeldete
-  und nicht angemeldete Benutzer auch die Administration mit Stitch gestalten.
-  Die abgenommene [Adminreferenz](docs/design/frontend-referenzen/admin.html)
-  als Grundlage verwenden. Die eingepassten Feldicons, Platzhalter und Admin-
-  Passworthinweise gemeinsam sichten. Logo-/Hintergrundauswahl in den drei
-  Referenzviewern gemeinsam bewerten. Danach anhand der
-  [Vaadin-Machbarkeitsstudie](docs/design/frontend-referenzen/quellen/vaadin-studie/README.md)
-  Umfang/Reihenfolge eines gesonderten Piloten festlegen; die Übernahme in die
-  Anwendung ist noch nicht freigegeben.
-  Die endgültige Service-Logoabnahme bleibt offen. Kandidat K ist zur Sichtung
-  in den HTML-Referenzen eingesetzt; alle erstellten Kandidaten A–O sind gesichert.
-  Die Anwendungsoberfläche und der verbindliche [Theme-Standard](docs/theme.md)
-  sind unverändert. Keine Gesamt-Abnahme oder Vaadin-Übernahme vorwegnehmen.
+- [ ] [Designübernahme aus den Frontend-Referenzen](docs/planung/designkritik-stitch.md):
+  Das gesamte angemeldete Benutzerportal mit Header, SideNav, Startseite,
+  Postfach, Konto, Sicherheit sowie Geräten/Sitzungen und zugehörigen Dialogen
+  gemeinsam anhand des durchklickbaren HTML-/Vaadin-Vergleichs abnehmen.
+  Die automatisierten DE-/EN-Browsernachweise stehen in [Testbedarf](docs/testbedarf.md).
+  Besucherbereich gemeinsam akzeptiert; die vollständige Adminübernahme wird im eigenen
+  Referenzvergleich gesichtet. Offene automatisierte Nachweise stehen im Testbedarf.
+  Logo-/Hintergrundauswahl der Referenzviewer gemeinsam bewerten; die endgültige
+  Service-Logoabnahme bleibt offen. Kandidat K dient weiterhin als Arbeitsgrundlage.
+  Theme-Bausteine und Grenzen stehen im [Theme-Standard](docs/theme.md).
 
 ## Menschliche Abnahmen
 

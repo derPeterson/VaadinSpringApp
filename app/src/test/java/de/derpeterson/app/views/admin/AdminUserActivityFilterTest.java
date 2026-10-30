@@ -119,13 +119,7 @@ class AdminUserActivityFilterTest {
     assertEquals(locale, time().getLocale());
     assertEquals(texts.getAdminUsersActivityDate(), date().getAriaLabel().orElseThrow());
     assertEquals(texts.getAdminUsersFilterActiveSince(), date().getLabel());
-    assertEquals(
-        LocalDateTime.ofInstant(CLOCK.instant(), UserActivityTime.DISPLAY_ZONE)
-            .toLocalDate()
-            .format(
-                java.time.format.DateTimeFormatter.ofPattern(
-                    language.equals("de") ? "dd.MM.uuuu" : "MM/dd/uuuu", locale)),
-        date().getPlaceholder());
+    assertEquals(texts.getRegistrationBirthDatePlaceholder(), date().getPlaceholder());
     LocalTime placeholder =
         LocalTime.parse(
             time().getPlaceholder(),

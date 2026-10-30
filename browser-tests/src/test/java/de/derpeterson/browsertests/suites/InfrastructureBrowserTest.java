@@ -94,7 +94,9 @@ public class InfrastructureBrowserTest extends BrowserFixture {
     for (Locator avatar : avatars.all()) {
       assertThat(avatar).isVisible();
       assertThat(avatar.locator(".cosmos-avatar-circle")).isVisible();
-      assertThat(avatar.locator(".cosmos-avatar-initials vaadin-icon[icon='vaadin:user']"))
+      assertThat(
+              avatar.locator(
+                  ".cosmos-avatar-initials vaadin-icon[src='icons/lucide/user-round.svg']"))
           .isVisible();
       assertThat(avatar.locator(".cosmos-avatar-status svg")).isVisible();
       assertThat(avatar.locator(".cosmos-avatar-status svg")).hasAttribute("fill", "none");

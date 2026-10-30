@@ -201,19 +201,23 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     }
 }
 
-.cosmos-notification-preview-toolbar > vaadin-button {
+.cosmos-notification-preview-tools {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: var(--cosmos-space-s);
+    margin-inline-start: auto;
+}
+
+.cosmos-notification-preview-tools > vaadin-button {
     margin: 0;
 }
 
-.cosmos-notification-preview-toolbar > .cosmos-notification-preview-tool {
+.cosmos-notification-preview-tools > .cosmos-notification-preview-tool {
     flex-shrink: 0;
     width: var(--cosmos-control-height);
     min-width: var(--cosmos-control-height);
     padding: 0;
-}
-
-.cosmos-notification-preview-toolbar > .cosmos-notification-preview-refresh {
-    margin-inline-start: auto;
 }
 
 .cosmos-notification-preview-tool > vaadin-icon {
@@ -542,24 +546,29 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     height: var(--cosmos-icon-size-s);
 }
 
-.cosmos-notification-inbox-empty {
+.cosmos-notification-empty {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: var(--cosmos-space-s);
-    padding: var(--cosmos-space-m);
-    border: var(--cosmos-border-width) solid var(--cosmos-badge-border);
-    border-radius: var(--cosmos-control-radius);
-    background: var(--cosmos-badge-background);
-    color: var(--lumo-secondary-text-color);
-    font-size: var(--cosmos-font-size-s);
-    line-height: var(--cosmos-line-height-copy);
+    justify-content: center;
+    gap: 12px;
+    padding: 48px 24px;
+    box-sizing: border-box;
+    text-align: center;
 }
 
-.cosmos-notification-inbox-empty > vaadin-icon {
+.cosmos-notification-empty > vaadin-icon {
+    width: 32px;
+    height: 32px;
+    margin: 0;
     flex-shrink: 0;
-    width: var(--cosmos-icon-size-xs);
-    height: var(--cosmos-icon-size-xs);
-    color: var(--lumo-primary-text-color);
+    color: var(--cosmos-reference-accent, var(--lumo-primary-text-color));
+}
+
+.cosmos-notification-empty-title {
+    margin: 0;
+    color: var(--cosmos-reference-text, var(--lumo-body-text-color));
+    font: 600 14px/20px Inter, sans-serif;
 }
 
 .cosmos-notification-inbox-rows {
@@ -852,15 +861,11 @@ vaadin-dialog.cosmos-notification-dialog::part(overlay) {
     min-width: 0;
 }
 
-.cosmos-notification-detail-actions > vaadin-button {
+.cosmos-notification-detail-actions > div > vaadin-button {
     margin: 0;
-    white-space: normal;
+    white-space: nowrap;
     height: auto;
     min-height: var(--cosmos-control-height);
-}
-
-.cosmos-notification-detail-actions > .cosmos-notification-detail-history {
-    margin-inline-end: auto;
 }
 
 @media (max-width: 600px) {
@@ -875,10 +880,6 @@ vaadin-dialog.cosmos-notification-dialog::part(overlay) {
         padding: var(--cosmos-space-l);
     }
 
-    .cosmos-notification-detail-actions > .cosmos-notification-detail-history {
-        flex-basis: 100%;
-        justify-content: flex-start;
-    }
 }
 
 /* Benachrichtigungen verfassen: lokale Anordnung nativer Vaadin-Bausteine. */
@@ -1419,5 +1420,1123 @@ vaadin-dialog.cosmos-notification-dialog::part(overlay) {
         grid-column: 2;
         justify-content: space-between;
         flex-wrap: wrap;
+    }
+}
+
+/* Angemeldetes Referenzportal: Inbox, Metadaten und Pagination der festen Vorlage. */
+.cosmos-reference-portal .cosmos-notification-inbox-card {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.cosmos-reference-portal #notifications-inbox {
+    padding: 0;
+    gap: 0;
+    border: 1px solid var(--cosmos-reference-border);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--cosmos-reference-panel);
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px;
+    gap: 16px;
+    border-bottom: 1px solid var(--cosmos-reference-border);
+    background: var(--cosmos-reference-panel);
+}
+
+.cosmos-notification-inbox-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    min-width: 0;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-panel-title {
+    margin: 0;
+    font: 600 18px/28px Inter, sans-serif;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-panel-description {
+    margin: 2px 0 0;
+    font: 400 12px/20px Inter, sans-serif;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-counts {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
+}
+
+.cosmos-reference-portal .cosmos-notification-inbox-stat {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: 60px;
+    padding: 8px 12px;
+    border: 1px solid var(--cosmos-reference-border);
+    border-radius: 9px;
+    background: var(--cosmos-reference-input);
+    text-align: center;
+}
+
+.cosmos-reference-portal .cosmos-notification-inbox-stat-unread {
+    background: var(--cosmos-reference-selection);
+    border-color: #0088cc66;
+}
+
+.cosmos-reference-portal .cosmos-notification-inbox-stat-label {
+    letter-spacing: .045em;
+    color: var(--cosmos-reference-secondary);
+    font: 600 10px/14px Inter, sans-serif;
+    text-transform: uppercase;
+}
+
+.cosmos-reference-portal .cosmos-notification-inbox-stat-value {
+    margin-top: 3px;
+    color: var(--cosmos-reference-white);
+    font: 700 20px/24px Inter, sans-serif;
+}
+
+.cosmos-reference-portal .cosmos-notification-inbox-stat-unread .cosmos-notification-inbox-stat-label,
+.cosmos-reference-portal #notifications-inbox-unread-total {
+    color: var(--cosmos-reference-accent);
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-toolbar {
+    display: block;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--cosmos-reference-border);
+    background: var(--cosmos-reference-panel);
+}
+
+.cosmos-notification-inbox-controls {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+}
+
+.cosmos-notification-inbox-controls::after {
+    content: "";
+    position: absolute;
+    left: -24px;
+    right: -24px;
+    bottom: 0;
+    border-bottom: 1px solid var(--cosmos-reference-border);
+    pointer-events: none;
+}
+
+.cosmos-reference-portal #notifications-inbox-filter {
+    width: 324px;
+    max-width: 100%;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.cosmos-reference-portal #notifications-inbox-search {
+    width: 100%;
+}
+
+.cosmos-reference-portal #notifications-inbox-search input[slot=input] {
+    font-size: 12px;
+}
+
+.cosmos-reference-portal #notifications-inbox-search > [slot=prefix] {
+    margin-inline-end: 8px;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-tools {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-tool {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    margin: 0;
+    padding: 0;
+    border-radius: 8px;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-tool vaadin-icon {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-rows {
+    display: grid;
+    gap: 14px;
+    padding: 24px;
+    background: var(--cosmos-reference-page);
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-row {
+    display: block;
+    position: relative;
+    margin: 0;
+    padding: 18px 20px;
+    border: 1px solid var(--cosmos-reference-border);
+    border-radius: 12px;
+    background: var(--cosmos-reference-panel);
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-row.cosmos-notification-row--unread {
+    border-left: 3px solid var(--cosmos-reference-primary);
+    background: var(--cosmos-reference-input);
+}
+
+.cosmos-reference-portal .cosmos-notification-inbox-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-notification-message-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 9px;
+    min-width: 0;
+    color: var(--cosmos-reference-secondary);
+}
+
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-notification-message-time {
+    color: var(--cosmos-reference-secondary);
+    font: 400 10px/15px Inter, sans-serif;
+}
+
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-notification-message-meta .cosmos-notification-preview-source {
+    display: inline-flex;
+    padding: 2px 6px;
+    border: 1px solid var(--cosmos-reference-border);
+    border-radius: 4px;
+    color: var(--cosmos-reference-secondary);
+    background: transparent;
+    font: 400 10px/14px Inter, sans-serif;
+    white-space: nowrap;
+}
+
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-notification-message-meta .portal-notification-source-admin {
+    background: var(--cosmos-reference-selection);
+    border-color: #0088cc44;
+    color: #7dd3fc;
+}
+
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-notification-message-meta .portal-notification-source-system {
+    background: #6366f11a;
+    border-color: #818cf84d;
+    color: #a5b4fc;
+}
+
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-notification-message-meta .cosmos-notification-preview-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    box-sizing: content-box;
+    min-height: 13px;
+    padding: 2px 6px;
+    border: 1px solid var(--cosmos-reference-border);
+    border-radius: 5px;
+    color: var(--cosmos-reference-secondary);
+    background: transparent;
+    font: 400 10px/13px Inter, sans-serif;
+    white-space: nowrap;
+}
+
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-notification-message-meta .cosmos-notification-preview-state[data-read=false] {
+    color: var(--cosmos-reference-accent);
+    border-color: #0088cc55;
+    background: var(--cosmos-reference-selection);
+}
+
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-notification-message-meta .cosmos-notification-preview-state[data-read=false]::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--cosmos-reference-primary);
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-content {
+    display: block;
+    padding: 0;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-title {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    color: var(--cosmos-reference-white);
+    font: 600 14px/20px Inter, sans-serif;
+    white-space: normal;
+    text-align: left;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-title::part(label) {
+    display: block;
+    width: 100%;
+    white-space: normal;
+    text-align: left;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-message {
+    margin-top: 4px;
+    color: var(--cosmos-reference-secondary);
+    font: 400 12px/19.5px Inter, sans-serif;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-actions {
+    display: flex;
+    gap: 6px;
+    margin: 0;
+}
+
+.cosmos-reference-portal #notifications-inbox :is(.cosmos-notification-row-action, .cosmos-notification-preview-dismiss) {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--cosmos-reference-control-border);
+    border-radius: 7px;
+    background: var(--cosmos-reference-input);
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-preview-dismiss > vaadin-icon {
+    color: inherit;
+}
+
+.cosmos-reference-portal #notifications-inbox vaadin-button.cosmos-delete-button,
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-row vaadin-button.cosmos-delete-button {
+    background: var(--vaadin-button-tertiary-background);
+    border-color: var(--cosmos-reference-danger-border);
+}
+
+.cosmos-reference-portal #notifications-inbox vaadin-button.cosmos-delete-button:hover:not([disabled]),
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-row vaadin-button.cosmos-delete-button:hover:not([disabled]) {
+    border-color: var(--cosmos-reference-danger-hover-border);
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-footer {
+    display: block;
+    padding: 0;
+    gap: 0;
+    border-top: 1px solid var(--cosmos-reference-border);
+    background: var(--cosmos-reference-panel);
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    width: 100%;
+    gap: 16px;
+    padding: 18px 24px;
+    box-sizing: border-box;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-page-summary {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    white-space: nowrap;
+    color: var(--cosmos-reference-secondary);
+    font-size: 11px;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-range {
+    color: var(--cosmos-reference-secondary);
+    font: 400 11px/16px Inter, sans-serif;
+    white-space: nowrap;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination {
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-page-numbers {
+    display: flex;
+    gap: 4px;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination vaadin-button {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    min-height: 28px;
+    padding: 0;
+    font: 600 11px/1 Inter, sans-serif;
+    border-radius: 6px;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination vaadin-button::part(label) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination vaadin-icon {
+    width: 14px;
+    height: 14px;
+    padding: 0;
+}
+
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-retention {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-top: 1px solid #ffffff0b;
+    color: var(--cosmos-reference-secondary);
+    font: 400 11px/16.5px Inter, sans-serif;
+    text-align: center;
+}
+
+.cosmos-notification-inbox-retention > vaadin-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--cosmos-reference-accent);
+}
+
+.cosmos-notification-inbox-retention > span {
+    flex: none;
+    margin: 0;
+    padding: 0;
+    font: inherit;
+}
+
+
+
+
+vaadin-popover[theme~=cosmos-reference][theme~=cosmos-notifications]::part(overlay) {
+    width: min(440px, calc(100vw - 24px));
+    border-color: rgba(255, 255, 255, .12);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+vaadin-popover[theme~=cosmos-reference][theme~=cosmos-notifications]::part(content) {
+    padding: 0;
+}
+
+#notifications-preview.cosmos-reference-overlay {
+    background: var(--cosmos-reference-page);
+    max-height: calc(100dvh - 96px);
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-header {
+    padding: 20px 24px;
+    background: var(--cosmos-reference-dialog);
+    border-color: var(--cosmos-reference-border);
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-panel-icon {
+    width: 40px;
+    height: 40px;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-panel-title {
+    font-size: 18px;
+    line-height: 25px;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-panel-description {
+    font-size: 12px;
+    line-height: 18px;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-toolbar {
+    padding: 14px 20px;
+    gap: 12px;
+    background: var(--cosmos-reference-dialog);
+    border-color: var(--cosmos-reference-border);
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-rows {
+    padding: 14px 20px;
+    background: var(--cosmos-reference-page);
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-row {
+    padding: 16px;
+    border-color: var(--cosmos-reference-border);
+    border-radius: 10px;
+    background: var(--cosmos-reference-panel);
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-row.cosmos-notification-row--unread {
+    background: var(--cosmos-reference-input);
+    border-left: 3px solid var(--cosmos-reference-primary);
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-title {
+    min-height: 0;
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--cosmos-reference-white);
+    font: 600 13px/20px Inter, sans-serif;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-message {
+    color: var(--cosmos-reference-secondary);
+    font: 400 12px/20px Inter, sans-serif;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-footer {
+    padding: 16px 20px;
+    border-color: var(--cosmos-reference-border);
+    background: var(--cosmos-reference-dialog);
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-footer .cosmos-notifications-secondary {
+    color: var(--cosmos-reference-secondary);
+    font-size: 11px;
+}
+
+#notifications-preview.cosmos-reference-overlay :is(.cosmos-notification-preview-tool, .cosmos-notification-row-action, .cosmos-notification-preview-dismiss) {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    padding: 0;
+}
+
+
+/* Nachrichtendetail: dunkler Inhalt mit der Nachrichtenkarte der Referenz. */
+vaadin-dialog.cosmos-notification-dialog[theme~=cosmos-reference]::part(overlay) {
+    width: min(620px, calc(100vw - 32px));
+}
+
+.cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-header {
+    padding: 20px;
+}
+
+.cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-content {
+    padding: 24px;
+    background: var(--cosmos-reference-page);
+}
+
+.cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-message {
+    display: block;
+    margin: 0;
+    padding: 16px;
+    border: 1px solid var(--cosmos-reference-border);
+    border-radius: 10px;
+    background: var(--cosmos-reference-input);
+}
+
+.cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-message--unread {
+    border-left: 3px solid var(--cosmos-reference-primary);
+}
+
+.cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-meta {
+    margin: 14px 0 20px;
+}
+
+.cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-title {
+    margin: 0;
+    color: var(--cosmos-reference-white);
+    font: 650 18px/27px Inter, sans-serif;
+}
+
+.cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-body {
+    color: var(--cosmos-reference-text);
+    font: 400 13px/24.05px Inter, sans-serif;
+}
+
+.cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-actions {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+}
+
+.cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-actions > div > vaadin-button {
+    width: auto;
+}
+
+.cosmos-notification-detail-tools,
+.cosmos-notification-detail-primary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.cosmos-notification-detail-tools {
+    flex-shrink: 0;
+    justify-content: flex-start;
+}
+
+.cosmos-notification-detail-primary {
+    justify-content: flex-end;
+    margin-inline-start: auto;
+}
+
+.cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-tools > vaadin-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+}
+
+.cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-tools > vaadin-button::part(prefix),
+.cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-tools > vaadin-button::part(suffix) {
+    margin: 0;
+}
+
+vaadin-dialog.cosmos-notification-dialog[theme~=cosmos-reference]::part(footer) {
+    padding: 16px 20px;
+}
+
+.portal-notification-confirmation .account-change-dialog-header {
+    padding: 20px 24px;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.portal-notification-confirmation .cosmos-panel-title {
+    font: 600 16px/22px Inter, sans-serif;
+}
+
+.portal-notification-confirmation .cosmos-panel-description {
+    margin-top: 2px;
+    font: 400 12px/16px Inter, sans-serif;
+}
+
+.portal-notification-confirmation .portal-context-card > vaadin-icon {
+    padding: 8px;
+}
+
+.portal-notification-confirmation .cosmos-dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.portal-notification-confirmation .cosmos-dialog-actions > vaadin-button {
+    width: auto;
+    min-width: 112px;
+    padding-inline: 12px;
+    white-space: nowrap;
+}
+
+.portal-notification-confirmation .cosmos-dialog-actions > vaadin-button > vaadin-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.portal-notification-confirmation .cosmos-dialog-actions > vaadin-button::part(prefix) {
+    margin: 0 8px 0 0;
+}
+
+.portal-notification-confirmation .portal-context-card .cosmos-notification-message-meta {
+    margin-top: 4px;
+}
+
+.portal-notification-confirmation .cosmos-panel-hint {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.portal-notification-confirmation .cosmos-panel-hint > vaadin-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.portal-notification-confirmation:not(.portal-confirm-destructive) .cosmos-dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.portal-notification-confirmation:not(.portal-confirm-destructive) .cosmos-dialog-actions > vaadin-button {
+    width: auto;
+}
+
+
+.cosmos-reference-portal #notifications-inbox-filter::part(group-field),
+#notifications-preview.cosmos-reference-overlay #notifications-preview-filter::part(group-field) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    gap: 3px;
+    padding: 3px;
+    border-radius: 9px;
+    background: var(--cosmos-reference-input);
+}
+
+.cosmos-reference-portal #notifications-inbox-filter vaadin-radio-button,
+#notifications-preview.cosmos-reference-overlay #notifications-preview-filter vaadin-radio-button {
+    min-height: 32px;
+    height: 32px;
+    border-radius: 6px;
+    color: var(--cosmos-reference-secondary);
+    font: 500 12px/16px Inter, sans-serif;
+    --vaadin-radio-button-label-font-size: 12px;
+    --vaadin-radio-button-label-font-weight: 500;
+}
+
+.cosmos-reference-portal #notifications-inbox-filter vaadin-radio-button[checked],
+#notifications-preview.cosmos-reference-overlay #notifications-preview-filter vaadin-radio-button[checked] {
+    color: var(--cosmos-reference-accent);
+    background: var(--cosmos-reference-selection);
+    border-color: var(--cosmos-reference-primary);
+    box-shadow: none;
+}
+
+.portal-read-filter-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.portal-filter-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 21px;
+    height: 18px;
+    padding: 0 5px;
+    box-sizing: border-box;
+    border: 1px solid var(--cosmos-reference-border);
+    border-radius: 999px;
+    background: var(--cosmos-reference-hover);
+    color: var(--cosmos-reference-text);
+    font: 600 10px/1 Inter, sans-serif;
+}
+
+vaadin-radio-button[checked] .portal-filter-count {
+    color: var(--cosmos-reference-accent);
+    border-color: var(--cosmos-reference-icon-border);
+    background: var(--cosmos-reference-selection);
+}
+
+/* Ohne Feldlabel darf dessen Referenzabstand die kompakte Auswahl nicht verschieben. */
+.cosmos-reference-portal .portal-page-size:not([has-label])::part(label) {
+    display: none;
+    margin: 0;
+}
+
+/* Die Seitengrößenauswahl bleibt eine native ComboBox mit kompaktem Referenzmenü. */
+.cosmos-reference-portal .portal-page-size {
+    height: 32px;
+    min-height: 32px;
+    padding: 0;
+    --vaadin-input-field-height: 32px;
+    --lumo-size-m: 32px;
+}
+
+.cosmos-reference-portal .portal-page-size::part(input-field) {
+    box-sizing: border-box;
+    height: 32px;
+    min-height: 32px;
+}
+
+.cosmos-reference-portal .portal-page-size::part(overlay) {
+    min-width: 76px;
+    border: 1px solid #ffffff26;
+    border-radius: 8px;
+    background: var(--cosmos-reference-input);
+    padding: 4px;
+}
+
+vaadin-combo-box-item.portal-pagination-option {
+    height: 32px;
+    min-height: 32px;
+    padding: 0;
+    border-radius: 5px;
+}
+
+.portal-pagination-option .cosmos-reference-option-row {
+    height: 32px;
+    padding: 7px 9px;
+    gap: 12px;
+    border-radius: 5px;
+    font: 500 12px/16.8px Inter, sans-serif;
+    color: var(--cosmos-reference-secondary);
+}
+
+.portal-pagination-option[selected] .cosmos-reference-option-row {
+    border-color: transparent;
+    background: var(--cosmos-reference-selection);
+    color: var(--cosmos-reference-accent);
+}
+
+.portal-pagination-option .cosmos-reference-option-check {
+    width: 13px;
+    height: 13px;
+}
+
+.portal-pagination-option[focused]:not([selected]) .cosmos-reference-option-row {
+    background: var(--cosmos-reference-hover);
+    color: var(--cosmos-reference-white);
+}
+
+@media (max-width: 639px) {
+    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 24px;
+    }
+
+    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-counts {
+        margin-left: 0;
+    }
+
+    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-toolbar {
+        padding: 16px;
+    }
+
+    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-controls {
+        gap: 12px;
+    }
+
+    .cosmos-notification-inbox-controls::after {
+        left: -16px;
+        right: -16px;
+    }
+
+    .cosmos-reference-portal #notifications-inbox-filter {
+        width: 100%;
+    }
+
+    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-rows {
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-row {
+        padding: 16px;
+    }
+
+    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-row-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-actions {
+        align-self: flex-end;
+    }
+
+    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination-row {
+        grid-template-columns: 1fr auto;
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination {
+        grid-column: 1 / -1;
+        justify-self: center;
+    }
+
+    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-range {
+        justify-self: end;
+    }
+
+    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-retention {
+        padding: 12px 16px;
+    }
+
+    .cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-content {
+        padding: 20px;
+    }
+}
+
+/* Glockenvorschau: feste Werkzeuge und Footer, ausschließlich die Karten scrollen. */
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-content {
+    display: contents;
+    padding: 0;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-header {
+    padding: 20px;
+    gap: 12px;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-panel-title {
+    font: 650 16px/22.4px Inter, sans-serif;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-panel-description {
+    margin: 3px 0 0;
+    font: 400 11px/16.5px Inter, sans-serif;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-panel-icon {
+    width: 36px;
+    height: 36px;
+}
+
+.portal-preview-unread-count {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 24px;
+    padding: 0 8px;
+    border: 1px solid #0088cc66;
+    border-radius: 6px;
+    background: var(--cosmos-reference-selection);
+    color: var(--cosmos-reference-accent);
+    font: 700 12px/1 Inter, sans-serif;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-toolbar {
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin: 0;
+    padding: 12px 16px;
+    gap: 12px;
+}
+
+#notifications-preview-filter {
+    flex: 1 1 290px;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-rows {
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 360px;
+    padding: 12px 16px;
+    gap: 10px;
+    overflow-y: auto;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 12px;
+    row-gap: 0;
+    margin: 0;
+    padding: 13px 12px;
+    border-radius: 9px;
+    border-left: 3px solid transparent;
+    background: var(--cosmos-reference-panel);
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-row.cosmos-notification-row--unread {
+    border-left-color: var(--cosmos-reference-primary);
+    background: var(--cosmos-reference-input);
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-title {
+    grid-column: 1;
+    margin: 0;
+    width: 100%;
+    font: 650 12px/18px Inter, sans-serif;
+    text-align: left;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-title::part(label) {
+    display: block;
+    width: 100%;
+    text-align: left;
+    white-space: normal;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-message {
+    grid-column: 1;
+    margin: 5px 0;
+    font: 400 11px/16.5px Inter, sans-serif;
+    -webkit-line-clamp: 1;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-meta {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+    gap: 5px 9px;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-actions {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: start;
+    display: flex;
+    gap: 6px;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-row :is(.cosmos-notification-row-action, .cosmos-notification-preview-dismiss) {
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    min-height: 28px;
+    border-radius: 6px;
+    background: var(--cosmos-reference-input);
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-row .cosmos-notification-row-action:hover:not([disabled]),
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-tools > vaadin-button:hover:not([disabled]),
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-row-action:hover:not([disabled]),
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-tool:not(.cosmos-delete-button):hover:not([disabled]) {
+    background: var(--cosmos-reference-button-hover);
+    border-color: #ffffff38;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-footer {
+    display: block;
+    padding: 16px 20px;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-footer > vaadin-button {
+    width: 100%;
+}
+
+.cosmos-notification-preview-retention {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+    color: var(--cosmos-reference-secondary);
+    font: 400 10px/16px Inter, sans-serif;
+    text-align: center;
+}
+
+.cosmos-notification-preview-retention > vaadin-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--cosmos-reference-accent);
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-retention > span {
+    font: inherit;
+    color: inherit;
+}
+
+
+/* Icons und Textzeilen teilen in den Nachrichtenaktionen dieselbe vertikale Mitte. */
+.cosmos-notification-dialog.cosmos-reference-overlay vaadin-button::part(prefix),
+.cosmos-notification-dialog.cosmos-reference-overlay vaadin-button::part(label) {
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
+}
+
+#notifications-preview.cosmos-reference-overlay #notifications-preview-filter vaadin-radio-button {
+    height: 28px;
+    min-height: 28px;
+    font-size: 11px;
+    border-radius: 5px;
+    --vaadin-radio-button-label-font-size: 11px;
+}
+
+#notifications-preview.cosmos-reference-overlay #notifications-preview-filter::part(group-field) {
+    box-sizing: border-box;
+    gap: 2px;
+    border-radius: 8px;
+}
+
+#notifications-preview.cosmos-reference-overlay #notifications-preview-filter vaadin-radio-button[checked] {
+    border-color: #0088cc88;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-tools {
+    gap: 6px;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-tools > vaadin-button {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0;
+    border-color: #ffffff1c;
+    border-radius: 8px;
+    background: var(--cosmos-reference-input);
+}
+
+/* Die Rundung des äußeren Popovers beschneidet alle inneren Flächen gemeinsam. */
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-header,
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-footer {
+    border-radius: 0;
+}
+
+#notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-retention {
+    margin: 16px -20px -16px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--cosmos-reference-border);
+}
+
+@media (max-width: 639px) {
+    #notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-toolbar {
+        gap: 10px;
+    }
+
+    #notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-header {
+        padding: 16px;
+        gap: 10px;
+    }
+
+    #notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-footer {
+        padding: 14px 16px;
+    }
+
+    #notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-retention {
+        margin: 14px -16px -14px;
+        padding: 14px 16px;
     }
 }

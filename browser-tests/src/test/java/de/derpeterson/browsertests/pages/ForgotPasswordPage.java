@@ -46,7 +46,7 @@ public final class ForgotPasswordPage {
   public void submit() {
     page.getByRole(
             AriaRole.BUTTON,
-            new Page.GetByRoleOptions().setName(texts.getBaseSendButton()).setExact(true))
+            new Page.GetByRoleOptions().setName(texts.getPublicRequestLink()).setExact(true))
         .click();
   }
 
@@ -81,7 +81,7 @@ public final class ForgotPasswordPage {
 
   private Locator emailField() {
     return page.getByLabel(
-        texts.getForgotPasswordEmailField(), new Page.GetByLabelOptions().setExact(true));
+        texts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true));
   }
 
   private Locator requestedNotice() {

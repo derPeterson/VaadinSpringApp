@@ -84,9 +84,17 @@ public final class AccountPage {
     return page.locator("vaadin-dialog.account-email-dialog[opened]");
   }
 
+  @Step("Kontobereich über die Seitennavigation auswählen")
+  public void section(String id) {
+    if (!host(id).isVisible() && host("account-navigation-toggle").isVisible()) {
+      host("account-navigation-toggle").click();
+    }
+    host(id).click();
+  }
+
   @Step("E-Mail-Dialog öffnen")
   public void openEmail() {
-    host("account-tab-security").click();
+    section("account-tab-security");
     host("account-email-edit-security").click();
     assertThat(input("account-email-new")).isVisible();
   }

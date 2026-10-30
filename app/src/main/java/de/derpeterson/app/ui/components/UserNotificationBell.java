@@ -10,6 +10,7 @@ import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.service.UserNotificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.util.function.LongConsumer;
 
 /** Keine Request-Proxys auf Push-Threads: die beim Attach gebundene Sitzung wird frisch geprüft. */
 public class UserNotificationBell extends Div {
@@ -21,6 +22,11 @@ public class UserNotificationBell extends Div {
   private transient HttpSession session;
   private transient Registration registration;
   private UserNotificationsPanel panel;
+  private LongConsumer unreadCountListener = value -> {};
+
+  public void setUnreadCountListener(LongConsumer listener) {
+    unreadCountListener = listener;
+  }
 
   public UserNotificationBell(
       MessageProperties texts,
@@ -56,6 +62,9 @@ public class UserNotificationBell extends Div {
         event -> {
           session = request.getSession(false);
           panel = new UserNotificationsPanel(texts, service, session, true);
+          if (referenceStyle) {
+            panel.addClassName("cosmos-reference-overlay");
+          }
           panel.setCloseAction(popover::close);
           panel.setDetailOpenListener(
               open -> {
@@ -99,6 +108,16 @@ public class UserNotificationBell extends Div {
         });
   }
 
+  private boolean referenceStyle;
+
+  public void useReferenceStyle() {
+    referenceStyle = true;
+    popover.getThemeNames().add("cosmos-reference");
+    if (panel != null) {
+      panel.addClassName("cosmos-reference-overlay");
+    }
+  }
+
   public void refreshTexts() {
     popover.setAriaLabel(texts.getNotificationsTitle());
     if (panel != null) {
@@ -112,6 +131,7 @@ public class UserNotificationBell extends Div {
   private void refresh() {
     try {
       long unread = service.unreadCount(session);
+      unreadCountListener.accept(unread);
       target.setEnabled(true);
       count.setVisible(unread > 0);
       count.setText(unread > 99 ? "99+" : Long.toString(unread));
@@ -120,6 +140,7 @@ public class UserNotificationBell extends Div {
         panel.refresh();
       }
     } catch (RuntimeException _) {
+      unreadCountListener.accept(-1);
       count.setVisible(false);
       target.setEnabled(false);
       popover.close();

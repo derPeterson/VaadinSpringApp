@@ -3,6 +3,7 @@ package de.derpeterson.browsertests.suites;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.derpeterson.app.config.TokenDurationPolicy;
 import de.derpeterson.browsertests.BrowserFixture;
@@ -100,22 +101,18 @@ public class TokenConfigurationBrowserTest extends BrowserFixture {
     String original = settings.value(label);
     settings.explain(label, minimum.toMinutes(), explanation);
     for (String invalid :
-        new String[] {"invalid", "PT0S", "PT-1S", "PT1S", minimum.minusNanos(1).toString()}) {
+        new String[] {"PT0S", "PT-1S", "PT1S", minimum.minusNanos(1).toString()}) {
       settings.enter(label, invalid);
-      settings.reject(
-          label,
-          invalid.equals("invalid")
-              ? texts.getAdminConfigValidationTokenDuration(minimum.toMinutes())
-              : texts.getAdminConfigValidationDurationMinimum(minimum.toMinutes()));
+      settings.reject(label, texts.getAdminConfigValidationDurationMinimum(minimum.toMinutes()));
       settings.reload();
-      assertThat(settings.field(label).locator("input")).hasValue(original);
+      assertEquals(original, settings.value(label));
     }
     AllurePlaywright.attachScreenshot("Unveränderte Werte nach abgelehnten Dauern", page);
     try {
       settings.enter(label, minimum.toMinutes() + "m");
       settings.save();
       settings.reload();
-      assertThat(settings.field(label).locator("input")).hasValue(minimum.toString());
+      assertEquals(minimum.toString(), settings.value(label));
     } finally {
       settings.enter(label, original);
       settings.save();

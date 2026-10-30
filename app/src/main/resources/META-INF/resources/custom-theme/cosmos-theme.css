@@ -283,14 +283,14 @@
 
 /* Dezenter Rahmen für Secondary-Buttons; Tertiary bleibt ohne Rahmen. */
 
-.cosmos-theme vaadin-button:not([theme~="primary"]):not([theme~="tertiary"]):not([theme~="tertiary-inline"]) {
+.cosmos-theme vaadin-button:where(:not([theme~="primary"], [theme~="tertiary"], [theme~="tertiary-inline"])) {
     border: var(--cosmos-border-width) solid var(--cosmos-button-secondary-border);
 }
 
 /* Gemeinsamer roter Akzent für Löschbuttons und nicht interaktive Warnflächen. */
 
 .cosmos-theme .cosmos-delete-accent,
-.cosmos-theme vaadin-button.cosmos-delete-button:not([theme~="primary"]):not([theme~="tertiary"]):not([theme~="tertiary-inline"]):not([disabled]) {
+.cosmos-theme vaadin-button.cosmos-delete-button:not([theme~="primary"]):not([theme~="tertiary"]):not([theme~="tertiary-inline"]):not([disabled]):not(:where(.cosmos-reference-portal *, .cosmos-reference-overlay *)) {
     color: var(--cosmos-delete-accent-color);
     border: var(--cosmos-border-width) solid currentColor;
     background: var(--cosmos-delete-accent-background);
@@ -452,7 +452,7 @@ vaadin-notification-card[theme~="cosmos"] .cosmos-notification-icon {
     flex-shrink: 0;
 }
 
-vaadin-notification-card[theme~="cosmos"] .cosmos-notification-title {
+vaadin-notification-card[theme~="cosmos"] .cosmos-toast-title {
     font-size: var(--cosmos-notification-title-font-size);
 }
 
@@ -512,80 +512,106 @@ vaadin-notification-card[theme~="cosmos"] .cosmos-notification-message {
     }
 }
 
-/* Gemeinsame Konto-Navigation und Einstellungstabs. */
-
-/* Native Vaadin-Tabs behalten Tastatursteuerung, Scrollbuttons und Fokusrahmen.
- * Nur Farbe, Typografie und Abstände werden an unsere bestehenden Buttons angelehnt.
- * Styling-API: https://vaadin.com/docs/latest/components/tabs/styling */
-
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) {
-    width: 100%;
-    min-width: 0;
-    box-shadow: none;
-    border-bottom: var(--cosmos-border-width) solid var(--cosmos-card-border);
-}
-
-.cosmos-theme .account-navigation-tabs {
-    max-width: var(--cosmos-page-content-width);
-    align-self: center;
-}
-
-/* Gleich breite Tabs nach dem längsten Inhalt. Der Scrollcontainer darf bei
- * wenig Platz schrumpfen; die gleich großen Gridspalten bleiben scrollbar. */
-
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs)::part(tabs) {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
-    flex: 0 1 auto;
-    width: max-content;
-    max-width: 100%;
-    min-width: 0;
-}
-
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab {
-    display: flex;
-    align-items: center;
-    gap: var(--lumo-space-s);
-    padding: var(--lumo-space-m);
-    color: var(--lumo-secondary-text-color);
-    font-size: var(--cosmos-font-size-m);
-    font-weight: var(--cosmos-font-weight-semibold);
-    white-space: nowrap;
-    min-width: max-content;
-}
-
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab[selected] {
-    color: var(--lumo-primary-text-color);
-    font-weight: var(--cosmos-font-weight-bold);
-}
-
-/* Lumo zentriert seine kurze Markierung per translateX(-50%). Bei voller
- * Tabbreite entfällt diese Verschiebung; auch der native Klickschimmer folgt. */
-
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab::before,
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab::after {
-    left: 0;
-    right: 0;
-    width: 100%;
-    transform: scaleX(0);
-    background: var(--lumo-primary-text-color);
-}
-
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab[selected]::before,
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab[selected]::after {
-    transform: scaleX(1);
-}
-
-/* Gleiche Außenmaße und dasselbe em-basierte Padding wie unsere Button-Icons. */
-
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab > vaadin-icon,
-:is(.cosmos-account .account-tabs, .cosmos-theme .account-navigation-tabs) vaadin-tab > .account-devices-icon {
-    width: var(--lumo-icon-size-m);
-    height: var(--lumo-icon-size-m);
-    font-size: var(--cosmos-font-size-l);
-    padding: 0.25em;
+/* Gemeinsame native Controls im angemeldeten Portal und seinen ausgelagerten Overlays. */
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button:where(:not(.cosmos-topbar-shortcut, .tracked-user-button, .account-navigation-toggle, #account-sidebar > vaadin-button)) {
+    cursor: pointer;
     margin: 0;
-    box-sizing: border-box;
-    flex-shrink: 0;
+    height: 36px;
+    padding: 0 13px;
+    border: 1px solid var(--cosmos-reference-control-border);
+    border-radius: 9px;
+    background: var(--cosmos-reference-input);
+    color: var(--cosmos-reference-text);
+    box-shadow: none;
+    font: 600 12px/1.4 Inter, sans-serif;
+    --vaadin-button-label-wrap: nowrap;
 }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button::part(label) { display: inline-flex; align-items: center; justify-content: center; padding: 0; margin: 0; color: inherit; font: inherit; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button::part(prefix) { display: inline-flex; align-items: center; padding: 0; margin-right: 8px; }
+/* Ein leerer Vorspann darf einzelne Icons, Zahlen und Titeltexte nicht verschieben. */
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button:not(:has(> [slot="prefix"]))::part(prefix) { margin: 0; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button > vaadin-icon { width: 16px; height: 16px; padding: 0; color: var(--cosmos-reference-accent); }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button[theme~=primary] { color: var(--cosmos-reference-white); background: var(--cosmos-reference-primary); border-color: var(--cosmos-reference-primary); box-shadow: none; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button[theme~=primary]:hover { background: var(--cosmos-reference-primary-hover); }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button[theme~=primary] > vaadin-icon { color: var(--cosmos-reference-white); }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button:where(:not([theme~=primary], [theme~=tertiary], [theme~=tertiary-inline], .cosmos-delete-button, .cosmos-topbar-shortcut, .tracked-user-button, .account-navigation-toggle, #account-sidebar > vaadin-button, [aria-pressed], .portal-menu-action, .portal-menu-footer > vaadin-button)):hover:not([disabled]) { background: var(--cosmos-reference-button-hover); border-color: #ffffff38; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-delete-button { color: var(--cosmos-reference-invalid); background: var(--cosmos-reference-danger-surface); border-color: var(--cosmos-reference-danger-border); --vaadin-button-tertiary-background: var(--cosmos-reference-danger-surface); }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-delete-button:hover:not([disabled]) { color: var(--cosmos-reference-danger-hover-text); background: var(--cosmos-reference-danger-hover-surface); border-color: var(--cosmos-reference-danger-hover-border); --vaadin-button-tertiary-background: var(--cosmos-reference-danger-hover-surface); }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-delete-button:focus-visible { outline: 2px solid var(--cosmos-reference-accent); outline-offset: 3px; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-delete-button > vaadin-icon { color: inherit; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button[disabled] { opacity: .45; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-overlay-close { display: inline-flex; align-items: center; justify-content: center; width: 36px; min-width: 36px; padding: 0; background: var(--cosmos-reference-input); --vaadin-button-tertiary-background: var(--cosmos-reference-input); }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-overlay-close:hover:not([disabled]) { background: var(--cosmos-reference-button-hover); --vaadin-button-tertiary-background: var(--cosmos-reference-button-hover); border-color: #ffffff38; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-overlay-close::part(prefix),
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-overlay-close::part(suffix) { margin: 0; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-overlay-close::part(label) { display: flex; align-items: center; justify-content: center; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-overlay-close > vaadin-icon { width: 18px; height: 18px; }
+
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker, vaadin-select) {
+    min-width: 0;
+    padding: 0;
+    --vaadin-input-field-value-font-size: 14px;
+    --vaadin-input-field-value-font-weight: 400;
+    --vaadin-input-field-background: var(--cosmos-reference-input);
+    --vaadin-input-field-border-color: var(--cosmos-reference-border);
+    --vaadin-input-field-border-width: 1px;
+    --vaadin-input-field-height: 40px;
+    --vaadin-input-field-border-radius: 8px;
+    --vaadin-input-field-value-color: var(--cosmos-reference-text);
+    --vaadin-input-field-placeholder-color: var(--cosmos-reference-muted);
+}
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker, vaadin-select)::part(input-field) {
+    box-shadow: none; background: var(--cosmos-reference-input); border: 1px solid var(--cosmos-reference-border); border-radius: 8px; min-height: 40px; padding-inline: 14px;
+}
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker, vaadin-select)::part(label) {
+    display: flex; align-items: center; gap: 4px; margin: 0 0 6px; padding: 0; color: var(--cosmos-reference-label); font: 500 12px/16px Inter, sans-serif;
+}
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker)::part(helper-text) { margin: 0; padding-top: 4px; color: var(--cosmos-reference-muted); font: 400 11px/16.5px Inter, sans-serif; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-combo-box, vaadin-date-picker)::part(helper-text)::before { display: none; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) :not([has-helper])::part(helper-text) { display: none; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) input[slot=input] { padding: 0; color: var(--cosmos-reference-white); font: 400 14px/20px Inter, sans-serif; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) input::placeholder { color: var(--cosmos-reference-muted); opacity: 1; font-weight: 400; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) [required]::part(required-indicator) { visibility: visible; display: inline-flex; font: 500 14px/14px Inter, sans-serif; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) [required]::part(required-indicator)::after { content: '•'; color: var(--cosmos-reference-accent); opacity: 1; position: static; width: auto; margin-left: 0; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) [focused]::part(input-field) { outline: 1px solid var(--cosmos-reference-accent); outline-offset: 2px; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) [invalid]::part(input-field) { border-color: var(--cosmos-reference-invalid); }
+.cosmos-reference-portal #account-email::part(input-field) { border-style: dashed; }
+.cosmos-reference-portal #account-email input[slot=input] { color: var(--cosmos-reference-secondary); }
+.cosmos-reference-portal #account-email vaadin-icon { width: 16px; height: 16px; color: var(--cosmos-reference-muted); }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) ::part(toggle-button),
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) ::part(reveal-button) { color: var(--cosmos-reference-secondary); }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) [opened]::part(toggle-button),
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) [focused]::part(toggle-button),
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) [focused]::part(reveal-button) { color: var(--cosmos-reference-accent); }
+.cosmos-reference-portal .cosmos-reference-choice { --vaadin-item-overlay-padding: 0; }
+.cosmos-reference-portal .cosmos-choice-dot::part(input-field)::before { content: ''; width: 8px; height: 8px; margin-right: 8px; flex-shrink: 0; border-radius: 50%; background: var(--cosmos-reference-accent); }
+.cosmos-reference-portal .cosmos-reference-choice::part(overlay) { background: var(--cosmos-reference-dialog); border: 1px solid var(--cosmos-reference-border); border-radius: 10px; }
+.cosmos-reference-portal .cosmos-reference-choice::part(content) { box-sizing: border-box; padding: 4px 4px 0; }
+vaadin-combo-box-item.cosmos-reference-option { box-sizing: border-box; height: 46px; min-height: 46px; padding: 0 0 4px; background: transparent; color: var(--cosmos-reference-label); }
+vaadin-combo-box-item.cosmos-reference-option::part(checkmark), vaadin-combo-box-item.cosmos-reference-option::before { display: none; }
+.cosmos-reference-option-row { display: flex; align-items: center; gap: 10px; box-sizing: border-box; height: 42px; width: 100%; padding: 10px 12px; border: 1px solid transparent; border-radius: 8px; font: 500 12px/16px Inter, sans-serif; }
+.cosmos-reference-option-dot { width: 8px; height: 8px; flex-shrink: 0; background: var(--cosmos-reference-dot); border-radius: 50%; }
+.cosmos-reference-option-check { width: 16px; height: 16px; margin-left: auto; color: var(--cosmos-reference-accent); opacity: 0; }
+.cosmos-reference-option[selected] .cosmos-reference-option-row { border-color: var(--cosmos-reference-primary); background: var(--cosmos-reference-selection); }
+.cosmos-reference-option[selected] .cosmos-reference-option-dot { background: var(--cosmos-reference-accent); }
+.cosmos-reference-option[selected] .cosmos-reference-option-check { opacity: 1; }
+vaadin-combo-box-item.portal-pagination-option { height: 36px; min-height: 36px; }
+.portal-pagination-option .cosmos-reference-option-row { height: 32px; padding: 6px 8px; }
+.cosmos-reference-portal .portal-page-size::part(input-field) { height: 32px; min-height: 32px; padding-inline: 12px; }
+.cosmos-reference-portal .portal-page-size input[slot=input] { font: 600 12px/16px Inter, sans-serif; }
+
+/* Globale Rückmeldungen: eigener Titelname verhindert Kollisionen mit Inbox-Titelbuttons. */
+vaadin-notification-card[theme~="cosmos-reference"] { --account-notification-color: var(--cosmos-reference-accent); max-width: calc(100vw - 24px); margin-top: 61px; }
+vaadin-notification-card[theme~="cosmos-reference-error"] { --account-notification-color: var(--cosmos-reference-invalid); }
+vaadin-notification-card[theme~="cosmos-reference-warning"] { --account-notification-color: var(--cosmos-reference-warning); }
+vaadin-notification-card[theme~="cosmos-reference-success"] { --account-notification-color: var(--cosmos-reference-success); }
+vaadin-notification-card[theme~="cosmos-reference"]::part(overlay) { box-sizing: border-box; width: 520px; max-width: calc(100vw - 24px); max-height: calc(100dvh - 89px); overflow: auto; border: 1px solid var(--cosmos-reference-border); border-left: 3px solid var(--account-notification-color); border-radius: 12px; background: var(--cosmos-reference-dialog); box-shadow: 0 12px 30px #0009; }
+vaadin-notification-card[theme~="cosmos-reference"]::part(content) { display: flex; align-items: center; gap: 12px; padding: 14px 12px 14px 16px; }
+vaadin-notification-card[theme~="cosmos-reference"] vaadin-horizontal-layout { flex: 1; min-width: 0; gap: 12px; }
+vaadin-notification-card[theme~="cosmos-reference"] vaadin-vertical-layout { padding: 0; flex: 1; min-width: 0; gap: 0; }
+vaadin-notification-card[theme~="cosmos-reference"] .cosmos-notification-icon { width: 28px; height: 28px; flex-shrink: 0; color: var(--account-notification-color); }
+vaadin-notification-card[theme~="cosmos-reference"] .cosmos-toast-title { display: block; min-height: 0; height: auto; margin: 0 0 3px; padding: 0; color: var(--cosmos-reference-text); font: 600 12px/1.6 Inter, sans-serif; }
+vaadin-notification-card[theme~="cosmos-reference"] .cosmos-notification-message { margin: 0; color: var(--cosmos-reference-secondary); font: 400 12px/1.7 Inter, sans-serif; }
+vaadin-notification-card[theme~="cosmos-reference"] vaadin-button { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; min-width: 36px; height: 36px; margin: 0; padding: 0; border: 1px solid var(--cosmos-reference-border); border-radius: 9px; background: var(--cosmos-reference-input); color: var(--cosmos-reference-accent); }
+vaadin-notification-card[theme~="cosmos-reference"] vaadin-button::part(label) { display: flex; align-items: center; justify-content: center; }
+vaadin-notification-card[theme~="cosmos-reference"] vaadin-button vaadin-icon { width: 18px; height: 18px; padding: 0; }

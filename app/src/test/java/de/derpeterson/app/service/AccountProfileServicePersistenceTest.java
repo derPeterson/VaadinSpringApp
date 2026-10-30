@@ -126,7 +126,8 @@ class AccountProfileServicePersistenceTest {
   }
 
   private Changes changes(Long version) {
-    return new Changes(version, " Updated ", " Name ", LocalDate.of(1995, 2, 3), Locale.ENGLISH);
+    return new Changes(
+        version, " Updated ", " Name ", LocalDate.of(1995, 2, 3), Locale.ENGLISH, Gender.OTHER);
   }
 
   @ParameterizedTest
@@ -191,6 +192,40 @@ class AccountProfileServicePersistenceTest {
   }
 
   @ParameterizedTest
+  @EnumSource(Gender.class)
+  void genderIsPersistedForTheAuthenticatedAccountOnly(Gender gender) {
+    Changes change =
+        new Changes(
+            account.getVersion(),
+            "Updated",
+            "Name",
+            LocalDate.of(1995, 2, 3),
+            Locale.ENGLISH,
+            gender);
+    Profile saved = profiles.save(request, change);
+    assertEquals(gender, saved.gender());
+    assertEquals(gender, users.findById(account.getId()).orElseThrow().getGender());
+    assertEquals(Gender.OTHER, users.findById(otherId).orElseThrow().getGender());
+  }
+
+  @Test
+  void missingGenderCannotPartiallySaveTheProfile() {
+    Changes change =
+        new Changes(
+            account.getVersion(),
+            "Updated",
+            "Name",
+            LocalDate.of(1995, 2, 3),
+            Locale.ENGLISH,
+            null);
+    assertThrows(IllegalArgumentException.class, () -> profiles.save(request, change));
+    UserEntity stored = users.findById(account.getId()).orElseThrow();
+    assertEquals("Before", stored.getFirstName());
+    assertEquals(account.getVersion(), stored.getVersion());
+    assertEquals(Gender.OTHER, stored.getGender());
+  }
+
+  @ParameterizedTest
   @ValueSource(ints = {0, 1, 2, 3, 4, 5, 6})
   void invalidValuesAreRejectedServerSideWithoutPartialWrites(int input) {
     Changes valid = changes(account.getVersion());
@@ -198,37 +233,60 @@ class AccountProfileServicePersistenceTest {
         switch (input) {
           case 0 ->
               new Changes(
-                  valid.version(), " ", valid.lastName(), valid.birthDate(), valid.language());
+                  valid.version(),
+                  " ",
+                  valid.lastName(),
+                  valid.birthDate(),
+                  valid.language(),
+                  Gender.OTHER);
           case 1 ->
               new Changes(
-                  valid.version(), valid.firstName(), null, valid.birthDate(), valid.language());
+                  valid.version(),
+                  valid.firstName(),
+                  null,
+                  valid.birthDate(),
+                  valid.language(),
+                  Gender.OTHER);
           case 2 ->
               new Changes(
-                  valid.version(), valid.firstName(), valid.lastName(), null, valid.language());
+                  valid.version(),
+                  valid.firstName(),
+                  valid.lastName(),
+                  null,
+                  valid.language(),
+                  Gender.OTHER);
           case 3 ->
               new Changes(
                   valid.version(),
                   valid.firstName(),
                   valid.lastName(),
                   LocalDate.now(),
-                  valid.language());
+                  valid.language(),
+                  Gender.OTHER);
           case 4 ->
               new Changes(
                   valid.version(),
                   valid.firstName(),
                   valid.lastName(),
                   LocalDate.now().plusDays(1),
-                  valid.language());
+                  valid.language(),
+                  Gender.OTHER);
           case 5 ->
               new Changes(
-                  valid.version(), valid.firstName(), valid.lastName(), valid.birthDate(), null);
+                  valid.version(),
+                  valid.firstName(),
+                  valid.lastName(),
+                  valid.birthDate(),
+                  null,
+                  Gender.OTHER);
           default ->
               new Changes(
                   valid.version(),
                   valid.firstName(),
                   valid.lastName(),
                   valid.birthDate(),
-                  Locale.FRENCH);
+                  Locale.FRENCH,
+                  Gender.OTHER);
         };
     assertThrows(IllegalArgumentException.class, () -> profiles.save(request, invalid));
     UserEntity stored = users.findById(account.getId()).orElseThrow();

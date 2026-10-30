@@ -160,6 +160,74 @@ class UserNotificationsUiTest {
     VaadinSession.setCurrent(null);
   }
 
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({"de,true", "en,true", "de,false", "en,false"})
+  void emptyListsUseTheSameIconAndTitleForEveryReadFilter(String language, boolean compact) {
+    locale.set(Locale.forLanguageTag(language));
+    when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
+        .thenReturn(Page.empty());
+    when(service.unreadSnapshot(http)).thenReturn(List.of());
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, compact);
+    ui.add(panel);
+    RadioButtonGroup<ReadFilter> filters = field(panel, "readFilter");
+    Div rows = field(panel, "rows");
+    for (ReadFilter filter : ReadFilter.values()) {
+      filters.setValue(filter);
+      panel.refresh();
+      assertEquals(1, rows.getComponentCount());
+      Div empty = (Div) rows.getComponentAt(0);
+      assertTrue(empty.hasClassName("cosmos-notification-empty"));
+      assertEquals(2, empty.getComponentCount());
+      assertEquals("icons/lucide/bell.svg", ((SvgIcon) empty.getComponentAt(0)).getSrc());
+      assertEquals(texts.getNotificationsEmpty(), ((Span) empty.getComponentAt(1)).getText());
+    }
+    if (!compact) {
+      when(service.searchInbox(
+              eq(http), any(ReadFilter.class), eq("no-hit"), anySet(), anyInt(), anyInt()))
+          .thenReturn(Page.empty());
+      ((TextField) field(panel, "search")).setValue("no-hit");
+      assertTrue(
+          rows.getElement().getTextRecursively().contains(texts.getNotificationsSearchEmpty()));
+    }
+    panel.unavailable();
+    assertFalse(tree(rows).anyMatch(item -> item.hasClassName("cosmos-notification-empty")));
+    assertTrue(
+        rows.getElement().getTextRecursively().contains(texts.getNotificationsUnavailable()));
+    verify(service, never()).dismiss(any(), any());
+    verify(service, never()).markRead(any(), any());
+  }
+
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({"de,true", "en,true", "de,false", "en,false"})
+  void onlyManualRefreshReportsTheActualOutcome(String language, boolean compact) {
+    locale.set(Locale.forLanguageTag(language));
+    UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, compact);
+    ui.add(panel);
+    panel.refresh();
+    NotificationHelper helper = NotificationHelper.getInstance();
+    assertNull(field(helper, "messageText"));
+    Button refreshButton = field(panel, "refresh");
+    refreshButton.click();
+    Span success = field(helper, "titleText");
+    assertEquals(texts.getNotificationsRefreshed(), success.getText());
+    assertNull(field(helper, "messageText"));
+    helper.closeAndClearAllNotifications();
+    when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
+        .thenThrow(new IllegalStateException("Unavailable test fixture"));
+    refreshButton.click();
+    Html failure = field(helper, "messageText");
+    assertTrue(failure.getInnerHtml().contains(texts.getNotificationsUnavailable()));
+    assertFalse(failure.getInnerHtml().contains(texts.getNotificationsRefreshed()));
+    assertEquals("–", ((Span) field(panel, "unreadCount")).getText());
+  }
+
+  private void confirmPending(UserNotificationsPanel panel) {
+    PortalConfirmationDialog confirmation = field(panel, "confirmation");
+    assertTrue(confirmation.isOpened());
+    ((Button) field(confirmation, "confirm")).click();
+    assertFalse(confirmation.isOpened());
+  }
+
   @SuppressWarnings("unchecked")
   <T> T field(Object component, String name) {
     return (T) ReflectionTestUtils.getField(component, name);
@@ -182,7 +250,7 @@ class UserNotificationsUiTest {
 
   private void assertReadAllIcon(Button button) {
     SvgIcon icon = assertInstanceOf(SvgIcon.class, button.getIcon());
-    assertEquals("icons/envelopes-check.svg", icon.getSrc());
+    assertEquals("icons/lucide/check-check.svg", icon.getSrc());
     assertEquals("vaadin-icon", icon.getElement().getTag());
     assertEquals("true", icon.getElement().getAttribute("aria-hidden"));
     assertNotNull(getClass().getResource("/META-INF/resources/" + icon.getSrc()));
@@ -250,12 +318,12 @@ class UserNotificationsUiTest {
     Span description = field(view, "description");
     assertTrue(overview.hasClassName("cosmos-dashboard-kicker"));
     assertTrue(description.hasClassName("cosmos-dashboard-description"));
-    assertEquals(texts.getNotificationsOverview(), overview.getText());
+    assertEquals(texts.getAccountNavigationPortal(), overview.getText());
     assertEquals(texts.getNotificationsTitle(), title.getText());
     assertEquals(texts.getNotificationsPageDescription(), description.getText());
     locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     view.refreshLanguage();
-    assertEquals(texts.getNotificationsOverview(), overview.getText());
+    assertEquals(texts.getAccountNavigationPortal(), overview.getText());
     assertEquals(texts.getNotificationsTitle(), title.getText());
     assertEquals(texts.getNotificationsPageDescription(), description.getText());
     assertEquals(1, tree(view.getContent()).filter(c -> c == description).count());
@@ -290,8 +358,7 @@ class UserNotificationsUiTest {
     popover.open();
     UserNotificationsPanel panel = field(bell, "panel");
     assertReadAllIcon((Button) field(panel, "markAll"));
-    assertEquals(
-        texts.getNotificationsDescription(), ((Span) field(panel, "description")).getText());
+    assertEquals(texts.getNotificationsLatest(5), ((Span) field(panel, "description")).getText());
     RadioButtonGroup<ReadFilter> filter = field(panel, "readFilter");
     assertEquals(ReadFilter.ALL, filter.getValue());
     assertEquals(texts.getNotificationsAll(), filter.getItemLabelGenerator().apply(ReadFilter.ALL));
@@ -407,6 +474,7 @@ class UserNotificationsUiTest {
             .orElseThrow();
     assertTrue(read.isVisible());
     read.click();
+    confirmPending(panel);
     verify(service).markRead(http, List.of(7L));
     assertNull(field(panel, "detail"));
     ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).setValue(ReadFilter.UNREAD);
@@ -533,7 +601,7 @@ class UserNotificationsUiTest {
     popover.open();
     UserNotificationsPanel panel = field(bell, "panel");
     Button history = field(panel, "history");
-    assertEquals("vaadin:envelopes", history.getIcon().getElement().getAttribute("icon"));
+    assertEquals("icons/lucide/eye.svg", ((SvgIcon) history.getIcon()).getSrc());
     Button dismiss =
         tree(panel)
             .filter(Button.class::isInstance)
@@ -542,9 +610,11 @@ class UserNotificationsUiTest {
             .findFirst()
             .orElseThrow();
     assertTrue(dismiss.getAriaLabel().orElseThrow().startsWith(texts.getNotificationsDismiss()));
+    assertTrue(dismiss.hasClassName("cosmos-delete-button"));
     when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
         .thenReturn(Page.empty());
     dismiss.click();
+    confirmPending(panel);
     verify(service).dismiss(http, 7L);
     verify(service, never()).markRead(any(), any());
     assertTrue(popover.isOpened());
@@ -569,8 +639,8 @@ class UserNotificationsUiTest {
             .filter(b -> b.hasClassName("cosmos-notification-preview-dismiss"))
             .findFirst()
             .orElseThrow();
-    assertTrue(dismiss.getParent().orElseThrow().hasClassName("cosmos-notification-inbox-title"));
-    assertEquals("vaadin:close-circle", dismiss.getIcon().getElement().getAttribute("icon"));
+    assertTrue(dismiss.getParent().orElseThrow().hasClassName("cosmos-notification-inbox-actions"));
+    assertEquals("icons/lucide/trash-2.svg", ((SvgIcon) dismiss.getIcon()).getSrc());
     assertEquals(texts.getNotificationsDismiss(), dismiss.getTooltip().getText());
     assertEquals(
         texts.getNotificationsDismiss() + ": " + UserNotificationTexts.title(texts, item),
@@ -580,6 +650,7 @@ class UserNotificationsUiTest {
     when(service.inboxCount(http)).thenReturn(0L);
     when(service.unreadSnapshot(http)).thenReturn(List.of());
     dismiss.click();
+    confirmPending(panel);
     verify(service).dismiss(http, 7L);
     verify(service, never()).markRead(any(), any());
     assertNull(field(panel, "detail"));
@@ -601,7 +672,7 @@ class UserNotificationsUiTest {
     assertFalse(remove.isEnabled());
     assertEquals("", remove.getText());
     assertTrue(remove.hasClassName("cosmos-delete-button"));
-    assertEquals("vaadin:trash", remove.getIcon().getElement().getAttribute("icon"));
+    assertEquals("icons/lucide/trash-2.svg", ((SvgIcon) remove.getIcon()).getSrc());
     assertEquals(texts.getNotificationsDismissRead(), remove.getTooltip().getText());
     assertEquals(texts.getNotificationsDismissRead(), remove.getAriaLabel().orElseThrow());
     List<Component> controls = remove.getParent().orElseThrow().getChildren().toList();
@@ -629,6 +700,7 @@ class UserNotificationsUiTest {
         .when(service)
         .dismissRead(http);
     remove.click();
+    confirmPending(panel);
     verify(service).dismissRead(http);
     verify(service, never()).dismiss(any(), any());
     verify(service, never()).markRead(any(), any());
@@ -740,17 +812,10 @@ class UserNotificationsUiTest {
     assertEquals(
         read ? texts.getNotificationsRead() : texts.getNotificationsUnread(), state.getText());
     assertEquals("badge", state.getElement().getAttribute("theme"));
-    Component dot =
-        tree(dialog)
-            .filter(c -> c.hasClassName("cosmos-notification-detail-dot"))
-            .findFirst()
-            .orElseThrow();
-    assertEquals(!read, dot.isVisible());
+    assertEquals(Boolean.toString(read), state.getElement().getAttribute("data-read"));
     assertEquals(
         !read,
         tree(dialog).anyMatch(c -> c.hasClassName("cosmos-notification-detail-message--unread")));
-    assertTrue(dot.hasClassName("cosmos-notification-preview-dot"));
-    assertEquals("true", dot.getElement().getAttribute("aria-hidden"));
     Component header =
         tree(dialog)
             .filter(c -> c.hasClassName("cosmos-notification-detail-header"))
@@ -758,7 +823,8 @@ class UserNotificationsUiTest {
             .orElseThrow();
     assertTrue(
         tree(header)
-            .anyMatch(c -> "vaadin:paperplane".equals(c.getElement().getAttribute("icon"))));
+            .anyMatch(
+                c -> c instanceof SvgIcon icon && "icons/lucide/bell.svg".equals(icon.getSrc())));
     List<H2> headerTitles = tree(header).filter(H2.class::isInstance).map(H2.class::cast).toList();
     assertEquals(1, headerTitles.size());
     assertEquals(texts.getNotificationsDetailTitle(), headerTitles.getFirst().getText());
@@ -785,7 +851,7 @@ class UserNotificationsUiTest {
             .anyMatch(
                 span ->
                     span.getText().equals(texts.getNotificationsSourceSystem())
-                        && span.hasClassName("cosmos-notification-detail-source")));
+                        && span.hasClassName("portal-notification-source-system")));
     assertTrue(
         tree(dialog)
             .filter(Span.class::isInstance)
@@ -808,16 +874,20 @@ class UserNotificationsUiTest {
     Dialog dialog = fixture.dialog();
     Button mark = detailButton(dialog, "cosmos-notification-detail-mark-read");
     assertEquals(!read, mark.isVisible());
-    assertEquals("vaadin:envelope-open", mark.getIcon().getElement().getAttribute("icon"));
+    assertEquals("icons/lucide/check.svg", ((SvgIcon) mark.getIcon()).getSrc());
     Button history = detailButton(dialog, "cosmos-notification-detail-history");
     assertEquals(compact, history.isVisible());
-    assertEquals(texts.getNotificationsHistory(), history.getText());
-    assertEquals("vaadin:envelopes", history.getIcon().getElement().getAttribute("icon"));
-    assertTrue(
-        tree(dialog)
-            .filter(Button.class::isInstance)
-            .map(Button.class::cast)
-            .anyMatch(button -> button.getText().equals(texts.getNotificationsOpenAccount())));
+    assertEquals("", history.getText());
+    assertEquals(texts.getNotificationsHistory(), history.getAriaLabel().orElseThrow());
+    assertEquals(texts.getNotificationsHistory(), history.getTooltip().getText());
+    assertEquals("icons/lucide/bell.svg", ((SvgIcon) history.getIcon()).getSrc());
+    Button account = detailButton(dialog, "cosmos-notification-detail-account");
+    assertEquals("", account.getText());
+    assertEquals(texts.getNotificationsOpenAccount(), account.getAriaLabel().orElseThrow());
+    assertEquals(texts.getNotificationsOpenAccount(), account.getTooltip().getText());
+    assertEquals("icons/lucide/lock-keyhole.svg", ((SvgIcon) account.getIcon()).getSrc());
+    assertTrue(account.getParent().orElseThrow().hasClassName("cosmos-notification-detail-tools"));
+    assertTrue(mark.getParent().orElseThrow().hasClassName("cosmos-notification-detail-primary"));
     assertTrue(
         tree(dialog)
             .filter(Button.class::isInstance)
@@ -826,8 +896,8 @@ class UserNotificationsUiTest {
                 button ->
                     button.getText().equals(texts.getNotificationsClose())
                         && button.getThemeNames().contains("primary")
-                        && "vaadin:close-circle"
-                            .equals(button.getIcon().getElement().getAttribute("icon"))));
+                        && button.getIcon() instanceof SvgIcon icon
+                        && "icons/lucide/x.svg".equals(icon.getSrc())));
     if (!read) {
       doAnswer(
               invocation -> {
@@ -840,18 +910,14 @@ class UserNotificationsUiTest {
           .when(service)
           .markRead(http, List.of(7L));
       mark.click();
+      confirmPending(panel);
       verify(service).markRead(http, List.of(7L));
       assertTrue(dialog.isOpened());
       assertEquals(texts.getNotificationsRead(), detailState(dialog).getText());
       assertTrue(
           tree(dialog)
               .noneMatch(c -> c.hasClassName("cosmos-notification-detail-message--unread")));
-      assertFalse(
-          tree(dialog)
-              .filter(c -> c.hasClassName("cosmos-notification-detail-dot"))
-              .findFirst()
-              .orElseThrow()
-              .isVisible());
+      assertEquals("true", detailState(dialog).getElement().getAttribute("data-read"));
       assertFalse(detailButton(dialog, "cosmos-notification-detail-mark-read").isVisible());
       assertTrue(tree(panel).noneMatch(c -> c.hasClassName("cosmos-notification-row--unread")));
     }
@@ -861,6 +927,42 @@ class UserNotificationsUiTest {
   }
 
   private record NotificationDetailFixture(UserNotificationsPanel panel, Dialog dialog) {}
+
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "de,true,false", "en,true,false", "de,false,false", "en,false,false",
+    "de,true,true", "en,true,true", "de,false,true", "en,false,true"
+  })
+  void detailDeleteConfirmsOnlyTheOpenedNotificationAndCancelKeepsIt(
+      String language, boolean compact, boolean read) {
+    NotificationDetailFixture fixture = openNotificationDetail(language, compact, read);
+    UserNotificationsPanel panel = fixture.panel();
+    Dialog dialog = fixture.dialog();
+    Button delete = detailButton(dialog, "cosmos-notification-detail-delete");
+    assertEquals("", delete.getText());
+    assertEquals(texts.getNotificationsDismiss(), delete.getAriaLabel().orElseThrow());
+    assertEquals(texts.getNotificationsDismiss(), delete.getTooltip().getText());
+    assertEquals("icons/lucide/trash-2.svg", ((SvgIcon) delete.getIcon()).getSrc());
+    assertTrue(delete.hasClassName("cosmos-delete-button"));
+    delete.click();
+    PortalConfirmationDialog confirmation = field(panel, "confirmation");
+    assertTrue(confirmation.isOpened());
+    assertTrue(dialog.isOpened());
+    verify(service, never()).dismiss(any(), any());
+    Button cancel = field(confirmation, "cancel");
+    cancel.click();
+    assertFalse(confirmation.isOpened());
+    assertTrue(dialog.isOpened());
+    verify(service, never()).dismiss(any(), any());
+    when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
+        .thenReturn(Page.empty());
+    when(service.unreadSnapshot(http)).thenReturn(List.of());
+    delete.click();
+    confirmPending(panel);
+    verify(service).dismiss(http, 7L);
+    verify(service, never()).markRead(any(), any());
+    assertFalse(dialog.isOpened());
+  }
 
   private NotificationDetailFixture openNotificationDetail(
       String language, boolean compact, boolean read) {
@@ -917,7 +1019,7 @@ class UserNotificationsUiTest {
         tree(dialog)
             .filter(Button.class::isInstance)
             .map(Button.class::cast)
-            .anyMatch(button -> button.getText().equals(texts.getNotificationsOpenAccount())));
+            .anyMatch(button -> button.hasClassName("cosmos-notification-detail-account")));
     verify(service, never()).markRead(any(), any());
   }
 
@@ -932,6 +1034,7 @@ class UserNotificationsUiTest {
         .when(service)
         .markRead(http, List.of(7L));
     detailButton(dialog, "cosmos-notification-detail-mark-read").click();
+    confirmPending(panel);
     assertTrue(dialog.isOpened());
     assertEquals(texts.getNotificationsUnread(), detailState(dialog).getText());
     assertTrue(detailButton(dialog, "cosmos-notification-detail-mark-read").isVisible());
@@ -1001,7 +1104,12 @@ class UserNotificationsUiTest {
     ui.add(panel);
     panel.refresh();
     ((Button) field(panel, "markAll")).click();
+    verify(service, never()).markRead(any(), any());
+    when(service.unreadSnapshot(http)).thenReturn(List.of(7L, 9L));
+    panel.refresh();
+    confirmPending(panel);
     verify(service).markRead(http, List.of(7L));
+    verify(service, never()).markRead(http, List.of(7L, 9L));
     ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).setValue(ReadFilter.UNREAD);
     verify(service).inbox(http, ReadFilter.UNREAD, 0, 10);
   }
@@ -1046,14 +1154,16 @@ class UserNotificationsUiTest {
     ui.add(panel);
     panel.refresh();
     assertTrue(
-        tree(panel).anyMatch(c -> "vaadin:archive".equals(c.getElement().getAttribute("icon"))));
+        tree(panel)
+            .anyMatch(
+                c -> c instanceof SvgIcon icon && "icons/lucide/bell.svg".equals(icon.getSrc())));
     assertEquals(
         texts.getNotificationsInboxDescription(), ((Span) field(panel, "description")).getText());
     assertEquals("6", ((Span) field(panel, "totalCount")).getText());
     assertEquals("2", ((Span) field(panel, "unreadCount")).getText());
     assertEquals(
-        "vaadin:refresh",
-        ((Button) field(panel, "refresh")).getIcon().getElement().getAttribute("icon"));
+        "icons/lucide/refresh-cw.svg",
+        ((SvgIcon) ((Button) field(panel, "refresh")).getIcon()).getSrc());
     assertReadAllIcon((Button) field(panel, "markAll"));
     ((Button) field(panel, "last")).click();
     verify(service).inbox(http, ReadFilter.ALL, 4, 10);
@@ -1111,7 +1221,7 @@ class UserNotificationsUiTest {
     assertEquals(texts.getAdminUsersPaginationPerPage(), sizes.getAriaLabel().orElseThrow());
     assertEquals(
         texts.getAdminUsersPaginationPerPage(), ((Span) field(panel, "pageLabel")).getText());
-    assertEquals(texts.getAdminUsersPaginationTotal(45), pageTotal.getText());
+    assertEquals(texts.getPortalPaginationRange(1, 10, 45), pageTotal.getText());
     ((Button) field(panel, "last")).click();
     verify(service).inbox(http, ReadFilter.ALL, 4, 10);
     sizes.setValue(20);
@@ -1147,12 +1257,12 @@ class UserNotificationsUiTest {
     assertEquals(
         ReadFilter.UNREAD, ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).getValue());
     assertEquals(texts.getAdminUsersPaginationPerPage(), sizes.getAriaLabel().orElseThrow());
-    assertEquals(texts.getAdminUsersPaginationTotal(45), pageTotal.getText());
+    assertEquals(texts.getPortalPaginationRange(41, 45, 45), pageTotal.getText());
     when(service.searchInbox(
             eq(http), any(ReadFilter.class), eq("no-hit"), anySet(), anyInt(), anyInt()))
         .thenReturn(Page.empty());
     search.setValue("no-hit");
-    assertEquals(texts.getAdminUsersPaginationTotal(0), pageTotal.getText());
+    assertEquals(texts.getPortalPaginationRange(0, 0, 0), pageTotal.getText());
     assertFalse(((Button) field(panel, "first")).isEnabled());
     assertFalse(((Button) field(panel, "last")).isEnabled());
     panel.unavailable();
@@ -1205,7 +1315,9 @@ class UserNotificationsUiTest {
     RadioButtonGroup<ReadFilter> filter = field(panel, "readFilter");
     assertEquals("notifications-inbox-filter", filter.getId().orElseThrow());
     assertEquals(ReadFilter.ALL, filter.getValue());
-    assertEquals(List.of(ReadFilter.values()), filter.getListDataView().getItems().toList());
+    assertEquals(
+        List.of(ReadFilter.ALL, ReadFilter.UNREAD, ReadFilter.READ),
+        filter.getListDataView().getItems().toList());
     assertTrue(tree(panel).noneMatch(Checkbox.class::isInstance));
     assertTrue(tree(panel).noneMatch(c -> c.hasClassName("cosmos-notification-inbox-hint")));
     Button reload = field(panel, "refresh");
@@ -1235,6 +1347,7 @@ class UserNotificationsUiTest {
     assertEquals("alpha", search.getValue());
     reload.click();
     markAll.click();
+    confirmPending(panel);
     verify(service).markRead(http, List.of(7L));
   }
 
@@ -1299,6 +1412,7 @@ class UserNotificationsUiTest {
           .when(service)
           .markRead(http, List.of(7L));
       mark.click();
+      confirmPending(panel);
       verify(service).markRead(http, List.of(7L));
       assertEquals("0", ((Span) field(panel, "unreadCount")).getText());
       assertEquals("1", ((Span) field(panel, "totalCount")).getText());
@@ -1471,7 +1585,7 @@ class UserNotificationsUiTest {
     assertEquals(
         texts.getNotificationsHistoryCount(21), ((Span) field(section, "historyCount")).getText());
     assertEquals(
-        texts.getAdminUsersPaginationTotal(21),
+        texts.getPortalPaginationRange(1, 5, 21),
         ((Span) field(field(section, "historyPagination"), "totalLabel")).getText());
     Div history = field(section, "history");
     List<Details> details =
@@ -1487,8 +1601,8 @@ class UserNotificationsUiTest {
     assertTrue(details.getFirst().isOpened());
     assertFalse(details.getLast().isOpened());
     assertEquals("true", toggles.getFirst().getElement().getAttribute("aria-expanded"));
-    assertEquals(texts.getNotificationsClose(), toggles.getFirst().getText());
-    assertTrue(
+    assertEquals(texts.getNotificationsHistoryDetails(), toggles.getFirst().getText());
+    assertFalse(
         tree(details.getFirst())
             .filter(H4.class::isInstance)
             .map(H4.class::cast)
@@ -1497,21 +1611,33 @@ class UserNotificationsUiTest {
         tree(details.getFirst())
             .filter(Span.class::isInstance)
             .map(Span.class::cast)
-            .anyMatch(
-                meta ->
-                    meta.getText().startsWith(texts.getNotificationsHistoryRecipients(2) + " · ")));
+            .anyMatch(label -> label.getText().equals(texts.getNotificationsMessageContent())));
+    assertFalse(
+        tree(details.getFirst())
+            .anyMatch(meta -> meta.hasClassName("cosmos-notification-sent-detail-meta")));
     assertTrue(
         tree(details.getFirst())
             .filter(Div.class::isInstance)
             .map(Div.class::cast)
             .anyMatch(div -> div.getText().equals(message)));
     assertTrue(tree(history).noneMatch(Html.class::isInstance));
+    assertTrue(
+        tree(details.getFirst())
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .anyMatch(label -> label.getText().equals(texts.getNotificationsHistoryDelivery())));
+    assertTrue(
+        tree(details.getFirst())
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .anyMatch(
+                label -> label.getText().equals(texts.getNotificationsHistoryImmutableLog())));
     toggles.getFirst().click();
     assertFalse(details.getFirst().isOpened());
     assertEquals("false", toggles.getFirst().getElement().getAttribute("aria-expanded"));
     ((Button) field(field(section, "historyPagination"), "last")).click();
     assertEquals(
-        texts.getAdminUsersPaginationTotal(21),
+        texts.getPortalPaginationRange(21, 21, 21),
         ((Span) field(field(section, "historyPagination"), "totalLabel")).getText());
     assertFalse(((Button) field(field(section, "historyPagination"), "next")).isEnabled());
     assertTrue(((Button) field(field(section, "historyPagination"), "previous")).isEnabled());
@@ -1520,7 +1646,7 @@ class UserNotificationsUiTest {
     when(service.sent(http, 0, 5)).thenReturn(Page.empty());
     section.activate();
     assertEquals(
-        texts.getAdminUsersPaginationTotal(0),
+        texts.getPortalPaginationRange(0, 0, 0),
         ((Span) field(field(section, "historyPagination"), "totalLabel")).getText());
     assertFalse(((Button) field(field(section, "historyPagination"), "next")).isEnabled());
     assertFalse(((Button) field(field(section, "historyPagination"), "previous")).isEnabled());

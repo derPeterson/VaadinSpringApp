@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinServlet;
@@ -35,7 +36,7 @@ import de.derpeterson.app.service.UserNotificationService.Selection;
 import de.derpeterson.app.service.UserNotificationService.Target;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountAvatarDialog;
-import de.derpeterson.app.ui.components.AccountNavigationTabs;
+import de.derpeterson.app.ui.components.PageNavigationComponent;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InvalidObjectException;
@@ -116,15 +117,33 @@ class UiSerializationContractTest {
         fixed.getNotificationsTitle());
   }
 
+  private record Navigation(PageNavigationComponent component, Probe probe)
+      implements Serializable {}
+
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void accountTabsCanRefreshTextsAfterAComponentRoundTrip(String language) throws Exception {
+  void nestedNavigationKeepsLabelsSelectionAndCallbacksAfterReading(String language)
+      throws Exception {
     MessageProperties messages =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
-    AccountNavigationTabs tabs = copy(new AccountNavigationTabs(messages, true));
-    tabs.refreshTexts();
-    assertEquals(messages.getAccountSettingsTitle(), tabs.getElement().getAttribute("aria-label"));
-    assertEquals("account-navigation-notifications", tabs.getSelectedTab().getId().orElseThrow());
+    Probe probe = new Probe();
+    PageNavigationComponent navigation = new PageNavigationComponent();
+    SideNavItem account = new SideNavItem(messages.getAccountSettingsTitle());
+    SideNavItem notifications = new SideNavItem(messages.getNotificationsTitle(), "/notifications");
+    notifications.setId("notifications");
+    account.addItem(notifications);
+    navigation.addItem(account);
+    navigation.registerAction(notifications, probe::run);
+    PageNavigationComponent.setItemActive(notifications, true);
+
+    Navigation restored = copy(new Navigation(navigation, probe));
+    SideNavItem restoredAccount = restored.component().getItems().getFirst();
+    SideNavItem restoredNotifications = restoredAccount.getItems().getFirst();
+    assertEquals(messages.getAccountSettingsTitle(), restoredAccount.getLabel());
+    assertEquals(messages.getNotificationsTitle(), restoredNotifications.getLabel());
+    assertEquals("page", restoredNotifications.getElement().getAttribute("aria-current"));
+    restored.component().activate(restoredNotifications);
+    assertEquals(1, restored.probe().actions);
   }
 
   private static final class Probe implements Serializable {
@@ -175,7 +194,7 @@ class UiSerializationContractTest {
   private record Filters(AdminUserFilterBar component, Probe probe) implements Serializable {}
 
   @Test
-  void filterCallbacksAndActiveFilterChipsStillWorkAfterReading() throws Exception {
+  void filterCallbacksAndDraftResetStillWorkAfterReading() throws Exception {
     Probe probe = new Probe();
     MessageProperties messages = new MessageProperties(new CustomI18NProvider());
     AdminUserFilterBar filter =
@@ -185,19 +204,18 @@ class UiSerializationContractTest {
             new Button(),
             new Button(),
             new AdminUserFilterBar.FilterControls(
-                new ComboBox<>(),
-                new ComboBox<>(),
-                new ComboBox<>(),
+                new com.vaadin.flow.component.radiobutton.RadioButtonGroup<>(),
+                new com.vaadin.flow.component.checkbox.CheckboxGroup<>(),
+                new com.vaadin.flow.component.checkbox.CheckboxGroup<>(),
                 new AdminUserActivityFilter()),
             probe::run);
-    filter.showActiveFilters(
-        List.of(new AdminUserFilterBar.ActiveFilter("Role", "User", probe::run)));
+    filter.showActiveCount(1);
     Filters restored = copy(new Filters(filter, probe));
     restored.component().refreshTexts();
     ((Button) ReflectionTestUtils.getField(restored.component(), "applyFiltersButton")).click();
     assertEquals(1, restored.probe().actions);
     ((Button) ReflectionTestUtils.getField(restored.component(), "clearFilters")).click();
-    assertEquals(2, restored.probe().actions);
+    assertEquals(1, restored.probe().actions);
   }
 
   @Test
@@ -208,7 +226,7 @@ class UiSerializationContractTest {
         new UserNotificationService.Item(8L, null, "Title", "Body", Instant.now(), false);
     AdminUserFilters filters =
         new AdminUserFilters(
-            "query", true, UserStatus.AVAILABLE, RoleType.ROLE_USER, Instant.now());
+            "query", true, Set.of(UserStatus.AVAILABLE), Set.of(RoleType.ROLE_USER), Instant.now());
     assertEquals(
         List.of(target, preview, item, filters), copy(List.of(target, preview, item, filters)));
   }

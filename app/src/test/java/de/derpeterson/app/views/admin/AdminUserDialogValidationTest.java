@@ -18,7 +18,7 @@ import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.FocusNotifier;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.checkbox.CheckboxGroup;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.server.VaadinSession;
@@ -169,26 +169,37 @@ class AdminUserDialogValidationTest {
   }
 
   @Test
-  void superadminCheckboxIsOnlyEditableByASuperadmin() {
+  void superadminRoleIsOnlyOfferedToASuperadmin() {
     open("de", false);
-    @SuppressWarnings("unchecked")
-    CheckboxGroup<RoleType> roles =
-        (com.vaadin.flow.component.checkbox.CheckboxGroup<de.derpeterson.app.model.enums.RoleType>)
-            descendants(dialog)
-                .filter(com.vaadin.flow.component.checkbox.CheckboxGroup.class::isInstance)
-                .findFirst()
-                .orElseThrow();
-    assertFalse(
-        roles
-            .getItemEnabledProvider()
-            .test(de.derpeterson.app.model.enums.RoleType.ROLE_SUPERADMIN));
-    assertTrue(
-        roles.getItemEnabledProvider().test(de.derpeterson.app.model.enums.RoleType.ROLE_ADMIN));
+    MultiSelectComboBox<RoleType> roles = roles();
+    assertFalse(roles.getListDataView().getItems().toList().contains(RoleType.ROLE_SUPERADMIN));
+    assertTrue(roles.getListDataView().getItems().toList().contains(RoleType.ROLE_ADMIN));
     when(users.canManageSuperadmins()).thenReturn(true);
-    assertTrue(
-        roles
-            .getItemEnabledProvider()
-            .test(de.derpeterson.app.model.enums.RoleType.ROLE_SUPERADMIN));
+    roles.getDataProvider().refreshAll();
+    assertTrue(roles.getListDataView().getItems().toList().contains(RoleType.ROLE_SUPERADMIN));
+  }
+
+  @Test
+  void roleSelectionRequiresOneRoleAndSurvivesLanguageChanges() {
+    open("de", false);
+    MultiSelectComboBox<RoleType> roles = roles();
+    roles.setValue(Set.of(RoleType.ROLE_USER, RoleType.ROLE_GUEST));
+    assertEquals(texts.getAdminUsersSelectedRoles(2), roles.getPlaceholder());
+    locale.set(Locale.ENGLISH);
+    section.refreshTexts();
+    assertEquals(Set.of(RoleType.ROLE_USER, RoleType.ROLE_GUEST), roles.getValue());
+    assertEquals(texts.getAdminUsersSelectedRoles(2), roles.getPlaceholder());
+    assertEquals(texts.getRoleGuest(), roles.getItemLabelGenerator().apply(RoleType.ROLE_GUEST));
+    roles.clear();
+    assertFalse(save().isEnabled());
+    roles.setValue(Set.of(RoleType.ROLE_USER));
+    assertTrue(save().isEnabled());
+  }
+
+  @SuppressWarnings("unchecked")
+  private MultiSelectComboBox<RoleType> roles() {
+    return (MultiSelectComboBox<RoleType>)
+        descendants(dialog).filter(MultiSelectComboBox.class::isInstance).findFirst().orElseThrow();
   }
 
   @Test
@@ -208,11 +219,15 @@ class AdminUserDialogValidationTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void newRolesCanBeAssignedAndHaveTranslatedLabels(String language) {
+    when(users.canManageSuperadmins()).thenReturn(true);
     open(language, false);
     @SuppressWarnings("unchecked")
-    CheckboxGroup<RoleType> roles =
-        (CheckboxGroup<RoleType>)
-            descendants(dialog).filter(CheckboxGroup.class::isInstance).findFirst().orElseThrow();
+    MultiSelectComboBox<RoleType> roles =
+        (MultiSelectComboBox<RoleType>)
+            descendants(dialog)
+                .filter(MultiSelectComboBox.class::isInstance)
+                .findFirst()
+                .orElseThrow();
     assertEquals(List.of(RoleType.values()), roles.getListDataView().getItems().toList());
     assertEquals(
         texts.getRoleSuperadmin(), roles.getItemLabelGenerator().apply(RoleType.ROLE_SUPERADMIN));

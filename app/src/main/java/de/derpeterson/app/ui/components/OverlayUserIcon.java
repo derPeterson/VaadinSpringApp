@@ -5,7 +5,6 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.shared.Registration;
@@ -114,7 +113,7 @@ public class OverlayUserIcon extends Div {
     initials.removeAll();
     initials.setText(initialsFor(firstName, lastName));
     if (initials.getText().isEmpty()) {
-      initials.add(VaadinIcon.USER.create());
+      initials.add(AppIcon.USER.create());
     }
     refreshTexts();
   }
@@ -138,6 +137,7 @@ public class OverlayUserIcon extends Div {
 
   public void setUserStatus(UserStatus value) {
     userStatus = value == null ? UserStatus.getDefaultStatus() : value;
+    getElement().setAttribute("data-status", userStatus.name().toLowerCase(Locale.ROOT));
     status.removeAll();
     if (showStatus) {
       status.add(userStatus.getOutlineComponent(iconSize, true));

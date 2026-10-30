@@ -23,7 +23,7 @@ Auf allen Bildschirmgrößen liegt sie als modales Overlay über der Oberfläche
 das Formular reserviert keinen Platz und seine Felder verschieben sich nicht.
 Die Scrollbarfläche bleibt beim Öffnen reserviert. Alle 30
 Originalhilfen der acht Gruppen sind über Infoicons erreichbar.
-Bei Checkboxen stehen Bezeichnung und Checkbox zusammen im Kasten; das Infoicon
+Bei Checkboxen stehen Bezeichnung links und Checkbox rechts zusammen im Kasten; das Infoicon
 liegt wie bei Textfeldern rechts außerhalb in derselben zusätzlichen Spalte.
 Die Kästchen verwenden den bestehenden `au-checkbox`-Baustein der Benutzerverwaltung
 mit dunkler Leerfläche, abgerundeten Ecken und blauem Hakenstatus.
@@ -41,7 +41,7 @@ Die ursprünglichen Stitch-Boards und älteren Nachbauten bleiben separat erhalt
 
 Pflichtpunkte und HTML-`required` folgen den typisierten Eingaberegeln aus
 `AdminConfigurationSection`: 13 Felder benötigen eine Eingabe, darunter Secret Key
-und SSL-Vertrauen. Die neun Zahlenfelder dürfen leer bleiben (Standardwert oder
+und SSL-Vertrauen. Neun Eingaben dürfen leer bleiben (Standardwert oder
 unbegrenzte Aufbewahrung), ebenso die ausdrücklich optionalen Texte. Checkboxen
 tragen keinen Pflichtpunkt. Das Inventar übernimmt dafür `required` aus den
 Regel-Gettern statt aus übersetzten Texten oder einer separaten Ausnahmeliste.
@@ -49,6 +49,15 @@ Zahlenfelder verwenden kleine blaue Pfeilbuttons innerhalb des Eingabefelds;
 native graue Spinbuttons sind ausgeblendet. Die Buttons nutzen den nativen
 Ganzzahlschritt und die vorhandenen Min-/Maxgrenzen; freie Eingabe und Pfeiltasten
 bleiben erhalten. Das ist eine lokale HTML-Darstellung, kein Vaadin-Umbau.
+
+`duration-controls.js` ist der gemeinsame HTML-Baustein für alle neun Zeitfelder.
+Er erhält das Speicherformat aus dem Inventar: Sekunden, ISO-Zeitspanne oder ganze
+Tage. Die Oberfläche bietet Zahl und passende Einheit, die Feldhilfe zeigt aktuelle
+Dauer und Umrechnung. Token-Mindestdauern bleiben erhalten. Die beiden
+Benachrichtigungs-Aufbewahrungen behalten die feste Einheit Tage und leer bedeutet
+unbegrenzt. Der HTML-Baustein rechnet mit Festkommazahlen und zeigt Validierung
+nur im synthetischen Entwurf. Die echte Anwendung nutzt weiterhin ihre Fachprüfung.
+Alle vier transportablen Konfigurationsseiten betten denselben Baustein ein.
 
 Der [Originalvergleich](../../konfiguration-hilfe-originale.html) zeigt die drei
 unveränderten Stitch-Entwurfsboards als eingebettete Bilder, einschließlich
@@ -119,7 +128,7 @@ Begrüßung, kurzen Ausblick und das Schnellzugriffsraster. Logo K, Schrift,
 Navigation, Iconrahmen und Buttons stammen aus der Referenz. Benutzerverwaltung,
 Konfiguration, Mailtest und interner Versand öffnen die vorhandenen synthetischen
 Bereiche; der Zielseitenkopf erhält den Tastaturfokus. Benachrichtigungen tragen
-die Glocke und den Superadmin-Hinweis. Auch dieser Schnellzugriff öffnet nun den
+die Glocke ohne zusätzliches Rollenbadge. Auch dieser Schnellzugriff öffnet nun den
 integrierten Versandbereich innerhalb der festen Referenz. Der Viewer prüft Quelle,
 Origin und Antwortzuordnung; die bestehende Frame-Sandbox bleibt erhalten.
 Die echten Dienstrechte bleiben unverändert.

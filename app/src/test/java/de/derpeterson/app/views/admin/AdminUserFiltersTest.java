@@ -9,6 +9,7 @@ import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class AdminUserFiltersTest {
@@ -32,27 +33,34 @@ class AdminUserFiltersTest {
   @Test
   void searchMatchesOnlyNameAndEmailIgnoringCaseAndSurroundingSpaces() {
     for (String query : List.of("", " LENA BAUER ", "bauer", "LENA@EXAMPLE")) {
-      assertTrue(new AdminUserFilters(query, null, null, null, null).matches(user()), query);
+      assertTrue(
+          new AdminUserFilters(query, null, Set.of(), Set.of(), null).matches(user()), query);
     }
     for (String query : List.of("offline", "administrator", "2026", "absent", "no match")) {
-      assertFalse(new AdminUserFilters(query, null, null, null, null).matches(user()), query);
+      assertFalse(
+          new AdminUserFilters(query, null, Set.of(), Set.of(), null).matches(user()), query);
     }
   }
 
   @Test
   void roleFilterMatchesMembershipIncludingAccountsWithMultipleRoles() {
-    assertTrue(new AdminUserFilters("", null, null, RoleType.ROLE_USER, null).matches(user()));
-    assertTrue(new AdminUserFilters("", null, null, RoleType.ROLE_ADMIN, null).matches(user()));
+    assertTrue(
+        new AdminUserFilters("", null, Set.of(), Set.of(RoleType.ROLE_USER), null).matches(user()));
+    assertTrue(
+        new AdminUserFilters("", null, Set.of(), Set.of(RoleType.ROLE_ADMIN), null)
+            .matches(user()));
     UserEntity plain = user();
     plain.setRoleEntities(List.of(RoleEntity.builder().name(RoleType.ROLE_USER).build()));
-    assertFalse(new AdminUserFilters("", null, null, RoleType.ROLE_ADMIN, null).matches(plain));
+    assertFalse(
+        new AdminUserFilters("", null, Set.of(), Set.of(RoleType.ROLE_ADMIN), null).matches(plain));
     plain.setRoleEntities(null);
-    assertFalse(new AdminUserFilters("", null, null, RoleType.ROLE_USER, null).matches(plain));
+    assertFalse(
+        new AdminUserFilters("", null, Set.of(), Set.of(RoleType.ROLE_USER), null).matches(plain));
   }
 
   @Test
   void activeSinceIncludesEqualityAndLaterButExcludesEarlierOrMissingActivity() {
-    AdminUserFilters filter = new AdminUserFilters("", null, null, null, cutoff);
+    AdminUserFilters filter = new AdminUserFilters("", null, Set.of(), Set.of(), cutoff);
     UserEntity candidate = user();
     assertTrue(filter.matches(candidate));
     candidate.setLastActivity(cutoff.plusNanos(1));
@@ -61,23 +69,47 @@ class AdminUserFiltersTest {
     assertFalse(filter.matches(candidate));
     candidate.setLastActivity(null);
     assertFalse(filter.matches(candidate));
-    assertTrue(new AdminUserFilters("", null, null, null, null).matches(candidate));
+    assertTrue(new AdminUserFilters("", null, Set.of(), Set.of(), null).matches(candidate));
   }
 
   @Test
   void allSelectedFiltersMustMatchAndNullSelectionsRemoveRestrictions() {
     assertTrue(
-        new AdminUserFilters("lena", true, UserStatus.OFFLINE, RoleType.ROLE_USER, cutoff)
+        new AdminUserFilters(
+                "lena", true, Set.of(UserStatus.OFFLINE), Set.of(RoleType.ROLE_USER), cutoff)
             .matches(user()));
     assertFalse(
-        new AdminUserFilters("lena", false, UserStatus.OFFLINE, RoleType.ROLE_USER, cutoff)
+        new AdminUserFilters(
+                "lena", false, Set.of(UserStatus.OFFLINE), Set.of(RoleType.ROLE_USER), cutoff)
             .matches(user()));
     assertFalse(
-        new AdminUserFilters("lena", true, UserStatus.AVAILABLE, RoleType.ROLE_USER, cutoff)
+        new AdminUserFilters(
+                "lena", true, Set.of(UserStatus.AVAILABLE), Set.of(RoleType.ROLE_USER), cutoff)
             .matches(user()));
     assertFalse(
-        new AdminUserFilters("other", true, UserStatus.OFFLINE, RoleType.ROLE_USER, cutoff)
+        new AdminUserFilters(
+                "other", true, Set.of(UserStatus.OFFLINE), Set.of(RoleType.ROLE_USER), cutoff)
             .matches(user()));
-    assertTrue(new AdminUserFilters(null, null, null, null, null).matches(user()));
+    assertTrue(new AdminUserFilters(null, null, Set.of(), Set.of(), null).matches(user()));
+  }
+
+  @Test
+  void multipleSelectionsUseOrWithinEachGroupAndAndBetweenGroups() {
+    assertTrue(
+        new AdminUserFilters(
+                "",
+                null,
+                Set.of(UserStatus.AVAILABLE, UserStatus.OFFLINE),
+                Set.of(RoleType.ROLE_GUEST, RoleType.ROLE_ADMIN),
+                null)
+            .matches(user()));
+    assertFalse(
+        new AdminUserFilters(
+                "",
+                null,
+                Set.of(UserStatus.AVAILABLE, UserStatus.ABSENT),
+                Set.of(RoleType.ROLE_USER),
+                null)
+            .matches(user()));
   }
 }

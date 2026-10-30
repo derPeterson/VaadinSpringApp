@@ -53,14 +53,14 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
     LoginPage login = new LoginPage(page);
     login.open();
     assertThat(page.locator(".cosmos-sky")).hasAttribute("aria-hidden", "true");
-    assertThat(page.locator(".cosmos-logo")).isVisible();
-    assertThat(page.locator(".cosmos-sky img, .cosmos-card img")).hasCount(0);
+    assertThat(page.locator(".public-brand img")).isVisible();
+    assertThat(page.locator(".cosmos-sky img, .public-panel img")).hasCount(0);
     assertTrue(
         (Boolean) page.evaluate("() => document.documentElement.scrollWidth <= innerWidth + 1"));
     for (Locator control :
         new Locator[] {
-          page.locator(".cosmos-card"),
-          page.getByLabel(texts.getLoginEmailField(), new Page.GetByLabelOptions().setExact(true)),
+          page.locator(".public-panel"),
+          page.getByLabel(texts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true)),
           page.getByLabel(
               texts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true)),
           page.getByRole(

@@ -3,6 +3,7 @@ package de.derpeterson.app.views;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
@@ -203,6 +204,54 @@ class AdminUserErrorNotificationTest {
         .build();
   }
 
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void passwordHelpFollowsFormStateAndLanguage(boolean create) {
+    LanguageChangeEvent.fire(ui, Locale.GERMAN);
+    ReflectionTestUtils.invokeMethod(section, "openDialog", user(create));
+    Dialog editor = dialog();
+    List<PasswordField> passwords =
+        descendants(editor)
+            .filter(PasswordField.class::isInstance)
+            .map(PasswordField.class::cast)
+            .toList();
+    Span hint =
+        descendants(editor)
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .filter(span -> span.hasClassName("admin-user-password-hint"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(
+        create
+            ? texts.getAdminUsersPasswordHelperCreate()
+            : texts.getAdminUsersPasswordHelperEdit(),
+        hint.getText());
+    assertFalse(passwords.get(1).isEnabled());
+    assertTrue(hint.getText().contains(texts.getAdminUsersPasswordHelperCreate()));
+
+    passwords.getFirst().setValue("Password!");
+    assertEquals(texts.getAdminUsersPasswordHelperCreate(), hint.getText());
+    assertTrue(passwords.get(1).isEnabled());
+    LanguageChangeEvent.fire(ui, Locale.ENGLISH);
+    assertEquals(texts.getAdminUsersPasswordHelperCreate(), hint.getText());
+
+    passwords.getFirst().clear();
+    assertEquals(
+        create
+            ? texts.getAdminUsersPasswordHelperCreate()
+            : texts.getAdminUsersPasswordHelperEdit(),
+        hint.getText());
+    assertFalse(passwords.get(1).isEnabled());
+    assertTrue(hint.getText().contains(texts.getAdminUsersPasswordHelperCreate()));
+    LanguageChangeEvent.fire(ui, Locale.GERMAN);
+    assertEquals(
+        create
+            ? texts.getAdminUsersPasswordHelperCreate()
+            : texts.getAdminUsersPasswordHelperEdit(),
+        hint.getText());
+  }
+
   private Dialog dialog() {
     ui.getInternals().getStateTree().runExecutionsBeforeClientResponse();
     return descendants(ui)
@@ -224,7 +273,7 @@ class AdminUserErrorNotificationTest {
           .forEach(field -> field.setValue("Password!"));
     }
     String label =
-        operation.equals("delete") ? texts.getAdminUsersDelete() : texts.getAdminUsersSave();
+        operation.equals("delete") ? texts.getPortalDeleteAction() : texts.getAdminUsersSave();
     descendants(dialog)
         .filter(Button.class::isInstance)
         .map(Button.class::cast)
@@ -373,6 +422,60 @@ class AdminUserErrorNotificationTest {
     assertFalse(actual.contains("secret"));
     assertFalse(actual.contains("SELECT"));
     assertFalse(actual.contains("SQLException"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void manualRefreshReportsSuccessAndFollowsLanguage(boolean german) {
+    LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
+    NotificationHelper helper = NotificationHelper.getInstance();
+    assertNull(ReflectionTestUtils.getField(helper, "titleText"));
+    clearInvocations(users);
+
+    Button refresh = (Button) ReflectionTestUtils.getField(section, "refreshButton");
+    refresh.click();
+
+    verify(users).findAllUsers();
+    Span notificationTitle = (Span) ReflectionTestUtils.getField(helper, "titleText");
+    assertEquals(texts.getAdminUsersRefreshSuccess(), notificationTitle.getText());
+    assertTrue(notificationTitle.hasClassName("text-success"));
+    Object notification = ReflectionTestUtils.getField(helper, "currentNotification");
+    LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
+    assertSame(notification, ReflectionTestUtils.getField(helper, "currentNotification"));
+    assertEquals(texts.getAdminUsersRefreshSuccess(), notificationTitle.getText());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void manualRefreshReportsFailureAndCanBeRetried(boolean german) {
+    LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
+    Object previousUsers = ReflectionTestUtils.getField(section, "users");
+    DataAccessResourceFailureException failure =
+        new DataAccessResourceFailureException("secret SELECT account data");
+    when(users.findAllUsers()).thenThrow(failure);
+
+    Button refresh = (Button) ReflectionTestUtils.getField(section, "refreshButton");
+    refresh.click();
+
+    assertNotification(texts.getAdminUsersRefreshFailed());
+    assertSame(previousUsers, ReflectionTestUtils.getField(section, "users"));
+    assertTrue(
+        logs.list.stream()
+            .anyMatch(
+                event ->
+                    event.getThrowableProxy() != null
+                        && event
+                            .getThrowableProxy()
+                            .getMessage()
+                            .equals(failure.getClass().getName())));
+    LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
+    assertNotification(texts.getAdminUsersRefreshFailed());
+
+    doReturn(List.of()).when(users).findAllUsers();
+    refresh.click();
+    Span notificationTitle =
+        (Span) ReflectionTestUtils.getField(NotificationHelper.getInstance(), "titleText");
+    assertEquals(texts.getAdminUsersRefreshSuccess(), notificationTitle.getText());
   }
 
   static Stream<Arguments> guards() {
