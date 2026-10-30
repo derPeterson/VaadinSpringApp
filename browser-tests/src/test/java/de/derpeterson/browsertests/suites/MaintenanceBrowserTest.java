@@ -25,6 +25,7 @@ import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.PersistentBrowserActor;
 import de.derpeterson.browsertests.mail.MailpitInbox;
+import de.derpeterson.browsertests.pages.AdminMailPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.ConfigurationPage;
@@ -193,18 +194,31 @@ public class MaintenanceBrowserTest extends BrowserFixture {
       assertTrue(
           actor.context.cookies().stream()
               .anyMatch(c -> c.name.equals("JSESSIONID") && c.value.equals(sessionCookie.value)));
-      page.navigate(path(ADMIN_ROUTE));
-      assertThat(page.locator("#admin-sidebar #admin-service-status"))
-          .containsText(texts.getMaintenanceStatusActive());
-      assertThat(page.locator("#admin-service-status"))
-          .containsText(texts.getMaintenanceServicesRestricted());
-      assertThat(page.locator("#admin-service-status")).hasAttribute("data-state", "active");
+      AdminMailPage mail = new AdminMailPage(page);
+      mail.open();
+      Locator deliveryStatus = page.locator(".cosmos-mail-delivery");
+      assertThat(deliveryStatus).isVisible();
+      assertThat(deliveryStatus).hasAttribute("data-state", "active");
+      assertThat(deliveryStatus)
+          .hasAttribute(
+              "aria-label",
+              texts.getAdminMailCardBadge() + ": " + texts.getMaintenanceStatusActive());
+      deliveryStatus.hover();
+      assertThat(page.getByRole(AriaRole.TOOLTIP))
+          .hasText(texts.getAdminMailCardBadge() + ": " + texts.getMaintenanceStatusActive());
+      page.mouse().move(1, 1);
       mode(false);
-      assertThat(page.locator("#admin-service-status"))
-          .containsText(texts.getMaintenanceStatusOnline());
-      assertThat(page.locator("#admin-service-status"))
-          .containsText(texts.getMaintenanceServicesReady());
-      assertThat(page.locator("#admin-service-status")).hasAttribute("data-state", "open");
+      mail.open();
+      assertThat(deliveryStatus).isVisible();
+      assertThat(deliveryStatus).hasAttribute("data-state", "open");
+      assertThat(deliveryStatus)
+          .hasAttribute(
+              "aria-label",
+              texts.getAdminMailCardBadge() + ": " + texts.getMaintenanceStatusAvailable());
+      deliveryStatus.hover();
+      assertThat(page.getByRole(AriaRole.TOOLTIP))
+          .hasText(texts.getAdminMailCardBadge() + ": " + texts.getMaintenanceStatusAvailable());
+      page.mouse().move(1, 1);
       actor.page.navigate(path(HOME_ROUTE));
       new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(account);
     }

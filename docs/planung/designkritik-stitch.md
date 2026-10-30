@@ -32,6 +32,12 @@ behalten ihre abgestimmte Gestaltung.
   sprachliche Verständlichkeit gemäß [manuellem Katalog](../manual-tests/README.md)
   menschlich beurteilen. Viewporttests ersetzen diese Abnahme nicht.
 
+## Offene Bereinigung
+
+Benutzermenü getrennt durchsehen: alten Erstaufbau und Besucheraktionen von der
+weiterhin benötigten Statusauswahl und Speicherlogik trennen. Die konkrete
+Bereinigung gemeinsam abstimmen. Am Benutzermenü noch nichts ändern.
+
 ## Offener Abschluss
 
 Nach den freigegebenen Tooltip- und Bereinigungsnachträgen die nächsten Schritte

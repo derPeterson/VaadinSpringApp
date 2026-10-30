@@ -97,7 +97,6 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-page-content-width: 1100px;
     --cosmos-notification-preview-width: 480px;
     --cosmos-notification-preview-max-height: min(720px, 75dvh);
-    --cosmos-card-width: 430px;
     --cosmos-card-radius: 18px;
     --cosmos-card-border: rgba(169, 191, 233, .18);
     --cosmos-card-shadow: 0 25px 95px rgba(0, 0, 0, .47), inset 0 1px rgba(255, 255, 255, .05);

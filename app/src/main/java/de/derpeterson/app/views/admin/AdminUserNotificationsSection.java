@@ -18,6 +18,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -63,6 +64,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private final Span description = new Span();
   private final Span deliveryLabel = new Span();
   private final Div deliveryMeta = new Div();
+  private final Tooltip deliveryTooltip = Tooltip.forComponent(deliveryMeta);
   private final VerticalLayout composeForm;
   private MaintenanceService.State maintenanceState;
   private transient Registration maintenancePolling;
@@ -340,13 +342,13 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     deliveryMeta.getElement().setAttribute(DATA_STATE, state.name().toLowerCase(Locale.ROOT));
     String status =
         switch (state) {
-          case OPEN -> texts.getMaintenanceStatusOnline();
+          case OPEN -> texts.getMaintenanceStatusAvailable();
           case ACTIVE -> texts.getMaintenanceStatusActive();
           case UNAVAILABLE -> texts.getMaintenanceStatusUnavailable();
         };
-    deliveryMeta
-        .getElement()
-        .setAttribute("aria-label", texts.getNotificationsInternal() + ": " + status);
+    String description = texts.getNotificationsInternal() + ": " + status;
+    deliveryMeta.getElement().setAttribute("aria-label", description);
+    deliveryTooltip.setText(description);
   }
 
   private boolean deliveryAvailable() {

@@ -36,63 +36,7 @@ vaadin-tooltip::part(content) {
     overflow-wrap: anywhere;
 }
 
-/* Gemeinsame Seite: wächst bei wenig Höhe, statt Inhalte hinter dem Fenster abzuschneiden. */
-
-/* 1. KONTOSEITEN UND CARDS / Zentrierung, Marke, gemeinsame Formstruktur */
-
-.cosmos-content {
-    position: relative;
-    z-index: 1;
-    box-sizing: border-box;
-    width: 100%;
-    min-width: 0;
-    min-height: 100vh;
-    min-height: 100dvh;
-    padding: clamp(24px, 5vh, 64px) var(--cosmos-space-l);
-    gap: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-
-    /* Gleiche obere/untere Platzreserve hält die Card selbst in der Bildschirmmitte.
-         * Wird der Inhalt größer als das Fenster, wächst das Grid und bleibt scrollbar. */
-    grid-template-rows: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
-    justify-items: center;
-}
-
-.cosmos-brand {
-    text-align: center;
-    width: 100%;
-    max-width: 660px;
-    margin-bottom: 28px;
-    align-self: end;
-    color: var(--lumo-body-text-color);
-}
-
-.cosmos-logo {
-    display: block;
-    width: 96px;
-    height: 96px;
-    object-fit: contain;
-    margin: 0 auto 17px;
-}
-
-.cosmos-brand-name {
-    display: block;
-    font-size: var(--lumo-font-size-xl);
-    font-weight: var(--cosmos-font-weight-label);
-    letter-spacing: .15em;
-    overflow-wrap: anywhere;
-}
-
-.cosmos-cards {
-    width: 100%;
-    max-width: var(--cosmos-card-width);
-    min-width: 0;
-}
-
-.cosmos-page--wide {
-    --cosmos-card-width: 660px;
-}
+/* 1. GEMEINSAME CARDS UND FORMSTRUKTUR */
 
 .cosmos-card {
     box-sizing: border-box;
@@ -502,10 +446,6 @@ vaadin-notification-card[theme~="cosmos"] .cosmos-notification-message {
         -webkit-backdrop-filter: blur(var(--cosmos-surface-blur-compact));
         backdrop-filter: blur(var(--cosmos-surface-blur-compact));
     }
-
-    .cosmos-brand {
-        margin-bottom: var(--cosmos-space-2xl);
-    }
 }
 
 @media (max-width: 600px) {
@@ -522,16 +462,8 @@ vaadin-notification-card[theme~="cosmos"] .cosmos-notification-message {
 
 @media (max-width: 380px) {
 
-    .cosmos-content {
-        padding: 22px var(--cosmos-space-m);
-    }
-
     .cosmos-card {
         padding: var(--cosmos-space-2xl) 17px 19px;
-    }
-
-    .cosmos-brand-name {
-        letter-spacing: .1em;
     }
 }
 

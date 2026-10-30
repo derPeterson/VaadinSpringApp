@@ -1708,11 +1708,18 @@ class UserNotificationsUiTest {
     assertEquals(
         texts.getNotificationsInternal(), ((Span) field(section, "deliveryLabel")).getText());
     assertEquals("open", meta.getElement().getAttribute("data-state"));
+    com.vaadin.flow.component.shared.Tooltip statusHint = field(section, "deliveryTooltip");
+    assertEquals(
+        texts.getNotificationsInternal() + ": " + texts.getMaintenanceStatusAvailable(),
+        statusHint.getText());
     when(service.deliveryState()).thenReturn(MaintenanceService.State.ACTIVE);
     section.refreshDeliveryState();
     assertEquals("active", meta.getElement().getAttribute("data-state"));
     assertTrue(
         meta.getElement().getAttribute("aria-label").contains(texts.getMaintenanceStatusActive()));
+    assertEquals(
+        texts.getNotificationsInternal() + ": " + texts.getMaintenanceStatusActive(),
+        statusHint.getText());
     com.vaadin.flow.component.orderedlayout.VerticalLayout form = field(section, "composeForm");
     assertFalse(form.isEnabled());
     assertEquals("true", form.getElement().getAttribute("aria-disabled"));
@@ -2169,7 +2176,7 @@ class UserNotificationsUiTest {
             .hasClassName("cosmos-notification-compose-recipients"));
     detailsButton.click();
     assertTrue(details.isOpened());
-    assertEquals(texts.getNotificationsHideRecipientDetails(), detailsButton.getText());
+    assertEquals(texts.getNotificationsRecipientDetails(), detailsButton.getText());
     assertEquals("true", detailsButton.getElement().getAttribute("aria-expanded"));
     detailsButton.click();
     assertFalse(details.isOpened());

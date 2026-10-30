@@ -14,6 +14,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
@@ -49,6 +50,7 @@ public class AdminMailTestSection extends VerticalLayout {
   private final transient MaintenanceService maintenance;
   private final VerticalLayout mailLayout;
   private final Div deliveryMeta = new Div();
+  private final Tooltip deliveryTooltip = Tooltip.forComponent(deliveryMeta);
   private transient Registration maintenancePolling;
   private int previousPollInterval;
   private int installedPollInterval;
@@ -191,13 +193,13 @@ public class AdminMailTestSection extends VerticalLayout {
     deliveryMeta.getElement().setAttribute("data-state", state.name().toLowerCase(Locale.ROOT));
     String status =
         switch (state) {
-          case OPEN -> messageProperties.getMaintenanceStatusOnline();
+          case OPEN -> messageProperties.getMaintenanceStatusAvailable();
           case ACTIVE -> messageProperties.getMaintenanceStatusActive();
           case UNAVAILABLE -> messageProperties.getMaintenanceStatusUnavailable();
         };
-    deliveryMeta
-        .getElement()
-        .setAttribute(ARIA_LABEL, messageProperties.getAdminMailCardBadge() + ": " + status);
+    String description = messageProperties.getAdminMailCardBadge() + ": " + status;
+    deliveryMeta.getElement().setAttribute(ARIA_LABEL, description);
+    deliveryTooltip.setText(description);
   }
 
   private VerticalLayout createMailCardContent() {

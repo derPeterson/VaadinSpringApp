@@ -29,7 +29,6 @@ import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.ConfigGroupIcons;
-import de.derpeterson.app.ui.components.CosmosServiceStatusComponent;
 import de.derpeterson.app.ui.components.PageNavigationComponent;
 import de.derpeterson.app.ui.components.PortalPageComponent;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
@@ -65,8 +64,6 @@ public class AdminView extends IsAuthenticatedBaseView {
   }
 
   private final transient ConfigService configService;
-
-  private final CosmosServiceStatusComponent serviceStatus;
 
   private final Div pageHeading = new Div();
   private final Map<AdminSection, com.vaadin.flow.component.Component> pageHeadings =
@@ -123,7 +120,6 @@ public class AdminView extends IsAuthenticatedBaseView {
     super(messageProperties, securityService, userService, userStatusBroadcaster, request, avatars);
 
     this.configService = configService;
-    serviceStatus = new CosmosServiceStatusComponent(maintenance, messageProperties);
     addClassNames(
         "admin-view",
         "cosmos-page",
@@ -213,7 +209,6 @@ public class AdminView extends IsAuthenticatedBaseView {
 
   private void refreshConfigurationState() {
     refreshServiceName();
-    serviceStatus.refresh();
     mailTestSection.refreshDeliveryState();
     if (notificationsSection != null) {
       notificationsSection.refreshDeliveryState();
@@ -259,8 +254,7 @@ public class AdminView extends IsAuthenticatedBaseView {
     portalNavigation.registerAction(portal, () -> UI.getCurrent().navigate(HomeView.class));
     portalNavigation.addItem(portal);
     VerticalLayout drawerContent =
-        new VerticalLayout(
-            administrationHeading, sideNavigation, portalLabel, portalNavigation, serviceStatus);
+        new VerticalLayout(administrationHeading, sideNavigation, portalLabel, portalNavigation);
     drawerContent.setPadding(false);
     drawerContent.setSpacing(false);
     drawerContent.setWidthFull();
@@ -295,7 +289,6 @@ public class AdminView extends IsAuthenticatedBaseView {
   }
 
   private void selectSection(AdminSection section, AdminConfigGroup configurationGroup) {
-    serviceStatus.refresh();
     mailTestSection.refreshDeliveryState();
     boolean canSend =
         notificationsService != null && notificationsService.canSend(request.getSession(false));
@@ -391,7 +384,6 @@ public class AdminView extends IsAuthenticatedBaseView {
     administrationHeading.setText(messageProperties.getAdminHeaderTitle());
     portalHeading.setText(messageProperties.getAccountNavigationPortal());
     portalHome.setLabel(messageProperties.getHomeTitle());
-    serviceStatus.refresh();
     mailTestSection.refreshDeliveryState();
 
     if (notificationsNavItem != null) {

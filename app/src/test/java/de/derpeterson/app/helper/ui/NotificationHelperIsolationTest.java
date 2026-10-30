@@ -15,6 +15,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.server.VaadinSession;
+import de.derpeterson.app.ui.components.PageFrameComponent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -91,6 +92,25 @@ class NotificationHelperIsolationTest {
     assertFalse(firstNotice.isOpened());
     assertTrue(secondNotice.isOpened(), "Nur der eigene Hinweis wird geschlossen");
     select(second);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void notificationThemeFollowsTheActuallyAttachedPageFrame(boolean themeOnPortalRoot) {
+    UI ui = window(session());
+    NotificationHelper helper = NotificationHelper.getInstance();
+    show("Ohne Seitenrahmen");
+    assertFalse(notification(helper).getElement().getThemeList().contains("cosmos"));
+    PageFrameComponent frame = new PageFrameComponent(new Div(), new Div(), new Div());
+    Div wrapper = new Div(frame);
+    // Public markiert den Rahmen selbst, Portal/Admin ihren übergeordneten View.
+    (themeOnPortalRoot ? wrapper : frame).addClassName("cosmos-theme");
+    ui.add(wrapper);
+    show("Mit verschachteltem Seitenrahmen");
+    assertTrue(notification(helper).getElement().getThemeList().contains("cosmos"));
+    ui.remove(wrapper);
+    show("Nach Entfernen des Seitenrahmens");
+    assertFalse(notification(helper).getElement().getThemeList().contains("cosmos"));
   }
 
   @Test

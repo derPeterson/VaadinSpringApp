@@ -17,7 +17,6 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.ui.components.AppIcon;
-import de.derpeterson.app.ui.components.CosmosPageComponent;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.function.Supplier;
@@ -100,10 +99,10 @@ public class NotificationHelper implements Serializable {
       message = messageSupplier.get();
     }
 
-    if (CosmosPageComponent.isDisplayed(UI.getCurrent())) {
+    if (containsClass(UI.getCurrent(), "cosmos-theme")) {
       currentNotification.getElement().getThemeList().add("cosmos");
     }
-    boolean referenceAccount = isReferencePortal(UI.getCurrent());
+    boolean referenceAccount = containsClass(UI.getCurrent(), "cosmos-reference-portal");
     if (referenceAccount) {
       currentNotification.getElement().getThemeList().add("cosmos-reference");
       currentNotification
@@ -187,10 +186,11 @@ public class NotificationHelper implements Serializable {
     currentNotification.open();
   }
 
-  private static boolean isReferencePortal(Component component) {
+  /** Auch verschachtelte Seitenrahmen bestimmen die Palette der ausgelagerten Meldung. */
+  private static boolean containsClass(Component component, String className) {
     return component != null
-        && (component.getElement().getClassList().contains("cosmos-reference-portal")
-            || component.getChildren().anyMatch(NotificationHelper::isReferencePortal));
+        && (component.getElement().getClassList().contains(className)
+            || component.getChildren().anyMatch(child -> containsClass(child, className)));
   }
 
   private static String localizedCloseLabel() {

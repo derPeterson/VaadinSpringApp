@@ -113,10 +113,6 @@ public class MessageTexts {
     return getTranslation("loginView.create_account_link");
   }
 
-  public String getLoginEmailField() {
-    return getTranslation("loginView.email_field");
-  }
-
   public String getLoginPasswordField() {
     return getTranslation("loginView.password_field");
   }
@@ -156,10 +152,6 @@ public class MessageTexts {
 
   public String getForgotPasswordText() {
     return getTranslation("forgotPasswordView.text");
-  }
-
-  public String getForgotPasswordEmailField() {
-    return getTranslation("forgotPasswordView.email_field");
   }
 
   public String getForgotPasswordSuccessMessage() {
@@ -202,10 +194,6 @@ public class MessageTexts {
 
   public String getRegistrationPasswordField() {
     return getTranslation("registrationView.password_field");
-  }
-
-  public String getRegistrationConfirmField() {
-    return getTranslation("registrationView.confirm_field");
   }
 
   public String getRegistrationGenderCombobox() {
@@ -269,10 +257,6 @@ public class MessageTexts {
     return getTranslation("verificationView.not_found.success_message");
   }
 
-  public String getVerificationEmailField() {
-    return getTranslation("verificationView.email_field");
-  }
-
   // Reset Password View
   public String getResetPasswordInvalidTitle() {
     return getTranslation("resetPasswordView.invalid.title");
@@ -317,10 +301,6 @@ public class MessageTexts {
 
   public String getBaseHomeButton() {
     return getTranslation("base.home_button");
-  }
-
-  public String getBaseSendButton() {
-    return getTranslation("base.send_button");
   }
 
   public String getBaseResendButton() {
@@ -549,10 +529,6 @@ public class MessageTexts {
 
   public String getAdminDashboardDescription() {
     return getTranslation("adminView.dashboard.description");
-  }
-
-  public String getAdminDashboardWelcome() {
-    return getTranslation("adminView.dashboard.welcome");
   }
 
   public String getAdminMailTitle() {
@@ -1144,10 +1120,6 @@ public class MessageTexts {
     return getFormattedTranslation("adminView.config.validation.service_name_max", max);
   }
 
-  public String getAdminConfigHelperDurationFormats() {
-    return getTranslation("adminView.config.helper.duration_formats");
-  }
-
   public String getAdminConfigHelperServiceNameMax(int max) {
     return getFormattedTranslation("adminView.config.helper.service_name_max", max);
   }
@@ -1369,10 +1341,6 @@ public class MessageTexts {
     return getTranslation("admin.users.filter.description");
   }
 
-  public String getAdminUsersRemoveFilter(String label) {
-    return getFormattedTranslation("admin.users.filter.remove", label);
-  }
-
   public String getAdminUsersFilterAll() {
     return getTranslation("admin.users.filter.all");
   }
@@ -1434,10 +1402,6 @@ public class MessageTexts {
 
   public String getAdminUsersFilterActiveSinceError() {
     return getTranslation("admin.users.filter.active_since_error");
-  }
-
-  public String getAdminUsersPaginationTotal(int totalItems) {
-    return getFormattedTranslation("admin.users.pagination.total", totalItems);
   }
 
   public String getAdminUsersPaginationPage(int page) {
@@ -1603,8 +1567,8 @@ public class MessageTexts {
     return getTranslation("maintenance.retry.button");
   }
 
-  public String getMaintenanceStatusOnline() {
-    return getTranslation("maintenance.status.online");
+  public String getMaintenanceStatusAvailable() {
+    return getTranslation("maintenance.status.available");
   }
 
   public String getMaintenanceStatusActive() {
@@ -1613,14 +1577,6 @@ public class MessageTexts {
 
   public String getMaintenanceStatusUnavailable() {
     return getTranslation("maintenance.status.unavailable");
-  }
-
-  public String getMaintenanceServicesReady() {
-    return getTranslation("maintenance.services.ready");
-  }
-
-  public String getMaintenanceServicesRestricted() {
-    return getTranslation("maintenance.services.restricted");
   }
 
   public String getMaintenanceLoginMessage() {
@@ -2315,10 +2271,6 @@ public class MessageTexts {
 
   public String getNotificationsPreviewNeedsReview() {
     return getTranslation("notifications.previewNeedsReview");
-  }
-
-  public String getNotificationsHideRecipientDetails() {
-    return getTranslation("notifications.hideRecipientDetails");
   }
 
   public String getNotificationsAdminPageDescription() {

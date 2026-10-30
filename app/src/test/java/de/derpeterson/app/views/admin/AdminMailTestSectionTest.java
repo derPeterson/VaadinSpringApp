@@ -135,6 +135,10 @@ class AdminMailTestSectionTest {
     body.setValue("Draft body");
     assertTrue(panel.isEnabled());
     assertEquals("open", badge.getElement().getAttribute("data-state"));
+    com.vaadin.flow.component.shared.Tooltip statusHint = field(section, "deliveryTooltip");
+    assertEquals(
+        texts.getAdminMailCardBadge() + ": " + texts.getMaintenanceStatusAvailable(),
+        statusHint.getText());
     assertEquals(texts.getAdminMailCardBadge(), ((Span) field(section, "mailCardBadge")).getText());
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     section.refreshDeliveryState();
@@ -152,6 +156,9 @@ class AdminMailTestSectionTest {
     assertEquals("active", badge.getElement().getAttribute("data-state"));
     assertTrue(
         badge.getElement().getAttribute("aria-label").contains(texts.getMaintenanceStatusActive()));
+    assertEquals(
+        texts.getAdminMailCardBadge() + ": " + texts.getMaintenanceStatusActive(),
+        statusHint.getText());
     assertTrue(section.isEnabled());
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
     section.refreshDeliveryState();
@@ -161,6 +168,9 @@ class AdminMailTestSectionTest {
     assertEquals("open", badge.getElement().getAttribute("data-state"));
     assertEquals("Draft subject", subject.getValue());
     assertEquals("Draft body", body.getValue());
+    assertEquals(
+        texts.getAdminMailCardBadge() + ": " + texts.getMaintenanceStatusAvailable(),
+        statusHint.getText());
     send.click();
     verify(email).sendAdminEmail("admin@example.test", "Draft subject", "Draft body");
   }

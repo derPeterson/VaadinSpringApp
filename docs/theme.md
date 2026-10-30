@@ -278,7 +278,9 @@ die Ecken noch den Rahmen; das native Scrollen im Inhaltsbereich bleibt erhalten
 Buttons ohne gesetzten Prefix entfernen dessen Leerabstand, damit Icons, Zahlen
 und reine Beschriftungen zentriert bleiben. Schließen-Buttons entfernen zusätzlich
 den leeren Suffixabstand.
-Globale Meldungen im angemeldeten Portal verwenden alle vier Schweregradrollen,
+Die Theme-Erkennung globaler Meldungen folgt dem tatsächlich angehängten
+Seitenrahmen, einschließlich verschachtelter Inhalte. Zuständig ist
+`NotificationHelper`. Globale Meldungen im angemeldeten Portal verwenden alle vier Schweregradrollen,
 die gesicherte Symbolzuordnung und eine eigene `.cosmos-toast-title` ohne Kollision
 mit Nachrichtenbuttons. Supplier-Sprachwechsel, Anzeigedauer und Fensterisolation
 bleiben erhalten.
@@ -289,6 +291,14 @@ oder Migration. Profil-E-Mail bleibt nur lesbar und fokussierbar; die E-Mail in 
 Sicherheitskarte ist weiß. Sicherheits-, Versions- und Eingabeprüfungen bleiben in
 den bestehenden Diensten. Die [Portalreferenz](design/frontend-referenzen/portal.html) bleibt die
 bedienbare Gestaltungsvorlage. Die tatsächlichen Abläufe prüfen die isolierten Browsertests.
+
+Die Statuspunkte bei „SMTP Test“ und „Intern“ zeigen die Freigabe der Funktion
+an. Verfügbar bedeutet ausgeschalteten Wartungsmodus. Bei aktivem Wartungsmodus
+oder nicht lesbarer Wartungskonfiguration sind die Aktionen gesperrt. Der Punkt
+bestätigt keine erfolgreiche SMTP-Verbindung. Die Zustandsbeschreibung steht als
+ARIA-Label und nativer Tooltip im gemeinsamen Tooltipstil zur Verfügung und folgt
+Sprache und aktuellem Wartungszustand. `MaintenanceService` und die bestehenden
+fachlichen Versandprüfungen bestimmen weiterhin die Freigabe.
 
 ## Besucherportal in Vaadin
 

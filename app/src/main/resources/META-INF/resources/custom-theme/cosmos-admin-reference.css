@@ -10,7 +10,6 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-admin-sections { max-width:none
 vaadin-app-layout.cosmos-reference-admin .cosmos-admin-section { gap:24px; max-width:none; align-items:stretch; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-footer { position:relative; z-index:1; display:block; box-sizing:border-box; width:100%; max-width:none; margin:0; padding:12px 24px; border-top:1px solid var(--cosmos-reference-border); background:var(--cosmos-reference-page); text-align:center; font:400 11px/16px Inter,sans-serif; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-sidebar { min-height:0; padding:0 0 24px; gap:0; background:transparent; }
-vaadin-app-layout.cosmos-reference-admin .cosmos-service-status { display:none; }
 vaadin-app-layout.cosmos-reference-admin .admin-portal-label { box-sizing:border-box; padding:0 12px 8px; color:var(--cosmos-reference-accent); font:600 10px/15px Inter,sans-serif; text-transform:uppercase; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-admin-form-card,vaadin-app-layout.cosmos-reference-admin .cosmos-panel-card,vaadin-app-layout.cosmos-reference-admin .cosmos-config-card { width:100%; max-width:none; box-sizing:border-box; padding:0; border:1px solid var(--cosmos-reference-border); border-radius:16px; background:var(--cosmos-reference-page); overflow:hidden; box-shadow:none; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-admin-form-card::before { display:none; }

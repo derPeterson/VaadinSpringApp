@@ -149,7 +149,7 @@ public final class AdminUsersPage {
     }
   }
 
-  @Step("Dropdownfilter auswählen und ausdrücklich anwenden")
+  @Step("Filter auswählen und ausdrücklich anwenden")
   public void selectFilter(String label, String option) {
     selectDraftFilter(label, option);
     applyFilters();
@@ -161,7 +161,7 @@ public final class AdminUsersPage {
     assertThat(page.locator("#admin-user-filter-panel[opened]")).hasCount(0);
   }
 
-  @Step("Nur den ausgewählten angewandten Filter über seinen Badge entfernen")
+  @Step("Eine Filtergruppe im Overlay zurücksetzen und anwenden")
   public void removeFilter(String label) {
     openFilters();
     if (label.equals(texts.getAdminUsersGridEnabled())) {
