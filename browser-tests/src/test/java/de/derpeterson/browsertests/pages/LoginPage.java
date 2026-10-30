@@ -30,15 +30,24 @@ public final class LoginPage {
 
   @Step("E-Mail und Passwort eingeben und Anmeldung absenden")
   public void signIn(String email, String password) {
+    for (Locator notice : page.locator("vaadin-notification-card:not([closing])").all()) {
+      notice.getByRole(AriaRole.BUTTON).click();
+    }
     page.getByLabel(texts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true))
         .fill(email);
     page.getByLabel(texts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true))
         .fill(password);
-    page.locator(".public-panel")
-        .getByRole(
-            AriaRole.BUTTON,
-            new Locator.GetByRoleOptions().setName(texts.getBaseLoginButton()).setExact(true))
-        .click();
+    Locator submit =
+        page.locator(".public-panel")
+            .getByRole(
+                AriaRole.BUTTON,
+                new Locator.GetByRoleOptions().setName(texts.getBaseLoginButton()).setExact(true));
+    UiActions.complete(page, submit::click);
+    page.waitForCondition(
+        () ->
+            !java.net.URI.create(page.url()).getPath().equals(path(LOGIN_ROUTE))
+                || page.locator("vaadin-notification-card:not([closing])").isVisible()
+                || page.locator("#session-recovery").isVisible());
   }
 
   @Step("Loginformular ist in der ausgewählten Sprache sichtbar")
@@ -64,8 +73,9 @@ public final class LoginPage {
   public void assertRejected() {
     assertFormVisible();
     assertThat(
-            page.getByText(
-                texts.getLoginFailedMessage(), new Page.GetByTextOptions().setExact(true)))
+            page.locator("vaadin-notification-card:not([closing])")
+                .getByText(
+                    texts.getLoginFailedMessage(), new Locator.GetByTextOptions().setExact(true)))
         .isVisible();
     assertThat(
             page.getByRole(
@@ -107,6 +117,7 @@ public final class LoginPage {
             page.locator("#account-session-entries [data-session-state='active'] vaadin-button")
                 .nth(index)
                 .click());
+    new AccountSessionsPage(page).confirm();
   }
 
   @Step("Eingeschränkte Verwaltung abbrechen und zur normalen Anmeldung zurückkehren")
@@ -143,10 +154,9 @@ public final class LoginPage {
                     .setExact(true)
                     .setLevel(1)))
         .isVisible();
-    assertThat(
-            page.getByText(
-                texts.getAdminDashboardWelcome() + ": " + email,
-                new Page.GetByTextOptions().setExact(true)))
-        .isVisible();
+    UserMenu menu = new UserMenu(page);
+    menu.open();
+    assertThat(page.locator(".user-popover-body")).containsText(email);
+    menu.close();
   }
 }

@@ -72,14 +72,9 @@ public abstract class BrowserFixture {
         page.navigate(path(HOME_ROUTE));
         UserMenu menu = new UserMenu(page);
         menu.selectTestLanguage();
-        menu.open();
-        if (page.getByRole(
-                com.microsoft.playwright.options.AriaRole.BUTTON,
-                new Page.GetByRoleOptions().setName(texts.getBaseLogoutButton()).setExact(true))
-            .isVisible()) {
+        // Besucher haben nur die öffentliche Navigation und kein Avatar-Popup.
+        if (!page.locator(".public-header").isVisible()) {
           menu.requestSignOut();
-        } else {
-          menu.close();
         }
       }
     } finally {

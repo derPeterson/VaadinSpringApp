@@ -1,0 +1,1 @@
+window.AdminPreviewRules = {"password": "^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$"};

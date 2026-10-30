@@ -27,7 +27,9 @@ public final class ResetPasswordPage {
     assertThat(
             page.getByRole(
                 AriaRole.HEADING,
-                new Page.GetByRoleOptions().setName(texts.getResetPasswordTitle()).setExact(true)))
+                new Page.GetByRoleOptions()
+                    .setName(texts.getPublicResetFormTitle())
+                    .setExact(true)))
         .isVisible();
     assertThat(
             page.getByLabel(

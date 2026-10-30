@@ -152,11 +152,12 @@ final class AdminUserFilterBar extends VerticalLayout {
 
   private void refreshDraftCount() {
     int count =
-        (search.isEmpty() ? 0 : 1)
-            + (controls.enabled().getValue() == AdminUserFilters.Enabled.ALL ? 0 : 1)
-            + controls.status().getValue().size()
-            + controls.role().getValue().size()
-            + (controls.activity().isEmpty() ? 0 : 1);
+        AdminUserFilters.countActiveGroups(
+            search.getValue(),
+            controls.enabled().getValue().value(),
+            controls.status().getValue(),
+            controls.role().getValue(),
+            !controls.activity().isEmpty());
     showActiveCount(count);
   }
 

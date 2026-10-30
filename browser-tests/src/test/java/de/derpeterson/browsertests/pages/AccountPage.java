@@ -86,8 +86,10 @@ public final class AccountPage {
 
   @Step("Kontobereich über die Seitennavigation auswählen")
   public void section(String id) {
+    assertThat(host(id)).hasCount(1);
     if (!host(id).isVisible() && host("account-navigation-toggle").isVisible()) {
-      host("account-navigation-toggle").click();
+      UiActions.complete(page, () -> host("account-navigation-toggle").click());
+      assertThat(host("account-navigation-toggle")).hasAttribute("aria-expanded", "true");
     }
     host(id).click();
   }

@@ -10,7 +10,7 @@ Sie wird ausschließlich auf der Entwicklungsmaschine mit austauschbaren Testdat
 | --- | --- |
 | die Funktionen verstehen | [Anwendung](docs/anwendung.md) |
 | entwickeln und konfigurieren | [Entwicklung](docs/entwicklung.md) |
-| die fünf Codex-Arbeitsabläufe nutzen | [Arbeiten mit Codex](docs/codex-skills.md) |
+| die Codex-Arbeitsabläufe nutzen | [Arbeiten mit Codex](docs/codex-skills.md) |
 | die Docker-Testumgebung mit Mailpit verwenden | [Docker](docs/docker/README.md) |
 | Anmeldung, Rechte und Sitzungen verstehen | [Sicherheit](docs/sicherheit.md) |
 | Farben, Komponenten oder das Theme anpassen | [Theme](docs/theme.md) |
@@ -44,11 +44,9 @@ entsteht unter `app/target/`. Gezielter Build mit benötigtem Shared-Modul:
 ```
 
 Reactor, lokaler IDE-/HTTPS-Start, Docker-Build, Browserstarter und gemeinsamer
-Coverage-/Sonar-Ablauf sind eingerichtet. Die gemeinsame Funktionsprüfung samt
-vollständiger Browserrunde DE/EN am selben aktuellen Image ist bestanden;
-Ergebnisse und Grenzen stehen im [Prüfstand](docs/status.md). Der gemeinsame Umfang
-ist lokal nach `main` integriert und auf dem Sonar-Server mit grünem Quality Gate
-nachgewiesen. Der Multi-Modul-Umbau ist insgesamt abgenommen.
+Coverage-/Sonar-Ablauf sind eingerichtet. Tatsächlich ausgeführte Prüfungen,
+geprüfter Quellstand und Grenzen stehen im [Prüfstand](docs/status.md).
+Offene Arbeiten und gemeinsame Abnahmen stehen in [TODO](TODO.md).
 
 Der lokale HTTPS-Zugang ist `https://localhost:8443`; dafür den Caddy-Proxy und
 das Zertifikatsvertrauen gemäß [Entwicklungsanleitung](docs/entwicklung.md#lokales-https)

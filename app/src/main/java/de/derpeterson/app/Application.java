@@ -18,7 +18,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @ComponentScan(basePackages = "de.derpeterson.app")
 @EntityScan(basePackages = {"de.derpeterson.app.model"})
-@PWA(name = "VaadinSpringApp", shortName = "App", iconPath = "custom-theme/service_logo.png")
+@PWA(name = "VaadinSpringApp", shortName = "App", iconPath = "icons/service-logo.png")
 @StyleSheet(Lumo.STYLESHEET)
 @StyleSheet(Lumo.UTILITY_STYLESHEET)
 @StyleSheet("custom-theme/typography.css")
@@ -35,7 +35,7 @@ public class Application implements AppShellConfigurator {
 
   @Override
   public void configurePage(AppShellSettings settings) {
-    settings.addFavIcon("icon", "icons/service-logo-k.svg", "any");
+    settings.addFavIcon("icon", "icons/service-logo.svg", "any");
   }
 
   static void main(String[] args) {

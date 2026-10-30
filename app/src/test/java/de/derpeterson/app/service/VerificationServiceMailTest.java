@@ -113,8 +113,7 @@ class VerificationServiceMailTest {
                   when(resource.getInputStream()).thenReturn(stream);
                 })) {
       image
-          .when(
-              () -> ImageHelper.readImageBytes("META-INF/resources/custom-theme/service_logo.png"))
+          .when(() -> ImageHelper.readImageBytes("META-INF/resources/icons/service-logo.png"))
           .thenReturn(new byte[] {1});
       locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.ENGLISH);
       if (readFailure || closeFailure) {

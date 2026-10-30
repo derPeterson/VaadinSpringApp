@@ -316,9 +316,7 @@ class VerificationServicePersistenceTest {
           .thenReturn(resource.equals("template") ? Locale.FRENCH : Locale.ENGLISH);
       if (resource.equals("logo")) {
         image
-            .when(
-                () ->
-                    ImageHelper.readImageBytes("META-INF/resources/custom-theme/service_logo.png"))
+            .when(() -> ImageHelper.readImageBytes("META-INF/resources/icons/service-logo.png"))
             .thenThrow(failure);
       }
       IOException thrown = assertThrows(IOException.class, () -> resend(entry));

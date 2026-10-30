@@ -529,13 +529,7 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   private void updateActiveFilters() {
-    int count =
-        (appliedFilters.search().isBlank() ? 0 : 1)
-            + (appliedFilters.enabled() == null ? 0 : 1)
-            + appliedFilters.statuses().size()
-            + appliedFilters.roles().size()
-            + (appliedFilters.activeSince() == null ? 0 : 1);
-    filterBar.showActiveCount(count);
+    filterBar.showActiveCount(appliedFilters.activeGroupCount());
   }
 
   private void updateGridPage() {

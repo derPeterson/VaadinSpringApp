@@ -105,7 +105,7 @@ public class AdminDashboardSection extends VerticalLayout {
     Button open =
         new Button(
             "",
-            AppIcon.ARROW_FORWARD.create(),
+            AppIcon.OPEN_SECTION.create(),
             event ->
                 UI.getCurrent()
                     .navigate(AdminView.class, QueryParameters.simple(Map.of("section", section))));

@@ -404,7 +404,7 @@ Offizielle Grundlagen: [Sonar-MCP-Einrichtung](https://docs.sonarsource.com/sona
 
 ## Arbeiten mit Codex
 
-Die [Skill-Anleitung](codex-skills.md) beschreibt alle fünf Abläufe: große Testrunde,
+Die [Skill-Anleitung](codex-skills.md) beschreibt die Projektabläufe: große Testrunde,
 Sonar-Bereinigung, Umsetzung starten, Änderungen prüfen und lokal mergen.
 Testbefehle stehen in der [Testanleitung](tests.md).
 

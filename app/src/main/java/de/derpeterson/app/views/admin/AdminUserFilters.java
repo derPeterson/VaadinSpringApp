@@ -31,6 +31,23 @@ record AdminUserFilters(
     }
   }
 
+  int activeGroupCount() {
+    return countActiveGroups(search, enabled, statuses, roles, activeSince != null);
+  }
+
+  static int countActiveGroups(
+      String search,
+      Boolean enabled,
+      Set<UserStatus> statuses,
+      Set<RoleType> roles,
+      boolean hasActivity) {
+    return (normalize(search).isEmpty() ? 0 : 1)
+        + (enabled == null ? 0 : 1)
+        + (statuses.isEmpty() ? 0 : 1)
+        + (roles.isEmpty() ? 0 : 1)
+        + (hasActivity ? 1 : 0);
+  }
+
   boolean matches(UserEntity user) {
     String query = normalize(search);
     String fullName = normalize(user.getFirstName()) + " " + normalize(user.getLastName());

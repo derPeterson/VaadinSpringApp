@@ -13,6 +13,7 @@ import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.TokenConfigurationPage;
 import de.derpeterson.browsertests.pages.UserMenu;
 import de.derpeterson.browsertests.pages.UserStatusMenu;
 import io.qameta.allure.Description;
@@ -79,9 +80,10 @@ public class UserStatusBrowserTest extends BrowserFixture {
     ConfigurationPage config = new ConfigurationPage(page);
     config.open(AdminConfigGroup.USER_STATUS);
     String label = texts.getAdminConfigEntryUserAutoAbsentTimeout();
-    String original = config.value(label);
+    TokenConfigurationPage durations = new TokenConfigurationPage(page);
+    String original = durations.value(label);
     try {
-      config.enter(label, "PT10S");
+      durations.enter(label, "PT10S");
       config.save();
       try (BrowserActor actor = new BrowserActor(browser)) {
         actor.login(email, BrowserTestAccounts.USER_PASSWORD);
@@ -110,7 +112,7 @@ public class UserStatusBrowserTest extends BrowserFixture {
       }
     } finally {
       config.open(AdminConfigGroup.USER_STATUS);
-      config.enter(label, original);
+      durations.enter(label, original);
       config.save();
     }
   }

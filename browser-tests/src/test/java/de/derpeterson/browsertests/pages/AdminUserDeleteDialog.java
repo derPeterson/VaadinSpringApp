@@ -30,7 +30,7 @@ public final class AdminUserDeleteDialog {
 
   @Step("Löschung ausschließlich des eigenen wegwerfbaren Testkontos bestätigen")
   public void confirm() {
-    button(texts.getAdminUsersDelete()).click();
+    button(texts.getPortalDeleteAction()).click();
     assertThat(root()).hasCount(0);
   }
 

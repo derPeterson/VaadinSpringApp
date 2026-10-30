@@ -49,7 +49,7 @@ public final class NotificationComposePage {
   }
 
   public Locator status() {
-    return root().locator(".cosmos-notification-compose-status");
+    return page.locator(".admin-notification-preview-card .cosmos-notification-compose-status");
   }
 
   @Step("Benachrichtigungen verfassen direkt über die vorhandene Adminroute öffnen")
@@ -105,9 +105,13 @@ public final class NotificationComposePage {
     review().click();
     assertThat(send()).isEnabled();
     assertThat(status()).hasText(texts.getNotificationsPreviewUpdated());
-    assertThat(root().locator(".cosmos-notification-compose-preview-content"))
+    assertThat(
+            page.locator(
+                ".admin-notification-preview-card .cosmos-notification-compose-preview-content"))
         .containsText(subject);
-    assertThat(root().locator(".cosmos-notification-compose-preview-content"))
+    assertThat(
+            page.locator(
+                ".admin-notification-preview-card .cosmos-notification-compose-preview-content"))
         .containsText(message);
   }
 
@@ -145,6 +149,7 @@ public final class NotificationComposePage {
             AriaRole.BUTTON,
             new Locator.GetByRoleOptions().setName(texts.getNotificationsMarkRead()).setExact(true))
         .click();
+    new NotificationInboxPage(target).confirm();
     assertThat(dialog.locator(".cosmos-notification-detail-state"))
         .hasText(texts.getNotificationsRead());
     dialog

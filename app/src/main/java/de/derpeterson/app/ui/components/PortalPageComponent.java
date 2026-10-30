@@ -14,7 +14,6 @@ public class PortalPageComponent extends Div {
 
   public PortalPageComponent() {
     addClassName("account-settings");
-    Shortcuts.addShortcutListener(this, this::closeNavigation, Key.ESCAPE);
     addDetachListener(event -> closeNavigation());
   }
 
@@ -41,6 +40,10 @@ public class PortalPageComponent extends Div {
 
   public final void configureNavigationToggle(Button toggle) {
     navigationToggle = toggle;
+    // Escape nur innerhalb der Navigation behandeln. Ein globales Shortcut würde
+    // die native Escape-Behandlung von Popovers und Dialogen abfangen.
+    Shortcuts.addShortcutListener(this, this::closeNavigation, Key.ESCAPE)
+        .listenOn(navigation, toggle);
     toggle.getElement().setAttribute("aria-controls", navigation.getId().orElseThrow());
     toggle.getElement().setAttribute("aria-expanded", "false");
     toggle.addClickListener(
@@ -52,7 +55,13 @@ public class PortalPageComponent extends Div {
           if (open) {
             navigation
                 .getElement()
-                .executeJs("this.querySelector('vaadin-side-nav-item, vaadin-button')?.focus()");
+                .executeJs(
+                    """
+                    const item = this.querySelector('vaadin-side-nav-item');
+                    const target = item?.shadowRoot?.querySelector('[part=link]')
+                      ?? this.querySelector('vaadin-button');
+                    target?.focus();
+                    """);
           }
         });
   }

@@ -7,6 +7,7 @@ import de.derpeterson.browsertests.suites.AdminMailBrowserTest;
 import de.derpeterson.browsertests.suites.AuthenticationBrowserTest;
 import de.derpeterson.browsertests.suites.BlockedLinksBrowserTest;
 import de.derpeterson.browsertests.suites.ConfigurationBrowserTest;
+import de.derpeterson.browsertests.suites.CosmosComponentsBrowserTest;
 import de.derpeterson.browsertests.suites.CosmosDesignBrowserTest;
 import de.derpeterson.browsertests.suites.InfrastructureBrowserTest;
 import de.derpeterson.browsertests.suites.LoginAttemptBrowserTest;
@@ -63,6 +64,7 @@ final class BrowserSuites {
               TokenExpiryBrowserTest.class,
               LoginLayoutBrowserTest.class,
               CosmosDesignBrowserTest.class,
+              CosmosComponentsBrowserTest.class,
               LoginAttemptBrowserTest.class,
               SessionLimitBrowserTest.class,
               MaintenanceBrowserTest.class);
@@ -73,6 +75,7 @@ final class BrowserSuites {
       case "account-settings" -> List.of(AccountSettingsBrowserTest.class);
       case "maintenance" -> List.of(MaintenanceBrowserTest.class);
       case "cosmos-design" -> List.of(CosmosDesignBrowserTest.class);
+      case "cosmos-components" -> List.of(CosmosComponentsBrowserTest.class);
       case "login-layout" -> List.of(LoginLayoutBrowserTest.class);
       case "login-checks" ->
           List.of(
@@ -144,7 +147,7 @@ final class BrowserSuites {
           throw new IllegalArgumentException(
               "Unknown suite: "
                   + suite
-                  + ". Choose all, fast, notifications, account-security, session-management, account-settings, cosmos-design, login-layout, login-checks, infrastructure, https-night, operations, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, session-limits, session-persistence, maintenance, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
+                  + ". Choose all, fast, notifications, account-security, session-management, account-settings, cosmos-design, cosmos-components, login-layout, login-checks, infrastructure, https-night, operations, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, session-limits, session-persistence, maintenance, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
     };
   }
 }

@@ -1,5 +1,6 @@
 package de.derpeterson.app.views.admin;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -8,6 +9,7 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,38 @@ class AdminUserFiltersTest {
                 RoleEntity.builder().name(RoleType.ROLE_USER).build(),
                 RoleEntity.builder().name(RoleType.ROLE_ADMIN).build()))
         .build();
+  }
+
+  @Test
+  void multipleStatusAndRoleSelectionsEachCountAsOneGroup() {
+    AdminUserFilters filters =
+        new AdminUserFilters(
+            "",
+            true,
+            Set.of(UserStatus.AVAILABLE, UserStatus.EMPLOYED, UserStatus.ABSENT),
+            EnumSet.allOf(RoleType.class),
+            null);
+    assertEquals(3, filters.activeGroupCount());
+    assertEquals(
+        3,
+        AdminUserFilters.countActiveGroups(
+            filters.search(), filters.enabled(), filters.statuses(), filters.roles(), false));
+  }
+
+  @Test
+  void dateAndTimeCountTogetherAndEveryGroupCountsAtMostOnce() {
+    AdminUserFilters filters =
+        new AdminUserFilters(
+            "Lena", false, EnumSet.allOf(UserStatus.class), EnumSet.allOf(RoleType.class), cutoff);
+    assertEquals(5, filters.activeGroupCount());
+    assertEquals(1, new AdminUserFilters("", null, Set.of(), Set.of(), cutoff).activeGroupCount());
+  }
+
+  @Test
+  void blankSearchAndEmptySelectionsDoNotCountButDisabledAccountsDo() {
+    assertEquals(0, new AdminUserFilters("  ", null, Set.of(), Set.of(), null).activeGroupCount());
+    assertEquals(0, new AdminUserFilters(null, null, Set.of(), Set.of(), null).activeGroupCount());
+    assertEquals(1, new AdminUserFilters("", false, Set.of(), Set.of(), null).activeGroupCount());
   }
 
   @Test

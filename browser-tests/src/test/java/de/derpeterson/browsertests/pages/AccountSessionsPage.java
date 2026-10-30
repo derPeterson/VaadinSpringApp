@@ -18,7 +18,7 @@ public final class AccountSessionsPage {
   @Step("Eigene Sitzungsliste im Konto öffnen")
   public void open() {
     new AccountPage(page).open();
-    UiActions.complete(page, () -> page.locator("#account-tab-sessions").click());
+    new AccountPage(page).section("account-tab-sessions");
     assertThat(page.locator("#account-panel-sessions")).isVisible();
   }
 
@@ -55,8 +55,11 @@ public final class AccountSessionsPage {
     confirm();
   }
 
-  private void confirm() {
-    assertThat(page.locator("#sessions-confirmation[opened]")).isVisible();
+  public void confirm() {
+    assertThat(
+            page.locator(
+                "#sessions-confirmation[opened] vaadin-dialog-overlay > [part~='overlay']"))
+        .isVisible();
     UiActions.complete(page, () -> page.locator("#sessions-confirmation-submit").click());
     assertThat(page.locator("#sessions-confirmation[opened]")).hasCount(0);
   }

@@ -1,7 +1,6 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppConstants.USER_ICON_ALT;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_PAGE_TITLE;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
@@ -62,15 +61,15 @@ public class InfrastructureBrowserTest extends BrowserFixture {
 
   @Tag("fast")
   @Test
-  @DisplayName("INFRA-01: Startseite, Logo, Avatare und Sprachflaggen werden geladen")
+  @DisplayName("INFRA-01: Öffentliche Startseite, Logo und Sprachwahl werden geladen")
   @Story("Startseite und Bilder")
   @Description(
       """
             1. Die Startseite öffnen und den konfigurierten Servicenamen prüfen.
-            2. Das Benutzermenü öffnen.
-            3. Logo und Sprachflaggen auf geladenen Bildinhalt prüfen; beide anonymen Avatare mit Benutzer- und Offlinesymbol prüfen.
+            2. Die öffentliche Kopfnavigation und ihre Sprachwahl prüfen.
+            3. Geladenes Service-Logo und die ausdrücklich gewählte Sprache prüfen.
 
-            **Erwartet:** Startseite korrekt gerendert; Bilder geladen, beide Standardavatare samt Status sichtbar.
+            **Erwartet:** Startseite korrekt gerendert, Logo geladen und Sprachwahl sichtbar. Besucher haben kein Avatar-Popup.
             Prüft keine vollständige responsive Darstellung, Rollen- oder Tabelleninitialisierung.
             """)
   void homeAndImagesLoad() {
@@ -80,29 +79,12 @@ public class InfrastructureBrowserTest extends BrowserFixture {
             page.getByText(
                 "VaadinSpringApp (Browser-Test)", new Page.GetByTextOptions().setExact(true)))
         .isVisible();
-    page.getByRole(
-            AriaRole.BUTTON, new Page.GetByRoleOptions().setName(USER_ICON_ALT).setExact(true))
-        .click();
-    for (String name : new String[] {"Service Icon", "German Flag Icon", "English Flag Icon"}) {
-      assertImageLoaded(
-          page.getByRole(AriaRole.IMG, new Page.GetByRoleOptions().setName(name).setExact(true)));
-    }
-    Locator avatars =
-        page.getByRole(
-            AriaRole.IMG, new Page.GetByRoleOptions().setName(USER_ICON_ALT).setExact(true));
-    assertThat(avatars).hasCount(2);
-    for (Locator avatar : avatars.all()) {
-      assertThat(avatar).isVisible();
-      assertThat(avatar.locator(".cosmos-avatar-circle")).isVisible();
-      assertThat(
-              avatar.locator(
-                  ".cosmos-avatar-initials vaadin-icon[src='icons/lucide/user-round.svg']"))
-          .isVisible();
-      assertThat(avatar.locator(".cosmos-avatar-status svg")).isVisible();
-      assertThat(avatar.locator(".cosmos-avatar-status svg")).hasAttribute("fill", "none");
-      assertThat(avatar.locator(".cosmos-avatar-status svg path"))
-          .hasAttribute("d", "m8.5 8.5 7 7m0-7-7 7");
-    }
+    assertImageLoaded(page.locator(".public-brand img"));
+    assertThat(page.locator(".public-navigation")).isVisible();
+    assertThat(page.locator(".public-languages vaadin-button")).hasCount(2);
+    assertThat(page.locator(".public-languages vaadin-button[aria-pressed='true']"))
+        .hasText(texts.language().toUpperCase(java.util.Locale.ROOT));
+    assertThat(page.locator(".tracked-user-button")).hasCount(0);
   }
 
   @Tag("fast")
@@ -120,9 +102,12 @@ public class InfrastructureBrowserTest extends BrowserFixture {
   void loginFormLoads() {
     new de.derpeterson.browsertests.pages.LoginPage(page).open();
     assertThat(
-            page.getByRole(
-                AriaRole.BUTTON,
-                new Page.GetByRoleOptions().setName(texts.getBaseLoginButton()).setExact(true)))
+            page.locator(".public-panel")
+                .getByRole(
+                    AriaRole.BUTTON,
+                    new Locator.GetByRoleOptions()
+                        .setName(texts.getBaseLoginButton())
+                        .setExact(true)))
         .isVisible();
   }
 

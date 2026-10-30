@@ -40,7 +40,7 @@ public final class AdminUserDialog {
   }
 
   public Locator confirmPassword() {
-    return field(texts.getRegistrationConfirmField());
+    return field(texts.getPublicConfirmPasswordField());
   }
 
   public Locator saveButton() {
@@ -137,6 +137,7 @@ public final class AdminUserDialog {
 
   @Step("Benutzerformular speichern und dessen tatsächliches Schließen abwarten")
   public void save() {
+    closeRoleOptions();
     assertThat(saveButton()).isEnabled();
     saveButton().click();
     assertThat(root()).hasCount(0);
@@ -144,6 +145,7 @@ public final class AdminUserDialog {
 
   @Step("Benutzerformular ohne Speicherung abbrechen")
   public void cancel() {
+    closeRoleOptions();
     button(texts.getAdminUsersCancel()).click();
     assertThat(root()).hasCount(0);
   }
@@ -168,6 +170,12 @@ public final class AdminUserDialog {
 
   private Locator field(String label) {
     return root().getByLabel(label, new Locator.GetByLabelOptions().setExact(true));
+  }
+
+  private void closeRoleOptions() {
+    if ("true".equals(rolesInput().getAttribute("aria-expanded"))) {
+      rolesInput().press("Escape");
+    }
   }
 
   private Locator button(String name) {

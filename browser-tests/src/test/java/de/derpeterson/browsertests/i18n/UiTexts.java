@@ -61,6 +61,11 @@ public final class UiTexts extends MessageTexts {
     return locale.getLanguage();
   }
 
+  @Override
+  protected Locale formattingLocale() {
+    return locale;
+  }
+
   public String browserLocale() {
     return language().equals("de") ? "de-DE" : "en-US";
   }

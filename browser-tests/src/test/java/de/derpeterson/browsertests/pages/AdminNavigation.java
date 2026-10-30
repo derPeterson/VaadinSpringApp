@@ -31,8 +31,12 @@ public final class AdminNavigation {
   @Step("Adminnavigation bei Bedarf öffnen")
   public void openDrawer() {
     Locator toggle = page.locator("#account-navigation-toggle");
+    // Nach direktem Seitenaufruf erst den Vaadin-Aufbau abwarten. Ein noch nicht
+    // vorhandener Schalter ist nicht gleichbedeutend mit Desktopnavigation.
+    assertThat(toggle).hasCount(1);
     if (toggle.isVisible() && !"true".equals(toggle.getAttribute("aria-expanded"))) {
       UiActions.complete(page, toggle::click);
+      assertThat(toggle).hasAttribute("aria-expanded", "true");
     }
     assertThat(page.locator("#admin-sidebar")).isVisible();
   }

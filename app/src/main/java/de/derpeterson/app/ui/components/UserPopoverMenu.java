@@ -8,7 +8,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -24,7 +23,6 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentPrefixHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
-import de.derpeterson.app.helper.ui.StyleHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.IconSize;
@@ -71,8 +69,8 @@ public class UserPopoverMenu {
   private Button registrationButton = null;
   private Button loginButton = null;
   private Button homeButton = null;
-  private Image deFlagIcon = null;
-  private Image enFlagIcon = null;
+  private Button germanLanguageButton;
+  private Button englishLanguageButton;
   private OverlayUserIcon overlayIcon = null;
   private Select<UserStatus> userStatusSelect = null;
 
@@ -176,24 +174,14 @@ public class UserPopoverMenu {
     }
     userStatusSelect.setLabel(messageProperties.getPortalPresenceHeading());
     languageHeading.setVisible(true);
-    for (Image flag : new Image[] {deFlagIcon, enFlagIcon}) {
-      if (flag != null && flag.getParent().orElse(null) instanceof Button button) {
-        boolean german = flag == deFlagIcon;
-        button.setId(german ? "portal-language-de" : "portal-language-en");
-        button.setText(german ? "DE" : "EN");
-        button.setAriaLabel(german ? "Deutsch" : "English");
-        button.removeThemeVariants(LUMO_TERTIARY_INLINE);
-        flag.setVisible(false);
-      }
-    }
     arrangeReferenceMenu(body);
     refreshTexts();
-    refreshLanguageFlags();
+    refreshLanguageButtons();
   }
 
   private void arrangeReferenceMenu(VerticalLayout body) {
     HorizontalLayout languageButtons =
-        (HorizontalLayout) deFlagIcon.getParent().orElseThrow().getParent().orElseThrow();
+        (HorizontalLayout) germanLanguageButton.getParent().orElseThrow();
     body.removeAll();
     Div identity = new Div();
     identity.addClassName("portal-menu-identity-copy");
@@ -265,7 +253,7 @@ public class UserPopoverMenu {
   public void refreshForLanguageChange() {
     refreshTexts();
     refreshUserStatusSelect();
-    refreshLanguageFlags();
+    refreshLanguageButtons();
   }
 
   public void applyExternalStatus(UserStatus newStatus) {
@@ -550,37 +538,22 @@ public class UserPopoverMenu {
   }
 
   private void addLanguageButtons(VerticalLayout contentLayout) {
-    Locale locale = VaadinSession.getCurrent().getLocale();
-
-    Button deFlagButton =
-        createLanguageButton(
-            "custom-theme/flag_de.png", "German Flag SvgIcon", Locale.GERMAN, locale);
-    deFlagIcon =
-        (Image) deFlagButton.getChildren().filter(Image.class::isInstance).findFirst().orElse(null);
-
-    Button enFlagButton =
-        createLanguageButton(
-            "custom-theme/flag_en.png", "English Flag SvgIcon", Locale.ENGLISH, locale);
-    enFlagIcon =
-        (Image) enFlagButton.getChildren().filter(Image.class::isInstance).findFirst().orElse(null);
-
-    HorizontalLayout flagLayout = new HorizontalLayout(deFlagButton, enFlagButton);
-    flagLayout.addClassName("portal-language-switch");
+    germanLanguageButton = createLanguageButton("DE", "Deutsch", Locale.GERMAN);
+    englishLanguageButton = createLanguageButton("EN", "English", Locale.ENGLISH);
+    HorizontalLayout languageButtons =
+        new HorizontalLayout(germanLanguageButton, englishLanguageButton);
+    languageButtons.addClassName("portal-language-switch");
     languageHeading.addClassName("portal-menu-section");
     languageHeading.setVisible(false);
-    contentLayout.add(languageHeading, flagLayout);
+    contentLayout.add(languageHeading, languageButtons);
+    refreshLanguageButtons();
   }
 
-  private Button createLanguageButton(
-      String imagePath, String altText, Locale targetLocale, Locale currentLocale) {
-    Image flagIcon = new Image(imagePath, altText);
-    flagIcon.setWidth("32px");
-    flagIcon.setHeight("32px");
-    updateFlagStyle(flagIcon, currentLocale.equals(targetLocale));
-
-    Button flagButton = new Button(flagIcon, clickEvent -> switchLanguage(targetLocale));
-    flagButton.addThemeVariants(LUMO_TERTIARY_INLINE);
-    return flagButton;
+  private Button createLanguageButton(String label, String accessibleName, Locale targetLocale) {
+    Button button = new Button(label, event -> switchLanguage(targetLocale));
+    button.setId("portal-language-" + targetLocale.getLanguage());
+    button.setAriaLabel(accessibleName);
+    return button;
   }
 
   private void switchLanguage(Locale locale) {
@@ -697,33 +670,15 @@ public class UserPopoverMenu {
     updateStatusSelectPrefix(currentStatus);
   }
 
-  private void refreshLanguageFlags() {
-    if (referenceStyle) {
-      Locale selected = VaadinSession.getCurrent().getLocale();
-      for (Image flag : new Image[] {deFlagIcon, enFlagIcon}) {
-        if (flag != null && flag.getParent().orElse(null) instanceof Button button) {
-          boolean active = (flag == deFlagIcon ? Locale.GERMAN : Locale.ENGLISH).equals(selected);
-          button.setClassName("portal-language-active", active);
-          button.getElement().setAttribute("aria-pressed", Boolean.toString(active));
-        }
+  private void refreshLanguageButtons() {
+    Locale selected = VaadinSession.getCurrent().getLocale();
+    for (Button button : new Button[] {germanLanguageButton, englishLanguageButton}) {
+      if (button != null) {
+        boolean active =
+            (button == germanLanguageButton ? Locale.GERMAN : Locale.ENGLISH).equals(selected);
+        button.setClassName("portal-language-active", active);
+        button.getElement().setAttribute("aria-pressed", Boolean.toString(active));
       }
-    }
-    Locale locale = VaadinSession.getCurrent().getLocale();
-
-    if (deFlagIcon != null) {
-      updateFlagStyle(deFlagIcon, locale.equals(Locale.GERMAN));
-    }
-
-    if (enFlagIcon != null) {
-      updateFlagStyle(enFlagIcon, locale.equals(Locale.ENGLISH));
-    }
-  }
-
-  private void updateFlagStyle(Image flagIcon, boolean active) {
-    if (active) {
-      StyleHelper.removeFilter(flagIcon);
-    } else {
-      StyleHelper.addFilterWithGrayscale100Percent(flagIcon);
     }
   }
 

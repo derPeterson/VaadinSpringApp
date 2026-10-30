@@ -55,7 +55,8 @@ public class UserManagementBrowserTest extends BrowserFixture {
     Set<String> firstPage = new HashSet<>(users.emailCells(prefix).allTextContents());
     assertThat(
             page.getByText(
-                texts.getAdminUsersPaginationTotal(12), new Page.GetByTextOptions().setExact(true)))
+                texts.getPortalPaginationRange(1, 10, 12),
+                new Page.GetByTextOptions().setExact(true)))
         .isVisible();
     button(texts.getAdminUsersPaginationPage(2)).click();
     assertThat(users.emailCells(prefix)).hasCount(2);
@@ -73,7 +74,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
                 .setName(texts.getAdminUsersPaginationPerPage())
                 .setExact(true));
     assertEquals(
-        56, page.locator(".admin-user-pagination vaadin-combo-box").boundingBox().width, 1.0);
+        64, page.locator(".admin-user-pagination vaadin-combo-box").boundingBox().width, 1.0);
     pageSize.click();
     page.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName("20").setExact(true))
         .click();
@@ -253,14 +254,27 @@ public class UserManagementBrowserTest extends BrowserFixture {
     UiTexts other = new UiTexts(texts.language().equals("de") ? "en" : "de");
     new UserMenu(page).selectLanguage(other.language());
     AdminUsersPage translated = new AdminUsersPage(page, other);
+    translated.openFilters();
     assertThat(translated.searchField()).hasValue(prefix);
-    assertThat(translated.filterField(other.getAdminUsersGridEnabled()))
-        .hasValue(other.getAdminUsersNo());
+    assertThat(
+            translated
+                .filterField(other.getAdminUsersGridEnabled())
+                .getByRole(
+                    AriaRole.RADIO,
+                    new Locator.GetByRoleOptions().setName(other.getAdminUsersNo()).setExact(true)))
+        .isChecked();
     assertThat(translated.emailCells(prefix)).hasCount(1);
     assertThat(translated.emailCells(prefix)).hasText(disabled);
+    page.keyboard().press("Escape");
     new UserMenu(page).selectTestLanguage();
-    assertThat(users.filterField(texts.getAdminUsersGridEnabled()))
-        .hasValue(texts.getAdminUsersNo());
+    users.openFilters();
+    assertThat(
+            users
+                .filterField(texts.getAdminUsersGridEnabled())
+                .getByRole(
+                    AriaRole.RADIO,
+                    new Locator.GetByRoleOptions().setName(texts.getAdminUsersNo()).setExact(true)))
+        .isChecked();
     assertThat(users.emailCells(prefix)).hasCount(1);
     assertThat(users.emailCells(prefix)).hasText(disabled);
     AllurePlaywright.attachScreenshot(
@@ -322,16 +336,16 @@ public class UserManagementBrowserTest extends BrowserFixture {
     int original = Integer.parseInt(total.innerText().replaceAll("\\D", ""));
     String email = unique("counter") + "@example.test";
     users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
-    assertThat(total).hasText(texts.getAdminUsersAccountCount(original + 1));
+    assertThat(total).hasAttribute("aria-label", texts.getAdminUsersAccountCount(original + 1));
     String query = unique("no-result");
     users.search(query);
     assertThat(users.emailCells(email)).hasCount(0);
-    assertThat(total).hasText(texts.getAdminUsersAccountCount(original + 1));
+    assertThat(total).hasAttribute("aria-label", texts.getAdminUsersAccountCount(original + 1));
     UiTexts other =
         new de.derpeterson.browsertests.i18n.UiTexts(texts.language().equals("de") ? "en" : "de");
     try {
       new UserMenu(page).selectLanguage(other.language());
-      assertThat(total).hasText(other.getAdminUsersAccountCount(original + 1));
+      assertThat(total).hasAttribute("aria-label", other.getAdminUsersAccountCount(original + 1));
       assertThat(new AdminUsersPage(page, other).searchField()).hasValue(query);
       AllurePlaywright.attachScreenshot(
           "Gesamtzahl und erhaltener Filter in der anderen Sprache", page);
@@ -340,7 +354,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
     }
     AdminUserDialog form = users.openEdit(email);
     form.requestDelete().confirm();
-    assertThat(total).hasText(texts.getAdminUsersAccountCount(original));
+    assertThat(total).hasAttribute("aria-label", texts.getAdminUsersAccountCount(original));
   }
 
   @Tag("fast")

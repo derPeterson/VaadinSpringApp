@@ -7,7 +7,7 @@ import java.io.IOException;
 public final class EmailLogo {
 
   public static final String CONTENT_ID = "service-logo@vaadinspringapp";
-  public static final String RESOURCE_PATH = "META-INF/resources/custom-theme/service_logo.png";
+  public static final String RESOURCE_PATH = "META-INF/resources/icons/service-logo.png";
 
   private EmailLogo() {}
 

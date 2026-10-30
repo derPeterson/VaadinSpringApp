@@ -27,13 +27,16 @@ public final class UserMenu {
     assertThat(page.locator("vaadin-popover-overlay[opened]")).isVisible();
   }
 
-  @Step("Testsprache über die sichtbare Sprachflagge auswählen")
+  @Step("Testsprache über den sichtbaren Sprachschalter auswählen")
   public void selectTestLanguage() {
     selectLanguage(texts.language());
   }
 
-  @Step("Sprache ausdrücklich über das Flaggenmenü wechseln")
+  @Step("Sprache ausdrücklich über den Sprachschalter wechseln")
   public void selectLanguage(String language) {
+    // Nach einer Navigation erst die tatsächlich gelieferte Kopfzeile abwarten.
+    assertThat(page.locator(".public-header, vaadin-button.tracked-user-button").first())
+        .isVisible();
     Locator publicLanguage =
         page.locator(".public-languages vaadin-button[lang='" + language + "']");
     if (publicLanguage.isVisible()) {
@@ -44,19 +47,9 @@ public final class UserMenu {
     UiTexts expected = new UiTexts(language);
     open();
     Locator languageButton = page.locator("#portal-language-" + language);
-    if (languageButton.isVisible()) {
-      languageButton.click();
-      assertThat(languageButton).hasAttribute("aria-pressed", "true");
-    } else {
-      Locator flag =
-          page.getByRole(
-              AriaRole.IMG,
-              new Page.GetByRoleOptions()
-                  .setName(language.equals("de") ? "German Flag Icon" : "English Flag Icon")
-                  .setExact(true));
-      page.getByRole(AriaRole.BUTTON).filter(new Locator.FilterOptions().setHas(flag)).click();
-      assertThat(flag).hasCSS("filter", "none");
-    }
+    assertThat(languageButton).isVisible();
+    languageButton.click();
+    assertThat(languageButton).hasAttribute("aria-pressed", "true");
     // The menu may be anonymous or authenticated; both expected labels use exactly this language.
     assertThat(
             page.getByRole(
@@ -110,7 +103,10 @@ public final class UserMenu {
   @Step("Normales Konto ist angemeldet und hat keine Adminaktion im Menü")
   public void assertUserSignedInWithoutAdminAction(String email) {
     open();
-    assertThat(page.getByText(email, new Page.GetByTextOptions().setExact(true))).isVisible();
+    assertThat(
+            page.locator(".user-popover-body")
+                .getByText(email, new Locator.GetByTextOptions().setExact(true)))
+        .isVisible();
     assertThat(
             page.getByRole(
                 AriaRole.BUTTON,

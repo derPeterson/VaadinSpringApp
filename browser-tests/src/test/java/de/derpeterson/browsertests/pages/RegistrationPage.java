@@ -133,9 +133,12 @@ public final class RegistrationPage {
 
   @Step("Registrierung über den Button absenden")
   public void submit() {
-    page.getByRole(
+    page.locator(".public-panel")
+        .getByRole(
             AriaRole.BUTTON,
-            new Page.GetByRoleOptions().setName(texts.getBaseRegistrationButton()).setExact(true))
+            new Locator.GetByRoleOptions()
+                .setName(texts.getBaseRegistrationButton())
+                .setExact(true))
         .click();
   }
 

@@ -21,8 +21,9 @@ Nur wesentliche ungeklärte Entscheidungen erfragen, sonst mit dem vorhandenen S
 
 ## Zusammenarbeit mit Stitch
 
-Verfügbare Stitch-Werkzeuge gezielt entdecken und bevorzugen. Reichen sie nicht aus,
-Google Stitch im Browser verwenden und den fehlenden Werkzeugzugriff kurz benennen.
+Verfügbare Stitch-Werkzeuge gezielt entdecken und bevorzugen. Die vorhandene
+Stitch-CLI verwenden, wenn sie verfügbar ist. Erst bei fehlender ausreichender
+CLI-/Werkzeugfunktion Google Stitch im Browser verwenden und die Grenze benennen.
 Ist Stitch nicht angemeldet, den Benutzer die Anmeldung durchführen lassen. Keine
 lokalen Eigenentwürfe als Stitch-Ergebnis ausgeben. Bei fehlendem Zugriff andere
 Vorbereitung abschließen und die fehlende Rückmeldung offen halten.
@@ -47,7 +48,10 @@ eigenen Favoriten und Gründe kurz erklären. Bei einer lokalen bedienbaren Vors
 vorhandene Referenzbausteine und Controller verwenden, klar als Übertragung des
 Stitch-Vorschlags kennzeichnen und sichtbare Abweichungen zum Original nennen.
 Keinen neuen Ordner mit vielen fast identischen vollständigen Referenzseiten anlegen.
-Vorhandene Generatoren und deren eingebettete Viewerstände konsistent halten.
+Die Referenzsammlung enthält nur `public.html`, `portal.html`, `admin.html` und
+deren lokale Assets. Keine entfernten Generatoren, Piloten oder Viewer voraussetzen.
+Neue Varianten zunächst getrennt und temporär aufbereiten; die drei festen
+Referenzen erst nach ausdrücklicher Auswahl und Übernahmeauftrag verändern.
 
 Browserprüfung und Starts nach den geltenden Projektfreigaben durchführen. Desktop,
 schmale Darstellung und relevante Zustände gezielt prüfen, keine große QA automatisch

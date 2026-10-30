@@ -38,7 +38,7 @@ public class CosmosPageComponent extends Div {
     String serviceName = config.getString(ConfigEntry.SERVICE_NAME);
 
     Div brand = layer("cosmos-brand");
-    Image logo = new Image("custom-theme/service_logo.png", serviceName);
+    Image logo = new Image("icons/service-logo.svg", serviceName);
     logo.addClassName("cosmos-logo");
     Span name = new Span(serviceName);
     name.addClassName("cosmos-brand-name");

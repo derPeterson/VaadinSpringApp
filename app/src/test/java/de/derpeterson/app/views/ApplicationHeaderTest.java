@@ -114,8 +114,7 @@ class ApplicationHeaderTest {
       brandParts = home.getChildren().toList();
     }
     Image logo = assertInstanceOf(Image.class, brandParts.getFirst());
-    assertEquals(
-        user != null ? "icons/service-logo-k.svg" : "custom-theme/service_logo.png", logo.getSrc());
+    assertEquals("icons/service-logo.svg", logo.getSrc());
     assertTrue(logo.hasClassName("cosmos-topbar-logo"));
     assertEquals(user != null, logo.getAlt().orElseThrow().isBlank());
     assertNotNull(getClass().getResource("/META-INF/resources/" + logo.getSrc()));
@@ -319,8 +318,7 @@ class ApplicationHeaderTest {
         (Anchor) tree(view).filter(c -> c.hasClassName("public-brand")).findFirst().orElseThrow();
     assertEquals("/home", brand.getHref());
     assertEquals(
-        "icons/service-logo-k.svg",
-        ((Image) brand.getChildren().findFirst().orElseThrow()).getSrc());
+        "icons/service-logo.svg", ((Image) brand.getChildren().findFirst().orElseThrow()).getSrc());
     assertEquals(texts.getHomeTitle(), buttonById(view, "public-nav-home").getText());
     assertEquals(texts.getBaseLoginButton(), buttonById(view, "public-nav-login").getText());
     assertEquals(

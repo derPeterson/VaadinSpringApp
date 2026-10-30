@@ -329,3 +329,18 @@ vaadin-notification-card[theme~="cosmos-reference"] {
     --cosmos-topbar-height: 65px;
     --cosmos-avatar-status-anchor: 6px;
 }
+
+/* Freigegebene Tooltip-Variante A; auch außerhalb einer View platzierte Hinweise. */
+.cosmos-theme,
+vaadin-tooltip {
+    --cosmos-tooltip-background: #0f172a;
+    --cosmos-tooltip-border: #334155;
+    --cosmos-tooltip-text: #e2e8f0;
+    --cosmos-tooltip-radius: 4px;
+    --cosmos-tooltip-font-size: 11px;
+    --cosmos-tooltip-line-height: 1.4;
+    --cosmos-tooltip-padding: 7px 11px;
+    --cosmos-tooltip-max-width: min(220px, calc(100vw - 32px));
+    --cosmos-tooltip-offset: 8px;
+    --cosmos-tooltip-shadow: 0 4px 14px rgba(0, 0, 0, .65);
+}

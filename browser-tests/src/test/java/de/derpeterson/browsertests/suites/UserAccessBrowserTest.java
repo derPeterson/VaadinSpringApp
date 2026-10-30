@@ -271,7 +271,7 @@ public class UserAccessBrowserTest extends BrowserFixture {
     assertThat(form.role(texts.getRoleGuest())).hasAttribute("aria-selected", "true");
     assertThat(form.role(texts.getRoleUser())).hasAttribute("aria-selected", "false");
     assertThat(form.role(texts.getRoleAdmin())).hasAttribute("aria-selected", "false");
-    assertThat(form.role(texts.getRoleSuperadmin())).hasAttribute("aria-selected", "false");
+    assertThat(form.role(texts.getRoleSuperadmin())).hasCount(0);
     form.cancel();
     try (BrowserActor actor = new BrowserActor(browser)) {
       actor.login(email, BrowserTestAccounts.USER_PASSWORD);

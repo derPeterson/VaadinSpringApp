@@ -49,7 +49,7 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
       2. Leere Eingaben verlassen: keine Fehler; Prüfen markiert alle fehlenden Felder und zeigt den allgemeinen Hinweis.
       3. Alle aktiven Konten wählen: Empfängerfeld gesperrt und lokalisierte Anzahl sichtbar.
       4. Vorschau prüfen, Empfängerdetails öffnen/schließen, Entwurf ändern: Versand wieder gesperrt.
-      5. Erneut prüfen: aktualisierter Text und Freigabe; Rahmen, Textgröße, Textabstand, gleiche Buttonbreite und kein Überlauf.
+      5. Erneut prüfen: aktualisierter Text und Freigabe; Rahmen, Textgröße, Textabstand, gleiche Buttonhöhe, bündige Panelköpfe und kein Überlauf.
       Erwartet: Native Bedienelemente und sichere Prüf-Freigabe; keine Historien-/Header-Overlay-Prüfung.
       """)
   void composeValidationAndReviewAtBothWidths(int width) {
@@ -57,6 +57,8 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
     page.setViewportSize(width, 1000);
     NotificationComposePage compose = new NotificationComposePage(page);
     compose.open();
+    de.derpeterson.browsertests.pages.UiActions.resizeTextArea(
+        page, page.locator("#admin-notifications-body"));
     compose.assertEmptyReview();
     compose.select(BrowserTestAccounts.ADMIN_EMAIL);
     compose.everyone().setChecked(true);
@@ -82,15 +84,25 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
     assertThat(compose.status()).hasText(texts.getNotificationsPreviewNeedsReview());
     compose.review().click();
     assertThat(compose.send()).isEnabled();
-    Locator content = compose.root().locator(".cosmos-notification-compose-preview-content");
+    Locator content =
+        page.locator(
+            ".admin-notification-preview-card .cosmos-notification-compose-preview-content");
     assertThat(content).containsText("Changed draft");
     assertThat(content).hasCSS("gap", "8px");
     assertThat(content.locator(".cosmos-notification-body")).hasCSS("font-size", "12px");
-    assertEquals(compose.review().boundingBox().width, compose.send().boundingBox().width, 1.0);
+    assertEquals(compose.review().boundingBox().height, compose.send().boundingBox().height, 1.0);
+    if (width == 1280) {
+      assertEquals(
+          compose.root().boundingBox().y,
+          page.locator(".admin-notification-preview-card").boundingBox().y,
+          1.0);
+    }
     assertTrue(compose.root().boundingBox().x >= 0);
     assertTrue(compose.root().boundingBox().x + compose.root().boundingBox().width <= width + 1);
     compose.review().focus();
     compose.review().press("Tab");
+    assertThat(page.locator("#admin-notifications-preview-details")).isFocused();
+    page.locator("#admin-notifications-preview-details").press("Tab");
     assertThat(compose.send()).isFocused();
     assertThat(compose.send()).hasCSS("outline-style", "solid");
     AllurePlaywright.attachScreenshot("Geprüftes Verfassenpanel", page);

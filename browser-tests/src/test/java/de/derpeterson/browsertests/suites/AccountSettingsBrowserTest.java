@@ -347,7 +347,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   }
 
   private void openAvatar() {
-    page.locator("#account-avatar-edit").click();
+    new AccountPage(page).section("account-avatar-edit");
     assertThat(page.locator("#account-avatar-choose")).isAttached();
   }
 
@@ -385,11 +385,24 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   }
 
   private void assertPhotos() {
+    Locator navigationToggle = page.locator("#account-navigation-toggle");
+    assertThat(navigationToggle).hasCount(1);
+    boolean mobileNavigation = navigationToggle.isVisible();
+    if (mobileNavigation) {
+      if (!"true".equals(navigationToggle.getAttribute("aria-expanded"))) {
+        UiActions.complete(page, navigationToggle::click);
+      }
+      assertThat(navigationToggle).hasAttribute("aria-expanded", "true");
+    }
     for (String selector : new String[] {".account-summary-avatar", ".cosmos-topbar"}) {
       Locator image = page.locator(selector + " .cosmos-avatar-photo");
       assertThat(image).isVisible();
       assertThat(image).hasJSProperty("complete", true);
       assertTrue(((Number) image.evaluate("e => e.naturalWidth")).intValue() > 0);
+    }
+    if (mobileNavigation) {
+      UiActions.complete(page, navigationToggle::click);
+      assertThat(navigationToggle).hasAttribute("aria-expanded", "false");
     }
     new UserMenu(page).open();
     assertThat(page.locator(".user-popover-avatar .cosmos-avatar-photo")).isVisible();
@@ -477,7 +490,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       page.keyboard().press("Escape");
       Locator circle = page.locator(".account-summary-avatar .cosmos-avatar-circle");
       assertEquals("2px", circle.evaluate("e => getComputedStyle(e).borderTopWidth"));
-      assertNotEquals("none", circle.evaluate("e => getComputedStyle(e).boxShadow"));
+      assertEquals("none", circle.evaluate("e => getComputedStyle(e).boxShadow"));
       String color = (String) circle.evaluate("e => getComputedStyle(e).borderTopColor");
       assertEquals(
           color,

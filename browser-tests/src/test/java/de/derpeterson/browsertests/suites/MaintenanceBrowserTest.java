@@ -151,11 +151,14 @@ public class MaintenanceBrowserTest extends BrowserFixture {
           assertEquals(503, response.status());
           maintenance(anonymous.page);
           assertThat(
-                  anonymous.page.getByRole(
-                      AriaRole.BUTTON,
-                      new Page.GetByRoleOptions()
-                          .setName(texts.getMaintenanceLoginButton())
-                          .setExact(true)))
+                  anonymous
+                      .page
+                      .locator(".public-panel")
+                      .getByRole(
+                          AriaRole.BUTTON,
+                          new Locator.GetByRoleOptions()
+                              .setName(texts.getMaintenanceLoginButton())
+                              .setExact(true)))
               .isVisible();
           assertThat(
                   anonymous.page.getByRole(
@@ -173,11 +176,14 @@ public class MaintenanceBrowserTest extends BrowserFixture {
       actor.page.reload();
       maintenance(actor.page);
       assertThat(
-              actor.page.getByRole(
-                  AriaRole.BUTTON,
-                  new Page.GetByRoleOptions()
-                      .setName(texts.getMaintenanceLoginButton())
-                      .setExact(true)))
+              actor
+                  .page
+                  .locator(".public-panel")
+                  .getByRole(
+                      AriaRole.BUTTON,
+                      new Locator.GetByRoleOptions()
+                          .setName(texts.getMaintenanceLoginButton())
+                          .setExact(true)))
           .isHidden();
       assertThat(
               actor.page.getByRole(
@@ -188,7 +194,7 @@ public class MaintenanceBrowserTest extends BrowserFixture {
           actor.context.cookies().stream()
               .anyMatch(c -> c.name.equals("JSESSIONID") && c.value.equals(sessionCookie.value)));
       page.navigate(path(ADMIN_ROUTE));
-      assertThat(page.locator(".cosmos-sidebar #admin-service-status"))
+      assertThat(page.locator("#admin-sidebar #admin-service-status"))
           .containsText(texts.getMaintenanceStatusActive());
       assertThat(page.locator("#admin-service-status"))
           .containsText(texts.getMaintenanceServicesRestricted());

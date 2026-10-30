@@ -178,8 +178,7 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
     page.navigate(path(VERIFICATION_ROUTE) + "/" + UUID.randomUUID());
     new VerificationPage(page).assertUnknownToken();
     Locator input =
-        page.getByLabel(
-            texts.getVerificationEmailField(), new Page.GetByLabelOptions().setExact(true));
+        page.getByLabel(texts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true));
     Locator send =
         page.getByRole(
             AriaRole.BUTTON,

@@ -153,12 +153,15 @@ public class RememberMeBrowserTest extends BrowserFixture {
   }
 
   private void assertAnonymous(Page page, String email) {
-    new UserMenu(page).open();
+    assertThat(page.locator(".public-header")).isVisible();
     assertThat(page.getByText(email, new Page.GetByTextOptions().setExact(true))).hasCount(0);
     assertThat(
-            page.getByRole(
-                AriaRole.BUTTON,
-                new Page.GetByRoleOptions().setName(texts.getBaseLoginButton()).setExact(true)))
+            page.locator(".public-navigation")
+                .getByRole(
+                    AriaRole.BUTTON,
+                    new com.microsoft.playwright.Locator.GetByRoleOptions()
+                        .setName(texts.getBaseLoginButton())
+                        .setExact(true)))
         .isVisible();
     assertThat(
             page.getByRole(

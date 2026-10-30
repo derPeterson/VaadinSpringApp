@@ -165,10 +165,9 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
 
   protected final HorizontalLayout createApplicationHeader(
       ConfigService config, UserPopoverMenu.Actions actions) {
-    Image logo = new Image("custom-theme/service_logo.png", "Service Icon");
+    Image logo = new Image("icons/service-logo.svg", "Service Icon");
     boolean referenceAccount = hasClassName("cosmos-reference-portal");
     if (referenceAccount) {
-      logo.setSrc("icons/service-logo-k.svg");
       logo.setAlt("");
     }
     logo.addClassName("cosmos-topbar-logo");

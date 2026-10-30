@@ -14,6 +14,17 @@ import org.junit.jupiter.params.provider.ValueSource;
 class UiTextsTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
+  void durationNumbersUseTheTestLanguageInsteadOfTheOperatingSystemLocale(String language) {
+    UiTexts texts = new UiTexts(language);
+    String grouped = language.equals("de") ? "172.800" : "172,800";
+    String decimal = language.equals("de") ? "1,5" : "1.5";
+    assertTrue(texts.getAdminConfigDurationSeconds(172800).contains(grouped));
+    assertTrue(
+        texts.getAdminConfigDurationMinutes(new java.math.BigDecimal("1.5")).contains(decimal));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
   void requiredKeysNeverFallBackToAnotherLanguageOrTheKeyItself(String language) {
     UiTexts texts = new UiTexts(language);
     assertThrows(
@@ -59,9 +70,17 @@ class UiTextsTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void adminPasswordExplanationsUseTheSharedRuleAndContainNoUnexpandedPlaceholder(String language) {
+  void adminPasswordValidationUsesTheFullRuleAndEditReusesTheApprovedCreateHint(String language) {
     UiTexts texts = new UiTexts(language);
     String rule = texts.getBaseValidationPasswordInvalidMessage();
+    // Der freigegebene Hinweis ist kürzer als der Validierungsfehler. Beim Bearbeiten
+    // folgt nach dem Leer-lassen-Hinweis exakt dieselbe neue Passwortregel wie beim Anlegen.
+    String createHint = texts.getAdminUsersPasswordHelperCreate();
+    assertFalse(createHint.isBlank());
+    assertTrue(texts.getAdminUsersPasswordHelperEdit().endsWith(createHint));
+    assertNotEquals(createHint, texts.getAdminUsersPasswordHelperEdit());
+    assertTrue(texts.getAdminUsersPasswordValidationEdit().contains(rule));
+    assertTrue(texts.getAdminUsersPasswordValidationCreate().contains(rule));
     for (String value :
         new String[] {
           texts.getAdminUsersPasswordHelperEdit(),
@@ -69,7 +88,6 @@ class UiTextsTest {
           texts.getAdminUsersPasswordValidationEdit(),
           texts.getAdminUsersPasswordValidationCreate()
         }) {
-      assertTrue(value.contains(rule));
       assertFalse(value.contains("{0}"));
       assertFalse(value.contains("\uFFFD"));
     }

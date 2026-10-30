@@ -56,12 +56,11 @@ public class PasswordResetBrowserTest extends BrowserFixture {
       page.navigate(path(HOME_ROUTE));
       new UserMenu(page).selectLanguage(other.language());
       page.navigate(path(de.derpeterson.app.config.AppRouteConstants.FORGOT_PASSWORD_ROUTE));
-      page.getByLabel(
-              other.getForgotPasswordEmailField(), new Page.GetByLabelOptions().setExact(true))
+      page.getByLabel(other.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true))
           .fill(email);
       page.getByRole(
               com.microsoft.playwright.options.AriaRole.BUTTON,
-              new Page.GetByRoleOptions().setName(other.getBaseSendButton()).setExact(true))
+              new Page.GetByRoleOptions().setName(other.getPublicRequestLink()).setExact(true))
           .click();
       MailpitInbox.CapturedMail second =
           new MailpitInbox(context, null, other).awaitPasswordResetMail(email);

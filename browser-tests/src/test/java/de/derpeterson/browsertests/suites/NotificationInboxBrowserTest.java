@@ -87,9 +87,10 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
                   .evaluate("el => el.complete && el.naturalWidth > 0"));
       assertThat(actor.page.locator("#account-nav-notifications"))
           .hasClass(java.util.regex.Pattern.compile(".*cosmos-nav-item--active.*"));
-      actor.page.locator("#account-navigation vaadin-side-nav-item").first().click();
+      new de.derpeterson.browsertests.pages.AccountPage(actor.page).section("account-nav-profile");
       assertThat(actor.page.locator("#account-tab-profile")).hasAttribute("aria-current", "page");
-      actor.page.locator("#account-nav-notifications").click();
+      new de.derpeterson.browsertests.pages.AccountPage(actor.page)
+          .section("account-nav-notifications");
       assertThat(inbox.rows(inbox.inbox())).hasCount(3);
       inbox.openPreview();
       assertThat(inbox.rows(inbox.preview())).hasCount(3);
@@ -133,7 +134,7 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       inbox.button(inbox.inbox(), texts.getNotificationsDismissRead()).click();
       inbox.confirm();
       assertThat(inbox.rows(inbox.inbox())).hasCount(0);
-      assertThat(inbox.inbox().locator(".cosmos-notification-inbox-empty"))
+      assertThat(inbox.inbox().locator(".cosmos-notification-empty"))
           .containsText(texts.getNotificationsEmpty());
       actor.page.reload();
       assertThat(actor.page.locator("#notifications-inbox-total")).hasText("0");
@@ -179,7 +180,7 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
     latest.locator(".cosmos-notification-sent-toggle").click();
     assertThat(latest.locator(".cosmos-notification-sent-details")).hasAttribute("opened", "");
     assertThat(latest.locator(".cosmos-notification-sent-body")).hasText("Archive body 10");
-    assertEquals(56, archive.locator("vaadin-combo-box").boundingBox().width, 1);
+    assertEquals(64, archive.locator("vaadin-combo-box").boundingBox().width, 1);
     archive
         .getByRole(
             AriaRole.BUTTON,
@@ -196,7 +197,7 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       inbox.open();
       assertThat(inbox.rows(inbox.inbox())).hasCount(10);
       assertThat(actor.page.locator("#notifications-inbox-total")).hasText("11");
-      assertEquals(56, actor.page.locator("#notifications-inbox-page-size").boundingBox().width, 1);
+      assertEquals(64, actor.page.locator("#notifications-inbox-page-size").boundingBox().width, 1);
       inbox.button(inbox.inbox(), texts.getNotificationsNext()).click();
       assertThat(inbox.rows(inbox.inbox())).hasCount(1);
       assertThat(inbox.row(inbox.inbox(), prefix + " item 0")).hasCount(1);
@@ -215,7 +216,7 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       assertThat(inbox.rows(inbox.inbox())).hasCount(1);
       inbox.search("no-result-" + UUID.randomUUID());
       assertThat(inbox.rows(inbox.inbox())).hasCount(0);
-      assertThat(inbox.inbox().locator(".cosmos-notification-inbox-empty"))
+      assertThat(inbox.inbox().locator(".cosmos-notification-empty"))
           .containsText(texts.getNotificationsSearchEmpty());
       inbox.search("");
       assertThat(inbox.rows(inbox.inbox())).hasCount(11);

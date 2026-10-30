@@ -14,7 +14,7 @@ import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -22,6 +22,7 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.ui.components.AdminDurationField;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import java.time.Duration;
 import java.util.Locale;
@@ -88,25 +89,29 @@ class AdminTokenDurationValidationTest {
     locale.set(language);
     section.refreshTexts();
     Duration minimum = entry.getMinimumTokenDuration();
-    TextField input = field(entry);
+    AdminDurationField input = field(entry);
     assertEquals(
         "config-label-" + entry.name().toLowerCase(Locale.ROOT),
-        input.getAriaLabelledBy().orElseThrow());
+        input.getElement().getAttribute("aria-labelledby"));
     for (String value :
-        new String[] {"", "invalid", "PT0S", "PT-1S", "PT1S", minimum.minusNanos(1).toString()}) {
-      input.setValue(value);
+        new String[] {"", "PT0S", "PT-1S", "PT1S", minimum.minusNanos(1).toString()}) {
+      if (value.isBlank()) {
+        amount(entry).clear();
+      } else {
+        input.setStoredValue(value);
+      }
       clearInvocations(config);
       saveButton().click();
       assertTrue(input.isInvalid(), entry + " / " + value);
-      assertNotNull(input.getErrorMessage());
-      if (!value.isBlank() && !value.equals("invalid")) {
+      assertNotNull(amount(entry).getErrorMessage());
+      if (!value.isBlank()) {
         assertEquals(
             messages.getAdminConfigValidationDurationMinimum(minimum.toMinutes()),
-            input.getErrorMessage());
+            amount(entry).getErrorMessage());
       } else {
         assertEquals(
             messages.getAdminConfigValidationTokenDuration(minimum.toMinutes()),
-            input.getErrorMessage());
+            amount(entry).getErrorMessage());
       }
       verify(config, never()).set(any(ConfigEntry.class), anyString());
     }
@@ -115,7 +120,7 @@ class AdminTokenDurationValidationTest {
     section.refreshTexts();
     assertEquals(
         messages.getAdminConfigValidationDurationMinimum(minimum.toMinutes()),
-        input.getErrorMessage());
+        amount(entry).getErrorMessage());
   }
 
   @ParameterizedTest
@@ -124,7 +129,7 @@ class AdminTokenDurationValidationTest {
     locale.set(language);
     section.refreshTexts();
     Duration minimum = entry.getMinimumTokenDuration();
-    field(entry).setValue(minimum.toMinutes() + "m");
+    field(entry).setStoredValue(minimum.toMinutes() + "m");
     clearInvocations(config);
     saveButton().click();
     verify(config).set(entry, minimum.toString());
@@ -132,8 +137,7 @@ class AdminTokenDurationValidationTest {
     ConfigInfoButton info =
         (ConfigInfoButton)
             ((Map<?, ?>) ReflectionTestUtils.getField(section, "configInfoButtons")).get(entry);
-    assertTrue(
-        info.getTooltip().getText().contains(messages.getAdminConfigHelperDurationFormats()));
+    assertTrue(info.getTooltip().getText().contains(messages.getAdminConfigDurationNumberRule()));
     assertTrue(
         info.getTooltip()
             .getText()
@@ -150,24 +154,28 @@ class AdminTokenDurationValidationTest {
     section.showGroup(AdminConfigGroup.QUEUE);
     ConfigEntry entry = ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION;
     for (String invalid : new String[] {"0s", "PT0S", "-1s"}) {
-      field(entry).setValue(invalid);
+      field(entry).setStoredValue(invalid);
       clearInvocations(config);
       saveButton().click();
       assertTrue(field(entry).isInvalid());
       assertEquals(
-          messages.getAdminConfigValidationPositiveDuration(), field(entry).getErrorMessage());
+          messages.getAdminConfigValidationPositiveDuration(), amount(entry).getErrorMessage());
       verify(config, never()).set(any(ConfigEntry.class), anyString());
     }
-    field(entry).setValue("1s");
+    field(entry).setStoredValue("1s");
     clearInvocations(config);
     saveButton().click();
     assertFalse(field(entry).isInvalid());
     verify(config).set(entry, "PT1S");
   }
 
-  private TextField field(ConfigEntry entry) {
-    return (TextField)
+  private AdminDurationField field(ConfigEntry entry) {
+    return (AdminDurationField)
         ((Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs")).get(entry);
+  }
+
+  private BigDecimalField amount(ConfigEntry entry) {
+    return (BigDecimalField) ReflectionTestUtils.getField(field(entry), "preciseAmount");
   }
 
   private Button saveButton() {

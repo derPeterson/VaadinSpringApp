@@ -151,7 +151,9 @@ vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-
 .admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox:has([data-status=employed]) { --filter-choice-color:var(--cosmos-reference-invalid); --filter-choice-border:#f8717166; --filter-choice-background:#f8717114; }
 .admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox:has([data-status=absent]) { --filter-choice-color:var(--cosmos-reference-warning); --filter-choice-border:#fbbf2466; --filter-choice-background:#fbbf2414; }
 .admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox:has([data-status=offline]) { --filter-choice-color:var(--cosmos-reference-secondary); --filter-choice-border:#94a3b866; --filter-choice-background:#94a3b814; }
-.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox>label[slot=label] { display:block; box-sizing:border-box; width:100%; padding:0 18px 0 0; font:500 11px/18px Inter,sans-serif; color:var(--cosmos-reference-secondary); }
+/* Die native Beschriftung aktiviert das Badge auch außerhalb des Textes. */
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox::part(label) { position:static; }
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox>label[slot=label] { position:absolute; inset:0; display:flex; align-items:center; box-sizing:border-box; width:auto; padding:8px 28px 8px 10px; font:500 11px/18px Inter,sans-serif; color:var(--cosmos-reference-secondary); }
 .admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices .admin-filter-status-label[data-status] { min-width:0; gap:6px; color:inherit; font:inherit; }
 .admin-reference-drawer.admin-user-filter-drawer .admin-filter-status-label>div:first-child { width:14px!important; height:14px!important; flex:0 0 14px; background:transparent!important; color:var(--filter-choice-color)!important; }
 .admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox::after { content:''; position:absolute; right:10px; top:calc(50% - 7px); width:14px; height:14px; background:var(--filter-choice-color); mask:url('../icons/lucide/check.svg') center/contain no-repeat; visibility:hidden; pointer-events:none; }
@@ -504,7 +506,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-config-card-actions>vaadin-butt
 /* Der sichtbare Hinweis liegt außerhalb des vergrößerbaren Felds. */
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-body-row { row-gap:6px; }
 /* 18 px Label plus 6 px Abstand: Infoaktion zur Eingabefläche zentrieren. */
-vaadin-app-layout.cosmos-reference-admin .cosmos-mail-body-row>.cosmos-config-info { margin-top:24px; }
+vaadin-app-layout.cosmos-reference-admin .cosmos-mail-field-row>.cosmos-config-info { margin-top:24px; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-body-hint { grid-column:1; display:block; color:var(--cosmos-reference-secondary); font:400 11px/18.7px Inter,sans-serif; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card .cosmos-mail-body-field::part(helper-text) { position:absolute; width:1px; height:1px; min-height:0; padding:0; margin:0; overflow:hidden; clip-path:inset(50%); }
 @media(max-width:1100px) { vaadin-app-layout.cosmos-reference-admin .admin-dashboard-intro { gap:22px; padding:24px; } }

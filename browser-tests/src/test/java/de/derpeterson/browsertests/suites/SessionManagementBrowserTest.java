@@ -352,8 +352,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
           .hasCount(1);
       assertThat(next.page.locator("#account-session-entries [data-session-state='current']"))
           .hasCount(0);
-      UiActions.complete(
-          next.page, () -> next.page.locator("#account-session-entries vaadin-button").click());
+      login.revokeRecoverySession(0);
       assertThat(next.page.locator("#account-session-entries [data-session-state='active']"))
           .hasCount(0);
       UiActions.complete(next.page, () -> next.page.locator("#session-recovery-continue").click());

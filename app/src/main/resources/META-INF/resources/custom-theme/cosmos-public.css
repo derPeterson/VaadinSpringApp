@@ -3,8 +3,9 @@
 .cosmos-reference-public { display:flex;flex-direction:column;position:relative;isolation:isolate;min-height:100dvh;width:100%;box-sizing:border-box;background:var(--cosmos-reference-page);color:var(--cosmos-reference-text);font:400 13px/1.6 Inter,sans-serif; }
 .cosmos-reference-public .public-header { background:var(--cosmos-reference-page); }
 .cosmos-reference-public .public-header-inner { display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;max-width:1240px;height:64px;box-sizing:border-box;margin:0 auto;padding:0 32px; }
-.cosmos-reference-public .public-brand { display:flex;align-items:center;gap:10px;flex-shrink:0;color:var(--cosmos-reference-text);font:600 16px/24px Inter,sans-serif;text-decoration:none; }
-.cosmos-reference-public .public-brand img { display:block;width:40px;height:40px;margin:-6px; }
+.cosmos-reference-public .public-brand { display:flex;align-items:center;gap:10px;flex:0 1 auto;min-width:0;color:var(--cosmos-reference-text);font:600 16px/24px Inter,sans-serif;text-decoration:none; }
+.cosmos-reference-public .public-brand > span { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.cosmos-reference-public .public-brand img { display:block;width:40px;height:40px;margin:-6px;flex-shrink:0; }
 .cosmos-reference-public .public-navigation { display:flex;align-items:center;gap:8px; }
 .cosmos-reference-public .public-navigation > vaadin-button { height:36px;margin:0;padding:0 12px;border-color:transparent;background:transparent;font:600 12px/1.4 Inter,sans-serif; }
 .cosmos-reference-public .public-navigation > vaadin-button::part(prefix) { margin-inline-start:0; }

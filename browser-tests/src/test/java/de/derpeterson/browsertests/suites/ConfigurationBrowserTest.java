@@ -283,8 +283,8 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     assertThat(settings.input(label)).hasAttribute("placeholder", "VaadinSpringApp (Browser-Test)");
     settings.enter(label, draft);
     settings.info(label).click();
-    assertThat(settings.helpPanel()).isVisible();
-    Locator overlay = page.locator("#admin-config-help [part~='overlay']");
+    Locator overlay = page.locator("#admin-config-help vaadin-dialog-overlay > [part~='overlay']");
+    assertThat(overlay).isVisible();
     assertThat(overlay).hasCSS("width", "380px");
     assertThat(settings.helpPanel().locator(".admin-help-description")).hasCSS("font-size", "12px");
     assertThat(settings.helpPanel().locator(".admin-help-description"))
@@ -294,13 +294,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     assertThat(settings.helpPanel()).containsText(texts.getAdminConfigHelperServiceNameMax(30));
     assertThat(page.locator("#admin-config-help[opened]")).hasCount(1);
     AllurePlaywright.attachScreenshot("Klick-Tooltip mit tatsächlichem Default und Regeln", page);
-    page.getByRole(
-            AriaRole.HEADING,
-            new Page.GetByRoleOptions()
-                .setLevel(1)
-                .setName(texts.getAdminConfigTitle())
-                .setExact(true))
-        .click();
+    page.mouse().click(4, 90);
     assertThat(settings.helpPanel()).hasCount(0);
     settings.explain(
         label,
@@ -315,8 +309,12 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       assertThat(settings.helpPanel()).containsText(other.getAdminConfigEntryServiceNameTooltip());
       assertThat(settings.helpPanel()).containsText(other.getAdminConfigHelperServiceNameMax(30));
       assertThat(settings.input(other.getAdminConfigEntryServiceName())).hasValue(draft);
-      settings.closeHelp();
+      settings.closeHelp(other.getNotificationsClose());
     } finally {
+      if (settings.helpPanel().count() > 0) {
+        page.keyboard().press("Escape");
+        assertThat(settings.helpPanel()).hasCount(0);
+      }
       new UserMenu(page).selectTestLanguage();
     }
   }
@@ -378,7 +376,8 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       for (Locator info : infos.all()) {
         info.click();
         assertThat(settings.helpPanel()).hasCount(1);
-        assertThat(settings.helpPanel()).isVisible();
+        assertThat(settings.helpPanel().locator("vaadin-dialog-overlay > [part~='overlay']"))
+            .isVisible();
         if (group == AdminConfigGroup.NOTIFICATIONS) {
           assertThat(settings.helpPanel()).containsText(texts.getAdminConfigInitialValue());
           assertThat(settings.helpPanel()).containsText(texts.getAdminConfigRuleEmptyUnlimited());
@@ -455,9 +454,10 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     settings.open(AdminConfigGroup.GENERAL);
     String label = texts.getAdminConfigEntryServiceName();
     settings.info(label).click();
-    assertThat(settings.helpPanel()).isVisible();
+    assertThat(settings.helpPanel().locator("vaadin-dialog-overlay > [part~='overlay']"))
+        .isVisible();
     assertThat(settings.helpPanel()).containsText(texts.getAdminConfigEntryServiceNameTooltip());
-    Locator overlay = page.locator("#admin-config-help [part~='overlay']");
+    Locator overlay = page.locator("#admin-config-help vaadin-dialog-overlay > [part~='overlay']");
     assertThat(overlay).hasCSS("width", "320px");
     BoundingBox bounds = overlay.boundingBox();
     assertTrue(
@@ -497,6 +497,75 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         "Abmelden muss im gescrollten Benutzermenü sichtbar bleiben: " + logoutBounds);
     AllurePlaywright.attachScreenshot("Mobiles Benutzermenü mit erreichbarer Abmeldung", page);
     menu.signOut();
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest(name = "CONFIG-06: Weitere Zeitfelder bei {0}px")
+  @org.junit.jupiter.params.provider.ValueSource(ints = {1280, 390})
+  @Description(
+      "Login-speichern-Dauer, automatische Abwesenheit und beide Benachrichtigungsaufbewahrungen über Zahl und Einheit speichern und neu laden. Umrechnung bleibt in der Feldhilfe. Leere Aufbewahrung bleibt unbegrenzt. Originalwerte werden über die UI wiederhergestellt.")
+  void remainingDurationFieldsPersistWithoutExposingTheCalculationBelowTheInput(int width) {
+    ConfigurationPage settings = admin();
+    page.setViewportSize(width, 844);
+    AdminConfigGroup[] groups = {
+      AdminConfigGroup.SECURITY,
+      AdminConfigGroup.USER_STATUS,
+      AdminConfigGroup.NOTIFICATIONS,
+      AdminConfigGroup.NOTIFICATIONS
+    };
+    String[] labels = {
+      texts.getAdminConfigEntryRememberMeDuration(),
+      texts.getAdminConfigEntryUserAutoAbsentTimeout(),
+      texts.getAdminConfigEntryNotificationInboxRetention(),
+      texts.getAdminConfigEntryNotificationHistoryRetention()
+    };
+    for (int index = 0; index < labels.length; index++) {
+      settings.open(groups[index]);
+      String label = labels[index];
+      boolean daysOnly = index >= 2;
+      String original = settings.value(label);
+      java.math.BigDecimal originalSeconds = daysOnly ? null : settings.seconds(label);
+      try {
+        if (daysOnly) {
+          settings.enter(label, "2");
+        } else {
+          settings.enterSeconds(label, java.math.BigDecimal.valueOf(120));
+        }
+        settings.save();
+        settings.reload();
+        java.math.BigDecimal expected = java.math.BigDecimal.valueOf(daysOnly ? 172800 : 120);
+        assertEquals(0, expected.compareTo(settings.seconds(label)));
+        assertThat(settings.duration(label).locator(".admin-help-default")).hasCount(0);
+        settings.info(label).click();
+        assertThat(settings.helpPanel())
+            .containsText(texts.getAdminConfigDurationSeconds(expected));
+        settings.closeHelp();
+        if (daysOnly) {
+          settings.enter(label, "");
+          settings.save();
+          settings.reload();
+          assertThat(settings.input(label)).hasValue("");
+          settings.info(label).click();
+          assertThat(settings.helpPanel()).containsText(texts.getAdminConfigUnlimited());
+          settings.closeHelp();
+        }
+      } finally {
+        if (settings.helpPanel().count() > 0) {
+          settings.closeHelp();
+        }
+        if (daysOnly) {
+          settings.enter(label, original);
+        } else {
+          settings.enterSeconds(label, originalSeconds);
+        }
+        settings.save();
+        settings.reload();
+        if (daysOnly) {
+          assertThat(settings.input(label)).hasValue(original);
+        } else {
+          assertEquals(0, originalSeconds.compareTo(settings.seconds(label)));
+        }
+      }
+    }
   }
 
   private ConfigurationPage admin() {

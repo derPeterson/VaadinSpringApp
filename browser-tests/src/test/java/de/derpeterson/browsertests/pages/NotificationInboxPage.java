@@ -113,7 +113,7 @@ public final class NotificationInboxPage {
   @Step("Die ausdrücklich ausgewählte Nachrichtenaktion bestätigen")
   public void confirm() {
     Locator confirmation = page.locator(".portal-confirmation-dialog[opened]");
-    assertThat(confirmation).isVisible();
+    assertThat(confirmation.locator("vaadin-dialog-overlay > [part~='overlay']")).isVisible();
     UiActions.complete(page, () -> confirmation.locator("vaadin-button[id$='-submit']").click());
     assertThat(page.locator(".portal-confirmation-dialog[opened]")).hasCount(0);
   }
@@ -126,9 +126,7 @@ public final class NotificationInboxPage {
   @Step("Iconaktionen und Metadaten bilden eine gemeinsame Zeile")
   public void assertRowLayout(Locator root, boolean compact) {
     String footerClass =
-        compact
-            ? ".cosmos-notification-preview-row-footer"
-            : ".cosmos-notification-inbox-row-header";
+        compact ? ".cosmos-notification-preview-actions" : ".cosmos-notification-inbox-row-header";
     for (Locator row : rows(root).all()) {
       Locator footer = row.locator(footerClass);
       assertThat(footer).isVisible();

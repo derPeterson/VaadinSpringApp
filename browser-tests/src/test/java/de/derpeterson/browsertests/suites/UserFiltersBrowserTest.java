@@ -33,7 +33,7 @@ public class UserFiltersBrowserTest extends BrowserFixture {
       """
         1. Eigenes aktives Benutzerkonto und deaktiviertes Konto mit beiden Rollen anlegen.
         2. Filterpanel öffnen, Freigabe wählen und anwenden; Ja/Nein liefern genau das passende Konto.
-        3. Offline und Rollenmitgliedschaft kombinieren; Administrator filtert das Mehrrollen-Konto.
+        3. Offline und Rollenmitgliedschaft kombinieren; Rollenbadge am freien Rand ab-/anwählen. Administrator filtert das Mehrrollen-Konto.
         4. Letzte Aktivität nur mit Datum setzen: Zukunft liefert keinen Treffer, Vergangenheit beide.
         5. Uhrzeit ergänzen und wieder leeren; Datum bleibt wirksam. Alle zurücksetzen leert Suche, Zusatzfilter und aktive Badges.
         **Erwartet:** Alle Bedingungen wirken gemeinsam; keine Uhrzeitpflicht, keine Datenbankvorbereitung.
@@ -56,7 +56,21 @@ public class UserFiltersBrowserTest extends BrowserFixture {
     users.selectFilter(texts.getAdminUsersGridStatus(), texts.getUserStatusOffline());
     users.selectFilter(texts.getAdminUsersFilterRole(), texts.getRoleUser());
     assertThat(users.emailCells(prefix)).hasCount(2);
-    users.selectFilter(texts.getAdminUsersFilterRole(), texts.getRoleAdmin());
+    users.selectDraftFilter(texts.getAdminUsersFilterRole(), texts.getRoleAdmin());
+    Locator adminRole =
+        users
+            .filterField(texts.getAdminUsersFilterRole())
+            .locator("vaadin-checkbox")
+            .filter(new Locator.FilterOptions().setHasText(texts.getRoleAdmin()));
+    // Auch der freie rechte Rand gehört zur sichtbaren Badge-Klickfläche.
+    adminRole.click(
+        new Locator.ClickOptions()
+            .setPosition(adminRole.boundingBox().width - 6, adminRole.boundingBox().height / 2));
+    assertThat(adminRole.getByRole(AriaRole.CHECKBOX)).not().isChecked();
+    adminRole.click();
+    assertThat(adminRole.getByRole(AriaRole.CHECKBOX)).isChecked();
+    AllurePlaywright.attachScreenshot("Vollständig anklickbare Filter-Badges", page);
+    users.applyFilters();
     assertThat(users.emailCells(prefix)).hasCount(1);
     assertThat(users.emailCells(prefix)).hasText(disabled);
     users.selectFilter(texts.getAdminUsersFilterRole(), texts.getRoleUser());
@@ -127,6 +141,14 @@ public class UserFiltersBrowserTest extends BrowserFixture {
           new de.derpeterson.browsertests.i18n.UiTexts(texts.language().equals("de") ? "en" : "de")
         }) {
       if (!expected.language().equals(texts.language())) {
+        page.keyboard().press("Escape");
+        if (page.locator("#admin-user-filter-panel[opened]").count() > 0) {
+          page.getByRole(
+                  AriaRole.BUTTON,
+                  new Page.GetByRoleOptions().setName(texts.getAdminUsersCancel()).setExact(true))
+              .click();
+          assertThat(page.locator("#admin-user-filter-panel[opened]")).hasCount(0);
+        }
         new UserMenu(page).selectLanguage(expected.language());
         users = new AdminUsersPage(page, expected);
       }
@@ -144,49 +166,70 @@ public class UserFiltersBrowserTest extends BrowserFixture {
 
   @Tag("fast")
   @Test
-  @DisplayName(
-      "USER-11A: Filterentwürfe wirken erst nach Anwenden; Badge-X übernimmt keine anderen Entwürfe")
+  @DisplayName("USER-11A: Suche und Filter sind Entwürfe; Abbrechen verwirft, Anwenden übernimmt")
   @Description(
-      """
-        1. Zwei eigene Konten anlegen, eines aktiv und eines deaktiviert, und gemeinsam suchen.
-        2. Nein als Entwurf wählen: beide Treffer bleiben. Panel schließen/öffnen erhält den Entwurf.
-        3. Anwenden: ein Treffer und ein aktiver Badge. Einen noch nicht angewandten Rollenentwurf wählen.
-        4. Aktiv-Badge über X entfernen: beide Treffer wieder sichtbar, Rollenentwurf bleibt ohne Wirkung.
-        5. Rollenentwurf anwenden, danach Alle zurücksetzen: Treffer und Badges folgen den Aktionen.
-        **Erwartet:** Suche bleibt live; Entwürfe, angewandte Filter und einzelne Badge-Aktionen bleiben getrennt.
-        """)
+      "Zwei eigene Konten suchen. Nein und eine andere Suche nur als Entwurf setzen. Escape verwirft beide. Nein anwenden reduziert auf ein Konto. Zurücksetzen wirkt erst nach Anwenden; Abbrechen erhält den aktiven Filter. Mehrere Status innerhalb einer Gruppe wirken als Oder, Status und Rolle zusammen als Und.")
   void draftApplyAndBadgeRemovalKeepTheirDistinctEffects() {
     AdminUsersPage users = login();
     String prefix = unique("drafts");
-    users.createUser(prefix + "-yes@example.test", BrowserTestAccounts.USER_PASSWORD, true);
-    users.createUser(prefix + "-no@example.test", BrowserTestAccounts.USER_PASSWORD, false);
+    String enabled = prefix + "-yes@example.test", disabled = prefix + "-no@example.test";
+    users.createUser(enabled, BrowserTestAccounts.USER_PASSWORD, true);
+    users.createUser(disabled, BrowserTestAccounts.USER_PASSWORD, false, true);
     users.search(prefix);
     users.selectDraftFilter(texts.getAdminUsersGridEnabled(), texts.getAdminUsersNo());
+    users.searchField().fill("no-match-" + prefix);
     assertThat(users.emailCells(prefix)).hasCount(2);
-    assertThat(page.locator(".admin-user-active-filter-chip:visible")).hasCount(0);
-    Locator toggle =
-        page.getByRole(
+    // Im nativen TextField leert Escape zuerst den Suchtext. Den Dialogabschluss
+    // deshalb außerhalb dieses Felds auslösen und die Schließantwort abwarten.
+    page.getByRole(
             AriaRole.BUTTON,
-            new Page.GetByRoleOptions().setName(texts.getAdminUsersAddFilter()).setExact(true));
-    toggle.click();
-    assertThat(toggle).hasAttribute("aria-expanded", "false");
+            new Page.GetByRoleOptions().setName(texts.getAdminUsersApplyFilters()).setExact(true))
+        .focus();
+    page.keyboard().press("Escape");
+    assertThat(page.locator("#admin-user-filter-panel[opened]")).hasCount(0);
     users.openFilters();
-    assertThat(users.filterField(texts.getAdminUsersGridEnabled()))
-        .hasValue(texts.getAdminUsersNo());
+    assertThat(users.searchField()).hasValue(prefix);
+    assertThat(
+            users
+                .filterField(texts.getAdminUsersGridEnabled())
+                .getByRole(
+                    AriaRole.RADIO,
+                    new Locator.GetByRoleOptions()
+                        .setName(texts.getAdminUsersFilterAll())
+                        .setExact(true)))
+        .isChecked();
+    users.selectDraftFilter(texts.getAdminUsersGridEnabled(), texts.getAdminUsersNo());
     users.applyFilters();
     assertThat(users.emailCells(prefix)).hasCount(1);
-    assertThat(page.locator(".admin-user-active-filter-count"))
-        .hasText(texts.getAdminUsersActiveFilterCount(1));
-    users.selectDraftFilter(texts.getAdminUsersFilterRole(), texts.getRoleAdmin());
-    users.removeFilter(texts.getAdminUsersGridEnabled());
-    assertThat(users.emailCells(prefix)).hasCount(2);
-    assertThat(users.filterField(texts.getAdminUsersFilterRole())).hasValue(texts.getRoleAdmin());
-    users.applyFilters();
-    assertThat(users.emailCells(prefix)).hasCount(0);
+    assertThat(users.emailCells(prefix)).hasText(disabled);
     users.clearAllFilters();
-    users.search(prefix);
+    assertThat(users.emailCells(prefix)).hasCount(1);
+    page.keyboard().press("Escape");
+    assertThat(page.locator("#admin-user-filter-panel[opened]")).hasCount(0);
+    assertThat(users.emailCells(prefix)).hasCount(1);
+    users.clearAllFilters();
+    users.searchField().fill(prefix);
+    users.applyFilters();
     assertThat(users.emailCells(prefix)).hasCount(2);
-    AllurePlaywright.attachScreenshot("Entwürfe und aktive Filter korrekt getrennt", page);
+    users.selectDraftFilter(texts.getAdminUsersGridStatus(), texts.getUserStatusOffline());
+    users
+        .filterField(texts.getAdminUsersGridStatus())
+        .getByText(texts.getUserStatusEmployed(), new Locator.GetByTextOptions().setExact(true))
+        .click();
+    assertThat(page.locator(".admin-user-active-filter-count"))
+        .hasText(texts.getAdminUsersActiveFilterCount(2));
+    users.applyFilters();
+    assertThat(users.emailCells(prefix)).hasCount(2);
+    users.selectFilter(texts.getAdminUsersFilterRole(), texts.getRoleAdmin());
+    users.openFilters();
+    page.setViewportSize(390, 844);
+    assertThat(page.locator(".admin-user-active-filter-count"))
+        .hasText(texts.getAdminUsersActiveFilterCount(3));
+    page.setViewportSize(1280, 900);
+    users.applyFilters();
+    assertThat(users.emailCells(prefix)).hasCount(1);
+    assertThat(users.emailCells(prefix)).hasText(disabled);
+    AllurePlaywright.attachScreenshot("Filterentwürfe, Reset und Mehrfachauswahl", page);
   }
 
   @Tag("fast")

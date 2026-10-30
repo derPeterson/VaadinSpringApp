@@ -3,6 +3,39 @@
  * Die Reihenfolge der Regeln ist Absicht: spätere/spezifischere Zustände dürfen frühere ergänzen.
  * ::part(name) erreicht die von Vaadin freigegebene Fläche innerhalb einer Komponente. */
 
+/* Aktions- und Feldhinweise teilen Variante A. Positionierung und Bedienung bleiben nativ. */
+vaadin-tooltip {
+    --vaadin-tooltip-max-width: var(--cosmos-tooltip-max-width);
+    --vaadin-tooltip-offset-top: var(--cosmos-tooltip-offset);
+    --vaadin-tooltip-offset-bottom: var(--cosmos-tooltip-offset);
+    --vaadin-tooltip-offset-start: var(--cosmos-tooltip-offset);
+    --vaadin-tooltip-offset-end: var(--cosmos-tooltip-offset);
+}
+
+/* Lumo gestaltet die Parts direkt; deshalb reichen geerbte Variablen allein nicht. */
+vaadin-tooltip::part(overlay) {
+    box-sizing: border-box;
+    width: auto;
+    max-width: var(--cosmos-tooltip-max-width);
+    padding: 0;
+    border: 1px solid var(--cosmos-tooltip-border);
+    border-radius: var(--cosmos-tooltip-radius);
+    background: var(--cosmos-tooltip-background);
+    color: var(--cosmos-tooltip-text);
+    font: 400 var(--cosmos-tooltip-font-size)/var(--cosmos-tooltip-line-height) Inter, sans-serif;
+    text-align: left;
+    box-shadow: var(--cosmos-tooltip-shadow);
+    backdrop-filter: none;
+}
+
+vaadin-tooltip::part(content) {
+    padding: var(--cosmos-tooltip-padding);
+    color: var(--cosmos-tooltip-text);
+    font: inherit;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
 /* Gemeinsame Seite: wächst bei wenig Höhe, statt Inhalte hinter dem Fenster abzuschneiden. */
 
 /* 1. KONTOSEITEN UND CARDS / Zentrierung, Marke, gemeinsame Formstruktur */

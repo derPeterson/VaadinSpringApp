@@ -1,10 +1,12 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.BoundingBox;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
@@ -97,6 +99,13 @@ public class AdminMailBrowserTest extends BrowserFixture {
     new UserMenu(page).selectTestLanguage();
     AdminMailPage mail = new AdminMailPage(page);
     mail.open();
+    for (int width : new int[] {1280, 390}) {
+      page.setViewportSize(width, 900);
+      assertInfoIconsCentered();
+    }
+    page.setViewportSize(1280, 900);
+    UiActions.resizeTextArea(page, page.locator("vaadin-text-area.cosmos-mail-body-field"));
+    assertInfoIconsCentered();
     String email = "info-" + UUID.randomUUID() + "@example.test",
         subject = "Unsent subject",
         body = "Unsent message ÄÖÜ";
@@ -160,6 +169,18 @@ public class AdminMailBrowserTest extends BrowserFixture {
     assertThat(page.locator("vaadin-notification-card:not([closing])")).hasCount(0);
   }
 
+  private void assertInfoIconsCentered() {
+    for (Locator row : page.locator(".cosmos-mail-field-row").all()) {
+      BoundingBox input = row.locator("[part~='input-field']").first().boundingBox();
+      BoundingBox info = row.locator(":scope > .cosmos-config-info").boundingBox();
+      assertEquals(
+          input.y + input.height / 2,
+          info.y + info.height / 2,
+          1,
+          "Mail-Infoicon muss zur Eingabefläche statt zum Feldlabel zentriert sein");
+    }
+  }
+
   @Test
   @DisplayName("MAIL-03: Enter im Nachrichtentext fügt eine neue Zeile ein und versendet nicht")
   @Description(
@@ -182,6 +203,7 @@ public class AdminMailBrowserTest extends BrowserFixture {
     mail.input(texts.getAdminMailRecipient()).fill(email);
     mail.input(texts.getAdminMailSubject()).fill(subject);
     Locator body = mail.input(texts.getAdminMailBody());
+    UiActions.resizeTextArea(page, page.locator("vaadin-text-area.cosmos-mail-body-field"));
     UiActions.completeValueChange(
         page,
         () -> {

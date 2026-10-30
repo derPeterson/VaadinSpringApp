@@ -37,6 +37,7 @@ public enum AppIcon {
   MENU("menu"),
   MESSAGE("message-square"),
   MINUS("minus"),
+  OPEN_SECTION("square-arrow-right-enter"),
   PAPERPLANE("send"),
   PICTURE("image"),
   PLUS("plus"),

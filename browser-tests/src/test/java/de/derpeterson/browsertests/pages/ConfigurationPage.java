@@ -41,7 +41,7 @@ public final class ConfigurationPage {
   @Step("Feldinformation per Klick öffnen und die tatsächlichen Regeln prüfen")
   public void explain(String label, String description, String... rules) {
     info(label).click();
-    assertThat(helpPanel()).isVisible();
+    assertThat(helpPanel().locator("vaadin-dialog-overlay > [part~='overlay']")).isVisible();
     assertThat(helpPanel()).containsText(description);
     for (String rule : rules) {
       assertThat(helpPanel()).containsText(rule);
@@ -52,10 +52,12 @@ public final class ConfigurationPage {
   }
 
   public void closeHelp() {
+    closeHelp(texts.getNotificationsClose());
+  }
+
+  public void closeHelp(String label) {
     helpPanel()
-        .getByRole(
-            AriaRole.BUTTON,
-            new Locator.GetByRoleOptions().setName(texts.getNotificationsClose()).setExact(true))
+        .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(label).setExact(true))
         .last()
         .click();
     assertThat(helpPanel()).hasCount(0);

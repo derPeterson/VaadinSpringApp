@@ -38,25 +38,24 @@ public class PresentationBrowserTest extends BrowserFixture {
   @Story("Verfügbarer Sprachschalter")
   @Description(
       """
-        1. Anonyme Startseite öffnen und ihr Flaggenmenü bedienen.
+        1. Anonyme Startseite öffnen und ihren DE-/EN-Schalter bedienen.
         2. Erst andere, dann Ausgangssprache wählen; jeweils übersetzten Loginbutton prüfen.
-        3. Ausgewählte Flagge und erhaltene Startseitenroute prüfen.
+        3. Ausgewählten Sprachbutton und erhaltene Startseitenroute prüfen.
         **Erwartet:** Tatsächlich vorhandener Schalter funktioniert in beiden Richtungen ohne Neuladen.
         Nicht angebotene Schalter auf anonymen Formular-/Tokenseiten bleiben ausdrücklich offen.
         """)
   void homeLanguageMenuChangesBothDirections() {
     for (UiTexts expected : languages()) {
       new UserMenu(page).selectLanguage(expected.language());
-      new UserMenu(page).open();
       assertThat(
-              page.getByRole(
-                  AriaRole.BUTTON,
-                  new Page.GetByRoleOptions()
-                      .setName(expected.getBaseLoginButton())
-                      .setExact(true)))
+              page.locator(".public-navigation")
+                  .getByRole(
+                      AriaRole.BUTTON,
+                      new Locator.GetByRoleOptions()
+                          .setName(expected.getBaseLoginButton())
+                          .setExact(true)))
           .isVisible();
       assertThat(page).hasURL(urlPattern(HOME_ROUTE));
-      new UserMenu(page).close();
     }
   }
 
@@ -68,7 +67,7 @@ public class PresentationBrowserTest extends BrowserFixture {
         1. Eigenes normales Konto als Admin anlegen, abmelden und als Benutzer anmelden.
         2. Andere Sprache ausdrücklich wählen; über den übersetzten Logoutbutton abmelden.
         3. In einer frischen Sitzung die entgegengesetzte Sprache wählen und dasselbe Konto anmelden.
-        4. Ohne erneuten Sprachklick gespeicherte Sprache an Logoutbutton/Flagge prüfen.
+        4. Ohne erneuten Sprachklick gespeicherte Sprache an Logoutbutton/Sprachbutton prüfen.
         **Erwartet:** Kontopräferenz bestimmt nach neuer Anmeldung die Sprache.
         """)
   void preferredLanguageIsLoadedAfterLogin() {
@@ -111,16 +110,8 @@ public class PresentationBrowserTest extends BrowserFixture {
                         .setName(chosen.getBaseLogoutButton())
                         .setExact(true)))
             .isVisible();
-        assertThat(
-                visitor.getByRole(
-                    AriaRole.IMG,
-                    new Page.GetByRoleOptions()
-                        .setName(
-                            chosen.language().equals("de")
-                                ? "German Flag Icon"
-                                : "English Flag Icon")
-                        .setExact(true)))
-            .hasCSS("filter", "none");
+        assertThat(visitor.locator("#portal-language-" + chosen.language()))
+            .hasAttribute("aria-pressed", "true");
         AllurePlaywright.attachScreenshot("Geladene Kontosprache", visitor);
       }
     }
@@ -141,7 +132,7 @@ public class PresentationBrowserTest extends BrowserFixture {
     new LoginPage(page).open();
     assertThat(
             page.getByLabel(
-                texts.getLoginEmailField(), new Page.GetByLabelOptions().setExact(true)))
+                texts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true)))
         .isVisible();
     RegistrationPage form = new RegistrationPage(page);
     form.open();
@@ -197,7 +188,7 @@ public class PresentationBrowserTest extends BrowserFixture {
   void loginWithKeyboard() {
     new LoginPage(page).open();
     Locator email =
-        page.getByLabel(texts.getLoginEmailField(), new Page.GetByLabelOptions().setExact(true));
+        page.getByLabel(texts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true));
     Locator password =
         page.getByLabel(texts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true));
     email.focus();

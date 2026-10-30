@@ -58,7 +58,7 @@ public class PublicPageComponent extends PageFrameComponent {
     addClassNames("cosmos-theme", "cosmos-reference-portal", "cosmos-reference-public");
     getElement().setAttribute("data-public-page", page.name().toLowerCase(Locale.ROOT));
     String serviceName = config.getString(ConfigEntry.SERVICE_NAME);
-    Image logo = new Image("icons/service-logo-k.svg", "");
+    Image logo = new Image("icons/service-logo.svg", "");
     Anchor brand = new Anchor(AppRoute.HOME.getSecurityRoute(), logo, new Span(serviceName));
     brand.addClassName("public-brand");
     brand.getElement().setAttribute("aria-label", serviceName);

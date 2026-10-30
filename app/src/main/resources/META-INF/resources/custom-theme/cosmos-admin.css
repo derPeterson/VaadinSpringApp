@@ -404,13 +404,9 @@ vaadin-app-layout.cosmos-admin {
     }
 }
 
-/* Gemeinsame Konfigurations-Tooltips: Breite hier ändern, Overlay nutzt die Card-Variablen. */
-
-/* 4. FELDINFORMATIONEN UND TOOLTIP
- * Der direkte Part-Style ergänzt Variablen, die Lumo sonst am Part überstimmen würde. */
+/* 4. FELDINFORMATIONEN / Tooltipgestaltung gemeinsam in cosmos-theme.css. */
 
 .cosmos-theme vaadin-button.cosmos-config-info {
-    --cosmos-info-tooltip-width: 360px;
     --vaadin-button-gap: 0;
     min-width: 44px;
     min-height: 44px;
@@ -464,47 +460,6 @@ vaadin-app-layout.cosmos-admin {
 :is(.cosmos-admin-section--config, .cosmos-admin-section--mail) .cosmos-config-info > vaadin-icon {
     width: var(--lumo-icon-size-m);
     height: var(--lumo-icon-size-m);
-}
-
-.cosmos-config-info > vaadin-tooltip {
-    --vaadin-tooltip-max-width: min(var(--cosmos-info-tooltip-width), calc(100vw - 32px));
-    --vaadin-tooltip-background: var(--cosmos-overlay-background);
-    --vaadin-tooltip-border-color: var(--cosmos-overlay-border);
-    --vaadin-tooltip-border-width: var(--cosmos-border-width);
-    --vaadin-tooltip-border-radius: var(--cosmos-overlay-radius);
-    --vaadin-tooltip-shadow: var(--cosmos-overlay-shadow);
-    --vaadin-tooltip-text-color: var(--lumo-secondary-text-color);
-    --vaadin-tooltip-font-size: var(--cosmos-font-size-s);
-    --vaadin-tooltip-font-weight: var(--cosmos-font-weight-regular);
-    --vaadin-tooltip-line-height: 1.6;
-    --vaadin-tooltip-padding: var(--lumo-space-m);
-}
-
-/* Lumo setzt Background, Border und Breite direkt am Part und umgeht dabei
- * die Tooltip-Variablen. Deshalb diese Werte gezielt am freigegebenen Part anwenden. */
-
-.cosmos-config-info > vaadin-tooltip::part(overlay) {
-    box-sizing: border-box;
-    width: var(--vaadin-tooltip-max-width);
-    max-width: var(--vaadin-tooltip-max-width);
-    padding: 0;
-    border: var(--vaadin-tooltip-border-width) solid var(--vaadin-tooltip-border-color);
-    border-radius: var(--vaadin-tooltip-border-radius);
-    background: var(--vaadin-tooltip-background);
-    box-shadow: var(--vaadin-tooltip-shadow);
-    color: var(--vaadin-tooltip-text-color);
-    font-size: var(--vaadin-tooltip-font-size);
-    font-weight: var(--vaadin-tooltip-font-weight);
-    line-height: var(--vaadin-tooltip-line-height);
-    -webkit-backdrop-filter: blur(var(--cosmos-surface-blur));
-    backdrop-filter: blur(var(--cosmos-surface-blur));
-}
-
-.cosmos-config-info > vaadin-tooltip::part(content) {
-    padding: var(--vaadin-tooltip-padding);
-    color: var(--vaadin-tooltip-text-color);
-    font-size: var(--vaadin-tooltip-font-size);
-    font-weight: var(--vaadin-tooltip-font-weight);
 }
 
 .cosmos-config-field {

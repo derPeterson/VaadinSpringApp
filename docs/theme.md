@@ -4,69 +4,75 @@ Vor Gestaltung oder Änderung einer Oberfläche diese Anleitung und die betroffe
 CSS-Quellen lesen und anwenden. Sie beschreibt den aktuellen gemeinsamen Standard
 und wird bei jeder ausdrücklich freigegebenen Erweiterung im selben Arbeitsstand gepflegt.
 
-Die freigegebenen HTML-Referenzen unter `docs/design/frontend-referenzen/` ergänzen
-eine abgestimmte Feldicon-Regel: neutral in Ruhe, heller bei Hover, Cyan bei Fokus
-oder geöffnetem Picker, gedämpft bei Disabled. Sie betrifft nur markierte
-Feldaktionen (`data-ref-field-action`), keine normalen Aktionsbuttonicons.
-Gemeinsame Quelle ist `quellen/eingabefelder.css` in dieser Referenzsammlung.
-Platzhalter übernehmen vorhandene Anwendungstexte und bleiben dezent und normal
-gewichtet. Diese HTML-Regeln sind noch keine Übernahme in das Vaadin-Anwendungstheme.
-Beschriftete Formularfelder verwenden keine dekorativen Präfix-Icons links.
-In der öffentlichen HTML-Referenz verwenden auch Passwortfelder die 14-px-Schrift
-der übrigen öffentlichen Eingaben; Platzhalter bleiben bei Gewicht 400.
-Suchfelder behalten ihre Lupe; rechte Passwort-, Kalender- und Auswahlaktionen
-bleiben erhalten. `ref-no-prefix` entfernt die alte reservierte Präfixfläche.
-Die HTML-Benutzerverwaltungsreferenz verwendet den abgestimmten Tabellenkopf aus
-Stitch-Variante 2: Versalien in Secondary, weiße Beschriftung bei Hover sowie
-aktiver Sortierung und nur der aktive Richtungspfeil in Cyan. Hover ändert allein
-die Schriftfarbe; Kästen und Hintergründe bleiben unverändert.
-Getrennte Sortierindikatoren bleiben;
-ein aktiver Buttonrahmen oder -hintergrund entfällt. Zuständig ist
-`docs/design/frontend-referenzen/quellen/benutzerverwaltung/table-header.css`.
-Diese lokale HTML-Gestaltung ändert keine Vaadin-Gridregeln.
-Die Pagination der HTML-Referenzen verwendet eine gemeinsame Seitengrößenauswahl:
-`.ref-pagination-trigger` öffnet `.ref-pagination-menu` mit den vorhandenen
-Seitengrößen als `.ref-pagination-option`. Dunkle Fläche, dezenter Rahmen und
-blauer Auswahl-/Fokuszustand folgen der Referenz. Gemeinsame Quellen sind
-`docs/design/frontend-referenzen/quellen/pagination.css`, `.js` und `.py`. Das
-native Select bleibt als ausgeblendeter Wertträger für die vorhandenen Controller
-erhalten; Maus/Tap, Pfeiltasten, Home/End, Escape und Außenklick bedienen das Popover.
-Dies ändert weder die zulässigen Seitengrößen noch das Vaadin-Anwendungstheme.
-Das Browser-Favicon der Anwendung verwendet ebenfalls `icons/service-logo-k.svg`.
-`Application.configurePage` bindet dieselbe SVG-Datei wie der aktuelle Servicekopf ein.
-Die drei HTML-Referenzköpfe verwenden zur Sichtung Kandidat K aus
-`docs/design/service-logo/logo-k.svg`. `quellen/service_logo.py` bettet ihn mit
-eigenen Verlaufs-IDs ein und vergrößert ihn optisch innerhalb des unveränderten
-Layoutplatzes. Die Anwendung verwendet die übernommene SVG-Datei unter `icons/service-logo-k.svg`.
+Die [drei HTML-Referenzen](design/frontend-referenzen/README.md) für Public,
+Portal und Admin liegen mit lokalen CSS-, Skript-, Schrift- und Bilddateien im
+Ordner `assets`. Sie sind bedienbare Momentaufnahmen mit synthetischen Daten.
+Entwurfsvarianten, Generatoren, Vergleichsviewer und Hintergrundauswahlen entfallen.
+Der feste Kosmoshintergrund bleibt erhalten. Bei ausdrücklich beauftragten
+Designänderungen wird nur die betroffene Referenz mitgezogen.
 
-Die äußeren HTML-Viewer bieten zusätzlich die gespeicherten Logos A–O und zwölf
-dunkle CSS-Hintergründe zur Laufzeitsichtung. Zuständig sind ausschließlich
-`quellen/erscheinungsbild.py`, die zugehörigen beiden JS-Dateien und
-`quellen/hintergruende.json` unter `docs/design/frontend-referenzen/`.
-Die Auswahl verändert nur Marke beziehungsweise Dekoration; Standard-K, Panel-
-und Controlgestaltung der eigenständigen Referenzen bleiben erhalten. Die Admin-HTML-Bausteine unter `quellen/admin-entwuerfe/` sind lokal auf die
-abgestimmte Referenz begrenzt und keine neuen Vaadin-Themebausteine. Das isolierte Vaadin-Layoutbeispiel unter
-`quellen/vaadin-studie/` verändert keine ausgelieferte View oder Themequelle.
-Der zusätzliche bedienbare Pilot unter `app/src/test/java/de/derpeterson/designpilot/`
-verwendet echte Vaadin-Komponenten und zwei vorhandene Cosmos-Layoutbausteine.
-Seine lokalen Regeln liegen in `app/src/test/resources/personal-data-pilot/`;
-Start und Isolation beschreibt die Studie. Diese Werte sind noch keine Übernahme
-in die gemeinsamen Themequellen oder produktiven Kontoflüsse.
+Feldicons sind neutral in Ruhe, heller bei Hover, Cyan bei Fokus oder geöffnetem
+Picker und gedämpft bei Disabled. Dies betrifft Feldaktionen, keine normalen
+Aktionsbuttonicons. Beschriftete Formularfelder haben keine dekorativen
+Präfix-Icons links. Suchfelder behalten ihre Lupe, rechte Passwort-, Kalender-
+und Auswahlaktionen bleiben erhalten. Platzhalter verwenden vorhandene
+Anwendungstexte und bleiben dezent und normal gewichtet. Öffentliche Eingaben
+verwenden einschließlich Passwort dieselbe 14-px-Schrift, Platzhalter Gewicht 400.
+
+Der Tabellenkopf der Benutzerverwaltung folgt Stitch-Variante 2: Versalien in
+Secondary, weiße Beschriftung bei Hover beziehungsweise aktiver Sortierung,
+nur der aktive Richtungspfeil in Cyan. Hover ändert allein die Schriftfarbe.
+Die Vaadin-Regeln liegen in `admin-users.css`, die HTML-Regeln in `assets/admin.css`.
+Die HTML-Pagination verwendet `.ref-pagination-trigger`, `.ref-pagination-menu`
+und `.ref-pagination-option`. Der ausgeblendete native Select bleibt Wertträger
+für die Controller. Maus/Tap, Pfeiltasten, Home/End, Escape und Außenklick bedienen
+die Auswahl. Vaadin verwendet weiterhin die native, im Theme gestaltete ComboBox.
+
+Das feste Servicezeichen ist `icons/service-logo.svg`, das gewählte Pulsarmotiv.
+Header und Browser-Favicon laden das SVG. `icons/service-logo.png` ist die
+transparente 512-px-Ausgabe desselben Motivs für eingebettete E-Mail-Logos und
+PWA-Installationssymbole. `EmailLogo` lädt sie per Classpath-Stream und behält
+seinen bisherigen CID-/Fehlervertrag. Alternativen und altes PNG liegen bewusst
+in `icons/service-logo-alternatives/`. Sprachumschaltung verwendet ausschließlich
+DE-/EN-Textbuttons, keine Flaggenbilder.
+
+## Tooltips
+
+Anwendungsweit gilt die freigegebene Stitch-Variante A: kompakte dunkle Fläche,
+feiner Rahmen, ruhige helle Schrift und kein Pfeil. Die Tokens
+`--cosmos-tooltip-*` in `cosmos-tokens.css` setzen Hintergrund `#0f172a`,
+Rahmen `#334155`, Text `#e2e8f0`, Radius 4 px, Inter 11 px / 1.4 bei Gewicht 400,
+Padding 7 px 11 px, maximale Breite 220 px und Abstand 8 px. Der Schatten ist
+`0 4px 14px rgba(0,0,0,.65)`. Schmale Viewports behalten seitlich Platz.
+`cosmos-theme.css` gestaltet die nativen Vaadin-Tooltip-Parts `overlay` und
+`content`. Bestehende Hinweise, Tastaturbedienung und Sprachwechsel bleiben erhalten.
+Die rechte Feldhilfe ist ein eigener Baustein und bleibt von Tooltips getrennt.
+Die HTML-Referenzen verwenden denselben Standard über `assets/tooltips.css` und
+`assets/tooltips.js`, einschließlich dynamischer Hinweise, Fokus und Escape.
+
+## HTML-Referenzen
+
 Die freigegebene Adminreferenz enthält Dashboard A, Benutzerverwaltung, Konfiguration A, Mailtest A und Benachrichtigungen B.
 Dashboard A ist der Einstieg mit lokal eingebettetem dunklem Bildmotiv, kurzer
-Orientierung, Ausblick und Schnellzugriffsraster. Es verwendet Logo K, bestehende
+Orientierung, Ausblick und Schnellzugriffsraster. Es verwendet Service-Logo, bestehende
 Iconrahmen, Infozeile und Buttons, ohne Kennzahlen oder Charts. Alle Schnellzugriffe
-öffnen ihren Bereich innerhalb derselben Adminreferenz. Der Benachrichtigungsversand
-verwendet Verfassen links, Vorschau mit runden Empfängeravataren rechts und eigene
-Historie darunter, mobil gestapelt. Die Historie übernimmt die Frontend-Pagination
+öffnen ihren Bereich innerhalb derselben Adminreferenz.
+Die Öffnen-Aktionen der Dashboard-Schnellzugriffe verwenden in HTML und Vaadin
+Lucides `square-arrow-right-enter` (`AppIcon.OPEN_SECTION`).
+Der Benachrichtigungsversand verwendet Verfassen links, Vorschau mit runden
+Empfängeravataren rechts und eigene Historie darunter, mobil gestapelt.
+Die Historie übernimmt die Frontend-Pagination
 (`c-pagination-bar`), durchgehende Zeilentrenner und aufklappbaren Nachrichteninhalt
-auf Insetfläche mit blauer Kante. Die untere Protokollzeile bleibt ausdrücklich nur
-eine statische Gestaltung im HTML. Quellen liegen lokal unter
-`quellen/admin-entwuerfe/`; dies ändert kein Vaadin-Theme.
+auf Insetfläche mit blauer Kante. Die untere Protokollzeile ist ein statischer
+Hinweis und keine zusätzliche Protokollfunktion. Die HTML-Quellen liegen lokal
+in `assets/admin.css` und den zugehörigen Controllern. In der Anwendung setzen die Admin-Komponenten
+und `cosmos-admin-reference.css` diese vereinbarte Gestaltung um.
 Der Mailtest verwendet einen Kopf mit 18 px vertikalem und 22 px seitlichem
 Padding, 22 px Inhaltspadding und keinen zusätzlichen Layoutabstand zwischen Kopf,
 Inhalt und Footer. Bis 600 px wechseln Kopf und Inhalt wie die HTML-Referenz
 auf 16 px Padding. Die Nachrichtenfläche ist wie im HTML mindestens 144 px hoch.
+Die außenliegenden Mailtest-Infoicons sind zur Eingabefläche unterhalb des Labels
+zentriert, auch bei der vergrößerten Nachrichtenfläche.
 Der Mailtest übernimmt die kompakten Panel-/Formularbausteine und das globale
 Notification-System; Eingabefehler markieren nur das betroffene Feld. Der
 Klartext-Hinweis steht unter der Nachricht, der SMTP-Hinweis samt Link ohne Pfeil
@@ -82,12 +88,12 @@ Kopf und Footer der Feldhilfe verwenden in HTML und Vaadin dieselbe Panelfläche
 Die Konfiguration verwendet das rechte Hilfeoverlay C mit kompakten Abschnitten,
 außenliegenden Infoicons, dem vorhandenen Checkboxbaustein, regelbasierten
 Pflichtpunkten und lokalen blauen Zahlenpfeilen. Quellen liegen gemeinsam unter
-`quellen/admin-entwuerfe/`; diese HTML-Übernahme verändert kein Vaadin-Theme.
+`assets/admin.css` und den zugehörigen Skripten; diese HTML-Übernahme verändert kein Vaadin-Theme.
 Ihre Panels
 verwenden die Header-/Footerfläche aus `--surface-panel` wie die persönlichen
 Daten und die dunkle Inhaltsfläche. Die Einstellungssumme steht als cyanfarbenes
 Badge rechts im Kopf; die gemeinsame Icon-Zuordnung gilt für Navigation und Panel.
-Diese Regeln bleiben lokal in `quellen/admin-entwuerfe/entwurf.css`.
+Diese Regeln bleiben lokal in `assets/admin.css`.
 Die Köpfe der zusätzlichen Adminpanels verwenden den bestehenden
 `portal-reference-icon`-Rahmen der HTML-Referenz. Der Konfigurationshinweis steht
 wie bei Geräte/Sitzungen in einer eigenen Zeile vor der Aktionsleiste.
@@ -102,6 +108,10 @@ zusammen im Dokument. `PortalPageComponent` ordnet Überschrift und optionale
 Navigations-/Inhaltsspalten an. Besucher übergeben keine Seitennavigation.
 `PortalSidebarComponent` ergänzt im angemeldeten Portal die Identitätskarte;
 `PortalContentComponent` liefert die Startseiten- und Postfachinhalte.
+
+Escape für die mobile Navigation wird nur innerhalb der Seitenleiste behandelt.
+Dialoge und Popovers behalten ihre native Escape-Bedienung. Lange Servicenamen im
+öffentlichen Header werden bei Platzmangel gekürzt, damit die Navigation erreichbar bleibt.
 
 Portal und Administration verwenden `PageNavigationComponent` auf Basis von
 Vaadins `SideNav` und `SideNavItem`, auch für die Kontobereiche. Native Links,
@@ -142,7 +152,7 @@ Das gilt für einzelne und gesammelte Lösch-/Geräteaktionen sowie Bestätigung
 Deaktivierte Buttons bleiben gedämpft ohne Hover; der Tastaturfokus bleibt cyan.
 Die aktuelle Sitzung bleibt eine deaktivierte Statusanzeige ohne Gefahrenstil.
 Die HTML-Referenzen nutzen dieselben Zustände aus
-`quellen/dialogdurchsicht/reference-controls.css`.
+den jeweiligen `assets/public.css`, `assets/portal.css` und `assets/admin.css`.
 Die Seitennavigation bleibt linksbündig. Hauptzeilen verwenden 12 px bei Gewicht
 500 (aktiv 600), 34 px Höhe und 8 px Iconabstand. Unterpunkte verwenden 11 px bei
 Gewicht 400 (aktiv 500), 30,5 px Höhe und 28 px Einrückung. Gemeinsame Regeln
@@ -277,12 +287,12 @@ Texte kommen aus Shared-`MessageTexts` und den DE-/EN-Ressourcen. Geschlecht ist
 ein echtes Pflichtfeld im bestehenden Profilvertrag, ohne neue Datenbankspalte
 oder Migration. Profil-E-Mail bleibt nur lesbar und fokussierbar; die E-Mail in der
 Sicherheitskarte ist weiß. Sicherheits-, Versions- und Eingabeprüfungen bleiben in
-den bestehenden Diensten. Der [Anwendungsvergleich](design/frontend-referenzen/quellen/anwendungsvergleich/README.md)
-bietet beide Oberflächen mit eigener flüchtiger Testumgebung zur gemeinsamen Abnahme.
+den bestehenden Diensten. Die [Portalreferenz](design/frontend-referenzen/portal.html) bleibt die
+bedienbare Gestaltungsvorlage. Die tatsächlichen Abläufe prüfen die isolierten Browsertests.
 
 ## Besucherportal in Vaadin
 
-`PublicPageComponent` stellt den gemeinsamen Besucherrahmen mit Logo K,
+`PublicPageComponent` stellt den gemeinsamen Besucherrahmen mit Service-Logo,
 Startseite/Anmeldung/Registrierung, kompakter DE-/EN-Auswahl, Seitenkopf und dem
 konfigurierten Copyright bereit. `PublicHomeComponent` verwendet das vorhandene
 lokale Kosmosmotiv. `PublicPanelComponent` verwendet die Cosmos-Panelklassen mit
@@ -393,10 +403,8 @@ vor dem Aktionsfooter bleibt allein das bestehende Panelpadding.
 
 Die Umsetzung umfasst öffentliche Startseite, Anmeldung und Sitzungsfreigabe,
 Registrierung, Passwortanforderung/-reset, Verifikation, E-Mail-Bestätigung und
-Wartung. Die feste Besucher-HTML bleibt die abgestimmte Vergleichsgrundlage. Der zusätzliche
-Viewer und seine ausschließlich testinternen Link-/Wartungs-/Recoverybeispiele
-sind im [Anwendungsvergleich](design/frontend-referenzen/quellen/anwendungsvergleich/README.md)
-beschrieben und gehören nicht zum ausgelieferten Anwendungs-JAR.
+Wartung. Die feste Besucher-HTML bleibt die abgestimmte Vergleichsgrundlage. Die früheren Vergleichsviewer, Piloten und separaten Testbeispiele sind entfernt.
+Die echten Linkzustände und Recoveryabläufe prüfen die isolierten Browsertests.
 
 ## Administration in Vaadin
 
@@ -471,9 +479,17 @@ Aktualisierungen ergänzen keine Erfolgsmeldung.
 Aktivschalter, Status- und Rollenmehrfachwahl sowie Aktivitätsgrenze sind ein
 Entwurf: Nur Anwenden übernimmt einen unveränderlichen Filterstand. Zurücksetzen
 ändert den Entwurf; Abbrechen, Außenklick und Escape stellen ihn wieder her.
-Innerhalb einer Mehrfachgruppe gilt Oder, zwischen den Gruppen Und. Navigation
-und Tastatur bleiben linksbündig beziehungsweise nativ. Benutzerformulare behalten
-Binder, Versions- und Rechteschutz; Löschen verwendet den gemeinsamen Gefahrenstil.
+Innerhalb einer Mehrfachgruppe gilt Oder, zwischen den Gruppen Und.
+Der Zähler zählt ausgewählte Gruppen: Suche, Aktiv, Status, Rollen und
+Aktivitätsgrenze jeweils höchstens einmal. Datum und Uhrzeit bilden zusammen
+eine Gruppe. Auch alle ausgewählten Status- oder Rollenwerte zählen einmal.
+Navigation und Tastatur bleiben linksbündig beziehungsweise nativ.
+Benutzerformulare behalten Binder, Versions- und Rechteschutz; Löschen verwendet
+den gemeinsamen Gefahrenstil.
+Bei Status- und Rollenbadges deckt das native Checkbox-Label die gesamte sichtbare
+Fläche ab. Dadurch aktivieren auch freie Randbereiche die Auswahl, ohne einen
+zusätzlichen JavaScript-Klickhandler. Die lokale Regel steht in
+`cosmos-admin-reference.css`.
 
 Alle Konfigurationsgruppen behalten ihre vorhandenen Eingaben und Validierung.
 Die rechte Feldhilfe nutzt `AdminSidePanel` im kompakten Referenzaufbau: fester
@@ -824,7 +840,7 @@ Optionsbeschriftungen und Anzahl folgen dem Sprachwechsel. Mindestens eine Rolle
 bleibt erforderlich. Die Superadminrolle wird nur entsprechend der bestehenden
 Berechtigung angeboten. Der Prüfhinweis steht in einer eigenen Footerzeile über den
 rechtsbündigen Aktionen, mit durchgehender Trennlinie. Die lokalen Regeln liegen in
-`cosmos-admin-reference.css`, für HTML in `quellen/benutzerverwaltung/drawer.css`.
+`cosmos-admin-reference.css`, für HTML in `assets/admin.css`.
 Am unteren Ende der Benutzertabelle zeichnet allein die Pagination die Abschlusslinie;
 die letzte Zeile erhält keinen zusätzlichen unteren Rahmen.
 

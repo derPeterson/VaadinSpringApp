@@ -7,6 +7,7 @@ import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.REGISTRATION_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
 import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
@@ -106,41 +107,44 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
   }
 
   @Test
-  @DisplayName("UI-03F: Gemeinsame CSS-Animation respektiert reduzierte Bewegung")
+  @DisplayName("UI-03F: Gemeinsamer Referenzhintergrund bleibt dekorativ und bewegungsarm")
   @Story("Dekoration und reduzierte Bewegung")
   @Description(
       """
-        1. Login öffnen: beide Sternlagen und Nebellagen besitzen die CSS-Animation; Dekoration ist aria-hidden und nicht klickbar.
-        2. Betriebssystemwunsch nach reduzierter Bewegung emulieren: Sterne/Nebel haben keine Animation mehr.
+        1. Login öffnen: der alte animierte Hintergrund ist ausgeblendet. Die beiden Referenzebenen sind dekorativ, statisch und nicht klickbar.
+        2. Reduzierte Bewegung emulieren: der statische Hintergrund bleibt unverändert ohne Animation.
         3. Über den echten Kontoerstellungslink zur Registrierung wechseln.
-        **Erwartet:** Reduzierte Bewegung ohne JavaScript-Animation; gemeinsamer Cosmos-Hintergrund auf Registrierung und Home.
+        **Erwartet:** Statischer Referenzhintergrund ohne Interaktionsfläche; gemeinsame Darstellung auf Registrierung und Home.
         """)
   void reducedMotionAndBackgroundScope() {
     page.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.NO_PREFERENCE));
     new LoginPage(page).open();
     Locator sky = page.locator(".cosmos-sky");
     assertThat(sky).hasAttribute("aria-hidden", "true");
-    assertThat(sky).hasCSS("pointer-events", "none");
-    Locator stars = page.locator(".cosmos-stars");
-    assertThat(stars).hasCount(2);
-    assertThat(page.locator(".cosmos-galaxy, .cosmos-glow")).hasCount(3);
-    for (Locator layer : stars.all()) {
-      assertThat(layer).hasCSS("animation-name", "cosmos-stars-float");
-    }
-    for (Locator layer : page.locator(".cosmos-galaxy, .cosmos-glow").all()) {
-      assertThat(layer).hasCSS("animation-name", "cosmos-nebula-float");
+    assertThat(sky).isHidden();
+    Locator frame = page.locator(".cosmos-page-frame.cosmos-reference-portal");
+    for (String pseudo : new String[] {"::before", "::after"}) {
+      assertEquals(
+          "none",
+          frame.evaluate("(el, pseudo) => getComputedStyle(el,pseudo).pointerEvents", pseudo));
+      assertEquals(
+          "none",
+          frame.evaluate("(el, pseudo) => getComputedStyle(el,pseudo).animationName", pseudo));
+      assertTrue(
+          frame
+              .evaluate("(el, pseudo) => getComputedStyle(el,pseudo).backgroundImage", pseudo)
+              .toString()
+              .contains("radial-gradient"));
     }
     page.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.REDUCE));
-    for (Locator layer : page.locator(".cosmos-stars, .cosmos-galaxy, .cosmos-glow").all()) {
-      assertThat(layer).hasCSS("animation-name", "none");
-    }
-    AllurePlaywright.attachScreenshot("Login mit reduzierter Bewegung", page);
+    assertEquals("none", frame.evaluate("el => getComputedStyle(el,'::after').animationName"));
+    AllurePlaywright.attachScreenshot("Referenzhintergrund mit reduzierter Bewegung", page);
     page.getByRole(
             AriaRole.LINK,
             new Page.GetByRoleOptions().setName(texts.getLoginCreateAccountLink()).setExact(true))
         .click();
     assertThat(page).hasURL(urlPattern(REGISTRATION_ROUTE));
-    assertThat(page.locator(".cosmos-page--wide")).isVisible();
+    assertThat(page.locator(".cosmos-reference-public[data-public-page=register]")).isVisible();
     page.navigate(path(HOME_ROUTE));
     assertThat(page).hasTitle(HOME_PAGE_TITLE);
     assertThat(page.locator(".cosmos-home.cosmos-theme")).isVisible();

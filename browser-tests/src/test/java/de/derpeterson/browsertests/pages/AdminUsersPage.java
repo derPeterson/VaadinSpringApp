@@ -103,8 +103,10 @@ public final class AdminUsersPage {
 
   @Step("Benutzer über Name oder E-Mail suchen")
   public void search(String query) {
+    openFilters();
     searchField().fill(query);
     searchField().press("Tab");
+    applyFilters();
   }
 
   public Locator searchField() {
@@ -116,7 +118,7 @@ public final class AdminUsersPage {
   public void openFilters() {
     Locator toggle = button(texts.getAdminUsersAddFilter());
     if (!"true".equals(toggle.getAttribute("aria-expanded"))) {
-      toggle.click();
+      UiActions.complete(page, toggle::click);
     }
     assertThat(toggle).hasAttribute("aria-expanded", "true");
     assertThat(button(texts.getAdminUsersApplyFilters())).isVisible();
@@ -125,14 +127,26 @@ public final class AdminUsersPage {
   @Step("Filterentwurf auswählen, ohne ihn bereits anzuwenden")
   public void selectDraftFilter(String label, String option) {
     openFilters();
-    filterField(label).click();
-    UiActions.completeValueChange(
-        page,
-        () ->
-            page.getByRole(
-                    AriaRole.OPTION, new Page.GetByRoleOptions().setName(option).setExact(true))
-                .click());
-    assertThat(filterField(label)).hasValue(option);
+    Locator group = filterField(label);
+    if (label.equals(texts.getAdminUsersGridEnabled())) {
+      group.getByText(option, new Locator.GetByTextOptions().setExact(true)).click();
+      assertThat(
+              group.getByRole(
+                  AriaRole.RADIO, new Locator.GetByRoleOptions().setName(option).setExact(true)))
+          .isChecked();
+    } else {
+      for (Locator choice : group.locator("vaadin-checkbox").all()) {
+        if (choice.getByRole(AriaRole.CHECKBOX).isChecked()) {
+          choice.locator("label[slot=label]").click();
+          assertThat(choice.getByRole(AriaRole.CHECKBOX)).not().isChecked();
+        }
+      }
+      group.getByText(option, new Locator.GetByTextOptions().setExact(true)).click();
+      assertThat(
+              group.getByRole(
+                  AriaRole.CHECKBOX, new Locator.GetByRoleOptions().setName(option).setExact(true)))
+          .isChecked();
+    }
   }
 
   @Step("Dropdownfilter auswählen und ausdrücklich anwenden")
@@ -143,16 +157,29 @@ public final class AdminUsersPage {
 
   @Step("Filterentwürfe über Filter anwenden übernehmen")
   public void applyFilters() {
-    button(texts.getAdminUsersApplyFilters()).click();
+    UiActions.complete(page, () -> button(texts.getAdminUsersApplyFilters()).click());
+    assertThat(page.locator("#admin-user-filter-panel[opened]")).hasCount(0);
   }
 
   @Step("Nur den ausgewählten angewandten Filter über seinen Badge entfernen")
   public void removeFilter(String label) {
-    button(texts.getAdminUsersRemoveFilter(label)).click();
-    assertThat(
-            page.locator(".admin-user-active-filter-chip:visible")
-                .filter(new Locator.FilterOptions().setHasText(label + ":")))
-        .hasCount(0);
+    openFilters();
+    if (label.equals(texts.getAdminUsersGridEnabled())) {
+      filterField(label)
+          .getByText(texts.getAdminUsersFilterAll(), new Locator.GetByTextOptions().setExact(true))
+          .click();
+    } else if (label.equals(texts.getAdminUsersFilterActiveSince())) {
+      activityDate().clear();
+      activityDate().press("Tab");
+    } else {
+      for (Locator choice : filterField(label).locator("vaadin-checkbox").all()) {
+        if (choice.getByRole(AriaRole.CHECKBOX).isChecked()) {
+          choice.locator("label[slot=label]").click();
+          assertThat(choice.getByRole(AriaRole.CHECKBOX)).not().isChecked();
+        }
+      }
+    }
+    applyFilters();
   }
 
   @Step("Aktivitätsfilter nur mit Datum setzen; Uhrzeit bleibt optional leer")
@@ -318,6 +345,7 @@ public final class AdminUsersPage {
   }
 
   public Locator activityDate() {
+    openFilters();
     return page.locator(".admin-user-activity-filter")
         .getByRole(
             AriaRole.COMBOBOX,
@@ -327,6 +355,7 @@ public final class AdminUsersPage {
   }
 
   public Locator activityTime() {
+    openFilters();
     return page.locator(".admin-user-activity-filter")
         .getByRole(
             AriaRole.COMBOBOX,

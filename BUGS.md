@@ -1,8 +1,7 @@
 # Offene Fehler
 
-Bestätigte offene Anwendungsfehler, nach Dringlichkeit sortiert. Sie haben Vorrang
-vor allen anderen Aufgaben.
+Derzeit keine bestätigten offenen Anwendungsfehler.
 
-Aktuell sind keine bestätigten offenen Anwendungsfehler erfasst.
-
-Fehlerdetails und Prüfergebnisse: [Prüfstand](docs/status.md#offene-fehler).
+Fehlerkorrekturen, tatsächlich ausgeführte Prüfungen und ihre Grenzen stehen im
+[Prüfstand](docs/status.md). Offene automatisierte Ergänzungen bleiben im
+[Testbedarf](docs/testbedarf.md).
