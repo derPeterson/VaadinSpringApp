@@ -200,6 +200,16 @@
 - Neue Oberflächen auf vorhandenen Vaadin-/Cosmos-Komponenten, Klassen und Tokens
   aufbauen. Eingaben, Panels, Tabellen, Buttons und Dialoge übernehmen den bestehenden
   Standard; keine eigene parallele Gestaltung für bereits vorhandene Bausteine erfinden.
+- Vor einem neuen spezialisierten UI-Baustein die Komponenten und APIs der tatsächlich
+  verwendeten Vaadin-Version prüfen. Passende native Flow-Komponenten bevorzugen
+  und über deren öffentliche APIs, Theme-Varianten, Parts und vorhandene Cosmos-Tokens
+  gestalten. Das gilt auch für Badges, Avatare, Karten und Auswahl-/Bestätigungsbausteine.
+- Wenn Vaadin keinen passenden Baustein bietet oder dessen Funktionsumfang nicht
+  genügt, vor einem eigenen Ersatz aus Div/Span, HTML oder JavaScript beim Benutzer
+  nachfragen: konkrete Lücke, geprüfte Alternative und benötigten Eigenanteil erläutern.
+  Gewöhnliche Layoutcontainer und fachliche Zusammensetzungen nativer Komponenten
+  sind kein solcher Ersatz. Bereits ausdrücklich freigegebene Sonderlösungen und
+  Icons bleiben gültig; bestehende Ansichten nicht ungefragt nachträglich umbauen.
 - Abgestimmtes gemeinsames Design nur mit Zustimmung des Benutzers ändern. Eine lokale
   Anpassung erlaubt keine globalen Änderungen oder unbeabsichtigte Änderungen an Icons,
   Größen und anderen Ansichten.

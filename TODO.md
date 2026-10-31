@@ -12,6 +12,12 @@
   Ergebnisse und Grenzen: [Prüfstand](docs/status.md).
   Gemeinsame Sichtung und eigene Anbieter-Clients bleiben zur Abnahme offen.
 
+## Geplante Bausteinprüfung
+
+- [ ] [Vaadin-Badges und weitere Komponenten](docs/planung/vaadin-komponenten-abgleich.md)
+  anhand der Bestandsaufnahme gemeinsam priorisieren und ein Umsetzungspaket freigeben.
+  Es ist noch kein Bausteinumbau beauftragt.
+
 ## Menschliche Abnahmen
 
 - [ ] Echte Mobilgeräte, Bildschirmtastatur, Zoom, Tastaturfokus und Screenreader.

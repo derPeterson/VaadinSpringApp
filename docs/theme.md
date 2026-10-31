@@ -66,6 +66,21 @@ Die rechte Feldhilfe ist ein eigener Baustein und bleibt von Tooltips getrennt.
 Die HTML-Referenzen verwenden denselben Standard über `assets/tooltips.css` und
 `assets/tooltips.js`, einschließlich dynamischer Hinweise, Fokus und Escape.
 
+## Native Vaadin-Bausteine zuerst
+
+Vor einem neuen spezialisierten Oberflächenelement die tatsächlich verwendete
+Vaadin-Version prüfen. Native Flow-Komponenten werden mit öffentlichen APIs,
+Theme-Varianten und Parts an Cosmos angepasst. Ein eigener Div-/Span-/JavaScript-
+Ersatz für eine spezialisierte Komponente benötigt vorher eine ausdrückliche
+Freigabe mit Begründung. Normale Layoutcontainer und Zusammensetzungen vorhandener
+nativer Komponenten bleiben möglich. Vereinbarte Sonderlösungen, insbesondere
+die Lucide-Anwendungsicons und der Bildausschnitt, bleiben gültig.
+
+`Badge` ist in der aktuell verwendeten Vaadin-Version bereits vorhanden. Die
+Anwendung verwendet derzeit noch ältere Lumo-Badge-Spans und lokale CSS-Anzeigen.
+Die [Bestandsaufnahme und offene Planung](planung/vaadin-komponenten-abgleich.md)
+beschreibt die betroffenen Stellen. Die Planung ist kein Auftrag zur Migration.
+
 ## HTML-Referenzen
 
 Die freigegebene Adminreferenz enthält Dashboard A, Benutzerverwaltung, Konfiguration A, Mailtest A und Benachrichtigungen B.

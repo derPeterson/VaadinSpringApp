@@ -43,3 +43,6 @@ Google-/Microsoft-Anmeldung und freiwillige Angaben zu Geschlecht/Geburtsdatum.
 Die Umsetzung ist isoliert geprüft. Die noch offene gemeinsame Abnahme steht im Plan.
 Weitere bewertete Möglichkeiten stehen in der
 [Entscheidungsvorlage für Portal-Erweiterungen](planung/portal-erweiterungen.md).
+Die [Vaadin-Komponentenprüfung](planung/vaadin-komponenten-abgleich.md) enthält die
+Bestandsaufnahme zu Badges und weiteren möglichen nativen Bausteinen. Umsetzung
+und Reihenfolge werden erst gemeinsam freigegeben.
