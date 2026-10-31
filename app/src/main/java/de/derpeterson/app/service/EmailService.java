@@ -42,6 +42,8 @@ public class EmailService {
    */
   public void sendEmail(UserEntity userEntity, String subject, String htmlContent)
       throws MailException, MessagingException {
+    // Erst im MIME-Aufbau auswerten: Eine gebundene Methodenreferenz würde bei null früher
+    // scheitern.
     sendEmailResolved(() -> userEntity.getEmail(), subject, htmlContent);
   }
 

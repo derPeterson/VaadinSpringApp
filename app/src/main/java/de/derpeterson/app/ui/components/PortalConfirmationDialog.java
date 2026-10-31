@@ -50,7 +50,7 @@ public class PortalConfirmationDialog extends Dialog {
           hint,
           actionLabel,
           destructive,
-          () -> (destructive ? AppIcon.TRASH : AppIcon.CHECK).create());
+          (destructive ? AppIcon.TRASH : AppIcon.CHECK)::create);
     }
   }
 

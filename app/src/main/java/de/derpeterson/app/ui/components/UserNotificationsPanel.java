@@ -47,8 +47,6 @@ public class UserNotificationsPanel extends Div {
   private static final String ARIA_HIDDEN = "aria-hidden";
   private static final String COSMOS_NOTIFICATION_INBOX_TOOL_CLASS =
       "cosmos-notification-inbox-tool";
-  private static final String COSMOS_NOTIFICATION_PREVIEW_DOT_CLASS =
-      "cosmos-notification-preview-dot";
   private static final String COSMOS_NOTIFICATION_ROW_ACTION_CLASS =
       "cosmos-notification-row-action";
   private static final String COSMOS_PANEL_DESCRIPTION_CLASS = PANEL_DESCRIPTION;
