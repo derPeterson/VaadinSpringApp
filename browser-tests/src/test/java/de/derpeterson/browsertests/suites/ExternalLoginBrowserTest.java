@@ -147,7 +147,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     target.navigate("/login");
     target
         .getByRole(
-            AriaRole.CHECKBOX,
+            AriaRole.SWITCH,
             new Page.GetByRoleOptions().setName(texts.getLoginRememberMeCheckbox()).setExact(true))
         .setChecked(remember);
     assertThat(target.locator("#external-login-" + provider + " img")).isVisible();

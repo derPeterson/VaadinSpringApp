@@ -2,11 +2,14 @@ package de.derpeterson.app.views;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -14,10 +17,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -43,6 +48,7 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionLimitException;
 import de.derpeterson.app.security.SessionManagementService;
 import de.derpeterson.app.service.ConfigService;
+import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
@@ -51,6 +57,9 @@ import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
@@ -101,15 +110,7 @@ class LoginSessionRecoveryTest {
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     messages = new MessageProperties(new CustomI18NProvider());
-    view =
-        new LoginView(
-            messages,
-            authentication,
-            security,
-            request,
-            config,
-            sessions,
-            mock(de.derpeterson.app.security.ExternalLoginFlow.class));
+    view = createView();
     ui.add(view);
     UserDetails principal =
         User.withUsername("own@example.test").password("").roles("USER").build();
@@ -147,6 +148,17 @@ class LoginSessionRecoveryTest {
     return type.cast(ReflectionTestUtils.getField(view, name));
   }
 
+  private LoginView createView() {
+    return new LoginView(
+        messages,
+        authentication,
+        security,
+        request,
+        config,
+        sessions,
+        mock(de.derpeterson.app.security.ExternalLoginFlow.class));
+  }
+
   private Button button(String id) {
     return tree(view)
         .filter(item -> item.getId().orElse("").equals(id))
@@ -163,7 +175,7 @@ class LoginSessionRecoveryTest {
   private void reachedLimit() {
     field("emailField", EmailField.class).setValue("own@example.test");
     field("passwordField", PasswordField.class).setValue("Secret!Password8");
-    field("rememberMeCheckBox", Checkbox.class).setValue(true);
+    field("rememberMeSwitch", Switch.class).setValue(true);
     field("loginButton", Button.class).click();
   }
 
@@ -188,6 +200,60 @@ class LoginSessionRecoveryTest {
     assertTrue(field("passwordField", PasswordField.class).isEmpty());
     assertNull(ui.target);
     assertFalse(button("session-recovery-continue").isEnabled());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void switchForwardsRememberChoiceToNormalLogin(boolean remember) {
+    Switch rememberSwitch = field("rememberMeSwitch", Switch.class);
+    assertFalse(rememberSwitch.getValue());
+    rememberSwitch.setValue(remember);
+    doNothing().when(security).storeAuthenticatedUser(any(), any(), any(), anyBoolean());
+    field("emailField", EmailField.class).setValue("own@example.test");
+    field("passwordField", PasswordField.class).setValue("Secret!Password8");
+
+    field("loginButton", Button.class).click();
+
+    verify(security).storeAuthenticatedUser(any(), any(), any(), eq(remember));
+    verifyNoInteractions(sessions);
+    assertEquals(HomeView.class, ui.target);
+  }
+
+  @ParameterizedTest
+  @CsvSource({"true,true", "false,false", "invalid,false"})
+  void savedSwitchChoiceDoesNotRestoreCredentialsOrAuthenticate(String saved, boolean expected) {
+    request.setCookies(new Cookie("login-remember-choice", saved));
+    view = createView();
+
+    assertEquals(expected, field("rememberMeSwitch", Switch.class).getValue());
+    assertTrue(field("emailField", EmailField.class).isEmpty());
+    assertTrue(field("passwordField", PasswordField.class).isEmpty());
+    assertEquals(0, response.getCookies().length);
+    verifyNoInteractions(authentication, security, sessions);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void explicitSwitchChangeStoresOnlyPreferenceBeforeLogin(boolean remember) {
+    request.setSecure(true);
+    Switch rememberSwitch = field("rememberMeSwitch", Switch.class);
+    rememberSwitch.setValue(remember);
+    assertEquals(0, response.getCookies().length, "Programmatische Änderungen speichern nichts");
+
+    ComponentUtil.fireEvent(
+        rememberSwitch,
+        new ComponentValueChangeEvent<>(rememberSwitch, rememberSwitch, !remember, true));
+
+    Cookie choice = response.getCookie("login-remember-choice");
+    assertNotNull(choice);
+    assertEquals(Boolean.toString(remember), choice.getValue());
+    assertEquals(31536000, choice.getMaxAge());
+    assertEquals("/", choice.getPath());
+    assertTrue(choice.isHttpOnly());
+    assertTrue(choice.getSecure());
+    assertEquals("Lax", choice.getAttribute("SameSite"));
+    assertNull(response.getCookie("remember-me"));
+    verifyNoInteractions(authentication, security, sessions);
   }
 
   @Test

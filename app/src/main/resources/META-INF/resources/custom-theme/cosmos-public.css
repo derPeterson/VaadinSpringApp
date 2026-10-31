@@ -111,10 +111,10 @@
 .cosmos-reference-public vaadin-checkbox::part(checkbox){width:16px;height:16px;box-sizing:border-box;border:1px solid var(--cosmos-reference-control-border);border-radius:5px;background:var(--cosmos-reference-input)}
 .cosmos-reference-public vaadin-checkbox[checked]::part(checkbox){background:var(--cosmos-reference-primary);border-color:var(--cosmos-reference-primary)}
 .cosmos-reference-public vaadin-checkbox::part(label){font:400 12px/18px Inter,sans-serif;color:var(--cosmos-reference-secondary);padding-inline-start:8px}
-.cosmos-reference-public .cosmos-remember vaadin-checkbox { display:inline-flex;align-items:center;vertical-align:middle;margin:0;padding:0; }
-.cosmos-reference-public .cosmos-remember vaadin-checkbox::part(checkbox) { width:18px;height:18px;margin:0;align-self:center; }
-.cosmos-reference-public .cosmos-remember vaadin-checkbox::part(label) { margin:0;padding:0 0 0 9px;line-height:19.2px;align-self:center; }
-.cosmos-reference-public .cosmos-remember vaadin-checkbox > label[slot=label] { padding:0; }
+.cosmos-reference-public .cosmos-remember vaadin-switch { --vaadin-switch-width:34px;--vaadin-switch-height:20px;--vaadin-switch-gap:9px;--vaadin-switch-background:var(--cosmos-reference-input);--vaadin-switch-border-color:var(--cosmos-reference-control-border);--vaadin-switch-border-width:1px;--vaadin-switch-border-radius:999px;--vaadin-switch-marker-width:14px;--vaadin-switch-marker-height:14px;--vaadin-switch-marker-color:var(--cosmos-reference-secondary);--vaadin-switch-marker-border-width:0;--vaadin-switch-marker-scale:1;--vaadin-switch-label-color:var(--cosmos-reference-secondary);--vaadin-switch-label-font-size:12px;--vaadin-switch-label-font-weight:400;--vaadin-switch-label-line-height:19.2px;display:inline-flex;align-items:center;margin:0;padding:0; }
+.cosmos-reference-public .cosmos-remember vaadin-switch[checked] { --vaadin-switch-background:var(--cosmos-reference-primary);--vaadin-switch-border-color:var(--cosmos-reference-primary);--vaadin-switch-marker-color:var(--cosmos-reference-white); }
+.cosmos-reference-public .cosmos-remember vaadin-switch::part(label) { margin:0;padding:0;font:400 12px/19.2px Inter,sans-serif;color:var(--cosmos-reference-secondary); }
+.cosmos-reference-public .cosmos-remember vaadin-switch[focus-ring]::part(switch) { outline:2px solid var(--cosmos-reference-accent);outline-offset:3px; }
 
 @media(max-width:440px) {
  .cosmos-reference-public .public-header-inner { padding:0 12px;gap:8px; }

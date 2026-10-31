@@ -1,5 +1,11 @@
 (() => {
   const byId = id => document.getElementById(id);
+  const rememberSwitch = byId('remember-login');
+  // Die synthetische Referenz merkt nur die Schalterstellung, keine Zugangsdaten.
+  try { rememberSwitch.checked = localStorage.getItem('preview-login-remember-choice') === 'true'; } catch (_) { /* Browser kann lokalen Speicher sperren. */ }
+  rememberSwitch.addEventListener('change', () => {
+    try { localStorage.setItem('preview-login-remember-choice', String(rememberSwitch.checked)); } catch (_) { /* Der Schalter bleibt auch ohne Speicherung bedienbar. */ }
+  });
   const allowed = ['home','login','register','forgot','reset','verification','email-confirm','recovery','maintenance'];
   let page = 'home';
   const notify = (text, severity='normal', title='', duration=3000) => window.PublicNotifications.show(text,severity,title,duration);

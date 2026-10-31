@@ -10,6 +10,8 @@
   die Anbieter unter Konfiguration → Anmeldeanbieter ein und geben sie dort frei.
   Details und Einrichtung:
   [Externe Anmeldung](externe-anmeldung.md). Optional bleibt die gespeicherte Anmeldung.
+  Der Switch „Login speichern“ merkt sich die letzte Wahl in diesem Browser für
+  ein Jahr. Gespeichert wird nur die Schalterstellung, keine E-Mail und kein Passwort.
 - Abmelden beendet die Sitzung. Die Startseite ist auch anonym erreichbar; Konto und
   Administration verlangen danach eine neue Anmeldung.
 - Passwortreset über einen zeitlich begrenzten Einmallink. Anfragen geben keine Konten preis.

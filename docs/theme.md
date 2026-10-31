@@ -19,6 +19,16 @@ und Auswahlaktionen bleiben erhalten. Platzhalter verwenden vorhandene
 Anwendungstexte und bleiben dezent und normal gewichtet. Öffentliche Eingaben
 verwenden einschließlich Passwort dieselbe 14-px-Schrift, Platzhalter Gewicht 400.
 
+„Login speichern“ verwendet auf der Anmeldung einen nativen Vaadin-`Switch`.
+Die lokale Gestaltung in `cosmos-public.css` setzt eine 34 × 20 px große Bahn
+mit 14-px-Marker, 9 px Labelabstand und 12 px / Gewicht 400 für die Beschriftung.
+Aus ist dunkel mit grauem Marker, an verwendet die bestehende Primärfarbe und
+einen weißen Marker. Der Tastaturfokus bleibt cyan. Die HTML-Referenz bildet
+denselben Schalter über `input[role=switch]` in `assets/public.css` ab.
+Die bestehende Remember-me-Funktion bleibt erhalten.
+Die Referenz merkt die Schalterstellung ausschließlich in ihrem getrennten
+Vorschau-Speicher, ohne eine Anmeldung nachzubilden.
+
 Der Tabellenkopf der Benutzerverwaltung folgt Stitch-Variante 2: Versalien in
 Secondary, weiße Beschriftung bei Hover beziehungsweise aktiver Sortierung,
 nur der aktive Richtungspfeil in Cyan. Hover ändert allein die Schriftfarbe.

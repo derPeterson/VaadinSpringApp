@@ -56,7 +56,7 @@ public final class BrowserActor implements AutoCloseable {
     LoginPage login = new LoginPage(page);
     login.open();
     page.getByRole(
-            AriaRole.CHECKBOX,
+            AriaRole.SWITCH,
             new Page.GetByRoleOptions()
                 .setName(UiTexts.selected().getLoginRememberMeCheckbox())
                 .setExact(true))

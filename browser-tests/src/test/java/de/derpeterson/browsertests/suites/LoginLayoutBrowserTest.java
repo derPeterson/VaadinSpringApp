@@ -85,11 +85,16 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("Login " + width + "×" + height, page);
     Locator remember =
         page.getByRole(
-            AriaRole.CHECKBOX,
+            AriaRole.SWITCH,
             new Page.GetByRoleOptions().setName(texts.getLoginRememberMeCheckbox()).setExact(true));
     remember.check();
     assertThat(remember).isChecked();
     remember.uncheck();
+    assertThat(remember).not().isChecked();
+    remember.focus();
+    remember.press("Space");
+    assertThat(remember).isChecked();
+    remember.press("Space");
     assertThat(remember).not().isChecked();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, "DefinitelyWrong1!");
     login.assertRejected();

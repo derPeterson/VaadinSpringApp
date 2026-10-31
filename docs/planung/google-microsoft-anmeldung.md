@@ -32,6 +32,10 @@ des noch fehlenden aktuellen Sonar-Nachweises: [Prüfstand](../status.md).
   [Stitch-Projekt](https://stitch.google.com/projects/43914967159269113).
   Die dunkle Inhaltsfläche und der lokale Footer bleiben erhalten. Diese Anordnung
   der Registrierung gemeinsam ansehen.
+- „Login speichern“ als nativen Switch mit gemerkter Schalterstellung gemeinsam
+  ansehen. Das separate Einstellungs-Cookie enthält keine E-Mail und kein Passwort
+  und ist kein Remember-me-Anmeldenachweis. Die lokale HTML-Referenz bildet die
+  Stellung mit getrenntem Vorschau-Speicher ab.
 - Mit selbst eingerichteten Google-/Microsoft-Anwendungen die Rücksprungadressen und
   tatsächlichen Anbieterabläufe prüfen. Dafür sind lokale Client-Konfiguration und
   interaktive Kontofreigabe nötig. Prüfanleitung: [HUM-08](../manual-tests/README.md#hum-08).

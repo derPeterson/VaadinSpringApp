@@ -143,7 +143,7 @@ public class RememberMeBrowserTest extends BrowserFixture {
     actor
         .page
         .getByRole(
-            AriaRole.CHECKBOX,
+            AriaRole.SWITCH,
             new Page.GetByRoleOptions().setName(texts.getLoginRememberMeCheckbox()).setExact(true))
         .setChecked(remember);
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);

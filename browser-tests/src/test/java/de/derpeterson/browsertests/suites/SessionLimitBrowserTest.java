@@ -188,7 +188,7 @@ public class SessionLimitBrowserTest extends BrowserFixture {
       persistent
           .page
           .getByRole(
-              AriaRole.CHECKBOX,
+              AriaRole.SWITCH,
               new Page.GetByRoleOptions()
                   .setName(texts.getLoginRememberMeCheckbox())
                   .setExact(true))

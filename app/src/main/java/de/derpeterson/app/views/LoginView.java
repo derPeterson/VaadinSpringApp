@@ -8,7 +8,7 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
@@ -48,8 +48,10 @@ import de.derpeterson.app.ui.components.PublicAuthenticationPanels;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.PublicPanelComponent;
 import de.derpeterson.app.validation.UserInputRules;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +78,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
   private static final String LOGIN_ERROR_MAINTENANCE = "maintenance";
   private static final String LOGIN_ERROR_THROTTLED = "throttled";
   private static final String COSMOS_FORM_TEXT_CLASS = "cosmos-form-text";
+  private static final String REMEMBER_CHOICE_COOKIE = "login-remember-choice";
 
   private static final Logger logger = LoggerFactory.getLogger(LoginView.class);
 
@@ -85,7 +88,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
   private EmailField emailField = null;
   private PasswordField passwordField = null;
   private RouterLink forgotPasswordLink = null;
-  private Checkbox rememberMeCheckBox = null;
+  private Switch rememberMeSwitch = null;
   private Button loginButton = null;
   private H1 title = null;
   private final transient SessionManagementService sessions;
@@ -139,7 +142,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
                   component ->
                       componentTranslationSupplierMap.put(
                           component, this.messageProperties::getLoginForgotPasswordLink));
-          Optional.ofNullable(rememberMeCheckBox)
+          Optional.ofNullable(rememberMeSwitch)
               .ifPresent(
                   component ->
                       componentTranslationSupplierMap.put(
@@ -179,7 +182,22 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     this.passwordField = new PasswordField(messageProperties.getLoginPasswordField());
     this.forgotPasswordLink =
         new RouterLink(messageProperties.getLoginForgotPasswordLink(), ForgotPasswordView.class);
-    this.rememberMeCheckBox = new Checkbox(messageProperties.getLoginRememberMeCheckbox());
+    this.rememberMeSwitch = new Switch(messageProperties.getLoginRememberMeCheckbox());
+    Cookie[] cookies = request.getCookies();
+    if (cookies != null) {
+      for (Cookie cookie : cookies) {
+        if (REMEMBER_CHOICE_COOKIE.equals(cookie.getName())) {
+          rememberMeSwitch.setValue("true".equals(cookie.getValue()));
+          break;
+        }
+      }
+    }
+    rememberMeSwitch.addValueChangeListener(
+        event -> {
+          if (event.isFromClient()) {
+            saveRememberChoice(event.getValue());
+          }
+        });
     this.loginButton =
         new Button(
             messageProperties.getBaseLoginButton(),
@@ -224,7 +242,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     rememberMeLayout.addClassName("cosmos-remember");
     rememberMeLayout.setAlignItems(FlexComponent.Alignment.CENTER);
     rememberMeLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-    rememberMeLayout.add(rememberMeCheckBox);
+    rememberMeLayout.add(rememberMeSwitch);
 
     HorizontalLayout forgotPasswordLayout = new HorizontalLayout();
     forgotPasswordLayout.addClassName("cosmos-forgot");
@@ -254,7 +272,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
             externalLogin,
             request,
             messageProperties,
-            () -> rememberMeCheckBox.getValue());
+            () -> rememberMeSwitch.getValue());
     recoverySessions =
         new AccountSessionsComponent(
             messageProperties, configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER));
@@ -334,7 +352,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
             (HttpServletRequest) VaadinRequest.getCurrent(),
             (HttpServletResponse) VaadinResponse.getCurrent(),
             userDetails,
-            rememberMeCheckBox.getValue());
+            rememberMeSwitch.getValue());
 
       } else {
         logger.warn(
@@ -359,13 +377,25 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     }
   }
 
+  private void saveRememberChoice(boolean remember) {
+    // Nur eine UI-Vorliebe. Der Remember-me-Zugang entsteht erst nach erfolgreicher Anmeldung.
+    Cookie cookie = new Cookie(REMEMBER_CHOICE_COOKIE, Boolean.toString(remember));
+    cookie.setPath(
+        currentRequest.getContextPath().isEmpty() ? "/" : currentRequest.getContextPath());
+    cookie.setHttpOnly(true);
+    cookie.setSecure(currentRequest.isSecure());
+    cookie.setAttribute("SameSite", "Lax");
+    cookie.setMaxAge(Math.toIntExact(Duration.ofDays(365).toSeconds()));
+    VaadinResponse.getCurrent().addCookie(cookie);
+  }
+
   private void startSessionRecovery() {
     try {
       sessions.startRecovery(
           currentRequest,
           emailField.getValue(),
           passwordField.getValue(),
-          rememberMeCheckBox.getValue());
+          rememberMeSwitch.getValue());
       passwordField.clear();
       showRecovery();
     } catch (AuthenticationException rejected) {

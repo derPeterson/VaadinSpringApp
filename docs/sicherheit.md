@@ -53,6 +53,14 @@ Zieladresse; gewöhnliche Queueaufträge verwenden die aktuelle Kontoadresse.
 
 ## Sitzungslimit und Remember-me
 
+„Login speichern“ ist ein Switch. Ein separates Cookie `login-remember-choice`
+merkt seine letzte ausdrücklich gewählte Stellung für 365 Tage, auch nach dem
+Abmelden. Es enthält ausschließlich `true` oder `false`, keine Zugangsdaten und
+keinen Anmeldenachweis. Ohne gültige Auswahl bleibt der Switch ausgeschaltet.
+Das Cookie ist hostgebunden, HttpOnly und SameSite=Lax sowie bei HTTPS Secure.
+Das Umschalten allein meldet niemanden an und erzeugt keinen Remember-me-Token.
+Eine vom Browser vorgeschlagene E-Mail-Adresse bleibt dessen Autovervollständigung.
+
 Eine zugelassene HTTP-Sitzung belegt einen Platz. Zusätzliche Tabs teilen diesen Platz.
 Gespeicherte Remember-me-Zugänge ohne aktive Sitzung belegen keinen Platz. Logout,
 Widerruf und Inaktivitätsablauf geben Plätze frei. Browserfenster schließen ist kein Logout.

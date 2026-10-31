@@ -51,7 +51,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
     LoginPage login = new LoginPage(page);
     login.open();
     page.getByRole(
-            AriaRole.CHECKBOX,
+            AriaRole.SWITCH,
             new Page.GetByRoleOptions().setName(texts.getLoginRememberMeCheckbox()).setExact(true))
         .check();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
@@ -248,7 +248,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       persistent
           .page
           .getByRole(
-              AriaRole.CHECKBOX,
+              AriaRole.SWITCH,
               new Page.GetByRoleOptions()
                   .setName(texts.getLoginRememberMeCheckbox())
                   .setExact(true))

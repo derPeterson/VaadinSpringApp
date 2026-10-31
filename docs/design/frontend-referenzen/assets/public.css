@@ -830,11 +830,11 @@ body.portal-reference #profileGenderDropdown [role=option][aria-selected=true] s
 .vp-field>span{font:400 11px/1.8 Inter,system-ui}
 .vp-options{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;font:400 12px/1.6 Inter,system-ui}
 .vp-options label{display:flex;align-items:center;gap:9px;cursor:pointer;color:var(--text-secondary)}
-.vp-options input[type=checkbox]{appearance:none;width:18px;height:18px;flex-shrink:0;margin:0;border:1px solid #ffffff26;border-radius:5px;background:var(--surface-input);display:grid;place-content:center;cursor:pointer}
-.vp-options input[type=checkbox]:checked{border-color:var(--action-primary);background:var(--action-primary)}
-.vp-options input[type=checkbox]::after{content:'';width:9px;height:5px;border-left:2px solid white;border-bottom:2px solid white;transform:rotate(-45deg);margin-top:-2px;opacity:0}
-.vp-options input[type=checkbox]:checked::after{opacity:1}
-.vp-options input[type=checkbox]:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.vp-options input[role=switch]{appearance:none;position:relative;box-sizing:border-box;width:34px;height:20px;flex-shrink:0;margin:0;border:1px solid #ffffff26;border-radius:999px;background:var(--surface-input);cursor:pointer}
+.vp-options input[role=switch]:checked{border-color:var(--action-primary);background:var(--action-primary)}
+.vp-options input[role=switch]::after{content:'';position:absolute;width:14px;height:14px;left:2px;top:2px;border-radius:50%;background:var(--text-secondary)}
+.vp-options input[role=switch]:checked::after{transform:translateX(14px);background:#fff}
+.vp-options input[role=switch]:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .vp-notice{margin-top:20px}
 .vp-notice>svg{width:16px;height:16px;color:var(--accent);flex-shrink:0}
 .vp-card-foot .vp-notice{width:100%;margin-top:0}

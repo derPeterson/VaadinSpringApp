@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.BoundingBox;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.pages.UserMenu;
@@ -62,6 +63,8 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
         "Copyrightzeile erstreckt sich über den gemeinsamen Seitenrahmen");
     if (registration) {
       assertRegistrationFields(local, width);
+    } else {
+      assertRememberSwitch(local);
     }
     attachPanels(route + ": Zwei Panels in Vaadin");
     if (width == 390) {
@@ -83,11 +86,39 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     assertProviderButtonsFlow(referenceExternal, false);
     if (registration) {
       assertRegistrationFields(referenceLocal, width);
+    } else {
+      assertRememberSwitch(referenceLocal);
     }
     attachPanels(route + ": Zwei Panels in der HTML-Referenz");
     if (width == 390) {
       assertResponsiveActions(referenceLocal, registration);
     }
+  }
+
+  private void assertRememberSwitch(Locator panel) {
+    Locator remember = panel.getByRole(AriaRole.SWITCH);
+    assertThat(remember).hasCount(1);
+    assertThat(remember).not().isChecked();
+    remember.check();
+    assertThat(remember).isChecked();
+    page.reload();
+    assertThat(remember).isChecked();
+    remember.focus();
+    remember.press("Space");
+    assertThat(remember).not().isChecked();
+    page.reload();
+    assertThat(remember).not().isChecked();
+    assertTrue(
+        (Boolean)
+            remember.evaluate(
+                """
+            el => {
+              const track = el.closest('vaadin-switch')?.shadowRoot.querySelector('[part="switch"]') || el;
+              const r = track.getBoundingClientRect();
+              return Math.abs(r.width - 34) < 1 && Math.abs(r.height - 20) < 1;
+            }
+            """),
+        "Schalterbahn hat in Anwendung und Referenz dieselben kompakten Abmessungen");
   }
 
   private void attachPanels(String title) {
