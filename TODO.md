@@ -12,11 +12,13 @@
   Ergebnisse und Grenzen: [Prüfstand](docs/status.md).
   Gemeinsame Sichtung und eigene Anbieter-Clients bleiben zur Abnahme offen.
 
-## Geplante Bausteinprüfung
+## Separate spätere Umsetzung: Vaadin-Komponenten
 
 - [ ] [Vaadin-Badges und weitere Komponenten](docs/planung/vaadin-komponenten-abgleich.md)
-  anhand der Bestandsaufnahme gemeinsam priorisieren und ein Umsetzungspaket freigeben.
-  Es ist noch kein Bausteinumbau beauftragt.
+  als eigene Umsetzung starten, Pakete priorisieren und deren Umfang freigeben.
+  Die Analyse und Einschätzung sind abgenommen; der Bausteinumbau ist noch nicht beauftragt.
+  Er gehört nicht zur laufenden Google-/Microsoft-Umsetzung und ist keine Voraussetzung
+  für deren Abnahme oder Abschluss.
 
 ## Menschliche Abnahmen
 

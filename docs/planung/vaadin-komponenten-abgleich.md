@@ -2,10 +2,12 @@
 
 ## Auftrag und Grenze
 
-Der Benutzer hat eine projektweite Bestandsaufnahme, eine Planung und eine
-verbindliche Komponentenregel beauftragt. Ein Umbau der Badges oder der übrigen
-Bausteine ist ausdrücklich noch nicht freigegeben. Dieser Plan bleibt bis zur
-gemeinsamen Auswahl des nächsten Arbeitspakets offen.
+Die projektweite Bestandsaufnahme und Einschätzung sind vom Benutzer abgenommen.
+Der Umbau von Badges und weiteren ausgewählten Bausteinen wird als separate spätere
+Umsetzung behandelt. Er ist kein Bestandteil der laufenden Google-/Microsoft-Umsetzung
+und keine Voraussetzung für deren Abnahme oder Abschluss. Ein Bausteinumbau ist
+ausdrücklich noch nicht beauftragt. Dieser Plan bleibt als Grundlage für den separaten
+Start und die gemeinsame Auswahl der Arbeitspakete offen.
 
 Arbeitsbasis ist `feature/google-microsoft-anmeldung`, nach der Profilbild-
 Löschbestätigung. Bestehendes Aussehen, Fachregeln und Sicherheitsprüfungen sind

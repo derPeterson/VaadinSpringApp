@@ -13,6 +13,9 @@ Dazu gehören Google und Microsoft für private sowie Firmen-/Schulkonten, freiw
 Profilangaben, ausdrückliche Anbieterzuordnungen und zweckgebundene erneute Nachweise.
 Die bisherige Passwortanmeldung und die bestehenden Kontoschutzregeln bleiben erhalten.
 Die drei HTML-Referenzen enthalten die entsprechenden Gestaltungselemente.
+Der [Vaadin-Komponentenabgleich](vaadin-komponenten-abgleich.md) ist eine separate
+spätere Umsetzung. Die abgenommene Analyse beauftragt keinen Bausteinumbau in diesem
+Feature; dessen Umsetzung ist keine Voraussetzung für die hiesige Abnahme oder den Abschluss.
 Die gezielten Prüfungen und der automatisierte Umfang der großen Testrunde auf dem
 Featurestand sind abgeschlossen. Ergebnisse einschließlich gezielter Nachtests und
 des noch fehlenden aktuellen Sonar-Nachweises: [Prüfstand](../status.md).

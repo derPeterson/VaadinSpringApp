@@ -44,5 +44,6 @@ Die Umsetzung ist isoliert geprüft. Die noch offene gemeinsame Abnahme steht im
 Weitere bewertete Möglichkeiten stehen in der
 [Entscheidungsvorlage für Portal-Erweiterungen](planung/portal-erweiterungen.md).
 Die [Vaadin-Komponentenprüfung](planung/vaadin-komponenten-abgleich.md) enthält die
-Bestandsaufnahme zu Badges und weiteren möglichen nativen Bausteinen. Umsetzung
-und Reihenfolge werden erst gemeinsam freigegeben.
+abgenommene Bestandsaufnahme und Einschätzung zu Badges und weiteren möglichen nativen
+Bausteinen. Der Umbau ist als separate spätere Umsetzung vorgesehen und gehört nicht
+zur Google-/Microsoft-Umsetzung. Start, Paketumfang und Reihenfolge sind noch freizugeben.
