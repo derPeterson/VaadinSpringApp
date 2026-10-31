@@ -657,9 +657,9 @@ public class UserNotificationsPanel extends Div {
     if (!item.read()) {
       row.addClassName("cosmos-notification-row--unread");
     }
-    // Doppelklicks auf Schaltflächen bleiben deren eigener Aktion vorbehalten.
+    // Buttons behalten ihre eigene Aktion; die restliche Karte öffnet per einfachem Klick.
     row.getElement()
-        .addEventListener("dblclick", e -> action(() -> open(item)))
+        .addEventListener("click", e -> action(() -> open(item)))
         .setFilter("!event.composedPath().some(node => node.localName === 'vaadin-button')");
     return row;
   }

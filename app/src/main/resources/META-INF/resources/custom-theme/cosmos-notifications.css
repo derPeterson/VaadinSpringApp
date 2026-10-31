@@ -247,6 +247,7 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     box-sizing: border-box;
     min-width: 0;
     max-width: 100%;
+    cursor: pointer;
     padding: var(--cosmos-space-l);
     border: var(--cosmos-border-width) solid var(--cosmos-card-border);
     border-radius: var(--cosmos-control-radius);

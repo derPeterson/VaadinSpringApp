@@ -515,7 +515,7 @@ class UserNotificationsUiTest {
 
   @ParameterizedTest
   @org.junit.jupiter.params.provider.CsvSource({"de,false", "en,false", "de,true", "en,true"})
-  void doubleClickOnPreviewCardOpensOnlyItsMessageAndIgnoresButtonEvents(
+  void singleClickOnPreviewCardOpensOnlyItsMessageAndIgnoresButtonEvents(
       String language, boolean read) {
     locale.set(Locale.forLanguageTag(language));
     item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), read);
@@ -533,17 +533,15 @@ class UserNotificationsUiTest {
     ElementListenerMap listeners =
         element.getNode().getFeature(com.vaadin.flow.internal.nodefeature.ElementListenerMap.class);
     ObjectNode data = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+    assertTrue(listeners.getExpressions("dblclick").isEmpty());
+    Set<String> expressions = listeners.getExpressions("click");
+    assertFalse(expressions.isEmpty());
+    expressions.forEach(expression -> data.put(expression, false));
     listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "click", data));
     assertNull(field(panel, "detail"));
     verify(service, never()).markRead(any(), any());
-    Set<String> expressions = listeners.getExpressions("dblclick");
-    assertFalse(expressions.isEmpty());
-    expressions.forEach(expression -> data.put(expression, false));
-    listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "dblclick", data));
-    assertNull(field(panel, "detail"));
-    verify(service, never()).markRead(any(), any());
     expressions.forEach(expression -> data.put(expression, true));
-    listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "dblclick", data));
+    listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "click", data));
     assertTrue(popover.isOpened());
     assertTrue(((Dialog) field(panel, "detail")).isOpened());
     verify(service, never()).markRead(any(), any());

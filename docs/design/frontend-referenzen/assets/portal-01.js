@@ -625,6 +625,9 @@ statusTrigger.addEventListener('click', () => { const open = statusPopover.hidde
     actions.className = 'n-preview-row-actions';
     rowActions(item, actions);
     row.append(title, body, meta, actions);
+    row.addEventListener('click', event => {
+      if (!event.target.closest('button')) { openDetail(item.id); }
+    });
     return row;
   }
 
