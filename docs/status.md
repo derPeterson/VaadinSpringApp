@@ -1,7 +1,7 @@
 # Aktueller Prüfstand
 
-Stand: 30.10.2026. Ausschließlich lokale Entwicklung mit eigenen austauschbaren
-Testdaten und Testdiensten.
+Letzte große Testrunde: 30.10.2026. Sonar-Nachweis: 31.10.2026.
+Ausschließlich lokale Entwicklung mit eigenen austauschbaren Testdaten und Testdiensten.
 
 ## Ergebnis und geprüfter Stand
 
@@ -89,12 +89,23 @@ vorhanden; Bedienung unter [Arbeiten mit Codex](codex-skills.md).
 
 ## Sonar und Grenzen
 
-Die konfigurierte Sonar-Anbindung wurde lesend geprüft. Verfügbar ist die
-main-Analyse `226deebd-5a32-4336-8986-5deb9891eb71` vom 22.10.2026 zu Revision
-`951452da7e89fc3f14db910f910734cfd5bf8008`: Gate OK, keine offenen Issues oder
-Hotspots, 45 bestehende begründete Ausnahmen. Dieser ältere Stand ist kein
-Sonar-Nachweis für den Featurebranch. Kein Upload vom Featurebranch und keine
-Statusänderung zur Zahlenbereinigung. Der aktuelle Feature-Sonar-Nachweis bleibt offen.
+Der Designbranch ist lokal nach `main` integriert. Die bestätigte main-Analyse
+`f388685c-cc43-4e6d-9e70-69658e34193d` vom 31.10.2026 gehört zu Revision
+`35205f7b255e413e205e2cb687b1a5c1eecca164`: Quality Gate OK, keine offenen Issues
+im Gesamtcode oder New Code und keine Hotspots. 51 ursprüngliche Befunde wurden
+durch Code behoben. Zusätzlich zu 45 bestehenden Ausnahmen sind drei Hinweise
+zur Vaadin-Vererbungstiefe begründet akzeptiert; ein Methodenreferenzhinweis am
+Mailaufbau ist wegen abweichender Nullwert-Auswertung als Fehlalarm dokumentiert.
+Die Begründungen stehen direkt an den Findings. Regeln, Analyseumfang und Gate
+wurden nicht abgeschwächt.
+
+Der vollständige Production-/Coverage-Reactor bestand mit 2.320 erfolgreichen
+Anwendungstests, zwei erwarteten optionalen Skips und 85 erfolgreichen
+Browser-Helfertests. Sonar misst 87,8 % Coverage, 90,7 % Zeilen- und 78,6 %
+Branch-Coverage. Das frisch gebaute JAR startete mit eigener flüchtiger H2-Datenbank;
+Login und Service-Logo wurden mit HTTP 200 ausgeliefert. Der eigene Prüfprozess
+wurde beendet. Der anschließende Abschlusscommit ändert ausschließlich Dokumentation.
+Diese technischen Nachweise ersetzen keine neue große Browser-Testrunde.
 
 Die zwei optionalen IDE-/Caddy-Fälle wurden mangels Opt-in nicht ausgeführt.
 Externe SMTP-Provider, echter Mail-Sichtversand, Zertifikatseinrichtung/-rückbau
@@ -116,6 +127,6 @@ In der ausgeführten Runde sind keine bestätigten Anwendungsfehler offen geblie
 
 Die Designübernahme ist vom Benutzer abgenommen. Die freigegebenen Tooltip- und
 Bereinigungsnachträge sind umgesetzt und gezielt geprüft. Der Designbranch ist
-nach `main` integriert und technisch geprüft. Die Sonar-Bereinigung ist beauftragt.
-Die anschließende große Testrunde bleibt
-offen; Reihenfolge und menschliche Sonderprüfungen stehen in [TODO](../TODO.md).
+nach `main` integriert, technisch geprüft und durch den grünen Sonar-Nachscan bestätigt.
+Die anschließende große Testrunde bleibt offen; nächste Arbeiten und menschliche
+Sonderprüfungen stehen in [TODO](../TODO.md).

@@ -2,10 +2,7 @@
 
 ## Als Nächstes
 
-Die vereinbarte Reihenfolge ist:
-
-- [ ] Sonar-Scan auf `main` ausführen und berechtigte Befunde beheben.
-- [ ] Anschließend eine große Testrunde durchführen.
+- [ ] Nach Design-Merge und Sonar-Bereinigung eine große Testrunde auf `main` durchführen.
 
 ## Menschliche Abnahmen
 
