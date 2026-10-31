@@ -3,6 +3,7 @@ package de.derpeterson.app.views;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
@@ -35,6 +36,7 @@ import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
@@ -69,6 +71,8 @@ class AdminViewNavigationTest {
   private SecurityService security;
   private HttpServletRequest request;
   private AdminView view;
+  private ConfigService config;
+  private UserAvatarService avatars;
 
   @BeforeEach
   void setup() {
@@ -94,23 +98,36 @@ class AdminViewNavigationTest {
         .thenReturn(
             Optional.of(
                 User.withUsername("admin@example.test").password("unused").roles("ADMIN").build()));
-    ConfigService config = mock(ConfigService.class);
+    when(security.getCurrentUser(request))
+        .thenReturn(
+            Optional.of(
+                UserEntity.builder()
+                    .id(1L)
+                    .firstName("Admin")
+                    .lastName("Test")
+                    .email("admin@example.test")
+                    .enabled(true)
+                    .build()));
+    config = mock(ConfigService.class);
     when(config.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
-    UserAvatarService avatars = mock(UserAvatarService.class);
+    avatars = mock(UserAvatarService.class);
     when(avatars.events()).thenReturn(new UserProfileBroadcaster());
-    view =
-        new AdminView(
-            new MessageProperties(new CustomI18NProvider()),
-            security,
-            config,
-            new MaintenanceService(config),
-            mock(EmailService.class),
-            mock(UserService.class),
-            mock(RoleService.class),
-            request,
-            new UserStatusBroadcaster(),
-            avatars);
+    view = createView();
+  }
+
+  private AdminView createView() {
+    return new AdminView(
+        new MessageProperties(new CustomI18NProvider()),
+        security,
+        config,
+        new MaintenanceService(config),
+        mock(EmailService.class),
+        mock(UserService.class),
+        mock(RoleService.class),
+        request,
+        new UserStatusBroadcaster(),
+        avatars);
   }
 
   @AfterEach
@@ -245,6 +262,19 @@ class AdminViewNavigationTest {
     view.beforeEnter(event);
     verify(event).forwardTo(LoginView.class);
     verify(event, never()).getLocation();
+  }
+
+  @Test
+  void requestWithoutCurrentUserIsForwardedWithoutBuildingAnAnonymousUserMenu() {
+    when(security.getCurrentUser(request)).thenReturn(Optional.empty());
+    when(security.getAuthenticatedUser(request)).thenReturn(Optional.empty());
+    AdminView anonymous = createView();
+    assertNull(ReflectionTestUtils.getField(anonymous, "userPopoverMenu"));
+    assertNull(ReflectionTestUtils.getField(anonymous, "userIconButton"));
+    BeforeEnterEvent event = mock(BeforeEnterEvent.class);
+    when(event.hasForwardTarget()).thenReturn(true);
+    anonymous.beforeEnter(event);
+    verify(event).forwardTo(LoginView.class);
   }
 
   public static class TestService extends VaadinServletService {

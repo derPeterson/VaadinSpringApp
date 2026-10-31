@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
@@ -197,22 +196,22 @@ class ApplicationHeaderTest {
       home.click();
       verify(ui).navigate(HomeView.class);
     }
-    if (user != null) {
-      doReturn(Optional.empty()).when(ui).navigate(AccountView.class);
-      settings.click();
-      verify(ui).navigate(AccountView.class);
-      assertNotNull(menuButton(menu, "logoutButton"));
-      assertNull(menuButton(menu, "registrationButton"));
-      assertNull(menuButton(menu, "loginButton"));
-    } else {
-      doReturn(Optional.empty()).when(ui).navigate(RegistrationView.class);
-      doReturn(Optional.empty()).when(ui).navigate(LoginView.class);
-      menuButton(menu, "registrationButton").click();
-      menuButton(menu, "loginButton").click();
-      verify(ui).navigate(RegistrationView.class);
-      verify(ui).navigate(LoginView.class);
-      assertNull(menuButton(menu, "logoutButton"));
-    }
+    doReturn(Optional.empty()).when(ui).navigate(AccountView.class);
+    settings.click();
+    verify(ui).navigate(AccountView.class);
+    assertNotNull(menuButton(menu, "logoutButton"));
+    assertTrue(
+        tree(menu.getPopover())
+            .noneMatch(
+                component -> component instanceof com.vaadin.flow.component.select.Select<?>));
+    assertTrue(
+        tree(menu.getPopover())
+            .noneMatch(component -> component.hasClassName("user-popover-header")));
+    assertEquals(
+        4,
+        tree(menu.getPopover())
+            .filter(component -> component.hasClassName("portal-status-option"))
+            .count());
   }
 
   @ParameterizedTest

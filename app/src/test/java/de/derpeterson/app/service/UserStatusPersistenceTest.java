@@ -815,7 +815,7 @@ class UserStatusPersistenceTest {
             statusService,
             snapshot,
             new Button(),
-            new UserPopoverMenu.Actions(null, null, null, null),
+            new UserPopoverMenu.Actions(null, null),
             icons::add);
     icons.clear();
     return menu;
@@ -834,7 +834,7 @@ class UserStatusPersistenceTest {
               messages.add(message);
             }));
 
-    ReflectionTestUtils.invokeMethod(menu, "handleUserStatusChange", UserStatus.EMPLOYED, true);
+    ReflectionTestUtils.invokeMethod(menu, "handleUserStatusChange", UserStatus.EMPLOYED);
 
     assertEquals(UserStatus.EMPLOYED, stored().getStatus());
     assertEquals(UserStatus.EMPLOYED, snapshot.getStatus());
@@ -862,8 +862,7 @@ class UserStatusPersistenceTest {
 
     assertDoesNotThrow(
         () ->
-            ReflectionTestUtils.invokeMethod(
-                menu, "handleUserStatusChange", UserStatus.EMPLOYED, true));
+            ReflectionTestUtils.invokeMethod(menu, "handleUserStatusChange", UserStatus.EMPLOYED));
     NotificationHelper helper = NotificationHelper.getInstance();
     Notification notification =
         (com.vaadin.flow.component.notification.Notification)

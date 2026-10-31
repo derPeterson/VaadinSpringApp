@@ -136,11 +136,7 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
       manageApplicationAction = () -> UI.getCurrent().navigate(AdminView.class);
     }
 
-    return new UserPopoverMenu.Actions(
-        manageApplicationAction,
-        null,
-        () -> UI.getCurrent().navigate(RegistrationView.class),
-        () -> UI.getCurrent().navigate(LoginView.class));
+    return new UserPopoverMenu.Actions(manageApplicationAction, null);
   }
 
   @Override

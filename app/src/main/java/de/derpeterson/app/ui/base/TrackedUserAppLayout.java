@@ -148,7 +148,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
     return createApplicationHeader(
         config,
         new UserPopoverMenu.Actions(
-            administration, () -> UI.getCurrent().navigate(HomeView.class), null, null));
+            administration, () -> UI.getCurrent().navigate(HomeView.class)));
   }
 
   protected final void setPortalPage(
@@ -189,21 +189,26 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
     brand.setSpacing(false);
     brand.addClassName("cosmos-topbar-brand");
 
-    Button userButton = createTrackedUserButton();
-    if (referenceAccount) {
-      Div identity = new Div(headerName, headerEmail);
-      identity.addClassName("cosmos-header-identity");
-      userButton
-          .getElement()
-          .appendChild(identity.getElement(), AppIcon.ANGLE_DOWN.create().getElement());
-      refreshHeaderIdentity();
+    HorizontalLayout userMenu = new HorizontalLayout();
+    // Geschützte Views können vor ihrer Weiterleitung noch ohne aktuellen Benutzer entstehen.
+    // Besucheraktionen gehören ausschließlich in den öffentlichen Header.
+    if (currentUser != null) {
+      Button userButton = createTrackedUserButton();
+      if (referenceAccount) {
+        Div identity = new Div(headerName, headerEmail);
+        identity.addClassName("cosmos-header-identity");
+        userButton
+            .getElement()
+            .appendChild(identity.getElement(), AppIcon.ANGLE_DOWN.create().getElement());
+        refreshHeaderIdentity();
+      }
+      createTrackedUserPopover(actions);
+      userPopoverMenu.addThemeName("cosmos");
+      if (referenceAccount) {
+        userPopoverMenu.addThemeName("cosmos-reference");
+      }
+      userMenu.add(accountHeaderActions, userButton);
     }
-    createTrackedUserPopover(actions);
-    userPopoverMenu.addThemeName("cosmos");
-    if (referenceAccount) {
-      userPopoverMenu.addThemeName("cosmos-reference");
-    }
-    HorizontalLayout userMenu = new HorizontalLayout(accountHeaderActions, userButton);
     userMenu.setSpacing(false);
     userMenu.addClassName("cosmos-topbar-account-menu");
     HorizontalLayout header = new HorizontalLayout(brand, userMenu);

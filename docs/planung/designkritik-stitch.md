@@ -23,8 +23,8 @@ behalten ihre abgestimmte Gestaltung.
 ## Gemeinsame Durchsicht nach der Prüfung
 
 - Angemeldetes Portal und Administration sind vom Benutzer nach manueller
-  Durchsicht gestalterisch abgenommen. Die laufenden Tooltip- und
-  Bereinigungsnachträge erhalten ihre gezielten Nachprüfungen.
+  Durchsicht gestalterisch abgenommen. Die Tooltip- und Bereinigungsnachträge
+  sind umgesetzt und gezielt nachgeprüft.
 - Besucherbereich ist als gestalterischer Erststand gemeinsam akzeptiert.
   Die Gesamtregression umfasst weiterhin Anmeldung, Registrierung, Passwortlinks,
   Aktivierung, E-Mail-Bestätigung, Wartung und eingeschränkte Anmeldung.
@@ -32,17 +32,12 @@ behalten ihre abgestimmte Gestaltung.
   sprachliche Verständlichkeit gemäß [manuellem Katalog](../manual-tests/README.md)
   menschlich beurteilen. Viewporttests ersetzen diese Abnahme nicht.
 
-## Offene Bereinigung
-
-Benutzermenü getrennt durchsehen: alten Erstaufbau und Besucheraktionen von der
-weiterhin benötigten Statusauswahl und Speicherlogik trennen. Die konkrete
-Bereinigung gemeinsam abstimmen. Am Benutzermenü noch nichts ändern.
-
 ## Offener Abschluss
 
-Nach den freigegebenen Tooltip- und Bereinigungsnachträgen die nächsten Schritte
-gemeinsam festlegen. Der Branch bleibt auf Benutzerwunsch offen. Ein Merge nach main, ein aktueller Sonar-Scan mit Behandlung
-der Befunde und eine anschließende große Testrunde sind gesondert zu beauftragen.
+Die freigegebenen Tooltip- und Bereinigungsnachträge sind umgesetzt und gezielt
+geprüft. Der Branch bleibt bis zur Integration offen. Als Nächstes folgen ein Merge
+nach main, ein aktueller Sonar-Scan mit Behandlung der Befunde und eine anschließende
+große Testrunde. Diese Schritte sind gesondert zu beauftragen.
 Die bisherige große Testrunde bleibt im Prüfstand dokumentiert. Gezielte Nachtests
 ersetzen sie nicht.
 

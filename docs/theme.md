@@ -217,6 +217,11 @@ angezeigte synthetische Nachricht; Abbrechen lässt den Detaildialog erhalten.
 Manuelles Aktualisieren meldet Erfolg als alleinigen Titel ohne leeren Textabsatz
 erst nach erfolgreichem Laden, bei einem
 Ladefehler eine Fehlermeldung. Automatische Aktualisierungen bleiben ohne Toast.
+`UserPopoverMenu` baut ausschließlich das aktuelle angemeldete Menü direkt auf.
+Ein alter Erstaufbau, eine ausgeblendete Schließen-Kopfzeile und eine anschließend
+entfernte Menü-Statusauswahl entfallen. Besucher verwenden `PublicPageComponent`;
+Anmeldung und Registrierung gehören nicht in dieses Benutzermenü.
+Die gemeinsame Statusauswahl am Kontobild und die Speicher-/Fehlerlogik bleiben erhalten.
 Das Benutzermenü zeigt die vier Statusoptionen direkt und eine kompakte Sprachwahl;
 sein Popover richtet sich unter dem rechten Rand des Avatar-Auslösers aus
 (`BOTTOM_END`). Mobil reserviert ein zusätzlicher Abstand von 16 px Platz für die

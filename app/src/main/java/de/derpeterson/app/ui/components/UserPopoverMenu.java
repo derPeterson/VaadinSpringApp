@@ -15,13 +15,11 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.popover.PopoverPosition;
-import com.vaadin.flow.component.popover.PopoverVariant;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.events.LanguageChangeEvent;
-import de.derpeterson.app.helper.ui.ComponentPrefixHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
@@ -36,16 +34,13 @@ import io.micrometer.common.util.StringUtils;
 import java.util.EnumMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import org.springframework.dao.OptimisticLockingFailureException;
 
 public class UserPopoverMenu {
 
-  public record Actions(
-      Runnable manageApplicationAction,
-      Runnable homeAction,
-      Runnable registrationAction,
-      Runnable loginAction) {}
+  public record Actions(Runnable manageApplicationAction, Runnable homeAction) {}
 
   private final MessageProperties messageProperties;
   private final SecurityService securityService;
@@ -55,9 +50,8 @@ public class UserPopoverMenu {
   private Span emailText;
   private Span menuPresence;
   private final Span languageHeading = new Span();
-  private boolean referenceStyle;
-  private final Map<UserStatus, Button> referenceStatusButtons = new EnumMap<>(UserStatus.class);
-  private Span referencePresenceHeading;
+  private final Map<UserStatus, Button> statusButtons = new EnumMap<>(UserStatus.class);
+  private Span presenceHeading;
   private final Actions actions;
   private final Consumer<UserStatus> statusIconConsumer;
   private final Popover userPopover;
@@ -66,13 +60,10 @@ public class UserPopoverMenu {
   private Button manageAccountButton = null;
   private Button manageApplicationButton = null;
   private Button logoutButton = null;
-  private Button registrationButton = null;
-  private Button loginButton = null;
   private Button homeButton = null;
   private Button germanLanguageButton;
   private Button englishLanguageButton;
   private OverlayUserIcon overlayIcon = null;
-  private Select<UserStatus> userStatusSelect = null;
 
   private UserStatus currentStatus;
 
@@ -87,153 +78,127 @@ public class UserPopoverMenu {
     this.messageProperties = messageProperties;
     this.securityService = securityService;
     this.userService = userService;
-    this.currentUser = currentUser;
+    this.currentUser = Objects.requireNonNull(currentUser);
     this.actions = actions;
     this.statusIconConsumer = statusIconConsumer;
-    this.currentStatus =
-        currentUser != null ? currentUser.getStatus() : UserStatus.getDefaultStatus();
+    this.currentStatus = currentUser.getStatus();
     this.userPopover = createUserPopover(targetButton);
+    refreshTexts();
+    refreshLanguageButtons();
   }
 
   public Popover getPopover() {
     return userPopover;
   }
 
-  /** Markiert auch das ausgelagerte Select-Overlay, damit View-Styles gezielt bleiben. */
   public void addThemeName(String themeName) {
     userPopover.getElement().getThemeList().add(themeName);
-    userStatusSelect.getElement().getThemeList().add(themeName);
-    if ("cosmos".equals(themeName)) {
-      // Native Platzierung außerhalb des Felds; bei wenig Platz darf Vaadin nach oben ausweichen.
-      userStatusSelect.setNoVerticalOverlap(true);
-      userPopover
-          .getChildren()
-          .forEach(
-              content -> {
-                content.getElement().getClassList().add("cosmos-theme");
-                content.getElement().getClassList().add("cosmos-user-menu");
-              });
-    }
-    if ("cosmos-reference".equals(themeName)) {
-      enableReferenceStyle();
-    }
   }
 
-  private void enableReferenceStyle() {
-    if (referenceStyle || !hasCurrentUser()) {
-      return;
-    }
-    referenceStyle = true;
-    userPopover.addClassName("portal-user-menu-popover");
-    userPopover.setPosition(PopoverPosition.BOTTOM_END);
-    userPopover.removeThemeVariants(PopoverVariant.ARROW);
-    VerticalLayout outer = (VerticalLayout) userPopover.getChildren().findFirst().orElseThrow();
-    outer.addClassName("cosmos-reference-overlay");
-    outer.setSpacing(false);
-    outer
-        .getChildren()
-        .filter(c -> c.getElement().getClassList().contains("user-popover-header"))
-        .forEach(c -> c.setVisible(false));
-    VerticalLayout body =
-        (VerticalLayout)
-            outer
-                .getChildren()
-                .filter(c -> c.getElement().getClassList().contains("user-popover-body"))
-                .findFirst()
-                .orElseThrow();
-    body.addClassName("portal-user-menu-body");
+  private Popover createUserPopover(Button targetButton) {
+    Popover popover = new Popover();
+    popover.setTarget(targetButton);
+    popover.addClassName("portal-user-menu-popover");
+    popover.setPosition(PopoverPosition.BOTTOM_END);
+    popover.setModal(true);
+    popover.setCloseOnEsc(true);
+    popover.setCloseOnOutsideClick(true);
+
+    VerticalLayout body = new VerticalLayout();
+    body.addClassNames("user-popover-body", "portal-user-menu-body");
+    body.setWidthFull();
     body.setSpacing(false);
-    overlayIcon.addClassName("portal-menu-avatar");
-    if (profileName != null) {
-      profileName.addClassName("portal-menu-name");
-    }
+    body.setPadding(false);
+    body.add(createIdentity());
+    addManageAccountButton(body);
+    addManageApplicationButton(body);
+    body.add(createStatusOptions(), createLanguageChoice(), createFooter());
+
+    VerticalLayout outer = new VerticalLayout(body);
+    outer.addClassNames(
+        "user-popover-content", "cosmos-theme", "cosmos-user-menu", "cosmos-reference-overlay");
+    outer.setWidth(null);
+    outer.setSpacing(false);
+    outer.setPadding(false);
+    popover.add(outer);
+    return popover;
+  }
+
+  private Div createIdentity() {
+    overlayIcon =
+        new OverlayUserIcon(messageProperties, currentUser, currentStatus, IconSize.PIXEL_96, true);
+    overlayIcon.addClassNames("user-popover-avatar", "portal-menu-avatar");
+    profileName = new Span();
+    profileName.addClassName("portal-menu-name");
+    refreshProfileName();
+    emailText = new Span(currentUser.getEmail());
     emailText.addClassName("portal-menu-email");
+    accountStateText = new Span();
     accountStateText.addClassName("portal-menu-account-state");
     menuPresence = new Span();
     menuPresence.addClassName("portal-menu-presence");
-    body.remove(accountStateText);
     Div badges = new Div(accountStateText, menuPresence);
     badges.addClassName("portal-menu-badges");
-    body.addComponentAtIndex(3, badges);
-    manageAccountButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    manageAccountButton.setPrefixComponent(AppIcon.COG.create());
-    if (manageApplicationButton != null) {
-      manageApplicationButton.setPrefixComponent(AppIcon.SHIELD_COG.create());
-    }
-    if (homeButton != null) {
-      homeButton.setPrefixComponent(AppIcon.HOME.create());
-    }
-    logoutButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
-    logoutButton.addClassName("portal-menu-logout");
-    for (Button item :
-        new Button[] {manageAccountButton, manageApplicationButton, homeButton, logoutButton}) {
-      if (item != null) {
-        item.addThemeVariants(LUMO_TERTIARY_INLINE);
-        item.addClassName("portal-menu-action");
-      }
-    }
-    userStatusSelect.setLabel(messageProperties.getPortalPresenceHeading());
-    languageHeading.setVisible(true);
-    arrangeReferenceMenu(body);
-    refreshTexts();
-    refreshLanguageButtons();
-  }
-
-  private void arrangeReferenceMenu(VerticalLayout body) {
-    HorizontalLayout languageButtons =
-        (HorizontalLayout) germanLanguageButton.getParent().orElseThrow();
-    body.removeAll();
-    Div identity = new Div();
+    Div identity = new Div(profileName, emailText, badges);
     identity.addClassName("portal-menu-identity-copy");
-    if (profileName != null) {
-      identity.add(profileName);
-    }
-    Div badges = new Div(accountStateText, menuPresence);
-    badges.addClassName("portal-menu-badges");
-    identity.add(emailText, badges);
     Div header = new Div(overlayIcon, identity);
     header.addClassName("portal-menu-identity");
-    body.add(header, manageAccountButton);
-    manageAccountButton.removeClassName("portal-menu-action");
-    manageAccountButton.removeThemeVariants(LUMO_TERTIARY_INLINE);
-    manageAccountButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    manageAccountButton.addClassName("portal-menu-primary");
-    manageAccountButton.setWidth(null);
-    if (manageApplicationButton != null) {
-      manageApplicationButton.removeThemeVariants(LUMO_TERTIARY_INLINE);
-      manageApplicationButton.setWidth(null);
-      body.add(manageApplicationButton);
-    }
-    referencePresenceHeading = new Span();
-    referencePresenceHeading.addClassName("portal-menu-section");
-    Div choices = new Div(referencePresenceHeading);
+    return header;
+  }
+
+  private Div createStatusOptions() {
+    presenceHeading = new Span();
+    presenceHeading.addClassName("portal-menu-section");
+    Div choices = new Div(presenceHeading);
     choices.addClassName("portal-menu-status-options");
     for (UserStatus status : UserStatus.values()) {
       Button option = new Button();
-      option.addClickListener(event -> handleUserStatusChange(status, true));
+      option.addClickListener(event -> handleUserStatusChange(status));
       option.addClassName("portal-status-option");
       option.getStyle().set("--portal-option-status-color", status.getColor());
       option.getElement().setAttribute("data-status", status.name().toLowerCase(Locale.ROOT));
-      referenceStatusButtons.put(status, option);
+      statusButtons.put(status, option);
       choices.add(option);
     }
+    return choices;
+  }
+
+  private Div createLanguageChoice() {
+    germanLanguageButton = createLanguageButton("DE", "Deutsch", Locale.GERMAN);
+    englishLanguageButton = createLanguageButton("EN", "English", Locale.ENGLISH);
+    HorizontalLayout languageButtons =
+        new HorizontalLayout(germanLanguageButton, englishLanguageButton);
+    languageButtons.addClassName("portal-language-switch");
+    languageHeading.addClassName("portal-menu-section");
     Div languageLabel = new Div(AppIcon.LANGUAGES.create(), languageHeading);
     languageLabel.addClassName("portal-menu-language-label");
     Div language = new Div(languageLabel, languageButtons);
     language.addClassName("portal-menu-language-row");
-    Div footer = new Div();
-    footer.addClassName("portal-menu-footer");
-    if (homeButton != null) {
-      homeButton.setWidth(null);
-      footer.add(homeButton);
-    }
-    logoutButton.setWidth(null);
-    footer.add(logoutButton);
-    body.add(choices, language, footer);
+    return language;
   }
 
-  private void refreshReferenceStatusButtons() {
-    for (Map.Entry<UserStatus, Button> entry : referenceStatusButtons.entrySet()) {
+  private Div createFooter() {
+    Div footer = new Div();
+    footer.addClassName("portal-menu-footer");
+    if (actions.homeAction() != null) {
+      homeButton =
+          new Button(messageProperties.getBaseHomeButton(), event -> actions.homeAction().run());
+      homeButton.setPrefixComponent(AppIcon.HOME.create());
+      homeButton.addThemeVariants(LUMO_TERTIARY_INLINE);
+      homeButton.addClassName("portal-menu-action");
+      footer.add(homeButton);
+    }
+    logoutButton =
+        new Button(messageProperties.getBaseLogoutButton(), event -> securityService.logout());
+    logoutButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
+    logoutButton.addThemeVariants(LUMO_TERTIARY_INLINE);
+    logoutButton.addClassNames("portal-menu-action", "portal-menu-logout");
+    footer.add(logoutButton);
+    return footer;
+  }
+
+  private void refreshStatusButtons() {
+    for (Map.Entry<UserStatus, Button> entry : statusButtons.entrySet()) {
       UserStatus status = entry.getKey();
       Button button = entry.getValue();
       Span label = new Span(messageProperties.getUserStatusLabel(status));
@@ -252,7 +217,6 @@ public class UserPopoverMenu {
 
   public void refreshForLanguageChange() {
     refreshTexts();
-    refreshUserStatusSelect();
     refreshLanguageButtons();
   }
 
@@ -263,121 +227,10 @@ public class UserPopoverMenu {
 
     currentStatus = newStatus;
 
-    if (hasCurrentUser()) {
-      currentUser.setStatus(newStatus);
-    }
+    currentUser.setStatus(newStatus);
 
     updateStatusIcons(newStatus);
-    refreshReferenceStatusButtons();
-
-    if (userStatusSelect != null) {
-      userStatusSelect.setValue(newStatus);
-      updateStatusSelectPrefix(newStatus);
-    }
-  }
-
-  private Popover createUserPopover(Button targetButton) {
-    Popover popover = createConfiguredPopover(targetButton);
-
-    VerticalLayout popoverLayout = createPopoverLayout();
-    HorizontalLayout headerLayout = createHeaderLayout(popover);
-    VerticalLayout contentLayout = createContentLayout();
-
-    addUserIcon(contentLayout);
-    addUserInfoSection(contentLayout);
-    addManageAccountButton(contentLayout);
-    addManageApplicationButton(contentLayout);
-    addUserStatusSelect(contentLayout);
-    addLanguageButtons(contentLayout);
-    addHomeButton(contentLayout);
-    addAuthButtons(contentLayout);
-
-    popoverLayout.add(headerLayout, contentLayout);
-    popover.add(popoverLayout);
-
-    return popover;
-  }
-
-  private Popover createConfiguredPopover(Button targetButton) {
-    Popover popover = new Popover();
-    popover.setTarget(targetButton);
-    popover.addThemeVariants(PopoverVariant.ARROW);
-    popover.setPosition(PopoverPosition.BOTTOM);
-    popover.setModal(true);
-    popover.setCloseOnEsc(true);
-    popover.setCloseOnOutsideClick(true);
-    return popover;
-  }
-
-  private VerticalLayout createPopoverLayout() {
-    VerticalLayout popoverLayout = new VerticalLayout();
-    // Keine inline vorgegebene Breite: das jeweilige Theme bestimmt die Menübreite.
-    popoverLayout.setWidth(null);
-    popoverLayout.setSpacing(false);
-    popoverLayout.setPadding(false);
-    popoverLayout.addClassNames(LumoUtility.Padding.SMALL);
-    popoverLayout.addClassName("user-popover-content");
-    return popoverLayout;
-  }
-
-  private HorizontalLayout createHeaderLayout(Popover popover) {
-    HorizontalLayout headerLayout = new HorizontalLayout();
-    headerLayout.addClassName("user-popover-header");
-    headerLayout.setWidthFull();
-    headerLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
-
-    Button closeButton = new Button(AppIcon.CLOSE_CIRCLE.create(), clickEvent -> popover.close());
-    closeButton.addClassNames(LumoUtility.TextColor.PRIMARY);
-    closeButton.addThemeVariants(LUMO_TERTIARY_INLINE);
-
-    headerLayout.add(closeButton);
-    return headerLayout;
-  }
-
-  private VerticalLayout createContentLayout() {
-    VerticalLayout contentLayout = new VerticalLayout();
-    contentLayout.addClassName("user-popover-body");
-    contentLayout.setWidthFull();
-    contentLayout.setSpacing(false);
-    contentLayout.setPadding(false);
-    contentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-    contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    contentLayout.addClassNames(
-        LumoUtility.Padding.Top.SMALL, LumoUtility.Padding.Bottom.SMALL, LumoUtility.Gap.SMALL);
-    return contentLayout;
-  }
-
-  private void addUserIcon(VerticalLayout contentLayout) {
-    overlayIcon =
-        new OverlayUserIcon(messageProperties, currentUser, currentStatus, IconSize.PIXEL_96, true);
-    overlayIcon.addClassName("user-popover-avatar");
-    contentLayout.add(overlayIcon);
-  }
-
-  private void addUserInfoSection(VerticalLayout contentLayout) {
-    if (hasCurrentUser()) {
-      addAccountInfo(contentLayout);
-    }
-  }
-
-  private void addAccountInfo(VerticalLayout contentLayout) {
-    accountStateText =
-        new Span(
-            currentUser.isEnabled()
-                ? messageProperties.getAccountSettingsEnabled()
-                : messageProperties.getAccountSettingsDisabled());
-    accountStateText.addClassNames(LumoUtility.TextColor.PRIMARY, LumoUtility.FontWeight.SEMIBOLD);
-    contentLayout.add(accountStateText);
-
-    if (hasUserName()) {
-      profileName = new Span(buildFullName());
-      profileName.addClassNames(LumoUtility.FontWeight.BOLD);
-      contentLayout.add(profileName);
-    }
-
-    emailText = new Span(currentUser.getEmail());
-    emailText.addClassNames(LumoUtility.TextColor.SECONDARY);
-    contentLayout.add(emailText);
+    refreshStatusButtons();
   }
 
   public void configureAvatars(UserAvatarService avatars) {
@@ -389,6 +242,7 @@ public class UserPopoverMenu {
   public void refreshProfileName() {
     if (profileName != null) {
       profileName.setText(buildFullName());
+      profileName.setVisible(hasUserName());
     }
     if (overlayIcon != null) {
       overlayIcon.setIdentity(currentUser);
@@ -398,25 +252,19 @@ public class UserPopoverMenu {
   private void addManageAccountButton(VerticalLayout contentLayout) {
     manageAccountButton = new Button(messageProperties.getBaseManageAccountButton());
     manageAccountButton.setPrefixComponent(AppIcon.COG.create());
-    manageAccountButton.setEnabled(hasCurrentUser());
     manageAccountButton.addClickListener(
         event -> {
-          if (hasCurrentUser()) {
-            userPopover.close();
-            UI.getCurrent().navigate(AccountView.class);
-          }
+          userPopover.close();
+          UI.getCurrent().navigate(AccountView.class);
         });
 
-    if (hasCurrentUser()) {
-      manageAccountButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    }
-
-    manageAccountButton.setWidthFull();
+    manageAccountButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    manageAccountButton.addClassName("portal-menu-primary");
     contentLayout.add(manageAccountButton);
   }
 
   private void addManageApplicationButton(VerticalLayout contentLayout) {
-    if (!hasCurrentUser() || actions.manageApplicationAction() == null) {
+    if (actions.manageApplicationAction() == null) {
       return;
     }
 
@@ -425,22 +273,14 @@ public class UserPopoverMenu {
             messageProperties.getBaseManageApplicationButton(),
             clickEvent -> actions.manageApplicationAction().run());
     manageApplicationButton.setPrefixComponent(AppIcon.SHIELD_COG.create());
-    manageApplicationButton.setWidthFull();
+    manageApplicationButton.addClassName("portal-menu-action");
     contentLayout.add(manageApplicationButton);
-  }
-
-  private void addUserStatusSelect(VerticalLayout contentLayout) {
-    userStatusSelect = createStatusSelect();
-    userStatusSelect.setWidthFull();
-    updateStatusSelectPrefix(currentStatus);
-    contentLayout.add(userStatusSelect);
   }
 
   /** Gleiche Auswahl und Speicherlogik für Benutzermenü und Kontobild. */
   public Select<UserStatus> createStatusSelect() {
     Select<UserStatus> select = new Select<UserStatus>();
     select.getElement().getThemeList().add("cosmos-status");
-    select.setEnabled(hasCurrentUser());
     select.setItems(UserStatus.values());
     select.setItemLabelGenerator(messageProperties::getUserStatusLabel);
     select.setRenderer(new ComponentRenderer<>(this::createUserStatusRenderer));
@@ -448,7 +288,7 @@ public class UserPopoverMenu {
     select.addValueChangeListener(
         event -> {
           if (event.isFromClient()) {
-            handleUserStatusChange(event.getValue(), true);
+            handleUserStatusChange(event.getValue());
           }
         });
     return select;
@@ -511,42 +351,24 @@ public class UserPopoverMenu {
     return textLayout;
   }
 
-  private void handleUserStatusChange(UserStatus userStatus, boolean isFromClient) {
+  private void handleUserStatusChange(UserStatus userStatus) {
     if (userStatus == null) {
       return;
     }
-    if (isFromClient && hasCurrentUser()) {
-      try {
-        StatusUpdate result = userService.updateUserStatus(currentUser, userStatus, true);
-        currentUser.setStatusManuallySet(result.manuallySet());
-        applyExternalStatus(result.status());
-      } catch (RuntimeException exception) {
-        applyExternalStatus(currentStatus);
-        NotificationHelper.getInstance()
-            .showNotification(
-                messageProperties::getBaseFailedTitle,
-                exception instanceof OptimisticLockingFailureException
-                    ? messageProperties::getBaseUserUpdateConflict
-                    : messageProperties::getBaseUserStatusFailed,
-                NotificationHelper.NotificationType.ERROR);
-      }
-    } else {
-      currentStatus = userStatus;
-      updateStatusSelectPrefix(userStatus);
-      updateStatusIcons(userStatus);
+    try {
+      StatusUpdate result = userService.updateUserStatus(currentUser, userStatus, true);
+      currentUser.setStatusManuallySet(result.manuallySet());
+      applyExternalStatus(result.status());
+    } catch (RuntimeException exception) {
+      applyExternalStatus(currentStatus);
+      NotificationHelper.getInstance()
+          .showNotification(
+              messageProperties::getBaseFailedTitle,
+              exception instanceof OptimisticLockingFailureException
+                  ? messageProperties::getBaseUserUpdateConflict
+                  : messageProperties::getBaseUserStatusFailed,
+              NotificationHelper.NotificationType.ERROR);
     }
-  }
-
-  private void addLanguageButtons(VerticalLayout contentLayout) {
-    germanLanguageButton = createLanguageButton("DE", "Deutsch", Locale.GERMAN);
-    englishLanguageButton = createLanguageButton("EN", "English", Locale.ENGLISH);
-    HorizontalLayout languageButtons =
-        new HorizontalLayout(germanLanguageButton, englishLanguageButton);
-    languageButtons.addClassName("portal-language-switch");
-    languageHeading.addClassName("portal-menu-section");
-    languageHeading.setVisible(false);
-    contentLayout.add(languageHeading, languageButtons);
-    refreshLanguageButtons();
   }
 
   private Button createLanguageButton(String label, String accessibleName, Locale targetLocale) {
@@ -557,117 +379,30 @@ public class UserPopoverMenu {
   }
 
   private void switchLanguage(Locale locale) {
-    if (hasCurrentUser()) {
-      userService.updateUserLocale(currentUser.getEmail(), locale);
-    }
+    userService.updateUserLocale(currentUser.getEmail(), locale);
 
     VaadinSession.getCurrent().setLocale(locale);
     LanguageChangeEvent.fire(UI.getCurrent(), locale);
   }
 
-  private void addHomeButton(VerticalLayout contentLayout) {
-    if (actions.homeAction() == null) {
-      return;
-    }
-
-    homeButton =
-        new Button(messageProperties.getBaseHomeButton(), clickEvent -> actions.homeAction().run());
-    homeButton.setPrefixComponent(AppIcon.HOME.create());
-    homeButton.setWidthFull();
-    contentLayout.add(homeButton);
-  }
-
-  private void addAuthButtons(VerticalLayout contentLayout) {
-    if (hasCurrentUser()) {
-      addLogoutButton(contentLayout);
-      return;
-    }
-
-    addRegistrationButton(contentLayout);
-    addLoginButton(contentLayout);
-  }
-
-  private void addLogoutButton(VerticalLayout contentLayout) {
-    logoutButton =
-        new Button(messageProperties.getBaseLogoutButton(), clickEvent -> securityService.logout());
-    logoutButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
-    logoutButton.setWidthFull();
-    contentLayout.add(logoutButton);
-  }
-
-  private void addRegistrationButton(VerticalLayout contentLayout) {
-    if (actions.registrationAction() == null) {
-      return;
-    }
-
-    registrationButton =
-        new Button(
-            messageProperties.getBaseRegistrationButton(),
-            clickEvent -> actions.registrationAction().run());
-    registrationButton.setPrefixComponent(AppIcon.EDIT.create());
-    registrationButton.setWidthFull();
-    contentLayout.add(registrationButton);
-  }
-
-  private void addLoginButton(VerticalLayout contentLayout) {
-    if (actions.loginAction() == null) {
-      return;
-    }
-
-    loginButton =
-        new Button(
-            messageProperties.getBaseLoginButton(), clickEvent -> actions.loginAction().run());
-    loginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
-    loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    loginButton.setWidthFull();
-    contentLayout.add(loginButton);
-  }
-
   private void refreshTexts() {
-    if (referenceStyle) {
-      languageHeading.setText(messageProperties.getPortalLanguageHeading());
-      userStatusSelect.setLabel(messageProperties.getPortalPresenceHeading());
-      referencePresenceHeading.setText(messageProperties.getPortalPresenceHeading());
-      refreshReferenceStatusButtons();
-      menuPresence.setText(messageProperties.getUserStatusLabel(currentStatus));
-      menuPresence.getStyle().set("--account-presence-color", currentStatus.getColor());
-    }
-    if (accountStateText != null) {
-      accountStateText.setText(
-          currentUser.isEnabled()
-              ? messageProperties.getAccountSettingsEnabled()
-              : messageProperties.getAccountSettingsDisabled());
-    }
-    if (manageAccountButton != null) {
-      manageAccountButton.setText(messageProperties.getBaseManageAccountButton());
-    }
+    languageHeading.setText(messageProperties.getPortalLanguageHeading());
+    presenceHeading.setText(messageProperties.getPortalPresenceHeading());
+    refreshStatusButtons();
+    menuPresence.setText(messageProperties.getUserStatusLabel(currentStatus));
+    menuPresence.getStyle().set("--account-presence-color", currentStatus.getColor());
+    accountStateText.setText(
+        currentUser.isEnabled()
+            ? messageProperties.getAccountSettingsEnabled()
+            : messageProperties.getAccountSettingsDisabled());
+    manageAccountButton.setText(messageProperties.getBaseManageAccountButton());
     if (manageApplicationButton != null) {
       manageApplicationButton.setText(messageProperties.getBaseManageApplicationButton());
     }
     if (homeButton != null) {
       homeButton.setText(messageProperties.getBaseHomeButton());
     }
-    if (logoutButton != null) {
-      logoutButton.setText(messageProperties.getBaseLogoutButton());
-    }
-    if (registrationButton != null) {
-      registrationButton.setText(messageProperties.getBaseRegistrationButton());
-    }
-    if (loginButton != null) {
-      loginButton.setText(messageProperties.getBaseLoginButton());
-    }
-  }
-
-  private void refreshUserStatusSelect() {
-    if (userStatusSelect == null) {
-      return;
-    }
-
-    userStatusSelect.setItemLabelGenerator(messageProperties::getUserStatusLabel);
-    userStatusSelect.setItems(UserStatus.values());
-    userStatusSelect.getDataProvider().refreshAll();
-    userStatusSelect.setValue(currentStatus);
-    updateStatusSelectPrefix(currentStatus);
+    logoutButton.setText(messageProperties.getBaseLogoutButton());
   }
 
   private void refreshLanguageButtons() {
@@ -700,39 +435,9 @@ public class UserPopoverMenu {
     }
   }
 
-  private void updateStatusSelectPrefix(UserStatus userStatus) {
-    if (userStatus == null) {
-      ComponentPrefixHelper.clearSlot(userStatusSelect, "prefix");
-      return;
-    }
-
-    Object prefixComponent = userStatus.getOutlineComponent(IconSize.PIXEL_16, false);
-
-    if (prefixComponent instanceof SvgIcon statusIcon) {
-      ComponentPrefixHelper.setPrefixComponent(userStatusSelect, createPrefixLayout(statusIcon));
-      return;
-    }
-
-    if (prefixComponent instanceof Div statusDiv) {
-      ComponentPrefixHelper.setPrefixComponent(userStatusSelect, createPrefixLayout(statusDiv));
-    }
-  }
-
-  private HorizontalLayout createPrefixLayout(Component component) {
-    HorizontalLayout layout = new HorizontalLayout();
-    layout.addClassNames(LumoUtility.Padding.Left.SMALL, LumoUtility.Padding.Right.SMALL);
-    layout.add(component);
-    return layout;
-  }
-
-  private boolean hasCurrentUser() {
-    return currentUser != null;
-  }
-
   private boolean hasUserName() {
-    return hasCurrentUser()
-        && (StringUtils.isNotEmpty(currentUser.getFirstName())
-            || StringUtils.isNotEmpty(currentUser.getLastName()));
+    return (StringUtils.isNotEmpty(currentUser.getFirstName())
+        || StringUtils.isNotEmpty(currentUser.getLastName()));
   }
 
   private String buildFullName() {

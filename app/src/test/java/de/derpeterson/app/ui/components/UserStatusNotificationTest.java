@@ -104,15 +104,15 @@ class UserStatusNotificationTest {
             service,
             user,
             new Button(),
-            new UserPopoverMenu.Actions(null, null, null, null),
+            new UserPopoverMenu.Actions(null, null),
             status -> {});
-    ReflectionTestUtils.invokeMethod(menu, "handleUserStatusChange", UserStatus.EMPLOYED, true);
+    ReflectionTestUtils.invokeMethod(menu, "handleUserStatusChange", UserStatus.EMPLOYED);
     Notification original = currentNotification();
     assertText(Locale.ENGLISH, conflict);
     LanguageChangeEvent.fire(ui, Locale.GERMAN);
     assertSame(original, currentNotification());
     assertText(Locale.GERMAN, conflict);
-    ReflectionTestUtils.invokeMethod(menu, "handleUserStatusChange", UserStatus.EMPLOYED, true);
+    ReflectionTestUtils.invokeMethod(menu, "handleUserStatusChange", UserStatus.EMPLOYED);
     assertNotSame(original, currentNotification());
     assertText(Locale.GERMAN, conflict);
     LanguageChangeEvent.fire(ui, Locale.ENGLISH);
@@ -137,8 +137,7 @@ class UserStatusNotificationTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   @SuppressWarnings("unchecked")
-  void referenceStatusButtonsPersistThroughTheExistingServiceAndKeepFailuresUnselected(
-      boolean fail) {
+  void statusButtonsPersistThroughTheExistingServiceAndKeepFailuresUnselected(boolean fail) {
     UserEntity user = UserEntity.builder().id(7L).status(UserStatus.OFFLINE).build();
     UserService service = mock(UserService.class);
     if (fail) {
@@ -155,11 +154,11 @@ class UserStatusNotificationTest {
             service,
             user,
             new Button(),
-            new UserPopoverMenu.Actions(null, null, null, null),
+            new UserPopoverMenu.Actions(null, null),
             status -> {});
     menu.addThemeName("cosmos-reference");
     Map<UserStatus, Button> buttons =
-        (Map<UserStatus, Button>) ReflectionTestUtils.getField(menu, "referenceStatusButtons");
+        (Map<UserStatus, Button>) ReflectionTestUtils.getField(menu, "statusButtons");
     assertEquals(UserStatus.values().length, buttons.size());
     buttons.get(UserStatus.EMPLOYED).click();
     UserStatus expected = fail ? UserStatus.OFFLINE : UserStatus.EMPLOYED;

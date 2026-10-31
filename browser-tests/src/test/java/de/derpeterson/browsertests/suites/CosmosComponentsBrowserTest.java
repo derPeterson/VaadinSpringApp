@@ -1,6 +1,7 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
@@ -312,6 +313,66 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       }
     }
     assertEquals(List.of(), referenceErrors, "Die ausgelagerten Referenzcontroller müssen laufen");
+  }
+
+  @Test
+  @DisplayName(
+      "COMPONENT-05: Bereinigtes Benutzermenü bleibt auf allen angemeldeten Seiten bedienbar")
+  @Description(
+      "Admin, Startseite und Konto auf Desktop und Smartphone öffnen. Identität, vier sichtbare Statusoptionen, Sprachwahl und rechtsbündiges Abmelden bleiben innerhalb des Viewports. Das Menü enthält keine zweite versteckte Statusauswahl oder alte Kopfzeile. Mein Konto navigiert, Escape und Außenklick schließen. Keine Statusänderung oder Speicherung.")
+  void userMenuKeepsItsLayoutNavigationAndNativeClosing() {
+    signIn();
+    UserMenu menu = new UserMenu(page);
+    for (int width : new int[] {1280, 390}) {
+      page.setViewportSize(width, 900);
+      for (String route : List.of(ADMIN_ROUTE, HOME_ROUTE, ACCOUNT_ROUTE)) {
+        page.navigate(path(route));
+        menu.open();
+        Locator body = page.locator(".portal-user-menu-body:visible");
+        Locator overlay = page.locator("vaadin-popover-overlay[opened] > [part~='overlay']");
+        assertThat(body.locator(".portal-menu-name")).isVisible();
+        assertThat(body.locator(".portal-menu-email")).isVisible();
+        assertThat(body.locator(".portal-status-option")).hasCount(4);
+        assertThat(body.locator(".portal-status-option[aria-pressed=true]")).hasCount(1);
+        assertThat(body.locator(".portal-language-switch vaadin-button")).hasCount(2);
+        assertThat(body.locator("vaadin-select, .user-popover-header")).hasCount(0);
+        Locator account =
+            body.getByRole(
+                AriaRole.BUTTON,
+                new Locator.GetByRoleOptions()
+                    .setName(texts.getBaseManageAccountButton())
+                    .setExact(true));
+        assertThat(account).isVisible();
+        Locator home =
+            body.getByRole(
+                AriaRole.BUTTON,
+                new Locator.GetByRoleOptions().setName(texts.getBaseHomeButton()).setExact(true));
+        assertThat(home).hasCount(route.equals(HOME_ROUTE) ? 0 : 1);
+        Locator admin =
+            body.getByRole(
+                AriaRole.BUTTON,
+                new Locator.GetByRoleOptions()
+                    .setName(texts.getBaseManageApplicationButton())
+                    .setExact(true));
+        assertThat(admin).hasCount(route.equals(ADMIN_ROUTE) ? 0 : 1);
+        BoundingBox bounds = overlay.boundingBox();
+        assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= width + 1);
+        assertTrue(bounds.y >= 0 && bounds.y + bounds.height <= 901);
+        BoundingBox footer = body.locator(".portal-menu-footer").boundingBox();
+        BoundingBox logout = body.locator(".portal-menu-logout").boundingBox();
+        assertEquals(footer.x + footer.width - 8, logout.x + logout.width, 1);
+        AllurePlaywright.attachScreenshot("Benutzermenü " + route + " bei " + width + "px", page);
+        menu.close();
+        menu.open();
+        page.mouse().click(1, 880);
+        assertThat(page.locator("vaadin-popover-overlay[opened], vaadin-popover-overlay[closing]"))
+            .hasCount(0);
+        menu.open();
+        account.click();
+        assertThat(page.locator("#account-panel-profile")).isVisible();
+        assertThat(page.locator("vaadin-popover-overlay[opened]")).hasCount(0);
+      }
+    }
   }
 
   private void assertTooltip(Locator tooltip) {

@@ -179,12 +179,11 @@ class AccountViewTest {
     assertFalse(tooltip.isOpened());
     assertEquals("", tooltip.getText());
     UserPopoverMenu menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
-    assertEquals(
-        UserStatus.ABSENT,
-        ((Select<?>) ReflectionTestUtils.getField(menu, "userStatusSelect")).getValue());
+    assertMenuStatus(menu, UserStatus.ABSENT);
     Button header = (Button) ReflectionTestUtils.getField(view, "userIconButton");
     assertEquals(UserStatus.ABSENT, ReflectionTestUtils.getField(header.getIcon(), "userStatus"));
     menu.applyExternalStatus(UserStatus.EMPLOYED);
+    assertMenuStatus(menu, UserStatus.EMPLOYED);
     assertEquals(UserStatus.EMPLOYED, select.getValue());
     LanguageChangeEvent.fire(ui, Locale.forLanguageTag(language.equals("de") ? "en" : "de"));
     assertEquals(UserStatus.EMPLOYED, select.getValue());
@@ -198,7 +197,7 @@ class AccountViewTest {
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
-  void failedAvatarStatusChangeRestoresBothSelectorsAndShowsTheExistingError(boolean conflict) {
+  void failedAvatarStatusChangeRestoresSelectionAndMenuAndShowsTheExistingError(boolean conflict) {
     Select<UserStatus> select = avatarStatus();
     when(users.updateUserStatus(user, UserStatus.ABSENT, true))
         .thenThrow(
@@ -209,9 +208,7 @@ class AccountViewTest {
     assertEquals(UserStatus.getDefaultStatus(), select.getValue());
     assertEquals(UserStatus.getDefaultStatus(), user.getStatus());
     UserPopoverMenu menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
-    assertEquals(
-        UserStatus.getDefaultStatus(),
-        ((Select<?>) ReflectionTestUtils.getField(menu, "userStatusSelect")).getValue());
+    assertMenuStatus(menu, UserStatus.getDefaultStatus());
     Notification notification =
         (Notification)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
@@ -224,6 +221,23 @@ class AccountViewTest {
         message.getElement().getProperty("innerHTML"));
     verify(users).updateUserStatus(user, UserStatus.ABSENT, true);
     verifyNoMoreInteractions(users);
+  }
+
+  private void assertMenuStatus(UserPopoverMenu menu, UserStatus expected) {
+    List<Component> choices =
+        tree(menu.getPopover())
+            .filter(component -> component.hasClassName("portal-status-option"))
+            .toList();
+    assertEquals(UserStatus.values().length, choices.size());
+    for (Component choice : choices) {
+      assertEquals(
+          Boolean.toString(
+              expected
+                  .name()
+                  .toLowerCase(Locale.ROOT)
+                  .equals(choice.getElement().getAttribute("data-status"))),
+          choice.getElement().getAttribute("aria-pressed"));
+    }
   }
 
   private SessionManagementService sessionService() {

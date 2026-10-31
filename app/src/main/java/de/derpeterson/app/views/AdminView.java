@@ -202,8 +202,7 @@ public class AdminView extends IsAuthenticatedBaseView {
     HorizontalLayout header =
         createApplicationHeader(
             configService,
-            new UserPopoverMenu.Actions(
-                null, () -> UI.getCurrent().navigate(HomeView.class), null, null));
+            new UserPopoverMenu.Actions(null, () -> UI.getCurrent().navigate(HomeView.class)));
     return header;
   }
 

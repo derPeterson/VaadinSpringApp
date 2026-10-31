@@ -268,11 +268,6 @@ vaadin-app-layout.cosmos-app-shell {
     font-size: var(--cosmos-font-size-m);
 }
 
-.cosmos-user-menu .user-popover-header {
-    margin-bottom: var(--cosmos-space-xs);
-}
-
-.cosmos-user-menu .user-popover-header vaadin-button,
 .cosmos-theme vaadin-button.cosmos-overlay-close {
     min-height: var(--cosmos-control-height);
     width: var(--cosmos-control-height);
@@ -281,7 +276,6 @@ vaadin-app-layout.cosmos-app-shell {
     padding: 0;
 }
 
-.cosmos-user-menu .user-popover-header vaadin-icon,
 .cosmos-theme vaadin-button.cosmos-overlay-close > vaadin-icon {
     width: var(--lumo-icon-size-m);
     height: var(--lumo-icon-size-m);
@@ -291,33 +285,6 @@ vaadin-app-layout.cosmos-app-shell {
     padding-block: 0;
     gap: var(--cosmos-space-m);
     min-width: 0;
-}
-
-.cosmos-user-menu .user-popover-body > span {
-    max-width: 100%;
-    text-align: center;
-    overflow-wrap: anywhere;
-}
-
-.cosmos-user-menu .user-popover-avatar {
-    margin-bottom: 6px;
-}
-
-.cosmos-user-menu vaadin-select {
-    --vaadin-select-overlay-width: var(--cosmos-status-overlay-width);
-    --vaadin-input-field-value-font-size: var(--cosmos-font-size-m);
-    --vaadin-input-field-value-font-weight: var(--cosmos-font-weight-semibold);
-}
-
-.cosmos-user-menu vaadin-select::part(input-field) {
-    min-height: var(--cosmos-control-height);
-    border: var(--cosmos-border-width) solid var(--cosmos-input-border);
-    border-radius: var(--lumo-border-radius-l);
-    background: var(--cosmos-input-background);
-}
-
-.cosmos-user-menu vaadin-select[focused]::part(input-field) {
-    border-color: var(--cosmos-input-focus-border);
 }
 
 .cosmos-user-menu vaadin-button {
@@ -634,14 +601,9 @@ vaadin-dialog.portal-confirmation-dialog[theme~=cosmos-reference]::part(overlay)
 vaadin-popover[theme~=cosmos-reference]::part(overlay) { box-sizing: border-box; width: min(330px, calc(100vw - 24px)); background: var(--cosmos-reference-dialog); border: 1px solid var(--cosmos-reference-control-border); border-radius: 14px; box-shadow: 0 24px 60px #0009; }
 vaadin-popover[theme~=cosmos-reference]::part(content) { padding: 0; }
 .cosmos-reference-overlay.cosmos-user-menu { width: 100%; padding: 16px; }
-.cosmos-reference-overlay .portal-user-menu-body { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: start; justify-content: start; gap: 0 12px; padding: 0; }
-.portal-user-menu-body > * { grid-column: 1 / -1; min-width: 0; }
-.portal-user-menu-body .portal-menu-avatar { grid-column: 1; grid-row: 1 / 4; margin: 0; width: 48px; height: 48px; --cosmos-avatar-size: 48px !important; }
-.portal-user-menu-body > .portal-menu-name { grid-column: 2; grid-row: 1; text-align: left; color: var(--cosmos-reference-white); font: 600 14px/20px Inter, sans-serif; }
-.portal-user-menu-body > .portal-menu-email { grid-column: 2; grid-row: 2; text-align: left; color: var(--cosmos-reference-secondary); font: 400 12px/18px Inter, sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cosmos-reference-overlay .portal-user-menu-body > :is(.portal-menu-name, .portal-menu-email, .portal-menu-section) { text-align: left; }
-.cosmos-reference-overlay .portal-user-menu-body > .portal-menu-avatar { margin: 0; align-self: start; }
-.portal-menu-badges { grid-column: 2; grid-row: 3; display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.portal-user-menu-body > * { min-width: 0; }
+.portal-user-menu-body .portal-menu-avatar { margin: 0; width: 48px; height: 48px; --cosmos-avatar-size: 48px !important; }
+.portal-menu-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
 .portal-menu-badges > span { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border: 1px solid var(--cosmos-reference-success-border); border-radius: 4px; font: 500 10px/15px Inter, sans-serif; }
 .portal-menu-account-state { color: var(--cosmos-reference-success); background: var(--cosmos-reference-success-surface); }
 .portal-menu-presence { color: var(--account-presence-color); background: var(--cosmos-reference-hover); }
@@ -651,10 +613,8 @@ vaadin-popover[theme~=cosmos-reference]::part(content) { padding: 0; }
 .cosmos-reference-overlay .portal-user-menu-body > .portal-menu-action::part(label) { flex: initial; justify-content: center; text-align: center; }
 .cosmos-reference-overlay .portal-user-menu-body > .portal-menu-action > vaadin-icon { color: var(--cosmos-reference-accent); }
 .cosmos-reference-overlay .portal-user-menu-body > .portal-menu-action:hover { color: var(--cosmos-reference-white); background: var(--cosmos-reference-button-hover); border-color: #ffffff38; }
-.cosmos-reference-overlay .portal-user-menu-body > .portal-menu-logout { color: var(--cosmos-reference-invalid); margin-top: 12px; border-top: 1px solid var(--cosmos-reference-border); border-radius: 0; }
 .cosmos-reference-overlay .portal-menu-logout > vaadin-icon { color: inherit; }
-.cosmos-reference-overlay .portal-user-menu-body vaadin-select { width: 100%; margin-top: 14px; }
-.cosmos-reference-overlay .portal-user-menu-body vaadin-select::part(label), .portal-menu-section { color: var(--cosmos-reference-accent); font: 600 10px/15px Inter, sans-serif; letter-spacing: .5px; text-transform: uppercase; }
+.portal-menu-section { color: var(--cosmos-reference-accent); font: 600 10px/15px Inter, sans-serif; letter-spacing: .5px; text-transform: uppercase; }
 .portal-menu-section { display: block; margin: 18px 0 8px; }
 .portal-language-switch { display: flex; width: 100%; gap: 4px; }
 .cosmos-reference-overlay .portal-language-switch > vaadin-button { flex: 1; border: 1px solid var(--cosmos-reference-border); background: var(--cosmos-reference-input); }

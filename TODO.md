@@ -6,7 +6,8 @@ Die vereinbarte Reihenfolge ist:
 
 - [ ] [Designübernahme: gemeinsamer Branchabschluss](docs/planung/designkritik-stitch.md):
   Besucher, angemeldetes Portal und Administration sind gestalterisch durchgesehen.
-  Nach Tooltip- und Bereinigungsnachträgen nächste Schritte gemeinsam festlegen.
+  Tooltip- und Bereinigungsnachträge sind umgesetzt und gezielt geprüft.
+  Als Nächstes folgen Merge, Sonar-Scan mit Behandlung der Befunde und große Testrunde.
   Die drei bedienbaren HTML-Referenzen bleiben in `docs`; weitere Entwurfsstände
   und Hintergrundauswahlen entfallen. Service-Logo ist fest gewählt.
   Ein Merge und der anschließende Sonar-/Gesamttestablauf benötigen einen Auftrag.
