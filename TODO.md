@@ -4,14 +4,9 @@
 
 Die vereinbarte Reihenfolge ist:
 
-- [ ] [Designübernahme: gemeinsamer Branchabschluss](docs/planung/designkritik-stitch.md):
-  Besucher, angemeldetes Portal und Administration sind gestalterisch durchgesehen.
-  Tooltip- und Bereinigungsnachträge sind umgesetzt und gezielt geprüft.
-  Als Nächstes folgen Merge, Sonar-Scan mit Behandlung der Befunde und große Testrunde.
-  Die drei bedienbaren HTML-Referenzen bleiben in `docs`; weitere Entwurfsstände
-  und Hintergrundauswahlen entfallen. Service-Logo ist fest gewählt.
-  Ein Merge und der anschließende Sonar-/Gesamttestablauf benötigen einen Auftrag.
-  Theme-Bausteine und Grenzen stehen im [Theme-Standard](docs/theme.md).
+- [ ] Designbranch nach `main` integrieren und den Zielstand technisch prüfen.
+- [ ] Sonar-Scan auf `main` ausführen und berechtigte Befunde beheben.
+- [ ] Anschließend eine große Testrunde durchführen.
 
 ## Menschliche Abnahmen
 

@@ -12,8 +12,9 @@ lag nicht vor. Deshalb wurden alle Browser-Suiten erneut ausgeführt.
 Geprüft wurden `feature/designkritik-stitch`, Commit
 `ee4861abdb537246896d18cec95c20a6b7333c2c`, und die anschließenden lokalen
 QA-Korrekturen. Der Commit wurde nach Review und Gegenprüfung vor der großen
-Testrunde erstellt. Die QA-Korrekturen und dieser Bericht bleiben uncommittiert.
-Kein Merge oder Push. Die gemeinsame Designabnahme bleibt offen.
+Testrunde erstellt. Die damaligen QA-Korrekturen und dieser Bericht sind inzwischen
+committet. Die spätere Designabnahme und gezielten Nachprüfungen ersetzen die hier
+dokumentierte große Testrunde nicht.
 
 | Prüfung | Tatsächliches Ergebnis |
 | --- | --- |
@@ -113,7 +114,7 @@ Prüfungen ersetzen die oben dokumentierte letzte große Testrunde nicht.
 
 In der ausgeführten Runde sind keine bestätigten Anwendungsfehler offen geblieben.
 
-Der [Abnahme- und Abschlussplan](planung/designkritik-stitch.md) bleibt offen.
-Portal und Admin sind manuell abgenommen. Der Benutzer entscheidet nach den
-Tooltip- und Bereinigungsnachträgen über den weiteren Branchabschluss.
-Ein Merge nach main benötigt einen eigenen Auftrag.
+Die Designübernahme ist vom Benutzer abgenommen. Die freigegebenen Tooltip- und
+Bereinigungsnachträge sind umgesetzt und gezielt geprüft. Integration nach `main`
+und Sonar-Bereinigung sind beauftragt. Die anschließende große Testrunde bleibt
+offen; Reihenfolge und menschliche Sonderprüfungen stehen in [TODO](../TODO.md).

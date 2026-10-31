@@ -27,13 +27,11 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
 
 ## Offene Arbeiten
 
-- [Designübernahme und gemeinsame Abnahme](planung/designkritik-stitch.md):
-  Besucherbereich, angemeldetes Portal und Administration sind in Vaadin umgesetzt.
-  Sie verwenden den gemeinsamen Seitenrahmen; Portal und Admin teilen die native
-  Seitennavigation. Die Vergleiche bleiben zur gemeinsamen Endabnahme erhalten.
-  Aktuelle technische Nachweise stehen ausschließlich im [Prüfstand](status.md).
-  Die Auslagerung der großen Referenzsammlung und der Branchabschluss benötigen
-  die im Plan beschriebenen gemeinsamen Entscheidungen.
+Die Designübernahme für Besucher, angemeldetes Portal und Administration ist
+umgesetzt und abgenommen. Die freigegebenen Bausteine stehen im [Theme-Standard](theme.md),
+die drei schlanken HTML-Referenzen bleiben in `docs/design/frontend-referenzen`.
+Offen sind die Integration nach `main`, Sonar-Bereinigung und die anschließende
+große Testrunde. Die letzte vollständige QA bleibt im [Prüfstand](status.md) erhalten.
 
 Weitere vereinbarte Arbeiten stehen in [TODO](../TODO.md); gültige Bedienung und
 Konfiguration in den obigen Fachdokumenten.
