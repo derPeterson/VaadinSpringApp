@@ -44,7 +44,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.AccountSessionsComponent;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
-import de.derpeterson.app.ui.components.ExternalLoginButtons;
+import de.derpeterson.app.ui.components.PublicAuthenticationPanels;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.PublicPanelComponent;
 import de.derpeterson.app.validation.UserInputRules;
@@ -91,7 +91,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
   private final transient SessionManagementService sessions;
   private final transient HttpServletRequest currentRequest;
   private PublicPageComponent pageLayout;
-  private CosmosCardComponent loginCard;
+  private Div loginPanels;
   private Div recoveryArea;
   private AccountSessionsComponent recoverySessions;
   private Button continueLogin;
@@ -199,7 +199,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     cardSecondaryTitleLayout.setWidthFull();
     cardSecondaryTitleLayout.setPadding(false);
     cardSecondaryTitleLayout.setSpacing(false);
-    cardSecondaryTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+    cardSecondaryTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
     cardSecondaryTitleLayout.addClassNames(
         LumoUtility.Gap.SMALL, "cosmos-form-links", COSMOS_FORM_TEXT_CLASS);
     cardSecondaryTitleLayout.add(createAccountQuestionText);
@@ -248,7 +248,13 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
             cardSecondaryTitleLayout,
             loginButton);
 
-    loginCard = cardComponent;
+    loginPanels =
+        new PublicAuthenticationPanels(
+            cardComponent,
+            externalLogin,
+            request,
+            messageProperties,
+            () -> rememberMeCheckBox.getValue());
     recoverySessions =
         new AccountSessionsComponent(
             messageProperties, configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER));
@@ -308,12 +314,11 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     recoveryArea.setId("session-recovery");
     recoveryArea.addClassName("cosmos-account");
     recoveryArea.setVisible(false);
-    mainContent.add(cardComponent, recoveryArea);
+    mainContent.add(loginPanels, recoveryArea);
 
     updateInputPlaceholders();
     refreshRecoveryTexts();
     add(pageLayout);
-    configureExternalLogin(externalLogin, request);
   }
 
   private void authenticate(
@@ -397,7 +402,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
   private void showRecovery() {
     pageLayout.showPage(PublicPageComponent.Page.RECOVERY);
-    loginCard.setVisible(false);
+    loginPanels.setVisible(false);
     recoveryArea.setVisible(true);
     recoverySessions.reload();
   }
@@ -407,7 +412,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     sessions.cancelRecovery(currentRequest);
     recoveryArea.setVisible(false);
     continueLogin.setEnabled(false);
-    loginCard.setVisible(true);
+    loginPanels.setVisible(true);
     passwordField.clear();
   }
 
@@ -470,20 +475,5 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     if (passwordField != null) {
       passwordField.setPlaceholder(messageProperties.getAccountPasswordPlaceholder());
     }
-  }
-
-  private void configureExternalLogin(ExternalLoginFlow flow, HttpServletRequest request) {
-    loginCard
-        .getChildren()
-        .filter(
-            component -> component instanceof Div && component.hasClassName("public-panel-body"))
-        .map(Div.class::cast)
-        .findFirst()
-        .ifPresent(
-            body ->
-                body.addComponentAtIndex(
-                    0,
-                    new ExternalLoginButtons(
-                        flow, request, messageProperties, () -> rememberMeCheckBox.getValue())));
   }
 }

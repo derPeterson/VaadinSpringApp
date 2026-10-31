@@ -67,10 +67,11 @@ import org.springframework.web.context.support.GenericWebApplicationContext;
 class UiSerializationContractTest {
   private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
   private GenericWebApplicationContext context;
+  private VaadinSession session;
 
   @BeforeEach
   void setup() {
-    VaadinSession session = mock(VaadinSession.class);
+    session = mock(VaadinSession.class);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     when(session.hasLock()).thenReturn(true);
     VaadinSession.setCurrent(session);
@@ -83,6 +84,7 @@ class UiSerializationContractTest {
       context.close();
     }
     com.vaadin.flow.internal.CurrentInstance.clearAll();
+    session = null;
   }
 
   @SuppressWarnings("unchecked")

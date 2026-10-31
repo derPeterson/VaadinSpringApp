@@ -184,7 +184,7 @@ class LoginSessionRecoveryTest {
     Component panel = recovery.getChildren().findFirst().orElseThrow();
     assertTrue(tree(panel).anyMatch(item -> item == button("session-recovery-cancel")));
     assertTrue(tree(panel).anyMatch(item -> item == button("session-recovery-continue")));
-    assertFalse(field("loginCard", Component.class).isVisible());
+    assertFalse(field("loginPanels", Component.class).isVisible());
     assertTrue(field("passwordField", PasswordField.class).isEmpty());
     assertNull(ui.target);
     assertFalse(button("session-recovery-continue").isEnabled());
@@ -197,7 +197,7 @@ class LoginSessionRecoveryTest {
     reachedLimit();
     verifyNoInteractions(sessions);
     assertFalse(field("recoveryArea", Div.class).isVisible());
-    assertTrue(field("loginCard", Component.class).isVisible());
+    assertTrue(field("loginPanels", Component.class).isVisible());
     verify(security, never()).storeAuthenticatedUser(any(), any(), any(), anyBoolean());
     Supplier<String> text =
         (Supplier<String>)
@@ -211,7 +211,7 @@ class LoginSessionRecoveryTest {
     button("session-recovery-cancel").click();
     verify(sessions).cancelRecovery(request);
     assertFalse(field("recoveryArea", Div.class).isVisible());
-    assertTrue(field("loginCard", Component.class).isVisible());
+    assertTrue(field("loginPanels", Component.class).isVisible());
     assertTrue(field("passwordField", PasswordField.class).isEmpty());
   }
 
@@ -274,7 +274,7 @@ class LoginSessionRecoveryTest {
     when(sessions.finishRecovery(request, vaadinResponse))
         .thenThrow(new AuthenticationCredentialsNotFoundException("expired"));
     button("session-recovery-continue").click();
-    assertTrue(field("loginCard", Component.class).isVisible());
+    assertTrue(field("loginPanels", Component.class).isVisible());
     assertFalse(field("recoveryArea", Div.class).isVisible());
     assertNull(ui.target);
     Supplier<String> text =

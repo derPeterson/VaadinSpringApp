@@ -908,4 +908,31 @@ body .portal-security-input.ref-no-prefix>input{padding-left:14px!important}
 
 @font-face{font-family:"Google Sans Signin";src:url("external-login/GoogleSans-latin.woff2") format("woff2");font-weight:500;font-display:swap}[data-external-preview="Google"]{font-family:"Google Sans Signin",Arial,sans-serif!important}[data-external-preview="Google"] img{background:white;border-radius:2px}
 
+/* Anmeldung: eigenständiger Schnellzugang neben dem bisherigen lokalen Panel. */
+.vp-auth-panels{display:grid;grid-template-columns:600px 40px minmax(0,1fr);gap:16px;align-items:center;width:100%;max-width:1048px;margin:0 auto}
+.vp-auth-panels .vp-card-foot > .vp-account-switch{flex:1 1 min-content;min-width:min-content;row-gap:0}
+.vp-auth-panels .vp-account-switch > span{white-space:nowrap}
+.vp-auth-panels .vp-card-foot > .vp-actions{flex-shrink:0}
+.vp-auth-panels .external-login-panel{box-sizing:border-box;gap:8px;min-width:0;margin:0;padding:32px;border:1px solid var(--border-subtle);border-radius:16px;background:var(--surface-panel)}
+.vp-auth-panels .external-provider-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:8px;min-width:0;width:100%}
+.external-login-panel .external-login-kicker{color:var(--accent);font:600 10px/16px Inter,system-ui;letter-spacing:.06em;text-transform:uppercase}
+.external-login-panel h2{margin:0;color:var(--text-primary);font:600 16px/24px Inter,system-ui}
+.external-login-panel .external-login-hint{margin:0 0 12px;color:var(--text-secondary);font:400 12px/20px Inter,system-ui}
+.public-reference .vp-auth-panels .external-login-panel .external-provider-button{width:100%;height:40px!important;min-height:40px!important;gap:8px;font-family:Inter,system-ui!important;font-size:12px!important;font-weight:600!important;border-color:var(--border-subtle)!important;border-radius:8px!important;background:var(--surface-input)!important;color:var(--text-primary)!important}
+.public-reference .vp-auth-panels .external-login-panel .external-provider-button:hover{border-color:var(--accent)!important}
+.external-login-panel [data-external-preview="Google"] img{background:transparent}
+@media(max-width:1023px){.vp-auth-panels{grid-template-columns:minmax(0,1fr);max-width:600px}}
+@media(max-width:639px){.vp-auth-panels .external-login-panel{padding:24px 20px}}
+
 .external-provider-button{display:flex;align-items:center;justify-content:center;gap:10px}
+
+.vp-auth-panels .external-login-panel .external-provider-button img{width:16px;height:16px;object-fit:contain;flex-shrink:0}
+
+.vp-auth-panels .external-login-divider{display:flex;flex-direction:column;align-items:center;align-self:stretch;gap:0;padding:24px 0}
+.vp-auth-panels .external-login-divider::before,.vp-auth-panels .external-login-divider::after{content:"";flex:1;border-left:1px solid var(--border-subtle)}
+.vp-auth-panels .external-login-divider>span{padding:4px 8px;border:1px solid var(--border-subtle);border-radius:999px;color:var(--text-secondary);background:var(--portal-content-surface);font:600 10px/16px Inter,system-ui;text-transform:uppercase}
+@media(max-width:1023px){.vp-auth-panels .external-login-divider{flex-direction:row;padding:0}.vp-auth-panels .external-login-divider::before,.vp-auth-panels .external-login-divider::after{border-left:0;border-top:1px solid var(--border-subtle)}}
+
+.vp-auth-panels--register{max-width:880px}
+.vp-auth-panels--register.vp-auth-panels{grid-template-columns:minmax(600px,880px) 40px 376px;max-width:1328px}
+@media(max-width:1199px){.vp-auth-panels--register.vp-auth-panels{grid-template-columns:minmax(0,1fr);max-width:880px}.vp-auth-panels--register .external-login-divider{flex-direction:row;padding:0}.vp-auth-panels--register .external-login-divider::before,.vp-auth-panels--register .external-login-divider::after{border-left:0;border-top:1px solid var(--border-subtle)}}

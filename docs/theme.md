@@ -887,6 +887,46 @@ die offiziellen Google-/Microsoft-Markenressourcen unter `icons/external-login/`
 und eine begrenzte Abweichung für das Anbieterbranding. HTML bildet sie in den
 bestehenden Referenzen `public.html` und `portal.html` ab.
 
+Anmeldung und Registrierung verwenden `PublicAuthenticationPanels` für das lokale
+Formular und den optionalen eigenständigen Schnellzugang. `ExternalLoginButtons`
+liefert in seiner Paneldarstellung Kicker, Überschrift, Erklärung und „Mit … fortfahren“.
+`.public-auth-panels--external` ordnet das lokale Formular, den Trenner und den
+Schnellzugang nebeneinander an. Bei der Anmeldung bleibt das Formular 600 px breit,
+die Zeile höchstens 1048 px. Unter 1024 px stehen die Panels untereinander.
+Die Variante `.public-auth-panels--register` lässt dem bestehenden zweispaltigen
+Registrierungsformular mehr Raum: ohne Anbieter maximal 880 px; mit Anbieter
+600 bis 880 px für das Formular, 376 px für den Schnellzugang und maximal 1328 px
+für die gesamte Zeile, begrenzt durch den gemeinsamen Seitenrahmen. Unter 1200 px
+stehen die Registrierungspanels untereinander, weiterhin mit maximal 880 px Breite.
+Die vorhandenen Felder, Feldspalten und Aktionen bleiben erhalten.
+
+Dazwischen steht ein 40 px breiter Trenner mit je 16 px Abstand zu den Panels.
+Seine dezente dunkle Linie trägt mittig „ODER“ in der Secondary-Textfarbe mit
+derselben dezenten Rahmenfarbe wie die Linie (10 px, Gewicht 600), bei englischer
+Sprache „OR“.
+Beim Stapeln verläuft die Trennlinie waagerecht.
+Der Schnellzugang behält seine Inhaltshöhe und steht auf Desktop vertikal mittig
+neben dem Formular. Er verwendet die Panelfläche von Kopf und Footer
+(`--cosmos-reference-panel`, in HTML `--surface-panel`) und 32 px Innenabstand,
+mobil 24 px / 20 px. Seine Anbieterbuttons übernehmen die Schrift des lokalen
+Anmelden-Buttons (Inter, 12 px, Gewicht 600). Die unveränderten farbigen Markenlogos
+stehen in einer 16 × 16 px großen Iconfläche mit 8 px Abstand zum Text.
+Die Anbieterbuttons stehen in `.external-provider-actions`: mindestens 220 px pro
+Button und 8 px Abstand. Reicht die tatsächliche Inhaltsbreite für beide, stehen
+sie gleich breit nebeneinander. Andernfalls wechseln sie untereinander. Unterhalb
+der Mindestbreite begrenzt die verfügbare Fläche den Button, damit kein Überlauf
+entsteht. Diese Regel gilt für Anmeldung und Registrierung unabhängig davon,
+ob der Schnellzugang neben oder unter dem Formular steht.
+
+Die dunkle Formularfläche und der lokale Aktionsfooter bleiben erhalten.
+Kontohinweis und Link zur jeweils anderen Anmeldeseite stehen bei genügend Platz
+nebeneinander. Zuerst darf der Link unter den Hinweis umbrechen. Reicht der Platz
+auch dafür nicht, rückt die Primäraktion rechtsbündig in eine eigene Zeile.
+Der Umbruch folgt der tatsächlichen Textbreite statt einer festen Smartphonegrenze.
+Ohne aktive Anbieter bleibt allein das lokale Panel sichtbar. Die eingeschränkte
+Sitzungsverwaltung blendet beide Anmeldewege gemeinsam aus. Die Regeln bleiben
+in `cosmos-external-login.css`, für HTML in `assets/public.css`.
+
 Die Anbieterverwaltung unter Konfiguration verwendet die bestehenden Adminpanel-,
 Formular-, Checkbox- und Footerbausteine. Nur das Anordnen von Einrichtungshinweis,
 Rücksprungadresse, Zugangsdaten und Freigabe liegt lokal in

@@ -244,7 +244,9 @@ public final class BrowserTestRunner {
       environment.put("BROWSER_TEST_HTTP_PORT", String.valueOf(httpPort));
       String appUrl = "https://127.0.0.1:" + appPort;
       String mailUrl = "http://127.0.0.1:" + mailPort;
-      if (testClasses.contains(de.derpeterson.browsertests.suites.ExternalLoginBrowserTest.class)) {
+      if (testClasses.contains(de.derpeterson.browsertests.suites.ExternalLoginBrowserTest.class)
+          || testClasses.contains(
+              de.derpeterson.browsertests.suites.ExternalLoginLayoutBrowserTest.class)) {
         oidc = new OidcTestProvider(appUrl);
         oidc.configure(environment);
         metadata.put("oidcFixture", environment.get("BROWSER_TEST_OIDC_GOOGLE_AUTH"));

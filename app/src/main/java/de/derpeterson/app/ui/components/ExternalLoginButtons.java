@@ -5,29 +5,79 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.ExternalLoginFlow;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 /** Dieselben Anbieteraktionen in Anmeldung und Registrierung. */
 @StyleSheet("custom-theme/cosmos-external-login.css")
 public final class ExternalLoginButtons extends Div {
+  public enum Presentation {
+    INLINE,
+    PANEL
+  }
+
   public ExternalLoginButtons(
       ExternalLoginFlow flow,
       HttpServletRequest request,
       MessageProperties texts,
       BooleanSupplier remember) {
+    this(flow, request, texts, remember, Presentation.INLINE);
+  }
+
+  public ExternalLoginButtons(
+      ExternalLoginFlow flow,
+      HttpServletRequest request,
+      MessageProperties texts,
+      BooleanSupplier remember,
+      Presentation presentation) {
     setClassName("external-login-buttons");
-    if (flow.providers().isEmpty()) {
+    List<String> providers = flow.providers();
+    if (providers.isEmpty()) {
       setVisible(false);
       return;
     }
-    for (String provider : flow.providers()) {
+    if (presentation == Presentation.PANEL) {
+      addClassName("external-login-panel");
+      Span kicker = new Span();
+      kicker.addClassName("external-login-kicker");
+      H2 title = new H2();
+      title.setId("external-login-title");
+      getElement().setAttribute("role", "region");
+      getElement().setAttribute("aria-labelledby", "external-login-title");
+      Paragraph hint = new Paragraph();
+      hint.addClassName("external-login-hint");
+      Runnable translate =
+          () -> {
+            kicker.setText(texts.getExternalPanelKicker());
+            title.setText(texts.getExternalPanelTitle());
+            hint.setText(texts.getExternalPanelHint());
+          };
+      translate.run();
+      ComponentUtil.addListener(
+          UI.getCurrent(), LanguageChangeEvent.class, event -> translate.run());
+      add(kicker, title, hint);
+    }
+    Supplier<String> googleText =
+        presentation == Presentation.PANEL
+            ? texts::getExternalContinueGoogle
+            : texts::getExternalGoogle;
+    Supplier<String> microsoftText =
+        presentation == Presentation.PANEL
+            ? texts::getExternalContinueMicrosoft
+            : texts::getExternalMicrosoft;
+    Div actions = new Div();
+    actions.addClassName("external-provider-actions");
+    for (String provider : providers) {
       Button button = new Button();
       button.setId("external-login-" + provider);
       button.setWidthFull();
@@ -41,11 +91,7 @@ public final class ExternalLoginButtons extends Div {
       brand.getElement().setAttribute("aria-hidden", "true");
       button.setPrefixComponent(brand);
       Runnable translate =
-          () ->
-              button.setText(
-                  provider.equals("google")
-                      ? texts.getExternalGoogle()
-                      : texts.getExternalMicrosoft());
+          () -> button.setText(provider.equals("google") ? googleText.get() : microsoftText.get());
       translate.run();
       ComponentUtil.addListener(
           UI.getCurrent(), LanguageChangeEvent.class, event -> translate.run());
@@ -59,13 +105,17 @@ public final class ExternalLoginButtons extends Div {
                           provider,
                           remember.getAsBoolean(),
                           VaadinSession.getCurrent().getLocale())));
-      add(button);
+      actions.add(button);
     }
-    Span alternative = new Span();
-    alternative.addClassName("external-login-alternative");
-    Runnable translate = () -> alternative.setText(texts.getExternalOr());
-    translate.run();
-    ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> translate.run());
-    add(alternative);
+    add(actions);
+    if (presentation == Presentation.INLINE) {
+      Span alternative = new Span();
+      alternative.addClassName("external-login-alternative");
+      Runnable translate = () -> alternative.setText(texts.getExternalOr());
+      translate.run();
+      ComponentUtil.addListener(
+          UI.getCurrent(), LanguageChangeEvent.class, event -> translate.run());
+      add(alternative);
+    }
   }
 }

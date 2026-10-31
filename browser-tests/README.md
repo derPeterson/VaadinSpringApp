@@ -69,8 +69,9 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `authentication` | Admin-/Benutzerlogin, Fehler, Gastzugriff und Logout | 7 |
 | `login-attempts` | Drei Sperr-/Resetfälle plus sieben Anmelde- und vier Remember-me-Regressionsfälle | 14 |
 | `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung einschließlich Serverneustart und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 37 |
-| `external-login` | Google/Microsoft mit eigenem OIDC-Anbieter, Admin-Anbietereinrichtung, freiwillige Profilfelder sowie bestehende Registrierungs-/Konto-/Sicherheitsfälle | 38 |
+| `external-login` | Google/Microsoft mit eigenem OIDC-Anbieter, Admin-Anbietereinrichtung, freiwillige Profilfelder sowie bestehende Registrierungs-/Konto-/Sicherheitsfälle und Formularpanels | 42 |
 | `external-login-flow` | Externe Anmeldungen, Admin-Anbietereinrichtung, Verknüpfungen, Nachweise, Browserneustart, E-Mail-Änderung und optionale Adminprofilfelder | 19 |
+| `external-login-layout` | Getrennte Panels für Anmeldung und Registrierung in Vaadin und HTML, Desktop/schmal und Footerumbrüche, ohne Anmeldung oder Versand | 4 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler, Links und Sprache neuer anonymer Anfragen | 7 |
@@ -102,7 +103,7 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
 | `cosmos-components` | Rollensuche, Checkbox-Geometrie, SideNav-Zustände, Tooltips und Benutzermenü | 5 |
-| `all` | Alle 31 Testklassen einschließlich der Fast-Fälle | 187 |
+| `all` | Alle 32 Testklassen einschließlich der Fast-Fälle | 191 |
 
 IDs, Schritte und erwartetes Ergebnis stehen pro Fall in `@DisplayName` und
 `@Description`; diese Angaben übernimmt der Bericht. AVATAR-01 enthält zwei

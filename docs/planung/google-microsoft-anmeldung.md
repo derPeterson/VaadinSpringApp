@@ -25,13 +25,13 @@ des noch fehlenden aktuellen Sonar-Nachweises: [Prüfstand](../status.md).
   Desktop und Smartphone sind bestanden. Echte Anbieterzugänge bleiben Teil von HUM-08.
 - Gemeinsam die Anbieterbuttons, ergänzende Registrierung und verbundenen Anmeldungen
   auf Desktop und Smartphone ansehen. Die Registrierung verlangt kein Portalpasswort.
-  Für Anmeldung und Registrierung werden im
-  [Stitch-Projekt](https://stitch.google.com/projects/43914967159269113) gezielte
-  Varianten geprüft: Anbieterbuttons unterhalb des vollständigen lokalen Formulars
-  oder am Desktop daneben und mobil darunter. Eine Platzierung darüber ist ausgeschlossen.
-  Übernahme erst nach gemeinsamer Auswahl. Insbesondere die dunkle Inhaltsfläche
-  zwischen Panelkopf und Footer bleibt erhalten. Der Layoutumbau wartet auf die
-  nächste Festlegung des Benutzers. Das übrige Design bleibt erhalten.
+  Die Zwei-Panel-Anordnung der Anmeldung ist abgenommen. Für die Registrierung
+  ist derselbe eigene Schnellzugang rechts neben dem unveränderten Formularpanel
+  freigegeben, bei wenig Platz darunter. Die Footerlinks folgen denselben Umbruchregeln.
+  Grundlage ist der Inhalt aus Variante B im
+  [Stitch-Projekt](https://stitch.google.com/projects/43914967159269113).
+  Die dunkle Inhaltsfläche und der lokale Footer bleiben erhalten. Diese Anordnung
+  der Registrierung gemeinsam ansehen.
 - Mit selbst eingerichteten Google-/Microsoft-Anwendungen die Rücksprungadressen und
   tatsächlichen Anbieterabläufe prüfen. Dafür sind lokale Client-Konfiguration und
   interaktive Kontofreigabe nötig. Prüfanleitung: [HUM-08](../manual-tests/README.md#hum-08).

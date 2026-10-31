@@ -39,6 +39,26 @@ public class MessageTexts {
     return getTranslation("external.or");
   }
 
+  public String getExternalPanelKicker() {
+    return getTranslation("external.panel.kicker");
+  }
+
+  public String getExternalPanelTitle() {
+    return getTranslation("external.panel.title");
+  }
+
+  public String getExternalPanelHint() {
+    return getTranslation("external.panel.hint");
+  }
+
+  public String getExternalContinueGoogle() {
+    return getTranslation("external.google.continue");
+  }
+
+  public String getExternalContinueMicrosoft() {
+    return getTranslation("external.microsoft.continue");
+  }
+
   public String getExternalCompleteTitle() {
     return getTranslation("external.complete.title");
   }

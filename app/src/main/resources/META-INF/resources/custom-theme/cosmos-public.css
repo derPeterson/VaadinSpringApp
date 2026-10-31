@@ -51,7 +51,7 @@
 .cosmos-reference-public .cosmos-form-row { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin:0; }
 .cosmos-reference-public .public-panel-body .cosmos-intro { margin:0;padding:0;align-items:flex-start;text-align:left;color:var(--cosmos-reference-secondary);font:400 13px/1.8 Inter,sans-serif; }
 .cosmos-reference-public .public-panel-body .cosmos-form-text { font:inherit;margin:0;text-align:left; }
-.cosmos-reference-portal.cosmos-reference-public > .cosmos-footer { position:relative;flex:0 0 auto;width:100%;box-sizing:border-box;margin:0;padding:12px 24px;border-top:1px solid var(--cosmos-reference-border);background:var(--cosmos-reference-page);color:var(--cosmos-reference-muted);font:400 11px/16px Inter,sans-serif;text-align:center; }
+.cosmos-reference-portal.cosmos-reference-public > .cosmos-app-main > .cosmos-footer { position:relative;flex:0 0 auto;width:100%;box-sizing:border-box;margin:0;padding:12px 24px;border-top:1px solid var(--cosmos-reference-border);background:var(--cosmos-reference-page);color:var(--cosmos-reference-muted);font:400 11px/16px Inter,sans-serif;text-align:center; }
 .cosmos-reference-public .public-panel .cosmos-panel-icon:has(>.cosmos-status-icon--warning) { color:var(--cosmos-reference-warning);border-color:#fbbf2444;background:#fbbf2414; }
 .cosmos-reference-public .public-panel .cosmos-panel-icon:has(>.cosmos-status-icon.text-error) { color:var(--cosmos-reference-invalid);border-color:#f8717144;background:#f8717114; }
 .cosmos-reference-public .public-panel .cosmos-status-icon.text-error { color:var(--cosmos-reference-invalid)!important; }

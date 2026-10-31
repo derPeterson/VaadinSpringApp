@@ -10,7 +10,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -47,8 +46,8 @@ import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
-import de.derpeterson.app.ui.components.ExternalLoginButtons;
 import de.derpeterson.app.ui.components.PortalFields;
+import de.derpeterson.app.ui.components.PublicAuthenticationPanels;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.PublicPanelComponent;
 import de.derpeterson.app.validation.EmailConflict;
@@ -87,7 +86,6 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
               AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>>
       requiredFormComponents;
 
-  private de.derpeterson.app.ui.components.CosmosCardComponent externalRegistrationCard;
   private H1 title = null;
   private Span createAccountQuestionText = null;
   private RouterLink loginLink = null;
@@ -271,12 +269,14 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
             cardSecondaryTitleLayout,
             registerButton);
 
-    externalRegistrationCard = registrationCardComponent;
-    mainContent.add(registrationCardComponent);
+    PublicAuthenticationPanels registrationPanels =
+        new PublicAuthenticationPanels(
+            registrationCardComponent, externalLogin, request, messageProperties, () -> false);
+    registrationPanels.addClassName("public-auth-panels--register");
+    mainContent.add(registrationPanels);
 
     updateInputPlaceholders();
     add(pageLayout);
-    configureExternalLogin(externalLogin, request);
   }
 
   private Button createRegisterButton() {
@@ -528,18 +528,5 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     if (birthDatePicker != null) {
       birthDatePicker.setHelperText(messageProperties.getAccountBirthDateFormatHint());
     }
-  }
-
-  private void configureExternalLogin(ExternalLoginFlow flow, HttpServletRequest request) {
-    externalRegistrationCard
-        .getChildren()
-        .filter(
-            component -> component instanceof Div && component.hasClassName("public-panel-body"))
-        .map(Div.class::cast)
-        .findFirst()
-        .ifPresent(
-            body ->
-                body.addComponentAtIndex(
-                    0, new ExternalLoginButtons(flow, request, messageProperties, () -> false)));
   }
 }
