@@ -61,3 +61,4 @@ sonar-findings.json
 
 # Lokale MCP-Konfiguration enthält maschinenspezifische Pfade
 /.codex/config.toml
+/analyze
