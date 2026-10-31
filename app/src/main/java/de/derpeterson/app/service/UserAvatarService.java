@@ -11,11 +11,13 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.AvatarImageProcessor.Crop;
 import de.derpeterson.app.service.AvatarImageProcessor.InvalidImage;
 import de.derpeterson.app.service.AvatarImageProcessor.Problem;
+import de.derpeterson.app.service.AvatarImageProcessor.SourceMetadata;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +40,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 @Slf4j
 public class UserAvatarService {
+  private record ImageReplacement(byte[] image, Instant uploadedAt, SourceMetadata original) {}
+
   public record State(Long version, AvatarMode mode, boolean hasImage, UUID imageRevision)
       implements Serializable {
     public static State initial() {
@@ -130,13 +134,9 @@ public class UserAvatarService {
     }
     Long owner = transaction.execute(status -> requireUser(request, false).getId());
     // Original/Decode niemals unter der späteren Kontosperre halten.
-    byte[] normalized =
-        change.imageId() == null
-            ? null
-            : processor.normalize(
-                drafts.image(change.draft(), owner, change.imageId()).bytes(), change.crop());
+    ImageReplacement replacement = prepareReplacement(owner, change);
     State saved =
-        transaction.execute(status -> saveLockedAvatar(request, owner, change, normalized));
+        transaction.execute(status -> saveLockedAvatar(request, owner, change, replacement));
     log.debug(
         "Account avatar updated: userId={}, mode={}, hasImage={}",
         owner,
@@ -146,9 +146,18 @@ public class UserAvatarService {
     return saved;
   }
 
+  private ImageReplacement prepareReplacement(Long owner, Change change) {
+    if (change.imageId() == null) {
+      return null;
+    }
+    AvatarDraftStore.Image original = drafts.image(change.draft(), owner, change.imageId());
+    byte[] normalized = processor.normalize(original.bytes(), change.crop());
+    return new ImageReplacement(normalized, original.uploadedAt(), original.metadata());
+  }
+
   // Ausschließlich innerhalb der bestehenden Schreibtransaktion und Kontosperre aufrufen.
   private State saveLockedAvatar(
-      HttpServletRequest request, Long owner, Change change, byte[] normalized) {
+      HttpServletRequest request, Long owner, Change change, ImageReplacement replacement) {
     UserEntity user = requireUser(request, true);
     if (!owner.equals(user.getId())) {
       throw new AccessDeniedException("Identity changed");
@@ -161,7 +170,7 @@ public class UserAvatarService {
       row = new UserAvatarEntity();
       row.setUser(user);
     }
-    applyImageChange(row, change, normalized);
+    applyImageChange(row, change, replacement);
     if (change.mode() == AvatarMode.CUSTOM && !row.isHasImage()) {
       throw new InvalidImage(Problem.MISSING);
     }
@@ -171,18 +180,28 @@ public class UserAvatarService {
     return new State(row.getVersion(), row.getMode(), row.isHasImage(), row.getImageRevision());
   }
 
-  private void applyImageChange(UserAvatarEntity row, Change change, byte[] normalized) {
+  private void applyImageChange(UserAvatarEntity row, Change change, ImageReplacement replacement) {
     if (change.deleteImage()) {
-      if (normalized != null || change.mode() != AvatarMode.INITIALS) {
+      if (replacement != null || change.mode() != AvatarMode.INITIALS) {
         throw new InvalidImage(Problem.MISSING);
       }
       row.setImage(null);
       row.setHasImage(false);
       row.setImageRevision(null);
-    } else if (normalized != null) {
-      row.setImage(normalized);
+      row.setUploadedAt(null);
+      row.setOriginalFormat(null);
+      row.setOriginalSizeBytes(null);
+      row.setOriginalWidth(null);
+      row.setOriginalHeight(null);
+    } else if (replacement != null) {
+      row.setImage(replacement.image());
       row.setHasImage(true);
       row.setImageRevision(UUID.randomUUID());
+      row.setUploadedAt(replacement.uploadedAt());
+      row.setOriginalFormat(replacement.original().format());
+      row.setOriginalSizeBytes(replacement.original().sizeBytes());
+      row.setOriginalWidth(replacement.original().width());
+      row.setOriginalHeight(replacement.original().height());
     }
   }
 

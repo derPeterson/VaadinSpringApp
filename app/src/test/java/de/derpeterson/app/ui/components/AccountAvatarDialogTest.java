@@ -22,6 +22,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.server.Command;
 import com.vaadin.flow.server.VaadinResponse;
@@ -123,6 +124,16 @@ class AccountAvatarDialogTest {
     ReflectionTestUtils.invokeMethod(
         dialog, "showUploadedImage", ReflectionTestUtils.getField(dialog, "draft"), image);
     return image;
+  }
+
+  @Test
+  void droppingPicturesUsesTheNativeUploadAndIsDisabledWhileSaving() {
+    Upload upload = (Upload) ReflectionTestUtils.getField(editor(), "uploader");
+    assertTrue(upload.isDropAllowed());
+    editor().setUploadEnabled(false);
+    assertFalse(upload.isEnabled());
+    editor().setUploadEnabled(true);
+    assertTrue(upload.isEnabled());
   }
 
   @Test

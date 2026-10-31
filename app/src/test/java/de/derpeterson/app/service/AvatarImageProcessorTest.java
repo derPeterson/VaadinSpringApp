@@ -5,9 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import de.derpeterson.app.model.enums.AvatarImageFormat;
 import de.derpeterson.app.service.AvatarImageProcessor.Crop;
 import de.derpeterson.app.service.AvatarImageProcessor.InvalidImage;
 import de.derpeterson.app.service.AvatarImageProcessor.Problem;
+import de.derpeterson.app.service.AvatarImageProcessor.SourceMetadata;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -41,6 +43,20 @@ class AvatarImageProcessorTest {
     ImageIO.write(image, format, output);
     image.flush();
     return output.toByteArray();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"png", "jpeg"})
+  void validationReturnsTheOriginalFormatSizeAndRasterDimensions(String format) throws Exception {
+    byte[] original = image(format, 67, 43);
+
+    SourceMetadata metadata = processor.validate(original);
+
+    assertEquals(
+        format.equals("png") ? AvatarImageFormat.PNG : AvatarImageFormat.JPEG, metadata.format());
+    assertEquals(original.length, metadata.sizeBytes());
+    assertEquals(67, metadata.width());
+    assertEquals(43, metadata.height());
   }
 
   @ParameterizedTest

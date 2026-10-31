@@ -52,6 +52,17 @@ Abbrechen erhält das Bild. Bestätigen merkt die Entfernung nur im aktuellen
 Editorentwurf vor; erst dessen „Speichern“ übernimmt sie. Der Hinweis im Dialog
 erklärt diese Grenze. Die Portal-HTML-Referenz zeigt dieselbe Bestätigung.
 
+Die Symbolkarten in Profilbild-, Benachrichtigungs- und Gerätebestätigungen
+verwenden den bestehenden rechteckigen `cosmos-panel-icon`-Rahmen mit abgerundeten
+Ecken. Die Kontextkarte enthält dafür einen Rahmen um das unveränderte Lucide-Icon,
+keine Kreisfläche direkt am SVG. Echte Benutzeravatare bleiben rund.
+Infoicons in Bestätigungen sind zur gesamten Texthöhe vertikal zentriert.
+Die Auswahl „Initialen / Eigenes Bild“ bleibt eine native Radiogruppe, deren
+Label die ganze Auswahlfläche abdeckt. Der native Vaadin-Upload unterstützt
+Dateiauswahl und Drag-and-drop im selben Bereich mit derselben Validierung.
+Beim Speichern ist auch das Ablegen gesperrt. Die HTML-Referenz zeigt beim
+Ablegen ausschließlich ihr synthetisches Beispielbild und verarbeitet keine Datei.
+
 ## Tooltips
 
 Anwendungsweit gilt die freigegebene Stitch-Variante A: kompakte dunkle Fläche,

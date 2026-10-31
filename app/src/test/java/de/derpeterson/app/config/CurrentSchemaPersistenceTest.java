@@ -1,11 +1,15 @@
 package de.derpeterson.app.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.derpeterson.app.model.LoginAttemptEntity;
 import de.derpeterson.app.model.RoleEntity;
+import de.derpeterson.app.model.UserAvatarEntity;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.AvatarImageFormat;
+import de.derpeterson.app.model.enums.AvatarMode;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserNotificationType;
@@ -20,6 +24,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
@@ -110,6 +115,18 @@ class CurrentSchemaPersistenceTest {
               .roleEntities(List.of(role))
               .build();
       manager.persist(user);
+      UserAvatarEntity avatar = new UserAvatarEntity();
+      avatar.setUser(user);
+      avatar.setMode(AvatarMode.CUSTOM);
+      avatar.setHasImage(true);
+      avatar.setImageRevision(UUID.randomUUID());
+      avatar.setImage(new byte[] {1, 2, 3});
+      avatar.setUploadedAt(until);
+      avatar.setOriginalFormat(AvatarImageFormat.JPEG);
+      avatar.setOriginalSizeBytes(12L);
+      avatar.setOriginalWidth(20);
+      avatar.setOriginalHeight(10);
+      manager.persist(avatar);
       LoginAttemptEntity block = new LoginAttemptEntity();
       block.setIdentityHash("fixture-identity-hash");
       block.setFailures(10);
@@ -130,6 +147,16 @@ class CurrentSchemaPersistenceTest {
       assertEquals(0L, user.getVersion());
       assertEquals("fixture-encoded-password", user.getPassword());
       assertTrue(user.hasRole(RoleType.ROLE_USER));
+      UserAvatarEntity avatar = manager.find(UserAvatarEntity.class, userId);
+      assertEquals(until, avatar.getUploadedAt());
+      assertEquals(AvatarImageFormat.JPEG, avatar.getOriginalFormat());
+      assertEquals(12L, avatar.getOriginalSizeBytes());
+      assertEquals(20, avatar.getOriginalWidth());
+      assertEquals(10, avatar.getOriginalHeight());
+      JdbcTemplate jdbc = new JdbcTemplate(source);
+      assertThrows(
+          DataIntegrityViolationException.class,
+          () -> jdbc.update("update user_avatar set uploaded_at = null where user_id = ?", userId));
       LoginAttemptEntity block = manager.find(LoginAttemptEntity.class, "fixture-identity-hash");
       assertEquals(10, block.getFailures());
       assertEquals(until, block.getBlockedUntil());

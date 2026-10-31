@@ -1,5 +1,6 @@
 package de.derpeterson.app.service;
 
+import de.derpeterson.app.model.enums.AvatarImageFormat;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
@@ -20,12 +21,17 @@ import javax.imageio.stream.MemoryCacheImageInputStream;
 import javax.imageio.stream.MemoryCacheImageOutputStream;
 import org.springframework.stereotype.Component;
 
-/** Begrenztes Raster-Decoding; Metadaten und Originalname werden nie übernommen. */
+/** Begrenztes Raster-Decoding; EXIF-Daten und Originalname werden nie übernommen. */
 @Component
 public class AvatarImageProcessor {
   public static final int MAX_UPLOAD = 5 * 1024 * 1024;
   public static final int MAX_RESULT = 1024 * 1024;
   private final Semaphore decoders = new Semaphore(2);
+
+  /** Dateigröße und Rastermaße des validierten Originals, vor Ausschnitt und Ausrichtung. */
+  public record SourceMetadata(AvatarImageFormat format, long sizeBytes, int width, int height) {}
+
+  private record ProcessedImage(SourceMetadata metadata, byte[] normalized) {}
 
   public record Crop(double zoom, double x, double y) implements Serializable {
     public static Crop centered() {
@@ -66,18 +72,18 @@ public class AvatarImageProcessor {
     return bytes;
   }
 
-  public void validate(byte[] data) {
-    process(data, Crop.centered(), false);
+  public SourceMetadata validate(byte[] data) {
+    return process(data, Crop.centered(), false).metadata();
   }
 
   public byte[] normalize(byte[] data, Crop crop) {
-    return process(data, crop, true);
+    return process(data, crop, true).normalized();
   }
 
   // Nur Position und Länge im bereits begrenzten Upload; keine Metadatenkopie.
   private record ExifBlock(int offset, int length) {}
 
-  private byte[] process(byte[] data, Crop crop, boolean encode) {
+  private ProcessedImage process(byte[] data, Crop crop, boolean encode) {
     boolean png = requireImageType(data);
     ExifBlock pngExif = png ? inspectPng(data) : null;
     if (!decoders.tryAcquire()) {
@@ -89,11 +95,17 @@ public class AvatarImageProcessor {
       try {
         BufferedImage image = readRaster(reader, input, png);
         try {
+          SourceMetadata metadata =
+              new SourceMetadata(
+                  png ? AvatarImageFormat.PNG : AvatarImageFormat.JPEG,
+                  data.length,
+                  image.getWidth(),
+                  image.getHeight());
           if (!encode) {
-            return new byte[0];
+            return new ProcessedImage(metadata, null);
           }
           int orientation = png ? pngOrientation(data, pngExif) : jpegOrientation(data);
-          return cropAndEncode(image, crop, orientation);
+          return new ProcessedImage(metadata, cropAndEncode(image, crop, orientation));
         } finally {
           if (image != null) {
             image.flush();

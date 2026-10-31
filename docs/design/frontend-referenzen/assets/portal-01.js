@@ -448,11 +448,25 @@ statusTrigger.addEventListener('click', () => { const open = statusPopover.hidde
     if(button.dataset.avatarMode){selectAvatarMode(button.dataset.avatarMode);return;}
     if(button.dataset.avatarImage){
       const action=button.dataset.avatarImage;
-      if(action==='choose'){avatarHasImage=true;byId('avatarCropControls').hidden=false;byId('avatarDelete').hidden=false;selectAvatarMode('image');notify('Gestaltungsvorschau: Ein synthetisches Beispielbild wurde geladen, keine Datei ausgewählt.');}
+      if(action==='choose'){avatarHasImage=true;byId('avatarCropControls').hidden=false;byId('avatarDelete').hidden=false;selectAvatarMode('image');notify('Gestaltungsvorschau: Ein synthetisches Beispielbild wurde geladen. Es wird keine Datei hochgeladen oder gespeichert.');}
       if(action==='cancel'){resetAvatarDraft();return;}
       if(action==='delete'){byId('avatar-delete-confirm').showModal();}
       if(action==='reset'||action==='choose'){cropX=0;cropY=0;byId('avatarZoom').value='1';updateCrop();}return;
     }
+  });
+
+  const dropZone = document.querySelector('[data-avatar-image="choose"]');
+  dropZone.addEventListener('dragover', event => {
+    event.preventDefault();
+    dropZone.classList.add('avatar-dragover');
+  });
+  dropZone.addEventListener('dragleave', event => {
+    if (!dropZone.contains(event.relatedTarget)) dropZone.classList.remove('avatar-dragover');
+  });
+  dropZone.addEventListener('drop', event => {
+    event.preventDefault();
+    dropZone.classList.remove('avatar-dragover');
+    if (event.dataTransfer?.files.length) dropZone.click();
   });
 
   const deleteConfirmation = byId('avatar-delete-confirm');

@@ -79,7 +79,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     uploader.addClassName("account-avatar-upload-control");
     // RAW vermeidet eine vorgelagerte Multipart-Pufferung; tatsächliche Bytes begrenzt der Handler.
     uploader.setUploadFormat(UploadFormat.RAW);
-    uploader.setDropAllowed(false);
+    uploader.setDropAllowed(true);
     uploader.setAcceptedMimeTypes("image/jpeg", "image/png");
     uploader.setMaxFiles(1);
     uploader.setMaxFileSize(AvatarImageProcessor.MAX_UPLOAD);
@@ -197,6 +197,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
   }
 
   public void setUploadEnabled(boolean enabled) {
+    uploader.setEnabled(enabled);
     choose.setEnabled(enabled);
     cancelSelection.setEnabled(enabled);
   }

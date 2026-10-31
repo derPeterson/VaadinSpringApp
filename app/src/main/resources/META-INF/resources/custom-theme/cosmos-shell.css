@@ -573,12 +573,13 @@ vaadin-dialog.account-avatar-dialog[theme~=cosmos-reference]::part(overlay) { wi
 .account-avatar-dialog.cosmos-reference-overlay .cosmos-dialog-actions { width: min(360px, 100%); grid-template-columns: repeat(2, minmax(0, 1fr)); }
 vaadin-dialog.portal-confirmation-dialog[theme~=cosmos-reference]::part(overlay) { width: min(540px, calc(100vw - 32px)); }
 .portal-confirmation-dialog.cosmos-reference-overlay .cosmos-panel-icon { width: 40px; height: 40px; }
-.portal-confirm-destructive.cosmos-reference-overlay .cosmos-panel-icon { color: var(--cosmos-reference-invalid); border-color: var(--cosmos-reference-danger-border); background: var(--cosmos-reference-danger-surface); }
+.portal-confirm-destructive.cosmos-reference-overlay .account-change-dialog-header > .cosmos-panel-icon { color: var(--cosmos-reference-invalid); border-color: var(--cosmos-reference-danger-border); background: var(--cosmos-reference-danger-surface); }
 .portal-confirm-body { display: grid; gap: 16px; padding: 24px; }
 .portal-confirm-lead { display: grid; gap: 6px; }
 .portal-confirm-question { color: var(--cosmos-reference-text); font: 600 15px/21px Inter, sans-serif; }
 .portal-confirm-explanation { color: var(--cosmos-reference-secondary); font: 400 13px/21px Inter, sans-serif; }
-.portal-confirmation-dialog.cosmos-reference-overlay .portal-confirm-body > .cosmos-panel-hint { padding: 0; margin: 0; border: 0; background: transparent; font: 400 12px/20px Inter, sans-serif; }
+.portal-confirmation-dialog.cosmos-reference-overlay .portal-confirm-body > .cosmos-panel-hint { display: flex; align-items: center; padding: 0; margin: 0; border: 0; background: transparent; font: 400 12px/20px Inter, sans-serif; }
+.portal-confirmation-dialog.cosmos-reference-overlay .portal-confirm-body > .cosmos-panel-hint > vaadin-icon { width: 16px; height: 16px; margin: 0; flex-shrink: 0; }
 .portal-confirmation-dialog .cosmos-dialog-actions { grid-template-columns: repeat(2, minmax(0, 112px)); }
 #sessions-confirmation .cosmos-dialog-actions { width: max-content; max-width: 100%; margin-inline-start: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 #sessions-confirmation .cosmos-dialog-actions > vaadin-button { min-width: max-content; }
@@ -587,10 +588,9 @@ vaadin-dialog.portal-confirmation-dialog[theme~=cosmos-reference]::part(overlay)
 .portal-session-confirmation .cosmos-panel-description { margin-top: 2px; font: 400 12px/16px Inter, sans-serif; }
 .portal-session-confirmation .portal-context-list { gap: 10px; }
 .portal-session-confirmation .portal-context-card { box-sizing: border-box; width: 100%; }
-.portal-session-confirmation .portal-context-card > vaadin-icon { padding: 8px; }
 .portal-context-list { display: grid; gap: 8px; }
 .portal-context-card { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 14px; border: 1px solid var(--cosmos-reference-border); border-radius: 8px; background: var(--cosmos-reference-input); }
-.portal-context-card > vaadin-icon { width: 36px; height: 36px; min-width: 36px; box-sizing: border-box; padding: 8px; border: 1px solid var(--cosmos-reference-hint-border); border-radius: 50%; background: var(--cosmos-reference-selection); color: var(--cosmos-reference-accent); }
+.portal-confirmation-dialog.cosmos-reference-overlay .portal-context-card > .cosmos-panel-icon { box-sizing: border-box; width: 36px; height: 36px; }
 .portal-context-copy { min-width: 0; overflow-wrap: anywhere; }
 .portal-context-title { display: block; color: var(--cosmos-reference-text); font: 500 14px/20px Inter, sans-serif; }
 .portal-context-detail { display: block; margin-top: 2px; color: var(--cosmos-reference-secondary); font: 400 12px/18px Inter, sans-serif; }

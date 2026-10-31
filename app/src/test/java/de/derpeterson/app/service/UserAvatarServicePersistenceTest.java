@@ -29,7 +29,9 @@ import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.RoleEntity;
+import de.derpeterson.app.model.UserAvatarEntity;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.AvatarImageFormat;
 import de.derpeterson.app.model.enums.AvatarMode;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.Gender;
@@ -52,6 +54,8 @@ import de.derpeterson.app.websocket.UserProfileBroadcaster.Message;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.io.ByteArrayInputStream;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,17 +95,28 @@ import tools.jackson.databind.ObjectMapper;
 
 @SpringJUnitConfig(UserAvatarServicePersistenceTest.Config.class)
 class UserAvatarServicePersistenceTest {
+  private static final Instant START = Instant.parse("2026-10-31T12:00:00Z");
+
   @Configuration
   @Import({
     UserServicePersistenceTest.Config.class,
     UserAvatarService.class,
-    AvatarImageProcessor.class,
-    AvatarDraftStore.class
+    AvatarImageProcessor.class
   })
   static class Config {
     @Bean
     ConfigService configService() {
       return mock(ConfigService.class);
+    }
+
+    @Bean
+    Clock avatarUploadClock() {
+      return mock(Clock.class);
+    }
+
+    @Bean
+    AvatarDraftStore avatarDraftStore(AvatarImageProcessor processor, Clock avatarUploadClock) {
+      return new AvatarDraftStore(processor, avatarUploadClock);
     }
   }
 
@@ -112,6 +127,7 @@ class UserAvatarServicePersistenceTest {
   @Autowired ConfigService config;
   @Autowired UserProfileBroadcaster events;
   @Autowired TransactionTemplate tx;
+  @Autowired Clock avatarUploadClock;
   @PersistenceContext EntityManager em;
   UserEntity user, other;
   final MockHttpServletRequest request = new MockHttpServletRequest();
@@ -119,7 +135,8 @@ class UserAvatarServicePersistenceTest {
   @BeforeEach
   void setup() {
     SecurityContextHolder.clearContext();
-    reset(config);
+    reset(config, avatarUploadClock);
+    when(avatarUploadClock.instant()).thenReturn(START);
     tx.executeWithoutResult(
         status -> {
           avatars.deleteAll();
@@ -236,7 +253,8 @@ class UserAvatarServicePersistenceTest {
       }
       assertFalse(session.hasLock());
       request.setMethod("POST");
-      request.setContentType("image/jpeg");
+      // Die ursprüngliche Formatangabe muss aus den Bytes stammen, nicht aus diesem Header.
+      request.setContentType("image/png");
       request.addHeader("X-Avatar-Draft", token.toString());
       request.setContent(AvatarImageProcessorTest.image("jpg", 1367, 1823));
       MockHttpServletResponse response = new MockHttpServletResponse();
@@ -263,6 +281,10 @@ class UserAvatarServicePersistenceTest {
       }
       State saved = service.state(user.getId());
       assertTrue(saved.hasImage());
+      UserAvatarEntity stored = avatars.findById(user.getId()).orElseThrow();
+      assertEquals(AvatarImageFormat.JPEG, stored.getOriginalFormat());
+      assertEquals(1367, stored.getOriginalWidth());
+      assertEquals(1823, stored.getOriginalHeight());
       assertEquals(Locale.GERMAN, users.findById(user.getId()).orElseThrow().getPreferredLocale());
       DownloadHandler download =
           AvatarImageResource.handler(service, user.getId(), saved.imageRevision(), false);
@@ -307,6 +329,90 @@ class UserAvatarServicePersistenceTest {
   }
 
   @Test
+  void metadataIsCommittedWithThePictureAndRetainedWhenSwitchingToInitials() throws Exception {
+    Open opened = service.open(request);
+    Instant uploadedAt = START.plusSeconds(15);
+    when(avatarUploadClock.instant()).thenReturn(uploadedAt);
+    byte[] original = AvatarImageProcessorTest.image("jpeg", 67, 43);
+    UUID image = service.upload(request, opened.draft(), new ByteArrayInputStream(original));
+    assertEquals(0, avatars.count());
+
+    when(avatarUploadClock.instant()).thenReturn(START.plusSeconds(45));
+    State saved =
+        service.save(
+            request,
+            new Change(
+                opened.state().version(),
+                AvatarMode.CUSTOM,
+                false,
+                opened.draft(),
+                image,
+                Crop.centered()));
+    UserAvatarEntity row = avatars.findById(user.getId()).orElseThrow();
+    assertOriginalMetadata(row, uploadedAt, AvatarImageFormat.JPEG, original.length, 67, 43);
+
+    service.save(
+        request, new Change(saved.version(), AvatarMode.INITIALS, false, null, null, null));
+    row = avatars.findById(user.getId()).orElseThrow();
+    assertOriginalMetadata(row, uploadedAt, AvatarImageFormat.JPEG, original.length, 67, 43);
+
+    Open replacement = service.open(request);
+    Instant replacedAt = START.plusSeconds(60);
+    when(avatarUploadClock.instant()).thenReturn(replacedAt);
+    byte[] next = AvatarImageProcessorTest.image("png", 29, 31);
+    UUID nextImage = service.upload(request, replacement.draft(), new ByteArrayInputStream(next));
+    assertOriginalMetadata(
+        avatars.findById(user.getId()).orElseThrow(),
+        uploadedAt,
+        AvatarImageFormat.JPEG,
+        original.length,
+        67,
+        43);
+    when(avatarUploadClock.instant()).thenReturn(START.plusSeconds(90));
+    service.save(
+        request,
+        new Change(
+            replacement.state().version(),
+            AvatarMode.CUSTOM,
+            false,
+            replacement.draft(),
+            nextImage,
+            Crop.centered()));
+    assertOriginalMetadata(
+        avatars.findById(user.getId()).orElseThrow(),
+        replacedAt,
+        AvatarImageFormat.PNG,
+        next.length,
+        29,
+        31);
+
+    Open cancelled = service.open(request);
+    service.upload(request, cancelled.draft(), new ByteArrayInputStream(original));
+    service.release(cancelled.draft());
+    assertOriginalMetadata(
+        avatars.findById(user.getId()).orElseThrow(),
+        replacedAt,
+        AvatarImageFormat.PNG,
+        next.length,
+        29,
+        31);
+  }
+
+  private void assertOriginalMetadata(
+      UserAvatarEntity row,
+      Instant uploadedAt,
+      AvatarImageFormat format,
+      long sizeBytes,
+      int width,
+      int height) {
+    assertEquals(uploadedAt, row.getUploadedAt());
+    assertEquals(format, row.getOriginalFormat());
+    assertEquals(sizeBytes, row.getOriginalSizeBytes());
+    assertEquals(width, row.getOriginalWidth());
+    assertEquals(height, row.getOriginalHeight());
+  }
+
+  @Test
   void saveSwitchKeepReplaceDeleteAndDeleteAccountHaveNoImageHistory() throws Exception {
     Long profileVersion = users.findById(user.getId()).orElseThrow().getVersion();
     State saved = uploadAndSave();
@@ -338,6 +444,12 @@ class UserAvatarServicePersistenceTest {
     assertFalse(deleted.hasImage());
     assertNull(deleted.imageRevision());
     assertNull(avatars.findById(user.getId()).orElseThrow().getImage());
+    UserAvatarEntity deletedRow = avatars.findById(user.getId()).orElseThrow();
+    assertNull(deletedRow.getUploadedAt());
+    assertNull(deletedRow.getOriginalFormat());
+    assertNull(deletedRow.getOriginalSizeBytes());
+    assertNull(deletedRow.getOriginalWidth());
+    assertNull(deletedRow.getOriginalHeight());
     assertEquals(profileVersion, users.findById(user.getId()).orElseThrow().getVersion());
     uploadAndSave();
     tx.executeWithoutResult(

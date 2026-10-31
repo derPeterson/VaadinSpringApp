@@ -2578,10 +2578,6 @@ public class MessageTexts {
     return getTranslation("portal.action.confirm");
   }
 
-  public String getPortalAvatarPreview() {
-    return getTranslation("portal.avatar.preview");
-  }
-
   public String getPortalSessionActive() {
     return getTranslation("portal.session.active");
   }

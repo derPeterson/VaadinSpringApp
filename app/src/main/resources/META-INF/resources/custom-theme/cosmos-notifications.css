@@ -2060,10 +2060,6 @@ vaadin-dialog.cosmos-notification-dialog[theme~=cosmos-reference]::part(footer) 
     font: 400 12px/16px Inter, sans-serif;
 }
 
-.portal-notification-confirmation .portal-context-card > vaadin-icon {
-    padding: 8px;
-}
-
 .portal-notification-confirmation .cosmos-dialog-actions {
     display: flex;
     flex-wrap: wrap;

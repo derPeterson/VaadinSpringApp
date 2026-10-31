@@ -55,7 +55,6 @@ public class AccountAvatarDialog extends Dialog {
   private final H2 title = new H2();
   private final Span description = new Span();
   private final Span keepHint = new Span();
-  private final Span previewCaption = new Span();
   private transient UserAvatarService avatars;
   private transient HttpServletRequest request;
   private volatile UUID draft;
@@ -137,8 +136,6 @@ public class AccountAvatarDialog extends Dialog {
             });
     editor.getElement().addEventListener("avatar-file-cancelled", event -> cancelSelection());
     editor.addComponentAtIndex(0, mode);
-    previewCaption.addClassName("portal-avatar-preview-caption");
-    editor.addComponentAtIndex(2, previewCaption);
     SvgIcon infoIcon = AppIcon.INFO_CIRCLE.create();
     infoIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Span infoBadge = new Span(infoIcon);
@@ -456,7 +453,6 @@ public class AccountAvatarDialog extends Dialog {
     mode.getDataProvider().refreshAll();
     mode.setValue(selectedMode == null ? AvatarMode.INITIALS : selectedMode);
     keepHint.setText(messages.getAccountAvatarKeepHint());
-    previewCaption.setText(messages.getPortalAvatarPreview());
     delete.setText(messages.getAccountAvatarDelete());
     cancel.setText(messages.getAdminUsersCancel());
     save.setText(messages.getAdminUsersSave());

@@ -216,12 +216,13 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 }
 
 .account-avatar-dialog #account-avatar-mode vaadin-radio-button {
+    position: relative;
     box-sizing: border-box;
     flex: 1 1 0;
     min-width: 0;
     min-height: 44px;
     margin: 0;
-    padding: 6px 10px;
+    padding: 0;
     grid-template-columns: minmax(0, 1fr);
     align-items: center;
     column-gap: 0;
@@ -238,10 +239,20 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 }
 
 .account-avatar-dialog #account-avatar-mode vaadin-radio-button > label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     grid-column: 1;
     margin: 0;
     padding: 0;
-    width: 100%;
+    width: auto;
+    cursor: pointer;
+}
+
+.account-avatar-dialog #account-avatar-mode vaadin-radio-button[disabled] > label {
+    cursor: default;
 }
 
 .account-avatar-dialog .account-avatar-mode-label {
@@ -319,6 +330,15 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     width: 100%;
 }
 
+.account-avatar-dialog #account-avatar-upload::part(drop-label) {
+    display: none;
+}
+
+.account-avatar-dialog #account-avatar-upload[dragover-valid] #account-avatar-choose {
+    border-color: var(--cosmos-reference-accent);
+    background: var(--cosmos-reference-selection);
+}
+
 .account-avatar-dialog #account-avatar-choose {
     box-sizing: border-box;
     width: 100%;
@@ -357,7 +377,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     width: 56px;
     height: 56px;
     border: var(--cosmos-border-width) solid var(--cosmos-panel-icon-border);
-    border-radius: 50%;
+    border-radius: var(--lumo-border-radius-l);
     background: var(--cosmos-panel-icon-background);
     color: var(--lumo-primary-text-color);
 }
@@ -723,7 +743,6 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-mode-label { flex-direction: row; gap: 8px; }
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-circle { background: var(--cosmos-reference-input); color: var(--cosmos-reference-text); border: 1px solid var(--cosmos-reference-icon-border); box-shadow: 0 0 0 6px var(--cosmos-reference-success-surface); }
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-initials { color: var(--cosmos-reference-white); font-size: 28px; font-weight: 700; }
-.portal-avatar-preview-caption { display: block; margin-top: -8px; text-align: center; color: var(--cosmos-reference-secondary); font: 400 11px/18px Inter, sans-serif; }
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-info { align-items: center; font: 400 11px/1.8 Inter, sans-serif; gap: 10px; }
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-info-icon { width: 16px; height: 16px; background: transparent; border: 0; }
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-info-icon > vaadin-icon { width: 16px; height: 16px; }

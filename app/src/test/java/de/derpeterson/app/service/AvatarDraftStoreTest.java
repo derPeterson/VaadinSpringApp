@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import de.derpeterson.app.model.enums.AvatarImageFormat;
 import de.derpeterson.app.service.AvatarImageProcessor.InvalidImage;
 import de.derpeterson.app.service.AvatarImageProcessor.Problem;
 import java.io.ByteArrayInputStream;
@@ -45,10 +46,15 @@ class AvatarDraftStoreTest {
         };
     AvatarDraftStore drafts = new AvatarDraftStore(new AvatarImageProcessor(), clock);
     UUID token = drafts.begin(1L);
-    UUID id =
-        drafts.upload(
-            token, 1L, new ByteArrayInputStream(AvatarImageProcessorTest.image("png", 10, 10)));
-    assertNotNull(drafts.image(token, 1L, id));
+    now.set(now.get().plusSeconds(5));
+    byte[] original = AvatarImageProcessorTest.image("png", 10, 10);
+    UUID id = drafts.upload(token, 1L, new ByteArrayInputStream(original));
+    AvatarDraftStore.Image snapshot = drafts.image(token, 1L, id);
+    assertEquals(now.get(), snapshot.uploadedAt());
+    assertEquals(AvatarImageFormat.PNG, snapshot.metadata().format());
+    assertEquals(original.length, snapshot.metadata().sizeBytes());
+    assertEquals(10, snapshot.metadata().width());
+    assertEquals(10, snapshot.metadata().height());
     assertEquals(
         Problem.EXPIRED,
         assertThrows(InvalidImage.class, () -> drafts.image(token, 2L, id)).problem());
@@ -71,9 +77,10 @@ class AvatarDraftStoreTest {
     UUID id =
         drafts.upload(
             token, 1L, new ByteArrayInputStream(AvatarImageProcessorTest.image("png", 10, 10)));
+    AvatarDraftStore.Image accepted = drafts.image(token, 1L, id);
     ByteArrayInputStream imageInput = new ByteArrayInputStream("bad image".getBytes());
     assertThrows(InvalidImage.class, () -> drafts.upload(token, 1L, imageInput));
-    assertEquals(id, drafts.image(token, 1L, id).id());
+    assertEquals(accepted, drafts.image(token, 1L, id));
     UUID operationId = UUID.randomUUID();
     assertEquals(
         Problem.MISSING,

@@ -821,9 +821,9 @@ body.portal-reference .portal-confirm-dialog .portal-confirm-description{margin:
 body.portal-reference .portal-confirm-dialog .portal-confirm-explanation{margin:0;font:400 13px/21px Inter,system-ui;color:var(--text-secondary)}
 body.portal-reference .portal-confirm-dialog .portal-confirm-explanation[hidden]{display:none}
 body.portal-reference .portal-confirm-dialog .portal-confirm-context{display:flex;align-items:center;gap:12px;box-sizing:border-box;margin:0;padding:14px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--surface-input);font:500 14px/20px Inter,system-ui;color:var(--text-primary);overflow-wrap:anywhere}
-body.portal-reference .portal-confirm-dialog .portal-confirm-object{display:grid;place-items:center;flex-shrink:0;box-sizing:border-box;width:36px;height:36px;border:1px solid #38bdf826;border-radius:50%;background:#122342;color:var(--accent)}
-body.portal-reference .portal-confirm-dialog .portal-confirm-object svg{display:block;width:18px;height:18px}
-body.portal-reference .portal-confirm-dialog .portal-confirm-avatar{font:600 12px/1 Inter,system-ui;color:#bae6fd}
+body.portal-reference .portal-confirm-dialog .portal-confirm-object{display:grid;place-items:center;flex-shrink:0;box-sizing:border-box;width:36px;height:36px;border:1px solid #38bdf826;border-radius:12px;background:#122342;color:var(--accent)}
+body.portal-reference .portal-confirm-dialog .portal-confirm-object svg{display:block;width:20px;height:20px}
+body.portal-reference .portal-confirm-dialog .portal-confirm-avatar{border-radius:50%;font:600 12px/1 Inter,system-ui;color:#bae6fd}
 body.portal-reference .portal-confirm-dialog .portal-confirm-text{min-width:0}
 body.portal-reference .portal-confirm-dialog .portal-confirm-context strong{font:500 14px/20px Inter,system-ui}
 body.portal-reference .portal-confirm-dialog .portal-confirm-context p{margin:2px 0 0;font:400 12px/18px Inter,system-ui;color:var(--text-secondary)}

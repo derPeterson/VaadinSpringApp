@@ -5,6 +5,7 @@ import static de.derpeterson.app.service.AvatarImageProcessor.Problem.EXPIRED;
 import static de.derpeterson.app.service.AvatarImageProcessor.Problem.MISSING;
 
 import de.derpeterson.app.service.AvatarImageProcessor.InvalidImage;
+import de.derpeterson.app.service.AvatarImageProcessor.SourceMetadata;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
@@ -28,6 +29,8 @@ public class AvatarDraftStore {
     final Instant expires;
     byte[] bytes;
     UUID imageId;
+    Instant uploadedAt;
+    SourceMetadata metadata;
     boolean uploading;
 
     Draft(Long owner, Instant expires) {
@@ -36,7 +39,7 @@ public class AvatarDraftStore {
     }
   }
 
-  public record Image(UUID id, byte[] bytes) {
+  public record Image(UUID id, byte[] bytes, Instant uploadedAt, SourceMetadata metadata) {
     public Image {
       bytes = bytes == null ? null : bytes.clone();
     }
@@ -51,12 +54,14 @@ public class AvatarDraftStore {
       return this == other
           || other instanceof Image image
               && Objects.equals(id, image.id)
+              && Objects.equals(uploadedAt, image.uploadedAt)
+              && Objects.equals(metadata, image.metadata)
               && Arrays.equals(bytes, image.bytes);
     }
 
     @Override
     public int hashCode() {
-      return 31 * Objects.hashCode(id) + Arrays.hashCode(bytes);
+      return 31 * Objects.hash(id, uploadedAt, metadata) + Arrays.hashCode(bytes);
     }
 
     @Override
@@ -113,13 +118,15 @@ public class AvatarDraftStore {
     }
     try {
       byte[] bytes = AvatarImageProcessor.readLimited(input);
-      images.validate(bytes);
+      SourceMetadata metadata = images.validate(bytes);
       synchronized (this) {
         if (require(token, owner) != draft) {
           throw new InvalidImage(EXPIRED);
         }
         draft.bytes = bytes;
         draft.imageId = UUID.randomUUID();
+        draft.uploadedAt = clock.instant();
+        draft.metadata = metadata;
         return draft.imageId;
       }
     } finally {
@@ -138,7 +145,7 @@ public class AvatarDraftStore {
     if (draft.bytes == null || imageId == null || !imageId.equals(draft.imageId)) {
       throw new InvalidImage(MISSING);
     }
-    return new Image(draft.imageId, draft.bytes);
+    return new Image(draft.imageId, draft.bytes, draft.uploadedAt, draft.metadata);
   }
 
   public synchronized void release(UUID token) {

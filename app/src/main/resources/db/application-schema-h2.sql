@@ -122,9 +122,25 @@ CREATE TABLE IF NOT EXISTS user_avatar (
     version bigint not null,
     image_revision uuid,
     image_data blob,
+    uploaded_at timestamp(6) with time zone,
+    original_format enum ('JPEG','PNG'),
+    original_size_bytes bigint,
+    original_width integer,
+    original_height integer,
     mode enum ('CUSTOM','INITIALS') not null,
     primary key (user_id),
-    constraint FKlatwcvwggmxieyymk3e3aah09 foreign key (user_id) references users on delete cascade
+    constraint FKlatwcvwggmxieyymk3e3aah09 foreign key (user_id) references users on delete cascade,
+    constraint ck_user_avatar_image_metadata check (
+        (not has_image and image_data is null and image_revision is null
+            and uploaded_at is null and original_format is null
+            and original_size_bytes is null and original_width is null and original_height is null)
+        or
+        (has_image and image_data is not null and image_revision is not null
+            and uploaded_at is not null and original_format is not null
+            and original_size_bytes is not null and original_size_bytes > 0
+            and original_width is not null and original_width > 0
+            and original_height is not null and original_height > 0)
+    )
 );
 
 CREATE TABLE IF NOT EXISTS user_notifications (

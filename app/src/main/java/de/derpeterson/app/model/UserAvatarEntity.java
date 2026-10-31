@@ -1,5 +1,6 @@
 package de.derpeterson.app.model;
 
+import de.derpeterson.app.model.enums.AvatarImageFormat;
 import de.derpeterson.app.model.enums.AvatarMode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,6 +14,7 @@ import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -44,6 +46,16 @@ public class UserAvatarEntity {
   private boolean hasImage;
 
   private UUID imageRevision;
+
+  private Instant uploadedAt;
+
+  @Enumerated(EnumType.STRING)
+  @Column(length = 8)
+  private AvatarImageFormat originalFormat;
+
+  private Long originalSizeBytes;
+  private Integer originalWidth;
+  private Integer originalHeight;
 
   @Lob
   @Column(name = "image_data")

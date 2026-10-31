@@ -5,9 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.microsoft.playwright.JSHandle;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.BoundingBox;
 import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
@@ -25,6 +27,8 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Base64;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -249,7 +253,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   @CsvSource({"1280,900", "390,844"})
   @DisplayName("AVATAR-01: Upload, Ausschnitt, Wiederöffnen, Initialen, Ersetzen und Löschen")
   @Description(
-      "Eigenes Konto: Bild über Dateiauswahl hochladen, zuschneiden und speichern; Kopfzeile, Popup und Konto prüfen. Wiederöffnen behält den Bildmodus. Lokales Abbrechen und Footer-Abbrechen verwerfen Entwürfe; Initialen erhalten das Bild, Ersetzen und Löschen werden gespeichert. Desktop und schmale Ansicht.")
+      "Eigenes Konto: Bild per Drag-and-drop und Dateiauswahl hochladen, zuschneiden und speichern; Kopfzeile, Popup und Konto prüfen. Die Modusauswahl reagiert auch am Rand der Fläche. Wiederöffnen behält den Bildmodus. Lokales Abbrechen und Footer-Abbrechen verwerfen Entwürfe; Initialen erhalten das Bild, Ersetzen und Löschen werden gespeichert. Desktop und schmale Ansicht.")
   void avatarPersistsAcrossAllModes(int width, int height) throws Exception {
     String email = account();
     page.setViewportSize(width, height);
@@ -257,7 +261,10 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.open();
     openAvatar();
     chooseMode(texts.getAccountAvatarCustom());
-    uploadAvatar(java.awt.Color.BLUE);
+    chooseMode(texts.getAccountAvatarInitials());
+    assertThat(page.locator("account-avatar-editor")).hasAttribute("data-mode", "INITIALS");
+    chooseMode(texts.getAccountAvatarCustom());
+    uploadAvatar(java.awt.Color.BLUE, true);
     assertThat(page.locator(".account-avatar-upload")).isHidden();
     Locator reset = page.locator("[data-avatar='reset']");
     Locator cancel = page.locator("#account-avatar-cancel-selection");
@@ -317,6 +324,13 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     assertThat(confirmation).hasJSProperty("opened", true);
     assertThat(confirmation).containsText(texts.getAccountAvatarDeleteQuestion());
     assertThat(confirmation).containsText(texts.getAccountAvatarDeleteHint());
+    Locator contextIcon = confirmation.locator(".portal-context-card > .cosmos-panel-icon");
+    assertThat(contextIcon).isVisible();
+    assertEquals("12px", contextIcon.evaluate("e => getComputedStyle(e).borderRadius"));
+    Locator hint = confirmation.locator(".portal-confirm-body > .cosmos-panel-hint");
+    BoundingBox hintIcon = hint.locator("vaadin-icon").boundingBox();
+    BoundingBox hintText = hint.locator(":scope > span").boundingBox();
+    assertEquals(hintText.y + hintText.height / 2, hintIcon.y + hintIcon.height / 2, 1);
     io.qameta.allure.playwright.AllurePlaywright.attachScreenshot(
         "Profilbild löschen bestätigen", page);
     page.locator("#account-avatar-delete-confirmation-cancel").click();
@@ -377,11 +391,18 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   }
 
   private void chooseMode(String label) {
-    page.getByRole(AriaRole.RADIO, new Page.GetByRoleOptions().setName(label).setExact(true))
-        .click();
+    Locator radio =
+        page.locator("#account-avatar-mode vaadin-radio-button")
+            .filter(new Locator.FilterOptions().setHasText(label));
+    assertThat(radio).isVisible();
+    radio.click(new Locator.ClickOptions().setPosition(radio.boundingBox().width - 3, 3));
   }
 
   private void uploadAvatar(java.awt.Color color) throws Exception {
+    uploadAvatar(color, false);
+  }
+
+  private void uploadAvatar(java.awt.Color color, boolean drop) throws Exception {
     BufferedImage image =
         new java.awt.image.BufferedImage(160, 120, java.awt.image.BufferedImage.TYPE_INT_RGB);
     Graphics2D graphics = image.createGraphics();
@@ -392,12 +413,37 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     graphics.dispose();
     ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
     javax.imageio.ImageIO.write(image, color.equals(java.awt.Color.RED) ? "jpeg" : "png", bytes);
-    page.waitForFileChooser(() -> page.locator("#account-avatar-choose").click())
-        .setFiles(
-            new com.microsoft.playwright.options.FilePayload(
-                color.equals(java.awt.Color.RED) ? "fixture.jpeg" : "fixture.png",
-                color.equals(java.awt.Color.RED) ? "image/jpeg" : "image/png",
-                bytes.toByteArray()));
+    String filename = color.equals(java.awt.Color.RED) ? "fixture.jpeg" : "fixture.png";
+    String contentType = color.equals(java.awt.Color.RED) ? "image/jpeg" : "image/png";
+    if (drop) {
+      JSHandle transfer =
+          page.evaluateHandle(
+              """
+              data => {
+                const bytes = Uint8Array.from(atob(data.bytes), c => c.charCodeAt(0));
+                const transfer = new DataTransfer();
+                transfer.items.add(new File([bytes], data.filename, { type: data.contentType }));
+                return transfer;
+              }
+              """,
+              Map.of(
+                  "bytes", Base64.getEncoder().encodeToString(bytes.toByteArray()),
+                  "filename", filename,
+                  "contentType", contentType));
+      try {
+        Locator upload = page.locator("#account-avatar-upload");
+        upload.dispatchEvent("dragover", Map.of("dataTransfer", transfer));
+        assertThat(upload).hasAttribute("dragover-valid", "true");
+        upload.dispatchEvent("drop", Map.of("dataTransfer", transfer));
+      } finally {
+        transfer.dispose();
+      }
+    } else {
+      page.waitForFileChooser(() -> page.locator("#account-avatar-choose").click())
+          .setFiles(
+              new com.microsoft.playwright.options.FilePayload(
+                  filename, contentType, bytes.toByteArray()));
+    }
     assertThat(page.locator("account-avatar-editor")).hasAttribute("data-local-image", "true");
     assertThat(page.locator(".account-avatar-crop-controls")).isVisible();
   }

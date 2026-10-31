@@ -54,13 +54,22 @@ Bild und Status erscheinen in den angebundenen Ansichten. Statussymbole kennzeic
 verfügbar, beschäftigt, abwesend und offline; manuelle Wahl und automatische
 Abwesenheit haben getrennte Regeln.
 
-Der Bilddialog akzeptiert JPEG und PNG, bietet Ausschnitt und Zoom und speichert
+Der Bilddialog akzeptiert JPEG und PNG per Dateiauswahl oder Drag-and-drop, bietet Ausschnitt und Zoom und speichert
 ein bereinigtes 512×512-PNG. Initialen können gewählt werden, ohne das gespeicherte
-Bild zu löschen. Löschen entfernt das Bild; Abbrechen verwirft den Entwurf.
-Für einen neuen Ausschnitt muss das Original erneut hochgeladen werden.
+Bild zu löschen. Bestätigtes Löschen wird beim Speichern übernommen; Abbrechen verwirft den Entwurf.
+Für einen neuen Ausschnitt wählen Sie erneut eine Bilddatei vom Gerät aus.
 
 Die Uploadgrenzen sind 5 MiB, 8192 Pixel je Kante und 20 Megapixel; das Ergebnis
-ist auf 1 MiB begrenzt. Originale und Metadaten werden nicht dauerhaft archiviert.
+ist auf 1 MiB begrenzt. Originaldateien, Originalnamen und EXIF-Daten werden nicht dauerhaft archiviert.
+In `user_avatar` liegen neben dem bereinigten PNG der serverseitige Uploadzeitpunkt
+(`uploaded_at`) und die erkannten Originalangaben: `original_format` (JPEG/PNG),
+`original_size_bytes`, `original_width` und `original_height`. Die Rastermaße
+beschreiben das Original vor Ausschnitt und EXIF-Ausrichtung. Diese Angaben
+werden erst mit dem erfolgreichen Speichern des Bildes dauerhaft übernommen.
+Der Wechsel zu Initialen erhält sie. Ersetzen aktualisiert sie, Löschen entfernt sie
+zusammen mit dem Bild. Es gibt keine Bild- oder Metadatenhistorie. Eine Datenbankprüfung
+verhindert unvollständige Bildmetadaten. Größe und Format des gespeicherten Ergebnisses
+sind weiterhin 512×512/PNG, seine Bytegröße ergibt sich aus `image_data`.
 Uploadentwürfe sind zeitlich und mengenmäßig begrenzt. Ein verspäteter Upload darf
 einen geschlossenen oder wieder geöffneten Dialog nicht verändern.
 
