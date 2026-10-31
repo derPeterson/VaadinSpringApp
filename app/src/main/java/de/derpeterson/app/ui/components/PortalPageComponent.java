@@ -1,5 +1,7 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.ui.components.CosmosClasses.ACCOUNT_NAVIGATION_OPEN;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.Shortcuts;
@@ -8,6 +10,16 @@ import com.vaadin.flow.component.html.Div;
 
 /** Gemeinsame Inhaltsanordnung mit optionaler Seitennavigation für alle Seitenbereiche. */
 public class PortalPageComponent extends Div {
+  private static final String ARIA_EXPANDED = "aria-expanded";
+
+  private static final String FOCUS_NAVIGATION_SCRIPT =
+      """
+                    const item = this.querySelector('vaadin-side-nav-item');
+                    const target = item?.shadowRoot?.querySelector('[part=link]')
+                      ?? this.querySelector('vaadin-button');
+                    target?.focus();
+                    """;
+
   private Component navigation;
   private Component pageContent;
   private Button navigationToggle;
@@ -45,35 +57,27 @@ public class PortalPageComponent extends Div {
     Shortcuts.addShortcutListener(this, this::closeNavigation, Key.ESCAPE)
         .listenOn(navigation, toggle);
     toggle.getElement().setAttribute("aria-controls", navigation.getId().orElseThrow());
-    toggle.getElement().setAttribute("aria-expanded", "false");
+    toggle.getElement().setAttribute(ARIA_EXPANDED, "false");
     toggle.addClickListener(
         event -> {
-          boolean open = !hasClassName("account-navigation-open");
-          setClassName("account-navigation-open", open);
+          boolean open = !hasClassName(ACCOUNT_NAVIGATION_OPEN);
+          setClassName(ACCOUNT_NAVIGATION_OPEN, open);
           pageContent.getElement().setAttribute("inert", open);
-          toggle.getElement().setAttribute("aria-expanded", Boolean.toString(open));
+          toggle.getElement().setAttribute(ARIA_EXPANDED, Boolean.toString(open));
           if (open) {
-            navigation
-                .getElement()
-                .executeJs(
-                    """
-                    const item = this.querySelector('vaadin-side-nav-item');
-                    const target = item?.shadowRoot?.querySelector('[part=link]')
-                      ?? this.querySelector('vaadin-button');
-                    target?.focus();
-                    """);
+            navigation.getElement().executeJs(FOCUS_NAVIGATION_SCRIPT);
           }
         });
   }
 
   public final void closeNavigation() {
-    if (!hasClassName("account-navigation-open")) {
+    if (!hasClassName(ACCOUNT_NAVIGATION_OPEN)) {
       return;
     }
-    removeClassName("account-navigation-open");
+    removeClassName(ACCOUNT_NAVIGATION_OPEN);
     pageContent.getElement().setAttribute("inert", false);
     if (navigationToggle != null) {
-      navigationToggle.getElement().setAttribute("aria-expanded", "false");
+      navigationToggle.getElement().setAttribute(ARIA_EXPANDED, "false");
       navigationToggle.focus();
     }
   }

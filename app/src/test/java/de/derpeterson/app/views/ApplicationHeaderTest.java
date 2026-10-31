@@ -12,6 +12,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -221,7 +222,6 @@ class ApplicationHeaderTest {
     HeaderFixture fixture = createHeader(page, role, initialLocale);
     TrackedUserAppLayout view = fixture.view();
     MessageProperties texts = fixture.texts();
-    VaadinSession session = fixture.session();
     List<Component> sidebars =
         tree(view).filter(c -> c.getId().orElse("").equals("account-sidebar")).toList();
     if (fixture.user() == null) {
@@ -302,7 +302,7 @@ class ApplicationHeaderTest {
           entries.stream()
               .noneMatch(
                   item -> item.getElement().getClassList().contains("cosmos-nav-item--active")));
-      verify(ui, org.mockito.Mockito.never())
+      verify(ui, never())
           .navigate(eq(AccountView.class), any(com.vaadin.flow.router.QueryParameters.class));
       ui.remove(navigation);
     }

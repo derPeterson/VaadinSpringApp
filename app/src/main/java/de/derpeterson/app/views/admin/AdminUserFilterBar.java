@@ -1,5 +1,7 @@
 package de.derpeterson.app.views.admin;
 
+import static de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON;
+
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -92,7 +94,7 @@ final class AdminUserFilterBar extends VerticalLayout {
     filterButton.getElement().setAttribute("aria-controls", "admin-user-filter-panel");
     activeFilterCountBadge.addClassName("admin-user-active-filter-count");
     clearFilters.setPrefixComponent(AppIcon.ROTATE_LEFT.create());
-    clearFilters.addClassNames("cosmos-delete-button", "admin-user-filter-reset");
+    clearFilters.addClassNames(DELETE_BUTTON, "admin-user-filter-reset");
     clearFilters.addClickListener(event -> clearAllFilters());
     Div tools = new Div(activeFilterCountBadge, clearFilters);
     tools.addClassName("admin-filter-tools");

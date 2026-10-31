@@ -1,5 +1,7 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
+
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
@@ -126,7 +128,7 @@ public class AdminView extends IsAuthenticatedBaseView {
         "cosmos-theme",
         "cosmos-app-shell",
         "cosmos-admin",
-        "cosmos-reference-portal",
+        REFERENCE_PORTAL,
         "cosmos-reference-admin");
 
     UserDetails authenticatedUser = securityService.getAuthenticatedUser(request).orElse(null);
@@ -199,11 +201,9 @@ public class AdminView extends IsAuthenticatedBaseView {
   }
 
   private HorizontalLayout createNavbar() {
-    HorizontalLayout header =
-        createApplicationHeader(
-            configService,
-            new UserPopoverMenu.Actions(null, () -> UI.getCurrent().navigate(HomeView.class)));
-    return header;
+    return createApplicationHeader(
+        configService,
+        new UserPopoverMenu.Actions(null, () -> UI.getCurrent().navigate(HomeView.class)));
   }
 
   private void refreshConfigurationState() {

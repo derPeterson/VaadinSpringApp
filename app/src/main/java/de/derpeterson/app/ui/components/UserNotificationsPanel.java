@@ -1,6 +1,13 @@
 package de.derpeterson.app.ui.components;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+import static de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADER;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
+import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_OVERLAY;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -44,9 +51,8 @@ public class UserNotificationsPanel extends Div {
       "cosmos-notification-preview-dot";
   private static final String COSMOS_NOTIFICATION_ROW_ACTION_CLASS =
       "cosmos-notification-row-action";
-  private static final String COSMOS_PANEL_ICON_CLASS = "cosmos-panel-icon";
-  private static final String COSMOS_PANEL_DESCRIPTION_CLASS = "cosmos-panel-description";
-  private static final String COSMOS_PANEL_HEADING_CLASS = "cosmos-panel-heading";
+  private static final String COSMOS_PANEL_DESCRIPTION_CLASS = PANEL_DESCRIPTION;
+  private static final String COSMOS_PANEL_HEADING_CLASS = PANEL_HEADING;
   private static final String BADGE_THEME = "badge";
   private static final String THEME_ATTRIBUTE = "theme";
   private static final String COSMOS_NOTIFICATION_BODY_CLASS = "cosmos-notification-body";
@@ -108,7 +114,7 @@ public class UserNotificationsPanel extends Div {
     confirmation.addOpenedChangeListener(event -> notifyOverlayState());
     addClassNames("cosmos-theme", "cosmos-notifications-panel");
     setId(compact ? "notifications-preview" : "notifications-inbox");
-    heading.addClassName("cosmos-panel-title");
+    heading.addClassName(PANEL_TITLE);
     configureReadFilter();
     Div toolbar = new Div(readFilter, refresh);
     toolbar.addClassName("cosmos-notifications-actions");
@@ -172,7 +178,7 @@ public class UserNotificationsPanel extends Div {
     SvgIcon readAllIcon = AppIcon.CHECK_CHECK.create();
     readAllIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     markAll.setIcon(readAllIcon);
-    dismissRead.addClassName("cosmos-delete-button");
+    dismissRead.addClassName(DELETE_BUTTON);
     dismissRead.setEnabled(false);
     dismissRead.addClickListener(e -> confirmDismissRead());
     refresh.addClickListener(e -> refresh(true));
@@ -210,7 +216,7 @@ public class UserNotificationsPanel extends Div {
     SvgIcon icon = AppIcon.BELL.create();
     icon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div badge = new Div(icon);
-    badge.addClassName(COSMOS_PANEL_ICON_CLASS);
+    badge.addClassName(PANEL_ICON);
     description.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
     Div titles = new Div(heading, description);
     titles.addClassName(COSMOS_PANEL_HEADING_CLASS);
@@ -248,7 +254,7 @@ public class UserNotificationsPanel extends Div {
     SvgIcon archive = AppIcon.BELL.create();
     archive.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div icon = new Div(archive);
-    icon.addClassName(COSMOS_PANEL_ICON_CLASS);
+    icon.addClassName(PANEL_ICON);
     description.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
     Div titles = new Div(heading, description);
     titles.addClassName(COSMOS_PANEL_HEADING_CLASS);
@@ -261,7 +267,7 @@ public class UserNotificationsPanel extends Div {
     Div headingGroup = new Div(icon, titles);
     headingGroup.addClassName("cosmos-notification-inbox-heading");
     Div header = new Div(headingGroup, counts);
-    header.addClassNames("cosmos-panel-header", "cosmos-notification-inbox-header");
+    header.addClassNames(PANEL_HEADER, "cosmos-notification-inbox-header");
     refresh.setIcon(AppIcon.REFRESH.create());
     search.setId("notifications-inbox-search");
     search.setPrefixComponent(AppIcon.SEARCH.create());
@@ -620,7 +626,7 @@ public class UserNotificationsPanel extends Div {
   private Button dismissButton(Item item) {
     Button dismiss = new Button(AppIcon.TRASH.create(), e -> confirmDismiss(item));
     dismiss.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    dismiss.addClassNames("cosmos-notification-preview-dismiss", "cosmos-delete-button");
+    dismiss.addClassNames("cosmos-notification-preview-dismiss", DELETE_BUTTON);
     dismiss.setTooltipText(texts.getNotificationsDismiss());
     dismiss.setAriaLabel(
         texts.getNotificationsDismiss() + ": " + UserNotificationTexts.title(texts, item));
@@ -683,7 +689,7 @@ public class UserNotificationsPanel extends Div {
     openedItem = item;
     detail = new Dialog();
     detail.addOpenedChangeListener(e -> notifyOverlayState());
-    detail.addClassNames("cosmos-theme", "cosmos-reference-overlay", "cosmos-notification-dialog");
+    detail.addClassNames("cosmos-theme", REFERENCE_OVERLAY, "cosmos-notification-dialog");
     detail.setModality(com.vaadin.flow.component.ModalityMode.STRICT);
     detail.getThemeNames().addAll(List.of("cosmos", "cosmos-reference"));
     detail.setCloseOnOutsideClick(true);
@@ -845,7 +851,7 @@ public class UserNotificationsPanel extends Div {
     detail.getFooter().removeAll();
     String subject = UserNotificationTexts.title(texts, openedItem);
     H2 title = new H2(texts.getNotificationsDetailTitle());
-    title.addClassName("cosmos-panel-title");
+    title.addClassName(PANEL_TITLE);
     Span detailDescription = new Span(texts.getNotificationsDetailDescription());
     detailDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
     Div titles = new Div(title, detailDescription);
@@ -853,7 +859,7 @@ public class UserNotificationsPanel extends Div {
     SvgIcon icon = AppIcon.BELL.create();
     icon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div badge = new Div(icon);
-    badge.addClassName(COSMOS_PANEL_ICON_CLASS);
+    badge.addClassName(PANEL_ICON);
     Button closeIcon = new Button(AppIcon.CLOSE_CIRCLE.create(), e -> detail.close());
     closeIcon.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     closeIcon.addClassName("cosmos-overlay-close");
@@ -925,7 +931,7 @@ public class UserNotificationsPanel extends Div {
     }
     Button delete = new Button(AppIcon.TRASH.create(), event -> confirmDismiss(openedItem));
     delete.addThemeVariants(ButtonVariant.LUMO_ICON);
-    delete.addClassNames("cosmos-notification-detail-delete", "cosmos-delete-button");
+    delete.addClassNames("cosmos-notification-detail-delete", DELETE_BUTTON);
     delete.setAriaLabel(texts.getNotificationsDismiss());
     delete.setTooltipText(texts.getNotificationsDismiss());
     tools.add(delete);

@@ -1,6 +1,7 @@
 package de.derpeterson.app.helper.ui;
 
 import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
+import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
@@ -102,7 +103,7 @@ public class NotificationHelper implements Serializable {
     if (containsClass(UI.getCurrent(), "cosmos-theme")) {
       currentNotification.getElement().getThemeList().add("cosmos");
     }
-    boolean referenceAccount = containsClass(UI.getCurrent(), "cosmos-reference-portal");
+    boolean referenceAccount = containsClass(UI.getCurrent(), REFERENCE_PORTAL);
     if (referenceAccount) {
       currentNotification.getElement().getThemeList().add("cosmos-reference");
       currentNotification
@@ -127,6 +128,29 @@ public class NotificationHelper implements Serializable {
     contentLayout.setSpacing(false);
     contentLayout.addClassNames(LumoUtility.Gap.LARGE);
 
+    addStatusIcon(contentLayout, notificationType, referenceAccount);
+
+    this.textLayout = new VerticalLayout();
+    textLayout.addClassNames(LumoUtility.Padding.SMALL);
+    textLayout.setSpacing(false);
+    textLayout.setWidth(null);
+
+    createTextLayoutContent(message);
+
+    contentLayout.add(textLayout);
+
+    currentNotification.add(contentLayout);
+    closeButton = createNotificationCloseButton(currentNotification);
+    closeButton.setAriaLabel(localizedCloseLabel());
+    if (referenceAccount) {
+      closeButton.setIcon(AppIcon.CLOSE_CIRCLE.create());
+    }
+    currentNotification.add(closeButton);
+    currentNotification.open();
+  }
+
+  private void addStatusIcon(
+      HorizontalLayout contentLayout, NotificationType notificationType, boolean referenceAccount) {
     SvgIcon icon = null;
     if (notificationType == NotificationType.ERROR) {
       icon = AppIcon.ERROR.create();
@@ -166,24 +190,6 @@ public class NotificationHelper implements Serializable {
     } else if (icon != null) {
       contentLayout.add(icon);
     }
-
-    this.textLayout = new VerticalLayout();
-    textLayout.addClassNames(LumoUtility.Padding.SMALL);
-    textLayout.setSpacing(false);
-    textLayout.setWidth(null);
-
-    createTextLayoutContent(message);
-
-    contentLayout.add(textLayout);
-
-    currentNotification.add(contentLayout);
-    closeButton = createNotificationCloseButton(currentNotification);
-    closeButton.setAriaLabel(localizedCloseLabel());
-    if (referenceAccount) {
-      closeButton.setIcon(AppIcon.CLOSE_CIRCLE.create());
-    }
-    currentNotification.add(closeButton);
-    currentNotification.open();
   }
 
   /** Auch verschachtelte Seitenrahmen bestimmen die Palette der ausgelagerten Meldung. */

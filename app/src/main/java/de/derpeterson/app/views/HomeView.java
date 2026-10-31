@@ -1,5 +1,7 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
+
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Span;
@@ -62,7 +64,7 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
 
     addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-home");
     if (currentUser != null) {
-      addClassName("cosmos-reference-portal");
+      addClassName(REFERENCE_PORTAL);
     }
     if (currentUser == null) {
       setContent(

@@ -1,6 +1,8 @@
 package de.derpeterson.app.ui.components;
 
 import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
+import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_OVERLAY;
+import static de.derpeterson.app.ui.components.CosmosClasses.USER_MENU_ACTION;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -47,7 +49,6 @@ public class UserPopoverMenu {
   private final UserService userService;
   private final UserEntity currentUser;
   private Span profileName;
-  private Span emailText;
   private Span menuPresence;
   private final Span languageHeading = new Span();
   private final Map<UserStatus, Button> statusButtons = new EnumMap<>(UserStatus.class);
@@ -116,7 +117,7 @@ public class UserPopoverMenu {
 
     VerticalLayout outer = new VerticalLayout(body);
     outer.addClassNames(
-        "user-popover-content", "cosmos-theme", "cosmos-user-menu", "cosmos-reference-overlay");
+        "user-popover-content", "cosmos-theme", "cosmos-user-menu", REFERENCE_OVERLAY);
     outer.setWidth(null);
     outer.setSpacing(false);
     outer.setPadding(false);
@@ -131,7 +132,7 @@ public class UserPopoverMenu {
     profileName = new Span();
     profileName.addClassName("portal-menu-name");
     refreshProfileName();
-    emailText = new Span(currentUser.getEmail());
+    Span emailText = new Span(currentUser.getEmail());
     emailText.addClassName("portal-menu-email");
     accountStateText = new Span();
     accountStateText.addClassName("portal-menu-account-state");
@@ -185,14 +186,14 @@ public class UserPopoverMenu {
           new Button(messageProperties.getBaseHomeButton(), event -> actions.homeAction().run());
       homeButton.setPrefixComponent(AppIcon.HOME.create());
       homeButton.addThemeVariants(LUMO_TERTIARY_INLINE);
-      homeButton.addClassName("portal-menu-action");
+      homeButton.addClassName(USER_MENU_ACTION);
       footer.add(homeButton);
     }
     logoutButton =
         new Button(messageProperties.getBaseLogoutButton(), event -> securityService.logout());
     logoutButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
     logoutButton.addThemeVariants(LUMO_TERTIARY_INLINE);
-    logoutButton.addClassNames("portal-menu-action", "portal-menu-logout");
+    logoutButton.addClassNames(USER_MENU_ACTION, "portal-menu-logout");
     footer.add(logoutButton);
     return footer;
   }
@@ -273,7 +274,7 @@ public class UserPopoverMenu {
             messageProperties.getBaseManageApplicationButton(),
             clickEvent -> actions.manageApplicationAction().run());
     manageApplicationButton.setPrefixComponent(AppIcon.SHIELD_COG.create());
-    manageApplicationButton.addClassName("portal-menu-action");
+    manageApplicationButton.addClassName(USER_MENU_ACTION);
     contentLayout.add(manageApplicationButton);
   }
 

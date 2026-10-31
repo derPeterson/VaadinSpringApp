@@ -1,5 +1,7 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.ui.components.CosmosClasses.STATUS_ICON;
+
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -45,7 +47,7 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
     PublicPageComponent page =
         new PublicPageComponent(config, messages, PublicPageComponent.Page.MAINTENANCE);
     SvgIcon icon = AppIcon.WRENCH.create();
-    icon.addClassName("cosmos-status-icon");
+    icon.addClassName(STATUS_ICON);
     H1 title = new H1();
     title.addClassName("cosmos-headline");
     Span text = new Span();

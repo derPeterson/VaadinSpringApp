@@ -1,16 +1,18 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_OVERLAY;
+
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.popover.PopoverPosition;
+import com.vaadin.flow.function.SerializableConsumer;
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.service.UserNotificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import java.util.function.LongConsumer;
 
 /** Keine Request-Proxys auf Push-Threads: die beim Attach gebundene Sitzung wird frisch geprüft. */
 public class UserNotificationBell extends Div {
@@ -22,9 +24,9 @@ public class UserNotificationBell extends Div {
   private transient HttpSession session;
   private transient Registration registration;
   private UserNotificationsPanel panel;
-  private LongConsumer unreadCountListener = value -> {};
+  private SerializableConsumer<Long> unreadCountListener = value -> {};
 
-  public void setUnreadCountListener(LongConsumer listener) {
+  public void setUnreadCountListener(SerializableConsumer<Long> listener) {
     unreadCountListener = listener;
   }
 
@@ -63,7 +65,7 @@ public class UserNotificationBell extends Div {
           session = request.getSession(false);
           panel = new UserNotificationsPanel(texts, service, session, true);
           if (referenceStyle) {
-            panel.addClassName("cosmos-reference-overlay");
+            panel.addClassName(REFERENCE_OVERLAY);
           }
           panel.setCloseAction(popover::close);
           panel.setDetailOpenListener(
@@ -114,7 +116,7 @@ public class UserNotificationBell extends Div {
     referenceStyle = true;
     popover.getThemeNames().add("cosmos-reference");
     if (panel != null) {
-      panel.addClassName("cosmos-reference-overlay");
+      panel.addClassName(REFERENCE_OVERLAY);
     }
   }
 
@@ -140,7 +142,7 @@ public class UserNotificationBell extends Div {
         panel.refresh();
       }
     } catch (RuntimeException _) {
-      unreadCountListener.accept(-1);
+      unreadCountListener.accept(-1L);
       count.setVisible(false);
       target.setEnabled(false);
       popover.close();

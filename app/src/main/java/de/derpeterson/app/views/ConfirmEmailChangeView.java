@@ -1,6 +1,7 @@
 package de.derpeterson.app.views;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+import static de.derpeterson.app.ui.components.CosmosClasses.STATUS_ICON;
 
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
@@ -59,7 +60,7 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
     setId("account-email-confirmation");
     PublicPageComponent page =
         new PublicPageComponent(config, messages, PublicPageComponent.Page.EMAIL_CONFIRM);
-    statusIcon.addClassName("cosmos-status-icon");
+    statusIcon.addClassName(STATUS_ICON);
     statusIcon.getElement().setAttribute("aria-hidden", "true");
     text.addClassName("cosmos-form-text");
     title.addClassName("cosmos-headline");

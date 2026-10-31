@@ -4,7 +4,6 @@
 
 Die vereinbarte Reihenfolge ist:
 
-- [ ] Designbranch nach `main` integrieren und den Zielstand technisch prüfen.
 - [ ] Sonar-Scan auf `main` ausführen und berechtigte Befunde beheben.
 - [ ] Anschließend eine große Testrunde durchführen.
 

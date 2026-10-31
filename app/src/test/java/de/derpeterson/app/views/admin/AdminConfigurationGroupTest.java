@@ -3,6 +3,7 @@ package de.derpeterson.app.views.admin;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
@@ -235,13 +236,13 @@ class AdminConfigurationGroupTest {
       String error =
           ReflectionTestUtils.invokeMethod(section, "validateValue", entry, field.getStoredValue());
       if (entry.getMinimumTokenDuration() != null) {
-        assertTrue(error != null);
+        assertNotNull(error);
       } else {
         assertNull(error);
       }
       amount.clear();
       assertEquals("", ReflectionTestUtils.invokeMethod(section, "extractInputValue", entry));
-      assertTrue(ReflectionTestUtils.invokeMethod(section, "validateValue", entry, "") != null);
+      assertNotNull(ReflectionTestUtils.invokeMethod(section, "validateValue", entry, ""));
     }
     verify(config, never()).set(any(), anyString());
   }
@@ -316,6 +317,47 @@ class AdminConfigurationGroupTest {
     assertEquals(7, amount.getValue());
     assertTrue(help.getElement().getTextRecursively().contains(field.getDisplayValue()));
     verify(config, never()).set(any(), anyString());
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "de,SECONDS",
+    "en,SECONDS",
+    "de,DAYS",
+    "en,DAYS",
+    "de,DURATION",
+    "en,DURATION"
+  })
+  void clearedDurationFieldsKeepDefaultUnlimitedAndRequiredMeanings(
+      String language, AdminDurationField.Storage storage) {
+    locale.set(Locale.forLanguageTag(language));
+    MessageProperties texts = new MessageProperties(provider);
+    AdminDurationField field = new AdminDurationField(texts, storage);
+    if (storage == AdminDurationField.Storage.DURATION) {
+      field.setDefaultValue("PT15M");
+      field.setStoredValue("PT30S");
+      BigDecimalField amount =
+          (BigDecimalField) ReflectionTestUtils.getField(field, "preciseAmount");
+      amount.clear();
+      assertEquals(texts.getAdminConfigDurationInvalid(), field.getDisplayValue());
+      assertEquals(texts.getAdminConfigDurationInvalid(), field.getEquivalentValue());
+    } else {
+      field.setStoredValue(storage == AdminDurationField.Storage.DAYS ? "7" : "1209600");
+      IntegerField amount = (IntegerField) ReflectionTestUtils.getField(field, "amount");
+      amount.clear();
+      if (storage == AdminDurationField.Storage.DAYS) {
+        assertEquals(texts.getAdminConfigUnlimited(), field.getDisplayValue());
+        assertEquals(texts.getAdminConfigUnlimited(), field.getEquivalentValue());
+      } else {
+        assertEquals(
+            texts.getAdminConfigDurationDays(BigDecimal.valueOf(14)), field.getDisplayValue());
+        assertEquals(
+            texts.getAdminConfigDurationSeconds(BigDecimal.valueOf(1209600)),
+            field.getEquivalentValue());
+      }
+    }
+    assertEquals("", field.getStoredValue());
+    assertEquals("", field.getSecondsValue());
   }
 
   @Test

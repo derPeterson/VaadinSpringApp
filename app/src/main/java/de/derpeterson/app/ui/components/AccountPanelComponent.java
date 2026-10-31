@@ -1,5 +1,12 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_CARD;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADER;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
@@ -15,16 +22,16 @@ public class AccountPanelComponent extends CosmosCardComponent {
 
   public AccountPanelComponent(String id, AppIcon iconType) {
     setId(id);
-    addClassNames("cosmos-panel-card", "account-panel");
+    addClassNames(PANEL_CARD, "account-panel");
     icon.add(iconType.create());
-    icon.addClassName("cosmos-panel-icon");
-    title.addClassName("cosmos-panel-title");
-    description.addClassName("cosmos-panel-description");
+    icon.addClassName(PANEL_ICON);
+    title.addClassName(PANEL_TITLE);
+    description.addClassName(PANEL_DESCRIPTION);
     meta.addClassName("cosmos-panel-meta");
     Div heading = new Div(title, description);
-    heading.addClassName("cosmos-panel-heading");
+    heading.addClassName(PANEL_HEADING);
     Div header = new Div(icon, heading, meta);
-    header.addClassName("cosmos-panel-header");
+    header.addClassName(PANEL_HEADER);
     body.addClassName("account-panel-body");
     add(header, body);
   }

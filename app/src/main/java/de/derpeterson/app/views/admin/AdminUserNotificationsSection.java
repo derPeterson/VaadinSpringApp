@@ -1,6 +1,12 @@
 package de.derpeterson.app.views.admin;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_CARD;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADER;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -48,7 +54,6 @@ import org.springframework.data.domain.Page;
 
 /** Superadmin-Entwurf mit serverseitiger Empfängervorschau und dauerhaftem Request-Schlüssel. */
 public class AdminUserNotificationsSection extends VerticalLayout {
-  private static final String COSMOS_PANEL_ICON_CLASS = "cosmos-panel-icon";
   private static final String COSMOS_PANEL_META_CLASS = "cosmos-panel-meta";
   private static final String ARIA_EXPANDED = "aria-expanded";
   private static final String ARIA_HIDDEN = "aria-hidden";
@@ -113,18 +118,18 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     setWidthFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
     addClassNames("cosmos-admin-section", "cosmos-admin-section--notifications", "cosmos-theme");
-    heading.addClassName("cosmos-panel-title");
-    historyTitle.addClassName("cosmos-panel-title");
-    description.addClassName("cosmos-panel-description");
+    heading.addClassName(PANEL_TITLE);
+    historyTitle.addClassName(PANEL_TITLE);
+    description.addClassName(PANEL_DESCRIPTION);
 
     configureComposeInputs();
     composeForm = createComposeForm();
     historyPagination = createHistoryPagination();
     Div sent = createHistoryContent();
     CosmosCardComponent formCard = new CosmosCardComponent(composeForm);
-    formCard.addClassNames("cosmos-admin-form-card", "cosmos-panel-card");
+    formCard.addClassNames("cosmos-admin-form-card", PANEL_CARD);
     CosmosCardComponent sentCard = new CosmosCardComponent(sent);
-    sentCard.addClassNames("cosmos-admin-form-card", "cosmos-panel-card");
+    sentCard.addClassNames("cosmos-admin-form-card", PANEL_CARD);
     Div columns = new Div(formCard, previewCard);
     columns.addClassName("admin-notification-columns");
     add(
@@ -199,9 +204,9 @@ public class AdminUserNotificationsSection extends VerticalLayout {
 
   private VerticalLayout createComposeForm() {
     Div panelIcon = new Div(decorativeIcon(AppIcon.BELL));
-    panelIcon.addClassName(COSMOS_PANEL_ICON_CLASS);
+    panelIcon.addClassName(PANEL_ICON);
     Div panelHeading = new Div(heading, description);
-    panelHeading.addClassName("cosmos-panel-heading");
+    panelHeading.addClassName(PANEL_HEADING);
     Span deliveryDot = new Span();
     deliveryDot.addClassName("cosmos-notification-delivery-dot");
     deliveryDot.getElement().setAttribute(ARIA_HIDDEN, "true");
@@ -209,7 +214,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     deliveryMeta.addClassNames(COSMOS_PANEL_META_CLASS, "cosmos-notification-delivery");
     deliveryMeta.getElement().setAttribute("role", "status");
     Div header = new Div(panelIcon, panelHeading, deliveryMeta);
-    header.addClassName("cosmos-panel-header");
+    header.addClassName(PANEL_HEADER);
     Div info = new Div(decorativeIcon(AppIcon.INFO_CIRCLE), deliveryInfo);
     info.addClassName("cosmos-notification-compose-info");
     everyone.addClassName("cosmos-notification-compose-everyone");
@@ -233,14 +238,14 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     previewArea.setVisible(false);
     Div footerHint = new Div(decorativeIcon(AppIcon.INFO_CIRCLE), hint);
     footerHint.addClassName("cosmos-panel-hint");
-    previewTitle.addClassName("cosmos-panel-title");
-    previewDescription.addClassName("cosmos-panel-description");
+    previewTitle.addClassName(PANEL_TITLE);
+    previewDescription.addClassName(PANEL_DESCRIPTION);
     Div previewHeading = new Div(previewTitle, previewDescription);
-    previewHeading.addClassName("cosmos-panel-heading");
+    previewHeading.addClassName(PANEL_HEADING);
     Div previewIcon = new Div(decorativeIcon(AppIcon.EYE));
-    previewIcon.addClassName("cosmos-panel-icon");
+    previewIcon.addClassName(PANEL_ICON);
     Div rightHeader = new Div(previewIcon, previewHeading);
-    rightHeader.addClassName("cosmos-panel-header");
+    rightHeader.addClassName(PANEL_HEADER);
     Div sendHint = new Div(decorativeIcon(AppIcon.INFO_CIRCLE), beforeSend);
     sendHint.addClassName("cosmos-panel-hint");
     Div sendActions = new Div(send);
@@ -250,7 +255,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     emptyPreview.add(decorativeIcon(AppIcon.EYE), emptyPreviewText);
     emptyPreview.addClassName("admin-preview-empty");
     previewCard.add(rightHeader, emptyPreview, previewArea, rightFooter);
-    previewCard.addClassNames("cosmos-panel-card", "admin-notification-preview-card");
+    previewCard.addClassNames(PANEL_CARD, "admin-notification-preview-card");
     Div actions = new Div(previewButton);
     actions.addClassName("cosmos-panel-actions");
     Div footer = new Div(info, footerHint, actions);
@@ -294,13 +299,13 @@ public class AdminUserNotificationsSection extends VerticalLayout {
 
   private Div createHistoryContent() {
     Div archiveIcon = new Div(decorativeIcon(AppIcon.BELL));
-    archiveIcon.addClassName(COSMOS_PANEL_ICON_CLASS);
-    historyDescription.addClassName("cosmos-panel-description");
+    archiveIcon.addClassName(PANEL_ICON);
+    historyDescription.addClassName(PANEL_DESCRIPTION);
     Div archiveHeading = new Div(historyTitle, historyDescription);
-    archiveHeading.addClassName("cosmos-panel-heading");
+    archiveHeading.addClassName(PANEL_HEADING);
     historyCount.addClassName(COSMOS_PANEL_META_CLASS);
     Div archiveHeader = new Div(archiveIcon, archiveHeading, historyCount);
-    archiveHeader.addClassName("cosmos-panel-header");
+    archiveHeader.addClassName(PANEL_HEADER);
     history.addClassName("cosmos-notification-sent-list");
     Div sent = new Div(archiveHeader, history, historyPagination);
     sent.setId("admin-notifications-sent");
@@ -346,9 +351,9 @@ public class AdminUserNotificationsSection extends VerticalLayout {
           case ACTIVE -> texts.getMaintenanceStatusActive();
           case UNAVAILABLE -> texts.getMaintenanceStatusUnavailable();
         };
-    String description = texts.getNotificationsInternal() + ": " + status;
-    deliveryMeta.getElement().setAttribute("aria-label", description);
-    deliveryTooltip.setText(description);
+    String deliveryDescription = texts.getNotificationsInternal() + ": " + status;
+    deliveryMeta.getElement().setAttribute("aria-label", deliveryDescription);
+    deliveryTooltip.setText(deliveryDescription);
   }
 
   private boolean deliveryAvailable() {
@@ -682,7 +687,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
 
   private Div sentRow(Sent item) {
     Div icon = new Div(decorativeIcon(AppIcon.BELL));
-    icon.addClassNames(COSMOS_PANEL_ICON_CLASS, "cosmos-notification-sent-icon");
+    icon.addClassNames(PANEL_ICON, "cosmos-notification-sent-icon");
     H3 subject = new H3(item.title());
     subject.addClassName("cosmos-notification-sent-title");
     Span metadata =

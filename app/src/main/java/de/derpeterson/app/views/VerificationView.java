@@ -1,6 +1,7 @@
 package de.derpeterson.app.views;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+import static de.derpeterson.app.ui.components.CosmosClasses.STATUS_ICON;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
@@ -53,9 +54,7 @@ import org.slf4j.LoggerFactory;
 @AnonymousAllowed
 public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     implements HasUrlParameter<String> {
-  private static final String COSMOS_FORM_CLASS = "cosmos-form";
   private static final String COSMOS_HEADLINE_CLASS = "cosmos-headline";
-  private static final String COSMOS_TITLE_ROW_CLASS = "cosmos-title-row";
   private static final String COSMOS_FORM_TEXT_CLASS = "cosmos-form-text";
   private static final String COSMOS_INTRO_CLASS = "cosmos-intro";
 
@@ -201,7 +200,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
   private void createExpiredCard(String token) {
 
     SvgIcon successIcon = AppIcon.WARNING.create();
-    successIcon.addClassNames("cosmos-status-icon", "cosmos-status-icon--warning");
+    successIcon.addClassNames(STATUS_ICON, "cosmos-status-icon--warning");
 
     this.expiredTitle = new H1(messageProperties.getVerificationExpiredTitle());
     expiredTitle.addClassName(COSMOS_HEADLINE_CLASS);
@@ -298,7 +297,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
   private void createNotFoundCard() {
 
     SvgIcon successIcon = AppIcon.WARNING.create();
-    successIcon.addClassNames("cosmos-status-icon", LumoUtility.TextColor.ERROR);
+    successIcon.addClassNames(STATUS_ICON, LumoUtility.TextColor.ERROR);
 
     this.notFoundTitle = new H1(messageProperties.getVerificationNotFoundTitle());
     notFoundTitle.addClassName(COSMOS_HEADLINE_CLASS);
@@ -388,7 +387,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
     SvgIcon successIcon = AppIcon.CHECK_CIRCLE.create();
     successIcon.addClassNames(
-        "cosmos-verification-success-icon", "cosmos-status-icon", LumoUtility.TextColor.SUCCESS);
+        "cosmos-verification-success-icon", STATUS_ICON, LumoUtility.TextColor.SUCCESS);
 
     this.successTitle = new H1(messageProperties.getVerificationSuccessTitle());
     successTitle.addClassName(COSMOS_HEADLINE_CLASS);

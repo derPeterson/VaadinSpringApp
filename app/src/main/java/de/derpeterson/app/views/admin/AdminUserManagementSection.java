@@ -1,6 +1,14 @@
 package de.derpeterson.app.views.admin;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+import static de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_CARD;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADER;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
+import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_OVERLAY;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
@@ -86,11 +94,10 @@ import org.springframework.dao.OptimisticLockingFailureException;
 
 @Slf4j
 public class AdminUserManagementSection extends VerticalLayout {
-  private static final String COSMOS_PANEL_TITLE_CLASS = "cosmos-panel-title";
-  private static final String COSMOS_PANEL_DESCRIPTION_CLASS = "cosmos-panel-description";
+  private static final String COSMOS_PANEL_TITLE_CLASS = PANEL_TITLE;
+  private static final String COSMOS_PANEL_DESCRIPTION_CLASS = PANEL_DESCRIPTION;
   private static final String ARIA_HIDDEN = "aria-hidden";
-  private static final String COSMOS_PANEL_ICON_CLASS = "cosmos-panel-icon";
-  private static final String COSMOS_PANEL_HEADING_CLASS = "cosmos-panel-heading";
+  private static final String COSMOS_PANEL_HEADING_CLASS = PANEL_HEADING;
   private static final String ARIA_LABEL_PROPERTY = "ariaLabel";
   private static final String COSMOS_FORM_ROW_CLASS = "cosmos-form-row";
 
@@ -242,7 +249,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     layout.setAlignItems(Alignment.START);
 
     CosmosCardComponent card = new CosmosCardComponent(layout);
-    card.addClassNames("cosmos-admin-users-card", "cosmos-panel-card");
+    card.addClassNames("cosmos-admin-users-card", PANEL_CARD);
     add(new CosmosSectionHeaderComponent(breadcrumb, title, description), card);
 
     refreshTexts();
@@ -253,11 +260,11 @@ public class AdminUserManagementSection extends VerticalLayout {
     SvgIcon usersIcon = AppIcon.USERS.create();
     usersIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div iconBadge = new Div(usersIcon);
-    iconBadge.addClassName(COSMOS_PANEL_ICON_CLASS);
+    iconBadge.addClassName(PANEL_ICON);
     Div heading = new Div(cardTitle, cardDescription);
     heading.addClassName(COSMOS_PANEL_HEADING_CLASS);
     Div header = new Div(iconBadge, heading, accountCount);
-    header.addClassName("cosmos-panel-header");
+    header.addClassName(PANEL_HEADER);
     return header;
   }
 
@@ -335,10 +342,10 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   private void refreshEmptyState() {
-    Span title = new Span(messageProperties.getAdminUsersGridEmptyState());
-    title.addClassName("admin-grid-empty-title");
+    Span emptyTitle = new Span(messageProperties.getAdminUsersGridEmptyState());
+    emptyTitle.addClassName("admin-grid-empty-title");
     Span hint = new Span(messageProperties.getAdminUsersEmptyHint());
-    Div empty = new Div(AppIcon.USERS.create(), title, hint);
+    Div empty = new Div(AppIcon.USERS.create(), emptyTitle, hint);
     empty.addClassName("admin-grid-empty");
     userGrid.setEmptyStateComponent(empty);
   }
@@ -586,7 +593,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
 
     Dialog dialog = new Dialog();
-    dialog.addClassNames("cosmos-theme", "cosmos-reference-overlay", "admin-reference-dialog");
+    dialog.addClassNames("cosmos-theme", REFERENCE_OVERLAY, "admin-reference-dialog");
     dialog.getThemeNames().add("cosmos-reference");
     dialog.getElement().getThemeList().add("cosmos");
     dialog.addClassName("admin-user-delete-dialog");
@@ -604,7 +611,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     closeButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
     Div deleteIcon = new Div(AppIcon.TRASH.create());
-    deleteIcon.addClassNames("cosmos-panel-icon", "cosmos-delete-accent");
+    deleteIcon.addClassNames(PANEL_ICON, "cosmos-delete-accent");
     Div dialogHeader = new Div(deleteIcon, dialogHeading, closeButton);
     dialogHeader.addClassName("admin-user-dialog-header");
     dialog.getHeader().add(dialogHeader);
@@ -613,7 +620,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     SvgIcon warningIcon = AppIcon.TRASH.create();
     warningIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div warningBadge = new Div(warningIcon);
-    warningBadge.addClassNames(COSMOS_PANEL_ICON_CLASS, "cosmos-delete-accent");
+    warningBadge.addClassNames(PANEL_ICON, "cosmos-delete-accent");
     Span warningTitle = new Span(messageProperties.getAdminUsersDeleteDialogQuestion());
     warningTitle.addClassName("admin-user-delete-warning-title");
     Span warningText = new Span(messageProperties.getAdminUsersDeleteDialogWarning());
@@ -661,7 +668,7 @@ public class AdminUserManagementSection extends VerticalLayout {
               }
             });
     confirmButton.setPrefixComponent(AppIcon.TRASH.create());
-    confirmButton.addClassName("cosmos-delete-button");
+    confirmButton.addClassName(DELETE_BUTTON);
     confirmButton.addClassName("admin-user-delete-confirm");
 
     HorizontalLayout footer = new HorizontalLayout(cancelButton, confirmButton);
@@ -757,7 +764,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     private void configureHeader() {
       dialog = new Dialog();
-      dialog.addClassNames("cosmos-theme", "cosmos-reference-overlay", "admin-reference-dialog");
+      dialog.addClassNames("cosmos-theme", REFERENCE_OVERLAY, "admin-reference-dialog");
       dialog.getThemeNames().add("cosmos-reference");
       dialog.getElement().getThemeList().add("cosmos");
       dialog.setCloseOnEsc(true);
@@ -778,7 +785,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       SvgIcon userIcon = AppIcon.USERS.create();
       userIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
       Div iconBadge = new Div(userIcon);
-      iconBadge.addClassName(COSMOS_PANEL_ICON_CLASS);
+      iconBadge.addClassName(PANEL_ICON);
       closeButton = new Button(AppIcon.CLOSE_CIRCLE.create(), event -> dialog.close());
       closeButton.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
       closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
@@ -1109,16 +1116,16 @@ public class AdminUserManagementSection extends VerticalLayout {
                 AppIcon.TRASH.create(),
                 event -> deleteUser(user, dialog::close));
         deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
-        deleteButton.addClassName("cosmos-delete-button");
+        deleteButton.addClassName(DELETE_BUTTON);
         deleteButton.setEnabled(!isCurrentUser(user));
         footer.add(deleteButton);
       }
       cancelButton.addClassName("cosmos-dialog-cancel");
       footer.add(cancelButton, saveButton);
 
-      Div rolesColumn = new Div(rolesField, rolesSummary);
-      rolesColumn.addClassName("admin-user-role-field");
-      Div permissionsRow = new Div(rolesColumn, enabledCheckbox);
+      Div roleSelection = new Div(rolesField, rolesSummary);
+      roleSelection.addClassName("admin-user-role-field");
+      Div permissionsRow = new Div(roleSelection, enabledCheckbox);
       permissionsRow.addClassName("admin-user-permissions");
       VerticalLayout dialogLayout =
           new VerticalLayout(nameRow, emailField, passwordFields, masterDataRow, permissionsRow);
@@ -1306,7 +1313,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     Button deleteButton = new Button(AppIcon.TRASH.create(), e -> deleteUser(user));
     deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
-    deleteButton.addClassName("cosmos-delete-button");
+    deleteButton.addClassName(DELETE_BUTTON);
     deleteButton.setTooltipText(messageProperties.getAdminUsersDelete());
     deleteButton.setEnabled(!isCurrentUser(user) && !protectedAccount);
 

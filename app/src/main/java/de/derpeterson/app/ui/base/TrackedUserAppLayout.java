@@ -1,6 +1,7 @@
 package de.derpeterson.app.ui.base;
 
 import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
+import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
@@ -166,7 +167,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
   protected final HorizontalLayout createApplicationHeader(
       ConfigService config, UserPopoverMenu.Actions actions) {
     Image logo = new Image("icons/service-logo.svg", "Service Icon");
-    boolean referenceAccount = hasClassName("cosmos-reference-portal");
+    boolean referenceAccount = hasClassName(REFERENCE_PORTAL);
     if (referenceAccount) {
       logo.setAlt("");
     }
@@ -224,7 +225,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
                 messageProperties,
                 currentUser,
                 currentUser != null ? currentUser.getStatus() : UserStatus.getDefaultStatus(),
-                hasClassName("cosmos-reference-portal") ? IconSize.PIXEL_32 : IconSize.PIXEL_48,
+                hasClassName(REFERENCE_PORTAL) ? IconSize.PIXEL_32 : IconSize.PIXEL_48,
                 true));
 
     ((OverlayUserIcon) userIconButton.getIcon()).configureAvatar(avatars, null);
@@ -286,7 +287,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
     accountNavigationToggle.setAriaLabel(messageProperties.getAccountOpenNavigation());
     if (userIconButton != null) {
       userIconButton.setAriaLabel(
-          hasClassName("cosmos-reference-portal")
+          hasClassName(REFERENCE_PORTAL)
               ? messageProperties.getAccountOpenUserMenu(name)
               : AppConstants.USER_ICON_ALT);
     }

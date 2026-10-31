@@ -1,5 +1,8 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_CARD;
+import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
+
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -49,14 +52,14 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
       UserNotificationService notifications,
       ConfigService config) {
     super(texts, security, users, status, request, avatars);
-    addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-reference-portal");
+    addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell", REFERENCE_PORTAL);
     HorizontalLayout header = createApplicationHeader(config);
     HttpSession session = request.getSession(false);
     inbox = new UserNotificationsPanel(texts, notifications, session, false);
     CosmosSectionHeaderComponent sectionHeader =
         new CosmosSectionHeaderComponent(overview, title, description);
     CosmosCardComponent card = new CosmosCardComponent(inbox);
-    card.addClassNames("cosmos-panel-card", "cosmos-notification-inbox-card");
+    card.addClassNames(PANEL_CARD, "cosmos-notification-inbox-card");
     portalContent =
         new PortalContentComponent(
             texts, currentUser, AppRoute.NOTIFICATIONS, sectionHeader, card, avatars, request);

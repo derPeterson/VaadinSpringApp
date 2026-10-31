@@ -5,10 +5,10 @@ import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLIN
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.function.SerializableConsumer;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.views.AccountView;
-import java.util.function.LongConsumer;
 
 /** Gemeinsame Konto-Schnelleinstiege neben dem Avatar; anonym vollständig ausgeblendet. */
 public class AccountHeaderActions extends HorizontalLayout {
@@ -37,9 +37,9 @@ public class AccountHeaderActions extends HorizontalLayout {
 
   private UserNotificationBell notificationBell;
   private boolean referenceStyle;
-  private LongConsumer unreadCountListener = value -> {};
+  private SerializableConsumer<Long> unreadCountListener = value -> {};
 
-  public void setUnreadCountListener(LongConsumer listener) {
+  public void setUnreadCountListener(SerializableConsumer<Long> listener) {
     unreadCountListener = listener;
     if (notificationBell != null) {
       notificationBell.setUnreadCountListener(listener);

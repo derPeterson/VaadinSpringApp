@@ -137,20 +137,21 @@ public class AdminDurationField extends Div implements HasAriaLabel {
 
   /** Ungültige Werte erreichen die vorhandene Prüfung und werden niemals zum Standardwert. */
   public String getStoredValue() {
-    if (number() == null) {
+    BigDecimal current = number();
+    if (current == null) {
       return "";
     }
     if (storage == Storage.SECONDS) {
       return getSecondsValue();
     }
     if (storage == Storage.DAYS) {
-      return number().toPlainString();
+      return current.toPlainString();
     }
     try {
       BigInteger nanos = new BigDecimal(getSecondsValue()).movePointRight(9).toBigIntegerExact();
       BigInteger[] parts = nanos.divideAndRemainder(BigInteger.valueOf(1_000_000_000));
       return Duration.ofSeconds(parts[0].longValueExact(), parts[1].longValueExact()).toString();
-    } catch (ArithmeticException exception) {
+    } catch (ArithmeticException _) {
       return "invalid";
     }
   }
@@ -197,7 +198,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
       } else {
         amount.setPlaceholder(placeholder.scale() <= 0 ? placeholder.toPlainString() : "");
       }
-    } catch (IllegalArgumentException | ArithmeticException exception) {
+    } catch (IllegalArgumentException | ArithmeticException _) {
       // Während des Aufbaus hat das Feld noch keinen zum Speicherformat passenden Standardwert.
       preciseAmount.setPlaceholder("");
     }
@@ -223,7 +224,8 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   }
 
   public String getDisplayValue() {
-    if (number() == null) {
+    BigDecimal current = number();
+    if (current == null) {
       if (storage == Storage.DAYS) {
         return texts.getAdminConfigUnlimited();
       }
@@ -231,9 +233,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
           ? displayStoredValue(defaultValue)
           : texts.getAdminConfigDurationInvalid();
     }
-    return validAmount()
-        ? format(number(), unit.getValue())
-        : texts.getAdminConfigDurationInvalid();
+    return validAmount() ? format(current, unit.getValue()) : texts.getAdminConfigDurationInvalid();
   }
 
   public String getEquivalentValue() {
@@ -249,13 +249,14 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   }
 
   private boolean validAmount() {
-    if (number() == null) {
+    BigDecimal current = number();
+    if (current == null) {
       return storage != Storage.DURATION;
     }
     if (storage == Storage.DURATION) {
       return !getStoredValue().equals("invalid");
     }
-    BigDecimal value = storage == Storage.DAYS ? number() : new BigDecimal(getSecondsValue());
+    BigDecimal value = storage == Storage.DAYS ? current : new BigDecimal(getSecondsValue());
     return value.compareTo(BigDecimal.ONE) >= 0
         && value.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) <= 0;
   }

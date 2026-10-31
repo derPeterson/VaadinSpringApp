@@ -1,6 +1,7 @@
 package de.derpeterson.app.views;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+import static de.derpeterson.app.ui.components.CosmosClasses.STATUS_ICON;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
@@ -52,9 +53,7 @@ import org.slf4j.LoggerFactory;
 @AnonymousAllowed
 public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     implements HasUrlParameter<String> {
-  private static final String COSMOS_FORM_CLASS = "cosmos-form";
   private static final String COSMOS_HEADLINE_CLASS = "cosmos-headline";
-  private static final String COSMOS_TITLE_ROW_CLASS = "cosmos-title-row";
 
   private static final Logger logger = LoggerFactory.getLogger(ResetPasswordView.class);
 
@@ -289,7 +288,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     loginButton = null;
 
     SvgIcon successIcon = AppIcon.CHECK_CIRCLE.create();
-    successIcon.addClassNames("cosmos-status-icon", LumoUtility.TextColor.SUCCESS);
+    successIcon.addClassNames(STATUS_ICON, LumoUtility.TextColor.SUCCESS);
 
     this.successTitle = new H1(messageProperties.getBaseSuccessTitle());
     successTitle.addClassName(COSMOS_HEADLINE_CLASS);
@@ -330,7 +329,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
 
     SvgIcon warningIcon = AppIcon.WARNING.create();
     warningIcon.addClassNames(
-        "cosmos-status-icon",
+        STATUS_ICON,
         !technicalFailure && linkState == LinkState.EXPIRED
             ? "cosmos-status-icon--warning"
             : LumoUtility.TextColor.ERROR);

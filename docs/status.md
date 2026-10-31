@@ -115,6 +115,7 @@ Prüfungen ersetzen die oben dokumentierte letzte große Testrunde nicht.
 In der ausgeführten Runde sind keine bestätigten Anwendungsfehler offen geblieben.
 
 Die Designübernahme ist vom Benutzer abgenommen. Die freigegebenen Tooltip- und
-Bereinigungsnachträge sind umgesetzt und gezielt geprüft. Integration nach `main`
-und Sonar-Bereinigung sind beauftragt. Die anschließende große Testrunde bleibt
+Bereinigungsnachträge sind umgesetzt und gezielt geprüft. Der Designbranch ist
+nach `main` integriert und technisch geprüft. Die Sonar-Bereinigung ist beauftragt.
+Die anschließende große Testrunde bleibt
 offen; Reihenfolge und menschliche Sonderprüfungen stehen in [TODO](../TODO.md).

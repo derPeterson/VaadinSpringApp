@@ -6,6 +6,7 @@ import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
@@ -222,7 +223,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     assertEquals(before.height, after.height, 1);
     assertThat(content).hasCSS("background-color", active ? background : "rgb(21, 34, 56)");
     if (active) {
-      assertTrue(!background.equals("rgba(0, 0, 0, 0)"));
+      assertNotEquals("rgba(0, 0, 0, 0)", background);
     }
     BoundingBox icon = item.locator(":scope > vaadin-icon").boundingBox();
     List<?> label =

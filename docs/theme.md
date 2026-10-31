@@ -123,6 +123,12 @@ Die mobile Navigation überlagert den Inhalt unter dem Servicekopf, ohne die
 Formularspalten zu verschieben. Außenklick, Escape und Seitenwahl schließen sie.
 Die feste HTML-Referenz bleibt unverändert und ist keine Laufzeitabhängigkeit.
 
+Wiederkehrende gemeinsame CSS-Klassen werden im Java-Code über `CosmosClasses`
+verwendet, etwa `REFERENCE_PORTAL`, `REFERENCE_OVERLAY`, `PANEL_ICON` und `DELETE_BUTTON`.
+Der Halter enthält ausschließlich Klassenbezeichner. Gestaltung, Farben, Größen
+und Zustände bleiben in den bestehenden CSS-Quellen; lokale Klassen bleiben bei
+ihrem jeweiligen Baustein.
+
 `--cosmos-reference-*` in `cosmos-tokens.css` begrenzen die akzeptierten Werte.
 `cosmos-theme.css` gestaltet markierte native Controls, ComboBox-Optionen und
 Notification-Cards; `cosmos-shell.css` Header, Startseite, Benutzermenü und

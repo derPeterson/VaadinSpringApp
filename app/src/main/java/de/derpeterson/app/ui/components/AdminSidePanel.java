@@ -1,5 +1,11 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
+import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_OVERLAY;
+
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
@@ -14,15 +20,15 @@ public class AdminSidePanel extends Dialog {
   private final Button close = new Button(AppIcon.CLOSE_CIRCLE.create());
 
   public AdminSidePanel(MessageProperties texts, AppIcon icon) {
-    addClassNames("cosmos-theme", "cosmos-reference-overlay", "admin-reference-drawer");
+    addClassNames("cosmos-theme", REFERENCE_OVERLAY, "admin-reference-drawer");
     getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
-    title.addClassName("cosmos-panel-title");
-    description.addClassName("cosmos-panel-description");
+    title.addClassName(PANEL_TITLE);
+    description.addClassName(PANEL_DESCRIPTION);
     description.setVisible(false);
     Div heading = new Div(title, description);
-    heading.addClassName("cosmos-panel-heading");
+    heading.addClassName(PANEL_HEADING);
     Div symbol = new Div(icon.create());
-    symbol.addClassName("cosmos-panel-icon");
+    symbol.addClassName(PANEL_ICON);
     close.addClassName("cosmos-overlay-close");
     close.addClickListener(event -> close());
     Div header = new Div(symbol, heading, close);

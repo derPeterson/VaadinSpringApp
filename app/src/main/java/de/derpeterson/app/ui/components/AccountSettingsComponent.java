@@ -1,6 +1,7 @@
 package de.derpeterson.app.ui.components;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasText;
@@ -377,7 +378,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
   private Div actionRow(
       AppIcon icon, Supplier<String> title, Supplier<String> description, Button action) {
     Div symbol = new Div((icon == AppIcon.LOCK ? AppIcon.KEY : AppIcon.ENVELOPE).create());
-    symbol.addClassName("cosmos-panel-icon");
+    symbol.addClassName(PANEL_ICON);
     Span heading = text(new Span(), title);
     heading.addClassName("account-entry-title");
     Span detail = text(new Span(), description);

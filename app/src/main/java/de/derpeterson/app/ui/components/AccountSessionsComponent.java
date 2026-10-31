@@ -1,6 +1,8 @@
 package de.derpeterson.app.ui.components;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+import static de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
@@ -64,7 +66,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     getBody().add(heading, rows);
     logout.setId("account-logout-others");
     logout.setPrefixComponent(AppIcon.SIGN_OUT.create());
-    logout.addClassName("cosmos-delete-button");
+    logout.addClassName(DELETE_BUTTON);
     logout.addClickListener(event -> confirmOthers());
     refresh.setId("account-sessions-refresh");
     refresh.setPrefixComponent(AppIcon.REFRESH.create());
@@ -160,7 +162,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
 
   private Div row(Entry entry) {
     Div symbol = new Div((entry.device().mobile() ? AppIcon.MOBILE : AppIcon.DESKTOP).create());
-    symbol.addClassName("cosmos-panel-icon");
+    symbol.addClassName(PANEL_ICON);
     String device =
         String.join(
             " · ",
@@ -238,7 +240,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     action.setPrefixComponent(entry.current() ? AppIcon.CHECK.create() : AppIcon.SIGN_OUT.create());
     action.addClassName("account-session-action");
     if (!entry.current()) {
-      action.addClassName("cosmos-delete-button");
+      action.addClassName(DELETE_BUTTON);
       action.setAriaLabel(
           entry.active()
               ? messages.getPortalSessionLogoutAria(deviceName(entry))

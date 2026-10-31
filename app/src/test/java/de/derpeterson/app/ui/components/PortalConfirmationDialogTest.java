@@ -91,7 +91,8 @@ class PortalConfirmationDialogTest {
           calls.incrementAndGet();
           throw new IllegalStateException("Test failure");
         });
-    assertThrows(IllegalStateException.class, () -> button("confirm").click());
+    Button confirm = button("confirm");
+    assertThrows(IllegalStateException.class, confirm::click);
     button("confirm").click();
     assertEquals(1, calls.get());
     assertFalse(dialog.isOpened());

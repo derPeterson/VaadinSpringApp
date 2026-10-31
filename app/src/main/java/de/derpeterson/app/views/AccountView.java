@@ -1,5 +1,7 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
+
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -54,11 +56,7 @@ public class AccountView extends IsAuthenticatedBaseView {
       UserAvatarService avatars) {
     super(messages, security, users, broadcaster, request, avatars);
     addClassNames(
-        "cosmos-page",
-        "cosmos-theme",
-        "cosmos-app-shell",
-        "cosmos-account",
-        "cosmos-reference-portal");
+        "cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-account", REFERENCE_PORTAL);
     HorizontalLayout header = createApplicationHeader(config);
 
     accountSettings =

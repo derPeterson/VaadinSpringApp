@@ -1,5 +1,7 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
+
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -10,6 +12,7 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.function.SerializableRunnable;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -27,6 +30,8 @@ import java.util.function.Function;
 /** Öffentlicher Referenzrahmen; Formulare und ihre Dienste bleiben in den zuständigen Views. */
 @StyleSheet("custom-theme/cosmos-public.css")
 public class PublicPageComponent extends PageFrameComponent {
+  private static final String ACTIVE_NAVIGATION_CLASS = "public-nav-active";
+
   public enum Page {
     HOME(MessageTexts::getHomeTitle, MessageTexts::getPublicHomeIntroduction),
     LOGIN(MessageTexts::getBaseLoginButton, MessageTexts::getPublicLoginIntroduction),
@@ -50,12 +55,12 @@ public class PublicPageComponent extends PageFrameComponent {
   }
 
   private Page page;
-  private Runnable refreshTexts;
+  private SerializableRunnable refreshTexts;
   private final VerticalLayout cards = new VerticalLayout();
 
   public PublicPageComponent(ConfigService config, MessageProperties texts, Page page) {
     this.page = page;
-    addClassNames("cosmos-theme", "cosmos-reference-portal", "cosmos-reference-public");
+    addClassNames("cosmos-theme", REFERENCE_PORTAL, "cosmos-reference-public");
     getElement().setAttribute("data-public-page", page.name().toLowerCase(Locale.ROOT));
     String serviceName = config.getString(ConfigEntry.SERVICE_NAME);
     Image logo = new Image("icons/service-logo.svg", "");
@@ -75,9 +80,9 @@ public class PublicPageComponent extends PageFrameComponent {
     home.setId("public-nav-home");
     login.setId("public-nav-login");
     register.setId("public-nav-register");
-    home.setClassName("public-nav-active", page == Page.HOME);
-    login.setClassName("public-nav-active", page == Page.LOGIN);
-    register.setClassName("public-nav-active", page == Page.REGISTER);
+    home.setClassName(ACTIVE_NAVIGATION_CLASS, page == Page.HOME);
+    login.setClassName(ACTIVE_NAVIGATION_CLASS, page == Page.LOGIN);
+    register.setClassName(ACTIVE_NAVIGATION_CLASS, page == Page.REGISTER);
     Button german = language("DE", Locale.GERMAN);
     Button english = language("EN", Locale.ENGLISH);
     Div languages = new Div(german, english);
@@ -112,7 +117,7 @@ public class PublicPageComponent extends PageFrameComponent {
         main,
         new CosmosCopyrightComponent(
             config, Clock.systemDefaultZone(), texts::getAccountCopyrightTemplate));
-    Runnable translate =
+    SerializableRunnable translate =
         () -> {
           home.setText(texts.getHomeTitle());
           home.setAriaLabel(texts.getHomeTitle());

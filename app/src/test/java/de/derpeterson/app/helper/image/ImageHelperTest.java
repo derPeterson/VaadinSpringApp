@@ -33,7 +33,7 @@ class ImageHelperTest {
     assertEquals(512, image.getHeight());
     assertTrue(image.getColorModel().hasAlpha());
     assertEquals(0, image.getRGB(0, 0) >>> 24, "The logo background must stay transparent");
-    assertEquals(resourcePath, EmailLogo.RESOURCE_PATH);
+    assertEquals("META-INF/resources/icons/service-logo.png", EmailLogo.RESOURCE_PATH);
     assertEquals(
         resourcePath,
         "META-INF/resources/" + Application.class.getAnnotation(PWA.class).iconPath());

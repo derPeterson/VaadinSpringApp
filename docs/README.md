@@ -30,8 +30,8 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
 Die Designübernahme für Besucher, angemeldetes Portal und Administration ist
 umgesetzt und abgenommen. Die freigegebenen Bausteine stehen im [Theme-Standard](theme.md),
 die drei schlanken HTML-Referenzen bleiben in `docs/design/frontend-referenzen`.
-Offen sind die Integration nach `main`, Sonar-Bereinigung und die anschließende
-große Testrunde. Die letzte vollständige QA bleibt im [Prüfstand](status.md) erhalten.
+Der Designbranch ist nach `main` integriert und technisch geprüft. Offen sind die
+Sonar-Bereinigung und die anschließende große Testrunde. Die letzte vollständige QA bleibt im [Prüfstand](status.md) erhalten.
 
 Weitere vereinbarte Arbeiten stehen in [TODO](../TODO.md); gültige Bedienung und
 Konfiguration in den obigen Fachdokumenten.

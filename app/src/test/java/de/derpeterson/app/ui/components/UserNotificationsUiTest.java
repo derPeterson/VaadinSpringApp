@@ -190,7 +190,8 @@ class UserNotificationsUiTest {
           rows.getElement().getTextRecursively().contains(texts.getNotificationsSearchEmpty()));
     }
     panel.unavailable();
-    assertFalse(tree(rows).anyMatch(item -> item.hasClassName("cosmos-notification-empty")));
+    assertFalse(
+        tree(rows).anyMatch(component -> component.hasClassName("cosmos-notification-empty")));
     assertTrue(
         rows.getElement().getTextRecursively().contains(texts.getNotificationsUnavailable()));
     verify(service, never()).dismiss(any(), any());

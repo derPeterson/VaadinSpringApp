@@ -1,5 +1,11 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
+import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_OVERLAY;
+
 import com.vaadin.flow.component.ModalityMode;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -41,19 +47,19 @@ public class AccountPasswordChangeDialog extends Dialog {
     setId("account-password-change-dialog");
     addClassNames("cosmos-theme", "account-change-dialog", "account-password-dialog");
     getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
-    addClassName("cosmos-reference-overlay");
+    addClassName(REFERENCE_OVERLAY);
     setModality(ModalityMode.STRICT);
     setCloseOnEsc(true);
     setCloseOnOutsideClick(true);
 
-    title.addClassName("cosmos-panel-title");
-    description.addClassName("cosmos-panel-description");
+    title.addClassName(PANEL_TITLE);
+    description.addClassName(PANEL_DESCRIPTION);
     Div heading = new Div(title, description);
-    heading.addClassName("cosmos-panel-heading");
+    heading.addClassName(PANEL_HEADING);
     SvgIcon icon = AppIcon.KEY.create();
     icon.getElement().setAttribute("aria-hidden", "true");
     Div badge = new Div(icon);
-    badge.addClassName("cosmos-panel-icon");
+    badge.addClassName(PANEL_ICON);
     close.setId("account-password-close");
     close.setIcon(AppIcon.CLOSE_CIRCLE.create());
     close.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);

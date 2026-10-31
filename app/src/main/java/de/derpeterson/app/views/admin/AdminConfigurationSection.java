@@ -74,6 +74,8 @@ public class AdminConfigurationSection extends VerticalLayout {
       "^[^\\x09-\\x0D @]+@[^\\x09-\\x0D @][^\\x09-\\x0D @.]*\\.[^\\x09-\\x0D @]+$";
   private static final Pattern SMTP_EMAIL_PATTERN = Pattern.compile(SMTP_EMAIL_REGEX);
 
+  private static final String HELP_DEFAULT_CLASS = "admin-help-default";
+
   private static final Set<ConfigEntry> DURATION_ENTRIES =
       Set.of(
           ConfigEntry.USER_AUTO_ABSENT_TIMEOUT,
@@ -432,6 +434,20 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private VerticalLayout createConfigInput(ConfigEntry configEntry) {
+    Component input = createInputComponent(configEntry);
+
+    updatePlaceholder(
+        input,
+        input instanceof AdminDurationField
+            ? configuredDefault(configEntry)
+            : buildPlaceholder(configEntry));
+    installValidationResetListener(input);
+    configInputs.put(configEntry, input);
+
+    return createFieldWrapper(input, configEntry);
+  }
+
+  private Component createInputComponent(ConfigEntry configEntry) {
     Object defaultValue = configEntry.getDefaultValue();
     Component input;
 
@@ -448,26 +464,9 @@ public class AdminConfigurationSection extends VerticalLayout {
     } else if (configEntry == ConfigEntry.REMEMBER_ME_DURATION
         || DURATION_ENTRIES.contains(configEntry)
         || isNotificationRetention(configEntry)) {
-      AdminDurationField.Storage storage =
-          DURATION_ENTRIES.contains(configEntry)
-              ? AdminDurationField.Storage.DURATION
-              : isNotificationRetention(configEntry)
-                  ? AdminDurationField.Storage.DAYS
-                  : AdminDurationField.Storage.SECONDS;
-      input = new AdminDurationField(messageProperties, storage);
+      input = new AdminDurationField(messageProperties, durationStorage(configEntry));
     } else if (defaultValue instanceof Integer) {
-      IntegerField integerField = new IntegerField();
-      integerField.setWidthFull();
-      integerField.setStepButtonsVisible(true);
-      integerField.setClearButtonVisible(true);
-      integerField.setMin(configEntry == ConfigEntry.EMAIL_QUEUE_MAX_RETRY ? 0 : 1);
-
-      if (configEntry == ConfigEntry.MAIL_PORT) {
-        integerField.setMin(1);
-        integerField.setMax(65535);
-      }
-
-      input = integerField;
+      input = createIntegerInput(configEntry);
     } else if (configEntry == ConfigEntry.REMEMBER_ME_SECRET_KEY
         || configEntry == ConfigEntry.MAIL_PASSWORD) {
       PasswordField passwordField = new PasswordField();
@@ -485,15 +484,29 @@ public class AdminConfigurationSection extends VerticalLayout {
       input = textField;
     }
 
-    updatePlaceholder(
-        input,
-        input instanceof AdminDurationField
-            ? configuredDefault(configEntry)
-            : buildPlaceholder(configEntry));
-    installValidationResetListener(input);
-    configInputs.put(configEntry, input);
+    return input;
+  }
 
-    return createFieldWrapper(input, configEntry);
+  private AdminDurationField.Storage durationStorage(ConfigEntry entry) {
+    if (DURATION_ENTRIES.contains(entry)) {
+      return AdminDurationField.Storage.DURATION;
+    }
+    if (isNotificationRetention(entry)) {
+      return AdminDurationField.Storage.DAYS;
+    }
+    return AdminDurationField.Storage.SECONDS;
+  }
+
+  private IntegerField createIntegerInput(ConfigEntry entry) {
+    IntegerField input = new IntegerField();
+    input.setWidthFull();
+    input.setStepButtonsVisible(true);
+    input.setClearButtonVisible(true);
+    input.setMin(entry == ConfigEntry.EMAIL_QUEUE_MAX_RETRY ? 0 : 1);
+    if (entry == ConfigEntry.MAIL_PORT) {
+      input.setMax(65535);
+    }
+    return input;
   }
 
   private VerticalLayout createFieldWrapper(Component input, ConfigEntry configEntry) {
@@ -554,7 +567,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     Span description = new Span(messageProperties.getAdminConfigEntryTooltip(entry));
     description.addClassName("admin-help-description");
     Div defaultValue = new Div(new Span(defaultLabel(entry)), new Span(defaultDisplayValue(entry)));
-    defaultValue.addClassName("admin-help-default");
+    defaultValue.addClassName(HELP_DEFAULT_CLASS);
     H4 rulesTitle = new H4(messageProperties.getAdminConfigInputRules());
     UnorderedList rules = new UnorderedList();
     buildInputRules(entry).forEach(rule -> rules.add(new ListItem(rule)));
@@ -579,8 +592,8 @@ public class AdminConfigurationSection extends VerticalLayout {
           new Div(
               new Span(messageProperties.getAdminConfigDurationEquivalent()),
               new Span(field.getEquivalentValue()));
-      current.addClassName("admin-help-default");
-      equivalent.addClassName("admin-help-default");
+      current.addClassName(HELP_DEFAULT_CLASS);
+      equivalent.addClassName(HELP_DEFAULT_CLASS);
       helpPanel.add(current, equivalent);
     }
     helpPanel.add(defaultValue, rulesCard);
@@ -907,15 +920,15 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     if (input instanceof PasswordField passwordField) {
-      return passwordField.getValue() == null ? "" : passwordField.getValue();
+      return Objects.toString(passwordField.getValue(), "");
     }
 
     if (input instanceof EmailField emailField) {
-      return emailField.getValue() == null ? "" : emailField.getValue();
+      return Objects.toString(emailField.getValue(), "");
     }
 
     if (input instanceof TextField textField) {
-      return textField.getValue() == null ? "" : textField.getValue();
+      return Objects.toString(textField.getValue(), "");
     }
 
     return configEntry.getDefaultValueString();

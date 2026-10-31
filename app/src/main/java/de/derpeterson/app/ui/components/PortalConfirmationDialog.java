@@ -1,5 +1,12 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
+import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_OVERLAY;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ModalityMode;
 import com.vaadin.flow.component.button.Button;
@@ -65,16 +72,16 @@ public class PortalConfirmationDialog extends Dialog {
   public PortalConfirmationDialog(MessageProperties texts, String id) {
     this.texts = texts;
     setId(id);
-    addClassNames("cosmos-theme", "cosmos-reference-overlay", "portal-confirmation-dialog");
+    addClassNames("cosmos-theme", REFERENCE_OVERLAY, "portal-confirmation-dialog");
     getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
     setModality(ModalityMode.STRICT);
     setCloseOnEsc(true);
     setCloseOnOutsideClick(true);
-    title.addClassName("cosmos-panel-title");
-    description.addClassName("cosmos-panel-description");
-    symbol.addClassName("cosmos-panel-icon");
+    title.addClassName(PANEL_TITLE);
+    description.addClassName(PANEL_DESCRIPTION);
+    symbol.addClassName(PANEL_ICON);
     Div titles = new Div(title, description);
-    titles.addClassName("cosmos-panel-heading");
+    titles.addClassName(PANEL_HEADING);
     close.addClassName("cosmos-overlay-close");
     close.addClickListener(event -> close());
     Div header = new Div(symbol, titles, close);
@@ -112,7 +119,7 @@ public class PortalConfirmationDialog extends Dialog {
     this.prompt = Objects.requireNonNull(prompt);
     pending = Objects.requireNonNull(action);
     setClassName("portal-confirm-destructive", prompt.destructive());
-    confirm.setClassName("cosmos-delete-button", prompt.destructive());
+    confirm.setClassName(DELETE_BUTTON, prompt.destructive());
     confirm.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
     if (!prompt.destructive()) {
       confirm.addThemeVariants(ButtonVariant.LUMO_PRIMARY);

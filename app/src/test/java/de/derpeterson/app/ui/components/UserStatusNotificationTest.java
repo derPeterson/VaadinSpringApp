@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Html;
@@ -173,7 +174,7 @@ class UserStatusNotificationTest {
     assertEquals(
         texts.getUserStatusLabel(UserStatus.EMPLOYED),
         buttons.get(UserStatus.EMPLOYED).getAriaLabel().orElseThrow());
-    org.mockito.Mockito.verify(service).updateUserStatus(user, UserStatus.EMPLOYED, true);
+    verify(service).updateUserStatus(user, UserStatus.EMPLOYED, true);
   }
 
   private Notification currentNotification() {

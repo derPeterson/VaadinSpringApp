@@ -1,5 +1,7 @@
 package de.derpeterson.app.views.admin;
 
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
+
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
@@ -98,7 +100,7 @@ public class AdminDashboardSection extends VerticalLayout {
       SerializableSupplier<String> description,
       String section) {
     Div symbol = new Div(icon.create());
-    symbol.addClassName("cosmos-panel-icon");
+    symbol.addClassName(PANEL_ICON);
     H3 title = new H3();
     translations.add(() -> title.setText(name.get()));
     Div copy = new Div(title, copy(description));

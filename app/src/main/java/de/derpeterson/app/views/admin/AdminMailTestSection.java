@@ -1,6 +1,12 @@
 package de.derpeterson.app.views.admin;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_CARD;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADER;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
@@ -91,9 +97,9 @@ public class AdminMailTestSection extends VerticalLayout {
     mailTestBreadcrumb = new Span();
     mailTestTitle = new Span();
     mailCardTitle = new H2();
-    mailCardTitle.addClassName("cosmos-panel-title");
+    mailCardTitle.addClassName(PANEL_TITLE);
     mailCardDescription = new Span();
-    mailCardDescription.addClassName("cosmos-panel-description");
+    mailCardDescription.addClassName(PANEL_DESCRIPTION);
     mailCardBadge = new Span();
     Span deliveryDot = new Span();
     deliveryDot.addClassName("cosmos-mail-delivery-dot");
@@ -157,7 +163,7 @@ public class AdminMailTestSection extends VerticalLayout {
 
     mailLayout = createMailCardContent();
     CosmosCardComponent mailCard = new CosmosCardComponent(mailLayout);
-    mailCard.addClassNames("cosmos-admin-form-card", "cosmos-panel-card", "cosmos-mail-card");
+    mailCard.addClassNames("cosmos-admin-form-card", PANEL_CARD, "cosmos-mail-card");
     add(
         new CosmosSectionHeaderComponent(mailTestBreadcrumb, mailTestTitle, mailTestDescription),
         mailCard);
@@ -206,11 +212,11 @@ public class AdminMailTestSection extends VerticalLayout {
     SvgIcon envelope = AppIcon.ENVELOPE.create();
     envelope.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div iconBadge = new Div(envelope);
-    iconBadge.addClassName("cosmos-panel-icon");
+    iconBadge.addClassName(PANEL_ICON);
     Div heading = new Div(mailCardTitle, mailCardDescription);
-    heading.addClassName("cosmos-panel-heading");
+    heading.addClassName(PANEL_HEADING);
     Div header = new Div(iconBadge, heading, deliveryMeta);
-    header.addClassName("cosmos-panel-header");
+    header.addClassName(PANEL_HEADER);
 
     VerticalLayout fields =
         new VerticalLayout(
