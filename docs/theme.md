@@ -46,6 +46,12 @@ seinen bisherigen CID-/Fehlervertrag. Alternativen und altes PNG liegen bewusst
 in `icons/service-logo-alternatives/`. Sprachumschaltung verwendet ausschließlich
 DE-/EN-Textbuttons, keine Flaggenbilder.
 
+„Bild löschen“ im Profilbildeditor öffnet den gemeinsamen
+`PortalConfirmationDialog` mit destruktivem Stil und einer `PortalContextCard`.
+Abbrechen erhält das Bild. Bestätigen merkt die Entfernung nur im aktuellen
+Editorentwurf vor; erst dessen „Speichern“ übernimmt sie. Der Hinweis im Dialog
+erklärt diese Grenze. Die Portal-HTML-Referenz zeigt dieselbe Bestätigung.
+
 ## Tooltips
 
 Anwendungsweit gilt die freigegebene Stitch-Variante A: kompakte dunkle Fläche,

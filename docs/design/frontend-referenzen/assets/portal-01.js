@@ -450,10 +450,21 @@ statusTrigger.addEventListener('click', () => { const open = statusPopover.hidde
       const action=button.dataset.avatarImage;
       if(action==='choose'){avatarHasImage=true;byId('avatarCropControls').hidden=false;byId('avatarDelete').hidden=false;selectAvatarMode('image');notify('Gestaltungsvorschau: Ein synthetisches Beispielbild wurde geladen, keine Datei ausgewählt.');}
       if(action==='cancel'){resetAvatarDraft();return;}
-      if(action==='delete'){avatarHasImage=false;byId('avatarCropControls').hidden=true;byId('avatarDelete').hidden=true;selectAvatarMode('initials');}
+      if(action==='delete'){byId('avatar-delete-confirm').showModal();}
       if(action==='reset'||action==='choose'){cropX=0;cropY=0;byId('avatarZoom').value='1';updateCrop();}return;
     }
   });
+
+  const deleteConfirmation = byId('avatar-delete-confirm');
+  deleteConfirmation.querySelectorAll('[data-avatar-delete-close]').forEach(button => button.addEventListener('click', () => deleteConfirmation.close()));
+  deleteConfirmation.querySelector('[data-avatar-delete-confirm]').addEventListener('click', () => {
+    if (byId('avatarDialog').open) {
+      avatarHasImage=false;byId('avatarCropControls').hidden=true;byId('avatarDelete').hidden=true;selectAvatarMode('initials');
+    }
+    deleteConfirmation.close();
+  });
+  deleteConfirmation.addEventListener('close', () => { if (byId('avatarDialog').open && !byId('avatarDelete').hidden) { byId('avatarDelete').focus(); } });
+  byId('avatarDialog').addEventListener('close', () => deleteConfirmation.close());
   byId('avatarZoom').addEventListener('input',updateCrop);
   byId('avatarCropFrame').addEventListener('keydown',event=>{const steps={ArrowLeft:[-4,0],ArrowRight:[4,0],ArrowUp:[0,-4],ArrowDown:[0,4]};if(steps[event.key]){event.preventDefault();cropX=Math.max(-60,Math.min(60,cropX+steps[event.key][0]));cropY=Math.max(-60,Math.min(60,cropY+steps[event.key][1]));updateCrop();}});
   const entry = location.hash.slice(1);

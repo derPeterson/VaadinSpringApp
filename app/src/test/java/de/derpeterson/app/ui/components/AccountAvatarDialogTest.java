@@ -109,6 +109,113 @@ class AccountAvatarDialogTest {
     return (Button) ReflectionTestUtils.getField(dialog, field);
   }
 
+  private PortalConfirmationDialog deleteConfirmation() {
+    return (PortalConfirmationDialog) ReflectionTestUtils.getField(dialog, "deleteConfirmation");
+  }
+
+  private Button confirmationButton(String field) {
+    return (Button) ReflectionTestUtils.getField(deleteConfirmation(), field);
+  }
+
+  private UUID openUploadedPicture() {
+    dialog.open();
+    UUID image = UUID.randomUUID();
+    ReflectionTestUtils.invokeMethod(
+        dialog, "showUploadedImage", ReflectionTestUtils.getField(dialog, "draft"), image);
+    return image;
+  }
+
+  @Test
+  void cancellingDeletionLeavesPictureAndDraftUntouched() {
+    UUID image = openUploadedPicture();
+    button("delete").click();
+    assertTrue(deleteConfirmation().isOpened());
+    assertEquals(false, ReflectionTestUtils.getField(dialog, "deleteImage"));
+    assertEquals(image, ReflectionTestUtils.getField(dialog, "uploadedImage"));
+
+    confirmationButton("cancel").click();
+
+    assertTrue(dialog.isOpened());
+    assertFalse(deleteConfirmation().isOpened());
+    assertEquals(AvatarMode.CUSTOM, mode().getValue());
+    assertEquals(image, ReflectionTestUtils.getField(dialog, "uploadedImage"));
+    verify(avatars, never()).save(any(), any());
+  }
+
+  @Test
+  void confirmedDeletionIsOnlyPersistedWhenTheEditorIsSaved() {
+    openUploadedPicture();
+    button("delete").click();
+    confirmationButton("confirm").click();
+    assertTrue(dialog.isOpened());
+    assertFalse(deleteConfirmation().isOpened());
+    assertEquals(true, ReflectionTestUtils.getField(dialog, "deleteImage"));
+    assertEquals(AvatarMode.INITIALS, mode().getValue());
+    assertNull(ReflectionTestUtils.getField(dialog, "uploadedImage"));
+    verify(avatars, never()).save(any(), any());
+
+    ReflectionTestUtils.invokeMethod(
+        dialog,
+        "save",
+        new ObjectMapper().readTree("{\"local\":false,\"zoom\":1,\"x\":0,\"y\":0}"));
+
+    ArgumentCaptor<Change> change = ArgumentCaptor.forClass(Change.class);
+    verify(avatars).save(any(), change.capture());
+    assertTrue(change.getValue().deleteImage());
+    assertFalse(dialog.isOpened());
+  }
+
+  @Test
+  void closingEditorDiscardsPendingDeletionAndCannotAffectTheNextDraft() {
+    openUploadedPicture();
+    button("delete").click();
+    dialog.close();
+    assertFalse(deleteConfirmation().isOpened());
+    UUID nextImage = openUploadedPicture();
+
+    confirmationButton("confirm").click();
+
+    assertEquals(nextImage, ReflectionTestUtils.getField(dialog, "uploadedImage"));
+    assertEquals(false, ReflectionTestUtils.getField(dialog, "deleteImage"));
+    verify(avatars, never()).save(any(), any());
+  }
+
+  @Test
+  void uploadCompletedAfterOpeningConfirmationIsNotDeletedByTheOldAction() {
+    openUploadedPicture();
+    button("delete").click();
+    UUID newerImage = UUID.randomUUID();
+    ReflectionTestUtils.invokeMethod(
+        dialog, "showUploadedImage", ReflectionTestUtils.getField(dialog, "draft"), newerImage);
+
+    confirmationButton("confirm").click();
+
+    assertEquals(newerImage, ReflectionTestUtils.getField(dialog, "uploadedImage"));
+    assertEquals(false, ReflectionTestUtils.getField(dialog, "deleteImage"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void deletionConfirmationUsesCurrentLanguage(String language) {
+    openUploadedPicture();
+    button("delete").click();
+    locale.set(Locale.forLanguageTag(language));
+
+    dialog.refreshTexts();
+
+    assertTrue(
+        deleteConfirmation()
+            .getElement()
+            .getTextRecursively()
+            .contains(messages.getAccountAvatarDeleteQuestion()));
+    assertTrue(
+        deleteConfirmation()
+            .getElement()
+            .getTextRecursively()
+            .contains(messages.getAccountAvatarDeleteHint()));
+    assertEquals(messages.getPortalDeleteAction(), confirmationButton("confirm").getText());
+  }
+
   @Test
   void previewUsesSavedInitialsAndReadsNameChangesOnReopenWithoutChangingTheAccount() {
     dialog.open();

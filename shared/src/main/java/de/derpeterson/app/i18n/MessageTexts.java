@@ -2059,6 +2059,18 @@ public class MessageTexts {
     return getTranslation("account.avatar.delete");
   }
 
+  public String getAccountAvatarDeleteQuestion() {
+    return getTranslation("account.avatar.delete.question");
+  }
+
+  public String getAccountAvatarDeleteExplanation() {
+    return getTranslation("account.avatar.delete.explanation");
+  }
+
+  public String getAccountAvatarDeleteHint() {
+    return getTranslation("account.avatar.delete.hint");
+  }
+
   public String getAccountAvatarTypeError() {
     return getTranslation("account.avatar.error.type");
   }

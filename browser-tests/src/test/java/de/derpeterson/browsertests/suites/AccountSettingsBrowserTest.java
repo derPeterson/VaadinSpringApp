@@ -313,6 +313,23 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     io.qameta.allure.playwright.AllurePlaywright.attachScreenshot("Gespeichertes Profilbild", page);
     openAvatar();
     page.locator("#account-avatar-delete").click();
+    Locator confirmation = page.locator("#account-avatar-delete-confirmation");
+    assertThat(confirmation).hasJSProperty("opened", true);
+    assertThat(confirmation).containsText(texts.getAccountAvatarDeleteQuestion());
+    assertThat(confirmation).containsText(texts.getAccountAvatarDeleteHint());
+    io.qameta.allure.playwright.AllurePlaywright.attachScreenshot(
+        "Profilbild löschen bestätigen", page);
+    page.locator("#account-avatar-delete-confirmation-cancel").click();
+    assertThat(page.locator("account-avatar-editor")).hasAttribute("data-mode", "CUSTOM");
+    page.locator("#account-avatar-delete").click();
+    page.locator("#account-avatar-delete-confirmation-submit").click();
+    assertThat(page.locator("account-avatar-editor")).hasAttribute("data-mode", "INITIALS");
+    page.locator("#account-avatar-cancel").click();
+    page.reload();
+    assertPhotos();
+    openAvatar();
+    page.locator("#account-avatar-delete").click();
+    page.locator("#account-avatar-delete-confirmation-submit").click();
     saveAvatar();
     page.reload();
     assertThat(page.locator(".account-summary-avatar .cosmos-avatar-photo")).isHidden();

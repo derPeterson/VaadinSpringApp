@@ -68,10 +68,13 @@ public class AccountAvatarDialog extends Dialog {
   private final Button delete = new Button();
   private final RadioButtonGroup<AvatarMode> mode = new RadioButtonGroup<>();
   private final AccountAvatarEditor editor;
+  private final PortalConfirmationDialog deleteConfirmation;
 
   public AccountAvatarDialog(MessageProperties messages, UserEntity user) {
     this.messages = messages;
     this.user = user;
+    deleteConfirmation =
+        new PortalConfirmationDialog(messages, "account-avatar-delete-confirmation");
     editor = new AccountAvatarEditor(messages, user);
     setId("account-avatar-dialog");
     addClassNames("cosmos-theme", "account-change-dialog", "account-avatar-dialog");
@@ -144,20 +147,13 @@ public class AccountAvatarDialog extends Dialog {
     info.addClassNames("cosmos-panel-hint", "account-avatar-info");
     Div body = new Div(editor, info);
     body.addClassNames("cosmos-dialog-form", "account-change-dialog-form", "account-avatar-form");
-    add(body);
+    add(body, deleteConfirmation);
 
     delete.setId("account-avatar-delete");
     delete.setPrefixComponent(AppIcon.TRASH.create());
     delete.addClassName(DELETE_BUTTON);
     delete.setVisible(false);
-    delete.addClickListener(
-        event -> {
-          deleteImage = true;
-          uploadedImage = null;
-          editor.clearImage();
-          mode.setValue(AvatarMode.INITIALS);
-          delete.setVisible(false);
-        });
+    delete.addClickListener(event -> confirmDeleteImage());
     cancel.setId("account-avatar-cancel");
     cancel.setPrefixComponent(AppIcon.CLOSE.create());
     save.setId("account-avatar-save");
@@ -177,6 +173,38 @@ public class AccountAvatarDialog extends Dialog {
         });
     addDetachListener(event -> clearDraft());
     refreshTexts();
+  }
+
+  private void confirmDeleteImage() {
+    if (!isOpened() || !delete.isVisible() || !delete.isEnabled()) {
+      return;
+    }
+    UUID selectedDraft = draft;
+    UUID selectedImage = uploadedImage;
+    deleteConfirmation.open(
+        new PortalConfirmationDialog.Prompt(
+            messages::getAccountAvatarDelete,
+            messages::getPortalSessionCheckSelection,
+            messages::getAccountAvatarDeleteQuestion,
+            messages::getAccountAvatarDeleteExplanation,
+            () ->
+                new PortalContextCard(AppIcon.PICTURE.create(), messages.getAccountAvatarCustom()),
+            messages::getAccountAvatarDeleteHint,
+            messages::getPortalDeleteAction,
+            true),
+        () -> {
+          // Ein inzwischen geschlossener oder durch einen Upload geänderter Entwurf bleibt
+          // unberührt.
+          if (isOpened()
+              && Objects.equals(selectedDraft, draft)
+              && Objects.equals(selectedImage, uploadedImage)) {
+            deleteImage = true;
+            uploadedImage = null;
+            editor.clearImage();
+            mode.setValue(AvatarMode.INITIALS);
+            delete.setVisible(false);
+          }
+        });
   }
 
   private void cancelSelection() {
@@ -401,6 +429,7 @@ public class AccountAvatarDialog extends Dialog {
   }
 
   private void clearDraft() {
+    deleteConfirmation.close();
     if (avatars != null) {
       avatars.release(draft);
     }
@@ -432,6 +461,7 @@ public class AccountAvatarDialog extends Dialog {
     cancel.setText(messages.getAdminUsersCancel());
     save.setText(messages.getAdminUsersSave());
     editor.refreshTexts();
+    deleteConfirmation.refreshTexts();
   }
 
   // Die dauerhafte HTTP-Sitzung speichert nur Sicherheitsdaten. Dieses UI enthält
