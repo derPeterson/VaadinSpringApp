@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -79,6 +80,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
   private final EmailField email = new EmailField();
   private final AccountEmailChangeDialog emailChangeDialog;
   private final AccountPasswordChangeDialog passwordChangeDialog;
+  private ExternalConnectionsComponent externalConnections;
   private final AccountAvatarDialog avatarDialog;
   private final DatePicker birthDate = new DatePicker();
   private final ComboBox<Locale> preferredLanguage = new ComboBox<>();
@@ -260,10 +262,10 @@ public class AccountSettingsComponent extends PortalPageComponent {
     gender.setId("account-gender");
     gender.setItems(Gender.values());
     gender.setItemLabelGenerator(this::genderLabel);
-    gender.setRequiredIndicatorVisible(true);
+    gender.setClearButtonVisible(true);
     firstName.setRequiredIndicatorVisible(true);
     lastName.setRequiredIndicatorVisible(true);
-    birthDate.setRequiredIndicatorVisible(true);
+    birthDate.setClearButtonVisible(true);
     preferredLanguage.setRequiredIndicatorVisible(true);
     email.setReadOnly(true);
     email.setSuffixComponent(AppIcon.LOCK.create());
@@ -325,7 +327,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
     // Wie in der Registrierung erst beim Absenden prüfen, nicht beim ersten Tastendruck.
     birthDate.setInvalid(false);
     if (!ValidationHelper.validateRequiredInputs(
-        List.of(firstName, lastName, birthDate, preferredLanguage, gender), messages)) {
+        List.of(firstName, lastName, preferredLanguage), messages)) {
       return;
     }
     if (!ValidationHelper.validateBirthDateBeforeInput(birthDate, messages)) {
@@ -443,6 +445,9 @@ public class AccountSettingsComponent extends PortalPageComponent {
           if (Objects.equals(version, changed.previousVersion())) {
             version = changed.version();
           }
+          if (externalConnections != null) {
+            externalConnections.refreshAccount();
+          }
           return changed;
         });
     emailChangeDialog.setRequestAction(emailAction);
@@ -474,6 +479,9 @@ public class AccountSettingsComponent extends PortalPageComponent {
   }
 
   private String genderLabel(Gender value) {
+    if (value == null) {
+      return "";
+    }
     return switch (value) {
       case MALE -> messages.getGenderMale();
       case FEMALE -> messages.getGenderFemale();
@@ -490,5 +498,15 @@ public class AccountSettingsComponent extends PortalPageComponent {
     avatarDialog.refreshTexts();
     sidebar.refreshTexts();
     sessionPanel.refreshTexts();
+  }
+
+  public void configureExternalLogins(
+      ExternalConnectionsComponent connections,
+      BooleanSupplier passwordRequired,
+      BooleanSupplier emailPasswordRequired) {
+    passwordChangeDialog.setCurrentPasswordRequired(passwordRequired);
+    emailChangeDialog.setCurrentPasswordRequired(emailPasswordRequired);
+    externalConnections = connections;
+    panels.get(AccountSection.SECURITY).getBody().add(connections);
   }
 }

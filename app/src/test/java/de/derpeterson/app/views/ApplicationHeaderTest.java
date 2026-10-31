@@ -394,7 +394,9 @@ class ApplicationHeaderTest {
                   mock(AccountSecurityService.class),
                   mock(SessionManagementService.class),
                   status,
-                  avatars);
+                  avatars,
+                  mock(de.derpeterson.app.security.ExternalLoginFlow.class),
+                  mock(de.derpeterson.app.service.ExternalIdentityService.class));
           case "notifications" ->
               new UserNotificationsView(
                   texts, security, users, status, request, avatars, notifications, config);

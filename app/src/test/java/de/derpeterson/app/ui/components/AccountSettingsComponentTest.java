@@ -261,9 +261,9 @@ class AccountSettingsComponentTest {
     save();
     assertTrue(first.isInvalid());
     assertTrue(last.isInvalid());
-    assertTrue(birth.isInvalid());
+    assertFalse(birth.isInvalid());
     assertTrue(choice.isInvalid());
-    assertTrue(gender.isInvalid());
+    assertFalse(gender.isInvalid());
     verifyNoInteractions(saver);
     assertNotification(new MessageProperties(provider).getBaseValidationRequiredMessage(), true);
   }

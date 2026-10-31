@@ -448,6 +448,10 @@ class AdminConfigurationGroupTest {
     AdminSidePanel panel = (AdminSidePanel) ReflectionTestUtils.getField(section, "helpPanel");
     int checkedFields = 0;
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
+      if (group == AdminConfigGroup.EXTERNAL_LOGIN) {
+        // Anbieter haben ein eigenes Panel ohne die generischen ConfigEntry-Feldhilfen.
+        continue;
+      }
       section.showGroup(group);
       for (Object value : visibleEntries()) {
         ConfigEntry entry = (ConfigEntry) value;

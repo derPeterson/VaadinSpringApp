@@ -136,6 +136,9 @@ public final class BrowserTestRunner {
                 metadata.put("cleanup", "failed");
                 metadata.put("cleanupError", error.toString());
               }
+              if (oidc != null) {
+                oidc.close();
+              }
               metadata.put("tests", "interrupted");
               metadata.put(
                   "error",
@@ -224,6 +227,8 @@ public final class BrowserTestRunner {
     System.exit(exit);
   }
 
+  private OidcTestProvider oidc;
+
   private int execute(Set<String> options) throws Exception {
     Runtime.getRuntime().addShutdownHook(shutdownHook);
     int exitCode = 1;
@@ -239,6 +244,11 @@ public final class BrowserTestRunner {
       environment.put("BROWSER_TEST_HTTP_PORT", String.valueOf(httpPort));
       String appUrl = "https://127.0.0.1:" + appPort;
       String mailUrl = "http://127.0.0.1:" + mailPort;
+      if (testClasses.contains(de.derpeterson.browsertests.suites.ExternalLoginBrowserTest.class)) {
+        oidc = new OidcTestProvider(appUrl);
+        oidc.configure(environment);
+        metadata.put("oidcFixture", environment.get("BROWSER_TEST_OIDC_GOOGLE_AUTH"));
+      }
       metadata.put("appUrl", appUrl);
       metadata.put("mailpitUrl", mailUrl);
       System.setProperty("browser.tests.managed", "true");
@@ -380,6 +390,10 @@ public final class BrowserTestRunner {
         metadata.put("html", "failed");
         metadata.put("reportError", error.toString());
         exitCode = 1;
+      }
+      if (oidc != null) {
+        oidc.close();
+        oidc = null;
       }
       metadata.put("finishedAt", Instant.now().toString());
       save();

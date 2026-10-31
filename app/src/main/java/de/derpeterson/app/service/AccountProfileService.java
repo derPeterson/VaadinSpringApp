@@ -74,7 +74,6 @@ public class AccountProfileService {
     Assert.isTrue(UserInputRules.isRequiredTextValid(changes.firstName()), "Invalid first name");
     Assert.isTrue(UserInputRules.isRequiredTextValid(changes.lastName()), "Invalid last name");
     Assert.isTrue(UserInputRules.isBirthDateValid(changes.birthDate()), "Invalid birth date");
-    Assert.notNull(changes.gender(), "Gender required");
     Assert.isTrue(
         Locale.GERMAN.equals(changes.language()) || Locale.ENGLISH.equals(changes.language()),
         "Unsupported language");

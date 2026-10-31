@@ -40,6 +40,7 @@ class AdminRolePolicyPrincipalSnapshotTest {
     when(authentication.isAuthenticated()).thenReturn(true);
     when(authentication.getPrincipal()).thenReturn(principal, null);
     SecurityUserRow row = mock(SecurityUserRow.class);
+    org.mockito.Mockito.lenient().when(row.getAccessVersion()).thenReturn("fixture-access-version");
     when(row.isEnabled()).thenReturn(true);
     when(row.getRole()).thenReturn(RoleType.ROLE_SUPERADMIN);
     when(users.findSecurityUser(principal.getUsername())).thenReturn(List.of(row));

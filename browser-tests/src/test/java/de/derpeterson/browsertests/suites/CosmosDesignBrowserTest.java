@@ -364,7 +364,9 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     ConfigurationPage settings = new ConfigurationPage(page);
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
       settings.open(group);
-      assertHintCentered(page.locator(".cosmos-config-save-hint"));
+      for (Locator hint : page.locator(".cosmos-config-save-hint").all()) {
+        assertHintCentered(hint);
+      }
     }
     page.navigate(path(ADMIN_ROUTE) + "?section=mail_test");
     assertHintCentered(page.locator(".cosmos-admin-section--mail .cosmos-panel-hint"));

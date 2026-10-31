@@ -3,7 +3,9 @@ package de.derpeterson.app.security.session;
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
 
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.WrappedHttpSession;
 import de.derpeterson.app.security.DeviceRememberMeServices;
+import jakarta.servlet.http.HttpSessionBindingEvent;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -48,6 +50,13 @@ public final class DurableSessionRepository<S extends Session>
   private final UserDetailsService users;
   private final Supplier<String> rememberKey;
   private final Map<String, RuntimeState> runtime = new ConcurrentHashMap<>();
+
+  /** Ein bereits geladener Request darf nach paralleler Abmeldung keine Rechte mehr erhalten. */
+  public static final class MissingSessionException extends IllegalStateException {
+    private MissingSessionException() {
+      super("Session no longer exists");
+    }
+  }
 
   private static final class RuntimeState {
     private String id;
@@ -120,7 +129,11 @@ public final class DurableSessionRepository<S extends Session>
   @Override
   public void save(LiveSession session) {
     synchronized (session.state) {
-      session.fresh();
+      // Ein anderer Request kann sich inzwischen abgemeldet haben. Der abschließende
+      // Spring-Session-Commit darf die gelöschte Sitzung weder neu anlegen noch HTTP 500 auslösen.
+      if (!session.refreshIfPresent()) {
+        return;
+      }
       backend.save(session.stored);
     }
   }
@@ -153,16 +166,19 @@ public final class DurableSessionRepository<S extends Session>
     if (removed == null) {
       return;
     }
-    removed.attributes.values().stream()
-        .filter(VaadinSession.class::isInstance)
-        .map(VaadinSession.class::cast)
-        .distinct()
-        .forEach(
-            session -> {
-              if (session.getService() != null) {
-                session.getService().fireSessionDestroy(session);
-              }
-            });
+    Set<VaadinSession> unbound = new HashSet<>();
+    removed.attributes.forEach(
+        (name, value) -> {
+          if (value instanceof VaadinSession session && unbound.add(session)) {
+            if (session.getSession() instanceof WrappedHttpSession wrapped) {
+              // Vaadins Binding-Lifecycle erhält die UI bis zum Ende einer laufenden UIDL-Antwort.
+              // Direktes fireSessionDestroy würde sie davor ablösen und den Metadatenaufbau stören.
+              session.valueUnbound(new HttpSessionBindingEvent(wrapped.getHttpSession(), name));
+            } else if (session.getService() != null) {
+              session.getService().fireSessionDestroy(session);
+            }
+          }
+        });
     removed.attributes.clear();
   }
 
@@ -203,18 +219,25 @@ public final class DurableSessionRepository<S extends Session>
       if (!stored.getId().equals(state.id)) {
         S replacement = backend.findById(state.id);
         if (replacement == null) {
-          throw new IllegalStateException("Session no longer exists");
+          throw new MissingSessionException();
         }
         stored = replacement;
       }
     }
 
     private void fresh() {
+      if (!refreshIfPresent()) {
+        throw new MissingSessionException();
+      }
+    }
+
+    private boolean refreshIfPresent() {
       S latest = backend.findById(state.id);
       if (latest == null) {
-        throw new IllegalStateException("Session no longer exists");
+        return false;
       }
       stored = latest;
+      return true;
     }
 
     @Override

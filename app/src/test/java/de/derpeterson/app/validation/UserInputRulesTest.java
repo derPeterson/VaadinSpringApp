@@ -25,7 +25,7 @@ class UserInputRulesTest {
     assertFalse(UserInputRules.isPasswordSecure(null, false));
     assertTrue(UserInputRules.isBirthDateValid(LocalDate.now().minusDays(1)));
     assertFalse(UserInputRules.isBirthDateValid(LocalDate.now()));
-    assertFalse(UserInputRules.isBirthDateValid(null));
+    assertTrue(UserInputRules.isBirthDateValid(null));
   }
 
   @ParameterizedTest

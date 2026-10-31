@@ -9,6 +9,7 @@ import de.derpeterson.browsertests.suites.BlockedLinksBrowserTest;
 import de.derpeterson.browsertests.suites.ConfigurationBrowserTest;
 import de.derpeterson.browsertests.suites.CosmosComponentsBrowserTest;
 import de.derpeterson.browsertests.suites.CosmosDesignBrowserTest;
+import de.derpeterson.browsertests.suites.ExternalLoginBrowserTest;
 import de.derpeterson.browsertests.suites.InfrastructureBrowserTest;
 import de.derpeterson.browsertests.suites.LoginAttemptBrowserTest;
 import de.derpeterson.browsertests.suites.LoginLayoutBrowserTest;
@@ -44,6 +45,7 @@ final class BrowserSuites {
               OperationsBrowserTest.class,
               AuthenticationBrowserTest.class,
               RegistrationBrowserTest.class,
+              ExternalLoginBrowserTest.class,
               VerificationBrowserTest.class,
               PasswordResetBrowserTest.class,
               AccountLifecycleBrowserTest.class,
@@ -68,6 +70,13 @@ final class BrowserSuites {
               LoginAttemptBrowserTest.class,
               SessionLimitBrowserTest.class,
               MaintenanceBrowserTest.class);
+      case "external-login-flow" -> List.of(ExternalLoginBrowserTest.class);
+      case "external-login" ->
+          List.of(
+              ExternalLoginBrowserTest.class,
+              RegistrationBrowserTest.class,
+              AccountSettingsBrowserTest.class,
+              AccountSecurityBrowserTest.class);
       case "notifications" ->
           List.of(UserNotificationsBrowserTest.class, NotificationInboxBrowserTest.class);
       case "account-security" -> List.of(AccountSecurityBrowserTest.class);

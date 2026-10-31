@@ -226,7 +226,9 @@ public final class AdminUsersPage {
     for (long step = 0; step < Math.abs(delta); step++) {
       currentDay.press(delta > 0 ? "ArrowRight" : "ArrowLeft");
     }
-    currentDay.click();
+    // Am Monatswechsel bewegt sich das Gitter noch. Die bereits per Tastatur fokussierte
+    // Zelle mit Enter bestätigen, statt während dieser Bewegung eine Mauskoordinate zu wählen.
+    currentDay.press("Enter");
     assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     assertThat(activityPicker()).hasJSProperty("value", selected.toString());
     assertThat(activityTime()).hasValue("");

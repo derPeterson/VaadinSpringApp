@@ -47,7 +47,7 @@ public final class UserInputRules {
 
   public static boolean isBirthDateValid(LocalDate birthDate) {
     // Geburtsdaten sind Kalendertage der Server-Zeitzone, keine UTC-Zeitpunkte.
-    return birthDate != null && birthDate.isBefore(LocalDate.now(ZoneId.systemDefault()));
+    return birthDate == null || birthDate.isBefore(LocalDate.now(ZoneId.systemDefault()));
   }
 
   public static boolean isRequiredTextValid(String value) {

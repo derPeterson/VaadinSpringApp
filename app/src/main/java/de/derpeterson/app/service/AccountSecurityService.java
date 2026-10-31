@@ -13,6 +13,7 @@ import de.derpeterson.app.repository.EmailChangeTokenRepository;
 import de.derpeterson.app.repository.PasswordResetTokenRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.CustomUserDetailsService;
+import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.session.DurableSessionRegistry;
@@ -36,6 +37,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -124,15 +126,21 @@ public class AccountSecurityService {
   private final Clock clock = Clock.systemDefaultZone();
   private final SecureRandom random = new SecureRandom();
 
+  private final ObjectProvider<ExternalLoginFlow> externalLogins;
+
   public PasswordChanged changePassword(HttpServletRequest request, PasswordChange change) {
     Assert.notNull(change, "Password change required");
     Assert.isTrue(UserInputRules.isPasswordSecure(change.newPassword()), "Invalid password");
     Assert.isTrue(Objects.equals(change.newPassword(), change.confirmation()), "Password mismatch");
-    String identity = reauthenticate(request, change.currentPassword());
+    String identity =
+        reauthenticate(request, change.currentPassword(), ExternalLoginFlow.Purpose.PASSWORD);
     return transaction(
         () -> {
-          UserEntity user = lockedAccount(identity, change.currentPassword());
-          if (encoder.matches(change.newPassword(), user.getPassword())) {
+          UserEntity user =
+              lockedAccount(
+                  request, identity, change.currentPassword(), ExternalLoginFlow.Purpose.PASSWORD);
+          if (user.getPassword() != null
+              && encoder.matches(change.newPassword(), user.getPassword())) {
             throw new Rejected(Problem.SAME_PASSWORD);
           }
           String body = mail.render("password_changed", user, Map.of());
@@ -159,10 +167,13 @@ public class AccountSecurityService {
     Assert.isTrue(
         Objects.equals(target, EmailIdentity.canonicalize(change.confirmation())),
         "Email mismatch");
-    String identity = reauthenticate(request, change.currentPassword());
+    String identity =
+        reauthenticate(request, change.currentPassword(), ExternalLoginFlow.Purpose.EMAIL);
     transaction(
         () -> {
-          UserEntity user = lockedAccount(identity, change.currentPassword());
+          UserEntity user =
+              lockedAccount(
+                  request, identity, change.currentPassword(), ExternalLoginFlow.Purpose.EMAIL);
           if (user.getEmail().equals(target)) {
             throw new Rejected(Problem.SAME_EMAIL);
           }
@@ -195,7 +206,7 @@ public class AccountSecurityService {
           pending.setUserEntity(user);
           pending.setOldEmail(user.getEmail());
           pending.setNewEmail(target);
-          pending.setCredentialDigest(digest(user.getPassword()));
+          pending.setCredentialDigest(digest(user.getAccessVersion()));
           pending.setCreatedAt(now);
           pending.setExpiryDate(now.plus(duration));
           tokens.save(pending);
@@ -280,18 +291,28 @@ public class AccountSecurityService {
     UserEntity user = token.getUserEntity();
     if (!user.isEnabled()
         || !Objects.equals(user.getEmail(), token.getOldEmail())
-        || !Objects.equals(digest(user.getPassword()), token.getCredentialDigest())) {
+        || !Objects.equals(digest(user.getAccessVersion()), token.getCredentialDigest())) {
       return Confirmation.INVALID;
     }
     return Confirmation.READY;
   }
 
-  private String reauthenticate(HttpServletRequest request, String password) {
+  private String reauthenticate(
+      HttpServletRequest request, String password, ExternalLoginFlow.Purpose purpose) {
     UserDetails principal =
         security
             .getAuthenticatedUser(request)
             .orElseThrow(() -> new AccessDeniedException("Authentication required"));
     MaintenanceService.requirePublicAccess(config);
+    ExternalLoginFlow externalLogin = externalLogins.getIfAvailable();
+    if ((password == null || password.isBlank()) && externalLogin != null) {
+      UserEntity user =
+          users
+              .findByEmail(principal.getUsername())
+              .orElseThrow(() -> new AccessDeniedException("Account unavailable"));
+      externalLogin.authorize(request, user, purpose, false);
+      return user.getEmail();
+    }
     Assert.hasText(password, "Current password required");
     Authentication auth =
         attempts.authenticate(
@@ -310,7 +331,11 @@ public class AccountSecurityService {
     return EmailIdentity.canonicalize(auth.getName());
   }
 
-  private UserEntity lockedAccount(String identity, String password) {
+  private UserEntity lockedAccount(
+      HttpServletRequest request,
+      String identity,
+      String password,
+      ExternalLoginFlow.Purpose purpose) {
     MaintenanceService.requirePublicAccess(config);
     UserEntity user =
         users
@@ -319,7 +344,10 @@ public class AccountSecurityService {
     if (!user.isEnabled()) {
       throw new AccessDeniedException("Account disabled");
     }
-    if (!encoder.matches(password, user.getPassword())) {
+    ExternalLoginFlow externalLogin = externalLogins.getIfAvailable();
+    if ((password == null || password.isBlank()) && externalLogin != null) {
+      externalLogin.authorize(request, user, purpose, true);
+    } else if (user.getPassword() == null || !encoder.matches(password, user.getPassword())) {
       throw new BadCredentialsException("Credentials changed");
     }
     return user;

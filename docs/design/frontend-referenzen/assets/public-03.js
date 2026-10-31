@@ -28,9 +28,9 @@
   const choose = (list, option) => {
     const value = option.dataset[list.attribute];
     options(list).forEach(entry => entry.setAttribute('aria-selected', String(entry === option)));
-    list.selected.textContent = value;
+    list.selected.textContent = value || "Geschlecht auswählen";
     byId('register-gender').value = value;
-    list.trigger.dataset.empty = 'false';
+    list.trigger.dataset.empty = String(!value);
     list.trigger.removeAttribute('aria-invalid');
     close(list, true);
   };

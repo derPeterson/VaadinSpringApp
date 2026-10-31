@@ -1,9 +1,11 @@
 package de.derpeterson.app.security;
 
+import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.repository.UserRepository.SecurityUserRow;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -25,9 +27,14 @@ public class CustomUserDetailsService implements UserDetailsService {
   }
 
   public UserDetails loadPasswordUserByUsername(String email) {
-    return toUserDetails(
-        userRepository.findPasswordSecurityUser(
-            de.derpeterson.app.model.EmailIdentity.canonicalize(email)));
+    List<SecurityUserRow> rows =
+        userRepository.findPasswordSecurityUser(EmailIdentity.canonicalize(email));
+    if (rows.isEmpty()
+        || rows.getFirst().getPassword() == null
+        || rows.getFirst().getPassword().isBlank()) {
+      throw new UsernameNotFoundException("Password sign-in unavailable");
+    }
+    return toUserDetails(rows);
   }
 
   private UserDetails toUserDetails(List<UserRepository.SecurityUserRow> rows) {
@@ -38,14 +45,18 @@ public class CustomUserDetailsService implements UserDetailsService {
     List<GrantedAuthority> authorities =
         rows.stream()
             .map(UserRepository.SecurityUserRow::getRole)
-            .filter(java.util.Objects::nonNull)
+            .filter(Objects::nonNull)
             .flatMap(role -> role.getGrantedRoles().stream())
             .map(RoleType::name)
             .distinct()
             .map(SimpleGrantedAuthority::new)
             .collect(Collectors.toList());
 
-    return new org.springframework.security.core.userdetails.User(
-        user.getEmail(), user.getPassword(), user.isEnabled(), true, true, true, authorities);
+    return new PortalUserDetails(
+        user.getEmail(),
+        user.getPassword(),
+        user.getAccessVersion(),
+        user.isEnabled(),
+        authorities);
   }
 }

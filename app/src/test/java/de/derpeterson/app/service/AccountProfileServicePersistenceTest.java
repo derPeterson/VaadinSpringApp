@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -209,24 +210,22 @@ class AccountProfileServicePersistenceTest {
   }
 
   @Test
-  void missingGenderCannotPartiallySaveTheProfile() {
+  void optionalProfileDataCanBeClearedAndReloaded() {
     Changes change =
-        new Changes(
-            account.getVersion(),
-            "Updated",
-            "Name",
-            LocalDate.of(1995, 2, 3),
-            Locale.ENGLISH,
-            null);
-    assertThrows(IllegalArgumentException.class, () -> profiles.save(request, change));
+        new Changes(account.getVersion(), "Updated", "Name", null, Locale.ENGLISH, null);
+    AccountProfileService.Profile saved = profiles.save(request, change);
     UserEntity stored = users.findById(account.getId()).orElseThrow();
-    assertEquals("Before", stored.getFirstName());
-    assertEquals(account.getVersion(), stored.getVersion());
-    assertEquals(Gender.OTHER, stored.getGender());
+    assertNull(saved.gender());
+    assertNull(saved.birthDate());
+    assertNull(stored.getGender());
+    assertNull(stored.getBirthDate());
+    assertEquals("Updated", stored.getFirstName());
+    assertEquals(account.getPassword(), stored.getPassword());
+    assertEquals(saved.version(), stored.getVersion());
   }
 
   @ParameterizedTest
-  @ValueSource(ints = {0, 1, 2, 3, 4, 5, 6})
+  @ValueSource(ints = {0, 1, 3, 4, 5, 6})
   void invalidValuesAreRejectedServerSideWithoutPartialWrites(int input) {
     Changes valid = changes(account.getVersion());
     Changes invalid =
@@ -245,14 +244,6 @@ class AccountProfileServicePersistenceTest {
                   valid.firstName(),
                   null,
                   valid.birthDate(),
-                  valid.language(),
-                  Gender.OTHER);
-          case 2 ->
-              new Changes(
-                  valid.version(),
-                  valid.firstName(),
-                  valid.lastName(),
-                  null,
                   valid.language(),
                   Gender.OTHER);
           case 3 ->

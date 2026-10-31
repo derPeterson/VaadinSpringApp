@@ -28,6 +28,7 @@ import de.derpeterson.app.ui.components.AccountSecurityFeedback.Field;
 import de.derpeterson.app.validation.UserInputRules;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 
 /** Fordert eine verifizierte Adressänderung an; die bisherige Kontoadresse bleibt erhalten. */
 public class AccountEmailChangeDialog extends Dialog {
@@ -38,6 +39,7 @@ public class AccountEmailChangeDialog extends Dialog {
   private final EmailField email = new EmailField();
   private final EmailField confirmEmail = new EmailField();
   private final PasswordField password = new PasswordField();
+  private transient BooleanSupplier currentPasswordRequired = () -> true;
   private final Button close = new Button(AppIcon.CLOSE_CIRCLE.create(), event -> close());
   private final Button cancel = new Button("", event -> close());
   private final Button request = new Button();
@@ -117,8 +119,16 @@ public class AccountEmailChangeDialog extends Dialog {
     requestAction = Objects.requireNonNull(action);
   }
 
+  public void setCurrentPasswordRequired(BooleanSupplier required) {
+    currentPasswordRequired = Objects.requireNonNull(required);
+  }
+
   private void submit() {
-    if (!ValidationHelper.validateRequiredInputs(List.of(email, confirmEmail, password), messages)
+    if (!ValidationHelper.validateRequiredInputs(
+            password.isVisible()
+                ? List.of(email, confirmEmail, password)
+                : List.of(email, confirmEmail),
+            messages)
         || !ValidationHelper.validateEmailValidInputs(List.of(email, confirmEmail), messages)
         || !ValidationHelper.validateEmailConfirmInputs(email, confirmEmail, messages)) {
       return;
@@ -149,6 +159,9 @@ public class AccountEmailChangeDialog extends Dialog {
 
   @Override
   public void open() {
+    boolean required = currentPasswordRequired.getAsBoolean();
+    password.setVisible(required);
+    password.setRequiredIndicatorVisible(required);
     clearDraft();
     super.open();
   }

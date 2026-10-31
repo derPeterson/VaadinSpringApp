@@ -19,6 +19,7 @@ import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -42,6 +43,7 @@ public class SessionSecurityBrowserTest extends BrowserFixture {
         4. Rollenentzug: automatische Weiterleitung auf Home bei erhaltenem Login, altes Formular verschwindet. Bei Sperre/Löschung alten Speichern-Button anklicken: 401 prüfen.
         5. Bei Sperre/Löschung geschützte Seite neu aufrufen: Login. Als ursprünglicher Admin nach dem Probe-Konto suchen.
         **Erwartet:** Der alte privilegierte Callback wird verweigert, Probe-Konto fehlt tatsächlich.
+        Die Neuanmeldung bleibt auch mit gespeichertem Login ohne HTTP-500-Antwort erreichbar.
         Keine synthetischen RPCs; bereits laufende Aktionen sind kein rückwirkender Widerruf.
         """)
   void oldPrivilegedCallbackIsRejected(String caseId, String change, boolean remember) {
@@ -49,6 +51,14 @@ public class SessionSecurityBrowserTest extends BrowserFixture {
     String account = email("session"), probe = email("blocked-create");
     users.createUser(account, BrowserTestAccounts.USER_PASSWORD, true, true);
     try (BrowserActor actor = new BrowserActor(browser)) {
+      AtomicInteger serverErrors = new AtomicInteger();
+      actor.page.onResponse(
+          response -> {
+            if (response.status() >= 500
+                && response.url().startsWith(System.getProperty("browser.tests.baseUrl"))) {
+              serverErrors.incrementAndGet();
+            }
+          });
       AdminUsersPage other = actor.loginAdmin(account, BrowserTestAccounts.USER_PASSWORD, remember);
       other.open();
       AdminUserDialog stale = other.openCreate();
@@ -76,6 +86,7 @@ public class SessionSecurityBrowserTest extends BrowserFixture {
         users.open();
         users.search(probe);
         assertThat(users.emailCells(probe)).hasCount(0);
+        assertEquals(0, serverErrors.get(), "Der Rechtewechsel darf keinen Serverfehler auslösen.");
         return;
       }
       Response denied =
@@ -92,6 +103,7 @@ public class SessionSecurityBrowserTest extends BrowserFixture {
           new Page.NavigateOptions()
               .setWaitUntil(com.microsoft.playwright.options.WaitUntilState.DOMCONTENTLOADED));
       new LoginPage(actor.page).assertFormVisible();
+      assertEquals(0, serverErrors.get(), "Die Neuanmeldung darf keinen Serverfehler auslösen.");
       users.open();
       users.search(probe);
       assertThat(users.emailCells(probe)).hasCount(0);

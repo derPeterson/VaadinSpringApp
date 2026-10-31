@@ -171,7 +171,8 @@ public class SecurityConfig {
       MaintenanceService maintenance,
       SecurityContextRepository contextRepository,
       ObjectProvider<SessionManagementService> sessionManagement,
-      @Qualifier("h2Console") ObjectProvider<ServletRegistrationBean<?>> h2Console) {
+      @Qualifier("h2Console") ObjectProvider<ServletRegistrationBean<?>> h2Console,
+      ObjectProvider<ExternalLoginHttp> externalLogin) {
     logger.debug("🔥 SecurityConfig is loading!");
 
     H2ConsoleOriginFilter consoleProtection =
@@ -221,6 +222,13 @@ public class SecurityConfig {
                         AppRoute.FORGOT_PASSWORD.getSecurityRoute(),
                         AppRoute.RESET_PASSWORD.getSecurityRoute(),
                         AppRoute.EMAIL_CHANGE.getSecurityRoute())
+                    .permitAll()
+                    .requestMatchers(
+                        "/oauth2/authorization/google",
+                        "/oauth2/authorization/microsoft",
+                        "/login/oauth2/code/google",
+                        "/login/oauth2/code/microsoft",
+                        "/external-registration")
                     .permitAll()
                     .requestMatchers(
                         AppRoute.H2.getSecurityRoute(), AppRoute.H2.getSecurityRoute() + "/**")
@@ -296,6 +304,10 @@ public class SecurityConfig {
 
     logger.debug("🔧 SecurityConfig loaded!");
 
+    ExternalLoginHttp external = externalLogin.getIfAvailable();
+    if (external != null) {
+      external.configure(http);
+    }
     return http.build();
   }
 
@@ -351,7 +363,7 @@ public class SecurityConfig {
       throws IOException {
     if (rememberMeServices instanceof DeviceRememberMeServices devices
         && !devices.requested(request)) {
-      devices.preparePasswordLogin(request, response, authentication.getName());
+      devices.prepareVerifiedLogin(request, response, authentication.getName());
     }
     boolean admin =
         authentication.getAuthorities().stream()
@@ -407,7 +419,10 @@ public class SecurityConfig {
       return false;
     }
 
-    return requestUri.equals(AppRoute.BASE.getSecurityRoute())
+    return requestUri.equals("/external-registration")
+        || requestUri.startsWith("/oauth2/authorization/")
+        || requestUri.startsWith("/login/oauth2/code/")
+        || requestUri.equals(AppRoute.BASE.getSecurityRoute())
         || requestUri.equals(AppRoute.HOME.getSecurityRoute())
         || requestUri.equals(AppRoute.ACCOUNT.getSecurityRoute())
         || requestUri.equals(AppRoute.NOTIFICATIONS.getSecurityRoute())

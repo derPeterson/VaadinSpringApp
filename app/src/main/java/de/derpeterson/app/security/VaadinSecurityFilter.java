@@ -3,6 +3,7 @@ package de.derpeterson.app.security;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.security.session.DurableSessionRepository;
+import de.derpeterson.app.security.session.DurableSessionRepository.MissingSessionException;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -35,28 +36,35 @@ public class VaadinSecurityFilter implements Filter {
           .sendRedirect(AppRoute.LOGIN.getSecurityRoute() + "?error=" + reason);
       return;
     }
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    HttpSession session = httpRequest.getSession(false);
-    boolean hadPrincipal =
-        authentication != null && authentication.getPrincipal() instanceof UserDetails
-            || VaadinSession.getCurrent() != null
-                && VaadinSession.getCurrent().getAttribute(UserDetails.class) != null
-            || session != null && session.getAttribute("authenticatedUser") instanceof UserDetails
-            || session != null && session.getAttribute(DurableSessionRepository.ACTIVE) != null;
     boolean loginDocument =
         "GET".equals(httpRequest.getMethod())
             && AppRoute.LOGIN.getSecurityRoute().equals(httpRequest.getServletPath());
-    if (securityService.getObject().getAuthenticatedUser(httpRequest).isEmpty()
-        && hadPrincipal
-        && !loginDocument) {
-      // Stop old UI callbacks. Only the login document may continue after the security
-      // service cleared the stale context and invalidated its old HTTP/Vaadin session.
-      ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
-      return;
-    }
-    if ("uidl".equals(httpRequest.getParameter("v-r"))
-        || httpRequest.getParameter("v-r") == null && "GET".equals(httpRequest.getMethod())) {
-      securityService.getObject().touchSession(httpRequest);
+    SecurityService security = securityService.getObject();
+    try {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      HttpSession session = httpRequest.getSession(false);
+      boolean hadPrincipal =
+          authentication != null && authentication.getPrincipal() instanceof UserDetails
+              || VaadinSession.getCurrent() != null
+                  && VaadinSession.getCurrent().getAttribute(UserDetails.class) != null
+              || session != null && session.getAttribute("authenticatedUser") instanceof UserDetails
+              || session != null && session.getAttribute(DurableSessionRepository.ACTIVE) != null;
+      if (security.getAuthenticatedUser(httpRequest).isEmpty() && hadPrincipal && !loginDocument) {
+        // Stop old UI callbacks. Only the login document may continue after the security
+        // service cleared the stale context and invalidated its old HTTP/Vaadin session.
+        ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        return;
+      }
+      if ("uidl".equals(httpRequest.getParameter("v-r"))
+          || httpRequest.getParameter("v-r") == null && "GET".equals(httpRequest.getMethod())) {
+        security.touchSession(httpRequest);
+      }
+    } catch (MissingSessionException _) {
+      security.clearStaleAuthentication(httpRequest);
+      if (!loginDocument) {
+        ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        return;
+      }
     }
     chain.doFilter(request, response);
   }

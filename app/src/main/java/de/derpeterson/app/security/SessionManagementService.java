@@ -66,7 +66,8 @@ public class SessionManagementService {
 
   public record Snapshot(List<Entry> entries, int active, int limit) implements Serializable {}
 
-  private record Proof(String identity, String fingerprint, boolean remember, Instant expires)
+  private record Proof(
+      String identity, String fingerprint, boolean remember, Instant expires, String provider)
       implements Serializable {
     @Override
     public String toString() {
@@ -302,7 +303,33 @@ public class SessionManagementService {
                 current.getUsername(),
                 fingerprint(current),
                 remember,
-                clock.instant().plusSeconds(300)));
+                clock.instant().plusSeconds(300),
+                null));
+  }
+
+  /** Nur nach einer geprüften externen Rückkehr; beschränkt auf eigene Sitzungsverwaltung. */
+  public void startExternalRecovery(
+      HttpServletRequest request, ExternalAuthenticationToken verified, boolean remember) {
+    cancelRecovery(request);
+    UserDetails current = users.loadUserByUsername(verified.getName());
+    if (!current.isEnabled()
+        || !PortalUserDetails.version(current)
+            .equals(PortalUserDetails.version(verified.getPrincipal()))) {
+      throw new BadCredentialsException("Sign-in changed");
+    }
+    new MaintenanceService(config).requireLogin(verified);
+    request.getSession(true);
+    request.changeSessionId();
+    request
+        .getSession()
+        .setAttribute(
+            PROOF,
+            new Proof(
+                current.getUsername(),
+                fingerprint(current),
+                remember,
+                clock.instant().plusSeconds(300),
+                verified.provider()));
   }
 
   public boolean hasRecovery(HttpServletRequest request) {
@@ -346,7 +373,15 @@ public class SessionManagementService {
           user -> {
             Proof proof = (Proof) session.getAttribute(PROOF);
             UserDetails principal = User.withUserDetails(user).password("").build();
-            security.storeAuthenticatedUser(request, response, principal, proof.remember());
+            if (proof.provider() == null) {
+              security.storeAuthenticatedUser(request, response, principal, proof.remember());
+            } else {
+              security.storeVerifiedAuthentication(
+                  request,
+                  response,
+                  new ExternalAuthenticationToken(user, proof.provider()),
+                  proof.remember());
+            }
             cancelRecovery(request);
             return principal.getAuthorities().stream()
                 .anyMatch(role -> "ROLE_ADMIN".equals(role.getAuthority()));
@@ -401,7 +436,8 @@ public class SessionManagementService {
       return HexFormat.of()
           .formatHex(
               MessageDigest.getInstance("SHA-256")
-                  .digest((user.getPassword() + roles).getBytes(StandardCharsets.UTF_8)));
+                  .digest(
+                      (PortalUserDetails.version(user) + roles).getBytes(StandardCharsets.UTF_8)));
     } catch (NoSuchAlgorithmException impossible) {
       throw new IllegalStateException(impossible);
     }

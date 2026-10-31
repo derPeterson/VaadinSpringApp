@@ -1,0 +1,16 @@
+@font-face {font-family:"Google Sans Signin";src:url("../icons/external-login/GoogleSans-latin.woff2") format("woff2");font-weight:500;font-style:normal;font-display:swap;}
+/* Auf die neuen Anmeldebausteine begrenzt; bestehende Felder und Buttons bleiben unverändert. */
+.external-login-buttons { display:flex;flex-direction:column;gap:10px;width:100%; }
+.cosmos-reference-public .external-login-buttons vaadin-button.external-provider-button { height:40px;min-height:40px;background:#131314;border:1px solid #8e918f;color:#e3e3e3;border-radius:4px;font-size:14px;font-weight:500;padding:0 12px; }
+.external-provider-button::part(label) { font-size:14px;font-weight:500; }
+.external-provider-mark { width:20px;height:20px;object-fit:contain;flex-shrink:0; }
+.external-login-alternative { display:flex;align-items:center;gap:12px;color:var(--cosmos-reference-secondary);font-size:11px; }
+.external-login-alternative::before,.external-login-alternative::after { content:"";flex:1;border-top:1px solid var(--cosmos-reference-border); }
+.account-external-connections { display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-top:24px;padding-top:24px;border-top:1px solid var(--cosmos-reference-border); }
+.account-external-connections > h3 { margin:0;font-size:14px;line-height:1.5; }
+.account-external-connections > vaadin-button { align-self:flex-start;max-width:100%; }
+.account-external-connections #external-security-result { font-size:12px;color:var(--cosmos-reference-accent); }
+
+#external-login-google,#external-login-google::part(label){font-family:"Google Sans Signin",Arial,sans-serif;font-weight:500;line-height:20px}#external-login-google .external-provider-mark{background:#fff;border-radius:2px} .external-provider-button::part(prefix){margin-inline-end:10px}
+
+.cosmos-reference-public[data-public-page=register] .external-registration-panel {max-width:600px}

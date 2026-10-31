@@ -35,13 +35,13 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.util.Assert;
 
 /**
- * User saves and admin edits require valid names, mail, past birth date, gender and non-null
- * roles/elements. Empty roles remain allowed. Save accepts an encoded, nonblank password plus
- * non-null locale/status; password updates use the existing raw password rule. Invalid arguments
- * raise IllegalArgumentException; last-superadmin removal or missing status/activity users raise
- * IllegalStateException. Stale admin snapshots/deletes raise OptimisticLockingFailureException.
- * Persistence failures propagate (including unique email conflicts); roll back the whole
- * transaction, never reuse its persistence context after failure.
+ * User saves and admin edits require valid names, mail, optional past birth date, optional gender
+ * and non-null roles/elements. Empty roles remain allowed. Save accepts an encoded, nonblank
+ * password plus non-null locale/status; password updates use the existing raw password rule.
+ * Invalid arguments raise IllegalArgumentException; last-superadmin removal or missing
+ * status/activity users raise IllegalStateException. Stale admin snapshots/deletes raise
+ * OptimisticLockingFailureException. Persistence failures propagate (including unique email
+ * conflicts); roll back the whole transaction, never reuse its persistence context after failure.
  */
 @Service
 @Slf4j
@@ -141,7 +141,12 @@ public class UserService {
   public void save(UserEntity user) {
     Assert.notNull(user, ENTITY_REQUIRED_MESSAGE);
     validateUserFields(user);
-    Assert.hasText(user.getPassword(), "Encoded password must not be blank");
+    Assert.isTrue(
+        user.getPassword() != null && !user.getPassword().isBlank()
+            || user.getPassword() == null
+                && user.getId() != null
+                && userRepository.hasExternalSignIn(user.getId()),
+        "An encoded password or a connected provider is required");
     validateLocale(user.getPreferredLocale());
     Assert.notNull(user.getStatus(), "Status must not be null");
     user.setEmail(user.getEmail());
@@ -456,7 +461,6 @@ public class UserService {
     Assert.isTrue(
         UserInputRules.isRequiredTextValid(user.getLastName()), "Last name must not be blank");
     Assert.isTrue(UserInputRules.isEmailValid(user.getEmail()), "Invalid email");
-    Assert.notNull(user.getGender(), "Gender must not be null");
     Assert.isTrue(
         UserInputRules.isBirthDateValid(user.getBirthDate()), "Birth date must be in the past");
     validateRoles(user.getRoleEntities());

@@ -2,9 +2,14 @@
 
 ## Benutzerkonto
 
-- Registrierung mit Vor-/Nachname, E-Mail, bestätigtem Passwort, Geschlecht und Geburtstag.
-- Neue Registrierungen benötigen die Aktivierung über eine tatsächlich versandte E-Mail.
-- Anmeldung mit E-Mail und Passwort; optional gespeicherte Anmeldung mit Remember-me.
+- Registrierung mit Vor-/Nachname, E-Mail und bestätigtem Passwort. Geschlecht und Geburtstag sind freiwillig.
+- Lokale Registrierungen benötigen die Aktivierung über eine tatsächlich versandte E-Mail.
+  Bei externen Registrierungen gelten die anbieterspezifischen Adressnachweise.
+- Anmeldung mit E-Mail/Passwort sowie bei konfigurierten Anbietern mit Google oder Microsoft.
+  Externe Registrierung benötigt kein zusätzliches Portalpasswort. Administratoren richten
+  die Anbieter unter Konfiguration → Anmeldeanbieter ein und geben sie dort frei.
+  Details und Einrichtung:
+  [Externe Anmeldung](externe-anmeldung.md). Optional bleibt die gespeicherte Anmeldung.
 - Abmelden beendet die Sitzung. Die Startseite ist auch anonym erreichbar; Konto und
   Administration verlangen danach eine neue Anmeldung.
 - Passwortreset über einen zeitlich begrenzten Einmallink. Anfragen geben keine Konten preis.
@@ -21,11 +26,13 @@ seitliche Kontonavigation. Auf Smartphones öffnet sie als Overlay.
 `?tab=profile`, `?tab=security` und `?tab=sessions` halten den ausgewählten Bereich
 in der URL; unbekannte oder mehrdeutige Werte öffnen das Profil.
 
-Im Profil lassen sich Namen, Geschlecht, Geburtstag und Sprache speichern. Die E-Mail-Adresse
+Im Profil lassen sich Namen, Geschlecht, Geburtstag und Sprache speichern.
+Geschlecht und Geburtstag dürfen leer bleiben oder wieder geleert werden. Die E-Mail-Adresse
 wird über den Sicherheitsablauf geändert. Parallele Änderungen werden mit einem
 Versionskonflikt gemeldet, statt ein anderes geöffnetes Formular zu überschreiben.
 
-Passwortwechsel verlangen eine aktuelle Passwortbestätigung. Die eigene aktuelle
+Passwortwechsel verlangen eine aktuelle Passwortbestätigung oder einen frischen,
+zweckgebundenen Nachweis eines verbundenen Anbieters. Die eigene aktuelle
 Sitzung bleibt erhalten; andere Zugänge werden widerrufen. Eine E-Mail-Änderung wird
 an der neuen Adresse ausdrücklich bestätigt; ein bloßer Linkaufruf übernimmt sie
 nicht. Danach sind neue Anmeldung und die Sicherheitsmails an die betroffenen
@@ -35,7 +42,7 @@ Geräte und Sitzungen zeigen aktive Zugänge und gespeicherte Anmeldungen mit
 Gerätebeschreibung. Einzelne oder alle anderen Zugänge können widerrufen werden.
 Die jeweilige Bestätigung nennt die betroffene Sitzung beziehungsweise gespeicherte
 Anmeldung. Abbrechen führt keinen Widerruf aus; die aktuelle Sitzung bleibt geschützt.
-Bei erreichtem Sitzungslimit gibt es nach Passwortprüfung einen eingeschränkten
+Bei erreichtem Sitzungslimit gibt es nach Passwort- oder Anbieterprüfung einen eingeschränkten
 Verwaltungszugang zum Freigeben eines Platzes; er öffnet keine normalen Fachaktionen.
 
 ## Profilbild und Verfügbarkeit

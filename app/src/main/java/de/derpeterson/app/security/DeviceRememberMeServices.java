@@ -5,9 +5,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.time.Instant;
 import java.util.Date;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.rememberme.CookieTheftException;
 import org.springframework.security.web.authentication.rememberme.InvalidCookieException;
 import org.springframework.security.web.authentication.rememberme.PersistentRememberMeToken;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
@@ -30,9 +32,22 @@ public class DeviceRememberMeServices extends PersistentTokenBasedRememberMeServ
   }
 
   @Override
+  public @Nullable Authentication autoLogin(
+      HttpServletRequest request, HttpServletResponse response) {
+    try {
+      return super.autoLogin(request, response);
+    } catch (CookieTheftException _) {
+      // Spring hat bereits alle Token des Kontos widerrufen und das Cookie entfernt.
+      // Die normale Zugriffskontrolle fordert eine neue Anmeldung statt einer HTTP-500-Seite.
+      logger.warn("Saved sign-in token mismatch rejected; fresh sign-in required");
+      return null;
+    }
+  }
+
+  @Override
   protected void onLoginSuccess(
       HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-    preparePasswordLogin(request, response, authentication.getName());
+    prepareVerifiedLogin(request, response, authentication.getName());
     admissions.withIdentity(
         authentication.getName(),
         () ->
@@ -81,9 +96,9 @@ public class DeviceRememberMeServices extends PersistentTokenBasedRememberMeServ
   }
 
   /**
-   * Nur nach erfolgreicher Passwortprüfung aufrufen; ersetzt die alte Anmeldung dieses Browsers.
+   * Nur nach bestätigter Benutzeranmeldung aufrufen; ersetzt die alte Anmeldung dieses Browsers.
    */
-  public void preparePasswordLogin(
+  public void prepareVerifiedLogin(
       HttpServletRequest request, HttpServletResponse response, String identity) {
     admissions.withIdentity(
         identity,

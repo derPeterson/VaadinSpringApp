@@ -271,9 +271,8 @@
     const roles = [...editor.querySelectorAll('[name=editorRole]:checked')].map(box => box.value);
     const password = byId('editorPassword').value;
     const invalid = [...byId('editorForm').querySelectorAll('input[required]')].filter(input => !input.checkValidity() || !input.value.trim());
-    if (!byId('editorGender').dataset.value) { invalid.push(byId('editorGender')); }
     const now = new Date(); const today = new Date(now.getFullYear(),now.getMonth(),now.getDate());
-    const birth = parseDate(byId('birthCalendarInput').value); if (!birth || birth >= today) { invalid.push(byId('birthCalendarInput')); }
+    const birth = parseDate(byId('birthCalendarInput').value); if (byId('birthCalendarInput').value.trim() && (!birth || birth >= today)) { invalid.push(byId('birthCalendarInput')); }
     // Die vorhandene zentrale Passwortregel wird vom Builder übernommen; keine neue Regel erfinden.
     if (password && !new RegExp(window.AdminPreviewRules.password).test(password.trim())) { invalid.push(byId('editorPassword')); }
     if (password && password !== byId('editorConfirm').value) { invalid.push(byId('editorConfirm')); }

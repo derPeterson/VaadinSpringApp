@@ -10,6 +10,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -37,6 +38,7 @@ import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
@@ -45,6 +47,7 @@ import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.ExternalLoginButtons;
 import de.derpeterson.app.ui.components.PortalFields;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.PublicPanelComponent;
@@ -84,6 +87,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
               AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>>
       requiredFormComponents;
 
+  private de.derpeterson.app.ui.components.CosmosCardComponent externalRegistrationCard;
   private H1 title = null;
   private Span createAccountQuestionText = null;
   private RouterLink loginLink = null;
@@ -105,7 +109,8 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
       RegistrationService registrationService,
       SecurityService securityService,
       HttpServletRequest request,
-      ConfigService configService) {
+      ConfigService configService,
+      ExternalLoginFlow externalLogin) {
 
     super(securityService, request, new HorizontalLayout());
 
@@ -266,10 +271,12 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
             cardSecondaryTitleLayout,
             registerButton);
 
+    externalRegistrationCard = registrationCardComponent;
     mainContent.add(registrationCardComponent);
 
     updateInputPlaceholders();
     add(pageLayout);
+    configureExternalLogin(externalLogin, request);
   }
 
   private Button createRegisterButton() {
@@ -413,8 +420,6 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     formComponents.confirmEmailField.setRequiredIndicatorVisible(true);
     formComponents.passwordField.setRequiredIndicatorVisible(true);
     formComponents.confirmPasswordField.setRequiredIndicatorVisible(true);
-    formComponents.genderComboBox().setRequiredIndicatorVisible(true);
-    formComponents.birthDatePicker.setRequiredIndicatorVisible(true);
 
     return List.of(
         formComponents.firstNameField,
@@ -422,9 +427,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         formComponents.emailField,
         formComponents.confirmEmailField,
         formComponents.passwordField,
-        formComponents.confirmPasswordField,
-        formComponents.genderComboBox,
-        formComponents.birthDatePicker);
+        formComponents.confirmPasswordField);
   }
 
   private FormComponents createFormComponents() {
@@ -525,5 +528,18 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     if (birthDatePicker != null) {
       birthDatePicker.setHelperText(messageProperties.getAccountBirthDateFormatHint());
     }
+  }
+
+  private void configureExternalLogin(ExternalLoginFlow flow, HttpServletRequest request) {
+    externalRegistrationCard
+        .getChildren()
+        .filter(
+            component -> component instanceof Div && component.hasClassName("public-panel-body"))
+        .map(Div.class::cast)
+        .findFirst()
+        .ifPresent(
+            body ->
+                body.addComponentAtIndex(
+                    0, new ExternalLoginButtons(flow, request, messageProperties, () -> false)));
   }
 }

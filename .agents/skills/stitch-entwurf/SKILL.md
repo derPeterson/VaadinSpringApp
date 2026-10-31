@@ -21,12 +21,17 @@ Nur wesentliche ungeklärte Entscheidungen erfragen, sonst mit dem vorhandenen S
 
 ## Zusammenarbeit mit Stitch
 
-Verfügbare Stitch-Werkzeuge gezielt entdecken und bevorzugen. Die vorhandene
-Stitch-CLI verwenden, wenn sie verfügbar ist. Erst bei fehlender ausreichender
-CLI-/Werkzeugfunktion Google Stitch im Browser verwenden und die Grenze benennen.
-Ist Stitch nicht angemeldet, den Benutzer die Anmeldung durchführen lassen. Keine
-lokalen Eigenentwürfe als Stitch-Ergebnis ausgeben. Bei fehlendem Zugriff andere
-Vorbereitung abschließen und die fehlende Rückmeldung offen halten.
+Die vorhandene Stitch-CLI für Projektverwaltung, Uploads, Generierung und Downloads
+verwenden. Vor Aufrufen bei Bedarf die CLI-Hilfe beziehungsweise Payloadschemas prüfen.
+Fehlende Anmeldung oder ein CLI-Fehler erlauben keinen stillen Wechsel zur
+Webseitensteuerung. Bei einer tatsächlich fehlenden CLI-Funktion den nötigen
+Browserfallback begründen und vorher mit dem Benutzer abstimmen.
+Auf Wunsch die CLI-Anmeldung selbst mit `stitch login` starten. Kontoauswahl und
+interaktive Freigaben führt der Benutzer durch. Danach den Canvas-Zugriff mit einem
+lesenden Projektaufruf prüfen. Eine erfolgreiche Google-Anmeldung allein belegt ihn
+nicht. Fehlende Canvas-Zugangsdaten konkret benennen, keine Zugangsdaten auslesen oder
+im Chat anfordern. Unabhängige Vorbereitung fortsetzen, bis der Zugriff vorhanden ist.
+Keine lokalen Eigenentwürfe als Stitch-Ergebnis ausgeben.
 
 Stitch einen gezielten Screenshot der synthetischen Ausgangsseite und die relevanten
 Gestaltungsregeln geben: dunkler Cosmos-Hintergrund, gemeinsame Tokens, Inter,
@@ -43,6 +48,11 @@ bewahren. Bestehende Referenzen nicht im selben Schritt ersetzen.
 
 ## Ergebnis zur gemeinsamen Sichtung
 
+Vor der Bewertung die tatsächlich gerenderten Entwurfsbilder herunterladen und ansehen.
+Prompt, Titel oder Metadaten allein reichen für einen Favoriten nicht aus. Prüfen, ob
+fertige Entwürfe auf der Projektfläche vorhanden sind. Falls die CLI sie nur als
+Generierungsergebnis liefert, die unveränderten exportierten HTML-Ergebnisse über
+`stitch upload screen` im selben Projekt ablegen und die Links dieser Knoten verwenden.
 Die echten Stitch-Ergebnisse mit direkten Projekt-/Entwurfslinks zeigen. Unterschiede,
 eigenen Favoriten und Gründe kurz erklären. Bei einer lokalen bedienbaren Vorschau
 vorhandene Referenzbausteine und Controller verwenden, klar als Übertragung des

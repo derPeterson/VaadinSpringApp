@@ -101,7 +101,15 @@ class LoginSessionRecoveryTest {
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     messages = new MessageProperties(new CustomI18NProvider());
-    view = new LoginView(messages, authentication, security, request, config, sessions);
+    view =
+        new LoginView(
+            messages,
+            authentication,
+            security,
+            request,
+            config,
+            sessions,
+            mock(de.derpeterson.app.security.ExternalLoginFlow.class));
     ui.add(view);
     UserDetails principal =
         User.withUsername("own@example.test").password("").roles("USER").build();

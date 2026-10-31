@@ -225,3 +225,39 @@ keine fehlende Funktion. Der Mail-Sichttest prüft Vorlagen und SMTP-Annahme sep
 
 Die [Mailqueue](../mailqueue.md), der [Theme-Standard](../theme.md) und die
 [Sicherheitsverträge](../sicherheit.md) beschreiben die jeweiligen Erwartungen.
+
+<a id="hum-08"></a>
+
+### HUM-08 · Eigene Google-/Microsoft-Anwendungen
+
+**Einordnung:** Anbieterintegration und menschliche Abnahme. Keine automatische Anmeldung
+mit echten Konten. Die isolierten OIDC-Regressionen ersetzen diesen Durchlauf nicht.
+
+Die einmalige Einrichtung erfolgt unter Administration → Konfiguration → Anmeldeanbieter.
+Dort die Rücksprungadresse kopieren, beim jeweiligen Anbieter hinterlegen und die
+erhaltene Client-ID samt Client-Secret eintragen. Die Freigabe gilt nach dem Speichern
+für neu aufgerufene Anmeldeseiten. Gespeicherte Geheimnisse bleiben im Formular leer.
+
+**Voraussetzung:** Eigene getrennte Testinstanz, bewusst eingerichtete Clients gemäß
+[Einrichtungsanleitung](../externe-anmeldung.md), passende HTTPS-Rücksprungadressen und
+ausdrückliche Freigabe für die eigenen Konten. Zugangsdaten ausschließlich lokal halten.
+Für tatsächlich benötigte Portal-Verifikationsmails ein ausdrücklich freigegebenes
+Testpostfach verwenden. Keine bestehenden Entwicklerkonten als Fixture benutzen.
+
+1. Google sowie Microsoft mit privatem Konto und Firmen-/Schulkonto prüfen. Anbieterzustimmung,
+   Abbruch, Rücksprung und benötigte Organisationsfreigaben beachten.
+2. Neues externes Konto ohne Portalpasswort registrieren. Fehlende Namen/Kontaktadresse ergänzen.
+   Google-Adressnachweis beziehungsweise eigene Portalaktivierung prüfen.
+3. Zum bestehenden Konto anmelden und einen weiteren Anbieter bewusst verknüpfen.
+   Gleiche Kontaktadressen allein dürfen kein bestehendes Konto öffnen.
+4. Eine konkrete Sicherheitsaktion auswählen und den verbundenen Anbieter erneut bestätigen.
+   Kontrollieren, dass der Anbieter einen frischen `auth_time`-Nachweis liefert. Ohne diesen
+   bleibt die Aktion gesperrt. Kontowechsel beim Anbieter darf keinen fremden Nachweis ergeben.
+5. Optional ein Portalpasswort einrichten, erneutes Anmelden und bewusste gespeicherte Anmeldung
+   prüfen. Einen weiteren Anbieter trennen und die letzte Anmeldemöglichkeit geschützt lassen.
+6. DE/EN, Desktop und Smartphone sowie Darstellungs-/Tastaturverhalten der Anbieterbuttons
+   und der ergänzenden Registrierung beurteilen.
+
+**Erwartet:** Nur die geprüfte Anbieteridentität führt zum zugeordneten lokalen Konto.
+Portalrollen, Sperren und Sicherheitsnachweise bleiben maßgeblich. Anbieter-/Mandantenregeln
+und nicht ausgeführte Varianten ausdrücklich dokumentieren. Keine Geheimnisse protokollieren.

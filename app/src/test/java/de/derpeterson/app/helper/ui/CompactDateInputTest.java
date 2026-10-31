@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.data.binder.Result;
@@ -103,6 +104,30 @@ class CompactDateInputTest {
   private void commit(String input) {
     field.getElement().setProperty("_inputElementValue", input);
     ReflectionTestUtils.invokeMethod(field, "setModelValue", null, true);
+  }
+
+  @Test
+  void optionalBirthdayCanBeClearedAfterARejectedDateEvenWithAnOldErrorFlag() {
+    ComponentUtil.setData(
+        UI.getCurrent(), NotificationHelper.class, mock(NotificationHelper.class));
+    field.setValue(LocalDate.now().plusDays(1));
+    assertFalse(ValidationHelper.validateBirthDateBeforeInput(field, messages));
+    field.clear();
+    field.setInvalid(true);
+    assertTrue(ValidationHelper.validateBirthDateBeforeInput(field, messages));
+    assertFalse(field.isInvalid());
+  }
+
+  @Test
+  void optionalBirthdayStillRejectsUnparsableClientInputWithAnEmptyModelValue() {
+    ComponentUtil.setData(
+        UI.getCurrent(), NotificationHelper.class, mock(NotificationHelper.class));
+    commit("not-a-date");
+    assertNull(field.getValue());
+    assertFalse(ValidationHelper.validateBirthDateBeforeInput(field, messages));
+    assertTrue(field.isInvalid());
+    commit("");
+    assertTrue(ValidationHelper.validateBirthDateBeforeInput(field, messages));
   }
 
   @Test

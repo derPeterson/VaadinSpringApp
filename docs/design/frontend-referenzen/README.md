@@ -31,6 +31,13 @@ Diensten und dem typisierten Textkatalog maßgeblich. Bei einem neuen Stitch-Auf
 gezielt die betreffende Seite beziehungsweise einen synthetischen Screenshot und
 den [Theme-Standard](../../theme.md) verwenden.
 
+Das laufende Stitch-Projekt ist
+[VaadinSpringApp - Design](https://stitch.google.com/projects/43914967159269113).
+Die aktuellen Anmelde- und Registrierungsansichten sind dort als Ausgangsstand
+hinterlegt. Weitere Entwürfe bleiben bis zur gemeinsamen Auswahl Vorschläge.
+Projektverwaltung, Uploads und Generierung erfolgen über die Stitch-CLI gemäß
+dem [Stitch-Skill](../../../.agents/skills/stitch-entwurf/SKILL.md).
+
 Das gewählte Service-Logo liegt unter
 [icons/service-logo.svg](../../../app/src/main/resources/META-INF/resources/icons/service-logo.svg).
 Die übrigen Logos sind dort im Ordner `service-logo-alternatives` erhalten.

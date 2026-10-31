@@ -5,6 +5,7 @@ import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.session.DurableSessionRepository.MissingSessionException;
 import de.derpeterson.app.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
@@ -52,45 +53,52 @@ public class SecurityService {
    * require the session lock).
    */
   public boolean hasCurrentSessionPrivileges(HttpServletRequest request) {
-    HttpSession session = request.getSession(false);
-    if (session == null) {
+    try {
+      HttpSession session = request.getSession(false);
+      if (session == null) {
+        return true;
+      }
+      Authentication authentication = sessionAuthentication(session);
+      boolean hadPrincipal =
+          authentication != null && authentication.getPrincipal() instanceof UserDetails
+              || session.getAttribute(AUTH_USER_SESSION_KEY) instanceof UserDetails;
+      Optional<Authentication> refreshed =
+          hadPrincipal ? refreshSessionAuthentication(session) : Optional.<Authentication>empty();
+      if (admissions.isExpired(request) || hadPrincipal && refreshed.isEmpty()) {
+        clearStaleAuthentication(request);
+        return false;
+      }
+      refreshed.ifPresent(this::useAuthentication);
       return true;
-    }
-    Authentication authentication = sessionAuthentication(session);
-    boolean hadPrincipal =
-        authentication != null && authentication.getPrincipal() instanceof UserDetails
-            || session.getAttribute(AUTH_USER_SESSION_KEY) instanceof UserDetails;
-    Optional<Authentication> refreshed =
-        hadPrincipal ? refreshSessionAuthentication(session) : Optional.<Authentication>empty();
-    if (admissions.isExpired(request) || hadPrincipal && refreshed.isEmpty()) {
-      session.removeAttribute(AUTH_USER_SESSION_KEY);
-      session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-      session.invalidate();
-      SecurityContextHolder.clearContext();
+    } catch (MissingSessionException _) {
+      clearStaleAuthentication(request);
       return false;
     }
-    refreshed.ifPresent(this::useAuthentication);
-    return true;
   }
 
   public Optional<UserDetails> getAuthenticatedUser(HttpServletRequest request) {
-    if (admissions.isExpired(request)) {
+    try {
+      if (admissions.isExpired(request)) {
+        clearStaleAuthentication(request);
+        return Optional.empty();
+      }
+      HttpSession session = request == null ? null : request.getSession(false);
+      Authentication auth = authenticationFromAvailableContexts(session);
+      if (auth == null || !(auth.getPrincipal() instanceof UserDetails)) {
+        return Optional.empty();
+      }
+      Optional<Authentication> fresh = refreshedAuthentication(auth);
+      if (fresh.isEmpty()) {
+        clearStaleAuthentication(request);
+        return Optional.empty();
+      }
+      install(session, fresh.get());
+      useAuthentication(fresh.get());
+      return Optional.of((UserDetails) fresh.get().getPrincipal());
+    } catch (MissingSessionException _) {
       clearStaleAuthentication(request);
       return Optional.empty();
     }
-    HttpSession session = request == null ? null : request.getSession(false);
-    Authentication auth = authenticationFromAvailableContexts(session);
-    if (auth == null || !(auth.getPrincipal() instanceof UserDetails)) {
-      return Optional.empty();
-    }
-    Optional<Authentication> fresh = refreshedAuthentication(auth);
-    if (fresh.isEmpty()) {
-      clearStaleAuthentication(request);
-      return Optional.empty();
-    }
-    install(session, fresh.get());
-    useAuthentication(fresh.get());
-    return Optional.of((UserDetails) fresh.get().getPrincipal());
   }
 
   private Authentication authenticationFromAvailableContexts(HttpSession session) {
@@ -199,8 +207,21 @@ public class SecurityService {
       HttpServletResponse response,
       UserDetails user,
       Boolean rememberMe) {
-    Authentication auth =
-        UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities());
+    storeVerifiedAuthentication(
+        request,
+        response,
+        UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities()),
+        Boolean.TRUE.equals(rememberMe));
+  }
+
+  public void storeVerifiedAuthentication(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      Authentication auth,
+      boolean rememberMe) {
+    if (!(auth.getPrincipal() instanceof UserDetails user) || !auth.isAuthenticated()) {
+      throw new AuthenticationServiceException("Verified portal identity required");
+    }
     try {
       admissions.completeLogin(
           auth,
@@ -240,10 +261,12 @@ public class SecurityService {
           .ifPresent(entity -> VaadinSession.getCurrent().setLocale(entity.getPreferredLocale()));
     }
     request.getSession().setAttribute(AUTH_USER_SESSION_KEY, user);
-    restoreSecurityContext(user);
+    SecurityContext context = SecurityContextHolder.createEmptyContext();
+    context.setAuthentication(auth);
+    SecurityContextHolder.setContext(context);
     securityContextRepository.saveContext(SecurityContextHolder.getContext(), request, response);
     if (rememberMeServices instanceof DeviceRememberMeServices devices) {
-      devices.preparePasswordLogin(request, response, user.getUsername());
+      devices.prepareVerifiedLogin(request, response, user.getUsername());
     }
     if (Boolean.TRUE.equals(rememberMe)) {
       // Checkbox selection belongs to this request, never to the singleton service.
@@ -321,6 +344,8 @@ public class SecurityService {
         refreshed =
             new org.springframework.security.authentication.RememberMeAuthenticationToken(
                 rememberMeServices.getKey(), current, authorities);
+      } else if (auth instanceof ExternalAuthenticationToken external) {
+        refreshed = new ExternalAuthenticationToken(current, external.provider(), authorities);
       } else {
         refreshed = UsernamePasswordAuthenticationToken.authenticated(current, null, authorities);
       }
@@ -340,15 +365,13 @@ public class SecurityService {
         .collect(Collectors.toSet());
   }
 
-  private void clearStaleAuthentication(HttpServletRequest request) {
+  void clearStaleAuthentication(HttpServletRequest request) {
     if (VaadinSession.getCurrent() != null && VaadinSession.getCurrent().hasLock()) {
       VaadinSession.getCurrent().setAttribute(UserDetails.class, null);
     }
 
     HttpSession httpSession = request == null ? null : request.getSession(false);
     if (httpSession != null) {
-      httpSession.removeAttribute(AUTH_USER_SESSION_KEY);
-      httpSession.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
       // Discard the old Vaadin UIs too: a later remember-me authentication
       // with reduced roles must not resume callbacks on an old admin view.
       httpSession.invalidate();

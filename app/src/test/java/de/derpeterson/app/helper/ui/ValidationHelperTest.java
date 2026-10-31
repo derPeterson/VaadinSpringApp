@@ -125,8 +125,8 @@ class ValidationHelperTest {
     // Invalid dates (future)
     assertFalse(ValidationHelper.isBirthDateValid(tomorrow));
 
-    // Null date
-    assertFalse(ValidationHelper.isBirthDateValid(null));
+    // Keine Angabe ist erlaubt.
+    assertTrue(ValidationHelper.isBirthDateValid(null));
   }
 
   @Test

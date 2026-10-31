@@ -902,3 +902,10 @@ body button[data-ref-placeholder][data-empty=true] #selectedGenderText{color:#64
 /* Ohne Präfix keine reservierte Iconfläche; Suchfelder behalten ihre Lupe. */
 body .portal-security-input.ref-no-prefix{padding-left:0;gap:0}
 body .portal-security-input.ref-no-prefix>input{padding-left:14px!important}
+
+/* Anbieteranmeldung, gemeinsam mit der Vaadin-Umsetzung. */
+.external-login-buttons{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}.external-provider-button{height:40px;background:#131314!important;color:#e3e3e3!important;border:1px solid #8e918f!important;border-radius:4px!important;font-size:14px!important;font-weight:500!important}.external-provider-button img{width:20px;height:20px}.external-login-alternative{display:flex;align-items:center;gap:12px;font-size:11px;color:#94a3b8}.external-login-alternative:before,.external-login-alternative:after{content:"";flex:1;border-top:1px solid rgba(255,255,255,.07)}
+
+@font-face{font-family:"Google Sans Signin";src:url("external-login/GoogleSans-latin.woff2") format("woff2");font-weight:500;font-display:swap}[data-external-preview="Google"]{font-family:"Google Sans Signin",Arial,sans-serif!important}[data-external-preview="Google"] img{background:white;border-radius:2px}
+
+.external-provider-button{display:flex;align-items:center;justify-content:center;gap:10px}

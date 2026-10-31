@@ -6,6 +6,7 @@ lokal mit Testdaten; eine neue Testdatenbank wird aus dem aktuellen Schema angel
 | Thema | Inhalt |
 | --- | --- |
 | [Anwendung](anwendung.md) | Funktionen, Konto, Administration und Benachrichtigungen |
+| [Externe Anmeldung](externe-anmeldung.md) | Google-/Microsoft-Einrichtung, Kontoverknüpfung und Sicherheitsnachweise |
 | [Sicherheit](sicherheit.md) | Anmeldung, Rollen, Tokens, Sitzungen, CSRF und Datenverträge |
 | [Entwicklung](entwicklung.md) | Voraussetzungen, Aufbau, Konfiguration, Build und Codestil |
 | [Arbeiten mit Codex](codex-skills.md) | Projekt-Skills, Aufträge, Grenzen und Ergebnisse |
@@ -36,3 +37,9 @@ Testrunde. Die letzte vollständige QA bleibt im [Prüfstand](status.md) erhalte
 
 Weitere vereinbarte Arbeiten stehen in [TODO](../TODO.md); gültige Bedienung und
 Konfiguration in den obigen Fachdokumenten.
+
+Der [aktive Umsetzungsplan](planung/google-microsoft-anmeldung.md) beschreibt die
+Google-/Microsoft-Anmeldung und freiwillige Angaben zu Geschlecht/Geburtsdatum.
+Die Umsetzung ist isoliert geprüft. Die noch offene gemeinsame Abnahme steht im Plan.
+Weitere bewertete Möglichkeiten stehen in der
+[Entscheidungsvorlage für Portal-Erweiterungen](planung/portal-erweiterungen.md).

@@ -1,0 +1,16 @@
+/* Nur die geführte Anbietereinrichtung. Controls und Panelwerte kommen aus dem Cosmos-Theme. */
+.cosmos-provider-settings .cosmos-card > div { width:100%; }
+.cosmos-provider-settings .cosmos-panel-icon img { width:20px; height:20px; object-fit:contain; }
+.cosmos-provider-settings .provider-fields { display:flex; flex-direction:column; gap:16px; padding:24px; }
+.cosmos-provider-settings .provider-fields > span { color:var(--cosmos-reference-secondary); font:400 12px/1.8 Inter,sans-serif; }
+.cosmos-provider-settings .provider-fields a { align-self:flex-start; color:var(--cosmos-reference-accent); font-size:12px; font-weight:500; }
+.cosmos-provider-settings .provider-credentials { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+.cosmos-provider-settings .provider-redirect { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:8px; }
+.cosmos-provider-settings .provider-activation { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px; border:1px solid var(--cosmos-reference-border); border-radius:9px; font:500 12px/1.6 Inter,sans-serif; }
+@media(max-width:600px) {
+  .cosmos-provider-settings .provider-fields { padding:16px; }
+  .cosmos-provider-settings .provider-credentials { grid-template-columns:1fr; }
+  .cosmos-provider-settings .provider-redirect { grid-template-columns:1fr; }
+  .cosmos-provider-settings .provider-redirect vaadin-button { justify-self:end; }
+  .cosmos-provider-settings .cosmos-panel-header { flex-wrap:wrap; padding:16px; }
+}

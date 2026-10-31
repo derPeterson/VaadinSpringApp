@@ -1,5 +1,6 @@
 package de.derpeterson.app.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -207,6 +208,27 @@ class SessionManagementTest {
   private Authentication returnWith(Cookie cookie, MockHttpServletRequest request) {
     request.setCookies(cookie);
     return remembered.autoLogin(request, new MockHttpServletResponse());
+  }
+
+  @Test
+  void replayedSavedLoginRevokesEverySavedTokenAndReturnsToNormalAuthorization() {
+    Cookie original = cookie(login(true));
+    Cookie otherDevice = cookie(login(true));
+    assertEquals(2, tokens.saved(IDENTITY, 3600).size());
+    assertNotNull(returnWith(original, new MockHttpServletRequest()));
+    MockHttpServletRequest replay = new MockHttpServletRequest();
+    replay.setCookies(original);
+    MockHttpServletResponse rejected = new MockHttpServletResponse();
+
+    assertNull(assertDoesNotThrow(() -> remembered.autoLogin(replay, rejected)));
+
+    assertTrue(
+        Arrays.stream(rejected.getCookies())
+            .anyMatch(c -> c.getName().equals("remember-me") && c.getMaxAge() == 0));
+    assertNull(SecurityContextHolder.getContext().getAuthentication());
+    assertEquals(0, jdbc.queryForObject("select count(*) from persistent_logins", Integer.class));
+    assertEquals(0, jdbc.queryForObject("select count(*) from remembered_device", Integer.class));
+    assertNull(returnWith(otherDevice, new MockHttpServletRequest()));
   }
 
   @Test
@@ -466,6 +488,43 @@ class SessionManagementTest {
     assertEquals(1, registry.getAllSessions(IDENTITY, false).size());
     assertThrows(
         AuthenticationCredentialsNotFoundException.class, () -> management.recoveryList(request));
+  }
+
+  @Test
+  void externalProofHonorsLimitAndRememberChoiceWithoutGrantingFullAccessBeforeAdmission() {
+    when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
+    UserDetails external =
+        new de.derpeterson.app.security.PortalUserDetails(
+            IDENTITY, null, UUID.randomUUID().toString(), true, account.get().getAuthorities());
+    account.set(external);
+    MockHttpServletRequest first = new MockHttpServletRequest();
+    security.storeVerifiedAuthentication(
+        first,
+        new MockHttpServletResponse(),
+        new de.derpeterson.app.security.ExternalAuthenticationToken(external, "google"),
+        true);
+    assertEquals(1, tokens.saved(IDENTITY, 3600).size());
+    SecurityContextHolder.clearContext();
+    MockHttpServletRequest returning = new MockHttpServletRequest();
+    management.startExternalRecovery(
+        returning,
+        new de.derpeterson.app.security.ExternalAuthenticationToken(external, "google"),
+        false);
+    assertTrue(management.hasRecovery(returning));
+    assertTrue(security.getAuthenticatedUser(returning).isEmpty());
+    assertThrows(
+        SessionLimitException.class,
+        () -> management.finishRecovery(returning, new MockHttpServletResponse()));
+    Snapshot snapshot = management.recoveryList(returning);
+    management.recoveryRevoke(returning, snapshot.entries().getFirst().handle());
+    assertTrue(admissions.isExpired(first));
+    assertFalse(management.finishRecovery(returning, new MockHttpServletResponse()));
+    assertFalse(management.hasRecovery(returning));
+    assertTrue(security.getAuthenticatedUser(returning).isPresent());
+    assertTrue(
+        SecurityContextHolder.getContext().getAuthentication()
+            instanceof de.derpeterson.app.security.ExternalAuthenticationToken);
+    assertEquals(0, tokens.saved(IDENTITY, 3600).size());
   }
 
   @Test

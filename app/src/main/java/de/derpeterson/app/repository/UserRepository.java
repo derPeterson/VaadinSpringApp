@@ -70,6 +70,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
 
     String getPassword();
 
+    String getAccessVersion();
+
     boolean isEnabled();
 
     RoleType getRole();
@@ -82,7 +84,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
   }
 
   String SECURITY_USER_QUERY =
-      "select u.email as email, u.password as password, u.enabled as enabled, r.name as role "
+      "select u.email as email, u.password as password, u.accessVersion as accessVersion, u.enabled as enabled, r.name as role "
           + "from UserEntity u left join u.roleEntities r where u.email = :email";
 
   @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
@@ -94,6 +96,9 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
   @Transactional(readOnly = true, propagation = Propagation.MANDATORY)
   @Query(SECURITY_USER_QUERY)
   List<SecurityUserRow> findPasswordSecurityUser(@Param("email") String email);
+
+  @Query("select count(i) > 0 from ExternalIdentityEntity i where i.user.id = :id")
+  boolean hasExternalSignIn(@Param("id") Long id);
 
   default Optional<UserEntity> findByEmailForUpdate(String email) {
     return findByCanonicalEmailForUpdate(EmailIdentity.canonicalize(email));

@@ -33,6 +33,7 @@ import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.LoginThrottledException;
 import de.derpeterson.app.security.MaintenanceAuthenticationException;
@@ -43,6 +44,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.AccountSessionsComponent;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.ExternalLoginButtons;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.PublicPanelComponent;
 import de.derpeterson.app.validation.UserInputRules;
@@ -102,7 +104,8 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
       SecurityService securityService,
       HttpServletRequest request,
       ConfigService configService,
-      SessionManagementService sessions) {
+      SessionManagementService sessions,
+      ExternalLoginFlow externalLogin) {
     super(securityService, request, new HorizontalLayout());
 
     this.messageProperties = messageProperties;
@@ -310,6 +313,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     updateInputPlaceholders();
     refreshRecoveryTexts();
     add(pageLayout);
+    configureExternalLogin(externalLogin, request);
   }
 
   private void authenticate(
@@ -466,5 +470,20 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     if (passwordField != null) {
       passwordField.setPlaceholder(messageProperties.getAccountPasswordPlaceholder());
     }
+  }
+
+  private void configureExternalLogin(ExternalLoginFlow flow, HttpServletRequest request) {
+    loginCard
+        .getChildren()
+        .filter(
+            component -> component instanceof Div && component.hasClassName("public-panel-body"))
+        .map(Div.class::cast)
+        .findFirst()
+        .ifPresent(
+            body ->
+                body.addComponentAtIndex(
+                    0,
+                    new ExternalLoginButtons(
+                        flow, request, messageProperties, () -> rememberMeCheckBox.getValue())));
   }
 }

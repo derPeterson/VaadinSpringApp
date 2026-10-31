@@ -992,7 +992,7 @@ byId('n-confirm-context').replaceChildren(contextIcon,contextText);
   };
   const choose = option => {
     options.forEach(entry => entry.setAttribute('aria-selected', String(entry === option)));
-    document.getElementById('selectedProfileGenderText').textContent = option.dataset.gender;
+    document.getElementById('selectedProfileGenderText').textContent = option.dataset.gender || 'Geschlecht auswählen';
     document.getElementById('profileGender').value = option.dataset.gender;
     close(true);
   };

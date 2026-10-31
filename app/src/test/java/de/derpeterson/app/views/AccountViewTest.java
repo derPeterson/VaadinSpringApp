@@ -137,7 +137,9 @@ class AccountViewTest {
             mock(AccountSecurityService.class),
             sessionService(),
             new UserStatusBroadcaster(),
-            avatars);
+            avatars,
+            mock(de.derpeterson.app.security.ExternalLoginFlow.class),
+            mock(de.derpeterson.app.service.ExternalIdentityService.class));
   }
 
   @SuppressWarnings("unchecked")

@@ -876,3 +876,19 @@ Filterentwurf, Zurücksetzen, Anwenden und Verwerfen bleiben unverändert.
 Der Datumsfilter „Letzte Aktivität ab“ verwendet denselben übersetzten
 Beispielplatzhalter wie das Geburtsdatum (DE: „z. B. 31.12.1990“).
 Die Zeitvorschau und der tatsächliche Filterwert bleiben davon unberührt.
+
+## Externe Anmeldebausteine
+
+`ExternalLoginButtons` ergänzt die vorhandenen Anmelde-/Registrierungspanels.
+`ExternalConnectionsComponent` verwaltet Anbieter im bestehenden Sicherheitspanel.
+Ihre lokalen Regeln liegen in `cosmos-external-login.css`. Die vorhandenen globalen
+Feld-, Dialog- und Buttonregeln bleiben die Grundlage. Anbieterbuttons verwenden
+die offiziellen Google-/Microsoft-Markenressourcen unter `icons/external-login/`
+und eine begrenzte Abweichung für das Anbieterbranding. HTML bildet sie in den
+bestehenden Referenzen `public.html` und `portal.html` ab.
+
+Die Anbieterverwaltung unter Konfiguration verwendet die bestehenden Adminpanel-,
+Formular-, Checkbox- und Footerbausteine. Nur das Anordnen von Einrichtungshinweis,
+Rücksprungadresse, Zugangsdaten und Freigabe liegt lokal in
+`cosmos-provider-settings.css`. Anbieterzeichen stammen aus `icons/external-login/`.
+Globale Feld-, Button- und Dialogregeln werden dafür nicht verändert.

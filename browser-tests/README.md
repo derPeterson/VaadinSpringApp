@@ -69,6 +69,8 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `authentication` | Admin-/Benutzerlogin, Fehler, Gastzugriff und Logout | 7 |
 | `login-attempts` | Drei Sperr-/Resetfälle plus sieben Anmelde- und vier Remember-me-Regressionsfälle | 14 |
 | `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung einschließlich Serverneustart und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 37 |
+| `external-login` | Google/Microsoft mit eigenem OIDC-Anbieter, Admin-Anbietereinrichtung, freiwillige Profilfelder sowie bestehende Registrierungs-/Konto-/Sicherheitsfälle | 38 |
+| `external-login-flow` | Externe Anmeldungen, Admin-Anbietereinrichtung, Verknüpfungen, Nachweise, Browserneustart, E-Mail-Änderung und optionale Adminprofilfelder | 19 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler, Links und Sprache neuer anonymer Anfragen | 7 |
@@ -100,13 +102,19 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
 | `cosmos-components` | Rollensuche, Checkbox-Geometrie, SideNav-Zustände, Tooltips und Benutzermenü | 5 |
-| `all` | Alle 30 Testklassen einschließlich der Fast-Fälle | 170 |
+| `all` | Alle 31 Testklassen einschließlich der Fast-Fälle | 187 |
 
 IDs, Schritte und erwartetes Ergebnis stehen pro Fall in `@DisplayName` und
 `@Description`; diese Angaben übernimmt der Bericht. AVATAR-01 enthält zwei
 Fenstergrößen, AVATAR-02 prüft beschädigten Upload und anschließende Korrektur.
 Sitzungsfälle führen echte Browser-/Serverneustarts mit erhaltenem Testprofil aus.
 Tokenablauffälle warten die tatsächliche Mindestdauer ab.
+
+Die externen Anmeldefälle starten je betroffenem Worker einen eigenen OIDC-Testanbieter.
+Er liefert signierte Antworten und prüft den Codeaustausch mit PKCE. Google-/Microsoft-
+Clientzugänge sind dafür nicht erforderlich. Die Endpunkte bleiben auf diesen Worker
+begrenzt. Die Tests kontaktieren keine echten Anbieterkonten. Die zusätzliche Abnahme
+mit echten eigenen Clients steht unter [HUM-08](../docs/manual-tests/README.md#hum-08).
 
 ## Schnellprüfung
 

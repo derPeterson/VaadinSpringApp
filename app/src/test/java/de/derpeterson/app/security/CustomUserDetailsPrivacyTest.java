@@ -37,6 +37,9 @@ class CustomUserDetailsPrivacyTest {
     UserRepository users = mock(UserRepository.class);
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(4);
     SecurityUserRow existing = mock(SecurityUserRow.class);
+    org.mockito.Mockito.lenient()
+        .when(existing.getAccessVersion())
+        .thenReturn("fixture-access-version");
     when(existing.getEmail()).thenReturn("existing@example.test");
     when(existing.getPassword()).thenReturn(encoder.encode("Correct-fixture!"));
     when(existing.isEnabled()).thenReturn(true);

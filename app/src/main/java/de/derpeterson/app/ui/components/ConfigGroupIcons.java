@@ -10,6 +10,7 @@ public final class ConfigGroupIcons {
     return switch (group) {
       case GENERAL, SMTP -> AppIcon.COG;
       case SECURITY -> AppIcon.LOCK;
+      case EXTERNAL_LOGIN -> AppIcon.SIGN_IN;
       case TOKENS -> AppIcon.KEY;
       case USER_STATUS -> AppIcon.USER;
       case EMAIL_SENDER -> AppIcon.ENVELOPE;

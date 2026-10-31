@@ -38,6 +38,7 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.security.ExternalProviderSettings;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
@@ -73,6 +74,7 @@ class AdminViewNavigationTest {
   private AdminView view;
   private ConfigService config;
   private UserAvatarService avatars;
+  private ExternalProviderSettings providers;
 
   @BeforeEach
   void setup() {
@@ -117,17 +119,26 @@ class AdminViewNavigationTest {
   }
 
   private AdminView createView() {
-    return new AdminView(
-        new MessageProperties(new CustomI18NProvider()),
-        security,
-        config,
-        new MaintenanceService(config),
-        mock(EmailService.class),
-        mock(UserService.class),
-        mock(RoleService.class),
-        request,
-        new UserStatusBroadcaster(),
-        avatars);
+    AdminView created =
+        new AdminView(
+            new MessageProperties(new CustomI18NProvider()),
+            security,
+            config,
+            new MaintenanceService(config),
+            mock(EmailService.class),
+            mock(UserService.class),
+            mock(RoleService.class),
+            request,
+            new UserStatusBroadcaster(),
+            avatars);
+    providers = mock(ExternalProviderSettings.class);
+    when(providers.load(any()))
+        .thenAnswer(
+            call ->
+                new ExternalProviderSettings.Settings(
+                    call.getArgument(0), "", false, false, "own-version"));
+    created.configureExternalProviders(providers);
+    return created;
   }
 
   @AfterEach
@@ -186,6 +197,7 @@ class AdminViewNavigationTest {
         new org.springframework.context.annotation.AnnotationConfigApplicationContext()) {
       context.registerBean(
           de.derpeterson.app.service.UserNotificationService.class, () -> notifications);
+      context.registerBean(ExternalProviderSettings.class, () -> providers);
       context.refresh();
       context.getAutowireCapableBeanFactory().autowireBean(view);
     }
@@ -223,12 +235,34 @@ class AdminViewNavigationTest {
     enter("?section=configuration&group=" + group.name().toLowerCase(Locale.ROOT));
     assertEquals(group, ReflectionTestUtils.getField(view, "activeConfigurationGroup"));
     Object section = ReflectionTestUtils.getField(view, "configurationSection");
-    assertEquals(group, ReflectionTestUtils.getField(section, "selectedGroup"));
+    if (group == AdminConfigGroup.EXTERNAL_LOGIN) {
+      VerticalLayout layout = (VerticalLayout) ReflectionTestUtils.getField(view, "sectionLayout");
+      assertSame(
+          ReflectionTestUtils.getField(view, "externalLoginSection"), layout.getComponentAt(0));
+      verify(providers).load("google");
+      verify(providers).load("microsoft");
+    } else {
+      assertEquals(group, ReflectionTestUtils.getField(section, "selectedGroup"));
+    }
     SideNavItem parent = (SideNavItem) ReflectionTestUtils.getField(view, "configurationNavItem");
     assertTrue(parent.isExpanded());
     Map<?, ?> items = (Map<?, ?>) ReflectionTestUtils.getField(view, "configurationSubmenuItems");
     assertEquals(
         "page", ((SideNavItem) items.get(group)).getElement().getAttribute("aria-current"));
+  }
+
+  @Test
+  void providerConfigurationAndGeneralConfigurationKeepTheirOwnHeadingsWhenSwitchingBack() {
+    enter("?section=configuration&group=general");
+    Component heading = (Component) ReflectionTestUtils.getField(view, "pageHeading");
+    Component general = heading.getChildren().findFirst().orElseThrow();
+    enter("?section=configuration&group=external_login");
+    Component external = heading.getChildren().findFirst().orElseThrow();
+    assertFalse(general == external);
+    enter("?section=configuration&group=general");
+    assertSame(general, heading.getChildren().findFirst().orElseThrow());
+    enter("?section=configuration&group=external_login");
+    assertSame(external, heading.getChildren().findFirst().orElseThrow());
   }
 
   @ParameterizedTest

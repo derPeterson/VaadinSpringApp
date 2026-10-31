@@ -234,7 +234,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
   @Description(
       """
       1. Eigenes Konto im temporären Chromium-Profil mit Remember-me anmelden und Prozess schließen.
-      2. In zweitem Kontext anmelden; nur die eigene Testanwendung neu starten.
+      2. In zweitem Kontext anmelden, laufende Seite verlassen; nur die eigene Testanwendung neu starten.
       3. Zweite Anmeldung wiederherstellen: zwei erhaltene aktive Sitzungen, keine zusätzliche gespeicherte Zeile.
       4. Andere aktive Sitzung widerrufen; alten Chromium-Prozess mit seinem Profil neu öffnen.
       5. Erneut den Server starten: Widerruf bleibt erhalten und es gibt genau einen aktiven Platz.
@@ -258,8 +258,12 @@ public class SessionManagementBrowserTest extends BrowserFixture {
     }
     try (BrowserActor owner = new BrowserActor(browser)) {
       login(owner, email, true);
+      // Dieser Fall prüft den dauerhaften Bestand, SESSIONS-06 den laufenden UI-Reconnect.
+      // Alte Push-Redirects dürfen nicht mit dem hier bewusst frisch geöffneten Dokument
+      // konkurrieren.
+      owner.page.navigate("about:blank");
       BrowserTestRunner.restartTestApplication();
-      owner.page.reload();
+      owner.page.navigate(path(HOME_ROUTE));
       assertThat(owner.page).hasURL(urlPattern(HOME_ROUTE));
       new UserMenu(owner.page).selectTestLanguage();
       AccountSessionsPage sessions = new AccountSessionsPage(owner.page);
@@ -267,8 +271,9 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       sessions.assertCounts(2, 1, 0);
       sessions.revokeOther(0);
       sessions.assertCounts(1, 0, 0);
+      owner.page.navigate("about:blank");
       BrowserTestRunner.restartTestApplication();
-      owner.page.reload();
+      owner.page.navigate(path(HOME_ROUTE));
       sessions.open();
       sessions.assertCounts(1, 0, 0);
       try (PersistentBrowserActor persistent = new PersistentBrowserActor(playwright, profile)) {

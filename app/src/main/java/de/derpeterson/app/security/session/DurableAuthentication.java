@@ -1,5 +1,7 @@
 package de.derpeterson.app.security.session;
 
+import de.derpeterson.app.security.ExternalAuthenticationToken;
+import de.derpeterson.app.security.PortalUserDetails;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -24,7 +26,17 @@ public record DurableAuthentication(
     String credentialVersion,
     boolean remembered,
     int rememberKeyHash,
-    List<Factor> factors) {
+    List<Factor> factors,
+    String externalProvider) {
+  public DurableAuthentication(
+      String username,
+      String credentialVersion,
+      boolean remembered,
+      int rememberKeyHash,
+      List<Factor> factors) {
+    this(username, credentialVersion, remembered, rememberKeyHash, factors, null);
+  }
+
   public record Factor(String authority, Instant issuedAt) {}
 
   public DurableAuthentication {
@@ -34,7 +46,11 @@ public record DurableAuthentication(
         || credentialVersion == null
         || credentialVersion.length() != 64
         || factors == null
-        || factors.size() > 16) {
+        || factors.size() > 16
+        || externalProvider != null
+            && (remembered
+                || !factors.isEmpty()
+                || !(externalProvider.equals("google") || externalProvider.equals("microsoft")))) {
       throw new IllegalArgumentException("Invalid durable authentication");
     }
     factors = List.copyOf(factors);
@@ -45,7 +61,8 @@ public record DurableAuthentication(
     if (!authentication.isAuthenticated()
         || !(authentication.getPrincipal() instanceof UserDetails authenticated)
         || !(authentication instanceof UsernamePasswordAuthenticationToken
-            || authentication instanceof RememberMeAuthenticationToken)) {
+            || authentication instanceof RememberMeAuthenticationToken
+            || authentication instanceof ExternalAuthenticationToken)) {
       throw new AuthenticationServiceException("Unsupported durable authentication");
     }
     UserDetails current = users.loadUserByUsername(authenticated.getUsername());
@@ -56,7 +73,10 @@ public record DurableAuthentication(
         || !current.isAccountNonExpired()
         || !current.isCredentialsNonExpired()
         // Spring/Flow entfernen Credentials nach erfolgreicher Passwortprüfung.
-        || authenticatedPassword != null
+        || authenticated instanceof PortalUserDetails
+            && !currentVersion.equals(fingerprint(authenticated))
+        || !(authenticated instanceof PortalUserDetails)
+            && authenticatedPassword != null
             && !authenticatedPassword.isEmpty()
             && !currentVersion.equals(fingerprint(authenticatedPassword))) {
       throw new AuthenticationServiceException("Account unavailable");
@@ -70,7 +90,14 @@ public record DurableAuthentication(
     boolean remembered = authentication instanceof RememberMeAuthenticationToken;
     int keyHash = remembered ? ((RememberMeAuthenticationToken) authentication).getKeyHash() : 0;
     return new DurableAuthentication(
-        current.getUsername(), currentVersion, remembered, keyHash, factors);
+        current.getUsername(),
+        currentVersion,
+        remembered,
+        keyHash,
+        factors,
+        authentication instanceof ExternalAuthenticationToken external
+            ? external.provider()
+            : null);
   }
 
   public SecurityContext restore(UserDetailsService users, String rememberKey) {
@@ -102,6 +129,8 @@ public record DurableAuthentication(
         throw new AuthenticationServiceException("Saved login configuration changed");
       }
       authentication = token;
+    } else if (externalProvider != null) {
+      authentication = new ExternalAuthenticationToken(current, externalProvider, authorities);
     } else {
       authentication =
           UsernamePasswordAuthenticationToken.authenticated(current, null, authorities);
@@ -115,11 +144,11 @@ public record DurableAuthentication(
       throw new AuthenticationServiceException("Account unavailable");
     }
     return new DurableAuthentication(
-        username, fingerprint(current), remembered, rememberKeyHash, factors);
+        username, fingerprint(current), remembered, rememberKeyHash, factors, externalProvider);
   }
 
   private static String fingerprint(UserDetails user) {
-    return fingerprint(user.getPassword());
+    return PortalUserDetails.version(user);
   }
 
   private static String fingerprint(String password) {

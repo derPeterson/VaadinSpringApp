@@ -7,6 +7,7 @@ import com.vaadin.flow.component.shared.HasAllowedCharPattern;
 import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.data.binder.ValueContext;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.validation.UserInputRules;
@@ -168,7 +169,13 @@ public class ValidationHelper {
 
   public static boolean validateBirthDateBeforeInput(
       DatePicker datePicker, MessageProperties messageProperties) {
-    if (!isBirthDateValid(datePicker.getValue())) {
+    // Ein früher gesetztes Fehlerflag unterscheidet nicht zwischen leerem und unlesbarem Datum.
+    // Der native Validator prüft die aktuelle Eingabe auch dann, wenn ihr Modellwert null ist.
+    if (datePicker
+            .getDefaultValidator()
+            .apply(datePicker.getValue(), new ValueContext(datePicker))
+            .isError()
+        || !isBirthDateValid(datePicker.getValue())) {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,

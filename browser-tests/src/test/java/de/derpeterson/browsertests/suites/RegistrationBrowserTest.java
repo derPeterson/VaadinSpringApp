@@ -68,6 +68,8 @@ public class RegistrationBrowserTest extends BrowserFixture {
     registration.assertRequiredError();
     AllurePlaywright.attachScreenshot("Fehlende Pflichtangaben", page);
     registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
+    page.locator("vaadin-combo-box [part~='clear-button']").click();
+    page.locator("vaadin-date-picker input").fill("");
     registration.submit();
     registration.assertSubmitted(email);
   }

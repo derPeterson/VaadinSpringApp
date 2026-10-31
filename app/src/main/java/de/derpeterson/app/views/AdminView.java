@@ -21,6 +21,7 @@ import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.security.ExternalProviderSettings;
 import de.derpeterson.app.security.IsAuthenticatedBaseView;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
@@ -36,6 +37,7 @@ import de.derpeterson.app.ui.components.PortalPageComponent;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.views.admin.AdminConfigurationSection;
 import de.derpeterson.app.views.admin.AdminDashboardSection;
+import de.derpeterson.app.views.admin.AdminExternalLoginSection;
 import de.derpeterson.app.views.admin.AdminMailTestSection;
 import de.derpeterson.app.views.admin.AdminUserManagementSection;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
@@ -70,6 +72,7 @@ public class AdminView extends IsAuthenticatedBaseView {
   private final Div pageHeading = new Div();
   private final Map<AdminSection, com.vaadin.flow.component.Component> pageHeadings =
       new java.util.EnumMap<>(AdminSection.class);
+  private com.vaadin.flow.component.Component externalLoginHeading;
   private PageNavigationComponent sideNavigation;
   private final Span administrationHeading = new Span();
   private final Span portalHeading = new Span();
@@ -102,6 +105,14 @@ public class AdminView extends IsAuthenticatedBaseView {
   private PortalPageComponent page;
   private AdminDashboardSection dashboardSection = null;
   private AdminConfigurationSection configurationSection = null;
+  private AdminExternalLoginSection externalLoginSection;
+
+  @org.springframework.beans.factory.annotation.Autowired
+  public void configureExternalProviders(ExternalProviderSettings settings) {
+    externalLoginSection =
+        new AdminExternalLoginSection(messageProperties, settings, configService);
+  }
+
   private AdminMailTestSection mailTestSection = null;
   private AdminUserManagementSection userManagementSection = null;
 
@@ -318,8 +329,14 @@ public class AdminView extends IsAuthenticatedBaseView {
 
     switch (section) {
       case CONFIGURATION -> {
-        sectionLayout.add(configurationSection);
-        configurationSection.showGroup(activeConfigurationGroup);
+        if (activeConfigurationGroup == AdminConfigGroup.EXTERNAL_LOGIN
+            && externalLoginSection != null) {
+          externalLoginSection.activate();
+          sectionLayout.add(externalLoginSection);
+        } else {
+          sectionLayout.add(configurationSection);
+          configurationSection.showGroup(activeConfigurationGroup);
+        }
       }
       case NOTIFICATIONS -> {
         sectionLayout.add(notificationsSection);
@@ -338,11 +355,20 @@ public class AdminView extends IsAuthenticatedBaseView {
         .findFirst()
         .ifPresent(
             header -> {
-              pageHeadings.put(activeSection, header);
+              if (activeSection == AdminSection.CONFIGURATION
+                  && activeConfigurationGroup == AdminConfigGroup.EXTERNAL_LOGIN) {
+                externalLoginHeading = header;
+              } else {
+                pageHeadings.put(activeSection, header);
+              }
               selected.remove(header);
             });
     pageHeading.removeAll();
-    com.vaadin.flow.component.Component heading = pageHeadings.get(activeSection);
+    com.vaadin.flow.component.Component heading =
+        activeSection == AdminSection.CONFIGURATION
+                && activeConfigurationGroup == AdminConfigGroup.EXTERNAL_LOGIN
+            ? externalLoginHeading
+            : pageHeadings.get(activeSection);
     if (heading != null) {
       pageHeading.add(heading);
     }
@@ -407,6 +433,9 @@ public class AdminView extends IsAuthenticatedBaseView {
     }
     if (configurationSection != null) {
       configurationSection.refreshTexts();
+    }
+    if (externalLoginSection != null) {
+      externalLoginSection.refreshTexts();
     }
     mailTestSection.refreshTexts();
     if (userManagementSection != null) {

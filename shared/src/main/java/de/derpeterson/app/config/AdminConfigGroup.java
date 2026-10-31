@@ -4,6 +4,7 @@ package de.derpeterson.app.config;
 public enum AdminConfigGroup {
   GENERAL,
   SECURITY,
+  EXTERNAL_LOGIN,
   TOKENS,
   USER_STATUS,
   NOTIFICATIONS,

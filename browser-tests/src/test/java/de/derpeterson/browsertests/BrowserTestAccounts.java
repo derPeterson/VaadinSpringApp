@@ -8,6 +8,7 @@ public final class BrowserTestAccounts {
   public static final String SUPERADMIN_PASSWORD = "BrowserSuperadmin1!";
   public static final String USER_PASSWORD = "BrowserUser1!";
   public static final String RESET_PASSWORD = "BrowserReset2!";
+  public static final String OIDC_CLIENT_SECRET = "own-browser-fixture-secret";
 
   private BrowserTestAccounts() {}
 }

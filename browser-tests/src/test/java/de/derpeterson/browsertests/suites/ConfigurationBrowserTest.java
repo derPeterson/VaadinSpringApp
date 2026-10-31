@@ -367,6 +367,11 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     ConfigurationPage settings = admin();
     int total = 0;
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
+      if (group == AdminConfigGroup.EXTERNAL_LOGIN) {
+        // Die geführte Anbietereinrichtung hat eigene Hinweise und OIDC-08 statt
+        // ConfigEntry-Hilfen.
+        continue;
+      }
       settings.open(group);
       Locator infos = page.locator(".cosmos-config-fields .cosmos-config-info");
       int count = infos.count();

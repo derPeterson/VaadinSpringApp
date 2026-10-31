@@ -4,6 +4,14 @@
 
 - [ ] Nach Design-Merge und Sonar-Bereinigung eine große Testrunde auf `main` durchführen.
 
+## Aktives Feature
+
+- [ ] Google-/Microsoft-Anmeldung und freiwillige Profilangaben gemäß
+  [Umsetzungsplan](docs/planung/google-microsoft-anmeldung.md) gemeinsam abnehmen.
+  Branch: `feature/google-microsoft-anmeldung`. Umsetzung und automatisierter Testumfang der großen Testrunde sind abgeschlossen.
+  Ergebnisse und Grenzen: [Prüfstand](docs/status.md).
+  Gemeinsame Sichtung und eigene Anbieter-Clients bleiben zur Abnahme offen.
+
 ## Menschliche Abnahmen
 
 - [ ] Echte Mobilgeräte, Bildschirmtastatur, Zoom, Tastaturfokus und Screenreader.

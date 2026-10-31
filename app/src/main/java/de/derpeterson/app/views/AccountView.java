@@ -16,6 +16,7 @@ import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.UserStatus;
+import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.IsAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionManagementService;
@@ -23,10 +24,12 @@ import de.derpeterson.app.service.AccountProfileService;
 import de.derpeterson.app.service.AccountSecurityService;
 import de.derpeterson.app.service.AccountSecurityService.PasswordChanged;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountSettingsComponent;
 import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
+import de.derpeterson.app.ui.components.ExternalConnectionsComponent;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
@@ -53,7 +56,9 @@ public class AccountView extends IsAuthenticatedBaseView {
       AccountSecurityService accountSecurity,
       SessionManagementService sessions,
       UserStatusBroadcaster broadcaster,
-      UserAvatarService avatars) {
+      UserAvatarService avatars,
+      ExternalLoginFlow externalLogin,
+      ExternalIdentityService identities) {
     super(messages, security, users, broadcaster, request, avatars);
     addClassNames(
         "cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-account", REFERENCE_PORTAL);
@@ -105,6 +110,7 @@ public class AccountView extends IsAuthenticatedBaseView {
           }
         });
     setPortalPage(header, accountSettings, config);
+    configureExternalLogins(externalLogin, identities, request, messages);
   }
 
   @Override
@@ -146,5 +152,27 @@ public class AccountView extends IsAuthenticatedBaseView {
     if (accountSettings != null) {
       accountSettings.refreshTexts();
     }
+  }
+
+  private void configureExternalLogins(
+      ExternalLoginFlow flow,
+      ExternalIdentityService identities,
+      HttpServletRequest request,
+      MessageProperties messages) {
+    if (currentUser == null || flow.providers().isEmpty()) {
+      return;
+    }
+    accountSettings.configureExternalLogins(
+        new ExternalConnectionsComponent(flow, identities, request, messages),
+        () ->
+            flow.owner(request).getPassword() != null
+                && flow.confirmedPurpose(request)
+                    .filter(purpose -> purpose == ExternalLoginFlow.Purpose.PASSWORD)
+                    .isEmpty(),
+        () ->
+            flow.owner(request).getPassword() != null
+                && flow.confirmedPurpose(request)
+                    .filter(purpose -> purpose == ExternalLoginFlow.Purpose.EMAIL)
+                    .isEmpty());
   }
 }

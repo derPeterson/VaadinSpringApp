@@ -131,7 +131,8 @@ public class RegistrationViewTest {
             new RegistrationService(users, verification, accountConfig()),
             mock(SecurityService.class),
             mock(HttpServletRequest.class),
-            accountConfig());
+            accountConfig(),
+            mock(de.derpeterson.app.security.ExternalLoginFlow.class));
     field("firstNameField", TextField.class).setValue("Test");
     field("lastNameField", TextField.class).setValue("User");
     field("emailField", EmailField.class).setValue("test@example.com");

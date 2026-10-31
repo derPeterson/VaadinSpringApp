@@ -27,6 +27,7 @@ import de.derpeterson.app.service.AccountSecurityService.PasswordChanged;
 import de.derpeterson.app.ui.components.AccountSecurityFeedback.Field;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 
 /** Eigene Passwortänderung mit expliziter Validierung erst beim Absenden. */
 public class AccountPasswordChangeDialog extends Dialog {
@@ -35,6 +36,7 @@ public class AccountPasswordChangeDialog extends Dialog {
   private final Span description = new Span();
   private final Span hint = new Span();
   private final PasswordField currentPassword = new PasswordField();
+  private transient BooleanSupplier currentPasswordRequired = () -> true;
   private final PasswordField confirmPassword = new PasswordField();
   private final PasswordField newPassword = new PasswordField();
   private final Button close = new Button(AppIcon.CLOSE_CIRCLE.create(), event -> close());
@@ -118,9 +120,16 @@ public class AccountPasswordChangeDialog extends Dialog {
     changeAction = Objects.requireNonNull(action);
   }
 
+  public void setCurrentPasswordRequired(BooleanSupplier required) {
+    currentPasswordRequired = Objects.requireNonNull(required);
+  }
+
   private void submit() {
     if (!ValidationHelper.validateRequiredInputs(
-            List.of(newPassword, confirmPassword, currentPassword), messages)
+            currentPassword.isVisible()
+                ? List.of(newPassword, confirmPassword, currentPassword)
+                : List.of(newPassword, confirmPassword),
+            messages)
         || !ValidationHelper.validatePasswordSecureInputs(List.of(newPassword), messages)
         || !ValidationHelper.validatePasswordConfirmInputs(
             newPassword, confirmPassword, messages)) {
@@ -153,6 +162,9 @@ public class AccountPasswordChangeDialog extends Dialog {
 
   @Override
   public void open() {
+    boolean required = currentPasswordRequired.getAsBoolean();
+    currentPassword.setVisible(required);
+    currentPassword.setRequiredIndicatorVisible(required);
     clearDraft();
     super.open();
   }

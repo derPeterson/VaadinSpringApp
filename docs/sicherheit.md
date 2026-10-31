@@ -17,6 +17,18 @@ Fehlversuche werden je kanonisierter Identität unter einem Hash gespeichert. Da
 Zeitfenster und eine Sperre dauern jeweils 15 Minuten; das Versuchslimit ist konfigurierbar.
 Ein erfolgreicher Passwortreset setzt den zugehörigen Schutz kontrolliert zurück.
 
+## Externe Identitäten
+
+Google und Microsoft ergänzen die lokale Anmeldung. Anbieter, Issuer und Subject
+bilden die eindeutige Identität. Keine automatische Verknüpfung über E-Mail und
+keine Übernahme von Anbieterrollen. Neue externe Konten können ohne Portalpasswort
+angelegt werden. Eine zufällige Zugangsversion bindet Sitzungen und Sicherheitslinks
+auch für diese Konten. State, Nonce, PKCE und OIDC-Tokenvalidierung übernimmt Spring.
+Anbieterbeweise und Registrierungsentwürfe sind kurzlebig und werden nicht dauerhaft
+als OIDC-Objektgraphen gespeichert. Ein externer Login ist kein Passwort-/MFA-Faktor.
+Kontaktvertrauen, erneute Sicherheitsbestätigung und Grenzen stehen unter
+[Externe Anmeldung](externe-anmeldung.md).
+
 ## Verifikation, Passwortreset und E-Mail-Änderung
 
 Nur eine deaktivierte, noch ausdrücklich ausstehende Registrierung darf per
@@ -35,7 +47,7 @@ einem verpflichtenden internen Sicherheitshinweis rollt die Fachaktion zurück.
 Nicht jeder technische Fehler wird als ungültiger Link verschluckt.
 
 Beim Passwortwechsel bleibt nur die bestätigte eigene Sitzung erhalten. Die
-E-Mail-Änderung bindet den Nachweis an Konto, Zieladresse und aktuelle Passwortversion;
+E-Mail-Änderung bindet den Nachweis an Konto, Zieladresse und aktuelle Zugangsversion;
 die ausdrückliche Bestätigung widerruft Zugänge. Sicherheitsmails fixieren ihre
 Zieladresse; gewöhnliche Queueaufträge verwenden die aktuelle Kontoadresse.
 
@@ -47,11 +59,11 @@ Widerruf und Inaktivitätsablauf geben Plätze frei. Browserfenster schließen i
 Eine Limitreduzierung verdrängt bereits zugelassene Geräte nicht automatisch.
 
 Remember-me verwendet rotierende Tokenserien und gespeicherte Gerätemetadaten.
-Neue Serie und Metadaten werden atomar erzeugt. Passwortlogin ersetzt die gespeicherte
+Neue Serie und Metadaten werden atomar erzeugt. Eine neue geprüfte Anmeldung ersetzt die gespeicherte
 Anmeldung dieses Browsers. Logout widerruft dessen Serie; eigene Verwaltung erlaubt
 Einzel- und Sammelwiderruf. Ablaufräumung ergänzt keine erfundenen Geräteinformationen.
 
-Bei vollem Limit ermöglicht ein kurzlebiger, nach Passwortprüfung erworbener Nachweis
+Bei vollem Limit ermöglicht ein kurzlebiger, nach Passwort- oder externer Identitätsprüfung erworbener Nachweis
 nur die eigene Sitzungsverwaltung. Er ist keine vollständige Anmeldung und gewährt
 keinen Zugriff auf Profil, Administration oder Inbox.
 
@@ -59,9 +71,20 @@ keinen Zugriff auf Profil, Administration oder Inbox.
 
 Spring Session JDBC erhält gültige Anmeldung, Sitzungsplatz, ursprüngliche
 Authentifizierungsfaktoren und Inaktivitätsfrist in derselben Datenbank. Kontostatus,
-Rollen und Passwortversion werden beim Wiederherstellen frisch geprüft. Ein Neustart
+Rollen und Zugangsversion werden beim Wiederherstellen frisch geprüft. Ein Neustart
 verlängert keine Gültigkeit; Logout und Widerruf bleiben wirksam. Standardtimeout:
 1800 Sekunden, über `app.sessions.timeout-seconds` für neue Sitzungen einstellbar.
+
+Ein abschließender HTTP-Commit einer inzwischen gelöschten Sitzung schreibt nichts
+mehr zurück. Sicherheitsattribute einer gelöschten Sitzung bleiben unzugänglich.
+Trifft die Löschung einen bereits geladenen Anmeldekontext, wird dieser verworfen.
+Alte geschützte UI-/Socket-Aufrufe werden abgewiesen, die Anmeldeseite bleibt erreichbar.
+Bei einer Remember-me-Tokenabweichung bleiben Springs vollständiger Widerruf der
+gespeicherten Anmeldungen und die Cookieentfernung erhalten. Es wird keine Anmeldung
+wiederhergestellt. Die normale Zugriffskontrolle übernimmt den erneuten Anmeldeweg,
+statt die Abweichung als unbehandelten Serverfehler weiterzureichen.
+Runtime-UIs werden über Vaadins Binding-Lifecycle entfernt, damit eine bereits
+laufende Antwort vor dem endgültigen Ablösen ihrer UI abgeschlossen werden kann.
 
 Die Vaadin-Oberfläche wird nach Neustart neu aufgebaut. Formulare, Uploadentwürfe,
 UI-Callbacks und Services werden nicht als Sitzungsgesamtgraph gespeichert.

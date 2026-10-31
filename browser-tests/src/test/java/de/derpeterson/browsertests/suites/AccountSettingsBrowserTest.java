@@ -93,6 +93,14 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     assertThat(page.locator(".cosmos-topbar .cosmos-avatar-initials")).hasText("SS");
     assertThat(form.host("account-birth-date")).hasJSProperty("value", "1993-04-05");
     assertThat(form.input("account-email")).hasValue(email);
+    form.input("account-birth-date").fill("");
+    form.host("account-gender").locator("[part~='clear-button']").click();
+    form.input("account-first-name").click();
+    form.save();
+    form.assertMessage(texts.getAccountSettingsSaveSuccess());
+    page.reload();
+    assertThat(form.input("account-birth-date")).hasValue("");
+    assertThat(form.input("account-gender")).hasValue("");
   }
 
   @Test

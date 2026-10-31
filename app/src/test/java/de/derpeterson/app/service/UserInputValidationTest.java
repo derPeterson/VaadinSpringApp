@@ -79,7 +79,6 @@ class UserInputValidationTest {
       case "first" -> user.setFirstName(" ");
       case "last" -> user.setLastName(null);
       case "email" -> user.setEmail("invalid-address");
-      case "gender" -> user.setGender(null);
       case "birth" -> user.setBirthDate(LocalDate.now());
       case "roles" -> user.setRoleEntities(null);
       case "role-null" -> user.setRoleEntities(Arrays.asList((RoleEntity) null));
@@ -89,8 +88,7 @@ class UserInputValidationTest {
   }
 
   @ParameterizedTest
-  @ValueSource(
-      strings = {"first", "last", "email", "gender", "birth", "roles", "role-null", "role-name"})
+  @ValueSource(strings = {"first", "last", "email", "birth", "roles", "role-null", "role-name"})
   void invalidSavedFieldsAreRejectedBeforeRepositoryOrEncoding(String field) {
     UserEntity candidate = user();
     invalidate(candidate, field);
@@ -100,8 +98,7 @@ class UserInputValidationTest {
   }
 
   @ParameterizedTest
-  @ValueSource(
-      strings = {"first", "last", "email", "gender", "birth", "roles", "role-null", "role-name"})
+  @ValueSource(strings = {"first", "last", "email", "birth", "roles", "role-null", "role-name"})
   void invalidAdminInputNeverPartiallyMutatesTheManagedUser(String field) {
     UserEntity stored = user();
     UserEntity edited = user();

@@ -26,6 +26,79 @@ public class MessageTexts {
     return MessageFormat.format(getTranslation(key), args);
   }
 
+  // Externe Anmeldung: gemeinsame DE-/EN-Texte.
+  public String getExternalGoogle() {
+    return getTranslation("external.google");
+  }
+
+  public String getExternalMicrosoft() {
+    return getTranslation("external.microsoft");
+  }
+
+  public String getExternalOr() {
+    return getTranslation("external.or");
+  }
+
+  public String getExternalCompleteTitle() {
+    return getTranslation("external.complete.title");
+  }
+
+  public String getExternalCompleteHint() {
+    return getTranslation("external.complete.hint");
+  }
+
+  public String getExternalError() {
+    return getTranslation("external.error");
+  }
+
+  public String getExternalVerifyEmail() {
+    return getTranslation("external.verify.email");
+  }
+
+  public String getExternalConnections() {
+    return getTranslation("external.connections");
+  }
+
+  public String getExternalConnect(String provider) {
+    return getFormattedTranslation("external.connect", provider);
+  }
+
+  public String getExternalDisconnect(String provider) {
+    return getFormattedTranslation("external.disconnect", provider);
+  }
+
+  public String getExternalAction() {
+    return getTranslation("external.action");
+  }
+
+  public String getExternalProof() {
+    return getTranslation("external.proof");
+  }
+
+  public String getExternalProofWith(String provider) {
+    return getFormattedTranslation("external.proof.with", provider);
+  }
+
+  public String getExternalProofHint() {
+    return getTranslation("external.proof.hint");
+  }
+
+  public String getExternalProofReady() {
+    return getTranslation("external.proof.ready");
+  }
+
+  public String getExternalPasswordSetup() {
+    return getTranslation("external.password.setup");
+  }
+
+  public String getExternalDisconnectHint() {
+    return getTranslation("external.disconnect.hint");
+  }
+
+  public String getExternalDraftExpired() {
+    return getTranslation("external.draft.expired");
+  }
+
   // Startseite: gemeinsame Getter für Anwendung und Browserprüfungen
   public String getHomeTitle() {
     return getTranslation("homeView.title");
@@ -651,6 +724,7 @@ public class MessageTexts {
     return switch (group) {
       case GENERAL -> getAdminConfigGroupGeneralDescription();
       case SECURITY -> getAdminConfigGroupSecurityDescription();
+      case EXTERNAL_LOGIN -> getProviderSettingsDescription();
       case TOKENS -> getAdminConfigGroupTokensDescription();
       case USER_STATUS -> getAdminConfigGroupUserStatusDescription();
       case EMAIL_SENDER -> getAdminConfigGroupEmailSenderDescription();
@@ -1537,6 +1611,7 @@ public class MessageTexts {
     return switch (group) {
       case GENERAL -> getAdminConfigGroupGeneral();
       case SECURITY -> getAdminConfigGroupSecurity();
+      case EXTERNAL_LOGIN -> getProviderSettingsTitle();
       case TOKENS -> getAdminConfigGroupTokens();
       case USER_STATUS -> getAdminConfigGroupUserStatus();
       case EMAIL_SENDER -> getAdminConfigGroupEmailSender();
@@ -2666,5 +2741,105 @@ public class MessageTexts {
 
   public String getPublicConfirmPasswordField() {
     return getTranslation("public.field.password.confirm");
+  }
+
+  public String getProviderSettingsTitle() {
+    return getTranslation("admin.providers.title");
+  }
+
+  public String getProviderSettingsDescription() {
+    return getTranslation("admin.providers.description");
+  }
+
+  public String getProviderSettingsGoogleGuide() {
+    return getTranslation("admin.providers.googleGuide");
+  }
+
+  public String getProviderSettingsMicrosoftGuide() {
+    return getTranslation("admin.providers.microsoftGuide");
+  }
+
+  public String getProviderSettingsOpenConsole() {
+    return getTranslation("admin.providers.openConsole");
+  }
+
+  public String getProviderSettingsRedirect() {
+    return getTranslation("admin.providers.redirect");
+  }
+
+  public String getProviderSettingsCopy() {
+    return getTranslation("admin.providers.copy");
+  }
+
+  public String getProviderSettingsCopied() {
+    return getTranslation("admin.providers.copied");
+  }
+
+  public String getProviderSettingsCopyFailed() {
+    return getTranslation("admin.providers.copyFailed");
+  }
+
+  public String getProviderSettingsClientId() {
+    return getTranslation("admin.providers.clientId");
+  }
+
+  public String getProviderSettingsClientIdPlaceholder() {
+    return getTranslation("admin.providers.clientIdPlaceholder");
+  }
+
+  public String getProviderSettingsSecret() {
+    return getTranslation("admin.providers.secret");
+  }
+
+  public String getProviderSettingsSecretPlaceholder() {
+    return getTranslation("admin.providers.secretPlaceholder");
+  }
+
+  public String getProviderSettingsSecretStored() {
+    return getTranslation("admin.providers.secretStored");
+  }
+
+  public String getProviderSettingsSecretHint() {
+    return getTranslation("admin.providers.secretHint");
+  }
+
+  public String getProviderSettingsEnable() {
+    return getTranslation("admin.providers.enable");
+  }
+
+  public String getProviderSettingsHint() {
+    return getTranslation("admin.providers.hint");
+  }
+
+  public String getProviderSettingsSave() {
+    return getTranslation("admin.providers.save");
+  }
+
+  public String getProviderSettingsUnconfigured() {
+    return getTranslation("admin.providers.unconfigured");
+  }
+
+  public String getProviderSettingsActive() {
+    return getTranslation("admin.providers.active");
+  }
+
+  public String getProviderSettingsInactive() {
+    return getTranslation("admin.providers.inactive");
+  }
+
+  public String getProviderSettingsSaved() {
+    return getTranslation("admin.providers.saved");
+  }
+
+  public String getProviderSettingsIncomplete() {
+    return getTranslation("admin.providers.incomplete");
+  }
+
+  public String getProviderSettingsConflict() {
+    return getTranslation("admin.providers.conflict");
+  }
+
+  public String getProviderSettingsFailed() {
+    return getTranslation("admin.providers.failed");
   }
 }

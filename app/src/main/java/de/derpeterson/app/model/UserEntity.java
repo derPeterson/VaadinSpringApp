@@ -28,6 +28,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Locale;
+import java.util.Objects;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -72,8 +74,22 @@ public class UserEntity {
   @NotNull(message = "Der Nachname darf nicht leer sein.")
   private String lastName;
 
-  @Column(nullable = false)
-  private String password;
+  @Column private String password;
+
+  @Column(nullable = false, length = 36)
+  @Builder.Default
+  private String accessVersion = UUID.randomUUID().toString();
+
+  public void setPassword(String password) {
+    if (!Objects.equals(this.password, password)) {
+      accessVersion = UUID.randomUUID().toString();
+    }
+    this.password = password;
+  }
+
+  public void rotateAccessVersion() {
+    accessVersion = UUID.randomUUID().toString();
+  }
 
   @Column(nullable = false)
   @NotBlank(message = "Die E-Mail-Adresse darf nicht leer sein.")
@@ -81,13 +97,11 @@ public class UserEntity {
   private String email;
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  @NotNull(message = "Der Geschlecht darf nicht leer sein.")
+  @Column
   private Gender gender;
 
-  @Column(nullable = false)
+  @Column
   @Past(message = "Das Geburtsdatum muss in der Vergangenheit liegen.")
-  @NotNull(message = "Das Geburtsdatum darf nicht leer sein.")
   private LocalDate birthDate;
 
   @Column(nullable = false)

@@ -846,7 +846,6 @@ public class AdminUserManagementSection extends VerticalLayout {
       genderComboBox.setPlaceholder(messageProperties.getAccountGenderPlaceholder());
       genderComboBox.setWidthFull();
       genderComboBox.setClearButtonVisible(true);
-      genderComboBox.setRequired(true);
       genderComboBox.setItemLabelGenerator(AdminUserManagementSection.this::formatGender);
 
       birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
@@ -854,7 +853,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       CompactDateInput.configure(birthDatePicker, messageProperties);
       refreshBirthDate();
       birthDatePicker.setWidthFull();
-      birthDatePicker.setRequired(true);
+      birthDatePicker.setClearButtonVisible(true);
       birthDatePicker.setMax(LocalDate.now(ZoneId.systemDefault()));
 
       enabledCheckbox = new Checkbox();
@@ -952,12 +951,10 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       binder
           .forField(genderComboBox)
-          .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
           .bind(AdminUserFormData::getGender, AdminUserFormData::setGender);
 
       binder
           .forField(birthDatePicker)
-          .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
           .withValidator(
               ValidationHelper::isBirthDateValid,
               context -> messageProperties.getBaseValidationBirthDatePastMessage())

@@ -1,5 +1,6 @@
 package de.derpeterson.app.security.session;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -8,15 +9,31 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.function.DeploymentConfiguration;
+import com.vaadin.flow.internal.CurrentInstance;
+import com.vaadin.flow.server.SessionLockCheckStrategy;
+import com.vaadin.flow.server.VaadinRequest;
+import com.vaadin.flow.server.VaadinService;
+import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.VaadinSessionState;
+import com.vaadin.flow.server.WrappedHttpSession;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.CustomUserDetailsService;
 import de.derpeterson.app.security.DeviceDescription;
+import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionAdmissionService;
 import de.derpeterson.app.security.SessionAdmissionService.Active;
 import de.derpeterson.app.security.SessionLimitException;
+import de.derpeterson.app.security.VaadinSecurityFilter;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.UserService;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,18 +45,22 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.authentication.RememberMeAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -51,6 +72,7 @@ import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.DefaultCsrfToken;
@@ -58,6 +80,7 @@ import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.Session;
 import org.springframework.session.jdbc.JdbcIndexedSessionRepository;
 import org.springframework.session.web.http.SessionRepositoryFilter;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.util.WebUtils;
 
 /** Echte JDBC-Commits, getrennte Repositoryinstanzen, eigene H2-Daten; kein Anwendungsserver. */
@@ -127,6 +150,48 @@ class DurableSessionPersistenceTest {
             ? new RememberMeAuthenticationToken(key.get(), current, authorities)
             : UsernamePasswordAuthenticationToken.authenticated(current, null, authorities);
     return new SecurityContextImpl(auth);
+  }
+
+  @Test
+  void passwordlessExternalAuthenticationSurvivesJdbcRestartAndAccessVersionRevokesIt() {
+    String version = UUID.randomUUID().toString();
+    UserDetails external =
+        new de.derpeterson.app.security.PortalUserDetails(
+            "external@example.test",
+            null,
+            version,
+            true,
+            List.of(
+                new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                    "ROLE_USER")));
+    account.set(external);
+    Session before = repository.createSession();
+    before.setAttribute(
+        FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME, external.getUsername());
+    before.setAttribute(
+        CONTEXT,
+        new SecurityContextImpl(
+            new de.derpeterson.app.security.ExternalAuthenticationToken(external, "microsoft")));
+    DurableSessionRepository<?> restarted = restart();
+    Session restored = restarted.findById(before.getId());
+    assertNotNull(restored);
+    SecurityContext security = restored.getAttribute(CONTEXT);
+    assertTrue(
+        security.getAuthentication()
+            instanceof de.derpeterson.app.security.ExternalAuthenticationToken);
+    assertTrue(
+        security.getAuthentication().getAuthorities().stream()
+            .noneMatch(FactorGrantedAuthority.class::isInstance));
+    account.set(
+        new de.derpeterson.app.security.PortalUserDetails(
+            "external@example.test",
+            null,
+            UUID.randomUUID().toString(),
+            true,
+            external.getAuthorities()));
+    Session revoked = restart().findById(before.getId());
+    assertNull(revoked.getAttribute(CONTEXT));
+    assertEquals(Boolean.TRUE, revoked.getAttribute(DurableSessionRepository.EXPIRED));
   }
 
   @ParameterizedTest
@@ -322,7 +387,7 @@ class DurableSessionPersistenceTest {
     sessions.deleteById(existing.getId());
     Instant accessed = Instant.now();
     assertThrows(IllegalStateException.class, () -> stale.setLastAccessedTime(accessed));
-    assertThrows(IllegalStateException.class, () -> sessions.save(stale));
+    assertDoesNotThrow(() -> sessions.save(stale));
     assertNull(sessions.findById(existing.getId()));
   }
 
@@ -538,6 +603,125 @@ class DurableSessionPersistenceTest {
     repository.deleteById(session.getId());
     verify(service).fireSessionDestroy(ui);
     assertNull(repository.findById(session.getId()));
+  }
+
+  @Test
+  void concurrentLogoutDoesNotFailTheOtherHttpRequestsFinalCommitOrRecreateItsSession()
+      throws Exception {
+    Session existing = admitted(false);
+    String id = existing.getId();
+    withRequest(
+        repository,
+        id,
+        request -> {
+          assertNotNull(request.getSession(false));
+          repository.deleteById(id);
+        });
+    assertNull(repository.findById(id));
+    assertNull(restart().findById(id));
+    assertEquals(
+        0,
+        jdbc.queryForObject(
+            "select count(*) from SPRING_SESSION where SESSION_ID = ?", Integer.class, id));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"login", "uidl", "anonymous-uidl", "privileges"})
+  void concurrentDeletionRejectsOldCallbacksButKeepsTheLoginDocumentAvailable(String entry)
+      throws Exception {
+    Session existing = admitted(false);
+    String id = existing.getId();
+    SessionAdmissionService admissions =
+        new SessionAdmissionService(config, new DurableSessionRegistry<>(repository));
+    SecurityService security =
+        new SecurityService(
+            mock(PersistentTokenBasedRememberMeServices.class),
+            mock(UserService.class),
+            mock(UserRepository.class),
+            mock(CustomUserDetailsService.class),
+            new HttpSessionSecurityContextRepository(),
+            admissions);
+    @SuppressWarnings("unchecked")
+    ObjectProvider<SecurityService> provider = mock(ObjectProvider.class);
+    when(provider.getObject()).thenReturn(security);
+    withRequest(
+        repository,
+        id,
+        request -> {
+          assertNotNull(request.getSession(false));
+          if (!"anonymous-uidl".equals(entry)) {
+            SecurityContextHolder.setContext(context(false));
+          }
+          repository.deleteById(id);
+          if ("privileges".equals(entry)) {
+            assertFalse(security.hasCurrentSessionPrivileges(request));
+          } else {
+            boolean login = "login".equals(entry);
+            HttpServletRequestWrapper callback =
+                new HttpServletRequestWrapper(request) {
+                  @Override
+                  public String getMethod() {
+                    return login ? "GET" : "POST";
+                  }
+
+                  @Override
+                  public String getServletPath() {
+                    return login ? "/login" : "/account";
+                  }
+
+                  @Override
+                  public String getParameter(String name) {
+                    return "v-r".equals(name) && !login ? "uidl" : super.getParameter(name);
+                  }
+                };
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            AtomicBoolean reachedApplication = new AtomicBoolean();
+            assertDoesNotThrow(
+                () ->
+                    new VaadinSecurityFilter(provider)
+                        .doFilter(callback, response, (req, res) -> reachedApplication.set(true)));
+            assertEquals(login, reachedApplication.get());
+            assertEquals(login ? 200 : 401, response.getStatus());
+          }
+          assertNull(request.getSession(false));
+          assertNull(SecurityContextHolder.getContext().getAuthentication());
+          assertTrue(security.getAuthenticatedUser(request).isEmpty());
+        });
+    assertNull(restart().findById(id));
+    assertEquals(
+        0,
+        jdbc.queryForObject(
+            "select count(*) from SPRING_SESSION where SESSION_ID = ?", Integer.class, id));
+  }
+
+  @Test
+  void logoutKeepsTheCurrentVaadinUiAttachedUntilItsResponseHasBeenWritten() {
+    Session stored = admitted(false);
+    VaadinService service = mock(VaadinService.class);
+    DeploymentConfiguration configuration = mock(DeploymentConfiguration.class);
+    when(service.getDeploymentConfiguration()).thenReturn(configuration);
+    VaadinSession live = new VaadinSession(service);
+    ReflectionTestUtils.setField(live, "lock", new ReentrantLock());
+    ReflectionTestUtils.setField(live, "sessionLockCheckStrategy", SessionLockCheckStrategy.THROW);
+    ReflectionTestUtils.setField(live, "session", new WrappedHttpSession(new MockHttpSession()));
+    UI ui = new UI();
+    live.lock();
+    VaadinSession.setCurrent(live);
+    CurrentInstance.set(VaadinRequest.class, mock(VaadinRequest.class));
+    try {
+      ui.getInternals().setSession(live);
+      stored.setAttribute("runtime-ui", live);
+      repository.deleteById(stored.getId());
+      assertSame(live, ui.getSession());
+      assertEquals(VaadinSessionState.CLOSING, live.getState());
+      assertNull(live.getSession());
+      verify(service, never()).fireSessionDestroy(live);
+    } finally {
+      CurrentInstance.set(VaadinRequest.class, null);
+      VaadinSession.setCurrent(null);
+      live.unlock();
+    }
+    assertNull(repository.findById(stored.getId()));
   }
 
   private <S extends Session> void withRequest(

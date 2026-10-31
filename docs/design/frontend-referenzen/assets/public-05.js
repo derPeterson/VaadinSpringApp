@@ -131,7 +131,7 @@
         notify('Bitte füllen Sie die Pflichtfelder vollständig und im passenden Format aus.','warning','Eingaben prüfen',-1);return;
       }
       form.querySelectorAll('[aria-invalid]').forEach(control=>control.removeAttribute('aria-invalid'));
-      if(form.dataset.demoForm==='register'){
+      if(form.dataset.demoForm==='register' && byId('register-birth').value.trim()){
         // Sichtbares deutsches Datum prüfen, ohne neue fachliche Altersregel zu erfinden.
         const match=/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(byId('register-birth').value);
         const date=match?new Date(Number(match[3]),Number(match[2])-1,Number(match[1])):null;

@@ -1,15 +1,11 @@
 # Offener Testbedarf
 
-Hier stehen ausschließlich offene Aufgaben zur Ergänzung oder Anpassung
-automatisierter Tests. Pflege und Abnahme: [Testablauf](tests.md#übergabe-offener-testaufgaben).
-
 ## Browser-Tests
 
-Derzeit keine offenen Ergänzungen.
+Kein offener automatisierter Ergänzungsbedarf.
 
 ## JUnit-Tests
 
-Derzeit keine offenen Ergänzungen.
+Kein offener automatisierter Ergänzungsbedarf.
 
-Menschliche Abnahmen und die nicht beauftragte optionale externe SMTP-Abnahme
-bleiben im [manuellen Katalog](manual-tests/README.md).
+Menschliche Abnahmen bleiben im [manuellen Katalog](manual-tests/README.md).

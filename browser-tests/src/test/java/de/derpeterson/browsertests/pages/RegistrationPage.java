@@ -158,8 +158,8 @@ public final class RegistrationPage {
     assertThat(page.locator("vaadin-text-field[invalid]")).hasCount(2);
     assertThat(page.locator("vaadin-email-field[invalid]")).hasCount(2);
     assertThat(page.locator("vaadin-password-field[invalid]")).hasCount(2);
-    assertThat(page.locator("vaadin-combo-box[invalid]")).isVisible();
-    assertThat(page.locator("vaadin-date-picker[invalid]")).isVisible();
+    assertThat(page.locator("vaadin-combo-box[invalid]")).hasCount(0);
+    assertThat(page.locator("vaadin-date-picker[invalid]")).hasCount(0);
   }
 
   @Step("Ungültige E-Mail verständlich anzeigen und beide E-Mail-Felder markieren")

@@ -364,7 +364,8 @@ class UserIdentityPersistenceTest {
               new RegistrationService(users, verification, accountConfig()),
               Mockito.mock(SecurityService.class),
               Mockito.mock(HttpServletRequest.class),
-              accountConfig());
+              accountConfig(),
+              Mockito.mock(de.derpeterson.app.security.ExternalLoginFlow.class));
       for (String name : List.of("firstNameField", "lastNameField")) {
         ((TextField) ReflectionTestUtils.getField(view, name)).setValue("Test");
       }

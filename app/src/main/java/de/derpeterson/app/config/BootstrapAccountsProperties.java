@@ -5,7 +5,6 @@ import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.validation.UserInputRules;
 import java.time.LocalDate;
-import java.time.Month;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -33,8 +32,8 @@ public class BootstrapAccountsProperties {
     private String password;
     private String firstName = "John";
     private String lastName = "Doe";
-    private LocalDate birthDate = LocalDate.of(1990, Month.JANUARY, 1);
-    private Gender gender = Gender.OTHER;
+    private LocalDate birthDate;
+    private Gender gender;
     private Locale preferredLocale = Locale.ENGLISH;
   }
 
@@ -70,7 +69,6 @@ public class BootstrapAccountsProperties {
           || !UserInputRules.isRequiredTextValid(account.firstName)
           || !UserInputRules.isRequiredTextValid(account.lastName)
           || !UserInputRules.isBirthDateValid(account.birthDate)
-          || account.gender == null
           || account.preferredLocale == null
           || !Set.of("de", "en").contains(account.preferredLocale.getLanguage())) {
         throw new IllegalArgumentException(
