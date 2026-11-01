@@ -103,7 +103,7 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
 | `cosmos-components` | Rollensuche, Checkbox-Geometrie, SideNav-Zustände, Tooltips und Benutzermenü | 5 |
-| `all` | Alle 32 Testklassen einschließlich der Fast-Fälle | 191 |
+| `all` | Alle 32 Testklassen einschließlich der Fast-Fälle | 208 |
 
 IDs, Schritte und erwartetes Ergebnis stehen pro Fall in `@DisplayName` und
 `@Description`; diese Angaben übernimmt der Bericht. AVATAR-01 enthält zwei

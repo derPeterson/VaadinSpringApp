@@ -1,142 +1,129 @@
-# Große Testrunde – 31.10.2026
+# Große Testrunde – 01.11.2026
 
 ## Prüfstand und Ergebnis
 
-Geprüft wurde `feature/google-microsoft-anmeldung` auf Basis von
-`782a971906b387d3b90ba26f13ba855215131def` einschließlich der uncommittierten
-Feature- und QA-Korrekturen. Der lokale Quell-/Testfingerabdruck lautet
-`8b891c16484c626451988272522b9cc25c29440e534240e245742511e839265c`.
+Die technische Integration der Google-/Microsoft-Anmeldung ist lokal auf `main`
+übernommen und automatisiert geprüft. Der Review-/Featurecommit ist `6cfea564`,
+die Sonar-Korrekturen sind `31ed947`, `1b05f96` und `ad594c8`.
+Der vollständig geprüfte Browser-Teststand ist
+`18d4d3d6a8b21d5aeffb2eb69b9a30158fe9cc57`.
 
-Vergleichsstand war die bisherige Design-QA zu
-`ee4861abdb537246896d18cec95c20a6b7333c2c` samt damaligen uncommittierten
-Nachträgen. Dafür lag kein vollständiger Quellfingerabdruck vor. Maßgeblich waren
-deshalb der tatsächliche Diff, die neuen Quellen und die aktuellen Testberichte.
+Die Anwendung selbst entspricht `ad594c845115373383a5811b9c72426222a91071`.
+Der folgende Commit änderte ausschließlich zwei Browsertests. Anwendung, Shared,
+Root-POM und Dockerfile blieben nachweislich unverändert. Nachfolgende Änderungen
+an Prüfstand und Aufgabenlisten ändern diesen Anwendungs-/Teststand ebenfalls nicht.
+Die zugehörigen Commit-, Quellen- und Runzuordnungen stehen im lokalen QA-Zustand.
 
-Der automatisierte Testumfang ist nach den unten beschriebenen Korrekturen und
-gezielten Nachtests bestanden. Keine bestätigten Anwendungsfehler sind offen.
-Ein aktueller Sonar-Nachweis für diesen Featurestand fehlt weiterhin. Der Stand
-ist damit noch keine vollständige Qualitätsfreigabe oder gemeinsame Featureabnahme.
-Es wurde weder committet noch gemergt oder veröffentlicht.
+Ausgangspunkt war der vorher dokumentierte Featureprüfstand auf Basis `782a9719`
+samt damaligen uncommittierten Änderungen. Eine vollständig bestätigte Main-Baseline
+lag noch nicht vor. Maßgeblich waren deshalb der tatsächliche Diff, die vorhandenen
+Regressionen und die jetzige vollständige Prüfung des integrierten Stands.
 
-Der aktuelle Arbeitsstand enthält zusätzlich die dokumentierten Startvorgaben in
-`.env.example` mit ausdrücklicher Properties-Zuordnung sowie die geführte
-Adminverwaltung unter Konfiguration / Anmeldeanbieter. Dafür bestanden **77 gezielte
-JUnit-Fälle** für Konfiguration, Persistenz, Rechte, veraltete Formulare, laufende
-Anbieteranfragen, Decoderwechsel und Navigation. Der optimierte Testimage-Build,
-Spotless und Checkstyle waren erfolgreich. Die Anbietersuite bestand anschließend
-mit **19 Browserfällen je DE und EN** auf demselben Image
-`sha256:2e1f8357b2cc8970658ffefa8418fa4865b0daa8041451b1436d22c1f42b96d7`.
-Die neue Einrichtung wurde auf Desktop und Smartphone geprüft. Auch ein Neustart
-mit beiden Anbietern deaktiviert und die erneute Freigabe erhielten die Einstellungen.
-Die Testumgebungen wurden erfolgreich abgebaut. Die oben beschriebene große
-Gesamtrunde liegt vor diesen Ergänzungen und wird durch die gezielten Prüfungen
-nicht ersetzt. Echte Anbieterzugänge, gemeinsame UI-Abnahme und aktueller Sonar-Nachweis
-bleiben offen.
+**Ergebnis:** Beide vollständigen Browserrunden sind bestanden. Keine ungeklärten
+Testfehler bleiben zurück. Die bekannte, ausdrücklich akzeptierte Google-Schwäche
+bleibt für die separate 2FA-Umsetzung offen. Das Feature bleibt außerdem bis zur
+Stitch-Designentscheidung offen. Es wurde nicht gepusht; die Quellbranches bleiben erhalten.
 
 ## Ausgeführte Prüfungen
 
 | Prüfung | Beobachtetes Ergebnis |
 | --- | --- |
-| Vollständiger Root-Reactor, Production und Coverage | 2.350 Anwendungstests erfolgreich, keine Fehler, zwei erwartete optionale Skips |
-| JUnit-Browser-Helfer | 85 erfolgreich |
-| Browser `all`, Deutsch | 187 von 187 erfolgreich, keine Skips |
-| Browser `all`, Englisch | 186 erfolgreich, ein Kalender-Testhelferfehler; anschließend gezielt behoben und nachgeprüft |
-| Browser `user-filters`, nach Testhelferkorrektur | Deutsch 5/5 und Englisch 5/5 erfolgreich |
-| Frontend-JavaScript | 12 erfolgreich |
-| Sonar-Offlineprüfungen | 47 erfolgreich |
-| Coverage-Offlineprüfungen | 18 erfolgreich |
-| Formatierung, Spotless und Checkstyle | Erfolgreich, keine Checkstyle-Verstöße |
+| Vollständiger optimierter Root-Reactor mit Production und Coverage | Erfolgreich unter JDK 25 |
+| Anwendungstests | 2.437 bestanden, zwei erwartete optionale Skips |
+| JUnit-Browser-Helfer | 85 bestanden |
+| Browser `all`, Deutsch, finaler vollständiger Lauf | 208/208 bestanden, keine Skips |
+| Browser `all`, Englisch, finaler vollständiger Lauf | 208/208 bestanden, keine Skips |
+| Frontend-JavaScript | 12 bestanden |
+| Sonar-Offlineprüfungen | 47 bestanden |
+| Coverage-Offlineprüfungen | 18 bestanden |
+| Spotless und Checkstyle | Erfolgreich, keine Checkstyle-Verstöße |
 | Ruff für die fünf gepflegten Python-Helfer | Formatprüfung und Lint erfolgreich |
+| Isolierter Start des frisch gebauten JARs | Anwendung und frisches Schema initialisiert, Login erreichbar |
 
-Damit sind alle 187 Browser-Szenarien je Sprache am selben Anwendungsimage
-abgedeckt. Die Filter-Nachtests wiederholen bestehende Szenarien und sind keine
-zusätzlichen zehn unterschiedlichen Fälle. Der englische Gesamtlauf wurde nach
-der ausschließlichen Testhelferkorrektur nicht vollständig wiederholt: betroffen
-war nur USER-05C, dessen gesamte Filtersuite in beiden Sprachen nachgeprüft wurde.
-
-Das identische Image aller maßgeblichen Browserläufe war
-`sha256:69d6c175ddf4190a073c9d2bb50f1e8384942f0f2a49b52d566e66cbefb4503d`.
-Die Anwendung blieb während dieser Läufe unverändert. Die Gesamtläufe nutzten vier
-klassenweise getrennte Worker mit eigenen Datenbanken und Testdiensten. Innerhalb
-eines Workers liefen die Fälle sequenziell. Chromium wurde in Deutsch und Englisch
-mit Desktop- und gezielten Smartphonefällen geprüft.
-
-Der vollständige Reactor lief mit `clean verify`, `-Pproduction,coverage` und
-`-Dvaadin.productionMode=true` unter JDK 25. Das wirksame Maven-Modell und die
-Coverage-Verifikation bestätigten Quellen-, Klassen- und Ausführungsdatenbezug.
-Die JaCoCo-Zeilenabdeckung beträgt **87,67 % für App** und **100 % für Shared**.
+Der geschützte Sonar-Einstieg führt einen vollständigen `clean install` mit
+`production,coverage` und `vaadin.productionMode=true` aus. Dieser enthält den
+vollständigen Verify-Lauf; ein zweiter identischer Build ist dafür nicht erforderlich.
+Wirksames Maven-Modell und gemeinsamer Coverage-Prüfer bestätigten den Bezug von
+Quellen, Klassen und Messdaten. JaCoCo-Zeilenabdeckung: **88,62 % App**, **100 % Shared**.
+Die zwei Skips betreffen ausschließlich die opt-in IDE-/Caddy-Prüfungen in
+`IdeHttpsProxyTest`. Shared wird über die Anwendung und Helfertests mitgeprüft.
 Es wurde keine zusätzliche serverseitige Browser-Coverage erhoben.
 
-Die zwei erwarteten Skips gehören ausschließlich zu den opt-in IDE-/Caddy-Fällen
-in `IdeHttpsProxyTest`. Der eingefrorene OpenCode-Workflow wurde nicht mitgeprüft.
+Beide finalen Sprachläufe verwendeten unverändert dasselbe Anwendungsimage:
+`sha256:a865aa8bf04971c418538afbc8028962da12f57662769efd80ca5fc354682743`.
+Je Sprache liefen 32 Testklassen mit vier getrennten Workern. Jeder Worker hatte
+seine eigene JVM, H2-Datenbank, Anwendung, HTTPS-Umgebung und Mailpit-Instanz.
+Innerhalb eines Workers lief JUnit sequenziell. Desktop und die vorhandenen
+Smartphonefälle wurden in Chromium geprüft. Die lokalen HTML-Referenzen gehören
+zu den bestehenden Layout-/Themefällen. Repräsentative Desktop-/Smartphonebilder
+wurden zusätzlich gesichtet; dies ersetzt keine menschliche Gesamtabnahme.
 
-## Behobene Anwendungsfehler
+Alle eigenen Browserumgebungen wurden erfolgreich abgebaut. Die vorherigen Runs
+und ihre Diagnosedaten bleiben erhalten. Entwicklerdaten, echte Google-/Microsoft-
+Konten und externe SMTP-Ziele wurden nicht als Fixture verwendet. Der eingefrorene
+OpenCode-Workflow wurde weder geprüft noch verändert.
 
-1. **Kontosprache nach externer Registrierung:** Nach einem Sprachwechsel vor dem
-   Abschicken wurde die anfängliche statt der zuletzt gewählten Sprache gespeichert.
-   Die Registrierung übernimmt jetzt die aktuelle Sitzungssprache. OIDC-01 prüft
-   die gespeicherte Sprache einschließlich erneutem Öffnen auf Desktop und Smartphone
-   in beiden Ausgangssprachen. Ein Portalpasswort bleibt bei externer Registrierung unnötig.
-2. **Sitzungsrennen bei Abmeldung oder Widerruf:** Ein später HTTP-Abschluss und das
-   Lesen eines bereits geladenen, inzwischen gelöschten Anmeldekontexts konnten HTTP 500
-   auslösen. Außerdem konnte die direkte Zerstörung der laufenden Vaadin-UI den
-   Antwortaufbau beschädigen. Der abschließende Commit schreibt eine gelöschte Sitzung
-   nicht zurück. Ein verschwundener Anmeldekontext wird gezielt verworfen, alte
-   geschützte Aktionen werden abgewiesen und die Anmeldung bleibt erreichbar.
-   Die UI wird über Vaadins nativen Binding-Lifecycle nach der laufenden Antwort abgebaut.
-3. **Gespeicherte Anmeldung nach Tokenabweichung:** Bei Sperre/Löschung und auslaufenden
-   Remember-me-Anfragen konnte Springs `CookieTheftException` als HTTP 500 weitergereicht
-   werden. Der vollständige Tokenwiderruf und die Cookieentfernung bleiben erhalten.
-   Es wird keine Anmeldung wiederhergestellt. Danach übernimmt die normale Zugriffskontrolle
-   den erneuten Anmeldeweg. Eine Tokenabweichung wird ohne sensible Inhalte protokolliert.
+## Korrekturen und bestätigte Nachtests
 
-Die letzten beiden Fehler wurden auch durch Kontrollen der eigenen Testserver entdeckt,
-obwohl sichtbare Browserabläufe teilweise bereits bestanden hatten. Die entsprechenden
-Fehler traten in den Kontrollen am korrigierten Image nicht mehr auf.
+Die Sonar-Bereinigung behob unter anderem fehlende Serialisierbarkeit kurzlebiger
+Sitzungsnachweise, den unkontrollierten Nullfall beim OIDC-Issuer und uneindeutige
+interne Transaktionsaufrufe. Anbietertoken unterscheiden bei Gleichheit auch ihren
+Anbieter. Unbenutzter Sicherheitscode entfiel. UI-Abläufe und lange Tests wurden
+gegliedert, wiederkehrende Bezeichner zentralisiert und Bildwerte für Arrayinhalte
+konsistent gemacht. Bestehende Zugriffs-, Widerrufs-, Zweck- und Versionsprüfungen
+blieben erhalten. Neue Regressionen prüfen Sitzungsserialisierung, fehlenden Issuer,
+Anbietergleichheit und das Entfernen einer leeren Autorisierungsanfrage.
 
-## Regressionen und Teststabilität
+Der erste deutsche Gesamtlauf bestand **206/208 Fälle** und zeigte zwei Testfehler:
 
-Sieben zusätzliche JUnit-Szenarien sichern verspäteten HTTP-Commit, fehlende Wiederbelebung,
-den laufenden Vaadin-Antwortabschluss, gelöschte Anmeldekontexte an HTTP-/Socket-Grenzen
-und vollständigen Tokenwiderruf bei Cookie-Wiederverwendung ab. Ein gezielter Lauf mit
-133 Sicherheits-/Sitzungsfällen sowie der vollständige Reactor waren erfolgreich.
-SESSION-01A–E prüfen zusätzlich, dass Rechtewechsel, Sperre und Löschung keine
-HTTP-500-Antworten erzeugen. OIDC-01 enthält den Sprachwechsel-Nachweis.
+- **LANG-02A:** Der Test navigierte nach einem Klick auf den übersetzten Logoutbutton
+  weiter, bevor die echte Abmeldeantwort abgeschlossen war. Der Trace belegt die
+  Überlappung. `UiActions.complete` wartet jetzt die tatsächliche Antwort ab.
+  Loginroute und gespeicherte Sprache werden weiterhin unverändert geprüft.
+- **AVATAR-01 Desktop:** Icon und Hinweistext wurden während der Öffnungsanimation
+  in verschiedenen Frames gemessen. Beide Mittelpunkte werden jetzt atomar im
+  selben Browserausdruck gelesen. Die Toleranz bleibt unverändert bei einem Pixel.
+  Styling und Animation wurden nicht verändert.
 
-Zwei Testabläufe wurden ohne Wiederholungsversuche oder schwächere Assertions stabilisiert:
+Beide Korrekturen stehen in `18d4d3d`. Anschließend wurden **beide vollständigen
+208-Fälle-Runden** erfolgreich ausgeführt. Der Sprachfall sowie die Profilbildfälle
+auf Desktop und Smartphone bestanden in DE und EN. Keine Assertions wurden
+abgeschwächt und keine Wiederholungsversuche eingebaut. Der fehlerhafte Erstlauf
+bleibt als Diagnose erhalten; seine erfolgreichen Teilfälle wurden nicht als
+Ersatz für die finalen Gesamtläufe ausgegeben.
 
-- SESSIONS-04 trennt den dauerhaften Sitzungsnachweis von konkurrierenden alten
-  Push-Navigationen. Die laufende Seite wird vor dem Serverneustart verlassen.
-  Erhaltene Sitzungen und Widerruf werden weiterhin nach beiden Neustarts geprüft.
-  SESSIONS-06 prüft den Live-UI-Neuaufbau separat und bestand ebenfalls in DE/EN.
-- USER-05C bestätigte eine per Pfeiltasten gewählte Kalenderzelle per Mausklick,
-  während sich am Monatswechsel das Gitter noch bewegte. Der Helfer bestätigt jetzt
-  mit Enter. Exaktes Datum, geschlossenes Overlay, Wiederöffnen der Auswahl und
-  tatsächliche Trefferfilterung bleiben geprüft. Der Helfer hat nur diesen einen Aufrufer.
+## Sonar und offene Grenzen
 
-Die Fehlversuche wurden nicht ausgeblendet. Ihre lokalen Diagnosedaten bleiben erhalten;
-konkrete Runzuordnungen und Quellfingerabdrücke stehen im ignorierten QA-Arbeitszustand.
+Der geschützte Main-Scan war nach der vollständigen Bereinigung grün: **0 offene
+Issues, 0 Bugs, 0 Vulnerabilities und 0 Hotspots**. Ausgangspunkt waren 95 offene
+Issues. Scope, Regeln und Quality Gate blieben unverändert. Die bestehenden
+48 Ausnahmen blieben erhalten. Drei weitere Hinweise sind direkt am Finding mit
+konkreter deutscher Begründung als False positive dokumentiert und nachgelesen:
+interne Spring-Passwortfehlergrenze, geerbte Spring-Benutzeridentität und die native
+Vaadin-Vererbung des gemeinsamen Seitenrahmens. Ausnahmen wurden nicht als
+Codebehebung gezählt. Die vollständige Analyse-/Findingzuordnung steht im einzigen
+aktuellen lokalen Sonar-Bericht unter `.codex/sonar/bericht.md`.
 
-## Sonar und verbleibende Grenzen
+**Bekannte Google-Grenze:** Eine offene Portal- und Google-Sitzung kann einen neuen
+Google-Durchlauf ohne erneute Passwort-/Faktoreingabe abschließen und damit eine
+sensible Kontoaktion bestätigen. Dies ist der ausdrücklich genehmigte Zwischenvertrag.
+Konto-, Sitzungs-, Zweck-, Token- und Einmalprüfungen sind weiterhin aktiv und geprüft.
+Ziel der nächsten separaten Umsetzung ist verbindliche eingerichtete 2FA ohne
+Umgehung über Google oder Portalpasswort. Risiko, Reproduktion und Lösungsrichtung
+stehen in [BUGS](../BUGS.md) und [Externe Anmeldung](externe-anmeldung.md).
+Der [2FA-Testbedarf](testbedarf.md) bleibt wartend erhalten.
 
-Sonar wurde ausschließlich lesend geprüft. Verfügbar war die main-Analyse
-`f388685c-cc43-4e6d-9e70-69658e34193d` vom 31.10.2026 zur Revision
-`35205f7b255e413e205e2cb687b1a5c1eecca164`: damaliges Gate OK, keine offenen Issues
-oder Hotspots. Diese Revision entspricht weder dem lokalen main noch dem aktuellen
-Featurestand. Daraus folgt kein aktuelles grünes Gate für dieses Paket. Auf dem
-uncommittierten Featurebranch wurde kein Sonar-Upload ausgeführt und keine Ausnahme geändert.
+Die [gespeicherte Stitch-Kritik](design/stitch-kritik-anmeldeanbieter-anmeldung.md)
+ist noch vom Benutzer zu entscheiden. Bereits erteilte Portal-/Adminabnahmen gelten
+weiter. Diese ausstehende Entscheidung verhindert ausdrücklich den endgültigen
+Featureabschluss, nicht die dokumentierte technische Integration.
 
-Die OIDC-Fälle verwenden einen eigenen Anbieter-Simulator. Die tatsächliche Google- und
-Microsoft-Anmeldung mit selbst eingerichteten Clients, privaten sowie Firmen-/Schulkonten
-und echter interaktiver Freigabe bleibt unter [HUM-08](manual-tests/README.md#hum-08)
-offen. Ebenfalls offen bleiben die gemeinsame UI-/Textabnahme, echte Mobilgeräte,
-Bildschirmtastatur, Zoom und Hilfsmittel gemäß [manuellem Katalog](manual-tests/README.md).
-Externe SMTP-Provider und echter Mail-Sichtversand gehören nicht zu dieser Runde.
+Echte private sowie Firmen-/Schulkonten bei Microsoft, weitere echte Anbieter-
+Sonderfälle, Mobilgeräte, Bildschirmtastatur, Zoom und Screenreader bleiben im
+[manuellen Katalog](manual-tests/README.md#hum-08). Provider-Smokes und echter
+Mail-Sichtversand gehören nicht zu dieser automatisierten Runde.
 
-Alle eigenen Browser-Testumgebungen wurden erfolgreich abgebaut. Entwicklerdaten und
-fremde Prozesse wurden nicht verwendet. Versionierte generierte Frontenddateien wurden
-nicht übernommen. Die Korrekturen sind im getesteten Build enthalten. Eine laufende
-Entwicklerinstanz benötigt einen Neustart mit dem neuen Build.
-
-Offene Aufgaben stehen in [TODO](../TODO.md), bestätigte Anwendungsfehler in
-[BUGS](../BUGS.md) und automatisierter Ergänzungsbedarf im [Testbedarf](testbedarf.md).
+Für eine bereits laufende Entwicklerinstanz sind ein aktueller Build und Neustart
+nötig. Es wurde keine Entwickleranwendung eigenmächtig neu gestartet. Offene Arbeiten
+stehen in [TODO](../TODO.md), der [Featureplan](planung/google-microsoft-anmeldung.md)
+bleibt auf die offene Designentscheidung begrenzt.

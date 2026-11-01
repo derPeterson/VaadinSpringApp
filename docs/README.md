@@ -31,16 +31,18 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
 Die Designübernahme für Besucher, angemeldetes Portal und Administration ist
 umgesetzt und abgenommen. Die freigegebenen Bausteine stehen im [Theme-Standard](theme.md),
 die drei schlanken HTML-Referenzen bleiben in `docs/design/frontend-referenzen`.
-Der Designbranch ist nach `main` integriert und technisch geprüft. Die Sonar-Bereinigung
-ist mit grünem Quality Gate abgeschlossen. Offen bleibt die anschließende große
-Testrunde. Die letzte vollständige QA bleibt im [Prüfstand](status.md) erhalten.
+Der Stand ist lokal nach `main` integriert. Die Sonar-Bereinigung und die vollständige
+große Testrunde in Deutsch und Englisch sind bestanden. Aktuelle Ergebnisse und
+verbleibende Grenzen stehen im [Prüfstand](status.md).
 
 Weitere vereinbarte Arbeiten stehen in [TODO](../TODO.md); gültige Bedienung und
 Konfiguration in den obigen Fachdokumenten.
 
 Der [aktive Umsetzungsplan](planung/google-microsoft-anmeldung.md) beschreibt die
 Google-/Microsoft-Anmeldung und freiwillige Angaben zu Geschlecht/Geburtsdatum.
-Die Umsetzung ist isoliert geprüft. Die noch offene gemeinsame Abnahme steht im Plan.
+Die technische Integration ist vollständig geprüft. Offen bleibt ausdrücklich die
+Entscheidung zur gespeicherten Stitch-Kritik; sie verhindert den endgültigen
+Featureabschluss. Bereits erteilte Abnahmen gelten weiter.
 Die [2FA-Bestätigung](planung/zwei-faktor-bestaetigung.md) ist als nächste separate
 Umsetzung vorgesehen. Sie soll die in [BUGS.md](../BUGS.md) dokumentierte Schwäche
 der ausdrücklich akzeptierten Google-Zwischenlösung bei eingerichteter 2FA ablösen.
