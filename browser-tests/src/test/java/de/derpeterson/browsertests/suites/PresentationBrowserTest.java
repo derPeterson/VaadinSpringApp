@@ -18,6 +18,7 @@ import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
+import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
@@ -81,10 +82,16 @@ public class PresentationBrowserTest extends BrowserFixture {
     UiTexts chosen = languages()[0];
     new UserMenu(page).selectLanguage(chosen.language());
     new UserMenu(page).open();
-    page.getByRole(
-            AriaRole.BUTTON,
-            new Page.GetByRoleOptions().setName(chosen.getBaseLogoutButton()).setExact(true))
-        .click();
+    // Vor der Navigation muss die tatsächliche Abmeldung auf dem Server abgeschlossen sein.
+    UiActions.complete(
+        page,
+        () ->
+            page.getByRole(
+                    AriaRole.BUTTON,
+                    new Page.GetByRoleOptions()
+                        .setName(chosen.getBaseLogoutButton())
+                        .setExact(true))
+                .click());
     // Normal Home logout invalidates the session but need not change the displayed route.
     page.navigate(path(LOGIN_ROUTE));
     assertThat(page).hasURL(urlPattern(LOGIN_ROUTE));

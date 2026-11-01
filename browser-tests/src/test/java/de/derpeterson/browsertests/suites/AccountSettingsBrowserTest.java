@@ -9,7 +9,6 @@ import com.microsoft.playwright.JSHandle;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
-import com.microsoft.playwright.options.BoundingBox;
 import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
@@ -328,9 +327,19 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     assertThat(contextIcon).isVisible();
     assertEquals("12px", contextIcon.evaluate("e => getComputedStyle(e).borderRadius"));
     Locator hint = confirmation.locator(".portal-confirm-body > .cosmos-panel-hint");
-    BoundingBox hintIcon = hint.locator("vaadin-icon").boundingBox();
-    BoundingBox hintText = hint.locator(":scope > span").boundingBox();
-    assertEquals(hintText.y + hintText.height / 2, hintIcon.y + hintIcon.height / 2, 1);
+    // Beide Mittelpunkte im selben Frame lesen; die Öffnungsanimation bewegt den Dialog.
+    double centerOffset =
+        ((Number)
+                hint.evaluate(
+                    """
+            element => {
+              const icon = element.querySelector('vaadin-icon').getBoundingClientRect();
+              const text = element.querySelector(':scope > span').getBoundingClientRect();
+              return (text.top + text.bottom - icon.top - icon.bottom) / 2;
+            }
+            """))
+            .doubleValue();
+    assertEquals(0, centerOffset, 1);
     io.qameta.allure.playwright.AllurePlaywright.attachScreenshot(
         "Profilbild löschen bestätigen", page);
     page.locator("#account-avatar-delete-confirmation-cancel").click();
