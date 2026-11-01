@@ -7,10 +7,23 @@
 .external-provider-mark { width:20px;height:20px;object-fit:contain;flex-shrink:0; }
 .external-login-alternative { display:flex;align-items:center;gap:12px;color:var(--cosmos-reference-secondary);font-size:11px; }
 .external-login-alternative::before,.external-login-alternative::after { content:"";flex:1;border-top:1px solid var(--cosmos-reference-border); }
-.account-external-connections { display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-top:24px;padding-top:24px;border-top:1px solid var(--cosmos-reference-border); }
-.account-external-connections > h3 { margin:0;font-size:14px;line-height:1.5; }
-.account-external-connections > vaadin-button { align-self:flex-start;max-width:100%; }
-.account-external-connections #external-security-result { font-size:12px;color:var(--cosmos-reference-accent); }
+.external-connections-overview { display:grid;gap:16px;padding:24px; }
+.cosmos-reference-portal #account-panel-security .external-connection-row { grid-template-columns:36px minmax(0,1fr) auto; }
+.cosmos-reference-portal #account-panel-security .external-connection-row > vaadin-button { width:auto; }
+.external-connection-row .cosmos-panel-icon { width:36px;height:36px; }
+.external-connection-row .cosmos-panel-icon img { width:20px;height:20px;object-fit:contain; }
+.external-connection-copy { min-width:0; }
+.external-connection-heading { display:flex;align-items:center;flex-wrap:wrap;gap:8px;font:600 13px/19.5px Inter,sans-serif; }
+.external-connection-heading vaadin-badge { box-sizing:border-box; margin:0; padding:2px 6px; border:1px solid var(--vaadin-badge-border-color); border-radius:4px; font:500 10px/15px Inter,sans-serif; --vaadin-badge-text-color:var(--cosmos-reference-accent); --vaadin-badge-background:var(--cosmos-reference-selection); --vaadin-badge-border-color:var(--cosmos-reference-icon-border); }
+.external-connection-heading vaadin-badge[theme~=success] { --vaadin-badge-text-color:var(--cosmos-reference-success); --vaadin-badge-background:var(--cosmos-reference-success-surface); --vaadin-badge-border-color:var(--cosmos-reference-success-border); }
+.external-proof-alternatives { display:flex;flex-direction:column;gap:8px;min-width:0; }
+.external-proof-provider { width:100%;height:36px;min-height:36px; }
+.external-proof-provider-mark { display:block;width:16px;height:16px;flex:0 0 16px;object-fit:contain; }
+.external-proof-heading-mark { display:block;width:20px;height:20px;object-fit:contain; }
+.external-proof-separator { display:flex;align-items:center;gap:12px;color:var(--cosmos-reference-secondary);font:600 10px/18px Inter,sans-serif; }
+.external-proof-separator::before,.external-proof-separator::after { content:"";flex:1;border-top:1px solid var(--cosmos-reference-border); }
+.external-proof-ready { color:var(--cosmos-reference-success);font:500 12px/20px Inter,sans-serif; }
+@media(max-width:600px){.external-connections-overview{padding:20px;}.cosmos-reference-portal #account-panel-security .external-connection-row{grid-template-columns:32px minmax(0,1fr);}.external-connection-row > vaadin-button{grid-column:2;justify-self:end;max-width:100%;}}
 
 .external-login-buttons:not(.external-login-panel) #external-login-google,.external-login-buttons:not(.external-login-panel) #external-login-google::part(label){font-family:"Google Sans Signin",Arial,sans-serif;font-weight:500;line-height:20px}#external-login-google .external-provider-mark{background:#fff;border-radius:2px} .external-provider-button::part(prefix){margin-inline-end:10px}
 
@@ -47,3 +60,6 @@
 .cosmos-reference-public .public-auth-panels--register {max-width:880px;}
 .cosmos-reference-public .public-auth-panels--register.public-auth-panels--external {grid-template-columns:minmax(600px,880px) 40px 376px;max-width:1328px;}
 @media(max-width:1199px){.cosmos-reference-public .public-auth-panels--register.public-auth-panels--external{grid-template-columns:minmax(0,1fr);max-width:880px;}.public-auth-panels--register .external-login-divider{flex-direction:row;padding:0;}.public-auth-panels--register .external-login-divider::before,.public-auth-panels--register .external-login-divider::after{border-left:0;border-top:1px solid var(--cosmos-reference-border);}}
+
+.external-proof-separator { text-transform:uppercase;letter-spacing:.06em; }
+.external-identity-dialog .cosmos-panel-icon img { width:20px;height:20px;object-fit:contain; }

@@ -43,6 +43,7 @@ import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.helper.time.UserActivityTime;
 import de.derpeterson.app.helper.ui.CompactDateInput;
+import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -673,6 +674,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     HorizontalLayout footer = new HorizontalLayout(cancelButton, confirmButton);
     footer.addClassName("cosmos-dialog-actions");
+    EqualButtonWidths.configure(footer);
     footer.setWidthFull();
     footer.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
 
@@ -1104,6 +1106,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       HorizontalLayout footer = new HorizontalLayout();
       footer.addClassName("cosmos-dialog-actions");
+      EqualButtonWidths.configure(footer);
       footer.setWidthFull();
       footer.setAlignItems(Alignment.CENTER);
       if (editMode) {

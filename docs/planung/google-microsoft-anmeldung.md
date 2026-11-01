@@ -1,60 +1,44 @@
 # Google-/Microsoft-Anmeldung und freiwillige Profilangaben
 
-## Auftrag und Stand
+## Stand und freigegebene Integration
 
-Branch: `feature/google-microsoft-anmeldung`.
-Die Umsetzung ist freigegeben, einschließlich externer Registrierung ohne zusätzliches
-Portalpasswort und isolierter Browserprüfungen DE/EN auf Desktop und Smartphone.
-Ein Zwischencommit des aktuellen Stands ist beauftragt. Merge und Push sind nicht beauftragt. Die separate große Testrunde auf `main`
-bleibt offen.
+Quellbranch: `feature/google-microsoft-anmeldung`. Die technische Integration nach
+`main` ist ausdrücklich beauftragt: Review, Commit, lokaler Merge, vollständige
+Sonar-Bereinigung und anschließend große Testrunde mit eigenen isolierten Daten.
+Die Umsetzung bleibt bis zur noch offenen Stitch-Entscheidung als Feature offen.
+Der Merge gilt hier ausdrücklich nicht als endgültiger Featureabschluss. Kein Push.
 
-Der Funktionsumfang ist in [Externe Anmeldung](../externe-anmeldung.md) beschrieben.
-Dazu gehören Google und Microsoft für private sowie Firmen-/Schulkonten, freiwillige
-Profilangaben, ausdrückliche Anbieterzuordnungen und zweckgebundene erneute Nachweise.
-Die bisherige Passwortanmeldung und die bestehenden Kontoschutzregeln bleiben erhalten.
-Die drei HTML-Referenzen enthalten die entsprechenden Gestaltungselemente.
-Der [Vaadin-Komponentenabgleich](vaadin-komponenten-abgleich.md) ist eine separate
-spätere Umsetzung. Die abgenommene Analyse beauftragt keinen Bausteinumbau in diesem
-Feature; dessen Umsetzung ist keine Voraussetzung für die hiesige Abnahme oder den Abschluss.
-Die gezielten Prüfungen und der automatisierte Umfang der großen Testrunde auf dem
-Featurestand sind abgeschlossen. Ergebnisse einschließlich gezielter Nachtests und
-des noch fehlenden aktuellen Sonar-Nachweises: [Prüfstand](../status.md).
+Die Kontosicherheit mit den Tabs „Portalzugang“ und „Anmeldeanbieter“ sowie die
+Google-Zwischenlösung sind händisch abgenommen. Der Benutzer konnte nach dem
+Google-Durchlauf sein Portalpasswort ändern. Die Zwischenlösung ist zusätzlich mit
+Testanbietern auf Desktop und Smartphone in DE/EN geprüft: fehlender/alter
+Google-Zeitpunkt, strenge Microsoft-Prüfung sowie Ablehnung von Kontowechsel,
+Abbruch und ungültigen Antworten. Aktuelles Verhalten und Grenzen stehen in
+[Externe Anmeldung](../externe-anmeldung.md), Gestaltungsbausteine in
+[Theme](../theme.md). Den letzten Gesamtprüfstand beschreibt [Status](../status.md).
+Gezielte Nachtests ersetzen diese große QA nicht.
 
-## Noch offen bis zur gemeinsamen Abnahme
+## Noch offene Entscheidung
 
-- Die [gespeicherte Stitch-Kritik zu Anmeldeanbietern und ODER-Trenner](../design/stitch-kritik-anmeldeanbieter-anmeldung.md)
-  gemeinsam besprechen. Die Entscheidung ist vertagt; keine Empfehlungen sind
-  zur Umsetzung freigegeben. Bis zur Auswahl bleibt die Oberfläche unverändert.
-- Die freigegebene geführte Einrichtung unter Konfiguration / Anmeldeanbieter
-  gemeinsam ansehen: Zugangsdaten, Rücksprungadresse, direkte Aktivierung und
-  Deaktivierung für Google/Microsoft. Das gemeinsame Panel „Anmeldeanbieter“ mit nativen
-  Google-/Microsoft-Tabs ist umgesetzt. Jeder Tab enthält einen Einrichtungsassistenten
-  mit drei Schritten, Zugangsdaten, Freigabe und Feldhilfe. Ungespeicherte Eingaben
-  bleiben beim Tabwechsel erhalten. Die HTML-Referenz folgt demselben Aufbau.
-  Die Darstellungsprüfungen auf Desktop/Smartphone in DE/EN sind bestanden. Der
-  erneute Speichertest nach dem Tab-Umbau bleibt im zentralen Testbedarf offen.
-  Vorerst keinen weiteren Stitch-Entwurf erstellen. Echte Anbieterzugänge bleiben
-  Teil von HUM-08.
-- Gemeinsam die Anbieterbuttons, ergänzende Registrierung und verbundenen Anmeldungen
-  auf Desktop und Smartphone ansehen. Die Registrierung verlangt kein Portalpasswort.
-  Die Zwei-Panel-Anordnung der Anmeldung ist abgenommen. Für die Registrierung
-  ist derselbe eigene Schnellzugang rechts neben dem unveränderten Formularpanel
-  freigegeben, bei wenig Platz darunter. Die Footerlinks folgen denselben Umbruchregeln.
-  Grundlage ist der Inhalt aus Variante B im
-  [Stitch-Projekt](https://stitch.google.com/projects/43914967159269113).
-  Die dunkle Inhaltsfläche und der lokale Footer bleiben erhalten. Diese Anordnung
-  der Registrierung gemeinsam ansehen.
-- „Login speichern“ als nativen Switch mit gemerkter Schalterstellung gemeinsam
-  ansehen. Das separate Einstellungs-Cookie enthält keine E-Mail und kein Passwort
-  und ist kein Remember-me-Anmeldenachweis. Die lokale HTML-Referenz bildet die
-  Stellung mit getrenntem Vorschau-Speicher ab.
-- Mit selbst eingerichteten Google-/Microsoft-Anwendungen die Rücksprungadressen und
-  tatsächlichen Anbieterabläufe prüfen. Dafür sind lokale Client-Konfiguration und
-  interaktive Kontofreigabe nötig. Prüfanleitung: [HUM-08](../manual-tests/README.md#hum-08).
-  Die isolierten OIDC-Tests verwenden keine echten Anbieterzugänge.
-- Nach Abnahme den offenen Plan und seinen TODO-Verweis entfernen. Keine automatische
-  Zusammenführung oder Veröffentlichung.
+Die [gespeicherte Stitch-Kritik zu Anmeldeanbietern und ODER-Trenner](../design/stitch-kritik-anmeldeanbieter-anmeldung.md)
+mit dem Benutzer besprechen. Er trifft die Designentscheidung später, bevor die
+nächste Umsetzung beginnt. Bis dahin keine weitere Gestaltung aus der Kritik
+übernehmen. Diesen Plan und seinen TODO-Verweis auch nach Integration und QA erhalten.
+Nach der Entscheidung den beschlossenen Umfang umsetzen beziehungsweise bewusst
+verwerfen und erst nach abschließender Abnahme den Featureplan entfernen.
 
-Die Kontoidentität bleibt unabhängig von veränderlichen E-Mail-Adressen. Weder
-Anbieterrollen noch eine erfolgreiche Anbieteranmeldung umgehen lokale Sperren,
-Wartung, Sitzungslimit oder Widerrufe. Nicht konfigurierte Anbieter werden nicht angeboten.
+## Beauftragte technische Abschlussprüfung
+
+Sonar und große QA auf dem integrierten `main` noch durchführen. Dabei den offenen
+2FA-Testbedarf ausdrücklich als wartende Folgeumsetzung erhalten. Nach belegtem
+Abschluss diesen Prüfauftrag aus dem Plan und TODO entfernen; die Stitch-Entscheidung
+bleibt davon unabhängig offen. Echte Anbieter-/Geräte-Sonderfälle stehen weiterhin
+im [manuellen Katalog](../manual-tests/README.md#hum-08).
+
+## Separate Folgeumsetzungen
+
+Die [2FA-Bestätigung](zwei-faktor-bestaetigung.md) ist als nächste separate Umsetzung
+vereinbart. Die akzeptierte Google-Sitzungsschwäche bleibt bis zur passenden Ablösung
+in [BUGS.md](../../BUGS.md) erhalten. Sie gehört nicht zur jetzigen Sonar-Bereinigung.
+Der [Vaadin-Komponentenabgleich](vaadin-komponenten-abgleich.md) bleibt ebenfalls eine
+separate spätere Umsetzung. Keine neuen Bausteinumbauten aus der Integration ableiten.

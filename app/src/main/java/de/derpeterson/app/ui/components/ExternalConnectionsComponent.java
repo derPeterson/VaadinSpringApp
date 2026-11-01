@@ -2,31 +2,42 @@ package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.badge.Badge;
+import com.vaadin.flow.component.badge.BadgeVariant;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.function.SerializableRunnable;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.events.LanguageChangeEvent;
+import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.ExternalLoginFlow.Purpose;
+import de.derpeterson.app.security.ExternalProviderSettings;
 import de.derpeterson.app.service.ExternalIdentityService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.util.List;
 
-/** Zweckgebundene Bestätigung und Verwaltung der verbundenen Anbieter im Kontobereich. */
+/** Anbieterübersicht mit kontextbezogener, zweckgebundener Bestätigung der Kontoaktionen. */
 @StyleSheet("custom-theme/cosmos-external-login.css")
 public final class ExternalConnectionsComponent extends Div {
+  private static final String LINK_RETURN =
+      ExternalConnectionsComponent.class.getName() + ".linkReturn";
   private final transient ExternalLoginFlow flow;
   private final transient ExternalIdentityService identities;
   private final transient HttpServletRequest request;
   private final transient MessageProperties texts;
+  private final Div overview = new Div();
+  private final ExternalIdentityConfirmationDialog confirmation;
+  private SerializableRunnable passwordAction;
+  private SerializableRunnable emailAction;
+  private SerializableRunnable showProviders = () -> {};
 
   public ExternalConnectionsComponent(
       ExternalLoginFlow flow,
@@ -37,153 +48,161 @@ public final class ExternalConnectionsComponent extends Div {
     this.identities = identities;
     this.request = request;
     this.texts = texts;
+    confirmation = new ExternalIdentityConfirmationDialog(flow, identities, request, texts);
     setId("account-external-connections");
     addClassName("account-external-connections");
-    ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> render());
-    render();
+    overview.addClassName("external-connections-overview");
+    EqualButtonWidths.configure(overview);
+    add(overview);
+    ComponentUtil.addListener(
+        UI.getCurrent(), LanguageChangeEvent.class, event -> refreshAccount());
+    refreshAccount();
   }
 
-  private void render() {
-    removeAll();
-    UserEntity user = flow.owner(request);
-    List<String> connected = identities.connected(user.getId());
-    if (flow.providers().isEmpty() && connected.isEmpty()) {
-      setVisible(false);
-      return;
-    }
-    add(new H3(texts.getExternalConnections()));
-    Span hint = new Span(texts.getExternalProofHint());
-    hint.addClassName("cosmos-panel-description");
-    add(hint);
-    ComboBox<Purpose> purpose = new ComboBox<>(texts.getExternalAction());
-    purpose.setId("external-security-action");
-    purpose.setItems(Purpose.values());
-    purpose.setItemLabelGenerator(this::label);
-    purpose.setValue(flow.confirmedPurpose(request).orElse(Purpose.PASSWORD));
-    purpose.setWidthFull();
-    PortalFields.styleChoice(purpose, this::label, true);
-    add(purpose);
-    Span result = new Span();
-    result.setId("external-security-result");
-    if (flow.confirmedPurpose(request).isPresent()) {
-      result.setText(texts.getExternalProofReady());
-    }
-    add(result);
-    if (user.getPassword() != null) {
-      PasswordField password = new PasswordField(texts.getAccountPasswordDialogCurrentPassword());
-      password.setId("external-confirm-password");
-      password.setWidthFull();
-      password.setPlaceholder(texts.getAccountPasswordPlaceholder());
-      Button confirm =
-          new Button(
-              texts.getExternalProof(),
-              AppIcon.CHECK.create(),
-              event -> {
-                try {
-                  flow.confirmPassword(request, password.getValue(), purpose.getValue());
-                  result.setText(texts.getExternalProofReady());
-                } catch (RuntimeException failure) {
-                  error();
-                } finally {
-                  password.clear();
-                }
-              });
-      confirm.setId("external-confirm-local");
-      add(password, confirm);
-    }
-    for (String provider : connected) {
-      if (!flow.providers().contains(provider)) {
-        continue;
-      }
-      String brand = brand(provider);
-      Button proof =
-          new Button(
-              texts.getExternalProofWith(brand),
-              AppIcon.SIGN_IN.create(),
-              event -> {
-                try {
-                  UI.getCurrent()
-                      .getPage()
-                      .setLocation(
-                          flow.beginProof(
-                              request,
-                              provider,
-                              purpose.getValue(),
-                              VaadinSession.getCurrent().getLocale()));
-                } catch (RuntimeException failure) {
-                  error();
-                }
-              });
-      proof.setId("external-confirm-" + provider);
-      add(proof);
-    }
-    for (String provider : flow.providers()) {
-      Button action =
-          new Button(
-              connected.contains(provider)
-                  ? texts.getExternalDisconnect(brand(provider))
-                  : texts.getExternalConnect(brand(provider)));
-      action.setId("external-connect-" + provider);
-      action.setPrefixComponent(
-          (connected.contains(provider) ? AppIcon.SIGN_OUT : AppIcon.SIGN_IN).create());
-      action.setEnabled(
-          !connected.contains(provider)
-              || user.getPassword() != null
-              || connected.stream()
-                  .anyMatch(other -> !other.equals(provider) && flow.providers().contains(other)));
-      action.addClickListener(
-          event -> {
-            try {
-              if (connected.contains(provider)) {
-                UserEntity owner = flow.owner(request);
-                flow.authorize(request, owner, ExternalLoginFlow.unlinkPurpose(provider), true);
-                identities.unlink(owner.getId(), owner.getAccessVersion(), provider);
-                UI.getCurrent().getPage().setLocation("/login");
-              } else {
-                UI.getCurrent()
-                    .getPage()
-                    .setLocation(
-                        flow.beginLink(request, provider, VaadinSession.getCurrent().getLocale()));
+  public void configureAccountActions(
+      SerializableRunnable passwordAction,
+      SerializableRunnable emailAction,
+      SerializableRunnable showProviders) {
+    this.passwordAction = passwordAction;
+    this.emailAction = emailAction;
+    this.showProviders = showProviders;
+    // Nach der Rückkehr vom Anbieter sichtbar fortsetzen, nie automatisch trennen.
+    UI.getCurrent()
+        .beforeClientResponse(
+            confirmation,
+            context -> {
+              HttpSession session = request.getSession(false);
+              if (session != null && Boolean.TRUE.equals(session.getAttribute(LINK_RETURN))) {
+                session.removeAttribute(LINK_RETURN);
+                showProviders.run();
               }
-            } catch (RuntimeException failure) {
-              error();
-            }
-          });
-      add(action);
-    }
-    Span note = new Span(texts.getExternalDisconnectHint());
-    note.addClassName("cosmos-panel-description");
-    add(note);
+              confirmation.consumeProviderReturn().ifPresent(this::requestAction);
+            });
+  }
+
+  public ExternalIdentityConfirmationDialog getConfirmationDialog() {
+    return confirmation;
+  }
+
+  public void requestPasswordChange() {
+    requestAction(Purpose.PASSWORD);
+  }
+
+  public void requestEmailChange() {
+    requestAction(Purpose.EMAIL);
   }
 
   public void refreshAccount() {
-    render();
-  }
-
-  private String label(Purpose purpose) {
-    if (purpose == null) {
-      return "";
+    overview.removeAll();
+    UserEntity user = flow.owner(request);
+    List<String> connected = identities.connected(user.getId());
+    List<String> available = flow.providers();
+    overview.setVisible(!available.isEmpty() || !connected.isEmpty());
+    for (String provider : ExternalProviderSettings.PROVIDERS) {
+      if (available.contains(provider) || connected.contains(provider)) {
+        overview.add(providerRow(provider, user, connected, available));
+      }
     }
-    return switch (purpose) {
-      case PASSWORD -> texts.getExternalPasswordSetup();
-      case EMAIL -> texts.getAccountSettingsChangeEmail();
-      case LINK_GOOGLE -> texts.getExternalConnect("Google");
-      case LINK_MICROSOFT -> texts.getExternalConnect("Microsoft");
-      case UNLINK_GOOGLE -> texts.getExternalDisconnect("Google");
-      case UNLINK_MICROSOFT -> texts.getExternalDisconnect("Microsoft");
-    };
+    confirmation.refreshTexts();
   }
 
-  private String brand(String provider) {
-    return provider.equals("google") ? "Google" : "Microsoft";
+  private Div providerRow(
+      String provider, UserEntity user, List<String> connected, List<String> available) {
+    boolean linked = connected.contains(provider);
+    String brand = provider.equals("google") ? "Google" : "Microsoft";
+    Image logo =
+        new Image(
+            "icons/external-login/" + provider + (provider.equals("google") ? ".png" : ".svg"), "");
+    logo.getElement().setAttribute("aria-hidden", "true");
+    Div icon = new Div(logo);
+    icon.addClassName("cosmos-panel-icon");
+    Badge state =
+        new Badge(linked ? texts.getExternalConnected() : texts.getExternalNotConnected());
+    if (linked) {
+      state.addThemeVariants(BadgeVariant.SUCCESS);
+    }
+    Div heading = new Div(new Span(brand), state);
+    heading.addClassName("external-connection-heading");
+    boolean lastMethod =
+        linked
+            && user.getPassword() == null
+            && connected.stream()
+                .noneMatch(other -> !other.equals(provider) && available.contains(other));
+    String detail;
+    if (!available.contains(provider)) {
+      detail = texts.getExternalProviderUnavailable();
+    } else if (lastMethod) {
+      detail = texts.getExternalLastMethod();
+    } else {
+      detail = linked ? texts.getExternalConnectedHint() : texts.getExternalNotConnectedHint();
+    }
+    Span explanation = new Span(detail);
+    explanation.addClassName("account-entry-description");
+    Div copy = new Div(heading, explanation);
+    copy.addClassNames("external-connection-copy", "account-entry-copy");
+    Button action =
+        new Button(linked ? texts.getExternalDisconnect(brand) : texts.getExternalConnect(brand));
+    action.setId("external-connect-" + provider);
+    action.setPrefixComponent((linked ? AppIcon.SIGN_OUT : AppIcon.SIGN_IN).create());
+    action.setClassName(CosmosClasses.DELETE_BUTTON, linked);
+    action.setEnabled(!lastMethod);
+    action.addClickListener(
+        event ->
+            requestAction(
+                linked
+                    ? ExternalLoginFlow.unlinkPurpose(provider)
+                    : ExternalLoginFlow.linkPurpose(provider)));
+    Div row = new Div(icon, copy, action);
+    row.addClassNames("external-connection-row", "account-entry");
+    return row;
   }
 
-  private void error() {
-    NotificationHelper.getInstance()
-        .showNotification(
-            texts::getBaseFailedTitle,
-            texts::getExternalError,
-            -1,
-            NotificationHelper.NotificationType.ERROR);
+  private void requestAction(Purpose purpose) {
+    SerializableRunnable action =
+        switch (purpose) {
+          case PASSWORD -> passwordAction;
+          case EMAIL -> emailAction;
+          case LINK_GOOGLE -> () -> link("google");
+          case LINK_MICROSOFT -> () -> link("microsoft");
+          case UNLINK_GOOGLE -> () -> unlink("google");
+          case UNLINK_MICROSOFT -> () -> unlink("microsoft");
+        };
+    if (action == null) {
+      return;
+    }
+    boolean accountChange = purpose == Purpose.PASSWORD || purpose == Purpose.EMAIL;
+    if (!accountChange) {
+      showProviders.run();
+    }
+    boolean confirmed = flow.confirmedPurpose(request).filter(purpose::equals).isPresent();
+    UserEntity user = flow.owner(request);
+    boolean providerProofAvailable =
+        identities.connected(user.getId()).stream().anyMatch(flow.providers()::contains);
+    if (!confirmed && user.getPassword() == null && !providerProofAvailable) {
+      NotificationHelper.getInstance()
+          .showNotification(
+              texts::getExternalProofUnavailable, NotificationHelper.NotificationType.WARNING);
+      return;
+    }
+    if (accountChange && (confirmed || user.getPassword() != null && !providerProofAvailable)) {
+      // Lokale Konten behalten den bestehenden Änderungsdialog mit Passwortprüfung.
+      action.run();
+    } else {
+      confirmation.open(purpose, action);
+    }
+  }
+
+  private void link(String provider) {
+    String destination = flow.beginLink(request, provider, VaadinSession.getCurrent().getLocale());
+    // Nur die Ansichtsposition merken, keinen Anmeldenachweis oder eine weitere Aktion.
+    request.getSession(false).setAttribute(LINK_RETURN, true);
+    UI.getCurrent().getPage().setLocation(destination);
+  }
+
+  private void unlink(String provider) {
+    UserEntity user = flow.owner(request);
+    flow.authorize(request, user, ExternalLoginFlow.unlinkPurpose(provider), true);
+    identities.unlink(user.getId(), user.getAccessVersion(), provider);
+    UI.getCurrent().getPage().setLocation("/login");
   }
 }

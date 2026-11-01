@@ -41,6 +41,9 @@ Konfiguration in den obigen Fachdokumenten.
 Der [aktive Umsetzungsplan](planung/google-microsoft-anmeldung.md) beschreibt die
 Google-/Microsoft-Anmeldung und freiwillige Angaben zu Geschlecht/Geburtsdatum.
 Die Umsetzung ist isoliert geprüft. Die noch offene gemeinsame Abnahme steht im Plan.
+Die [2FA-Bestätigung](planung/zwei-faktor-bestaetigung.md) ist als nächste separate
+Umsetzung vorgesehen. Sie soll die in [BUGS.md](../BUGS.md) dokumentierte Schwäche
+der ausdrücklich akzeptierten Google-Zwischenlösung bei eingerichteter 2FA ablösen.
 Weitere bewertete Möglichkeiten stehen in der
 [Entscheidungsvorlage für Portal-Erweiterungen](planung/portal-erweiterungen.md).
 Die [Vaadin-Komponentenprüfung](planung/vaadin-komponenten-abgleich.md) enthält die

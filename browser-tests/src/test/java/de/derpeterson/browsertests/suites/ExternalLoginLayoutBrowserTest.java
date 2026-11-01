@@ -12,8 +12,11 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.BoundingBox;
+import com.microsoft.playwright.options.ScreenshotAnimations;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.pages.AdminUserDialog;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Allure;
@@ -30,6 +33,205 @@ import org.junit.jupiter.params.provider.CsvSource;
 @Tag("browser")
 @Feature("Externe Anmeldung")
 public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
+  @ParameterizedTest
+  @CsvSource({"1280", "390"})
+  @DisplayName(
+      "OIDC-12: Anbieterzeilen und Kontobestätigung verwenden die bestehenden Dialogflächen")
+  void contextualAccountDialogMatchesReference(int width) {
+    page.setViewportSize(width, 900);
+    LoginPage login = new LoginPage(page);
+    login.open();
+    login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    page.navigate("/account?tab=security");
+    Locator securityTabs = page.locator("#account-security-tabs");
+    assertThat(securityTabs.getByRole(AriaRole.TAB)).hasCount(2);
+    Locator portalTab = page.locator("#account-security-tab-portal");
+    Locator providersTab = page.locator("#account-security-tab-providers");
+    assertThat(portalTab).hasText(texts.getAccountSecurityPortalAccess());
+    assertThat(providersTab).hasText(texts.getProviderSettingsPanelTitle());
+    assertThat(portalTab).hasAttribute("selected", "");
+    assertThat(page.locator("#account-security-portal .account-security-hint")).isVisible();
+    assertThat(page.locator("#account-password-edit-security")).isVisible();
+    // Auch nach einem vorherigen Anbieter-/Adminaufruf darf die zuletzt geladene
+    // Kontogestaltung die Anbieteraktionen nicht auf die schmale Änderungsbreite begrenzen.
+    page.evaluate(
+        """
+        async () => {
+          const href = [...document.styleSheets].map(sheet => sheet.href)
+            .find(href => href?.includes('/cosmos-account.css'));
+          if (!href) throw new Error('Account stylesheet not found');
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = href;
+          const loaded = new Promise((resolve, reject) => {
+            link.onload = resolve;
+            link.onerror = reject;
+          });
+          document.head.append(link);
+          await loaded;
+        }
+        """);
+    attachPanels("Kontosicherheit: Portalzugang bei " + width + " px");
+    portalTab.focus();
+    portalTab.press("End");
+    assertThat(providersTab).isFocused();
+    providersTab.press("Space");
+    assertThat(providersTab).hasAttribute("selected", "");
+    assertThat(page.locator("#account-security-portal .account-security-hint")).isHidden();
+    assertThat(page.locator("#account-password-edit-security")).isHidden();
+    assertThat(page.locator("#external-security-action")).hasCount(0);
+    assertThat(page.locator(".external-connection-row vaadin-badge")).hasCount(2);
+    Locator connectionBadge = page.locator(".external-connection-row vaadin-badge").first();
+    assertThat(connectionBadge).hasCSS("border-radius", "4px");
+    assertThat(connectionBadge).hasCSS("border-top-width", "1px");
+    assertThat(connectionBadge).hasCSS("font-size", "10px");
+    assertThat(connectionBadge).hasCSS("font-weight", "500");
+    assertThat(connectionBadge).hasCSS("color", "rgb(56, 189, 248)");
+    assertThat(page.locator(".external-connection-row").first())
+        .hasCSS("background-color", "rgb(9, 17, 32)");
+    assertThat(portalTab.locator("img")).hasCSS("width", "20px");
+    assertThat(providersTab.locator("vaadin-icon")).hasCSS("width", "20px");
+    Locator google = page.locator("#external-connect-google");
+    Locator microsoft = page.locator("#external-connect-microsoft");
+    page.waitForCondition(
+        () -> Math.abs(google.boundingBox().width - microsoft.boundingBox().width) < 1);
+    assertTrue(
+        microsoft.boundingBox().width > 110,
+        "Anbieteraktionen erhalten ihre eigene natürliche Breite statt der Änderungsbreite");
+    for (Locator button : List.of(google, microsoft)) {
+      assertTrue(
+          (Boolean)
+              button
+                  .locator("[part=label]")
+                  .evaluate("label => label.scrollWidth <= label.clientWidth + 1"),
+          "Der gesamte Anbietertext bleibt sichtbar");
+    }
+    double bothWidth = google.boundingBox().width;
+    Locator microsoftRow = microsoft.locator("xpath=..");
+    microsoftRow.evaluate("row => row.style.display = 'none'");
+    page.waitForCondition(() -> google.boundingBox().width < bothWidth - 1);
+    assertTrue(
+        (Boolean)
+            google
+                .locator("[part=label]")
+                .evaluate("label => label.scrollWidth <= label.clientWidth + 1"));
+    microsoftRow.evaluate("row => row.style.removeProperty('display')");
+    page.waitForCondition(
+        () -> Math.abs(google.boundingBox().width - microsoft.boundingBox().width) < 1);
+    assertTrue((Boolean) page.evaluate("document.documentElement.scrollWidth <= innerWidth"));
+    attachPanels("Kontosicherheit: Anbieterübersicht bei " + width + " px");
+    page.locator("#external-connect-google").click();
+    Locator dialog = page.locator("#external-identity-dialog");
+    Locator content = dialog.locator("vaadin-dialog-overlay [part=content]");
+    assertThat(content).hasCSS("background-color", "rgb(5, 8, 17)");
+    assertThat(page.locator("#external-confirm-password input")).hasCSS("font-size", "12px");
+    assertThat(dialog.locator(".account-change-dialog-header .cosmos-panel-icon img"))
+        .hasAttribute("src", "icons/external-login/google.png");
+    assertDynamicTextWidths(dialog.locator(".cosmos-dialog-actions"));
+    attachPanels("Kontosicherheit: stabiler Bestätigungsdialog bei " + width + " px");
+    BoundingBox bounds = dialog.locator("vaadin-dialog-overlay > [part~=overlay]").boundingBox();
+    assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= width);
+    page.keyboard().press("Escape");
+    assertThat(dialog).hasJSProperty("opened", false);
+
+    page.navigate("/admin");
+    new AdminUsersPage(page).open();
+    AdminUserDialog editor = new AdminUsersPage(page).openCreate();
+    assertDynamicTextWidths(editor.root().locator(".cosmos-dialog-actions"));
+    editor.cancel();
+
+    page.navigate(
+        Path.of("docs/design/frontend-referenzen/portal.html").toAbsolutePath().toUri()
+            + "#security");
+    page.locator("[data-portal-page=security]").evaluate("element => element.blur()");
+    assertThat(page.locator("#security-portal")).isVisible();
+    assertThat(page.locator("#security-providers")).isHidden();
+    attachPanels("HTML-Referenz: Portalzugang bei " + width + " px");
+    page.locator("#security-tab-portal").focus();
+    page.locator("#security-tab-portal").press("End");
+    assertThat(page.locator("#security-tab-providers")).isFocused();
+    page.locator("#security-tab-providers").press("Space");
+    assertThat(page.locator("#security-portal")).isHidden();
+    assertThat(page.locator("#security-providers")).isVisible();
+    Locator referenceBadge = page.locator(".external-connection-state").first();
+    assertThat(referenceBadge).hasCSS("border-radius", "4px");
+    assertThat(referenceBadge).hasCSS("border-top-width", "1px");
+    assertThat(referenceBadge).hasCSS("font-size", "10px");
+    assertThat(referenceBadge).hasCSS("font-weight", "500");
+    assertThat(referenceBadge).hasCSS("color", "rgb(52, 211, 153)");
+    assertThat(page.locator(".external-connection-row").first())
+        .hasCSS("background-color", "rgb(9, 17, 32)");
+    attachPanels("HTML-Referenz: Anbieterübersicht bei " + width + " px");
+    page.locator("[data-external-provider=google]").click();
+    Locator reference = page.locator("#externalIdentityDialog");
+    assertThat(reference.locator(".portal-modal-body")).hasCSS("background-color", "rgb(5, 8, 17)");
+    assertThat(page.locator("#externalProofPassword")).hasCSS("font-size", "12px");
+    assertDynamicTextWidths(reference.locator(".portal-modal-foot"));
+    assertThat(reference.locator(".external-proof-separator"))
+        .hasCSS("text-transform", "uppercase");
+    assertThat(reference.locator(".portal-hint > svg")).hasCSS("color", "rgb(56, 189, 248)");
+    page.locator("#externalProofPassword").focus();
+    page.mouse().move(1, 1);
+    attachPanels("HTML-Referenz: Bestätigungsdialog bei " + width + " px");
+    assertTrue((Boolean) page.evaluate("document.documentElement.scrollWidth <= innerWidth"));
+    page.keyboard().press("Escape");
+    assertThat(reference).isHidden();
+  }
+
+  private void assertDynamicTextWidths(Locator group) {
+    group.evaluate(
+        """
+        async element => {
+          const animations = new Set();
+          for (let node = element; node; node = node.parentElement || node.getRootNode().host) {
+            node.getAnimations?.().forEach(animation => animations.add(animation));
+          }
+          await Promise.all([...animations]
+            .filter(animation => animation.effect?.getComputedTiming().endTime !== Infinity)
+            .map(animation => animation.finished.catch(() => {})));
+        }
+        """);
+    Locator buttons = group.locator("vaadin-button,button");
+    page.waitForCondition(
+        () ->
+            (Boolean)
+                buttons
+                    .nth(0)
+                    .evaluate(
+                        "button => button.style.getPropertyPriority('width') === 'important'"));
+    page.waitForCondition(
+        () ->
+            Math.abs(buttons.nth(0).boundingBox().width - buttons.nth(1).boundingBox().width) < 1);
+    double original = buttons.nth(0).boundingBox().width;
+    assertTrue(original < 200, "Textbuttons erhalten keine feste 200-px-Breite");
+    group.evaluate(
+        """
+        root => {
+          const extra = document.createElement('button');
+          extra.dataset.widthProbe = 'text';
+          extra.textContent = 'Synthetic action with a much longer caption';
+          extra.hidden = true;
+          const icon = document.createElement('button');
+          icon.dataset.widthProbe = 'icon';
+          icon.setAttribute('aria-label', 'Synthetic icon action');
+          icon.style.width = '32px';
+          root.append(extra, icon);
+        }
+        """);
+    assertEquals(original, buttons.nth(0).boundingBox().width, 1);
+    assertEquals(32, group.locator("[data-width-probe=icon]").boundingBox().width, 1);
+    Locator extra = group.locator("[data-width-probe=text]");
+    extra.evaluate("button => button.hidden = false");
+    page.waitForCondition(() -> buttons.nth(0).boundingBox().width > original + 20);
+    extra.evaluate("button => button.style.display = 'none'");
+    page.waitForCondition(() -> Math.abs(buttons.nth(0).boundingBox().width - original) < 1);
+    assertEquals(32, group.locator("[data-width-probe=icon]").boundingBox().width, 1);
+    group
+        .locator("[data-width-probe]")
+        .evaluateAll("buttons => buttons.forEach(button => button.remove())");
+  }
+
   @ParameterizedTest
   @CsvSource({"1280", "390"})
   @DisplayName("OIDC-10: Native Anbietertabs erhalten ungespeicherte Eingaben")
@@ -490,7 +692,11 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     Allure.attachment(
         title,
         "image/png",
-        new ByteArrayInputStream(page.screenshot(new Page.ScreenshotOptions().setFullPage(true))),
+        new ByteArrayInputStream(
+            page.screenshot(
+                new Page.ScreenshotOptions()
+                    .setFullPage(true)
+                    .setAnimations(ScreenshotAnimations.DISABLED))),
         AttachmentOptions.empty());
   }
 

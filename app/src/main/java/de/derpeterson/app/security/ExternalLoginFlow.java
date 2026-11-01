@@ -42,6 +42,27 @@ public class ExternalLoginFlow {
     PROOF
   }
 
+  public enum ProofProblem {
+    FRESH_AUTHENTICATION_REQUIRED,
+    IDENTITY_MISMATCH,
+    UNAVAILABLE
+  }
+
+  public static final class ProofRejected extends AccessDeniedException {
+    private final ProofProblem problem;
+
+    public ProofRejected(ProofProblem problem) {
+      super(problem.name());
+      this.problem = problem;
+    }
+
+    public ProofProblem problem() {
+      return problem;
+    }
+  }
+
+  public static final String ERROR_PARAMETER = "external_error";
+
   public record Attempt(
       String provider,
       Mode mode,
@@ -222,12 +243,18 @@ public class ExternalLoginFlow {
       if (attempt.mode() == Mode.LINK) {
         identities.link(user.getId(), attempt.accessVersion(), evidence);
       } else {
-        Instant authenticated = evidence.authenticatedAt();
-        if (!identities.belongsTo(user.getId(), evidence)
-            || authenticated == null
-            || authenticated.isBefore(attempt.started().minusSeconds(5))
-            || authenticated.isAfter(clock.instant().plusSeconds(30))) {
-          throw new AccessDeniedException("Fresh provider authentication required");
+        if (!identities.belongsTo(user.getId(), evidence)) {
+          throw new ProofRejected(ProofProblem.IDENTITY_MISMATCH);
+        }
+        // Freigegebene Google-Zwischenlösung: Ein neuer OIDC-Durchlauf bestätigt das Konto,
+        // aber keine erneute Passworteingabe. Diese bekannte Schwäche muss später 2FA ablösen.
+        if (!attempt.provider().equals("google")) {
+          Instant authenticated = evidence.authenticatedAt();
+          if (authenticated == null
+              || authenticated.isBefore(attempt.started().minusSeconds(5))
+              || authenticated.isAfter(clock.instant().plusSeconds(30))) {
+            throw new ProofRejected(ProofProblem.FRESH_AUTHENTICATION_REQUIRED);
+          }
         }
         session.setAttribute(
             GRANT,

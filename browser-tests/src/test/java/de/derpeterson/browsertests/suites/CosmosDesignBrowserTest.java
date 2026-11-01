@@ -35,6 +35,7 @@ import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Story;
 import io.qameta.allure.playwright.AllurePlaywright;
+import java.nio.file.Path;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -339,7 +340,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
       """
       1. Als Superadmin bei Desktop- bzw. schmaler Breite anmelden.
       2. Alle drei Kontotabs öffnen und die Mitte des Infoicons mit der sichtbaren Hinweiszeile vergleichen.
-      3. Alle acht Konfigurationsgruppen über die native Navigation öffnen und denselben Footer-Vertrag prüfen.
+      3. Alle Konfigurationsgruppen über die native Navigation öffnen und denselben Footer-Vertrag prüfen.
       4. Mail-Test und Benachrichtigungsversand öffnen: Footer- und Versandhinweise ebenfalls vertikal mittig.
       Erwartet: Ein- und mehrzeilige Texte behalten ein mittig ausgerichtetes Infoicon; keine Datenänderung oder Sendung.
       """)
@@ -380,9 +381,9 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
   }
 
   @ParameterizedTest(name = "COSMOS-07: Gemeinsamer Seitenrahmen bei {0}px")
-  @ValueSource(ints = {1280, 390})
+  @ValueSource(ints = {2560, 1280, 390})
   @Description(
-      "Servicekopf bleibt beim Scrollen stehen. Bereichskopf und Seitennavigation scrollen mit dem Inhalt. Feldhilfe respektiert den sichtbaren Copyrightfooter.")
+      "Servicekopf bleibt beim Scrollen stehen. Bereichskopf und Seitennavigation scrollen mit dem Inhalt. Feldhilfe und Benutzerfilter bleiben am rechten Inhaltsrand und respektieren den sichtbaren Copyrightfooter.")
   void sharedFrameScrollsContentAndKeepsTheServiceHeader(int width) {
     LoginPage login = new LoginPage(page);
     login.open();
@@ -417,6 +418,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     settings.info(texts.getAdminConfigEntryMailHost()).click();
     Locator overlay = page.locator("#admin-config-help vaadin-dialog-overlay > [part~='overlay']");
     assertThat(overlay).isVisible();
+    assertDrawerAtContentEdge(overlay, width);
     com.microsoft.playwright.options.BoundingBox bounds = overlay.boundingBox();
     assertTrue(bounds.y >= header.boundingBox().height - 1);
     com.microsoft.playwright.options.BoundingBox footer =
@@ -427,7 +429,58 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
           "Die Hilfe darf den sichtbaren Copyrightfooter nicht überdecken.");
     }
     settings.closeHelp();
+    AdminUsersPage users = new AdminUsersPage(page);
+    users.open();
+    users.openFilters();
+    Locator filter =
+        page.locator("#admin-user-filter-panel vaadin-dialog-overlay > [part~='overlay']");
+    assertThat(filter).isVisible();
+    assertDrawerAtContentEdge(filter, width);
+    if (width == 2560) {
+      page.setViewportSize(1280, 600);
+      assertDrawerAtContentEdge(filter, 1280);
+      page.setViewportSize(2560, 600);
+      assertDrawerAtContentEdge(filter, 2560);
+    }
+    page.keyboard().press("Escape");
     AllurePlaywright.attachScreenshot("Gemeinsamer scrollender Seitenrahmen", page);
+    page.navigate(
+        Path.of("docs/design/frontend-referenzen/admin.html").toAbsolutePath().toUri().toString());
+    Locator mobileNavigation = page.locator("#mobileMenuBtn");
+    if (mobileNavigation.isVisible()) {
+      mobileNavigation.click();
+    }
+    page.locator("[data-admin-route=settings]").click();
+    page.keyboard().press("Escape");
+    page.locator(".hc-trigger").first().click();
+    assertDrawerAtContentEdge(page.locator("#configurationHelp"), width);
+    AllurePlaywright.attachScreenshot("HTML-Feldhilfe am Inhaltsrand", page);
+    page.keyboard().press("Escape");
+    if (mobileNavigation.isVisible()) {
+      mobileNavigation.click();
+    }
+    page.locator("[data-admin-route=users]").click();
+    page.keyboard().press("Escape");
+    page.locator("#filterToggle").click();
+    assertDrawerAtContentEdge(page.locator("#filterPanel"), width);
+    AllurePlaywright.attachScreenshot("HTML-Benutzerfilter am Inhaltsrand", page);
+    page.keyboard().press("Escape");
+  }
+
+  private void assertDrawerAtContentEdge(Locator overlay, int width) {
+    page.waitForCondition(
+        () -> {
+          com.microsoft.playwright.options.BoundingBox content =
+              page.locator(".cosmos-admin-sections, main .au-layout").boundingBox();
+          com.microsoft.playwright.options.BoundingBox drawer = overlay.boundingBox();
+          double right =
+              width >= 1024
+                  ? content.x + content.width
+                  : ((Number) page.evaluate("document.body.getBoundingClientRect().right"))
+                      .doubleValue();
+          return drawer != null && Math.abs(drawer.x + drawer.width - right) < 2;
+        });
+    assertTrue(overlay.boundingBox().x >= 0, "Die Seitenleiste bleibt im sichtbaren Bereich");
   }
 
   private void assertHintCentered(Locator hint) {

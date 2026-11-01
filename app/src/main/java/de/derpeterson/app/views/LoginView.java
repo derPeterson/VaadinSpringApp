@@ -18,6 +18,8 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.router.AfterNavigationEvent;
+import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -71,7 +73,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 @PageTitle(AppRouteConstants.LOGIN_PAGE_TITLE)
 @AnonymousAllowed
 @StyleSheet("custom-theme/cosmos-account.css")
-public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
+public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
+    implements AfterNavigationObserver {
   private static final String LOGIN_ERROR_UNAVAILABLE = "unavailable";
   private static final String LOGIN_ERROR_SESSIONS = "sessions";
   private static final String LOGIN_ERROR_INVALID = "invalid";
@@ -414,6 +417,13 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
     }
     if (sessions.hasRecovery(currentRequest)) {
       showRecovery();
+    }
+  }
+
+  @Override
+  public void afterNavigation(AfterNavigationEvent event) {
+    // Auch Fehler aus externen Anmeldungen benötigen den bereits angehängten Public-Rahmen.
+    if (recoveryArea.isVisible()) {
       return;
     }
     List<String> errors = event.getLocation().getQueryParameters().getParameters().get("error");

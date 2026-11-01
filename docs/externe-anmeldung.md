@@ -124,7 +124,7 @@ Einstieg wird auf einen konkreten UUID-Mandanten mit passendem Issuer aufgelöst
 
 Anbieter, Issuer und Subject identifizieren eine externe Anmeldung. Eine gleiche
 E-Mail-Adresse verknüpft niemals automatisch ein bestehendes Konto. Dazu zuerst
-im bestehenden Konto anmelden und unter **Sicherheit → Verbundene Anmeldungen**
+im bestehenden Konto anmelden und unter **Sicherheit → Anmeldeanbieter**
 den zusätzlichen Anbieter bewusst verbinden.
 
 Bei einer neuen externen Registrierung werden Namen und Kontaktadresse bestätigt
@@ -141,14 +141,99 @@ Anbieterzugriffs- und Refresh-Tokens werden nicht aufbewahrt. Die Portalabmeldun
 beendet keine Sitzung beim Anbieter. Eine spätere Sperre beim Anbieter wird beim nächsten
 Anbieternachweis geprüft, nicht fortlaufend während einer bestehenden Portalsitzung.
 
-Für Passwort-/E-Mail-Änderungen und Verknüpfungen zuerst die konkrete Sicherheitsaktion
-auswählen und die Identität mit dem vorhandenen Portalpasswort oder einem bereits
-verbundenen Anbieter erneut bestätigen. Der Nachweis ist fünf Minuten gültig, an
+Das Sicherheitspanel trennt „Portalzugang“ mit Passwort, E-Mail und Zugangsdatenhinweis
+vom Tab „Anmeldeanbieter“. Dieser zeigt je Anbieter Verbindung und passende
+Aktion. „Verbinden“ oder „Trennen“ öffnet die dafür nötige Identitätsbestätigung.
+Passwort-/E-Mail-Änderungen behalten ihre vorhandenen Schaltflächen. Ein bereits
+verbundener Anbieter kann auch diese Aktionen bestätigen; lokale Konten ohne
+Anbieterverbindung verwenden weiterhin die Passwortprüfung im Änderungsdialog.
+Eine allgemeine Sicherheitsaktionsauswahl ist nicht erforderlich. Nach Rückkehr
+vom Anbieter wird die gewählte Aktion wieder aufgenommen, eine Trennung aber nie
+automatisch ausgeführt. Der Nachweis ist fünf Minuten gültig, an
 Konto, Sitzung, Zugangsversion und Zweck gebunden und wird bei Verwendung verbraucht.
-Eine alte Anbietersitzung allein genügt nicht: Ein frischer `auth_time`-Nachweis ist
-erforderlich. Liefert ein Anbieter diesen nicht, bleibt die Änderung gesperrt.
+Microsoft muss einen frischen `auth_time`-Nachweis liefern. Für Google ist als
+bewusst schwächere Zwischenlösung ein neuer OIDC-Durchlauf mit demselben bereits
+verbundenen Konto freigegeben. Dabei kann eine bestehende Google-Sitzung genügen.
+Die Unterschiede und die geplante 2FA-Ablösung stehen im folgenden Abschnitt.
 Die vorhandene Wiederherstellung über die bestätigte Portaladresse bleibt nutzbar.
 Ein eigenes Portalpasswort kann freiwillig eingerichtet werden.
+
+Auch bei vollständig deaktivierten Anbietern bleiben vorhandene Verbindungen
+in der Kontosicherheit sichtbar. Die Anbieterzeile erklärt, dass der Anmeldeweg
+derzeit nicht verfügbar ist. Ein vorhandenes Portalpasswort kann weiterhin
+Sicherheitsaktionen bestätigen. Ohne Portalpasswort, verfügbaren verbundenen
+Anbieter oder bereits gültigen zweckgebundenen Nachweis bleibt die Aktion
+gesperrt. Statt nach einem nicht vorhandenen Passwort zu fragen, weist die
+Oberfläche auf die fehlende Bestätigungsmöglichkeit und die Administration hin.
+Die letzte nutzbare Anmeldung bleibt geschützt. Die Deaktivierung löscht keine
+Anbieterzuordnung und beendet keine bestehende Portalsitzung.
+
+### Google-Zwischenlösung und bekannte Sicherheitsschwäche
+
+Google unterstützt laut [Anbieterdokumentation](https://developers.google.com/identity/siwg/security-bundle#authentication_time)
+keine Anforderung einer erneuten aktiven Google-Anmeldung. Kontoauswahl und
+Zustimmung erzwingen keine neue Passwort- oder MFA-Eingabe. Der optionale
+Sitzungsclaim `auth_time` beschreibt die Google-Anmeldung und nicht die Ausgabe
+eines neuen Tokens an unser Portal. Seine Freischaltung löst diese Grenze nicht.
+
+**Ausdrücklich akzeptierter Übergangsvertrag:** Der Benutzer startet für eine
+konkrete Sicherheitsaktion einen neuen Google-OIDC-Durchlauf. Google zeigt die
+Kontoauswahl und Zustimmung. Nur die signierte Antwort des bereits verbundenen
+Kontos darf die Aktion freigeben. Google benötigt dafür keinen `auth_time`-Claim;
+ein fehlender oder alter Google-Anmeldezeitpunkt wird akzeptiert. Wir fordern
+dafür weder `max_age=0` noch einen zusätzlichen Sitzungsclaim an und geben den
+Token-Ausgabezeitpunkt nicht als aktive Neuanmeldung aus. Die normale externe
+Registrierung benötigt weiterhin kein zusätzliches Portalpasswort.
+
+State, Nonce, PKCE, Signatur-, Issuer-, Audience- und Tokenzeitprüfungen bleiben
+erhalten. Der offene Vorgang ist auf fünf Minuten begrenzt. Konto, Zugangsversion,
+bestehende lokale Anmeldung und freigegebener Anbieter werden erneut geprüft.
+Der Nachweis gilt nur für die gewählte Aktion und Sitzung, höchstens fünf Minuten
+und einmalig. Kontowechsel, Abbruch und ungültige Antworten erlauben keine Änderung.
+Eine Anbietertrennung erfolgt auch nach erfolgreicher Bestätigung nicht automatisch.
+
+**Verbleibendes Risiko:** Wer nur die Portalsitzung besitzt, benötigt zusätzlich
+Zugriff auf das verbundene Google-Konto. Wer dagegen die offene Portal- und
+Google-Sitzung verwenden kann, etwa am unbeaufsichtigten Rechner oder mit beiden
+übernommenen Sitzungen, kann den Durchlauf ohne neue aktive Identitätsprüfung
+abschließen. Diese Lockerung ist als [offene Sicherheitsschwäche](../BUGS.md)
+dokumentiert und kein gleichwertiger Ersatz für eine frische Anmeldung oder 2FA.
+
+**Nächste separate Umsetzung:** Eine sicher eingerichtete Authenticator-Bestätigung
+(TOTP) soll bei Benutzern mit eingerichteter 2FA für sensible Aktionen verbindlich
+werden. Der Google-Durchlauf und das Portalpasswort allein dürfen sie dann nicht
+umgehen. Geschützte Erstregistrierung, Faktorwechsel, Verlust und Wiederherstellung
+gehören dazu. Für bestehende Google-only-Konten muss ein geeigneter Einrichtungsweg
+festgelegt werden. Der [Lösungsplan](planung/zwei-faktor-bestaetigung.md) beschreibt
+die offenen Schritte. 2FA ist derzeit noch nicht implementiert.
+
+Microsoft behält die bisherige strengere Bestätigung: `prompt=login`, `max_age=0`
+und angeforderter `auth_time`-Claim. Ein fehlender Zeitpunkt, ein Zeitpunkt vor
+Beginn des Vorgangs abzüglich fünf Sekunden Uhrtoleranz oder mehr als 30 Sekunden
+in der Zukunft führt zur Ablehnung. Eine Google-Ausnahme gilt niemals für Microsoft.
+Fehlschläge beider Anbieter führen bei bestehender Portalsitzung zur Kontosicherheit
+mit passender Fehlermeldung zurück. Sie starten keine neue Registrierung.
+
+### Welche Kontoaktionen möglich sind
+
+Die ursprüngliche Registrierung bestimmt die Anmeldewege nicht dauerhaft.
+Maßgeblich sind die aktuell gespeicherten und freigegebenen Zugänge.
+
+| Aktueller Zugang | Portalpasswort | Weitere Anbieter | Anbieter trennen |
+| --- | --- | --- | --- |
+| Nur Portalpasswort | Mit aktuellem Passwort ändern. | Google und Microsoft nach Passwortbestätigung verbinden. | Erst nach einer Verbindung relevant. |
+| Nur Google oder nur Microsoft | Freiwillig nach Anbieterbestätigung einrichten. Für Google gilt die dokumentierte Zwischenlösung, für Microsoft der frische Nachweis. | Den anderen Anbieter nach Bestätigung des bestehenden Zugangs verbinden. | Die letzte nutzbare Anmeldung bleibt geschützt. |
+| Google und Microsoft ohne Portalpasswort | Nach Bestätigung eines verbundenen Anbieters gemäß dessen Nachweisvertrag einrichten. | Beide Verbindungen sind bereits vorhanden. | Möglich, wenn der andere Anbieter weiterhin freigegeben ist. |
+| Portalpasswort und mindestens ein Anbieter | Mit aktuellem Passwort oder Anbieterbestätigung gemäß dessen Nachweisvertrag ändern. | Den noch fehlenden Anbieter bewusst verbinden. | Nach Identitätsbestätigung möglich, das Portalpasswort bleibt als Zugang erhalten. |
+
+Die Portal-E-Mail-Adresse kann in allen Fällen nach Identitätsbestätigung geändert
+werden. Erst der Link an die neue Adresse übernimmt die Änderung. Das ändert weder
+die E-Mail-Adresse beim Anbieter noch dessen gespeicherte Identitätszuordnung.
+Nach bestätigter E-Mail-Änderung oder Anbietertrennung werden Portalsitzungen und
+gespeicherte Anmeldungen widerrufen. Ein Passwortwechsel behält die aktuelle Sitzung
+und widerruft die übrigen Zugänge sowie gespeicherte Anmeldungen.
+Eine Anbieteridentität darf nur einem Portalkonto zugeordnet sein. Gleiche
+E-Mail-Adressen führen weder zur Zusammenführung noch zu zusätzlichen Rechten.
 
 Die letzte Anmeldemöglichkeit kann nicht getrennt werden. Trennen eines Anbieters
 widerruft bestehende Portalsitzungen und gespeicherte Anmeldungen. Kontosperre, lokale

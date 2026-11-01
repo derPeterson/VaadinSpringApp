@@ -12,9 +12,12 @@
     const height=window.innerHeight;
     const header=document.querySelector('header').getBoundingClientRect();
     const footer=document.querySelector('footer').getBoundingClientRect();
+    const content=document.querySelector('main .au-layout').getBoundingClientRect();
+    const right=window.innerWidth>=1024?Math.max(0,document.body.getBoundingClientRect().right-content.right):0;
     const visibleFooter=Math.max(0,Math.min(height,footer.bottom)-Math.max(0,footer.top));
     drawer.style.setProperty('--filter-drawer-top',`${Math.min(height,Math.max(0,header.bottom))}px`);
     drawer.style.setProperty('--filter-drawer-bottom',`${visibleFooter}px`);
+    drawer.style.setProperty('--filter-drawer-right',`${right}px`);
   }
   function close(restoreFocus=true){
     if(!drawer.open){return;}

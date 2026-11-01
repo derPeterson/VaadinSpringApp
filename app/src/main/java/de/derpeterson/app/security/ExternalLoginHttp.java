@@ -33,6 +33,7 @@ public class ExternalLoginHttp {
   private final ExternalLoginProperties properties;
   private final ExternalLoginFlow flow;
   private final ExternalProviderSettings settings;
+  private final SecurityService security;
 
   public void configure(HttpSecurity http) {
     OidcUserService userService = new OidcUserService();
@@ -75,21 +76,38 @@ public class ExternalLoginHttp {
                       flow.complete(request, response, authentication);
                     } catch (RuntimeException failure) {
                       log.warn(
-                          "External sign-in completion failed", LogSafety.safeFailure(failure));
-                      fail(request, response);
+                          "External sign-in completion failed: reason={}",
+                          proofProblem(failure),
+                          LogSafety.safeFailure(failure));
+                      fail(request, response, failure);
                     }
                   })
               .failureHandler(
                   (request, response, failure) -> {
                     log.warn("External sign-in was rejected", LogSafety.safeFailure(failure));
-                    fail(request, response);
+                    fail(request, response, failure);
                   });
         });
   }
 
-  private void fail(HttpServletRequest request, HttpServletResponse response) throws IOException {
+  private void fail(
+      HttpServletRequest request, HttpServletResponse response, RuntimeException failure)
+      throws IOException {
+    boolean localAccount = security.getAuthenticatedUser(request).isPresent();
     flow.cancel(request);
-    response.sendRedirect("/external-registration?error=external");
+    response.sendRedirect(
+        localAccount
+            ? "/account?tab=security&"
+                + ExternalLoginFlow.ERROR_PARAMETER
+                + "="
+                + proofProblem(failure).name()
+            : "/external-registration?error=external");
+  }
+
+  private ExternalLoginFlow.ProofProblem proofProblem(RuntimeException failure) {
+    return failure instanceof ExternalLoginFlow.ProofRejected rejected
+        ? rejected.problem()
+        : ExternalLoginFlow.ProofProblem.UNAVAILABLE;
   }
 
   private final class Resolver implements OAuth2AuthorizationRequestResolver {
@@ -123,10 +141,13 @@ public class ExternalLoginHttp {
       return OAuth2AuthorizationRequest.from(authorization)
           .additionalParameters(
               parameters -> {
-                parameters.put("max_age", "0");
-                parameters.put("claims", "{\"id_token\":{\"auth_time\":{\"essential\":true}}}");
-                parameters.put(
-                    "prompt", id.equals("microsoft") ? "login" : "select_account consent");
+                if (id.equals("google")) {
+                  parameters.put("prompt", "select_account consent");
+                } else {
+                  parameters.put("max_age", "0");
+                  parameters.put("claims", "{\"id_token\":{\"auth_time\":{\"essential\":true}}}");
+                  parameters.put("prompt", "login");
+                }
               })
           .build();
     }

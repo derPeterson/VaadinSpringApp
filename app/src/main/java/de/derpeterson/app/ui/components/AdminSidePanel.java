@@ -49,7 +49,7 @@ public class AdminSidePanel extends Dialog {
     description.setVisible(!text.isBlank());
   }
 
-  /** Reserviert nur den tatsächlich sichtbaren Copyrightbereich, auch nach Scrollen/Resize. */
+  /** Bindet die Leiste an den Seiteninhalt und hält sichtbaren Kopf/Copyrightbereich frei. */
   private void updateBounds() {
     getElement()
         .executeJs(
@@ -62,11 +62,15 @@ public class AdminSidePanel extends Dialog {
               const layout = document.querySelector('vaadin-app-layout.cosmos-reference-admin');
               const header = layout?.querySelector('.cosmos-topbar')?.getBoundingClientRect();
               const footer = layout?.querySelector('.cosmos-footer')?.getBoundingClientRect();
+              const content = layout?.querySelector('.cosmos-admin-sections')?.getBoundingClientRect();
+              const viewportWidth = document.documentElement.clientWidth;
               const height = window.innerHeight;
               const top = Math.min(height, Math.max(0, header?.bottom ?? 65));
               const bottom = footer ? Math.max(0, Math.min(height, footer.bottom) - Math.max(0, footer.top)) : 0;
+              const right = window.innerWidth >= 1024 && content ? Math.max(0, viewportWidth - content.right) : 0;
               drawer.style.setProperty('--admin-drawer-top', top + 'px');
               drawer.style.setProperty('--admin-drawer-bottom', bottom + 'px');
+              drawer.style.setProperty('--admin-drawer-right', right + 'px');
             };
             const stop = () => {
               window.removeEventListener('resize', update);

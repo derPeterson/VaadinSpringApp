@@ -24,10 +24,14 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.function.DeploymentConfiguration;
 import com.vaadin.flow.internal.CurrentInstance;
+import com.vaadin.flow.router.AfterNavigationEvent;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.Location;
 import com.vaadin.flow.router.Router;
 import com.vaadin.flow.server.RouteRegistry;
 import com.vaadin.flow.server.VaadinContext;
@@ -157,6 +161,55 @@ class LoginSessionRecoveryTest {
         config,
         sessions,
         mock(de.derpeterson.app.security.ExternalLoginFlow.class));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"invalid", "maintenance", "sessions", "throttled", "unavailable"})
+  void navigationFailureUsesTheAttachedPublicTheme(String reason) {
+    ui.remove(view);
+    Location location = new Location("login?error=" + reason);
+    BeforeEnterEvent before = mock(BeforeEnterEvent.class);
+    when(before.getLocation()).thenReturn(location);
+    view.beforeEnter(before);
+    NotificationHelper helper = NotificationHelper.getInstance();
+    assertFalse(
+        ((Notification) ReflectionTestUtils.getField(helper, "currentNotification")).isOpened());
+    ui.add(view);
+    AfterNavigationEvent after = mock(AfterNavigationEvent.class);
+    when(after.getLocation()).thenReturn(location);
+    view.afterNavigation(after);
+    Notification notice =
+        (Notification) ReflectionTestUtils.getField(helper, "currentNotification");
+    assertTrue(notice.isOpened());
+    assertTrue(notice.getElement().getThemeList().contains("cosmos-reference-error"));
+    Supplier<String> message =
+        (Supplier<String>) ReflectionTestUtils.getField(helper, "messageSupplier");
+    String expected =
+        switch (reason) {
+          case "maintenance" -> messages.getMaintenanceLoginMessage();
+          case "sessions" -> messages.getLoginSessionLimitMessage();
+          case "throttled" -> messages.getLoginThrottledMessage();
+          case "unavailable" -> messages.getLoginUnavailableMessage();
+          default -> messages.getLoginFailedMessage();
+        };
+    assertEquals(expected, message.get());
+  }
+
+  @Test
+  void recoveryKeepsPriorityOverAnErrorInTheRedirectUrl() {
+    when(sessions.hasRecovery(request)).thenReturn(true);
+    Location location = new Location("login?error=sessions");
+    BeforeEnterEvent before = mock(BeforeEnterEvent.class);
+    when(before.getLocation()).thenReturn(location);
+    view.beforeEnter(before);
+    AfterNavigationEvent after = mock(AfterNavigationEvent.class);
+    when(after.getLocation()).thenReturn(location);
+    view.afterNavigation(after);
+    assertTrue(field("recoveryArea", Div.class).isVisible());
+    Notification notice =
+        (Notification)
+            ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
+    assertFalse(notice.isOpened());
   }
 
   private Button button(String id) {

@@ -21,6 +21,7 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.server.streams.UploadEvent;
 import com.vaadin.flow.server.streams.UploadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
@@ -159,6 +160,7 @@ public class AccountAvatarDialog extends Dialog {
     save.addClickListener(event -> submit());
     Div actions = new Div(cancel, save);
     actions.addClassName("cosmos-dialog-actions");
+    EqualButtonWidths.configure(actions);
     Div footer = new Div(delete, actions);
     footer.addClassName("account-avatar-footer");
     getFooter().add(footer);

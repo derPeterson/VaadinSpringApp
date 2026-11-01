@@ -23,6 +23,7 @@ import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.QueryParameters;
+import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.i18n.UserNotificationTexts;
@@ -937,6 +938,7 @@ public class UserNotificationsPanel extends Div {
     primary.addClassName("cosmos-notification-detail-primary");
     Div actions = new Div(tools, primary);
     actions.addClassNames("cosmos-dialog-actions", "cosmos-notification-detail-actions");
+    EqualButtonWidths.configure(actions);
     detail.getFooter().add(actions);
   }
 }

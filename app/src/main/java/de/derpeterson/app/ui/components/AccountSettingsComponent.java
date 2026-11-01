@@ -10,10 +10,14 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.sidenav.SideNavItem;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.component.tabs.TabSheetVariant;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.function.SerializableConsumer;
@@ -81,6 +85,9 @@ public class AccountSettingsComponent extends PortalPageComponent {
   private final AccountEmailChangeDialog emailChangeDialog;
   private final AccountPasswordChangeDialog passwordChangeDialog;
   private ExternalConnectionsComponent externalConnections;
+  private final TabSheet securityTabs = new TabSheet();
+  private final Div providerAccess = new Div();
+  private Tab providersTab;
   private final AccountAvatarDialog avatarDialog;
   private final DatePicker birthDate = new DatePicker();
   private final ComboBox<Locale> preferredLanguage = new ComboBox<>();
@@ -151,7 +158,14 @@ public class AccountSettingsComponent extends PortalPageComponent {
     Button button = actionButton(AppIcon.EDIT, messages::getAccountSettingsChangeAction, false);
     button.setId(id);
     textUpdates.add(() -> button.setAriaLabel(messages.getAccountSettingsChangeEmail()));
-    button.addClickListener(event -> emailChangeDialog.open());
+    button.addClickListener(
+        event -> {
+          if (externalConnections == null) {
+            emailChangeDialog.open();
+          } else {
+            externalConnections.requestEmailChange();
+          }
+        });
     return button;
   }
 
@@ -159,7 +173,14 @@ public class AccountSettingsComponent extends PortalPageComponent {
     Button button = actionButton(AppIcon.EDIT, messages::getAccountSettingsChangeAction, false);
     button.setId("account-password-edit-security");
     textUpdates.add(() -> button.setAriaLabel(messages.getAccountSettingsChangePassword()));
-    button.addClickListener(event -> passwordChangeDialog.open());
+    button.addClickListener(
+        event -> {
+          if (externalConnections == null) {
+            passwordChangeDialog.open();
+          } else {
+            externalConnections.requestPasswordChange();
+          }
+        });
     return button;
   }
 
@@ -402,9 +423,8 @@ public class AccountSettingsComponent extends PortalPageComponent {
             messages::getAccountSettingsSecurityDescription,
             messages::getAccountSettingsSecurityTab);
     panel.setIcon(AppIcon.LOCK.create());
-    panel
-        .getBody()
-        .add(
+    Div cards =
+        new Div(
             actionRow(
                 AppIcon.LOCK,
                 messages::getRegistrationPasswordField,
@@ -415,7 +435,32 @@ public class AccountSettingsComponent extends PortalPageComponent {
                 messages::getAccountEmailAddressLabel,
                 () -> user == null ? "" : Objects.toString(user.getEmail(), ""),
                 emailChangeButton("account-email-edit-security")));
-    panel.addFooter(text(new Span(), messages::getAccountSettingsAccountHint), new Span());
+    cards.addClassName("account-security-cards");
+    Div hint =
+        new Div(
+            AppIcon.INFO_CIRCLE.create(),
+            text(new Span(), messages::getAccountSettingsAccountHint));
+    hint.addClassNames("cosmos-panel-hint", "account-security-hint");
+    Div portalAccess = new Div(cards, hint);
+    portalAccess.setId("account-security-portal");
+    providerAccess.setId("account-security-providers");
+    Span unavailable = text(new Span(), messages::getAccountSecurityNoProviders);
+    unavailable.addClassNames("cosmos-panel-description", "account-security-empty");
+    providerAccess.add(unavailable);
+    Image logo = new Image("icons/service-logo.svg", "");
+    logo.getElement().setAttribute("aria-hidden", "true");
+    Tab portalTab = new Tab(logo, text(new Span(), messages::getAccountSecurityPortalAccess));
+    portalTab.setId("account-security-tab-portal");
+    providersTab =
+        new Tab(
+            AppIcon.CLOUD_LOCK.create(), text(new Span(), messages::getProviderSettingsPanelTitle));
+    providersTab.setId("account-security-tab-providers");
+    securityTabs.setId("account-security-tabs");
+    securityTabs.setWidthFull();
+    securityTabs.addThemeVariants(TabSheetVariant.NO_PADDING);
+    securityTabs.add(portalTab, portalAccess);
+    securityTabs.add(providersTab, providerAccess);
+    panel.getBody().add(securityTabs);
     return panel;
   }
 
@@ -507,6 +552,13 @@ public class AccountSettingsComponent extends PortalPageComponent {
     passwordChangeDialog.setCurrentPasswordRequired(passwordRequired);
     emailChangeDialog.setCurrentPasswordRequired(emailPasswordRequired);
     externalConnections = connections;
-    panels.get(AccountSection.SECURITY).getBody().add(connections);
+    // Der Bestätigungsdialog muss auch vom Portal-Tab aus bedienbar bleiben.
+    add(connections.getConfirmationDialog());
+    connections.configureAccountActions(
+        passwordChangeDialog::open,
+        emailChangeDialog::open,
+        () -> securityTabs.setSelectedTab(providersTab));
+    providerAccess.removeAll();
+    providerAccess.add(connections);
   }
 }

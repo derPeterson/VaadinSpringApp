@@ -18,6 +18,8 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.sidenav.SideNavItem;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.function.SerializableFunction;
@@ -35,6 +37,7 @@ import java.time.LocalDate;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,6 +87,13 @@ class AccountSettingsComponentTest {
   }
 
   private Stream<Component> tree(Component component) {
+    if (component instanceof TabSheet tabs) {
+      return Stream.concat(
+          Stream.of(tabs),
+          IntStream.range(0, tabs.getTabCount())
+              .mapToObj(tabs::getTabAt)
+              .flatMap(tab -> Stream.concat(tree(tab), tree(tabs.getComponent(tab)))));
+    }
     return Stream.concat(Stream.of(component), component.getChildren().flatMap(this::tree));
   }
 
@@ -134,6 +144,17 @@ class AccountSettingsComponentTest {
     Button emailAction = (Button) byId("account-email-edit-security");
     assertEquals(texts.getAccountSettingsChangeAction(), emailAction.getText());
     assertEquals(texts.getAccountSettingsChangeEmail(), emailAction.getAriaLabel().orElseThrow());
+    TabSheet tabs = (TabSheet) byId("account-security-tabs");
+    assertEquals(byId("account-security-tab-portal"), tabs.getSelectedTab());
+    assertEquals(
+        texts.getAccountSecurityPortalAccess(),
+        byId("account-security-tab-portal").getElement().getTextRecursively());
+    tabs.setSelectedTab((Tab) byId("account-security-tab-providers"));
+    content.refreshTexts();
+    assertEquals(byId("account-security-tab-providers"), tabs.getSelectedTab());
+    assertEquals(
+        texts.getProviderSettingsPanelTitle(),
+        byId("account-security-tab-providers").getElement().getTextRecursively());
     assertEquals("Alex", ((TextField) byId("account-first-name")).getValue());
     verifyNoInteractions(saver);
   }

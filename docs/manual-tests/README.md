@@ -251,8 +251,15 @@ Testpostfach verwenden. Keine bestehenden Entwicklerkonten als Fixture benutzen.
 3. Zum bestehenden Konto anmelden und einen weiteren Anbieter bewusst verknüpfen.
    Gleiche Kontaktadressen allein dürfen kein bestehendes Konto öffnen.
 4. Eine konkrete Sicherheitsaktion auswählen und den verbundenen Anbieter erneut bestätigen.
-   Kontrollieren, dass der Anbieter einen frischen `auth_time`-Nachweis liefert. Ohne diesen
-   bleibt die Aktion gesperrt. Kontowechsel beim Anbieter darf keinen fremden Nachweis ergeben.
+   Microsoft muss einen frischen `auth_time`-Nachweis liefern. Ohne diesen bleibt
+   die Aktion gesperrt. Bei Google gilt die ausdrücklich akzeptierte
+   [Zwischenlösung](../externe-anmeldung.md#google-zwischenlösung-und-bekannte-sicherheitsschwäche):
+   Ein neuer Durchlauf mit dem bereits verbundenen Konto darf auch bei bestehender
+   Google-Sitzung ohne neue Passwortabfrage bestätigen. Die sichtbare Kontoauswahl
+   und Zustimmung sind kein Nachweis einer aktiven Neuanmeldung.
+   Kontowechsel beim Anbieter darf keinen fremden Nachweis ergeben. Bei Ablehnung
+   muss die Kontosicherheit mit passender Fehlermeldung erscheinen, keine Registrierung.
+   Die bekannte Sitzungsschwäche bleibt bis zur nächsten 2FA-Umsetzung offen.
 5. Optional ein Portalpasswort einrichten, erneutes Anmelden und bewusste gespeicherte Anmeldung
    prüfen. Einen weiteren Anbieter trennen und die letzte Anmeldemöglichkeit geschützt lassen.
 6. DE/EN, Desktop und Smartphone sowie Darstellungs-/Tastaturverhalten der Anbieterbuttons

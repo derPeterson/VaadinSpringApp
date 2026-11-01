@@ -71,12 +71,20 @@ public class MessageTexts {
     return getTranslation("external.error");
   }
 
-  public String getExternalVerifyEmail() {
-    return getTranslation("external.verify.email");
+  public String getExternalProofFreshRequired() {
+    return getTranslation("external.proof.fresh_required");
   }
 
-  public String getExternalConnections() {
-    return getTranslation("external.connections");
+  public String getExternalProofIdentityMismatch() {
+    return getTranslation("external.proof.identity_mismatch");
+  }
+
+  public String getExternalProofUnavailable() {
+    return getTranslation("external.proof.unavailable");
+  }
+
+  public String getExternalVerifyEmail() {
+    return getTranslation("external.verify.email");
   }
 
   public String getExternalConnect(String provider) {
@@ -85,10 +93,6 @@ public class MessageTexts {
 
   public String getExternalDisconnect(String provider) {
     return getFormattedTranslation("external.disconnect", provider);
-  }
-
-  public String getExternalAction() {
-    return getTranslation("external.action");
   }
 
   public String getExternalProof() {
@@ -113,6 +117,42 @@ public class MessageTexts {
 
   public String getExternalDisconnectHint() {
     return getTranslation("external.disconnect.hint");
+  }
+
+  public String getAccountSecurityPortalAccess() {
+    return getTranslation("account.security.portalAccess");
+  }
+
+  public String getAccountSecurityNoProviders() {
+    return getTranslation("account.security.noProviders");
+  }
+
+  public String getExternalConnected() {
+    return getTranslation("external.connected");
+  }
+
+  public String getExternalNotConnected() {
+    return getTranslation("external.notConnected");
+  }
+
+  public String getExternalConnectedHint() {
+    return getTranslation("external.connected.hint");
+  }
+
+  public String getExternalNotConnectedHint() {
+    return getTranslation("external.notConnected.hint");
+  }
+
+  public String getExternalLastMethod() {
+    return getTranslation("external.lastMethod");
+  }
+
+  public String getExternalProviderUnavailable() {
+    return getTranslation("external.providerUnavailable");
+  }
+
+  public String getExternalContinueAction() {
+    return getTranslation("external.continueAction");
   }
 
   public String getExternalDraftExpired() {

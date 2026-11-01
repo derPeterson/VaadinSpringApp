@@ -11,6 +11,23 @@ Entwurfsvarianten, Generatoren, Vergleichsviewer und Hintergrundauswahlen entfal
 Der feste Kosmoshintergrund bleibt erhalten. Bei ausdrücklich beauftragten
 Designänderungen wird nur die betroffene Referenz mitgezogen.
 
+Textbuttons zusammengehöriger Dialogaktionen verwenden `EqualButtonWidths.configure`
+am vorhandenen nativen Layoutcontainer. `equal-button-widths.js` lädt über den
+Anwendungskontext und misst nur sichtbare Beschriftungen einschließlich Präfix,
+Padding und Rahmen. Die größte natürliche Breite gilt für die sichtbaren Textbuttons
+dieser Gruppe. Versteckte oder entfernte Buttons und reine Iconbuttons zählen nicht.
+Bei Sprachwechsel, geändertem Text, Sichtbarkeit oder verfügbarer Breite wird neu
+gemessen. Öffnungsanimationen verfälschen die Layoutmessung nicht. Die Aktionsleisten
+brechen bei Platzmangel um. Die Referenzen verwenden eine identische lokale Kopie
+unter `assets/equal-button-widths.js`; beide Dateien gemeinsam aktualisieren.
+
+Anbieterlogos in der Identitätsbestätigung haben eigene Klassen direkt am Bild:
+`external-proof-provider-mark` für die Aktionsbuttons und
+`external-proof-heading-mark` für den Dialogkopf. Die Regeln liegen in
+`cosmos-external-login.css`, das die Kontoroute ausdrücklich einbindet, auch beim
+direkten Seitenaufruf. Die Iconregeln benötigen keinen Vorfahren außerhalb des
+nativen Dialoginhalts, da dessen Darstellung die Komponentengrenze überschreitet.
+
 Feldicons sind neutral in Ruhe, heller bei Hover, Cyan bei Fokus oder geöffnetem
 Picker und gedämpft bei Disabled. Dies betrifft Feldaktionen, keine normalen
 Aktionsbuttonicons. Beschriftete Formularfelder haben keine dekorativen
@@ -342,6 +359,9 @@ Seitenrahmen, einschließlich verschachtelter Inhalte. Zuständig ist
 die gesicherte Symbolzuordnung und eine eigene `.cosmos-toast-title` ohne Kollision
 mit Nachrichtenbuttons. Supplier-Sprachwechsel, Anzeigedauer und Fensterisolation
 bleiben erhalten.
+Rückmeldungen aus URL-Parametern werden nach abgeschlossener Navigation geöffnet,
+damit bei direkten Aufrufen und Anbieter-Rücksprüngen bereits der Zielrahmen die
+Palette bestimmt. Das gilt für Sicherheitsbestätigungen und Anmeldefehler.
 
 Texte kommen aus Shared-`MessageTexts` und den DE-/EN-Ressourcen. Geschlecht ist
 ein echtes Pflichtfeld im bestehenden Profilvertrag, ohne neue Datenbankspalte
@@ -567,6 +587,10 @@ Platzhalter mit Erklärung vor dem Standardwert. Vertrauliche Standardwerte blei
 verdeckt. Die Feldhilfe ist bis zu 380 px breit. Der Schließen-Button füllt die Footerbreite. Header und sichtbarer
 Copyrightbereich begrenzen die Leiste; beim Scrollen und bei Größenänderung werden
 die Grenzen aktualisiert. Ein nicht sichtbarer Seitenfooter reserviert keinen Abstand.
+Feldhilfe und Benutzerfilter enden auf Desktop am rechten Rand der Inhaltsspalte,
+auch auf breiten Bildschirmen. Dafür misst `AdminSidePanel` die aktuelle Inhaltskante
+und setzt `--admin-drawer-right`. Unterhalb der Desktopnavigation bleibt der Rand
+am Viewport. Die HTML-Referenz verwendet entsprechend `--filter-drawer-right`.
 Es gibt keine behauptete Livevalidierung oder Speicherung durch die Hilfe.
 Pflichtpunkte folgen der tatsächlichen Leerwertprüfung; Integer-Leerwerte mit
 Standardwert-/Unbegrenzt-Vertrag bleiben optional. Infoaktionen stehen außerhalb
@@ -806,8 +830,9 @@ keine sichtbare Übernahme. Die letzten Prüfungen stehen im [aktuellen Stand](s
 
 Der Textblock im Admin-Dashboard übernimmt die Canvasfarbe der HTML-Referenz
 (`--cosmos-reference-page`). Konfigurationsaktionen stehen über eine vollbreite
-Trennlinie getrennt und verwenden zwei gleich breite Spalten (maximal 200 px je
-Button), bis 600 px jeweils volle Breite untereinander. Der Mailtest erlaubt
+Trennlinie getrennt. Dialogaktionen verwenden den gemeinsamen Größenabgleich der
+sichtbaren Textbuttons und brechen bei wenig Platz um. Konfigurationsaktionen
+behalten ihre eigene responsive Anordnung. Der Mailtest erlaubt
 über `resize:vertical` am nativen TextArea-Host das manuelle Vergrößern des
 Eingabefelds einschließlich Label. Die Mindesthöhe beträgt 168 px. Der sichtbare
 Klartexthinweis steht außerhalb, damit der Griff direkt an der Eingabekante sitzt.
@@ -934,6 +959,36 @@ Die Zeitvorschau und der tatsächliche Filterwert bleiben davon unberührt.
 
 `ExternalLoginButtons` ergänzt die vorhandenen Anmelde-/Registrierungspanels.
 `ExternalConnectionsComponent` verwaltet Anbieter im bestehenden Sicherheitspanel.
+Das Sicherheitspanel gliedert seine Inhalte mit einem nativen `TabSheet` in
+„Portalzugang“ (Service-Logo, Passwort, E-Mail, Zugangsdatenhinweis) und
+„Anmeldeanbieter“ (Cloud-Lock, Google/Microsoft). Die Tabs übernehmen lokal in
+`cosmos-account.css` dieselbe Form wie die Anbieterkonfiguration. Der normale
+Seiteninhalt wächst mit; ein eigener Scrollbereich entfällt. Portalzugang ist
+anfangs ausgewählt. Beide Tabs behalten ihre Komponenten beim Umschalten.
+Google/Microsoft verwenden denselben Sicherheitskartenstil wie Passwort und E-Mail
+mit Markenlogo, nativem `Badge`, Verbindung und passender Aktion. Die allgemeine
+Aktionsauswahl und das dauerhaft sichtbare Passwortfeld entfallen.
+Die Anbieterbuttons gleichen ihre natürliche Breite ausschließlich untereinander an.
+Die schmale „Ändern“-Breite des Portalzugangs gilt nicht für diese Karten.
+Das gemeinsame Kartenraster verwendet deshalb eine automatische Aktionsspalte.
+Eine später geladene Kontogestaltung darf die Anbieteraktionen nicht begrenzen.
+Verbindungsbadges übernehmen den kompakten Kontostil mit Rahmen, kleinen Ecken und
+derselben Schriftstufe. Verbundene Anbieter sind grün, nicht verbundene blau.
+Service- und Cloud-Lock-Symbole in den Kontotabs sind lokal 20 px groß, um ihre
+schlankeren Motive gegenüber den gefüllten Markenlogos auszugleichen.
+`ExternalIdentityConfirmationDialog` ist ein nativer `Dialog` im vorhandenen
+Kontodialogstil. Er liegt außerhalb der Tabinhalte, damit ein inaktiver Tab seine
+Bedienung nicht sperrt. Er bestätigt die konkret gewählte Aktion mit Portalpasswort oder
+einem bereits verbundenen, verfügbaren Anbieter. Nach externer Bestätigung werden
+Passwort-/E-Mail-Dialoge wieder geöffnet; beim Verbinden/Trennen bleibt die letzte
+Aktion ausdrücklich zu bestätigen. Die letzte nutzbare Anmeldung bleibt geschützt.
+Verbinden/Trennen zeigt das Dienstlogo im Dialogkopf. Fehler verwenden die vorhandene
+Pflichtfeld-/Kontosicherheitsmeldung als Notification und markieren nur das betroffene
+Feld rot. Ein zusätzlicher Fehlertext unter dem Passwortfeld entfällt. Der Trenner
+„ODER“ verwendet Großbuchstaben, Gewicht 600 und die Secondary-Textfarbe.
+Nur die Anordnung von Zeilen, Anbieterlogos und Bestätigungsalternativen wird lokal
+gestaltet. Die HTML-Referenz zeigt denselben Ablauf mit synthetischen Zuständen und
+ihren bestehenden Dialogbausteinen, ohne echte Konten oder Anmeldungen zu verändern.
 Ihre lokalen Regeln liegen in `cosmos-external-login.css`. Die vorhandenen globalen
 Feld-, Dialog- und Buttonregeln bleiben die Grundlage. Anbieterbuttons verwenden
 die offiziellen Google-/Microsoft-Markenressourcen unter `icons/external-login/`

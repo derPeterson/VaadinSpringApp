@@ -56,10 +56,13 @@
     const viewportHeight = window.innerHeight;
     const header = document.querySelector('header').getBoundingClientRect();
     const footer = document.querySelector('footer').getBoundingClientRect();
+    const content = document.querySelector('main .au-layout').getBoundingClientRect();
+    const right = window.innerWidth >= 1024 ? Math.max(0,document.body.getBoundingClientRect().right-content.right) : 0;
     // Nur tatsächlich sichtbare Footerfläche freihalten, nicht die Höhe unterhalb des Viewports.
     const visibleFooter = Math.max(0,Math.min(viewportHeight,footer.bottom)-Math.max(0,footer.top));
     drawer.style.setProperty('--filter-drawer-top',`${Math.min(viewportHeight,Math.max(0,header.bottom))}px`);
     drawer.style.setProperty('--filter-drawer-bottom',`${visibleFooter}px`);
+    drawer.style.setProperty('--filter-drawer-right',`${right}px`);
   };
   const close = (cancel = true) => {
     if (!drawer.open) { return; }

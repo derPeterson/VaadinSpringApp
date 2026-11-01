@@ -29,7 +29,7 @@
 /* Gemeinsame Aktionsbreite fuer Passwort und E-Mail, auch bei Sprachwechsel.
  * Auf schmalen Displays bleibt der Button innerhalb seiner Textspalte. */
 
-.cosmos-account #account-panel-security .account-entry > vaadin-button {
+.cosmos-account #account-panel-security .account-entry:not(.external-connection-row) > vaadin-button {
     width: 180px;
     max-width: 100%;
 }
@@ -641,13 +641,13 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 /* Sicherheitskarten und echte Geräte-/Sitzungsdaten. */
 .cosmos-reference-portal #account-panel-security > .cosmos-panel-header { padding: 24px; }
 .cosmos-reference-portal #account-panel-security > .account-panel-body { display: grid; gap: 16px; padding: 24px; }
-.cosmos-reference-portal #account-panel-security .account-entry { grid-template-columns: 36px minmax(0, 1fr) 110px; gap: 16px; padding: 20px; margin: 0; border: 1px solid var(--cosmos-reference-border); border-radius: 10px; background: var(--cosmos-reference-input); }
+.cosmos-reference-portal #account-panel-security .account-entry { grid-template-columns: 36px minmax(0, 1fr) auto; gap: 16px; padding: 20px; margin: 0; border: 1px solid var(--cosmos-reference-border); border-radius: 10px; background: var(--cosmos-reference-input); }
 .cosmos-reference-portal #account-panel-security .account-entry > .cosmos-panel-icon { width: 36px; height: 36px; border-radius: 10px; }
 .cosmos-reference-portal #account-panel-security .account-entry > .cosmos-panel-icon > vaadin-icon { width: 20px; height: 20px; }
 .cosmos-reference-portal #account-panel-security .account-entry-title { font: 600 13px/19.5px Inter, sans-serif; }
 .cosmos-reference-portal #account-panel-security .account-entry-description { margin-top: 6px; font: 400 11px/1.75 Inter, sans-serif; }
 .cosmos-reference-portal #account-panel-security .account-email-security-entry .account-entry-description { color: var(--cosmos-reference-white); }
-.cosmos-reference-portal #account-panel-security .account-entry > vaadin-button { width: 110px; }
+.cosmos-reference-portal #account-panel-security .account-entry:not(.external-connection-row) > vaadin-button { width: 110px; }
 .cosmos-reference-portal :is(#account-panel-security, #account-panel-sessions) > .cosmos-panel-footer { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 0; background: var(--cosmos-reference-panel); }
 .cosmos-reference-portal :is(#account-panel-security, #account-panel-sessions) .cosmos-panel-hint { display: flex; align-items: center; gap: 10px; padding: 18px 24px; color: var(--cosmos-reference-secondary); font: 400 11px/1.8 Inter, sans-serif; }
 .cosmos-reference-portal :is(#account-panel-security, #account-panel-sessions) .cosmos-panel-hint > vaadin-icon { width: 17px; height: 17px; flex-shrink: 0; margin: 0; color: var(--cosmos-reference-accent); }
@@ -753,3 +753,25 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-upload-icon > vaadin-icon { width: 22px; height: 22px; }
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-upload-title { font: 600 14px/20px Inter, sans-serif; }
 .account-avatar-dialog.cosmos-reference-overlay #account-avatar-choose .account-avatar-helper { font: 400 11px/18px Inter, sans-serif; }
+
+/* Native Kontotabs: dieselbe Tabform wie bei der Anbietereinrichtung, lokal begrenzt. */
+.cosmos-reference-portal #account-panel-security > .cosmos-panel-header { border-bottom:0; }
+.cosmos-reference-portal #account-panel-security > .account-panel-body { display:block;padding:0; }
+#account-security-tabs { border:0;border-radius:0;--vaadin-tabsheet-border-width:0px; }
+#account-security-tabs::part(content) { flex:none;height:auto;max-height:none;padding:0;contain:none;background:var(--cosmos-reference-page);--vaadin-scroller-overflow-indicator-top-opacity:0; }
+#account-security-tabs::part(tabs-container) { padding:0 24px;background:var(--cosmos-reference-panel);border-bottom:0;box-shadow:none;background-image:linear-gradient(var(--cosmos-reference-border),var(--cosmos-reference-border));background-position:bottom;background-size:100% 1px;background-repeat:no-repeat; }
+#account-security-tabs vaadin-tabs { margin:0;border:0;box-shadow:none;--vaadin-tabs-border-width:0px; }
+#account-security-tabs vaadin-tabs::part(tabs) { gap:0;margin:0; }
+#account-security-tabs vaadin-tab { box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;min-width:168px;min-height:48px;padding:12px 20px;margin:0;border:1px solid transparent;border-top-width:2px;border-bottom:0;border-radius:10px 10px 0 0;background:transparent;color:var(--cosmos-reference-secondary);font:500 12px/20px Inter,sans-serif;cursor:pointer; }
+#account-security-tabs vaadin-tab[selected] { z-index:1;border-color:var(--cosmos-reference-border);border-top-color:var(--cosmos-reference-accent);background:var(--cosmos-reference-page);color:var(--cosmos-reference-text);font-weight:600; }
+#account-security-tabs vaadin-tab::before,#account-security-tabs vaadin-tab::after { display:none; }
+#account-security-tabs vaadin-tab :is(img,vaadin-icon) { width:20px;height:20px;flex-shrink:0;object-fit:contain; }
+#account-security-tabs vaadin-tab vaadin-icon { color:var(--cosmos-reference-accent); }
+.account-security-cards { display:grid;gap:16px;padding:24px; }
+.account-security-empty { display:block;padding:24px; }
+#account-panel-security .account-security-hint { margin:0;border-top:1px solid var(--cosmos-reference-border);background:var(--cosmos-reference-panel); }
+@media(max-width:600px) {
+  #account-security-tabs::part(tabs-container) { padding:0 16px; }
+  #account-security-tabs vaadin-tab { flex:1;min-width:0;padding-inline:10px; }
+  .account-security-cards,.account-security-empty { padding:20px; }
+}

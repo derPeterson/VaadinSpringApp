@@ -109,11 +109,21 @@ final class OidcTestProvider implements AutoCloseable {
       throw new IllegalArgumentException("Invalid own authorization request");
     }
     if (exchange.getRequestMethod().equals("GET")) {
+      String parameters =
+          "<div id=fixture-authorize-parameters data-prompt=\""
+              + htmlAttribute(authorization.getOrDefault("prompt", ""))
+              + "\" data-max-age=\""
+              + htmlAttribute(authorization.getOrDefault("max_age", ""))
+              + "\" data-claims=\""
+              + htmlAttribute(authorization.getOrDefault("claims", ""))
+              + "\"></div>";
       send(
           exchange,
           200,
           "text/html; charset=utf-8",
-          "<!doctype html><html><body><h1>Own OIDC test provider</h1><form method=post><label>Test email<input name=email id=fixture-email required type=email></label><label>Test response<select name=mode id=fixture-mode><option value=valid>Valid</option><option value=nonce>Wrong nonce</option><option value=audience>Wrong audience</option><option value=stale>Old authentication</option><option value=cancel>Cancel</option></select></label><button id=fixture-signin>Continue with own test identity</button></form></body></html>");
+          "<!doctype html><html><body><h1>Own OIDC test provider</h1>"
+              + parameters
+              + "<form method=post><label>Test email<input name=email id=fixture-email required type=email></label><label>Test response<select name=mode id=fixture-mode><option value=valid>Valid</option><option value=nonce>Wrong nonce</option><option value=audience>Wrong audience</option><option value=stale>Old authentication</option><option value=missing-auth-time>Missing authentication time</option><option value=cancel>Cancel</option></select></label><button id=fixture-signin>Continue with own test identity</button></form></body></html>");
       return;
     }
     Map<String, String> input =
@@ -165,7 +175,9 @@ final class OidcTestProvider implements AutoCloseable {
     claims.put("aud", code.mode().equals("audience") ? "wrong-client" : CLIENT);
     claims.put("iat", now);
     claims.put("exp", now + 300);
-    claims.put("auth_time", code.mode().equals("stale") ? now - 3600 : now);
+    if (!code.mode().equals("missing-auth-time")) {
+      claims.put("auth_time", code.mode().equals("stale") ? now - 3600 : now);
+    }
     claims.put(
         "nonce", code.mode().equals("nonce") ? "wrong-nonce" : code.authorization().get("nonce"));
     claims.put("email", code.email());
@@ -197,6 +209,14 @@ final class OidcTestProvider implements AutoCloseable {
                 "openid profile email",
                 "id_token",
                 jwt)));
+  }
+
+  private String htmlAttribute(String value) {
+    return value
+        .replace("&", "&amp;")
+        .replace("\"", "&quot;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;");
   }
 
   private Map<String, String> form(String data) {

@@ -69,9 +69,9 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `authentication` | Admin-/Benutzerlogin, Fehler, Gastzugriff und Logout | 7 |
 | `login-attempts` | Drei Sperr-/Resetfälle plus sieben Anmelde- und vier Remember-me-Regressionsfälle | 14 |
 | `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung einschließlich Serverneustart und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 37 |
-| `external-login` | Google/Microsoft mit eigenem OIDC-Anbieter, Admin-Anbietereinrichtung, freiwillige Profilfelder sowie bestehende Registrierungs-/Konto-/Sicherheitsfälle und Formularpanels | 42 |
-| `external-login-flow` | Externe Anmeldungen, Admin-Anbietereinrichtung, Verknüpfungen, Nachweise, Browserneustart, E-Mail-Änderung und optionale Adminprofilfelder | 19 |
-| `external-login-layout` | Getrennte Panels für Anmeldung und Registrierung sowie Admin-Anbietertabs in Vaadin und HTML, Desktop/schmal, Footerumbrüche und Erhalt ungespeicherter Eingaben. Ohne Registrierung, Speicherung oder Versand | 6 |
+| `external-login` | Google/Microsoft mit eigenem OIDC-Anbieter, Admin-Anbietereinrichtung, freiwillige Profilfelder sowie bestehende Registrierungs-/Konto-/Sicherheitsfälle und Formularpanels | 52 |
+| `external-login-flow` | Externe Anmeldungen, Admin-Anbietereinrichtung, Verknüpfungen, Aktionsnachweise mit dokumentierter Google-Zwischenlösung und frischer Microsoft-Bestätigung, Browserneustart, E-Mail-Änderung, optionale Adminprofilfelder und kontextbezogene Kontobestätigung, vollständig deaktivierte Anbieter sowie Standardmeldungen nach Rücksprüngen | 29 |
+| `external-login-layout` | Getrennte Panels für Anmeldung und Registrierung sowie Admin-Anbieter- und Kontosicherheitstabs in Vaadin und HTML, Desktop/schmal, Tastaturbedienung, Footerumbrüche, Erhalt ungespeicherter Eingaben und Kontobestätigungsdialoge. Ohne Registrierung, Speicherung oder Versand | 8 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler, Links und Sprache neuer anonymer Anfragen | 7 |
@@ -98,7 +98,7 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 24 |
 | `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 22 |
-| `cosmos-design` | Kontoansichten, mobiler Mailablauf, Copyright, Theme, Navigation, Infoicon-Ausrichtung und gemeinsamer scrollender Seitenrahmen bei Desktop/schmal | 15 |
+| `cosmos-design` | Kontoansichten, mobiler Mailablauf, Copyright, Theme, Navigation, Infoicon-Ausrichtung und gemeinsamer Seitenrahmen mit Feldhilfe/Benutzerfilter in Vaadin und HTML bei breitem Desktop, Desktop und Smartphone | 16 |
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |

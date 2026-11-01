@@ -14,6 +14,8 @@ import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.ExternalLoginFlow.ProofProblem;
+import de.derpeterson.app.security.ExternalLoginFlow.ProofRejected;
 import de.derpeterson.app.security.ExternalLoginFlow.Purpose;
 import de.derpeterson.app.service.ExternalIdentityService;
 import java.time.Clock;
@@ -25,6 +27,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.access.AccessDeniedException;
@@ -51,6 +55,8 @@ class ExternalLoginFlowTest {
     ExternalLoginProperties properties = new ExternalLoginProperties();
     properties.getGoogle().setClientId("own-client");
     properties.getGoogle().setClientSecret("own-fixture-secret");
+    properties.getMicrosoft().setClientId("own-client");
+    properties.getMicrosoft().setClientSecret("own-fixture-secret");
     clients = spy(new ExternalLoginConfiguration().externalRegistrations(properties));
     flow =
         new ExternalLoginFlow(
@@ -72,20 +78,32 @@ class ExternalLoginFlowTest {
   }
 
   private OAuth2AuthenticationToken oidc(String subject, Instant authenticated) {
+    return oidc("google", subject, authenticated);
+  }
+
+  private OAuth2AuthenticationToken oidc(String provider, String subject, Instant authenticated) {
     Instant now = Instant.now();
     OidcIdToken token =
         OidcIdToken.withTokenValue("own-already-validated-fixture")
-            .issuer("https://accounts.google.com")
+            .issuer(
+                provider.equals("google")
+                    ? "https://accounts.google.com"
+                    : "https://login.microsoftonline.com/11111111-2222-3333-4444-555555555555/v2.0")
             .subject(subject)
             .audience(List.of("own-client"))
             .issuedAt(now)
             .expiresAt(now.plusSeconds(300))
             .claim("email", "person@gmail.com")
             .claim("email_verified", true)
-            .claim("auth_time", authenticated)
+            .claims(
+                claims -> {
+                  if (authenticated != null) {
+                    claims.put("auth_time", authenticated);
+                  }
+                })
             .build();
     DefaultOidcUser user = new DefaultOidcUser(List.of(), token);
-    return new OAuth2AuthenticationToken(user, List.of(), "google");
+    return new OAuth2AuthenticationToken(user, List.of(), provider);
   }
 
   private void signedIn() {
@@ -93,7 +111,7 @@ class ExternalLoginFlowTest {
         .thenReturn(
             Optional.of(
                 User.withUsername(owner.getEmail()).password("hash").roles("USER").build()));
-    when(identities.connected(1L)).thenReturn(List.of("google"));
+    when(identities.connected(1L)).thenReturn(List.of("google", "microsoft"));
     when(identities.belongsTo(eq(1L), any())).thenReturn(true);
   }
 
@@ -143,13 +161,15 @@ class ExternalLoginFlowTest {
     assertThrows(AccessDeniedException.class, () -> flow.registration(request));
   }
 
-  @Test
-  void sensitiveProofIsBoundToPurposeVersionSessionAndConsumedOnce() throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {"google", "microsoft"})
+  void sensitiveProofIsBoundToPurposeVersionSessionAndConsumedOnce(String provider)
+      throws Exception {
     signedIn();
-    flow.beginProof(request, "google", Purpose.PASSWORD, Locale.GERMAN);
-    flow.bindAuthorization(request, "google", "state");
+    flow.beginProof(request, provider, Purpose.PASSWORD, Locale.GERMAN);
+    flow.bindAuthorization(request, provider, "state");
     request.setParameter("state", "state");
-    flow.complete(request, response, oidc("subject", Instant.now()));
+    flow.complete(request, response, oidc(provider, "subject", Instant.now()));
     flow.authorize(request, owner, Purpose.PASSWORD, false);
     assertThrows(
         AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.EMAIL, false));
@@ -161,33 +181,118 @@ class ExternalLoginFlowTest {
     flow.authorize(request, owner, Purpose.PASSWORD, true);
     assertThrows(
         AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.PASSWORD, true));
-    flow.beginProof(request, "google", Purpose.PASSWORD, Locale.GERMAN);
-    flow.bindAuthorization(request, "google", "next-state");
+    flow.beginProof(request, provider, Purpose.PASSWORD, Locale.GERMAN);
+    flow.bindAuthorization(request, provider, "next-state");
     request.setParameter("state", "next-state");
-    flow.complete(request, new MockHttpServletResponse(), oidc("subject", Instant.now()));
+    flow.complete(request, new MockHttpServletResponse(), oidc(provider, "subject", Instant.now()));
     request.changeSessionId();
     assertThrows(
         AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.PASSWORD, false));
   }
 
   @Test
-  void oldProviderSessionAndDifferentLinkedIdentityCannotAuthorizeSensitiveChange() {
+  void oldMicrosoftSessionCannotAuthorizeSensitiveChange() {
+    signedIn();
+    flow.beginProof(request, "microsoft", Purpose.PASSWORD, Locale.GERMAN);
+    flow.bindAuthorization(request, "microsoft", "state");
+    request.setParameter("state", "state");
+    ProofRejected stale =
+        assertThrows(
+            ProofRejected.class,
+            () ->
+                flow.complete(
+                    request,
+                    response,
+                    oidc("microsoft", "subject", Instant.now().minusSeconds(600))));
+    assertEquals(ProofProblem.FRESH_AUTHENTICATION_REQUIRED, stale.problem());
+    assertThrows(
+        AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.PASSWORD, false));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"google", "microsoft"})
+  void differentLinkedIdentityCannotAuthorizeSensitiveChange(String provider) {
+    signedIn();
+    flow.beginProof(request, provider, Purpose.PASSWORD, Locale.GERMAN);
+    flow.bindAuthorization(request, provider, "state");
+    request.setParameter("state", "state");
+    when(identities.belongsTo(eq(1L), any())).thenReturn(false);
+    ProofRejected mismatch =
+        assertThrows(
+            ProofRejected.class,
+            () ->
+                flow.complete(
+                    request, response, oidc(provider, "different-subject", Instant.now())));
+    assertEquals(ProofProblem.IDENTITY_MISMATCH, mismatch.problem());
+    assertThrows(
+        AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.PASSWORD, false));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void missingOrFutureMicrosoftAuthenticationTimeNeverGrantsAProof(boolean missing) {
+    signedIn();
+    flow.beginProof(request, "microsoft", Purpose.PASSWORD, Locale.GERMAN);
+    flow.bindAuthorization(request, "microsoft", "state");
+    request.setParameter("state", "state");
+    ProofRejected failure =
+        assertThrows(
+            ProofRejected.class,
+            () ->
+                flow.complete(
+                    request,
+                    response,
+                    oidc("microsoft", "subject", missing ? null : Instant.now().plusSeconds(60))));
+    assertEquals(ProofProblem.FRESH_AUTHENTICATION_REQUIRED, failure.problem());
+    assertThrows(
+        AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.PASSWORD, false));
+    assertThrows(AccessDeniedException.class, () -> flow.registration(request));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void googleInterimConfirmationAllowsMissingOrOldAuthenticationTime(boolean missing)
+      throws Exception {
     signedIn();
     flow.beginProof(request, "google", Purpose.PASSWORD, Locale.GERMAN);
     flow.bindAuthorization(request, "google", "state");
     request.setParameter("state", "state");
+    flow.complete(
+        request, response, oidc("subject", missing ? null : Instant.now().minusSeconds(86400)));
+    assertEquals("/account?tab=security", response.getRedirectedUrl());
+    flow.authorize(request, owner, Purpose.PASSWORD, true);
     assertThrows(
-        AccessDeniedException.class,
-        () -> flow.complete(request, response, oidc("subject", Instant.now().minusSeconds(600))));
+        AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.PASSWORD, true));
+    assertThrows(
+        AccessDeniedException.class, () -> flow.complete(request, response, oidc("subject", null)));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"blocked", "version", "signed-out", "different-user"})
+  void googleInterimConfirmationStillRequiresTheUnchangedLocalAccount(String change) {
+    signedIn();
+    flow.beginProof(request, "google", Purpose.PASSWORD, Locale.GERMAN);
+    flow.bindAuthorization(request, "google", "state");
+    request.setParameter("state", "state");
+    switch (change) {
+      case "blocked" -> owner.setEnabled(false);
+      case "version" -> owner.rotateAccessVersion();
+      case "signed-out" ->
+          when(security.getAuthenticatedUser(request)).thenReturn(Optional.empty());
+      case "different-user" ->
+          when(security.getAuthenticatedUser(request))
+              .thenReturn(
+                  Optional.of(
+                      User.withUsername("different@example.test")
+                          .password("hash")
+                          .roles("USER")
+                          .build()));
+      default -> throw new IllegalArgumentException(change);
+    }
+    assertThrows(
+        AccessDeniedException.class, () -> flow.complete(request, response, oidc("subject", null)));
     assertThrows(
         AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.PASSWORD, false));
-    flow.beginProof(request, "google", Purpose.PASSWORD, Locale.GERMAN);
-    flow.bindAuthorization(request, "google", "next");
-    request.setParameter("state", "next");
-    when(identities.belongsTo(eq(1L), any())).thenReturn(false);
-    assertThrows(
-        AccessDeniedException.class,
-        () -> flow.complete(request, response, oidc("different-subject", Instant.now())));
   }
 
   @Test

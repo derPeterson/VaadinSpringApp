@@ -25,10 +25,14 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.function.DeploymentConfiguration;
+import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.Location;
 import com.vaadin.flow.router.QueryParameters;
+import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
@@ -39,6 +43,7 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.UserStatus;
+import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionManagementService;
 import de.derpeterson.app.service.AccountProfileService;
@@ -46,10 +51,12 @@ import de.derpeterson.app.service.AccountProfileService.Changes;
 import de.derpeterson.app.service.AccountProfileService.Profile;
 import de.derpeterson.app.service.AccountSecurityService;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountSettingsComponent;
 import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
+import de.derpeterson.app.ui.components.ExternalConnectionsComponent;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.ui.components.PageNavigationComponent;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
@@ -81,6 +88,10 @@ class AccountViewTest {
   private AccountProfileService profiles;
   private UserService users;
   private UserEntity user;
+  private ConfigService config;
+  private UserAvatarService avatars;
+  private ExternalLoginFlow externalLogin;
+  private ExternalIdentityService identities;
   private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
 
   @BeforeEach
@@ -89,6 +100,9 @@ class AccountViewTest {
     UI.setCurrent(ui);
     VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
+    VaadinService service = mock(VaadinService.class);
+    when(service.getDeploymentConfiguration()).thenReturn(mock(DeploymentConfiguration.class));
+    when(session.getService()).thenReturn(service);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     doAnswer(
             call -> {
@@ -101,7 +115,7 @@ class AccountViewTest {
     ui.getInternals().setSession(session);
     request = mock(HttpServletRequest.class);
     security = mock(SecurityService.class);
-    ConfigService config = mock(ConfigService.class);
+    config = mock(ConfigService.class);
     when(config.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(11);
@@ -124,22 +138,51 @@ class AccountViewTest {
         .thenReturn(
             Optional.of(
                 User.withUsername("own@example.test").password("unused").roles("USER").build()));
-    UserAvatarService avatars = mock(UserAvatarService.class);
+    avatars = mock(UserAvatarService.class);
     when(avatars.events()).thenReturn(new UserProfileBroadcaster());
-    view =
-        new AccountView(
-            new MessageProperties(new CustomI18NProvider()),
-            security,
-            request,
-            config,
-            users,
-            profiles,
-            mock(AccountSecurityService.class),
-            sessionService(),
-            new UserStatusBroadcaster(),
-            avatars,
-            mock(de.derpeterson.app.security.ExternalLoginFlow.class),
-            mock(de.derpeterson.app.service.ExternalIdentityService.class));
+    externalLogin = mock(ExternalLoginFlow.class);
+    identities = mock(ExternalIdentityService.class);
+    view = createView();
+  }
+
+  private AccountView createView() {
+    return new AccountView(
+        new MessageProperties(new CustomI18NProvider()),
+        security,
+        request,
+        config,
+        users,
+        profiles,
+        mock(AccountSecurityService.class),
+        sessionService(),
+        new UserStatusBroadcaster(),
+        avatars,
+        externalLogin,
+        identities);
+  }
+
+  @Test
+  void directAccountRouteKeepsExistingConnectionsWhenAllProvidersAreDisabled() {
+    when(identities.connected(user.getId())).thenReturn(List.of("google"));
+    when(externalLogin.owner(request)).thenReturn(user);
+    view = createView();
+    TabSheet tabs =
+        tree(settings())
+            .filter(TabSheet.class::isInstance)
+            .map(TabSheet.class::cast)
+            .findFirst()
+            .orElseThrow();
+    Component providers = tabs.getComponent(tabs.getTabAt(1));
+    ExternalConnectionsComponent connections =
+        tree(providers)
+            .filter(ExternalConnectionsComponent.class::isInstance)
+            .map(ExternalConnectionsComponent.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertTrue(
+        tree(connections)
+            .anyMatch(component -> component.getId().orElse("").equals("external-connect-google")));
+    assertEquals(1, tree(providers).filter(ExternalConnectionsComponent.class::isInstance).count());
   }
 
   @SuppressWarnings("unchecked")
@@ -264,6 +307,45 @@ class AccountViewTest {
     BeforeEnterEvent event = mock(BeforeEnterEvent.class);
     when(event.getLocation()).thenReturn(new Location(AppRouteConstants.ACCOUNT_ROUTE + query));
     view.beforeEnter(event);
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {"FRESH_AUTHENTICATION_REQUIRED", "IDENTITY_MISMATCH", "UNAVAILABLE", "unknown"})
+  void failedExternalConfirmationStaysInSecurityAndTranslatesItsNotification(String problem) {
+    enter("?tab=security&external_error=" + problem);
+    assertEquals(AccountSection.SECURITY, settings().getSelectedSection());
+    assertFalse(
+        ((Notification)
+                ReflectionTestUtils.getField(
+                    NotificationHelper.getInstance(), "currentNotification"))
+            .isOpened());
+    ui.add(view);
+    AfterNavigationEvent event = mock(AfterNavigationEvent.class);
+    when(event.getLocation())
+        .thenReturn(new Location("account?tab=security&external_error=" + problem));
+    view.afterNavigation(event);
+    Notification notification =
+        (Notification)
+            ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
+    assertTrue(notification.isOpened());
+    assertTrue(notification.getElement().getThemeList().contains("cosmos"));
+    assertTrue(notification.getElement().getThemeList().contains("cosmos-reference"));
+    assertTrue(notification.getElement().getThemeList().contains("cosmos-reference-error"));
+    MessageProperties texts = new MessageProperties(new CustomI18NProvider());
+    for (Locale language : List.of(Locale.GERMAN, Locale.ENGLISH)) {
+      LanguageChangeEvent.fire(ui, language);
+      Html message =
+          (Html) ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText");
+      String expected =
+          switch (problem) {
+            case "FRESH_AUTHENTICATION_REQUIRED" -> texts.getExternalProofFreshRequired();
+            case "IDENTITY_MISMATCH" -> texts.getExternalProofIdentityMismatch();
+            default -> texts.getExternalError();
+          };
+      assertEquals(expected, message.getElement().getProperty("innerHTML"));
+    }
+    verifyNoInteractions(profiles);
   }
 
   @ParameterizedTest

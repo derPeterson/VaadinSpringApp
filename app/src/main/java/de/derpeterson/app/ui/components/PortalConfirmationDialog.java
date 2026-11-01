@@ -16,6 +16,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.function.SerializableRunnable;
+import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.i18n.MessageProperties;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -104,6 +105,7 @@ public class PortalConfirmationDialog extends Dialog {
     confirm.addClickListener(event -> confirmPending());
     Div actions = new Div(cancel, confirm);
     actions.addClassName("cosmos-dialog-actions");
+    EqualButtonWidths.configure(actions);
     getFooter().add(actions);
     addOpenedChangeListener(
         event -> {
