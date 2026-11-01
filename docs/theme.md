@@ -88,7 +88,8 @@ nativer Komponenten bleiben möglich. Vereinbarte Sonderlösungen, insbesondere
 die Lucide-Anwendungsicons und der Bildausschnitt, bleiben gültig.
 
 `Badge` ist in der aktuell verwendeten Vaadin-Version bereits vorhanden. Die
-Anwendung verwendet derzeit noch ältere Lumo-Badge-Spans und lokale CSS-Anzeigen.
+Anwendung verwendet überwiegend noch ältere Lumo-Badge-Spans und lokale CSS-Anzeigen.
+Die neuen Anbieterstatusanzeigen verwenden bereits native `Badge`-Komponenten.
 Die [Bestandsaufnahme und offene Planung](planung/vaadin-komponenten-abgleich.md)
 beschreibt die betroffenen Stellen. Die Planung ist kein Auftrag zur Migration.
 
@@ -117,7 +118,7 @@ Die außenliegenden Mailtest-Infoicons sind zur Eingabefläche unterhalb des Lab
 zentriert, auch bei der vergrößerten Nachrichtenfläche.
 Der Mailtest übernimmt die kompakten Panel-/Formularbausteine und das globale
 Notification-System; Eingabefehler markieren nur das betroffene Feld. Der
-Klartext-Hinweis steht unter der Nachricht, der SMTP-Hinweis samt Link ohne Pfeil
+Klartext-Hinweis steht unter der Nachricht, der SMTP-Hinweis samt internem Navigationslink
 in einer eigenen Zeile über der Senden-Aktion. Der SMTP-Test-Badge zeigt den
 vorhandenen Statuspunkt über `.ad-mail-badge > .ad-dot`; dessen Farbe folgt
 `--dot`. Auch dies bleibt eine HTML-Referenz.
@@ -177,8 +178,12 @@ Notification-Cards; `cosmos-shell.css` Header, Startseite, Benutzermenü und
 portalisierte Dialoge; `cosmos-account.css` Konto, Profilbild und Sitzungsliste;
 `cosmos-notifications.css` Vorschau, Postfach, Detail und Pagination.
 `cosmos-background.css` enthält die Portal-Dekoration. Alle ausdrücklich gesetzten Anwendungsicons
-kommen nach ausdrücklicher Freigabe aus Lucide; der gemeinsame Baustein ist
-`AppIcon`. Dies gilt auch für Besucher- und Adminansichten, ohne deren übrige
+kommen nach ausdrücklicher Freigabe aus Lucide. Als ausdrücklich gewählte Ausnahme
+verwendet die Anbieterkonfiguration Tablers `cloud-lock` in Panelkopf und SideNav.
+SVG und MIT-Lizenz liegen unter `icons/tabler/`, die Lucide-Dateien weiterhin unter
+`icons/lucide/`. Der gemeinsame Baustein `AppIcon` kennt die Herkunft und liefert
+für beide native `SvgIcon`-Komponenten. Es wird keine zusätzliche Iconbibliothek eingebunden.
+Dies gilt auch für Besucher- und Adminansichten, ohne deren übrige
 Gestaltung zu verändern. Die festen HTML-Referenzen und Iconvergleiche bleiben
 unveränderte Gestaltungsvorlagen. Ursprüngliche SVGs werden dort weiter benötigt,
 aber in der echten Anwendung nicht mehr verwendet.
@@ -569,7 +574,13 @@ der Checkbox-/Eingabefläche; Zahlenaktionen bleiben native Vaadin-Komponenten.
 
 Der Mailtest verwendet ein kompaktes Panel, Klartexthinweis und SMTP-Direktzugang.
 Das Infoicon steht mittig zum gesamten Block aus Hinweistext und SMTP-Zugang.
-Der SMTP-Zugang ist ein echter Navigationslink in einer neuen Zeile, ohne Buttonfläche.
+Der SMTP-Zugang ist ein echter Navigationslink in einer neuen Zeile. Er übernimmt
+den rahmenlosen Avatar-Menüstil des Anbieter-Links, mit weißer Beschriftung und
+dem blauen Lucide-`square-arrow-right-enter` aus den Dashboard-Schnellzugriffen.
+Die Maße entsprechen dem Anbieter-Link; der obere Abstand beträgt 4 px.
+Wie bei „Startseite“ und „Abmelden“ im Avatar-Overlay bleiben Fläche, Text- und
+Iconfarbe bei Hover unverändert. Der Tastaturfokus bleibt sichtbar.
+Die Regeln bleiben lokal in `cosmos-admin-reference.css` und `assets/admin.css`.
 Der Klartexthinweis unter dem Nachrichtenfeld verwendet konstant 11 px bei Gewicht 400
 und die sekundäre Textfarbe, auch bei Hover. Die Admin-HTML-Feldlabels entsprechen
 dem Frontend mit 12 px bei Gewicht 500. Der
@@ -970,7 +981,61 @@ Sitzungsverwaltung blendet beide Anmeldewege gemeinsam aus. Die Regeln bleiben
 in `cosmos-external-login.css`, für HTML in `assets/public.css`.
 
 Die Anbieterverwaltung unter Konfiguration verwendet die bestehenden Adminpanel-,
-Formular-, Checkbox- und Footerbausteine. Nur das Anordnen von Einrichtungshinweis,
+Formular-, Checkbox- und Footerbausteine. Panelkopf und SideNav heißen einheitlich
+„Anmeldeanbieter“. Die zwei Erklärungssätze im Kopf stehen mit festem Zeilenumbruch
+und 20 px Zeilenhöhe, damit rechts Platz für die Statusbadges bleibt.
+Ein gemeinsamer Panelkopf steht über einer
+nativen `TabSheet` mit Google-/Microsoft-Logo und Name. Der Einrichtungsassistent
+und das Anbieterformular liegen im jeweiligen Tabinhalt. Beide Formulare bleiben beim Tabwechsel
+erhalten; weder Speicherung noch Neuladen werden dadurch ausgelöst. Die HTML-Referenz
+bildet dieselbe Anordnung mit zugänglichen Tabs und getrennten Beispielinhalten ab.
+Der aktive Anbietertab hat einen blauen oberen Rand, abgerundete obere Ecken und
+die dunkle Inhaltsfläche. Desktop-Tabs sind mindestens 168 px breit und zentrieren
+Logo und Namen. Mobil teilen sie sich die verfügbare Breite gleichmäßig.
+Die Tableiste hat keinen oberen Innenabstand. Unter dem Panelkopf gibt es keine
+Trennlinie. Die Linie vor dem Inhalt wird als
+Hintergrund der Tableiste gezeichnet und nur unter dem aktiven Tab verdeckt.
+Der Tabinhalt wächst mit der Seite und hat keinen eigenen Scrollbereich.
+Seine native obere Scrollmarkierung ist deaktiviert, damit unter dem aktiven
+Tab auch nach Fokuswechseln keine zusätzliche feine Linie erscheint.
+Der zusätzliche TabSheet-Rahmen ist lokal entfernt. Rechts im Panelkopf stehen
+zwei native `Badge`-Komponenten mit Anbieterlogo und gespeichertem Status, aktiv
+in Grün, deaktiviert oder noch nicht eingerichtet in Gelb. Sichtbar ist nur
+„Aktiv“/„Inaktiv“. Anbietername und Status bleiben als zugängliche Beschriftung erhalten.
+Native Tooltips erläutern
+die Freigabe für neue Anmeldungen, die Prüfung der Zugangsdaten beim Anmeldeversuch
+und bei deaktivierten Anbietern den Erhalt bestehender Sitzungen. Ungespeicherte
+Formularänderungen ändern diese Statusanzeige nicht. Die Statusanzeigen bleiben
+auch mit Tastaturfokus lesbar. Die HTML-Referenz zeigt dieselben Badgeformen und
+nutzt ihre gemeinsamen Tooltips mit synthetischen Zuständen. Client-ID, Client-Secret
+und Freigabe haben rechts einen `ConfigInfoButton`. Ein Klick öffnet die bestehende
+`AdminSidePanel`-Feldhilfe mit anbieterspezifischer Erklärung und Eingaberegeln.
+Geheimniswerte werden dabei weder angezeigt noch zurückgeladen. Die Hilfe und
+Status-Tooltips folgen dem Sprachwechsel. Die HTML-Referenz verwendet ihre bestehende
+Feldhilfe dafür mit denselben Texten. Der Tabinhalt beginnt mit „Einrichtungsassistent“
+in 11 px bei Gewicht 600 und dem Lucide-`bot`-Icon, einer Anbieterüberschrift
+und einer kurzen Erklärung. Die Schrittüberschriften behalten 10 px.
+Darunter gliedern drei Schrittüberschriften Einrichtung mit Rücksprungadresse,
+Zugangsdaten und Freigabe. Sie tragen die blauen Tabler-Icons
+`square-rounded-number-1`, `square-rounded-number-2` und `square-rounded-number-3`
+mit den Titeln „Anbieter einrichten“, „Zugangsdaten hinterlegen“ und „Anmeldung
+aktivieren“. Der native Link zur Anbieter-Verwaltung übernimmt die rahmenlose
+Startseitenaktion des Avatar-Overlays: 36 px Höhe, 12 px seitlicher Innenabstand,
+12-px-Text mit Gewicht 600 und ein blaues 16-px-Tabler-`external-link`-Icon
+mit 8 px Textabstand. Zwischen Erklärung und Linkfläche liegen 4 px.
+Der Link bleibt auch bei Hover transparent mit unveränderten Text- und Iconfarben.
+Sein sichtbarer Tastaturfokus bleibt erhalten.
+URL, neues Fenster und Linksemantik bleiben erhalten. Beide Zugangsdatenlabels haben den üblichen
+blauen Pflichtpunkt für die Aktivierung. Ein gespeichertes Secret erfüllt diese
+Voraussetzung trotz leer angezeigtem Passwortfeld. Ohne Client-ID oder neues/gespeichertes
+Secret lässt sich die Freigabe nicht einschalten. Ausschalten bleibt auch mit
+unvollständigem Entwurf möglich. Eingaben aktualisieren diese Verfügbarkeit direkt,
+ändern aber weder den gespeicherten Status noch die tatsächliche Anbieterfreigabe.
+Panelkopf und SideNav verwenden dieselbe
+`ConfigGroupIcons`-Zuordnung zu `AppIcon.CLOUD_LOCK`. Die HTML-Referenz verwendet
+dieselbe Kontur als Inline-SVG, damit sie auch beim direkten Öffnen der Datei
+die Akzentfarbe erbt. Original-SVG und Lizenz liegen dort unter `assets/tabler/`.
+Nur das Anordnen von Einrichtungshinweis,
 Rücksprungadresse, Zugangsdaten und Freigabe liegt lokal in
 `cosmos-provider-settings.css`. Anbieterzeichen stammen aus `icons/external-login/`.
 Globale Feld-, Button- und Dialogregeln werden dafür nicht verändert.

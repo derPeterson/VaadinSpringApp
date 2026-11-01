@@ -109,13 +109,13 @@ class AdminMailTestSectionTest {
     TextArea body = field(section, "testBodyField");
     Span bodyHint = field(section, "mailBodyHint");
     assertEquals("admin?section=configuration&group=smtp", link.getHref());
-    assertEquals(texts.getAdminConfigGroupSmtp(), link.getText());
+    assertEquals(texts.getAdminConfigGroupSmtp(), link.getElement().getTextRecursively());
     assertEquals(texts.getAdminMailBodyHint(), bodyHint.getText());
     assertEquals(body.getHelperText(), bodyHint.getText());
     assertEquals("true", bodyHint.getElement().getAttribute("aria-hidden"));
     locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     section.refreshTexts();
-    assertEquals(texts.getAdminConfigGroupSmtp(), link.getText());
+    assertEquals(texts.getAdminConfigGroupSmtp(), link.getElement().getTextRecursively());
     assertEquals(texts.getAdminMailBodyHint(), bodyHint.getText());
     assertEquals(body.getHelperText(), bodyHint.getText());
     verifyNoInteractions(email);

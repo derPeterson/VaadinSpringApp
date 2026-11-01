@@ -22,10 +22,19 @@ des noch fehlenden aktuellen Sonar-Nachweises: [Prüfstand](../status.md).
 
 ## Noch offen bis zur gemeinsamen Abnahme
 
+- Die [gespeicherte Stitch-Kritik zu Anmeldeanbietern und ODER-Trenner](../design/stitch-kritik-anmeldeanbieter-anmeldung.md)
+  gemeinsam besprechen. Die Entscheidung ist vertagt; keine Empfehlungen sind
+  zur Umsetzung freigegeben. Bis zur Auswahl bleibt die Oberfläche unverändert.
 - Die freigegebene geführte Einrichtung unter Konfiguration / Anmeldeanbieter
   gemeinsam ansehen: Zugangsdaten, Rücksprungadresse, direkte Aktivierung und
-  Deaktivierung für Google/Microsoft. Die isolierten Browserprüfungen DE/EN auf
-  Desktop und Smartphone sind bestanden. Echte Anbieterzugänge bleiben Teil von HUM-08.
+  Deaktivierung für Google/Microsoft. Das gemeinsame Panel „Anmeldeanbieter“ mit nativen
+  Google-/Microsoft-Tabs ist umgesetzt. Jeder Tab enthält einen Einrichtungsassistenten
+  mit drei Schritten, Zugangsdaten, Freigabe und Feldhilfe. Ungespeicherte Eingaben
+  bleiben beim Tabwechsel erhalten. Die HTML-Referenz folgt demselben Aufbau.
+  Die Darstellungsprüfungen auf Desktop/Smartphone in DE/EN sind bestanden. Der
+  erneute Speichertest nach dem Tab-Umbau bleibt im zentralen Testbedarf offen.
+  Vorerst keinen weiteren Stitch-Entwurf erstellen. Echte Anbieterzugänge bleiben
+  Teil von HUM-08.
 - Gemeinsam die Anbieterbuttons, ergänzende Registrierung und verbundenen Anmeldungen
   auf Desktop und Smartphone ansehen. Die Registrierung verlangt kein Portalpasswort.
   Die Zwei-Panel-Anordnung der Anmeldung ist abgenommen. Für die Registrierung

@@ -83,6 +83,9 @@ class MessageCatalogueTest {
               if (type == int.class) {
                 return (Object) variant;
               }
+              if (type == boolean.class) {
+                return (Object) (variant > 0);
+              }
               if (type == Number.class) {
                 return (Object) BigDecimal.valueOf(variant);
               }

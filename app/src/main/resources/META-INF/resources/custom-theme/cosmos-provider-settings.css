@@ -1,16 +1,66 @@
 /* Nur die geführte Anbietereinrichtung. Controls und Panelwerte kommen aus dem Cosmos-Theme. */
 .cosmos-provider-settings .cosmos-card > div { width:100%; }
 .cosmos-provider-settings .cosmos-panel-icon img { width:20px; height:20px; object-fit:contain; }
-.cosmos-provider-settings .provider-fields { display:flex; flex-direction:column; gap:16px; padding:24px; }
+vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-panel-header { display:grid; grid-template-columns:var(--cosmos-panel-icon-size) minmax(0,1fr) auto; border-bottom:0; }
+.cosmos-provider-settings .provider-panel-header .cosmos-panel-description { white-space:pre-line; line-height:20px; }
+.cosmos-provider-settings .provider-statuses { display:flex; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:8px; }
+.cosmos-provider-settings vaadin-badge.provider-status { height:30px; margin:0; padding:6px 10px; border-radius:6px; gap:6px; font:600 10px/16px Inter,sans-serif; letter-spacing:1.2px; text-transform:uppercase; cursor:help; --vaadin-badge-text-color:var(--cosmos-reference-warning); --vaadin-badge-background:color-mix(in srgb,var(--cosmos-reference-warning) 10%,transparent); --vaadin-badge-border-color:color-mix(in srgb,var(--cosmos-reference-warning) 20%,transparent); }
+.cosmos-provider-settings vaadin-badge.provider-status[data-state=active] { --vaadin-badge-text-color:var(--cosmos-reference-success); --vaadin-badge-background:var(--cosmos-reference-success-surface); --vaadin-badge-border-color:var(--cosmos-reference-success-border); }
+.cosmos-provider-settings vaadin-badge.provider-status img { display:block; width:14px; height:14px; object-fit:contain; }
+.cosmos-provider-settings vaadin-badge.provider-status:focus-visible { outline:2px solid var(--cosmos-reference-accent); outline-offset:2px; }
+.cosmos-provider-settings #admin-provider-tabs { border:0; border-radius:0; --vaadin-tabsheet-border-width:0px; }
+/* Der mitwachsende Inhalt benötigt keine zusätzliche native Scrollmarkierung unter den Tabs. */
+.cosmos-provider-settings #admin-provider-tabs::part(content) { flex:none; height:auto; max-height:none; padding:0; contain:none; background:var(--cosmos-reference-page); --vaadin-scroller-overflow-indicator-top-opacity:0; }
+.cosmos-provider-settings #admin-provider-tabs::part(tabs-container) { padding:0 24px; background:var(--cosmos-reference-panel); border-bottom:0; box-shadow:none; background-image:linear-gradient(var(--cosmos-reference-border),var(--cosmos-reference-border)); background-position:bottom; background-size:100% 1px; background-repeat:no-repeat; }
+.cosmos-provider-settings #admin-provider-tabs vaadin-tabs { margin:0; border:0; box-shadow:none; --vaadin-tabs-border-width:0px; }
+.cosmos-provider-settings #admin-provider-tabs vaadin-tabs::part(tabs) { gap:0; margin:0; }
+.cosmos-provider-settings #admin-provider-tabs vaadin-tab { box-sizing:border-box; display:flex; align-items:center; gap:8px; min-width:168px; min-height:48px; justify-content:center; padding:12px 20px; margin:0; border:1px solid transparent; border-top-width:2px; border-bottom:0; border-radius:10px 10px 0 0; background:transparent; font:500 12px/20px Inter,sans-serif; color:var(--cosmos-reference-secondary); cursor:pointer; }
+.cosmos-provider-settings #admin-provider-tabs vaadin-tab[selected] { z-index:1; border-color:var(--cosmos-reference-border); border-top-color:var(--cosmos-reference-accent); border-bottom-color:var(--cosmos-reference-page); background:var(--cosmos-reference-page); color:var(--cosmos-reference-text); font-weight:600; }
+.cosmos-provider-settings #admin-provider-tabs vaadin-tab::before,
+.cosmos-provider-settings #admin-provider-tabs vaadin-tab::after { display:none; }
+.cosmos-provider-settings #admin-provider-tabs vaadin-tab img { width:16px; height:16px; object-fit:contain; }
+.cosmos-provider-settings .provider-content { width:100%; min-width:0; background:var(--cosmos-reference-page); }
+.cosmos-provider-settings .provider-fields { display:flex; flex-direction:column; gap:24px; padding:24px; }
 .cosmos-provider-settings .provider-fields > span { color:var(--cosmos-reference-secondary); font:400 12px/1.8 Inter,sans-serif; }
 .cosmos-provider-settings .provider-fields a { align-self:flex-start; color:var(--cosmos-reference-accent); font-size:12px; font-weight:500; }
 .cosmos-provider-settings .provider-credentials { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
 .cosmos-provider-settings .provider-redirect { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:8px; }
 .cosmos-provider-settings .provider-activation { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px; border:1px solid var(--cosmos-reference-border); border-radius:9px; font:500 12px/1.6 Inter,sans-serif; }
 @media(max-width:600px) {
+  vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-panel-header { grid-template-columns:40px minmax(0,1fr); }
+  .cosmos-provider-settings .provider-statuses { grid-column:1/-1; }
+  .cosmos-provider-settings #admin-provider-tabs::part(tabs-container) { padding:0 16px; }
+  .cosmos-provider-settings #admin-provider-tabs vaadin-tab { flex:1; min-width:0; padding-inline:16px; }
   .cosmos-provider-settings .provider-fields { padding:16px; }
   .cosmos-provider-settings .provider-credentials { grid-template-columns:1fr; }
   .cosmos-provider-settings .provider-redirect { grid-template-columns:1fr; }
   .cosmos-provider-settings .provider-redirect vaadin-button { justify-self:end; }
   .cosmos-provider-settings .cosmos-panel-header { flex-wrap:wrap; padding:16px; }
 }
+
+.cosmos-provider-settings .provider-help-field { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.cosmos-provider-settings .provider-field-label { color:var(--cosmos-reference-label); font:500 12px/20px Inter,sans-serif; }
+vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-help-row { align-items:start; }
+.cosmos-provider-settings .provider-help-row > .cosmos-config-info { width:28px; min-width:28px; height:28px; min-height:28px; margin:6px 0 0; }
+.cosmos-provider-settings .provider-help-row > :is(vaadin-text-field,vaadin-password-field) { padding-top:0; }
+vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-help-toggle { align-items:center; }
+.cosmos-provider-settings .provider-help-toggle > .cosmos-config-info { margin:0; }
+
+.cosmos-provider-settings .provider-assistant-intro { display:flex; flex-direction:column; gap:8px; }
+.cosmos-provider-settings :is(.provider-assistant-kicker,.provider-step-label) { display:block; color:var(--cosmos-reference-accent); font:600 10px/16px Inter,sans-serif; text-transform:uppercase; letter-spacing:1.2px; }
+.cosmos-provider-settings .provider-assistant-title { margin:0; color:var(--cosmos-reference-text); font:600 16px/24px Inter,sans-serif; }
+.cosmos-provider-settings .provider-assistant-description { color:var(--cosmos-reference-secondary); font:400 12px/20px Inter,sans-serif; }
+.cosmos-provider-settings .provider-step { display:flex; flex-direction:column; gap:12px; }
+.cosmos-provider-settings .provider-step-body { display:flex; flex-direction:column; gap:16px; }
+.cosmos-provider-settings .provider-console-guide { display:flex; flex-direction:column; gap:4px; }
+.cosmos-provider-settings .provider-console-guide > span { color:var(--cosmos-reference-secondary); font:400 12px/1.8 Inter,sans-serif; }
+.cosmos-provider-settings a.provider-console-link { display:inline-flex; align-self:flex-start; align-items:center; gap:8px; min-height:36px; padding:0 12px; border:0; border-radius:8px; background:transparent; color:var(--cosmos-reference-text); font:600 12px/1.4 Inter,sans-serif; text-decoration:none; }
+.cosmos-provider-settings a.provider-console-link > vaadin-icon { width:16px; height:16px; flex-shrink:0; color:var(--cosmos-reference-accent); }
+.cosmos-provider-settings a.provider-console-link:focus-visible { outline:2px solid var(--cosmos-reference-accent); outline-offset:2px; }
+.cosmos-provider-settings .provider-activation > [aria-disabled=true] { color:var(--cosmos-reference-secondary); cursor:default; }
+
+.cosmos-provider-settings .provider-assistant-kicker { display:flex; align-items:center; gap:8px; font-size:11px; }
+.cosmos-provider-settings .provider-assistant-kicker > vaadin-icon { width:16px; height:16px; flex-shrink:0; color:var(--cosmos-reference-accent); }
+
+.cosmos-provider-settings .provider-step-label { display:flex; align-items:center; gap:8px; }
+.cosmos-provider-settings .provider-step-label > vaadin-icon { width:16px; height:16px; flex-shrink:0; color:var(--cosmos-reference-accent); }

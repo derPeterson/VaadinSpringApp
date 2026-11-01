@@ -2,7 +2,7 @@ package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.icon.SvgIcon;
 
-/** Gemeinsame Lucide-Symbole; Konturen und Lizenz werden lokal mit der Anwendung ausgeliefert. */
+/** Lokale Anwendungssymbole aus Lucide und ausdrücklich freigegebene Tabler-Ergänzungen. */
 public enum AppIcon {
   ANGLE_DOUBLE_LEFT("chevrons-left"),
   ANGLE_DOUBLE_RIGHT("chevrons-right"),
@@ -13,12 +13,18 @@ public enum AppIcon {
   ARCHIVE("archive"),
   ARROW_FORWARD("arrow-right"),
   BELL("bell"),
+  BOT("bot"),
   CALENDAR_USER("calendar-days"),
   CHECK("check"),
   CHECK_CHECK("check-check"),
   CHECK_CIRCLE("circle-check"),
   CLOSE("x"),
   CLOSE_CIRCLE("circle-x"),
+  CLOUD_LOCK("tabler", "cloud-lock"),
+  NUMBER_ONE("tabler", "square-rounded-number-1"),
+  NUMBER_TWO("tabler", "square-rounded-number-2"),
+  NUMBER_THREE("tabler", "square-rounded-number-3"),
+  EXTERNAL_LINK_TABLER("tabler", "external-link"),
   COG("settings"),
   COGS("settings-2"),
   DASHBOARD("layout-dashboard"),
@@ -66,20 +72,26 @@ public enum AppIcon {
   CLOCK("clock");
 
   private final String name;
+  private final String library;
 
   AppIcon(String name) {
+    this("lucide", name);
+  }
+
+  AppIcon(String library, String name) {
+    this.library = library;
     this.name = name;
   }
 
   public String getSource() {
-    return "icons/lucide/" + name + ".svg";
+    return "icons/" + library + "/" + name + ".svg";
   }
 
   public SvgIcon create() {
     SvgIcon icon = new SvgIcon(getSource());
-    icon.addClassName("cosmos-lucide-icon");
+    icon.addClassName("cosmos-" + library + "-icon");
     icon.getElement().setAttribute("aria-hidden", "true");
-    icon.getElement().setAttribute("data-lucide", name);
+    icon.getElement().setAttribute("data-" + library, name);
     return icon;
   }
 }

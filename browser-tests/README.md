@@ -71,7 +71,7 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung einschließlich Serverneustart und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 37 |
 | `external-login` | Google/Microsoft mit eigenem OIDC-Anbieter, Admin-Anbietereinrichtung, freiwillige Profilfelder sowie bestehende Registrierungs-/Konto-/Sicherheitsfälle und Formularpanels | 42 |
 | `external-login-flow` | Externe Anmeldungen, Admin-Anbietereinrichtung, Verknüpfungen, Nachweise, Browserneustart, E-Mail-Änderung und optionale Adminprofilfelder | 19 |
-| `external-login-layout` | Getrennte Panels für Anmeldung und Registrierung in Vaadin und HTML, Desktop/schmal und Footerumbrüche, ohne Anmeldung oder Versand | 4 |
+| `external-login-layout` | Getrennte Panels für Anmeldung und Registrierung sowie Admin-Anbietertabs in Vaadin und HTML, Desktop/schmal, Footerumbrüche und Erhalt ungespeicherter Eingaben. Ohne Registrierung, Speicherung oder Versand | 6 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler, Links und Sprache neuer anonymer Anfragen | 7 |

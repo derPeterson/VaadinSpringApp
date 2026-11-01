@@ -2779,6 +2779,38 @@ public class MessageTexts {
     return getTranslation("admin.providers.description");
   }
 
+  public String getProviderSettingsPanelTitle() {
+    return getTranslation("admin.providers.panelTitle");
+  }
+
+  public String getProviderSettingsPanelDescription() {
+    return getTranslation("admin.providers.panelDescription");
+  }
+
+  public String getProviderSettingsAssistantKicker() {
+    return getTranslation("admin.providers.assistantKicker");
+  }
+
+  public String getProviderSettingsAssistantTitle(String provider) {
+    return getFormattedTranslation("admin.providers.assistantTitle", provider);
+  }
+
+  public String getProviderSettingsAssistantDescription() {
+    return getTranslation("admin.providers.assistantDescription");
+  }
+
+  public String getProviderSettingsSetupCredentials() {
+    return getTranslation("admin.providers.setupCredentials");
+  }
+
+  public String getProviderSettingsEnableSignIn() {
+    return getTranslation("admin.providers.enableSignIn");
+  }
+
+  public String getProviderSettingsSetupProvider() {
+    return getTranslation("admin.providers.setupProvider");
+  }
+
   public String getProviderSettingsGoogleGuide() {
     return getTranslation("admin.providers.googleGuide");
   }
@@ -2843,8 +2875,44 @@ public class MessageTexts {
     return getTranslation("admin.providers.save");
   }
 
-  public String getProviderSettingsUnconfigured() {
-    return getTranslation("admin.providers.unconfigured");
+  public String getProviderSettingsUnconfiguredHint(String provider) {
+    return getFormattedTranslation("admin.providers.unconfiguredHint", provider);
+  }
+
+  public String getProviderSettingsActiveHint(String provider) {
+    return getFormattedTranslation("admin.providers.activeHint", provider);
+  }
+
+  public String getProviderSettingsInactiveHint(String provider) {
+    return getFormattedTranslation("admin.providers.inactiveHint", provider);
+  }
+
+  public String getProviderSettingsClientIdHelp(boolean microsoft) {
+    return getTranslation(
+        microsoft
+            ? "admin.providers.microsoft.clientIdHelp"
+            : "admin.providers.google.clientIdHelp");
+  }
+
+  public String getProviderSettingsSecretHelp(boolean microsoft) {
+    return getTranslation(
+        microsoft ? "admin.providers.microsoft.secretHelp" : "admin.providers.google.secretHelp");
+  }
+
+  public String getProviderSettingsEnableHelp() {
+    return getTranslation("admin.providers.enableHelp");
+  }
+
+  public String getProviderSettingsClientIdRule() {
+    return getTranslation("admin.providers.clientIdRule");
+  }
+
+  public String getProviderSettingsSecretRule() {
+    return getTranslation("admin.providers.secretRule");
+  }
+
+  public String getProviderSettingsEnableRule() {
+    return getTranslation("admin.providers.enableRule");
   }
 
   public String getProviderSettingsActive() {

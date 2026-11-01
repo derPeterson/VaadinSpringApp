@@ -45,6 +45,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     assertThat(page.locator("#admin-provider-settings")).isVisible();
     AllurePlaywright.attachScreenshot("Anbietereinrichtung mit Google und Microsoft", page);
     for (String provider : new String[] {"google", "microsoft"}) {
+      page.locator("#provider-tab-" + provider).click();
       com.microsoft.playwright.Locator enabled =
           page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.CHECKBOX);
       com.microsoft.playwright.Locator save = page.locator("#provider-" + provider + "-save");
@@ -76,12 +77,14 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
             .hasText(texts.getProviderSettingsActive());
       }
       page.reload();
+      page.locator("#provider-tab-" + provider).click();
       assertThat(secret).hasValue("");
       assertThat(page.locator("#provider-" + provider + "-status"))
           .hasText(texts.getProviderSettingsActive());
     }
     if (width == 1280) {
       for (String provider : new String[] {"google", "microsoft"}) {
+        page.locator("#provider-tab-" + provider).click();
         page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.CHECKBOX).uncheck();
         page.locator("#provider-" + provider + "-save").click();
         assertThat(page.locator("#provider-" + provider + "-status"))
@@ -92,6 +95,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       de.derpeterson.browsertests.BrowserTestRunner.restartTestApplication();
       page.navigate("/admin?section=configuration&group=external_login");
       for (String provider : new String[] {"google", "microsoft"}) {
+        page.locator("#provider-tab-" + provider).click();
         assertThat(page.locator("#provider-" + provider + "-status"))
             .hasText(texts.getProviderSettingsInactive());
         assertThat(page.locator("#provider-" + provider + "-secret input")).hasValue("");

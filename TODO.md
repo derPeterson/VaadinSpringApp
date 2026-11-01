@@ -11,6 +11,8 @@
   Branch: `feature/google-microsoft-anmeldung`. Umsetzung und automatisierter Testumfang der großen Testrunde sind abgeschlossen.
   Ergebnisse und Grenzen: [Prüfstand](docs/status.md).
   Gemeinsame Sichtung und eigene Anbieter-Clients bleiben zur Abnahme offen.
+  Die [Stitch-Kritik zu Anmeldeanbietern und ODER-Trenner](docs/design/stitch-kritik-anmeldeanbieter-anmeldung.md)
+  ist gespeichert; die Entscheidung über Änderungen ist vertagt.
 
 ## Separate spätere Umsetzung: Vaadin-Komponenten
 

@@ -59,7 +59,7 @@
   function open(field){
     if(activeField){activeField.trigger.setAttribute('aria-expanded','false');activeField.wrapper.removeAttribute('data-help-selected');}
     activeField=field;
-    drawer.querySelector('.hc-group').textContent=root.querySelector('.ad-head h2').textContent;
+    drawer.querySelector('.hc-group').textContent=field.input.dataset.providerHelp==='google'?'Google':field.input.dataset.providerHelp==='microsoft'?'Microsoft':root.querySelector('.ad-head h2').textContent;
     drawer.querySelector('#hc-field-title').textContent=field.label;
     drawer.querySelector('.hc-copy').replaceChildren(field.content.cloneNode(true));
     if(field.wrapper.querySelector('[data-duration-amount]')){
@@ -83,7 +83,7 @@
     const panel=root.querySelector('.ad-config');
     if(!panel){return;}
     panel.querySelectorAll('.ad-field').forEach(wrapper=>{
-      const details=wrapper.querySelector('details'),input=wrapper.querySelector('[data-config-id]'),label=wrapper.querySelector('label');
+      const details=wrapper.querySelector('details'),input=wrapper.querySelector('[data-config-id],[data-provider-help]'),label=wrapper.querySelector('label');
       if(!details||!input||!label){return;}
       const content=helpContent(details,input);
       const field={wrapper,input,label:label.textContent.replace('•','').trim(),content,trigger:null};

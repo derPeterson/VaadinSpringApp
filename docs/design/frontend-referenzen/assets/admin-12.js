@@ -8,14 +8,21 @@
   const notifications=inventory.notifications;
   const notificationText=notifications.texts;
   const paginationReference=document.querySelector('.au-pagination .c-pagination-bar').cloneNode(true);
-  const groups = Object.fromEntries(Object.entries(configuration.groups).map(([group,values])=>[group,values.label]));
+  const groups = {};
+  for(const [group,values] of Object.entries(configuration.groups)){
+    groups[group]=values.label;
+    if(group==='SECURITY'){groups.EXTERNAL_LOGIN='Anmeldeanbieter';}
+  }
   const groupIcons = {GENERAL:'settings',SECURITY:'shield',TOKENS:'key',USER_STATUS:'config-user',NOTIFICATIONS:'bell',EMAIL_SENDER:'mail',SMTP:'config-server',QUEUE:'config-list'};
+  groupIcons.EXTERNAL_LOGIN='cloud-lock';
   const labels = {dashboard:'Dashboard',settings:configuration.title,mail:mail.title,send:notificationText.title,users:'Benutzerverwaltung'};
   const descriptions = {dashboard:'Ihr Einstieg in die Administration.',settings:configuration.description,mail:mail.description,send:notificationText.adminPageDescription,users:'Verwalten Sie Benutzerkonten, Rollen und Aktivierungsstatus.'};
   document.querySelector('[data-admin-route="mail"]>span').textContent=mail.title;
   const byId = id => document.getElementById(id);
   const escape = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-  const icon = name => byId('vp-symbols').content.querySelector(`[data-symbol="${name}"]`).innerHTML;
+  // Tabler cloud-lock (MIT). Original und Lizenz: assets/tabler/.
+  const cloudLock = '<svg class="ad-tabler-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 18a3.5 3.5 0 0 0 0 -7h-1c.397 -1.768 -.285 -3.593 -1.788 -4.787c-1.503 -1.193 -3.6 -1.575 -5.5 -1s-3.315 2.019 -3.712 3.787c-2.199 -.088 -4.155 1.326 -4.666 3.373c-.512 2.047 .564 4.154 2.566 5.027"/><path d="M8 16a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v3a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1l0 -3"/><path d="M10 15v-2a2 2 0 1 1 4 0v2"/></svg>';
+  const icon = name => name==='cloud-lock' ? cloudLock : byId('vp-symbols').content.querySelector(`[data-symbol="${name}"]`).innerHTML;
   const button = (action, text, symbol='check', primary=false) => `<button type="button" class="portal-button ${primary?'primary':''}" data-ad-action="${action}">${icon(symbol)}${text}</button>`;
   const notice = (text, tone='info') => `<div class="ad-notice" data-tone="${tone}" role="status">${icon(tone==='error'?'error':tone==='warning'?'warning':tone==='success'?'check':'info')}<span>${text}</span></div>`;
   const panel = (title, description, symbol, content, footer='', metadata='') => `<article class="ad-card"><div class="ad-head"><span class="portal-reference-icon">${icon(symbol)}</span><div><h2>${title}</h2><p>${description}</p></div>${metadata}</div><div class="ad-body">${content}</div>${footer?`<div class="ad-foot">${footer}</div>`:''}</article>`;
@@ -133,6 +140,7 @@
     return `<div class="ad-field"><label for="${id}">${escape(field.label)}${required}</label>${input}${help}</div>`;
   }
   function renderConfig() {
+    if(group==='EXTERNAL_LOGIN'){renderProviders();return;}
     const fields=inventory.fields.filter(field=>field.group===group);
     const count=(fields.length===1?configuration.countOne:configuration.countOther).replace('{0}',String(fields.length));
     const metadata=`<span class="ad-pill ad-config-count">${escape(count)}</span>`;
@@ -148,6 +156,89 @@
     root.querySelectorAll('[data-duration-amount]').forEach(input=>window.AdminDuration.update(input.closest('.ad-field')));
     syncNumberButtons();
   }
+  function renderProviders() {
+    const providers=[['google','Google'],['microsoft','Microsoft']];
+    const numberOne="<!--\ntags: [one, number, digit, numeral, square, rounded, squircle, box, badge, count, step, numbered]\ncategory: Numbers\nversion: \"1.111\"\nunicode: \"f5c9\"\n-->\n<svg class=\"ad-provider-number\" aria-hidden=\"true\"\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M10 10l2 -2v8\" />\n  <path d=\"M12 3c7.2 0 9 1.8 9 9c0 7.2 -1.8 9 -9 9c-7.2 0 -9 -1.8 -9 -9c0 -7.2 1.8 -9 9 -9\" />\n</svg>\n";
+    const numberTwo="<!--\ntags: [two, number, digit, numeral, square, rounded, squircle, box, badge, count, step, numbered]\ncategory: Numbers\nversion: \"1.111\"\nunicode: \"f5ca\"\n-->\n<svg class=\"ad-provider-number\" aria-hidden=\"true\"\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M10 8h3a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 0 -1 1v2a1 1 0 0 0 1 1h3\" />\n  <path d=\"M12 3c7.2 0 9 1.8 9 9c0 7.2 -1.8 9 -9 9c-7.2 0 -9 -1.8 -9 -9c0 -7.2 1.8 -9 9 -9\" />\n</svg>\n";
+    const numberThree="<!--\ntags: [three, number, digit, numeral, square, rounded, squircle, box, badge, count, step, numbered]\ncategory: Numbers\nversion: \"1.111\"\nunicode: \"f5cb\"\n-->\n<svg class=\"ad-provider-number\" aria-hidden=\"true\"\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M10 9a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1\" />\n  <path d=\"M12 3c7.2 0 9 1.8 9 9c0 7.2 -1.8 9 -9 9c-7.2 0 -9 -1.8 -9 -9c0 -7.2 1.8 -9 9 -9\" />\n</svg>\n";
+    const externalLink="<!--\ntags: [external-link, open-in-new, new-tab, new-window, link, launch, redirect, outbound, arrow, url, external]\ncategory: System\nversion: \"1.0\"\nunicode: \"ea99\"\n-->\n<svg aria-hidden=\"true\"\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6\" />\n  <path d=\"M11 13l9 -9\" />\n  <path d=\"M15 4h5v5\" />\n</svg>\n";
+    const bot="<!-- @license lucide-static v1.63.0 - ISC -->\n<svg\n  class=\"lucide lucide-bot ad-provider-bot\" aria-hidden=\"true\"\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M12 8V4H8\" />\n  <rect width=\"16\" height=\"12\" x=\"4\" y=\"8\" rx=\"2\" />\n  <path d=\"M2 14h2\" />\n  <path d=\"M20 14h2\" />\n  <path d=\"M15 13v2\" />\n  <path d=\"M9 13v2\" />\n</svg>\n";
+    const logo=provider=>`<img src="assets/provider-${provider}.${provider==='google'?'png':'svg'}" alt="" aria-hidden="true">`;
+    const statuses=providers.map(([provider,name])=>{
+      const active=provider==='google';
+      const hint=active?`${name} ist für neue Anmeldungen freigegeben. Die Zugangsdaten werden beim Anmeldeversuch geprüft.`:`${name} ist für neue Anmeldungen deaktiviert. Bestehende Sitzungen bleiben erhalten.`;
+      return `<span class="ad-provider-status" data-state="${active?'active':'inactive'}" tabindex="0" aria-label="${name}: ${active?'Aktiv':'Inaktiv'}" data-ref-tooltip="${escape(hint)}">${logo(provider)}<span>${active?'Aktiv':'Inaktiv'}</span></span>`;
+    }).join('');
+    const tabs=providers.map(([provider,name],index)=>`<button type="button" role="tab" id="ad-provider-tab-${provider}" data-provider-tab="${provider}" aria-controls="ad-provider-${provider}" aria-selected="${index===0}" tabindex="${index===0?0:-1}">${logo(provider)}<span>${name}</span></button>`).join('');
+    const fieldHelp=(provider,field)=>{
+      const descriptions={
+        google:{client:'Kopieren Sie die Client-ID Ihrer Webanwendung aus der Google-Verwaltung. Die Client-ID ist nicht das Client-Secret.',secret:'Kopieren Sie das Client-Secret derselben Webanwendung aus der Google-Verwaltung. Ein neu eingegebenes Geheimnis ersetzt beim Speichern das bisherige. Bereits gespeicherte Geheimnisse werden nicht angezeigt.'},
+        microsoft:{client:'Kopieren Sie die Anwendungs-ID (Client-ID) aus der App-Registrierung in Microsoft Entra. Verwenden Sie weder die Objekt-ID noch die Verzeichnis-ID.',secret:'Kopieren Sie unter Zertifikate und Geheimnisse den Wert des geheimen Clientschlüssels, nicht dessen ID. Der Wert ist nur direkt nach dem Erstellen sichtbar. Ein neu eingegebenes Geheimnis ersetzt beim Speichern das bisherige.'}
+      };
+      const rules={client:'Zum Aktivieren erforderlich. Maximal 512 Zeichen. Keine Steuerzeichen.',secret:'Zum Aktivieren erforderlich, falls noch kein Geheimnis gespeichert ist. Leer lassen, um das gespeicherte Geheimnis beizubehalten. Maximal 2048 Zeichen. Keine Steuerzeichen.',enabled:'Eine Aktivierung erfordert eine Client-ID und ein Client-Secret. Änderungen werden erst mit Einstellungen speichern übernommen.'};
+      const description=field==='enabled'?'Erlaubt nach dem Speichern neue Anmeldungen über diesen Anbieter. Beim Ausschalten bleiben bestehende Sitzungen erhalten. Die Zugangsdaten werden erst beim nächsten Anmeldeversuch geprüft.':descriptions[provider][field];
+      return `<details><summary>Feldhilfe</summary><p>${description}</p><span data-help-rules-label>Eingaberegeln</span><ul><li>${rules[field]}</li></ul></details>`;
+    };
+    const panels=providers.map(([provider,name],index)=>{
+      const google=provider==='google';
+      const guide=google?'Erstellen Sie in der Google-Verwaltung eine Anwendung vom Typ Webanwendung und hinterlegen Sie die folgende Rücksprungadresse.':'Registrieren Sie in Microsoft Entra eine Anwendung für private sowie Firmen- und Schulkonten. Hinterlegen Sie die folgende Rücksprungadresse als Web-Adresse.';
+      const consoleUrl=google?'https://console.cloud.google.com/auth/clients':'https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade';
+      const redirect=`https://portal.example.test/login/oauth2/code/${provider}`;
+      return `<section id="ad-provider-${provider}" class="ad-provider-content" role="tabpanel" aria-labelledby="ad-provider-tab-${provider}" ${index?'hidden':''}>
+        <form id="ad-provider-form-${provider}" data-provider-form="${provider}" class="ad-provider-fields" novalidate>
+          <div class="ad-provider-assistant-intro"><span class="ad-provider-assistant-kicker">${bot}Einrichtungsassistent</span><h3>${name}-Anmeldung einrichten</h3><p>Richten Sie den Anbieter ein, übernehmen Sie die Zugangsdaten und geben Sie die Anmeldung frei.</p></div>
+          <section class="ad-provider-step"><span class="ad-provider-step-label">${numberOne}Anbieter einrichten</span><div class="ad-provider-step-body"><div class="ad-provider-console-guide"><p>${guide}</p><a class="ad-provider-console-link" href="${consoleUrl}" target="_blank" rel="noopener noreferrer">${externalLink}<span>Anbieter-Verwaltung öffnen</span></a></div>
+          <div class="ad-provider-redirect"><div class="ad-field"><label for="ad-provider-${provider}-redirect">Rücksprungadresse beim Anbieter hinterlegen</label><input id="ad-provider-${provider}-redirect" value="${redirect}" readonly></div><button type="button" class="portal-button" data-provider-copy="${provider}">Kopieren</button></div></div></section>
+          <section class="ad-provider-step"><span class="ad-provider-step-label">${numberTwo}Zugangsdaten hinterlegen</span><div class="ad-provider-credentials"><div class="ad-field"><label for="ad-provider-${provider}-client">Client-ID<span class="ad-required"> •</span></label><input data-provider-help="${provider}" id="ad-provider-${provider}-client" value="comparison-${provider}" placeholder="Client-ID des Anbieters eingeben" maxlength="512">${fieldHelp(provider,'client')}</div>
+          <div class="ad-field"><label for="ad-provider-${provider}-secret">Client-Secret<span class="ad-required"> •</span></label><div class="ad-input-action"><input data-provider-help="${provider}" data-secret-stored="true" id="ad-provider-${provider}-secret" type="password" placeholder="Bereits hinterlegt" autocomplete="new-password" maxlength="2048"><button type="button" data-ad-reveal="ad-provider-${provider}-secret" aria-label="Passwort anzeigen" aria-pressed="false">${icon('eye')}</button></div><small>Leer lassen, um das hinterlegte Geheimnis beizubehalten.</small>${fieldHelp(provider,'secret')}</div></div></section>
+          <section class="ad-provider-step"><span class="ad-provider-step-label">${numberThree}Anmeldung aktivieren</span><div class="ad-field ad-toggle"><label for="ad-provider-${provider}-enabled">Anmeldung erlauben</label><input data-provider-help="${provider}" type="checkbox" id="ad-provider-${provider}-enabled" ${google?'checked':''}>${fieldHelp(provider,'enabled')}</div></section>
+        </form><div class="ad-foot"><div class="ad-config-save-hint">${icon('info')}<span>Nach dem Speichern gilt die Freigabe für neue Anmeldungen. Bestehende Sitzungen bleiben erhalten. Zugangsdaten werden beim nächsten Anmeldeversuch geprüft. Bei einer Deaktivierung benötigen betroffene Benutzer einen anderen Anmeldeweg.</span></div>
+        <div class="ad-config-actions"><button type="button" class="portal-button" data-provider-reload="${provider}">${icon('refresh')}Werte neu laden</button><button type="button" class="portal-button primary" data-provider-save="${provider}">${icon('check')}Einstellungen speichern</button></div></div>
+      </section>`;
+    }).join('');
+    root.innerHTML=`<div class="ad-config ad-providers"><article class="ad-card"><div class="ad-head ad-provider-panel-header"><span class="portal-reference-icon" aria-hidden="true">${icon('cloud-lock')}</span><div><h2>Anmeldeanbieter</h2><p>Richten Sie Google und Microsoft als zusätzliche Anmeldemöglichkeiten ein.<br>Die Anmeldung erfolgt über OpenID Connect auf Basis von OAuth 2.0.</p></div><div class="ad-provider-statuses">${statuses}</div></div><div class="ad-provider-tabs" role="tablist" aria-label="Anmeldeanbieter">${tabs}</div>${panels}</article></div>`;
+    root.querySelectorAll('[data-provider-form]').forEach(updateProviderAvailability);
+  }
+  function updateProviderAvailability(form){
+    const provider=form.dataset.providerForm;
+    const client=form.querySelector(`#ad-provider-${provider}-client`),secret=form.querySelector(`#ad-provider-${provider}-secret`),enabled=form.querySelector(`#ad-provider-${provider}-enabled`);
+    const complete=client.value.trim()!==''&&(secret.value.trim()!==''||secret.dataset.secretStored==='true');
+    enabled.disabled=!complete&&!enabled.checked;
+  }
+  root.addEventListener('input',event=>{
+    const form=event.target.closest('[data-provider-form]');
+    if(form){updateProviderAvailability(form);}
+  });
+  function selectProvider(provider, focus=false) {
+    root.querySelectorAll('[data-provider-tab]').forEach(tab=>{
+      const selected=tab.dataset.providerTab===provider;
+      tab.setAttribute('aria-selected',String(selected));
+      tab.tabIndex=selected?0:-1;
+      byId(tab.getAttribute('aria-controls')).hidden=!selected;
+      if(selected&&focus){tab.focus();}
+    });
+  }
+  root.addEventListener('click',event=>{
+    const tab=event.target.closest('[data-provider-tab]');
+    if(tab){selectProvider(tab.dataset.providerTab);return;}
+    const copy=event.target.closest('[data-provider-copy]');
+    if(copy){
+      const field=byId(`ad-provider-${copy.dataset.providerCopy}-redirect`);
+      field.select();
+      toast('Gestaltungsvorschau: Die Beispieladresse ist zum Kopieren markiert.');
+    }
+    const reload=event.target.closest('[data-provider-reload]');
+    if(reload){const form=byId(`ad-provider-form-${reload.dataset.providerReload}`);form.reset();updateProviderAvailability(form);toast('Beispielwerte neu geladen.');}
+    if(event.target.closest('[data-provider-save]')){toast('Gestaltungsvorschau: Es wurden keine Anbietereinstellungen gespeichert.');}
+  });
+  root.addEventListener('keydown',event=>{
+    const tab=event.target.closest('[data-provider-tab]');
+    if(!tab||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){return;}
+    const tabs=[...root.querySelectorAll('[data-provider-tab]')];
+    const index=tabs.indexOf(tab);
+    const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+    event.preventDefault();selectProvider(tabs[next].dataset.providerTab,true);
+  });
   function syncNumberButtons(){
     root.querySelectorAll('.ad-number-control').forEach(control=>{
       const input=control.querySelector('input'),value=input.valueAsNumber;
@@ -176,7 +267,7 @@
     }).join('');
     const status=inventory.mail.status[state]||inventory.mail.status.ready;
     const metadata=`<span class="ad-pill ad-mail-badge" aria-label="${escape(mail.cardBadge+': '+status)}"><i class="ad-dot" style="--dot:${state==='maintenance'?'#fbbf24':state==='unavailable'?'#64748b':'#34d399'}"></i>${escape(mail.cardBadge)}</span>`;
-    const footer=`<div class="ad-config-save-hint ad-mail-hint">${icon('info')}<div><p>${escape(mail.sendHint)}</p><button type="button" class="ad-mail-settings-link" data-ad-action="go-smtp">${escape(configuration.groups.SMTP.label)}</button></div></div><div class="ad-config-actions">${button('mail-send',escape(mail.send),'send',true)}</div>`;
+    const footer=`<div class="ad-config-save-hint ad-mail-hint">${icon('info')}<div><p>${escape(mail.sendHint)}</p><button type="button" class="ad-mail-settings-link" data-ad-action="go-smtp">${icon('open-section')}${escape(configuration.groups.SMTP.label)}</button></div></div><div class="ad-config-actions">${button('mail-send',escape(mail.send),'send',true)}</div>`;
     root.innerHTML='<div class="ad-mail" data-variant="a">'+panel(escape(mail.cardTitle),escape(mail.cardDescription),'mail',`<form id="ad-mail-form" class="ad-stack" novalidate>${fields}</form>`,footer,metadata)+'</div>';
     if(blocked()){root.querySelectorAll('input,textarea,[data-ad-action=mail-send]').forEach(node=>node.disabled=true);}
     if(state==='error'){mailNotification('Simulation: '+mail.error,'error');}

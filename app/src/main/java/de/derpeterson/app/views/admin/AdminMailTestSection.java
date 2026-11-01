@@ -75,6 +75,7 @@ public class AdminMailTestSection extends VerticalLayout {
   private final Button sendTestMailButton;
   private final Anchor smtpLink =
       new Anchor(AppRoute.ADMIN.getRoute() + "?section=configuration&group=smtp", "");
+  private final Span smtpLinkCaption = new Span();
   private final ConfigInfoButton recipientInfoButton;
   private final ConfigInfoButton subjectInfoButton;
   private final ConfigInfoButton bodyInfoButton;
@@ -235,7 +236,8 @@ public class AdminMailTestSection extends VerticalLayout {
     Div hint = new Div(hintIcon, hintCopy);
     hint.addClassName("cosmos-panel-hint");
     smtpLink.addClassName("admin-smtp-link");
-    smtpLink.setText(messageProperties.getAdminConfigGroupSmtp());
+    smtpLink.add(AppIcon.OPEN_SECTION.create(), smtpLinkCaption);
+    smtpLinkCaption.setText(messageProperties.getAdminConfigGroupSmtp());
     testBodyField.setHelperText(messageProperties.getAdminMailBodyHint());
     Div actions = new Div(sendTestMailButton);
     actions.addClassName("cosmos-panel-actions");
@@ -280,7 +282,7 @@ public class AdminMailTestSection extends VerticalLayout {
     mailCardBadge.setText(messageProperties.getAdminMailCardBadge());
     refreshDeliveryState();
     mailSendHint.setText(messageProperties.getAdminMailSendHint());
-    smtpLink.setText(messageProperties.getAdminConfigGroupSmtp());
+    smtpLinkCaption.setText(messageProperties.getAdminConfigGroupSmtp());
     testBodyField.setHelperText(messageProperties.getAdminMailBodyHint());
     mailBodyHint.setText(messageProperties.getAdminMailBodyHint());
     testRecipientField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());

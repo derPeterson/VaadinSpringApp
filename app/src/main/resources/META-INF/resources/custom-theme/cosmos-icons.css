@@ -1,5 +1,6 @@
 /* Nur ausdrücklich gesetzte Anwendungsicons. Native Vaadin-Symbole bleiben unverändert. */
-vaadin-icon.cosmos-lucide-icon {
+vaadin-icon.cosmos-lucide-icon,
+vaadin-icon.cosmos-tabler-icon {
     --vaadin-icon-stroke-width: 2;
     padding: 0;
 }

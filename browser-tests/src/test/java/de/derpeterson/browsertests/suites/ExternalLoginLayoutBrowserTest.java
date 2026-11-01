@@ -13,12 +13,15 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.BoundingBox;
 import de.derpeterson.browsertests.BrowserFixture;
+import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Allure;
 import io.qameta.allure.AttachmentOptions;
 import io.qameta.allure.Feature;
 import java.io.ByteArrayInputStream;
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -27,6 +30,368 @@ import org.junit.jupiter.params.provider.CsvSource;
 @Tag("browser")
 @Feature("Externe Anmeldung")
 public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
+  @ParameterizedTest
+  @CsvSource({"1280", "390"})
+  @DisplayName("OIDC-10: Native Anbietertabs erhalten ungespeicherte Eingaben")
+  void providerTabsKeepIndependentDrafts(int width) {
+    page.setViewportSize(width, 1000);
+    LoginPage login = new LoginPage(page);
+    login.open();
+    login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    page.navigate("/admin?section=configuration&group=external_login");
+    Locator section = page.locator("#admin-provider-settings");
+    Locator tabs = section.locator("vaadin-tabsheet");
+    assertThat(tabs).hasCount(1);
+    assertThat(tabs.getByRole(AriaRole.TAB)).hasCount(2);
+    assertThat(section.locator(".provider-panel-header vaadin-icon"))
+        .hasAttribute("data-tabler", "cloud-lock");
+    assertThat(page.locator("vaadin-side-nav-item vaadin-icon[data-tabler=cloud-lock]"))
+        .hasCount(1);
+    assertThat(tabs).hasCSS("border-top-width", "0px");
+    assertThat(tabs).hasCSS("border-bottom-width", "0px");
+    assertThat(tabs.locator("vaadin-tabs")).hasCSS("border-bottom-width", "0px");
+    assertThat(tabs.locator("[part=tabs-container]")).hasCSS("border-bottom-width", "0px");
+    assertThat(section.locator(".provider-panel-header")).hasCSS("border-bottom-width", "0px");
+    assertTrue(
+        tabs.locator("[part=tabs-container]")
+            .evaluate("e => getComputedStyle(e).backgroundImage")
+            .toString()
+            .contains("linear-gradient"),
+        "Die Trennlinie bleibt außerhalb des aktiven Tabs erhalten");
+    assertThat(tabs.locator("[part=tabs-container]")).hasCSS("box-shadow", "none");
+    assertEquals(
+        "none",
+        page.locator("#provider-tab-google")
+            .evaluate("e => getComputedStyle(e, '::before').display"));
+    assertProviderTabAppearance(page.locator("#provider-tab-google"));
+    assertThat(section.locator(".provider-panel-header h2"))
+        .hasText(texts.getProviderSettingsPanelTitle());
+    assertThat(section.locator(".provider-panel-header .cosmos-panel-description"))
+        .hasText(texts.getProviderSettingsPanelDescription());
+    assertThat(section.locator(".provider-panel-header .cosmos-panel-description"))
+        .hasCSS("white-space", "pre-line");
+    assertThat(section.locator(".provider-panel-header .cosmos-panel-description"))
+        .hasCSS("line-height", "20px");
+    assertThat(section.locator(".provider-panel-header vaadin-badge")).hasCount(2);
+    for (String provider : new String[] {"google", "microsoft"}) {
+      Locator badge = page.locator("#provider-" + provider + "-status");
+      assertThat(badge).hasAttribute("data-state", "active");
+      assertThat(badge).hasText(texts.getProviderSettingsActive());
+      assertThat(badge).hasCSS("height", "30px");
+      assertThat(badge.locator("img")).hasCount(1);
+      page.keyboard().press("Tab");
+      badge.focus();
+      assertThat(page.getByRole(AriaRole.TOOLTIP))
+          .containsText(
+              texts.getProviderSettingsActiveHint(
+                  provider.equals("google") ? "Google" : "Microsoft"));
+      page.keyboard().press("Escape");
+      page.locator("#provider-tab-" + provider).click();
+      Locator assistant = page.locator("#provider-" + provider + "-content");
+      assertThat(assistant.locator(".provider-assistant-kicker"))
+          .hasText(texts.getProviderSettingsAssistantKicker());
+      assertThat(assistant.locator(".provider-assistant-kicker vaadin-icon"))
+          .hasAttribute("data-lucide", "bot");
+      assertThat(assistant.locator(".provider-step-label")).hasCount(3);
+      assertThat(assistant.locator(".provider-step-label").first())
+          .hasText(texts.getProviderSettingsSetupProvider());
+      assertThat(assistant.locator(".provider-step-label").nth(1))
+          .hasText(texts.getProviderSettingsSetupCredentials());
+      assertThat(assistant.locator(".provider-step-label").nth(2))
+          .hasText(texts.getProviderSettingsEnableSignIn());
+      for (int step = 0; step < 3; step++) {
+        assertThat(assistant.locator(".provider-step-label vaadin-icon").nth(step))
+            .hasAttribute("data-tabler", "square-rounded-number-" + (step + 1));
+      }
+      assertThat(assistant.locator(".provider-field-label.admin-config-required")).hasCount(2);
+      Locator consoleLink = assistant.locator("a.provider-console-link");
+      assertThat(consoleLink).hasText(texts.getProviderSettingsOpenConsole());
+      assertThat(consoleLink).hasAttribute("target", "_blank");
+      assertThat(consoleLink).hasAttribute("rel", "noopener noreferrer");
+      assertThat(consoleLink).hasCSS("border-top-width", "0px");
+      assertThat(consoleLink).hasCSS("font-weight", "600");
+      assertThat(consoleLink).hasCSS("color", "rgb(226, 232, 240)");
+      assertThat(consoleLink.locator("vaadin-icon")).hasAttribute("data-tabler", "external-link");
+      assertThat(consoleLink.locator("vaadin-icon")).hasCSS("color", "rgb(56, 189, 248)");
+      assertThat(assistant.locator(".provider-console-guide")).hasCSS("row-gap", "4px");
+      assertLinkAlignmentAndStableHover(consoleLink);
+      assertProviderFieldHelp(provider);
+    }
+    page.locator("#provider-tab-google").click();
+    Locator google = page.locator("#provider-google-content");
+    Locator microsoft = page.locator("#provider-microsoft-content");
+    assertThat(google).isVisible();
+    assertThat(microsoft).isHidden();
+    attachPanels("Anmeldeanbieter: Google-Tab bei " + width + " px");
+    Locator clientId = page.locator("#provider-google-client-id input");
+    clientId.fill("unsaved-google-example");
+    page.locator("#provider-tab-microsoft").click();
+    assertThat(google).isHidden();
+    assertThat(microsoft).isVisible();
+    assertThat(page.locator("#provider-tab-microsoft")).hasAttribute("aria-selected", "true");
+    assertProviderTabAppearance(page.locator("#provider-tab-microsoft"));
+    Locator microsoftId = page.locator("#provider-microsoft-client-id input");
+    microsoftId.fill("unsaved-microsoft-example");
+    page.locator("#provider-tab-google").click();
+    assertThat(clientId).hasValue("unsaved-google-example");
+    page.locator("#provider-tab-microsoft").click();
+    assertThat(microsoftId).hasValue("unsaved-microsoft-example");
+    assertTrue(
+        (Boolean)
+            tabs.locator("vaadin-tabsheet-scroller[part=content]")
+                .evaluate(
+                    "e => e.scrollHeight <= e.clientHeight + 1 && e.scrollWidth <= e.clientWidth + 1"),
+        "Der Tabinhalt wächst ohne eigenen Scrollbereich");
+    assertTrue(
+        (Boolean) page.evaluate("document.documentElement.scrollWidth <= innerWidth"),
+        "Anbietertabs erzeugen keinen horizontalen Seitenüberlauf");
+
+    page.navigate(
+        Path.of("docs/design/frontend-referenzen/admin.html").toAbsolutePath().toUri().toString());
+    if (width == 390) {
+      page.locator("#mobileMenuBtn").click();
+    }
+    page.locator("[data-admin-route=settings]:visible").first().click();
+    if (!page.locator("[data-ad-group=EXTERNAL_LOGIN]:visible").first().isVisible()) {
+      page.locator("#mobileMenuBtn").click();
+    }
+    page.locator("[data-ad-group=EXTERNAL_LOGIN]:visible").first().click();
+    Locator referenceTabs = page.locator(".ad-provider-tabs");
+    assertThat(referenceTabs.getByRole(AriaRole.TAB)).hasCount(2);
+    assertThat(page.locator(".ad-provider-panel-header .ad-tabler-icon")).isVisible();
+    assertThat(page.locator("[data-ad-group=EXTERNAL_LOGIN] .ad-tabler-icon")).hasCount(1);
+    assertThat(referenceTabs).hasCSS("border-bottom-width", "0px");
+    assertThat(page.locator(".ad-provider-panel-header")).hasCSS("border-bottom-width", "0px");
+    assertThat(page.locator(".ad-provider-panel-header h2")).hasText("Anmeldeanbieter");
+    assertThat(page.locator(".ad-provider-panel-header p br")).hasCount(1);
+    assertThat(page.locator(".ad-provider-status")).hasCount(2);
+    for (String provider : new String[] {"google", "microsoft"}) {
+      Locator badge =
+          page.locator(
+              ".ad-provider-status[data-state="
+                  + (provider.equals("google") ? "active" : "inactive")
+                  + "]");
+      assertThat(badge).hasCSS("height", "30px");
+      badge.scrollIntoViewIfNeeded();
+      badge.evaluate(
+          "e => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))");
+      badge.evaluate("e => e.focus({preventScroll:true})");
+      assertThat(page.locator("#reference-tooltip")).isVisible();
+      assertThat(page.locator("#reference-tooltip"))
+          .containsText(
+              provider.equals("google")
+                  ? "Google ist für neue Anmeldungen freigegeben."
+                  : "Microsoft ist für neue Anmeldungen deaktiviert.");
+      page.keyboard().press("Escape");
+      page.locator("#ad-provider-tab-" + provider).click();
+      assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-assistant-kicker"))
+          .hasText("Einrichtungsassistent");
+      assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-step-label")).hasCount(3);
+      assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-step-label"))
+          .hasText(
+              new String[] {
+                "Anbieter einrichten", "Zugangsdaten hinterlegen", "Anmeldung aktivieren"
+              });
+      assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-step-label svg"))
+          .hasCount(3);
+      assertThat(page.locator("#ad-provider-" + provider + " label .ad-required")).hasCount(2);
+      Locator referenceConsoleLink =
+          page.locator("#ad-provider-" + provider + " a.ad-provider-console-link");
+      assertThat(referenceConsoleLink).hasCSS("border-top-width", "0px");
+      assertThat(referenceConsoleLink).hasCSS("font-weight", "600");
+      assertThat(referenceConsoleLink).hasCSS("color", "rgb(226, 232, 240)");
+      assertThat(referenceConsoleLink.locator("svg")).hasCSS("color", "rgb(56, 189, 248)");
+      assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-console-guide"))
+          .hasCSS("row-gap", "4px");
+      assertLinkAlignmentAndStableHover(referenceConsoleLink);
+      for (String field : new String[] {"client", "secret", "enabled"}) {
+        Locator wrapper =
+            page.locator("#ad-provider-" + provider + "-" + field)
+                .locator(
+                    "xpath=ancestor::div[contains(concat(' ',normalize-space(@class),' '),' hc-field ')][1]");
+        wrapper.locator(".hc-trigger").click();
+        Locator help = page.locator("#configurationHelp");
+        assertThat(help).isVisible();
+        assertThat(help.locator(".hc-group"))
+            .hasText(provider.equals("google") ? "Google" : "Microsoft");
+        assertThat(help.locator(".hc-rules li")).hasCount(1);
+        help.locator("[data-hc-close]").click();
+      }
+      Locator referenceEnabled = page.locator("#ad-provider-" + provider + "-enabled");
+      Locator referenceClientInput = page.locator("#ad-provider-" + provider + "-client");
+      String initialClient = referenceClientInput.inputValue();
+      boolean initialEnabled = referenceEnabled.isChecked();
+      referenceEnabled.uncheck();
+      referenceClientInput.fill("");
+      assertThat(referenceEnabled).isDisabled();
+      referenceClientInput.fill(initialClient);
+      assertThat(referenceEnabled).isEnabled();
+      referenceEnabled.setChecked(initialEnabled);
+    }
+    page.locator("#ad-provider-tab-google").click();
+    BoundingBox referenceClient = page.locator("#ad-provider-google-client").boundingBox();
+    BoundingBox referenceSecret = page.locator("#ad-provider-google-secret").boundingBox();
+    if (width >= 600) {
+      assertEquals(
+          referenceClient.y,
+          referenceSecret.y,
+          1,
+          "Die Eingaben stehen auch mit Feldhilfe auf gleicher Höhe");
+    } else {
+      assertTrue(
+          referenceSecret.y > referenceClient.y + referenceClient.height,
+          "Mobil stehen die Eingaben untereinander");
+    }
+    BoundingBox referenceCredentials =
+        page.locator("#ad-provider-google .ad-provider-credentials").boundingBox();
+    BoundingBox referenceActivation =
+        page.locator("#ad-provider-google .hc-toggle-control").boundingBox();
+    assertTrue(
+        referenceActivation.width >= referenceCredentials.width * .85,
+        "Die Freigabezeile nutzt die volle verfügbare Formularbreite");
+    assertProviderTabAppearance(page.locator("#ad-provider-tab-google"));
+    assertThat(page.locator("#ad-provider-google")).isVisible();
+    assertThat(page.locator("#ad-provider-microsoft")).isHidden();
+    attachPanels("Anmeldeanbieter: Google-Tab HTML-Referenz bei " + width + " px");
+    page.locator("#ad-provider-google-client").fill("unsaved-reference-example");
+    page.locator("#ad-provider-tab-microsoft").click();
+    assertProviderTabAppearance(page.locator("#ad-provider-tab-microsoft"));
+    assertThat(page.locator("#ad-provider-microsoft")).isVisible();
+    referenceTabs
+        .getByRole(AriaRole.TAB, new Locator.GetByRoleOptions().setName("Microsoft"))
+        .press("Home");
+    assertThat(page.locator("#ad-provider-tab-google")).isFocused();
+    assertThat(page.locator("#ad-provider-google-client")).hasValue("unsaved-reference-example");
+    assertTrue(
+        (Boolean) page.evaluate("document.documentElement.scrollWidth <= innerWidth"),
+        "HTML-Anbietertabs erzeugen keinen horizontalen Seitenüberlauf");
+
+    Locator referenceMail = page.locator("[data-admin-route=mail]").first();
+    if (!referenceMail.isVisible()) {
+      page.locator("#mobileMenuBtn").click();
+    }
+    referenceMail.click();
+    Locator referenceSmtp = page.locator(".ad-mail-settings-link");
+    assertThat(referenceSmtp).hasText("SMTP Einstellungen");
+    assertLinkAlignmentAndStableHover(referenceSmtp);
+    attachPanels("SMTP-Direktzugang HTML bei " + width + " px");
+    referenceSmtp.click();
+    assertThat(page.locator("#admin-proposal .ad-config")).isVisible();
+
+    page.navigate("/admin?section=mail_test");
+    Locator smtp = page.locator("a.admin-smtp-link");
+    assertThat(smtp).hasText(texts.getAdminConfigGroupSmtp());
+    assertLinkAlignmentAndStableHover(smtp);
+    attachPanels("SMTP-Direktzugang Vaadin bei " + width + " px");
+    smtp.click();
+    assertThat(page).hasURL(java.util.regex.Pattern.compile(".*[?&]group=smtp(?:&.*)?$"));
+  }
+
+  private void assertProviderTabAppearance(Locator tab) {
+    assertThat(tab).hasCSS("border-top-width", "2px");
+    assertThat(tab).hasCSS("border-top-color", "rgb(56, 189, 248)");
+    assertThat(tab).hasCSS("border-top-left-radius", "10px");
+    assertThat(tab).hasCSS("border-bottom-width", "0px");
+    assertThat(tab).hasCSS("font-weight", "600");
+  }
+
+  private void assertLinkAlignmentAndStableHover(Locator link) {
+    link.scrollIntoViewIfNeeded();
+    List<?> geometry =
+        (List<?>)
+            link.evaluate(
+                """
+                element => {
+                  const icon = element.querySelector('vaadin-icon, svg');
+                  const caption = element.querySelector('span');
+                  const range = document.createRange();
+                  if (caption) {
+                    range.selectNodeContents(caption);
+                  } else {
+                    range.selectNode([...element.childNodes].find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim()));
+                  }
+                  const text = range.getBoundingClientRect();
+                  const symbol = icon.getBoundingClientRect();
+                  const box = element.getBoundingClientRect();
+                  return [
+                    Math.abs((symbol.top + symbol.bottom - text.top - text.bottom) / 2),
+                    text.left - symbol.right,
+                    Math.abs((symbol.left + text.right - box.left - box.right) / 2)
+                  ];
+                }
+                """);
+    assertTrue(
+        ((Number) geometry.get(0)).doubleValue() <= 1.5,
+        "Icon und sichtbarer Text stehen vertikal mittig: " + geometry);
+    assertEquals(8, ((Number) geometry.get(1)).doubleValue(), 1, "Einheitlicher Iconabstand");
+    assertTrue(
+        ((Number) geometry.get(2)).doubleValue() <= 1,
+        "Icon und Text sind als Gruppe in der Klickfläche zentriert: " + geometry);
+    String color = link.evaluate("element => getComputedStyle(element).color").toString();
+    Locator symbol = link.locator(":scope > vaadin-icon, :scope > svg");
+    String iconColor = symbol.evaluate("element => getComputedStyle(element).color").toString();
+    link.hover();
+    assertThat(link).hasCSS("background-color", "rgba(0, 0, 0, 0)");
+    assertThat(link).hasCSS("color", color);
+    assertThat(symbol).hasCSS("color", iconColor);
+    page.mouse().move(1, 1);
+  }
+
+  private void assertProviderFieldHelp(String provider) {
+    for (String field : new String[] {"client_id", "secret", "enabled"}) {
+      Locator info = page.locator("#provider-" + provider + "-" + field + "-info");
+      if (!field.equals("enabled")) {
+        Locator input =
+            page.locator(
+                "#provider-"
+                    + provider
+                    + "-"
+                    + (field.equals("client_id") ? "client-id" : field)
+                    + " [part=input-field]");
+        info.scrollIntoViewIfNeeded();
+        BoundingBox inputBounds = input.boundingBox();
+        BoundingBox infoBounds = info.boundingBox();
+        assertTrue(
+            Math.abs(inputBounds.y + inputBounds.height / 2 - infoBounds.y - infoBounds.height / 2)
+                < 2,
+            "Infoicon ist mittig zum Eingabefeld: Feld "
+                + (inputBounds.y + inputBounds.height / 2)
+                + ", Info "
+                + (infoBounds.y + infoBounds.height / 2));
+      }
+      info.click();
+      Locator help = page.locator("#provider-field-help");
+      assertThat(help.locator("vaadin-dialog-overlay > [part~=overlay]")).isVisible();
+      String explanation =
+          switch (field) {
+            case "client_id" -> texts.getProviderSettingsClientIdHelp(provider.equals("microsoft"));
+            case "secret" -> texts.getProviderSettingsSecretHelp(provider.equals("microsoft"));
+            default -> texts.getProviderSettingsEnableHelp();
+          };
+      assertThat(help.locator(".admin-help-description")).hasText(explanation);
+      help.locator("[slot=footer] vaadin-button").click();
+    }
+    Locator enabled =
+        page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.CHECKBOX);
+    Locator client = page.locator("#provider-" + provider + "-client-id input");
+    String originalClient = client.inputValue();
+    enabled.uncheck();
+    client.fill(" ");
+    assertThat(enabled).isDisabled();
+    client.fill(originalClient);
+    assertThat(enabled).isEnabled();
+    assertThat(page.locator("#provider-" + provider + "-status"))
+        .hasAttribute("data-state", "active");
+    enabled.check();
+    client.fill("");
+    assertThat(enabled).isEnabled();
+    enabled.uncheck();
+    assertThat(enabled).isDisabled();
+    client.fill(originalClient);
+    enabled.check();
+  }
+
   @ParameterizedTest
   @CsvSource({"login,1280", "login,390", "register,1280", "register,390"})
   @DisplayName("OIDC-09: Anmeldung und Registrierung behalten getrennte responsive Panels")
