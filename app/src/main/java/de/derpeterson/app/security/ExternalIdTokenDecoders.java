@@ -3,6 +3,7 @@ package de.derpeterson.app.security;
 import com.nimbusds.jwt.JWTParser;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.security.oauth2.client.oidc.authentication.OidcIdTokenDecoderFactory;
 import org.springframework.security.oauth2.client.oidc.authentication.OidcIdTokenValidator;
@@ -63,7 +64,8 @@ public final class ExternalIdTokenDecoders implements JwtDecoderFactory<ClientRe
                 .registrationId("microsoft-" + tenant)
                 .build();
         NimbusJwtDecoder microsoft =
-            NimbusJwtDecoder.withJwkSetUri(scoped.getProviderDetails().getJwkSetUri())
+            NimbusJwtDecoder.withJwkSetUri(
+                    Objects.requireNonNull(scoped.getProviderDetails().getJwkSetUri()))
                 .restOperations(
                     MicrosoftSigningKeys.client(scoped.getProviderDetails().getIssuerUri()))
                 .build();

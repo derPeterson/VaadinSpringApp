@@ -20,10 +20,10 @@ public final class PortalUserDetails extends User {
       String accessVersion,
       boolean enabled,
       Collection<? extends GrantedAuthority> authorities) {
-    super(email, password == null ? "" : password, enabled, true, true, true, authorities);
     if (accessVersion == null || accessVersion.isBlank()) {
       throw new IllegalArgumentException("Account access version required");
     }
+    super(email, password == null ? "" : password, enabled, true, true, true, authorities);
     credentialVersion = digest(accessVersion + ":" + (password == null ? "" : password));
   }
 

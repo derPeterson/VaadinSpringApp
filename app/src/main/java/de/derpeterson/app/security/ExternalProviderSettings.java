@@ -21,7 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Slf4j
 public class ExternalProviderSettings {
-  public static final List<String> PROVIDERS = List.of("google", "microsoft");
+  public static final String GOOGLE = "google";
+  public static final String MICROSOFT = "microsoft";
+  public static final String GOOGLE_NAME = "Google";
+  public static final String MICROSOFT_NAME = "Microsoft";
+  public static final List<String> PROVIDERS = List.of(GOOGLE, MICROSOFT);
   private final ExternalProviderRepository repository;
   private final ExternalLoginProperties properties;
   private final AdminRolePolicy administrators;
@@ -32,7 +36,7 @@ public class ExternalProviderSettings {
   @Transactional(readOnly = true)
   public Settings load(String provider) {
     administrators.authorizeMutation(null, Set.of());
-    return describe(credentials(provider));
+    return describe(readCredentials(provider));
   }
 
   /** Ein leeres Geheimnis behält den bisherigen Wert. Veraltete Formulare überschreiben nichts. */
@@ -40,7 +44,7 @@ public class ExternalProviderSettings {
   public Settings save(
       String provider, String clientId, String newSecret, boolean enabled, String revision) {
     administrators.authorizeMutation(null, Set.of());
-    ExternalProviderEntity current = credentials(provider);
+    ExternalProviderEntity current = readCredentials(provider);
     if (!Objects.equals(revision, revision(current))) {
       throw new OptimisticLockingFailureException("Provider configuration changed");
     }
@@ -66,6 +70,10 @@ public class ExternalProviderSettings {
   // Nur der Anmeldeadapter benötigt Geheimnisse. Kein UI-/JSON-Modell gibt sie zurück.
   @Transactional(readOnly = true)
   ExternalProviderEntity credentials(String provider) {
+    return readCredentials(provider);
+  }
+
+  private ExternalProviderEntity readCredentials(String provider) {
     if (!PROVIDERS.contains(provider)) {
       throw new IllegalArgumentException("Unsupported sign-in provider");
     }

@@ -41,14 +41,7 @@ public class VaadinSecurityFilter implements Filter {
             && AppRoute.LOGIN.getSecurityRoute().equals(httpRequest.getServletPath());
     SecurityService security = securityService.getObject();
     try {
-      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-      HttpSession session = httpRequest.getSession(false);
-      boolean hadPrincipal =
-          authentication != null && authentication.getPrincipal() instanceof UserDetails
-              || VaadinSession.getCurrent() != null
-                  && VaadinSession.getCurrent().getAttribute(UserDetails.class) != null
-              || session != null && session.getAttribute("authenticatedUser") instanceof UserDetails
-              || session != null && session.getAttribute(DurableSessionRepository.ACTIVE) != null;
+      boolean hadPrincipal = hasPrincipal(httpRequest);
       if (security.getAuthenticatedUser(httpRequest).isEmpty() && hadPrincipal && !loginDocument) {
         // Stop old UI callbacks. Only the login document may continue after the security
         // service cleared the stale context and invalidated its old HTTP/Vaadin session.
@@ -67,5 +60,15 @@ public class VaadinSecurityFilter implements Filter {
       }
     }
     chain.doFilter(request, response);
+  }
+
+  private boolean hasPrincipal(HttpServletRequest request) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    HttpSession session = request.getSession(false);
+    VaadinSession vaadin = VaadinSession.getCurrent();
+    return authentication != null && authentication.getPrincipal() instanceof UserDetails
+        || vaadin != null && vaadin.getAttribute(UserDetails.class) != null
+        || session != null && session.getAttribute("authenticatedUser") instanceof UserDetails
+        || session != null && session.getAttribute(DurableSessionRepository.ACTIVE) != null;
   }
 }

@@ -1,5 +1,7 @@
 package de.derpeterson.app.security;
 
+import static de.derpeterson.app.security.ExternalProviderSettings.GOOGLE;
+
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.service.ExternalIdentityService;
@@ -7,6 +9,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.io.Serializable;
+import java.net.URL;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -72,7 +76,8 @@ public class ExternalLoginFlow {
       boolean remember,
       Locale locale,
       Instant started,
-      String state) {
+      String state)
+      implements Serializable {
     @Override
     public String toString() {
       return "External sign-in attempt";
@@ -80,7 +85,8 @@ public class ExternalLoginFlow {
   }
 
   public record Registration(
-      ExternalIdentityEvidence identity, Locale locale, boolean remember, Instant expires) {
+      ExternalIdentityEvidence identity, Locale locale, boolean remember, Instant expires)
+      implements Serializable {
     @Override
     public String toString() {
       return "Pending external registration";
@@ -88,7 +94,8 @@ public class ExternalLoginFlow {
   }
 
   private record Grant(
-      Long userId, String version, Purpose purpose, Instant expires, String sessionId) {}
+      Long userId, String version, Purpose purpose, Instant expires, String sessionId)
+      implements Serializable {}
 
   private static final String ATTEMPT = ExternalLoginFlow.class.getName() + ".attempt";
   private static final String REGISTRATION = ExternalLoginFlow.class.getName() + ".registration";
@@ -186,22 +193,33 @@ public class ExternalLoginFlow {
   public Attempt bindAuthorization(HttpServletRequest request, String provider, String state) {
     HttpSession session = request.getSession(false);
     if (session == null
-        || !(session.getAttribute(ATTEMPT) instanceof Attempt old)
-        || !old.provider().equals(provider)
-        || old.state() != null
-        || old.started().plusSeconds(300).isBefore(clock.instant())) {
+        || !(session.getAttribute(ATTEMPT)
+            instanceof
+            Attempt(
+                String previousProvider,
+                Mode mode,
+                Long userId,
+                String accessVersion,
+                Purpose purpose,
+                boolean remember,
+                Locale locale,
+                Instant started,
+                String previousState))
+        || !previousProvider.equals(provider)
+        || previousState != null
+        || started.plusSeconds(300).isBefore(clock.instant())) {
       throw new AccessDeniedException("Start sign-in from the portal");
     }
     Attempt attempt =
         new Attempt(
-            old.provider(),
-            old.mode(),
-            old.userId(),
-            old.accessVersion(),
-            old.purpose(),
-            old.remember(),
-            old.locale(),
-            old.started(),
+            previousProvider,
+            mode,
+            userId,
+            accessVersion,
+            purpose,
+            remember,
+            locale,
+            started,
             state);
     session.setAttribute(ATTEMPT, attempt);
     return attempt;
@@ -228,43 +246,7 @@ public class ExternalLoginFlow {
     // Das Framework-OIDC-Token ist kein lokaler Portalzugang und wird nicht gespeichert.
     SecurityContextHolder.clearContext();
     if (attempt.mode() != Mode.LOGIN) {
-      UserEntity user =
-          users
-              .findById(attempt.userId())
-              .orElseThrow(() -> new AccessDeniedException("Account unavailable"));
-      if (!user.isEnabled()
-          || !Objects.equals(attempt.accessVersion(), user.getAccessVersion())
-          || security
-              .getAuthenticatedUser(request)
-              .filter(principal -> principal.getUsername().equals(user.getEmail()))
-              .isEmpty()) {
-        throw new AccessDeniedException("Account access changed");
-      }
-      if (attempt.mode() == Mode.LINK) {
-        identities.link(user.getId(), attempt.accessVersion(), evidence);
-      } else {
-        if (!identities.belongsTo(user.getId(), evidence)) {
-          throw new ProofRejected(ProofProblem.IDENTITY_MISMATCH);
-        }
-        // Freigegebene Google-Zwischenlösung: Ein neuer OIDC-Durchlauf bestätigt das Konto,
-        // aber keine erneute Passworteingabe. Diese bekannte Schwäche muss später 2FA ablösen.
-        if (!attempt.provider().equals("google")) {
-          Instant authenticated = evidence.authenticatedAt();
-          if (authenticated == null
-              || authenticated.isBefore(attempt.started().minusSeconds(5))
-              || authenticated.isAfter(clock.instant().plusSeconds(30))) {
-            throw new ProofRejected(ProofProblem.FRESH_AUTHENTICATION_REQUIRED);
-          }
-        }
-        session.setAttribute(
-            GRANT,
-            new Grant(
-                user.getId(),
-                user.getAccessVersion(),
-                attempt.purpose(),
-                clock.instant().plusSeconds(300),
-                session.getId()));
-      }
+      completeAccountAction(request, session, attempt, evidence);
       response.sendRedirect("/account?tab=security");
       return;
     }
@@ -278,6 +260,50 @@ public class ExternalLoginFlow {
         new Registration(
             evidence, attempt.locale(), attempt.remember(), clock.instant().plusSeconds(600)));
     response.sendRedirect("/external-registration");
+  }
+
+  private void completeAccountAction(
+      HttpServletRequest request,
+      HttpSession session,
+      Attempt attempt,
+      ExternalIdentityEvidence evidence) {
+    UserEntity user =
+        users
+            .findById(attempt.userId())
+            .orElseThrow(() -> new AccessDeniedException("Account unavailable"));
+    if (!user.isEnabled()
+        || !Objects.equals(attempt.accessVersion(), user.getAccessVersion())
+        || security
+            .getAuthenticatedUser(request)
+            .filter(principal -> principal.getUsername().equals(user.getEmail()))
+            .isEmpty()) {
+      throw new AccessDeniedException("Account access changed");
+    }
+    if (attempt.mode() == Mode.LINK) {
+      identities.link(user.getId(), attempt.accessVersion(), evidence);
+    } else {
+      if (!identities.belongsTo(user.getId(), evidence)) {
+        throw new ProofRejected(ProofProblem.IDENTITY_MISMATCH);
+      }
+      // Freigegebene Google-Zwischenlösung: Ein neuer OIDC-Durchlauf bestätigt das Konto,
+      // aber keine erneute Passworteingabe. Diese bekannte Schwäche muss später 2FA ablösen.
+      if (!attempt.provider().equals(GOOGLE)) {
+        Instant authenticated = evidence.authenticatedAt();
+        if (authenticated == null
+            || authenticated.isBefore(attempt.started().minusSeconds(5))
+            || authenticated.isAfter(clock.instant().plusSeconds(30))) {
+          throw new ProofRejected(ProofProblem.FRESH_AUTHENTICATION_REQUIRED);
+        }
+      }
+      session.setAttribute(
+          GRANT,
+          new Grant(
+              user.getId(),
+              user.getAccessVersion(),
+              attempt.purpose(),
+              clock.instant().plusSeconds(300),
+              session.getId()));
+    }
   }
 
   public void login(
@@ -305,7 +331,7 @@ public class ExternalLoginFlow {
               .anyMatch(role -> "ROLE_ADMIN".equals(role.getAuthority()))
           ? "/admin"
           : "/home";
-    } catch (SessionLimitException limit) {
+    } catch (SessionLimitException _) {
       sessions.startExternalRecovery(request, authentication, remember);
       return "/login?error=sessions";
     }
@@ -341,12 +367,19 @@ public class ExternalLoginFlow {
       HttpServletRequest request, UserEntity user, Purpose purpose, boolean consume) {
     HttpSession session = request.getSession(false);
     if (session == null
-        || !(session.getAttribute(GRANT) instanceof Grant grant)
-        || !grant.userId().equals(user.getId())
-        || !grant.version().equals(user.getAccessVersion())
-        || grant.purpose() != purpose
-        || !grant.expires().isAfter(clock.instant())
-        || !grant.sessionId().equals(session.getId())) {
+        || !(session.getAttribute(GRANT)
+            instanceof
+            Grant(
+                Long userId,
+                String version,
+                Purpose grantedPurpose,
+                Instant expires,
+                String sessionId))
+        || !userId.equals(user.getId())
+        || !version.equals(user.getAccessVersion())
+        || grantedPurpose != purpose
+        || !expires.isAfter(clock.instant())
+        || !sessionId.equals(session.getId())) {
       throw new AccessDeniedException("Confirm this security action again");
     }
     if (consume) {
@@ -362,7 +395,7 @@ public class ExternalLoginFlow {
     try {
       authorize(request, owner(request), grant.purpose(), false);
       return Optional.of(grant.purpose());
-    } catch (AccessDeniedException unavailable) {
+    } catch (AccessDeniedException _) {
       return Optional.empty();
     }
   }
@@ -380,7 +413,7 @@ public class ExternalLoginFlow {
 
   public static Purpose linkPurpose(String provider) {
     return switch (provider) {
-      case "google" -> Purpose.LINK_GOOGLE;
+      case GOOGLE -> Purpose.LINK_GOOGLE;
       case "microsoft" -> Purpose.LINK_MICROSOFT;
       default -> throw new IllegalArgumentException("Unknown provider");
     };
@@ -388,7 +421,7 @@ public class ExternalLoginFlow {
 
   public static Purpose unlinkPurpose(String provider) {
     return switch (provider) {
-      case "google" -> Purpose.UNLINK_GOOGLE;
+      case GOOGLE -> Purpose.UNLINK_GOOGLE;
       case "microsoft" -> Purpose.UNLINK_MICROSOFT;
       default -> throw new IllegalArgumentException("Unknown provider");
     };
@@ -400,13 +433,17 @@ public class ExternalLoginFlow {
         email != null && email.contains("@") ? email.substring(email.lastIndexOf('@') + 1) : "";
     String hosted = user.getClaimAsString("hd");
     boolean trusted =
-        provider.equals("google")
+        provider.equals(GOOGLE)
             && Boolean.TRUE.equals(user.getEmailVerified())
             && ("gmail.com".equalsIgnoreCase(domain)
                 || hosted != null && hosted.equalsIgnoreCase(domain));
+    URL issuer = user.getIssuer();
+    if (issuer == null) {
+      throw new AccessDeniedException("External issuer required");
+    }
     return new ExternalIdentityEvidence(
         provider,
-        user.getIssuer().toString(),
+        issuer.toString(),
         user.getSubject(),
         email,
         trusted,

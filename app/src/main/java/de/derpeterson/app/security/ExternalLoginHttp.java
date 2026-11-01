@@ -166,13 +166,17 @@ public class ExternalLoginHttp {
         OAuth2AuthorizedClient client,
         Authentication principal,
         HttpServletRequest request,
-        HttpServletResponse response) {}
+        HttpServletResponse response) {
+      // Tokens werden nach dem Identitätsnachweis absichtlich nicht gespeichert.
+    }
 
     @Override
     public void removeAuthorizedClient(
         String id,
         Authentication principal,
         HttpServletRequest request,
-        HttpServletResponse response) {}
+        HttpServletResponse response) {
+      // Ohne gespeicherte Anbieterzugänge gibt es hier nichts zu entfernen.
+    }
   }
 }

@@ -1,5 +1,7 @@
 package de.derpeterson.app.security;
 
+import static de.derpeterson.app.security.ExternalProviderSettings.GOOGLE;
+
 import de.derpeterson.app.model.ExternalProviderEntity;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -55,9 +57,9 @@ public class ExternalLoginConfiguration {
           for (String provider : ExternalProviderSettings.PROVIDERS) {
             ExternalProviderEntity stored = settings.credentials(provider);
             ExternalLoginProperties.Provider target =
-                provider.equals("google") ? current.getGoogle() : current.getMicrosoft();
+                provider.equals(GOOGLE) ? current.getGoogle() : current.getMicrosoft();
             ExternalLoginProperties.Provider defaults =
-                provider.equals("google") ? properties.getGoogle() : properties.getMicrosoft();
+                provider.equals(GOOGLE) ? properties.getGoogle() : properties.getMicrosoft();
             if (stored.isEnabled()) {
               target.setClientId(stored.getClientId());
               target.setClientSecret(stored.getClientSecret());
@@ -79,7 +81,7 @@ public class ExternalLoginConfiguration {
     if (properties.getGoogle().configured()) {
       clients.add(
           registration(
-              "google",
+              GOOGLE,
               properties.getGoogle(),
               "https://accounts.google.com",
               "https://accounts.google.com/o/oauth2/v2/auth",
@@ -118,7 +120,7 @@ public class ExternalLoginConfiguration {
         .tokenUri(value(properties.getTokenUri(), token))
         .jwkSetUri(value(properties.getJwkSetUri(), keys))
         .userNameAttributeName("sub")
-        .clientName(id.equals("google") ? "Google" : "Microsoft")
+        .clientName(id.equals(GOOGLE) ? "Google" : "Microsoft")
         .build();
   }
 

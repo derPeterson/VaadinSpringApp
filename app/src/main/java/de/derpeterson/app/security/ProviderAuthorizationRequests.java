@@ -2,6 +2,7 @@ package de.derpeterson.app.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
@@ -28,7 +29,7 @@ final class ProviderAuthorizationRequests
 
   @Override
   public void saveAuthorizationRequest(
-      OAuth2AuthorizationRequest authorization,
+      @Nullable OAuth2AuthorizationRequest authorization,
       HttpServletRequest request,
       HttpServletResponse response) {
     if (authorization != null) {

@@ -1,5 +1,6 @@
 package de.derpeterson.app.security;
 
+import java.io.Serializable;
 import java.time.Instant;
 
 /** Nur aus einem durch Spring geprüften OIDC-ID-Token erstellen. Keine Roh-Tokens aufbewahren. */
@@ -11,7 +12,8 @@ public record ExternalIdentityEvidence(
     boolean trustedEmail,
     String firstName,
     String lastName,
-    Instant authenticatedAt) {
+    Instant authenticatedAt)
+    implements Serializable {
   public ExternalIdentityEvidence {
     if ((!"google".equals(provider) && !"microsoft".equals(provider))
         || issuer == null

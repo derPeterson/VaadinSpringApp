@@ -281,15 +281,6 @@ public class SecurityService {
     }
   }
 
-  private Authentication restoreSecurityContext(UserDetails user) {
-    Authentication auth =
-        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-    SecurityContext context = SecurityContextHolder.createEmptyContext();
-    context.setAuthentication(auth);
-    SecurityContextHolder.setContext(context);
-    return auth;
-  }
-
   public void logout() {
     HttpServletRequest request = (HttpServletRequest) VaadinRequest.getCurrent();
     HttpServletResponse response = (HttpServletResponse) VaadinResponse.getCurrent();

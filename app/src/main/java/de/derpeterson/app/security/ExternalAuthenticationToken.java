@@ -1,6 +1,7 @@
 package de.derpeterson.app.security;
 
 import java.util.Collection;
+import java.util.Objects;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,10 +17,10 @@ public final class ExternalAuthenticationToken extends AbstractAuthenticationTok
 
   public ExternalAuthenticationToken(
       UserDetails principal, String provider, Collection<? extends GrantedAuthority> authorities) {
-    super(authorities);
     if (!"google".equals(provider) && !"microsoft".equals(provider)) {
       throw new IllegalArgumentException("Unknown external provider");
     }
+    super(authorities);
     this.principal = principal;
     this.provider = provider;
     super.setAuthenticated(true);
@@ -37,5 +38,17 @@ public final class ExternalAuthenticationToken extends AbstractAuthenticationTok
   @Override
   public Object getCredentials() {
     return null;
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    return other instanceof ExternalAuthenticationToken external
+        && super.equals(other)
+        && provider.equals(external.provider);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), provider);
   }
 }
