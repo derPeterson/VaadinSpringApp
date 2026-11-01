@@ -56,6 +56,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -119,58 +120,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     this.currentRequest = request;
 
     ComponentUtil.addListener(
-        UI.getCurrent(),
-        LanguageChangeEvent.class,
-        event -> {
-          VaadinSession.getCurrent().setLocale(event.getNewLocale());
-
-          Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
-          Optional.ofNullable(createAccountLink)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getLoginCreateAccountLink));
-          Optional.ofNullable(emailField)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getPublicEmailField));
-          Optional.ofNullable(passwordField)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getLoginPasswordField));
-          Optional.ofNullable(forgotPasswordLink)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getLoginForgotPasswordLink));
-          Optional.ofNullable(rememberMeSwitch)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getLoginRememberMeCheckbox));
-          Optional.ofNullable(loginButton)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getBaseLoginButton));
-          Optional.ofNullable(title)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getLoginTitle));
-          Optional.ofNullable(createAccountQuestionText)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getLoginCreateAccountQuestion));
-
-          ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
-          updateInputPlaceholders();
-          refreshRecoveryTexts();
-          NotificationHelper.getInstance().updateText();
-        });
+        UI.getCurrent(), LanguageChangeEvent.class, event -> refreshLanguage(event.getNewLocale()));
 
     getContent().setWidthFull();
     getContent().setPadding(false);
@@ -340,6 +290,57 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     updateInputPlaceholders();
     refreshRecoveryTexts();
     add(pageLayout);
+  }
+
+  private void refreshLanguage(Locale locale) {
+    VaadinSession.getCurrent().setLocale(locale);
+
+    Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
+    Optional.ofNullable(createAccountLink)
+        .ifPresent(
+            component ->
+                componentTranslationSupplierMap.put(
+                    component, this.messageProperties::getLoginCreateAccountLink));
+    Optional.ofNullable(emailField)
+        .ifPresent(
+            component ->
+                componentTranslationSupplierMap.put(
+                    component, this.messageProperties::getPublicEmailField));
+    Optional.ofNullable(passwordField)
+        .ifPresent(
+            component ->
+                componentTranslationSupplierMap.put(
+                    component, this.messageProperties::getLoginPasswordField));
+    Optional.ofNullable(forgotPasswordLink)
+        .ifPresent(
+            component ->
+                componentTranslationSupplierMap.put(
+                    component, this.messageProperties::getLoginForgotPasswordLink));
+    Optional.ofNullable(rememberMeSwitch)
+        .ifPresent(
+            component ->
+                componentTranslationSupplierMap.put(
+                    component, this.messageProperties::getLoginRememberMeCheckbox));
+    Optional.ofNullable(loginButton)
+        .ifPresent(
+            component ->
+                componentTranslationSupplierMap.put(
+                    component, this.messageProperties::getBaseLoginButton));
+    Optional.ofNullable(title)
+        .ifPresent(
+            component ->
+                componentTranslationSupplierMap.put(
+                    component, this.messageProperties::getLoginTitle));
+    Optional.ofNullable(createAccountQuestionText)
+        .ifPresent(
+            component ->
+                componentTranslationSupplierMap.put(
+                    component, this.messageProperties::getLoginCreateAccountQuestion));
+
+    ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+    updateInputPlaceholders();
+    refreshRecoveryTexts();
+    NotificationHelper.getInstance().updateText();
   }
 
   private void authenticate(

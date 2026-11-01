@@ -13,7 +13,9 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.concurrent.Semaphore;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -31,7 +33,24 @@ public class AvatarImageProcessor {
   /** Dateigröße und Rastermaße des validierten Originals, vor Ausschnitt und Ausrichtung. */
   public record SourceMetadata(AvatarImageFormat format, long sizeBytes, int width, int height) {}
 
-  private record ProcessedImage(SourceMetadata metadata, byte[] normalized) {}
+  private record ProcessedImage(SourceMetadata metadata, byte[] normalized) {
+    @Override
+    public boolean equals(Object other) {
+      return other instanceof ProcessedImage(SourceMetadata otherMetadata, byte[] otherNormalized)
+          && Objects.equals(metadata, otherMetadata)
+          && Arrays.equals(normalized, otherNormalized);
+    }
+
+    @Override
+    public int hashCode() {
+      return 31 * Objects.hashCode(metadata) + Arrays.hashCode(normalized);
+    }
+
+    @Override
+    public String toString() {
+      return "Processed avatar image";
+    }
+  }
 
   public record Crop(double zoom, double x, double y) implements Serializable {
     public static Crop centered() {
@@ -107,9 +126,7 @@ public class AvatarImageProcessor {
           int orientation = png ? pngOrientation(data, pngExif) : jpegOrientation(data);
           return new ProcessedImage(metadata, cropAndEncode(image, crop, orientation));
         } finally {
-          if (image != null) {
-            image.flush();
-          }
+          image.flush();
         }
       } finally {
         reader.dispose();

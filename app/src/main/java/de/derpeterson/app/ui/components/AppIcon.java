@@ -20,11 +20,11 @@ public enum AppIcon {
   CHECK_CIRCLE("circle-check"),
   CLOSE("x"),
   CLOSE_CIRCLE("circle-x"),
-  CLOUD_LOCK("tabler", "cloud-lock"),
-  NUMBER_ONE("tabler", "square-rounded-number-1"),
-  NUMBER_TWO("tabler", "square-rounded-number-2"),
-  NUMBER_THREE("tabler", "square-rounded-number-3"),
-  EXTERNAL_LINK_TABLER("tabler", "external-link"),
+  CLOUD_LOCK(Library.TABLER, "cloud-lock"),
+  NUMBER_ONE(Library.TABLER, "square-rounded-number-1"),
+  NUMBER_TWO(Library.TABLER, "square-rounded-number-2"),
+  NUMBER_THREE(Library.TABLER, "square-rounded-number-3"),
+  EXTERNAL_LINK_TABLER(Library.TABLER, "external-link"),
   COG("settings"),
   COGS("settings-2"),
   DASHBOARD("layout-dashboard"),
@@ -72,26 +72,36 @@ public enum AppIcon {
   CLOCK("clock");
 
   private final String name;
-  private final String library;
+  private final Library library;
 
-  AppIcon(String name) {
-    this("lucide", name);
+  private enum Library {
+    LUCIDE("lucide"),
+    TABLER("tabler");
+    private final String directory;
+
+    Library(String directory) {
+      this.directory = directory;
+    }
   }
 
-  AppIcon(String library, String name) {
+  AppIcon(String name) {
+    this(Library.LUCIDE, name);
+  }
+
+  AppIcon(Library library, String name) {
     this.library = library;
     this.name = name;
   }
 
   public String getSource() {
-    return "icons/" + library + "/" + name + ".svg";
+    return "icons/" + library.directory + "/" + name + ".svg";
   }
 
   public SvgIcon create() {
     SvgIcon icon = new SvgIcon(getSource());
-    icon.addClassName("cosmos-" + library + "-icon");
+    icon.addClassName("cosmos-" + library.directory + "-icon");
     icon.getElement().setAttribute("aria-hidden", "true");
-    icon.getElement().setAttribute("data-" + library, name);
+    icon.getElement().setAttribute("data-" + library.directory, name);
     return icon;
   }
 }

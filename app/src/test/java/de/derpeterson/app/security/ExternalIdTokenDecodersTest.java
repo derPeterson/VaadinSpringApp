@@ -111,16 +111,15 @@ class ExternalIdTokenDecodersTest {
     assertEquals(
         "stable-subject",
         decoder.decode(token(issuer, "own-client", TENANT, valid, key)).getSubject());
-    String encodedToken1 = token(issuer, "another-client", TENANT, valid, key);
-    assertThrows(JwtException.class, () -> decoder.decode(encodedToken1));
-    String encodedToken2 = token("https://attacker.example.test", "own-client", TENANT, valid, key);
-    assertThrows(JwtException.class, () -> decoder.decode(encodedToken2));
-    String encodedToken3 =
-        token(issuer, "own-client", TENANT, Instant.now().minusSeconds(300), key);
-    assertThrows(JwtException.class, () -> decoder.decode(encodedToken3));
+    String wrongAudience = token(issuer, "another-client", TENANT, valid, key);
+    assertThrows(JwtException.class, () -> decoder.decode(wrongAudience));
+    String wrongIssuer = token("https://attacker.example.test", "own-client", TENANT, valid, key);
+    assertThrows(JwtException.class, () -> decoder.decode(wrongIssuer));
+    String expiredToken = token(issuer, "own-client", TENANT, Instant.now().minusSeconds(300), key);
+    assertThrows(JwtException.class, () -> decoder.decode(expiredToken));
     RSAKey other = new RSAKeyGenerator(2048).keyID("own-test-key").generate();
-    String encodedToken4 = token(issuer, "own-client", TENANT, valid, other);
-    assertThrows(JwtException.class, () -> decoder.decode(encodedToken4));
+    String wrongSignature = token(issuer, "own-client", TENANT, valid, other);
+    assertThrows(JwtException.class, () -> decoder.decode(wrongSignature));
   }
 
   @ParameterizedTest
@@ -138,8 +137,8 @@ class ExternalIdTokenDecodersTest {
     (provider.equals("google") ? properties.getGoogle() : properties.getMicrosoft())
         .setClientId("replacement-client");
     JwtDecoder replacement = factory.createDecoder(registration(provider));
-    String encodedToken5 = token(issuer, "own-client", TENANT, expires, key);
-    assertThrows(JwtException.class, () -> replacement.decode(encodedToken5));
+    String previousAudience = token(issuer, "own-client", TENANT, expires, key);
+    assertThrows(JwtException.class, () -> replacement.decode(previousAudience));
     assertEquals(
         "stable-subject",
         replacement.decode(token(issuer, "replacement-client", TENANT, expires, key)).getSubject());
@@ -161,21 +160,21 @@ class ExternalIdTokenDecodersTest {
                     Instant.now().plusSeconds(300),
                     key))
             .getClaimAsString("tid"));
-    String encodedToken6 =
+    String invalidTenantPath =
         token(
             "https://attacker.example.test",
             "own-client",
             "../../attacker",
             Instant.now().plusSeconds(300),
             key);
-    assertThrows(JwtException.class, () -> decoder.decode(encodedToken6));
-    String encodedToken7 =
+    assertThrows(JwtException.class, () -> decoder.decode(invalidTenantPath));
+    String mismatchedTenant =
         token(
             "https://login.microsoftonline.com/" + TENANT + "/v2.0",
             "own-client",
             company,
             Instant.now().plusSeconds(300),
             key);
-    assertThrows(JwtException.class, () -> decoder.decode(encodedToken7));
+    assertThrows(JwtException.class, () -> decoder.decode(mismatchedTenant));
   }
 }

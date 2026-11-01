@@ -94,7 +94,7 @@ final class OidcTestProvider implements AutoCloseable {
       } else {
         send(exchange, 404, "text/plain", "Own fixture endpoint not found");
       }
-    } catch (Exception failure) {
+    } catch (Exception _) {
       send(exchange, 400, "application/json", "{\"error\":\"invalid_request\"}");
     }
   }

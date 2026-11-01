@@ -1,5 +1,8 @@
 package de.derpeterson.app.views.admin;
 
+import static de.derpeterson.app.security.ExternalProviderSettings.GOOGLE;
+import static de.derpeterson.app.security.ExternalProviderSettings.GOOGLE_NAME;
+import static de.derpeterson.app.security.ExternalProviderSettings.MICROSOFT_NAME;
 import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_CARD;
 import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
 import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADER;
@@ -45,6 +48,7 @@ import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -57,6 +61,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 /** Geführte Einrichtung auf den vorhandenen Konfigurations-/Panelbausteinen. */
 @StyleSheet("custom-theme/cosmos-provider-settings.css")
 public class AdminExternalLoginSection extends VerticalLayout {
+  private static final String PROVIDER_PREFIX = "provider-";
   private static final Logger logger = LoggerFactory.getLogger(AdminExternalLoginSection.class);
   private final transient MessageProperties texts;
   private final transient ExternalProviderSettings settings;
@@ -113,7 +118,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
       ProviderForm form = new ProviderForm(provider);
       forms.add(form);
       statuses.add(form.status);
-      String name = provider.equals("google") ? "Google" : "Microsoft";
+      String name = provider.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
       Image logo = new Image(providerLogo(provider), "");
       logo.getElement().setAttribute("aria-hidden", "true");
       Tab tab = new Tab(logo, new Span(name));
@@ -127,7 +132,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
   }
 
   private static String providerLogo(String provider) {
-    return "icons/external-login/" + provider + (provider.equals("google") ? ".png" : ".svg");
+    return "icons/external-login/" + provider + (provider.equals(GOOGLE) ? ".png" : ".svg");
   }
 
   public void activate() {
@@ -146,32 +151,15 @@ public class AdminExternalLoginSection extends VerticalLayout {
     forms.forEach(ProviderForm::refreshTexts);
     closeHelp.setText(texts.getNotificationsClose());
     if (helpPanel.isOpened()) {
-      refreshHelp();
+      helpForm.refreshHelp();
     }
   }
 
   private void openHelp(ProviderForm form, ProviderField field) {
     helpForm = form;
     helpField = field;
-    refreshHelp();
+    helpForm.refreshHelp();
     helpPanel.open();
-  }
-
-  private void refreshHelp() {
-    helpPanel.removeAll();
-    helpPanel.setHeading(texts.getAdminConfigHelpTitle());
-    helpPanel.setDescription(texts.getAdminConfigHelpDescription());
-    helpPanel.refreshCloseText(texts);
-    Span group = new Span(helpForm.provider.equals("google") ? "Google" : "Microsoft");
-    group.addClassName("admin-help-group");
-    H3 fieldTitle = new H3(helpForm.fieldLabel(helpField));
-    fieldTitle.addClassName("admin-help-field-title");
-    Span explanation = new Span(helpForm.fieldHelp(helpField));
-    explanation.addClassName("admin-help-description");
-    UnorderedList rules = new UnorderedList(new ListItem(fieldRule(helpField)));
-    Div rulesSection = new Div(new H4(texts.getAdminConfigInputRules()), rules);
-    rulesSection.addClassName("admin-help-rules");
-    helpPanel.add(group, fieldTitle, explanation, rulesSection);
   }
 
   private String fieldRule(ProviderField field) {
@@ -182,7 +170,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
     };
   }
 
-  private final class ProviderForm {
+  private final class ProviderForm implements Serializable {
     private final String provider;
     private final Div content;
     private final Badge status = new Badge();
@@ -218,12 +206,12 @@ public class AdminExternalLoginSection extends VerticalLayout {
       Div introduction = new Div(assistantKicker, assistantTitle, assistantDescription);
       introduction.addClassName("provider-assistant-intro");
       status.addClassName("provider-status");
-      status.setId("provider-" + provider + "-status");
+      status.setId(PROVIDER_PREFIX + provider + "-status");
       status.setIcon(new Image(providerLogo(provider), ""));
       status.getElement().setAttribute("tabindex", "0");
       console =
           new Anchor(
-              provider.equals("google")
+              provider.equals(GOOGLE)
                   ? "https://console.cloud.google.com/auth/clients"
                   : "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade",
               "");
@@ -234,7 +222,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
       redirect.setReadOnly(true);
       redirect.setAutoselect(true);
       redirect.setWidthFull();
-      redirect.setId("provider-" + provider + "-redirect");
+      redirect.setId(PROVIDER_PREFIX + provider + "-redirect");
       copy.addClickListener(
           event ->
               redirect
@@ -247,20 +235,22 @@ public class AdminExternalLoginSection extends VerticalLayout {
                       copied ->
                           NotificationHelper.getInstance()
                               .showNotification(
-                                  copied
+                                  Boolean.TRUE.equals(copied)
                                       ? texts::getProviderSettingsCopied
                                       : texts::getProviderSettingsCopyFailed,
                                   null,
-                                  copied ? NotificationType.SUCCESS : NotificationType.ERROR)));
+                                  Boolean.TRUE.equals(copied)
+                                      ? NotificationType.SUCCESS
+                                      : NotificationType.ERROR)));
       Div address = new Div(redirect, copy);
       address.addClassName("provider-redirect");
       clientId.setWidthFull();
       clientId.setMaxLength(512);
-      clientId.setId("provider-" + provider + "-client-id");
+      clientId.setId(PROVIDER_PREFIX + provider + "-client-id");
       clientId.setValueChangeMode(ValueChangeMode.EAGER);
       secret.setWidthFull();
       secret.setMaxLength(2048);
-      secret.setId("provider-" + provider + "-secret");
+      secret.setId(PROVIDER_PREFIX + provider + "-secret");
       secret.getElement().setAttribute("autocomplete", "new-password");
       secret.setValueChangeMode(ValueChangeMode.EAGER);
       Div credentials =
@@ -268,7 +258,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
               fieldWithHelp(clientId, ProviderField.CLIENT_ID),
               fieldWithHelp(secret, ProviderField.SECRET));
       credentials.addClassName("provider-credentials");
-      enabled.setId("provider-" + provider + "-enabled");
+      enabled.setId(PROVIDER_PREFIX + provider + "-enabled");
       enabledLabel
           .getElement()
           .addEventListener(
@@ -297,18 +287,35 @@ public class AdminExternalLoginSection extends VerticalLayout {
       reload.addClickListener(event -> load());
       save.setPrefixComponent(AppIcon.CHECK.create());
       save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-      save.setId("provider-" + provider + "-save");
+      save.setId(PROVIDER_PREFIX + provider + "-save");
       save.addClickListener(event -> save());
       Div actions = new Div(reload, save);
       actions.addClassName("cosmos-config-card-actions");
       Div footer = new Div(info, actions);
       footer.addClassName("cosmos-panel-footer");
       content = new Div(fields, footer);
-      content.setId("provider-" + provider + "-content");
+      content.setId(PROVIDER_PREFIX + provider + "-content");
       content.addClassName("provider-content");
       clientId.addValueChangeListener(event -> refreshAvailability());
       secret.addValueChangeListener(event -> refreshAvailability());
       enabled.addValueChangeListener(event -> refreshAvailability());
+    }
+
+    private void refreshHelp() {
+      helpPanel.removeAll();
+      helpPanel.setHeading(texts.getAdminConfigHelpTitle());
+      helpPanel.setDescription(texts.getAdminConfigHelpDescription());
+      helpPanel.refreshCloseText(texts);
+      Span group = new Span(provider.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME);
+      group.addClassName("admin-help-group");
+      H3 fieldTitle = new H3(fieldLabel(helpField));
+      fieldTitle.addClassName("admin-help-field-title");
+      Span explanation = new Span(fieldHelp(helpField));
+      explanation.addClassName("admin-help-description");
+      UnorderedList rules = new UnorderedList(new ListItem(fieldRule(helpField)));
+      Div rulesSection = new Div(new H4(texts.getAdminConfigInputRules()), rules);
+      rulesSection.addClassName("admin-help-rules");
+      helpPanel.add(group, fieldTitle, explanation, rulesSection);
     }
 
     private Div step(Component body) {
@@ -334,7 +341,11 @@ public class AdminExternalLoginSection extends VerticalLayout {
       ConfigInfoButton info =
           new ConfigInfoButton(() -> fieldHelp(field), () -> openHelp(this, field));
       info.setId(
-          "provider-" + provider + "-" + field.name().toLowerCase(java.util.Locale.ROOT) + "-info");
+          PROVIDER_PREFIX
+              + provider
+              + "-"
+              + field.name().toLowerCase(java.util.Locale.ROOT)
+              + "-info");
       infoButtons.put(field, info);
       Div row = new Div(input, info);
       row.addClassNames("cosmos-config-input-row", "provider-help-row");
@@ -403,10 +414,10 @@ public class AdminExternalLoginSection extends VerticalLayout {
         refreshTexts();
         NotificationHelper.getInstance()
             .showNotification(texts::getProviderSettingsSaved, null, NotificationType.SUCCESS);
-      } catch (IllegalArgumentException failure) {
+      } catch (IllegalArgumentException _) {
         NotificationHelper.getInstance()
             .showNotification(texts::getProviderSettingsIncomplete, null, NotificationType.ERROR);
-      } catch (OptimisticLockingFailureException failure) {
+      } catch (OptimisticLockingFailureException _) {
         NotificationHelper.getInstance()
             .showNotification(texts::getProviderSettingsConflict, null, NotificationType.ERROR);
       } catch (RuntimeException failure) {
@@ -423,7 +434,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
             info.refreshText();
             info.setAriaLabel(texts.getAdminConfigHelpTitle() + ": " + fieldLabel(field));
           });
-      String name = provider.equals("google") ? "Google" : "Microsoft";
+      String name = provider.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
       assistantKickerText.setText(texts.getProviderSettingsAssistantKicker());
       assistantTitle.setText(texts.getProviderSettingsAssistantTitle(name));
       assistantDescription.setText(texts.getProviderSettingsAssistantDescription());
@@ -439,7 +450,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
                 });
       }
       guide.setText(
-          provider.equals("google")
+          provider.equals(GOOGLE)
               ? texts.getProviderSettingsGoogleGuide()
               : texts.getProviderSettingsMicrosoftGuide());
       consoleCaption.setText(texts.getProviderSettingsOpenConsole());
@@ -474,7 +485,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
     private void refreshStatus() {
       boolean configured = stored != null && !stored.clientId().isBlank() && stored.secretStored();
       boolean active = configured && stored.enabled();
-      String name = provider.equals("google") ? "Google" : "Microsoft";
+      String name = provider.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
       String state =
           active ? texts.getProviderSettingsActive() : texts.getProviderSettingsInactive();
       status.setText(state);

@@ -512,9 +512,9 @@ class SessionManagementTest {
         false);
     assertTrue(management.hasRecovery(returning));
     assertTrue(security.getAuthenticatedUser(returning).isEmpty());
+    MockHttpServletResponse limitedResponse = new MockHttpServletResponse();
     assertThrows(
-        SessionLimitException.class,
-        () -> management.finishRecovery(returning, new MockHttpServletResponse()));
+        SessionLimitException.class, () -> management.finishRecovery(returning, limitedResponse));
     Snapshot snapshot = management.recoveryList(returning);
     management.recoveryRevoke(returning, snapshot.entries().getFirst().handle());
     assertTrue(admissions.isExpired(first));

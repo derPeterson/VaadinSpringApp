@@ -189,9 +189,9 @@ class ExternalLoginFlowTest {
         .storeVerifiedAuthentication(
             any(), any(), any(), org.mockito.ArgumentMatchers.anyBoolean());
     assertEquals(null, SecurityContextHolder.getContext().getAuthentication());
-    OAuth2AuthenticationToken confirmation1 = oidc("subject", Instant.now());
+    OAuth2AuthenticationToken replayedConfirmation = oidc("subject", Instant.now());
     assertThrows(
-        AccessDeniedException.class, () -> flow.complete(request, response, confirmation1));
+        AccessDeniedException.class, () -> flow.complete(request, response, replayedConfirmation));
   }
 
   @Test
@@ -201,9 +201,10 @@ class ExternalLoginFlowTest {
     flow.beginLogin(request, "google", false, Locale.ENGLISH);
     flow.bindAuthorization(request, "google", "state");
     request.setParameter("state", "different");
-    OAuth2AuthenticationToken confirmation2 = oidc("subject", Instant.now());
+    OAuth2AuthenticationToken mismatchedStateConfirmation = oidc("subject", Instant.now());
     assertThrows(
-        AccessDeniedException.class, () -> flow.complete(request, response, confirmation2));
+        AccessDeniedException.class,
+        () -> flow.complete(request, response, mismatchedStateConfirmation));
     assertThrows(AccessDeniedException.class, () -> flow.registration(request));
   }
 
@@ -242,10 +243,11 @@ class ExternalLoginFlowTest {
     flow.beginProof(request, "microsoft", Purpose.PASSWORD, Locale.GERMAN);
     flow.bindAuthorization(request, "microsoft", "state");
     request.setParameter("state", "state");
-    OAuth2AuthenticationToken confirmation3 =
+    OAuth2AuthenticationToken staleConfirmation =
         oidc("microsoft", "subject", Instant.now().minusSeconds(600));
     ProofRejected stale =
-        assertThrows(ProofRejected.class, () -> flow.complete(request, response, confirmation3));
+        assertThrows(
+            ProofRejected.class, () -> flow.complete(request, response, staleConfirmation));
     assertEquals(ProofProblem.FRESH_AUTHENTICATION_REQUIRED, stale.problem());
     assertThrows(
         AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.PASSWORD, false));
@@ -259,9 +261,12 @@ class ExternalLoginFlowTest {
     flow.bindAuthorization(request, provider, "state");
     request.setParameter("state", "state");
     when(identities.belongsTo(eq(1L), any())).thenReturn(false);
-    OAuth2AuthenticationToken confirmation4 = oidc(provider, "different-subject", Instant.now());
+    OAuth2AuthenticationToken differentIdentityConfirmation =
+        oidc(provider, "different-subject", Instant.now());
     ProofRejected mismatch =
-        assertThrows(ProofRejected.class, () -> flow.complete(request, response, confirmation4));
+        assertThrows(
+            ProofRejected.class,
+            () -> flow.complete(request, response, differentIdentityConfirmation));
     assertEquals(ProofProblem.IDENTITY_MISMATCH, mismatch.problem());
     assertThrows(
         AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.PASSWORD, false));
@@ -274,10 +279,11 @@ class ExternalLoginFlowTest {
     flow.beginProof(request, "microsoft", Purpose.PASSWORD, Locale.GERMAN);
     flow.bindAuthorization(request, "microsoft", "state");
     request.setParameter("state", "state");
-    OAuth2AuthenticationToken confirmation5 =
+    OAuth2AuthenticationToken invalidTimeConfirmation =
         oidc("microsoft", "subject", missing ? null : Instant.now().plusSeconds(60));
     ProofRejected failure =
-        assertThrows(ProofRejected.class, () -> flow.complete(request, response, confirmation5));
+        assertThrows(
+            ProofRejected.class, () -> flow.complete(request, response, invalidTimeConfirmation));
     assertEquals(ProofProblem.FRESH_AUTHENTICATION_REQUIRED, failure.problem());
     assertThrows(
         AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.PASSWORD, false));
@@ -298,9 +304,9 @@ class ExternalLoginFlowTest {
     flow.authorize(request, owner, Purpose.PASSWORD, true);
     assertThrows(
         AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.PASSWORD, true));
-    OAuth2AuthenticationToken confirmation6 = oidc("subject", null);
+    OAuth2AuthenticationToken replayedConfirmation = oidc("subject", null);
     assertThrows(
-        AccessDeniedException.class, () -> flow.complete(request, response, confirmation6));
+        AccessDeniedException.class, () -> flow.complete(request, response, replayedConfirmation));
   }
 
   @ParameterizedTest
@@ -325,9 +331,10 @@ class ExternalLoginFlowTest {
                           .build()));
       default -> throw new IllegalArgumentException(change);
     }
-    OAuth2AuthenticationToken confirmation7 = oidc("subject", null);
+    OAuth2AuthenticationToken changedAccountConfirmation = oidc("subject", null);
     assertThrows(
-        AccessDeniedException.class, () -> flow.complete(request, response, confirmation7));
+        AccessDeniedException.class,
+        () -> flow.complete(request, response, changedAccountConfirmation));
     assertThrows(
         AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.PASSWORD, false));
   }
@@ -353,9 +360,9 @@ class ExternalLoginFlowTest {
     request.setParameter("state", "expired-state");
     ReflectionTestUtils.setField(
         flow, "clock", Clock.fixed(start.plusSeconds(301), ZoneOffset.UTC));
-    OAuth2AuthenticationToken confirmation8 = oidc("subject", start);
+    OAuth2AuthenticationToken expiredConfirmation = oidc("subject", start);
     assertThrows(
-        AccessDeniedException.class, () -> flow.complete(request, response, confirmation8));
+        AccessDeniedException.class, () -> flow.complete(request, response, expiredConfirmation));
     assertThrows(AccessDeniedException.class, () -> flow.registration(request));
     ReflectionTestUtils.setField(flow, "clock", Clock.fixed(start, ZoneOffset.UTC));
     flow.beginLogin(request, "google", false, Locale.GERMAN);

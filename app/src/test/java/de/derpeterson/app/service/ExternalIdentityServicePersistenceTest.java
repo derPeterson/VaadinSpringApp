@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.RoleEntity;
@@ -164,13 +165,12 @@ class ExternalIdentityServicePersistenceTest {
     UserEntity user = register(evidence("microsoft", "subject-two", false));
     assertFalse(user.isEnabled());
     assertTrue(user.isVerificationPending());
-    assertThrows(
-        DisabledException.class,
-        () -> service.resolve(evidence("microsoft", "subject-two", false)));
-    assertThrows(
-        DisabledException.class,
-        () ->
-            service.link(user.getId(), user.getAccessVersion(), evidence("google", "other", true)));
+    ExternalIdentityEvidence pendingIdentity = evidence("microsoft", "subject-two", false);
+    assertThrows(DisabledException.class, () -> service.resolve(pendingIdentity));
+    Long userId = user.getId();
+    String version = user.getAccessVersion();
+    ExternalIdentityEvidence additionalIdentity = evidence("google", "other", true);
+    assertThrows(DisabledException.class, () -> service.link(userId, version, additionalIdentity));
     UserEntity changedContact =
         service.register(
             evidence("google", "changed-contact", true),
@@ -185,10 +185,10 @@ class ExternalIdentityServicePersistenceTest {
   @Test
   void matchingEmailNeverLinksAnotherIdentityOrCreatesAnotherAccount() throws IOException {
     register(evidence("google", "subject-one", true));
-    assertThrows(
-        AccessDeniedException.class, () -> register(evidence("microsoft", "subject-two", false)));
-    assertThrows(
-        AccessDeniedException.class, () -> register(evidence("google", "subject-different", true)));
+    ExternalIdentityEvidence microsoftIdentity = evidence("microsoft", "subject-two", false);
+    ExternalIdentityEvidence differentIdentity = evidence("google", "subject-different", true);
+    assertThrows(AccessDeniedException.class, () -> register(microsoftIdentity));
+    assertThrows(AccessDeniedException.class, () -> register(differentIdentity));
     assertEquals(1, users.count());
     assertEquals(1, identities.count());
   }
@@ -196,9 +196,9 @@ class ExternalIdentityServicePersistenceTest {
   @Test
   void lastMethodCannotBeRemovedAndUnlinkRevokesPersistedAuthentication() throws IOException {
     UserEntity user = register(evidence("google", "one", true));
-    assertThrows(
-        AccessDeniedException.class,
-        () -> service.unlink(user.getId(), user.getAccessVersion(), "google"));
+    Long userId = user.getId();
+    String version = user.getAccessVersion();
+    assertThrows(AccessDeniedException.class, () -> service.unlink(userId, version, "google"));
     service.link(user.getId(), user.getAccessVersion(), evidence("microsoft", "two", false));
     sessions.registerNewSession("own-active-session", user.getEmail());
     sessions.registerNewSession("other-active-session", user.getEmail());
@@ -214,15 +214,14 @@ class ExternalIdentityServicePersistenceTest {
     service.unlink(user.getId(), user.getAccessVersion(), "google");
     assertTrue(sessions.getSessionInformation("own-active-session").isExpired());
     assertTrue(sessions.getSessionInformation("other-active-session").isExpired());
-    org.mockito.Mockito.verify(remembered).removeUserTokens(user.getEmail());
+    verify(remembered).removeUserTokens(user.getEmail());
     assertNotEquals(
         user.getAccessVersion(), users.findById(user.getId()).orElseThrow().getAccessVersion());
     assertThrows(AuthenticationServiceException.class, () -> durable.restore(details, "test-key"));
     assertEquals(List.of("microsoft"), service.connected(user.getId()));
+    ExternalIdentityEvidence additionalIdentity = evidence("google", "three", true);
     assertThrows(
-        AccessDeniedException.class,
-        () ->
-            service.link(user.getId(), user.getAccessVersion(), evidence("google", "three", true)));
+        AccessDeniedException.class, () -> service.link(userId, version, additionalIdentity));
   }
 
   @Test
@@ -237,7 +236,8 @@ class ExternalIdentityServicePersistenceTest {
   @Test
   void maintenancePreventsPublicExternalRegistration() {
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    assertThrows(MaintenanceAccessException.class, () -> register(evidence("google", "one", true)));
+    ExternalIdentityEvidence identity = evidence("google", "one", true);
+    assertThrows(MaintenanceAccessException.class, () -> register(identity));
     assertEquals(0, users.count());
   }
 
@@ -269,7 +269,7 @@ class ExternalIdentityServicePersistenceTest {
                   try {
                     register(evidence("google", "same-identity", true));
                     return true;
-                  } catch (AccessDeniedException duplicate) {
+                  } catch (AccessDeniedException _) {
                     return false;
                   }
                 }));
@@ -305,7 +305,7 @@ class ExternalIdentityServicePersistenceTest {
                   try {
                     service.unlink(user.getId(), user.getAccessVersion(), provider);
                     return true;
-                  } catch (AccessDeniedException rejected) {
+                  } catch (AccessDeniedException _) {
                     return false;
                   }
                 }));

@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +41,30 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 @Slf4j
 public class UserAvatarService {
-  private record ImageReplacement(byte[] image, Instant uploadedAt, SourceMetadata original) {}
+  private record ImageReplacement(byte[] image, Instant uploadedAt, SourceMetadata original) {
+    @Override
+    public boolean equals(Object other) {
+      return other
+              instanceof
+              ImageReplacement(
+                  byte[] otherImage,
+                  Instant otherUploadedAt,
+                  SourceMetadata otherOriginal)
+          && Arrays.equals(image, otherImage)
+          && Objects.equals(uploadedAt, otherUploadedAt)
+          && Objects.equals(original, otherOriginal);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(Arrays.hashCode(image), uploadedAt, original);
+    }
+
+    @Override
+    public String toString() {
+      return "Avatar image replacement";
+    }
+  }
 
   public record State(Long version, AvatarMode mode, boolean hasImage, UUID imageRevision)
       implements Serializable {

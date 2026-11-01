@@ -3,6 +3,7 @@ package de.derpeterson.app.security;
 import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.model.ExternalProviderEntity;
 import de.derpeterson.app.repository.ExternalProviderRepository;
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -31,7 +32,8 @@ public class ExternalProviderSettings {
   private final AdminRolePolicy administrators;
 
   public record Settings(
-      String provider, String clientId, boolean secretStored, boolean enabled, String revision) {}
+      String provider, String clientId, boolean secretStored, boolean enabled, String revision)
+      implements Serializable {}
 
   @Transactional(readOnly = true)
   public Settings load(String provider) {
@@ -82,7 +84,7 @@ public class ExternalProviderSettings {
 
   private ExternalProviderEntity initialCredentials(String provider) {
     ExternalLoginProperties.Provider defaults =
-        provider.equals("google") ? properties.getGoogle() : properties.getMicrosoft();
+        provider.equals(GOOGLE) ? properties.getGoogle() : properties.getMicrosoft();
     ExternalProviderEntity entity = new ExternalProviderEntity();
     entity.setProvider(provider);
     entity.setClientId(Objects.requireNonNullElse(defaults.getClientId(), ""));

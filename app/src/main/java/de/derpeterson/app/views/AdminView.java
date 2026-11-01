@@ -310,16 +310,7 @@ public class AdminView extends IsAuthenticatedBaseView {
     }
     activeSection = section;
 
-    if (section == AdminSection.CONFIGURATION) {
-      configurationNavItem.setExpanded(true);
-      if (configurationGroup != null) {
-        activeConfigurationGroup = configurationGroup;
-      } else if (activeConfigurationGroup == null) {
-        activeConfigurationGroup = AdminConfigGroup.GENERAL;
-      }
-    } else {
-      activeConfigurationGroup = null;
-    }
+    selectConfigurationGroup(section, configurationGroup);
 
     if (sectionLayout == null) {
       return;
@@ -347,6 +338,25 @@ public class AdminView extends IsAuthenticatedBaseView {
       default -> sectionLayout.add(dashboardSection);
     }
 
+    updatePageHeading();
+    page.closeNavigation();
+    updateNavigationState();
+  }
+
+  private void selectConfigurationGroup(AdminSection section, AdminConfigGroup configurationGroup) {
+    if (section == AdminSection.CONFIGURATION) {
+      configurationNavItem.setExpanded(true);
+      if (configurationGroup != null) {
+        activeConfigurationGroup = configurationGroup;
+      } else if (activeConfigurationGroup == null) {
+        activeConfigurationGroup = AdminConfigGroup.GENERAL;
+      }
+    } else {
+      activeConfigurationGroup = null;
+    }
+  }
+
+  private void updatePageHeading() {
     VerticalLayout selected =
         (VerticalLayout) sectionLayout.getChildren().findFirst().orElseThrow();
     selected
@@ -372,8 +382,6 @@ public class AdminView extends IsAuthenticatedBaseView {
     if (heading != null) {
       pageHeading.add(heading);
     }
-    page.closeNavigation();
-    updateNavigationState();
   }
 
   private void updateNavigationState() {

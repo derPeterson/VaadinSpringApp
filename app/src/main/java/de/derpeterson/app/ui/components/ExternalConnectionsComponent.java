@@ -1,5 +1,7 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.security.ExternalProviderSettings.GOOGLE;
+
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.badge.Badge;
@@ -109,10 +111,10 @@ public final class ExternalConnectionsComponent extends Div {
   private Div providerRow(
       String provider, UserEntity user, List<String> connected, List<String> available) {
     boolean linked = connected.contains(provider);
-    String brand = provider.equals("google") ? "Google" : "Microsoft";
+    String brand = provider.equals(GOOGLE) ? "Google" : "Microsoft";
     Image logo =
         new Image(
-            "icons/external-login/" + provider + (provider.equals("google") ? ".png" : ".svg"), "");
+            "icons/external-login/" + provider + (provider.equals(GOOGLE) ? ".png" : ".svg"), "");
     logo.getElement().setAttribute("aria-hidden", "true");
     Div icon = new Div(logo);
     icon.addClassName("cosmos-panel-icon");
@@ -162,9 +164,9 @@ public final class ExternalConnectionsComponent extends Div {
         switch (purpose) {
           case PASSWORD -> passwordAction;
           case EMAIL -> emailAction;
-          case LINK_GOOGLE -> () -> link("google");
+          case LINK_GOOGLE -> () -> link(GOOGLE);
           case LINK_MICROSOFT -> () -> link("microsoft");
-          case UNLINK_GOOGLE -> () -> unlink("google");
+          case UNLINK_GOOGLE -> () -> unlink(GOOGLE);
           case UNLINK_MICROSOFT -> () -> unlink("microsoft");
         };
     if (action == null) {

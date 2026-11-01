@@ -23,7 +23,7 @@ class ExternalAuthenticationTokenTest {
     assertEquals(google.hashCode(), same.hashCode());
     assertNotEquals(google, microsoft);
     assertNotEquals(google, noRoles);
-    assertNotEquals(google, null);
+    assertNotEquals(null, google);
     assertThrows(
         IllegalArgumentException.class, () -> new ExternalAuthenticationToken(user, "unknown"));
   }

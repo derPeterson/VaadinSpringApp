@@ -82,6 +82,32 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     assertThat(page.locator("#account-password-edit-security")).isHidden();
     assertThat(page.locator("#external-security-action")).hasCount(0);
     assertThat(page.locator(".external-connection-row vaadin-badge")).hasCount(2);
+    assertAccountProviderRows(portalTab, providersTab);
+    attachPanels("Kontosicherheit: Anbieterübersicht bei " + width + " px");
+    page.locator("#external-connect-google").click();
+    Locator dialog = page.locator("#external-identity-dialog");
+    Locator content = dialog.locator("vaadin-dialog-overlay [part=content]");
+    assertThat(content).hasCSS("background-color", "rgb(5, 8, 17)");
+    assertThat(page.locator("#external-confirm-password input")).hasCSS("font-size", "12px");
+    assertThat(dialog.locator(".account-change-dialog-header .cosmos-panel-icon img"))
+        .hasAttribute("src", "icons/external-login/google.png");
+    assertDynamicTextWidths(dialog.locator(".cosmos-dialog-actions"));
+    attachPanels("Kontosicherheit: stabiler Bestätigungsdialog bei " + width + " px");
+    BoundingBox bounds = dialog.locator("vaadin-dialog-overlay > [part~=overlay]").boundingBox();
+    assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= width);
+    page.keyboard().press("Escape");
+    assertThat(dialog).hasJSProperty("opened", false);
+
+    page.navigate("/admin");
+    new AdminUsersPage(page).open();
+    AdminUserDialog editor = new AdminUsersPage(page).openCreate();
+    assertDynamicTextWidths(editor.root().locator(".cosmos-dialog-actions"));
+    editor.cancel();
+
+    assertReferenceAccountDialog(width);
+  }
+
+  private void assertAccountProviderRows(Locator portalTab, Locator providersTab) {
     Locator connectionBadge = page.locator(".external-connection-row vaadin-badge").first();
     assertThat(connectionBadge).hasCSS("border-radius", "4px");
     assertThat(connectionBadge).hasCSS("border-top-width", "1px");
@@ -120,27 +146,9 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     page.waitForCondition(
         () -> Math.abs(google.boundingBox().width - microsoft.boundingBox().width) < 1);
     assertTrue((Boolean) page.evaluate("document.documentElement.scrollWidth <= innerWidth"));
-    attachPanels("Kontosicherheit: Anbieterübersicht bei " + width + " px");
-    page.locator("#external-connect-google").click();
-    Locator dialog = page.locator("#external-identity-dialog");
-    Locator content = dialog.locator("vaadin-dialog-overlay [part=content]");
-    assertThat(content).hasCSS("background-color", "rgb(5, 8, 17)");
-    assertThat(page.locator("#external-confirm-password input")).hasCSS("font-size", "12px");
-    assertThat(dialog.locator(".account-change-dialog-header .cosmos-panel-icon img"))
-        .hasAttribute("src", "icons/external-login/google.png");
-    assertDynamicTextWidths(dialog.locator(".cosmos-dialog-actions"));
-    attachPanels("Kontosicherheit: stabiler Bestätigungsdialog bei " + width + " px");
-    BoundingBox bounds = dialog.locator("vaadin-dialog-overlay > [part~=overlay]").boundingBox();
-    assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= width);
-    page.keyboard().press("Escape");
-    assertThat(dialog).hasJSProperty("opened", false);
+  }
 
-    page.navigate("/admin");
-    new AdminUsersPage(page).open();
-    AdminUserDialog editor = new AdminUsersPage(page).openCreate();
-    assertDynamicTextWidths(editor.root().locator(".cosmos-dialog-actions"));
-    editor.cancel();
-
+  private void assertReferenceAccountDialog(int width) {
     page.navigate(
         Path.of("docs/design/frontend-referenzen/portal.html").toAbsolutePath().toUri()
             + "#security");
@@ -244,81 +252,9 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     page.navigate("/admin?section=configuration&group=external_login");
     Locator section = page.locator("#admin-provider-settings");
     Locator tabs = section.locator("vaadin-tabsheet");
-    assertThat(tabs).hasCount(1);
-    assertThat(tabs.getByRole(AriaRole.TAB)).hasCount(2);
-    assertThat(section.locator(".provider-panel-header vaadin-icon"))
-        .hasAttribute("data-tabler", "cloud-lock");
-    assertThat(page.locator("vaadin-side-nav-item vaadin-icon[data-tabler=cloud-lock]"))
-        .hasCount(1);
-    assertThat(tabs).hasCSS("border-top-width", "0px");
-    assertThat(tabs).hasCSS("border-bottom-width", "0px");
-    assertThat(tabs.locator("vaadin-tabs")).hasCSS("border-bottom-width", "0px");
-    assertThat(tabs.locator("[part=tabs-container]")).hasCSS("border-bottom-width", "0px");
-    assertThat(section.locator(".provider-panel-header")).hasCSS("border-bottom-width", "0px");
-    assertTrue(
-        tabs.locator("[part=tabs-container]")
-            .evaluate("e => getComputedStyle(e).backgroundImage")
-            .toString()
-            .contains("linear-gradient"),
-        "Die Trennlinie bleibt außerhalb des aktiven Tabs erhalten");
-    assertThat(tabs.locator("[part=tabs-container]")).hasCSS("box-shadow", "none");
-    assertEquals(
-        "none",
-        page.locator("#provider-tab-google")
-            .evaluate("e => getComputedStyle(e, '::before').display"));
-    assertProviderTabAppearance(page.locator("#provider-tab-google"));
-    assertThat(section.locator(".provider-panel-header h2"))
-        .hasText(texts.getProviderSettingsPanelTitle());
-    assertThat(section.locator(".provider-panel-header .cosmos-panel-description"))
-        .hasText(texts.getProviderSettingsPanelDescription());
-    assertThat(section.locator(".provider-panel-header .cosmos-panel-description"))
-        .hasCSS("white-space", "pre-line");
-    assertThat(section.locator(".provider-panel-header .cosmos-panel-description"))
-        .hasCSS("line-height", "20px");
-    assertThat(section.locator(".provider-panel-header vaadin-badge")).hasCount(2);
+    assertProviderPanelHeader(section, tabs);
     for (String provider : new String[] {"google", "microsoft"}) {
-      Locator badge = page.locator("#provider-" + provider + "-status");
-      assertThat(badge).hasAttribute("data-state", "active");
-      assertThat(badge).hasText(texts.getProviderSettingsActive());
-      assertThat(badge).hasCSS("height", "30px");
-      assertThat(badge.locator("img")).hasCount(1);
-      page.keyboard().press("Tab");
-      badge.focus();
-      assertThat(page.getByRole(AriaRole.TOOLTIP))
-          .containsText(
-              texts.getProviderSettingsActiveHint(
-                  provider.equals("google") ? "Google" : "Microsoft"));
-      page.keyboard().press("Escape");
-      page.locator("#provider-tab-" + provider).click();
-      Locator assistant = page.locator("#provider-" + provider + "-content");
-      assertThat(assistant.locator(".provider-assistant-kicker"))
-          .hasText(texts.getProviderSettingsAssistantKicker());
-      assertThat(assistant.locator(".provider-assistant-kicker vaadin-icon"))
-          .hasAttribute("data-lucide", "bot");
-      assertThat(assistant.locator(".provider-step-label")).hasCount(3);
-      assertThat(assistant.locator(".provider-step-label").first())
-          .hasText(texts.getProviderSettingsSetupProvider());
-      assertThat(assistant.locator(".provider-step-label").nth(1))
-          .hasText(texts.getProviderSettingsSetupCredentials());
-      assertThat(assistant.locator(".provider-step-label").nth(2))
-          .hasText(texts.getProviderSettingsEnableSignIn());
-      for (int step = 0; step < 3; step++) {
-        assertThat(assistant.locator(".provider-step-label vaadin-icon").nth(step))
-            .hasAttribute("data-tabler", "square-rounded-number-" + (step + 1));
-      }
-      assertThat(assistant.locator(".provider-field-label.admin-config-required")).hasCount(2);
-      Locator consoleLink = assistant.locator("a.provider-console-link");
-      assertThat(consoleLink).hasText(texts.getProviderSettingsOpenConsole());
-      assertThat(consoleLink).hasAttribute("target", "_blank");
-      assertThat(consoleLink).hasAttribute("rel", "noopener noreferrer");
-      assertThat(consoleLink).hasCSS("border-top-width", "0px");
-      assertThat(consoleLink).hasCSS("font-weight", "600");
-      assertThat(consoleLink).hasCSS("color", "rgb(226, 232, 240)");
-      assertThat(consoleLink.locator("vaadin-icon")).hasAttribute("data-tabler", "external-link");
-      assertThat(consoleLink.locator("vaadin-icon")).hasCSS("color", "rgb(56, 189, 248)");
-      assertThat(assistant.locator(".provider-console-guide")).hasCSS("row-gap", "4px");
-      assertLinkAlignmentAndStableHover(consoleLink);
-      assertProviderFieldHelp(provider);
+      assertNativeProviderSetup(provider);
     }
     page.locator("#provider-tab-google").click();
     Locator google = page.locator("#provider-google-content");
@@ -349,6 +285,10 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
         (Boolean) page.evaluate("document.documentElement.scrollWidth <= innerWidth"),
         "Anbietertabs erzeugen keinen horizontalen Seitenüberlauf");
 
+    assertReferenceProviderTabsAndSmtpLinks(width);
+  }
+
+  private void assertReferenceProviderTabsAndSmtpLinks(int width) {
     page.navigate(
         Path.of("docs/design/frontend-referenzen/admin.html").toAbsolutePath().toUri().toString());
     if (width == 390) {
@@ -369,67 +309,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     assertThat(page.locator(".ad-provider-panel-header p br")).hasCount(1);
     assertThat(page.locator(".ad-provider-status")).hasCount(2);
     for (String provider : new String[] {"google", "microsoft"}) {
-      Locator badge =
-          page.locator(
-              ".ad-provider-status[data-state="
-                  + (provider.equals("google") ? "active" : "inactive")
-                  + "]");
-      assertThat(badge).hasCSS("height", "30px");
-      badge.scrollIntoViewIfNeeded();
-      badge.evaluate(
-          "e => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))");
-      badge.evaluate("e => e.focus({preventScroll:true})");
-      assertThat(page.locator("#reference-tooltip")).isVisible();
-      assertThat(page.locator("#reference-tooltip"))
-          .containsText(
-              provider.equals("google")
-                  ? "Google ist für neue Anmeldungen freigegeben."
-                  : "Microsoft ist für neue Anmeldungen deaktiviert.");
-      page.keyboard().press("Escape");
-      page.locator("#ad-provider-tab-" + provider).click();
-      assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-assistant-kicker"))
-          .hasText("Einrichtungsassistent");
-      assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-step-label")).hasCount(3);
-      assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-step-label"))
-          .hasText(
-              new String[] {
-                "Anbieter einrichten", "Zugangsdaten hinterlegen", "Anmeldung aktivieren"
-              });
-      assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-step-label svg"))
-          .hasCount(3);
-      assertThat(page.locator("#ad-provider-" + provider + " label .ad-required")).hasCount(2);
-      Locator referenceConsoleLink =
-          page.locator("#ad-provider-" + provider + " a.ad-provider-console-link");
-      assertThat(referenceConsoleLink).hasCSS("border-top-width", "0px");
-      assertThat(referenceConsoleLink).hasCSS("font-weight", "600");
-      assertThat(referenceConsoleLink).hasCSS("color", "rgb(226, 232, 240)");
-      assertThat(referenceConsoleLink.locator("svg")).hasCSS("color", "rgb(56, 189, 248)");
-      assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-console-guide"))
-          .hasCSS("row-gap", "4px");
-      assertLinkAlignmentAndStableHover(referenceConsoleLink);
-      for (String field : new String[] {"client", "secret", "enabled"}) {
-        Locator wrapper =
-            page.locator("#ad-provider-" + provider + "-" + field)
-                .locator(
-                    "xpath=ancestor::div[contains(concat(' ',normalize-space(@class),' '),' hc-field ')][1]");
-        wrapper.locator(".hc-trigger").click();
-        Locator help = page.locator("#configurationHelp");
-        assertThat(help).isVisible();
-        assertThat(help.locator(".hc-group"))
-            .hasText(provider.equals("google") ? "Google" : "Microsoft");
-        assertThat(help.locator(".hc-rules li")).hasCount(1);
-        help.locator("[data-hc-close]").click();
-      }
-      Locator referenceEnabled = page.locator("#ad-provider-" + provider + "-enabled");
-      Locator referenceClientInput = page.locator("#ad-provider-" + provider + "-client");
-      String initialClient = referenceClientInput.inputValue();
-      boolean initialEnabled = referenceEnabled.isChecked();
-      referenceEnabled.uncheck();
-      referenceClientInput.fill("");
-      assertThat(referenceEnabled).isDisabled();
-      referenceClientInput.fill(initialClient);
-      assertThat(referenceEnabled).isEnabled();
-      referenceEnabled.setChecked(initialEnabled);
+      assertReferenceProviderSetup(provider);
     }
     page.locator("#ad-provider-tab-google").click();
     BoundingBox referenceClient = page.locator("#ad-provider-google-client").boundingBox();
@@ -487,7 +367,151 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     assertLinkAlignmentAndStableHover(smtp);
     attachPanels("SMTP-Direktzugang Vaadin bei " + width + " px");
     smtp.click();
-    assertThat(page).hasURL(java.util.regex.Pattern.compile(".*[?&]group=smtp(?:&.*)?$"));
+    assertThat(page).hasURL(java.util.regex.Pattern.compile("^.*[?&]group=smtp(?:&.*)?$"));
+  }
+
+  private void assertNativeProviderSetup(String provider) {
+    Locator badge = page.locator("#provider-" + provider + "-status");
+    assertThat(badge).hasAttribute("data-state", "active");
+    assertThat(badge).hasText(texts.getProviderSettingsActive());
+    assertThat(badge).hasCSS("height", "30px");
+    assertThat(badge.locator("img")).hasCount(1);
+    page.keyboard().press("Tab");
+    badge.focus();
+    assertThat(page.getByRole(AriaRole.TOOLTIP))
+        .containsText(
+            texts.getProviderSettingsActiveHint(
+                provider.equals("google") ? "Google" : "Microsoft"));
+    page.keyboard().press("Escape");
+    page.locator("#provider-tab-" + provider).click();
+    Locator assistant = page.locator("#provider-" + provider + "-content");
+    assertThat(assistant.locator(".provider-assistant-kicker"))
+        .hasText(texts.getProviderSettingsAssistantKicker());
+    assertThat(assistant.locator(".provider-assistant-kicker vaadin-icon"))
+        .hasAttribute("data-lucide", "bot");
+    assertThat(assistant.locator(".provider-step-label")).hasCount(3);
+    assertThat(assistant.locator(".provider-step-label").first())
+        .hasText(texts.getProviderSettingsSetupProvider());
+    assertThat(assistant.locator(".provider-step-label").nth(1))
+        .hasText(texts.getProviderSettingsSetupCredentials());
+    assertThat(assistant.locator(".provider-step-label").nth(2))
+        .hasText(texts.getProviderSettingsEnableSignIn());
+    for (int step = 0; step < 3; step++) {
+      assertThat(assistant.locator(".provider-step-label vaadin-icon").nth(step))
+          .hasAttribute("data-tabler", "square-rounded-number-" + (step + 1));
+    }
+    assertThat(assistant.locator(".provider-field-label.admin-config-required")).hasCount(2);
+    Locator consoleLink = assistant.locator("a.provider-console-link");
+    assertThat(consoleLink).hasText(texts.getProviderSettingsOpenConsole());
+    assertThat(consoleLink).hasAttribute("target", "_blank");
+    assertThat(consoleLink).hasAttribute("rel", "noopener noreferrer");
+    assertThat(consoleLink).hasCSS("border-top-width", "0px");
+    assertThat(consoleLink).hasCSS("font-weight", "600");
+    assertThat(consoleLink).hasCSS("color", "rgb(226, 232, 240)");
+    assertThat(consoleLink.locator("vaadin-icon")).hasAttribute("data-tabler", "external-link");
+    assertThat(consoleLink.locator("vaadin-icon")).hasCSS("color", "rgb(56, 189, 248)");
+    assertThat(assistant.locator(".provider-console-guide")).hasCSS("row-gap", "4px");
+    assertLinkAlignmentAndStableHover(consoleLink);
+    assertProviderFieldHelp(provider);
+  }
+
+  private void assertReferenceProviderSetup(String provider) {
+    Locator badge =
+        page.locator(
+            ".ad-provider-status[data-state="
+                + (provider.equals("google") ? "active" : "inactive")
+                + "]");
+    assertThat(badge).hasCSS("height", "30px");
+    badge.scrollIntoViewIfNeeded();
+    badge.evaluate(
+        "e => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))");
+    badge.evaluate("e => e.focus({preventScroll:true})");
+    assertThat(page.locator("#reference-tooltip")).isVisible();
+    assertThat(page.locator("#reference-tooltip"))
+        .containsText(
+            provider.equals("google")
+                ? "Google ist für neue Anmeldungen freigegeben."
+                : "Microsoft ist für neue Anmeldungen deaktiviert.");
+    page.keyboard().press("Escape");
+    page.locator("#ad-provider-tab-" + provider).click();
+    assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-assistant-kicker"))
+        .hasText("Einrichtungsassistent");
+    assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-step-label")).hasCount(3);
+    assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-step-label"))
+        .hasText(
+            new String[] {
+              "Anbieter einrichten", "Zugangsdaten hinterlegen", "Anmeldung aktivieren"
+            });
+    assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-step-label svg"))
+        .hasCount(3);
+    assertThat(page.locator("#ad-provider-" + provider + " label .ad-required")).hasCount(2);
+    Locator referenceConsoleLink =
+        page.locator("#ad-provider-" + provider + " a.ad-provider-console-link");
+    assertThat(referenceConsoleLink).hasCSS("border-top-width", "0px");
+    assertThat(referenceConsoleLink).hasCSS("font-weight", "600");
+    assertThat(referenceConsoleLink).hasCSS("color", "rgb(226, 232, 240)");
+    assertThat(referenceConsoleLink.locator("svg")).hasCSS("color", "rgb(56, 189, 248)");
+    assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-console-guide"))
+        .hasCSS("row-gap", "4px");
+    assertLinkAlignmentAndStableHover(referenceConsoleLink);
+    for (String field : new String[] {"client", "secret", "enabled"}) {
+      Locator wrapper =
+          page.locator("#ad-provider-" + provider + "-" + field)
+              .locator(
+                  "xpath=ancestor::div[contains(concat(' ',normalize-space(@class),' '),' hc-field ')][1]");
+      wrapper.locator(".hc-trigger").click();
+      Locator help = page.locator("#configurationHelp");
+      assertThat(help).isVisible();
+      assertThat(help.locator(".hc-group"))
+          .hasText(provider.equals("google") ? "Google" : "Microsoft");
+      assertThat(help.locator(".hc-rules li")).hasCount(1);
+      help.locator("[data-hc-close]").click();
+    }
+    Locator referenceEnabled = page.locator("#ad-provider-" + provider + "-enabled");
+    Locator referenceClientInput = page.locator("#ad-provider-" + provider + "-client");
+    String initialClient = referenceClientInput.inputValue();
+    boolean initialEnabled = referenceEnabled.isChecked();
+    referenceEnabled.uncheck();
+    referenceClientInput.fill("");
+    assertThat(referenceEnabled).isDisabled();
+    referenceClientInput.fill(initialClient);
+    assertThat(referenceEnabled).isEnabled();
+    referenceEnabled.setChecked(initialEnabled);
+  }
+
+  private void assertProviderPanelHeader(Locator section, Locator tabs) {
+    assertThat(tabs).hasCount(1);
+    assertThat(tabs.getByRole(AriaRole.TAB)).hasCount(2);
+    assertThat(section.locator(".provider-panel-header vaadin-icon"))
+        .hasAttribute("data-tabler", "cloud-lock");
+    assertThat(page.locator("vaadin-side-nav-item vaadin-icon[data-tabler=cloud-lock]"))
+        .hasCount(1);
+    assertThat(tabs).hasCSS("border-top-width", "0px");
+    assertThat(tabs).hasCSS("border-bottom-width", "0px");
+    assertThat(tabs.locator("vaadin-tabs")).hasCSS("border-bottom-width", "0px");
+    assertThat(tabs.locator("[part=tabs-container]")).hasCSS("border-bottom-width", "0px");
+    assertThat(section.locator(".provider-panel-header")).hasCSS("border-bottom-width", "0px");
+    assertTrue(
+        tabs.locator("[part=tabs-container]")
+            .evaluate("e => getComputedStyle(e).backgroundImage")
+            .toString()
+            .contains("linear-gradient"),
+        "Die Trennlinie bleibt außerhalb des aktiven Tabs erhalten");
+    assertThat(tabs.locator("[part=tabs-container]")).hasCSS("box-shadow", "none");
+    assertEquals(
+        "none",
+        page.locator("#provider-tab-google")
+            .evaluate("e => getComputedStyle(e, '::before').display"));
+    assertProviderTabAppearance(page.locator("#provider-tab-google"));
+    assertThat(section.locator(".provider-panel-header h2"))
+        .hasText(texts.getProviderSettingsPanelTitle());
+    assertThat(section.locator(".provider-panel-header .cosmos-panel-description"))
+        .hasText(texts.getProviderSettingsPanelDescription());
+    assertThat(section.locator(".provider-panel-header .cosmos-panel-description"))
+        .hasCSS("white-space", "pre-line");
+    assertThat(section.locator(".provider-panel-header .cosmos-panel-description"))
+        .hasCSS("line-height", "20px");
+    assertThat(section.locator(".provider-panel-header vaadin-badge")).hasCount(2);
   }
 
   private void assertProviderTabAppearance(Locator tab) {

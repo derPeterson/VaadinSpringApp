@@ -120,11 +120,15 @@ public final class ExternalRegistrationView extends VerticalLayout
     submit.setText(texts.getBaseRegistrationButton());
     cancel.setText(texts.getAdminUsersCancel());
     if (error.isVisible()) {
-      error.setText(
-          awaitingVerification
-              ? texts.getExternalVerifyEmail()
-              : expiredRegistration ? texts.getExternalDraftExpired() : texts.getExternalError());
+      error.setText(currentErrorText());
     }
+  }
+
+  private String currentErrorText() {
+    if (awaitingVerification) {
+      return texts.getExternalVerifyEmail();
+    }
+    return expiredRegistration ? texts.getExternalDraftExpired() : texts.getExternalError();
   }
 
   @Override
@@ -141,7 +145,7 @@ public final class ExternalRegistrationView extends VerticalLayout
       first.setValue(value(pending.identity().firstName()));
       last.setValue(value(pending.identity().lastName()));
       email.setValue(value(pending.identity().email()));
-    } catch (AccessDeniedException expired) {
+    } catch (AccessDeniedException _) {
       expiredRegistration = true;
       hideForm();
       error.setText(texts.getExternalDraftExpired());
@@ -181,7 +185,7 @@ public final class ExternalRegistrationView extends VerticalLayout
         error.setText(texts.getExternalVerifyEmail());
         error.setVisible(true);
       }
-    } catch (IOException | RuntimeException failure) {
+    } catch (IOException | RuntimeException _) {
       NotificationHelper.getInstance()
           .showNotification(
               texts::getBaseFailedTitle,

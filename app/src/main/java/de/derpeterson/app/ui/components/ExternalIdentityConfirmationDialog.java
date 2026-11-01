@@ -1,5 +1,8 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.security.ExternalProviderSettings.GOOGLE;
+import static de.derpeterson.app.security.ExternalProviderSettings.GOOGLE_NAME;
+import static de.derpeterson.app.security.ExternalProviderSettings.MICROSOFT_NAME;
 import static de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON;
 import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
 import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
@@ -134,11 +137,29 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     }
     boolean confirmed = flow.confirmedPurpose(request).filter(purpose::equals).isPresent();
     boolean hasPassword = flow.owner(request).getPassword() != null;
+    refreshHeader();
+    explanation.setText(texts.getExternalProofHint());
+    ready.setText(texts.getExternalProofReady());
+    ready.setVisible(confirmed);
+    password.setLabel(texts.getAccountPasswordDialogCurrentPassword());
+    password.setPlaceholder(texts.getAccountPasswordPlaceholder());
+    password.setVisible(hasPassword && !confirmed);
+    password.setRequiredIndicatorVisible(password.isVisible());
+    refreshAlternatives(confirmed);
+    if (!confirmed && !hasPassword && !alternatives.isVisible()) {
+      explanation.setText(texts.getExternalProofUnavailable());
+    }
+    separator.setText(texts.getExternalOr());
+    separator.setVisible(password.isVisible() && alternatives.isVisible());
+    refreshActions(confirmed || hasPassword);
+  }
+
+  private void refreshHeader() {
     title.setText(actionTitle());
     symbol.removeAll();
     String headerProvider =
         switch (purpose) {
-          case LINK_GOOGLE, UNLINK_GOOGLE -> "google";
+          case LINK_GOOGLE, UNLINK_GOOGLE -> GOOGLE;
           case LINK_MICROSOFT, UNLINK_MICROSOFT -> "microsoft";
           default -> null;
         };
@@ -149,20 +170,16 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
           new Image(
               "icons/external-login/"
                   + headerProvider
-                  + (headerProvider.equals("google") ? ".png" : ".svg"),
+                  + (headerProvider.equals(GOOGLE) ? ".png" : ".svg"),
               "");
       mark.addClassName("external-proof-heading-mark");
       symbol.add(mark);
     }
     getElement().setProperty("ariaLabel", title.getText());
     description.setText(texts.getExternalProof());
-    explanation.setText(texts.getExternalProofHint());
-    ready.setText(texts.getExternalProofReady());
-    ready.setVisible(confirmed);
-    password.setLabel(texts.getAccountPasswordDialogCurrentPassword());
-    password.setPlaceholder(texts.getAccountPasswordPlaceholder());
-    password.setVisible(hasPassword && !confirmed);
-    password.setRequiredIndicatorVisible(password.isVisible());
+  }
+
+  private void refreshAlternatives(boolean confirmed) {
     alternatives.removeAll();
     if (!confirmed) {
       for (String provider : identities.connected(flow.owner(request).getId())) {
@@ -171,9 +188,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
           proof.setId("external-confirm-" + provider);
           Image mark =
               new Image(
-                  "icons/external-login/"
-                      + provider
-                      + (provider.equals("google") ? ".png" : ".svg"),
+                  "icons/external-login/" + provider + (provider.equals(GOOGLE) ? ".png" : ".svg"),
                   "");
           mark.addClassName("external-proof-provider-mark");
           mark.getElement().setAttribute("aria-hidden", "true");
@@ -185,11 +200,9 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
       }
     }
     alternatives.setVisible(alternatives.getComponentCount() > 0);
-    if (!confirmed && !hasPassword && !alternatives.isVisible()) {
-      explanation.setText(texts.getExternalProofUnavailable());
-    }
-    separator.setText(texts.getExternalOr());
-    separator.setVisible(password.isVisible() && alternatives.isVisible());
+  }
+
+  private void refreshActions(boolean enabled) {
     boolean destructive = purpose == Purpose.UNLINK_GOOGLE || purpose == Purpose.UNLINK_MICROSOFT;
     warning.setText(texts.getExternalDisconnectHint());
     note.setVisible(destructive);
@@ -203,7 +216,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
         purpose == Purpose.PASSWORD || purpose == Purpose.EMAIL
             ? texts.getExternalContinueAction()
             : actionTitle());
-    confirm.setEnabled(confirmed || hasPassword);
+    confirm.setEnabled(enabled);
     cancel.setText(texts.getAdminUsersCancel());
     close.setAriaLabel(texts.getAdminUsersCloseDialog());
   }
@@ -219,25 +232,32 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
           refreshTexts();
           return;
         }
-        if (!ValidationHelper.validateRequiredInputs(java.util.List.of(password), texts)) {
-          return;
-        }
-        try {
-          flow.confirmPassword(request, password.getValue(), purpose);
-        } catch (RuntimeException failure) {
-          AccountSecurityFeedback.Field field = AccountSecurityFeedback.failure(texts, failure);
-          password.setInvalid(field == AccountSecurityFeedback.Field.CURRENT_PASSWORD);
-          refreshTexts();
+        if (!confirmPassword()) {
           return;
         }
       }
       action.run();
       close();
-    } catch (RuntimeException failure) {
+    } catch (RuntimeException _) {
       showExternalFailure();
       refreshTexts();
     } finally {
       password.clear();
+    }
+  }
+
+  private boolean confirmPassword() {
+    if (!ValidationHelper.validateRequiredInputs(java.util.List.of(password), texts)) {
+      return false;
+    }
+    try {
+      flow.confirmPassword(request, password.getValue(), purpose);
+      return true;
+    } catch (RuntimeException failure) {
+      AccountSecurityFeedback.Field field = AccountSecurityFeedback.failure(texts, failure);
+      password.setInvalid(field == AccountSecurityFeedback.Field.CURRENT_PASSWORD);
+      refreshTexts();
+      return false;
     }
   }
 
@@ -255,7 +275,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
           flow.beginProof(request, provider, purpose, VaadinSession.getCurrent().getLocale());
       request.getSession(false).setAttribute(RETURN_ACTION, purpose);
       UI.getCurrent().getPage().setLocation(destination);
-    } catch (RuntimeException failure) {
+    } catch (RuntimeException _) {
       if (!flow.providers().contains(provider)) {
         close();
         NotificationHelper.getInstance()
@@ -287,14 +307,14 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     return switch (purpose) {
       case PASSWORD -> texts.getExternalPasswordSetup();
       case EMAIL -> texts.getAccountSettingsChangeEmail();
-      case LINK_GOOGLE -> texts.getExternalConnect("Google");
-      case LINK_MICROSOFT -> texts.getExternalConnect("Microsoft");
-      case UNLINK_GOOGLE -> texts.getExternalDisconnect("Google");
-      case UNLINK_MICROSOFT -> texts.getExternalDisconnect("Microsoft");
+      case LINK_GOOGLE -> texts.getExternalConnect(GOOGLE_NAME);
+      case LINK_MICROSOFT -> texts.getExternalConnect(MICROSOFT_NAME);
+      case UNLINK_GOOGLE -> texts.getExternalDisconnect(GOOGLE_NAME);
+      case UNLINK_MICROSOFT -> texts.getExternalDisconnect(MICROSOFT_NAME);
     };
   }
 
   private String brand(String provider) {
-    return provider.equals("google") ? "Google" : "Microsoft";
+    return provider.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
   }
 }

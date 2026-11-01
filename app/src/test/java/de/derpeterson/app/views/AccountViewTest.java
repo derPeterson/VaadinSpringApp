@@ -101,7 +101,8 @@ class AccountViewTest {
     VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     VaadinService service = mock(VaadinService.class);
-    when(service.getDeploymentConfiguration()).thenReturn(mock(DeploymentConfiguration.class));
+    DeploymentConfiguration deployment = mock(DeploymentConfiguration.class);
+    when(service.getDeploymentConfiguration()).thenReturn(deployment);
     when(session.getService()).thenReturn(service);
     when(session.getLocale()).thenAnswer(call -> locale.get());
     doAnswer(
@@ -485,7 +486,7 @@ class AccountViewTest {
         .save(request, new Changes(3L, "Changed", "Account", date, Locale.ENGLISH, Gender.OTHER));
     assertEquals(Locale.ENGLISH, locale.get());
     assertEquals("Changed", user.getFirstName());
-    List<Component> avatars =
+    List<Component> avatarComponents =
         Stream.concat(
                 tree(view),
                 tree(
@@ -494,8 +495,8 @@ class AccountViewTest {
             .filter(OverlayUserIcon.class::isInstance)
             .distinct()
             .toList();
-    assertEquals(3, avatars.size());
-    for (Component avatar : avatars) {
+    assertEquals(3, avatarComponents.size());
+    for (Component avatar : avatarComponents) {
       String expected =
           "Changed Name – "
               + MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH)

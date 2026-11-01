@@ -1,6 +1,7 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Browser;
@@ -604,10 +605,10 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       begin(actor.page, "google", email, "valid", remember);
       actor.page.locator("#external-register-submit").click();
       assertThat(actor.page).hasURL(Pattern.compile(".*/home$"));
-      assertTrue(
+      assertEquals(
+          remember,
           actor.context.cookies().stream()
-                  .anyMatch(cookie -> cookie.name.equals("remember-me") && cookie.expires > 0)
-              == remember);
+              .anyMatch(cookie -> cookie.name.equals("remember-me") && cookie.expires > 0));
     }
     try (PersistentBrowserActor actor = new PersistentBrowserActor(playwright, profile)) {
       if (remember) {
@@ -666,6 +667,6 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     assertThat(page).hasURL(Pattern.compile(".*/external-registration\\?error=external$"));
     assertThat(page.locator("#external-register-submit")).isHidden();
     page.navigate("/account");
-    assertThat(page).hasURL(Pattern.compile(".*/login(?:\\?.*)?$"));
+    assertThat(page).hasURL(Pattern.compile("^.*/login(?:\\?.*)?$"));
   }
 }

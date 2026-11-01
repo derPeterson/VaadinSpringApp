@@ -93,9 +93,10 @@ class ExternalProviderSettingsPersistenceTest {
     assertTrue(repository.findAll().isEmpty());
     ExternalProviderSettings.Settings saved =
         settings.save("google", "own", "own-secret", true, revision);
+    String savedRevision = saved.revision();
     assertThrows(
         IllegalArgumentException.class,
-        () -> settings.save("google", "bad\nclient", "", true, saved.revision()));
+        () -> settings.save("google", "bad\nclient", "", true, savedRevision));
     assertEquals("own", settings.load("google").clientId());
   }
 
@@ -108,9 +109,10 @@ class ExternalProviderSettingsPersistenceTest {
         OptimisticLockingFailureException.class,
         () -> settings.save("google", "stale", "", false, initial));
     settings.save("google", "own", "second-secret", true, first.revision());
+    String firstRevision = first.revision();
     assertThrows(
         OptimisticLockingFailureException.class,
-        () -> settings.save("google", "stale", "", false, first.revision()));
+        () -> settings.save("google", "stale", "", false, firstRevision));
     assertEquals("second-secret", repository.findById("google").orElseThrow().getClientSecret());
   }
 

@@ -32,17 +32,19 @@ final class ProviderAuthorizationRequests
       @Nullable OAuth2AuthorizationRequest authorization,
       HttpServletRequest request,
       HttpServletResponse response) {
-    if (authorization != null) {
-      String provider = authorization.getAttribute("registration_id");
-      authorization =
-          OAuth2AuthorizationRequest.from(authorization)
-              .attributes(
-                  attributes ->
-                      attributes.put(
-                          REVISION,
-                          ExternalProviderSettings.revision(settings.credentials(provider))))
-              .build();
+    if (authorization == null) {
+      delegate.removeAuthorizationRequest(request, response);
+      return;
     }
+    String provider = authorization.getAttribute("registration_id");
+    authorization =
+        OAuth2AuthorizationRequest.from(authorization)
+            .attributes(
+                attributes ->
+                    attributes.put(
+                        REVISION,
+                        ExternalProviderSettings.revision(settings.credentials(provider))))
+            .build();
     delegate.saveAuthorizationRequest(authorization, request, response);
   }
 

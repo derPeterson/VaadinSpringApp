@@ -302,10 +302,11 @@ class UiSerializationContractTest {
         de.derpeterson.app.security.SessionAdmissionService.class, () -> admission);
     context.refresh();
     servlet.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, context);
-    org.springframework.mock.web.MockHttpSession session =
+    org.springframework.mock.web.MockHttpSession restoredSession =
         new org.springframework.mock.web.MockHttpSession(servlet);
-    restored.valueUnbound(new jakarta.servlet.http.HttpSessionBindingEvent(session, "fixture"));
-    verify(fresh).removeSessionInformation(session.getId());
+    restored.valueUnbound(
+        new jakarta.servlet.http.HttpSessionBindingEvent(restoredSession, "fixture"));
+    verify(fresh).removeSessionInformation(restoredSession.getId());
     org.mockito.Mockito.verifyNoInteractions(old);
   }
 

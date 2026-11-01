@@ -57,6 +57,8 @@ import org.springframework.dao.OptimisticLockingFailureException;
 /** Eigene Profildaten, Kontosicherheit, Profilbild und Sitzungen. */
 @Slf4j
 public class AccountSettingsComponent extends PortalPageComponent {
+  private static final String ARIA_HIDDEN = "aria-hidden";
+
   public enum AccountSection {
     PROFILE,
     SECURITY,
@@ -201,7 +203,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
       Supplier<String> label,
       AccountPanelComponent panel) {
     String id = section.name().toLowerCase(Locale.ROOT);
-    symbol.getElement().setAttribute("aria-hidden", "true");
+    symbol.getElement().setAttribute(ARIA_HIDDEN, "true");
     SideNavItem item = new SideNavItem("", AppRoute.ACCOUNT.getSecurityRoute(), symbol);
     item.setId("account-tab-" + id);
     item.setQueryParameters(QueryParameters.of("tab", id));
@@ -448,7 +450,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
     unavailable.addClassNames("cosmos-panel-description", "account-security-empty");
     providerAccess.add(unavailable);
     Image logo = new Image("icons/service-logo.svg", "");
-    logo.getElement().setAttribute("aria-hidden", "true");
+    logo.getElement().setAttribute(ARIA_HIDDEN, "true");
     Tab portalTab = new Tab(logo, text(new Span(), messages::getAccountSecurityPortalAccess));
     portalTab.setId("account-security-tab-portal");
     providersTab =
@@ -467,7 +469,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
   private SvgIcon devicesIcon() {
     SvgIcon devices = AppIcon.DEVICES.create();
     devices.addClassName("account-devices-icon");
-    devices.getElement().setAttribute("aria-hidden", "true");
+    devices.getElement().setAttribute(ARIA_HIDDEN, "true");
     return devices;
   }
 
