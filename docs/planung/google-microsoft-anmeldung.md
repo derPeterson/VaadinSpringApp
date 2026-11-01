@@ -7,11 +7,19 @@ Der Featureabschluss bleibt auf ausdrücklichen Benutzerwunsch trotzdem offen.
 
 ## Noch zu entscheiden
 
-Die [gespeicherte Stitch-Kritik zu Anmeldeanbietern und ODER-Trenner](../design/stitch-kritik-anmeldeanbieter-anmeldung.md)
-mit dem Benutzer besprechen. Er trifft die Designentscheidung später, bevor die
-nächste Umsetzung beginnt. Bis dahin keine weiteren Vorschläge aus der Kritik
-übernehmen. Den beschlossenen Umfang anschließend umsetzen oder bewusst verwerfen
-und erst nach abschließender Abnahme diesen Plan samt TODO-Verweis entfernen.
+Aus der [gespeicherten Stitch-Kritik](../design/stitch-kritik-anmeldeanbieter-anmeldung.md)
+ist der schlichte ODER-Trenner für Anmeldung und Registrierung freigegeben:
+ohne Kapsel, mit der Secondary-Schrift des Sicherheitsdialogs, neben- und
+untereinander. Die gemeinsame Sichtung dieser Anpassung bleibt offen.
+Für die Anmeldeanbieter-Konfiguration sind außerdem das kurze Rücksprungadresslabel,
+der feldhohe Kopierbutton mit Lucide-Icon sowie ein rahmenloser Aktivierungs-Switch
+auf halber Inhaltsbreite freigegeben. Die booleschen Felder der übrigen
+Konfigurationsgruppen werden ebenfalls als Switch dargestellt. Der Speichern-Button
+verwendet einheitlich „Konfiguration speichern“. Auch diese Darstellung bleibt
+gemeinsam zu sichten.
+Die übrigen Vorschläge zur Anmeldeanbieter-Konfiguration sind noch mit dem
+Benutzer zu entscheiden. Bis dahin keine weiteren Vorschläge aus der Kritik
+übernehmen. Erst nach abschließender Abnahme diesen Plan samt TODO-Verweis entfernen.
 
 Der Quellbranch `feature/google-microsoft-anmeldung` bleibt erhalten. Neue Änderungen
 müssen auf dem dann aktuellen Main-Stand aufbauen; die Integration allein schließt

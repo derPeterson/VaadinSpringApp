@@ -15,7 +15,7 @@ import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.badge.BadgeVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
@@ -172,7 +172,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
     private final Button copy = new Button();
     private final TextField clientId = new TextField();
     private final PasswordField secret = new PasswordField();
-    private final Checkbox enabled = new Checkbox();
+    private final Switch enabled = new Switch();
     private final Span enabledLabel = new Span();
     private final Span hint = new Span();
     private final Button reload = new Button();
@@ -208,6 +208,8 @@ public class AdminExternalLoginSection extends VerticalLayout {
       redirect.setAutoselect(true);
       redirect.setWidthFull();
       redirect.setId(PROVIDER_PREFIX + provider + "-redirect");
+      copy.addClassName("provider-copy");
+      copy.setPrefixComponent(AppIcon.CLIPBOARD_COPY.create());
       copy.addClickListener(
           event ->
               redirect
@@ -244,16 +246,10 @@ public class AdminExternalLoginSection extends VerticalLayout {
               fieldWithHelp(secret, ProviderField.SECRET));
       credentials.addClassName("provider-credentials");
       enabled.setId(PROVIDER_PREFIX + provider + "-enabled");
-      enabledLabel
-          .getElement()
-          .addEventListener(
-              "click",
-              event -> {
-                if (enabled.isEnabled()) {
-                  enabled.setValue(!enabled.getValue());
-                }
-              });
-      Div activation = new Div(enabledLabel, enabled);
+      enabled.setWidthFull();
+      enabled.addClassName("cosmos-config-switch");
+      enabled.setLabelComponent(enabledLabel);
+      Div activation = new Div(enabled);
       activation.addClassName("provider-activation");
       Div consoleGuide = new Div(guide, console);
       consoleGuide.addClassName("provider-console-guide");
@@ -467,7 +463,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
       enabled.setAriaLabel(texts.getProviderSettingsEnable());
       hint.setText(texts.getProviderSettingsHint());
       reload.setText(texts.getAdminConfigReload());
-      save.setText(texts.getProviderSettingsSave());
+      save.setText(texts.getAdminConfigSave());
       refreshAvailability();
       refreshStatus();
     }

@@ -74,7 +74,7 @@ public final class AccountPage {
             new Page.GetByRoleOptions()
                 .setName(
                     Locale.forLanguageTag(language)
-                        .getDisplayLanguage(Locale.forLanguageTag(language)))
+                        .getDisplayLanguage(Locale.forLanguageTag(texts.language())))
                 .setExact(true))
         .click();
     input("account-first-name").click();

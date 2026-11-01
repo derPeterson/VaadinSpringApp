@@ -875,10 +875,18 @@ Einheitenwert ist normaler Feldtext. Nur das Menü markiert die Auswahl.
 Konfigurationsfelder mit externem Label blenden die leere interne Labelzeile aus,
 damit beide Spalten dieselbe Ober- und Unterkante haben.
 
-Konfigurations-Checkboxen zeigen ihren Text links und den nativen Schalter rechts.
-Das innere Lumo-Raster folgt hier einer lokalen RTL-Richtung. Die Label-Fläche
-bleibt ausdrücklich LTR und linksbündig. Checkbox und unsichtbare native Eingabe
-belegen gemeinsam die rechte Rasterspalte. Fokus und Klickverhalten bleiben nativ.
+Alle booleschen Konfigurationsfelder verwenden native Vaadin-Switches mit der
+Klasse `cosmos-config-switch`, auch in der Anbietereinrichtung. Der Text steht
+links, der Schalter rechts und das Infoicon außerhalb. Die Zeile hat keinen
+Rahmenkasten. Die gemeinsame Gestaltung liegt in `cosmos-admin-reference.css`:
+34 × 20 px Bahn, 14-px-Marker und mindestens 40 px Zeilenhöhe. Das Label steht
+links, die Bahn am rechten Rand der Eingabespalte.
+Die öffentlichen Parts `label` und `switch` sowie der native Eingabeslot liegen
+in derselben Rasterzeile. Eine RTL-Umkehrung ist dafür nicht nötig. Fokus, Tastatur,
+Disabled-Zustand und Labelklick bleiben nativ. Ein Umschalten ändert zunächst den
+Formularentwurf; übernommen wird er weiterhin mit „Konfiguration speichern“.
+Die HTML-Referenz verwendet entsprechende `input[role=switch]`-Felder in `.hc-switch`.
+Die übrigen Checkboxen, beispielsweise bei Benutzerrollen, bleiben Checkboxen.
 
 Die Admin-Benachrichtigung verwendet eine native Mehrfachauswahl mit zweizeiligen
 Empfängern (Name und E-Mail). Die Anzahl liegt innerhalb der Eingabefläche und weicht
@@ -1009,10 +1017,12 @@ stehen die Registrierungspanels untereinander, weiterhin mit maximal 880 px Brei
 Die vorhandenen Felder, Feldspalten und Aktionen bleiben erhalten.
 
 Dazwischen steht ein 40 px breiter Trenner mit je 16 px Abstand zu den Panels.
-Seine dezente dunkle Linie trägt mittig „ODER“ in der Secondary-Textfarbe mit
-derselben dezenten Rahmenfarbe wie die Linie (10 px, Gewicht 600), bei englischer
-Sprache „OR“.
-Beim Stapeln verläuft die Trennlinie waagerecht.
+Seine dezente dunkle Linie trägt mittig „ODER“ in der Secondary-Textfarbe, bei
+englischer Sprache „OR“. Der Text hat keinen Rahmen, Hintergrund oder eigenen
+Innenabstand. Schrift und Linienabstand entsprechen dem Trenner im
+Identitätsbestätigungsdialog: 10 px, Gewicht 600, 18 px Zeilenhöhe,
+0,06 em Zeichenabstand und 12 px Abstand zu den Linien.
+Beim Stapeln verläuft die Trennlinie waagerecht; der Textstil bleibt gleich.
 Der Schnellzugang behält seine Inhaltshöhe und steht auf Desktop vertikal mittig
 neben dem Formular. Er verwendet die Panelfläche von Kopf und Footer
 (`--cosmos-reference-panel`, in HTML `--surface-panel`) und 32 px Innenabstand,
@@ -1036,7 +1046,7 @@ Sitzungsverwaltung blendet beide Anmeldewege gemeinsam aus. Die Regeln bleiben
 in `cosmos-external-login.css`, für HTML in `assets/public.css`.
 
 Die Anbieterverwaltung unter Konfiguration verwendet die bestehenden Adminpanel-,
-Formular-, Checkbox- und Footerbausteine. Panelkopf und SideNav heißen einheitlich
+Formular-, Switch- und Footerbausteine. Panelkopf und SideNav heißen einheitlich
 „Anmeldeanbieter“. Die zwei Erklärungssätze im Kopf stehen mit festem Zeilenumbruch
 und 20 px Zeilenhöhe, damit rechts Platz für die Statusbadges bleibt.
 Ein gemeinsamer Panelkopf steht über einer
@@ -1080,7 +1090,16 @@ Startseitenaktion des Avatar-Overlays: 36 px Höhe, 12 px seitlicher Innenabstan
 mit 8 px Textabstand. Zwischen Erklärung und Linkfläche liegen 4 px.
 Der Link bleibt auch bei Hover transparent mit unveränderten Text- und Iconfarben.
 Sein sichtbarer Tastaturfokus bleibt erhalten.
-URL, neues Fenster und Linksemantik bleiben erhalten. Beide Zugangsdatenlabels haben den üblichen
+URL, neues Fenster und Linksemantik bleiben erhalten. Die Rücksprungadresse trägt
+das kurze Label „Rücksprungadresse“. Der Kopierbutton hat dieselbe Höhe wie die
+Eingabefläche (40 px) und das blaue 16-px-Lucide-Icon `clipboard-copy`.
+Die Aktivierungszeile verwendet denselben nativen Konfigurations-Switch ohne Rahmenkasten.
+Text und Switch bleiben zusammen mit der rechts stehenden Feldhilfe auf der Breite
+einer Zugangsdaten-Spalte: halbe Inhaltsbreite abzüglich des halben 20-px-Spaltenabstands.
+Unter 600 px wird die Zeile vollständig breit. Der Switch übernimmt lokal die
+34 × 20 px große Bahn und den 14-px-Marker des Anmeldeschalters. Die HTML-Referenz
+bildet ihn als `input[role=switch]` mit denselben Werten ab.
+Beide Zugangsdatenlabels haben den üblichen
 blauen Pflichtpunkt für die Aktivierung. Ein gespeichertes Secret erfüllt diese
 Voraussetzung trotz leer angezeigtem Passwortfeld. Ohne Client-ID oder neues/gespeichertes
 Secret lässt sich die Freigabe nicht einschalten. Ausschalten bleibt auch mit
@@ -1094,3 +1113,12 @@ Nur das Anordnen von Einrichtungshinweis,
 Rücksprungadresse, Zugangsdaten und Freigabe liegt lokal in
 `cosmos-provider-settings.css`. Anbieterzeichen stammen aus `icons/external-login/`.
 Globale Feld-, Button- und Dialogregeln werden dafür nicht verändert.
+
+Die beiden Textbuttons in `.portal-home-actions` der angemeldeten Startseite
+verwenden den bestehenden sichtbarkeits- und sprachabhängigen Größenabgleich
+`EqualButtonWidths`. Die HTML-Referenz nutzt dieselbe lokale JavaScript-Kopie.
+Die Sprachbeschriftung im Avatar-Overlay verwendet die normale Primärtextfarbe.
+Sprachnamen unter „Bevorzugte Sprache“ folgen der aktuellen Oberflächensprache:
+DE „Deutsch/Englisch“, EN „German/English“. Die gespeicherte Locale bleibt unverändert.
+Beim Sprachwechsel wird auch der native Beschriftungsgeber neu gesetzt, damit
+Vaadin den bereits ausgewählten Feldwert ebenso aktualisiert wie die Auswahlliste.

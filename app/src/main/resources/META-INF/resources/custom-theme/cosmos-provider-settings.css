@@ -24,8 +24,11 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-pan
 .cosmos-provider-settings .provider-fields > span { color:var(--cosmos-reference-secondary); font:400 12px/1.8 Inter,sans-serif; }
 .cosmos-provider-settings .provider-fields a { align-self:flex-start; color:var(--cosmos-reference-accent); font-size:12px; font-weight:500; }
 .cosmos-provider-settings .provider-credentials { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
-.cosmos-provider-settings .provider-redirect { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:8px; }
-.cosmos-provider-settings .provider-activation { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px; border:1px solid var(--cosmos-reference-border); border-radius:9px; font:500 12px/1.6 Inter,sans-serif; }
+.cosmos-provider-settings .provider-redirect { --vaadin-input-field-height:40px; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:8px; }
+.cosmos-provider-settings .provider-redirect > vaadin-text-field { padding-bottom:0; }
+.cosmos-provider-settings .provider-redirect > vaadin-text-field::part(input-field) { box-sizing:border-box; height:var(--vaadin-input-field-height); min-height:var(--vaadin-input-field-height); }
+.cosmos-provider-settings vaadin-button.provider-copy { height:var(--vaadin-input-field-height); min-height:var(--vaadin-input-field-height); }
+.cosmos-provider-settings .provider-activation { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:40px; font:500 12px/1.6 Inter,sans-serif; }
 @media(max-width:600px) {
   vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-panel-header { grid-template-columns:40px minmax(0,1fr); }
   .cosmos-provider-settings .provider-statuses { grid-column:1/-1; }
@@ -43,8 +46,9 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-pan
 vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-help-row { align-items:start; }
 .cosmos-provider-settings .provider-help-row > .cosmos-config-info { width:28px; min-width:28px; height:28px; min-height:28px; margin:6px 0 0; }
 .cosmos-provider-settings .provider-help-row > :is(vaadin-text-field,vaadin-password-field) { padding-top:0; }
-vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-help-toggle { align-items:center; }
+vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-help-toggle { align-items:center; width:calc((100% - 20px)/2); }
 .cosmos-provider-settings .provider-help-toggle > .cosmos-config-info { margin:0; }
+@media(max-width:600px) { vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-help-toggle { width:100%; } }
 
 .cosmos-provider-settings .provider-assistant-intro { display:flex; flex-direction:column; gap:8px; }
 .cosmos-provider-settings :is(.provider-assistant-kicker,.provider-step-label) { display:block; color:var(--cosmos-reference-accent); font:600 10px/16px Inter,sans-serif; text-transform:uppercase; letter-spacing:1.2px; }
@@ -57,7 +61,6 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-hel
 .cosmos-provider-settings a.provider-console-link { display:inline-flex; align-self:flex-start; align-items:center; gap:8px; min-height:36px; padding:0 12px; border:0; border-radius:8px; background:transparent; color:var(--cosmos-reference-text); font:600 12px/1.4 Inter,sans-serif; text-decoration:none; }
 .cosmos-provider-settings a.provider-console-link > vaadin-icon { width:16px; height:16px; flex-shrink:0; color:var(--cosmos-reference-accent); }
 .cosmos-provider-settings a.provider-console-link:focus-visible { outline:2px solid var(--cosmos-reference-accent); outline-offset:2px; }
-.cosmos-provider-settings .provider-activation > [aria-disabled=true] { color:var(--cosmos-reference-secondary); cursor:default; }
 
 .cosmos-provider-settings .provider-assistant-kicker { display:flex; align-items:center; gap:8px; font-size:11px; }
 .cosmos-provider-settings .provider-assistant-kicker > vaadin-icon { width:16px; height:16px; flex-shrink:0; color:var(--cosmos-reference-accent); }

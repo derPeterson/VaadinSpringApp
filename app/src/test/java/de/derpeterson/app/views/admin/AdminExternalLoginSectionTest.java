@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.badge.Badge;
-import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -31,7 +31,7 @@ class AdminExternalLoginSectionTest {
     "de,true,true", "de,true,false", "de,false,false",
     "en,true,true", "en,true,false", "en,false,false"
   })
-  void statusExplainsStoredSettingsAndDoesNotApplyAnUnsavedCheckbox(
+  void statusExplainsStoredSettingsAndDoesNotApplyAnUnsavedSwitch(
       String language, boolean configured, boolean enabled) {
     MessageProperties texts =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
@@ -61,9 +61,9 @@ class AdminExternalLoginSectionTest {
                 : texts.getProviderSettingsInactiveHint("Google");
     assertEquals(expectedHint, Tooltip.forComponent(badge).getText());
     TabSheet tabs = (TabSheet) find(section, "admin-provider-tabs");
-    Checkbox checkbox =
-        (Checkbox) find(tabs.getComponent(tabs.getTabAt(0)), "provider-google-enabled");
-    checkbox.setValue(!enabled);
+    Switch activationSwitch =
+        (Switch) find(tabs.getComponent(tabs.getTabAt(0)), "provider-google-enabled");
+    activationSwitch.setValue(!enabled);
     section.refreshTexts();
     assertEquals(expected, badge.getText(), "Ein Entwurf ist keine gespeicherte Freigabe");
     verify(settings, never())
@@ -97,23 +97,25 @@ class AdminExternalLoginSectionTest {
     Component form = tabs.getComponent(tabs.getTabAt(0));
     TextField client = (TextField) find(form, "provider-google-client-id");
     PasswordField secret = (PasswordField) find(form, "provider-google-secret");
-    Checkbox checkbox = (Checkbox) find(form, "provider-google-enabled");
-    assertEquals(secretStored, checkbox.isEnabled());
+    Switch activationSwitch = (Switch) find(form, "provider-google-enabled");
+    assertEquals(secretStored, activationSwitch.isEnabled());
     client.setValue(" ");
-    assertFalse(checkbox.isEnabled());
+    assertFalse(activationSwitch.isEnabled());
     secret.setValue("new-example-secret");
-    assertFalse(checkbox.isEnabled());
+    assertFalse(activationSwitch.isEnabled());
     client.setValue("new-client");
-    assertTrue(checkbox.isEnabled());
+    assertTrue(activationSwitch.isEnabled());
     secret.clear();
-    assertEquals(secretStored, checkbox.isEnabled(), "Ein gespeichertes Secret zählt weiter");
+    assertEquals(
+        secretStored, activationSwitch.isEnabled(), "Ein gespeichertes Secret zählt weiter");
     secret.setValue("new-example-secret");
-    checkbox.setValue(true);
+    activationSwitch.setValue(true);
     client.clear();
     assertTrue(
-        checkbox.isEnabled(), "Ausschalten muss auch bei unvollständigem Entwurf möglich bleiben");
-    checkbox.setValue(false);
-    assertFalse(checkbox.isEnabled());
+        activationSwitch.isEnabled(),
+        "Ausschalten muss auch bei unvollständigem Entwurf möglich bleiben");
+    activationSwitch.setValue(false);
+    assertFalse(activationSwitch.isEnabled());
     assertEquals(
         texts.getProviderSettingsInactive(),
         ((Badge) find(section, "provider-google-status")).getText());

@@ -1323,7 +1323,7 @@ html.hc-overlay-page{scrollbar-gutter:stable}
 .hc-trigger svg{width:16px;height:16px}.hc-trigger:hover{color:#fff}.hc-trigger[aria-expanded=true]{background:#122342;border-color:#38bdf840}.hc-trigger:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
 .hc-trigger>.hc-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;pointer-events:none}
 .ad-config .hc-field{display:grid;grid-template-columns:minmax(0,1fr) 28px;gap:6px 8px;align-items:center}.hc-field>label{grid-column:1/-1}.hc-field>.hc-trigger{grid-column:2;grid-row:2}.hc-field>input,.hc-field>.ad-input-action{grid-column:1;grid-row:2}
-.ad-config .hc-checkbox{grid-template-rows:auto;align-self:end}.hc-checkbox>.hc-trigger{grid-column:2;grid-row:1}.ad-config .hc-toggle-control{grid-column:1;grid-row:1;display:flex;flex-wrap:nowrap;gap:12px;min-width:0;min-height:40px;padding:10px 12px}.hc-toggle-control>label{min-width:0;color:#cbd5e1;font-size:12px;font-weight:500;cursor:pointer}.hc-toggle-control>input{flex:0 0 17px;width:17px;height:17px}
+.ad-config .hc-switch{grid-template-rows:auto;align-self:end}.hc-switch>.hc-trigger{grid-column:2;grid-row:1}.ad-config .hc-toggle-control{grid-column:1;grid-row:1;display:flex;flex-wrap:nowrap;gap:12px;min-width:0;min-height:40px;padding:10px 12px}.hc-toggle-control>label{min-width:0;color:#cbd5e1;font-size:12px;font-weight:500;cursor:pointer}.hc-toggle-control>input{flex:0 0 17px;width:17px;height:17px}
 .hc-drawer .au-drawer-body{overflow-wrap:anywhere}.hc-drawer .hc-group{font-size:10px;font-weight:600;letter-spacing:.06em;color:#38bdf8;text-transform:uppercase;margin-bottom:8px}.hc-drawer h3{font-size:16px;font-weight:650;line-height:1.5;margin:0 0 12px;color:#e2e8f0}.hc-copy{color:#94a3b8;font-size:12px;line-height:1.7}.hc-description{margin:0;white-space:pre-line}.hc-section{margin-top:20px}.hc-section h4{margin:0 0 8px;color:#38bdf8;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}.hc-placeholders{margin:0}.hc-placeholders>div{display:grid;grid-template-columns:minmax(0,115px) minmax(0,1fr);gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid #ffffff0d}.hc-placeholders dt,.hc-placeholders dd{margin:0;min-width:0}.hc-placeholders dd{text-align:right;font-size:11px}.hc-placeholders code{display:inline-block;padding:2px 6px;border:1px solid #38bdf826;border-radius:5px;background:#008ecc0d;color:#38bdf8;font:11px/1.6 ui-monospace,Consolas,monospace;overflow-wrap:anywhere}.hc-default{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:20px;padding:10px 12px;border:1px solid #ffffff14;border-radius:8px;background:#091120}.hc-default>span{font-size:11px;flex-shrink:0}.hc-default>code{min-width:0;color:#cbd5e1;text-align:right;font:11px/1.7 ui-monospace,Consolas,monospace;overflow-wrap:anywhere}.hc-rules ul{list-style:disc;padding-left:16px;margin:0}.hc-rules li{padding-left:2px;margin-top:6px}.hc-rules li::marker{color:#38bdf8}body.admin-reference .hc-drawer .au-drawer-footer.hc-footer{grid-template-columns:1fr}.hc-field[data-help-selected=true]>label,.hc-field[data-help-selected=true] .hc-toggle-control>label{color:#38bdf8}
 
 /* Kopf und Fuß der Feldhilfe verwenden dieselbe Panelfläche. */
@@ -1354,12 +1354,13 @@ body.admin-reference .ad-providers .ad-provider-panel-header{display:grid;grid-t
 .ad-provider-fields>a{align-self:flex-start;color:var(--accent);font:500 12px/20px Inter,system-ui}
 .ad-provider-credentials{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
 .ad-provider-redirect{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:8px}
-.ad-provider-activation{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px;border:1px solid var(--border-subtle);border-radius:9px;font:500 12px/1.6 Inter,system-ui}
+.ad-providers .ad-provider-activation{width:calc((100% - 20px)/2);min-width:0}
 .ad-providers .ad-foot{display:block;padding:0}
 .ad-providers .hc-field{align-content:start}
-.ad-providers .hc-checkbox{align-self:stretch}
+.ad-providers .hc-switch{align-self:stretch}
 .ad-providers .hc-toggle-control{padding:12px}
 @media(max-width:600px){body.admin-reference .ad-providers .ad-provider-panel-header{padding:16px;grid-template-columns:40px minmax(0,1fr)}.ad-provider-statuses{grid-column:1/-1}.ad-provider-tabs{padding:0 16px}.ad-provider-tabs>[role=tab]{flex:1;min-width:0;padding-inline:16px}.ad-provider-summary{padding:16px 16px 0;grid-template-columns:40px minmax(0,1fr)}.ad-provider-fields{padding:16px}.ad-provider-credentials,.ad-provider-redirect{grid-template-columns:1fr}.ad-provider-redirect>.portal-button{justify-self:end}}
+@media(max-width:600px){.ad-providers .ad-provider-activation{width:100%}}
 
 /* Kopf und Fuß der Feldhilfe verwenden dieselbe Panelfläche. */
 body.admin-reference .hc-drawer :is(.au-drawer-head,.au-drawer-footer.hc-footer){background:#080e1b!important}
@@ -1386,3 +1387,16 @@ body.admin-reference .hc-drawer :is(.au-drawer-head,.au-drawer-footer.hc-footer)
 .ad-provider-number{width:16px;height:16px;flex-shrink:0}
 
 .ad-provider-assistant-kicker{font-size:11px}
+
+/* Sprachbeschriftung des Benutzermenüs in der normalen hellen Textfarbe. */
+.portal-menu-language-label,.portal-menu-language-label>svg{color:var(--text-primary)}
+
+/* Einheitliche rahmenlose Ein-/Aus-Schalter in allen Konfigurationsgruppen. */
+.ad-config .hc-toggle-control{border:0;border-radius:0;background:transparent;padding:0;min-height:40px}
+.ad-config .hc-toggle-control>input[role=switch]{appearance:none;position:relative;display:block;box-sizing:border-box;flex:0 0 34px;width:34px;height:20px;margin:0;border:1px solid #ffffff26;border-radius:999px;background:var(--surface-input);cursor:pointer}
+.ad-config .hc-toggle-control>input[role=switch]:checked{border-color:var(--action-primary);background:var(--action-primary)}
+.ad-config .hc-toggle-control>input[role=switch]::after{content:'';position:absolute;box-sizing:border-box;width:14px;height:14px;left:2px;top:2px;margin:0;border:0;border-radius:50%;background:var(--text-secondary);transform:none}
+.ad-config .hc-toggle-control>input[role=switch]:checked::after{transform:translateX(14px);background:#fff}
+.ad-config .hc-toggle-control>input[role=switch]:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.ad-config .hc-toggle-control>input[role=switch]:disabled{opacity:.4;cursor:default}
+body.admin-reference .ad-providers button.portal-button.ad-provider-copy{height:40px!important;min-height:40px!important;padding-block:0}

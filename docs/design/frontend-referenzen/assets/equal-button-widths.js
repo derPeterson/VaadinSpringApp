@@ -91,7 +91,7 @@
 
   // Die exportierbaren HTML-Referenzen verwenden exakt denselben Größenabgleich.
   const initializeReference = () => {
-    document.querySelectorAll('dialog .portal-modal-foot,dialog .n-actions,dialog .portal-card-foot,.external-connections-overview')
+    document.querySelectorAll('dialog .portal-modal-foot,dialog .n-actions,dialog .portal-card-foot,.external-connections-overview,.portal-reference .portal-home-actions')
       .forEach(observe);
   };
   if (document.querySelector('body.portal-reference,body.admin-reference,body.public-reference')) {

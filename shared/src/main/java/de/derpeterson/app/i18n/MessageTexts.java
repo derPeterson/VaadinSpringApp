@@ -2911,10 +2911,6 @@ public class MessageTexts {
     return getTranslation("admin.providers.hint");
   }
 
-  public String getProviderSettingsSave() {
-    return getTranslation("admin.providers.save");
-  }
-
   public String getProviderSettingsUnconfiguredHint(String provider) {
     return getFormattedTranslation("admin.providers.unconfiguredHint", provider);
   }

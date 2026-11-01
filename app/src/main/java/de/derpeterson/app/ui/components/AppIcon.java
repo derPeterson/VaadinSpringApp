@@ -18,6 +18,7 @@ public enum AppIcon {
   CHECK("check"),
   CHECK_CHECK("check-check"),
   CHECK_CIRCLE("circle-check"),
+  CLIPBOARD_COPY("clipboard-copy"),
   CLOSE("x"),
   CLOSE_CIRCLE("circle-x"),
   CLOUD_LOCK(Library.TABLER, "cloud-lock"),

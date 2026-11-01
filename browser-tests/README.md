@@ -102,7 +102,7 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
-| `cosmos-components` | Rollensuche, Checkbox-Geometrie, SideNav-Zustände, Tooltips und Benutzermenü | 5 |
+| `cosmos-components` | Rollensuche, Konfigurations-Switches, SideNav-Zustände, Tooltips und Benutzermenü | 5 |
 | `all` | Alle 32 Testklassen einschließlich der Fast-Fälle | 208 |
 
 IDs, Schritte und erwartetes Ergebnis stehen pro Fall in `@DisplayName` und

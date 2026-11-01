@@ -933,8 +933,10 @@ vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] vaadin-select-item 
     display: flex;
     align-items: center;
     gap: 6px;
-    color: var(--cosmos-reference-secondary);
+    color: var(--cosmos-reference-text);
 }
+
+.portal-menu-language-label .portal-menu-section { color: inherit; }
 
 .portal-menu-language-label > vaadin-icon {
     width: 14px;

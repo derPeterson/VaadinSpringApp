@@ -1,7 +1,7 @@
 # Stitch-Kritik zu Anmeldeanbietern und Anmeldung
 
-Stand: 1. November 2026. Die Entscheidung ist vertagt. Die Empfehlungen sind noch
-nicht zur Umsetzung freigegeben; die bestehende Oberfläche bleibt unverändert.
+Stand: 1. November 2026. Der schlichte ODER-Trenner ist zur Umsetzung freigegeben.
+Die weiteren Empfehlungen sind noch nicht freigegeben.
 
 Die folgende vollständige Antwort stammt von Stitch und bewertet die hochgeladenen
 Ist-Screenshots. Ihre Prioritäten und Gestaltungsvorschläge sind die Einschätzung
@@ -13,9 +13,16 @@ von Stitch, keine bereits gemeinsam beschlossenen Änderungen.
 
 ## Noch zu entscheiden
 
-Die Anmeldeanbieter-Seite und der ODER-Trenner werden später gemeinsam besprochen.
-Es wurde keine der vorgeschlagenen Änderungen ausgewählt. Die Rückmeldung wurde
-als reine Textkritik geliefert; neue Design-Screens sind dabei nicht entstanden.
+Die Statusplatzierung und die übrige Struktur der Anmeldeanbieter-Seite bleiben
+offen. Freigegeben ist dort ein rahmenloser Aktivierungs-Switch auf halber
+Inhaltsbreite sowie das kurze Rücksprungadresslabel und ein feldhoher Kopierbutton
+mit Lucide-Icon. Für Anmeldung und
+Registrierung ist ein schlichtes „ODER“ ohne Kapsel ausgewählt, im selben
+Secondary-Schriftstil wie die Identitätsbestätigung unter Mein Konto → Sicherheit.
+Dies gilt neben- und untereinander; die Linien bleiben erhalten. Die gemeinsame
+Sichtung der Anpassung steht noch aus. Die ursprüngliche Rückmeldung unten bleibt
+unverändert. Sie wurde als reine Textkritik geliefert; neue Design-Screens sind
+dabei nicht entstanden.
 
 ## Vollständige Antwort von Stitch
 

@@ -96,8 +96,8 @@
       trigger.setAttribute('aria-controls',drawer.id);trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-haspopup','dialog');
       field.trigger=trigger;wrapper.classList.add('hc-field');details.remove();
       if(input.type==='checkbox'){
-        const control=document.createElement('div');control.className='ad-toggle au-checkbox hc-toggle-control';
-        wrapper.classList.remove('ad-toggle');wrapper.classList.add('hc-checkbox');
+        const control=document.createElement('div');control.className='ad-toggle hc-toggle-control';
+        wrapper.classList.remove('ad-toggle');wrapper.classList.add('hc-switch');
         control.append(label,input);wrapper.append(control);
       }
       wrapper.append(trigger);

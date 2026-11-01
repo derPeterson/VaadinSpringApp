@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -85,10 +86,10 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
 
   @Test
   @DisplayName(
-      "COMPONENT-02: Konfigurationscheckboxen bleiben links beschriftet und rechts bedienbar")
+      "COMPONENT-02: Konfigurationsswitches bleiben links beschriftet und rechts bedienbar")
   @Description(
-      "Alle fünf Boolean-Einstellungen der Sicherheits- und SMTP-Gruppen auf Desktop und Smartphone vermessen: Text links, Checkbox rechts, Info außerhalb. Label und Kontrollkästchen schalten denselben Zustand. Das sichtbare native Häkchen ist im Quadrat zentriert. Keine Einstellung wird gespeichert.")
-  void configurationCheckboxGeometryAndBothClickTargets() {
+      "Alle fünf Boolean-Einstellungen der Sicherheits- und SMTP-Gruppen auf Desktop und Smartphone vermessen: Text links, Switch rechts, Info außerhalb. Label und Schalter schalten denselben Zustand. Der Marker bleibt innerhalb der Bahn vertikal zentriert. Keine Einstellung wird gespeichert.")
+  void configurationSwitchGeometryAndBothClickTargets() {
     signIn();
     ConfigurationPage settings = new ConfigurationPage(page);
     for (int width : new int[] {1280, 390}) {
@@ -96,20 +97,25 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       int checkedFields = 0;
       for (AdminConfigGroup group : List.of(AdminConfigGroup.SECURITY, AdminConfigGroup.SMTP)) {
         settings.open(group);
-        for (Locator row : page.locator(".admin-config-checkbox .cosmos-config-input-row").all()) {
-          Locator checkbox = row.locator("vaadin-checkbox");
-          Locator input = checkbox.locator("input[slot=input]");
-          Locator label = checkbox.locator("[id^=config-label-]");
-          Locator square = checkbox.locator("[part=checkbox]");
+        for (Locator row : page.locator(".admin-config-switch .cosmos-config-input-row").all()) {
+          Locator toggle = row.locator("vaadin-switch");
+          Locator input = toggle.locator("input[slot=input]");
+          Locator label = toggle.locator("[id^=config-label-]");
+          Locator track = toggle.locator("[part=switch]");
           Locator info = row.locator(".cosmos-config-info");
-          BoundingBox textBounds = label.boundingBox(), squareBounds = square.boundingBox();
-          assertTrue(textBounds.x + textBounds.width <= squareBounds.x + 1);
+          BoundingBox textBounds = label.boundingBox(), trackBounds = track.boundingBox();
+          assertThat(label).hasCSS("font-size", "12px");
+          assertThat(label).hasCSS("font-weight", "500");
+          assertTrue(textBounds.x + textBounds.width <= trackBounds.x + 1);
           assertEquals(
-              textBounds.y + textBounds.height / 2, squareBounds.y + squareBounds.height / 2, 2);
-          assertTrue(
-              info.boundingBox().x >= checkbox.boundingBox().x + checkbox.boundingBox().width);
+              toggle.boundingBox().x + toggle.boundingBox().width,
+              trackBounds.x + trackBounds.width,
+              1);
           assertEquals(
-              squareBounds.y + squareBounds.height / 2,
+              textBounds.y + textBounds.height / 2, trackBounds.y + trackBounds.height / 2, 2);
+          assertTrue(info.boundingBox().x >= toggle.boundingBox().x + toggle.boundingBox().width);
+          assertEquals(
+              trackBounds.y + trackBounds.height / 2,
               info.boundingBox().y + info.boundingBox().height / 2,
               1);
           boolean original = input.isChecked();
@@ -119,9 +125,9 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
                   new com.microsoft.playwright.assertions.LocatorAssertions.IsCheckedOptions()
                       .setChecked(!original));
           if (!original) {
-            assertCenteredCheckmark(square);
+            assertSwitchMarker(track);
           }
-          BoundingBox clickTarget = square.boundingBox();
+          BoundingBox clickTarget = track.boundingBox();
           page.mouse()
               .click(clickTarget.x + clickTarget.width / 2, clickTarget.y + clickTarget.height / 2);
           assertThat(input)
@@ -129,40 +135,26 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
                   new com.microsoft.playwright.assertions.LocatorAssertions.IsCheckedOptions()
                       .setChecked(original));
           if (original) {
-            assertCenteredCheckmark(square);
+            assertSwitchMarker(track);
           }
           checkedFields++;
         }
       }
       assertEquals(5, checkedFields);
-      AllurePlaywright.attachScreenshot("Checkboxzeilen bei " + width + "px", page);
+      AllurePlaywright.attachScreenshot("Switchzeilen bei " + width + "px", page);
     }
   }
 
-  private void assertCenteredCheckmark(Locator square) {
-    assertThat(square).hasCSS("position", "relative");
-    List<?> geometry =
-        (List<?>)
-            square.evaluate(
-                """
-        el => {
-          const glyph = getComputedStyle(el, '::after');
-          const box = getComputedStyle(el);
-          const transform = new DOMMatrix(glyph.transform === 'none' ? undefined : glyph.transform);
-          const width = el.clientWidth, height = el.clientHeight;
-          return [parseFloat(glyph.left) + parseFloat(glyph.width) / 2 + transform.e - width / 2,
-            parseFloat(glyph.top) + parseFloat(glyph.height) / 2 + transform.f - height / 2,
-            parseFloat(glyph.width), parseFloat(glyph.height), width, height, glyph.opacity, glyph.content];
-        }
-        """);
-    assertEquals(0, ((Number) geometry.get(0)).doubleValue(), 1);
-    assertEquals(0, ((Number) geometry.get(1)).doubleValue(), 1);
-    assertTrue(
-        ((Number) geometry.get(2)).doubleValue() >= ((Number) geometry.get(4)).doubleValue() - 1);
-    assertTrue(
-        ((Number) geometry.get(3)).doubleValue() >= ((Number) geometry.get(5)).doubleValue() - 1);
-    assertEquals("1", geometry.get(6));
-    assertTrue(!"none".equals(geometry.get(7)) && !"normal".equals(geometry.get(7)));
+  private void assertSwitchMarker(Locator track) {
+    Locator marker = track.locator("[part=marker]");
+    assertThat(track).hasCSS("width", "34px");
+    assertThat(track).hasCSS("height", "20px");
+    assertThat(marker).hasCSS("width", "14px");
+    assertThat(marker).hasCSS("height", "14px");
+    BoundingBox area = track.boundingBox();
+    BoundingBox thumb = marker.boundingBox();
+    assertEquals(area.y + area.height / 2, thumb.y + thumb.height / 2, 1);
+    assertTrue(thumb.x >= area.x && thumb.x + thumb.width <= area.x + area.width);
   }
 
   @Test
@@ -183,6 +175,15 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       checkNav(page.locator("#admin-nav-configuration-security"), "400", false);
       navigation.closeOverlayDrawer();
       page.navigate(path(HOME_ROUTE));
+      assertThat(page.locator("#portal-home-account")).isVisible();
+      page.waitForFunction(
+          """
+          () => {
+            const buttons = [...document.querySelectorAll('.portal-home-actions vaadin-button')];
+            return buttons.length === 2 && Math.abs(buttons[0].getBoundingClientRect().width
+              - buttons[1].getBoundingClientRect().width) < 1;
+          }
+          """);
       openPortalNavigation();
       checkNav(page.locator("#account-nav-home"), "600", true);
       checkNav(page.locator("#account-nav-notifications"), "500", false);
@@ -320,7 +321,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
   @DisplayName(
       "COMPONENT-05: Bereinigtes Benutzermenü bleibt auf allen angemeldeten Seiten bedienbar")
   @Description(
-      "Admin, Startseite und Konto auf Desktop und Smartphone öffnen. Identität, vier sichtbare Statusoptionen, Sprachwahl und rechtsbündiges Abmelden bleiben innerhalb des Viewports. Das Menü enthält keine zweite versteckte Statusauswahl oder alte Kopfzeile. Mein Konto navigiert, Escape und Außenklick schließen. Keine Statusänderung oder Speicherung.")
+      "Admin, Startseite und Konto auf Desktop und Smartphone öffnen. Identität, vier sichtbare Statusoptionen, Sprachwahl und rechtsbündiges Abmelden bleiben innerhalb des Viewports. Das Menü enthält keine zweite versteckte Statusauswahl oder alte Kopfzeile. Mein Konto navigiert, Escape und Außenklick schließen. Bei vorausgewähltem Deutsch und Englisch aktualisiert ein Sprachwechsel sowohl Feldwert als auch Optionen, ohne die Auswahl zu ändern. Keine Statusänderung und kein Speichern des Profilformulars.")
   void userMenuKeepsItsLayoutNavigationAndNativeClosing() {
     signIn();
     UserMenu menu = new UserMenu(page);
@@ -333,6 +334,10 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
         Locator overlay = page.locator("vaadin-popover-overlay[opened] > [part~='overlay']");
         assertThat(body.locator(".portal-menu-name")).isVisible();
         assertThat(body.locator(".portal-menu-email")).isVisible();
+        assertThat(body.locator(".portal-menu-language-label"))
+            .hasCSS("color", "rgb(226, 232, 240)");
+        assertThat(body.locator(".portal-menu-language-label .portal-menu-section"))
+            .hasCSS("color", "rgb(226, 232, 240)");
         assertThat(body.locator(".portal-status-option")).hasCount(4);
         assertThat(body.locator(".portal-status-option[aria-pressed=true]")).hasCount(1);
         assertThat(body.locator(".portal-language-switch vaadin-button")).hasCount(2);
@@ -373,7 +378,44 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
         assertThat(page.locator("#account-panel-profile")).isVisible();
         assertThat(page.locator("vaadin-popover-overlay[opened]")).hasCount(0);
       }
+      assertPreferredLanguageLabels(menu);
     }
+  }
+
+  private void assertPreferredLanguageLabels(UserMenu menu) {
+    Locator field = page.locator("#account-language");
+    Locator input = field.locator("input");
+    Locale originalInterface = Locale.forLanguageTag(texts.language());
+    String otherLanguage = texts.language().equals("de") ? "en" : "de";
+    for (Locale selected : List.of(Locale.GERMAN, Locale.ENGLISH)) {
+      field.click();
+      page.getByRole(
+              AriaRole.OPTION,
+              new Page.GetByRoleOptions()
+                  .setName(selected.getDisplayLanguage(originalInterface))
+                  .setExact(true))
+          .click();
+      page.locator("#account-first-name input").click();
+      for (String language : List.of(otherLanguage, texts.language())) {
+        menu.selectLanguage(language);
+        Locale currentInterface = Locale.forLanguageTag(language);
+        String expected = selected.getDisplayLanguage(currentInterface);
+        assertThat(input).hasValue(expected);
+        field.click();
+        for (Locale option : List.of(Locale.GERMAN, Locale.ENGLISH)) {
+          assertThat(
+                  page.getByRole(
+                      AriaRole.OPTION,
+                      new Page.GetByRoleOptions()
+                          .setName(option.getDisplayLanguage(currentInterface))
+                          .setExact(true)))
+              .isVisible();
+        }
+        input.press("Escape");
+        assertThat(input).hasValue(expected);
+      }
+    }
+    AllurePlaywright.attachScreenshot("Vorausgewählte Sprache nach Sprachwechsel", page);
   }
 
   private void assertTooltip(Locator tooltip) {

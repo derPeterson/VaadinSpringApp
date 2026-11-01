@@ -21,11 +21,7 @@ public final class ConfigurationPage {
   @Step("Gewählte Konfigurationsgruppe über das Adminmenü öffnen")
   public void open(AdminConfigGroup group) {
     new AdminNavigation(page).openGroup(group);
-    String action =
-        group == AdminConfigGroup.EXTERNAL_LOGIN
-            ? texts.getProviderSettingsSave()
-            : texts.getAdminConfigSave();
-    assertThat(button(action)).isVisible();
+    assertThat(button(texts.getAdminConfigSave())).isVisible();
   }
 
   public Locator input(String label) {

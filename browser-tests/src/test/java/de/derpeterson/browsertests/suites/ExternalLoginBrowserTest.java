@@ -157,7 +157,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       admin.locator("#provider-tab-" + provider).click();
       admin
           .locator("#provider-" + provider + "-enabled")
-          .getByRole(AriaRole.CHECKBOX)
+          .getByRole(AriaRole.SWITCH)
           .setChecked(enabled);
       admin.locator("#provider-" + provider + "-save").click();
       assertThat(admin.locator("#provider-" + provider + "-status"))
@@ -242,7 +242,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     for (String provider : new String[] {"google", "microsoft"}) {
       page.locator("#provider-tab-" + provider).click();
       com.microsoft.playwright.Locator enabled =
-          page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.CHECKBOX);
+          page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.SWITCH);
       com.microsoft.playwright.Locator save = page.locator("#provider-" + provider + "-save");
       com.microsoft.playwright.Locator secret =
           page.locator("#provider-" + provider + "-secret input");
@@ -285,7 +285,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     if (width == 1280) {
       for (String provider : new String[] {"google", "microsoft"}) {
         page.locator("#provider-tab-" + provider).click();
-        page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.CHECKBOX).uncheck();
+        page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.SWITCH).uncheck();
         page.locator("#provider-" + provider + "-save").click();
         assertThat(page.locator("#provider-" + provider + "-status"))
             .hasText(texts.getProviderSettingsInactive());
@@ -299,7 +299,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
         assertThat(page.locator("#provider-" + provider + "-status"))
             .hasText(texts.getProviderSettingsInactive());
         assertThat(page.locator("#provider-" + provider + "-secret input")).hasValue("");
-        page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.CHECKBOX).check();
+        page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.SWITCH).check();
         page.locator("#provider-" + provider + "-save").click();
         assertThat(page.locator("#provider-" + provider + "-status"))
             .hasText(texts.getProviderSettingsActive());

@@ -30,7 +30,16 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-config-field>vaadin-horizontal-
 vaadin-app-layout.cosmos-reference-admin .admin-config-required::after { content:' •'; color:var(--cosmos-reference-accent); }
 vaadin-app-layout.cosmos-reference-admin .cosmos-config-input-row { display:grid; grid-template-columns:minmax(0,1fr) 28px; gap:8px; align-items:center; width:100%; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-config-info { width:28px; min-width:28px; height:28px; padding:0; background:transparent; border:0; }
-vaadin-app-layout.cosmos-reference-admin .admin-config-checkbox vaadin-checkbox { box-sizing:border-box; padding:12px; border:1px solid var(--cosmos-reference-border); border-radius:9px; background:var(--cosmos-reference-page); }
+/* Gemeinsamer nativer Schalter für alle Konfigurationsgruppen einschließlich Anbieter. */
+vaadin-app-layout.cosmos-reference-admin .admin-config-switch { align-self:end; }
+/* Lumo richtet Label und Bahn im Innencontainer aus; ein zweites Host-Grid würde den Tooltipslot mitzählen. */
+.cosmos-reference-admin vaadin-switch.cosmos-config-switch { display:block; box-sizing:border-box; width:100%; min-height:40px; margin:0; padding:10px 0; border:0; background:transparent; font:500 12px/19.2px Inter,sans-serif; --vaadin-switch-width:34px; --vaadin-switch-height:20px; --vaadin-switch-background:var(--cosmos-reference-input); --vaadin-switch-border-color:var(--cosmos-reference-control-border); --vaadin-switch-border-width:1px; --vaadin-switch-border-radius:999px; --vaadin-switch-marker-width:14px; --vaadin-switch-marker-height:14px; --vaadin-switch-marker-color:var(--cosmos-reference-secondary); --vaadin-switch-marker-border-width:0; --vaadin-switch-marker-scale:1; --vaadin-switch-label-color:var(--cosmos-reference-label); --vaadin-switch-label-font-size:12px; --vaadin-switch-label-font-weight:500; --vaadin-switch-label-line-height:19.2px; --vaadin-switch-label-padding:0; }
+.cosmos-reference-admin vaadin-switch.cosmos-config-switch::part(label) { grid-column:1; grid-row:1; justify-self:stretch; align-self:center; margin:0; padding:0; text-align:left; }
+.cosmos-reference-admin vaadin-switch.cosmos-config-switch > [slot=label],.cosmos-reference-admin vaadin-switch.cosmos-config-switch [id^=config-label-] { font:inherit; }
+.cosmos-reference-admin vaadin-switch.cosmos-config-switch::part(switch) { grid-column:2; grid-row:1; align-self:center; justify-self:end; margin:0; }
+.cosmos-reference-admin vaadin-switch.cosmos-config-switch > input[slot=input] { grid-column:2; grid-row:1; align-self:stretch; }
+.cosmos-reference-admin vaadin-switch.cosmos-config-switch[checked] { --vaadin-switch-background:var(--cosmos-reference-primary); --vaadin-switch-border-color:var(--cosmos-reference-primary); --vaadin-switch-marker-color:var(--cosmos-reference-white); }
+.cosmos-reference-admin vaadin-switch.cosmos-config-switch[focus-ring]::part(switch) { outline:2px solid var(--cosmos-reference-accent); outline-offset:3px; }
 vaadin-app-layout.cosmos-reference-admin vaadin-checkbox::part(checkbox) { width:16px; height:16px; margin:0; border-radius:5px; background:var(--cosmos-reference-input); border:1px solid var(--cosmos-reference-control-border); }
 vaadin-app-layout.cosmos-reference-admin vaadin-checkbox[checked]::part(checkbox) { background:var(--cosmos-reference-primary); border-color:var(--cosmos-reference-primary); }
 vaadin-app-layout.cosmos-reference-admin vaadin-checkbox::part(checkbox)::after { top:50%; left:50%; transform:translate(-50%,-50%); }
@@ -392,11 +401,6 @@ vaadin-app-layout.cosmos-reference-admin .admin-history-note>span:last-child { m
 .admin-reference-drawer .admin-filter-status-label[data-status=available] { color:var(--cosmos-reference-success); }
 .admin-reference-drawer .admin-filter-status-label[data-status=employed] { color:var(--cosmos-reference-invalid); }
 .admin-reference-drawer .admin-filter-status-label[data-status=absent] { color:var(--cosmos-reference-warning); }
-vaadin-app-layout.cosmos-reference-admin .admin-config-checkbox vaadin-checkbox { display:block; direction:rtl; --vaadin-checkbox-label-padding:0; text-align:left; padding:10px 12px; min-height:40px; }
-vaadin-app-layout.cosmos-reference-admin .admin-config-checkbox vaadin-checkbox::part(label) { grid-column:2; grid-row:1; justify-self:stretch; max-width:none; direction:ltr; text-align:left; align-self:center; margin:0; }
-vaadin-app-layout.cosmos-reference-admin .admin-config-checkbox vaadin-checkbox::part(checkbox) { grid-column:1; grid-row:1; justify-self:center; align-self:center; }
-vaadin-app-layout.cosmos-reference-admin .admin-config-checkbox vaadin-checkbox > input[slot=input] { grid-column:1; grid-row:1; }
-vaadin-app-layout.cosmos-reference-admin .admin-config-checkbox vaadin-checkbox::part(label) { padding:0; }
 
 vaadin-app-layout.cosmos-reference-admin :is(vaadin-integer-field,vaadin-number-field,vaadin-text-area,vaadin-multi-select-combo-box) { padding:0; min-width:0; --vaadin-input-field-background:var(--cosmos-reference-input); --vaadin-input-field-border-color:var(--cosmos-reference-border); --vaadin-input-field-border-width:1px; --vaadin-input-field-border-radius:8px; --vaadin-input-field-height:40px; --vaadin-input-field-value-font-size:14px; --vaadin-input-field-value-font-weight:400; --vaadin-input-field-value-color:var(--cosmos-reference-text); --vaadin-input-field-placeholder-color:var(--cosmos-reference-muted); }
 vaadin-app-layout.cosmos-reference-admin :is(vaadin-integer-field,vaadin-number-field,vaadin-text-area,vaadin-multi-select-combo-box)::part(input-field) { min-height:40px; border:1px solid var(--cosmos-reference-border); border-radius:8px; background:var(--cosmos-reference-input); padding:0 14px; }

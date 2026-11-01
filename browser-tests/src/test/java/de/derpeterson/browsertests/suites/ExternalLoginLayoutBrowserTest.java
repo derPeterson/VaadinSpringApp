@@ -326,13 +326,6 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
           referenceSecret.y > referenceClient.y + referenceClient.height,
           "Mobil stehen die Eingaben untereinander");
     }
-    BoundingBox referenceCredentials =
-        page.locator("#ad-provider-google .ad-provider-credentials").boundingBox();
-    BoundingBox referenceActivation =
-        page.locator("#ad-provider-google .hc-toggle-control").boundingBox();
-    assertTrue(
-        referenceActivation.width >= referenceCredentials.width * .85,
-        "Die Freigabezeile nutzt die volle verfügbare Formularbreite");
     assertProviderTabAppearance(page.locator("#ad-provider-tab-google"));
     assertThat(page.locator("#ad-provider-google")).isVisible();
     assertThat(page.locator("#ad-provider-microsoft")).isHidden();
@@ -413,6 +406,17 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     assertThat(consoleLink.locator("vaadin-icon")).hasAttribute("data-tabler", "external-link");
     assertThat(consoleLink.locator("vaadin-icon")).hasCSS("color", "rgb(56, 189, 248)");
     assertThat(assistant.locator(".provider-console-guide")).hasCSS("row-gap", "4px");
+    assertThat(assistant.locator(".provider-redirect label"))
+        .hasText(texts.getProviderSettingsRedirect());
+    assertThat(assistant.locator(".provider-copy vaadin-icon"))
+        .hasAttribute("data-lucide", "clipboard-copy");
+    assertThat(assistant.getByRole(AriaRole.SWITCH)).hasCount(1);
+    assertProviderControlGeometry(
+        assistant.locator(".provider-redirect [part=input-field]"),
+        assistant.locator(".provider-copy"),
+        assistant.locator(".provider-help-toggle"),
+        assistant.locator(".provider-activation"),
+        assistant.locator(".provider-credentials > div").first());
     assertLinkAlignmentAndStableHover(consoleLink);
     assertProviderFieldHelp(provider);
   }
@@ -455,6 +459,16 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     assertThat(referenceConsoleLink.locator("svg")).hasCSS("color", "rgb(56, 189, 248)");
     assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-console-guide"))
         .hasCSS("row-gap", "4px");
+    Locator assistant = page.locator("#ad-provider-" + provider);
+    assertThat(assistant.locator(".ad-provider-redirect label")).hasText("Rücksprungadresse");
+    assertThat(assistant.locator(".ad-provider-copy svg")).hasCount(1);
+    assertThat(assistant.getByRole(AriaRole.SWITCH)).hasCount(1);
+    assertProviderControlGeometry(
+        assistant.locator(".ad-provider-redirect input"),
+        assistant.locator(".ad-provider-copy"),
+        assistant.locator(".ad-provider-activation"),
+        assistant.locator(".hc-toggle-control"),
+        assistant.locator(".ad-provider-credentials > div").first());
     assertLinkAlignmentAndStableHover(referenceConsoleLink);
     for (String field : new String[] {"client", "secret", "enabled"}) {
       Locator wrapper =
@@ -479,6 +493,25 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     referenceClientInput.fill(initialClient);
     assertThat(referenceEnabled).isEnabled();
     referenceEnabled.setChecked(initialEnabled);
+  }
+
+  private void assertProviderControlGeometry(
+      Locator input,
+      Locator copy,
+      Locator activationRow,
+      Locator activationControl,
+      Locator credentialField) {
+    assertEquals(
+        input.boundingBox().height,
+        copy.boundingBox().height,
+        1,
+        "Kopierbutton und Eingabefläche haben dieselbe Höhe");
+    assertEquals(
+        credentialField.boundingBox().width,
+        activationRow.boundingBox().width,
+        1,
+        "Die Aktivierung nutzt genau eine Formularspalte, mobil die volle Breite");
+    assertThat(activationControl).hasCSS("border-top-width", "0px");
   }
 
   private void assertProviderPanelHeader(Locator section, Locator tabs) {
@@ -600,8 +633,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
       assertThat(help.locator(".admin-help-description")).hasText(explanation);
       help.locator("[slot=footer] vaadin-button").click();
     }
-    Locator enabled =
-        page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.CHECKBOX);
+    Locator enabled = page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.SWITCH);
     Locator client = page.locator("#provider-" + provider + "-client-id input");
     String originalClient = client.inputValue();
     enabled.uncheck();

@@ -51,9 +51,9 @@
 .external-login-panel .external-provider-button::part(prefix){margin-inline-end:8px;}
 
 /* Der Trenner gehört zwischen die zwei eigenständigen Panels. */
-.cosmos-reference-public .external-login-divider {display:flex;flex-direction:column;align-items:center;align-self:stretch;gap:0;padding:24px 0;}
+.cosmos-reference-public .external-login-divider {display:flex;flex-direction:column;align-items:center;align-self:stretch;gap:12px;padding:24px 0;}
 .external-login-divider::before,.external-login-divider::after {content:"";flex:1;border-left:1px solid var(--cosmos-reference-border);}
-.external-login-divider > span {padding:4px 8px;border:1px solid var(--cosmos-reference-border);border-radius:999px;color:var(--cosmos-reference-secondary);background:var(--cosmos-reference-page);font:600 10px/16px Inter,sans-serif;text-transform:uppercase;}
+.external-login-divider > span {color:var(--cosmos-reference-secondary);font:600 10px/18px Inter,sans-serif;text-transform:uppercase;letter-spacing:.06em;}
 @media(max-width:1023px){.cosmos-reference-public .external-login-divider{flex-direction:row;padding:0;}.external-login-divider::before,.external-login-divider::after{border-left:0;border-top:1px solid var(--cosmos-reference-border);}}
 
 /* Das zweispaltige Registrierungsformular nutzt mehr Breite und stapelt früher. */

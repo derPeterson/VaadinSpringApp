@@ -293,7 +293,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
     email.setReadOnly(true);
     email.setSuffixComponent(AppIcon.LOCK.create());
     preferredLanguage.setItems(Locale.GERMAN, Locale.ENGLISH);
-    preferredLanguage.setItemLabelGenerator(language -> language.getDisplayLanguage(language));
+    preferredLanguage.setItemLabelGenerator(this::languageLabel);
     preferredLanguage.setAllowCustomValue(false);
     birthDate.setAutoOpen(false);
     CompactDateInput.configure(birthDate, messages);
@@ -328,9 +328,11 @@ public class AccountSettingsComponent extends PortalPageComponent {
           gender.setItemLabelGenerator(this::genderLabel);
           preferredLanguage.setLabel(messages.getAccountSettingsLanguage());
           preferredLanguage.setHelperText(messages.getAccountSettingsLanguageHint());
+          // Vaadin aktualisiert dabei auch die separat gehaltene Beschriftung der Auswahl.
+          preferredLanguage.setItemLabelGenerator(this::languageLabel);
         });
     styleChoices(gender, this::genderLabel);
-    styleChoices(preferredLanguage, language -> language.getDisplayLanguage(language));
+    styleChoices(preferredLanguage, this::languageLabel);
     Div emailGroup = new Div(email);
     emailGroup.addClassName("account-profile-email-group");
     Span readOnly = text(new Span(), messages::getAccountReadOnlyLabel);
@@ -534,6 +536,10 @@ public class AccountSettingsComponent extends PortalPageComponent {
       case FEMALE -> messages.getGenderFemale();
       case OTHER -> messages.getGenderOther();
     };
+  }
+
+  private String languageLabel(Locale language) {
+    return language.getDisplayLanguage(CustomI18NProvider.getCurrentLocale());
   }
 
   public void refreshTexts() {

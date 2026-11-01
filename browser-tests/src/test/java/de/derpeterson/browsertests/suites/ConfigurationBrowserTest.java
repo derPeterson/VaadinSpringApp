@@ -94,7 +94,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   @Description(
       """
         1. Sicherheitsgruppe öffnen und aktuellen Wartungsmodus merken.
-        2. Checkbox umschalten, speichern und neu laden: exakt geänderter Checkboxzustand.
+        2. Switch umschalten, speichern und neu laden: exakt geänderter Switchzustand.
         3. Originalzustand wieder speichern und neu prüfen.
         **Erwartet:** Boolean-Bedienung und Persistenz; keine Behauptung einer Wartungsfunktion.
         """)
@@ -103,7 +103,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     settings.open(AdminConfigGroup.SECURITY);
     Locator checkbox =
         page.getByRole(
-            AriaRole.CHECKBOX,
+            AriaRole.SWITCH,
             new Page.GetByRoleOptions()
                 .setName(texts.getAdminConfigEntryMaintenanceMode())
                 .setExact(true));

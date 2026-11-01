@@ -7,7 +7,7 @@ import com.vaadin.flow.component.HasAriaLabel;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
@@ -256,7 +256,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
   private void applyConfigValue(Component input, ConfigEntry configEntry, String safeValue) {
     switch (input) {
-      case Checkbox checkbox -> checkbox.setValue(Boolean.parseBoolean(safeValue));
+      case Switch settingSwitch -> settingSwitch.setValue(Boolean.parseBoolean(safeValue));
       case AdminDurationField field -> {
         try {
           field.setStoredValue(safeValue);
@@ -413,7 +413,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       }
       case TextField field -> field.setPlaceholder(safePlaceholder);
       default -> {
-        /* Checkboxen haben keinen Platzhalter. */
+        /* Switches haben keinen Platzhalter. */
       }
     }
   }
@@ -452,9 +452,10 @@ public class AdminConfigurationSection extends VerticalLayout {
     Component input;
 
     if (isBooleanLikeEntry(configEntry, defaultValue)) {
-      Checkbox checkbox = new Checkbox();
-      checkbox.setWidthFull();
-      input = checkbox;
+      Switch settingSwitch = new Switch();
+      settingSwitch.setWidthFull();
+      settingSwitch.addClassName("cosmos-config-switch");
+      input = settingSwitch;
     } else if (isEmailEntry(configEntry)) {
       EmailField emailField = new EmailField();
       emailField.setPattern(SMTP_EMAIL_REGEX);
@@ -515,20 +516,20 @@ public class AdminConfigurationSection extends VerticalLayout {
     wrapper.setSpacing(false);
     wrapper.setWidthFull();
     wrapper.addClassNames(LumoUtility.Gap.XSMALL, "cosmos-config-field");
-    wrapper.setClassName("admin-config-checkbox", input instanceof Checkbox);
+    wrapper.setClassName("admin-config-switch", input instanceof Switch);
 
     Span labelSpan = new Span(messageProperties.getAdminConfigEntryLabel(configEntry));
     labelSpan.setId("config-label-" + configEntry.name().toLowerCase(Locale.ROOT));
     labelSpan.addClassNames(LumoUtility.FontWeight.MEDIUM, LumoUtility.FontSize.SMALL);
     labelSpan.setClassName(
         "admin-config-required",
-        !(input instanceof Checkbox)
+        !(input instanceof Switch)
             && !(input instanceof IntegerField)
             && (!(input instanceof AdminDurationField) || DURATION_ENTRIES.contains(configEntry))
             && validateValue(configEntry, "") != null);
     configLabelSpans.put(configEntry, labelSpan);
-    if (input instanceof Checkbox checkbox) {
-      checkbox.setLabelComponent(labelSpan);
+    if (input instanceof Switch settingSwitch) {
+      settingSwitch.setLabelComponent(labelSpan);
     } else {
       HorizontalLayout headerLayout = new HorizontalLayout();
       headerLayout.setPadding(false);
@@ -900,8 +901,8 @@ public class AdminConfigurationSection extends VerticalLayout {
   private String extractInputValue(ConfigEntry configEntry) {
     Component input = configInputs.get(configEntry);
 
-    if (input instanceof Checkbox checkbox) {
-      return String.valueOf(checkbox.getValue());
+    if (input instanceof Switch settingSwitch) {
+      return String.valueOf(settingSwitch.getValue());
     }
 
     if (input instanceof AdminDurationField field) {
@@ -997,8 +998,8 @@ public class AdminConfigurationSection extends VerticalLayout {
       textField.addValueChangeListener(event -> clearValidationState(textField));
     } else if (input instanceof IntegerField integerField) {
       integerField.addValueChangeListener(event -> clearValidationState(integerField));
-    } else if (input instanceof Checkbox checkbox) {
-      checkbox.addValueChangeListener(event -> clearValidationState(checkbox));
+    } else if (input instanceof Switch settingSwitch) {
+      settingSwitch.addValueChangeListener(event -> clearValidationState(settingSwitch));
     }
   }
 

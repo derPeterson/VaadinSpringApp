@@ -81,7 +81,7 @@ beim Anbieter, anschließend werden die Werte in unserer Adminoberfläche gespei
    `https://localhost:8443/login/oauth2/code/google`.
 5. Den Client erstellen. Die erhaltene **Client-ID** und das **Client-Secret** in
    die entsprechenden Google-Felder unserer Adminoberfläche übertragen.
-6. **Anmeldung erlauben** aktivieren und **Einstellungen speichern** wählen.
+6. **Anmeldung erlauben** aktivieren und **Konfiguration speichern** wählen.
    Anschließend die Anmeldeseite neu laden. Dort erscheint die Google-Anmeldung.
 
 Offizielle Anleitung: [Google OpenID Connect – Einrichtung](https://developers.google.com/identity/openid-connect/openid-connect#settingup).
@@ -104,7 +104,7 @@ Offizielle Anleitung: [Google OpenID Connect – Einrichtung](https://developers
    in das Client-Secret-Feld unserer Adminoberfläche übernehmen.
    Der Wert wird nur beim Anlegen vollständig angezeigt. Vor seinem Ablauf einen
    neuen Schlüssel konfigurieren.
-6. **Anmeldung erlauben** aktivieren und **Einstellungen speichern** wählen.
+6. **Anmeldung erlauben** aktivieren und **Konfiguration speichern** wählen.
    Anschließend die Anmeldeseite neu laden. Dort erscheint die Microsoft-Anmeldung.
    Für den gemeinsamen Microsoft-Einstieg ist keine zusätzliche Tenant-ID nötig.
 

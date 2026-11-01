@@ -109,7 +109,7 @@
   };
   const chooseLanguage = value => {
     language = value;
-    byId('selectedLanguageText').textContent = value === 'de' ? 'Deutsch' : 'English';
+    byId('selectedLanguageText').textContent = value === 'de' ? 'Deutsch' : 'Englisch';
     languageTrigger.dataset.value = value;
     options.forEach(option => option.setAttribute('aria-selected', String(option.dataset.language === value)));
   userMenu.querySelectorAll('[data-menu-language]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.menuLanguage === value)));

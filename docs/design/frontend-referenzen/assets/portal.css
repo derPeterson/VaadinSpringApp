@@ -945,3 +945,6 @@ body .portal-security-input.ref-no-prefix>input{padding-left:14px!important}
 
 
 .external-identity-dialog .portal-input[aria-invalid=true] { border-color:var(--danger,#fb7185); }
+
+/* Sprachbeschriftung des Benutzermenüs in der normalen hellen Textfarbe. */
+.portal-menu-language-label,.portal-menu-language-label>svg{color:var(--text-primary)}

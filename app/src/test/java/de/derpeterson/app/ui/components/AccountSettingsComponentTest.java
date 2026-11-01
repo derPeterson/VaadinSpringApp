@@ -2,6 +2,7 @@ package de.derpeterson.app.ui.components;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doThrow;
@@ -43,9 +44,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
+import tools.jackson.databind.JsonNode;
 
 class AccountSettingsComponentTest {
   private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
@@ -108,6 +111,30 @@ class AccountSettingsComponentTest {
         .filter(component -> component.getId().orElse("").equals(id))
         .findFirst()
         .orElseThrow();
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "de,de,Deutsch,Englisch",
+    "en,de,German,English",
+    "de,en,Deutsch,Englisch",
+    "en,en,German,English"
+  })
+  @SuppressWarnings("unchecked")
+  void languageNamesFollowTheInterfaceWithoutChangingThePreference(
+      String language, String preference, String german, String english) {
+    ComboBox<Locale> choice = (ComboBox<Locale>) byId("account-language");
+    Locale selected = Locale.forLanguageTag(preference);
+    choice.setValue(selected);
+    locale.set(Locale.forLanguageTag(language));
+    content.refreshTexts();
+    assertEquals(german, choice.getItemLabelGenerator().apply(Locale.GERMAN));
+    assertEquals(english, choice.getItemLabelGenerator().apply(Locale.ENGLISH));
+    JsonNode presentation =
+        assertInstanceOf(JsonNode.class, choice.getElement().getPropertyRaw("selectedItem"));
+    assertEquals(preference.equals("de") ? german : english, presentation.path("label").asText());
+    assertEquals(selected, choice.getValue());
+    verifyNoInteractions(saver);
   }
 
   @ParameterizedTest
