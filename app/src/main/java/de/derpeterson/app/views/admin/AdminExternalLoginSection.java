@@ -155,21 +155,6 @@ public class AdminExternalLoginSection extends VerticalLayout {
     }
   }
 
-  private void openHelp(ProviderForm form, ProviderField field) {
-    helpForm = form;
-    helpField = field;
-    helpForm.refreshHelp();
-    helpPanel.open();
-  }
-
-  private String fieldRule(ProviderField field) {
-    return switch (field) {
-      case CLIENT_ID -> texts.getProviderSettingsClientIdRule();
-      case SECRET -> texts.getProviderSettingsSecretRule();
-      case ENABLED -> texts.getProviderSettingsEnableRule();
-    };
-  }
-
   private final class ProviderForm implements Serializable {
     private final String provider;
     private final Div content;
@@ -301,6 +286,21 @@ public class AdminExternalLoginSection extends VerticalLayout {
       enabled.addValueChangeListener(event -> refreshAvailability());
     }
 
+    private void openHelp(ProviderField field) {
+      helpForm = this;
+      helpField = field;
+      helpForm.refreshHelp();
+      helpPanel.open();
+    }
+
+    private String fieldRule(ProviderField field) {
+      return switch (field) {
+        case CLIENT_ID -> texts.getProviderSettingsClientIdRule();
+        case SECRET -> texts.getProviderSettingsSecretRule();
+        case ENABLED -> texts.getProviderSettingsEnableRule();
+      };
+    }
+
     private void refreshHelp() {
       helpPanel.removeAll();
       helpPanel.setHeading(texts.getAdminConfigHelpTitle());
@@ -338,8 +338,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
     }
 
     private Div fieldWithHelp(Component input, ProviderField field) {
-      ConfigInfoButton info =
-          new ConfigInfoButton(() -> fieldHelp(field), () -> openHelp(this, field));
+      ConfigInfoButton info = new ConfigInfoButton(() -> fieldHelp(field), () -> openHelp(field));
       info.setId(
           PROVIDER_PREFIX
               + provider

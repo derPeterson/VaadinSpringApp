@@ -20,6 +20,7 @@ import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.UUID;
@@ -667,6 +668,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     assertThat(page).hasURL(Pattern.compile(".*/external-registration\\?error=external$"));
     assertThat(page.locator("#external-register-submit")).isHidden();
     page.navigate("/account");
-    assertThat(page).hasURL(Pattern.compile("^.*/login(?:\\?.*)?$"));
+    page.waitForURL(url -> URI.create(url).getPath().endsWith("/login"));
+    assertTrue(URI.create(page.url()).getPath().endsWith("/login"));
   }
 }

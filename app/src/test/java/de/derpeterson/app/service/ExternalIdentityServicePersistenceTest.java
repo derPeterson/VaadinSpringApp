@@ -354,8 +354,7 @@ class ExternalIdentityServicePersistenceTest {
                         user.getAccessVersion(),
                         evidence("microsoft", "shared", false));
                     return true;
-                  } catch (AccessDeniedException
-                      | DataIntegrityViolationException assignedElsewhere) {
+                  } catch (AccessDeniedException | DataIntegrityViolationException _) {
                     return false;
                   }
                 }));

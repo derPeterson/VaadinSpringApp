@@ -136,15 +136,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     this.forgotPasswordLink =
         new RouterLink(messageProperties.getLoginForgotPasswordLink(), ForgotPasswordView.class);
     this.rememberMeSwitch = new Switch(messageProperties.getLoginRememberMeCheckbox());
-    Cookie[] cookies = request.getCookies();
-    if (cookies != null) {
-      for (Cookie cookie : cookies) {
-        if (REMEMBER_CHOICE_COOKIE.equals(cookie.getName())) {
-          rememberMeSwitch.setValue("true".equals(cookie.getValue()));
-          break;
-        }
-      }
-    }
+    restoreRememberChoice(request.getCookies());
     rememberMeSwitch.addValueChangeListener(
         event -> {
           if (event.isFromClient()) {
@@ -290,6 +282,17 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     updateInputPlaceholders();
     refreshRecoveryTexts();
     add(pageLayout);
+  }
+
+  private void restoreRememberChoice(Cookie[] cookies) {
+    if (cookies != null) {
+      for (Cookie cookie : cookies) {
+        if (REMEMBER_CHOICE_COOKIE.equals(cookie.getName())) {
+          rememberMeSwitch.setValue("true".equals(cookie.getValue()));
+          break;
+        }
+      }
+    }
   }
 
   private void refreshLanguage(Locale locale) {

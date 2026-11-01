@@ -1,24 +1,27 @@
-# Offene Sonar-Bereinigung
+# Offene Sonar-Nachkorrekturen
 
 Auftrag: vollständige Bereinigung nach Integration der externen Anmeldung.
-Ausgang: Main `6cfea564`, Analyse `691155cb-fae6-409c-a80e-eaf9d79205d6`,
-95 offene Issues, keine Hotspots. Bestehende Ausnahmen bleiben erhalten.
+Aktuell: Main `1b05f96`, Analyse `a3ca1726-f439-4f20-b158-f796aaf5e28c`.
+Sechs Wartbarkeitshinweise sind noch offen. Bugs, Vulnerabilities und Hotspots: null.
 
-## Oberfläche, Bildwerte und Tests
+## Abschließendes lokales Paket
 
-- Aktuelle Zuordnung: Main `31ed947`, Analyse
-  `6f8b62ec-7496-4b06-b084-60c82c2a62a6`, noch 57 offene Issues.
-- UI-Komplexität, gemeinsame Anbieter-/CSS-Konstanten, serialisierbare Feldhilfe,
-  Bildwert-Gleichheit und überflüssige Bedingungen bereinigen.
-- Zwei kleine Nachträge aus dem Sicherheitspaket: vorhandene Google-Konstante
-  konsequent nutzen und den nativen Entfernen-Vertrag bei leerer OIDC-Anfrage
-  ausdrücklich aufrufen. Den Nullfall mit einer Regression absichern.
-- Assertions auf fachlich benannte Prüfabschnitte verteilen, vorbereitende
-  Testaufrufe außerhalb der Fehler-Assertions ausführen, Regex vereinfachen.
-- Gezielte JUnit-/Frontendprüfungen sowie anschließend die ausdrücklich beauftragte
-  große Browserrunde DE/EN. Layout, Texte und abgestimmtes Design bleiben erhalten.
-- Die konkreten Finding-IDs und Codestellen stammen aus dem vollständigen aktuellen
-  lokalen Export `sonar-findings.json`; nach jedem Paket auf Main nachscannen.
+- `29a59d84-b5ee-4acd-b58b-bec5865bf0df`,
+  `65d8261d-4554-4f0f-8607-5eb4402e5d97` (S8786): URL-Prüfungen ohne
+  mehrdeutige Regex, mit derselben Warte- und Zielseitenprüfung.
+- `21f169f2-01fa-48f3-8cb5-7cb67e4b02c3`,
+  `033bf0a6-c341-4a82-87e5-26073e2cab5f` (S3398): Feldhilfe vollständig
+  dem zugehörigen Anbieterformular zuordnen.
+- `36c062d2-4c4a-4131-91b2-83babf894824` (S3776): Cookie-Vorauswahl
+  aus dem Login-Konstruktor als verständliche Aufgabe gliedern.
+- `da207394-8b38-4947-9056-26f91bb37d2f` (S7467): unbenutzte
+  Fehlerbindung im Konkurrenztest entfernen.
 
-Keine Scope-, Regel- oder Gateänderungen. Erledigte Pakete nach belegtem Nachscan
-entfernen; verbleibende Arbeit und Testbedarf erhalten.
+Geprüfte Verträge, Styling und Sicherheitsgrenzen bleiben erhalten. Vorhandene
+Login-/Anbieter-/Navigations- und Persistenztests verwenden. Danach vollständiger
+Main-Nachscan und die bereits beauftragte große Browserrunde DE/EN. Kleiner
+Gliederungsumfang ohne neue Architektur.
+
+Keine Scope-, Regel- oder Gateänderungen. Die drei begründeten Framework-Fehlalarme
+sind direkt am Finding dokumentiert. Akzeptierte Google-Zwischenlösung und offene
+Stitch-Entscheidung bleiben unverändert. Nach belegtem Abschluss diesen Plan entfernen.

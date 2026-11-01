@@ -23,6 +23,7 @@ import io.qameta.allure.Allure;
 import io.qameta.allure.AttachmentOptions;
 import io.qameta.allure.Feature;
 import java.io.ByteArrayInputStream;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -366,8 +367,9 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     assertThat(smtp).hasText(texts.getAdminConfigGroupSmtp());
     assertLinkAlignmentAndStableHover(smtp);
     attachPanels("SMTP-Direktzugang Vaadin bei " + width + " px");
+    String settingsUrl = URI.create(page.url()).resolve(smtp.getAttribute("href")).toString();
     smtp.click();
-    assertThat(page).hasURL(java.util.regex.Pattern.compile("^.*[?&]group=smtp(?:&.*)?$"));
+    assertThat(page).hasURL(settingsUrl);
   }
 
   private void assertNativeProviderSetup(String provider) {
