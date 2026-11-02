@@ -3,17 +3,120 @@
   const codes = Array.from({length:10},(_,index)=>`${String(index).padStart(8,'0')}-12345678-ABCDEF01-23456789`).join('\n');
   const symbol = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/></svg>';
   const notify = text => window.PublicNotifications?.show(text,'normal','',4000);
+  const numberIcon = number => '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (number === 1 ? '<path d="M10 10l2-2v8"/>' : '<path d="M10 8h3a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 0-1 1v3h4"/>') + '<path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9Z"/></svg>';
+  const renderEnrollment = (root, english) => {
+    const selectedMethod = root.dataset.setupMethod || 'qr';
+    const text = english ? {
+      qr:'QR code',manual:'Manual key',manualHint:'Enter this key in your authenticator app and select a time-based code (TOTP).',codeHint:'Enter the current six-digit code shown in your authenticator app.',
+      stepOne:'Prepare your authenticator app',stepTwo:'Confirm the code',apps:'You can use a compatible authenticator app, such as Google Authenticator, Microsoft Authenticator or 2fast for Windows.',compatibility:'You can also use any other app that supports TOTP according to RFC 6238.',
+      scan:'Scan the QR code with your authenticator app.',code:'Authenticator code',manualLabel:'Key for manual setup',copy:'Copy',copied:'The setup key was copied.',copyFailed:'Please select and copy the key in the field.'
+    } : {
+      qr:'QR-Code',manual:'Manueller Schlüssel',manualHint:'Tragen Sie diesen Schlüssel in Ihrer Authenticator-App ein und wählen Sie einen zeitbasierten Code (TOTP).',codeHint:'Geben Sie den aktuell angezeigten sechsstelligen Code Ihrer Authenticator-App ein.',
+      stepOne:'Authenticator-App vorbereiten',stepTwo:'Code bestätigen',apps:'Sie können eine kompatible Authenticator-App verwenden, beispielsweise Google Authenticator, Microsoft Authenticator oder 2fast für Windows.',compatibility:'Sie können auch eine andere App verwenden, die TOTP nach RFC 6238 unterstützt.',
+      scan:'Scannen Sie den QR-Code mit Ihrer Authenticator-App.',code:'Authenticator-Code',manualLabel:'Schlüssel für manuelle Einrichtung',copy:'Kopieren',copied:'Der Einrichtungsschlüssel wurde kopiert.',copyFailed:'Bitte markieren und kopieren Sie den Schlüssel im Feld.'
+    };
+    const externalIcon = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6M11 13 20 4m-5 0h5v5"/></svg>';
+    const infoIcon = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-9v1"/></svg>';
+    const appLink = (url, caption) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${externalIcon}<span>${caption}</span></a>`;
+    root.innerHTML = `<div class="mfa-setup-layout">
+      <div class="mfa-setup-method">
+        <div class="mfa-setup-tabs" role="tablist" aria-label="${english ? 'Setup method' : 'Einrichtungsmethode'}">
+          <button type="button" role="tab" id="mfa-qr-tab" aria-selected="true" aria-controls="mfa-qr-pane" data-mfa-method="qr">${text.qr}</button>
+          <button type="button" role="tab" id="mfa-manual-tab" aria-selected="false" tabindex="-1" aria-controls="mfa-manual-pane" data-mfa-method="manual">${text.manual}</button>
+        </div>
+        <div id="mfa-qr-pane" role="tabpanel" aria-labelledby="mfa-qr-tab" class="mfa-setup-qr">
+          <div class="mfa-qr-placeholder">QR-Code<br>${english ? 'Design preview' : 'Gestaltungsvorschau'}</div>
+        </div>
+        <div id="mfa-manual-pane" role="tabpanel" aria-labelledby="mfa-manual-tab" class="mfa-setup-manual" hidden>
+          <p class="portal-copy">${text.manualHint}</p>
+          <div class="mfa-manual-control">
+            <label class="mfa-manual-label" for="mfa-manual-key"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>${text.manualLabel}</label>
+            <div class="mfa-manual-field">
+              <textarea id="mfa-manual-key" rows="2" readonly autocomplete="off" spellcheck="false">DEMO KEYX ONLY NOXX&#10;REAL SECR ETXX XXXX</textarea>
+              <button type="button" data-mfa-copy-key aria-label="${text.copy}" title="${text.copy}"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M16 4h2a2 2 0 0 1 2 2v4M21 14H11m4-4-4 4 4 4"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mfa-setup-instructions">
+        <section class="mfa-setup-step">
+          <h3 class="mfa-step-label">${numberIcon(1)}<span>${text.stepOne}</span></h3>
+          <p class="portal-copy">${text.apps}</p>
+          <div class="mfa-app-links">${appLink('https://support.google.com/accounts/answer/1066447', 'Google Authenticator')}${appLink('https://support.microsoft.com/account-billing/download-and-install-the-microsoft-authenticator-app-351498fc-850a-45da-b7b6-27e523b8702a', 'Microsoft Authenticator')}${appLink('https://2fast-app.de/', '2fast (Windows)')}</div>
+          <div class="mfa-app-compatibility">${infoIcon}<span>${text.compatibility}</span></div>
+          <p class="portal-copy" data-mfa-scan-hint>${text.scan}</p>
+        </section>
+        <section class="mfa-setup-step">
+          <h3 class="mfa-step-label">${numberIcon(2)}<span>${text.stepTwo}</span></h3>
+          <p class="portal-copy">${text.codeHint}</p>
+          <label class="mfa-otp-label" for="mfa-setup-code">${text.code}<span class="mfa-required">•</span></label>
+          <div class="mfa-otp"><div class="mfa-otp-slots" aria-hidden="true">${'<span></span>'.repeat(6)}</div><input id="mfa-setup-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-required="true" data-mfa-otp-input></div>
+        </section>
+      </div>
+    </div>`;
+    root.querySelector('[data-mfa-copy-key]').addEventListener('click', async () => {
+      try {
+        // Gruppierungsleerzeichen und Zeilenumbruch gehören nicht zum Schlüssel.
+        const key = root.querySelector('#mfa-manual-key').value.replaceAll(' ', '').replaceAll('\n', '');
+        await navigator.clipboard.writeText(key);
+        notify(text.copied);
+      } catch {
+        notify(text.copyFailed);
+      }
+    });
+    const tabs = [...root.querySelectorAll('[data-mfa-method]')];
+    const selectMethod = tab => {
+      root.dataset.setupMethod = tab.dataset.mfaMethod;
+      root.querySelector('[data-mfa-scan-hint]').hidden = tab.dataset.mfaMethod === 'manual';
+      tabs.forEach(item => { const selected = item === tab; item.setAttribute('aria-selected', String(selected)); item.tabIndex = selected ? 0 : -1; });
+      root.querySelector('#mfa-qr-pane').hidden = tab.dataset.mfaMethod !== 'qr';
+      root.querySelector('#mfa-manual-pane').hidden = tab.dataset.mfaMethod !== 'manual';
+    };
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => selectMethod(tab));
+      tab.addEventListener('keydown', event => {
+        if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) { return; }
+        event.preventDefault();
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? 1 : 1 - index;
+        selectMethod(tabs[next]); tabs[next].focus();
+      });
+    });
+    selectMethod(tabs.find(tab => tab.dataset.mfaMethod === selectedMethod));
+    const input = root.querySelector('[data-mfa-otp-input]');
+    const slots = [...root.querySelectorAll('.mfa-otp-slots > span')];
+    const refreshSlots = () => slots.forEach((slot,index) => {
+      slot.textContent = input.value[index] || '';
+      slot.classList.toggle('active', document.activeElement === input && index === Math.min(input.selectionStart || 0, 5));
+    });
+    input.addEventListener('input', () => { input.value = input.value.replace(/[^0-9]/g,'').slice(0,6); refreshSlots(); });
+    input.addEventListener('paste', event => {
+      event.preventDefault();
+      const digits = event.clipboardData.getData('text').replace(/[^0-9]/g,'');
+      input.setRangeText(digits, input.selectionStart, input.selectionEnd, 'end');
+      input.dispatchEvent(new Event('input', {bubbles:true}));
+    });
+    ['focus','blur','click','keyup'].forEach(name => input.addEventListener(name,refreshSlots));
+  };
   const renderPhase = (root, phase) => {
     const isPublic = root.hasAttribute('data-mfa-phase-content');
     if (isPublic) {
       root.closest('.vp-card').classList.toggle('mfa-introduction', phase === 'intro');
+      root.closest('.vp-card').classList.toggle('mfa-setup', phase === 'qr');
       const english = document.querySelector('[data-menu-language="en"][aria-pressed="true"]');
       const action = document.querySelector('#public-two-factor [data-mfa-continue]');
       action.innerHTML = phase === 'intro'
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></svg><span>' + (english ? 'Set up' : 'Einrichten') + '</span>'
         : '<span>Bestätigen</span>';
+      if (phase === 'qr') {
+        action.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span>' + (english ? 'Enable authenticator' : 'Authenticator aktivieren') + '</span>';
+      }
       const cancel = document.querySelector('#public-two-factor .vp-card-foot a');
-      cancel.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9"/></svg><span>' + (phase === 'intro' && english ? 'Sign out' : 'Abmelden') + '</span>';
+      cancel.classList.toggle('danger', phase === 'intro' || phase === 'qr');
+      cancel.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9"/></svg><span>' + (english ? 'Sign out' : 'Abmelden') + '</span>';
+      if (phase === 'qr') {
+        root.closest('.vp-card').querySelector('.vp-card-head').innerHTML = '<span class="portal-reference-icon">' + symbol + '</span><div class="portal-reference-heading"><h2>' + (english ? 'Set up an authenticator app' : 'Authenticator-App einrichten') + '</h2><p>' + (english ? 'Protect your account with an authenticator app.' : 'Schützen Sie Ihr Konto mit einer Authenticator-App.') + '</p></div>';
+        renderEnrollment(root, Boolean(english)); root.dataset.phase = phase; return;
+      }
       if (phase === 'intro') {
         root.innerHTML = '<img class="two-factor-introduction-art" src="assets/two-factor-locks.svg" alt=""><h2 class="two-factor-introduction-title">' + (english ? 'Two-factor authentication required' : 'Zwei-Faktor-Authentifizierung erforderlich') + '</h2><p class="portal-copy">' + (english ? 'Your account requires additional protection. Connect an authenticator app now to continue using the application.' : 'Für Ihr Konto ist eine zusätzliche Absicherung erforderlich. Verbinden Sie jetzt eine Authenticator-App, um die Anwendung weiter zu nutzen.') + '</p>';
         root.dataset.phase = phase;
@@ -25,7 +128,7 @@
       recover: '<p class="portal-copy">Verwenden Sie einen unbenutzten Ersatzcode, um einen neuen Authenticator einzurichten. Ihr bisheriger Faktor bleibt bis zur Bestätigung der neuen App gültig. Der Ersatzcode wird erst beim erfolgreichen Wechsel verbraucht.</p><label>Ersatzcode •<input autocomplete="off" placeholder="Code eingeben"></label><div class="mfa-phase-buttons"><button type="button" class="portal-button" data-mfa-go="confirm">Zur Code-Abfrage</button></div>',
       setup: '<p class="portal-copy">Bestätigen Sie zuerst Ihre Identität, bevor Sie einen Authenticator einrichten.</p><label>Aktuelles Passwort •<input type="password" autocomplete="off" placeholder="Passwort eingeben"></label>',
       email: '<p class="portal-copy">Geben Sie den Einmalcode ein, den wir zur erstmaligen Einrichtung an Ihre bestätigte Kontaktadresse senden.</p><label>E-Mail-Code •<input inputmode="numeric" placeholder="Achtstelliger Code"></label>',
-      qr: '<p class="portal-copy">Scannen Sie den QR-Code mit einer kompatiblen Authenticator-App. Google Authenticator und Microsoft Authenticator sind zwei mögliche Apps.</p><div class="mfa-qr-placeholder">QR-Code (Gestaltungsvorschau)</div><label>Erster Authenticator-Code •<input inputmode="numeric" placeholder="Sechsstelliger Code"></label>',
+      qr: '<p class="portal-copy">Scannen Sie den QR-Code mit einer kompatiblen Authenticator-App. Sie können beispielsweise Google Authenticator, Microsoft Authenticator oder 2fast für Windows verwenden.</p><div class="mfa-qr-placeholder">QR-Code (Gestaltungsvorschau)</div><div class="mfa-phase-buttons"><a href="https://support.google.com/accounts/answer/1066447" target="_blank" rel="noopener noreferrer">Google Authenticator</a><a href="https://support.microsoft.com/account-billing/download-and-install-the-microsoft-authenticator-app-351498fc-850a-45da-b7b6-27e523b8702a" target="_blank" rel="noopener noreferrer">Microsoft Authenticator</a><a href="https://2fast-app.de/" target="_blank" rel="noopener noreferrer">2fast (Windows)</a></div><label>Erster Authenticator-Code •<input inputmode="numeric" placeholder="Sechsstelliger Code"></label>',
       codes: `<p class="portal-copy">Speichern oder drucken Sie diese Ersatzcodes. Jeder Code gilt nur einmal. Neue Codes widerrufen alle alten.</p><pre class="mfa-code-values">${codes}</pre><p class="portal-copy">Die echte Anwendung bietet hier einen geschützten PDF-Download mit Logo und Erklärung.</p>`,
       help: '<p class="portal-copy">Eine Anfrage ersetzt keinen Identitätsnachweis. Ohne Authenticator oder gültigen Ersatzcode können wir das Konto nicht entsperren.</p><label>Ihre Anfrage<textarea rows="4" maxlength="2000" placeholder="Keine Passwörter oder Ersatzcodes eingeben"></textarea></label>'
     };
@@ -45,7 +148,7 @@
       notify('Gestaltungsvorschau: Es wurde keine Anmeldung oder Kontoänderung ausgeführt.');
     });
     document.querySelectorAll('[data-menu-language]').forEach(button => button.addEventListener('click', () => {
-      if (publicPhase.dataset.phase === 'intro') { renderPhase(publicPhase, 'intro'); }
+      if (['intro','qr'].includes(publicPhase.dataset.phase)) { renderPhase(publicPhase, publicPhase.dataset.phase); }
     }));
     renderPhase(publicPhase,'intro');
   }

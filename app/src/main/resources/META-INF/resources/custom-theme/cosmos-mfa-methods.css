@@ -1,0 +1,26 @@
+/* Native Tabs mit normalem Seiteninhalt, passend zur freigegebenen HTML-Referenz. */
+@font-face { font-family:'Space Mono'; src:url('fonts/SpaceMono-Regular.ttf') format('truetype'); font-style:normal; font-weight:400; font-display:swap; }
+.two-factor-methods { min-width:0; align-self:stretch; display:flex; flex-direction:column; }
+.two-factor-method-tabs { box-sizing:border-box; flex:none; min-width:0; height:42px; min-height:42px; margin:0; padding:0; border:1px solid var(--cosmos-reference-border); border-radius:var(--cosmos-control-radius); background:var(--cosmos-reference-input); box-shadow:none; --vaadin-tabs-border-width:0px; }
+.two-factor-method-tabs::part(tabs) { box-sizing:border-box; width:100%; height:100%; margin:0; padding:3px; gap:0; }
+.two-factor-method-tabs vaadin-tab { box-sizing:border-box; flex:1 1 0; min-width:0; min-height:34px; margin:0; padding:6px 8px; border:1px solid transparent; border-radius:6px; color:var(--cosmos-reference-secondary); font:500 12px/18px Inter,sans-serif; text-align:center; justify-content:center; cursor:pointer; }
+.two-factor-method-tabs vaadin-tab[selected] { color:var(--cosmos-reference-accent); background:var(--cosmos-reference-selection); border-color:var(--cosmos-reference-primary); }
+.two-factor-method-tabs vaadin-tab::before,.two-factor-method-tabs vaadin-tab::after { display:none; }
+.two-factor-methods .two-factor-qr-content { box-sizing:border-box; flex:1; min-height:272px; align-items:center; justify-content:center; padding:16px 0; }
+.two-factor-methods .two-factor-qr { display:block; flex:none; width:240px; height:auto; max-width:100%; }
+.two-factor-methods .two-factor-manual-content { padding-top:16px; }
+.two-factor-manual-input { min-width:0; }
+.two-factor-view vaadin-text-area.two-factor-manual-input::part(label) { display:flex; align-items:center; gap:6px; font:500 12px/16px Inter,sans-serif; }
+.two-factor-view vaadin-text-area.two-factor-manual-input::part(label)::before { content:''; flex:none; width:14px; height:14px; background:var(--cosmos-reference-accent); mask:url('../icons/lucide/key-round.svg') center/contain no-repeat; }
+.two-factor-manual-input::part(input-field) { align-items:center; }
+.two-factor-manual-input[readonly]::part(input-field) { border-style:dashed; }
+.two-factor-view vaadin-text-area.two-factor-manual-input > textarea { text-align:center; font:400 14px/20px 'Space Mono',ui-monospace,Consolas,monospace; }
+.two-factor-manual-input #two-factor-copy-key { flex:none; width:24px; min-width:24px; height:24px; margin:0; padding:0; border:0; background:transparent; color:var(--cosmos-reference-secondary); }
+.two-factor-manual-input #two-factor-copy-key vaadin-icon { width:16px; height:16px; color:inherit; }
+.two-factor-manual-input #two-factor-copy-key:hover { color:var(--cosmos-reference-text); background:transparent; box-shadow:none; }
+.two-factor-manual-input #two-factor-copy-key:active { background:transparent; box-shadow:none; }
+.two-factor-manual-input #two-factor-copy-key::before { display:none; }
+.two-factor-manual-input #two-factor-copy-key:focus-visible { color:var(--cosmos-reference-accent); }
+.two-factor-manual-input[focused] #two-factor-copy-key,
+.two-factor-manual-input:focus-within #two-factor-copy-key { color:var(--cosmos-reference-accent); }
+@media (max-width:760px) { .two-factor-methods { max-width:340px; width:100%; justify-self:center; } }

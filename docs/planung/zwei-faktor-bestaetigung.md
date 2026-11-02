@@ -36,6 +36,29 @@ Die Google-/Microsoft-Verwaltung ist im selben Paket auf Superadmins beschränkt
 
 ## Gestaltung der verpflichtenden Ersteinrichtung
 
+### QR-Einrichtungsschritt: Variante B mit Ergänzungen
+
+Drei gesichtete Stitch-Entwürfe für „Authenticator-App einrichten“ liegen im
+selben Projekt. Panelkopf und Aktionsfooter bleiben bei einer Übernahme Grundlage;
+„Abmelden“ verwendet die bestehende rote Aktionsvariante. Der Inhalt darf neu
+angeordnet werden. Ausgewählt ist B mit Umschaltung QR/manueller Schlüssel aus C,
+den drei App-Empfehlungen und den blauen Tabler-Schrittüberschriften wie in der
+Anbietereinrichtung. Die erste Codeeingabe verwendet das freigegebene OTP-Add-on
+mit sechs sichtbaren Kästchen und gemeinsamem Einfügen. Der Content verwendet
+die Standardfarbe. Vaadin und HTML sind angepasst; die gemeinsame Sicht- und
+Bedienprüfung ist auf Wunsch bis zum Ende der Oberflächenanpassungen zurückgestellt.
+
+- [A: Schritte untereinander](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=7593142201349970462)
+- [B: QR und Code nebeneinander](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=271433440045913590)
+- [C: QR/manueller Schlüssel mit Codefeldern](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=15548966782208944965)
+
+Die Entwürfe enthalten ausschließlich synthetische QR-/Schlüsselbeispiele.
+Zusätzliche von Stitch erfundene Seitenstatus und technische Erklärungen sind
+keine abgenommenen Anforderungen. Die Windows-App 2fast ist bereits als weitere
+frei wählbare App-Empfehlung in Vaadin und der HTML-Referenz ergänzt.
+
+### Bereits ausgewählter Einstieg
+
 Im eigenen Stitch-Projekt
 [VaadinSpringApp – Zwei-Faktor-Authentifizierung](https://stitch.withgoogle.com/projects/1332538028618138858)
 liegen die drei gesichteten Entwürfe:

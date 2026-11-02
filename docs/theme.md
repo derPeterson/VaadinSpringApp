@@ -96,13 +96,22 @@ Die HTML-Referenzen verwenden denselben Standard über `assets/tooltips.css` und
 
 ## Native Vaadin-Bausteine zuerst
 
-Vor einem neuen spezialisierten Oberflächenelement die tatsächlich verwendete
-Vaadin-Version prüfen. Native Flow-Komponenten werden mit öffentlichen APIs,
+Vor neuen Oberflächenelementen einschließlich Layouts die tatsächlich verwendete
+Vaadin-Version prüfen. Passende native Flow-Komponenten haben Vorrang und werden mit öffentlichen APIs,
 Theme-Varianten und Parts an Cosmos angepasst. Ein eigener Div-/Span-/JavaScript-
 Ersatz für eine spezialisierte Komponente benötigt vorher eine ausdrückliche
 Freigabe mit Begründung. Normale Layoutcontainer und Zusammensetzungen vorhandener
 nativer Komponenten bleiben möglich. Vereinbarte Sonderlösungen, insbesondere
 die Lucide-Anwendungsicons und der Bildausschnitt, bleiben gültig.
+
+Für einfache Zeilen, Spalten und Formanordnungen bevorzugt `HorizontalLayout`,
+`VerticalLayout` und `FormLayout` verwenden. Anordnung, Abstände und Ausrichtung
+sollen im Java-Code gut nachvollziehbar sein. Div-Container mit CSS Grid/Flex
+gezielt einsetzen, wenn konkrete responsive Anforderungen damit klarer und
+einfacher umzusetzen sind, beispielsweise mehrere Spalten auf breiten Bildschirmen
+und dieselben Bereiche untereinander auf schmalen Displays. Die Unterstützung
+mehrerer Bildschirmgrößen allein rechtfertigt keinen Ersatz der Vaadin-Layouts.
+Diese Regel ist kein Auftrag, bestehende Ansichten nachträglich umzubauen.
 
 `Badge` ist in der aktuell verwendeten Vaadin-Version bereits vorhanden. Die
 Anwendung verwendet überwiegend noch ältere Lumo-Badge-Spans und lokale CSS-Anzeigen.
@@ -1134,8 +1143,67 @@ Werte im dauerhaften Sitzungszustand gehalten.
 
 `cosmos-mfa.css` begrenzt die neue Gestaltung auf `.two-factor-view`,
 `.cosmos-mfa-settings` und `.two-factor-account-entry`. Panel-, Button- und
-Eingabestandards bleiben unverändert. Das Einrichtungs-/Anmeldepanel ist höchstens
-640 px breit. Der Rollenbereich übernimmt die bestehende Anbietertabform, stellt
+Eingabestandards bleiben unverändert. Das Anmeldepanel ist höchstens 640 px breit.
+Der QR-Einrichtungsschritt verwendet die freigegebene Variante B mit maximal 920 px:
+links native `Tabs` für QR-Code oder manuellen Schlüssel, rechts zwei
+Abschnitte mit den vorhandenen blauen Tabler-Zahlenicons aus der Anbietereinrichtung.
+Die erste Anleitung enthält die drei frei wählbaren App-Empfehlungen als rahmenlose
+Links mit dem vorhandenen blauen Tabler-External-Link-Icon und 12 px / 600 wie in
+der Anbietereinrichtung. Ein Hinweis darunter erklärt die Unterstützung weiterer
+TOTP-Apps nach RFC 6238. Der QR-Scan gehört zu Schritt 1, die Codeeingabe zu Schritt 2;
+ein doppelter Hinweis unter der Eingabe entfällt. Unter 760 px
+stehen die Bereiche untereinander; statt der vertikalen Trennlinie trennt dann
+eine horizontale Linie mit 24 px Abstand zu den Schritten die beiden Bereiche.
+Der Inhalt verwendet die normale dunkle
+Contentfläche, Kopf und Footer die bestehende Panelfläche.
+Die Tabs schalten normale Inhaltscontainer um; ein zusätzliches `TabSheet` und
+ein eigener Scrollbereich entfallen. `cosmos-mfa-methods.css` gleicht ausschließlich
+Form, Innenabstände, Schrift und Auswahlfarbe an die HTML-Referenz an.
+Die Methodenauswahl ist in Vaadin und HTML 42 px hoch. Der QR-Code steht horizontal
+und vertikal mittig im Bereich unter den Tabs. Der manuelle Schlüssel erscheint
+in zwei Zeilen mit je vier Vierergruppen in einem schreibgeschützten Feld mit
+normaler Labelschrift und ausschließlich blauem Schlüsselicon sowie
+einem nativen Vaadin-Iconbutton als Suffix rechts. Das Feld ist eine native,
+schreibgeschützte `TextArea` mit nativem Feldlabel und zwei festen Zeilen. Sie nutzt
+die volle Breite der manuellen Ansicht; die Schlüsselzeilen sind horizontal
+zentriert. Das Label verwendet wie die bestehenden Formularfelder 12 px / 500;
+der Feldrahmen ist wie bei schreibgeschützten Textfeldern gestrichelt.
+Das Kopiericon ist in Ruhe neutral, bei Hover heller und bei Feldfokus
+wie andere Feldaktionen blau. Es bekommt keine eigene Hoverfläche oder Umrandung.
+Nur der Schlüsseltext verwendet Space Mono Regular mit 14 px / 20 px. Die Datei
+`custom-theme/fonts/SpaceMono-Regular.ttf` und `SpaceMono-LICENSE.txt` liegen neben
+Inter; die HTML-Referenz enthält identische Kopien neben ihren Inter-Dateien.
+Die Schrift wird lokal geladen. Feldlabel und übrige Oberfläche verwenden weiterhin Inter.
+Die manuelle Ansicht
+verwendet `VerticalLayout`. Rahmen, Schrift und Fokus folgen dem bestehenden
+Feldstandard. Der Browser lädt den Wert vom geschützten No-Store-Endpunkt und setzt
+ihn ausschließlich in das öffentliche `inputElement` des schreibgeschützten Felds.
+Der Hostwert und das serverseitige Flow-Modell bleiben leer. Dadurch gelangt der
+Seed weiterhin nicht in den JDBC-Sitzungszustand. Die frühere HTML-/IFrame-
+Sonderdarstellung entfällt. Kopiert wird ohne
+Gruppierungsleerzeichen und Zeilenumbruch. Die gewählte Einrichtungsmethode bleibt
+beim Sprachwechsel erhalten. Die HTML-Referenz verwendet ausschließlich Beispieldaten.
+Die manuelle Anleitung erwähnt keinen QR-Scan. Der Scan-Hinweis unter Schritt 1
+erscheint nur im QR-Tab. Schritt 2 fordert in beiden Tabs nur zur App-Codeeingabe auf.
+
+Die erste Codebestätigung verwendet das freigegebene Flowing-Code-Add-on `OtpField`
+mit sechs sichtbaren Kästchen und einem gemeinsamen Eingabefeld. Einfügen,
+Auswählen, Rücktaste, Pfeiltasten und Autofill übernimmt der Baustein; bestätigt
+wird weiterhin ausdrücklich über den vorhandenen Button. Längere Ersatzcode-
+und E-Mail-Code-Felder bleiben unverändert. Die Gestaltung ist auf
+`.two-factor-otp` in `cosmos-mfa.css` begrenzt und nutzt die öffentlichen Parts
+und `--fc-otp-field-*`-Variablen. Die synthetische HTML-Referenz zeigt dieselbe
+Anordnung mit einer einzelnen Eingabe und sechs dekorativen Kästchen.
+Label, 4 px Abstand und Position des Pflichtfeldpunkts übernehmen die bestehenden
+Vaadin-Feldregeln mit 12 px / 16 px Labelschrift und 14 px / 14 px für den Punkt.
+Die native Eingabe über den Slots bleibt durch eine auf `.two-factor-otp`
+begrenzte Regel unsichtbar. Allgemeine Formularfarben dürfen den vollständigen
+Eingabewert nicht zusätzlich über die sechs angezeigten Ziffern legen. Die Eingabe
+bleibt für Fokus, Tastatur, Einfügen und Autofill vorhanden.
+Die vorhandene Vaadin-Frontendversion bleibt auch für `field-base` maßgeblich;
+die ältere Paketdeklaration des Add-ons darf die gemeinsamen Felder nicht herunterstufen.
+
+Der Rollenbereich übernimmt die bestehende Anbietertabform, stellt
 Regeln zweispaltig dar und wechselt unter 650 px auf eine Spalte. Neue lokale
 Details bleiben bis zur gemeinsamen Designabnahme lokal.
 
@@ -1143,9 +1211,13 @@ Der freigegebene verpflichtende Einrichtungseinstieg folgt Stitch-Variante A:
 zentrierte Schlossillustration, Überschrift, Erklärung und die nativen Aktionen
 „Abmelden“ / „Einrichten“. `.two-factor-introduction` in `cosmos-mfa.css` begrenzt
 die Karte auf 440 px, mit 32 px Innenabstand, einem 128 × 112 px großen Motiv
-und Inter 22 px / 600 für die Überschrift. Unter 480 px gelten 20 px seitlicher
+und Inter 22 px / 600 für die Überschrift. Unter 480 px gelten 20 px umlaufender
 Innenabstand und 20 px Überschrift. Bei Platzmangel brechen die Aktionen untereinander um.
 Buttonhöhen, Farben und Icongrößen folgen dem vorhandenen Standard.
+Der Aktionsbereich verwendet den Standard-Panel-Footer mit durchgehender oberer
+Trennlinie, Panelfläche und rechtsbündigen, bei Platzmangel umbrechenden Buttons.
+„Abmelden“ verwendet dort die bestehende rote Aktionsvariante mit Rahmen und
+dezentem Hintergrund (`cosmos-delete-button`, in der Referenz `danger`).
 Der öffentliche Seitenrahmen bleibt erhalten. Die Illustration liegt lokal als
 `images/two-factor-locks.svg`; die Public-Referenz verwendet dieselbe SVG unter
 `assets`. Nur dieser Einstieg blendet den normalen Panelkopf aus.

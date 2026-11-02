@@ -2,10 +2,21 @@
 
 Die Anwendung verwendet TOTP nach RFC 6238: sechs Ziffern, SHA-1 und
 30-Sekunden-Schritte. Kompatible Apps sind frei wählbar. Google Authenticator
-und Microsoft Authenticator werden als Beispiele verlinkt. Die Wahl der App ist
-unabhängig davon, ob das Portalpasswort, Google oder Microsoft zur Anmeldung dient.
+und Microsoft Authenticator sowie 2fast für Windows werden als Beispiele verlinkt.
+Die Wahl der App ist unabhängig davon, ob das Portalpasswort, Google oder Microsoft
+zur Anmeldung dient.
 
 ## Einrichtung und eigene Verwaltung
+
+Der Einrichtungsschritt bietet wahlweise den QR-Code oder einen manuellen
+Schlüssel. Die Schlüsselanzeige ist eine native schreibgeschützte Vaadin-TextArea
+mit zwei Zeilen. Beim Sprachwechsel bleibt der gewählte Tab erhalten.
+Der Browser lädt den Schlüssel geschützt und ohne Zwischenspeicherung direkt in
+die Eingabe. Der Flow-Hostwert bleibt leer; der Schlüssel gelangt dadurch nicht
+in den dauerhaften Vaadin-UI-Zustand.
+Die erste Bestätigung zeigt sechs Kästchen für einen gemeinsamen sechsstelligen
+Code. Ein vollständiger Code kann auf einmal eingefügt werden, auch mit
+trennenden Leerzeichen. Die Aktivierung erfolgt über den Bestätigungsbutton.
 
 Unter **Mein Konto → Sicherheit → Portalzugang** stehen Einrichtung,
 Authenticatorwechsel, neue Ersatzcodes und Entfernen zur Verfügung. Eine

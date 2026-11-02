@@ -1,20 +1,17 @@
 .two-factor-view #two-factor-panel { max-width: 640px; margin-inline: auto; }
 .two-factor-view #two-factor-panel.two-factor-introduction { max-width:440px; background:var(--cosmos-reference-panel); }
 .two-factor-view .two-factor-introduction > .cosmos-panel-header { display:none; }
-.two-factor-view .two-factor-introduction > .account-panel-body { padding:32px 32px 24px; background:transparent; }
+.two-factor-view .two-factor-introduction > .account-panel-body { padding:32px; background:transparent; }
 .two-factor-introduction .two-factor-content { align-items:center; text-align:center; gap:16px; }
 .two-factor-introduction-art { display:block; width:128px; height:112px; object-fit:contain; filter:drop-shadow(0 0 24px color-mix(in srgb, var(--cosmos-reference-accent) 25%, transparent)); }
 .two-factor-introduction-title { margin:4px 0 0; color:var(--cosmos-reference-text); font:600 22px/1.3 Inter,sans-serif; letter-spacing:-.02em; overflow-wrap:anywhere; }
 .two-factor-introduction .cosmos-panel-description { max-width:360px; font:400 14px/1.7 Inter,sans-serif; color:var(--cosmos-reference-secondary); }
-.two-factor-view #two-factor-panel.two-factor-introduction > .cosmos-panel-footer { padding:16px 32px 32px; background:transparent; border-top:0; }
-.two-factor-introduction .cosmos-panel-actions { width:100%; }
-.two-factor-introduction .cosmos-dialog-actions { width:100%; display:flex; flex-wrap:wrap; justify-content:center; gap:12px; padding-top:16px; border-top:1px solid var(--cosmos-reference-border); }
+.two-factor-view #two-factor-panel.two-factor-introduction > .cosmos-panel-footer { background:var(--cosmos-reference-panel); border-top:1px solid var(--cosmos-reference-border); }
 @media (max-width:480px) {
- .two-factor-view .two-factor-introduction > .account-panel-body { padding:24px 20px 16px; }
- .two-factor-view #two-factor-panel.two-factor-introduction > .cosmos-panel-footer { padding:16px 20px 24px; }
+ .two-factor-view .two-factor-introduction > .account-panel-body { padding:20px; }
+ .two-factor-view #two-factor-panel.two-factor-introduction > .cosmos-panel-footer { padding-inline:20px; }
  .two-factor-introduction-title { font-size:20px; }
 }
-@media (max-width:360px) { .two-factor-introduction .cosmos-dialog-actions vaadin-button { width:100%; } }
 .two-factor-view #two-factor-panel > .cosmos-panel-footer { padding: 16px 24px; justify-content: flex-end; }
 .two-factor-content { display: flex; flex-direction: column; gap: var(--cosmos-space-l, 16px); }
 .two-factor-extra-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cosmos-space-m, 12px); margin-top:var(--cosmos-space-l,16px); }
@@ -24,6 +21,31 @@
 .two-factor-content .two-factor-qr { width: 240px; height: 240px; max-width: 100%; align-self: center; border-radius: var(--cosmos-control-radius); }
 .two-factor-code-document { width: 100%; height: 330px; border: 0; }
 .two-factor-app-links { display: flex; flex-wrap: wrap; gap: var(--cosmos-space-l, 16px); }
+.two-factor-view #two-factor-panel.two-factor-setup { max-width:920px; }
+.two-factor-view .two-factor-setup > .account-panel-body { padding:24px; background:var(--cosmos-reference-page); }
+.two-factor-view .two-factor-setup > .cosmos-panel-footer { background:var(--cosmos-reference-panel); border-color:var(--cosmos-reference-border); }
+.two-factor-setup-layout { display:grid; grid-template-columns:300px minmax(0,1fr); gap:24px; align-items:start; }
+.two-factor-setup-instructions { min-width:0; display:flex; flex-direction:column; gap:28px; padding-left:24px; border-left:1px solid var(--cosmos-reference-border); }
+.two-factor-setup-step { display:flex; flex-direction:column; gap:12px; min-width:0; }
+.two-factor-step-label { display:flex; align-items:center; gap:8px; color:var(--cosmos-reference-accent); font:600 10px/16px Inter,sans-serif; text-transform:uppercase; letter-spacing:1.2px; }
+.two-factor-step-label > vaadin-icon { width:16px; height:16px; flex-shrink:0; color:inherit; }
+.two-factor-setup .two-factor-app-links { gap:8px; }
+.two-factor-setup .two-factor-app-links > a { display:inline-flex; align-items:center; gap:8px; min-height:36px; padding:0 12px; border:0; border-radius:8px; background:transparent; color:var(--cosmos-reference-text); font:600 12px/1.4 Inter,sans-serif; text-decoration:none; }
+.two-factor-setup .two-factor-app-links > a > vaadin-icon { width:16px; height:16px; flex:none; color:var(--cosmos-reference-accent); }
+.two-factor-setup .two-factor-app-links > a:focus-visible { outline:2px solid var(--cosmos-reference-accent); outline-offset:2px; }
+.two-factor-app-compatibility { gap:8px; color:var(--cosmos-reference-secondary); font:400 11px/18px Inter,sans-serif; }
+.two-factor-app-compatibility > vaadin-icon { width:14px; height:14px; flex:none; color:var(--cosmos-reference-accent); }
+.two-factor-qr-content { display:flex; justify-content:center; padding:8px 0; }
+.two-factor-manual-content { display:flex; flex-direction:column; gap:16px; }
+.two-factor-view fc-otp-field.two-factor-otp { width:100%; min-width:0; margin:0; font:500 12px/20px Inter,sans-serif; --fc-otp-field-slot-width:clamp(24px,calc((100vw - 136px) / 6),44px); --fc-otp-field-slot-height:44px; --fc-otp-field-slot-gap:6px; --fc-otp-field-slot-background:var(--cosmos-reference-input); --fc-otp-field-slot-border-width:1px; --fc-otp-field-slot-border-color:var(--cosmos-reference-control-border); --fc-otp-field-slot-border-radius:var(--cosmos-control-radius); --fc-otp-field-slot-font-size:18px; --fc-otp-field-slot-color:var(--cosmos-reference-text); --fc-otp-field-caret-color:var(--cosmos-reference-accent); --fc-otp-field-slot-border-color-active:var(--cosmos-reference-accent); --fc-otp-field-slot-border-width-active:2px; --fc-otp-field-slot-border-color-invalid:var(--cosmos-reference-invalid); --fc-otp-field-slot-background-invalid:var(--cosmos-reference-danger-surface); --vaadin-input-field-value-font-weight:600; }
+/* Die gemeinsame Feldregel darf die native Eingabe über den sechs Ziffernslots
+ * nicht sichtbar machen. Fokus, Einfügen und Autofill bleiben am Add-on-Input. */
+.two-factor-view fc-otp-field.two-factor-otp > input[slot=input] { color:transparent; -webkit-text-fill-color:transparent; caret-color:transparent; opacity:0; }
+.two-factor-otp::part(label) { display:flex; align-items:center; gap:4px; margin:0 0 6px; padding:0; color:var(--cosmos-reference-label); font:500 12px/16px Inter,sans-serif; }
+.two-factor-otp::part(required-indicator) { position:static; visibility:visible; display:inline-flex; flex:none; width:auto; margin:0; padding:0; font:500 14px/14px Inter,sans-serif; }
+.two-factor-otp::part(required-indicator)::after { content:'•'; color:var(--cosmos-reference-accent); opacity:1; position:static; width:auto; margin-left:0; }
+@media (max-width:760px) { .two-factor-setup-layout { grid-template-columns:minmax(0,1fr); } .two-factor-setup-instructions { padding:24px 0 0; border-left:0; border-top:1px solid var(--cosmos-reference-border); } }
+@media (max-width:480px) { .two-factor-view .two-factor-setup > .account-panel-body { padding:20px; } }
 .cosmos-mfa-settings .mfa-policy-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--cosmos-space-2xl, 24px); padding: var(--cosmos-space-2xl, 24px); }
 .cosmos-mfa-settings .cosmos-config-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--cosmos-space-m, 12px); align-items: center; }
 .cosmos-mfa-settings .mfa-rules-hint { display: block; padding: var(--cosmos-space-l, 16px) var(--cosmos-space-2xl, 24px); }

@@ -64,6 +64,12 @@
 
     <dependencies>
 
+        <dependency>
+            <groupId>com.flowingcode.vaadin.addons</groupId>
+            <artifactId>otp-field-addon</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- Lokale QR-Erzeugung und HTML/CSS-Vorlage für die vereinbarten Ersatzcode-PDFs. -->
         <dependency>
             <groupId>com.google.zxing</groupId>

@@ -200,10 +200,17 @@
 - Neue Oberflächen auf vorhandenen Vaadin-/Cosmos-Komponenten, Klassen und Tokens
   aufbauen. Eingaben, Panels, Tabellen, Buttons und Dialoge übernehmen den bestehenden
   Standard; keine eigene parallele Gestaltung für bereits vorhandene Bausteine erfinden.
-- Vor einem neuen spezialisierten UI-Baustein die Komponenten und APIs der tatsächlich
+- Vor neuen UI-Bausteinen einschließlich Layouts die Komponenten und APIs der tatsächlich
   verwendeten Vaadin-Version prüfen. Passende native Flow-Komponenten bevorzugen
   und über deren öffentliche APIs, Theme-Varianten, Parts und vorhandene Cosmos-Tokens
   gestalten. Das gilt auch für Badges, Avatare, Karten und Auswahl-/Bestätigungsbausteine.
+- Einfache Zeilen, Spalten und Formanordnungen bevorzugt mit passenden Vaadin-Layouts
+  wie `HorizontalLayout`, `VerticalLayout` und `FormLayout` aufbauen, damit Anordnung,
+  Abstände und Ausrichtung im Java-Code gut lesbar bleiben. Div-Container mit CSS
+  Grid/Flex gezielt verwenden, wenn konkrete responsive Anforderungen damit klarer
+  und einfacher umzusetzen sind, etwa der Wechsel von mehreren Spalten auf breiten
+  Bildschirmen zu untereinander angeordneten Bereichen auf schmalen Displays.
+  Mehrere Bildschirmgrößen allein sind kein Grund, Vaadin-Layouts zu ersetzen.
 - Wenn Vaadin keinen passenden Baustein bietet oder dessen Funktionsumfang nicht
   genügt, vor einem eigenen Ersatz aus Div/Span, HTML oder JavaScript beim Benutzer
   nachfragen: konkrete Lücke, geprüfte Alternative und benötigten Eigenanteil erläutern.

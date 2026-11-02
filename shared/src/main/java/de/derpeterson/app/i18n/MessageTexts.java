@@ -190,12 +190,56 @@ public class MessageTexts {
     return getTranslation("mfa.app.hint");
   }
 
+  public String getTwoFactorAppStep() {
+    return getTranslation("mfa.setup.appStep");
+  }
+
+  public String getTwoFactorCodeStep() {
+    return getTranslation("mfa.setup.codeStep");
+  }
+
+  public String getTwoFactorQrTab() {
+    return getTranslation("mfa.setup.qrTab");
+  }
+
+  public String getTwoFactorManualTab() {
+    return getTranslation("mfa.setup.manualTab");
+  }
+
+  public String getTwoFactorManualHint() {
+    return getTranslation("mfa.setup.manualHint");
+  }
+
+  public String getTwoFactorSetupCodeLabel() {
+    return getTranslation("mfa.setup.codeLabel");
+  }
+
+  public String getTwoFactorAppCompatibility() {
+    return getTranslation("mfa.app.compatibility");
+  }
+
   public String getTwoFactorQrAlt() {
     return getTranslation("mfa.qr.alt");
   }
 
-  public String getTwoFactorManualKey() {
-    return getTranslation("mfa.manual.key");
+  public String getTwoFactorManualLabel() {
+    return getTranslation("mfa.manual.label");
+  }
+
+  public String getTwoFactorSetupCodeHint() {
+    return getTranslation("mfa.setup.codeHint");
+  }
+
+  public String getTwoFactorManualCopied() {
+    return getTranslation("mfa.manual.copied");
+  }
+
+  public String getTwoFactorManualCopyFailed() {
+    return getTranslation("mfa.manual.copyFailed");
+  }
+
+  public String getTwoFactorManualLoadFailed() {
+    return getTranslation("mfa.manual.loadFailed");
   }
 
   public String getTwoFactorEnable() {
