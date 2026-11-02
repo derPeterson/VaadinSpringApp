@@ -1,12 +1,25 @@
 # Offene Aufgaben
 
-## Als Nächstes
+## Aktive Planung: Zwei-Faktor-Authentifizierung
 
-- [ ] Als nächste separate Umsetzung die [2FA-Bestätigung](docs/planung/zwei-faktor-bestaetigung.md)
-  planen und umsetzen. Die bekannte Schwäche der Google-Bestätigung vollständig
-  behandeln, einschließlich Ersteinrichtung, Registrierung und Konten ohne 2FA.
-  Eingerichtete 2FA darf nicht durch einen anderen Anmeldeweg umgangen werden.
-  Bekannte Sicherheitsschwäche und Risiko stehen in [BUGS.md](BUGS.md).
+- [ ] Den abgestimmten [2FA-Plan](docs/planung/zwei-faktor-bestaetigung.md) umsetzen:
+  TOTP, Ersatzcodes, abgesicherte Hilfe und eine ausschließlich für Superadmins
+  zugängliche Konfiguration nach Rollen, Funktionen und Nachweisfristen.
+  Kleine gemeinsame Ticketgrundlage zunächst für Wiederherstellungsanfragen
+  berücksichtigen. Admins bearbeiten, Superadmins geben die Wiederherstellung frei.
+  Ersatzcodes als druckbare PDF aus HTML-/CSS-Vorlage mit OpenPDF-html, Service-Logo
+  und Anleitung anbieten. Vorbereitete Hilfeantwort per Ticket
+  und E-Mail vorsehen. Ohne gültigen Nachweis bleibt der Zugang gesperrt, keine Sicherheitsfragen.
+  Spätere Feedback-/Problemmeldungen nutzen diese Grundlage als eigene Erweiterung.
+  Google-Umgehungswege bei eingerichteter 2FA absichern. Ersteinrichtung ohne Faktor
+  mit Google-Bestätigung, E-Mail-Code und erstem TOTP samt akzeptiertem Restrisiko
+  umsetzen. Registrierung und Konten ohne 2FA berücksichtigen. Die ausdrücklich
+  gewünschte Entwicklungs-Ausnahme nur nach ausdrücklicher Startfreigabe über
+  Umgebungsvariable anbieten, einzeln schaltbar halten und warnen.
+  Den manuellen Datenbank-Notfallweg für den letzten Superadmin dokumentieren und
+  isoliert prüfen, keine zusätzliche Reparaturoberfläche oder verstecktes Notfallkonto.
+  Anbieterverwaltung im selben Paket ausschließlich für Superadmins zugänglich machen.
+  Der bestehende Fehler bleibt bis zur Behebung und Nachprüfung in [BUGS.md](BUGS.md).
 
 ## Separate spätere Umsetzung: Vaadin-Komponenten
 

@@ -41,10 +41,17 @@ Konfiguration in den obigen Fachdokumenten.
 Die [Google-/Microsoft-Anmeldung](externe-anmeldung.md) und freiwillige Angaben zu
 Geschlecht/Geburtsdatum sind umgesetzt und vom Benutzer abschließend abgenommen.
 Die gewählten Designkorrekturen stehen im [Theme-Standard](theme.md).
-Die [2FA-Bestätigung](planung/zwei-faktor-bestaetigung.md) ist als nächste separate
-Umsetzung beauftragt. Ihr Plan muss die in [BUGS.md](../BUGS.md) dokumentierte
-Schwäche der Google-Zwischenlösung auch für Ersteinrichtung, Registrierung und
-Konten ohne eingerichtete 2FA behandeln. Bis zur Behebung bleibt sie offen.
+Die [2FA-Planung](planung/zwei-faktor-bestaetigung.md) umfasst konfigurierbare
+Rollen-/Funktionsregeln, eine Superadmin-Konfiguration, TOTP und Wiederherstellung.
+Sie behandelt die in [BUGS.md](../BUGS.md) dokumentierte Google-Schwäche auch bei
+Ersteinrichtung, Registrierung und Konten ohne Faktor. Die gewünschte gewarnte
+Entwicklungs-Ausnahme wird getrennt vom sicheren Betrieb geplant. Die
+Anbieterverwaltung ausschließlich für Superadmins gehört verbindlich zum Paket.
+Für die erste Google-2FA-Einrichtung sind erneute Anbieterbestätigung, E-Mail-Code
+und erster TOTP mit ausdrücklich akzeptiertem Restrisiko abgestimmt. Bestehende
+2FA kann dadurch nicht ersetzt werden. Die Grundsatzentscheidungen sind abgestimmt,
+die Implementierung hat noch nicht begonnen. Bis zur tatsächlichen Behebung und
+Nachprüfung bleibt die bekannte Schwäche offen.
 Weitere bewertete Möglichkeiten stehen in der
 [Entscheidungsvorlage für Portal-Erweiterungen](planung/portal-erweiterungen.md).
 Die [Vaadin-Komponentenprüfung](planung/vaadin-komponenten-abgleich.md) enthält die
