@@ -736,9 +736,10 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-editor { gap: 18px; }
 .account-avatar-dialog.cosmos-reference-overlay #account-avatar-mode { width: 100%; }
 .account-avatar-dialog.cosmos-reference-overlay #account-avatar-mode::part(group-field) { padding: 3px; gap: 3px; border-radius: 9px; background: var(--cosmos-reference-input); }
-.account-avatar-dialog.cosmos-reference-overlay #account-avatar-mode vaadin-radio-button { display: flex; align-items: center; justify-content: center; min-height: 36px; border-radius: 6px; color: var(--cosmos-reference-secondary); font: 500 12px/16px Inter, sans-serif; }
-.account-avatar-dialog.cosmos-reference-overlay #account-avatar-mode vaadin-radio-button[checked] { color: var(--cosmos-reference-accent); background: var(--cosmos-reference-selection); border-color: var(--cosmos-reference-primary); box-shadow: none; }
+.account-avatar-dialog.cosmos-reference-overlay #account-avatar-mode vaadin-radio-button { display: flex; align-items: center; justify-content: center; min-height: 36px; border-radius: 6px; color: var(--cosmos-reference-secondary); font: 500 12px/16px Inter, sans-serif; --vaadin-radio-button-label-font-weight: 500; }
+.account-avatar-dialog.cosmos-reference-overlay #account-avatar-mode vaadin-radio-button[checked] { color: var(--cosmos-reference-text); font-weight: 600; --vaadin-radio-button-label-font-weight: 600; background: var(--cosmos-reference-selection); border-color: var(--cosmos-reference-primary); box-shadow: none; }
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-mode-icon { width: 16px; height: 16px; padding: 0; border: 0; background: transparent; color: inherit; }
+.account-avatar-dialog.cosmos-reference-overlay #account-avatar-mode vaadin-radio-button[checked] .account-avatar-mode-icon { color: var(--cosmos-reference-accent); }
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-mode-icon > vaadin-icon { width: 16px; height: 16px; }
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-mode-label { flex-direction: row; gap: 8px; }
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-circle { background: var(--cosmos-reference-input); color: var(--cosmos-reference-text); border: 1px solid var(--cosmos-reference-icon-border); box-shadow: 0 0 0 6px var(--cosmos-reference-success-surface); }

@@ -54,10 +54,22 @@ Kopieren und PDF bleiben vor der Bestätigung verfügbar. Sicherheitsfristen und
 Nachweise bleiben unverändert. Der PDF-Fehler ist unabhängig vom Entwurf behoben;
 der gezielte Ersatzcode-/PDF-Nachtest auf Desktop/Smartphone in DE/EN ist bestanden.
 
-Für den fertigen QR-/Manuell-Einrichtungsschritt ist ausschließlich Textkritik,
-keine neue Variante gewünscht. Der CLI-Befehl zur Screen-Erzeugung wurde dafür
-von der automatischen Freigabeprüfung abgelehnt; die Freigabe für einen reinen
-Stitch-Browserchat steht noch aus.
+Die reine Textkritik zum fertigen QR-/Manuell-Einrichtungsschritt wurde nach
+ausdrücklicher Freigabe im Stitch-Browserchat abgefragt und im Chat wiedergegeben.
+Stitch lobt Aufbau, Aktionsgewichtung und mobile Trennlinie; es empfiehlt mehr
+Abstand zwischen den Schritten, lesbare Hinweise und einen klaren Codefokus.
+Das kritisierte Vorschau-Banner gehört nicht zur echten Oberfläche; die
+Kontrastaussage war keine Messung.
+
+Auf weiteren Auftrag liegt eine einzelne
+[Überarbeitung nach der Kritik](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=2934366688844334879)
+im Projekt. Sie wurde über die CLI erzeugt, exportiert und gesichtet. Die
+ausgewählten Elemente sind in Vaadin und der festen HTML-Referenz übernommen:
+Trennlinie zwischen den Schritten, Punkt-Platzhalter mit wandernder Codemarkierung,
+Tabicons und überarbeitete Hinweise. Die Gestaltung dieses Einrichtungsschritts ist
+gemeinsam abgenommen. Zusätzliche Codegruppierung, Footeränderungen und erfundene
+Statusanzeigen aus Stitch bleiben ausgeschlossen. Der offene automatisierte
+Bediennachweis bleibt im zentralen Testbedarf erhalten.
 
 ### QR-Einrichtungsschritt: Variante B mit Ergänzungen
 
@@ -68,8 +80,9 @@ angeordnet werden. Ausgewählt ist B mit Umschaltung QR/manueller Schlüssel aus
 den drei App-Empfehlungen und den blauen Tabler-Schrittüberschriften wie in der
 Anbietereinrichtung. Die erste Codeeingabe verwendet das freigegebene OTP-Add-on
 mit sechs sichtbaren Kästchen und gemeinsamem Einfügen. Der Content verwendet
-die Standardfarbe. Vaadin und HTML sind angepasst; die gemeinsame Sicht- und
-Bedienprüfung ist auf Wunsch bis zum Ende der Oberflächenanpassungen zurückgestellt.
+die Standardfarbe. Vaadin und HTML sind angepasst; die gemeinsame Sichtabnahme
+dieses Screens ist erfolgt. Die abschließende Funktionsprüfung des gesamten
+Einrichtungsablaufs bleibt offen.
 
 - [A: Schritte untereinander](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=7593142201349970462)
 - [B: QR und Code nebeneinander](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=271433440045913590)

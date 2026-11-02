@@ -1,0 +1,9 @@
+/* Lokale Erweiterung der dokumentierten Slot-Parts und active-/filled-Zustände des Add-ons.
+ * Die native Eingabe steuert die Position; diese Regel nimmt keinen Tastaturfokus. */
+:host(.two-factor-otp:not([invalid]):not([disabled]):not([readonly])) [part~='slot'][active]:not([filled]) {
+  border-width:var(--fc-otp-field-slot-border-width-active,2px);
+  border-color:var(--fc-otp-field-slot-border-color-active);
+  background:var(--fc-otp-field-slot-background-active,var(--fc-otp-field-slot-background));
+}
+/* Rahmen und Punkt zeigen die Eingabeposition ohne zusätzlichen blinkenden Strich. */
+:host(.two-factor-otp) [part~='slot'][active]::after { display:none; }

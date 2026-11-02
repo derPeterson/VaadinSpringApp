@@ -49,6 +49,7 @@ public enum AppIcon {
   PICTURE("image"),
   PLUS("plus"),
   QUESTION_CIRCLE("circle-help"),
+  QR_CODE("qr-code"),
   REFRESH("refresh-cw"),
   ROTATE_LEFT("rotate-ccw"),
   SEARCH("search"),

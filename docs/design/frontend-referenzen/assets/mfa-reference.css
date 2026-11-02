@@ -34,10 +34,11 @@ dialog.mfa-reference .portal-modal-body { padding:24px; }
 #public-two-factor .mfa-setup > .vp-card-foot { background:var(--surface-panel,#080e1b); }
 #public-two-factor .mfa-setup > .vp-card-body > .mfa-phase-buttons { display:none; }
 .mfa-setup-layout { display:grid; grid-template-columns:300px minmax(0,1fr); gap:24px; align-items:start; }
-.mfa-setup-instructions { min-width:0; display:flex; flex-direction:column; gap:28px; padding-left:24px; border-left:1px solid var(--border-subtle); }
+.mfa-setup-instructions { min-width:0; align-self:stretch; display:flex; flex-direction:column; gap:28px; padding-left:24px; border-left:1px solid var(--border-subtle); }
 .mfa-setup-step { display:flex; flex-direction:column; gap:12px; min-width:0; }
-.mfa-step-label { display:flex; align-items:center; gap:8px; margin:0; color:var(--accent); font:600 10px/16px Inter,sans-serif; text-transform:uppercase; letter-spacing:1.2px; }
-.mfa-step-label > svg { width:16px; height:16px; flex-shrink:0; }
+.mfa-setup-step + .mfa-setup-step { border-top:1px solid var(--border-subtle); padding-top:28px; }
+.mfa-setup .mfa-step-label { display:flex; align-items:center; gap:8px; margin:0; color:var(--accent); font:600 10px/16px Inter,sans-serif; text-transform:uppercase; letter-spacing:1.2px; }
+.mfa-step-label > svg { width:20px; height:20px; flex-shrink:0; }
 .mfa-app-links { display:flex; flex-wrap:wrap; gap:8px; }
 .mfa-app-links > a { display:inline-flex; align-items:center; gap:8px; min-height:36px; padding:0 12px; border:0; border-radius:8px; background:transparent; color:var(--text-primary); font:600 12px/1.4 Inter,sans-serif; text-decoration:none; }
 .mfa-app-links > a > svg { width:16px; height:16px; flex:none; color:var(--accent); }
@@ -46,9 +47,13 @@ dialog.mfa-reference .portal-modal-body { padding:24px; }
 .mfa-app-compatibility > svg { width:14px; height:14px; flex:none; color:var(--accent); }
 .mfa-setup-method { min-width:0; display:flex; flex-direction:column; align-self:stretch; }
 .mfa-setup-tabs { box-sizing:border-box; display:flex; flex:none; height:42px; padding:3px; border:1px solid var(--border-subtle); border-radius:9px; background:var(--surface-input); }
-.mfa-setup-tabs > button { flex:1; min-width:0; min-height:34px; padding:6px 8px; border:1px solid transparent; border-radius:6px; color:var(--text-secondary); background:transparent; font:500 12px/18px Inter,sans-serif; cursor:pointer; }
-.mfa-setup-tabs > button[aria-selected=true] { color:var(--accent); background:var(--state-selected); border-color:var(--border-active); }
-.mfa-setup-qr { box-sizing:border-box; display:flex; flex:1; min-height:272px; align-items:center; justify-content:center; padding:16px 0; }
+.mfa-setup-tabs > button { display:flex; align-items:center; justify-content:center; gap:4px; flex:1; min-width:0; min-height:34px; padding:6px 2px; white-space:nowrap; border:1px solid transparent; border-radius:6px; color:var(--text-secondary); background:transparent; font:500 12px/18px Inter,sans-serif; cursor:pointer; }
+.mfa-setup-tabs > button > svg { width:16px; height:16px; flex:none; }
+.mfa-setup-tabs > button[aria-selected=true] { color:var(--text-primary); font-weight:600; background:var(--state-selected); border-color:var(--border-active); }
+.mfa-setup-tabs > button[aria-selected=true] > svg { color:var(--accent); }
+.mfa-setup-qr { box-sizing:border-box; display:flex; flex-direction:column; gap:16px; flex:1; min-height:272px; align-items:center; justify-content:center; padding:16px 0; }
+.mfa-setup .mfa-qr-hint { width:100%; text-align:center; }
+.mfa-manual-hint { box-sizing:border-box; width:100%; text-align:center; }
 .mfa-setup .mfa-qr-placeholder { width:240px; height:240px; max-width:100%; margin:0 auto; text-align:center; }
 .mfa-setup-manual { display:flex; flex-direction:column; gap:16px; padding-top:16px; }
 .mfa-manual-control { width:100%; min-width:0; }
@@ -69,7 +74,8 @@ dialog.mfa-reference .portal-modal-body { padding:24px; }
 .mfa-otp { position:relative; width:max-content; max-width:100%; }
 .mfa-otp-slots { display:flex; gap:6px; pointer-events:none; }
 .mfa-otp-slots > span { box-sizing:border-box; display:flex; justify-content:center; align-items:center; width:clamp(24px,calc((100vw - 136px) / 6),44px); height:44px; border:1px solid var(--border-subtle); border-radius:9px; color:var(--text-primary); background:var(--surface-input); font:600 18px/20px Inter,sans-serif; }
-.mfa-otp-slots > span.active { border:2px solid var(--accent); }
+.mfa-otp-slots > span:not(.filled) { color:var(--text-secondary); }
+.mfa-otp-slots > span.active:not(.filled),.mfa-otp:focus-within .mfa-otp-slots > span.active { border:2px solid var(--accent); }
 .mfa-reference .mfa-otp > input { position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:text; }
 .mfa-otp:focus-within { outline:none; }
 @media(max-width:760px) { .mfa-setup-layout { grid-template-columns:minmax(0,1fr); } .mfa-setup-instructions { padding:24px 0 0; border-left:0; border-top:1px solid var(--border-subtle); } .mfa-setup-method { max-width:340px; width:100%; justify-self:center; } }

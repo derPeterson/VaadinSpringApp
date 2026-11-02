@@ -1150,8 +1150,13 @@ Abschnitte mit den vorhandenen blauen Tabler-Zahlenicons aus der Anbietereinrich
 Die erste Anleitung enthält die drei frei wählbaren App-Empfehlungen als rahmenlose
 Links mit dem vorhandenen blauen Tabler-External-Link-Icon und 12 px / 600 wie in
 der Anbietereinrichtung. Ein Hinweis darunter erklärt die Unterstützung weiterer
-TOTP-Apps nach RFC 6238. Der QR-Scan gehört zu Schritt 1, die Codeeingabe zu Schritt 2;
-ein doppelter Hinweis unter der Eingabe entfällt. Unter 760 px
+TOTP-Apps nach RFC 6238. Der Scan-Hinweis steht direkt unter dem QR-Code; Schritt 2
+beschreibt nur die Codeeingabe und endet mit einem Doppelpunkt. Die App-Einleitung
+endet nach „beispielsweise:“, ohne die verlinkten Namen zusätzlich aufzuzählen.
+Unter dem Kompatibilitätshinweis trennt eine dünne Linie die beiden Schritte.
+Die vertikale Trennlinie zwischen Einrichtungsmethode und Anleitung reicht über
+die volle gemeinsame Inhaltshöhe, auch wenn der QR-Bereich höher als die Anleitung ist.
+Die Zahlenicons sind 20 × 20 px groß. Unter 760 px
 stehen die Bereiche untereinander; statt der vertikalen Trennlinie trennt dann
 eine horizontale Linie mit 24 px Abstand zu den Schritten die beiden Bereiche.
 Der Inhalt verwendet die normale dunkle
@@ -1159,7 +1164,11 @@ Contentfläche, Kopf und Footer die bestehende Panelfläche.
 Die Tabs schalten normale Inhaltscontainer um; ein zusätzliches `TabSheet` und
 ein eigener Scrollbereich entfallen. `cosmos-mfa-methods.css` gleicht ausschließlich
 Form, Innenabstände, Schrift und Auswahlfarbe an die HTML-Referenz an.
-Die Methodenauswahl ist in Vaadin und HTML 42 px hoch. Der QR-Code steht horizontal
+Die Methodenauswahl ist in Vaadin und HTML 42 px hoch und zeigt die Lucide-Icons
+`qr-code` und `key-round` mit jeweils 16 px neben den Beschriftungen.
+Der aktive Tab verwendet wie die Profilbild-Umschaltung weiße Schrift mit Gewicht
+600 und ein blaues Icon; inaktive Beschriftungen bleiben Secondary mit Gewicht 500.
+Der QR-Code steht horizontal
 und vertikal mittig im Bereich unter den Tabs. Der manuelle Schlüssel erscheint
 in zwei Zeilen mit je vier Vierergruppen in einem schreibgeschützten Feld mit
 normaler Labelschrift und ausschließlich blauem Schlüsselicon sowie
@@ -1183,8 +1192,10 @@ Seed weiterhin nicht in den JDBC-Sitzungszustand. Die frühere HTML-/IFrame-
 Sonderdarstellung entfällt. Kopiert wird ohne
 Gruppierungsleerzeichen und Zeilenumbruch. Die gewählte Einrichtungsmethode bleibt
 beim Sprachwechsel erhalten. Die HTML-Referenz verwendet ausschließlich Beispieldaten.
-Die manuelle Anleitung erwähnt keinen QR-Scan. Der Scan-Hinweis unter Schritt 1
-erscheint nur im QR-Tab. Schritt 2 fordert in beiden Tabs nur zur App-Codeeingabe auf.
+Die manuelle Anleitung erklärt die Schlüsseleingabe und die Auswahl zeitbasierter Codes
+in einem vollständigen Satz. Sie ist über die volle Breite zentriert und bricht natürlich um.
+Der Scan-Hinweis direkt unter dem QR erscheint nur im QR-Tab. Schritt 2 fordert
+in beiden Tabs nur zur App-Codeeingabe auf.
 
 Die erste Codebestätigung verwendet das freigegebene Flowing-Code-Add-on `OtpField`
 mit sechs sichtbaren Kästchen und einem gemeinsamen Eingabefeld. Einfügen,
@@ -1200,6 +1211,12 @@ Die native Eingabe über den Slots bleibt durch eine auf `.two-factor-otp`
 begrenzte Regel unsichtbar. Allgemeine Formularfarben dürfen den vollständigen
 Eingabewert nicht zusätzlich über die sechs angezeigten Ziffern legen. Die Eingabe
 bleibt für Fokus, Tastatur, Einfügen und Autofill vorhanden.
+Einzelne Punkt-Platzhalter setzt die native Add-on-API. Das nächste leere Kästchen
+bleibt auch ohne echten Tastaturfokus blau markiert; Eingabe und Positionswechsel
+steuert weiterhin das Add-on. `cosmos-mfa-otp.css` wird gezielt in dessen Shadowroot
+geladen und gestaltet ausschließlich die dokumentierten `slot`-Parts und deren
+`active`-/`filled`-Zustände. Es wird kein automatischer Smartphone-Tastaturfokus gesetzt;
+Fehler-, Disabled- und Read-only-Zustände behalten Vorrang.
 Die vorhandene Vaadin-Frontendversion bleibt auch für `field-base` maßgeblich;
 die ältere Paketdeklaration des Add-ons darf die gemeinsamen Felder nicht herunterstufen.
 

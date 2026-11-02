@@ -19,6 +19,8 @@
   Erhalt des manuellen Tabs bei DE/EN-Wechsel und Pflichtfeldpunkt wie beim
   bestehenden Feldstandard sowie externe App-Links und RFC-6238-Hinweis,
   sechs sichtbare Kästchen ohne Überlauf, Einfügen von `123456` und `123 456`,
+  Punkt-Platzhalter und ausschließlich das nächste leere Kästchen blau markiert,
+  Positionswechsel beim Tippen/Löschen ohne künstlichen Smartphone-Tastaturfokus,
   dabei kein zusätzlich sichtbarer Gesamtcode über dem ersten Kästchen,
   Ersetzen, Rücktaste und Pfeiltasten sowie explizite Aktivierung und rote Fehlermarkierung.
   Die bestehenden Einrichtungsfälle an den neuen OTP-Baustein anpassen; längere

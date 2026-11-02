@@ -139,10 +139,31 @@ public final class TwoFactorView extends VerticalLayout
     code.getElement().setAttribute("autocomplete", "one-time-code");
     enrollmentCode.setId("two-factor-enrollment-code");
     enrollmentCode.setLength(6);
+    enrollmentCode.setPlaceholder("•");
     enrollmentCode.setManualValidation(true);
     enrollmentCode.setRequiredIndicatorVisible(true);
     enrollmentCode.setValueChangeMode(ValueChangeMode.ON_CHANGE);
     enrollmentCode.addClassName("two-factor-otp");
+    String otpStylesheetPath = request.getContextPath() + "/custom-theme/cosmos-mfa-otp.css";
+    enrollmentCode.addAttachListener(
+        event ->
+            enrollmentCode
+                .getElement()
+                .executeJs(
+                    """
+                const field = this;
+                customElements.whenDefined(field.localName).then(async () => {
+                  await field.updateComplete;
+                  const root = field.shadowRoot;
+                  if (!root || root.querySelector('link[data-cosmos-otp]')) { return; }
+                  const sheet = document.createElement('link');
+                  sheet.rel = 'stylesheet';
+                  sheet.href = $0;
+                  sheet.dataset.cosmosOtp = '';
+                  root.append(sheet);
+                });
+                """,
+                    otpStylesheetPath));
     recoverySaved.setId("two-factor-codes-saved");
     recoverySaved.addValueChangeListener(event -> updateRecoveryActions());
     cancel.setId("two-factor-cancel");
@@ -368,7 +389,11 @@ public final class TwoFactorView extends VerticalLayout
         new Image(documentPath("setup/" + pending.id() + "/qr.png"), texts.getTwoFactorQrAlt());
     qr.setId("two-factor-qr");
     qr.addClassName("two-factor-qr");
-    Div qrContent = new Div(qr);
+    Span scanHint = new Span(texts.getTwoFactorScanHint());
+    scanHint.addClassNames("cosmos-panel-description", "two-factor-qr-hint");
+    VerticalLayout qrContent = new VerticalLayout(qr, scanHint);
+    qrContent.setPadding(false);
+    qrContent.setSpacing(false);
     qrContent.addClassName("two-factor-qr-content");
     TextArea manual = new TextArea();
     manual.setId("two-factor-manual-key");
@@ -381,10 +406,7 @@ public final class TwoFactorView extends VerticalLayout
     manual.addClassName("two-factor-manual-input");
     manual.setLabel(texts.getTwoFactorManualLabel());
     Span manualHint = new Span(texts.getTwoFactorManualHint());
-    manualHint.addClassName("cosmos-panel-description");
-    Span scanHint = new Span(texts.getTwoFactorScanHint());
-    scanHint.setVisible(!manualSetupSelected);
-    scanHint.addClassName("cosmos-panel-description");
+    manualHint.addClassNames("cosmos-panel-description", "two-factor-manual-hint");
     Button copyKey = new Button(AppIcon.CLIPBOARD_COPY.create());
     copyKey.setId("two-factor-copy-key");
     copyKey.setAriaLabel(texts.getProviderSettingsCopy());
@@ -425,8 +447,8 @@ public final class TwoFactorView extends VerticalLayout
             loadManualKey(manual, copyKey);
           }
         });
-    Tab qrTab = new Tab(texts.getTwoFactorQrTab());
-    Tab manualTab = new Tab(texts.getTwoFactorManualTab());
+    Tab qrTab = new Tab(AppIcon.QR_CODE.create(), new Span(texts.getTwoFactorQrTab()));
+    Tab manualTab = new Tab(AppIcon.KEY.create(), new Span(texts.getTwoFactorManualTab()));
     qrTab.setId("two-factor-qr-tab");
     manualTab.setId("two-factor-manual-tab");
     qrContent.setId("two-factor-qr-pane");
@@ -448,7 +470,6 @@ public final class TwoFactorView extends VerticalLayout
         event -> {
           boolean manualSelected = event.getSelectedTab() == manualTab;
           manualSetupSelected = manualSelected;
-          scanHint.setVisible(!manualSelected);
           qrContent.setVisible(!manualSelected);
           manualContent.setVisible(manualSelected);
           if (manualSelected) {
@@ -485,8 +506,7 @@ public final class TwoFactorView extends VerticalLayout
             setupStep(AppIcon.NUMBER_ONE, texts.getTwoFactorAppStep()),
             appHint,
             apps,
-            compatibility,
-            scanHint);
+            compatibility);
     firstStep.setPadding(false);
     firstStep.setSpacing(false);
     firstStep.addClassName("two-factor-setup-step");

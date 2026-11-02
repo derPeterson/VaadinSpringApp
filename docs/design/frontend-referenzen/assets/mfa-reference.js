@@ -7,28 +7,31 @@
   const renderEnrollment = (root, english) => {
     const selectedMethod = root.dataset.setupMethod || 'qr';
     const text = english ? {
-      qr:'QR code',manual:'Manual key',manualHint:'Enter this key in your authenticator app and select a time-based code (TOTP).',codeHint:'Enter the current six-digit code shown in your authenticator app.',
-      stepOne:'Prepare your authenticator app',stepTwo:'Confirm the code',apps:'You can use a compatible authenticator app, such as Google Authenticator, Microsoft Authenticator or 2fast for Windows.',compatibility:'You can also use any other app that supports TOTP according to RFC 6238.',
-      scan:'Scan the QR code with your authenticator app.',code:'Authenticator code',manualLabel:'Key for manual setup',copy:'Copy',copied:'The setup key was copied.',copyFailed:'Please select and copy the key in the field.'
+      qr:'QR code',manual:'Key',manualHint:'Enter this key in your authenticator app and select a time-based code (TOTP).',codeHint:'Enter the current six-digit code shown in your authenticator app:',
+      stepOne:'Prepare your authenticator app',stepTwo:'Confirm the code',apps:'You can use a compatible authenticator app, for example:',compatibility:'You can also use any other app that supports TOTP according to RFC 6238.',
+      scan:'Scan this QR code with your authenticator app.',code:'Authenticator code',manualLabel:'Key for manual setup',copy:'Copy',copied:'The setup key was copied.',copyFailed:'Please select and copy the key in the field.'
     } : {
-      qr:'QR-Code',manual:'Manueller Schlüssel',manualHint:'Tragen Sie diesen Schlüssel in Ihrer Authenticator-App ein und wählen Sie einen zeitbasierten Code (TOTP).',codeHint:'Geben Sie den aktuell angezeigten sechsstelligen Code Ihrer Authenticator-App ein.',
-      stepOne:'Authenticator-App vorbereiten',stepTwo:'Code bestätigen',apps:'Sie können eine kompatible Authenticator-App verwenden, beispielsweise Google Authenticator, Microsoft Authenticator oder 2fast für Windows.',compatibility:'Sie können auch eine andere App verwenden, die TOTP nach RFC 6238 unterstützt.',
-      scan:'Scannen Sie den QR-Code mit Ihrer Authenticator-App.',code:'Authenticator-Code',manualLabel:'Schlüssel für manuelle Einrichtung',copy:'Kopieren',copied:'Der Einrichtungsschlüssel wurde kopiert.',copyFailed:'Bitte markieren und kopieren Sie den Schlüssel im Feld.'
+      qr:'QR-Code',manual:'Schlüssel',manualHint:'Tragen Sie diesen Schlüssel in Ihrer Authenticator-App ein und wählen Sie dort einen zeitbasierten Code (TOTP).',codeHint:'Geben Sie den aktuell angezeigten sechsstelligen Code Ihrer Authenticator-App ein:',
+      stepOne:'Authenticator-App vorbereiten',stepTwo:'Code bestätigen',apps:'Sie können eine kompatible Authenticator-App verwenden, beispielsweise:',compatibility:'Sie können auch eine andere App verwenden, die TOTP nach RFC 6238 unterstützt.',
+      scan:'Scannen Sie diesen QR-Code mit Ihrer Authenticator-App.',code:'Authenticator-Code',manualLabel:'Schlüssel für manuelle Einrichtung',copy:'Kopieren',copied:'Der Einrichtungsschlüssel wurde kopiert.',copyFailed:'Bitte markieren und kopieren Sie den Schlüssel im Feld.'
     };
     const externalIcon = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6M11 13 20 4m-5 0h5v5"/></svg>';
+    const qrIcon = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3M21 21v.01M12 7v3a2 2 0 0 1-2 2H7M3 12h.01M12 3h.01M12 16v.01M16 12h1M21 12v.01M12 21v-1"/></svg>';
+    const keyIcon = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>';
     const infoIcon = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-9v1"/></svg>';
     const appLink = (url, caption) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${externalIcon}<span>${caption}</span></a>`;
     root.innerHTML = `<div class="mfa-setup-layout">
       <div class="mfa-setup-method">
         <div class="mfa-setup-tabs" role="tablist" aria-label="${english ? 'Setup method' : 'Einrichtungsmethode'}">
-          <button type="button" role="tab" id="mfa-qr-tab" aria-selected="true" aria-controls="mfa-qr-pane" data-mfa-method="qr">${text.qr}</button>
-          <button type="button" role="tab" id="mfa-manual-tab" aria-selected="false" tabindex="-1" aria-controls="mfa-manual-pane" data-mfa-method="manual">${text.manual}</button>
+          <button type="button" role="tab" id="mfa-qr-tab" aria-selected="true" aria-controls="mfa-qr-pane" data-mfa-method="qr">${qrIcon}<span>${text.qr}</span></button>
+          <button type="button" role="tab" id="mfa-manual-tab" aria-selected="false" tabindex="-1" aria-controls="mfa-manual-pane" data-mfa-method="manual">${keyIcon}<span>${text.manual}</span></button>
         </div>
         <div id="mfa-qr-pane" role="tabpanel" aria-labelledby="mfa-qr-tab" class="mfa-setup-qr">
           <div class="mfa-qr-placeholder">QR-Code<br>${english ? 'Design preview' : 'Gestaltungsvorschau'}</div>
+          <p class="portal-copy mfa-qr-hint">${text.scan}</p>
         </div>
         <div id="mfa-manual-pane" role="tabpanel" aria-labelledby="mfa-manual-tab" class="mfa-setup-manual" hidden>
-          <p class="portal-copy">${text.manualHint}</p>
+          <p class="portal-copy mfa-manual-hint">${text.manualHint}</p>
           <div class="mfa-manual-control">
             <label class="mfa-manual-label" for="mfa-manual-key"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>${text.manualLabel}</label>
             <div class="mfa-manual-field">
@@ -44,13 +47,12 @@
           <p class="portal-copy">${text.apps}</p>
           <div class="mfa-app-links">${appLink('https://support.google.com/accounts/answer/1066447', 'Google Authenticator')}${appLink('https://support.microsoft.com/account-billing/download-and-install-the-microsoft-authenticator-app-351498fc-850a-45da-b7b6-27e523b8702a', 'Microsoft Authenticator')}${appLink('https://2fast-app.de/', '2fast (Windows)')}</div>
           <div class="mfa-app-compatibility">${infoIcon}<span>${text.compatibility}</span></div>
-          <p class="portal-copy" data-mfa-scan-hint>${text.scan}</p>
         </section>
         <section class="mfa-setup-step">
           <h3 class="mfa-step-label">${numberIcon(2)}<span>${text.stepTwo}</span></h3>
           <p class="portal-copy">${text.codeHint}</p>
           <label class="mfa-otp-label" for="mfa-setup-code">${text.code}<span class="mfa-required">•</span></label>
-          <div class="mfa-otp"><div class="mfa-otp-slots" aria-hidden="true">${'<span></span>'.repeat(6)}</div><input id="mfa-setup-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-required="true" data-mfa-otp-input></div>
+          <div class="mfa-otp"><div class="mfa-otp-slots" aria-hidden="true">${'<span>•</span>'.repeat(6)}</div><input id="mfa-setup-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-required="true" data-mfa-otp-input></div>
         </section>
       </div>
     </div>`;
@@ -67,7 +69,6 @@
     const tabs = [...root.querySelectorAll('[data-mfa-method]')];
     const selectMethod = tab => {
       root.dataset.setupMethod = tab.dataset.mfaMethod;
-      root.querySelector('[data-mfa-scan-hint]').hidden = tab.dataset.mfaMethod === 'manual';
       tabs.forEach(item => { const selected = item === tab; item.setAttribute('aria-selected', String(selected)); item.tabIndex = selected ? 0 : -1; });
       root.querySelector('#mfa-qr-pane').hidden = tab.dataset.mfaMethod !== 'qr';
       root.querySelector('#mfa-manual-pane').hidden = tab.dataset.mfaMethod !== 'manual';
@@ -85,8 +86,9 @@
     const input = root.querySelector('[data-mfa-otp-input]');
     const slots = [...root.querySelectorAll('.mfa-otp-slots > span')];
     const refreshSlots = () => slots.forEach((slot,index) => {
-      slot.textContent = input.value[index] || '';
-      slot.classList.toggle('active', document.activeElement === input && index === Math.min(input.selectionStart || 0, 5));
+      slot.textContent = input.value[index] || '•';
+      slot.classList.toggle('filled', Boolean(input.value[index]));
+      slot.classList.toggle('active', index === Math.min(input.selectionStart || 0, 5));
     });
     input.addEventListener('input', () => { input.value = input.value.replace(/[^0-9]/g,'').slice(0,6); refreshSlots(); });
     input.addEventListener('paste', event => {
@@ -96,6 +98,7 @@
       input.dispatchEvent(new Event('input', {bubbles:true}));
     });
     ['focus','blur','click','keyup'].forEach(name => input.addEventListener(name,refreshSlots));
+    refreshSlots();
   };
   const renderPhase = (root, phase) => {
     const isPublic = root.hasAttribute('data-mfa-phase-content');
