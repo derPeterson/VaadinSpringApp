@@ -351,11 +351,11 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
               new UsernamePasswordAuthenticationToken(
                   emailField.getValue(), passwordField.getValue()));
 
-      if (authentication.getPrincipal() instanceof UserDetails userDetails) {
-        securityService.storeAuthenticatedUser(
+      if (authentication.getPrincipal() instanceof UserDetails) {
+        securityService.storeVerifiedAuthentication(
             (HttpServletRequest) VaadinRequest.getCurrent(),
             (HttpServletResponse) VaadinResponse.getCurrent(),
-            userDetails,
+            authentication,
             rememberMeSwitch.getValue());
 
       } else {

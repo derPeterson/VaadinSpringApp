@@ -1,4 +1,20 @@
 .two-factor-view #two-factor-panel { max-width: 640px; margin-inline: auto; }
+.two-factor-view #two-factor-panel.two-factor-introduction { max-width:440px; background:var(--cosmos-reference-panel); }
+.two-factor-view .two-factor-introduction > .cosmos-panel-header { display:none; }
+.two-factor-view .two-factor-introduction > .account-panel-body { padding:32px 32px 24px; background:transparent; }
+.two-factor-introduction .two-factor-content { align-items:center; text-align:center; gap:16px; }
+.two-factor-introduction-art { display:block; width:128px; height:112px; object-fit:contain; filter:drop-shadow(0 0 24px color-mix(in srgb, var(--cosmos-reference-accent) 25%, transparent)); }
+.two-factor-introduction-title { margin:4px 0 0; color:var(--cosmos-reference-text); font:600 22px/1.3 Inter,sans-serif; letter-spacing:-.02em; overflow-wrap:anywhere; }
+.two-factor-introduction .cosmos-panel-description { max-width:360px; font:400 14px/1.7 Inter,sans-serif; color:var(--cosmos-reference-secondary); }
+.two-factor-view #two-factor-panel.two-factor-introduction > .cosmos-panel-footer { padding:16px 32px 32px; background:transparent; border-top:0; }
+.two-factor-introduction .cosmos-panel-actions { width:100%; }
+.two-factor-introduction .cosmos-dialog-actions { width:100%; display:flex; flex-wrap:wrap; justify-content:center; gap:12px; padding-top:16px; border-top:1px solid var(--cosmos-reference-border); }
+@media (max-width:480px) {
+ .two-factor-view .two-factor-introduction > .account-panel-body { padding:24px 20px 16px; }
+ .two-factor-view #two-factor-panel.two-factor-introduction > .cosmos-panel-footer { padding:16px 20px 24px; }
+ .two-factor-introduction-title { font-size:20px; }
+}
+@media (max-width:360px) { .two-factor-introduction .cosmos-dialog-actions vaadin-button { width:100%; } }
 .two-factor-view #two-factor-panel > .cosmos-panel-footer { padding: 16px 24px; justify-content: flex-end; }
 .two-factor-content { display: flex; flex-direction: column; gap: var(--cosmos-space-l, 16px); }
 .two-factor-extra-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cosmos-space-m, 12px); margin-top:var(--cosmos-space-l,16px); }

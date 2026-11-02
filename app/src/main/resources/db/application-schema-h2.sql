@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS config (
 CREATE TABLE IF NOT EXISTS external_providers (
     provider varchar(16) not null primary key,
     client_id varchar(512) not null,
-    client_secret varchar(2048) not null,
+    encrypted_client_secret varchar(12000) not null,
     enabled boolean not null,
     version bigint not null
 );

@@ -30,6 +30,7 @@ public class ExternalProviderSettings {
   public static final List<String> PROVIDERS = List.of(GOOGLE, MICROSOFT);
   private final ExternalProviderRepository repository;
   private final ExternalLoginProperties properties;
+  private final ExternalProviderSecrets secrets;
   private final AdminRolePolicy administrators;
   private final TwoFactorAuthorization twoFactor;
   private final jakarta.servlet.http.HttpServletRequest request;
@@ -37,6 +38,15 @@ public class ExternalProviderSettings {
   public record Settings(
       String provider, String clientId, boolean secretStored, boolean enabled, String revision)
       implements Serializable {}
+
+  /** Nur für den serverseitigen Anmeldeadapter, niemals für die Oberfläche oder Sitzungen. */
+  record Credentials(
+      String provider, String clientId, String clientSecret, boolean enabled, Long version) {
+    @Override
+    public String toString() {
+      return "Provider credentials: " + provider;
+    }
+  }
 
   @Transactional(readOnly = true)
   public Settings load(String provider) {
@@ -49,31 +59,51 @@ public class ExternalProviderSettings {
   public Settings save(
       String provider, String clientId, String newSecret, boolean enabled, String revision) {
     administrators.requireSuperadmin();
-    ExternalProviderEntity current = readCredentials(provider);
+    requireProvider(provider);
+    ExternalProviderEntity entity = repository.findById(provider).orElse(null);
+    Credentials current = entity == null ? defaultCredentials(provider) : decrypted(entity);
     if (!Objects.equals(revision, revision(current))) {
       throw new OptimisticLockingFailureException("Provider configuration changed");
     }
     String id = Objects.requireNonNull(clientId).trim();
     String secret =
-        Objects.requireNonNull(newSecret).isBlank() ? current.getClientSecret() : newSecret;
+        Objects.requireNonNull(newSecret).isBlank() ? current.clientSecret() : newSecret;
     validateCredentials(id, secret, enabled);
     twoFactor.authorizeCurrent(request, TwoFactorAction.SECURITY_CONFIGURATION, true);
-    current.setClientId(id);
-    current.setClientSecret(secret);
-    current.setEnabled(enabled);
-    ExternalProviderEntity saved = repository.saveAndFlush(current);
+    if (entity == null) {
+      entity = new ExternalProviderEntity();
+    }
+    entity.setProvider(provider);
+    entity.setClientId(id);
+    if (entity.getEncryptedClientSecret() == null || !newSecret.isBlank()) {
+      entity.setEncryptedClientSecret(secrets.encrypt(provider, secret));
+    }
+    entity.setEnabled(enabled);
+    ExternalProviderEntity saved = repository.saveAndFlush(entity);
     AfterCommitLog.info(
         log, "Sign-in provider configuration updated: provider={}, enabled={}", provider, enabled);
-    return describe(saved);
+    return describe(decrypted(saved));
   }
 
   /** Nur der Startinitialisierer: fehlende Anbieter gemeinsam anlegen, bestehende nie ändern. */
   @Transactional
   public void initializeDefaults() {
+    // Ein verlorener/falscher Schlüssel darf bestehende Secrets weder ersetzen noch umgehen.
+    repository.findAll().forEach(this::decrypted);
     List<ExternalProviderEntity> missing =
         PROVIDERS.stream()
             .filter(provider -> !repository.existsById(provider))
-            .map(this::initialCredentials)
+            .map(
+                provider -> {
+                  Credentials defaults = defaultCredentials(provider);
+                  ExternalProviderEntity entity = new ExternalProviderEntity();
+                  entity.setProvider(provider);
+                  entity.setClientId(defaults.clientId());
+                  entity.setEncryptedClientSecret(
+                      secrets.encrypt(provider, defaults.clientSecret()));
+                  entity.setEnabled(defaults.enabled());
+                  return entity;
+                })
             .toList();
     repository.saveAllAndFlush(missing);
   }
@@ -90,49 +120,62 @@ public class ExternalProviderSettings {
 
   // Nur der Anmeldeadapter benötigt Geheimnisse. Kein UI-/JSON-Modell gibt sie zurück.
   @Transactional(readOnly = true)
-  ExternalProviderEntity credentials(String provider) {
+  Credentials credentials(String provider) {
     return readCredentials(provider);
   }
 
-  private ExternalProviderEntity readCredentials(String provider) {
+  private Credentials readCredentials(String provider) {
+    requireProvider(provider);
+    return repository
+        .findById(provider)
+        .map(this::decrypted)
+        .orElseGet(() -> defaultCredentials(provider));
+  }
+
+  private void requireProvider(String provider) {
     if (!PROVIDERS.contains(provider)) {
       throw new IllegalArgumentException("Unsupported sign-in provider");
     }
-    return repository.findById(provider).orElseGet(() -> initialCredentials(provider));
   }
 
-  private ExternalProviderEntity initialCredentials(String provider) {
+  private Credentials defaultCredentials(String provider) {
     ExternalLoginProperties.Provider defaults =
         provider.equals(GOOGLE) ? properties.getGoogle() : properties.getMicrosoft();
-    ExternalProviderEntity entity = new ExternalProviderEntity();
-    entity.setProvider(provider);
-    entity.setClientId(Objects.requireNonNullElse(defaults.getClientId(), "").trim());
-    entity.setClientSecret(Objects.requireNonNullElse(defaults.getClientSecret(), ""));
-    entity.setEnabled(defaults.isEnabled());
-    validateCredentials(entity.getClientId(), entity.getClientSecret(), entity.isEnabled());
-    return entity;
+    String clientId = Objects.requireNonNullElse(defaults.getClientId(), "").trim();
+    String secret = Objects.requireNonNullElse(defaults.getClientSecret(), "");
+    validateCredentials(clientId, secret, defaults.isEnabled());
+    return new Credentials(provider, clientId, secret, defaults.isEnabled(), null);
   }
 
-  private Settings describe(ExternalProviderEntity entity) {
-    return new Settings(
+  private Credentials decrypted(ExternalProviderEntity entity) {
+    return new Credentials(
         entity.getProvider(),
         entity.getClientId(),
-        !entity.getClientSecret().isBlank(),
+        secrets.decrypt(entity.getProvider(), entity.getEncryptedClientSecret()),
         entity.isEnabled(),
+        entity.getVersion());
+  }
+
+  private Settings describe(Credentials entity) {
+    return new Settings(
+        entity.provider(),
+        entity.clientId(),
+        !entity.clientSecret().isBlank(),
+        entity.enabled(),
         revision(entity));
   }
 
-  static String revision(ExternalProviderEntity entity) {
+  static String revision(Credentials entity) {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       // Längenpräfixe machen die Felder eindeutig. Das Ergebnis enthält kein lesbares Geheimnis.
       for (String value :
           List.of(
-              entity.getProvider(),
-              entity.getClientId(),
-              entity.getClientSecret(),
-              Boolean.toString(entity.isEnabled()),
-              Objects.toString(entity.getVersion(), "initial"))) {
+              entity.provider(),
+              entity.clientId(),
+              entity.clientSecret(),
+              Boolean.toString(entity.enabled()),
+              Objects.toString(entity.version(), "initial"))) {
         digest.update((value.length() + ":" + value).getBytes(StandardCharsets.UTF_8));
       }
       return HexFormat.of().formatHex(digest.digest());

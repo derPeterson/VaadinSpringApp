@@ -146,6 +146,18 @@ public class MessageTexts {
     return getTranslation("mfa.setup.title");
   }
 
+  public String getTwoFactorRequiredTitle() {
+    return getTranslation("mfa.required.title");
+  }
+
+  public String getTwoFactorRequiredHint() {
+    return getTranslation("mfa.required.hint");
+  }
+
+  public String getTwoFactorBeginSetup() {
+    return getTranslation("mfa.required.begin");
+  }
+
   public String getTwoFactorRecoverAction() {
     return getTranslation("mfa.recover.action");
   }

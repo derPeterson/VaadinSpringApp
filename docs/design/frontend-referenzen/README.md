@@ -19,7 +19,9 @@ bedienbar. Weitere Link- und Bestätigungszustände lassen sich in den jeweilige
 Portal und Admin verwenden ihre Seitennavigation. Admin startet ohne Fragment
 mit dem Dashboard. Die Referenzen sind Gestaltungsvorlagen, keine zweite Anwendung.
 
-`public.html#public-two-factor` bietet die synthetischen Phasen von Einrichtung,
+`public.html#public-two-factor` beginnt mit der ausgewählten Schlosskarte A für
+die verpflichtende Ersteinrichtung. „Einrichten“ öffnet die synthetische QR-Phase.
+Danach bietet die Referenz die synthetischen Phasen von Einrichtung,
 Codeabfrage, gezieltem Authenticatorwechsel mit Ersatzcode, Codeausgabe und Hilfe.
 Portal und Admin zeigen die ergänzte
 Faktorverwaltung, Rollenregeln und Anfragebearbeitung. Die QR-Fläche ist ausdrücklich

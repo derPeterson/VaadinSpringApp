@@ -34,6 +34,35 @@ Die Google-/Microsoft-Verwaltung ist im selben Paket auf Superadmins beschränkt
    abschließend bereinigen und diesen erledigten Plan entfernen. Git-Schritte
    nur auf entsprechenden Auftrag ausführen.
 
+## Gestaltung der verpflichtenden Ersteinrichtung
+
+Im eigenen Stitch-Projekt
+[VaadinSpringApp – Zwei-Faktor-Authentifizierung](https://stitch.withgoogle.com/projects/1332538028618138858)
+liegen die drei gesichteten Entwürfe:
+
+- [A: Zentrierte Schlosskarte](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=0767d365b62e4df296209ad37bc924bd)
+- [B: Geteiltes Panel mit Schildmotiv](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=c3bcc6e662e34ccba6f0abca4a51b89f)
+- [C: Sachliches Panel mit Kosmos-Motiv](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=c0fce938cba44dfb9fee508cb71f340b)
+
+Variante A ist ausgewählt und in Vaadin sowie der Public-Referenz übernommen.
+Die gemeinsame Sichtprüfung der Übernahme steht aus. Zusätzliche von Stitch
+erfundene Statusangaben und Schrittzahlen werden nicht übernommen.
+
+Vereinbarter Einstieg nach einer frischen Portalpasswort-Anmeldung: Überschrift
+„Zwei-Faktor-Authentifizierung erforderlich“, Erklärung „Für Ihr Konto ist eine
+zusätzliche Absicherung erforderlich. Verbinden Sie jetzt eine Authenticator-App,
+um die Anwendung weiter zu nutzen.“ sowie „Abmelden“ und „Einrichten“.
+„Abmelden“ beendet die Anmeldung; Schließen oder Überspringen darf die Pflicht
+nicht umgehen. QR-Code, Codeeingabe und Ersatzcodes folgen erst danach.
+
+Die verpflichtende Ersteinrichtung verwendet den echten Passwortnachweis derselben
+Sitzung, solange er weniger als fünf Minuten alt ist. Die Prüfung erfolgt auch beim
+Start der Einrichtung. Alte Sitzungen, dauerhafte Anmeldung und externe Nachweise
+gelten nicht als frischer Passwortnachweis. Ohne passenden Nachweis folgt die
+bestehende Identitätsprüfung. Der erste gültige TOTP bleibt Voraussetzung für den
+Abschluss. Frühere Faktoren und Betreiber-Wiederherstellungen nutzen diese Ausnahme
+nicht.
+
 ## Geltende Umfangsgrenzen
 
 - Ein neuer Google-Durchlauf allein bestätigt im normalen Betrieb keine sensible

@@ -13,6 +13,17 @@ verpflichtende Anmeldung führt vor dem Portalzugriff direkt zur Einrichtung bzw
 Codeabfrage. Die QR-Grafik entsteht lokal. Für die manuelle Eingabe gibt es einen
 geschützten Einrichtungsschlüssel.
 
+Bei verpflichtender Ersteinrichtung erklärt zunächst eine kompakte Karte die
+Anforderung. „Abmelden“ beendet die Anmeldung, „Einrichten“ führt zur Einrichtung.
+Nach einer frischen Portalpasswort-Anmeldung ist keine zweite Passwortabfrage
+nötig: Der originale Spring-Passwortnachweis derselben Sitzung gilt dafür weniger
+als fünf Minuten und wird beim Start erneut geprüft. Er wird weder durch einen
+Seitenaufruf noch durch Refresh verlängert. Bei älteren Sitzungen und Remember-me
+folgt die bestehende Identitätsbestätigung. Die Wiederverwendung gilt nur für ein
+bisher nie geschütztes Konto mit Einrichtungspflicht, nicht für freiwillige
+Einrichtung, frühere Faktoren oder Betreiber-Wiederherstellungen. Ein erster
+gültiger TOTP ist in jedem Fall nötig, bevor Portalzugriff freigegeben wird.
+
 Eine Einrichtung beginnt mit dem aktuellen Portalpasswort oder einer frischen,
 kontogebundenen Microsoft-Bestätigung. Google bestätigt keine ausreichend frische
 aktive Anmeldung. Ausschließlich für die erstmalige Einrichtung eines bisher nie

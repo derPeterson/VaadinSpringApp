@@ -86,7 +86,7 @@ direkt. Der Katalog enthält keine tatsächlichen Werte oder Zugangsdaten.
 | Allgemeine Einzelwerte aus `ConfigEntry` | Fehlende Werte werden aus `APP_CFG_*` in `config` angelegt. |
 | Google und Microsoft | Fehlende Anbieter werden aus `APP_EXTERNAL_LOGIN_*` in `external_providers` angelegt. Client-ID, Secret und Aktivierung werden gemeinsam geprüft und gespeichert. |
 | Rollen- und Funktionsregeln für 2FA | Gemeinsamer Regelstand in `two_factor_policy`, verwaltet durch `TwoFactorPolicies`. Ohne gespeicherten Stand gelten dessen Standardregeln. |
-| TOTP-Schlüssel und Freigabe der Entwicklungsoptionen | Ausschließlich Startkonfiguration. Sie werden nicht als Adminwerte in der Datenbank abgelegt. |
+| TOTP-Schlüssel, Anbieter-Verschlüsselungsschlüssel und Freigabe der Entwicklungsoptionen | Ausschließlich Startkonfiguration. Sie werden nicht als Adminwerte in der Datenbank abgelegt. |
 
 Vorhandene Anbieterzeilen bleiben beim Neustart unverändert, einschließlich einer
 gespeicherten Deaktivierung. Für eine erstmalige Aktivierung in der `.env`
@@ -99,8 +99,11 @@ Ein deaktivierter Anbieter darf bereits Zugangsdaten enthalten.
 Der Katalog ist keine allgemeine Schreibschnittstelle. Anbieter und 2FA behalten
 ihre Transaktionen, Revisionsprüfungen und Superadmin-/Faktorprüfungen. Technische
 Startparameter wie Datenbankverbindung, HTTP-Port, H2-Konsole und Bootstrap bleiben
-bei ihren zuständigen Spring-Konfigurationen. Der TOTP-Verschlüsselungsschlüssel
-bleibt getrennt von den verschlüsselten Daten.
+bei ihren zuständigen Spring-Konfigurationen. Die getrennten Verschlüsselungsschlüssel
+für TOTP und Anmeldeanbieter bleiben außerhalb der Datenbank. Anbieter-Secrets
+liegen ausschließlich als authentifiziert verschlüsselter Inhalt in
+`external_providers.encrypted_client_secret`. Einrichtung und Grenzen stehen in
+der [Anbieteranleitung](externe-anmeldung.md).
 
 Bootstrap ist standardmäßig aus. Die optionalen Listen `app.bootstrap.superadmins`,
 `admins`, `users` und `guests` legen explizite lokale Testkonten mit genau ihrer

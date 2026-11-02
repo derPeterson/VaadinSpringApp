@@ -2,7 +2,7 @@ package de.derpeterson.app.security;
 
 import static de.derpeterson.app.security.ExternalProviderSettings.GOOGLE;
 
-import de.derpeterson.app.model.ExternalProviderEntity;
+import de.derpeterson.app.security.ExternalProviderSettings.Credentials;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -55,14 +55,14 @@ public class ExternalLoginConfiguration {
         () -> {
           ExternalLoginProperties current = new ExternalLoginProperties();
           for (String provider : ExternalProviderSettings.PROVIDERS) {
-            ExternalProviderEntity stored = settings.credentials(provider);
+            Credentials stored = settings.credentials(provider);
             ExternalLoginProperties.Provider target =
                 provider.equals(GOOGLE) ? current.getGoogle() : current.getMicrosoft();
             ExternalLoginProperties.Provider defaults =
                 provider.equals(GOOGLE) ? properties.getGoogle() : properties.getMicrosoft();
-            if (stored.isEnabled()) {
-              target.setClientId(stored.getClientId());
-              target.setClientSecret(stored.getClientSecret());
+            if (stored.enabled()) {
+              target.setClientId(stored.clientId());
+              target.setClientSecret(stored.clientSecret());
               target.setEnabled(true);
             }
             // Endpunkte stammen ausschließlich aus der Serverkonfiguration, nie aus Admin-Eingaben.

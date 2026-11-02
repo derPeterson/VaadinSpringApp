@@ -127,7 +127,7 @@ class LoginSessionRecoveryTest {
                 principal, null, principal.getAuthorities()));
     doThrow(new SessionLimitException())
         .when(security)
-        .storeAuthenticatedUser(any(), any(), any(), anyBoolean());
+        .storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
     Instant when = Instant.parse("2026-10-17T03:00:00Z");
     when(sessions.recoveryList(request))
         .thenReturn(
@@ -258,13 +258,13 @@ class LoginSessionRecoveryTest {
     Switch rememberSwitch = field("rememberMeSwitch", Switch.class);
     assertFalse(rememberSwitch.getValue());
     rememberSwitch.setValue(remember);
-    doNothing().when(security).storeAuthenticatedUser(any(), any(), any(), anyBoolean());
+    doNothing().when(security).storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
     field("emailField", EmailField.class).setValue("own@example.test");
     field("passwordField", PasswordField.class).setValue("Secret!Password8");
 
     field("loginButton", Button.class).click();
 
-    verify(security).storeAuthenticatedUser(any(), any(), any(), eq(remember));
+    verify(security).storeVerifiedAuthentication(any(), any(), any(), eq(remember));
     verifyNoInteractions(sessions);
     assertEquals(HomeView.class, ui.target);
   }
@@ -314,7 +314,7 @@ class LoginSessionRecoveryTest {
     verifyNoInteractions(sessions);
     assertFalse(field("recoveryArea", Div.class).isVisible());
     assertTrue(field("loginPanels", Component.class).isVisible());
-    verify(security, never()).storeAuthenticatedUser(any(), any(), any(), anyBoolean());
+    verify(security, never()).storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
     Supplier<String> text =
         (Supplier<String>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");

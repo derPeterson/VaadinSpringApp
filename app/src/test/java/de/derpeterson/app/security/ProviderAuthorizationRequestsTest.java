@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import de.derpeterson.app.model.ExternalProviderEntity;
+import de.derpeterson.app.security.ExternalProviderSettings.Credentials;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -17,11 +17,7 @@ class ProviderAuthorizationRequestsTest {
   @Test
   void savingNullRemovesTheMatchingAuthorizationRequest() {
     ExternalProviderSettings settings = mock(ExternalProviderSettings.class);
-    ExternalProviderEntity entity = new ExternalProviderEntity();
-    entity.setProvider("google");
-    entity.setClientId("own-client");
-    entity.setClientSecret("own-secret");
-    entity.setEnabled(true);
+    Credentials entity = new Credentials("google", "own-client", "own-secret", true, 0L);
     when(settings.credentials("google")).thenReturn(entity);
     ProviderAuthorizationRequests repository = new ProviderAuthorizationRequests(settings);
     MockHttpServletRequest request = new MockHttpServletRequest();
@@ -44,12 +40,7 @@ class ProviderAuthorizationRequestsTest {
   @ValueSource(strings = {"unchanged", "disabled", "secret", "client", "version"})
   void callbackRequiresTheSameProviderConfigurationAndConsumesTheAttempt(String change) {
     ExternalProviderSettings settings = mock(ExternalProviderSettings.class);
-    ExternalProviderEntity entity = new ExternalProviderEntity();
-    entity.setProvider("google");
-    entity.setClientId("own-client");
-    entity.setClientSecret("own-secret");
-    entity.setEnabled(true);
-    entity.setVersion(0L);
+    Credentials entity = new Credentials("google", "own-client", "own-secret", true, 0L);
     when(settings.credentials("google")).thenReturn(entity);
     ProviderAuthorizationRequests repository = new ProviderAuthorizationRequests(settings);
     MockHttpServletRequest request = new MockHttpServletRequest();
@@ -64,16 +55,14 @@ class ProviderAuthorizationRequestsTest {
             .build();
     repository.saveAuthorizationRequest(authorization, request, response);
     request.setParameter("state", "own-state");
-    switch (change) {
-      case "disabled" -> entity.setEnabled(false);
-      case "secret" -> entity.setClientSecret("replacement");
-      case "client" -> entity.setClientId("replacement");
-      case "version" -> entity.setVersion(2L);
-      case "unchanged" -> {
-        // Kontrollfall: Die gespeicherte Anbieterrevision bleibt unverändert.
-      }
-      default -> throw new IllegalArgumentException(change);
-    }
+    when(settings.credentials("google"))
+        .thenReturn(
+            new Credentials(
+                "google",
+                change.equals("client") ? "replacement" : "own-client",
+                change.equals("secret") ? "replacement" : "own-secret",
+                !change.equals("disabled"),
+                change.equals("version") ? 2L : 0L));
     if (change.equals("unchanged")) {
       assertNotNull(repository.removeAuthorizationRequest(request, response));
     } else {

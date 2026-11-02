@@ -32,10 +32,20 @@ public final class TwoFactorPage {
     new UserMenu(page).selectTestLanguage();
     page.waitForCondition(
         () ->
-            page.locator("#two-factor-password").isVisible()
+            page.locator("#two-factor-introduction-title").isVisible()
+                || page.locator("#two-factor-password").isVisible()
                 || page.locator("#two-factor-code").isVisible()
                 || page.locator("#two-factor-recovery-codes").isVisible());
-    if (page.locator("#two-factor-password").isVisible()) {
+    if (page.locator("#two-factor-introduction-title").isVisible()) {
+      page.locator("#two-factor-submit").click();
+      page.waitForCondition(
+          () ->
+              page.locator("#two-factor-qr").isVisible()
+                  || page.locator("#two-factor-password").isVisible());
+    }
+    if (page.locator("#two-factor-qr").isVisible()) {
+      enrollCurrent(page, email);
+    } else if (page.locator("#two-factor-password").isVisible()) {
       page.locator("#two-factor-password input").fill(password);
       page.locator("#two-factor-submit").click();
       enrollCurrent(page, email);

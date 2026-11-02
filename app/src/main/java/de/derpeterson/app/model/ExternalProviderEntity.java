@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Zugangsdaten werden wie die SMTP-Konfiguration ausschließlich serverseitig gespeichert. */
+/** Anbieter-Secrets liegen ausschließlich verschlüsselt in der Datenbank. */
 @Entity
 @Table(name = "external_providers")
 @Getter
@@ -23,8 +23,8 @@ public class ExternalProviderEntity {
   @Column(name = "client_id", nullable = false, length = 512)
   private String clientId;
 
-  @Column(name = "client_secret", nullable = false, length = 2048)
-  private String clientSecret;
+  @Column(name = "encrypted_client_secret", nullable = false, length = 12000)
+  private String encryptedClientSecret;
 
   @Column(nullable = false)
   private boolean enabled;

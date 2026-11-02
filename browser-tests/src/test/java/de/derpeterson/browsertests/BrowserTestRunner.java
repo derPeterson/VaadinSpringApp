@@ -82,6 +82,10 @@ public final class BrowserTestRunner {
     byte[] totpKey = new byte[32];
     new java.security.SecureRandom().nextBytes(totpKey);
     environment.put("BROWSER_TEST_TOTP_KEY", java.util.Base64.getEncoder().encodeToString(totpKey));
+    byte[] providerKey = new byte[32];
+    new java.security.SecureRandom().nextBytes(providerKey);
+    environment.put(
+        "BROWSER_TEST_PROVIDER_KEY", java.util.Base64.getEncoder().encodeToString(providerKey));
     environment.put("BROWSER_TEST_DEVELOPMENT_OPTIONS_ENABLED", "false");
     if (worker && !run.startsWith(this.module.resolve("runs"))) {
       throw new IllegalArgumentException("Worker output must be within runs/.");

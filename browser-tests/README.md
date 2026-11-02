@@ -120,8 +120,9 @@ Clientzugänge sind dafür nicht erforderlich. Die Endpunkte bleiben auf diesen 
 begrenzt. Die Tests kontaktieren keine echten Anbieterkonten. Die zusätzliche Abnahme
 mit echten eigenen Clients steht unter [HUM-08](../docs/manual-tests/README.md#hum-08).
 
-Die isolierte Umgebung erhält einen eigenen zufälligen 2FA-Verschlüsselungsschlüssel,
-der beim gezielten Neustart desselben Workers erhalten bleibt. Entwicklungs-Ausnahmen
+Die isolierte Umgebung erhält eigene, voneinander getrennte zufällige Schlüssel
+für 2FA und Anbieter-Secrets. Beide bleiben beim gezielten Neustart desselben Workers
+erhalten. Entwicklungs-Ausnahmen
 sind standardmäßig aus, unabhängig von geerbten Startvariablen. Ausschließlich MFA-16
 startet seine eigene Testanwendung bewusst mit der Startfreigabe neu, prüft beide
 getrennten Schalter und nimmt die Freigabe im `finally` wieder zurück. Dabei bleiben

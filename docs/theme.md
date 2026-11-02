@@ -1139,6 +1139,17 @@ Eingabestandards bleiben unverändert. Das Einrichtungs-/Anmeldepanel ist höchs
 Regeln zweispaltig dar und wechselt unter 650 px auf eine Spalte. Neue lokale
 Details bleiben bis zur gemeinsamen Designabnahme lokal.
 
+Der freigegebene verpflichtende Einrichtungseinstieg folgt Stitch-Variante A:
+zentrierte Schlossillustration, Überschrift, Erklärung und die nativen Aktionen
+„Abmelden“ / „Einrichten“. `.two-factor-introduction` in `cosmos-mfa.css` begrenzt
+die Karte auf 440 px, mit 32 px Innenabstand, einem 128 × 112 px großen Motiv
+und Inter 22 px / 600 für die Überschrift. Unter 480 px gelten 20 px seitlicher
+Innenabstand und 20 px Überschrift. Bei Platzmangel brechen die Aktionen untereinander um.
+Buttonhöhen, Farben und Icongrößen folgen dem vorhandenen Standard.
+Der öffentliche Seitenrahmen bleibt erhalten. Die Illustration liegt lokal als
+`images/two-factor-locks.svg`; die Public-Referenz verwendet dieselbe SVG unter
+`assets`. Nur dieser Einstieg blendet den normalen Panelkopf aus.
+
 `cosmos-mfa-document.css` gestaltet ausschließlich die geschützte, einmalige
 Ersatzcodeausgabe. Die druckbare PDF verwendet eine eigene Classpath-HTML-/CSS-
 Vorlage unter `pdf/`, das vorhandene Service-Logo und einen hellen Druckhintergrund.

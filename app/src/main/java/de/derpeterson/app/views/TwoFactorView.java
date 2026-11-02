@@ -7,6 +7,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.IFrame;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
@@ -31,6 +32,7 @@ import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.LoginThrottledException;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.mfa.TwoFactorAction;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.security.mfa.TwoFactorDocuments;
 import de.derpeterson.app.security.mfa.TwoFactorEnrollment;
@@ -76,6 +78,8 @@ public final class TwoFactorView extends VerticalLayout
   private boolean administration;
   private boolean recovering;
   private boolean initializing;
+  private boolean introduction;
+  private boolean setupStarted;
 
   public TwoFactorView(
       ConfigService config,
@@ -152,6 +156,10 @@ public final class TwoFactorView extends VerticalLayout
     password.setInvalid(false);
     code.setInvalid(false);
     pending = enrollment.pending(request);
+    introduction = false;
+    panel.removeClassName("two-factor-introduction");
+    cancel.setPrefixComponent(AppIcon.CLOSE.create());
+    submit.setPrefixComponent(AppIcon.CHECK.create());
     recovering = recovering || pending != null && pending.proof() == SetupProof.RECOVERY_CODE;
     TwoFactorAuthorization.State state = authorization.state(authorization.owner(request));
     initializing = pending == null && !state.enrolled();
@@ -218,6 +226,12 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private void showSetup() {
+    if (!setupStarted
+        && (authorization.requires(request, TwoFactorAction.LOGIN)
+            || authorization.requires(request, TwoFactorAction.ADMINISTRATION))) {
+      showIntroduction();
+      return;
+    }
     addHint(
         enrollment.available() ? texts.getTwoFactorSetupHint() : texts.getTwoFactorUnavailable());
     boolean local = external.owner(request).getPassword() != null;
@@ -267,6 +281,28 @@ public final class TwoFactorView extends VerticalLayout
     if (!local && extraActions.getComponentCount() == 0) {
       addHint(texts.getExternalProofUnavailable());
     }
+  }
+
+  private void showIntroduction() {
+    introduction = true;
+    panel.addClassName("two-factor-introduction");
+    Image illustration = new Image("images/two-factor-locks.svg", "");
+    illustration.addClassName("two-factor-introduction-art");
+    illustration.getElement().setAttribute("aria-hidden", "true");
+    H2 heading = new H2(texts.getTwoFactorRequiredTitle());
+    heading.setId("two-factor-introduction-title");
+    heading.addClassName("two-factor-introduction-title");
+    content.add(illustration, heading);
+    addHint(texts.getTwoFactorRequiredHint());
+    if (!enrollment.available()) {
+      addHint(texts.getTwoFactorUnavailable());
+    }
+    cancel.setText(texts.getBaseLogoutButton());
+    cancel.setPrefixComponent(AppIcon.SIGN_OUT.create());
+    submit.setVisible(true);
+    submit.setEnabled(enrollment.available());
+    submit.setText(texts.getTwoFactorBeginSetup());
+    submit.setPrefixComponent(AppIcon.SHIELD_CHECK.create());
   }
 
   private void showPending() {
@@ -379,6 +415,14 @@ public final class TwoFactorView extends VerticalLayout
 
   private void submit() {
     try {
+      if (introduction) {
+        if (enrollment.canBeginFromPasswordLogin(request)) {
+          enrollment.beginFromPasswordLogin(request);
+        }
+        setupStarted = true;
+        render();
+        return;
+      }
       if (pending != null && pending.kind() == Kind.RECOVERY_OUTPUT) {
         enrollment.dismissOutput(request, pending.id());
         finish();
@@ -444,7 +488,7 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private void cancel() {
-    if (authorization.sessionConfirmed(request)) {
+    if (!introduction && authorization.sessionConfirmed(request)) {
       UI.getCurrent().getPage().setLocation(request.getContextPath() + "/account?tab=security");
     } else {
       security.logout();

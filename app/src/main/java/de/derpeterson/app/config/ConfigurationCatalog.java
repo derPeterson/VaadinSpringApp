@@ -83,6 +83,11 @@ public final class ConfigurationCatalog {
   }
 
   public enum StartupSetting {
+    PROVIDER_SECRETS_ENCRYPTION_KEY(
+        "app.security.provider-secrets-encryption-key",
+        "APP_SECURITY_PROVIDER_SECRETS_ENCRYPTION_KEY",
+        true,
+        "Eigener Schlüssel für Google-/Microsoft-Secrets. Außerhalb der Datenbank sichern."),
     TOTP_ENCRYPTION_KEY(
         "app.security.totp-encryption-key",
         "APP_SECURITY_TOTP_ENCRYPTION_KEY",
@@ -240,7 +245,9 @@ public final class ConfigurationCatalog {
       entries.add(
           new Entry(
               setting.property,
-              AdminConfigGroup.TWO_FACTOR,
+              setting == StartupSetting.PROVIDER_SECRETS_ENCRYPTION_KEY
+                  ? AdminConfigGroup.EXTERNAL_LOGIN
+                  : AdminConfigGroup.TWO_FACTOR,
               Storage.STARTUP_ONLY,
               setting.secret,
               setting.property,

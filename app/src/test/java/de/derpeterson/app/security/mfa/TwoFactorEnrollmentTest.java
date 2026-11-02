@@ -25,12 +25,16 @@ import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.TwoFactorAccountRepository;
 import de.derpeterson.app.repository.TwoFactorRecoveryCodeRepository;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.ExternalAuthenticationToken;
 import de.derpeterson.app.security.ExternalLoginFlow.EnrollmentConfirmation;
+import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionManagementService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -49,7 +53,15 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
+import org.springframework.security.authentication.RememberMeAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.FactorGrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -62,6 +74,7 @@ import org.springframework.transaction.support.TransactionTemplate;
   TwoFactorAuthorizationTest.Config.class,
   TwoFactorEnrollmentTest.Config.class
 })
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class TwoFactorEnrollmentTest {
   @Autowired TwoFactorEnrollment enrollment;
   @Autowired TwoFactorAuthorization authorization;
@@ -73,6 +86,7 @@ class TwoFactorEnrollmentTest {
   @Autowired TransactionTemplate transaction;
   @Autowired PlatformTransactionManager transactions;
   @Autowired TwoFactorStoreTest.TestClock clock;
+  @Autowired SecurityService security;
   @PersistenceContext EntityManager entityManager;
   private UserEntity user;
   private MockHttpServletRequest request;
@@ -135,6 +149,121 @@ class TwoFactorEnrollmentTest {
     enrollment.dismissOutput(request, output);
     assertThrows(AccessDeniedException.class, () -> enrollment.recoveryOutput(request, output));
     verify(mail).securityChange(any(), eq(TwoFactorMail.Event.ENABLED));
+  }
+
+  @Test
+  void freshPasswordSignInStartsOnlyRequiredFirstEnrollmentAndStillRequiresTotp() {
+    Authentication authentication = freshPasswordSignIn();
+    assertTrue(enrollment.canBeginFromPasswordLogin(request));
+    TwoFactorEnrollment.Pending pending = enrollment.beginFromPasswordLogin(request);
+    assertEquals(SetupProof.PASSWORD, pending.proof());
+    assertFalse(authorization.state(authorization.owner(request)).enrolled());
+    assertFalse(authorization.sessionConfirmed(request));
+    assertEquals(authentication.getAuthorities(), freshAuthentication().getAuthorities());
+    enrollment.complete(
+        request, pending.id(), currentCode(enrollment.pendingSecret(request, pending.id())));
+    assertTrue(authorization.sessionConfirmed(request));
+    assertFalse(enrollment.canBeginFromPasswordLogin(request));
+  }
+
+  @Test
+  void firstEnrollmentRejectsExpiredOrFuturePasswordEvidenceAndAnotherSession() {
+    freshPasswordSignIn();
+    assertFalse(
+        enrollment.canBeginFromPasswordLogin(
+            TwoFactorAuthorizationTest.requestFor(user.getEmail())));
+    clock.now.updateAndGet(now -> now.minusSeconds(1));
+    assertFalse(enrollment.canBeginFromPasswordLogin(request));
+    clock.now.updateAndGet(now -> now.plusSeconds(300));
+    assertTrue(enrollment.canBeginFromPasswordLogin(request));
+    clock.now.updateAndGet(now -> now.plusSeconds(1));
+    assertFalse(enrollment.canBeginFromPasswordLogin(request));
+    assertThrows(AccessDeniedException.class, () -> enrollment.beginFromPasswordLogin(request));
+    assertTrue(enrollment.pending(request) == null);
+    assertEquals(Kind.ENROLLMENT, enrollment.beginPassword(request, "correct").kind());
+  }
+
+  @Test
+  void rememberMeExternalLoginAndPlainAuthorityNeverSupplyFreshPasswordProof() {
+    Authentication password = freshPasswordSignIn();
+    UserDetails principal = (UserDetails) password.getPrincipal();
+    for (Authentication other :
+        List.of(
+            new RememberMeAuthenticationToken("fixture", principal, password.getAuthorities()),
+            new ExternalAuthenticationToken(principal, "google", password.getAuthorities()),
+            new ExternalAuthenticationToken(principal, "microsoft", password.getAuthorities()),
+            UsernamePasswordAuthenticationToken.authenticated(
+                principal,
+                null,
+                List.of(new SimpleGrantedAuthority(FactorGrantedAuthority.PASSWORD_AUTHORITY))))) {
+      when(security.refreshSessionAuthentication(request.getSession(false)))
+          .thenReturn(Optional.of(other));
+      assertFalse(enrollment.canBeginFromPasswordLogin(request));
+      assertThrows(AccessDeniedException.class, () -> enrollment.beginFromPasswordLogin(request));
+    }
+  }
+
+  @Test
+  void optionalEnrollmentAndRemovedFactorsStillNeedExplicitProof() {
+    freshPasswordSignIn();
+    transaction.executeWithoutResult(
+        status -> {
+          UserEntity current = users.findById(user.getId()).orElseThrow();
+          current.setRoleEntities(
+              entityManager
+                  .createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
+                  .setParameter("role", RoleType.ROLE_USER)
+                  .getResultList());
+          users.saveAndFlush(current);
+        });
+    assertFalse(enrollment.canBeginFromPasswordLogin(request));
+    freshPasswordSignIn();
+    UUID revision = store.initialize(user.getId(), user.getAccessVersion());
+    transaction.executeWithoutResult(
+        status -> {
+          TwoFactorAccountEntity account = accounts.findById(user.getId()).orElseThrow();
+          account.setPreviouslyEnrolled(true);
+          accounts.saveAndFlush(account);
+        });
+    assertFalse(enrollment.canBeginFromPasswordLogin(request));
+    assertThrows(AccessDeniedException.class, () -> enrollment.beginFromPasswordLogin(request));
+    assertEquals(revision, accounts.findById(user.getId()).orElseThrow().getRevision());
+  }
+
+  private Authentication freshPasswordSignIn() {
+    transaction.executeWithoutResult(
+        status -> {
+          RoleEntity role =
+              entityManager
+                  .createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
+                  .setParameter("role", RoleType.ROLE_SUPERADMIN)
+                  .getResultStream()
+                  .findFirst()
+                  .orElse(null);
+          if (role == null) {
+            role = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
+            entityManager.persist(role);
+          }
+          UserEntity current = users.findById(user.getId()).orElseThrow();
+          current.setRoleEntities(new ArrayList<>(List.of(role)));
+          users.saveAndFlush(current);
+        });
+    UserDetails principal =
+        User.withUsername(user.getEmail()).password("").roles("SUPERADMIN").build();
+    List<GrantedAuthority> authorities = new ArrayList<>(principal.getAuthorities());
+    authorities.add(
+        FactorGrantedAuthority.withAuthority(FactorGrantedAuthority.PASSWORD_AUTHORITY)
+            .issuedAt(clock.instant())
+            .build());
+    Authentication authentication =
+        UsernamePasswordAuthenticationToken.authenticated(principal, null, authorities);
+    when(security.refreshSessionAuthentication(request.getSession(false)))
+        .thenReturn(Optional.of(authentication));
+    return authentication;
+  }
+
+  private Authentication freshAuthentication() {
+    return security.refreshSessionAuthentication(request.getSession(false)).orElseThrow();
   }
 
   @Test

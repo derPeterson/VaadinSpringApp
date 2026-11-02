@@ -167,6 +167,26 @@ public class TwoFactorEnrollment {
     return begin(request, current, SetupProof.PASSWORD);
   }
 
+  public boolean canBeginFromPasswordLogin(HttpServletRequest request) {
+    TwoFactorAuthorization.Owner owner = authorization.owner(request);
+    TwoFactorAuthorization.State state = authorization.state(owner);
+    return !state.enrolled()
+        && !state.previouslyEnrolled()
+        && !state.operatorEnrollment()
+        && (authorization.requires(request, TwoFactorAction.LOGIN)
+            || authorization.requires(request, TwoFactorAction.ADMINISTRATION))
+        && authorization.hasFreshPasswordLogin(request);
+  }
+
+  /** Die frische Passwortanmeldung gilt ausschließlich für die verpflichtende Ersteinrichtung. */
+  public Pending beginFromPasswordLogin(HttpServletRequest request) {
+    TwoFactorAuthorization.Owner owner = authorization.owner(request);
+    if (!canBeginFromPasswordLogin(request)) {
+      throw new AccessDeniedException("Fresh password sign-in for initial enrollment required");
+    }
+    return begin(request, owner, SetupProof.PASSWORD, true);
+  }
+
   /**
    * Nur nach der vollständigen OIDC-Konto-, State- und Frischeprüfung des ExternalLoginFlow
    * aufrufen.
@@ -223,6 +243,14 @@ public class TwoFactorEnrollment {
 
   private Pending begin(
       HttpServletRequest request, TwoFactorAuthorization.Owner owner, SetupProof proof) {
+    return begin(request, owner, proof, false);
+  }
+
+  private Pending begin(
+      HttpServletRequest request,
+      TwoFactorAuthorization.Owner owner,
+      SetupProof proof,
+      boolean passwordLogin) {
     if (!secrets.available()) {
       throw new IllegalStateException("TOTP encryption key is not configured");
     }
@@ -231,6 +259,12 @@ public class TwoFactorEnrollment {
         owner.accessVersion(),
         account -> {
           requireNoFactor(account);
+          if (passwordLogin
+              && (!canBeginFromPasswordLogin(request)
+                  || account.isPreviouslyEnrolled()
+                  || account.isOperatorEnrollment())) {
+            throw new AccessDeniedException("Initial enrollment changed");
+          }
           if (proof == SetupProof.OPERATOR && !account.isOperatorEnrollment()) {
             throw new AccessDeniedException("Operator enrollment is not permitted");
           }

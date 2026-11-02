@@ -36,6 +36,55 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   @TempDir Path profile;
 
   @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName(
+      "MFA-17: Verpflichtender Einstieg A nutzt die frische Passwortanmeldung ohne zweite Abfrage")
+  void requiredIntroductionReusesFreshPasswordWithoutGrantingPortalAccess(int width) {
+    LoginPage login = new LoginPage(page);
+    login.open();
+    login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    String email = "intro-mfa-" + UUID.randomUUID() + "@example.test";
+    new AdminUsersPage(page).createUser(email, BrowserTestAccounts.USER_PASSWORD, true, true);
+    try (BrowserActor actor = new BrowserActor(browser)) {
+      actor.page.setViewportSize(width, 900);
+      LoginPage fresh = new LoginPage(actor.page);
+      fresh.open();
+      fresh.signInFirstFactor(email, BrowserTestAccounts.USER_PASSWORD);
+      new UserMenu(actor.page).selectTestLanguage();
+      assertThat(actor.page.locator("#two-factor-introduction-title"))
+          .hasText(texts.getTwoFactorRequiredTitle());
+      assertThat(actor.page.locator("#two-factor-password")).hasCount(0);
+      assertThat(actor.page.locator("#two-factor-submit")).hasText(texts.getTwoFactorBeginSetup());
+      assertThat(actor.page.locator("#two-factor-cancel")).hasText(texts.getBaseLogoutButton());
+      assertTrue(
+          (Boolean)
+              actor
+                  .page
+                  .locator(".two-factor-introduction-art")
+                  .evaluate("image => image.complete && image.naturalWidth > 0"));
+      assertTrue(
+          (Boolean)
+              actor.page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"));
+      AllurePlaywright.attachScreenshot(
+          "Vaadin: verpflichtender Einstieg A bei " + width + "px", actor.page);
+      actor.page.locator("#two-factor-cancel").click();
+      assertThat(actor.page).hasURL(Pattern.compile(".*/login$"));
+      actor.page.navigate("/home");
+      assertThat(actor.page).hasURL(Pattern.compile(".*/login.*"));
+      fresh.signInFirstFactor(email, BrowserTestAccounts.USER_PASSWORD);
+      actor.page.reload();
+      assertThat(actor.page.locator("#two-factor-introduction-title")).isVisible();
+      actor.page.navigate("/admin");
+      assertThat(actor.page).hasURL(Pattern.compile(".*/two-factor.*"));
+      actor.page.locator("#two-factor-submit").click();
+      assertThat(actor.page.locator("#two-factor-qr")).isVisible();
+      assertThat(actor.page.locator("#two-factor-password")).hasCount(0);
+      TwoFactorPage.enrollCurrent(actor.page, email);
+      assertThat(actor.page).hasURL(Pattern.compile(".*/admin$"));
+    }
+  }
+
+  @ParameterizedTest
   @CsvSource({
     "password,1280",
     "password,390",
@@ -320,6 +369,13 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         Path.of("docs/design/frontend-referenzen/public.html").toAbsolutePath().toUri()
             + "#public-two-factor");
     assertThat(page.locator("#public-two-factor")).isVisible();
+    assertThat(page.locator(".mfa-introduction")).isVisible();
+    assertThat(page.locator(".two-factor-introduction-title"))
+        .hasText(new UiTexts("de").getTwoFactorRequiredTitle());
+    AllurePlaywright.attachScreenshot("HTML: verpflichtende Ersteinrichtung Variante A", page);
+    page.locator("[data-mfa-continue]").click();
+    assertThat(page.locator(".mfa-qr-placeholder")).isVisible();
+    page.locator("[data-mfa-phase=confirm]").click();
     page.locator("[data-mfa-go=recover]").click();
     assertThat(page.locator("[data-mfa-phase-content]")).hasAttribute("data-phase", "recover");
     assertThat(page.locator("[data-mfa-phase-content]"))

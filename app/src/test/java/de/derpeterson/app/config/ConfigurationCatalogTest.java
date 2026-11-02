@@ -67,8 +67,14 @@ class ConfigurationCatalogTest {
     assertThrows(IllegalArgumentException.class, () -> ProviderField.SECRET.property("unknown"));
   }
 
-  @Test
-  void startupOnlySecretsNeverBecomeGeneralDatabaseEntriesAndMappingsResolve() throws Exception {
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "APP_SECURITY_TOTP_ENCRYPTION_KEY",
+        "APP_SECURITY_PROVIDER_SECRETS_ENCRYPTION_KEY"
+      })
+  void startupOnlySecretsNeverBecomeGeneralDatabaseEntriesAndMappingsResolve(String variable)
+      throws Exception {
     MockEnvironment environment = new MockEnvironment();
     environment
         .getPropertySources()
@@ -85,7 +91,7 @@ class ConfigurationCatalogTest {
             .filter(
                 entry ->
                     entry.environmentVariable() != null
-                        && entry.environmentVariable().equals("APP_SECURITY_TOTP_ENCRYPTION_KEY"))
+                        && entry.environmentVariable().equals(variable))
             .findFirst()
             .orElseThrow();
     assertTrue(encryption.secret());

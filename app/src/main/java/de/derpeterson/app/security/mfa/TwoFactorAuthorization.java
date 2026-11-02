@@ -19,6 +19,8 @@ import java.util.UUID;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.FactorGrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -139,6 +141,30 @@ public class TwoFactorAuthorization {
   public boolean requires(HttpServletRequest request, TwoFactorAction action) {
     Owner owner = owner(request);
     return required(owner, state(owner), policies.current(), action);
+  }
+
+  /** Nur der echte Passwortnachweis der gebundenen Sitzung, höchstens fünf Minuten alt. */
+  public boolean hasFreshPasswordLogin(HttpServletRequest request) {
+    Owner owner = owner(request);
+    Instant now = clock.instant();
+    return owner.hasPassword()
+        && security
+            .getObject()
+            .refreshSessionAuthentication(request.getSession(false))
+            .filter(UsernamePasswordAuthenticationToken.class::isInstance)
+            .filter(
+                authentication ->
+                    authentication.isAuthenticated()
+                        && authentication.getName().equals(owner.email()))
+            .stream()
+            .flatMap(authentication -> authentication.getAuthorities().stream())
+            .filter(FactorGrantedAuthority.class::isInstance)
+            .map(FactorGrantedAuthority.class::cast)
+            .anyMatch(
+                factor ->
+                    FactorGrantedAuthority.PASSWORD_AUTHORITY.equals(factor.getAuthority())
+                        && !factor.getIssuedAt().isAfter(now)
+                        && factor.getIssuedAt().plusSeconds(300).isAfter(now));
   }
 
   private boolean required(

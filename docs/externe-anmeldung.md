@@ -23,9 +23,32 @@ Bestehende Portalsitzungen bleiben erhalten. Nach Deaktivierung benötigen betro
 Benutzer einen anderen Anmeldeweg. Laufende Anbieteranfragen mit zwischenzeitlich
 geänderten Einstellungen müssen neu gestartet werden. Veraltete parallele
 Adminformulare dürfen neuere Einstellungen nicht überschreiben.
-Die Zugangsdaten werden wie die vorhandene SMTP-Konfiguration serverseitig in
-der lokalen Datenbank gespeichert. Die Administration prüft vor Lesen und Speichern
-frische Superadminrechte. Endpunktadressen sind nicht über die Oberfläche änderbar.
+Client-Secrets werden mit AES-256-GCM und zufälliger Nonce in
+`external_providers.encrypted_client_secret` gespeichert. Die Verschlüsselung ist
+an den jeweiligen Anbieter gebunden. Client-IDs bleiben lesbar. Die Administration
+prüft vor Lesen und Speichern frische Superadminrechte. Endpunktadressen sind nicht
+über die Oberfläche änderbar. Entschlüsselte Secrets bleiben serverseitig und werden
+nicht ins Formular, in UI-Sitzungen oder in Fehlermeldungen übernommen.
+
+Vor dem Hinterlegen von Secrets den eigenen Startschlüssel
+`APP_SECURITY_PROVIDER_SECRETS_ENCRYPTION_KEY` in der `.env` setzen.
+Er besteht aus 32 zufälligen Bytes als Base64. In PowerShell 7 einmalig erzeugen:
+
+```powershell
+[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+```
+
+Einen anderen Schlüssel als für TOTP verwenden. Er bleibt dauerhaft gleich und
+wird getrennt von Datenbank und Repository gesichert. Ohne Schlüssel sind nur
+Anbieter ohne hinterlegtes Secret möglich. Fehlender/falscher Schlüssel oder
+beschädigte gespeicherte Secrets führen zu einem Fehler, beim Start zum Abbruch.
+Es gibt keinen Klartext-Fallback und keinen Ersatz durch Startvorgaben. Ohne den
+ursprünglichen Schlüssel sind gespeicherte Secrets nicht wiederherstellbar.
+
+Das aktuelle Entwicklungsschema enthält ausschließlich die verschlüsselte Spalte.
+Eine ältere lokale Datenbank muss zurückgesetzt und anschließend neu eingerichtet
+werden. Es gibt keinen automatischen Umbau alter Klartextbestände. Vorhandene
+Klartextkopien und alte Datenbankexporte werden durch diese Änderung nicht verändert.
 
 Die folgenden Startvorgaben sind optional. Beim Start legt die Anwendung fehlende
 Anbieterzeilen in `external_providers` mit diesen Werten an. Vorhandene Zeilen

@@ -4,6 +4,22 @@
   const symbol = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/></svg>';
   const notify = text => window.PublicNotifications?.show(text,'normal','',4000);
   const renderPhase = (root, phase) => {
+    const isPublic = root.hasAttribute('data-mfa-phase-content');
+    if (isPublic) {
+      root.closest('.vp-card').classList.toggle('mfa-introduction', phase === 'intro');
+      const english = document.querySelector('[data-menu-language="en"][aria-pressed="true"]');
+      const action = document.querySelector('#public-two-factor [data-mfa-continue]');
+      action.innerHTML = phase === 'intro'
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></svg><span>' + (english ? 'Set up' : 'Einrichten') + '</span>'
+        : '<span>Bestätigen</span>';
+      const cancel = document.querySelector('#public-two-factor .vp-card-foot a');
+      cancel.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9"/></svg><span>' + (phase === 'intro' && english ? 'Sign out' : 'Abmelden') + '</span>';
+      if (phase === 'intro') {
+        root.innerHTML = '<img class="two-factor-introduction-art" src="assets/two-factor-locks.svg" alt=""><h2 class="two-factor-introduction-title">' + (english ? 'Two-factor authentication required' : 'Zwei-Faktor-Authentifizierung erforderlich') + '</h2><p class="portal-copy">' + (english ? 'Your account requires additional protection. Connect an authenticator app now to continue using the application.' : 'Für Ihr Konto ist eine zusätzliche Absicherung erforderlich. Verbinden Sie jetzt eine Authenticator-App, um die Anwendung weiter zu nutzen.') + '</p>';
+        root.dataset.phase = phase;
+        return;
+      }
+    }
     const contents = {
       confirm: '<p class="portal-copy">Bestätigen Sie Ihre Anmeldung mit einem Code Ihrer Authenticator-App oder einem noch unbenutzten Ersatzcode.</p><label>Bestätigungscode •<input autocomplete="off" placeholder="Code eingeben"></label><div class="mfa-phase-buttons"><button type="button" class="portal-button" data-mfa-go="recover">Authenticator wiederherstellen</button><button type="button" class="portal-button" data-mfa-go="help">Kein Zugriff auf Authenticator oder Ersatzcodes?</button></div>',
       recover: '<p class="portal-copy">Verwenden Sie einen unbenutzten Ersatzcode, um einen neuen Authenticator einzurichten. Ihr bisheriger Faktor bleibt bis zur Bestätigung der neuen App gültig. Der Ersatzcode wird erst beim erfolgreichen Wechsel verbraucht.</p><label>Ersatzcode •<input autocomplete="off" placeholder="Code eingeben"></label><div class="mfa-phase-buttons"><button type="button" class="portal-button" data-mfa-go="confirm">Zur Code-Abfrage</button></div>',
@@ -24,11 +40,14 @@
     document.querySelectorAll('#public-two-factor [data-mfa-phase]').forEach(button=>button.addEventListener('click',()=>renderPhase(publicPhase,button.dataset.mfaPhase)));
     publicPhase.addEventListener('click',event=>{const control=event.target.closest('[data-mfa-go]');if(control){renderPhase(publicPhase,control.dataset.mfaGo);}});
     document.querySelector('#public-two-factor [data-mfa-continue]').addEventListener('click',()=>{
-      const next={setup:'qr',recover:'qr',email:'qr',qr:'codes',codes:'confirm',help:'help',confirm:'confirm'};
+      const next={intro:'qr',setup:'qr',recover:'qr',email:'qr',qr:'codes',codes:'confirm',help:'help',confirm:'confirm'};
       renderPhase(publicPhase,next[publicPhase.dataset.phase]);
       notify('Gestaltungsvorschau: Es wurde keine Anmeldung oder Kontoänderung ausgeführt.');
     });
-    renderPhase(publicPhase,'confirm');
+    document.querySelectorAll('[data-menu-language]').forEach(button => button.addEventListener('click', () => {
+      if (publicPhase.dataset.phase === 'intro') { renderPhase(publicPhase, 'intro'); }
+    }));
+    renderPhase(publicPhase,'intro');
   }
   const portal = document.querySelector('#security-portal .portal-card-body');
   if(portal){
