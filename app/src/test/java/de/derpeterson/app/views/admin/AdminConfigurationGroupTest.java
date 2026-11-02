@@ -448,7 +448,7 @@ class AdminConfigurationGroupTest {
     AdminSidePanel panel = (AdminSidePanel) ReflectionTestUtils.getField(section, "helpPanel");
     int checkedFields = 0;
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
-      if (group == AdminConfigGroup.EXTERNAL_LOGIN) {
+      if (group.isSuperadminOnly()) {
         // Anbieter haben ein eigenes Panel ohne die generischen ConfigEntry-Feldhilfen.
         continue;
       }

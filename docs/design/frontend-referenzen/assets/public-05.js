@@ -6,7 +6,7 @@
   rememberSwitch.addEventListener('change', () => {
     try { localStorage.setItem('preview-login-remember-choice', String(rememberSwitch.checked)); } catch (_) { /* Der Schalter bleibt auch ohne Speicherung bedienbar. */ }
   });
-  const allowed = ['home','login','register','forgot','reset','verification','email-confirm','recovery','maintenance'];
+  const allowed = ['home','login','register','forgot','reset','verification','email-confirm','recovery','maintenance','two-factor'];
   let page = 'home';
   const notify = (text, severity='normal', title='', duration=3000) => window.PublicNotifications.show(text,severity,title,duration);
   const icon = name => byId('vp-symbols').content.querySelector(`[data-symbol="${name}"]`).innerHTML;

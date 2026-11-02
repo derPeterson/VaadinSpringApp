@@ -33,8 +33,8 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
  *       gewünschten Mailprogramm ansehen. Jeder aktivierte Start versendet die Beispiele erneut.
  * </ol>
  *
- * <p>Sprachen: {@code de}, {@code en} oder {@code de,en} (Standard). Eine Sprache ergibt sieben
- * Mails, beide ergeben 13. Enthalten sind alle fünf HTML-Vorlagen, die lokalisierte Admin-Testmail
+ * <p>Sprachen: {@code de}, {@code en} oder {@code de,en} (Standard). Eine Sprache ergibt acht
+ * Mails, beide ergeben 15. Enthalten sind alle sechs HTML-Vorlagen, die lokalisierte Admin-Testmail
  * und einmal der technische, auch in der Anwendung englische Klartext-Fehlerhinweis.
  *
  * <p>SMTP gemäß Anbieter konfigurieren: Standard ist Port 587 mit {@code starttls}; bei direktem

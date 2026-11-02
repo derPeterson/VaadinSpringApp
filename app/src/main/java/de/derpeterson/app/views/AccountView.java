@@ -51,6 +51,16 @@ import java.util.function.Supplier;
 public class AccountView extends IsAuthenticatedBaseView implements AfterNavigationObserver {
   private final AccountSettingsComponent accountSettings;
 
+  @org.springframework.beans.factory.annotation.Autowired
+  void configureTwoFactor(
+      de.derpeterson.app.security.mfa.TwoFactorAuthorization authorization,
+      de.derpeterson.app.security.mfa.TwoFactorManagement management,
+      HttpServletRequest request) {
+    accountSettings.configureTwoFactor(
+        new de.derpeterson.app.ui.components.TwoFactorAccountComponent(
+            messageProperties, authorization, management, request));
+  }
+
   public AccountView(
       MessageProperties messages,
       SecurityService security,

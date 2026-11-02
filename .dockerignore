@@ -24,6 +24,12 @@ app/*
 !browser-tests/
 browser-tests/*
 !browser-tests/pom.xml
+# Der Sicherheitstest führt genau die dokumentierte Betreiberanleitung aus.
+!docs/
+docs/*
+!docs/betrieb/
+docs/betrieb/*
+!docs/betrieb/2fa-notfall.md
 app/src/main/frontend/generated/
 app/src/main/bundles/
 **/.env*

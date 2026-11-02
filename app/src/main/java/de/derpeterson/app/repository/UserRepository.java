@@ -23,6 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLockRepository {
 
+  @Query(
+      "select distinct u from UserEntity u join u.roleEntities r where u.enabled = true and u.verificationPending = false and r.name in (de.derpeterson.app.model.enums.RoleType.ROLE_ADMIN, de.derpeterson.app.model.enums.RoleType.ROLE_SUPERADMIN)")
+  List<UserEntity> findEnabledAdministrators();
+
   default Optional<UserEntity> findByEmail(String email) {
     return findByCanonicalEmail(EmailIdentity.canonicalize(email));
   }
@@ -76,6 +80,27 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
 
     RoleType getRole();
   }
+
+  interface TwoFactorAccessRow {
+    Long getId();
+
+    String getEmail();
+
+    String getAccessVersion();
+
+    boolean getEnabled();
+
+    boolean getVerificationPending();
+
+    boolean getHasPassword();
+
+    RoleType getRole();
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+  @Query(
+      "select u.id as id, u.email as email, u.accessVersion as accessVersion, u.enabled as enabled, u.verificationPending as verificationPending, (u.password is not null) as hasPassword, r.name as role from UserEntity u left join u.roleEntities r where u.email = :email")
+  List<TwoFactorAccessRow> findTwoFactorAccess(String email);
 
   // Scalar projections bypass stale managed entities/collections (including
   // OSIV). An independent read sees committed privileges, not pending edits.

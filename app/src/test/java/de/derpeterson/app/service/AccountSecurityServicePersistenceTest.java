@@ -123,6 +123,13 @@ class AccountSecurityServicePersistenceTest {
   })
   static class Config {
     @Bean
+    de.derpeterson.app.security.mfa.TwoFactorAuthorization twoFactorAuthorization() {
+      // Diese Fälle prüfen die vorhandenen Konto-/Mailtransaktionen. Die echten MFA-Grenzen
+      // werden mit Datenbank und aktueller Regelmatrix separat geprüft.
+      return mock(de.derpeterson.app.security.mfa.TwoFactorAuthorization.class);
+    }
+
+    @Bean
     ConfigService config() {
       ConfigService config = mock(ConfigService.class);
       when(config.getString(any()))

@@ -21,6 +21,7 @@ import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableRunnable;
 import com.vaadin.flow.server.VaadinSession;
@@ -33,8 +34,11 @@ import de.derpeterson.app.security.ExternalLoginFlow.Purpose;
 import de.derpeterson.app.service.ExternalIdentityService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.LockedException;
 
 /** Bestätigt genau die angeforderte Kontoaktion; die Fachaktion prüft den Nachweis erneut. */
 public final class ExternalIdentityConfirmationDialog extends Dialog {
@@ -50,10 +54,12 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
   private final Span explanation = new Span();
   private final Span ready = new Span();
   private final PasswordField password = new PasswordField();
+  private final TextField factor = new TextField();
   private final Span separator = new Span();
   private final Div alternatives = new Div();
   private final Div note = new Div();
   private final Span warning = new Span();
+  private final Span developmentWarning = new Span();
   private final Button cancel = new Button();
   private final Button close = new Button(AppIcon.CLOSE_CIRCLE.create());
   private final Button confirm = new Button();
@@ -72,7 +78,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     setId("external-identity-dialog");
     addClassNames(
         "cosmos-theme", REFERENCE_OVERLAY, "account-change-dialog", "external-identity-dialog");
-    getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
+    getThemeNames().addAll(List.of("cosmos", "cosmos-reference"));
     setModality(ModalityMode.STRICT);
     setCloseOnEsc(true);
     setCloseOnOutsideClick(true);
@@ -92,6 +98,12 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     password.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
     password.setManualValidation(true);
     password.setValueChangeMode(ValueChangeMode.EAGER);
+    factor.setId("external-confirm-factor");
+    factor.setWidthFull();
+    factor.setMaxLength(35);
+    factor.setManualValidation(true);
+    factor.setValueChangeMode(ValueChangeMode.EAGER);
+    factor.getElement().setAttribute("autocomplete", "one-time-code");
     separator.addClassName("external-proof-separator");
     alternatives.addClassName("external-proof-alternatives");
     explanation.addClassName(PANEL_DESCRIPTION);
@@ -99,7 +111,17 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     ready.addClassName("external-proof-ready");
     note.add(AppIcon.INFO_CIRCLE.create(), warning);
     note.addClassName("cosmos-panel-hint");
-    Div body = new Div(explanation, ready, password, separator, alternatives, note);
+    developmentWarning.addClassName("cosmos-panel-description");
+    Div body =
+        new Div(
+            explanation,
+            ready,
+            password,
+            factor,
+            separator,
+            alternatives,
+            note,
+            developmentWarning);
     body.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
     add(body);
     cancel.setPrefixComponent(AppIcon.CLOSE.create());
@@ -116,6 +138,8 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
           if (!event.isOpened()) {
             password.clear();
             password.setInvalid(false);
+            factor.clear();
+            factor.setInvalid(false);
             purpose = null;
             action = null;
           }
@@ -137,21 +161,29 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     }
     boolean confirmed = flow.confirmedPurpose(request).filter(purpose::equals).isPresent();
     boolean hasPassword = flow.owner(request).getPassword() != null;
+    boolean needsFactor = flow.requiresFactor(request, purpose);
+    developmentWarning.setText(texts.getTwoFactorDevelopmentWarning());
+    developmentWarning.setVisible(flow.developmentExceptionActive());
     refreshHeader();
-    explanation.setText(texts.getExternalProofHint());
+    explanation.setText(
+        needsFactor ? texts.getTwoFactorActionHint() : texts.getExternalProofHint());
     ready.setText(texts.getExternalProofReady());
     ready.setVisible(confirmed);
     password.setLabel(texts.getAccountPasswordDialogCurrentPassword());
     password.setPlaceholder(texts.getAccountPasswordPlaceholder());
-    password.setVisible(hasPassword && !confirmed);
+    password.setVisible(hasPassword && !confirmed && !needsFactor);
     password.setRequiredIndicatorVisible(password.isVisible());
+    factor.setLabel(texts.getTwoFactorCodeLabel());
+    factor.setPlaceholder(texts.getTwoFactorCodePlaceholder());
+    factor.setVisible(needsFactor && !confirmed);
+    factor.setRequiredIndicatorVisible(factor.isVisible());
     refreshAlternatives(confirmed);
-    if (!confirmed && !hasPassword && !alternatives.isVisible()) {
+    if (!confirmed && !hasPassword && !alternatives.isVisible() && !needsFactor) {
       explanation.setText(texts.getExternalProofUnavailable());
     }
     separator.setText(texts.getExternalOr());
     separator.setVisible(password.isVisible() && alternatives.isVisible());
-    refreshActions(confirmed || hasPassword);
+    refreshActions(confirmed || hasPassword || needsFactor);
   }
 
   private void refreshHeader() {
@@ -183,7 +215,8 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     alternatives.removeAll();
     if (!confirmed) {
       for (String provider : identities.connected(flow.owner(request).getId())) {
-        if (flow.providers().contains(provider)) {
+        if (flow.providers().contains(provider)
+            && flow.canUseProviderProof(request, provider, purpose)) {
           Button proof = new Button(texts.getExternalProofWith(brand(provider)));
           proof.setId("external-confirm-" + provider);
           Image mark =
@@ -227,13 +260,34 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     }
     try {
       if (flow.confirmedPurpose(request).filter(purpose::equals).isEmpty()) {
-        if (!password.isVisible()) {
-          showExternalFailure();
-          refreshTexts();
-          return;
-        }
-        if (!confirmPassword()) {
-          return;
+        if (factor.isVisible()) {
+          if (!ValidationHelper.validateRequiredInputs(List.of(factor), texts)) {
+            return;
+          }
+          try {
+            flow.confirmFactor(request, factor.getValue(), purpose);
+          } catch (RuntimeException failure) {
+            factor.setInvalid(true);
+            NotificationHelper.getInstance()
+                .showNotification(
+                    texts::getBaseFailedTitle,
+                    failure instanceof LockedException
+                        ? texts::getTwoFactorThrottled
+                        : failure instanceof BadCredentialsException
+                            ? texts::getTwoFactorInvalidCode
+                            : texts::getTwoFactorFailed,
+                    NotificationHelper.NotificationType.ERROR);
+            return;
+          }
+        } else {
+          if (!password.isVisible()) {
+            showExternalFailure();
+            refreshTexts();
+            return;
+          }
+          if (!confirmPassword()) {
+            return;
+          }
         }
       }
       action.run();
@@ -243,11 +297,12 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
       refreshTexts();
     } finally {
       password.clear();
+      factor.clear();
     }
   }
 
   private boolean confirmPassword() {
-    if (!ValidationHelper.validateRequiredInputs(java.util.List.of(password), texts)) {
+    if (!ValidationHelper.validateRequiredInputs(List.of(password), texts)) {
       return false;
     }
     try {
@@ -311,6 +366,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
       case LINK_MICROSOFT -> texts.getExternalConnect(MICROSOFT_NAME);
       case UNLINK_GOOGLE -> texts.getExternalDisconnect(GOOGLE_NAME);
       case UNLINK_MICROSOFT -> texts.getExternalDisconnect(MICROSOFT_NAME);
+      case ENROLL_FACTOR -> throw new IllegalArgumentException("Enrollment has its own view");
     };
   }
 

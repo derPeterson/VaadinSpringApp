@@ -50,7 +50,12 @@ public final class PersistentBrowserActor implements AutoCloseable {
     page.navigate(path(HOME_ROUTE));
     assertThat(page).hasURL(urlPattern(expectedRoute));
     assertThat(page)
-        .hasTitle(expectedRoute.equals(LOGIN_ROUTE) ? LOGIN_PAGE_TITLE : HOME_PAGE_TITLE);
+        .hasTitle(
+            expectedRoute.equals(LOGIN_ROUTE)
+                ? LOGIN_PAGE_TITLE
+                : expectedRoute.equals("two-factor")
+                    ? texts.getTwoFactorPageTitle()
+                    : HOME_PAGE_TITLE);
     if (expectedRoute.equals(HOME_ROUTE)) {
       new UserMenu(page).selectTestLanguage();
     }

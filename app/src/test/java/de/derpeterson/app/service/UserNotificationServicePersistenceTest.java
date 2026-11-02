@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
@@ -32,6 +34,7 @@ import de.derpeterson.app.scheduler.UserNotificationCleanup;
 import de.derpeterson.app.security.CustomUserDetailsService;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SessionAdmissionService;
+import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.service.UserNotificationService.Item;
 import de.derpeterson.app.service.UserNotificationService.Preview;
 import de.derpeterson.app.service.UserNotificationService.Problem;
@@ -98,6 +101,11 @@ class UserNotificationServicePersistenceTest {
   })
   static class Config {
     @Bean
+    TwoFactorAuthorization twoFactorAuthorization() {
+      return mock(TwoFactorAuthorization.class);
+    }
+
+    @Bean
     ConfigService config() {
       return mock(ConfigService.class);
     }
@@ -127,6 +135,7 @@ class UserNotificationServicePersistenceTest {
   @Autowired TransactionTemplate tx;
   @Autowired SessionRegistryImpl registry;
   @Autowired ConfigService config;
+  @Autowired TwoFactorAuthorization twoFactor;
   @PersistenceContext EntityManager em;
   UserEntity sender, ordinary, guest, disabled, pending;
   MockHttpSession adminSession, userSession;
@@ -134,7 +143,7 @@ class UserNotificationServicePersistenceTest {
 
   @BeforeEach
   void seed() {
-    reset(config);
+    reset(config, twoFactor);
     when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("180");
     when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS)).thenReturn("365");
     tx.executeWithoutResult(
@@ -164,6 +173,22 @@ class UserNotificationServicePersistenceTest {
     subscriptions.forEach(com.vaadin.flow.shared.Registration::remove);
     subscriptions.clear();
     SecurityContextHolder.clearContext();
+  }
+
+  @Test
+  void notificationReadsAndChangesStopWhenTheSessionFactorExpires() {
+    assertDoesNotThrow(() -> service.unreadCount(userSession));
+    doThrow(new AccessDeniedException("Second factor expired"))
+        .when(twoFactor)
+        .requireSession(userSession);
+    assertThrows(AccessDeniedException.class, () -> service.unreadCount(userSession));
+    assertThrows(
+        AccessDeniedException.class, () -> service.inbox(userSession, ReadFilter.ALL, 0, 5));
+    assertThrows(AccessDeniedException.class, () -> service.ownerId(userSession));
+    assertThrows(AccessDeniedException.class, () -> service.markRead(userSession, List.of(1L)));
+    assertThrows(AccessDeniedException.class, () -> service.dismiss(userSession, 1L));
+    doNothing().when(twoFactor).requireSession(userSession);
+    assertDoesNotThrow(() -> service.unreadCount(userSession));
   }
 
   UserEntity create(String name, RoleType type, boolean enabled) {

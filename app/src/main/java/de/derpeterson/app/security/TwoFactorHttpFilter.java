@@ -1,0 +1,120 @@
+package de.derpeterson.app.security;
+
+import com.vaadin.flow.server.VaadinService;
+import de.derpeterson.app.config.AppRouteConstants;
+import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
+import de.derpeterson.app.security.mfa.TwoFactorDocuments;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Set;
+
+/** Schützt auch alte Ansichten und Remember-me-Sitzungen vor dem Servlet-/RPC-Aufruf. */
+public final class TwoFactorHttpFilter implements Filter {
+  private final SecurityService security;
+  private final TwoFactorAuthorization authorization;
+
+  public TwoFactorHttpFilter(SecurityService security, TwoFactorAuthorization authorization) {
+    this.security = security;
+    this.authorization = authorization;
+  }
+
+  @Override
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+      throws IOException, ServletException {
+    HttpServletRequest http = (HttpServletRequest) request;
+    HttpServletResponse reply = (HttpServletResponse) response;
+    if (security.getAuthenticatedUser(http).isEmpty()) {
+      chain.doFilter(request, response);
+      return;
+    }
+    String path = http.getServletPath();
+    String type = http.getParameter("v-r");
+    boolean protocol =
+        "uidl".equals(type)
+            || "push".equals(type)
+            || "/VAADIN/uidl".equals(path)
+            || "/VAADIN/push".equals(path);
+    boolean confirmed =
+        authorization.sessionConfirmed(http)
+            && (!("/admin".equals(path) || protocol && TwoFactorTransport.administrativeUi(http))
+                || authorization.administrationConfirmed(http));
+    if (protocol) {
+      if (serviceEndpoint(path) && (confirmed || TwoFactorTransport.allowedUi(http))) {
+        chain.doFilter(request, response);
+      } else {
+        reply.setContentType("application/json;charset=UTF-8");
+        reply.setHeader("Cache-Control", "no-store");
+        reply
+            .getWriter()
+            .write(
+                VaadinService.createCriticalNotificationJSON(
+                    null, null, null, TwoFactorTransport.destination(http)));
+      }
+      return;
+    }
+    if (confirmed || permitted(http, path, type)) {
+      chain.doFilter(request, response);
+      return;
+    }
+    reply.setHeader("Cache-Control", "no-store");
+    if (type == null && "GET".equals(http.getMethod())) {
+      reply.sendRedirect(TwoFactorTransport.destination(http));
+    } else {
+      reply.sendError(HttpServletResponse.SC_FORBIDDEN);
+    }
+  }
+
+  private boolean permitted(HttpServletRequest request, String path, String type) {
+    if (serviceEndpoint(path) && ("init".equals(type) || "heartbeat".equals(type))) {
+      return true;
+    }
+    return type == null
+        && (AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE.equals(path)
+            || "/recovery-help".equals(path)
+            || "/logout".equals(path)
+            || "/login".equals(path)
+            || path.startsWith("/oauth2/authorization/")
+            || path.startsWith("/login/oauth2/code/")
+            || path.startsWith(TwoFactorDocuments.PATH + "/")
+            || ("GET".equals(request.getMethod()) || "HEAD".equals(request.getMethod()))
+                && resource(path));
+  }
+
+  private boolean serviceEndpoint(String path) {
+    return path.isEmpty()
+        || "/".equals(path)
+        || "/VAADIN/uidl".equals(path)
+        || "/VAADIN/push".equals(path);
+  }
+
+  private boolean resource(String path) {
+    if (path.startsWith("/VAADIN/dynamic/")) {
+      return false;
+    }
+    return Set.of(
+                "/VAADIN/",
+                "/themes/",
+                "/custom-theme/",
+                "/lumo/",
+                "/frontend/",
+                "/icons/",
+                "/images/",
+                "/webjars/")
+            .stream()
+            .anyMatch(path::startsWith)
+        || Set.of(
+                "/favicon.ico",
+                "/manifest.webmanifest",
+                "/sw.js",
+                "/sw-runtime-resources-precache.js",
+                "/offline.html",
+                "/error")
+            .contains(path);
+  }
+}

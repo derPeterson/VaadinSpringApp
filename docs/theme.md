@@ -1122,3 +1122,25 @@ Sprachnamen unter „Bevorzugte Sprache“ folgen der aktuellen Oberflächenspra
 DE „Deutsch/Englisch“, EN „German/English“. Die gespeicherte Locale bleibt unverändert.
 Beim Sprachwechsel wird auch der native Beschriftungsgeber neu gesetzt, damit
 Vaadin den bereits ausgewählten Feldwert ebenso aktualisiert wie die Auswahlliste.
+
+## Zwei-Faktor-Bereiche
+
+Die neue 2FA-Oberfläche verwendet `AccountPanelComponent`, native Vaadin-Eingaben,
+Buttons, `Badge`, `TabSheet`, `Select`, `Switch`, `Grid` und die bestehenden Cosmos-
+Bestätigungsdialoge. Die Kontoverwaltung liegt im Tab „Portalzugang“. Einrichtung
+und eingeschränkte Anmeldung verwenden den öffentlichen Seitenrahmen. Kurzlebige
+QR-/Code-Dokumente werden geschützt eingebettet, Geheimnisse nicht als Flow-Komponenten-
+Werte im dauerhaften Sitzungszustand gehalten.
+
+`cosmos-mfa.css` begrenzt die neue Gestaltung auf `.two-factor-view`,
+`.cosmos-mfa-settings` und `.two-factor-account-entry`. Panel-, Button- und
+Eingabestandards bleiben unverändert. Das Einrichtungs-/Anmeldepanel ist höchstens
+640 px breit. Der Rollenbereich übernimmt die bestehende Anbietertabform, stellt
+Regeln zweispaltig dar und wechselt unter 650 px auf eine Spalte. Neue lokale
+Details bleiben bis zur gemeinsamen Designabnahme lokal.
+
+`cosmos-mfa-document.css` gestaltet ausschließlich die geschützte, einmalige
+Ersatzcodeausgabe. Die druckbare PDF verwendet eine eigene Classpath-HTML-/CSS-
+Vorlage unter `pdf/`, das vorhandene Service-Logo und einen hellen Druckhintergrund.
+Die drei HTML-Momentaufnahmen bilden die neuen Bereiche synthetisch über
+`mfa-reference.css` und `mfa-reference.js` ab. Sie erzeugen keine echten Faktoren.

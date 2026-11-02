@@ -36,6 +36,8 @@ public class AccountPasswordChangeDialog extends Dialog {
   private final H2 title = new H2();
   private final Span description = new Span();
   private final Span hint = new Span();
+  private final Span developmentWarning = new Span();
+  private transient BooleanSupplier developmentException = () -> false;
   private final PasswordField currentPassword = new PasswordField();
   private transient BooleanSupplier currentPasswordRequired = () -> true;
   private final PasswordField confirmPassword = new PasswordField();
@@ -95,7 +97,9 @@ public class AccountPasswordChangeDialog extends Dialog {
     infoIcon.getElement().setAttribute("aria-hidden", "true");
     Div info = new Div(infoIcon, hint);
     info.addClassName("cosmos-panel-hint");
-    Div form = new Div(newPassword, confirmPassword, currentPassword, info);
+    developmentWarning.addClassName(PANEL_DESCRIPTION);
+    developmentWarning.setVisible(false);
+    Div form = new Div(newPassword, confirmPassword, currentPassword, info, developmentWarning);
     form.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
     add(form);
 
@@ -124,6 +128,10 @@ public class AccountPasswordChangeDialog extends Dialog {
 
   public void setCurrentPasswordRequired(BooleanSupplier required) {
     currentPasswordRequired = Objects.requireNonNull(required);
+  }
+
+  public void setDevelopmentWarning(BooleanSupplier active) {
+    developmentException = Objects.requireNonNull(active);
   }
 
   private void submit() {
@@ -164,6 +172,8 @@ public class AccountPasswordChangeDialog extends Dialog {
 
   @Override
   public void open() {
+    developmentWarning.setText(messages.getTwoFactorDevelopmentWarning());
+    developmentWarning.setVisible(developmentException.getAsBoolean());
     boolean required = currentPasswordRequired.getAsBoolean();
     currentPassword.setVisible(required);
     currentPassword.setRequiredIndicatorVisible(required);

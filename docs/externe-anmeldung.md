@@ -6,7 +6,7 @@ private Microsoft-Konten und Firmen-/Schulkonten werden unterstützt.
 
 ## Einrichtung
 
-Unter **Administration → Konfiguration → Anmeldeanbieter** können Administratoren
+Unter **Administration → Konfiguration → Anmeldeanbieter** können ausschließlich Superadmins
 Google und Microsoft getrennt einrichten und aktivieren. Die Oberfläche führt zur
 jeweiligen Anbieterverwaltung, zeigt die aus `BASE_URL` abgeleitete Rücksprungadresse
 zum Kopieren und bietet Client-ID, maskiertes Client-Secret und die Freigabe an.
@@ -25,7 +25,7 @@ geänderten Einstellungen müssen neu gestartet werden. Veraltete parallele
 Adminformulare dürfen neuere Einstellungen nicht überschreiben.
 Die Zugangsdaten werden wie die vorhandene SMTP-Konfiguration serverseitig in
 der lokalen Datenbank gespeichert. Die Administration prüft vor Lesen und Speichern
-frische Administratorrechte. Endpunktadressen sind nicht über die Oberfläche änderbar.
+frische Superadminrechte. Endpunktadressen sind nicht über die Oberfläche änderbar.
 
 Die folgenden Startvorgaben sind optional. Solange für einen Anbieter noch keine
 Einstellung gespeichert wurde, gelten die Werte aus der Serverkonfiguration.
@@ -151,70 +151,46 @@ Eine allgemeine Sicherheitsaktionsauswahl ist nicht erforderlich. Nach Rückkehr
 vom Anbieter wird die gewählte Aktion wieder aufgenommen, eine Trennung aber nie
 automatisch ausgeführt. Der Nachweis ist fünf Minuten gültig, an
 Konto, Sitzung, Zugangsversion und Zweck gebunden und wird bei Verwendung verbraucht.
-Microsoft muss einen frischen `auth_time`-Nachweis liefern. Für Google ist als
-bewusst schwächere Zwischenlösung ein neuer OIDC-Durchlauf mit demselben bereits
-verbundenen Konto freigegeben. Dabei kann eine bestehende Google-Sitzung genügen.
-Die Unterschiede und die geplante 2FA-Ablösung stehen im folgenden Abschnitt.
-Die vorhandene Wiederherstellung über die bestätigte Portaladresse bleibt nutzbar.
-Ein eigenes Portalpasswort kann freiwillig eingerichtet werden.
+Microsoft muss einen frischen `auth_time`-Nachweis liefern. Google allein bestätigt
+im normalen Betrieb keine sensible Kontoaktion. Bei geltender 2FA-Regel sind TOTP
+oder ein einmaliger Ersatzcode notwendig, unabhängig vom ursprünglich verwendeten
+Anmeldeweg. Ein eigenes Portalpasswort bleibt freiwillig.
 
 Auch bei vollständig deaktivierten Anbietern bleiben vorhandene Verbindungen
-in der Kontosicherheit sichtbar. Die Anbieterzeile erklärt, dass der Anmeldeweg
-derzeit nicht verfügbar ist. Ein vorhandenes Portalpasswort kann weiterhin
-Sicherheitsaktionen bestätigen. Ohne Portalpasswort, verfügbaren verbundenen
-Anbieter oder bereits gültigen zweckgebundenen Nachweis bleibt die Aktion
-gesperrt. Statt nach einem nicht vorhandenen Passwort zu fragen, weist die
-Oberfläche auf die fehlende Bestätigungsmöglichkeit und die Administration hin.
-Die letzte nutzbare Anmeldung bleibt geschützt. Die Deaktivierung löscht keine
-Anbieterzuordnung und beendet keine bestehende Portalsitzung.
+sichtbar. Portalpasswort und eingerichtete 2FA bleiben unabhängig nutzbar. Die letzte
+nutzbare Anmeldung darf nicht getrennt werden. Anbieter-Deaktivierung löscht keine
+Zuordnung und beendet keine bereits bestehende Sitzung.
 
-### Google-Zwischenlösung und bekannte Sicherheitsschwäche
+### Google-Bestätigung und geschützte Ersteinrichtung
 
-Google unterstützt laut [Anbieterdokumentation](https://developers.google.com/identity/siwg/security-bundle#authentication_time)
-keine Anforderung einer erneuten aktiven Google-Anmeldung. Kontoauswahl und
-Zustimmung erzwingen keine neue Passwort- oder MFA-Eingabe. Der optionale
-Sitzungsclaim `auth_time` beschreibt die Google-Anmeldung und nicht die Ausgabe
-eines neuen Tokens an unser Portal. Seine Freischaltung löst diese Grenze nicht.
+Ein neuer Google-OIDC-Durchlauf kann eine bestehende Google-Sitzung verwenden und
+beweist keine erneute aktive Passwort- oder MFA-Eingabe. Deshalb wird er im normalen
+Betrieb nicht als Bestätigung einer sensiblen Kontoaktion akzeptiert. Die erneute
+Microsoft-Bestätigung verlangt weiterhin `prompt=login`, `max_age=0` und einen
+frischen `auth_time`. Ein fehlender oder unzulässig alter Zeitpunkt wird abgewiesen.
 
-**Ausdrücklich akzeptierter Übergangsvertrag:** Der Benutzer startet für eine
-konkrete Sicherheitsaktion einen neuen Google-OIDC-Durchlauf. Google zeigt die
-Kontoauswahl und Zustimmung. Nur die signierte Antwort des bereits verbundenen
-Kontos darf die Aktion freigeben. Google benötigt dafür keinen `auth_time`-Claim;
-ein fehlender oder alter Google-Anmeldezeitpunkt wird akzeptiert. Wir fordern
-dafür weder `max_age=0` noch einen zusätzlichen Sitzungsclaim an und geben den
-Token-Ausgabezeitpunkt nicht als aktive Neuanmeldung aus. Die normale externe
-Registrierung benötigt weiterhin kein zusätzliches Portalpasswort.
+Die echte erstmalige Google-2FA-Einrichtung verwendet den erneuten kontogebundenen
+OIDC-Durchlauf, einen begrenzten Einmalcode an die bereits bestätigte Portaladresse
+und den ersten TOTP. Das ausdrücklich akzeptierte Restrisiko gemeinsam übernommener
+Google-/Mailkonten bleibt bestehen. Dieser Weg ersetzt niemals einen bereits
+eingerichteten, entfernten oder verlorenen Faktor. Faktorwechsel und neue Ersatzcodes
+verlangen immer den vorhandenen Faktor oder einen gültigen Ersatzcode.
 
-State, Nonce, PKCE, Signatur-, Issuer-, Audience- und Tokenzeitprüfungen bleiben
-erhalten. Der offene Vorgang ist auf fünf Minuten begrenzt. Konto, Zugangsversion,
-bestehende lokale Anmeldung und freigegebener Anbieter werden erneut geprüft.
-Der Nachweis gilt nur für die gewählte Aktion und Sitzung, höchstens fünf Minuten
-und einmalig. Kontowechsel, Abbruch und ungültige Antworten erlauben keine Änderung.
-Eine Anbietertrennung erfolgt auch nach erfolgreicher Bestätigung nicht automatisch.
+Nur eine gesondert beim Start freigegebene, ausdrücklich eingeschaltete
+Entwicklungsoption erlaubt den früheren schwachen Google-Nachweis für Aktionen ohne
+geltende 2FA-Anforderung. Sie erzeugt keinen zweiten Faktor. Ohne Startfreigabe sind
+auch gespeicherte Ausnahmen wirkungslos. Alle Konto-, Sitzungs-, Zweck-, Versions-,
+Signatur-, State-, Nonce- und PKCE-Prüfungen bleiben erhalten.
 
-**Verbleibendes Risiko:** Wer nur die Portalsitzung besitzt, benötigt zusätzlich
-Zugriff auf das verbundene Google-Konto. Wer dagegen die offene Portal- und
-Google-Sitzung verwenden kann, etwa am unbeaufsichtigten Rechner oder mit beiden
-übernommenen Sitzungen, kann den Durchlauf ohne neue aktive Identitätsprüfung
-abschließen. Diese Lockerung ist als [offene Sicherheitsschwäche](../BUGS.md)
-dokumentiert und kein gleichwertiger Ersatz für eine frische Anmeldung oder 2FA.
-
-**Nächste separate Umsetzung:** Eine sicher eingerichtete Authenticator-Bestätigung
-(TOTP) soll bei Benutzern mit eingerichteter 2FA für sensible Aktionen verbindlich
-werden. Der Google-Durchlauf und das Portalpasswort allein dürfen sie dann nicht
-umgehen. Geschützte Erstregistrierung, Faktorwechsel, Verlust und Wiederherstellung
-gehören dazu. Für bestehende Google-only-Konten muss ein geeigneter Einrichtungsweg
-festgelegt werden. Der [Lösungsplan](planung/zwei-faktor-bestaetigung.md) beschreibt
-die offenen Schritte. 2FA ist derzeit noch nicht implementiert.
-
-Microsoft behält die bisherige strengere Bestätigung: `prompt=login`, `max_age=0`
-und angeforderter `auth_time`-Claim. Ein fehlender Zeitpunkt, ein Zeitpunkt vor
-Beginn des Vorgangs abzüglich fünf Sekunden Uhrtoleranz oder mehr als 30 Sekunden
-in der Zukunft führt zur Ablehnung. Eine Google-Ausnahme gilt niemals für Microsoft.
-Fehlschläge beider Anbieter führen bei bestehender Portalsitzung zur Kontosicherheit
-mit passender Fehlermeldung zurück. Sie starten keine neue Registrierung.
-
+Details zu Einrichtung, Regeln, Wiederherstellung und Grenzen stehen unter
+[Zwei-Faktor-Authentifizierung](zwei-faktor-authentifizierung.md). Die laufende
+Umsetzung und gemeinsame Abnahme stehen im [Plan](planung/zwei-faktor-bestaetigung.md).
+Fehlgeschlagene Bestätigungen kehren zur Kontosicherheit mit passender Meldung zurück,
+sie beginnen keine neue Registrierung.
 ### Welche Kontoaktionen möglich sind
+
+Die folgende Übersicht ergänzt die jeweils geltende 2FA-Regel. Ein eingerichteter Faktor
+und dessen erforderliche Aktionsbestätigung werden durch keinen anderen Anmeldeweg umgangen.
 
 Die ursprüngliche Registrierung bestimmt die Anmeldewege nicht dauerhaft.
 Maßgeblich sind die aktuell gespeicherten und freigegebenen Zugänge.
@@ -222,7 +198,7 @@ Maßgeblich sind die aktuell gespeicherten und freigegebenen Zugänge.
 | Aktueller Zugang | Portalpasswort | Weitere Anbieter | Anbieter trennen |
 | --- | --- | --- | --- |
 | Nur Portalpasswort | Mit aktuellem Passwort ändern. | Google und Microsoft nach Passwortbestätigung verbinden. | Erst nach einer Verbindung relevant. |
-| Nur Google oder nur Microsoft | Freiwillig nach Anbieterbestätigung einrichten. Für Google gilt die dokumentierte Zwischenlösung, für Microsoft der frische Nachweis. | Den anderen Anbieter nach Bestätigung des bestehenden Zugangs verbinden. | Die letzte nutzbare Anmeldung bleibt geschützt. |
+| Nur Google oder nur Microsoft | Freiwillig nach Anbieterbestätigung einrichten. Für Google gilt die geschützte 2FA-Ersteinrichtung, für Microsoft der frische Nachweis. | Den anderen Anbieter nach Bestätigung des bestehenden Zugangs verbinden. | Die letzte nutzbare Anmeldung bleibt geschützt. |
 | Google und Microsoft ohne Portalpasswort | Nach Bestätigung eines verbundenen Anbieters gemäß dessen Nachweisvertrag einrichten. | Beide Verbindungen sind bereits vorhanden. | Möglich, wenn der andere Anbieter weiterhin freigegeben ist. |
 | Portalpasswort und mindestens ein Anbieter | Mit aktuellem Passwort oder Anbieterbestätigung gemäß dessen Nachweisvertrag ändern. | Den noch fehlenden Anbieter bewusst verbinden. | Nach Identitätsbestätigung möglich, das Portalpasswort bleibt als Zugang erhalten. |
 

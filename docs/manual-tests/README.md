@@ -93,7 +93,8 @@ Der Test verwendet den normalen MIME-Versand einschließlich eingebettetem Logo 
 die vorhandenen HTML-Vorlagen: Aktivierung, Passwortreset, Passwort geändert,
 E-Mail-Änderung bestätigen und E-Mail geändert. Dazu kommen die lokalisierte
 Admin-Testmail und einmal die technische, auch in der Anwendung englische
-Versandfehlermeldung als Klartext. Ergebnis: **7 Mails bei einer Sprache, 13 bei DE+EN**.
+Versandfehlermeldung als Klartext. Ergebnis: **8 Mails bei einer Sprache, 15 bei DE+EN**.
+Die Zwei-Faktor-Vorlage enthält ausschließlich einen synthetischen Beispielcode.
 Für unveränderte gleiche Inhalte an alter/neuer Adresse gibt es nur ein Beispiel.
 `PROMOTION` ist ein Queue-Typ ohne eigenen Versandablauf oder eigene Vorlage.
 
@@ -250,16 +251,14 @@ Testpostfach verwenden. Keine bestehenden Entwicklerkonten als Fixture benutzen.
    Google-Adressnachweis beziehungsweise eigene Portalaktivierung prüfen.
 3. Zum bestehenden Konto anmelden und einen weiteren Anbieter bewusst verknüpfen.
    Gleiche Kontaktadressen allein dürfen kein bestehendes Konto öffnen.
-4. Eine konkrete Sicherheitsaktion auswählen und den verbundenen Anbieter erneut bestätigen.
-   Microsoft muss einen frischen `auth_time`-Nachweis liefern. Ohne diesen bleibt
-   die Aktion gesperrt. Bei Google gilt die ausdrücklich akzeptierte
-   [Zwischenlösung](../externe-anmeldung.md#google-zwischenlösung-und-bekannte-sicherheitsschwäche):
-   Ein neuer Durchlauf mit dem bereits verbundenen Konto darf auch bei bestehender
-   Google-Sitzung ohne neue Passwortabfrage bestätigen. Die sichtbare Kontoauswahl
-   und Zustimmung sind kein Nachweis einer aktiven Neuanmeldung.
-   Kontowechsel beim Anbieter darf keinen fremden Nachweis ergeben. Bei Ablehnung
-   muss die Kontosicherheit mit passender Fehlermeldung erscheinen, keine Registrierung.
-   Die bekannte Sitzungsschwäche bleibt bis zur nächsten 2FA-Umsetzung offen.
+4. Eine konkrete Sicherheitsaktion mit geltender 2FA-Regel auswählen und einen
+   eigenen aktuellen TOTP oder Ersatzcode verwenden. Anbieterbestätigung und
+   Portalpasswort allein dürfen sie nicht freigeben. Die erstmalige Einrichtung
+   mit Google verlangt zusätzlich den begrenzten Einmalcode an die bestätigte
+   Portaladresse. Sie ersetzt keinen früheren oder verlorenen Faktor. Eine frische
+   Microsoft-Bestätigung benötigt weiterhin `auth_time`. Kontowechsel beim Anbieter
+   darf keinen fremden Nachweis ergeben. Ablehnung kehrt mit passender Meldung zur
+   Kontosicherheit zurück und startet keine Registrierung.
 5. Optional ein Portalpasswort einrichten, erneutes Anmelden und bewusste gespeicherte Anmeldung
    prüfen. Einen weiteren Anbieter trennen und die letzte Anmeldemöglichkeit geschützt lassen.
 6. DE/EN, Desktop und Smartphone sowie Darstellungs-/Tastaturverhalten der Anbieterbuttons
@@ -268,3 +267,36 @@ Testpostfach verwenden. Keine bestehenden Entwicklerkonten als Fixture benutzen.
 **Erwartet:** Nur die geprüfte Anbieteridentität führt zum zugeordneten lokalen Konto.
 Portalrollen, Sperren und Sicherheitsnachweise bleiben maßgeblich. Anbieter-/Mandantenregeln
 und nicht ausgeführte Varianten ausdrücklich dokumentieren. Keine Geheimnisse protokollieren.
+
+<a id="hum-09"></a>
+
+### HUM-09 · Eigener Authenticator und Ersatzcode-Dokument
+
+**Einordnung:** Menschliche Geräte-, Bedienungs- und Designabnahme der laufenden
+2FA-Umsetzung. Die automatisierten RFC-/Zeit-/Replayprüfungen ersetzen sie nicht.
+
+Auf einer eigenen isolierten Testinstanz einen neuen Authenticator mit einer frei
+gewählten TOTP-App am echten Smartphone einrichten. QR und alternativ den manuellen
+Schlüssel verwenden, ersten Code eingeben und die Sicherheitsmail beurteilen.
+Ersatzcodes vollständig kopieren und das PDF in DE/EN herunterladen. Logo,
+Kontozuordnung, Erklärung, Lesbarkeit und Druck prüfen. Nur synthetische Konten und
+Codes verwenden, keine echten Geheimnisse in Abnahmeunterlagen aufnehmen.
+
+Nach Abmeldung erneut anmelden und einen TOTP sowie einen noch unbenutzten Ersatzcode
+erproben. Navigation, Refresh und zweiter Tab innerhalb derselben gültigen Sitzung
+benötigen keinen neuen Anmeldenachweis. Sensible Aktionen verlangen nach der Regel
+ihre eigene Bestätigung. Authenticatorwechsel mit vorhandenem Nachweis durchführen,
+neue Codes sichern und verlorenen Zugriff über die eingeschränkte Hilfsanfrage
+durchgehen. Ein Ticket oder die versandte Anleitung darf die Sperre nicht aufheben.
+
+Zusätzlich vor der normalen Codeeingabe **Authenticator wiederherstellen** wählen
+und einen unbenutzten Ersatzcode für genau diesen Wechsel verwenden. Bis zum ersten
+Code der neuen App darf die Sitzung keinen anderen Kontobereich öffnen. Abbruch
+und erneuten Einstieg beurteilen. Erst der erfolgreiche Wechsel verbraucht den
+Ersatzcode und ersetzt die alte App. Die automatisierte Prüfung deckt auch den
+Fall mit nur einem verbliebenen Code ab.
+
+Mit Superadmin die Rollenregeln, Feldhilfen und Fristeneinheiten beurteilen. Ein normaler
+Admin darf weder 2FA-Regeln noch Anmeldeanbieter verwalten. Bedienung und Texte in DE/EN
+auf Desktop und Smartphone gemeinsam abnehmen. Die Startfreigabe für Entwicklungs-
+Ausnahmen bleibt bei dieser regulären Abnahme ausgeschaltet.

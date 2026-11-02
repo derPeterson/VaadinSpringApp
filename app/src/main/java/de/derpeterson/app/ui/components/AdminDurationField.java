@@ -12,6 +12,7 @@ import de.derpeterson.app.i18n.MessageProperties;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Duration;
+import java.util.Arrays;
 import org.springframework.boot.convert.DurationStyle;
 
 /** Zahl und Einheit ohne Rundung. Das Speicherformat und die Fachprüfung bleiben erhalten. */
@@ -94,6 +95,27 @@ public class AdminDurationField extends Div implements HasAriaLabel {
 
   public void setSecondsValue(int seconds) {
     setStoredValue(Integer.toString(seconds));
+  }
+
+  /**
+   * Schränkt nur die angebotenen Einheiten ein; vorhandene Konfigurationsfelder bleiben
+   * unverändert.
+   */
+  public void setAvailableUnits(Unit... available) {
+    Unit current = unit.getValue();
+    if (available.length == 0 || storage == Storage.DAYS) {
+      throw new IllegalArgumentException("Selectable duration units required");
+    }
+    unit.setItems(available);
+    unit.setValue(Arrays.asList(available).contains(current) ? current : available[0]);
+  }
+
+  public void setControlsEnabled(boolean enabled) {
+    amount.setEnabled(enabled);
+    preciseAmount.setEnabled(enabled);
+    unit.setEnabled(enabled);
+    decrease.setEnabled(enabled);
+    increase.setEnabled(enabled);
   }
 
   public void setStoredValue(String value) {

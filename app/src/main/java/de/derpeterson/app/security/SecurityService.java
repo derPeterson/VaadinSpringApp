@@ -1,5 +1,8 @@
 package de.derpeterson.app.security;
 
+import static de.derpeterson.app.security.mfa.SecondFactorAuthorities.RECOVERY_CODE;
+import static de.derpeterson.app.security.mfa.SecondFactorAuthorities.TOTP;
+
 import com.vaadin.flow.server.VaadinRequest;
 import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.VaadinSession;
@@ -11,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
@@ -187,6 +191,55 @@ public class SecurityService {
 
   public void touchSession(HttpServletRequest request) {
     admissions.touch(request);
+  }
+
+  /** Nur Nachweismetadaten. Zugriff und Frische bleiben an den MFA-Regel-/Faktorstand gebunden. */
+  public void recordSecondFactor(
+      HttpServletRequest request, boolean recoveryCode, Instant verifiedAt) {
+    replaceSecondFactor(
+        request,
+        FactorGrantedAuthority.withAuthority(recoveryCode ? RECOVERY_CODE : TOTP)
+            .issuedAt(verifiedAt)
+            .build());
+  }
+
+  public void clearSecondFactor(HttpServletRequest request) {
+    replaceSecondFactor(request, null);
+  }
+
+  private void replaceSecondFactor(HttpServletRequest request, FactorGrantedAuthority factor) {
+    HttpSession session = request.getSession(false);
+    Authentication current =
+        refreshSessionAuthentication(session)
+            .orElseThrow(
+                () -> new AuthenticationServiceException("Session authentication unavailable"));
+    ArrayList<GrantedAuthority> authorities = new ArrayList<>();
+    current.getAuthorities().stream()
+        .filter(authority -> !isSecondFactor(authority))
+        .forEach(authorities::add);
+    if (factor != null) {
+      authorities.add(factor);
+    }
+    UserDetails principal = (UserDetails) current.getPrincipal();
+    Authentication updated;
+    if (current instanceof ExternalAuthenticationToken external) {
+      updated = new ExternalAuthenticationToken(principal, external.provider(), authorities);
+    } else if (current
+        instanceof org.springframework.security.authentication.RememberMeAuthenticationToken) {
+      updated =
+          new org.springframework.security.authentication.RememberMeAuthenticationToken(
+              rememberMeServices.getKey(), principal, authorities);
+    } else {
+      updated = UsernamePasswordAuthenticationToken.authenticated(principal, null, authorities);
+    }
+    install(session, updated);
+    useAuthentication(updated);
+  }
+
+  private boolean isSecondFactor(GrantedAuthority authority) {
+    return authority instanceof FactorGrantedAuthority
+        && (TOTP.equals(authority.getAuthority())
+            || RECOVERY_CODE.equals(authority.getAuthority()));
   }
 
   public Optional<UserEntity> getCurrentUser() {

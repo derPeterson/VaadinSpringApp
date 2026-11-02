@@ -1,0 +1,37 @@
+package de.derpeterson.app.repository;
+
+import de.derpeterson.app.model.SupportTicketEntity;
+import jakarta.persistence.LockModeType;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+
+public interface SupportTicketRepository extends JpaRepository<SupportTicketEntity, Long> {
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("select t from SupportTicketEntity t where t.id = :id")
+  Optional<SupportTicketEntity> lock(Long id);
+
+  @Query(
+      "select t from SupportTicketEntity t where t.owner.id = :owner order by t.updatedAt desc, t.id desc")
+  List<SupportTicketEntity> own(Long owner, Pageable page);
+
+  @Query("select t from SupportTicketEntity t order by t.updatedAt desc, t.id desc")
+  List<SupportTicketEntity> inbox(Pageable page);
+
+  @Query(
+      "select count(t) from SupportTicketEntity t where t.owner.id = :owner and t.status <> :closed")
+  long openFor(Long owner, SupportTicketEntity.Status closed);
+
+  @Query(
+      "select count(t) from SupportTicketEntity t where t.owner.id = :owner and t.createdAt > :after")
+  long createdSince(Long owner, Instant after);
+
+  @Modifying
+  @Query("delete from SupportTicketEntity t where t.status = :closed and t.updatedAt < :before")
+  int deleteClosedBefore(Instant before, SupportTicketEntity.Status closed);
+}

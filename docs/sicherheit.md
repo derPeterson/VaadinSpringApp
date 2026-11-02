@@ -29,13 +29,14 @@ als OIDC-Objektgraphen gespeichert. Ein externer Login ist kein Passwort-/MFA-Fa
 Kontaktvertrauen, erneute Sicherheitsbestätigung und Grenzen stehen unter
 [Externe Anmeldung](externe-anmeldung.md).
 
-Für sensible Aktionen ist vorübergehend ein erneuter Google-OIDC-Durchlauf mit
-dem bereits verbundenen Konto freigegeben. Er kann eine vorhandene Google-Sitzung
-verwenden und beweist keine neue aktive Anmeldung. Das ist eine bewusst akzeptierte
-[offene Sicherheitsschwäche](../BUGS.md), kein MFA-Nachweis. Microsoft behält die
-Prüfung eines frischen Anmeldezeitpunkts. Konto-, Sitzungs-, Zweck-, Versions- und
-Einmalbindung gelten für beide Anbieter. Die nächste separate Umsetzung soll
-[eingerichtete 2FA verbindlich zur Bestätigung verwenden](planung/zwei-faktor-bestaetigung.md).
+Ein neuer Google-Durchlauf ist kein frischer unabhängiger Sicherheitsnachweis.
+Im normalen Betrieb bestätigt er keine sensible Kontoaktion. Die rollen- und
+aktionsbezogene [Zwei-Faktor-Authentifizierung](zwei-faktor-authentifizierung.md)
+verwendet TOTP oder einmalige Ersatzcodes. Remember-me ersetzt nur den ersten Faktor.
+HTTP, alte Vaadin-Ansichten und Push-Verbindungen bleiben bis zur geforderten
+Bestätigung eingeschränkt. Die Superadmin-Konfiguration entscheidet nach der bisher
+geltenden Regel über ihre eigene Änderung. Entwicklungs-Ausnahmen benötigen eine
+separate Startfreigabe und erzeugen keinen echten MFA-Nachweis.
 
 ## Verifikation, Passwortreset und E-Mail-Änderung
 

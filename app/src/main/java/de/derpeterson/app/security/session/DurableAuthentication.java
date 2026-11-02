@@ -1,5 +1,8 @@
 package de.derpeterson.app.security.session;
 
+import static de.derpeterson.app.security.mfa.SecondFactorAuthorities.RECOVERY_CODE;
+import static de.derpeterson.app.security.mfa.SecondFactorAuthorities.TOTP;
+
 import de.derpeterson.app.security.ExternalAuthenticationToken;
 import de.derpeterson.app.security.PortalUserDetails;
 import java.nio.charset.StandardCharsets;
@@ -49,7 +52,11 @@ public record DurableAuthentication(
         || factors.size() > 16
         || externalProvider != null
             && (remembered
-                || !factors.isEmpty()
+                || factors.stream()
+                    .anyMatch(
+                        factor ->
+                            !(TOTP.equals(factor.authority())
+                                || RECOVERY_CODE.equals(factor.authority())))
                 || !(externalProvider.equals("google") || externalProvider.equals("microsoft")))) {
       throw new IllegalArgumentException("Invalid durable authentication");
     }

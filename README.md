@@ -13,6 +13,7 @@ Sie wird ausschließlich auf der Entwicklungsmaschine mit austauschbaren Testdat
 | die Codex-Arbeitsabläufe nutzen | [Arbeiten mit Codex](docs/codex-skills.md) |
 | die Docker-Testumgebung mit Mailpit verwenden | [Docker](docs/docker/README.md) |
 | Anmeldung, Rechte und Sitzungen verstehen | [Sicherheit](docs/sicherheit.md) |
+| Authenticator, Ersatzcodes und Wiederherstellung einrichten | [Zwei-Faktor-Authentifizierung](docs/zwei-faktor-authentifizierung.md) |
 | Farben, Komponenten oder das Theme anpassen | [Theme](docs/theme.md) |
 | Mailversand, Wiederholungen und Versandfehler verstehen | [Mailqueue](docs/mailqueue.md) |
 | Logmeldungen und Diagnose verstehen | [Logging](docs/logging.md) |

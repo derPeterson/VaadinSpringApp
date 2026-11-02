@@ -17,7 +17,7 @@ und Datenmodell. Das sind relative Einschätzungen, keine Stunden- oder Terminzu
 
 | Möglichkeit | Mehrwert jetzt / später | Umbau und betroffene Bereiche | Wichtigkeit und Einordnung |
 | --- | --- | --- | --- |
-| **Zwei-Faktor-Anmeldung** | Hoch für Kontoschutz, besonders bei Administratoren. Vom Benutzer als interessant benannt. | **Groß:** Einrichtung per Authenticator-App, zweite Anmeldestufe, sicherer Wechsel/Entfernen und Wiederherstellung mit Ersatzcodes; Zusammenspiel mit externen Logins. | **Hohe Sicherheitspriorität**, besonders vor einem späteren Livebetrieb. Etablierte Sicherheitsfunktion; mehr Aufwand als nur ein zusätzlicher Code beim Login. Als nächste separate Umsetzung zur Ablösung der Google-Zwischenlösung vereinbart, siehe [2FA-Bestätigung](zwei-faktor-bestaetigung.md). |
+| **Zwei-Faktor-Anmeldung** | Hoch für Kontoschutz, besonders bei Administratoren. | **Groß:** Einrichtung per Authenticator-App, zweite Anmeldestufe, sicherer Wechsel/Entfernen und Wiederherstellung mit Ersatzcodes; Zusammenspiel mit externen Logins. | Technisch umgesetzt, gemeinsame Abnahme offen. Aktuelle Funktionen und Grenzen stehen in der [Fachdokumentation](../zwei-faktor-authentifizierung.md), offene Schritte im [2FA-Plan](zwei-faktor-bestaetigung.md). |
 | **Benachrichtigungseinstellungen** | Jetzt mittel, später hoch bei mehreren Arten freiwilliger Hinweise. | **Mittel:** gespeicherte Präferenzen und deren Berücksichtigung beim Erzeugen/Zustellen; Oberfläche und Texte. | Sinnvoll, sobald Benutzer tatsächlich eine Auswahl benötigen. Freiwillige Hinweise und notwendige Sicherheitsmeldungen getrennt behandeln. |
 | **Eigene Kontoaktivitäten** | Mittel: verständliche Chronik zu Anmeldung, Sicherheitsänderungen und verbundenen Anbietern. | **Mittel:** begrenzte Ereignisdaten, Aufbewahrung, eigene Ansicht und Zugriffsschutz. | Etablierte Vertrauensfunktion. Ergänzt vorhandene Geräteansicht und Systemhinweise; nicht lediglich dieselben Informationen erneut anzeigen. |
 | **Konto selbst löschen / eigene Daten herunterladen** | Mittel, mit echten Inhalten hoch: Benutzer können ihr Konto selbst verwalten und verlassen. | **Mittel bis groß:** sichere Bestätigung, vollständiger Export beziehungsweise Löschung abhängiger Daten, Sitzungswiderruf und Sonderfall letzter Superadmin. | Sinnvolle Kontofunktion. Vor einem Livebetrieb konkret bewerten; Umfang hängt von den später gespeicherten Daten ab. |
@@ -30,8 +30,8 @@ und Datenmodell. Das sind relative Einschätzungen, keine Stunden- oder Terminzu
 
 ## Empfehlung für die weitere Auswahl
 
-Die [2FA-Bestätigung](zwei-faktor-bestaetigung.md) ist als nächste separate Umsetzung
-beauftragt, einschließlich der Behebung der bekannten Google-Sicherheitsschwäche. Für ein
+Die [2FA-Bestätigung](zwei-faktor-bestaetigung.md) ist die laufende Umsetzung
+einschließlich des abgesicherten Ersatzes der Google-Zwischenlösung. Für ein
 kleineres Komfortpaket bietet sich der Schutz vor ungespeicherten Änderungen an.
 Benachrichtigungspräferenzen und Entwürfe gewinnen mit tatsächlichen Portalinhalten
 an Wert. Die übrigen Ideen bleiben Auswahlmöglichkeiten, keine zugesagte Roadmap.

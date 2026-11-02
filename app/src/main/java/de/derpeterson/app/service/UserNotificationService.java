@@ -15,6 +15,7 @@ import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.MaintenanceService.State;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.websocket.UserNotificationBroadcaster;
 import jakarta.servlet.http.HttpSession;
 import java.io.Serializable;
@@ -58,6 +59,7 @@ public class UserNotificationService {
   private final SecurityService security;
   private final ConfigService config;
   private final UserNotificationBroadcaster events;
+  private final TwoFactorAuthorization twoFactor;
 
   public enum Problem {
     INVALID_DRAFT,
@@ -130,6 +132,7 @@ public class UserNotificationService {
     if (!user.isEnabled() || user.isVerificationPending()) {
       throw new AccessDeniedException("Account unavailable");
     }
+    twoFactor.requireSession(session);
     State state = new MaintenanceService(config).state();
     if (state != MaintenanceService.State.OPEN
         && (state != MaintenanceService.State.ACTIVE || !user.hasAdministrativeRole())) {
@@ -396,6 +399,18 @@ public class UserNotificationService {
     m.setRequestKey("security:" + UUID.randomUUID());
     m.setType(type);
     create(m, List.of(user));
+  }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void recordRecoveryRequest() {
+    List<UserEntity> administrators = users.findEnabledAdministrators();
+    if (administrators.isEmpty()) {
+      return;
+    }
+    UserNotificationEntity event = new UserNotificationEntity();
+    event.setRequestKey("recovery:" + UUID.randomUUID());
+    event.setType(UserNotificationType.RECOVERY_REQUEST);
+    create(event, administrators);
   }
 
   private void create(UserNotificationEntity m, List<UserEntity> selected) {

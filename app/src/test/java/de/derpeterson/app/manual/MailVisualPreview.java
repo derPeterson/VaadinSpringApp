@@ -142,6 +142,21 @@ final class MailVisualPreview {
               texts.getAdminMailDefaultSubject(),
               texts.getAdminMailDefaultBody(),
               false));
+      examples.add(
+          html(
+              renderer,
+              user,
+              "two_factor",
+              texts.getTwoFactorEmailSubject(),
+              Map.of(
+                  "TITLE",
+                  texts.getTwoFactorEmailSubject(),
+                  "MESSAGE",
+                  texts.getTwoFactorEmailExplanation(),
+                  "CODE",
+                  "12345678",
+                  "NOTICE",
+                  texts.getTwoFactorEmailNotice())));
     }
     // Der technische Fehlerhinweis der Queue ist in der Anwendung ausschließlich englisch.
     // Seine Beispieldaten lösen weder einen Queuefehler noch einen erneuten Versandversuch aus.

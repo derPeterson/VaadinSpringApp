@@ -18,6 +18,12 @@ Die nachfolgenden UI- und Sprachkorrekturen sind in `3a57a2b` übernommen und ge
 geprüft. Sie gehören nicht zum Quellstand dieser letzten großen Testrunde. Der
 Benutzer hat die Google-/Microsoft-Umsetzung inzwischen abschließend abgenommen.
 
+Auf `codex/zwei-faktor-authentifizierung` ist inzwischen die 2FA-Erweiterung technisch
+umgesetzt. Sie gehört nicht zum nachfolgenden Main-Prüfstand. Ihre gezielten
+Nachprüfungen und die noch offene gemeinsame Abnahme werden im
+[aktiven Plan](planung/zwei-faktor-bestaetigung.md) abgegrenzt. Die dort behobene
+Google-Schwäche wird unten ausschließlich als Grenze der damaligen Main-Baseline beschrieben.
+
 Ausgangspunkt war der vorher dokumentierte Featureprüfstand auf Basis `782a9719`
 samt damaligen uncommittierten Änderungen. Eine vollständig bestätigte Main-Baseline
 lag noch nicht vor. Maßgeblich waren deshalb der tatsächliche Diff, die vorhandenen

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="{{LANG}}">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{TITLE}}</title>
+  <style>
+    @page { size: A4; margin: 22mm; }
+    body { font-family: sans-serif; font-size: 11pt; line-height: 1.55; color: #18263b; }
+    .brand { width: 100%; border-bottom: 2px solid #008dcc; padding-bottom: 14px; }
+    .brand img { width: 48px; height: 48px; vertical-align: middle; }
+    .brand strong { font-size: 16pt; padding-left: 12px; }
+    h1 { font-size: 21pt; color: #102039; margin: 24px 0 8px; }
+    .meta { font-size: 10pt; color: #526378; margin: 12px 0 22px; }
+    .codes { width: 100%; border-spacing: 12px; margin: 20px -12px; table-layout: fixed; }
+    .codes td { width: 50%; font-family: monospace; font-size: 9pt; padding: 12px 5px;
+      text-align: center; border: 1px solid #d2e1eb; background: #f3f8fb; }
+    .notice { border-left: 3px solid #008dcc; padding: 10px 14px; background: #f3f8fb; }
+    .footer { font-size: 9pt; color: #526378; margin-top: 24px; border-top: 1px solid #d2e1eb; padding-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="brand"><img src="{{LOGO}}" alt="" /><strong>{{SERVICE}}</strong></div>
+  <h1>{{TITLE}}</h1>
+  <div class="meta">{{ACCOUNT_LABEL}}: {{ACCOUNT}}<br />{{DATE_LABEL}}: {{DATE}}</div>
+  <p>{{EXPLANATION}}</p>
+  <table class="codes"><tbody>{{CODE_ROWS}}</tbody></table>
+  <p class="notice">{{STORAGE_NOTICE}}</p>
+  <p>{{REPLACEMENT_NOTICE}}</p>
+  <div class="footer">{{SUPPORT_NOTICE}}</div>
+</body>
+</html>

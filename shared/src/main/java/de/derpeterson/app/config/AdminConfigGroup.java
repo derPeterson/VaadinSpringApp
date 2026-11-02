@@ -5,10 +5,15 @@ public enum AdminConfigGroup {
   GENERAL,
   SECURITY,
   EXTERNAL_LOGIN,
+  TWO_FACTOR,
   TOKENS,
   USER_STATUS,
   NOTIFICATIONS,
   EMAIL_SENDER,
   SMTP,
-  QUEUE
+  QUEUE;
+
+  public boolean isSuperadminOnly() {
+    return this == EXTERNAL_LOGIN || this == TWO_FACTOR;
+  }
 }

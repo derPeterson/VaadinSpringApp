@@ -68,6 +68,12 @@ class ExternalConnectionsComponentTest {
     ui.getInternals().setSession(session);
     texts = new MessageProperties(new CustomI18NProvider());
     when(flow.owner(request)).thenReturn(user);
+    when(flow.factorEnrolled(request)).thenReturn(true);
+    when(flow.canUseProviderProof(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any()))
+        .thenReturn(true);
     when(flow.providers()).thenReturn(List.of("google", "microsoft"));
     when(identities.connected(1L)).thenReturn(List.of("google"));
     when(flow.confirmedPurpose(request)).thenAnswer(call -> Optional.ofNullable(grant.get()));
@@ -235,6 +241,56 @@ class ExternalConnectionsComponentTest {
         (Supplier<?>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
     assertEquals(texts.getAccountSecurityWrongPassword(), message.get());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "de, invalid",
+    "en, invalid",
+    "de, locked",
+    "en, locked",
+    "de, unavailable",
+    "en, unavailable"
+  })
+  void factorFailureUsesStandardToastAndDistinguishesLockFromInvalidCode(
+      String language, String reason) {
+    locale.set(Locale.forLanguageTag(language));
+    when(flow.requiresFactor(request, Purpose.PASSWORD)).thenReturn(true);
+    when(flow.canUseProviderProof(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any()))
+        .thenReturn(false);
+    RuntimeException failure =
+        switch (reason) {
+          case "locked" ->
+              new org.springframework.security.authentication.LockedException("fixture");
+          case "invalid" -> new BadCredentialsException("fixture");
+          default -> new IllegalStateException("fixture service unavailable");
+        };
+    doThrow(failure).when(flow).confirmFactor(request, "invalid", Purpose.PASSWORD);
+    ExternalIdentityConfirmationDialog dialog =
+        new ExternalIdentityConfirmationDialog(flow, identities, request, texts);
+    dialog.open(Purpose.PASSWORD, actions::incrementAndGet);
+    com.vaadin.flow.component.textfield.TextField code =
+        (com.vaadin.flow.component.textfield.TextField) find(dialog, "external-confirm-factor");
+    code.setValue("invalid");
+    ((Button) find(dialog, "external-confirm-local")).click();
+    assertEquals(0, actions.get());
+    assertTrue(dialog.isOpened());
+    assertTrue(code.isEmpty());
+    assertTrue(code.isInvalid());
+    assertTrue(code.getErrorMessage() == null || code.getErrorMessage().isBlank());
+    Supplier<?> message =
+        (Supplier<?>)
+            ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
+    assertEquals(
+        switch (reason) {
+          case "locked" -> texts.getTwoFactorThrottled();
+          case "invalid" -> texts.getTwoFactorInvalidCode();
+          default -> texts.getTwoFactorFailed();
+        },
+        message.get());
   }
 
   @Test

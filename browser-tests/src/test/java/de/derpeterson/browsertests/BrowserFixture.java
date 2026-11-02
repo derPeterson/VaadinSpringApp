@@ -70,6 +70,15 @@ public abstract class BrowserFixture {
         // A closed browser intentionally keeps its server slot until timeout. Explicitly
         // sign out the shared fixture account so independent cases do not consume its limit.
         page.navigate(path(HOME_ROUTE));
+        page.waitForCondition(
+            () ->
+                page.locator(".public-header, vaadin-button.tracked-user-button")
+                    .first()
+                    .isVisible());
+        if (java.net.URI.create(page.url()).getPath().equals("/two-factor")) {
+          page.locator("#two-factor-cancel").click();
+          page.waitForURL(url -> java.net.URI.create(url).getPath().equals("/login"));
+        }
         UserMenu menu = new UserMenu(page);
         menu.selectTestLanguage();
         // Besucher haben nur die öffentliche Navigation und kein Avatar-Popup.

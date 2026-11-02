@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import de.derpeterson.browsertests.suites.AccountSecurityBrowserTest;
 import de.derpeterson.browsertests.suites.AccountSettingsBrowserTest;
 import de.derpeterson.browsertests.suites.AuthenticationBrowserTest;
+import de.derpeterson.browsertests.suites.ExternalLoginBrowserTest;
 import de.derpeterson.browsertests.suites.MaintenanceBrowserTest;
 import de.derpeterson.browsertests.suites.SessionManagementBrowserTest;
 import de.derpeterson.browsertests.suites.UserNotificationsBrowserTest;
@@ -27,6 +28,18 @@ import org.junit.platform.launcher.TestPlan;
 import org.junit.platform.launcher.core.LauncherFactory;
 
 class BrowserExecutionPlanTest {
+  @Test
+  void externalSuiteKeepsTheLongProviderClassOnItsOwnWorker() {
+    List<List<Class<?>>> groups =
+        BrowserExecutionPlan.partition(BrowserSuites.select("external-login"), 3, "external-login");
+    assertEquals(
+        List.of(ExternalLoginBrowserTest.class),
+        groups.stream()
+            .filter(group -> group.contains(ExternalLoginBrowserTest.class))
+            .findFirst()
+            .orElseThrow());
+  }
+
   @Test
   void notificationCasesAreInAllAndKeepTheFastSelectionUnchanged() {
     Class<UserNotificationsBrowserTest> type =

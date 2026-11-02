@@ -100,7 +100,10 @@ class AdminViewNavigationTest {
     when(security.getAuthenticatedUser(request))
         .thenReturn(
             Optional.of(
-                User.withUsername("admin@example.test").password("unused").roles("ADMIN").build()));
+                User.withUsername("admin@example.test")
+                    .password("unused")
+                    .roles("SUPERADMIN", "ADMIN")
+                    .build()));
     when(security.getCurrentUser(request))
         .thenReturn(
             Optional.of(
@@ -138,7 +141,16 @@ class AdminViewNavigationTest {
             call ->
                 new ExternalProviderSettings.Settings(
                     call.getArgument(0), "", false, false, "own-version"));
-    created.configureExternalProviders(providers);
+    de.derpeterson.app.security.mfa.TwoFactorAuthorization factor =
+        mock(de.derpeterson.app.security.mfa.TwoFactorAuthorization.class);
+    created.configureExternalProviders(providers, factor);
+    de.derpeterson.app.security.mfa.TwoFactorPolicies policies =
+        mock(de.derpeterson.app.security.mfa.TwoFactorPolicies.class);
+    when(policies.load())
+        .thenReturn(
+            new de.derpeterson.app.security.mfa.TwoFactorPolicies.Snapshot(
+                -1, de.derpeterson.app.security.mfa.TwoFactorPolicy.defaults()));
+    created.configureTwoFactor(policies, factor);
     return created;
   }
 
@@ -199,6 +211,15 @@ class AdminViewNavigationTest {
       context.registerBean(
           de.derpeterson.app.service.UserNotificationService.class, () -> notifications);
       context.registerBean(ExternalProviderSettings.class, () -> providers);
+      context.registerBean(
+          de.derpeterson.app.security.mfa.TwoFactorAuthorization.class,
+          () -> mock(de.derpeterson.app.security.mfa.TwoFactorAuthorization.class));
+      context.registerBean(
+          de.derpeterson.app.security.mfa.TwoFactorPolicies.class,
+          () -> mock(de.derpeterson.app.security.mfa.TwoFactorPolicies.class));
+      context.registerBean(
+          de.derpeterson.app.service.SupportTicketService.class,
+          () -> mock(de.derpeterson.app.service.SupportTicketService.class));
       context.refresh();
       context.getAutowireCapableBeanFactory().autowireBean(view);
     }
@@ -242,6 +263,9 @@ class AdminViewNavigationTest {
           ReflectionTestUtils.getField(view, "externalLoginSection"), layout.getComponentAt(0));
       verify(providers).load("google");
       verify(providers).load("microsoft");
+    } else if (group == AdminConfigGroup.TWO_FACTOR) {
+      VerticalLayout layout = (VerticalLayout) ReflectionTestUtils.getField(view, "sectionLayout");
+      assertSame(ReflectionTestUtils.getField(view, "twoFactorSection"), layout.getComponentAt(0));
     } else {
       assertEquals(group, ReflectionTestUtils.getField(section, "selectedGroup"));
     }

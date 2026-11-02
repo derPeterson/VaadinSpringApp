@@ -14,7 +14,6 @@ import de.derpeterson.app.security.AdminRolePolicy;
 import de.derpeterson.app.security.ExternalLoginConfiguration;
 import de.derpeterson.app.security.ExternalLoginProperties;
 import de.derpeterson.app.security.ExternalProviderSettings;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +29,16 @@ class ExternalProviderSettingsPersistenceTest {
   @Configuration
   @Import({UserServicePersistenceTest.Config.class, ExternalProviderSettings.class})
   static class Config {
+    @Bean
+    de.derpeterson.app.security.mfa.TwoFactorAuthorization twoFactor() {
+      return org.mockito.Mockito.mock(de.derpeterson.app.security.mfa.TwoFactorAuthorization.class);
+    }
+
+    @Bean
+    jakarta.servlet.http.HttpServletRequest request() {
+      return new org.springframework.mock.web.MockHttpServletRequest();
+    }
+
     @Bean
     ExternalLoginProperties externalProperties() {
       return new ExternalLoginProperties();
@@ -119,7 +128,7 @@ class ExternalProviderSettingsPersistenceTest {
   @Test
   void freshAdministratorAuthorizationProtectsReadAndWriteAndUnsupportedProvidersAreRejected() {
     String revision = settings.load("google").revision();
-    doThrow(new AccessDeniedException("Revoked")).when(policy).authorizeMutation(null, Set.of());
+    doThrow(new AccessDeniedException("Revoked")).when(policy).requireSuperadmin();
     assertThrows(AccessDeniedException.class, () -> settings.load("google"));
     assertThrows(
         AccessDeniedException.class,

@@ -26,6 +26,9 @@ import de.derpeterson.browsertests.suites.SessionManagementBrowserTest;
 import de.derpeterson.browsertests.suites.SessionSecurityBrowserTest;
 import de.derpeterson.browsertests.suites.TokenConfigurationBrowserTest;
 import de.derpeterson.browsertests.suites.TokenExpiryBrowserTest;
+import de.derpeterson.browsertests.suites.TwoFactorBrowserTest;
+import de.derpeterson.browsertests.suites.TwoFactorLifecycleBrowserTest;
+import de.derpeterson.browsertests.suites.TwoFactorPushBrowserTest;
 import de.derpeterson.browsertests.suites.UserAccessBrowserTest;
 import de.derpeterson.browsertests.suites.UserFiltersBrowserTest;
 import de.derpeterson.browsertests.suites.UserManagementBrowserTest;
@@ -40,6 +43,9 @@ final class BrowserSuites {
     return switch (suite) {
       case "all", "fast" ->
           List.of(
+              TwoFactorBrowserTest.class,
+              TwoFactorPushBrowserTest.class,
+              TwoFactorLifecycleBrowserTest.class,
               UserNotificationsBrowserTest.class,
               NotificationInboxBrowserTest.class,
               InfrastructureBrowserTest.class,
@@ -73,6 +79,9 @@ final class BrowserSuites {
               SessionLimitBrowserTest.class,
               MaintenanceBrowserTest.class);
       case "external-login-flow" -> List.of(ExternalLoginBrowserTest.class);
+      case "two-factor" -> List.of(TwoFactorBrowserTest.class, TwoFactorPushBrowserTest.class);
+      case "two-factor-push" -> List.of(TwoFactorPushBrowserTest.class);
+      case "two-factor-lifecycle" -> List.of(TwoFactorLifecycleBrowserTest.class);
       case "external-login-layout" -> List.of(ExternalLoginLayoutBrowserTest.class);
       case "external-login" ->
           List.of(
@@ -160,7 +169,7 @@ final class BrowserSuites {
           throw new IllegalArgumentException(
               "Unknown suite: "
                   + suite
-                  + ". Choose all, fast, notifications, account-security, session-management, account-settings, cosmos-design, cosmos-components, login-layout, login-checks, infrastructure, https-night, operations, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, session-limits, session-persistence, maintenance, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
+                  + ". Choose all, fast, two-factor, two-factor-push, two-factor-lifecycle, notifications, account-security, session-management, account-settings, cosmos-design, cosmos-components, login-layout, login-checks, infrastructure, https-night, operations, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, session-limits, session-persistence, maintenance, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
     };
   }
 }

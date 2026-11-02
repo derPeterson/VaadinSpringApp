@@ -89,7 +89,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     Locator dialog = page.locator("#external-identity-dialog");
     Locator content = dialog.locator("vaadin-dialog-overlay [part=content]");
     assertThat(content).hasCSS("background-color", "rgb(5, 8, 17)");
-    assertThat(page.locator("#external-confirm-password input")).hasCSS("font-size", "12px");
+    assertThat(page.locator("#external-confirm-factor input")).hasCSS("font-size", "12px");
     assertThat(dialog.locator(".account-change-dialog-header .cosmos-panel-icon img"))
         .hasAttribute("src", "icons/external-login/google.png");
     assertDynamicTextWidths(dialog.locator(".cosmos-dialog-actions"));
@@ -248,7 +248,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     page.setViewportSize(width, 1000);
     LoginPage login = new LoginPage(page);
     login.open();
-    login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+    login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
     new UserMenu(page).selectTestLanguage();
     page.navigate("/admin?section=configuration&group=external_login");
     Locator section = page.locator("#admin-provider-settings");

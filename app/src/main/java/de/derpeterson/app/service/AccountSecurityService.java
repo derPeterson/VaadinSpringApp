@@ -16,6 +16,7 @@ import de.derpeterson.app.security.CustomUserDetailsService;
 import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.security.session.DurableSessionRegistry;
 import de.derpeterson.app.validation.EmailConflict;
 import de.derpeterson.app.validation.UserInputRules;
@@ -127,6 +128,7 @@ public class AccountSecurityService {
   private final SecureRandom random = new SecureRandom();
 
   private final ObjectProvider<ExternalLoginFlow> externalLogins;
+  private final TwoFactorAuthorization twoFactor;
 
   public PasswordChanged changePassword(HttpServletRequest request, PasswordChange change) {
     Assert.notNull(change, "Password change required");
@@ -145,6 +147,7 @@ public class AccountSecurityService {
           }
           String body = mail.render("password_changed", user, Map.of());
           Long previous = user.getVersion();
+          String previousAccessVersion = user.getAccessVersion();
           user.setPassword(encoder.encode(change.newPassword()));
           users.saveAndFlush(user);
           invalidateEmailChanges(user);
@@ -156,6 +159,13 @@ public class AccountSecurityService {
           remembered.removeUserTokens(identity);
           HttpSession session = request.getSession(false);
           revokeAfterCommit(identity, session == null ? null : session.getId());
+          TransactionSynchronizationManager.registerSynchronization(
+              new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                  twoFactor.retainAfterPasswordChange(request, previousAccessVersion);
+                }
+              });
           return new PasswordChanged(previous, user.getVersion());
         });
   }
@@ -304,6 +314,7 @@ public class AccountSecurityService {
             .getAuthenticatedUser(request)
             .orElseThrow(() -> new AccessDeniedException("Authentication required"));
     MaintenanceService.requirePublicAccess(config);
+    twoFactor.authorizeCurrent(request, ExternalLoginFlow.action(purpose), false);
     ExternalLoginFlow externalLogin = externalLogins.getIfAvailable();
     if ((password == null || password.isBlank()) && externalLogin != null) {
       UserEntity user =
@@ -349,6 +360,8 @@ public class AccountSecurityService {
       externalLogin.authorize(request, user, purpose, true);
     } else if (user.getPassword() == null || !encoder.matches(password, user.getPassword())) {
       throw new BadCredentialsException("Credentials changed");
+    } else {
+      twoFactor.authorizeCurrent(request, ExternalLoginFlow.action(purpose), true);
     }
     return user;
   }

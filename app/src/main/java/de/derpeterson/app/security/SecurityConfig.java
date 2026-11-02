@@ -2,10 +2,12 @@ package de.derpeterson.app.security;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
 
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.NavigationErrorCode;
 import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.security.session.DurableSessionRegistry;
 import de.derpeterson.app.security.session.DurableSessionRepository;
 import de.derpeterson.app.service.ConfigService;
@@ -172,7 +174,9 @@ public class SecurityConfig {
       SecurityContextRepository contextRepository,
       ObjectProvider<SessionManagementService> sessionManagement,
       @Qualifier("h2Console") ObjectProvider<ServletRegistrationBean<?>> h2Console,
-      ObjectProvider<ExternalLoginHttp> externalLogin) {
+      ObjectProvider<ExternalLoginHttp> externalLogin,
+      SecurityService securityService,
+      TwoFactorAuthorization twoFactor) {
     logger.debug("🔥 SecurityConfig is loading!");
 
     H2ConsoleOriginFilter consoleProtection =
@@ -246,6 +250,8 @@ public class SecurityConfig {
         .addFilterAfter(new LoginCsrfTokenFilter(), RememberMeAuthenticationFilter.class)
         .addFilterBefore(vaadinSecurityFilter, AuthorizationFilter.class)
         .addFilterAfter(new MaintenanceHttpFilter(maintenance), VaadinSecurityFilter.class)
+        .addFilterAfter(
+            new TwoFactorHttpFilter(securityService, twoFactor), MaintenanceHttpFilter.class)
         .addFilterBefore(
             new LoginCompletionFilter(admissions, rememberMeServices),
             UsernamePasswordAuthenticationFilter.class)
@@ -268,7 +274,8 @@ public class SecurityConfig {
                   .defaultSuccessUrl(AppRoute.ADMIN.getSecurityRoute(), true)
                   .successHandler(
                       (request, response, authentication) ->
-                          completeFormLogin(request, response, authentication, rememberMeServices))
+                          completeFormLogin(
+                              request, response, authentication, rememberMeServices, twoFactor))
                   .failureHandler(
                       (request, response, failure) -> {
                         AuthenticationException result =
@@ -359,7 +366,8 @@ public class SecurityConfig {
       HttpServletRequest request,
       HttpServletResponse response,
       Authentication authentication,
-      PersistentTokenBasedRememberMeServices rememberMeServices)
+      PersistentTokenBasedRememberMeServices rememberMeServices,
+      TwoFactorAuthorization twoFactor)
       throws IOException {
     if (rememberMeServices instanceof DeviceRememberMeServices devices
         && !devices.requested(request)) {
@@ -368,7 +376,10 @@ public class SecurityConfig {
     boolean admin =
         authentication.getAuthorities().stream()
             .anyMatch(authority -> RoleType.ROLE_ADMIN.name().equals(authority.getAuthority()));
-    response.sendRedirect((admin ? AppRoute.ADMIN : AppRoute.HOME).getSecurityRoute());
+    response.sendRedirect(
+        twoFactor.sessionConfirmed(request)
+            ? (admin ? AppRoute.ADMIN : AppRoute.HOME).getSecurityRoute()
+            : AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE);
   }
 
   private AuthenticationException recoverSessionLimit(
@@ -420,6 +431,8 @@ public class SecurityConfig {
     }
 
     return requestUri.equals("/external-registration")
+        || requestUri.equals(AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE)
+        || requestUri.equals("/recovery-help")
         || requestUri.startsWith("/oauth2/authorization/")
         || requestUri.startsWith("/login/oauth2/code/")
         || requestUri.equals(AppRoute.BASE.getSecurityRoute())

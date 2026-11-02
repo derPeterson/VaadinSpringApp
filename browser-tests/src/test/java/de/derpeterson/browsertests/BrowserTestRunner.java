@@ -77,6 +77,12 @@ public final class BrowserTestRunner {
             ? Path.of(System.getProperty("browser.tests.workerRun")).toAbsolutePath().normalize()
             : this.module.resolve("runs").resolve(runId);
     environment.put("BROWSER_TEST_TLS_DIRECTORY", run.resolve("https").toString());
+    // Auch die koordinierende Compose-Prüfung benötigt einen Wert. Jeder Worker erzeugt
+    // beim eigenen Start erneut einen getrennten Schlüssel und übernimmt keinen Elternschlüssel.
+    byte[] totpKey = new byte[32];
+    new java.security.SecureRandom().nextBytes(totpKey);
+    environment.put("BROWSER_TEST_TOTP_KEY", java.util.Base64.getEncoder().encodeToString(totpKey));
+    environment.put("BROWSER_TEST_DEVELOPMENT_OPTIONS_ENABLED", "false");
     if (worker && !run.startsWith(this.module.resolve("runs"))) {
       throw new IllegalArgumentException("Worker output must be within runs/.");
     }
@@ -245,6 +251,9 @@ public final class BrowserTestRunner {
       String appUrl = "https://127.0.0.1:" + appPort;
       String mailUrl = "http://127.0.0.1:" + mailPort;
       if (testClasses.contains(de.derpeterson.browsertests.suites.ExternalLoginBrowserTest.class)
+          || testClasses.contains(de.derpeterson.browsertests.suites.TwoFactorBrowserTest.class)
+          || testClasses.contains(
+              de.derpeterson.browsertests.suites.TwoFactorLifecycleBrowserTest.class)
           || testClasses.contains(
               de.derpeterson.browsertests.suites.ExternalLoginLayoutBrowserTest.class)) {
         oidc = new OidcTestProvider(appUrl);
@@ -744,6 +753,13 @@ public final class BrowserTestRunner {
             "180",
             "app"));
     runner.appContainer = runner.command(runner.withCompose("ps", "-q", "app")).trim();
+  }
+
+  /** Startfreigabe nur für die eigene isolierte Anwendung, mit unverändertem Schlüssel und H2. */
+  public static void restartWithDevelopmentOptions(boolean enabled) throws Exception {
+    BrowserTestRunner runner = ownedRunner();
+    runner.environment.put("BROWSER_TEST_DEVELOPMENT_OPTIONS_ENABLED", Boolean.toString(enabled));
+    restartTestApplication();
   }
 
   /** Ausschließlich der Maildienst des aktiven eigenen Workers; keine fremden Dienste. */

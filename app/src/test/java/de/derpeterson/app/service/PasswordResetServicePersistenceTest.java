@@ -39,6 +39,7 @@ import de.derpeterson.app.repository.EmailQueueRepository;
 import de.derpeterson.app.repository.PasswordResetTokenRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.MaintenanceAccessException;
+import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import jakarta.persistence.EntityManagerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -1231,7 +1232,8 @@ class PasswordResetServicePersistenceTest {
           users,
           mock(de.derpeterson.app.security.SecurityService.class),
           config,
-          new de.derpeterson.app.websocket.UserNotificationBroadcaster());
+          new de.derpeterson.app.websocket.UserNotificationBroadcaster(),
+          mock(TwoFactorAuthorization.class));
     }
 
     @Bean

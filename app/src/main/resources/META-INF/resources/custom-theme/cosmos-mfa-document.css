@@ -1,0 +1,4 @@
+/* Geschütztes Ersatzcode-Dokument im nativen IFrame, ohne Vaadin-Zustand mit Klartextcodes. */
+body { margin: 0; background: transparent; color: #e2e8f0; font: 12px monospace; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 2.4; margin: 0; padding: 12px; border: 1px solid #1e293b; border-radius: 8px; background: #0b1220; }
+@media (max-width: 280px) { body { font-size: 10px; } }

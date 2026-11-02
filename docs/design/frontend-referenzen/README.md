@@ -4,9 +4,9 @@ Drei bedienbare HTML-Momentaufnahmen der gemeinsam abgestimmten Gestaltung:
 
 | Bereich | Referenz | Einstieg |
 | --- | --- | --- |
-| Besucher, ohne Anmeldung | [Public](public.html) | Startseite, Anmeldung und Registrierung |
+| Besucher, ohne Anmeldung | [Public](public.html) | Startseite, Anmeldung, Registrierung und eingeschränkte 2FA-Zustände |
 | Angemeldete Benutzer | [Portal](portal.html) | Startseite, Benachrichtigungen und Mein Konto |
-| Administration | [Admin](admin.html) | Dashboard, Benutzerverwaltung, Konfiguration, Mailtest und Benachrichtigungen |
+| Administration | [Admin](admin.html) | Dashboard, Benutzerverwaltung, Konfiguration, Mailtest, Benachrichtigungen und Wiederherstellungsanfragen |
 
 Die HTML-Dateien direkt im Browser öffnen. Den Ordner `assets` daneben belassen.
 Alle Ressourcen liegen lokal. Es werden weder Nachrichten noch E-Mails versendet
@@ -18,6 +18,12 @@ bedienbar. Weitere Link- und Bestätigungszustände lassen sich in den jeweilige
 über die synthetischen Statusauswahlen darstellen.
 Portal und Admin verwenden ihre Seitennavigation. Admin startet ohne Fragment
 mit dem Dashboard. Die Referenzen sind Gestaltungsvorlagen, keine zweite Anwendung.
+
+`public.html#public-two-factor` bietet die synthetischen Phasen von Einrichtung,
+Codeabfrage, gezieltem Authenticatorwechsel mit Ersatzcode, Codeausgabe und Hilfe.
+Portal und Admin zeigen die ergänzte
+Faktorverwaltung, Rollenregeln und Anfragebearbeitung. Die QR-Fläche ist ausdrücklich
+ein Platzhalter. Beispielcodes und Vorgänge besitzen keine echte Sicherheitsfunktion.
 
 `assets` enthält die lokalen Schriften samt Lizenz, das Dashboardmotiv sowie die
 Styles und Controller der drei Oberflächen. Geteilte Tooltips liegen in
@@ -32,7 +38,7 @@ gezielt die betreffende Seite beziehungsweise einen synthetischen Screenshot und
 den [Theme-Standard](../../theme.md) verwenden.
 
 Das laufende Stitch-Projekt ist
-[VaadinSpringApp - Design](https://stitch.google.com/projects/43914967159269113).
+[VaadinSpringApp - Design](https://stitch.withgoogle.com/projects/43914967159269113).
 Die aktuellen Anmelde- und Registrierungsansichten sind dort als Ausgangsstand
 hinterlegt. Weitere Entwürfe bleiben bis zur gemeinsamen Auswahl Vorschläge.
 Projektverwaltung, Uploads und Generierung erfolgen über die Stitch-CLI gemäß

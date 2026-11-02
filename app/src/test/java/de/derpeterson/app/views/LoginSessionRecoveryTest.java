@@ -48,6 +48,7 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.DeviceDescription;
+import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionLimitException;
 import de.derpeterson.app.security.SessionManagementService;
@@ -81,6 +82,7 @@ class LoginSessionRecoveryTest {
   private final SecurityService security = mock(SecurityService.class);
   private final AuthenticationManager authentication = mock(AuthenticationManager.class);
   private final SessionManagementService sessions = mock(SessionManagementService.class);
+  private final ExternalLoginFlow externalLogin = mock(ExternalLoginFlow.class);
   private MockHttpServletRequest request;
   private MockHttpServletResponse response;
   private VaadinServletResponse vaadinResponse;
@@ -114,6 +116,7 @@ class LoginSessionRecoveryTest {
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     messages = new MessageProperties(new CustomI18NProvider());
+    when(externalLogin.loginConfirmed(request)).thenReturn(true);
     view = createView();
     ui.add(view);
     UserDetails principal =
@@ -154,13 +157,7 @@ class LoginSessionRecoveryTest {
 
   private LoginView createView() {
     return new LoginView(
-        messages,
-        authentication,
-        security,
-        request,
-        config,
-        sessions,
-        mock(de.derpeterson.app.security.ExternalLoginFlow.class));
+        messages, authentication, security, request, config, sessions, externalLogin);
   }
 
   @ParameterizedTest
@@ -365,6 +362,20 @@ class LoginSessionRecoveryTest {
     verify(sessions).finishRecovery(request, vaadinResponse);
     assertEquals(HomeView.class, ui.target);
     verify(authentication, times(1)).authenticate(any());
+  }
+
+  @Test
+  void admittedFirstFactorRequiresTwoFactorBeforePortalAndSuccessNotice() {
+    when(externalLogin.loginConfirmed(request)).thenReturn(false);
+    reachedLimit();
+    freeSessionSlot();
+    NotificationHelper.getInstance().closeAndClearAllNotifications();
+    button("session-recovery-continue").click();
+    assertEquals(TwoFactorView.class, ui.target);
+    Notification notice =
+        (Notification)
+            ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
+    assertFalse(notice.isOpened());
   }
 
   @Test

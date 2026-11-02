@@ -11,12 +11,15 @@
   const groups = {};
   for(const [group,values] of Object.entries(configuration.groups)){
     groups[group]=values.label;
-    if(group==='SECURITY'){groups.EXTERNAL_LOGIN='Anmeldeanbieter';}
+    if(group==='SECURITY'){groups.EXTERNAL_LOGIN='Anmeldeanbieter';groups.TWO_FACTOR='Zwei-Faktor-Authentifizierung';}
   }
   const groupIcons = {GENERAL:'settings',SECURITY:'shield',TOKENS:'key',USER_STATUS:'config-user',NOTIFICATIONS:'bell',EMAIL_SENDER:'mail',SMTP:'config-server',QUEUE:'config-list'};
   groupIcons.EXTERNAL_LOGIN='cloud-lock';
+  groupIcons.TWO_FACTOR='shield';
   const labels = {dashboard:'Dashboard',settings:configuration.title,mail:mail.title,send:notificationText.title,users:'Benutzerverwaltung'};
+  labels.support='Wiederherstellungsanfragen';
   const descriptions = {dashboard:'Ihr Einstieg in die Administration.',settings:configuration.description,mail:mail.description,send:notificationText.adminPageDescription,users:'Verwalten Sie Benutzerkonten, Rollen und Aktivierungsstatus.'};
+  descriptions.support='Unterstützen Sie Benutzer beim Wiederfinden ihrer gesicherten Ersatzcodes.';
   document.querySelector('[data-admin-route="mail"]>span').textContent=mail.title;
   const byId = id => document.getElementById(id);
   const escape = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -87,6 +90,7 @@
     if(route==='settings'){renderConfig();}
     if(route==='mail'){renderMail();}
     if(route==='send'){renderCompose();}
+    if(route==='support'){renderSupport();}
     publish(requestId);
   }
 
@@ -141,6 +145,7 @@
   }
   function renderConfig() {
     if(group==='EXTERNAL_LOGIN'){renderProviders();return;}
+    if(group==='TWO_FACTOR'){renderTwoFactor();return;}
     const fields=inventory.fields.filter(field=>field.group===group);
     const count=(fields.length===1?configuration.countOne:configuration.countOther).replace('{0}',String(fields.length));
     const metadata=`<span class="ad-pill ad-config-count">${escape(count)}</span>`;
@@ -155,6 +160,42 @@
     }
     root.querySelectorAll('[data-duration-amount]').forEach(input=>window.AdminDuration.update(input.closest('.ad-field')));
     syncNumberButtons();
+  }
+
+  function renderTwoFactor() {
+    const roles=['Superadmin','Administrator','Benutzer','Gast'];
+    const actions=['Anmeldung','Administrationsbereich','Passwort ändern','E-Mail-Adresse ändern','Anbieter verbinden','Anbieter trennen','Authenticator verwalten','Ersatzcodes verwalten','Sicherheitskonfiguration'];
+    const tabs=roles.map((role,index)=>`<button type="button" role="tab" data-mfa-role="${index}" aria-selected="${index===0}" tabindex="${index===0?0:-1}">${role}</button>`).join('');
+    const fields=roles.map((role,index)=>`<div class="ad-grid" data-mfa-rules="${index}" ${index?'hidden':''}>${actions.map((action,number)=>`<div class="ad-field"><label for="mfa-rule-${index}-${number}">${action}</label><div class="ad-input-help"><select id="mfa-rule-${index}-${number}"><option ${number===1?'selected':''}>Aus</option><option ${index>1&&number!==1?'selected':''}>Falls eingerichtet</option><option ${index<2&&number!==1?'selected':''}>Verpflichtend</option></select><button class="ad-info" type="button" data-mfa-info aria-label="Feldhilfe">${icon('info')}</button></div></div>`).join('')}</div>`).join('');
+    root.innerHTML=`<div class="ad-config ad-providers mfa-reference"><article class="ad-card"><div class="ad-head"><span class="portal-reference-icon">${icon('shield')}</span><div><h2>Zwei-Faktor-Authentifizierung</h2><p>Bestimmen Sie, wann Benutzer ihre Anmeldung und sensible Änderungen zusätzlich bestätigen.</p></div></div><p class="mfa-reference-copy">Bei mehreren Rollen gilt die strengste Regel. Änderungen wirken auch auf bestehende Sitzungen. Nur Superadmins können diese Konfiguration ändern.</p><div class="ad-provider-tabs" role="tablist" aria-label="Rollen">${tabs}</div>${fields}<div class="ad-grid"><div class="ad-field"><label class="ad-switch"><span>Nach Inaktivität erneut bestätigen</span><input type="checkbox" role="switch" data-mfa-inactivity></label></div><div class="ad-field"><label for="mfa-inactivity-value">Inaktivitätsdauer</label><div class="ad-input-help"><input id="mfa-inactivity-value" type="number" value="12" min="1" disabled><select aria-label="Zeiteinheit" data-mfa-unit disabled><option>Minuten</option><option selected>Stunden</option><option>Tage</option></select></div></div></div><div class="ad-foot"><div class="ad-config-save-hint">${icon('info')}<span>Die zuvor gültige Regel entscheidet über die Bestätigung dieser Änderung.</span></div><div class="ad-config-actions"><button class="portal-button" type="button" data-mfa-reload>${icon('refresh')}Werte neu laden</button><button class="portal-button primary" type="button" data-mfa-save>${icon('check')}Konfiguration speichern</button></div></div></article></div>`;
+    root.querySelectorAll('[data-mfa-role]').forEach(tab=>tab.addEventListener('click',()=>{
+      root.querySelectorAll('[data-mfa-role]').forEach(item=>{const active=item===tab;item.setAttribute('aria-selected',String(active));item.tabIndex=active?0:-1;});
+      root.querySelectorAll('[data-mfa-rules]').forEach(panel=>panel.hidden=panel.dataset.mfaRules!==tab.dataset.mfaRole);
+    }));
+    root.querySelector('[role=tablist]').addEventListener('keydown',event=>{
+      if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){return;}
+      const tabs=[...root.querySelectorAll('[data-mfa-role]')],index=tabs.indexOf(document.activeElement);
+      const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+      tabs[next].click();tabs[next].focus();event.preventDefault();
+    });
+    root.querySelector('[data-mfa-inactivity]').addEventListener('change',event=>{
+      root.querySelector('#mfa-inactivity-value').disabled=!event.target.checked;
+      root.querySelector('[data-mfa-unit]').disabled=!event.target.checked;
+    });
+    root.querySelector('[data-mfa-save]').addEventListener('click',()=>toast('Gestaltungsvorschau: Keine Sicherheitsregel wurde gespeichert.'));
+    root.querySelector('[data-mfa-reload]').addEventListener('click',renderTwoFactor);
+    root.querySelectorAll('[data-mfa-info]').forEach(info=>info.addEventListener('click',()=>toast('Aus: andere Identitätsprüfungen bleiben bestehen. Falls eingerichtet: vorhandenen Faktor verwenden. Verpflichtend: vorher einrichten und bestätigen.')));
+  }
+
+  function renderSupport() {
+    const content=`<p class="portal-copy">Eine Anfrage ersetzt keinen Identitätsnachweis. Ohne Authenticator oder gültigen Ersatzcode kann der Kontozugang nicht freigegeben werden.</p><div class="mfa-ticket-list"><button class="portal-button" type="button" data-mfa-ticket>#42 · Hilfe beim Authenticator-Zugriff · Offen</button></div><div data-mfa-conversation><p class="portal-copy">Bitte wählen Sie eine Anfrage aus.</p></div><label class="ad-field">Antwort<textarea rows="4" maxlength="2000" placeholder="Keine Passwörter oder Ersatzcodes eintragen"></textarea></label><label class="ad-switch"><span>Interner Vermerk</span><input type="checkbox" role="switch"></label>`;
+    const footer=`<div class="ad-config-actions">${button('support-claim','Übernehmen','check')}${button('support-instruction','Anleitung senden','mail')}${button('support-reply','Antworten','check',true)}${button('support-close','Anfrage schließen','close')}</div>`;
+    root.innerHTML=`<div class="mfa-reference">${panel(labels.support,'Kontakt und Unterstützung. Ticketaktionen setzen keinen Faktor zurück.','info',content,footer)}</div>`;
+    root.querySelector('[data-mfa-ticket]').addEventListener('click',()=>{root.querySelector('[data-mfa-conversation]').innerHTML='<p class="portal-copy">Alex Berger: Ich finde meine gesicherten Ersatzcodes nicht mehr.</p>';});
+    root.querySelectorAll('[data-ad-action]').forEach(action=>action.addEventListener('click',()=>{
+      if(action.dataset.adAction==='support-instruction'){root.querySelector('[data-mfa-conversation]').innerHTML='<p class="portal-copy">Suchen Sie nach dem bei der Einrichtung gespeicherten Notfalldokument oder in Ihrem Passwortmanager. Melden Sie sich regulär an und verwenden Sie selbst einen unbenutzten Ersatzcode. Senden Sie keine Codes an den Support. Ohne gültigen Nachweis können wir die Sperre nicht aufheben.</p>';}
+      toast('Gestaltungsvorschau: Keine Nachricht versendet und kein Kontozugang geändert.');
+    }));
   }
   function renderProviders() {
     const providers=[['google','Google'],['microsoft','Microsoft']];

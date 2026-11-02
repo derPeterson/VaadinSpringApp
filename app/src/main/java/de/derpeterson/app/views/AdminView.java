@@ -25,24 +25,30 @@ import de.derpeterson.app.security.ExternalProviderSettings;
 import de.derpeterson.app.security.IsAuthenticatedBaseView;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
+import de.derpeterson.app.security.mfa.TwoFactorPolicies;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.service.RoleService;
+import de.derpeterson.app.service.SupportTicketService;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.PageNavigationComponent;
 import de.derpeterson.app.ui.components.PortalPageComponent;
+import de.derpeterson.app.ui.components.SupportTicketsComponent;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.views.admin.AdminConfigurationSection;
 import de.derpeterson.app.views.admin.AdminDashboardSection;
 import de.derpeterson.app.views.admin.AdminExternalLoginSection;
 import de.derpeterson.app.views.admin.AdminMailTestSection;
+import de.derpeterson.app.views.admin.AdminTwoFactorSection;
 import de.derpeterson.app.views.admin.AdminUserManagementSection;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -64,15 +70,17 @@ public class AdminView extends IsAuthenticatedBaseView {
     CONFIGURATION,
     MAIL_TEST,
     USER_MANAGEMENT,
-    NOTIFICATIONS
+    NOTIFICATIONS,
+    SUPPORT
   }
 
   private final transient ConfigService configService;
 
   private final Div pageHeading = new Div();
   private final Map<AdminSection, com.vaadin.flow.component.Component> pageHeadings =
-      new java.util.EnumMap<>(AdminSection.class);
-  private com.vaadin.flow.component.Component externalLoginHeading;
+      new EnumMap<>(AdminSection.class);
+  private final Map<AdminConfigGroup, com.vaadin.flow.component.Component>
+      specialConfigurationHeadings = new EnumMap<>(AdminConfigGroup.class);
   private PageNavigationComponent sideNavigation;
   private final Span administrationHeading = new Span();
   private final Span portalHeading = new Span();
@@ -84,6 +92,16 @@ public class AdminView extends IsAuthenticatedBaseView {
   private SideNavItem notificationsNavItem;
   private de.derpeterson.app.views.admin.AdminUserNotificationsSection notificationsSection;
   private transient de.derpeterson.app.service.UserNotificationService notificationsService;
+  private SupportTicketsComponent supportSection;
+  private SideNavItem supportNavItem;
+
+  @org.springframework.beans.factory.annotation.Autowired
+  void configureSupport(SupportTicketService support) {
+    supportNavItem = createNavigationItem(AppIcon.QUESTION_CIRCLE, AdminSection.SUPPORT, null);
+    supportNavItem.setLabel(messageProperties.getSupportTitle());
+    sideNavigation.addItem(supportNavItem);
+    supportSection = new SupportTicketsComponent(messageProperties, support, request, true);
+  }
 
   @org.springframework.beans.factory.annotation.Autowired
   public void configureAdminNotifications(
@@ -106,11 +124,30 @@ public class AdminView extends IsAuthenticatedBaseView {
   private AdminDashboardSection dashboardSection = null;
   private AdminConfigurationSection configurationSection = null;
   private AdminExternalLoginSection externalLoginSection;
+  private AdminTwoFactorSection twoFactorSection;
 
   @org.springframework.beans.factory.annotation.Autowired
-  public void configureExternalProviders(ExternalProviderSettings settings) {
-    externalLoginSection =
-        new AdminExternalLoginSection(messageProperties, settings, configService);
+  public void configureExternalProviders(
+      ExternalProviderSettings settings, TwoFactorAuthorization authorization) {
+    if (canConfigureSecurity()) {
+      externalLoginSection =
+          new AdminExternalLoginSection(messageProperties, settings, configService);
+      externalLoginSection.configureConfirmation(authorization, request);
+    }
+  }
+
+  @org.springframework.beans.factory.annotation.Autowired
+  public void configureTwoFactor(TwoFactorPolicies policies, TwoFactorAuthorization authorization) {
+    if (canConfigureSecurity()) {
+      twoFactorSection =
+          new AdminTwoFactorSection(messageProperties, policies, authorization, request);
+    }
+  }
+
+  private boolean canConfigureSecurity() {
+    return securityService.getAuthenticatedUser(request).stream()
+        .flatMap(user -> user.getAuthorities().stream())
+        .anyMatch(authority -> "ROLE_SUPERADMIN".equals(authority.getAuthority()));
   }
 
   private AdminMailTestSection mailTestSection = null;
@@ -299,6 +336,14 @@ public class AdminView extends IsAuthenticatedBaseView {
   }
 
   private void selectSection(AdminSection section, AdminConfigGroup configurationGroup) {
+    AdminConfigGroup requestedGroup =
+        configurationGroup == null ? activeConfigurationGroup : configurationGroup;
+    if (section == AdminSection.CONFIGURATION
+        && requestedGroup != null
+        && requestedGroup.isSuperadminOnly()
+        && !canConfigureSecurity()) {
+      configurationGroup = AdminConfigGroup.GENERAL;
+    }
     mailTestSection.refreshDeliveryState();
     boolean canSend =
         notificationsService != null && notificationsService.canSend(request.getSession(false));
@@ -320,7 +365,10 @@ public class AdminView extends IsAuthenticatedBaseView {
 
     switch (section) {
       case CONFIGURATION -> {
-        if (activeConfigurationGroup == AdminConfigGroup.EXTERNAL_LOGIN
+        if (activeConfigurationGroup == AdminConfigGroup.TWO_FACTOR && twoFactorSection != null) {
+          twoFactorSection.activate();
+          sectionLayout.add(twoFactorSection);
+        } else if (activeConfigurationGroup == AdminConfigGroup.EXTERNAL_LOGIN
             && externalLoginSection != null) {
           externalLoginSection.activate();
           sectionLayout.add(externalLoginSection);
@@ -332,6 +380,10 @@ public class AdminView extends IsAuthenticatedBaseView {
       case NOTIFICATIONS -> {
         sectionLayout.add(notificationsSection);
         notificationsSection.activate();
+      }
+      case SUPPORT -> {
+        sectionLayout.add(supportSection);
+        supportSection.refresh();
       }
       case MAIL_TEST -> sectionLayout.add(mailTestSection);
       case USER_MANAGEMENT -> sectionLayout.add(userManagementSection);
@@ -366,8 +418,9 @@ public class AdminView extends IsAuthenticatedBaseView {
         .ifPresent(
             header -> {
               if (activeSection == AdminSection.CONFIGURATION
-                  && activeConfigurationGroup == AdminConfigGroup.EXTERNAL_LOGIN) {
-                externalLoginHeading = header;
+                  && activeConfigurationGroup != null
+                  && activeConfigurationGroup.isSuperadminOnly()) {
+                specialConfigurationHeadings.put(activeConfigurationGroup, header);
               } else {
                 pageHeadings.put(activeSection, header);
               }
@@ -376,8 +429,9 @@ public class AdminView extends IsAuthenticatedBaseView {
     pageHeading.removeAll();
     com.vaadin.flow.component.Component heading =
         activeSection == AdminSection.CONFIGURATION
-                && activeConfigurationGroup == AdminConfigGroup.EXTERNAL_LOGIN
-            ? externalLoginHeading
+                && activeConfigurationGroup != null
+                && activeConfigurationGroup.isSuperadminOnly()
+            ? specialConfigurationHeadings.get(activeConfigurationGroup)
             : pageHeadings.get(activeSection);
     if (heading != null) {
       pageHeading.add(heading);
@@ -385,6 +439,7 @@ public class AdminView extends IsAuthenticatedBaseView {
   }
 
   private void updateNavigationState() {
+    applyNavigationItemState(supportNavItem, activeSection == AdminSection.SUPPORT);
     applyNavigationItemState(notificationsNavItem, activeSection == AdminSection.NOTIFICATIONS);
     applyNavigationItemState(dashboardNavItem, activeSection == AdminSection.DASHBOARD);
     applyNavigationItemState(configurationNavItem, activeSection == AdminSection.CONFIGURATION);
@@ -398,6 +453,7 @@ public class AdminView extends IsAuthenticatedBaseView {
 
     configurationSubmenuItems.forEach(
         (group, item) -> {
+          item.setVisible(!group.isSuperadminOnly() || canConfigureSecurity());
           boolean isActive =
               activeSection == AdminSection.CONFIGURATION
                   && Objects.equals(activeConfigurationGroup, group);
@@ -414,6 +470,10 @@ public class AdminView extends IsAuthenticatedBaseView {
   }
 
   private void refreshTexts() {
+    if (supportNavItem != null) {
+      supportNavItem.setLabel(messageProperties.getSupportTitle());
+      supportSection.refreshTexts();
+    }
     administrationHeading.setText(messageProperties.getAdminHeaderTitle());
     portalHeading.setText(messageProperties.getAccountNavigationPortal());
     portalHome.setLabel(messageProperties.getHomeTitle());
@@ -444,6 +504,9 @@ public class AdminView extends IsAuthenticatedBaseView {
     }
     if (externalLoginSection != null) {
       externalLoginSection.refreshTexts();
+    }
+    if (twoFactorSection != null) {
+      twoFactorSection.refreshTexts();
     }
     mailTestSection.refreshTexts();
     if (userManagementSection != null) {

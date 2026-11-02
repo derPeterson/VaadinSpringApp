@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -13,11 +15,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.ExternalLoginFlow.ProofProblem;
 import de.derpeterson.app.security.ExternalLoginFlow.ProofRejected;
 import de.derpeterson.app.security.ExternalLoginFlow.Purpose;
+import de.derpeterson.app.security.mfa.TwoFactorAction;
+import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
+import de.derpeterson.app.security.mfa.TwoFactorEnrollment;
+import de.derpeterson.app.security.mfa.TwoFactorPolicies;
+import de.derpeterson.app.security.mfa.TwoFactorPolicy;
 import de.derpeterson.app.service.ExternalIdentityService;
+import jakarta.persistence.EntityManager;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -28,15 +37,18 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.InOrder;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -44,11 +56,19 @@ import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.SimpleTransactionStatus;
 
 class ExternalLoginFlowTest {
   private final ExternalIdentityService identities = mock(ExternalIdentityService.class);
   private final UserRepository users = mock(UserRepository.class);
   private final SecurityService security = mock(SecurityService.class);
+  private final TwoFactorAuthorization twoFactor = mock(TwoFactorAuthorization.class);
+  private final TwoFactorEnrollment enrollment = mock(TwoFactorEnrollment.class);
+  private final TwoFactorPolicies policies = mock(TwoFactorPolicies.class);
+  private final EntityManager entityManager = mock(EntityManager.class);
+  private final PlatformTransactionManager transactions = mock(PlatformTransactionManager.class);
+  private final AuthenticationManager passwords = mock(AuthenticationManager.class);
   private final MockHttpServletRequest request = new MockHttpServletRequest();
   private final MockHttpServletResponse response = new MockHttpServletResponse();
   private ExternalLoginFlow flow;
@@ -71,10 +91,33 @@ class ExternalLoginFlowTest {
             mock(CustomUserDetailsService.class),
             security,
             mock(SessionManagementService.class),
-            mock(AuthenticationManager.class));
+            passwords,
+            twoFactor,
+            enrollment,
+            policies,
+            entityManager,
+            transactions);
     owner = UserEntity.builder().id(1L).email("owner@example.test").enabled(true).build();
+    when(twoFactor.sessionConfirmed(any())).thenReturn(true);
     when(users.findById(1L)).thenReturn(Optional.of(owner));
     when(users.findByEmail(owner.getEmail())).thenReturn(Optional.of(owner));
+    when(users.findByIdForUpdate(1L)).thenReturn(Optional.of(owner));
+    when(transactions.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
+    when(policies.current())
+        .thenReturn(new TwoFactorPolicies.Snapshot(-1, TwoFactorPolicy.defaults()));
+    when(twoFactor.owner(request))
+        .thenReturn(
+            new TwoFactorAuthorization.Owner(
+                1L,
+                owner.getEmail(),
+                owner.getAccessVersion(),
+                true,
+                true,
+                List.of(RoleType.ROLE_USER)));
+    when(twoFactor.state(any()))
+        .thenReturn(new TwoFactorAuthorization.State(false, false, false, null, null));
+    when(passwords.authenticate(any()))
+        .thenReturn(UsernamePasswordAuthenticationToken.authenticated("fixture", null, List.of()));
   }
 
   @AfterEach
@@ -88,8 +131,92 @@ class ExternalLoginFlowTest {
     assertThrows(AccessDeniedException.class, () -> ExternalLoginFlow.evidence("google", identity));
   }
 
+  private void pendingLink() {
+    signedIn();
+    flow.confirmPassword(request, "own-password", Purpose.LINK_MICROSOFT);
+    assertEquals(
+        "/oauth2/authorization/microsoft", flow.beginLink(request, "microsoft", Locale.GERMAN));
+    flow.bindAuthorization(request, "microsoft", "link-state");
+    request.setParameter("state", "link-state");
+  }
+
+  @Test
+  void linkConsumesItsProofOnlyInsideTheLockedCallbackTransaction() throws Exception {
+    pendingLink();
+    assertEquals(Optional.of(Purpose.LINK_MICROSOFT), flow.confirmedPurpose(request));
+    verify(twoFactor, never()).authorizeCurrent(request, TwoFactorAction.LINK_PROVIDER, true);
+    flow.complete(request, response, oidc("microsoft", "new-subject", Instant.now()));
+    InOrder ordered = inOrder(users, entityManager, twoFactor, identities, transactions);
+    ordered.verify(users).findByIdForUpdate(1L);
+    ordered.verify(entityManager).refresh(owner);
+    ordered.verify(twoFactor).authorizeCurrent(request, TwoFactorAction.LINK_PROVIDER, true);
+    ordered.verify(identities).link(eq(1L), eq(owner.getAccessVersion()), any());
+    ordered.verify(transactions).commit(any());
+    assertThrows(
+        AccessDeniedException.class,
+        () -> flow.authorize(request, owner, Purpose.LINK_MICROSOFT, true));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"policy", "factor", "required"})
+  void changeDuringProviderRedirectRejectsTheFinalLink(String change) {
+    pendingLink();
+    switch (change) {
+      case "policy" ->
+          when(policies.current())
+              .thenReturn(new TwoFactorPolicies.Snapshot(0, TwoFactorPolicy.defaults()));
+      case "factor" ->
+          when(twoFactor.state(any()))
+              .thenReturn(
+                  new TwoFactorAuthorization.State(
+                      true, true, false, UUID.randomUUID(), Instant.now()));
+      default -> when(twoFactor.requires(any(), any())).thenReturn(true);
+    }
+    assertThrows(
+        AccessDeniedException.class,
+        () -> flow.complete(request, response, oidc("microsoft", "new-subject", Instant.now())));
+    verify(identities, never()).link(any(), any(), any());
+    verify(transactions).rollback(any());
+  }
+
+  @Test
+  void redirectCannotExtendTheOriginalProofDeadline() {
+    Instant start = Instant.now();
+    signedIn();
+    ReflectionTestUtils.setField(flow, "clock", Clock.fixed(start, ZoneOffset.UTC));
+    flow.confirmPassword(request, "own-password", Purpose.LINK_MICROSOFT);
+    ReflectionTestUtils.setField(
+        flow, "clock", Clock.fixed(start.plusSeconds(299), ZoneOffset.UTC));
+    flow.beginLink(request, "microsoft", Locale.GERMAN);
+    flow.bindAuthorization(request, "microsoft", "link-state");
+    request.setParameter("state", "link-state");
+    ReflectionTestUtils.setField(
+        flow, "clock", Clock.fixed(start.plusSeconds(301), ZoneOffset.UTC));
+    assertThrows(
+        AccessDeniedException.class,
+        () -> flow.complete(request, response, oidc("microsoft", "new-subject", start)));
+    verify(identities, never()).link(any(), any(), any());
+  }
+
+  @Test
+  void factorProofStillRequiresItsStoredGrantWhenTheActionRuleIsOff() {
+    signedIn();
+    flow.confirmFactor(request, "own-code", Purpose.LINK_MICROSOFT);
+    flow.beginLink(request, "microsoft", Locale.GERMAN);
+    flow.bindAuthorization(request, "microsoft", "link-state");
+    request.setParameter("state", "link-state");
+    doThrow(new AccessDeniedException("fixture changed grant"))
+        .when(twoFactor)
+        .authorizeFactorGrant(request, TwoFactorAction.LINK_PROVIDER, true);
+    assertThrows(
+        AccessDeniedException.class,
+        () -> flow.complete(request, response, oidc("microsoft", "new-subject", Instant.now())));
+    verify(identities, never()).link(any(), any(), any());
+  }
+
   @Test
   void pendingAttemptRegistrationAndGrantSurviveSessionSerialization() throws Exception {
+    when(policies.weakGoogleAllowed()).thenReturn(true);
     flow.beginLogin(request, "google", true, Locale.GERMAN);
     flow.bindAuthorization(request, "google", "state");
     roundTripSessionValues();
@@ -153,6 +280,7 @@ class ExternalLoginFlowTest {
   }
 
   private void signedIn() {
+    request.getSession();
     when(security.getAuthenticatedUser(request))
         .thenReturn(
             Optional.of(
@@ -212,6 +340,9 @@ class ExternalLoginFlowTest {
   @ValueSource(strings = {"google", "microsoft"})
   void sensitiveProofIsBoundToPurposeVersionSessionAndConsumedOnce(String provider)
       throws Exception {
+    if (provider.equals("google")) {
+      when(policies.weakGoogleAllowed()).thenReturn(true);
+    }
     signedIn();
     flow.beginProof(request, provider, Purpose.PASSWORD, Locale.GERMAN);
     flow.bindAuthorization(request, provider, "state");
@@ -292,8 +423,9 @@ class ExternalLoginFlowTest {
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
-  void googleInterimConfirmationAllowsMissingOrOldAuthenticationTime(boolean missing)
+  void explicitlyEnabledDevelopmentConfirmationAllowsMissingOrOldGoogleTime(boolean missing)
       throws Exception {
+    when(policies.weakGoogleAllowed()).thenReturn(true);
     signedIn();
     flow.beginProof(request, "google", Purpose.PASSWORD, Locale.GERMAN);
     flow.bindAuthorization(request, "google", "state");
@@ -377,6 +509,7 @@ class ExternalLoginFlowTest {
 
   @Test
   void expiredFreshProofCannotAuthorizeSecurityActions() throws Exception {
+    when(policies.weakGoogleAllowed()).thenReturn(true);
     Instant start = Instant.now();
     ReflectionTestUtils.setField(flow, "clock", Clock.fixed(start, ZoneOffset.UTC));
     signedIn();
@@ -387,6 +520,49 @@ class ExternalLoginFlowTest {
     flow.authorize(request, owner, Purpose.EMAIL, false);
     ReflectionTestUtils.setField(
         flow, "clock", Clock.fixed(start.plusSeconds(301), ZoneOffset.UTC));
+    assertThrows(
+        AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.EMAIL, true));
+  }
+
+  @Test
+  void googleRoundTripAloneDoesNotGrantSensitiveProofByDefault() {
+    signedIn();
+    flow.beginProof(request, "google", Purpose.PASSWORD, Locale.GERMAN);
+    flow.bindAuthorization(request, "google", "state");
+    request.setParameter("state", "state");
+    OAuth2AuthenticationToken confirmation = oidc("subject", Instant.now());
+    ProofRejected rejected =
+        assertThrows(ProofRejected.class, () -> flow.complete(request, response, confirmation));
+    assertEquals(ProofProblem.FRESH_AUTHENTICATION_REQUIRED, rejected.problem());
+    assertThrows(
+        AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.PASSWORD, true));
+  }
+
+  @Test
+  void neitherProviderCanOverrideAnEnrolledRequiredSecondFactor() {
+    signedIn();
+    when(policies.weakGoogleAllowed()).thenReturn(true);
+    when(twoFactor.requires(any(), any())).thenReturn(true);
+    for (String provider : List.of("google", "microsoft")) {
+      flow.beginProof(request, provider, Purpose.EMAIL, Locale.GERMAN);
+      flow.bindAuthorization(request, provider, provider + "-state");
+      request.setParameter("state", provider + "-state");
+      OAuth2AuthenticationToken confirmation = oidc(provider, "subject", Instant.now());
+      assertThrows(ProofRejected.class, () -> flow.complete(request, response, confirmation));
+      assertThrows(
+          AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.EMAIL, true));
+    }
+  }
+
+  @Test
+  void turningOffDevelopmentExceptionRevokesAnExistingWeakGrant() throws Exception {
+    signedIn();
+    when(policies.weakGoogleAllowed()).thenReturn(true);
+    flow.beginProof(request, "google", Purpose.EMAIL, Locale.GERMAN);
+    flow.bindAuthorization(request, "google", "state");
+    request.setParameter("state", "state");
+    flow.complete(request, response, oidc("subject", null));
+    when(policies.weakGoogleAllowed()).thenReturn(false);
     assertThrows(
         AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.EMAIL, true));
   }

@@ -12,6 +12,106 @@ import java.util.function.UnaryOperator;
 /** Typed translation getters shared by the application and external browser tests. */
 public class MessageTexts {
 
+  public String getSupportTitle() {
+    return getTranslation("support.title");
+  }
+
+  public String getSupportSubjectColumn() {
+    return getTranslation("support.subjectColumn");
+  }
+
+  public String getSupportStatusColumn() {
+    return getTranslation("support.statusColumn");
+  }
+
+  public String getSupportAssigneeColumn() {
+    return getTranslation("support.assigneeColumn");
+  }
+
+  public String getSupportRecoverySubject() {
+    return getTranslation("support.recoverySubject");
+  }
+
+  public String getSupportRecoveryNotification() {
+    return getTranslation("support.recoveryNotification");
+  }
+
+  public String getSupportNoUnlock() {
+    return getTranslation("support.noUnlock");
+  }
+
+  public String getSupportSensitiveWarning() {
+    return getTranslation("support.sensitiveWarning");
+  }
+
+  public String getSupportDescription() {
+    return getTranslation("support.description");
+  }
+
+  public String getSupportCreate() {
+    return getTranslation("support.create");
+  }
+
+  public String getSupportReply() {
+    return getTranslation("support.reply");
+  }
+
+  public String getSupportInternal() {
+    return getTranslation("support.internal");
+  }
+
+  public String getSupportClaim() {
+    return getTranslation("support.claim");
+  }
+
+  public String getSupportClose() {
+    return getTranslation("support.close");
+  }
+
+  public String getSupportInstructions() {
+    return getTranslation("support.instructions");
+  }
+
+  public String getSupportQueued() {
+    return getTranslation("support.queued");
+  }
+
+  public String getSupportSaved() {
+    return getTranslation("support.saved");
+  }
+
+  public String getSupportFailed() {
+    return getTranslation("support.failed");
+  }
+
+  public String getSupportOpen() {
+    return getTranslation("support.open");
+  }
+
+  public String getSupportInProgress() {
+    return getTranslation("support.inProgress");
+  }
+
+  public String getSupportClosed() {
+    return getTranslation("support.closed");
+  }
+
+  public String getSupportUnassigned() {
+    return getTranslation("support.unassigned");
+  }
+
+  public String getSupportAssigned() {
+    return getTranslation("support.assigned");
+  }
+
+  public String getSupportEmpty() {
+    return getTranslation("support.empty");
+  }
+
+  public String getSupportRecoveryInstructions() {
+    return getTranslation("support.recoveryInstructions");
+  }
+
   private final UnaryOperator<String> lookup;
 
   public MessageTexts(UnaryOperator<String> lookup) {
@@ -26,9 +126,365 @@ public class MessageTexts {
     return MessageFormat.format(getTranslation(key), args);
   }
 
+  public String getTwoFactorPageTitle() {
+    return getTranslation("mfa.page.title");
+  }
+
+  public String getTwoFactorPageHint() {
+    return getTranslation("mfa.page.hint");
+  }
+
+  public String getTwoFactorConfirmTitle() {
+    return getTranslation("mfa.confirm.title");
+  }
+
+  public String getTwoFactorLoginHint() {
+    return getTranslation("mfa.login.hint");
+  }
+
+  public String getTwoFactorSetupTitle() {
+    return getTranslation("mfa.setup.title");
+  }
+
+  public String getTwoFactorRecoverAction() {
+    return getTranslation("mfa.recover.action");
+  }
+
+  public String getTwoFactorRecoverHint() {
+    return getTranslation("mfa.recover.hint");
+  }
+
+  public String getTwoFactorRecoveryCodeLabel() {
+    return getTranslation("mfa.recover.code");
+  }
+
+  public String getTwoFactorReturnToCode() {
+    return getTranslation("mfa.recover.back");
+  }
+
+  public String getTwoFactorSetupHint() {
+    return getTranslation("mfa.setup.hint");
+  }
+
+  public String getTwoFactorStartSetup() {
+    return getTranslation("mfa.setup.start");
+  }
+
+  public String getTwoFactorScanHint() {
+    return getTranslation("mfa.scan.hint");
+  }
+
+  public String getTwoFactorAppHint() {
+    return getTranslation("mfa.app.hint");
+  }
+
+  public String getTwoFactorQrAlt() {
+    return getTranslation("mfa.qr.alt");
+  }
+
+  public String getTwoFactorManualKey() {
+    return getTranslation("mfa.manual.key");
+  }
+
+  public String getTwoFactorEnable() {
+    return getTranslation("mfa.enable");
+  }
+
+  public String getTwoFactorConfirm() {
+    return getTranslation("mfa.confirm");
+  }
+
+  public String getTwoFactorEmailCodeHint() {
+    return getTranslation("mfa.email.code.hint");
+  }
+
+  public String getTwoFactorEmailCodeLabel() {
+    return getTranslation("mfa.email.code.label");
+  }
+
+  public String getTwoFactorRecoveryTitle() {
+    return getTranslation("mfa.recovery.title");
+  }
+
+  public String getTwoFactorRecoveryExplanation() {
+    return getTranslation("mfa.recovery.explanation");
+  }
+
+  public String getTwoFactorRecoveryStorage() {
+    return getTranslation("mfa.recovery.storage");
+  }
+
+  public String getTwoFactorRecoveryReplacement() {
+    return getTranslation("mfa.recovery.replacement");
+  }
+
+  public String getTwoFactorRecoverySupport() {
+    return getTranslation("mfa.recovery.support");
+  }
+
+  public String getTwoFactorDocumentAccount() {
+    return getTranslation("mfa.document.account");
+  }
+
+  public String getTwoFactorDocumentDate() {
+    return getTranslation("mfa.document.date");
+  }
+
+  public String getTwoFactorDownloadPdf() {
+    return getTranslation("mfa.download.pdf");
+  }
+
+  public String getTwoFactorCopyCodes() {
+    return getTranslation("mfa.copy.codes");
+  }
+
+  public String getTwoFactorCodesSaved() {
+    return getTranslation("mfa.codes.saved");
+  }
+
+  public String getTwoFactorCodeFrameTitle() {
+    return getTranslation("mfa.codes.frame");
+  }
+
+  public String getTwoFactorCopySuccess() {
+    return getTranslation("mfa.copy.success");
+  }
+
+  public String getTwoFactorCopyFailed() {
+    return getTranslation("mfa.copy.failed");
+  }
+
+  public String getTwoFactorUnavailable() {
+    return getTranslation("mfa.unavailable");
+  }
+
+  public String getTwoFactorSetupRequired() {
+    return getTranslation("mfa.setup.required");
+  }
+
+  public String getTwoFactorThrottled() {
+    return getTranslation("mfa.throttled");
+  }
+
+  public String getTwoFactorFailed() {
+    return getTranslation("mfa.failed");
+  }
+
+  public String getTwoFactorBack() {
+    return getTranslation("mfa.back");
+  }
+
+  public String getTwoFactorNeedHelp() {
+    return getTranslation("mfa.need.help");
+  }
+
+  public String getTwoFactorRequestHelp() {
+    return getTranslation("mfa.request.help");
+  }
+
+  public String getTwoFactorSettingsTitle() {
+    return getTranslation("mfa.settings.title");
+  }
+
+  public String getTwoFactorSettingsHint() {
+    return getTranslation("mfa.settings.hint");
+  }
+
+  public String getTwoFactorModeOff() {
+    return getTranslation("mfa.mode.off");
+  }
+
+  public String getTwoFactorModeEnrolled() {
+    return getTranslation("mfa.mode.enrolled");
+  }
+
+  public String getTwoFactorModeRequired() {
+    return getTranslation("mfa.mode.required");
+  }
+
+  public String getTwoFactorRulesHint() {
+    return getTranslation("mfa.rules.hint");
+  }
+
+  public String getTwoFactorRuleLogin() {
+    return getTranslation("mfa.rule.login");
+  }
+
+  public String getTwoFactorRuleAdministration() {
+    return getTranslation("mfa.rule.administration");
+  }
+
+  public String getTwoFactorRulePassword() {
+    return getTranslation("mfa.rule.password");
+  }
+
+  public String getTwoFactorRuleEmail() {
+    return getTranslation("mfa.rule.email");
+  }
+
+  public String getTwoFactorRuleLink() {
+    return getTranslation("mfa.rule.link");
+  }
+
+  public String getTwoFactorRuleUnlink() {
+    return getTranslation("mfa.rule.unlink");
+  }
+
+  public String getTwoFactorRuleFactor() {
+    return getTranslation("mfa.rule.factor");
+  }
+
+  public String getTwoFactorRuleRecovery() {
+    return getTranslation("mfa.rule.recovery");
+  }
+
+  public String getTwoFactorRuleConfiguration() {
+    return getTranslation("mfa.rule.configuration");
+  }
+
+  public String getTwoFactorRuleHelp() {
+    return getTranslation("mfa.rule.help");
+  }
+
+  public String getTwoFactorInactivityEnabled() {
+    return getTranslation("mfa.inactivity.enabled");
+  }
+
+  public String getTwoFactorInactivityDuration() {
+    return getTranslation("mfa.inactivity.duration");
+  }
+
+  public String getTwoFactorInactivityHelp() {
+    return getTranslation("mfa.inactivity.help");
+  }
+
+  public String getTwoFactorDevelopmentTitle() {
+    return getTranslation("mfa.development.title");
+  }
+
+  public String getTwoFactorDevelopmentPause() {
+    return getTranslation("mfa.development.pause");
+  }
+
+  public String getTwoFactorDevelopmentGoogle() {
+    return getTranslation("mfa.development.google");
+  }
+
+  public String getTwoFactorDevelopmentWarning() {
+    return getTranslation("mfa.development.warning");
+  }
+
+  public String getTwoFactorSaveHint() {
+    return getTranslation("mfa.save.hint");
+  }
+
+  public String getTwoFactorSaved() {
+    return getTranslation("mfa.saved");
+  }
+
+  public String getTwoFactorConflict() {
+    return getTranslation("mfa.conflict");
+  }
+
+  public String getTwoFactorAccountHint() {
+    return getTranslation("mfa.account.hint");
+  }
+
+  public String getTwoFactorEnrolled() {
+    return getTranslation("mfa.enrolled");
+  }
+
+  public String getTwoFactorNotEnrolled() {
+    return getTranslation("mfa.not.enrolled");
+  }
+
+  public String getTwoFactorSetupAction() {
+    return getTranslation("mfa.setup.action");
+  }
+
+  public String getTwoFactorReplaceAction() {
+    return getTranslation("twoFactor.replaceAction");
+  }
+
+  public String getTwoFactorDisableAction() {
+    return getTranslation("mfa.disable.action");
+  }
+
+  public String getTwoFactorRegenerateAction() {
+    return getTranslation("mfa.regenerate.action");
+  }
+
+  public String getTwoFactorIndependentAccessRequired() {
+    return getTranslation("twoFactor.independentAccessRequired");
+  }
+
+  public String getTwoFactorDisableHint() {
+    return getTranslation("mfa.disable.hint");
+  }
+
+  public String getTwoFactorDisabled() {
+    return getTranslation("mfa.disabled");
+  }
+
+  public String getTwoFactorDisabledSubject() {
+    return getTranslation("mfa.disabled.subject");
+  }
+
+  public String getTwoFactorDisabledExplanation() {
+    return getTranslation("mfa.disabled.explanation");
+  }
+
+  public String getTwoFactorRenewedSubject() {
+    return getTranslation("mfa.renewed.subject");
+  }
+
+  public String getTwoFactorRenewedExplanation() {
+    return getTranslation("mfa.renewed.explanation");
+  }
+
   // Externe Anmeldung: gemeinsame DE-/EN-Texte.
   public String getExternalGoogle() {
     return getTranslation("external.google");
+  }
+
+  public String getTwoFactorEmailSubject() {
+    return getTranslation("mfa.email.subject");
+  }
+
+  public String getTwoFactorEmailExplanation() {
+    return getTranslation("mfa.email.explanation");
+  }
+
+  public String getTwoFactorEmailNotice() {
+    return getTranslation("mfa.email.notice");
+  }
+
+  public String getTwoFactorEnabledSubject() {
+    return getTranslation("mfa.enabled.subject");
+  }
+
+  public String getTwoFactorEnabledExplanation() {
+    return getTranslation("mfa.enabled.explanation");
+  }
+
+  public String getTwoFactorSecurityNotice() {
+    return getTranslation("mfa.security.notice");
+  }
+
+  public String getTwoFactorActionHint() {
+    return getTranslation("mfa.action.hint");
+  }
+
+  public String getTwoFactorCodeLabel() {
+    return getTranslation("mfa.code.label");
+  }
+
+  public String getTwoFactorCodePlaceholder() {
+    return getTranslation("mfa.code.placeholder");
+  }
+
+  public String getTwoFactorInvalidCode() {
+    return getTranslation("mfa.code.invalid");
   }
 
   public String getExternalMicrosoft() {
@@ -785,6 +1241,7 @@ public class MessageTexts {
       case GENERAL -> getAdminConfigGroupGeneralDescription();
       case SECURITY -> getAdminConfigGroupSecurityDescription();
       case EXTERNAL_LOGIN -> getProviderSettingsDescription();
+      case TWO_FACTOR -> getTwoFactorSettingsHint();
       case TOKENS -> getAdminConfigGroupTokensDescription();
       case USER_STATUS -> getAdminConfigGroupUserStatusDescription();
       case EMAIL_SENDER -> getAdminConfigGroupEmailSenderDescription();
@@ -1672,6 +2129,7 @@ public class MessageTexts {
       case GENERAL -> getAdminConfigGroupGeneral();
       case SECURITY -> getAdminConfigGroupSecurity();
       case EXTERNAL_LOGIN -> getProviderSettingsTitle();
+      case TWO_FACTOR -> getTwoFactorSettingsTitle();
       case TOKENS -> getAdminConfigGroupTokens();
       case USER_STATUS -> getAdminConfigGroupUserStatus();
       case EMAIL_SENDER -> getAdminConfigGroupEmailSender();

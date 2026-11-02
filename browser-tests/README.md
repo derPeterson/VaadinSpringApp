@@ -69,8 +69,11 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `authentication` | Admin-/Benutzerlogin, Fehler, Gastzugriff und Logout | 7 |
 | `login-attempts` | Drei Sperr-/Resetfälle plus sieben Anmelde- und vier Remember-me-Regressionsfälle | 14 |
 | `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung einschließlich Serverneustart und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 37 |
-| `external-login` | Google/Microsoft mit eigenem OIDC-Anbieter, Admin-Anbietereinrichtung, freiwillige Profilfelder sowie bestehende Registrierungs-/Konto-/Sicherheitsfälle und Formularpanels | 52 |
-| `external-login-flow` | Externe Anmeldungen, Admin-Anbietereinrichtung, Verknüpfungen, Aktionsnachweise mit dokumentierter Google-Zwischenlösung und frischer Microsoft-Bestätigung, Browserneustart, E-Mail-Änderung, optionale Adminprofilfelder und kontextbezogene Kontobestätigung, vollständig deaktivierte Anbieter sowie Standardmeldungen nach Rücksprüngen | 29 |
+| `external-login` | Google/Microsoft mit eigenem OIDC-Anbieter, Admin-Anbietereinrichtung, freiwillige Profilfelder sowie bestehende Registrierungs-/Konto-/Sicherheitsfälle und Formularpanels | 56 |
+| `external-login-flow` | Externe Anmeldungen, Superadmin-Anbietereinrichtung mit 2FA, Verknüpfungen, geschützte Google-Ersteinrichtung und frische Microsoft-Bestätigung, Browserneustart, E-Mail-Änderung, optionale Adminprofilfelder und kontextbezogene Kontobestätigung, vollständig deaktivierte Anbieter sowie Standardmeldungen nach Rücksprüngen | 29 |
+| `two-factor` | Einrichtung, erneute Anmeldung, aktionsgebundene Bestätigung, geschützter Faktorwechsel/Entfernen, Wiederherstellung mit dem letzten Ersatzcode nach Portal-/Google-/Microsoft-Anmeldung, Ersatzcodes/PDF, eingeschränkte Hilfe und Adminbearbeitung, Superadminrechte, Regelwechsel einer offenen Sitzung, echte Browser-/Anwendungsneustarts, Inaktivität auch bei Push und HTML-Momentaufnahmen auf Desktop/Smartphone | 30 |
+| `two-factor-push` | Echte einminütige Inaktivitätsfrist, native Benutzereingabe gegenüber Hintergrundabrufen und gesperrte serverseitige Vorschauupdates nach Ablauf | 2 |
+| `two-factor-lifecycle` | Sprachwechsel während Mailcode/QR/Codeausgabe/Hilfe, Entzug der Superadminrolle bei zwei offenen Konfigurationen sowie Startfreigabe und Neustart mit gespeicherten Entwicklungsausnahmen | 5 |
 | `external-login-layout` | Getrennte Panels für Anmeldung und Registrierung sowie Admin-Anbieter- und Kontosicherheitstabs in Vaadin und HTML, Desktop/schmal, Tastaturbedienung, Footerumbrüche, Erhalt ungespeicherter Eingaben und Kontobestätigungsdialoge. Ohne Registrierung, Speicherung oder Versand | 8 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
@@ -103,7 +106,7 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
 | `cosmos-components` | Rollensuche, Konfigurations-Switches, SideNav-Zustände, Tooltips und Benutzermenü | 5 |
-| `all` | Alle 32 Testklassen einschließlich der Fast-Fälle | 208 |
+| `all` | Alle 35 Testklassen einschließlich der Fast-Fälle | 241 |
 
 IDs, Schritte und erwartetes Ergebnis stehen pro Fall in `@DisplayName` und
 `@Description`; diese Angaben übernimmt der Bericht. AVATAR-01 enthält zwei
@@ -116,6 +119,18 @@ Er liefert signierte Antworten und prüft den Codeaustausch mit PKCE. Google-/Mi
 Clientzugänge sind dafür nicht erforderlich. Die Endpunkte bleiben auf diesen Worker
 begrenzt. Die Tests kontaktieren keine echten Anbieterkonten. Die zusätzliche Abnahme
 mit echten eigenen Clients steht unter [HUM-08](../docs/manual-tests/README.md#hum-08).
+
+Die isolierte Umgebung erhält einen eigenen zufälligen 2FA-Verschlüsselungsschlüssel,
+der beim gezielten Neustart desselben Workers erhalten bleibt. Entwicklungs-Ausnahmen
+sind standardmäßig aus, unabhängig von geerbten Startvariablen. Ausschließlich MFA-16
+startet seine eigene Testanwendung bewusst mit der Startfreigabe neu, prüft beide
+getrennten Schalter und nimmt die Freigabe im `finally` wieder zurück. Dabei bleiben
+Testschlüssel und H2 erhalten, damit auch gespeicherte Ausnahmen nach dem Neustart
+nachweislich unwirksam sind. Der Test-Authenticator durchläuft den regulären Einrichtungspfad und liest
+seinen Schlüssel über den kontogebundenen geschützten Endpunkt. Er verwendet echte
+TOTP und einmalige Ersatzcodes. Keine Datenbankmanipulation und keine Injektion eines
+angeblichen MFA-Status. Echte Appbedienung, Druck und Verständlichkeit werden zusätzlich
+unter [HUM-09](../docs/manual-tests/README.md#hum-09) gemeinsam abgenommen.
 
 ## Schnellprüfung
 

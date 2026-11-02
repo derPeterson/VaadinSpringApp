@@ -6,7 +6,7 @@
 - Lokale Registrierungen benötigen die Aktivierung über eine tatsächlich versandte E-Mail.
   Bei externen Registrierungen gelten die anbieterspezifischen Adressnachweise.
 - Anmeldung mit E-Mail/Passwort sowie bei konfigurierten Anbietern mit Google oder Microsoft.
-  Externe Registrierung benötigt kein zusätzliches Portalpasswort. Administratoren richten
+  Externe Registrierung benötigt kein zusätzliches Portalpasswort. Superadmins richten
   die Anbieter unter Konfiguration → Anmeldeanbieter ein und geben sie dort frei.
   Details und Einrichtung:
   [Externe Anmeldung](externe-anmeldung.md). Optional bleibt die gespeicherte Anmeldung.
@@ -33,12 +33,21 @@ Geschlecht und Geburtstag dürfen leer bleiben oder wieder geleert werden. Die E
 wird über den Sicherheitsablauf geändert. Parallele Änderungen werden mit einem
 Versionskonflikt gemeldet, statt ein anderes geöffnetes Formular zu überschreiben.
 
-Passwortwechsel verlangen eine aktuelle Passwortbestätigung oder einen frischen,
-zweckgebundenen Nachweis eines verbundenen Anbieters. Die eigene aktuelle
+Passwortwechsel verlangen den nach der aktuellen Regel erforderlichen,
+zweckgebundenen Identitätsnachweis. Bei eingerichteter 2FA ist dies standardmäßig
+ein aktueller Authenticator- oder Ersatzcode. Ohne entsprechende 2FA-Anforderung
+bleiben die geschützten Passwort-/Anbieterwege erhalten. Ein Google-Durchlauf allein
+genügt im normalen Betrieb nicht. Die eigene aktuelle
 Sitzung bleibt erhalten; andere Zugänge werden widerrufen. Eine E-Mail-Änderung wird
 an der neuen Adresse ausdrücklich bestätigt; ein bloßer Linkaufruf übernimmt sie
 nicht. Danach sind neue Anmeldung und die Sicherheitsmails an die betroffenen
 Adressen vorgesehen. Die Details stehen unter [Sicherheit](sicherheit.md).
+
+Im Tab **Portalzugang** lässt sich ein Authenticator einrichten, wechseln oder
+entfernen. Neue Ersatzcodes werden einmalig zum Kopieren und als druckbare PDF
+angeboten. Eine verpflichtende Einrichtung bzw. Bestätigung erfolgt vor dem
+vollständigen Kontozugriff. Auch eine gespeicherte Anmeldung überspringt diesen
+Schritt nicht. Details: [Zwei-Faktor-Authentifizierung](zwei-faktor-authentifizierung.md).
 
 Geräte und Sitzungen zeigen aktive Zugänge und gespeicherte Anmeldungen mit
 Gerätebeschreibung. Einzelne oder alle anderen Zugänge können widerrufen werden.
@@ -104,8 +113,15 @@ Persönliches Entfernen löscht keine Nachweise oder Hinweise anderer Empfänger
 ## Administration
 
 Admins verwalten Benutzer, Konfiguration und den Mailtest. Superadmins verwalten
-zusätzlich Superadmins und den internen Mitteilungsversand. Die letzte aktive
+zusätzlich Superadmins, den internen Mitteilungsversand, Anmeldeanbieter und die
+rollenbezogenen Zwei-Faktor-Regeln. Die letzte aktive
 Superadminberechtigung ist geschützt; ein Admin darf sich keine höheren Rechte geben.
+
+**Wiederherstellungsanfragen** bieten eine kleine gemeinsame Vorgangsliste mit
+Übernahme, öffentlichen Antworten, internen Vermerken und vorbereiteter Anleitung.
+Nach dem ersten Anmeldenachweis können ausgesperrte Benutzer ausschließlich ihre
+eigenen Anfragen erreichen. Eine Antwort oder ein Ticketabschluss setzt keinen
+Authenticator zurück und gibt keinen gesperrten Kontozugriff frei.
 
 Die Benutzerverwaltung bietet sofortige Namens-/E-Mail-Suche, Sortierung und Paging.
 Weitere Filter sind Entwürfe bis zum Anwenden; Badges zeigen angewandte Kriterien.

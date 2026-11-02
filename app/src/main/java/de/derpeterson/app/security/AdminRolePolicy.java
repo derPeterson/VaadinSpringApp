@@ -23,6 +23,12 @@ import org.springframework.stereotype.Component;
 public class AdminRolePolicy {
   private final UserRepository users;
 
+  public void requireSuperadmin() {
+    if (!currentRoles().contains(RoleType.ROLE_SUPERADMIN)) {
+      throw denied();
+    }
+  }
+
   public void authorizeMutation(Long targetId, Set<RoleType> desired) {
     Set<RoleType> current = currentRoles();
     if (!current.contains(RoleType.ROLE_ADMIN) && !current.contains(RoleType.ROLE_SUPERADMIN)) {

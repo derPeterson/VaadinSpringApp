@@ -62,6 +62,14 @@ Umbau ist insgesamt abgenommen.
 Spring lädt `application.properties` sowie optional die lokale, nicht versionierte
 `.env`. `app.config.defaults.*` bzw. die vorgesehenen `APP_CFG_*`-Variablen liefern
 Vorgaben für fehlende Datenbankeinträge. Gespeicherte Adminwerte haben Vorrang.
+Alle 30 allgemeinen Admin-Konfigurationen besitzen eine entsprechende `APP_CFG_*`-
+Startvorgabe. Die `.env.example` gliedert sie nach Konfigurationsbereich und nennt
+die jeweiligen Einheiten. Dauerwerte verwenden ISO 8601, beispielsweise `PT10M`
+für zehn Minuten oder `P7D` für sieben Tage. Die Remember-me-Dauer wird in Sekunden
+und die Aufbewahrung von Benachrichtigungen in Tagen angegeben.
+Der Servicename wird mit `APP_CFG_SERVICE_NAME=derPeter` in der `.env` vorgegeben.
+Ohne diese Variable gilt `{ServiceName}`. Änderungen benötigen einen Neustart und
+überschreiben keinen bereits gespeicherten Servicenamen.
 `ConfigService` bewahrt Strings unverändert; typisierte Getter lehnen ungültige
 Zahlen/Booleans ab. SMTP, Remember-me und Workerzahl werden beim Start gebunden.
 

@@ -37,6 +37,8 @@ public class AccountEmailChangeDialog extends Dialog {
   private final H2 title = new H2();
   private final Span description = new Span();
   private final Span hint = new Span();
+  private final Span developmentWarning = new Span();
+  private transient BooleanSupplier developmentException = () -> false;
   private final EmailField email = new EmailField();
   private final EmailField confirmEmail = new EmailField();
   private final PasswordField password = new PasswordField();
@@ -96,6 +98,9 @@ public class AccountEmailChangeDialog extends Dialog {
     info.addClassName("cosmos-panel-hint");
     Div form = new Div(email, confirmEmail, password, info);
     form.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
+    developmentWarning.addClassName(PANEL_DESCRIPTION);
+    developmentWarning.setVisible(false);
+    form.add(developmentWarning);
     add(form);
 
     cancel.setId("account-email-cancel");
@@ -161,6 +166,8 @@ public class AccountEmailChangeDialog extends Dialog {
 
   @Override
   public void open() {
+    developmentWarning.setText(messages.getTwoFactorDevelopmentWarning());
+    developmentWarning.setVisible(developmentException.getAsBoolean());
     boolean required = currentPasswordRequired.getAsBoolean();
     password.setVisible(required);
     password.setRequiredIndicatorVisible(required);
@@ -191,5 +198,9 @@ public class AccountEmailChangeDialog extends Dialog {
     hint.setText(messages.getAccountEmailDialogHint());
     cancel.setText(messages.getAdminUsersCancel());
     request.setText(messages.getAccountEmailDialogRequest());
+  }
+
+  public void setDevelopmentWarning(BooleanSupplier active) {
+    developmentException = Objects.requireNonNull(active);
   }
 }

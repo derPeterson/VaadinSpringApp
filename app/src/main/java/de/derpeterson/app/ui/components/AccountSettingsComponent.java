@@ -89,6 +89,8 @@ public class AccountSettingsComponent extends PortalPageComponent {
   private ExternalConnectionsComponent externalConnections;
   private final TabSheet securityTabs = new TabSheet();
   private final Div providerAccess = new Div();
+  private Div portalCards;
+  private TwoFactorAccountComponent twoFactor;
   private Tab providersTab;
   private final AccountAvatarDialog avatarDialog;
   private final DatePicker birthDate = new DatePicker();
@@ -440,6 +442,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
                 () -> user == null ? "" : Objects.toString(user.getEmail(), ""),
                 emailChangeButton("account-email-edit-security")));
     cards.addClassName("account-security-cards");
+    portalCards = cards;
     Div hint =
         new Div(
             AppIcon.INFO_CIRCLE.create(),
@@ -481,6 +484,11 @@ public class AccountSettingsComponent extends PortalPageComponent {
       SerializableRunnable revokeOthers) {
     sessionPanel.configure(loader, revoke, revokeOthers);
     sessionPanel.refreshTexts();
+  }
+
+  public void configureTwoFactor(TwoFactorAccountComponent component) {
+    twoFactor = component;
+    portalCards.add(component);
   }
 
   public void configureSecurityActions(
@@ -551,6 +559,9 @@ public class AccountSettingsComponent extends PortalPageComponent {
     avatarDialog.refreshTexts();
     sidebar.refreshTexts();
     sessionPanel.refreshTexts();
+    if (twoFactor != null) {
+      twoFactor.refresh();
+    }
   }
 
   public void configureExternalLogins(
@@ -560,6 +571,8 @@ public class AccountSettingsComponent extends PortalPageComponent {
     passwordChangeDialog.setCurrentPasswordRequired(passwordRequired);
     emailChangeDialog.setCurrentPasswordRequired(emailPasswordRequired);
     externalConnections = connections;
+    passwordChangeDialog.setDevelopmentWarning(connections::developmentExceptionActive);
+    emailChangeDialog.setDevelopmentWarning(connections::developmentExceptionActive);
     // Der Bestätigungsdialog muss auch vom Portal-Tab aus bedienbar bleiben.
     add(connections.getConfirmationDialog());
     connections.configureAccountActions(

@@ -86,6 +86,10 @@ public final class ExternalConnectionsComponent extends Div {
     return confirmation;
   }
 
+  public boolean developmentExceptionActive() {
+    return flow.developmentExceptionActive();
+  }
+
   public void requestPasswordChange() {
     requestAction(Purpose.PASSWORD);
   }
@@ -168,6 +172,7 @@ public final class ExternalConnectionsComponent extends Div {
           case LINK_MICROSOFT -> () -> link("microsoft");
           case UNLINK_GOOGLE -> () -> unlink(GOOGLE);
           case UNLINK_MICROSOFT -> () -> unlink("microsoft");
+          case ENROLL_FACTOR -> throw new IllegalArgumentException("Enrollment has its own view");
         };
     if (action == null) {
       return;
@@ -179,14 +184,32 @@ public final class ExternalConnectionsComponent extends Div {
     boolean confirmed = flow.confirmedPurpose(request).filter(purpose::equals).isPresent();
     UserEntity user = flow.owner(request);
     boolean providerProofAvailable =
-        identities.connected(user.getId()).stream().anyMatch(flow.providers()::contains);
-    if (!confirmed && user.getPassword() == null && !providerProofAvailable) {
+        identities.connected(user.getId()).stream()
+            .anyMatch(
+                provider ->
+                    flow.providers().contains(provider)
+                        && flow.canUseProviderProof(request, provider, purpose));
+    if (!confirmed
+        && !flow.factorEnrolled(request)
+        && (flow.requiresFactor(request, purpose)
+            || user.getPassword() == null && !providerProofAvailable)) {
+      UI.getCurrent().getPage().setLocation(request.getContextPath() + "/two-factor?setup");
+      return;
+    }
+    if (!confirmed
+        && user.getPassword() == null
+        && !providerProofAvailable
+        && !flow.requiresFactor(request, purpose)) {
       NotificationHelper.getInstance()
           .showNotification(
               texts::getExternalProofUnavailable, NotificationHelper.NotificationType.WARNING);
       return;
     }
-    if (accountChange && (confirmed || user.getPassword() != null && !providerProofAvailable)) {
+    if (accountChange
+        && (confirmed
+            || user.getPassword() != null
+                && !providerProofAvailable
+                && !flow.requiresFactor(request, purpose))) {
       // Lokale Konten behalten den bestehenden Änderungsdialog mit Passwortprüfung.
       action.run();
     } else {

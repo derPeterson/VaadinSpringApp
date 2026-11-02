@@ -2,9 +2,15 @@ package de.derpeterson.app.security;
 
 import static de.derpeterson.app.security.ExternalProviderSettings.GOOGLE;
 
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.mfa.TwoFactorAction;
+import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
+import de.derpeterson.app.security.mfa.TwoFactorEnrollment;
+import de.derpeterson.app.security.mfa.TwoFactorPolicies;
 import de.derpeterson.app.service.ExternalIdentityService;
+import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -17,6 +23,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,6 +33,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /** Kurzlebige, sitzungsgebundene Abläufe. Nur fertige lokale Logins erhalten Portalzugriff. */
 @Service
@@ -37,7 +46,8 @@ public class ExternalLoginFlow {
     LINK_GOOGLE,
     LINK_MICROSOFT,
     UNLINK_GOOGLE,
-    UNLINK_MICROSOFT
+    UNLINK_MICROSOFT,
+    ENROLL_FACTOR
   }
 
   public enum Mode {
@@ -93,9 +103,63 @@ public class ExternalLoginFlow {
     }
   }
 
+  private enum ProofMethod {
+    PASSWORD,
+    MICROSOFT,
+    GOOGLE_DEVELOPMENT,
+    SECOND_FACTOR
+  }
+
   private record Grant(
-      Long userId, String version, Purpose purpose, Instant expires, String sessionId)
-      implements Serializable {}
+      Long userId,
+      String version,
+      Purpose purpose,
+      Instant expires,
+      String sessionId,
+      ProofMethod method,
+      UUID factorRevision,
+      long policyRevision)
+      implements Serializable {
+    @Override
+    public String toString() {
+      return "External action grant";
+    }
+  }
+
+  /** Kann ausschließlich nach der OIDC-Prüfung dieses Dienstes erzeugt werden. */
+  public static final class EnrollmentConfirmation {
+    private final Long userId;
+    private final String version;
+    private final String sessionId;
+    private final String provider;
+    private final Instant expires;
+
+    private EnrollmentConfirmation(
+        UserEntity user, HttpSession session, String provider, Instant expires) {
+      this.userId = user.getId();
+      this.version = user.getAccessVersion();
+      this.sessionId = session.getId();
+      this.provider = provider;
+      this.expires = expires;
+    }
+
+    public boolean matches(Long ownerId, String accessVersion, HttpSession session, Instant now) {
+      return session != null
+          && userId.equals(ownerId)
+          && version.equals(accessVersion)
+          && sessionId.equals(session.getId())
+          && expires.isAfter(now);
+    }
+
+    public String provider() {
+      return provider;
+    }
+
+    @Override
+    public String toString() {
+      return "Verified enrollment provider";
+    }
+  }
 
   private static final String ATTEMPT = ExternalLoginFlow.class.getName() + ".attempt";
   private static final String REGISTRATION = ExternalLoginFlow.class.getName() + ".registration";
@@ -107,10 +171,18 @@ public class ExternalLoginFlow {
   private final SecurityService security;
   private final SessionManagementService sessions;
   private final AuthenticationManager authenticationManager;
+  private final TwoFactorAuthorization twoFactor;
+  private final TwoFactorEnrollment enrollment;
+  private final TwoFactorPolicies policies;
+  private final EntityManager entityManager;
+  private final PlatformTransactionManager transactions;
   private Clock clock = Clock.systemUTC();
 
   public void confirmPassword(HttpServletRequest request, String password, Purpose purpose) {
     Objects.requireNonNull(purpose, "Security action required");
+    if (purpose == Purpose.ENROLL_FACTOR || requiresFactor(request, purpose)) {
+      throw new AccessDeniedException("Confirm with the required second factor");
+    }
     UserEntity user = owner(request);
     Authentication verified =
         authenticationManager.authenticate(
@@ -122,15 +194,38 @@ public class ExternalLoginFlow {
     if (!Objects.equals(user.getAccessVersion(), current.getAccessVersion())) {
       throw new AccessDeniedException("Account changed");
     }
-    HttpSession session = request.getSession(false);
-    session.setAttribute(
-        GRANT,
-        new Grant(
-            current.getId(),
-            current.getAccessVersion(),
-            purpose,
-            clock.instant().plusSeconds(300),
-            session.getId()));
+    storeGrant(request, current, purpose, ProofMethod.PASSWORD);
+  }
+
+  public boolean requiresFactor(HttpServletRequest request, Purpose purpose) {
+    return twoFactor.requires(request, action(purpose));
+  }
+
+  public boolean factorEnrolled(HttpServletRequest request) {
+    return twoFactor.state(twoFactor.owner(request)).enrolled();
+  }
+
+  public boolean loginConfirmed(HttpServletRequest request) {
+    return twoFactor.sessionConfirmed(request);
+  }
+
+  public boolean developmentExceptionActive() {
+    return policies.pauseEnabled(policies.current()) || policies.weakGoogleAllowed();
+  }
+
+  public boolean canUseProviderProof(HttpServletRequest request, String provider, Purpose purpose) {
+    return purpose == Purpose.ENROLL_FACTOR
+        || !requiresFactor(request, purpose)
+            && (!GOOGLE.equals(provider) || policies.weakGoogleAllowed());
+  }
+
+  public void confirmFactor(HttpServletRequest request, String code, Purpose purpose) {
+    if (purpose == Purpose.ENROLL_FACTOR) {
+      throw new AccessDeniedException("Use the protected enrollment flow");
+    }
+    twoFactor.confirmAction(request, action(purpose), code);
+    UserEntity user = owner(request);
+    storeGrant(request, user, purpose, ProofMethod.SECOND_FACTOR);
   }
 
   public List<String> providers() {
@@ -158,7 +253,9 @@ public class ExternalLoginFlow {
   public String beginLink(HttpServletRequest request, String provider, Locale locale) {
     UserEntity user = owner(request);
     Purpose purpose = linkPurpose(provider);
-    authorize(request, user, purpose, true);
+    // Der ausgehende OIDC-Aufruf verbraucht die Freigabe noch nicht. Die eigentliche
+    // Verbindung prüft und verbraucht sie nach dem Rücksprung unter dem Kontolock.
+    authorize(request, user, purpose, false);
     return begin(request, provider, Mode.LINK, user, purpose, false, locale);
   }
 
@@ -247,7 +344,10 @@ public class ExternalLoginFlow {
     SecurityContextHolder.clearContext();
     if (attempt.mode() != Mode.LOGIN) {
       completeAccountAction(request, session, attempt, evidence);
-      response.sendRedirect("/account?tab=security");
+      response.sendRedirect(
+          attempt.purpose() == Purpose.ENROLL_FACTOR
+              ? "/two-factor?setup"
+              : "/account?tab=security");
       return;
     }
     Optional<UserEntity> user = identities.resolve(evidence);
@@ -280,13 +380,11 @@ public class ExternalLoginFlow {
       throw new AccessDeniedException("Account access changed");
     }
     if (attempt.mode() == Mode.LINK) {
-      identities.link(user.getId(), attempt.accessVersion(), evidence);
+      completeLink(request, attempt, evidence);
     } else {
       if (!identities.belongsTo(user.getId(), evidence)) {
         throw new ProofRejected(ProofProblem.IDENTITY_MISMATCH);
       }
-      // Freigegebene Google-Zwischenlösung: Ein neuer OIDC-Durchlauf bestätigt das Konto,
-      // aber keine erneute Passworteingabe. Diese bekannte Schwäche muss später 2FA ablösen.
       if (!attempt.provider().equals(GOOGLE)) {
         Instant authenticated = evidence.authenticatedAt();
         if (authenticated == null
@@ -295,15 +393,60 @@ public class ExternalLoginFlow {
           throw new ProofRejected(ProofProblem.FRESH_AUTHENTICATION_REQUIRED);
         }
       }
-      session.setAttribute(
-          GRANT,
-          new Grant(
-              user.getId(),
-              user.getAccessVersion(),
-              attempt.purpose(),
-              clock.instant().plusSeconds(300),
-              session.getId()));
+      if (attempt.purpose() == Purpose.ENROLL_FACTOR) {
+        enrollment.afterProviderConfirmation(
+            request,
+            new EnrollmentConfirmation(
+                user, session, attempt.provider(), clock.instant().plusSeconds(60)));
+        return;
+      }
+      if (!canUseProviderProof(request, attempt.provider(), attempt.purpose())) {
+        throw new ProofRejected(ProofProblem.FRESH_AUTHENTICATION_REQUIRED);
+      }
+      storeGrant(
+          request,
+          user,
+          attempt.purpose(),
+          attempt.provider().equals(GOOGLE)
+              ? ProofMethod.GOOGLE_DEVELOPMENT
+              : ProofMethod.MICROSOFT);
     }
+  }
+
+  private void completeLink(
+      HttpServletRequest request, Attempt attempt, ExternalIdentityEvidence evidence) {
+    new TransactionTemplate(transactions)
+        .executeWithoutResult(
+            status -> {
+              UserEntity current = users.findByIdForUpdate(attempt.userId()).orElseThrow();
+              entityManager.refresh(current);
+              if (!current.isEnabled()
+                  || !Objects.equals(current.getAccessVersion(), attempt.accessVersion())) {
+                throw new AccessDeniedException("Account access changed");
+              }
+              authorize(request, current, attempt.purpose(), true);
+              identities.link(current.getId(), attempt.accessVersion(), evidence);
+            });
+  }
+
+  private void storeGrant(
+      HttpServletRequest request, UserEntity user, Purpose purpose, ProofMethod method) {
+    HttpSession session = request.getSession(false);
+    session.setAttribute(
+        GRANT,
+        new Grant(
+            user.getId(),
+            user.getAccessVersion(),
+            purpose,
+            clock.instant().plusSeconds(300),
+            session.getId(),
+            method,
+            currentFactorRevision(request),
+            policies.current().revision()));
+  }
+
+  private UUID currentFactorRevision(HttpServletRequest request) {
+    return twoFactor.state(twoFactor.owner(request)).revision();
   }
 
   public void login(
@@ -327,6 +470,9 @@ public class ExternalLoginFlow {
         new ExternalAuthenticationToken(details.loadUserByUsername(user.getEmail()), provider);
     try {
       security.storeVerifiedAuthentication(request, response, authentication, remember);
+      if (!twoFactor.sessionConfirmed(request)) {
+        return AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE;
+      }
       return authentication.getAuthorities().stream()
               .anyMatch(role -> "ROLE_ADMIN".equals(role.getAuthority()))
           ? "/admin"
@@ -365,6 +511,9 @@ public class ExternalLoginFlow {
 
   public void authorize(
       HttpServletRequest request, UserEntity user, Purpose purpose, boolean consume) {
+    if (purpose == Purpose.ENROLL_FACTOR) {
+      throw new AccessDeniedException("Enrollment proof cannot authorize account changes");
+    }
     HttpSession session = request.getSession(false);
     if (session == null
         || !(session.getAttribute(GRANT)
@@ -374,17 +523,41 @@ public class ExternalLoginFlow {
                 String version,
                 Purpose grantedPurpose,
                 Instant expires,
-                String sessionId))
+                String sessionId,
+                ProofMethod method,
+                UUID factorRevision,
+                long policyRevision))
         || !userId.equals(user.getId())
         || !version.equals(user.getAccessVersion())
         || grantedPurpose != purpose
         || !expires.isAfter(clock.instant())
-        || !sessionId.equals(session.getId())) {
+        || !sessionId.equals(session.getId())
+        || policyRevision != policies.current().revision()
+        || !Objects.equals(factorRevision, currentFactorRevision(request))
+        || method == ProofMethod.GOOGLE_DEVELOPMENT && !policies.weakGoogleAllowed()) {
       throw new AccessDeniedException("Confirm this security action again");
+    }
+    if (requiresFactor(request, purpose) && method != ProofMethod.SECOND_FACTOR) {
+      throw new AccessDeniedException("Second factor required");
+    }
+    if (method == ProofMethod.SECOND_FACTOR) {
+      twoFactor.authorizeFactorGrant(request, action(purpose), consume);
+    } else {
+      twoFactor.authorizeCurrent(request, action(purpose), consume);
     }
     if (consume) {
       session.removeAttribute(GRANT);
     }
+  }
+
+  public static TwoFactorAction action(Purpose purpose) {
+    return switch (purpose) {
+      case PASSWORD -> TwoFactorAction.PASSWORD;
+      case EMAIL -> TwoFactorAction.EMAIL;
+      case LINK_GOOGLE, LINK_MICROSOFT -> TwoFactorAction.LINK_PROVIDER;
+      case UNLINK_GOOGLE, UNLINK_MICROSOFT -> TwoFactorAction.UNLINK_PROVIDER;
+      case ENROLL_FACTOR -> TwoFactorAction.MANAGE_FACTOR;
+    };
   }
 
   public Optional<Purpose> confirmedPurpose(HttpServletRequest request) {

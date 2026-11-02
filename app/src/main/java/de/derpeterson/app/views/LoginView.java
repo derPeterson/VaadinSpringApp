@@ -97,6 +97,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
   private H1 title = null;
   private final transient SessionManagementService sessions;
   private final transient HttpServletRequest currentRequest;
+  private final transient ExternalLoginFlow externalLogin;
   private PublicPageComponent pageLayout;
   private Div loginPanels;
   private Div recoveryArea;
@@ -118,6 +119,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     this.messageProperties = messageProperties;
     this.sessions = sessions;
     this.currentRequest = request;
+    this.externalLogin = externalLogin;
 
     ComponentUtil.addListener(
         UI.getCurrent(), LanguageChangeEvent.class, event -> refreshLanguage(event.getNewLocale()));
@@ -243,12 +245,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
             boolean admin =
                 sessions.finishRecovery(
                     currentRequest, (HttpServletResponse) VaadinResponse.getCurrent());
-            NotificationHelper.getInstance()
-                .showNotification(
-                    messageProperties::getBaseSuccessTitle,
-                    messageProperties::getLoginSuccessMessage,
-                    NotificationHelper.NotificationType.SUCCESS);
-            Class<? extends Component> target = admin ? AdminView.class : HomeView.class;
+            Class<? extends Component> target = loginTarget(admin);
             getUI().ifPresent(ui -> ui.navigate(target));
           } catch (SessionLimitException _) {
             recoverySessions.reload();
@@ -366,14 +363,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
             "⚠️ Principal is not an instance of UserDetails, save and handle of login could not be performed.");
       }
 
-      NotificationHelper.getInstance()
-          .showNotification(
-              messageProperties::getBaseSuccessTitle,
-              messageProperties::getLoginSuccessMessage,
-              NotificationHelper.NotificationType.SUCCESS);
-
-      Class<? extends Component> target =
-          hasAdminRole(authentication) ? AdminView.class : HomeView.class;
+      Class<? extends Component> target = loginTarget(hasAdminRole(authentication));
       getUI().ifPresent(ui -> ui.navigate(target));
     } catch (AuthenticationException e) {
       if (e instanceof SessionLimitException) {
@@ -382,6 +372,18 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
       }
       showLoginFailure(authenticationFailureCode(e));
     }
+  }
+
+  private Class<? extends Component> loginTarget(boolean admin) {
+    if (!externalLogin.loginConfirmed(currentRequest)) {
+      return TwoFactorView.class;
+    }
+    NotificationHelper.getInstance()
+        .showNotification(
+            messageProperties::getBaseSuccessTitle,
+            messageProperties::getLoginSuccessMessage,
+            NotificationHelper.NotificationType.SUCCESS);
+    return admin ? AdminView.class : HomeView.class;
   }
 
   private void saveRememberChoice(boolean remember) {

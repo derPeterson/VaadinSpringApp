@@ -1,0 +1,22 @@
+.mfa-reference [hidden] { display:none !important; }
+.mfa-reference-copy { padding:16px 24px; color:var(--cosmos-reference-secondary,#94a3b8); font-size:12px; line-height:1.7; }
+.mfa-reference .ad-input-help { display:flex; align-items:center; gap:12px; }
+.mfa-reference select,.mfa-reference input:not([type=checkbox]) { width:100%; min-width:0; min-height:40px; padding:10px 12px; border:1px solid #1e293b; border-radius:8px; color:#e2e8f0; background:#09111f; font:500 14px Inter,sans-serif; }
+.mfa-reference .ad-grid[hidden] { display:none; }
+.mfa-reference .ad-info { background:transparent; border:0; color:#22c8ff; cursor:pointer; }
+.mfa-reference .ad-info svg { width:16px; height:16px; }
+.mfa-reference .mfa-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+.mfa-reference .mfa-code-values { white-space:pre; overflow:auto; color:#e2e8f0; font:13px/2.4 monospace; }
+.mfa-reference .mfa-phase-buttons { display:flex; flex-wrap:wrap; gap:8px; }
+.mfa-reference > .mfa-phase-buttons { margin-bottom:16px; }
+.mfa-reference .mfa-phase-buttons .portal-button { max-width:100%; min-width:0; height:auto; min-height:36px; white-space:normal; }
+.mfa-reference .mfa-qr-placeholder { display:grid; place-items:center; width:220px; height:220px; margin:16px auto; background:#fff; color:#102039; border-radius:8px; font:600 12px Inter,sans-serif; }
+.mfa-reference .mfa-form { display:flex; flex-direction:column; gap:16px; }
+.mfa-reference .mfa-form label { display:flex; flex-direction:column; gap:8px; font-size:12px; font-weight:500; }
+#public-two-factor .vp-card { max-width:640px; margin-inline:auto; }
+dialog.mfa-reference .portal-modal-body { padding:24px; }
+@media(max-width:650px) { .mfa-reference .ad-grid { grid-template-columns:minmax(0,1fr); } .mfa-reference .mfa-actions { width:100%; } }
+.mfa-reference.portal-row { grid-template-columns:36px minmax(0,1fr); }
+.mfa-reference.portal-row .mfa-actions { grid-column:2 / -1; }
+.mfa-ticket-list { display:flex; flex-direction:column; gap:12px; margin-block:16px; }
+.mfa-reference textarea { width:100%; box-sizing:border-box; padding:12px; border:1px solid #1e293b; border-radius:8px; background:#09111f; color:#e2e8f0; font:400 14px/1.5 Inter,sans-serif; resize:vertical; }

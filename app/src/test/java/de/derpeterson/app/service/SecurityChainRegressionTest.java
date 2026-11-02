@@ -16,6 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.AppRoute;
@@ -105,20 +106,74 @@ class SecurityChainRegressionTest {
   @Autowired AuthenticationManager passwordManager;
   @Autowired PasswordEncoder encoder;
   @Autowired LoginAttemptRepository attempts;
+  @Autowired de.derpeterson.app.security.mfa.TwoFactorPolicies twoFactorPolicies;
   @PersistenceContext EntityManager entityManager;
 
   @AfterEach
   void cleanup() {
+    when(twoFactorPolicies.current()).thenReturn(Config.withoutTwoFactor());
     SecurityContextHolder.clearContext();
     when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(10);
     when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
   }
 
   @Test
-  void accountRouteRequiresAuthenticationAndUsesTheNormalLogin() throws Exception {
+  void currentRequiredRuleRestrictsRealPasswordLoginBeforeAnyBusinessRequest() throws Exception {
+    when(twoFactorPolicies.current())
+        .thenReturn(
+            new de.derpeterson.app.security.mfa.TwoFactorPolicies.Snapshot(
+                4, de.derpeterson.app.security.mfa.TwoFactorPolicy.defaults()));
+    String email = sessionUser(RoleType.ROLE_ADMIN);
+    PasswordResponse firstFactor = postPassword(email, "OriginalPassword!");
+    assertEquals("/two-factor", firstFactor.response().getRedirectedUrl());
+    MockHttpSession session = (MockHttpSession) firstFactor.request().getSession(false);
+    MockHttpServletRequest business = new MockHttpServletRequest("GET", "/admin");
+    business.setServletPath("/admin");
+    business.setSession(session);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    FilterChain action = mock(FilterChain.class);
+    new FilterChainProxy(chain).doFilter(business, response, action);
+    assertEquals("/two-factor?administration", response.getRedirectedUrl());
+    verifyNoInteractions(action);
+    MockHttpServletRequest help = new MockHttpServletRequest("GET", "/recovery-help");
+    help.setServletPath("/recovery-help");
+    help.setSession(session);
+    new FilterChainProxy(chain).doFilter(help, new MockHttpServletResponse(), action);
+    verify(action).doFilter(any(), any());
+  }
+
+  @Test
+  void policyUpgradeBlocksAnAlreadyOpenTransportWithoutDiscardingItsFirstFactor() throws Exception {
+    PasswordResponse login = postPassword(sessionUser(RoleType.ROLE_ADMIN), "OriginalPassword!");
+    MockHttpSession session = (MockHttpSession) login.request().getSession(false);
+    when(twoFactorPolicies.current())
+        .thenReturn(
+            new de.derpeterson.app.security.mfa.TwoFactorPolicies.Snapshot(
+                5, de.derpeterson.app.security.mfa.TwoFactorPolicy.defaults()));
+    MockHttpServletRequest uidl = new MockHttpServletRequest("POST", "/");
+    uidl.setServletPath("/");
+    uidl.setSession(session);
+    uidl.setParameter("v-r", "uidl");
+    // Vom Client behauptete UI-Kennung ist kein Nachweis einer eingeschränkten Serveransicht.
+    uidl.setParameter("v-uiId", "7");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    FilterChain action = mock(FilterChain.class);
+    new FilterChainProxy(chain).doFilter(uidl, response, action);
+    assertTrue(response.getContentAsString().contains("/two-factor"));
+    verifyNoInteractions(action);
+    assertFalse(session.isInvalid());
+    assertNotNull(
+        session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
+  }
+
+  @Test
+  void accountAndTwoFactorRoutesRequireAuthenticationAndUseTheNormalLogin() throws Exception {
     for (String path :
         java.util.List.of(
-            AppRoute.ACCOUNT.getSecurityRoute(), AppRoute.NOTIFICATIONS.getSecurityRoute())) {
+            AppRoute.ACCOUNT.getSecurityRoute(),
+            AppRoute.NOTIFICATIONS.getSecurityRoute(),
+            AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE,
+            "/recovery-help")) {
       when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
       MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
       request.setServletPath(path);
@@ -229,7 +284,9 @@ class SecurityChainRegressionTest {
       verifyNoInteractions(action);
     } else {
       assertEquals(200, response.getStatus());
-      verify(action).doFilter(any(), any());
+      // Ohne jede aktuelle Rolle gibt es keine konfigurierte Ausnahme vom MFA-Schutz.
+      assertTrue(response.getContentAsString().contains("/two-factor"));
+      verifyNoInteractions(action);
     }
     SecurityContext refreshed =
         (org.springframework.security.core.context.SecurityContext)
@@ -751,9 +808,47 @@ class SecurityChainRegressionTest {
     UserServicePersistenceTest.Config.class,
     SecurityConfig.class,
     LoginAttemptService.class,
-    SessionManagementService.class
+    SessionManagementService.class,
+    de.derpeterson.app.security.mfa.TwoFactorAuthorization.class,
+    de.derpeterson.app.security.mfa.TwoFactorStore.class,
+    de.derpeterson.app.security.mfa.TwoFactorSecrets.class
   })
   static class Config {
+    @Bean
+    de.derpeterson.app.security.mfa.TwoFactorPolicies twoFactorPolicies() {
+      // Diese bestehenden Fälle prüfen die konfigurierbar faktorfreie Rechte-/Sitzungsmatrix.
+      // Die verpflichtende MFA-Grenze erhält eigene Fälle mit denselben echten Filtern.
+      de.derpeterson.app.security.mfa.TwoFactorPolicies policies =
+          mock(de.derpeterson.app.security.mfa.TwoFactorPolicies.class);
+      when(policies.current()).thenReturn(withoutTwoFactor());
+      return policies;
+    }
+
+    static de.derpeterson.app.security.mfa.TwoFactorPolicies.Snapshot withoutTwoFactor() {
+      java.util.Map<
+              RoleType,
+              java.util.Map<
+                  de.derpeterson.app.security.mfa.TwoFactorAction,
+                  de.derpeterson.app.security.mfa.TwoFactorMode>>
+          roles = new java.util.EnumMap<>(RoleType.class);
+      for (RoleType role : RoleType.values()) {
+        java.util.Map<
+                de.derpeterson.app.security.mfa.TwoFactorAction,
+                de.derpeterson.app.security.mfa.TwoFactorMode>
+            actions =
+                new java.util.EnumMap<>(de.derpeterson.app.security.mfa.TwoFactorAction.class);
+        for (de.derpeterson.app.security.mfa.TwoFactorAction action :
+            de.derpeterson.app.security.mfa.TwoFactorAction.values()) {
+          actions.put(action, de.derpeterson.app.security.mfa.TwoFactorMode.OFF);
+        }
+        roles.put(role, actions);
+      }
+      return new de.derpeterson.app.security.mfa.TwoFactorPolicies.Snapshot(
+          -1,
+          new de.derpeterson.app.security.mfa.TwoFactorPolicy(
+              roles, false, java.time.Duration.ofHours(12), false, false));
+    }
+
     @Bean
     CustomUserDetailsService userDetailsService(UserRepository repository) {
       return new CustomUserDetailsService(repository);

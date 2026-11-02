@@ -81,6 +81,19 @@ public final class MailpitInbox {
     return awaitMail(recipient, subject);
   }
 
+  @Step("Einrichtungscode aus der tatsächlich an das eigene Testkonto versandten Mail lesen")
+  public String awaitAuthenticatorSetupCode(String recipient) {
+    CapturedMail captured = awaitSecurityMail(recipient, texts.getTwoFactorEmailSubject());
+    String text = getJson("/api/v1/message/" + captured.id()).path("Text").asText();
+    // Der achtstellige Code steht als eigener Text in der regulären Einrichtungsmail.
+    java.util.regex.Matcher code =
+        java.util.regex.Pattern.compile("(?<![0-9])[0-9]{8}(?![0-9])").matcher(text);
+    assertTrue(code.find(), "Einrichtungsmail muss ihren achtstelligen Code enthalten.");
+    String value = code.group();
+    assertFalse(code.find(), "Einrichtungsmail muss genau einen Code enthalten.");
+    return value;
+  }
+
   @Step("Sicherheitsmail mit echtem Inline-Logo, Footer und ohne Passwortinhalte prüfen")
   public void assertSecurityNotice(CapturedMail mail, String... forbidden) {
     JsonNode actual = getJson("/api/v1/message/" + mail.id());

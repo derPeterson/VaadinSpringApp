@@ -8,6 +8,7 @@ lokal mit Testdaten; eine neue Testdatenbank wird aus dem aktuellen Schema angel
 | [Anwendung](anwendung.md) | Funktionen, Konto, Administration und Benachrichtigungen |
 | [Externe Anmeldung](externe-anmeldung.md) | Google-/Microsoft-Einrichtung, Kontoverknüpfung und Sicherheitsnachweise |
 | [Sicherheit](sicherheit.md) | Anmeldung, Rollen, Tokens, Sitzungen, CSRF und Datenverträge |
+| [Zwei-Faktor-Authentifizierung](zwei-faktor-authentifizierung.md) | Authenticator, Ersatzcodes, Regeln, Entwicklungsoptionen und Wiederherstellung |
 | [Entwicklung](entwicklung.md) | Voraussetzungen, Aufbau, Konfiguration, Build und Codestil |
 | [Arbeiten mit Codex](codex-skills.md) | Projekt-Skills, Aufträge, Grenzen und Ergebnisse |
 | [Docker](docker/README.md) | Lokale Testanwendung und Mailpit |
@@ -50,8 +51,9 @@ Anbieterverwaltung ausschließlich für Superadmins gehört verbindlich zum Pake
 Für die erste Google-2FA-Einrichtung sind erneute Anbieterbestätigung, E-Mail-Code
 und erster TOTP mit ausdrücklich akzeptiertem Restrisiko abgestimmt. Bestehende
 2FA kann dadurch nicht ersetzt werden. Die Grundsatzentscheidungen sind abgestimmt,
-die Implementierung hat noch nicht begonnen. Bis zur tatsächlichen Behebung und
-Nachprüfung bleibt die bekannte Schwäche offen.
+die Implementierung und ihre isolierten Nachtests laufen auf dem Feature-Branch.
+Bedienung und Grenzen stehen in der [2FA-Dokumentation](zwei-faktor-authentifizierung.md).
+Bis zur passenden erfolgreichen Nachprüfung bleibt die bekannte Schwäche offen.
 Weitere bewertete Möglichkeiten stehen in der
 [Entscheidungsvorlage für Portal-Erweiterungen](planung/portal-erweiterungen.md).
 Die [Vaadin-Komponentenprüfung](planung/vaadin-komponenten-abgleich.md) enthält die

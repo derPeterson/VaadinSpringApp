@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/** Anbieterzugänge kommen ausschließlich aus lokaler Startkonfiguration. */
+/** Startvorgaben für Anbieterzugänge. Gespeicherte Anbietereinstellungen haben Vorrang. */
 @ConfigurationProperties("app.external-login")
 @Getter
 public class ExternalLoginProperties {

@@ -41,6 +41,8 @@ import de.derpeterson.app.helper.ui.NotificationHelper.NotificationType;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.ExternalProviderSettings;
+import de.derpeterson.app.security.mfa.TwoFactorAction;
+import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.AdminSidePanel;
 import de.derpeterson.app.ui.components.AppIcon;
@@ -48,6 +50,7 @@ import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.ui.components.TwoFactorActionDialog;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
@@ -77,6 +80,17 @@ public class AdminExternalLoginSection extends VerticalLayout {
   private final Button closeHelp = new Button(AppIcon.CLOSE.create());
   private ProviderForm helpForm;
   private ProviderField helpField;
+  private transient TwoFactorAuthorization twoFactor;
+  private transient jakarta.servlet.http.HttpServletRequest request;
+  private TwoFactorActionDialog confirmation;
+
+  public void configureConfirmation(
+      TwoFactorAuthorization twoFactor, jakarta.servlet.http.HttpServletRequest request) {
+    this.twoFactor = twoFactor;
+    this.request = request;
+    confirmation = new TwoFactorActionDialog(texts, twoFactor, request);
+    add(confirmation);
+  }
 
   private enum ProviderField {
     CLIENT_ID,
@@ -394,6 +408,15 @@ public class AdminExternalLoginSection extends VerticalLayout {
     }
 
     private void save() {
+      if (twoFactor != null
+          && twoFactor.requires(request, TwoFactorAction.SECURITY_CONFIGURATION)) {
+        confirmation.open(TwoFactorAction.SECURITY_CONFIGURATION, this::saveConfirmed);
+      } else {
+        saveConfirmed();
+      }
+    }
+
+    private void saveConfirmed() {
       clientId.setInvalid(enabled.getValue() && clientId.getValue().isBlank());
       secret.setInvalid(
           enabled.getValue() && secret.getValue().isBlank() && !stored.secretStored());

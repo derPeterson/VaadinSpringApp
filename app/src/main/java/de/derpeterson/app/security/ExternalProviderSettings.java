@@ -3,6 +3,8 @@ package de.derpeterson.app.security;
 import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.model.ExternalProviderEntity;
 import de.derpeterson.app.repository.ExternalProviderRepository;
+import de.derpeterson.app.security.mfa.TwoFactorAction;
+import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -10,7 +12,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -30,6 +31,8 @@ public class ExternalProviderSettings {
   private final ExternalProviderRepository repository;
   private final ExternalLoginProperties properties;
   private final AdminRolePolicy administrators;
+  private final TwoFactorAuthorization twoFactor;
+  private final jakarta.servlet.http.HttpServletRequest request;
 
   public record Settings(
       String provider, String clientId, boolean secretStored, boolean enabled, String revision)
@@ -37,7 +40,7 @@ public class ExternalProviderSettings {
 
   @Transactional(readOnly = true)
   public Settings load(String provider) {
-    administrators.authorizeMutation(null, Set.of());
+    administrators.requireSuperadmin();
     return describe(readCredentials(provider));
   }
 
@@ -45,7 +48,7 @@ public class ExternalProviderSettings {
   @Transactional
   public Settings save(
       String provider, String clientId, String newSecret, boolean enabled, String revision) {
-    administrators.authorizeMutation(null, Set.of());
+    administrators.requireSuperadmin();
     ExternalProviderEntity current = readCredentials(provider);
     if (!Objects.equals(revision, revision(current))) {
       throw new OptimisticLockingFailureException("Provider configuration changed");
@@ -60,6 +63,7 @@ public class ExternalProviderSettings {
         || enabled && (id.isBlank() || secret.isBlank())) {
       throw new IllegalArgumentException("Complete provider credentials required");
     }
+    twoFactor.authorizeCurrent(request, TwoFactorAction.SECURITY_CONFIGURATION, true);
     current.setClientId(id);
     current.setClientSecret(secret);
     current.setEnabled(enabled);

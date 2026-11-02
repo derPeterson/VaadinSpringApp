@@ -18,12 +18,14 @@ import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
+import de.derpeterson.browsertests.pages.TwoFactorPage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Story;
 import io.qameta.allure.playwright.AllurePlaywright;
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -205,6 +207,9 @@ public class PresentationBrowserTest extends BrowserFixture {
     assertThat(password).isFocused();
     password.fill(BrowserTestAccounts.ADMIN_PASSWORD);
     password.press("Enter");
+    page.waitForURL(url -> !URI.create(url).getPath().equals(path(LOGIN_ROUTE)));
+    TwoFactorPage.completeIfRequired(
+        page, BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     assertThat(page).hasURL(urlPattern(ADMIN_ROUTE));
     new UserMenu(page).selectTestLanguage();
     new LoginPage(page).assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);

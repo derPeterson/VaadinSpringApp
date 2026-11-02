@@ -20,6 +20,7 @@ public final class UserNotificationTexts {
       case PASSWORD_RESET -> texts.getNotificationsPasswordResetTitle();
       case EMAIL_CHANGED -> texts.getNotificationsEmailChangedTitle();
       case ROLES_CHANGED -> texts.getNotificationsRolesChangedTitle();
+      case RECOVERY_REQUEST -> texts.getSupportRecoverySubject();
     };
   }
 
@@ -30,6 +31,7 @@ public final class UserNotificationTexts {
       case PASSWORD_RESET -> texts.getNotificationsPasswordResetBody();
       case EMAIL_CHANGED -> texts.getNotificationsEmailChangedBody();
       case ROLES_CHANGED -> texts.getNotificationsRolesChangedBody();
+      case RECOVERY_REQUEST -> texts.getSupportRecoveryNotification();
     };
   }
 

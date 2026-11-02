@@ -30,6 +30,11 @@ public final class LoginPage {
 
   @Step("E-Mail und Passwort eingeben und Anmeldung absenden")
   public void signIn(String email, String password) {
+    signInFirstFactor(email, password);
+    TwoFactorPage.completeIfRequired(page, email, password);
+  }
+
+  public void signInFirstFactor(String email, String password) {
     for (Locator notice : page.locator("vaadin-notification-card:not([closing])").all()) {
       notice.getByRole(AriaRole.BUTTON).click();
     }

@@ -22,6 +22,7 @@ import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.AdminRolePolicy;
 import de.derpeterson.app.security.CustomUserDetailsService;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.service.UserNotificationService.ReadFilter;
 import de.derpeterson.app.websocket.UserNotificationBroadcaster;
 import de.derpeterson.app.websocket.UserRoleBroadcaster;
@@ -68,6 +69,11 @@ class RoleMutationPersistenceTest {
     UserRoleBroadcaster.class
   })
   static class Config {
+    @Bean
+    TwoFactorAuthorization twoFactorAuthorization() {
+      return mock(TwoFactorAuthorization.class);
+    }
+
     @Bean
     @Primary
     AdminRolePolicy actualPolicy(UserRepository users) {

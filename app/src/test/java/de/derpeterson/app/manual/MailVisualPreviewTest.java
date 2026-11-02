@@ -49,7 +49,7 @@ class MailVisualPreviewTest {
   void everyRealHtmlTemplateIsCoveredInBothLanguagesWithoutUnresolvedPlaceholders()
       throws Exception {
     MailVisualPreview preview = MailVisualPreview.prepare(settings()::get);
-    assertEquals(13, preview.examples().size());
+    assertEquals(15, preview.examples().size());
     Set<String> expected =
         Arrays.stream(
                 new PathMatchingResourcePatternResolver().getResources("classpath*:email/*.html"))
@@ -61,7 +61,7 @@ class MailVisualPreviewTest {
             .map(example -> example.template() + "_" + example.locale().getLanguage() + ".html")
             .collect(Collectors.toSet());
     assertEquals(expected, actual);
-    assertEquals(10, actual.size());
+    assertEquals(12, actual.size());
     for (MailVisualPreview.Example example : preview.examples()) {
       assertFalse(example.body().contains("{{"));
       assertFalse(example.body().contains("}}"));
@@ -82,7 +82,7 @@ class MailVisualPreviewTest {
     Map<String, String> values = settings();
     values.put("MAIL_PREVIEW_LANGUAGES", language);
     MailVisualPreview preview = MailVisualPreview.prepare(values::get);
-    assertEquals(7, preview.examples().size());
+    assertEquals(8, preview.examples().size());
     assertEquals("en", preview.examples().getLast().locale().getLanguage());
     assertEquals("dispatch-failure", preview.examples().getLast().template());
     assertEquals(
@@ -119,9 +119,9 @@ class MailVisualPreviewTest {
     when(sender.createMimeMessage())
         .thenAnswer(ignored -> new MimeMessage(Session.getInstance(new Properties())));
     int accepted = preview.send(sender);
-    assertEquals(13, accepted);
+    assertEquals(15, accepted);
     ArgumentCaptor<MimeMessage> html = ArgumentCaptor.forClass(MimeMessage.class);
-    verify(sender, times(10)).send(html.capture());
+    verify(sender, times(12)).send(html.capture());
     for (MimeMessage message : html.getAllValues()) {
       message.saveChanges();
       assertEquals(
