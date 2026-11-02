@@ -1,15 +1,9 @@
 # Mögliche Erweiterungen des Portals
 
-Stand: 31.10.2026. Entscheidungsvorlage für weitere Funktionen.
-Das Designpaket ist abgeschlossen. Die große Testrunde auf `main` bleibt separat
-offen und startet erst mit ausdrücklichem Auftrag.
-
-## Gestartetes Funktionspaket
-
-**Anmeldung mit Google und Microsoft; Geschlecht und Geburtsdatum freiwillig.**
-Der Featurestart ist beauftragt. Umfang, Entscheidungen, offene Arbeitspakete und
-Abnahme stehen ausschließlich im [aktiven Umsetzungsplan](google-microsoft-anmeldung.md).
-Microsoft umfasst private sowie Firmen-/Schulkonten. Die Umsetzung ist freigegeben. Zwei externe Anbieter reichen zunächst.
+Entscheidungsvorlage für weitere Funktionen. Designübernahme und
+[Google-/Microsoft-Anmeldung](../externe-anmeldung.md) einschließlich freiwilliger
+Profilangaben sind abgeschlossen. Die letzte große Testrunde steht im
+[Prüfstand](../status.md).
 
 ## Weitere Möglichkeiten zur Auswahl
 
@@ -36,8 +30,8 @@ und Datenmodell. Das sind relative Einschätzungen, keine Stunden- oder Terminzu
 
 ## Empfehlung für die weitere Auswahl
 
-Zuerst das gestartete Google-/Microsoft-Paket mit freiwilligen Profilangaben gemeinsam
-abnehmen. Die [2FA-Bestätigung](zwei-faktor-bestaetigung.md) ist als nächste separate Umsetzung vereinbart. Für ein
+Die [2FA-Bestätigung](zwei-faktor-bestaetigung.md) ist als nächste separate Umsetzung
+beauftragt, einschließlich der Behebung der bekannten Google-Sicherheitsschwäche. Für ein
 kleineres Komfortpaket bietet sich der Schutz vor ungespeicherten Änderungen an.
 Benachrichtigungspräferenzen und Entwürfe gewinnen mit tatsächlichen Portalinhalten
 an Wert. Die übrigen Ideen bleiben Auswahlmöglichkeiten, keine zugesagte Roadmap.

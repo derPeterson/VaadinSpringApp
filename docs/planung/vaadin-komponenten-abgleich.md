@@ -4,8 +4,8 @@
 
 Die projektweite Bestandsaufnahme und Einschätzung sind vom Benutzer abgenommen.
 Der Umbau von Badges und weiteren ausgewählten Bausteinen wird als separate spätere
-Umsetzung behandelt. Er ist kein Bestandteil der laufenden Google-/Microsoft-Umsetzung
-und keine Voraussetzung für deren Abnahme oder Abschluss. Ein Bausteinumbau ist
+Umsetzung behandelt. Er ist vom abgeschlossenen Google-/Microsoft-Login und der
+2FA-Umsetzung getrennt. Ein Bausteinumbau ist
 ausdrücklich noch nicht beauftragt. Dieser Plan bleibt als Grundlage für den separaten
 Start und die gemeinsame Auswahl der Arbeitspakete offen.
 

@@ -14,6 +14,10 @@ Root-POM und Dockerfile blieben nachweislich unverändert. Nachfolgende Änderun
 an Prüfstand und Aufgabenlisten ändern diesen Anwendungs-/Teststand ebenfalls nicht.
 Die zugehörigen Commit-, Quellen- und Runzuordnungen stehen im lokalen QA-Zustand.
 
+Die nachfolgenden UI- und Sprachkorrekturen sind in `3a57a2b` übernommen und gezielt
+geprüft. Sie gehören nicht zum Quellstand dieser letzten großen Testrunde. Der
+Benutzer hat die Google-/Microsoft-Umsetzung inzwischen abschließend abgenommen.
+
 Ausgangspunkt war der vorher dokumentierte Featureprüfstand auf Basis `782a9719`
 samt damaligen uncommittierten Änderungen. Eine vollständig bestätigte Main-Baseline
 lag noch nicht vor. Maßgeblich waren deshalb der tatsächliche Diff, die vorhandenen
@@ -21,8 +25,8 @@ Regressionen und die jetzige vollständige Prüfung des integrierten Stands.
 
 **Ergebnis:** Beide vollständigen Browserrunden sind bestanden. Keine ungeklärten
 Testfehler bleiben zurück. Die bekannte, ausdrücklich akzeptierte Google-Schwäche
-bleibt für die separate 2FA-Umsetzung offen. Das Feature bleibt außerdem bis zur
-Stitch-Designentscheidung offen. Es wurde nicht gepusht; die Quellbranches bleiben erhalten.
+bleibt für die separate 2FA-Umsetzung offen. Die Designentscheidung und der
+Featureabschluss sind erfolgt. Es wurde nicht gepusht; die Quellbranches bleiben erhalten.
 
 ## Ausgeführte Prüfungen
 
@@ -114,9 +118,8 @@ stehen in [BUGS](../BUGS.md) und [Externe Anmeldung](externe-anmeldung.md).
 Der [2FA-Testbedarf](testbedarf.md) bleibt wartend erhalten.
 
 Die [gespeicherte Stitch-Kritik](design/stitch-kritik-anmeldeanbieter-anmeldung.md)
-ist noch vom Benutzer zu entscheiden. Bereits erteilte Portal-/Adminabnahmen gelten
-weiter. Diese ausstehende Entscheidung verhindert ausdrücklich den endgültigen
-Featureabschluss, nicht die dokumentierte technische Integration.
+ist entschieden. Die ausgewählten Korrekturen sind umgesetzt und das Feature ist
+abgenommen. Die bekannte Google-Schwäche bleibt davon unabhängig offen.
 
 Echte private sowie Firmen-/Schulkonten bei Microsoft, weitere echte Anbieter-
 Sonderfälle, Mobilgeräte, Bildschirmtastatur, Zoom und Screenreader bleiben im
@@ -125,5 +128,4 @@ Mail-Sichtversand gehören nicht zu dieser automatisierten Runde.
 
 Für eine bereits laufende Entwicklerinstanz sind ein aktueller Build und Neustart
 nötig. Es wurde keine Entwickleranwendung eigenmächtig neu gestartet. Offene Arbeiten
-stehen in [TODO](../TODO.md), der [Featureplan](planung/google-microsoft-anmeldung.md)
-bleibt auf die offene Designentscheidung begrenzt.
+stehen in [TODO](../TODO.md) und im [2FA-Plan](planung/zwei-faktor-bestaetigung.md).

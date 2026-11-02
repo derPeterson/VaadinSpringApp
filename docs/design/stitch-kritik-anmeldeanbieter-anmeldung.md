@@ -1,7 +1,7 @@
 # Stitch-Kritik zu Anmeldeanbietern und Anmeldung
 
-Stand: 1. November 2026. Der schlichte ODER-Trenner ist zur Umsetzung freigegeben.
-Die weiteren Empfehlungen sind noch nicht freigegeben.
+Die Designentscheidung ist abgeschlossen; die Google-/Microsoft-Anmeldung ist
+vom Benutzer abgenommen. Verbindlich ist der [aktuelle Theme-Standard](../theme.md).
 
 Die folgende vollständige Antwort stammt von Stitch und bewertet die hochgeladenen
 Ist-Screenshots. Ihre Prioritäten und Gestaltungsvorschläge sind die Einschätzung
@@ -9,20 +9,19 @@ von Stitch, keine bereits gemeinsam beschlossenen Änderungen.
 
 - [Anmeldeanbieter: bewerteter Ist-Screenshot](https://stitch.withgoogle.com/projects/43914967159269113?node-id=12157834669425121719)
 - [Anmeldung mit ODER-Trenner: bewerteter Ist-Screenshot](https://stitch.withgoogle.com/projects/43914967159269113?node-id=13517430824104027733)
-- Zugehöriger [offener Umsetzungsplan](../planung/google-microsoft-anmeldung.md).
 
-## Noch zu entscheiden
+## Übernommene Gestaltung
 
-Die Statusplatzierung und die übrige Struktur der Anmeldeanbieter-Seite bleiben
-offen. Freigegeben ist dort ein rahmenloser Aktivierungs-Switch auf halber
-Inhaltsbreite sowie das kurze Rücksprungadresslabel und ein feldhoher Kopierbutton
-mit Lucide-Icon. Für Anmeldung und
-Registrierung ist ein schlichtes „ODER“ ohne Kapsel ausgewählt, im selben
-Secondary-Schriftstil wie die Identitätsbestätigung unter Mein Konto → Sicherheit.
-Dies gilt neben- und untereinander; die Linien bleiben erhalten. Die gemeinsame
-Sichtung der Anpassung steht noch aus. Die ursprüngliche Rückmeldung unten bleibt
-unverändert. Sie wurde als reine Textkritik geliefert; neue Design-Screens sind
-dabei nicht entstanden.
+Umgesetzt sind der rahmenlose Aktivierungs-Switch auf halber Inhaltsbreite, das
+kurze Rücksprungadresslabel und der feldhohe Kopierbutton mit Lucide-Icon.
+Anmeldung und Registrierung verwenden ein schlichtes „ODER“ ohne Kapsel im
+Secondary-Schriftstil der Identitätsbestätigung, neben- und untereinander.
+Statusbadges und übrige Panelstruktur bleiben in der abgenommenen Gestaltung.
+Die übrigen Empfehlungen eröffnen keine weitere Aufgabe.
+
+Die auf Benutzerwunsch gespeicherte Originalantwort bleibt als Entwurfsquelle
+erhalten. Sie beschreibt die damaligen Screenshots und ist keine aktuelle
+Funktions- oder Gestaltungsvorgabe. Neue Design-Screens sind dabei nicht entstanden.
 
 ## Vollständige Antwort von Stitch
 

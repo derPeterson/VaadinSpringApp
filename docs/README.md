@@ -38,17 +38,17 @@ verbleibende Grenzen stehen im [Prüfstand](status.md).
 Weitere vereinbarte Arbeiten stehen in [TODO](../TODO.md); gültige Bedienung und
 Konfiguration in den obigen Fachdokumenten.
 
-Der [aktive Umsetzungsplan](planung/google-microsoft-anmeldung.md) beschreibt die
-Google-/Microsoft-Anmeldung und freiwillige Angaben zu Geschlecht/Geburtsdatum.
-Die technische Integration ist vollständig geprüft. Offen bleibt ausdrücklich die
-Entscheidung zur gespeicherten Stitch-Kritik; sie verhindert den endgültigen
-Featureabschluss. Bereits erteilte Abnahmen gelten weiter.
+Die [Google-/Microsoft-Anmeldung](externe-anmeldung.md) und freiwillige Angaben zu
+Geschlecht/Geburtsdatum sind umgesetzt und vom Benutzer abschließend abgenommen.
+Die gewählten Designkorrekturen stehen im [Theme-Standard](theme.md).
 Die [2FA-Bestätigung](planung/zwei-faktor-bestaetigung.md) ist als nächste separate
-Umsetzung vorgesehen. Sie soll die in [BUGS.md](../BUGS.md) dokumentierte Schwäche
-der ausdrücklich akzeptierten Google-Zwischenlösung bei eingerichteter 2FA ablösen.
+Umsetzung beauftragt. Ihr Plan muss die in [BUGS.md](../BUGS.md) dokumentierte
+Schwäche der Google-Zwischenlösung auch für Ersteinrichtung, Registrierung und
+Konten ohne eingerichtete 2FA behandeln. Bis zur Behebung bleibt sie offen.
 Weitere bewertete Möglichkeiten stehen in der
 [Entscheidungsvorlage für Portal-Erweiterungen](planung/portal-erweiterungen.md).
 Die [Vaadin-Komponentenprüfung](planung/vaadin-komponenten-abgleich.md) enthält die
 abgenommene Bestandsaufnahme und Einschätzung zu Badges und weiteren möglichen nativen
 Bausteinen. Der Umbau ist als separate spätere Umsetzung vorgesehen und gehört nicht
-zur Google-/Microsoft-Umsetzung. Start, Paketumfang und Reihenfolge sind noch freizugeben.
+zur abgeschlossenen Google-/Microsoft- oder zur 2FA-Umsetzung. Start, Paketumfang und
+Reihenfolge sind noch freizugeben.
