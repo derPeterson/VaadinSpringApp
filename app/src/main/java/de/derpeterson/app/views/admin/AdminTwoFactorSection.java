@@ -13,6 +13,7 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabSheetVariant;
+import de.derpeterson.app.config.ConfigurationCatalog;
 import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -363,16 +364,6 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   }
 
   private String actionLabel(TwoFactorAction action) {
-    return switch (action) {
-      case LOGIN -> texts.getTwoFactorRuleLogin();
-      case ADMINISTRATION -> texts.getTwoFactorRuleAdministration();
-      case PASSWORD -> texts.getTwoFactorRulePassword();
-      case EMAIL -> texts.getTwoFactorRuleEmail();
-      case LINK_PROVIDER -> texts.getTwoFactorRuleLink();
-      case UNLINK_PROVIDER -> texts.getTwoFactorRuleUnlink();
-      case MANAGE_FACTOR -> texts.getTwoFactorRuleFactor();
-      case MANAGE_RECOVERY_CODES -> texts.getTwoFactorRuleRecovery();
-      case SECURITY_CONFIGURATION -> texts.getTwoFactorRuleConfiguration();
-    };
+    return ConfigurationCatalog.actionLabel(action, texts);
   }
 }

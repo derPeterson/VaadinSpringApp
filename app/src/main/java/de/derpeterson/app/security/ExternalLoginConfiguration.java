@@ -63,6 +63,7 @@ public class ExternalLoginConfiguration {
             if (stored.isEnabled()) {
               target.setClientId(stored.getClientId());
               target.setClientSecret(stored.getClientSecret());
+              target.setEnabled(true);
             }
             // Endpunkte stammen ausschließlich aus der Serverkonfiguration, nie aus Admin-Eingaben.
             target.setAuthorizationUri(defaults.getAuthorizationUri());

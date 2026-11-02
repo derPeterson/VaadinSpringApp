@@ -7,7 +7,7 @@ Branch: `codex/zwei-faktor-authentifizierung`, Basis:
 Die acht vereinbarten Pakete sind technisch umgesetzt. Review und gezielte
 automatisierte Nachprüfungen sind abgeschlossen. Die gemeinsame fachliche und
 gestalterische Abnahme steht aus.
-Der Zwischencommit des geprüften Stands ist beauftragt. Die fachliche Abnahme,
+Der geprüfte technische Stand ist als Zwischencommit gesichert. Die fachliche Abnahme,
 der Featureabschluss sowie Merge und Push stehen noch aus.
 
 Das aktuelle Verhalten einschließlich Standardwerten und Grenzen steht in der

@@ -61,6 +61,7 @@ class ExternalIdTokenDecodersTest {
           properties.getGoogle(), properties.getMicrosoft()
         }) {
       provider.setClientId("own-client");
+      provider.setEnabled(true);
       provider.setClientSecret("own-fixture-secret");
       provider.setJwkSetUri("http://127.0.0.1:" + server.getAddress().getPort() + "/keys");
     }

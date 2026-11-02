@@ -27,9 +27,11 @@ Die Zugangsdaten werden wie die vorhandene SMTP-Konfiguration serverseitig in
 der lokalen Datenbank gespeichert. Die Administration prüft vor Lesen und Speichern
 frische Superadminrechte. Endpunktadressen sind nicht über die Oberfläche änderbar.
 
-Die folgenden Startvorgaben sind optional. Solange für einen Anbieter noch keine
-Einstellung gespeichert wurde, gelten die Werte aus der Serverkonfiguration.
-Gespeicherte Adminwerte haben danach Vorrang, einschließlich „Deaktiviert“.
+Die folgenden Startvorgaben sind optional. Beim Start legt die Anwendung fehlende
+Anbieterzeilen in `external_providers` mit diesen Werten an. Vorhandene Zeilen
+bleiben unverändert. Gespeicherte Adminwerte haben Vorrang, einschließlich „Deaktiviert“.
+Client-ID und Secret allein aktivieren keinen Anbieter. Dazu ist der eigene
+Aktivierungsschalter erforderlich. Beide Anbieter sind standardmäßig deaktiviert.
 
 Für jeden Anbieter eine eigene Webanwendung registrieren. Bei Microsoft als
 unterstützte Kontotypen Organisationsverzeichnisse **und persönliche Microsoft-Konten**
@@ -40,30 +42,38 @@ Keine Mailbox-, Kalender-, Laufwerks- oder Graph-Berechtigungen hinzufügen.
 | --- | --- | --- |
 | Client-ID | `app.external-login.google.client-id` | `app.external-login.microsoft.client-id` |
 | Client-Secret | `app.external-login.google.client-secret` | `app.external-login.microsoft.client-secret` |
+| Aktivierung | `app.external-login.google.enabled` | `app.external-login.microsoft.enabled` |
 | Rücksprung | `https://localhost:8443/login/oauth2/code/google` | `https://localhost:8443/login/oauth2/code/microsoft` |
 
 Den jeweiligen Rücksprung mit der tatsächlich verwendeten HTTPS-Adresse exakt beim
 Anbieter eintragen. Hinter einem Proxy müssen Ursprung und Weiterleitungsheader
 gemäß der HTTPS-Konfiguration stimmen. Zugangsdaten über den Adminbereich oder die
 lokalen Startvorgaben setzen, niemals einchecken.
-Die [`.env.example`](../.env.example) enthält diese vier Einstellungen für die lokale
+Die [`.env.example`](../.env.example) enthält diese sechs Einstellungen für die lokale
 `.env` oder echte Umgebungsvariablen:
 
 ```properties
 APP_EXTERNAL_LOGIN_GOOGLE_CLIENT_ID=
 APP_EXTERNAL_LOGIN_GOOGLE_CLIENT_SECRET=
+APP_EXTERNAL_LOGIN_GOOGLE_ENABLED=false
 APP_EXTERNAL_LOGIN_MICROSOFT_CLIENT_ID=
 APP_EXTERNAL_LOGIN_MICROSOFT_CLIENT_SECRET=
+APP_EXTERNAL_LOGIN_MICROSOFT_ENABLED=false
 ```
 
 Die Anwendung ordnet diese Namen ausdrücklich den typisierten Spring-Properties
 zu. Die `.env` wird als Properties-Datei importiert. Die Einträge dort jeweils
 ohne Leerzeichen vor oder nach dem eigenen Wert ausfüllen.
-Ein Anbieter ohne beide Angaben bleibt unsichtbar. Nur Änderungen an Startvorgaben
-erfordern einen Neustart. Für Änderungen über die Administration genügt Speichern
-und ein neuer Aufruf der Anmeldeseite.
-Dieses Paket ändert auch das aktuelle H2-Schema. Zum Starten eine frische eigene
-Testdatenbank verwenden. Bestehende Entwicklungsdaten werden nicht automatisch umgebaut.
+Zur erstmaligen Aktivierung `ENABLED=true` und beide Zugangsdaten setzen. Eine
+angeforderte Aktivierung ohne vollständige oder mit formal ungültigen Zugangsdaten
+führt zu einem Startfehler. Ob die Zugangsdaten beim Anbieter gültig sind, wird
+erst beim tatsächlichen Anmeldeversuch geprüft. Ein deaktivierter Anbieter bleibt auf Anmeldung und
+Registrierung unsichtbar. Änderungen an Startvorgaben benötigen einen Neustart
+und wirken nur auf fehlende Anbieterzeilen. Bereits gespeicherte Anbieter über
+die Administration ändern. Dort genügt Speichern und ein neuer Aufruf der Anmeldeseite.
+Die Datenbank muss dem aktuellen H2-Schema entsprechen. Bestehende Tabellen werden
+nicht automatisch umgebaut. Die Anbieterinitialisierung selbst benötigt keine
+zusätzliche Schemaänderung und überschreibt keine vorhandenen Einstellungen.
 
 ### Google: Client-ID und Client-Secret erstellen
 

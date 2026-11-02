@@ -51,6 +51,7 @@ final class OidcTestProvider implements AutoCloseable {
       String prefix = "BROWSER_TEST_OIDC_" + provider + "_";
       String path = provider.toLowerCase(java.util.Locale.ROOT);
       environment.put(prefix + "CLIENT", CLIENT);
+      environment.put(prefix + "ENABLED", "true");
       environment.put(prefix + "SECRET", BrowserTestAccounts.OIDC_CLIENT_SECRET);
       environment.put(prefix + "AUTH", "http://127.0.0.1:" + port + "/" + path + "/authorize");
       environment.put(

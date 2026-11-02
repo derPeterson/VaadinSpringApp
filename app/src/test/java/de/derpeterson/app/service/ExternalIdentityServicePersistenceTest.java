@@ -64,8 +64,10 @@ class ExternalIdentityServicePersistenceTest {
     ExternalLoginConfiguration.Registrations clients() {
       ExternalLoginProperties properties = new ExternalLoginProperties();
       properties.getGoogle().setClientId("own-client");
+      properties.getGoogle().setEnabled(true);
       properties.getGoogle().setClientSecret("own-secret");
       properties.getMicrosoft().setClientId("own-client");
+      properties.getMicrosoft().setEnabled(true);
       properties.getMicrosoft().setClientSecret("own-secret");
       return new ExternalLoginConfiguration().externalRegistrations(properties);
     }
@@ -381,6 +383,7 @@ class ExternalIdentityServicePersistenceTest {
     service.link(user.getId(), user.getAccessVersion(), evidence("microsoft", "two", false));
     ExternalLoginProperties properties = new ExternalLoginProperties();
     properties.getGoogle().setClientId("own-client");
+    properties.getGoogle().setEnabled(true);
     properties.getGoogle().setClientSecret("own-secret");
     ExternalIdentityService restricted =
         new ExternalIdentityService(

@@ -5,6 +5,9 @@ import java.time.Duration;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Allgemeine Einzelwerte. Der vollständige bereichsübergreifende Katalog ist ConfigurationCatalog.
+ */
 @Getter
 @RequiredArgsConstructor
 public enum ConfigEntry {

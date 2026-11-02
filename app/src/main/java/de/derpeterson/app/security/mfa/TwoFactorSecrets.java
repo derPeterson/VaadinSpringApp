@@ -1,5 +1,6 @@
 package de.derpeterson.app.security.mfa;
 
+import de.derpeterson.app.config.ConfigurationCatalog.StartupSetting;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
@@ -24,7 +25,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public final class TwoFactorSecrets {
-  public static final String KEY_PROPERTY = "app.security.totp-encryption-key";
+  public static final String KEY_PROPERTY = StartupSetting.TOTP_ENCRYPTION_KEY.property();
   private final byte[] key;
   private final SecureRandom random = new SecureRandom();
 

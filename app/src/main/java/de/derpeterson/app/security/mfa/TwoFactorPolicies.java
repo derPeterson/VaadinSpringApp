@@ -1,5 +1,6 @@
 package de.derpeterson.app.security.mfa;
 
+import de.derpeterson.app.config.ConfigurationCatalog.StartupSetting;
 import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.model.TwoFactorPolicyEntity;
 import de.derpeterson.app.model.enums.RoleType;
@@ -55,7 +56,8 @@ public class TwoFactorPolicies {
     this.administrators = administrators;
     this.authorization = authorization;
     developmentOptions =
-        environment.getProperty("app.security.development-options-enabled", Boolean.class, false);
+        environment.getProperty(
+            StartupSetting.DEVELOPMENT_OPTIONS_ENABLED.property(), Boolean.class, false);
   }
 
   /**

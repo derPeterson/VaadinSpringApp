@@ -9,6 +9,7 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.RoleRepository;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.ExternalProviderSettings;
 import de.derpeterson.app.service.ConfigService;
 import java.util.EnumMap;
 import java.util.List;
@@ -39,11 +40,13 @@ public class DatabaseInitializer {
   private final Environment environment;
   private final BootstrapAccountsProperties bootstrap;
   private final PlatformTransactionManager transactionManager;
+  private final ExternalProviderSettings providers;
 
   @Bean
   public CommandLineRunner initDatabase() {
     return args -> {
       createDefaultConfigSettings();
+      providers.initializeDefaults();
       createDefaultRolesAndAccounts();
     };
   }
@@ -105,7 +108,7 @@ public class DatabaseInitializer {
   }
 
   private String resolveDefaultValue(ConfigEntry configEntry) {
-    String propertyKey = "app.config.defaults." + configEntry.getKey();
+    String propertyKey = ConfigurationCatalog.property(configEntry);
     return environment.getProperty(propertyKey, configEntry.getDefaultValueString());
   }
 }

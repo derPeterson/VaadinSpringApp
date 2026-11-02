@@ -42,18 +42,20 @@ Konfiguration in den obigen Fachdokumenten.
 Die [Google-/Microsoft-Anmeldung](externe-anmeldung.md) und freiwillige Angaben zu
 Geschlecht/Geburtsdatum sind umgesetzt und vom Benutzer abschließend abgenommen.
 Die gewählten Designkorrekturen stehen im [Theme-Standard](theme.md).
-Die [2FA-Planung](planung/zwei-faktor-bestaetigung.md) umfasst konfigurierbare
+Die technisch umgesetzte [2FA-Erweiterung](planung/zwei-faktor-bestaetigung.md) umfasst konfigurierbare
 Rollen-/Funktionsregeln, eine Superadmin-Konfiguration, TOTP und Wiederherstellung.
-Sie behandelt die in [BUGS.md](../BUGS.md) dokumentierte Google-Schwäche auch bei
-Ersteinrichtung, Registrierung und Konten ohne Faktor. Die gewünschte gewarnte
-Entwicklungs-Ausnahme wird getrennt vom sicheren Betrieb geplant. Die
+Sie ersetzt die frühere Google-Zwischenlösung für sensible Aktionen durch einen
+Faktornachweis. Der geschützte Ersteinrichtungsweg und seine Grenzen stehen in der
+[Sicherheitsdokumentation](externe-anmeldung.md#google-bestätigung-und-geschützte-ersteinrichtung).
+Die gewünschte gewarnte
+Entwicklungs-Ausnahme ist vom sicheren Betrieb getrennt. Die
 Anbieterverwaltung ausschließlich für Superadmins gehört verbindlich zum Paket.
 Für die erste Google-2FA-Einrichtung sind erneute Anbieterbestätigung, E-Mail-Code
 und erster TOTP mit ausdrücklich akzeptiertem Restrisiko abgestimmt. Bestehende
-2FA kann dadurch nicht ersetzt werden. Die Grundsatzentscheidungen sind abgestimmt,
-die Implementierung und ihre isolierten Nachtests laufen auf dem Feature-Branch.
+2FA kann dadurch nicht ersetzt werden. Die Umsetzung und ihre gezielten isolierten
+Nachprüfungen sind abgeschlossen. Die gemeinsame fachliche und gestalterische
+Abnahme auf dem Feature-Branch steht noch aus.
 Bedienung und Grenzen stehen in der [2FA-Dokumentation](zwei-faktor-authentifizierung.md).
-Bis zur passenden erfolgreichen Nachprüfung bleibt die bekannte Schwäche offen.
 Weitere bewertete Möglichkeiten stehen in der
 [Entscheidungsvorlage für Portal-Erweiterungen](planung/portal-erweiterungen.md).
 Die [Vaadin-Komponentenprüfung](planung/vaadin-komponenten-abgleich.md) enthält die

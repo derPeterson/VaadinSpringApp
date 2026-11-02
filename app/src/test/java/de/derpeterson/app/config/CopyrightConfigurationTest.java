@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.repository.RoleRepository;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.ExternalProviderSettings;
 import de.derpeterson.app.service.ConfigService;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.env.Environment;
@@ -51,6 +52,7 @@ class CopyrightConfigurationTest {
         mock(PasswordEncoder.class),
         environment,
         new BootstrapAccountsProperties(),
-        mock(org.springframework.transaction.PlatformTransactionManager.class));
+        mock(org.springframework.transaction.PlatformTransactionManager.class),
+        mock(ExternalProviderSettings.class));
   }
 }

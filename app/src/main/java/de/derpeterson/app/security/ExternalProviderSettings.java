@@ -56,13 +56,7 @@ public class ExternalProviderSettings {
     String id = Objects.requireNonNull(clientId).trim();
     String secret =
         Objects.requireNonNull(newSecret).isBlank() ? current.getClientSecret() : newSecret;
-    if (id.length() > 512
-        || secret.length() > 2048
-        || id.chars().anyMatch(Character::isISOControl)
-        || secret.chars().anyMatch(Character::isISOControl)
-        || enabled && (id.isBlank() || secret.isBlank())) {
-      throw new IllegalArgumentException("Complete provider credentials required");
-    }
+    validateCredentials(id, secret, enabled);
     twoFactor.authorizeCurrent(request, TwoFactorAction.SECURITY_CONFIGURATION, true);
     current.setClientId(id);
     current.setClientSecret(secret);
@@ -71,6 +65,27 @@ public class ExternalProviderSettings {
     AfterCommitLog.info(
         log, "Sign-in provider configuration updated: provider={}, enabled={}", provider, enabled);
     return describe(saved);
+  }
+
+  /** Nur der Startinitialisierer: fehlende Anbieter gemeinsam anlegen, bestehende nie ändern. */
+  @Transactional
+  public void initializeDefaults() {
+    List<ExternalProviderEntity> missing =
+        PROVIDERS.stream()
+            .filter(provider -> !repository.existsById(provider))
+            .map(this::initialCredentials)
+            .toList();
+    repository.saveAllAndFlush(missing);
+  }
+
+  private void validateCredentials(String id, String secret, boolean enabled) {
+    if (id.length() > 512
+        || secret.length() > 2048
+        || id.chars().anyMatch(Character::isISOControl)
+        || secret.chars().anyMatch(Character::isISOControl)
+        || enabled && (id.isBlank() || secret.isBlank())) {
+      throw new IllegalArgumentException("Complete provider credentials required");
+    }
   }
 
   // Nur der Anmeldeadapter benötigt Geheimnisse. Kein UI-/JSON-Modell gibt sie zurück.
@@ -91,9 +106,10 @@ public class ExternalProviderSettings {
         provider.equals(GOOGLE) ? properties.getGoogle() : properties.getMicrosoft();
     ExternalProviderEntity entity = new ExternalProviderEntity();
     entity.setProvider(provider);
-    entity.setClientId(Objects.requireNonNullElse(defaults.getClientId(), ""));
+    entity.setClientId(Objects.requireNonNullElse(defaults.getClientId(), "").trim());
     entity.setClientSecret(Objects.requireNonNullElse(defaults.getClientSecret(), ""));
-    entity.setEnabled(defaults.configured());
+    entity.setEnabled(defaults.isEnabled());
+    validateCredentials(entity.getClientId(), entity.getClientSecret(), entity.isEnabled());
     return entity;
   }
 

@@ -19,7 +19,7 @@ class ExternalLoginConfigurationTest {
   void documentedDotEnvCredentialsEnableTheCorrespondingProvider(String provider, String key)
       throws Exception {
     ExternalLoginConfiguration.Registrations registrations =
-        registrations(key, "own-fixture-secret");
+        registrations(key, "own-fixture-secret", "true");
 
     assertEquals(List.of(provider), registrations.providers());
     assertEquals("own-client", registrations.findByRegistrationId(provider).getClientId());
@@ -29,20 +29,41 @@ class ExternalLoginConfigurationTest {
   @CsvSource({"google,GOOGLE", "microsoft,MICROSOFT"})
   void missingDotEnvSecretKeepsTheProviderUnavailable(String provider, String key)
       throws Exception {
-    ExternalLoginConfiguration.Registrations registrations = registrations(key, "");
+    ExternalLoginConfiguration.Registrations registrations = registrations(key, "", "true");
 
     assertTrue(registrations.providers().isEmpty());
     assertNull(registrations.findByRegistrationId(provider));
   }
 
-  private ExternalLoginConfiguration.Registrations registrations(String key, String secret)
+  @ParameterizedTest
+  @CsvSource({"google,GOOGLE", "microsoft,MICROSOFT"})
+  void credentialsAloneNeverEnableAProvider(String provider, String key) throws Exception {
+    ExternalLoginConfiguration.Registrations registrations = registrations(key, "own-secret", null);
+    assertTrue(registrations.providers().isEmpty());
+    assertNull(registrations.findByRegistrationId(provider));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"google,GOOGLE", "microsoft,MICROSOFT"})
+  void explicitDisableWinsEvenWithCompleteCredentials(String provider, String key)
       throws Exception {
+    ExternalLoginConfiguration.Registrations registrations =
+        registrations(key, "own-secret", "false");
+    assertTrue(registrations.providers().isEmpty());
+    assertNull(registrations.findByRegistrationId(provider));
+  }
+
+  private ExternalLoginConfiguration.Registrations registrations(
+      String key, String secret, String enabled) throws Exception {
     // Eine importierte .env ist wie MockEnvironment eine normale Properties-Quelle,
     // keine Betriebssystem-Umgebung mit deren besonderer Namensauflösung.
     MockEnvironment environment =
         new MockEnvironment()
             .withProperty("APP_EXTERNAL_LOGIN_" + key + "_CLIENT_ID", "own-client")
             .withProperty("APP_EXTERNAL_LOGIN_" + key + "_CLIENT_SECRET", secret);
+    if (enabled != null) {
+      environment.setProperty("APP_EXTERNAL_LOGIN_" + key + "_ENABLED", enabled);
+    }
     environment
         .getPropertySources()
         .addLast(new ResourcePropertySource("classpath:application.properties"));

@@ -1,5 +1,6 @@
 package de.derpeterson.app.service;
 
+import de.derpeterson.app.config.ConfigurationCatalog;
 import de.derpeterson.app.model.ConfigEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
@@ -43,7 +44,7 @@ public class ConfigService {
   public String getDefaultValue(ConfigEntry configEntry) {
     Objects.requireNonNull(configEntry, "configEntry");
     return environment.getProperty(
-        "app.config.defaults." + configEntry.getKey(), configEntry.getDefaultValueString());
+        ConfigurationCatalog.property(configEntry), configEntry.getDefaultValueString());
   }
 
   public String getString(ConfigEntry configEntry, String defaultValue) {

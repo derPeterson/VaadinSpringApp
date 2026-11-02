@@ -75,7 +75,14 @@ class BootstrapAccountsPersistenceTest {
     ConfigService config = mock(ConfigService.class);
     when(config.exists(any())).thenReturn(true);
     return new DatabaseInitializer(
-        users, roles, config, encoder, mock(Environment.class), settings, manager);
+        users,
+        roles,
+        config,
+        encoder,
+        mock(Environment.class),
+        settings,
+        manager,
+        mock(de.derpeterson.app.security.ExternalProviderSettings.class));
   }
 
   void run() throws Exception {

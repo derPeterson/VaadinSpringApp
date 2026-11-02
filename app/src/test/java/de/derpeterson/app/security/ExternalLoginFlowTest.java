@@ -79,8 +79,10 @@ class ExternalLoginFlowTest {
   void setup() {
     ExternalLoginProperties properties = new ExternalLoginProperties();
     properties.getGoogle().setClientId("own-client");
+    properties.getGoogle().setEnabled(true);
     properties.getGoogle().setClientSecret("own-fixture-secret");
     properties.getMicrosoft().setClientId("own-client");
+    properties.getMicrosoft().setEnabled(true);
     properties.getMicrosoft().setClientSecret("own-fixture-secret");
     clients = spy(new ExternalLoginConfiguration().externalRegistrations(properties));
     flow =

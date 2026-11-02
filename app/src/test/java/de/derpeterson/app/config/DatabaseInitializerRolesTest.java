@@ -18,6 +18,7 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.RoleRepository;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.ExternalProviderSettings;
 import de.derpeterson.app.service.ConfigService;
 import java.util.EnumMap;
 import java.util.Optional;
@@ -40,6 +41,7 @@ class DatabaseInitializerRolesTest {
     RoleEntity user = RoleEntity.builder().id(13L).name(RoleType.ROLE_USER).build();
     stored.put(RoleType.ROLE_ADMIN, admin);
     stored.put(RoleType.ROLE_USER, user);
+    ExternalProviderSettings providers = mock(ExternalProviderSettings.class);
     when(roles.findByName(any()))
         .thenAnswer(call -> Optional.ofNullable(stored.get(call.getArgument(0))));
     when(roles.save(any()))
@@ -57,7 +59,8 @@ class DatabaseInitializerRolesTest {
             mock(PasswordEncoder.class),
             mock(Environment.class),
             new BootstrapAccountsProperties(),
-            mock(org.springframework.transaction.PlatformTransactionManager.class));
+            mock(org.springframework.transaction.PlatformTransactionManager.class),
+            providers);
     initializer.initDatabase().run();
     initializer.initDatabase().run();
     assertEquals(Set.of(RoleType.values()), stored.keySet());
@@ -65,6 +68,7 @@ class DatabaseInitializerRolesTest {
     assertSame(user, stored.get(RoleType.ROLE_USER));
     verify(roles, times(2)).save(any());
     verifyNoInteractions(users);
+    verify(providers, times(2)).initializeDefaults();
   }
 
   @Test
@@ -80,7 +84,8 @@ class DatabaseInitializerRolesTest {
             mock(PasswordEncoder.class),
             environment,
             new BootstrapAccountsProperties(),
-            mock(org.springframework.transaction.PlatformTransactionManager.class));
+            mock(org.springframework.transaction.PlatformTransactionManager.class),
+            mock(ExternalProviderSettings.class));
 
     initializer.initDatabase().run();
     initializer.initDatabase().run();
@@ -110,7 +115,8 @@ class DatabaseInitializerRolesTest {
             mock(PasswordEncoder.class),
             mock(Environment.class),
             new BootstrapAccountsProperties(),
-            mock(org.springframework.transaction.PlatformTransactionManager.class));
+            mock(org.springframework.transaction.PlatformTransactionManager.class),
+            mock(ExternalProviderSettings.class));
     BootstrapAccountsProperties bootstrap = new BootstrapAccountsProperties();
     bootstrap.setEnabled(true);
     Account account = new BootstrapAccountsProperties.Account();

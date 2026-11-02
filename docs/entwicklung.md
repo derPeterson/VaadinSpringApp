@@ -73,6 +73,35 @@ Ohne diese Variable gilt `{ServiceName}`. Änderungen benötigen einen Neustart 
 `ConfigService` bewahrt Strings unverändert; typisierte Getter lehnen ungültige
 Zahlen/Booleans ab. SMTP, Remember-me und Workerzahl werden beim Start gebunden.
 
+### Zentraler Konfigurationskatalog
+
+`ConfigurationCatalog` unter `app/.../config/` erfasst die fachlichen
+Konfigurationsnamen, Bereiche, Speicherorte, Umgebungsvariablen und Geheimniskennzeichen.
+Beschriftungen und Feldhilfen verwenden den vorhandenen typisierten Textkatalog.
+Die allgemeine Konfiguration und die Anbieter-Feldhilfen nutzen diese Zuordnungen
+direkt. Der Katalog enthält keine tatsächlichen Werte oder Zugangsdaten.
+
+| Bereich | Speicherung und Startverhalten |
+| --- | --- |
+| Allgemeine Einzelwerte aus `ConfigEntry` | Fehlende Werte werden aus `APP_CFG_*` in `config` angelegt. |
+| Google und Microsoft | Fehlende Anbieter werden aus `APP_EXTERNAL_LOGIN_*` in `external_providers` angelegt. Client-ID, Secret und Aktivierung werden gemeinsam geprüft und gespeichert. |
+| Rollen- und Funktionsregeln für 2FA | Gemeinsamer Regelstand in `two_factor_policy`, verwaltet durch `TwoFactorPolicies`. Ohne gespeicherten Stand gelten dessen Standardregeln. |
+| TOTP-Schlüssel und Freigabe der Entwicklungsoptionen | Ausschließlich Startkonfiguration. Sie werden nicht als Adminwerte in der Datenbank abgelegt. |
+
+Vorhandene Anbieterzeilen bleiben beim Neustart unverändert, einschließlich einer
+gespeicherten Deaktivierung. Für eine erstmalige Aktivierung in der `.env`
+`APP_EXTERNAL_LOGIN_GOOGLE_ENABLED=true` bzw.
+`APP_EXTERNAL_LOGIN_MICROSOFT_ENABLED=true` zusammen mit vollständigen Zugangsdaten
+setzen. Beide Schalter sind standardmäßig aus. Eine angeforderte Aktivierung ohne
+vollständige oder mit formal ungültigen Zugangsdaten lässt den Start fehlschlagen.
+Ein deaktivierter Anbieter darf bereits Zugangsdaten enthalten.
+
+Der Katalog ist keine allgemeine Schreibschnittstelle. Anbieter und 2FA behalten
+ihre Transaktionen, Revisionsprüfungen und Superadmin-/Faktorprüfungen. Technische
+Startparameter wie Datenbankverbindung, HTTP-Port, H2-Konsole und Bootstrap bleiben
+bei ihren zuständigen Spring-Konfigurationen. Der TOTP-Verschlüsselungsschlüssel
+bleibt getrennt von den verschlüsselten Daten.
+
 Bootstrap ist standardmäßig aus. Die optionalen Listen `app.bootstrap.superadmins`,
 `admins`, `users` und `guests` legen explizite lokale Testkonten mit genau ihrer
 vorgesehenen Rolle an. Alle Einträge werden vor der ersten Anlage geprüft; die

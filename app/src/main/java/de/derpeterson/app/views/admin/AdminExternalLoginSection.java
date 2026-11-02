@@ -35,6 +35,7 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import de.derpeterson.app.config.AdminConfigGroup;
+import de.derpeterson.app.config.ConfigurationCatalog.ProviderField;
 import de.derpeterson.app.helper.logging.LogSafety;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper.NotificationType;
@@ -90,12 +91,6 @@ public class AdminExternalLoginSection extends VerticalLayout {
     this.request = request;
     confirmation = new TwoFactorActionDialog(texts, twoFactor, request);
     add(confirmation);
-  }
-
-  private enum ProviderField {
-    CLIENT_ID,
-    SECRET,
-    ENABLED
   }
 
   public AdminExternalLoginSection(
@@ -304,11 +299,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
     }
 
     private String fieldRule(ProviderField field) {
-      return switch (field) {
-        case CLIENT_ID -> texts.getProviderSettingsClientIdRule();
-        case SECRET -> texts.getProviderSettingsSecretRule();
-        case ENABLED -> texts.getProviderSettingsEnableRule();
-      };
+      return field.rule(texts);
     }
 
     private void refreshHelp() {
@@ -377,20 +368,11 @@ public class AdminExternalLoginSection extends VerticalLayout {
     }
 
     private String fieldLabel(ProviderField field) {
-      return switch (field) {
-        case CLIENT_ID -> texts.getProviderSettingsClientId();
-        case SECRET -> texts.getProviderSettingsSecret();
-        case ENABLED -> texts.getProviderSettingsEnable();
-      };
+      return field.label(texts);
     }
 
     private String fieldHelp(ProviderField field) {
-      boolean microsoft = provider.equals("microsoft");
-      return switch (field) {
-        case CLIENT_ID -> texts.getProviderSettingsClientIdHelp(microsoft);
-        case SECRET -> texts.getProviderSettingsSecretHelp(microsoft);
-        case ENABLED -> texts.getProviderSettingsEnableHelp();
-      };
+      return field.description(texts, provider);
     }
 
     private void load() {

@@ -25,6 +25,7 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.config.AdminConfigGroup;
+import de.derpeterson.app.config.ConfigurationCatalog;
 import de.derpeterson.app.config.TokenDurationPolicy;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -419,18 +420,12 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private void registerConfigGroups() {
-    configGroupFilters.put(AdminConfigGroup.GENERAL, this::isGeneralConfig);
-    configGroupFilters.put(AdminConfigGroup.SECURITY, this::isSecurityConfig);
-    configGroupFilters.put(AdminConfigGroup.TOKENS, this::isTokenConfig);
-    configGroupFilters.put(AdminConfigGroup.USER_STATUS, this::isUserStatusConfig);
-    configGroupFilters.put(
-        AdminConfigGroup.NOTIFICATIONS,
-        entry ->
-            entry == ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS
-                || entry == ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS);
-    configGroupFilters.put(AdminConfigGroup.EMAIL_SENDER, this::isEmailSenderConfig);
-    configGroupFilters.put(AdminConfigGroup.SMTP, this::isSmtpConfig);
-    configGroupFilters.put(AdminConfigGroup.QUEUE, this::isQueueConfig);
+    for (AdminConfigGroup group : AdminConfigGroup.values()) {
+      if (Arrays.stream(ConfigEntry.values())
+          .anyMatch(entry -> ConfigurationCatalog.group(entry) == group)) {
+        configGroupFilters.put(group, entry -> ConfigurationCatalog.group(entry) == group);
+      }
+    }
   }
 
   private VerticalLayout createConfigInput(ConfigEntry configEntry) {
@@ -941,8 +936,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private boolean isSecretEntry(ConfigEntry configEntry) {
-    return configEntry == ConfigEntry.REMEMBER_ME_SECRET_KEY
-        || configEntry == ConfigEntry.MAIL_PASSWORD;
+    return ConfigurationCatalog.secret(configEntry);
   }
 
   private boolean isNotificationRetention(ConfigEntry entry) {
@@ -1161,42 +1155,5 @@ public class AdminConfigurationSection extends VerticalLayout {
       }
     }
     return true;
-  }
-
-  private boolean isGeneralConfig(ConfigEntry configEntry) {
-    return configEntry == ConfigEntry.SERVICE_NAME
-        || configEntry == ConfigEntry.COPYRIGHT_TEXT
-        || configEntry == ConfigEntry.BASE_URL;
-  }
-
-  private boolean isSecurityConfig(ConfigEntry configEntry) {
-    return configEntry == ConfigEntry.REMEMBER_ME_DURATION
-        || configEntry == ConfigEntry.REMEMBER_ME_SECRET_KEY
-        || configEntry == ConfigEntry.LOGIN_ATTEMPTS_LIMIT
-        || configEntry == ConfigEntry.MAX_SESSIONS_PER_USER
-        || configEntry == ConfigEntry.MAINTENANCE_MODE;
-  }
-
-  private boolean isTokenConfig(ConfigEntry configEntry) {
-    return configEntry == ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION
-        || configEntry == ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION
-        || configEntry == ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION
-        || configEntry == ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION;
-  }
-
-  private boolean isUserStatusConfig(ConfigEntry configEntry) {
-    return configEntry == ConfigEntry.USER_AUTO_ABSENT_TIMEOUT;
-  }
-
-  private boolean isEmailSenderConfig(ConfigEntry configEntry) {
-    return configEntry == ConfigEntry.EMAIL_FROM || configEntry == ConfigEntry.EMAIL_ADMIN;
-  }
-
-  private boolean isSmtpConfig(ConfigEntry configEntry) {
-    return configEntry.name().startsWith("MAIL_");
-  }
-
-  private boolean isQueueConfig(ConfigEntry configEntry) {
-    return configEntry.name().startsWith("EMAIL_QUEUE_");
   }
 }
