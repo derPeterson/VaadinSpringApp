@@ -54,22 +54,22 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     page.locator("#two-factor-code input").fill(mailCode);
     page.locator("#two-factor-submit").click();
     assertThat(page.locator("#two-factor-qr")).isVisible();
-    Locator manual = page.locator("a[href*='/internal/two-factor/setup/'][href$='/key']");
-    String originalKeyLink = manual.getAttribute("href");
+    Locator qr = page.locator("#two-factor-qr");
+    String originalQr = qr.getAttribute("src");
     new UserMenu(page).selectTestLanguage();
-    assertThat(manual).hasAttribute("href", originalKeyLink);
+    assertThat(qr).hasAttribute("src", originalQr);
     assertThat(page.locator("#two-factor-qr")).hasAttribute("alt", texts.getTwoFactorQrAlt());
     TwoFactorPage.confirmEnrollment(page, email);
     String codes =
         page.frameLocator("#two-factor-recovery-codes")
             .locator("#recovery-code-values")
             .innerText();
-    String output = page.locator("#two-factor-download-pdf").getAttribute("href").split("\\?")[0];
+    page.locator("#two-factor-codes-saved input").setChecked(true);
     new UserMenu(page).selectLanguage(other.language());
     assertThat(page.frameLocator("#two-factor-recovery-codes").locator("#recovery-code-values"))
         .hasText(codes);
-    assertThat(page.locator("#two-factor-download-pdf"))
-        .hasAttribute("href", output + "?lang=" + other.language());
+    assertThat(page.locator("#two-factor-download-pdf")).hasText(other.getTwoFactorDownloadPdf());
+    assertThat(page.locator("#two-factor-codes-saved input")).isChecked();
     new UserMenu(page).selectTestLanguage();
     assertThat(page.frameLocator("#two-factor-recovery-codes").locator("#recovery-code-values"))
         .hasText(codes);

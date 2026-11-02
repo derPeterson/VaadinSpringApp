@@ -593,7 +593,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @DisplayName("MFA-02: Neue Ersatzcodes nach eigener Bestätigung und geschütztes PDF")
-  void protectedRecoveryCodeIssuance(int width) {
+  @Tag("recovery-output")
+  void protectedRecoveryCodeIssuance(int width) throws Exception {
     page.setViewportSize(width, 900);
     LoginPage login = new LoginPage(page);
     login.open();
@@ -604,6 +605,9 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         .fill(TwoFactorPage.nextCode(page, BrowserTestAccounts.ADMIN_EMAIL));
     page.locator("#two-factor-action-confirm").click();
     assertThat(page.locator("#two-factor-recovery-codes")).isVisible();
+    assertThat(page.locator("#two-factor-submit")).isDisabled();
+    assertThat(page.locator("#two-factor-cancel")).isDisabled();
+    String outputPage = page.url();
     String url = page.locator("#two-factor-download-pdf").getAttribute("href");
     @SuppressWarnings("unchecked")
     Map<String, Object> pdf =
@@ -615,7 +619,37 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     org.junit.jupiter.api.Assertions.assertTrue(((String) pdf.get("cache")).contains("no-store"));
     org.junit.jupiter.api.Assertions.assertTrue(((Number) pdf.get("size")).intValue() > 1000);
     TwoFactorPage.captureCodes(page, BrowserTestAccounts.ADMIN_EMAIL);
+    String originalCodes =
+        page.frameLocator("#two-factor-recovery-codes")
+            .locator("#recovery-code-values")
+            .innerText();
+    // Ein tatsächlich nicht verfügbarer Codesatz wird vom geschützten Serverendpunkt
+    // abgelehnt. Die native Downloadaktion muss auch dabei die sichtbare Ausgabe erhalten.
+    String unavailable = "/internal/two-factor/recovery/" + UUID.randomUUID() + "/codes.pdf";
+    page.locator("#two-factor-download-pdf")
+        .evaluate("(anchor, href) => anchor.href = href", unavailable);
+    try {
+      com.microsoft.playwright.Download failed =
+          page.waitForDownload(() -> page.locator("#two-factor-download-pdf").click());
+      org.junit.jupiter.api.Assertions.assertNotNull(failed.failure());
+    } finally {
+      page.locator("#two-factor-download-pdf")
+          .evaluate("(anchor, href) => anchor.href = href", url);
+    }
+    assertThat(page).hasURL(outputPage);
+    assertThat(page.frameLocator("#two-factor-recovery-codes").locator("#recovery-code-values"))
+        .hasText(originalCodes);
+    assertThat(page.locator("#two-factor-submit")).isDisabled();
+    com.microsoft.playwright.Download download =
+        page.waitForDownload(() -> page.locator("#two-factor-download-pdf").click());
+    org.junit.jupiter.api.Assertions.assertNull(download.failure());
+    byte[] bytes = java.nio.file.Files.readAllBytes(download.path());
+    assertTrue(new String(bytes, 0, 5, java.nio.charset.StandardCharsets.US_ASCII).equals("%PDF-"));
+    assertThat(page).hasURL(outputPage);
+    assertThat(page.frameLocator("#two-factor-recovery-codes").locator("#recovery-code-values"))
+        .hasText(originalCodes);
     AllurePlaywright.attachScreenshot("Einmalige Ausgabe synthetischer Ersatzcodes", page);
+    page.locator("#two-factor-codes-saved input").setChecked(true);
     page.locator("#two-factor-submit").click();
     assertThat(page).hasURL(Pattern.compile(".*/account\\?tab=security$"));
     org.junit.jupiter.api.Assertions.assertTrue(

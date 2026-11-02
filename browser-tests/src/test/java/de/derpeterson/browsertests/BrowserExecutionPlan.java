@@ -79,6 +79,8 @@ final class BrowserExecutionPlan {
             .configurationParameter("junit.jupiter.execution.parallel.enabled", "false");
     if (suite.equals("fast")) {
       builder.filters(TagFilter.includeTags("fast"));
+    } else if (suite.equals("two-factor-recovery-output")) {
+      builder.filters(TagFilter.includeTags("recovery-output"));
     }
     return builder.build();
   }

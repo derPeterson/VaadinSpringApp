@@ -9,6 +9,7 @@
 .mfa-reference .mfa-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
 .mfa-reference .mfa-code-values { white-space:pre; overflow:auto; color:#e2e8f0; font:13px/2.4 monospace; }
 .mfa-reference .mfa-phase-buttons { display:flex; flex-wrap:wrap; gap:8px; }
+#public-two-factor .vp-card-foot [aria-disabled=true],#public-two-factor .vp-card-foot button:disabled { opacity:.5; cursor:default; }
 .mfa-reference > .mfa-phase-buttons { margin-bottom:16px; }
 .mfa-reference .mfa-phase-buttons .portal-button { max-width:100%; min-width:0; height:auto; min-height:36px; white-space:normal; }
 .mfa-reference .mfa-qr-placeholder { display:grid; place-items:center; width:220px; height:220px; margin:16px auto; background:#fff; color:#102039; border-radius:8px; font:600 12px Inter,sans-serif; }

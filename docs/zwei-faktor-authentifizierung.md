@@ -8,6 +8,15 @@ zur Anmeldung dient.
 
 ## Einrichtung und eigene Verwaltung
 
+Die Ersatzcodeausgabe bleibt beim PDF-Download auf derselben Seite. Fehler werden
+als Standardmeldung angezeigt; ein erneuter Download oder Kopieren bleibt innerhalb
+der bestehenden Ausgabefrist möglich. Herunterladen verbraucht die Ausgabe nicht.
+Erst der Switch „Ich habe meine Ersatzcodes sicher gespeichert“ schaltet beide
+Footeraktionen frei. Die Bestätigung bleibt beim Sprachwechsel für denselben
+Codesatz erhalten, gilt aber nicht für einen neuen Codesatz. Sie dokumentiert die
+bewusste Bestätigung, kann die tatsächliche sichere Ablage jedoch nicht nachweisen.
+Die bestehende zeitliche Begrenzung und Berechtigungsprüfung bleiben erhalten.
+
 Der Einrichtungsschritt bietet wahlweise den QR-Code oder einen manuellen
 Schlüssel. Die Schlüsselanzeige ist eine native schreibgeschützte Vaadin-TextArea
 mit zwei Zeilen. Beim Sprachwechsel bleibt der gewählte Tab erhalten.

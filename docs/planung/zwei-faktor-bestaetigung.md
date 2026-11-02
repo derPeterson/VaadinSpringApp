@@ -36,6 +36,29 @@ Die Google-/Microsoft-Verwaltung ist im selben Paket auf Superadmins beschränkt
 
 ## Gestaltung der verpflichtenden Ersteinrichtung
 
+### Ersatzcodeausgabe: Auswahl offen
+
+Die folgenden drei Stitch-Exporte liegen im bestehenden 2FA-Projekt; sie verwenden
+ausschließlich synthetische Codes. Noch keine Designübernahme beauftragt:
+
+- [A: zentrale Sicherheitskarte](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=12100564379038591947)
+- [B: zweispaltiges Panel mit Tresorillustration](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=16507521264873901502)
+- [C: Sicherungsaktionen und einklappbare Codeübersicht](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=18067519117044536055)
+
+Bevorzugte Grundlage ist B mit kompakter Codeumschaltung; Entscheidung gemeinsam
+treffen. Zusätzliche Statusanzeigen, veränderte Codestruktur, technische
+Download-Erklärungen und falsche Behauptungen über einen unvollständigen Login
+sind keine Anforderungen. Die Codebestätigung soll ein bewusster Switch statt
+eines zusätzlichen Bestätigungsdialogs sein. Sie beweist keine tatsächliche Ablage.
+Kopieren und PDF bleiben vor der Bestätigung verfügbar. Sicherheitsfristen und
+Nachweise bleiben unverändert. Der PDF-Fehler ist unabhängig vom Entwurf behoben;
+der gezielte Ersatzcode-/PDF-Nachtest auf Desktop/Smartphone in DE/EN ist bestanden.
+
+Für den fertigen QR-/Manuell-Einrichtungsschritt ist ausschließlich Textkritik,
+keine neue Variante gewünscht. Der CLI-Befehl zur Screen-Erzeugung wurde dafür
+von der automatischen Freigabeprüfung abgelehnt; die Freigabe für einen reinen
+Stitch-Browserchat steht noch aus.
+
 ### QR-Einrichtungsschritt: Variante B mit Ergänzungen
 
 Drei gesichtete Stitch-Entwürfe für „Authenticator-App einrichten“ liegen im

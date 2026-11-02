@@ -290,6 +290,14 @@ public class MessageTexts {
     return getTranslation("mfa.download.pdf");
   }
 
+  public String getTwoFactorDownloadFailed() {
+    return getTranslation("mfa.download.failed");
+  }
+
+  public String getTwoFactorCodesSavedConfirmation() {
+    return getTranslation("mfa.recovery.savedConfirmation");
+  }
+
   public String getTwoFactorCopyCodes() {
     return getTranslation("mfa.copy.codes");
   }

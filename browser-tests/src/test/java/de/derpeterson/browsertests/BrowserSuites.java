@@ -81,6 +81,7 @@ final class BrowserSuites {
       case "external-login-flow" -> List.of(ExternalLoginBrowserTest.class);
       case "two-factor" -> List.of(TwoFactorBrowserTest.class, TwoFactorPushBrowserTest.class);
       case "two-factor-push" -> List.of(TwoFactorPushBrowserTest.class);
+      case "two-factor-recovery-output" -> List.of(TwoFactorBrowserTest.class);
       case "two-factor-lifecycle" -> List.of(TwoFactorLifecycleBrowserTest.class);
       case "external-login-layout" -> List.of(ExternalLoginLayoutBrowserTest.class);
       case "external-login" ->

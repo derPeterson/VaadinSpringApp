@@ -7,6 +7,7 @@ import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
@@ -50,9 +51,12 @@ import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.ui.components.AccountPanelComponent;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.PublicPageComponent;
+import de.derpeterson.app.ui.components.RecoveryCodeDownload;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 import java.util.function.Supplier;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
@@ -75,6 +79,7 @@ public final class TwoFactorView extends VerticalLayout
   private final transient ExternalLoginFlow external;
   private final transient ExternalIdentityService identities;
   private final transient HttpServletRequest request;
+  private final transient RecoveryCodeDownload recoveryDownloads;
   private final AccountPanelComponent panel =
       new AccountPanelComponent("two-factor-panel", AppIcon.LOCK);
   private final Div content = new Div();
@@ -84,6 +89,8 @@ public final class TwoFactorView extends VerticalLayout
   private final PasswordField password = new PasswordField();
   private final TextField code = new TextField();
   private final OtpField enrollmentCode = new OtpField();
+  private final Switch recoverySaved = new Switch();
+  private UUID recoveryOutputId;
   private TwoFactorEnrollment.Pending pending;
   private boolean setup;
   private boolean administration;
@@ -101,6 +108,7 @@ public final class TwoFactorView extends VerticalLayout
       TwoFactorEnrollment enrollment,
       ExternalLoginFlow external,
       ExternalIdentityService identities,
+      RecoveryCodeDownload recoveryDownloads,
       HttpServletRequest request) {
     this.texts = texts;
     this.security = security;
@@ -109,6 +117,7 @@ public final class TwoFactorView extends VerticalLayout
     this.external = external;
     this.identities = identities;
     this.request = request;
+    this.recoveryDownloads = recoveryDownloads;
     setPadding(false);
     setSpacing(false);
     setWidthFull();
@@ -134,6 +143,8 @@ public final class TwoFactorView extends VerticalLayout
     enrollmentCode.setRequiredIndicatorVisible(true);
     enrollmentCode.setValueChangeMode(ValueChangeMode.ON_CHANGE);
     enrollmentCode.addClassName("two-factor-otp");
+    recoverySaved.setId("two-factor-codes-saved");
+    recoverySaved.addValueChangeListener(event -> updateRecoveryActions());
     cancel.setId("two-factor-cancel");
     cancel.setPrefixComponent(AppIcon.CLOSE.create());
     cancel.addClickListener(event -> cancel());
@@ -198,6 +209,7 @@ public final class TwoFactorView extends VerticalLayout
       cancel.setPrefixComponent(AppIcon.SIGN_OUT.create());
     }
     submit.setEnabled(true);
+    cancel.setEnabled(true);
     if (pending != null) {
       showPending();
     } else if (state.enrolled() && recovering) {
@@ -596,17 +608,38 @@ public final class TwoFactorView extends VerticalLayout
                                 Boolean.TRUE.equals(copied)
                                     ? NotificationHelper.NotificationType.SUCCESS
                                     : NotificationHelper.NotificationType.ERROR)));
+    UUID outputId = pending.id();
+    Locale locale = VaadinSession.getCurrent().getLocale();
     Anchor download =
         new Anchor(
-            documentPath(
-                "recovery/"
-                    + pending.id()
-                    + "/codes.pdf?lang="
-                    + VaadinSession.getCurrent().getLocale().getLanguage()),
+            event ->
+                recoveryDownloads.write(
+                    event,
+                    outputId,
+                    locale,
+                    () ->
+                        NotificationHelper.getInstance()
+                            .showNotification(
+                                texts::getTwoFactorDownloadFailed,
+                                NotificationHelper.NotificationType.ERROR)),
             texts.getTwoFactorDownloadPdf());
     download.setId("two-factor-download-pdf");
     extraActions.add(copy, download);
+    if (!outputId.equals(recoveryOutputId)) {
+      recoveryOutputId = outputId;
+      recoverySaved.setValue(false);
+    }
+    recoverySaved.setLabel(texts.getTwoFactorCodesSavedConfirmation());
+    content.add(recoverySaved);
     submit.setText(texts.getTwoFactorCodesSaved());
+    updateRecoveryActions();
+  }
+
+  private void updateRecoveryActions() {
+    if (pending != null && pending.kind() == Kind.RECOVERY_OUTPUT) {
+      submit.setEnabled(recoverySaved.getValue());
+      cancel.setEnabled(recoverySaved.getValue());
+    }
   }
 
   private void prepareCode(String label, int maximumLength) {
@@ -629,6 +662,9 @@ public final class TwoFactorView extends VerticalLayout
         return;
       }
       if (pending != null && pending.kind() == Kind.RECOVERY_OUTPUT) {
+        if (!recoverySaved.getValue()) {
+          return;
+        }
         enrollment.dismissOutput(request, pending.id());
         finish();
         return;
@@ -705,6 +741,12 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private void cancel() {
+    if (pending != null && pending.kind() == Kind.RECOVERY_OUTPUT) {
+      if (!recoverySaved.getValue()) {
+        return;
+      }
+      enrollment.dismissOutput(request, pending.id());
+    }
     if (!introduction && authorization.sessionConfirmed(request)) {
       UI.getCurrent().getPage().setLocation(request.getContextPath() + "/account?tab=security");
     } else {

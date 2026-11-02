@@ -104,6 +104,7 @@
       root.closest('.vp-card').classList.toggle('mfa-setup', phase === 'qr');
       const english = document.querySelector('[data-menu-language="en"][aria-pressed="true"]');
       const action = document.querySelector('#public-two-factor [data-mfa-continue]');
+      action.disabled = phase === 'codes';
       action.innerHTML = phase === 'intro'
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></svg><span>' + (english ? 'Set up' : 'Einrichten') + '</span>'
         : '<span>Bestätigen</span>';
@@ -111,6 +112,8 @@
         action.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span>' + (english ? 'Enable authenticator' : 'Authenticator aktivieren') + '</span>';
       }
       const cancel = document.querySelector('#public-two-factor .vp-card-foot a');
+      cancel.href = '#public-login';
+      cancel.setAttribute('aria-disabled', String(phase === 'codes'));
       cancel.classList.toggle('danger', phase === 'intro' || phase === 'qr');
       cancel.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9"/></svg><span>' + (english ? 'Sign out' : 'Abmelden') + '</span>';
       if (phase === 'qr') {
@@ -119,6 +122,25 @@
       }
       if (phase === 'intro') {
         root.innerHTML = '<img class="two-factor-introduction-art" src="assets/two-factor-locks.svg" alt=""><h2 class="two-factor-introduction-title">' + (english ? 'Two-factor authentication required' : 'Zwei-Faktor-Authentifizierung erforderlich') + '</h2><p class="portal-copy">' + (english ? 'Your account requires additional protection. Connect an authenticator app now to continue using the application.' : 'Für Ihr Konto ist eine zusätzliche Absicherung erforderlich. Verbinden Sie jetzt eine Authenticator-App, um die Anwendung weiter zu nutzen.') + '</p>';
+        root.dataset.phase = phase;
+        return;
+      }
+      if (phase === 'codes') {
+        const saved = root.dataset.phase === 'codes' && root.dataset.codesSaved === 'true';
+        root.dataset.codesSaved = String(saved);
+        root.closest('.vp-card').querySelector('.vp-card-head h2').textContent = english ? 'Keep your recovery codes safe' : 'Ersatzcodes sicher aufbewahren';
+        action.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span>' + (english ? 'Codes saved — continue' : 'Codes gesichert und weiter') + '</span>';
+        cancel.href = 'portal.html#security';
+        cancel.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg><span>' + (english ? 'Back to account' : 'Zurück zum Konto') + '</span>';
+        root.innerHTML = `<p class="portal-copy">${english ? 'Save or print these recovery codes. Each code works only once. Keep them in a safe place separate from your device.' : 'Speichern oder drucken Sie diese Ersatzcodes. Jeder Code gilt nur einmal. Bewahren Sie sie getrennt von Ihrem Gerät sicher auf.'}</p><pre class="mfa-code-values">${codes}</pre><p class="portal-copy">${english ? 'The application provides a protected PDF download with its service logo.' : 'Die Anwendung bietet einen geschützten PDF-Download mit Service-Logo.'}</p><div class="vp-options"><label><input type="checkbox" role="switch" data-mfa-saved> ${english ? 'I have saved my recovery codes securely.' : 'Ich habe meine Ersatzcodes sicher gespeichert.'}</label></div>`;
+        root.querySelector('[data-mfa-saved]').addEventListener('change', event => {
+          root.dataset.codesSaved = String(event.target.checked);
+          action.disabled = !event.target.checked;
+          cancel.setAttribute('aria-disabled', String(!event.target.checked));
+        });
+        root.querySelector('[data-mfa-saved]').checked = saved;
+        action.disabled = !saved;
+        cancel.setAttribute('aria-disabled', String(!saved));
         root.dataset.phase = phase;
         return;
       }
@@ -143,12 +165,16 @@
     document.querySelectorAll('#public-two-factor [data-mfa-phase]').forEach(button=>button.addEventListener('click',()=>renderPhase(publicPhase,button.dataset.mfaPhase)));
     publicPhase.addEventListener('click',event=>{const control=event.target.closest('[data-mfa-go]');if(control){renderPhase(publicPhase,control.dataset.mfaGo);}});
     document.querySelector('#public-two-factor [data-mfa-continue]').addEventListener('click',()=>{
+      if (publicPhase.dataset.phase === 'codes' && !publicPhase.querySelector('[data-mfa-saved]').checked) { return; }
       const next={intro:'qr',setup:'qr',recover:'qr',email:'qr',qr:'codes',codes:'confirm',help:'help',confirm:'confirm'};
       renderPhase(publicPhase,next[publicPhase.dataset.phase]);
       notify('Gestaltungsvorschau: Es wurde keine Anmeldung oder Kontoänderung ausgeführt.');
     });
+    document.querySelector('#public-two-factor .vp-card-foot a').addEventListener('click', event => {
+      if (publicPhase.dataset.phase === 'codes' && !publicPhase.querySelector('[data-mfa-saved]').checked) { event.preventDefault(); }
+    });
     document.querySelectorAll('[data-menu-language]').forEach(button => button.addEventListener('click', () => {
-      if (['intro','qr'].includes(publicPhase.dataset.phase)) { renderPhase(publicPhase, publicPhase.dataset.phase); }
+      if (['intro','qr','codes'].includes(publicPhase.dataset.phase)) { renderPhase(publicPhase, publicPhase.dataset.phase); }
     }));
     renderPhase(publicPhase,'intro');
   }

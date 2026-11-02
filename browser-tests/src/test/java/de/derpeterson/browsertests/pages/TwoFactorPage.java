@@ -58,6 +58,7 @@ public final class TwoFactorPage {
 
   public static void enrollCurrent(Page page, String email) {
     confirmEnrollment(page, email);
+    page.locator("#two-factor-codes-saved input").setChecked(true);
     page.locator("#two-factor-submit").click();
   }
 
@@ -67,15 +68,14 @@ public final class TwoFactorPage {
    */
   public static void confirmEnrollment(Page page, String email) {
     assertThat(page.locator("#two-factor-qr")).isVisible();
-    String href =
-        page.locator("a[href*='/internal/two-factor/setup/'][href$='/key']").getAttribute("href");
+    String href = page.locator("#two-factor-qr").getAttribute("src").replace("/qr.png", "/key");
     String key =
         (String)
             page.evaluate(
                 "async url => { const response = await fetch(url, {cache:'no-store'}); if (!response.ok) throw new Error('Protected setup key unavailable'); return response.text(); }",
                 href);
     SEEDS.put(email, key);
-    page.locator("#two-factor-code input").fill(totp(page, email));
+    page.locator("#two-factor-enrollment-code input").fill(totp(page, email));
     page.locator("#two-factor-submit").click();
     captureCodes(page, email);
   }

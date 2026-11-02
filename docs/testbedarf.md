@@ -2,6 +2,12 @@
 
 ## Browser-Tests
 
+- **Ersatzcodeausgabe und Sprachwechsel: wartend auf die abschließende 2FA-Prüfung.**
+  Der angepasste Lifecycle-Fall prüft dieselben Codes und die bestätigte Sicherung
+  nach DE/EN-Wechsel sowie die übersetzte native Downloadaktion. Den vorhandenen
+  Lifecycle-Fall mit dem aktuellen Image ausführen; der gezielte PDF-Nachtest
+  ersetzt diesen weiteren Ablauf nicht.
+
 - **QR-Einrichtungsscreen mit OTP-Eingabe: wartend auf abschließende UI-Prüfung.**
   Nur diesen Screen in Vaadin und HTML auf Desktop/Smartphone in DE/EN prüfen:
   Standard-Contentfarbe, QR/manueller Schlüssel, App-Links, beide Schrittüberschriften,

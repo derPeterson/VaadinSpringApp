@@ -1203,6 +1203,14 @@ bleibt für Fokus, Tastatur, Einfügen und Autofill vorhanden.
 Die vorhandene Vaadin-Frontendversion bleibt auch für `field-base` maßgeblich;
 die ältere Paketdeklaration des Add-ons darf die gemeinsamen Felder nicht herunterstufen.
 
+Die Ersatzcodeausgabe verwendet einen nativen `Anchor` mit `DownloadHandler`
+über `RecoveryCodeDownload`. Der Abruf prüft die aktuelle Berechtigung und
+verbraucht die Ausgabe weder bei Erfolg noch bei Fehler. Die Browserseite bleibt
+stehen; Fehler erscheinen über die Standardnotification. Ein nativer `Switch`
+bestätigt die Sicherung und schaltet beide Footeraktionen frei. Nur die ausdrückliche
+bestätigte Aktion verwirft die einmalige Ausgabe; reine Navigation ist kein Download.
+Eine neue Gestaltung mit ein-/ausblendbaren Codes bleibt bis zur Entwurfswahl offen.
+
 Der Rollenbereich übernimmt die bestehende Anbietertabform, stellt
 Regeln zweispaltig dar und wechselt unter 650 px auf eine Spalte. Neue lokale
 Details bleiben bis zur gemeinsamen Designabnahme lokal.
