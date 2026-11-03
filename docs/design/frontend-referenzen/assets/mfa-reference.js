@@ -138,12 +138,105 @@
     });
     root.querySelector('[data-mfa-download-demo]').addEventListener('click', () => notify(english ? 'Design preview: The PDF download is available in the Vaadin application.' : 'Gestaltungsvorschau: Der PDF-Download ist in der Vaadin-Anwendung verfügbar.'));
   };
+  const helpMessages = [];
+  const renderConfirmationFlow = (root, phase, english) => {
+    const text = english ? {
+      confirm:'Confirm sign-in',confirmSubtitle:'Confirm that it is you.',authenticator:'Authenticator code',recovery:'Recovery code',
+      authHint:'Enter the six-digit code from your authenticator app.',recoveryHint:'Enter an unused recovery code to confirm your sign-in.',
+      restore:'Restore authenticator',restoreSubtitle:'Use a recovery code to set up a new app.',restoreHint:'Use an unused recovery code to set up a new authenticator. Your current app remains valid until you confirm the new one.',
+      consumption:'The recovery code is only used up after the replacement succeeds.',help:'No access to your authenticator or recovery codes?',
+      helpTitle:'Recovery help',helpSubtitle:'No access to your authenticator or recovery codes?',noUnlock:'A request is not proof of identity. Without an authenticator or valid recovery code we cannot unlock the account.',
+      empty:'No requests.',request:'Your request',placeholder:'Briefly describe what you need help with.',warning:'Do not include passwords, authenticator secrets or recovery codes in this request.',
+      submit:'Confirm',continue:'Continue',create:'Create request',reply:'Add reply',back:'Back to sign-in',refresh:'Refresh',codePlaceholder:'Enter code'
+    } : {
+      confirm:'Anmeldung bestätigen',confirmSubtitle:'Bestätigen Sie, dass Sie es sind.',authenticator:'Authenticator-Code',recovery:'Ersatzcode',
+      authHint:'Geben Sie den sechsstelligen Code Ihrer Authenticator-App ein.',recoveryHint:'Geben Sie einen noch unbenutzten Ersatzcode ein, um Ihre Anmeldung zu bestätigen.',
+      restore:'Authenticator wiederherstellen',restoreSubtitle:'Mit einem Ersatzcode eine neue App einrichten.',restoreHint:'Verwenden Sie einen unbenutzten Ersatzcode, um einen neuen Authenticator einzurichten. Ihre bisherige App bleibt gültig, bis Sie die neue bestätigt haben.',
+      consumption:'Der Ersatzcode wird erst nach dem erfolgreichen Wechsel verbraucht.',help:'Kein Zugriff auf Authenticator und Ersatzcodes?',
+      helpTitle:'Hilfe zur Wiederherstellung',helpSubtitle:'Kein Zugriff auf Authenticator und Ersatzcodes?',noUnlock:'Eine Anfrage ersetzt keinen Identitätsnachweis. Ohne Authenticator oder gültigen Ersatzcode können wir das Konto nicht entsperren.',
+      empty:'Keine Anfragen vorhanden.',request:'Ihre Anfrage',placeholder:'Beschreiben Sie Ihr Anliegen kurz.',warning:'Schreiben Sie keine Passwörter, Authenticator-Schlüssel oder Ersatzcodes in diese Anfrage.',
+      submit:'Bestätigen',continue:'Weiter',create:'Anfrage erstellen',reply:'Antwort hinzufügen',back:'Zur Anmeldung',refresh:'Aktualisieren',codePlaceholder:'Code eingeben'
+    };
+    const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>';
+    const key = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="16" cy="8" r="5"/><path d="m12.5 11.5-9 9H2v-4l3-3h3v-3h3"/></svg>';
+    const device = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>';
+    const escape = value => String(value).replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
+    const restoreLink = `<button class="portal-button mfa-quiet-action" type="button" data-mfa-go="recover">${text.restore}${arrow}</button>`;
+    const helpLink = `<button class="portal-button mfa-quiet-action" type="button" data-mfa-go="help">${text.help}${arrow}</button>`;
+    const recoveryMode = root.dataset.loginMethod === 'recovery';
+    if (phase === 'confirm') {
+      root.innerHTML = `<div class="mfa-setup-tabs mfa-login-tabs" role="tablist" aria-label="${text.confirm}"><button type="button" role="tab" data-mfa-login-method="authenticator" aria-selected="${!recoveryMode}" tabindex="${recoveryMode?-1:0}">${device}<span>${text.authenticator}</span></button><button type="button" role="tab" data-mfa-login-method="recovery" aria-selected="${recoveryMode}" tabindex="${recoveryMode?0:-1}">${key}<span>${text.recovery}</span></button></div><p class="portal-copy">${recoveryMode?text.recoveryHint:text.authHint}</p>${recoveryMode?`<label>${text.recovery} <span class="mfa-required-dot">•</span><input id="mfa-login-recovery-code" maxlength="35" autocomplete="off" placeholder="${text.codePlaceholder}"></label>`:`<div class="mfa-otp-field"><label for="mfa-login-code">${text.authenticator} <span class="mfa-required-dot">•</span></label><div class="mfa-otp"><div class="mfa-otp-slots" aria-hidden="true">${'<span>•</span>'.repeat(6)}</div><input id="mfa-login-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-required="true"></div></div>`}<div class="mfa-login-help">${restoreLink}${helpLink}</div>`;
+      const tabs = [...root.querySelectorAll('[data-mfa-login-method]')];
+      tabs.forEach((tab, index) => {
+        const select = () => { root.dataset.loginMethod = tab.dataset.mfaLoginMethod; renderPhase(root, 'confirm'); };
+        tab.addEventListener('click', select);
+        tab.addEventListener('keydown', event => {
+          if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) { return; }
+          event.preventDefault();
+          const next = event.key === 'Home' ? 0 : event.key === 'End' ? 1 : 1 - index;
+          root.dataset.loginMethod = tabs[next].dataset.mfaLoginMethod;
+          renderPhase(root, 'confirm');
+          root.querySelectorAll('[data-mfa-login-method]')[next].focus();
+        });
+      });
+      const input = root.querySelector('#mfa-login-code');
+      if (input) {
+        const slots = [...root.querySelectorAll('.mfa-otp-slots > span')];
+        const refresh = () => slots.forEach((slot,index) => { slot.textContent=input.value[index]||'•';slot.classList.toggle('filled',Boolean(input.value[index]));slot.classList.toggle('active',index===Math.min(input.selectionStart||0,5)); });
+        input.addEventListener('input',()=>{input.value=input.value.replace(/[^0-9]/g,'').slice(0,6);refresh();});
+        input.addEventListener('paste',event=>{event.preventDefault();input.value=event.clipboardData.getData('text').replace(/[^0-9]/g,'').slice(0,6);input.dispatchEvent(new Event('input'));});
+        ['focus','click','keyup'].forEach(event=>input.addEventListener(event,refresh));refresh();
+      }
+    } else if (phase === 'recover') {
+      root.innerHTML = `<p class="portal-copy">${text.restoreHint}</p><label>${text.recovery} <span class="mfa-required-dot">•</span><input maxlength="35" autocomplete="off" placeholder="${text.codePlaceholder}"></label><div class="mfa-flow-notice">${symbol}<span>${text.consumption}</span></div><div class="mfa-login-help">${helpLink}</div>`;
+    } else {
+      const conversation = helpMessages.map((message, index) => `
+        <div class="mfa-flow-ticket">
+          <strong>${index === 0 ? text.request : text.reply}</strong>
+          <p class="portal-copy">${escape(message)}</p>
+        </div>`).join('');
+      const formLabel = helpMessages.length ? text.reply : text.request;
+      root.innerHTML = `
+        <p class="portal-copy">${text.noUnlock}</p>
+        ${conversation || `<div class="mfa-help-empty">${text.empty}</div>`}
+        <label>${formLabel} <span class="mfa-required-dot">•</span>
+          <textarea id="mfa-help-request" rows="4" maxlength="2000" placeholder="${text.placeholder}"></textarea>
+        </label>
+        <div class="mfa-flow-notice">${symbol}<span>${text.warning}</span></div>`;
+      const draft = root.querySelector('textarea');draft.value=root.dataset.helpDraft||'';draft.addEventListener('input',()=>{root.dataset.helpDraft=draft.value;});
+    }
+    const card = root.closest('.vp-card');
+    if (card) {
+      const heading = card.querySelector('.vp-card-head');
+      if (!heading.querySelector('.portal-reference-icon')) { heading.insertAdjacentHTML('afterbegin',`<span class="portal-reference-icon">${symbol}</span>`); }
+      heading.querySelector('h2').textContent = phase==='confirm'?text.confirm:phase==='recover'?text.restore:text.helpTitle;
+      heading.querySelector('p').textContent = phase==='confirm'?text.confirmSubtitle:phase==='recover'?text.restoreSubtitle:text.helpSubtitle;
+      const footer = card.querySelector('.vp-card-foot');
+      footer.querySelector('[data-mfa-flow-back]')?.remove();
+      footer.querySelector('[data-mfa-refresh]')?.remove();
+      const cancel = footer.querySelector('a');cancel.hidden=phase==='help';
+      if (phase!=='confirm') {
+        const back=document.createElement('button');back.type='button';back.className='portal-button mfa-quiet-action';back.dataset.mfaFlowBack='';back.textContent='‹ '+text.back;back.addEventListener('click',()=>renderPhase(root,'confirm'));footer.prepend(back);
+      }
+      if (phase==='help') {
+        const reload=document.createElement('button');reload.type='button';reload.className='portal-button';reload.dataset.mfaRefresh='';reload.textContent=text.refresh;reload.addEventListener('click',()=>notify(english?'Design preview: Requests refreshed.':'Gestaltungsvorschau: Anfragen aktualisiert.'));footer.insertBefore(reload,footer.querySelector('[data-mfa-continue]'));
+      }
+      const actionLabels = {
+        confirm: text.submit,
+        recover: text.continue,
+        help: helpMessages.length ? text.reply : text.create
+      };
+      footer.querySelector('[data-mfa-continue]').textContent = actionLabels[phase];
+    }
+    root.dataset.phase=phase;
+  };
   const renderPhase = (root, phase) => {
     const isPublic = root.hasAttribute('data-mfa-phase-content');
     if (isPublic) {
       root.closest('.vp-card').classList.toggle('mfa-introduction', phase === 'intro');
       root.closest('.vp-card').classList.toggle('mfa-setup', phase === 'qr');
       root.closest('.vp-card').classList.toggle('mfa-recovery', phase === 'codes');
+      root.closest('.vp-card').classList.toggle('mfa-confirmation-flow', ['confirm','recover','help'].includes(phase));
       const english = document.querySelector('[data-menu-language="en"][aria-pressed="true"]');
       const action = document.querySelector('#public-two-factor [data-mfa-continue]');
       action.disabled = phase === 'codes';
@@ -154,6 +247,9 @@
         action.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span>' + (english ? 'Enable authenticator' : 'Authenticator aktivieren') + '</span>';
       }
       const cancel = document.querySelector('#public-two-factor .vp-card-foot a');
+      cancel.hidden=false;
+      root.closest('.vp-card').querySelector('[data-mfa-flow-back]')?.remove();
+      root.closest('.vp-card').querySelector('[data-mfa-refresh]')?.remove();
       cancel.href = '#public-login';
       cancel.hidden = phase === 'codes';
       cancel.classList.toggle('danger', phase === 'intro' || phase === 'qr');
@@ -185,13 +281,17 @@
         return;
       }
     }
+    if (isPublic && ['confirm','recover','help'].includes(phase)) {
+      renderConfirmationFlow(root,phase,Boolean(document.querySelector('[data-menu-language="en"][aria-pressed="true"]')));
+      return;
+    }
     const contents = {
       confirm: '<p class="portal-copy">Bestätigen Sie Ihre Anmeldung mit einem Code Ihrer Authenticator-App oder einem noch unbenutzten Ersatzcode.</p><label>Bestätigungscode •<input autocomplete="off" placeholder="Code eingeben"></label><div class="mfa-phase-buttons"><button type="button" class="portal-button" data-mfa-go="recover">Authenticator wiederherstellen</button><button type="button" class="portal-button" data-mfa-go="help">Kein Zugriff auf Authenticator oder Ersatzcodes?</button></div>',
       recover: '<p class="portal-copy">Verwenden Sie einen unbenutzten Ersatzcode, um einen neuen Authenticator einzurichten. Ihr bisheriger Faktor bleibt bis zur Bestätigung der neuen App gültig. Der Ersatzcode wird erst beim erfolgreichen Wechsel verbraucht.</p><label>Ersatzcode •<input autocomplete="off" placeholder="Code eingeben"></label><div class="mfa-phase-buttons"><button type="button" class="portal-button" data-mfa-go="confirm">Zur Code-Abfrage</button></div>',
+      help: '<p class="portal-copy">Eine Anfrage ersetzt keinen Identitätsnachweis. Ohne Authenticator oder gültigen Ersatzcode können wir das Konto nicht entsperren.</p><label>Ihre Anfrage<textarea rows="4" maxlength="2000" placeholder="Keine Passwörter oder Ersatzcodes eingeben"></textarea></label>',
       setup: '<p class="portal-copy">Bestätigen Sie zuerst Ihre Identität, bevor Sie einen Authenticator einrichten.</p><label>Aktuelles Passwort •<input type="password" autocomplete="off" placeholder="Passwort eingeben"></label>',
       email: '<p class="portal-copy">Geben Sie den Einmalcode ein, den wir zur erstmaligen Einrichtung an Ihre bestätigte Kontaktadresse senden.</p><label>E-Mail-Code •<input inputmode="numeric" placeholder="Achtstelliger Code"></label>',
       qr: '<p class="portal-copy">Scannen Sie den QR-Code mit einer kompatiblen Authenticator-App. Sie können beispielsweise Google Authenticator, Microsoft Authenticator oder 2fast für Windows verwenden.</p><div class="mfa-qr-placeholder">QR-Code (Gestaltungsvorschau)</div><div class="mfa-phase-buttons"><a href="https://support.google.com/accounts/answer/1066447" target="_blank" rel="noopener noreferrer">Google Authenticator</a><a href="https://support.microsoft.com/account-billing/download-and-install-the-microsoft-authenticator-app-351498fc-850a-45da-b7b6-27e523b8702a" target="_blank" rel="noopener noreferrer">Microsoft Authenticator</a><a href="https://2fast-app.de/" target="_blank" rel="noopener noreferrer">2fast (Windows)</a></div><label>Erster Authenticator-Code •<input inputmode="numeric" placeholder="Sechsstelliger Code"></label>',
-      help: '<p class="portal-copy">Eine Anfrage ersetzt keinen Identitätsnachweis. Ohne Authenticator oder gültigen Ersatzcode können wir das Konto nicht entsperren.</p><label>Ihre Anfrage<textarea rows="4" maxlength="2000" placeholder="Keine Passwörter oder Ersatzcodes eingeben"></textarea></label>'
     };
     root.innerHTML=contents[phase]||contents.confirm;
     root.dataset.phase=phase;
@@ -205,15 +305,28 @@
     publicPhase.addEventListener('click',event=>{const control=event.target.closest('[data-mfa-go]');if(control){renderPhase(publicPhase,control.dataset.mfaGo);}});
     document.querySelector('#public-two-factor [data-mfa-continue]').addEventListener('click',()=>{
       if (publicPhase.dataset.phase === 'codes' && !publicPhase.querySelector('[data-mfa-saved]').checked) { return; }
-      const next={intro:'qr',setup:'qr',recover:'qr',email:'qr',qr:'codes',codes:'confirm',help:'help',confirm:'confirm'};
+      const english = document.querySelector('[data-menu-language="en"][aria-pressed="true"]');
+      if (publicPhase.dataset.phase === 'help') {
+        const draft = publicPhase.dataset.helpDraft?.trim();
+        if (!draft) {
+          publicPhase.querySelector('textarea').setAttribute('aria-invalid', 'true');
+          return;
+        }
+        helpMessages.push(draft);
+        publicPhase.dataset.helpDraft = '';
+        renderPhase(publicPhase, 'help');
+        notify(english ? 'Design preview: No request was sent.' : 'Gestaltungsvorschau: Es wurde keine Anfrage gesendet.');
+        return;
+      }
+      const next={intro:'qr',setup:'qr',recover:'qr',email:'qr',qr:'codes',codes:'confirm',confirm:'confirm'};
       renderPhase(publicPhase,next[publicPhase.dataset.phase]);
-      notify('Gestaltungsvorschau: Es wurde keine Anmeldung oder Kontoänderung ausgeführt.');
+      notify(english ? 'Design preview: No sign-in or account change was performed.' : 'Gestaltungsvorschau: Es wurde keine Anmeldung oder Kontoänderung ausgeführt.');
     });
     document.querySelector('#public-two-factor .vp-card-foot a').addEventListener('click', event => {
       if (publicPhase.dataset.phase === 'codes' && !publicPhase.querySelector('[data-mfa-saved]').checked) { event.preventDefault(); }
     });
     document.querySelectorAll('[data-menu-language]').forEach(button => button.addEventListener('click', () => {
-      if (['intro','qr','codes'].includes(publicPhase.dataset.phase)) { renderPhase(publicPhase, publicPhase.dataset.phase); }
+      renderPhase(publicPhase, publicPhase.dataset.phase);
     }));
     renderPhase(publicPhase,'intro');
   }

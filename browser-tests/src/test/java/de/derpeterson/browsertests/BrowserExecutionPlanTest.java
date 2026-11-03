@@ -29,7 +29,7 @@ import org.junit.platform.launcher.core.LauncherFactory;
 
 class BrowserExecutionPlanTest {
   @ParameterizedTest
-  @ValueSource(strings = {"two-factor-setup", "external-login-settings"})
+  @ValueSource(strings = {"two-factor-setup", "two-factor-confirmation", "external-login-settings"})
   void focusedSuitesSelectOnlyTheirExistingJourneys(String suite) {
     TestPlan plan =
         LauncherFactory.create()
@@ -44,12 +44,17 @@ class BrowserExecutionPlanTest {
       }
     }
     Set<String> expected =
-        suite.equals("two-factor-setup")
-            ? Set.of(
-                "requiredIntroductionReusesFreshPasswordWithoutGrantingPortalAccess",
-                "referenceStatesAndKeyboardNavigation")
-            : Set.of(
-                "administrativeProviderSettings", "disabledProvidersPreserveExistingAccountAccess");
+        switch (suite) {
+          case "two-factor-setup" ->
+              Set.of(
+                  "requiredIntroductionReusesFreshPasswordWithoutGrantingPortalAccess",
+                  "referenceStatesAndKeyboardNavigation");
+          case "two-factor-confirmation" -> Set.of("confirmationRecoveryAndHelpUseNativeControls");
+          default ->
+              Set.of(
+                  "administrativeProviderSettings",
+                  "disabledProvidersPreserveExistingAccountAccess");
+        };
     assertEquals(expected, methods);
   }
 

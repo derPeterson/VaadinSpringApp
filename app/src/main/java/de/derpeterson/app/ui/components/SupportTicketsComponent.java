@@ -2,15 +2,18 @@ package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
+import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.SupportTicketEntity.Status;
 import de.derpeterson.app.service.SupportTicketService;
@@ -42,6 +45,10 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private final AccountPanelComponent panel =
       new AccountPanelComponent("support-panel", AppIcon.INFO_CIRCLE);
   private final Span warning = new Span();
+  private final Span emptyText = new Span();
+  private final Span userExplanation = new Span();
+  private final HorizontalLayout emptyState = new HorizontalLayout();
+  private final HorizontalLayout backActions = new HorizontalLayout();
   private Ticket selected;
   private boolean openRequest;
 
@@ -88,7 +95,11 @@ public final class SupportTicketsComponent extends VerticalLayout {
     create.setId("support-create");
     create.setPrefixComponent(AppIcon.PLUS.create());
     create.addClickListener(
-        event -> perform(() -> service.createRecovery(request, body.getValue())));
+        event -> {
+          if (ValidationHelper.validateRequiredInputs(List.of(body), texts)) {
+            perform(() -> service.createRecovery(request, body.getValue()));
+          }
+        });
     claim.setId("support-claim");
     claim.setPrefixComponent(AppIcon.CHECK.create());
     claim.addClickListener(
@@ -96,7 +107,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
     reply.setId("support-add-reply");
     reply.setPrefixComponent(AppIcon.PAPERPLANE.create());
     reply.addClickListener(
-        event ->
+        event -> {
+          if (ValidationHelper.validateRequiredInputs(List.of(body), texts)) {
             perform(
                 () ->
                     service.reply(
@@ -105,7 +117,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
                         selected.version(),
                         body.getValue(),
                         administration && internal.getValue(),
-                        administration)));
+                        administration));
+          }
+        });
     close.setId("support-close");
     close.setPrefixComponent(AppIcon.CHECK_CHECK.create());
     close.addClickListener(
@@ -115,18 +129,68 @@ public final class SupportTicketsComponent extends VerticalLayout {
     instructions.addClickListener(event -> previewInstructions());
     reload.setPrefixComponent(AppIcon.REFRESH.create());
     reload.addClickListener(event -> refresh());
-    Div actions = new Div(create, claim, reply, instructions, close, reload);
-    actions.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configure(actions);
     warning.addClassName("cosmos-panel-description");
-    panel.getBody().add(grid, conversation, warning, body, internal);
-    panel.addActionFooter(actions);
+    if (administration) {
+      Div actions = new Div(create, claim, reply, instructions, close, reload);
+      actions.addClassName("cosmos-dialog-actions");
+      EqualButtonWidths.configure(actions);
+      panel.getBody().add(grid, conversation, warning, body, internal);
+      panel.addActionFooter(actions);
+    } else {
+      addClassName("support-recovery-help");
+      userExplanation.setId("support-no-unlock");
+      userExplanation.addClassName("cosmos-panel-description");
+      emptyState.add(AppIcon.ARCHIVE.create(), emptyText);
+      emptyState.setPadding(false);
+      emptyState.setSpacing(false);
+      emptyState.setWidthFull();
+      emptyState.setAlignItems(Alignment.CENTER);
+      emptyState.setJustifyContentMode(JustifyContentMode.CENTER);
+      emptyState.addClassName("support-empty-state");
+      HorizontalLayout sensitiveNotice = new HorizontalLayout(AppIcon.LOCK.create(), warning);
+      sensitiveNotice.setPadding(false);
+      sensitiveNotice.setSpacing(false);
+      sensitiveNotice.setAlignItems(Alignment.CENTER);
+      sensitiveNotice.addClassName("support-sensitive-notice");
+      VerticalLayout form =
+          new VerticalLayout(
+              userExplanation, emptyState, grid, conversation, body, sensitiveNotice);
+      form.setPadding(false);
+      form.setSpacing(false);
+      form.setWidthFull();
+      form.addClassName("support-user-form");
+      panel.getBody().add(form);
+      body.setRequiredIndicatorVisible(true);
+      create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      reply.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      HorizontalLayout actions = new HorizontalLayout(reload, reply, create);
+      actions.setPadding(false);
+      actions.setSpacing(false);
+      actions.addClassName("cosmos-dialog-actions");
+      EqualButtonWidths.configure(actions);
+      backActions.setPadding(false);
+      backActions.setSpacing(false);
+      backActions.addClassName("support-back-actions");
+      HorizontalLayout footer = new HorizontalLayout(backActions, actions);
+      footer.setPadding(false);
+      footer.setSpacing(false);
+      footer.setWidthFull();
+      footer.setAlignItems(Alignment.CENTER);
+      footer.addClassName("support-user-footer");
+      panel.addActionFooter(footer);
+    }
     add(panel, instructionDialog);
     refreshTexts();
   }
 
   public void refreshTexts() {
-    panel.setHeading(texts.getSupportTitle(), texts.getSupportNoUnlock(), "");
+    panel.setHeading(
+        administration ? texts.getSupportTitle() : texts.getSupportHelpTitle(),
+        administration ? texts.getSupportNoUnlock() : texts.getSupportHelpSubtitle(),
+        "");
+    emptyText.setText(texts.getSupportEmpty());
+    userExplanation.setText(texts.getSupportNoUnlock());
+    body.setPlaceholder(administration ? "" : texts.getSupportRequestPlaceholder());
     grid.getColumns().get(1).setHeader(texts.getSupportSubjectColumn());
     grid.getColumns().get(2).setHeader(texts.getSupportStatusColumn());
     grid.getColumns().get(3).setHeader(texts.getSupportAssigneeColumn());
@@ -147,6 +211,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
     try {
       Long id = selected == null ? null : selected.id();
       List<Ticket> values = service.list(request, administration);
+      grid.setVisible(administration || !values.isEmpty());
+      emptyState.setVisible(!administration && values.isEmpty());
       openRequest = values.stream().anyMatch(ticket -> ticket.status() != Status.CLOSED);
       grid.setItems(values);
       selected = values.stream().filter(ticket -> ticket.id().equals(id)).findFirst().orElse(null);
@@ -162,8 +228,18 @@ public final class SupportTicketsComponent extends VerticalLayout {
     }
   }
 
+  public void addBackAction(Button action) {
+    if (administration) {
+      throw new IllegalStateException("Recovery navigation belongs to the user's request form");
+    }
+    backActions.add(action);
+  }
+
   private void refreshConversation() {
     conversation.removeAll();
+    if (!administration) {
+      body.setLabel(openRequest ? texts.getSupportReply() : texts.getSupportDescription());
+    }
     create.setVisible(!administration && !openRequest);
     claim.setVisible(administration && selected != null && selected.status() != Status.CLOSED);
     reply.setVisible(selected != null && selected.status() != Status.CLOSED);

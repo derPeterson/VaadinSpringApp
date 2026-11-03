@@ -86,6 +86,8 @@ final class BrowserExecutionPlan {
       builder.filters(TagFilter.includeTags("recovery-output"));
     } else if (suite.equals("two-factor-setup")) {
       builder.filters(TagFilter.includeTags("setup-screen"));
+    } else if (suite.equals("two-factor-confirmation")) {
+      builder.filters(TagFilter.includeTags("confirmation-screens"));
     } else if (suite.equals("external-login-settings")) {
       builder.filters(TagFilter.includeTags("provider-settings"));
     }

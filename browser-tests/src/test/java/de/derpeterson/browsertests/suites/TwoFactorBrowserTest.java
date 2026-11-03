@@ -256,7 +256,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     signInUntilSecondFactor(email, provider);
     page.locator("#two-factor-recover").click();
     assertThat(page.locator("#two-factor-panel")).containsText(texts.getTwoFactorRecoverHint());
-    page.locator("#two-factor-code input").fill(last);
+    TwoFactorPage.enterCode(page, last);
     page.locator("#two-factor-submit").click();
     assertThat(page.locator("#two-factor-qr")).isVisible();
     try (Page blocked = context.newPage()) {
@@ -273,12 +273,12 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     new UserMenu(page).requestSignOut();
     assertThat(page.locator(".public-header")).isVisible();
     signInUntilSecondFactor(email, provider);
-    page.locator("#two-factor-code input").fill(last);
+    TwoFactorPage.enterCode(page, last);
     page.locator("#two-factor-submit").click();
     assertThat(page.locator("#two-factor-code")).hasAttribute("invalid", "");
     assertThat(page.locator("vaadin-notification-card:not([closing])"))
         .containsText(texts.getTwoFactorInvalidCode());
-    page.locator("#two-factor-code input").fill(TwoFactorPage.nextCode(page, email));
+    TwoFactorPage.enterCode(page, TwoFactorPage.nextCode(page, email));
     page.locator("#two-factor-submit").click();
     assertThat(page).hasURL(Pattern.compile(".*/home$"));
   }
@@ -510,13 +510,11 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     page.locator("#mfa-setup-code").fill("123456");
     page.locator("[data-mfa-continue]").click();
     page.locator("[data-mfa-saved]").check();
-    // Die noch nicht neu gestalteten Bestätigungs-/Hilfemomentaufnahmen sind deutsch.
-    page.locator("[data-menu-language=de]").click();
     page.locator("[data-mfa-continue]").click();
     page.locator("[data-mfa-go=recover]").click();
     assertThat(page.locator("[data-mfa-phase-content]")).hasAttribute("data-phase", "recover");
     assertThat(page.locator("[data-mfa-phase-content]"))
-        .containsText(new UiTexts("de").getTwoFactorRecoverHint());
+        .containsText(texts.getTwoFactorRecoverHint());
     page.locator("[data-mfa-continue]").click();
     assertThat(page.locator(".mfa-qr-placeholder")).isVisible();
     page.locator("[data-mfa-continue]").click();
@@ -862,6 +860,107 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       assertThat(administrator.page.locator("#admin-provider-settings")).hasCount(0);
       new UserMenu(administrator.page).signOut();
     }
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @Tag("confirmation-screens")
+  @DisplayName("MFA-18: Codebestätigung, geschützter Faktorwechsel und Hilfe folgen Variante A")
+  void confirmationRecoveryAndHelpUseNativeControls(int width) {
+    page.setViewportSize(width, 900);
+    LoginPage login = new LoginPage(page);
+    login.open();
+    login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    String email = "confirmation-mfa-" + UUID.randomUUID() + "@example.test";
+    new AdminUsersPage(page).createUser(email, BrowserTestAccounts.USER_PASSWORD, true, true);
+    new UserMenu(page).signOut();
+    login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    new UserMenu(page).signOut();
+    login.signInFirstFactor(email, BrowserTestAccounts.USER_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    assertThat(page.locator("#two-factor-code")).hasJSProperty("length", 6);
+    assertThat(page.locator("#two-factor-code [part=slot]")).hasCount(6);
+    page.locator("#two-factor-code input").fill("123456");
+    assertThat(page.locator("#two-factor-code [part=slot]"))
+        .hasText(new String[] {"1", "2", "3", "4", "5", "6"});
+    page.locator("#two-factor-recovery-tab").click();
+    String recoveryCode = "12345678-12345678-12345678-12345678";
+    TwoFactorPage.enterCode(page, recoveryCode);
+    assertThat(page.locator("#two-factor-code input")).hasValue(recoveryCode);
+    UiTexts other = new UiTexts(texts.language().equals("de") ? "en" : "de");
+    new UserMenu(page).selectLanguage(other.language());
+    assertThat(page.locator("#two-factor-recovery-tab")).hasAttribute("selected", "");
+    assertThat(page.locator("#two-factor-code"))
+        .hasJSProperty("label", other.getTwoFactorRecoveryCodeLabel());
+    new UserMenu(page).selectTestLanguage();
+    page.locator("#two-factor-authenticator-tab").click();
+    assertThat(page.locator("#two-factor-code [part=slot]")).hasCount(6);
+    assertTrue(
+        (Boolean) page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"));
+    AllurePlaywright.attachScreenshot("Anmeldung bestätigen mit nativer Methodenauswahl", page);
+    page.locator("#two-factor-recover").click();
+    assertThat(page.locator("vaadin-text-field#two-factor-code input"))
+        .hasAttribute("maxlength", "35");
+    assertThat(page.locator(".cosmos-panel-footer #two-factor-recovery-back")).isVisible();
+    assertThat(page.locator("#two-factor-panel"))
+        .containsText(texts.getTwoFactorRecoveryConsumptionHint());
+    AllurePlaywright.attachScreenshot(
+        "Authenticator mit Ersatzcode geschützt wiederherstellen", page);
+    page.locator("#two-factor-recovery-back").click();
+    assertThat(page).hasURL(Pattern.compile(".*/two-factor$"));
+    assertThat(page.locator("#two-factor-authenticator-tab")).isVisible();
+    page.locator("#two-factor-help").click();
+    assertThat(page.locator("#account-support")).containsText(texts.getSupportEmpty());
+    assertThat(page.locator(".cosmos-panel-footer #support-back")).isVisible();
+    assertThat(page.locator("#support-ticket-grid")).isHidden();
+    String draft = "Synthetische Bitte um Hilfe zu meinen gesicherten Ersatzcodes.";
+    page.locator("#support-reply textarea").fill(draft);
+    new UserMenu(page).selectLanguage(other.language());
+    assertThat(page.locator("#support-reply textarea")).hasValue(draft);
+    new UserMenu(page).selectTestLanguage();
+    AllurePlaywright.attachScreenshot(
+        "Hilfeanfrage mit Leerzustand und nativen Footeraktionen", page);
+    page.locator("#support-create").click();
+    assertThat(page.locator("#support-ticket-grid"))
+        .containsText(texts.getSupportRecoverySubject());
+    assertThat(page.locator("#support-add-reply")).isVisible();
+    assertThat(page.locator("#support-back")).isVisible();
+    assertTrue(
+        (Boolean) page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"));
+    page.locator("#support-back").click();
+    assertThat(page.locator("#two-factor-code")).isVisible();
+    page.navigate(
+        Path.of("docs/design/frontend-referenzen/public.html").toAbsolutePath().toUri()
+            + "#public-two-factor");
+    page.locator("[data-menu-language=" + texts.language() + "]").click();
+    page.locator("[data-mfa-continue]").click();
+    page.locator("[data-mfa-continue]").click();
+    page.locator("[data-mfa-saved]").check();
+    page.locator("[data-mfa-continue]").click();
+    assertThat(page.locator("#public-two-factor .vp-card-head h2"))
+        .hasText(texts.getTwoFactorConfirmTitle());
+    assertThat(page.locator("#mfa-login-code")).isVisible();
+    assertThat(page.locator("#public-two-factor .mfa-otp-slots > span")).hasCount(6);
+    page.locator("[data-mfa-login-method=recovery]").click();
+    page.locator("#mfa-login-recovery-code").fill(recoveryCode);
+    assertThat(page.locator("#mfa-login-recovery-code")).hasValue(recoveryCode);
+    AllurePlaywright.attachScreenshot("HTML: Anmeldung mit getrennten Codemethoden", page);
+    page.locator("[data-mfa-go=recover]").click();
+    assertThat(page.locator("#public-two-factor .vp-card-head h2"))
+        .hasText(texts.getTwoFactorRecoverAction());
+    assertThat(page.locator(".vp-card-foot [data-mfa-flow-back]")).isVisible();
+    AllurePlaywright.attachScreenshot("HTML: geschützter Authenticatorwechsel", page);
+    page.locator("[data-mfa-go=help]").click();
+    assertThat(page.locator("#public-two-factor .vp-card-head h2"))
+        .hasText(texts.getSupportHelpTitle());
+    page.locator("#mfa-help-request").fill(draft);
+    page.locator("[data-menu-language=" + other.language() + "]").click();
+    assertThat(page.locator("#mfa-help-request")).hasValue(draft);
+    page.locator("[data-menu-language=" + texts.language() + "]").click();
+    assertThat(page.locator("#public-two-factor .mfa-help-empty")).hasText(texts.getSupportEmpty());
+    AllurePlaywright.attachScreenshot("HTML: Hilfeanfrage ohne Kontofreigabe", page);
   }
 
   @ParameterizedTest

@@ -44,7 +44,7 @@ public class PublicPageComponent extends PageFrameComponent {
         MessageTexts::getAccountEmailConfirmationTitle, MessageTexts::getPublicEmailIntroduction),
     RECOVERY(MessageTexts::getPublicRecoveryTitle, MessageTexts::getPublicRecoveryIntroduction),
     TWO_FACTOR(MessageTexts::getTwoFactorPageTitle, MessageTexts::getTwoFactorPageHint),
-    RECOVERY_HELP(MessageTexts::getSupportTitle, MessageTexts::getSupportSensitiveWarning),
+    RECOVERY_HELP(MessageTexts::getSupportHelpTitle, MessageTexts::getSupportHelpPageHint),
     MAINTENANCE(MessageTexts::getMaintenanceTitle, MessageTexts::getPublicMaintenanceIntroduction);
 
     private final Function<MessageTexts, String> title;

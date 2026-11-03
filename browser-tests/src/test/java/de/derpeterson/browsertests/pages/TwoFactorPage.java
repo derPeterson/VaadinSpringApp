@@ -52,10 +52,26 @@ public final class TwoFactorPage {
       page.locator("#two-factor-submit").click();
       enrollCurrent(page, email);
     } else {
-      page.locator("#two-factor-code input").fill(nextCode(page, email));
+      enterCode(page, nextCode(page, email));
       page.locator("#two-factor-submit").click();
     }
     page.waitForURL(url -> !URI.create(url).getPath().equals("/two-factor"));
+  }
+
+  /** Die sichtbare Methode wählen; Ersatzcodes werden nicht in das sechsstellige Feld gekürzt. */
+  public static void enterCode(Page page, String value) {
+    Locator recovery = page.locator("#two-factor-recovery-tab");
+    Locator authenticator = page.locator("#two-factor-authenticator-tab");
+    if (recovery.isVisible()) {
+      if (value.length() > 6) {
+        recovery.click();
+        assertThat(page.locator("vaadin-text-field#two-factor-code")).isVisible();
+      } else {
+        authenticator.click();
+        assertThat(page.locator("fc-otp-field#two-factor-code")).isVisible();
+      }
+    }
+    page.locator("#two-factor-code input").fill(value);
   }
 
   public static void enrollCurrent(Page page, String email) {

@@ -133,4 +133,22 @@ dialog.mfa-reference .portal-modal-body { padding:24px; }
  .mfa-reference.portal-row .mfa-actions:has(> button:only-child) { grid-column:3; grid-row:1; align-self:center; }
 }
 .mfa-ticket-list { display:flex; flex-direction:column; gap:12px; margin-block:16px; }
+.mfa-confirmation-flow .mfa-form { display:flex; flex-direction:column; gap:20px; }
+.mfa-confirmation-flow .mfa-login-tabs { width:100%; }
+#public-two-factor .mfa-confirmation-flow > .vp-card-body > .mfa-phase-buttons { display:none; }
+.mfa-confirmation-flow .mfa-form > label { display:block; }
+.mfa-confirmation-flow .mfa-form > label > :is(input,textarea) { display:block; margin-top:8px; }
+.mfa-confirmation-flow .mfa-login-tabs svg { width:16px; height:16px; flex:none; }
+.mfa-confirmation-flow .mfa-login-tabs button { display:flex; align-items:center; justify-content:center; gap:6px; }
+.mfa-confirmation-flow .mfa-otp { max-width:294px; margin-inline:auto; }
+.mfa-confirmation-flow .mfa-required-dot { color:var(--cosmos-reference-accent,#38bdf8); }
+.mfa-confirmation-flow .mfa-login-help { display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding-top:16px; border-top:1px solid var(--cosmos-reference-border,#ffffff14); }
+.mfa-reference .mfa-quiet-action { display:inline-flex; align-items:center; gap:8px; border:0; background:transparent; color:var(--cosmos-reference-text,#e2e8f0); padding:0; box-shadow:none; text-decoration:none; }
+.mfa-reference .mfa-quiet-action svg { width:16px; height:16px; flex:none; color:var(--cosmos-reference-accent,#38bdf8); }
+.mfa-confirmation-flow .mfa-flow-notice { display:flex; align-items:center; gap:12px; padding:16px; border:1px solid var(--cosmos-reference-border,#ffffff14); border-radius:8px; background:var(--cosmos-reference-input,#091120); color:var(--cosmos-reference-secondary,#94a3b8); font:400 12px/20px Inter,sans-serif; }
+.mfa-confirmation-flow .mfa-flow-notice > svg { width:16px; height:16px; flex:none; color:var(--cosmos-reference-accent,#38bdf8); }
+.mfa-confirmation-flow .mfa-help-empty { padding:20px; border:1px solid var(--cosmos-reference-border,#ffffff14); border-radius:8px; background:var(--cosmos-reference-input,#091120); color:var(--cosmos-reference-secondary,#94a3b8); text-align:center; }
+.mfa-confirmation-flow .mfa-flow-ticket { padding:16px; border:1px solid var(--cosmos-reference-border,#ffffff14); border-radius:8px; background:var(--cosmos-reference-input,#091120); overflow-wrap:anywhere; }
+.mfa-confirmation-flow .vp-card-foot { flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+.mfa-confirmation-flow .vp-card-foot > [data-mfa-flow-back] { margin-right:auto; }
 .mfa-reference textarea { width:100%; box-sizing:border-box; padding:12px; border:1px solid #1e293b; border-radius:8px; background:#09111f; color:#e2e8f0; font:400 14px/1.5 Inter,sans-serif; resize:vertical; }

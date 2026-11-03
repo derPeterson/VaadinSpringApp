@@ -142,6 +142,42 @@ public class MessageTexts {
     return getTranslation("mfa.confirm.title");
   }
 
+  public String getTwoFactorConfirmSubtitle() {
+    return getTranslation("mfa.confirm.subtitle");
+  }
+
+  public String getTwoFactorLoginRecoveryHint() {
+    return getTranslation("mfa.login.recoveryHint");
+  }
+
+  public String getTwoFactorRecoverSubtitle() {
+    return getTranslation("mfa.recover.subtitle");
+  }
+
+  public String getTwoFactorRecoveryConsumptionHint() {
+    return getTranslation("mfa.recover.consumptionHint");
+  }
+
+  public String getTwoFactorRecoveryContinue() {
+    return getTranslation("mfa.recover.continue");
+  }
+
+  public String getSupportHelpTitle() {
+    return getTranslation("support.help.title");
+  }
+
+  public String getSupportHelpSubtitle() {
+    return getTranslation("support.help.subtitle");
+  }
+
+  public String getSupportHelpPageHint() {
+    return getTranslation("support.help.pageHint");
+  }
+
+  public String getSupportRequestPlaceholder() {
+    return getTranslation("support.request.placeholder");
+  }
+
   public String getTwoFactorLoginHint() {
     return getTranslation("mfa.login.hint");
   }

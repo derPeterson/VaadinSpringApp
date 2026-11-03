@@ -78,13 +78,15 @@ Geänderte Navigation, zusätzliche Statusboxen, kräftige Warnkästen, fremde S
 und umgebrochene oder übergroße Buttons sind nicht automatisch freigegeben.
 Die Auswahl und die gemeinsame Desktop-/Smartphone-Abnahme bleiben offen.
 
-## Wiederkehrende Anmeldung und Wiederherstellung: Entwurfswahl offen
+## Wiederkehrende Anmeldung und Wiederherstellung: Variante A zur Abnahme
 
 Beauftragt sind drei zusammenhängende Stitch-Varianten, jeweils als Übersicht mit
 diesen drei Ansichten: Anmeldung bestätigen, Authenticator mit Ersatzcode
 wiederherstellen und Wiederherstellungsanfragen ohne App/Ersatzcodes. Die Entwürfe
-bleiben im bestehenden 2FA-Projekt. Eine Übernahme in Vaadin oder die festen
-HTML-Referenzen ist noch nicht beauftragt.
+bleiben im bestehenden 2FA-Projekt. Ausgewählt und zur Übernahme freigegeben ist A.
+Die drei Ansichten sind mit den bestehenden Cosmos-Bausteinen in Vaadin und der
+Public-HTML-Referenz umgesetzt. Die gemeinsame Sichtabnahme und spätere Verfeinerung
+bleiben offen.
 
 Der bestehende Cosmos-Seitenrahmen, Panelkopf, Inhaltsfläche, Footer, Inter,
 Feld-/Buttonstandards und die vereinbarten Farben bleiben Grundlage. Die Anmeldung
@@ -107,19 +109,22 @@ liegen auf der Projektfläche. Jede zeigt alternative Wege, keine drei Pflichtsc
 - [B: eigener Bereich für die Anmeldehilfe](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=17144405251035875117)
 - [C: einklappbare Hilfe und Anfrageübersicht](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=15330646331966040633)
 
-Die Auswahl bleibt offen. Empfehlung zur gemeinsamen Sichtung ist A als ruhige
-Grundlage. Die exportierten Stitch-Entwürfe sind keine exakten Themevorlagen:
+A bildet die Grundlage. Die exportierten Stitch-Entwürfe sind keine exakten Themevorlagen:
 abweichende Navigation, fehlende beziehungsweise anders platzierte Kopficons,
 zusätzliche Formatangaben an Ersatzcodefeldern, gelbe Hinweisicons, kräftig gefüllte
 Tabs und umgebrochene Footerbuttons werden nicht automatisch übernommen.
-Bei einer später beauftragten Umsetzung gelten die vorhandenen Cosmos-Bausteine,
+Die Übernahme verwendet die vorhandenen Cosmos-Bausteine,
 nativen Vaadin-Komponenten und Texte statt dieser Abweichungen. Bestehende Anfragen
 und deren Konversation müssen weiterhin erreichbar bleiben; die Bilder zeigen nur
 den Leerzustand beziehungsweise eine eingeklappte Übersicht.
 
-Bei der Übernahme auch die bislang deutschen Bestätigungs-/Hilfemomentaufnahmen
-der HTML-Referenz in DE/EN angleichen. Der zugehörige automatisierte Bediennachweis
-wartet im [Testbedarf](../testbedarf.md) auf diese Entwurfsentscheidung.
+Die Anmeldung verwendet die vorhandene native OTP-Eingabe und ein getrenntes
+Ersatzcodefeld, umschaltbar mit nativen Tabs. Der Wiederherstellungsweg bleibt von
+der Sitzungsbestätigung getrennt; Rückweg und Hauptaktionen stehen im Panel-Footer.
+Die Hilfe behält eigene Anfragen und Konversationen sowie die serverseitigen
+Zugriffsgrenzen, zeigt bei leerer Liste einen Leerzustand und verwendet native
+Footerbuttons. Alle drei HTML-Momentaufnahmen sind in DE/EN angeglichen.
+Der gezielte Bediennachweis wird zentral im [Testbedarf](../testbedarf.md) geführt.
 
 ## Gestaltung der verpflichtenden Ersteinrichtung
 

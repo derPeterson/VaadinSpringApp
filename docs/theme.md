@@ -1142,6 +1142,22 @@ und eingeschränkte Anmeldung verwenden den öffentlichen Seitenrahmen. Kurzlebi
 QR-/Code-Dokumente werden geschützt eingebettet, Geheimnisse nicht als Flow-Komponenten-
 Werte im dauerhaften Sitzungszustand gehalten.
 
+Die wiederkehrende Codebestätigung, der geschützte Authenticatorwechsel und die
+Benutzerhilfe folgen der ausgewählten Stitch-Variante A. Die Bestätigung verwendet
+native `Tabs` im vorhandenen 42-px-Methodenstil: Authenticator-Code mit demselben
+sechsstelligen `OtpField`-Add-on wie bei der Einrichtung oder ein normales natives
+`TextField` für den vollständigen Ersatzcode. Die gewählte Methode bleibt beim
+Sprachwechsel erhalten; sensible Eingaben werden dabei geleert. Seltene Hilfsaktionen
+stehen unter einer Trennlinie, Rückwege als native Buttons links im Footer.
+Der Faktorwechsel bleibt ein eigener Ablauf mit Ersatzcodefeld und Verbrauchshinweis.
+Die Benutzerhilfe verwendet native Layouts, `TextArea`, den vorhandenen `Grid` für
+eigene Anfragen und einen ruhigen Leerzustand. Rückweg, Aktualisieren und die
+jeweilige Hauptaktion stehen im gemeinsamen Panel-Footer. Die Adminbearbeitung
+behält ihren bisherigen Aufbau. `cosmos-mfa-confirmation.css` begrenzt die Gestaltung
+auf `.two-factor-confirmation`, `.two-factor-restore` und `.support-recovery-help`;
+Panels, Buttonzustände und Eingaben folgen weiterhin den vorhandenen Standards.
+Die Public-HTML-Referenz bildet die drei Ansichten samt DE/EN und Methodenauswahl ab.
+
 `cosmos-mfa.css` begrenzt die neue Gestaltung auf `.two-factor-view`,
 `.cosmos-mfa-settings` und `.two-factor-account-entry`. Panel-, Button- und
 Eingabestandards bleiben unverändert. Das Anmeldepanel ist höchstens 640 px breit.

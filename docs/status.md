@@ -26,6 +26,16 @@ in Vaadin sowie der HTML-Referenz getrennt. Für diese nachträgliche Textanpass
 bestanden 43 gezielte JUnit-Fälle für Navigation und Sprachkataloge; sie gehört
 nicht zum oben genannten Browsernachweis des unveränderten QA-Images.
 
+Die danach übernommene Variante A für Codebestätigung, geschützten
+Authenticatorwechsel und Benutzerhilfe ist gezielt geprüft: 23 Komponenten-/
+Sprachtests und 89 Browser-Helfertests bestanden. `two-factor-confirmation`
+bestand mit jeweils zwei Fällen auf Desktop/Smartphone in DE und EN am selben
+Anwendungsimage `sha256:a685b4cee24bcbe8a07f3dedaca2c2def8938e37b3cc6399dd9e0a06938d9dc7`.
+Geprüft sind native OTP-/Ersatzcodeumschaltung, vollständige Ersatzcodes,
+Rückwege, eigene Hilfeanfragen, Spracherhalt und die drei HTML-Momentaufnahmen.
+Spotless, Checkstyle und JavaScript-Syntaxprüfung bestanden ebenfalls.
+Dieser Nachtest ersetzt die oben dokumentierte große Testrunde nicht.
+
 ## Ausgeführte Prüfungen
 
 | Prüfung | Beobachtetes Ergebnis |
@@ -112,7 +122,8 @@ Die vorhandene klassenweise Worker-Verteilung berücksichtigt die langen 2FA- un
 Anbieterklassen besser. Zwei zusätzliche Auswahlen führen bestehende Fälle gezielt
 aus: `two-factor-setup` und `external-login-settings`. Es gibt keinen zweiten Runner.
 Der erledigte automatisierte [Testbedarf](testbedarf.md) ist bereinigt. Der
-UI-Nachtest nach einer später freigegebenen Entwurfsübernahme bleibt dort wartend.
+vollständige Nachtest der Anmelde- und Wiederherstellungsabläufe sowie der
+Nachtest der gekürzten Adminnavigation bleiben dort offen.
 
 ## Sonar und verbleibende Abnahme
 
@@ -129,11 +140,12 @@ Grenzen der Google-Ersteinrichtung bleiben in der
 [Fachdokumentation](externe-anmeldung.md#google-bestätigung-und-geschützte-ersteinrichtung)
 benannt; bestandene Tests beseitigen diese Grenzen nicht.
 
-Die Entwurfsentscheidung für die wiederkehrende Codebestätigung,
-Authenticator-Wiederherstellung und Hilfeanfragen bleibt im
-[aktiven 2FA-Plan](planung/zwei-faktor-bestaetigung.md) offen. Die umgesetzten
-QR-/Ersatzcodevorlagen wurden in DE/EN geprüft; ältere Hilfsmomentaufnahmen der
-HTML-Referenz sind weiterhin deutsch. Die fachliche und gestalterische Abnahme
+Die ausgewählte Variante A für wiederkehrende Codebestätigung,
+Authenticator-Wiederherstellung und Hilfeanfragen ist in Vaadin und der
+Public-HTML-Referenz umgesetzt. Die gemeinsame Sichtabnahme und spätere
+Verfeinerung bleiben im [aktiven 2FA-Plan](planung/zwei-faktor-bestaetigung.md)
+offen. Die drei Public-Momentaufnahmen unterstützen jetzt ebenfalls DE/EN.
+Die fachliche und gestalterische Abnahme
 sowie echte Authenticator-Apps, reale Google-/Microsoft-Sonderfälle, Mobilgeräte,
 Bildschirmtastatur, Zoom, Screenreader und PDF-Druck bleiben in
 [HUM-08/HUM-09](manual-tests/README.md). Headless-Bilder ersetzen diese Abnahmen nicht.

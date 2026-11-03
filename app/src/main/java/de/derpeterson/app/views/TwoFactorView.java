@@ -74,6 +74,7 @@ import org.springframework.security.authentication.LockedException;
 @StyleSheet("custom-theme/cosmos-mfa.css")
 @StyleSheet("custom-theme/cosmos-mfa-methods.css")
 @StyleSheet("custom-theme/cosmos-mfa-recovery.css")
+@StyleSheet("custom-theme/cosmos-mfa-confirmation.css")
 public final class TwoFactorView extends VerticalLayout
     implements BeforeEnterObserver, HasDynamicTitle {
   private final transient MessageProperties texts;
@@ -88,11 +89,13 @@ public final class TwoFactorView extends VerticalLayout
       new AccountPanelComponent("two-factor-panel", AppIcon.LOCK);
   private final Div content = new Div();
   private final Div extraActions = new Div();
+  private final HorizontalLayout footerNavigation = new HorizontalLayout();
   private final Button cancel = new Button();
   private final Button submit = new Button();
   private final PasswordField password = new PasswordField();
   private final TextField code = new TextField();
   private final OtpField enrollmentCode = new OtpField();
+  private final OtpField confirmationCode = new OtpField();
   private final Switch recoverySaved = new Switch();
   private UUID recoveryOutputId;
   private TwoFactorEnrollment.Pending pending;
@@ -104,6 +107,7 @@ public final class TwoFactorView extends VerticalLayout
   private boolean setupStarted;
   private boolean manualSetupSelected;
   private boolean recoveryCodesVisible;
+  private boolean recoveryLoginSelected;
 
   public TwoFactorView(
       ConfigService config,
@@ -142,17 +146,49 @@ public final class TwoFactorView extends VerticalLayout
     code.setManualValidation(true);
     code.setRequiredIndicatorVisible(true);
     code.getElement().setAttribute("autocomplete", "one-time-code");
-    enrollmentCode.setId("two-factor-enrollment-code");
-    enrollmentCode.setLength(6);
-    enrollmentCode.setPlaceholder("•");
-    enrollmentCode.setManualValidation(true);
-    enrollmentCode.setRequiredIndicatorVisible(true);
-    enrollmentCode.setValueChangeMode(ValueChangeMode.ON_CHANGE);
-    enrollmentCode.addClassName("two-factor-otp");
+    configureOtp(enrollmentCode, "two-factor-enrollment-code");
+    configureOtp(confirmationCode, "two-factor-code");
+    recoverySaved.setId("two-factor-codes-saved");
+    recoverySaved.addValueChangeListener(event -> updateRecoveryActions());
+    cancel.setId("two-factor-cancel");
+    cancel.setPrefixComponent(AppIcon.CLOSE.create());
+    cancel.addClickListener(event -> cancel());
+    submit.setId("two-factor-submit");
+    submit.setPrefixComponent(AppIcon.CHECK.create());
+    submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    submit.addClickListener(event -> submit());
+    HorizontalLayout actions = new HorizontalLayout(cancel, submit);
+    actions.setPadding(false);
+    actions.setSpacing(false);
+    actions.addClassName("cosmos-dialog-actions");
+    EqualButtonWidths.configure(actions);
+    footerNavigation.setPadding(false);
+    footerNavigation.setSpacing(false);
+    footerNavigation.addClassName("two-factor-footer-navigation");
+    HorizontalLayout footer = new HorizontalLayout(footerNavigation, actions);
+    footer.setPadding(false);
+    footer.setSpacing(false);
+    footer.setWidthFull();
+    footer.setAlignItems(Alignment.CENTER);
+    footer.addClassName("two-factor-footer");
+    panel.addActionFooter(footer);
+    page.getCardContainer().add(panel);
+    add(page);
+    ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> render());
+  }
+
+  private void configureOtp(OtpField field, String id) {
+    field.setId(id);
+    field.setLength(6);
+    field.setPlaceholder("•");
+    field.setManualValidation(true);
+    field.setRequiredIndicatorVisible(true);
+    field.setValueChangeMode(ValueChangeMode.ON_CHANGE);
+    field.addClassName("two-factor-otp");
     String otpStylesheetPath = request.getContextPath() + "/custom-theme/cosmos-mfa-otp.css";
-    enrollmentCode.addAttachListener(
+    field.addAttachListener(
         event ->
-            enrollmentCode
+            field
                 .getElement()
                 .executeJs(
                     """
@@ -169,22 +205,6 @@ public final class TwoFactorView extends VerticalLayout
                 });
                 """,
                     otpStylesheetPath));
-    recoverySaved.setId("two-factor-codes-saved");
-    recoverySaved.addValueChangeListener(event -> updateRecoveryActions());
-    cancel.setId("two-factor-cancel");
-    cancel.setPrefixComponent(AppIcon.CLOSE.create());
-    cancel.addClickListener(event -> cancel());
-    submit.setId("two-factor-submit");
-    submit.setPrefixComponent(AppIcon.CHECK.create());
-    submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    submit.addClickListener(event -> submit());
-    Div actions = new Div(cancel, submit);
-    actions.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configure(actions);
-    panel.addActionFooter(actions);
-    page.getCardContainer().add(panel);
-    add(page);
-    ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> render());
   }
 
   @Override
@@ -206,17 +226,22 @@ public final class TwoFactorView extends VerticalLayout
     }
     content.removeAll();
     extraActions.removeAll();
+    footerNavigation.removeAll();
     password.clear();
     code.clear();
     enrollmentCode.clear();
+    confirmationCode.clear();
     password.setInvalid(false);
     code.setInvalid(false);
     enrollmentCode.setInvalid(false);
+    confirmationCode.setInvalid(false);
     pending = enrollment.pending(request);
     introduction = false;
     panel.removeClassName("two-factor-introduction");
     panel.removeClassName("two-factor-setup");
     panel.removeClassName("two-factor-recovery");
+    panel.removeClassName("two-factor-confirmation");
+    panel.removeClassName("two-factor-restore");
     cancel.removeClassName(DELETE_BUTTON);
     cancel.setPrefixComponent(AppIcon.CLOSE.create());
     submit.setPrefixComponent(AppIcon.CHECK.create());
@@ -249,9 +274,11 @@ public final class TwoFactorView extends VerticalLayout
         finish();
         return;
       }
-      addHint(administration ? texts.getTwoFactorActionHint() : texts.getTwoFactorLoginHint());
-      prepareCode(texts.getTwoFactorCodeLabel(), 35);
-      Button recover = new Button(texts.getTwoFactorRecoverAction(), AppIcon.EDIT.create());
+      showLoginMethods();
+      Button recover =
+          new Button(texts.getTwoFactorRecoverAction(), AppIcon.ARROW_FORWARD.create());
+      recover.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+      recover.setIconAfterText(true);
       recover.setId("two-factor-recover");
       recover.addClickListener(
           event ->
@@ -266,6 +293,9 @@ public final class TwoFactorView extends VerticalLayout
                       .getPage()
                       .setLocation(request.getContextPath() + "/recovery-help"));
       help.setId("two-factor-help");
+      help.setIcon(AppIcon.ARROW_FORWARD.create());
+      help.setIconAfterText(true);
+      help.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
       extraActions.add(recover, help);
       submit.setText(texts.getTwoFactorConfirm());
     } else {
@@ -273,22 +303,101 @@ public final class TwoFactorView extends VerticalLayout
     }
   }
 
+  private void showLoginMethods() {
+    panel.addClassName("two-factor-confirmation");
+    panel.setHeading(texts.getTwoFactorConfirmTitle(), texts.getTwoFactorConfirmSubtitle(), "");
+    Tab authenticator =
+        new Tab(AppIcon.DEVICES.create(), new Span(texts.getTwoFactorSetupCodeLabel()));
+    Tab recovery = new Tab(AppIcon.KEY.create(), new Span(texts.getTwoFactorRecoveryCodeLabel()));
+    authenticator.setId("two-factor-authenticator-tab");
+    recovery.setId("two-factor-recovery-tab");
+    VerticalLayout input = new VerticalLayout();
+    input.setPadding(false);
+    input.setSpacing(false);
+    input.setWidthFull();
+    input.setId("two-factor-confirmation-input");
+    input.addClassName("two-factor-confirmation-input");
+    input.getElement().setAttribute("role", "tabpanel");
+    for (Tab tab : List.of(authenticator, recovery)) {
+      tab.getElement().setAttribute("aria-controls", "two-factor-confirmation-input");
+    }
+    Tabs selector = new Tabs(authenticator, recovery);
+    selector.setWidthFull();
+    selector.addClassName("two-factor-method-tabs");
+    selector.addThemeVariants(TabsVariant.LUMO_EQUAL_WIDTH_TABS);
+    selector.setSelectedTab(recoveryLoginSelected ? recovery : authenticator);
+    selector.addSelectedChangeListener(
+        event -> {
+          recoveryLoginSelected = event.getSelectedTab() == recovery;
+          showLoginInput(input);
+        });
+    content.add(selector, input);
+    showLoginInput(input);
+  }
+
+  private void showLoginInput(VerticalLayout input) {
+    input.removeAll();
+    code.clear();
+    confirmationCode.clear();
+    code.setInvalid(false);
+    confirmationCode.setInvalid(false);
+    input
+        .getElement()
+        .setAttribute(
+            "aria-labelledby",
+            recoveryLoginSelected ? "two-factor-recovery-tab" : "two-factor-authenticator-tab");
+    Span hint =
+        new Span(
+            administration
+                ? texts.getTwoFactorActionHint()
+                : recoveryLoginSelected
+                    ? texts.getTwoFactorLoginRecoveryHint()
+                    : texts.getTwoFactorLoginHint());
+    hint.addClassName("cosmos-panel-description");
+    input.add(hint);
+    if (recoveryLoginSelected) {
+      input.add(prepareCode(texts.getTwoFactorRecoveryCodeLabel(), 35));
+      code.getElement().setAttribute("autocomplete", "off");
+    } else {
+      confirmationCode.setLabel(texts.getTwoFactorSetupCodeLabel());
+      input.add(confirmationCode);
+    }
+  }
+
   private void showRecovery() {
-    panel.setHeading(texts.getTwoFactorRecoverAction(), texts.getTwoFactorPageHint(), "");
+    panel.addClassName("two-factor-restore");
+    panel.setHeading(texts.getTwoFactorRecoverAction(), texts.getTwoFactorRecoverSubtitle(), "");
     addHint(texts.getTwoFactorRecoverHint());
     if (!enrollment.available()) {
       addHint(texts.getTwoFactorUnavailable());
     }
-    prepareCode(texts.getTwoFactorRecoveryCodeLabel(), 35);
+    content.add(prepareCode(texts.getTwoFactorRecoveryCodeLabel(), 35));
     code.getElement().setAttribute("autocomplete", "off");
     submit.setVisible(true);
     submit.setEnabled(enrollment.available());
-    submit.setText(texts.getTwoFactorConfirm());
-    Button back = new Button(texts.getTwoFactorReturnToCode());
+    submit.setText(texts.getTwoFactorRecoveryContinue());
+    HorizontalLayout notice =
+        new HorizontalLayout(
+            AppIcon.INFO_CIRCLE.create(), new Span(texts.getTwoFactorRecoveryConsumptionHint()));
+    notice.setPadding(false);
+    notice.setSpacing(false);
+    notice.setAlignItems(Alignment.CENTER);
+    notice.addClassName("two-factor-restore-notice");
+    content.add(notice);
+    Button help = new Button(texts.getTwoFactorNeedHelp(), AppIcon.ARROW_FORWARD.create());
+    help.setId("two-factor-help");
+    help.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    help.setIconAfterText(true);
+    help.addClickListener(
+        event ->
+            UI.getCurrent().getPage().setLocation(request.getContextPath() + "/recovery-help"));
+    extraActions.add(help);
+    Button back = new Button(texts.getTwoFactorReturnToCode(), AppIcon.ANGLE_LEFT.create());
+    back.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     back.setId("two-factor-recovery-back");
     back.addClickListener(
         event -> UI.getCurrent().getPage().setLocation(request.getContextPath() + "/two-factor"));
-    extraActions.add(back);
+    footerNavigation.add(back);
   }
 
   private void showSetup() {
@@ -377,7 +486,7 @@ public final class TwoFactorView extends VerticalLayout
     switch (pending.kind()) {
       case GOOGLE_EMAIL -> {
         addHint(texts.getTwoFactorEmailCodeHint());
-        prepareCode(texts.getTwoFactorEmailCodeLabel(), 8);
+        content.add(prepareCode(texts.getTwoFactorEmailCodeLabel(), 8));
         code.getElement().setAttribute("inputmode", "numeric");
         submit.setText(texts.getTwoFactorConfirm());
       }
@@ -832,13 +941,13 @@ public final class TwoFactorView extends VerticalLayout
     }
   }
 
-  private void prepareCode(String label, int maximumLength) {
+  private TextField prepareCode(String label, int maximumLength) {
     code.setLabel(label);
     code.setPlaceholder(texts.getTwoFactorCodePlaceholder());
     code.setMaxLength(maximumLength);
     code.getElement().setAttribute("autocomplete", "one-time-code");
     code.getElement().removeAttribute("inputmode");
-    content.add(code);
+    return code;
   }
 
   private void submit() {
@@ -875,6 +984,14 @@ public final class TwoFactorView extends VerticalLayout
         }
         enrollment.complete(request, pending.id(), enrollmentCode.getValue());
       } else {
+        if (pending == null && !recoveryLoginSelected) {
+          if (!ValidationHelper.validateRequiredInputs(List.of(confirmationCode), texts)) {
+            return;
+          }
+          authorization.confirmSession(request, confirmationCode.getValue());
+          finish();
+          return;
+        }
         if (!ValidationHelper.validateRequiredInputs(List.of(code), texts)) {
           return;
         }
@@ -894,6 +1011,8 @@ public final class TwoFactorView extends VerticalLayout
         password.setInvalid(true);
       } else if (pending != null && pending.kind() == Kind.ENROLLMENT) {
         enrollmentCode.setInvalid(true);
+      } else if (pending == null && !recovering && !recoveryLoginSelected) {
+        confirmationCode.setInvalid(true);
       } else {
         code.setInvalid(true);
       }
@@ -902,6 +1021,7 @@ public final class TwoFactorView extends VerticalLayout
       password.clear();
       code.clear();
       enrollmentCode.clear();
+      confirmationCode.clear();
     }
   }
 
