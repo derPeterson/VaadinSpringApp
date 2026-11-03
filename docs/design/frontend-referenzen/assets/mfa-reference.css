@@ -31,7 +31,7 @@
 }
 dialog.mfa-reference .portal-modal-body { padding:24px; }
 #public-two-factor .vp-card.mfa-setup { max-width:920px; }
-#public-two-factor .mfa-setup .vp-card-body { padding:24px; background:var(--page-bg,#050811); }
+#public-two-factor .mfa-setup .vp-card-body { background:var(--page-bg,#050811); }
 #public-two-factor .mfa-setup > .vp-card-foot { background:var(--surface-panel,#080e1b); }
 #public-two-factor .mfa-setup > .vp-card-body > .mfa-phase-buttons { display:none; }
 .mfa-setup-layout { display:grid; grid-template-columns:300px minmax(0,1fr); gap:24px; align-items:start; }
@@ -100,7 +100,6 @@ dialog.mfa-reference .portal-modal-body { padding:24px; }
  .mfa-recovery-explanation { padding:0 0 24px; border-right:0; border-bottom:1px solid var(--border-subtle); gap:16px; }
  .mfa-recovery-art { width:128px; height:96px; }
 }
-@media(max-width:480px) { #public-two-factor .mfa-recovery > .vp-card-body { padding:20px; } }
 .mfa-setup .mfa-qr-placeholder { width:240px; height:240px; max-width:100%; margin:0 auto; text-align:center; }
 .mfa-setup-manual { display:flex; flex-direction:column; gap:16px; padding-top:16px; }
 .mfa-manual-control { width:100%; min-width:0; }
@@ -126,9 +125,12 @@ dialog.mfa-reference .portal-modal-body { padding:24px; }
 .mfa-reference .mfa-otp > input { position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:text; }
 .mfa-otp:focus-within { outline:none; }
 @media(max-width:760px) { .mfa-setup-layout { grid-template-columns:minmax(0,1fr); } .mfa-setup-instructions { padding:24px 0 0; border-left:0; border-top:1px solid var(--border-subtle); } .mfa-setup-method { max-width:340px; width:100%; justify-self:center; } }
-@media(max-width:480px) { #public-two-factor .mfa-setup .vp-card-body { padding:20px; } }
 @media(max-width:650px) { .mfa-reference .ad-grid { grid-template-columns:minmax(0,1fr); } .mfa-reference .mfa-actions { width:100%; } }
 .mfa-reference.portal-row { grid-template-columns:36px minmax(0,1fr); }
 .mfa-reference.portal-row .mfa-actions { grid-column:2 / -1; }
+@media(min-width:651px) {
+ .mfa-reference.portal-row:has(.mfa-actions > button:only-child) { grid-template-columns:36px minmax(0,1fr) auto; align-items:center; }
+ .mfa-reference.portal-row .mfa-actions:has(> button:only-child) { grid-column:3; grid-row:1; align-self:center; }
+}
 .mfa-ticket-list { display:flex; flex-direction:column; gap:12px; margin-block:16px; }
 .mfa-reference textarea { width:100%; box-sizing:border-box; padding:12px; border:1px solid #1e293b; border-radius:8px; background:#09111f; color:#e2e8f0; font:400 14px/1.5 Inter,sans-serif; resize:vertical; }

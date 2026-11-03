@@ -77,6 +77,7 @@ Infoicons in Bestätigungen sind zur gesamten Texthöhe vertikal zentriert.
 Die Auswahl „Initialen / Eigenes Bild“ bleibt eine native Radiogruppe, deren
 Label die ganze Auswahlfläche abdeckt. Der native Vaadin-Upload unterstützt
 Dateiauswahl und Drag-and-drop im selben Bereich mit derselben Validierung.
+Zwischen Modusauswahl, Profilbildvorschau und Uploadbereich liegen jeweils 24 px.
 Beim Speichern ist auch das Ablegen gesperrt. Die HTML-Referenz zeigt beim
 Ablegen ausschließlich ihr synthetisches Beispielbild und verarbeitet keine Datei.
 
@@ -1232,6 +1233,16 @@ als Datei angeboten; die Browserseite bleibt stehen und zeigt die Standardnotifi
 bestätigt die Sicherung und schaltet den einzigen Abschlussbutton „Codes gesichert“ frei. Die zusätzliche
 Aktion „Zurück zum Konto“ entfällt ausschließlich in der Ersatzcodeausgabe. Nur die ausdrückliche
 bestätigte Aktion verwirft die einmalige Ausgabe; reine Navigation ist kein Download.
+Die gemeinsame `.account-panel-body`-Regel in `cosmos-account.css` setzt 24 px
+umlaufenden Innenabstand und unter 640 px die vorhandenen 20 px. Persönliche Daten,
+Tickets und die normalen 2FA-Ansichten einschließlich Einrichtung und Ersatzcodes
+übernehmen diesen Standard ohne lokale Padding-Kopien. Die HTML-Referenzen nutzen
+dafür die bestehende `.portal-card-body`-Regel. Bereiche mit eigener innerer Aufteilung
+wie Sicherheit und Sitzungen behalten ihre bewusst randlosen äußeren Inhaltsflächen.
+Die separat freigegebene Einführungskarte behält 32 px, unter 480 px weiterhin 20 px.
+In der 2FA-Kontokarte steht eine einzelne Aktion wie „Einrichten“ ab 651 px rechts
+neben der Beschreibung und ist vertikal mittig ausgerichtet. Mehrere Aktionen und
+schmale Ansichten behalten ihre vorhandene separate Aktionszeile.
 Die freigegebene Variante B verwendet auf maximal 920 px ein responsives Grid:
 links die lokale Tresorillustration `images/two-factor-vault.svg` mit dezentem blauem
 Glow aus der Primärfarbe und drei Hinweise aus nativen `HorizontalLayout`-/`VerticalLayout`-

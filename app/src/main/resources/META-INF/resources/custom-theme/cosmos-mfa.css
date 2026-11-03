@@ -22,7 +22,7 @@
 .two-factor-code-document { width: 100%; height: 330px; border: 0; }
 .two-factor-app-links { display: flex; flex-wrap: wrap; gap: var(--cosmos-space-l, 16px); }
 .two-factor-view #two-factor-panel.two-factor-setup { max-width:920px; }
-.two-factor-view .two-factor-setup > .account-panel-body { padding:24px; background:var(--cosmos-reference-page); }
+.two-factor-view .two-factor-setup > .account-panel-body { background:var(--cosmos-reference-page); }
 .two-factor-view .two-factor-setup > .cosmos-panel-footer { background:var(--cosmos-reference-panel); border-color:var(--cosmos-reference-border); }
 .two-factor-setup-layout { display:grid; grid-template-columns:300px minmax(0,1fr); gap:24px; align-items:start; }
 .two-factor-setup-instructions { min-width:0; align-self:stretch; display:flex; flex-direction:column; gap:28px; padding-left:24px; border-left:1px solid var(--cosmos-reference-border); }
@@ -46,7 +46,6 @@
 .two-factor-otp::part(required-indicator) { position:static; visibility:visible; display:inline-flex; flex:none; width:auto; margin:0; padding:0; font:500 14px/14px Inter,sans-serif; }
 .two-factor-otp::part(required-indicator)::after { content:'•'; color:var(--cosmos-reference-accent); opacity:1; position:static; width:auto; margin-left:0; }
 @media (max-width:760px) { .two-factor-setup-layout { grid-template-columns:minmax(0,1fr); } .two-factor-setup-instructions { padding:24px 0 0; border-left:0; border-top:1px solid var(--cosmos-reference-border); } }
-@media (max-width:480px) { .two-factor-view .two-factor-setup > .account-panel-body { padding:20px; } }
 .cosmos-mfa-settings .mfa-policy-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--cosmos-space-2xl, 24px); padding: var(--cosmos-space-2xl, 24px); }
 .cosmos-mfa-settings .cosmos-config-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--cosmos-space-m, 12px); align-items: center; }
 .cosmos-mfa-settings .mfa-rules-hint { display: block; padding: var(--cosmos-space-l, 16px) var(--cosmos-space-2xl, 24px); }
@@ -61,6 +60,10 @@
 @media (max-width: 650px) { .cosmos-mfa-settings .mfa-policy-grid { grid-template-columns: minmax(0, 1fr); } }
 .cosmos-reference-portal #account-panel-security .two-factor-account-entry { grid-template-columns:36px minmax(0,1fr); }
 .two-factor-account-actions { grid-column:2 / -1; min-width:0; display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+@media (min-width:651px) {
+ .cosmos-reference-portal #account-panel-security .two-factor-account-entry:has(.two-factor-account-actions > vaadin-button:only-child) { grid-template-columns:36px minmax(0,1fr) auto; align-items:center; }
+ .two-factor-account-actions:has(> vaadin-button:only-child) { grid-column:3; grid-row:1; align-self:center; }
+}
 .two-factor-account-entry .account-entry-copy > div { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .two-factor-account-entry vaadin-badge { box-sizing:border-box; margin:0; padding:2px 6px; border:1px solid var(--vaadin-badge-border-color); border-radius:4px; font:500 10px/15px Inter,sans-serif; --vaadin-badge-text-color:var(--cosmos-reference-accent); --vaadin-badge-background:var(--cosmos-reference-selection); --vaadin-badge-border-color:var(--cosmos-reference-icon-border); }
 .two-factor-account-entry vaadin-badge[theme~=success] { --vaadin-badge-text-color:var(--cosmos-reference-success); --vaadin-badge-background:var(--cosmos-reference-success-surface); --vaadin-badge-border-color:var(--cosmos-reference-success-border); }
