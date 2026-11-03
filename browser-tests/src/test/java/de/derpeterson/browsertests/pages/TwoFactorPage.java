@@ -2,6 +2,7 @@ package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -102,6 +103,33 @@ public final class TwoFactorPage {
             page.locator("#two-factor-recovery-codes input")
                 .evaluateAll("inputs => inputs.map(input => input.value)");
     return values;
+  }
+
+  /** Simuliert nur eine verweigerte Clipboard-API; Klick und Sicherheitsablauf bleiben echt. */
+  public static void assertCopyFailure(Page page, Locator copy, String expectedMessage) {
+    page.evaluate(
+        """
+        () => {
+        window.mfaOriginalClipboardWrite = navigator.clipboard.writeText;
+        navigator.clipboard.writeText = () => Promise.reject(
+          new DOMException('Clipboard access denied by the test', 'NotAllowedError'));
+        }
+        """);
+    try {
+      copy.click();
+      assertThat(
+              page.locator("vaadin-notification-card:not([closing])")
+                  .filter(new Locator.FilterOptions().setHasText(expectedMessage)))
+          .isVisible();
+    } finally {
+      page.evaluate(
+          """
+          () => {
+          navigator.clipboard.writeText = window.mfaOriginalClipboardWrite;
+          delete window.mfaOriginalClipboardWrite;
+          }
+          """);
+    }
   }
 
   public static String nextCode(Page page, String email) {

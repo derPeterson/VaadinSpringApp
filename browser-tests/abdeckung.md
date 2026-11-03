@@ -10,7 +10,7 @@ jedem Test und werden in den Laufbericht übernommen.
 | Anwendungs-JUnit und H2 | Regeln, Null-/Grenzwerte, Transaktionen, Rollback, Parallelität, Schema und Serialisierung |
 | Browser DE und EN | Sichtbare Journeys: Registrierung/Mails, Konto/Avatar, Login/Remember-me, Neustart/Sitzungen, Rollen/Wartung, Administration, Benachrichtigungen und Theme |
 | Helfertests | Suiteauswahl, Worker, Texte, Reporter und Diagnose ohne App-Container |
-| Frontend-Offlinetests | Bildeditor und kompakte Datums-/Zeiteingaben |
+| Frontend-Offlinetests | Bildeditor, kompakte Datums-/Zeiteingaben und geschützter PDF-Download ohne Navigation oder Fehlerdatei |
 | Manuelle Sonderprüfungen | Echte Geräte, Bediengefühl, Hilfsmittel, Mailclients und individuelle Designbewertung |
 
 Browser prüfen Chromium und definierte Fenstergrößen. Das belegt keine vollständige

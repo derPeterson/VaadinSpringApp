@@ -61,9 +61,35 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     assertThat(page.locator("#two-factor-qr")).hasAttribute("alt", texts.getTwoFactorQrAlt());
     TwoFactorPage.confirmEnrollment(page, email);
     java.util.List<String> codes = TwoFactorPage.recoveryCodeValues(page);
+    assertThat(page.locator("#two-factor-recovery-details")).hasAttribute("opened", "");
+    Locator firstCode = page.locator("#two-factor-recovery-code-1");
+    firstCode.locator("input").focus();
+    assertThat(firstCode).hasJSProperty("value", "");
+    assertThat(firstCode.locator("vaadin-button")).hasCSS("color", "rgb(56, 189, 248)");
+    context.grantPermissions(java.util.List.of("clipboard-read", "clipboard-write"));
+    firstCode.locator("vaadin-button").click();
+    assertThat(
+            page.locator("vaadin-notification-card:not([closing])")
+                .filter(new Locator.FilterOptions().setHasText(texts.getTwoFactorCodeCopied())))
+        .isVisible();
+    org.junit.jupiter.api.Assertions.assertEquals(
+        codes.getFirst(), page.evaluate("navigator.clipboard.readText()"));
+    TwoFactorPage.assertCopyFailure(
+        page, firstCode.locator("vaadin-button"), texts.getTwoFactorCopyFailed());
+    org.junit.jupiter.api.Assertions.assertEquals(codes, TwoFactorPage.recoveryCodeValues(page));
+    page.locator("#two-factor-recovery-toggle").click();
+    assertThat(page.locator("#two-factor-recovery-codes")).isHidden();
+    assertThat(page.locator("#two-factor-copy-codes")).isEnabled();
+    assertThat(page.locator("#two-factor-download-pdf")).isEnabled();
     page.locator("#two-factor-codes-saved input").setChecked(true);
     new UserMenu(page).selectLanguage(other.language());
+    assertThat(page.locator("#two-factor-recovery-codes")).isHidden();
+    assertThat(page.locator("#two-factor-recovery-details")).not().hasAttribute("opened", "");
+    page.locator("#two-factor-recovery-toggle").click();
     org.junit.jupiter.api.Assertions.assertEquals(codes, TwoFactorPage.recoveryCodeValues(page));
+    for (int index = 1; index <= 10; index++) {
+      assertThat(page.locator("#two-factor-recovery-code-" + index)).hasJSProperty("value", "");
+    }
     assertThat(page.locator("#two-factor-download-pdf")).hasText(other.getTwoFactorDownloadPdf());
     assertThat(page.locator("#two-factor-codes-saved input")).isChecked();
     new UserMenu(page).selectTestLanguage();
@@ -223,12 +249,18 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     page.locator("#two-factor-action-code input")
         .fill(TwoFactorPage.nextCode(page, BrowserTestAccounts.SUPERADMIN_EMAIL));
     UiActions.complete(page, () -> page.locator("#two-factor-action-confirm").click());
+    assertThat(page.locator("#two-factor-action-confirm")).isHidden();
     page.waitForCondition(
         () ->
             java.net.URI.create(page.url()).getPath().equals("/two-factor")
                 || page.locator("vaadin-notification-card:not([closing])")
                     .filter(new Locator.FilterOptions().setHasText(texts.getTwoFactorSaved()))
                     .isVisible());
+    // Die alte Ansicht kann noch zur erneuten 2FA-Bestätigung weiterleiten.
+    // Den gespeicherten Stand ohne konkurrierende Navigation in derselben Sitzung öffnen.
+    Page previous = page;
+    page = context.newPage();
+    previous.close();
     openConfiguration();
   }
 

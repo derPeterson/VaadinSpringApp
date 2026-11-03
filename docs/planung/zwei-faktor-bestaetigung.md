@@ -4,11 +4,10 @@
 
 Branch: `codex/zwei-faktor-authentifizierung`, Basis:
 `9be7038f3d0a3bd986d3733777a22d216650fa3d` auf lokalem `main`.
-Die acht vereinbarten Pakete sind technisch umgesetzt. Review und gezielte
-automatisierte Nachprüfungen sind abgeschlossen. Die gemeinsame fachliche und
-gestalterische Abnahme steht aus.
-Der geprüfte technische Stand ist als Zwischencommit gesichert. Die fachliche Abnahme,
-der Featureabschluss sowie Merge und Push stehen noch aus.
+Die acht vereinbarten Pakete sind technisch umgesetzt. Die automatisierten Nachweise
+einschließlich der großen Testrunde stehen im [Prüfstand](../status.md).
+Die gemeinsame fachliche und gestalterische Abnahme, der Featureabschluss sowie
+Merge und Push stehen noch aus.
 
 Das aktuelle Verhalten einschließlich Standardwerten und Grenzen steht in der
 [Fachdokumentation](../zwei-faktor-authentifizierung.md). Dort sind TOTP,
@@ -33,6 +32,51 @@ Die Google-/Microsoft-Verwaltung ist im selben Paket auf Superadmins beschränkt
 4. Nach ausdrücklicher Abnahme aktuelle Fachdokumentation und Aufgabenlisten
    abschließend bereinigen und diesen erledigten Plan entfernen. Git-Schritte
    nur auf entsprechenden Auftrag ausführen.
+
+## Administrative 2FA-Konfiguration und Ticketbearbeitung: Entwurfswahl offen
+
+Für beide neuen Adminbereiche sind jeweils drei Stitch-Varianten zur gemeinsamen
+Sichtung beauftragt und über die CLI erstellt worden. Grundlage sind aktuelle
+Vaadin-Seitenaufnahmen mit eigenen isolierten Testdaten. Die Bilder und das
+unveränderte exportierte HTML wurden gesichtet; die Entwürfe liegen im bestehenden
+2FA-Projekt auf der Projektfläche. Eine Umsetzung oder Änderung der festen
+HTML-Referenzen ist noch nicht freigegeben.
+
+2FA-Konfiguration:
+
+- [A: nach Funktionen gegliedertes Formular](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=17680211258750069028)
+- [B: Regelbereiche mit zusätzlicher Erklärspalte](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=2958079107723707652)
+- [C: tabellarische Regelübersicht](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=12170611722839130185)
+
+Die vier Rollen, neun dreiwertigen Aktionsregeln samt Feldhilfe und der globale
+Inaktivitätsschalter mit Dauer bleiben fachlich unverändert. Eine globale
+„Sitzungssperre“ ist keine passende Bezeichnung für die erneute Faktorbestätigung.
+Die in C zusätzlich gezeigten Bereichsbezeichnungen sind reine Gliederungsvorschläge,
+keine neuen Konfigurationswerte. Entwickleroptionen bleiben im Normalbetrieb verborgen.
+Empfehlung zur Sichtung ist A wegen der Gliederung bei geringer Änderung des Formulars.
+
+Administrative Wiederherstellungsanfragen/Tickets:
+
+- [A: Liste oben, Verlauf und Antwort darunter](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=8811681643467681946)
+- [B: Anfragenliste links und ausgewählter Vorgang rechts](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=14836410918965297816)
+- [C: ausgewählter Vorgang mit Ticketumschaltung](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=2814354832496990714)
+
+Die Entwürfe sind Gestaltungsideen, keine fachlichen Vorlagen: Trotz ausdrücklichem
+Ausschluss hat Stitch zusätzliche SLA-/Online-/Versionsangaben, Filter, Prioritäten,
+Auditinformationen und teilweise Aussagen über telefonischen Kontakt oder
+Personalnummernprüfung erfunden. Auch die Aufforderung, Ersatzcodes vorzulegen,
+ist falsch. Diese Inhalte und Funktionen gehören nicht zur Anwendung und dürfen
+nicht übernommen werden. Eine Anfrage entsperrt kein Konto; Passwörter,
+Authenticator-Schlüssel und Ersatzcodes gehören nicht in den Schriftverkehr.
+Die Anfragenliste mit Status/Bearbeiter, der Verlauf, interne Vermerke, Übernehmen,
+Antwort, Anleitung mit Vorschau, Abschließen und Aktualisieren bleiben Grundlage.
+Empfehlung zur Sichtung ist A als einfachste Anordnung nahe am vorhandenen Panel.
+
+Für beide Bereiche gelten bei einer späteren Übernahme weiterhin die bestehenden
+Cosmos-Maße, Farben, Kopficons, nativen Vaadin-Komponenten und Footerregeln.
+Geänderte Navigation, zusätzliche Statusboxen, kräftige Warnkästen, fremde Schriften
+und umgebrochene oder übergroße Buttons sind nicht automatisch freigegeben.
+Die Auswahl und die gemeinsame Desktop-/Smartphone-Abnahme bleiben offen.
 
 ## Wiederkehrende Anmeldung und Wiederherstellung: Entwurfswahl offen
 
@@ -72,6 +116,10 @@ Bei einer später beauftragten Umsetzung gelten die vorhandenen Cosmos-Bausteine
 nativen Vaadin-Komponenten und Texte statt dieser Abweichungen. Bestehende Anfragen
 und deren Konversation müssen weiterhin erreichbar bleiben; die Bilder zeigen nur
 den Leerzustand beziehungsweise eine eingeklappte Übersicht.
+
+Bei der Übernahme auch die bislang deutschen Bestätigungs-/Hilfemomentaufnahmen
+der HTML-Referenz in DE/EN angleichen. Der zugehörige automatisierte Bediennachweis
+wartet im [Testbedarf](../testbedarf.md) auf diese Entwurfsentscheidung.
 
 ## Gestaltung der verpflichtenden Ersteinrichtung
 
@@ -121,8 +169,9 @@ ausgewählten Elemente sind in Vaadin und der festen HTML-Referenz übernommen:
 Trennlinie zwischen den Schritten, Punkt-Platzhalter mit wandernder Codemarkierung,
 Tabicons und überarbeitete Hinweise. Die Gestaltung dieses Einrichtungsschritts ist
 gemeinsam abgenommen. Zusätzliche Codegruppierung, Footeränderungen und erfundene
-Statusanzeigen aus Stitch bleiben ausgeschlossen. Der offene automatisierte
-Bediennachweis bleibt im zentralen Testbedarf erhalten.
+Statusanzeigen aus Stitch bleiben ausgeschlossen. Der automatisierte Bediennachweis
+für DE/EN steht im [Prüfstand](../status.md); die menschlichen Sonderprüfungen
+bleiben in [HUM-09](../manual-tests/README.md#hum-09).
 
 ### QR-Einrichtungsschritt: Variante B mit Ergänzungen
 
@@ -134,8 +183,9 @@ den drei App-Empfehlungen und den blauen Tabler-Schrittüberschriften wie in der
 Anbietereinrichtung. Die erste Codeeingabe verwendet das freigegebene OTP-Add-on
 mit sechs sichtbaren Kästchen und gemeinsamem Einfügen. Der Content verwendet
 die Standardfarbe. Vaadin und HTML sind angepasst; die gemeinsame Sichtabnahme
-dieses Screens ist erfolgt. Die abschließende Funktionsprüfung des gesamten
-Einrichtungsablaufs bleibt offen.
+dieses Screens ist erfolgt. Die automatisierten Einrichtungs- und
+Wiederherstellungsabläufe sind geprüft; der manuelle Durchlauf mit echter App
+bleibt Teil von [HUM-09](../manual-tests/README.md#hum-09).
 
 - [A: Schritte untereinander](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=7593142201349970462)
 - [B: QR und Code nebeneinander](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=271433440045913590)

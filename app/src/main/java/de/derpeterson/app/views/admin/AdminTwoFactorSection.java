@@ -316,7 +316,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   public void refreshTexts() {
     breadcrumb.setText(texts.getAdminHeaderTitle() + " / " + texts.getAdminConfigTitle());
     pageTitle.setText(texts.getAdminConfigTitle());
-    pageHint.setText(texts.getTwoFactorSettingsHint());
+    pageHint.setText(texts.getTwoFactorSettingsPageHint());
     title.setText(texts.getTwoFactorSettingsTitle());
     hint.setText(texts.getTwoFactorSettingsHint());
     rulesHint.setText(texts.getTwoFactorRulesHint());

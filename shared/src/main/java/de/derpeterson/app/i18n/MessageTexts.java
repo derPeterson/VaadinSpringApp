@@ -386,6 +386,14 @@ public class MessageTexts {
     return getTranslation("mfa.settings.title");
   }
 
+  public String getTwoFactorNavigationLabel() {
+    return getTranslation("mfa.navigation.label");
+  }
+
+  public String getTwoFactorSettingsPageHint() {
+    return getTranslation("mfa.settings.page.hint");
+  }
+
   public String getTwoFactorSettingsHint() {
     return getTranslation("mfa.settings.hint");
   }

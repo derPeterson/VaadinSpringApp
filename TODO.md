@@ -3,10 +3,10 @@
 ## Aktive Planung: Zwei-Faktor-Authentifizierung
 
 - [ ] Die technisch umgesetzte [2FA-Erweiterung](docs/planung/zwei-faktor-bestaetigung.md)
-  nach den bestandenen gezielten Nachprüfungen gemeinsam abnehmen. Dazu gehören die
+  nach den automatisierten Prüfungen gemeinsam abnehmen. Dazu gehören die
   Oberflächen in DE/EN, echte Authenticator-Bedienung, Ersatzcode-PDF und
   Superadminrechte für 2FA-Regeln und Anmeldeanbieter. Details: [HUM-09](docs/manual-tests/README.md#hum-09).
-  Offene automatisierte Prüfungen bleiben im [Testbedarf](docs/testbedarf.md).
+  Ergebnisse und Grenzen stehen im [Prüfstand](docs/status.md).
 
 ## Separate spätere Umsetzung: Vaadin-Komponenten
 

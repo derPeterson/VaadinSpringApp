@@ -7,7 +7,7 @@
 | JUnit / isoliertes H2 | Fachregeln, Transaktionen, Rollback, Rechte, Zeitgrenzen und Konkurrenz |
 | Browser DE und EN | Sichtbare Abläufe über echte UI und eigene Mailpit-Mails |
 | Browser-Helfertests | Auswahl, Reporter, Sprachkatalog und Runner ohne App-Container |
-| JavaScript-Offlinetests | Frontendparser und Bildeditorfunktionen |
+| JavaScript-Offlinetests | Frontendparser, Bildeditor und geschützter PDF-Download |
 | Manuelle Abnahme | Menschliche Wahrnehmung, echte Geräte, Hilfsmittel und Mailclients |
 
 Aktuelle Ergebnisse stehen nur im [Prüfstand](status.md), nicht in einer Kette alter

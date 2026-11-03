@@ -79,9 +79,11 @@ final class BrowserSuites {
               SessionLimitBrowserTest.class,
               MaintenanceBrowserTest.class);
       case "external-login-flow" -> List.of(ExternalLoginBrowserTest.class);
+      case "external-login-settings" -> List.of(ExternalLoginBrowserTest.class);
       case "two-factor" -> List.of(TwoFactorBrowserTest.class, TwoFactorPushBrowserTest.class);
       case "two-factor-push" -> List.of(TwoFactorPushBrowserTest.class);
       case "two-factor-recovery-output" -> List.of(TwoFactorBrowserTest.class);
+      case "two-factor-setup" -> List.of(TwoFactorBrowserTest.class);
       case "two-factor-lifecycle" -> List.of(TwoFactorLifecycleBrowserTest.class);
       case "external-login-layout" -> List.of(ExternalLoginLayoutBrowserTest.class);
       case "external-login" ->
@@ -170,7 +172,7 @@ final class BrowserSuites {
           throw new IllegalArgumentException(
               "Unknown suite: "
                   + suite
-                  + ". Choose all, fast, two-factor, two-factor-push, two-factor-lifecycle, notifications, account-security, session-management, account-settings, cosmos-design, cosmos-components, login-layout, login-checks, infrastructure, https-night, operations, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, session-limits, session-persistence, maintenance, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
+                  + ". Choose all, fast, external-login-settings, two-factor, two-factor-push, two-factor-recovery-output, two-factor-setup, two-factor-lifecycle, notifications, account-security, session-management, account-settings, cosmos-design, cosmos-components, login-layout, login-checks, infrastructure, https-night, operations, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, session-limits, session-persistence, maintenance, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
     };
   }
 }

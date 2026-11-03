@@ -4,11 +4,10 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.microsoft.playwright.Browser;
-import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.PersistentBrowserActor;
@@ -51,6 +50,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
 
   @ParameterizedTest
   @CsvSource({"1280, false", "390, false", "1280, true", "390, true"})
+  @Tag("provider-settings")
   @DisplayName(
       "OIDC-12: Deaktivierte Anbieter erhalten Verbindungen und bieten nur nutzbare Bestätigungen")
   void disabledProvidersPreserveExistingAccountAccess(int width, boolean hasPassword) {
@@ -70,13 +70,8 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       assertThat(page.locator("vaadin-notification-card:not([closing])"))
           .containsText(texts.getAccountSecurityPasswordSuccess());
     }
-    try (BrowserContext adminContext =
-        browser.newContext(
-            new Browser.NewContextOptions()
-                .setBaseURL(System.getProperty("browser.tests.baseUrl"))
-                .setLocale(texts.browserLocale())
-                .setTimezoneId("Europe/Berlin"))) {
-      Page admin = adminContext.newPage();
+    try (BrowserActor administrator = new BrowserActor(browser)) {
+      Page admin = administrator.page;
       admin.navigate("/login");
       new UserMenu(admin).selectTestLanguage();
       LoginPage login = new LoginPage(admin);
@@ -167,6 +162,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
         .locator("#two-factor-action-code input")
         .fill(TwoFactorPage.nextCode(admin, BrowserTestAccounts.SUPERADMIN_EMAIL));
     UiActions.complete(admin, () -> admin.locator("#two-factor-action-confirm").click());
+    assertThat(admin.locator("#two-factor-action-confirm")).isHidden();
   }
 
   private void confirmFactor(String email) {
@@ -260,6 +256,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @ValueSource(ints = {1280, 390})
   @DisplayName(
       "OIDC-08: Superadmins bestätigen Anbieteränderungen mit 2FA und Geheimnisse bleiben serverseitig")
+  @Tag("provider-settings")
   void administrativeProviderSettings(int width) throws Exception {
     page.setViewportSize(width, 900);
     LoginPage login = new LoginPage(page);
@@ -337,9 +334,30 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("Anmeldeanbieter im bestehenden Referenzstyle", page);
     // Der anschließende echte Code-/Tokenaustausch mit dem eigenen Anbieter prüft die Übernahme.
     new UserMenu(page).signOut();
-    begin("google", "admin-settings-" + UUID.randomUUID() + "@gmail.com", "valid");
-    page.locator("#external-register-submit").click();
-    assertThat(page).hasURL(Pattern.compile(".*/home$"));
+    for (String provider : new String[] {"google", "microsoft"}) {
+      String providerEmail = "admin-settings-" + UUID.randomUUID() + "@gmail.com";
+      begin(provider, providerEmail, "valid");
+      page.locator("#external-register-first input").fill("Browser");
+      page.locator("#external-register-last input").fill("Testuser");
+      page.locator("#external-register-submit").click();
+      if (provider.equals("microsoft")) {
+        // Der Testanbieter bestätigt diese Kontaktadresse nicht verbindlich.
+        // Microsoft-Konten durchlaufen deshalb weiterhin die lokale Mailverifikation.
+        MailpitInbox inbox = new MailpitInbox(context);
+        try (Page activation =
+            inbox.openVerificationLink(inbox.awaitVerificationMail(providerEmail))) {
+          new de.derpeterson.browsertests.pages.VerificationPage(activation).assertActivated();
+        }
+        begin(provider, providerEmail, "valid");
+      }
+      assertThat(page).hasURL(Pattern.compile(".*/home$"));
+      new UserMenu(page).selectTestLanguage();
+      new UserMenu(page).requestSignOut();
+      // Die Startseite ist auch anonym erreichbar. Der geschützte Kontoaufruf
+      // muss nach der echten Abmeldung wieder zur Anmeldung führen.
+      page.navigate("/account");
+      new LoginPage(page).assertFormVisible();
+    }
   }
 
   @ParameterizedTest

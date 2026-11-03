@@ -9,6 +9,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -94,6 +95,7 @@ public class AdminView extends IsAuthenticatedBaseView {
   private transient de.derpeterson.app.service.UserNotificationService notificationsService;
   private SupportTicketsComponent supportSection;
   private SideNavItem supportNavItem;
+  private Tooltip twoFactorNavigationTooltip;
 
   @org.springframework.beans.factory.annotation.Autowired
   void configureSupport(SupportTicketService support) {
@@ -285,6 +287,9 @@ public class AdminView extends IsAuthenticatedBaseView {
       submenuItem.getElement().getClassList().add("cosmos-nav-item--sub");
       configurationSubmenuItems.put(group, submenuItem);
       configurationNavItem.addItem(submenuItem);
+      if (group == AdminConfigGroup.TWO_FACTOR) {
+        twoFactorNavigationTooltip = Tooltip.forComponent(submenuItem);
+      }
     }
 
     sideNavigation.addItem(
@@ -491,7 +496,12 @@ public class AdminView extends IsAuthenticatedBaseView {
     userManagementNavItem.setLabel(messageProperties.getAdminUsersTitle());
 
     configurationSubmenuItems.forEach(
-        (group, item) -> item.setLabel(messageProperties.getAdminConfigGroupLabel(group)));
+        (group, item) ->
+            item.setLabel(
+                group == AdminConfigGroup.TWO_FACTOR
+                    ? messageProperties.getTwoFactorNavigationLabel()
+                    : messageProperties.getAdminConfigGroupLabel(group)));
+    twoFactorNavigationTooltip.setText(messageProperties.getTwoFactorSettingsTitle());
     sideNavigation.getElement().setAttribute("aria-label", messageProperties.getAdminHeaderTitle());
     sideNavigation.setI18n(
         new SideNav.SideNavI18n().setToggle(messageProperties.getAdminNavToggleChildren()));

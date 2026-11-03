@@ -71,9 +71,11 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung einschließlich Serverneustart und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 37 |
 | `external-login` | Google/Microsoft mit eigenem OIDC-Anbieter, Admin-Anbietereinrichtung, freiwillige Profilfelder sowie bestehende Registrierungs-/Konto-/Sicherheitsfälle und Formularpanels | 56 |
 | `external-login-flow` | Externe Anmeldungen, Superadmin-Anbietereinrichtung mit 2FA, Verknüpfungen, geschützte Google-Ersteinrichtung und frische Microsoft-Bestätigung, Browserneustart, E-Mail-Änderung, optionale Adminprofilfelder und kontextbezogene Kontobestätigung, vollständig deaktivierte Anbieter sowie Standardmeldungen nach Rücksprüngen | 29 |
-| `two-factor` | Einrichtung, erneute Anmeldung, aktionsgebundene Bestätigung, geschützter Faktorwechsel/Entfernen, Wiederherstellung mit dem letzten Ersatzcode nach Portal-/Google-/Microsoft-Anmeldung, Ersatzcodes/PDF, eingeschränkte Hilfe und Adminbearbeitung, Superadminrechte, Regelwechsel einer offenen Sitzung, echte Browser-/Anwendungsneustarts, Inaktivität auch bei Push und HTML-Momentaufnahmen auf Desktop/Smartphone | 30 |
+| `external-login-settings` | Bestehende Anbieterfälle gezielt: Superadmin-Einrichtung mit 2FA, verschlüsselte Zugangsdaten nach Speichern/Neustart und Kontozugriff bei deaktivierten Anbietern, jeweils Desktop/Smartphone | 6 |
+| `two-factor` | Einrichtung, erneute Anmeldung, aktionsgebundene Bestätigung, geschützter Faktorwechsel/Entfernen, Wiederherstellung mit dem letzten Ersatzcode nach Portal-/Google-/Microsoft-Anmeldung, Ersatzcodes/PDF, eingeschränkte Hilfe und Adminbearbeitung, Superadminrechte, Regelwechsel einer offenen Sitzung, echte Browser-/Anwendungsneustarts, Inaktivität auch bei Push und HTML-Momentaufnahmen auf Desktop/Smartphone | 32 |
 | `two-factor-push` | Echte einminütige Inaktivitätsfrist, native Benutzereingabe gegenüber Hintergrundabrufen und gesperrte serverseitige Vorschauupdates nach Ablauf | 2 |
-| `two-factor-recovery-output` | Gezielter Ersatzcode-/PDF-Nachtest auf Desktop und Smartphone: fehlgeschlagener Abruf, echter Download ohne Navigation und ausdrückliche Sicherungsbestätigung | 2 |
+| `two-factor-setup` | Verpflichtender Einstieg, QR/manueller Schlüssel, native OTP-Eingabe mit Einfügen und Tastatur, Kopierfehler sowie sichtbare Einrichtungsschritte der HTML-Referenz auf Desktop/Smartphone; ohne vollständigen Wiederherstellungs- oder Richtlinienlauf | 4 |
+| `two-factor-recovery-output` | Gezielter Ersatzcode-/PDF-Nachtest auf Desktop und Smartphone: fehlgeschlagener Abruf ohne Fehlerdatei, echter Download ohne Navigation und ausdrückliche Sicherungsbestätigung; auf Desktop zusätzlich echter Ablauf der fünfminütigen Sicherheitsfrist bei weiterhin verfügbaren Codes und PDF | 2 |
 | `two-factor-lifecycle` | Sprachwechsel während Mailcode/QR/Codeausgabe/Hilfe, Entzug der Superadminrolle bei zwei offenen Konfigurationen sowie Startfreigabe und Neustart mit gespeicherten Entwicklungsausnahmen | 5 |
 | `external-login-layout` | Getrennte Panels für Anmeldung und Registrierung sowie Admin-Anbieter- und Kontosicherheitstabs in Vaadin und HTML, Desktop/schmal, Tastaturbedienung, Footerumbrüche, Erhalt ungespeicherter Eingaben und Kontobestätigungsdialoge. Ohne Registrierung, Speicherung oder Versand | 8 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
@@ -107,7 +109,7 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
 | `cosmos-components` | Rollensuche, Konfigurations-Switches, SideNav-Zustände, Tooltips und Benutzermenü | 5 |
-| `all` | Alle 35 Testklassen einschließlich der Fast-Fälle | 241 |
+| `all` | Alle 35 Testklassen einschließlich der Fast-Fälle | 245 |
 
 IDs, Schritte und erwartetes Ergebnis stehen pro Fall in `@DisplayName` und
 `@Description`; diese Angaben übernimmt der Bericht. AVATAR-01 enthält zwei
@@ -171,6 +173,8 @@ dieselbe eigene Datenbank und deaktivieren Bootstrap ausdrücklich.
 
 Der Elternrunner kompiliert Shared-/Browserquellen und baut das Anwendungsimage
 einmal vor der Verteilung. Alle Worker verwenden dieselbe unveränderliche Image-ID.
+Die Verteilungsgewichte berücksichtigen auch die echten Frist- und Neustartfälle
+der 2FA-Klassen; sie dienen der Lastverteilung und sind keine Laufzeitgarantie.
 Das Build-Verbot während eines Laufs verbietet keine parallelen Worker, sondern
 verhindert wechselnde oder entfernte Images bei laufenden Tests und Neustartfällen.
 Die vollständige Runde läuft üblicherweise zuerst auf DE, anschließend EN mit

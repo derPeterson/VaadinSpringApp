@@ -28,6 +28,31 @@ import org.junit.platform.launcher.TestPlan;
 import org.junit.platform.launcher.core.LauncherFactory;
 
 class BrowserExecutionPlanTest {
+  @ParameterizedTest
+  @ValueSource(strings = {"two-factor-setup", "external-login-settings"})
+  void focusedSuitesSelectOnlyTheirExistingJourneys(String suite) {
+    TestPlan plan =
+        LauncherFactory.create()
+            .discover(BrowserExecutionPlan.request(BrowserSuites.select(suite), suite));
+    Set<String> methods = new HashSet<>();
+    for (TestIdentifier root : plan.getRoots()) {
+      for (TestIdentifier test : plan.getDescendants(root)) {
+        test.getSource()
+            .filter(MethodSource.class::isInstance)
+            .map(MethodSource.class::cast)
+            .ifPresent(method -> methods.add(method.getMethodName()));
+      }
+    }
+    Set<String> expected =
+        suite.equals("two-factor-setup")
+            ? Set.of(
+                "requiredIntroductionReusesFreshPasswordWithoutGrantingPortalAccess",
+                "referenceStatesAndKeyboardNavigation")
+            : Set.of(
+                "administrativeProviderSettings", "disabledProvidersPreserveExistingAccountAccess");
+    assertEquals(expected, methods);
+  }
+
   @Test
   void externalSuiteKeepsTheLongProviderClassOnItsOwnWorker() {
     List<List<Class<?>>> groups =

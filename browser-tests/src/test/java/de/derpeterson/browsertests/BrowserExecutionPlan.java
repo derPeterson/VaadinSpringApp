@@ -40,10 +40,13 @@ final class BrowserExecutionPlan {
           Map.entry("UserFiltersBrowserTest", 66),
           // Neue Klassen/Rebootfälle: gezielte DE-Messung vom 16.10.2026, grob gerundet.
           Map.entry("AccountSettingsBrowserTest", 150),
-          // Anbieter-/2FA-Klassen aus isolierten Featureläufen grob gewichtet.
-          Map.entry("ExternalLoginBrowserTest", 1100),
+          // DE-Gesamtlauf vom 03.11.2026: gerundete Verteilungsgewichte einschließlich
+          // echter Frist- und Neustartprüfungen, keine Laufzeitgarantie.
+          Map.entry("ExternalLoginBrowserTest", 1260),
           Map.entry("ExternalLoginLayoutBrowserTest", 90),
-          Map.entry("TwoFactorBrowserTest", 480),
+          Map.entry("TwoFactorBrowserTest", 1380),
+          Map.entry("TwoFactorLifecycleBrowserTest", 240),
+          Map.entry("TwoFactorPushBrowserTest", 540),
           // Neue Sicherheits-/Sitzungsjourneys zunächst geschätzt, keine Laufzeitgarantie.
           Map.entry("AccountSecurityBrowserTest", 120),
           Map.entry("SessionManagementBrowserTest", 130),
@@ -81,6 +84,10 @@ final class BrowserExecutionPlan {
       builder.filters(TagFilter.includeTags("fast"));
     } else if (suite.equals("two-factor-recovery-output")) {
       builder.filters(TagFilter.includeTags("recovery-output"));
+    } else if (suite.equals("two-factor-setup")) {
+      builder.filters(TagFilter.includeTags("setup-screen"));
+    } else if (suite.equals("external-login-settings")) {
+      builder.filters(TagFilter.includeTags("provider-settings"));
     }
     return builder.build();
   }

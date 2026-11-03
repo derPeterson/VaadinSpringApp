@@ -18,6 +18,7 @@ import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
+import de.derpeterson.browsertests.pages.TwoFactorPage;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
@@ -294,7 +295,7 @@ public class UserAccessBrowserTest extends BrowserFixture {
   @Description(
       """
       1. Eigenes normales Konto über die Benutzerverwaltung anlegen und in getrenntem Browserkontext anmelden.
-      2. Als ursprünglicher Admin Administrator zusätzlich vergeben; das bereits angemeldete Konto erhält die Adminaktion.
+      2. Als ursprünglicher Admin Administrator zusätzlich vergeben; die bestehende Sitzung richtet zuerst die nun verpflichtende 2FA ein und erhält danach die Adminaktion.
       3. Dort den Adminbereich und ein ungespeichertes Benutzerformular öffnen.
       4. Als ursprünglicher Admin Administrator entziehen: betroffene Sitzung landet automatisch auf Home, altes Formular verschwindet.
       5. Dieselbe Sitzung öffnet ihre Inbox und findet die Rollenbenachrichtigung; kein Login-POST und dieselbe Session-ID.
@@ -326,6 +327,12 @@ public class UserAccessBrowserTest extends BrowserFixture {
       AdminUserDialog change = users.openEdit(email);
       change.setAdministrator(true);
       change.save();
+      // Der 2FA-Pfad darf seine aktuelle Phase zusätzlich als Query enthalten.
+      assertThat(actor.page).hasURL(java.util.regex.Pattern.compile(".*/two-factor.*"));
+      TwoFactorPage.completeIfRequired(actor.page, email, BrowserTestAccounts.USER_PASSWORD);
+      // Die verpflichtende Einrichtung führt bereits ins nun zugängliche Admin-Dashboard.
+      // Den Wechsel aus dem Portal weiterhin über die echte Menüaktion prüfen.
+      actor.page.navigate(path(HOME_ROUTE));
       menu.open();
       Locator manage =
           actor.page.getByRole(

@@ -156,7 +156,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       """
         1. Allgemein über die native Konfigurationshierarchie öffnen und einen ungespeicherten Namen eingeben.
         2. Elternpunkt per Klick einklappen: Allgemein bleibt sichtbar und die Eingabe erhalten.
-        3. Per Enter öffnen, per Leertaste schließen und erneut öffnen; alle sieben Gruppen bleiben erreichbar.
+        3. Per Enter öffnen, per Leertaste schließen und erneut öffnen; alle acht freigegebenen Gruppen bleiben erreichbar, die beiden Superadmin-Gruppen fehlen.
         4. Über das Avatarmenü die andere Sprache wählen und wieder zurück: Gruppe und Eingabe bleiben erhalten.
         5. Benutzerverwaltung und Security öffnen: URL, Refresh, Zurück/Vorwärts und Direktlink im neuen Tab prüfen.
         **Erwartet:** Elternpunkt navigiert nicht; Bedienung und Sprache erhalten Entwürfe. URL stellt den gewählten Bereich wieder her.
@@ -189,13 +189,20 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     page.keyboard().press("Enter");
     assertThat(parent).hasJSProperty("expanded", true);
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
-      assertThat(
-              parent.getByRole(
-                  AriaRole.LINK,
-                  new Locator.GetByRoleOptions()
-                      .setName(texts.getAdminConfigGroupLabel(group))
-                      .setExact(true)))
-          .isVisible();
+      Locator groupLink =
+          parent.getByRole(
+              AriaRole.LINK,
+              new Locator.GetByRoleOptions()
+                  .setName(
+                      group == AdminConfigGroup.TWO_FACTOR
+                          ? texts.getTwoFactorNavigationLabel()
+                          : texts.getAdminConfigGroupLabel(group))
+                  .setExact(true));
+      if (group.isSuperadminOnly()) {
+        assertThat(groupLink).hasCount(0);
+      } else {
+        assertThat(groupLink).isVisible();
+      }
     }
     UiTexts other =
         new de.derpeterson.browsertests.i18n.UiTexts(texts.language().equals("de") ? "en" : "de");
@@ -353,10 +360,10 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   }
 
   @Test
-  @DisplayName("CONFIG-05D: Alle 30 Feldinfos bleiben in ihren acht Gruppen erreichbar")
+  @DisplayName("CONFIG-05D: Normale Admins erreichen alle 30 Feldinfos ihrer acht Gruppen")
   @Description(
       """
-        1. Alle acht Konfigurationsgruppen über die native SideNav öffnen.
+        1. Alle acht für normale Admins freigegebenen Konfigurationsgruppen über die native SideNav öffnen.
         2. Jede Feldinfo per Klick öffnen: übersetzter Standardwert und nicht leere Eingaberegeln.
         3. Nur eine Info gleichzeitig sichtbar; per Info-Button wieder schließen.
         4. Ein gesetzter Standard-Geheimschlüssel bleibt vertraulich; das leere SMTP-Passwort zeigt ausdrücklich den Leerhinweis.
@@ -367,9 +374,9 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     ConfigurationPage settings = admin();
     int total = 0;
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
-      if (group == AdminConfigGroup.EXTERNAL_LOGIN) {
-        // Die geführte Anbietereinrichtung hat eigene Hinweise und OIDC-08 statt
-        // ConfigEntry-Hilfen.
+      if (group.isSuperadminOnly()) {
+        // Anbieter- und 2FA-Konfiguration bleiben dem Superadmin vorbehalten.
+        // Ihre eigenen Formulare werden in OIDC-08 und MFA-03 geprüft.
         continue;
       }
       settings.open(group);

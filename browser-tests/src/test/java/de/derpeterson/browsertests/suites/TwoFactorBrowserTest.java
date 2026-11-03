@@ -37,12 +37,14 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
+  @Tag("setup-screen")
   @DisplayName(
       "MFA-17: Verpflichtender Einstieg A nutzt die frische Passwortanmeldung ohne zweite Abfrage")
   void requiredIntroductionReusesFreshPasswordWithoutGrantingPortalAccess(int width) {
     LoginPage login = new LoginPage(page);
     login.open();
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
     String email = "intro-mfa-" + UUID.randomUUID() + "@example.test";
     new AdminUsersPage(page).createUser(email, BrowserTestAccounts.USER_PASSWORD, true, true);
     try (BrowserActor actor = new BrowserActor(browser)) {
@@ -70,7 +72,11 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       actor.page.locator("#two-factor-cancel").click();
       assertThat(actor.page).hasURL(Pattern.compile(".*/login$"));
       actor.page.navigate("/home");
+      assertThat(actor.page.locator(".public-header")).isVisible();
+      actor.page.navigate("/account");
       assertThat(actor.page).hasURL(Pattern.compile(".*/login.*"));
+      new UserMenu(actor.page).selectTestLanguage();
+      fresh.assertFormVisible();
       fresh.signInFirstFactor(email, BrowserTestAccounts.USER_PASSWORD);
       actor.page.reload();
       assertThat(actor.page.locator("#two-factor-introduction-title")).isVisible();
@@ -79,9 +85,115 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       actor.page.locator("#two-factor-submit").click();
       assertThat(actor.page.locator("#two-factor-qr")).isVisible();
       assertThat(actor.page.locator("#two-factor-password")).hasCount(0);
+      assertEnrollmentControls(actor.page);
       TwoFactorPage.enrollCurrent(actor.page, email);
       assertThat(actor.page).hasURL(Pattern.compile(".*/admin$"));
     }
+  }
+
+  private void assertEnrollmentControls(Page enrollment) {
+    assertThat(enrollment.locator(".two-factor-method-tabs")).hasCSS("height", "42px");
+    assertThat(enrollment.locator(".two-factor-app-links a")).hasCount(3);
+    assertThat(enrollment.locator(".two-factor-app-compatibility"))
+        .hasText(texts.getTwoFactorAppCompatibility());
+    assertThat(enrollment.locator("#two-factor-qr")).hasJSProperty("complete", true);
+    assertTrue(
+        (Boolean)
+            enrollment
+                .locator("#two-factor-qr-pane")
+                .evaluate(
+                    """
+                pane => {
+                  const image = pane.querySelector('img');
+                  const bounds = pane.getBoundingClientRect();
+                  const qr = image.getBoundingClientRect();
+                  return image.complete && image.naturalWidth > 0
+                    && Math.abs(qr.x + qr.width / 2 - bounds.x - bounds.width / 2) <= 1;
+                }
+                """));
+    enrollment.locator("#two-factor-manual-tab").click();
+    Locator manual = enrollment.locator("#two-factor-manual-key");
+    Locator manualInput = manual.locator("textarea");
+    // Genau zwei Zeilen aus Base32-Zeichen und Gruppierungsleerzeichen zulassen.
+    assertThat(manualInput).hasValue(Pattern.compile("[A-Z2-7 ]+\\n[A-Z2-7 ]+"));
+    assertThat(manual).hasJSProperty("value", "");
+    assertThat(manualInput).hasAttribute("readonly", "");
+    String formattedKey = manualInput.inputValue();
+    manualInput.focus();
+    assertThat(manual).hasJSProperty("value", "");
+    assertThat(manual.locator("#two-factor-copy-key")).hasCSS("color", "rgb(56, 189, 248)");
+    enrollment.context().grantPermissions(java.util.List.of("clipboard-read", "clipboard-write"));
+    manual.locator("#two-factor-copy-key").click();
+    assertThat(
+            enrollment
+                .locator("vaadin-notification-card:not([closing])")
+                .filter(new Locator.FilterOptions().setHasText(texts.getTwoFactorManualCopied())))
+        .isVisible();
+    org.junit.jupiter.api.Assertions.assertEquals(
+        formattedKey.replace(" ", "").replace("\n", ""),
+        enrollment.evaluate("navigator.clipboard.readText()"));
+    TwoFactorPage.assertCopyFailure(
+        enrollment, manual.locator("#two-factor-copy-key"), texts.getTwoFactorManualCopyFailed());
+    assertThat(manualInput).hasValue(formattedKey);
+    assertThat(manual).hasJSProperty("value", "");
+    UiTexts other = new UiTexts(texts.language().equals("de") ? "en" : "de");
+    new UserMenu(enrollment).selectLanguage(other.language());
+    assertThat(enrollment.locator("#two-factor-manual-tab")).hasAttribute("selected", "");
+    assertThat(manual).hasJSProperty("label", other.getTwoFactorManualLabel());
+    assertThat(manualInput).hasValue(formattedKey);
+    assertThat(manual).hasJSProperty("value", "");
+    new UserMenu(enrollment).selectTestLanguage();
+    assertThat(manualInput).hasValue(formattedKey);
+    AllurePlaywright.attachScreenshot(
+        "Manueller Einrichtungsschlüssel nach Sprachwechsel", enrollment);
+    enrollment.locator("#two-factor-qr-tab").click();
+    assertThat(enrollment.locator("#two-factor-qr")).isVisible();
+    assertThat(enrollment.locator("#two-factor-qr")).hasJSProperty("complete", true);
+    AllurePlaywright.attachScreenshot("QR-Einrichtung mit nativer OTP-Eingabe", enrollment);
+    assertOtpInput(enrollment);
+    AllurePlaywright.attachScreenshot("Fehlermarkierung bei leerem Authenticator-Code", enrollment);
+  }
+
+  private void assertOtpInput(Page enrollment) {
+    Locator otp = enrollment.locator("#two-factor-enrollment-code");
+    Locator slots = otp.locator("[part=slot]");
+    Locator input = otp.locator("input");
+    assertThat(slots).hasCount(6);
+    assertThat(slots).hasText(new String[] {"•", "•", "•", "•", "•", "•"});
+    assertThat(otp.locator("[part=slot][active]:not([filled])")).hasCount(1);
+    assertThat(input).not().isFocused();
+    input.pressSequentially("12");
+    assertThat(otp.locator("[part=slot][filled]")).hasCount(2);
+    assertThat(slots.nth(2)).hasAttribute("active", "");
+    input.press("Backspace");
+    assertThat(input).hasValue("1");
+    assertThat(slots.nth(1)).hasAttribute("active", "");
+    input.press("ArrowLeft");
+    assertThat(slots.first()).hasAttribute("active", "");
+    input.press("ArrowRight");
+    assertThat(slots.nth(1)).hasAttribute("active", "");
+    for (String copiedCode : new String[] {"123456", "123 456"}) {
+      enrollment.evaluate("value => navigator.clipboard.writeText(value)", copiedCode);
+      input.press("ControlOrMeta+A");
+      input.press("ControlOrMeta+V");
+      assertThat(input).hasValue("123456");
+      assertThat(slots).hasText(new String[] {"1", "2", "3", "4", "5", "6"});
+      assertThat(input).hasCSS("color", "rgba(0, 0, 0, 0)");
+      assertTrue(
+          (Boolean)
+              enrollment.evaluate("document.documentElement.scrollWidth <= window.innerWidth"));
+    }
+    input.fill("");
+    enrollment.locator("#two-factor-submit").click();
+    assertThat(otp).hasAttribute("invalid", "");
+    assertThat(
+            enrollment
+                .locator("vaadin-notification-card:not([closing])")
+                .filter(
+                    new Locator.FilterOptions()
+                        .setHasText(texts.getBaseValidationRequiredMessage())))
+        .isVisible();
+    assertThat(enrollment.locator("#two-factor-qr")).isVisible();
   }
 
   @ParameterizedTest
@@ -361,6 +473,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
+  @Tag("setup-screen")
   @DisplayName(
       "MFA-06: HTML-Momentaufnahmen zeigen Einrichtung, Codeausgabe, Rollenregeln und Kontakt")
   void referenceStatesAndKeyboardNavigation(int width) {
@@ -373,16 +486,40 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(page.locator(".two-factor-introduction-title"))
         .hasText(new UiTexts("de").getTwoFactorRequiredTitle());
     AllurePlaywright.attachScreenshot("HTML: verpflichtende Ersteinrichtung Variante A", page);
+    page.locator("[data-menu-language=" + texts.language() + "]").click();
+    assertThat(page.locator(".two-factor-introduction-title"))
+        .hasText(texts.getTwoFactorRequiredTitle());
     page.locator("[data-mfa-continue]").click();
     assertThat(page.locator(".mfa-qr-placeholder")).isVisible();
-    page.locator("[data-mfa-phase=confirm]").click();
+    assertThat(page.locator(".mfa-setup-tabs")).hasCSS("height", "42px");
+    page.locator("#mfa-manual-tab").click();
+    Locator referenceKey = page.locator("#mfa-manual-key");
+    assertThat(referenceKey).hasAttribute("readonly", "");
+    String exampleKey = referenceKey.inputValue();
+    UiTexts other = new UiTexts(texts.language().equals("de") ? "en" : "de");
+    page.locator("[data-menu-language=" + other.language() + "]").click();
+    assertThat(page.locator("#mfa-manual-tab")).hasAttribute("aria-selected", "true");
+    assertThat(page.locator(".mfa-manual-hint")).hasText(other.getTwoFactorManualHint());
+    assertThat(referenceKey).hasValue(exampleKey);
+    page.locator("[data-menu-language=" + texts.language() + "]").click();
+    assertThat(page.locator(".mfa-manual-hint")).hasText(texts.getTwoFactorManualHint());
+    AllurePlaywright.attachScreenshot("HTML: manueller Schlüssel nach Sprachwechsel", page);
+    page.locator("#mfa-qr-tab").click();
+    assertThat(page.locator(".mfa-qr-placeholder")).isVisible();
+    AllurePlaywright.attachScreenshot("HTML: QR-Einrichtung in der Testsprache", page);
+    page.locator("#mfa-setup-code").fill("123456");
+    page.locator("[data-mfa-continue]").click();
+    page.locator("[data-mfa-saved]").check();
+    // Die noch nicht neu gestalteten Bestätigungs-/Hilfemomentaufnahmen sind deutsch.
+    page.locator("[data-menu-language=de]").click();
+    page.locator("[data-mfa-continue]").click();
     page.locator("[data-mfa-go=recover]").click();
     assertThat(page.locator("[data-mfa-phase-content]")).hasAttribute("data-phase", "recover");
     assertThat(page.locator("[data-mfa-phase-content]"))
         .containsText(new UiTexts("de").getTwoFactorRecoverHint());
-    page.locator("[data-mfa-phase=qr]").click();
+    page.locator("[data-mfa-continue]").click();
     assertThat(page.locator(".mfa-qr-placeholder")).isVisible();
-    page.locator("[data-mfa-phase=codes]").click();
+    page.locator("[data-mfa-continue]").click();
     assertThat(page.locator(".mfa-recovery-code-field input")).hasCount(10);
     assertThat(page.locator(".mfa-recovery-code-field input").first()).isVisible();
     assertThat(page.locator(".mfa-recovery-code-field input").first())
@@ -608,6 +745,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         .fill(TwoFactorPage.nextCode(page, BrowserTestAccounts.ADMIN_EMAIL));
     page.locator("#two-factor-action-confirm").click();
     assertThat(page.locator("#two-factor-recovery-toggle")).isVisible();
+    java.time.Instant shortProofExpired = java.time.Instant.now().plusSeconds(301);
     assertThat(page.locator("#two-factor-recovery-codes")).isVisible();
     page.locator("#two-factor-recovery-toggle").click();
     assertThat(page.locator("#two-factor-recovery-codes")).isHidden();
@@ -671,6 +809,23 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(page).hasURL(outputPage);
     org.junit.jupiter.api.Assertions.assertEquals(
         originalCodes, TwoFactorPage.recoveryCodeValues(page));
+    if (width == 1280) {
+      // Die echte Fünf-Minuten-Frist darf nur den kurzen Sicherheitsnachweis beenden,
+      // nicht die noch unbestätigte sitzungsgebundene Codeausgabe oder deren PDF.
+      page.waitForCondition(
+          () -> java.time.Instant.now().isAfter(shortProofExpired),
+          new Page.WaitForConditionOptions().setTimeout(310_000));
+      page.reload();
+      org.junit.jupiter.api.Assertions.assertEquals(
+          originalCodes, TwoFactorPage.recoveryCodeValues(page));
+      com.microsoft.playwright.Download laterDownload =
+          page.waitForDownload(() -> page.locator("#two-factor-download-pdf").click());
+      org.junit.jupiter.api.Assertions.assertNull(laterDownload.failure());
+      byte[] laterBytes = java.nio.file.Files.readAllBytes(laterDownload.path());
+      assertTrue(
+          new String(laterBytes, 0, 5, java.nio.charset.StandardCharsets.US_ASCII).equals("%PDF-"));
+      assertThat(page).hasURL(outputPage);
+    }
     AllurePlaywright.attachScreenshot("Einmalige Ausgabe synthetischer Ersatzcodes", page);
     page.locator("#two-factor-codes-saved input").setChecked(true);
     page.locator("#two-factor-submit").click();
