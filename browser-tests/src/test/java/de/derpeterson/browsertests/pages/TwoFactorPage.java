@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.crypto.Mac;
@@ -35,7 +36,7 @@ public final class TwoFactorPage {
             page.locator("#two-factor-introduction-title").isVisible()
                 || page.locator("#two-factor-password").isVisible()
                 || page.locator("#two-factor-code").isVisible()
-                || page.locator("#two-factor-recovery-codes").isVisible());
+                || page.locator("#two-factor-recovery-toggle").isVisible());
     if (page.locator("#two-factor-introduction-title").isVisible()) {
       page.locator("#two-factor-submit").click();
       page.waitForCondition(
@@ -81,15 +82,26 @@ public final class TwoFactorPage {
   }
 
   public static void captureCodes(Page page, String email) {
+    assertThat(page.locator("#two-factor-recovery-toggle")).isVisible();
+    if (page.locator("#two-factor-recovery-details").getAttribute("opened") == null) {
+      page.locator("#two-factor-recovery-toggle").click();
+    }
     assertThat(page.locator("#two-factor-recovery-codes")).isVisible();
-    String values =
-        page.frameLocator("#two-factor-recovery-codes")
-            .locator("#recovery-code-values")
-            .innerText();
-    CODES.put(email, new ArrayDeque<>(Arrays.asList(values.strip().split("\\s+"))));
+    CODES.put(email, new ArrayDeque<>(recoveryCodeValues(page)));
     if (CODES.get(email).size() != 10) {
       throw new AssertionError("Ten issued recovery codes required");
     }
+  }
+
+  public static List<String> recoveryCodeValues(Page page) {
+    assertThat(page.locator("#two-factor-copy-codes")).isEnabled();
+    assertThat(page.locator("#two-factor-recovery-codes vaadin-text-field")).hasCount(10);
+    @SuppressWarnings("unchecked")
+    List<String> values =
+        (List<String>)
+            page.locator("#two-factor-recovery-codes input")
+                .evaluateAll("inputs => inputs.map(input => input.value)");
+    return values;
   }
 
   public static String nextCode(Page page, String email) {

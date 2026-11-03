@@ -36,22 +36,36 @@ Die Google-/Microsoft-Verwaltung ist im selben Paket auf Superadmins beschränkt
 
 ## Gestaltung der verpflichtenden Ersteinrichtung
 
-### Ersatzcodeausgabe: Auswahl offen
+### Ersatzcodeausgabe: Variante B mit kompakter Codeübersicht
+
+Die [aktuelle Stitch-Verfeinerung](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=11513303871659797662)
+zeigt nach erneuter Kritik-Anfrage den Sicherungs-Switch rechts und die Beschriftung
+links sowie einen stärker gerahmten Tresorbereich. Die Darstellung wurde über die CLI
+mit einem aktuellen Screenshot der synthetischen HTML-Referenz erzeugt, exportiert
+und gesichtet. Ein getrennter Kritiktext war im CLI-Ergebnis nicht enthalten.
+Übernommen ist ausschließlich die Switch-Position rechts mit linksbündigem Text.
+Der zusätzliche Tresorrahmen und die übrigen Änderungen sind nicht gewünscht.
 
 Die folgenden drei Stitch-Exporte liegen im bestehenden 2FA-Projekt; sie verwenden
-ausschließlich synthetische Codes. Noch keine Designübernahme beauftragt:
+ausschließlich synthetische Codes. Ausgewählt ist B mit einklappbarer Codeübersicht aus C:
 
 - [A: zentrale Sicherheitskarte](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=12100564379038591947)
 - [B: zweispaltiges Panel mit Tresorillustration](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=16507521264873901502)
 - [C: Sicherungsaktionen und einklappbare Codeübersicht](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=18067519117044536055)
 
-Bevorzugte Grundlage ist B mit kompakter Codeumschaltung; Entscheidung gemeinsam
-treffen. Zusätzliche Statusanzeigen, veränderte Codestruktur, technische
+Die Umsetzung verwendet native Vaadin-Layouts, `Details`, den vorhandenen `Switch`
+und den geschützten Download. Links stehen die Tresorillustration mit blauem Glow,
+drei kurze Hinweise und darunter die vollbreiten Sicherungsaktionen mit Trennlinie;
+rechts zehn native schreibgeschützte Textfelder mit Kopieraktion, einklappbar über
+einen rahmenlosen Details-Button, und die Bestätigung ohne zusätzlichen Helpertext. Schmale
+Ansichten ordnen die Bereiche untereinander an. Die gemeinsame Designabnahme steht aus.
+Zusätzliche Statusanzeigen, veränderte Codestruktur, technische
 Download-Erklärungen und falsche Behauptungen über einen unvollständigen Login
 sind keine Anforderungen. Die Codebestätigung soll ein bewusster Switch statt
 eines zusätzlichen Bestätigungsdialogs sein. Sie beweist keine tatsächliche Ablage.
-Kopieren und PDF bleiben vor der Bestätigung verfügbar. Sicherheitsfristen und
-Nachweise bleiben unverändert. Der PDF-Fehler ist unabhängig vom Entwurf behoben;
+Kopieren und PDF bleiben bis zur Bestätigung oder zum Ende der berechtigten Sitzung
+verfügbar. Die Fünf-Minuten-Frist gilt nur für Sicherheitsbestätigungen; deren Nachweise
+bleiben unverändert. Der PDF-Fehler ist unabhängig vom Entwurf behoben;
 der gezielte Ersatzcode-/PDF-Nachtest auf Desktop/Smartphone in DE/EN ist bestanden.
 
 Die reine Textkritik zum fertigen QR-/Manuell-Einrichtungsschritt wurde nach

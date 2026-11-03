@@ -3,7 +3,7 @@
   const codes = Array.from({length:10},(_,index)=>`${String(index).padStart(8,'0')}-12345678-ABCDEF01-23456789`).join('\n');
   const symbol = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/></svg>';
   const notify = text => window.PublicNotifications?.show(text,'normal','',4000);
-  const numberIcon = number => '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (number === 1 ? '<path d="M10 10l2-2v8"/>' : '<path d="M10 8h3a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 0-1 1v3h4"/>') + '<path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9Z"/></svg>';
+  const numberIcon = number => '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (number === 1 ? '<path d="M10 10l2-2v8"/>' : number === 2 ? '<path d="M10 8h3a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 0-1 1v3h4"/>' : '<path d="M10 9a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1"/>') + '<path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9Z"/></svg>';
   const renderEnrollment = (root, english) => {
     const selectedMethod = root.dataset.setupMethod || 'qr';
     const text = english ? {
@@ -100,11 +100,50 @@
     ['focus','blur','click','keyup'].forEach(name => input.addEventListener(name,refreshSlots));
     refreshSlots();
   };
+  const renderRecovery = (root, english, saved) => {
+    const text = english ? {
+      once:'Single use',onceHint:'Each code replaces one authenticator confirmation and works only once.',
+      restore:'Restore access',restoreHint:'If you lose your app, choose “Restore authenticator” after signing in and use an unused recovery code.',
+      storage:'Keep them safe',storageHint:'Save or print the codes. Keep them in a safe place separate from your device. They will not be displayed again later.',
+      copy:'Copy all codes',pdf:'Download PDF',summary:'Your 10 recovery codes',saved:'I have saved my recovery codes securely.'
+    } : {
+      once:'Einmal verwendbar',onceHint:'Jeder Code ersetzt eine Authenticator-Bestätigung und gilt nur einmal.',
+      restore:'Zugang wiederherstellen',restoreHint:'Bei Verlust Ihrer App wählen Sie nach der Anmeldung „Authenticator wiederherstellen“ und verwenden einen unbenutzten Ersatzcode.',
+      storage:'Sicher aufbewahren',storageHint:'Speichern oder drucken Sie die Codes. Bewahren Sie sie an einem sicheren Ort getrennt von Ihrem Gerät auf. Sie werden später nicht erneut angezeigt.',
+      copy:'Alle Codes kopieren',pdf:'PDF herunterladen',summary:'Ihre 10 Ersatzcodes',saved:'Ich habe meine Ersatzcodes sicher gespeichert.'
+    };
+    const copyIcon = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M16 4h2a2 2 0 0 1 2 2v4M21 14H11m4-4-4 4 4 4"/></svg>';
+    const downloadIcon = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>';
+    const summaryIcon = "<svg aria-hidden=\"true\" class=\"lucide lucide-key-round\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z\" /> <circle cx=\"16.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\" /> </svg>";
+    const codeLabel = english ? 'Recovery code' : 'Ersatzcode';
+    const copyLabel = english ? 'Copy' : 'Kopieren';
+    const codeFields = codes.split('\n').map((code,index) => `<div class="mfa-recovery-code-field"><input readonly autocomplete="off" value="${code}" aria-label="${codeLabel} ${index+1}"><button type="button" data-mfa-copy-code aria-label="${copyLabel}: ${codeLabel} ${index+1}" data-tooltip="${copyLabel}">${copyIcon}</button></div>`).join('');
+    const hint = (number,title,description) => `<div class="mfa-recovery-hint">${numberIcon(number)}<div><strong>${title}</strong><p class="portal-copy">${description}</p></div></div>`;
+    root.innerHTML = `<div class="mfa-recovery-layout"><div class="mfa-recovery-explanation"><img class="mfa-recovery-art" src="assets/two-factor-vault.svg" alt="">${hint(1,text.once,text.onceHint)}${hint(2,text.restore,text.restoreHint)}${hint(3,text.storage,text.storageHint)}<div class="mfa-recovery-actions"><button type="button" class="portal-button" data-mfa-copy-codes>${copyIcon}<span>${text.copy}</span></button><button type="button" class="portal-button" data-mfa-download-demo>${downloadIcon}<span>${text.pdf}</span></button></div></div><div class="mfa-recovery-controls"><div class="mfa-recovery-codes-section"><div class="mfa-recovery-codes-header"><span class="mfa-recovery-heading">${summaryIcon}<span>${text.summary}</span></span><button type="button" class="mfa-recovery-toggle" data-mfa-toggle-codes aria-controls="mfa-recovery-code-list" aria-expanded="false"><span>Details</span><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></div><details id="mfa-recovery-code-list" class="mfa-recovery-details"><summary>${text.summary}</summary><div class="mfa-recovery-code-fields">${codeFields}</div></details></div><div class="mfa-recovery-confirmation"><label class="mfa-recovery-saved"><input type="checkbox" role="switch" data-mfa-saved><span>${text.saved}</span></label></div></div></div>`;
+    root.querySelectorAll('[data-mfa-copy-code]').forEach(button => button.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(button.previousElementSibling.value); notify(english ? 'The recovery code was copied.' : 'Der Ersatzcode wurde kopiert.'); }
+      catch { notify(english ? 'Please select and copy the code.' : 'Bitte markieren und kopieren Sie den Code.'); }
+    }));
+    const details = root.querySelector('details');
+    details.open = root.dataset.codesVisible !== 'false';
+    const toggle = root.querySelector('[data-mfa-toggle-codes]');
+    const refreshToggle = () => { root.dataset.codesVisible = String(details.open); toggle.setAttribute('aria-expanded', String(details.open)); toggle.querySelector('path').setAttribute('d', details.open ? 'm6 9 6 6 6-6' : 'm9 6 6 6-6 6'); };
+    toggle.addEventListener('click', () => { details.open = !details.open; refreshToggle(); });
+    details.addEventListener('toggle', refreshToggle);
+    refreshToggle();
+    root.querySelector('[data-mfa-saved]').checked = saved;
+    root.querySelector('[data-mfa-copy-codes]').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(codes); notify(english ? 'The recovery codes were copied.' : 'Die Ersatzcodes wurden kopiert.'); }
+      catch { notify(english ? 'Please select and copy the codes.' : 'Bitte markieren und kopieren Sie die Codes.'); }
+    });
+    root.querySelector('[data-mfa-download-demo]').addEventListener('click', () => notify(english ? 'Design preview: The PDF download is available in the Vaadin application.' : 'Gestaltungsvorschau: Der PDF-Download ist in der Vaadin-Anwendung verfügbar.'));
+  };
   const renderPhase = (root, phase) => {
     const isPublic = root.hasAttribute('data-mfa-phase-content');
     if (isPublic) {
       root.closest('.vp-card').classList.toggle('mfa-introduction', phase === 'intro');
       root.closest('.vp-card').classList.toggle('mfa-setup', phase === 'qr');
+      root.closest('.vp-card').classList.toggle('mfa-recovery', phase === 'codes');
       const english = document.querySelector('[data-menu-language="en"][aria-pressed="true"]');
       const action = document.querySelector('#public-two-factor [data-mfa-continue]');
       action.disabled = phase === 'codes';
@@ -116,7 +155,7 @@
       }
       const cancel = document.querySelector('#public-two-factor .vp-card-foot a');
       cancel.href = '#public-login';
-      cancel.setAttribute('aria-disabled', String(phase === 'codes'));
+      cancel.hidden = phase === 'codes';
       cancel.classList.toggle('danger', phase === 'intro' || phase === 'qr');
       cancel.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9"/></svg><span>' + (english ? 'Sign out' : 'Abmelden') + '</span>';
       if (phase === 'qr') {
@@ -129,21 +168,19 @@
         return;
       }
       if (phase === 'codes') {
+        if (root.dataset.phase !== 'codes') { root.dataset.codesVisible = 'true'; }
         const saved = root.dataset.phase === 'codes' && root.dataset.codesSaved === 'true';
         root.dataset.codesSaved = String(saved);
         root.closest('.vp-card').querySelector('.vp-card-head h2').textContent = english ? 'Keep your recovery codes safe' : 'Ersatzcodes sicher aufbewahren';
-        action.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span>' + (english ? 'Codes saved — continue' : 'Codes gesichert und weiter') + '</span>';
-        cancel.href = 'portal.html#security';
-        cancel.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg><span>' + (english ? 'Back to account' : 'Zurück zum Konto') + '</span>';
-        root.innerHTML = `<p class="portal-copy">${english ? 'Save or print these recovery codes. Each code works only once. Keep them in a safe place separate from your device.' : 'Speichern oder drucken Sie diese Ersatzcodes. Jeder Code gilt nur einmal. Bewahren Sie sie getrennt von Ihrem Gerät sicher auf.'}</p><pre class="mfa-code-values">${codes}</pre><p class="portal-copy">${english ? 'The application provides a protected PDF download with its service logo.' : 'Die Anwendung bietet einen geschützten PDF-Download mit Service-Logo.'}</p><div class="vp-options"><label><input type="checkbox" role="switch" data-mfa-saved> ${english ? 'I have saved my recovery codes securely.' : 'Ich habe meine Ersatzcodes sicher gespeichert.'}</label></div>`;
+        root.closest('.vp-card').querySelector('.vp-card-head p').textContent = english ? 'Save your recovery codes for an emergency.' : 'Sichern Sie Ihre Ersatzcodes für den Notfall.';
+        action.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span>' + (english ? 'Codes saved' : 'Codes gesichert') + '</span>';
+        renderRecovery(root, Boolean(english), saved);
         root.querySelector('[data-mfa-saved]').addEventListener('change', event => {
           root.dataset.codesSaved = String(event.target.checked);
           action.disabled = !event.target.checked;
-          cancel.setAttribute('aria-disabled', String(!event.target.checked));
         });
         root.querySelector('[data-mfa-saved]').checked = saved;
         action.disabled = !saved;
-        cancel.setAttribute('aria-disabled', String(!saved));
         root.dataset.phase = phase;
         return;
       }
@@ -154,7 +191,7 @@
       setup: '<p class="portal-copy">Bestätigen Sie zuerst Ihre Identität, bevor Sie einen Authenticator einrichten.</p><label>Aktuelles Passwort •<input type="password" autocomplete="off" placeholder="Passwort eingeben"></label>',
       email: '<p class="portal-copy">Geben Sie den Einmalcode ein, den wir zur erstmaligen Einrichtung an Ihre bestätigte Kontaktadresse senden.</p><label>E-Mail-Code •<input inputmode="numeric" placeholder="Achtstelliger Code"></label>',
       qr: '<p class="portal-copy">Scannen Sie den QR-Code mit einer kompatiblen Authenticator-App. Sie können beispielsweise Google Authenticator, Microsoft Authenticator oder 2fast für Windows verwenden.</p><div class="mfa-qr-placeholder">QR-Code (Gestaltungsvorschau)</div><div class="mfa-phase-buttons"><a href="https://support.google.com/accounts/answer/1066447" target="_blank" rel="noopener noreferrer">Google Authenticator</a><a href="https://support.microsoft.com/account-billing/download-and-install-the-microsoft-authenticator-app-351498fc-850a-45da-b7b6-27e523b8702a" target="_blank" rel="noopener noreferrer">Microsoft Authenticator</a><a href="https://2fast-app.de/" target="_blank" rel="noopener noreferrer">2fast (Windows)</a></div><label>Erster Authenticator-Code •<input inputmode="numeric" placeholder="Sechsstelliger Code"></label>',
-      codes: `<p class="portal-copy">Speichern oder drucken Sie diese Ersatzcodes. Jeder Code gilt nur einmal. Neue Codes widerrufen alle alten.</p><pre class="mfa-code-values">${codes}</pre><p class="portal-copy">Die echte Anwendung bietet hier einen geschützten PDF-Download mit Logo und Erklärung.</p>`,
+      codes: `<p class="portal-copy">Speichern oder drucken Sie diese Ersatzcodes. Jeder Code gilt nur einmal. Neue Codes widerrufen alle alten.</p><div class="mfa-recovery-code-fields">${codeFields}</div><p class="portal-copy">Die echte Anwendung bietet hier einen geschützten PDF-Download mit Logo und Erklärung.</p>`,
       help: '<p class="portal-copy">Eine Anfrage ersetzt keinen Identitätsnachweis. Ohne Authenticator oder gültigen Ersatzcode können wir das Konto nicht entsperren.</p><label>Ihre Anfrage<textarea rows="4" maxlength="2000" placeholder="Keine Passwörter oder Ersatzcodes eingeben"></textarea></label>'
     };
     root.innerHTML=contents[phase]||contents.confirm;

@@ -648,7 +648,12 @@ class PasswordResetServiceTest {
                 .map(match -> match.group(1))
                 .collect(Collectors.toSet());
         assertEquals(
-            Set.of("SERVICE_NAME", "SERVICE_LOGO", "RESET_PASSWORD_LINK", "COPYRIGHT_TEXT"),
+            Set.of(
+                "SERVICE_NAME",
+                "SERVICE_LOGO",
+                "RESET_PASSWORD_LINK",
+                "COPYRIGHT_TEXT",
+                "INTER_FONT_STYLESHEET"),
             placeholders);
       }
     }

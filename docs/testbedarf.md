@@ -6,7 +6,20 @@
   Der angepasste Lifecycle-Fall prüft dieselben Codes und die bestätigte Sicherung
   nach DE/EN-Wechsel sowie die übersetzte native Downloadaktion. Den vorhandenen
   Lifecycle-Fall mit dem aktuellen Image ausführen; der gezielte PDF-Nachtest
-  ersetzt diesen weiteren Ablauf nicht.
+  ersetzt diesen weiteren Ablauf nicht. Die neue B-Anordnung zusätzlich mit
+  standardmäßig aufgeklapptem nativen `Details`, Kopieren/PDF auch nach Einklappen und Erhalt
+  des Ein-/Ausklappzustands nach Sprachwechsel prüfen. Desktop/Smartphone und
+  den einzigen gesperrten Abschlussbutton bis zur Sicherungsbestätigung sowie
+  den ausgeblendeten Zurück-Button berücksichtigen. Zehn native schreibgeschützte
+  Textfelder, Kopieren eines einzelnen Codes und Fokusfarbe des Suffixicons prüfen;
+  Hostwerte müssen auch nach Feldfokus und Sprachwechsel leer bleiben.
+  Nach mehr als fünf Minuten müssen Codes und PDF in derselben berechtigten Sitzung
+  noch verfügbar sein. „Codes gesichert“, Abmeldung und Sitzungsende sperren weitere
+  Abrufe; Sicherheitsbestätigungen behalten ihre kurze Frist. Switch rechts und
+  linksbündige Beschriftung auf schmalen Displays berücksichtigen.
+  Ein fehlgeschlagener PDF-Abruf zeigt eine Standardmeldung
+  und bietet keine TXT-/Fehlerdatei an. Die gezielten Frist- und Download-Helfertests
+  ersetzen den abschließenden Browser-Lifecycle nicht.
 
 - **QR-Einrichtungsscreen mit OTP-Eingabe: wartend auf abschließende UI-Prüfung.**
   Nur diesen Screen in Vaadin und HTML auf Desktop/Smartphone in DE/EN prüfen:

@@ -8,11 +8,12 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Switch;
+import com.vaadin.flow.component.checkbox.SwitchVariant;
 import com.vaadin.flow.component.dependency.StyleSheet;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.IFrame;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -30,6 +31,7 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.HasDynamicTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.streams.DownloadHandler;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.EqualButtonWidths;
@@ -54,6 +56,7 @@ import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.RecoveryCodeDownload;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -70,6 +73,7 @@ import org.springframework.security.authentication.LockedException;
 @StyleSheet("custom-theme/cosmos-external-login.css")
 @StyleSheet("custom-theme/cosmos-mfa.css")
 @StyleSheet("custom-theme/cosmos-mfa-methods.css")
+@StyleSheet("custom-theme/cosmos-mfa-recovery.css")
 public final class TwoFactorView extends VerticalLayout
     implements BeforeEnterObserver, HasDynamicTitle {
   private final transient MessageProperties texts;
@@ -99,6 +103,7 @@ public final class TwoFactorView extends VerticalLayout
   private boolean introduction;
   private boolean setupStarted;
   private boolean manualSetupSelected;
+  private boolean recoveryCodesVisible;
 
   public TwoFactorView(
       ConfigService config,
@@ -211,6 +216,7 @@ public final class TwoFactorView extends VerticalLayout
     introduction = false;
     panel.removeClassName("two-factor-introduction");
     panel.removeClassName("two-factor-setup");
+    panel.removeClassName("two-factor-recovery");
     cancel.removeClassName(DELETE_BUTTON);
     cancel.setPrefixComponent(AppIcon.CLOSE.create());
     submit.setPrefixComponent(AppIcon.CHECK.create());
@@ -231,6 +237,7 @@ public final class TwoFactorView extends VerticalLayout
     }
     submit.setEnabled(true);
     cancel.setEnabled(true);
+    cancel.setVisible(true);
     if (pending != null) {
       showPending();
     } else if (state.enrolled() && recovering) {
@@ -592,73 +599,236 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private void showRecoveryCodes() {
-    panel.setHeading(texts.getTwoFactorRecoveryTitle(), texts.getTwoFactorPageHint(), "");
-    addHint(texts.getTwoFactorRecoveryExplanation());
-    IFrame frame =
-        new IFrame(
-            documentPath(
-                "recovery/"
-                    + pending.id()
-                    + "/codes?lang="
-                    + VaadinSession.getCurrent().getLocale().getLanguage()));
-    frame.setId("two-factor-recovery-codes");
-    frame.getElement().setAttribute("title", texts.getTwoFactorCodeFrameTitle());
-    frame.addClassName("two-factor-code-document");
-    content.add(frame);
-    addHint(texts.getTwoFactorRecoveryStorage());
+    cancel.setVisible(false);
+    panel.addClassName("two-factor-recovery");
+    panel.setHeading(texts.getTwoFactorRecoveryTitle(), texts.getTwoFactorRecoverySubtitle(), "");
+    UUID outputId = pending.id();
+    if (!outputId.equals(recoveryOutputId)) {
+      recoveryOutputId = outputId;
+      recoverySaved.setValue(false);
+      recoveryCodesVisible = true;
+    }
+    Image illustration = new Image("images/two-factor-vault.svg", "");
+    illustration.addClassName("two-factor-recovery-art");
+    illustration.getElement().setAttribute("aria-hidden", "true");
+    VerticalLayout explanation =
+        new VerticalLayout(
+            illustration,
+            recoveryHint(
+                AppIcon.NUMBER_ONE,
+                texts.getTwoFactorRecoveryOnceTitle(),
+                texts.getTwoFactorRecoveryOnceHint()),
+            recoveryHint(
+                AppIcon.NUMBER_TWO,
+                texts.getTwoFactorRecoveryRestoreTitle(),
+                texts.getTwoFactorRecoveryRestoreHint()),
+            recoveryHint(
+                AppIcon.NUMBER_THREE,
+                texts.getTwoFactorRecoveryStorageTitle(),
+                texts.getTwoFactorRecoveryStorage()));
+    explanation.setPadding(false);
+    explanation.setSpacing(false);
+    explanation.addClassName("two-factor-recovery-explanation");
+    VerticalLayout codeFields = new VerticalLayout();
+    codeFields.setId("two-factor-recovery-codes");
+    codeFields.setPadding(false);
+    codeFields.setSpacing(false);
+    codeFields.setWidthFull();
+    codeFields.addClassName("two-factor-recovery-code-fields");
+    List<Button> copyButtons = new ArrayList<>();
+    for (int index = 1; index <= 10; index++) {
+      TextField field = new TextField();
+      field.setId("two-factor-recovery-code-" + index);
+      field.setAriaLabel(texts.getTwoFactorRecoveryCodeLabel() + " " + index);
+      field.setReadOnly(true);
+      field.setWidthFull();
+      field.setAutocomplete(Autocomplete.OFF);
+      field.addClassName("two-factor-recovery-code");
+      Button copyCode = new Button(AppIcon.CLIPBOARD_COPY.create());
+      copyCode.setAriaLabel(
+          texts.getProviderSettingsCopy() + ": " + field.getAriaLabel().orElseThrow());
+      copyCode.setTooltipText(texts.getProviderSettingsCopy());
+      copyCode.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+      copyCode.addClassName("two-factor-recovery-copy");
+      copyCode.setEnabled(false);
+      copyCode.addClickListener(
+          event ->
+              copyCode
+                  .getElement()
+                  .executeJs(
+                      """
+              const value = $0.inputElement?.value;
+              return value && navigator.clipboard
+                ? navigator.clipboard.writeText(value).then(() => true, () => false) : false;
+              """,
+                      field.getElement())
+                  .then(
+                      Boolean.class,
+                      copied -> showRecoveryCopyResult(copied, texts::getTwoFactorCodeCopied)));
+      field.setSuffixComponent(copyCode);
+      copyButtons.add(copyCode);
+      codeFields.add(field);
+    }
+    Details codes = new Details("", codeFields);
+    codes.setId("two-factor-recovery-details");
+    codes.setWidthFull();
+    codes.setOpened(recoveryCodesVisible);
+    Span codesHeading =
+        new Span(AppIcon.KEY.create(), new Span(texts.getTwoFactorRecoveryCodesSummary()));
+    codesHeading.setId("two-factor-recovery-heading");
+    codesHeading.addClassName("two-factor-recovery-heading");
+    Button toggle =
+        new Button(
+            texts.getBaseDetailsButton(),
+            recoveryCodesVisible ? AppIcon.ANGLE_DOWN.create() : AppIcon.ANGLE_RIGHT.create());
+    toggle.setId("two-factor-recovery-toggle");
+    toggle.setIconAfterText(true);
+    toggle.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    toggle.getElement().setAttribute("aria-controls", codes.getId().orElseThrow());
+    toggle.getElement().setAttribute("aria-expanded", Boolean.toString(recoveryCodesVisible));
+    toggle.setAriaLabel(
+        texts.getBaseDetailsButton() + ": " + texts.getTwoFactorRecoveryCodesSummary());
+    toggle.addClickListener(event -> codes.setOpened(!codes.isOpened()));
+    codes.addOpenedChangeListener(
+        event -> {
+          recoveryCodesVisible = event.isOpened();
+          toggle.setIcon(
+              event.isOpened() ? AppIcon.ANGLE_DOWN.create() : AppIcon.ANGLE_RIGHT.create());
+          toggle.getElement().setAttribute("aria-expanded", Boolean.toString(event.isOpened()));
+        });
+    codes.getElement().setAttribute("aria-labelledby", codesHeading.getId().orElseThrow());
+    HorizontalLayout codesHeader = new HorizontalLayout(codesHeading, toggle);
+    codesHeader.setPadding(false);
+    codesHeader.setSpacing(false);
+    codesHeader.setWidthFull();
+    codesHeader.setAlignItems(Alignment.CENTER);
+    codesHeader.addClassName("two-factor-recovery-codes-header");
+    VerticalLayout codesSection = new VerticalLayout(codesHeader, codes);
+    codesSection.setPadding(false);
+    codesSection.setSpacing(false);
     Button copy = new Button(texts.getTwoFactorCopyCodes(), AppIcon.CLIPBOARD_COPY.create());
     copy.setId("two-factor-copy-codes");
+    copy.setEnabled(false);
+    codeFields.addAttachListener(event -> loadRecoveryCodes(codeFields, copyButtons, copy));
     copy.addClickListener(
         event ->
             copy.getElement()
                 .executeJs(
                     """
-        const values = $0.contentDocument?.getElementById('recovery-code-values')?.textContent;
-        return values && navigator.clipboard ? navigator.clipboard.writeText(values).then(() => true, () => false) : false;
+        const values = Array.from($0.querySelectorAll('vaadin-text-field'), field => field.inputElement?.value || '');
+        return values.length === 10 && values.every(Boolean) && navigator.clipboard
+          ? navigator.clipboard.writeText(values.join('\\n')).then(() => true, () => false) : false;
         """,
-                    frame.getElement())
+                    codeFields.getElement())
                 .then(
                     Boolean.class,
-                    copied ->
-                        NotificationHelper.getInstance()
-                            .showNotification(
-                                Boolean.TRUE.equals(copied)
-                                    ? texts::getTwoFactorCopySuccess
-                                    : texts::getTwoFactorCopyFailed,
-                                Boolean.TRUE.equals(copied)
-                                    ? NotificationHelper.NotificationType.SUCCESS
-                                    : NotificationHelper.NotificationType.ERROR)));
-    UUID outputId = pending.id();
+                    copied -> showRecoveryCopyResult(copied, texts::getTwoFactorCopySuccess)));
     Locale locale = VaadinSession.getCurrent().getLocale();
-    Anchor download =
-        new Anchor(
-            event ->
-                recoveryDownloads.write(
-                    event,
-                    outputId,
-                    locale,
-                    () ->
-                        NotificationHelper.getInstance()
-                            .showNotification(
-                                texts::getTwoFactorDownloadFailed,
-                                NotificationHelper.NotificationType.ERROR)),
-            texts.getTwoFactorDownloadPdf());
+    Button download = new Button(texts.getTwoFactorDownloadPdf(), AppIcon.DOWNLOAD.create());
+    download
+        .getElement()
+        .setAttribute(
+            "data-download-url",
+            (DownloadHandler) event -> recoveryDownloads.write(event, outputId, locale));
+    recoveryDownloads.configure(
+        download,
+        () ->
+            NotificationHelper.getInstance()
+                .showNotification(
+                    texts::getTwoFactorDownloadFailed, NotificationHelper.NotificationType.ERROR));
     download.setId("two-factor-download-pdf");
-    extraActions.add(copy, download);
-    if (!outputId.equals(recoveryOutputId)) {
-      recoveryOutputId = outputId;
-      recoverySaved.setValue(false);
-    }
+    copy.setWidthFull();
+    download.setWidthFull();
+    VerticalLayout actions = new VerticalLayout(copy, download);
+    actions.setPadding(false);
+    actions.setSpacing(false);
+    actions.addClassName("two-factor-recovery-actions");
+    explanation.add(actions);
     recoverySaved.setLabel(texts.getTwoFactorCodesSavedConfirmation());
-    content.add(recoverySaved);
+    recoverySaved.addThemeVariants(SwitchVariant.AURA_REVERSE);
+    VerticalLayout controls = new VerticalLayout(codesSection, recoverySaved);
+    controls.setPadding(false);
+    controls.setSpacing(false);
+    controls.addClassName("two-factor-recovery-controls");
+    Div layout = new Div(explanation, controls);
+    layout.addClassName("two-factor-recovery-layout");
+    content.add(layout);
     submit.setText(texts.getTwoFactorCodesSaved());
     updateRecoveryActions();
+  }
+
+  /**
+   * Wie beim manuellen Schlüssel bleiben Klartextwerte außerhalb des gespeicherten Flow-Modells.
+   */
+  private void loadRecoveryCodes(VerticalLayout fields, List<Button> copies, Button copyAll) {
+    fields
+        .getElement()
+        .executeJs(
+            """
+        const container = this;
+        return (async () => {
+          try {
+            const response = await fetch($0, {credentials:'same-origin', cache:'no-store'});
+            if (!response.ok) { return false; }
+            const values = (await response.text()).trim().split('\\n');
+            const fields = Array.from(container.querySelectorAll('vaadin-text-field'));
+            await Promise.all(fields.map(field => field.updateComplete));
+            if (!container.isConnected) { return null; }
+            if (values.length !== fields.length || !values.every(Boolean)
+                || !fields.every(field => field.inputElement?.readOnly)) { return false; }
+            fields.forEach((field, index) => { field.inputElement.value = values[index]; });
+            return true;
+          } catch {
+            return false;
+          }
+        })();
+        """,
+            documentPath("recovery/" + pending.id() + "/codes"))
+        .then(
+            Boolean.class,
+            loaded -> {
+              if (loaded == null) {
+                return;
+              }
+              boolean available = Boolean.TRUE.equals(loaded);
+              copies.forEach(button -> button.setEnabled(available));
+              copyAll.setEnabled(available);
+              if (!available) {
+                NotificationHelper.getInstance()
+                    .showNotification(
+                        texts::getTwoFactorRecoveryLoadFailed,
+                        NotificationHelper.NotificationType.ERROR);
+              }
+            });
+  }
+
+  private void showRecoveryCopyResult(Boolean copied, Supplier<String> success) {
+    NotificationHelper.getInstance()
+        .showNotification(
+            Boolean.TRUE.equals(copied) ? success : texts::getTwoFactorCopyFailed,
+            Boolean.TRUE.equals(copied)
+                ? NotificationHelper.NotificationType.SUCCESS
+                : NotificationHelper.NotificationType.ERROR);
+  }
+
+  private HorizontalLayout recoveryHint(AppIcon icon, String title, String description) {
+    Span heading = new Span(title);
+    heading.addClassName("two-factor-recovery-hint-title");
+    Span hint = new Span(description);
+    hint.addClassName("cosmos-panel-description");
+    VerticalLayout copy = new VerticalLayout(heading, hint);
+    copy.setPadding(false);
+    copy.setSpacing(false);
+    HorizontalLayout row = new HorizontalLayout(icon.create(), copy);
+    row.setPadding(false);
+    row.setSpacing(false);
+    row.addClassName("two-factor-recovery-hint");
+    return row;
   }
 
   private void updateRecoveryActions() {
     if (pending != null && pending.kind() == Kind.RECOVERY_OUTPUT) {
       submit.setEnabled(recoverySaved.getValue());
-      cancel.setEnabled(recoverySaved.getValue());
     }
   }
 

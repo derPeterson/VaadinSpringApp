@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -34,6 +35,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 @Slf4j
 public class TwoFactorEnrollment {
+  // Die Codeausgabe endet mit der Sitzung oder Bestätigung, nicht mit einer Bestätigungsfrist.
+  private static final Instant SESSION_BOUND_OUTPUT = Instant.parse("9999-12-31T23:59:59Z");
   private final TwoFactorAuthorization authorization;
   private final TwoFactorStore factors;
   private final TwoFactorSecrets secrets;
@@ -413,11 +416,27 @@ public class TwoFactorEnrollment {
     return challenges.saveAndFlush(codes);
   }
 
+  /**
+   * Bestätigt nur die Sicherung bereits angezeigter Codes und verwirft die Ausgabe. Wiederholte
+   * Bestätigung darf auch nach einer Bereinigung gelingen, solange die Sitzung berechtigt ist.
+   */
   public void dismissOutput(HttpServletRequest request, UUID id) {
     TwoFactorAuthorization.Owner owner = authorization.owner(request);
+    authorization.requireSession(request);
     transaction.executeWithoutResult(
         status -> {
-          TwoFactorChallengeEntity challenge = locked(request, owner, id, Kind.RECOVERY_OUTPUT);
+          TwoFactorChallengeEntity challenge = challenges.lock(id).orElse(null);
+          if (challenge == null) {
+            return;
+          }
+          if (challenge.getKind() != Kind.RECOVERY_OUTPUT
+              || !challenge.getUser().getId().equals(owner.id())
+              || !challenge.getAccessVersion().equals(owner.accessVersion())
+              || !challenge
+                  .getSessionDigest()
+                  .equals(TwoFactorAuthorization.sessionDigest(request.getSession(false)))) {
+            throw new AccessDeniedException("Recovery output belongs to another operation");
+          }
           challenge.setEncryptedPayload(null);
           challenge.setConsumed(true);
           challenges.saveAndFlush(challenge);
@@ -462,7 +481,8 @@ public class TwoFactorEnrollment {
     challenge.setAction(TwoFactorAction.MANAGE_FACTOR);
     challenge.setKind(kind);
     challenge.setCreatedAt(clock.instant());
-    challenge.setExpiresAt(clock.instant().plusSeconds(300));
+    challenge.setExpiresAt(
+        kind == Kind.RECOVERY_OUTPUT ? SESSION_BOUND_OUTPUT : clock.instant().plusSeconds(300));
     challenge.setOperatorEnrollment(account.isOperatorEnrollment());
     return challenge;
   }
@@ -480,7 +500,7 @@ public class TwoFactorEnrollment {
         || !challenge
             .getSessionDigest()
             .equals(TwoFactorAuthorization.sessionDigest(request.getSession(false)))
-        || !challenge.getExpiresAt().isAfter(clock.instant())
+        || kind != Kind.RECOVERY_OUTPUT && !challenge.getExpiresAt().isAfter(clock.instant())
         || challenge.getPolicyRevision() != policies.current().revision()
         || !Objects.equals(challenge.getFactorRevision(), authorization.state(owner).revision())) {
       throw new AccessDeniedException("Two-factor challenge expired or changed");

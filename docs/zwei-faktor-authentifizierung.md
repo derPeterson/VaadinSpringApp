@@ -9,13 +9,23 @@ zur Anmeldung dient.
 ## Einrichtung und eigene Verwaltung
 
 Die Ersatzcodeausgabe bleibt beim PDF-Download auf derselben Seite. Fehler werden
-als Standardmeldung angezeigt; ein erneuter Download oder Kopieren bleibt innerhalb
-der bestehenden Ausgabefrist möglich. Herunterladen verbraucht die Ausgabe nicht.
-Erst der Switch „Ich habe meine Ersatzcodes sicher gespeichert“ schaltet beide
-Footeraktionen frei. Die Bestätigung bleibt beim Sprachwechsel für denselben
+als Standardmeldung angezeigt. Anzeigen, Kopieren und PDF-Download bleiben bis
+„Codes gesichert“ oder bis zum Ende der berechtigten Sitzung möglich. Es gibt für
+diese Ausgabe keine zusätzliche Fünf-Minuten-Frist. Herunterladen verbraucht sie nicht.
+Die zehn Codes sind beim Betreten bereits aufgeklappt. Der PDF-Dateiname enthält
+den auf sichere ASCII-Zeichen bereinigten Servicenamen, beispielsweise
+`derPeter-recovery-codes.pdf`. Ohne verwendbaren Namen bleibt es bei `recovery-codes.pdf`.
+Erst der Switch „Ich habe meine Ersatzcodes sicher gespeichert“ schaltet den
+Abschlussbutton „Codes gesichert“ frei. Die Bestätigung bleibt beim Sprachwechsel für denselben
 Codesatz erhalten, gilt aber nicht für einen neuen Codesatz. Sie dokumentiert die
 bewusste Bestätigung, kann die tatsächliche sichere Ablage jedoch nicht nachweisen.
-Die bestehende zeitliche Begrenzung und Berechtigungsprüfung bleiben erhalten.
+Die aktuellen Konto-, Sitzungs-, Faktor- und Berechtigungsprüfungen bleiben erhalten.
+Status, Inhaltstyp und PDF-Signatur werden vor dem Dateidownload geprüft.
+Eine Fehlerantwort wird nicht als TXT-Datei angeboten. „Codes gesichert“ verwirft
+die Ausgabe endgültig und erteilt keinen neuen Sicherheitsnachweis. Abmeldung,
+Sitzungsablauf oder Sitzungswiderruf sperren den Zugriff ebenfalls. Die automatische
+Bereinigung entfernt bestätigte Ausgaben und Ausgaben ohne aktive Sitzung.
+Die fünf Minuten gelten weiterhin für Sicherheitsbestätigungen und Einrichtungsschritte.
 
 Der Einrichtungsschritt bietet wahlweise den QR-Code oder einen manuellen
 Schlüssel. Die Schlüsselanzeige ist eine native schreibgeschützte Vaadin-TextArea
@@ -84,8 +94,9 @@ Codes einmalig angeboten. Alle Codes kopieren oder als PDF herunterladen und
 ausdrucken. Das Dokument enthält Logo, Servicename, Konto, Datum und Erläuterungen.
 Die Codes gelten jeweils einmal. Neue Codes widerrufen sämtliche alten Codes.
 Das Erneuern der Codes erhält Art und Zeitpunkt des vorhandenen Sitzungsnachweises.
-Nach dem Schließen der Ausgabe oder nach fünf Minuten werden sie nicht erneut
-angezeigt. Die Anwendung speichert die PDF nicht als Datei.
+Nach „Codes gesichert“ oder dem Ende der Sitzung werden sie nicht erneut angezeigt.
+Die Anwendung speichert die PDF nicht als Datei. Der Ablauf der Sitzungsausgabe
+ändert die Gültigkeit bereits gesicherter Ersatzcodes nicht.
 
 ## Konfiguration und Standardwerte
 

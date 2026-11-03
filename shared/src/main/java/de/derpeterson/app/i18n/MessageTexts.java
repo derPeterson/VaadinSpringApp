@@ -12,6 +12,10 @@ import java.util.function.UnaryOperator;
 /** Typed translation getters shared by the application and external browser tests. */
 public class MessageTexts {
 
+  public String getBaseDetailsButton() {
+    return getTranslation("base.button.details");
+  }
+
   public String getSupportTitle() {
     return getTranslation("support.title");
   }
@@ -262,6 +266,34 @@ public class MessageTexts {
     return getTranslation("mfa.recovery.title");
   }
 
+  public String getTwoFactorRecoverySubtitle() {
+    return getTranslation("mfa.recovery.subtitle");
+  }
+
+  public String getTwoFactorRecoveryOnceTitle() {
+    return getTranslation("mfa.recovery.once.title");
+  }
+
+  public String getTwoFactorRecoveryOnceHint() {
+    return getTranslation("mfa.recovery.once.hint");
+  }
+
+  public String getTwoFactorRecoveryRestoreTitle() {
+    return getTranslation("mfa.recovery.restore.title");
+  }
+
+  public String getTwoFactorRecoveryRestoreHint() {
+    return getTranslation("mfa.recovery.restore.hint");
+  }
+
+  public String getTwoFactorRecoveryStorageTitle() {
+    return getTranslation("mfa.recovery.storage.title");
+  }
+
+  public String getTwoFactorRecoveryCodesSummary() {
+    return getTranslation("mfa.recovery.codesSummary");
+  }
+
   public String getTwoFactorRecoveryExplanation() {
     return getTranslation("mfa.recovery.explanation");
   }
@@ -306,8 +338,12 @@ public class MessageTexts {
     return getTranslation("mfa.codes.saved");
   }
 
-  public String getTwoFactorCodeFrameTitle() {
-    return getTranslation("mfa.codes.frame");
+  public String getTwoFactorCodeCopied() {
+    return getTranslation("mfa.copy.codeSuccess");
+  }
+
+  public String getTwoFactorRecoveryLoadFailed() {
+    return getTranslation("mfa.recovery.loadFailed");
   }
 
   public String getTwoFactorCopySuccess() {

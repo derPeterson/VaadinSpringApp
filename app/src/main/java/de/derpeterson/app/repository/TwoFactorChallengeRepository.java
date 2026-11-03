@@ -21,7 +21,7 @@ public interface TwoFactorChallengeRepository
   Optional<TwoFactorChallengeEntity> lock(UUID id);
 
   @Query(
-      "select c.id from TwoFactorChallengeEntity c where c.user.id = :userId and c.sessionDigest = :session and c.kind = :kind and c.action = :action and c.consumed = false and c.expiresAt > :now order by c.createdAt desc")
+      "select c.id from TwoFactorChallengeEntity c where c.user.id = :userId and c.sessionDigest = :session and c.kind = :kind and c.action = :action and c.consumed = false and (c.kind = de.derpeterson.app.model.TwoFactorChallengeEntity$Kind.RECOVERY_OUTPUT or c.expiresAt > :now) order by c.createdAt desc")
   List<UUID> active(Long userId, String session, Kind kind, TwoFactorAction action, Instant now);
 
   @Query(
@@ -34,7 +34,8 @@ public interface TwoFactorChallengeRepository
   void invalidate(Long userId, String session, Kind kind, TwoFactorAction action);
 
   @Modifying
-  @Query("delete from TwoFactorChallengeEntity c where c.expiresAt < :before")
+  @Query(
+      "delete from TwoFactorChallengeEntity c where c.kind <> de.derpeterson.app.model.TwoFactorChallengeEntity$Kind.RECOVERY_OUTPUT and c.expiresAt < :before")
   int deleteExpired(Instant before);
 
   @Query(
@@ -48,6 +49,11 @@ public interface TwoFactorChallengeRepository
 
   @Modifying
   @Query(
-      "update TwoFactorChallengeEntity c set c.encryptedPayload = null, c.verificationDigest = null, c.consumed = true where c.expiresAt <= :now and (c.encryptedPayload is not null or c.verificationDigest is not null)")
+      "update TwoFactorChallengeEntity c set c.encryptedPayload = null, c.verificationDigest = null, c.consumed = true where c.kind <> de.derpeterson.app.model.TwoFactorChallengeEntity$Kind.RECOVERY_OUTPUT and c.expiresAt <= :now and (c.encryptedPayload is not null or c.verificationDigest is not null)")
   int clearExpiredSecrets(Instant now);
+
+  @Modifying
+  @Query(
+      "delete from TwoFactorChallengeEntity c where c.kind = de.derpeterson.app.model.TwoFactorChallengeEntity$Kind.RECOVERY_OUTPUT and (c.consumed = true or (c.createdAt < :snapshot and c.sessionDigest not in :activeSessions))")
+  int deleteClosedRecoveryOutputs(List<String> activeSessions, Instant snapshot);
 }

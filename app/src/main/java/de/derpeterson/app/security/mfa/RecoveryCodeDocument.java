@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -18,6 +19,8 @@ import java.util.Map;
 import java.util.Objects;
 import org.openpdf.pdf.ITextRenderer;
 import org.openpdf.pdf.ITextUserAgent;
+import org.openpdf.text.DocumentException;
+import org.openpdf.text.pdf.BaseFont;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.HtmlUtils;
@@ -25,6 +28,20 @@ import org.springframework.web.util.HtmlUtils;
 /** Lokale HTML/CSS-Vorlage, ausschließlich eingebettete Ressourcen und In-Memory-Ausgabe. */
 @Component
 public final class RecoveryCodeDocument {
+  public static String fileName(String serviceName) {
+    // Zerlegt Umlaute und entfernt kombinierende Akzente. Nur ASCII-Buchstaben, Ziffern,
+    // Bindestriche und Unterstriche bleiben; Pfad-, Steuer- und Windows-Sonderzeichen entfallen.
+    String prefix =
+        Normalizer.normalize(serviceName == null ? "" : serviceName, Normalizer.Form.NFKD)
+            .replaceAll("\\p{M}+", "")
+            .replaceAll("[^A-Za-z0-9_-]+", "-");
+    if (prefix.length() > 64) {
+      prefix = prefix.substring(0, 64);
+    }
+    prefix = prefix.replaceAll("^-+|-+$", "");
+    return prefix.isEmpty() ? "recovery-codes.pdf" : prefix + "-recovery-codes.pdf";
+  }
+
   public byte[] render(
       String service,
       String account,
@@ -72,6 +89,8 @@ public final class RecoveryCodeDocument {
       }
       template = template.replace("{{CODE_ROWS}}", rows.toString());
       ITextRenderer renderer = new ITextRenderer();
+      addEmbeddedFont(renderer, "InterVariable.ttf", "Inter");
+      addEmbeddedFont(renderer, "SpaceMono-Regular.ttf", "Space Mono");
       String defaultCss =
           Objects.requireNonNull(
                   ITextRenderer.class.getResource("/resources/css/XhtmlNamespaceHandler.css"))
@@ -97,6 +116,19 @@ public final class RecoveryCodeDocument {
       return output.toByteArray();
     } catch (IOException failure) {
       throw new UncheckedIOException("Cannot read recovery document resources", failure);
+    } catch (DocumentException failure) {
+      throw new IllegalStateException("Cannot embed recovery document fonts", failure);
+    }
+  }
+
+  private void addEmbeddedFont(ITextRenderer renderer, String fileName, String family)
+      throws IOException, DocumentException {
+    String resource = "META-INF/resources/custom-theme/fonts/" + fileName;
+    try (InputStream input = new ClassPathResource(resource).getInputStream()) {
+      BaseFont font =
+          BaseFont.createFont(
+              fileName, BaseFont.IDENTITY_H, BaseFont.EMBEDDED, false, input.readAllBytes(), null);
+      renderer.getFontResolver().addFont(font, resource, family);
     }
   }
 }

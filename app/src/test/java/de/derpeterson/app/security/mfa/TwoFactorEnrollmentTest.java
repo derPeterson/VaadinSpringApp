@@ -1,9 +1,11 @@
 package de.derpeterson.app.security.mfa;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,6 +25,7 @@ import de.derpeterson.app.model.TwoFactorChallengeEntity.SetupProof;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.TwoFactorAccountRepository;
+import de.derpeterson.app.repository.TwoFactorChallengeRepository;
 import de.derpeterson.app.repository.TwoFactorRecoveryCodeRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.ExternalAuthenticationToken;
@@ -83,6 +86,7 @@ class TwoFactorEnrollmentTest {
   @Autowired UserRepository users;
   @Autowired TwoFactorAccountRepository accounts;
   @Autowired TwoFactorRecoveryCodeRepository recoveryCodes;
+  @Autowired TwoFactorChallengeRepository challenges;
   @Autowired TransactionTemplate transaction;
   @Autowired PlatformTransactionManager transactions;
   @Autowired TwoFactorStoreTest.TestClock clock;
@@ -149,6 +153,81 @@ class TwoFactorEnrollmentTest {
     enrollment.dismissOutput(request, output);
     assertThrows(AccessDeniedException.class, () -> enrollment.recoveryOutput(request, output));
     verify(mail).securityChange(any(), eq(TwoFactorMail.Event.ENABLED));
+  }
+
+  @Test
+  void recoveryOutputRemainsAvailableUntilAcknowledgementInTheSameSession() {
+    TwoFactorEnrollment.Pending pending = enrollment.beginPassword(request, "correct");
+    UUID output =
+        enrollment.complete(
+            request, pending.id(), currentCode(enrollment.pendingSecret(request, pending.id())));
+    List<String> originalCodes = enrollment.recoveryOutput(request, output);
+    clock.now.updateAndGet(now -> now.plusSeconds(3600));
+    transaction.executeWithoutResult(status -> challenges.clearExpiredSecrets(clock.instant()));
+
+    assertEquals(originalCodes, enrollment.recoveryOutput(request, output));
+    assertEquals(output, enrollment.pending(request).id());
+    assertTrue(authorization.sessionConfirmed(request));
+    assertDoesNotThrow(() -> enrollment.dismissOutput(request, output));
+    assertNull(challenges.findById(output).orElseThrow().getEncryptedPayload());
+    assertTrue(challenges.findById(output).orElseThrow().isConsumed());
+    assertThrows(AccessDeniedException.class, () -> enrollment.recoveryOutput(request, output));
+  }
+
+  @Test
+  void acknowledgementAfterRepeatedConfirmationOrMetadataDeletionIsIdempotent() {
+    TwoFactorEnrollment.Pending pending = enrollment.beginPassword(request, "correct");
+    UUID output =
+        enrollment.complete(
+            request, pending.id(), currentCode(enrollment.pendingSecret(request, pending.id())));
+    clock.now.updateAndGet(now -> now.plusSeconds(301));
+    transaction.executeWithoutResult(status -> challenges.clearExpiredSecrets(clock.instant()));
+
+    assertDoesNotThrow(() -> enrollment.dismissOutput(request, output));
+    assertDoesNotThrow(() -> enrollment.dismissOutput(request, output));
+    transaction.executeWithoutResult(status -> challenges.deleteById(output));
+    assertDoesNotThrow(() -> enrollment.dismissOutput(request, output));
+    assertThrows(AccessDeniedException.class, () -> enrollment.recoveryOutput(request, output));
+  }
+
+  @Test
+  void recoveryOutputCannotBeReopenedAfterSessionEnd() {
+    TwoFactorEnrollment.Pending pending = enrollment.beginPassword(request, "correct");
+    UUID output =
+        enrollment.complete(
+            request, pending.id(), currentCode(enrollment.pendingSecret(request, pending.id())));
+    request.getSession().invalidate();
+    assertThrows(AccessDeniedException.class, () -> enrollment.recoveryOutput(request, output));
+  }
+
+  @Test
+  void enrollmentConfirmationStillExpiresAfterFiveMinutes() {
+    TwoFactorEnrollment.Pending pending = enrollment.beginPassword(request, "correct");
+    byte[] secret = enrollment.pendingSecret(request, pending.id());
+    clock.now.updateAndGet(now -> now.plusSeconds(300));
+    assertThrows(
+        AccessDeniedException.class,
+        () -> enrollment.complete(request, pending.id(), currentCode(secret)));
+    assertFalse(authorization.state(authorization.owner(request)).enrolled());
+  }
+
+  @Test
+  void acknowledgementRejectsAnotherSessionMissingProofAndAnEnrollmentChallenge() {
+    TwoFactorEnrollment.Pending pending = enrollment.beginPassword(request, "correct");
+    assertThrows(
+        AccessDeniedException.class, () -> enrollment.dismissOutput(request, pending.id()));
+    UUID output =
+        enrollment.complete(
+            request, pending.id(), currentCode(enrollment.pendingSecret(request, pending.id())));
+    MockHttpServletRequest other = TwoFactorAuthorizationTest.requestFor(user.getEmail());
+    assertThrows(AccessDeniedException.class, () -> enrollment.dismissOutput(other, output));
+    authorization.confirmSession(other, enrollment.recoveryOutput(request, output).getFirst());
+    assertThrows(AccessDeniedException.class, () -> enrollment.dismissOutput(other, output));
+    Object proof = request.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF);
+    request.getSession().removeAttribute(TwoFactorAuthorization.SESSION_PROOF);
+    assertThrows(AccessDeniedException.class, () -> enrollment.dismissOutput(request, output));
+    request.getSession().setAttribute(TwoFactorAuthorization.SESSION_PROOF, proof);
+    assertEquals(10, enrollment.recoveryOutput(request, output).size());
   }
 
   @Test

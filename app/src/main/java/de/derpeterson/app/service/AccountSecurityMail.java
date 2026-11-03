@@ -1,5 +1,6 @@
 package de.derpeterson.app.service;
 
+import de.derpeterson.app.helper.email.EmailFonts;
 import de.derpeterson.app.helper.email.EmailLogo;
 import de.derpeterson.app.helper.text.CopyrightTextFormatter;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -48,6 +49,8 @@ public class AccountSecurityMail {
       throw new UncheckedIOException("Cannot read account security mail logo", failure);
     }
     replacements.put("SERVICE_NAME", service);
+    replacements.put(
+        "INTER_FONT_STYLESHEET", EmailFonts.styleSheetUrl(config.getString(ConfigEntry.BASE_URL)));
     replacements.put(
         "LOGIN_LINK",
         UriComponentsBuilder.fromUriString(config.getString(ConfigEntry.BASE_URL))

@@ -1,5 +1,6 @@
 <mjml lang="en">
   <mj-head>
+    <mj-font name="Inter" href="{{INTER_FONT_STYLESHEET}}" />
     <mj-title>Welcome! Please verify your email</mj-title>
     <mj-preview>Welcome! Please verify your email</mj-preview>
     <mj-attributes>

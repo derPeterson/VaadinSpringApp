@@ -10,6 +10,7 @@
 .mfa-reference .mfa-code-values { white-space:pre; overflow:auto; color:#e2e8f0; font:13px/2.4 monospace; }
 .mfa-reference .mfa-phase-buttons { display:flex; flex-wrap:wrap; gap:8px; }
 #public-two-factor .vp-card-foot [aria-disabled=true],#public-two-factor .vp-card-foot button:disabled { opacity:.5; cursor:default; }
+#public-two-factor .vp-card-foot > a[hidden] { display:none; }
 .mfa-reference > .mfa-phase-buttons { margin-bottom:16px; }
 .mfa-reference .mfa-phase-buttons .portal-button { max-width:100%; min-width:0; height:auto; min-height:36px; white-space:normal; }
 .mfa-reference .mfa-qr-placeholder { display:grid; place-items:center; width:220px; height:220px; margin:16px auto; background:#fff; color:#102039; border-radius:8px; font:600 12px Inter,sans-serif; }
@@ -54,6 +55,52 @@ dialog.mfa-reference .portal-modal-body { padding:24px; }
 .mfa-setup-qr { box-sizing:border-box; display:flex; flex-direction:column; gap:16px; flex:1; min-height:272px; align-items:center; justify-content:center; padding:16px 0; }
 .mfa-setup .mfa-qr-hint { width:100%; text-align:center; }
 .mfa-manual-hint { box-sizing:border-box; width:100%; text-align:center; }
+.mfa-recovery-layout { display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); gap:28px; align-items:stretch; }
+#public-two-factor .vp-card.mfa-recovery { max-width:920px; }
+.mfa-recovery > .vp-card-body { background:var(--surface-canvas); }
+.mfa-recovery > .vp-card-foot { justify-content:flex-end; background:var(--surface-panel); }
+.mfa-recovery > .vp-card-body > .mfa-phase-buttons { display:none; }
+.mfa-recovery-explanation { display:flex; flex-direction:column; min-width:0; gap:24px; padding-right:28px; border-right:1px solid var(--border-subtle); }
+.mfa-recovery-art { width:160px; height:120px; align-self:center; object-fit:contain; filter:drop-shadow(0 0 24px color-mix(in srgb, var(--action-primary) 30%, transparent)); }
+.mfa-recovery-hint { display:flex; gap:12px; align-items:flex-start; min-width:0; }
+.mfa-recovery-hint > svg { flex:none; width:20px; height:20px; color:var(--accent); }
+.mfa-recovery-hint > div { display:flex; flex-direction:column; min-width:0; gap:0; }
+.mfa-recovery-hint strong { color:var(--text-primary); font:600 12px/20px Inter,sans-serif; }
+.mfa-recovery .portal-copy { margin:0; color:var(--text-secondary); font:400 12px/20px Inter,sans-serif; }
+.mfa-recovery-controls { display:flex; flex-direction:column; min-width:0; gap:24px; align-self:stretch; }
+.mfa-recovery-actions { display:flex; flex-direction:column; gap:8px; align-items:stretch; padding-top:20px; border-top:1px solid var(--border-subtle); }
+.mfa-recovery-actions > .portal-button { width:100%; }
+.mfa-reference .mfa-recovery-actions > .portal-button:is(:hover, :focus-visible) { text-decoration:none; }
+.mfa-recovery-actions svg { flex:none; width:16px; height:16px; color:var(--accent); }
+.mfa-recovery-details > summary { display:none; }
+.mfa-recovery-codes-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.mfa-recovery-heading { display:flex; align-items:center; gap:8px; min-width:0; color:var(--text-primary); font:600 12px/20px Inter,sans-serif; }
+.mfa-recovery-heading > svg,.mfa-recovery-codes-header > button > svg { width:16px; height:16px; flex:none; color:var(--accent); }
+.mfa-recovery-codes-header > .mfa-recovery-toggle { display:inline-flex; align-items:center; justify-content:center; gap:8px; flex:none; min-height:28px; height:auto; margin:0; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; color:var(--text-primary); font:600 12px/16.8px Inter,sans-serif; cursor:pointer; }
+.mfa-recovery-codes-header > button:hover { border:0; background:transparent; }
+.mfa-recovery-confirmation { display:flex; flex-direction:column; flex:none; gap:8px; margin-top:auto; }
+.mfa-recovery-code-fields { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+.mfa-recovery-code-field { box-sizing:border-box; display:flex; align-items:center; width:100%; min-width:0; height:36px; min-height:36px; padding:0 14px; border:1px dashed var(--border-subtle); border-radius:8px; background:var(--surface-input); }
+.mfa-recovery-code-field:focus-within { outline:2px solid var(--accent); outline-offset:1px; }
+.mfa-reference .mfa-recovery-code-field input[readonly] { flex:1; width:0; min-width:0; height:34px; padding:0; border:0; outline:0; background:transparent; color:var(--text-primary); font:400 12px/20px 'Space Mono',ui-monospace,Consolas,monospace; }
+.mfa-recovery-code-field button { display:flex; align-items:center; justify-content:center; flex:none; width:24px; min-width:24px; height:24px; padding:0; border:0; background:transparent; color:var(--text-secondary); cursor:pointer; }
+.mfa-recovery-code-field button > svg { width:16px; height:16px; }
+.mfa-recovery-code-field button:hover { color:var(--text-primary); background:transparent; }
+.mfa-recovery-code-field:focus-within button { color:var(--accent); }
+.mfa-recovery-code-field button:focus-visible { outline:2px solid var(--accent); outline-offset:1px; border-radius:4px; }
+#public-two-factor .mfa-recovery-saved { display:flex; flex-direction:row-reverse; justify-content:space-between; width:100%; box-sizing:border-box; align-items:center; gap:9px; padding-top:20px; border-top:1px solid var(--border-subtle); color:var(--text-secondary); font:400 12px/20px Inter,sans-serif; cursor:pointer; }
+.mfa-recovery-saved > span { flex:1; text-align:left; }
+.mfa-recovery-saved > input { appearance:none; box-sizing:border-box; flex:none; width:34px; height:20px; margin:0; padding:2px; border:1px solid var(--border-subtle); border-radius:10px; background:var(--surface-input); cursor:pointer; }
+.mfa-recovery-saved > input::before { content:''; display:block; width:14px; height:14px; border-radius:50%; background:var(--text-secondary); transition:transform .15s; }
+.mfa-recovery-saved > input:checked { background:var(--action-primary); border-color:var(--action-primary); }
+.mfa-recovery-saved > input:checked::before { transform:translateX(14px); background:#fff; }
+.mfa-recovery-saved > input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+@media(max-width:760px) {
+ .mfa-recovery-layout { grid-template-columns:minmax(0,1fr); gap:24px; }
+ .mfa-recovery-explanation { padding:0 0 24px; border-right:0; border-bottom:1px solid var(--border-subtle); gap:16px; }
+ .mfa-recovery-art { width:128px; height:96px; }
+}
+@media(max-width:480px) { #public-two-factor .mfa-recovery > .vp-card-body { padding:20px; } }
 .mfa-setup .mfa-qr-placeholder { width:240px; height:240px; max-width:100%; margin:0 auto; text-align:center; }
 .mfa-setup-manual { display:flex; flex-direction:column; gap:16px; padding-top:16px; }
 .mfa-manual-control { width:100%; min-width:0; }

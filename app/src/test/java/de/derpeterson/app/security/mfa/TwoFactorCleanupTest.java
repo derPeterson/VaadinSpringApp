@@ -16,12 +16,17 @@ import de.derpeterson.app.repository.SupportTicketRepository;
 import de.derpeterson.app.repository.TwoFactorChallengeRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.scheduler.TwoFactorCleanup;
+import de.derpeterson.app.security.session.DurableSessionRepository;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -32,6 +37,7 @@ class TwoFactorCleanupTest {
   @Autowired SupportTicketRepository tickets;
   @Autowired SupportReplyRepository replies;
   @Autowired TransactionTemplate transaction;
+  @Autowired DataSource source;
 
   @Test
   void clearsExpiredSecretsBeforeMetadataAndDeletesOnlyOldClosedConversations() {
@@ -58,7 +64,10 @@ class TwoFactorCleanupTest {
     reply.setCreatedAt(oldClosed.getCreatedAt());
     replies.saveAndFlush(reply);
 
-    transaction.executeWithoutResult(status -> new TwoFactorCleanup(challenges, tickets).cleanup());
+    new ResourceDatabasePopulator(new ClassPathResource("db/durable-sessions-h2.sql"))
+        .execute(source);
+    transaction.executeWithoutResult(
+        status -> new TwoFactorCleanup(challenges, tickets, new JdbcTemplate(source)).cleanup());
 
     TwoFactorChallengeEntity cleared = challenges.findById(expired.getId()).orElseThrow();
     assertTrue(cleared.isConsumed());
@@ -72,6 +81,76 @@ class TwoFactorCleanupTest {
     assertFalse(replies.existsById(reply.getId()));
     assertTrue(tickets.existsById(oldOpen.getId()));
     assertTrue(tickets.existsById(recentClosed.getId()));
+  }
+
+  @Test
+  void recoveryOutputsFollowTheSessionAndAcknowledgementInsteadOfConfirmationExpiry() {
+    new ResourceDatabasePopulator(new ClassPathResource("db/durable-sessions-h2.sql"))
+        .execute(source);
+    JdbcTemplate jdbc = new JdbcTemplate(source);
+    Instant now = Instant.now();
+    String sessionId = UUID.randomUUID().toString();
+    String expiredSessionId = UUID.randomUUID().toString();
+    String revokedSessionId = UUID.randomUUID().toString();
+    insertSession(jdbc, sessionId, now.plusSeconds(1800));
+    insertSession(jdbc, expiredSessionId, now.minusSeconds(1));
+    insertSession(jdbc, revokedSessionId, now.plusSeconds(1800));
+    jdbc.update(
+        "insert into SPRING_SESSION_ATTRIBUTES (SESSION_PRIMARY_ID, ATTRIBUTE_NAME, ATTRIBUTE_BYTES) select PRIMARY_ID, ?, ? from SPRING_SESSION where SESSION_ID = ?",
+        DurableSessionRepository.EXPIRED,
+        new byte[] {1},
+        revokedSessionId);
+    UserEntity user =
+        users.saveAndFlush(
+            UserEntity.builder()
+                .firstName("Recovery")
+                .lastName("Fixture")
+                .email(UUID.randomUUID() + "@example.test")
+                .enabled(true)
+                .roleEntities(List.of())
+                .build());
+    TwoFactorChallengeEntity active = output(user, sessionId, now.minusSeconds(7200), false);
+    TwoFactorChallengeEntity expired =
+        output(user, expiredSessionId, now.minusSeconds(7200), false);
+    TwoFactorChallengeEntity revoked =
+        output(user, revokedSessionId, now.minusSeconds(7200), false);
+    TwoFactorChallengeEntity missing =
+        output(user, UUID.randomUUID().toString(), now.minusSeconds(7200), false);
+    TwoFactorChallengeEntity saved = output(user, sessionId, now.minusSeconds(7200), true);
+    transaction.executeWithoutResult(
+        status -> new TwoFactorCleanup(challenges, tickets, jdbc).cleanup());
+    assertEquals(
+        "synthetic encrypted payload",
+        challenges.findById(active.getId()).orElseThrow().getEncryptedPayload());
+    assertFalse(challenges.existsById(expired.getId()));
+    assertFalse(challenges.existsById(revoked.getId()));
+    assertFalse(challenges.existsById(missing.getId()));
+    assertFalse(challenges.existsById(saved.getId()));
+    jdbc.update("delete from SPRING_SESSION where SESSION_ID = ?", sessionId);
+    transaction.executeWithoutResult(
+        status -> new TwoFactorCleanup(challenges, tickets, jdbc).cleanup());
+    assertFalse(challenges.existsById(active.getId()));
+  }
+
+  private void insertSession(JdbcTemplate jdbc, String id, Instant expires) {
+    long created = expires.minusSeconds(1800).toEpochMilli();
+    jdbc.update(
+        "insert into SPRING_SESSION (PRIMARY_ID, SESSION_ID, CREATION_TIME, LAST_ACCESS_TIME, MAX_INACTIVE_INTERVAL, EXPIRY_TIME) values (?, ?, ?, ?, ?, ?)",
+        UUID.randomUUID().toString(),
+        id,
+        created,
+        created,
+        1800,
+        expires.toEpochMilli());
+  }
+
+  private TwoFactorChallengeEntity output(
+      UserEntity user, String sessionId, Instant expiry, boolean saved) {
+    TwoFactorChallengeEntity output = challenge(user, expiry);
+    output.setKind(Kind.RECOVERY_OUTPUT);
+    output.setSessionDigest(TwoFactorAuthorization.sessionDigest(sessionId));
+    output.setConsumed(saved);
+    return challenges.saveAndFlush(output);
   }
 
   private TwoFactorChallengeEntity challenge(UserEntity user, Instant expiry) {

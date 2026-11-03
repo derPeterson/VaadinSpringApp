@@ -1220,13 +1220,65 @@ Fehler-, Disabled- und Read-only-Zustände behalten Vorrang.
 Die vorhandene Vaadin-Frontendversion bleibt auch für `field-base` maßgeblich;
 die ältere Paketdeklaration des Add-ons darf die gemeinsamen Felder nicht herunterstufen.
 
-Die Ersatzcodeausgabe verwendet einen nativen `Anchor` mit `DownloadHandler`
-über `RecoveryCodeDownload`. Der Abruf prüft die aktuelle Berechtigung und
-verbraucht die Ausgabe weder bei Erfolg noch bei Fehler. Die Browserseite bleibt
-stehen; Fehler erscheinen über die Standardnotification. Ein nativer `Switch`
-bestätigt die Sicherung und schaltet beide Footeraktionen frei. Nur die ausdrückliche
+Die Ersatzcodeausgabe verwendet einen nativen `Button` mit einem per öffentlicher
+Element-API registrierten `DownloadHandler` über `RecoveryCodeDownload`. Wie
+„Alle Codes kopieren“ verwendet er ausschließlich die gemeinsamen Buttonregeln
+aus `cosmos-theme.css`; lokale Downloadbutton-Styles entfallen.
+Der Abruf prüft die aktuelle Berechtigung und
+verbraucht die Ausgabe weder bei Erfolg noch bei Fehler. `recovery-code-download.js`
+prüft vor dem Dateidownload Status, PDF-Inhaltstyp und PDF-Signatur. Erst danach
+startet der Browser den Download. Fehlerantworten und Anmeldeseiten werden nicht
+als Datei angeboten; die Browserseite bleibt stehen und zeigt die Standardnotification. Ein nativer `Switch`
+bestätigt die Sicherung und schaltet den einzigen Abschlussbutton „Codes gesichert“ frei. Die zusätzliche
+Aktion „Zurück zum Konto“ entfällt ausschließlich in der Ersatzcodeausgabe. Nur die ausdrückliche
 bestätigte Aktion verwirft die einmalige Ausgabe; reine Navigation ist kein Download.
-Eine neue Gestaltung mit ein-/ausblendbaren Codes bleibt bis zur Entwurfswahl offen.
+Die freigegebene Variante B verwendet auf maximal 920 px ein responsives Grid:
+links die lokale Tresorillustration `images/two-factor-vault.svg` mit dezentem blauem
+Glow aus der Primärfarbe und drei Hinweise aus nativen `HorizontalLayout`-/`VerticalLayout`-
+Komponenten. Überschrift und Erklärung haben keinen zusätzlichen Zwischenabstand.
+Kopieren und PDF stehen darunter nach einer horizontalen Trennlinie in einem nativen
+`VerticalLayout`, beide über die volle Spaltenbreite. Rechts stehen ein natives
+`Details` mit anfangs aufgeklappter Codeübersicht und der vorhandene Sicherungs-Switch.
+Die Sicherungsbestätigung bleibt am unteren Rand der rechten Spalte, auch bei
+eingeklappter Codeübersicht.
+Über den Codes stehen der blaue Schlüssel und „Ihre 10 Ersatzcodes“. Rechts steuert
+ein rahmenloser nativer „Details“-Button mit blauem Pfeil nach rechts (geschlossen)
+beziehungsweise unten (offen) den Bereich,
+wie bei den Admin-Benachrichtigungen; `aria-controls` und `aria-expanded` folgen dem Zustand.
+`cosmos-mfa-recovery.css` kapselt ausschließlich diese Ansicht.
+Unter 760 px stehen beide Bereiche untereinander; eine horizontale ersetzt dann
+die vertikale Trennlinie. Kopf und Footer verwenden Panelfläche, der Inhalt die
+normale Contentfarbe; Überschriften sind Primary, Hinweise Secondary und Icons blau.
+Der native Sicherungs-Switch folgt dem öffentlichen Login-Switch mit 34 × 20 px,
+14-px-Marker, 9 px Labelabstand und 12 px / 400 für den Secondary-Text.
+Seine native Reverse-Variante setzt die Beschriftung links und den Schalter rechts.
+Die lokale Grid-Aufteilung und die öffentlichen Parts halten den Schalter ganz am
+rechten Spaltenrand; die Beschriftung nutzt den verbleibenden Platz links.
+Zusätzliche Rahmen oder Änderungen an der Tresorillustration entfallen.
+Ein-/Ausklappzustand und Sicherungsbestätigung bleiben beim Sprachwechsel für
+dieselbe Ausgabe erhalten. Kopieren und PDF funktionieren auch bei eingeklappten Codes.
+Die Ausgabe bleibt bis „Codes gesichert“ oder zum Ende der berechtigten Sitzung
+verfügbar; die Fünf-Minuten-Frist gilt nur für Sicherheitsbestätigungen.
+Zehn native schreibgeschützte `TextField`-Komponenten zeigen die Codes einzeln mit
+gestricheltem Rahmen und einem Kopierbutton im Suffix. Space Mono mit 12 px / 20 px
+erleichtert das Ablesen. Die Schrift ist am Eingabe-Part und am nativen Eingabetext
+festgelegt. Die PDF bettet Inter für ihre normalen Texte und Space Mono für die Codes
+aus den mitgelieferten Schriftdateien ein. Die Codefelder sind 36 px hoch und stehen mit 6 px Abstand
+untereinander; der Rahmen folgt dem vorhandenen Eingabestandard.
+Die Kopiericons sind neutral, bei Hover heller und bei Feldfokus blau, ohne eigene
+Hoverfläche. Ein geschützter No-Store-Abruf setzt die Werte ausschließlich in die
+öffentlichen `inputElement`-Eingaben. Hostwerte und gespeicherter Flow-Zustand bleiben leer.
+Die Public-Referenz
+verwendet dieselbe Illustration und ausschließlich synthetische Beispielcodes.
+
+Die Kontomails deklarieren Inter in allen MJML-Vorlagen und den daraus erzeugten
+HTML-Dateien. `mj-font` bindet `custom-theme/email-fonts.css` über die konfigurierte
+Basisadresse ein; die Schrift stammt aus den lokalen Theme-Ressourcen. Es gibt keinen
+externen Schriftdienst. Mailprogramme ohne Webfonts oder mit blockierten externen
+Inhalten verwenden Roboto, Arial oder Sans-Serif. Die Basisadresse muss vom Empfänger
+erreichbar sein; eine lokale Entwicklungsadresse ist außerhalb des Rechners ungeeignet.
+Beim MJML-Erzeugen `fonts: {}` setzen: Die `mj-font`-Deklaration liefert Inter,
+automatische MJML-Standardimporte von Google Fonts werden damit vermieden.
 
 Der Rollenbereich übernimmt die bestehende Anbietertabform, stellt
 Regeln zweispaltig dar und wechselt unter 650 px auf eine Spalte. Neue lokale
@@ -1247,8 +1299,7 @@ Der öffentliche Seitenrahmen bleibt erhalten. Die Illustration liegt lokal als
 `images/two-factor-locks.svg`; die Public-Referenz verwendet dieselbe SVG unter
 `assets`. Nur dieser Einstieg blendet den normalen Panelkopf aus.
 
-`cosmos-mfa-document.css` gestaltet ausschließlich die geschützte, einmalige
-Ersatzcodeausgabe. Die druckbare PDF verwendet eine eigene Classpath-HTML-/CSS-
+Die druckbare PDF verwendet eine eigene Classpath-HTML-/CSS-
 Vorlage unter `pdf/`, das vorhandene Service-Logo und einen hellen Druckhintergrund.
 Die drei HTML-Momentaufnahmen bilden die neuen Bereiche synthetisch über
 `mfa-reference.css` und `mfa-reference.js` ab. Sie erzeugen keine echten Faktoren.

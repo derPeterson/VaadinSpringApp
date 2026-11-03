@@ -60,19 +60,14 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     assertThat(qr).hasAttribute("src", originalQr);
     assertThat(page.locator("#two-factor-qr")).hasAttribute("alt", texts.getTwoFactorQrAlt());
     TwoFactorPage.confirmEnrollment(page, email);
-    String codes =
-        page.frameLocator("#two-factor-recovery-codes")
-            .locator("#recovery-code-values")
-            .innerText();
+    java.util.List<String> codes = TwoFactorPage.recoveryCodeValues(page);
     page.locator("#two-factor-codes-saved input").setChecked(true);
     new UserMenu(page).selectLanguage(other.language());
-    assertThat(page.frameLocator("#two-factor-recovery-codes").locator("#recovery-code-values"))
-        .hasText(codes);
+    org.junit.jupiter.api.Assertions.assertEquals(codes, TwoFactorPage.recoveryCodeValues(page));
     assertThat(page.locator("#two-factor-download-pdf")).hasText(other.getTwoFactorDownloadPdf());
     assertThat(page.locator("#two-factor-codes-saved input")).isChecked();
     new UserMenu(page).selectTestLanguage();
-    assertThat(page.frameLocator("#two-factor-recovery-codes").locator("#recovery-code-values"))
-        .hasText(codes);
+    org.junit.jupiter.api.Assertions.assertEquals(codes, TwoFactorPage.recoveryCodeValues(page));
     page.locator("#two-factor-submit").click();
     assertThat(page).hasURL(Pattern.compile(".*/account\\?tab=security$"));
     new UserMenu(page).signOut();

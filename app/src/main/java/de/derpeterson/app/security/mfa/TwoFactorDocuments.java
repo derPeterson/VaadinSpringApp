@@ -35,7 +35,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.util.HtmlUtils;
 
 /**
  * Geschützte Dokumente verhindern, dass Seeds oder Ersatzcodes in Vaadins UI-/Sitzungszustand
@@ -112,23 +111,10 @@ public class TwoFactorDocuments {
   }
 
   @GetMapping("/recovery/{id}/codes")
-  public ResponseEntity<byte[]> codes(
-      HttpServletRequest request,
-      @PathVariable UUID id,
-      @RequestParam(defaultValue = "en") String lang) {
+  public ResponseEntity<byte[]> codes(HttpServletRequest request, @PathVariable UUID id) {
     List<String> codes = enrollment.recoveryOutput(request, id);
-    String escapedCodes = HtmlUtils.htmlEscape(String.join("\n", codes));
-    String html =
-        """
-        <!doctype html><html lang="%s"><head><meta charset="UTF-8">
-        <link rel="stylesheet" href="%s/custom-theme/cosmos-mfa-document.css">
-        </head><body><pre id="recovery-code-values">%s</pre></body></html>
-        """
-            .formatted(
-                locale(lang).getLanguage(),
-                HtmlUtils.htmlEscape(request.getContextPath()),
-                escapedCodes);
-    return response(html.getBytes(StandardCharsets.UTF_8), MediaType.TEXT_HTML);
+    return response(
+        String.join("\n", codes).getBytes(StandardCharsets.US_ASCII), MediaType.TEXT_PLAIN);
   }
 
   @GetMapping("/recovery/{id}/codes.pdf")
@@ -138,16 +124,19 @@ public class TwoFactorDocuments {
       @RequestParam(defaultValue = "en") String lang) {
     List<String> codes = enrollment.recoveryOutput(request, id);
     Locale locale = locale(lang);
+    String serviceName = config.getString(ConfigEntry.SERVICE_NAME);
     byte[] bytes =
         pdf.render(
-            config.getString(ConfigEntry.SERVICE_NAME),
+            serviceName,
             authorization.owner(request).email(),
             codes,
             Instant.now(),
             locale,
             MessageProperties.forLocale(i18n, locale));
     return response(
-        bytes, MediaType.APPLICATION_PDF, "attachment; filename=\"recovery-codes.pdf\"");
+        bytes,
+        MediaType.APPLICATION_PDF,
+        "attachment; filename=\"" + RecoveryCodeDocument.fileName(serviceName) + "\"");
   }
 
   private static Locale locale(String lang) {

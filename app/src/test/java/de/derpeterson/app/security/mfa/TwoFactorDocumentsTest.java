@@ -10,6 +10,7 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.service.ConfigService;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -60,5 +61,33 @@ class TwoFactorDocumentsTest {
     assertThrows(AccessDeniedException.class, () -> documents.manualKey(request, id));
     assertEquals(403, documents.denied().getStatusCode().value());
     assertEquals("no-store", documents.denied().getHeaders().getCacheControl());
+  }
+
+  @Test
+  void recoveryCodesAreDeliveredAsPlainTextWithoutCaching() {
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setContextPath("/portal");
+    UUID id = UUID.randomUUID();
+    List<String> codes =
+        List.of("12345678-12345678-12345678-12345678", "ABCDEF12-ABCDEF12-ABCDEF12-ABCDEF12");
+    when(enrollment.recoveryOutput(request, id)).thenReturn(codes);
+
+    ResponseEntity<byte[]> response = documents.codes(request, id);
+
+    assertEquals("no-store", response.getHeaders().getCacheControl());
+    assertEquals("no-cache", response.getHeaders().getPragma());
+    assertEquals(MediaType.TEXT_PLAIN, response.getHeaders().getContentType());
+    assertEquals(
+        String.join("\n", codes), new String(response.getBody(), StandardCharsets.US_ASCII));
+  }
+
+  @Test
+  void recoveryDocumentCannotBeViewedWithoutAnAuthorizedOutput() {
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    UUID id = UUID.randomUUID();
+    when(enrollment.recoveryOutput(request, id))
+        .thenThrow(new AccessDeniedException("Expired output"));
+
+    assertThrows(AccessDeniedException.class, () -> documents.codes(request, id));
   }
 }

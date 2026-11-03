@@ -69,6 +69,8 @@ class MailVisualPreviewTest {
       if (example.html()) {
         assertTrue(example.body().contains("cid:"));
         assertTrue(example.body().contains("preview.invalid"));
+        assertTrue(example.body().contains("https://preview.invalid/custom-theme/email-fonts.css"));
+        assertTrue(example.body().contains("font-family:Inter, Roboto, Arial, sans-serif"));
       }
       if (example.template().equals("welcome")) {
         assertTrue(example.body().contains("Muster &amp; Beispiel"));

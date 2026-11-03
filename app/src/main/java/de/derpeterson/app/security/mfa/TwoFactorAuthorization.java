@@ -475,6 +475,13 @@ public class TwoFactorAuthorization {
     if (session == null) {
       throw new AccessDeniedException("Session required");
     }
-    return TwoFactorSecrets.digest(session.getId());
+    return sessionDigest(session.getId());
+  }
+
+  /**
+   * Sitzungsbindung für Bereinigung und Autorisierung ohne Speicherung zusätzlicher Session-IDs.
+   */
+  public static String sessionDigest(String sessionId) {
+    return TwoFactorSecrets.digest(sessionId);
   }
 }

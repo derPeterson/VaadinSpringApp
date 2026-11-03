@@ -30,6 +30,7 @@ public enum AppIcon {
   COGS("settings-2"),
   DASHBOARD("layout-dashboard"),
   DESKTOP("monitor"),
+  DOWNLOAD("download"),
   EDIT("square-pen"),
   ENVELOPE("mail"),
   EYE("eye"),

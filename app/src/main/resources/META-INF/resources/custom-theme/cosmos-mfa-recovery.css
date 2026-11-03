@@ -1,0 +1,53 @@
+/* Ersatzcodeausgabe: native Layouts, Details, Switch und bestehender DownloadHandler. */
+.two-factor-view #two-factor-panel.two-factor-recovery { max-width:920px; }
+.two-factor-view .two-factor-recovery > .account-panel-body { padding:24px; background:var(--cosmos-reference-page); }
+.two-factor-view .two-factor-recovery > .cosmos-panel-footer { background:var(--cosmos-reference-panel); border-color:var(--cosmos-reference-border); }
+.two-factor-recovery-layout { display:grid; grid-template-columns:minmax(0, .85fr) minmax(0, 1.15fr); gap:28px; align-items:stretch; }
+.two-factor-recovery-explanation { min-width:0; gap:24px; padding-right:28px; border-right:1px solid var(--cosmos-reference-border); }
+.two-factor-recovery-art { width:160px; height:120px; align-self:center; object-fit:contain; filter:drop-shadow(0 0 24px color-mix(in srgb, var(--cosmos-reference-primary) 30%, transparent)); }
+.two-factor-recovery-hint { width:100%; min-width:0; gap:12px; align-items:flex-start; }
+.two-factor-recovery-hint > vaadin-icon { flex:none; width:20px; height:20px; color:var(--cosmos-reference-accent); }
+.two-factor-recovery-hint > vaadin-vertical-layout { min-width:0; gap:0; }
+.two-factor-recovery-hint-title { color:var(--cosmos-reference-text); font:600 12px/20px Inter,sans-serif; }
+.two-factor-recovery .cosmos-panel-description { font:400 12px/20px Inter,sans-serif; color:var(--cosmos-reference-secondary); }
+.two-factor-recovery-controls { min-width:0; gap:24px; align-self:stretch; }
+.two-factor-recovery-actions { width:100%; gap:8px; align-items:stretch; padding-top:20px; border-top:1px solid var(--cosmos-reference-border); }
+.two-factor-recovery-actions > vaadin-button { margin:0; }
+#two-factor-recovery-details { margin:0; padding:0; border:0; color:var(--cosmos-reference-text); }
+#two-factor-recovery-details > vaadin-details-summary,
+#two-factor-recovery-details:not([opened]) { display:none; }
+.two-factor-recovery-codes-header { gap:12px; justify-content:space-between; }
+.two-factor-recovery-heading { display:flex; align-items:center; gap:8px; min-width:0; color:var(--cosmos-reference-text); font:600 12px/20px Inter,sans-serif; }
+.two-factor-recovery-heading > vaadin-icon { width:16px; height:16px; flex:none; color:var(--cosmos-reference-accent); }
+#two-factor-recovery-toggle { flex:none; margin:0; padding:0; min-height:28px; height:auto; border:0; background:transparent; color:var(--cosmos-reference-text); font:600 12px/16.8px Inter,sans-serif; }
+#two-factor-recovery-toggle::before { display:none; }
+#two-factor-recovery-toggle vaadin-icon { width:16px; height:16px; color:var(--cosmos-reference-accent); }
+#two-factor-recovery-details::part(content) { padding:8px 0 0; }
+.two-factor-recovery #two-factor-codes-saved { flex:none; width:100%; margin:auto 0 0; padding-top:20px; border-top:1px solid var(--cosmos-reference-border); --vaadin-switch-width:34px; --vaadin-switch-height:20px; --vaadin-switch-gap:9px; --vaadin-switch-background:var(--cosmos-reference-input); --vaadin-switch-border-color:var(--cosmos-reference-control-border); --vaadin-switch-border-width:1px; --vaadin-switch-border-radius:999px; --vaadin-switch-marker-width:14px; --vaadin-switch-marker-height:14px; --vaadin-switch-marker-color:var(--cosmos-reference-secondary); --vaadin-switch-marker-border-width:0; --vaadin-switch-marker-scale:1; --vaadin-switch-label-color:var(--cosmos-reference-secondary); --vaadin-switch-label-font-size:12px; --vaadin-switch-label-font-weight:400; --vaadin-switch-label-line-height:20px; }
+.two-factor-recovery #two-factor-codes-saved[checked] { --vaadin-switch-background:var(--cosmos-reference-primary); --vaadin-switch-border-color:var(--cosmos-reference-primary); --vaadin-switch-marker-color:var(--cosmos-reference-white); }
+.two-factor-recovery #two-factor-codes-saved { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; --vaadin-switch-label-padding:0; }
+.two-factor-recovery #two-factor-codes-saved::part(label) { grid-column:1; grid-row:1; justify-self:stretch; min-width:0; margin:0; padding:0; text-align:left; color:var(--cosmos-reference-secondary); font:400 12px/20px Inter,sans-serif; }
+.two-factor-recovery #two-factor-codes-saved::part(switch) { grid-column:2; grid-row:1; justify-self:end; margin:0; }
+.two-factor-recovery #two-factor-codes-saved > input { grid-column:2; grid-row:1; }
+.two-factor-recovery #two-factor-codes-saved > [slot=label] { white-space:normal; }
+.two-factor-recovery #two-factor-codes-saved[focus-ring]::part(switch) { outline:2px solid var(--cosmos-reference-accent); outline-offset:3px; }
+.two-factor-recovery-code-fields { min-width:0; gap:6px; }
+.two-factor-recovery-code { box-sizing:border-box; flex:none; min-width:0; height:36px; min-height:36px; margin:0; padding:0; --vaadin-input-field-height:36px; }
+.two-factor-view vaadin-text-field.two-factor-recovery-code::part(input-field) { box-sizing:border-box; height:36px; min-height:36px; padding-block:0; }
+.two-factor-recovery-code[readonly]::part(input-field) { border-style:dashed; }
+.two-factor-view vaadin-text-field.two-factor-recovery-code::part(input-field),
+.two-factor-view vaadin-text-field.two-factor-recovery-code > input[slot=input] { font:400 12px/20px 'Space Mono',ui-monospace,Consolas,monospace; }
+.two-factor-recovery-code .two-factor-recovery-copy { flex:none; width:24px; min-width:24px; height:24px; margin:0; padding:0; border:0; background:transparent; color:var(--cosmos-reference-secondary); }
+.two-factor-recovery-code .two-factor-recovery-copy vaadin-icon { width:16px; height:16px; color:inherit; }
+.two-factor-recovery-code .two-factor-recovery-copy:hover { color:var(--cosmos-reference-text); background:transparent; box-shadow:none; }
+.two-factor-recovery-code .two-factor-recovery-copy:active { background:transparent; box-shadow:none; }
+.two-factor-recovery-copy::before { display:none; }
+.two-factor-recovery-code .two-factor-recovery-copy:focus-visible,
+.two-factor-recovery-code[focused] .two-factor-recovery-copy,
+.two-factor-recovery-code:focus-within .two-factor-recovery-copy { color:var(--cosmos-reference-accent); }
+@media (max-width:760px) {
+ .two-factor-recovery-layout { grid-template-columns:minmax(0,1fr); gap:24px; }
+ .two-factor-recovery-explanation { padding:0 0 24px; border-right:0; border-bottom:1px solid var(--cosmos-reference-border); gap:16px; }
+ .two-factor-recovery-art { width:128px; height:96px; }
+}
+@media (max-width:480px) { .two-factor-view .two-factor-recovery > .account-panel-body { padding:20px; } }

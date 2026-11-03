@@ -1,6 +1,7 @@
 package de.derpeterson.app.service;
 
 import de.derpeterson.app.config.TokenDurationPolicy;
+import de.derpeterson.app.helper.email.EmailFonts;
 import de.derpeterson.app.helper.email.EmailLogo;
 import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.helper.text.CopyrightTextFormatter;
@@ -289,6 +290,9 @@ public class PasswordResetService {
     Map<String, String> placeholders =
         Map.of(
             "SERVICE_LOGO", EmailLogo.validatedContentId(),
+            "INTER_FONT_STYLESHEET",
+                HtmlUtils.htmlEscape(
+                    EmailFonts.styleSheetUrl(configService.getString(ConfigEntry.BASE_URL))),
             "SERVICE_NAME", HtmlUtils.htmlEscape(serviceName),
             "COPYRIGHT_TEXT",
                 HtmlUtils.htmlEscape(

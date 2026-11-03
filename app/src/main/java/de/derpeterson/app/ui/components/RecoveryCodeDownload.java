@@ -1,5 +1,6 @@
 package de.derpeterson.app.ui.components;
 
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.server.streams.DownloadEvent;
 import de.derpeterson.app.helper.logging.LogSafety;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -32,7 +33,29 @@ public final class RecoveryCodeDownload {
   private final CustomI18NProvider i18n;
   private final RecoveryCodeDocument pdf;
 
-  public void write(DownloadEvent event, UUID outputId, Locale locale, Runnable failed) {
+  /** Ein Fehlerstatus darf im Browser weder eine TXT-Datei noch einen Seitenwechsel auslösen. */
+  public void configure(Button button, Runnable failed) {
+    button.addAttachListener(
+        event ->
+            event
+                .getUI()
+                .getPage()
+                .addJavaScript("context://custom-theme/recovery-code-download.js"));
+    button.addClickListener(
+        event ->
+            button
+                .getElement()
+                .executeJs("return window.cosmosRecoveryCodeDownload(this)")
+                .then(
+                    Boolean.class,
+                    success -> {
+                      if (Boolean.FALSE.equals(success)) {
+                        failed.run();
+                      }
+                    }));
+  }
+
+  public void write(DownloadEvent event, UUID outputId, Locale locale) {
     event.getResponse().setHeader("Cache-Control", "no-store");
     event.getResponse().setHeader("Pragma", "no-cache");
     event.getResponse().setHeader("X-Content-Type-Options", "nosniff");
@@ -40,22 +63,22 @@ public final class RecoveryCodeDownload {
     try {
       HttpServletRequest request = (HttpServletRequest) event.getRequest();
       List<String> codes = enrollment.recoveryOutput(request, outputId);
+      String serviceName = config.getString(ConfigEntry.SERVICE_NAME);
       bytes =
           pdf.render(
-              config.getString(ConfigEntry.SERVICE_NAME),
+              serviceName,
               authorization.owner(request).email(),
               codes,
               Instant.now(),
               locale,
               MessageProperties.forLocale(i18n, locale));
-      event.setFileName("recovery-codes.pdf");
+      event.setFileName(RecoveryCodeDocument.fileName(serviceName));
       event.setContentType("application/pdf");
       event.setContentLength(bytes.length);
       event.getOutputStream().write(bytes);
     } catch (IOException | RuntimeException failure) {
       log.warn("Recovery code PDF download failed", LogSafety.safeFailure(failure));
       event.getResponse().setStatus(failure instanceof AccessDeniedException ? 403 : 500);
-      event.getUI().access(failed::run);
     } finally {
       if (bytes != null) {
         Arrays.fill(bytes, (byte) 0);
