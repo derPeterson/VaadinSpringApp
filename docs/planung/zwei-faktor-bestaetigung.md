@@ -34,6 +34,45 @@ Die Google-/Microsoft-Verwaltung ist im selben Paket auf Superadmins beschränkt
    abschließend bereinigen und diesen erledigten Plan entfernen. Git-Schritte
    nur auf entsprechenden Auftrag ausführen.
 
+## Wiederkehrende Anmeldung und Wiederherstellung: Entwurfswahl offen
+
+Beauftragt sind drei zusammenhängende Stitch-Varianten, jeweils als Übersicht mit
+diesen drei Ansichten: Anmeldung bestätigen, Authenticator mit Ersatzcode
+wiederherstellen und Wiederherstellungsanfragen ohne App/Ersatzcodes. Die Entwürfe
+bleiben im bestehenden 2FA-Projekt. Eine Übernahme in Vaadin oder die festen
+HTML-Referenzen ist noch nicht beauftragt.
+
+Der bestehende Cosmos-Seitenrahmen, Panelkopf, Inhaltsfläche, Footer, Inter,
+Feld-/Buttonstandards und die vereinbarten Farben bleiben Grundlage. Die Anmeldung
+soll zwischen dem vorhandenen sechsstelligen OTP-Add-on und einem Ersatzcodefeld
+umschalten können. Seltene Wiederherstellungs- und Hilfeaktionen werden ruhiger
+angeordnet; doppelte Erklärungen entfallen. Der Hilfeablauf darf im Inhalt stärker
+überarbeitet werden: verständlicher Leerzustand, bestehende eigene Anfragen und
+Konversation, Anfragefeld sowie kompakte Footeraktionen mit der Hauptaktion rechts.
+
+Die unterschiedlichen Zwecke bleiben sichtbar: Ein Ersatzcode kann die Anmeldung
+bestätigen oder gezielt einen geschützten Authenticatorwechsel beginnen. Beim
+Wechsel bleibt der alte Faktor bis zur Bestätigung der neuen App gültig; der
+Ersatzcode wird erst beim erfolgreichen Wechsel verbraucht. Eine Hilfeanfrage
+ersetzt keinen unabhängigen Nachweis und entsperrt das Konto nicht automatisch.
+
+Die drei über die CLI erzeugten, exportierten und visuell gesichteten Übersichten
+liegen auf der Projektfläche. Jede zeigt alternative Wege, keine drei Pflichtschritte:
+
+- [A: kompakte Anmeldung mit offenen Hilfeaktionen](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=1024361580137853276)
+- [B: eigener Bereich für die Anmeldehilfe](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=17144405251035875117)
+- [C: einklappbare Hilfe und Anfrageübersicht](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=15330646331966040633)
+
+Die Auswahl bleibt offen. Empfehlung zur gemeinsamen Sichtung ist A als ruhige
+Grundlage. Die exportierten Stitch-Entwürfe sind keine exakten Themevorlagen:
+abweichende Navigation, fehlende beziehungsweise anders platzierte Kopficons,
+zusätzliche Formatangaben an Ersatzcodefeldern, gelbe Hinweisicons, kräftig gefüllte
+Tabs und umgebrochene Footerbuttons werden nicht automatisch übernommen.
+Bei einer später beauftragten Umsetzung gelten die vorhandenen Cosmos-Bausteine,
+nativen Vaadin-Komponenten und Texte statt dieser Abweichungen. Bestehende Anfragen
+und deren Konversation müssen weiterhin erreichbar bleiben; die Bilder zeigen nur
+den Leerzustand beziehungsweise eine eingeklappte Übersicht.
+
 ## Gestaltung der verpflichtenden Ersteinrichtung
 
 ### Ersatzcodeausgabe: Variante B mit kompakter Codeübersicht
