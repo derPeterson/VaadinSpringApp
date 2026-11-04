@@ -33,14 +33,14 @@ Die Google-/Microsoft-Verwaltung ist im selben Paket auf Superadmins beschränkt
    abschließend bereinigen und diesen erledigten Plan entfernen. Git-Schritte
    nur auf entsprechenden Auftrag ausführen.
 
-## Administrative 2FA-Konfiguration und Ticketbearbeitung: Entwurfswahl offen
+## Administrative 2FA-Konfiguration und Ticketbearbeitung
 
 Für beide neuen Adminbereiche sind jeweils drei Stitch-Varianten zur gemeinsamen
 Sichtung beauftragt und über die CLI erstellt worden. Grundlage sind aktuelle
 Vaadin-Seitenaufnahmen mit eigenen isolierten Testdaten. Die Bilder und das
 unveränderte exportierte HTML wurden gesichtet; die Entwürfe liegen im bestehenden
-2FA-Projekt auf der Projektfläche. Eine Umsetzung oder Änderung der festen
-HTML-Referenzen ist noch nicht freigegeben.
+2FA-Projekt auf der Projektfläche. Für die 2FA-Konfiguration sind Variante A
+und die Erklärspalte aus Variante B ausgewählt. Die Ticketgestaltung bleibt offen.
 
 2FA-Konfiguration:
 
@@ -53,7 +53,9 @@ Inaktivitätsschalter mit Dauer bleiben fachlich unverändert. Eine globale
 „Sitzungssperre“ ist keine passende Bezeichnung für die erneute Faktorbestätigung.
 Die in C zusätzlich gezeigten Bereichsbezeichnungen sind reine Gliederungsvorschläge,
 keine neuen Konfigurationswerte. Entwickleroptionen bleiben im Normalbetrieb verborgen.
-Empfehlung zur Sichtung ist A wegen der Gliederung bei geringer Änderung des Formulars.
+Vaadin und die Admin-HTML-Referenz kombinieren die drei Regelgruppen aus A mit
+der Erklärspalte aus B. Der Seitenkopf bleibt bestehen und die Rollentabs nutzen
+die Gestaltung der Anmeldeanbieter. Die gemeinsame Sichtabnahme steht aus.
 
 Administrative Wiederherstellungsanfragen/Tickets:
 
@@ -125,6 +127,12 @@ Die Hilfe behält eigene Anfragen und Konversationen sowie die serverseitigen
 Zugriffsgrenzen, zeigt bei leerer Liste einen Leerzustand und verwendet native
 Footerbuttons. Alle drei HTML-Momentaufnahmen sind in DE/EN angeglichen.
 Der gezielte Bediennachweis wird zentral im [Testbedarf](../testbedarf.md) geführt.
+
+Für den Wiederherstellungsdialog liegt eine [Stitch-Verfeinerung zur Sichtung](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=12469882513791176942)
+vor. Offen ist, ob der Rückweg eindeutiger beschriftet und ein kurzer Formathinweis
+am Ersatzcodefeld ergänzt werden soll. Der Entwurf verändert den Portalrahmen und
+zeigt einen Platzhalter mit uneinheitlichen Gruppenlängen. Maßgeblich bleiben die
+bestehenden Cosmos-Bausteine und das Format mit vier Gruppen zu je acht Zeichen.
 
 ## Gestaltung der verpflichtenden Ersteinrichtung
 

@@ -1,6 +1,7 @@
 package de.derpeterson.app.views;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -15,6 +16,8 @@ import com.flowingcode.vaadin.addons.otpfield.OtpField;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.details.Details;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextField;
@@ -34,6 +37,7 @@ import de.derpeterson.app.security.mfa.TwoFactorEnrollment;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.SupportTicketService;
+import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.RecoveryCodeDownload;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
@@ -114,6 +118,19 @@ class TwoFactorFlowViewTest {
   void confirmationUsesNativeOtpAndKeepsTheRecoveryCodeWhole(String language) {
     TwoFactorView view = open(language, false);
     assertInstanceOf(OtpField.class, find(view, "two-factor-code"));
+    Details alternatives = assertInstanceOf(Details.class, find(view, "two-factor-login-help"));
+    assertFalse(alternatives.isOpened());
+    assertEquals(2, alternatives.getContent().findFirst().orElseThrow().getChildren().count());
+    Button toggle = assertInstanceOf(Button.class, find(view, "two-factor-login-help-toggle"));
+    assertEquals(AppIcon.ANGLE_RIGHT.getSource(), ((SvgIcon) toggle.getIcon()).getSrc());
+    toggle.click();
+    assertTrue(alternatives.isOpened());
+    assertEquals("true", toggle.getElement().getAttribute("aria-expanded"));
+    assertEquals(AppIcon.ANGLE_DOWN.getSource(), ((SvgIcon) toggle.getIcon()).getSrc());
+    toggle.click();
+    assertFalse(alternatives.isOpened());
+    assertEquals("false", toggle.getElement().getAttribute("aria-expanded"));
+    assertEquals(AppIcon.ANGLE_RIGHT.getSource(), ((SvgIcon) toggle.getIcon()).getSrc());
     Tabs methods =
         find(view, "two-factor-authenticator-tab").getParent().map(Tabs.class::cast).orElseThrow();
     methods.setSelectedIndex(1);

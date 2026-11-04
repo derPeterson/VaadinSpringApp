@@ -150,6 +150,14 @@ public class MessageTexts {
     return getTranslation("mfa.login.recoveryHint");
   }
 
+  public String getTwoFactorLoginHelpTitle() {
+    return getTranslation("mfa.login.help.title");
+  }
+
+  public String getTwoFactorLoginRestorePrompt() {
+    return getTranslation("mfa.login.restore.prompt");
+  }
+
   public String getTwoFactorRecoverSubtitle() {
     return getTranslation("mfa.recover.subtitle");
   }
@@ -212,6 +220,10 @@ public class MessageTexts {
 
   public String getTwoFactorReturnToCode() {
     return getTranslation("mfa.recover.back");
+  }
+
+  public String getTwoFactorRecoverySignIn() {
+    return getTranslation("mfa.recover.sign-in");
   }
 
   public String getTwoFactorSetupHint() {
@@ -410,10 +422,6 @@ public class MessageTexts {
     return getTranslation("mfa.back");
   }
 
-  public String getTwoFactorNeedHelp() {
-    return getTranslation("mfa.need.help");
-  }
-
   public String getTwoFactorRequestHelp() {
     return getTranslation("mfa.request.help");
   }
@@ -432,6 +440,54 @@ public class MessageTexts {
 
   public String getTwoFactorSettingsHint() {
     return getTranslation("mfa.settings.hint");
+  }
+
+  public String getTwoFactorAccessGroup() {
+    return getTranslation("mfa.settings.group.access");
+  }
+
+  public String getTwoFactorAccountGroup() {
+    return getTranslation("mfa.settings.group.account");
+  }
+
+  public String getTwoFactorMethodsGroup() {
+    return getTranslation("mfa.settings.group.methods");
+  }
+
+  public String getTwoFactorInactivityGroup() {
+    return getTranslation("mfa.settings.group.inactivity");
+  }
+
+  public String getTwoFactorRoleGuide() {
+    return getTranslation("mfa.settings.guide.title");
+  }
+
+  public String getTwoFactorRolePriority() {
+    return getTranslation("mfa.settings.guide.priority");
+  }
+
+  public String getTwoFactorRolePriorityHint() {
+    return getTranslation("mfa.settings.guide.priority.hint");
+  }
+
+  public String getTwoFactorExistingFactors() {
+    return getTranslation("mfa.settings.guide.factors");
+  }
+
+  public String getTwoFactorExistingFactorsHint() {
+    return getTranslation("mfa.settings.guide.factors.hint");
+  }
+
+  public String getTwoFactorRuleTiming() {
+    return getTranslation("mfa.settings.guide.timing");
+  }
+
+  public String getTwoFactorRoleScope(String role) {
+    return getFormattedTranslation("mfa.settings.guide.scope", role);
+  }
+
+  public String getTwoFactorAdminAccessHelp() {
+    return getTranslation("mfa.settings.admin.help");
   }
 
   public String getTwoFactorModeOff() {

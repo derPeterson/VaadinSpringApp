@@ -617,7 +617,8 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 .account-summary-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .cosmos-reference-portal .account-summary-badges > span { padding: 2px 6px; border: 1px solid var(--cosmos-reference-border); border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; font: 500 10px/15px Inter, sans-serif; }
 .cosmos-reference-portal .account-summary-status[theme~=success] { color: var(--cosmos-reference-success); background: var(--cosmos-reference-success-surface); border-color: var(--cosmos-reference-success-border); }
-.cosmos-reference-portal .account-summary-badges > span::before { content: ''; display: inline-block; width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: currentColor; }
+.cosmos-reference-portal .account-summary-badges > span::before,
+.cosmos-reference-portal .two-factor-account-entry vaadin-badge[theme~=success]::before { content: ''; display: inline-block; width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: currentColor; }
 .cosmos-reference-portal .account-summary-badges > .account-summary-presence { color: var(--account-presence-color); background: var(--cosmos-reference-hover); }
 .cosmos-reference-portal .account-summary-badges > .account-summary-presence::before { background: var(--account-presence-color); }
 .cosmos-reference-portal #account-avatar-edit { width: 100%; margin-top: 14px; }

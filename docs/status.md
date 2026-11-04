@@ -36,6 +36,12 @@ Rückwege, eigene Hilfeanfragen, Spracherhalt und die drei HTML-Momentaufnahmen.
 Spotless, Checkstyle und JavaScript-Syntaxprüfung bestanden ebenfalls.
 Dieser Nachtest ersetzt die oben dokumentierte große Testrunde nicht.
 
+Die administrative 2FA-Konfiguration mit gruppierten Regeln und Erklärspalte wurde
+mit `two-factor-configuration` auf Desktop und Smartphone in DE und EN geprüft.
+Je Sprache bestanden zwei Fälle mit Rollenwechsel, Feldhilfe und Zugriffsprüfung
+am selben isolierten Anwendungsimage. Die HTML-Referenz wurde auf Aufbau und
+JavaScript geprüft. 42 gezielte Java- und Testauswahlprüfungen bestanden ebenfalls.
+
 ## Ausgeführte Prüfungen
 
 | Prüfung | Beobachtetes Ergebnis |

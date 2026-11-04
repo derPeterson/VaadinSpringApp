@@ -172,7 +172,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(slots.first()).hasAttribute("active", "");
     input.press("ArrowRight");
     assertThat(slots.nth(1)).hasAttribute("active", "");
-    for (String copiedCode : new String[] {"123456", "123 456"}) {
+    // Überlange Inhalte werden begrenzt, lösen aber keine automatische Bestätigung aus.
+    for (String copiedCode : new String[] {"1234567", "123 456 7"}) {
       enrollment.evaluate("value => navigator.clipboard.writeText(value)", copiedCode);
       input.press("ControlOrMeta+A");
       input.press("ControlOrMeta+V");
@@ -254,6 +255,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     new UserMenu(page).requestSignOut();
     assertThat(page.locator(".public-header")).isVisible();
     signInUntilSecondFactor(email, provider);
+    TwoFactorPage.openLoginHelp(page);
     page.locator("#two-factor-recover").click();
     assertThat(page.locator("#two-factor-panel")).containsText(texts.getTwoFactorRecoverHint());
     TwoFactorPage.enterCode(page, last);
@@ -511,6 +513,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     page.locator("[data-mfa-continue]").click();
     page.locator("[data-mfa-saved]").check();
     page.locator("[data-mfa-continue]").click();
+    page.locator(".mfa-login-alternatives > summary").click();
     page.locator("[data-mfa-go=recover]").click();
     assertThat(page.locator("[data-mfa-phase-content]")).hasAttribute("data-phase", "recover");
     assertThat(page.locator("[data-mfa-phase-content]"))
@@ -838,14 +841,46 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   @ValueSource(ints = {1280, 390})
   @DisplayName(
       "MFA-03: Sicherheitskonfiguration nur für Superadmins mit nativen Rollenregeln und Feldhilfe")
+  @Tag("two-factor-configuration")
   void superadminOnlyConfiguration(int width) {
     page.setViewportSize(width, 900);
     LoginPage login = new LoginPage(page);
     login.open();
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
     page.navigate("/admin?section=configuration&group=two_factor");
     assertThat(page.locator("#two-factor-save")).isVisible();
-    assertThat(page.locator("#two-factor-role-tabs vaadin-tab")).hasCount(4);
+    Locator tabs = page.locator("#two-factor-role-tabs vaadin-tab");
+    assertThat(tabs).hasCount(4);
+    Locator roleContent = page.locator(".mfa-role-content:visible");
+    assertThat(roleContent.locator("vaadin-select")).hasCount(9);
+    assertThat(roleContent.locator(".mfa-config-heading").first())
+        .hasText(texts.getTwoFactorAccessGroup());
+    Locator guide = roleContent.locator(".mfa-role-guide");
+    assertThat(guide).containsText(texts.getTwoFactorRoleScope(texts.getRoleSuperadmin()));
+    assertTrue(
+        (Boolean)
+            guide.evaluate(
+                """
+                (guide, desktop) => {
+                  const fields = guide.parentElement.firstElementChild.getBoundingClientRect();
+                  const help = guide.getBoundingClientRect();
+                  return desktop ? help.left >= fields.right : help.top >= fields.bottom;
+                }
+                """,
+                width == 1280));
+    page.locator("#two-factor-rule-role_superadmin-administration + .cosmos-config-info").click();
+    Locator help = page.locator("#two-factor-field-help");
+    Locator helpOverlay = help.locator("vaadin-dialog-overlay > [part~=overlay]");
+    assertThat(helpOverlay).isVisible();
+    assertThat(help).containsText(texts.getTwoFactorAdminAccessHelp());
+    page.keyboard().press("Escape");
+    assertThat(helpOverlay).isHidden();
+    tabs.nth(2).click();
+    assertThat(guide).containsText(texts.getTwoFactorRoleScope(texts.getRoleUser()));
+    assertThat(page.locator("#two-factor-inactivity-enabled")).isVisible();
+    assertTrue(
+        (Boolean) page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"));
     assertThat(
             page.getByText(
                 texts.getTwoFactorDevelopmentTitle(), new Page.GetByTextOptions().setExact(true)))
@@ -853,6 +888,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("Superadmin-Regeln für Zwei-Faktor-Authentifizierung", page);
     try (BrowserActor administrator = new BrowserActor(browser)) {
       administrator.login(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+      new UserMenu(administrator.page).selectTestLanguage();
       administrator.page.navigate("/admin?section=configuration&group=two_factor");
       assertThat(administrator.page.locator("#two-factor-save")).hasCount(0);
       assertThat(administrator.page.locator("#admin-nav-configuration-two_factor")).isHidden();
@@ -900,10 +936,14 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertTrue(
         (Boolean) page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"));
     AllurePlaywright.attachScreenshot("Anmeldung bestätigen mit nativer Methodenauswahl", page);
+    assertThat(page.locator("#two-factor-recover, #two-factor-help").first()).isHidden();
+    TwoFactorPage.openLoginHelp(page);
     page.locator("#two-factor-recover").click();
     assertThat(page.locator("vaadin-text-field#two-factor-code input"))
         .hasAttribute("maxlength", "35");
-    assertThat(page.locator(".cosmos-panel-footer #two-factor-recovery-back")).isVisible();
+    assertThat(page.locator(".cosmos-panel-footer #two-factor-recovery-back"))
+        .hasText(texts.getTwoFactorRecoverySignIn());
+    assertThat(page.locator("#two-factor-help")).isHidden();
     assertThat(page.locator("#two-factor-panel"))
         .containsText(texts.getTwoFactorRecoveryConsumptionHint());
     AllurePlaywright.attachScreenshot(
@@ -911,6 +951,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     page.locator("#two-factor-recovery-back").click();
     assertThat(page).hasURL(Pattern.compile(".*/two-factor$"));
     assertThat(page.locator("#two-factor-authenticator-tab")).isVisible();
+    TwoFactorPage.openLoginHelp(page);
     page.locator("#two-factor-help").click();
     assertThat(page.locator("#account-support")).containsText(texts.getSupportEmpty());
     assertThat(page.locator(".cosmos-panel-footer #support-back")).isVisible();
@@ -947,6 +988,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     page.locator("#mfa-login-recovery-code").fill(recoveryCode);
     assertThat(page.locator("#mfa-login-recovery-code")).hasValue(recoveryCode);
     AllurePlaywright.attachScreenshot("HTML: Anmeldung mit getrennten Codemethoden", page);
+    assertThat(page.locator("[data-mfa-go=recover]")).isHidden();
+    page.locator(".mfa-login-alternatives > summary").click();
     page.locator("[data-mfa-go=recover]").click();
     assertThat(page.locator("#public-two-factor .vp-card-head h2"))
         .hasText(texts.getTwoFactorRecoverAction());
@@ -973,6 +1016,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     login.open();
     login.signInFirstFactor(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     assertThat(page).hasURL(Pattern.compile(".*/two-factor$"));
+    TwoFactorPage.openLoginHelp(page);
     Locator help = page.locator("#two-factor-help");
     assertThat(help).isVisible();
     assertTrue(

@@ -7,7 +7,9 @@ import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.Tab;
@@ -59,7 +61,6 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   private final Span pageHint = new Span();
   private final H2 title = new H2();
   private final Span hint = new Span();
-  private final Span rulesHint = new Span();
   private final Span saveHint = new Span();
   private final Switch inactivity = new Switch();
   private final Span durationLabel = new Span();
@@ -106,36 +107,49 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     Div icon = new Div(AppIcon.LOCK.create());
     icon.addClassName(CosmosClasses.PANEL_ICON);
     Div header = new Div(icon, heading);
-    header.addClassName(CosmosClasses.PANEL_HEADER);
+    header.addClassNames(CosmosClasses.PANEL_HEADER, "mfa-settings-header");
     TabSheet tabs = new TabSheet();
     tabs.setId("two-factor-role-tabs");
     tabs.setWidthFull();
     tabs.addThemeVariants(TabSheetVariant.NO_PADDING);
     for (RoleType role : RoleType.values()) {
       Map<TwoFactorAction, Select<TwoFactorMode>> selections = new EnumMap<>(TwoFactorAction.class);
-      Div fields = new Div();
-      fields.addClassName("mfa-policy-grid");
-      for (TwoFactorAction action : TwoFactorAction.values()) {
-        Select<TwoFactorMode> select = new Select<>();
-        select.setId(
-            "two-factor-rule-"
-                + role.name().toLowerCase(Locale.ROOT)
-                + "-"
-                + action.name().toLowerCase(Locale.ROOT));
-        select.setWidthFull();
-        select.setItems(TwoFactorMode.values());
-        select.setEmptySelectionAllowed(false);
-        select.setItemLabelGenerator(this::modeLabel);
-        selections.put(action, select);
-        fields.add(withHelp(select, () -> actionLabel(action), texts::getTwoFactorRuleHelp));
-      }
+      VerticalLayout groups = new VerticalLayout();
+      groups.setPadding(false);
+      groups.addClassName("mfa-rule-groups");
+      groups.add(
+          ruleGroup(
+              role,
+              selections,
+              AppIcon.NUMBER_ONE,
+              texts::getTwoFactorAccessGroup,
+              List.of(TwoFactorAction.LOGIN, TwoFactorAction.ADMINISTRATION)),
+          ruleGroup(
+              role,
+              selections,
+              AppIcon.NUMBER_TWO,
+              texts::getTwoFactorAccountGroup,
+              List.of(
+                  TwoFactorAction.PASSWORD,
+                  TwoFactorAction.EMAIL,
+                  TwoFactorAction.SECURITY_CONFIGURATION)),
+          ruleGroup(
+              role,
+              selections,
+              AppIcon.NUMBER_THREE,
+              texts::getTwoFactorMethodsGroup,
+              List.of(
+                  TwoFactorAction.LINK_PROVIDER,
+                  TwoFactorAction.UNLINK_PROVIDER,
+                  TwoFactorAction.MANAGE_FACTOR,
+                  TwoFactorAction.MANAGE_RECOVERY_CODES)));
+      Div content = new Div(groups, roleGuide(role));
+      content.addClassName("mfa-role-content");
       rules.put(role, selections);
       Tab tab = new Tab();
       roleTabs.put(role, tab);
-      tabs.add(tab, fields);
+      tabs.add(tab, content);
     }
-    rulesHint.addClassName(CosmosClasses.PANEL_DESCRIPTION);
-    rulesHint.addClassName("mfa-rules-hint");
     inactivity.setId("two-factor-inactivity-enabled");
     inactivity.addClassName("cosmos-config-switch");
     inactivity.setWidthFull();
@@ -164,6 +178,12 @@ public final class AdminTwoFactorSection extends VerticalLayout {
                 texts::getTwoFactorInactivityHelp),
             durationField);
     common.addClassName("mfa-policy-grid");
+    VerticalLayout inactivitySection =
+        new VerticalLayout(
+            sectionHeading(AppIcon.CLOCK, texts::getTwoFactorInactivityGroup), common);
+    inactivitySection.setSpacing(false);
+    inactivitySection.setPadding(false);
+    inactivitySection.addClassName("mfa-inactivity-section");
     inactivity.addValueChangeListener(event -> duration.setControlsEnabled(event.getValue()));
     developmentPause.addClassName("cosmos-config-switch");
     developmentPause.setWidthFull();
@@ -177,7 +197,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
         new Div(developmentTitle, developmentWarning, developmentPause, developmentGoogle);
     development.addClassName("mfa-development-options");
     development.setVisible(policies.developmentOptionsAvailable());
-    Div body = new Div(rulesHint, tabs, common, development);
+    Div body = new Div(tabs, inactivitySection, development);
     body.addClassName("mfa-settings-body");
     Div info = new Div(AppIcon.INFO_CIRCLE.create(), saveHint);
     info.addClassName("cosmos-config-save-hint");
@@ -197,6 +217,84 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     card.addClassName(CosmosClasses.PANEL_CARD);
     add(card, help, confirmation);
     refreshTexts();
+  }
+
+  private VerticalLayout ruleGroup(
+      RoleType role,
+      Map<TwoFactorAction, Select<TwoFactorMode>> selections,
+      AppIcon icon,
+      Supplier<String> heading,
+      List<TwoFactorAction> actions) {
+    Div fields = new Div();
+    fields.addClassName("mfa-policy-grid");
+    for (TwoFactorAction action : actions) {
+      Select<TwoFactorMode> select = new Select<>();
+      select.setId(
+          "two-factor-rule-"
+              + role.name().toLowerCase(Locale.ROOT)
+              + "-"
+              + action.name().toLowerCase(Locale.ROOT));
+      select.setWidthFull();
+      select.setItems(TwoFactorMode.values());
+      select.setEmptySelectionAllowed(false);
+      select.setItemLabelGenerator(this::modeLabel);
+      selections.put(action, select);
+      fields.add(withHelp(select, () -> actionLabel(action), () -> ruleHelp(action)));
+    }
+    VerticalLayout group = new VerticalLayout(sectionHeading(icon, heading), fields);
+    group.setPadding(false);
+    group.setSpacing(false);
+    return group;
+  }
+
+  private H3 sectionHeading(AppIcon icon, Supplier<String> label) {
+    Span caption = new Span();
+    fieldTextUpdates.add(() -> caption.setText(label.get()));
+    H3 heading = new H3();
+    heading.add(icon.create(), caption);
+    heading.addClassName("mfa-config-heading");
+    return heading;
+  }
+
+  private VerticalLayout roleGuide(RoleType role) {
+    Span scope = new Span();
+    scope.addClassNames(CosmosClasses.PANEL_DESCRIPTION, "mfa-role-scope");
+    fieldTextUpdates.add(() -> scope.setText(texts.getTwoFactorRoleScope(roleLabel(role))));
+    VerticalLayout guide =
+        new VerticalLayout(
+            sectionHeading(AppIcon.INFO_CIRCLE, texts::getTwoFactorRoleGuide),
+            guideItem(
+                AppIcon.NUMBER_ONE,
+                texts::getTwoFactorRolePriority,
+                texts::getTwoFactorRolePriorityHint),
+            guideItem(
+                AppIcon.NUMBER_TWO,
+                texts::getTwoFactorExistingFactors,
+                texts::getTwoFactorExistingFactorsHint),
+            guideItem(
+                AppIcon.NUMBER_THREE, texts::getTwoFactorRuleTiming, texts::getTwoFactorSaveHint),
+            scope);
+    guide.addClassName("mfa-role-guide");
+    return guide;
+  }
+
+  private HorizontalLayout guideItem(
+      AppIcon icon, Supplier<String> title, Supplier<String> description) {
+    Span heading = new Span();
+    heading.addClassName("mfa-guide-item-title");
+    Span copy = new Span();
+    copy.addClassName(CosmosClasses.PANEL_DESCRIPTION);
+    fieldTextUpdates.add(
+        () -> {
+          heading.setText(title.get());
+          copy.setText(description.get());
+        });
+    VerticalLayout text = new VerticalLayout(heading, copy);
+    text.setPadding(false);
+    text.setSpacing(false);
+    HorizontalLayout item = new HorizontalLayout(icon.create(), text);
+    item.addClassName("mfa-guide-item");
+    return item;
   }
 
   public void activate() {
@@ -319,7 +417,6 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     pageHint.setText(texts.getTwoFactorSettingsPageHint());
     title.setText(texts.getTwoFactorSettingsTitle());
     hint.setText(texts.getTwoFactorSettingsHint());
-    rulesHint.setText(texts.getTwoFactorRulesHint());
     roleTabs.forEach(
         (role, tab) -> {
           tab.removeAll();
@@ -365,5 +462,14 @@ public final class AdminTwoFactorSection extends VerticalLayout {
 
   private String actionLabel(TwoFactorAction action) {
     return ConfigurationCatalog.actionLabel(action, texts);
+  }
+
+  private String ruleHelp(TwoFactorAction action) {
+    String common = texts.getTwoFactorRuleHelp();
+    return switch (action) {
+      case ADMINISTRATION -> texts.getTwoFactorAdminAccessHelp() + " " + common;
+      case SECURITY_CONFIGURATION -> common + " " + texts.getTwoFactorSaveHint();
+      default -> common;
+    };
   }
 }

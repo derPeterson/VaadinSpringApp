@@ -185,6 +185,22 @@ public final class TwoFactorView extends VerticalLayout
     field.setRequiredIndicatorVisible(true);
     field.setValueChangeMode(ValueChangeMode.ON_CHANGE);
     field.addClassName("two-factor-otp");
+    field
+        .getElement()
+        .addEventListener(
+            "paste",
+            event -> {
+              // Sechs ASCII-Ziffern, die das Add-on bereits in den Feldwert übernommen hat.
+              if (field.isAttached()
+                  && submit.isEnabled()
+                  && field.getValue().matches("[0-9]{6}")) {
+                submit();
+              }
+            })
+        .setFilter(
+            // Leerraum und Bindestriche sind Gruppierungszeichen aus Authenticator-Apps.
+            "event.defaultPrevented && /^[0-9]{6}$/.test(element.value)"
+                + " && event.clipboardData?.getData('text').replace(/[\\s-]/g, '') === element.value");
     String otpStylesheetPath = request.getContextPath() + "/custom-theme/cosmos-mfa-otp.css";
     field.addAttachListener(
         event ->
@@ -248,6 +264,8 @@ public final class TwoFactorView extends VerticalLayout
     recovering = recovering || pending != null && pending.proof() == SetupProof.RECOVERY_CODE;
     TwoFactorAuthorization.State state = authorization.state(authorization.owner(request));
     initializing = pending == null && !state.enrolled();
+    boolean startsRecovery = pending == null && state.enrolled() && recovering;
+    panel.setIcon((startsRecovery ? AppIcon.LOCK_RESET : AppIcon.LOCK).create());
     panel.setHeading(
         initializing ? texts.getTwoFactorSetupTitle() : texts.getTwoFactorConfirmTitle(),
         texts.getTwoFactorPageHint(),
@@ -265,7 +283,7 @@ public final class TwoFactorView extends VerticalLayout
     cancel.setVisible(true);
     if (pending != null) {
       showPending();
-    } else if (state.enrolled() && recovering) {
+    } else if (startsRecovery) {
       showRecovery();
     } else if (state.enrolled()) {
       if (administration
@@ -275,10 +293,9 @@ public final class TwoFactorView extends VerticalLayout
         return;
       }
       showLoginMethods();
-      Button recover =
-          new Button(texts.getTwoFactorRecoverAction(), AppIcon.ARROW_FORWARD.create());
-      recover.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+      Button recover = new Button(texts.getTwoFactorRecoverAction(), AppIcon.OPEN_SECTION.create());
       recover.setIconAfterText(true);
+      recover.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
       recover.setId("two-factor-recover");
       recover.addClickListener(
           event ->
@@ -287,24 +304,75 @@ public final class TwoFactorView extends VerticalLayout
                   .setLocation(request.getContextPath() + "/two-factor?recover"));
       Button help =
           new Button(
-              texts.getTwoFactorNeedHelp(),
+              texts.getSupportHelpTitle(),
               event ->
                   UI.getCurrent()
                       .getPage()
                       .setLocation(request.getContextPath() + "/recovery-help"));
       help.setId("two-factor-help");
-      help.setIcon(AppIcon.ARROW_FORWARD.create());
+      help.setIcon(AppIcon.OPEN_SECTION.create());
       help.setIconAfterText(true);
       help.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-      extraActions.add(recover, help);
-      submit.setText(texts.getTwoFactorConfirm());
+      Span topic =
+          new Span(AppIcon.QUESTION_CIRCLE.create(), new Span(texts.getTwoFactorLoginHelpTitle()));
+      topic.addClassName("two-factor-login-help-topic");
+      VerticalLayout links =
+          new VerticalLayout(
+              loginHelpRow(texts.getTwoFactorLoginRestorePrompt(), recover),
+              loginHelpRow(texts.getSupportHelpSubtitle(), help));
+      links.setPadding(false);
+      links.setSpacing(false);
+      links.addClassName("two-factor-login-help-links");
+      Details alternatives = new Details("", links);
+      alternatives.setId("two-factor-login-help");
+      alternatives.setWidthFull();
+      Button toggle =
+          detailsToggle(
+              alternatives, "two-factor-login-help-toggle", texts.getTwoFactorLoginHelpTitle());
+      toggle.setPrefixComponent(topic);
+      toggle.addClassName("two-factor-login-help-toggle");
+      extraActions.add(toggle, alternatives);
+      submit.setText(administration ? texts.getTwoFactorConfirm() : texts.getBaseLoginButton());
+      if (!administration) {
+        submit.setPrefixComponent(AppIcon.SIGN_IN.create());
+      }
     } else {
       showSetup();
     }
   }
 
+  private HorizontalLayout loginHelpRow(String question, Button action) {
+    HorizontalLayout row = new HorizontalLayout(new Span(question), action);
+    row.setAlignItems(Alignment.CENTER);
+    row.addClassName("two-factor-login-help-row");
+    return row;
+  }
+
+  private Button detailsToggle(Details details, String id, String topic) {
+    Button toggle =
+        new Button(
+            texts.getBaseDetailsButton(),
+            details.isOpened() ? AppIcon.ANGLE_DOWN.create() : AppIcon.ANGLE_RIGHT.create());
+    toggle.setId(id);
+    toggle.setIconAfterText(true);
+    toggle.addClassName("two-factor-details-toggle");
+    toggle.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    toggle.getElement().setAttribute("aria-controls", details.getId().orElseThrow());
+    toggle.getElement().setAttribute("aria-expanded", Boolean.toString(details.isOpened()));
+    toggle.setAriaLabel(topic + ": " + texts.getBaseDetailsButton());
+    toggle.addClickListener(event -> details.setOpened(!details.isOpened()));
+    details.addOpenedChangeListener(
+        event -> {
+          toggle.setIcon(
+              event.isOpened() ? AppIcon.ANGLE_DOWN.create() : AppIcon.ANGLE_RIGHT.create());
+          toggle.getElement().setAttribute("aria-expanded", Boolean.toString(event.isOpened()));
+        });
+    return toggle;
+  }
+
   private void showLoginMethods() {
     panel.addClassName("two-factor-confirmation");
+    panel.setIcon(AppIcon.SHIELD_KEYHOLE.create());
     panel.setHeading(texts.getTwoFactorConfirmTitle(), texts.getTwoFactorConfirmSubtitle(), "");
     Tab authenticator =
         new Tab(AppIcon.DEVICES.create(), new Span(texts.getTwoFactorSetupCodeLabel()));
@@ -356,7 +424,7 @@ public final class TwoFactorView extends VerticalLayout
     hint.addClassName("cosmos-panel-description");
     input.add(hint);
     if (recoveryLoginSelected) {
-      input.add(prepareCode(texts.getTwoFactorRecoveryCodeLabel(), 35));
+      input.add(prepareRecoveryCode());
       code.getElement().setAttribute("autocomplete", "off");
     } else {
       confirmationCode.setLabel(texts.getTwoFactorSetupCodeLabel());
@@ -371,7 +439,7 @@ public final class TwoFactorView extends VerticalLayout
     if (!enrollment.available()) {
       addHint(texts.getTwoFactorUnavailable());
     }
-    content.add(prepareCode(texts.getTwoFactorRecoveryCodeLabel(), 35));
+    content.add(prepareRecoveryCode());
     code.getElement().setAttribute("autocomplete", "off");
     submit.setVisible(true);
     submit.setEnabled(enrollment.available());
@@ -384,15 +452,7 @@ public final class TwoFactorView extends VerticalLayout
     notice.setAlignItems(Alignment.CENTER);
     notice.addClassName("two-factor-restore-notice");
     content.add(notice);
-    Button help = new Button(texts.getTwoFactorNeedHelp(), AppIcon.ARROW_FORWARD.create());
-    help.setId("two-factor-help");
-    help.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    help.setIconAfterText(true);
-    help.addClickListener(
-        event ->
-            UI.getCurrent().getPage().setLocation(request.getContextPath() + "/recovery-help"));
-    extraActions.add(help);
-    Button back = new Button(texts.getTwoFactorReturnToCode(), AppIcon.ANGLE_LEFT.create());
+    Button back = new Button(texts.getTwoFactorRecoverySignIn(), AppIcon.SIGN_IN.create());
     back.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     back.setId("two-factor-recovery-back");
     back.addClickListener(
@@ -500,6 +560,7 @@ public final class TwoFactorView extends VerticalLayout
 
   private void showEnrollment() {
     panel.addClassName("two-factor-setup");
+    panel.setIcon(AppIcon.SHIELD_KEYHOLE.create());
     panel.setHeading(texts.getTwoFactorSetupTitle(), texts.getTwoFactorPageHint(), "");
     Image qr =
         new Image(documentPath("setup/" + pending.id() + "/qr.png"), texts.getTwoFactorQrAlt());
@@ -787,24 +848,9 @@ public final class TwoFactorView extends VerticalLayout
     codesHeading.setId("two-factor-recovery-heading");
     codesHeading.addClassName("two-factor-recovery-heading");
     Button toggle =
-        new Button(
-            texts.getBaseDetailsButton(),
-            recoveryCodesVisible ? AppIcon.ANGLE_DOWN.create() : AppIcon.ANGLE_RIGHT.create());
-    toggle.setId("two-factor-recovery-toggle");
-    toggle.setIconAfterText(true);
-    toggle.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    toggle.getElement().setAttribute("aria-controls", codes.getId().orElseThrow());
-    toggle.getElement().setAttribute("aria-expanded", Boolean.toString(recoveryCodesVisible));
-    toggle.setAriaLabel(
-        texts.getBaseDetailsButton() + ": " + texts.getTwoFactorRecoveryCodesSummary());
-    toggle.addClickListener(event -> codes.setOpened(!codes.isOpened()));
-    codes.addOpenedChangeListener(
-        event -> {
-          recoveryCodesVisible = event.isOpened();
-          toggle.setIcon(
-              event.isOpened() ? AppIcon.ANGLE_DOWN.create() : AppIcon.ANGLE_RIGHT.create());
-          toggle.getElement().setAttribute("aria-expanded", Boolean.toString(event.isOpened()));
-        });
+        detailsToggle(
+            codes, "two-factor-recovery-toggle", texts.getTwoFactorRecoveryCodesSummary());
+    codes.addOpenedChangeListener(event -> recoveryCodesVisible = event.isOpened());
     codes.getElement().setAttribute("aria-labelledby", codesHeading.getId().orElseThrow());
     HorizontalLayout codesHeader = new HorizontalLayout(codesHeading, toggle);
     codesHeader.setPadding(false);
@@ -941,7 +987,16 @@ public final class TwoFactorView extends VerticalLayout
     }
   }
 
+  private TextField prepareRecoveryCode() {
+    String example = "XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX";
+    TextField field = prepareCode(texts.getTwoFactorRecoveryCodeLabel(), example.length());
+    field.setPlaceholder(example);
+    field.addClassName("two-factor-recovery-input");
+    return field;
+  }
+
   private TextField prepareCode(String label, int maximumLength) {
+    code.removeClassName("two-factor-recovery-input");
     code.setLabel(label);
     code.setPlaceholder(texts.getTwoFactorCodePlaceholder());
     code.setMaxLength(maximumLength);

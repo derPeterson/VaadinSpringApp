@@ -29,7 +29,13 @@ import org.junit.platform.launcher.core.LauncherFactory;
 
 class BrowserExecutionPlanTest {
   @ParameterizedTest
-  @ValueSource(strings = {"two-factor-setup", "two-factor-confirmation", "external-login-settings"})
+  @ValueSource(
+      strings = {
+        "two-factor-setup",
+        "two-factor-confirmation",
+        "two-factor-configuration",
+        "external-login-settings"
+      })
   void focusedSuitesSelectOnlyTheirExistingJourneys(String suite) {
     TestPlan plan =
         LauncherFactory.create()
@@ -50,6 +56,7 @@ class BrowserExecutionPlanTest {
                   "requiredIntroductionReusesFreshPasswordWithoutGrantingPortalAccess",
                   "referenceStatesAndKeyboardNavigation");
           case "two-factor-confirmation" -> Set.of("confirmationRecoveryAndHelpUseNativeControls");
+          case "two-factor-configuration" -> Set.of("superadminOnlyConfiguration");
           default ->
               Set.of(
                   "administrativeProviderSettings",

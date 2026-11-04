@@ -1135,6 +1135,14 @@ Vaadin den bereits ausgewählten Feldwert ebenso aktualisiert wie die Auswahllis
 
 ## Zwei-Faktor-Bereiche
 
+Die administrative 2FA-Konfiguration gruppiert die neun Regeln je Rolle in
+Zugang und Administration, Konto- und Sicherheitsdaten sowie Authenticator und
+Anmeldeanbieter. Das native `TabSheet` verwendet die Tableiste der Anmeldeanbieter
+aus `cosmos-provider-settings.css`. Die Erklärspalte steht auf breiten Inhaltsflächen
+neben den Gruppen und rückt auf schmalen darunter. Die rollenübergreifende
+Inaktivitätsregel folgt außerhalb der Tabs. `cosmos-mfa.css` enthält das lokale
+Layout. Die Feldhilfe nutzt weiterhin `ConfigInfoButton` und `AdminSidePanel`.
+
 Die neue 2FA-Oberfläche verwendet `AccountPanelComponent`, native Vaadin-Eingaben,
 Buttons, `Badge`, `TabSheet`, `Select`, `Switch`, `Grid` und die bestehenden Cosmos-
 Bestätigungsdialoge. Die Kontoverwaltung liegt im Tab „Portalzugang“. Einrichtung
@@ -1146,9 +1154,24 @@ Die wiederkehrende Codebestätigung, der geschützte Authenticatorwechsel und di
 Benutzerhilfe folgen der ausgewählten Stitch-Variante A. Die Bestätigung verwendet
 native `Tabs` im vorhandenen 42-px-Methodenstil: Authenticator-Code mit demselben
 sechsstelligen `OtpField`-Add-on wie bei der Einrichtung oder ein normales natives
-`TextField` für den vollständigen Ersatzcode. Die gewählte Methode bleibt beim
-Sprachwechsel erhalten; sensible Eingaben werden dabei geleert. Seltene Hilfsaktionen
-stehen unter einer Trennlinie, Rückwege als native Buttons links im Footer.
+`TextField` für den vollständigen Ersatzcode. Ersatzcode-Eingaben verwenden Space
+Mono und zeigen vier Gruppen mit je acht Zeichen als Platzhalter. Ein vollständig
+eingefügter sechsstelliger Authenticator-Code löst in beiden OTP-Feldern dieselbe
+Prüfung wie der Footerbutton aus. Die gewählte Methode bleibt beim Sprachwechsel
+erhalten; sensible Eingaben werden dabei geleert. Die beiden
+Hilfsaktionen liegen in „Zugangsprobleme und Alternativen“ unter der Trennlinie.
+Vaadin `Details` ist anfangs geschlossen. Die Anmeldung und die Ersatzcode-Ausgabe
+verwenden denselben nativen Vaadin-Button und dieselbe Gestaltung in `cosmos-mfa.css`.
+Die Schalter bleiben bei Hover und Mausklick neutral. Der Tastaturfokus ist sichtbar.
+Bei der Anmeldung ist die ganze Zeile klickbar, mit Titel und Fragezeichen links
+und „Details“ rechts. Der blaue 16-px-Pfeil zeigt geschlossen nach rechts und
+geöffnet nach unten. Darunter
+folgen zwei Fragen in Sekundärfarbe mit rahmenlosen nativen Vaadin-Buttons.
+Wie der Details-Schalter bleiben beide Aktionen bei Hover und Mausklick neutral
+und zeigen den Tastaturfokus.
+Beide zeigen Lucides `square-arrow-right-enter` mit 8 px Abstand hinter dem
+Aktionstext, wie bei den App-Links mit Icon links.
+Rückwege stehen als native Buttons links im Footer.
 Der Faktorwechsel bleibt ein eigener Ablauf mit Ersatzcodefeld und Verbrauchshinweis.
 Die Benutzerhilfe verwendet native Layouts, `TextArea`, den vorhandenen `Grid` für
 eigene Anfragen und einen ruhigen Leerzustand. Rückweg, Aktualisieren und die
@@ -1178,6 +1201,9 @@ stehen die Bereiche untereinander; statt der vertikalen Trennlinie trennt dann
 eine horizontale Linie mit 24 px Abstand zu den Schritten die beiden Bereiche.
 Der Inhalt verwendet die normale dunkle
 Contentfläche, Kopf und Footer die bestehende Panelfläche.
+Die Panelköpfe der Authenticator-Einrichtung und der Anmeldebestätigung sowie die
+2FA-Zeile unter „Sicherheit & Zugang“ zeigen das Lucide-Icon `shield-keyhole`.
+Der Badge „Eingerichtet“ verwendet den grünen Statuspunkt der Kontokarte.
 Die Tabs schalten normale Inhaltscontainer um; ein zusätzliches `TabSheet` und
 ein eigener Scrollbereich entfallen. `cosmos-mfa-methods.css` gleicht ausschließlich
 Form, Innenabstände, Schrift und Auswahlfarbe an die HTML-Referenz an.
@@ -1222,6 +1248,8 @@ und E-Mail-Code-Felder bleiben unverändert. Die Gestaltung ist auf
 `.two-factor-otp` in `cosmos-mfa.css` begrenzt und nutzt die öffentlichen Parts
 und `--fc-otp-field-*`-Variablen. Die synthetische HTML-Referenz zeigt dieselbe
 Anordnung mit einer einzelnen Eingabe und sechs dekorativen Kästchen.
+Die Kästchen verwenden Space Mono bei der Einrichtung und bei der späteren
+Anmeldebestätigung, jeweils in Vaadin und in der HTML-Referenz.
 Label, 4 px Abstand und Position des Pflichtfeldpunkts übernehmen die bestehenden
 Vaadin-Feldregeln mit 12 px / 16 px Labelschrift und 14 px / 14 px für den Punkt.
 Die native Eingabe über den Slots bleibt durch eine auf `.two-factor-otp`

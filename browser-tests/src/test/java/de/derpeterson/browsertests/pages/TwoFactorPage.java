@@ -61,15 +61,14 @@ public final class TwoFactorPage {
   /** Die sichtbare Methode wählen; Ersatzcodes werden nicht in das sechsstellige Feld gekürzt. */
   public static void enterCode(Page page, String value) {
     Locator recovery = page.locator("#two-factor-recovery-tab");
-    Locator authenticator = page.locator("#two-factor-authenticator-tab");
     if (recovery.isVisible()) {
-      if (value.length() > 6) {
-        recovery.click();
-        assertThat(page.locator("vaadin-text-field#two-factor-code")).isVisible();
-      } else {
-        authenticator.click();
-        assertThat(page.locator("fc-otp-field#two-factor-code")).isVisible();
+      boolean recoveryCode = value.length() > 6;
+      Locator method = recoveryCode ? recovery : page.locator("#two-factor-authenticator-tab");
+      if (method.getAttribute("selected") == null) {
+        UiActions.complete(page, method::click);
       }
+      String field = recoveryCode ? "vaadin-text-field" : "fc-otp-field";
+      assertThat(page.locator(field + "#two-factor-code")).isVisible();
     }
     page.locator("#two-factor-code input").fill(value);
   }
@@ -78,6 +77,12 @@ public final class TwoFactorPage {
     confirmEnrollment(page, email);
     page.locator("#two-factor-codes-saved input").setChecked(true);
     page.locator("#two-factor-submit").click();
+  }
+
+  public static void openLoginHelp(Page page) {
+    Locator details = page.locator("#two-factor-login-help");
+    page.locator("#two-factor-login-help-toggle").click();
+    assertThat(details).hasAttribute("opened", "");
   }
 
   /**

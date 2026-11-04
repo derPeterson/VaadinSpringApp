@@ -2,7 +2,13 @@
   // Nur synthetische Gestaltungsvorschau. Kein echter Authenticator, Kontozugriff oder Versand.
   const codes = Array.from({length:10},(_,index)=>`${String(index).padStart(8,'0')}-12345678-ABCDEF01-23456789`).join('\n');
   const symbol = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/></svg>';
+  const shieldKeyhole = '<span class="mfa-shield-keyhole-icon" aria-hidden="true"></span>';
   const notify = text => window.PublicNotifications?.show(text,'normal','',4000);
+  const submitPastedOtp = (root, input, clipboardText) => {
+    if (/^[0-9]{6}$/.test(input.value) && clipboardText.replace(/[\s-]/g, '') === input.value) {
+      root.closest('.vp-card').querySelector('[data-mfa-continue]').click();
+    }
+  };
   const numberIcon = number => '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (number === 1 ? '<path d="M10 10l2-2v8"/>' : number === 2 ? '<path d="M10 8h3a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 0-1 1v3h4"/>' : '<path d="M10 9a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1"/>') + '<path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9Z"/></svg>';
   const renderEnrollment = (root, english) => {
     const selectedMethod = root.dataset.setupMethod || 'qr';
@@ -93,9 +99,11 @@
     input.addEventListener('input', () => { input.value = input.value.replace(/[^0-9]/g,'').slice(0,6); refreshSlots(); });
     input.addEventListener('paste', event => {
       event.preventDefault();
-      const digits = event.clipboardData.getData('text').replace(/[^0-9]/g,'');
+      const clipboardText = event.clipboardData.getData('text');
+      const digits = clipboardText.replace(/[^0-9]/g,'');
       input.setRangeText(digits, input.selectionStart, input.selectionEnd, 'end');
       input.dispatchEvent(new Event('input', {bubbles:true}));
+      submitPastedOtp(root, input, clipboardText);
     });
     ['focus','blur','click','keyup'].forEach(name => input.addEventListener(name,refreshSlots));
     refreshSlots();
@@ -141,31 +149,46 @@
   const helpMessages = [];
   const renderConfirmationFlow = (root, phase, english) => {
     const text = english ? {
-      confirm:'Confirm sign-in',confirmSubtitle:'Confirm that it is you.',authenticator:'Authenticator code',recovery:'Recovery code',
-      authHint:'Enter the six-digit code from your authenticator app.',recoveryHint:'Enter an unused recovery code to confirm your sign-in.',
-      restore:'Restore authenticator',restoreSubtitle:'Use a recovery code to set up a new app.',restoreHint:'Use an unused recovery code to set up a new authenticator. Your current app remains valid until you confirm the new one.',
-      consumption:'The recovery code is only used up after the replacement succeeds.',help:'No access to your authenticator or recovery codes?',
+      confirm:'Confirm sign-in',confirmSubtitle:'Use your authenticator app or an unused recovery code.',authenticator:'Authenticator code',recovery:'Recovery code',
+      authHint:'Enter the six-digit code from your authenticator app:',recoveryHint:'Enter an unused recovery code to confirm your sign-in:',
+      restore:'Restore authenticator',restorePrompt:'Use a recovery code to set up a new app?',restoreSubtitle:'Use a recovery code to set up a new app.',restoreHint:'Use an unused recovery code to set up a new authenticator. Your current app remains valid until you confirm the new one.',
+      consumption:'The recovery code is only used up after the replacement succeeds.',
       helpTitle:'Recovery help',helpSubtitle:'No access to your authenticator or recovery codes?',noUnlock:'A request is not proof of identity. Without an authenticator or valid recovery code we cannot unlock the account.',
       empty:'No requests.',request:'Your request',placeholder:'Briefly describe what you need help with.',warning:'Do not include passwords, authenticator secrets or recovery codes in this request.',
-      submit:'Confirm',continue:'Continue',create:'Create request',reply:'Add reply',back:'Back to sign-in',refresh:'Refresh',codePlaceholder:'Enter code'
+      signIn:'Sign in',loginBack:'Sign in',continue:'Continue',create:'Create request',reply:'Add reply',back:'Back to sign-in',refresh:'Refresh'
     } : {
-      confirm:'Anmeldung bestätigen',confirmSubtitle:'Bestätigen Sie, dass Sie es sind.',authenticator:'Authenticator-Code',recovery:'Ersatzcode',
-      authHint:'Geben Sie den sechsstelligen Code Ihrer Authenticator-App ein.',recoveryHint:'Geben Sie einen noch unbenutzten Ersatzcode ein, um Ihre Anmeldung zu bestätigen.',
-      restore:'Authenticator wiederherstellen',restoreSubtitle:'Mit einem Ersatzcode eine neue App einrichten.',restoreHint:'Verwenden Sie einen unbenutzten Ersatzcode, um einen neuen Authenticator einzurichten. Ihre bisherige App bleibt gültig, bis Sie die neue bestätigt haben.',
-      consumption:'Der Ersatzcode wird erst nach dem erfolgreichen Wechsel verbraucht.',help:'Kein Zugriff auf Authenticator und Ersatzcodes?',
+      confirm:'Anmeldung bestätigen',confirmSubtitle:'Verwenden Sie Ihre Authenticator-App oder einen unbenutzten Ersatzcode.',authenticator:'Authenticator-Code',recovery:'Ersatzcode',
+      authHint:'Geben Sie den sechsstelligen Code Ihrer Authenticator-App ein:',recoveryHint:'Geben Sie einen noch unbenutzten Ersatzcode ein, um Ihre Anmeldung zu bestätigen:',
+      restore:'Authenticator wiederherstellen',restorePrompt:'Mit einem Ersatzcode eine neue App einrichten?',restoreSubtitle:'Mit einem Ersatzcode eine neue App einrichten.',restoreHint:'Verwenden Sie einen unbenutzten Ersatzcode, um einen neuen Authenticator einzurichten. Ihre bisherige App bleibt gültig, bis Sie die neue bestätigt haben.',
+      consumption:'Der Ersatzcode wird erst nach dem erfolgreichen Wechsel verbraucht.',
       helpTitle:'Hilfe zur Wiederherstellung',helpSubtitle:'Kein Zugriff auf Authenticator und Ersatzcodes?',noUnlock:'Eine Anfrage ersetzt keinen Identitätsnachweis. Ohne Authenticator oder gültigen Ersatzcode können wir das Konto nicht entsperren.',
       empty:'Keine Anfragen vorhanden.',request:'Ihre Anfrage',placeholder:'Beschreiben Sie Ihr Anliegen kurz.',warning:'Schreiben Sie keine Passwörter, Authenticator-Schlüssel oder Ersatzcodes in diese Anfrage.',
-      submit:'Bestätigen',continue:'Weiter',create:'Anfrage erstellen',reply:'Antwort hinzufügen',back:'Zur Anmeldung',refresh:'Aktualisieren',codePlaceholder:'Code eingeben'
+      signIn:'Anmelden',loginBack:'Anmeldung',continue:'Weiter',create:'Anfrage erstellen',reply:'Antwort hinzufügen',back:'Zur Anmeldung',refresh:'Aktualisieren'
     };
-    const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>';
     const key = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="16" cy="8" r="5"/><path d="m12.5 11.5-9 9H2v-4l3-3h3v-3h3"/></svg>';
     const device = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>';
     const escape = value => String(value).replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
-    const restoreLink = `<button class="portal-button mfa-quiet-action" type="button" data-mfa-go="recover">${text.restore}${arrow}</button>`;
-    const helpLink = `<button class="portal-button mfa-quiet-action" type="button" data-mfa-go="help">${text.help}${arrow}</button>`;
+    const recoveryPlaceholder = 'XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX';
+    const recoveryField = id => `
+      <div class="mfa-recovery-field">
+        <label class="mfa-code-label" for="${id}">${text.recovery}<span class="mfa-required" aria-hidden="true">•</span></label>
+        <input id="${id}" class="mfa-recovery-input" maxlength="35" autocomplete="off" aria-required="true" placeholder="${recoveryPlaceholder}">
+      </div>`;
     const recoveryMode = root.dataset.loginMethod === 'recovery';
     if (phase === 'confirm') {
-      root.innerHTML = `<div class="mfa-setup-tabs mfa-login-tabs" role="tablist" aria-label="${text.confirm}"><button type="button" role="tab" data-mfa-login-method="authenticator" aria-selected="${!recoveryMode}" tabindex="${recoveryMode?-1:0}">${device}<span>${text.authenticator}</span></button><button type="button" role="tab" data-mfa-login-method="recovery" aria-selected="${recoveryMode}" tabindex="${recoveryMode?0:-1}">${key}<span>${text.recovery}</span></button></div><p class="portal-copy">${recoveryMode?text.recoveryHint:text.authHint}</p>${recoveryMode?`<label>${text.recovery} <span class="mfa-required-dot">•</span><input id="mfa-login-recovery-code" maxlength="35" autocomplete="off" placeholder="${text.codePlaceholder}"></label>`:`<div class="mfa-otp-field"><label for="mfa-login-code">${text.authenticator} <span class="mfa-required-dot">•</span></label><div class="mfa-otp"><div class="mfa-otp-slots" aria-hidden="true">${'<span>•</span>'.repeat(6)}</div><input id="mfa-login-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-required="true"></div></div>`}<div class="mfa-login-help">${restoreLink}${helpLink}</div>`;
+      const alternativesOpen = root.querySelector('.mfa-login-alternatives')?.open;
+      const helpTitle = english ? 'Sign-in problems and alternatives' : 'Zugangsprobleme und Alternativen';
+      const question = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 1 1 5 2.2c-1.3 1-2 1.4-2 2.8m0 3h.01"/></svg>';
+      const chevron = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+      const alternatives = `<details class="mfa-login-alternatives" ${alternativesOpen ? 'open' : ''}>
+        <summary><span class="mfa-login-help-topic">${question}<span>${helpTitle}</span></span>
+          <span class="mfa-login-help-toggle">Details${chevron}</span></summary>
+        <div class="mfa-login-help-links">
+          <div class="mfa-login-help-row"><span>${text.restorePrompt}</span><button class="mfa-quiet-action" type="button" data-mfa-go="recover">${text.restore}<span class="mfa-login-open-icon" aria-hidden="true"></span></button></div>
+          <div class="mfa-login-help-row"><span>${text.helpSubtitle}</span><button class="mfa-quiet-action" type="button" data-mfa-go="help">${text.helpTitle}<span class="mfa-login-open-icon" aria-hidden="true"></span></button></div>
+        </div>
+      </details>`;
+      root.innerHTML = `<div class="mfa-setup-tabs mfa-login-tabs" role="tablist" aria-label="${text.confirm}"><button type="button" role="tab" data-mfa-login-method="authenticator" aria-selected="${!recoveryMode}" tabindex="${recoveryMode?-1:0}">${device}<span>${text.authenticator}</span></button><button type="button" role="tab" data-mfa-login-method="recovery" aria-selected="${recoveryMode}" tabindex="${recoveryMode?0:-1}">${key}<span>${text.recovery}</span></button></div><p class="portal-copy">${recoveryMode?text.recoveryHint:text.authHint}</p>${recoveryMode?recoveryField('mfa-login-recovery-code'):`<div class="mfa-otp-field"><label class="mfa-otp-label" for="mfa-login-code">${text.authenticator} <span class="mfa-required">•</span></label><div class="mfa-otp"><div class="mfa-otp-slots" aria-hidden="true">${'<span>•</span>'.repeat(6)}</div><input id="mfa-login-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-required="true"></div></div>`}<div class="mfa-login-help">${alternatives}</div>`;
       const tabs = [...root.querySelectorAll('[data-mfa-login-method]')];
       tabs.forEach((tab, index) => {
         const select = () => { root.dataset.loginMethod = tab.dataset.mfaLoginMethod; renderPhase(root, 'confirm'); };
@@ -184,11 +207,18 @@
         const slots = [...root.querySelectorAll('.mfa-otp-slots > span')];
         const refresh = () => slots.forEach((slot,index) => { slot.textContent=input.value[index]||'•';slot.classList.toggle('filled',Boolean(input.value[index]));slot.classList.toggle('active',index===Math.min(input.selectionStart||0,5)); });
         input.addEventListener('input',()=>{input.value=input.value.replace(/[^0-9]/g,'').slice(0,6);refresh();});
-        input.addEventListener('paste',event=>{event.preventDefault();input.value=event.clipboardData.getData('text').replace(/[^0-9]/g,'').slice(0,6);input.dispatchEvent(new Event('input'));});
+        input.addEventListener('paste', event => {
+          event.preventDefault();
+          const clipboardText = event.clipboardData.getData('text');
+          input.value = clipboardText.replace(/[^0-9]/g, '').slice(0, 6);
+          input.dispatchEvent(new Event('input'));
+          submitPastedOtp(root, input, clipboardText);
+        });
         ['focus','click','keyup'].forEach(event=>input.addEventListener(event,refresh));refresh();
       }
     } else if (phase === 'recover') {
-      root.innerHTML = `<p class="portal-copy">${text.restoreHint}</p><label>${text.recovery} <span class="mfa-required-dot">•</span><input maxlength="35" autocomplete="off" placeholder="${text.codePlaceholder}"></label><div class="mfa-flow-notice">${symbol}<span>${text.consumption}</span></div><div class="mfa-login-help">${helpLink}</div>`;
+      const infoIcon = document.querySelector('#vp-symbols').content.querySelector('[data-symbol="info"]').innerHTML;
+      root.innerHTML = `<p class="portal-copy">${text.restoreHint}</p>${recoveryField('mfa-restore-recovery-code')}<div class="mfa-flow-notice">${infoIcon}<span>${text.consumption}</span></div>`;
     } else {
       const conversation = helpMessages.map((message, index) => `
         <div class="mfa-flow-ticket">
@@ -208,25 +238,47 @@
     const card = root.closest('.vp-card');
     if (card) {
       const heading = card.querySelector('.vp-card-head');
-      if (!heading.querySelector('.portal-reference-icon')) { heading.insertAdjacentHTML('afterbegin',`<span class="portal-reference-icon">${symbol}</span>`); }
+      if (!heading.querySelector('.portal-reference-icon')) { heading.insertAdjacentHTML('afterbegin','<span class="portal-reference-icon"></span>'); }
+      const headingIcons = {
+        confirm: shieldKeyhole,
+        recover: '<span class="mfa-restore-heading-icon" aria-hidden="true"></span>',
+        help: symbol
+      };
+      heading.querySelector('.portal-reference-icon').innerHTML = headingIcons[phase];
       heading.querySelector('h2').textContent = phase==='confirm'?text.confirm:phase==='recover'?text.restore:text.helpTitle;
       heading.querySelector('p').textContent = phase==='confirm'?text.confirmSubtitle:phase==='recover'?text.restoreSubtitle:text.helpSubtitle;
       const footer = card.querySelector('.vp-card-foot');
       footer.querySelector('[data-mfa-flow-back]')?.remove();
       footer.querySelector('[data-mfa-refresh]')?.remove();
       const cancel = footer.querySelector('a');cancel.hidden=phase==='help';
+      const signInIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 17 5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg>';
       if (phase!=='confirm') {
-        const back=document.createElement('button');back.type='button';back.className='portal-button mfa-quiet-action';back.dataset.mfaFlowBack='';back.textContent='‹ '+text.back;back.addEventListener('click',()=>renderPhase(root,'confirm'));footer.prepend(back);
+        const back = document.createElement('button');
+        back.type = 'button';
+        back.className = phase === 'recover' ? 'portal-button' : 'portal-button mfa-quiet-action';
+        back.dataset.mfaFlowBack = phase;
+        back.textContent = phase === 'recover' ? text.loginBack : '‹ ' + text.back;
+        if (phase === 'recover') {
+          back.insertAdjacentHTML('afterbegin', signInIcon);
+        }
+        back.addEventListener('click', () => renderPhase(root, 'confirm'));
+        footer.prepend(back);
       }
       if (phase==='help') {
         const reload=document.createElement('button');reload.type='button';reload.className='portal-button';reload.dataset.mfaRefresh='';reload.textContent=text.refresh;reload.addEventListener('click',()=>notify(english?'Design preview: Requests refreshed.':'Gestaltungsvorschau: Anfragen aktualisiert.'));footer.insertBefore(reload,footer.querySelector('[data-mfa-continue]'));
       }
       const actionLabels = {
-        confirm: text.submit,
+        confirm: text.signIn,
         recover: text.continue,
         help: helpMessages.length ? text.reply : text.create
       };
-      footer.querySelector('[data-mfa-continue]').textContent = actionLabels[phase];
+      const submit = footer.querySelector('[data-mfa-continue]');
+      submit.textContent = actionLabels[phase];
+      if (phase === 'confirm') {
+        submit.insertAdjacentHTML('afterbegin', signInIcon);
+      } else if (phase === 'recover') {
+        submit.insertAdjacentHTML('afterbegin', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>');
+      }
     }
     root.dataset.phase=phase;
   };
@@ -252,11 +304,17 @@
       root.closest('.vp-card').querySelector('[data-mfa-refresh]')?.remove();
       cancel.href = '#public-login';
       cancel.hidden = phase === 'codes';
-      cancel.classList.toggle('danger', phase === 'intro' || phase === 'qr');
+      const isSignInFlow = phase === 'confirm' || phase === 'recover';
+      cancel.classList.toggle('vp-button', isSignInFlow);
+      cancel.classList.toggle('danger', isSignInFlow || phase === 'intro' || phase === 'qr');
       cancel.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9"/></svg><span>' + (english ? 'Sign out' : 'Abmelden') + '</span>';
       if (phase === 'qr') {
-        root.closest('.vp-card').querySelector('.vp-card-head').innerHTML = '<span class="portal-reference-icon">' + symbol + '</span><div class="portal-reference-heading"><h2>' + (english ? 'Set up an authenticator app' : 'Authenticator-App einrichten') + '</h2><p>' + (english ? 'Protect your account with an authenticator app.' : 'Schützen Sie Ihr Konto mit einer Authenticator-App.') + '</p></div>';
+        root.closest('.vp-card').querySelector('.vp-card-head').innerHTML = '<span class="portal-reference-icon">' + shieldKeyhole + '</span><div class="portal-reference-heading"><h2>' + (english ? 'Set up an authenticator app' : 'Authenticator-App einrichten') + '</h2><p>' + (english ? 'Protect your account with an authenticator app.' : 'Schützen Sie Ihr Konto mit einer Authenticator-App.') + '</p></div>';
         renderEnrollment(root, Boolean(english)); root.dataset.phase = phase; return;
+      }
+      const setupIcon = root.closest('.vp-card').querySelector('.mfa-shield-keyhole-icon');
+      if (setupIcon) {
+        setupIcon.parentElement.innerHTML = symbol;
       }
       if (phase === 'intro') {
         root.innerHTML = '<img class="two-factor-introduction-art" src="assets/two-factor-locks.svg" alt=""><h2 class="two-factor-introduction-title">' + (english ? 'Two-factor authentication required' : 'Zwei-Faktor-Authentifizierung erforderlich') + '</h2><p class="portal-copy">' + (english ? 'Your account requires additional protection. Connect an authenticator app now to continue using the application.' : 'Für Ihr Konto ist eine zusätzliche Absicherung erforderlich. Verbinden Sie jetzt eine Authenticator-App, um die Anwendung weiter zu nutzen.') + '</p>';
@@ -334,7 +392,7 @@
   if(portal){
     const row=document.createElement('div');
     row.className='portal-row mfa-reference';
-    row.innerHTML=`<span class="portal-icon">${symbol}</span><div class="portal-row-copy"><h3>Zwei-Faktor-Authentifizierung <span class="external-connection-state connected">Eingerichtet</span></h3><p class="portal-copy">Schützen Sie Ihr Konto mit einer Authenticator-App und sichern Sie Ihre Ersatzcodes.</p></div><div class="mfa-actions"><button class="portal-button" type="button" data-mfa-manage="qr">Authenticator wechseln</button><button class="portal-button" type="button" data-mfa-manage="codes">Neue Ersatzcodes</button><button class="portal-button danger" type="button" data-mfa-manage="remove">Entfernen</button></div>`;
+    row.innerHTML=`<span class="portal-icon">${shieldKeyhole}</span><div class="portal-row-copy"><h3>Zwei-Faktor-Authentifizierung <span class="external-connection-state connected gap-1"><span class="w-1.5 h-1.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true"></span>Eingerichtet</span></h3><p class="portal-copy">Schützen Sie Ihr Konto mit einer Authenticator-App und sichern Sie Ihre Ersatzcodes.</p></div><div class="mfa-actions"><button class="portal-button" type="button" data-mfa-manage="qr">Authenticator wechseln</button><button class="portal-button" type="button" data-mfa-manage="codes">Neue Ersatzcodes</button><button class="portal-button danger" type="button" data-mfa-manage="remove">Entfernen</button></div>`;
     portal.append(row);
     const dialog=document.createElement('dialog');
     dialog.className='portal-modal portal-security-dialog mfa-reference';

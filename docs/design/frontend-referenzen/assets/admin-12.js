@@ -163,28 +163,77 @@
   }
 
   function renderTwoFactor() {
-    const roles=['Superadmin','Administrator','Benutzer','Gast'];
-    const actions=['Anmeldung','Administrationsbereich','Passwort ändern','E-Mail-Adresse ändern','Anbieter verbinden','Anbieter trennen','Authenticator verwalten','Ersatzcodes verwalten','Sicherheitskonfiguration'];
-    const tabs=roles.map((role,index)=>`<button type="button" role="tab" data-mfa-role="${index}" aria-selected="${index===0}" tabindex="${index===0?0:-1}">${role}</button>`).join('');
-    const fields=roles.map((role,index)=>`<div class="ad-grid" data-mfa-rules="${index}" ${index?'hidden':''}>${actions.map((action,number)=>`<div class="ad-field"><label for="mfa-rule-${index}-${number}">${action}</label><div class="ad-input-help"><select id="mfa-rule-${index}-${number}"><option ${number===1?'selected':''}>Aus</option><option ${index>1&&number!==1?'selected':''}>Falls eingerichtet</option><option ${index<2&&number!==1?'selected':''}>Verpflichtend</option></select><button class="ad-info" type="button" data-mfa-info aria-label="Feldhilfe">${icon('info')}</button></div></div>`).join('')}</div>`).join('');
-    root.innerHTML=`<div class="ad-config ad-providers mfa-reference"><article class="ad-card"><div class="ad-head"><span class="portal-reference-icon">${icon('shield')}</span><div><h2>Zwei-Faktor-Authentifizierung</h2><p>Legen Sie für jede Rolle fest, wann ein zweiter Faktor erforderlich ist.</p></div></div><p class="mfa-reference-copy">Bei mehreren Rollen gilt die strengste Regel. Änderungen wirken auch auf bestehende Sitzungen. Nur Superadmins können diese Konfiguration ändern.</p><div class="ad-provider-tabs" role="tablist" aria-label="Rollen">${tabs}</div>${fields}<div class="ad-grid"><div class="ad-field"><label class="ad-switch"><span>Nach Inaktivität erneut bestätigen</span><input type="checkbox" role="switch" data-mfa-inactivity></label></div><div class="ad-field"><label for="mfa-inactivity-value">Inaktivitätsdauer</label><div class="ad-input-help"><input id="mfa-inactivity-value" type="number" value="12" min="1" disabled><select aria-label="Zeiteinheit" data-mfa-unit disabled><option>Minuten</option><option selected>Stunden</option><option>Tage</option></select></div></div></div><div class="ad-foot"><div class="ad-config-save-hint">${icon('info')}<span>Die zuvor gültige Regel entscheidet über die Bestätigung dieser Änderung.</span></div><div class="ad-config-actions"><button class="portal-button" type="button" data-mfa-reload>${icon('refresh')}Werte neu laden</button><button class="portal-button primary" type="button" data-mfa-save>${icon('check')}Konfiguration speichern</button></div></div></article></div>`;
-    root.querySelectorAll('[data-mfa-role]').forEach(tab=>tab.addEventListener('click',()=>{
-      root.querySelectorAll('[data-mfa-role]').forEach(item=>{const active=item===tab;item.setAttribute('aria-selected',String(active));item.tabIndex=active?0:-1;});
-      root.querySelectorAll('[data-mfa-rules]').forEach(panel=>panel.hidden=panel.dataset.mfaRules!==tab.dataset.mfaRole);
+    const roles = ['Superadmin', 'Administrator', 'Benutzer', 'Gast'];
+    const groups = [
+      ['Zugang und Administration', [[0, 'Anmeldung'], [1, 'Zugriff auf Administration']]],
+      ['Konto- und Sicherheitsdaten', [[2, 'Portalpasswort einrichten oder ändern'], [3, 'E-Mail-Adresse ändern'], [8, 'Sicherheitskonfiguration ändern']]],
+      ['Authenticator und Anmeldeanbieter', [[4, 'Anmeldeanbieter verbinden'], [5, 'Anmeldeanbieter trennen'], [6, 'Authenticator verwalten'], [7, 'Ersatzcodes neu erzeugen']]]
+    ];
+    const saveHint = 'Änderungen gelten ab dem nächsten geschützten Zugriff, auch in bereits offenen Sitzungen. Eine Abschwächung muss nach der bisher gültigen Regel bestätigt werden.';
+    const modes = ['Aus', 'Bei eingerichteter 2FA', 'Pflicht'];
+    const modeHelp = ['Aus verlangt für diese Aktion keinen zweiten Faktor.', 'Bei eingerichteter 2FA schützt die Aktion, sobald das Konto einen Authenticator besitzt.', 'Pflicht verlangt zuerst die Einrichtung und dann die Bestätigung.'];
+    const inactivityHelp = 'Nach diesem Zeitraum ist der zweite Faktor erneut erforderlich. Hintergrundanfragen zählen nicht als Benutzeraktivität.';
+    const help = (description, notes) => `<details><summary>Feldhilfe</summary><p>${description}</p><span data-help-rules-label>Hinweise</span><ul>${notes.map(note => `<li>${note}</li>`).join('')}</ul></details>`;
+    const rule = (roleIndex, [number, label]) => {
+      const id = `mfa-rule-${roleIndex}-${number}`;
+      const selected = number === 1 ? 0 : roleIndex < 2 ? 2 : 1;
+      const explanation = number === 1
+        ? 'Diese Regel greift beim Öffnen der Administration. Der Zugriff setzt weiterhin eine entsprechende Rolle voraus.'
+        : number === 8 ? saveHint : 'Wählen Sie die 2FA-Anforderung für diese Aktion.';
+      return `<div class="ad-field"><label for="${id}">${label}</label>
+        <select id="${id}" data-config-id="${id}">${modes.map((mode, index) => `<option ${index === selected ? 'selected' : ''}>${mode}</option>`).join('')}</select>
+        ${help(explanation, modeHelp)}</div>`;
+    };
+    const tabs = roles.map((role, index) => `<button type="button" role="tab" id="mfa-role-${index}" data-mfa-role="${index}" aria-controls="mfa-rules-${index}" aria-selected="${index === 0}" tabindex="${index === 0 ? 0 : -1}">${role}</button>`).join('');
+    const guide = role => `<aside class="ad-mfa-guide">
+      <h3>${icon('info')}Hinweise zur Rollenkonfiguration</h3>
+      <ol>
+        <li><strong>Vorrang bei mehreren Rollen</strong><p>Für jede Aktion gilt die strengste Regel aus den Rollen des Kontos.</p></li>
+        <li><strong>Bestehende Authenticatoren</strong><p>Beim Ausschalten einer Regel bleiben eingerichtete Authenticatoren und Ersatzcodes erhalten.</p></li>
+        <li><strong>Wirksamkeit und Bestätigung</strong><p>${saveHint}</p></li>
+      </ol><p class="ad-mfa-role-scope">Sie bearbeiten die Regeln für die Rolle ${role}.</p>
+    </aside>`;
+    const panels = roles.map((role, index) => `<div class="ad-mfa-role-content" id="mfa-rules-${index}" role="tabpanel" aria-labelledby="mfa-role-${index}" data-mfa-rules="${index}" ${index ? 'hidden' : ''}>
+      <div class="ad-mfa-groups">${groups.map(([heading, actions], groupIndex) => `<section><h3><span class="ad-mfa-number">${groupIndex + 1}</span>${heading}</h3><div class="ad-grid">${actions.map(action => rule(index, action)).join('')}</div></section>`).join('')}</div>
+      ${guide(role)}
+    </div>`).join('');
+    root.innerHTML = `<div class="ad-config ad-providers mfa-reference ad-mfa-config"><article class="ad-card">
+      <div class="ad-head"><span class="portal-reference-icon">${icon('shield')}</span><div><h2>Zwei-Faktor-Authentifizierung</h2><p>Legen Sie für jede Rolle fest, wann ein zweiter Faktor erforderlich ist.</p></div></div>
+      <div class="ad-provider-tabs" role="tablist" aria-label="Rollen">${tabs}</div>
+      ${panels}
+      <section class="ad-mfa-inactivity"><h3>${icon('clock')}Rollenübergreifende Inaktivitätsregel</h3><div class="ad-grid">
+        <div class="ad-field ad-toggle"><label for="mfa-inactivity">Nach Inaktivität erneut bestätigen</label><input type="checkbox" role="switch" id="mfa-inactivity" data-mfa-inactivity data-config-id="mfa-inactivity">${help(inactivityHelp, ['Diese Einstellung gilt rollenübergreifend.'])}</div>
+        <div class="ad-field"><label for="mfa-inactivity-value">Zeitraum ohne Benutzeraktivität</label><div class="ad-input-help"><input id="mfa-inactivity-value" data-config-id="mfa-inactivity-value" type="number" value="12" min="1" disabled><select aria-label="Zeiteinheit" data-mfa-unit disabled><option>Minuten</option><option selected>Stunden</option><option>Tage</option></select></div>${help(inactivityHelp, ['Der Zeitraum kann zwischen einer Minute und 365 Tagen liegen.'])}</div>
+      </div></section>
+      <div class="ad-foot"><div class="ad-config-save-hint">${icon('info')}<span>${saveHint}</span></div><div class="ad-config-actions"><button class="portal-button" type="button" data-mfa-reload>${icon('refresh')}Werte neu laden</button><button class="portal-button primary" type="button" data-mfa-save>${icon('check')}Konfiguration speichern</button></div></div>
+    </article></div>`;
+    const roleTabs = [...root.querySelectorAll('[data-mfa-role]')];
+    roleTabs.forEach(tab => tab.addEventListener('click', () => {
+      roleTabs.forEach(item => {
+        const active = item === tab;
+        item.setAttribute('aria-selected', String(active));
+        item.tabIndex = active ? 0 : -1;
+      });
+      root.querySelectorAll('[data-mfa-rules]').forEach(panel => {
+        panel.hidden = panel.dataset.mfaRules !== tab.dataset.mfaRole;
+      });
     }));
-    root.querySelector('[role=tablist]').addEventListener('keydown',event=>{
-      if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){return;}
-      const tabs=[...root.querySelectorAll('[data-mfa-role]')],index=tabs.indexOf(document.activeElement);
-      const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
-      tabs[next].click();tabs[next].focus();event.preventDefault();
+    root.querySelector('[role=tablist]').addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) { return; }
+      const index = roleTabs.indexOf(document.activeElement);
+      let next = (index + (event.key === 'ArrowRight' ? 1 : -1) + roleTabs.length) % roleTabs.length;
+      if (event.key === 'Home') { next = 0; }
+      if (event.key === 'End') { next = roleTabs.length - 1; }
+      roleTabs[next].click();
+      roleTabs[next].focus();
+      event.preventDefault();
     });
-    root.querySelector('[data-mfa-inactivity]').addEventListener('change',event=>{
-      root.querySelector('#mfa-inactivity-value').disabled=!event.target.checked;
-      root.querySelector('[data-mfa-unit]').disabled=!event.target.checked;
+    root.querySelector('[data-mfa-inactivity]').addEventListener('change', event => {
+      root.querySelector('#mfa-inactivity-value').disabled = !event.target.checked;
+      root.querySelector('[data-mfa-unit]').disabled = !event.target.checked;
     });
-    root.querySelector('[data-mfa-save]').addEventListener('click',()=>toast('Gestaltungsvorschau: Keine Sicherheitsregel wurde gespeichert.'));
-    root.querySelector('[data-mfa-reload]').addEventListener('click',renderTwoFactor);
-    root.querySelectorAll('[data-mfa-info]').forEach(info=>info.addEventListener('click',()=>toast('Aus: andere Identitätsprüfungen bleiben bestehen. Falls eingerichtet: vorhandenen Faktor verwenden. Verpflichtend: vorher einrichten und bestätigen.')));
+    root.querySelector('[data-mfa-save]').addEventListener('click', () => toast('Gestaltungsvorschau: Keine Sicherheitsregel wurde gespeichert.'));
+    root.querySelector('[data-mfa-reload]').addEventListener('click', renderTwoFactor);
   }
 
   function renderSupport() {

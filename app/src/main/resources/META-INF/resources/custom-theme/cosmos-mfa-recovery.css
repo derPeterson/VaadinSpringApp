@@ -19,9 +19,6 @@
 .two-factor-recovery-codes-header { gap:12px; justify-content:space-between; }
 .two-factor-recovery-heading { display:flex; align-items:center; gap:8px; min-width:0; color:var(--cosmos-reference-text); font:600 12px/20px Inter,sans-serif; }
 .two-factor-recovery-heading > vaadin-icon { width:16px; height:16px; flex:none; color:var(--cosmos-reference-accent); }
-#two-factor-recovery-toggle { flex:none; margin:0; padding:0; min-height:28px; height:auto; border:0; background:transparent; color:var(--cosmos-reference-text); font:600 12px/16.8px Inter,sans-serif; }
-#two-factor-recovery-toggle::before { display:none; }
-#two-factor-recovery-toggle vaadin-icon { width:16px; height:16px; color:var(--cosmos-reference-accent); }
 #two-factor-recovery-details::part(content) { padding:8px 0 0; }
 .two-factor-recovery #two-factor-codes-saved { flex:none; width:100%; margin:auto 0 0; padding-top:20px; border-top:1px solid var(--cosmos-reference-border); --vaadin-switch-width:34px; --vaadin-switch-height:20px; --vaadin-switch-gap:9px; --vaadin-switch-background:var(--cosmos-reference-input); --vaadin-switch-border-color:var(--cosmos-reference-control-border); --vaadin-switch-border-width:1px; --vaadin-switch-border-radius:999px; --vaadin-switch-marker-width:14px; --vaadin-switch-marker-height:14px; --vaadin-switch-marker-color:var(--cosmos-reference-secondary); --vaadin-switch-marker-border-width:0; --vaadin-switch-marker-scale:1; --vaadin-switch-label-color:var(--cosmos-reference-secondary); --vaadin-switch-label-font-size:12px; --vaadin-switch-label-font-weight:400; --vaadin-switch-label-line-height:20px; }
 .two-factor-recovery #two-factor-codes-saved[checked] { --vaadin-switch-background:var(--cosmos-reference-primary); --vaadin-switch-border-color:var(--cosmos-reference-primary); --vaadin-switch-marker-color:var(--cosmos-reference-white); }

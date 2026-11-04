@@ -99,6 +99,7 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     new UserMenu(page).signOut();
     page.locator("#external-login-google").click();
     providerIdentity(email);
+    TwoFactorPage.openLoginHelp(page);
     page.locator("#two-factor-help").click();
     assertThat(page.locator("#account-support")).isVisible();
     String draft = "Own recovery request " + UUID.randomUUID();

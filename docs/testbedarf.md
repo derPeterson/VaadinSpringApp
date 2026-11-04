@@ -13,7 +13,9 @@
   Anmelde- und Wiederherstellungsfälle nach der Umstellung auf getrennte Eingaben
   in DE/EN erneut ausführen. MFA-12 prüft dabei den Wechsel mit dem letzten
   Ersatzcode bis zur Freigabe nach Bestätigung der neuen App. Die fokussierte
-  Suite MFA-18 deckt den Wechsel der Eingabemethode und die Ansichten ab.
+  Suite MFA-18 deckt den Wechsel der Eingabemethode und die Ansichten ab. Nach
+  der Umstellung auf „Zugangsprobleme und Alternativen“ außerdem prüfen, dass
+  beide Aktionen erst nach Öffnen der Details sichtbar und erreichbar sind.
 
 ## JUnit-Tests
 

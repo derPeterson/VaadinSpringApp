@@ -4,10 +4,34 @@
 .support-recovery-help .account-panel-body { background:var(--cosmos-reference-page); }
 .two-factor-confirmation-input { gap:16px; min-width:0; }
 .two-factor-confirmation-input .two-factor-otp { align-self:center; }
-.two-factor-confirmation .two-factor-extra-actions,
-.two-factor-restore .two-factor-extra-actions { flex-direction:column; align-items:flex-start; gap:8px; border-top:1px solid var(--cosmos-reference-border); margin-top:24px; padding-top:16px; }
+.two-factor-view vaadin-text-field.two-factor-recovery-input > input[slot=input] { font-family:'Space Mono',ui-monospace,Consolas,monospace; }
+.two-factor-confirmation .two-factor-extra-actions { flex-direction:column; align-items:flex-start; gap:8px; border-top:1px solid var(--cosmos-reference-border); margin-top:24px; padding-top:16px; }
 .two-factor-extra-actions vaadin-button[theme~=tertiary-inline] { margin:0; }
+#two-factor-login-help { margin:0; padding:0; border:0; }
+#two-factor-login-help > vaadin-details-summary,
+#two-factor-login-help:not([opened]) { display:none; }
+#two-factor-login-help::part(content) { padding:0; }
+.two-factor-login-help-toggle { width:100%; }
+.two-factor-login-help-toggle::part(prefix) { flex:1; min-width:0; text-align:start; white-space:normal; }
+.two-factor-login-help-topic { display:flex; align-items:center; gap:8px; }
+.two-factor-login-help-topic > vaadin-icon { flex:none; width:16px; height:16px; color:var(--cosmos-reference-accent); }
+.two-factor-login-help-links { gap:0; }
+.two-factor-login-help-row { flex-wrap:wrap; column-gap:8px; row-gap:0; color:var(--cosmos-reference-secondary); font:400 12px/20px Inter,sans-serif; }
+.two-factor-login-help-row > vaadin-button[theme~=tertiary-inline] {
+  padding:0;
+  border:0;
+  background:transparent;
+}
+.two-factor-login-help-row > vaadin-button[theme~=tertiary-inline]:focus:not([focus-ring], :focus-visible) {
+  outline:none;
+}
+.two-factor-login-help-row > vaadin-button::part(suffix) {
+  display:inline-flex;
+  align-items:center;
+  margin-inline:var(--cosmos-space-s) 0;
+}
 .two-factor-footer { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; }
+.two-factor-restore > .cosmos-panel-footer > .cosmos-panel-actions { width:100%; }
 .two-factor-footer-navigation { flex:none; min-width:0; }
 .two-factor-footer-navigation:empty { display:none; }
 .two-factor-footer > .cosmos-dialog-actions { flex-wrap:wrap; justify-content:flex-end; width:auto; max-width:100%; margin-inline-start:auto; gap:8px; }

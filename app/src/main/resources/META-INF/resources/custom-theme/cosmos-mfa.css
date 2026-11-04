@@ -42,22 +42,38 @@
 /* Die gemeinsame Feldregel darf die native Eingabe über den sechs Ziffernslots
  * nicht sichtbar machen. Fokus, Einfügen und Autofill bleiben am Add-on-Input. */
 .two-factor-view fc-otp-field.two-factor-otp > input[slot=input] { color:transparent; -webkit-text-fill-color:transparent; caret-color:transparent; opacity:0; }
+.two-factor-otp::part(slot) { font-family:'Space Mono',ui-monospace,Consolas,monospace; }
 .two-factor-otp::part(label) { display:flex; align-items:center; gap:4px; margin:0 0 6px; padding:0; color:var(--cosmos-reference-label); font:500 12px/16px Inter,sans-serif; }
 .two-factor-otp::part(required-indicator) { position:static; visibility:visible; display:inline-flex; flex:none; width:auto; margin:0; padding:0; font:500 14px/14px Inter,sans-serif; }
 .two-factor-otp::part(required-indicator)::after { content:'•'; color:var(--cosmos-reference-accent); opacity:1; position:static; width:auto; margin-left:0; }
 @media (max-width:760px) { .two-factor-setup-layout { grid-template-columns:minmax(0,1fr); } .two-factor-setup-instructions { padding:24px 0 0; border-left:0; border-top:1px solid var(--cosmos-reference-border); } }
-.cosmos-mfa-settings .mfa-policy-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--cosmos-space-2xl, 24px); padding: var(--cosmos-space-2xl, 24px); }
+.cosmos-mfa-settings .mfa-policy-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--cosmos-space-2xl, 24px); width: 100%; }
 .cosmos-mfa-settings .cosmos-config-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--cosmos-space-m, 12px); align-items: center; }
-.cosmos-mfa-settings .mfa-rules-hint { display: block; padding: var(--cosmos-space-l, 16px) var(--cosmos-space-2xl, 24px); }
-.cosmos-mfa-settings #two-factor-role-tabs { border: 0; border-radius: 0; --vaadin-tabsheet-border-width: 0px; }
-.cosmos-mfa-settings #two-factor-role-tabs::part(content) { flex: none; height: auto; max-height: none; padding: 0; contain: none; background: var(--cosmos-reference-page); --vaadin-scroller-overflow-indicator-top-opacity: 0; }
-.cosmos-mfa-settings #two-factor-role-tabs::part(tabs-container) { padding: 0 24px; background: var(--cosmos-reference-panel); border-bottom: 0; box-shadow: none; background-image: linear-gradient(var(--cosmos-reference-border),var(--cosmos-reference-border)); background-position: bottom; background-size: 100% 1px; background-repeat: no-repeat; }
-.cosmos-mfa-settings #two-factor-role-tabs vaadin-tabs { margin: 0; border: 0; box-shadow: none; --vaadin-tabs-border-width: 0px; }
-.cosmos-mfa-settings #two-factor-role-tabs vaadin-tab { box-sizing: border-box; display: flex; align-items: center; min-width: 150px; min-height: 48px; justify-content: center; padding: 12px 20px; margin: 0; border: 1px solid transparent; border-top-width: 2px; border-bottom: 0; border-radius: 10px 10px 0 0; background: transparent; font: 500 12px/20px Inter,sans-serif; color: var(--cosmos-reference-secondary); cursor: pointer; }
-.cosmos-mfa-settings #two-factor-role-tabs vaadin-tab[selected] { z-index: 1; border-color: var(--cosmos-reference-border); border-top-color: var(--cosmos-reference-accent); background: var(--cosmos-reference-page); color: var(--cosmos-reference-text); font-weight: 600; }
-.cosmos-mfa-settings #two-factor-role-tabs vaadin-tab::before, .cosmos-mfa-settings #two-factor-role-tabs vaadin-tab::after { display: none; }
+.cosmos-reference-admin .cosmos-mfa-settings .mfa-settings-header { border-bottom:0; }
+.cosmos-mfa-settings .mfa-settings-body { container-type:inline-size; }
+.cosmos-mfa-settings .mfa-role-content { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); align-items:start; gap:24px; padding:24px; }
+.cosmos-mfa-settings .mfa-rule-groups { gap:24px; min-width:0; }
+.cosmos-mfa-settings .mfa-config-heading { display:flex; align-items:center; gap:8px; width:100%; box-sizing:border-box; margin:0 0 16px; padding-bottom:8px; border-bottom:1px solid var(--cosmos-reference-border); color:var(--cosmos-reference-text); font:600 12px/20px Inter,sans-serif; }
+.cosmos-mfa-settings .mfa-config-heading > vaadin-icon,
+.cosmos-mfa-settings .mfa-guide-item > vaadin-icon { flex:none; width:16px; height:16px; color:var(--cosmos-reference-accent); }
+.cosmos-mfa-settings .mfa-role-guide { box-sizing:border-box; min-width:0; border:1px solid var(--cosmos-reference-border); border-radius:var(--cosmos-control-radius); padding:16px; gap:16px; background:var(--cosmos-reference-panel); }
+.cosmos-mfa-settings .mfa-role-guide .mfa-config-heading { margin-bottom:0; }
+.cosmos-mfa-settings .mfa-guide-item { align-items:flex-start; gap:8px; }
+.cosmos-mfa-settings .mfa-guide-item-title { color:var(--cosmos-reference-text); font:600 12px/20px Inter,sans-serif; }
+.cosmos-mfa-settings .mfa-role-scope { width:100%; box-sizing:border-box; border-top:1px solid var(--cosmos-reference-border); padding-top:12px; }
+.cosmos-mfa-settings .mfa-inactivity-section { box-sizing:border-box; padding:24px; border-top:1px solid var(--cosmos-reference-border); }
+.cosmos-mfa-settings .mfa-inactivity-section .mfa-policy-grid { align-items:end; }
 .cosmos-mfa-settings .mfa-development-options { display: flex; flex-direction: column; gap: var(--cosmos-space-l, 16px); margin: var(--cosmos-space-2xl, 24px); padding: var(--cosmos-space-l, 16px); border: var(--cosmos-border-width) solid var(--lumo-warning-color); border-radius: var(--cosmos-control-radius); }
-@media (max-width: 650px) { .cosmos-mfa-settings .mfa-policy-grid { grid-template-columns: minmax(0, 1fr); } }
+@container (max-width:760px) {
+  .cosmos-mfa-settings .mfa-role-content { grid-template-columns:minmax(0,1fr); }
+}
+@container (max-width:480px) {
+  .cosmos-mfa-settings .mfa-policy-grid { grid-template-columns:minmax(0,1fr); gap:16px; }
+  .cosmos-mfa-settings :is(.mfa-role-content,.mfa-inactivity-section) { padding:16px; }
+}
+@media (max-width:600px) {
+  .cosmos-provider-settings #two-factor-role-tabs vaadin-tab { padding-inline:6px; }
+}
 .cosmos-reference-portal #account-panel-security .two-factor-account-entry { grid-template-columns:36px minmax(0,1fr); }
 .two-factor-account-actions { grid-column:2 / -1; min-width:0; display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
 @media (min-width:651px) {
@@ -66,10 +82,14 @@
 }
 .two-factor-account-entry .account-entry-copy > div { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .two-factor-account-entry vaadin-badge { box-sizing:border-box; margin:0; padding:2px 6px; border:1px solid var(--vaadin-badge-border-color); border-radius:4px; font:500 10px/15px Inter,sans-serif; --vaadin-badge-text-color:var(--cosmos-reference-accent); --vaadin-badge-background:var(--cosmos-reference-selection); --vaadin-badge-border-color:var(--cosmos-reference-icon-border); }
-.two-factor-account-entry vaadin-badge[theme~=success] { --vaadin-badge-text-color:var(--cosmos-reference-success); --vaadin-badge-background:var(--cosmos-reference-success-surface); --vaadin-badge-border-color:var(--cosmos-reference-success-border); }
+.two-factor-account-entry vaadin-badge[theme~=success] { --vaadin-badge-text-color:var(--cosmos-reference-success); --vaadin-badge-background:var(--cosmos-reference-success-surface); --vaadin-badge-border-color:var(--cosmos-reference-success-border); --vaadin-badge-gap:4px; }
 @media (max-width:650px) { .two-factor-account-actions { grid-column:1 / -1; } }
 .support-tickets .account-panel-body { display:flex; flex-direction:column; gap:16px; }
 .support-tickets .cosmos-dialog-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; width:100%; }
 .support-tickets .cosmos-panel-footer { padding:16px 24px; }
 .support-tickets vaadin-grid vaadin-badge { font:500 10px/15px Inter,sans-serif; border-radius:4px; }
 .support-instructions .portal-confirm-explanation { white-space:pre-line; }
+.cosmos-reference-portal vaadin-button.two-factor-details-toggle { flex:none; margin:0; padding:0; min-height:28px; height:auto; border:0; background:transparent; box-shadow:none; color:var(--cosmos-reference-text); font:600 12px/16.8px Inter,sans-serif; }
+:is(.two-factor-details-toggle, .two-factor-login-help-row > vaadin-button[theme~=tertiary-inline])::before,
+:is(.two-factor-details-toggle, .two-factor-login-help-row > vaadin-button[theme~=tertiary-inline])::after { display:none; }
+.cosmos-reference-portal vaadin-button.two-factor-details-toggle:focus:not([focus-ring]) { outline:none; }

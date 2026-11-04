@@ -43,7 +43,7 @@ public final class TwoFactorAccountComponent extends Div {
   public void refresh() {
     entry.removeAll();
     TwoFactorAuthorization.State state = authorization.state(authorization.owner(request));
-    Div icon = new Div(AppIcon.LOCK.create());
+    Div icon = new Div(AppIcon.SHIELD_KEYHOLE.create());
     icon.addClassName(CosmosClasses.PANEL_ICON);
     Span title = new Span(texts.getTwoFactorSettingsTitle());
     title.addClassName("account-entry-title");

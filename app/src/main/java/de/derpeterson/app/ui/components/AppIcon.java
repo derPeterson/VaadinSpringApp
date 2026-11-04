@@ -2,7 +2,7 @@ package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.icon.SvgIcon;
 
-/** Lokale Anwendungssymbole aus Lucide und ausdrücklich freigegebene Tabler-Ergänzungen. */
+/** Lokale Anwendungssymbole aus Lucide, Tabler und Material Symbols. */
 public enum AppIcon {
   ANGLE_DOUBLE_LEFT("chevrons-left"),
   ANGLE_DOUBLE_RIGHT("chevrons-right"),
@@ -42,6 +42,7 @@ public enum AppIcon {
   LANGUAGES("languages"),
   LIST("list"),
   LOCK("lock-keyhole"),
+  LOCK_RESET(Library.MATERIAL_SYMBOLS, "lock-reset"),
   MENU("menu"),
   MESSAGE("message-square"),
   MINUS("minus"),
@@ -57,6 +58,7 @@ public enum AppIcon {
   SHIELD("shield"),
   SHIELD_CHECK("shield-check"),
   SHIELD_COG("shield-cog"),
+  SHIELD_KEYHOLE("shield-keyhole"),
   SIGN_IN("log-in"),
   SIGN_OUT("log-out"),
   TRASH("trash-2"),
@@ -79,7 +81,8 @@ public enum AppIcon {
 
   private enum Library {
     LUCIDE("lucide"),
-    TABLER("tabler");
+    TABLER("tabler"),
+    MATERIAL_SYMBOLS("material-symbols");
     private final String directory;
 
     Library(String directory) {
